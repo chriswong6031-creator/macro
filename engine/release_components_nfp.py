@@ -245,16 +245,26 @@ def project_claims(
       - point, p10, p25, p50, p75, p90 (level, thousands)
       - naive_prior: last ICSA initial print
       - inputs_used: {"ic4wsa_last": ..., "icsa_last": ...}
+
+    Degraded mode: IC4WSA feeds ONLY point/quantiles. The benchmark_set
+    (naive_prior / trailing_4w / ar_model) is a pure ICSA read, so an IC4WSA
+    collection gap degrades the model half and leaves the benchmarks intact.
     """
     # All initial ICSA prints knowable at asof
     icsa = knowable_series_fn(vintages, "ICSA", asof)
     ic4wsa = knowable_series_fn(vintages, "IC4WSA", asof)
 
-    if icsa.empty or ic4wsa.empty:
+    # ICSA is the target series: without it there is no card. IC4WSA is only the
+    # point-forecast input. Guarding both behind one `or` meant an IC4WSA gap in the
+    # vintage store emptied the whole benchmark_set — and because the §6 kill rule
+    # (research/release_forecast/CLAIMS_BACKTEST.md) ships claims in benchmark_only
+    # mode, the benchmarks ARE the card, so the two composed into an empty card.
+    if icsa.empty:
         return _empty_claims_projection(asof, "insufficient_data")
 
+    have_ic4wsa = not ic4wsa.empty
     icsa_last = float(icsa["value"].iloc[-1])
-    ic4wsa_last = float(ic4wsa["value"].iloc[-1])
+    ic4wsa_last = float(ic4wsa["value"].iloc[-1]) if have_ic4wsa else None
 
     # Walk-forward residuals: for each ICSA observation where we also have an
     # IC4WSA prediction (the IC4WSA published one week earlier than the
@@ -262,31 +272,33 @@ def project_claims(
     # We use a time-aligned merge: for ICSA period T, use the IC4WSA reading
     # with the latest realtime_start <= ICSA's realtime_start - 1 day.
     icsa_sorted = icsa.sort_values("period").reset_index(drop=True)
-    ic4wsa_sorted = ic4wsa.sort_values("period").reset_index(drop=True)
 
     residuals: list[float] = []
-    for _, icsa_row in icsa_sorted.iterrows():
-        icsa_rt = icsa_row["realtime_start"]
-        icsa_period = icsa_row["period"]
-        icsa_val = float(icsa_row["value"])
+    if have_ic4wsa:
+        ic4wsa_sorted = ic4wsa.sort_values("period").reset_index(drop=True)
+        for _, icsa_row in icsa_sorted.iterrows():
+            icsa_rt = icsa_row["realtime_start"]
+            icsa_period = icsa_row["period"]
+            icsa_val = float(icsa_row["value"])
 
-        # IC4WSA with same or prior period, published strictly before this ICSA print
-        ic4_avail = ic4wsa_sorted[
-            (ic4wsa_sorted["period"] <= icsa_period) &
-            (ic4wsa_sorted["realtime_start"] < icsa_rt)
-        ]
-        if ic4_avail.empty:
-            continue
-        # Most recent IC4WSA reading
-        ic4_pred = float(ic4_avail.iloc[-1]["value"])
-        # Residuals in thousands (matching benchmark units)
-        residuals.append((icsa_val - ic4_pred) / 1000.0)
+            # IC4WSA with same or prior period, published strictly before this ICSA print
+            ic4_avail = ic4wsa_sorted[
+                (ic4wsa_sorted["period"] <= icsa_period) &
+                (ic4wsa_sorted["realtime_start"] < icsa_rt)
+            ]
+            if ic4_avail.empty:
+                continue
+            # Most recent IC4WSA reading
+            ic4_pred = float(ic4_avail.iloc[-1]["value"])
+            # Residuals in thousands (matching benchmark units)
+            residuals.append((icsa_val - ic4_pred) / 1000.0)
 
     residuals_arr = np.array(residuals, dtype=float)
 
     # Quantiles: p10/p25/p50/p75/p90 from expanding residuals (all in thousands)
-    point = ic4wsa_last / 1000.0  # convert raw persons → thousands to match benchmark_set units
-    if len(residuals_arr) >= min_quantile_obs:
+    # point is None without IC4WSA — the model half degrades, the benchmarks below do not.
+    point = ic4wsa_last / 1000.0 if have_ic4wsa else None  # raw persons → thousands (benchmark_set units)
+    if point is not None and len(residuals_arr) >= min_quantile_obs:
         qs = np.quantile(residuals_arr, [0.10, 0.25, 0.50, 0.75, 0.90])
         quantiles = {
             "p10": round(point + qs[0], 3),
@@ -331,12 +343,19 @@ def project_claims(
             except Exception:
                 ar3_pred = None
 
+    # Both declared legs are ALFRED-vintaged; IC4WSA moves to absent_legs when the
+    # store lacks it, so the degradation is disclosed rather than shipped as a
+    # silently empty provenance block (MRI-R26 coverage flags read these lists).
+    inputs_used: dict[str, Any] = {"icsa_last_raw": round(icsa_last, 1)}  # raw persons (informational)
+    if have_ic4wsa:
+        inputs_used["ic4wsa_last_raw"] = round(ic4wsa_last, 1)
+
     return {
         "release": "claims",
         "asof": asof.isoformat(),
         "target": "icsa_level",
         "regime_axis": "growth",
-        "point": round(point, 3),  # thousands (ic4wsa_last / 1000.0)
+        "point": round(point, 3) if point is not None else None,  # thousands (ic4wsa_last / 1000.0)
         "p10": quantiles["p10"],
         "p25": quantiles["p25"],
         "p50": quantiles["p50"],
@@ -350,23 +369,27 @@ def project_claims(
             "cleveland_nowcast": None,
             "market_implied": None,
         },
-        "inputs_used": {
-            "ic4wsa_last_raw": round(ic4wsa_last, 1),  # raw persons (informational)
-            "icsa_last_raw": round(icsa_last, 1),       # raw persons (informational)
-        },
+        "inputs_used": inputs_used,
         "surprise_skew": {"sigma": None, "tag": None},
         "pit_provenance": {
             "revision_optimistic_legs": [],
+            "vintaged_legs": ["ICSA", "IC4WSA"] if have_ic4wsa else ["ICSA"],
             "unrevised_legs": [],
-            "absent_legs": [],
+            "absent_legs": [] if have_ic4wsa else ["IC4WSA"],
             "display_only": True,
             "authority": False,
-            "note": "frozen trivial spec: IC4WSA point, expanding IC4WSA→ICSA residuals",
+            "note": (
+                "frozen trivial spec: IC4WSA point, expanding IC4WSA→ICSA residuals"
+                if have_ic4wsa else
+                "IC4WSA absent from the vintage store: benchmarks read from ICSA; "
+                "point and quantiles unavailable"
+            ),
         },
         "display_only": True,
         "authority": False,
         "confidence": None,
-        "input_completeness": 1.0 if (not icsa.empty and not ic4wsa.empty) else 0.0,
+        # 2 declared legs (ICSA, IC4WSA); ICSA alone is half the declared input set.
+        "input_completeness": 1.0 if have_ic4wsa else 0.5,
     }
 
 

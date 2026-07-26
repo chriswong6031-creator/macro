@@ -176,6 +176,13 @@ The scoreboard grades mae_naive_prior, mae_trailing_4w, mae_ar_model going forwa
 - **Trailing benchmark:** trailing_4w (mean of last 4 prints); trailing_3m applies to monthly releases.
 - **IC4WSA walk-forward:** point = IC4WSA / 1000 (thousands); actual = ICSA / 1000 (thousands).
   IC4WSA published strictly before each ICSA print (PIT law preserved).
+- **IC4WSA absent (degraded mode):** IC4WSA feeds `point`, the quantiles and `n_residuals`
+  only. The three benchmarks above are pure ICSA reads, so when the vintage store carries no
+  IC4WSA they are still computed and the card still ships graded numbers; `point`/quantiles
+  go null and `pit_provenance` carries `absent_legs: ["IC4WSA"]` with `input_completeness`
+  0.5. This matters because the §6 kill above makes the benchmarks the card's whole content —
+  guarding both halves behind one condition shipped an empty card (2026-07-26; the store lost
+  IC4WSA between #809 and the 2026-07-16 collection).
 - **No iteration:** Anti-mining law applies. No spec changes after seeing results.
 - **Forward gates:** If n>=12 forward prints show a model beating naive with Wilson LB > 0.5,
   a model-mode re-entry proposal may be adjudicated (new separate program, not this §9.1).

@@ -103,10 +103,20 @@ fred:
   # prone business-cycle hard-data legs, so a FRED_API_KEY run (CI) auto-upgrades the
   # recession backtest to full point-in-time. Market/rate legs (MPRIME, USREC) are not
   # revised and stay out. NFCI family stays out (re-revises all history, API times out).
+  # THIS LIST IS MEANT TO STAY A SUPERSET OF DEFAULT_VINTAGE_SERIES. fetch_vintages()
+  # prefers this override and REWRITES vintages.parquet wholesale, so a series dropped
+  # here is deleted from the store on the next keyed collect — silently, since the
+  # collector only warns on fetch errors, never on omissions. IC4WSA/CCSA were dropped
+  # exactly that way (891/876 rows present at #809, zero by 2026-07-16), which left the
+  # claims cards with no point forecast and NFP with a permanently absent
+  # claims_survey_week_ccsa leg; both are restored below.
+  # STILL MISSING vs DEFAULT_VINTAGE_SERIES: PPIFES, ECIALLCIV, ECIWAG (lost the same
+  # way — PPIFES holds the CPI bridge's core_goods_pipeline block off the PIT path).
+  # Restoring them changes shipped inflation-lane numbers, so it is that lane's call.
   vintage_series: [PAYEMS, INDPRO, M2SL, WEI, GDPNOW, RECPROUSM156N, THREEFYTP10,
     SAHMREALTIME, STICKCPIM157SFRBATL, CORESTICKM157SFRBATL, FLEXCPIM157SFRBATL,
     MEDCPIM158SFRBCLE, STLFSI4, UMCSENT, MICH,
-    AWHMAN, ICSA, PERMIT, NEWORDER, W875RX1, CMRMTSPL, UEMPMEAN, ISRATIO, BUSLOANS, CUSR0000SAS,
+    AWHMAN, ICSA, IC4WSA, CCSA, PERMIT, NEWORDER, W875RX1, CMRMTSPL, UEMPMEAN, ISRATIO, BUSLOANS, CUSR0000SAS,
     # base-effect inflation levels (engine/base_effect.py) — absent from the store per
     # scripts/audit_alfred_depth.py; a keyed collect run backfills them so the base-effect
     # inflation legs upgrade from latest-revision (revised=True) to point-in-time.
