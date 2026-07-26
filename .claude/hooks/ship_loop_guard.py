@@ -985,6 +985,54 @@ def _session_start(root: Path, path: Path, payload: dict[str, Any]) -> None:
     )
 
 
+def _fast_forwarded_onto_main(root: Path) -> bool:
+    """Whether HEAD is origin/main's own history with nothing of this session on top.
+
+    The exemption above this one catches a session that never moved. A stand-down
+    session — one assigned a defect that turns out to be already fixed on main,
+    the common shape under the duplicate-fixes playbook — DOES move: it runs
+    `git reset --hard origin/main` to verify the fix at tip before concluding,
+    which walks HEAD off start_head while creating zero commits of its own.
+
+    From there the full chain is unsatisfiable. GitHub refuses a zero-diff pull
+    request ("No commits between main and <branch>"), and `unmerged` is not in
+    EXTERNAL_BLOCKERS, so the repeated-blocker `SHIP LOOP BLOCKED:` escape never
+    arms. Observed 2026-07-26 on claude/serene-colden-e5b716: the only exit was
+    resetting BACK to start_head to re-qualify for the no-op exemption — a
+    non-obvious and wasteful ritual for a session that verified and built nothing.
+
+    Fail-closed, and the fetch is load-bearing. Ancestry has to be judged against
+    origin's CURRENT tip, never a stale local ref this worktree happened to keep,
+    so a fetch that does not SUCCEED means the exemption simply does not apply and
+    the ordinary chain takes over — whose GitHub-side failures are escapable
+    external blockers, so nothing is trapped by going offline. The ancestry test
+    and the zero-ahead count are belt-and-braces statements of one claim; both
+    must hold, and every git failure — a failed fetch, rc=1 for "not an ancestor",
+    rc=128 for an origin/main this checkout cannot name — reads as "not exempt".
+
+    Shipped sessions are untouched: a squash merge mints a NEW sha, so a merged
+    branch head is never an ancestor of origin/main and still falls through to the
+    merged-PR, CI, render, and live verification exactly as before.
+
+    The branch gate must run BEFORE this, and that ordering is load-bearing rather
+    than cosmetic. Ancestry proves POSITION, never authorship: a session that
+    synced to someone else's fix and a session that committed its own work on main
+    and pushed it straight to origin/main both end with HEAD equal to origin's tip
+    and a zero ahead-count, and nothing here can tell them apart. The second one
+    genuinely shipped something, so exempting it would skip the render and live
+    gates on live work — fail-open, which this guard may never be. Running the
+    branch check first leaves that session blocking on `unsafe_branch` and makes
+    the exemption reachable only from a claude/* worktree branch, where a zero
+    ahead-count really does mean nothing shippable exists.
+    """
+    try:
+        _run(root, "git", "fetch", "origin", "main", timeout=90)
+        _run(root, "git", "merge-base", "--is-ancestor", "HEAD", "origin/main")
+        return _run(root, "git", "rev-list", "--count", "origin/main..HEAD") == "0"
+    except Exception:
+        return False
+
+
 def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
     state = _load(path)
     # Hooks can be installed during an already-running session. Fail open once so
@@ -1006,6 +1054,9 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
     branch = _run(root, "git", "branch", "--show-current")
     if not branch or branch in {"main", "master"}:
         _block(path, state, payload, "unsafe_branch", f"Work is on {branch or 'detached HEAD'}.")
+        return
+
+    if _fast_forwarded_onto_main(root):
         return
 
     # A missing upstream means one of two opposite things: never pushed, or
