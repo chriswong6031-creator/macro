@@ -1823,6 +1823,14 @@ lanes:
         module: scripts.build_ai_desk_page
       - id: build_vector
         module: scripts.build_vector
+      - id: build_intl
+        module: scripts.build_intl
+        note: >
+          International macro dashboard, page-only re-render via the intl() scope
+          function that #3718 added to render.yml so an intl.html.j2 / build_intl.py
+          edit actually republishes the page. Declared here to match the live
+          workflow; sits between hub() and central() in the post-band serial run.
+          DISPLAY-ONLY.
       - id: build_sector_central
         module: scripts.build_sector_central
       - id: build_flow_leaders
