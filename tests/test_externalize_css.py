@@ -220,3 +220,108 @@ def test_pair_set_comes_from_the_guard_that_enforces_it(tmp_path):
     (tmp_path / "site" / "theme.css").write_text("a{}", encoding="utf-8")
 
     assert _paired_page_names(tmp_path / "site") == {"index.html"}  # no .css, no unshipped
+
+
+# ---------------------------------------------------------------------------
+# committed-tree tripwire: a paired stylesheet must never be linked by zero pages
+# ---------------------------------------------------------------------------
+# #3676 lifted the landing's and chat's inline CSS into HUMAN-authored paired
+# sheets (templates/chat.css, chat_nav.css, landing.css). The render lane then
+# reverted part of it and NOTHING went red: scope=all render 3db5cbddb40 checked
+# out main at 886fe25d89e — before #3676 merged — and its push-loop
+# `git pull --rebase -X theirs` resolved the <head> hunk toward the run's
+# checkout-time copy, so chat.html's 17,951-char block went back inline and
+# `<link rel="stylesheet" href="chat.css">` disappeared. #3724 restored it by hand.
+#
+# Every existing gate stayed green through that, by construction:
+#   * check_template_site_sync — the clobber hit BOTH sides identically, so the
+#     pair stayed byte-identical and the sync law had nothing to say;
+#   * externalize_css — it SKIPS the pairs (#3650), so nothing re-lifted the block;
+#   * the orphan prune — it only reclaims site/assets/css/ hash files, never a
+#     hand-authored templates/ sheet.
+# What was actually observable was chat.css sitting linked by zero pages. That is
+# the signal this pins, and #3724 shipped the repair without it.
+
+
+def _referenced_css_names(site: Path) -> set:
+    """Basenames of every stylesheet a shipped page can actually reach.
+
+    Both hops count: a `<link href=>` on any page, and an `@import` inside any
+    shipped sheet — theme.css reaches product-nav-icons.css only that way, so a
+    link-only scan would call it an orphan.
+    """
+    import re as _re
+    refs = set()
+    for html in site.rglob("*.html"):
+        try:
+            text = html.read_text(errors="ignore")
+        except OSError:
+            continue
+        refs.update(u.split("?")[0].split("/")[-1]
+                    for u in _re.findall(r'href="([^"]+\.css[^"]*)"', text))
+    for css in site.rglob("*.css"):
+        try:
+            text = css.read_text(errors="ignore")
+        except OSError:
+            continue
+        refs.update(u.split("?")[0].split("/")[-1]
+                    for u in _re.findall(r'@import\s+url\(\s*["\']?([^"\')]+)', text))
+        refs.update(u.split("?")[0].split("/")[-1]
+                    for u in _re.findall(r'@import\s+["\']([^"\']+)', text))
+    return refs
+
+
+def _orphaned_paired_stylesheets(root: Path) -> list:
+    """Paired stylesheets (templates/<n>.css shipping as site/<n>.css) reached by nothing."""
+    site, templates = root / "site", root / "templates"
+    if not site.is_dir() or not templates.is_dir():
+        return []
+    paired = sorted(p.name for p in templates.glob("*.css") if (site / p.name).is_file())
+    refs = _referenced_css_names(site)
+    return [n for n in paired if n not in refs]
+
+
+def test_committed_paired_stylesheets_are_never_orphaned():
+    """The real tree: every hand-authored paired sheet is still reached by a page."""
+    root = Path(__file__).resolve().parent.parent
+    orphans = _orphaned_paired_stylesheets(root)
+    assert orphans == [], (
+        "paired stylesheet(s) linked by ZERO pages — a render lane's `-X theirs` "
+        "most likely re-inlined the block and dropped the <link> (2026-07-26 "
+        f"3db5cbddb40 did exactly this to chat.css, repaired in #3724): {orphans}"
+    )
+
+
+def test_orphan_tripwire_fires_when_a_page_stops_linking_its_sheet(tmp_path):
+    """Guard the guard: reconstruct the #3724 shape and prove it goes red.
+
+    Without this the scan could silently stop matching and read as green forever —
+    the same failure mode that let the clobber ship unnoticed in the first place.
+    """
+    (tmp_path / "templates").mkdir()
+    (tmp_path / "site").mkdir()
+    for side in ("templates", "site"):
+        (tmp_path / side / "chat.css").write_text(".c{color:red}", encoding="utf-8")
+    (tmp_path / "site" / "chat.html").write_text(
+        '<html><head><link rel="stylesheet" href="chat.css?v=0340e5d9"></head></html>',
+        encoding="utf-8")
+    assert _orphaned_paired_stylesheets(tmp_path) == []
+
+    # the clobber: block goes back inline, the <link> disappears
+    (tmp_path / "site" / "chat.html").write_text(
+        "<html><head><style>.c{color:red}</style></head></html>", encoding="utf-8")
+    assert _orphaned_paired_stylesheets(tmp_path) == ["chat.css"]
+
+
+def test_import_only_sheet_is_not_an_orphan(tmp_path):
+    """product-nav-icons.css is reached by an @import inside theme.css, never a <link>."""
+    (tmp_path / "templates").mkdir()
+    (tmp_path / "site").mkdir()
+    for name in ("theme.css", "product-nav-icons.css"):
+        for side in ("templates", "site"):
+            (tmp_path / side / name).write_text("a{}", encoding="utf-8")
+    (tmp_path / "site" / "theme.css").write_text(
+        '@import url("product-nav-icons.css?v=7b0290e9");\nbody{color:red}', encoding="utf-8")
+    (tmp_path / "site" / "p.html").write_text(
+        '<html><head><link rel="stylesheet" href="theme.css"></head></html>', encoding="utf-8")
+    assert _orphaned_paired_stylesheets(tmp_path) == []
