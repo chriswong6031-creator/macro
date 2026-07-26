@@ -5,7 +5,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script data-dbase src="data_base.js"></script>
+<script data-dbase>(function () {
+  window.DATA_BASE = window.DATA_BASE || "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev";  // R2 public data plane (flip: clear to revert to Pages)
+  var B = window.DATA_BASE;
+  if (!B) return;                                         // no-op when unset -> zero behavior change
+  B = B.replace(/\/+$/, "");                              // strip trailing slash
+  // the per-ticker stores that live in R2 (mirror scripts/publish_r2.py DEFAULT_DIRS)
+  var RE = /^(ohlc|chinaohlc|hkohlc|intlohlc|canadaohlc|subsectorohlc(?:_china|_russell|_nasdaq)?|stockdata|chinastockdata|hkstockdata|canadastockdata|intlstockdata|intraday)\//;
+  var orig = window.fetch;
+  window.fetch = function (u, o) {
+    try {
+      if (typeof u === "string") {
+        var rel = u.replace(/^(?:\.\.\/)+/, "");          // strip any ../ depth prefix
+        if (RE.test(rel)) u = B + "/" + rel;              // -> https://<data-host>/ohlc/AAPL.json
+      }
+    } catch (e) { /* never let the shim break a fetch */ }
+    return orig.call(this, u, o);
+  };
+})();</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Signal Lab — does each signal actually work?</title>
@@ -28,6 +45,8 @@
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css?v=370c3de0">
 <link rel="stylesheet" href="assets/css/e6a1fcd9.css?v=e6a1fcd9">
+<link rel="preload" as="style" href="product-nav-icons.css?v=7b0290e9">
+<link rel="preload" as="style" href="assets/css/9cfd4219.css?v=9cfd4219">
 </head>
 <body>
 
@@ -5907,8 +5926,8 @@
   <p class="muted sm" style="margin:0"><span class="l-en">Validation toolkit: engine/validation.py (deflated Sharpe, purged k-fold + embargo, block bootstrap, Newey-West HAC, Benjamini-Hochberg FDR, Brier/Platt calibration, cost-aware backtest). Verdicts are quoted from the named reports in reports/. The factor cross-section reads live from data/edgar/ic_scorecard.json.</span><span class="l-zh">验证工具：engine/validation.py（去偏夏普、净化 k 折+隔离、分块自助、Newey-West HAC、Benjamini-Hochberg FDR、Brier/Platt 校准、含成本回测）。结论引自 reports/ 中具名报告；因子横截面实时读取 data/edgar/ic_scorecard.json。</span></p>
   <p class="src" style="margin:8px 0 0">
     <span class="l-en">data span</span><span class="l-zh">数据区间</span> 2011-03-31..2025-12-31 ·
-    <span class="l-en">dashboard updated</span><span class="l-zh">仪表盘更新</span> 2026-07-26 05:46 UTC ·
-    <span class="l-en">rendered</span><span class="l-zh">生成</span> 2026-07-26 05:46 UTC</p>
+    <span class="l-en">dashboard updated</span><span class="l-zh">仪表盘更新</span> 2026-07-26 06:06 UTC ·
+    <span class="l-en">rendered</span><span class="l-zh">生成</span> 2026-07-26 06:06 UTC</p>
 </div>
 
 <script src="theme.js?v=015c6c36" defer></script>

@@ -2,13 +2,32 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script data-dbase src="data_base.js"></script>
+<script data-dbase>(function () {
+  window.DATA_BASE = window.DATA_BASE || "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev";  // R2 public data plane (flip: clear to revert to Pages)
+  var B = window.DATA_BASE;
+  if (!B) return;                                         // no-op when unset -> zero behavior change
+  B = B.replace(/\/+$/, "");                              // strip trailing slash
+  // the per-ticker stores that live in R2 (mirror scripts/publish_r2.py DEFAULT_DIRS)
+  var RE = /^(ohlc|chinaohlc|hkohlc|intlohlc|canadaohlc|subsectorohlc(?:_china|_russell|_nasdaq)?|stockdata|chinastockdata|hkstockdata|canadastockdata|intlstockdata|intraday)\//;
+  var orig = window.fetch;
+  window.fetch = function (u, o) {
+    try {
+      if (typeof u === "string") {
+        var rel = u.replace(/^(?:\.\.\/)+/, "");          // strip any ../ depth prefix
+        if (RE.test(rel)) u = B + "/" + rel;              // -> https://<data-host>/ohlc/AAPL.json
+      }
+    } catch (e) { /* never let the shim break a fetch */ }
+    return orig.call(this, u, o);
+  };
+})();</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Markets News — What matters now · Mastermind</title>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css?v=370c3de0">
 <link rel="stylesheet" href="assets/css/0bd6e622.css?v=0bd6e622">
+<link rel="preload" as="style" href="product-nav-icons.css?v=7b0290e9">
+<link rel="preload" as="style" href="assets/css/9cfd4219.css?v=9cfd4219">
 
 
 
@@ -274,7 +293,7 @@
   <div class="nx-eyebrow"><span class="live"></span><span class="l-en">Markets News</span><span class="l-zh">市场新闻</span></div>
   <h1 class="nx-title"><span class="l-en">What matters now</span><span class="l-zh">当下要闻</span></h1>
   <p class="nx-sub"><span class="l-en">The market-moving business and macro news that matters now — importance-ranked, fresh, and de-noised.</span><span class="l-zh">此刻真正影响市场的商业与宏观新闻——按重要性排序、保持新鲜、去除噪音。</span></p>
-  <div class="nx-updated"><span class="l-en">Updated</span><span class="l-zh">更新于</span> <span class="rel-time num" data-ts="2026-07-26T05:51:32.069631+00:00"></span>
+  <div class="nx-updated"><span class="l-en">Updated</span><span class="l-zh">更新于</span> <span class="rel-time num" data-ts="2026-07-26T06:11:09.253359+00:00"></span>
     · <span class="num">45</span> <span class="l-en">stories ranked</span><span class="l-zh">条已排序</span></div>
 </header>
 
@@ -402,7 +421,7 @@
   <span class="nx-pulse-lbl"><span class="l-en">Theme pulse</span><span class="l-zh">主题热度</span></span>
   
     
-    <span class="nx-heat th-earnings"><span class="l-en">Earnings</span><span class="l-zh">业绩</span> <b>8</b></span>
+    <span class="nx-heat th-earnings"><span class="l-en">Earnings</span><span class="l-zh">业绩</span> <b>7</b></span>
   
     
     <span class="nx-heat th-macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span> <b>5</b></span>
@@ -663,6 +682,28 @@
       <div class="nx-meta">
         <span class="src">marketwatch.com</span>
         <span>·</span><span class="rel-time" data-ts="2026-07-25T22:30:00+00:00"></span>
+        
+      </div>
+    </div>
+  </article>
+  
+  
+  <article class="nx-story" data-lane="companies"
+           data-idx="9"
+           data-search="earnings scorecard: communication sector sees 4 of 6 stocks top eps estimates this week  seeking alpha - market currents"
+           style="--acc:var(--link);">
+    <div class="nx-rankdot">43</div>
+    <div class="nx-story-main">
+      <a class="nx-story-title" href="https://seekingalpha.com/news/4618340-earnings-scorecard-communication-sector-sees-4-of-6-stocks-top-eps-estimates-this-week?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Earnings scorecard: Communication sector sees 4 of 6 stocks top EPS estimates this week</span><span class="l-zh">Earnings scorecard: Communication sector sees 4 of 6 stocks top EPS estimates this week</span></a>
+      <div class="nx-chips">
+        <span class="nx-chip th-earnings"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+        
+        
+        
+      </div>
+      <div class="nx-meta">
+        <span class="src">Seeking Alpha - Market Currents</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-25T17:00:53+00:00"></span>
         
       </div>
     </div>
@@ -937,7 +978,7 @@
            data-idx="22"
            data-search="samsung nabs $200b chip deal with broadcom xlk avgo seeking alpha - market currents"
            style="--acc:var(--link);">
-    <div class="nx-rankdot">37</div>
+    <div class="nx-rankdot">36</div>
     <div class="nx-story-main">
       <a class="nx-story-title" href="https://seekingalpha.com/news/4618429-samsung-nabs-200b-chip-deal-broadcom?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Samsung nabs $200B chip deal with Broadcom</span><span class="l-zh">Samsung nabs $200B chip deal with Broadcom</span></a>
       <div class="nx-chips">
@@ -981,7 +1022,7 @@
            data-idx="24"
            data-search="costs of u.s. grid buildout soaring alongside demand for power, to pose headache for consumers  seeking alpha - market currents"
            style="--acc:var(--link);">
-    <div class="nx-rankdot">36</div>
+    <div class="nx-rankdot">35</div>
     <div class="nx-story-main">
       <a class="nx-story-title" href="https://seekingalpha.com/news/4618411-costs-of-u-s-grid-buildout-soaring-alongside-demand-for-power?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Costs of U.S. grid buildout soaring alongside demand for power, to pose headache for consumers</span><span class="l-zh">Costs of U.S. grid buildout soaring alongside demand for power, to pose headache for consumers</span></a>
       <div class="nx-chips">
@@ -1157,7 +1198,7 @@
            data-idx="32"
            data-search="paramount says it will pause its warner acquisition while legal challenges play out  npr - business"
            style="--acc:var(--link);">
-    <div class="nx-rankdot">28</div>
+    <div class="nx-rankdot">27</div>
     <div class="nx-story-main">
       <a class="nx-story-title" href="https://www.npr.org/2026/07/24/nx-s1-5906818/paramount-warner-bros-merger-pause-lawsuits" target="_blank" rel="noopener"><span class="l-en">Paramount says it will pause its Warner acquisition while legal challenges play out</span><span class="l-zh">Paramount says it will pause its Warner acquisition while legal challenges play out</span></a>
       <div class="nx-chips">
@@ -1177,31 +1218,9 @@
   
   <article class="nx-story hide" data-lane="companies"
            data-idx="33"
-           data-search="southside bancshares, inc. q2 2026 earnings call summary  yahoo finance - top stories"
-           style="--acc:var(--link);">
-    <div class="nx-rankdot">27</div>
-    <div class="nx-story-main">
-      <a class="nx-story-title" href="https://finance.yahoo.com/markets/stocks/articles/southside-bancshares-inc-q2-2026-205648044.html" target="_blank" rel="noopener"><span class="l-en">Southside Bancshares, Inc. Q2 2026 Earnings Call Summary</span><span class="l-zh">Southside Bancshares, Inc. Q2 2026 Earnings Call Summary</span></a>
-      <div class="nx-chips">
-        <span class="nx-chip th-earnings"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-        
-        
-        
-      </div>
-      <div class="nx-meta">
-        <span class="src">Yahoo Finance - Top Stories</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-24T20:56:48Z"></span>
-        
-      </div>
-    </div>
-  </article>
-  
-  
-  <article class="nx-story hide" data-lane="macro"
-           data-idx="34"
            data-search="yes, the ai stock selloff looks terrifying. but it might actually save the bull market. qqq marketwatch - top stories"
            style="--acc:var(--link);">
-    <div class="nx-rankdot">26</div>
+    <div class="nx-rankdot">27</div>
     <div class="nx-story-main">
       <a class="nx-story-title" href="https://www.marketwatch.com/story/yes-the-ai-stock-selloff-looks-terrifying-but-it-might-actually-save-the-bull-market-3bef59be?mod=mw_rss_topstories" target="_blank" rel="noopener"><span class="l-en">Yes, the AI stock selloff looks terrifying. But it might actually save the bull market.</span><span class="l-zh">Yes, the AI stock selloff looks terrifying. But it might actually save the bull market.</span></a>
       <div class="nx-chips">
@@ -1220,7 +1239,7 @@
   
   
   <article class="nx-story hide" data-lane="companies"
-           data-idx="35"
+           data-idx="34"
            data-search="central pacific financial corp. q2 2026 earnings call summary  yahoo finance - top stories"
            style="--acc:var(--link);">
     <div class="nx-rankdot">24</div>
@@ -1235,6 +1254,28 @@
       <div class="nx-meta">
         <span class="src">Yahoo Finance - Top Stories</span>
         <span>·</span><span class="rel-time" data-ts="2026-07-25T00:21:27Z"></span>
+        
+      </div>
+    </div>
+  </article>
+  
+  
+  <article class="nx-story hide" data-lane="companies"
+           data-idx="35"
+           data-search="how much do you need invested to match the maximum social security benefit with dividends?  yahoo finance - top stories"
+           style="--acc:var(--link);">
+    <div class="nx-rankdot">24</div>
+    <div class="nx-story-main">
+      <a class="nx-story-title" href="https://finance.yahoo.com/markets/stocks/articles/much-invested-match-maximum-social-221203344.html" target="_blank" rel="noopener"><span class="l-en">How Much Do You Need Invested to Match the Maximum Social Security Benefit With Dividends?</span><span class="l-zh">How Much Do You Need Invested to Match the Maximum Social Security Benefit With Dividends?</span></a>
+      <div class="nx-chips">
+        <span class="nx-chip th-capital_return"><span class="l-en">Buybacks</span><span class="l-zh">回购</span></span>
+        
+        
+        
+      </div>
+      <div class="nx-meta">
+        <span class="src">Yahoo Finance - Top Stories</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-24T22:12:03Z"></span>
         
       </div>
     </div>
