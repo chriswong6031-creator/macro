@@ -482,15 +482,22 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
         _block(path, state, payload, "unsafe_branch", f"Work is on {branch or 'detached HEAD'}.")
         return
 
+    # A missing upstream means one of two opposite things: never pushed, or
+    # pushed and merged, with the remote branch auto-deleted on merge. Blocking
+    # here judged the second case as the first and made a COMPLETED ship
+    # unsatisfiable — the branch is merged, so there is nothing left to push and
+    # recreating it would be wrong. The merged-PR lookup below is what tells the
+    # two apart (GitHub keeps serving a merged PR by head ref after the branch is
+    # gone), so defer the verdict rather than pre-empt it.
     try:
         upstream = _run(root, "git", "rev-parse", "--abbrev-ref", "@{upstream}")
     except RuntimeError:
-        _block(path, state, payload, "unpushed", f"{branch} has no upstream branch.")
-        return
-    ahead = int(_run(root, "git", "rev-list", "--count", f"{upstream}..HEAD") or "0")
-    if ahead:
-        _block(path, state, payload, "unpushed", f"{ahead} commit(s) have not been pushed.")
-        return
+        upstream = ""
+    if upstream:
+        ahead = int(_run(root, "git", "rev-list", "--count", f"{upstream}..HEAD") or "0")
+        if ahead:
+            _block(path, state, payload, "unpushed", f"{ahead} commit(s) have not been pushed.")
+            return
 
     try:
         owner, repo = _github_slug(root)
@@ -499,7 +506,13 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
         _block(path, state, payload, _github_block_code(exc), str(exc))
         return
     if not pull:
-        _block(path, state, payload, "unmerged", f"No merged main pull request found for {branch}.")
+        # No merged pull request: an absent upstream now genuinely means unpushed.
+        if not upstream:
+            _block(path, state, payload, "unpushed", f"{branch} has no upstream branch.")
+        else:
+            _block(
+                path, state, payload, "unmerged", f"No merged main pull request found for {branch}."
+            )
         return
 
     head_sha = str((pull.get("head") or {}).get("sha") or head)

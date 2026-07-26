@@ -317,6 +317,99 @@ def test_check_ci_passes_only_when_every_real_check_is_green(monkeypatch):
     assert GUARD._check_ci("acme", "widgets", "0" * 40)[0] is False
 
 
+def _session_repo(tmp_path: Path) -> tuple[Path, Path]:
+    """A repo with committed session work on a feature branch, plus its guard state."""
+    repo = _repo(tmp_path)
+    start_head = _git(repo, "rev-parse", "HEAD")
+    _git(repo, "checkout", "-b", "claude/feature")
+    _commit(repo, "work.txt", "session work\n", "feat: session work")
+    state_path = tmp_path / "state.json"
+    GUARD._save(
+        state_path,
+        {
+            "root": str(repo),
+            "start_head": start_head,
+            "baseline": GUARD._fingerprint(repo),
+            "last_blocker": "",
+            "blocker_count": 0,
+        },
+    )
+    return repo, state_path
+
+
+def _stop_verdict(monkeypatch, capsys, repo, state_path, *, merged_pr, ci=(True, "")):
+    monkeypatch.setattr(GUARD, "_github_slug", lambda _root: ("acme", "widgets"))
+    monkeypatch.setattr(GUARD, "_latest_merged_pr", lambda *_a: merged_pr)
+    monkeypatch.setattr(GUARD, "_check_ci", lambda *_a: ci)
+    GUARD._stop(repo, state_path, {"hook_event_name": "Stop"})
+    out = capsys.readouterr().out.strip()
+    if not out:
+        return None
+    # Reason reads "SHIP LOOP <code>: <detail>" — the code sits before the colon.
+    return json.loads(out)["reason"].split(":", 1)[0].split()[-1]
+
+
+_MERGED_PR = {"merged_at": "2026-07-25T22:18:56Z", "head": {"sha": "a" * 40}, "merge_commit_sha": "b" * 40}
+
+
+def test_a_merged_branch_deleted_on_merge_is_not_reported_as_unpushed(
+    monkeypatch, tmp_path, capsys
+):
+    """The completed end state must not read as the state before any push.
+
+    GitHub auto-deletes the head branch on merge, which drops `@{upstream}`. The
+    guard used to block `unpushed` right there, before ever looking up the merged
+    pull request — an unsatisfiable verdict on finished work, since the branch is
+    merged and recreating it would be wrong.
+    """
+    repo, state_path = _session_repo(tmp_path)
+    assert "fatal" in subprocess.run(
+        ("git", "rev-parse", "--abbrev-ref", "@{upstream}"),
+        cwd=repo, text=True, capture_output=True,
+    ).stderr, "precondition: this repo has no upstream"
+
+    # CI is failed purely to stop the chain at a code that proves we got past the
+    # upstream gate; ci_failed lives strictly after it.
+    verdict = _stop_verdict(
+        monkeypatch, capsys, repo, state_path,
+        merged_pr=_MERGED_PR, ci=(False, "Failing CI: build (failure)"),
+    )
+    assert verdict == "ci_failed", f"expected to reach the CI gate, got {verdict}"
+
+
+def test_no_upstream_and_no_merged_pr_is_still_unpushed(monkeypatch, tmp_path, capsys):
+    """The deferral must not lose the real unpushed case."""
+    repo, state_path = _session_repo(tmp_path)
+    verdict = _stop_verdict(monkeypatch, capsys, repo, state_path, merged_pr=None)
+    assert verdict == "unpushed"
+
+
+def test_pushed_but_unmerged_still_blocks_as_unmerged(monkeypatch, tmp_path, capsys):
+    repo, state_path = _session_repo(tmp_path)
+    bare = tmp_path / "origin.git"
+    subprocess.run(("git", "init", "--bare", str(bare)), check=True, capture_output=True)
+    _git(repo, "remote", "add", "origin", str(bare))
+    _git(repo, "push", "-u", "origin", "claude/feature")
+    verdict = _stop_verdict(monkeypatch, capsys, repo, state_path, merged_pr=None)
+    assert verdict == "unmerged"
+
+
+def test_unpushed_commits_still_block_when_an_upstream_exists(monkeypatch, tmp_path, capsys):
+    """The ahead-count check must keep firing; only its guard clause moved."""
+    repo, state_path = _session_repo(tmp_path)
+    bare = tmp_path / "origin.git"
+    subprocess.run(("git", "init", "--bare", str(bare)), check=True, capture_output=True)
+    _git(repo, "remote", "add", "origin", str(bare))
+    _git(repo, "push", "-u", "origin", "claude/feature")
+    _commit(repo, "more.txt", "later\n", "feat: not pushed")
+    GUARD._save(
+        state_path,
+        {**json.loads(state_path.read_text(encoding="utf-8")), "baseline": GUARD._fingerprint(repo)},
+    )
+    verdict = _stop_verdict(monkeypatch, capsys, repo, state_path, merged_pr=_MERGED_PR)
+    assert verdict == "unpushed"
+
+
 def test_settings_wire_session_start_and_stop():
     settings = json.loads((ROOT / ".claude" / "settings.json").read_text(encoding="utf-8"))
     hooks = settings["hooks"]
