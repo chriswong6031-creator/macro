@@ -1,5 +1,16 @@
 # Landing + onboarding display face — Archivo Expanded, self-hosted
 
+> ## ⚠️ SUPERSEDED — Archivo Expanded no longer ships
+>
+> **#3700 retired this face.** The landing and onboarding sheet are set in **Outfit**;
+> `templates/fonts/Archivo-latin.woff2` is **deleted**. Current reference, measurements
+> and build script: **`mockups/refs/landing-modern-sans/`**.
+>
+> Do not follow the regeneration recipe below to "restore" the font — it would
+> reintroduce a face nothing links, and the `font-stretch:125%` this document explains
+> is gone from every rule (Outfit has no `wdth` axis). Kept for the axis-subsetting
+> technique, which is still correct and is what `build_outfit_subset.py` is built on.
+
 Reference for the display typography on `templates/index.html` and
 `templates/onboard.css`, and the regeneration recipe for
 `templates/fonts/Archivo-latin.woff2`.
