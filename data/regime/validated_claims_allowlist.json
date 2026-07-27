@@ -1339,6 +1339,13 @@
    "surfaces": [
     "subsector_rotation"
    ]
+  },
+  {
+   "match": "validated two likely sources of ongoing disinflation",
+   "backing": "NOT a platform claim — a verbatim sentence inside a third-party economics note ('US Daily: What the Rebound in Oil Prices Means for Upcoming Inflation Prints', 24 July 2026) mirrored into the research vault. The word is ordinary English about CPI data confirming a disinflation channel (shelter + tariff pass-through); it asserts nothing about any Macro Dashboard signal, rank, gate, or artifact, so BC-2's stored-artifact requirement has nothing to attach to. Scoped to the quoted clause so it can never green-light one of our own claims.",
+   "surfaces": [
+    "research_vault"
+   ]
   }
  ]
 }
