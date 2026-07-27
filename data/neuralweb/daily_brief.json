@@ -1,9 +1,9 @@
 {
   "schema": "neuralweb.daily_brief.v1",
-  "produced_at": "2026-07-27T03:54:21.795448+00:00",
+  "produced_at": "2026-07-27T04:04:21.043673+00:00",
   "as_of": "2026-07-24",
   "status": "warn",
-  "phase": "engine",
+  "phase": "final",
   "did_the_brain_run": {
     "cortex_status": "degraded",
     "tool_call_batches": 0,
@@ -515,10 +515,10 @@
   },
   "evidence_clock": {
     "available": true,
-    "as_of": "2026-07-26",
+    "as_of": "2026-07-27",
     "counts": {
       "overdue": 20,
-      "due": 9,
+      "due": 11,
       "human_review": 0,
       "missing": 1,
       "stale": 1,
@@ -532,7 +532,7 @@
       "clock_id": "qledger:placebo",
       "due_at": "2026-06-22"
     },
-    "morning_line": "20 overdue, 9 due, 1 missing, 1 stale, 2 blocked, 275 accruing. Top due: qledger:placebo."
+    "morning_line": "20 overdue, 11 due, 1 missing, 1 stale, 2 blocked, 275 accruing. Top due: qledger:placebo."
   },
   "china_market_state": {
     "available": true,
@@ -562,7 +562,7 @@
   },
   "causal_lab": {
     "available": true,
-    "asof": "2026-07-26T09:41:46Z",
+    "asof": "2026-07-27T03:58:44Z",
     "new_edges_this_week_by_verdict": {
       "insufficient_power": 22,
       "null": 11,
