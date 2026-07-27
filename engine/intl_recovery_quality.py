@@ -262,11 +262,17 @@ def macro_backdrop(
         "items": items,
         "summary_en": labels_en,
         "summary_zh": labels_zh,
+        # "Scored", not "validated": this block is display_only context, and the word
+        # "validated" is reserved for claims backed by a gauntlet artifact (CI-enforced by
+        # scripts/check_validated_claims.py).  The sentence's own contrast is scored-vs-
+        # unscored, so the house term carries the meaning without borrowing the promotion
+        # word.  See docs/UNRUN_TEST_CENSUS.md — this shipped through a nightly re-render
+        # and turned two legacy CI jobs red on main.
         "read_en": (
-            "Macro backdrop is shown separately from the price state. Validated HK "
+            "Macro backdrop is shown separately from the price state. Scored HK "
             "rate/FX pressure lives in the pullback radar; Iran/oil and the midterm "
             "calendar remain unscored context."
         ),
-        "read_zh": "宏观背景与价格状态分开显示。经验证的港股利率／汇率压力归入回撤雷达；伊朗／原油及中期选举日历仅作未评分背景。",
+        "read_zh": "宏观背景与价格状态分开显示。已评分的港股利率／汇率压力归入回撤雷达；伊朗／原油及中期选举日历仅作未评分背景。",
         "display_only": True,
     }
