@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-27T16:51:10.050073+00:00",
-  "count": 202,
+  "generated_at": "2026-07-27T17:07:13.429521+00:00",
+  "count": 204,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -21,6 +21,45 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-k7tfccs8zue-980d74",
+      "title": "Wall street de risked tech china didnt",
+      "institution": "The Market Ear",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-27T16:51:40Z",
+      "summary_points": [
+        "**China semiconductor ecosystem risk**: China's advancing semiconductor capabilities pose structural AI supply chain risks, threatening global tech dependencies.",
+        "**CTA unwinds**: Nasdaq sell-off triggered first wave of CTA unwinds (BofA), extending systemic selling risk to S&P 500 and Russell 2000.",
+        "**Memory story validation**: CXMT's 470% STAR debut signals China's DRAM self-sufficiency, reducing global memory demand headwinds and boosting equipment demand.",
+        "**China DUV lithography progress**: China's DUV production start reduces Western supplier reliance, with markets pricing faster tech gap narrowing."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-laykoj6j6ft-396abc",
+      "title": "Is korea the next china 2015",
+      "institution": "The Market Ear",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-27T16:51:26Z",
+      "summary_points": [
+        "**Technical Breakdown Risk**: KOSPI testing steep uptrend; break below 100-day MA could trigger rapid sell-off despite intact 21/50-day MA crossover.",
+        "**Crowded Longs at 8%**: Elevated net long exposure (Net Allocation 8%) signals overbought conditions and high reversal risk.",
+        "**Theta Selling Erodes Support**: Volatility compression (KOSPI VIX down) removes critical volatility support, amplifying downside risk."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-9a8of85bqed-671826",
       "title": "JPM US FOMC preview 1",
