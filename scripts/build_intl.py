@@ -171,6 +171,7 @@ def main() -> int:
     # those loops stay cc-keyed to intl.countries() and naturally skip US/CN/HK.
     _wr_extra_closes: dict[str, "pd.Series"] = {}
     _wr_confirmation: dict[str, dict] = {}
+    _wr_hk_as_of = None
     try:
         from lib import store as _wr_store
 
@@ -210,8 +211,8 @@ def main() -> int:
             }
             _hk_peers = {k: v for k, v in _hk_peers.items() if v is not None}
             _hk_primary = _wr_extra_closes.get("HK")
-            _hk_as_of = _hk_primary.index[-1] if _hk_primary is not None and not _hk_primary.empty else None
-            _hk_confirmation = _wr_breadth(_hk_peers, as_of=_hk_as_of)
+            _wr_hk_as_of = _hk_primary.index[-1] if _hk_primary is not None and not _hk_primary.empty else None
+            _hk_confirmation = _wr_breadth(_hk_peers, as_of=_wr_hk_as_of)
             if _hk_confirmation:
                 _wr_confirmation["HK"] = _hk_confirmation
         except Exception as _hk_ce:  # noqa: BLE001 — context must fail open
@@ -275,6 +276,58 @@ def main() -> int:
         for _wcc4, _confirmation in _wr_confirmation.items():
             if _wcc4 in _world_states:
                 _world_states[_wcc4]["confirmation"] = _confirmation
+
+        # Hong Kong needs two authorities that the price-only turn state cannot
+        # supply by itself:
+        #   1) a validated external-driver radar (rates / USD-HKD / breadth), and
+        #   2) a recovery-quality qualifier that distinguishes healthy follow-
+        #      through from a fading, possible fake breakout.
+        # Geopolitical and election-cycle context is deliberately display-only.
+        _hk_state = _world_states.get("HK")
+        if isinstance(_hk_state, dict):
+            try:
+                from engine import risk_radar_intl as _wr_rri
+                from engine.intl_recovery_quality import assess_recovery as _wr_assess_recovery
+                from engine.intl_recovery_quality import macro_backdrop as _wr_macro_backdrop
+
+                _hk_radar = _wr_rri.snapshot(_wr_rri.HK_PROFILE)
+                if _hk_radar.get("state"):
+                    _hk_state["risk_radar"] = _hk_radar
+
+                _hk_state["recovery_assessment"] = _wr_assess_recovery(
+                    _hk_state,
+                    _hk_state.get("confirmation"),
+                    _hk_state.get("risk_radar"),
+                )
+
+                _rates_command_path = Path(config.ROOT) / "data" / "rates_command" / "latest.json"
+                _rates_command = (
+                    json.loads(_rates_command_path.read_text(encoding="utf-8"))
+                    if _rates_command_path.exists()
+                    else {}
+                )
+                _hk_state["macro_backdrop"] = _wr_macro_backdrop(
+                    _rates_command,
+                    as_of=_wr_hk_as_of or _hk_state.get("asof"),
+                )
+            except Exception as _hk_qe:  # noqa: BLE001 — qualifier/context must fail open
+                log.warning("world_risk: HK recovery-quality context failed (fail-open): %s", _hk_qe)
+
+        # Apply the same conservative naming law to every recovery state. Markets
+        # without breadth confirmation remain a "repair attempt"; they cannot be
+        # promoted to recovery merely because the price-only ruler improved.
+        try:
+            from engine.intl_recovery_quality import assess_recovery as _wr_assess_any_recovery
+
+            for _wr_state in _world_states.values():
+                if _wr_state.get("state") == "recovery" and not _wr_state.get("recovery_assessment"):
+                    _wr_state["recovery_assessment"] = _wr_assess_any_recovery(
+                        _wr_state,
+                        _wr_state.get("confirmation"),
+                        _wr_state.get("risk_radar"),
+                    )
+        except Exception as _wr_qe:  # noqa: BLE001 — naming qualifier must fail open
+            log.warning("world_risk: recovery-quality naming failed (fail-open): %s", _wr_qe)
 
         # US is its own benchmark (rs20 = px/bench), so its relative-strength read is
         # ~0 by construction, not a signal — blank it rather than show a spurious 0.0%.
@@ -714,7 +767,9 @@ def main() -> int:
                 _row["name"]     = _meta3.get("name", _cc3)
                 _row["name_zh"]  = _meta3.get("name_zh", _cc3)
                 _row["flag"]     = _meta3.get("flag", "")
-                _row["risk_radar"] = _radar_by_cc.get(_cc3)   # US/CN/HK: None (tile is None-safe)
+                # Preserve HK's directly attached profile radar; the seven core
+                # markets continue to use the record-level join below.
+                _row["risk_radar"] = _st.get("risk_radar") or _radar_by_cc.get(_cc3)
                 _tb_rows.append(_row)
             turn_board = sorted(
                 _tb_rows,

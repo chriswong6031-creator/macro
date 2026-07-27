@@ -352,12 +352,18 @@
   .tb-state.ts-extended { background:color-mix(in srgb,#d4a017 10%,transparent); color:#d4a017; border:1px solid color-mix(in srgb,#d4a017 28%,transparent); }
   .tb-state.ts-uptrend { background:color-mix(in srgb,var(--up) 14%,transparent); color:var(--up); border:1px solid color-mix(in srgb,var(--up) 34%,transparent); }
   .tb-state.ts-recovery { background:color-mix(in srgb,var(--up) 10%,transparent); color:var(--up); border:1px solid color-mix(in srgb,var(--up) 28%,transparent); }
+  .tb-state.ts-recovery-confirmed { background:color-mix(in srgb,var(--up) 12%,transparent); color:var(--up); border:1px solid color-mix(in srgb,var(--up) 32%,transparent); }
+  .tb-state.ts-repair-attempt { background:color-mix(in srgb,#d4a017 10%,transparent); color:#b37a00; border:1px solid color-mix(in srgb,#d4a017 30%,transparent); }
+  .tb-state.ts-rollover-risk { background:color-mix(in srgb,var(--down) 11%,transparent); color:var(--down); border:1px solid color-mix(in srgb,var(--down) 30%,transparent); }
+  .tb-state.ts-failed-rebound { background:color-mix(in srgb,var(--down) 18%,transparent); color:var(--down); border:1px solid color-mix(in srgb,var(--down) 40%,transparent); }
   .tb-state.ts-basing { background:color-mix(in srgb,var(--info) 10%,transparent); color:var(--info); border:1px solid color-mix(in srgb,var(--info) 28%,transparent); }
   .tb-state.ts-downtrend { background:color-mix(in srgb,var(--down) 10%,transparent); color:var(--down); border:1px solid color-mix(in srgb,var(--down) 28%,transparent); }
   .tb-state.ts-calm { background:var(--panel2); color:var(--muted); border:1px solid var(--line); }
   .tb-stance { font-size:11.5px; color:var(--text); line-height:1.35; margin-bottom:6px; font-weight:500; }
   .tb-confirm { font-size:10.5px; color:var(--muted); line-height:1.35; margin:-1px 0 6px; }
   .tb-confirm b { color:var(--text); }
+  .tb-context { font-size:10.5px; color:var(--muted); line-height:1.35; margin:1px 0 7px; padding-top:6px; border-top:1px dashed var(--line); }
+  .tb-context b { color:var(--text); }
   .tb-metrics { display:flex; gap:10px; flex-wrap:wrap; font-size:11px; color:var(--muted); }
   .tb-metrics .tm-v { font-weight:700; }
   .tb-metrics .tm-v.pos { color:var(--up); }
@@ -607,7 +613,7 @@
   'parabolic': 'Shooting almost straight up. Moves this steep rarely last, and the snap-back tends to be sharp.',
   'extended':  'Stretched well above its own trend — not broken, but priced for a lot to keep going right.',
   'downtrend': 'Grinding lower for weeks now. The path of least resistance is still downward.',
-  'recovery':  'Off the lows and healing, but it is early — the trend has not actually turned up yet.',
+  'recovery':  'The broad index has repaired some technical damage. That price state alone does not confirm healthy leadership or a durable recovery.',
   'basing':    'The fall has stalled and it is trying to carve out a floor. No turn up is confirmed yet.',
   'uptrend':   'Climbing in good health — above its key averages with real momentum behind it.',
   'calm':      'Quiet. Nothing stretched, nothing breaking — and nothing that needs a decision today.'
@@ -619,7 +625,7 @@
   'parabolic': '近乎垂直的拉升。如此陡峭的涨势难以持久，回落往往迅猛。',
   'extended':  '已明显高于自身趋势——尚未破位，但已计入大量利好。',
   'downtrend': '已连续数周走低。阻力最小的方向仍然向下。',
-  'recovery':  '已脱离低位、正在修复，但仍属早期——趋势尚未真正转上。',
+  'recovery':  '宽基指数已修复部分技术损伤。仅凭这一价格状态，不能确认领涨健康或复苏可持续。',
   'basing':    '跌势已止，正尝试筑底。尚未确认转上。',
   'uptrend':   '健康上行——站上关键均线，且有实实在在的动能支撑。',
   'calm':      '平静。既不极端，也未破位——今天没有需要做的决定。'
@@ -655,8 +661,15 @@
   {% for tile in turn_board %}
     {# determine tile heat class #}
     {% set _ts = tile.state %}
-    {% if _ts in ['crash', 'breaking'] %}{% set _tile_cls = 'tb-hot' %}
-    {% elif _ts in ['topping', 'parabolic', 'extended'] %}{% set _tile_cls = 'tb-warm' %}
+    {% set _qa = tile.get('recovery_assessment') or {} %}
+    {% set _mb = tile.get('macro_backdrop') or {} %}
+    {% set _display_ts = _qa.get('css') or _ts %}
+    {% set _display_en = _qa.get('label_en') or tile.state_en or tile.state %}
+    {% set _display_zh = _qa.get('label_zh') or tile.state_zh or tile.state %}
+    {% set _stance_en = _qa.get('stance_en') or tile.stance_en %}
+    {% set _stance_zh = _qa.get('stance_zh') or tile.stance_zh %}
+    {% if _qa.get('heat') == 'hot' or _ts in ['crash', 'breaking'] %}{% set _tile_cls = 'tb-hot' %}
+    {% elif _qa.get('heat') == 'warm' or _ts in ['topping', 'parabolic', 'extended'] %}{% set _tile_cls = 'tb-warm' %}
     {% else %}{% set _tile_cls = 'tb-cool' %}
     {% endif %}
     {# pullback-risk radar (#2684, display-only) — schema risk_radar_intl.v1; absent/degraded → skipped #}
@@ -673,15 +686,15 @@
     {# ---- per-tile popover helpers (dates trimmed to MM-DD; stretch pctile → int) ---- #}
     {% set _since_s = tile.since[5:] if tile.since else none %}
     {% set _peak_s = tile.peak_date[5:] if tile.peak_date else none %}
-    {% set _kind = TB_KIND.get(tile.state, 'source') %}
-    {% set _grp = TB_GRP.get(tile.state, 'flat') %}
+    {% set _kind = _qa.get('lens_kind') or TB_KIND.get(tile.state, 'source') %}
+    {% set _grp = _qa.get('glyph') or TB_GRP.get(tile.state, 'flat') %}
     {% set _ext_i = (tile.ext_pctile|round|int) if tile.ext_pctile is not none else none %}
     {% set _cf = tile.get('confirmation') %}
     {% set _cf5 = ((_cf.get('windows') or {}).get('5d') or {}) if _cf else {} %}
     {% set _cf20 = ((_cf.get('windows') or {}).get('20d') or {}) if _cf else {} %}
     {# compact plain fallback (trigger hook + JS-off / older-cache): state + stance, one line #}
-    {% set _fb_en = (tile.state_en or tile.state) ~ ': ' ~ tile.stance_en ~ '.' %}
-    {% set _fb_zh = (tile.state_zh or tile.state) ~ '：' ~ tile.stance_zh ~ '。' %}
+    {% set _fb_en = _display_en ~ ': ' ~ _stance_en ~ '.' %}
+    {% set _fb_zh = _display_zh ~ '：' ~ _stance_zh ~ '。' %}
     <div class="tb-tile {{ _tile_cls }}" data-lens-kind="{{ _kind }}" data-tip-en="{{ _fb_en }}" data-tip-zh="{{ _fb_zh }}">
       {# ---- rich LENS popover, cloned by theme.js on hover/focus/tap. The plain data-tip
              above is the trigger hook + fallback; the human read lives in .lens-body and the
@@ -691,7 +704,7 @@
           <span class="lens-ill">{{ tb_glyph(_grp) }}</span>
           <span class="lens-hgroup">
             <span class="lens-kick"><span class="l-en">{{ tile.name }}</span><span class="l-zh">{{ tile.name_zh }}</span></span>
-            <span class="lens-title"><span class="l-en">{{ tile.state_en }}</span><span class="l-zh">{{ tile.state_zh }}</span></span>
+            <span class="lens-title"><span class="l-en">{{ _display_en }}</span><span class="l-zh">{{ _display_zh }}</span></span>
           </span>
         </div>
         {% if _ext_i is not none %}
@@ -705,13 +718,19 @@
         </div>
         {% endif %}
         <div class="lens-body">
-          <span class="l-en">{{ TB_READ_EN.get(tile.state, '') }} <b>{{ tile.stance_en }}.</b></span>
-          <span class="l-zh">{{ TB_READ_ZH.get(tile.state, '') }} <b>{{ tile.stance_zh }}。</b></span>
+          <span class="l-en">{{ _qa.get('read_en') or TB_READ_EN.get(tile.state, '') }} <b>{{ _stance_en }}.</b></span>
+          <span class="l-zh">{{ _qa.get('read_zh') or TB_READ_ZH.get(tile.state, '') }} <b>{{ _stance_zh }}。</b></span>
         </div>
         {% if _cf and _cf.get('read_en') %}
         <div class="lens-body">
           <span class="l-en">{{ _cf.get('read_en') }}</span>
           <span class="l-zh">{{ _cf.get('read_zh') }}</span>
+        </div>
+        {% endif %}
+        {% if _mb.get('read_en') %}
+        <div class="lens-body">
+          <span class="l-en"><b>Macro backdrop:</b> {{ _mb.get('read_en') }}</span>
+          <span class="l-zh"><b>宏观背景：</b>{{ _mb.get('read_zh') }}</span>
         </div>
         {% endif %}
         {# receipt: precise machine numbers, demoted under the perforation. Built as a list
@@ -728,7 +747,7 @@
           <span class="l-zh">{{ _rc_zh|join(' · ')|safe }}</span>
         </div>
         {% endif %}
-        <div class="tbl-note"><span class="l-en">Read from price action only — not a forecast.</span><span class="l-zh">仅读自价格走势——并非预测。</span></div>
+        <div class="tbl-note"><span class="l-en">Price state and recovery quality are separate; unvalidated macro context never changes the signal.</span><span class="l-zh">价格状态与复苏质量分开；未经验证的宏观背景绝不改变信号。</span></div>
       </span>{# end .lens-src #}
       <div class="tb-hd">
         <span class="flg">{{ tile.flag }}</span>
@@ -738,17 +757,23 @@
         </div>
       </div>
       <div>
-        <span class="tb-state ts-{{ _ts }}">
-          <span class="l-en">{{ tile.state_en }}</span><span class="l-zh">{{ tile.state_zh }}</span>
+        <span class="tb-state ts-{{ _display_ts }}">
+          <span class="l-en">{{ _display_en }}</span><span class="l-zh">{{ _display_zh }}</span>
         </span>
       </div>
       <div class="tb-stance">
-        <span class="l-en">{{ tile.stance_en }}</span><span class="l-zh">{{ tile.stance_zh }}</span>
+        <span class="l-en">{{ _stance_en }}</span><span class="l-zh">{{ _stance_zh }}</span>
       </div>
       {% if _cf and _cf20.get('available') %}
       <div class="tb-confirm">
         <span class="l-en"><b>Tech breadth</b> · 20d {{ _cf20.get('positive') }}/{{ _cf20.get('available') }} up · 5d {{ _cf5.get('positive') }}/{{ _cf5.get('available') }} up</span>
         <span class="l-zh"><b>科技广度</b> · 20日 {{ _cf20.get('positive') }}/{{ _cf20.get('available') }} 上涨 · 5日 {{ _cf5.get('positive') }}/{{ _cf5.get('available') }} 上涨</span>
+      </div>
+      {% endif %}
+      {% if _mb.get('summary_en') %}
+      <div class="tb-context">
+        <span class="l-en"><b>Backdrop</b> · {{ _mb.get('summary_en') }}</span>
+        <span class="l-zh"><b>背景</b> · {{ _mb.get('summary_zh') }}</span>
       </div>
       {% endif %}
       <div class="tb-metrics">
@@ -770,7 +795,7 @@
         </div>
         {% if _rd_h21 is not none %}
         <div class="tb-rd-odds">
-          <span class="l-en">≥5% dip within a month: ~{{ (_rd_h21*100)|round|int }}%</span><span class="l-zh">一个月内≥5%回撤：约{{ (_rd_h21*100)|round|int }}%</span>
+          <span class="l-en">≥5% dip within a month: ~{{ (_rd_h21*100)|round|int }}%{% if _rd_b21 is not none %} vs ~{{ (_rd_b21*100)|round|int }}% base{% endif %}</span><span class="l-zh">一个月内≥5%回撤：约{{ (_rd_h21*100)|round|int }}%{% if _rd_b21 is not none %}（基准约{{ (_rd_b21*100)|round|int }}%）{% endif %}</span>
         </div>
         {% endif %}
       </div>
