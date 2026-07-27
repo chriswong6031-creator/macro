@@ -4,8 +4,15 @@ Standalone, like scripts/build_china.py — shares only the parquet store with t
 other pipelines. Recomputes the Canada regime (so live == backtest), runs the cycle
 engine over each sector ETF for the rotation board + MTF cards, and renders the
 dark, bilingual templates/canada.html.j2. LEADS with the commodity/CAD/BoC-vs-Fed
-overlay hero (the primary Canada driver). Returns 0 on ANY engine error so it can
-never break the macro / vector site builds.
+overlay hero (the primary Canada driver).
+
+NEVER RAISES — every engine/render error is caught, so a caller that invokes main()
+in-process (the build_vector fallback hook) can never be broken by it. But it does
+RETURN 1 on a hard failure (engine dead, or the page render aborted) and emits a
+``::error`` annotation, so a first-class workflow step surfaces the failure instead
+of shipping a stale canada.html behind a green run. The lanes that call it all use a
+resilient ``run_py`` (set +e; annotate; never abort), so a non-zero rc is a loud
+signal, not a broken deploy.
 
 Usage: python -m scripts.build_canada   (run after build_site, before build_vector)
 """
@@ -826,8 +833,13 @@ def main() -> int:
         from engine.canada_run import run
         latest = run()
     except Exception as e:  # noqa: BLE001 — never break the site build
-        log.error("canada engine failed (%s); skipping canada page", e)
-        return 0
+        # Bare print, NEVER log.* — this module's logging format prefixes "ERROR ",
+        # which pushes "::" off the line start and GitHub silently drops the
+        # annotation (house rule; tests/test_gh_annotation_line_start.py).
+        print(f"::error title=build_canada engine failed::canada.html keeps its previous "
+              f"render — {e}", flush=True)
+        log.error("canada engine failed (%s); skipping canada page", e, exc_info=True)
+        return 1
 
     try:
         sectors = _sector_cards(latest)
@@ -1152,8 +1164,10 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.error("canada sector pages build failed (%s); skipping", e)
     except Exception as e:  # noqa: BLE001
-        log.error("canada page render failed (%s); skipping", e)
-        return 0
+        print(f"::error title=build_canada page render failed::canada.html keeps its "
+              f"previous render — {e}", flush=True)
+        log.error("canada page render failed (%s); skipping", e, exc_info=True)
+        return 1
     return 0
 
 

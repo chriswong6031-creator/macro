@@ -38,7 +38,7 @@ on:
         description: "Which pages to rebuild from committed data (all = every page)"
         type: choice
         default: all
-        options: [all, macro, intl, china, hk, markets, gex, baskets, sits]
+        options: [all, macro, intl, china, hk, canada, markets, gex, baskets, sits]
       runner:
         description: "Runner label — re-dispatch with macstudio if the render PC (pc-render-1) is down (GHA has no automatic label fallback)"
         type: choice
@@ -209,6 +209,7 @@ jobs:
               templates/china_special_situations.html.j2|templates/_china_special_situations_*.html.j2|scripts/build_china_special_situations.py) echo china;;
               templates/intl.html.j2|scripts/build_intl.py) echo intl;;
               templates/hk.html.j2|scripts/build_hk.py) echo hk;;
+              templates/canada.html.j2|templates/canada_stock.html.j2|templates/canada_history.html.j2|templates/canada_sector.html.j2|scripts/build_canada.py|scripts/build_canada_library.py) echo canada;;
               templates/commodities.html.j2|templates/spr.html.j2|templates/forex.html.j2|templates/bonds.html.j2|templates/crossasset.html.j2|templates/transmission.html.j2|templates/discovery.html.j2|templates/macro_context.html.j2|scripts/build_commodities.py|scripts/build_spr.py|scripts/build_forex.py|scripts/build_bonds.py|scripts/build_crossasset.py|scripts/build_transmission.py|scripts/build_discovery.py|scripts/build_macro_context.py) echo markets;;
               templates/gex.html.j2|scripts/build_gex_board.py|scripts/build_options_flow.py|scripts/build_options_skew.py|scripts/build_vol_regime.py) echo gex;;
               templates/baskets.html.j2|templates/methodology.html.j2|scripts/build_baskets.py|scripts/build_methodology.py) echo baskets;;
@@ -233,7 +234,7 @@ jobs:
             return 1
           }
           DIRTY="" NEED_ALL=""
-          for R in macro intl china hk markets gex baskets sits; do
+          for R in macro intl china hk canada markets gex baskets sits; do
             FR=$(covering_from "$R")
             if [ -z "$FR" ]; then NEED_ALL="no from=-tagged render covers '$R' in the log window"; break; fi
             CH=$(git diff --name-only "$FR..HEAD" -- templates scripts config.yml lib 2>/dev/null)
@@ -328,6 +329,21 @@ jobs:
 
           hub() { [ -n "$HUB_DONE" ] && return 0; HUB_DONE=1; run_py "bitcoin vector + landing hub (build_vector)" scripts.build_vector; }
           intl() { [ -n "$INTL_DONE" ] && return 0; INTL_DONE=1; run_py "international macro dashboard (build_intl)" scripts.build_intl; }
+
+          # ---- Canada / S&P-TSX dashboard: first-class step (was a build_vector hook) ----
+          # WHY: build_canada was invoked ONLY as a swallowed try/except inside build_vector,
+          # so (a) it had no scope of its own — a canada-only template fix fell through
+          # region_of()'s catch-all to scope=all (a 40-85m render for a ~10m builder), and a
+          # DISPATCHED narrow scope that happens not to call hub() (intl, sits) shipped a
+          # STALE canada.html from a green run; and (b) the hook logged its failure through
+          # log.error, so a dead builder was invisible in the Actions summary. Both halves
+          # were found shipping macro#3820 (the HK/Canada rebuild), whose recovery needed a
+          # hand-dispatched scope=hk purely because that scope calls hub().
+          # MUST run BEFORE hub(): build_vector's _canada_state() reads the
+          # data/canada_regime/latest.json this builder writes. SKIP_CANADA_HOOK=1 exported
+          # here makes build_vector's surviving fallback hook a no-op for the rest of this
+          # step, so scope=all does not pay for the ~10m builder twice.
+          canada() { [ -n "$CANADA_DONE" ] && return 0; CANADA_DONE=1; export SKIP_CANADA_HOOK=1; run_py "canada / S&P-TSX dashboard (build_canada)" scripts.build_canada; }
 
           # US Sector Central hub — reads baskets.json + sector_cycles_data.js + the heatmap json
           # (all committed or freshly rebuilt by band/spine). Call AFTER band so its deps exist.
@@ -551,7 +567,7 @@ jobs:
           for SC in ${SCOPE//+/ }; do
           case "$SC" in
             all)
-              spine; intl; band; central; flowleaders; leaderradar; foresightpage; hub; us_pages; libs; sits; csits ;;
+              spine; intl; canada; band; central; flowleaders; leaderradar; foresightpage; hub; us_pages; libs; sits; csits ;;
             macro)
               spine; hub; us_pages; central ;;
             intl)
@@ -562,6 +578,8 @@ jobs:
               run_py "build china a-share dashboard (build_china)" scripts.build_china; csits; hub ;;
             hk)
               run_py "build hong kong / hang seng (build_hk)" scripts.build_hk; hub ;;
+            canada)
+              canada; hub ;;
             markets)
               run_py "build commodity vector (build_commodities)"         scripts.build_commodities
               run_py "build strategic reserves (build_spr)"               scripts.build_spr

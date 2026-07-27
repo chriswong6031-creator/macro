@@ -647,6 +647,16 @@ lanes:
           poller R2 archive blobs are available. R2-creds-gated, graceful no-op
           without creds, non-fatal. Nightly is the sole advancer of
           data/flow_signals/ (forward-ledger law).
+      - id: build_canada
+        module: scripts.build_canada
+        note: >-
+          Canada / S&P-TSX dashboard. Promoted to a first-class step 2026-07-27 —
+          it used to run ONLY as a swallowed try/except inside build_vector (a PR
+          #81 workaround for a PAT without `workflow` scope), so a dead builder
+          shipped a stale canada.html behind a green nightly. MUST stay ABOVE
+          build_vector: the landing hub's _canada_state() reads the
+          data/canada_regime/latest.json written here. Exports SKIP_CANADA_HOOK=1
+          so build_vector's surviving fallback hook no-ops for the rest of the job.
       - id: build_vector
         module: scripts.build_vector
       - id: master_brain_scorer
@@ -1857,6 +1867,18 @@ lanes:
           edit actually republishes the page. Declared here to match the live
           workflow; sits between hub() and central() in the post-band serial run.
           DISPLAY-ONLY.
+      - id: build_canada
+        module: scripts.build_canada
+        note: >
+          Canada / S&P-TSX dashboard, page-only re-render via the canada() scope
+          function (2026-07-27) — the same shape #3718 gave intl above, and for the
+          same reason: build_canada was reachable ONLY through build_vector's
+          swallowed hook, so region_of() had no `canada` arm (a canada-only fix
+          forced scope=all) and a dispatched narrow scope that skips hub() shipped a
+          stale canada.html from a green run. Runs serially before band() in
+          scope=all and as `canada; hub` in the narrow scope; exports
+          SKIP_CANADA_HOOK=1 so hub() does not re-run the ~10m builder.
+          DISPLAY-ONLY.
       - id: build_sector_central
         module: scripts.build_sector_central
       - id: build_flow_leaders
@@ -2113,6 +2135,14 @@ lanes:
         module: scripts.calibrate_vector
       - id: validate_gex
         module: scripts.validate_gex
+      - id: build_canada
+        module: scripts.build_canada
+        note: >-
+          Canada / S&P-TSX dashboard — first-class step 2026-07-27 (was a swallowed
+          build_vector hook). MUST stay above build_vector: the landing hub's
+          _canada_state() reads the regime JSON written here. The step exports
+          SKIP_CANADA_HOOK=1 so build_vector's fallback hook does not re-run the
+          ~10m builder inside a chain already measured at ~250-270m against a 300m cap.
       - id: build_vector
         module: scripts.build_vector
       - id: build_aibrief
