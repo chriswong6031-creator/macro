@@ -209,6 +209,7 @@ jobs:
               templates/china_special_situations.html.j2|templates/_china_special_situations_*.html.j2|scripts/build_china_special_situations.py) echo china;;
               templates/intl.html.j2|scripts/build_intl.py) echo intl;;
               templates/hk.html.j2|scripts/build_hk.py) echo hk;;
+              templates/canada.html.j2|templates/canada_stock.html.j2|templates/canada_history.html.j2|templates/canada_sector.html.j2|scripts/build_canada.py|scripts/build_canada_library.py) echo canada;;
               templates/commodities.html.j2|templates/spr.html.j2|templates/forex.html.j2|templates/bonds.html.j2|templates/crossasset.html.j2|templates/transmission.html.j2|templates/discovery.html.j2|templates/macro_context.html.j2|scripts/build_commodities.py|scripts/build_spr.py|scripts/build_forex.py|scripts/build_bonds.py|scripts/build_crossasset.py|scripts/build_transmission.py|scripts/build_discovery.py|scripts/build_macro_context.py) echo markets;;
               templates/gex.html.j2|scripts/build_gex_board.py|scripts/build_options_flow.py|scripts/build_options_skew.py|scripts/build_vol_regime.py) echo gex;;
               templates/baskets.html.j2|templates/methodology.html.j2|scripts/build_baskets.py|scripts/build_methodology.py) echo baskets;;
@@ -233,7 +234,7 @@ jobs:
             return 1
           }
           DIRTY="" NEED_ALL=""
-          for R in macro intl china hk markets gex baskets sits; do
+          for R in macro intl china hk canada markets gex baskets sits; do
             FR=$(covering_from "$R")
             if [ -z "$FR" ]; then NEED_ALL="no from=-tagged render covers '$R' in the log window"; break; fi
             CH=$(git diff --name-only "$FR..HEAD" -- templates scripts config.yml lib 2>/dev/null)
