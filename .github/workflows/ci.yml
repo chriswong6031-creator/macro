@@ -1794,6 +1794,7 @@ on:
       # unrun-pit-probes
       - "tests/test_setup_tier.py"
       - "tests/test_stock_personality_wiring.py"
+      - "tests/test_personality_relief_hazard.py"
       - "tests/fixtures/setup_tier_probe_closes.parquet"
       # ── The strictly-dark set reopened TWICE in one day (2026-07-27) ────────
       # #3776 landed the public signup email gate and #3797 the shared-quota hook,

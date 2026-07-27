@@ -3637,6 +3637,8 @@ jobs:
         run: python -m pytest tests/test_setup_tier.py -q
       - name: personality forward-ledger PIT stamp + the no-backfill wire-in floor
         run: python -m pytest tests/test_stock_personality_wiring.py -q
+      - name: PSS-RH1 prospective-only detector parity + lifecycle authority fences
+        run: python -m pytest tests/test_personality_relief_hazard.py -q
 
   # ── THE STRICTLY-DARK SET REOPENED TWICE IN ONE DAY (2026-07-27) ───────────
   # #3636 emptied the strictly-dark set, #3645 emptied it again the same day, and

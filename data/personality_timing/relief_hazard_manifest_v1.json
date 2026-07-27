@@ -1,0 +1,167 @@
+{
+  "authority": {
+    "may_alert": false,
+    "may_auto_promote": false,
+    "may_display_to_users": false,
+    "may_enter": false,
+    "may_gate": false,
+    "may_rank": false,
+    "may_size": false,
+    "research_only": true
+  },
+  "construction": {
+    "anchor": {
+      "anchor_cooldown_sessions": 21,
+      "breadth_quantile": 0.8,
+      "breadth_quantile_min_periods": 63,
+      "breadth_quantile_shift_sessions": 1,
+      "breadth_quantile_window_sessions": 126,
+      "minimum_ex_self_peer_new_low_breadth": 0.15,
+      "minimum_ex_self_peers": 15,
+      "subject_prior_close_low_sessions": 60
+    },
+    "construction_id": "pss_sr3_exact_v1_as_adverse_hazard",
+    "fixed_bands": {
+      "action_close_depth_atr": [
+        "[1.00,1.25)",
+        "[1.25,1.50)",
+        "[1.50,1.75]"
+      ],
+      "anchor_severity": [
+        "[0.15,0.30)",
+        "[0.30,0.50)",
+        "[0.50,1.01]"
+      ],
+      "formation_to_action_delay": [
+        "[1,10]",
+        "[11,20]",
+        "[21,30]"
+      ]
+    },
+    "formation": {
+      "atr_information_cutoff": "anchor_minus_1_close",
+      "atr_sessions": 14,
+      "reference_low": "minimum_intraday_low_anchor_through_anchor_plus_3",
+      "sessions_including_anchor": 4
+    },
+    "labels": {
+      "level_control": "level_min>=0.50 and active_min<0.50",
+      "relief_hazard": "level_min>=0.50 and active_min>=0.50",
+      "weak_level_diagnostic": "level_min<0.50"
+    },
+    "peer_state": {
+      "active_requires_strictly_higher_close": true,
+      "active_trend_lookback_sessions": 5,
+      "level_recovery_atr": 0.5,
+      "minimum_ex_self_peers_each_observation": 15,
+      "peer_specific_reference_and_atr": true,
+      "persistence_sessions": 3,
+      "subject_excluded": true
+    },
+    "subject_action": {
+      "action_close_depth_atr_inclusive": [
+        1.0,
+        1.75
+      ],
+      "first_only": true,
+      "minimum_close_above_reference_atr": 0.5,
+      "minimum_low_above_reference_atr": -0.5,
+      "persistence_sessions": 3,
+      "search_sessions_after_formation": 30
+    }
+  },
+  "construction_sha256": "3f9be23e75af3079105f33eb930541ffb8ab8d9e28fbd2125c2271d098c1e6dc",
+  "decision_law": {
+    "authority_now": "none",
+    "first_read_requires_all": {
+      "action_date_span_days": 365,
+      "distinct_action_months": 12,
+      "informative_exact_strata": 30,
+      "level_control_rows": 100,
+      "matured_primary_rows": 500,
+      "relief_hazard_rows": 100,
+      "unique_names": 250
+    },
+    "harm_signs": {
+      "mae": "level_control_mae_minus_relief_hazard_mae",
+      "rebound8_first": "level_control_rebound_first_rate_minus_relief_hazard_rebound_first_rate",
+      "tail10": "relief_hazard_tail_rate_minus_level_control_tail_rate",
+      "w5": "level_control_w5_rate_minus_relief_hazard_w5_rate"
+    },
+    "inference_tape": {
+      "aggregation": "equal weight across informative strata",
+      "bootstrap": {
+        "confidence": 0.95,
+        "draws": 5000,
+        "seed": 20260809,
+        "unit": "three-calendar-month moving block"
+      },
+      "deduplication": "keep first primary action per name per calendar month",
+      "minimum_per_label_in_stratum": 2,
+      "permutation": {
+        "draws": 10000,
+        "labels_move_only_within_stratum": true,
+        "one_sided_alpha": 0.05,
+        "seed": 20260808
+      },
+      "stratum": "sector x action_month x anchor_severity_band x delay_band"
+    },
+    "interim_outcome_reads": "forbidden",
+    "qualification_requires_all": [
+      "mae harm > 0, one-sided permutation p<=0.05, and block-CI lower>0",
+      "tail10 harm > 0, one-sided permutation p<=0.05, and block-CI lower>0",
+      "w5 harm > 0 and rebound8_first harm > 0",
+      "mae and tail10 harm > 0 independently in chronological early and late halves",
+      "leave-one-sector-out mae and tail10 harm stay > 0",
+      "no sector supplies more than 25% of relief_hazard rows",
+      "absolute stratified action-close-distance difference <=0.25 ATR"
+    ],
+    "read_count": 1,
+    "ruling": "Qualification authorizes only a separate preregistered de-escalation-shadow review. It never automatically creates entry, rank, size, gate, alert, or user-display authority. Failure of any required check kills PSS-RH1 at its sole read; thresholds and the read clock may not be retimed."
+  },
+  "enrollment_law": "action_date must be strictly greater than not_before_session; historical events are never imported or counted",
+  "family": "pss_rh1_relief_hazard_prospective",
+  "frozen_at": "2026-07-27T22:30:55Z",
+  "grading": {
+    "called": "proximity trough offset -2 through +5 sessions",
+    "competing_risk": {
+      "breach": "low<reference_low-0.50*anchor_atr",
+      "rebound": "close>=action_close*1.08",
+      "tie": "breach_wins",
+      "unresolved": "retained_as_failure"
+    },
+    "mae63": "minimum close return over action+1 through action+63",
+    "maturity_sessions_after_action": 63,
+    "outcomes_begin": "session_after_action",
+    "proximity_window": "minimum close action-31 through action+31",
+    "tail10": "mae63<=-10%",
+    "tdt": "signed action-minus-trough trading-session offset",
+    "w5": "action close within 5% above proximity-window minimum"
+  },
+  "hypothesis": "After identical systemic stress, held subject recovery, and passive majority peer recovery, persistent majority five-session peer advancement marks a synchronized relief-rally hazard with worse subsequent drawdown/tail risk than the nested level control.",
+  "membership": {
+    "path": "data/personality_timing/relief_hazard_membership_v1.json",
+    "sha256": "f00c9d70e0c554213d6aa9a82fecc1492bcedc49c04ce36d4a14647f85713baf",
+    "ticker_count": 799
+  },
+  "not_before_session": "2026-07-24",
+  "outputs": {
+    "ledger": "data/personality_timing/relief_hazard.jsonl",
+    "state": "data/personality_timing/relief_hazard_state.json"
+  },
+  "prior_seen_not_confirmation": [
+    "PSS-SR3 historical DEV, VAL, and FWD outcomes",
+    "PSS-SR3 construction-only feasibility shapes",
+    "PSS-F1 through F4, F4R/F4H, SR1, and SR2 results"
+  ],
+  "program_id": "PSS-RH1",
+  "schema": "personality_relief_hazard.manifest/v1",
+  "source_commit": "71ac1df412a9cf0b32b050ff05d40ed59c0ac27c",
+  "status": "prospective_accrual_only",
+  "trial_budget": {
+    "historical_lineage_disclosed": true,
+    "no_interim_retiming": true,
+    "no_threshold_grid": true,
+    "prospective_configurations": 1
+  }
+}
