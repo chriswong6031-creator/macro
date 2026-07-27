@@ -64,7 +64,11 @@
 </div>
 
 <script src="radar_panel.js"></script>
-<script>renderRadarFull({ base: "basketdata/" });</script>
+<script>
+window.addEventListener("DOMContentLoaded", function () {
+  window.renderRadarFull({ base: "basketdata/" });
+});
+</script>
 <script src="theme.js"></script>
 </body>
 </html>
