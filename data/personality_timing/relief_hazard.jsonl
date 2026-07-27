@@ -1,0 +1,5 @@
+# PSS-RH1 prospective relief-hazard ledger — schema personality_relief_hazard.ledger/v1
+# Event action_date must be strictly after 2026-07-24. No historical backfill.
+# Nightly is the sole lifecycle advancer. Keep-first rows; one 63-session grade.
+# OPERATOR RESEARCH ONLY — no entry/rank/size/gate/alert/user-display authority.
+{"authority": {"may_alert": false, "may_auto_promote": false, "may_display_to_users": false, "may_enter": false, "may_gate": false, "may_rank": false, "may_size": false, "research_only": true}, "construction_sha256": "3f9be23e75af3079105f33eb930541ffb8ab8d9e28fbd2125c2271d098c1e6dc", "event_rows_at_launch": 0, "family": "pss_rh1_relief_hazard_prospective", "kind": "registration", "manifest_sha256": "0b07345178592032570aeb57c1c54c1cb24b6463a5836431bc7daf5d44b0cc6b", "membership_sha256": "f00c9d70e0c554213d6aa9a82fecc1492bcedc49c04ce36d4a14647f85713baf", "not_before_session": "2026-07-24", "program_id": "PSS-RH1", "schema": "personality_relief_hazard.ledger/v1"}

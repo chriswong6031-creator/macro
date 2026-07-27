@@ -130,6 +130,7 @@ curated, not generated. Do not build an extractor.
 
 | Topic | State | Ruling / source |
 |---|---|---|
+| PSS-RH1 exact SR3 label as an adverse synchronized relief-rally hazard | PROSPECTIVE-ONLY ACCRUAL — lawful use of the SR3 mechanism inversion, but historical SR3 rows count as zero and the 2026-07-24 boundary is absolute. Frozen 799-name membership; one exact configuration; 63-session maturity; no interim effect reads; sole formal read only after ≥500 matured primary paths / ≥250 names / ≥12 action months spanning ≥365d / ≥30 informative strata. No entry, rank, size, gate, alert, user-display, or auto-promotion authority. Even full qualification opens only a separately preregistered intervention review. Do not backfill, retime, tune, expose per-ticker state, or combine historical outcomes with prospective confirmation. | `research/PSS_RH1_RELIEF_HAZARD_PROSPECTIVE_CHARTER.md`; `data/personality_timing/relief_hazard_manifest_v1.json` (family `pss_rh1_relief_hazard_prospective`, frozen 2026-07-27) |
 | Ontology W4.7 pos_v2 acceptance | HOLD — peak gate IQR 48.8 > 25 | Open PR #1639 (do not accidentally revive) |
 | Theta tape | SUSPENDED | Final3-lobes program (2026-07-06) |
 | DISP-GATE-1 | DEFER ×2-replicated | Final3-lobes program (#1696) |

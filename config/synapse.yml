@@ -1211,6 +1211,102 @@ artifacts:
       stock-personality JSON only for active watches or recently observed
       rejections. It never enters setup compatibility or any scored path.
 
+  # PSS-RH1: exact PSS-SR3 label prospectively tested as an adverse
+  # synchronized relief-rally hazard. Historical SR3 outcomes generated the
+  # hypothesis but contribute zero confirmation.
+  personality-relief-hazard-manifest:
+    path: data/personality_timing/relief_hazard_manifest_v1.json
+    format: json
+    producer: scripts/research/freeze_pss_rh1_relief_hazard.py
+    known_extra_writers: []
+    owner_program: personality-timing
+    cadence: on-demand
+    storage: git
+    asof_field: frozen_at
+    freshness_sla_hours: 99999
+    schema: personality_relief_hazard.manifest/v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+    - engine/personality_relief_hazard.py
+    external_consumers: []
+    notes: >
+      Immutable PSS-RH1 construction, 2026-07-24 no-backfill boundary,
+      63-session ruler, one-read decision law, membership binding, and absolute
+      authority fence. Runtime verifies the entire file hash and fails inert on
+      drift. Qualification can open only a separately preregistered review.
+  personality-relief-hazard-membership:
+    path: data/personality_timing/relief_hazard_membership_v1.json
+    format: json
+    producer: scripts/research/freeze_pss_rh1_relief_hazard.py
+    known_extra_writers: []
+    owner_program: personality-timing
+    cadence: on-demand
+    storage: git
+    asof_field: frozen_at
+    freshness_sla_hours: 99999
+    schema: personality_relief_hazard.membership/v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+    - engine/personality_relief_hazard.py
+    external_consumers: []
+    notes: >
+      Frozen 799-name eligible W1 membership across eleven standard GICS
+      sectors. Source hashes bind the W1 panel and ticker-sector map; it never
+      refreshes dynamically and therefore cannot change the prospective cohort
+      after outcomes begin.
+  personality-relief-hazard-ledger:
+    path: data/personality_timing/relief_hazard.jsonl
+    format: jsonl
+    producer: engine/personality_relief_hazard.py
+    known_extra_writers: []
+    owner_program: personality-timing
+    cadence: daily-engine
+    storage: git
+    asof_field: observed_as_of
+    freshness_sla_hours: 30
+    schema: personality_relief_hazard.ledger/v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+    - engine/personality_relief_hazard.py
+    external_consumers: []
+    notes: >
+      Keep-first prospective evidence ledger. Launches with zero event rows and
+      rejects every action on or before 2026-07-24. Stores hazard, nested
+      level-control, and weak-level diagnostic paths; grades once after 63
+      later sessions. Nightly is the sole advancer. No product consumer or
+      decision authority.
+  personality-relief-hazard-state:
+    path: data/personality_timing/relief_hazard_state.json
+    format: json
+    producer: engine/personality_relief_hazard.py
+    known_extra_writers: []
+    owner_program: personality-timing
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: personality_relief_hazard.state/v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Operator/agent accrual census only. It deliberately exposes no per-ticker
+      map or interim effect estimate and carries all authority flags false. The
+      formal matched outcome tape remains closed until the frozen sole-read
+      sample and clock minimums are met.
+
   # IHM-R1..R4: Index Hybrid Momentum snapshot — display-tier daily snapshot for
   # 13 index carriers at 1D/2B/3B/W-FRI grids.  Written by engine/index_momentum.py
   # (called in-process by engine/run.py); no new collectors required.

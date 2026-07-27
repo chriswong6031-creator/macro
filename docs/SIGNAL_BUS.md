@@ -66,7 +66,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | options-alpha | 7 |
 | options-nw-entry-intelligence | 3 |
 | oracle | 29 |
-| personality-timing | 8 |
+| personality-timing | 12 |
 | pick-lab | 3 |
 | policy-shock | 5 |
 | prophet | 1 |
@@ -103,13 +103,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | display | 333 |
 | infrastructure | 95 |
 | scored | 4 |
-| shadow | 75 |
+| shadow | 79 |
 
 ### Artifacts by storage
 
 | storage | count |
 |---|---|
-| git | 485 |
+| git | 489 |
 | gitignored-local | 15 |
 | r2 | 7 |
 
@@ -774,6 +774,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | personality-gate-shadow-ledger | `data/personality_timing/gate_shadow.jsonl` | jsonl | daily-engine | display | 1 | 0 |
+| personality-relief-hazard-ledger | `data/personality_timing/relief_hazard.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
+| personality-relief-hazard-manifest | `data/personality_timing/relief_hazard_manifest_v1.json` | json | on-demand | shadow | 1 | 0 |
+| personality-relief-hazard-membership | `data/personality_timing/relief_hazard_membership_v1.json` | json | on-demand | shadow | 1 | 0 |
 | personality-terminality-shadow-ledger | `data/personality_timing/terminality_shadow.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
 | personality-terminality-shadow-model-manifest | `data/personality_timing/terminality_shadow_model_v1/manifest.json` | json | on-demand | shadow | 1 | 0 |
 | personality-terminality-shadow-near-model | `data/personality_timing/terminality_shadow_model_v1/near_low.json` | json | on-demand | shadow | 1 | 0 |
@@ -781,6 +784,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | personality-terminality-shadow-state | `data/personality_timing/terminality_shadow_state.json` | json | daily-engine | display | 1 | 0 |
 | personality-timing-codex | `data/personality_timing/codex.parquet` | parquet | weekly | display | 1 | 0 |
 | personality-gate-shadow-state | `data/personality_timing/gate_shadow_state.json` | json | daily-engine | display | 0 | 0 |
+| personality-relief-hazard-state | `data/personality_timing/relief_hazard_state.json` | json | daily-engine | shadow | 0 | 0 |
 
 ### pick-lab
 

@@ -1,0 +1,75 @@
+{
+  "as_of": "2026-07-27",
+  "authority": {
+    "may_alert": false,
+    "may_auto_promote": false,
+    "may_display_to_users": false,
+    "may_enter": false,
+    "may_gate": false,
+    "may_rank": false,
+    "may_size": false,
+    "research_only": true
+  },
+  "construction_sha256": "3f9be23e75af3079105f33eb930541ffb8ab8d9e28fbd2125c2271d098c1e6dc",
+  "consumers": [],
+  "decision_read": {
+    "count_and_clock_minimums_met": false,
+    "note": "No interim effect estimates. Informative strata and outcomes are opened only by the separately reviewed sole adjudication.",
+    "observed": {
+      "action_date_span_days": 0,
+      "distinct_action_months": 0,
+      "informative_exact_strata": null,
+      "level_control_rows": 0,
+      "matured_primary_rows": 0,
+      "relief_hazard_rows": 0,
+      "unique_names": 0
+    },
+    "required": {
+      "action_date_span_days": 365,
+      "distinct_action_months": 12,
+      "informative_exact_strata": 30,
+      "level_control_rows": 100,
+      "matured_primary_rows": 500,
+      "relief_hazard_rows": 100,
+      "unique_names": 250
+    },
+    "sole_read_executed": false,
+    "status": "locked_minimums"
+  },
+  "family": "pss_rh1_relief_hazard_prospective",
+  "gate_open": true,
+  "generated_utc": "2026-07-27T22:38:30.909983+00:00",
+  "ledger": {
+    "advanced_today": 0,
+    "appended_today": 0,
+    "earliest_action": null,
+    "events": 0,
+    "latest_action": null,
+    "level_control": 0,
+    "matured": 0,
+    "primary_events": 0,
+    "rejected_pre_cutoff_today": 0,
+    "relief_hazard": 0,
+    "ungraded": 0,
+    "weak_level_diagnostic": 0
+  },
+  "manifest_sha256": "0b07345178592032570aeb57c1c54c1cb24b6463a5836431bc7daf5d44b0cc6b",
+  "membership_sha256": "f00c9d70e0c554213d6aa9a82fecc1492bcedc49c04ce36d4a14647f85713baf",
+  "not_before_session": "2026-07-24",
+  "note": "Exact PSS-SR3 construction accruing prospectively as an adverse relief-rally hypothesis. Historical SR3 rows count as zero. Operator research only; no entry, rank, size, gate, alert, user-display, or auto-promotion authority.",
+  "program_id": "PSS-RH1",
+  "registration_ok": true,
+  "scan_census": {
+    "anchors": 9231,
+    "detected_post_cutoff_paths": 0,
+    "frozen_members": 799,
+    "loaded_members": 799,
+    "missing_members": 0,
+    "prospective_candidate_anchors": 0,
+    "reasons": {
+      "missing_ohlcv": 0
+    }
+  },
+  "schema": "personality_relief_hazard.state/v1",
+  "status": "prospective_accrual_only"
+}

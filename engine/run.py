@@ -788,6 +788,17 @@ def run(force: bool = False) -> dict:
         _pts.update()
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("personality-terminality-shadow failed: %s", e)
+    # PSS-RH1 prospective adverse-hazard replication. The exact killed SR3
+    # construction is replayed over a frozen 799-name membership, but only
+    # action closes strictly after 2026-07-24 may enroll. Historical SR3 rows
+    # count as zero. Nightly alone appends/grades; this operator-research lane
+    # has no entry, rank, size, gate, alert, user-display, or auto-promotion
+    # authority. Never fatal.
+    try:
+        from engine import personality_relief_hazard as _prh
+        _prh.update()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("personality-relief-hazard failed: %s", e)
     # Index Hybrid Momentum organ (engine/index_momentum.py, IHM-R1..R4): RSI-MACD
     # hybrid at 1D/2B/3B/W-FRI for 13 index carriers (US/HK/CN/INTL + MAG7 carrier).
     # Depth percentile, hist_vel3, washout_turn/trap_zone quality tags, and global-turn
