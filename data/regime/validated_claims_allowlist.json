@@ -1,7 +1,7 @@
 {
  "schema": "validated_allowlist.v1",
  "purpose": "W4.6 / BC-2 (PREREGISTRATION.md §4). Each entry justifies an AFFIRMATIVE use of the word 'validated'/'已验证' in a user-facing surface by naming the backing evidence artifact or the reason the use is legitimate. scripts/check_validated_claims.py fails CI on any affirmative 'validated' claim that matches NO entry here (negated/hedged uses — 'no validated edge', 'not a validated', 'unvalidated', '未验证' — are ignored automatically). Keep entries phrase-scoped, not file:line-scoped, so they survive page regeneration. Adding an entry is a claim of record: it must cite an artifact or a documented study.",
- "notes": "The `match` field is a case-insensitive substring that must appear on the same line as the token. `backing` names the artifact/doc that earns it. Order does not matter.",
+ "notes": "The `match` field is a case-insensitive substring that must appear on the same line as the token. `backing` names the artifact/doc that earns it. Order does not matter. DO NOT add entries for quoted third-party research: verbatim text mirrored from syndicated institutional notes (site/research/*.html, site/research/index.html, the baked catalog in site/research_vault.html) is skipped STRUCTURALLY by _THIRD_PARTY_PAGES in scripts/check_validated_claims.py, because reported speech from a named external author is not a platform claim and has no artifact to cite. An entry here is a claim of record; a third-party quote is not ours to make one about. If such a quote reds the gate, the sink is unmapped — extend _THIRD_PARTY_PAGES (and tests/test_validated_claims_thirdparty.py) rather than allowlisting the sentence.",
  "allow": [
   {
    "match": "validated absolute-trend drawdown gate",
@@ -1338,13 +1338,6 @@
    "backing": "Code comment in subsector_rotation.js labeling the JS object key 'validated' as a DATA KEY (the engine-emitted verdict value), not a user-facing claim. The comment explicitly annotates that the display string was changed away from 'Validated'. Part of D-7a rotation-events-v2 UI overhaul.",
    "surfaces": [
     "subsector_rotation"
-   ]
-  },
-  {
-   "match": "validated two likely sources of ongoing disinflation",
-   "backing": "NOT a platform claim — a verbatim sentence inside a third-party economics note ('US Daily: What the Rebound in Oil Prices Means for Upcoming Inflation Prints', 24 July 2026) mirrored into the research vault. The word is ordinary English about CPI data confirming a disinflation channel (shelter + tariff pass-through); it asserts nothing about any Macro Dashboard signal, rank, gate, or artifact, so BC-2's stored-artifact requirement has nothing to attach to. Scoped to the quoted clause so it can never green-light one of our own claims.",
-   "surfaces": [
-    "research_vault"
    ]
   }
  ]
