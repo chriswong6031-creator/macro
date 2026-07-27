@@ -30,6 +30,15 @@ Two measurement traps, both of which materially change the numbers:
 A third trap is now guarded by a comment in `ci.yml`: the census tests *`name in
 workflow_text`*, so **naming an unwired suite in a workflow comment makes it look covered.**
 
+A fourth trap runs the other way and produces **false positives**: `audit_unrun_tests.py`
+derives a suite's subjects from its **imports**, so a *source-scanning guard* — one that
+imports nothing from the repo and instead reads a file as text and regexes it — reports
+`subjects: []` and is labelled **untriggerable**. `tests/test_signup_email_validation.py`
+(2026-07-27) reads `templates/onboard.js`; `templates/**` has always matched it, so only the
+*unrun* half of its "strictly dark" verdict was real. Before treating a dark verdict as
+ground truth, check whether the suite references its subject as a **path string** rather than
+an import.
+
 ## Blast-radius ranking
 
 Ranked so the top tier is where a silent break changes shipped numbers with no signal at all:
@@ -581,6 +590,28 @@ That suite also showed the mirror of the vacuous-green problem: its "wrong date"
 day before `build_date`, from when the filter was same-day. The filter later became a 30-day
 lookback (fires land in `track_record` retroactively, so a same-day filter would match
 nothing, ever) — which made that row legitimately *in* window, proving nothing.
+
+### The strictly-dark set reopened TWICE on the day of the sweep
+
+Re-running the auditor after the three fix batches turned up a strictly-dark suite:
+`tests/test_signup_email_validation.py`, landed hours earlier by #3776 with the public
+account-creation email gate and named by no workflow. It is the highest-risk shape the
+census tracks — a security-adjacent guard on the signup path, run by nothing — and it passed,
+so nothing would ever have complained.
+
+Re-running it again one batch later turned up **a second one**: `tests/test_gh_quota_guard.py`
+(36 tests), landed by #3797 — the shared-GitHub-quota hook, itself written because two
+watchers on one endpoint drained the 5,000/hr REST pool to zero and 403'd every session. Also
+named by no workflow. **Two suites arrived dark in a single day**, which is the strongest
+available evidence that this is a standing leak and not a backlog to be drained once.
+
+This is the third reopening (#3636 emptied the set, #3645 emptied it again the same day).
+The count is a **snapshot, not a state**: re-run `audit_unrun_tests.py` rather than trusting
+any number written down here. Both are now wired as `unrun-dark-guards`, with every half pinned in `paths` — the two
+suites and the two files they inspect. They are the examples behind the fourth measurement
+trap above, and they sharpen it: **neither suite imports its subject.** One reads
+`templates/onboard.js` as text; the other runs `.claude/hooks/gh_quota_guard.py` as a
+*subprocess*. Check how a suite reaches its subject before believing a dark verdict.
 
 ### Byproducts worth their own tickets
 
