@@ -321,9 +321,6 @@
   /* Hero gauge — US mx5-gauge semicircle geometry (viewBox 0 -4 140 101, r=56, ticks + 0/50/100 scale) */
   body.page-canada .cax-gauge-svg{flex:0 0 196px;width:196px;height:142px;overflow:visible;display:block}
   @media(max-width:560px){body.page-canada .cax-gauge-svg{flex:0 0 108px;width:108px;height:80px}}
-  body.page-canada .cax-gauge-num{fill:var(--warn);font-weight:800}
-  body.page-canada .ms-green .cax-gauge-num{fill:var(--up)}
-  body.page-canada .ms-red .cax-gauge-num{fill:var(--down)}
   body.page-canada .ms-green .cax-gauge-fill{stroke:var(--up)}
   body.page-canada .ms-yellow .cax-gauge-fill{stroke:var(--warn)}
   body.page-canada .ms-red .cax-gauge-fill{stroke:var(--down)}
@@ -524,7 +521,16 @@
   body.page-canada .cax-rack2{display:grid;grid-template-columns:3fr 2fr;gap:14px;margin-bottom:14px}
   body.page-canada .cax-rack3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:14px}
   @media(max-width:1000px){body.page-canada .cax-rack2,body.page-canada .cax-rack3{grid-template-columns:1fr}body.page-canada .cax-hero{grid-template-columns:1fr}body.page-canada .cax-hero-left{border-right:none;border-bottom:1px solid rgba(255,255,255,.12)}}
-  body.page-canada .cax-ctitle{font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+  {# Card titles follow macro.html's .mx5-card-title: 13px, sentence case, tight tracking,
+     near-white. The old rule was 11px uppercase +.8px tracking in var(--muted) GREY — three
+     compounding cheapeners: a dim title reads as a caption rather than a heading, small-caps
+     at 11px is hard to scan, and wide tracking on a short label looks like boilerplate.
+     Titles are already authored in Title Case, so dropping text-transform renders them
+     as written ("Commodities & FX", "Regime Watch"). #}
+  {# color is var(--text), NOT macro.html's var(--ink-1,rgba(255,255,255,.92)): --ink-1 is
+     not defined in theme.css, so that fallback resolves to hardcoded white and would go
+     invisible under [data-theme="light"]. --text is the theme-aware token. #}
+  body.page-canada .cax-ctitle{font-size:13px;font-weight:700;letter-spacing:-.01em;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:7px}
   body.page-canada .cax-row{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:12.5px}
   body.page-canada .cax-row:last-child{border-bottom:none}
   body.page-canada .cax-row .ic{flex:0 0 20px;text-align:center;font-size:12px;padding-top:1px;opacity:.9}
@@ -550,6 +556,30 @@
   body.page-canada .cax-heat i.c{background:var(--down)}
   body.page-canada .cax-heat i.c2{background:var(--down);opacity:.45}
   body.page-canada .cax-heat i.n{background:rgba(255,255,255,.12)}
+  {# heating/cooling key under the strip — ported from macro.html's .mx5-sector-heat-legend.
+     var(--up)/var(--down) flip to 红涨绿跌 automatically under html[data-lang="zh"]. #}
+  body.page-canada .cax-heat-legend{display:flex;justify-content:space-between;margin-top:7px;font-size:10px;font-weight:600;letter-spacing:.03em}
+  body.page-canada .cax-heat-legend .heat-up{color:var(--up)}
+  body.page-canada .cax-heat-legend .heat-dn{color:var(--down)}
+  {# "Why this call" agree/disagree rows (Regime Watch card) #}
+  body.page-canada .cax-sigrow{display:flex;align-items:baseline;gap:8px;font-size:11.5px;padding:3px 0;color:var(--text)}
+  body.page-canada .cax-sigdot{flex:0 0 auto;font-size:10px;font-weight:800;line-height:1.4}
+  body.page-canada .cax-sigdot.ok{color:var(--up)}
+  body.page-canada .cax-sigdot.bad{color:var(--down)}
+  {# Standouts-by-sector panel (ROW 4) — auto-fit so 8 sector cells reflow from 4-up to 1-up #}
+  body.page-canada .cax-rack1{margin-bottom:14px}
+  body.page-canada .cax-sogrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:10px 18px}
+  body.page-canada .cax-socell{min-width:0;padding:9px 0 4px;border-top:1px solid rgba(255,255,255,.07)}
+  body.page-canada .cax-solbl{font-size:10px;letter-spacing:.7px;text-transform:uppercase;color:var(--muted);margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  body.page-canada .cax-son{opacity:.6;letter-spacing:0}
+  body.page-canada .cax-sorow{display:flex;align-items:baseline;gap:7px;font-size:11.5px;padding:2.5px 0;min-width:0}
+  body.page-canada .cax-soarrow{flex:0 0 auto;font-size:8px;line-height:1.7}
+  body.page-canada .cax-soarrow.up{color:var(--up)}
+  body.page-canada .cax-soarrow.dn{color:var(--down)}
+  body.page-canada .cax-sotkr{flex:0 0 auto;font-weight:700;color:var(--text);text-decoration:none;font-variant-numeric:tabular-nums}
+  body.page-canada .cax-sotkr:hover{text-decoration:underline}
+  body.page-canada .cax-soname{flex:1 1 auto;min-width:0;color:var(--muted);font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  [data-theme="light"] body.page-canada .cax-socell{border-top-color:rgba(0,0,0,.10)}
   body.page-canada .cax-stk{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:12px}
   body.page-canada .cax-stk .tkr{flex:0 0 auto}
   body.page-canada .cax-stk:last-of-type{border-bottom:none}
@@ -905,9 +935,12 @@
           <circle class="cax-needle-core" cx="70" cy="75" r="2"/>
           <circle class="cax-needle-tip" cx="70" cy="25.5" r="2.5"/>
         </g>
-        {# Score numeral inside the arc (US idiom) #}
-        <text class="cax-gauge-num" x="70" y="62" font-size="24" text-anchor="middle" font-family="Inter,-apple-system,sans-serif">{{ _ms_score }}</text>
-        <text x="70" y="73" fill="rgba(255,255,255,.32)" font-size="11" text-anchor="middle" font-family="Inter,-apple-system,sans-serif">/ 100</text>
+        {# NO score numeral inside the arc. This markup was copied from macro.html believing
+           it was the US idiom, but macro.html suppresses both of those <text> nodes in CSS
+           (assets/css: `#mx5-score-numeral + text{display:none}` and its sibling rule) — so
+           on Canada they actually painted, putting a 24px score right where the needle
+           sweeps and duplicating the .cax-big-score value two inches to the right. The big
+           score below already carries the number; the arc carries the position. #}
       </svg>
       <div>
         <div class="cax-score-line"><span id="ms-score" class="cax-big-score">{{ _ms_score }}</span><span id="ms-word" class="cax-verdict">{{ t(_ms_label, _ms_label_zh) }} <span class="arr">▶</span></span></div>
@@ -1119,8 +1152,12 @@
     <div class="mx5-mkt-grid">
       {# TSX Composite — real index level; data-sym for live price patch #}
       <div class="mx5-mkt-tile {{ 'up' if (benchmark and benchmark.chg >= 0) else ('dn' if benchmark else '') }}" data-sym="^GSPTSE" data-mkt="ca">
-        <div class="mx5-mkt-ticker">^GSPTSE</div>
-        <div class="mx5-mkt-sub"><span class="l-en">TSX Composite</span><span class="l-zh">TSX 综合</span></div>
+        {# Visible label is the short desk code, never the Yahoo slug (`^GSPTSE` is a raw
+           machine slug — banned on the glance tier). data-sym keeps the real symbol for
+           live.js price patching, so only the text changed. Mirrors macro.html's
+           "ES / S&P fut" tiles. #}
+        <div class="mx5-mkt-ticker">TSX</div>
+        <div class="mx5-mkt-sub"><span class="l-en">S&amp;P/TSX Composite</span><span class="l-zh">标普/TSX 综合</span></div>
         {% if benchmark %}
         <div class="mx5-mkt-price nb-px" data-sym="^GSPTSE" data-mkt="ca" data-bare>{{ '{:,.0f}'.format(benchmark.price) }}</div>
         <div class="mx5-mkt-delta {{ 'up' if benchmark.chg >= 0 else 'dn' }} nb-chg" data-sym="^GSPTSE" data-mkt="ca">{{ '%+.2f'|format(benchmark.chg) }}%</div>
@@ -1130,8 +1167,8 @@
       </div>
       {# TSX Venture — small-cap / junior-miner breadth (Canada mining tape); live-only via ^SPCDNX #}
       <div class="mx5-mkt-tile" data-sym="^SPCDNX" data-mkt="ca">
-        <div class="mx5-mkt-ticker">^SPCDNX</div>
-        <div class="mx5-mkt-sub"><span class="l-en">TSX Venture</span><span class="l-zh">TSX 创业板</span></div>
+        <div class="mx5-mkt-ticker">TSXV</div>
+        <div class="mx5-mkt-sub"><span class="l-en">TSX Venture · juniors</span><span class="l-zh">TSX 创业板 · 小型矿企</span></div>
         <div class="mx5-mkt-price nb-px" data-sym="^SPCDNX" data-mkt="ca" data-bare>—</div>
         <div class="mx5-mkt-delta nb-chg" data-sym="^SPCDNX" data-mkt="ca" style="color:var(--muted)">—</div>
       </div>
@@ -1262,6 +1299,24 @@
   </div>
 </div>
 
+{# ── Plain-word names for the regime contributor slugs ───────────────────────────
+   engine/canada_run.py:confirming_contradicting() returns raw column stems like
+   "growth_unemployment_trend" — machine slugs, banned on the glance tier. The full
+   universe is the 9 keys in engine/canada_axes.py:_component_scores(). _CA_SIG_FALLBACK
+   prettifies anything added upstream later so a new contributor degrades to readable
+   words instead of a raw slug (and never blocks the render on a lookup miss). #}
+{% set _CA_SIG = {
+  'growth_gdp_trend':            ('Economic output',        '经济产出'),
+  'growth_unemployment_trend':   ('Jobless rate',           '失业率'),
+  'growth_cyclical_defensive':   ('Cyclicals vs defensives','周期股 vs 防御股'),
+  'growth_global_growth':        ('Global demand',          '全球需求'),
+  'growth_breadth_direction':    ('How many stocks are rising','上涨股票占比'),
+  'growth_tsx_spx':              ('TSX vs the US market',   'TSX vs 美股'),
+  'inflation_cpi_direction':     ('Inflation rate',         '通胀率'),
+  'inflation_breakeven_direction':('The bond market\'s inflation bet','债市通胀预期'),
+  'inflation_inflation_beta_basket':('Inflation-sensitive stocks','通胀敏感股'),
+} %}
+
 <!-- =============== ROW 1: What To Do + Regime Watch =============== -->
 <div class="cax-rack2">
   {# What To Do #}
@@ -1297,6 +1352,28 @@
     {# pending_quad is a float NaN when nothing is pending (NaN is truthy!) —
        the x == x self-equality test is the NaN-safe guard; also require days > 0 #}
     {% if latest.pending_quad and latest.pending_quad == latest.pending_quad and latest.pending_quad is string and (latest.pending_days or 0) > 0 %}<div class="cax-kv"><span class="k">{{ t('Pending','待确认') }}</span><span class="v" style="color:var(--warn)">{{ td(latest.pending_quad) }} <span style="color:var(--muted)">{{ latest.pending_days }}d</span></span></div>{% endif %}
+    {# WHAT AGREES / WHAT ARGUES AGAINST — latest.confirming/contradicting were computed
+       every night and never displayed. This is the "why" behind the regime call, and the
+       honest place to show disagreement rather than only the confident headline. #}
+    {% set _cfm = latest.confirming or [] %}
+    {% set _ctr = latest.contradicting or [] %}
+    {% if _cfm or _ctr %}
+    <div class="cax-lbl" style="margin-top:11px">{{ t('Why this call','判断依据') }}</div>
+    {% for _s in _cfm[:4] %}
+    {% set _nm = _CA_SIG.get(_s) %}
+    <div class="cax-sigrow"><span class="cax-sigdot ok">✓</span><span>{{ t(_nm[0], _nm[1]) if _nm else (_s.split('_', 1)[1] if '_' in _s else _s) | replace('_',' ') | capitalize }}</span></div>
+    {% endfor %}
+    {% for _s in _ctr[:3] %}
+    {% set _nm = _CA_SIG.get(_s) %}
+    <div class="cax-sigrow"><span class="cax-sigdot bad">✕</span><span>{{ t(_nm[0], _nm[1]) if _nm else (_s.split('_', 1)[1] if '_' in _s else _s) | replace('_',' ') | capitalize }}</span></div>
+    {% endfor %}
+    <div class="cax-foot">
+      {% if _cfm and not _ctr %}<span class="cax-stword ok">{{ t('Every reading we track points the same way — the call is clean.','所有跟踪指标方向一致 — 判断明确。') }}</span>
+      {% elif _ctr and not _cfm %}<span class="cax-stword bad">{{ t('The readings point the other way — treat this call as weak.','指标方向相反 — 该判断偏弱。') }}</span>
+      {% elif _ctr %}<span class="cax-stword warn">{{ t('%d of %d readings disagree — size positions smaller than usual.'|format(_ctr|length, (_cfm|length + _ctr|length)), '%d/%d 项指标不一致 — 仓位应低于平常。'|format(_ctr|length, (_cfm|length + _ctr|length))) }}</span>
+      {% endif %}
+    </div>
+    {% endif %}
   </div>
 </div>
 
@@ -1339,6 +1416,11 @@
     <div class="cax-kv"><span class="k">{{ t('Above 200d','200日上方') }}</span><span class="v {{ 'cax-tt-up' if breadth.pct_above_200 >= 50 else 'cax-tt-dn' }}">{{ breadth.pct_above_200 }}%</span></div>
     <div class="cax-kv"><span class="k">{{ t('Adv / Dec','涨/跌') }}</span><span class="v"><span style="color:var(--up)">{{ breadth.adv }}</span> / <span style="color:var(--down)">{{ breadth.dec }}</span></span></div>
     <div class="cax-kv"><span class="k">{{ t('Net new highs','净新高') }}</span><span class="v {{ 'cax-tt-up' if breadth.net_nh > 0 else ('cax-tt-dn' if breadth.net_nh < 0 else '') }}">{{ '%+d'|format(breadth.net_nh) }}</span></div>
+    {% if breadth_chart %}
+    {# waterline at 50%: above = more than half the market participating #}
+    <div class="cax-lbl" style="margin-top:10px">{{ t('Above the 50-day line, 2 years','站上50日线占比 · 近2年') }}</div>
+    <div class="cax-ilx">{{ breadth_chart | safe }}</div>
+    {% endif %}
     <div class="cax-foot"><span class="cax-stword {{ 'ok' if breadth.state == 'broad' else ('warn' if breadth.state == 'mixed' else 'bad') }}">{% if breadth.state=='broad' %}{{ t('Broad — confirms the move.','广泛 — 确认走势。') }}{% elif breadth.state=='thin' %}{{ t('Thin — rallies are fragile.','稀薄 — 反弹脆弱。') }}{% else %}{{ t('Mixed — no clear edge.','参差 — 无明显方向。') }}{% endif %}</span></div>
     {% else %}
     <div style="font-size:12px;color:var(--muted)">{{ t('Breadth data pending…','广度数据待更新…') }}</div>
@@ -1362,13 +1444,22 @@
       {% for x in _avoid_chips %}<span class="cax-chip hot">{{ td(x.name) }}</span>{% endfor %}
     </div>
     {% endif %}
-    <div class="cax-lbl">{{ t('Sector heat','板块热度') }}</div>
+    <div class="cax-lbl">{{ t('Sector heat · green = leading · red = lagging','板块热度 · 绿=领涨 · 红=滞涨') }}</div>
     <div class="cax-heat">
+      {# Tone is 20-day momentum, not the `dir` stance flag. Keying off `dir` made the strip
+         dishonest under its own "Sector heat" label (dir is a turn/decline call, not heat)
+         AND inverted the intensity: dir=='up' mapped to .h3 (opacity .3, the palest cell)
+         while dir=='caution' mapped to .h2 (.55), so the strongest sectors looked weakest.
+         Same thresholds as hk.html.j2 so the two strips read identically. #}
       {% for s in (sectors[:12] if sectors else []) %}
-      {% set _tone = 'c' if s.dir == 'down' else ('h2' if s.dir == 'caution' else ('h3' if s.dir == 'up' else 'n')) %}
-      <i class="{{ _tone }}" data-tip-en="{{ s.name }}" data-tip-zh="{{ s.name }}"></i>
+      {% set _m = s.mom20 %}
+      {% set _tone = 'n' if _m is none else ('c' if _m < -1 else ('c2' if _m < 0 else ('h3' if _m < 1 else ('h2' if _m < 3 else 'h')))) %}
+      <i class="{{ _tone }}"
+         data-tip-en="{{ s.name }}{{ ': %+.1f%% over 20 days'|format(_m) if _m is not none else ': no 20-day reading' }}"
+         data-tip-zh="{{ tr(s.name) }}{{ '：20日 %+.1f%%'|format(_m) if _m is not none else '：暂无20日数据' }}"></i>
       {% endfor %}
     </div>
+    <div class="cax-heat-legend"><span class="heat-up">{{ t('▲ Heating','▲ 升温') }}</span><span class="heat-dn">{{ t('Cooling ▼','降温 ▼') }}</span></div>
     {# Stance: count by direction for a "so what" answer (Law 1) #}
     {% if sectors %}
     {% set _ns_up = (sectors | selectattr('dir', 'equalto', 'up') | list | length) %}
@@ -1386,9 +1477,28 @@
     <div class="cax-ctitle">{{ t('Commodities & FX','大宗商品与汇率') }}</div>
     <div class="cax-kv"><span class="k">{{ t('Overlay state','叠加状态') }}</span><span class="v cax-stword {{ 'ok' if ov.state == 'Risk-on' else ('bad' if ov.state == 'Risk-off' else 'warn') }}">{{ td(ov.state or '—') }}</span></div>
     {% if ov.terms_of_trade %}<div class="cax-kv"><span class="k">{{ t('Terms of trade','贸易条件') }}</span><span class="v cax-stword {{ 'ok' if ov.terms_of_trade == 'improving' else ('bad' if ov.terms_of_trade == 'deteriorating' else 'warn') }}">{{ td(ov.terms_of_trade) }}</span></div>{% endif %}
+    {# Glance tier gets the READ, not the z-score. A bare "+1.42σ" is decoration unless the
+       reader knows what a sigma is and which direction helps Canada; the σ value keeps its
+       precision on the hover receipt (and in the Tier-3 dialog, which still prints it). #}
     {% for f in (ov.factors or [])[:4] %}
-    <div class="cax-kv"><span class="k">{{ td(f.label) }}</span><span class="v cax-stword {{ 'ok' if f.risk == 'on' else ('bad' if f.risk == 'off' else 'warn') }}">{{ '%+.2f'|format(f.z) }}σ</span></div>
+    {% set _fz = f.z %}
+    {% set _fstr = ('well above' if (_fz is not none and _fz >= 1) else ('above' if (_fz is not none and _fz >= 0.25) else ('well below' if (_fz is not none and _fz <= -1) else ('below' if (_fz is not none and _fz <= -0.25) else 'about')))) %}
+    {% set _fstr_zh = ('明显高于' if (_fz is not none and _fz >= 1) else ('高于' if (_fz is not none and _fz >= 0.25) else ('明显低于' if (_fz is not none and _fz <= -1) else ('低于' if (_fz is not none and _fz <= -0.25) else '接近')))) %}
+    {# NEVER td()/t() inside an attribute: those emit <span class="l-en">…</span><span
+       class="l-zh">…</span>, whose inner quotes terminate the attribute and dump the rest
+       of the tag on screen as text. Attributes take raw strings — f.label for EN,
+       tr(f.label) for the ZH twin. (Same rule the title= CI guard enforces.) #}
+    <div class="cax-kv"
+         data-tip-en="{{ f.label }}: {{ '%+.2f'|format(_fz) if _fz is not none else 'n/a' }} standard deviations from its 1-year average{{ ' — supports Canadian assets' if f.risk == 'on' else (' — a headwind for Canadian assets' if f.risk == 'off' else '') }}"
+         data-tip-zh="{{ tr(f.label) }}：较1年均值 {{ '%+.2f'|format(_fz) if _fz is not none else '无' }} 个标准差{{ '（利多加拿大资产）' if f.risk == 'on' else ('（利空加拿大资产）' if f.risk == 'off' else '') }}">
+      <span class="k">{{ td(f.label) }}</span>
+      <span class="v cax-stword {{ 'ok' if f.risk == 'on' else ('bad' if f.risk == 'off' else 'warn') }}">{{ t(_fstr ~ ' normal', '' ~ _fstr_zh ~ '常态') }}</span>
+    </div>
     {% endfor %}
+    {% if cmd_charts and cmd_charts.wti %}
+    <div class="cax-lbl" style="margin-top:10px">{{ t('WTI crude, 2 years','WTI 原油 · 近2年') }}</div>
+    <div class="cax-ilx">{{ cmd_charts.wti | safe }}</div>
+    {% endif %}
   </div>
 
   {# Rates & BoC #}
@@ -1397,13 +1507,30 @@
     {% if cp.boc_rate is not none %}
     <div class="cax-kv"><span class="k">{{ t('BoC rate','加央行利率') }}</span><span class="v"><b>{{ '%.2f'|format(cp.boc_rate) }}%</b></span></div>
     {% endif %}
+    {# "GoC 2s10s" / "GoC−UST 10y" are desk shorthand with no units — unreadable cold.
+       Glance tier names the thing in plain words and says which way it leans; the exact
+       spread keeps its decimals on the hover receipt. #}
     {% if cp.goc_curve_2s10s is not none %}
-    <div class="cax-kv"><span class="k">{{ t('GoC 2s10s','加债 2s10s') }}</span><span class="v cax-stword {{ 'ok' if cp.goc_curve_2s10s > 0 else 'warn' }}">{{ '%+.2f'|format(cp.goc_curve_2s10s) }}</span></div>
+    <div class="cax-kv"
+         data-tip-en="Canada 10-year yield minus the 2-year: {{ '%+.2f'|format(cp.goc_curve_2s10s) }} percentage points. Positive is the normal shape; negative (inverted) has often led slowdowns."
+         data-tip-zh="加拿大10年期减2年期国债收益率：{{ '%+.2f'|format(cp.goc_curve_2s10s) }} 个百分点。正值为常态；负值（倒挂）常领先经济放缓。">
+      <span class="k">{{ t('Long vs short bonds','长债 vs 短债') }}</span>
+      <span class="v cax-stword {{ 'ok' if cp.goc_curve_2s10s > 0 else 'warn' }}">{{ t('normal shape','形态正常') if cp.goc_curve_2s10s > 0 else t('inverted — caution','倒挂 — 谨慎') }}</span>
+    </div>
     {% endif %}
     {% if cp.goc_minus_ust_10y is not none %}
-    <div class="cax-kv"><span class="k">{{ t('GoC−UST 10y','加债−美债 10y') }}</span><span class="v">{{ '%+.2f'|format(cp.goc_minus_ust_10y) }}</span></div>
+    <div class="cax-kv"
+         data-tip-en="Canada's 10-year government yield minus the US 10-year: {{ '%+.2f'|format(cp.goc_minus_ust_10y) }} percentage points. Canada paying less than the US tends to weaken the Canadian dollar."
+         data-tip-zh="加拿大10年期国债收益率减美国10年期：{{ '%+.2f'|format(cp.goc_minus_ust_10y) }} 个百分点。加拿大利率低于美国通常令加元偏弱。">
+      <span class="k">{{ t('Canada vs US 10-year','加债 vs 美债 10年') }}</span>
+      <span class="v cax-stword {{ 'warn' if cp.goc_minus_ust_10y < 0 else 'ok' }}">{{ t('Canada pays less','加拿大更低') if cp.goc_minus_ust_10y < 0 else t('Canada pays more','加拿大更高') }}</span>
+    </div>
     {% endif %}
     <div class="cax-kv"><span class="k">{{ t('BoC stance','央行立场') }}</span><span class="v">{{ td(latest.liquidity_overlay) }}</span></div>
+    {% if spread_chart %}
+    <div class="cax-lbl" style="margin-top:10px">{{ t('Canada vs US 10-year, 5 years','加债 vs 美债 10年 · 近5年') }}</div>
+    <div class="cax-ilx">{{ spread_chart | safe }}</div>
+    {% endif %}
     {# Stance: derive from BoC stance (Law 1 — every card answers "so what") #}
     {% set _liq = (latest.liquidity_overlay or '') | lower %}
     <div class="cax-foot">{% if 'easing' in _liq or 'accommodative' in _liq %}<span class="cax-stword ok">{{ t('BoC easing — tailwind for TSX. Watch duration.','央行宽松 — TSX 顺风。关注久期。') }}</span>{% elif 'tighten' in _liq or 'restrictive' in _liq or 'hawkish' in _liq %}<span class="cax-stword bad">{{ t('BoC tight — rate headwind. Favour shorter duration.','央行收紧 — 利率逆风。偏好短久期。') }}</span>{% elif 'neutral' in _liq or 'hold' in _liq or 'pause' in _liq %}<span class="cax-stword warn">{{ t('BoC on hold — watch data for the next move.','央行暂停 — 观察数据等待下一步。') }}</span>{% else %}<span class="cax-stword warn">{{ t('Watch — no clear BoC signal.','观察 — 央行信号不明。') }}</span>{% endif %}</div>
@@ -1416,6 +1543,7 @@
     <div class="cax-kv"><span class="k">{{ t('Real price index','实际房价指数') }}</span><span class="v"><b>{{ housing.level }}</b></span></div>
     {% if housing.yoy is not none %}<div class="cax-kv"><span class="k">{{ t('~1y change','约1年变化') }}</span><span class="v cax-stword {{ 'ok' if housing.yoy >= 0 else 'bad' }}">{{ '%+.1f'|format(housing.yoy) }}%</span></div>{% endif %}
     <div class="cax-kv"><span class="k">{{ t('Off peak','距峰值') }}</span><span class="v cax-stword {{ 'bad' if housing.off_peak < -10 else 'warn' }}">{{ '%.1f'|format(housing.off_peak) }}%</span></div>
+    {% if house_chart %}<div class="cax-ilx">{{ house_chart | safe }}</div>{% endif %}
     {# Stance from off_peak — Law 1 every card answers "so what" #}
     <div class="cax-foot">{% if housing.off_peak < -20 %}<span class="cax-stword bad">{{ t('Prices well below peak — mortgage stress risk. Protect.','房价远低于峰值 — 按揭风险。保守为主。') }}</span>{% elif housing.off_peak < -10 %}<span class="cax-stword warn">{{ t('Prices off peak — watch household debt drag.','房价低于峰值 — 关注家庭债务压力。') }}</span>{% else %}<span class="cax-stword warn">{{ t('Near peak — fragility remains high.','接近峰值 — 脆弱性依然较高。') }}</span>{% endif %}</div>
     {% else %}
@@ -1423,6 +1551,64 @@
     {% endif %}
   </div>
 </div>
+
+<!-- =============== ROW 4: Standouts inside each sector =============== -->
+{# The `alpha` cross-section (218 TSX names, sector-neutral residual momentum) was computed
+   nightly, written to site/factordata/canada_alpha.json, and never rendered on this page —
+   the single largest block of dark data Canada had. Only names are shown: the raw alpha
+   score is a unitless residual and means nothing at a glance (Law 3), so it lives on the
+   hover receipt. alpha.note calls this "a modest, regime-decayed edge — context, not a buy
+   list", and the footer says exactly that in plain words. #}
+{% if alpha and alpha.by_sector %}
+{% set _sec_rows = [] %}
+{% for _sname, _sv in (alpha.by_sector | dictsort) %}
+  {% if (_sv.leaders or _sv.laggards) and (_sv.n or 0) >= 4 %}
+    {% set _ = _sec_rows.append((_sname, _sv)) %}
+  {% endif %}
+{% endfor %}
+{% if _sec_rows %}
+<div class="cax-rack1">
+  <div class="cax-card">
+    <div class="cax-ctitle">{{ t('Standouts inside each sector','各板块内的领先与落后') }}</div>
+    <div class="cax-sub" style="margin:-2px 0 12px">{{ t('Names beating — and trailing — their own sector, with the market\'s move stripped out. Use it to pick within a sector you already like.','剔除大盘影响后，各板块内表现领先与落后的个股。用于在已看好的板块内选股。') }}</div>
+    <div class="cax-sogrid">
+      {% for _sname, _sv in _sec_rows[:8] %}
+      <div class="cax-socell">
+        <div class="cax-solbl">{{ td(_sname) }} <span class="cax-son">{{ _sv.n }}{{ t(' names',' 只') }}</span></div>
+        {% for _r in (_sv.leaders or [])[:2] %}
+        <div class="cax-sorow"
+             data-tip-en="{{ _r.name or _r.ticker }} — leads {{ _sname }}{{ ', rank %d of %d'|format(_r.sector_rank, _r.sector_n) if _r.sector_rank else '' }}. Sector-neutral residual momentum{{ ' %+.2f'|format(_r.alpha) if _r.alpha is not none else '' }} over a 12-month window, skipping the last month."
+             data-tip-zh="{{ _r.name or _r.ticker }} — {{ tr(_sname) }}板块领先{{ '，第 %d/%d 名'|format(_r.sector_rank, _r.sector_n) if _r.sector_rank else '' }}。剔除板块与大盘后的残差动量{{ ' %+.2f'|format(_r.alpha) if _r.alpha is not none else '' }}（12个月，跳过最近1个月）。">
+          <span class="cax-soarrow up">▲</span>
+          {# individual names live on the per-stock page's hash route; sectors/*.html is
+             the sector-ETF namespace only (52 ETF pages) and would 404 for a stock. #}
+          <a class="cax-sotkr" href="canada_stock.html#{{ _r.ticker }}">{{ _r.ticker | replace('.TO','') }}</a>
+          <span class="cax-soname">{{ _r.name or '' }}</span>
+        </div>
+        {% endfor %}
+        {% for _r in (_sv.laggards or [])[:1] %}
+        <div class="cax-sorow"
+             data-tip-en="{{ _r.name or _r.ticker }} — trails {{ _sname }}{{ ', rank %d of %d'|format(_r.sector_rank, _r.sector_n) if _r.sector_rank else '' }}. Sector-neutral residual momentum{{ ' %+.2f'|format(_r.alpha) if _r.alpha is not none else '' }} over a 12-month window, skipping the last month."
+             data-tip-zh="{{ _r.name or _r.ticker }} — {{ tr(_sname) }}板块落后{{ '，第 %d/%d 名'|format(_r.sector_rank, _r.sector_n) if _r.sector_rank else '' }}。剔除板块与大盘后的残差动量{{ ' %+.2f'|format(_r.alpha) if _r.alpha is not none else '' }}（12个月，跳过最近1个月）。">
+          <span class="cax-soarrow dn">▼</span>
+          {# individual names live on the per-stock page's hash route; sectors/*.html is
+             the sector-ETF namespace only (52 ETF pages) and would 404 for a stock. #}
+          <a class="cax-sotkr" href="canada_stock.html#{{ _r.ticker }}">{{ _r.ticker | replace('.TO','') }}</a>
+          <span class="cax-soname">{{ _r.name or '' }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+    <div class="cax-foot">
+      <span class="cax-stword warn">{{ t('Context for where to look — not a buy list.','仅供参考方向 — 非买入清单。') }}</span>
+      {{ t('These compare a name only against its own sector, so a leader in a falling sector can still fall.','这些排名仅在板块内部比较：弱势板块中的领先股仍可能下跌。') }}
+    </div>
+    <div class="cax-receipt">{{ t('Sector-neutral residual momentum over 12 months, skipping the most recent month; %d names as of %s. Display-only.'|format(alpha.n or 0, alpha.as_of or '—'), '剔除板块与大盘后的12个月残差动量（跳过最近1个月）；截至 %s，共 %d 只。仅供展示。'|format(alpha.as_of or '—', alpha.n or 0)) }}</div>
+  </div>
+</div>
+{% endif %}
+{% endif %}
 
 <!-- =============== DIALOGS =============== -->
 
@@ -1562,7 +1748,11 @@
   <div class="cax-dlg-backdrop" onclick="caxCloseDlg()"></div>
   <div class="cax-dlg-panel">
     <div class="cax-dlg-head">
-      <span class="cax-dlg-title">{{ t('Market Participation','市场参与度') }}</span>
+      {# Titled "Participation — the numbers", not "Market Participation": cax-dlg-sentiment
+         further down already owns that exact title, and two different dialogs sharing one
+         name gives the reader no way to tell which they opened. This one is the raw
+         breadth table; that one is the illustrated participation field. #}
+      <span class="cax-dlg-title">{{ t('Participation — the numbers','市场参与度 — 数据明细') }}</span>
       <button class="cax-dlg-close" onclick="caxCloseDlg()">✕</button>
     </div>
     <div class="cax-dlg-body">
@@ -1632,6 +1822,28 @@
       </div>
       {% endfor %}
       {% if ov.terms_of_trade %}<div class="cax-kv" style="margin-top:12px"><span class="k">{{ t('Terms of trade','贸易条件') }}</span><span class="v cax-stword {{ 'ok' if ov.terms_of_trade == 'improving' else ('bad' if ov.terms_of_trade == 'deteriorating' else 'warn') }}">{{ td(ov.terms_of_trade) }}</span></div>{% endif %}
+      {# The three prices that actually set the TSX's earnings, plus the loonie. Each is
+         {% if %}-gated so a cold yahoo store drops the chart, not the dialog. #}
+      {% if cmd_charts and (cmd_charts.wti or cmd_charts.gold or cmd_charts.copper) or usdcad_chart %}
+      <div class="cax-sep"></div>
+      <div class="cax-eyebrow">{{ t('What sets the TSX — 2-year shapes','驱动 TSX 的价格 · 近2年') }}</div>
+      {% if cmd_charts.wti %}
+      <div class="cax-lbl">{{ t('WTI crude oil','WTI 原油') }} — {{ t('energy is the biggest TSX sector weight','能源是 TSX 权重最大的板块') }}</div>
+      <div class="cax-ilx">{{ cmd_charts.wti | safe }}</div>
+      {% endif %}
+      {% if cmd_charts.gold %}
+      <div class="cax-lbl">{{ t('Gold','黄金') }} — {{ t('drives the miners','驱动金矿股') }}</div>
+      <div class="cax-ilx">{{ cmd_charts.gold | safe }}</div>
+      {% endif %}
+      {% if cmd_charts.copper %}
+      <div class="cax-lbl">{{ t('Copper','铜') }} — {{ t('reads global industrial demand','反映全球工业需求') }}</div>
+      <div class="cax-ilx">{{ cmd_charts.copper | safe }}</div>
+      {% endif %}
+      {% if usdcad_chart %}
+      <div class="cax-lbl">{{ t('US dollar per Canadian dollar','美元/加元') }} — {{ t('a rising line is a weaker loonie','曲线上行代表加元走弱') }}</div>
+      <div class="cax-ilx">{{ usdcad_chart | safe }}</div>
+      {% endif %}
+      {% endif %}
       {# pair ratios: structural cross-market levels (GAP 15) #}
       {% if pair %}
       <div class="cax-sep"></div>
@@ -1727,7 +1939,7 @@
       <div class="cax-eyebrow">{{ t('Index health','指数健康') }}</div>
       <div class="cax-ihgrid">
         <div class="cax-ihcard">
-          <div class="t">^GSPTSE · {{ t('TSX Composite','TSX 综合指数') }}</div>
+          <div class="t">{{ t('S&P/TSX Composite','标普/TSX 综合指数') }}</div>
           <div class="p">{{ '{:,.0f}'.format(benchmark.price) }} <span class="{{ 'cax-tt-up' if benchmark.chg >= 0 else 'cax-tt-dn' }}" style="font-size:13px">{{ '%+.2f'|format(benchmark.chg) }}%</span></div>
           <span class="lad {{ 'up' if benchmark.dc_day else 'flat' }}">{{ td(benchmark.label) if benchmark.label else td(benchmark.state) }}</span>
         </div>
@@ -2354,6 +2566,19 @@
        the panel entrance has settled, so every open re-animates. */
     if(window.ilxReveal){setTimeout(function(){ilxReveal(el);},340);}
   }
+  /* IN-PAGE ilx charts (commodities / rates spread / breadth / housing cards) are new on
+     this page — every other dashboard puts its ilx charts inside dialogs, where the open
+     handler above reveals them. In-page figures otherwise depend solely on illus.js's
+     IntersectionObserver, so anything already above the fold at load, or any browser where
+     the observer is slow to fire, would sit at its undrawn start state (stroke-dashoffset ==
+     dasharray, i.e. an empty card). ilxReveal() is illus.js's documented reliability
+     fallback: it skips figures the observer already handled (no mid-draw flicker) and skips
+     display-hidden dialog charts, so this only backfills the in-page ones. */
+  (function(){
+    var go=function(){ if(window.ilxReveal){ ilxReveal(document); } };
+    if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',function(){setTimeout(go,60);});}
+    else{setTimeout(go,60);}
+  })();
   function caxCloseDlg(){
     document.querySelectorAll('.cax-dlg.open').forEach(function(el){
       var panel=el.querySelector('.cax-dlg-panel');

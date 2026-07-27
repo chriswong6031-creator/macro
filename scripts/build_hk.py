@@ -328,6 +328,54 @@ def _ilx(series: dict, accent: str, *, kind: str = "line", height: int = 190,
                        value_fmt=value_fmt, aria_en=aria_en or f"{kind} chart")
 
 
+def _store_series(group: str, name: str, *, days: int, col: str | None = None,
+                  ndigits: int = 2) -> dict | None:
+    """Trim a stored series to the last `days` -> ilx {dates, vals}, or None.
+
+    Companion to _ilx() for series that live in the parquet store rather than in an
+    internals view-model. None-safe: a missing store just drops the caller's chart."""
+    df = store.read(group, name)
+    if df is None or df.empty:
+        return None
+    c = col or ("close" if "close" in df.columns else df.columns[0])
+    if c not in df.columns:
+        return None
+    s = df[c].dropna()
+    s = s[s.index >= s.index.max() - pd.Timedelta(days=days)]
+    if s.empty:
+        return None
+    return {"dates": [d.strftime("%Y-%m-%d") for d in s.index],
+            "vals": [round(float(v), ndigits) for v in s]}
+
+
+def _hk_flow_charts() -> dict:
+    """In-page ilx shapes for the HK cards. Until now every HK chart lived inside a
+    dialog, so the visible page carried numbers with no history behind them.
+
+    Deliberately NEW series (index level / volatility / breadth) rather than reusing the
+    dialogs' existing chart_html: lib.illus derives its SVG element ids from a hash of
+    (kind, points, accent, baseline, reference) and NOT height, so re-emitting the same
+    fragment in a card would duplicate clipPath ids within one document."""
+    out: dict = {}
+    hsi = _store_series("hk", "^HSI", days=730, ndigits=0)
+    if hsi:
+        out["hsi"] = _ilx(hsi, "var(--info)", height=104, value_fmt="{:,.0f}",
+                          aria_en="Hang Seng Index, two years")
+    vhsi = _store_series("hk", "^HSIL", days=730, ndigits=2)
+    if vhsi:
+        # VHSI is HK's fear gauge; ~20 is its long-run middle, so anchor there — above the
+        # line is a jumpier tape than normal, below it a calmer one.
+        out["vhsi"] = _ilx(vhsi, "var(--warn)", kind="baseline", baseline=20, height=104,
+                           value_fmt="{:,.1f}",
+                           aria_en="Hang Seng volatility index against its long-run middle")
+    br = _store_series("hk_breadth", "breadth", days=730, col="pct_above_50", ndigits=1)
+    if br:
+        out["breadth"] = _ilx(br, "var(--up)", kind="baseline", baseline=50, height=104,
+                              value_fmt="{:.0f}", unit_en="%", unit_zh="%",
+                              aria_en="Share of HK names above their 50-day average")
+    return out
+
+
 # ---- News & Company Filings view-model enrichment -----------------------------
 # The template renders raw exchange rows (ALL-CAPS titles) and, previously, a broken
 # `ent.name` field. These helpers do the plain-word translation on the build side so
@@ -888,6 +936,7 @@ def main() -> int:
             "ah_official": _hk_ah_official_vm(),        # official ~190-pair A/H index
             "sb_channels": _hk_southbound_channels_vm(),  # per-channel southbound split
             "index_health": _hk_index_health(),         # macro-page index-health strip (mx5 hero)
+            "flow_charts": _hk_flow_charts(),           # in-page ilx shapes for the cards
             "ms_history": None,                          # populated below after market_state runs
             "top_setups": [],                            # populated below from hk_standouts
         }
