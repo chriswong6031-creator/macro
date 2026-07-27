@@ -992,6 +992,12 @@ jobs:
         run: python scripts/check_dag_conformance.py --verbose
       - name: DAG conformance selftest + live conformance tests
         run: python -m pytest tests/test_dag_conformance.py -q
+      # Same family, one layer down: dag.yml pins WHAT the nightly lane runs,
+      # this pins that the lane's timeout still lets it finish. tech_lab_offrender
+      # was cancelled at its 40m cap every night 2026-07-19→07-26 — the declared
+      # step sequence was perfectly conformant, and the publish tail never ran.
+      - name: nightly lane budgets (tech_lab_offrender publish tail)
+        run: python -m pytest tests/test_tech_lab_offrender_budget.py -q
 
   push-retry-policy:
     if: ${{ false }}

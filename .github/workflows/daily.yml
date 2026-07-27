@@ -2840,18 +2840,19 @@ jobs:
           echo "::warning::could not push oracle Time Machine feed after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal)"
 
   # ── TLT-R2: Technical Lab data refresh (off-render) ─────────────────────
-  # build_tech_lab_data.py is heavy (~219 tickers × 64 signals, a few minutes)
-  # and writes ONLY site/factordata/tech_screener.json + tech_lab.json (+ the
+  # build_tech_lab_data.py is heavy (231 tickers × 195 signals, ~57 min) and
+  # writes ONLY site/factordata/tech_screener.json + tech_lab.json (+ the
   # optional site/factordata/tech_events/ subtree when that sibling PR lands).
-  # build_tech_confluence.py (multi-signal combo miner, ~8 min measured on the
-  # full universe) runs after it → site/factordata/tech_confluence.json.
+  # build_tech_confluence.py (multi-signal combo miner, 654.4s ≈ 11 min measured
+  # end-to-end on the full universe — the "~8 min" this comment used to claim is
+  # stale) runs after it → site/factordata/tech_confluence.json.
   # Kept off the main render path so it never adds to the ~67min render budget.
   # Needs: engine (data/stocks/ parquets, site/factordata/us_standouts.json).
   tech_lab_offrender:
     needs: engine
     if: always()
     runs-on: [self-hosted, macstudio]
-    timeout-minutes: 40
+    timeout-minutes: 120    # was 40 — EVERY nightly 2026-07-19→07-26 was CANCELLED at exactly the 40m cap, mid-way through the first heavy step, so steps 2-5 (incl. the confluence-screener page render AND the commit) were skipped and NOTHING published for 8 days. Cause: #3013 (merged 2026-07-19T01:40, ~4.5h before #3061 added the screener render here) expanded the single-pass build from 64 signals to 195 on a 231-ticker universe — a ~3x workload increase with no re-budget. Measured from the 07-26 job log: 50 tickers/12m28s then 50/11m50s ≈ 14.6s/ticker → 231 tickers ≈ 56m for build_tech_lab_data alone. Whole-job worst case: checkout up to ~15m (the 14k-file tree, see the engine job's note) + 57m lab data + 11m combo miner + ~1m screener page + ~2m m2_profiles + up to ~10m commit/push-retry band ≈ 96m. 120 clears that with headroom. The combo-miner figure is measured end-to-end, not inherited and not extrapolated: this job's own comment claimed "~8 min", and a full 2026-07-27 run on the runner host logged `panel: 323.4s` + `mine_long: 187.7s` + `mine_short: 140.9s` + `artifact: 1.7s` = **654.4s ≈ 11m**. Note mine_short is ~25% CHEAPER than mine_long (58 vs 59 legs but far fewer surviving combos) — an earlier symmetry estimate put the total at ~13m, so even the arithmetic shortcut was wrong. A stale step-cost label is precisely what produced this outage; re-measure, never inherit, and never extrapolate one half from the other. NOTE the per-step `set +e … exit 0` wrappers make a *script* error non-fatal but do NOTHING for a job timeout: the cap hard-cancels the running step, skips every later step, and the `::warning` alarm the step would have printed never fires — the job just reports "cancelled", which reads like this repo's known-benign cancellations. That is why an 8-day publish outage went unnoticed. If the signal count or universe grows again, re-measure and re-budget HERE.
     steps:
       - uses: actions/checkout@v4
         with:
@@ -2864,7 +2865,7 @@ jobs:
           echo "$VENV/bin" >> "$GITHUB_PATH"
           "$VENV/bin/python" -m pip install --quiet --upgrade pip
       - run: pip install -r requirements.txt
-      - name: rebuild Technical Lab screener + lab data (64-signal, ~219-ticker)
+      - name: rebuild Technical Lab screener + lab data (195-signal, ~231-ticker, ~57 min)
         run: |
           set +e
           python -m scripts.build_tech_lab_data; rc=$?
@@ -2896,6 +2897,15 @@ jobs:
             echo "::warning title=m2_profiles::build_m2_profiles rc=$rc (M2 artifact may be stale)"
           fi
           exit 0
+      # DELIBERATELY NOT `if: always()`, unlike the engine and ledger_heartbeat
+      # commit steps. Those salvage completed work when the job is cancelled;
+      # here that would be a downgrade. build_tech_lab_data writes its payloads
+      # with a bare `json.dump` into an open handle at the very END of the ~57min
+      # pass (scripts/build_tech_lab_data.py:735-820) — no temp-file-and-rename —
+      # so a cancel landing inside that narrow write window leaves a TRUNCATED
+      # tech_screener.json / tech_lab.json on disk, and an always() commit would
+      # publish it to the live site. Committing nothing beats committing corrupt
+      # JSON. Make the writes atomic first if you want always() here.
       - name: commit Technical Lab artifacts
         run: |
           . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
