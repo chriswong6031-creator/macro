@@ -121,7 +121,7 @@ CASES = [
         "options.html",
     ),
     # free_content renders many pages from content/seo/; the blog hub stands for
-    # the four write sites in that builder (article, blog, learn, tools, calc).
+    # the write sites in that builder (product, article, hubs, tools, calc).
     (
         "build_free_content",
         True,
@@ -215,6 +215,8 @@ def test_free_content_renders_every_family_with_shim(tmp_path):
     site = fixture / "site"
     pages = sorted(site.rglob("*.html"))
     assert len(pages) > 20, f"expected the full free estate, got {len(pages)} page(s)"
+    assert (site / "products" / "index.html").exists()
+    assert (site / "products" / "market-terminal.html").exists()
 
     missing = [str(p.relative_to(site)) for p in pages if DBASE_MARKER not in p.read_text(errors="ignore")]
     assert not missing, f"{len(missing)} free-estate page(s) written without the shim: {missing[:10]}"

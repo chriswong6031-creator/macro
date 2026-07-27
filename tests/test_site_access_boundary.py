@@ -75,6 +75,30 @@ def test_caddy_public_boundary_matches_policy_exactly():
     assert _caddy_public_exclusions() == expected
 
 
+def test_product_family_is_public_in_every_caddy_html_path():
+    """Success and fail-open/error matchers must agree on the public product tree."""
+    for matcher in (
+        "reg_html",
+        "reg_asset",
+        "gate_html",
+        "reg_html_err",
+        "reg_asset_err",
+        "gate_html_err",
+    ):
+        match = re.search(rf"@{matcher}\s*\{{(.*?)^\s*\}}", CADDY, flags=re.S | re.M)
+        assert match, f"Caddy matcher @{matcher} missing"
+        path_lines = re.findall(r"^\s*(?:not\s+)?path\s+([^\n]+)", match.group(1), flags=re.M)
+        matcher_paths = {
+            token
+            for path_line in path_lines
+            for token in shlex.split(path_line)
+        }
+        assert "/products/*" in matcher_paths, (
+            f"@{matcher} does not expose /products/*; anonymous product pages "
+            "would change behavior between normal and error paths"
+        )
+
+
 def test_public_policy_targets_exist():
     for path in POLICY["public"]["exact"]:
         if path == "/" or path.startswith(RUNTIME_ARTIFACT_PREFIXES):

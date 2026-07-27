@@ -37,26 +37,26 @@
   document.documentElement.setAttribute('data-lang',l);
   document.documentElement.lang=l==='zh'?'zh-CN':'en';}catch(e){}})();
 </script>
-<title>Mastermind — Your personal, institutional-grade market intelligence.</title>
+<title>MastermindX — Market Intelligence for Active Investors</title>
 <meta name="description" content="Macro regimes, graded stock signals, intraday options flow, deep research and an AI analyst — rebuilt nightly by engines that check each other's work. Free to read.">
 <link rel="canonical" href="https://www.mastermind-x.com/">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Mastermind">
-<meta property="og:title" content="Mastermind — Your personal, institutional-grade market intelligence.">
+<meta property="og:site_name" content="MastermindX">
+<meta property="og:title" content="MastermindX — Market Intelligence for Active Investors">
 <meta property="og:description" content="Macro regimes, graded stock signals, intraday options flow, deep research and an AI analyst — rebuilt nightly by engines that check each other's work. Free to read.">
 <meta property="og:url" content="https://www.mastermind-x.com/">
 <meta property="og:image" content="https://www.mastermind-x.com/assets/landing/og_card.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Mastermind — Every market. Every signal. One desk. Live scorecards connected to one AI core.">
+<meta property="og:image:alt" content="MastermindX market intelligence platform with connected dashboards, research and AI analysis.">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Mastermind — Your personal, institutional-grade market intelligence.">
+<meta name="twitter:title" content="MastermindX — Market Intelligence for Active Investors">
 <meta name="twitter:description" content="Macro regimes, graded stock signals, intraday options flow, deep research and an AI analyst — rebuilt nightly by engines that check each other's work. Free to read.">
 <meta name="twitter:image" content="https://www.mastermind-x.com/assets/landing/og_card.png">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","name":"Mastermind","url":"https://www.mastermind-x.com/","logo":"https://www.mastermind-x.com/apple-touch-icon.png"},{"@type":"WebSite","name":"Mastermind","url":"https://www.mastermind-x.com/","inLanguage":["en","zh"]}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","name":"MastermindX","alternateName":"Mastermind","url":"https://www.mastermind-x.com/","logo":"https://www.mastermind-x.com/apple-touch-icon.png","sameAs":["https://x.com/mastermindx001"]},{"@type":"WebSite","name":"MastermindX","alternateName":"Mastermind","url":"https://www.mastermind-x.com/","inLanguage":["en","zh"]}]}</script>
 <!-- No font is fetched from fonts.googleapis.com: it is blocked in mainland China,
      so the CDN <link> that used to sit here delivered NOTHING to Chinese visitors
      and every headline fell back to system sans, silently. The display face is now
@@ -67,16 +67,65 @@
      the body face and the display fallback, so there is nothing left to preload —
      Inter's own weights are already discovered by that stylesheet. -->
 <link rel="stylesheet" href="onboard.css?v=5c897a72">
-<link rel="stylesheet" href="landing.css?v=b08ab410">
+<link rel="stylesheet" href="landing.css?v=138738ca">
 </head>
 <body>
 
 <nav class="nav" aria-label="Main">
   <div class="nav-in">
-    <a class="brand" href="index.html"><span class="m">M</span> MASTERMIND</a>
-    <div class="nav-links">
-      <a href="https://app.mastermind-x.com">Terminal</a><a href="#ai" data-zh="Mastermind AI">Mastermind AI</a><a href="#pricing" data-zh="定价">Pricing</a>
-    </div>
+    <a class="brand" href="index.html" aria-label="MastermindX home"><span class="m">M</span> MASTERMINDX</a>
+    <button class="nav-toggle" id="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-navigation" aria-label="Open navigation">
+      <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+    </button>
+    <ul class="nav-links" id="primary-navigation">
+      <li class="nav-group">
+        <button class="nav-trigger" id="nav-platform-trigger" type="button" aria-expanded="false" aria-controls="nav-platform-panel">
+          <span data-zh="平台">Platform</span><svg viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5 6 6.5l5-5"/></svg>
+        </button>
+        <div class="nav-panel nav-panel-platform" id="nav-platform-panel" aria-labelledby="nav-platform-trigger" hidden>
+          <div class="nav-panel-head">
+            <div><span class="nav-panel-k" data-zh="互联研究工作台">CONNECTED RESEARCH DESK</span><strong data-zh="从市场状态一路深入到底层证据">Move from market state to the underlying evidence</strong></div>
+            <a href="products/index.html" data-zh="平台概览 →">Platform overview →</a>
+          </div>
+          <div class="nav-card-grid">
+            <a class="nav-card" href="products/market-terminal.html"><span class="nav-card-mark">01</span><span><strong data-zh="市场终端">Market Terminal</strong><small data-zh="浏览器图表、观察列表与股票研究背景。">Browser charting, watchlists and stock research context.</small></span></a>
+            <a class="nav-card" href="products/mastermind-ai.html"><span class="nav-card-mark">02</span><span><strong>Mastermind AI</strong><small data-zh="结合当前页面与来源的市场研究助手。">A market research assistant grounded in the page and its sources.</small></span></a>
+            <a class="nav-card" href="products/market-dashboards.html"><span class="nav-card-mark">03</span><span><strong data-zh="市场仪表盘">Market Dashboards</strong><small data-zh="宏观、周期、行业轮动与跨资产背景。">Macro, cycle, sector rotation and cross-asset context.</small></span></a>
+          </div>
+        </div>
+      </li>
+      <li class="nav-group">
+        <button class="nav-trigger" id="nav-research-trigger" type="button" aria-expanded="false" aria-controls="nav-research-panel">
+          <span data-zh="研究">Research</span><svg viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5 6 6.5l5-5"/></svg>
+        </button>
+        <div class="nav-panel nav-panel-research" id="nav-research-panel" aria-labelledby="nav-research-trigger" hidden>
+          <div class="nav-panel-head">
+            <div><span class="nav-panel-k" data-zh="公开研究界面">PUBLIC RESEARCH SURFACES</span><strong data-zh="从报告节选到逐股档案">From report excerpts to ticker-level dossiers</strong></div>
+          </div>
+          <div class="nav-card-grid two">
+            <a class="nav-card" href="research/index.html"><span class="nav-card-mark">R</span><span><strong data-zh="机构研报">Institutional Research</strong><small data-zh="已索引的报告页面与可搜索节选；完整报告可能需要账户权限。">Indexed report pages and searchable excerpts; complete reports may require access.</small></span></a>
+            <a class="nav-card" href="stocks/index.html"><span class="nav-card-mark">S</span><span><strong data-zh="股票档案">Stock Dossiers</strong><small data-zh="按股票整理的技术面、基本面、持仓与期权背景。">Ticker pages for technical, fundamental, ownership and options context.</small></span></a>
+          </div>
+        </div>
+      </li>
+      <li class="nav-group">
+        <button class="nav-trigger" id="nav-resources-trigger" type="button" aria-expanded="false" aria-controls="nav-resources-panel">
+          <span data-zh="资源">Resources</span><svg viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5 6 6.5l5-5"/></svg>
+        </button>
+        <div class="nav-panel nav-panel-resources" id="nav-resources-panel" aria-labelledby="nav-resources-trigger" hidden>
+          <div class="nav-panel-head">
+            <div><span class="nav-panel-k" data-zh="无需账户即可使用">USEFUL BEFORE SIGNUP</span><strong data-zh="先解决一个真实问题">Start by solving one real problem</strong></div>
+          </div>
+          <div class="nav-card-grid two">
+            <a class="nav-card" href="tools/index.html"><span class="nav-card-mark">T</span><span><strong data-zh="免费工具">Free Tools</strong><small data-zh="仓位、风险、回报与投资组合计算器。">Calculators for sizing, risk, returns and portfolios.</small></span></a>
+            <a class="nav-card" href="learn/index.html"><span class="nav-card-mark">L</span><span><strong data-zh="学习中心">Learning Center</strong><small data-zh="技术分析、风险、期权与申报文件课程。">Lessons on technicals, risk, options and filings.</small></span></a>
+            <a class="nav-card" href="blog/index.html"><span class="nav-card-mark">B</span><span><strong data-zh="博客">Blog</strong><small data-zh="关于交易数学与市场机制的朴素文章。">Plain-English articles on trading math and market mechanics.</small></span></a>
+            <a class="nav-card" href="support.html"><span class="nav-card-mark">?</span><span><strong data-zh="支持">Support</strong><small data-zh="账户、产品与访问问题的帮助入口。">Help with account, product and access questions.</small></span></a>
+          </div>
+        </div>
+      </li>
+      <li class="nav-direct"><a href="plans.html" data-zh="定价">Pricing</a></li>
+    </ul>
     <div class="nav-right">
       <a id="nav-login" href="https://app.mastermind-x.com/terminal?signin=1" style="color:var(--muted)" data-zh="登录">Log in</a>
       <a id="nav-cta" class="btn primary sm" href="https://app.mastermind-x.com/terminal?signup=1" data-zh="免费开始">Start free</a>
@@ -283,7 +332,7 @@
         </div>
         <div class="tapp">
           <div class="tt-top">
-            <div class="tt-logo"><span class="lm">M</span><span class="ln"><b>MASTERMIND</b><span>TERMINAL</span></span></div>
+            <div class="tt-logo"><span class="lm">M</span><span class="ln"><b>MASTERMINDX</b><span>TERMINAL</span></span></div>
             <div class="tt-sym"><span class="sic">n</span>NVDA <svg width="8" height="5" viewBox="0 0 8 5" fill="none" stroke="#5c6879" stroke-width="1.2"><path d="M1 1l3 3 3-3"/></svg></div>
             <div class="tt-cmp hx3"><svg width="11" height="10" viewBox="0 0 11 10" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M1 3h7M6 1l2 2-2 2M10 7H3M5 5L3 7l2 2"/></svg>Compare</div>
             <div class="tt-cell"><span class="l">Last price</span><span class="v mo" id="tb-last">211.07</span></div>
@@ -743,20 +792,26 @@
   <div class="f-in">
     <div class="f-grid">
       <div class="f-brand">
-        <div class="fb-row"><span class="fm">M</span><span class="fn">MASTERMIND</span></div>
+        <div class="fb-row"><span class="fm">M</span><span class="fn">MASTERMINDX</span></div>
         <p class="ft" data-zh="机构级市场情报。">Institutional-grade market intelligence.</p>
       </div>
       <div class="f-cols">
         <div class="f-col">
-          <p data-zh="产品">Product</p>
-          <a href="https://app.mastermind-x.com">Terminal</a>
-          <a href="start.html" data-zh="仪表盘">Dashboards</a>
-          <a href="#ai">Mastermind AI</a>
-          <a href="#pricing" data-zh="定价">Pricing</a>
+          <p data-zh="平台">Platform</p>
+          <a href="products/index.html" data-zh="平台概览">Platform overview</a>
+          <a href="products/market-terminal.html">Market Terminal</a>
+          <a href="products/mastermind-ai.html">Mastermind AI</a>
+          <a href="products/market-dashboards.html" data-zh="市场仪表盘">Market dashboards</a>
+          <a href="plans.html" data-zh="方案与定价">Plans &amp; pricing</a>
+        </div>
+        <div class="f-col">
+          <p data-zh="研究">Research</p>
+          <a href="research/index.html" data-zh="机构研报">Institutional research</a>
+          <a href="stocks/index.html" data-zh="股票档案">Stock dossiers</a>
+          <a href="about-research.html" data-zh="关于研究">About the research</a>
         </div>
         <div class="f-col">
           <p data-zh="资源">Resources</p>
-          <a href="methodology.html" data-zh="方法论">Methodology</a>
           <a href="tools/index.html" data-zh="工具">Tools</a>
           <a href="learn/index.html" data-zh="学习">Learn</a>
           <a href="blog/index.html" data-zh="博客">Blog</a>
@@ -771,7 +826,7 @@
       </div>
     </div>
     <div class="f-bot">
-      <span>© 2026 Mastermind · mastermind-x.com</span>
+      <span>© 2026 MastermindX · mastermind-x.com</span>
       <span class="f-legal"><a href="privacy.html" data-zh="隐私政策">Privacy</a> · <a href="terms.html" data-zh="服务条款">Terms</a> · <a href="disclaimer.html" data-zh="免责声明">Disclaimer</a></span>
     </div>
   </div>
@@ -807,13 +862,120 @@ const LANG = (() => {
   return { cur, apply, toggle(){ apply(cur() === 'zh' ? 'en' : 'zh'); }, onChange(fn){ subs.push(fn); } };
 })();
 
+/* ───── primary navigation: click disclosures + mobile accordion ───── */
+const MMX_NAV = (() => {
+  const nav = document.querySelector('.nav');
+  const list = document.getElementById('primary-navigation');
+  const mobile = document.getElementById('nav-toggle');
+  const triggers = [...document.querySelectorAll('.nav-trigger')];
+  const mq = matchMedia('(max-width: 900px)');
+  if (!nav || !list || !mobile) return { closeAll(){} };
+  const panelFor = trigger => document.getElementById(trigger.getAttribute('aria-controls'));
+  const openTrigger = () => triggers.find(trigger => trigger.getAttribute('aria-expanded') === 'true');
+  function syncMobileLabel(){
+    const isOpen = mobile.getAttribute('aria-expanded') === 'true';
+    mobile.setAttribute('aria-label', LANG.cur() === 'zh'
+      ? (isOpen ? '关闭导航' : '打开导航')
+      : (isOpen ? 'Close navigation' : 'Open navigation'));
+  }
+  function closePanels(focusTrigger){
+    const active = openTrigger();
+    triggers.forEach(trigger => {
+      const panel = panelFor(trigger);
+      trigger.setAttribute('aria-expanded','false');
+      if (panel) panel.hidden = true;
+    });
+    if (focusTrigger && active) active.focus();
+  }
+  function closeDrawer(focusToggle){
+    list.classList.remove('open');
+    nav.classList.remove('nav-open');
+    mobile.setAttribute('aria-expanded','false');
+    syncMobileLabel();
+    if (focusToggle) mobile.focus();
+  }
+  function closeAll(focusControl){
+    closePanels(Boolean(focusControl && openTrigger()));
+    closeDrawer(Boolean(focusControl && !openTrigger()));
+  }
+  function closeSettings(){
+    const pop = document.getElementById('gear-pop');
+    const btn = document.getElementById('gear-btn');
+    if (pop) pop.classList.remove('open');
+    if (btn) btn.setAttribute('aria-expanded','false');
+  }
+  function openPanel(trigger, focusLast){
+    closePanels(false);
+    closeSettings();
+    const panel = panelFor(trigger);
+    if (!panel) return;
+    trigger.setAttribute('aria-expanded','true');
+    panel.hidden = false;
+    if (focusLast !== undefined) {
+      const links = [...panel.querySelectorAll('a[href]')];
+      const target = focusLast ? links[links.length - 1] : links[0];
+      if (target) target.focus();
+    }
+  }
+  triggers.forEach(trigger => {
+    trigger.addEventListener('click', event => {
+      event.stopPropagation();
+      const wasOpen = trigger.getAttribute('aria-expanded') === 'true';
+      if (wasOpen) closePanels(false); else openPanel(trigger);
+    });
+    trigger.addEventListener('keydown', event => {
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        openPanel(trigger, event.key === 'ArrowUp');
+      }
+    });
+    trigger.closest('.nav-group').addEventListener('focusout', event => {
+      if (mq.matches || event.currentTarget.contains(event.relatedTarget)) return;
+      if (trigger.getAttribute('aria-expanded') === 'true') closePanels(false);
+    });
+  });
+  mobile.addEventListener('click', event => {
+    event.stopPropagation();
+    const willOpen = mobile.getAttribute('aria-expanded') !== 'true';
+    closeSettings();
+    if (willOpen) {
+      list.classList.add('open');
+      nav.classList.add('nav-open');
+      mobile.setAttribute('aria-expanded','true');
+      syncMobileLabel();
+    } else {
+      closePanels(false);
+      closeDrawer(false);
+    }
+  });
+  list.querySelectorAll('a[href]').forEach(link => link.addEventListener('click', () => closeAll(false)));
+  document.addEventListener('pointerdown', event => {
+    if (!nav.contains(event.target)) closeAll(false);
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'Escape') return;
+    if (openTrigger()) {
+      event.preventDefault();
+      closePanels(true);
+    } else if (mobile.getAttribute('aria-expanded') === 'true') {
+      event.preventDefault();
+      closeDrawer(true);
+    }
+  });
+  const reset = () => closeAll(false);
+  if (mq.addEventListener) mq.addEventListener('change', reset); else mq.addListener(reset);
+  LANG.onChange(syncMobileLabel);
+  syncMobileLabel();
+  return { closeAll };
+})();
+
 /* ───── nav settings popover ───── */
 (function(){
   const btn = document.getElementById('gear-btn');
   const pop = document.getElementById('gear-pop');
   if (!btn || !pop) return;
   const segs = [...pop.querySelectorAll('.gp-seg-b')];
-  const open = () => { pop.classList.add('open'); btn.setAttribute('aria-expanded','true'); };
+  const open = () => { MMX_NAV.closeAll(false); pop.classList.add('open'); btn.setAttribute('aria-expanded','true'); };
   const close = () => { pop.classList.remove('open'); btn.setAttribute('aria-expanded','false'); };
   const toggle = () => pop.classList.contains('open') ? close() : open();
   btn.addEventListener('click', e => { e.stopPropagation(); toggle(); });

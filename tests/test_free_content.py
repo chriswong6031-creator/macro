@@ -55,6 +55,8 @@ def _required_templates_present() -> bool:
     """Return True if all required designer templates exist."""
     names = [
         "seo_base.html.j2",
+        "seo_products_index.html.j2",
+        "seo_product.html.j2",
         "seo_tools_index.html.j2",
         "seo_learn_index.html.j2",
         "seo_blog_index.html.j2",
@@ -65,7 +67,13 @@ def _required_templates_present() -> bool:
 
 def _any_content_exists() -> bool:
     """Return True if at least one .md content file exists."""
-    for pattern in ("blog/*.md", "learn/**/*.md", "pages/*.md", "tools/*.md"):
+    for pattern in (
+        "products/*.md",
+        "blog/*.md",
+        "learn/**/*.md",
+        "pages/*.md",
+        "tools/*.md",
+    ):
         if any((_CONTENT_DIR).glob(pattern)):
             return True
     return False
@@ -169,6 +177,26 @@ class TestFrontmatterValidation:
         )
         self._validate_fm(fm, path, frozenset({"known-slug"}))  # no raise
 
+    def test_allowlisted_application_cta_passes(self, tmp_path):
+        path = tmp_path / "test-article.md"
+        fm = _make_valid_fm(
+            description="A" * 120,
+            cta={
+                "href": "https://app.mastermind-x.com/terminal?signup=1",
+                "label": "Start free",
+            },
+        )
+        self._validate_fm(fm, path)
+
+    def test_unreviewed_external_cta_fails(self, tmp_path):
+        path = tmp_path / "test-article.md"
+        fm = _make_valid_fm(
+            description="A" * 120,
+            cta={"href": "https://example.com/signup", "label": "Start"},
+        )
+        with pytest.raises(ValueError, match="CTA allowlist"):
+            self._validate_fm(fm, path)
+
     def test_title_over_70_fails(self, tmp_path):
         """title > 70 chars raises ValueError."""
         path = tmp_path / "test-article.md"
@@ -181,6 +209,54 @@ class TestFrontmatterValidation:
         path = tmp_path / "test-article.md"
         fm = _make_valid_fm(description="A" * 120, family="unknown_family")
         with pytest.raises(ValueError, match="family"):
+            self._validate_fm(fm, path)
+
+    def test_product_with_three_step_workflow_passes(self, tmp_path):
+        path = tmp_path / "test-article.md"
+        fm = _make_valid_fm(
+            family="product",
+            product_name="Test Product",
+            eyebrow="Test workflow",
+            order=1,
+            workflow=["Open the surface", "Inspect the evidence", "Continue"],
+        )
+        self._validate_fm(fm, path)
+
+    def test_product_without_workflow_fails(self, tmp_path):
+        path = tmp_path / "test-article.md"
+        fm = _make_valid_fm(
+            family="product",
+            product_name="Test Product",
+            eyebrow="Test workflow",
+            order=1,
+        )
+        with pytest.raises(ValueError, match="workflow"):
+            self._validate_fm(fm, path)
+
+    @pytest.mark.parametrize("order", ["2", 2.0, True, None])
+    def test_product_order_must_be_an_integer(self, tmp_path, order):
+        path = tmp_path / "test-article.md"
+        fm = _make_valid_fm(
+            family="product",
+            product_name="Test Product",
+            eyebrow="Test workflow",
+            order=order,
+            workflow=["Open the surface", "Inspect the evidence", "Continue"],
+        )
+        with pytest.raises(ValueError, match="order must be an integer"):
+            self._validate_fm(fm, path)
+
+    @pytest.mark.parametrize("order", [0, 100, -1])
+    def test_product_order_must_be_in_range(self, tmp_path, order):
+        path = tmp_path / "test-article.md"
+        fm = _make_valid_fm(
+            family="product",
+            product_name="Test Product",
+            eyebrow="Test workflow",
+            order=order,
+            workflow=["Open the surface", "Inspect the evidence", "Continue"],
+        )
+        with pytest.raises(ValueError, match="between 1 and 99"):
             self._validate_fm(fm, path)
 
     def test_lesson_without_track_fails(self, tmp_path):
@@ -266,6 +342,40 @@ class TestBodyScriptValidation:
             assert len(pages) == 1
         finally:
             bfc._CONTENT_DIR = orig_content
+
+    def test_duplicate_product_order_fails(self, tmp_path):
+        import scripts.build_free_content as bfc
+        products_dir = tmp_path / "products"
+        for slug in ("alpha", "beta"):
+            _write_md(
+                products_dir / f"{slug}.md",
+                _make_valid_fm(
+                    slug=slug,
+                    family="product",
+                    title=f"{slug.title()} Product",
+                    product_name=f"{slug.title()} Product",
+                    eyebrow="Test workflow",
+                    order=1,
+                    workflow=["Open the surface", "Inspect the evidence", "Continue"],
+                ),
+            )
+        orig_content = bfc._CONTENT_DIR
+        try:
+            bfc._CONTENT_DIR = tmp_path
+            with pytest.raises(ValueError, match="order 1 duplicates"):
+                bfc.load_content()
+        finally:
+            bfc._CONTENT_DIR = orig_content
+
+    def test_free_estate_header_cta_starts_terminal_signup(self):
+        template = (_TEMPLATES_DIR / "_public_nav.html.j2").read_text(
+            encoding="utf-8"
+        )
+        assert (
+            'href="https://app.mastermind-x.com/terminal?signup=1"' in template
+        )
+        assert "Start free" in template
+        assert 'public-nav-cta" href="{{ rel }}index.html"' not in template
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -491,8 +601,25 @@ class TestJsonLd:
         fm["updated"] = "2026-07-20"
         payload = bfc._article_jsonld(fm, "https://www.mastermind-x.com/blog/test.html")
         data = json.loads(payload)
-        assert data["author"]["name"] == "Mastermind Research"
-        assert data["publisher"]["name"] == "Mastermind Research"
+        assert data["author"]["name"] == "MastermindX Research"
+        assert data["publisher"]["name"] == "MastermindX"
+
+    def test_product_jsonld_describes_visible_application_without_offers(self):
+        import scripts.build_free_content as bfc
+        fm = _make_valid_fm(
+            family="product",
+            product_name="Market Terminal",
+            description="A" * 120,
+        )
+        payload = bfc._product_jsonld(
+            fm, "https://www.mastermind-x.com/products/market-terminal.html"
+        )
+        data = json.loads(payload)
+        assert data["@type"] == "WebPage"
+        assert data["mainEntity"]["@type"] == "SoftwareApplication"
+        assert data["mainEntity"]["name"] == "Market Terminal"
+        assert "offers" not in data["mainEntity"]
+        assert "aggregateRating" not in data["mainEntity"]
 
     def test_lesson_jsonld_not_emitted_for_page_family(self):
         """family='page' must NOT get Article JSON-LD per CONTRACT §9."""
@@ -544,6 +671,20 @@ class TestBreadcrumbs:
         crumbs = bfc._breadcrumbs(fm, "/blog/test.html")
         home = next(c for c in crumbs if c["label"] == "Home")
         assert home["href"] == "/"
+
+    def test_product_breadcrumbs_include_platform_hub(self):
+        import scripts.build_free_content as bfc
+        fm = _make_valid_fm(
+            description="A" * 120,
+            family="product",
+            product_name="Market Terminal",
+        )
+        crumbs = bfc._breadcrumbs(fm, "/products/market-terminal.html")
+        assert crumbs[1] == {
+            "label": "Platform",
+            "href": "/products/index.html",
+        }
+        assert crumbs[-1] == {"label": "Market Terminal", "href": None}
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -702,7 +843,7 @@ class TestRenderedOutput:
     def _get_rendered_html_files(self) -> list[Path]:
         """Return all rendered free-estate HTML files."""
         files = []
-        for d in ("blog", "learn", "tools"):
+        for d in ("products", "blog", "learn", "tools"):
             subdir = _SITE_DIR / d
             if subdir.exists():
                 files.extend(subdir.rglob("*.html"))
@@ -794,9 +935,45 @@ class TestRenderedOutput:
                 site_path = _SITE_DIR / path.lstrip("/")
                 if not site_path.exists():
                     # Free-estate paths must resolve; dashboard paths are live-only
-                    if any(path.startswith(p) for p in ("/blog/", "/learn/", "/tools/")):
+                    if any(
+                        path.startswith(p)
+                        for p in ("/products/", "/blog/", "/learn/", "/tools/")
+                    ):
                         errors.append(f"{f.relative_to(_REPO)}: broken link {path}")
         assert not errors, "Broken internal links:\n" + "\n".join(errors)
+
+    def test_rendered_nested_runtime_assets_resolve(self):
+        """Every estate page loads shared scripts from site root and never emits
+        the root-only inline font URLs that become /products/fonts/* 404s."""
+        files = self._get_rendered_html_files()
+        if not files:
+            pytest.skip("No rendered free-estate HTML files found in site/")
+
+        errors = []
+        for page in files:
+            html = page.read_text(encoding="utf-8")
+            if 'url("fonts/' in html:
+                errors.append(
+                    f"{page.relative_to(_REPO)}: nested inline font URL"
+                )
+            for asset in ("supabase.js", "account.js", "mm_brain.js", "theme.js"):
+                refs = re.findall(
+                    rf'<script[^>]+src=["\']([^"\']*{re.escape(asset)}'
+                    rf'(?:\?[^"\']*)?)["\']',
+                    html,
+                )
+                if len(refs) != 1:
+                    errors.append(
+                        f"{page.relative_to(_REPO)}: {len(refs)} {asset} refs"
+                    )
+                    continue
+                href = refs[0].split("?", 1)[0]
+                target = (page.parent / href).resolve()
+                if target != (_SITE_DIR / asset).resolve():
+                    errors.append(
+                        f"{page.relative_to(_REPO)}: {asset} resolves to {target}"
+                    )
+        assert not errors, "Broken nested runtime assets:\n" + "\n".join(errors)
 
     def test_calculator_pages_have_related_rail(self):
         """F2: Calculator pages must contain the related rail markup (.est-related)."""
@@ -899,6 +1076,12 @@ class TestSitemapDiscovery:
         (site / "index.html").write_text("<html></html>")
         (site / "macro.html").write_text("<html></html>")
 
+        # products
+        products = site / "products"
+        products.mkdir()
+        (products / "index.html").write_text("<html></html>")
+        (products / "market-terminal.html").write_text("<html></html>")
+
         # blog
         blog = site / "blog"
         blog.mkdir()
@@ -930,6 +1113,16 @@ class TestSitemapDiscovery:
         (stocks / "AAPL.html").write_text("<html></html>")
 
         return site
+
+    def test_discover_free_pages_finds_products_hub(self, tmp_path):
+        site = self._make_free_site(tmp_path)
+        rels = [r[0] for r in discover_free_pages(site)]
+        assert "products/index.html" in rels
+
+    def test_discover_free_pages_finds_product_leaf(self, tmp_path):
+        site = self._make_free_site(tmp_path)
+        rels = [r[0] for r in discover_free_pages(site)]
+        assert "products/market-terminal.html" in rels
 
     def test_discover_free_pages_finds_blog_hub(self, tmp_path):
         site = self._make_free_site(tmp_path)
@@ -1016,6 +1209,20 @@ class TestSitemapDiscovery:
         assert "https://www.mastermind-x.com/blog/index.html" in result
         assert "https://www.mastermind-x.com/blog/test-article.html" in result
 
+    def test_build_core_sitemap_includes_products(self, tmp_path):
+        site = self._make_free_site(tmp_path)
+        empty = (
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+            '</urlset>\n'
+        )
+        result = build_core_sitemap(empty, site)
+        assert "https://www.mastermind-x.com/products/index.html" in result
+        assert (
+            "https://www.mastermind-x.com/products/market-terminal.html"
+            in result
+        )
+
     def test_build_core_sitemap_includes_learn(self, tmp_path):
         site = self._make_free_site(tmp_path)
         empty = (
@@ -1096,6 +1303,10 @@ class TestSitemapDiscovery:
         sm_text = sm_path.read_text()
         assert "https://www.mastermind-x.com/blog/index.html" in sm_text, \
             "blog/index.html missing from committed sitemap"
+        products_idx = _SITE_DIR / "products" / "index.html"
+        if products_idx.exists():
+            assert "https://www.mastermind-x.com/products/index.html" in sm_text, \
+                "products/index.html missing from committed sitemap"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1126,6 +1337,11 @@ class TestLlmsTxt:
     def test_llms_txt_mentions_tools_hub(self):
         text = (_REPO / "templates" / "llms.txt").read_text()
         assert "/tools/index.html" in text
+
+    def test_llms_txt_mentions_product_hub(self):
+        text = (_REPO / "templates" / "llms.txt").read_text()
+        assert "/products/index.html" in text
+        assert text.startswith("# MastermindX")
 
     def test_llms_txt_mentions_learn_hub(self):
         text = (_REPO / "templates" / "llms.txt").read_text()

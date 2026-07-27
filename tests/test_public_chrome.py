@@ -49,11 +49,27 @@ def _anchors(html: str) -> Counter[tuple[str, str]]:
     return Counter(pairs)
 
 
-def test_shared_public_nav_matches_landing_information_architecture():
+def test_shared_public_nav_matches_landing_core_information_architecture():
     landing = (TEMPLATES / "index.html").read_text(encoding="utf-8")
-    expected = _anchors(_block(landing, "nav", "nav"))
-    actual = _anchors(_block(_render_partial("_public_nav.html.j2"), "nav", "public-nav"))
-    assert actual == expected
+    landing_hrefs = {href for href, _label in _anchors(_block(landing, "nav", "nav"))}
+    shared_hrefs = {
+        href
+        for href, _label in _anchors(
+            _block(_render_partial("_public_nav.html.j2"), "nav", "public-nav")
+        )
+    }
+    core = {
+        "products/index.html",
+        "research/index.html",
+        "tools/index.html",
+        "plans.html",
+    }
+    assert core <= landing_hrefs
+    assert core <= shared_hrefs
+    # The homepage expands those destinations into useful mega-menu links;
+    # interior public pages keep a compact, server-rendered subset.
+    assert shared_hrefs <= landing_hrefs
+    assert not any("#" in href for href in shared_hrefs)
 
 
 def test_shared_public_footer_matches_landing_information_architecture():

@@ -1,6 +1,7 @@
 # Free Estate content contract (MKT-SEO-01..04 W1)
 
-Binding contract for the free acquisition estate: `/tools/` (Calculator Lab +
+Binding contract for the public acquisition estate: `/products/` (platform
+overview and honest product explainers), `/tools/` (Calculator Lab +
 spreadsheets), `/learn/` (Learning Center), `/blog/` (Blog). Every builder,
 designer and reviewer in this program codes against this file. Deviations
 require a contract edit in the same PR.
@@ -13,6 +14,10 @@ Deterministic: same inputs ⇒ identical bytes (no build timestamps).
 ## 1. URL map (W1 — complete list)
 
 ```
+/products/index.html                             Platform overview
+/products/market-terminal.html                   Browser terminal explainer
+/products/mastermind-ai.html                     AI analyst explainer
+/products/market-dashboards.html                 Market dashboards explainer
 /tools/index.html                                Tools hub
 /tools/calculators/position-size.html            (designer-built exemplar)
 /tools/calculators/risk-reward.html
@@ -50,6 +55,7 @@ links to it as the flagship options lesson. No page duplicates its content.
 ```
 content/seo/
   CONTRACT.md            (this file)
+  products/<slug>.md     product page frontmatter + HTML-fragment body
   blog/<slug>.md         B4 owns    frontmatter + HTML-fragment body
   learn/<track>/<slug>.md B5 owns   same format
   pages/about-research.md B4 owns   rendered with the article template
@@ -60,6 +66,8 @@ scripts/build_trading_journal_xlsx.py  B2 owns
 lib/seo.py (discovery extension only)  B1 owns
 templates/llms.txt (new section only)  B1 owns
 templates/seo_base.html.j2             D1 (designer) owns
+templates/seo_products_index.html.j2   product overview hub
+templates/seo_product.html.j2          product explainer layout
 templates/seo_tools_index.html.j2      D1
 templates/seo_learn_index.html.j2      D1
 templates/seo_blog_index.html.j2       D1
@@ -82,7 +90,7 @@ markdown — the `markdown` package is not in the environment).
 ```yaml
 ---
 slug: position-sizing            # must match filename
-family: article | lesson | page
+family: article | lesson | page | product
 title: "Position Sizing: The Only Edge You Fully Control"   # ≤60 chars, search-intent phrased
 description: "…"                 # 120–155 chars, plain, no clickbait
 track: risk                      # lessons only: technical | risk | ownership
@@ -100,8 +108,26 @@ cta: {href: /tools/calculators/position-size.html, label: "Try the position size
 <p>…body HTML fragment…</p>
 ```
 
-Every `related` and `cta` target must exist in the §1 URL map or the live
-site. The builder validates this and fails loudly on a broken reference.
+Every `related` target must exist in the §1 URL map or the live site. Every
+`cta` target must meet the same rule or exactly match one of the builder's
+allowlisted `https://app.mastermind-x.com` application destinations. Arbitrary
+external CTA hosts and unreviewed application paths fail validation.
+
+Product pages additionally require:
+
+```yaml
+product_name: "Mastermind AI"
+eyebrow: "AI market analyst"
+order: 2
+workflow:
+  - "Ask a market question"
+  - "Inspect the connected evidence"
+  - "Continue into the relevant workspace"
+```
+
+`order` is a unique integer from 1 through 99 across product pages. `workflow`
+contains exactly three short, visible steps. Product pages may use
+`related.products` with product slugs from the §1 URL map.
 
 ## 4. Body fragment vocabulary (styled by seo_base)
 
@@ -133,6 +159,10 @@ url_path, published, track/cluster`), learn hub: `tracks` (ordered list of
 `{key, label, lessons: [...]}` + a `flagship` entry for /learn.html).
 Article/lesson/page: `body_html`, `related` (resolved to `{href, title}`
 lists), `cta`, `toc` (list of `{id, label}` from h2s).
+Product pages receive the same fields plus `page.product_name`,
+`page.eyebrow`, and `page.workflow`; `related.products` resolves to public
+product explainers. The product hub receives ordered `items` from product
+frontmatter.
 Calculator pages are templates themselves: they extend
 `seo_calculator_base.html.j2` and fill blocks `calc_form`, `calc_script`,
 `article_body`, plus set `page`-level vars per the base template's header
@@ -242,6 +272,10 @@ d=20 → +25%; (d=50,g=10) → 7.27 years (±0.05).
 - Structure per page: one-sentence direct answer first; then depth; a
   "common trap" section; a "where this breaks / limits" section; internal
   links per the relation map; ONE exact continuation CTA.
+- Product explainers replace the educational "common trap" requirement with
+  a visible "What it does" workflow, but still require a candid limitations
+  section, differentiated search intent, real internal destinations, and one
+  continuation CTA. No persona or keyword page may ship without unique utility.
 - Lessons additionally: a one-line learning objective at top and a 3-question
   self-check (details/summary) at the bottom.
 - EN body copy for `.md` content; the template chrome carries the bilingual
@@ -262,13 +296,15 @@ d=20 → +25%; (d=50,g=10) → 7.27 years (±0.05).
   one `<link rel=canonical>` (www host), description, OG/Twitter, favicons
   with `rel` prefix.
 - JSON-LD: BreadcrumbList on every page; Article (headline, description,
-  datePublished, dateModified, author = Organization "Mastermind Research",
-  publisher, mainEntityOfPage) on blog/lesson pages only. No ratings, no
-  Course, no FAQ markup. Markup describes visible content only.
+  datePublished, dateModified, author = Organization "MastermindX Research",
+  publisher = Organization "MastermindX", mainEntityOfPage) on blog/lesson
+  pages only; WebPage with a
+  visible SoftwareApplication main entity on product leaves. No ratings,
+  reviews, offers, Course, or FAQ markup. Markup describes visible content only.
 - Sitemap: extend `lib/seo.py` discovery to include `site/blog/`, `site/learn/`
   (one level of track subdirs), `site/tools/` (+ `calculators/`,
-  `spreadsheets/`) — hubs weekly 0.7, leaves monthly 0.6. Single-file sitemap
-  stays (D12A R2); `feed.xml`/non-HTML never listed.
+  `spreadsheets/`), and `site/products/` — hubs weekly 0.7, leaves monthly
+  0.6. Single-file sitemap stays (D12A R2); `feed.xml`/non-HTML never listed.
 - RSS 2.0 at `/blog/feed.xml`: canonical URLs, title, description, pubDate
   from frontmatter. Deterministic (no build-time timestamps).
 - `templates/llms.txt`: add a "## Free tools & learning" section listing the

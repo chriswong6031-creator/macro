@@ -2600,7 +2600,7 @@ def _hub_footer_html() -> str:
         '<div class="b-foot-brand">'
         '<div class="b-m-glyph" aria-hidden="true">M</div>'
         '<div>'
-        '<div class="b-wordmark">MASTERMIND</div>'
+        '<div class="b-wordmark">MASTERMINDX</div>'
         '<div class="b-tagline">'
         + _bi("Global Macro Intelligence", "全球宏观智能")
         + '</div></div></div>'
@@ -2656,15 +2656,15 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
     # (Slack/X/iMessage) don't run JS. Mirrors the shared
     # templates/_seo_head.html.j2 used by the Jinja hub pages. Canonical is
     # /start.html — the root canonical belongs to the marketing landing page.
-    _seo_title = "Mastermind — Global Macro Regime & Market Cycle Intelligence"
-    _seo_desc = ("Mastermind is a live macro dashboard tracking market regimes, sector "
+    _seo_title = "MastermindX — Global Macro Regime & Market Cycle Intelligence"
+    _seo_desc = ("MastermindX is a live macro dashboard tracking market regimes, sector "
                  "rotation and boom-bust cycles across the US, China, Hong Kong, Canada and "
                  "global markets — risk radar, signals and cycle clocks in one place.")
     _seo = (
         '<meta name="description" content="%s">\n'
         '<link rel="canonical" href="https://www.mastermind-x.com/start.html">\n'
         '<meta property="og:type" content="website">\n'
-        '<meta property="og:site_name" content="Mastermind">\n'
+        '<meta property="og:site_name" content="MastermindX">\n'
         '<meta property="og:title" content="%s">\n'
         '<meta property="og:description" content="%s">\n'
         '<meta property="og:url" content="https://www.mastermind-x.com/start.html">\n'
@@ -2680,9 +2680,9 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
 
     _jsonld = (
         '<script type="application/ld+json">{"@context":"https://schema.org","@graph":['
-        '{"@type":"Organization","name":"Mastermind","url":"https://www.mastermind-x.com/",'
+        '{"@type":"Organization","name":"MastermindX","url":"https://www.mastermind-x.com/",'
         '"logo":"https://www.mastermind-x.com/apple-touch-icon.png"},'
-        '{"@type":"WebSite","name":"Mastermind","url":"https://www.mastermind-x.com/",'
+        '{"@type":"WebSite","name":"MastermindX","url":"https://www.mastermind-x.com/",'
         '"inLanguage":["en","zh"]}'
         ']}</script>\n'
     )
@@ -2739,7 +2739,7 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
         + '<div class="hub-hero-stack">'
         + '<div class="hub-greet" aria-hidden="true"><span class="greet-tx"></span><span class="greet-caret"></span></div>'
         + '<div class="hub-brand"><h1 class="hub-logo">' + _BRAND_MARK_SVG
-        + '<span class="logo-word">MASTERMIND</span></h1>'
+        + '<span class="logo-word">MASTERMINDX</span></h1>'
         '<p>' + _bi("Regime dashboards across every major asset class — one mechanical, disciplined engine.",
                     "覆盖各大类资产的市场周期仪表盘——一套机械化、有纪律的引擎。") + '</p></div></div></header>'
         + globe_deck

@@ -219,6 +219,16 @@ def _build_mini_site(
         _STOCKS_SAMPLE_PAGE.format(canonical_host=ch), encoding="utf-8"
     )
 
+    # products/ public acquisition family
+    products_dir = site / "products"
+    products_dir.mkdir()
+    (products_dir / "market-terminal.html").write_text(
+        _GOOD_PAGE.format(canonical_host=ch)
+        .replace(f"{ch}/good.html", f"{ch}/products/market-terminal.html")
+        .replace("Good Core Page", "Market Terminal Product Page"),
+        encoding="utf-8",
+    )
+
     # sitemap.xml — includes one orphan URL
     if include_sitemap:
         sitemap_urls = [
@@ -230,6 +240,7 @@ def _build_mini_site(
             f"{ch}/fund_ako.html",
             f"{ch}/orphan_that_does_not_exist.html",  # orphan
             f"{ch}/stocks/AAPL.html",
+            f"{ch}/products/market-terminal.html",
         ]
         if extra_sitemap_urls:
             sitemap_urls.extend(extra_sitemap_urls)
@@ -261,6 +272,9 @@ def _build_mini_site(
 class TestClassifyPage:
     def test_stocks(self):
         assert classify_page("stocks/AAPL") == "stocks"
+
+    def test_products(self):
+        assert classify_page("products/market-terminal") == "products"
 
     def test_fund(self):
         assert classify_page("fund_ako") == "fund"
@@ -385,6 +399,15 @@ class TestIssueDetection:
         result = audit_site(site)
         census = result["census"]["by_family"]
         assert census["fund"]["pages"] >= 1
+
+    def test_product_page_detected_and_counted_in_sitemap(self, tmp_path):
+        site = _build_mini_site(tmp_path)
+        result = audit_site(site)
+        products = result["census"]["by_family"]["products"]
+        assert products["pages"] == 1
+        assert products["with_canonical"] == 1
+        assert products["in_sitemap"] == 1
+        assert result["sitemap"]["products"] == 1
 
 
 class TestHealthScore:

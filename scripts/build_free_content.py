@@ -1,6 +1,7 @@
-"""scripts/build_free_content.py — Mastermind Free Estate builder.
+"""scripts/build_free_content.py — MastermindX public acquisition builder.
 
-Renders content/seo/{blog,learn,pages,tools}/*.md + templates/seo_*.html.j2
+Renders content/seo/{products,blog,learn,pages,tools}/*.md +
+templates/seo_*.html.j2
 into committed site/ output.  Deterministic: same inputs => identical bytes.
 
 Ownership: B1 (this file) per content/seo/CONTRACT.md §2.
@@ -47,7 +48,12 @@ _REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_REPO))
 
 from lib.pages import write_page  # noqa: E402
-from lib.seo import SITE_BASE, page_url  # noqa: E402
+from lib.seo import (  # noqa: E402
+    BRAND_NAME,
+    BRAND_RESEARCH_NAME,
+    SITE_BASE,
+    page_url,
+)
 
 _CONTENT_DIR = _REPO / "content" / "seo"
 _TEMPLATES_DIR = _REPO / "templates"
@@ -55,6 +61,10 @@ _SITE_DIR = _REPO / "site"
 # Live-target validation always resolves against the committed repo site/,
 # regardless of where a render is being written (tests patch _SITE_DIR).
 _LIVE_SITE_DIR = _REPO / "site"
+_ALLOWED_EXTERNAL_CTAS: frozenset[str] = frozenset({
+    "https://app.mastermind-x.com",
+    "https://app.mastermind-x.com/terminal?signup=1",
+})
 
 # ---------------------------------------------------------------------------
 # CONTRACT §1 URL map — all paths the builder owns
@@ -62,6 +72,10 @@ _LIVE_SITE_DIR = _REPO / "site"
 
 # Section §1 canonical URL paths (root-relative) — used to validate related.*
 _URL_MAP: frozenset[str] = frozenset({
+    "/products/index.html",
+    "/products/market-terminal.html",
+    "/products/mastermind-ai.html",
+    "/products/market-dashboards.html",
     "/tools/index.html",
     "/tools/calculators/position-size.html",
     "/tools/calculators/risk-reward.html",
@@ -125,7 +139,9 @@ _URL_MAP: frozenset[str] = frozenset({
 _VALID_TRACKS: frozenset[str] = frozenset({"technical", "risk", "ownership", "options"})
 
 # valid family values
-_VALID_FAMILIES: frozenset[str] = frozenset({"article", "lesson", "page"})
+_VALID_FAMILIES: frozenset[str] = frozenset(
+    {"article", "lesson", "page", "product"}
+)
 
 # Track ordering and display labels (CONTRACT §5 / learn hub)
 _TRACK_ORDER = ["technical", "risk", "ownership", "options"]
@@ -242,6 +258,22 @@ def _validate(fm: dict[str, Any], path: Path, all_slugs: frozenset[str]) -> None
             raise ValueError(
                 f"{path}: invalid track '{fm['track']}'; must be one of {sorted(_VALID_TRACKS)}"
             )
+    elif fm["family"] == "product":
+        for key in ("product_name", "eyebrow", "order", "workflow"):
+            if key not in fm:
+                raise ValueError(f"{path}: product pages require '{key}' key")
+        order = fm["order"]
+        if isinstance(order, bool) or not isinstance(order, int):
+            raise ValueError(f"{path}: product order must be an integer")
+        if not 1 <= order <= 99:
+            raise ValueError(f"{path}: product order must be between 1 and 99")
+        workflow = fm["workflow"]
+        if not isinstance(workflow, list) or len(workflow) != 3:
+            raise ValueError(f"{path}: product workflow must contain exactly 3 steps")
+        if any(not str(step).strip() or len(str(step)) > 80 for step in workflow):
+            raise ValueError(
+                f"{path}: each product workflow step must be 1–80 characters"
+            )
 
     # title length
     title_len = len(str(fm["title"]))
@@ -292,15 +324,17 @@ def _validate(fm: dict[str, Any], path: Path, all_slugs: frozenset[str]) -> None
         elif key == "calculators":
             # validated at render time against calculators.yml
             pass
-        elif key in ("lessons", "articles"):
+        elif key in ("lessons", "articles", "products"):
             if not isinstance(slugs, list):
                 slugs = [slugs]
             for s in slugs:
                 if key == "lessons":
                     # lessons slugs are track/slug
                     url_path = f"/learn/{s}.html"
-                else:
+                elif key == "articles":
                     url_path = f"/blog/{s}.html"
+                else:
+                    url_path = f"/products/{s}.html"
                 if url_path not in _URL_MAP and s not in all_slugs:
                     raise ValueError(
                         f"{path}: related.{key} slug '{s}' not in §1 URL map"
@@ -310,9 +344,14 @@ def _validate(fm: dict[str, Any], path: Path, all_slugs: frozenset[str]) -> None
     cta = fm.get("cta")
     if cta:
         href = cta.get("href", "") if isinstance(cta, dict) else str(cta)
-        if href not in _URL_MAP and not (_LIVE_SITE_DIR / href.lstrip("/")).exists():
+        if (
+            href not in _URL_MAP
+            and href not in _ALLOWED_EXTERNAL_CTAS
+            and not (_LIVE_SITE_DIR / href.lstrip("/")).exists()
+        ):
             raise ValueError(
-                f"{path}: cta.href '{href}' not in §1 URL map and not found in site/"
+                f"{path}: cta.href '{href}' not in §1 URL map, the application "
+                "CTA allowlist, or site/"
             )
 
 
@@ -375,13 +414,37 @@ def _article_jsonld(fm: dict[str, Any], canonical: str) -> str:
         "dateModified": updated_str,
         "author": {
             "@type": "Organization",
-            "name": "Mastermind Research",
+            "name": BRAND_RESEARCH_NAME,
         },
         "publisher": {
             "@type": "Organization",
-            "name": "Mastermind Research",
+            "name": BRAND_NAME,
         },
         "mainEntityOfPage": {"@type": "WebPage", "@id": canonical},
+    }
+    return json.dumps(data, ensure_ascii=False, indent=2)
+
+
+def _product_jsonld(fm: dict[str, Any], canonical: str) -> str:
+    """Return product-page JSON-LD without invented offers or reviews."""
+    data = {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": str(fm["title"]),
+        "description": str(fm["description"]),
+        "url": canonical,
+        "isPartOf": {
+            "@type": "WebSite",
+            "name": BRAND_NAME,
+            "url": SITE_BASE,
+        },
+        "mainEntity": {
+            "@type": "SoftwareApplication",
+            "name": str(fm["product_name"]),
+            "applicationCategory": "FinanceApplication",
+            "operatingSystem": "Web browser",
+            "url": canonical,
+        },
     }
     return json.dumps(data, ensure_ascii=False, indent=2)
 
@@ -414,6 +477,9 @@ def _breadcrumbs(fm: dict[str, Any], url_path: str) -> list[dict[str, str | None
         if "/tools/" in url_path:
             crumbs.append({"label": "Tools", "href": "/tools/index.html"})
         crumbs.append({"label": fm["title"], "href": None})
+    elif family == "product":
+        crumbs.append({"label": "Platform", "href": "/products/index.html"})
+        crumbs.append({"label": fm["product_name"], "href": None})
 
     return crumbs
 
@@ -470,6 +536,14 @@ def _resolve_related(
                 title = slug_title_map.get(s, s)
                 entries.append({"href": f"/blog/{s}.html", "title": title})
             resolved["articles"] = entries
+        elif key == "products":
+            if not isinstance(items, list):
+                items = [items]
+            entries = []
+            for s in items:
+                title = slug_title_map.get(s, s)
+                entries.append({"href": f"/products/{s}.html", "title": title})
+            resolved["products"] = entries
 
     return resolved
 
@@ -497,6 +571,13 @@ def load_content() -> tuple[list[dict], dict[str, dict]]:
     # Collect all slugs first (for cross-reference validation)
     all_slugs: set[str] = set()
     md_files: list[tuple[Path, str]] = []  # (path, url_path)
+
+    # products
+    products_dir = _CONTENT_DIR / "products"
+    if products_dir.exists():
+        for p in sorted(products_dir.glob("*.md")):
+            all_slugs.add(p.stem)
+            md_files.append((p, f"/products/{p.stem}.html"))
 
     # blog
     blog_dir = _CONTENT_DIR / "blog"
@@ -551,9 +632,18 @@ def load_content() -> tuple[list[dict], dict[str, dict]]:
         )
 
     pages: list[dict] = []
+    product_orders: dict[int, Path] = {}
     for md_path, url_path in md_files:
         fm, body_html = _parse_md(md_path)
         _validate(fm, md_path, frozen_slugs)
+        if fm["family"] == "product":
+            order = fm["order"]
+            if order in product_orders:
+                raise ValueError(
+                    f"{md_path}: product order {order} duplicates "
+                    f"{product_orders[order]}"
+                )
+            product_orders[order] = md_path
 
         # D4: CONTRACT §3 forbids <script in content bodies
         if re.search(r"<script", body_html, re.IGNORECASE):
@@ -595,10 +685,12 @@ def _build_page_ctx(
     published = _to_date(fm["published"])
     updated = _to_date(fm["updated"])
 
-    # JSON-LD for article/lesson families
+    # JSON-LD for editorial and product families
     jsonld_extra = ""
     if fm["family"] in ("article", "lesson"):
         jsonld_extra = _article_jsonld(fm, canonical)
+    elif fm["family"] == "product":
+        jsonld_extra = _product_jsonld(fm, canonical)
 
     # D2: include track in page dict so lesson eyebrow renders
     # seo_article.html.j2 gates on page.family=='lesson' and page.track;
@@ -615,6 +707,9 @@ def _build_page_ctx(
         "updated": updated,
         "breadcrumbs": _breadcrumbs(fm, url_path),
         "track": fm.get("track"),  # D2: track for lesson eyebrow
+        "product_name": fm.get("product_name"),
+        "eyebrow": fm.get("eyebrow"),
+        "workflow": fm.get("workflow") or [],
     }
 
     # D3: section for nav aria-current
@@ -626,6 +721,8 @@ def _build_page_ctx(
         if "/tools/" in url_path:
             page_dict["section"] = "tools"
         # about-research: no section (no nav highlight)
+    elif fm["family"] == "product":
+        page_dict["section"] = "products"
 
     related = _resolve_related(fm, slug_title_map, calc_map)
     cta = fm.get("cta")
@@ -633,7 +730,7 @@ def _build_page_ctx(
     return {
         "rel": _rel_for_depth(depth),
         "page": page_dict,
-        "site": {"base": SITE_BASE},
+        "site": {"base": SITE_BASE, "brand": BRAND_NAME},
         "body_html": page["body_html"],
         "toc": page["toc"],
         "related": related,
@@ -661,10 +758,41 @@ def _hub_items(pages: list[dict], family: str) -> list[dict]:
             "published": _to_date(fm["published"]),
             "track": fm.get("track", ""),
             "cluster": fm.get("cluster", ""),
+            "order": fm.get("order", 999),
+            "product_name": fm.get("product_name", ""),
+            "eyebrow": fm.get("eyebrow", ""),
+            "workflow": fm.get("workflow") or [],
         })
-    # sort: published desc, then slug
-    items.sort(key=lambda x: (-x["published"].toordinal(), x["url_path"]))
+    if family == "product":
+        items.sort(key=lambda x: (x["order"], x["url_path"]))
+    else:
+        # sort: published desc, then slug
+        items.sort(key=lambda x: (-x["published"].toordinal(), x["url_path"]))
     return items
+
+
+def _products_hub_ctx(pages: list[dict]) -> dict[str, Any]:
+    url_path = "/products/index.html"
+    return {
+        "rel": _rel_for_depth(_depth_of(url_path)),
+        "page": {
+            "slug": "products-index",
+            "family": "hub",
+            "section": "products",
+            "title": "Market Intelligence Platform",
+            "description": "Explore MastermindX: browser charting, nightly market "
+                           "dashboards, stock dossiers, institutional research "
+                           "and a context-aware AI assistant.",
+            "canonical": _canonical(url_path),
+            "url_path": url_path,
+            "breadcrumbs": [
+                {"label": "Home", "href": "/"},
+                {"label": "Platform", "href": None},
+            ],
+        },
+        "site": {"base": SITE_BASE, "brand": BRAND_NAME},
+        "items": _hub_items(pages, "product"),
+    }
 
 
 def _blog_hub_ctx(pages: list[dict]) -> dict[str, Any]:
@@ -688,7 +816,7 @@ def _blog_hub_ctx(pages: list[dict]) -> dict[str, Any]:
                 {"label": "Blog", "href": None},
             ],
         },
-        "site": {"base": SITE_BASE},
+        "site": {"base": SITE_BASE, "brand": BRAND_NAME},
         "items": items,
     }
 
@@ -752,7 +880,7 @@ def _learn_hub_ctx(pages: list[dict]) -> dict[str, Any]:
                 {"label": "Learning Center", "href": None},
             ],
         },
-        "site": {"base": SITE_BASE},
+        "site": {"base": SITE_BASE, "brand": BRAND_NAME},
         "tracks": tracks,
         "flagship": flagship,
         "items": _hub_items(pages, "lesson"),
@@ -798,7 +926,7 @@ def _tools_hub_ctx(calc_registry: dict[str, dict]) -> dict[str, Any]:
                 {"label": "Tools", "href": None},
             ],
         },
-        "site": {"base": SITE_BASE},
+        "site": {"base": SITE_BASE, "brand": BRAND_NAME},
         "items": items,
         "calc_registry": calc_registry,
     }
@@ -837,9 +965,9 @@ def _build_rss(pages: list[dict]) -> str:
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">\n'
         "  <channel>\n"
-        "    <title>Mastermind Research Blog</title>\n"
+        f"    <title>{BRAND_RESEARCH_NAME} Blog</title>\n"
         f"    <link>{channel_link}</link>\n"
-        "    <description>Plain-English trading education from Mastermind Research.</description>\n"
+        f"    <description>Plain-English trading education from {BRAND_RESEARCH_NAME}.</description>\n"
         f'    <atom:link href="{page_url("blog/feed.xml")}" rel="self" type="application/rss+xml"/>\n'
         + "\n".join(items_xml)
         + "\n  </channel>\n</rss>\n"
@@ -855,6 +983,8 @@ def _build_rss(pages: list[dict]) -> str:
 # Required templates (from CONTRACT §2)
 _REQUIRED_TEMPLATES = [
     "seo_base.html.j2",
+    "seo_products_index.html.j2",
+    "seo_product.html.j2",
     "seo_tools_index.html.j2",
     "seo_learn_index.html.j2",
     "seo_blog_index.html.j2",
@@ -907,6 +1037,17 @@ def _output_path(url_path: str, out_dir: Path) -> Path:
     """Convert a root-relative URL path to an output filesystem path."""
     rel = url_path.lstrip("/")
     return out_dir / rel
+
+
+def _strip_line_end_whitespace(text: str) -> str:
+    """Remove indentation left behind by optional Jinja product blocks.
+
+    Splitting on the literal newline preserves the template's final newline
+    while keeping the established rendering of the older estate templates
+    byte-for-byte unchanged.
+    """
+
+    return "\n".join(line.rstrip() for line in text.split("\n"))
 
 
 def render_all(out_dir: Path) -> None:
@@ -962,7 +1103,11 @@ def render_all(out_dir: Path) -> None:
         ctx = _build_page_ctx(page, slug_title_map, calc_registry)
 
         # pick template
-        tmpl_name = "seo_article.html.j2"
+        tmpl_name = (
+            "seo_product.html.j2"
+            if fm["family"] == "product"
+            else "seo_article.html.j2"
+        )
         try:
             tmpl = env.get_template(tmpl_name)
         except TemplateNotFound:
@@ -970,6 +1115,8 @@ def render_all(out_dir: Path) -> None:
             sys.exit(2)
 
         html = tmpl.render(**ctx)
+        if fm["family"] == "product":
+            html = _strip_line_end_whitespace(html)
         # write_page, not write_text — the seo_* templates carry no data-base
         # shim, so a raw write ships these pages pointed at Pages instead of R2
         # outside the render lane's inject_data_base sweep. NOTE: this target
@@ -980,6 +1127,24 @@ def render_all(out_dir: Path) -> None:
         write_page(out_path, html, encoding="utf-8")
 
     # ---- Render hubs ----
+    # Products hub
+    try:
+        products_tmpl = env.get_template("seo_products_index.html.j2")
+        products_ctx = _products_hub_ctx(pages)
+        products_out = out_dir / "products" / "index.html"
+        products_out.parent.mkdir(parents=True, exist_ok=True)
+        write_page(
+            products_out,
+            _strip_line_end_whitespace(products_tmpl.render(**products_ctx)),
+            encoding="utf-8",
+        )
+    except TemplateNotFound:
+        print(
+            "ERROR: template 'seo_products_index.html.j2' not found",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+
     # Blog hub
     try:
         blog_tmpl = env.get_template("seo_blog_index.html.j2")
@@ -1095,7 +1260,7 @@ def render_all(out_dir: Path) -> None:
                         {"label": entry.get("title", slug), "href": None},
                     ],
                 },
-                "site": {"base": SITE_BASE},
+                "site": {"base": SITE_BASE, "brand": BRAND_NAME},
                 "registry": entry,
                 # D1: related rail and cta; no toc for calculators (CONTRACT §5)
                 "related": calc_related,
@@ -1240,7 +1405,7 @@ def _check_mode() -> int:
         # D5: orphan detection — walk committed site subdirs and report any
         # HTML/XML files not produced by this fresh render
         orphans: list[str] = []
-        _FREE_DIRS = ["blog", "learn", "tools"]
+        _FREE_DIRS = ["products", "blog", "learn", "tools"]
         _FREE_ROOT_FILES = ["about-research.html", "privacy.html", "terms.html", "disclaimer.html"]
 
         for sub in _FREE_DIRS:
@@ -1290,7 +1455,7 @@ def _check_mode() -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Build free content estate (blog/learn/tools)."
+        description="Build public acquisition estate (products/blog/learn/tools)."
     )
     parser.add_argument(
         "--check",

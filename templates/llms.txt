@@ -1,19 +1,20 @@
-# Mastermind — www.mastermind-x.com
+# MastermindX — www.mastermind-x.com
 
-> Mastermind is a market-intelligence platform: nightly-computed macro regime, market-cycle, and sector-rotation dashboards across US, China, Hong Kong, Canada and global markets, plus per-stock dossiers with proprietary trend, stage and confluence models. Bilingual English/Chinese at every URL. Signals and scores come from deterministic engines over market data; AI assists explanation, not signal generation.
+> MastermindX is a market-intelligence platform: nightly-computed macro regime, market-cycle, and sector-rotation dashboards across US, China, Hong Kong, Canada and global markets, plus per-stock dossiers with proprietary trend, stage and confluence models. Navigation and interface chrome support English and Chinese; long-form public editorial content is currently English. Signals and scores come from deterministic engines over market data; AI assists explanation, not signal generation.
 
 Machine-readable brand facts: https://www.mastermind-x.com/brand-facts.json
 Sitemap: https://www.mastermind-x.com/sitemap.xml
 
 ## Public, citable surfaces
+- [MastermindX Platform](https://www.mastermind-x.com/products/index.html): product overview connecting the Market Terminal, Mastermind AI, market dashboards and public research.
 - [Stock Dossiers](https://www.mastermind-x.com/stocks/index.html): 1,600+ per-ticker pages — trend, stage, confluence, ownership and options context.
 - [Research Library](https://www.mastermind-x.com/research/): public report landing pages and excerpts; full reports may require a subscription.
 - [Learning Center](https://www.mastermind-x.com/learn/index.html): technical analysis, position sizing, options mechanics and market breadth.
 - [Trading Calculators](https://www.mastermind-x.com/tools/index.html): risk, return, sizing and portfolio calculators.
-- [Mastermind Blog](https://www.mastermind-x.com/blog/index.html): plain-English articles on trading math, risk and market mechanics.
+- [MastermindX Blog](https://www.mastermind-x.com/blog/index.html): plain-English articles on trading math, risk and market mechanics.
 
 ## Product access
-- The live regional dashboards, ranked boards, Neural Web and premium signal detail require an account. Start at [Mastermind](https://www.mastermind-x.com/) or review [Plans](https://www.mastermind-x.com/plans.html).
+- The live regional dashboards, ranked boards, Neural Web and premium signal detail require an account. Start at [MastermindX](https://www.mastermind-x.com/) or review [Plans](https://www.mastermind-x.com/plans.html).
 - Public stock dossiers update after the relevant market close. Each page carries its own freshness and limitation labels.
 
 ## Free tools & learning

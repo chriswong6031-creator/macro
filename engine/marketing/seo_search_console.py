@@ -377,6 +377,8 @@ def _build_scorecard(
             # Handle stocks sub-path
             if path.startswith("stocks/"):
                 return "stocks"
+            if path.startswith("products/"):
+                return "products"
             return classify_page(stem)
         except Exception:  # noqa: BLE001
             return "core"

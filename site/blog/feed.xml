@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Mastermind Research Blog</title>
+    <title>MastermindX Research Blog</title>
     <link>https://www.mastermind-x.com/blog/index.html</link>
-    <description>Plain-English trading education from Mastermind Research.</description>
+    <description>Plain-English trading education from MastermindX Research.</description>
     <atom:link href="https://www.mastermind-x.com/blog/feed.xml" rel="self" type="application/rss+xml"/>
     <item>
       <title><![CDATA[Compound Growth for Traders]]></title>
