@@ -170,7 +170,7 @@ def _already_processed_pdf_keys(store) -> set[str]:
 # per-item ingest (never raises to the caller)
 # ---------------------------------------------------------------------------
 
-def _ingest_one(store, conn, pdf_key: str, now: datetime, dry_run: bool = False) -> dict:
+def _ingest_one(store, conn, pdf_key: str, dry_run: bool = False) -> dict:
     """Ingest a single PDF. Returns a per-item result dict.
 
     ``status`` ∈ ingested | failed. On any exception the item is marked failed
@@ -186,13 +186,16 @@ def _ingest_one(store, conn, pdf_key: str, now: datetime, dry_run: bool = False)
 
         sidecar_raw = store.get_bytes(_sidecar_key(pdf_key))
 
-        # Fallbacks the caller can recover before normalization.
-        upload_time = store.upload_time(pdf_key) or now.astimezone(timezone.utc).isoformat()
+        # Fallbacks the caller can recover before normalization. We deliberately
+        # pass NO published_at fallback: published_at is MarketDesk's own publish
+        # timestamp (carried by the sidecar). If it is ever missing, the paper must
+        # sort to the BOTTOM of the vault (a blank date sorts last) — it must NEVER
+        # be stamped with our R2-upload / ingest time, which would masquerade a
+        # stale backfill as brand-new at the TOP of "latest".
         item = sidecar_mod.from_bytes(
             sidecar_raw,
             fallback_title_pdf=_embedded_title(pdf_bytes),
             fallback_title_filename=_pdf_stem_filename(pdf_key),
-            fallback_published_at=upload_time,
             fallback_source_filename=_pdf_stem_filename(pdf_key) + ".pdf",
         )
 
@@ -203,6 +206,10 @@ def _ingest_one(store, conn, pdf_key: str, now: datetime, dry_run: bool = False)
         item_id = item["id"]
         result["id"] = item_id
         result["needs_metadata"] = bool(item.get("needs_metadata"))
+        if not item.get("published_at"):
+            log.warning("research_vault: %s has no MarketDesk publish date; it will "
+                        "sort to the bottom of the vault (never stamped with our "
+                        "ingest time)", item_id)
 
         # Keep the RAW extractor result: None means pdftotext is missing/crashed
         # (a host fault) while "" means the PDF genuinely has no text layer (a
@@ -442,7 +449,7 @@ def run(store, corpus_path: str | Path, now: datetime | None = None,
                 summary["skipped"] += 1
                 continue
 
-            res = _ingest_one(store, conn, pdf_key, now, dry_run=dry_run)
+            res = _ingest_one(store, conn, pdf_key, dry_run=dry_run)
             if res["status"] != "ingested":
                 summary["failed"] += 1
                 continue
