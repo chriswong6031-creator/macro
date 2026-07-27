@@ -37,6 +37,10 @@
   var TERMINAL_URL = "https://app.mastermind-x.com/terminal";
   var PLANS_HTML = "https://www.mastermind-x.com/plans.html";
   var TRIAL_DAYS = 7;
+  // Browser `type=email` accepts local-network shapes such as `name@domain`.
+  // Account creation requires a routable domain with a real suffix instead.
+  var EMAIL_RE = /^(?=.{3,254}$)(?=.{1,64}@)[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+)*@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*\.(?:[A-Za-z]{2,63}|xn--[A-Za-z0-9-]{2,59})$/;
+  function validEmail(value) { return EMAIL_RE.test(String(value || "").trim()); }
 
   // Raw cents — the ONLY hand-entered plan numbers (mirror config/plans.yml /
   // terminal plans.ts). Every displayed figure is DERIVED from these.
@@ -113,6 +117,8 @@
     firstName:    ["First name", "名"],
     lastName:     ["Last name", "姓"],
     email:        ["Email", "邮箱"],
+    emailInvalid: ["Enter a valid email address, including the domain suffix (for example, name@example.com).",
+                   "请输入完整有效的邮箱地址，包括域名后缀（例如 name@example.com）。"],
     password:     ["Password", "密码"],
     pwHintShort:  ["At least 8 characters.", "至少 8 个字符。"],
     pwHintOk:     ["Looks good.", "看起来不错。"],
@@ -995,6 +1001,17 @@
   function onAccountSubmit(e) {
     e.preventDefault();
     showErr("");
+    var emailInput = document.getElementById("ob-email");
+    S.email = String(S.email || "").trim();
+    if (!validEmail(S.email)) {
+      showErr(tx("emailInvalid"));
+      if (emailInput) {
+        emailInput.setAttribute("aria-invalid", "true");
+        emailInput.focus();
+      }
+      return;
+    }
+    if (emailInput) emailInput.removeAttribute("aria-invalid");
     if (!authEnabled() && !window.MDXAuth) {
       // auth broker not yet resolved — try to resolve, else show honest error
     }
