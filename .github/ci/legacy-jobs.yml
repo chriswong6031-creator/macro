@@ -892,6 +892,13 @@ jobs:
       # so the minimal pytest+pyyaml install above is enough.
       - name: render-lane scope contract (canada must be first-class, not a build_vector hook)
         run: python -m pytest tests/test_render_canada_scope.py -q
+      # A run: scalar over GitHub's length cap makes GitHub DE-REGISTER the workflow —
+      # render.yml vanished from the registry on 2026-07-27 (#3826) and the express lane
+      # was dead ~40 min. yaml.safe_load, check_workflow_yaml.py and actionlint ALL pass
+      # on an over-cap file, and the owning PR's checks stay green (the failure only shows
+      # in the BRANCH run list), so this is the only gate that can catch it pre-merge.
+      - name: "no workflow run: step may exceed GitHub's observed size ceiling"
+        run: python -m pytest tests/test_render_run_size_cap.py -q
 
   causal-factory:
     if: ${{ false }}

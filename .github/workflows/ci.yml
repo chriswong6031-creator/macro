@@ -519,6 +519,7 @@ on:
       # still starts CI, per the two-halves law.
       - "tests/test_render_intl_scope.py"
       - "tests/test_render_canada_scope.py"
+      - "tests/test_render_run_size_cap.py"
       # W0 PR3 synapse read-gate: any change to engine, scripts, collectors, the registry,
       # the gate script, the test, or the baseline must re-run the read-gate + Article-2 check.
       - "config/synapse.yml"
