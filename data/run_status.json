@@ -3253,5 +3253,46 @@
       "age_days": 26,
       "detected_at": "2026-07-26T23:35:12.330868+00:00"
     }
-  ]
+  ],
+  "tushare": {
+    "health": {
+      "valuation": {
+        "table": "valuation",
+        "asof": "2026-07-24",
+        "lag_days": 3,
+        "state": "slow"
+      },
+      "margin": {
+        "table": "margin",
+        "asof": "2026-07-24",
+        "lag_days": 3,
+        "state": "slow"
+      },
+      "moneyflow": {
+        "table": "moneyflow",
+        "asof": "2026-07-24",
+        "lag_days": 3,
+        "state": "slow"
+      },
+      "chips": {
+        "table": "chips",
+        "asof": "2026-07-24",
+        "lag_days": 3,
+        "state": "slow"
+      },
+      "broker": {
+        "table": "broker",
+        "asof": "2026-07-26",
+        "lag_days": 1,
+        "state": "fresh"
+      },
+      "forecast": {
+        "table": "forecast",
+        "asof": "2026-07-25",
+        "lag_days": 2,
+        "state": "fresh"
+      }
+    },
+    "asof": "2026-07-27 10:53:54.262134+00:00"
+  }
 }

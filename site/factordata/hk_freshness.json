@@ -1,16 +1,16 @@
 {
-  "checked_at": "2026-07-27T09:44:23+00:00",
+  "checked_at": "2026-07-27T11:18:53+00:00",
   "expected_session": "2026-07-27",
   "stores": {
     "cache": {
-      "asof": "2026-07-24",
-      "lag_days": 3,
-      "state": "slow"
+      "asof": "2026-07-27",
+      "lag_days": 0,
+      "state": "fresh"
     },
     "bellwether": {
-      "asof": "2026-07-24",
-      "lag_days": 3,
-      "state": "slow"
+      "asof": "2026-07-27",
+      "lag_days": 0,
+      "state": "fresh"
     },
     "standouts": {
       "asof": "2026-07-24",
@@ -18,9 +18,9 @@
       "state": "slow"
     },
     "regime": {
-      "asof": "2026-07-24",
-      "lag_days": 3,
-      "state": "stale"
+      "asof": "2026-07-27",
+      "lag_days": 0,
+      "state": "fresh"
     },
     "southbound": {
       "asof": "2026-07-24",
@@ -31,14 +31,14 @@
   "coherence": {
     "ok": true,
     "standouts_asof": "2026-07-24",
-    "regime_date": "2026-07-24",
-    "gap_sessions": 0,
-    "note": null
+    "regime_date": "2026-07-27",
+    "gap_sessions": 1,
+    "note": "regime read is one session behind the stock scan \u2014 catches up after the next Asia close"
   },
   "regression": {
     "ok": true,
     "prev_cache_max": "2026-07-24",
-    "curr_cache_max": "2026-07-24",
+    "curr_cache_max": "2026-07-27",
     "note": null
   },
   "verdict": "degraded",
