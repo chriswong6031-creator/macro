@@ -110,6 +110,10 @@ _STRUCTURAL = [
     re.compile(r"_vs\s*==\s*'validated'"),                    # template state-var comparison
     re.compile(r"verdict\s*===?\s*'validated'"),
     re.compile(r"=\s*'validated'\s*if"),                      # jinja set _vs = 'validated' if ...
+    # conditional-expression literal WITHOUT an '=' — val: {{ ('validated' if ... )|tojson }}
+    # (factors drawer payload, #3823) — same code shape as the {% set %} form above
+    re.compile(r"\(\s*'validated'\s+if\b"),
+    re.compile(r'\bval\s*:\s*"validated"'),                   # its rendered form: val: "validated",
     re.compile(r"scored=True\s*\(validated\)"),
     # engine-emitted 'validated_tag' honesty field: the tag VALUE is earned per-basket in
     # engine.cn_ai_semis_confirmer (only where t=3.27 survives the horse race, #773). Its
@@ -623,6 +627,10 @@ def selftest() -> int:
          "the PRIOR hasn&#39;t been validated, so trade the tape.", False, allow),
         ("EN negated 'cannot be validated'",
          "This construction cannot be validated on the available window.", False, allow),
+        ("jinja ternary literal (factors val payload source) is code, not prose",
+         "    val: {{ ('validated' if (r.survives_fdr and r.mean_ic is not none and r.mean_ic > 0)", False, allow),
+        ("rendered factors val payload is a data value, not a claim",
+         '    val: "validated",', False, allow),
     ]
     ok = True
     for name, line, should_fire, allow_entries in cases:

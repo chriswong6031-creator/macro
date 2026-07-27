@@ -234,24 +234,13 @@
    ]
   },
   {
-   "match": "must have a stored",
-   "backing": "measurement.html — this is the STATEMENT of the validated-artifact doctrine itself (BC-2's own prose).",
-   "surfaces": [
-    "measurement"
-   ]
-  },
-  {
    "match": "the word \"validated\"",
-   "backing": "measurement.html — quotes the doctrine (the word 'validated' requires a stored artifact).",
+   "backing": "Template header comments on the display-only stocks-lab / track-record pages, each stating the doctrine as its own guard: 'The word \"validated\" never appears (CI-guarded).' A statement of the gate, not a signal claim. (Originally covered the measurement.html hero doctrine sentence, retired in #3821 with the Calibration Lab reframe.)",
    "surfaces": [
-    "measurement"
-   ]
-  },
-  {
-   "match": "已验证\"一词",
-   "backing": "measurement.html zh — quotes the doctrine.",
-   "surfaces": [
-    "measurement"
+    "china_stocks_lab",
+    "hk_stocks_lab",
+    "us_stocks_lab",
+    "us_track_record"
    ]
   },
   {
@@ -981,13 +970,6 @@
    "surfaces": [
     "hk",
     "hk_lookup"
-   ]
-  },
-  {
-   "match": "the word \"validated.\"",
-   "backing": "measurement.html — the STATEMENT of the validated-artifact doctrine itself (BC-2's own prose).",
-   "surfaces": [
-    "measurement"
    ]
   },
   {
