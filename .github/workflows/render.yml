@@ -38,7 +38,7 @@ on:
         description: "Which pages to rebuild from committed data (all = every page)"
         type: choice
         default: all
-        options: [all, macro, intl, china, hk, markets, gex, baskets, sits]
+        options: [all, macro, intl, china, hk, canada, markets, gex, baskets, sits]
       runner:
         description: "Runner label — re-dispatch with macstudio if the render PC (pc-render-1) is down (GHA has no automatic label fallback)"
         type: choice
@@ -256,6 +256,34 @@ jobs:
           else S="$DIRTY"; echo "::notice::dirty since last covering renders -> scope=$S"
           fi
           echo "scope=$S" >> "$GITHUB_OUTPUT"
+      # DELIBERATELY omitted from this lane (vetted 2026-07-25):
+      #  • build_odds — a collector wearing a builder's name: refetches all 119
+      #    universe tickers from yfinance on EVERY run (odds.stale_trading_days: 0)
+      #    with no timeout, and its data/odds_ohlcv store is gitignored → wiped by
+      #    this job's clean checkout, so every express run would COLD-START a
+      #    full-history backfill (5-15+ min of third-party network on the render
+      #    path — the gdelt-stall class). Its site/oddsmatrix payloads are gitignored
+      #    and R2-published by daily.yml only, so advancing catalog.json here would
+      #    silence the page's staleness banner over stale R2 matrices. Same class as
+      #    the gex_board omission in engine-render; odds.html keeps the last
+      #    nightly's values.
+      #  (build_leader_radar was omitted here for the same 2026-07-25 vetting; its
+      #   three named bake-side blockers — the unguarded pick_lab as_of consumption,
+      #   the built_at/elapsed_s churn, and the undisclosed rs_series vintage skew —
+      #   were fixed in #3578, so the builder is now admitted above as a serial
+      #   post-band step.)
+      #
+      # SIZE CEILING — this step's `run:` script is length-capped by GitHub. Measured
+      # 2026-07-27 (#3826 postmortem): 20,563 chars parsed, 21,573 chars did NOT — and
+      # equal-length ASCII filler reproduced it, so it is SIZE, not content. Over the cap
+      # GitHub REFUSES to register the workflow: render.yml vanishes from
+      # `gh api actions/workflows` and every push to every branch carrying it gets a
+      # zero-job FAILED run named by PATH instead of by `name: render` (metabolism-agenda
+      # col-0 class, #2135->#2260). yaml.safe_load, check_workflow_yaml.py and actionlint
+      # ALL pass on an over-cap file — only GitHub rejects it. #3826 spent 1,010 chars on
+      # an inline comment block and killed the express render lane for ~40 min.
+      # Keep prose HERE, in YAML comments (stripped by the parser, they cost the scalar
+      # nothing); keep the `run:` body terse. Guard: tests/test_render_run_size_cap.py.
       - name: re-render pages from committed data (resilient; no collect / no LLM / no EDGAR)
         # Mirrors the RENDER steps of daily.yml's `engine` job, minus the collectors,
         # engine.run, the LLM brains + their scorers/ledgers, the EDGAR special-sits
@@ -330,20 +358,9 @@ jobs:
           hub() { [ -n "$HUB_DONE" ] && return 0; HUB_DONE=1; run_py "bitcoin vector + landing hub (build_vector)" scripts.build_vector; }
           intl() { [ -n "$INTL_DONE" ] && return 0; INTL_DONE=1; run_py "international macro dashboard (build_intl)" scripts.build_intl; }
 
+          # Canada / S&P-TSX. MUST precede hub(): build_vector's _canada_state() reads the
+          # regime JSON this writes. SKIP_CANADA_HOOK=1 no-ops build_vector's fallback hook.
           canada() { [ -n "$CANADA_DONE" ] && return 0; CANADA_DONE=1; export SKIP_CANADA_HOOK=1; run_py "canada / S&P-TSX dashboard (build_canada)" scripts.build_canada; }
-          # filler filler filler filler filler filler filler filler filler pad
-          # filler filler filler filler filler filler filler filler filler pad
-          # filler filler filler filler filler filler filler filler filler pad
-          # filler filler filler filler filler filler filler filler filler pad
-          # filler filler filler filler filler filler filler filler filler pad
-          # filler filler filler filler filler filler filler filler filler pad
-          # filler filler filler filler filler filler filler filler filler pad
-          # filler filler filler filler filler filler filler filler filler pad
-          # filler filler filler filler filler filler filler filler filler pad
-          # filler filler filler filler filler filler filler filler filler pad
-          # filler filler filler filler filler filler filler filler filler pad
-          # filler filler filler filler filler filler filler filler filler pad
-          # filler filler filler filler filler filler filler filler filler pad
 
 
           # US Sector Central hub — reads baskets.json + sector_cycles_data.js + the heatmap json
@@ -400,23 +417,6 @@ jobs:
           # site/basketdata/foresight_cascade.json in the same pass as the page it pairs
           # with.
           foresightpage() { [ -n "$FORESIGHT_DONE" ] && return 0; FORESIGHT_DONE=1; run_py "thematic foresight desk (build_foresight)" scripts.build_foresight; }
-
-          # DELIBERATELY omitted from this lane (vetted 2026-07-25):
-          #  • build_odds — a collector wearing a builder's name: refetches all 119
-          #    universe tickers from yfinance on EVERY run (odds.stale_trading_days: 0)
-          #    with no timeout, and its data/odds_ohlcv store is gitignored → wiped by
-          #    this job's clean checkout, so every express run would COLD-START a
-          #    full-history backfill (5-15+ min of third-party network on the render
-          #    path — the gdelt-stall class). Its site/oddsmatrix payloads are gitignored
-          #    and R2-published by daily.yml only, so advancing catalog.json here would
-          #    silence the page's staleness banner over stale R2 matrices. Same class as
-          #    the gex_board omission in engine-render; odds.html keeps the last
-          #    nightly's values.
-          #  (build_leader_radar was omitted here for the same 2026-07-25 vetting; its
-          #   three named bake-side blockers — the unguarded pick_lab as_of consumption,
-          #   the built_at/elapsed_s churn, and the undisclosed rs_series vintage skew —
-          #   were fixed in #3578, so the builder is now admitted above as a serial
-          #   post-band step.)
 
           # ---- special situations: page-only rebake, NO EDGAR sweep ----
           # The nightly owns the ~28m filing sweep; this lane re-renders the desk
@@ -568,7 +568,7 @@ jobs:
           for SC in ${SCOPE//+/ }; do
           case "$SC" in
             all)
-              spine; intl; band; central; flowleaders; leaderradar; foresightpage; hub; us_pages; libs; sits; csits ;;
+              spine; intl; canada; band; central; flowleaders; leaderradar; foresightpage; hub; us_pages; libs; sits; csits ;;
             macro)
               spine; hub; us_pages; central ;;
             intl)
@@ -579,6 +579,8 @@ jobs:
               run_py "build china a-share dashboard (build_china)" scripts.build_china; csits; hub ;;
             hk)
               run_py "build hong kong / hang seng (build_hk)" scripts.build_hk; hub ;;
+            canada)
+              canada; hub ;;
             markets)
               run_py "build commodity vector (build_commodities)"         scripts.build_commodities
               run_py "build strategic reserves (build_spr)"               scripts.build_spr
