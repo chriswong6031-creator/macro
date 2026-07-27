@@ -479,6 +479,11 @@ data/marketing/live_quotes_snapshot.json
 # D05 breaking-feed local-only poller state (seen ledger + ETag state);
 # the nightly blanket "git add data/" must never stage these.
 data/marketing/breaking/
+# PRESS-FEEDS B1 (D05 Addendum 2) press-lane local-only poller state — provider
+# cursors, conditional-GET ETags, twitterapi.io spend accounting, flagship
+# counter, corroboration window, seen-ledger. The poller writes ONLY here and
+# makes ZERO git writes; the nightly blanket "git add data/" must never stage it.
+data/marketing/press/
 
 # SGA (Stage Analysis v2): raw EquityDesk backfill seeds (~55MB incl. the 34MB
 # earnings_calls.parquet) violate the <1MB-in-git rule — one-time competitor backfill

@@ -1,0 +1,188 @@
+# config/press_sources.yml — PRESS-FEEDS curated source register (D05 Addendum 2).
+#
+# The canonical source register the Media masterplan (rev 4, PRESS-FEEDS wave B1)
+# calls for. Ships DARK by default — every lane is gated by the daemon
+# kill-switches (MARKETING_FASTLANE_ENABLED + the outbox kill-switch). Pollers
+# make ZERO repo/git writes; all cursor / seen / spend / counter state lives in
+# data/marketing/press/ (gitignored).
+#
+# Back-compat: the existing wire RSS lane still reads config/marketing.yml
+# `breaking:` (unchanged — breaking_feed.poll_all is its canonical driver). The
+# wire_rss section below REFERENCES those six sources so this file is the single
+# human-readable register; press_providers does not re-poll them.
+#
+# Hard laws (D05 Addendum 2 + appendix §2 kills that STAND):
+#   - NO first-party scraping. Providers consume ONLY the documented published
+#     endpoints below (mirror RSS, mirror JSON archive, twitterapi.io read API).
+#     No browser automation, no cookie auth, no HTML scraping, no Nitter.
+#   - Deterministic relevance decides what is market-moving; the LLM only
+#     summarizes facts present in the source snippet (breaking_summary validator).
+#   - Corroboration classes (§3): direct-quote (mirror-verified own post) = single
+#     primary source OK; hearsay = >=2 independent sources or attributed phrasing;
+#     single-wire uncorroborated political/geopolitical NEVER instant-publishes.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Tier W — licensed / free wire RSS (the spine). Canonical poll config lives in
+# config/marketing.yml `breaking:`; listed here for the register of record only.
+# ─────────────────────────────────────────────────────────────────────────────
+wire_rss:
+  # source-of-truth: config/marketing.yml breaking.sources (breaking_feed.poll_all)
+  canonical_config: "config/marketing.yml#breaking.sources"
+  references:
+    - key: fed_press          # Federal Reserve   (official)
+    - key: bls_news           # Bureau of Labor Statistics (official)
+    - key: bea_news           # Bureau of Economic Analysis (official)
+    - key: whitehouse_actions # White House presidential-actions (official)
+    - key: cnbc_top           # CNBC              (wire)
+    - key: marketwatch_top    # MarketWatch       (wire)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Tier M — Truth Social relay mirrors (published feeds; wire-relay posture).
+# ─────────────────────────────────────────────────────────────────────────────
+truth_mirrors:
+  # Primary Truth-Social detector: fast poll, conditional GET, honest UA.
+  - key: trumpstruth
+    provider: trumpstruth
+    kind: rss
+    url: "https://trumpstruth.org/feed"
+    source_name: "Truth Social (via trumpstruth.org)"
+    tier: mirror
+    author: "Donald J. Trump"
+    poll_interval_s: 75          # hot loop 60-90 s window
+    enabled: true
+
+  # CNN archive: corroboration + nightly backfill ONLY. 19 MB payload →
+  # conditional GET mandatory; NEVER the hot loop.
+  - key: cnn_truth_backfill
+    provider: cnn_truth_backfill
+    kind: json
+    url: "https://ix.cnn.io/data/truth-social/truth_archive.json"
+    source_name: "Truth Social (via CNN archive)"
+    tier: mirror
+    author: "Donald J. Trump"
+    poll_interval_s: 21600       # 6 h — backfill/corroboration cadence, never hot
+    enabled: true
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Tier X — twitterapi.io read relay (key via env TWITTERAPI_IO_KEY; skips cleanly
+# when unset). Per-handle poll tier + corroboration class. source_tier=x_relay.
+# ─────────────────────────────────────────────────────────────────────────────
+x_follow:
+  provider: twitterapiio
+  base_url: "https://api.twitterapi.io"
+  endpoint: "/twitter/user/last_tweets"
+  auth_header: "X-API-Key"
+  key_env: "TWITTERAPI_IO_KEY"
+  price_per_1k_tweets_usd: 0.15
+  min_charge_per_request_usd: 0.00015
+  # Exclude any account flagged parody/commentary/fan (PCF). Satire is hard-blocked
+  # at ingestion regardless of this flag (see satire_blocklist below).
+  exclude_pcf_labeled: true
+  poll_tiers:
+    fast: 75      # 60-90 s
+    mid:  105     # 90-120 s
+    slow: 300
+  handles:
+    # fast (60-90 s)
+    - handle: DeItaone        # class: hearsay (Bloomberg-terminal relay)
+      tier: fast
+      corroboration_class: hearsay
+    - handle: FirstSquawk
+      tier: fast
+      corroboration_class: hearsay
+    - handle: financialjuice
+      tier: fast
+      corroboration_class: hearsay
+    - handle: zerohedge
+      tier: fast
+      corroboration_class: hearsay
+    - handle: WHPressPool     # WH pool reports — "Trump told reporters..." surfaces here
+      tier: fast
+      corroboration_class: hearsay
+    # mid (90-120 s)
+    - handle: NewsWire_US
+      tier: mid
+      corroboration_class: hearsay
+    - handle: remarks
+      tier: mid
+      corroboration_class: hearsay
+    - handle: Osint613
+      tier: mid
+      corroboration_class: hearsay
+    - handle: BRICSinfo
+      tier: mid
+      corroboration_class: hearsay
+      strict_corroboration: true
+    - handle: rawsalerts
+      tier: mid
+      corroboration_class: hearsay
+      strict_corroboration: true
+    - handle: StockMKTNewz
+      tier: mid
+      corroboration_class: hearsay
+    - handle: tradfi
+      tier: mid
+      corroboration_class: hearsay
+    - handle: unusual_whales
+      tier: mid
+      corroboration_class: hearsay
+    - handle: WatcherGuru
+      tier: mid
+      corroboration_class: hearsay
+    - handle: WhaleInsider
+      tier: mid
+      corroboration_class: hearsay
+    # slow (300 s)
+    - handle: HormuzLetter     # route to brief_candidates, not fast wire
+      tier: slow
+      corroboration_class: hearsay
+      route: brief_candidates
+    - handle: CoinDesk
+      tier: slow
+      corroboration_class: hearsay
+    - handle: Cointelegraph
+      tier: slow
+      corroboration_class: hearsay
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Satire / parody hard blocklist — excluded at INGESTION (never scored, never
+# posted). Seed: HalfwayPost. Add PCF-labeled accounts here as they surface.
+# ─────────────────────────────────────────────────────────────────────────────
+satire_blocklist:
+  - HalfwayPost
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Spend — monthly hard cap for the twitterapi.io lane (USD). At cap the lane
+# STOPS and emits a start-of-line ::warning (repo GH-annotation law).
+# ─────────────────────────────────────────────────────────────────────────────
+spend:
+  twitterapiio_monthly_cap_usd: 75.0
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Alpaca — WS wire slot. Disabled until a key exists (BUILD GATE — no key yet).
+# ─────────────────────────────────────────────────────────────────────────────
+alpaca:
+  enabled: false
+  ws_url: "wss://stream.data.alpaca.markets/v1beta1/news"
+  key_env: "ALPACA_API_KEY_ID"
+  secret_env: "ALPACA_API_SECRET_KEY"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Wire lane emission policy — flagship interim lane (B1). Only the top-K highest
+# salience wire items/day may emit for the flagship account; counter persisted in
+# the daemon's LOCAL state (data/marketing/press/, never the repo).
+# ─────────────────────────────────────────────────────────────────────────────
+wire:
+  flagship_top_k_per_day: 3
+  flagship_salience_floor: 70.0
+  # Corroboration window for hearsay-class items: two independent sources must
+  # arrive within this window for a hearsay item to clear to instant-publish.
+  corroboration_window_s: 1800
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Summarize-with-citation LLM lane — reuses config/marketing.yml breaking.llm
+# gating exactly (both cfg enabled AND env MARKETING_LLM_ENABLED). Referenced here
+# for the register of record; press_providers does not duplicate the gate.
+# ─────────────────────────────────────────────────────────────────────────────
+llm:
+  canonical_config: "config/marketing.yml#breaking.llm"

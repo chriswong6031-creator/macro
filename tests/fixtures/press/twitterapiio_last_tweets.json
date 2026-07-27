@@ -1,0 +1,22 @@
+{
+  "status": "success",
+  "has_next_page": false,
+  "next_cursor": "",
+  "tweets": [
+    {
+      "id": "1949000000000000003",
+      "text": "*TREASURY SECRETARY: TARIFF TALKS WITH CHINA ONGOING, NO DEAL YET",
+      "createdAt": "Mon Jul 27 20:30:00 +0000 2026"
+    },
+    {
+      "id": "1949000000000000002",
+      "text": "*BREAKING: WHITE HOUSE CONFIRMS NEW STEEL TARIFF EFFECTIVE IMMEDIATELY",
+      "createdAt": "Mon Jul 27 20:25:00 +0000 2026"
+    },
+    {
+      "id": "1949000000000000001",
+      "text": "Markets quiet ahead of the open.",
+      "createdAt": "Mon Jul 27 13:00:00 +0000 2026"
+    }
+  ]
+}
