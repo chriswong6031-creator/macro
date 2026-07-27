@@ -3,8 +3,9 @@
 DOCTRINE (measurement.html): every number the platform shows must trace to a stored,
 leak-free, pre-registered artifact — or it does not ship with the word 'validated'.
 This gate makes that mechanically true. It scans the user-facing surfaces
-(templates/, site/*.js, generated *_data.js) in BOTH English and Chinese ('validated',
-'已验证') and fails if an AFFIRMATIVE 'validated' claim maps to NO backing:
+(templates/, site/*.js, generated *_data.js, and the engine/ display-copy fields that
+FEED them) in BOTH English and Chinese ('validated', '已验证') and fails if an
+AFFIRMATIVE 'validated' claim maps to NO backing:
 
   A claim is BACKED iff either
     (a) it matches a justified entry in data/regime/validated_claims_allowlist.json
@@ -36,6 +37,10 @@ nothing to attach to. Those spans are skipped by construction rather than allowl
 one quote at a time — see the module comment above _THIRD_PARTY_PAGES for the safety
 invariant that keeps this from weakening the gate.
 
+ENGINE SOURCE COPY is scanned too — see _COPY_BARE / scan_python_copy below. A claim
+authored in engine/ used to be gated only once a nightly render carried it onto a page,
+which is a day late and on somebody else's PR (#3765 → #3790).
+
 Run:  python -m scripts.check_validated_claims          # scan; exit 1 on any unearned claim
       python -m scripts.check_validated_claims --list    # list every affirmative claim + status
       python -m scripts.check_validated_claims --selftest # prove the gate fires on a synthetic EN+zh
@@ -43,6 +48,7 @@ Run:  python -m scripts.check_validated_claims          # scan; exit 1 on any un
 from __future__ import annotations
 
 import argparse
+import ast
 import html
 import json
 import re
@@ -61,7 +67,29 @@ SCAN_GLOBS = [
     ("site/prophet/plans", ("*.json",)),
 ]
 
+# Python sources whose DISPLAY-COPY FIELDS are scanned (scan_python_copy). Not the whole
+# file — see the _COPY_BARE comment for why.
+PY_COPY_GLOBS = [
+    ("engine", ("*.py",)),
+]
+
 TOKEN = re.compile(r"validated|已验证", re.IGNORECASE)
+# KNOWN GAP — 经验证. The zh token list is '已验证' only, so the equally common '经验证'
+# ("having been validated") is invisible: #3790's zh copy said 经验证的港股利率／汇率压力
+# and sailed through while its EN twin reddened main. Live affirmative uses sit on
+# templates/spvector.html.j2, sector_central.html.j2, discovery.html.j2 and others.
+#
+# NOT widened here, deliberately — it is a separate adjudication, not a token edit.
+# MEASURED on this tree (2026-07-27) by adding 经验证 to this pattern and re-scanning:
+#   23 newly-red lines — 21 genuinely affirmative claims (each needs an allowlist entry
+#   citing an artifact, or de-escalated copy), and 2 FALSE POSITIVES that are honest
+#   disclaimers the negation guard cannot see: '香港没有经验证的选股阿尔法' ("HK has no
+#   validated selection alpha", templates/hk_lookup.html.j2 + its render).
+# _NEG_ZH is [无非未不] — it covers 未经验证 (which is why 641 hedged uses stay ignored)
+# but NOT 没有, 尚未, 缺乏. Widening TOKEN without widening _NEG_ZH would therefore turn
+# two of the estate's most honest sentences into gate failures, and the cheapest way out
+# of that red is to delete the disclaimer — the exact inversion this gate exists to
+# prevent. Sequence: widen _NEG_ZH first, then TOKEN, then adjudicate the 21.
 
 # STRUCTURAL non-claims — the token here is a code identifier, a data-field key/value, or an
 # i18n token, NOT a displayed prose claim. BC-2 targets DISPLAYED CLAIMS, so these are skipped
@@ -307,6 +335,143 @@ def _scan_line(line: str, allow: list[dict]) -> tuple[int, list[tuple[bool, dict
     return n_negated, hits
 
 
+# ── ENGINE SOURCE COPY (PY_COPY_GLOBS) ───────────────────────────────────────────────
+#
+# WHY THIS EXISTS (#3765 → #3790). BC-2 used to scan only RENDERED surfaces, so copy
+# authored in engine/ was gated only AFTER a nightly render carried it onto a page — a
+# day later, on a PR that did not write it. #3765 added an unearned "Validated HK
+# rate/FX pressure" to engine/intl_recovery_quality.macro_backdrop, passed CI green, and
+# reddened main on ci-pack-0 with the 2026-07-27 render; every open PR inherited the
+# failure until #3790 landed. The claim now fails at its OWN PR, next to its author.
+#
+# WHY AST AND NOT A LINE SCAN. The #3765 defect was shaped like this:
+#
+#     "read_en": (
+#         "Macro backdrop is shown separately from the price state. Validated HK "
+#         "rate/FX pressure lives in the pullback radar; ..."
+#     ),
+#
+# The field name and the token are on DIFFERENT LINES. A grep-shaped rule keyed on "a
+# display-copy field name and 'validated' on the same line" would have sailed straight
+# past the exact defect it was written for. Python folds implicit concatenation at parse
+# time, so the AST sees ONE string: we scan the folded value and report the node's line.
+#
+# WHY FIELD-RESTRICTED, NOT WHOLE-FILE. engine/ carries ~939 token occurrences; scanning
+# whole files the way templates/ are scanned surfaces 509 findings, essentially all of
+# them code identifiers, enum values, `"validated": True` data fields, LLM system
+# prompts, and research-registry bookkeeping. BC-2 targets DISPLAYED CLAIMS. Binding the
+# scan to the fields that ARE display copy reduces that to 10 real strings — all of which
+# this change resolves, so the rule ships with zero pre-existing debt.
+#
+# RELATION TO _STRUCTURAL. `"note": ...validated` is a structural skip on the RENDERED
+# side (an engine-stamped field inside a minified data blob, where one match suppresses a
+# whole 100kB line). Scanning `note` HERE is the other half of that bargain, not a
+# contradiction: the claim is gated once, at the source, where a human can fix it.
+#
+# The house's display-copy marker is the bilingual `_en`/`_zh` suffix — there is no
+# reason to translate an internal note into Chinese — so ANY suffixed field counts. The
+# bare names below are the display-copy fields the codebase also uses unsuffixed.
+# DELIBERATELY EXCLUDED (checked against the census, all internal): `notes` (plural —
+# engine/intl_claims research-registry bookkeeping, "W4-C7 VERDICT: CONTEXT (do NOT
+# wire)"), `description` (LLM tool schemas in engine/neuralweb), and `reason` / `tier` /
+# `verdict` / `status` (scoring enums and trace fields).
+_COPY_BARE = frozenset({
+    "label", "caveat", "blurb", "headline", "summary", "detail", "read",
+    "note", "disclaimer", "tooltip", "takeaway", "subtitle",
+})
+_COPY_SUFFIX = re.compile(r"_(?:en|zh)$")
+
+
+def _is_copy_field(name: str) -> bool:
+    return name in _COPY_BARE or bool(_COPY_SUFFIX.search(name))
+
+
+def _copy_strings(tree: ast.AST) -> list[tuple[str, ast.Constant]]:
+    """Every string literal bound to a display-copy field name, as (field, node).
+
+    Covers the shapes engine/ actually uses to emit copy: dict literals
+    ({"read_en": ...}), call keywords (RadarProfile(caveat_en=...), _row(why_zh=...)),
+    plain/annotated assignment, attribute and constant-subscript assignment. Values are
+    unwrapped through ternaries, `+` concatenation, f-string literal parts, and
+    list/tuple elements, because each of those is a live way to write shipping copy.
+    """
+    out: list[tuple[str, ast.Constant]] = []
+    seen: set[tuple[int, int]] = set()
+
+    def emit(name: str, node: ast.AST) -> None:
+        if isinstance(node, ast.Constant) and isinstance(node.value, str):
+            key = (node.lineno, node.col_offset)
+            if key not in seen:
+                seen.add(key)
+                out.append((name, node))
+        elif isinstance(node, ast.IfExp):                 # x if cond else y
+            emit(name, node.body); emit(name, node.orelse)
+        elif isinstance(node, ast.BinOp):                 # "a" + var + "b"
+            emit(name, node.left); emit(name, node.right)
+        elif isinstance(node, ast.JoinedStr):             # f"...{v}..." — literal parts
+            for v in node.values:
+                emit(name, v)
+        elif isinstance(node, (ast.List, ast.Tuple)):
+            for e in node.elts:
+                emit(name, e)
+
+    for n in ast.walk(tree):
+        if isinstance(n, ast.Dict):
+            for k, v in zip(n.keys, n.values):
+                if isinstance(k, ast.Constant) and isinstance(k.value, str) \
+                        and _is_copy_field(k.value):
+                    emit(k.value, v)
+        elif isinstance(n, ast.Call):
+            for kw in n.keywords:
+                if kw.arg and _is_copy_field(kw.arg):
+                    emit(kw.arg, kw.value)
+        elif isinstance(n, ast.Assign):
+            for t in n.targets:
+                if isinstance(t, ast.Name) and _is_copy_field(t.id):
+                    emit(t.id, n.value)
+                elif isinstance(t, ast.Attribute) and _is_copy_field(t.attr):
+                    emit(t.attr, n.value)
+                elif isinstance(t, ast.Subscript) and isinstance(t.slice, ast.Constant) \
+                        and isinstance(t.slice.value, str) and _is_copy_field(t.slice.value):
+                    emit(t.slice.value, n.value)
+        elif isinstance(n, ast.AnnAssign) and n.value is not None \
+                and isinstance(n.target, ast.Name) and _is_copy_field(n.target.id):
+            emit(n.target.id, n.value)
+    return out
+
+
+def scan_python_copy(rel_path: str, text: str, allow: list[dict]) -> tuple[list[dict], dict]:
+    """Scan the display-copy field values of one Python source. Same contract as scan_text.
+
+    Fails CLOSED on an unparseable file: a syntax error is reported as a finding rather
+    than skipped, so the gate can never be silently bypassed by a file it cannot read.
+    """
+    stats = {"claims": 0, "backed": 0, "negated": 0, "third_party": 0, "ok": []}
+    try:
+        tree = ast.parse(text)
+    except SyntaxError as e:
+        return ([{"file": rel_path, "line_no": e.lineno or 1,
+                  "text": f"UNPARSEABLE ({e.msg}) — cannot prove it carries no unearned claim"}],
+                stats)
+
+    unearned: list[dict] = []
+    for field, node in _copy_strings(tree):
+        if not TOKEN.search(node.value):
+            continue
+        n_neg, hits = _scan_line(node.value, allow)
+        stats["negated"] += n_neg
+        for backed, entry in hits:
+            stats["claims"] += 1
+            if backed:
+                stats["backed"] += 1
+                stats["ok"].append((node.lineno, ("allow:" + entry["match"]) if entry
+                                    else "artifact validated:true"))
+            else:
+                unearned.append({"file": rel_path, "line_no": node.lineno,
+                                 "text": f"[{field}] " + node.value.strip()[:160]})
+    return unearned, stats
+
+
 def scan_text(rel_path: str, text: str, allow: list[dict]) -> tuple[list[dict], dict]:
     """Scan one file's `text` as if it lived at repo-relative `rel_path`.
 
@@ -344,7 +509,11 @@ def scan(list_all: bool = False) -> list[dict]:
     allow = _load_allowlist()
     unearned: list[dict] = []
     n_claims = n_negated = n_backed = n_tp = 0
-    for sub, pats in SCAN_GLOBS:
+    # Rendered surfaces are scanned whole-file; Python sources only through their
+    # display-copy fields (scan_python_copy) — same reporting shape either way.
+    surfaces = ([(sub, pats, scan_text) for sub, pats in SCAN_GLOBS]
+                + [(sub, pats, scan_python_copy) for sub, pats in PY_COPY_GLOBS])
+    for sub, pats, scanner in surfaces:
         base = ROOT / sub
         if not base.exists():
             continue
@@ -357,7 +526,7 @@ def scan(list_all: bool = False) -> list[dict]:
                 except Exception:  # noqa: BLE001
                     continue
                 rel = f.relative_to(ROOT).as_posix()
-                found, st = scan_text(rel, text, allow)
+                found, st = scanner(rel, text, allow)
                 n_claims += st["claims"]; n_backed += st["backed"]
                 n_negated += st["negated"]; n_tp += st["third_party"]
                 unearned.extend(found)
@@ -507,6 +676,51 @@ def selftest() -> int:
     ]
     for name, rel, text, should_fire in page_cases:
         found, _ = scan_text(rel, text, allow)
+        fired = bool(found)
+        status = "PASS" if fired == should_fire else "FAIL"
+        if fired != should_fire:
+            ok = False
+        print(f"  [{status}] {name}: fired={fired} expected={should_fire}")
+
+    # ── engine source copy: the #3765 → #3790 latency ────────────────────────────────
+    # The first case is the ACTUAL defect, byte-for-byte in its original shape: the
+    # field name on one line, the token on the next. It is the reason this scan parses
+    # instead of grepping — a same-line rule scores 0 on it.
+    py_cases = [
+        ("#3765 read_en: token on a bare continuation line FIRES", True, '''
+def macro_backdrop() -> dict:
+    return {
+        "read_en": (
+            "Macro backdrop is shown separately from the price state. Validated HK "
+            "rate/FX pressure lives in the pullback radar; Iran/oil and the midterm "
+            "calendar remain unscored context."
+        ),
+    }
+'''),
+        ("zh 已验证 in a label_zh FIRES", True,
+         'TIERS = [{"key": "x", "label_zh": "已验证的选股优势"}]\n'),
+        ("dataclass/profile keyword copy FIRES",
+         True, 'P = RadarProfile(key="x", caveat_en="This sleeve is validated on HK breadth.")\n'),
+        ("f-string literal part FIRES",
+         True, 'note = f"validated macro gauge ({band})"\n'.replace("{band}", "{b}")),
+        ("negated engine copy is NOT a claim", False,
+         '{"detail_en": "HK has no validated selection edge; context only."}\n'),
+        ("allowlisted engine copy does not fire", False,
+         '{"caveat_en": "gated by the validated MACD-2D × StochRSI-3D confluence."}\n'),
+        # Everything below is why the scan is field-restricted rather than whole-file:
+        # engine internals use this token constantly and assert nothing to a user.
+        ("data field `\"validated\": True` is not copy", False,
+         'row = {"validated": True, "tier": "scored"}\n'),
+        ("code identifiers are not copy", False,
+         'validated_tag = compute()\nif verdict == "validated":\n    ship()\n'),
+        ("research-registry `notes` bookkeeping is out of scope", False,
+         '_row(notes="W4-C7 VERDICT: validated at index level, do NOT wire")\n'),
+        ("LLM tool `description` is out of scope", False,
+         'TOOL = {"description": "Read the validated mechanism-pathways artifact."}\n'),
+        ("unparseable engine file FAILS CLOSED", True, 'def broken(:\n'),
+    ]
+    for name, should_fire, src in py_cases:
+        found, _ = scan_python_copy("engine/_selftest.py", src, allow)
         fired = bool(found)
         status = "PASS" if fired == should_fire else "FAIL"
         if fired != should_fire:

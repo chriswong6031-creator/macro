@@ -1339,6 +1339,79 @@
    "surfaces": [
     "subsector_rotation"
    ]
+  },
+  {
+   "match": "Validated but modest: China drawdowns are led by",
+   "backing": "engine/risk_radar_intl.CN_PROFILE — the China external-driver forward-drawdown composite. Ledger: data/risk_radar_intl/cn_forward_log.jsonl (named by the module's own passport `validation` field). Measured lift: caution 1.97-3.13x, composite 2.07x p=0.01, 2016+ era; legs are US rate shocks, USD/CNH, the US-CN yield gap and A-share breadth, with the internal froth legs excluded because they mean-revert. Same claim of record as the existing 'validated china external-driver radar' entry, which covers the RENDERED form; this covers the ENGINE SOURCE the render is built from. Scope is deliberately CN-only: the sibling HK_PROFILE makes a weaker claim ('Lighter than the China read and recent-era only ... Context, not a forecast'), has no validated:true artifact, and its over-claiming copy was de-escalated in #3790 rather than allowlisted.",
+   "surfaces": [
+    "risk_radar",
+    "china",
+    "market_state_board"
+   ]
+  },
+  {
+   "match": "已验证但偏温和：A股回撤由美债利率冲击",
+   "backing": "ZH counterpart of 'Validated but modest: China drawdowns are led by'. engine/risk_radar_intl.CN_PROFILE — the China external-driver forward-drawdown composite. Ledger: data/risk_radar_intl/cn_forward_log.jsonl (named by the module's own passport `validation` field). Measured lift: caution 1.97-3.13x, composite 2.07x p=0.01, 2016+ era; legs are US rate shocks, USD/CNH, the US-CN yield gap and A-share breadth, with the internal froth legs excluded because they mean-revert. Same claim of record as the existing 'validated china external-driver radar' entry, which covers the RENDERED form; this covers the ENGINE SOURCE the render is built from. Scope is deliberately CN-only: the sibling HK_PROFILE makes a weaker claim ('Lighter than the China read and recent-era only ... Context, not a forecast'), has no validated:true artifact, and its over-claiming copy was de-escalated in #3790 rather than allowlisted.",
+   "surfaces": [
+    "risk_radar",
+    "china",
+    "market_state_board"
+   ]
+  },
+  {
+   "match": "Validated forward-drawdown composite on external drivers",
+   "backing": "Signal-passport note for the same CN radar, carried in the sleeve chip's passport (engine/risk_radar_intl.cn_sleeve_chip). The prose states its own numbers inline and the passport's `validation` field names the ledger on the line above. The existing 'note\":\"validated forward-drawdown' entry covers the MINIFIED rendered form only. engine/risk_radar_intl.CN_PROFILE — the China external-driver forward-drawdown composite. Ledger: data/risk_radar_intl/cn_forward_log.jsonl (named by the module's own passport `validation` field). Measured lift: caution 1.97-3.13x, composite 2.07x p=0.01, 2016+ era; legs are US rate shocks, USD/CNH, the US-CN yield gap and A-share breadth, with the internal froth legs excluded because they mean-revert. Same claim of record as the existing 'validated china external-driver radar' entry, which covers the RENDERED form; this covers the ENGINE SOURCE the render is built from. Scope is deliberately CN-only: the sibling HK_PROFILE makes a weaker claim ('Lighter than the China read and recent-era only ... Context, not a forecast'), has no validated:true artifact, and its over-claiming copy was de-escalated in #3790 rather than allowlisted.",
+   "surfaces": [
+    "china",
+    "measurement",
+    "baskets_desk"
+   ]
+  },
+  {
+   "match": "validated per-name extension brake",
+   "backing": "engine/stock_score._STRETCH_BLOCK — the absolute trend-extension brake. Deep+PIT 18y top-momentum-decile study (forward 5/10/21d, returns clipped; engine/stock_score.py L423-435): names <25% above their 200dma are healthy, while the >~35% cohort has the WORST median forward return AND the deepest drawdown at every horizon. Independently re-tested and upheld by research/LEADER_STARTER_SIZE_PHASE0.md (VERDICT: NO-GO on relaxing it — WAIT_FULL is risk-adjusted best at ret/DD 0.49 vs 0.34 for the chase). The word attaches ONLY to that pre-existing brake: the cohort layer this disclaimer introduces is explicitly display-only and says so in the same sentence ('it is not a new return or drawdown edge').",
+   "surfaces": [
+    "baskets_desk",
+    "china_intel"
+   ]
+  },
+  {
+   "match": "已验证的个股延展刹车",
+   "backing": "ZH counterpart of 'validated per-name extension brake'. engine/stock_score._STRETCH_BLOCK — the absolute trend-extension brake. Deep+PIT 18y top-momentum-decile study (forward 5/10/21d, returns clipped; engine/stock_score.py L423-435): names <25% above their 200dma are healthy, while the >~35% cohort has the WORST median forward return AND the deepest drawdown at every horizon. Independently re-tested and upheld by research/LEADER_STARTER_SIZE_PHASE0.md (VERDICT: NO-GO on relaxing it — WAIT_FULL is risk-adjusted best at ret/DD 0.49 vs 0.34 for the chase). The word attaches ONLY to that pre-existing brake: the cohort layer this disclaimer introduces is explicitly display-only and says so in the same sentence ('it is not a new return or drawdown edge').",
+   "surfaces": [
+    "baskets_desk",
+    "china_intel"
+   ]
+  },
+  {
+   "match": "已验证状态计的宏观倾斜",
+   "backing": "ZH counterpart of the existing 'validated condition gauges' entry: the masterminds GTAA regime sleeve tilts off engine.conditions recession_risk / drawdown_risk / RORO — the same validated condition gauges that entry cites. Needed separately because `match` is a case-insensitive substring, so an EN phrase can never cover its zh twin; the EN half of this exact bilingual pair (engine/masterminds.py desc_en) has been allowlisted all along while desc_zh went ungated only because engine/ was unscanned.",
+   "surfaces": [
+    "masterminds",
+    "dashboard"
+   ]
+  },
+  {
+   "match": "Validated — pending wiring on this branch",
+   "backing": "engine/signal_lab.TIERS 'pending' bucket, defined (signal_lab.py L27) as 'validated but the code/wiring lives in a worktree/PR, not this branch'. The lab is a curated registry whose every number is quoted from a named report in reports/ via each row's `source` field, so tier membership is auditable per row. Directly precedented by the existing sibling entries 'confirmer / context — validated' and its zh twin '确认/背景 — 已验证', which allowlist the neighbouring tier label on the same page for the same reason: the label states the bucket's admission rule, not a fresh edge claim.",
+   "surfaces": [
+    "signal_lab"
+   ]
+  },
+  {
+   "match": "已验证 — 本分支待接入",
+   "backing": "ZH counterpart of 'Validated — pending wiring on this branch'. engine/signal_lab.TIERS 'pending' bucket, defined (signal_lab.py L27) as 'validated but the code/wiring lives in a worktree/PR, not this branch'. The lab is a curated registry whose every number is quoted from a named report in reports/ via each row's `source` field, so tier membership is auditable per row. Directly precedented by the existing sibling entries 'confirmer / context — validated' and its zh twin '确认/背景 — 已验证', which allowlist the neighbouring tier label on the same page for the same reason: the label states the bucket's admission rule, not a fresh edge claim.",
+   "surfaces": [
+    "signal_lab"
+   ]
+  },
+  {
+   "match": "validated macro-stress drawdown gauge",
+   "backing": "engine/conditions.drawdown_risk — the macro-stress drawdown gauge. Backing study: scripts/validate_drawdown_risk_pit.py, a PIT-frame re-measurement of the gauge's forward-drawdown hit rate that reports per-band rates with Wilson CIs on three frames including a leak-free `release` PIT frame (revision-prone econ legs carry only what was knowable at initial release; market legs are never revised). Measured: P(>=10% drawdown in 63d) ~49% in this band vs ~19% base (engine/alerts.py L355, engine/conditions.py L332/L611). Already the house term for this layer — engine/bonds.py L10 calls it the 'validated conditions layer'.",
+   "surfaces": [
+    "dashboard",
+    "macro"
+   ]
   }
  ]
 }

@@ -142,7 +142,16 @@ def verdict(per_trade: dict, recovery: dict, bar: float = 0.70) -> dict:
             "per_trade_agreement": (per_trade or {}).get("agreement"),
             "per_trade_size_weighted": (per_trade or {}).get("size_weighted_agreement"),
             "bar": bar,
-            "note": ("flow DIRECTION validated (minute net-sign recovered ≥ bar)"
+            # "RELIABLE", not "validated" (BC-2, scripts/check_validated_claims.py). What
+            # cleared `bar` is a SIGNING-ACCURACY calibration — minute tick-rule signs vs
+            # quote-rule truth (scripts/calibrate_flow_signing → Databento TBBO) — not a
+            # forward edge that passed the gauntlet, which is what "validated" means to a
+            # reader everywhere else on the estate. Stretching the word to a second sense
+            # is how it stops meaning anything, so this de-escalates rather than earning an
+            # allowlist entry. Nothing is lost: the parenthetical already states the
+            # evidence, and RELIABLE/SOFT now reads as the matched pair it always was —
+            # mirroring this dict's own `direction_reliable` / `magnitude_reliable` keys.
+            "note": ("flow DIRECTION is RELIABLE (minute net-sign recovered ≥ bar)"
                      if direction_ok else
                      "flow DIRECTION is SOFT — option minute-ticks are delta-dominated, so net "
                      "buy/sell is approximate; MAGNITUDE / positioning reads stay reliable"
