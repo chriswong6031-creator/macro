@@ -618,7 +618,11 @@ html[data-theme="dark"] .kpi{background:var(--panel2)}
 .cc-mkt-strip{display:flex;flex-wrap:wrap;gap:10px;margin-top:4px}
 .cc-mkt-chip{display:inline-flex;flex-direction:column;gap:2px;padding:10px 14px;border-radius:12px;border:1px solid var(--grid);background:var(--card);cursor:help;flex:1;min-width:160px}
 .cc-mkt-chip .chip-label{font-size:13px;font-weight:700;color:var(--ink)}
-.cc-mkt-chip .chip-sub{font-size:11px;color:var(--muted)}
+/* Bottom-align the sub-line: chip labels are state-dependent copy that changes
+   nightly, so some wrap to two lines at a given chip width and others don't.
+   margin-top:auto pins every sub to the foot of its (equal-height) chip, keeping
+   the row of values on one baseline whatever the labels do. */
+.cc-mkt-chip .chip-sub{font-size:11px;color:var(--muted);margin-top:auto}
 .cc-mkt-chip.chip-amber{border-color:color-mix(in srgb,var(--amber) 55%,var(--grid));background:color-mix(in srgb,var(--amber) 7%,var(--card))}
 .cc-mkt-chip.chip-red{border-color:color-mix(in srgb,var(--red) 45%,var(--grid));background:color-mix(in srgb,var(--red) 6%,var(--card))}
 .cc-mkt-chip.chip-calm{border-color:color-mix(in srgb,var(--green) 40%,var(--grid));background:color-mix(in srgb,var(--green) 5%,var(--card))}
