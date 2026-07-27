@@ -7,13 +7,19 @@ quietly writing an empty month.
 
 Covers:
   - the monthly index: UNQUOTED hrefs, the FULL-WIDTH-parenthesis '（2）… by Country
-    （Region）…' row label, and the year-select JavaScript that maps past years to
-    their own index (the current year is the un-suffixed monthly.html)
-  - table (2): 271 partner rows for June 2026, the '############' Excel-overflow
-    artifact parsed to NaN and COUNTED (never dropped, never zero-filled), GACC's
-    '-' nil marker likewise, and continent/bloc rows flagged as aggregates
+    （Region）…' row label, the year-select OPTION list (the primary current-year
+    source — it survives a change-handler rewrite) and the JavaScript map that
+    points past years at their own index
+  - table (2) in BOTH published shapes: the 10-cell month+cumulative table (June
+    2026, 271 partner rows) and the 7-cell year-start table (January 2026, where the
+    month IS the cumulative)
+  - the '############' Excel-overflow artifact parsed to NaN and COUNTED (never
+    dropped, never zero-filled), GACC's '-' nil marker likewise, and continent/bloc
+    rows flagged as aggregates
   - keep-FIRST vintage: a re-parse carrying REVISED figures never overwrites the
-    first observation (GACC revises silently at the same URL)
+    first observation (GACC revises silently at the same URL) — and therefore the
+    truncation floor, which keeps a partial page from becoming that first vintage
+  - the January year-rollover sweep of the prior year's unpublished tail
   - corrupt-store abort, atomic write, empty-key rows dropped and counted
 
 Storage is redirected to tmp_path (monkeypatched lib.config.data_dir) so no tracked
@@ -22,6 +28,7 @@ parquet is ever dirtied.
 from __future__ import annotations
 
 import math
+import re
 import sys
 from pathlib import Path
 
@@ -36,6 +43,7 @@ from lib import config  # noqa: E402
 _FIX = Path(__file__).resolve().parent / "fixtures" / "china_trade_detail"
 _TS = "2026-07-27T12:00:00+00:00"
 _JUN_URL = "http://english.customs.gov.cn/Statics/2d569f57-a86e-4d63-94fb-d3000b039aa7.html"
+_JAN_URL = "http://english.customs.gov.cn/Statics/6e9d4074-409f-46a1-883c-3278c5b5b31c.html"
 
 
 def _fx(name: str) -> str:
@@ -51,6 +59,11 @@ def store(tmp_path, monkeypatch):
 @pytest.fixture(scope="module")
 def jun2026():
     return td.parse_by_country(_fx("bycountry_jun2026.html"), _JUN_URL, _TS)
+
+
+@pytest.fixture(scope="module")
+def jan2026():
+    return td.parse_by_country(_fx("bycountry_jan2026.html"), _JAN_URL, _TS)
 
 
 def _by_name(parsed):
@@ -106,6 +119,37 @@ class TestMonthIndex:
     def test_current_year_is_the_sites_notion_not_our_clock(self):
         assert td.current_year(_fx("monthly_index.html")) == "2026"
         assert td.current_year("<html>no year select</html>") == ""
+
+    def test_year_comes_from_the_select_options_not_the_javascript(self):
+        """REVIEW F1 — the year must survive a change-handler rewrite.
+
+        The old resolver read ONLY the select's onChange JavaScript. Swapping
+        `location.replace` for `window.location.assign` — presentation code, not one
+        published figure changed — emptied the year map, stamped every month with an
+        EMPTY period, emptied the pending diff and reported a clean 0-row success. A
+        silent, permanent death of the plane. The `<option value="YYYY">` list is
+        server-rendered DATA and is now the primary source.
+        """
+        drifted = _fx("monthly_index.html").replace("location.replace(",
+                                                    "window.location.assign(")
+        assert td.parse_year_map(drifted) == {}          # the JS resolver is now blind
+        assert td.select_years(_fx("monthly_index.html"))[0] == "2026"
+        assert td.current_year(drifted) == "2026"        # …and the select still answers
+        assert [m["period"] for m in td.parse_month_index(drifted)] == [
+            "2026-01", "2026-02", "2026-03", "2026-04", "2026-05", "2026-06"]
+
+    def test_select_max_year_wins_regardless_of_option_order(self):
+        html = ('<select id="monthlysel"><option value="2024">2024</option>'
+                '<option value="2027">2027</option>'
+                '<option value="2025">2025</option></select>')
+        assert td.select_years(html) == ["2024", "2027", "2025"]
+        assert td.current_year(html) == "2027"
+
+    def test_javascript_is_the_fallback_when_the_options_vanish(self):
+        stripped = re.sub(r'(?is)<select[^>]*id="monthlysel".*?</select>', "",
+                          _fx("monthly_index.html"))
+        assert td.select_years(stripped) == []
+        assert td.current_year(stripped) == "2026"       # the JS map still corroborates
 
     def test_explicit_year_overrides_for_a_backfill_index(self):
         months = td.parse_month_index(_fx("monthly_index.html"), year="2024")
@@ -213,6 +257,64 @@ class TestParseByCountry:
     def test_garbage_page_degrades(self):
         assert td.parse_by_country("")["rows"] == []
         assert td.parse_by_country("<html>nope</html>")["period"] == ""
+
+
+class TestJanuarySevenColumnShape:
+    """REVIEW F3 (main-session LIVE finding) — the year-start bulletin is 7-column.
+
+    From February on, each of Total/Exports/Imports carries a MONTH and a CUMULATIVE
+    column (10 cells per data row). In January the month IS the cumulative, so the
+    bulletin prints one column per group and every data row has 7 cells. A hard-coded
+    ``len(cells) != 10`` test drops all 271 rows on the floor and files January as a
+    parse failure — every year, silently, for the month that anchors the whole
+    year-to-date series.
+    """
+
+    def test_the_sub_header_declares_the_shape(self):
+        assert td.period_columns(_fx("bycountry_jan2026.html")) == 1
+        assert td.period_columns(_fx("bycountry_jun2026.html")) == 2
+        # an unknown page keeps the historic 10-cell shape rather than guessing
+        assert td.period_columns("<html>no table</html>") == 2
+
+    def test_january_rows_and_period(self, jan2026):
+        assert jan2026["period"] == "2026-01"
+        assert len(jan2026["rows"]) == 271
+        assert jan2026["n_empty_key"] == 0
+
+    def test_total_row_exact_numbers(self, jan2026):
+        total = _by_name(jan2026)["TOTAL"]
+        assert total["total_month_kusd"] == 590758685.0
+        assert total["exports_month_kusd"] == 356699626.0
+        assert total["imports_month_kusd"] == 234059059.0
+        assert total["pct_total"] == 15.7
+        assert total["pct_exports"] == 10.0
+        assert total["pct_imports"] == 25.6
+        assert total["is_aggregate"] is True
+
+    def test_month_is_the_cumulative_in_january(self, jan2026):
+        """Not an inference — the bulletin's own arithmetic. A NULL cumulative column
+        would read as a coverage gap that does not exist."""
+        for name in ("TOTAL", "United States", "Asia:"):
+            r = _by_name(jan2026)[name]
+            assert r["total_cum_kusd"] == r["total_month_kusd"], name
+            assert r["exports_cum_kusd"] == r["exports_month_kusd"], name
+            assert r["imports_cum_kusd"] == r["imports_month_kusd"], name
+
+    def test_aggregate_flagging_matches_the_ten_column_shape(self, jan2026):
+        aggregates = {r["country_en"] for r in jan2026["rows"] if r["is_aggregate"]}
+        assert aggregates == {
+            "TOTAL", "Asia:", "Africa:", "Europe:", "Latin America:",
+            "North America:", "Oceania:", "ASEAN", "EU", "APEC", "RCEP", "BRI"}
+
+    def test_january_rows_round_trip_the_store(self, store, jan2026):
+        assert td.write_rows(jan2026["rows"]) == 271
+        stored = td.load_by_country()
+        assert set(stored["period"]) == {"2026-01"}
+        assert len(stored) == 271
+
+    def test_a_january_page_clears_the_truncation_threshold(self, jan2026):
+        # F2's floor applies to this shape too — 271 >= 200, so the month stores.
+        assert len(jan2026["rows"]) >= td._MIN_COUNTRY_ROWS
 
 
 class TestParseValue:
@@ -386,6 +488,158 @@ class TestRefresh:
         monkeypatch.setattr(td, "_clock", lambda: next(ticks))
         s = td.refresh()
         assert s["n_fetched"] <= 2
+
+    def test_a_truncated_month_is_retried_not_frozen(self, store, monkeypatch, caplog):
+        """REVIEW F2 — a partial page must never become the permanent first vintage.
+
+        keep-FIRST means the first thing written under a period stays there forever.
+        A page that renders 5 of its 271 partner rows (a partial render, a shape drift
+        the row matcher half-follows) therefore froze that month at 5 rows for the life
+        of the store, with n_new=5 reading as a successful night.
+        """
+        full = _fx("bycountry_jun2026.html")
+        rows = re.findall(r"(?is)<tr[^>]*>.*?</tr>", full)
+        # keep the title/unit/header rows + 5 data rows, drop the other 266
+        truncated = ("<title>（2）Imports and Exports by Country （Region） of "
+                     "Origin/Destination,6.2026</title><table>"
+                     + "".join(rows[:9]) + "</table>")
+        assert 0 < len(td.parse_by_country(truncated)["rows"]) < td._MIN_COUNTRY_ROWS
+
+        pages = {"truncated": truncated, "full": full}
+        state = {"serve": "truncated"}
+
+        def _get(_session, url):
+            if url == td.INDEX_URL:
+                return _fx("monthly_index.html")
+            return pages[state["serve"]]
+
+        monkeypatch.setattr(td, "_get", _get)
+        with caplog.at_level("WARNING"):
+            night1 = td.refresh()
+        assert night1["n_new"] == 0 and night1["n_failed"] == 6
+        assert td.load_by_country().empty              # nothing frozen at 5 rows
+        assert any("TRUNCATED page" in r.getMessage() for r in caplog.records)
+        assert any("only 5 partner rows" in r.getMessage() for r in caplog.records)
+
+        state["serve"] = "full"                         # night 2: the real page is back
+        night2 = td.refresh()
+        assert night2["n_new"] == 271
+        assert len(td.load_by_country()) == 271
+
+    def test_a_year_that_cannot_be_resolved_is_a_loud_failure_not_a_quiet_night(
+            self, store, monkeypatch, caplog):
+        """REVIEW F1 (second half) — the tripwire behind the year resolver.
+
+        With BOTH the option list and the change-handler gone, every month link stamps
+        an empty period, the pending diff is empty and the old code returned the
+        all-zero quiet-night sentinel — the collector reporting success while storing
+        nothing, forever. n_failed must carry the month count instead.
+        """
+        blind = re.sub(r'(?is)<select[^>]*id="monthlysel".*?</select>', "",
+                       _fx("monthly_index.html")).replace("location.replace(",
+                                                          "window.location.assign(")
+        calls = []
+
+        def _get(_session, url):
+            calls.append(url)
+            return blind if url == td.INDEX_URL else _fx("bycountry_jun2026.html")
+
+        monkeypatch.setattr(td, "_get", _get)
+        with caplog.at_level("ERROR"):
+            s = td.refresh()
+        assert s == {"n_new": 0, "n_fetched": 0, "n_failed": 6, "n_nulls": 0,
+                     "periods_seen": 0}
+        assert calls == [td.INDEX_URL]                  # no month page was even fetched
+        assert any("year resolution failed" in r.getMessage() for r in caplog.records)
+
+
+class TestDecemberRollover:
+    """REVIEW F12 — the prior year's tail must not fall off the calendar.
+
+    GACC publishes ~3 weeks in arrears, so when the site rolls monthly.html over to a
+    new year in January, LAST year's November and December tables have not been
+    published yet — and they never appear on the new index. Without a rollover sweep
+    the tape loses two months a year, permanently and silently.
+    """
+
+    def _rolled_over_index(self) -> str:
+        """The committed 2026 index as it looks the January the site rolls to 2027:
+        a new 2027 option/clause pointing at monthly.html, and 2026 demoted to its own
+        monthly2026.html — exactly the asymmetry parse_year_map exists to read."""
+        html = _fx("monthly_index.html")
+        html = html.replace('<option value="2026">2026</option>',
+                            '<option value="2027">2027</option>'
+                            '<option value="2026">2026</option>')
+        html = html.replace(
+            'location.replace("http://english.customs.gov.cn/statics/report/monthly.html")',
+            'location.replace("http://english.customs.gov.cn/statics/report/monthly2026.html")')
+        html = html.replace(
+            'if ($("#monthlysel").val() == "2018")',
+            'if ($("#monthlysel").val() == "2027") {'
+            ' location.replace("http://english.customs.gov.cn/statics/report/monthly.html") }'
+            ' if ($("#monthlysel").val() == "2018")')
+        assert td.current_year(html) == "2027"
+        assert td.parse_year_map(html)["2026"].endswith("/monthly2026.html")
+        return html
+
+    def test_prior_year_months_join_the_pending_diff(self, store, monkeypatch):
+        td.write_rows(_rows(1, period="2026-06"))       # store's newest year is 2026
+        seen: list[str] = []
+
+        def _get(_session, url):
+            seen.append(url)
+            if url == td.INDEX_URL:
+                return self._rolled_over_index()          # the site rolled over
+            if url.endswith("monthly2026.html"):
+                return _fx("monthly_index.html")        # last year's index, 6 months
+            return _fx("bycountry_jun2026.html")
+
+        monkeypatch.setattr(td, "_get", _get)
+        s = td.refresh()
+        assert "http://english.customs.gov.cn/statics/report/monthly2026.html" in seen
+        # 6 new 2027 slots + 5 unstored 2026 months (2026-06 is already on disk)
+        assert s["n_fetched"] == 11
+
+    def test_no_sweep_when_the_store_is_already_on_the_current_year(self, store, monkeypatch):
+        td.write_rows(_rows(1, period="2026-06"))
+        seen: list[str] = []
+
+        def _get(_session, url):
+            seen.append(url)
+            return _fx("monthly_index.html") if url == td.INDEX_URL \
+                else _fx("bycountry_jun2026.html")
+
+        monkeypatch.setattr(td, "_get", _get)
+        td.refresh()
+        assert not any(u.endswith("monthly2025.html") for u in seen)
+
+    def test_a_dead_prior_year_index_does_not_sink_the_night(self, store, monkeypatch):
+        td.write_rows(_rows(1, period="2026-06"))
+
+        def _get(_session, url):
+            if url == td.INDEX_URL:
+                return self._rolled_over_index()
+            if url.endswith("monthly2026.html"):
+                raise IOError("boom")
+            return _fx("bycountry_jun2026.html")
+
+        monkeypatch.setattr(td, "_get", _get)
+        s = td.refresh()
+        assert s["n_fetched"] == 6                      # the 2027 months still landed
+        assert s["n_new"] == 271
+
+    def test_the_sweep_never_fires_on_a_first_night(self, store, monkeypatch):
+        """An EMPTY store is not a rollover — it has no 'prior year' to be behind."""
+        seen: list[str] = []
+
+        def _get(_session, url):
+            seen.append(url)
+            return self._rolled_over_index() if url == td.INDEX_URL \
+                else _fx("bycountry_jun2026.html")
+
+        monkeypatch.setattr(td, "_get", _get)
+        td.refresh()
+        assert not any("monthly2026.html" in u for u in seen)
 
 
 class TestBackfillIsManualOnly:

@@ -420,6 +420,12 @@ on:
       - "tests/test_cn_newswires.py"
       - "tests/test_china_calendar.py"
       - "tests/fixtures/cn_newswires/**"
+      # china_news_intel is the CONSUMER of those wires (slug collision, timestamp
+      # quality, the qbus rows) and its W2 migration suite was named by NO job — the
+      # #1253 shape again. A wire_sources change or a _timestamp_quality edit could
+      # merge with the only suite that pins them unrun.
+      - "engine/china_news_intel.py"
+      - "tests/test_china_news_intel_w2.py"
       # Whole-board 涨跌家数: the heatmap card quotes a ~5,200-name count, and the
       # engine gates the row against the map's own session. Both suites were
       # previously named by NO job (#1253 wiring law) — test_market_heatmap.py

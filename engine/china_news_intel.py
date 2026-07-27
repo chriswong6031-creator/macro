@@ -704,10 +704,11 @@ def _timestamp_quality(seendate: str, source: str, domain: str = "") -> str:
     src = (source or "").lower()
     if src in {"rss", "wallstreetcn", "jin10", "gelonghui"}:
         return "PUBLISHER_STATED"
-    # W3: futu/ths now arrive on TWO legs with the SAME slug — akshare's
-    # stock_info_global_{futu,ths} (config.yml china_news_intel.wire_sources; day-
-    # resolution 发布时间, and _fetch_wires strips the prefix to the bare slug) and
-    # engine/cn_newswires.py's direct endpoints (epoch-SECOND `time`/`ctime`). Only
+    # W3: futu/ths CAN arrive on two legs with the SAME slug — akshare's
+    # stock_info_global_{futu,ths} (a documented FALLBACK since W3 removed them from
+    # config.yml china_news_intel.wire_sources; day-resolution 发布时间, and
+    # _fetch_wires strips the prefix to the bare slug) and engine/cn_newswires.py's
+    # direct endpoints (epoch-SECOND `time`/`ctime`), the live leg today. Only
     # the direct leg may claim a publisher-stated stamp, and the domain is what tells
     # them apart — a bare `src in {...}` test would relabel akshare's day-resolution
     # rows as sub-minute truth.

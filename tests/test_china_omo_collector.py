@@ -226,6 +226,38 @@ class TestParseTrade:
                 for r in rows] == [("7天", 7.0, 1.40, 3255.0), ("14天", 14.0, 1.55, 800.0)]
         assert all(r["op_date"] == "2026-07-27" for r in rows)
 
+    def test_multi_price_auction_reads_the_weighted_average_rate(self):
+        """REVIEW F10 — a 利率招标 result table prints THREE rate columns.
+
+        最高 / 最低 / 加权平均中标利率, in that order. Taking the leftmost 利率 header
+        publishes the HIGHEST accepted bid as the operation's rate — the tail of the
+        auction dressed up as the policy rate.
+        """
+        html = """<div id="zoom"><p>2026年7月27日中国人民银行开展逆回购操作。</p>
+        <table><tr><td>期限</td><td>最高中标利率</td><td>最低中标利率</td>
+        <td>加权平均中标利率</td><td>投标量</td><td>中标量</td></tr>
+        <tr><td>91天</td><td>1.68%</td><td>1.45%</td><td>1.51%</td>
+        <td>5000亿元</td><td>3000亿元</td></tr></table></div>"""
+        r = co.parse_trade(html, "2026-07-27")[0]
+        assert r["rate_pct"] == 1.51
+        assert r["bid_bn"] == 5000.0 and r["awarded_bn"] == 3000.0
+
+    def test_a_total_row_is_never_stored_as_a_tenor(self):
+        """REVIEW F10 — the 合计 footer sums the tenors above it.
+
+        Stored as a tenor it becomes a phantom operation that double-counts the whole
+        table (and, keyed on tenor_label, a permanent one).
+        """
+        html = """<div id="zoom"><p>2026年7月27日中国人民银行开展逆回购操作。</p>
+        <table><tr><td>期限</td><td>操作利率</td><td>投标量</td><td>中标量</td></tr>
+        <tr><td>7天</td><td>1.40%</td><td>6000亿元</td><td>5000亿元</td></tr>
+        <tr><td>14天</td><td>1.55%</td><td>4000亿元</td><td>3000亿元</td></tr>
+        <tr><td>合计</td><td></td><td>10000亿元</td><td>8000亿元</td></tr>
+        </table></div>"""
+        rows = co.parse_trade(html, "2026-07-27")
+        assert [r["tenor_label"] for r in rows] == ["7天", "14天"]
+        assert sum(r["awarded_bn"] for r in rows) == 8000.0
+
     def test_table_without_a_bid_column_still_parses(self):
         html = """<div id="zoom"><p>2026年7月27日开展逆回购操作。</p>
         <table><tr><td>期限</td><td>中标利率</td><td>中标量</td></tr>
@@ -280,6 +312,24 @@ class TestParseAnnouncement:
                 '1月2日开展3000亿元。</p></div>')
         rows = co.parse_announcement(html, "2026-12-28")
         assert rows[0]["op_date"] == "2027-01-02"
+
+    def test_january_announcement_rolls_december_into_the_previous_year(self):
+        """REVIEW F11 — the roll must be SYMMETRIC.
+
+        A January bulletin referring back to a 12月30日 operation is the mirror of the
+        December→January case; with only the forward roll it lands eleven months in
+        the FUTURE, which is worse than the defect the forward roll was added for.
+        """
+        html = ('<div id="zoom"><p>中国人民银行于12月30日开展隔夜逆回购操作。'
+                '12月30日开展3000亿元。</p></div>')
+        rows = co.parse_announcement(html, "2027-01-05")
+        assert rows[0]["op_date"] == "2026-12-30"
+
+    def test_both_roll_directions_are_pinned_on_the_helper(self):
+        assert co._dated(1, 2, 2026, "2026-12-28") == "2027-01-02"    # +1y
+        assert co._dated(12, 30, 2027, "2027-01-05") == "2026-12-30"  # -1y
+        assert co._dated(7, 29, 2026, "2026-07-24") == "2026-07-29"   # no roll
+        assert co._dated(1, 5, 2026, "2026-06-30") == "2026-01-05"    # 5 months back: no roll
 
     def test_same_month_announcement_does_not_roll(self):
         html = ('<div id="zoom"><p>将在7月29日开展隔夜逆回购操作。7月29日开展3000亿元。</p></div>')
@@ -437,6 +487,19 @@ class TestBuildEvent:
             assert ev["provenance"] == "pboc_bulletin"
             assert ev["source"] == "pboc"
 
+    def test_row_conforms_to_the_documented_ledger_shape(self):
+        """REVIEW F17 — events.jsonl rows carry sectors + phrase_diff_ref.
+
+        Every seeded row in data/china_policy_transmission/events.jsonl has them, so a
+        short row from this collector would make each consumer branch on where the row
+        came from. A PBOC operation states neither, hence [] and None — the honest
+        empties, not absent keys.
+        """
+        ev = co.build_event(_trade_rows())
+        assert set(ev) == {"ts", "source", "kind", "title", "url", "sectors",
+                           "phrase_diff_ref", "provenance", "_hash"}
+        assert ev["sectors"] == [] and ev["phrase_diff_ref"] is None
+
     def test_hash_is_the_engines_own_key(self):
         from engine.china_policy_transmission import _event_hash
         ev = co.build_event(_trade_rows())
@@ -453,9 +516,26 @@ class TestBuildEvent:
         assert "3255亿元" in ev["title"] and "1.40%" in ev["title"]
 
     def test_summary_of_a_multi_day_preannouncement(self):
+        """REVIEW F19: identical clauses COLLAPSE and the distinct one is never hidden.
+
+        The old head-of-three slice printed '6000亿元' three times and pushed the ONE
+        figure that differs (the 3000亿元 fourth day) behind '等4笔' — repetition that
+        also rode into the events.jsonl title.
+        """
         rows = co.build_rows(_ANN_ENTRY, "announcement", _fx("ann_5.html"), _TS)
         summary = co.summarise(rows)
-        assert "隔夜" in summary and "6000亿元" in summary and "等4笔" in summary
+        assert summary == "隔夜逆回购(预告) 6000亿元×3、隔夜逆回购(预告) 3000亿元"
+        assert "3000亿元" in summary                       # the distinct clause is SHOWN
+        assert "6000亿元、隔夜逆回购(预告) 6000亿元" not in summary   # never repeated
+        assert "等" not in summary                         # nothing is hidden to hide
+
+    def test_summary_keeps_a_tail_marker_only_past_four_distinct_clauses(self):
+        rows = [{"kind": "reverse_repo", "tenor_label": f"{d}天", "amount_bn": 100.0 * d,
+                 "rate_pct": float("nan")} for d in (1, 7, 14, 28, 91)]
+        summary = co.summarise(rows)
+        assert summary.endswith("等5笔")                   # 5 distinct clauses > cap of 4
+        assert "91天" not in summary                       # the head is a head
+        assert co.summarise(rows[:4]).endswith("28天逆回购 2800亿元")   # 4 fits whole
 
     def test_empty_and_other_kinds_produce_no_event(self):
         assert co.build_event([]) is None
@@ -627,7 +707,40 @@ class TestRefresh:
         co.refresh()
         s = co.refresh()          # nothing new upstream → a clean 0-row night
         assert s == {"n_new": 0, "n_fetched": 0, "n_failed": 3, "n_nulls": 0,
-                     "n_deferred": 0, "columns_polled": 1}
+                     "n_deferred": 0, "n_store_abort": 0, "columns_polled": 1}
+
+    def test_an_unreadable_store_halts_the_night_before_any_fetch(self, store, monkeypatch):
+        """REVIEW F8 — the abort must come FIRST, not after the night's work.
+
+        write_operations() already refused to append onto an unreadable store, but the
+        refusal fired at the END: 24 upstream fetches were spent, the URL diff ran
+        against an EMPTY known-set (so every bulletin looked new, every night), and
+        events.jsonl gained rows for bulletins the store never received — a permanent
+        ledger/tape divergence that no later run repairs.
+        """
+        co.write_operations(_trade_rows())
+        corrupt = b"PAR1 this is not a parquet file"
+        co._ops_path().write_bytes(corrupt)
+        before_events = len(_events(store))
+
+        calls = _wire(monkeypatch)
+        s = co.refresh()
+
+        assert calls == []                                  # nothing was fetched at all
+        assert s["n_store_abort"] == 1
+        assert s == {"n_new": 0, "n_fetched": 0, "n_failed": 0, "n_nulls": 0,
+                     "n_deferred": 0, "n_store_abort": 1, "columns_polled": 0}
+        assert co._ops_path().read_bytes() == corrupt       # left for manual recovery
+        assert len(_events(store)) == before_events         # the ledger did not move
+
+    def test_the_abort_reaches_the_sentinel_frame(self, store, monkeypatch):
+        co._ops_path().parent.mkdir(parents=True, exist_ok=True)
+        co._ops_path().write_bytes(b"PAR1 garbage")
+        _wire(monkeypatch)
+        sentinel = co.ChinaOmoAdapter().fetch()["refresh"]
+        assert sentinel["n_store_abort"].iloc[0] == 1.0
+        assert sentinel["n_fetched"].iloc[0] == 0.0
+        assert not co.ChinaOmoAdapter().validate("refresh", sentinel).empty
 
     def test_wall_clock_guard_stops_and_defers(self, store, monkeypatch):
         ticks = iter([0.0] * 3 + [co._BUDGET_S + 1.0] * 200)
@@ -674,13 +787,31 @@ class TestRefresh:
         assert len(_events(store)) == before
 
     def test_an_unparseable_bulletin_is_counted_not_stored(self, store, monkeypatch):
+        """REVIEW F16 — a parse failure is a FAILURE, not a null.
+
+        n_nulls answers "how many fields did the bulletins not state"; a document that
+        parsed to nothing has no fields at all. Folding it into n_nulls made a night of
+        unprinted rates and a night of broken parsing the same number.
+        """
         _wire(monkeypatch, detail_for="mlf_col.html",     # a list page, not a bulletin
               columns={_TRADE_COL_URL: "trade_col.html"},
               fail={_ANN_COL_URL, _OUTRIGHT_COL_URL, _MLF_COL_URL})
         s = co.refresh()
         assert s["n_fetched"] == 20 and s["n_new"] == 0
-        assert s["n_nulls"] >= 20          # every unparsed document is ledgered
+        assert s["n_failed"] == 23         # 3 dead columns + 20 unparseable documents
+        assert s["n_nulls"] == 0           # no ROWS were stored, so no fields are null
         assert co.load_operations().empty
+
+    def test_n_nulls_counts_unstated_fields_only(self, store, monkeypatch):
+        """The positive half of F16: real rows with a real coverage gap."""
+        _wire(monkeypatch, detail_for="ann_5.html",
+              columns={_ANN_COL_URL: "landing_list.html"},
+              fail={_TRADE_COL_URL, _OUTRIGHT_COL_URL, _MLF_COL_URL})
+        monkeypatch.setattr(co, "_DETAIL_CAP", 1)
+        s = co.refresh()
+        # one bulletin → four pre-announced operations, each with an unstated rate
+        assert s["n_fetched"] == 1 and s["n_new"] == 4
+        assert s["n_nulls"] == 4 and s["n_failed"] == 3
 
     def test_a_failing_detail_does_not_stop_the_run(self, store, monkeypatch):
         entries = co.extract_entries(_fx("trade_col.html"), _TRADE_COL_URL)
@@ -699,8 +830,9 @@ class TestAdapter:
         _wire(monkeypatch)
         frames = co.ChinaOmoAdapter().fetch()
         sentinel = frames["refresh"]
-        assert list(sentinel.columns) == ["n_new", "n_fetched", "n_failed",
-                                          "n_nulls", "n_deferred", "columns_polled"]
+        assert list(sentinel.columns) == ["n_new", "n_fetched", "n_failed", "n_nulls",
+                                          "n_deferred", "n_store_abort", "columns_polled"]
+        assert sentinel["n_store_abort"].iloc[0] == 0.0    # a healthy night says so
         # tz-NAIVE DatetimeIndex: validate() calls pd.to_datetime(df.index), and a
         # tz-aware index makes store.upsert's combine_first raise.
         assert isinstance(sentinel.index, pd.DatetimeIndex)

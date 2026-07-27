@@ -27,8 +27,21 @@ _PAYLOAD_KEYS = {"schema", "asof", "generated_at_utc", "horizon_days", "entries"
 
 
 @pytest.fixture(scope="module")
-def payload() -> dict:
-    return cal.assemble_calendar(asof=_ASOF, horizon_days=45)
+def payload(tmp_path_factory) -> dict:
+    """The rule/static skeleton, assembled against EMPTY stores ON PURPOSE.
+
+    Reading the LIVE data/china_omo + data/china_earnings stores here would make every
+    schema assertion below a function of last night's collector run: the nightly
+    advances those parquets, so a suite that passes today fails the week the PBoC
+    announces an operation of a shape nobody anticipated — a failure that says nothing
+    about the code under test. The feed leg has its own tests, each with a synthetic
+    store it fully controls.
+    """
+    empty = tmp_path_factory.mktemp("china_calendar_no_stores")
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(cal, "omo_store_path", lambda: empty / "operations.parquet")
+        mp.setattr(cal, "earnings_store_path", lambda: empty / "calendar.parquet")
+        return cal.assemble_calendar(asof=_ASOF, horizon_days=45)
 
 
 # --------------------------------------------------------------------------- #
@@ -65,9 +78,14 @@ def test_every_entry_matches_the_v1_row_shape(payload):
 
 
 def test_entries_are_sorted_and_deduped(payload):
-    keys = [(e["date"], e["region"], e["etype"]) for e in payload["entries"]]
-    assert keys == sorted(keys)
-    assert len(keys) == len(set(keys)), "duplicate (date, region, etype) rows"
+    sort_keys = [(e["date"], e["region"], e["etype"]) for e in payload["entries"]]
+    assert sort_keys == sorted(sort_keys)
+    # Uniqueness is on the FOUR-key (review F5): the label is part of the identity
+    # because one feed etype legitimately carries several rows on one date (different
+    # tenor/size). Two rows that agree on all four are the same row twice.
+    keys = [(e["date"], e["region"], e["etype"], e["label_zh"])
+            for e in payload["entries"]]
+    assert len(keys) == len(set(keys)), "duplicate (date, region, etype, label_zh) rows"
 
 
 def test_hk_engine_cn_reexports_are_not_shipped_twice(payload):
@@ -95,6 +113,51 @@ def test_module_imports_the_rule_engines_instead_of_re_encoding_them():
     for banned in ("_SCHED_2026", "_HK_SCHED_2026", "last_day_of_month",
                    "nth_business_day"):
         assert banned not in src, f"{banned} re-encodes a rule the engines already own"
+
+
+_RISK_STATE_GLOBS = ("risk_radar*.py", "risk_state*.py", "risk_sizing*.py",
+                     "risk_brain*.py", "china_market_state*.py", "market_state*.py",
+                     "*_gate*.py", "china_axes.py", "china_regime*.py",
+                     "china_playbook.py", "china_radar*.py", "hk_axes.py",
+                     "hk_regime*.py", "hk_playbook.py", "regime*.py",
+                     "*_score.py", "*_scorer.py", "setup_tier.py",
+                     "confluence_tiers.py")
+
+_CAL_IMPORT_FORMS = ("from engine.china_calendar", "import engine.china_calendar",
+                     "from engine import china_calendar",
+                     'import_module("engine.china_calendar")',
+                     "import_module('engine.china_calendar')")
+
+
+def test_ric_r3_no_risk_or_state_module_imports_the_calendar():
+    """RIC-R3, the OTHER direction: nothing that ranks, gates or sizes may READ this.
+
+    The forward test below proves the calendar does not reach into the scored core.
+    That is only half the rule — a calendar-gated risk leg is built by the risk module
+    importing the calendar, which the forward test cannot see at all. This scan is the
+    reverse direction, and it is deliberately cheap: file names in the risk/state
+    family, four import spellings, no AST.
+    """
+    scanned: list[Path] = []
+    offenders: list[str] = []
+    for folder in ("engine", "scripts"):
+        for pattern in _RISK_STATE_GLOBS:
+            for path in sorted((_REPO_ROOT / folder).glob(pattern)):
+                if path in scanned:
+                    continue
+                scanned.append(path)
+                code = "\n".join(
+                    ln for ln in path.read_text(encoding="utf-8", errors="replace").splitlines()
+                    if not ln.lstrip().startswith("#"))
+                if any(form in code for form in _CAL_IMPORT_FORMS):
+                    offenders.append(str(path.relative_to(_REPO_ROOT)))
+    # a guard that scans nothing passes forever — pin the floor (count-guard law)
+    assert len(scanned) >= 40, f"the risk/state scan went vacuous: {len(scanned)} files"
+    assert any(p.name == "risk_radar.py" for p in scanned)
+    assert any(p.name == "china_market_state.py" for p in scanned)
+    assert not offenders, (
+        "RIC-R3: these risk/state modules import engine.china_calendar — a calendar "
+        f"row may never gate, size or dampen a channel: {offenders}")
 
 
 def test_ric_r3_no_risk_or_state_channel_writers():
@@ -200,7 +263,12 @@ def test_feed_rows_carry_bilingual_amount_and_tenor(tmp_path, monkeypatch):
     feed = {e["etype"]: e for e in p["entries"] if e["source_class"] == "feed"}
 
     mlf = feed["omo_mlf_tender"]
-    assert mlf["date"] == "2026-08-14" and mlf["window_end"] == "2027-08-14"
+    # A MATURITY IS NOT A WINDOW (review F15): a 1-year tender is a one-day event whose
+    # money returns in a year. window_end=2027-08-14 painted a 365-day band across the
+    # calendar; the maturity now reads as the fact it is, in the labels.
+    assert mlf["date"] == "2026-08-14" and mlf["window_end"] is None
+    assert "matures 2027-08-14" in mlf["label_en"]
+    assert "到期 2027-08-14" in mlf["label_zh"]
     assert mlf["source"] == "china_omo.operations" and mlf["approx"] is False
     assert "1年期" in mlf["label_zh"] and "5,000亿元" in mlf["label_zh"]
     assert "RMB 500bn" in mlf["label_en"] and "MLF" in mlf["label_en"]
@@ -214,6 +282,7 @@ def test_feed_rows_carry_bilingual_amount_and_tenor(tmp_path, monkeypatch):
 
     out = feed["omo_outright_repo_tender"]
     assert out["date"] == "2026-08-15" and "RMB 1,400bn" in out["label_en"]
+    assert out["window_end"] is None and "matures 2027-02-15" in out["label_en"]
 
     # a settled result bulletin is NOT a forward calendar row
     assert "omo_reverse_repo" not in feed
@@ -221,7 +290,16 @@ def test_feed_rows_carry_bilingual_amount_and_tenor(tmp_path, monkeypatch):
 
 def test_feed_mlf_suppresses_the_rule_row(tmp_path, monkeypatch):
     """Announced beats guessed — the ~15th arithmetic MLF row must disappear when the
-    PBoC has published the tender, and the payload must say why."""
+    PBoC has published the tender, and the payload must say why.
+
+    The "before" leg runs against an EMPTY store (review F7): read from the live
+    data/china_omo tape it was a dated time bomb — the nightly appends real tenders, so
+    the day the PBoC announced an August MLF this assertion would fail while nothing in
+    the code had changed. An empty store is the only baseline that means "no feed row".
+    """
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    monkeypatch.setattr(cal, "omo_store_path", lambda: empty / "operations.parquet")
     before = cal.assemble_calendar(asof=_ASOF, horizon_days=45)
     assert [e["date"] for e in before["entries"] if e["etype"] == "MLF"] == ["2026-08-17"]
 
@@ -234,8 +312,8 @@ def test_feed_mlf_suppresses_the_rule_row(tmp_path, monkeypatch):
 
 
 def test_mlf_suppression_is_scoped_to_the_matching_operation(tmp_path, monkeypatch):
-    """The suppression is a +/-10d SAME-OPERATION test, not a blanket kill of the MLF
-    rule: a September tender takes out September's guessed row and leaves August's."""
+    """The suppression is a SAME-MONTH test, not a blanket kill of the MLF rule: a
+    September tender takes out September's guessed row and leaves August's."""
     monkeypatch.setattr(cal, "omo_store_path",
                         lambda: _omo_store(tmp_path, [_mlf_row("2026-09-05")]))
     p = cal.assemble_calendar(asof=_ASOF, horizon_days=60)
@@ -243,6 +321,72 @@ def test_mlf_suppression_is_scoped_to_the_matching_operation(tmp_path, monkeypat
     assert ruled == ["2026-08-17"]                      # Aug survives (nothing announced)
     assert any("MLF rule row 2026-09-15 suppressed" in g for g in p["data_gaps"])
     assert not any("2026-08-17 suppressed" in g for g in p["data_gaps"])
+
+
+def test_a_late_month_tender_still_suppresses_the_mid_month_guess(tmp_path, monkeypatch):
+    """REVIEW F4 — the old +/-10-day window failed on the CADENCE THAT ACTUALLY RUNS.
+
+    MLF is monthly: one tender per calendar month. The engine guesses the 15th; the
+    observed 2026 tenders have landed on the 24th-26th. A 26th-vs-15th pair is 11 days
+    apart, i.e. just outside the old +/-10d test, so the reader was shown the ANNOUNCED
+    tender and a phantom rule row for the very same monthly operation.
+    """
+    feed_day = date(2026, 9, 26)
+    rule_day = date(2026, 9, 15)
+    assert abs((feed_day - rule_day).days) > 10, "the old window would have kept both"
+
+    monkeypatch.setattr(cal, "omo_store_path",
+                        lambda: _omo_store(tmp_path, [_mlf_row(feed_day.isoformat())]))
+    p = cal.assemble_calendar(asof=_ASOF, horizon_days=75)
+    september = [e for e in p["entries"]
+                 if e["date"].startswith("2026-09") and "MLF" in e["etype"].upper()]
+    assert [(e["date"], e["source_class"]) for e in september] == [("2026-09-26", "feed")]
+    assert any("MLF rule row 2026-09-15 suppressed" in g for g in p["data_gaps"])
+    # August, which nothing announced, keeps its honest guess
+    assert [e["date"] for e in p["entries"] if e["etype"] == "MLF"] == ["2026-08-17"]
+
+
+def test_same_day_multi_tenor_feed_rows_both_survive_dedup(tmp_path, monkeypatch):
+    """REVIEW F5 — two operations announced for the SAME DAY are two rows.
+
+    The PBoC routinely pre-announces different tenors/sizes for one date, and both
+    carried etype 'omo_reverse_repo_preannounce'. On the old (date, etype, region) key
+    the second collapsed into the first: the larger operation deleted outright, with
+    nothing in data_gaps to say a row had been dropped.
+    """
+    monkeypatch.setattr(cal, "omo_store_path", lambda: _omo_store(tmp_path, [
+        {"announce_date": "2026-07-27", "op_date": "2026-08-03", "bulletin_no": "2026-6",
+         "column": "announcement", "kind": "reverse_repo_preannounce",
+         "tenor_label": "隔夜", "tenor_days": 1, "rate_pct": float("nan"),
+         "amount_bn": 3000.0, "title": "公开市场业务公告［2026］第6号",
+         "url": "https://www.pbc.gov.cn/ann/6.html", "provenance": "pboc_bulletin"},
+        {"announce_date": "2026-07-27", "op_date": "2026-08-03", "bulletin_no": "2026-6",
+         "column": "announcement", "kind": "reverse_repo_preannounce",
+         "tenor_label": "14天", "tenor_days": 14, "rate_pct": float("nan"),
+         "amount_bn": 8000.0, "title": "公开市场业务公告［2026］第6号",
+         "url": "https://www.pbc.gov.cn/ann/6.html", "provenance": "pboc_bulletin"},
+    ]))
+    p = cal.assemble_calendar(asof=_ASOF, horizon_days=45)
+    same_day = [e for e in p["entries"]
+                if e["etype"] == "omo_reverse_repo_preannounce" and e["date"] == "2026-08-03"]
+    assert len(same_day) == 2, "a same-day multi-tenor announcement lost a leg"
+    # both the tenor and the size survive — the old key kept whichever arrived first
+    assert sorted(e["label_zh"] for e in same_day) == sorted([
+        "央行逆回购操作（预告）：隔夜，3,000亿元",
+        "央行逆回购操作（预告）：14天，8,000亿元"])
+    # and the 3-key the review flagged really would have collapsed them
+    assert len({(e["date"], e["etype"], e["region"]) for e in same_day}) == 1
+
+
+def test_rule_and_static_rows_still_collapse_on_the_four_key(tmp_path, monkeypatch):
+    """The F5 key extension must not un-dedup the rows dedup exists for: a rule row the
+    feed already announces, and the HK engine's CN re-exports."""
+    monkeypatch.setattr(cal, "omo_store_path", lambda: _omo_store(tmp_path, [_mlf_row()]))
+    p = cal.assemble_calendar(asof=_ASOF, horizon_days=45)
+    keys = [(e["date"], e["region"], e["etype"], e["source_class"])
+            for e in p["entries"] if e["source_class"] in ("rule", "static")]
+    assert len(keys) == len(set(keys)), "rule/static rows duplicated"
+    assert not [e for e in p["entries"] if e["etype"].startswith("CN_")]
 
 
 def test_out_of_horizon_and_past_operations_are_dropped(tmp_path, monkeypatch):
@@ -293,6 +437,45 @@ def test_earnings_window_needs_a_dense_month(tmp_path, monkeypatch):
     assert s["impact"] == "high" and s["region"] == "cn" and s["approx"] is False
     assert "86%" in s["label_en"] and "86%" in s["label_zh"]
     assert "interim results" in s["label_en"] and "中报" in s["label_zh"]
+
+
+def test_mid_season_share_is_the_months_fact_not_a_horizon_slice(tmp_path, monkeypatch):
+    """REVIEW F6 — the label states a MONTH fact, so the arithmetic must be the month's.
+
+    99 of 100 covered names report in August. Clipping the numerator to [asof, end]
+    made the same August read 99% on the 1st and 70% on the 25th — a number the label
+    presents as "% of the covered board reports in 2026-08" — and DEMOTED impact from
+    high to medium as the clipped share fell through 50%, i.e. the season looked calmer
+    the deeper into it we got.
+    """
+    rows = [{"ticker": f"{i:06d}.SZ", "next_date": f"2026-08-{1 + i % 20:02d}",
+             "last_date": "", "period": "20260630", "asof": "2026-08-25"}
+            for i in range(29)]                                   # 8-01..8-20, all PAST asof
+    rows += [{"ticker": f"1{i:05d}.SZ", "next_date": f"2026-08-{26 + i % 6:02d}",
+              "last_date": "", "period": "20260630", "asof": "2026-08-25"}
+             for i in range(70)]                                  # 8-26..8-31, still ahead
+    rows += [{"ticker": "600000.SS", "next_date": "2026-09-10", "last_date": "",
+              "period": "20260630", "asof": "2026-08-25"}]
+    monkeypatch.setattr(cal, "earnings_store_path", lambda: _earnings_store(tmp_path, rows))
+    p = cal.assemble_calendar(asof=date(2026, 8, 25), horizon_days=45)
+    seasons = [e for e in p["entries"] if e["etype"] == "earnings_season"]
+    assert len(seasons) == 1
+    s = seasons[0]
+    assert "99%" in s["label_en"] and "99%" in s["label_zh"]     # the month's own fact
+    assert "70%" not in s["label_en"]                            # not the horizon slice
+    assert s["impact"] == "high"                                 # no mid-season demotion
+    # the window is the month's; the entry date is clamped forward to today
+    assert s["date"] == "2026-08-25" and s["window_end"] == "2026-08-31"
+
+
+def test_a_finished_season_is_not_a_forward_row(tmp_path, monkeypatch):
+    """The horizon still decides WHETHER a window ships: a month whose last report is
+    behind us is history, not a forward calendar row."""
+    rows = [{"ticker": f"{i:06d}.SZ", "next_date": "2026-08-05", "last_date": "",
+             "period": "20260630", "asof": "2026-08-25"} for i in range(80)]
+    monkeypatch.setattr(cal, "earnings_store_path", lambda: _earnings_store(tmp_path, rows))
+    p = cal.assemble_calendar(asof=date(2026, 8, 25), horizon_days=45)
+    assert not [e for e in p["entries"] if e["etype"] == "earnings_season"]
 
 
 def test_sparse_calendar_reports_the_density_gap(tmp_path, monkeypatch):

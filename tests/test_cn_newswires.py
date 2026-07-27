@@ -486,18 +486,36 @@ def test_w3_wires_are_tier2_publisher_stated_on_the_intel_bus():
 
 
 def test_akshare_futu_ths_rows_keep_their_day_resolution_label():
-    """SLUG COLLISION GUARD: config.yml already names akshare's stock_info_global_futu
-    / _ths, and _fetch_wires strips the prefix to the SAME 'futu'/'ths' slug the new
-    direct wires use — but akshare serves a day-resolution 发布时间, not an epoch. Only
-    the direct leg carries the vendor domain, so only it may claim PUBLISHER_STATED."""
+    """SLUG COLLISION GUARD (kept live after the config change below): _fetch_wires
+    strips 'stock_info_global_' to the SAME 'futu'/'ths' slug the direct wires use, so
+    a day-resolution akshare row must never be relabelled sub-minute. The domain is
+    what separates them, and this stays pinned because the akshare leg is the standing
+    CNH-R2 fallback — it is one config line away from being live again."""
     from engine import china_news_intel as ni
     assert ni._timestamp_quality("2026-07-27 18:33", "futu", "") == "SNAPSHOT_DATE"
     assert ni._timestamp_quality("2026-07-27 18:41", "ths", "") == "SNAPSHOT_DATE"
-    # and the akshare wire slugs really are these two (config, not folklore)
+
+
+def test_futu_ths_are_not_polled_twice_through_akshare():
+    """REVIEW F9 — one vendor, one leg.
+
+    config.yml used to name akshare's stock_info_global_futu / _ths ALONGSIDE the
+    direct cn_newswires futu/ths wires. Both legs strip to the same slug, so the bus
+    ingested each vendor twice — the akshare copy at day resolution, the direct copy
+    at the second — and only the domain field told them apart. The direct wires are
+    strictly better (publisher-stated stamps), so the akshare pair is retired to a
+    documented CNH-R2 fallback.
+    """
     from lib import config
-    wire_sources = (config.load().get("china_news_intel") or {}).get("wire_sources") or []
+    cfg = config.load()
+    wire_sources = (cfg.get("china_news_intel") or {}).get("wire_sources") or []
     stripped = {str(f).replace("stock_info_global_", "") for f in wire_sources}
-    assert {"futu", "ths"} <= stripped
+    assert not ({"futu", "ths"} & stripped), (
+        "futu/ths are polled on the direct cn_newswires leg — the akshare copies "
+        "duplicate every item into the intel bus")
+    assert stripped == {"em", "sina"}
+    # the direct leg is the one that carries them, and it still does
+    assert {"futu", "ths"} <= set((cfg.get("cn_newswires") or {}).get("sources") or [])
 
 
 def test_qbus_row_passes_the_domain_into_timestamp_quality():

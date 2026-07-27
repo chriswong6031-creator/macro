@@ -26,12 +26,24 @@ VERIFIED TRANSPORT (live 2026-07-27, this runner):
   * The by-country row's title uses FULL-WIDTH parentheses:
     '（2）Imports and Exports by Country （Region） of Origin/Destination'.
   * Older years live at .../monthly<YEAR>.html; the CURRENT year is the plain
-    monthly.html. The mapping is read off the page's own year-select JavaScript
-    rather than guessed.
+    monthly.html. The year the plain page is serving is read off the ``<select
+    id="monthlysel">`` OPTION LIST (server-rendered data), NOT off the select's
+    change-handler JavaScript: the handler is presentation code that a CMS
+    refresh rewrites (``location.replace`` → ``location.assign``/a router call)
+    without changing a single published figure, and a year that resolves to ''
+    stamps every month with an empty period, which silently ends the tape. The
+    JS map is still parsed — as CORROBORATION (a disagreement is logged) and as
+    the URL source for past-year indexes.
   * Publication lag is ~2–3 weeks (June 2026 landed mid-July 2026).
   * Cells that overflow Excel's column width are published literally as
     ``############``. They are DATA LOSS, not zero: they parse to NaN and are
     counted in the sentinel's n_nulls, never dropped and never zero-filled.
+  * TWO table shapes ship under the same table (2) label. From February on, each
+    of Total/Exports/Imports carries a MONTH and a CUMULATIVE column (10 cells
+    per data row). The YEAR-START bulletin has one column per group (7 cells)
+    because in January the month IS the cumulative — the sub-header row is what
+    says which shape a page is, and a hard-coded 10-cell test drops the whole
+    January table on the floor. See parse_by_country / _period_columns.
 
 Politeness + budget: ≥1.1 s before every request to the single host, a monthly
 cadence (a full current-year seed is ~6 fetches ≈ 15 s) and a ~100 s wall-clock
@@ -69,6 +81,15 @@ _JITTER_S = 0.3
 _TIMEOUT = (10, 30)     # table (2) is ~230 KB
 _BUDGET_S = 100.0
 _MONTH_CAP = 12         # a whole year in one night is the largest legitimate pull
+
+# A published month carries ~271 partner rows (every month of 2026, including the
+# 7-column January variant). A page that parses to fewer is TRUNCATED — a partial
+# render, a shape drift the row matcher half-follows — and must NOT be stored: the
+# keep-FIRST vintage law means the first thing written under a period is the thing
+# that stays there forever, so a 5-row Tuesday would freeze that month at 5 rows
+# for the life of the store. Below the threshold the month is counted in n_failed
+# and left in the diff, so the next night simply fetches it again.
+_MIN_COUNTRY_ROWS = 200
 
 # The bulletin's own table-of-contents label for the by-country breakdown. Matched
 # on the ASCII-safe fragments only: the live title carries FULL-WIDTH parentheses
@@ -269,6 +290,10 @@ _ANCHOR_RE = re.compile(r"""(?is)<a\s[^>]*?href=(["']?)([^"'\s>]+)\1[^>]*>(.*?)<
 _STATICS_RE = re.compile(r"(?i)^https?://[^/]*customs\.gov\.cn/Statics/[A-Za-z0-9\-]+\.html$")
 _YEAR_JS_RE = re.compile(
     r"""(?is)val\(\)\s*==\s*["'](\d{4})["']\s*\)\s*\{\s*location\.replace\(\s*["']([^"']+)["']""")
+# The year select itself: server-rendered DATA, and therefore the primary source.
+_YEAR_SELECT_RE = re.compile(
+    r"""(?is)<select[^>]*\bid\s*=\s*["']?monthlysel["']?[^>]*>(.*?)</select>""")
+_YEAR_OPTION_RE = re.compile(r"""(?is)<option[^>]*\bvalue\s*=\s*["']?(\d{4})["']?""")
 
 
 def parse_year_map(html_text: str) -> dict[str, str]:
@@ -279,21 +304,59 @@ def parse_year_map(html_text: str) -> dict[str, str]:
     monthly.html while every past year gets a monthly<YEAR>.html, and that asymmetry
     is exactly the kind of thing a hand-rolled f-string gets wrong the January the
     site rolls over.
+
+    This map is the URL source for PAST years (and a corroboration check on the
+    current one). It is NOT the current-year resolver — see current_year().
     """
     return {m.group(1): m.group(2) for m in _YEAR_JS_RE.finditer(html_text or "")}
+
+
+def select_years(html_text: str) -> list[str]:
+    """Every ``<option value="YYYY">`` of the ``monthlysel`` select, in page order. PURE.
+
+    The option list is server-rendered DATA — the set of years the bulletin archive
+    holds — and it survives the CMS reshuffling its own JavaScript.
+    """
+    m = _YEAR_SELECT_RE.search(html_text or "")
+    if not m:
+        return []
+    return [o.group(1) for o in _YEAR_OPTION_RE.finditer(m.group(1))]
 
 
 def current_year(html_text: str) -> str:
     """The year the plain monthly.html is serving, or ''. PURE.
 
-    Derived from the year map (the year whose target has no <YEAR> suffix) so the
-    period stamped on a scraped month is the SITE's notion of the current year, never
-    this machine's clock.
+    RESOLUTION ORDER (the 2026-07 review's blocker): the ``<select id="monthlysel">``
+    OPTION LIST first — max(year), because the archive only ever grows and the newest
+    option is the year the un-suffixed page serves — then the change-handler JS map as
+    a fallback. The JS is presentation code: a CMS refresh that swaps
+    ``location.replace`` for ``location.assign`` (or a framework router) changes not
+    one published figure, yet a JS-only resolver returns '' the moment it happens,
+    which stamps every month with an EMPTY period, makes the pending diff empty and
+    reports the night as a clean 0-row success — a silent permanent death.
+
+    Either way the answer is the SITE's notion of the current year, never this
+    machine's clock. A disagreement between the two sources is logged (the select
+    wins) so a real rollover discrepancy is visible instead of guessed at.
     """
+    years = select_years(html_text)
+    js_year = ""
     for year, url in parse_year_map(html_text).items():
         if re.search(r"/monthly\.html$", url or ""):
-            return year
-    return ""
+            js_year = year
+            break
+    if years:
+        best = max(years)
+        if js_year and js_year != best:
+            log.warning("china_trade_detail: year-select says %s but the page's own "
+                        "JavaScript points monthly.html at %s — trusting the select "
+                        "(server-rendered data beats presentation code)", best, js_year)
+        return best
+    if js_year:
+        log.warning("china_trade_detail: the monthlysel year OPTIONS are gone — falling "
+                    "back to the change-handler JavaScript (%s); the index shape has "
+                    "changed, check %s", js_year, INDEX_URL)
+    return js_year
 
 
 def parse_month_index(html_text: str, base_url: str = INDEX_URL,
@@ -345,24 +408,66 @@ def parse_period(html_text: str) -> str:
     return f"{p.group(2)}-{int(p.group(1)):02d}" if p else ""
 
 
+_PCT_SUBHEAD = ("total", "exports", "imports")
+
+
+def period_columns(html_text: str) -> int:
+    """How many PERIOD columns each of Total/Exports/Imports carries: 2 or 1. PURE.
+
+    Read off the table's own sub-header row, whose last three cells are always
+    Total/Exports/Imports (the percentage-change group). What precedes them is one
+    cell per value column:
+
+      Feb..Dec   ``6 | 1to6 | 6 | 1to6 | 6 | 1to6 | Total | Exports | Imports``  → 2
+      January    ``1 | 1 | 1 | Total | Exports | Imports``                       → 1
+
+    January's bulletin prints ONE column per group because the month and the
+    year-to-date cumulative are the same figure at the year start. Defaults to 2
+    when no sub-header is found, so a synthetic/edge page keeps the historic shape.
+    """
+    for tr in re.findall(r"(?is)<tr[^>]*>(.*?)</tr>", html_text or ""):
+        cells = [_cell(td) for td in re.findall(r"(?is)<td[^>]*>(.*?)</td>", tr)]
+        if len(cells) < 6:
+            continue
+        if tuple(c.strip().lower() for c in cells[-3:]) != _PCT_SUBHEAD:
+            continue
+        lead = len(cells) - 3
+        if lead == 3:
+            return 1
+        if lead == 6:
+            return 2
+    return 2
+
+
 def parse_by_country(html_text: str, source_url: str = "",
                      fetched_at: str = "", backfill: bool = False) -> dict:
     """Table (2) → {period, rows, n_nulls, n_empty_key}. PURE, never raises.
 
-    A data row is a <tr> with exactly 10 cells (country + 6 value columns + 3 percent
-    columns); the title/unit/two header rows and the trailing Notes row have other
-    widths and drop out on that test alone. A row whose country cell is EMPTY is
-    DROPPED and counted, never stored: country_en is half the dedup key, so a keyless
-    row would collapse the whole month into one row (W1 F7).
+    A data row is a <tr> with exactly (1 country + 3×periods value + 3 percent)
+    cells — 10 in the usual month+cumulative shape, 7 in the January year-start
+    shape, decided by the page's OWN sub-header row (see period_columns). The
+    title/unit/header rows and the trailing Notes row have other widths and drop
+    out on that test alone. A row whose country cell is EMPTY is DROPPED and
+    counted, never stored: country_en is half the dedup key, so a keyless row
+    would collapse the whole month into one row (W1 F7).
+
+    In the 7-column January shape each value is written to BOTH the *_month_kusd
+    and the *_cum_kusd field, because in January the month IS the cumulative. That
+    is the bulletin's own arithmetic, not an inference: a NULL cumulative column
+    would read as a coverage gap that does not exist. One consequence to read the
+    sentinel by: a nil cell in a January table counts TWICE in n_nulls, once per
+    mirrored field — the field-level count is honest, the cell-level one is half it.
     """
     try:
         period = parse_period(html_text)
+        periods = period_columns(html_text)
+        width = 1 + 3 * periods + 3
         rows: list[dict] = []
         n_empty_key = 0
         n_overflow = 0
         for tr in re.findall(r"(?is)<tr[^>]*>(.*?)</tr>", html_text or ""):
             cells = [_cell(td) for td in re.findall(r"(?is)<td[^>]*>(.*?)</td>", tr)]
-            if len(cells) != 10:
+            if len(cells) != width:
                 continue
             name = cells[0].strip()
             if not name:
@@ -370,6 +475,10 @@ def parse_by_country(html_text: str, source_url: str = "",
                 continue
             n_overflow += sum(1 for c in cells[1:] if OVERFLOW in c)
             values = [parse_value(c) for c in cells[1:]]
+            if periods == 1:
+                # month == cumulative in January; the pct group keeps its own slots.
+                values = [values[0], values[0], values[1], values[1],
+                          values[2], values[2], values[3], values[4], values[5]]
             rows.append({
                 "period": period,
                 "country_en": name,
@@ -449,24 +558,32 @@ def _get(session, url: str) -> str:
 # ------------------------------------------------------------------ nightly refresh --
 
 def _pull(session, months: list[dict], fetched_at: str, t0: float,
-          backfill_flag: bool = False) -> tuple[list[dict], int, int, int, set[str]]:
+          backfill_flag: bool = False, cap: int | None = None
+          ) -> tuple[list[dict], int, int, int, set[str]]:
     """Fetch + parse a list of month links. Returns (rows, n_fetched, n_failed, n_nulls, periods).
 
     Per-month try/except isolation: one unreachable month never sinks the rest, and a
-    page whose title carries no period is skipped rather than filed under a guess.
+    page whose title carries no period is skipped rather than filed under a guess. A
+    page that parses to FEWER than _MIN_COUNTRY_ROWS partner rows is treated as a
+    failure and left unstored (see the constant) — the keep-FIRST vintage makes a
+    truncated first write permanent.
+
+    ``cap`` defaults to _MONTH_CAP (one calendar year); the January rollover path
+    passes a larger one because it legitimately offers the prior year's tail as well.
     """
     rows: list[dict] = []
     n_fetched = n_failed = n_nulls = 0
     periods: set[str] = set()
-    if len(months) > _MONTH_CAP:
+    cap = int(cap or _MONTH_CAP)
+    if len(months) > cap:
         # A calendar year cannot exceed 12 months, so this only fires when the index
         # shape changed under us. LOUD rather than silent (W1 F3): a cap that trims
         # without saying so is how a plane quietly shrinks a month at a time.
         log.warning("china_trade_detail: %d month links offered but the cap is %d — "
                     "%d NOT fetched; the index shape has changed, check the "
-                    "'（2）… by Country' row", len(months), _MONTH_CAP,
-                    len(months) - _MONTH_CAP)
-    for i, link in enumerate(months[:_MONTH_CAP]):
+                    "'（2）… by Country' row", len(months), cap,
+                    len(months) - cap)
+    for i, link in enumerate(months[:cap]):
         if _clock() - t0 > _BUDGET_S:
             log.warning("china_trade_detail: %.0fs wall-clock guard hit after %d/%d "
                         "months — the remainder is picked up next run",
@@ -486,6 +603,17 @@ def _pull(session, months: list[dict], fetched_at: str, t0: float,
             log.warning("china_trade_detail: %s parsed to no usable rows (period=%r) — "
                         "counted, not stored", link["url"], period)
             continue
+        if len(parsed["rows"]) < _MIN_COUNTRY_ROWS:
+            # A TRUNCATED page, not a small month: every real bulletin carries ~271
+            # partner rows. Storing it would freeze the period at the truncated
+            # vintage forever (keep-FIRST), so it is counted and left in the diff —
+            # tomorrow's run fetches the same URL again.
+            n_failed += 1
+            log.warning("china_trade_detail: %s (%s) parsed to only %d partner rows "
+                        "(< %d) — TRUNCATED page, not stored; the month stays in the "
+                        "diff and is retried on the next run",
+                        link["url"], period, len(parsed["rows"]), _MIN_COUNTRY_ROWS)
+            continue
         # The page's OWN title wins over the index's month position: the index has
         # been observed pointing a month slot at a re-published neighbour.
         for r in parsed["rows"]:
@@ -498,12 +626,62 @@ def _pull(session, months: list[dict], fetched_at: str, t0: float,
     return rows, n_fetched, n_failed, n_nulls, periods
 
 
+def _prior_year_months(session, index_html: str, current: str, known: set[str],
+                       ) -> list[dict]:
+    """Unstored by-country months from LAST year's index, or []. Never raises.
+
+    The bulletin publishes ~3 weeks in arrears, so when the site rolls the plain
+    monthly.html over to a new year in January the prior year's November and December
+    tables have not been published yet — and they never appear on the new index. Left
+    alone, the tape simply loses two months a year, permanently and silently.
+
+    Fires only when the site's OWN current year is ahead of every stored period (never
+    the wall clock), and one failed prior-year fetch is a warning, not a dead night.
+    """
+    if not current or not known:
+        return []
+    stored_years = {p[:4] for p in known if len(p) >= 4 and p[:4].isdigit()}
+    if not stored_years or max(stored_years) >= current:
+        return []
+    prior = str(int(current) - 1)
+    url = parse_year_map(index_html).get(prior)
+    if not url:
+        log.warning("china_trade_detail: the site rolled over to %s but its year map "
+                    "offers no %s index — the prior year's tail cannot be swept", current, prior)
+        return []
+    try:
+        page = _get(session, url)
+    except Exception as e:  # noqa: BLE001 — the rollover sweep never sinks the night
+        log.warning("china_trade_detail: %s rollover index %s failed: %s", prior, url, e)
+        return []
+    out = [m for m in parse_month_index(page, url, year=prior)
+           if m["period"] and m["period"] not in known]
+    log.info("china_trade_detail: year rollover %s→%s — %d unstored %s month(s) swept "
+             "from %s", prior, current, len(out), prior, url)
+    return out
+
+
 def refresh() -> dict:
     """Fetch the monthly index, download only months NOT already stored, append.
 
     The whole current year is legitimate on a first night (~6 pages, ~15 s); after
     that a normal night finds nothing new at all, which is a success (n_new=0), not a
     failure. Raises RuntimeError only when the INDEX itself failed at transport level.
+
+    SENTINEL UNITS (data/china_trade_detail/refresh.parquet), stated precisely because
+    a sentinel whose units are folklore cannot be read:
+      n_new        NET-NEW STORE ROWS — (period, country_en) pairs that were not on
+                   disk before tonight. A re-observed month adds 0 (keep-FIRST).
+      n_fetched    month PAGES that answered at transport level (not rows).
+      n_failed     month PAGES that did not become stored rows: transport failures +
+                   pages with no period/no rows + pages truncated below
+                   _MIN_COUNTRY_ROWS. It is a PAGE count, never a row count.
+      n_nulls      value CELLS the bulletin gave no number for (############ overflow
+                   and GACC's '-' nil marker) PLUS the count of keyless ROWS dropped
+                   (n_empty_key). Two units in one column, deliberately: both are
+                   "coverage the page owes us", and the per-month log prints them
+                   apart. Not comparable to china_omo's n_nulls, which is fields only.
+      periods_seen distinct periods written tonight.
     """
     import requests  # lazy — keeps import-time cost off the collect registry
 
@@ -516,21 +694,38 @@ def refresh() -> dict:
     except Exception as e:  # noqa: BLE001
         raise RuntimeError(f"china_trade_detail: monthly index unreachable ({e})") from e
 
-    months = parse_month_index(index_html, INDEX_URL)
+    year = current_year(index_html)
+    months = parse_month_index(index_html, INDEX_URL, year=year)
     if not months:
         log.warning("china_trade_detail: the index carried NO by-country month links — "
                     "0-row night (check the '（2）… by Country' row label)")
         return {"n_new": 0, "n_fetched": 0, "n_failed": 1, "n_nulls": 0, "periods_seen": 0}
+    if not any(m["period"] for m in months):
+        # The row matcher found month links but the YEAR did not resolve, so every
+        # period is '' and the diff below would be empty — i.e. the night would
+        # report a clean 0-row success forever. Fail LOUD instead: this is the
+        # silent-permanent-death shape the review caught.
+        log.error("china_trade_detail: %d by-country month link(s) but NO year could be "
+                  "resolved (index shape changed — year resolution failed; check the "
+                  "<select id=\"monthlysel\"> options at %s). Nothing stored; this is a "
+                  "FAILED night, not a quiet one", len(months), INDEX_URL)
+        return {"n_new": 0, "n_fetched": 0, "n_failed": len(months), "n_nulls": 0,
+                "periods_seen": 0}
 
     known = stored_periods()
     pending = [m for m in months if m["period"] and m["period"] not in known]
-    log.info("china_trade_detail: index lists %d month(s), %d not yet stored",
-             len(months), len(pending))
+    rollover = _prior_year_months(session, index_html, year, known)
+    pending.extend(rollover)
+    log.info("china_trade_detail: index lists %d month(s) for %s, %d not yet stored "
+             "(+%d swept from the prior year)",
+             len(months), year or "?", len(pending) - len(rollover), len(rollover))
     if not pending:
         return {"n_new": 0, "n_fetched": 0, "n_failed": 0, "n_nulls": 0,
                 "periods_seen": 0}
 
-    rows, n_fetched, n_failed, n_nulls, periods = _pull(session, pending, fetched_at, t0)
+    rows, n_fetched, n_failed, n_nulls, periods = _pull(
+        session, pending, fetched_at, t0,
+        cap=_MONTH_CAP * 2 if rollover else _MONTH_CAP)
     n_new = write_rows(rows)
     log.info("china_trade_detail: fetched=%d failed=%d rows=%d net_new=%d periods=%s",
              n_fetched, n_failed, len(rows), n_new, sorted(periods))
@@ -589,12 +784,12 @@ class ChinaTradeDetailAdapter(Adapter):
     the cheapest place for a 6-page-a-month collector.
 
     fetch() returns a COVERAGE sentinel rather than a bare count, so
-    data/china_trade_detail/refresh.parquet is a readable run ledger: n_new/n_fetched
-    say what landed, n_failed what broke, n_nulls how many value cells the bulletin
-    itself did not give us a number for (the ############ overflow artifact and GACC's
-    '-' marker), and periods_seen how many months were written. What the sentinel does
-    NOT prove is that a stored month matches the CURRENT official table — the store is
-    first-vintage by design (see the module docstring).
+    data/china_trade_detail/refresh.parquet is a readable run ledger. Every column's
+    exact unit is documented on refresh() — read it there rather than inferring from
+    the name; n_failed in particular counts PAGES (transport failures, unusable pages
+    and truncated ones), not rows. What the sentinel does NOT prove is that a stored
+    month matches the CURRENT official table — the store is first-vintage by design
+    (see the module docstring).
     """
 
     name = "china_trade_detail"

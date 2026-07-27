@@ -685,9 +685,12 @@ jobs:
       # calendar organ that aggregates the CN/HK release engines + the OMO tape.
       # test_cn_newswires.py was named by NO job before this — the same wiring hole as
       # test_china_official_corpora.py above, on the surface that rots FASTEST (five
-      # vendor JSON shapes, none of them contractual).
+      # vendor JSON shapes, none of them contractual). test_china_news_intel_w2.py
+      # joins them for the same reason: it is the only suite pinning the bus that
+      # CONSUMES those wires (slug collision, timestamp quality, qbus row shape) and
+      # no job named it either.
       - name: china native wires + forward calendar tests (W3 CNH)
-        run: python -m pytest tests/test_cn_newswires.py tests/test_china_calendar.py -q
+        run: python -m pytest tests/test_cn_newswires.py tests/test_china_calendar.py tests/test_china_news_intel_w2.py -q
 
   china-board-breadth:
     if: ${{ false }}
