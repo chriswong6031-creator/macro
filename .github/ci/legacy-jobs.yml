@@ -681,6 +681,13 @@ jobs:
         run: python -m pytest tests/test_china_irm_collector.py tests/test_china_einteraction_collector.py tests/test_china_reports_collector.py tests/test_china_holder_counts_collector.py -q
       - name: china native policy / OMO / trade-detail collector tests (W3 CNH)
         run: python -m pytest tests/test_china_omo_collector.py tests/test_china_trade_detail_collector.py tests/test_china_official_corpora.py -q
+      # W3 part B: the five native flash wires (futu/ths joined here) and the forward
+      # calendar organ that aggregates the CN/HK release engines + the OMO tape.
+      # test_cn_newswires.py was named by NO job before this — the same wiring hole as
+      # test_china_official_corpora.py above, on the surface that rots FASTEST (five
+      # vendor JSON shapes, none of them contractual).
+      - name: china native wires + forward calendar tests (W3 CNH)
+        run: python -m pytest tests/test_cn_newswires.py tests/test_china_calendar.py -q
 
   china-board-breadth:
     if: ${{ false }}

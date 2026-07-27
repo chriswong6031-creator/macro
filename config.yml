@@ -3955,6 +3955,8 @@ cn_newswires:
     - wallstreetcn
     - jin10
     - gelonghui
+    - futu                        # 富途牛牛快讯 (W3 CNH; title often empty -> content head)
+    - ths                         # 同花顺快讯 (W3 CNH; Referer header REQUIRED, see module)
   max_per_source: 80              # normalized items kept per wire (pre theme-gate)
   cache_dir: data/china_news/cn_wire_cache
   cache_ttl_hours: 6

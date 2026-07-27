@@ -4984,6 +4984,28 @@
       "status": "accruing",
       "state": "registered at W2 merge (2026-07-26). Deep seeds committed with the PR (one-shot --full-history off the render path): repo_fixings 2,882 rows 2015-01-04->2026-07-24 (139/139 windows clean), shibor 2,331 rows 2015-05-08->, cb index 250 rows (rolling window), issuance 180 weekly bins 2013-08-23-> (sparse pre-2023 -- source completeness caveat), etf_shares first full-universe row (1,584 funds) at 2026-07-24. Weekend-snapshot legs (cgb_mm, cb breadth) start accruing on the first Monday asia-close render.",
       "next_step": "At come-back: read store row counts / widths; if stable, run the W8 display adjudication (designer lane) for the CB-breadth + ETF-share-flow chips; if unstable, diagnose collectors before any display work."
+    },
+    {
+      "id": "cnh-w3-policy-omo-calendar-planes",
+      "name": "China native W3 — PBoC OMO tape / policy corpus / GACC trade detail / wires 4-5",
+      "kind": "data_collection",
+      "priority": "medium",
+      "program": "china-native-data",
+      "wave": "W3",
+      "cadence": "nightly asia-lane accrual",
+      "what": "Forward accrual of the W3 native policy plane: data/china_omo/ (PBoC bulletin tape — observed reverse repo / pre-announcements / outright tenders / MLF, kind=omo_observed with provenance=pboc_bulletin per the red-team ruling), the gov.cn policy-library json_feed organ inside data/china_official_corpora/, data/china_trade_detail/ (GACC English by-country monthly exports/imports, first-vintage PIT), and the Futu + THS flash wires as sources 4/5 of engine/cn_newswires.py. engine/china_calendar.py aggregates the CN/HK release engines + the OMO tape + the A-share reporting calendar into site/chinastatedata/calendar.json. Display/context tier only (masterplan CNH-R1); the calendar carries authority {tier: context_only, may_rank: false} and RIC-R3 forbids it gating any risk or state channel.",
+      "source": "collectors/china_omo.py",
+      "storage": "data/china_omo/ + data/china_trade_detail/ + data/china_official_corpora/ + data/china_news/cn_wire_cache/",
+      "track_json": "",
+      "hook": "static",
+      "started": "2026-07-27",
+      "come_back_on": "2026-10-25",
+      "come_back_note": "2026-10-25 (masterplan CHINA_HK_NATIVE_DATA §6, same date as the W1 planes): DESCRIPTIVE ONLY — OMO bulletin coverage vs the PBoC's own publication cadence, n_deferred backlog draining, GACC month coverage + ############ null census, wire-4/5 item volume and dedup overlap with wires 1-3, calendar source_class mix. No forward-return read, no scoring.",
+      "maturation": "~90d of nightly bulletins on disk (the first nights drain a ~35-doc seed under the 20/night cap); GACC has published at least two new months; both new wires appear in the shared cache every night. Any scoring requires a fresh pre-registration (CNH-R1).",
+      "status": "collecting",
+      "state": "Registered at W3 ship, 2026-07-27 — OMO observed tape + gov.cn policy-library feed + GACC by-country trade detail + Futu/THS wires accruing; calendar organ display-tier. First descriptive review with the W1 planes.",
+      "state_as_of": "2026-07-27",
+      "next_step": "Accrue. Review 2026-10-25 with the W1 planes."
     }
   ]
 }

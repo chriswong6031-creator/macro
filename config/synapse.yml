@@ -3875,6 +3875,25 @@ artifacts:
       - "mastermind:context"
     notes: "Producer: scripts/build_china_cycle_phase.py (W3 — parallel PR; file does not yet exist in this tree). Phase tape + falsifier ledger. Nullable until W3 PR merges; spine degrades gracefully on absence. data/china_cycle_phase/ stores the tape and falsifier_ledger.parquet. CN-SYS-R1/R5. W7: mastermind:context reader added (admin observatory)."
 
+  site-china-calendar:
+    path: site/chinastatedata/calendar.json
+    format: json
+    producer: scripts/build_china_calendar.py
+    known_extra_writers: []
+    owner_program: china-system
+    cadence: asia-close
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: china_calendar.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: "Producer: scripts/build_china_calendar.py (W3 CNH). Forward China/HK event calendar — an AGGREGATOR over engine/china_event_calendar.py + engine/hk_event_calendar.py (rules), data/china_omo/operations.parquet (announced PBoC operations) and data/china_earnings/calendar.parquet (reporting-season windows); it re-encodes no release cadence of its own. Every row carries its CNH-R12 source_class (rule = algorithmic, feed = monitored store, static = manually refreshed political rhythm) and the payload carries authority {tier: context_only, may_rank: false}. RIC-R3: context only — a calendar row may never gate, size or dampen a risk or state channel, so consumers is deliberately empty. A china_intel briefing block is a separately-commissioned W7 candidate owned by china-alpha (CNH-R13), never added from this program."
+
   site-china-market-state:
     path: site/chinastatedata/market_state.json
     format: json

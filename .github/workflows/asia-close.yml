@@ -489,6 +489,11 @@ jobs:
             brun cycle_phase    "china cycle phase lobe (build_china_cycle_phase)"    scripts.build_china_cycle_phase
             brun market_state   "china market state spine (build_china_market_state)" scripts.build_china_market_state
             brun mechanics      "china mechanics cockpit (build_china_mechanics)"     scripts.build_china_mechanics
+            # W3 CNH: forward calendar (aggregates the CN/HK event engines + the OMO
+            # bulletin tape + the A-share reporting calendar). Display tier, RIC-R3
+            # context-only — nothing downstream reads it, so it runs last and a
+            # degrade (missing store -> data_gaps, exit 0) costs the lane nothing.
+            brun calendar       "china forward calendar (build_china_calendar)"       scripts.build_china_calendar
           }
           cl_intel_tail() {
             brun intel_hub      "china intel hub command apparatus (build_china_intel_hub)" scripts.build_china_intel_hub
@@ -499,7 +504,7 @@ jobs:
           }
           cl_state & cl_intel_tail & cl_central &
           wait
-          ORDER="cycle_phase market_state mechanics intel_hub intel_bus sector_central"
+          ORDER="cycle_phase market_state mechanics calendar intel_hub intel_bus sector_central"
           echo "### ⏱ asia band B — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
           for slug in $ORDER; do
             [ -f "$ART/$slug.log" ] || continue

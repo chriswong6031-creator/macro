@@ -407,6 +407,19 @@ on:
       - "tests/fixtures/china_omo/**"
       - "tests/fixtures/china_trade_detail/**"
       - "tests/fixtures/china_official_corpora/**"
+      # W3 CNH part B: the five native flash wires + the forward calendar organ.
+      # engine/** is NOT a blanket trigger here, so each of these must be named or a
+      # parser/aggregator edit merges with the suite unrun. test_cn_newswires.py was
+      # itself named by no job until W3 — the #1253 shape on the fastest-rotting
+      # surface in the tree (five vendor JSON payloads, zero of them contractual).
+      - "engine/cn_newswires.py"
+      - "engine/china_calendar.py"
+      - "engine/china_event_calendar.py"
+      - "engine/hk_event_calendar.py"
+      - "scripts/build_china_calendar.py"
+      - "tests/test_cn_newswires.py"
+      - "tests/test_china_calendar.py"
+      - "tests/fixtures/cn_newswires/**"
       # Whole-board 涨跌家数: the heatmap card quotes a ~5,200-name count, and the
       # engine gates the row against the map's own session. Both suites were
       # previously named by NO job (#1253 wiring law) — test_market_heatmap.py
