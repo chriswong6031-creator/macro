@@ -45,7 +45,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: main
-          fetch-depth: 0
+          # Full history accounted for roughly seven minutes of the first
+          # 13-minute proof run. Two commits are enough for the bot commit and
+          # its rebase/push retry while keeping this lane inside merge cadence.
+          fetch-depth: 2
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"

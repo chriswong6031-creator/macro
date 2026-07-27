@@ -65,6 +65,8 @@ def test_public_render_owns_the_excluded_surfaces():
         assert f'- "{pattern}"' in PUBLIC
     assert "runs-on: ubuntu-latest" in PUBLIC
     assert "cancel-in-progress: true" in PUBLIC
+    assert "fetch-depth: 2" in PUBLIC
+    assert "fetch-depth: 0" not in PUBLIC
 
 
 def test_public_render_never_invokes_market_or_data_builders():
