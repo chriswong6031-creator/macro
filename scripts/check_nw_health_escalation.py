@@ -26,17 +26,13 @@ Run after build_neuralweb_health in the ENGINE job (daily.yml).
 from __future__ import annotations
 
 import json
+import logging
 import sys
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
-try:
-    from lib.logging import get_logger
-    log = get_logger(__name__)
-except Exception:  # noqa: BLE001
-    import logging
-    log = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 # ── constants ──────────────────────────────────────────────────────────────
 _STREAK_THRESHOLD = 3          # consecutive nightly runs required to fire

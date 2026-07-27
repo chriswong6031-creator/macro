@@ -36,6 +36,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
@@ -43,12 +44,7 @@ import pandas as pd
 
 from lib import config
 
-try:  # central logger if present, else a no-op
-    from lib.logging import get_logger
-    log = get_logger(__name__)
-except Exception:  # noqa: BLE001
-    import logging
-    log = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 # --- per-source conviction ----------------------------------------------------

@@ -692,3 +692,83 @@ def test_btc_slice_no_attention_when_no_crypto_items(tmp_path):
     if "attention" in result:
         items = (result["attention"] or {}).get("items") or []
         assert items == [], f"non-crypto items should not appear in btc attention: {items}"
+
+
+# ---------------------------------------------------------------------------
+# Root resolution (regression: `from engine import config` never resolved)
+# ---------------------------------------------------------------------------
+#
+# All three slice functions used to resolve their default root with:
+#
+#     try:
+#         from engine import config as _config
+#         _root = Path(root) if root else _config.ROOT
+#     except Exception:
+#         _root = Path(root) if root else Path(__file__).parent.parent.parent
+#
+# `engine.config` has never existed — the config module is `lib.config` — so the
+# ImportError fired on EVERY call and the guessed parent-walk was the only path
+# ever taken.  It happens to equal lib.config.ROOT in the current layout, which is
+# exactly why nothing noticed; the two diverge as soon as the checkout moves.
+# These tests pin the resolved value and the failure mode, not the coincidence.
+
+def test_resolve_root_uses_lib_config_root():
+    """The default root is lib.config.ROOT — not a __file__ parent-walk."""
+    from lib.config import ROOT
+    from engine.neuralweb.brief_context import _resolve_root
+
+    assert _resolve_root(None) == ROOT
+
+
+def test_default_root_follows_lib_config_not_a_parent_walk(tmp_path, monkeypatch):
+    """Repointing lib.config.ROOT must repoint what the slices actually read.
+
+    This is the assertion the old code fails: with ROOT moved to a tmp tree, the
+    parent-walk fallback still reads the real repo checkout, so the distinctive
+    fixture verdict below never appears in the packet.
+    """
+    import lib.config
+    from engine.neuralweb.brief_context import macro_slice
+
+    nw = _make_nw_dir(tmp_path)
+    ws = _minimal_world_state()
+    ws["verdict"]["label_en"] = "ROOT-SENTINEL-ff01"
+    _write_json(nw / "world_state.json", ws)
+
+    monkeypatch.setattr(lib.config, "ROOT", tmp_path)
+    result = macro_slice()  # no explicit root — must follow the patched ROOT
+
+    assert result.get("market_core", {}).get("verdict", {}).get("label_en") == "ROOT-SENTINEL-ff01", (
+        "macro_slice() ignored lib.config.ROOT — it is resolving the root some other way"
+    )
+
+
+def test_unimportable_config_yields_absent_packet_not_a_guessed_path(tmp_path, monkeypatch):
+    """A missing config module must surface as `absent`, never as a substituted path.
+
+    ADB-R1 ("never raises") is preserved by the slice's own outer handler; what must
+    NOT happen is a silent fallback that reads a different tree and returns a packet
+    indistinguishable from a healthy one.
+    """
+    import builtins
+
+    import engine.neuralweb.brief_context as bc
+
+    real_import = builtins.__import__
+
+    def _boom(name, *a, **kw):
+        if name == "lib.config":
+            raise ImportError("simulated: config module gone")
+        return real_import(name, *a, **kw)
+
+    monkeypatch.setattr(builtins, "__import__", _boom)
+
+    for fn in (bc.macro_slice, bc.btc_slice, bc.china_slice):
+        result = fn()  # must not raise
+        assert result.get("absent") is True, (
+            f"{fn.__name__} returned a normal packet with no config module — "
+            "it substituted a guessed root instead of reporting the failure"
+        )
+        assert "config" in result.get("reason", "").lower() or "import" in result.get("reason", "").lower(), (
+            f"{fn.__name__} absent-reason does not name the import failure: {result.get('reason')!r}"
+        )

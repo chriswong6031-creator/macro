@@ -125,3 +125,22 @@ def test_sessions_behind_future_store_is_not_negative():
     """A future-dated row means no COMPLETED session is missing, not -N."""
     now = datetime(2026, 7, 16, 20, 0, tzinfo=timezone.utc)
     assert cal.sessions_behind(date(2026, 12, 1), now) == 0
+
+
+import pytest
+
+
+@pytest.mark.parametrize(
+    "name",
+    ["is_session", "last_session_on_or_before", "expected_last_session",
+     "session_date", "sessions_between", "sessions_behind"],
+)
+def test_public_calendar_api_present(name: str):
+    """The helpers every freshness gate is built on must not silently disappear.
+
+    Carried over from tests/test_nyse_calendar_import_names.py, whose AST sweep was
+    promoted repo-wide into tests/test_first_party_import_names.py.  That sweep
+    resolves import NAMES statically; this asserts the calendar's own public surface
+    is present AND callable at runtime, which the static sweep cannot see.
+    """
+    assert callable(getattr(cal, name, None)), f"lib.nyse_calendar.{name} missing"

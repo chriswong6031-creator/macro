@@ -59,6 +59,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import os
 import sys
 import tempfile
@@ -66,12 +67,7 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
-try:
-    from lib.logging import get_logger
-    log = get_logger(__name__)
-except Exception:  # noqa: BLE001
-    import logging
-    log = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 # ── constants ──────────────────────────────────────────────────────────────
 _DEFAULT_LEDGER = "data/ci/builder_failstreaks.json"
