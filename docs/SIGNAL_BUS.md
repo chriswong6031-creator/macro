@@ -66,7 +66,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | options-alpha | 7 |
 | options-nw-entry-intelligence | 3 |
 | oracle | 29 |
-| personality-timing | 3 |
+| personality-timing | 8 |
 | pick-lab | 3 |
 | policy-shock | 5 |
 | prophet | 1 |
@@ -100,16 +100,16 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 332 |
+| display | 333 |
 | infrastructure | 95 |
 | scored | 4 |
-| shadow | 71 |
+| shadow | 75 |
 
 ### Artifacts by storage
 
 | storage | count |
 |---|---|
-| git | 480 |
+| git | 485 |
 | gitignored-local | 15 |
 | r2 | 7 |
 
@@ -773,8 +773,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| personality-gate-shadow-ledger | `data/personality_timing/gate_shadow.jsonl` | jsonl | daily-engine | display | 1 | 0 |
+| personality-terminality-shadow-ledger | `data/personality_timing/terminality_shadow.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
+| personality-terminality-shadow-model-manifest | `data/personality_timing/terminality_shadow_model_v1/manifest.json` | json | on-demand | shadow | 1 | 0 |
+| personality-terminality-shadow-near-model | `data/personality_timing/terminality_shadow_model_v1/near_low.json` | json | on-demand | shadow | 1 | 0 |
+| personality-terminality-shadow-safe-model | `data/personality_timing/terminality_shadow_model_v1/tail_safe.json` | json | on-demand | shadow | 1 | 0 |
+| personality-terminality-shadow-state | `data/personality_timing/terminality_shadow_state.json` | json | daily-engine | display | 1 | 0 |
 | personality-timing-codex | `data/personality_timing/codex.parquet` | parquet | weekly | display | 1 | 0 |
-| personality-gate-shadow-ledger | `data/personality_timing/gate_shadow.jsonl` | jsonl | daily-engine | display | 0 | 0 |
 | personality-gate-shadow-state | `data/personality_timing/gate_shadow_state.json` | json | daily-engine | display | 0 | 0 |
 
 ### pick-lab
