@@ -1,17 +1,10 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-07-27T17:55:24.685444+00:00",
+  "as_of": "2026-07-27T19:53:20.006018+00:00",
   "posts_seen": 7,
   "seen_total": 63,
-  "evaluated": 1,
+  "evaluated": 0,
   "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
-  "gate_scores": [
-    {
-      "id": "wh-2026-07-27-made-in-michigan-again-president-trumps-trade-agenda-is-supercharging-american-a",
-      "importance": 20,
-      "activated": false,
-      "degraded_reason": "served_by:deepseek"
-    }
-  ]
+  "gate_scores": []
 }
