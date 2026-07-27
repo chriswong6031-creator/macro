@@ -860,6 +860,15 @@ function applyPricing(){
   document.querySelectorAll('.mx-mobile-price').forEach(el => {
     el.textContent = zh ? (annual ? el.dataset.annualZh : el.dataset.monthlyZh) : (annual ? el.dataset.annual : el.dataset.monthly);
   });
+  const period = annual ? 'annual' : 'monthly';
+  document.querySelectorAll('.js-plan-cta[data-period]').forEach(el => {
+    el.dataset.period = period;
+    try {
+      const url = new URL(el.href, location.href);
+      url.searchParams.set('period', period);
+      el.href = url.toString();
+    } catch (e) {}
+  });
 }
 tog.forEach(b => b.addEventListener('click', () => {
   tog.forEach(x => x.setAttribute('aria-pressed', String(x === b)));
