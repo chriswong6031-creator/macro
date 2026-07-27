@@ -808,7 +808,13 @@
   body.page-hk .hkx-card{background:var(--mx5-glass-bg,rgba(16,22,30,.55));border:1px solid var(--mx5-glass-border,rgba(255,255,255,.12));border-radius:18px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:0 8px 32px rgba(0,0,0,.55),0 1.5px 0 rgba(255,255,255,.07) inset;padding:18px 20px;transition:background .2s,border-color .2s,box-shadow .2s,transform .2s;margin-bottom:14px}
   body.page-hk .hkx-card[role="button"]{cursor:pointer}
   body.page-hk .hkx-card[role="button"]:hover{background:rgba(22,29,38,.62);border-color:rgba(255,255,255,.16);box-shadow:0 6px 24px rgba(0,0,0,.25);transform:translateY(-1px)}
-  body.page-hk .hkx-ctitle{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+  {# Card titles follow macro.html's .mx5-card-title: 13px, sentence case, tight tracking.
+     Titles are authored in Title Case, so dropping text-transform renders them as written
+     ("Currency & Interest Rates", "Mainland Buying & Value") instead of shouting. #}
+  {# var(--text), not --ink-1: that token is only defined inside the hero scope on this page
+     and absent from theme.css, so a bare fallback would be hardcoded white (invisible in
+     light theme). #}
+  body.page-hk .hkx-ctitle{font-size:13px;font-weight:700;letter-spacing:-.01em;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px}
   body.page-hk .hkx-ctitle .zh{font-weight:500;opacity:.5;text-transform:none;letter-spacing:0}
   body.page-hk .hkx-ctitle .q{margin-left:6px;width:14px;height:14px;border-radius:50%;border:1px solid var(--muted);color:var(--muted);font-size:9px;display:inline-flex;align-items:center;justify-content:center;font-weight:700}
   /* Mechanic #3: hero z-index 30 for popover stacking context */
@@ -1004,6 +1010,11 @@
   body.page-hk .hkx-heat i.c{background:var(--down);opacity:1}
   body.page-hk .hkx-heat i.c2{background:color-mix(in srgb,var(--down) 50%,transparent);opacity:1}
   body.page-hk .hkx-heat i.n{background:rgba(255,255,255,.12);opacity:1}
+  {# heating/cooling key — ported from macro.html's .mx5-sector-heat-legend. The tokens
+     flip to 红涨绿跌 automatically under html[data-lang="zh"]. #}
+  body.page-hk .hkx-heat-legend{display:flex;justify-content:space-between;margin-top:7px;font-size:10px;font-weight:600;letter-spacing:.03em}
+  body.page-hk .hkx-heat-legend .heat-up{color:var(--up)}
+  body.page-hk .hkx-heat-legend .heat-dn{color:var(--down)}
   body.page-hk .hkx-stk{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:12px}
   body.page-hk .hkx-stk:last-of-type{border-bottom:none}
   body.page-hk .hkx-tkr-btn{display:inline-block;background:rgba(91,155,240,.10);border:1px solid rgba(91,155,240,.35);color:#a9c8f5;border-radius:8px;padding:3px 10px;font-weight:700;font-size:12px;cursor:pointer;text-decoration:none}
@@ -1014,9 +1025,15 @@
   body.page-hk .hkx-screener-btn{display:block;width:100%;text-align:center;margin-top:11px;background:linear-gradient(135deg,rgba(91,155,240,.18),rgba(69,184,115,.14));border:1px solid rgba(91,155,240,.4);color:var(--text);font-weight:700;font-size:12.5px;border-radius:12px;padding:10px 0;cursor:pointer;text-decoration:none;letter-spacing:.4px}
   body.page-hk .hkx-bbar{display:flex;height:14px;border-radius:6px;overflow:hidden;margin:6px 0}
   body.page-hk .hkx-bbar .bull{background:var(--up)} body.page-hk .hkx-bbar .bear{background:var(--down)}
-  body.page-hk .hkx-pegband{position:relative;height:24px;border-radius:8px;margin:8px 0 4px;background:linear-gradient(90deg,rgba(69,184,115,.25),rgba(224,160,48,.2),rgba(224,100,100,.3))}
-  body.page-hk .hkx-pegband .mark{position:absolute;top:-3px;bottom:-3px;width:3px;background:var(--text);border-radius:2px}
-  body.page-hk .hkx-pegband .ends{position:absolute;bottom:-14px;width:100%;display:flex;justify-content:space-between;font-size:9px;color:var(--muted)}
+  {# bottom margin must clear the absolutely-positioned end labels (bottom:-14px) or they
+     overlap whatever row follows the band. #}
+  body.page-hk .hkx-pegband{position:relative;height:24px;border-radius:8px;margin:8px 0 20px;background:linear-gradient(90deg,rgba(69,184,115,.25),rgba(224,160,48,.2),rgba(224,100,100,.3))}
+  {# The tick + end-label selectors MUST carry the hkx- prefix: the markup below writes
+     class="hkx-mark"/"hkx-ends", so the older unprefixed .mark/.ends rules matched nothing
+     and the band shipped with an unpositioned tick and both labels collapsed together
+     ("strong 7.75weak 7.85"). Keep prefix and markup in lockstep. #}
+  body.page-hk .hkx-pegband .hkx-mark{position:absolute;top:-3px;bottom:-3px;width:3px;background:var(--text);border-radius:2px}
+  body.page-hk .hkx-pegband .hkx-ends{position:absolute;bottom:-14px;left:0;width:100%;display:flex;justify-content:space-between;font-size:9px;color:var(--muted)}
   body.page-hk .hkx-estrip{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
   body.page-hk .hkx-ev{flex:1 1 84px;text-align:center;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:9px 6px;background:rgba(255,255,255,.02)}
   body.page-hk .hkx-ev .en{font-size:11px;font-weight:650;margin:2px 0}
@@ -1931,10 +1948,16 @@
       {% endif %}
       <div class="hkx-lbl">{{ t('Sector heat · green = leading · red = lagging','板块温度 · 绿=领涨 · 红=滞涨') }}</div>
       <div class="hkx-heat">
+        {# each cell names its sector + 20-day move on hover; the strip was unlabelled cells
+           with no way to tell which sector any cell was. #}
         {% for s in sectors[:12] %}
-        <i class="{{ 'c' if (s.mom20 is not none and s.mom20 < -1) else ('c2' if (s.mom20 is not none and s.mom20 < 0) else ('n' if (s.mom20 is none) else ('h3' if s.mom20 < 1 else ('h2' if s.mom20 < 3 else 'h')))) }}"></i>
+        {% set _m = s.mom20 %}
+        <i class="{{ 'c' if (_m is not none and _m < -1) else ('c2' if (_m is not none and _m < 0) else ('n' if (_m is none) else ('h3' if _m < 1 else ('h2' if _m < 3 else 'h')))) }}"
+           data-tip-en="{{ (s.name.en if s.name is mapping else s.name) }}{{ ': %+.1f%% over 20 days'|format(_m) if _m is not none else ': no 20-day reading' }}"
+           data-tip-zh="{{ (s.name.zh if s.name is mapping else s.name) }}{{ '：20日 %+.1f%%'|format(_m) if _m is not none else '：暂无20日数据' }}"></i>
         {% endfor %}
       </div>
+      <div class="hkx-heat-legend"><span class="heat-up">{{ t('▲ Heating','▲ 升温') }}</span><span class="heat-dn">{{ t('Cooling ▼','降温 ▼') }}</span></div>
       {% else %}
       <p style="font-size:12px;color:var(--muted)">{{ t('Building…','积累中…') }}</p>
       {% endif %}
@@ -1968,9 +1991,13 @@
     <div class="hkx-card" role="button" tabindex="0" onclick="hkxOpenDlg('hkx-dlg-flows')">
       <div class="hkx-ctitle">{{ t('Mainland Buying & Value','南向资金与价值') }}</div>
       {% if internals and internals.southbound and internals.southbound.net is not none %}
+      {# UNITS: build_hk.py already divides the ¥-millions store value by 100, so this field
+         arrives in 亿 (¥100M). 1 亿 = ¥0.1bn, so bn = 亿 / 10 — an extra /1000 (as shipped
+         before) shrank a real -15.2亿 day to "~¥0bn" and erased the magnitude entirely.
+         One decimal: a typical day is single-digit bn, which %.0f rounds into noise.
+         ZH keeps 亿 — the unit mainland readers actually use. #}
       {% set _sbn = internals.southbound.net %}
-      {% set _sbn_bn = (_sbn / 1000)|round(1) %}
-      <div class="hkx-bignum" style="color:{{ 'var(--up)' if _sbn >= 0 else 'var(--down)' }}">{{ '~¥%.0fbn'|format(_sbn_bn|abs) }}</div>
+      <div class="hkx-bignum" style="color:{{ 'var(--up)' if _sbn >= 0 else 'var(--down)' }}">{{ t('~¥%.1fbn'|format((_sbn / 10)|abs), '~%.0f亿'|format(_sbn|abs)) }}</div>
       <div class="hkx-bigsub" style="color:{{ 'var(--up)' if _sbn >= 0 else 'var(--down)' }}">{{ t('Mainland money bought HK today','内地今日净买入港股') if _sbn >= 0 else t('Mainland money sold HK today','内地今日净卖出港股') }}</div>
       {% if internals.southbound.pos_days_20 is not none %}
       <div class="hkx-kv"><span class="hkx-k">{{ t('How often lately','近期频率') }}</span><span class="hkx-v">{{ t('bought on','净买入') }} {{ internals.southbound.pos_days_20 }} {{ t('of last 20 days','天（近20日）') }}</span></div>
@@ -2235,11 +2262,14 @@
             {% if internals and internals.southbound %}
             {% set sb = internals.southbound %}
             <div style="display:flex;gap:12px;align-items:baseline;margin:2px 0 8px">
-              <span class="hkx-bignum" style="color:{{ 'var(--up)' if (sb.net is not none and sb.net >= 0) else 'var(--down)' }}">{{ ('~¥%.0fbn'|format(sb.net / 1000|abs)) if sb.net is not none else '—' }}</span>
+              {# Two bugs lived on this line: the divisor (field is 亿, so bn = 亿/10, not /1000)
+                 and Jinja filter precedence — `sb.net / 1000|abs` applies abs() to 1000, not to
+                 the quotient, so a negative day leaked through as "~¥-0bn". Parenthesise. #}
+              <span class="hkx-bignum" style="color:{{ 'var(--up)' if (sb.net is not none and sb.net >= 0) else 'var(--down)' }}">{{ t('~¥%.1fbn'|format((sb.net / 10)|abs), '~%.0f亿'|format(sb.net|abs)) if sb.net is not none else '—' }}</span>
               {# pill-buy/pill-sell CSS classes use color-mix over var(--up)/var(--down) → auto-flip in zh #}
               <span class="hkx-alert-pill {{ 'pill-buy' if (sb.net is not none and sb.net >= 0) else 'pill-sell' }}" style="margin:0">{{ t('NET BUYING','净买入') if (sb.net is not none and sb.net >= 0) else t('NET SELLING','净卖出') }}</span>
             </div>
-            {% if sb.cum_20d is not none %}<div class="hkx-kv"><span class="hkx-k">{{ t('Last 20 days','近20日') }}</span><span class="hkx-v">{{ '~¥%.0fbn'|format(sb.cum_20d / 1000|abs) }} {{ t('total','合计') }}</span></div>{% endif %}
+            {% if sb.cum_20d is not none %}<div class="hkx-kv"><span class="hkx-k">{{ t('Last 20 days','近20日') }}</span><span class="hkx-v">{{ t('~¥%.0fbn'|format((sb.cum_20d / 10)|abs), '~%.0f亿'|format(sb.cum_20d|abs)) }} {{ t('total','合计') }}</span></div>{% endif %}
             {% if sb.pos_days_20 is not none %}<div class="hkx-kv"><span class="hkx-k">{{ t('How often','频率') }}</span><span class="hkx-v">{{ t('bought on','买入') }} {{ sb.pos_days_20 }} {{ t('of 20 days','天（共20日）') }}</span></div>{% endif %}
             {% else %}
             <p style="font-size:12px;color:var(--muted)">—</p>
@@ -2291,15 +2321,18 @@
           {% if sb_channels.sh %}
           <div>
             <div class="hkx-eyebrow" style="margin-top:0">{{ t(sb_channels.sh.label_en, sb_channels.sh.label_zh) if sb_channels.sh.label_en is defined else t('Shanghai','沪') }}</div>
-            <div class="hkx-kv"><span class="hkx-k">{{ t('Today','今日') }}</span><span class="hkx-v {{ 'hkx-up' if (sb_channels.sh.net is not none and sb_channels.sh.net >= 0) else 'hkx-dn' }}">{{ ('¥%.0fM'|format(sb_channels.sh.net / 1)) if sb_channels.sh.net is not none else '—' }}</span></div>
-            <div class="hkx-kv"><span class="hkx-k">{{ t('20d','20日') }}</span><span class="hkx-v">{{ ('¥%.0fbn'|format(sb_channels.sh.sum_20d / 1000)) if (sb_channels.sh.sum_20d is defined and sb_channels.sh.sum_20d is not none) else '—' }}</span></div>
+            {# collectors/hk_connect_channels.py emits these in 亿 (¥100M) already — the old
+               "¥%.0fM" label was off by 100x and the /1000 for the 20d total by another 100x.
+               bn = 亿 / 10; ZH shows 亿 natively. #}
+            <div class="hkx-kv"><span class="hkx-k">{{ t('Today','今日') }}</span><span class="hkx-v {{ 'hkx-up' if (sb_channels.sh.net is not none and sb_channels.sh.net >= 0) else 'hkx-dn' }}">{{ t('¥%+.1fbn'|format(sb_channels.sh.net / 10), '%+.0f亿'|format(sb_channels.sh.net)) if sb_channels.sh.net is not none else '—' }}</span></div>
+            <div class="hkx-kv"><span class="hkx-k">{{ t('20d','20日') }}</span><span class="hkx-v">{{ t('¥%+.0fbn'|format(sb_channels.sh.sum_20d / 10), '%+.0f亿'|format(sb_channels.sh.sum_20d)) if (sb_channels.sh.sum_20d is defined and sb_channels.sh.sum_20d is not none) else '—' }}</span></div>
           </div>
           {% endif %}
           {% if sb_channels.sz %}
           <div>
             <div class="hkx-eyebrow" style="margin-top:0">{{ t(sb_channels.sz.label_en, sb_channels.sz.label_zh) if sb_channels.sz.label_en is defined else t('Shenzhen','深') }}</div>
-            <div class="hkx-kv"><span class="hkx-k">{{ t('Today','今日') }}</span><span class="hkx-v {{ 'hkx-up' if (sb_channels.sz.net is not none and sb_channels.sz.net >= 0) else 'hkx-dn' }}">{{ ('¥%.0fM'|format(sb_channels.sz.net / 1)) if sb_channels.sz.net is not none else '—' }}</span></div>
-            <div class="hkx-kv"><span class="hkx-k">{{ t('20d','20日') }}</span><span class="hkx-v">{{ ('¥%.0fbn'|format(sb_channels.sz.sum_20d / 1000)) if (sb_channels.sz.sum_20d is defined and sb_channels.sz.sum_20d is not none) else '—' }}</span></div>
+            <div class="hkx-kv"><span class="hkx-k">{{ t('Today','今日') }}</span><span class="hkx-v {{ 'hkx-up' if (sb_channels.sz.net is not none and sb_channels.sz.net >= 0) else 'hkx-dn' }}">{{ t('¥%+.1fbn'|format(sb_channels.sz.net / 10), '%+.0f亿'|format(sb_channels.sz.net)) if sb_channels.sz.net is not none else '—' }}</span></div>
+            <div class="hkx-kv"><span class="hkx-k">{{ t('20d','20日') }}</span><span class="hkx-v">{{ t('¥%+.0fbn'|format(sb_channels.sz.sum_20d / 10), '%+.0f亿'|format(sb_channels.sz.sum_20d)) if (sb_channels.sz.sum_20d is defined and sb_channels.sz.sum_20d is not none) else '—' }}</span></div>
           </div>
           {% endif %}
         </div>

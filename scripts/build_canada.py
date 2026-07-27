@@ -136,6 +136,76 @@ def _ilx_series(df, cut) -> dict | None:
             "vals": [round(float(v), 2) for v in s]}
 
 
+def _ilx_price(group: str, sym: str, color: str, *, days: int = 730,
+               aria_en: str = "", value_fmt: str = "{:,.2f}", height: int = 92) -> str:
+    """Single price series -> a compact ilx / Signal-Ink sparkline.
+
+    Canada is a commodity/FX market, so the pages lead with WTI / gold / copper /
+    USDCAD levels; before this the page printed those as bare numbers with no shape,
+    which is the thing that made it read thin next to china.html (15 ilx charts vs 2).
+    Reads via store.read so the yahoo symbol sanitising (CL=F -> CL_F.parquet) is
+    handled upstream. Returns "" on any missing series — never raises, never blocks."""
+    df = store.read(group, sym)
+    if df is None or df.empty:
+        return ""
+    col = "close" if "close" in df.columns else df.columns[0]
+    cut = df.index.max() - pd.Timedelta(days=days)
+    ser = _ilx_series(df[[col]], cut)
+    if ser is None:
+        return ""
+    return illus.illus(ser, kind="line", accent=color, height=height,
+                       value_fmt=value_fmt, aria_en=aria_en)
+
+
+def _ilx_ca_us_spread(days: int = 1825) -> str:
+    """Canada 10y minus US 10y, zero-anchored. Negative = Canada borrows cheaper than
+    the US, which is the standing weak-CAD force the hero copy leans on — a shape the
+    page previously asserted with one scalar and no history."""
+    g10, u10 = store.read("canada_macro", "goc_10y"), store.read("canada_macro", "us_10y")
+    if g10 is None or u10 is None or g10.empty or u10.empty:
+        return ""
+    s = (g10.iloc[:, 0] - u10.iloc[:, 0].reindex(g10.index).ffill()).dropna()
+    if s.empty:
+        return ""
+    s = s[s.index >= s.index.max() - pd.Timedelta(days=days)]
+    if s.empty:
+        return ""
+    rows = {"dates": [d.strftime("%Y-%m-%d") for d in s.index],
+            "vals": [round(float(v), 2) for v in s]}
+    return illus.illus(rows, kind="baseline", accent="var(--info)", baseline=0,
+                       height=150, value_fmt="{:+.2f}",
+                       unit_en="pp", unit_zh="个百分点",
+                       aria_en="Canada minus US 10-year yield spread")
+
+
+def _ilx_breadth_hist(days: int = 730) -> str:
+    """Share of TSX names above their 50-day line, anchored at the 50% waterline —
+    the honest shape behind the single 'Above 50d' percentage on the page."""
+    df = store.read("canada_breadth", "breadth")
+    if df is None or df.empty or "pct_above_50" not in df.columns:
+        return ""
+    ser = _ilx_series(df[["pct_above_50"]], df.index.max() - pd.Timedelta(days=days))
+    if ser is None:
+        return ""
+    return illus.illus(ser, kind="baseline", accent="var(--up)", baseline=50,
+                       height=150, value_fmt="{:.0f}", unit_en="%", unit_zh="%",
+                       aria_en="Share of TSX names above their 50-day average")
+
+
+def _ilx_house_hist(days: int = 3650) -> str:
+    """Teranet/CREA house-price index. Housing is the Canadian household-debt channel;
+    the card states 'well below peak' and now shows the descent that earns that line."""
+    df = store.read("canada_macro", "house_prices")
+    if df is None or df.empty:
+        return ""
+    ser = _ilx_series(df, df.index.max() - pd.Timedelta(days=days))
+    if ser is None:
+        return ""
+    return illus.illus(ser, kind="line", accent="var(--orange)", height=150,
+                       value_fmt="{:,.1f}",
+                       aria_en="Canadian house price index over ten years")
+
+
 def _chart_curve(days: int = 2600) -> str:
     """BoC policy rate + GoC 2y/10y yields over ~10y, as an ilx / Signal-Ink
     multi-line fragment (no Plotly). The policy rate is the anchor (brightest,
@@ -780,6 +850,22 @@ def main() -> int:
             "coupling": (latest.get("overlay") or {}).get("coupling", {}),
             "housing": _housing_note(),
             "curve_chart": _chart_curve(),
+            # ilx / Signal-Ink shapes for the commodity + rates + participation cards.
+            # Each is "" when its series is missing, and every consumer is {% if %}-gated,
+            # so a cold store degrades to the old number-only card instead of a hole.
+            "cmd_charts": {
+                "wti": _ilx_price("yahoo", "CL=F", "var(--orange)",
+                                  aria_en="WTI crude oil, two years"),
+                "gold": _ilx_price("yahoo", "GC=F", "#e0a030",
+                                   aria_en="Gold, two years"),
+                "copper": _ilx_price("yahoo", "HG=F", "#c87f4a", value_fmt="{:,.2f}",
+                                     aria_en="Copper, two years"),
+            },
+            "usdcad_chart": _ilx_price("canada", "USDCAD_X", "var(--info)", value_fmt="{:,.4f}",
+                                       aria_en="US dollar against the Canadian dollar, two years"),
+            "spread_chart": _ilx_ca_us_spread(),
+            "breadth_chart": _ilx_breadth_hist(),
+            "house_chart": _ilx_house_hist(),
             "quad_meaning": QUAD_MEANING.get(latest.get("quad_name")),
         }
         site = Path(config.load()["storage"]["site_dir"])
