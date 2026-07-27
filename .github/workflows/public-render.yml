@@ -19,7 +19,12 @@ on:
       - "templates/*.json"
       - "templates/*.txt"
       - "templates/*.svg"
+      - "templates/_public_chrome_css.html.j2"
+      - "templates/_public_chrome_js.html.j2"
+      - "templates/_public_footer.html.j2"
+      - "templates/_public_nav.html.j2"
       - "templates/plans.html.j2"
+      - "templates/seo_base.html.j2"
       - "templates/support.html.j2"
       - "templates/unsubscribe.html.j2"
 
