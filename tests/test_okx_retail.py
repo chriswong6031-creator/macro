@@ -7,6 +7,7 @@ Run: .venv/bin/python -m tests.test_okx_retail
 from __future__ import annotations
 
 import inspect
+import re
 import sys
 from pathlib import Path
 
@@ -124,13 +125,42 @@ def test_display_only_invariant():
         assert "okx_ls" not in src and "okx_taker" not in src, fn.__name__
 
 
+_LS_CHIP = "{% if leverage.okx_ls_ratio is not none %}"
+_TAKER_CHIP = "{% if leverage.okx_taker_buy is not none %}"
+_IFTAG = re.compile(r"\{%-?\s*(if\b[^%]*|endif\s*)-?%\}")
+
+
+def _if_block(src: str, opener: str) -> str:
+    """Slice the balanced {% if %}…{% endif %} block that starts at `opener`.
+
+    Each chip is bounded by its OWN endif. The previous form ended the slice at a
+    NEIGHBOURING block's opening tag ("{% if leverage.cme_basis ... %}"), which has
+    two failure modes this avoids: anything inserted between the two OKX chips
+    silently joined the text under test, and renaming or moving the cme_basis
+    block — a block this test does not care about — would kill the harness with a
+    bare ValueError from .index() instead of failing an assertion. A vanished
+    anchor now names itself and says what to do.
+    """
+    start = src.find(opener)
+    assert start >= 0, (
+        f"anchor {opener!r} is gone from vector.html.j2 — the OKX chip was renamed "
+        "or moved; re-point this test at the block that ships now")
+    depth = 0
+    for m in _IFTAG.finditer(src[start:]):
+        if m.group(1).strip().startswith("if"):
+            depth += 1
+        else:
+            depth -= 1
+            if depth == 0:
+                return src[start:start + m.end()]
+    raise AssertionError(f"unbalanced if/endif after {opener!r} in vector.html.j2")
+
+
 def test_bilingual_render():
     """Render the actual shipped chip markup (sliced from the template) through the
     bilingual t() macro and assert BOTH languages + the contrarian framing ship."""
     from jinja2 import Environment
     tmpl = (ROOT / "templates/vector.html.j2").read_text()
-    start = tmpl.index("{% if leverage.okx_ls_ratio is not none %}")
-    end = tmpl.index("{% if leverage.cme_basis is not none %}", start)
     # Carry the template's REAL macro preamble (everything above <!DOCTYPE>) rather than
     # hand-rolling t(): the chip later started calling qmark() too, and a hand-rolled
     # preamble that lists only the macros the chip used on the day the test was written
@@ -138,7 +168,7 @@ def test_bilingual_render():
     # test rendering the shipped markup with the shipped helpers.
     preamble = tmpl[:tmpl.index("<!DOCTYPE html>")]
     assert "macro t(" in preamble and "macro qmark(" in preamble
-    snippet = preamble + "\n" + tmpl[start:end]
+    snippet = preamble + "\n" + _if_block(tmpl, _LS_CHIP) + _if_block(tmpl, _TAKER_CHIP)
     html = Environment(autoescape=True).from_string(snippet).render(leverage={
         "okx_ls_ratio": 2.5, "okx_ls_pctile": 96, "okx_ls_z": 2.1,
         "okx_ls_lean": "crowded_long", "okx_taker_buy": 0.55, "okx_taker_pctile": 80})
@@ -152,6 +182,16 @@ def test_bilingual_render():
     # the glance line into the "?" hover note, so accept it anywhere in the chip.
     assert "contrarian" in html.lower()                                     # contrarian EN
     assert "反向" in html                                                    # contrarian ZH
+    # ...but "anywhere in the chip" must not quietly become "back on the glance line".
+    # The demotion IS the doctrine ("technicals demoted to hover/popover"), so pin the
+    # direction of travel: the percentile and z-score belong in the qmark receipt and
+    # nowhere else. Without this, re-promoting them to the chip face stays green.
+    tips = re.findall(r'data-tip-en="([^"]*)"', html)
+    assert any("96%ile" in tip and "z 2.1" in tip for tip in tips), \
+        f"percentile/z receipt missing from the qmark hover note: {tips}"
+    face = re.sub(r'<span class="qm"[^>]*>.*?</span>', "", html, flags=re.DOTALL)
+    assert "%ile" not in face and "z 2.1" not in face, \
+        "percentile/z leaked back onto the chip face (DESIGN_DOCTRINE: demote technicals)"
     # NOTE: this test used to assert a card-level "display-only positioning context" /
     # "不参与仓位或评分" caveat in the template body. #1337 ("Simplify dashboard copy and
     # footers") deleted that sentence, and no equivalent card-level disclosure replaced it

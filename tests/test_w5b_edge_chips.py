@@ -49,6 +49,31 @@ def _sleeve_chip(state="caution"):
     }
 
 
+_IFTAG = re.compile(r"\{%-?\s*(if\b[^%]*|endif\s*)-?%\}")
+
+
+def _chip_block():
+    """Slice the W5b EDGE-1 chip block by balanced {% if %}…{% endif %} traversal.
+
+    Shared by the renderer and by T10's source scan. T10 used to take the FIRST
+    {% endif %} after the block comment, which stops at the chip's first NESTED
+    endif (the dominant-driver guard) and leaves the tail unscanned — the as-of
+    span and the whole help() tooltip, i.e. precisely where a CJK-in-attribute
+    violation would land. One extractor keeps the render and the scan agreeing on
+    what "the chip" is.
+    """
+    start = CHINA_TMPL_SRC.index("{# W5b EDGE-1")
+    depth = 0
+    for m in _IFTAG.finditer(CHINA_TMPL_SRC[start:]):
+        if m.group(1).strip().startswith("if"):
+            depth += 1
+        else:
+            depth -= 1
+            if depth == 0:
+                return CHINA_TMPL_SRC[start:start + m.end()]
+    raise AssertionError("unbalanced if/endif in the W5b EDGE-1 chip block")
+
+
 def _render_stocks_header(setups, mode="stocks"):
     """Extract and render just the W5b sleeve chip block from china.html.j2."""
     macros = (
@@ -60,22 +85,7 @@ def _render_stocks_header(setups, mode="stocks"):
     )
     from engine import i18n
 
-    # Extract just the W5b EDGE-1 chip block (balanced if/endif traversal).
-    # Match opening {% if ... %} tokens (any content) and closing {% endif %} tokens.
-    import re as _re
-    chip_start = CHINA_TMPL_SRC.index("{# W5b EDGE-1")
-    depth = 0
-    chip_end = chip_start
-    for _m in _re.finditer(r"\{%-?\s*(if\b[^%]*|endif\s*)-?%\}", CHINA_TMPL_SRC[chip_start:]):
-        tag_body = _m.group(1).strip()
-        if tag_body.startswith("if"):
-            depth += 1
-        elif tag_body.startswith("endif"):
-            depth -= 1
-            if depth == 0:
-                chip_end = chip_start + _m.end()
-                break
-    chip_block = CHINA_TMPL_SRC[chip_start:chip_end]
+    chip_block = _chip_block()
 
     # Wrap in the mode guard to test dual-mode isolation
     mode_open = "{% if mode == 'stocks' %}"
@@ -118,6 +128,12 @@ def test_t1_chip_renders_with_valid_radar_state():
     # contract ("every signal panel answers 'so what do I do'")
     assert "CAUTION" in html and "avoid chasing" in html          # EN state + action
     assert "谨慎" in html and "谨慎追高" in html                     # ZH state + action
+    # The rename was the POINT of #2947, so guard it in the direction it can regress:
+    # cn_sleeve_chip() still emits label_en ("Sleeve ×0.90 — …") and sleeve_factor, and
+    # the chip simply stops rendering them. Printing either again would put the jargon
+    # back on a glance-tier surface (DESIGN_DOCTRINE Law 2) with nothing to object.
+    assert "Sleeve" not in html and "0.90" not in html, \
+        "the sleeve multiplier is back on the chip face — #2947 removed it as jargon"
 
 
 def test_t2_chip_absent_when_sleeve_chip_none():
@@ -197,11 +213,11 @@ def test_t10_no_cjk_in_html_attributes_added_section():
     """T10: no Chinese characters inside HTML attribute values in the W5b chip block."""
     _CJK = re.compile(r"[一-鿿㐀-䶿]")
     _ATTR = re.compile(r'(?:class|id|style|data-[\w-]+|aria-[\w-]+)\s*=\s*"([^"]*)"')
-    # Extract only the W5b chip block
-    start = CHINA_TMPL_SRC.index("{# W5b EDGE-1")
-    # find next {% endif %} after start
-    end = CHINA_TMPL_SRC.index("{% endif %}", start) + len("{% endif %}")
-    block = CHINA_TMPL_SRC[start:end]
+    # Balanced traversal, NOT "first {% endif %} after the comment" — that stopped at
+    # the chip's first nested endif and left the as-of span and the entire help()
+    # tooltip unscanned (2807 of 3285 chars), which is where CJK in an attribute is
+    # most likely to appear in the first place.
+    block = _chip_block()
     violations = [m.group(0)[:80] for m in _ATTR.finditer(block) if _CJK.search(m.group(1))]
     assert not violations, f"CJK in HTML attribute values in W5b chip block: {violations}"
 
