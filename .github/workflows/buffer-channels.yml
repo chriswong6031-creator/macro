@@ -1,0 +1,47 @@
+name: buffer-channels
+# ─────────────────────────────────────────────────────────────────────────────
+# Buffer channel-id discovery — dispatch-only, READ-ONLY.
+#
+# WHY THIS EXISTS: wiring a new account into publish.channels (config/
+# marketing.yml) needs its Buffer channel id, and the only documented discovery
+# path — `BUFFER_TOKEN=... python -m scripts.marketing_publisher
+# --list-channels` — needs the token. The admin panel's paste-box pipes the
+# token straight into the BUFFER_TOKEN repo SECRET (stdin only, never stored
+# locally or on the VPS), so after setup the ONLY place that can run discovery
+# is an Actions job. This lane prints {service, id, name} per connected
+# channel — channel ids are not secrets (flagship's is committed in
+# config/marketing.yml); the token itself is never echoed.
+#
+# It posts nothing, writes nothing, and commits nothing: --list-channels
+# returns before any publish/ledger path, independent of the
+# MARKETING_PUBLISH_ENABLED kill-switch.
+# ─────────────────────────────────────────────────────────────────────────────
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  list:
+    runs-on: ubuntu-latest    # OFF the render path — never the macstudio pool
+    timeout-minutes: 10
+    env:
+      BUFFER_TOKEN: ${{ secrets.BUFFER_TOKEN }}
+    steps:
+      - name: checkout (shallow — read-only lane, no ledger push)
+        uses: actions/checkout@v4
+
+      - name: setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: install deps
+        # Same trio as marketing-publish.yml: pyyaml for the config load;
+        # pandas+pyarrow cover the publisher module's lazy imports so the
+        # discovery path can never diverge from the publish lane's closure.
+        run: pip install --quiet pyyaml pandas pyarrow
+
+      - name: list connected Buffer channels
+        run: python -m scripts.marketing_publisher --list-channels
