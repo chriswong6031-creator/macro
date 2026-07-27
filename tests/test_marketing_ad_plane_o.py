@@ -526,3 +526,118 @@ def test_ingest_never_raises_on_junk(tmp_path):
         [{"type": "ad_exposure"}, {"type": "ad_exposure", "visitor_id": "v", "meta": "not-a-dict"},
          {"nonsense": True}], root=tmp_path)
     assert r["ok"] is True and r["assignments"] == 0
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 6. The nightly runner + its wiring
+# ═══════════════════════════════════════════════════════════════════════════
+
+from scripts import ad_ingest_run  # noqa: E402
+
+WORKFLOW = ROOT / ".github" / "workflows" / "daily.yml"
+
+
+def test_the_runner_is_actually_wired_into_the_nightly():
+    """A nightly script nobody calls is dead code that looks like a feature."""
+    wf = WORKFLOW.read_text(encoding="utf-8")
+    assert "scripts.ad_ingest_run" in wf, "the ingest step is not in daily.yml"
+    assert "SUPABASE_ACCESS_TOKEN" in wf and "SUPABASE_PROJECT_REF" in wf
+    # …and the ledgers it advances must actually be committed, or every night's
+    # work is discarded when the runner's checkout is thrown away.
+    assert "git add data/marketing/ad_central" in wf, (
+        "the arena ledgers are written but never committed — the ledger would "
+        "reset to empty every night"
+    )
+
+
+def test_the_query_window_is_clamped_and_static():
+    """All SQL is authored here; the only interpolated value is an int-clamped window."""
+    seen = {}
+
+    def fake_sql(q):
+        seen["q"] = q
+        return []
+
+    ad_ingest_run.fetch_rows(9999, sql=fake_sql)
+    assert "interval '365 days'" in seen["q"]
+    ad_ingest_run.fetch_rows(-5, sql=fake_sql)
+    assert "interval '1 days'" in seen["q"]
+    # The window is the ONLY interpolated value, and it must be an int or nothing.
+    with pytest.raises(ValueError):
+        ad_ingest_run.fetch_rows("7; drop table analytics_events", sql=fake_sql)
+    assert "drop table" not in seen["q"]
+
+
+def test_the_query_asks_only_for_what_the_fold_needs():
+    seen = {}
+
+    def fake_sql(q):
+        seen["q"] = q
+        return []
+
+    ad_ingest_run.fetch_rows(7, sql=fake_sql)
+    q = seen["q"]
+    assert "ad_exposure" in q
+    # Restricted to visitors that actually have an exposure — otherwise this drags
+    # the whole events table back every night.
+    assert "exposed" in q and "visitor_id in (select visitor_id from exposed)" in q
+    for col in ("visitor_id", "user_id", "created_at", "meta"):
+        assert col in q
+    assert f"limit {ad_ingest_run.MAX_ROWS}" in q
+
+
+def test_a_non_list_response_degrades_to_no_rows():
+    assert ad_ingest_run.fetch_rows(7, sql=lambda q: {"error": "nope"}) == []
+
+
+def test_no_credential_is_a_skip_not_a_failure(tmp_path, monkeypatch, capsys):
+    """A nightly that hard-fails on a missing optional secret is a broken pipeline."""
+    monkeypatch.setattr(ad_ingest_run, "PAT", "")
+    assert ad_ingest_run.main(["--root", str(tmp_path)]) == 0
+    assert "skipping" in capsys.readouterr().out
+    assert not (tmp_path / ad_arena.DEFAULT_LEDGER_DIR).exists()
+
+
+def test_a_read_failure_warns_and_does_not_fail_the_nightly(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(ad_ingest_run, "PAT", "sbp_test")
+    monkeypatch.setattr(ad_ingest_run, "fetch_rows",
+                        lambda *a, **k: (_ for _ in ()).throw(RuntimeError("HTTP 403")))
+    assert ad_ingest_run.main(["--root", str(tmp_path)]) == 0
+    out = capsys.readouterr().out
+    assert "::warning" in out and "403" in out
+
+
+def test_the_runner_advances_the_ledger_end_to_end(tmp_path, monkeypatch, capsys):
+    arena = _seed_arena(tmp_path)
+    rows = []
+    for i in range(120):
+        cid = ad_arena.assign(arena, f"v-{i}")
+        rows.append(_exposure(f"v-{i}", cid, f"2026-07-27T10:{i // 60:02d}:{i % 60:02d}Z"))
+    rows.append(_pageview("v-0", "2026-07-27T20:00:00Z", user_id="u-0"))
+
+    monkeypatch.setattr(ad_ingest_run, "PAT", "sbp_test")
+    monkeypatch.setattr(ad_ingest_run, "fetch_rows", lambda *a, **k: rows)
+    assert ad_ingest_run.main(["--root", str(tmp_path)]) == 0
+    assert "Recorded 120 new visitors" in capsys.readouterr().out
+
+    tally = ad_arena.tally_from_ledgers(ad_arena.load_arenas(root=tmp_path)[0], root=tmp_path)
+    assert sum(a.assigned for a in tally.arms) == 120
+    assert sum(a.converted for a in tally.arms) == 1
+
+
+def test_dry_run_writes_nothing(tmp_path, monkeypatch, capsys):
+    arena = _seed_arena(tmp_path)
+    rows = [_exposure("v-1", ad_arena.assign(arena, "v-1"), "2026-07-27T10:00:00Z")]
+    monkeypatch.setattr(ad_ingest_run, "PAT", "sbp_test")
+    monkeypatch.setattr(ad_ingest_run, "fetch_rows", lambda *a, **k: rows)
+    assert ad_ingest_run.main(["--root", str(tmp_path), "--dry-run"]) == 0
+    assert "Would record" in capsys.readouterr().out
+    assert ad_arena.read_jsonl(
+        tmp_path / ad_arena.DEFAULT_LEDGER_DIR / ad_arena.ASSIGNMENTS_FILE) == []
+
+
+def test_the_runner_carries_the_waf_user_agent():
+    """api.supabase.com sits behind a WAF that 403s the default urllib UA — a failure
+    that looks like an auth problem and is not (same fix as scripts/geo_enrich.py)."""
+    src = (ROOT / "scripts" / "ad_ingest_run.py").read_text(encoding="utf-8")
+    assert "User-Agent" in src and "Mozilla/5.0" in src
