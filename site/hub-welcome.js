@@ -643,23 +643,59 @@
   /* ---- play it: type, hold to let it land, fade, next; then slow dissolve -- */
   var text = function (p) { return zh ? p[1] : p[0]; };
   hdr.classList.add('greet-run');
-  function finish() { greet.classList.remove('convo'); hdr.classList.remove('greet-run'); }   // slow CSS crossfade → brand
+  function finish() { drop(); greet.classList.remove('convo'); hdr.classList.remove('greet-run'); }   // slow CSS crossfade → brand
+
+  // Every pause below goes through wait(), never a bare setTimeout: timers keep running
+  // (throttled) in a HIDDEN tab, so a hub opened in a background tab used to deliver its
+  // whole read to nobody and be back to the brand by the time you looked. Hold while the
+  // page is hidden; pick up from the same character when the reader actually arrives.
+  // Belt AND braces: a pointer moving across the page proves a reader is there even if the
+  // flag never flips (non-composited embeddings can hold it true), and that rescue is
+  // STICKY — otherwise every character re-parks and the read crawls one glyph per twitch.
+  // A visibilitychange resume does NOT set it: there the flag works, and leaving again
+  // should park again, which is the whole point.
+  var awake = false;
+  function wait(ms, fn) {
+    if (awake || !document.hidden) return setTimeout(fn, ms);
+    var EV = ['visibilitychange', 'pointermove'], i;
+    function go(e) {
+      if (e.type === 'visibilitychange' && document.hidden) return;
+      if (e.type === 'pointermove') awake = true;
+      for (i = 0; i < EV.length; i++) document.removeEventListener(EV[i], go, true);
+      setTimeout(fn, ms);
+    }
+    for (i = 0; i < EV.length; i++) document.addEventListener(EV[i], go, { passive: true, capture: true });
+  }
 
   if (reduced()) {
     // no typing/animation: show the greeting + one read, briefly, then hand to the brand
     var seq = [lines[0], lines[1] || lines[0]], si = 0;
     (function step() {
       var ln = seq[si]; greet.classList.toggle('convo', !ln.big); tx.textContent = text(ln.s);
-      si++; if (si < seq.length) setTimeout(step, 2400); else setTimeout(finish, 2400);
+      si++; if (si < seq.length) wait(2400, step); else wait(2400, finish);
     })();
     return;
   }
 
+  // A DELIBERATE act — a click, a tap, a keypress — means "got it, move on", and the read
+  // gets out of the way. SCROLLING IS NOT THAT ACT. It used to be: 'wheel' and 'touchstart'
+  // were on this list, so a two-finger nudge, a trackpad's momentum after your fingers left,
+  // or a thumb merely landing to begin a swipe abandoned the sentence mid-word — the reader
+  // did the most natural thing on a hub page and the desk stopped talking to them. The
+  // greeting sits in the header and scrolls out of view on its own; it never needed help.
+  // 'click' rather than 'pointerdown' is what tells a tap from the start of a swipe: a touch
+  // that turns into a scroll never fires it. Arrow/Page/Home/End/Space are scrolling too —
+  // just with a keyboard — so they don't count either.
+  var SCROLL_KEY = { ArrowUp: 1, ArrowDown: 1, ArrowLeft: 1, ArrowRight: 1, PageUp: 1, PageDown: 1, Home: 1, End: 1, ' ': 1, Spacebar: 1 };
   var skip = false;
-  function onSkip() { skip = true; }
-  ['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(function (ev) {
-    document.addEventListener(ev, onSkip, { passive: true, capture: true });
-  });
+  function onSkip() { skip = true; drop(); }
+  function onKey(e) { if (!SCROLL_KEY[e.key]) onSkip(); }
+  function drop() {
+    document.removeEventListener('click', onSkip, true);
+    document.removeEventListener('keydown', onKey, true);
+  }
+  document.addEventListener('click', onSkip, { passive: true, capture: true });
+  document.addEventListener('keydown', onKey, { passive: true, capture: true });
 
   var li = 0;
   function playLine() {
@@ -675,19 +711,19 @@
         var ch = full.charAt(i - 1); i++;
         // pause at breath points in BOTH scripts (、； and full-width ？！ included)
         var d = /[\s，,、；;]/.test(ch) ? 90 : /[.。—？?！!…：]/.test(ch) ? 150 : 26;
-        setTimeout(type, d);
+        wait(d, type);
       } else {
         var hold = ln.big ? 1150 : Math.min(2600, 1250 + full.length * 12);   // longer remarks land longer
-        setTimeout(nextLine, hold);
+        wait(hold, nextLine);
       }
     })();
   }
   function nextLine() {
     if (skip) return finish();
     li++;
-    if (li >= lines.length) { setTimeout(finish, 700); return; }   // last remark held, then dissolve
+    if (li >= lines.length) { wait(700, finish); return; }   // last remark held, then dissolve
     tx.style.transition = 'opacity .34s ease'; tx.style.opacity = '0';   // soft fade between remarks
-    setTimeout(playLine, 360);
+    wait(360, playLine);
   }
   playLine();
 })();
