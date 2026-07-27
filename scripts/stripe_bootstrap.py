@@ -8,7 +8,8 @@ re-run — the matching Stripe objects:
   * 4 recurring Prices addressed by stable ``lookup_key`` (portable across test/live),
     so application code never hardcodes environment-specific price IDs.
   * Limited-offer Coupons + PromotionCodes whose real Stripe redemption count powers
-    customer-facing inventory (no simulated scarcity).
+    customer-facing inventory (no simulated scarcity). The PromotionCode owns the
+    first-acquisition cap; the Coupon remains reusable for grandfathered customers.
   * 3 Entitlement Features (Stripe Entitlements, GA), attached to their products.
 
 Idempotency: every object is looked up before creation and reused when found; a re-run
@@ -133,7 +134,7 @@ def _ensure_price(product_id: str | None, spec: dict, currency: str, dry: bool) 
 
 
 # --------------------------------------------------------------------------- #
-# Limited offers (Coupon + PromotionCode; Stripe owns the cap/count atomically)
+# Limited offers (uncapped Coupon + capped PromotionCode)
 # --------------------------------------------------------------------------- #
 def _promo_coupon_id(promo) -> str | None:
     """Read both pre-Basil `coupon` and Basil `promotion.coupon` response shapes."""
@@ -153,7 +154,7 @@ def _ensure_offer(
     currency: str,
     dry: bool,
 ) -> tuple[str | None, str | None]:
-    """Create/reuse an immutable Coupon and its capped customer-facing PromotionCode."""
+    """Create/reuse an uncapped Coupon and its capped customer-facing PromotionCode."""
     if not product_id:
         print(f"  offer    {offer_key:<24} SKIP    (product unresolved)")
         return None, None
@@ -183,7 +184,7 @@ def _ensure_offer(
             coupon.amount_off == amount_off
             and coupon.currency == currency
             and coupon.duration == spec.get("duration", "forever")
-            and coupon.max_redemptions == cap
+            and coupon.max_redemptions is None
             and owned
             and scope_matches
         )
@@ -202,7 +203,6 @@ def _ensure_offer(
             amount_off=amount_off,
             currency=currency,
             duration=spec.get("duration", "forever"),
-            max_redemptions=cap,
             applies_to={"products": [product_id]},
             metadata={"mnz_offer": offer_key},
         )
@@ -238,6 +238,23 @@ def _ensure_offer(
         )
         print(f"  promo    {offer_key:<24} create  {promo.id}  (0/{cap} redeemed)")
     return (coupon.id if coupon else None, promo.id if promo else None)
+
+
+def _retire_promotion_codes(codes: list[str], current_code: str, dry: bool) -> None:
+    """Deactivate superseded acquisition codes without touching existing discounts."""
+    for code in codes:
+        if not code or code == current_code:
+            continue
+        promos = stripe.PromotionCode.list(code=code, limit=10).data
+        for promo in promos:
+            if not bool(promo.active):
+                print(f"  promo    {code:<24} retired {promo.id}")
+                continue
+            if dry:
+                print(f"  promo    {code:<24} RETIRE  {promo.id} (dry-run)")
+                continue
+            stripe.PromotionCode.modify(promo.id, active=False)
+            print(f"  promo    {code:<24} retire  {promo.id}")
 
 
 # --------------------------------------------------------------------------- #
@@ -356,9 +373,23 @@ def main() -> int:
         tier = offer_spec["tier"]
         product_key, product = next(
             (key, value) for key, value in cat["products"].items() if value["tier"] == tier)
-        regular = int(product["prices"][offer_spec["interval"]]["unit_amount"])
+        current = product["prices"][offer_spec["interval"]]
+        base_spec = {
+            "lookup_key": offer_spec.get("base_lookup_key", current["lookup_key"]),
+            "unit_amount": int(offer_spec.get("base_unit_amount", current["unit_amount"])),
+            "interval": current["interval"],
+        }
+        # Reconcile the immutable offer anchor independently so a fresh Stripe environment can
+        # still reproduce a founder's exact total after future public rack-price changes.
+        _ensure_price(product_ids.get(product_key), base_spec, currency, args.dry_run)
+        regular = int(base_spec["unit_amount"])
         _ensure_offer(
             offer_key, offer_spec, product_ids.get(product_key), regular, currency, args.dry_run)
+        _retire_promotion_codes(
+            list(offer_spec.get("retire_promotion_codes") or []),
+            offer_spec["promotion_code"],
+            args.dry_run,
+        )
 
     print("customer portal:")
     _ensure_portal_configuration(portal_products, args.dry_run)

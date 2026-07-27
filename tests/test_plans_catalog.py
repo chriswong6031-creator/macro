@@ -4,9 +4,9 @@ Pins config/plans.yml to the LOCKED 2026-07-27 pricing so config, the Stripe
 sandbox objects (scripts/stripe_bootstrap.py re-creates drifted prices from this
 file), and the landing page can't silently diverge:
 
-    Insider  $79/mo · $708/yr ($59/mo-equivalent, save 25%) · 7-day trial
-    Pro      $119/mo · $1,068/yr ($89/mo-equivalent, save 25%) · 7-day trial
-    Founding Pro  $828/yr ($69/mo-equivalent, 22% off regular annual) · first 250
+    Insider  $99/mo · $900/yr ($75/mo-equivalent, save 24%) · 7-day trial
+    Pro      $149/mo · $1,308/yr ($109/mo-equivalent, save 27%) · 7-day trial
+    Founding Pro  $900/yr ($75/mo-equivalent, save $408/year) · first 2,000
 
 Also verifies the billing endpoints are mounted by hitting them with a TestClient
 (401/503 responses). NOTE (repo memory fastapi-includedrouter-route-verify): this
@@ -18,6 +18,7 @@ Run:
 """
 from __future__ import annotations
 
+import copy
 from pathlib import Path
 
 import yaml
@@ -26,10 +27,10 @@ ROOT = Path(__file__).resolve().parents[1]
 
 # The locked table (onboarding masterplan §2; landing templates/index.html shows the same).
 LOCKED = {
-    "insider": {"monthly": 7900, "annual": 70800, "trial_days": 7,
-                "annual_pm": 59, "save_pct": 25},
-    "pro":     {"monthly": 11900, "annual": 106800, "trial_days": 7,
-                "annual_pm": 89, "save_pct": 25},
+    "insider": {"monthly": 9900, "annual": 90000, "trial_days": 7,
+                "annual_pm": 75, "save_pct": 24},
+    "pro":     {"monthly": 14900, "annual": 130800, "trial_days": 7,
+                "annual_pm": 109, "save_pct": 27},
 }
 
 
@@ -48,8 +49,8 @@ def test_catalog_locked_pricing():
         prices = prod["prices"]
         assert int(prices["monthly"]["unit_amount"]) == want["monthly"], f"{key}: monthly drifted"
         assert int(prices["annual"]["unit_amount"]) == want["annual"], f"{key}: annual drifted"
-        assert prices["monthly"]["lookup_key"] == f"{key}_2026_monthly"
-        assert prices["annual"]["lookup_key"] == f"{key}_2026_annual"
+        assert prices["monthly"]["lookup_key"] == f"{key}_2026_v2_monthly"
+        assert prices["annual"]["lookup_key"] == f"{key}_2026_v2_annual"
         assert prices["monthly"]["interval"] == "month"
         assert prices["annual"]["interval"] == "year"
 
@@ -67,10 +68,14 @@ def test_savings_badges_derive_from_config():
 def test_founding_pro_is_limited_annual_pro_offer():
     offer = _catalog()["offers"]["founding_pro"]
     assert offer["tier"] == "pro" and offer["interval"] == "annual"
-    assert int(offer["unit_amount"]) == 82800
-    assert round(offer["unit_amount"] / 12 / 100) == 69
-    assert round((106800 - offer["unit_amount"]) / 106800 * 100) == 22
-    assert int(offer["max_redemptions"]) == 250
+    assert int(offer["unit_amount"]) == 90000
+    assert round(offer["unit_amount"] / 12 / 100) == 75
+    assert int(130800 - offer["unit_amount"]) == 40800
+    assert offer["base_lookup_key"] == "pro_2026_v2_annual"
+    assert int(offer["base_unit_amount"]) == 130800
+    assert int(offer["max_redemptions"]) == 2000
+    assert int(offer["public_count_threshold"]) == 25
+    assert offer["entitlement_metadata_key"] == "mm_founding_pro_entitled"
     assert offer["duration"] == "forever"
 
 
@@ -82,16 +87,34 @@ def test_billing_maps_tiers_trials_and_lookup_keys():
         assert billing._tier_trial_days(tier) == 7
         for interval in ("monthly", "annual"):
             lk = billing._tier_to_lookup_key(tier, interval)
-            assert lk == f"{tier}_2026_{interval}"
+            assert lk == f"{tier}_2026_v2_{interval}"
     lk2t = billing._lookup_key_to_tier()
     assert lk2t == {
+        "insider_2026_v2_monthly": "insider", "insider_2026_v2_annual": "insider",
         "insider_2026_monthly": "insider", "insider_2026_annual": "insider",
         "insider_monthly": "insider", "insider_annual": "insider",
+        "pro_2026_v2_monthly": "pro", "pro_2026_v2_annual": "pro",
         "pro_2026_monthly": "pro", "pro_2026_annual": "pro",
         "pro_monthly": "pro", "pro_annual": "pro",
     }
     assert billing._tier_features("pro") == ["site_full", "terminal_live_options", "chat_opus"]
     assert billing._tier_features("insider") == ["site_full", "terminal_live_options"]
+
+
+def test_founding_price_anchor_survives_a_future_regular_pro_increase(monkeypatch):
+    """A returning founder must stay at $900 when the public Pro rack price changes."""
+    from app import billing
+
+    future = copy.deepcopy(_catalog())
+    future["products"]["pro"]["prices"]["annual"] = {
+        "lookup_key": "pro_2027_annual",
+        "unit_amount": 180000,
+        "interval": "year",
+    }
+    monkeypatch.setattr(billing, "_CATALOG", future)
+    assert billing._tier_to_lookup_key("pro", "annual") == "pro_2027_annual"
+    assert billing._purchase_lookup_key(
+        "pro", "annual", "founding_pro") == "pro_2026_v2_annual"
 
 
 def test_billing_endpoints_mounted(monkeypatch):

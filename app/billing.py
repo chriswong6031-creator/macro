@@ -89,6 +89,9 @@ def _lookup_key_to_tier() -> dict[str, str]:
             out[pspec["lookup_key"]] = prod["tier"]
         for lookup_key in prod.get("legacy_lookup_keys", []):
             out[lookup_key] = prod["tier"]
+    for offer in (_catalog().get("offers") or {}).values():
+        if offer.get("base_lookup_key"):
+            out[offer["base_lookup_key"]] = offer["tier"]
     return out
 
 
@@ -98,6 +101,17 @@ def _tier_to_lookup_key(tier: str, interval: str) -> str | None:
             spec = prod["prices"].get(interval)
             return spec["lookup_key"] if spec else None
     return None
+
+
+def _purchase_lookup_key(tier: str, interval: str, offer_key: str | None = None) -> str | None:
+    """Resolve the price anchor for a purchase, preserving an offer's promised total forever."""
+    if offer_key:
+        spec = (_catalog().get("offers") or {}).get(offer_key) or {}
+        if spec.get("tier") == tier and spec.get("interval") == interval:
+            anchored = (spec.get("base_lookup_key") or "").strip()
+            if anchored:
+                return anchored
+    return _tier_to_lookup_key(tier, interval)
 
 
 def _tier_trial_days(tier: str) -> int:
@@ -252,7 +266,7 @@ def _promotion_code(offer_key: str) -> Any:
 
 
 def _offer_status(offer_key: str) -> dict[str, Any]:
-    """Public, truthful inventory derived from Stripe—not a simulated counter."""
+    """Public inventory derived from Stripe—not a simulated counter."""
     spec = (_catalog().get("offers") or {}).get(offer_key)
     if not spec:
         raise HTTPException(404, f"unknown offer '{offer_key}'")
@@ -274,17 +288,88 @@ def _offer_status(offer_key: str) -> dict[str, Any]:
         "claimed": min(claimed, cap),
         "remaining": max(0, cap - claimed),
         "cap": cap,
+        "public_count_threshold": int(spec.get("public_count_threshold", 0)),
         "unit_amount": int(spec["unit_amount"]),
         "regular_unit_amount": regular,
         "currency": _catalog().get("currency", "usd"),
-        "renews_while_uninterrupted": spec.get("duration") == "forever",
+        "renews_at_offer_rate": spec.get("duration") == "forever",
     }
 
 
-def _offer_discount(offer_key: str | None) -> list[dict[str, str]] | None:
-    """Return Stripe's discounts payload, or 410 when truthful inventory is gone."""
+def _offer_entitlement_key(offer_key: str) -> str | None:
+    spec = (_catalog().get("offers") or {}).get(offer_key) or {}
+    return (spec.get("entitlement_metadata_key") or "").strip() or None
+
+
+def _grant_offer_entitlement(customer_id: str, offer_key: str | None) -> None:
+    """Persist a grandfathered offer on the Stripe Customer without touching subscription state."""
+    if not offer_key:
+        return
+    metadata_key = _offer_entitlement_key(offer_key)
+    if metadata_key:
+        _stripe().Customer.modify(customer_id, metadata={metadata_key: "true"})
+
+
+def _customer_offer_entitled(customer_id: str | None, offer_key: str) -> bool:
+    """Return durable founding eligibility, with subscription history as a recovery backstop.
+
+    Customer metadata is the fast path. Historical subscription metadata is deliberately also
+    authoritative: it survives cancellation and expiry and repairs the Customer marker if the
+    post-checkout metadata write was interrupted.
+    """
+    if not customer_id:
+        return False
+    metadata_key = _offer_entitlement_key(offer_key)
+    if not metadata_key:
+        return False
+    stripe = _stripe()
+    customer = stripe.Customer.retrieve(customer_id)
+    metadata = _field(customer, "metadata", {}) or {}
+    if str(metadata.get(metadata_key, "")).lower() == "true":
+        return True
+    subscriptions = stripe.Subscription.list(customer=customer_id, status="all", limit=100).data
+    for sub in subscriptions:
+        sub_metadata = _field(sub, "metadata", {}) or {}
+        if sub_metadata.get("mm_offer") == offer_key:
+            try:
+                _grant_offer_entitlement(customer_id, offer_key)
+            except Exception as exc:  # noqa: BLE001 — history remains the durable recovery record
+                log.warning("billing: failed to repair %s entitlement for %s (%s)",
+                            offer_key, customer_id, exc)
+            return True
+    return False
+
+
+def _effective_offer_key(
+    raw: str | None,
+    tier: str,
+    interval: str,
+    customer_id: str | None,
+) -> str | None:
+    """Validate an explicit offer or silently restore a matching grandfathered offer."""
+    explicit = _offer_key(raw, tier, interval)
+    if explicit:
+        return explicit
+    for offer_key, spec in (_catalog().get("offers") or {}).items():
+        if spec.get("tier") != tier or spec.get("interval") != interval:
+            continue
+        if _customer_offer_entitled(customer_id, offer_key):
+            return offer_key
+    return None
+
+
+def _offer_discount(
+    offer_key: str | None,
+    customer_id: str | None = None,
+) -> list[dict[str, str]] | None:
+    """Return a capped acquisition promo or the uncapped coupon for an existing founder."""
     if not offer_key:
         return None
+    spec = (_catalog().get("offers") or {}).get(offer_key)
+    if not spec:
+        raise HTTPException(400, f"unknown offer '{offer_key}'")
+    if _customer_offer_entitled(customer_id, offer_key):
+        return [{"coupon": spec["coupon_id"]}]
     status = _offer_status(offer_key)
     if not status["active"]:
         raise HTTPException(410, f"{status['name']} is sold out")
@@ -650,23 +735,26 @@ def checkout(body: CheckoutRequest, user: dict = Depends(_current_user)) -> dict
         raise HTTPException(400, f"unknown tier '{tier}'")
     if interval not in ("monthly", "annual"):
         raise HTTPException(400, f"unknown interval '{interval}'")
-    lookup_key = _tier_to_lookup_key(tier, interval)
-    if not lookup_key:
-        raise HTTPException(400, f"no price for {tier}/{interval}")
-    offer_key = _offer_key(body.offer, tier, interval)
-    discounts = _offer_discount(offer_key)
-
     stripe = _stripe()
     user_id = user.get("id")
     if not user_id:
         raise HTTPException(401, "no user id")
     email = user.get("email")
     customer = _existing_customer(user_id)
+    offer_key = _effective_offer_key(body.offer, tier, interval, customer)
+    lookup_key = _purchase_lookup_key(tier, interval, offer_key)
+    if not lookup_key:
+        raise HTTPException(400, f"no price for {tier}/{interval}")
+    discounts = _offer_discount(offer_key, customer)
 
     args: dict[str, Any] = {
         "mode": "subscription",
         "line_items": [{"price": _price_id(lookup_key), "quantity": 1}],
         "client_reference_id": user_id,
+        "metadata": {
+            "mm_user_id": user_id,
+            **({"mm_offer": offer_key} if offer_key else {}),
+        },
         # Land a PAYING customer on the desk, not back on the pricing page. The Elements
         # sheet lane already ends at start.html (its Done step -> loginDest()); hosted
         # Checkout used to return to /plans.html?checkout=success, where the banner told
@@ -772,9 +860,7 @@ def subscribe_init(body: SubscribeInitRequest, user: dict = Depends(_current_use
     """
     tier, interval = body.tier.strip().lower(), body.interval.strip().lower()
     _resolve_lookup_key(tier, interval)  # validate before touching Stripe
-    offer_key = _offer_key(body.offer, tier, interval)
-    # Resolve before card capture so a sold-out offer never advances with a stale price.
-    _offer_discount(offer_key)
+    _offer_key(body.offer, tier, interval)  # validate before touching Stripe
 
     user_id = user.get("id")
     if not user_id:
@@ -796,6 +882,12 @@ def subscribe_init(body: SubscribeInitRequest, user: dict = Depends(_current_use
             _persist_customer(user_id, customer_id)
         except Exception as exc:  # noqa: BLE001 — mapping persist is best-effort; sub metadata still carries mm_user_id
             log.warning("billing: persist customer mapping failed for %s (%s)", user_id, exc)
+
+    offer_key = _effective_offer_key(body.offer, tier, interval, customer_id)
+    if not _purchase_lookup_key(tier, interval, offer_key):
+        raise HTTPException(400, f"no price for {tier}/{interval}")
+    # Resolve before card capture so a sold-out offer never advances with a stale price.
+    _offer_discount(offer_key, customer_id)
 
     # No-double-subscribe guard (409) — fail before creating a SetupIntent for an already-paid user.
     try:
@@ -843,8 +935,7 @@ def subscribe_complete(body: SubscribeCompleteRequest, user: dict = Depends(_cur
     payment method. Only then is the subscription created with the 7-day trial and the captured PM.
     """
     tier, interval = body.tier.strip().lower(), body.interval.strip().lower()
-    lookup_key = _resolve_lookup_key(tier, interval)
-    offer_key = _offer_key(body.offer, tier, interval)
+    _resolve_lookup_key(tier, interval)
 
     user_id = user.get("id")
     if not user_id:
@@ -852,6 +943,10 @@ def subscribe_complete(body: SubscribeCompleteRequest, user: dict = Depends(_cur
     customer_id = _existing_customer(user_id)
     if not customer_id:
         raise HTTPException(400, "no billing customer for this user (call /subscribe/init first)")
+    offer_key = _effective_offer_key(body.offer, tier, interval, customer_id)
+    lookup_key = _purchase_lookup_key(tier, interval, offer_key)
+    if not lookup_key:
+        raise HTTPException(400, f"no price for {tier}/{interval}")
 
     stripe = _stripe()
     try:
@@ -895,7 +990,7 @@ def subscribe_complete(body: SubscribeCompleteRequest, user: dict = Depends(_cur
             "trial_settings": {"end_behavior": {"missing_payment_method": "cancel"}},
             "metadata": {"mm_user_id": user_id, **({"mm_offer": offer_key} if offer_key else {})},
         }
-        discounts = _offer_discount(offer_key)
+        discounts = _offer_discount(offer_key, customer_id)
         if discounts:
             create_args["discounts"] = discounts
         sub = stripe.Subscription.create(
@@ -906,6 +1001,13 @@ def subscribe_complete(body: SubscribeCompleteRequest, user: dict = Depends(_cur
         if _offer_sold_out_after_error(offer_key):
             raise HTTPException(410, f"{_catalog()['offers'][offer_key]['name']} is sold out") from None
         raise HTTPException(502, "subscribe complete failed, please try again") from None
+
+    if offer_key:
+        try:
+            _grant_offer_entitlement(customer_id, offer_key)
+        except Exception as exc:  # noqa: BLE001 — subscription metadata lets the webhook/re-entry repair this
+            log.warning("billing: post-subscribe %s entitlement grant failed for %s (%s)",
+                        offer_key, user_id, exc)
 
     # Same-module authority (MNZ-R3): this IS the billing spine, so it may write the entitlement row
     # directly. Recompute + upsert + invalidate exactly like _handle_event, so /api/me reflects
@@ -998,15 +1100,15 @@ def upgrade(body: UpgradeRequest, user: dict = Depends(_current_user)) -> dict:
     interval = interval_override or cur_interval
     if not _upgrade_allowed(cur_tier, cur_interval, target_tier, interval):
         raise HTTPException(409, _upgrade_denial(cur_tier, cur_interval, target_tier, interval))
-    offer_key = _offer_key(body.offer, target_tier, interval)
-    discounts = _offer_discount(offer_key)
+    offer_key = _effective_offer_key(body.offer, target_tier, interval, customer_id)
+    discounts = _offer_discount(offer_key, customer_id)
 
     sub_id = _sub_id(sub)
     item_id = _first_item_id(sub)
     if not sub_id or not item_id:
         raise HTTPException(502, "upgrade failed: subscription has no modifiable item")
 
-    target_lookup_key = _tier_to_lookup_key(target_tier, interval)
+    target_lookup_key = _purchase_lookup_key(target_tier, interval, offer_key)
     if not target_lookup_key:
         raise HTTPException(400, f"no price for {target_tier}/{interval}")
 
@@ -1033,6 +1135,13 @@ def upgrade(body: UpgradeRequest, user: dict = Depends(_current_user)) -> dict:
         if _offer_sold_out_after_error(offer_key):
             raise HTTPException(410, f"{_catalog()['offers'][offer_key]['name']} is sold out") from None
         raise HTTPException(502, "upgrade failed, please try again") from None
+
+    if offer_key:
+        try:
+            _grant_offer_entitlement(customer_id, offer_key)
+        except Exception as exc:  # noqa: BLE001 — subscription metadata lets the webhook/re-entry repair this
+            log.warning("billing: post-upgrade %s entitlement grant failed for %s (%s)",
+                        offer_key, user_id, exc)
 
     # Same-module authority: recompute -> upsert -> invalidate so /api/me flips to Pro instantly.
     try:
@@ -1191,6 +1300,14 @@ def _handle_event(event: dict) -> None:
     if not user_id or not customer_id:
         log.warning("billing: unresolved ids for %s (customer=%s user=%s)", etype, customer_id, user_id)
         return
+    if etype in {
+        "checkout.session.completed",
+        "customer.subscription.created",
+        "customer.subscription.updated",
+    }:
+        event_offer = (obj.get("metadata") or {}).get("mm_offer")
+        if event_offer in (_catalog().get("offers") or {}):
+            _grant_offer_entitlement(customer_id, event_offer)
     if etype in _REVOKING:
         _cancel_subscriptions(customer_id)   # chargeback → cancel so the free downgrade sticks (C1)
     emails = _billing_emails()
