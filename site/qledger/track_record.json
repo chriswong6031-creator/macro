@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-26T09:06:10.572956+00:00",
+  "generated_at": "2026-07-27T00:33:20.283853+00:00",
   "grade_horizons": [
     5,
     21,
@@ -81,10 +81,10 @@
     },
     "us_importance_v0": {
       "5": {
-        "n_obs": 5246,
+        "n_obs": 5500,
         "n_dates": 19,
         "hit_rate": null,
-        "excess_mean": -0.005615,
+        "excess_mean": -0.005533,
         "wilson_ci_low": null,
         "state": "ACCRUING"
       },
@@ -117,10 +117,10 @@
     },
     "us_importance_v0_pit": {
       "5": {
-        "n_obs": 5246,
+        "n_obs": 5500,
         "n_dates": 19,
         "hit_rate": null,
-        "excess_mean": -0.005615,
+        "excess_mean": -0.005533,
         "wilson_ci_low": null,
         "state": "ACCRUING"
       },
@@ -267,10 +267,10 @@
     },
     "us_importance_v0": {
       "5": {
-        "n_obs": 5246,
+        "n_obs": 5500,
         "n_dates": 19,
         "hit_rate": null,
-        "excess_mean": -0.005615,
+        "excess_mean": -0.005533,
         "wilson_ci_low": null,
         "state": "ACCRUING"
       },
@@ -303,10 +303,10 @@
     },
     "us_importance_v0_pit": {
       "5": {
-        "n_obs": 5246,
+        "n_obs": 5500,
         "n_dates": 19,
         "hit_rate": null,
-        "excess_mean": -0.005615,
+        "excess_mean": -0.005533,
         "wilson_ci_low": null,
         "state": "ACCRUING"
       },
@@ -452,20 +452,20 @@
       }
     },
     "_meta": {
-      "n_placebo_claims": 700,
+      "n_placebo_claims": 756,
       "n_covered_events": 39,
       "n_fallback_events": 39,
       "fallback_rate": 0.5
     }
   },
   "counts": {
-    "n_claims": 25894,
-    "n_grades": 24459,
-    "n_placebo": 700,
+    "n_claims": 28150,
+    "n_grades": 24967,
+    "n_placebo": 756,
     "n_rejected": 1,
     "grades_by_fill_convention": {
       "asof_legacy": 2780,
-      "next_bar": 21679
+      "next_bar": 22187
     },
     "n_claims_unstamped_regime": 5773
   },
@@ -935,7 +935,7 @@
       }
     }
   },
-  "ladder_states_at": "2026-07-26T09:06:27.511993+00:00",
+  "ladder_states_at": "2026-07-27T00:33:34.661238+00:00",
   "promotion_readiness": {
     "altdata": {
       "5": {
@@ -1608,7 +1608,7 @@
         "needed": 25,
         "wilson_ci_low": null,
         "hit_rate": null,
-        "excess_mean": -0.005615,
+        "excess_mean": -0.005533,
         "ready": false,
         "approaching": false,
         "projected_ready_date": "2026-08-01",
@@ -1643,7 +1643,7 @@
         "needed": 25,
         "wilson_ci_low": null,
         "hit_rate": null,
-        "excess_mean": -0.005615,
+        "excess_mean": -0.005533,
         "ready": false,
         "approaching": false,
         "projected_ready_date": "2026-08-01",
@@ -1823,13 +1823,13 @@
         "wilson_ci_low_5d": null
       },
       "us_importance_v0": {
-        "challenger_excess_mean_5d": -0.005615,
+        "challenger_excess_mean_5d": -0.005533,
         "placebo_covered_abs_excess_5d": 0.066272,
         "n_dates_5d": 19,
         "wilson_ci_low_5d": null
       },
       "us_importance_v0_pit": {
-        "challenger_excess_mean_5d": -0.005615,
+        "challenger_excess_mean_5d": -0.005533,
         "placebo_covered_abs_excess_5d": 0.066272,
         "n_dates_5d": 19,
         "wilson_ci_low_5d": null
@@ -1842,5 +1842,5 @@
       }
     }
   },
-  "promotion_readiness_at": "2026-07-26T09:06:53.239029+00:00"
+  "promotion_readiness_at": "2026-07-27T00:33:58.170014+00:00"
 }

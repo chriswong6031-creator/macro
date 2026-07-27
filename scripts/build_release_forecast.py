@@ -915,6 +915,10 @@ def _attach_shadows_to_items(upcoming_block: list[dict], root: Path, today: date
                     "coverage_residual_pp": bridge_result.get("coverage_residual_pp"),
                     "weight_coverage": bridge_result.get("weight_coverage"),
                     "confidence": bridge_result.get("confidence"),
+                    # Blocks that shipped an estimate on partial inputs. Without this the
+                    # per-block `degraded` flags inside components have no roll-up and a
+                    # one-leg bridge is indistinguishable from a full-leg one on the artifact.
+                    "degraded_blocks": bridge_result.get("degraded_blocks"),
                 }
 
         # W11-G task 1: mf_energy shadow (cpi_headline only, Track T MRI-R36)
@@ -1066,7 +1070,8 @@ def _build_shadow_ledger_rows(
       - row_type = "shadow_projection"
       - model = "v3_factor" | "cpi_bridge" | "mf_energy"
       - prediction_id includes model slug
-      - cpi_bridge carries components, coverage_residual_pp, prior_driven_share
+      - cpi_bridge carries components, coverage_residual_pp, prior_driven_share,
+        degraded_blocks
     """
     from engine.release_forecast import make_release_id, make_prediction_id
     asof_night = today.isoformat()
@@ -1183,6 +1188,7 @@ def _build_shadow_ledger_rows(
                     "coverage_residual_pp": bridge_result.get("coverage_residual_pp"),
                     "prior_driven_share": bridge_result.get("prior_driven_share"),
                     "weight_coverage": bridge_result.get("weight_coverage"),
+                    "degraded_blocks": bridge_result.get("degraded_blocks"),
                     "display_only": True,
                     "authority": False,
                 }
