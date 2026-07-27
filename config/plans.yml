@@ -69,6 +69,9 @@ offers:
     tier: pro
     interval: annual
     unit_amount: 90000
+    # Preserve the exact $900 founder total even after future regular Pro price increases.
+    base_lookup_key: pro_2026_v2_annual
+    base_unit_amount: 130800
     max_redemptions: 2000
     public_count_threshold: 25
     entitlement_metadata_key: mm_founding_pro_entitled

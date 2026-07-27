@@ -18,6 +18,7 @@ Run:
 """
 from __future__ import annotations
 
+import copy
 from pathlib import Path
 
 import yaml
@@ -70,6 +71,8 @@ def test_founding_pro_is_limited_annual_pro_offer():
     assert int(offer["unit_amount"]) == 90000
     assert round(offer["unit_amount"] / 12 / 100) == 75
     assert int(130800 - offer["unit_amount"]) == 40800
+    assert offer["base_lookup_key"] == "pro_2026_v2_annual"
+    assert int(offer["base_unit_amount"]) == 130800
     assert int(offer["max_redemptions"]) == 2000
     assert int(offer["public_count_threshold"]) == 25
     assert offer["entitlement_metadata_key"] == "mm_founding_pro_entitled"
@@ -96,6 +99,22 @@ def test_billing_maps_tiers_trials_and_lookup_keys():
     }
     assert billing._tier_features("pro") == ["site_full", "terminal_live_options", "chat_opus"]
     assert billing._tier_features("insider") == ["site_full", "terminal_live_options"]
+
+
+def test_founding_price_anchor_survives_a_future_regular_pro_increase(monkeypatch):
+    """A returning founder must stay at $900 when the public Pro rack price changes."""
+    from app import billing
+
+    future = copy.deepcopy(_catalog())
+    future["products"]["pro"]["prices"]["annual"] = {
+        "lookup_key": "pro_2027_annual",
+        "unit_amount": 180000,
+        "interval": "year",
+    }
+    monkeypatch.setattr(billing, "_CATALOG", future)
+    assert billing._tier_to_lookup_key("pro", "annual") == "pro_2027_annual"
+    assert billing._purchase_lookup_key(
+        "pro", "annual", "founding_pro") == "pro_2026_v2_annual"
 
 
 def test_billing_endpoints_mounted(monkeypatch):

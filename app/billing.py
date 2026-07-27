@@ -89,6 +89,9 @@ def _lookup_key_to_tier() -> dict[str, str]:
             out[pspec["lookup_key"]] = prod["tier"]
         for lookup_key in prod.get("legacy_lookup_keys", []):
             out[lookup_key] = prod["tier"]
+    for offer in (_catalog().get("offers") or {}).values():
+        if offer.get("base_lookup_key"):
+            out[offer["base_lookup_key"]] = offer["tier"]
     return out
 
 
@@ -98,6 +101,17 @@ def _tier_to_lookup_key(tier: str, interval: str) -> str | None:
             spec = prod["prices"].get(interval)
             return spec["lookup_key"] if spec else None
     return None
+
+
+def _purchase_lookup_key(tier: str, interval: str, offer_key: str | None = None) -> str | None:
+    """Resolve the price anchor for a purchase, preserving an offer's promised total forever."""
+    if offer_key:
+        spec = (_catalog().get("offers") or {}).get(offer_key) or {}
+        if spec.get("tier") == tier and spec.get("interval") == interval:
+            anchored = (spec.get("base_lookup_key") or "").strip()
+            if anchored:
+                return anchored
+    return _tier_to_lookup_key(tier, interval)
 
 
 def _tier_trial_days(tier: str) -> int:
@@ -721,10 +735,6 @@ def checkout(body: CheckoutRequest, user: dict = Depends(_current_user)) -> dict
         raise HTTPException(400, f"unknown tier '{tier}'")
     if interval not in ("monthly", "annual"):
         raise HTTPException(400, f"unknown interval '{interval}'")
-    lookup_key = _tier_to_lookup_key(tier, interval)
-    if not lookup_key:
-        raise HTTPException(400, f"no price for {tier}/{interval}")
-
     stripe = _stripe()
     user_id = user.get("id")
     if not user_id:
@@ -732,6 +742,9 @@ def checkout(body: CheckoutRequest, user: dict = Depends(_current_user)) -> dict
     email = user.get("email")
     customer = _existing_customer(user_id)
     offer_key = _effective_offer_key(body.offer, tier, interval, customer)
+    lookup_key = _purchase_lookup_key(tier, interval, offer_key)
+    if not lookup_key:
+        raise HTTPException(400, f"no price for {tier}/{interval}")
     discounts = _offer_discount(offer_key, customer)
 
     args: dict[str, Any] = {
@@ -871,6 +884,8 @@ def subscribe_init(body: SubscribeInitRequest, user: dict = Depends(_current_use
             log.warning("billing: persist customer mapping failed for %s (%s)", user_id, exc)
 
     offer_key = _effective_offer_key(body.offer, tier, interval, customer_id)
+    if not _purchase_lookup_key(tier, interval, offer_key):
+        raise HTTPException(400, f"no price for {tier}/{interval}")
     # Resolve before card capture so a sold-out offer never advances with a stale price.
     _offer_discount(offer_key, customer_id)
 
@@ -920,7 +935,7 @@ def subscribe_complete(body: SubscribeCompleteRequest, user: dict = Depends(_cur
     payment method. Only then is the subscription created with the 7-day trial and the captured PM.
     """
     tier, interval = body.tier.strip().lower(), body.interval.strip().lower()
-    lookup_key = _resolve_lookup_key(tier, interval)
+    _resolve_lookup_key(tier, interval)
 
     user_id = user.get("id")
     if not user_id:
@@ -929,6 +944,9 @@ def subscribe_complete(body: SubscribeCompleteRequest, user: dict = Depends(_cur
     if not customer_id:
         raise HTTPException(400, "no billing customer for this user (call /subscribe/init first)")
     offer_key = _effective_offer_key(body.offer, tier, interval, customer_id)
+    lookup_key = _purchase_lookup_key(tier, interval, offer_key)
+    if not lookup_key:
+        raise HTTPException(400, f"no price for {tier}/{interval}")
 
     stripe = _stripe()
     try:
@@ -1090,7 +1108,7 @@ def upgrade(body: UpgradeRequest, user: dict = Depends(_current_user)) -> dict:
     if not sub_id or not item_id:
         raise HTTPException(502, "upgrade failed: subscription has no modifiable item")
 
-    target_lookup_key = _tier_to_lookup_key(target_tier, interval)
+    target_lookup_key = _purchase_lookup_key(target_tier, interval, offer_key)
     if not target_lookup_key:
         raise HTTPException(400, f"no price for {target_tier}/{interval}")
 

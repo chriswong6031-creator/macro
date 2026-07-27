@@ -140,3 +140,38 @@ def test_bootstrap_retires_superseded_acquisition_code(monkeypatch):
     bootstrap._retire_promotion_codes(
         ["FOUNDINGPRO2026"], "FOUNDINGPRO2026V2", False)
     assert modified == {"id": "promo_old", "active": False}
+
+
+def test_founding_base_price_can_be_reprovisioned_independently(monkeypatch):
+    """A fresh Stripe environment can recreate the immutable anchor after rack-price changes."""
+    created = {}
+
+    class _Price:
+        @staticmethod
+        def list(**kwargs):
+            return _ListResp([])
+
+        @staticmethod
+        def create(**kwargs):
+            created.update(kwargs)
+            return types.SimpleNamespace(id="price_founding_anchor")
+
+    monkeypatch.setattr(bootstrap, "stripe", types.SimpleNamespace(Price=_Price))
+    assert bootstrap._ensure_price(
+        "prod_pro",
+        {
+            "lookup_key": "pro_2026_v2_annual",
+            "unit_amount": 130800,
+            "interval": "year",
+        },
+        "usd",
+        False,
+    ) == "price_founding_anchor"
+    assert created == {
+        "product": "prod_pro",
+        "currency": "usd",
+        "unit_amount": 130800,
+        "recurring": {"interval": "year"},
+        "lookup_key": "pro_2026_v2_annual",
+        "transfer_lookup_key": True,
+    }

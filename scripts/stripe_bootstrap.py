@@ -373,7 +373,16 @@ def main() -> int:
         tier = offer_spec["tier"]
         product_key, product = next(
             (key, value) for key, value in cat["products"].items() if value["tier"] == tier)
-        regular = int(product["prices"][offer_spec["interval"]]["unit_amount"])
+        current = product["prices"][offer_spec["interval"]]
+        base_spec = {
+            "lookup_key": offer_spec.get("base_lookup_key", current["lookup_key"]),
+            "unit_amount": int(offer_spec.get("base_unit_amount", current["unit_amount"])),
+            "interval": current["interval"],
+        }
+        # Reconcile the immutable offer anchor independently so a fresh Stripe environment can
+        # still reproduce a founder's exact total after future public rack-price changes.
+        _ensure_price(product_ids.get(product_key), base_spec, currency, args.dry_run)
+        regular = int(base_spec["unit_amount"])
         _ensure_offer(
             offer_key, offer_spec, product_ids.get(product_key), regular, currency, args.dry_run)
         _retire_promotion_codes(

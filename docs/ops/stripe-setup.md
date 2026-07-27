@@ -35,6 +35,11 @@ first-time redemptions**. The PromotionCode—not the Coupon—owns this cap. Th
 backend-only and lets an already-entitled founder resume the grandfathered rate without consuming
 another acquisition slot.
 
+The offer is also pinned to the immutable `pro_2026_v2_annual` base Price ($1,308/year). That
+price anchor plus the forever $408 Coupon keeps the founder total at exactly $900/year even if the
+regular Pro catalog is raised later. The bootstrap independently reconciles the anchor so a fresh
+Stripe environment can reproduce the promise.
+
 `GET /api/billing/offers/founding_pro` reads Stripe's real `times_redeemed`. Before the configured
 public threshold is reached, the UI says that Founding access is open and shows the total capacity
 without printing an unhelpful near-zero count. Once the threshold is reached, it shows a progress bar
