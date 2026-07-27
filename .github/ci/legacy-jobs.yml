@@ -253,8 +253,14 @@ jobs:
     # pandas/numpy/pyarrow closure; pyyaml for the repo conftest), so the install
     # line is byte-identical to the trial-budgets/outcome-spine family and the pack
     # runner can share a venv with any same-pack sibling on that line. Closure
-    # verified in a clean venv with exactly this install: 2 passed (plus the whole
-    # unwired-in-CI tests/test_breakdown_events.py suite: 122 passed).
+    # verified in a clean venv with exactly this install: 2 passed, plus the full
+    # event-tape + AVOID-1 stamper suites below: 122 passed (89+33), zero skips,
+    # identical under PYTHONHASHSEED 0/1/42.
+    # The second step runs the two breakdown suites that were executed by NO job
+    # until 2026-07-27 (every pytest invocation in this repo carries an explicit
+    # file list — an unnamed suite is never run). Their fixture seeding was
+    # de-flaked first (hash(ticker) → zlib.crc32) so wiring them cannot import
+    # the same PYTHONHASHSEED salt this lane exists to prevent.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -265,6 +271,8 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml
       - name: BD-4/5/6 control seeds must be PYTHONHASHSEED-stable (crc32, never hash())
         run: python -m pytest tests/test_breakdown_seed_determinism.py -q
+      - name: breakdown event tape + BD-AVOID1 stamper suites
+        run: python -m pytest tests/test_breakdown_events.py tests/test_bd_avoid1_stamper.py -q
 
   outcome-spine:
     if: ${{ false }}
