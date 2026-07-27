@@ -94,8 +94,9 @@ class _FakeStripe:
         self.Subscription = _Subscription
 
 
-def _make_si(status="succeeded", customer="cus_1", pm="pm_123"):
-    return types.SimpleNamespace(status=status, customer=customer, payment_method=pm)
+def _make_si(status="succeeded", customer="cus_1", pm="pm_123", metadata=None):
+    return types.SimpleNamespace(
+        status=status, customer=customer, payment_method=pm, metadata=metadata or {})
 
 
 # --------------------------------------------------------------------------- #
@@ -205,8 +206,9 @@ def test_init_400_unknown_interval(monkeypatch):
 # --------------------------------------------------------------------------- #
 # complete
 # --------------------------------------------------------------------------- #
-def _complete_body(tier="pro", interval="monthly", sid="seti_abc"):
-    return billing.SubscribeCompleteRequest(setup_intent_id=sid, tier=tier, interval=interval)
+def _complete_body(tier="pro", interval="monthly", sid="seti_abc", offer=None):
+    return billing.SubscribeCompleteRequest(
+        setup_intent_id=sid, tier=tier, interval=interval, offer=offer)
 
 
 def test_complete_400_when_si_not_succeeded(monkeypatch):
@@ -263,7 +265,7 @@ def test_complete_creates_sub_with_trial_and_syncs_entitlement(monkeypatch):
     # captured PM, save-on-subscription, cancel-on-missing-PM, mm_user_id metadata).
     kw = fake.calls["sub_create"]
     assert kw["customer"] == "cus_1"
-    assert kw["items"] == [{"price": "price_pro_monthly"}]
+    assert kw["items"] == [{"price": "price_pro_2026_monthly"}]
     assert kw["trial_period_days"] == 7
     assert kw["default_payment_method"] == "pm_777"
     assert kw["payment_settings"] == {"save_default_payment_method": "on_subscription"}
@@ -274,6 +276,33 @@ def test_complete_creates_sub_with_trial_and_syncs_entitlement(monkeypatch):
     assert synced["ent"]["status"] == "trialing" and synced["ent"]["tier"] == "pro"
     assert synced["uid"] == "user_1" and synced["cid"] == "cus_1"
     assert synced["invalidated"] == "user_1"
+
+
+def test_complete_applies_bound_founding_discount(monkeypatch):
+    fake = _FakeStripe(
+        subs=[],
+        si=_make_si(
+            customer="cus_1", pm="pm_777", metadata={"mm_offer": "founding_pro"}))
+    monkeypatch.setattr(billing, "_stripe", lambda: fake)
+    monkeypatch.setattr(billing, "_existing_customer", lambda uid: "cus_1")
+    monkeypatch.setattr(billing, "_price_id", lambda lk: f"price_{lk}")
+    monkeypatch.setattr(
+        billing, "_offer_discount",
+        lambda key: [{"promotion_code": "promo_founder"}] if key else None)
+    monkeypatch.setattr(
+        billing, "_compute_entitlement",
+        lambda cid: {"tier": "pro", "status": "trialing", "current_period_end": None,
+                     "features": []})
+    monkeypatch.setattr(billing, "_upsert_entitlement", lambda *a: None)
+    monkeypatch.setattr(billing, "_invalidate", lambda *a: None)
+
+    billing.subscribe_complete(
+        _complete_body(tier="pro", interval="annual", offer="founding_pro"), user=USER)
+
+    kw = fake.calls["sub_create"]
+    assert kw["items"] == [{"price": "price_pro_2026_annual"}]
+    assert kw["discounts"] == [{"promotion_code": "promo_founder"}]
+    assert kw["metadata"] == {"mm_user_id": "user_1", "mm_offer": "founding_pro"}
 
 
 def test_complete_409_double_subscribe(monkeypatch):

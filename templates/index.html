@@ -621,9 +621,9 @@
   <div class="wrap">
     <div class="p-head rv">
       <span class="kicker" style="color:var(--blue)" data-zh="定价">Pricing</span>
-      <h2 class="sec-title" style="margin-top:12px" data-zh="免费阅读。<br>深度也不贵。">Free to read.<br>Cheap to go deep.</h2>
+      <h2 class="sec-title" style="margin-top:12px" data-zh="免费探索。<br>为更深的决策而生。">Free to explore.<br>Built for deeper decisions.</h2>
       <div class="toggle" role="group" aria-label="Billing period">
-        <button aria-pressed="true" data-period="annual" data-zh="按年 <span class='save'>最高省 30%</span>">Annual <span class="save">SAVE UP TO 30%</span></button>
+        <button aria-pressed="true" data-period="annual" data-zh="按年 <span class='save'>FOUNDING PRO 开放中</span>">Annual <span class="save">FOUNDING PRO AVAILABLE</span></button>
         <button aria-pressed="false" data-period="monthly" data-zh="按月">Monthly</button>
       </div>
     </div>
@@ -639,16 +639,21 @@
       <div class="tier rv" style="--d:.1s">
         <h3>Insider</h3>
         <p class="who" data-zh="随叫随到的分析师，配上完整的工作台席。">The working desk, with the analyst on call.</p>
-        <div class="price" data-annual="$49" data-monthly="$69"><span class="was">$69</span>$49 <span class="per">/mo billed annually</span></div>
-        <span class="badge" data-zh="省 29% · $588/年">SAVE 29% · $588/YR</span>
+        <div class="price" data-annual="$59" data-monthly="$79"><span class="was">$79</span>$59 <span class="per">/mo billed annually</span></div>
+        <span class="badge" data-zh="省 25% · $708/年">SAVE 25% · $708/YR</span>
         <p class="gist" data-zh="<b>无限量 Flash AI</b>、每月 20 次 Pro AI、<b>日内期权流</b>、内部人/国会与 13F 台席、电话会记录、每日简报。"><b>Unlimited Flash AI</b>, 20 Pro AI dives a month, <b>intraday options flow</b>, the Insider/Congress &amp; 13F desks, transcripts, daily briefs.</p>
         <a class="btn js-plan-cta" data-plan="insider" data-period="annual" href="https://app.mastermind-x.com/terminal?signup=1&amp;plan=insider&amp;period=annual" style="justify-content:center" data-zh="开始 7 天试用">Start 7-day trial</a>
       </div>
-      <div class="tier hot rv" style="--d:.16s">
+      <div class="tier hot rv" style="--d:.16s" data-founding-tier>
         <h3>Pro</h3>
         <p class="who" data-zh="为那些提出更难问题的人准备。">For the ones who ask harder questions.</p>
-        <div class="price" data-annual="$69" data-monthly="$99"><span class="was">$99</span>$69 <span class="per">/mo billed annually</span></div>
-        <span class="badge" data-zh="省 30% · $828/年">SAVE 30% · $828/YR</span>
+        <div class="price" data-annual="$69" data-monthly="$119" data-offer-key="founding_pro" data-offer-active="true"><span class="was">$89</span>$69 <span class="per">/mo billed annually</span></div>
+        <span class="badge" data-founding-badge data-zh="创始会员 · 常规年付价省 22% · $828/年">FOUNDING MEMBER · 22% OFF REGULAR ANNUAL · $828/YR</span>
+        <div class="founding" data-founding>
+          <div class="founding-line"><b>FOUNDING PRO</b><span data-founding-count data-zh="限量前 250 名">Limited to the first 250</span></div>
+          <div class="founding-track" role="progressbar" aria-label="Founding Pro memberships claimed" aria-valuemin="0" aria-valuemax="250" aria-valuenow="0"><span class="founding-fill" data-founding-fill></span></div>
+          <p class="founding-terms" data-zh="只要订阅不中断，$828 年付价持续续订；取消后该价格失效。">The $828 annual rate renews while your subscription stays uninterrupted. Canceling ends the founding rate.</p>
+        </div>
         <p class="gist" data-zh="<b>每月 50 次 Pro AI</b>、Mastermind 与机构研究报告、机器人组合、MCP 即将上线。"><b>50 Pro AI dives a month</b>, Mastermind + institutional research reports, Bot Portfolios, MCP soon.</p>
         <a class="btn primary js-plan-cta" data-plan="pro" data-period="annual" href="https://app.mastermind-x.com/terminal?signup=1&amp;plan=pro&amp;period=annual" style="justify-content:center" data-zh="免费试用 Pro 7天">Try Pro free for 7 days</a>
       </div>
@@ -660,8 +665,8 @@
         <p class="mx-mobile-label" data-zh="选择方案查看每项功能">Choose a plan to compare every feature</p>
         <div class="mx-plan-tabs" role="group" aria-label="Plan shown in feature comparison">
           <button type="button" data-mx-plan="free" aria-pressed="false" aria-controls="pricing-matrix"><span data-zh="免费">Free</span><small>$0</small></button>
-          <button type="button" data-mx-plan="insider" aria-pressed="true" aria-controls="pricing-matrix"><span>Insider</span><small class="mx-mobile-price" data-annual="$49/mo" data-monthly="$69/mo" data-annual-zh="$49/月" data-monthly-zh="$69/月">$49/mo</small></button>
-          <button type="button" data-mx-plan="pro" aria-pressed="false" aria-controls="pricing-matrix"><span>Pro</span><small class="mx-mobile-price" data-annual="$69/mo" data-monthly="$99/mo" data-annual-zh="$69/月" data-monthly-zh="$99/月">$69/mo</small></button>
+          <button type="button" data-mx-plan="insider" aria-pressed="true" aria-controls="pricing-matrix"><span>Insider</span><small class="mx-mobile-price" data-annual="$59/mo" data-monthly="$79/mo" data-annual-zh="$59/月" data-monthly-zh="$79/月">$59/mo</small></button>
+          <button type="button" data-mx-plan="pro" aria-pressed="false" aria-controls="pricing-matrix"><span>Pro</span><small class="mx-mobile-price" data-annual="$69/mo" data-monthly="$119/mo" data-annual-zh="$69/月" data-monthly-zh="$119/月">$69/mo</small></button>
         </div>
         <p class="mx-mobile-hint" data-zh="点击带 ⓘ 的功能查看说明。">Tap any feature marked ⓘ for a plain-language description.</p>
       </div>
@@ -670,8 +675,8 @@
           <tr>
             <th data-zh="逐项对比">Compare every feature</th>
             <th data-zh="免费<small>$0</small>">Free<small>$0</small></th>
-            <th>Insider<small class="mx-price" data-annual="$49/mo annual" data-monthly="$69/mo monthly" data-annual-zh="$49/月 · 年付" data-monthly-zh="$69/月 · 月付">$49/mo annual</small></th>
-            <th>Pro<small class="mx-price" data-annual="$69/mo annual" data-monthly="$99/mo monthly" data-annual-zh="$69/月 · 年付" data-monthly-zh="$99/月 · 月付">$69/mo annual</small></th>
+            <th>Insider<small class="mx-price" data-annual="$59/mo annual" data-monthly="$79/mo monthly" data-annual-zh="$59/月 · 年付" data-monthly-zh="$79/月 · 月付">$59/mo annual</small></th>
+            <th>Pro<small class="mx-price" data-founding-matrix data-annual="$69/mo annual" data-monthly="$119/mo monthly" data-annual-zh="$69/月 · 年付" data-monthly-zh="$119/月 · 月付">$69/mo annual</small></th>
           </tr>
         </thead>
         <tbody>
@@ -833,9 +838,13 @@ function applyPricing(){
     p.childNodes.forEach(n => { if (n.nodeType === 3 && n.textContent.trim()) n.textContent = (annual ? p.dataset.annual : p.dataset.monthly) + ' '; });
     const per = p.querySelector('.per'), was = p.querySelector('.was');
     if (per) per.textContent = zh ? (annual ? '/月 · 年付' : '/月 · 月付') : (annual ? '/mo billed annually' : '/mo billed monthly');
-    if (was) was.style.display = annual ? '' : 'none';
+    if (was) was.style.display = annual && (!p.dataset.offerKey || p.dataset.offerActive === 'true') ? '' : 'none';
   });
-  document.querySelectorAll('.badge').forEach(el => el.style.visibility = annual ? '' : 'hidden');
+  document.querySelectorAll('.tier .badge').forEach(el => el.style.visibility = annual ? '' : 'hidden');
+  document.querySelectorAll('[data-founding]').forEach(el => {
+    const p = el.closest('.tier').querySelector('.price[data-offer-key]');
+    el.hidden = !annual || !p || p.dataset.offerActive !== 'true';
+  });
   document.querySelectorAll('.mx-price').forEach(el => {
     el.textContent = zh ? (annual ? el.dataset.annualZh : el.dataset.monthlyZh) : (annual ? el.dataset.annual : el.dataset.monthly);
   });
@@ -848,6 +857,37 @@ tog.forEach(b => b.addEventListener('click', () => {
   applyPricing();
 }));
 LANG.onChange(applyPricing);
+
+/* Real founding inventory comes from Stripe. There is deliberately no simulated seed
+   or time-based increment: the number changes only when a promotion is redeemed. */
+(function(){
+  const tier=document.querySelector('[data-founding-tier]');
+  if(!tier) return;
+  const price=tier.querySelector('.price[data-offer-key]');
+  const badge=tier.querySelector('[data-founding-badge]');
+  const count=tier.querySelector('[data-founding-count]');
+  const fill=tier.querySelector('[data-founding-fill]');
+  const track=tier.querySelector('.founding-track');
+  const setBi=(el,en,cn)=>{ if(!el)return;el.__en=en;el.setAttribute('data-zh',cn);el.innerHTML=LANG.cur()==='zh'?cn:en; };
+  fetch('/api/billing/offers/'+encodeURIComponent(price.dataset.offerKey),{cache:'no-store'})
+    .then(r=>r.ok?r.json():Promise.reject(new Error('offer')))
+    .then(o=>{
+      price.dataset.offerActive=o.active?'true':'false';
+      price.dataset.annual=o.active?'$69':'$89';
+      if(!o.active){
+        setBi(badge,'SAVE 25% · $1,068/YR','省 25% · $1,068/年');
+        document.querySelectorAll('[data-mx-plan="pro"] .mx-mobile-price,[data-founding-matrix]').forEach(el=>{
+          el.dataset.annual='$89/mo'+(el.matches('.mx-price')?' annual':'');
+          el.dataset.annualZh='$89/月'+(el.matches('.mx-price')?' · 年付':'');
+        });
+      }else{
+        setBi(count,o.claimed+' of '+o.cap+' claimed','已领取 '+o.claimed+' / '+o.cap);
+        if(track)track.setAttribute('aria-valuenow',String(o.claimed));
+        if(fill)fill.style.width=Math.min(100,Math.max(0,o.claimed/o.cap*100))+'%';
+      }
+      applyPricing();
+    }).catch(()=>{});
+})();
 
 /* ───── mobile matrix: one readable plan column + tap-to-expand details ───── */
 (function(){

@@ -1,11 +1,12 @@
 """tests/test_plans_catalog.py — W0 pricing-alignment guard (onboarding masterplan §2).
 
-Pins config/plans.yml to the LOCKED 2026-07-23 pricing so config, the Stripe
+Pins config/plans.yml to the LOCKED 2026-07-27 pricing so config, the Stripe
 sandbox objects (scripts/stripe_bootstrap.py re-creates drifted prices from this
 file), and the landing page can't silently diverge:
 
-    Insider  $69/mo · $588/yr ($49/mo-equivalent, save 29%) · 7-day trial
-    Pro      $99/mo · $828/yr ($69/mo-equivalent, save 30%) · 7-day trial
+    Insider  $79/mo · $708/yr ($59/mo-equivalent, save 25%) · 7-day trial
+    Pro      $119/mo · $1,068/yr ($89/mo-equivalent, save 25%) · 7-day trial
+    Founding Pro  $828/yr ($69/mo-equivalent, 22% off regular annual) · first 250
 
 Also verifies the billing endpoints are mounted by hitting them with a TestClient
 (401/503 responses). NOTE (repo memory fastapi-includedrouter-route-verify): this
@@ -25,10 +26,10 @@ ROOT = Path(__file__).resolve().parents[1]
 
 # The locked table (onboarding masterplan §2; landing templates/index.html shows the same).
 LOCKED = {
-    "insider": {"monthly": 6900, "annual": 58800, "trial_days": 7,
-                "annual_pm": 49, "save_pct": 29},
-    "pro":     {"monthly": 9900, "annual": 82800, "trial_days": 7,
-                "annual_pm": 69, "save_pct": 30},
+    "insider": {"monthly": 7900, "annual": 70800, "trial_days": 7,
+                "annual_pm": 59, "save_pct": 25},
+    "pro":     {"monthly": 11900, "annual": 106800, "trial_days": 7,
+                "annual_pm": 89, "save_pct": 25},
 }
 
 
@@ -47,8 +48,8 @@ def test_catalog_locked_pricing():
         prices = prod["prices"]
         assert int(prices["monthly"]["unit_amount"]) == want["monthly"], f"{key}: monthly drifted"
         assert int(prices["annual"]["unit_amount"]) == want["annual"], f"{key}: annual drifted"
-        assert prices["monthly"]["lookup_key"] == f"{key}_monthly"
-        assert prices["annual"]["lookup_key"] == f"{key}_annual"
+        assert prices["monthly"]["lookup_key"] == f"{key}_2026_monthly"
+        assert prices["annual"]["lookup_key"] == f"{key}_2026_annual"
         assert prices["monthly"]["interval"] == "month"
         assert prices["annual"]["interval"] == "year"
 
@@ -63,6 +64,16 @@ def test_savings_badges_derive_from_config():
         assert round((m - a / 12) / m * 100) == want["save_pct"]
 
 
+def test_founding_pro_is_limited_annual_pro_offer():
+    offer = _catalog()["offers"]["founding_pro"]
+    assert offer["tier"] == "pro" and offer["interval"] == "annual"
+    assert int(offer["unit_amount"]) == 82800
+    assert round(offer["unit_amount"] / 12 / 100) == 69
+    assert round((106800 - offer["unit_amount"]) / 106800 * 100) == 22
+    assert int(offer["max_redemptions"]) == 250
+    assert offer["duration"] == "forever"
+
+
 def test_billing_maps_tiers_trials_and_lookup_keys():
     """app/billing.py resolves both paid tiers, both intervals, and 7-day trials."""
     from app import billing
@@ -71,10 +82,12 @@ def test_billing_maps_tiers_trials_and_lookup_keys():
         assert billing._tier_trial_days(tier) == 7
         for interval in ("monthly", "annual"):
             lk = billing._tier_to_lookup_key(tier, interval)
-            assert lk == f"{tier}_{interval}"
+            assert lk == f"{tier}_2026_{interval}"
     lk2t = billing._lookup_key_to_tier()
     assert lk2t == {
+        "insider_2026_monthly": "insider", "insider_2026_annual": "insider",
         "insider_monthly": "insider", "insider_annual": "insider",
+        "pro_2026_monthly": "pro", "pro_2026_annual": "pro",
         "pro_monthly": "pro", "pro_annual": "pro",
     }
     assert billing._tier_features("pro") == ["site_full", "terminal_live_options", "chat_opus"]
@@ -84,15 +97,20 @@ def test_billing_maps_tiers_trials_and_lookup_keys():
 def test_billing_endpoints_mounted(monkeypatch):
     """TestClient hits — 401 (auth) / 503 (unconfigured), never 404."""
     from fastapi.testclient import TestClient
+    from app import billing
     from app.main import app
 
     monkeypatch.delenv("STRIPE_WEBHOOK_SECRET", raising=False)
+    monkeypatch.delenv("STRIPE_SECRET_KEY", raising=False)
+    billing._PROMO_CACHE.clear()
     client = TestClient(app)
 
     r = client.post("/api/billing/checkout", json={"tier": "insider", "interval": "annual"})
     assert r.status_code == 401, f"checkout should require auth, got {r.status_code}"
     r = client.get("/api/billing/portal")
     assert r.status_code == 401, f"portal should require auth, got {r.status_code}"
+    r = client.get("/api/billing/offers/founding_pro")
+    assert r.status_code == 503, f"unprovisioned public offer should 503, got {r.status_code}"
     r = client.post("/api/billing/webhook", content=b"{}",
                     headers={"stripe-signature": "t=0,v1=bad"})
     assert r.status_code == 503, f"webhook without secret should 503, got {r.status_code}"

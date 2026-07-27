@@ -6,9 +6,11 @@
 #   templates/plans.html.j2      — renders the pricing table + computed savings badges (baked at build time)
 #
 # Amounts are integer minor units of `currency` (USD cents). `annual.unit_amount` is the FULL yearly
-# charge; the per-month-equivalent shown on the plans page is DERIVED (annual/12), never stored — so the
-# savings badge `round((monthly - annual/12) / monthly * 100)` recomputes whenever these numbers change
-# (masterplan §2.1 display law). Names are still adjustable before the W4 copy freeze (MNZ-OD1).
+# charge; the per-month-equivalent shown on the plans page is DERIVED (annual/12), never stored.
+#
+# Price lookup keys are versioned so a rack-price change never steals the lookup key from an older
+# Price. Stripe Prices are immutable and existing subscriptions must remain grandfathered. The
+# `legacy_lookup_keys` list keeps those subscriptions mapped to the correct entitlement tier.
 schema: plans_catalog.v1
 currency: usd
 
@@ -33,17 +35,33 @@ products:
     name: Insider
     trial_days: 7
     features: [site_full, terminal_live_options]
+    legacy_lookup_keys: [insider_monthly, insider_annual]
     prices:
-      monthly: { lookup_key: insider_monthly, unit_amount: 6900,  interval: month }
-      annual:  { lookup_key: insider_annual,  unit_amount: 58800, interval: year }
+      monthly: { lookup_key: insider_2026_monthly, unit_amount: 7900,  interval: month }
+      annual:  { lookup_key: insider_2026_annual,  unit_amount: 70800, interval: year }
   pro:
     tier: pro
     name: Pro
     trial_days: 7
     features: [site_full, terminal_live_options, chat_opus]
+    legacy_lookup_keys: [pro_monthly, pro_annual]
     prices:
-      monthly: { lookup_key: pro_monthly, unit_amount: 9900,  interval: month }
-      annual:  { lookup_key: pro_annual,  unit_amount: 82800, interval: year }
+      monthly: { lookup_key: pro_2026_monthly, unit_amount: 11900,  interval: month }
+      annual:  { lookup_key: pro_2026_annual,  unit_amount: 106800, interval: year }
+
+# Founding Pro is a limited offer on the annual Pro product, not a fourth entitlement tier.
+# The checkout paths automatically apply this Stripe promotion while it is active. Stripe owns
+# the atomic redemption cap and the real `times_redeemed` counter shown in the UI.
+offers:
+  founding_pro:
+    name: Founding Pro
+    tier: pro
+    interval: annual
+    unit_amount: 82800
+    max_redemptions: 250
+    coupon_id: mastermind_founding_pro_annual_2026
+    promotion_code: FOUNDINGPRO2026
+    duration: forever
 
 # Entitlement precedence — if a customer ever holds overlapping active subscriptions, the
 # highest-ranked tier wins. Also the display order (low -> high) on the plans page.

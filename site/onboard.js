@@ -45,13 +45,17 @@
   // Raw cents — the ONLY hand-entered plan numbers (mirror config/plans.yml /
   // terminal plans.ts). Every displayed figure is DERIVED from these.
   var CENTS = {
-    insider: { monthly: 6900, annual: 58800 },
-    pro:     { monthly: 9900, annual: 82800 }
+    insider: { monthly: 7900, annual: 70800 },
+    pro:     { monthly: 11900, annual: 106800 }
   };
-  function perMonth(key, period) { var c = CENTS[key]; return Math.round(period === "annual" ? c.annual / 12 / 100 : c.monthly / 100); }
+  var FOUNDING_PRO = { key: "founding_pro", active: true, annual: 82800, cap: 250, claimed: null };
+  function offerFor(key, period) { return key === "pro" && period === "annual" && FOUNDING_PRO.active ? FOUNDING_PRO.key : null; }
+  function annualCents(key) { return offerFor(key, "annual") ? FOUNDING_PRO.annual : CENTS[key].annual; }
+  function perMonth(key, period) { var c = CENTS[key]; return Math.round(period === "annual" ? annualCents(key) / 12 / 100 : c.monthly / 100); }
   function monthlyPrice(key) { return Math.round(CENTS[key].monthly / 100); }
-  function annualBilled(key) { return Math.round(CENTS[key].annual / 100); }
-  function savePct(key) { var c = CENTS[key]; return Math.round(((c.monthly - c.annual / 12) / c.monthly) * 100); }
+  function annualBilled(key) { return Math.round(annualCents(key) / 100); }
+  function annualWas(key) { return key === "pro" && FOUNDING_PRO.active ? Math.round(CENTS.pro.annual / 12 / 100) : monthlyPrice(key); }
+  function savePct(key) { var c = CENTS[key]; return Math.round(((c.monthly - annualCents(key) / 12) / c.monthly) * 100); }
   function bestSavePct() { return Math.max(savePct("insider"), savePct("pro")); }
   function firstInvoiceTotal(key, period) { return period === "annual" ? annualBilled(key) : monthlyPrice(key); }
   function proWedge() { return perMonth("pro", "annual") - perMonth("insider", "annual"); }
@@ -64,7 +68,7 @@
     paneAccountS:  ["Create your account to unlock every dashboard, signal and the Terminal — free.", "创建账户，解锁全部看板、信号与 Terminal——免费。"],
     panePrefsH:    ["Make it read the way you think.", "让它按你的思路来解读。"],
     panePrefsS:    ["Pick your markets and theme. Everything here is optional — change it any time.", "选择你的市场与主题。此处全部可选，随时可改。"],
-    planePlanH:    ["Free to read. Cheap to go deep.", "免费阅读。深度也不贵。"],
+    planePlanH:    ["Free to explore. Built for deeper decisions.", "免费探索。为更深的决策而生。"],
     planePlanS:    ["Start free forever, or add the analyst and the desks. Every paid plan is a 7-day free trial.", "永久免费开始，或加上分析师与各台席。所有付费方案均含 7 天免费试用。"],
     paneBillH:     ["7 days free. Cancel in one click.", "7 天免费。一键取消。"],
     paneBillS:     ["Your card starts the trial. We tell you exactly when the first charge lands — and cancelling before then costs nothing.", "绑卡即开启试用。我们会明确告知首次扣款时间——在此之前取消，分文不收。"],
@@ -156,7 +160,7 @@
     // step 3 — plan
     planTitle:    ["Choose your plan", "选择你的方案"],
     planSub:      ["Free forever, or start a 7-day trial of a paid plan.", "永久免费，或开启付费方案的 7 天试用。"],
-    togAnnual:    ["Annual <span class=\"obm-save\">SAVE UP TO " + bestSavePct() + "%</span>", "按年 <span class=\"obm-save\">最高省 " + bestSavePct() + "%</span>"],
+    togAnnual:    ["Annual <span class=\"obm-save\">FOUNDING PRO AVAILABLE</span>", "按年 <span class=\"obm-save\">FOUNDING PRO 开放中</span>"],
     togMonthly:   ["Monthly", "按月"],
     planFree:     ["Free", "免费"],
     planInsider:  ["Insider", "Insider"],
@@ -168,6 +172,11 @@
     perMo:        ["/mo", "/月"],
     free0:        ["$0", "$0"],
     ribbon:       ["MOST POPULAR", "最受欢迎"],
+    foundingRibbon:["FOUNDING RATE", "创始会员价"],
+    foundingFine: ["Founding Pro renews at $__T__/year while this subscription stays uninterrupted. Canceling ends the founding rate.",
+                   "只要订阅不中断，Founding Pro 将按 $__T__/年持续续订；取消后该价格失效。"],
+    foundingGone: ["The last founding spot was claimed. Review the regular Pro Annual price to continue.",
+                   "最后一个创始会员名额已被领取。请查看 Pro 常规年付价格后继续。"],
     // summaries
     sumGetFree:   ["What you get", "你将获得"],
     sumMissFree:  ["What you're missing", "你还缺少"],
@@ -422,6 +431,21 @@
     var host = location.hostname || "";
     if (/(^|\.)mastermind-x\.com$/i.test(host) || host === "localhost" || host === "127.0.0.1") return "";
     return (window.MM_API || "").replace(/\/+$/, "");
+  }
+  function syncFoundingOffer() {
+    return fetch(apiBase() + "/api/billing/offers/" + encodeURIComponent(FOUNDING_PRO.key), {
+      cache: "no-store", credentials: "include"
+    }).then(function (r) {
+      if (!r.ok) return null;
+      return r.json().catch(function () { return null; });
+    }).then(function (o) {
+      if (!o) return null;
+      FOUNDING_PRO.active = !!o.active;
+      FOUNDING_PRO.claimed = typeof o.claimed === "number" ? o.claimed : null;
+      FOUNDING_PRO.cap = typeof o.cap === "number" ? o.cap : FOUNDING_PRO.cap;
+      if (el.body && el.body.querySelector("[data-obm-plan]")) updatePlanUI();
+      return o;
+    }).catch(function () { return null; });
   }
   // Cheap signed-in sniff without loading theme.js (mirrors theme.js _hasSessionCookie):
   // an `sb-…-auth-token` or a chunk `…-auth-token.0` cookie. Guests pay zero cost.
@@ -1240,7 +1264,7 @@
     // in upgrade mode Free is the plan you already have — readable, not pickable
     return !(S.mode === "upgrade" && t === "free");
   }
-  // the same wording the landing's matrix header uses — "$49/mo" alone reads as
+  // the same wording the landing's matrix header uses — "$59/mo" alone reads as
   // the monthly price when the toggle is on Annual
   function comparePriceLbl(t) {
     if (t === "free") return "$0";
@@ -1412,7 +1436,7 @@
   function priceHtml(key) {
     if (key === "free") return "$0";
     var annual = S.period === "annual";
-    var was = annual ? ('<span class="obm-was">$' + monthlyPrice(key) + '</span>') : "";
+    var was = annual ? ('<span class="obm-was">$' + annualWas(key) + '</span>') : "";
     var perK = annual ? "perMoAnnual" : "perMo";
     return was + '$' + perMonth(key, S.period) + '<span class="obm-per" data-k="' + perK + '">' + tx(perK) + '</span>';
   }
@@ -1431,7 +1455,11 @@
     var radio = h("span", "obm-radio"); radio.innerHTML = svgCheck("");
     right.appendChild(price); right.appendChild(radio);
     card.appendChild(left); card.appendChild(right);
-    if (hot) { var rb = h("span", "obm-ribbon", { "data-k": "ribbon" }); rb.textContent = tx("ribbon"); card.appendChild(rb); }
+    if (hot) {
+      var ribbonKey = offerFor(key, S.period) ? "foundingRibbon" : "ribbon";
+      var rb = h("span", "obm-ribbon", { "data-k": ribbonKey });
+      rb.textContent = tx(ribbonKey); card.appendChild(rb);
+    }
     card.addEventListener("click", function () { if (S.plan === key) return; S.plan = key; updatePlanUI(); });
     return card;
   }
@@ -1484,6 +1512,11 @@
     } else {
       box.appendChild(hd("sumPlusPro"));
       box.appendChild(list(["plusPro1", "plusPro2", "plusPro3"]));
+      if (offerFor("pro", S.period)) {
+        var ff = T("p", "obm-fineprint", "foundingFine");
+        ff.innerHTML = tx("foundingFine").replace("__T__", String(annualBilled("pro")));
+        box.appendChild(ff);
+      }
       box.appendChild(T("p", "obm-fineprint", "proFine"));
       var soon = h("div", "obm-sum-mrow"); soon.style.marginTop = "8px";
       var mc = h("span", "obm-mchip obm-soon", { "data-k": "mcpSoonTag" }); mc.textContent = tx("mcpSoonTag");
@@ -1742,7 +1775,7 @@
 
     var right = h("div", "obm-plan-r");
     var price = h("div", "obm-plan-price");
-    var was = annual ? ('<span class="obm-was">$' + monthlyPrice(ln.tier) + '</span>') : "";
+      var was = annual ? ('<span class="obm-was">$' + annualWas(ln.tier) + '</span>') : "";
     var perK = annual ? "laneBilledAnnual" : "laneBilledMonthly";
     price.innerHTML = was + '$' + mo + '<span class="obm-per" data-k="' + perK + '">' + tx(perK) + '</span>';
     right.appendChild(price);
@@ -1750,7 +1783,11 @@
     right.appendChild(chev);
 
     card.appendChild(left); card.appendChild(right);
-    if (ln.popular) { var rb = h("span", "obm-ribbon", { "data-k": "lanePopular" }); rb.textContent = tx("lanePopular"); card.appendChild(rb); }
+    if (ln.popular || offerFor(ln.tier, ln.interval)) {
+      var laneRibbonKey = offerFor(ln.tier, ln.interval) ? "foundingRibbon" : "lanePopular";
+      var rb = h("span", "obm-ribbon", { "data-k": laneRibbonKey });
+      rb.textContent = tx(laneRibbonKey); card.appendChild(rb);
+    }
 
     // progressive inline confirm (mirror the sd plan block's ARM→CONFIRM pattern)
     var confirm = h("div", "obm-up-confirm");
@@ -1784,7 +1821,7 @@
       if (token) headers["Authorization"] = "Bearer " + token;
       return fetch(apiBase() + "/api/billing/upgrade", {
         method: "POST", credentials: "include", headers: headers,
-        body: JSON.stringify({ tier: ln.tier, interval: ln.interval })
+        body: JSON.stringify({ tier: ln.tier, interval: ln.interval, offer: offerFor(ln.tier, ln.interval) })
       });
     }).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (body) { return { status: r.status, ok: r.ok, body: body }; });
@@ -1808,6 +1845,11 @@
       }
       if (res.status === 409) {   // not an upward move → refetch + re-render the branch
         fetchMe(true).then(function (me) { S.me = me; S.upDone = null; render(); });
+        return;
+      }
+      if (res.status === 410) {   // founding inventory raced to zero — require a fresh confirmation
+        FOUNDING_PRO.active = false;
+        render();
         return;
       }
       if (res.status === 404) {   // no Stripe sub (comp'd) → subscribe lane preselecting the target
@@ -1918,7 +1960,12 @@
       '<div class="obm-order-billed" data-obm-zh="' + esc(billedZh) + '">' + billedEn + '</div>' +
       '<div class="obm-order-truth">' +
       '<p class="obm-order-trial" data-obm-zh="' + esc(trialZh) + '">' + trialEn + '</p>' +
-      '<p class="obm-order-cancel" data-k="billCancelLine">' + tx("billCancelLine") + '</p></div>';
+      '<p class="obm-order-cancel" data-k="billCancelLine">' + tx("billCancelLine") + '</p>' +
+      (offerFor(tier, S.period)
+        ? '<p class="obm-order-cancel" data-obm-zh="' +
+          esc(LEX.foundingFine[1].replace("__T__", String(annualBilled(tier)))) + '">' +
+          LEX.foundingFine[0].replace("__T__", String(annualBilled(tier))) + '</p>'
+        : '') + '</div>';
     return card;
   }
   function trialChargeDate() { var d = new Date(); d.setDate(d.getDate() + TRIAL_DAYS); return d; }
@@ -1942,9 +1989,13 @@
         if (token) headers["Authorization"] = "Bearer " + token;
         return fetch(apiBase() + "/api/billing/subscribe/init", {
           method: "POST", credentials: "include", headers: headers,
-          body: JSON.stringify({ tier: tier, interval: period })
+          body: JSON.stringify({ tier: tier, interval: period, offer: offerFor(tier, period) })
         }).then(function (initRes) {
           if (initRes.status === 409) { return billAlready(host); }
+          if (initRes.status === 410) {
+            FOUNDING_PRO.active = false;
+            render(); return;
+          }
           if (initRes.status === 401) { return billState(host, '<p class="obm-bill-state-msg" data-k="billSignin">' + tx("billSignin") + '</p>'); }
           if (!initRes.ok) { return billError(host); }
           return initRes.json().catch(function () { return {}; }).then(function (data) {
@@ -2047,9 +2098,10 @@
         if (token) headers["Authorization"] = "Bearer " + token;
         return fetch(apiBase() + "/api/billing/subscribe/complete", {
           method: "POST", credentials: "include", headers: headers,
-          body: JSON.stringify({ setup_intent_id: si.id, tier: tier, interval: period })
+          body: JSON.stringify({ setup_intent_id: si.id, tier: tier, interval: period, offer: offerFor(tier, period) })
         });
       }).then(function (r) {
+        if (r.status === 410) { FOUNDING_PRO.active = false; render(); return; }
         if (!r.ok) { setPayErr(tx("billErr")); submitBtn.disabled = false; submitBtn.innerHTML = tx("billSubmit"); return; }
         return r.json().catch(function () { return {}; }).then(function (data) {
           S.trialActive = true;
@@ -2546,5 +2598,6 @@
   // expose a tiny API (parity with MDXAuth.open) for other scripts/tests.
   // applyChrome(me) lets a host that already resolved /api/me paint the landing's
   // signed-in header without re-fetching (also the console-driven verify seam).
+  syncFoundingOffer();
   window.MMOnboard = { open: openSheet, close: closeSheet, applyChrome: applyAuthChrome };
 })();

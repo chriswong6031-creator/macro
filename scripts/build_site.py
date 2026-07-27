@@ -3259,7 +3259,7 @@ def _plans_view_model() -> dict:
         m_cents = int(prices.get("monthly", {}).get("unit_amount", 0))
         a_cents = int(prices.get("annual", {}).get("unit_amount", 0))
         # Per-month equivalents. Dollars are whole here because the catalog prices
-        # are round ($69/$99 monthly; $588/$828 annual → $49/$69 per month) — round()
+        # are round ($79/$119 monthly; $708/$1,068 annual → $59/$89 per month) — round()
         # keeps the badge honest if a future price isn't a clean multiple of 12.
         monthly_pm = round(m_cents / 100)
         annual_pm = round(a_cents / 12 / 100)
@@ -3278,10 +3278,31 @@ def _plans_view_model() -> dict:
             "annual_cents": a_cents,
         }
 
+    offer = (catalog.get("offers") or {}).get("founding_pro")
+    founding = None
+    if offer:
+        regular = next(
+            prod["prices"][offer["interval"]]["unit_amount"]
+            for prod in products.values() if prod["tier"] == offer["tier"])
+        offer_cents = int(offer["unit_amount"])
+        founding = {
+            "key": "founding_pro",
+            "name": offer["name"],
+            "tier": offer["tier"],
+            "interval": offer["interval"],
+            "annual_cents": offer_cents,
+            "annual_pm": round(offer_cents / 12 / 100),
+            "annual_total": round(offer_cents / 100),
+            "regular_annual_pm": round(int(regular) / 12 / 100),
+            "discount_pct": round((int(regular) - offer_cents) / int(regular) * 100),
+            "cap": int(offer["max_redemptions"]),
+        }
+
     return {
         "currency": catalog.get("currency", "usd"),
         "insider": _tier_vm("insider"),
         "pro": _tier_vm("pro"),
+        "founding": founding,
     }
 
 
@@ -3300,6 +3321,7 @@ def build_plans_page(env: Environment, site: Path, generated: str) -> None:
         currency=vm["currency"],
         insider=vm["insider"],
         pro=vm["pro"],
+        founding=vm["founding"],
     )
     write_page(site / "plans.html", html)
     log.info("wrote plans.html (insider $%s/$%s save %s%% · pro $%s/$%s save %s%%)",

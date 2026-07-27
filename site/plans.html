@@ -41,10 +41,246 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css?v=370c3de0">
-<link rel="stylesheet" href="assets/css/8be758a7.css?v=8be758a7">
-<link rel="preload" as="style" href="product-nav-icons.css?v=7b0290e9">
-<link rel="preload" as="style" href="assets/css/9cfd4219.css?v=9cfd4219">
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.55 var(--font-ui); margin:0; padding-top:18px; }
+  a { text-decoration:none; color:inherit; }
+
+  /* ── per-tier stance accents (drawn from house tokens; violet = the orb/Opus tier) ── */
+  :root { --t-free:var(--muted); --t-insider:var(--info); --t-pro:#8b5cf6;
+    /* Content surfaces use an OPAQUE elevated fill (not the floating-menu --glass-bg,
+       which is translucent and needs backdrop-filter to be legible). backdrop-filter
+       stays on as an enhancement; the fill guarantees contrast without it. */
+    --surface:color-mix(in srgb, var(--panel) 96%, var(--text)); }
+  html[data-theme="light"] { --t-pro:#7c5cff;
+    --surface:color-mix(in srgb, var(--panel) 97%, #000); }
+
+  /* ── page shell ─────────────────────────────────────────────────────── */
+  .wrap { max-width:1120px; margin:0 auto; padding:22px 18px 72px; }
+  @media (min-width:900px){ .wrap{ padding:30px 26px 96px; } }
+
+  /* ── hero ───────────────────────────────────────────────────────────── */
+  .hero { position:relative; text-align:center; padding:26px 6px 8px; }
+  .hero .eyebrow { font:600 11px/1 var(--font-ui); letter-spacing:.18em; text-transform:uppercase;
+    color:var(--muted); display:inline-flex; align-items:center; gap:8px; margin-bottom:16px; }
+  .hero .eyebrow::before, .hero .eyebrow::after { content:""; width:26px; height:1px;
+    background:linear-gradient(90deg,transparent,var(--line)); }
+  .hero .eyebrow::after { background:linear-gradient(90deg,var(--line),transparent); }
+  .hero h1 { font:700 clamp(28px,5.4vw,44px)/1.08 var(--font-ui); letter-spacing:-.02em;
+    margin:0 auto; max-width:15ch; }
+  .hero h1 .accent { background:linear-gradient(100deg,var(--t-insider),var(--t-pro));
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+  .hero .sub { font-size:clamp(14.5px,2.2vw,17px); color:var(--muted); max-width:56ch;
+    margin:16px auto 0; line-height:1.5; }
+
+  /* ── billing toggle (the signature interaction) ─────────────────────── */
+  .toggle-wrap { display:flex; justify-content:center; margin:28px 0 6px; }
+  .btoggle { position:relative; display:inline-flex; align-items:center; gap:2px; padding:5px;
+    border-radius:999px; border:1px solid var(--glass-brd); background:var(--glass-bg);
+    -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur);
+    box-shadow:var(--card-shadow); }
+  .btoggle .knob { position:absolute; top:5px; bottom:5px; left:5px; width:calc(50% - 5px);
+    border-radius:999px; background:linear-gradient(180deg,color-mix(in srgb,var(--t-insider) 22%,var(--panel2)),var(--panel2));
+    border:1px solid color-mix(in srgb,var(--t-insider) 40%,var(--line));
+    box-shadow:inset 0 1px 0 var(--gbtn-sheen), 0 4px 14px -6px color-mix(in srgb,var(--t-insider) 55%,transparent);
+    transition:transform .34s cubic-bezier(.34,1.4,.5,1); z-index:0; }
+  .btoggle.annual .knob { transform:translateX(100%); }
+  .btoggle button { position:relative; z-index:1; appearance:none; border:0; background:none; cursor:pointer;
+    font:600 13px/1 var(--font-ui); color:var(--muted); padding:9px 20px; border-radius:999px;
+    display:inline-flex; align-items:center; gap:8px; transition:color .24s ease; white-space:nowrap; }
+  .btoggle button.on { color:var(--text); }
+  .btoggle .save-flag { font:700 10px/1 var(--font-ui); letter-spacing:.02em; color:var(--t-pro);
+    background:color-mix(in srgb,var(--t-pro) 16%,transparent);
+    border:1px solid color-mix(in srgb,var(--t-pro) 34%,transparent);
+    padding:3px 7px; border-radius:999px; }
+  .toggle-note { text-align:center; font-size:12px; color:var(--muted); margin:4px 0 0; min-height:1.2em; }
+
+  /* ── tier cards ─────────────────────────────────────────────────────── */
+  .cards { display:grid; gap:16px; margin-top:26px; grid-template-columns:1fr; align-items:stretch; }
+  @media (min-width:760px){ .cards{ grid-template-columns:repeat(3,1fr); gap:14px; } }
+
+  .card { --accent:var(--muted); position:relative; display:flex; flex-direction:column;
+    background:var(--surface); -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur);
+    border:1px solid var(--glass-brd); border-radius:18px; padding:22px 20px 20px; overflow:hidden;
+    box-shadow:var(--card-shadow); transition:transform .2s ease, box-shadow .25s ease, border-color .2s ease; }
+  .card::before { content:""; position:absolute; inset:0 0 auto 0; height:3px;
+    background:linear-gradient(90deg,transparent,var(--accent),transparent); opacity:.9; }
+  .card:hover { transform:translateY(-3px); border-color:color-mix(in srgb,var(--accent) 34%,var(--glass-brd));
+    box-shadow:0 20px 50px -24px color-mix(in srgb,var(--accent) 40%,transparent), var(--card-shadow); }
+  .card.free { --accent:var(--t-free); }
+  .card.insider { --accent:var(--t-insider); }
+  .card.pro { --accent:var(--t-pro);
+    border-color:color-mix(in srgb,var(--t-pro) 32%,var(--glass-brd));
+    box-shadow:0 22px 54px -26px color-mix(in srgb,var(--t-pro) 46%,transparent), var(--card-shadow); }
+  .card.pro::after { content:""; position:absolute; inset:-1px; border-radius:18px; pointer-events:none;
+    background:radial-gradient(120% 60% at 50% 0%,color-mix(in srgb,var(--t-pro) 12%,transparent),transparent 60%); }
+
+  .ribbon { position:absolute; top:19px; right:-38px; transform:rotate(45deg); z-index:2;
+    background:linear-gradient(180deg,var(--t-pro),color-mix(in srgb,var(--t-pro) 70%,#000));
+    color:#fff; font:700 9.5px/1 var(--font-ui); letter-spacing:.07em; text-transform:uppercase;
+    padding:5px 44px; box-shadow:0 4px 12px -4px rgba(0,0,0,.5); text-align:center; }
+
+  .card .tname { display:inline-flex; align-items:center; gap:8px; font:700 15px/1 var(--font-ui);
+    letter-spacing:.01em; color:var(--text); }
+  .card .tname .dot { width:9px; height:9px; border-radius:50%; background:var(--accent);
+    box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 18%,transparent); }
+  .card .tfor { font-size:12.5px; color:var(--muted); margin:8px 0 0; min-height:2.4em; line-height:1.4; }
+
+  /* price block — mono numerals (the trading-desk numeric face) */
+  .price { display:flex; align-items:flex-end; gap:4px; margin:18px 0 2px; min-height:44px; }
+  .price .cur { font:600 18px/1 var(--font-mono); color:var(--muted); margin-bottom:5px; }
+  .price .amt { font:600 40px/.9 var(--font-mono); letter-spacing:-.01em; color:var(--text);
+    font-variant-numeric:tabular-nums; transition:opacity .18s ease; }
+  .price .per { font-size:12.5px; color:var(--muted); margin-bottom:5px; }
+  .price.free-price .amt { font-size:28px; }
+  .billed { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted);
+    min-height:1.5em; margin-top:2px; }
+  .badge-save { font:700 10.5px/1 var(--font-ui); color:var(--accent);
+    background:color-mix(in srgb,var(--accent) 15%,transparent);
+    border:1px solid color-mix(in srgb,var(--accent) 32%,transparent);
+    padding:3px 8px; border-radius:999px; white-space:nowrap; }
+  .badge-save.hidden { display:none; }
+  .rack-price { display:flex; align-items:center; gap:7px; min-height:1.5em; margin-top:10px;
+    color:var(--muted); font-size:11.5px; }
+  .rack-price s { color:var(--text); text-decoration-thickness:1.5px; }
+  .rack-price.hidden { display:none; }
+
+  .founding-meter { margin:14px 0 1px; padding:11px 12px; border-radius:11px;
+    border:1px solid color-mix(in srgb,var(--t-pro) 32%,var(--line));
+    background:color-mix(in srgb,var(--t-pro) 8%,transparent); }
+  .founding-meter.hidden { display:none; }
+  .founding-line { display:flex; justify-content:space-between; gap:12px; align-items:baseline;
+    font-size:11.5px; color:var(--muted); }
+  .founding-line b { color:var(--text); font:700 11.5px/1.2 var(--font-ui); }
+  .founding-track { height:6px; margin-top:8px; border-radius:999px; overflow:hidden;
+    background:color-mix(in srgb,var(--t-pro) 16%,var(--panel)); }
+  .founding-fill { width:0; height:100%; border-radius:inherit;
+    background:linear-gradient(90deg,var(--t-pro),color-mix(in srgb,var(--t-pro) 60%,#fff));
+    transition:width .35s ease; }
+  .founding-terms { margin:8px 0 0; color:var(--muted); font-size:10.5px; line-height:1.4; }
+
+  .cta { margin:18px 0 4px; }
+  .cta .gbtn { width:100%; }
+  .cta-note { font-size:11.5px; color:var(--muted); text-align:center; margin:9px 0 0; min-height:1.3em; }
+  .cta-note.on-plan { color:var(--t-insider); font-weight:600; }
+
+  /* per-card highlight list — glance-tier plain words, one line each */
+  .feats { list-style:none; margin:16px 0 0; padding:16px 0 0; border-top:1px solid var(--line);
+    display:flex; flex-direction:column; gap:9px; }
+  .feats li { display:flex; align-items:flex-start; gap:9px; font-size:12.8px; line-height:1.4; color:var(--text); }
+  .feats li .ic { flex:none; margin-top:1px; width:15px; height:15px; }
+  .feats li .ic svg { width:15px; height:15px; display:block; }
+  .feats li.on .ic { color:var(--accent); }
+  .feats li.off { color:var(--muted); }
+  .feats li.off .ic { color:color-mix(in srgb,var(--muted) 70%,transparent); }
+  .feats li b { font-weight:600; }
+
+  /* ── comparison matrix ──────────────────────────────────────────────── */
+  .matrix-sec { margin-top:56px; }
+  .sec-head { text-align:center; margin-bottom:22px; }
+  .sec-head h2 { font:700 clamp(19px,3vw,25px)/1.15 var(--font-ui); letter-spacing:-.01em; margin:0; }
+  .sec-head p { color:var(--muted); margin:8px auto 0; max-width:52ch; font-size:14px; }
+
+  .mtx-shell { border:1px solid var(--glass-brd); border-radius:16px; overflow:hidden;
+    background:var(--surface); box-shadow:var(--card-shadow); }
+  .mtx { width:100%; border-collapse:collapse; font-size:13px; }
+  .mtx th, .mtx td { padding:12px 14px; text-align:left; border-bottom:1px solid var(--line);
+    vertical-align:middle; }
+  .mtx thead th { position:sticky; top:0; background:var(--surface); z-index:3;
+    box-shadow:0 1px 0 var(--line); }
+  .mtx tbody tr:last-child td { border-bottom:0; }
+  .mtx tbody tr:hover td { background:color-mix(in srgb,var(--text) 3%,transparent); }
+  .mtx .col-feat { width:34%; }
+  .mtx .col-tier { width:22%; text-align:center; }
+  .mtx td.col-tier, .mtx th.col-tier { text-align:center; }
+  .mtx thead .th-tier { display:inline-flex; flex-direction:column; align-items:center; gap:3px; }
+  .mtx thead .th-tier .tn { font:700 13px/1 var(--font-ui); }
+  .mtx thead .th-tier .tp { font:500 11px/1 var(--font-mono); color:var(--muted); }
+  .mtx thead .th-free .tn { color:var(--t-free); }
+  .mtx thead .th-insider .tn { color:var(--t-insider); }
+  .mtx thead .th-pro .tn { color:var(--t-pro); }
+  .mtx .col-pro { background:color-mix(in srgb,var(--t-pro) 5%,transparent); }
+  .mtx .rlabel { font-weight:600; color:var(--text); }
+  .mtx .rsub { display:block; font-weight:400; font-size:11.5px; color:var(--muted); margin-top:2px; }
+  .mtx .val { color:var(--text); font-size:12.6px; }
+  .mtx .val-muted { color:var(--muted); }
+  .mtx .yes { color:var(--up); }
+  .mtx .yes svg { width:17px; height:17px; }
+  .mtx .dash { color:color-mix(in srgb,var(--muted) 60%,transparent); font-size:15px; }
+  .mtx .num { font-family:var(--font-mono); font-variant-numeric:tabular-nums; font-weight:600; }
+
+  /* ── FAQ ────────────────────────────────────────────────────────────── */
+  .faq-sec { margin-top:56px; }
+  .faq { display:grid; gap:10px; max-width:760px; margin:22px auto 0; }
+  .faq details { border:1px solid var(--glass-brd); border-radius:12px; background:var(--surface);
+    overflow:hidden; }
+  .faq summary { list-style:none; cursor:pointer; padding:15px 18px; font:600 14px/1.4 var(--font-ui);
+    display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .faq summary::-webkit-details-marker { display:none; }
+  .faq summary .chev { flex:none; width:16px; height:16px; color:var(--muted); transition:transform .22s ease; }
+  .faq details[open] summary .chev { transform:rotate(180deg); }
+  .faq .ans { padding:0 18px 16px; color:var(--muted); font-size:13.4px; line-height:1.6; }
+  /* the FAQ's honest exit: when none of the five answers is yours, there is a
+     person to ask (SEE W2 / masterplan R6 — support entry points ride the funnel,
+     not the nav, which is on hold). */
+  .faq-more { max-width:760px; margin:14px auto 0; text-align:center; font-size:13.2px;
+    color:var(--muted); line-height:1.55; }
+  .faq-more a { color:var(--link); font-weight:600; }
+
+  /* ── disclaimer ─────────────────────────────────────────────────────── */
+  .disclaimer { margin-top:44px; padding:16px 18px; border:1px solid var(--line); border-radius:12px;
+    background:color-mix(in srgb,var(--panel) 60%,transparent); color:var(--muted);
+    font-size:11.8px; line-height:1.6; max-width:820px; margin-left:auto; margin-right:auto; }
+  .disclaimer b { color:color-mix(in srgb,var(--text) 80%,var(--muted)); font-weight:600; }
+
+  /* ── inline ? help tips (Tier-2 home for the fine mechanics) ─────────── */
+  .phelp { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px;
+    border-radius:50%; border:1px solid var(--muted); color:var(--muted); font:600 10px/1 var(--font-ui);
+    cursor:help; position:relative; vertical-align:middle; margin-left:5px; }
+  .phelp .ptip { display:none; position:absolute; bottom:150%; left:50%; transform:translateX(-50%);
+    width:250px; background:var(--panel); border:1px solid var(--line); padding:9px 11px; border-radius:9px;
+    z-index:70; font:400 12px/1.45 var(--font-ui); color:var(--text); box-shadow:var(--popover-shadow);
+    text-align:left; }
+  .phelp:hover .ptip, .phelp:focus .ptip { display:block; }
+
+  /* ── return-flag banner (?checkout=success | cancel) ────────────────── */
+  .flag-banner { display:none; align-items:center; gap:12px; margin:0 0 20px; padding:13px 16px;
+    border-radius:12px; font-size:13.5px; border:1px solid var(--line); }
+  .flag-banner.show { display:flex; }
+  .flag-banner.ok { border-color:color-mix(in srgb,var(--up) 42%,var(--line));
+    background:color-mix(in srgb,var(--up) 10%,transparent); color:var(--text); }
+  .flag-banner.cancel { border-color:color-mix(in srgb,var(--warn) 42%,var(--line));
+    background:color-mix(in srgb,var(--warn) 10%,transparent); color:var(--text); }
+  .flag-banner .ficon { flex:none; font-size:17px; }
+  /* the success banner's way OUT of the pricing page — the old copy told the user to
+     "head to the dashboard" and then gave them nothing to click. */
+  .flag-banner .fgo { flex:none; margin-left:14px; font-weight:600; white-space:nowrap;
+    color:var(--text); text-decoration:none; border-bottom:1px solid currentColor; }
+  .flag-banner .fgo:hover { opacity:.72; }
+  .flag-banner .fx { margin-left:auto; cursor:pointer; color:var(--muted); background:none; border:0;
+    font-size:16px; line-height:1; padding:2px 4px; }
+
+  /* ── toast (checkout errors — interface voice, no apology) ──────────── */
+  #ptoast { position:fixed; left:50%; bottom:26px; transform:translateX(-50%) translateY(20px);
+    max-width:min(92vw,420px); background:var(--panel); border:1px solid var(--line); color:var(--text);
+    padding:12px 16px; border-radius:12px; box-shadow:var(--glass-shadow); font-size:13px; z-index:2147483600;
+    opacity:0; pointer-events:none; transition:opacity .22s ease, transform .22s ease; }
+  #ptoast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+  .gbtn[aria-busy="true"] { pointer-events:none; opacity:.75; }
+  .gbtn .spin { width:14px; height:14px; border:2px solid color-mix(in srgb,var(--text) 30%,transparent);
+    border-top-color:var(--text); border-radius:50%; animation:pspin .7s linear infinite; }
+  @keyframes pspin { to { transform:rotate(360deg); } }
+  @media (prefers-reduced-motion:reduce){
+    .btoggle .knob, .card, .price .amt, .faq summary .chev, #ptoast { transition:none; }
+    .gbtn .spin { animation-duration:1.4s; }
+  }
+  @media (max-width:480px){
+    .btoggle .save-flag { display:none; }
+    .btoggle button { padding-left:24px; padding-right:24px; }
+  }
+</style>
 </head>
 <body class="page-plans">
 
@@ -200,7 +436,71 @@
       </div>
     </div>
     
-    <link rel="stylesheet" href="assets/css/9cfd4219.css?v=9cfd4219">
+    <style>
+    /* The Research trigger sits mid-row, so a trigger-anchored wide panel would
+       clip off the left edge. Instead anchor the mega to the full-width .nav-links
+       row (its right edge = the nav rail right): make .nav-links the positioning
+       context and the Research .nav-dd static >700px, so right:0 right-aligns the
+       panel to the rail and it stays fully on-screen. The ::before bridges the
+       hover gap (the panel is a child of .nav-dd, so hovering it keeps it open). */
+    @media (min-width:701px){
+      /* nav-links is the positioning context for the rail-anchored mega; desktop
+         only, so it never overrides theme.js's position:absolute hamburger flyout
+         (≤700px), which shares this specificity. */
+      .site-nav .nav-links,.topbar .nav-links{position:relative}
+      .site-nav .nav-mega-dd,.topbar .nav-mega-dd{position:static}
+      /* the base .nav-dd::after bridge would become a full-width strip once the
+         trigger is static — disable it; the mega's own ::before bridges the gap. */
+      .site-nav .nav-mega-dd::after,.topbar .nav-mega-dd::after{content:none}
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{
+        left:auto;right:0;min-width:0;width:min(1060px,calc(100vw - 40px));padding:16px}
+      .nav-dd-menu.nav-mega::before{content:"";position:absolute;left:0;right:0;top:-11px;height:13px}
+    }
+    .nav-mega-feat{display:grid;grid-template-columns:1fr 1fr;gap:10px;
+      padding-bottom:13px;margin-bottom:13px;
+      border-bottom:1px solid color-mix(in srgb,var(--text,#cbd5e1) 11%,transparent)}
+    .nav-mega.nav-mega .nm-feat{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
+      white-space:normal;text-decoration:none;
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 10%,transparent);
+      border:1px solid color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 22%,transparent);
+      transition:transform .16s ease,background .16s,border-color .16s,box-shadow .18s}
+    .nav-mega.nav-mega .nm-feat:hover{transform:translateY(-2px);
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 17%,transparent);
+      border-color:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 44%,transparent);
+      box-shadow:0 12px 26px -14px color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 60%,transparent)}
+    .nav-mega .nm-feat .nm-ic{font-size:21px;flex:none;width:24px;text-align:center}
+    .nav-mega.nav-mega .nm-feat .nm-t{display:block;font-size:14px;font-weight:700;color:var(--text,#e7ecf6);line-height:1.2}
+    .nav-mega-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px 14px}
+    .nav-mega-col{display:flex;flex-direction:column;gap:1px;min-width:0}
+    .nav-mega-h{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+      color:var(--muted,#8b93a1);display:flex;align-items:center;gap:8px;padding:3px 10px 7px}
+    .nav-mega-h::after{content:"";flex:1;height:1px;background:color-mix(in srgb,var(--text,#cbd5e1) 10%,transparent)}
+    html[data-lang="zh"] .nav-mega-h{letter-spacing:.02em}
+    .nav-mega.nav-mega .nav-mega-item{display:flex;align-items:flex-start;gap:9px;padding:7px 10px;border-radius:10px;
+      white-space:normal;text-decoration:none;transition:background .15s ease}
+    .nav-mega.nav-mega .nav-mega-item:hover{background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 14%,var(--panel2,var(--card,#1e222a)))}
+    .nav-mega .nm-ic{flex:none;font-size:15px;line-height:1.3;width:18px;text-align:center}
+    .nav-mega .nm-tx{min-width:0}
+    .nav-mega.nav-mega .nm-t{display:block;font-size:12.5px;font-weight:600;color:var(--text,#e7ecf6);line-height:1.25}
+    .nav-mega.nav-mega .nav-mega-item .d,.nav-mega.nav-mega .nm-feat .d{display:block;font-size:10.5px;font-weight:400;
+      color:var(--muted,#8b93a1);line-height:1.34;margin-top:2px;white-space:normal}
+    @media (max-width:1080px) and (min-width:701px){
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{width:min(680px,calc(100vw - 24px))}
+      .nav-mega-grid{grid-template-columns:1fr 1fr}}
+    @media (max-width:700px){
+      .nav-mega-feat{grid-template-columns:1fr;gap:7px;padding-bottom:9px;margin-bottom:7px}
+      .nav-mega-grid{grid-template-columns:1fr;gap:0}
+      .nav-mega-h{padding-top:9px}
+      /* the hamburger accordion caps each open dropdown at max-height:600px
+         (theme.js, 0,5,0); the stacked mega (2 cards + 4 groups + 23 items) is
+         taller, so raise the cap for it (0,6,0 wins) — the parent flyout
+         (max-height:78vh; overflow-y:auto) scrolls any remaining overflow.
+         Same specificity trick overrides theme.js's generic accordion-panel
+         padding (8px 0 6px 12px — left-heavy, meant for indented text-link
+         submenus) with symmetric sides + top breathing room, so the feature
+         cards read centered under the trigger instead of crooked. */
+      .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px;padding:12px 10px 8px}}
+    </style>
     <div class="nav-dd nav-mega-dd">
       <a class="nav-link" href="intelligence_hub.html"><span class="menu-icon menu-icon-research" aria-hidden="true"></span><span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu nav-mega" role="menu">
@@ -260,8 +560,8 @@
     </div>
   </div>
   
-  <script src="live_config.js?v=52943e92" defer></script>
-  <script src="live.js?v=e19f6af3" defer></script>
+  <script src="live_config.js"></script>
+  <script src="live.js"></script>
   <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -301,12 +601,12 @@
         <button type="button" data-interval="monthly" aria-pressed="false"><span class="l-en">Monthly</span><span class="l-zh">按月</span></button>
         <button type="button" data-interval="annual" class="on" aria-pressed="true">
           <span class="l-en">Annual</span><span class="l-zh">按年</span>
-          <span class="save-flag l-en">save up to 30%</span><span class="save-flag l-zh">最高省 30%</span>
+          <span class="save-flag l-en">Founding Pro available</span><span class="save-flag l-zh">Founding Pro 开放中</span>
         </button>
       </div>
     </div>
     <p class="toggle-note" id="toggle-note">
-      <span class="l-en">Billed yearly — two months on us versus paying monthly.</span><span class="l-zh">按年结算——相比按月付费，等于免两个月。</span>
+      <span class="l-en">Annual plans cost less. Founding Pro is applied automatically while spots remain.</span><span class="l-zh">年付更省。名额尚存时将自动应用 Founding Pro 优惠。</span>
     </p>
   </header>
 
@@ -337,17 +637,17 @@
 
     
     <section class="card insider" aria-label="Insider plan"
-             data-tier="insider" data-m-cents="6900" data-a-cents="58800"
-             data-m-pm="69" data-a-pm="49"
-             data-a-total="588" data-save="29">
+             data-tier="insider" data-m-cents="7900" data-a-cents="70800"
+             data-m-pm="79" data-a-pm="59"
+             data-a-total="708" data-save="25">
       <div class="tname"><span class="dot"></span>Insider</div>
       <p class="tfor"><span class="l-en">The whole desk — every market, every heatmap, all the research.</span><span class="l-zh">完整桌面——所有市场、所有热力图、全部研究。</span></p>
       <div class="price">
-        <span class="cur">$</span><span class="amt" data-price>49</span><span class="per">/<span class="l-en">mo</span><span class="l-zh">月</span></span>
+        <span class="cur">$</span><span class="amt" data-price>59</span><span class="per">/<span class="l-en">mo</span><span class="l-zh">月</span></span>
       </div>
       <div class="billed">
-        <span data-billed><span class="l-en">Billed $588 a year.</span><span class="l-zh">每年结算 $588。</span></span>
-        <span class="badge-save" data-badge><span class="l-en">save 29%</span><span class="l-zh">省 29%</span></span>
+        <span data-billed><span class="l-en">Billed $708 a year.</span><span class="l-zh">每年结算 $708。</span></span>
+        <span class="badge-save" data-badge><span class="l-en">save 25%</span><span class="l-zh">省 25%</span></span>
       </div>
       <div class="cta">
         <button class="gbtn gbtn-lg gbtn-pill gbtn-cta" data-act="subscribe" data-tier="insider" type="button">
@@ -368,18 +668,35 @@
 
     
     <section class="card pro" aria-label="Pro plan"
-             data-tier="pro" data-m-cents="9900" data-a-cents="82800"
-             data-m-pm="99" data-a-pm="69"
-             data-a-total="828" data-save="30">
-      <div class="ribbon"><span class="l-en">Most complete</span><span class="l-zh">最完整</span></div>
+             data-tier="pro" data-m-cents="11900" data-a-cents="106800"
+             data-m-pm="119" data-a-pm="89"
+             data-a-total="1068" data-save="25"
+             data-offer-key="founding_pro" data-offer-active="true"
+             data-offer-a-pm="69" data-offer-a-total="828"
+             data-offer-discount="22" data-offer-cap="250">
+      <div class="ribbon" data-offer-ribbon><span class="l-en">Founding rate</span><span class="l-zh">创始会员价</span></div>
       <div class="tname"><span class="dot"></span>Pro</div>
       <p class="tfor"><span class="l-en">Everything in Insider, plus the deep Opus chat lane for real research.</span><span class="l-zh">Insider 全部内容，另加用于深度研究的 Opus 对话通道。</span></p>
+      <div class="rack-price" data-offer-rack>
+        <span class="l-en">Regular annual</span><span class="l-zh">常规年付</span>
+        <s>$89/<span class="l-en">mo</span><span class="l-zh">月</span></s>
+      </div>
       <div class="price">
         <span class="cur">$</span><span class="amt" data-price>69</span><span class="per">/<span class="l-en">mo</span><span class="l-zh">月</span></span>
       </div>
       <div class="billed">
         <span data-billed><span class="l-en">Billed $828 a year.</span><span class="l-zh">每年结算 $828。</span></span>
-        <span class="badge-save" data-badge><span class="l-en">save 30%</span><span class="l-zh">省 30%</span></span>
+        <span class="badge-save" data-badge><span class="l-en">Founding · 22% off</span><span class="l-zh">创始会员 · 省 22%</span></span>
+      </div>
+      <div class="founding-meter" data-offer-meter>
+        <div class="founding-line"><b><span class="l-en">Founding Pro</span><span class="l-zh">Founding Pro</span></b>
+          <span data-offer-count><span class="l-en">Limited to 250 memberships</span><span class="l-zh">限量 250 个名额</span></span>
+        </div>
+        <div class="founding-track" role="progressbar" aria-label="Founding Pro memberships claimed"
+             aria-valuemin="0" aria-valuemax="250" aria-valuenow="0">
+          <div class="founding-fill" data-offer-fill></div>
+        </div>
+        <p class="founding-terms"><span class="l-en">The $828 annual rate renews while this subscription remains uninterrupted. Canceling ends the founding rate.</span><span class="l-zh">只要订阅不中断，$828 年付创始会员价将持续续订；取消后该价格失效。</span></p>
       </div>
       <div class="cta">
         <button class="gbtn gbtn-lg gbtn-pill gbtn-cta" data-act="subscribe" data-tier="pro" type="button">
@@ -409,7 +726,7 @@
           <tr>
             <th class="col-feat"><span class="l-en">What you get</span><span class="l-zh">你能获得</span></th>
             <th class="col-tier"><span class="th-tier th-free"><span class="tn"><span class="l-en">Free</span><span class="l-zh">免费</span></span><span class="tp">$0</span></span></th>
-            <th class="col-tier"><span class="th-tier th-insider"><span class="tn">Insider</span><span class="tp" data-mtx-price="insider">$49/mo</span></span></th>
+            <th class="col-tier"><span class="th-tier th-insider"><span class="tn">Insider</span><span class="tp" data-mtx-price="insider">$59/mo</span></span></th>
             <th class="col-tier col-pro"><span class="th-tier th-pro"><span class="tn">Pro</span><span class="tp" data-mtx-price="pro">$69/mo</span></span></th>
           </tr>
         </thead>
@@ -518,7 +835,7 @@
 
 <div id="ptoast" role="alert"></div>
 
-<script src="theme.js?v=c094a665" defer></script>
+<script src="theme.js"></script>
 <script>
 /* plans.js (inline) — billing toggle + Stripe checkout wiring.
 
@@ -574,6 +891,11 @@
     $$('.card[data-tier]').forEach(function (card) {
       var mPm = card.getAttribute('data-m-pm'), aPm = card.getAttribute('data-a-pm');
       var aTot = card.getAttribute('data-a-total'), save = card.getAttribute('data-save');
+      var offerOn = annual && card.getAttribute('data-offer-active') === 'true';
+      if (offerOn) {
+        aPm = card.getAttribute('data-offer-a-pm') || aPm;
+        aTot = card.getAttribute('data-offer-a-total') || aTot;
+      }
       var priceEl = $('[data-price]', card), billedEl = $('[data-billed]', card), badgeEl = $('[data-badge]', card);
       if (priceEl) {
         priceEl.style.opacity = '0';
@@ -586,8 +908,17 @@
       }
       if (badgeEl) {
         badgeEl.classList.toggle('hidden', !annual);
-        badgeEl.innerHTML = '<span class="l-en">save ' + save + '%</span><span class="l-zh">省 ' + save + '%</span>';
+        badgeEl.innerHTML = offerOn
+          ? '<span class="l-en">Founding · ' + card.getAttribute('data-offer-discount') + '% off</span><span class="l-zh">创始会员 · 省 ' + card.getAttribute('data-offer-discount') + '%</span>'
+          : '<span class="l-en">save ' + save + '%</span><span class="l-zh">省 ' + save + '%</span>';
       }
+      var rackEl = $('[data-offer-rack]', card), meterEl = $('[data-offer-meter]', card);
+      if (rackEl) rackEl.classList.toggle('hidden', !offerOn);
+      if (meterEl) meterEl.classList.toggle('hidden', !offerOn);
+      var ribbonEl = $('[data-offer-ribbon]', card);
+      if (ribbonEl) ribbonEl.innerHTML = offerOn
+        ? '<span class="l-en">Founding rate</span><span class="l-zh">创始会员价</span>'
+        : '<span class="l-en">Most complete</span><span class="l-zh">最完整</span>';
     });
     /* matrix header prices track the toggle too */
     $$('[data-mtx-price]').forEach(function (el) {
@@ -595,11 +926,14 @@
       var card = $('.card[data-tier="' + tier + '"]');
       if (!card) return;
       var pm = annual ? card.getAttribute('data-a-pm') : card.getAttribute('data-m-pm');
+      if (annual && card.getAttribute('data-offer-active') === 'true') {
+        pm = card.getAttribute('data-offer-a-pm') || pm;
+      }
       el.textContent = '$' + pm + '/mo';
     });
     if (note) {
       note.innerHTML = annual
-        ? '<span class="l-en">Billed yearly — two months on us versus paying monthly.</span><span class="l-zh">按年结算——相比按月付费，等于免两个月。</span>'
+        ? '<span class="l-en">Annual plans cost less. Founding Pro is applied automatically while spots remain.</span><span class="l-zh">年付更省。名额尚存时将自动应用 Founding Pro 优惠。</span>'
         : '<span class="l-en">Billed month to month. Switch to annual to pay less.</span><span class="l-zh">按月结算。切换到按年更省。</span>';
     }
   }
@@ -619,6 +953,24 @@
     setInterval_('annual'); /* establish annual-default state on load */
   }
 
+  /* Stripe is the inventory ledger. Never synthesize or time-increment this number. */
+  var foundingCard = $('.card[data-offer-key]');
+  if (foundingCard) {
+    var offerKey = foundingCard.getAttribute('data-offer-key');
+    fetch(API + '/api/billing/offers/' + encodeURIComponent(offerKey), { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('offer')); })
+      .then(function (o) {
+        foundingCard.setAttribute('data-offer-active', o.active ? 'true' : 'false');
+        var count = $('[data-offer-count]', foundingCard);
+        var track = $('.founding-track', foundingCard);
+        var fill = $('[data-offer-fill]', foundingCard);
+        if (count) count.innerHTML = '<span class="l-en">' + o.claimed + ' of ' + o.cap + ' claimed</span><span class="l-zh">已领取 ' + o.claimed + ' / ' + o.cap + '</span>';
+        if (track) track.setAttribute('aria-valuenow', String(o.claimed));
+        if (fill) fill.style.width = Math.min(100, Math.max(0, o.claimed / o.cap * 100)) + '%';
+        paintPrices();
+      }).catch(function () { /* keep the configured offer; checkout remains the final authority */ });
+  }
+
   /* ── checkout ── */
   function goCheckout(tier, btn) {
     var busy = btn && btn.getAttribute('aria-busy') === 'true';
@@ -634,7 +986,13 @@
     withAuth({ 'Content-Type': 'application/json' }).then(function (h) {
       return fetch(API + '/api/billing/checkout', {
         method: 'POST', headers: h, credentials: 'include',
-        body: JSON.stringify({ tier: tier, interval: interval })
+        body: JSON.stringify({
+          tier: tier,
+          interval: interval,
+          offer: tier === 'pro' && interval === 'annual' && foundingCard &&
+            foundingCard.getAttribute('data-offer-active') === 'true'
+              ? foundingCard.getAttribute('data-offer-key') : null
+        })
       });
     }).then(function (r) {
       if (r.status === 401) {

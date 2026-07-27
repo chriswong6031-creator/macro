@@ -17,20 +17,28 @@ mode** first; live-mode is gated by **W-LEGAL** (business entity, tax registrati
 
 ---
 
-## 1. Create the Stripe objects (already done in test mode)
+## 1. Create the Stripe objects
 
-`scripts/stripe_bootstrap.py` was run against the test key and created (re-run any time — idempotent):
+`scripts/stripe_bootstrap.py` creates or reuses:
 
 | lookup_key | product | price |
 |---|---|---|
-| `insider_monthly` | Insider | $69 / month |
-| `insider_annual`  | Insider | $588 / year ($49/mo equivalent) |
-| `pro_monthly`     | Pro     | $99 / month |
-| `pro_annual`      | Pro     | $828 / year ($69/mo equivalent) |
+| `insider_2026_monthly` | Insider | $79 / month |
+| `insider_2026_annual`  | Insider | $708 / year ($59/mo equivalent) |
+| `pro_2026_monthly`     | Pro     | $119 / month |
+| `pro_2026_annual`      | Pro     | $1,068 / year ($89/mo equivalent) |
 
 Features `site_full`, `terminal_live_options`, `chat_opus` are created and attached to the products.
-Application code addresses prices by **lookup_key**, so the same code works against the live objects
-you create later. To (re)create in any account:
+The bootstrap also creates `Founding Pro`: a forever-duration, Pro-only coupon that makes annual Pro
+$828/year ($69/month equivalent), plus a `FOUNDINGPRO2026` PromotionCode capped at **250 real
+redemptions**. `GET /api/billing/offers/founding_pro` reads Stripe's `times_redeemed`; that is the
+only count shown to customers.
+
+Application code addresses prices by **lookup_key**, so the same code works in test and live mode.
+The versioned 2026 keys intentionally leave the old `insider_monthly`, `insider_annual`,
+`pro_monthly`, and `pro_annual` Prices in place. Existing subscriptions continue at their contracted
+prices and those legacy keys remain mapped to the correct entitlement tier; new purchases use the
+2026 keys. To create or reconcile the current objects:
 
 ```bash
 STRIPE_SECRET_KEY=sk_test_... python scripts/stripe_bootstrap.py            # test
@@ -113,8 +121,9 @@ until the card is captured — SetupIntent first, subscription second.
 | Endpoint | Auth | Purpose |
 |---|---|---|
 | `GET /api/billing/config` | none | `{"publishable_key": <STRIPE_PUBLISHABLE_KEY>}` so the sheet can boot Stripe.js. 503 when the env is unset (publishable keys are public by design). |
-| `POST /api/billing/subscribe/init` | bearer | Body `{tier, interval}`. Find-or-creates the Stripe customer (persists the `user_id → stripe_customer_id` mapping only), then creates a `SetupIntent(usage="off_session")`. Returns `{client_secret, customer_id}`. 409 `already subscribed` if a live sub exists; **no subscription yet**. |
-| `POST /api/billing/subscribe/complete` | bearer | Body `{setup_intent_id, tier, interval}`. Verifies the SetupIntent succeeded and belongs to this user's customer, then creates the trialing subscription (7-day trial, captured payment method, cancel-on-missing-PM). Recomputes + upserts the entitlement row so `/api/me` shows `trialing` instantly; the webhook remains the convergent source. Returns `{status, subscription_id, trial_end}`. |
+| `POST /api/billing/subscribe/init` | bearer | Body `{tier, interval, offer?}`. Find-or-creates the Stripe customer (persists the `user_id → stripe_customer_id` mapping only), validates live offer inventory, then creates a `SetupIntent(usage="off_session")` with the offer bound in metadata. Returns `{client_secret, customer_id}`. 409 `already subscribed` if a live sub exists; 410 if the offer sold out; **no subscription yet**. |
+| `POST /api/billing/subscribe/complete` | bearer | Body `{setup_intent_id, tier, interval, offer?}`. Verifies the SetupIntent succeeded, belongs to this user's customer, and carries the same offer, then creates the trialing subscription (7-day trial, captured payment method, cancel-on-missing-PM, capped promotion where applicable). Recomputes + upserts the entitlement row so `/api/me` shows `trialing` instantly; the webhook remains the convergent source. Returns `{status, subscription_id, trial_end}`. |
+| `GET /api/billing/offers/founding_pro` | none | Returns the real Stripe-backed `{active, claimed, remaining, cap, unit_amount, regular_unit_amount}` inventory. No seed, simulated growth, or time-based increment. |
 
 Requires `STRIPE_PUBLISHABLE_KEY` in `/etc/macro-api.env` (step 3) — delivered via the
 **deploy-api-secrets** workflow. No dashboard step is needed to enable the lane; it uses the same
@@ -128,16 +137,18 @@ path, once the workflow is wired.
 
 ## 5c. Upgrade lane (Insider → Pro)
 
-`POST /api/billing/upgrade` (bearer; body `{interval?}`, target is always tier `pro`) modifies the
-caller's existing live subscription **in place** — it never creates a second one. It swaps the item
-to the Pro price at the user's current cadence (override with `interval`) using
+`POST /api/billing/upgrade` (bearer; body `{tier?, interval?, offer?}`) modifies the caller's
+existing live subscription **in place** — it never creates a second one. The upward-only
+tier/cadence matrix permits same-tier monthly→annual and Insider→Pro moves. It swaps the item to the
+target price (and applies Founding Pro when requested and available) using
 `proration_behavior="always_invoice"`, so Stripe credits the unused Insider time and charges the
-prorated Pro difference **immediately**; `payment_behavior="error_if_incomplete"` turns a card decline
+prorated difference **immediately**; `payment_behavior="error_if_incomplete"` turns a card decline
 into a `402` (Stripe's message) instead of a half-switched sub. **Trialing subs** keep their trial —
 Stripe swaps the price with no proration and an unchanged `trial_end`, so the user just starts Pro
 billing at trial end (`trialing:true`, `prorated:false`). No Stripe dashboard step is required.
-Returns `{status, tier, prorated, trialing, invoice_total_cents, current_period_end}`;
-`404 no subscription` when there's no live sub, `409 already pro` when it is already Pro.
+Returns `{status, tier, interval, prorated, trialing, invoice_total_cents, current_period_end}`;
+`404 no subscription` when there's no live sub, 409 for a downgrade/no-op, and 410 when a limited
+offer has sold out.
 
 ## 6. Stripe Tax
 
