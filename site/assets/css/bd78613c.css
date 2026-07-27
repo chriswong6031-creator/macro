@@ -103,8 +103,10 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
 .avoid h3{margin:0 0 3px;font-size:15px;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:9px}
 .avoid .ah-sub{font-size:12.5px;color:var(--muted);margin:0 0 14px}
 .avoid-list{display:grid;gap:10px}
-.avoid-item{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:12px;background:color-mix(in srgb,var(--card) 82%,transparent);border:1px solid var(--grid);border-left:3px solid var(--amber)}
-.avoid-item.red{border-left-color:var(--red)}.avoid-item.calm{border-left-color:var(--green)}
+/* One accent rail per panel: .avoid::before already paints the coloured left
+   edge, so the items inside keep a plain border rather than repeating a second
+   colour bar within a coloured container. Tone classes stay on the markup. */
+.avoid-item{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:12px;background:color-mix(in srgb,var(--card) 82%,transparent);border:1px solid var(--grid)}
 .avoid-item .ai-ic{font-size:18px;line-height:1.3;flex:none}
 .avoid-item .ai-t{font-size:14px;font-weight:700;color:var(--ink)}
 .avoid-item .ai-d{font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.5}
