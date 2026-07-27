@@ -168,11 +168,13 @@ const ICONS = {
   marketing_seo:         NAV_ICO('<circle cx="11" cy="11" r="7"/><path d="M16 16l4.5 4.5"/><path d="M8 11.5l2 2 4-4.5"/>'),
   /* Chronicle — market context timeline (clock/timeline glyph) */
   chronicle:             NAV_ICO('<circle cx="12" cy="13" r="8"/><path d="M12 8.5V13l3 2"/><path d="M9 2.5h6"/>'),
+  /* Persona Roster — an identity card: one face, and the beat written beside it. */
+  personas:              NAV_ICO('<rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="9" cy="11" r="2.1"/><path d="M5.7 16.3a3.5 3.5 0 0 1 6.6 0"/><path d="M14.8 10h3.6M14.8 13.5h3.6"/>'),
 };
 const NAV_GROUPS = [
   { label: "", items: [["overview", "Overview"]] },
   { label: "Neural Web", items: [["neural_web", "Observatory"], ["orchestrator", "Master Brain"], ["prophet", "Prophet"], ["mastermind_ai", "Mastermind AI"], ["mastermind_logs", "AI Response Logs"], ["alerts", "Alerts"], ["long_hold", "Long-Hold Lobe"], ["context_lobe", "Context Lobe"], ["causal_lab", "Causal Lab"], ["chronicle", "Chronicle"]] },
-  { label: "Marketing", items: [["marketing_overview", "CMO Office"], ["marketing_departments", "Departments"], ["marketing_radar", "Radar"], ["marketing_seo", "SEO"], ["marketing_campaigns", "Campaigns"], ["marketing_channels", "Channels & Desks"], ["marketing_content", "Content Studio"], ["marketing_outbox", "Outbox"], ["marketing_publish", "Publisher"], ["marketing_sentinel", "Sentinel"], ["marketing_allies", "Allies"], ["marketing_lab", "Lab"], ["marketing_ads", "Ad Central"], ["marketing_experiments", "Experiments"], ["marketing_lobes", "Engines"]] },
+  { label: "Marketing", items: [["marketing_overview", "CMO Office"], ["marketing_departments", "Departments"], ["marketing_radar", "Radar"], ["marketing_seo", "SEO"], ["marketing_campaigns", "Campaigns"], ["marketing_channels", "Channels & Desks"], ["personas", "Persona Roster"], ["marketing_content", "Content Studio"], ["marketing_outbox", "Outbox"], ["marketing_publish", "Publisher"], ["marketing_sentinel", "Sentinel"], ["marketing_allies", "Allies"], ["marketing_lab", "Lab"], ["marketing_ads", "Ad Central"], ["marketing_experiments", "Experiments"], ["marketing_lobes", "Engines"]] },
   { label: "Growth", items: [["analytics", "Analytics"], ["users", "Users"], ["revenue", "Revenue"], ["experiments", "Experiments"], ["site_gate", "Site Access"]] },
   { label: "Support", items: [["support_tickets", "Support Tickets"], ["email_center", "Email Center"]] },
   { label: "System", items: [["system", "System"], ["health", "Health"], ["deploy", "Build & Deploy"], ["metabolism", "Metabolism"], ["codex", "Codex Research"], ["cost", "AI Cost"], ["content", "Content"]] },
@@ -8326,6 +8328,52 @@ function mmlEvalBadges(ev) {
   return out.join(" ");
 }
 
+/* Contradiction assessment chips. Two independent tiers, deliberately distinct:
+   ⚡ is the free keyword TRIAGE scan (a QUESTION — "conflict?"), the verdict pill is the
+   LLM's answer. system_error is red because it means OUR data was wrong, not the market.
+   Null-prototype map: contra_verdict comes from a hand-editable local sidecar, and a
+   plain object literal would resolve "constructor"/"__proto__" up the prototype chain and
+   hand the destructure a function instead of a [class, label] pair. */
+const MML_VERDICT = Object.assign(Object.create(null), {
+  system_error: ["s-bad", "data may be wrong"],
+  market_divergence: ["s-warn", "market split"],
+  none: ["s-mut", "no conflict"],
+  unclear: ["s-mut", "unclear"],
+});
+function mmlVerdictMeta(v) {
+  const hit = MML_VERDICT[v];
+  return Array.isArray(hit) ? hit : ["s-mut", String(v)];
+}
+function mmlVerdictPill(ev) {
+  const v = ev && ev.contra_verdict;
+  if (!v) return "";
+  const [cls, label] = mmlVerdictMeta(v);
+  const note = (ev.contra_note || "").trim();
+  const sigs = (ev.contra_signals || []).join(" vs ");
+  const title = [label, sigs, note, ev.contra_model && `by ${ev.contra_model}`].filter(Boolean).join(" · ");
+  return `<span class="statpill ${cls}" title="${esc(title)}">${esc(label)}</span>`;
+}
+function mmlThinkChip(r) {
+  const tm = r.thinking_meta || {};
+  if (!tm.segments) return "";
+  return `<span class="statpill s-mut" title="${tm.segments} reasoning segment${tm.segments === 1 ? "" : "s"} · ${tm.chars} chars captured">🧠 ${tm.segments}</span>`;
+}
+/* Where the scan matched — a TRIAGE pointer, not a finding. The stems also match TA
+   vocabulary ("MACD divergence"), negations ("no conflict between them"), and the
+   doctrine's own words echoed back out of the system prompt, so a thinking-only hit is a
+   row to READ, never proof the model smoothed a conflict over. */
+function mmlContraSrcHint(src) {
+  return src === "thinking"
+    ? "conflict wording appears only in the reasoning text — open the trace and judge; keyword hits include TA vocabulary and negations"
+    : src === "answer" ? "conflict wording in the answer text"
+      : "conflict wording in both the answer and the reasoning";
+}
+function mmlContraChip(r) {
+  const c = r.contra || {};
+  if (!c.hit) return "";
+  return `<span class="statpill s-warn" title="${esc(mmlContraSrcHint(c.src))}: ${esc((c.terms || []).join(", "))}">⚡ conflict?</span>`;
+}
+
 RENDER.mastermind_logs = async () => {
   const v = $("#view");
   v.innerHTML = `<div class="spin">loading…</div>`;
@@ -8337,11 +8385,13 @@ async function mmlLoad() {
   const qs = new URLSearchParams();
   qs.set("limit", "300");
   const f = MML.filters;
-  ["surface", "lane", "model", "graded", "thumb", "search", "since"].forEach(k => {
+  ["surface", "lane", "model", "graded", "thumb", "search", "since", "verdict"].forEach(k => {
     if (f[k] && f[k] !== "all") qs.set(k, f[k]);
   });
   if (f.starred) qs.set("starred", "1");
   if (f.error) qs.set("error", "1");
+  if (f.thinking) qs.set("thinking", "1");
+  if (f.contra) qs.set("contra", "1");
   const d = await api("/api/mastermind_ai/response_logs?" + qs.toString());
   if (CURRENT !== "mastermind_logs") return;
   if (!d || d.error) {
@@ -8360,12 +8410,19 @@ async function mmlLoad() {
     if (!(days >= (ing.threshold_days || 2))) return "";
     return `<span class="statpill s-bad" title="no ${esc(s)} responses since ${esc(String(ts).slice(0, 10))}">${esc(s)} dark ${Math.floor(days)}d</span>`;
   }).join("");
+  /* Contradiction verdict counts — only the labels actually present, so an
+     un-classified corpus shows nothing rather than four zeroes. */
+  const verdictChips = Object.entries(st.verdicts || {}).map(([v, n]) => {
+    const [cls, label] = mmlVerdictMeta(v);
+    return `<span class="statpill ${cls}" title="LLM verdict: ${esc(label)}">${esc(label)} ${n}</span>`;
+  }).join("");
   const heroHtml = `<div class="mb-hero">
     <div class="mb-hero-top">
       <span class="mb-hero-kicker">Mastermind AI</span>
       <span class="mb-hero-name">Response logs — evaluation corpus</span>
       <span class="spacer"></span>
       <button class="btn" id="mmlRefresh" title="Pull new rows from R2 (both surfaces write there)">⟳ Refresh from R2</button>
+      <button class="btn" id="mmlClassify" title="Ask a small model to label the un-verdicted conflict candidates: our data wrong, or the market genuinely split?">⚡ Classify conflicts (LLM)</button>
       <button class="btn" id="mmlExportJ" title="Download current filter as JSONL">⭳ JSONL</button>
       <button class="btn" id="mmlExportC" title="Download current filter as CSV">⭳ CSV</button>
     </div>
@@ -8377,9 +8434,13 @@ async function mmlLoad() {
       <span class="statpill s-ok">👍 ${st.thumbs_up || 0}</span>
       <span class="statpill s-bad">👎 ${st.thumbs_down || 0}</span>
       ${st.errors ? `<span class="statpill s-bad">${st.errors} errored</span>` : ""}
+      <span class="statpill ${st.n_thinking ? "s-ok" : "s-mut"}" title="rows carrying the model's captured reasoning">🧠 ${st.n_thinking || 0}</span>
+      <span class="statpill ${st.n_contra ? "s-warn" : "s-mut"}" title="rows whose answer or reasoning uses conflict wording — a keyword triage list to read, not a count of real contradictions (the stems also match TA vocabulary and negated mentions)">⚡ ${st.n_contra || 0} candidates (keyword triage)</span>
+      ${verdictChips}
       ${d.read_capped ? `<span class="statpill s-warn" title="showing the most recent window">window capped</span>` : ""}
       ${surfDarkHtml}
     </div>
+    <div id="mmlStatus" class="sub muted" style="margin-top:6px"></div>
   </div>`;
 
   const filterHtml = `<div class="section" style="margin-top:14px;display:flex;flex-wrap:wrap;gap:8px;align-items:center">
@@ -8389,8 +8450,11 @@ async function mmlLoad() {
     <select id="mmlThumb" class="btn">${[["all", "any 👍/👎"], ["up", "👍 up"], ["down", "👎 down"]].map(([o, t]) => `<option value="${o}"${f.thumb === o ? " selected" : ""}>${t}</option>`).join("")}</select>
     <input id="mmlModel" class="btn" style="width:120px" placeholder="model…" value="${esc(f.model || "")}">
     <input id="mmlSearch" class="btn" style="width:180px" placeholder="search text…" value="${esc(f.search || "")}">
+    <select id="mmlVerdict" class="btn" title="LLM contradiction verdict">${[["all", "any verdict"], ["system_error", "data may be wrong"], ["market_divergence", "market split"], ["none", "no conflict"], ["unclear", "unclear"]].map(([o, t]) => `<option value="${o}"${f.verdict === o ? " selected" : ""}>${t}</option>`).join("")}</select>
     <label class="sub" style="display:flex;align-items:center;gap:4px"><input type="checkbox" id="mmlStar"${f.starred ? " checked" : ""}> flagged</label>
     <label class="sub" style="display:flex;align-items:center;gap:4px"><input type="checkbox" id="mmlErr"${f.error ? " checked" : ""}> errors</label>
+    <label class="sub" style="display:flex;align-items:center;gap:4px" title="only rows carrying the model's captured reasoning"><input type="checkbox" id="mmlThink"${f.thinking ? " checked" : ""}> 🧠 thinking</label>
+    <label class="sub" style="display:flex;align-items:center;gap:4px" title="only rows whose answer or reasoning uses conflict language"><input type="checkbox" id="mmlContra"${f.contra ? " checked" : ""}> ⚡ conflicts</label>
     <button class="btn primary" id="mmlApply">Apply</button>
     <span class="sub muted">${d.matched || 0} match</span>
   </div>`;
@@ -8413,15 +8477,70 @@ function mmlRowHtml(r) {
   const tok = (r.input_tokens || 0) + (r.output_tokens || 0);
   const lane = r.lane ? `<span class="sub muted"> · ${esc(r.lane)}</span>` : "";
   const errDot = (r.flags && r.flags.error) ? ` <span class="statpill s-bad" title="errored/degraded">!</span>` : "";
+  const contraChips = [mmlThinkChip(r), mmlContraChip(r), mmlVerdictPill(ev)].filter(Boolean).join(" ");
   return `<tr class="mml-row" data-id="${esc(r.id)}" style="cursor:pointer">
     <td class="sub mono">${when}</td>
     <td>${mmlSurfacePill(r.surface)}</td>
-    <td><div><b>${qSnip || "<span class='muted'>(no question)</span>"}</b>${errDot}</div><div class="sub muted">${aSnip}</div>${mmlEvalBadges(ev)}</td>
+    <td><div><b>${qSnip || "<span class='muted'>(no question)</span>"}</b>${errDot}</div><div class="sub muted">${aSnip}</div>${[mmlEvalBadges(ev), contraChips].filter(Boolean).join(" ")}</td>
     <td class="sub mono">${esc(orchTrunc(r.model || "?", 16))}${lane}</td>
     <td class="r mono sub">${tok || "—"}</td>
     <td>${mmlEvalBadges(ev) || '<span class="sub muted">ungraded</span>'}</td>
   </tr>
   <tr class="mml-detail" data-for="${esc(r.id)}" style="display:none"><td colspan="6" style="background:rgba(255,255,255,.02)"></td></tr>`;
+}
+
+/* The model's captured reasoning — collapsed by default AND fetched on demand. The list
+   response carries only thinking_meta (segments + chars); a single trace runs to ~144k
+   chars, so shipping 300 of them for a section that is usually never opened would bloat
+   every page load. The trace arrives on first expand and is cached on the row object. */
+function mmlThinkingHtml(r) {
+  const tm = r.thinking_meta || {};
+  if (!tm.segments) return "";
+  const c = r.contra || {};
+  const contraLine = c.hit
+    ? `<div class="sub muted" style="margin:6px 0">⚡ ${esc(mmlContraSrcHint(c.src))}: ${esc((c.terms || []).join(", "))}</div>`
+    : "";
+  return `<details class="mml-think" data-id="${esc(r.id)}">
+    <summary class="sub" style="font-weight:700;cursor:pointer">🧠 Thinking (${tm.segments} segment${tm.segments === 1 ? "" : "s"} · ${tm.chars || 0} chars)</summary>
+    ${contraLine}<div class="mml-think-body"><div class="sub muted">expand to load the reasoning trace…</div></div>
+  </details>`;
+}
+
+function mmlThinkingSegsHtml(segs) {
+  const list = (segs || []).filter(s => s && typeof s === "object");
+  if (!list.length) return `<div class="sub muted">No reasoning captured for this row.</div>`;
+  return list.map(s => {
+    const label = `[${esc(s.phase || "?")} · round ${esc(String(s.round == null ? "?" : s.round))} · ${esc(s.model || "?")}]`;
+    const text = s.redacted && !s.text
+      ? "(redacted by the provider — the model reasoned here, the text is unavailable)"
+      : (s.text || "");
+    return `<div style="margin:8px 0"><div class="sub mono muted">${label}</div>
+      <div class="mono" style="white-space:pre-wrap;font-size:12px;line-height:1.5;padding:8px;border-left:2px solid rgba(255,255,255,.14);background:rgba(255,255,255,.02)">${esc(text)}</div></div>`;
+  }).join("");
+}
+
+/* Fetch one row's trace the first time its <details> is opened; cache it on the row so
+   collapsing and reopening never re-fetches. Fail-soft: a bad response leaves a plain
+   message and lets the next open retry. */
+async function mmlLoadTrace(id, det) {
+  const r = MML.rows.find(x => x.id === id);
+  const body = det && det.querySelector(".mml-think-body");
+  if (!r || !body) return;
+  if (Array.isArray(r.thinking)) { body.innerHTML = mmlThinkingSegsHtml(r.thinking); return; }
+  if (det.dataset.loading === "1") return;
+  det.dataset.loading = "1";
+  body.innerHTML = `<div class="sub muted">loading the reasoning trace…</div>`;
+  let d = null;
+  try {
+    d = await api("/api/mastermind_ai/response_logs/thinking?id=" + encodeURIComponent(id));
+  } catch (e) { d = null; }          /* api() throws on 401 — it has already shown login */
+  det.dataset.loading = "";
+  if (!d || !d.ok || !Array.isArray(d.thinking)) {
+    body.innerHTML = `<div class="sub muted">Couldn't load the reasoning trace${d && d.error ? ` (${esc(String(d.error))})` : ""} — collapse and reopen to retry.</div>`;
+    return;
+  }
+  r.thinking = d.thinking;
+  body.innerHTML = mmlThinkingSegsHtml(r.thinking);
 }
 
 function mmlDetailHtml(r) {
@@ -8442,6 +8561,7 @@ function mmlDetailHtml(r) {
     <div class="sub muted">${meta}</div>
     <div><div class="sub" style="font-weight:700;margin-bottom:3px">Question</div><div style="white-space:pre-wrap">${esc(r.question || "")}</div></div>
     <div><div class="sub" style="font-weight:700;margin-bottom:3px">Answer</div><div style="white-space:pre-wrap">${esc(r.answer || "")}</div></div>
+    ${mmlThinkingHtml(r)}
     <div class="section" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;border-top:1px solid rgba(255,255,255,.08);padding-top:10px">
       <span class="sub" style="font-weight:700">Grade</span>
       <div style="display:flex;gap:4px">${grades}</div>
@@ -8464,6 +8584,36 @@ function mmlWire() {
     else toast((r && r.note) || "Refresh failed (R2 creds?)", true);
     await mmlLoad();
   });
+  /* Classify conflicts: label the un-verdicted candidates via the small LLM. Verdicts
+     merge into the SAME sidecar as manual grades, so a rated row keeps its rating. */
+  on("mmlClassify", "click", async (e) => {
+    const btn = e.target;
+    btn.disabled = true; btn.textContent = "⚡ classifying…";
+    mmlStatus("Reading the un-verdicted conflict candidates…");
+    const r = await post("/api/mastermind_ai/response_logs/classify", { limit: 20 });
+    btn.disabled = false; btn.textContent = "⚡ Classify conflicts (LLM)";
+    if (r && r.ok) {
+      /* `candidates` is the count BEFORE the batch limit — i.e. how much work is left,
+         so the operator knows whether to press the button again. */
+      const line = `classified ${r.classified || 0} / skipped ${r.skipped || 0} of ${r.candidates || 0} candidate${r.candidates === 1 ? "" : "s"}`;
+      mmlStatus(line);
+      toast(`Classified ${r.classified || 0} response${r.classified === 1 ? "" : "s"}`);
+      await mmlLoad();
+      mmlStatus(line);
+    } else if (r && r.error === "busy") {
+      /* The lock, not a failure: a second click or a second tab would re-bill the same
+         candidate set. */
+      mmlStatus("A classification batch is already running — wait for it to finish before starting another.");
+      toast("A classification batch is already running", true);
+    } else if (r && r.error === "no_llm_key") {
+      /* Non-blocking: the deterministic ⚡ scan keeps working without a key. */
+      mmlStatus("No LLM key — set DEEPSEEK_API_KEY for the admin process to classify conflicts. The ⚡ keyword scan still works.");
+      toast("DEEPSEEK_API_KEY not set on this host", true);
+    } else {
+      mmlStatus("");
+      toast((r && r.error) || "Classify failed", true);
+    }
+  });
   on("mmlExportJ", "click", () => mmlExport("jsonl"));
   on("mmlExportC", "click", () => mmlExport("csv"));
   on("mmlApply", "click", mmlApplyFilters);
@@ -8475,16 +8625,26 @@ function mmlWire() {
   });
 }
 
+/* The tab's own status line (classify results, LLM-key notice) — survives a re-render
+   because mmlLoad rebuilds the node, so callers set it AFTER the reload they trigger. */
+function mmlStatus(msg) {
+  const el = $("#mmlStatus");
+  if (el) el.textContent = msg || "";
+}
+
 function mmlApplyFilters() {
   MML.filters = {
     surface: $("#mmlSurface").value,
     lane: $("#mmlLane").value,
     graded: $("#mmlGraded").value,
     thumb: $("#mmlThumb").value,
+    verdict: $("#mmlVerdict").value,
     model: $("#mmlModel").value.trim(),
     search: $("#mmlSearch").value.trim(),
     starred: $("#mmlStar").checked,
     error: $("#mmlErr").checked,
+    thinking: $("#mmlThink").checked,
+    contra: $("#mmlContra").checked,
   };
   mmlLoad();
 }
@@ -8507,6 +8667,9 @@ function mmlToggle(id) {
 function mmlWireDetail(id, cell) {
   const r = MML.rows.find(x => x.id === id);
   if (!r) return;
+  /* Reasoning trace: fetched the first time this <details> is opened, not with the list. */
+  const det = cell.querySelector(".mml-think");
+  if (det) det.addEventListener("toggle", () => { if (det.open) mmlLoadTrace(id, det); });
   const draft = Object.assign({ grade: null, thumb: null, star: false, tags: [], note: "" }, r.eval || {});
   cell.querySelectorAll(".mml-grade").forEach(b => b.addEventListener("click", () => {
     const g = parseInt(b.getAttribute("data-g"), 10);
@@ -8542,9 +8705,11 @@ async function mmlExport(fmt) {
   const qs = new URLSearchParams();
   qs.set("fmt", fmt);
   const f = MML.filters;
-  ["surface", "lane", "model", "graded", "thumb", "search", "since"].forEach(k => { if (f[k] && f[k] !== "all") qs.set(k, f[k]); });
+  ["surface", "lane", "model", "graded", "thumb", "search", "since", "verdict"].forEach(k => { if (f[k] && f[k] !== "all") qs.set(k, f[k]); });
   if (f.starred) qs.set("starred", "1");
   if (f.error) qs.set("error", "1");
+  if (f.thinking) qs.set("thinking", "1");
+  if (f.contra) qs.set("contra", "1");
   const d = await api("/api/mastermind_ai/response_logs/export?" + qs.toString());
   if (!d || !d.ok) { toast((d && d.error) || "Export failed", true); return; }
   const blob = new Blob([d.content || ""], { type: d.mime || "text/plain" });
@@ -9594,6 +9759,106 @@ RENDER.chronicle = async () => {
     <div class="card">${eventsHtml}</div>
     <div class="section">State Log Tail <span class="cnt">${stateLog.length}</span></div>
     <div class="card">${stateLogHtml}</div>`;
+};
+
+/* ---- Persona Roster (Persona Network W1) --------------------------------- */
+RENDER.personas = async () => {
+  const v = $("#view");
+  v.innerHTML = `<div class="sub muted" style="margin-bottom:8px">Loading…</div>`;
+  const d = await api("/api/personas/roster");
+
+  if (d.error) {
+    v.innerHTML = card("Persona Roster", `<div class="sub muted">${esc(d.error)}</div>`);
+    return;
+  }
+
+  const banner = `<div class="banner show" style="margin-bottom:12px;padding:8px 12px;border-radius:6px;background:var(--surface2,#1e2030);border:1px solid var(--border,#334)">
+    <span style="font-weight:600">Read-only · spec layer</span>
+    <span class="sub" style="margin-left:8px">W1 additive overlay — nothing generates from a spec; desk_network and copywriter.personas stay canonical</span>
+  </div>`;
+
+  const rows = d.personas || [];
+  if (!rows.length) {
+    v.innerHTML = banner + card("Persona Roster", nwEmpty("No specs yet", d.note || "config/personas/ is empty."));
+    return;
+  }
+
+  const c = d.counts || {};
+  const countsHtml = `
+    <div class="kv"><span>Specs committed</span><b>${c.total != null ? c.total : "—"}</b></div>
+    <div class="kv"><span>Live</span><b>${c.live != null ? c.live : "—"}</b></div>
+    <div class="kv"><span>Configured (account disabled)</span><b>${c.configured != null ? c.configured : "—"}</b></div>
+    <div class="kv"><span>Planned (spec only)</span><b>${c.planned != null ? c.planned : "—"}</b></div>
+    <div class="kv"><span>Invalid</span><b>${c.invalid != null ? c.invalid : "—"}</b></div>`;
+
+  const STATUS_CLS = { LIVE: "s-ok", CONFIGURED: "s-warn", PLANNED: "s-mut", INVALID: "s-bad" };
+
+  const personaRows = rows.map(r => {
+    if (!r.ok) {
+      return `<tr>
+        <td><b class="mono">${esc(r.id)}</b><div class="note">${esc(r.source || "")}</div></td>
+        <td colspan="7" class="sub">${(r.errors || []).map(esc).join("<br>")}</td>
+        <td><span class="statpill s-bad">INVALID</span></td>
+      </tr>`;
+    }
+    const iso = r.isolation || {};
+    const isoCls = iso.done > 0 ? "s-warn" : "s-mut";
+    const sc = r.scorecard || {};
+    return `<tr>
+      <td><b class="mono">${esc(r.id)}</b><div class="note">${esc(r.archetype || "")}</div></td>
+      <td><span class="statpill s-mut">${esc(r.persona_kind || "—")}</span></td>
+      <td class="sub">${esc(r.voice || "—")}${r.zh ? `<div class="note">zh-first</div>` : ""}</td>
+      <td><span class="statpill s-mut">${esc(r.pipeline || "—")}</span><div class="note">${esc(r.model_tier || "")}</div></td>
+      <td class="sub">${esc(r.cadence_label || "—")}</td>
+      <td><span class="statpill ${isoCls}">${esc(iso.label || "—")}</span><div class="note">${iso.done ? "partially recorded" : "not recorded"}</div></td>
+      <td class="sub muted">${esc((r.health || {}).state || "no data yet")}</td>
+      <td class="sub">${esc(sc.min_impressions_label || "—")} impressions
+        <div class="note">${esc(sc.promote_label || "")}</div>
+        <div class="note">${esc(sc.kill_label || "")}</div>
+        <div class="note">${esc(sc.arm_size_label || "")}</div></td>
+      <td><span class="statpill ${STATUS_CLS[r.status] || "s-mut"}">${esc(r.status || "—")}</span></td>
+    </tr>`;
+  }).join("");
+
+  const tableHtml = `<table>
+    <thead><tr>
+      <th>Persona</th><th>Kind</th><th>Voice</th><th>Pipeline</th><th>Cadence</th>
+      <th>Isolation</th><th>Health</th><th>Scorecard gates</th><th>Status</th>
+    </tr></thead>
+    <tbody>${personaRows}</tbody></table>`;
+
+  const isoItems = d.isolation_items || [];
+  const isoLegend = isoItems.length
+    ? `<div class="section">Isolation Checklist <span class="cnt">${isoItems.length}</span></div>
+       <div class="card">${isoItems.map(i => `<div class="note">${esc(i)}</div>`).join("")}
+       <div class="note muted">Recorded per account at provisioning (W3 gate). "Registration identity" has no spec field at W1.</div></div>`
+    : "";
+
+  const health = d.health_signals || [];
+  const healthLegend = health.length
+    ? `<div class="section">Health Signals <span class="cnt">${health.length}</span></div>
+       <div class="card">${health.map(h => `<div class="note">${esc(h)} — no data yet</div>`).join("")}
+       <div class="note muted">The per-account health monitor ships in W2; every cell reads "no data yet" rather than 0.</div></div>`
+    : "";
+
+  const orphans = d.accounts_without_spec || [];
+  const orphanHtml = orphans.length
+    ? `<div class="section">desk_network accounts with no spec <span class="cnt">${orphans.length}</span></div>
+       <div class="card">${orphans.map(o => `<div class="note mono">${esc(o)}</div>`).join("")}</div>`
+    : "";
+
+  const alphaNote = (rows.find(r => r.ok && (r.scorecard || {}).alpha_note) || {}).scorecard;
+
+  v.innerHTML = `
+    ${banner}
+    <div class="section">Roster</div>
+    <div class="card">${countsHtml}</div>
+    <div class="section">Personas <span class="cnt">${rows.length}</span></div>
+    <div class="card">${tableHtml}</div>
+    ${isoLegend}
+    ${healthLegend}
+    ${orphanHtml}
+    ${alphaNote ? `<div class="section">Pre-registered gates</div><div class="card"><div class="note">${esc(alphaNote.alpha_note)}</div></div>` : ""}`;
 };
 
 /* ---- Causal Lab --------------------------------------------------------- */

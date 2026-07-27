@@ -262,11 +262,23 @@ def macro_backdrop(
         "items": items,
         "summary_en": labels_en,
         "summary_zh": labels_zh,
+        # "Measured", not "validated": the HK radar profile makes a deliberately weaker
+        # claim than the CN one. CN's caveat reads "Validated but modest"; HK's reads
+        # "Lighter than the China read and recent-era only ... Context, not a forecast"
+        # (engine/risk_radar_intl.HK_PROFILE), its legs are the external rateshock/usd
+        # pair with no HK breadth history, and no artifact carries validated:true for it.
+        # BC-2 (scripts/check_validated_claims.py) failed on the rendered EN line. The
+        # honest repair is to de-escalate the word, not to allowlist it — the allowlist
+        # takes citations, and there is no HK rate/FX study to cite. The EN/zh pair is
+        # kept in step: only EN tripped the gate (the token is 'validated|已验证', and the
+        # zh said 经验证), but leaving zh over-claiming would just hide the same error
+        # from the guard. House term for this tier is 实测 / "measured", as the rates item
+        # above already uses.
         "read_en": (
-            "Macro backdrop is shown separately from the price state. Validated HK "
-            "rate/FX pressure lives in the pullback radar; Iran/oil and the midterm "
+            "Macro backdrop is shown separately from the price state. Measured HK "
+            "rate/FX pressure is carried by the pullback radar; Iran/oil and the midterm "
             "calendar remain unscored context."
         ),
-        "read_zh": "宏观背景与价格状态分开显示。经验证的港股利率／汇率压力归入回撤雷达；伊朗／原油及中期选举日历仅作未评分背景。",
+        "read_zh": "宏观背景与价格状态分开显示。实测的港股利率／汇率压力归入回撤雷达；伊朗／原油及中期选举日历仅作未评分背景。",
         "display_only": True,
     }

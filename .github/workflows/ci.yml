@@ -353,6 +353,16 @@ on:
       # file, so nothing went red.  Both halves listed on purpose (#3488).
       - "tests/test_ftr_w1_template_markup.py"
       - "tests/test_ftr_w3_ui.py"
+      # group_flow display-only detector + its baskets.html.j2 money-flow render
+      # guard (unrun-suite census, 2026-07-26).  Same defect as the FTR pair above:
+      # `grep -rn test_group_flow .github/` returned nothing, so when #3282's
+      # Rotation Map revamp rebuilt the "Flow lens" card into the Money-flow tile
+      # (2026-07-24) the suite's literal `{% if flow %}` source slice started raising
+      # ValueError and stayed red on main unseen.  Now carried by engine-render-guards.
+      # The template half of the trigger is already covered twice — "templates/**"
+      # and an explicit "templates/baskets.html.j2" above — so only the test file
+      # needs a new entry here; both halves do trigger the job (#3488).
+      - "tests/test_group_flow.py"
       # CPI net-liquidity artifact (data infrastructure): builder + contract tests
       # must re-run together so a canon-formula or stale-guard regression fails RED.
       - "scripts/build_netliq_daily.py"
@@ -644,6 +654,9 @@ on:
       # The third-party-sink exemption's own suite (#3770). Named so an edit to
       # the test ALONE still triggers the lane that runs it.
       - "tests/test_validated_claims_thirdparty.py"
+      # The intl backdrop copy that tripped BC-2 on 2026-07-27. engine/** already covers
+      # the module; list the suite so a test-only edit still triggers CI.
+      - "tests/test_intl_recovery_quality.py"
       # Mastermind Feedback Contract PR-A (FB-R12/R13): privacy-boundary guard.
       # Any change to the guard script, its tests, committed governance/feedback
       # artifacts, .gitignore, or operator_grading must re-prove the rail holds.
@@ -1082,6 +1095,16 @@ on:
       - "tests/test_admin_marketing.py"
       - "admin/marketing.py"
       - "config/marketing.yml"
+      # Persona Network W1 (docket D13): the persona spec layer + its roster panel,
+      # co-run in the marketing-engine job (same stdlib+pyyaml closure). The SPECS
+      # are listed, not only the code — a PR that edits ONLY config/personas/*.yml
+      # is exactly the change `python -m engine.marketing.personas --check` exists
+      # to catch, and without this entry it would never reach the guard.
+      # engine/marketing/** already covers engine/marketing/personas.py;
+      # admin/server.py + admin/static/app.js are already listed above (SEE W1).
+      - "config/personas/**"
+      - "admin/personas.py"
+      - "tests/test_marketing_personas.py"
       # D02 per-post metrics poller + chart-image (PNG) pipeline. The poller
       # reads back Buffer analytics; media_publish uploads chart PNGs to R2;
       # content_studio renders the PNG at plan-build time. engine/marketing/**
@@ -1714,6 +1737,17 @@ on:
       - "scripts/**/*.py"
       - "research/*.py"
       - "research/**/*.py"
+      # ── RED-on-arrival sweep, batch A: scoring engine (2026-07-27) ──────────
+      # The first pass that measured how many of the 870 remaining unrun suites are
+      # actually RED (24 of 870; see docs/UNRUN_TEST_CENSUS.md §"Red on arrival —
+      # the P4/P5 sweep").  These four were red on main and are fixed in this PR.
+      # Subjects all live under engine/**, already a broad catch-all above, so only
+      # the test halves need entries here — tests/** is deliberately NOT broad.
+      # unrun-scoring-engine
+      - "tests/test_etf_pulse.py"
+      - "tests/test_fix43_analyst_and_whitehouse.py"
+      - "tests/test_sector_central.py"
+      - "tests/test_spotlight.py"
   workflow_dispatch:
 
 permissions:

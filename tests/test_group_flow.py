@@ -7,11 +7,13 @@ baskets below clean sectors, and the AI-handoff payload carries the do-not-concl
 guardrails + caveats so a downstream inference layer cannot over-trust it."""
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -125,22 +127,43 @@ def test_never_scored_invariant():
         assert "group_flow" not in (ROOT / mod).read_text(), f"{mod} must not import group_flow"
 
 
-# ---- card render (the baskets.html.j2 flow-lens slice) ----
-def _render_card(flow):
-    from jinja2 import Environment, FileSystemLoader
-    src = (TEMPLATES / "baskets.html.j2").read_text()
-    macro = src[: src.index("endmacro %}") + len("endmacro %}")]
-    slice_ = src[src.index("{% if flow %}"): src.index('<div id="content">')]
-    # FileSystemLoader so any {% include %} inside the slice (e.g. _theme_addons)
-    # resolves against templates/ instead of raising "no loader for this environment".
-    env = Environment(autoescape=True, loader=FileSystemLoader(str(TEMPLATES)))
-    return env.from_string(macro + "\n" + slice_).render(flow=flow)
+# ---- the baskets.html.j2 money-flow surface ----
+#
+# These render the REAL template end-to-end.  The previous version sliced a fragment
+# out of the template SOURCE on literal `{% if flow %}` .. `<div id="content">`
+# offsets; #3282 (Rotation Map revamp, 2026-07-24) rebuilt the standalone "Flow lens"
+# card into the Money-flow tile under "Under the hood", `{% if flow %}` stopped
+# existing, and the slice raised ValueError from that day on — unnoticed, because no
+# CI job named this suite.  A full render cannot rot the same way: it has no literal
+# offsets to miss, and a template that stops rendering fails here with the real Jinja
+# error instead of a substring-not-found from the harness.
+def _render_baskets(flow=None):
+    from jinja2 import Environment, FileSystemLoader, Undefined
+    env = Environment(loader=FileSystemLoader(str(TEMPLATES)), autoescape=True,
+                      undefined=Undefined)
+    ctx = {"basket_member_syms": []}
+    if flow is not None:
+        ctx["flow"] = flow
+    return env.get_template("baskets.html.j2").render(**ctx)
 
 
+def _money_flow_card(html):
+    """Slice the Money-flow tile out of the RENDERED page.
+
+    Anchored on `mf-etf-chips`/`mf-vol-chip` — element ids the page's own JS calls
+    getElementById() on — so renaming them breaks the visible card too, instead of
+    silently rotting this guard the way the old source-offset slice did.
+    """
+    end = html.index('id="mf-vol-chip"')
+    return html[html.rindex('<div class="rvx-gcard"', 0, end): end]
+
+
+# The page reads only flow.cluster.regime today; the rest mirrors a real
+# engine/group_flow.py payload so the fixture stays recognisable.
 _SYNTH_FLOW = {
     "verdict": "display_only",
     "regime": {"vix": 16.0, "pctile": 0.32, "elevated": False},
-    "cluster": {"absorption": 0.52, "regime": "mixed",
+    "cluster": {"absorption": 0.52, "regime": "concentrated",
                 "dominant_cluster": ["Industrials", "Financials"],
                 "top_pair": ["Industrials", "Financials"], "top_pair_corr": 0.81},
     "sectors": [{"name": "Industrials", "name_zh": "工业", "stage": "emerging",
@@ -153,10 +176,45 @@ _SYNTH_FLOW = {
 }
 
 
-def test_card_renders_honestly():
-    html = _render_card(_SYNTH_FLOW)
-    assert "Flow lens" in html and "display-only" in html
-    assert "NOT a forecast" in html and "no forward edge" in html   # the honesty is on the card
-    assert "Co-movement" in html and "Dominant cluster" in html and "Cohesion gate" in html
-    assert "Industrials" in html and "Retail" in html
-    assert "{{" not in html and "{%" not in html       # no unrendered Jinja
+def test_money_flow_card_renders_bilingually():
+    card = _money_flow_card(_render_baskets(_SYNTH_FLOW))
+    assert "Money flow" in card and "资金流向" in card             # label, both languages
+    assert "Crowding into a few" in card and "向少数板块集中" in card  # the regime verdict
+
+
+@pytest.mark.parametrize("regime, en, zh", [
+    ("concentrated", "Crowding into a few", "向少数板块集中"),
+    ("broad",        "Spread across many",  "广泛分布"),
+    ("mixed",        "No single group leads", "暂无单一板块主导"),
+    ("bogus",        "No single group leads", "暂无单一板块主导"),  # unknown -> neutral default
+])
+def test_money_flow_verdict_is_plain_and_never_directional(regime, en, zh):
+    """Display-only: the card says WHERE money is, never what to do about it."""
+    flow = {**_SYNTH_FLOW, "cluster": {**_SYNTH_FLOW["cluster"], "regime": regime}}
+    card = _money_flow_card(_render_baskets(flow))
+    assert en in card and zh in card
+    # Scan the visible copy, not the markup — `justify-content:center` is not a verb.
+    text = re.sub(r"<[^>]+>", " ", card).lower()
+    for verb in ("buy", "sell", "accumulate", "enter", "exit", "trim",
+                 "forecast", "target", "will"):
+        assert not re.search(rf"\b{verb}\b", text), \
+            f"directional/forecast word {verb!r} in display-only card copy: {text.strip()!r}"
+
+
+@pytest.mark.parametrize("flow", [
+    None,                                   # key absent from the context entirely
+    {},                                     # present but empty
+    {"verdict": "display_only"},            # payload with no cluster leg
+    {"verdict": "display_only", "cluster": None},
+])
+def test_money_flow_card_degrades_without_a_cluster(flow):
+    card = _money_flow_card(_render_baskets(flow))
+    assert "Money flow" in card and "—" in card        # placeholder, not a crash
+    for en in ("Crowding into a few", "Spread across many", "No single group leads"):
+        assert en not in card                          # and no invented verdict
+
+
+@pytest.mark.parametrize("flow", [None, _SYNTH_FLOW])
+def test_baskets_page_renders_with_no_unrendered_jinja(flow):
+    html = _render_baskets(flow)
+    assert "{{" not in html and "{%" not in html

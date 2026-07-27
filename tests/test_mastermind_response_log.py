@@ -85,6 +85,116 @@ def test_build_row_clips_long_answer():
 
 
 # ---------------------------------------------------------------------------
+# thinking — the reasoning trace (contradiction-assessment corpus)
+# ---------------------------------------------------------------------------
+def _seg(text="thought", round_=1, phase="tool", model="deepseek-v4-flash", **kw):
+    seg = {"round": round_, "phase": phase, "model": model, "text": text}
+    seg.update(kw)
+    return seg
+
+
+def test_build_row_thinking_defaults_to_empty_list():
+    # Old callers pass nothing; the field must still exist so readers never branch.
+    row = mm.build_row(surface="macro", question="q", answer="a")
+    assert row["thinking"] == []
+
+
+def test_build_row_keeps_thinking_segments():
+    row = mm.build_row(surface="macro", question="q", answer="a", thinking=[
+        _seg("weighing the two reads", round_=1, phase="tool"),
+        _seg("they disagree", round_=2, phase="synthesis", model="claude-opus-5"),
+    ])
+    assert [s["phase"] for s in row["thinking"]] == ["tool", "synthesis"]
+    assert row["thinking"][1]["model"] == "claude-opus-5"
+    assert row["thinking"][1]["round"] == 2
+
+
+def test_build_row_clips_each_thinking_segment():
+    long = "y" * 40000
+    row = mm.build_row(surface="macro", question="q", answer="a",
+                       thinking=[_seg(long), _seg(long)])
+    for seg in row["thinking"]:
+        assert seg["text"].endswith("…[truncated]")
+        assert len(seg["text"]) < len(long)
+        # Bound is per-segment, not per-trace: a 2-segment trace clips twice.
+        assert len(seg["text"]) <= mm._THINKING_TEXT_CAP + 32
+
+
+def test_build_row_caps_thinking_keeping_the_head_and_the_last_segment():
+    """FIRST (N-1) + LAST. A chain of thought frames the conflict up front, but the
+    SYNTHESIS segment rides last and is the decision the corpus exists to show — a plain
+    head-truncation would drop exactly that. Middle tool rounds are what gets dropped."""
+    row = mm.build_row(surface="macro", question="q", answer="a",
+                       thinking=[_seg(f"step {i}", round_=i) for i in range(60)])
+    assert len(row["thinking"]) == mm._THINKING_MAX_SEGMENTS
+    assert row["thinking"][0]["text"] == "step 0"
+    assert row["thinking"][-2]["text"] == f"step {mm._THINKING_MAX_SEGMENTS - 2}"
+    assert row["thinking"][-1]["text"] == "step 59"
+
+
+def test_build_row_cap_keeps_the_synthesis_segment_of_a_long_trace():
+    """The load-bearing case: a long tool-heavy turn whose synthesis is the last block."""
+    segs = [_seg(f"tool {i}", round_=i, phase="tool") for i in range(80)]
+    segs.append(_seg("here is the call", round_=81, phase="synthesis",
+                     model="claude-opus-5"))
+    row = mm.build_row(surface="macro", question="q", answer="a", thinking=segs)
+    assert len(row["thinking"]) == mm._THINKING_MAX_SEGMENTS
+    assert row["thinking"][-1]["phase"] == "synthesis"
+    assert row["thinking"][-1]["text"] == "here is the call"
+
+
+def test_build_row_thinking_under_the_cap_is_untouched():
+    """No phantom duplicate of the last segment when the trace already fits."""
+    n = mm._THINKING_MAX_SEGMENTS - 1
+    row = mm.build_row(surface="macro", question="q", answer="a",
+                       thinking=[_seg(f"step {i}", round_=i) for i in range(n)])
+    assert [s["text"] for s in row["thinking"]] == [f"step {i}" for i in range(n)]
+
+
+def test_build_row_thinking_exactly_at_the_cap_is_untouched():
+    n = mm._THINKING_MAX_SEGMENTS
+    row = mm.build_row(surface="macro", question="q", answer="a",
+                       thinking=[_seg(f"step {i}", round_=i) for i in range(n)])
+    assert [s["text"] for s in row["thinking"]] == [f"step {i}" for i in range(n)]
+
+
+def test_build_row_redacted_thinking_survives_with_empty_text():
+    row = mm.build_row(surface="macro", question="q", answer="a",
+                       thinking=[_seg("", redacted=True), _seg("")])
+    # The redacted one is kept (evidence the model reasoned); the plain empty is dropped.
+    assert len(row["thinking"]) == 1
+    assert row["thinking"][0]["text"] == ""
+    assert row["thinking"][0]["redacted"] is True
+
+
+def test_build_row_drops_non_dict_thinking_segments():
+    row = mm.build_row(surface="macro", question="q", answer="a",
+                       thinking=["a bare string", None, 7, _seg("real")])
+    assert [s["text"] for s in row["thinking"]] == ["real"]
+
+
+def test_build_row_thinking_coerces_types():
+    row = mm.build_row(surface="macro", question="q", answer="a",
+                       thinking=[{"round": "3", "phase": 9, "model": None, "text": "t"}])
+    seg = row["thinking"][0]
+    assert seg["round"] == 3 and isinstance(seg["round"], int)
+    assert seg["phase"] == "9" and seg["model"] == ""
+
+
+def test_build_row_thinking_non_list_is_empty():
+    assert mm.build_row(surface="macro", question="q", answer="a",
+                        thinking="not a list")["thinking"] == []
+
+
+def test_thinking_round_trips_through_the_local_sink(tmp_path, monkeypatch):
+    monkeypatch.setenv("MASTERMIND_RESPONSE_LOG_LOCAL_DIR", str(tmp_path))
+    assert mm.log_response(surface="macro", question="q", answer="a",
+                           thinking=[_seg("the two reads disagree")]) is True
+    written = json.loads(list(tmp_path.rglob("*.json"))[0].read_text())
+    assert written["thinking"][0]["text"] == "the two reads disagree"
+
+
+# ---------------------------------------------------------------------------
 # object_key — R2 layout
 # ---------------------------------------------------------------------------
 def test_object_key_layout():
