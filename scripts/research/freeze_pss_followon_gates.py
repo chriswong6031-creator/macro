@@ -36,6 +36,10 @@ RH1_MANIFEST_SHA256 = (
 RH1_MEMBERSHIP_SHA256 = (
     "f00c9d70e0c554213d6aa9a82fecc1492bcedc49c04ce36d4a14647f85713baf"
 )
+CR1_MANIFEST = BASE / "challenge_resilience_manifest_v1.json"
+CR1_MANIFEST_SHA256 = (
+    "0b520e60616d60f4c4182e9796bbf4e23cc58279ccf2b0b2d03eb3cec3c352e1"
+)
 
 FINRA_PANEL = ROOT / "data/finra_short_volume/panel.parquet"
 FINRA_PREFIX_END = "2026-07-21"
@@ -532,6 +536,12 @@ def freeze(*, register_trials: bool) -> None:
             "authority": AUTHORITY,
         }
         if spec["program_id"] == "PSS-AF1":
+            if _sha256_file(CR1_MANIFEST) != CR1_MANIFEST_SHA256:
+                raise RuntimeError("PSS-CR1 manifest changed before AF1 binding")
+            manifest["source_bindings"]["cr1_manifest"] = {
+                "path": str(CR1_MANIFEST.relative_to(ROOT)),
+                "sha256": CR1_MANIFEST_SHA256,
+            }
             manifest["source_bindings"]["finra_stable_prefix"] = {
                 "path": str(FINRA_PANEL.relative_to(ROOT)),
                 "through": FINRA_PREFIX_END,

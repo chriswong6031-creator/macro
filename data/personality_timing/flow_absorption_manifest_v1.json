@@ -152,6 +152,10 @@
   "program_id": "PSS-AF1",
   "schema": "personality_flow_absorption.manifest/v1",
   "source_bindings": {
+    "cr1_manifest": {
+      "path": "data/personality_timing/challenge_resilience_manifest_v1.json",
+      "sha256": "0b520e60616d60f4c4182e9796bbf4e23cc58279ccf2b0b2d03eb3cec3c352e1"
+    },
     "finra_stable_prefix": {
       "canonical_sha256": "4d7165ff3346c7bdaaf28e0b4064f1eda4311a1600f3df33509e8d03d183bbf6",
       "path": "data/finra_short_volume/panel.parquet",

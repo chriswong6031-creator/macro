@@ -1,0 +1,69 @@
+{
+  "as_of": "2026-07-27",
+  "authority": {
+    "may_alert": false,
+    "may_auto_promote": false,
+    "may_display_to_users": false,
+    "may_enter": false,
+    "may_gate": false,
+    "may_rank": false,
+    "may_size": false,
+    "research_only": true
+  },
+  "construction_sha256": "243fde8127390938856b0af6d0797dbed8bcc4f031f7ec630fb0f903bca2394b",
+  "consumers": [],
+  "decision_read": {
+    "count_and_clock_minimums_met": false,
+    "note": "No interim effect estimates. Informative strata and outcomes are opened only by the separately reviewed sole adjudication.",
+    "observed": {
+      "action_date_span_days": 0,
+      "challenged_control_rows": 0,
+      "distinct_action_months": 0,
+      "informative_exact_strata": null,
+      "matured_primary_rows": 0,
+      "resilient_leader_rows": 0,
+      "unique_names": 0
+    },
+    "required": {
+      "action_date_span_days": 365,
+      "challenged_control_rows": 75,
+      "distinct_action_months": 12,
+      "informative_exact_strata": 20,
+      "matured_primary_rows": 300,
+      "resilient_leader_rows": 75,
+      "unique_names": 150
+    },
+    "sole_read_executed": false,
+    "status": "locked_minimums"
+  },
+  "family": "pss_cr1_challenge_resilience_prospective",
+  "gate_open": true,
+  "generated_utc": "2026-07-27T23:10:51.051077+00:00",
+  "ledger": {
+    "advanced_today": 0,
+    "appended_today": 0,
+    "challenged_control": 0,
+    "earliest_action": null,
+    "events": 0,
+    "failed_hold_diagnostic": 0,
+    "latest_action": null,
+    "matured": 0,
+    "primary_events": 0,
+    "rejected_pre_cutoff_today": 0,
+    "resilient_leader": 0,
+    "ungraded": 0
+  },
+  "manifest_sha256": "0b520e60616d60f4c4182e9796bbf4e23cc58279ccf2b0b2d03eb3cec3c352e1",
+  "membership_sha256": "f00c9d70e0c554213d6aa9a82fecc1492bcedc49c04ce36d4a14647f85713baf",
+  "not_before_session": "2026-07-24",
+  "note": "Prospective test of selective leadership during the first real peer pullback after an RH1 hazard. Operator research only.",
+  "program_id": "PSS-CR1",
+  "registration_ok": true,
+  "scan_census": {
+    "derived_events": 0,
+    "eligible_future_rh1_sources": 0,
+    "reasons": {}
+  },
+  "schema": "personality_challenge_resilience.state/v1",
+  "status": "prospective_accrual_only"
+}

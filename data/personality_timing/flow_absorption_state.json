@@ -1,0 +1,73 @@
+{
+  "as_of": "2026-07-27",
+  "authority": {
+    "may_alert": false,
+    "may_auto_promote": false,
+    "may_display_to_users": false,
+    "may_enter": false,
+    "may_gate": false,
+    "may_rank": false,
+    "may_size": false,
+    "research_only": true
+  },
+  "construction_sha256": "31dafcf5f3606e084f73d120328fd0d0b55e7db7d8f8ae55c112f61062b79634",
+  "consumers": [],
+  "decision_read": {
+    "count_and_clock_minimums_met": false,
+    "note": "No interim effect estimates. Informative strata and outcomes are opened only by the separately reviewed sole adjudication.",
+    "observed": {
+      "action_date_span_days": 0,
+      "distinct_action_months": 0,
+      "flow_witness_rows": 0,
+      "informative_exact_strata": null,
+      "leader_flow_control_rows": 0,
+      "matured_primary_rows": 0,
+      "unique_names": 0
+    },
+    "required": {
+      "action_date_span_days": 365,
+      "distinct_action_months": 12,
+      "flow_witness_rows": 40,
+      "informative_exact_strata": 12,
+      "leader_flow_control_rows": 40,
+      "matured_primary_rows": 150,
+      "unique_names": 100
+    },
+    "sole_read_executed": false,
+    "status": "locked_minimums"
+  },
+  "family": "pss_af1_finra_absorption_witness_prospective",
+  "finra_prefix_sha256": "4d7165ff3346c7bdaaf28e0b4064f1eda4311a1600f3df33509e8d03d183bbf6",
+  "gate_open": true,
+  "generated_utc": "2026-07-27T23:10:51.284776+00:00",
+  "ledger": {
+    "advanced_today": 0,
+    "appended_today": 0,
+    "earliest_action": null,
+    "events": 0,
+    "flow_witness": 0,
+    "latest_action": null,
+    "leader_flow_control": 0,
+    "low_activity_diagnostic": 0,
+    "matured": 0,
+    "missing_flow_diagnostic": 0,
+    "primary_events": 0,
+    "rejected_pre_cutoff_today": 0,
+    "ungraded": 0
+  },
+  "manifest_sha256": "6b9fc71307aca9d97a04eb4933f0fdc3744ae4b7b8d9a23cbd9b178be15aa658",
+  "membership_sha256": "f00c9d70e0c554213d6aa9a82fecc1492bcedc49c04ce36d4a14647f85713baf",
+  "not_before_session": "2026-07-24",
+  "note": "Prospective own-history FINRA short-marked activity witness inside future CR1 leaders. Not directional flow; research only.",
+  "program_id": "PSS-AF1",
+  "registration_ok": true,
+  "scan_census": {
+    "derived_events": 0,
+    "eligible_future_cr1_leader_sources": 0,
+    "finra_latest_session": "2026-07-24",
+    "finra_rows_through_as_of": 56508,
+    "reasons": {}
+  },
+  "schema": "personality_flow_absorption.state/v1",
+  "status": "prospective_accrual_only"
+}
