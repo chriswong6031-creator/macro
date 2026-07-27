@@ -168,11 +168,13 @@ const ICONS = {
   marketing_seo:         NAV_ICO('<circle cx="11" cy="11" r="7"/><path d="M16 16l4.5 4.5"/><path d="M8 11.5l2 2 4-4.5"/>'),
   /* Chronicle — market context timeline (clock/timeline glyph) */
   chronicle:             NAV_ICO('<circle cx="12" cy="13" r="8"/><path d="M12 8.5V13l3 2"/><path d="M9 2.5h6"/>'),
+  /* Persona Roster — an identity card: one face, and the beat written beside it. */
+  personas:              NAV_ICO('<rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="9" cy="11" r="2.1"/><path d="M5.7 16.3a3.5 3.5 0 0 1 6.6 0"/><path d="M14.8 10h3.6M14.8 13.5h3.6"/>'),
 };
 const NAV_GROUPS = [
   { label: "", items: [["overview", "Overview"]] },
   { label: "Neural Web", items: [["neural_web", "Observatory"], ["orchestrator", "Master Brain"], ["prophet", "Prophet"], ["mastermind_ai", "Mastermind AI"], ["mastermind_logs", "AI Response Logs"], ["alerts", "Alerts"], ["long_hold", "Long-Hold Lobe"], ["context_lobe", "Context Lobe"], ["causal_lab", "Causal Lab"], ["chronicle", "Chronicle"]] },
-  { label: "Marketing", items: [["marketing_overview", "CMO Office"], ["marketing_departments", "Departments"], ["marketing_radar", "Radar"], ["marketing_seo", "SEO"], ["marketing_campaigns", "Campaigns"], ["marketing_channels", "Channels & Desks"], ["marketing_content", "Content Studio"], ["marketing_outbox", "Outbox"], ["marketing_publish", "Publisher"], ["marketing_sentinel", "Sentinel"], ["marketing_allies", "Allies"], ["marketing_lab", "Lab"], ["marketing_ads", "Ad Central"], ["marketing_experiments", "Experiments"], ["marketing_lobes", "Engines"]] },
+  { label: "Marketing", items: [["marketing_overview", "CMO Office"], ["marketing_departments", "Departments"], ["marketing_radar", "Radar"], ["marketing_seo", "SEO"], ["marketing_campaigns", "Campaigns"], ["marketing_channels", "Channels & Desks"], ["personas", "Persona Roster"], ["marketing_content", "Content Studio"], ["marketing_outbox", "Outbox"], ["marketing_publish", "Publisher"], ["marketing_sentinel", "Sentinel"], ["marketing_allies", "Allies"], ["marketing_lab", "Lab"], ["marketing_ads", "Ad Central"], ["marketing_experiments", "Experiments"], ["marketing_lobes", "Engines"]] },
   { label: "Growth", items: [["analytics", "Analytics"], ["users", "Users"], ["revenue", "Revenue"], ["experiments", "Experiments"], ["site_gate", "Site Access"]] },
   { label: "Support", items: [["support_tickets", "Support Tickets"], ["email_center", "Email Center"]] },
   { label: "System", items: [["system", "System"], ["health", "Health"], ["deploy", "Build & Deploy"], ["metabolism", "Metabolism"], ["codex", "Codex Research"], ["cost", "AI Cost"], ["content", "Content"]] },
@@ -9757,6 +9759,106 @@ RENDER.chronicle = async () => {
     <div class="card">${eventsHtml}</div>
     <div class="section">State Log Tail <span class="cnt">${stateLog.length}</span></div>
     <div class="card">${stateLogHtml}</div>`;
+};
+
+/* ---- Persona Roster (Persona Network W1) --------------------------------- */
+RENDER.personas = async () => {
+  const v = $("#view");
+  v.innerHTML = `<div class="sub muted" style="margin-bottom:8px">Loading…</div>`;
+  const d = await api("/api/personas/roster");
+
+  if (d.error) {
+    v.innerHTML = card("Persona Roster", `<div class="sub muted">${esc(d.error)}</div>`);
+    return;
+  }
+
+  const banner = `<div class="banner show" style="margin-bottom:12px;padding:8px 12px;border-radius:6px;background:var(--surface2,#1e2030);border:1px solid var(--border,#334)">
+    <span style="font-weight:600">Read-only · spec layer</span>
+    <span class="sub" style="margin-left:8px">W1 additive overlay — nothing generates from a spec; desk_network and copywriter.personas stay canonical</span>
+  </div>`;
+
+  const rows = d.personas || [];
+  if (!rows.length) {
+    v.innerHTML = banner + card("Persona Roster", nwEmpty("No specs yet", d.note || "config/personas/ is empty."));
+    return;
+  }
+
+  const c = d.counts || {};
+  const countsHtml = `
+    <div class="kv"><span>Specs committed</span><b>${c.total != null ? c.total : "—"}</b></div>
+    <div class="kv"><span>Live</span><b>${c.live != null ? c.live : "—"}</b></div>
+    <div class="kv"><span>Configured (account disabled)</span><b>${c.configured != null ? c.configured : "—"}</b></div>
+    <div class="kv"><span>Planned (spec only)</span><b>${c.planned != null ? c.planned : "—"}</b></div>
+    <div class="kv"><span>Invalid</span><b>${c.invalid != null ? c.invalid : "—"}</b></div>`;
+
+  const STATUS_CLS = { LIVE: "s-ok", CONFIGURED: "s-warn", PLANNED: "s-mut", INVALID: "s-bad" };
+
+  const personaRows = rows.map(r => {
+    if (!r.ok) {
+      return `<tr>
+        <td><b class="mono">${esc(r.id)}</b><div class="note">${esc(r.source || "")}</div></td>
+        <td colspan="7" class="sub">${(r.errors || []).map(esc).join("<br>")}</td>
+        <td><span class="statpill s-bad">INVALID</span></td>
+      </tr>`;
+    }
+    const iso = r.isolation || {};
+    const isoCls = iso.done > 0 ? "s-warn" : "s-mut";
+    const sc = r.scorecard || {};
+    return `<tr>
+      <td><b class="mono">${esc(r.id)}</b><div class="note">${esc(r.archetype || "")}</div></td>
+      <td><span class="statpill s-mut">${esc(r.persona_kind || "—")}</span></td>
+      <td class="sub">${esc(r.voice || "—")}${r.zh ? `<div class="note">zh-first</div>` : ""}</td>
+      <td><span class="statpill s-mut">${esc(r.pipeline || "—")}</span><div class="note">${esc(r.model_tier || "")}</div></td>
+      <td class="sub">${esc(r.cadence_label || "—")}</td>
+      <td><span class="statpill ${isoCls}">${esc(iso.label || "—")}</span><div class="note">${iso.done ? "partially recorded" : "not recorded"}</div></td>
+      <td class="sub muted">${esc((r.health || {}).state || "no data yet")}</td>
+      <td class="sub">${esc(sc.min_impressions_label || "—")} impressions
+        <div class="note">${esc(sc.promote_label || "")}</div>
+        <div class="note">${esc(sc.kill_label || "")}</div>
+        <div class="note">${esc(sc.arm_size_label || "")}</div></td>
+      <td><span class="statpill ${STATUS_CLS[r.status] || "s-mut"}">${esc(r.status || "—")}</span></td>
+    </tr>`;
+  }).join("");
+
+  const tableHtml = `<table>
+    <thead><tr>
+      <th>Persona</th><th>Kind</th><th>Voice</th><th>Pipeline</th><th>Cadence</th>
+      <th>Isolation</th><th>Health</th><th>Scorecard gates</th><th>Status</th>
+    </tr></thead>
+    <tbody>${personaRows}</tbody></table>`;
+
+  const isoItems = d.isolation_items || [];
+  const isoLegend = isoItems.length
+    ? `<div class="section">Isolation Checklist <span class="cnt">${isoItems.length}</span></div>
+       <div class="card">${isoItems.map(i => `<div class="note">${esc(i)}</div>`).join("")}
+       <div class="note muted">Recorded per account at provisioning (W3 gate). "Registration identity" has no spec field at W1.</div></div>`
+    : "";
+
+  const health = d.health_signals || [];
+  const healthLegend = health.length
+    ? `<div class="section">Health Signals <span class="cnt">${health.length}</span></div>
+       <div class="card">${health.map(h => `<div class="note">${esc(h)} — no data yet</div>`).join("")}
+       <div class="note muted">The per-account health monitor ships in W2; every cell reads "no data yet" rather than 0.</div></div>`
+    : "";
+
+  const orphans = d.accounts_without_spec || [];
+  const orphanHtml = orphans.length
+    ? `<div class="section">desk_network accounts with no spec <span class="cnt">${orphans.length}</span></div>
+       <div class="card">${orphans.map(o => `<div class="note mono">${esc(o)}</div>`).join("")}</div>`
+    : "";
+
+  const alphaNote = (rows.find(r => r.ok && (r.scorecard || {}).alpha_note) || {}).scorecard;
+
+  v.innerHTML = `
+    ${banner}
+    <div class="section">Roster</div>
+    <div class="card">${countsHtml}</div>
+    <div class="section">Personas <span class="cnt">${rows.length}</span></div>
+    <div class="card">${tableHtml}</div>
+    ${isoLegend}
+    ${healthLegend}
+    ${orphanHtml}
+    ${alphaNote ? `<div class="section">Pre-registered gates</div><div class="card"><div class="note">${esc(alphaNote.alpha_note)}</div></div>` : ""}`;
 };
 
 /* ---- Causal Lab --------------------------------------------------------- */

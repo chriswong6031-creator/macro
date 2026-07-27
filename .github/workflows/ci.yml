@@ -1082,6 +1082,16 @@ on:
       - "tests/test_admin_marketing.py"
       - "admin/marketing.py"
       - "config/marketing.yml"
+      # Persona Network W1 (docket D13): the persona spec layer + its roster panel,
+      # co-run in the marketing-engine job (same stdlib+pyyaml closure). The SPECS
+      # are listed, not only the code — a PR that edits ONLY config/personas/*.yml
+      # is exactly the change `python -m engine.marketing.personas --check` exists
+      # to catch, and without this entry it would never reach the guard.
+      # engine/marketing/** already covers engine/marketing/personas.py;
+      # admin/server.py + admin/static/app.js are already listed above (SEE W1).
+      - "config/personas/**"
+      - "admin/personas.py"
+      - "tests/test_marketing_personas.py"
       # D02 per-post metrics poller + chart-image (PNG) pipeline. The poller
       # reads back Buffer analytics; media_publish uploads chart PNGs to R2;
       # content_studio renders the PNG at plan-build time. engine/marketing/**
