@@ -83,3 +83,45 @@ def test_expected_last_session_weekend_and_naive_utc():
         datetime(2026, 7, 4, 12, 0)) == date(2026, 7, 2)  # Sat of the holiday weekend
     assert cal.expected_last_session(
         datetime(2026, 3, 14, 12, 0)) == date(2026, 3, 13)  # ordinary Saturday -> Friday
+
+
+def test_sessions_between_skips_weekend_and_holiday():
+    """The inclusive range drops Fri 07-03 (July-4 observed) and the weekend."""
+    assert cal.sessions_between(date(2026, 7, 1), date(2026, 7, 8)) == [
+        date(2026, 7, 1), date(2026, 7, 2),
+        date(2026, 7, 6), date(2026, 7, 7), date(2026, 7, 8),
+    ]
+
+
+def test_sessions_between_degenerate_ranges():
+    assert cal.sessions_between(date(2026, 7, 8), date(2026, 7, 1)) == []   # start > end
+    assert cal.sessions_between(date(2026, 7, 6), date(2026, 7, 6)) == [date(2026, 7, 6)]
+    assert cal.sessions_between(date(2026, 7, 4), date(2026, 7, 5)) == []   # weekend only
+
+
+def test_sessions_behind_counts_real_sessions():
+    """Thu 2026-07-16 16:00 ET is inside the settle buffer -> expects Wed 07-15.
+
+    Pins the SLA ladder the flow/radar builders gate on: a store two sessions
+    back is still inside a >2 SLA, three sessions back trips it."""
+    now = datetime(2026, 7, 16, 20, 0, tzinfo=timezone.utc)  # 16:00 ET
+    assert cal.expected_last_session(now) == date(2026, 7, 15)
+    assert cal.sessions_behind(date(2026, 7, 15), now) == 0
+    assert cal.sessions_behind(date(2026, 7, 14), now) == 1
+    assert cal.sessions_behind(date(2026, 7, 13), now) == 2
+    assert cal.sessions_behind(date(2026, 7, 10), now) == 3   # Fri -> skips the weekend
+    assert cal.sessions_behind(date(2026, 7, 9), now) == 4
+
+
+def test_sessions_behind_ignores_weekend_and_holiday_gaps():
+    """A store holding Thu 07-02 is only ONE session behind on Mon 07-06 —
+    the holiday Friday and the weekend are not missing bars."""
+    now = datetime(2026, 7, 6, 21, 0, tzinfo=timezone.utc)  # 17:00 ET Monday
+    assert cal.expected_last_session(now) == date(2026, 7, 6)
+    assert cal.sessions_behind(date(2026, 7, 2), now) == 1
+
+
+def test_sessions_behind_future_store_is_not_negative():
+    """A future-dated row means no COMPLETED session is missing, not -N."""
+    now = datetime(2026, 7, 16, 20, 0, tzinfo=timezone.utc)
+    assert cal.sessions_behind(date(2026, 12, 1), now) == 0

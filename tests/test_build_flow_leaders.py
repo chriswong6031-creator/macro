@@ -19,7 +19,7 @@ from __future__ import annotations
 import json
 import sys
 import tempfile
-from datetime import date, timedelta
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 import numpy as np
@@ -149,26 +149,53 @@ class TestPersonalityFlags:
 # ──────────────────────────────────────────────────── _check_stale ──
 
 class TestCheckStale:
+    """FL-R15: latest flow session > 2 NYSE sessions behind the calendar → stale.
+
+    These assert the VERDICT, not just `isinstance(result, bool)`. The predicate
+    shipped dead for months behind that weaker assertion: it imported a
+    `trading_dates_between` that lib/nyse_calendar.py never defined, swallowed the
+    ImportError in a bare `except Exception`, and returned False for every input —
+    a permanently vacuous SLA that a no-crash test cannot distinguish from a
+    working one. Every case below therefore pins a real True/False.
+    """
+
+    # Thu 2026-07-16 20:00 UTC = 16:00 ET, inside the settle buffer, so the
+    # calendar expects Wed 2026-07-15's bar. Fixed instant = date-independent test.
+    NOW = datetime(2026, 7, 16, 20, 0, tzinfo=timezone.utc)
+
     def test_none_session_is_stale(self):
         assert _check_stale(None) is True
 
-    def test_recent_session_not_stale(self):
-        # Use today's date string as "latest" — should not be stale
-        today_str = str(date.today())
-        # Not guaranteed but very unlikely to be stale if it's today
-        # Just ensure no crash
-        result = _check_stale(today_str)
-        assert isinstance(result, bool)
+    def test_fresh_store_is_not_stale(self):
+        """Positive path: the store holds the expected last session."""
+        assert _check_stale("2026-07-15", now=self.NOW) is False
 
-    def test_old_session_is_stale(self):
-        # A session 30+ days ago should be stale (calendar-aware; may silently return
-        # False if nyse_calendar unavailable in this env, so just assert no crash)
-        old = str(date.today() - timedelta(days=30))
-        result = _check_stale(old)
-        assert isinstance(result, bool)
-        # Best-effort: if calendar is available, 30-day-old should be stale
-        # (> 2 NYSE sessions behind). We don't hard-assert True since the
-        # calendar import may fall back to False gracefully (non-fatal path).
+    def test_at_sla_boundary_is_not_stale(self):
+        """Exactly 2 sessions behind is within the >2 SLA."""
+        assert _check_stale("2026-07-13", now=self.NOW) is False
+
+    def test_three_sessions_behind_is_stale(self):
+        """3 real trading sessions behind trips the SLA. Under the dead import
+        this returned False, so the boards rendered fresh on a stale store."""
+        assert _check_stale("2026-07-10", now=self.NOW) is True
+
+    def test_month_old_store_is_stale(self):
+        assert _check_stale("2026-06-16", now=self.NOW) is True
+
+    def test_weekend_and_holiday_gaps_do_not_count_as_lag(self):
+        """Mon 2026-07-06 17:00 ET with a store through Thu 07-02: the holiday
+        Friday (July-4 observed) and the weekend are not missing sessions, so the
+        store is 1 session behind — fresh, not stale."""
+        monday = datetime(2026, 7, 6, 21, 0, tzinfo=timezone.utc)
+        assert _check_stale("2026-07-02", now=monday) is False
+
+    def test_timestamp_prefix_is_accepted(self):
+        """Session strings may arrive with a time component appended."""
+        assert _check_stale("2026-07-15T00:00:00", now=self.NOW) is False
+
+    def test_unreadable_session_is_stale(self):
+        """An unverifiable store must never be stamped fresh."""
+        assert _check_stale("not-a-date", now=self.NOW) is True
 
 
 # ──────────────────────────────────────────────────── ETF routing ──

@@ -847,6 +847,33 @@ jobs:
       - name: rebalance calendar + pulse tests
         run: python -m pytest tests/test_rebalance_calendar.py tests/test_rebalance_pulse.py -q
 
+  nyse-calendar-freshness:
+    if: ${{ false }}
+    # lib/nyse_calendar.py — the exchange-calendar reference every freshness SLA
+    # is built on (expected_last_session / sessions_behind), plus the import-name
+    # tripwire.
+    #
+    # Wired 2026-07-27: test_nyse_calendar.py was named by NO job in ANY workflow,
+    # so the calendar's rule arithmetic was UNRUN while ~20 scripts imported it.
+    # That darkness is what let build_flow_leaders and build_leader_radar both
+    # import a `trading_dates_between` this module never defined — swallowed by a
+    # bare `except Exception: return False`, making two >2-session stale SLAs
+    # return "fresh" for every input they ever saw.
+    # test_nyse_calendar_import_names.py resolves every
+    # `from lib.nyse_calendar import X` in the repo statically so that class of
+    # dead import fails a test instead of degrading into an always-false gate.
+    # Stdlib-only module; pytest is the whole dependency set.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest
+      - name: nyse calendar rules + imported-name resolution
+        run: python -m pytest tests/test_nyse_calendar.py tests/test_nyse_calendar_import_names.py -q
+
   dag-conformance:
     if: ${{ false }}
     # W5a (Neural Web): config/dag.yml declares the per-workflow-step lane inventory;
