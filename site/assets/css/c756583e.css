@@ -1,21 +1,91 @@
 
-/* ── Measurement Hub — page-specific styles ──────────────────────────────── */
+/* ── Calibration Lab — page-specific styles ──────────────────────────────── */
 body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
+
+/* ── Token bridge ────────────────────────────────────────────────────────────
+   This page loads ONLY theme.css, which does not define --border / --card /
+   --surface / --blue / --fail. Every `var(--border,rgba(255,255,255,.08))` on
+   this page was therefore resolving to its hard-coded DARK fallback in light
+   mode: invisible hairlines, invisible card fills, and — worst — the tinted
+   banners mixing over --surface:#0f1629, i.e. a near-black box with dark text
+   on the light canvas. Defining the five names on .mh-wrap (which contains the
+   whole page, but NOT the shared nav chrome) maps them onto real theme tokens,
+   so both themes resolve at paint with no per-rule edits.
+
+   --ok/--act, NOT --up/--down: theme.css swaps --up/--down under
+   html[data-lang="zh"] for the Asia 红涨绿跌 convention, and states in its own
+   comment that status colours "encode health/danger, NOT price direction".
+   Every green/red on this page is a PASS/FAIL/health reading, so painting them
+   from --up/--down rendered PASS red and FAIL green for Chinese readers. */
+.mh-wrap{
+  --border:  color-mix(in srgb, var(--text) 13%, transparent);
+  --card:    color-mix(in srgb, var(--panel) 88%, transparent);
+  --surface: var(--panel);
+  --blue:    var(--info);
+  --fail:    var(--act);
+  /* ── Chip ink ──────────────────────────────────────────────────────────────
+     Status chips paint hue-coloured text on a 12–18% tint of the same hue.
+     On the light theme's white card that lands at ~2.6–3.5:1 — under AA for
+     11–13px type, and these chips (FAIL / FALSIFIED / PASS / ACCRUING) ARE the
+     page's content. Mixing the hue toward --text deepens it on light and
+     lightens it on dark with one declaration per hue; the chip FILLS keep the
+     pure hue, so the colour language is unchanged. */
+  --ok-ink:     color-mix(in srgb, var(--ok)   66%, var(--text));
+  --act-ink:    color-mix(in srgb, var(--act)  66%, var(--text));
+  --warn-ink:   color-mix(in srgb, var(--warn) 66%, var(--text));
+  --blue-ink:   color-mix(in srgb, var(--blue) 66%, var(--text));
+  --accent-deep:color-mix(in srgb, var(--blue) 68%, #0a1930);
+}
 .mh-wrap{max-width:1100px;margin:0 auto;padding:0 16px 80px}
-.mh-hero{padding:40px 0 28px;border-bottom:1px solid var(--border,rgba(255,255,255,.08));margin-bottom:32px}
-.mh-kicker{font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--muted,#8899aa);margin-bottom:10px}
-.mh-kicker .hb{display:inline-block;width:8px;height:8px;border-radius:50%;
-  background:var(--warn,#f59e0b);margin-right:6px}
-.mh-title{font-size:clamp(1.5rem,4vw,2.2rem);font-weight:800;line-height:1.2;
-  margin:0 0 12px;color:var(--text,#e2e8f0)}
-.mh-doctrine{font-size:.92rem;line-height:1.65;color:var(--muted,#8899aa);
-  max-width:800px;margin:0 0 16px}
-.mh-verdict{background:color-mix(in srgb,var(--warn,#f59e0b) 8%,var(--surface,#0f1629));
-  border:1px solid color-mix(in srgb,var(--warn,#f59e0b) 25%,transparent);
-  border-radius:10px;padding:16px 20px;margin-top:20px;
-  font-size:.88rem;line-height:1.6;color:var(--text,#e2e8f0)}
-.mh-verdict strong{color:var(--warn,#f59e0b)}
+
+/* ── Hero — the calibration loop ─────────────────────────────────────────── */
+.mh-hero{padding:44px 0 32px;border-bottom:1px solid var(--border);margin-bottom:34px}
+.mh-kicker{font-size:.7rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:12px}
+.mh-kicker .hb{display:inline-block;width:7px;height:7px;border-radius:50%;
+  background:var(--blue);margin-right:7px;vertical-align:1px}
+.mh-title{font-size:clamp(1.6rem,4.4vw,2.35rem);font-weight:800;line-height:1.12;
+  letter-spacing:-.02em;margin:0 0 10px;color:var(--text)}
+.mh-deck{font-size:1.02rem;line-height:1.5;color:var(--muted);
+  max-width:52ch;margin:0 0 28px}
+
+/* The signature: three beats of the nightly loop, joined into one instrument,
+   with a return rail that closes it. Ordinals are earned here — this really is
+   a sequence, and the rail is what makes it a loop rather than a funnel. */
+.mh-loop{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,1fr)}
+.mh-loop-step{min-width:0;padding:15px 18px 17px;border:1px solid var(--border);
+  background:color-mix(in srgb,var(--text) 3%,transparent)}
+.mh-loop-step + .mh-loop-step{border-left:none}
+.mh-loop-step:first-child{border-radius:10px 0 0 0}
+.mh-loop-step:last-child{border-radius:0 10px 0 0}
+.mh-loop-hd{display:flex;align-items:baseline;gap:9px}
+.mh-loop-n{font-family:var(--font-mono);font-size:.72rem;font-weight:700;
+  color:var(--blue-ink);letter-spacing:.06em}
+.mh-loop-name{font-size:.72rem;font-weight:800;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--text)}
+.mh-loop-line{display:block;margin-top:9px;font-size:.82rem;line-height:1.5;color:var(--muted)}
+.mh-loop-stat{display:block;margin-top:11px;font-size:.72rem;line-height:1.4;color:var(--muted)}
+.mh-loop-num{font-family:var(--font-mono);font-size:.94rem;font-weight:700;
+  color:var(--text);letter-spacing:-.01em;margin-right:4px}
+.mh-loop-rail{position:relative;height:15px;border:1px solid var(--border);border-top:none;
+  border-radius:0 0 10px 10px;margin:0 0 26px}
+.mh-loop-return{position:absolute;left:50%;bottom:-1px;transform:translate(-50%,50%);
+  background:var(--bg);padding:0 12px;white-space:nowrap;
+  font-size:.65rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--muted)}
+.mh-loop-return .rr{color:var(--blue-ink);margin-right:5px;font-size:.8rem;line-height:1}
+
+/* Where it stands — the one stance line. Calm left rule, not an alarm box. */
+.mh-stand{font-size:.9rem;line-height:1.65;color:var(--muted);max-width:78ch;
+  margin:0;padding-left:15px;border-left:2px solid var(--blue)}
+.mh-stand strong{color:var(--text);font-weight:700}
+.mh-stand a{color:var(--link,var(--blue))}
+
+/* Tier-3 standing note (section-level, below the fold) */
+.mh-note{border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin:0 0 20px;
+  background:color-mix(in srgb,var(--text) 3%,transparent);
+  font-size:.83rem;line-height:1.6;color:var(--muted)}
+.mh-note strong{color:var(--text)}
 
 /* ── Section headings ────────────────────────────────────────────────────── */
 .mh-section{margin-bottom:48px}
@@ -28,7 +98,9 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
 .mh-tab{padding:7px 14px;border-radius:7px;border:1px solid var(--border,rgba(255,255,255,.1));
   background:transparent;color:var(--muted,#8899aa);font-size:.82rem;cursor:pointer;
   transition:all .15s}
-.mh-tab.on{background:var(--blue,#3b82f6);border-color:var(--blue,#3b82f6);
+/* Selected tab: the raw accent takes white text to only 2.8:1 in dark mode, so
+   the fill is deepened toward ink. ~5:1 dark, ~7.7:1 light. */
+.mh-tab.on{background:var(--accent-deep);border-color:var(--accent-deep);
   color:#fff;font-weight:600}
 
 /* ── Engine panel ────────────────────────────────────────────────────────── */
@@ -38,7 +110,7 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
 .mh-eng-name{font-size:1rem;font-weight:700;color:var(--text,#e2e8f0)}
 .mh-eng-epoch{font-size:.72rem;color:var(--muted,#8899aa);
   background:color-mix(in srgb,var(--text) 8%,transparent);
-  padding:3px 8px;border-radius:4px;font-family:monospace}
+  padding:3px 8px;border-radius:4px;font-family:var(--font-mono)}
 
 /* ── Cohort badges ───────────────────────────────────────────────────────── */
 .mh-cohorts{display:grid;grid-template-columns:repeat(auto-fit,minmax(480px,1fr));gap:20px}
@@ -48,9 +120,9 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
 .mh-cohort-badge{font-size:.7rem;font-weight:700;letter-spacing:.1em;
   padding:3px 8px;border-radius:4px}
 .badge-backtest{background:color-mix(in srgb,var(--blue,#3b82f6) 20%,transparent);
-  color:var(--blue,#3b82f6);border:1px solid color-mix(in srgb,var(--blue) 35%,transparent)}
-.badge-live{background:color-mix(in srgb,var(--up,#22c55e) 20%,transparent);
-  color:var(--up,#22c55e);border:1px solid color-mix(in srgb,var(--up) 35%,transparent)}
+  color:var(--blue-ink);border:1px solid color-mix(in srgb,var(--blue) 35%,transparent)}
+.badge-live{background:color-mix(in srgb,var(--ok,#3da564) 20%,transparent);
+  color:var(--ok-ink);border:1px solid color-mix(in srgb,var(--ok) 35%,transparent)}
 .mh-cohort-meta{font-size:.75rem;color:var(--muted,#8899aa)}
 
 /* ── Primitive blocks ────────────────────────────────────────────────────── */
@@ -58,24 +130,24 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
   background:color-mix(in srgb,var(--text) 4%,transparent)}
 .mh-prim-title{font-size:.78rem;font-weight:700;color:var(--text,#e2e8f0);
   margin-bottom:10px;display:flex;align-items:center;gap:8px}
-.mh-prim-gate{font-size:.68rem;font-family:monospace;padding:2px 6px;border-radius:3px;
+.mh-prim-gate{font-size:.68rem;font-family:var(--font-mono);padding:2px 6px;border-radius:3px;
   background:color-mix(in srgb,var(--muted) 15%,transparent);color:var(--muted,#8899aa)}
 
 /* ── Verdict badges ──────────────────────────────────────────────────────── */
 .verdict{display:inline-flex;align-items:center;gap:5px;font-size:.72rem;font-weight:700;
   padding:3px 8px;border-radius:4px;letter-spacing:.05em}
 .verdict::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%}
-.verdict-fail{background:color-mix(in srgb,var(--down,#ef4444) 18%,transparent);
-  color:var(--down,#ef4444);border:1px solid color-mix(in srgb,var(--down) 35%,transparent)}
-.verdict-fail::before{background:var(--down,#ef4444)}
+.verdict-fail{background:color-mix(in srgb,var(--act,#e05555) 18%,transparent);
+  color:var(--act-ink);border:1px solid color-mix(in srgb,var(--act) 35%,transparent)}
+.verdict-fail::before{background:var(--act,#e05555)}
 .verdict-miscal{background:color-mix(in srgb,var(--warn,#f59e0b) 18%,transparent);
-  color:var(--warn,#f59e0b);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent)}
+  color:var(--warn-ink);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent)}
 .verdict-miscal::before{background:var(--warn,#f59e0b)}
-.verdict-pass{background:color-mix(in srgb,var(--up,#22c55e) 18%,transparent);
-  color:var(--up,#22c55e);border:1px solid color-mix(in srgb,var(--up) 35%,transparent)}
-.verdict-pass::before{background:var(--up,#22c55e)}
+.verdict-pass{background:color-mix(in srgb,var(--ok,#3da564) 18%,transparent);
+  color:var(--ok-ink);border:1px solid color-mix(in srgb,var(--ok) 35%,transparent)}
+.verdict-pass::before{background:var(--ok,#3da564)}
 .verdict-accruing{background:color-mix(in srgb,var(--blue,#3b82f6) 18%,transparent);
-  color:var(--blue,#3b82f6);border:1px solid color-mix(in srgb,var(--blue) 35%,transparent)}
+  color:var(--blue-ink);border:1px solid color-mix(in srgb,var(--blue) 35%,transparent)}
 .verdict-accruing::before{background:var(--blue,#3b82f6)}
 .verdict-none{background:color-mix(in srgb,var(--muted) 18%,transparent);
   color:var(--muted,#8899aa);border:1px solid color-mix(in srgb,var(--muted) 25%,transparent)}
@@ -100,11 +172,11 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
 .mh-gate-table td{padding:9px 12px;border-bottom:1px solid var(--border,rgba(255,255,255,.04));
   color:var(--text,#e2e8f0);vertical-align:top;line-height:1.45}
 .mh-gate-table tr:last-child td{border-bottom:none}
-.mh-gate-table .gate-id{font-family:monospace;font-size:.75rem;font-weight:700;
+.mh-gate-table .gate-id{font-family:var(--font-mono);font-size:.75rem;font-weight:700;
   white-space:nowrap;color:var(--text,#e2e8f0)}
 .mh-gate-table .gate-result{font-size:.75rem;color:var(--muted,#8899aa);
   max-width:340px;line-height:1.4}
-.mh-gate-fam{font-size:.68rem;font-family:monospace;
+.mh-gate-fam{font-size:.68rem;font-family:var(--font-mono);
   padding:2px 6px;border-radius:3px;
   background:color-mix(in srgb,var(--text) 8%,transparent);
   color:var(--muted,#8899aa)}
@@ -136,27 +208,27 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
 .mh-exp-table tr:last-child td{border-bottom:none}
 .mh-exp-name{font-weight:600;font-size:.82rem;color:var(--text,#e2e8f0)}
 .mh-exp-what{font-size:.75rem;color:var(--muted,#8899aa);margin-top:3px}
-.mh-exp-cb{font-family:monospace;font-size:.75rem}
+.mh-exp-cb{font-family:var(--font-mono);font-size:.75rem}
 
 /* ── Sync gauge (W5.1 STOP-fallback) ─────────────────────────────────────── */
 .sg-wrap{margin-bottom:48px}
-.sg-stop-banner{background:color-mix(in srgb,var(--down,#ef4444) 7%,var(--surface,#0f1629));
-  border:1px solid color-mix(in srgb,var(--down,#ef4444) 22%,transparent);
+.sg-stop-banner{background:color-mix(in srgb,var(--act,#e05555) 7%,var(--surface,#0f1629));
+  border:1px solid color-mix(in srgb,var(--act,#e05555) 22%,transparent);
   border-radius:10px;padding:14px 18px;margin-bottom:20px;
   font-size:.85rem;line-height:1.6;color:var(--text,#e2e8f0)}
-.sg-stop-banner strong{color:var(--down,#ef4444)}
+.sg-stop-banner strong{color:var(--act-ink)}
 .sg-honest-note{background:color-mix(in srgb,var(--blue,#3b82f6) 6%,var(--surface,#0f1629));
   border:1px solid color-mix(in srgb,var(--blue,#3b82f6) 20%,transparent);
   border-radius:8px;padding:12px 16px;margin-bottom:20px;
   font-size:.8rem;line-height:1.55;color:var(--muted,#8899aa)}
-.sg-honest-note strong{color:var(--blue,#3b82f6)}
+.sg-honest-note strong{color:var(--blue-ink)}
 .sg-families{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-bottom:20px}
 .sg-family{padding:16px;border-radius:10px;
   border:1px solid var(--border,rgba(255,255,255,.08));
   background:var(--card,rgba(255,255,255,.03))}
 .sg-fam-hd{display:flex;align-items:baseline;gap:8px;margin-bottom:12px}
 .sg-fam-name{font-size:.88rem;font-weight:700;color:var(--text,#e2e8f0)}
-.sg-fam-date{font-size:.72rem;color:var(--muted,#8899aa);font-family:monospace}
+.sg-fam-date{font-size:.72rem;color:var(--muted,#8899aa);font-family:var(--font-mono)}
 .sg-sync-val{font-size:1.5rem;font-weight:800;margin:0 0 4px}
 .sg-sync-bar{height:6px;border-radius:3px;
   background:color-mix(in srgb,var(--text) 10%,transparent);margin-bottom:10px;overflow:hidden}
@@ -196,21 +268,21 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
 .eg-table td{padding:8px 10px;border-bottom:1px solid var(--border,rgba(255,255,255,.04));
   color:var(--text,#e2e8f0);vertical-align:top;line-height:1.45}
 .eg-table tr:last-child td{border-bottom:none}
-.eg-mono{font-family:monospace;font-size:.78rem;color:var(--text,#e2e8f0)}
-.eg-num{font-family:monospace;font-size:.82rem;font-weight:700;color:var(--text,#e2e8f0);white-space:nowrap}
+.eg-mono{font-family:var(--font-mono);font-size:.78rem;color:var(--text,#e2e8f0)}
+.eg-num{font-family:var(--font-mono);font-size:.82rem;font-weight:700;color:var(--text,#e2e8f0);white-space:nowrap}
 .eg-ts{font-size:.72rem;color:var(--muted,#8899aa)}
 .eg-question{font-size:.75rem;color:var(--muted,#8899aa);max-width:380px;line-height:1.4}
 .eg-starvation{font-size:.78rem;line-height:1.45}
-.eg-stv-closed{color:var(--up,#22c55e)}
-.eg-stv-time{color:var(--blue,#3b82f6)}
-.eg-stv-build{color:var(--warn,#f59e0b)}
+.eg-stv-closed{color:var(--ok-ink)}
+.eg-stv-time{color:var(--blue-ink)}
+.eg-stv-build{color:var(--warn-ink)}
 .eg-footnote{font-size:.7rem;color:var(--muted,#8899aa);margin-top:10px;line-height:1.5}
-.eg-footnote code{font-family:monospace;font-size:.7rem}
+.eg-footnote code{font-family:var(--font-mono);font-size:.7rem}
 .eg-accrual-banner{background:color-mix(in srgb,var(--warn,#f59e0b) 8%,var(--surface,#0f1629));
   border:1px solid color-mix(in srgb,var(--warn,#f59e0b) 25%,transparent);
   border-radius:8px;padding:12px 16px;margin-bottom:12px;
   font-size:.82rem;line-height:1.55;color:var(--text,#e2e8f0)}
-.eg-accrual-banner strong{color:var(--warn,#f59e0b)}
+.eg-accrual-banner strong{color:var(--warn-ink)}
 .eg-ci-caveat{font-size:.78rem;color:var(--muted,#8899aa);
   background:color-mix(in srgb,var(--blue,#3b82f6) 6%,transparent);
   border:1px solid color-mix(in srgb,var(--blue,#3b82f6) 18%,transparent);
@@ -231,7 +303,7 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
 .mh-prov-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
 .mh-prov-cell{font-size:.75rem}
 .mh-prov-cell dt{color:var(--muted,#8899aa);margin-bottom:2px}
-.mh-prov-cell dd{font-family:monospace;color:var(--text,#e2e8f0);word-break:break-all}
+.mh-prov-cell dd{font-family:var(--font-mono);color:var(--text,#e2e8f0);margin-left:0}
 
 /* ── Cone recal info ─────────────────────────────────────────────────────── */
 .mh-recal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-top:12px}
@@ -242,7 +314,7 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
 .mh-recal-stat{display:flex;justify-content:space-between;align-items:baseline;
   font-size:.8rem;margin-bottom:5px}
 .mh-recal-stat .lbl{color:var(--muted,#8899aa)}
-.mh-recal-stat .val{font-weight:700;color:var(--warn,#f59e0b)}
+.mh-recal-stat .val{font-weight:700;color:var(--warn-ink)}
 .mh-recal-note{font-size:.72rem;color:var(--muted,#8899aa);margin-top:10px;line-height:1.4}
 
 /* ── Mobile ──────────────────────────────────────────────────────────────── */
@@ -264,36 +336,59 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
 .pm-chip-promoted_null{background:color-mix(in srgb,var(--muted,#8899aa) 12%,transparent);
   color:var(--muted,#8899aa);border-color:color-mix(in srgb,var(--muted) 30%,transparent)}
 .pm-chip-display{background:color-mix(in srgb,var(--blue,#3b82f6) 12%,transparent);
-  color:var(--blue,#3b82f6);border-color:color-mix(in srgb,var(--blue) 30%,transparent)}
+  color:var(--blue-ink);border-color:color-mix(in srgb,var(--blue) 30%,transparent)}
 .pm-chip-candidate{background:color-mix(in srgb,var(--warn,#f59e0b) 12%,transparent);
-  color:var(--warn,#f59e0b);border-color:color-mix(in srgb,var(--warn) 30%,transparent)}
+  color:var(--warn-ink);border-color:color-mix(in srgb,var(--warn) 30%,transparent)}
 .pm-chip-structural{background:color-mix(in srgb,var(--text,#e2e8f0) 8%,transparent);
   color:var(--text,#e2e8f0);border-color:color-mix(in srgb,var(--text) 20%,transparent)}
 .pm-truth-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
-.pm-truth-table{width:100%;min-width:600px;border-collapse:collapse;font-size:.8rem}
+/* table-layout:fixed + the %-widths below: the ID column used to size itself to
+   a 48-char nowrap slug (`cycle_truth_cn_downturn_broken_trend_tail_null_v1`),
+   which ate ~40% of the table and shoved STATEMENT into STATUS. */
+.pm-truth-table{width:100%;min-width:640px;table-layout:fixed;border-collapse:collapse;font-size:.8rem}
 .pm-truth-table th{text-align:left;padding:8px 12px;font-size:.72rem;font-weight:700;
   color:var(--muted,#8899aa);border-bottom:1px solid var(--border,rgba(255,255,255,.08));
   text-transform:uppercase;letter-spacing:.08em}
 .pm-truth-table td{padding:8px 12px;border-bottom:1px solid var(--border,rgba(255,255,255,.04));
   vertical-align:top;line-height:1.4}
 .pm-truth-table tr:last-child td{border-bottom:none}
-.pm-truth-id{font-family:monospace;font-size:.75rem;font-weight:700;white-space:nowrap;
-  color:var(--text,#e2e8f0)}
-.pm-stmt{font-size:.78rem;color:var(--text,#e2e8f0);line-height:1.4;max-width:400px}
+.pm-truth-table th:nth-child(1),.pm-truth-table td:nth-child(1){width:18%}
+.pm-truth-table th:nth-child(2),.pm-truth-table td:nth-child(2){width:44%}
+.pm-truth-table th:nth-child(3),.pm-truth-table td:nth-child(3){width:8%}
+.pm-truth-table th:nth-child(4),.pm-truth-table td:nth-child(4){width:10%}
+.pm-truth-table th:nth-child(5),.pm-truth-table td:nth-child(5){width:11%}
+.pm-truth-table th:nth-child(6),.pm-truth-table td:nth-child(6){width:9%}
+.pm-truth-id{font-family:var(--font-mono);font-size:.75rem;font-weight:700;
+  color:var(--text,#e2e8f0);line-height:1.35}
+.pm-stmt{font-size:.78rem;color:var(--text,#e2e8f0);line-height:1.45}
 .pm-status-null{color:var(--muted,#8899aa);font-size:.72rem;font-weight:700}
-.pm-status-display{color:var(--blue,#3b82f6);font-size:.72rem;font-weight:700}
-.pm-status-candidate{color:var(--warn,#f59e0b);font-size:.72rem;font-weight:700}
+.pm-status-display{color:var(--blue-ink);font-size:.72rem;font-weight:700}
+.pm-status-candidate{color:var(--warn-ink);font-size:.72rem;font-weight:700}
 .pm-status-other{color:var(--text,#e2e8f0);font-size:.72rem;font-weight:700}
 .pm-meta{font-size:.7rem;color:var(--muted,#8899aa)}
 
 /* ── Hub v2: Null Library ───────────────────────────────────────────────── */
-.nl-wrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px;margin-top:8px}
-.nl-card{border:1px solid color-mix(in srgb,var(--muted,#8899aa) 20%,transparent);
-  border-radius:10px;padding:16px;
+/* Multi-column, not grid: these cards run from 6 lines to 40, so a row-based
+   grid either stretched the short ones into 200px of framed dead space or left
+   the same hole unframed. Column flow packs them; `columns` also has no
+   min-track, which is what was pushing the page into horizontal scroll at
+   390px. Reading order becomes column-major — fine for an id-sorted reference
+   library. */
+.nl-wrap{columns:340px 3;column-gap:16px;margin-top:8px}
+.nl-card{break-inside:avoid;-webkit-column-break-inside:avoid;page-break-inside:avoid;
+  margin:0 0 16px;
+  border:1px solid color-mix(in srgb,var(--muted,#8899aa) 20%,transparent);
+  border-radius:10px;padding:16px;min-width:0;
   background:color-mix(in srgb,var(--muted,#8899aa) 5%,transparent)}
-.nl-card-hd{display:flex;align-items:center;gap:8px;margin-bottom:10px}
-.nl-card-id{font-family:monospace;font-size:.75rem;font-weight:700;color:var(--muted,#8899aa)}
-.nl-ruled-badge{font-size:.68rem;font-weight:700;letter-spacing:.05em;padding:2px 7px;
+/* Header is a two-slot row, not a nowrap line: the id wraps in its own column
+   and the badge keeps reserved space. Before this it overflowed the card and
+   the neighbouring card's id rendered straight through the badge. */
+.nl-card-hd{display:flex;align-items:flex-start;justify-content:space-between;
+  gap:6px 10px;margin-bottom:10px;flex-wrap:wrap}
+.nl-card-id{flex:1 1 14ch;min-width:0;font-family:var(--font-mono);font-size:.75rem;
+  font-weight:700;color:var(--muted,#8899aa);line-height:1.35}
+.nl-ruled-badge{flex:0 0 auto;white-space:nowrap;
+  font-size:.68rem;font-weight:700;letter-spacing:.05em;padding:2px 7px;
   border-radius:4px;
   background:color-mix(in srgb,var(--muted,#8899aa) 12%,transparent);
   color:var(--muted,#8899aa);
@@ -303,11 +398,11 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
 .nl-refs-label{font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
   color:var(--muted,#8899aa);margin-bottom:4px}
 .nl-refs-list{list-style:none;padding:0;margin:0}
-.nl-refs-list li{font-family:monospace;font-size:.7rem;color:var(--muted,#8899aa);
-  padding:2px 0;word-break:break-all;line-height:1.4}
+.nl-refs-list li{font-family:var(--font-mono);font-size:.7rem;color:var(--muted,#8899aa);
+  padding:2px 0;line-height:1.4}
 .nl-due{font-size:.68rem;color:var(--muted,#8899aa);margin-top:8px}
 @media(max-width:600px){
-  .nl-wrap{grid-template-columns:1fr}
+  .nl-wrap{columns:1}
 }
 
 /* ── Hub v2: Accrual Clocks ─────────────────────────────────────────────── */
@@ -322,11 +417,11 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
 .ac-table tr:last-child td{border-bottom:none}
 .ac-ledger-name{font-size:.82rem;font-weight:600;color:var(--text,#e2e8f0)}
 .ac-ledger-sub{font-size:.7rem;color:var(--muted,#8899aa);margin-top:2px}
-.ac-num{font-family:monospace;font-size:.82rem;font-weight:700;color:var(--text,#e2e8f0)}
+.ac-num{font-family:var(--font-mono);font-size:.82rem;font-weight:700;color:var(--text,#e2e8f0)}
 .ac-na{color:var(--muted,#8899aa);font-size:.82rem}
-.ac-proj{font-family:monospace;font-size:.82rem;font-weight:700}
-.ac-proj-future{color:var(--blue,#3b82f6)}
-.ac-proj-done{color:var(--up,#22c55e)}
+.ac-proj{font-family:var(--font-mono);font-size:.82rem;font-weight:700}
+.ac-proj-future{color:var(--blue-ink)}
+.ac-proj-done{color:var(--ok-ink)}
 .ac-proj-none{color:var(--muted,#8899aa)}
 
 /* ── Hub v2: Prediction Layer ───────────────────────────────────────────── */
@@ -339,20 +434,20 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
   border:1px solid var(--border,rgba(255,255,255,.1));color:var(--muted,#8899aa)}
 .pl-meta-chip strong{color:var(--text,#e2e8f0)}
 .pl-stale-note{font-size:.78rem;color:var(--muted,#8899aa);font-style:italic}
-.pl-revopt-warn{font-size:.78rem;color:var(--warn,#f59e0b);margin-left:4px}
+.pl-revopt-warn{font-size:.78rem;color:var(--warn-ink);margin-left:4px}
 .pl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:28px}
 .pl-cell{border-radius:8px;padding:14px;border:1px solid var(--border,rgba(255,255,255,.08));
   background:color-mix(in srgb,var(--surface,#0f1629) 60%,transparent)}
-.pl-cell-pass{border-color:color-mix(in srgb,var(--up,#22c55e) 30%,transparent);
-  background:color-mix(in srgb,var(--up,#22c55e) 5%,transparent)}
+.pl-cell-pass{border-color:color-mix(in srgb,var(--ok,#3da564) 30%,transparent);
+  background:color-mix(in srgb,var(--ok,#3da564) 5%,transparent)}
 .pl-cell-prior{border-color:color-mix(in srgb,var(--muted,#8899aa) 20%,transparent)}
 .pl-cell-dir{font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
   color:var(--muted,#8899aa);margin-bottom:4px}
 .pl-cell-horizon{font-size:.95rem;font-weight:800;color:var(--text,#e2e8f0);margin-bottom:8px}
 .pl-badge{display:inline-block;font-size:.72rem;font-weight:700;padding:3px 8px;
   border-radius:4px;margin-bottom:8px}
-.pl-badge-pass{background:color-mix(in srgb,var(--up,#22c55e) 18%,transparent);
-  color:var(--up,#22c55e);border:1px solid color-mix(in srgb,var(--up) 30%,transparent)}
+.pl-badge-pass{background:color-mix(in srgb,var(--ok,#3da564) 18%,transparent);
+  color:var(--ok-ink);border:1px solid color-mix(in srgb,var(--ok) 30%,transparent)}
 .pl-badge-prior{background:color-mix(in srgb,var(--muted,#8899aa) 12%,transparent);
   color:var(--muted,#8899aa);border:1px solid color-mix(in srgb,var(--muted) 25%,transparent)}
 .pl-cell-stat{font-size:.72rem;color:var(--muted,#8899aa);line-height:1.5}
@@ -368,7 +463,7 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
   border-color:color-mix(in srgb,var(--fail,#ef4444) 20%,transparent)}
 .pl-gap-hd{font-weight:700;color:var(--text,#e2e8f0);margin-bottom:5px}
 .pl-gap-note{color:var(--muted,#8899aa);line-height:1.5}
-.pl-gap-meta{font-size:.7rem;color:var(--muted,#8899aa);margin-top:5px;font-family:monospace}
+.pl-gap-meta{font-size:.7rem;color:var(--muted,#8899aa);margin-top:5px;font-family:var(--font-mono)}
 .pl-gap-tag{display:inline-block;font-size:.65rem;padding:1px 6px;border-radius:3px;margin-left:6px;
   background:color-mix(in srgb,var(--muted) 12%,transparent);color:var(--muted,#8899aa)}
 
@@ -382,9 +477,33 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
 .cm-table td{padding:9px 12px;border-bottom:1px solid var(--border,rgba(255,255,255,.04));
   color:var(--text,#e2e8f0);vertical-align:middle;line-height:1.4}
 .cm-table tr:last-child td{border-bottom:none}
-.cm-page{font-size:.8rem;font-weight:600;color:var(--text,#e2e8f0);font-family:monospace}
-.cm-yes{font-weight:700;color:var(--up,#22c55e)}
-.cm-partial{font-weight:700;color:var(--warn,#f59e0b)}
+.cm-page{font-size:.8rem;font-weight:600;color:var(--text,#e2e8f0);font-family:var(--font-mono)}
+.cm-yes{font-weight:700;color:var(--ok-ink)}
+.cm-partial{font-weight:700;color:var(--warn-ink)}
 .cm-no{color:var(--muted,#8899aa);font-size:.75rem}
-.cm-hint{font-size:.65rem;color:var(--muted,#8899aa);display:block;margin-top:2px;font-family:monospace}
+.cm-hint{font-size:.65rem;color:var(--muted,#8899aa);display:block;margin-top:2px;font-family:var(--font-mono)}
 .cm-audit{font-size:.72rem;color:var(--muted,#8899aa);font-style:italic;margin-top:8px}
+
+/* ── Machine strings must break, not escape ──────────────────────────────────
+   Truth ids, feature slugs, file paths and the statements that quote them are
+   long unbroken tokens. `anywhere` rather than `break-word` on purpose: only
+   `anywhere` also shrinks min-content, and min-content is what was forcing the
+   null-library grid (and with it the whole page) to scroll sideways at 390px. */
+.pm-truth-table td,.pm-truth-table th,
+.mh-gate-table td,.mh-exp-table td,.ac-table td,.eg-table td,.cm-table td,
+.nl-card,.mh-collin-block li,.pl-gap-meta,.pl-gap-note,.mh-prov-cell dd,
+.mh-eng-epoch,.pm-status-chip,.mh-note,.mh-loop-step{overflow-wrap:anywhere}
+
+/* ── Quality floor ───────────────────────────────────────────────────────── */
+.mh-tab:focus-visible,.mh-stand a:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+@media(prefers-reduced-motion:reduce){
+  .mh-tab,.sg-sync-fill{transition:none}
+}
+@media(max-width:720px){
+  .mh-loop{grid-template-columns:1fr}
+  .mh-loop-step + .mh-loop-step{border-left:1px solid var(--border);border-top:none}
+  .mh-loop-step:first-child{border-radius:10px 10px 0 0}
+  .mh-loop-step:last-child{border-radius:0}
+  .mh-deck{font-size:.95rem}
+  .mh-stand{font-size:.86rem}
+}

@@ -269,7 +269,7 @@
             <a class="nav-mega-item" href="markets.html"><span class="nm-ic research-icon research-icon-global-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Global Market Cycles</span><span class="l-zh">全球市场周期</span></span><span class="d"><span class="l-en">Eleven national equity markets on one clock</span><span class="l-zh">十一大股市同框 · 各自周期位置</span></span></span></a>
             <a class="nav-mega-item" href="sector_cycles.html"><span class="nm-ic research-icon research-icon-sector-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Sector Cycles</span><span class="l-zh">板块周期</span></span><span class="d"><span class="l-en">Every US sector ETF on one cycle clock</span><span class="l-zh">美股各板块同框 · 阶段 · 拐点</span></span></span></a>
             <a class="nav-mega-item" href="country_cycles.html"><span class="nm-ic research-icon research-icon-country-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Country Cycles</span><span class="l-zh">国家周期</span></span><span class="d"><span class="l-en">Every country &amp; region ETF on one cycle clock · turns · projection</span><span class="l-zh">各国及区域 ETF 同框 · 拐点 · 推演</span></span></span></a>
-            <a class="nav-mega-item" href="measurement.html"><span class="nm-ic research-icon research-icon-measurement" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Measurement Hub</span><span class="l-zh">周期测量中心</span></span><span class="d"><span class="l-en">Turn P/R · cone coverage · Brier skill — scorecards, gate ledger, failures rendered straight</span><span class="l-zh">拐点精准/召回 · 锥形覆盖 · 布莱尔技能——记分卡、门槛台账、失败如实展示</span></span></span></a>
+            <a class="nav-mega-item" href="measurement.html"><span class="nm-ic research-icon research-icon-measurement" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Calibration Lab</span><span class="l-zh">校准实验室</span></span><span class="d"><span class="l-en">How our cycle reads are scored and sharpened — updated nightly</span><span class="l-zh">周期解读的评分与迭代——每日更新</span></span></span></a>
             <a class="nav-mega-item" href="crossasset.html"><span class="nm-ic research-icon research-icon-cross-asset" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span></span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></span></a>
             <a class="nav-mega-item" href="transmission.html"><span class="nm-ic research-icon research-icon-transmission" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Rate & Inflation Transmission</span><span class="l-zh">利率与通胀传导</span></span><span class="d"><span class="l-en">How rates & inflation move every asset</span><span class="l-zh">利率与通胀如何驱动各类资产</span></span></span></a>
             <a class="nav-mega-item" href="macro_context.html"><span class="nm-ic research-icon research-icon-macro-weather" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象台</span></span><span class="d"><span class="l-en">Live macro label board — quad, FX, rates, credit, commodity</span><span class="l-zh">宏观标签全景 — 象限、汇率、利率、信用、大宗</span></span></span></a>
@@ -430,7 +430,7 @@
             <div class="ms-alerts-wrap">
               <label class="ms-alerts" for="ms-alerts-toggle" tabindex="0" aria-haspopup="dialog" aria-controls="ms-alerts-pop">
                 <span class="dot"></span><span class="l-en">Fired alerts</span><span class="l-zh">已触发警报</span>
-                <span class="ct">1</span>
+                <span class="ct">2</span>
               </label>
               <div class="ms-alerts-pop" id="ms-alerts-pop" role="dialog" aria-label="Fired alerts · 已触发警报">
                 <div class="ms-pop-head">
@@ -443,6 +443,15 @@
                   
                   
                   
+                  
+                  
+                  
+                  <a class="ms-sig sev-warn" data-ms-jump href="#health">
+                    <div class="ms-sig-head"><span class="ms-sig-ico">🔌</span><span class="ms-sig-title"><span class="l-en">A data source went dark</span><span class="l-zh">某数据源中断</span></span><span class="ms-sig-jump"><span class="l-en">View ↓</span><span class="l-zh">查看 ↓</span></span></div>
+                    <div class="ms-sig-detail"><span class="l-en">Source &#39;intl_universe&#39; marked dead after 3 consecutive failures — collector skipped until it recovers; affected signals degrade</span><span class="l-zh">数据源 &#39;intl_universe&#39; 连续 3 次失败后被标记为中断 —采集器暂停直至恢复；相关信号置信度下降</span></div>
+                    <div class="ms-sig-what"><span class="l-en">A feed this dashboard relies on failed several runs in a row, so it’s paused until it recovers. Any signals that depend on it automatically lose confidence until it’s back. This is a plumbing notice, not a market signal.</span><span class="l-zh">本仪表盘依赖的某个数据源连续多次失败，已暂停直至恢复。依赖它的信号会自动降低置信度，直到其恢复。这是系统管线提示，并非市场信号。</span></div>
+                    <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Plumbing — data health, not a market signal.</span><span class="l-zh">管线 — 数据健康度，而非市场信号。</span></div>
+                  </a>
                   
                   
                   
@@ -4126,9 +4135,9 @@
         
         <span class="mx5-ai-ticker-pill">USO</span>
         
-        <span class="mx5-ai-ticker-pill">GOOGL</span>
-        
         <span class="mx5-ai-ticker-pill">SPY</span>
+        
+        <span class="mx5-ai-ticker-pill">AAPL</span>
         
       </div>
       
@@ -4136,14 +4145,14 @@
       <div class="mx5-ai-body">
         
         <span class="l-en">
-          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">5 High-Impact Items</span><br>
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">6 High-Impact Items</span><br>
           Dominant channel: <span style="color:var(--mx5-accent-ink);font-weight:600">earnings</span><br>
-          5 high-impact signals across channels
+          6 high-impact signals across channels
         </span>
         <span class="l-zh">
-          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">5 条高影响信息</span><br>
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">6 条高影响信息</span><br>
           主导频道：<span style="color:var(--mx5-accent-ink);font-weight:600">业绩</span><br>
-          5 条高影响信号
+          6 条高影响信号
         </span>
         
       </div>
@@ -4219,11 +4228,11 @@
           <div class="mx5-alert-content">
             <div class="mx5-alert-title">
               <span style="font-size:12px;margin-right:3px">📰</span>
-              <span class="l-en">Bank of Hawaii GAAP EPS of $1.47 beats by $0.02, revenue of $196.9M misses by $2…</span>
-              <span class="l-zh">夏威夷银行GAAP每股收益1.47美元，超出预期0.02美元，营收1.969亿美元，低于预期255万美元</span>
+              <span class="l-en">Apple options are doing something unusual into earnings</span>
+              <span class="l-zh">Apple options are doing something unusual into earnings</span>
             </div>
             <div class="mx5-alert-detail">
-              <span>Seeking Alpha - Market Currents</span> · 
+              <span>CNBC - Investing</span> · 
               <span style="color:var(--mx5-warn-ink,#9c6212);font-weight:600"><span class="l-en">High impact</span><span class="l-zh">高影响</span></span>
             </div>
           </div>
@@ -4236,8 +4245,8 @@
       </div>
       <div class="mx5-alert-footer">
         <span>
-          <span class="l-en">Showing 1 of 1 in feed</span>
-          <span class="l-zh">显示 1 / 1 条</span>
+          <span class="l-en">Showing 1 of 2 in feed</span>
+          <span class="l-zh">显示 1 / 2 条</span>
         </span>
         <button type="button" class="gbtn gbtn-sm gbtn-quiet" onclick="event.stopPropagation();mx5OpenDlg('dlg-news')">
           <span class="l-en">View all &#8594;</span>
@@ -7416,6 +7425,25 @@ The bond market is healthy but late in its cycle, and the breakdown in the stock
         
         
         
+        <div class="isle-head"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">Context</span><span class="l-zh">背景</span></span><div class="isle-head-line"></div></div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;opacity:.8">
+          
+          <div style="display:flex;gap:10px;padding:10px 12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid rgba(255,255,255,.05)">
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.30));flex-shrink:0;margin-top:5px"></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:3px">
+                <div style="font-size:12.5px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.7))">
+                  <span style="font-size:11px;margin-right:3px">🔌</span>
+                  <span class="l-en">A data source went dark</span><span class="l-zh">某数据源中断</span>
+                </div>
+                <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.36));border:1px solid rgba(255,255,255,.09);white-space:nowrap"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
+              </div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">Source &#39;intl_universe&#39; marked dead after 3 consecutive failures — collector skipped until it recovers; affected signals degrade</span><span class="l-zh">数据源 &#39;intl_universe&#39; 连续 3 次失败后被标记为中断 —采集器暂停直至恢复；相关信号置信度下降</span></div>
+            </div>
+          </div>
+          
+        </div>
+        
         
         
         
@@ -7427,28 +7455,10 @@ The bond market is healthy but late in its cycle, and the breakdown in the stock
           
           
           
-          <a class="nbx-item" href="https://finance.yahoo.com/economy/article/fed-expected-to-hold-rates-steady--but-an-interest-rate-hike-isnt-off-the-table-090000519.html" target="_blank" rel="noopener">
-            <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span>
-              <span class="nbx-title"><span class="l-en">Fed expected to hold rates steady — but an interest rate hike isn&#39;t off the table</span><span class="l-zh">美联储预计维持利率不变——但加息可能性仍未排除</span></span>
-            </div>
-            <div class="nbx-meta">
-              <span class="nbx-src">news_rss</span>
-              <span class="nbx-dot">·</span>
-              <span class="nbx-date">Jul 27</span>
-              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
-            </div>
-            
-          </a>
-          
-          
-          
-          
-          
-          <a class="nbx-item" href="https://seekingalpha.com/news/4618619-bank-of-hawaii-gaap-eps-of-1_47-beats-by-0_02-revenue-of-196_9m-misses-by-2_55m?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://www.cnbc.com/2026/07/27/apple-options-are-doing-something-unusual-into-earnings.html" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Bank of Hawaii GAAP EPS of $1.47 beats by $0.02, revenue of $196.9M misses by $2.55M</span><span class="l-zh">夏威夷银行GAAP每股收益1.47美元，超出预期0.02美元，营收1.969亿美元，低于预期255万美元</span></span>
+              <span class="nbx-title"><span class="l-en">Apple options are doing something unusual into earnings</span><span class="l-zh">Apple options are doing something unusual into earnings</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7481,82 +7491,10 @@ The bond market is healthy but late in its cycle, and the breakdown in the stock
           
           
           
-          <a class="nbx-item" href="https://seekingalpha.com/news/4618609-asante-gold-cfo-david-wiens-to-resign-dindiok-chialin-named-interim-cfo?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
-            <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nbx-title"><span class="l-en">Asante Gold CFO David Wiens to resign; Dindiok Chialin named interim CFO</span><span class="l-zh">阿桑特黄金CFO David Wiens将辞职，Dindiok Chialin被任命为临时CFO</span></span>
-            </div>
-            <div class="nbx-meta">
-              <span class="nbx-src">news_rss</span>
-              <span class="nbx-dot">·</span>
-              <span class="nbx-date">Jul 27</span>
-              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
-            </div>
-            
-          </a>
-          
-          
-          
-          
-          
-          <a class="nbx-item" href="https://seekingalpha.com/news/4618617-perfect-gaap-eps-of-0_01-misses-by-0_01-revenue-of-16_3m-misses-by-1_83m?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
-            <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Perfect GAAP EPS of $0.01 misses by $0.01, revenue of $16.3M misses by $1.83M</span><span class="l-zh">Perfect GAAP每股收益0.01美元，低于预期0.01美元，营收1630万美元，低于预期183万美元</span></span>
-            </div>
-            <div class="nbx-meta">
-              <span class="nbx-src">news_rss</span>
-              <span class="nbx-dot">·</span>
-              <span class="nbx-date">Jul 27</span>
-              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
-            </div>
-            
-          </a>
-          
-          
-          
-          
-          
-          <a class="nbx-item" href="https://seekingalpha.com/news/4618615-fertitta-entertainment-s-buyout-of-caesars-progresses?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
-            <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Deals</span><span class="l-zh">并购/IPO</span></span>
-              <span class="nbx-title"><span class="l-en">Fertitta Entertainment’s buyout of Caesars progresses</span><span class="l-zh">费尔蒂塔娱乐对凯撒娱乐的收购持续推进</span></span>
-            </div>
-            <div class="nbx-meta">
-              <span class="nbx-src">news_rss</span>
-              <span class="nbx-dot">·</span>
-              <span class="nbx-date">Jul 27</span>
-              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
-            </div>
-            
-          </a>
-          
-          
-          
-          
-          
-          <a class="nbx-item" href="https://www.cnbc.com/2026/07/24/trader-who-successfully-shorted-tesla-into-earnings-now-sets-sights-on-this-high-flyer-.html" target="_blank" rel="noopener">
-            <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Trader who successfully shorted Tesla into earnings now sets sights on this high flyer</span><span class="l-zh">成功做空特斯拉财报的交易员，如今将目光投向这只高飞股</span></span>
-            </div>
-            <div class="nbx-meta">
-              <span class="nbx-src">news_rss</span>
-              <span class="nbx-dot">·</span>
-              <span class="nbx-date">Jul 24</span>
-              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
-            </div>
-            
-          </a>
-          
-          
-          
-          
-          
-          <a class="nbx-item" href="https://finance.yahoo.com/personal-finance/banking/article/best-high-yield-savings-interest-rates-today-monday-july-27-2026-you-can-earn-up-to-415-apy-100000612.html" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://www.cnbc.com/2026/07/27/fed-interest-rates-july.html" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span>
-              <span class="nbx-title"><span class="l-en">Best high-yield savings interest rates today, Monday, July 27, 2026: You can earn up to 4.15% APY</span><span class="l-zh">今日最佳高收益储蓄利率，2026年7月27日周一：最高可达4.15%年化收益率</span></span>
+              <span class="nbx-title"><span class="l-en">Federal Reserve is likely to hold interest rates steady. Here&#39;s what that means for consumers</span><span class="l-zh">Federal Reserve is likely to hold interest rates steady. Here&#39;s what that means for consumers</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7571,10 +7509,10 @@ The bond market is healthy but late in its cycle, and the breakdown in the stock
           
           
           
-          <a class="nbx-item" href="https://www.benzinga.com/money/best-method-of-analysis-forex-trading" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://seekingalpha.com/news/4618692-turbo-energy-swings-to-h1-profit-revenue-jumps-180?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
             <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nbx-title"><span class="l-en">Forex Analysis: What it is &amp; Best Analysis for Trading</span><span class="l-zh">外汇分析：定义及最佳交易分析方法</span></span>
+              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="nbx-title"><span class="l-en">Turbo Energy swings to H1 profit, revenue jumps 180%</span><span class="l-zh">Turbo Energy swings to H1 profit, revenue jumps 180%</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7589,10 +7527,100 @@ The bond market is healthy but late in its cycle, and the breakdown in the stock
           
           
           
-          <a class="nbx-item" href="https://www.marketwatch.com/story/a-look-at-chers-85-million-malibu-home-after-she-spent-1-million-in-legal-fees-in-lawsuit-6b42822c?mod=mw_rss_topstories" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://seekingalpha.com/news/4618695-new-york-community-bancorp-deposit-shs-repr-non-cum-perp-pfd-registered-series-a-declares?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
+            <div class="nbx-top">
+              <span class="nbx-theme"><span class="l-en">Buybacks</span><span class="l-zh">回购/分红</span></span>
+              <span class="nbx-title"><span class="l-en">New York Community Bancorp Deposit Shs Repr Non Cum Perp Pfd Registered Series A declares $0.3984 dividend</span><span class="l-zh">New York Community Bancorp Deposit Shs Repr Non Cum Perp Pfd Registered Series A declares $0.3984 dividend</span></span>
+            </div>
+            <div class="nbx-meta">
+              <span class="nbx-src">news_rss</span>
+              <span class="nbx-dot">·</span>
+              <span class="nbx-date">Jul 27</span>
+              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
+            </div>
+            
+          </a>
+          
+          
+          
+          
+          
+          <a class="nbx-item" href="https://www.investors.com/news/technology/seagate-stock-earnings-july-2026-ai-stock/?src=A00220&amp;yptr=yahoo" target="_blank" rel="noopener">
+            <div class="nbx-top">
+              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="nbx-title"><span class="l-en">Seagate Pulled Back After 450% Rally. Earnings Will Bring AI Stock&#39;s Next Test.</span><span class="l-zh">Seagate Pulled Back After 450% Rally. Earnings Will Bring AI Stock&#39;s Next Test.</span></span>
+            </div>
+            <div class="nbx-meta">
+              <span class="nbx-src">news_rss</span>
+              <span class="nbx-dot">·</span>
+              <span class="nbx-date">Jul 27</span>
+              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
+            </div>
+            
+          </a>
+          
+          
+          
+          
+          
+          <a class="nbx-item" href="https://finance.yahoo.com/markets/article/why-microsoft-meta-and-amazon-earnings-could-crush-the-sp-500-123600155.html" target="_blank" rel="noopener">
+            <div class="nbx-top">
+              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="nbx-title"><span class="l-en">Why Microsoft, Meta, and Amazon earnings could crush the S&amp;P 500</span><span class="l-zh">Why Microsoft, Meta, and Amazon earnings could crush the S&amp;P 500</span></span>
+            </div>
+            <div class="nbx-meta">
+              <span class="nbx-src">news_rss</span>
+              <span class="nbx-dot">·</span>
+              <span class="nbx-date">Jul 27</span>
+              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
+            </div>
+            
+          </a>
+          
+          
+          
+          
+          
+          <a class="nbx-item" href="https://seekingalpha.com/news/4618684-carpenter-technology-chief-malloy-dies-suddenly?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nbx-title"><span class="l-en">A look at Cher’s $85 million Malibu home, after she spent $1 million in legal fees in lawsuit</span><span class="l-zh">雪儿斥资100万美元诉讼费后，其8500万美元马里布豪宅一览</span></span>
+              <span class="nbx-title"><span class="l-en">Carpenter Technology chief Malloy dies suddenly</span><span class="l-zh">Carpenter Technology chief Malloy dies suddenly</span></span>
+            </div>
+            <div class="nbx-meta">
+              <span class="nbx-src">news_rss</span>
+              <span class="nbx-dot">·</span>
+              <span class="nbx-date">Jul 27</span>
+              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
+            </div>
+            
+          </a>
+          
+          
+          
+          
+          
+          <a class="nbx-item" href="https://seekingalpha.com/news/4618680-central-garden-pet-expands-european-footprint-with-majority-stake-in-trixie-heimtierbedarf-gmbh-co-kg?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
+            <div class="nbx-top">
+              <span class="nbx-theme"><span class="l-en">Deals</span><span class="l-zh">并购/IPO</span></span>
+              <span class="nbx-title"><span class="l-en">Central Garden &amp; Pet expands European footprint with majority stake in TRIXIE Heimtierbedarf GmbH &amp; Co. KG</span><span class="l-zh">Central Garden &amp; Pet expands European footprint with majority stake in TRIXIE Heimtierbedarf GmbH &amp; Co. KG</span></span>
+            </div>
+            <div class="nbx-meta">
+              <span class="nbx-src">news_rss</span>
+              <span class="nbx-dot">·</span>
+              <span class="nbx-date">Jul 27</span>
+              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
+            </div>
+            
+          </a>
+          
+          
+          
+          
+          
+          <a class="nbx-item" href="https://www.benzinga.com/money/best-stock-brokers-in-the-us" target="_blank" rel="noopener">
+            <div class="nbx-top">
+              <span class="nbx-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="nbx-title"><span class="l-en">Best Stock Brokers in May 2026</span><span class="l-zh">Best Stock Brokers in May 2026</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -11334,9 +11362,9 @@ The bond market is healthy but late in its cycle, and the breakdown in the stock
       
     </table>
     <p class="muted"><span class="l-en">A failed source never crashes the dashboard — affected signals just lose confidence until it heals.
-       Generated 2026-07-27 10:52 UTC · <a href="aibrief.html">AI daily brief</a> ·
+       Generated 2026-07-27 12:55 UTC · <a href="aibrief.html">AI daily brief</a> ·
        <a href="history.html">history & charts</a></span><span class="l-zh">数据源失败绝不会让仪表盘崩溃 — 受影响的信号只是降低置信度，直到其恢复。
-       生成于 2026-07-27 10:52 UTC · <a href="aibrief.html">AI每日简报</a> ·
+       生成于 2026-07-27 12:55 UTC · <a href="aibrief.html">AI每日简报</a> ·
        <a href="history.html">历史与图表</a></span></p>
   </details>
   

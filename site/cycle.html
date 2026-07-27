@@ -238,7 +238,7 @@
             <a class="nav-mega-item" href="markets.html"><span class="nm-ic research-icon research-icon-global-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Global Market Cycles</span><span class="l-zh">全球市场周期</span></span><span class="d"><span class="l-en">Eleven national equity markets on one clock</span><span class="l-zh">十一大股市同框 · 各自周期位置</span></span></span></a>
             <a class="nav-mega-item" href="sector_cycles.html"><span class="nm-ic research-icon research-icon-sector-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Sector Cycles</span><span class="l-zh">板块周期</span></span><span class="d"><span class="l-en">Every US sector ETF on one cycle clock</span><span class="l-zh">美股各板块同框 · 阶段 · 拐点</span></span></span></a>
             <a class="nav-mega-item" href="country_cycles.html"><span class="nm-ic research-icon research-icon-country-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Country Cycles</span><span class="l-zh">国家周期</span></span><span class="d"><span class="l-en">Every country &amp; region ETF on one cycle clock · turns · projection</span><span class="l-zh">各国及区域 ETF 同框 · 拐点 · 推演</span></span></span></a>
-            <a class="nav-mega-item" href="measurement.html"><span class="nm-ic research-icon research-icon-measurement" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Measurement Hub</span><span class="l-zh">周期测量中心</span></span><span class="d"><span class="l-en">Turn P/R · cone coverage · Brier skill — scorecards, gate ledger, failures rendered straight</span><span class="l-zh">拐点精准/召回 · 锥形覆盖 · 布莱尔技能——记分卡、门槛台账、失败如实展示</span></span></span></a>
+            <a class="nav-mega-item" href="measurement.html"><span class="nm-ic research-icon research-icon-measurement" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Calibration Lab</span><span class="l-zh">校准实验室</span></span><span class="d"><span class="l-en">How our cycle reads are scored and sharpened — updated nightly</span><span class="l-zh">周期解读的评分与迭代——每日更新</span></span></span></a>
             <a class="nav-mega-item" href="crossasset.html"><span class="nm-ic research-icon research-icon-cross-asset" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span></span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></span></a>
             <a class="nav-mega-item" href="transmission.html"><span class="nm-ic research-icon research-icon-transmission" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Rate & Inflation Transmission</span><span class="l-zh">利率与通胀传导</span></span><span class="d"><span class="l-en">How rates & inflation move every asset</span><span class="l-zh">利率与通胀如何驱动各类资产</span></span></span></a>
             <a class="nav-mega-item" href="macro_context.html"><span class="nm-ic research-icon research-icon-macro-weather" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象台</span></span><span class="d"><span class="l-en">Live macro label board — quad, FX, rates, credit, commodity</span><span class="l-zh">宏观标签全景 — 象限、汇率、利率、信用、大宗</span></span></span></a>
@@ -291,7 +291,8 @@
       <p class="cyc-sub"><span class="l-en">Two dozen boom-bust cycles on one clock. <b>MEASURED</b> cards plot the engine's own
         oscillator, turns and projection from the live backing tape; <b>FRAME</b> cards show only the curated turning-point
         history — structural clocks, never a hand-typed position. So you can see exactly where each measurable asset sits,
-        and how the long clocks line up beside them.</span><span class="l-zh">二十多个繁荣—萧条周期同处一张时钟之上。<b>已测量</b>卡片由底层数据实时计算引擎自身的振荡指标、拐点与投影；<b>框架</b>卡片仅展示人工整理的拐点历史——结构性时钟，绝无人工录入的位置。让你清楚看到每类可测量资产的位置，以及长周期时钟如何在旁排布。</span></p>
+        and how the long clocks line up beside them. Projections here are windows, not certainties — re-drawn nightly as new
+        data lands.</span><span class="l-zh">二十多个繁荣—萧条周期同处一张时钟之上。<b>已测量</b>卡片由底层数据实时计算引擎自身的振荡指标、拐点与投影；<b>框架</b>卡片仅展示人工整理的拐点历史——结构性时钟，绝无人工录入的位置。让你清楚看到每类可测量资产的位置，以及长周期时钟如何在旁排布。这里的预测是时间窗口，而非确定性结论——每晚随新数据重新计算。</span></p>
     </div>
     <div class="cyc-ctrls">
       <span class="cyc-asof"><span class="l-en">As of</span><span class="l-zh">截至</span> <span id="cyc-asof">…</span></span>
@@ -311,8 +312,8 @@
           <div class="cyc-zoom" id="cyc-zoom" aria-label="Zoom"></div>
         </div>
       </div>
+      
       <div id="cyc-stale-banner"></div>
-      <div id="regime-prior-banner"></div>
       <div class="cyc-groups" id="cyc-groups" aria-label="Group filter"></div>
       <div class="cyc-chips" id="cyc-chips" aria-label="Cycle toggles"></div>
       <div id="cyc-chart" data-h="452" role="img" aria-label="Cross-cycle overlay chart"></div>
@@ -343,66 +344,12 @@
      run on DOMContentLoaded (fires after every defer script). -->
 <script src="regimedata/regime_prior.js?v=ff9f219f" defer></script>
 <script src="cycle_data.js?v=443f0a05" defer></script>
-<script src="cycledata/cycle_engine.js?v=c95a12e4" defer></script>
+<script src="cycledata/cycle_engine.js?v=473f290a" defer></script>
 <script src="mm_charts.js?v=244eb769" defer></script>
 <script src="cycle_i18n.js?v=cb651fea" defer></script>
 <script src="cycle_app.js?v=957e5ec4" defer></script>
 <script>document.addEventListener('DOMContentLoaded',function(){try{document.getElementById('cyc-asof').textContent=(window.CYCLE_ENGINE||window.CYCLE_META||{}).as_of||(window.CYCLE_META||{}).asOf||'';}catch(e){}});</script>
-<script>
-/* W4.5 regime-prior reconciliation banner — rendered after all data scripts load.
-   Two layers: (0) CONTRADICTION — curated regime_claim quad vs the live engine quad
-   (from CYCLE_ENGINE.regime_disagreement, softened to amber when the engine read is
-   itself provisional); (1) prior stale/partial; (2) curated prose > 30 days old.
-   Dual-span EN/zh — no t() in attributes. Runs on DOMContentLoaded so the deferred
-   data scripts (CYCLE_ENGINE / REGIME_PRIOR) are guaranteed loaded first. */
-document.addEventListener('DOMContentLoaded',function(){
-  try{
-    var host=document.getElementById('regime-prior-banner');
-    if(!host)return;
-    var prior=window.REGIME_PRIOR||{};
-    var meta=window.CYCLE_ENGINE||window.CYCLE_META||{};
-    var lang=(document.documentElement.getAttribute('data-lang')||'').slice(0,2).toLowerCase();
-    var zh=lang==='zh';
-    var msgs=[];
-    // 0. Contradiction: curated regime_claim quad vs live engine quad (W4.5 primary signal)
-    var rd=(window.CYCLE_ENGINE||{}).regime_disagreement;
-    if(rd&&rd.banner_en){
-      msgs.push({en:rd.banner_en,zh:rd.banner_zh,cls:rd.cls||'stale-red'});
-    }
-    // 1. Prior itself stale/partial
-    var ps=prior.status;
-    if(ps==='stale'||ps==='partial'){
-      var sources=prior.sources||{};
-      var staleSrcs=[];
-      for(var k in sources){if(sources[k]&&(sources[k].status==='stale'||sources[k].status==='unavailable'))staleSrcs.push(k);}
-      var enMsg='Regime data is '+ps+' ('+staleSrcs.join(', ')+') — some components may not reflect the latest build.';
-      var zhMsg='体制数据状态为'+ps+'（'+staleSrcs.join('、')+'）——部分组件可能未反映最新构建。';
-      msgs.push({en:enMsg,zh:zhMsg,cls:'stale-amber'});
-    }
-    // 2. Curated prose staleness (>30d from CYCLE_META.asOf or CYCLE_ENGINE.as_of)
-    var curatedAsOf=meta.asOf||meta.as_of||null;
-    if(curatedAsOf){
-      var d=new Date(curatedAsOf+'T00:00:00Z');
-      var daysDiff=Math.round((Date.now()-d.getTime())/86400000);
-      if(daysDiff>30){
-        var cls2=daysDiff>60?'stale-red':'stale-amber';
-        var enMsg2='Regime narrative notes last updated '+curatedAsOf+' ('+daysDiff+'d ago) — may not reflect the live engine ('+((prior.quad||'?')+' '+((prior.liquidity||'')))+ ').';
-        var zhMsg2='体制叙述最后更新于 '+curatedAsOf+'（已 '+daysDiff+' 天）——可能未反映实时引擎读数（当前：'+(prior.quad||'?')+' '+(prior.liquidity||'')+'）。';
-        msgs.push({en:enMsg2,zh:zhMsg2,cls:cls2});
-      }
-    }
-    if(!msgs.length){host.innerHTML='';return;}
-    var html='';
-    msgs.forEach(function(m){
-      html+='<div class="stale-banner '+m.cls+'">'
-        +'<span class="l-en">'+m.en+'</span>'
-        +'<span class="l-zh">'+m.zh+'</span>'
-        +'</div>';
-    });
-    host.innerHTML=html;
-  }catch(e){}
-});
-</script>
+
 <script src="theme.js?v=c094a665" defer></script>
 </body>
 </html>
