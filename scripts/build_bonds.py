@@ -564,10 +564,12 @@ def build_corp_credit_vm(data_root: Path | None = None) -> dict:
         "subtitle_zh": "整体压力仍低；AI公司的借贷成本值得关注。",
     }
 
-    # Spread gauges (4 chips from roster + market)
+    # Spread gauges (roster + market, plus the AAA/AA rungs of the FRED ladder for
+    # the leading 'Safest borrowers' chip — see _build_high_grade_gauge).
     roster = cm.get("roster") or {}
     market = cm.get("market") or {}
-    gauges = _build_spread_gauges(roster, market)
+    ladder = cm.get("ladder") or {}
+    gauges = _build_spread_gauges(roster, market, ladder)
 
     # Theme tiles (7)
     themes_raw = cm.get("themes") or {}
@@ -603,8 +605,143 @@ def build_corp_credit_vm(data_root: Path | None = None) -> dict:
     }
 
 
-def _build_spread_gauges(roster: dict, market: dict) -> list[dict]:
-    """Build the 4 spread-gauge chips from roster (ig_oas, hy_oas, quality_spread, ccc_bb).
+def _pctile_plain(pctile: float | None) -> tuple[str, str]:
+    """Translate a velocity percentile into Tier-1-legal plain words (EN, ZH).
+
+    DESIGN_DOCTRINE Law 2 bans bare percentile ranks on the glance tier and Law 3
+    requires a number to arrive with its meaning, so 91.7 becomes "about 9 in 10"
+    rather than "92nd percentile". Precision stays on the Tier-2 hover.
+    """
+    if pctile is None:
+        return "", ""
+    # Capped at 9: round() sends anything >= 95 to 10, and "faster than about 10 in 10
+    # past readings" claims it beat every reading including itself.
+    n = max(1, min(9, int(round(float(pctile) / 10.0))))
+    zh_num = "一二三四五六七八九"[n - 1]
+    return f"about {n} in 10", f"约十分之{zh_num}"
+
+
+def _build_high_grade_gauge(ladder: dict) -> dict | None:
+    """Build the 'Safest borrowers' chip from the AAA/AA rungs of the FRED ladder.
+
+    Why this chip exists: the four original gauges span quality-grade (the whole IG
+    index), junk, the junk-vs-quality gap, and CCC — so the TOP of the rating ladder
+    had no chip of its own, and a move confined to AAA/AA showed up only diluted
+    inside the aggregate quality-grade number. Placed first, the strip now reads as a
+    quality ladder (safest → quality-grade → junk → gap → weakest), which is what
+    makes a top-heavy move legible at a glance.
+
+    Composite rule: the chip's state/colour follows the MORE STRESSED of the two rungs
+    by 21-day velocity percentile, and both levels are printed in the hover — no
+    invented average, and nothing hidden. Returns None when neither rung has data, so
+    the chip is simply absent rather than rendering an empty shell.
+
+    Display-tier only (CCW-R16); authority stays all-false.
+    """
+    aaa = (ladder or {}).get("aaa_oas") or {}
+    aa = (ladder or {}).get("aa_oas") or {}
+    rungs = [r for r in (aaa, aa) if r.get("level") is not None]
+    if not rungs:
+        return None
+
+    def _vel(r: dict) -> float:
+        return float(((r.get("velocity") or {}).get("vel21_pctile")) or 0.0)
+
+    lead = max(rungs, key=_vel)
+    state = lead.get("state", "accruing")
+    pctile = (lead.get("velocity") or {}).get("vel21_pctile")
+    d21 = lead.get("d21")
+
+    # Labels are held to the width of the sibling "Weakest borrowers: widening" chip
+    # (~27 chars): anything longer wraps to a second line at the strip's settled chip
+    # width and drops this chip's sub-line out of alignment with the other four.
+    # State goes in the label, pace goes in the sub — the pattern the strip already uses.
+    if state == "widening_stress":
+        chip_css, sub_color = "chip-red", "cc-sub-red"
+        label_en, label_zh = "Safest borrowers: widening", "最安全借款人：走阔"
+        sub_en, sub_zh = "rising faster than usual", "上升快于常态"
+    elif state == "widening":
+        chip_css, sub_color = "chip-amber", "cc-sub-amber"
+        label_en, label_zh = "Safest borrowers: edging up", "最安全借款人：小幅上行"
+        sub_en, sub_zh = "modest drift", "温和漂移"
+    else:
+        chip_css, sub_color = "chip-calm", "cc-sub-calm"
+        label_en, label_zh = "Safest borrowers: steady", "最安全借款人：平稳"
+        sub_en, sub_zh = "no unusual pressure", "无异常压力"
+
+    # Tier-2 hover: ratings, both levels, the 21-day move, the translated pace, caveat.
+    lv_en, lv_zh = [], []
+    for name, r in (("AAA", aaa), ("AA", aa)):
+        if r.get("level") is not None:
+            lv_en.append(f"{name} +{r['level']:.2f}%")
+            lv_zh.append(f"{name} +{r['level']:.2f}%")
+    # The hover is assembled sentence-by-sentence because its editorial line is only
+    # TRUE in the widening states — a fixed "it is the pace that stands out" string
+    # lies outright once the tier is calm or tightening, and a "faster than about
+    # 2 in 10" tail reads as urgency when it actually means the opposite.
+    pace_en, pace_zh = _pctile_plain(pctile)
+    notable = (pctile is not None and pctile >= 70.0)
+    widening = state in ("widening", "widening_stress")
+
+    s_en = ["Top-rated companies — the safest corporate borrowers.",
+            f"Extra yield over Treasuries: {', '.join(lv_en)}."]
+    s_zh = ["最高评级企业——最安全的公司借款人。",
+            f"相对国债额外收益率：{'、'.join(lv_zh)}。"]
+
+    if d21 is not None:
+        # Direction words, not a signed number: a bare {:+.2f} yields "risen +-0.06"
+        # once spreads tighten, and the ZH copy needs 上升/收窄 either way.
+        verb_en = "risen" if d21 >= 0 else "narrowed"
+        verb_zh = "上升" if d21 >= 0 else "收窄"
+        tail_en = f", faster than {pace_en} past readings" if (notable and pace_en) else ""
+        tail_zh = f"，快于{pace_zh}的历史读数" if (notable and pace_zh) else ""
+        s_en.append(f"It has {verb_en} {abs(d21):.2f} points over 21 days{tail_en}.")
+        s_zh.append(f"21日{verb_zh}{abs(d21):.2f}个百分点{tail_zh}。")
+
+    if d21 is None:
+        # No change reading yet — say so rather than asserting a range we cannot see.
+        s_en.append("Change over time is still building.")
+        s_zh.append("变化数据仍在积累。")
+    elif widening and notable:
+        s_en.append("The level is still low by history; it is the pace that stands out.")
+        s_zh.append("绝对水平仍处历史低位，值得注意的是变化速度。")
+    else:
+        s_en.append("That is within its usual range.")
+        s_zh.append("该变化处于常态区间。")
+
+    # Only true when both rungs are present to choose between.
+    if len(rungs) > 1:
+        s_en.append("Colour follows whichever of the two rating tiers is moving faster.")
+        s_zh.append("颜色取两档评级中变化更快者。")
+
+    # House disclosure idiom (used across the site); also keeps the CI-guarded word
+    # "validated" out of user-facing copy — see scripts/check_validated_claims.py.
+    s_en.append("Shown for context — not a buy signal.")
+    s_zh.append("仅为提示，非买入信号。")
+
+    tip_en = " ".join(s_en)
+    tip_zh = "".join(s_zh)
+
+    return {
+        "key": "high_grade",
+        "label_en": label_en,
+        "label_zh": label_zh,
+        "chip_css": chip_css,
+        "sub_en": sub_en,
+        "sub_zh": sub_zh,
+        "sub_color": sub_color,
+        "tip_en": tip_en,
+        "tip_zh": tip_zh,
+        "state": state,
+    }
+
+
+def _build_spread_gauges(roster: dict, market: dict, ladder: dict | None = None) -> list[dict]:
+    """Build the spread-gauge chips from roster (ig_oas, hy_oas, quality_spread, ccc_bb).
+
+    When `ladder` carries AAA/AA rungs, a fifth 'Safest borrowers' chip is prepended so
+    the strip reads as a quality ladder top-to-bottom (see _build_high_grade_gauge).
+    Omitting `ladder` yields the original four chips unchanged.
 
     Severity color: red=widening/stress, amber=watch, green=calm.
     This is a SEVERITY gauge (not direction) — ZH color swap must NOT apply.
@@ -659,7 +796,12 @@ def _build_spread_gauges(roster: dict, market: dict) -> list[dict]:
     qs = roster.get("quality_spread") or {}
     ccc_bb = roster.get("ccc_bb") or {}
 
-    return [
+    # Quality-ladder order: safest → quality-grade → junk → gap → weakest.
+    # The high-grade chip leads so a top-heavy move is legible left-to-right;
+    # it is omitted entirely when the AAA/AA rungs carry no data.
+    high_grade = _build_high_grade_gauge(ladder or {})
+
+    gauges = [
         _gauge(
             "ig_oas",
             "Quality-grade: creeping wider" if ig.get("state") == "widening" else "Quality-grade: steady",
@@ -711,6 +853,8 @@ def _build_spread_gauges(roster: dict, market: dict) -> list[dict]:
             level_in_sub=False,
         ),
     ]
+
+    return ([high_grade] + gauges) if high_grade else gauges
 
 
 def _load_theme_daily_levels(cm_path: Path | None) -> dict[str, float]:

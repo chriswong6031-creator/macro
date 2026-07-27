@@ -1110,3 +1110,86 @@ class TestThemeTileUnitContract:
         # No theme_daily on disk here (cm_path=None) → no level, no crash.
         assert tiles["hyperscaler_credit"]["level_disp"] is None
         assert tiles["hyperscaler_credit"]["stance_en"] == "Building history"
+
+
+# ---------------------------------------------------------------------------
+# High-grade (AAA/AA) 'Safest borrowers' gauge — the top of the rating ladder
+# ---------------------------------------------------------------------------
+# The original four chips covered quality-grade (whole IG index), junk, the
+# junk-vs-quality gap and CCC, so a move confined to AAA/AA appeared only diluted
+# inside the aggregate. This chip leads the strip so the ladder reads safest →
+# weakest and a top-heavy move is visible at a glance.
+
+class TestHighGradeGauge:
+    @staticmethod
+    def _ladder(aaa_pct=91.7, aa_pct=89.9, state="widening_stress", d21=0.06):
+        return {
+            "aaa_oas": {"level": 0.43, "d21": d21, "state": state,
+                        "velocity": {"vel21_pctile": aaa_pct}},
+            "aa_oas": {"level": 0.57, "d21": d21, "state": state,
+                       "velocity": {"vel21_pctile": aa_pct}},
+        }
+
+    def test_absent_without_ladder(self) -> None:
+        """No ladder → original four chips, unchanged. The chip never renders empty."""
+        from scripts.build_bonds import _build_high_grade_gauge
+        assert _build_high_grade_gauge({}) is None
+        assert _build_high_grade_gauge({"aaa_oas": {"level": None}}) is None
+        assert len(_build_spread_gauges({}, {})) == 4
+
+    def test_leads_the_strip_when_present(self) -> None:
+        """Quality-ladder order: the high-grade chip is first, then the original four."""
+        gauges = _build_spread_gauges({}, {}, self._ladder())
+        assert len(gauges) == 5
+        assert gauges[0]["key"] == "high_grade"
+        assert [g["key"] for g in gauges[1:]] == ["ig_oas", "hy_oas", "quality_spread", "ccc_bb"]
+
+    def test_stress_is_red(self) -> None:
+        g = _build_spread_gauges({}, {}, self._ladder())[0]
+        assert g["chip_css"] == "chip-red"
+        assert g["label_en"] == "Safest borrowers: widening"
+
+    def test_colour_follows_the_faster_rung(self) -> None:
+        """AA calm but AAA in stress → the chip still reports stress (disclosed in tip)."""
+        ladder = self._ladder()
+        ladder["aa_oas"] = {"level": 0.57, "d21": 0.0, "state": "stable",
+                            "velocity": {"vel21_pctile": 20.0}}
+        g = _build_spread_gauges({}, {}, ladder)[0]
+        assert g["chip_css"] == "chip-red"
+        assert "moving faster" in g["tip_en"]
+
+    def test_tier1_copy_has_no_banned_vocabulary(self) -> None:
+        """DESIGN_DOCTRINE Law 2: no ratings acronyms or percentile ranks on the glance."""
+        g = _build_spread_gauges({}, {}, self._ladder())[0]
+        glance = f"{g['label_en']} {g['sub_en']} {g['label_zh']} {g['sub_zh']}"
+        for banned in ("AAA", "AA", "OAS", "percentile", "pctile", "vel21", "bp", "91.7"):
+            assert banned not in glance, f"{banned!r} belongs on the hover, not the glance"
+        assert len(g["label_en"].split()) <= 4, "Tier-1 title budget is 4 words"
+
+    def test_hover_carries_both_levels_and_the_caveat(self) -> None:
+        g = _build_spread_gauges({}, {}, self._ladder())[0]
+        assert "AAA +0.43%" in g["tip_en"] and "AA +0.57%" in g["tip_en"]
+        assert "not a buy signal" in g["tip_en"], "house display-tier disclosure idiom"
+        assert "validated" not in g["tip_en"], "CI-guarded word must stay out of copy"
+
+    def test_pace_claim_only_when_the_pace_is_notable(self) -> None:
+        """A calm tier must not be described as 'faster than ...' — that reads as urgency."""
+        calm = _build_spread_gauges({}, {}, self._ladder(aaa_pct=12.0, aa_pct=15.0,
+                                                         state="tightening", d21=-0.04))[0]
+        assert calm["chip_css"] == "chip-calm"
+        assert "faster than" not in calm["tip_en"]
+        assert "narrowed" in calm["tip_en"], "negative d21 must not print 'risen -0.04'"
+        assert "stands out" not in calm["tip_en"], "editorial line is only true when widening"
+
+    def test_never_claims_ten_in_ten(self) -> None:
+        """round() sends pctile>=95 to 10; 'faster than 10 in 10' beats every reading."""
+        g = _build_spread_gauges({}, {}, self._ladder(aaa_pct=99.0, aa_pct=98.0))[0]
+        assert "10 in 10" not in g["tip_en"]
+        assert "9 in 10" in g["tip_en"]
+
+    def test_missing_change_reading_is_disclosed_not_assumed(self) -> None:
+        """With no d21 we cannot claim 'within its usual range'."""
+        g = _build_spread_gauges({}, {}, {"aa_oas": {"level": 0.57, "state": "accruing"}})[0]
+        assert "still building" in g["tip_en"]
+        assert "usual range" not in g["tip_en"]
+        assert "moving faster" not in g["tip_en"], "no second rung to choose between"
