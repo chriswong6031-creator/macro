@@ -20,7 +20,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | china-alpha | 20 |
 | china-intel-hub | 2 |
 | china-pick-lab | 3 |
-| china-system | 5 |
+| china-system | 6 |
 | codex-b5 | 1 |
 | codex-docket-b6 | 3 |
 | cycle-intelligence | 14 |
@@ -100,7 +100,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 333 |
+| display | 334 |
 | infrastructure | 95 |
 | scored | 4 |
 | shadow | 79 |
@@ -109,7 +109,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 489 |
+| git | 490 |
 | gitignored-local | 15 |
 | r2 | 7 |
 
@@ -230,6 +230,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | china-cb-store | `data/china_cb/breadth.parquet` | parquet | collect | display | 0 | 0 |
 | china-fund-issuance-store | `data/china_fund_issuance/issuance.parquet` | parquet | collect | display | 0 | 0 |
 | china-funding-store | `data/china_funding/shibor.parquet` | parquet | collect | display | 0 | 0 |
+| site-china-calendar | `site/chinastatedata/calendar.json` | json | asia-close | display | 0 | 0 |
 
 ### codex-b5
 
