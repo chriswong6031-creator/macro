@@ -7,6 +7,8 @@ re-run — the matching Stripe objects:
   * 2 Products (Insider, Pro), tagged ``metadata.mnz_product`` so we can find them again.
   * 4 recurring Prices addressed by stable ``lookup_key`` (portable across test/live),
     so application code never hardcodes environment-specific price IDs.
+  * Limited-offer Coupons + PromotionCodes whose real Stripe redemption count powers
+    customer-facing inventory (no simulated scarcity).
   * 3 Entitlement Features (Stripe Entitlements, GA), attached to their products.
 
 Idempotency: every object is looked up before creation and reused when found; a re-run
@@ -131,6 +133,114 @@ def _ensure_price(product_id: str | None, spec: dict, currency: str, dry: bool) 
 
 
 # --------------------------------------------------------------------------- #
+# Limited offers (Coupon + PromotionCode; Stripe owns the cap/count atomically)
+# --------------------------------------------------------------------------- #
+def _promo_coupon_id(promo) -> str | None:
+    """Read both pre-Basil `coupon` and Basil `promotion.coupon` response shapes."""
+    coupon = getattr(promo, "coupon", None)
+    if coupon:
+        return coupon.id if hasattr(coupon, "id") else coupon
+    promotion = getattr(promo, "promotion", None) or {}
+    coupon = promotion.get("coupon") if hasattr(promotion, "get") else None
+    return coupon.id if hasattr(coupon, "id") else coupon
+
+
+def _ensure_offer(
+    offer_key: str,
+    spec: dict,
+    product_id: str | None,
+    regular_amount: int,
+    currency: str,
+    dry: bool,
+) -> tuple[str | None, str | None]:
+    """Create/reuse an immutable Coupon and its capped customer-facing PromotionCode."""
+    if not product_id:
+        print(f"  offer    {offer_key:<24} SKIP    (product unresolved)")
+        return None, None
+    offer_amount = int(spec["unit_amount"])
+    amount_off = regular_amount - offer_amount
+    cap = int(spec["max_redemptions"])
+    if amount_off <= 0:
+        sys.exit(f"offer {offer_key}: unit_amount must be below the regular annual price")
+
+    coupon_id = spec["coupon_id"]
+    try:
+        coupon = stripe.Coupon.retrieve(coupon_id)
+    except stripe.error.InvalidRequestError:
+        coupon = None
+    if coupon:
+        applies = getattr(coupon, "applies_to", None) or {}
+        products = list(applies.get("products") or []) if hasattr(applies, "get") else []
+        metadata = getattr(coupon, "metadata", None) or {}
+        owned = metadata.get("mnz_offer") == offer_key if hasattr(metadata, "get") else False
+        # stripe-python 12 / API 2024-06-20 accepts applies_to on create but some
+        # accounts omit it from Coupon.retrieve. Treat an omitted scope as
+        # unverifiable—not drift—only when our ownership metadata and every
+        # immutable financial term still match. A returned scope must contain the
+        # intended product.
+        scope_matches = not products or product_id in products
+        same = (
+            coupon.amount_off == amount_off
+            and coupon.currency == currency
+            and coupon.duration == spec.get("duration", "forever")
+            and coupon.max_redemptions == cap
+            and owned
+            and scope_matches
+        )
+        if not same:
+            sys.exit(
+                f"offer {offer_key}: coupon {coupon_id} drifted; coupons are immutable, "
+                "choose a new coupon_id after reviewing the live subscriptions")
+        print(f"  coupon   {offer_key:<24} reuse   {coupon.id}  (-{amount_off/100:.2f} {currency})")
+    elif dry:
+        print(f"  coupon   {offer_key:<24} CREATE  (dry-run, -{amount_off/100:.2f} {currency})")
+        coupon = None
+    else:
+        coupon = stripe.Coupon.create(
+            id=coupon_id,
+            name=spec["name"],
+            amount_off=amount_off,
+            currency=currency,
+            duration=spec.get("duration", "forever"),
+            max_redemptions=cap,
+            applies_to={"products": [product_id]},
+            metadata={"mnz_offer": offer_key},
+        )
+        print(f"  coupon   {offer_key:<24} create  {coupon.id}  (-{amount_off/100:.2f} {currency})")
+
+    code = spec["promotion_code"]
+    existing = stripe.PromotionCode.list(code=code, limit=10).data
+    promo = existing[0] if existing else None
+    if promo:
+        same = (
+            _promo_coupon_id(promo) == coupon_id
+            and promo.max_redemptions == cap
+            and bool(promo.active)
+        )
+        if not same:
+            sys.exit(
+                f"offer {offer_key}: promotion code {code} drifted; choose a new code "
+                "rather than silently changing a customer-visible offer")
+        print(f"  promo    {offer_key:<24} reuse   {promo.id}  "
+              f"({promo.times_redeemed}/{cap} redeemed)")
+    elif dry:
+        print(f"  promo    {offer_key:<24} CREATE  (dry-run, cap={cap})")
+        promo = None
+    else:
+        # stripe-python <13 uses the 2024-06-20 API shape (`coupon=`). The app's
+        # dependency is intentionally pinned there; Basil's `promotion={...}` shape
+        # can replace this when the SDK pin is upgraded in a reviewed migration.
+        promo = stripe.PromotionCode.create(
+            coupon=coupon_id,
+            code=code,
+            max_redemptions=cap,
+            metadata={"mnz_offer": offer_key},
+        )
+        print(f"  promo    {offer_key:<24} create  {promo.id}  (0/{cap} redeemed)")
+    return (coupon.id if coupon else None, promo.id if promo else None)
+
+
+# --------------------------------------------------------------------------- #
 # Customer Portal configuration
 # --------------------------------------------------------------------------- #
 # The portal is where a customer updates a card, cancels, or DOWNGRADES — everything
@@ -230,14 +340,25 @@ def main() -> int:
     print("products + prices:")
     summary: list[tuple[str, str, str | None]] = []
     portal_products: dict[str, list[str]] = {}
+    product_ids: dict[str, str | None] = {}
     for pkey, prod in cat["products"].items():
         pid = _ensure_product(pkey, prod["name"], args.dry_run)
+        product_ids[pkey] = pid
         _attach_features(pid, [feat_ids.get(f) for f in prod.get("features", [])], args.dry_run)
         for interval_name, pspec in prod["prices"].items():
             price_id = _ensure_price(pid, pspec, currency, args.dry_run)
             summary.append((f"{pkey}/{interval_name}", pspec["lookup_key"], price_id))
             if pid and price_id:
                 portal_products.setdefault(pid, []).append(price_id)
+
+    print("limited offers:")
+    for offer_key, offer_spec in (cat.get("offers") or {}).items():
+        tier = offer_spec["tier"]
+        product_key, product = next(
+            (key, value) for key, value in cat["products"].items() if value["tier"] == tier)
+        regular = int(product["prices"][offer_spec["interval"]]["unit_amount"])
+        _ensure_offer(
+            offer_key, offer_spec, product_ids.get(product_key), regular, currency, args.dry_run)
 
     print("customer portal:")
     _ensure_portal_configuration(portal_products, args.dry_run)

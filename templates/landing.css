@@ -713,12 +713,21 @@ html.still .ph-belt .phc-ch svg{clip-path:none !important}
 .tiers .tier:last-child{background:linear-gradient(150deg,rgba(120,98,224,.07),rgba(193,47,120,.045) 55%,rgba(176,125,5,.065)),#fff}
 .tier.hot::before{content:"MOST POPULAR";position:absolute;top:-11px;left:50%;transform:translateX(-50%);font-family:var(--display);font-weight:700;font-size:9.5px;letter-spacing:.14em;color:#fff;background:var(--blue);padding:4px 11px;border-radius:99px}
 html[data-lang="zh"] .tier.hot::before{content:"最受欢迎";letter-spacing:.08em}
+.tier.hot[data-founding-tier]::before{content:"FOUNDING RATE"}
+html[data-lang="zh"] .tier.hot[data-founding-tier]::before{content:"创始会员价";letter-spacing:.08em}
 .tier h3{margin:0;font-family:var(--display);font-weight:800;font-size:19px}
 .tier .who{color:var(--muted);font-size:13px;margin-top:4px;min-height:36px}
 .price{margin-top:12px;font-family:var(--fig);font-weight:800;font-size:41px;letter-spacing:-.005em}
 .price .per{font-family:'Inter',sans-serif;font-weight:500;font-size:12.5px;color:var(--muted);letter-spacing:0}
 .price .was{font-family:var(--fig);font-weight:600;font-size:16px;letter-spacing:normal;color:var(--faint);text-decoration:line-through;margin-right:7px}
 .badge{display:inline-block;margin-top:6px;font-family:var(--display);font-weight:700;font-size:10px;letter-spacing:.06em;color:var(--q-green);background:var(--green-wash);border-radius:6px;padding:4px 9px}
+.founding{margin-top:12px;padding:10px 11px;border:1px solid rgba(40,95,255,.2);border-radius:10px;background:rgba(40,95,255,.045)}
+.founding[hidden]{display:none}
+.founding-line{display:flex;justify-content:space-between;gap:10px;font-size:10.5px;color:var(--muted)}
+.founding-line b{font-family:var(--display);font-weight:750;color:var(--ink)}
+.founding-track{height:6px;margin-top:7px;overflow:hidden;border-radius:999px;background:rgba(40,95,255,.12)}
+.founding-fill{display:block;width:0;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--blue),#7862e0);transition:width .35s ease}
+.founding-terms{margin:7px 0 0;font-size:10px;line-height:1.4;color:var(--muted)}
 .tier .gist{margin:14px 0 18px;font-size:13.5px;color:var(--muted);line-height:1.6;flex:1}
 .tier .gist b{color:var(--ink);font-weight:600}
 /* matrix */

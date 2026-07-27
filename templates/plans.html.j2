@@ -130,6 +130,24 @@
     border:1px solid color-mix(in srgb,var(--accent) 32%,transparent);
     padding:3px 8px; border-radius:999px; white-space:nowrap; }
   .badge-save.hidden { display:none; }
+  .rack-price { display:flex; align-items:center; gap:7px; min-height:1.5em; margin-top:10px;
+    color:var(--muted); font-size:11.5px; }
+  .rack-price s { color:var(--text); text-decoration-thickness:1.5px; }
+  .rack-price.hidden { display:none; }
+
+  .founding-meter { margin:14px 0 1px; padding:11px 12px; border-radius:11px;
+    border:1px solid color-mix(in srgb,var(--t-pro) 32%,var(--line));
+    background:color-mix(in srgb,var(--t-pro) 8%,transparent); }
+  .founding-meter.hidden { display:none; }
+  .founding-line { display:flex; justify-content:space-between; gap:12px; align-items:baseline;
+    font-size:11.5px; color:var(--muted); }
+  .founding-line b { color:var(--text); font:700 11.5px/1.2 var(--font-ui); }
+  .founding-track { height:6px; margin-top:8px; border-radius:999px; overflow:hidden;
+    background:color-mix(in srgb,var(--t-pro) 16%,var(--panel)); }
+  .founding-fill { width:0; height:100%; border-radius:inherit;
+    background:linear-gradient(90deg,var(--t-pro),color-mix(in srgb,var(--t-pro) 60%,#fff));
+    transition:width .35s ease; }
+  .founding-terms { margin:8px 0 0; color:var(--muted); font-size:10.5px; line-height:1.4; }
 
   .cta { margin:18px 0 4px; }
   .cta .gbtn { width:100%; }
@@ -247,6 +265,10 @@
     .btoggle .knob, .card, .price .amt, .faq summary .chev, #ptoast { transition:none; }
     .gbtn .spin { animation-duration:1.4s; }
   }
+  @media (max-width:480px){
+    .btoggle .save-flag { display:none; }
+    .btoggle button { padding-left:24px; padding-right:24px; }
+  }
 </style>
 </head>
 <body class="page-plans">
@@ -296,12 +318,12 @@
         <button type="button" data-interval="monthly" aria-pressed="false">{{ t('Monthly', '按月') }}</button>
         <button type="button" data-interval="annual" class="on" aria-pressed="true">
           {{ t('Annual', '按年') }}
-          <span class="save-flag l-en">save up to {{ [insider.save_pct, pro.save_pct]|max }}%</span><span class="save-flag l-zh">最高省 {{ [insider.save_pct, pro.save_pct]|max }}%</span>
+          <span class="save-flag l-en">Founding Pro available</span><span class="save-flag l-zh">Founding Pro 开放中</span>
         </button>
       </div>
     </div>
     <p class="toggle-note" id="toggle-note">
-      <span class="l-en">Billed yearly — two months on us versus paying monthly.</span><span class="l-zh">按年结算——相比按月付费，等于免两个月。</span>
+      <span class="l-en">Annual plans cost less. Founding Pro is applied automatically while spots remain.</span><span class="l-zh">年付更省。名额尚存时将自动应用 Founding Pro 优惠。</span>
     </p>
   </header>
 
@@ -367,16 +389,34 @@
     <section class="card pro" aria-label="Pro plan"
              data-tier="pro" data-m-cents="{{ pro.monthly_cents }}" data-a-cents="{{ pro.annual_cents }}"
              data-m-pm="{{ pro.monthly_pm }}" data-a-pm="{{ pro.annual_pm }}"
-             data-a-total="{{ pro.annual_total }}" data-save="{{ pro.save_pct }}">
-      <div class="ribbon"><span class="l-en">Most complete</span><span class="l-zh">最完整</span></div>
+             data-a-total="{{ pro.annual_total }}" data-save="{{ pro.save_pct }}"
+             data-offer-key="{{ founding.key }}" data-offer-active="true"
+             data-offer-a-pm="{{ founding.annual_pm }}" data-offer-a-total="{{ founding.annual_total }}"
+             data-offer-discount="{{ founding.discount_pct }}" data-offer-cap="{{ founding.cap }}">
+      <div class="ribbon" data-offer-ribbon><span class="l-en">Founding rate</span><span class="l-zh">创始会员价</span></div>
       <div class="tname"><span class="dot"></span>{{ pro.name }}</div>
       <p class="tfor">{{ t('Everything in Insider, plus the deep Opus chat lane for real research.', 'Insider 全部内容，另加用于深度研究的 Opus 对话通道。') }}</p>
+      <div class="rack-price" data-offer-rack>
+        <span class="l-en">Regular annual</span><span class="l-zh">常规年付</span>
+        <s>${{ founding.regular_annual_pm }}/{{ t('mo', '月') }}</s>
+      </div>
       <div class="price">
-        <span class="cur">$</span><span class="amt" data-price>{{ pro.annual_pm }}</span><span class="per">/{{ t('mo', '月') }}</span>
+        <span class="cur">$</span><span class="amt" data-price>{{ founding.annual_pm }}</span><span class="per">/{{ t('mo', '月') }}</span>
       </div>
       <div class="billed">
-        <span data-billed><span class="l-en">Billed ${{ pro.annual_total }} a year.</span><span class="l-zh">每年结算 ${{ pro.annual_total }}。</span></span>
-        <span class="badge-save" data-badge><span class="l-en">save {{ pro.save_pct }}%</span><span class="l-zh">省 {{ pro.save_pct }}%</span></span>
+        <span data-billed><span class="l-en">Billed ${{ founding.annual_total }} a year.</span><span class="l-zh">每年结算 ${{ founding.annual_total }}。</span></span>
+        <span class="badge-save" data-badge><span class="l-en">Founding · {{ founding.discount_pct }}% off</span><span class="l-zh">创始会员 · 省 {{ founding.discount_pct }}%</span></span>
+      </div>
+      <div class="founding-meter" data-offer-meter>
+        <div class="founding-line"><b>{{ t('Founding Pro', 'Founding Pro') }}</b>
+          <span data-offer-count><span class="l-en">Limited to {{ founding.cap }} memberships</span><span class="l-zh">限量 {{ founding.cap }} 个名额</span></span>
+        </div>
+        <div class="founding-track" role="progressbar" aria-label="Founding Pro memberships claimed"
+             aria-valuemin="0" aria-valuemax="{{ founding.cap }}" aria-valuenow="0">
+          <div class="founding-fill" data-offer-fill></div>
+        </div>
+        <p class="founding-terms">{{ t('The $828 annual rate renews while this subscription remains uninterrupted. Canceling ends the founding rate.',
+                                      '只要订阅不中断，$828 年付创始会员价将持续续订；取消后该价格失效。') }}</p>
       </div>
       <div class="cta">
         <button class="gbtn gbtn-lg gbtn-pill gbtn-cta" data-act="subscribe" data-tier="pro" type="button">
@@ -410,7 +450,7 @@
             <th class="col-feat">{{ t('What you get', '你能获得') }}</th>
             <th class="col-tier"><span class="th-tier th-free"><span class="tn">{{ t('Free', '免费') }}</span><span class="tp">$0</span></span></th>
             <th class="col-tier"><span class="th-tier th-insider"><span class="tn">{{ insider.name }}</span><span class="tp" data-mtx-price="insider">${{ insider.annual_pm }}/mo</span></span></th>
-            <th class="col-tier col-pro"><span class="th-tier th-pro"><span class="tn">{{ pro.name }}</span><span class="tp" data-mtx-price="pro">${{ pro.annual_pm }}/mo</span></span></th>
+            <th class="col-tier col-pro"><span class="th-tier th-pro"><span class="tn">{{ pro.name }}</span><span class="tp" data-mtx-price="pro">${{ founding.annual_pm }}/mo</span></span></th>
           </tr>
         </thead>
         <tbody>
@@ -582,6 +622,11 @@
     $$('.card[data-tier]').forEach(function (card) {
       var mPm = card.getAttribute('data-m-pm'), aPm = card.getAttribute('data-a-pm');
       var aTot = card.getAttribute('data-a-total'), save = card.getAttribute('data-save');
+      var offerOn = annual && card.getAttribute('data-offer-active') === 'true';
+      if (offerOn) {
+        aPm = card.getAttribute('data-offer-a-pm') || aPm;
+        aTot = card.getAttribute('data-offer-a-total') || aTot;
+      }
       var priceEl = $('[data-price]', card), billedEl = $('[data-billed]', card), badgeEl = $('[data-badge]', card);
       if (priceEl) {
         priceEl.style.opacity = '0';
@@ -594,8 +639,17 @@
       }
       if (badgeEl) {
         badgeEl.classList.toggle('hidden', !annual);
-        badgeEl.innerHTML = '<span class="l-en">save ' + save + '%</span><span class="l-zh">省 ' + save + '%</span>';
+        badgeEl.innerHTML = offerOn
+          ? '<span class="l-en">Founding · ' + card.getAttribute('data-offer-discount') + '% off</span><span class="l-zh">创始会员 · 省 ' + card.getAttribute('data-offer-discount') + '%</span>'
+          : '<span class="l-en">save ' + save + '%</span><span class="l-zh">省 ' + save + '%</span>';
       }
+      var rackEl = $('[data-offer-rack]', card), meterEl = $('[data-offer-meter]', card);
+      if (rackEl) rackEl.classList.toggle('hidden', !offerOn);
+      if (meterEl) meterEl.classList.toggle('hidden', !offerOn);
+      var ribbonEl = $('[data-offer-ribbon]', card);
+      if (ribbonEl) ribbonEl.innerHTML = offerOn
+        ? '<span class="l-en">Founding rate</span><span class="l-zh">创始会员价</span>'
+        : '<span class="l-en">Most complete</span><span class="l-zh">最完整</span>';
     });
     /* matrix header prices track the toggle too */
     $$('[data-mtx-price]').forEach(function (el) {
@@ -603,11 +657,14 @@
       var card = $('.card[data-tier="' + tier + '"]');
       if (!card) return;
       var pm = annual ? card.getAttribute('data-a-pm') : card.getAttribute('data-m-pm');
+      if (annual && card.getAttribute('data-offer-active') === 'true') {
+        pm = card.getAttribute('data-offer-a-pm') || pm;
+      }
       el.textContent = '$' + pm + '/mo';
     });
     if (note) {
       note.innerHTML = annual
-        ? '<span class="l-en">Billed yearly — two months on us versus paying monthly.</span><span class="l-zh">按年结算——相比按月付费，等于免两个月。</span>'
+        ? '<span class="l-en">Annual plans cost less. Founding Pro is applied automatically while spots remain.</span><span class="l-zh">年付更省。名额尚存时将自动应用 Founding Pro 优惠。</span>'
         : '<span class="l-en">Billed month to month. Switch to annual to pay less.</span><span class="l-zh">按月结算。切换到按年更省。</span>';
     }
   }
@@ -627,6 +684,24 @@
     setInterval_('annual'); /* establish annual-default state on load */
   }
 
+  /* Stripe is the inventory ledger. Never synthesize or time-increment this number. */
+  var foundingCard = $('.card[data-offer-key]');
+  if (foundingCard) {
+    var offerKey = foundingCard.getAttribute('data-offer-key');
+    fetch(API + '/api/billing/offers/' + encodeURIComponent(offerKey), { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('offer')); })
+      .then(function (o) {
+        foundingCard.setAttribute('data-offer-active', o.active ? 'true' : 'false');
+        var count = $('[data-offer-count]', foundingCard);
+        var track = $('.founding-track', foundingCard);
+        var fill = $('[data-offer-fill]', foundingCard);
+        if (count) count.innerHTML = '<span class="l-en">' + o.claimed + ' of ' + o.cap + ' claimed</span><span class="l-zh">已领取 ' + o.claimed + ' / ' + o.cap + '</span>';
+        if (track) track.setAttribute('aria-valuenow', String(o.claimed));
+        if (fill) fill.style.width = Math.min(100, Math.max(0, o.claimed / o.cap * 100)) + '%';
+        paintPrices();
+      }).catch(function () { /* keep the configured offer; checkout remains the final authority */ });
+  }
+
   /* ── checkout ── */
   function goCheckout(tier, btn) {
     var busy = btn && btn.getAttribute('aria-busy') === 'true';
@@ -642,7 +717,13 @@
     withAuth({ 'Content-Type': 'application/json' }).then(function (h) {
       return fetch(API + '/api/billing/checkout', {
         method: 'POST', headers: h, credentials: 'include',
-        body: JSON.stringify({ tier: tier, interval: interval })
+        body: JSON.stringify({
+          tier: tier,
+          interval: interval,
+          offer: tier === 'pro' && interval === 'annual' && foundingCard &&
+            foundingCard.getAttribute('data-offer-active') === 'true'
+              ? foundingCard.getAttribute('data-offer-key') : null
+        })
       });
     }).then(function (r) {
       if (r.status === 401) {

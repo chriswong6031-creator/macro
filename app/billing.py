@@ -82,11 +82,13 @@ def _tier_rank() -> list[str]:
 
 
 def _lookup_key_to_tier() -> dict[str, str]:
-    """price lookup_key -> tier string (insider_monthly -> 'insider', …)."""
+    """Current and grandfathered price lookup_key -> entitlement tier."""
     out: dict[str, str] = {}
     for prod in _catalog()["products"].values():
         for pspec in prod["prices"].values():
             out[pspec["lookup_key"]] = prod["tier"]
+        for lookup_key in prod.get("legacy_lookup_keys", []):
+            out[lookup_key] = prod["tier"]
     return out
 
 
@@ -204,6 +206,105 @@ def _price_id(lookup_key: str) -> str:
     with _PRICE_CACHE_LOCK:
         _PRICE_CACHE[lookup_key] = (pid, now + 300)
     return pid
+
+
+def _field(obj: Any, key: str, default: Any = None) -> Any:
+    """Read a StripeObject or a plain test dict without coupling callers to either."""
+    return obj.get(key, default) if isinstance(obj, dict) else getattr(obj, key, default)
+
+
+_PROMO_CACHE: dict[str, tuple[Any, float]] = {}  # offer key -> (PromotionCode, expire_ts)
+_PROMO_CACHE_LOCK = threading.Lock()
+
+
+def _offer_key(raw: str | None, tier: str, interval: str) -> str | None:
+    """Validate an optional offer against its one allowed tier/cadence."""
+    key = (raw or "").strip().lower() or None
+    if key is None:
+        return None
+    spec = (_catalog().get("offers") or {}).get(key)
+    if not spec:
+        raise HTTPException(400, f"unknown offer '{key}'")
+    if spec.get("tier") != tier or spec.get("interval") != interval:
+        raise HTTPException(400, f"offer '{key}' is not valid for {tier}/{interval}")
+    return key
+
+
+def _promotion_code(offer_key: str) -> Any:
+    """Resolve the Stripe PromotionCode that atomically owns an offer's real cap."""
+    now = time.monotonic()
+    with _PROMO_CACHE_LOCK:
+        hit = _PROMO_CACHE.get(offer_key)
+        if hit and hit[1] > now:
+            return hit[0]
+    spec = (_catalog().get("offers") or {}).get(offer_key)
+    if not spec:
+        raise HTTPException(400, f"unknown offer '{offer_key}'")
+    stripe = _stripe()
+    data = stripe.PromotionCode.list(code=spec["promotion_code"], limit=1).data
+    if not data:
+        raise HTTPException(
+            503, f"offer '{offer_key}' is not provisioned in Stripe — run scripts/stripe_bootstrap.py")
+    promo = data[0]
+    with _PROMO_CACHE_LOCK:
+        _PROMO_CACHE[offer_key] = (promo, now + 30)
+    return promo
+
+
+def _offer_status(offer_key: str) -> dict[str, Any]:
+    """Public, truthful inventory derived from Stripe—not a simulated counter."""
+    spec = (_catalog().get("offers") or {}).get(offer_key)
+    if not spec:
+        raise HTTPException(404, f"unknown offer '{offer_key}'")
+    promo = _promotion_code(offer_key)
+    cap = int(spec["max_redemptions"])
+    claimed = max(0, int(_field(promo, "times_redeemed", 0) or 0))
+    active = bool(_field(promo, "active", False)) and claimed < cap
+    regular = next(
+        int(prod["prices"][spec["interval"]]["unit_amount"])
+        for prod in _catalog()["products"].values()
+        if prod["tier"] == spec["tier"]
+    )
+    return {
+        "key": offer_key,
+        "name": spec["name"],
+        "tier": spec["tier"],
+        "interval": spec["interval"],
+        "active": active,
+        "claimed": min(claimed, cap),
+        "remaining": max(0, cap - claimed),
+        "cap": cap,
+        "unit_amount": int(spec["unit_amount"]),
+        "regular_unit_amount": regular,
+        "currency": _catalog().get("currency", "usd"),
+        "renews_while_uninterrupted": spec.get("duration") == "forever",
+    }
+
+
+def _offer_discount(offer_key: str | None) -> list[dict[str, str]] | None:
+    """Return Stripe's discounts payload, or 410 when truthful inventory is gone."""
+    if not offer_key:
+        return None
+    status = _offer_status(offer_key)
+    if not status["active"]:
+        raise HTTPException(410, f"{status['name']} is sold out")
+    promo = _promotion_code(offer_key)
+    promo_id = _field(promo, "id")
+    if not promo_id:
+        raise HTTPException(503, f"offer '{offer_key}' has no Stripe promotion-code id")
+    return [{"promotion_code": promo_id}]
+
+
+def _offer_sold_out_after_error(offer_key: str | None) -> bool:
+    """Re-read Stripe after a create/modify race and map a newly exhausted cap to 410."""
+    if not offer_key:
+        return False
+    with _PROMO_CACHE_LOCK:
+        _PROMO_CACHE.pop(offer_key, None)
+    try:
+        return not _offer_status(offer_key)["active"]
+    except Exception:  # noqa: BLE001 — preserve the caller's original Stripe failure
+        return False
 
 
 # --------------------------------------------------------------------------- #
@@ -538,6 +639,7 @@ def _current_user(authorization: str | None = Header(default=None)) -> dict:
 class CheckoutRequest(BaseModel):
     tier: str = Field(..., description="'insider' | 'pro'")
     interval: str = Field("annual", description="'monthly' | 'annual'")
+    offer: str | None = Field(None, description="optional catalog offer key")
 
 
 @router.post("/api/billing/checkout")
@@ -551,6 +653,8 @@ def checkout(body: CheckoutRequest, user: dict = Depends(_current_user)) -> dict
     lookup_key = _tier_to_lookup_key(tier, interval)
     if not lookup_key:
         raise HTTPException(400, f"no price for {tier}/{interval}")
+    offer_key = _offer_key(body.offer, tier, interval)
+    discounts = _offer_discount(offer_key)
 
     stripe = _stripe()
     user_id = user.get("id")
@@ -572,12 +676,11 @@ def checkout(body: CheckoutRequest, user: dict = Depends(_current_user)) -> dict
         # on the pricing page — that user is still choosing.
         "success_url": f"{MM_SITE_BASE}/start.html?checkout=success",
         "cancel_url": f"{MM_SITE_BASE}/plans.html?checkout=cancel",
-        "subscription_data": {
-            "trial_period_days": _tier_trial_days(tier),
-            "metadata": {"mm_user_id": user_id},
-        },
-        "allow_promotion_codes": True,
+        "subscription_data": {"trial_period_days": _tier_trial_days(tier), "metadata": {
+            "mm_user_id": user_id, **({"mm_offer": offer_key} if offer_key else {})}},
     }
+    if discounts:
+        args["discounts"] = discounts
     if _AUTOMATIC_TAX:
         args["automatic_tax"] = {"enabled": True}
     if customer:
@@ -591,8 +694,16 @@ def checkout(body: CheckoutRequest, user: dict = Depends(_current_user)) -> dict
         session = stripe.checkout.Session.create(**args)
     except Exception as exc:  # noqa: BLE001
         log.warning("billing: checkout create failed (%s)", exc)
+        if _offer_sold_out_after_error(offer_key):
+            raise HTTPException(410, f"{_catalog()['offers'][offer_key]['name']} is sold out") from None
         raise HTTPException(502, "checkout failed, please try again") from None
     return {"url": session.url, "id": session.id}
+
+
+@router.get("/api/billing/offers/{offer_key}")
+def offer_status(offer_key: str) -> dict:
+    """Truthful public inventory for a limited offer, sourced from Stripe redemptions."""
+    return _offer_status(offer_key.strip().lower())
 
 
 @router.get("/api/billing/portal")
@@ -648,6 +759,7 @@ def billing_config() -> dict:
 class SubscribeInitRequest(BaseModel):
     tier: str = Field(..., description="'insider' | 'pro'")
     interval: str = Field("annual", description="'monthly' | 'annual'")
+    offer: str | None = Field(None, description="optional catalog offer key")
 
 
 @router.post("/api/billing/subscribe/init")
@@ -660,6 +772,9 @@ def subscribe_init(body: SubscribeInitRequest, user: dict = Depends(_current_use
     """
     tier, interval = body.tier.strip().lower(), body.interval.strip().lower()
     _resolve_lookup_key(tier, interval)  # validate before touching Stripe
+    offer_key = _offer_key(body.offer, tier, interval)
+    # Resolve before card capture so a sold-out offer never advances with a stale price.
+    _offer_discount(offer_key)
 
     user_id = user.get("id")
     if not user_id:
@@ -692,6 +807,9 @@ def subscribe_init(body: SubscribeInitRequest, user: dict = Depends(_current_use
         raise HTTPException(409, "already subscribed")
 
     try:
+        metadata = {"mm_user_id": user_id, "mm_tier": tier, "mm_interval": interval}
+        if offer_key:
+            metadata["mm_offer"] = offer_key
         si = stripe.SetupIntent.create(
             customer=customer_id,
             usage="off_session",
@@ -701,7 +819,7 @@ def subscribe_init(body: SubscribeInitRequest, user: dict = Depends(_current_use
             # avoid. Found live in the sandbox E2E: without this, dashboard-enabled
             # redirect PMs make SetupIntent.confirm 400 ("must provide a return_url").
             automatic_payment_methods={"enabled": True, "allow_redirects": "never"},
-            metadata={"mm_user_id": user_id, "mm_tier": tier, "mm_interval": interval},
+            metadata=metadata,
         )
     except Exception as exc:  # noqa: BLE001
         log.warning("billing: setup intent create failed for %s (%s)", user_id, exc)
@@ -713,6 +831,7 @@ class SubscribeCompleteRequest(BaseModel):
     setup_intent_id: str = Field(..., description="the SetupIntent confirmed client-side by Elements")
     tier: str = Field(..., description="'insider' | 'pro'")
     interval: str = Field("annual", description="'monthly' | 'annual'")
+    offer: str | None = Field(None, description="optional catalog offer key")
 
 
 @router.post("/api/billing/subscribe/complete")
@@ -725,6 +844,7 @@ def subscribe_complete(body: SubscribeCompleteRequest, user: dict = Depends(_cur
     """
     tier, interval = body.tier.strip().lower(), body.interval.strip().lower()
     lookup_key = _resolve_lookup_key(tier, interval)
+    offer_key = _offer_key(body.offer, tier, interval)
 
     user_id = user.get("id")
     if not user_id:
@@ -743,6 +863,7 @@ def subscribe_complete(body: SubscribeCompleteRequest, user: dict = Depends(_cur
     si_status = si["status"] if isinstance(si, dict) else si.status
     si_customer = si["customer"] if isinstance(si, dict) else si.customer
     si_pm = si["payment_method"] if isinstance(si, dict) else si.payment_method
+    si_metadata = _field(si, "metadata", {}) or {}
     if si_status != "succeeded":
         raise HTTPException(400, f"setup intent not succeeded (status={si_status})")
     if si_customer != customer_id:
@@ -750,6 +871,8 @@ def subscribe_complete(body: SubscribeCompleteRequest, user: dict = Depends(_cur
         raise HTTPException(400, "setup intent customer mismatch")
     if not si_pm:
         raise HTTPException(400, "setup intent has no payment method")
+    if (si_metadata.get("mm_offer") or None) != offer_key:
+        raise HTTPException(400, "setup intent offer mismatch")
 
     # Re-check the no-double-subscribe guard — a second tab could have subscribed in the card-capture
     # window between /init and /complete.
@@ -763,17 +886,25 @@ def subscribe_complete(body: SubscribeCompleteRequest, user: dict = Depends(_cur
         raise HTTPException(502, "subscribe complete failed, please try again") from None
 
     try:
+        create_args: dict[str, Any] = {
+            "customer": customer_id,
+            "items": [{"price": _price_id(lookup_key)}],
+            "trial_period_days": _tier_trial_days(tier),
+            "default_payment_method": si_pm,
+            "payment_settings": {"save_default_payment_method": "on_subscription"},
+            "trial_settings": {"end_behavior": {"missing_payment_method": "cancel"}},
+            "metadata": {"mm_user_id": user_id, **({"mm_offer": offer_key} if offer_key else {})},
+        }
+        discounts = _offer_discount(offer_key)
+        if discounts:
+            create_args["discounts"] = discounts
         sub = stripe.Subscription.create(
-            customer=customer_id,
-            items=[{"price": _price_id(lookup_key)}],
-            trial_period_days=_tier_trial_days(tier),
-            default_payment_method=si_pm,
-            payment_settings={"save_default_payment_method": "on_subscription"},
-            trial_settings={"end_behavior": {"missing_payment_method": "cancel"}},
-            metadata={"mm_user_id": user_id},
+            **create_args
         )
     except Exception as exc:  # noqa: BLE001
         log.warning("billing: subscription create failed for %s (%s)", user_id, exc)
+        if _offer_sold_out_after_error(offer_key):
+            raise HTTPException(410, f"{_catalog()['offers'][offer_key]['name']} is sold out") from None
         raise HTTPException(502, "subscribe complete failed, please try again") from None
 
     # Same-module authority (MNZ-R3): this IS the billing spine, so it may write the entitlement row
@@ -799,6 +930,7 @@ class UpgradeRequest(BaseModel):
         None, description="'insider' | 'pro' — target tier; defaults to 'pro' (settings-dashboard back-compat)")
     interval: str | None = Field(
         None, description="'monthly' | 'annual' — defaults to the current subscription's cadence")
+    offer: str | None = Field(None, description="optional catalog offer key")
 
 
 @router.post("/api/billing/upgrade")
@@ -866,6 +998,8 @@ def upgrade(body: UpgradeRequest, user: dict = Depends(_current_user)) -> dict:
     interval = interval_override or cur_interval
     if not _upgrade_allowed(cur_tier, cur_interval, target_tier, interval):
         raise HTTPException(409, _upgrade_denial(cur_tier, cur_interval, target_tier, interval))
+    offer_key = _offer_key(body.offer, target_tier, interval)
+    discounts = _offer_discount(offer_key)
 
     sub_id = _sub_id(sub)
     item_id = _first_item_id(sub)
@@ -879,14 +1013,16 @@ def upgrade(body: UpgradeRequest, user: dict = Depends(_current_user)) -> dict:
     is_trialing = (sub["status"] if isinstance(sub, dict) else sub.status) == "trialing"
 
     try:
-        updated = stripe.Subscription.modify(
-            sub_id,
-            items=[{"id": item_id, "price": _price_id(target_lookup_key)}],
-            proration_behavior="always_invoice",
-            payment_behavior="error_if_incomplete",
-            metadata={"mm_user_id": user_id},
-            expand=["latest_invoice"],
-        )
+        modify_args: dict[str, Any] = {
+            "items": [{"id": item_id, "price": _price_id(target_lookup_key)}],
+            "proration_behavior": "always_invoice",
+            "payment_behavior": "error_if_incomplete",
+            "metadata": {"mm_user_id": user_id, **({"mm_offer": offer_key} if offer_key else {})},
+            "expand": ["latest_invoice"],
+        }
+        if discounts:
+            modify_args["discounts"] = discounts
+        updated = stripe.Subscription.modify(sub_id, **modify_args)
     except stripe.error.CardError as exc:
         # error_if_incomplete surfaces the decline synchronously — pass Stripe's message straight through.
         msg = getattr(exc, "user_message", None) or str(exc)
@@ -894,6 +1030,8 @@ def upgrade(body: UpgradeRequest, user: dict = Depends(_current_user)) -> dict:
         raise HTTPException(402, msg) from None
     except Exception as exc:  # noqa: BLE001 — house pattern: any other Stripe failure -> 502
         log.warning("billing: upgrade modify failed for %s (%s)", user_id, exc)
+        if _offer_sold_out_after_error(offer_key):
+            raise HTTPException(410, f"{_catalog()['offers'][offer_key]['name']} is sold out") from None
         raise HTTPException(502, "upgrade failed, please try again") from None
 
     # Same-module authority: recompute -> upsert -> invalidate so /api/me flips to Pro instantly.
