@@ -79,3 +79,41 @@ def test_bootstrap_creates_product_scoped_forever_coupon_and_real_cap(monkeypatc
         "max_redemptions": 250,
         "metadata": {"mnz_offer": "founding_pro"},
     }
+
+
+def test_bootstrap_reuses_owned_coupon_when_api_omits_product_scope(monkeypatch):
+    coupon = types.SimpleNamespace(
+        id="mastermind_founding_pro_annual_2026",
+        amount_off=24000,
+        currency="usd",
+        duration="forever",
+        max_redemptions=250,
+        metadata={"mnz_offer": "founding_pro"},
+    )
+    promo = types.SimpleNamespace(
+        id="promo_founder",
+        coupon=types.SimpleNamespace(id=coupon.id),
+        max_redemptions=250,
+        active=True,
+        times_redeemed=0,
+    )
+
+    class _ExistingStripe:
+        error = stripe.error
+        Coupon = types.SimpleNamespace(retrieve=lambda coupon_id: coupon)
+        PromotionCode = types.SimpleNamespace(
+            list=lambda **kwargs: _ListResp([promo]))
+
+    monkeypatch.setattr(bootstrap, "stripe", _ExistingStripe())
+    spec = {
+        "name": "Founding Pro",
+        "unit_amount": 82800,
+        "max_redemptions": 250,
+        "coupon_id": coupon.id,
+        "promotion_code": "FOUNDINGPRO2026",
+        "duration": "forever",
+    }
+
+    assert bootstrap._ensure_offer(
+        "founding_pro", spec, "prod_pro", 106800, "usd", True
+    ) == (coupon.id, promo.id)

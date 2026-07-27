@@ -171,12 +171,21 @@ def _ensure_offer(
     if coupon:
         applies = getattr(coupon, "applies_to", None) or {}
         products = list(applies.get("products") or []) if hasattr(applies, "get") else []
+        metadata = getattr(coupon, "metadata", None) or {}
+        owned = metadata.get("mnz_offer") == offer_key if hasattr(metadata, "get") else False
+        # stripe-python 12 / API 2024-06-20 accepts applies_to on create but some
+        # accounts omit it from Coupon.retrieve. Treat an omitted scope as
+        # unverifiable—not drift—only when our ownership metadata and every
+        # immutable financial term still match. A returned scope must contain the
+        # intended product.
+        scope_matches = not products or product_id in products
         same = (
             coupon.amount_off == amount_off
             and coupon.currency == currency
             and coupon.duration == spec.get("duration", "forever")
             and coupon.max_redemptions == cap
-            and product_id in products
+            and owned
+            and scope_matches
         )
         if not same:
             sys.exit(
