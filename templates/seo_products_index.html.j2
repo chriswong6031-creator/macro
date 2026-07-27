@@ -1,0 +1,122 @@
+{#=============================================================================
+  seo_products_index.html.j2 — public MastermindX platform overview.
+  Context: page, rel, site, items (ordered product page metadata).
+=============================================================================#}
+{% extends "seo_base.html.j2" %}
+{% block body_class %}est-products{% endblock %}
+
+{% block estate_css %}
+  .ph-hero{max-width:1120px; margin:24px auto 0; padding:0 24px;}
+  .ph-hero-in{position:relative; overflow:hidden; border:1px solid var(--hair-strong);
+    border-radius:var(--r-lg); padding:clamp(28px,5vw,58px); background:
+      radial-gradient(70% 150% at 100% 0%,color-mix(in srgb,var(--link) 18%,transparent),transparent 62%),
+      linear-gradient(140deg,var(--panel),var(--panel2)); box-shadow:var(--ms);}
+  .ph-hero-in::after{content:""; position:absolute; right:-8%; bottom:-55%; width:420px;
+    height:420px; border:1px solid color-mix(in srgb,var(--link) 22%,transparent);
+    border-radius:50%; box-shadow:0 0 0 54px color-mix(in srgb,var(--link) 5%,transparent),
+      0 0 0 108px color-mix(in srgb,var(--link) 3%,transparent); pointer-events:none;}
+  .ph-hero .est-title{max-width:17ch; position:relative; z-index:1;}
+  .ph-hero .est-dek{position:relative; z-index:1; max-width:65ch;}
+  .ph-hero .ph-actions{position:relative; z-index:1; margin-top:24px; display:flex;
+    flex-wrap:wrap; gap:12px; align-items:center;}
+  .ph-hero .ph-textlink{color:var(--ink-2); font-size:var(--fs-sm);}
+  .ph-section{max-width:1120px; margin:42px auto 0; padding:0 24px;}
+  .ph-sech{display:flex; align-items:center; gap:11px; padding-bottom:12px;
+    border-bottom:1px solid var(--hair-strong); margin-bottom:17px;}
+  .ph-sech::before{content:""; width:3px; height:20px; border-radius:2px;
+    background:linear-gradient(180deg,var(--link),transparent);}
+  .ph-sech .n{font-family:var(--num); color:var(--ink-3); font-size:var(--fs-label);}
+  .ph-sech h2{font-size:calc(var(--fs-h2) + 2px); margin:0;}
+  .ph-grid{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:15px;}
+  .ph-card{display:flex; flex-direction:column; min-height:276px; padding:21px;
+    border:1px solid var(--hair-strong); border-radius:var(--r-lg); background:var(--panel);
+    color:var(--ink-1); text-decoration:none; box-shadow:var(--ms);
+    transition:transform .2s,border-color .2s;}
+  .ph-card:hover{transform:translateY(-3px); border-color:var(--link); text-decoration:none;}
+  .ph-card .pc-num{font-family:var(--num); font-size:var(--fs-label); color:var(--link);
+    letter-spacing:.08em;}
+  .ph-card h3{font-size:calc(var(--fs-h2) + 2px); line-height:1.2; margin:16px 0 0;}
+  .ph-card p{color:var(--ink-2); font-size:var(--fs-body); line-height:1.55; margin:10px 0 0;}
+  .ph-card ol{list-style:none; margin:auto 0 0; padding:18px 0 0; border-top:1px solid var(--hair);}
+  .ph-card li{font-family:var(--num); font-size:var(--fs-label); color:var(--ink-3);
+    margin-top:5px;}
+  .ph-card .pc-go{margin-top:15px; color:var(--link); font-size:var(--fs-sm);}
+  .ph-flow{display:grid; grid-template-columns:repeat(3,1fr); border:1px solid var(--hair-strong);
+    border-radius:var(--r-lg); overflow:hidden; background:var(--panel);}
+  .ph-step{padding:22px; border-left:1px solid var(--hair-strong);}
+  .ph-step:first-child{border-left:0;}
+  .ph-step .ps-n{font-family:var(--num); font-size:var(--fs-label); color:var(--link);}
+  .ph-step h3{font-size:var(--fs-h2); margin:9px 0 0;}
+  .ph-step p{font-size:var(--fs-body); line-height:1.55; color:var(--ink-2); margin:7px 0 0;}
+  .ph-research{display:grid; grid-template-columns:repeat(3,1fr); gap:13px;}
+  .ph-research a{display:block; padding:18px; border:1px solid var(--hair-strong);
+    border-radius:var(--r-md); background:var(--panel2); text-decoration:none;}
+  .ph-research a:hover{border-color:var(--link); text-decoration:none;}
+  .ph-research strong{display:block; color:var(--ink-1);}
+  .ph-research span{display:block; margin-top:6px; color:var(--ink-2);
+    font-size:var(--fs-sm); line-height:1.45;}
+  .ph-boundary{margin-top:16px; border-left:3px solid var(--warn); padding:14px 17px;
+    background:color-mix(in srgb,var(--warn) 7%,var(--panel)); color:var(--ink-2);
+    font-size:var(--fs-sm); line-height:1.55;}
+  @media (max-width:840px){
+    .ph-grid,.ph-flow,.ph-research{grid-template-columns:1fr;}
+    .ph-step{border-left:0; border-top:1px solid var(--hair-strong);}
+    .ph-step:first-child{border-top:0;}
+  }
+  @media (max-width:600px){.ph-hero,.ph-section{padding-inline:16px;}}
+{% endblock %}
+
+{% block main %}
+<section class="ph-hero">
+  <div class="ph-hero-in">
+    <span class="est-kicker">{{ t('MastermindX platform', 'MastermindX 平台') }}</span>
+    <h1 class="est-title">{{ t('A connected market-intelligence platform', '互联的市场情报平台') }}</h1>
+    <p class="est-dek">{{ t('Browser charting, nightly market dashboards, public stock dossiers, institutional research and a context-aware AI assistant — separate surfaces connected into one investigation workflow.',
+      '浏览器图表、每晚更新的市场仪表盘、公开股票档案、机构研报与具备上下文的 AI 助手——各自独立，又串联为一套研究流程。') }}</p>
+    <div class="ph-actions">
+      <a class="gbtn gbtn-lg gbtn-cta" href="https://app.mastermind-x.com/terminal?signup=1">{{ t('Start free', '免费开始') }} →</a>
+      <a class="ph-textlink" href="{{ rel }}plans.html">{{ t('Compare current access', '比较当前访问权限') }}</a>
+    </div>
+  </div>
+</section>
+
+<section class="ph-section" aria-labelledby="product-surfaces">
+  <div class="ph-sech"><span class="n">01</span><h2 id="product-surfaces">{{ t('Three connected product surfaces', '三个互联产品界面') }}</h2></div>
+  <div class="ph-grid">
+    {% for it in items %}
+    <a class="ph-card" href="{{ rel }}{{ it.url_path.lstrip('/') }}">
+      <span class="pc-num">0{{ loop.index }} · {{ it.eyebrow }}</span>
+      <h3>{{ it.product_name }}</h3>
+      <p>{{ it.description }}</p>
+      <ol aria-label="Workflow">
+        {% for step in it.workflow %}<li>{{ loop.index }} / {{ step }}</li>{% endfor %}
+      </ol>
+      <span class="pc-go">{{ t('Explore the product', '了解产品') }} →</span>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="ph-section" aria-labelledby="research-flow">
+  <div class="ph-sech"><span class="n">02</span><h2 id="research-flow">{{ t('One investigation flow', '一套研究流程') }}</h2></div>
+  <div class="ph-flow">
+    <div class="ph-step"><span class="ps-n">01 · ORIENT</span><h3>{{ t('Read the market state', '读取市场状态') }}</h3><p>{{ t('Start with nightly macro, cycle, breadth, sector and cross-asset context. Keep each reading attached to its own timestamp.',
+      '先看每晚更新的宏观、周期、宽度、行业与跨资产背景，并保留每项读数自己的时间戳。') }}</p></div>
+    <div class="ph-step"><span class="ps-n">02 · INVESTIGATE</span><h3>{{ t('Open the underlying evidence', '打开底层证据') }}</h3><p>{{ t('Move from a broad observation into a chart, stock dossier or indexed research page instead of treating a dashboard label as the final word.',
+      '从宏观观察深入图表、股票档案或已索引研报，而不是把仪表盘标签当作最终结论。') }}</p></div>
+    <div class="ph-step"><span class="ps-n">03 · EXPLAIN</span><h3>{{ t('Ask in context', '基于上下文提问') }}</h3><p>{{ t('Use Mastermind AI to explain the surface you are viewing, then inspect the linked source and its freshness before relying on the summary.',
+      '让 Mastermind AI 解释当前页面，再检查链接来源及其新鲜度，之后再决定如何使用摘要。') }}</p></div>
+  </div>
+</section>
+
+<section class="ph-section" aria-labelledby="public-research">
+  <div class="ph-sech"><span class="n">03</span><h2 id="public-research">{{ t('Useful before signup', '注册前即可使用') }}</h2></div>
+  <div class="ph-research">
+    <a href="{{ rel }}stocks/index.html"><strong>{{ t('Stock dossiers', '股票档案') }}</strong><span>{{ t('Public, ticker-specific pages for price, technical, fundamental, ownership and options context.', '按股票整理的公开页面，涵盖价格、技术面、基本面、持仓与期权背景。') }}</span></a>
+    <a href="{{ rel }}research/index.html"><strong>{{ t('Institutional research', '机构研报') }}</strong><span>{{ t('Indexed report landing pages and excerpts; complete documents may require account access.', '已索引的研报落地页与节选；完整文档可能需要账户权限。') }}</span></a>
+    <a href="{{ rel }}tools/index.html"><strong>{{ t('Calculators &amp; learning', '计算器与学习') }}</strong><span>{{ t('Focused calculators, lessons and articles that answer a real question without an account.', '无需账户即可使用的专注型计算器、课程与文章。') }}</span></a>
+  </div>
+  <p class="ph-boundary"><strong>{{ t('Access boundary:', '访问边界：') }}</strong> {{ t('MastermindX is a research and decision-context product, not a broker or investment adviser. Some live, intraday and complete-research surfaces require registration or a paid plan; the pricing page owns the current boundary.',
+    'MastermindX 是研究与决策背景产品，并非券商或投资顾问。部分实时、盘中及完整研报界面需要注册或付费方案；当前权限边界以定价页为准。') }}</p>
+</section>
+{% endblock %}

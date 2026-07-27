@@ -405,6 +405,8 @@ def test_brand_facts_parses():
     data = json.loads(p.read_text())
     assert "effective_at" in data, "brand-facts.json missing 'effective_at'"
     assert data["effective_at"], "effective_at is empty"
+    assert data["brand"]["name"] == "MastermindX"
+    assert data["brand"]["alternate_name"] == "Mastermind"
 
 
 def test_brand_facts_has_public_surfaces():
@@ -412,7 +414,19 @@ def test_brand_facts_has_public_surfaces():
     data = json.loads(p.read_text())
     assert data.get("surface_scope") == "public_unauthenticated"
     surfaces = data.get("surfaces", [])
-    assert len(surfaces) == 7, f"Expected 7 public surfaces, got {len(surfaces)}"
+    names = {surface.get("name") for surface in surfaces}
+    assert {
+        "MastermindX Platform",
+        "Stock Dossiers",
+        "Research Library",
+        "Learning Center",
+        "Trading Calculators",
+        "MastermindX Blog",
+        "Plans",
+        "Homepage",
+    } <= names
+    urls = [surface.get("url") for surface in surfaces]
+    assert len(urls) == len(set(urls)), "brand-facts surfaces contain duplicate URLs"
 
 
 def test_brand_facts_no_validated():
@@ -490,3 +504,95 @@ def test_live_sitemap_urls_have_committed_static_files():
             missing.append((loc, relative.as_posix()))
 
     assert missing == [], f"Sitemap URLs without committed static files: {missing[:10]}"
+
+
+def test_live_sitemap_uses_one_mastermindx_corporate_entity():
+    """Every indexed page must reinforce the same corporate entity.
+
+    Product names such as ``Mastermind AI`` remain valid, but the document title,
+    Open Graph site name, and any corporate author/publisher node may not fall
+    back to the retired bare ``Mastermind`` label.
+    """
+    site = _REPO / "site"
+    root = ET.parse(site / "sitemap.xml").getroot()
+    ns = {"sm": "http://www.sitemaps.org/schemas/sitemap/0.9"}
+    failures: list[str] = []
+
+    for node in root.findall(".//sm:loc", ns):
+        loc = (node.text or "").strip()
+        path = urlsplit(loc).path
+        relative = (
+            Path("index.html") if path == "/"
+            else Path(path.lstrip("/")) / "index.html" if path.endswith("/")
+            else Path(path.lstrip("/"))
+        )
+        html = (site / relative).read_text(encoding="utf-8")
+        title_match = re.search(r"<title[^>]*>(.*?)</title>", html, re.I | re.S)
+        title = re.sub(r"<[^>]+>", "", title_match.group(1)).strip() if title_match else ""
+        if "MastermindX" not in title:
+            failures.append(f"{relative.as_posix()}: title={title!r}")
+
+        site_name = re.search(
+            r'<meta\s+property=["\']og:site_name["\']\s+content=["\']([^"\']+)["\']',
+            html,
+            re.I,
+        )
+        if not site_name or site_name.group(1) != "MastermindX":
+            value = site_name.group(1) if site_name else "<missing>"
+            failures.append(f"{relative.as_posix()}: og:site_name={value!r}")
+
+        for raw in re.findall(
+            r'<script[^>]+type=["\']application/ld\+json["\'][^>]*>(.*?)</script>',
+            html,
+            re.I | re.S,
+        ):
+            try:
+                payload = json.loads(raw)
+            except json.JSONDecodeError:
+                continue  # JSON validity has its own dedicated estate guard.
+            def _walk(value):
+                if isinstance(value, dict):
+                    yield value
+                    for child in value.values():
+                        yield from _walk(child)
+                elif isinstance(value, list):
+                    for child in value:
+                        yield from _walk(child)
+
+            for item in _walk(payload):
+                if (
+                    item.get("@type") == "Organization"
+                    and item.get("name") == "Mastermind"
+                ):
+                    failures.append(
+                        f"{relative.as_posix()}: JSON-LD Organization=Mastermind"
+                    )
+
+    assert failures == [], (
+        "Indexed pages have split corporate-brand signals: "
+        f"{failures[:20]}{' …' if len(failures) > 20 else ''}"
+    )
+
+
+def test_signed_in_hub_uses_mastermindx_entity_and_wordmark():
+    """The signed-in home must not undo the public site's entity migration."""
+    html = (_REPO / "site" / "start.html").read_text(encoding="utf-8")
+    assert "<title>MastermindX —" in html
+    assert html.count('property="og:site_name" content="MastermindX"') == 1
+    assert 'class="logo-word">MASTERMINDX</span>' in html
+    assert 'class="b-wordmark">MASTERMINDX</div>' in html
+
+    raw = re.search(
+        r'<script[^>]+type="application/ld\+json"[^>]*>(.*?)</script>',
+        html,
+        re.I | re.S,
+    )
+    assert raw, "start.html is missing Organization/WebSite JSON-LD"
+    payload = json.loads(raw.group(1))
+    graph = payload.get("@graph") or []
+    names = {
+        node.get("name")
+        for node in graph
+        if isinstance(node, dict) and node.get("@type") in {"Organization", "WebSite"}
+    }
+    assert names == {"MastermindX"}

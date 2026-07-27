@@ -2,10 +2,13 @@
 
 Provides:
   SITE_BASE          — canonical www host (single source of truth)
+  BRAND_NAME         — public product/entity name
+  BRAND_RESEARCH_NAME — organization name used for editorial attribution
   page_url(path)     — construct a full canonical URL
   discover_core_pages(site_dir) — discover unauthenticated public site/*.html pages
   discover_free_pages(site_dir) — discover free-estate sub-family pages
-                                  (site/blog/, site/learn/*/, site/tools/, etc.)
+                                  (site/products/, site/blog/, site/learn/*/,
+                                  site/tools/, etc.)
   build_core_sitemap(existing_xml, site_dir) — regenerate the public sitemap
 """
 from __future__ import annotations
@@ -22,6 +25,8 @@ import yaml
 # ─────────────────────────────────────────────────────────────────────────────
 
 SITE_BASE = "https://www.mastermind-x.com/"
+BRAND_NAME = "MastermindX"
+BRAND_RESEARCH_NAME = "MastermindX Research"
 REPO_ROOT = Path(__file__).resolve().parents[1]
 ACCESS_POLICY = REPO_ROOT / "config" / "site_access.yml"
 
@@ -194,6 +199,8 @@ def discover_free_pages(site_dir: Path) -> list[tuple[str, str, str, str, float]
     Returns a sorted list of (rel_path, loc_url, changefreq, filename, priority).
 
     Families and rules (CONTRACT §9 / MKT-SEO-01..04):
+      - site/products/index.html      -> hub (weekly, 0.7)
+      - site/products/<slug>.html     -> leaf (monthly, 0.6)
       - site/blog/index.html          -> hub (weekly, 0.7)
       - site/blog/<slug>.html         -> leaf (monthly, 0.6)
       - site/learn/index.html         -> hub (weekly, 0.7)
@@ -206,6 +213,18 @@ def discover_free_pages(site_dir: Path) -> list[tuple[str, str, str, str, float]
     Hub index.html filenames are preserved in the URL (e.g. /blog/index.html).
     """
     results: list[tuple[str, str, str, str, float]] = []
+
+    # ---- products ----
+    products_dir = site_dir / "products"
+    if products_dir.is_dir():
+        for p in sorted(products_dir.glob("*.html")):
+            if p.name == "index.html":
+                freq, pri = "weekly", 0.7
+            else:
+                freq, pri = "monthly", 0.6
+            rel = f"products/{p.name}"
+            if is_public_path("/" + rel):
+                results.append((rel, page_url(rel), freq, p.name, pri))
 
     # ---- blog ----
     blog_dir = site_dir / "blog"
@@ -357,7 +376,7 @@ def build_core_sitemap(existing_xml: str, site_dir: Path) -> str:
         entry = f"  <url><loc>{url}</loc><changefreq>{freq}</changefreq><priority>{pri_str}</priority></url>"
         core_entries.append(entry)
 
-    # Discover free-estate sub-family pages (blog/, learn/, tools/).
+    # Discover public sub-family pages (products/, blog/, learn/, tools/).
     free_entries: list[str] = []
     for _rel, url, freq, _fname, pri in discover_free_pages(site_dir):
         pri_str = f"{pri:.1f}" if pri == int(pri) else str(pri)

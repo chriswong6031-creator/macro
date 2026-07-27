@@ -82,6 +82,7 @@ def test_public_path_allows_without_session():
     "path",
     [
         "/stocks/NVDA.html",
+        "/products/market-terminal.html",
         "/tools/index.html",
         "/tools/calculators/roi.html",
         "/learn/technical/index.html",

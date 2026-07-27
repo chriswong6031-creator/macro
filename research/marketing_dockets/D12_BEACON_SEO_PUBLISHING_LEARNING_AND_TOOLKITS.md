@@ -24,6 +24,31 @@ index split still open per D12A R2). REMAINING lanes: MKT-SEO-05 living toolkits
 control, MKT-SEO-07 Search Console loop (operator GSC verification still open), MKT-SEO-08
 beyond the shipped llms.txt. Original W0 directive preserved below.
 
+**Operator amendment — Product Discovery W2 (2026-07-27):** Add a compact,
+task-oriented discovery layer to the public home page and a new `/products/` family:
+one platform overview plus substantive pages for Market Terminal, Mastermind AI, and
+Market Dashboards. The header taxonomy is Platform / Research / Resources / Pricing,
+with one Start free action; it is a route map into useful pages, not a directory of
+keyword variants. Institutional Research remains a permitted semi-gated destination,
+with the public preview responsible for clearly describing what is available before
+registration. Do not create new acquisition pages for methodology, named leadership,
+research standards, or track record in this wave. Existing trust pages remain
+unchanged; revisiting those four page concepts requires a new operator ruling.
+
+The W2 build sequence is intentionally phased:
+
+1. **Product foundation:** canonical MastermindX entity signals, accessible
+   server-rendered navigation, the four-page product family, internal links, access
+   policy, sitemap inclusion, and SEO Director/Search Console family measurement.
+2. **Evidence-backed feature expansion:** add a page only when the shipped product has
+   a distinct user job, demonstrable workflow, accurate limitations, and original
+   screenshots or evidence. Do not manufacture persona or keyword-location variants.
+3. **Living discovery objects:** prioritize repeat-use market tools and data-backed
+   hubs over static feature prose once their public data contracts are ready.
+4. **Crawl scaling:** execute MKT-SEO-06's coordinated sitemap-index migration and
+   Search Console refresh loop only after the family builders and consumers accept a
+   sitemap index. Until then, extend the single canonical sitemap.
+
 **Prior status (2026-07-20, pre-W1):** W0 READY FOR A SPECIALIST CLAUDE SESSION — docket only; no D12 product code had shipped
 
 **Operator request:** Launch a native blog, a TrendSpider-University-style Learning Center, free calculators, recurring market toolkits such as new 52-week highs and recent insider transactions, and the additional SEO systems worth building now.

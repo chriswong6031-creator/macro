@@ -486,6 +486,17 @@ class TestFamilyScorecard:
         assert "stocks" in sc["families"]
         assert sc["families"]["stocks"]["clicks"] == 3
 
+    def test_product_page_classified(self, tmp_path):
+        """products/market-terminal.html -> products family."""
+        rows = [_make_api_row(
+            page="https://www.mastermind-x.com/products/market-terminal.html",
+            query="browser market terminal", clicks=4, impressions=80
+        )]
+        df = _build_parquet(rows, None, "web", date(2025, 1, 1))
+        sc = _build_scorecard(df, "2026-07-20", _WINDOW)
+        assert "products" in sc["families"]
+        assert sc["families"]["products"]["clicks"] == 4
+
     def test_report_page_classified(self, tmp_path):
         """report_haven.html -> report family."""
         rows = [_make_api_row(
@@ -539,6 +550,7 @@ class TestBrandSplit:
         """Brand regex matches 'mastermind' variants."""
         assert _BRAND_RE.search("mastermind x")
         assert _BRAND_RE.search("Mastermind")
+        assert _BRAND_RE.search("MastermindX")
         assert _BRAND_RE.search("MASTERMIND X")
         assert _BRAND_RE.search("master mind")  # with space
 

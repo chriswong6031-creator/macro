@@ -1484,8 +1484,8 @@ def _build_meta(
         "headline": f"{ticker} — {name}: signals, options & factor profile",
         "datePublished": freshness,
         "dateModified": freshness,
-        "author": {"@type": "Organization", "name": "Mastermind"},
-        "publisher": {"@type": "Organization", "name": "Mastermind"},
+        "author": {"@type": "Organization", "name": "MastermindX Research"},
+        "publisher": {"@type": "Organization", "name": "MastermindX"},
         "about": {"@type": "Corporation", "name": name, "tickerSymbol": ticker},
         "url": f"{CANONICAL_BASE}/stocks/{ticker}.html",
     }

@@ -61,11 +61,19 @@ PUBLIC_PATHS = {"/", "/index.html", "/plans.html", "/support.html", "/unsubscrib
 # @reg_html_err `not path` exclusions (app/deploy/Caddyfile) — the edge is the
 # real enforcer, so the two lists MUST stay identical. Every entry is a live
 # sitemap.xml prefix:
-#   /stocks/  ~1.6k per-ticker SEO dossiers    /learn/  learning center
+#   /stocks/  ~1.6k per-ticker SEO dossiers    /products/ platform explainers
+#   /learn/   learning center
 #   /tools/   tools hub + calculators + sheets  /blog/   blog + feed
 #   /research/ per-report SEO landing pages + crawl hub (#3392/#3487 — public
 #   teaser + in-page paywall; the PDFs stay in private R2 behind /api auth)
-PUBLIC_PREFIXES = ("/stocks/", "/tools/", "/learn/", "/blog/", "/research/")
+PUBLIC_PREFIXES = (
+    "/stocks/",
+    "/products/",
+    "/tools/",
+    "/learn/",
+    "/blog/",
+    "/research/",
+)
 
 
 def _enabled() -> bool:

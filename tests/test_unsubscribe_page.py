@@ -205,7 +205,7 @@ def test_the_committed_page_matches_the_template():
 
 def test_page_builds_with_the_house_chrome(page):
     assert page.lstrip().startswith("<!DOCTYPE html>")
-    assert "<title>Unsubscribe — Mastermind</title>" in page
+    assert "<title>Unsubscribe — MastermindX</title>" in page
     assert 'href="theme.css"' in page and 'src="theme.js"' in page
     assert 'class="public-nav"' in page
     assert 'class="public-nav-links"' in page
@@ -668,7 +668,7 @@ PUBLIC_EXACT = frozenset({
 NEVER_PUBLIC = ("/labdata/", "/premiumdata/")
 PUBLIC_PREFIXES = frozenset({
     "/assets/css/", "/assets/landing/", "/factordata/tech_events/",
-    "/stocks/", "/tools/", "/learn/", "/blog/", "/research/", "/fonts/",
+    "/stocks/", "/products/", "/tools/", "/learn/", "/blog/", "/research/", "/fonts/",
 })
 
 

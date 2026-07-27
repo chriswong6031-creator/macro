@@ -1,6 +1,6 @@
 """engine.marketing.seo_director — Beacon SEO audit engine (weekly, fully offline).
 
-Audits the rendered site (site/*.html, site/stocks/ sampled, site/sitemap.xml,
+Audits the rendered site (site/*.html, site/products/*.html, site/stocks/ sampled, site/sitemap.xml,
 site/robots.txt, site/llms.txt, site/brand-facts.json) without any network calls.
 
 Health score 0-100, weighted:
@@ -19,6 +19,7 @@ Both host constants are imported from lib.seo (single source of truth).
 
 Page families (by filename):
   stocks    — site/stocks/**
+  products  — site/products/**
   fund      — fund_*.html
   strategy  — strategy_*.html
   report    — report_*.html
@@ -194,6 +195,7 @@ def classify_page(stem: str) -> str:
 
     Examples:
       "stocks/AAPL"   -> "stocks"
+      "products/market-terminal" -> "products"
       "fund_ako"      -> "fund"
       "strategy_btc"  -> "strategy"
       "report_haven"  -> "report"
@@ -203,8 +205,11 @@ def classify_page(stem: str) -> str:
       "macro"         -> "core"
     """
     name = Path(stem).name  # drop any leading path component
-    if name.startswith("stocks/") or str(stem).startswith("stocks/"):
+    rel = str(stem).replace("\\", "/")
+    if rel.startswith("stocks/"):
         return "stocks"
+    if rel.startswith("products/"):
+        return "products"
     if name.startswith("fund_"):
         return "fund"
     if name.startswith("strategy_"):
@@ -225,6 +230,8 @@ def _classify_html(path: Path, site_dir: Path) -> str:
     parts = rel.parts
     if len(parts) > 1 and parts[0] == "stocks":
         return "stocks"
+    if len(parts) > 1 and parts[0] == "products":
+        return "products"
     return classify_page(rel.stem)
 
 
@@ -469,6 +476,7 @@ def audit_site(site_dir: Path, *, as_of: datetime | None = None) -> dict:
     strategy_pages: list[Path] = []
     report_pages: list[Path] = []
     utility_pages: list[Path] = []
+    product_pages: list[Path] = []
     stocks_pages: list[Path] = []
 
     for html in sorted(site_dir.glob("*.html")):
@@ -488,7 +496,13 @@ def audit_site(site_dir: Path, *, as_of: datetime | None = None) -> dict:
     if stocks_dir.is_dir():
         stocks_pages = sorted(stocks_dir.glob("*.html"))
 
-    non_stocks_pages = core_pages + fund_pages + strategy_pages + report_pages + utility_pages
+    products_dir = site_dir / "products"
+    if products_dir.is_dir():
+        product_pages = sorted(products_dir.glob("*.html"))
+
+    non_stocks_pages = (
+        core_pages + fund_pages + strategy_pages + report_pages + utility_pages + product_pages
+    )
     all_public_pages = non_stocks_pages  # stocks handled separately
 
     # ---- build set of filenames present in site/ for internal link checks ----
@@ -533,7 +547,7 @@ def audit_site(site_dir: Path, *, as_of: datetime | None = None) -> dict:
         # Title
         title = meta.get("title")
         if not title:
-            sev = "high" if fam in ("core", "fund", "strategy") else "medium"
+            sev = "high" if fam in ("core", "fund", "strategy", "products") else "medium"
             _add_issue(sev, "missing_title", rel, "No <title> element")
         else:
             tlen = len(title)
@@ -549,7 +563,7 @@ def audit_site(site_dir: Path, *, as_of: datetime | None = None) -> dict:
         # Meta description
         desc = meta.get("description")
         if not desc:
-            sev = "high" if fam in ("core",) else "medium"
+            sev = "high" if fam in ("core", "products") else "medium"
             _add_issue(sev, "missing_description", rel, "No meta description")
         else:
             dlen = len(desc)
@@ -565,7 +579,7 @@ def audit_site(site_dir: Path, *, as_of: datetime | None = None) -> dict:
         # Canonical
         canonical = meta.get("canonical")
         if not canonical:
-            sev = "high" if fam in ("core", "fund", "strategy", "report") else "medium"
+            sev = "high" if fam in ("core", "fund", "strategy", "report", "products") else "medium"
             _add_issue(sev, "missing_canonical", rel, "No rel=canonical link")
         else:
             # Host check — flag wrong host as critical
@@ -670,7 +684,7 @@ def audit_site(site_dir: Path, *, as_of: datetime | None = None) -> dict:
 
     # ---- sitemap ----
     sitemap_path = site_dir / "sitemap.xml"
-    sitemap_data = {"total_urls": 0, "core": 0, "stocks": 0,
+    sitemap_data = {"total_urls": 0, "core": 0, "products": 0, "stocks": 0,
                     "host_ok": False, "bad_host_count": 0, "apex_host_count": 0,
                     "orphans_in_sitemap": [], "missing_from_sitemap": [],
                     "duplicates": [], "parse_ok": False}
@@ -710,6 +724,8 @@ def audit_site(site_dir: Path, *, as_of: datetime | None = None) -> dict:
                     # Classify url
                     if path_part.startswith("stocks/"):
                         sitemap_data["stocks"] += 1
+                    elif path_part.startswith("products/"):
+                        sitemap_data["products"] += 1
                     else:
                         sitemap_data["core"] += 1
 
@@ -829,9 +845,10 @@ def audit_site(site_dir: Path, *, as_of: datetime | None = None) -> dict:
                 pass
 
     # ---- census ----
-    families = ("core", "fund", "strategy", "report", "utility", "stocks")
+    families = ("core", "products", "fund", "strategy", "report", "utility", "stocks")
     family_pages = {
-        "core": core_pages, "fund": fund_pages, "strategy": strategy_pages,
+        "core": core_pages, "products": product_pages,
+        "fund": fund_pages, "strategy": strategy_pages,
         "report": report_pages, "utility": utility_pages, "stocks": stocks_pages,
     }
     in_sitemap_paths_set: set[str] = set()
@@ -927,6 +944,7 @@ def audit_site(site_dir: Path, *, as_of: datetime | None = None) -> dict:
         "sitemap": {
             "total_urls": sitemap_data["total_urls"],
             "core": sitemap_data.get("core", 0),
+            "products": sitemap_data.get("products", 0),
             "stocks": sitemap_data.get("stocks", 0),
             "host_ok": sitemap_data.get("host_ok", False),
             "bad_host_count": sitemap_data.get("bad_host_count", 0),

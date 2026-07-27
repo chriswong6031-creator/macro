@@ -13,7 +13,7 @@
    HTML — never inject it from theme.js. Favicon paths are root-relative (all
    pages that include this live at the site root). #}
 {%- set _base = 'https://www.mastermind-x.com/' -%}
-{%- set _title = seo_title | default('Mastermind — Macro Regime & Market Cycle Intelligence') -%}
+{%- set _title = seo_title | default('MastermindX — Macro Regime & Market Cycle Intelligence') -%}
 {%- set _desc = seo_desc | default('Live macro-regime, market-cycle and sector-rotation intelligence across US, China, Hong Kong, Canada and global markets — risk radar, signals and cycle clocks in one dashboard.') -%}
 {%- set _url = _base ~ (seo_path | default('')) -%}
 {%- set _img = _base ~ (seo_image | default('apple-touch-icon.png')) -%}
@@ -21,7 +21,7 @@
 <meta name="description" content="{{ _desc }}">
 <link rel="canonical" href="{{ _url }}">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Mastermind">
+<meta property="og:site_name" content="MastermindX">
 <meta property="og:title" content="{{ _title }}">
 <meta property="og:description" content="{{ _desc }}">
 <meta property="og:url" content="{{ _url }}">

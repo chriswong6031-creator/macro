@@ -6,6 +6,10 @@
   <url><loc>https://www.mastermind-x.com/privacy.html</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/support.html</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/terms.html</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/products/index.html</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.mastermind-x.com/products/market-dashboards.html</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/products/market-terminal.html</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/products/mastermind-ai.html</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/blog/compound-growth-for-traders.html</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/blog/congress-trades-are-not-realtime-signals.html</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/blog/how-to-keep-a-trading-journal.html</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
@@ -1627,6 +1631,13 @@
   <url><loc>https://www.mastermind-x.com/stocks/GLUE.html</loc><lastmod>2026-07-27</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/stocks/PPTA.html</loc><lastmod>2026-07-27</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/research/index.html</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/all-eyes-on-sox-fa2c9a.html</loc><lastmod>2026-07-27</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/the-ai-trade-s-moment-of-truth-56f3f0.html</loc><lastmod>2026-07-27</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/investor-positioning-and-flows-july-27-9493b9.html</loc><lastmod>2026-07-27</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/amazon-july-27-acd80e.html</loc><lastmod>2026-07-27</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/oracle-july-27-46a055.html</loc><lastmod>2026-07-27</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/spacex-july-27-8acc82.html</loc><lastmod>2026-07-27</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/tesla-july-27-a4e240.html</loc><lastmod>2026-07-27</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/wall-street-de-risked-tech-china-didnt-980d74.html</loc><lastmod>2026-07-27</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/is-korea-the-next-china-2015-396abc.html</loc><lastmod>2026-07-27</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/jpm-us-fomc-preview-1-671826.html</loc><lastmod>2026-07-27</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>

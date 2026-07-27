@@ -23,12 +23,12 @@
 })();</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Short Selling Profit Calculator — Mastermind</title>
+<title>Short Selling Profit Calculator — MastermindX</title>
 
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.classList.add('has-js');}catch(e){}</script><meta name="description" content="Calculate short selling profit or loss including the borrow fee. Enter your short entry, cover price, shares, fee rate and days held to net it out.">
 <link rel="canonical" href="https://www.mastermind-x.com/tools/calculators/short-selling.html">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Mastermind">
+<meta property="og:site_name" content="MastermindX">
 <meta property="og:title" content="Short Selling Profit Calculator">
 <meta property="og:description" content="Calculate short selling profit or loss including the borrow fee. Enter your short entry, cover price, shares, fee rate and days held to net it out.">
 <meta property="og:url" content="https://www.mastermind-x.com/tools/calculators/short-selling.html">
@@ -39,18 +39,9 @@
 <meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
 <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
 <link rel="icon" href="../../favicon.ico" sizes="any">
-<link rel="apple-touch-icon" href="../../apple-touch-icon.png"><style>
-@font-face{font-family:Inter;font-style:normal;font-weight:400;font-display:swap;src:url("fonts/Inter-400.woff2") format("woff2");}
-@font-face{font-family:Inter;font-style:normal;font-weight:500;font-display:swap;src:url("fonts/Inter-500.woff2") format("woff2");}
-@font-face{font-family:Inter;font-style:normal;font-weight:600;font-display:swap;src:url("fonts/Inter-600.woff2") format("woff2");}
-@font-face{font-family:Inter;font-style:normal;font-weight:700;font-display:swap;src:url("fonts/Inter-700.woff2") format("woff2");}
-@font-face{font-family:Inter;font-style:normal;font-weight:800;font-display:swap;src:url("fonts/Inter-800.woff2") format("woff2");}
-@font-face{font-family:Inter;font-style:normal;font-weight:900;font-display:swap;src:url("fonts/Inter-900.woff2") format("woff2");}
-</style>
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png"><link rel="stylesheet" href="../../theme.css?v=370c3de0"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.mastermind-x.com/"},{"@type":"ListItem","position":2,"name":"Tools","item":"https://www.mastermind-x.com/tools/index.html"},{"@type":"ListItem","position":3,"name":"Short Selling Profit Calculator"}]}</script>
 
-<link rel="stylesheet" href="../../theme.css?v=370c3de0"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.mastermind-x.com/"},{"@type":"ListItem","position":2,"name":"Tools","item":"https://www.mastermind-x.com/tools/index.html"},{"@type":"ListItem","position":3,"name":"Short Selling Profit Calculator"}]}</script>
-
-<link rel="stylesheet" href="../../assets/css/e06e389d.css?v=e06e389d">
+<link rel="stylesheet" href="../../assets/css/e194ed38.css?v=e194ed38">
 
 <link rel="stylesheet" href="../../assets/css/c68d2db1.css?v=c68d2db1">
 <link rel="preload" as="style" href="../../product-nav-icons.css?v=7b0290e9">
@@ -62,11 +53,12 @@
 
 <nav class="public-nav" aria-label="Main">
   <div class="public-nav-in">
-    <a class="public-brand" href="../../index.html"><span class="m">M</span> MASTERMIND</a>
+    <a class="public-brand" href="../../index.html" aria-label="MastermindX home"><span class="m">M</span> MASTERMINDX</a>
     <div class="public-nav-links">
-      <a href="https://app.mastermind-x.com">Terminal</a>
-      <a href="../../index.html#ai"><span class="l-en">Mastermind AI</span><span class="l-zh">Mastermind AI</span></a>
-      <a href="../../index.html#pricing"><span class="l-en">Pricing</span><span class="l-zh">定价</span></a>
+      <a href="../../products/index.html"><span class="l-en">Platform</span><span class="l-zh">平台</span></a>
+      <a href="../../research/index.html"><span class="l-en">Research</span><span class="l-zh">研究</span></a>
+      <a href="../../tools/index.html"><span class="l-en">Resources</span><span class="l-zh">资源</span></a>
+      <a href="../../plans.html"><span class="l-en">Pricing</span><span class="l-zh">定价</span></a>
     </div>
     <div class="public-nav-right">
       <a id="nav-login" class="public-nav-login" href="https://app.mastermind-x.com/terminal?signin=1"><span class="l-en">Log in</span><span class="l-zh">登录</span></a>
@@ -271,20 +263,26 @@
   <div class="f-in">
     <div class="f-grid">
       <div class="f-brand">
-        <div class="fb-row"><span class="fm">M</span><span class="fn">MASTERMIND</span></div>
+        <div class="fb-row"><span class="fm">M</span><span class="fn">MASTERMINDX</span></div>
         <p class="ft"><span class="l-en">Institutional-grade market intelligence.</span><span class="l-zh">机构级市场情报。</span></p>
       </div>
       <div class="f-cols">
         <div class="f-col">
-          <p><span class="l-en">Product</span><span class="l-zh">产品</span></p>
-          <a href="https://app.mastermind-x.com">Terminal</a>
-          <a href="../../start.html"><span class="l-en">Dashboards</span><span class="l-zh">仪表盘</span></a>
-          <a href="../../index.html#ai">Mastermind AI</a>
-          <a href="../../index.html#pricing"><span class="l-en">Pricing</span><span class="l-zh">定价</span></a>
+          <p><span class="l-en">Platform</span><span class="l-zh">平台</span></p>
+          <a href="../../products/index.html"><span class="l-en">Platform overview</span><span class="l-zh">平台概览</span></a>
+          <a href="../../products/market-terminal.html"><span class="l-en">Market Terminal</span><span class="l-zh">市场终端</span></a>
+          <a href="../../products/mastermind-ai.html">Mastermind AI</a>
+          <a href="../../products/market-dashboards.html"><span class="l-en">Market dashboards</span><span class="l-zh">市场仪表盘</span></a>
+          <a href="../../plans.html"><span class="l-en">Plans &amp; pricing</span><span class="l-zh">方案与定价</span></a>
+        </div>
+        <div class="f-col">
+          <p><span class="l-en">Research</span><span class="l-zh">研究</span></p>
+          <a href="../../research/index.html"><span class="l-en">Institutional research</span><span class="l-zh">机构研报</span></a>
+          <a href="../../stocks/index.html"><span class="l-en">Stock dossiers</span><span class="l-zh">股票档案</span></a>
+          <a href="../../about-research.html"><span class="l-en">About the research</span><span class="l-zh">关于研究</span></a>
         </div>
         <div class="f-col">
           <p><span class="l-en">Resources</span><span class="l-zh">资源</span></p>
-          <a href="../../methodology.html"><span class="l-en">Methodology</span><span class="l-zh">方法论</span></a>
           <a href="../../tools/index.html"><span class="l-en">Tools</span><span class="l-zh">工具</span></a>
           <a href="../../learn/index.html"><span class="l-en">Learn</span><span class="l-zh">学习</span></a>
           <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
@@ -299,7 +297,7 @@
       </div>
     </div>
     <div class="f-bot">
-      <span>© 2026 Mastermind · mastermind-x.com</span>
+      <span>© 2026 MastermindX · mastermind-x.com</span>
       <span class="f-legal"><a href="../../privacy.html"><span class="l-en">Privacy</span><span class="l-zh">隐私政策</span></a> · <a href="../../terms.html"><span class="l-en">Terms</span><span class="l-zh">服务条款</span></a> · <a href="../../disclaimer.html"><span class="l-en">Disclaimer</span><span class="l-zh">免责声明</span></a></span>
     </div>
   </div>
@@ -421,6 +419,11 @@
 
 
 
+
+<script>window.MM_API=window.MM_API||'https://app.mastermind-x.com';window.__mmAccountLoading=true;</script>
+<script src="../../supabase.js?v=8596965f" defer></script>
+<script src="../../account.js?v=e48d35c8" defer></script>
+<script src="../../mm_brain.js?v=02e3e5a2" defer></script>
 <script src="../../theme.js?v=c094a665" defer></script>
 
 <script>
@@ -468,6 +471,5 @@
 </script>
 
 <script src="../../onboard.js?v=8f1b52d1" defer></script>
-<script defer data-whb data-root="../../" src="../../wh_banner.js?v=37bf40aa"></script>
 </body>
 </html>

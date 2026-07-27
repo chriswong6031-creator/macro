@@ -85,6 +85,7 @@ _EXCLUDED_TEMPLATES = {
     # would emit duplicate meta tags.
     "seo_base.html.j2", "seo_article.html.j2", "seo_blog_index.html.j2",
     "seo_calculator_base.html.j2", "seo_learn_index.html.j2",
+    "seo_product.html.j2", "seo_products_index.html.j2",
     "seo_tools_index.html.j2",
 }
 

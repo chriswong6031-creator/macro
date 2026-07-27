@@ -1,15 +1,22 @@
 {
-  "effective_at": "2026-07-25",
-  "owner": "Mastermind Research",
+  "effective_at": "2026-07-27",
+  "owner": "MastermindX",
   "source": "https://www.mastermind-x.com/brand-facts.json",
   "brand": {
-    "name": "Mastermind",
+    "name": "MastermindX",
+    "alternate_name": "Mastermind",
     "url": "https://www.mastermind-x.com/",
-    "languages": ["en", "zh"]
+    "languages": ["en", "zh"],
+    "social_profiles": ["https://x.com/mastermindx001"]
   },
   "what_it_is": "Market-intelligence platform: nightly macro-regime, market-cycle and sector-rotation dashboards for US, China, Hong Kong, Canada and global markets, plus 1,600+ per-stock dossiers with proprietary trend, stage and confluence models.",
   "surface_scope": "public_unauthenticated",
   "surfaces": [
+    {
+      "name": "MastermindX Platform",
+      "url": "https://www.mastermind-x.com/products/index.html",
+      "description": "Overview of the Market Terminal, Mastermind AI, market dashboards and connected public research surfaces."
+    },
     {
       "name": "Stock Dossiers",
       "url": "https://www.mastermind-x.com/stocks/index.html",
@@ -31,7 +38,7 @@
       "description": "Free calculators for position sizing, risk, return and portfolio planning."
     },
     {
-      "name": "Mastermind Blog",
+      "name": "MastermindX Blog",
       "url": "https://www.mastermind-x.com/blog/index.html",
       "description": "Plain-English articles on trading math, risk and market mechanics."
     },
@@ -43,7 +50,7 @@
     {
       "name": "Homepage",
       "url": "https://www.mastermind-x.com/",
-      "description": "Overview of Mastermind's market-intelligence product and account access."
+      "description": "Overview of MastermindX market intelligence and account access."
     }
   ],
   "account_gated_product": {
@@ -56,7 +63,7 @@
     "update_cadence": "nightly"
   },
   "editorial": {
-    "author_entity": "Mastermind Research (organization)",
+    "author_entity": "MastermindX Research (organization)",
     "ai_use": "AI assists drafting and explanation; signals and scores come from deterministic engines."
   }
 }

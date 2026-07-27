@@ -162,7 +162,7 @@ def _jsonld(n: dict, canonical: str, meta_desc: str) -> str:
         "headline": n["title"][:110],
         "author": {"@type": "Organization", "name": n["inst"]},
         "publisher": {
-            "@type": "Organization", "name": "Mastermind",
+            "@type": "Organization", "name": "MastermindX",
             "logo": {"@type": "ImageObject", "url": f"{CANONICAL_BASE}/apple-touch-icon.png"},
         },
         "description": meta_desc,
@@ -368,7 +368,7 @@ def build(catalog: dict | None = None) -> int:
         date_bit = f" · {n['date_disp']}" if n["date_disp"] else ""
         meta_desc = _trunc(
             f"{n['inst']} institutional research{date_bit}. "
-            f"{n['teaser'] or 'Read the full report on Mastermind.'}", 158)
+            f"{n['teaser'] or 'Read the full report on MastermindX.'}", 158)
         page = tmpl.render(
             n=n, canonical=canonical, meta_desc=meta_desc,
             jsonld_str=_jsonld(n, canonical, meta_desc),

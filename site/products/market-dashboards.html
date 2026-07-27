@@ -1,0 +1,350 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script data-dbase>(function () {
+  window.DATA_BASE = window.DATA_BASE || "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev";  // R2 public data plane (flip: clear to revert to Pages)
+  var B = window.DATA_BASE;
+  if (!B) return;                                         // no-op when unset -> zero behavior change
+  B = B.replace(/\/+$/, "");                              // strip trailing slash
+  // the per-ticker stores that live in R2 (mirror scripts/publish_r2.py DEFAULT_DIRS)
+  var RE = /^(ohlc|chinaohlc|hkohlc|intlohlc|canadaohlc|subsectorohlc(?:_china|_russell|_nasdaq)?|stockdata|chinastockdata|hkstockdata|canadastockdata|intlstockdata|intraday)\//;
+  var orig = window.fetch;
+  window.fetch = function (u, o) {
+    try {
+      if (typeof u === "string") {
+        var rel = u.replace(/^(?:\.\.\/)+/, "");          // strip any ../ depth prefix
+        if (RE.test(rel)) u = B + "/" + rel;              // -> https://<data-host>/ohlc/AAPL.json
+      }
+    } catch (e) { /* never let the shim break a fetch */ }
+    return orig.call(this, u, o);
+  };
+})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Market Intelligence Dashboards — MastermindX</title>
+
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.classList.add('has-js');}catch(e){}</script><meta name="description" content="Read nightly market dashboards for the US, China, Hong Kong, Canada and international markets, with macro, cycle, sector and cross-asset context.">
+<link rel="canonical" href="https://www.mastermind-x.com/products/market-dashboards.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="MastermindX">
+<meta property="og:title" content="Market Intelligence Dashboards">
+<meta property="og:description" content="Read nightly market dashboards for the US, China, Hong Kong, Canada and international markets, with macro, cycle, sector and cross-asset context.">
+<meta property="og:url" content="https://www.mastermind-x.com/products/market-dashboards.html">
+<meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Market Intelligence Dashboards">
+<meta name="twitter:description" content="Read nightly market dashboards for the US, China, Hong Kong, Canada and international markets, with macro, cycle, sector and cross-asset context.">
+<meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png"><link rel="stylesheet" href="../theme.css?v=370c3de0"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.mastermind-x.com/"},{"@type":"ListItem","position":2,"name":"Platform","item":"https://www.mastermind-x.com/products/index.html"},{"@type":"ListItem","position":3,"name":"Market Dashboards"}]}</script><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "Market Intelligence Dashboards",
+  "description": "Read nightly market dashboards for the US, China, Hong Kong, Canada and international markets, with macro, cycle, sector and cross-asset context.",
+  "url": "https://www.mastermind-x.com/products/market-dashboards.html",
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "MastermindX",
+    "url": "https://www.mastermind-x.com/"
+  },
+  "mainEntity": {
+    "@type": "SoftwareApplication",
+    "name": "Market Dashboards",
+    "applicationCategory": "FinanceApplication",
+    "operatingSystem": "Web browser",
+    "url": "https://www.mastermind-x.com/products/market-dashboards.html"
+  }
+}</script>
+
+<link rel="stylesheet" href="../assets/css/43592e0a.css?v=43592e0a">
+
+<link rel="stylesheet" href="../assets/css/c68d2db1.css?v=c68d2db1">
+<link rel="preload" as="style" href="../product-nav-icons.css?v=7b0290e9">
+
+
+</head>
+<body class="estate public-page est-product product-market-dashboards">
+
+
+<nav class="public-nav" aria-label="Main">
+  <div class="public-nav-in">
+    <a class="public-brand" href="../index.html" aria-label="MastermindX home"><span class="m">M</span> MASTERMINDX</a>
+    <div class="public-nav-links">
+      <a href="../products/index.html"><span class="l-en">Platform</span><span class="l-zh">平台</span></a>
+      <a href="../research/index.html"><span class="l-en">Research</span><span class="l-zh">研究</span></a>
+      <a href="../tools/index.html"><span class="l-en">Resources</span><span class="l-zh">资源</span></a>
+      <a href="../plans.html"><span class="l-en">Pricing</span><span class="l-zh">定价</span></a>
+    </div>
+    <div class="public-nav-right">
+      <a id="nav-login" class="public-nav-login" href="https://app.mastermind-x.com/terminal?signin=1"><span class="l-en">Log in</span><span class="l-zh">登录</span></a>
+      <a id="nav-cta" class="public-nav-cta" href="https://app.mastermind-x.com/terminal?signup=1"><span class="l-en">Start free</span><span class="l-zh">免费开始</span></a>
+      <span class="gear-wrap">
+        <button class="gearbtn" id="gear-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+        <div class="gear-pop" id="gear-pop" role="menu" aria-label="Settings">
+          <p class="gp-kicker"><span class="l-en">Settings</span><span class="l-zh">设置</span></p>
+          <div class="gp-lang">
+            <span class="gp-lbl"><span class="l-en">Language</span><span class="l-zh">语言</span></span>
+            <span class="gp-seg" role="group" aria-label="Language">
+              <button type="button" class="gp-seg-b" data-set-lang="en">EN</button>
+              <button type="button" class="gp-seg-b" data-set-lang="zh">中文</button>
+            </span>
+          </div>
+          <div class="gp-div"></div>
+          <a class="gp-link" role="menuitem" href="../start.html"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></a>
+          <div class="gp-div"></div>
+          <div class="gp-acct">
+            <p class="gp-acct-t"><span class="l-en">Account</span><span class="l-zh">账户</span></p>
+            <div class="gp-acct-out" id="gp-acct-out">
+              <p class="gp-acct-d"><span class="l-en">Sign in to sync your watchlists, alerts and settings across devices.</span><span class="l-zh">登录以在所有设备同步自选、提醒与设置。</span></p>
+              <div class="gp-acct-btns">
+                <button type="button" class="gp-abtn ghost" id="gp-signin"><span class="l-en">Sign in</span><span class="l-zh">登录</span></button>
+                <button type="button" class="gp-abtn solid" id="gp-signup"><span class="l-en">Create account</span><span class="l-zh">创建账户</span></button>
+              </div>
+            </div>
+            <div class="gp-acct-in" id="gp-acct-in" hidden>
+              <div class="gp-acct-card" id="gp-acct-card" role="button" tabindex="0">
+                <span class="gp-avatar" id="gp-avatar"></span>
+                <span class="gp-acct-main"><span class="gp-acct-email" id="gp-email"></span><span class="gp-acct-sub"><span class="l-en">Manage account & sync ›</span><span class="l-zh">管理账户与同步 ›</span></span></span>
+              </div>
+              <button type="button" class="gp-signout" id="gp-signout"><span class="l-en">Sign out</span><span class="l-zh">退出登录</span></button>
+            </div>
+          </div>
+        </div>
+      </span>
+    </div>
+  </div>
+</nav>
+
+
+
+<nav class="est-crumb" aria-label="Breadcrumb">
+  <ol>
+
+    <li>
+      <a href="../">Home</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+
+    <li>
+      <a href="../products/index.html">Platform</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+
+    <li aria-current="page">
+      Market Dashboards
+    </li>
+
+
+  </ol>
+</nav>
+
+
+<main id="main">
+
+<section class="prod-hero">
+  <div class="prod-copy">
+    <span class="est-kicker">Macro, cycle and rotation</span>
+    <h1 class="est-title">Market Intelligence Dashboards</h1>
+    <p class="est-dek">Read nightly market dashboards for the US, China, Hong Kong, Canada and international markets, with macro, cycle, sector and cross-asset context.</p>
+
+    <div class="prod-cta">
+      <a class="gbtn gbtn-lg gbtn-cta" href="https://app.mastermind-x.com/terminal?signup=1">Start free →</a>
+    </div>
+
+  </div>
+  <aside class="prod-workflow" aria-label="Product workflow">
+    <span class="pw-k"><span class="l-en">How it fits</span><span class="l-zh">使用流程</span></span>
+    <ol>
+      <li>Orient with the regional market state</li><li>Trace the reading into sectors and assets</li><li>Open the underlying ticker or research context</li>
+    </ol>
+  </aside>
+</section>
+
+<div class="prod-layout">
+  <nav class="prod-toc" aria-label="On this page">
+    <p class="toc-h"><span class="l-en">On this page</span><span class="l-zh">本页目录</span></p>
+    <a href="#read-regional-markets-on-their-own-terms">Read regional markets on their own terms</a><a href="#start-with-market-state-and-health">Start with market state and health</a><a href="#move-from-markets-to-sectors-and-themes">Move from markets to sectors and themes</a><a href="#add-cross-asset-context">Add cross-asset context</a><a href="#connect-the-reading-to-ai-and-research">Connect the reading to AI and research</a><a href="#coverage-cadence-and-access-limits">Coverage, cadence and access limits</a>
+  </nav>
+  <div class="prod-main">
+    <article class="est-prose">
+      <p>MastermindX market dashboards turn nightly engine output into focused views of regional markets, macro conditions, cycles, sectors, themes and cross-asset relationships.</p>
+
+<h2 id="read-regional-markets-on-their-own-terms">Read regional markets on their own terms</h2>
+<p>Coverage spans the US, China, Hong Kong, Canada and an international comparison set. Each region has dedicated macro and equity views, while region-specific surfaces add the flows, policy, currency or commodity context that matters there.</p>
+
+<h2 id="start-with-market-state-and-health">Start with market state and health</h2>
+<p>Macro views organize available growth, inflation, liquidity, rates, credit and regime context. Market-health views add breadth, volatility, index condition and scheduled catalysts where those inputs exist. They describe state at their stated cadence rather than pretending every field is a real-time feed.</p>
+
+<h2 id="move-from-markets-to-sectors-and-themes">Move from markets to sectors and themes</h2>
+<p>Sector and thematic views organize heat, cycle position, breadth and rotation for scanning. Links into baskets and stock dossiers make a broad observation investigable at the constituent level.</p>
+
+<h2 id="add-cross-asset-context">Add cross-asset context</h2>
+<p>Dedicated surfaces cover commodities, foreign exchange, bonds, Bitcoin and cross-asset relationships. They help reveal whether rates, the dollar, credit or commodity moves support or conflict with the equity picture.</p>
+
+<h2 id="connect-the-reading-to-ai-and-research">Connect the reading to AI and research</h2>
+<p>Mastermind AI can explain a page or panel using the current context, while linked stock dossiers and institutional research pages provide ticker- and report-level detail. The dashboard is a starting point for investigation, not the final word.</p>
+
+<h2 id="coverage-cadence-and-access-limits">Coverage, cadence and access limits</h2>
+<div class="callout warn"><span class="co-h">Not every surface updates together</span><p>Most engine-generated dashboards rebuild nightly; selected quote or intraday surfaces may update more frequently. Regions do not expose identical fields, missing data can produce unavailable readings, and deeper dashboards may require registration or a paid plan.</p></div>
+<p>Dashboard outputs are research context, not investment advice. Read the timestamp and limitation labels attached to each surface before comparing two states.</p>
+    </article>
+
+
+    <aside class="prod-related" aria-label="Related product and research pages">
+      <h2><span class="l-en">Continue the workflow</span><span class="l-zh">继续探索</span></h2>
+      <div class="prod-rel-grid">
+
+        <a class="prod-rel" href="../products/market-terminal.html">
+          <span class="kind"><span class="l-en">Product</span><span class="l-zh">产品</span></span>
+          <span class="name">Market Terminal &amp; Browser Charting</span>
+          <span class="go"><span class="l-en">Explore</span><span class="l-zh">查看</span> →</span>
+        </a>
+
+        <a class="prod-rel" href="../products/mastermind-ai.html">
+          <span class="kind"><span class="l-en">Product</span><span class="l-zh">产品</span></span>
+          <span class="name">AI Market Research Assistant</span>
+          <span class="go"><span class="l-en">Explore</span><span class="l-zh">查看</span> →</span>
+        </a>
+
+
+        <a class="prod-rel" href="../research/index.html">
+          <span class="kind"><span class="l-en">Research surface</span><span class="l-zh">研究页面</span></span>
+          <span class="name">Browse institutional research</span>
+          <span class="go"><span class="l-en">Open</span><span class="l-zh">打开</span> →</span>
+        </a>
+
+        <a class="prod-rel" href="../tools/index.html">
+          <span class="kind"><span class="l-en">Research surface</span><span class="l-zh">研究页面</span></span>
+          <span class="name">Use free market calculators</span>
+          <span class="go"><span class="l-en">Open</span><span class="l-zh">打开</span> →</span>
+        </a>
+
+      </div>
+    </aside>
+
+  </div>
+</div>
+
+</main>
+
+
+<footer class="public-footer">
+  <div class="f-in">
+    <div class="f-grid">
+      <div class="f-brand">
+        <div class="fb-row"><span class="fm">M</span><span class="fn">MASTERMINDX</span></div>
+        <p class="ft"><span class="l-en">Institutional-grade market intelligence.</span><span class="l-zh">机构级市场情报。</span></p>
+      </div>
+      <div class="f-cols">
+        <div class="f-col">
+          <p><span class="l-en">Platform</span><span class="l-zh">平台</span></p>
+          <a href="../products/index.html"><span class="l-en">Platform overview</span><span class="l-zh">平台概览</span></a>
+          <a href="../products/market-terminal.html"><span class="l-en">Market Terminal</span><span class="l-zh">市场终端</span></a>
+          <a href="../products/mastermind-ai.html">Mastermind AI</a>
+          <a href="../products/market-dashboards.html"><span class="l-en">Market dashboards</span><span class="l-zh">市场仪表盘</span></a>
+          <a href="../plans.html"><span class="l-en">Plans &amp; pricing</span><span class="l-zh">方案与定价</span></a>
+        </div>
+        <div class="f-col">
+          <p><span class="l-en">Research</span><span class="l-zh">研究</span></p>
+          <a href="../research/index.html"><span class="l-en">Institutional research</span><span class="l-zh">机构研报</span></a>
+          <a href="../stocks/index.html"><span class="l-en">Stock dossiers</span><span class="l-zh">股票档案</span></a>
+          <a href="../about-research.html"><span class="l-en">About the research</span><span class="l-zh">关于研究</span></a>
+        </div>
+        <div class="f-col">
+          <p><span class="l-en">Resources</span><span class="l-zh">资源</span></p>
+          <a href="../tools/index.html"><span class="l-en">Tools</span><span class="l-zh">工具</span></a>
+          <a href="../learn/index.html"><span class="l-en">Learn</span><span class="l-zh">学习</span></a>
+          <a href="../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+          <a href="../support.html"><span class="l-en">Support</span><span class="l-zh">支持</span></a>
+        </div>
+        <div class="f-col">
+          <p><span class="l-en">Legal</span><span class="l-zh">法律</span></p>
+          <a href="../privacy.html"><span class="l-en">Privacy</span><span class="l-zh">隐私政策</span></a>
+          <a href="../terms.html"><span class="l-en">Terms</span><span class="l-zh">服务条款</span></a>
+          <a href="../disclaimer.html"><span class="l-en">Disclaimer</span><span class="l-zh">免责声明</span></a>
+        </div>
+      </div>
+    </div>
+    <div class="f-bot">
+      <span>© 2026 MastermindX · mastermind-x.com</span>
+      <span class="f-legal"><a href="../privacy.html"><span class="l-en">Privacy</span><span class="l-zh">隐私政策</span></a> · <a href="../terms.html"><span class="l-en">Terms</span><span class="l-zh">服务条款</span></a> · <a href="../disclaimer.html"><span class="l-en">Disclaimer</span><span class="l-zh">免责声明</span></a></span>
+    </div>
+  </div>
+</footer>
+
+
+
+
+<script>
+(function(){
+  var links=[].slice.call(document.querySelectorAll('.prod-toc a'));
+  var heads=links.map(function(a){return document.querySelector(a.getAttribute('href'));});
+  if(!links.length)return;
+  function spy(){
+    var y=window.scrollY+100, active=0;
+    heads.forEach(function(h,i){if(h&&h.offsetTop<=y)active=i;});
+    links.forEach(function(a,i){a.classList.toggle('active',i===active);});
+  }
+  window.addEventListener('scroll',spy,{passive:true}); spy();
+})();
+</script>
+
+
+
+<script>window.MM_API=window.MM_API||'https://app.mastermind-x.com';window.__mmAccountLoading=true;</script>
+<script src="../supabase.js?v=8596965f" defer></script>
+<script src="../account.js?v=e48d35c8" defer></script>
+<script src="../mm_brain.js?v=02e3e5a2" defer></script>
+<script src="../theme.js?v=c094a665" defer></script>
+
+<script>
+(function(){
+  var nav=document.querySelector('.public-nav');
+  if(nav){
+    var raf=false;
+    var update=function(){nav.classList.toggle('sc',window.scrollY>10);raf=false;};
+    window.addEventListener('scroll',function(){
+      if(!raf){raf=true;window.requestAnimationFrame(update);}
+    },{passive:true});
+    update();
+  }
+
+  var btn=document.getElementById('gear-btn');
+  var pop=document.getElementById('gear-pop');
+  if(!btn||!pop)return;
+  var segs=Array.prototype.slice.call(pop.querySelectorAll('.gp-seg-b'));
+  var current=function(){return document.documentElement.getAttribute('data-lang')==='zh'?'zh':'en';};
+  var close=function(){pop.classList.remove('open');btn.setAttribute('aria-expanded','false');};
+  var sync=function(){var lang=current();segs.forEach(function(s){s.classList.toggle('on',s.getAttribute('data-set-lang')===lang);});};
+  btn.addEventListener('click',function(e){
+    e.stopPropagation();
+    var opening=!pop.classList.contains('open');
+    pop.classList.toggle('open',opening);
+    btn.setAttribute('aria-expanded',opening?'true':'false');
+  });
+  segs.forEach(function(s){
+    s.addEventListener('click',function(e){
+      e.stopPropagation();
+      var lang=s.getAttribute('data-set-lang')==='zh'?'zh':'en';
+      document.documentElement.setAttribute('data-lang',lang);
+      document.documentElement.lang=lang==='zh'?'zh-CN':'en';
+      try{localStorage.setItem('lang',lang);}catch(ignore){}
+      try{document.dispatchEvent(new CustomEvent('langchange',{detail:{lang:lang}}));}catch(ignore){}
+      sync();
+    });
+  });
+  document.addEventListener('click',function(e){if(!pop.contains(e.target)&&e.target!==btn)close();});
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'&&pop.classList.contains('open')){close();btn.focus();}
+  });
+  sync();
+})();
+</script>
+
+<script src="../onboard.js?v=8f1b52d1" defer></script>
+</body>
+</html>
