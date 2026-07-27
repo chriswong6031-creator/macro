@@ -1287,7 +1287,16 @@ def main() -> int:
     try:
         from engine.trend_episode import current_episode
         _cl = pd.read_parquet(config.ROOT / "data" / "yahoo" / "CL_F.parquet")
-        oil_episode = current_episode(_cl["close"] if "close" in _cl else _cl["close_price"])
+        _oil_close = _cl["close"] if "close" in _cl else _cl["close_price"]
+        oil_episode = current_episode(_oil_close)
+        if oil_episode:
+            # 1-month point-to-point return so the template can name the 3-month trend
+            # horizon and flag an opposite-signed short-term move (a bounce inside a
+            # downtrend / a pullback inside an uptrend) — keeps the medium-term regime
+            # read from being misread as a 1-month call.
+            _oc = pd.Series(_oil_close).dropna().astype(float)
+            oil_episode["ret_1m"] = (round(float(_oc.iloc[-1] / _oc.iloc[-23] - 1.0) * 100.0, 1)
+                                     if len(_oc) > 23 else None)
     except Exception as _oe:  # noqa: BLE001 — a context chip must never crash the build
         log.warning("oil_episode read failed (%s); chip hidden", _oe)
     try:
