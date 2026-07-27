@@ -1339,6 +1339,13 @@
    "surfaces": [
     "subsector_rotation"
    ]
+  },
+  {
+   "match": "validated two likely sources of ongoing disinflation",
+   "backing": "Attributed Goldman Sachs Global Investment Research report, 'US Daily: What the Rebound in Oil Prices Means for Upcoming Inflation Prints' (2026-07-24), reproduced in the research reader. This is an external analyst's evidence statement about June CPI components, not a Macro Dashboard model-validation or alpha claim.",
+   "surfaces": [
+    "research"
+   ]
   }
  ]
 }
