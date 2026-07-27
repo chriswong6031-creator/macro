@@ -414,11 +414,14 @@ class TestConsistencyRows:
         gate = self._build_gate(tmp_path)
         rows = aoc._consistency_rows(gate, tmp_path, date(2026, 7, 6))
         drift = next(r for r in rows if r["check"] == "bh_test_count_drift")
-        # gate.json family_size=22; registered=28; docstring=22
-        assert drift["registry_registered"] == 28
+        # Registry and validator both sit at the post-FS-3 family size of 36
+        # (28 OVC + 8 S-FLOWML cells — OPTIONS_ALPHA_MASTERPLAN §4, FS-3 amendment
+        # 2026-07-13). The fixture gate.json deliberately carries the older 22 so the
+        # drift row has a real mismatch to surface.
+        assert drift["registry_registered"] == 36
         assert drift["gate_json_family_size"] == 22
-        assert drift["validate_docstring_count"] == 22
-        assert "W-OVC" in drift["note"] or "W-OVC" in drift["note"]
+        assert drift["validate_docstring_count"] == 36
+        assert "W-OVC" in drift["note"]
 
     def test_stale_asof_ages_row_present(self, tmp_path: Path) -> None:
         gate = self._build_gate(tmp_path)
