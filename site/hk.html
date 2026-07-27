@@ -289,6 +289,15 @@
 
   
   
+  
+  
+  
+  
+  <div class="span12 hk-fresh-degraded" id="hk-freshness-banner">
+    <span class="hfd-i">&#9680;</span> <span class="l-en">Some background feeds are a step behind — prices and picks are current. (prices current as of 2026-07-24)</span><span class="l-zh">部分后台数据来源稍有滞后 — 价格和选股仍是最新的。（价格截至 2026-07-24 为最新）</span>
+  </div>
+  
+  
 
   
   
@@ -1290,8 +1299,8 @@
     <div class="hkx-card" role="button" tabindex="0" onclick="hkxOpenDlg('hkx-dlg-health')" style="align-self:start;cursor:pointer">
       <div class="hkx-ctitle"><span class="l-en">Data Health</span><span class="l-zh">数据状态</span></div>
       <div style="display:flex;align-items:center;gap:8px;font-size:12px">
-        <span style="width:8px;height:8px;border-radius:50%;background:var(--up);flex:0 0 8px;display:inline-block"></span>
-        <b><span class="l-en">OK</span><span class="l-zh">正常</span></b>
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--warn);flex:0 0 8px;display:inline-block"></span>
+        <b><span class="l-en">Check data</span><span class="l-zh">请检查数据</span></b>
         <span style="margin-left:auto;opacity:.6;font-size:10px"><span class="l-en">tap for details</span><span class="l-zh">点击查看详情</span> ↓</span>
       </div>
     </div>
@@ -2302,14 +2311,16 @@ The sector action fits the playbook of short-term mean reversion. Semiconductors
         <div class="hkx-plain"><span class="l-en">Each data feed has a freshness check. Stale feeds are noted here — values still display, but treat them with caution until the next nightly update.</span><span class="l-zh">每个数据来源都有新鲜度检查。过期数据在此标注 — 数值仍会显示，但在下次夜间更新前请谨慎对待。</span></div>
         <div class="hkx-eyebrow"><span class="l-en">Overall status</span><span class="l-zh">整体状态</span></div>
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-          <span style="width:10px;height:10px;border-radius:50%;background:var(--up);flex:0 0 10px;display:inline-block"></span>
-          <b><span class="l-en">OK — all feeds current</span><span class="l-zh">正常 — 所有数据源最新</span></b>
+          <span style="width:10px;height:10px;border-radius:50%;background:var(--warn);flex:0 0 10px;display:inline-block"></span>
+          <b><span class="l-en">Degraded — some feeds behind</span><span class="l-zh">降级 — 部分数据来源落后</span></b>
         </div>
         
         
         
+        <div class="hkx-kv"><span class="hkx-k"><span class="l-en">Detail</span><span class="l-zh">详情</span></span><span class="hkx-v" style="color:var(--warn)"><span class="l-en">Some background feeds are a step behind — prices and picks are current. (prices current as of 2026-07-24)</span><span class="l-zh">部分后台数据来源稍有滞后 — 价格和选股仍是最新的。（价格截至 2026-07-24 为最新）</span></span></div>
         
-        <div class="hkx-kv"><span class="hkx-k"><span class="l-en">Expected session</span><span class="l-zh">预期交易日</span></span><span class="hkx-v">2026-07-24</span></div>
+        
+        <div class="hkx-kv"><span class="hkx-k"><span class="l-en">Expected session</span><span class="l-zh">预期交易日</span></span><span class="hkx-v">2026-07-27</span></div>
         
         
         
@@ -2320,7 +2331,7 @@ The sector action fits the playbook of short-term mean reversion. Semiconductors
         
         <div class="hkx-kv"><span class="hkx-k"><span class="l-en">Regime as-of</span><span class="l-zh">周期截至</span></span><span class="hkx-v">2026-07-24</span></div>
         
-        <div class="hkx-kv"><span class="hkx-k"><span class="l-en">ADR bridge</span><span class="l-zh">ADR桥接</span></span><span class="hkx-v hkx-up"><span class="l-en">Current</span><span class="l-zh">正常</span></span></div>
+        <div class="hkx-kv"><span class="hkx-k"><span class="l-en">ADR bridge</span><span class="l-zh">ADR桥接</span></span><span class="hkx-v hkx-dn"><span class="l-en">Behind</span><span class="l-zh">落后</span></span></div>
         
         <div class="hkx-kv"><span class="hkx-k"><span class="l-en">Company filings</span><span class="l-zh">公司公告</span></span><span class="hkx-v hkx-dn"><span class="l-en">Behind</span><span class="l-zh">落后</span></span></div>
         
@@ -2424,7 +2435,7 @@ The sector action fits the playbook of short-term mean reversion. Semiconductors
 </div>
 
 <div class="foot">
-  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-27 09:17 UTC<br>
+  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-27 09:44 UTC<br>
   <span class="made">© 2026 Mastermind Inc</span>
 </div>
 

@@ -97,6 +97,24 @@
     border:1px solid color-mix(in srgb,var(--accent) 32%,transparent);
     padding:3px 8px; border-radius:999px; white-space:nowrap; }
   .badge-save.hidden { display:none; }
+  .rack-price { display:flex; align-items:center; gap:7px; min-height:1.5em; margin-top:10px;
+    color:var(--muted); font-size:11.5px; }
+  .rack-price s { color:var(--text); text-decoration-thickness:1.5px; }
+  .rack-price.hidden { display:none; }
+
+  .founding-meter { margin:14px 0 1px; padding:11px 12px; border-radius:11px;
+    border:1px solid color-mix(in srgb,var(--t-pro) 32%,var(--line));
+    background:color-mix(in srgb,var(--t-pro) 8%,transparent); }
+  .founding-meter.hidden { display:none; }
+  .founding-line { display:flex; justify-content:space-between; gap:12px; align-items:baseline;
+    font-size:11.5px; color:var(--muted); }
+  .founding-line b { color:var(--text); font:700 11.5px/1.2 var(--font-ui); }
+  .founding-track { height:6px; margin-top:8px; border-radius:999px; overflow:hidden;
+    background:color-mix(in srgb,var(--t-pro) 16%,var(--panel)); }
+  .founding-fill { width:0; height:100%; border-radius:inherit;
+    background:linear-gradient(90deg,var(--t-pro),color-mix(in srgb,var(--t-pro) 60%,#fff));
+    transition:width .35s ease; }
+  .founding-terms { margin:8px 0 0; color:var(--muted); font-size:10.5px; line-height:1.4; }
 
   .cta { margin:18px 0 4px; }
   .cta .gbtn { width:100%; }
@@ -213,4 +231,8 @@
   @media (prefers-reduced-motion:reduce){
     .btoggle .knob, .card, .price .amt, .faq summary .chev, #ptoast { transition:none; }
     .gbtn .spin { animation-duration:1.4s; }
+  }
+  @media (max-width:480px){
+    .btoggle .save-flag { display:none; }
+    .btoggle button { padding-left:24px; padding-right:24px; }
   }
