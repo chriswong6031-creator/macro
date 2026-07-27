@@ -36,7 +36,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from engine.marketing import copywriter, live_verify, movers_source, outbox, sentinel
+from engine.marketing import (
+    copywriter,
+    live_verify,
+    market_facts,
+    movers_source,
+    outbox,
+    sentinel,
+)
 
 log = logging.getLogger(__name__)
 
@@ -834,3 +841,322 @@ def _build_source(cand: dict, slot: str, now: datetime, quote_source: str) -> di
         "theme": cand.get("_theme_name", ""),
         "agg_pct": cand.get("_agg_pct"),
     }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Publish-time DAILY READ ("My read on today's move", kind=event)
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Sibling to generate_slot_items, one family over. The NIGHTLY plan bakes the
+# `event` post at ~04:00 UTC but schedules it after the close, so it ships a
+# driver read written ~18h stale. This generates the read AT publish time from
+# the FRESH daily brief (market_facts.event_facts reads why_the_tape_moved,
+# which refreshes intraday), on the after-close ladder slot, ONCE per day.
+#
+# DARK BY DEFAULT: publish.publish_time_read.enabled is False when the block is
+# absent, so old configs / test fixtures without the block never fire. When
+# disabled the function returns a disabled report and writes NOTHING — nothing
+# can auto-post under the default config.
+
+# In-code defaults for the publish.publish_time_read block (mirror _DEFAULTS).
+_READ_DEFAULTS: dict[str, Any] = {
+    "enabled": False,       # DARK by default (operator arms after dry-runs)
+    "slot": "S8",           # after-close ladder slot (outbox._LADDER_PT_HOURS: 18:00 PT)
+}
+
+_READ_KIND = "event"
+
+
+def _read_cfg(cfg: dict | None) -> dict[str, Any]:
+    """Resolve publish.publish_time_read over the in-code defaults (fail-soft).
+
+    Mirrors _pt_cfg: a missing block leaves `enabled` False (the dark default),
+    and a junk value coerces to the default type rather than raising.
+    """
+    out = dict(_READ_DEFAULTS)
+    try:
+        block = ((cfg or {}).get("publish") or {}).get("publish_time_read") or {}
+        for k, dv in _READ_DEFAULTS.items():
+            if k in block:
+                if isinstance(dv, bool):
+                    v = block[k]
+                    out[k] = v if isinstance(v, bool) else (
+                        str(v).strip().lower() in {"1", "true", "yes"})
+                else:
+                    out[k] = type(dv)(block[k])
+    except Exception as exc:  # noqa: BLE001
+        log.warning("publish_time_content: bad publish.publish_time_read config "
+                    "(%s) — using defaults", exc)
+    return out
+
+
+def _ladder_local(now: datetime) -> datetime | None:
+    """`now` in the ladder's Pacific clock, or None if the tz database is absent.
+
+    The after-close ladder is a PACIFIC-clock concept, so both the weekday gate
+    and the slot gate must read the Pacific frame — an S8 (18:00 PT) instant is
+    the NEXT UTC calendar day (Fri 18:00 PT == Sat 01:00 UTC), so a UTC-based
+    weekday check would wrongly reject a legitimate Friday after-close read and
+    wrongly admit a Sunday-evening one. zoneinfo keeps the Pacific→UTC offset
+    DST-safe (never hardcode -7/-8).
+    """
+    try:
+        from zoneinfo import ZoneInfo  # noqa: PLC0415
+        return now.astimezone(ZoneInfo(outbox._LADDER_TZ))
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _ladder_slot_label(local: datetime) -> str | None:
+    """Map a Pacific-LOCAL datetime to its 2-hour ladder slot label (S1..S8).
+
+    The daily read fires on an after-close ladder slot (config default S8 =
+    18:00 PT), NOT on the AM/PM/EOD publish window `_slot_label` returns. Each
+    ladder slot owns the 2-hour block [pt_hour, pt_hour+2) (outbox._LADDER_PT_HOURS).
+    """
+    hour = local.hour
+    best: str | None = None
+    best_h = -1
+    for slot, pt_hour in outbox._LADDER_PT_HOURS.items():
+        if pt_hour <= hour < pt_hour + 2 and pt_hour > best_h:
+            best, best_h = slot, pt_hour
+    return best
+
+
+def _empty_read_report(slot: str | None, *, enabled: bool,
+                       drop: list[dict] | None = None) -> dict:
+    """Disabled/empty report for the read lane (mirror _empty_report shape,
+    quote_source fixed to 'brief' since this lane reads the daily brief)."""
+    return {
+        "enabled": enabled,
+        "generated": [],
+        "would_generate": [],
+        "dropped": drop or [],
+        "quote_source": "brief",
+        "slot": slot or "",
+    }
+
+
+def _read_top_fact(facts_data: dict | None) -> str:
+    """The freshest 'What's driving today: …' line, or '' if the brief has none.
+
+    event_facts falls back to macro_facts, which returns an EMPTY facts list when
+    neither regime nor brief exists — so an empty/absent text means no usable
+    driver read (→ dropped no_brief)."""
+    for f in (facts_data or {}).get("facts") or []:
+        txt = str(f.get("text") or "").strip()
+        if txt:
+            return txt
+    return ""
+
+
+def _queued_read_today(state: dict, today: str) -> set[str]:
+    """Accounts that already have a publish-time-lane `event` item queued today
+    (provenance publisher_live_movers, created today). Enforces once/day per
+    account across sweeps — a second sweep in the same S8 block must not re-post.
+    """
+    out: set[str] = set()
+    for it in (state.get("items") or {}).values():
+        if it.get("provenance") != _PROVENANCE:
+            continue
+        if it.get("kind") != _READ_KIND:
+            continue
+        if str(it.get("created_at") or "")[:10] == today:
+            out.add(str(it.get("account") or ""))
+    return out
+
+
+def generate_read_item(
+    root: Path | str,
+    *,
+    cfg: dict,
+    now: datetime,
+    state: dict,
+    live: bool,
+    account_filter: str | None = None,
+) -> dict:
+    """Generate the publish-time DAILY READ (kind=event) for the after-close slot.
+
+    Returns a report dict with the SAME shape generate_slot_items returns:
+    {enabled, generated:[ids], would_generate:[{account,kind,text}],
+    dropped:[{reason,detail}], quote_source:"brief", slot}. NEVER raises — the
+    whole body is fail-soft; on error it logs a warning and returns a report with
+    the error noted. In dry-run (live=False) it writes NOTHING and fills
+    would_generate; enqueues only when live is True.
+
+    DARK GATE: when publish.publish_time_read.enabled is false (the default) it
+    returns a disabled report immediately and writes nothing.
+    """
+    slot: str | None = None
+    try:
+        r = Path(root)
+        rc = _read_cfg(cfg)
+
+        # ── DARK GATE ───────────────────────────────────────────────────────
+        if not rc["enabled"]:
+            return _empty_read_report(None, enabled=False,
+                                      drop=[{"reason": "disabled",
+                                             "detail": "publish.publish_time_read.enabled is false"}])
+
+        # ── Gate 1: weekday + configured after-close ladder slot ────────────
+        # Both read the PACIFIC clock (see _ladder_local): the after-close slot
+        # is a Pacific-clock concept and its UTC instant is the next calendar day.
+        local = _ladder_local(now)
+        if local is None:
+            return _empty_read_report(None, enabled=True,
+                                      drop=[{"reason": "no_tzdata",
+                                             "detail": "zoneinfo tz database unavailable"}])
+        if local.weekday() >= 5:  # Sat/Sun (Pacific)
+            return _empty_read_report(None, enabled=True,
+                                      drop=[{"reason": "not_weekday", "detail": local.strftime("%A")}])
+        want_slot = str(rc["slot"] or "").strip().upper()
+        slot = _ladder_slot_label(local)
+        if slot != want_slot:
+            # Not the after-close slot (or outside the ladder) → empty report so
+            # the read fires ONCE/day, not on every sweep.
+            return _empty_read_report(slot, enabled=True,
+                                      drop=[{"reason": "wrong_slot",
+                                             "detail": f"{slot or 'none'} != {want_slot}"}])
+
+        # ── Fresh driver fact from the daily brief ──────────────────────────
+        facts_data = market_facts.event_facts(r)
+        top_fact = _read_top_fact(facts_data)
+        if not top_fact:
+            return _empty_read_report(slot, enabled=True,
+                                      drop=[{"reason": "no_brief",
+                                             "detail": "event_facts returned no usable driver read"}])
+
+        today = now.strftime("%Y-%m-%d")
+
+        # ── Eligible accounts (deterministic, config order) ─────────────────
+        # Mirror generate_slot_items: config desk_network.accounts, skip disabled,
+        # require a publish.channels[aid] channel, honour account_filter.
+        accounts = (cfg or {}).get("desk_network", {}).get("accounts", []) or []
+        pub_channels = ((cfg or {}).get("publish") or {}).get("channels") or {}
+        already_today = _queued_read_today(state, today)
+        eligible: list[dict] = []
+        for acc in accounts:
+            aid = str(acc.get("id", "") or "")
+            if not aid:
+                continue
+            if acc.get("disabled"):
+                continue
+            if not str(pub_channels.get(aid, "") or "").strip():
+                continue  # no channel id → the item could never post
+            if account_filter is not None and aid != account_filter:
+                continue
+            if aid in already_today:
+                continue  # once/day per account (spacing across sweeps)
+            eligible.append(acc)
+        if not eligible:
+            return _empty_read_report(slot, enabled=True,
+                                      drop=[{"reason": "no_eligible_accounts",
+                                             "detail": "no account has a publish channel (filter/already-posted)"}])
+
+        dropped: list[dict] = []
+        generated: list[str] = []
+        would_generate: list[dict] = []
+
+        for acc in eligible:
+            aid = str(acc.get("id", ""))
+            voice = acc.get("voice", "authoritative desk")
+            persona = _persona_for(cfg or {}, aid, voice)
+
+            # ── Copy: mirror content_studio's nightly event context exactly ──
+            # (content_studio.py ~1713-1728). Non-ticker item → the deterministic
+            # picker seeds variant rotation by CALENDAR DAY off ctx["as_of"] (the
+            # #3824 fix), so a single daily read differs day to day. Feed the fresh
+            # event_facts so {top_fact} is the "What's driving today: …" line.
+            try:
+                item_dict = {"type": _READ_KIND, "account": aid, "ticker": ""}
+                ctx = copywriter.build_context(
+                    item_dict, persona=persona or None, facts=facts_data or None)
+                ctx["type"] = _READ_KIND
+                ctx["voice"] = voice
+                ctx["slot"] = f"LIVE-{slot}"
+                ctx["as_of"] = today
+                ctx["has_chart"] = False
+                posts = copywriter.write_posts_deterministic([ctx])
+                post = posts[0] if posts else {}
+                headline = str(post.get("headline") or "")
+                body = str(post.get("body") or "")
+                text = (f"{headline}\n\n{body}" if headline and body
+                        else (headline or body))
+                violations = list(post.get("violations") or [])
+            except Exception as exc:  # noqa: BLE001
+                dropped.append({"reason": "copy_error", "detail": f"{aid}: {exc}"})
+                continue
+            if not text:
+                dropped.append({"reason": "empty_copy", "detail": aid})
+                continue
+            # Fail-closed: any validate_copy violation drops the candidate — there
+            # is no operator at post time to catch bad copy.
+            if violations:
+                dropped.append({"reason": "copy_violation",
+                                "detail": f"{aid}: {violations[:3]}"})
+                continue
+
+            # ── Source stamp (the read carries the brief driver, no tape pct) ─
+            source = {
+                "lane": "publish_time",
+                "slot_run": slot,
+                "generated_at": _iso_now(now),
+                "quote_source": "brief",
+                "driver": top_fact,
+            }
+            try:
+                item = outbox.make_item(
+                    account=aid,
+                    kind=_READ_KIND,
+                    text=text,
+                    as_of=today,
+                    scheduled_at="immediate",
+                    slot=f"LIVE-{slot}",
+                    priority=6,
+                    provenance=_PROVENANCE,
+                    source=source,
+                    now=now,
+                )
+            except ValueError as exc:
+                dropped.append({"reason": "make_item_invalid", "detail": f"{aid}: {exc}"})
+                continue
+
+            if not live:
+                would_generate.append({
+                    "id": item["id"], "account": aid, "kind": _READ_KIND,
+                    "ticker": "", "slot": f"LIVE-{slot}",
+                    "text": text.replace("\n", " ")[:200],
+                })
+                continue
+
+            result = outbox.enqueue(item, r)
+            if result == "queued":
+                generated.append(item["id"])
+            elif result == "duplicate":
+                # EXPECTED if the brief hasn't changed since a prior sweep: the
+                # identical text hashes to the same id (idempotent). The cross-
+                # night dedup in enqueue (#3824) likewise catches a same-week
+                # identical repeat. Report quietly, not as an error.
+                dropped.append({"reason": "duplicate", "detail": f"{aid} ({item['id']})"})
+            else:
+                dropped.append({"reason": "enqueue_failed", "detail": f"{aid}: {result}"})
+
+        return {
+            "enabled": True,
+            "generated": generated,
+            "would_generate": would_generate,
+            "dropped": dropped,
+            "quote_source": "brief",
+            "slot": slot,
+        }
+
+    except Exception as exc:  # noqa: BLE001
+        log.warning("publish_time_content.generate_read_item: %s", exc)
+        return {
+            "enabled": True,
+            "generated": [],
+            "would_generate": [],
+            "dropped": [{"reason": "error", "detail": str(exc)}],
+            "quote_source": "brief",
+            "slot": slot or "",
+        }

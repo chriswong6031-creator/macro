@@ -289,6 +289,27 @@ publish:
     max_quote_age_min: 45    # generation freshness gate (mirrors live_gate)
     min_active_tiles: 25     # flat-tape belt: skip unless ≥N S&P names moved ±0.5% (closed-market guard)
 
+  # Publish-time DAILY READ ("My read on today's move", kind=event).
+  # SAME root problem as publish_time_movers, one family over: the nightly plan
+  # bakes the event post at ~04:00 UTC but schedules it after the close, so it
+  # ships a driver read written ~18h stale (two consecutive nights once posted
+  # BYTE-IDENTICAL copy). The fix: generate the read AT publish time from the
+  # FRESH daily brief (site/neuralwebdata/daily_brief.json refreshes intraday —
+  # it carries why_the_tape_moved), on the after-close ladder slot, once/day.
+  #
+  # DARK BY DEFAULT. `enabled: false` ⇒ behaviour is byte-for-byte unchanged:
+  # the nightly still emits the event post and the publisher does nothing new.
+  # Nothing auto-posts until the operator arms it. ARMING IS TWO STEPS:
+  #   1. set enabled: true here (the nightly then STOPS emitting event so the
+  #      publish-time read is the only event post — no double-post), AND
+  #   2. add `event` to publish.auto_approve_kinds above (the scoped auto-approve
+  #      only approves provenance publisher_live_movers items whose kind is
+  #      listed there; without it the read enqueues but waits for manual approval).
+  # Eyeball dry-runs (--dry-run) before doing either.
+  publish_time_read:
+    enabled: false           # DARK by default — operator arms after dry-runs (see above)
+    slot: "S8"               # after-close ladder slot the daily read fires on (18:00 PT; once/day)
+
   # Per-account Buffer channel id. Empty placeholder until a real token exists —
   # discover the X channel id with:
   #   BUFFER_TOKEN=... python -m scripts.marketing_publisher --list-channels
