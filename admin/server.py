@@ -40,6 +40,7 @@ from . import (actions, ai_cost, alerts as _alerts_mod, allies_store, analytics_
                metabolism_panel,
                neural_web,
                orchestrator_chat,
+               personas,
                prophet,
                revenue,
                services, settings, site_gate,
@@ -592,6 +593,9 @@ class Handler(BaseHTTPRequestHandler):
             # Chronicle (market context timeline) admin inspector — read-only.
             if path == "/api/chronicle/overview":
                 return self._json(chronicle.overview())
+            # Persona Network roster (config/personas/ ⋈ desk_network) — read-only.
+            if path == "/api/personas/roster":
+                return self._json(personas.roster())
             # W-AI: Mastermind AI response log — batch-evaluatable corpus of every
             # user-facing answer (Macro brain + Terminal copilot), ingested from R2.
             if path == "/api/mastermind_ai/response_logs":

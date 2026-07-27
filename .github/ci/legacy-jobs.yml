@@ -2635,7 +2635,18 @@ jobs:
         # co-run (never whitelisted → test-whitelist-rot; the admin panels are
         # plain dict-returning functions, no fastapi/httpx). All stdlib-only —
         # verified against a minimal pytest+pyyaml env.
-        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py -q
+        # test_marketing_personas (Persona Network W1, docket D13) joins the same
+        # lane: the spec loader keeps stdlib+yaml at module level and reads the
+        # content-studio type-id set through a LAZY import, so a top-level heavy
+        # import in engine/marketing/personas.py must turn this job red at
+        # collection. Verified in a clean pytest+pyyaml venv.
+        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_marketing_personas.py -q
+      - name: persona specs validate (config/personas/*.yml)
+        # The gate the specs exist for: every committed spec carries the full
+        # content-studio tilt key set, a live template-pool voice key, and the
+        # AM-R1 banned patterns. Runs as its own step so a spec-only PR fails on
+        # the spec, not inside a pytest summary.
+        run: python -m engine.marketing.personas --check
 
   marketing-data:
     if: ${{ false }}
