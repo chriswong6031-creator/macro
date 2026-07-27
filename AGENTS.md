@@ -46,6 +46,31 @@ For Macro, the `Workers Builds: macro` red X is known-spurious. Template/source
 changes must include their paired `site/` artifact when required, and “merged” is
 not “live” until the VPS/render path and live marker are verified.
 
+### Waiting on CI without jamming every other session
+
+`gh` authenticates as ONE account token, so GitHub REST's 5,000/hr `core` pool is a
+single bucket shared by every parallel session, the babysitter lane, and the hooks.
+Exhausting it 403s all of them for up to an hour — including `ship_loop_guard.py`,
+which spends up to four REST calls per Stop evaluation and **fails closed** when
+rate-limited, so over-polling blocks the very Stop the polling was meant to reach.
+A ci.yml run here takes 30–34 minutes; there is no reason to poll it faster than a
+couple of times per minute.
+
+`.claude/hooks/gh_quota_guard.py` (PreToolUse on Bash) denies the three shapes that
+emptied the pool on 2026-07-26:
+
+- `gh run watch` at its **default `--interval 3`** — nothing on the command line
+  says "3 seconds", which is exactly why it passed review. Use `--interval 60`+.
+- a `gh` call inside a loop sleeping under 90s (two watchers on one endpoint at 45s
+  went 4,488 → 0 in under an hour);
+- `--paginate` over check-runs/jobs — ~130 checks per PR, where one page already
+  answers "is it still running".
+
+Preflight `gh api rate_limit --jq '.resources.core.remaining'` before arming any long
+watch, run ONE watcher per endpoint, and never read an empty or 403 response as a
+settled/green result. REST and GraphQL are separate 5,000/hr pools, so `gh pr view`
+continuing to work does not mean `gh api` will.
+
 When an operating standard changes, update the repository's `AGENTS.md` and
 `CLAUDE.md` together so both Codex and every Claude account inherit it.
 
