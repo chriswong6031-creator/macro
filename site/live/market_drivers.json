@@ -1,5 +1,5 @@
 {
-  "asof": "2026-07-27",
+  "asof": "2026-07-24",
   "window_d": 5,
   "verdict": "clear",
   "verdict_zh": "\u660e\u786e",
@@ -11,64 +11,64 @@
   "dir_sign": 1,
   "confidence": "medium",
   "confidence_zh": "\u4e2d",
-  "strength": 1.52,
-  "dominance_ratio": 1.46,
+  "strength": 1.42,
+  "dominance_ratio": 1.35,
   "agreement": 1.0,
-  "runner_up": "ai_semis",
-  "runner_up_label": "AI / semis",
-  "runner_up_label_zh": "AI/\u534a\u5bfc\u4f53",
-  "headline": "Fed repricing \u2014 hawkish repricing \u2014 cuts priced out, front-end up. 2y yield +1.8\u03c3, fed-funds futures +2.4\u03c3, rate-path (2y\u2212FF) +1.3\u03c3.",
+  "runner_up": "oil_shock",
+  "runner_up_label": "Oil shock",
+  "runner_up_label_zh": "\u6cb9\u4ef7\u51b2\u51fb",
+  "headline": "Fed repricing \u2014 hawkish repricing \u2014 cuts priced out, front-end up. 2y yield +2.2\u03c3, rate-path (2y\u2212FF) +1.6\u03c3, 10y yield +1.9\u03c3.",
   "evidence": [
-    "2y yield +1.8\u03c3",
-    "fed-funds futures +2.4\u03c3",
-    "rate-path (2y\u2212FF) +1.3\u03c3"
+    "2y yield +2.2\u03c3",
+    "rate-path (2y\u2212FF) +1.6\u03c3",
+    "10y yield +1.9\u03c3"
   ],
   "evidence_legs": [
     {
       "en": "2y yield",
       "zh": "2\u5e74\u671f\u6536\u76ca\u7387",
-      "z": 1.8
-    },
-    {
-      "en": "fed-funds futures",
-      "zh": "\u8054\u90a6\u57fa\u91d1\u671f\u8d27",
-      "z": 2.4
+      "z": 2.2
     },
     {
       "en": "rate-path (2y\u2212FF)",
       "zh": "\u5229\u7387\u8def\u5f84(2\u5e74\u2212\u8054\u90a6\u57fa\u91d1)",
-      "z": 1.3
+      "z": 1.6
+    },
+    {
+      "en": "10y yield",
+      "zh": "10\u5e74\u671f\u6536\u76ca\u7387",
+      "z": 1.9
     }
   ],
   "invalidation": "Fades if 2y yield reverses and the rest of the rates fingerprint stops confirming.",
   "invalidation_zh": "\u82e52\u5e74\u671f\u6536\u76ca\u7387\u53cd\u8f6c\u3001\u4e14\u5229\u7387\u6307\u7eb9\u5176\u4f59\u817f\u505c\u6b62\u786e\u8ba4\uff0c\u6b64\u5224\u8bfb\u5c06\u6d88\u9000\u3002",
-  "absorption_pctile": 0.86,
+  "absorption_pctile": 0.85,
   "scores": [
     {
       "driver": "fed_repricing",
       "label": "Fed repricing",
       "label_zh": "\u7f8e\u8054\u50a8\u91cd\u5b9a\u4ef7",
       "family": "rates",
-      "projection": 1.52,
-      "strength": 1.52,
+      "projection": 1.42,
+      "strength": 1.42,
       "direction": "hawkish repricing \u2014 cuts priced out, front-end up"
     },
     {
-      "driver": "ai_semis",
-      "label": "AI / semis",
-      "label_zh": "AI/\u534a\u5bfc\u4f53",
-      "family": "equity-leadership",
-      "projection": -1.04,
-      "strength": 1.04,
-      "direction": "AI/semis unwind \u2014 tech-led de-rating"
+      "driver": "oil_shock",
+      "label": "Oil shock",
+      "label_zh": "\u6cb9\u4ef7\u51b2\u51fb",
+      "family": "inflation",
+      "projection": 1.05,
+      "strength": 1.05,
+      "direction": "oil spiking \u2014 energy leads, breakevens up"
     },
     {
       "driver": "real_rate_shock",
       "label": "Real-rate shock",
       "label_zh": "\u5b9e\u9645\u5229\u7387\u51b2\u51fb",
       "family": "rates",
-      "projection": 0.65,
-      "strength": 0.65,
+      "projection": 0.71,
+      "strength": 0.71,
       "direction": "real yields rising \u2014 restrictive, gold & duration hit"
     },
     {
@@ -76,54 +76,54 @@
       "label": "China stimulus",
       "label_zh": "\u4e2d\u56fd\u523a\u6fc0",
       "family": "china",
-      "projection": 0.43,
-      "strength": 0.43,
+      "projection": 0.66,
+      "strength": 0.66,
       "direction": "China risk-on \u2014 A-shares/HK & copper lead up"
     },
     {
-      "driver": "credit_stress",
-      "label": "Credit stress",
-      "label_zh": "\u4fe1\u7528\u538b\u529b",
-      "family": "credit",
-      "projection": 0.32,
-      "strength": 0.32,
-      "direction": "credit spreads widening \u2014 stress"
-    },
-    {
-      "driver": "oil_shock",
-      "label": "Oil shock",
-      "label_zh": "\u6cb9\u4ef7\u51b2\u51fb",
-      "family": "inflation",
-      "projection": 0.19,
-      "strength": 0.19,
-      "direction": "oil spiking \u2014 energy leads, breakevens up"
-    },
-    {
-      "driver": "crypto_liquidity",
-      "label": "Crypto liquidity",
-      "label_zh": "\u52a0\u5bc6\u6d41\u52a8\u6027",
-      "family": "crypto",
-      "projection": 0.1,
-      "strength": 0.1,
-      "direction": "crypto liquidity surging \u2014 BTC/ETH lead up"
+      "driver": "ai_semis",
+      "label": "AI / semis",
+      "label_zh": "AI/\u534a\u5bfc\u4f53",
+      "family": "equity-leadership",
+      "projection": -0.39,
+      "strength": 0.39,
+      "direction": "AI/semis unwind \u2014 tech-led de-rating"
     },
     {
       "driver": "liquidity_impulse",
       "label": "Liquidity impulse",
       "label_zh": "\u6d41\u52a8\u6027\u8109\u51b2",
       "family": "liquidity",
-      "projection": 0.07,
-      "strength": 0.07,
+      "projection": 0.27,
+      "strength": 0.27,
       "direction": "net liquidity expanding \u2014 broad risk-on tailwind"
+    },
+    {
+      "driver": "crypto_liquidity",
+      "label": "Crypto liquidity",
+      "label_zh": "\u52a0\u5bc6\u6d41\u52a8\u6027",
+      "family": "crypto",
+      "projection": 0.15,
+      "strength": 0.15,
+      "direction": "crypto liquidity surging \u2014 BTC/ETH lead up"
+    },
+    {
+      "driver": "credit_stress",
+      "label": "Credit stress",
+      "label_zh": "\u4fe1\u7528\u538b\u529b",
+      "family": "credit",
+      "projection": -0.14,
+      "strength": 0.14,
+      "direction": "credit spreads compressing \u2014 risk-on"
     },
     {
       "driver": "usd_shock",
       "label": "USD shock",
       "label_zh": "\u7f8e\u5143\u51b2\u51fb",
       "family": "fx",
-      "projection": 0.06,
-      "strength": 0.06,
-      "direction": "dollar surging \u2014 squeeze, commodities & EM pressured"
+      "projection": -0.02,
+      "strength": 0.02,
+      "direction": "dollar falling \u2014 risk tailwind, commodities & EM bid"
     }
   ],
   "note": "Deterministic cross-asset attribution \u2014 a regime READ, not a signal; never gates a score.",
