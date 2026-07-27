@@ -208,6 +208,16 @@ jobs:
         run: python scripts/check_workflow_yaml.py --selftest
       - name: "all workflow files must parse with on:/jobs: blocks"
         run: python scripts/check_workflow_yaml.py .github/workflows
+      # Skip-only suites (mirror ci.yml's workflow-yaml job). Worth a heartbeat
+      # slot precisely because this guard rots on MAIN, not on a PR: a merge that
+      # drops a package from an install line, or a nightly bot edit, can strand a
+      # suite whose own path filter no PR happens to touch again. Pure stdlib +
+      # pyyaml, ~1s. The pytest-based unit tests stay on the PR lane only — this
+      # job installs no pytest, by design.
+      - name: check_skip_only_suites selftest
+        run: python scripts/check_skip_only_suites.py --selftest
+      - name: no suite may skip in every job that names it
+        run: python scripts/check_skip_only_suites.py
 
   # ── DAG conformance (mirror ci.yml: dag-conformance) ───────────────────────
   dag-conformance:

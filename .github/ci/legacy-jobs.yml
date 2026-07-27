@@ -779,6 +779,20 @@ jobs:
         run: python scripts/check_workflow_yaml.py .github/workflows
       - name: hosted-runner packing contract
         run: python -m pytest tests/test_ci_pack.py -q
+      # SKIP-ONLY suites: a test that skips in every job naming it executes
+      # nowhere, so a job list and a green run both lie about it. This is what an
+      # `importorskip` added to clear a red lane creates by construction — it
+      # happened in #3703 and again in #3722→#3738→#3760 — and no other census
+      # measures it: audit_unrun_tests.py asks "is this suite named by a job",
+      # never "does that job install what the suite needs to run".
+      # The selftest runs FIRST: a detector that has quietly stopped detecting
+      # would otherwise report a clean repo forever.
+      - name: check_skip_only_suites selftest
+        run: python scripts/check_skip_only_suites.py --selftest
+      - name: no suite may skip in every job that names it
+        run: python scripts/check_skip_only_suites.py
+      - name: skip-only detector unit tests
+        run: python -m pytest tests/test_check_skip_only_suites.py -q
       # render.yml's per-scope publish wiring. #3718 fixed the international
       # dashboard never publishing because `intl` was missing from the render
       # lane's scope list, and shipped this suite as the guard — but no `run:`
@@ -2488,7 +2502,14 @@ jobs:
         # the one production actually uses, since the hourly lane installs neither
         # pypdf nor anything else beyond boto3+pyyaml — needs a system package, so its
         # two tests skip when `pdfinfo` is absent and run on the self-hosted Mac.
-        run: pip install pytest jinja2 pyyaml pypdf
+        # boto3 (added 2026-07-26 by check_skip_only_suites.py): the r2_store
+        # credential-precedence test is `importorskip("boto3")`-gated, and this was
+        # the ONLY job naming test_research_vault.py — so it executed nowhere. There
+        # is no lazy-import contract to protect here: the production hourly lane
+        # installs boto3, and the client is built offline (creds are not validated
+        # until a call), so the test stays hermetic. This install line had exactly
+        # one member, so extending it costs no extra ci-pack venv.
+        run: pip install pytest jinja2 pyyaml pypdf boto3
       - name: research vault ingestion-spine + page unit tests
         run: python -m pytest tests/test_research_vault.py tests/test_research_vault_page.py tests/test_research_pages.py -q
 
@@ -2587,6 +2608,84 @@ jobs:
         # plain dict-returning functions, no fastapi/httpx). All stdlib-only —
         # verified against a minimal pytest+pyyaml env.
         run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py -q
+
+  marketing-data:
+    if: ${{ false }}
+    # The data-dependent half of two marketing suites whose only lanes are
+    # deliberately stdlib+pyyaml. Same pairing shape as chart-render /
+    # chart-render-data: the thin lanes stay thin because their minimal env IS the
+    # contract, and this lane proves the code behind the skips.
+    #
+    # Added 2026-07-26 by scripts/check_skip_only_suites.py, on its first run:
+    #   * test_marketing_content.py:531 importorskip("pandas")/("pyarrow") — the
+    #     engine.marketing.chart_render load_closes round-trip against the committed
+    #     data/stocks/PLTR.parquet. marketing-engine (pytest+pyyaml) was the only
+    #     job naming the file.
+    #   * test_marketing_live_verify.py:250 importorskip("pandas") — the earnings
+    #     guard set read from a parquet the test writes itself. marketing-social-
+    #     publisher (pytest+pyyaml) was the only job naming the file, and its own
+    #     comment recorded the skip as intentional ("the one pandas-dependent test
+    #     importorskips") without noticing that made it run nowhere.
+    # pyarrow is installed even though only test_marketing_content names it: the
+    # live_verify test calls DataFrame.to_parquet, which needs a parquet engine.
+    #
+    # The thin lanes keep a real contract. marketing-engine's comment states it
+    # ("stdlib + pytest + pyyaml only — no pandas/numpy, verified against a
+    # minimal-import env"); a top-level `import pandas` in the marketing engine or
+    # the publisher loop must still turn those lanes red at collection.
+    #
+    # Deps are byte-identical to the 22-job `pytest pandas numpy pyarrow pyyaml`
+    # group (trial-budgets, outcome-spine, chart-render-data, …) that run_ci_pack.py
+    # keys venv reuse on, so this job provisions NO new environment.
+    #
+    # Verified locally in clean venvs with each lane's exact install line:
+    #   pytest pyyaml                      → 101 passed, 2 skipped
+    #   pytest pandas numpy pyarrow pyyaml → 103 passed
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      # The lane's own tripwire: if a future edit drops pandas or pyarrow from the
+      # install line above, these tests would go back to skipping silently and the
+      # lane would stay green while guarding nothing. The probe makes that red, and
+      # -rs prints every skip reason so a NEW skip is visible in the log.
+      - name: prove the data-dependent modules are present
+        run: python -c "import pandas, pyarrow, numpy"
+      - name: marketing suites (data-dependent tests execute here)
+        run: python -m pytest tests/test_marketing_content.py tests/test_marketing_live_verify.py -q -rs
+
+  publish-r2-client:
+    if: ${{ false }}
+    # scripts/publish_r2._client's retry posture — 10 adaptive attempts and the
+    # 15s/60s connect/read bounds that replaced the 4/standard config which died
+    # 2026-07-16 mid-nightly. The assertion reads botocore's normalized config, so
+    # it is `importorskip("boto3")`-gated and offline (no creds, no network).
+    #
+    # Added 2026-07-26 by scripts/check_skip_only_suites.py. unrun-publish-ops names
+    # test_publish_r2.py, but its install line — the 21-job jinja2/plotly/sklearn
+    # group — has no boto3, and it was the only job naming the file, so the retry
+    # guard executed nowhere. unrun-publish-ops is deliberately left alone: adding
+    # boto3 to ITS line would fork one job out of a 21-member venv group and cost a
+    # whole new environment, whereas this install line is byte-identical to
+    # flow-signals-ledger's, so this lane provisions NO new environment.
+    #
+    # Verified locally in a clean venv with this exact install line: 29 passed.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pandas numpy pyarrow pyyaml boto3 scikit-learn joblib
+      - name: prove boto3 is present (a silent re-skip is the regression)
+        run: python -c "import boto3, botocore"
+      - name: R2 publish client + transport tests (boto3 tests execute here)
+        run: python -m pytest tests/test_publish_r2.py -q -rs
 
   chart-render:
     if: ${{ false }}
