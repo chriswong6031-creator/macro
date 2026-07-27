@@ -2749,7 +2749,7 @@ jobs:
     # conftest imports yaml in EVERY pytest run, so pyyaml is not optional
     # (a pytest-only env dies at collection). Matching marketing-engine's
     # dependency set also lets the pack runner reuse its venv. Verified green
-    # against a minimal pytest+pyyaml env: 34 passed, 6 skipped.
+    # against a minimal pytest+pyyaml env: 35 passed, 6 skipped.
     #
     # 2026-07-26: "the tests needing them importorskip cleanly" was NOT true when
     # this lane was wired — test_chart_render_inline's two load_ohlcv tests did a
@@ -2770,7 +2770,7 @@ jobs:
     # red at collection. That is worth a job on its own and is why it stays thin.
     #
     # What a thin lane CANNOT do is execute the tests that need those modules.
-    # Six of the 40 tests here skip in this env — the two load_ohlcv tests in
+    # Six of the 41 tests here skip in this env — the two load_ohlcv tests in
     # test_chart_render_inline, three in test_marketing_card_parity, one in
     # test_chart_render_m2 (engine.indicators_m2 needs numpy) — and until
     # 2026-07-27 no other job in any workflow named these files, so the skip was
@@ -2821,8 +2821,8 @@ jobs:
     # than hidden behind a bare pass count.
     #
     # Verified locally in a clean venv with this exact install line:
-    #   pytest pyyaml                      → 34 passed, 6 skipped
-    #   pytest pandas numpy pyarrow pyyaml → 40 passed
+    #   pytest pyyaml                      → 35 passed, 6 skipped
+    #   pytest pandas numpy pyarrow pyyaml → 41 passed
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
