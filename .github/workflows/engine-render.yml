@@ -572,6 +572,45 @@ jobs:
           python3 scripts/check_ms_board_coherence.py && exit 0
           python3 scripts/check_ms_board_coherence.py --heal-from HEAD || true
           exit 1
+      - name: publish rebuilt US stockdata to R2 (browser data plane)
+        # engine.run can change per-name display payloads without changing a template.
+        # spine rebuilds the complete US stockdata tree for all/macro/fast scopes, and
+        # the browser consumes that tree from R2. Publish it before the working tree is
+        # discarded so a green engine-render cannot leave new engine output stranded
+        # until the nightly. --no-manifest protects the multi-market remote manifest.
+        # Credentials and the three-attempt sync are deliberately hard gates here.
+        if: ${{ success() }}
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          SCOPE="${{ github.event.inputs.scope }}"; SCOPE="${SCOPE:-all}"
+          case "+$SCOPE+" in
+            *"+all+"*|*"+macro+"*|*"+fast+"*) ;;
+            *) echo "::notice::scope=$SCOPE did not rebuild US stockdata — R2 sync skipped"; exit 0 ;;
+          esac
+          for V in R2_ENDPOINT R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY R2_BUCKET; do
+            if [ -z "${!V}" ]; then
+              echo "::error title=engine-render stockdata publish unavailable::$V is unset"
+              exit 1
+            fi
+          done
+          if [ ! -s site/stockdata/index.json ]; then
+            echo "::error title=engine-render stockdata publish refused::site/stockdata/index.json is absent or empty"
+            exit 1
+          fi
+          for ATTEMPT in 1 2 3; do
+            if python -m scripts.publish_r2 --dirs stockdata --no-manifest; then
+              echo "::notice::engine-render stockdata published to R2 on attempt $ATTEMPT"
+              exit 0
+            fi
+            echo "::warning::engine-render stockdata R2 attempt $ATTEMPT failed; retrying"
+            sleep $((ATTEMPT * 10))
+          done
+          echo "::error title=engine-render stockdata publish failed::R2 sync failed after 3 attempts"
+          exit 1
       - name: inject data-base shim (site-wide; a re-render would strip it otherwise)
         # always(), NOT !cancelled() — same reasoning as render.yml: the commit below is
         # if: always(), so a CANCELLED engine-render still pushes site/ to main, and

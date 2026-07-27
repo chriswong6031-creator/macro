@@ -6,8 +6,12 @@ from __future__ import annotations
 
 import json
 import sys
+from pathlib import Path
 
 from scripts.publish_r2 import _data_dir_syncable, _manifest_doc, _manifest_ok, main
+
+
+_ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_no_remote_manifest_allows_put():
@@ -101,6 +105,42 @@ def test_cli_flags_reach_publish(monkeypatch):
     monkeypatch.setattr(sys, "argv", ["publish_r2", "--force-manifest"])
     main()
     assert seen["manifest"] is True and seen["force_manifest"] is True
+
+
+def _workflow_step(workflow: str, name: str) -> str:
+    text = (_ROOT / ".github" / "workflows" / workflow).read_text()
+    marker = f"      - name: {name}\n"
+    assert text.count(marker) == 1
+    start = text.index(marker)
+    end = text.find("\n      - name:", start + len(marker))
+    return text[start:] if end < 0 else text[start:end]
+
+
+def test_express_render_lanes_publish_rebuilt_stockdata_to_r2():
+    """A green express build must publish the gitignored browser payload it built.
+
+    F4 terminality exposed the old split-brain failure: render.yml logged 13 active
+    watches and committed the UI, then discarded site/stockdata, leaving R2 null.
+    Pin both engine-bearing render lanes to a credential-gated, retrying,
+    no-manifest sync so future display payloads cannot be stranded until nightly.
+    """
+    step_name = "publish rebuilt US stockdata to R2 (browser data plane)"
+    for workflow in ("render.yml", "engine-render.yml"):
+        block = _workflow_step(workflow, step_name)
+        assert "if: ${{ success() }}" in block
+        assert "site/stockdata/index.json" in block
+        assert "python -m scripts.publish_r2 --dirs stockdata --no-manifest" in block
+        assert "for ATTEMPT in 1 2 3" in block
+        assert "R2_ENDPOINT" in block
+        assert "R2_ACCESS_KEY_ID" in block
+        assert "R2_SECRET_ACCESS_KEY" in block
+        assert "R2_BUCKET" in block
+        assert "|| echo" not in block
+
+    render = _workflow_step("render.yml", step_name)
+    engine_render = _workflow_step("engine-render.yml", step_name)
+    assert '*"+all+"*|*"+macro+"*' in render
+    assert '*"+all+"*|*"+macro+"*|*"+fast+"*' in engine_render
 
 
 # ── thetadata_eod registration ────────────────────────────────────────────────
