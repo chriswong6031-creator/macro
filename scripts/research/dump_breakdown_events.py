@@ -30,10 +30,21 @@ Seeding contract (CRITICAL):
     BD-4/5/6 events do NOT enter this pool.  BD-1/2/3 event rows AND their control draws
     are byte-identical to any Phase-0-only run.
   - BD-4/5/6 controls: each definition uses its OWN declared per-definition seed constant
-    (BD4=7891, BD5=13421, BD6=19937), XOR-ed with a ticker hash for per-ticker variation.
+    (BD4=7891, BD5=13421, BD6=19937), XOR-ed with a crc32 ticker hash for per-ticker
+    variation (bd456_control_seed() — zlib.crc32, PYTHONHASHSEED-stable).
     This is a SEPARATE RNG pass that does not advance the global rng state.
   - PRACTICAL CONSEQUENCE: Phase-0 (BD-1/2/3) rows in the output parquet are byte-identical
     to a hypothetical Phase-0-only run — the seeding contract is preserved exactly.
+  - HISTORY (2026-07-26): the ticker hash was builtin hash() before this date, which
+    Python salts per process (PYTHONHASHSEED) — BD-4/5/6 control draws differed on every
+    run, so no pre-fix dump's BD-4/5/6 control panel is exactly reproducible (BD-1/2/3
+    controls were always deterministic).  Artifacts dumped before the fix — including the
+    control-conditioned stats inside the committed summary v3 — predate deterministic
+    BD-4/5/6 controls; the first post-fix run draws a NEW, now-reproducible control panel.
+    Do not chase BD-4/5/6 control-row diffs across that boundary.  The frozen preregs are
+    unaffected: they specify "seeded random-bar controls" without naming a hash function,
+    a promise the hash() implementation silently broke and crc32 honors.  Same defect
+    class as chart_render's SVG ids (#3785).
 """
 from __future__ import annotations
 
@@ -41,6 +52,7 @@ import json
 import logging
 import sys
 import time
+import zlib
 from pathlib import Path
 from typing import Any
 
@@ -156,6 +168,20 @@ BD6_MIN_SECTOR_MEMBERS = 8        # sectors with <8 covered members skipped per 
 BD4_CONTROL_RNG_SEED  = 7891      # chosen to not collide with 42 or 12345
 BD5_CONTROL_RNG_SEED  = 13421     # "
 BD6_CONTROL_RNG_SEED  = 19937     # "
+
+
+def bd456_control_seed(ticker: str, seed_const: int) -> int:
+    """Per-ticker BD-4/5/6 control-RNG sub-seed (PYTHONHASHSEED-stable).
+
+    seed_const XOR (crc32 of the UTF-8 ticker, masked to 31 bits): ticker-specific
+    draws while preserving per-definition seed independence.  zlib.crc32, NEVER
+    builtin hash() — Python salts hash(str) per process, so hash()-derived seeds
+    differed on every run and silently broke the prereg's seeded-controls promise
+    (fixed 2026-07-26; same class as chart_render's SVG ids, #3785).  Covered by
+    tests/test_breakdown_seed_determinism.py.
+    """
+    return seed_const ^ (zlib.crc32(ticker.encode("utf-8")) & 0x7FFF_FFFF)
+
 
 # ---------------------------------------------------------------------------
 # Grading horizons (prereg §4)
@@ -1238,7 +1264,8 @@ def process_ticker(
         This guarantees BD-1/2/3 event rows AND their control draws are byte-identical to
         a Phase-0-only run for every ticker.
       - BD-4/5/6 controls are drawn in a SEPARATE pass, each using the declared
-        per-definition seed constants (BD4=7891, BD5=13421, BD6=19937), independent of
+        per-definition seed constants (BD4=7891, BD5=13421, BD6=19937) XOR-ed with a
+        crc32 ticker hash (bd456_control_seed(), PYTHONHASHSEED-stable), independent of
         the global rng.  This eliminates cross-contamination of the global rng state.
       - All controls carry definition="CONTROL" and is_control=True.  Downstream code
         (build_summary, overlap) uses the is_control flag, not a per-definition distinction.
@@ -1331,19 +1358,19 @@ def process_ticker(
 
     # PASS 2 — BD-4/5/6 controls: each uses its OWN declared seed (independent of global rng).
     # seed constants: BD4=7891, BD5=13421, BD6=19937 (declared at module level).
-    # We use a deterministic sub-seed derived from the declared constant + ticker hash
-    # so that different tickers get different draws even with the same per-definition seed,
-    # while the global rng state for Phase-0 definitions is entirely unaffected.
+    # We use a deterministic sub-seed (bd456_control_seed: crc32-based, PYTHONHASHSEED-
+    # stable) derived from the declared constant + ticker so that different tickers get
+    # different draws even with the same per-definition seed, while the global rng state
+    # for Phase-0 definitions is entirely unaffected.
     for defn, seed_const in (("BD-4", BD4_CONTROL_RNG_SEED),
                               ("BD-5", BD5_CONTROL_RNG_SEED),
                               ("BD-6", BD6_CONTROL_RNG_SEED)):
         def_events = all_events_by_def.get(defn, [])
         if not def_events:
             continue
-        # Per-ticker sub-seed: seed_const XOR (hash of ticker, masked to 31 bits).
-        # This makes draws ticker-specific while keeping per-definition seed independence.
-        ticker_hash = hash(ticker) & 0x7FFF_FFFF
-        per_ticker_seed = seed_const ^ ticker_hash
+        # Was builtin hash() until 2026-07-26 — salted per process, so control draws
+        # differed on every run (see module docstring HISTORY).
+        per_ticker_seed = bd456_control_seed(ticker, seed_const)
         def_rng = np.random.default_rng(per_ticker_seed)
         ctrl_rows_def = _sample_controls(ticker, close, raw_df, def_events, def_rng)
         rows.extend(ctrl_rows_def)
