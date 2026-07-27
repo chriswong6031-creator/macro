@@ -1,7 +1,7 @@
 {
   "schema": "theme_options_witness.v1",
-  "as_of": "2026-07-26",
-  "generated_at": "2026-07-26T08:11:32.018854+00:00",
+  "as_of": "2026-07-27",
+  "generated_at": "2026-07-27T01:25:56.538346+00:00",
   "authority": {
     "may_rank": false,
     "may_gate": false,
@@ -21,7 +21,7 @@
     "n_themes_suppressed": 3,
     "store_present": true,
     "store_path": "/Users/chriswong/theta-ops-wt/data/thetadata_eod",
-    "as_of": "2026-07-26"
+    "as_of": "2026-07-27"
   },
   "oi_timing_law": "OI[t] = positions as of EOD t-1 (OPRA reports ~06:30 ET). Leg B applies explicit shift(1) to the daily OI series (doi_series law). Leg A reads only the asof-date snapshot row, which per OPRA schedule already represents EOD t-1 positions — no additional shift required.",
   "banned_constructs": [
@@ -35,7 +35,7 @@
       "theme_id": "ai_semiconductors",
       "name_en": "AI Semiconductors",
       "name_zh": "AI半导体",
-      "as_of": "2026-07-26",
+      "as_of": "2026-07-27",
       "members": [
         "NVDA",
         "AVGO",
@@ -152,8 +152,8 @@
         "label_zh": "隐含波动率溢价 vs 实现波动率（事件溢价风险）",
         "coverage_count": 26,
         "coverage_total": 26,
-        "value": 0.1374,
-        "value_z252": 0.479,
+        "value": 0.1376,
+        "value_z252": 0.481,
         "band": "normal",
         "stale": false,
         "inputs": [
@@ -184,15 +184,15 @@
           "APH",
           "GLW"
         ],
-        "note_en": "Coverage: 26/26 members. Options priced vs recent actual swings (median): +13.7% (z +0.48). Options priced near their usual level.",
-        "note_zh": "覆盖：26/26 个成员。期权定价相对近期实际波动（中位数）：+13.7%（z +0.48）。期权定价接近正常水平。"
+        "note_en": "Coverage: 26/26 members. Options priced vs recent actual swings (median): +13.8% (z +0.48). Options priced near their usual level.",
+        "note_zh": "覆盖：26/26 个成员。期权定价相对近期实际波动（中位数）：+13.8%（z +0.48）。期权定价接近正常水平。"
       }
     },
     "memory_storage": {
       "theme_id": "memory_storage",
       "name_en": "Memory, HBM & Storage",
       "name_zh": "存储与HBM",
-      "as_of": "2026-07-26",
+      "as_of": "2026-07-27",
       "members": [
         "MU",
         "WDC",
@@ -243,8 +243,8 @@
         "label_zh": "隐含波动率溢价 vs 实现波动率（事件溢价风险）",
         "coverage_count": 4,
         "coverage_total": 4,
-        "value": 0.1374,
-        "value_z252": 0.433,
+        "value": 0.1376,
+        "value_z252": 0.434,
         "band": "normal",
         "stale": false,
         "inputs": [
@@ -253,15 +253,15 @@
           "STX",
           "SNDK"
         ],
-        "note_en": "Coverage: 4/4 members. Options priced vs recent actual swings (median): +13.7% (z +0.43). Options priced near their usual level.",
-        "note_zh": "覆盖：4/4 个成员。期权定价相对近期实际波动（中位数）：+13.7%（z +0.43）。期权定价接近正常水平。"
+        "note_en": "Coverage: 4/4 members. Options priced vs recent actual swings (median): +13.8% (z +0.43). Options priced near their usual level.",
+        "note_zh": "覆盖：4/4 个成员。期权定价相对近期实际波动（中位数）：+13.8%（z +0.43）。期权定价接近正常水平。"
       }
     },
     "semicap_equipment": {
       "theme_id": "semicap_equipment",
       "name_en": "Semiconductor Equipment (WFE)",
       "name_zh": "半导体设备（WFE）",
-      "as_of": "2026-07-26",
+      "as_of": "2026-07-27",
       "members": [
         "AMAT",
         "LRCX",
@@ -378,7 +378,7 @@
       "theme_id": "data_center_power",
       "name_en": "Data Center Power & Cooling",
       "name_zh": "数据中心电力与冷却",
-      "as_of": "2026-07-26",
+      "as_of": "2026-07-27",
       "members": [
         "VRT",
         "ETN",
@@ -503,7 +503,7 @@
       "theme_id": "nuclear_power",
       "name_en": "Nuclear & SMR Power",
       "name_zh": "核能与小型模块堆",
-      "as_of": "2026-07-26",
+      "as_of": "2026-07-27",
       "members": [
         "CEG",
         "VST",
@@ -629,7 +629,7 @@
       "theme_id": "grid_electrification",
       "name_en": "Grid & Electrification",
       "name_zh": "电网与电气化",
-      "as_of": "2026-07-26",
+      "as_of": "2026-07-27",
       "members": [
         "GEV",
         "ETN",
@@ -778,7 +778,7 @@
       "theme_id": "cybersecurity",
       "name_en": "Cybersecurity",
       "name_zh": "网络安全",
-      "as_of": "2026-07-26",
+      "as_of": "2026-07-27",
       "members": [
         "CRWD",
         "PANW",
@@ -871,7 +871,7 @@
       "theme_id": "defense_aerospace",
       "name_en": "Defense & Aerospace",
       "name_zh": "国防与航空航天",
-      "as_of": "2026-07-26",
+      "as_of": "2026-07-27",
       "members": [
         "LMT",
         "RTX",
@@ -1008,7 +1008,7 @@
       "theme_id": "robotics_automation",
       "name_en": "Robotics & Automation",
       "name_zh": "机器人与自动化",
-      "as_of": "2026-07-26",
+      "as_of": "2026-07-27",
       "members": [
         "ROK",
         "ISRG",
@@ -1109,7 +1109,7 @@
       "theme_id": "glp1_obesity",
       "name_en": "GLP-1 / Obesity",
       "name_zh": "GLP-1与肥胖",
-      "as_of": "2026-07-26",
+      "as_of": "2026-07-27",
       "members": [
         "LLY",
         "NVO",
@@ -1215,7 +1215,7 @@
       "theme_id": "fintech_payments",
       "name_en": "Fintech & Payments",
       "name_zh": "金融科技与支付",
-      "as_of": "2026-07-26",
+      "as_of": "2026-07-27",
       "members": [
         "V",
         "MA",
@@ -1317,8 +1317,8 @@
         "label_zh": "隐含波动率溢价 vs 实现波动率（事件溢价风险）",
         "coverage_count": 21,
         "coverage_total": 21,
-        "value": 0.5711,
-        "value_z252": 1.583,
+        "value": 0.5684,
+        "value_z252": 1.572,
         "band": "elevated",
         "stale": false,
         "inputs": [
@@ -1344,15 +1344,15 @@
           "FLYW",
           "MQ"
         ],
-        "note_en": "Coverage: 21/21 members. Options priced vs recent actual swings (median): +57.1% (z +1.58). Options priced far above recent actual swings — event-premium hazard.",
-        "note_zh": "覆盖：21/21 个成员。期权定价相对近期实际波动（中位数）：+57.1%（z +1.58）。期权定价远高于近期实际波动——事件溢价风险。"
+        "note_en": "Coverage: 21/21 members. Options priced vs recent actual swings (median): +56.8% (z +1.57). Options priced far above recent actual swings — event-premium hazard.",
+        "note_zh": "覆盖：21/21 个成员。期权定价相对近期实际波动（中位数）：+56.8%（z +1.57）。期权定价远高于近期实际波动——事件溢价风险。"
       }
     },
     "space_satellite": {
       "theme_id": "space_satellite",
       "name_en": "Space & Satellites",
       "name_zh": "太空与卫星",
-      "as_of": "2026-07-26",
+      "as_of": "2026-07-27",
       "members": [
         "RKLB",
         "FLY",
@@ -1429,7 +1429,7 @@
       "theme_id": "rare_earth_critical_min",
       "name_en": "Rare Earth & Critical Minerals",
       "name_zh": "稀土与关键矿产",
-      "as_of": "2026-07-26",
+      "as_of": "2026-07-27",
       "members": [
         "MP",
         "USAR",
@@ -1514,7 +1514,7 @@
       "theme_id": "copper_steel_electrify",
       "name_en": "Copper, Steel & Electrification",
       "name_zh": "铜、钢铁与电气化",
-      "as_of": "2026-07-26",
+      "as_of": "2026-07-27",
       "members": [
         "ETN",
         "PH",
@@ -1680,7 +1680,7 @@
       "theme_id": "medical_devices",
       "name_en": "Medical Devices",
       "name_zh": "医疗器械",
-      "as_of": "2026-07-26",
+      "as_of": "2026-07-27",
       "members": [
         "UNH",
         "ELV",

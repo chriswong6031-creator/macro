@@ -1,7 +1,7 @@
 {
   "schema": "theme_adoption.v1",
   "as_of": "2026-07-26",
-  "generated_at": "2026-07-26T08:16:07.434548+00:00",
+  "generated_at": "2026-07-27T01:30:21.463163+00:00",
   "authority": {
     "may_rank": false,
     "may_gate": false,
@@ -15,11 +15,11 @@
     "history_note": "Momentum signals are coarse with <90d history. Do not promote to a scored factor until ~2026-09-17."
   },
   "coverage_stats": {
-    "total_rows": 510,
+    "total_rows": 527,
     "unique_tickers": 17,
     "date_range_min": "2026-06-20",
-    "date_range_max": "2026-07-26",
-    "history_days": 36
+    "date_range_max": "2026-07-27",
+    "history_days": 37
   },
   "npm_pypi_note": "npm/PyPI adoption descoped: no collectors exist in collectors/. Future wave: add npm_downloads.py and pypi_stats.py collectors.",
   "history_note": "Momentum signals are coarse with <90d history. Do not promote to a scored factor until ~2026-09-17.",
@@ -34,8 +34,8 @@
         "AMD",
         "NVDA"
       ],
-      "coverage_note": "2/24 basket tickers have GitHub data; velocity window: 7d. History: ~36d (expanding).",
-      "coverage_note_zh": "篮子成员24个，其中2个有GitHub数据；速度窗口：7天；历史长度：约36天（持续扩展）。"
+      "coverage_note": "2/24 basket tickers have GitHub data; velocity window: 7d. History: ~37d (expanding).",
+      "coverage_note_zh": "篮子成员24个，其中2个有GitHub数据；速度窗口：7天；历史长度：约37天（持续扩展）。"
     },
     "ai_neoclouds": {
       "basket_id": "ai_neoclouds",
@@ -55,8 +55,8 @@
         "AMD",
         "NVDA"
       ],
-      "coverage_note": "2/12 basket tickers have GitHub data; velocity window: 7d. History: ~36d (expanding).",
-      "coverage_note_zh": "篮子成员12个，其中2个有GitHub数据；速度窗口：7天；历史长度：约36天（持续扩展）。"
+      "coverage_note": "2/12 basket tickers have GitHub data; velocity window: 7d. History: ~37d (expanding).",
+      "coverage_note_zh": "篮子成员12个，其中2个有GitHub数据；速度窗口：7天；历史长度：约37天（持续扩展）。"
     },
     "critical_minerals": {
       "basket_id": "critical_minerals",
@@ -75,8 +75,8 @@
       "covered_tickers": [
         "NET"
       ],
-      "coverage_note": "1/10 basket tickers have GitHub data; velocity window: 7d. History: ~36d (expanding).",
-      "coverage_note_zh": "篮子成员10个，其中1个有GitHub数据；速度窗口：7天；历史长度：约36天（持续扩展）。"
+      "coverage_note": "1/10 basket tickers have GitHub data; velocity window: 7d. History: ~37d (expanding).",
+      "coverage_note_zh": "篮子成员10个，其中1个有GitHub数据；速度窗口：7天；历史长度：约37天（持续扩展）。"
     },
     "data_center_power": {
       "basket_id": "data_center_power",
