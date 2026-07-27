@@ -3038,6 +3038,27 @@ jobs:
             echo "::warning title=marketing_governor::rc=$rc (marketing_state/lobe may be stale)"
           fi
           exit 0
+      # Ad Central Plane O: fold the browser's ad_exposure beacons into the arena
+      # ledgers (research/AD_CENTRAL_MASTERPLAN.md §2). Nightly is the SOLE advancer
+      # of a forward ledger, so this is the only writer — an intraday lane may
+      # compute with --dry-run and must never write.
+      #
+      # The Management API PAT pair, same one scripts/geo_enrich.py uses. WITHOUT
+      # THEM THIS IS A NO-OP, not a failure: the script prints "skipping" and exits
+      # 0, so provisioning the secret is what turns the lane on. (daily.yml carries
+      # SUPABASE_SERVICE_KEY for other steps — that is a DIFFERENT credential and
+      # does not reach the Management API's SQL endpoint.)
+      - name: ad central — ingest split-test exposures
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          set +e
+          python -m scripts.ad_ingest_run --days 7; rc=$?
+          if [ "$rc" -ne 0 ]; then
+            echo "::warning title=ad_ingest::rc=$rc (arena ledgers may not have advanced)"
+          fi
+          exit 0
       - name: commit standout audit US artifacts
         run: |
           . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
@@ -3061,6 +3082,8 @@ jobs:
           git add data/marketing/opportunities.jsonl 2>/dev/null || true
           git add data/marketing/radar_plan_history.json 2>/dev/null || true
           git add data/marketing/outbox 2>/dev/null || true
+          # Ad Central arena ledgers — forward-only, advanced by the ingest step above.
+          git add data/marketing/ad_central 2>/dev/null || true
           if git diff --cached --quiet; then echo "no standout audit US changes"; exit 0; fi
           git commit -m "standout-audit-us: nightly US attribution + fitness card $(date -u +%F)"
           # best-effort rebase-push (own files — no other job writes these paths)

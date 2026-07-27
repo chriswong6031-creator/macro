@@ -1122,6 +1122,21 @@ lanes:
           config/marketing.yml + data/marketing/ seed ledgers. Writes:
           data/neuralweb/marketing_state.json, site/neuralwebdata/marketing_lobe.json.
           Never-raise; display-only; originates no market signal.
+      - id: ad_central_ingest
+        module: scripts.ad_ingest_run
+        note: >
+          Ad Central Plane O ingest (research/AD_CENTRAL_MASTERPLAN.md §2). Reads
+          ad_exposure rows from the first-party analytics_events table via the
+          Supabase Management API (SUPABASE_ACCESS_TOKEN + SUPABASE_PROJECT_REF)
+          and folds them into the arena ledgers. Writes:
+          data/marketing/ad_central/{assignments,outcomes}.jsonl — forward-only, and
+          this is their SOLE advancer (an intraday lane may only --dry-run).
+          Units are keyed on the SERVER-stamped visitor_id, never on anything the
+          browser sends, so the denominator cannot be forged by the client that
+          chose the arm. Idempotent: the window is a lookback, not a watermark, so a
+          missed night self-heals and a re-read appends nothing.
+          Unconfigured (no PAT) is a SKIP, not a failure — exits 0 having written
+          nothing. Never-raise; display-only; originates no market signal.
 
   # ── daily.yml / oracle_offrender ────────────────────────────────────────
   # Oracle off-render job: panel rebuild + episodes + Time Machine + Ratio Lens.
