@@ -1,8 +1,9 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-27T13:53:08.504800+00:00",
-  "count": 198,
+  "generated_at": "2026-07-27T15:30:23.889466+00:00",
+  "count": 199,
   "institutions": [
+    "BTIG",
     "Bank of America",
     "Deutsche Bank",
     "Goldman Sachs",
@@ -20,6 +21,25 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-bsw5n8dbnri-2c84f6",
+      "title": "The Backstop Boys",
+      "institution": "BTIG",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-27T15:16:03Z",
+      "summary_points": [
+        "**SOXX 200 DMA Test**: Imminent 200 DMA test (-22%) with March lows risk (-23%) as high-beta momentum nears breakdown, signaling significant downside pressure.",
+        "**Tech OAS Reversal**: IG Tech Sector OAS near 139.538 with S&P 500 Tech at 6490.31 indicates potential retest of March lows if momentum fails.",
+        "**High-Beta Momentum Breakdown**: High-Beta Momentum index nearing 200 DMA, threatening breach of March lows (-23%) and accelerating downside for high-beta assets."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-73at25bgsrd-c2923d",
       "title": "Global daily massive relax",
