@@ -1,0 +1,183 @@
+{
+  "authority": {
+    "may_alert": false,
+    "may_auto_promote": false,
+    "may_display_to_users": false,
+    "may_enter": false,
+    "may_gate": false,
+    "may_rank": false,
+    "may_size": false,
+    "research_only": true
+  },
+  "availability_audit": {
+    "finra_first_session": "2026-05-26",
+    "finra_latest_session": "2026-07-24",
+    "finra_missing_members": [
+      "BF-B",
+      "BRK-B",
+      "FI",
+      "MOG-A"
+    ],
+    "finra_prefix_end": "2026-07-21",
+    "finra_prefix_rows": 51960,
+    "finra_prefix_sha256": "4d7165ff3346c7bdaaf28e0b4064f1eda4311a1600f3df33509e8d03d183bbf6",
+    "finra_rh1_member_count": 795,
+    "finra_session_count": 42,
+    "rh1_member_count": 799
+  },
+  "construction": {
+    "baseline": {
+      "coverage_required": "all_20_FINRA_rows",
+      "dates": "the 20 subject trading sessions immediately before challenge_start",
+      "rolling_comparable_windows": "all_18_overlapping_3_session_windows",
+      "sessions": 20
+    },
+    "challenge_window": {
+      "activity": "mean(total_vol)",
+      "coverage_required": "all_3_FINRA_rows",
+      "dates": "challenge_start_through_C_exactly_3_subject_sessions",
+      "short_ratio": "sum(short_vol)/sum(total_vol)"
+    },
+    "construction_id": "pss_af1_finra_short_marked_absorption_witness_v1",
+    "flow_source": {
+      "dataset": "FINRA consolidated daily short-sale volume",
+      "interpretation": "short-marked transaction activity, not short interest, net bearish inventory, or a standalone directional signal",
+      "path": "data/finra_short_volume/panel.parquet",
+      "required_columns": [
+        "date",
+        "ticker",
+        "short_vol",
+        "short_exempt",
+        "total_vol",
+        "short_ratio"
+      ]
+    },
+    "labels": {
+      "flow_witness": "challenge_short_ratio>=prior_18_window_q75 and challenge_mean_total_vol>=prior_20_session_median_total_vol",
+      "leader_flow_control": "challenge_short_ratio<prior_18_window_q75 and challenge_mean_total_vol>=prior_20_session_median_total_vol",
+      "low_activity_diagnostic": "challenge_mean_total_vol<prior_20_session_median_total_vol",
+      "missing_flow_diagnostic": "required_20_plus_3_exact_date_coverage_missing"
+    },
+    "quantile": {
+      "information_cutoff": "challenge_start_minus_1_close",
+      "method": "linear",
+      "value": 0.75
+    },
+    "source": {
+      "action": "same_C_close",
+      "group": "resilient_leader",
+      "historical_source_rows_allowed": false,
+      "ledger": "data/personality_timing/challenge_resilience.jsonl",
+      "program_id": "PSS-CR1"
+    }
+  },
+  "construction_sha256": "31dafcf5f3606e084f73d120328fd0d0b55e7db7d8f8ae55c112f61062b79634",
+  "decision_law": {
+    "authority_now": "none",
+    "benefit_signs": {
+      "mae": "flow_witness_mae_minus_leader_flow_control_mae",
+      "rebound8_first": "flow_witness_rebound_first_rate_minus_leader_flow_control_rebound_first_rate",
+      "tail10": "leader_flow_control_tail_rate_minus_flow_witness_tail_rate",
+      "w5": "flow_witness_w5_rate_minus_leader_flow_control_w5_rate"
+    },
+    "first_read_requires_all": {
+      "action_date_span_days": 365,
+      "distinct_action_months": 12,
+      "flow_witness_rows": 40,
+      "informative_exact_strata": 12,
+      "leader_flow_control_rows": 40,
+      "matured_primary_rows": 150,
+      "unique_names": 100
+    },
+    "inference_tape": {
+      "aggregation": "equal weight across informative strata",
+      "bootstrap": {
+        "confidence": 0.95,
+        "draws": 5000,
+        "seed": 20260815,
+        "unit": "three-calendar-month moving block"
+      },
+      "deduplication": "keep first primary action per name per calendar month",
+      "minimum_per_label_in_stratum": 2,
+      "permutation": {
+        "draws": 10000,
+        "labels_move_only_within_stratum": true,
+        "one_sided_alpha": 0.05,
+        "seed": 20260814
+      },
+      "stratum": "sector x action_month x source_anchor_severity_band x source_delay_band"
+    },
+    "interim_outcome_reads": "forbidden",
+    "qualification_requires_all": [
+      "mae benefit>0, one-sided permutation p<=0.05, and block-CI lower>0",
+      "tail10 benefit>0, one-sided permutation p<=0.05, and block-CI lower>0",
+      "w5 and rebound8_first benefit>0",
+      "mae and tail10 benefit>0 in chronological early and late halves",
+      "leave-one-sector-out mae and tail10 benefit stay>0",
+      "no sector supplies more than 25% of flow_witness rows"
+    ],
+    "read_count": 1,
+    "ruling": "Qualification authorizes only a separate preregistered intervention shadow. It never creates entry, rank, size, gate, alert, display, or automatic promotion authority. Failure kills this exact construction."
+  },
+  "enrollment_law": "source action must be strictly greater than not_before_session; historical events are never imported or counted",
+  "family": "pss_af1_finra_absorption_witness_prospective",
+  "frozen_at": "2026-07-27T23:02:00Z",
+  "grading": {
+    "called": "proximity trough offset -2 through +5 sessions",
+    "competing_risk": {
+      "breach": "low<reference_low-0.50*anchor_atr",
+      "rebound": "close>=action_close*1.08",
+      "tie": "breach_wins",
+      "unresolved": "retained_as_failure"
+    },
+    "mae63": "minimum close return over action+1 through action+63",
+    "maturity_sessions_after_action": 63,
+    "outcomes_begin": "session_after_action",
+    "proximity_window": "minimum close action-31 through action+31",
+    "tail10": "mae63<=-10%",
+    "tdt": "signed action-minus-trough trading-session offset",
+    "w5": "action close within 5% above proximity-window minimum"
+  },
+  "hypothesis": "Among prospectively observed CR1 resilient leaders with comparable FINRA activity, leadership that survives top-quartile own-history short-marked activity has lower subsequent drawdown and tail risk than resilient leadership without that transaction-flow witness.",
+  "not_before_session": "2026-07-24",
+  "outputs": {
+    "ledger": "data/personality_timing/flow_absorption.jsonl",
+    "state": "data/personality_timing/flow_absorption_state.json"
+  },
+  "prior_seen_not_confirmation": [
+    "PSS-F1 through F4 and F4R/F4H outcomes",
+    "PSS-SR1 through SR3 outcomes",
+    "PSS-RH1 was selected from the historical PSS-SR3 sign inversion"
+  ],
+  "program_id": "PSS-AF1",
+  "schema": "personality_flow_absorption.manifest/v1",
+  "source_bindings": {
+    "cr1_manifest": {
+      "path": "data/personality_timing/challenge_resilience_manifest_v1.json",
+      "sha256": "0b520e60616d60f4c4182e9796bbf4e23cc58279ccf2b0b2d03eb3cec3c352e1"
+    },
+    "finra_stable_prefix": {
+      "canonical_sha256": "4d7165ff3346c7bdaaf28e0b4064f1eda4311a1600f3df33509e8d03d183bbf6",
+      "path": "data/finra_short_volume/panel.parquet",
+      "row_count": 51960,
+      "through": "2026-07-21"
+    },
+    "rh1_manifest": {
+      "path": "data/personality_timing/relief_hazard_manifest_v1.json",
+      "sha256": "0b07345178592032570aeb57c1c54c1cb24b6463a5836431bc7daf5d44b0cc6b"
+    },
+    "rh1_membership": {
+      "path": "data/personality_timing/relief_hazard_membership_v1.json",
+      "sha256": "f00c9d70e0c554213d6aa9a82fecc1492bcedc49c04ce36d4a14647f85713baf",
+      "ticker_count": 799
+    }
+  },
+  "source_commit": "e61042bf70fe2ca61db5bc55e163c9e208927b02",
+  "status": "prospective_accrual_only",
+  "trial_budget": {
+    "historical_lineage_disclosed": true,
+    "no_interim_retiming": true,
+    "no_threshold_grid": true,
+    "prospective_configurations": 1
+  }
+}

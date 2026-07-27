@@ -1,0 +1,163 @@
+{
+  "authority": {
+    "may_alert": false,
+    "may_auto_promote": false,
+    "may_display_to_users": false,
+    "may_enter": false,
+    "may_gate": false,
+    "may_rank": false,
+    "may_size": false,
+    "research_only": true
+  },
+  "availability_audit": {
+    "finra_first_session": "2026-05-26",
+    "finra_latest_session": "2026-07-24",
+    "finra_missing_members": [
+      "BF-B",
+      "BRK-B",
+      "FI",
+      "MOG-A"
+    ],
+    "finra_prefix_end": "2026-07-21",
+    "finra_prefix_rows": 51960,
+    "finra_prefix_sha256": "4d7165ff3346c7bdaaf28e0b4064f1eda4311a1600f3df33509e8d03d183bbf6",
+    "finra_rh1_member_count": 795,
+    "finra_session_count": 42,
+    "rh1_member_count": 799
+  },
+  "construction": {
+    "construction_id": "pss_cd1_peer_factor_crowding_v1",
+    "labels": {
+      "crowding_hazard": "pc1_share>=prior_q80 and dispersion_5<=prior_q20",
+      "mixed_diagnostic": "exactly one extreme condition is true",
+      "uncrowded_control": "pc1_share<prior_q80 and dispersion_5>prior_q20"
+    },
+    "metrics": {
+      "dispersion_5": {
+        "definition": "cross_sectional_median_absolute_deviation_of_peer_close[t]/close[t-5]-1"
+      },
+      "pc1_share": {
+        "definition": "largest_singular_value_squared/sum_all_singular_values_squared",
+        "matrix": "peer daily simple returns, each peer population-standardized",
+        "return_sessions": 10
+      }
+    },
+    "peers": {
+      "minimum_valid_peers": 15,
+      "same_sector_ex_self_membership": "frozen_PSS_RH1_membership"
+    },
+    "pit_thresholds": {
+      "dispersion_quantile": 0.2,
+      "information_cutoff": "B_minus_1_close",
+      "metric_sessions_before_B": 126,
+      "minimum_valid_metric_sessions": 63,
+      "pc1_quantile": 0.8
+    },
+    "source": {
+      "action": "same_B_close",
+      "group": "relief_hazard",
+      "historical_source_rows_allowed": false,
+      "ledger": "data/personality_timing/relief_hazard.jsonl",
+      "program_id": "PSS-RH1"
+    }
+  },
+  "construction_sha256": "4b956ab36a3ddf00f4b67708e8b716abd8cf2b3bad86698e83dc46f705d3920f",
+  "decision_law": {
+    "authority_now": "none",
+    "first_read_requires_all": {
+      "action_date_span_days": 365,
+      "crowding_hazard_rows": 50,
+      "distinct_action_months": 12,
+      "informative_exact_strata": 20,
+      "matured_primary_rows": 250,
+      "uncrowded_control_rows": 50,
+      "unique_names": 125
+    },
+    "harm_signs": {
+      "mae": "uncrowded_control_mae_minus_crowding_hazard_mae",
+      "rebound8_first": "uncrowded_control_rebound_first_rate_minus_crowding_hazard_rebound_first_rate",
+      "tail10": "crowding_hazard_tail_rate_minus_uncrowded_control_tail_rate",
+      "w5": "uncrowded_control_w5_rate_minus_crowding_hazard_w5_rate"
+    },
+    "inference_tape": {
+      "aggregation": "equal weight across informative strata",
+      "bootstrap": {
+        "confidence": 0.95,
+        "draws": 5000,
+        "seed": 20260813,
+        "unit": "three-calendar-month moving block"
+      },
+      "deduplication": "keep first primary action per name per calendar month",
+      "minimum_per_label_in_stratum": 2,
+      "permutation": {
+        "draws": 10000,
+        "labels_move_only_within_stratum": true,
+        "one_sided_alpha": 0.05,
+        "seed": 20260812
+      },
+      "stratum": "sector x action_month x source_anchor_severity_band x source_delay_band"
+    },
+    "interim_outcome_reads": "forbidden",
+    "qualification_requires_all": [
+      "mae harm>0, one-sided permutation p<=0.05, and block-CI lower>0",
+      "tail10 harm>0, one-sided permutation p<=0.05, and block-CI lower>0",
+      "w5 and rebound8_first harm>0",
+      "mae and tail10 harm>0 in chronological early and late halves",
+      "leave-one-sector-out mae and tail10 harm stay>0",
+      "no sector supplies more than 25% of crowding_hazard rows"
+    ],
+    "read_count": 1,
+    "ruling": "Qualification authorizes only a separate preregistered intervention shadow. It never creates entry, rank, size, gate, alert, display, or automatic promotion authority. Failure kills this exact construction."
+  },
+  "enrollment_law": "source action must be strictly greater than not_before_session; historical events are never imported or counted",
+  "family": "pss_cd1_correlation_dispersion_prospective",
+  "frozen_at": "2026-07-27T23:02:00Z",
+  "grading": {
+    "called": "proximity trough offset -2 through +5 sessions",
+    "competing_risk": {
+      "breach": "low<reference_low-0.50*anchor_atr",
+      "rebound": "close>=action_close*1.08",
+      "tie": "breach_wins",
+      "unresolved": "retained_as_failure"
+    },
+    "mae63": "minimum close return over action+1 through action+63",
+    "maturity_sessions_after_action": 63,
+    "outcomes_begin": "session_after_action",
+    "proximity_window": "minimum close action-31 through action+31",
+    "tail10": "mae63<=-10%",
+    "tdt": "signed action-minus-trough trading-session offset",
+    "w5": "action close within 5% above proximity-window minimum"
+  },
+  "hypothesis": "Inside a prospectively observed RH1 synchronized-relief hazard, unusually concentrated common-factor variance plus unusually low cross-sectional dispersion marks a crowded beta rally with greater subsequent drawdown and tail risk than a nested uncrowded hazard.",
+  "not_before_session": "2026-07-24",
+  "outputs": {
+    "ledger": "data/personality_timing/crowding_hazard.jsonl",
+    "state": "data/personality_timing/crowding_hazard_state.json"
+  },
+  "prior_seen_not_confirmation": [
+    "PSS-F1 through F4 and F4R/F4H outcomes",
+    "PSS-SR1 through SR3 outcomes",
+    "PSS-RH1 was selected from the historical PSS-SR3 sign inversion"
+  ],
+  "program_id": "PSS-CD1",
+  "schema": "personality_crowding_hazard.manifest/v1",
+  "source_bindings": {
+    "rh1_manifest": {
+      "path": "data/personality_timing/relief_hazard_manifest_v1.json",
+      "sha256": "0b07345178592032570aeb57c1c54c1cb24b6463a5836431bc7daf5d44b0cc6b"
+    },
+    "rh1_membership": {
+      "path": "data/personality_timing/relief_hazard_membership_v1.json",
+      "sha256": "f00c9d70e0c554213d6aa9a82fecc1492bcedc49c04ce36d4a14647f85713baf",
+      "ticker_count": 799
+    }
+  },
+  "source_commit": "e61042bf70fe2ca61db5bc55e163c9e208927b02",
+  "status": "prospective_accrual_only",
+  "trial_budget": {
+    "historical_lineage_disclosed": true,
+    "no_interim_retiming": true,
+    "no_threshold_grid": true,
+    "prospective_configurations": 1
+  }
+}

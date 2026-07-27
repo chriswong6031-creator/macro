@@ -799,6 +799,28 @@ def run(force: bool = False) -> dict:
         _prh.update()
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("personality-relief-hazard failed: %s", e)
+    # PSS-CR1/CD1/AF1 prospective follow-ons. CR1 waits for the first real
+    # same-sector pullback after a future RH1 hazard and measures selective
+    # leadership; CD1 measures common-factor concentration/low dispersion at
+    # that RH1 action; AF1 then joins only CR1 leaders to exact-date, own-history
+    # FINRA short-marked activity. Order is causal because AF1 may consume a CR1
+    # row enrolled in this same nightly. All three are hash-frozen, zero-backfill,
+    # nightly-only operator-research ledgers with no product authority. Never fatal.
+    try:
+        from engine import personality_challenge_resilience as _pcr
+        _pcr.update()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("personality-challenge-resilience failed: %s", e)
+    try:
+        from engine import personality_crowding_hazard as _pch
+        _pch.update()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("personality-crowding-hazard failed: %s", e)
+    try:
+        from engine import personality_flow_absorption as _pfa
+        _pfa.update()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("personality-flow-absorption failed: %s", e)
     # Index Hybrid Momentum organ (engine/index_momentum.py, IHM-R1..R4): RSI-MACD
     # hybrid at 1D/2B/3B/W-FRI for 13 index carriers (US/HK/CN/INTL + MAG7 carrier).
     # Depth percentile, hist_vel3, washout_turn/trap_zone quality tags, and global-turn
