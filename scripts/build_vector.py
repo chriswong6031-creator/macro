@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -3963,15 +3964,32 @@ def main() -> int:
         _build_masterminds()
     except Exception as e:  # noqa: BLE001
         log.error("mastermind pages (via build_vector) failed (%s)", e)
-    try:  # Canada / S&P-TSX dashboard — has no dedicated daily.yml step yet (the PAT that
-          # opened PR #81 lacked `workflow` scope), so it is built here, before the landing
-          # hub reads _canada_state(). Self-sufficient + returns 0; never breaks the build.
-          # TODO: move to a proper daily.yml/weekly.yml `build_canada` step + drop this hook
-          # once a workflow-scoped token is available.
-        from scripts import build_canada as _build_canada
-        _build_canada.main()
-    except Exception as e:  # noqa: BLE001
-        log.error("canada dashboard (via build_vector) failed (%s)", e)
+    # Canada / S&P-TSX dashboard — FALLBACK ONLY (the old TODO here is discharged).
+    # build_canada is now a first-class step in daily.yml, weekly.yml and render.yml's
+    # `canada` + `all` scopes; those lanes export SKIP_CANADA_HOOK=1 so this hook does
+    # not double-run a ~10-min builder on the render budget. It still fires for every
+    # lane that calls build_vector WITHOUT its own step (closing-bell, earlyclose,
+    # sentinel, engine-render, and render.yml's narrow non-canada scopes), which is why
+    # it is kept rather than deleted: dropping it would silently stop refreshing
+    # canada.html in five lanes. Runs BEFORE the landing hub reads _canada_state().
+    if os.environ.get("SKIP_CANADA_HOOK") == "1":
+        log.info("build_vector: canada dashboard built by a first-class step this run — skipping fallback hook")
+    else:
+        try:
+            from scripts import build_canada as _build_canada
+            _rc = _build_canada.main()
+            if _rc:
+                # Bare print, NEVER log.* — the logging format prefixes "%(levelname)s ",
+                # which would push "::" off the line start and GitHub would drop the
+                # annotation (house rule; tests/test_gh_annotation_line_start.py). Without
+                # this, a dead build_canada shipped a stale canada.html behind a green render.
+                print(f"::error title=canada dashboard (via build_vector) failed::"
+                      f"build_canada returned rc={_rc} — canada.html keeps its previous render",
+                      flush=True)
+        except Exception as e:  # noqa: BLE001
+            print(f"::error title=canada dashboard (via build_vector) failed::"
+                  f"canada.html keeps its previous render — {e}", flush=True)
+            log.error("canada dashboard (via build_vector) failed (%s)", e, exc_info=True)
     # (build_intl ran concurrently as the background subprocess launched above; joined below.)
     # W6-CN Fix 4 (lane unification): baskets_china/_ths/baskets_hk are now PRIMARILY built
     # in asia-close.yml (after the china builds, sharing one CN session). This hook is the

@@ -25,7 +25,9 @@ jobs:
                            # bonds, transmission, vector, aibrief + library rebuild + commit). Measured segments:
                            # collectors+dead-name+IC ~18m, recalibrate 26m, build_site 25m, china fundamentals 29m,
                            # calibrate china 10m; asia-close measured build_china alone at 36m on the same congested
-                           # 2-core runners, and build_vector also builds canada/intl via hooks — full chain ≈ 250-270m.
+                           # 2-core runners; canada is now its own ~10m step (was a build_vector hook) and build_vector
+                           # still builds intl via a hook — full chain ≈ 250-270m (unchanged: the canada work moved
+                           # out of build_vector, it was not added).
                            # 300m restores the whole chain with headroom. Future outgrowth is no longer silent: the
                            # "stamp weekly lane alive" step below + scripts.healthcheck check_weekly_lane (heartbeat.yml)
                            # alert when the committed stamp exceeds 7.5 days.
@@ -164,11 +166,21 @@ jobs:
           run_py "forward path board (build_rates_command)" scripts.build_rates_command
           run_py "calibrate vector" scripts.calibrate_vector
           run_py "validate gex (forward-RV gate)" scripts.validate_gex
+          # Canada / S&P-TSX — FIRST-CLASS step (2026-07-27). Was a swallowed try/except
+          # inside build_vector, so its failures never reached the Actions summary (the
+          # hook logged through log.error, whose level prefix pushes "::" off the line
+          # start) and it had no scope/timing of its own. MUST stay above build_vector:
+          # the landing hub's _canada_state() reads the data/canada_regime/latest.json
+          # written here. SKIP_CANADA_HOOK=1 makes build_vector's surviving fallback hook
+          # a no-op for the rest of this step so the ~10m builder does not run twice in a
+          # chain that already measures ~250-270m against a 300m cap.
+          run_py "build canada" scripts.build_canada
+          export SKIP_CANADA_HOOK=1
           run_py "build vector + landing hub" scripts.build_vector
           run_py "AI brief page (build_aibrief)" scripts.build_aibrief
           exit 0
       - name: rebuild stock-search libraries (resilient — guarantees the analyzers ship)
-        # build_china/build_hk (and build_canada/build_intl via build_vector hooks)
+        # build_china/build_hk/build_canada (and build_intl via a build_vector hook)
         # swallow errors; rebuild the per-stock search JSON (site/chinastockdata,
         # site/hkstockdata, site/canadastockdata, site/intlstockdata) directly from
         # committed caches so the A-Share / HK / TSX / intl analyzers always ship.

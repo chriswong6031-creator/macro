@@ -882,6 +882,16 @@ jobs:
       # scripts/audit_unrun_tests.py on the very next census.
       - name: render-lane scope contract (intl must stay in the publish scopes)
         run: python -m pytest tests/test_render_intl_scope.py -q
+      # Same class, second instance (2026-07-27). build_canada was invoked by NO
+      # workflow at all: site/canada.html existed only as a side effect of a
+      # swallowed try/except inside build_vector, so a canada-only fix could ride a
+      # dispatched scope that never calls hub() and ship stale behind a green run —
+      # exactly how macro#3820's recovery ended up needing scope=hk. The suite runs
+      # render.yml's `region_of` shell function for real (inline shell is untested
+      # code otherwise) and pins the daily/weekly step ordering. stdlib + bash only,
+      # so the minimal pytest+pyyaml install above is enough.
+      - name: render-lane scope contract (canada must be first-class, not a build_vector hook)
+        run: python -m pytest tests/test_render_canada_scope.py -q
 
   causal-factory:
     if: ${{ false }}

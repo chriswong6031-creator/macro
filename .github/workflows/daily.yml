@@ -860,8 +860,8 @@ jobs:
         run: |
           set +e
           # Marker for the libraries-rebuild guard further down. The four non-US search
-          # libraries are each built by their dashboard step (build_china / build_hk, and
-          # build_canada / build_intl via build_vector) AND again by the resilient rebuild
+          # libraries are each built by their dashboard step (build_china / build_hk /
+          # build_canada, and build_intl via build_vector) AND again by the resilient rebuild
           # step at the end — duplicate per-name analyze() work (~11m/run). Any
           # <mkt>stockdata/index.json newer than this marker was (re)built FRESH this run,
           # so the rebuild step skips it; a market whose dashboard failed keeps its older
@@ -1435,6 +1435,35 @@ jobs:
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: |
           python -m scripts.build_flow_signals || echo "::warning::build_flow_signals failed (non-fatal — keeping last committed ledger)"
+      - name: build canada dashboard (S&P/TSX)
+        # FIRST-CLASS STEP (2026-07-27) — build_canada used to run ONLY as a swallowed
+        # try/except inside build_vector (a workaround from PR #81, whose PAT lacked
+        # `workflow` scope). Two defects came with that: the failure went through
+        # log.error, whose "%(levelname)s " prefix pushes "::" off the line start so
+        # GitHub DROPPED the annotation and a dead builder shipped a stale canada.html
+        # behind a green nightly; and the builder had no workflow of its own to be
+        # scoped or timed by. Both found shipping macro#3820 (HK/Canada rebuild).
+        # ORDERING IS LOAD-BEARING: this MUST stay above the build_vector step below —
+        # the landing hub's _canada_state() reads the data/canada_regime/latest.json
+        # written here (and the hub card is presence-gated on site/canada.html).
+        # Resilient like every other builder in this job: build_canada never raises, a
+        # non-zero rc is annotated + summarised here, and the step always exits 0 so one
+        # broken dashboard can never abort the nightly.
+        # SKIP_CANADA_HOOK=1 goes to $GITHUB_ENV so build_vector's surviving fallback
+        # hook no-ops for the rest of this job — set UNCONDITIONALLY (even on failure):
+        # build_canada is a pure function of the committed store, so a retry would burn
+        # ~10 min of a 150m-capped nightly to fail identically. The annotation is the
+        # recovery signal, not a second attempt.
+        run: |
+          set +e
+          python -m scripts.build_canada > "$RUNNER_TEMP/canada.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/canada.log"
+          echo "SKIP_CANADA_HOOK=1" >> "$GITHUB_ENV"
+          if [ "$rc" -ne 0 ]; then
+            echo "::error title=canada dashboard (build_canada) failed (rc=$rc)::$(tail -n 2 "$RUNNER_TEMP/canada.log" | tr '\n' ' ' | tail -c 600)"
+            { echo "### ❌ canada dashboard (build_canada) failed (rc=$rc)"; echo '<details><summary>traceback</summary>'; echo; echo '```'; tail -n 60 "$RUNNER_TEMP/canada.log"; echo '```'; echo '</details>'; } >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit 0
       - name: build bitcoin vector + landing hub
         # installs the landing hub at index.html (rendered from stored engine
         # state, so ordering vs build_site no longer matters — build_site writes
@@ -1860,7 +1889,7 @@ jobs:
         # the analyst panel). Pure render — order-independent; resilient (returns 0).
         run: python -m scripts.build_ai_desk_page
       - name: rebuild stock-search libraries (resilient — guarantees the analyzers ship)
-        # build_china/build_hk (and build_canada/build_intl via build_vector hooks)
+        # build_china/build_hk/build_canada (and build_intl via a build_vector hook)
         # render their dashboards but SWALLOW errors (return 0), so a failure there
         # silently 404s the per-stock search. This rebuilds the search JSON
         # (site/chinastockdata, site/hkstockdata, site/canadastockdata,
