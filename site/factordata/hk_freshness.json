@@ -1,11 +1,11 @@
 {
-  "checked_at": "2026-07-27T11:25:05+00:00",
+  "checked_at": "2026-07-27T12:34:54+00:00",
   "expected_session": "2026-07-27",
   "stores": {
     "cache": {
-      "asof": "2026-07-24",
-      "lag_days": 3,
-      "state": "slow"
+      "asof": "2026-07-27",
+      "lag_days": 0,
+      "state": "fresh"
     },
     "bellwether": {
       "asof": "2026-07-27",
@@ -13,9 +13,9 @@
       "state": "fresh"
     },
     "standouts": {
-      "asof": "2026-07-24",
-      "lag_days": 3,
-      "state": "slow"
+      "asof": "2026-07-27",
+      "lag_days": 0,
+      "state": "fresh"
     },
     "regime": {
       "asof": "2026-07-27",
@@ -30,14 +30,14 @@
   },
   "coherence": {
     "ok": true,
-    "standouts_asof": "2026-07-24",
+    "standouts_asof": "2026-07-27",
     "regime_date": "2026-07-27",
-    "gap_sessions": 1,
-    "note": "regime read is one session behind the stock scan \u2014 catches up after the next Asia close"
+    "gap_sessions": 0,
+    "note": null
   },
   "regression": {
     "ok": true,
-    "prev_cache_max": "2026-07-24",
+    "prev_cache_max": "2026-07-27",
     "curr_cache_max": "2026-07-27",
     "note": null
   },

@@ -1269,7 +1269,9 @@
   body.page-hk .hkx-card{background:var(--mx5-glass-bg,rgba(16,22,30,.55));border:1px solid var(--mx5-glass-border,rgba(255,255,255,.12));border-radius:18px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:0 8px 32px rgba(0,0,0,.55),0 1.5px 0 rgba(255,255,255,.07) inset;padding:18px 20px;transition:background .2s,border-color .2s,box-shadow .2s,transform .2s;margin-bottom:14px}
   body.page-hk .hkx-card[role="button"]{cursor:pointer}
   body.page-hk .hkx-card[role="button"]:hover{background:rgba(22,29,38,.62);border-color:rgba(255,255,255,.16);box-shadow:0 6px 24px rgba(0,0,0,.25);transform:translateY(-1px)}
-  body.page-hk .hkx-ctitle{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+  
+  
+  body.page-hk .hkx-ctitle{font-size:13px;font-weight:700;letter-spacing:-.01em;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px}
   body.page-hk .hkx-ctitle .zh{font-weight:500;opacity:.5;text-transform:none;letter-spacing:0}
   body.page-hk .hkx-ctitle .q{margin-left:6px;width:14px;height:14px;border-radius:50%;border:1px solid var(--muted);color:var(--muted);font-size:9px;display:inline-flex;align-items:center;justify-content:center;font-weight:700}
   /* Mechanic #3: hero z-index 30 for popover stacking context */
@@ -1465,6 +1467,12 @@
   body.page-hk .hkx-heat i.c{background:var(--down);opacity:1}
   body.page-hk .hkx-heat i.c2{background:color-mix(in srgb,var(--down) 50%,transparent);opacity:1}
   body.page-hk .hkx-heat i.n{background:rgba(255,255,255,.12);opacity:1}
+  
+  body.page-hk .hkx-heat-legend{display:flex;justify-content:space-between;margin-top:7px;font-size:10px;font-weight:600;letter-spacing:.03em}
+  body.page-hk .hkx-heat-legend .heat-up{color:var(--up)}
+  body.page-hk .hkx-heat-legend .heat-dn{color:var(--down)}
+  
+  body.page-hk .hkx-ilx{margin:6px 0 2px}
   body.page-hk .hkx-stk{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:12px}
   body.page-hk .hkx-stk:last-of-type{border-bottom:none}
   body.page-hk .hkx-tkr-btn{display:inline-block;background:rgba(91,155,240,.10);border:1px solid rgba(91,155,240,.35);color:#a9c8f5;border-radius:8px;padding:3px 10px;font-weight:700;font-size:12px;cursor:pointer;text-decoration:none}
@@ -1475,9 +1483,11 @@
   body.page-hk .hkx-screener-btn{display:block;width:100%;text-align:center;margin-top:11px;background:linear-gradient(135deg,rgba(91,155,240,.18),rgba(69,184,115,.14));border:1px solid rgba(91,155,240,.4);color:var(--text);font-weight:700;font-size:12.5px;border-radius:12px;padding:10px 0;cursor:pointer;text-decoration:none;letter-spacing:.4px}
   body.page-hk .hkx-bbar{display:flex;height:14px;border-radius:6px;overflow:hidden;margin:6px 0}
   body.page-hk .hkx-bbar .bull{background:var(--up)} body.page-hk .hkx-bbar .bear{background:var(--down)}
-  body.page-hk .hkx-pegband{position:relative;height:24px;border-radius:8px;margin:8px 0 4px;background:linear-gradient(90deg,rgba(69,184,115,.25),rgba(224,160,48,.2),rgba(224,100,100,.3))}
-  body.page-hk .hkx-pegband .mark{position:absolute;top:-3px;bottom:-3px;width:3px;background:var(--text);border-radius:2px}
-  body.page-hk .hkx-pegband .ends{position:absolute;bottom:-14px;width:100%;display:flex;justify-content:space-between;font-size:9px;color:var(--muted)}
+  
+  body.page-hk .hkx-pegband{position:relative;height:24px;border-radius:8px;margin:8px 0 20px;background:linear-gradient(90deg,rgba(69,184,115,.25),rgba(224,160,48,.2),rgba(224,100,100,.3))}
+  
+  body.page-hk .hkx-pegband .hkx-mark{position:absolute;top:-3px;bottom:-3px;width:3px;background:var(--text);border-radius:2px}
+  body.page-hk .hkx-pegband .hkx-ends{position:absolute;bottom:-14px;left:0;width:100%;display:flex;justify-content:space-between;font-size:9px;color:var(--muted)}
   body.page-hk .hkx-estrip{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
   body.page-hk .hkx-ev{flex:1 1 84px;text-align:center;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:9px 6px;background:rgba(255,255,255,.02)}
   body.page-hk .hkx-ev .en{font-size:11px;font-weight:650;margin:2px 0}

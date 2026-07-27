@@ -781,9 +781,6 @@
   /* Hero gauge — US mx5-gauge semicircle geometry (viewBox 0 -4 140 101, r=56, ticks + 0/50/100 scale) */
   body.page-canada .cax-gauge-svg{flex:0 0 196px;width:196px;height:142px;overflow:visible;display:block}
   @media(max-width:560px){body.page-canada .cax-gauge-svg{flex:0 0 108px;width:108px;height:80px}}
-  body.page-canada .cax-gauge-num{fill:var(--warn);font-weight:800}
-  body.page-canada .ms-green .cax-gauge-num{fill:var(--up)}
-  body.page-canada .ms-red .cax-gauge-num{fill:var(--down)}
   body.page-canada .ms-green .cax-gauge-fill{stroke:var(--up)}
   body.page-canada .ms-yellow .cax-gauge-fill{stroke:var(--warn)}
   body.page-canada .ms-red .cax-gauge-fill{stroke:var(--down)}
@@ -984,7 +981,9 @@
   body.page-canada .cax-rack2{display:grid;grid-template-columns:3fr 2fr;gap:14px;margin-bottom:14px}
   body.page-canada .cax-rack3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:14px}
   @media(max-width:1000px){body.page-canada .cax-rack2,body.page-canada .cax-rack3{grid-template-columns:1fr}body.page-canada .cax-hero{grid-template-columns:1fr}body.page-canada .cax-hero-left{border-right:none;border-bottom:1px solid rgba(255,255,255,.12)}}
-  body.page-canada .cax-ctitle{font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+  
+  
+  body.page-canada .cax-ctitle{font-size:13px;font-weight:700;letter-spacing:-.01em;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:7px}
   body.page-canada .cax-row{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:12.5px}
   body.page-canada .cax-row:last-child{border-bottom:none}
   body.page-canada .cax-row .ic{flex:0 0 20px;text-align:center;font-size:12px;padding-top:1px;opacity:.9}
@@ -1010,6 +1009,29 @@
   body.page-canada .cax-heat i.c{background:var(--down)}
   body.page-canada .cax-heat i.c2{background:var(--down);opacity:.45}
   body.page-canada .cax-heat i.n{background:rgba(255,255,255,.12)}
+  
+  body.page-canada .cax-heat-legend{display:flex;justify-content:space-between;margin-top:7px;font-size:10px;font-weight:600;letter-spacing:.03em}
+  body.page-canada .cax-heat-legend .heat-up{color:var(--up)}
+  body.page-canada .cax-heat-legend .heat-dn{color:var(--down)}
+  
+  body.page-canada .cax-sigrow{display:flex;align-items:baseline;gap:8px;font-size:11.5px;padding:3px 0;color:var(--text)}
+  body.page-canada .cax-sigdot{flex:0 0 auto;font-size:10px;font-weight:800;line-height:1.4}
+  body.page-canada .cax-sigdot.ok{color:var(--up)}
+  body.page-canada .cax-sigdot.bad{color:var(--down)}
+  
+  body.page-canada .cax-rack1{margin-bottom:14px}
+  body.page-canada .cax-sogrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:10px 18px}
+  body.page-canada .cax-socell{min-width:0;padding:9px 0 4px;border-top:1px solid rgba(255,255,255,.07)}
+  body.page-canada .cax-solbl{font-size:10px;letter-spacing:.7px;text-transform:uppercase;color:var(--muted);margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  body.page-canada .cax-son{opacity:.6;letter-spacing:0}
+  body.page-canada .cax-sorow{display:flex;align-items:baseline;gap:7px;font-size:11.5px;padding:2.5px 0;min-width:0}
+  body.page-canada .cax-soarrow{flex:0 0 auto;font-size:8px;line-height:1.7}
+  body.page-canada .cax-soarrow.up{color:var(--up)}
+  body.page-canada .cax-soarrow.dn{color:var(--down)}
+  body.page-canada .cax-sotkr{flex:0 0 auto;font-weight:700;color:var(--text);text-decoration:none;font-variant-numeric:tabular-nums}
+  body.page-canada .cax-sotkr:hover{text-decoration:underline}
+  body.page-canada .cax-soname{flex:1 1 auto;min-width:0;color:var(--muted);font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  [data-theme="light"] body.page-canada .cax-socell{border-top-color:rgba(0,0,0,.10)}
   body.page-canada .cax-stk{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:12px}
   body.page-canada .cax-stk .tkr{flex:0 0 auto}
   body.page-canada .cax-stk:last-of-type{border-bottom:none}
