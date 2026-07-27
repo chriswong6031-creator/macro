@@ -95,8 +95,10 @@ readers tolerate extra keys and pre-2026-07-26 rows simply lack it):
 
 A Claude `redacted_thinking` block becomes the same shape with `"text": ""` and
 `"redacted": true`. Bounds (`lib/mastermind_response_log._clean_thinking`): 6000 chars
-per segment, 24 segments per turn, keeping the **first** 24 — a chain of thought frames
-the conflict up front and converges later.
+per segment, 24 segments per turn. When the cap bites the kept window is the **first 23
+plus the last** — a chain of thought frames the conflict up front, but the `synthesis`
+segment rides last and *is* the decision this corpus exists to show, so middle tool
+rounds are what gets dropped, never the ending.
 
 **Why**: the answer text alone cannot tell you whether the assistant *wrestled* a
 genuine contradiction between site signals, or smoothed one over. The reasoning can,
@@ -121,8 +123,13 @@ that actually shipped.
 > side effect of this capture.
 
 The gateway's system prompt also carries a **CONTRADICTORY SIGNALS** block in every mode
-(`_CONTRADICTION_DIRECTIVE`, pinned by a test): name the conflict, judge whether it is
-stale data or a real split, and prefer "watch — don't chase" over a forced call.
+(`_CONTRADICTION_DIRECTIVE`, pinned by a test): check the calibrated contradiction tools
+first, name the conflict plainly, **never overrule the desk** (the model may not pick
+which reading is right, nor tell a user our data is wrong — the only permitted move is
+*down*, to lower conviction / "unresolved"), and prefer "watch — don't chase" over a
+forced call. The first draft told the model to judge staleness and "lean on the fresher"
+reading; that originates a ranking the model may never invent (MNZ-R5) and was removed
+2026-07-26 — a regression test pins the phrase as absent.
 
 ## Configuration
 
@@ -153,6 +160,12 @@ Admin → **Neural Web → AI Response Logs**:
 - **Row** — click to expand the full question, answer, and metadata (provider, latency,
   tokens, hashed user, thread, page/symbol), plus a collapsed **🧠 Thinking (n segments ·
   m chars)** section rendering each segment as `[phase · round n · model]`.
+  The list response carries only the trace's SIZE (`thinking_meta`); the trace itself is
+  fetched on first expand from
+  `GET /api/mastermind_ai/response_logs/thinking?id=<id>` (→ `mastermind_logs.thinking_trace`)
+  and cached on the row until the next reload. A single trace can run to ~144k chars, so
+  300 of them in one list payload is the load the lazy fetch exists to avoid.
+  **Export is the exception and keeps the full trace** — it is operator-triggered and capped.
 - **Grade** — 1–5 + 👍/👎 + ⚑ flag + tags + note → **Save verdict** (writes the sidecar).
 - **Classify conflicts (LLM)** — see below.
 - **Export** — JSONL (full rows + eval + `thinking` + the scan) or CSV (flattened, with
@@ -161,19 +174,38 @@ Admin → **Neural Web → AI Response Logs**:
 
 ## Contradiction assessment (the two tiers)
 
-**Tier 1 — deterministic, free, always on.** `_scan_contradiction` greps the answer AND
-every thinking segment for conflict stems (EN: contradict, conflict, inconsisten,
-disagree, diverg, at odds, mixed signals, tension between, opposite direction; ZH: 矛盾,
-冲突, 不一致, 分歧, 相悖) and puts `contra: {hit, terms, src}` on the row. It runs at
-**read time and is never stored**, so widening the pattern list re-scores the whole
-existing corpus. Watch `src`: **`thinking` alone means the model worked a conflict out
-privately and then shipped a smooth, confident answer** — exactly the smoothing-over the
-doctrine forbids.
+**Tier 1 — deterministic, free, always on. A TRIAGE hint, not a detector.**
+`_scan_contradiction` greps the answer AND every thinking segment for conflict stems (EN:
+contradict, conflict, inconsisten, disagree, diverg, at odds, mixed signals, tension
+between, opposite direction; ZH: 矛盾, 冲突, 不一致, 分歧, 相悖) and puts
+`contra: {hit, terms, src}` on the row. It runs at **read time and is never stored**, so
+widening the pattern list re-scores the whole existing corpus.
+
+`src` (`answer` | `thinking` | `both`) says **where the wording appeared, and nothing
+more**. A `thinking`-only hit is a row worth OPENING — it is not evidence that the model
+worked a conflict out privately and shipped a smooth answer. Substring stems over free
+text have loud failure modes in both directions:
+
+- **False positives** — TA vocabulary (`MACD divergence`, `bullish divergence`), negated
+  mentions (`there is no conflict between them`, `these do not disagree`), and the
+  contradiction doctrine's own vocabulary echoed back out of the system prompt (the model
+  reasoning "the doctrine says name any conflict" trips `conflict` with no conflict present).
+- **False negatives** — a genuine contradiction described without a stem word ("breadth
+  says risk-on, credit says the opposite" — no listed stem in ZH or EN form) scores clean.
+
+So `n_contra` and the **⚡ n candidates (keyword triage)** pill are a **candidate count,
+not a contradiction rate**, and neither number belongs in a claim about how often the
+assistant hits conflicts. The discriminators are the **Tier-2 LLM verdict** and, finally,
+the **operator reading the trace**.
 
 **Tier 2 — LLM verdict, on demand.** **⚡ Classify conflicts (LLM)** takes up to 20
 un-verdicted candidates (scan hit *or* any reasoning present), newest first, and labels
 each `none` / `system_error` / `market_divergence` / `unclear` with the conflicting
-signal names and a one-line note. The tab reports `classified n / skipped m`.
+signal names and a one-line note. The tab reports
+`classified n / skipped m of N candidates` — **N is the count before the batch limit**,
+i.e. how much work is left, so press again to continue. Only one batch runs at a time per
+admin process: a second click or a second tab gets `{"ok": false, "error": "busy"}` and a
+"batch already running" notice rather than a second bill for the same rows.
 
 ```bash
 curl -s -XPOST localhost:8799/api/mastermind_ai/response_logs/classify \
@@ -219,8 +251,20 @@ deployed panel's first successful refresh (7 rows).
 
 - `thinking` is the model's private reasoning about a real user's question. It is stored
   exactly like the answer (hashed `user_ref`, gitignored ledger, same R2 prefix) and is
-  **never** shown to the user — see the leak law above. It leaves the box only through
-  the operator's own export.
+  **never** shown to the user — see the leak law above.
+- **Two operator actions send this material off the box, and both are deliberate:**
+  1. **Export** (JSONL/CSV download) — the file lands wherever the operator puts it.
+  2. **⚡ Classify conflicts (LLM)** — this is the non-obvious one. Each candidate row's
+     **question (≤600 chars), answer (≤1600 chars), and thinking excerpts (≤~1800 chars,
+     whatever the 4000-char budget leaves)** are POSTed to **DeepSeek's API**
+     (`api.deepseek.com`) — **including rows whose turn was served by Claude**, since the
+     classifier is one fixed small model regardless of which lane produced the answer.
+     Pressing that button is therefore an explicit decision to share those excerpts, and
+     the real user questions inside them, with a third-party provider. It is never
+     automatic: nothing is sent on page load, on refresh, or on a filter change.
+     Without `DEEPSEEK_API_KEY` set for the admin process, nothing ever leaves — the
+     button answers `{"ok": false, "error": "no_llm_key"}` before reading a single row,
+     and the free ⚡ keyword triage keeps working.
 - The corpus holds real user questions and answers. Both ledgers are **gitignored**
   (`data/mastermind/response_log.jsonl`, `response_eval.jsonl`) — admin-local only,
   never committed, never deployed.

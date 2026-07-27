@@ -4709,12 +4709,30 @@ def test_system_prompt_carries_contradiction_doctrine_in_every_mode():
         assert "CONTRADICTORY SIGNALS" in prompt
 
 
-def test_contradiction_doctrine_names_both_causes_and_the_stance():
-    """The two causes need OPPOSITE handling — our data being wrong vs a split market —
-    and a genuine split resolves to 'watch, don't chase', not a forced call."""
+def test_contradiction_doctrine_de_escalates_and_never_overrules_the_desk():
+    """The only permitted move on a conflict is DOWN.
+
+    The model may name a conflict and lower conviction; it may NOT pick a winner between
+    two calibrated readings (that originates a ranking — MNZ-R5) or tell a paying user our
+    data is wrong. It routes to the calibrated contradiction tools instead."""
     prompt = gw._build_system_prompt("chat")
     low = prompt.lower()
-    assert "stale" in low                       # the system-error tell
-    assert "the market itself is split" in low  # the divergence branch
-    assert "watch, don't chase" in low
-    assert "mushy middle" in low                # no averaging opposing signals away
+    assert "never overrule the desk" in low
+    assert "read_contradictions" in prompt            # the calibrated source of truth
+    assert "lower conviction" in low                  # de-escalation, not adjudication
+    assert "unresolved" in low
+    assert "watch — don't chase" in low
+    assert "mushy middle" in low                      # no averaging opposing signals away
+
+
+def test_contradiction_doctrine_does_not_tell_the_model_to_pick_a_winner():
+    """Regression pin for the escalation the first draft shipped: 'lean on the fresher,
+    corroborated reading' had the model adjudicate staleness and assert to the user that
+    our data may be off. It must stay gone from every mode."""
+    for prompt in (gw._build_system_prompt("chat"),
+                   gw._build_system_prompt("research"),
+                   gw._build_system_prompt("chat", page="terminal"),
+                   gw._build_system_prompt("chat", internals_allowed=True)):
+        low = prompt.lower()
+        assert "lean on the fresher" not in low
+        assert "say the data may be off" not in low

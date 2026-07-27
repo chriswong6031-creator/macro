@@ -8327,18 +8327,25 @@ function mmlEvalBadges(ev) {
 }
 
 /* Contradiction assessment chips. Two independent tiers, deliberately distinct:
-   ⚡ is the free keyword scan (a QUESTION — "conflict?"), the verdict pill is the LLM's
-   answer. system_error is red because it means OUR data was wrong, not the market. */
-const MML_VERDICT = {
+   ⚡ is the free keyword TRIAGE scan (a QUESTION — "conflict?"), the verdict pill is the
+   LLM's answer. system_error is red because it means OUR data was wrong, not the market.
+   Null-prototype map: contra_verdict comes from a hand-editable local sidecar, and a
+   plain object literal would resolve "constructor"/"__proto__" up the prototype chain and
+   hand the destructure a function instead of a [class, label] pair. */
+const MML_VERDICT = Object.assign(Object.create(null), {
   system_error: ["s-bad", "data may be wrong"],
   market_divergence: ["s-warn", "market split"],
   none: ["s-mut", "no conflict"],
   unclear: ["s-mut", "unclear"],
-};
+});
+function mmlVerdictMeta(v) {
+  const hit = MML_VERDICT[v];
+  return Array.isArray(hit) ? hit : ["s-mut", String(v)];
+}
 function mmlVerdictPill(ev) {
   const v = ev && ev.contra_verdict;
   if (!v) return "";
-  const [cls, label] = MML_VERDICT[v] || ["s-mut", v];
+  const [cls, label] = mmlVerdictMeta(v);
   const note = (ev.contra_note || "").trim();
   const sigs = (ev.contra_signals || []).join(" vs ");
   const title = [label, sigs, note, ev.contra_model && `by ${ev.contra_model}`].filter(Boolean).join(" · ");
@@ -8349,12 +8356,20 @@ function mmlThinkChip(r) {
   if (!tm.segments) return "";
   return `<span class="statpill s-mut" title="${tm.segments} reasoning segment${tm.segments === 1 ? "" : "s"} · ${tm.chars} chars captured">🧠 ${tm.segments}</span>`;
 }
+/* Where the scan matched — a TRIAGE pointer, not a finding. The stems also match TA
+   vocabulary ("MACD divergence"), negations ("no conflict between them"), and the
+   doctrine's own words echoed back out of the system prompt, so a thinking-only hit is a
+   row to READ, never proof the model smoothed a conflict over. */
+function mmlContraSrcHint(src) {
+  return src === "thinking"
+    ? "conflict wording appears only in the reasoning text — open the trace and judge; keyword hits include TA vocabulary and negations"
+    : src === "answer" ? "conflict wording in the answer text"
+      : "conflict wording in both the answer and the reasoning";
+}
 function mmlContraChip(r) {
   const c = r.contra || {};
   if (!c.hit) return "";
-  const where = c.src === "thinking" ? "only in the model's reasoning — not in the answer"
-    : c.src === "answer" ? "in the answer" : "in both the answer and the reasoning";
-  return `<span class="statpill s-warn" title="conflict language ${where}: ${esc((c.terms || []).join(", "))}">⚡ conflict?</span>`;
+  return `<span class="statpill s-warn" title="${esc(mmlContraSrcHint(c.src))}: ${esc((c.terms || []).join(", "))}">⚡ conflict?</span>`;
 }
 
 RENDER.mastermind_logs = async () => {
@@ -8396,7 +8411,7 @@ async function mmlLoad() {
   /* Contradiction verdict counts — only the labels actually present, so an
      un-classified corpus shows nothing rather than four zeroes. */
   const verdictChips = Object.entries(st.verdicts || {}).map(([v, n]) => {
-    const [cls, label] = MML_VERDICT[v] || ["s-mut", v];
+    const [cls, label] = mmlVerdictMeta(v);
     return `<span class="statpill ${cls}" title="LLM verdict: ${esc(label)}">${esc(label)} ${n}</span>`;
   }).join("");
   const heroHtml = `<div class="mb-hero">
@@ -8418,7 +8433,7 @@ async function mmlLoad() {
       <span class="statpill s-bad">👎 ${st.thumbs_down || 0}</span>
       ${st.errors ? `<span class="statpill s-bad">${st.errors} errored</span>` : ""}
       <span class="statpill ${st.n_thinking ? "s-ok" : "s-mut"}" title="rows carrying the model's captured reasoning">🧠 ${st.n_thinking || 0}</span>
-      <span class="statpill ${st.n_contra ? "s-warn" : "s-mut"}" title="rows whose answer or reasoning uses conflict language">⚡ ${st.n_contra || 0}</span>
+      <span class="statpill ${st.n_contra ? "s-warn" : "s-mut"}" title="rows whose answer or reasoning uses conflict wording — a keyword triage list to read, not a count of real contradictions (the stems also match TA vocabulary and negated mentions)">⚡ ${st.n_contra || 0} candidates (keyword triage)</span>
       ${verdictChips}
       ${d.read_capped ? `<span class="statpill s-warn" title="showing the most recent window">window capped</span>` : ""}
       ${surfDarkHtml}
@@ -8472,18 +8487,27 @@ function mmlRowHtml(r) {
   <tr class="mml-detail" data-for="${esc(r.id)}" style="display:none"><td colspan="6" style="background:rgba(255,255,255,.02)"></td></tr>`;
 }
 
-/* The model's captured reasoning — collapsed by default: it is long, and the answer
-   above it is what an operator reads first. Opened when they want to see WHETHER the
-   model wrestled a conflict, and how it decided which side to believe. */
+/* The model's captured reasoning — collapsed by default AND fetched on demand. The list
+   response carries only thinking_meta (segments + chars); a single trace runs to ~144k
+   chars, so shipping 300 of them for a section that is usually never opened would bloat
+   every page load. The trace arrives on first expand and is cached on the row object. */
 function mmlThinkingHtml(r) {
-  const segs = (r.thinking || []).filter(s => s && typeof s === "object");
-  if (!segs.length) return "";
   const tm = r.thinking_meta || {};
+  if (!tm.segments) return "";
   const c = r.contra || {};
   const contraLine = c.hit
-    ? `<div class="sub muted" style="margin:6px 0">⚡ conflict language ${esc(c.src === "thinking" ? "in the reasoning only — check whether the answer surfaced it" : c.src === "answer" ? "in the answer" : "in both the answer and the reasoning")}: ${esc((c.terms || []).join(", "))}</div>`
+    ? `<div class="sub muted" style="margin:6px 0">⚡ ${esc(mmlContraSrcHint(c.src))}: ${esc((c.terms || []).join(", "))}</div>`
     : "";
-  const body = segs.map(s => {
+  return `<details class="mml-think" data-id="${esc(r.id)}">
+    <summary class="sub" style="font-weight:700;cursor:pointer">🧠 Thinking (${tm.segments} segment${tm.segments === 1 ? "" : "s"} · ${tm.chars || 0} chars)</summary>
+    ${contraLine}<div class="mml-think-body"><div class="sub muted">expand to load the reasoning trace…</div></div>
+  </details>`;
+}
+
+function mmlThinkingSegsHtml(segs) {
+  const list = (segs || []).filter(s => s && typeof s === "object");
+  if (!list.length) return `<div class="sub muted">No reasoning captured for this row.</div>`;
+  return list.map(s => {
     const label = `[${esc(s.phase || "?")} · round ${esc(String(s.round == null ? "?" : s.round))} · ${esc(s.model || "?")}]`;
     const text = s.redacted && !s.text
       ? "(redacted by the provider — the model reasoned here, the text is unavailable)"
@@ -8491,10 +8515,30 @@ function mmlThinkingHtml(r) {
     return `<div style="margin:8px 0"><div class="sub mono muted">${label}</div>
       <div class="mono" style="white-space:pre-wrap;font-size:12px;line-height:1.5;padding:8px;border-left:2px solid rgba(255,255,255,.14);background:rgba(255,255,255,.02)">${esc(text)}</div></div>`;
   }).join("");
-  return `<details class="mml-think">
-    <summary class="sub" style="font-weight:700;cursor:pointer">🧠 Thinking (${segs.length} segment${segs.length === 1 ? "" : "s"} · ${tm.chars || 0} chars)</summary>
-    ${contraLine}${body}
-  </details>`;
+}
+
+/* Fetch one row's trace the first time its <details> is opened; cache it on the row so
+   collapsing and reopening never re-fetches. Fail-soft: a bad response leaves a plain
+   message and lets the next open retry. */
+async function mmlLoadTrace(id, det) {
+  const r = MML.rows.find(x => x.id === id);
+  const body = det && det.querySelector(".mml-think-body");
+  if (!r || !body) return;
+  if (Array.isArray(r.thinking)) { body.innerHTML = mmlThinkingSegsHtml(r.thinking); return; }
+  if (det.dataset.loading === "1") return;
+  det.dataset.loading = "1";
+  body.innerHTML = `<div class="sub muted">loading the reasoning trace…</div>`;
+  let d = null;
+  try {
+    d = await api("/api/mastermind_ai/response_logs/thinking?id=" + encodeURIComponent(id));
+  } catch (e) { d = null; }          /* api() throws on 401 — it has already shown login */
+  det.dataset.loading = "";
+  if (!d || !d.ok || !Array.isArray(d.thinking)) {
+    body.innerHTML = `<div class="sub muted">Couldn't load the reasoning trace${d && d.error ? ` (${esc(String(d.error))})` : ""} — collapse and reopen to retry.</div>`;
+    return;
+  }
+  r.thinking = d.thinking;
+  body.innerHTML = mmlThinkingSegsHtml(r.thinking);
 }
 
 function mmlDetailHtml(r) {
@@ -8547,10 +8591,18 @@ function mmlWire() {
     const r = await post("/api/mastermind_ai/response_logs/classify", { limit: 20 });
     btn.disabled = false; btn.textContent = "⚡ Classify conflicts (LLM)";
     if (r && r.ok) {
-      mmlStatus(`classified ${r.classified || 0} / skipped ${r.skipped || 0}${r.candidates ? ` (of ${r.candidates} candidate${r.candidates === 1 ? "" : "s"})` : ""}`);
+      /* `candidates` is the count BEFORE the batch limit — i.e. how much work is left,
+         so the operator knows whether to press the button again. */
+      const line = `classified ${r.classified || 0} / skipped ${r.skipped || 0} of ${r.candidates || 0} candidate${r.candidates === 1 ? "" : "s"}`;
+      mmlStatus(line);
       toast(`Classified ${r.classified || 0} response${r.classified === 1 ? "" : "s"}`);
       await mmlLoad();
-      mmlStatus(`classified ${r.classified || 0} / skipped ${r.skipped || 0}`);
+      mmlStatus(line);
+    } else if (r && r.error === "busy") {
+      /* The lock, not a failure: a second click or a second tab would re-bill the same
+         candidate set. */
+      mmlStatus("A classification batch is already running — wait for it to finish before starting another.");
+      toast("A classification batch is already running", true);
     } else if (r && r.error === "no_llm_key") {
       /* Non-blocking: the deterministic ⚡ scan keeps working without a key. */
       mmlStatus("No LLM key — set DEEPSEEK_API_KEY for the admin process to classify conflicts. The ⚡ keyword scan still works.");
@@ -8613,6 +8665,9 @@ function mmlToggle(id) {
 function mmlWireDetail(id, cell) {
   const r = MML.rows.find(x => x.id === id);
   if (!r) return;
+  /* Reasoning trace: fetched the first time this <details> is opened, not with the list. */
+  const det = cell.querySelector(".mml-think");
+  if (det) det.addEventListener("toggle", () => { if (det.open) mmlLoadTrace(id, det); });
   const draft = Object.assign({ grade: null, thumb: null, star: false, tags: [], note: "" }, r.eval || {});
   cell.querySelectorAll(".mml-grade").forEach(b => b.addEventListener("click", () => {
     const g = parseInt(b.getAttribute("data-g"), 10);

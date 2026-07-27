@@ -120,13 +120,42 @@ def test_build_row_clips_each_thinking_segment():
         assert len(seg["text"]) <= mm._THINKING_TEXT_CAP + 32
 
 
-def test_build_row_caps_thinking_segment_count_keeping_the_first():
+def test_build_row_caps_thinking_keeping_the_head_and_the_last_segment():
+    """FIRST (N-1) + LAST. A chain of thought frames the conflict up front, but the
+    SYNTHESIS segment rides last and is the decision the corpus exists to show — a plain
+    head-truncation would drop exactly that. Middle tool rounds are what gets dropped."""
     row = mm.build_row(surface="macro", question="q", answer="a",
                        thinking=[_seg(f"step {i}", round_=i) for i in range(60)])
     assert len(row["thinking"]) == mm._THINKING_MAX_SEGMENTS
-    # FIRST N, not last: a chain of thought frames the conflict up front.
     assert row["thinking"][0]["text"] == "step 0"
-    assert row["thinking"][-1]["text"] == f"step {mm._THINKING_MAX_SEGMENTS - 1}"
+    assert row["thinking"][-2]["text"] == f"step {mm._THINKING_MAX_SEGMENTS - 2}"
+    assert row["thinking"][-1]["text"] == "step 59"
+
+
+def test_build_row_cap_keeps_the_synthesis_segment_of_a_long_trace():
+    """The load-bearing case: a long tool-heavy turn whose synthesis is the last block."""
+    segs = [_seg(f"tool {i}", round_=i, phase="tool") for i in range(80)]
+    segs.append(_seg("here is the call", round_=81, phase="synthesis",
+                     model="claude-opus-5"))
+    row = mm.build_row(surface="macro", question="q", answer="a", thinking=segs)
+    assert len(row["thinking"]) == mm._THINKING_MAX_SEGMENTS
+    assert row["thinking"][-1]["phase"] == "synthesis"
+    assert row["thinking"][-1]["text"] == "here is the call"
+
+
+def test_build_row_thinking_under_the_cap_is_untouched():
+    """No phantom duplicate of the last segment when the trace already fits."""
+    n = mm._THINKING_MAX_SEGMENTS - 1
+    row = mm.build_row(surface="macro", question="q", answer="a",
+                       thinking=[_seg(f"step {i}", round_=i) for i in range(n)])
+    assert [s["text"] for s in row["thinking"]] == [f"step {i}" for i in range(n)]
+
+
+def test_build_row_thinking_exactly_at_the_cap_is_untouched():
+    n = mm._THINKING_MAX_SEGMENTS
+    row = mm.build_row(surface="macro", question="q", answer="a",
+                       thinking=[_seg(f"step {i}", round_=i) for i in range(n)])
+    assert [s["text"] for s in row["thinking"]] == [f"step {i}" for i in range(n)]
 
 
 def test_build_row_redacted_thinking_survives_with_empty_text():

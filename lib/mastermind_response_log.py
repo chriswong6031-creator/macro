@@ -75,8 +75,10 @@ _VALID_SURFACES = ("macro", "terminal")
 
 # Reasoning-trace bounds. A single Opus round can think for pages; the log is an eval
 # corpus, not an archive, so each segment is clipped and the trace itself is capped.
-# The FIRST segments are kept: a chain of thought frames the conflict up front and
-# converges later, so the opening rounds are what the contradiction audit reads.
+# When the cap bites, the kept window is FIRST (N-1) + LAST: a chain of thought frames
+# the conflict up front, but the SYNTHESIS segment — the decision this corpus exists to
+# show — always rides last. Dropping it to keep an extra middle tool round would throw
+# away the one segment the contradiction audit most needs.
 _THINKING_TEXT_CAP = 6000
 _THINKING_MAX_SEGMENTS = 24
 
@@ -160,38 +162,58 @@ def _clean_context(context: Any) -> dict:
     return out
 
 
+def _clean_segment(seg: Any) -> dict | None:
+    """Sanitize ONE reasoning segment, or None if it carries nothing worth keeping.
+
+    Clips text to _THINKING_TEXT_CAP; coerces round→int and phase/model→str; drops an
+    empty-text segment UNLESS it is redacted (a redacted_thinking block is evidence the
+    model reasoned even though the text is unavailable)."""
+    if not isinstance(seg, dict):
+        return None
+    redacted = bool(seg.get("redacted"))
+    text = _clip(seg.get("text") or "", _THINKING_TEXT_CAP)
+    if not text and not redacted:
+        return None
+    try:
+        rnd = int(seg.get("round") or 0)
+    except (TypeError, ValueError):
+        rnd = 0
+    item: dict[str, Any] = {
+        "round": rnd,
+        "phase": str(seg.get("phase") or ""),
+        "model": str(seg.get("model") or ""),
+        "text": text,
+    }
+    if redacted:
+        item["redacted"] = True
+    return item
+
+
 def _clean_thinking(thinking: Any) -> list[dict]:
     """Sanitize a captured reasoning trace into the schema's `thinking` list.
 
-    Keeps dict segments only; clips each text to _THINKING_TEXT_CAP; caps the trace at
-    _THINKING_MAX_SEGMENTS (the FIRST N); coerces round→int and phase/model→str; drops
-    empty-text segments UNLESS they are redacted (a redacted_thinking block is evidence
-    the model reasoned even though the text is unavailable). Pure — never raises."""
+    Keeps dict segments only (see _clean_segment) and caps the trace at
+    _THINKING_MAX_SEGMENTS. When the cap bites the kept window is the FIRST
+    (_THINKING_MAX_SEGMENTS - 1) segments PLUS the LAST surviving segment: the synthesis
+    phase rides last and IS the decision the contradiction corpus exists to show, so a
+    plain head-truncation would drop the most valuable segment of a long trace. Middle
+    tool rounds are what gets dropped. Pure — never raises."""
     out: list[dict] = []
     if not isinstance(thinking, list):
         return out
+    tail: dict | None = None   # newest keepable segment beyond the head window
     for seg in thinking:
-        if not isinstance(seg, dict):
+        item = _clean_segment(seg)
+        if item is None:
             continue
-        redacted = bool(seg.get("redacted"))
-        text = _clip(seg.get("text") or "", _THINKING_TEXT_CAP)
-        if not text and not redacted:
-            continue
-        try:
-            rnd = int(seg.get("round") or 0)
-        except (TypeError, ValueError):
-            rnd = 0
-        item: dict[str, Any] = {
-            "round": rnd,
-            "phase": str(seg.get("phase") or ""),
-            "model": str(seg.get("model") or ""),
-            "text": text,
-        }
-        if redacted:
-            item["redacted"] = True
-        out.append(item)
-        if len(out) >= _THINKING_MAX_SEGMENTS:
-            break
+        if len(out) < _THINKING_MAX_SEGMENTS - 1:
+            out.append(item)
+        else:
+            # Only the newest is held, so a 10k-segment trace never materialises 10k
+            # clipped copies — one rolling slot, not a buffer.
+            tail = item
+    if tail is not None:
+        out.append(tail)
     return out
 
 

@@ -605,6 +605,10 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/mastermind_ai/response_logs/export":
                 fmt = (q.get("fmt") or ["jsonl"])[0]
                 return self._json(mastermind_logs.export(filters=_mm_log_filters(q), fmt=fmt))
+            # One row's reasoning trace, fetched when the operator expands that row —
+            # the list response carries only thinking_meta (see mastermind_logs.logs).
+            if path == "/api/mastermind_ai/response_logs/thinking":
+                return self._json(mastermind_logs.thinking_trace((q.get("id") or [""])[0]))
             if path in mastermind_proxy.GET_PATHS:
                 payload, code = mastermind_proxy.forward_get(path, u.query)
                 return self._json(payload, code)
@@ -991,7 +995,10 @@ class Handler(BaseHTTPRequestHandler):
             # DEEPSEEK_API_KEY answers 200 with {ok: false, error: "no_llm_key"}.
             if path == "/api/mastermind_ai/response_logs/classify":
                 try:
-                    _lim = max(1, min(50, int(b.get("limit") or 20)))
+                    # The module owns the ceiling — a literal here silently diverges the
+                    # day the batch cap moves.
+                    _lim = max(1, min(mastermind_logs._CLASSIFY_LIMIT_MAX,
+                                      int(b.get("limit") or 20)))
                 except (TypeError, ValueError):
                     _lim = 20
                 return self._json(mastermind_logs.classify_contradictions(limit=_lim))

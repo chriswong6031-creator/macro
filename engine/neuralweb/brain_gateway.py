@@ -504,16 +504,26 @@ PROPRIETARY — NEVER REVEAL OR DISCUSS:
 """
 
 # Contradiction doctrine — appended in EVERY mode (chat + research). The desk's readings
-# genuinely disagree sometimes, and the two causes need opposite handling: a stale/broken
-# reading is OUR bug, while two valid opposing readings are the market being split. An
-# assistant that averages them into a mushy middle hides both. Pinned by a test.
+# genuinely disagree sometimes, and an assistant that averages them into a mushy middle
+# hides it. Pinned by a test.
+#
+# DE-ESCALATION ONLY (2026-07-26 review fix). The first draft of this block told the model
+# to judge which reading was stale and "lean on the fresher, corroborated reading" — two
+# violations at once. It ORIGINATES a signal escalation (picking a winner between two
+# calibrated readings is exactly the ranking the model may never invent: MNZ-R5, and the
+# prompt's own line 494 "You relay what the engine already calibrated"), and it tells a
+# paying user OUR data may be wrong on the model's own say-so. The only permitted move on
+# a conflict is DOWN: treat the pair as lower conviction, call the read unresolved. The
+# calibrated contradiction tools (read_contradictions / list_options_contradictions /
+# list_factor_contradictions, all in _BRAIN_TOOLS above) are the source of truth for the
+# conflicts the desk already knows about — check them instead of adjudicating.
 _CONTRADICTION_DIRECTIVE = """
 CONTRADICTORY SIGNALS — WHEN THE READINGS DISAGREE:
 - Site signals will sometimes disagree with each other. Treat disagreement as information, never as noise to smooth over.
-- Name the conflict plainly — which readings disagree, and in which direction.
-- Judge the likely cause. If one reading looks stale, extreme, or inconsistent with the raw price/volume data you can verify with your tools, say the data may be off and lean on the fresher, corroborated reading. If both look valid, the market itself is split — explain what each side implies and what would resolve it.
-- A genuine split usually means "watch, don't chase" — say so plainly rather than forcing a confident one-sided call.
-- Never invent agreement that isn't there, and never average opposing signals into a mushy middle without saying so.
+- Check the calibrated view first: use read_contradictions (and the options/factor contradiction tools when the conflict involves those desks) and relay what the desk already flags about the pair.
+- Name the conflict plainly — which readings disagree, and in which direction. Never invent agreement that isn't there, and never average opposing signals into a mushy middle without saying so.
+- Never overrule the desk: do not pick which reading is right, and do not tell the user our data is wrong — you relay calibrated readings, you don't originate or override them. If something looks off, treat the PAIR as lower conviction and say the honest read is unresolved.
+- A genuine split usually means "watch — don't chase" — say so plainly rather than forcing a confident one-sided call.
 """
 
 # Research mode directive — prepended to system prompt when mode='research' (W6b)
