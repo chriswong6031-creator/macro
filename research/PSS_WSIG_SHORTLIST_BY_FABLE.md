@@ -148,6 +148,48 @@ rather than mis-graded). Lens: vol-structure. Panel id C10.
 - **W-CONF status:** the multi-family 2-of-N wave is MOOT (zero standalone survivors). The narrow **incumbent × semivariance-asymmetry** thread was subsequently executed in F4R/F4H using causal confirmation state machines and frozen DEV-only hazard ablations. Adding F4 to matched orthogonal constructions was effectively zero in DEV, VAL, and FWD, so the current F4 confluence family is closed as a hard-gate route. Only the F4-free orthogonal score remains open for prospective shadow location.
 - **Program disposition:** the personality-timing estate ships as built — codex (measured structure) + tailored-gate shadow (W3) + dual-ruler labs (W-LAB) — with the honest finding that free-daily-data reset-identification features do not beat the incumbent as standalone bottom-timers (consistent with the signal-lab "saturated at 6 for free data" result). W-FOUNDRY (the draft-generator system) remains the open forward wave.
 
+## Supply-reset extension verdict — SR1–SR3 (3/3 killed)
+
+*Executed 2026-07-27. Each construction was frozen in the trial ledger before
+its outcomes were read and graded on MAE63/tail risk, reset timing, competing
+risk, era replication, containment, coverage, and exact calendar/sector
+controls.*
+
+- **SR1 — stress elasticity:** failed mainly because a double-conditioned
+  second-test path was sparse and its treatment sat farther from the low.
+- **SR2 — peer diffusion:** fixed coverage and action geometry, but selected a
+  subject-specific laggard: peers had stopped making new lows while the subject
+  alone returned to stress.
+- **SR3 — active participation:** removed the laggard condition and held both
+  subject recovery and passive peer recovery constant. It still failed
+  decisively. Across 2,065 treatments / 733 names, active majority peer
+  participation worsened every core effect in DEV and VAL, with the same
+  adverse MAE/tail signs in FWD. Stratified treatment-control action distance
+  was only −0.02/+0.02 ATR, ruling out a safe-late geometry explanation.
+
+**What the sequence establishes.** Neither the absence of peer weakness nor a
+contemporaneous broad peer advance identifies terminal supply for an
+individual name. After a systemic low, synchronized short-horizon sector
+strength can be a correlation-one relief rally that raises subsequent
+mean-reversion risk. This is why progressively “stronger confirmation” did not
+rescue F4 or SR1–SR3: confirmation strength and terminality are different
+objects.
+
+**Binding disposition.** No F4/SR1/SR2/SR3 result is wired into entry, rank,
+size, gate, alert, or display-shadow authority. The exact SR3 construction and
+its threshold/lookback/control retimes are registered in DNR §2. Reversing the
+observed sign on this history is outcome selection, not a new signal.
+
+**Remaining research boundary.** A credible next species must observe a source
+of durable absorption or selective leadership that exists *before or during*
+the subject action and is orthogonal to broad relief-rally breadth. Examples
+of admissible questions—not licensed constructions—are inventory-transfer
+persistence, subject-specific absorption with independent transaction-flow
+data, or cross-sectional leadership that survives a market pullback. It must
+use untouched/prospective evidence, a nested control, and a decision law frozen
+before outcomes. Until then, the structure-derived Stoch-RSI reset-confirmer
+remains the only validated timing gate.
+
 ## The shared guard — decline-deceleration terminality gate (C32)
 
 NOT a fifth family: a GATE measurement added to the codex and carried as a
