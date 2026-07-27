@@ -20,6 +20,12 @@ from typing import Any
 # Words that must NEVER appear in public-facing copy (the hook model rule from §1).
 # We keep indicator names out of the public post body; the public phrasing is
 # "our technical signals" (per MARKETING_VOICE_DOCTRINE_V2 §9), never "signal stack".
+#
+# NOT a runtime guard: nothing here filters win_rate_hook's output. The rule is
+# enforced in CI — tests/test_confluence_source.py imports this frozenset and
+# asserts the hook's public copy contains none of it — because the hook builds
+# its copy from fixed phrasing rather than from leg names, so there is nothing
+# to filter at runtime. Adding a word here tightens the CI check.
 _FORBIDDEN_INDICATOR_WORDS = frozenset({
     "macd", "rsi", "stochastic", "ema", "sma", "bollinger", "atr",
     "adx", "dmi", "obv", "cmf", "vwap", "ichimoku", "keltner",
