@@ -242,6 +242,71 @@ def test_dedupe_items_jsonl_has_one_line(tmp_path):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# 4b. Cross-night near-duplicate guard
+#    _item_id folds as_of into the hash, so identical copy re-emitted on a later
+#    day gets a fresh id and id-dedupe misses it — the 2026-07-26/07-27 verbatim
+#    "My read on today's move" event repeat. The text guard closes that hole
+#    WITHOUT touching copy that legitimately updates its numbers day to day.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_cross_night_identical_text_is_deduped(tmp_path):
+    from engine.marketing.outbox import make_item, enqueue, read_items
+
+    text = "My read on today's move\n\nWhat's driving today: hawkish repricing, front-end up."
+    d26 = make_item(account="flagship", kind="event", text=text, as_of="2026-07-26",
+                    provenance="content_studio", now=_FIXED_NOW)
+    d27 = make_item(account="flagship", kind="event", text=text, as_of="2026-07-27",
+                    provenance="content_studio", now=_FIXED_NOW)
+    # Different ids — id-dedupe alone would let both through (the actual bug).
+    assert d26["id"] != d27["id"]
+    assert enqueue(d26, root=tmp_path) == "queued"
+    assert enqueue(d27, root=tmp_path) == "duplicate"
+    assert len(read_items(root=tmp_path)) == 1
+
+
+def test_cross_night_different_text_both_queue(tmp_path):
+    """A signal that updates its numbers day to day must NOT be caught — the
+    guard fires only on byte-identical (whitespace-normalized) copy."""
+    from engine.marketing.outbox import make_item, enqueue, read_items
+
+    a = make_item(account="flagship", kind="signal", text="$ROST held 219.90 for 14 sessions.",
+                  as_of="2026-07-26", provenance="content_studio", now=_FIXED_NOW)
+    b = make_item(account="flagship", kind="signal", text="$ROST held 220.10 for 15 sessions.",
+                  as_of="2026-07-27", provenance="content_studio", now=_FIXED_NOW)
+    assert enqueue(a, root=tmp_path) == "queued"
+    assert enqueue(b, root=tmp_path) == "queued"
+    assert len(read_items(root=tmp_path)) == 2
+
+
+def test_identical_text_outside_window_both_queue(tmp_path):
+    """Beyond the dedup window (>7 days) the same evergreen line may recur."""
+    from engine.marketing.outbox import make_item, enqueue, read_items
+
+    text = "Evergreen note: size the position so the stop doesn't scare you out."
+    a = make_item(account="flagship", kind="education", text=text, as_of="2026-07-01",
+                  provenance="content_studio", now=_FIXED_NOW)
+    b = make_item(account="flagship", kind="education", text=text, as_of="2026-07-27",
+                  provenance="content_studio", now=_FIXED_NOW)
+    assert enqueue(a, root=tmp_path) == "queued"
+    assert enqueue(b, root=tmp_path) == "queued"
+    assert len(read_items(root=tmp_path)) == 2
+
+
+def test_cross_account_identical_text_both_queue(tmp_path):
+    """The guard is account-scoped: two desks may carry the same line."""
+    from engine.marketing.outbox import make_item, enqueue, read_items
+
+    text = "Same wording, different desks — both allowed."
+    a = make_item(account="flagship", kind="event", text=text, as_of="2026-07-27",
+                  provenance="content_studio", now=_FIXED_NOW)
+    b = make_item(account="specialist", kind="event", text=text, as_of="2026-07-27",
+                  provenance="content_studio", now=_FIXED_NOW)
+    assert enqueue(a, root=tmp_path) == "queued"
+    assert enqueue(b, root=tmp_path) == "queued"
+    assert len(read_items(root=tmp_path)) == 2
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # 5. Caps
 # ─────────────────────────────────────────────────────────────────────────────
 

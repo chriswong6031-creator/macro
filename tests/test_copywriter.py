@@ -493,6 +493,34 @@ def test_write_posts_deterministic_stable():
         assert r1["body"] == r2["body"], "Non-deterministic body"
 
 
+def test_event_variant_rotates_by_calendar_day():
+    """A single daily non-ticker post (the event 'read on today's move') must
+    land on a DIFFERENT variant each night instead of always slot 0 — the byte-
+    identical 2026-07-26/07-27 repeat. Same as_of stays deterministic."""
+    from engine.marketing.copywriter import build_context, write_posts_deterministic
+
+    def _event_headline(as_of):
+        item = {"ticker": "", "type": "event", "account": "flagship"}
+        facts = {"facts": [{"id": "drv", "text": "What's driving today: hawkish repricing.",
+                            "salience": 1, "numbers": []}],
+                 "numbers_whitelist": []}
+        ctx = build_context(item, persona={"name": "Flagship", "voice_notes": "",
+                                           "example_lines": []}, facts=facts)
+        ctx["type"] = "event"
+        ctx["voice"] = "authoritative desk"
+        ctx["slot"] = ""
+        ctx["as_of"] = as_of
+        return write_posts_deterministic([ctx])[0]["headline"]
+
+    # Determinism preserved: same day → same headline.
+    assert _event_headline("2026-07-27") == _event_headline("2026-07-27")
+    # The exact bug: two adjacent nights must NOT repeat verbatim.
+    assert _event_headline("2026-07-26") != _event_headline("2026-07-27")
+    # Five consecutive days cycle through all five event variants.
+    heads = [_event_headline(f"2026-07-{d:02d}") for d in range(23, 28)]
+    assert len(set(heads)) == 5, f"expected 5 distinct daily headlines, got {heads}"
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # 20: write_posts_llm in test environment
 # ─────────────────────────────────────────────────────────────────────────────

@@ -1719,6 +1719,11 @@ def content_plan(
                 ctx["voice"] = voice
                 # Carry slot for hash-based selection on ticker posts
                 ctx["slot"] = item_dict.get("slot", "")
+                # Carry the plan date so the deterministic variant picker can
+                # seed non-ticker rotation by CALENDAR DAY — otherwise a single
+                # daily post (the event "read on today's move") always lands on
+                # slot 0 and repeats verbatim night to night.
+                ctx["as_of"] = today
                 contexts.append(ctx)
 
             # Phase 3: batch call — LLM lane first (persona ceiling; guarded by

@@ -36,7 +36,7 @@ import os
 import re
 import tempfile
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Iterator
 
@@ -267,6 +267,44 @@ def _item_id(account: str, kind: str, text: str, as_of: str) -> str:
     raw = f"{account}|{kind}|{normalized}|{as_of}"
     digest = hashlib.sha1(raw.encode("utf-8")).hexdigest()[:10]
     return f"ob-{as_of}-{digest}"
+
+
+# ── Cross-night near-duplicate guard ──────────────────────────────────────────
+# _item_id folds as_of into the hash, so identical copy re-emitted on a LATER
+# day gets a fresh id and id-dedupe never catches it. That is how two byte-
+# identical "My read on today's move" event posts landed in the queue on
+# 2026-07-26 and 2026-07-27 (each auto-approved, each bound for X ~24h apart —
+# the exact robotic-repeat an anti-spam voice must not ship). The guard rejects
+# a re-emit whose account-scoped normalized text matches any item from the last
+# _TEXT_DEDUP_WINDOW_DAYS days. It fires ONLY on truly identical copy, so a
+# signal/watchlist that legitimately updates its numbers day to day is untouched.
+_TEXT_DEDUP_WINDOW_DAYS = 7
+
+
+def _text_key(account: object, text: object) -> tuple[str, str]:
+    """Account-scoped normalized-text key for near-dup detection (mirrors the
+    normalization _item_id already applies, so whitespace-only diffs collide)."""
+    return (str(account or ""), _normalize_text(str(text or "")))
+
+
+def _parse_as_of(s: object) -> date | None:
+    try:
+        return datetime.strptime(str(s)[:10], "%Y-%m-%d").date()
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _within_text_window(old_as_of: object, ref_as_of: object) -> bool:
+    """True if old_as_of is within the dedup window of ref_as_of.
+
+    Fail-OPEN on an unparseable date: an in-window verdict keeps the guard
+    active rather than silently disarming it on one malformed row.
+    """
+    old = _parse_as_of(old_as_of)
+    ref = _parse_as_of(ref_as_of)
+    if old is None or ref is None:
+        return True
+    return abs((ref - old).days) <= _TEXT_DEDUP_WINDOW_DAYS
 
 
 def make_item(
@@ -535,6 +573,13 @@ def enqueue(
         def _check_and_append(ctx: dict) -> str:
             if item_id in ctx["ids"]:
                 return "duplicate"
+            # Cross-night near-dup: identical copy re-emitted on a later day gets
+            # a fresh id (as_of is in the hash), so the id check above misses it.
+            # recent_texts holds account-scoped normalized text from the window;
+            # absent for legacy _ctx callers → the guard no-ops (back-compat).
+            text_key = _text_key(account, item.get("text"))
+            if text_key in ctx.get("recent_texts", ()):
+                return "duplicate"
             # Cap: every existing same-day item consumed a slot regardless of
             # status (quarantined/failed included — refilling a bad slot the
             # same day is how retry-spam starts). A negative cap = unlimited
@@ -546,6 +591,9 @@ def enqueue(
                 return "invalid:append failed"
             ctx["ids"].add(item_id)
             ctx["day_counts"][(account, as_of)] = ctx["day_counts"].get((account, as_of), 0) + 1
+            # Keep the near-dup set current so two identical posts in ONE batch
+            # (same night) also collapse to one, not just across nights.
+            ctx.setdefault("recent_texts", set()).add(text_key)
             return "queued"
 
         if _ctx is not None:
@@ -556,6 +604,11 @@ def enqueue(
             ctx = {
                 "ids": {i.get("id") for i in existing},
                 "day_counts": {},
+                "recent_texts": {
+                    _text_key(i.get("account"), i.get("text"))
+                    for i in existing
+                    if _within_text_window(i.get("as_of"), as_of)
+                },
             }
             for i in existing:
                 key = (i.get("account"), i.get("as_of"))
@@ -997,7 +1050,15 @@ def emit_from_content_plan(
 
     with _outbox_lock(root):
         existing = read_items(root)
-        ctx: dict[str, Any] = {"ids": {i.get("id") for i in existing}, "day_counts": {}}
+        ctx: dict[str, Any] = {
+            "ids": {i.get("id") for i in existing},
+            "day_counts": {},
+            "recent_texts": {
+                _text_key(i.get("account"), i.get("text"))
+                for i in existing
+                if _within_text_window(i.get("as_of"), as_of)
+            },
+        }
         for i in existing:
             key = (i.get("account"), i.get("as_of"))
             ctx["day_counts"][key] = ctx["day_counts"].get(key, 0) + 1

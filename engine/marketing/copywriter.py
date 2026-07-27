@@ -2211,8 +2211,17 @@ def write_posts_deterministic(contexts: list[dict]) -> list[dict]:
             variant_idx = h % len(pool)
         else:
             # Non-ticker post: rotate through variants to avoid headline repeat
+            # WITHIN a plan, and seed the starting slot by CALENDAR DAY so a
+            # single daily post (the event "read on today's move") lands on a
+            # different variant each night instead of always slot 0 — the byte-
+            # identical-across-nights repeat that got two 07-26/07-27 event posts
+            # queued word-for-word. A parseable as_of gives a clean day-ordinal
+            # rotation (consecutive days always differ); without one we fall back
+            # to the old plan-local counter starting at 0.
             counter = type_voice_counters.get(key, 0)
-            variant_idx = counter % len(pool)
+            _d = _parse_date(ctx.get("as_of"))
+            day_off = _d.toordinal() if _d is not None else 0
+            variant_idx = (day_off + counter) % len(pool)
             type_voice_counters[key] = counter + 1
 
         hl_tpl, body_tpl = pool[variant_idx][:2]
