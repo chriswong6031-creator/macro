@@ -1,0 +1,180 @@
+{
+  "authority": {
+    "may_alert": false,
+    "may_auto_promote": false,
+    "may_display_to_users": false,
+    "may_enter": false,
+    "may_gate": false,
+    "may_rank": false,
+    "may_size": false,
+    "research_only": true
+  },
+  "availability_audit": {
+    "finra_first_session": "2026-05-26",
+    "finra_latest_session": "2026-07-24",
+    "finra_missing_members": [
+      "BF-B",
+      "BRK-B",
+      "FI",
+      "MOG-A"
+    ],
+    "finra_prefix_end": "2026-07-21",
+    "finra_prefix_rows": 51960,
+    "finra_prefix_sha256": "4d7165ff3346c7bdaaf28e0b4064f1eda4311a1600f3df33509e8d03d183bbf6",
+    "finra_rh1_member_count": 795,
+    "finra_session_count": 42,
+    "rh1_member_count": 799
+  },
+  "construction": {
+    "challenge": {
+      "action": "C_close",
+      "challenge_start": "C_minus_2",
+      "first_completion_only": true,
+      "minimum_valid_peers": 15,
+      "peer_statistic": "cross_sectional_median_simple_return_over_3_sessions",
+      "qualifies": "peer_return_3[C]<0 and peer_return_3[C]<=frozen_q20_at_B",
+      "return_definition": "close[C]/close[C-3]-1",
+      "same_sector_ex_self_membership": "frozen_PSS_RH1_membership",
+      "search_completion_sessions_after_B_inclusive": [
+        5,
+        20
+      ],
+      "threshold_at_B": {
+        "information_cutoff": "B_minus_1_close",
+        "minimum_valid_metric_sessions": 63,
+        "quantile": 0.2,
+        "window_sessions": 126
+      }
+    },
+    "construction_id": "pss_cr1_first_peer_pullback_resilience_v1",
+    "fixed_bands": {
+      "challenge_return": [
+        "(-inf,-0.04]",
+        "(-0.04,-0.02]",
+        "(-0.02,0)"
+      ]
+    },
+    "labels": {
+      "challenged_control": "primary eligible and either leadership test fails",
+      "failed_hold_diagnostic": "challenge exists but primary eligibility fails",
+      "resilient_leader": "primary eligible and both leadership tests pass"
+    },
+    "leadership": {
+      "cross_section": "subject_plus_valid_ex_self_peers",
+      "minimum_percentile_inclusive": 0.75,
+      "minimum_relative_return": "0.50*anchor_atr/source_action_close",
+      "requires_both": true,
+      "return_window": "close[C]/close[C-3]-1"
+    },
+    "primary_eligibility": {
+      "held_recovery_during_challenge": "each_close_C_minus_2_through_C>=reference_low+0.50*anchor_atr",
+      "no_subject_breach_B_plus_1_through_C": "minimum_low>=reference_low-0.50*anchor_atr"
+    },
+    "source": {
+      "group": "relief_hazard",
+      "historical_source_rows_allowed": false,
+      "ledger": "data/personality_timing/relief_hazard.jsonl",
+      "program_id": "PSS-RH1",
+      "source_action": "B_close"
+    }
+  },
+  "construction_sha256": "243fde8127390938856b0af6d0797dbed8bcc4f031f7ec630fb0f903bca2394b",
+  "decision_law": {
+    "authority_now": "none",
+    "benefit_signs": {
+      "mae": "resilient_leader_mae_minus_challenged_control_mae",
+      "rebound8_first": "resilient_leader_rebound_first_rate_minus_challenged_control_rebound_first_rate",
+      "tail10": "challenged_control_tail_rate_minus_resilient_leader_tail_rate",
+      "w5": "resilient_leader_w5_rate_minus_challenged_control_w5_rate"
+    },
+    "first_read_requires_all": {
+      "action_date_span_days": 365,
+      "challenged_control_rows": 75,
+      "distinct_action_months": 12,
+      "informative_exact_strata": 20,
+      "matured_primary_rows": 300,
+      "resilient_leader_rows": 75,
+      "unique_names": 150
+    },
+    "inference_tape": {
+      "aggregation": "equal weight across informative strata",
+      "bootstrap": {
+        "confidence": 0.95,
+        "draws": 5000,
+        "seed": 20260811,
+        "unit": "three-calendar-month moving block"
+      },
+      "deduplication": "keep first primary action per name per calendar month",
+      "minimum_per_label_in_stratum": 2,
+      "permutation": {
+        "draws": 10000,
+        "labels_move_only_within_stratum": true,
+        "one_sided_alpha": 0.05,
+        "seed": 20260810
+      },
+      "stratum": "sector x action_month x source_anchor_severity_band x source_delay_band"
+    },
+    "interim_outcome_reads": "forbidden",
+    "qualification_requires_all": [
+      "mae benefit>0, one-sided permutation p<=0.05, and block-CI lower>0",
+      "tail10 benefit>0, one-sided permutation p<=0.05, and block-CI lower>0",
+      "w5 and rebound8_first benefit>0",
+      "mae and tail10 benefit>0 in chronological early and late halves",
+      "leave-one-sector-out mae and tail10 benefit stay>0",
+      "no sector supplies more than 25% of resilient_leader rows"
+    ],
+    "read_count": 1,
+    "ruling": "Qualification authorizes only a separate preregistered intervention shadow. It never creates entry, rank, size, gate, alert, display, or automatic promotion authority. Failure kills this exact construction."
+  },
+  "enrollment_law": "source action must be strictly greater than not_before_session; historical events are never imported or counted",
+  "family": "pss_cr1_challenge_resilience_prospective",
+  "frozen_at": "2026-07-27T23:02:00Z",
+  "grading": {
+    "called": "proximity trough offset -2 through +5 sessions",
+    "competing_risk": {
+      "breach": "low<reference_low-0.50*anchor_atr",
+      "rebound": "close>=action_close*1.08",
+      "tie": "breach_wins",
+      "unresolved": "retained_as_failure"
+    },
+    "mae63": "minimum close return over action+1 through action+63",
+    "maturity_sessions_after_action": 63,
+    "outcomes_begin": "session_after_action",
+    "proximity_window": "minimum close action-31 through action+31",
+    "tail10": "mae63<=-10%",
+    "tdt": "signed action-minus-trough trading-session offset",
+    "w5": "action close within 5% above proximity-window minimum"
+  },
+  "hypothesis": "Inside a prospectively observed RH1 synchronized-relief hazard, a subject that preserves its frozen recovery and remains top-quartile during the first independently defined peer pullback has lower subsequent drawdown and tail risk than an equally held but non-leading subject exposed to the same challenge.",
+  "not_before_session": "2026-07-24",
+  "outputs": {
+    "ledger": "data/personality_timing/challenge_resilience.jsonl",
+    "state": "data/personality_timing/challenge_resilience_state.json"
+  },
+  "prior_seen_not_confirmation": [
+    "PSS-F1 through F4 and F4R/F4H outcomes",
+    "PSS-SR1 through SR3 outcomes",
+    "PSS-RH1 was selected from the historical PSS-SR3 sign inversion"
+  ],
+  "program_id": "PSS-CR1",
+  "schema": "personality_challenge_resilience.manifest/v1",
+  "source_bindings": {
+    "rh1_manifest": {
+      "path": "data/personality_timing/relief_hazard_manifest_v1.json",
+      "sha256": "0b07345178592032570aeb57c1c54c1cb24b6463a5836431bc7daf5d44b0cc6b"
+    },
+    "rh1_membership": {
+      "path": "data/personality_timing/relief_hazard_membership_v1.json",
+      "sha256": "f00c9d70e0c554213d6aa9a82fecc1492bcedc49c04ce36d4a14647f85713baf",
+      "ticker_count": 799
+    }
+  },
+  "source_commit": "e61042bf70fe2ca61db5bc55e163c9e208927b02",
+  "status": "prospective_accrual_only",
+  "trial_budget": {
+    "historical_lineage_disclosed": true,
+    "no_interim_retiming": true,
+    "no_threshold_grid": true,
+    "prospective_configurations": 1
+  }
+}
