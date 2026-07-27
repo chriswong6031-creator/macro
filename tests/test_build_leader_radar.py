@@ -40,7 +40,7 @@ from __future__ import annotations
 import json
 import sys
 import tempfile
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import patch
 
@@ -49,6 +49,8 @@ import pandas as pd
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from scripts.build_leader_radar import _check_stale  # noqa: E402
 
 # ── Helpers for fixture construction ─────────────────────────────────────────
 
@@ -393,6 +395,39 @@ class TestUniverseFiltering:
         cov = payload.get("coverage") or {}
         uncovered = cov.get("revisions_uncovered") or []
         assert "UNCOVERED" in uncovered, f"UNCOVERED not in revisions_uncovered: {uncovered}"
+
+
+class TestCheckStalePredicate:
+    """The stale PREDICATE itself, unpatched.
+
+    TestStaleFreeze below patches `_check_stale` to prove the freeze wiring, which
+    left the predicate untested — and it shipped dead: it imported a
+    `trading_dates_between` that lib/nyse_calendar.py never defined, caught the
+    ImportError in a bare `except Exception`, and returned False for every input,
+    so prices never froze state no matter how far behind the store fell.
+    """
+
+    # Thu 2026-07-16 16:00 ET — inside the settle buffer, so the calendar expects
+    # Wed 2026-07-15's bar. Fixed instant keeps the ladder date-independent.
+    NOW = datetime(2026, 7, 16, 20, 0, tzinfo=timezone.utc)
+
+    def test_absent_store_is_stale(self):
+        assert _check_stale(None) is True
+
+    def test_fresh_store_is_not_stale(self):
+        assert _check_stale(date(2026, 7, 15), now=self.NOW) is False
+
+    def test_two_sessions_behind_is_within_sla(self):
+        assert _check_stale(date(2026, 7, 13), now=self.NOW) is False
+
+    def test_three_sessions_behind_is_stale(self):
+        assert _check_stale(date(2026, 7, 10), now=self.NOW) is True
+
+    def test_weekend_and_holiday_gaps_are_not_lag(self):
+        """Store through Thu 07-02 on Mon 07-06: the July-4-observed Friday and
+        the weekend are not missing bars, so it is 1 session behind — fresh."""
+        monday = datetime(2026, 7, 6, 21, 0, tzinfo=timezone.utc)
+        assert _check_stale(date(2026, 7, 2), now=monday) is False
 
 
 class TestStaleFreeze:

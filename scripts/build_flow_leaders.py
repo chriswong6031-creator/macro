@@ -38,6 +38,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from jinja2 import Environment, FileSystemLoader
 from lib import config
+from lib.nyse_calendar import sessions_behind  # noqa: E402
 from lib.pages import write_page  # noqa: E402
 
 log = logging.getLogger(__name__)
@@ -121,23 +122,25 @@ def _latest_summary_session(summaries: dict[str, pd.DataFrame]) -> str | None:
 
 # ── Freshness SLA (FL-R15) ────────────────────────────────────────────────────
 
-def _check_stale(latest_session: str | None) -> bool:
-    """Return True when flow store lags the NYSE calendar by > 2 sessions."""
+_STALE_MAX_LAG_SESSIONS = 2
+
+
+def _check_stale(latest_session: str | None, now: datetime | None = None) -> bool:
+    """Return True when flow store lags the NYSE calendar by > 2 sessions.
+
+    A session date we cannot read counts as stale: an unverifiable store must
+    never be stamped fresh."""
     if latest_session is None:
         return True
     try:
-        from lib.nyse_calendar import trading_dates_between
-        today = date.today()
-        # Get recent NYSE sessions (last 10); count how many strictly after latest_session
-        recent = trading_dates_between(
-            date(today.year - 1, today.month, today.day),
-            today,
+        latest = date.fromisoformat(str(latest_session)[:10])
+    except ValueError:
+        log.warning(
+            "build_flow_leaders: unreadable latest session %r — treating as stale",
+            latest_session,
         )
-        after = [d for d in recent if str(d) > latest_session and d <= today]
-        return len(after) > 2
-    except Exception as e:  # noqa: BLE001
-        log.debug("build_flow_leaders: stale check failed: %s", e)
-        return False
+        return True
+    return sessions_behind(latest, now=now) > _STALE_MAX_LAG_SESSIONS
 
 
 # ── Tape flow loaders ─────────────────────────────────────────────────────────

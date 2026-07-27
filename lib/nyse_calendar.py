@@ -128,6 +128,20 @@ def last_session_on_or_before(d: date) -> date:
     raise ValueError("no NYSE session found in the prior 30 days — calendar rules broken")
 
 
+def sessions_between(start: date, end: date) -> list[date]:
+    """Every session date in the INCLUSIVE range [start, end], ascending.
+
+    Empty when start > end. Callers wanting "strictly after d" pass
+    `d + timedelta(days=1)` as start."""
+    out: list[date] = []
+    d = start
+    while d <= end:
+        if is_session(d):
+            out.append(d)
+        d += timedelta(days=1)
+    return out
+
+
 def expected_last_session(now: datetime | None = None) -> date:
     """The most recent COMPLETED session whose daily bar the price store should hold.
 
@@ -143,6 +157,19 @@ def expected_last_session(now: datetime | None = None) -> date:
     if is_session(today) and now_et.time() >= _CLOSE_PLUS_SETTLE:
         return today
     return last_session_on_or_before(today - timedelta(days=1))
+
+
+def sessions_behind(latest: date, now: datetime | None = None) -> int:
+    """How many completed sessions a store holding `latest` is missing.
+
+    Counts sessions strictly after `latest` up to and including
+    `expected_last_session(now)` — NOT up to today. On a session morning the
+    current day's bar does not exist yet, so counting to today would report
+    every store as one session staler than it is and trip a >N SLA a day early.
+
+    0 = current. Negative is impossible: a store ahead of the calendar (a
+    future-dated row) returns 0, since no completed session is missing."""
+    return len(sessions_between(latest + timedelta(days=1), expected_last_session(now)))
 
 
 def session_date(now_utc: datetime | None = None) -> date:

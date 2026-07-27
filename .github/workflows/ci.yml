@@ -1237,6 +1237,15 @@ on:
       - "scripts/build_china_analogs.py"
       - "scripts/build_china_library.py"
       - "scripts/build_hk_library.py"
+      # nyse-calendar-freshness — the exchange-calendar reference under every
+      # freshness SLA. lib/** above already triggers on lib/nyse_calendar.py, but
+      # a test-only edit must reach its own guard too (#3488: "a guard the guarded
+      # change cannot trigger is not a guard"). test_nyse_calendar.py was named by
+      # NO job in ANY workflow while ~20 scripts imported the module — the darkness
+      # that let two builders import a `trading_dates_between` it never defined and
+      # swallow the ImportError into a permanently-false stale gate.
+      - "tests/test_nyse_calendar.py"
+      - "tests/test_nyse_calendar_import_names.py"
       # unrun-data-plane — R2 transport, accrual audits and the ledger-advance guards
       - "tests/test_audit_options_accrual.py"
       - "tests/test_audit_r2.py"

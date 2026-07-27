@@ -52,6 +52,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config
+from lib.nyse_calendar import sessions_behind
 from lib.pages import write_page
 
 log = logging.getLogger(__name__)
@@ -283,22 +284,14 @@ def _load_sector_etf_close(etf: str, data_root: Path) -> pd.Series | None:
 
 # ── Stale SLA ─────────────────────────────────────────────────────────────────
 
-def _check_stale(latest_date: date | None) -> bool:
+_STALE_MAX_LAG_SESSIONS = 2
+
+
+def _check_stale(latest_date: date | None, now: datetime | None = None) -> bool:
     """Return True when price store lags NYSE calendar by >2 sessions."""
     if latest_date is None:
         return True
-    try:
-        from lib.nyse_calendar import trading_dates_between
-        today = date.today()
-        recent = trading_dates_between(
-            date(today.year - 1, today.month, today.day),
-            today,
-        )
-        after = [d for d in recent if d > latest_date and d <= today]
-        return len(after) > 2
-    except Exception as e:  # noqa: BLE001
-        log.debug("build_leader_radar: stale check failed: %s", e)
-        return False
+    return sessions_behind(latest_date, now=now) > _STALE_MAX_LAG_SESSIONS
 
 
 # ── RS-series store (LR-R3) ──────────────────────────────────────────────────
