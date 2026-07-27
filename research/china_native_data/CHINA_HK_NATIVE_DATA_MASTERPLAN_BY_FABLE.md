@@ -498,3 +498,45 @@ law with gates inline; no child self-merge on the bot repo.
   aggregates on all four window dates and `first_seen` populated (Monday-morning pull at
   ~18:00 CST — the rolling window re-pull collects the evening's reports tomorrow);
   holder counts full-market seed 5,537 rows (12 pages) with same-day notices included.
+- 2026-07-27: W3 shipped (PR #3844) — policy corpus, OMO, calendar, wires. `china_omo`
+  polls FOUR PBOC bulletin columns (daily 交易公告 results, 公告 pre-announcements incl.
+  the temporary o/n repo notices, 买断式逆回购 tenders, MLF 工作信息 — MLF lives at
+  `125437/125446/125873`, NOT reachable from the OMO landing; https:// direct, http 302s);
+  no machine mirror of OMO exists anywhere (re-confirmed) — observed operations append to
+  `events.jsonl` as `kind=omo_observed` + `provenance=pboc_bulletin` (one hash-deduped
+  event per bulletin; synthetic `omo_mlf` untouched), 20-doc/night cap with
+  `n_deferred`/`n_store_abort` sentinels, fetched-but-unparseable bulletins heal
+  retroactively. `china_trade_detail` pulls GACC's ENGLISH monthly by-country table
+  (CN site 412-WAF'd): first-vintage PIT, `############` overflow cells → printed nulls
+  distinct from `-` nils, ~271-row completeness floor so a truncated month is never
+  frozen, January's 7-column year-start variant parsed, prior-year index swept at the
+  Dec/Jan rollover; seeded Feb–Jun 2026 (1,355 rows). `china_official_corpora` gains
+  `gov_policy_library` via the policy page's own static sidecar
+  `zhengce/zuixin/ZUIXINZHENGCE.json` (1,082 docs, same-day fresh) — the search-gov JSON
+  API is DEAD to anonymous callers (totalCount=0 with correct param echo across 3
+  variants + cookie warmup; probe kept per CNH-R5) and `/zhengce/zhengceku/` is
+  path-403; **MIIT deferred with finding recorded** (its list pages are jpaas JS shells,
+  2 KB bootstrap, 2026-07-27 — revisit needs a jpaas endpoint-discovery pass).
+  `engine/china_calendar.py` → `site/chinastatedata/calendar.json` (china_calendar.v1)
+  AGGREGATES the existing `china_event_calendar`/`hk_event_calendar` rules (never
+  re-encodes them) + OMO feed rows (announced ops suppress the same-calendar-month MLF
+  rule row — a ±Nd window has ZERO margin against PBOC's observed 24th–25th cadence) +
+  CNH-R12 static political windows (CY2026–27) + a full-month earnings-season share;
+  bilingual, `source_class ∈ {rule,feed,static}`, context_only + may_rank=false, RIC-R3
+  pinned in BOTH import directions. Wires 4/5: Futu flash (empty titles → headline from
+  content) + THS push (Referer REQUIRED — empty reply without it) rank `china_native`;
+  akshare's `stock_info_global_futu/_ths` retired from `china_news_intel.wire_sources`
+  (CNH-R2: direct leg primary, akshare leg documented fallback — dual-running
+  double-accrued headlines under divergent event_ids, and UTC-vs-Beijing seendates
+  defeated same-day clustering; timestamp-quality upgrades key on the vendor DOMAIN).
+  Probe baseline 51 probes (49 ok / 0 deviating) with a new `contains` HTML content
+  check + CJK-safe decode; clock `cnh-w3-policy-omo-calendar-planes` (2026-10-25).
+  Ship-day live smoke: OMO 55 docs found / 23 rows incl. July MLF 5000亿元 + all four
+  pre-announced ops in 43 s; calendar 39 entries (18 rule / 16 static / 5 feed).
+  Opus adversarial review = FIX-FIRST for the third straight wave (17 findings, 10
+  CONFIRMED with repros: GACC year-select-drift dead-sentinel BLOCKER, partial-month
+  keep-FIRST freeze, zero-margin MLF suppression, same-day multi-tenor dedup loss,
+  horizon-truncated earnings share, `summarise()` clause repetition that had already
+  reached the seeded ledger, a dated time-bomb test reading the live store,
+  abort-yet-append ledger divergence, double-leg vendor duplication, multi-price-auction
+  rate capture) — all closed in the same PR; the single-review-misses pattern held.
