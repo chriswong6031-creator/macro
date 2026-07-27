@@ -220,9 +220,9 @@
         nextTurn: "trough", central: "2027-06", low: "2026-09", high: "2028-06", tilt: "headwind",
         drivers: ["Fed rate path", "labor-market slack feeding through", "housing drag"],
         falsifier:
-          "ISM holding >54 through H2-2026 with firm new orders refutes an imminent inventory " +
-          "peak; unemployment ≤4.5% and positive payrolls through 2027 refute the late-cycle " +
-          "recession call (soft-landing extension)."
+          "ISM holding >54 through H2-2026 with firm new orders would push the inventory peak " +
+          "out past this window; unemployment ≤4.5% and positive payrolls through 2027 would " +
+          "mark a soft-landing extension rather than a late-cycle recession."
       },
       regimeNote: "Headwind: late-cycle age + restrictive policy; the inventory upswing is cresting into a 2027 recession risk.",
       regime_claim: { quad: "Q3", as_of: "2026-06-25", conf: "medium" }
@@ -416,8 +416,9 @@
         nextTurn: "trough", central: "2026-10", low: "2026-07", high: "2027-04", tilt: "headwind",
         drivers: ["spot-ETF / institutional flows damping volatility", "macro liquidity & rate path", "whether the 4-yr pattern is weakening"],
         falsifier:
-          "A new ATH (> ~$126k) before the trough invalidates 'we're in the down-leg'; a decisive " +
-          "break below the ~$64k halving level toward sub-$40k falsifies the 'shallow, ETF-cushioned' read."
+          "A new ATH (> ~$126k) before the trough would mark the down-leg already behind us; a " +
+          "decisive break below the ~$64k halving level toward sub-$40k would mark a deeper " +
+          "drawdown than the shallow, ETF-cushioned path."
       },
       regimeNote: "Headwind: the priced-out-cuts, hiking-bias regime drains the liquidity that fuels crypto up-legs.",
       // v2 note: bitcoin's TRUEST checkable claim is a LIQUIDITY one ("drains the liquidity"
@@ -460,7 +461,7 @@
         drivers: ["timing/severity of any macro or default shock", "the loan-vs-bond default divergence", "how long private-credit refi access suppresses defaults"],
         falsifier:
           "HY OAS above ~500bp confirms the turn to stress; spreads holding ≤300bp with loan defaults " +
-          "falling toward ~3.4% through 2027 falsifies 'late-cycle, turn imminent'."
+          "falling toward ~3.4% through 2027 would push the turn out well past this window."
       },
       regimeNote: "Headwind building: the tightest part of the cycle, with the thinnest cushion against the regime's shocks.",
       regime_claim: { quad: "Q3", as_of: "2026-06-25", conf: "medium" }

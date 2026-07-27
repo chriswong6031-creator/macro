@@ -622,144 +622,96 @@
     });
   }
 
-  /* ---- W3.3: falsifier tripwire strip ------------------------------------- */
-  /* Ruling A17: FIRED is latched (sticky), but always shows current_leg status
-     so a recovered thesis shows "fired {date}; condition no longer met".
-     State colors use severity tokens, NOT up/down tokens — zh flip is bypassed.
-       ARMED        → green-neutral (.tw-armed)
-       FIRED        → red alert (.tw-fired)
-       MANUAL       → amber (.tw-manual)
-       DATA_MISSING → grey (.tw-missing)
-       EXPIRED      → grey (.tw-expired)                                       */
+  /* ---- forward "what we're watching" strip --------------------------------
+     The background condition engine is unchanged — it still evaluates every
+     pre-set level nightly.  What the CARD shows is forward-looking only: how
+     many levels are still live on the watch.  No state enums, no alarm
+     vocabulary; a level that has already crossed is reported by the neutral
+     revision chip below, not here.
+     Chip colors use severity/neutral tokens, NOT up/down tokens — the zh
+     red/green flip stays bypassed.                                            */
   function tripwireStripHTML(card) {
     var tws = card.tripwires || [];
-    if (!tws.length) return "";
+    var watched = tws.filter(function (tw) { return tw.state === "ARMED"; });
+    var n = watched.length;
+    if (!n) return "";
 
-    var items = tws.map(function (tw) {
-      var cls = "tw-item tw-" + (tw.state || "armed").toLowerCase().replace(/_/g, "-");
-      var label = "", dot = "";
+    // claim hover (plain EN per house rule — no translated text in title attrs)
+    var titleStr = watched.map(function (tw) { return tw.claim || ""; })
+                          .filter(Boolean).join("; ");
 
-      if (tw.state === "FIRED") {
-        dot = '<span class="tw-dot tw-dot-fired"></span>';
-        var dateStr = tw.fired_on ? tw.fired_on.slice(0, 7) : "";
-        var noLonger = (tw.current_leg === false)
-          ? " · " + L("condition no longer met", "条件已不再满足")
-          : "";
-        label = '<span class="l-en"><b>' + L("FIRED", "已触发") + '</b>' +
-                (dateStr ? " " + dateStr : "") + noLonger + '</span>' +
-                '<span class="l-zh"><b>已触发</b>' +
-                (dateStr ? " " + dateStr : "") + (tw.current_leg === false ? " · 条件已不再满足" : "") + '</span>';
-      } else if (tw.state === "ARMED") {
-        dot = '<span class="tw-dot tw-dot-armed"></span>';
-        label = '<span class="l-en">' + L("armed", "监控中") + '</span>' +
-                '<span class="l-zh">监控中</span>';
-      } else if (tw.state === "MANUAL") {
-        dot = '<span class="tw-dot tw-dot-manual"></span>';
-        var overdue = tw.overdue_days && tw.overdue_days > 0
-          ? " · " + L("review overdue " + tw.overdue_days + "d", "超期 " + tw.overdue_days + " 天")
-          : (tw.manual && tw.manual.last_reviewed
-              ? " · " + L("reviewed " + tw.manual.last_reviewed, "已审阅 " + tw.manual.last_reviewed)
-              : "");
-        label = '<span class="l-en">' + L("manual", "人工") + esc(overdue) + '</span>' +
-                '<span class="l-zh">人工' + (tw.overdue_days && tw.overdue_days > 0
-                  ? ' · 超期 ' + tw.overdue_days + ' 天' : '') + '</span>';
-      } else if (tw.state === "DATA_MISSING") {
-        dot = '<span class="tw-dot tw-dot-missing"></span>';
-        label = '<span class="l-en">' + L("data missing", "数据缺失") + '</span>' +
-                '<span class="l-zh">数据缺失</span>';
-      } else if (tw.state === "EXPIRED") {
-        dot = '<span class="tw-dot tw-dot-expired"></span>';
-        label = '<span class="l-en">' + L("expired", "已过期") + '</span>' +
-                '<span class="l-zh">已过期</span>';
-      } else {
-        dot = '<span class="tw-dot"></span>';
-        label = '<span class="l-en">' + esc(tw.state || "") + '</span>' +
-                '<span class="l-zh">' + esc(tw.state || "") + '</span>';
-      }
-
-      // claim tooltip (plain EN per house rule — no t() in attributes)
-      var titleStr = (tw.claim || "") + (tw.state === "FIRED" && tw.current_leg === false
-        ? " (condition no longer met — latch remains until v" + ((tw.version || 1) + 1) + ")"
-        : "");
-
-      return '<span class="' + cls + '" title="' + esc(titleStr) + '">' + dot + label + '</span>';
-    }).join("");
-
-    // summary prefix: count FIRED
-    var nFired = tws.filter(function (tw) { return tw.state === "FIRED"; }).length;
-    var nArmed = tws.filter(function (tw) { return tw.state === "ARMED"; }).length;
-    var summary = nFired
-      ? '<span class="tw-summary tw-summary-fired">' +
-          '<span class="l-en">' + L("⚠ " + nFired + " falsifier fired", "⚠ " + nFired + " 项证伪已触发") + '</span>' +
-          '<span class="l-zh">⚠ ' + nFired + ' 项证伪已触发</span>' +
-        '</span>'
-      : '<span class="tw-summary">' +
-          '<span class="l-en">' + L(nArmed + " conditions live", nArmed + " 项条件监控中") + '</span>' +
-          '<span class="l-zh">' + nArmed + ' 项条件监控中</span>' +
-        '</span>';
-
-    return '<div class="cc-tripwire tw-strip">' + summary + ' ' + items + '</div>';
+    return '<div class="cc-watch tw-strip">' +
+      '<span class="cc-watch-chip" title="' + esc(titleStr) + '">' +
+        '<span class="l-en">Watching ' + n + ' level' + (n === 1 ? '' : 's') + '</span>' +
+        '<span class="l-zh">关注 ' + n + ' 个关键位</span>' +
+      '</span>' +
+    '</div>';
   }
 
-  /* FIRED banner: shown above the card when any tripwire is latched FIRED */
+  /* Revision chip — same slot the alarm banner used to occupy.  A pre-set level
+     has crossed, so the WRITTEN note is behind; the engine read on the card is
+     live and unaffected.  Neutral wording + neutral accent (design doctrine:
+     no internal state vocabulary on any user-visible tier). */
   function firedBannerHTML(card) {
     var tws = card.tripwires || [];
     var fired = tws.filter(function (tw) { return tw.state === "FIRED" && tw.latched; });
     if (!fired.length) return "";
-    var msgs = fired.map(function (tw) {
-      return esc(tw.claim) + (tw.fired_on ? " (" + tw.fired_on.slice(0, 10) + ")" : "");
-    });
-    var msgEn = "⚠ Falsifier fired: " + msgs.join("; ") + " — thesis refuted.";
-    var msgZh = "⚠ 证伪触发：" + msgs.join("；") + " — 论点已被否定。";
-    return '<div class="cc-fired-banner">' +
-      '<span class="l-en">' + msgEn + '</span>' +
-      '<span class="l-zh">' + msgZh + '</span>' +
+
+    var dates = fired.map(function (tw) { return tw.fired_on ? tw.fired_on.slice(0, 10) : ""; })
+                     .filter(Boolean).sort();
+    var claims = fired.map(function (tw) { return tw.claim || ""; })
+                      .filter(Boolean).join("; ");
+    // plain-EN hover only (house rule: no translated text in title attributes)
+    var titleStr = "A pre-set condition crossed" +
+      (dates.length ? " on " + dates[dates.length - 1] : "") +
+      (claims ? ": " + claims : "") +
+      ". The written note is being re-authored; the live engine read on this card is current.";
+
+    return '<div class="cc-rev-chip" title="' + esc(titleStr) + '">' +
+      '<span class="l-en">New data — read being updated</span>' +
+      '<span class="l-zh">新数据 — 解读更新中</span>' +
     '</div>';
   }
 
-  /* focus panel tripwire detail block */
+  /* focus panel: the forward watch list.  Rows are plain claim sentences; a
+     level that has already crossed carries a neutral dated tag plus the one
+     line that matters to the reader (the live read wins while the note lags).
+     Rows with no readable data (missing tape / expired entry) are dropped
+     rather than shown as machine states. */
   function focusTripwireBlock(card) {
     var tws = card.tripwires || [];
-    if (!tws.length) return "";
     var rows = tws.map(function (tw) {
-      var stateTag = tw.state === "FIRED"
-        ? '<span class="tw-tag tw-tag-fired">' + L("FIRED", "已触发") + '</span>'
-        : tw.state === "MANUAL"
-        ? '<span class="tw-tag tw-tag-manual">' + L("MANUAL", "人工") + '</span>'
-        : tw.state === "DATA_MISSING"
-        ? '<span class="tw-tag tw-tag-missing">' + L("DATA MISSING", "数据缺失") + '</span>'
-        : tw.state === "EXPIRED"
-        ? '<span class="tw-tag tw-tag-expired">' + L("EXPIRED", "已过期") + '</span>'
-        : '<span class="tw-tag tw-tag-armed">' + L("ARMED", "监控中") + '</span>';
+      if (tw.state === "DATA_MISSING" || tw.state === "EXPIRED") return "";
 
-      var a17 = (tw.state === "FIRED" && tw.current_leg === false)
-        ? '<div class="tw-a17">' +
-            '<span class="l-en">Condition no longer met — latch stays until re-authored (v' + ((tw.version || 1) + 1) + ')</span>' +
-            '<span class="l-zh">条件已不再满足 — 锁存至重新编写（v' + ((tw.version || 1) + 1) + '）</span>' +
-          '</div>'
-        : "";
-
-      var manualNote = tw.state === "MANUAL" && tw.manual
-        ? '<div class="tw-manual-note">' +
-            '<span class="l-en">Manual falsifier: ' + esc(tw.manual.note || "") +
-            (tw.overdue_days && tw.overdue_days > 0
-              ? ' <b>Review overdue ' + tw.overdue_days + 'd</b>' : '') + '</span>' +
-            '<span class="l-zh">人工证伪：' + esc(tw.manual.note || "") +
-            (tw.overdue_days && tw.overdue_days > 0
-              ? ' <b>超期 ' + tw.overdue_days + ' 天</b>' : '') + '</span>' +
-          '</div>'
-        : "";
+      var tag = "", note = "";
+      if (tw.state === "FIRED") {
+        var d = tw.fired_on ? tw.fired_on.slice(0, 10) : "";
+        tag = '<span class="tw-tag tw-tag-crossed">' +
+                '<span class="l-en">Crossed' + (d ? " " + d : "") + '</span>' +
+                '<span class="l-zh">已触发' + (d ? " " + d : "") + '</span>' +
+              '</span> ';
+        note = '<div class="tw-note">' +
+                 '<span class="l-en">Live engine read takes precedence while the note is re-written.</span>' +
+                 '<span class="l-zh">以实时引擎解读为准，注释更新中。</span>' +
+               '</div>';
+      } else if (tw.state === "MANUAL") {
+        note = '<div class="tw-note">' +
+                 '<span class="l-en">tracked by hand</span>' +
+                 '<span class="l-zh">人工跟踪</span>' +
+               '</div>';
+      }
 
       return '<div class="tw-focus-row">' +
-        '<div class="tw-focus-head">' + stateTag + ' <span class="tw-claim">' + esc(tw.claim) + '</span>' +
-        '<span class="tw-dir"> · ' + esc(tw.direction) + '</span></div>' +
-        a17 + manualNote +
+        '<div class="tw-focus-head">' + tag +
+          '<span class="tw-claim">' + esc(tw.claim) + '</span></div>' +
+        note +
       '</div>';
     }).join("");
+    if (!rows) return "";
 
     return '<div class="cyc-grp cyc-grp-full">' +
-      '<div class="cyc-lbl">' + L("Falsifier tripwires", "证伪条件监控") + ' ' +
-        '<span class="cyc-tier tier-frame" title="W3.3 live-evaluated tripwires">' +
+      '<div class="cyc-lbl">' + L("What we're watching", "关注条件") + ' ' +
+        '<span class="cyc-tier tier-frame" title="Evaluated live against the tape">' +
           L("LIVE", "实时") + '</span></div>' +
       '<div class="tw-focus-list">' + rows + '</div>' +
     '</div>';
@@ -945,7 +897,7 @@
     var refLine = "";
     if (pj.overdue) {
       var frac = pj.overdue_frac != null ? pj.overdue_frac.toFixed(1) : "?";
-      refLine = '<div class="cc-proj-ref' + (firedDemote ? " cc-proj-refuted" : "") + '">' +
+      refLine = '<div class="cc-proj-ref' + (firedDemote ? " cc-proj-review" : "") + '">' +
         '<span class="l-en">ref: ' + turnWord(pj.nextTurn, true) + ' was projected ' +
           fmtMon(pj.central) + ' — window elapsed (' + frac + '× median)</span>' +
         '<span class="l-zh">参考：' + turnWord(pj.nextTurn, true) + '原预计 ' +
@@ -958,15 +910,20 @@
         "半周期中位参考 ≈ " + fmtMon(pj.central) + (medYrs != null ? "（周期中位约" + medYrs + "年）" : ""));
       refLine = '<div class="cc-proj-ref">' + halfCycLabel + '</div>';
     }
-    // fired-falsifier demotion label
+    // a pre-set level has crossed, so this window is being re-drawn: say that, and
+    // demote it to reference — never announce it as a refutation (the card's live
+    // engine read is unaffected, and the revision chip above already carries the why).
     var demotionLine = "";
     if (firedDemote) {
       var firedTW = (card.tripwires || []).filter(function (tw) { return tw.state === "FIRED"; });
       var firedOn = firedTW.length && firedTW[0].fired_on ? firedTW[0].fired_on.slice(0, 10) : "";
+      // plain-EN hover (house rule: no translated text in title attributes)
+      var reviewTitle = "A pre-set condition crossed" + (firedOn ? " on " + firedOn : "") +
+        ", so this window is being re-drawn. Treat the date as a reference, not a call.";
       demotionLine =
-        '<div class="cc-proj-ref cc-proj-refuted">' +
-          '<span class="l-en">projection refuted by falsifier' + (firedOn ? " (fired " + firedOn + ")" : "") + ' — reference only</span>' +
-          '<span class="l-zh">预测已被证伪' + (firedOn ? "（触发 " + firedOn + "）" : "") + ' — 仅供参考</span>' +
+        '<div class="cc-proj-ref cc-proj-review" title="' + esc(reviewTitle) + '">' +
+          '<span class="l-en">window under review — reference only</span>' +
+          '<span class="l-zh">窗口复核中 — 仅供参考</span>' +
         '</div>';
     }
     return (wrapper ? '<div class="' + wrapper + '">' : '') + refLine + demotionLine + (wrapper ? '</div>' : '');
@@ -1074,7 +1031,7 @@
           ' <span class="cyc-opinion-badge" title="Dated analyst opinion — not an engine output">' + L("OPINION", "观点") + '</span>' +
           '<span class="cyc-asof-mini"> · ' + L("as of ", "截至 ") + esc(op.as_of || AS_OF) + '</span></div>' +
           '<p>' + zc(card.id, "read", op.read || "") + '</p>' + tolLine + '</div>' +
-        '<div class="cyc-fals"><div class="cyc-lbl">' + L("Falsifier", "证伪条件") +
+        '<div class="cyc-fals"><div class="cyc-lbl">' + L("What would change this view", "何种情况会改变判断") +
           ' <span class="cyc-opinion-badge">' + L("OPINION", "观点") + '</span></div>' +
           '<p>' + zc(card.id, "falsifier", op.falsifier || "") + '</p></div>' +
       '</div>' +
@@ -1265,17 +1222,51 @@
     });
   }
 
-  /* ---- staleness banner (W0.1) ------------------------------------------- */
+  /* ---- engine-vs-notes banner (ONE line) ---------------------------------
+     This slot used to stack three notes that all said the same thing three
+     ways: the analyst-note age, the curated-vs-live regime contradiction, and
+     the regime-narrative staleness.  They are now ONE line carrying the single
+     stance a reader needs — where the note and the tape disagree, the tape
+     wins — with every reconciliation detail demoted to the plain-EN hover
+     (house rule: no translated text in title attributes).
+
+     The page shell's own inline banner block is superseded by this one; we
+     blank its host here so the merged line is what ships from the moment
+     cycle_app.js goes live, without waiting for the next render to regenerate
+     cycle.html.  (The shell's block is removed in templates/cycle.html.j2;
+     this clear covers the interim and any cached shell.) */
   function renderStalenessBanner() {
+    var legacy = document.getElementById("regime-prior-banner");
+    if (legacy) legacy.innerHTML = "";
+
     var host = document.getElementById("cyc-stale-banner");
     if (!host) return;
     var asOfYear = AS_OF ? yf(AS_OF) : TODAY;
     var days = Math.round((TODAY - asOfYear) * 365.25);
-    if (days < 14) { host.innerHTML = ""; return; }
-    var cls = days >= 60 ? "stale-red" : "stale-amber";
-    host.innerHTML = '<div class="stale-banner ' + cls + '">' +
-      L("Analyst notes as of " + AS_OF + " — " + days + " days old (engine reads are live)",
-        "分析师注记截至 " + AS_OF + " — 已 " + days + " 天（引擎读数为实时）") + '</div>';
+    var rd = ENGINE.regime_disagreement || null;
+    // show once the notes have aged, or whenever the curated read and the live
+    // engine read disagree (that reconciliation used to be its own banner).
+    if (days < 14 && !(rd && rd.banner_en)) { host.innerHTML = ""; return; }
+
+    // hover detail — plain EN only
+    var prior = window.REGIME_PRIOR || {};
+    var bits = [];
+    if (days >= 14) bits.push("Analyst notes are " + days + " days old; the engine reads on this page are current.");
+    if (rd && rd.banner_en) bits.push(rd.banner_en);
+    if (prior.quad) {
+      bits.push("Live regime engine reads " + prior.quad +
+                (prior.liquidity ? " " + prior.liquidity : "") + ".");
+    }
+    if (prior.status === "stale" || prior.status === "partial") {
+      bits.push("Regime data is " + prior.status + " — some components may lag the latest build.");
+    }
+
+    host.innerHTML = '<div class="stale-banner stale-amber" title="' + esc(bits.join(" ")) + '">' +
+      '<span class="l-en">Engine reads live · analyst notes as of ' + esc(AS_OF) +
+        ' — where they differ, the tape wins</span>' +
+      '<span class="l-zh">引擎实时读数 · 分析师注释更新于 ' + esc(AS_OF) +
+        '——两者不一致时以实时数据为准</span>' +
+      '</div>';
   }
 
   /* ---- language switch --------------------------------------------------- */
@@ -1311,6 +1302,12 @@
     buildDefaultPanel();
     mountCards();
     renderStalenessBanner();
+    // A page shell rendered before this change still carries the superseded inline
+    // banner block, which populates its host on DOMContentLoaded — i.e. AFTER this
+    // deferred script has already run.  A macrotask re-run lands after every
+    // DOMContentLoaded handler, so the merged line stands alone regardless of
+    // whether cycle.html has been regenerated yet.
+    setTimeout(renderStalenessBanner, 0);
     initSheet();
     document.addEventListener("langchange", rerender);
     var h = (location.hash || "").replace("#", "");
