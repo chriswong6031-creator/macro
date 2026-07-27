@@ -171,3 +171,18 @@ Operator (2026-07-27, second directive): expand beyond Trump to other high-reach
 Sub-waves: **B4a** wires.json sink + site_access line (B1 follow-on, small) → **B4b** designed rail on news.html (`designer` spec first, then builder) → **B4c** zh items + tier gate → **B4d** terminal hub feed.
 
 **Sequencing:** registers ship in **B1** as config alongside the Trump register (same poller tick — zero marginal infra); exec-voice, company, and geopolitical registers day one; vault wire-nuggets after W2R lands; wire-card family after one `designer` pass; news.html live-wires rail as B4. Multi-register volume strengthens (does not bypass) the Persona-W2 cadence-resolver precondition for the news cohort; the interim flagship top-K cap is global across all registers.
+
+---
+
+## 7. B2-COPY — copy quality, format alternation, media (operator robustness directive, 2026-07-27 evening)
+
+B1 (#3838) ships **ingestion-grade** robustness (providers, dedupe, corroboration, spend cap, satire blocklist, cold-start priming, 566 tests). The layers that determine POST quality are chartered here:
+
+- **Wire voice pass.** Today's summarizer is generic ≤2-sentence summarize-with-citation + deterministic fallback — functional, not distinctive. Build: rotating opener pool per account codex (§3 seed list); **key-phrase selection law** — quote the source's own strongest short phrase verbatim-in-quotes ("running afoul", "very friendly talks"), paraphrase the rest (vivid + safe); AI-tell lexicon validator extended to wire posts; sonnet tier for flagship-grade items, haiku for volume; per-account tilt once the news cohort exists (W2).
+- **Dual-format law** (operator: HormuzLetter's two-paragraph explanatory style vs one-sentence flashes — both work; ALTERNATE). Format tiers: `flash` (≤2 sentences, default) and `wire_deep` (two short paragraphs, ~400–700 chars — for high-salience items with rich source bodies: geopolitical developments, bank-research nuggets, vault findings). Selection is DETERMINISTIC (salience × source-body length × register), never the LLM's call. Optional thread pattern: flash first, detail as self-reply. Format mix is also textual-diversity the dup-detector rewards.
+- **Tape-stamp engine.** The daemon runs on the VPS beside `/var/lib/macro-live/public/live/quotes.json` and the Sina/Webull feeds — compute "WTI −1.8% since the headline" stamps locally, threshold-gated (quiet tape → no stamp; never a fabricated reaction).
+- **Media cards.** Extend `chart_render.render_breaking_card` into the §6 wire-card family (post text set large, logo corner mark, event-class accents; `designer` lane). **Rights posture: no lifted photos of people** (Getty-class exposure the relay accounts simply eat) — our media strategy is branded text cards + our own chart renders; no fabricated imagery; no post screenshots (kills stand).
+- **Digest sink revival.** B1 logs-only digest means single-source hearsay evaporates overnight — build the next-morning digest emitter (D05 item 6's fallback) so detailed-but-uncorroborated items become a morning post instead of nothing.
+- **Feedback loop.** Per-post reach/engagement telemetry → which hooks/formats/registers earn reach → weekly tuning input; folds into the Persona health monitor when the cohort exists.
+
+**Status notes (2026-07-27):** twitterapi.io key PROVISIONED by operator, live-probed (HTTP 200, 1.2–1.6 s, response shape matches fixtures; DeItaone/zerohedge/WHPressPool all minutes-fresh) and installed in the VPS `/etc/macro-live.env` the systemd unit reads. Arming after #3838 merges = deploy unit + `MARKETING_FASTLANE_ENABLED=1`.
