@@ -5,9 +5,12 @@ logic with canned payloads — nothing in this file touches the wire.
 """
 from __future__ import annotations
 
+import sys
+
 import pandas as pd
 import pytest
 
+import collectors
 from collectors import china_board_breadth as cbb
 
 
@@ -214,7 +217,20 @@ def test_tushare_plane_filters_scope_and_dedupes(monkeypatch):
         def snapshot_by_date(*_a, **_k):
             return df, "20260724"
 
-    monkeypatch.setitem(__import__("sys").modules, "collectors.tushare_client", _TC)
+    # A full-suite run has already genuinely imported the real client (the
+    # scripts.collect registry pulls collectors.china_tushare), which binds it as
+    # an ATTRIBUTE on the ``collectors`` package — and the lazy
+    # ``from collectors import tushare_client`` in _from_tushare resolves through
+    # that attribute, so a sys.modules stub alone is a silent no-op in that order.
+    # Force the already-imported order so the standalone CI job (which runs this
+    # file alone) exercises it too, then patch BOTH planes; monkeypatch restores
+    # both. Same pattern as test_key_pool_economy's broken-key_pool stub.
+    try:
+        import collectors.tushare_client as _real_tc  # noqa: F401
+    except ImportError:
+        pass
+    monkeypatch.setitem(sys.modules, "collectors.tushare_client", _TC)
+    monkeypatch.setattr(collectors, "tushare_client", _TC, raising=False)
     out = a._from_tushare()
     r = out.iloc[0]
     assert r["n"] == 4000            # BJ dropped, duplicate collapsed
