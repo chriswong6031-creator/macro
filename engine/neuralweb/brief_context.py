@@ -65,6 +65,36 @@ from typing import Any
 
 log = logging.getLogger(__name__)
 
+
+def _resolve_root(root: Path | None) -> Path:
+    """Return the repo root the slice composers read artifacts under.
+
+    NOT fail-open.  Until this was fixed, all three slice functions did::
+
+        try:
+            from engine import config as _config
+            _root = ... _config.ROOT
+        except Exception:
+            _root = ... Path(__file__).parent.parent.parent
+
+    `engine.config` has never existed (the config module is `lib.config`), so the
+    ImportError fired on every call and the guessed parent-walk was the ONLY path
+    ever used.  It happens to equal `lib.config.ROOT` in the current layout, which
+    is exactly why nothing noticed — but the two diverge the moment the checkout
+    moves (the iCloud-relocation trap), and then the packet would silently read a
+    different tree instead of failing.
+
+    So: no substitute path.  A missing config module raises here, the caller's
+    outer handler logs it and returns the documented `{absent: True, reason: ...}`
+    packet.  ADB-R1 ("no exception is ever raised" out of macro_slice / btc_slice /
+    china_slice) is preserved by that handler, not by guessing.
+    """
+    if root:
+        return Path(root)
+    from lib.config import ROOT
+    return ROOT
+
+
 # ---------------------------------------------------------------------------
 # SLA table (default 30h; keyed by artifact slug).
 # Staleness is keyed off the artifact's DATA asof, not produced_at.
@@ -1135,13 +1165,7 @@ def macro_slice(root: Path | None = None) -> dict:
     blocks in the documented order.
     """
     try:
-        from engine import config as _config
-        _root = Path(root) if root else _config.ROOT
-    except Exception:  # noqa: BLE001
-        _root = Path(root) if root else Path(__file__).parent.parent.parent
-
-    try:
-        return _build_macro_slice(_root)
+        return _build_macro_slice(_resolve_root(root))
     except Exception as exc:  # noqa: BLE001
         log.exception("brief_context.macro_slice: unexpected error: %s", exc)
         return {
@@ -1249,13 +1273,7 @@ def btc_slice(root: Path | None = None) -> dict:
     Reuses the existing _block_* composers — no duplicated bodies.
     """
     try:
-        from engine import config as _config
-        _root = Path(root) if root else _config.ROOT
-    except Exception:  # noqa: BLE001
-        _root = Path(root) if root else Path(__file__).parent.parent.parent
-
-    try:
-        return _build_btc_slice(_root)
+        return _build_btc_slice(_resolve_root(root))
     except Exception as exc:  # noqa: BLE001
         log.exception("brief_context.btc_slice: unexpected error: %s", exc)
         return {
@@ -1338,13 +1356,7 @@ def china_slice(root: Path | None = None) -> dict:
     Never raises.  Serialised size enforced ≤ 6 144 bytes.
     """
     try:
-        from engine import config as _config
-        _root = Path(root) if root else _config.ROOT
-    except Exception:  # noqa: BLE001
-        _root = Path(root) if root else Path(__file__).parent.parent.parent
-
-    try:
-        return _build_china_slice(_root)
+        return _build_china_slice(_resolve_root(root))
     except Exception as exc:  # noqa: BLE001
         log.exception("brief_context.china_slice: unexpected error: %s", exc)
         return {

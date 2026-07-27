@@ -860,10 +860,19 @@ jobs:
     # import a `trading_dates_between` this module never defined — swallowed by a
     # bare `except Exception: return False`, making two >2-session stale SLAs
     # return "fresh" for every input they ever saw.
-    # test_nyse_calendar_import_names.py resolves every
+    # test_nyse_calendar_import_names.py resolved every
     # `from lib.nyse_calendar import X` in the repo statically so that class of
     # dead import fails a test instead of degrading into an always-false gate.
-    # Stdlib-only module; pytest is the whole dependency set.
+    #
+    # PROMOTED repo-wide into tests/test_first_party_import_names.py: the same sweep
+    # over EVERY first-party root found five more dead imports of the identical shape
+    # — `from engine import config` (no such module; the except substituted a
+    # __file__ parent-walk), `from engine.data_store import store` (the store is
+    # lib.store; both HK and CN pick-lab benchmark loaders returned None forever),
+    # `from lib.logging import get_logger` (never existed), plus a permanently-skipped
+    # test and a dead fixture branch. The single-module guard is retired; its
+    # calendar public-API check moved into test_nyse_calendar.py.
+    # Both suites are stdlib-only (ast + pathlib); pytest is the whole dependency set.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -872,8 +881,8 @@ jobs:
           python-version: "3.12"
       - name: install minimal deps
         run: pip install pytest
-      - name: nyse calendar rules + imported-name resolution
-        run: python -m pytest tests/test_nyse_calendar.py tests/test_nyse_calendar_import_names.py -q
+      - name: nyse calendar rules + first-party imported-name resolution
+        run: python -m pytest tests/test_nyse_calendar.py tests/test_first_party_import_names.py -q
 
   dag-conformance:
     if: ${{ false }}

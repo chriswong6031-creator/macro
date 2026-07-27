@@ -955,27 +955,51 @@ class TestEndToEndFireBehavior:
 # ---------------------------------------------------------------------------
 
 class TestDNAMixedDefault:
+    """The cascade is `_classify_dna(row: dict, sector: str)`.
+
+    This class previously imported `_dna_class` — a name build_factor_panel has
+    never defined — inside `except ImportError: pytest.skip(...)`, so it reported
+    "skipped" on every run and never executed one assertion.  The skip was not
+    even load-bearing: tests/test_build_factor_panel.py imports the same module
+    unguarded at module scope, so it is always importable here.
+    """
+
+    # Values chosen so EVERY archetype condition in the §3.3 cascade fails.
+    ALL_FALSE = {
+        "quality_pct": 10,   # < 70 → quality_growth; < 65 → defensive_quality
+        "value_pct": 10,     # < 65 → cyclical_value
+        "beta_growth": 0.0,  # ≤ 0.3 → quality_growth / high_beta_liquidity
+        "beta_mkt": 0.5,     # ≤ 1.3 → high_beta_liquidity; ≤ 1.1 → china proxy
+        "low_vol_pct": 50,   # ≥ 35 (high_beta) and < 55 (rate_duration)
+        "beta_sector": 0.0,  # ≤ 0.2 → cyclical_value
+        "beta_rates": 0.1,   # |b| ≤ 0.25 → rate_duration_sensitive
+        "payout_pct": 20,    # < 55 → rate_duration_sensitive
+        "beta_china": 0.0,   # ≤ 0.30 → china_crypto_proxy
+        "size_pct": 60,      # ≥ 30 → small_spec
+    }
+
     def test_all_conditions_false_returns_mixed(self):
         """The DNA class cascade must return 'mixed' when no archetype triggers."""
-        try:
-            from scripts.build_factor_panel import _dna_class  # type: ignore[import]
-        except ImportError:
-            pytest.skip("build_factor_panel._dna_class not importable in this context")
+        from scripts.build_factor_panel import _classify_dna
 
-        # Pass values that satisfy NO archetype condition
-        result = _dna_class(
-            quality_pct=10,    # < 70 → quality_growth fails
-            value_pct=10,      # < 65 → cyclical_value fails
-            beta_growth=0.0,   # < 0.3 → quality_growth/high_beta_liquidity fails
-            beta_mkt=0.5,      # < 1.3 → high_beta_liquidity fails
-            low_vol_pct=50,    # not < 35 for high_beta, not ≥ 55 for rate_duration
-            sector="Technology",
-            beta_sector=0.0,   # < 0.2 → cyclical_value fails
-            beta_rates=0.1,    # < 0.25 → rate_duration fails
-            payout_pct=20,     # < 55 → rate_duration fails
-            beta_china=0.0,    # < 0.30 → china_crypto_proxy fails
-            size_pct=60,       # ≥ 30 → small_spec fails
-        )
+        result = _classify_dna(dict(self.ALL_FALSE), "Technology")
         assert result == "mixed", (
             f"Expected 'mixed' when all conditions are false, got {result!r}"
+        )
+
+    @pytest.mark.parametrize(
+        "required", ["quality_pct", "value_pct", "payout_pct", "low_vol_pct"]
+    )
+    def test_missing_required_block_b_input_is_not_evaluable(self, required: str):
+        """RULING-A: a None Block-B input is NOT EVALUABLE (None), never 'mixed'.
+
+        The distinction this pins is the whole point of the class: a backfill row
+        with no inputs must not be published as the 'mixed' archetype.
+        """
+        from scripts.build_factor_panel import _classify_dna
+
+        row = dict(self.ALL_FALSE)
+        row[required] = None
+        assert _classify_dna(row, "Technology") is None, (
+            f"{required}=None must yield None (NOT EVALUABLE), not a class string"
         )

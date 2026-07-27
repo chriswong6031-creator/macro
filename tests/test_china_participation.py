@@ -140,6 +140,32 @@ def _make_limit_breadth_flows(n: int = 30, start: str = "2026-05-27") -> pd.Data
     )
 
 
+def _make_limit_tape(n: int = 200, start: str = "2014-02-11") -> pd.DataFrame:
+    """W1 china_microstructure/limit_tape.parquet — the PREFERRED zt_breadth source.
+
+    limit_up_breadth_pct is % of the ~5000-name A-share universe at limit-up, so it
+    lives in the same units as the _ZT_BREADTH_* thresholds (unlike the
+    china_flows/limit_breadth.parquet seal_rate fallback, which is 56-85 and would
+    fire zt_hot on every row).
+
+    Dated to match _make_turnover: build_tape drops every row where turnover_total,
+    margin_balance, southbound_net and qvix are ALL null, so a tape on non-overlapping
+    dates would be silently discarded before the schema assertions ever see it.
+
+    failed_up_seal_count / limit_up_count are the raw columns build_tape divides into
+    the failed_seal_ratio column — NOT a precomputed ratio.
+    """
+    idx = pd.date_range(start, periods=n, freq="B")
+    rng = np.random.default_rng(7)
+    limit_up_count = rng.integers(20, 200, n)
+    return pd.DataFrame(
+        {"limit_up_breadth_pct": rng.uniform(0.5, 6.0, n),
+         "limit_up_count": limit_up_count,
+         "failed_up_seal_count": (limit_up_count * rng.uniform(0.05, 0.4, n)).astype(int)},
+        index=idx,
+    )
+
+
 # ---------------------------------------------------------------------------
 # Context manager: patch data loaders with temp parquet files
 # ---------------------------------------------------------------------------
@@ -166,9 +192,11 @@ class _FakeDataDir:
         self._write("china_flows/etf_shares.parquet", _make_etf_shares())
         self._write("china_flows/limit_breadth.parquet", _make_limit_breadth_flows())
         if self._ms:
-            from engine.china_participation import (
-                _TAPE_PATH,  # noqa: F401 — not relevant, just confirming import works
-            )
+            # W1 preferred source.  This branch used to be a no-op import of
+            # `engine.china_participation._TAPE_PATH` — a name that module has never
+            # defined — and no caller ever passed include_microstructure=True, so it
+            # never ran and the preferred _load_limit_breadth path had zero coverage.
+            self._write("china_microstructure/limit_tape.parquet", _make_limit_tape())
 
     def patch(self):
         return mock.patch("engine.china_participation._ROOT", str(self.root))
@@ -547,6 +575,49 @@ def test_degrade_missing_microstructure_degrades_to_null():
             check("no seal_rate-scale values in zt_breadth",
                   result.dropna().empty or result.dropna().max() < 10,
                   f"max={result.dropna().max():.1f} (seal_rate range is 56-85)")
+
+
+def test_w1_limit_tape_is_preferred_over_seal_rate_fallback():
+    """When china_microstructure/limit_tape.parquet IS present, zt_breadth comes from it.
+
+    This is the other half of test_degrade_missing_microstructure_degrades_to_null and
+    the first test ever to run `_FakeDataDir(include_microstructure=True)`.  The flag
+    existed but its body was a no-op import of a nonexistent name, so the preferred
+    W1 branch of _load_limit_breadth() had never been executed by any test — only the
+    degrade branch was covered.
+    """
+    with _FakeDataDir(include_microstructure=True):
+        import engine.china_participation as cp
+        result, gaps = cp._load_limit_breadth()
+
+    check("zt_breadth populated from W1 limit_tape", not result.empty,
+          f"result empty — preferred branch not taken; gaps={gaps}")
+    check("series named zt_breadth", result.name == "zt_breadth", f"name={result.name!r}")
+    # Fixture range is 0.5-6.0 (% of universe). seal_rate would be 50-90.
+    check("values are universe-breadth units, not seal_rate",
+          result.max() < 10.0,
+          f"max={result.max():.1f} — looks like seal_rate (50-90), not breadth %")
+    check("no degrade gap when W1 tape present",
+          not any("limit_breadth:" in g for g in gaps),
+          f"gaps: {gaps}")
+
+
+def test_w1_limit_tape_reaches_the_built_tape():
+    """zt_breadth from the W1 tape must survive into build_tape output, non-null."""
+    with _FakeDataDir(include_microstructure=True):
+        import engine.china_participation as cp
+        tape = cp.build_tape(backfill=True)
+
+    check("zt_breadth column present", "zt_breadth" in tape.columns, f"cols={list(tape.columns)}")
+    nn = tape["zt_breadth"].notna().sum()
+    check("zt_breadth has non-null rows", nn > 0,
+          f"all-null zt_breadth despite W1 limit_tape fixture (rows={len(tape)})")
+    check("zt_breadth in universe-breadth units", tape["zt_breadth"].max() < 10.0,
+          f"max={tape['zt_breadth'].max():.1f} — seal_rate (50-90) leaked in")
+    # failed_seal_ratio rides the same W1 artifact (derived from the raw count columns)
+    check("failed_seal_ratio populated from W1 limit_tape",
+          tape["failed_seal_ratio"].notna().sum() > 0,
+          "failed_seal_ratio all-null despite limit_up_count/failed_up_seal_count present")
 
 
 def test_latest_snapshot_shape():

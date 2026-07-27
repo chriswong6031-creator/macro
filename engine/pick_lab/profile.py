@@ -220,7 +220,7 @@ def _hk_benchmark_loader() -> Optional[pd.Series]:
     Lazy import so the function only runs on the HK runner (not in US/CN tests).
     """
     try:
-        from engine.data_store import store  # type: ignore[import]
+        from lib import store
         df = store.read("hk", "^HSI")
         if df is None or df.empty:
             return None
@@ -238,7 +238,7 @@ def _cn_benchmark_loader() -> Optional[pd.Series]:
     Lazy import so the function only runs on the CN runner (not in US tests).
     """
     try:
-        from engine.data_store import store  # type: ignore[import]
+        from lib import store
         df = store.read("china", "510300.SS")
         if df is None or df.empty:
             return None
