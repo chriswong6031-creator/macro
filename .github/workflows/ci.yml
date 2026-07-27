@@ -396,6 +396,17 @@ on:
       - "tests/test_china_einteraction_collector.py"
       - "tests/test_china_reports_collector.py"
       - "tests/test_china_holder_counts_collector.py"
+      # W3 CNH policy/OMO/trade-detail collectors. Same wiring law: collectors/**
+      # already triggers the job, but a test-only edit (a re-pinned live fixture) must
+      # re-run it too. test_china_official_corpora.py was named by NO job before this —
+      # the corpus fetcher's whole surface merged untested for its entire life, which
+      # is exactly the #1253 shape, and W3 adds a gov.cn json_feed organ to it.
+      - "tests/test_china_omo_collector.py"
+      - "tests/test_china_trade_detail_collector.py"
+      - "tests/test_china_official_corpora.py"
+      - "tests/fixtures/china_omo/**"
+      - "tests/fixtures/china_trade_detail/**"
+      - "tests/fixtures/china_official_corpora/**"
       # Whole-board 涨跌家数: the heatmap card quotes a ~5,200-name count, and the
       # engine gates the row against the map's own session. Both suites were
       # previously named by NO job (#1253 wiring law) — test_market_heatmap.py

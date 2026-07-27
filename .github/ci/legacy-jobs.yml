@@ -664,6 +664,11 @@ jobs:
     # fixture-pinned parsers over live CN vendor responses, i.e. exactly the code that
     # rots silently when the vendor's shape drifts. Offline only (no network in tests);
     # beautifulsoup4 + lxml are needed because the e互动 planes are HTML, not JSON.
+    #
+    # W3 adds the policy/OMO/trade-detail step below. tests/test_china_official_corpora.py
+    # joins it as the same class of defect the job exists for: it was named by NO job
+    # from the day it was written, so the official-corpus fetcher — now carrying the
+    # gov.cn policy-library json_feed organ — had no CI at all.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -674,6 +679,8 @@ jobs:
         run: pip install pytest pandas pyarrow requests beautifulsoup4 lxml pyyaml
       - name: china native interaction + sell-side collector tests (W1 CNH)
         run: python -m pytest tests/test_china_irm_collector.py tests/test_china_einteraction_collector.py tests/test_china_reports_collector.py tests/test_china_holder_counts_collector.py -q
+      - name: china native policy / OMO / trade-detail collector tests (W3 CNH)
+        run: python -m pytest tests/test_china_omo_collector.py tests/test_china_trade_detail_collector.py tests/test_china_official_corpora.py -q
 
   china-board-breadth:
     if: ${{ false }}

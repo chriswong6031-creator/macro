@@ -15,6 +15,7 @@ Regression:
 """
 from __future__ import annotations
 
+import json
 import sys
 from datetime import date
 from pathlib import Path
@@ -24,6 +25,8 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from collectors import china_official_corpora as coc  # noqa: E402
+
+_FIX = Path(__file__).resolve().parent / "fixtures" / "china_official_corpora"
 
 
 # --------------------------------------------------------------------------- #
@@ -96,6 +99,136 @@ def test_same_site_matcher():
     assert coc._same_site("http://www.pbc.gov.cn/x", "pbc.gov.cn")
     assert coc._same_site("/relative/path", "pbc.gov.cn")   # relative = same page
     assert not coc._same_site("http://evil.com/x", "pbc.gov.cn")
+
+
+# --------------------------------------------------------------------------- #
+# W3: gov.cn policy-library json_feed organ
+#
+# The search API (sousuo.www.gov.cn/search-gov/data) is dead to unauthenticated
+# callers — 200 with totalCount pinned at 0 on every param variant, verified
+# 2026-07-27 — so the organ rides the page's own static sidecar JSON instead. The
+# fixture is the live head-25 of that feed.
+# --------------------------------------------------------------------------- #
+_FEED_BYTES = _FIX.joinpath("zuixin_feed_head25.json").read_bytes()
+_FEED_URL = "https://www.gov.cn/zhengce/zuixin/ZUIXINZHENGCE.json"
+
+
+def test_json_feed_organ_is_registered():
+    feeds = [o for o in coc.ORGANS if o.get("kind") == "json_feed"]
+    assert len(feeds) == 1
+    organ = feeds[0]
+    assert organ["organ"] == "gov_policy_library"
+    assert organ["url"] == _FEED_URL
+    assert organ["domain"] == "gov.cn" and organ["theme"] == "policy"
+
+
+def test_json_feed_parses_the_live_head25():
+    links = coc.parse_json_feed(_FEED_BYTES, _FEED_URL)
+    assert len(links) == 25
+    first = links[0]
+    assert first["title"].startswith("中共中央 国务院转发")
+    assert first["href"] == "https://www.gov.cn/zhengce/202607/content_7076696.htm"
+    # seendate is the feed's OWN DOCRELPUBTIME, not a date scraped out of the body.
+    assert first["seendate"] == "2026-07-27"
+    assert all(len(l["seendate"]) == 10 for l in links)
+
+
+def test_json_feed_is_newest_first():
+    dates = [l["seendate"] for l in coc.parse_json_feed(_FEED_BYTES, _FEED_URL)]
+    assert dates == sorted(dates, reverse=True)
+
+
+def test_json_feed_cap_takes_the_newest_n():
+    links = coc.parse_json_feed(_FEED_BYTES, _FEED_URL, cap=5)
+    assert len(links) == 5
+    assert links[0]["seendate"] == "2026-07-27"
+
+
+def test_json_feed_tolerates_a_utf8_bom():
+    # The live feed carried no BOM on 2026-07-27, but the same CMS emits BOM'd JSON
+    # elsewhere and json.loads chokes on one.
+    assert len(coc.parse_json_feed(b"\xef\xbb\xbf" + _FEED_BYTES)) == 25
+    assert len(coc.parse_json_feed(_FEED_BYTES.decode("utf-8"))) == 25
+
+
+def test_json_feed_drops_keyless_items_and_dedupes():
+    payload = json.dumps([
+        {"TITLE": "有效文件", "URL": "/a.htm", "DOCRELPUBTIME": "2026-07-27"},
+        {"TITLE": "", "URL": "/b.htm", "DOCRELPUBTIME": "2026-07-26"},     # no title
+        {"TITLE": "无链接", "URL": "", "DOCRELPUBTIME": "2026-07-25"},      # no URL
+        {"TITLE": "重复", "URL": "/a.htm", "DOCRELPUBTIME": "2026-07-24"},  # dup href
+        "not-a-dict",
+    ])
+    links = coc.parse_json_feed(payload, "https://www.gov.cn/zhengce/")
+    assert [l["title"] for l in links] == ["有效文件"]
+    assert links[0]["href"] == "https://www.gov.cn/a.htm"
+
+
+def test_json_feed_degrades_on_a_shape_change():
+    assert coc.parse_json_feed(b"not json at all") == []
+    assert coc.parse_json_feed("") == []
+    assert coc.parse_json_feed({"unexpected": "envelope"}) == []
+    assert coc.parse_json_feed(None) == []
+
+
+def test_fetch_organ_json_feed_branch_keeps_the_feed_date(monkeypatch):
+    """The leaf-fetch/dedup/cap machinery is shared; only link DISCOVERY differs."""
+    organ = [o for o in coc.ORGANS if o.get("kind") == "json_feed"][0]
+    body = "<html><body>本通知自2019年1月1日起施行。</body></html>"
+
+    def _get(url, timeout=15):
+        return (_FEED_BYTES.decode("utf-8"), "application/json") if url == _FEED_URL \
+            else (body, "text/html")
+
+    monkeypatch.setattr(coc, "_get", _get)
+    rows = coc._fetch_organ(organ, date(2026, 7, 27),
+                            {"max_docs_per_organ": 3, "request_pace_s": 0},
+                            "2026-07-27T00:00:00+00:00", 0)
+    assert len(rows) == 3
+    assert {r["organ"] for r in rows} == {"gov_policy_library"}
+    # The body quotes 2019 (the rule it amends). The FEED's date must win — a
+    # body-scraped date would file a same-day policy seven years in the past.
+    assert rows[0]["seendate"] == "2026-07-27"
+    assert rows[0]["timestamp_quality"] == "PUBLISHER_STATED"
+    assert rows[0]["layout_rank"] == -1
+    assert rows[0]["body_sha256"] and rows[0]["lang"] == "zh"
+
+
+def test_fetch_organ_json_feed_drops_offsite_links(monkeypatch):
+    """A feed is no more trustworthy than an index page — same-site still applies."""
+    organ = [o for o in coc.ORGANS if o.get("kind") == "json_feed"][0]
+    feed = json.dumps([
+        {"TITLE": "国务院文件", "URL": "https://www.gov.cn/zhengce/a.htm",
+         "DOCRELPUBTIME": "2026-07-27"},
+        {"TITLE": "站外链接", "URL": "https://evil.example.com/x.htm",
+         "DOCRELPUBTIME": "2026-07-27"},
+    ])
+
+    def _get(url, timeout=15):
+        return (feed, "application/json") if url == _FEED_URL else ("<p>正文</p>", "text/html")
+
+    monkeypatch.setattr(coc, "_get", _get)
+    rows = coc._fetch_organ(organ, date(2026, 7, 27),
+                            {"max_docs_per_organ": 10, "request_pace_s": 0},
+                            "2026-07-27T00:00:00+00:00", 0)
+    assert [r["url"] for r in rows] == ["https://www.gov.cn/zhengce/a.htm"]
+
+
+def test_fetch_organ_index_branch_still_derives_its_own_date(monkeypatch):
+    """REGRESSION: extract_links emits no seendate, so index organs are unchanged."""
+    organ = [o for o in coc.ORGANS if o["organ"] == "pboc"][0]
+    index = '<a href="/art/1.htm">适度宽松的货币政策落地实施</a>'
+    body = "<html><body>发布日期 2026-07-02 央行公告</body></html>"
+
+    def _get(url, timeout=15):
+        return (index, "text/html") if url == organ["url"] else (body, "text/html")
+
+    monkeypatch.setattr(coc, "_get", _get)
+    rows = coc._fetch_organ(organ, date(2026, 7, 27),
+                            {"max_docs_per_organ": 3, "request_pace_s": 0},
+                            "2026-07-27T00:00:00+00:00", 0)
+    assert len(rows) == 1
+    assert rows[0]["seendate"] == "2026-07-02"      # derived from the body, as before
 
 
 # --------------------------------------------------------------------------- #

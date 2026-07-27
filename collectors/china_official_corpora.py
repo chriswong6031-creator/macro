@@ -41,6 +41,7 @@ See the `china_official` block in config.yml.
 from __future__ import annotations
 
 import hashlib
+import json
 import logging
 import re
 import time
@@ -74,6 +75,21 @@ ORGANS: list[dict] = [
     {"organ": "state_council", "name": "State Council 国务院",
      "url": "https://www.gov.cn/zhengce/",
      "domain": "gov.cn", "kind": "index", "theme": "policy"},
+    # W3 CNH. The State Council policy LIBRARY (国务院政策文件库) is a different plane
+    # from /zhengce/ above: /zhengce/ is the rolling news column, the library is the
+    # curated document set. Its search API (sousuo.www.gov.cn/search-gov/data) is DEAD
+    # to unauthenticated callers — it echoes the params and answers totalCount:0 on
+    # every variant, cookie warm-up and referer included (verified 2026-07-27) — and
+    # /zhengce/zhengceku/ is path-403. The transport that DOES work is the page's own
+    # static sidecar JSON, which is ~260 KB, carries ~1,082 documents and is current
+    # same-day. kind="json_feed" selects that parse branch.
+    {"organ": "gov_policy_library", "name": "Policy Library 国务院政策文件库",
+     "url": "https://www.gov.cn/zhengce/zuixin/ZUIXINZHENGCE.json",
+     "domain": "gov.cn", "kind": "json_feed", "theme": "policy"},
+    # MIIT (工信部) is DEFERRED, not forgotten: its list pages are jpaas JavaScript
+    # shells — a 2,116-byte layui/requirejs stub with no documents in the HTML
+    # (verified 2026-07-27). Recorded here so nobody re-attempts a blind HTML fetch;
+    # a revival needs the underlying jpaas JSON endpoint, which W3 did not locate.
     {"organ": "pboc", "name": "PBOC 人民银行",
      "url": "http://www.pbc.gov.cn/goutongjiaoliu/113456/113469/index.html",
      "domain": "pbc.gov.cn", "kind": "index", "theme": "monetary"},
@@ -201,6 +217,62 @@ def extract_links(html_text: str, base_url: str, domain: str,
         seen.add(href)
         out.append({"title": title, "href": href})
     return out
+
+
+_FEED_CAP = 30   # newest N feed items considered, BEFORE the per-organ max_docs cap
+
+
+def parse_json_feed(payload, base_url: str = "", cap: int = _FEED_CAP) -> list[dict]:
+    """gov.cn policy-library sidecar JSON → the SAME leaf shape extract_links emits.
+
+    Items are ``{TITLE, SUB_TITLE, URL, DOCRELPUBTIME}``; the returned dicts carry the
+    usual {title, href} plus a ``seendate`` that the leaf-fetch flow prefers over the
+    date it would otherwise scrape out of the body. That is the point of the branch:
+    the feed STATES each document's publication date, so there is no reason to infer
+    one from the article text (and a policy document's body routinely quotes several
+    other dates before its own).
+
+    Accepts bytes or str and decodes utf-8-**sig**: the live feed carried no BOM on
+    2026-07-27, but the same CMS emits BOM'd JSON elsewhere and json.loads chokes on
+    one. PURE — no I/O, never raises: a shape change returns [] and the organ degrades
+    to zero documents rather than taking the whole crawl down.
+    """
+    try:
+        if isinstance(payload, (bytes, bytearray)):
+            payload = bytes(payload).decode("utf-8-sig", errors="replace")
+        if isinstance(payload, str):
+            payload = json.loads(payload.lstrip("﻿"))
+    except Exception as e:  # noqa: BLE001
+        log.warning("china_official: json_feed payload unparseable (%s)", e)
+        return []
+    if not isinstance(payload, list):
+        payload = (payload or {}).get("data") if isinstance(payload, dict) else None
+        if not isinstance(payload, list):
+            return []
+    rows = []
+    for item in payload:
+        if not isinstance(item, dict):
+            continue
+        title = str(item.get("TITLE") or item.get("SUB_TITLE") or "").strip()
+        href = str(item.get("URL") or "").strip()
+        if not title or not href:
+            continue
+        rows.append({
+            "title": title,
+            "href": urljoin(base_url, href) if base_url else href,
+            "seendate": str(item.get("DOCRELPUBTIME") or "").strip()[:10],
+        })
+    # Newest first. The live feed already arrives in that order, but the sort is what
+    # makes the cap MEAN "newest N" rather than "whatever the CMS put on top today".
+    rows.sort(key=lambda r: r["seendate"], reverse=True)
+    seen: set[str] = set()
+    out = []
+    for r in rows:
+        if r["href"] in seen:
+            continue
+        seen.add(r["href"])
+        out.append(r)
+    return out[:cap] if cap and cap > 0 else out
 
 
 def _doc_id(organ: str, url: str, title: str) -> str:
@@ -352,6 +424,7 @@ def _fetch_organ(organ: dict, today: date, cfg: dict,
     max_docs = int(cfg.get("max_docs_per_organ", 12))
     fetch_bodies = bool(cfg.get("fetch_bodies", True))
     is_layout = organ.get("kind") == "layout"
+    is_feed = organ.get("kind") == "json_feed"
 
     index_url = _peoples_daily_url(today) if is_layout else organ["url"]
     got = _get(index_url, timeout=int(cfg.get("timeout_s", 15)))
@@ -359,8 +432,18 @@ def _fetch_organ(organ: dict, today: date, cfg: dict,
         log.debug("china_official: index fetch failed for %s", organ["organ"])
         return []
     index_html, _ = got
-    links = extract_links(index_html, index_url, organ["domain"],
-                          min_title=int(cfg.get("min_title", 6)))[:max_docs]
+    if is_feed:
+        # The feed replaces only the LINK-DISCOVERY step; the leaf fetch, body hash,
+        # doc_id and per-organ cap below are the same machinery every organ rides.
+        # The same-site filter is applied here rather than inside the parser so the
+        # parser stays domain-agnostic — but it IS applied: extract_links enforces it
+        # for every other organ, and a feed is no more trustworthy than an index page.
+        links = [ln for ln in parse_json_feed(
+            index_html, index_url, cap=int(cfg.get("feed_cap", _FEED_CAP)))
+            if _same_site(ln["href"], organ["domain"])][:max_docs]
+    else:
+        links = extract_links(index_html, index_url, organ["domain"],
+                              min_title=int(cfg.get("min_title", 6)))[:max_docs]
     if not links:
         return []
 
@@ -369,14 +452,19 @@ def _fetch_organ(organ: dict, today: date, cfg: dict,
         title = ln["title"]
         url = ln["href"]
         body = ""
-        seendate = ""
+        # A link that STATES its own publication date (the json_feed branch) keeps it:
+        # scraping a date out of the body would silently prefer whatever date the
+        # document happens to quote first, which for a policy document is usually the
+        # date of the rule it amends. extract_links() emits no seendate, so every
+        # pre-existing organ falls through to the body/URL derivation unchanged.
+        seendate = str(ln.get("seendate") or "")
         if fetch_bodies:
             if pace:
                 time.sleep(pace)
             leaf = _get(url, timeout=int(cfg.get("timeout_s", 15)))
             if leaf is not None:
                 body = _strip_html(leaf[0])[:int(cfg.get("max_body_chars", 20000))]
-                seendate = _doc_date(body) or _doc_date(url)
+                seendate = seendate or _doc_date(body) or _doc_date(url)
         seendate = seendate or _doc_date(url)
         tq = "PUBLISHER_STATED" if seendate else "CRAWL_BOUNDED"
         rows.append({
