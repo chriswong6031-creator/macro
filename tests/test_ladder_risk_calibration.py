@@ -215,6 +215,12 @@ def test_grep_gate_whole_tree_clean():
     assert GATE.scan(list_all=False) == [], "committed tree has an unearned 'validated' claim"
 
 
+# Scan SCOPE (which surfaces BC-2 may judge at all) is pinned in
+# tests/test_validated_claims_scope.py — deliberately a separate, stdlib-only module so it
+# runs in the PR lane (engine-render-guards / ci-pack-0). THIS file is wired only to
+# cycle-calibration.yml, a monthly cron with no pull_request trigger.
+
+
 # ── 5. null-cell discipline ──────────────────────────────────────────────────
 
 def test_null_cell_ci_includes_null_gives_weight_one():

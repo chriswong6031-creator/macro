@@ -634,6 +634,9 @@ on:
       # are caught before merge (not just in the nightly calibration run).
       - "scripts/check_validated_claims.py"
       - "data/regime/validated_claims_allowlist.json"
+      # Scan-scope pins (which surfaces BC-2 may judge). Named so an edit to the
+      # scope test ALONE still triggers the lane that runs it.
+      - "tests/test_validated_claims_scope.py"
       # Mastermind Feedback Contract PR-A (FB-R12/R13): privacy-boundary guard.
       # Any change to the guard script, its tests, committed governance/feedback
       # artifacts, .gitignore, or operator_grading must re-prove the rail holds.

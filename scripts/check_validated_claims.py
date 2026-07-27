@@ -18,6 +18,15 @@ NEGATED / HEDGED uses are NOT claims and are ignored automatically:
 These are honest disclaimers ("HK has no validated selection edge") and must never be
 forced to cite an artifact.
 
+INGESTED THIRD-PARTY DOCUMENT TEXT is likewise not a claim (see _INGESTED_SURFACES).
+BC-2 governs what the PLATFORM asserts. The research vault hosts third-party research
+verbatim; a sell-side economist writing that a CPI print "validated two likely sources
+of ongoing disinflation" is quoted speech, and there is no artifact of ours for it to
+cite. Those rendered surfaces are out of scope BY CONSTRUCTION — never per-phrase
+allowlisted, because an allowlist entry must name the evidence a claim rests on, and
+"this is not our claim" is the wrong shape for that file. The templates those pages
+render from stay scanned, so every word WE write on them is still gated.
+
 The gate is phrase-scoped, not file:line-scoped, so it survives page regeneration (the
 per-basket/per-stock pages repeat one template phrase; one allowlist entry covers them all).
 Rendered site HTML is autoescaped ('&' -> '&amp;', quotes -> '&#39;'/'&#34;'), so token,
@@ -52,6 +61,49 @@ SCAN_GLOBS = [
 ]
 
 TOKEN = re.compile(r"validated|已验证", re.IGNORECASE)
+
+# INGESTED THIRD-PARTY SURFACES — rendered pages whose prose is text we ingested VERBATIM
+# from someone else's research PDF. BC-2 adjudicates claims the PLATFORM makes about its
+# own signals; it was never meant to adjudicate a Goldman Sachs economics note we host
+# behind a paywall. Skipped BY CONSTRUCTION, like _STRUCTURAL — the axis here is
+# PROVENANCE (displayed prose, but not ours) rather than syntax (not displayed prose).
+#
+# Why not an allowlist entry: the allowlist's own contract is "each entry justifies an
+# affirmative use by naming the backing evidence artifact ... adding an entry is a claim
+# of record". An ingested sentence has no backing artifact of ours to name, so the entry
+# reads "NOT a platform claim" in a field reserved for citations. Worse, `match` is a
+# phrase, so an entry clears exactly ONE ingested document and the next nightly ingest
+# re-reds main. That is what happened: render ff5d3b1c8 (2026-07-27) mirrored a US Daily
+# note in, main went red, #3767 allowlisted the one phrase — leaving ~161 catalogued
+# reports and every future drop as live re-red vectors.
+#
+# SAFE — no platform claim loses coverage. Each surface below is (a) house chrome that
+# lives in a templates/*.j2 the gate STILL scans, plus (b) fields off the ingest catalog.
+# There is no third category, and that is verifiable at the call sites:
+#   • scripts/build_research_vault.render() renders research_vault.html.j2 with exactly
+#     two variables — catalog_json and ssr_feed — both projected from the catalog.
+#   • scripts/build_research_pages.build() renders research_report.html.j2 with only
+#     normalized catalog fields (title/institution/teaser/tags/related) plus
+#     excerpt_paras, the verbatim first pages of the PDF.
+# So our copy on these pages is gated at its source. tests/test_validated_claims_scope.py
+# pins both halves: the surfaces are skipped AND their templates still fire.
+_INGESTED_SURFACES = (
+    "site/research/",            # per-report SEO landing pages + the /research/ crawl hub
+    "site/research_vault.html",  # the vault page: SSR feed cards + the rv-catalog island
+)
+
+
+def _is_ingested_surface(rel_path: str) -> bool:
+    """Is `rel_path` (repo-relative, posix) a rendered ingested-document surface?
+
+    A trailing '/' entry matches the directory tree; anything else matches exactly. Kept
+    strict so siblings stay in scope — site/research_vault_app.js is hand-written house
+    JS and MUST keep failing on an unearned claim.
+    """
+    rel = rel_path.replace("\\", "/")
+    return any(rel.startswith(p) if p.endswith("/") else rel == p
+               for p in _INGESTED_SURFACES)
+
 
 # STRUCTURAL non-claims — the token here is a code identifier, a data-field key/value, or an
 # i18n token, NOT a displayed prose claim. BC-2 targets DISPLAYED CLAIMS, so these are skipped
@@ -177,6 +229,8 @@ def scan(list_all: bool = False) -> list[dict]:
             for f in sorted(base.rglob(pat)):
                 if "node_modules" in str(f):
                     continue
+                if _is_ingested_surface(f.relative_to(ROOT).as_posix()):
+                    continue                                # quoted third-party document
                 try:
                     lines = f.read_text(encoding="utf-8").splitlines()
                 except Exception:  # noqa: BLE001
@@ -239,6 +293,25 @@ def selftest() -> int:
         if fired != should_fire:
             ok = False
         print(f"  [{status}] {name}: fired={fired} expected={should_fire}")
+
+    # Scope half of the gate: the ingested-document exemption must cover the WHOLE vault
+    # (any future drop, not one phrase) while leaving every sibling surface in scope.
+    # Paths only — nothing here touches the tree.
+    for path, skipped in [
+        ("site/research/us-daily-oil-rebound-inflation-3da181.html", True),
+        ("site/research/some-report-ingested-next-nightly-000000.html", True),
+        ("site/research/index.html", True),
+        ("site/research_vault.html", True),
+        ("site/research_vault_app.js", False),      # hand-written house JS
+        ("site/index.html", False),
+        ("templates/research_report.html.j2", False),
+        ("templates/research_vault.html.j2", False),
+    ]:
+        got = _is_ingested_surface(path)
+        status = "PASS" if got == skipped else "FAIL"
+        if got != skipped:
+            ok = False
+        print(f"  [{status}] scope {path}: skipped={got} expected={skipped}")
     return 0 if ok else 1
 
 

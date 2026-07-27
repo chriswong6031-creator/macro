@@ -18,6 +18,20 @@ allocations — the gauntlet/epistemics promotion law does not apply. It DOES ob
 `validated`-word ban (CI-enforced), the user-first design doctrine, bilingual EN/ZH, and
 the paywall/quota entitlement law (server enforces; client chrome is decorative).
 
+**Scope of the `validated`-word ban here (amended 2026-07-27).** The ban binds the copy
+*we* write — which lives in `templates/research_{vault,report,index}.*` and is scanned by
+`scripts/check_validated_claims.py` as before. It does NOT bind text ingested verbatim
+from a third-party PDF: an analyst writing that a CPI print "validated two likely sources
+of ongoing disinflation" is quoted speech, and BC-2's contract ("every number the platform
+shows traces to a stored artifact") has nothing to attach to. The rendered ingest surfaces
+— `site/research/**` and `site/research_vault.html` — are therefore out of BC-2's scan
+scope by construction (`_INGESTED_SURFACES`), because they contain only house chrome from
+those scanned templates plus catalog/excerpt fields. Precipitating incident: the 2026-07-27
+nightly render mirrored in a US Daily note and red-lined main plus every open PR's
+ci-pack-0; the first fix (#3767) allowlisted the one phrase, which would have re-red the
+build on the next drop carrying the word. Do not allowlist ingested phrases — the allowlist
+is a citation registry.
+
 **Operator/legal note:** distribution rights for third-party research are an operator/legal
 responsibility. This system enforces *access control* (who may view/download, how many per
 day) and *traceability* (per-user watermark); it does not adjudicate redistribution rights.

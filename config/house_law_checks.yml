@@ -455,6 +455,14 @@ checks:
       - Scans templates/, site/*.js, generated *_data.js only; does not scan
         research/*.md (frozen Fable ruling 2026-07-06 — see
         epistemics.research_docs_not_scanned).
+      - Does not scan the research vault's ingested-document surfaces
+        (site/research/** and site/research_vault.html — _INGESTED_SURFACES,
+        2026-07-27). BC-2 judges claims the PLATFORM makes; those pages carry
+        third-party research text verbatim, which has no artifact of ours to
+        cite. Coverage is NOT lost — the pages render from
+        templates/research_{vault,report,index}.*, which stay scanned, and the
+        only interpolated values come from the ingest catalog. Scope pinned by
+        tests/test_validated_claims_scope.py.
     owner_program: engine-fix-masterplan
     notes: null
 
