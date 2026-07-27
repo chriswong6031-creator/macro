@@ -240,6 +240,12 @@ entries:
     section: 2
     section_name: killed_signal_families
 
+  - topic: 'Persistent ex-self sector-peer new-low diffusion at a name-specific tested low (PSS-SR2)'
+    verdict: 'KILLED — the exact externally-labeled construction solved SR1''s coverage and safe-late problems but failed in the opposite direction on every outcome layer. The frozen tape contains 3,586 treatments across 791 names (659 names with ≥3) and 69 DEV / 55 VAL exact sector×month×anchor-severity×delay strata; treatment-control action distance is only +0.03/+0.00 ATR, so the result is not SR1''s rebound-distance confound. Yet stratified DEV effects are adverse on MAE −2.14pp (3-month-block CI [−3.32,−1.25], within-stratum permutation p=0.9995), tail −6.97pp, W5 −14.73pp, called −9.06pp, and rebound-first −16.42pp; VAL independently worsens MAE −2.80pp ([−4.32,−1.22], p=0.9990), tail −12.68pp, W5 −18.78pp, called −3.77pp, and rebound-first −16.78pp. FWD MAE remains negative. Mechanism inversion: once peers stop making new lows, a subject that alone returns to its reference low is an idiosyncratic laggard, not evidence that systemic supply is terminal. Close the exact fresh-low anchor→1ATR rebound→first tested-low→three-session ex-self breadth≤0.5×peak construction. Do not reverse the label, shorten persistence, change the 0.50 ratio, or remove the tested-low condition on this inspected history. Peer-state research remains open only as a genuinely new preregistered species that does not condition on the subject lagging recovered peers; any sign-reversed idea must accrue prospectively or use untouched data.'
+    source: '`research/PSS_SR2_PEER_DIFFUSION_PREREG.md`; `reports/pss_sr2_peer_diffusion.md` (family `pss_sr2_peer_diffusion`, 2026-07-27)'
+    section: 2
+    section_name: killed_signal_families
+
   - topic: 'Washout × turn (2W operator seed)'
     verdict: 'KILLED — operator seed dies in test'
     source: 'Entry-stack Amendment-3 adjudication (#1747)'
