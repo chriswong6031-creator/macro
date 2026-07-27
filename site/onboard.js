@@ -290,10 +290,10 @@
       { l: ["Daily macro dashboards", "每日宏观看板"],     v: [1, 1, 1] },
       { l: ["Stock dossiers", "个股档案"],                 v: [1, 1, 1] },
       { l: ["Theme rotation lanes", "主题轮动通道"],       v: [1, 1, 1] },
-      { l: ["Insider & Congress desks", "内部人 & 国会台席"], v: [0, 1, 1] },
       { l: ["Special situations", "特殊机会"],             v: [1, 1, 1] },
-      { l: ["13F institutional flows", "13F 机构资金流"],  v: [0, 1, 1] },
-      { l: ["Bitcoin · Commodities · FX", "比特币 · 大宗 · 外汇"], v: [1, 1, 1] }
+      { l: ["Bitcoin · Commodities · FX", "比特币 · 大宗 · 外汇"], v: [1, 1, 1] },
+      { l: ["Insider & Congress desks", "内部人 & 国会台席"], v: [0, 1, 1] },
+      { l: ["13F institutional flows", "13F 机构资金流"],  v: [0, 1, 1] }
     ] },
     { g: ["SIGNALS", "信号"], rows: [
       { l: ["Daily buy signals", "每日买入信号"], v: [["6 / day", "6 条/天"], ["Full book", "完整名册"], ["Full book", "完整名册"]] },
