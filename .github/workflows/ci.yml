@@ -1767,6 +1767,15 @@ on:
       - "tests/test_okx_retail.py"
       - "tests/test_w4_us_board.py"
       - "tests/test_w5b_edge_chips.py"
+      # ── RED-on-arrival sweep, batch C: PIT + frozen tape (2026-07-27) ───────
+      # Subjects are engine/setup_tier.py and scripts/build_stock_library.py, both
+      # already covered by the engine/** and scripts/*.py catch-alls above.  The
+      # probe fixture is listed too: it IS the input under test, so re-freezing the
+      # tape must retrigger the suite that reads it.
+      # unrun-pit-probes
+      - "tests/test_setup_tier.py"
+      - "tests/test_stock_personality_wiring.py"
+      - "tests/fixtures/setup_tier_probe_closes.parquet"
   workflow_dispatch:
 
 permissions:

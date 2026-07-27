@@ -53,9 +53,9 @@ def _washout_recovery(n_warm: int = 500, crash_bars: int = 30,
     return _series(np.concatenate([warmup, crash, recovery]))
 
 
-def _data_available() -> bool:
-    p = ROOT / "data" / "china_search" / "closes.parquet"
-    return p.exists()
+# (_data_available() was removed with the live-store read it guarded — the probe class
+# now reads a committed fixture, so there is no longer an environment in which these
+# tests should silently skip.  A skip that fires in CI is indistinguishable from a pass.)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -147,21 +147,35 @@ class TestWSetupSmoke:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 class TestWSetupProbeFixtures:
-    """Validate against the three exemplar probes from probes-inline.md.
+    """Validate w_setup() against the three exemplar probes from probes-inline.md.
 
-    These assert RELATIONSHIPS (d_at_cross < 15, approaching_up True) rather than
-    hard-coding exact numeric values, so the tests pass on any panel update that
-    keeps the same structural setup story.
+    These assert RELATIONSHIPS (d_at_cross < 15, macd_approaching_up True) rather than
+    exact numeric values — but a relationship about a LIVE tape is still a claim about
+    the market, not about the code.  Read against data/china_search/closes.parquet these
+    probes decayed as the names traded on: by 2026-07-27 two of the six were red
+    (300725's 2W stoch had recovered 24 -> 45 out of the washout band, and 688306's 2W
+    MACD was no longer approaching up), and the other four were passing on borrowed time.
+    The suite was run by no CI job, so the drift was invisible.
+
+    They now read a FROZEN slice of the same store — the three probed tickers truncated
+    at 2026-07-03, the tape the probes were authored against and the last date on which
+    all six relationships hold simultaneously.  That makes them a permanent regression
+    test of the ENGINE (which is what they were always for) instead of a rolling
+    assertion about three Chinese equities.  Regenerate only when the probe story is
+    deliberately re-authored:
+
+        python - <<'PY'
+        import pandas as pd
+        TK = ['300725.SZ', '688306.SS', '603129.SS']
+        df = pd.read_parquet('data/china_search/closes.parquet')[TK]
+        df[df.index <= '2026-07-03'].dropna(how='all').to_parquet(
+            'tests/fixtures/setup_tier_probe_closes.parquet')
+        PY
     """
-
-    @pytest.fixture(autouse=True)
-    def skip_if_no_data(self):
-        if not _data_available():
-            pytest.skip("closes.parquet absent — skip live probe fixtures")
 
     @pytest.fixture(scope="class")
     def closes(self):
-        return pd.read_parquet(ROOT / "data" / "china_search" / "closes.parquet")
+        return pd.read_parquet(ROOT / "tests" / "fixtures" / "setup_tier_probe_closes.parquet")
 
     def test_300725_1w_cross_from_washout_zone(self, closes):
         """300725.SZ: 1W StochRSI bull cross from deep washout zone (d < 25).
