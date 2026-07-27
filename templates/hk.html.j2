@@ -1015,6 +1015,9 @@
   body.page-hk .hkx-heat-legend{display:flex;justify-content:space-between;margin-top:7px;font-size:10px;font-weight:600;letter-spacing:.03em}
   body.page-hk .hkx-heat-legend .heat-up{color:var(--up)}
   body.page-hk .hkx-heat-legend .heat-dn{color:var(--down)}
+  {# wrapper for the in-page ilx charts (Canada's .cax-ilx equivalent — that class is
+     page-canada-scoped and does nothing here) #}
+  body.page-hk .hkx-ilx{margin:6px 0 2px}
   body.page-hk .hkx-stk{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:12px}
   body.page-hk .hkx-stk:last-of-type{border-bottom:none}
   body.page-hk .hkx-tkr-btn{display:inline-block;background:rgba(91,155,240,.10);border:1px solid rgba(91,155,240,.35);color:#a9c8f5;border-radius:8px;padding:3px 10px;font-weight:700;font-size:12px;cursor:pointer;text-decoration:none}
@@ -1732,6 +1735,12 @@
       </div>
       {% endfor %}
     </div>
+    {% if flow_charts and flow_charts.hsi %}
+    {# the tiles above are today's four levels; this is the two-year shape of the index
+       they all hang off, so the card answers "and where has it been?" #}
+    <div class="hkx-lbl">{{ t('Hang Seng, two years','恒生指数 · 近两年') }}</div>
+    <div class="hkx-ilx">{{ flow_charts.hsi | safe }}</div>
+    {% endif %}
     <div class="mx5-face-open"><span class="l-en">Open indexes &amp; heatmap</span><span class="l-zh">打开指数与热力图</span> &rarr;</div>
   </button>
 
@@ -1919,6 +1928,12 @@
         <span class="l-en">HK fear gauge {{ vhsi.level }} &middot; {{ _hk_pct | int }}th of its range</span>
         <span class="l-zh">港股恐慌指数 {{ vhsi.level }} &middot; 历史第 {{ _hk_pct | int }} 分位</span>
       </div>
+      {% if flow_charts and flow_charts.vhsi %}
+      {# the gauge shows today; this shows how today compares with the last two years,
+         anchored at the ~20 long-run middle (above = jumpier tape than normal). #}
+      <div class="hkx-lbl">{{ t('Two years of fear &amp; calm &middot; middle of its range = 20','近两年恐慌与平静 &middot; 区间中值 = 20') | safe }}</div>
+      <div class="hkx-ilx">{{ flow_charts.vhsi | safe }}</div>
+      {% endif %}
       {% else %}
       <div style="height:80px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px">{{ t('Building…','积累中…') }}</div>
       {% endif %}
@@ -1958,6 +1973,12 @@
         {% endfor %}
       </div>
       <div class="hkx-heat-legend"><span class="heat-up">{{ t('▲ Heating','▲ 升温') }}</span><span class="heat-dn">{{ t('Cooling ▼','降温 ▼') }}</span></div>
+      {% if flow_charts and flow_charts.breadth %}
+      {# the stance line at the top of this card is one breadth number; this is the shape
+         behind it, anchored at the 50% waterline (above = more than half the market up) #}
+      <div class="hkx-lbl">{{ t('How many stocks are above their 50-day line','站上50日线的个股占比') }}</div>
+      <div class="hkx-ilx">{{ flow_charts.breadth | safe }}</div>
+      {% endif %}
       {% else %}
       <p style="font-size:12px;color:var(--muted)">{{ t('Building…','积累中…') }}</p>
       {% endif %}
@@ -2835,6 +2856,17 @@
        settled — mirrors china.html.j2:cnxOpenDlg, so every open re-animates the ink. */
     if(window.ilxReveal){setTimeout(function(){ilxReveal(d);},340);}
   }
+  /* IN-PAGE ilx charts (Hang Seng / fear gauge history / breadth waterline) are new on this
+     page — every chart here used to live in a dialog, revealed by the handler above. An
+     in-page figure otherwise relies solely on illus.js's IntersectionObserver, so anything
+     above the fold at load could stay at its undrawn start state and render as an empty
+     card. ilxReveal() is illus.js's documented fallback: it skips figures the observer
+     already handled and skips display-hidden dialog charts, so only in-page ones backfill. */
+  (function(){
+    var go=function(){ if(window.ilxReveal){ ilxReveal(document); } };
+    if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',function(){setTimeout(go,60);});}
+    else{setTimeout(go,60);}
+  })();
   function hkxCloseDlg(){
     if(document.querySelector('.hm-ov'))return;
     if(!_hkxOpen)return;
