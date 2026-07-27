@@ -238,6 +238,34 @@ jobs:
         # must never drift. Skips cleanly when data/vector/*.json is absent.
         run: python -m pytest tests/test_signal_lab_vector_display.py -q
 
+  breakdown-control-seed-determinism:
+    if: ${{ false }}
+    # BD-4/5/6 control sampling derives a per-ticker RNG sub-seed from the ticker.
+    # Until 2026-07-26 that derivation was builtin hash(), which Python salts per
+    # process (PYTHONHASHSEED) — control draws differed on EVERY run while the frozen
+    # Phase-0/0b preregs promise seeded (reproducible) controls and the surrounding
+    # comment claimed "deterministic sub-seed". Same defect class as the chart_render
+    # SVG ids (#3785), fixed the same way: bd456_control_seed() now uses zlib.crc32.
+    # This lane runs the real derivation in fresh subprocesses under PYTHONHASHSEED
+    # 0/1/42 asserting identical seeds, and pins golden values so a silent regime
+    # change (mask width, XOR operator, encoding) also fails RED. The subprocess
+    # imports scripts.research.dump_breakdown_events wholesale (engine.grading +
+    # pandas/numpy/pyarrow closure; pyyaml for the repo conftest), so the install
+    # line is byte-identical to the trial-budgets/outcome-spine family and the pack
+    # runner can share a venv with any same-pack sibling on that line. Closure
+    # verified in a clean venv with exactly this install: 2 passed (plus the whole
+    # unwired-in-CI tests/test_breakdown_events.py suite: 122 passed).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: BD-4/5/6 control seeds must be PYTHONHASHSEED-stable (crc32, never hash())
+        run: python -m pytest tests/test_breakdown_seed_determinism.py -q
+
   outcome-spine:
     if: ${{ false }}
     # W4 (audit #13/#19/#23/#41/#42): the outcome spine + partial-pooling closed loop. The
