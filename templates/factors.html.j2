@@ -719,8 +719,8 @@
     {% if _comp and _comp.get('mean_ic') is not none and _comp.mean_ic < 0 %}
     <div class="ic-alert">
       <b>⚠ {{ t('The equal-weight composite has NEGATIVE predictive IC.', '等权综合因子的预测 IC 为负。') }}</b>
-      {{ t('Its blended mean IC is ' ~ ('%+.4f'|format(_comp.mean_ic)) ~ ' over ' ~ ic.rebalances ~ ' quarters — the naive all-factor blend INVERTS the cross-section on this panel, so it is worse than useless as a stock screen. Do NOT trade the composite. Judge each factor on its own row below: only a factor tagged VALIDATED (survives BH-FDR AND positive mean IC) has earned it, and even that is a marginal survivor on a survivorship-biased panel.',
-           '其混合平均 IC 为 ' ~ ('%+.4f'|format(_comp.mean_ic)) ~ '（' ~ ic.rebalances ~ ' 个季度）— 朴素的全因子等权混合在此面板上反转了横截面，作为选股信号还不如不用。切勿交易该综合因子。请按下方每个因子各自的行判断：仅标记为 VALIDATED（通过 BH-FDR 且平均 IC 为正）的因子才成立，且即便如此也只是幸存者偏差面板上的勉强通过者。') }}
+      {{ t('Its blended mean IC is ' ~ ('%+.4f'|format(_comp.mean_ic)) ~ ' over ' ~ ic.rebalances ~ ' quarters — the naive all-factor blend INVERTS the cross-section on this panel, so it is worse than useless as a stock screen. Do NOT trade the composite. Judge each factor on its own row below: only a factor tagged FDR-PASS (survives BH-FDR AND positive mean IC) clears that statistical screen, and even that is a marginal survivor on a survivorship-biased panel.',
+           '其混合平均 IC 为 ' ~ ('%+.4f'|format(_comp.mean_ic)) ~ '（' ~ ic.rebalances ~ ' 个季度）— 朴素的全因子等权混合在此面板上反转了横截面，作为选股信号还不如不用。切勿交易该综合因子。请按下方每个因子各自的行判断：仅标记为 FDR-PASS（通过 BH-FDR 且平均 IC 为正）的因子通过该统计筛选，且即便如此也只是幸存者偏差面板上的勉强通过者。') }}
     </div>
     {% endif %}
     <table>
@@ -736,7 +736,7 @@
       {% for r in ic.rows %}
       {% set _vs = 'validated' if (r.survives_fdr and r.mean_ic is not none and r.mean_ic > 0) else ('negative-ic' if (r.mean_ic is not none and r.mean_ic < 0) else 'fdr-fail') %}
       <tr>
-        <td><span class="fx-open" data-fx="{{ r.factor }}">{{ t(r.label_en, fac.factor_labels.get(r.factor, r.label_en)) }}</span><span class="val-chip {{ _vs }}">{% if _vs == 'validated' %}{{ t('VALIDATED','已验证') }}{% elif _vs == 'negative-ic' %}{{ t('NEG-IC','反向') }}{% else %}{{ t('FDR-FAIL','未过检') }}{% endif %}</span></td>
+        <td><span class="fx-open" data-fx="{{ r.factor }}">{{ t(r.label_en, fac.factor_labels.get(r.factor, r.label_en)) }}</span><span class="val-chip {{ _vs }}">{% if _vs == 'validated' %}{{ t('FDR-PASS','通过FDR') }}{% elif _vs == 'negative-ic' %}{{ t('NEG-IC','反向') }}{% else %}{{ t('FDR-FAIL','未过检') }}{% endif %}</span></td>
         <td class="r {{ 'pos' if r.mean_ic and r.mean_ic > 0 else ('neg' if r.mean_ic and r.mean_ic < 0 else 'muted') }}">{{ '%+.4f'|format(r.mean_ic) if r.mean_ic is not none else '—' }}</td>
         <td class="r {{ 'pos' if r.ic_ir_ann and r.ic_ir_ann > 0 else ('neg' if r.ic_ir_ann and r.ic_ir_ann < 0 else 'muted') }}">{{ '%+.2f'|format(r.ic_ir_ann) if r.ic_ir_ann is not none else '—' }}</td>
         <td class="r muted">{{ '%+.2f'|format(r.t_hac) if r.t_hac is not none else '—' }}</td>
@@ -1453,7 +1453,7 @@
   {% if ic and ic.rows %}{% for r in ic.rows %}
   Object.assign(_fx({{ r.factor|tojson }}), {
     label: {{ (fac.factor_labels.get(r.factor, r.label_en))|tojson }},
-    val: {{ ('validated' if (r.survives_fdr and r.mean_ic is not none and r.mean_ic > 0)
+    val: {{ ('fdr-pass' if (r.survives_fdr and r.mean_ic is not none and r.mean_ic > 0)
              else ('negative-ic' if (r.mean_ic is not none and r.mean_ic < 0) else 'fdr-fail'))|tojson }},
     ic: {{ r.mean_ic|tojson }}, ir: {{ r.ic_ir_ann|tojson }}, t: {{ r.t_hac|tojson }},
     hit: {{ r.hit|tojson }}, q: {{ r.q_fdr|tojson }}, n: {{ r.n|tojson }},
@@ -1482,7 +1482,7 @@
       .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     /* bilingual pair — labels TOGGLE via l-en / l-zh, never both on screen */
     const L=(en,zh)=>'<span class="l-en">'+en+'</span><span class="l-zh">'+(zh||en)+'</span>';
-    const VL={validated:[ 'VALIDATED','已验证'],'fdr-fail':['FDR-FAIL','未过检'],
+    const VL={'fdr-pass':['FDR-PASS','通过FDR'],'fdr-fail':['FDR-FAIL','未过检'],
               'negative-ic':['NEG-IC','反向']};
     const num=(v,d,s)=>v==null?'—':((v>=0&&s?'+':'')+v.toFixed(d));
     const pct=v=>v==null?'—':((v>=0?'+':'')+v.toFixed(0)+'%');
@@ -1496,7 +1496,9 @@
     function open(key){
       const f=FX_F[key]; if(!f||!f.label) return;
       last=document.activeElement;
-      const vc=f.val?'<span class="val-chip '+f.val+'">'+L(VL[f.val][0],VL[f.val][1])+'</span>':'';
+      const vcs=f.val==='fdr-pass'
+        ?' style="color:var(--ok);border:1px solid color-mix(in srgb,var(--ok) 55%,transparent);background:color-mix(in srgb,var(--ok) 12%,transparent)"':'';
+      const vc=f.val?'<span class="val-chip '+f.val+'"'+vcs+'>'+L(VL[f.val][0],VL[f.val][1])+'</span>':'';
       const edge=row('mean IC','平均 IC',num(f.ic,4,1))+row('IC-IR (ann)','IC-IR（年化）',num(f.ir,2,1))
         +row('t-HAC','t 值',num(f.t,2,1))
         +row('hit rate','命中率',f.hit==null?null:(f.hit*100).toFixed(0)+'%')
@@ -1510,8 +1512,8 @@
       const rec=row('63-day Q5−Q1 spread','63日多空价差',
         f.spread==null?null:'<span class="'+(f.spread>=0?'pos':'neg')+'">'
         +(f.spread>=0?'+':'')+f.spread.toFixed(1)+'%</span>');
-      /* the read: validation state is the honest headline, not the return */
-      const read = f.val==='validated'
+      /* the read: multiple-testing state is the honest headline, not the return */
+      const read = f.val==='fdr-pass'
         ? L('Clears BH-FDR with a positive measured edge — the only bar on this page that means anything. Still a marginal survivor on a survivorship-biased panel: a tilt, not a trade.',
             '通过 BH-FDR 且实测优势为正 — 本页唯一有意义的门槛。但在含幸存者偏差的面板上仍属勉强通过：可作倾斜，而非交易。')
         : f.val==='negative-ic'
