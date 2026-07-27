@@ -131,20 +131,36 @@ def test_bilingual_render():
     tmpl = (ROOT / "templates/vector.html.j2").read_text()
     start = tmpl.index("{% if leverage.okx_ls_ratio is not none %}")
     end = tmpl.index("{% if leverage.cme_basis is not none %}", start)
-    macro = ("{% macro t(en, zh='') %}<span class=\"l-en\">{{ en }}</span>"
-             "<span class=\"l-zh\">{{ zh if zh else en }}</span>{% endmacro %}")
-    snippet = macro + "\n" + tmpl[start:end]
+    # Carry the template's REAL macro preamble (everything above <!DOCTYPE>) rather than
+    # hand-rolling t(): the chip later started calling qmark() too, and a hand-rolled
+    # preamble that lists only the macros the chip used on the day the test was written
+    # turns every future macro into an UndefinedError. Slicing the definitions keeps the
+    # test rendering the shipped markup with the shipped helpers.
+    preamble = tmpl[:tmpl.index("<!DOCTYPE html>")]
+    assert "macro t(" in preamble and "macro qmark(" in preamble
+    snippet = preamble + "\n" + tmpl[start:end]
     html = Environment(autoescape=True).from_string(snippet).render(leverage={
         "okx_ls_ratio": 2.5, "okx_ls_pctile": 96, "okx_ls_z": 2.1,
         "okx_ls_lean": "crowded_long", "okx_taker_buy": 0.55, "okx_taker_pctile": 80})
-    assert "OKX retail long/short" in html and "OKX 散户多空比" in html        # EN + ZH
-    assert "OKX taker buy/sell flow" in html and "OKX 主动买卖盘占比" in html   # EN + ZH
-    assert "crowded longs (contrarian caution, not a buy)" in html            # contrarian EN
-    assert "多头拥挤（反向警示，非买入信号）" in html                              # contrarian ZH
-    # the display-only honesty caveat ships bilingual in the template body
-    # (prose gets copy-edited — pin the load-bearing phrases, case-insensitive EN)
-    assert "display-only positioning context" in tmpl.lower()
-    assert "不参与仓位或评分" in tmpl
+    # Both metrics ship bilingually. Pin the load-bearing NOUNS, not the sentence: this
+    # copy was rewritten to plain language ("OKX retail long/short" -> "Retail long/short
+    # ratio (OKX accounts)") and assertions on the old phrasing rotted silently.
+    assert "long/short ratio" in html.lower() and "多空比" in html          # EN + ZH
+    assert "buy share" in html.lower() and "主动买盘占比" in html             # EN + ZH
+    # The CONTRARIAN framing is the load-bearing honesty invariant — a crowded long must
+    # never read as a buy. Per the design doctrine the technical detail was demoted from
+    # the glance line into the "?" hover note, so accept it anywhere in the chip.
+    assert "contrarian" in html.lower()                                     # contrarian EN
+    assert "反向" in html                                                    # contrarian ZH
+    # NOTE: this test used to assert a card-level "display-only positioning context" /
+    # "不参与仓位或评分" caveat in the template body. #1337 ("Simplify dashboard copy and
+    # footers") deleted that sentence, and no equivalent card-level disclosure replaced it
+    # on the Leverage state card — the honesty statement now lives only in the per-metric
+    # "?" notes above. The CODE invariant is unaffected and is still enforced by
+    # test_display_only_invariant (allocation/compute_all/composite_* must not read okx_*),
+    # so this suite no longer asserts prose that ships nowhere. Whether the card should
+    # regain an explicit display-only line is a design-doctrine call, not test rot — see
+    # docs/UNRUN_TEST_CENSUS.md §"Red on arrival".
 
 
 if __name__ == "__main__":

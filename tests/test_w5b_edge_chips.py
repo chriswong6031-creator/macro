@@ -98,19 +98,33 @@ def _render_stocks_header(setups, mode="stocks"):
 # Edge 1 tests
 # ---------------------------------------------------------------------------
 
+# Presence sentinel for the rendered chip.  The chip was deliberately rebuilt in plain
+# words — the old "Sleeve ×0.62" label was jargon (see the {# W5b EDGE-1 #} comment in
+# china.html.j2), so the multiplier no longer renders at all.  The absence tests below
+# MUST key off this same sentinel: they used to assert `"Sleeve ×" not in html`, which
+# went vacuously green the moment the rename landed — they would no longer have caught a
+# chip leaking into macro mode or surviving radar_state=None.
+_CHIP_EN = "Risk backdrop"
+_CHIP_ZH = "风险背景"
+
+
 def test_t1_chip_renders_with_valid_radar_state():
-    """T1: chip renders when setups.sleeve_chip has a valid radar_state."""
+    """T1: chip renders bilingually when setups.sleeve_chip has a valid radar_state."""
     setups = {"sleeve_chip": _sleeve_chip("caution"), "buy": [], "ripening": [], "ran": []}
     html = _render_stocks_header(setups)
-    assert "Sleeve" in html, "sleeve chip label_en missing from rendered output"
-    assert "0.90" in html, "sleeve_factor missing from rendered output"
+    assert _CHIP_EN in html, "risk-backdrop chip missing from rendered output"
+    assert _CHIP_ZH in html, "risk-backdrop chip missing its zh half"
+    # plain-word state + what to DO about it, in both languages, per the glance-tier
+    # contract ("every signal panel answers 'so what do I do'")
+    assert "CAUTION" in html and "avoid chasing" in html          # EN state + action
+    assert "谨慎" in html and "谨慎追高" in html                     # ZH state + action
 
 
 def test_t2_chip_absent_when_sleeve_chip_none():
     """T2: chip must be absent (degrade) when setups.sleeve_chip is None."""
     setups = {"sleeve_chip": None, "buy": [], "ripening": [], "ran": []}
     html = _render_stocks_header(setups)
-    assert "Sleeve ×" not in html, "chip rendered despite sleeve_chip=None"
+    assert _CHIP_EN not in html, "chip rendered despite sleeve_chip=None"
 
 
 def test_t3_chip_absent_when_radar_state_none():
@@ -119,14 +133,14 @@ def test_t3_chip_absent_when_radar_state_none():
     chip["radar_state"] = None
     setups = {"sleeve_chip": chip, "buy": [], "ripening": [], "ran": []}
     html = _render_stocks_header(setups)
-    assert "Sleeve ×" not in html, "chip rendered despite radar_state=None"
+    assert _CHIP_EN not in html, "chip rendered despite radar_state=None"
 
 
 def test_t4_chip_absent_when_mode_macro():
     """T4: chip must not appear when mode='macro' (stocks-header block skipped)."""
     setups = {"sleeve_chip": _sleeve_chip("caution"), "buy": [], "ripening": [], "ran": []}
     html = _render_stocks_header(setups, mode="macro")
-    assert "Sleeve ×" not in html, "chip leaked into macro mode"
+    assert _CHIP_EN not in html, "chip leaked into macro mode"
 
 
 def test_t5_caution_state_uses_warn_colour():

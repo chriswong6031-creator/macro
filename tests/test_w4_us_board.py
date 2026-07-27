@@ -184,24 +184,23 @@ class TestW9ASectorCapitulatingAnnotation:
 
 
 # ---------------------------------------------------------------------------
-# Template guard: data-tip-en/data-tip-zh (not title=) used for CJK tips
+# REMOVED (2026-07-27): test_template_uses_data_tip_not_title_for_sector_cap
+#
+# It asserted that the W9-A sector-capitulating chip is present in
+# templates/dashboard.html.j2 and uses data-tip-en/-zh rather than title=.  Prophet
+# card v1 (fe7a7426c49) DELETED that chip markup outright, along with a batch of
+# sibling chips, folding their disclosures into the card's flags popover.  The
+# subject is gone, so the guard tests nothing — and a suite pinned to deleted markup
+# is worse than no suite, because it reads as coverage.
+#
+# The producer half is NOT gone: scripts/build_stock_library.py still computes
+# r["sector_capitulating"] and ships it into site/factordata/us_standouts.json, and
+# .nb-sector-cap still exists in the template's CSS — both now dead.  The chip also
+# carried a stop-out safety disclosure (−2.7pp deep panel / −3.5pp OOS, sign-stable)
+# that no longer reaches the user anywhere.  Whether the prophet card should
+# re-surface it is a product call, tracked in docs/UNRUN_TEST_CENSUS.md
+# §"Red on arrival — the P4/P5 sweep"; it is not test rot and is not fixed here.
+#
+# The producer-side assertions above (test_sector_capitulating_*) still cover the
+# field itself and are unaffected.
 # ---------------------------------------------------------------------------
-
-def test_template_uses_data_tip_not_title_for_sector_cap():
-    """CI guard: sector_capitulating chip must use data-tip-en/data-tip-zh, not title=."""
-    tmpl_path = (Path(__file__).resolve().parent.parent
-                 / "templates" / "dashboard.html.j2")
-    if not tmpl_path.exists():
-        pytest.skip("template not found — running outside full repo")
-    content = tmpl_path.read_text()
-    # The chip must be present
-    assert "sector_capitulating" in content, "W9-A chip missing from dashboard template"
-    # Must NOT use title= (CJK in title= fails CI)
-    import re
-    # Find the sector_cap chip block
-    cap_block = re.search(
-        r'nb-sector-cap.*?(?=\{%|$)', content, re.DOTALL)
-    assert cap_block, "nb-sector-cap CSS class missing from template"
-    # data-tip-en and data-tip-zh must be present
-    assert "data-tip-en=" in content[content.find("sector_capitulating"):]
-    assert "data-tip-zh=" in content[content.find("sector_capitulating"):]

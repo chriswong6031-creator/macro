@@ -3520,3 +3520,36 @@ jobs:
         run: python -m pytest tests/test_etf_pulse.py tests/test_fix43_analyst_and_whitehouse.py -q
       - name: sector_central board order — fast-lens rotation rank, failing open to conviction
         run: python -m pytest tests/test_sector_central.py -q
+
+  # ── RED-ON-ARRIVAL SWEEP, BATCH B (2026-07-27) ─────────────────────────────
+  # The template-surface share of the 10 reds (docs/UNRUN_TEST_CENSUS.md §"Red on
+  # arrival — the P4/P5 sweep").  All three slice shipped markup out of templates/
+  # and render it, so they rot whenever copy is rewritten — and the house style is
+  # to rewrite copy into plain words (the jargon ban in DESIGN_DOCTRINE.md).  Each
+  # now pins the load-bearing NOUN or the honesty invariant rather than a sentence.
+  #
+  # The sweep also caught a VACUOUS GREEN here, which is the more dangerous half:
+  # three of test_w5b_edge_chips' absence tests asserted `"Sleeve ×" not in html`,
+  # and a rename made that trivially true — they passed while no longer able to
+  # catch a chip leaking into the wrong mode or surviving a None radar_state.  A
+  # renamed sentinel silently disarms every absence assertion keyed to the old one;
+  # when a presence marker changes, re-point the absence tests in the same edit.
+  # Repeats the shared dependency install BYTE-FOR-BYTE so run_ci_pack.py keeps one
+  # venv across the unrun-* set.  Measured locally: 3 suites / 42 tests / ~2s.
+  unrun-template-chips:
+    if: ${{ false }}
+    timeout-minutes: 4
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: OKX retail chip — bilingual + the contrarian framing survives copy edits
+        run: python -m pytest tests/test_okx_retail.py -q
+      - name: CN risk-backdrop chip — renders, degrades, and stays out of macro mode
+        run: python -m pytest tests/test_w5b_edge_chips.py -q
+      - name: US board W9-A producer field + cohort math
+        run: python -m pytest tests/test_w4_us_board.py -q
