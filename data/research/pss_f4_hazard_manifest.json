@@ -71,6 +71,11 @@
     }
   },
   "seed": 20260802,
+  "serving_artifact": {
+    "manifest_sha256": "f0777cbca0b5ad5e2078d6971af6a232a86373f6eba852246700d4b5b1952691",
+    "model_id": "pss_f4h_orthogonal_dev2022_v1",
+    "path": "data/personality_timing/terminality_shadow_model_v1"
+  },
   "target_coverage": 0.2,
   "train_end": "2022-12-31"
 }

@@ -19,6 +19,7 @@ shadow research because all available history was visible before the study.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 import sys
@@ -39,8 +40,10 @@ OUT_SCORES = ROOT / "data/research/pss_f4_hazard_scores.parquet"
 OUT_ACTIONS = ROOT / "data/research/pss_f4_hazard_actions.parquet"
 OUT_MANIFEST = ROOT / "data/research/pss_f4_hazard_manifest.json"
 OUT_REPORT = ROOT / "reports/pss_f4_hazard.md"
+SERVING_DIR = ROOT / "data/personality_timing/terminality_shadow_model_v1"
 TARGET_COVERAGE = 0.20
 SEED = 20260802
+MODEL_ID = "pss_f4h_orthogonal_dev2022_v1"
 
 F4_FEATURES = ("x_f4_q", "x_f4_d3", "x_rvd_d3")
 ORTHOGONAL_FEATURES = tuple(
@@ -86,7 +89,11 @@ def safe_auc(y: pd.Series, probability: np.ndarray) -> float:
     return float(roc_auc_score(y, probability))
 
 
-def fit_scores(events: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
+def fit_scores(
+    events: pd.DataFrame,
+    *,
+    fitted_models: dict | None = None,
+) -> tuple[pd.DataFrame, dict]:
     inc = events[events.kind == "inc"].copy().reset_index(drop=True)
     dev = inc.date <= repair.DEV_END
     y_near = inc.w5.astype(int)
@@ -104,6 +111,8 @@ def fit_scores(events: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
         safe_model = classifier(SEED + number * 2 + 1)
         near_model.fit(x.loc[dev], y_near.loc[dev])
         safe_model.fit(x.loc[dev], y_safe.loc[dev])
+        if fitted_models is not None:
+            fitted_models[name] = (near_model, safe_model)
         p_near = near_model.predict_proba(x)[:, 1]
         p_safe = safe_model.predict_proba(x)[:, 1]
         score = np.sqrt(np.clip(p_near, 0, 1) * np.clip(p_safe, 0, 1))
@@ -133,6 +142,88 @@ def fit_scores(events: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
         "threshold": price_threshold,
     }
     return inc, manifest
+
+
+def _tree_document(model, features: tuple[str, ...]) -> dict:
+    """Export sklearn's numerical HGB trees to a stable, pure-JSON scorer."""
+    trees: list[list[dict]] = []
+    for iteration in model._predictors:
+        if len(iteration) != 1:
+            raise ValueError("binary classifier must have one tree per iteration")
+        nodes = iteration[0].nodes
+        tree: list[dict] = []
+        for node in nodes:
+            if bool(node["is_categorical"]):
+                raise ValueError("categorical splits are not supported by frozen scorer")
+            tree.append(
+                {
+                    "leaf": bool(node["is_leaf"]),
+                    "value": float(node["value"]),
+                    "feature": int(node["feature_idx"]),
+                    "threshold": float(node["num_threshold"]),
+                    "missing_left": bool(node["missing_go_to_left"]),
+                    "left": int(node["left"]),
+                    "right": int(node["right"]),
+                }
+            )
+        trees.append(tree)
+    return {
+        "schema": "frozen_hist_gradient_boosting/v1",
+        "features": list(features),
+        "baseline": float(model._baseline_prediction.ravel()[0]),
+        "trees": trees,
+    }
+
+
+def _write_json(path: Path, obj: dict) -> None:
+    path.write_text(
+        json.dumps(obj, sort_keys=True, separators=(",", ":"), allow_nan=False) + "\n",
+        encoding="utf-8",
+    )
+
+
+def _sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def export_serving_artifact(
+    models: tuple,
+    hazard_manifest: dict,
+) -> dict:
+    """Package the exact orthogonal DEV models for production shadow scoring."""
+    SERVING_DIR.mkdir(parents=True, exist_ok=True)
+    features = tuple(FEATURE_SETS["hazard_orthogonal"])
+    near_path = SERVING_DIR / "near_low.json"
+    safe_path = SERVING_DIR / "tail_safe.json"
+    _write_json(near_path, _tree_document(models[0], features))
+    _write_json(safe_path, _tree_document(models[1], features))
+    model_spec = hazard_manifest["models"]["hazard_orthogonal"]
+    manifest = {
+        "schema": "personality_terminality_shadow.model/v1",
+        "model_id": MODEL_ID,
+        "source_study": "PSS-F4H",
+        "source_report": "reports/pss_f4_hazard.md",
+        "source_events": "data/research/pss_f4_repair_events.parquet",
+        "source_events_sha256": _sha256(repair.OUT_EVENTS),
+        "train_end": hazard_manifest["train_end"],
+        "target_coverage": hazard_manifest["target_coverage"],
+        "seed": hazard_manifest["seed"],
+        "features": list(features),
+        "threshold": model_spec["threshold"],
+        "composition": "sqrt(P(near_low) * P(avoids_mae_le_-10pct))",
+        "authority": "shadow_only",
+        "f4_features_included": False,
+        "models": {
+            "near_low": {"path": near_path.name, "sha256": _sha256(near_path)},
+            "tail_safe": {"path": safe_path.name, "sha256": _sha256(safe_path)},
+        },
+        "serving_note": (
+            "Frozen prospective locator only. It may not rank, size, gate, alert, "
+            "or authorize an entry."
+        ),
+    }
+    _write_json(SERVING_DIR / "manifest.json", manifest)
+    return manifest
 
 
 def scored_events(scores: pd.DataFrame) -> pd.DataFrame:
@@ -445,7 +536,17 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     base_events = pd.read_parquet(repair.OUT_EVENTS)
-    scores, manifest = fit_scores(base_events)
+    fitted_models: dict = {}
+    scores, manifest = fit_scores(base_events, fitted_models=fitted_models)
+    serving = export_serving_artifact(
+        fitted_models["hazard_orthogonal"],
+        manifest,
+    )
+    manifest["serving_artifact"] = {
+        "model_id": serving["model_id"],
+        "path": str(SERVING_DIR.relative_to(ROOT)),
+        "manifest_sha256": _sha256(SERVING_DIR / "manifest.json"),
+    }
     direct_events = scored_events(scores)
     action_events = build_action_events(scores)
     events = pd.concat([direct_events, action_events], ignore_index=True)
@@ -463,6 +564,7 @@ def main() -> None:
     print(f"wrote {OUT_SCORES.relative_to(ROOT)} ({len(scores):,} rows)")
     print(f"wrote {OUT_ACTIONS.relative_to(ROOT)} ({len(action_events):,} rows)")
     print(f"wrote {OUT_MANIFEST.relative_to(ROOT)}")
+    print(f"wrote {SERVING_DIR.relative_to(ROOT)}")
     print(f"wrote {OUT_REPORT.relative_to(ROOT)}")
 
 

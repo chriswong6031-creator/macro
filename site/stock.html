@@ -2403,6 +2403,7 @@
     var micro = base.microstructure || {};
     var mode = p.current_mode || {};
     var compat = p.setup_compatibility || {};
+    var terminalityShadow = p.terminality_shadow || null;
     var ev = p.evidence || {};
     var asof = p.as_of || '';
     var cov = ev.coverage || {};
@@ -2493,6 +2494,49 @@
           '当前模式：' + m + (evSnippetZh ? ' · ' + evSnippetZh : '') + expZh + '。仅供参考，快速层状态。', 'sp-mode-chip');
       }).join('');
       rows.push('<div class="sp-row sp-mode-row"><span class="sp-axis sp-mode-axis"><span class="l-en">Current mode</span><span class="l-zh">当前模式</span></span><span class="sp-chips">' + modeChips + '</span></div>');
+    }
+
+    // --- Frozen orthogonal terminality locator (prospective SHADOW only) ---
+    // This block is deliberately outside setup compatibility and every decision
+    // surface. It reports an already-produced observation; it cannot rank, size,
+    // gate, alert, or authorize an entry.
+    if (terminalityShadow &&
+        terminalityShadow.authority === 'shadow_only' &&
+        terminalityShadow.display_only === true) {
+      var tsWatching = terminalityShadow.status === 'watching';
+      var tsAction = terminalityShadow.status === 'rejection_observed';
+      if (tsWatching || tsAction) {
+        var tsScore = Number(terminalityShadow.score);
+        var tsThreshold = Number(terminalityShadow.threshold);
+        var tsScoreText = Number.isFinite(tsScore) && Number.isFinite(tsThreshold)
+          ? ' · ' + tsScore.toFixed(3) + ' / ' + tsThreshold.toFixed(3)
+          : '';
+        var tsEn = tsAction
+          ? 'Rejection observed · shadow'
+          : 'Terminality watch · shadow';
+        var tsZh = tsAction
+          ? '观察到低位拒绝 · 影子'
+          : '终局观察 · 影子';
+        var tsDetailEn = tsAction
+          ? 'Fresh-low rejection observed on ' + esc(terminalityShadow.action_date || '—') +
+            ' after ' + esc(terminalityShadow.action_delay_sessions == null ? '—' : terminalityShadow.action_delay_sessions) + ' session(s).'
+          : 'Frozen top-20% locator watch; ' +
+            esc(terminalityShadow.remaining_sessions == null ? '—' : terminalityShadow.remaining_sessions) +
+            ' session(s) remain in the 15-session observation window.';
+        var tsDetailZh = tsAction
+          ? '于 ' + esc(terminalityShadow.action_date || '—') + ' 观察到新低拒绝，延迟 ' +
+            esc(terminalityShadow.action_delay_sessions == null ? '—' : terminalityShadow.action_delay_sessions) + ' 个交易日。'
+          : '冻结的前20%定位器观察；15个交易日观察窗剩余 ' +
+            esc(terminalityShadow.remaining_sessions == null ? '—' : terminalityShadow.remaining_sessions) + ' 个交易日。';
+        var tsTipEn = tsDetailEn + ' Research prioritization only; never changes entry, ranking, sizing, or alerts.';
+        var tsTipZh = tsDetailZh + ' 仅用于研究优先级；不改变入场、排名、仓位或提醒。';
+        var tsChip = _pchip(
+          '<span class="l-en">' + tsEn + esc(tsScoreText) + '</span>' +
+          '<span class="l-zh">' + tsZh + esc(tsScoreText) + '</span>',
+          tsTipEn, tsTipZh, 'sp-shadow-chip');
+        rows.push('<div class="sp-row"><span class="sp-axis"><span class="l-en">Terminality</span><span class="l-zh">终局状态</span></span><span class="sp-chips">' + tsChip + '</span>' +
+          '<span class="sp-asof muted">' + esc(terminalityShadow.event_date || '') + '</span></div>');
+      }
     }
 
     // --- Setup compatibility ---
