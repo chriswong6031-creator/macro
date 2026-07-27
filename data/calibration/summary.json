@@ -152,7 +152,7 @@
       "placebo_coverage": 0.3556,
       "placebo_available": false,
       "placebo_note": "reconstructed 16 graded predicates but the track record has 45 \u2014 cannot pair observed outcomes to their nulls",
-      "placebo_mix_source": "ledger_elapsed",
+      "placebo_mix_source": "scored",
       "placebo_by_kind": {
         "rel_return": {
           "n": 16,
@@ -175,7 +175,7 @@
       "name": "Demand Chain",
       "slug": "demand_chain",
       "scored": 0,
-      "open": 44,
+      "open": 45,
       "hit_rate": null,
       "dir_accuracy": null,
       "null_hit_rate": null,
@@ -205,7 +205,7 @@
       "name": "Thematic Desk",
       "slug": "thematic_desk",
       "scored": 28,
-      "open": 105,
+      "open": 94,
       "hit_rate": 0.643,
       "dir_accuracy": 0.5,
       "null_hit_rate": 0.8608,
@@ -1096,10 +1096,28 @@
         "itemized": 1,
         "declared": 0,
         "effective_n": 1
+      },
+      {
+        "family": "pss_f2_overnight",
+        "itemized": 1,
+        "declared": 0,
+        "effective_n": 1
+      },
+      {
+        "family": "pss_f3_residual",
+        "itemized": 1,
+        "declared": 0,
+        "effective_n": 1
+      },
+      {
+        "family": "pss_f4_semivar",
+        "itemized": 1,
+        "declared": 0,
+        "effective_n": 1
       }
     ],
-    "total_families": 128,
-    "total_effective_n": 3099
+    "total_families": 131,
+    "total_effective_n": 3102
   },
   "summary_note": "3/9 desk loops live; 6 still cold (windows maturing); 0 promoted to calibrated. A desk is judged against the rate ITS OWN falsifiers go untriggered by chance, not against one-half \u2014 'not falsified' is a lenient endpoint, and most leans clear it without any skill. Display-only \u2014 track records calibrate conviction, never size a position.",
   "standout_tracks": [

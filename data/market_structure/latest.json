@@ -1,26 +1,19 @@
 {
   "schema": "market_structure_context.v1",
   "asof": "2026-07-24",
-  "built_at": "2026-07-26T07:58:19.106114+00:00",
+  "built_at": "2026-07-27T01:13:11.836773+00:00",
   "is_context_only": true,
   "display_only": true,
   "gamma": {
     "regime": "short",
-    "net_gex_bn": -23.957209,
-    "net_gex_pctile": 14.7,
-    "gamma_flip": 7455.647415,
+    "net_gex_bn": -21.300892,
+    "net_gex_pctile": 13.6,
+    "gamma_flip": 7450.891345,
     "spot": 7411.98,
-    "dist_to_flip_pct": -0.59,
-    "days_in_regime": 3,
-    "series_start": "2026-06-14",
+    "dist_to_flip_pct": -0.52,
+    "days_in_regime": 2,
+    "series_start": "2026-06-15",
     "history": [
-      {
-        "date": "2026-06-14",
-        "net_gex_bn": 22.156829,
-        "regime": "long",
-        "flip": 7382.770992,
-        "spot": 7431.46
-      },
       {
         "date": "2026-06-15",
         "net_gex_bn": 79.08822,
@@ -48,27 +41,6 @@
         "regime": "short",
         "flip": 7436.077198,
         "spot": 7420.1
-      },
-      {
-        "date": "2026-06-19",
-        "net_gex_bn": 26.580359,
-        "regime": "long",
-        "flip": 7459.462288,
-        "spot": 7500.58
-      },
-      {
-        "date": "2026-06-20",
-        "net_gex_bn": 26.096723,
-        "regime": "long",
-        "flip": 7461.237359,
-        "spot": 7500.58
-      },
-      {
-        "date": "2026-06-21",
-        "net_gex_bn": 25.854096,
-        "regime": "long",
-        "flip": 7462.168807,
-        "spot": 7500.58
       },
       {
         "date": "2026-06-22",
@@ -106,20 +78,6 @@
         "spot": 7357.49
       },
       {
-        "date": "2026-06-27",
-        "net_gex_bn": -24.086959,
-        "regime": "short",
-        "flip": 7401.692599,
-        "spot": 7354.02
-      },
-      {
-        "date": "2026-06-28",
-        "net_gex_bn": -27.678602,
-        "regime": "short",
-        "flip": 7405.079103,
-        "spot": 7354.02
-      },
-      {
         "date": "2026-06-29",
         "net_gex_bn": 20.539275,
         "regime": "long",
@@ -139,13 +97,6 @@
         "regime": "long",
         "flip": 7423.383143,
         "spot": 7483.23
-      },
-      {
-        "date": "2026-07-04",
-        "net_gex_bn": 29.708802,
-        "regime": "long",
-        "flip": 7448.749654,
-        "spot": 7483.24
       },
       {
         "date": "2026-07-07",
@@ -169,20 +120,6 @@
         "spot": 7543.64
       },
       {
-        "date": "2026-07-11",
-        "net_gex_bn": 85.182296,
-        "regime": "long",
-        "flip": 7460.375849,
-        "spot": 7575.39
-      },
-      {
-        "date": "2026-07-12",
-        "net_gex_bn": 87.099511,
-        "regime": "long",
-        "flip": 7484.390043,
-        "spot": 7575.39
-      },
-      {
         "date": "2026-07-13",
         "net_gex_bn": 38.169398,
         "regime": "long",
@@ -195,20 +132,6 @@
         "regime": "short",
         "flip": 7482.314422,
         "spot": 7457.6899
-      },
-      {
-        "date": "2026-07-18",
-        "net_gex_bn": -13.356731,
-        "regime": "short",
-        "flip": 7487.638416,
-        "spot": 7457.69
-      },
-      {
-        "date": "2026-07-19",
-        "net_gex_bn": -12.366768,
-        "regime": "short",
-        "flip": 7475.422145,
-        "spot": 7457.69
       },
       {
         "date": "2026-07-20",
@@ -243,13 +166,6 @@
         "net_gex_bn": -21.300892,
         "regime": "short",
         "flip": 7450.891345,
-        "spot": 7411.98
-      },
-      {
-        "date": "2026-07-25",
-        "net_gex_bn": -23.957209,
-        "regime": "short",
-        "flip": 7455.647415,
         "spot": 7411.98
       }
     ]
@@ -6326,16 +6242,16 @@
     ]
   },
   "week_map": {
-    "week_start": "2026-07-20",
-    "week_end": "2026-07-24",
-    "locked_close": 7457.69,
-    "locked_at": "2026-07-17T00:00:00",
-    "band_1sigma_lo": 7302.01,
-    "band_1sigma_hi": 7613.37,
-    "band_2sigma_lo": 7146.33,
-    "band_2sigma_hi": 7769.05,
-    "gamma_flip": 7455.647415,
-    "implied_weekly_pct": 2.09,
+    "week_start": "2026-07-27",
+    "week_end": "2026-07-31",
+    "locked_close": 7411.98,
+    "locked_at": "2026-07-24T00:00:00",
+    "band_1sigma_lo": 7255.93,
+    "band_1sigma_hi": 7568.03,
+    "band_2sigma_lo": 7099.88,
+    "band_2sigma_hi": 7724.08,
+    "gamma_flip": 7450.891345,
+    "implied_weekly_pct": 2.11,
     "source": "spx_iv30_scaled_5d"
   },
   "state_changes": {

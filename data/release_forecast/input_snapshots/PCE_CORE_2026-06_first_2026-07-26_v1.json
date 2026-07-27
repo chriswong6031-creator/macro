@@ -8,7 +8,7 @@
     "sticky_mom_lag1": 0.0676495,
     "median_mom_lag1": 0.17412399936844736,
     "flex_mom_lag1": -1.774278179,
-    "ppifes_mom_lag1": null
+    "ppifes_mom_lag1": -0.09795844226613282
   },
   "legs": {
     "flex_mom_lag1": "present",
@@ -16,7 +16,7 @@
     "pce_core_mom_lag1": "present",
     "pce_core_mom_lag2": "present",
     "pce_core_mom_lag3": "present",
-    "ppifes_mom_lag1": "absent",
+    "ppifes_mom_lag1": "present",
     "sticky_mom_lag1": "present"
   },
   "inputs_hash": ""

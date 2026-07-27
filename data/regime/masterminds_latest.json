@@ -1,7 +1,7 @@
 {
   "schema": "masterminds.latest.v2",
   "n": 3,
-  "built": "2026-07-26 09:13 UTC",
+  "built": "2026-07-27 03:21 UTC",
   "asof": "2026-07-24",
   "stale_after_min": 1440,
   "cards": [
@@ -9,7 +9,7 @@
       "key": "mm_conservative",
       "name": "Mastermind \u2014 Conservative",
       "cagr": 7.82,
-      "sharpe": 1.12,
+      "sharpe": 1.11,
       "maxdd": -17.3,
       "asof": "2026-07-24",
       "gross_now": 0.49,
@@ -43,7 +43,7 @@
     {
       "key": "mm_moderate",
       "name": "Mastermind \u2014 Moderate",
-      "cagr": 11.31,
+      "cagr": 11.3,
       "sharpe": 1.05,
       "maxdd": -24.1,
       "asof": "2026-07-24",
@@ -53,13 +53,13 @@
           "asset": "SPY",
           "label_en": "S&P 500",
           "label_zh": "\u6807\u666e500",
-          "weight": 24.2
+          "weight": 24.1
         },
         {
           "asset": "HYG",
           "label_en": "High-yield credit",
           "label_zh": "\u9ad8\u6536\u76ca\u4fe1\u7528",
-          "weight": 24.2
+          "weight": 24.1
         },
         {
           "asset": "QQQ",
@@ -71,14 +71,14 @@
           "asset": "HG=F",
           "label_en": "Copper",
           "label_zh": "\u94dc",
-          "weight": 19.2
+          "weight": 19.3
         }
       ]
     },
     {
       "key": "mm_aggressive",
       "name": "Mastermind \u2014 Aggressive",
-      "cagr": 16.98,
+      "cagr": 16.96,
       "sharpe": 0.98,
       "maxdd": -34.9,
       "asof": "2026-07-24",
@@ -106,7 +106,7 @@
           "asset": "HG=F",
           "label_en": "Copper",
           "label_zh": "\u94dc",
-          "weight": 31.5
+          "weight": 31.7
         }
       ]
     }

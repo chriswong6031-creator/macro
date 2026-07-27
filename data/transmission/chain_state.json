@@ -1,7 +1,7 @@
 {
   "schema": "transmission_chains.v1",
   "asof": "2026-07-24",
-  "built": "2026-07-26 08:37 UTC",
+  "built": "2026-07-27 01:49 UTC",
   "chains": [
     {
       "chain": "credit_spreads_refinancing",
@@ -93,12 +93,12 @@
         "en": "Dollar spike → EM & multinational-EPS headwind",
         "zh": "美元飙升 → 新兴市场与跨国企业盈利承压"
       },
-      "state": "propagating",
+      "state": "expressed",
       "state_label": {
-        "en": "Propagating",
-        "zh": "传导中"
+        "en": "Expressed",
+        "zh": "已兑现"
       },
-      "hop": 1,
+      "hop": 2,
       "n_hops": 2,
       "armable": true,
       "episode_id": "dollar_spike_em_multinational@r3:2026-07-24",
@@ -145,8 +145,8 @@
             0,
             90
           ],
-          "confirmed": false,
-          "asof": null,
+          "confirmed": true,
+          "asof": "2026-07-24",
           "value_receipt": [
             {
               "series": "FXI",
@@ -237,15 +237,20 @@
             "en": "EM revenue exposure",
             "zh": "新兴市场营收敞口"
           },
-          "n": 15,
+          "n": 21,
           "cuts": {},
-          "unevaluable": 2884,
+          "unevaluable": 2873,
           "names": [
             "AAPL",
+            "AES",
             "AMAT",
+            "APD",
             "APH",
+            "BWA",
+            "CCK",
             "CNH",
             "CTVA",
+            "EL",
             "FCX",
             "JBL",
             "LEA",
@@ -254,6 +259,7 @@
             "MU",
             "NEM",
             "NVDA",
+            "NXPI",
             "TEL",
             "WHR"
           ],
@@ -268,17 +274,21 @@
             "en": "Multinational FX translation",
             "zh": "跨国汇率折算"
           },
-          "n": 73,
+          "n": 88,
           "cuts": {},
-          "unevaluable": 2798,
+          "unevaluable": 2771,
           "names": [
+            "AA",
             "AAPL",
+            "ABNB",
             "ABT",
             "ADBE",
             "ADM",
+            "AES",
             "AIG",
             "AMAT",
             "AON",
+            "APD",
             "APH",
             "APTV",
             "ARW",
@@ -288,10 +298,12 @@
             "BG",
             "BKNG",
             "BKR",
+            "BWA",
             "C",
             "CARR",
             "CAT",
             "CBRE",
+            "CCK",
             "CCL",
             "CMI",
             "CNH",
@@ -299,12 +311,16 @@
             "CTVA",
             "DE",
             "DELL",
+            "DXC",
+            "EL",
             "EMR",
+            "EXPE",
             "FCX",
             "GE",
             "GEHC",
             "GEV",
             "GOOGL",
+            "GXO",
             "HON",
             "HPE",
             "HPQ",
@@ -318,6 +334,7 @@
             "KVUE",
             "LEA",
             "LIN",
+            "LKQ",
             "LYB",
             "MDLZ",
             "MDT",
@@ -328,8 +345,10 @@
             "NEM",
             "NFLX",
             "NKE",
+            "NXPI",
             "OMC",
             "ORCL",
+            "OTIS",
             "PCAR",
             "PEP",
             "PFE",
@@ -339,11 +358,13 @@
             "SLB",
             "SMCI",
             "SNEX",
+            "STT",
             "SW",
             "TEL",
             "TMO",
             "UBER",
             "V",
+            "VTRS",
             "WKC"
           ],
           "resolved": true,
@@ -357,16 +378,20 @@
             "en": "Dollar-debt burden",
             "zh": "美元债务负担"
           },
-          "n": 4,
+          "n": 8,
           "cuts": {
             "financials.debt_to_assets": 31.9
           },
-          "unevaluable": 2857,
+          "unevaluable": 2843,
           "names": [
             "APTV",
             "AVGO",
             "BKNG",
-            "ITW"
+            "CCK",
+            "ITW",
+            "NXPI",
+            "OTIS",
+            "VTRS"
           ],
           "resolved": true,
           "note": {
@@ -703,7 +728,7 @@
               "series": "CL=F",
               "metric": "ret_pct",
               "window": 60,
-              "value": -12.672,
+              "value": -10.665,
               "op": "gt",
               "threshold": 25,
               "passed": false
@@ -711,7 +736,7 @@
             {
               "series": "CL=F",
               "metric": "ma50_slope5",
-              "value": -1.7514,
+              "value": -1.662,
               "op": "gt",
               "threshold": 0,
               "passed": false

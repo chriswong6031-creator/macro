@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.theme_asymmetry.v1",
-  "as_of": "2026-07-26",
-  "generated_at": "2026-07-26T09:36:38Z",
+  "as_of": "2026-07-27",
+  "generated_at": "2026-07-27T03:46:50Z",
   "hard_caveat": "not a buy score; no behavior-changing consumer",
   "authority": {
     "is_context_only": true,
@@ -277,16 +277,16 @@
           "note_zh": "平均入场质量=0.25，平均超买=0.41，延伸绝对值=0.00，炒作拉伸=0.44 → 入场整洁度=0.00"
         },
         "crowding_hazard": {
-          "value": 0.462,
-          "band": "med",
+          "value": 0.362,
+          "band": "low",
           "inputs": [
             "baskets:theme_intel.components.crowding",
             "divergence_log:quadrant",
             "divergence_log:money_pct"
           ],
           "stale": false,
-          "note_en": "avg_crowding=0.36, div_log=money_pct=0.82 (elevated) → crowding_hazard=0.46. HAZARD framing only; not a directional read.",
-          "note_zh": "平均拥挤=0.36，背离日志=money_pct=0.82 (elevated) → 拥挤风险=0.46。仅为风险识别，非方向性判断。"
+          "note_en": "avg_crowding=0.36, div_log=quadrant=hidden-opportunity → crowding_hazard=0.36. HAZARD framing only; not a directional read.",
+          "note_zh": "平均拥挤=0.36，背离日志=quadrant=hidden-opportunity → 拥挤风险=0.36。仅为风险识别，非方向性判断。"
         },
         "falsifier_clarity": {
           "value": 0.0,
@@ -1008,8 +1008,8 @@
           "note_zh": "瓶颈波段=band=NEUTRAL，活动加速=accel=0.96，综合紧张度=0.24"
         },
         "stale_consensus_gap": {
-          "value": 0.35,
-          "band": "med",
+          "value": 0.15,
+          "band": "low",
           "inputs": [
             "foresight_cascade:demand_band",
             "foresight_cascade:broadening_state",
@@ -1018,8 +1018,8 @@
             "finnhub_recs:revision_direction"
           ],
           "stale": false,
-          "note_en": "activity accelerating (RISING) and revisions following (level=POSITIVE, breadth=0.323); gap narrowing. no_dispersion_data",
-          "note_zh": "活动加速（RISING）且修正跟进（水平=POSITIVE，广度=0.323）；差距收窄。no_dispersion_data"
+          "note_en": "activity not accelerating (INSUFFICIENT_HISTORY), revisions positive (level=POSITIVE, breadth=0.323); no gap. no_dispersion_data",
+          "note_zh": "活动未加速（INSUFFICIENT_HISTORY），修正正面（水平=POSITIVE，广度=0.323）；无差距。no_dispersion_data"
         },
         "cyclical_dislocation": {
           "value": 0.162,
@@ -1284,7 +1284,7 @@
       ],
       "legs": {
         "bottleneck_tightness": {
-          "value": 0.447,
+          "value": 0.451,
           "band": "med",
           "inputs": [
             "foresight_cascade:bottleneck_band",
@@ -1292,8 +1292,8 @@
             "radar:flags.observable.accel"
           ],
           "stale": false,
-          "note_en": "bottleneck_band=band=TIGHT (text), accel=0.71 → tightness=0.45",
-          "note_zh": "瓶颈波段=band=TIGHT (text)，活动加速=accel=0.71，综合紧张度=0.45"
+          "note_en": "bottleneck_band=band=TIGHT (text), accel=0.72 → tightness=0.45",
+          "note_zh": "瓶颈波段=band=TIGHT (text)，活动加速=accel=0.72，综合紧张度=0.45"
         },
         "stale_consensus_gap": {
           "value": 0.35,
@@ -1400,8 +1400,8 @@
             "finnhub_recs:revision_direction"
           ],
           "stale": false,
-          "note_en": "activity not accelerating (MIXED) and revisions lagging — aligned weakness. no_dispersion_data",
-          "note_zh": "活动未加速（MIXED）且修正滞后——一致疲软。no_dispersion_data"
+          "note_en": "activity not accelerating (INSUFFICIENT_HISTORY) and revisions lagging — aligned weakness. no_dispersion_data",
+          "note_zh": "活动未加速（INSUFFICIENT_HISTORY）且修正滞后——一致疲软。no_dispersion_data"
         },
         "cyclical_dislocation": {
           "value": null,
@@ -1496,8 +1496,8 @@
             "finnhub_recs:revision_direction"
           ],
           "stale": false,
-          "note_en": "activity not accelerating (MIXED) and revisions lagging — aligned weakness. no_dispersion_data",
-          "note_zh": "活动未加速（MIXED）且修正滞后——一致疲软。no_dispersion_data"
+          "note_en": "activity not accelerating (FLAT_LOW) and revisions lagging — aligned weakness. no_dispersion_data",
+          "note_zh": "活动未加速（FLAT_LOW）且修正滞后——一致疲软。no_dispersion_data"
         },
         "cyclical_dislocation": {
           "value": 0.27,
@@ -1590,8 +1590,8 @@
             "finnhub_recs:revision_direction"
           ],
           "stale": false,
-          "note_en": "activity not accelerating (ROLLING), revisions positive (level=POSITIVE, breadth=0.486); no gap. no_dispersion_data",
-          "note_zh": "活动未加速（ROLLING），修正正面（水平=POSITIVE，广度=0.486）；无差距。no_dispersion_data"
+          "note_en": "activity not accelerating (INSUFFICIENT_HISTORY), revisions positive (level=POSITIVE, breadth=0.486); no gap. no_dispersion_data",
+          "note_zh": "活动未加速（INSUFFICIENT_HISTORY），修正正面（水平=POSITIVE，广度=0.486）；无差距。no_dispersion_data"
         },
         "cyclical_dislocation": {
           "value": null,
@@ -1751,6 +1751,7 @@
     }
   ],
   "stale_legs": [
+    "divergence_log[cybersecurity]: stale (as_of=2026-07-22)",
     "divergence_log[robotics_automation]: stale (as_of=2026-07-17)",
     "divergence_log[defense_aerospace]: stale (as_of=2026-07-14)",
     "divergence_log[fintech_payments]: stale (as_of=2026-07-20)",
@@ -1759,7 +1760,7 @@
   ],
   "schema_version": 1,
   "produced_by": "scripts/build_thematic_state.py",
-  "produced_at": "2026-07-26T09:36:38Z",
-  "inputs_hash": "sha256:0ad660eea77327cd2e32f395abe46f456cb0a8912f67c69bb44b514828af88f7",
+  "produced_at": "2026-07-27T03:46:50Z",
+  "inputs_hash": "sha256:f454877844c8d85495e6dd8b66e96cb8376917410b0028121dc75e27da282711",
   "tier": "display"
 }

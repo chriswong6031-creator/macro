@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.theme_state.v1",
-  "as_of": "2026-07-26",
-  "generated_at": "2026-07-26T09:36:37Z",
+  "as_of": "2026-07-27",
+  "generated_at": "2026-07-27T03:46:50Z",
   "authority": {
     "is_context_only": true,
     "may_rank": false,
@@ -29,7 +29,7 @@
       "foresight": {
         "stage": "RE-RATING",
         "tier": "P",
-        "score": 50.0,
+        "score": 47.1,
         "entry_ready": false,
         "bottleneck_band": "TIGHT (text)",
         "source": "site/basketdata/foresight_cascade.json"
@@ -65,8 +65,8 @@
           "basket_id": "ai_semiconductors",
           "state": "QUIET",
           "lifecycle": "quiet",
-          "divergence": -1.706,
-          "salience": 1.706,
+          "divergence": -1.693,
+          "salience": 1.693,
           "source": "site/basketdata/radar_enriched.json"
         },
         {
@@ -162,8 +162,8 @@
           "basket_id": "memory_storage",
           "state": "NEGATIVE_DIVERGENCE",
           "lifecycle": "fading",
-          "divergence": -3.933,
-          "salience": 3.933,
+          "divergence": -3.917,
+          "salience": 3.917,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -235,8 +235,8 @@
           "basket_id": "semicap_equipment",
           "state": "QUIET",
           "lifecycle": "quiet",
-          "divergence": -0.596,
-          "salience": 0.596,
+          "divergence": -0.583,
+          "salience": 0.583,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -263,11 +263,11 @@
         ]
       },
       "divergence_board": {
-        "quadrant": "confirmed",
-        "divergence": -0.0588,
-        "narrative_pct": 0.7647,
-        "money_pct": 0.8235,
-        "asof": "2026-07-26",
+        "quadrant": "hidden-opportunity",
+        "divergence": -0.1765,
+        "narrative_pct": 0.5294,
+        "money_pct": 0.7059,
+        "asof": "2026-07-27",
         "source": "data/foresight/divergence_log.jsonl"
       },
       "basket_ids": [
@@ -320,8 +320,8 @@
           "basket_id": "data_center_power",
           "state": "CONFIRMED_DOWN",
           "lifecycle": "fading",
-          "divergence": 1.805,
-          "salience": 1.805,
+          "divergence": 1.79,
+          "salience": 1.79,
           "source": "site/basketdata/radar_enriched.json"
         },
         {
@@ -407,8 +407,8 @@
           "basket_id": "nuclear_power",
           "state": "CONFIRMED_DOWN",
           "lifecycle": "fading",
-          "divergence": 1.947,
-          "salience": 1.947,
+          "divergence": 1.957,
+          "salience": 1.957,
           "source": "site/basketdata/radar_enriched.json"
         },
         {
@@ -482,8 +482,8 @@
           "basket_id": "power_grid",
           "state": "CONFIRMED_DOWN",
           "lifecycle": "fading",
-          "divergence": 1.285,
-          "salience": 1.285,
+          "divergence": 1.283,
+          "salience": 1.283,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -621,8 +621,8 @@
           "basket_id": "defense",
           "state": "QUIET",
           "lifecycle": "quiet",
-          "divergence": -0.044,
-          "salience": 0.044,
+          "divergence": -0.048,
+          "salience": 0.048,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -846,7 +846,7 @@
       "foresight": {
         "stage": "WATCH",
         "tier": "P",
-        "score": 45.0,
+        "score": 44.6,
         "entry_ready": false,
         "bottleneck_band": "NEUTRAL",
         "source": "site/basketdata/foresight_cascade.json"
@@ -943,8 +943,8 @@
           "basket_id": "space_economy",
           "state": "QUIET",
           "lifecycle": "quiet",
-          "divergence": 3.012,
-          "salience": 3.012,
+          "divergence": 3.01,
+          "salience": 3.01,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -1075,8 +1075,8 @@
           "basket_id": "reshoring",
           "state": "QUIET",
           "lifecycle": "quiet",
-          "divergence": -0.424,
-          "salience": 0.424,
+          "divergence": -0.4,
+          "salience": 0.4,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -1174,7 +1174,7 @@
       "foresight": {
         "stage": "PRECIPICE (fingerprint)",
         "tier": "P",
-        "score": 55.7,
+        "score": 57.0,
         "entry_ready": false,
         "bottleneck_band": "TIGHTENING (fingerprint)",
         "source": "site/basketdata/foresight_cascade.json"
@@ -1240,7 +1240,7 @@
       "foresight": {
         "stage": "WATCH",
         "tier": "P",
-        "score": 37.1,
+        "score": 41.0,
         "entry_ready": false,
         "bottleneck_band": "NEUTRAL",
         "source": "site/basketdata/foresight_cascade.json"
@@ -1269,7 +1269,14 @@
           }
         ]
       },
-      "divergence_board": null,
+      "divergence_board": {
+        "quadrant": "hidden-opportunity",
+        "divergence": -0.5294,
+        "narrative_pct": 0.2353,
+        "money_pct": 0.7647,
+        "asof": "2026-07-27",
+        "source": "data/foresight/divergence_log.jsonl"
+      },
       "basket_ids": [],
       "subsector_keys": [
         "Healthcare & Biotech"
@@ -1319,6 +1326,7 @@
     }
   ],
   "stale_legs": [
+    "divergence_log[cybersecurity]: stale (as_of=2026-07-22)",
     "divergence_log[robotics_automation]: stale (as_of=2026-07-17)",
     "divergence_log[defense_aerospace]: stale (as_of=2026-07-14)",
     "divergence_log[fintech_payments]: stale (as_of=2026-07-20)",
@@ -1336,7 +1344,7 @@
   },
   "schema_version": 1,
   "produced_by": "scripts/build_thematic_state.py",
-  "produced_at": "2026-07-26T09:36:38Z",
-  "inputs_hash": "sha256:ef4086e71873d38b55d835f144290c7df3ede2d6623f9c3c732a36c1f6c17c63",
+  "produced_at": "2026-07-27T03:46:50Z",
+  "inputs_hash": "sha256:3c5395585287a90887431e78902835aa496008ca881901c09a0cecd83b0cc0bd",
   "tier": "display"
 }

@@ -430,7 +430,7 @@
             <div class="ms-alerts-wrap">
               <label class="ms-alerts" for="ms-alerts-toggle" tabindex="0" aria-haspopup="dialog" aria-controls="ms-alerts-pop">
                 <span class="dot"></span><span class="l-en">Fired alerts</span><span class="l-zh">已触发警报</span>
-                <span class="ct">1</span>
+                <span class="ct">2</span>
               </label>
               <div class="ms-alerts-pop" id="ms-alerts-pop" role="dialog" aria-label="Fired alerts · 已触发警报">
                 <div class="ms-pop-head">
@@ -446,9 +446,18 @@
                   
                   
                   
+                  <a class="ms-sig sev-warn" data-ms-jump href="#health">
+                    <div class="ms-sig-head"><span class="ms-sig-ico">🔌</span><span class="ms-sig-title"><span class="l-en">A data source went dark</span><span class="l-zh">某数据源中断</span></span><span class="ms-sig-jump"><span class="l-en">View ↓</span><span class="l-zh">查看 ↓</span></span></div>
+                    <div class="ms-sig-detail"><span class="l-en">Source &#39;intl_universe&#39; marked dead after 3 consecutive failures — collector skipped until it recovers; affected signals degrade</span><span class="l-zh">数据源 &#39;intl_universe&#39; 连续 3 次失败后被标记为中断 —采集器暂停直至恢复；相关信号置信度下降</span></div>
+                    <div class="ms-sig-what"><span class="l-en">A feed this dashboard relies on failed several runs in a row, so it’s paused until it recovers. Any signals that depend on it automatically lose confidence until it’s back. This is a plumbing notice, not a market signal.</span><span class="l-zh">本仪表盘依赖的某个数据源连续多次失败，已暂停直至恢复。依赖它的信号会自动降低置信度，直到其恢复。这是系统管线提示，并非市场信号。</span></div>
+                    <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Plumbing — data health, not a market signal.</span><span class="l-zh">管线 — 数据健康度，而非市场信号。</span></div>
+                  </a>
+                  
+                  
+                  
                   <a class="ms-sig sev-warn" data-ms-dlg="dlg-events" href="#dlg-events">
                     <div class="ms-sig-head"><span class="ms-sig-ico">📅</span><span class="ms-sig-title"><span class="l-en">Major event on deck — expect bigger swings either way</span><span class="l-zh">重大事件临近 — 双向波动或加大</span></span><span class="ms-sig-jump"><span class="l-en">View →</span><span class="l-zh">查看 →</span></span></div>
-                    <div class="ms-sig-detail"><span class="l-en">Event-risk window: FOMC rate decision in 2 days — high two-sided volatility expected · positioned fragile. Not a sell signal; size for the noise.</span><span class="l-zh">事件风险窗口：美联储议息会议（2 天后）—— 预计偏高的两面性波动 · 仓位脆弱。非卖出信号；按噪声调整仓位。</span></div>
+                    <div class="ms-sig-detail"><span class="l-en">Event-risk window: FOMC rate decision in 3 days — high two-sided volatility expected · positioned fragile. Not a sell signal; size for the noise.</span><span class="l-zh">事件风险窗口：美联储议息会议（3 天后）—— 预计偏高的两面性波动 · 仓位脆弱。非卖出信号；按噪声调整仓位。</span></div>
                     <div class="ms-sig-what"><span class="l-en">A high-impact scheduled release (CPI, Fed decision, jobs report) lands in the coming sessions — the message says which and when. Moves around these prints are two-sided and often retraced — a volatility warning, not a directional call. Size positions for the noise; avoid forcing new trades right into the print.</span><span class="l-zh">未来数个交易日内将有高影响力的既定事件（CPI、美联储决议、就业报告）——具体是哪个、何时，见提示内容。事件前后的波动是双向的、常被回补 —这是波动性提示，并非方向判断。按噪声调整仓位，避免在数据公布前强行开新仓。</span></div>
                     <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Context — a volatility window, not a direction call. Size for the noise.</span><span class="l-zh">背景 — 波动窗口而非方向判断。按噪声调整仓位。</span></div>
                   </a>
@@ -480,7 +489,7 @@
     <div class="mxfs">
       <div class="mxfs-hd">
         <span class="l-en">What could change the regime call</span><span class="l-zh">什么会改变周期判断</span>
-        <span class="help">?<span class="tip"><span class="l-en">Drawn only from today&#39;s regime-engine readings, shown as-is. Weakest support: the component still supporting the call — slope z 0.58 vs its ±0.45 cutoff, margin 0.13. Drift: how the model&#39;s regime probabilities moved over the last 5 sessions. How firmly held: 0–1 = probability behind the label × how much the inputs agree. Conditional context only — nothing here predicts a flip.</span><span class="l-zh">仅取自今日周期引擎的读数，原样展示。最弱支撑：仍支撑当前判断的最弱分量 — 斜率 z 0.58，阈值 ±0.45（边际 0.13）。漂移方向：模型周期概率近 5 个交易日的变化。把握程度：0–1 = 标签背后的概率 × 输入一致度。仅为条件性参考 — 并非预测翻转。</span></span></span>
+        <span class="help">?<span class="tip"><span class="l-en">Drawn only from today&#39;s regime-engine readings, shown as-is. Weakest support: the component still supporting the call — slope z 0.5 vs its ±0.45 cutoff, margin 0.05. Drift: how the model&#39;s regime probabilities moved over the last 5 sessions. How firmly held: 0–1 = probability behind the label × how much the inputs agree. Conditional context only — nothing here predicts a flip.</span><span class="l-zh">仅取自今日周期引擎的读数，原样展示。最弱支撑：仍支撑当前判断的最弱分量 — 斜率 z 0.5，阈值 ±0.45（边际 0.05）。漂移方向：模型周期概率近 5 个交易日的变化。把握程度：0–1 = 标签背后的概率 × 输入一致度。仅为条件性参考 — 并非预测翻转。</span></span></span>
         <span class="mxfs-badge"><span class="l-en">Context — not a forecast</span><span class="l-zh">情景参考 — 非预测</span></span>
       </div>
       <div class="mxfs-subtitle"><span class="l-en">About the regime label — not the 0-100 risk score.</span><span class="l-zh">指上方周期标签——并非 0-100 风险评分。</span></div>
@@ -773,7 +782,7 @@
             <span class="l-en">Held reasonably firm — weakest support is <b>copper vs gold</b>.</span>
             <span class="l-zh">把握尚可 — 最弱支撑为<b>铜对黄金</b>。</span>
           </span>
-          <span class="help">?<span class="tip"><span class="l-en">conviction 0.41 / 1 · cushion 0.13 · drift measured over 5 sessions</span><span class="l-zh">把握 0.41 / 1 · 缓冲 0.13 · 漂移基于近 5 个交易日</span></span></span>
+          <span class="help">?<span class="tip"><span class="l-en">conviction 0.41 / 1 · cushion 0.05 · drift measured over 5 sessions</span><span class="l-zh">把握 0.41 / 1 · 缓冲 0.05 · 漂移基于近 5 个交易日</span></span></span>
         </div>
         
         
@@ -4068,15 +4077,15 @@
               <stop offset="100%" stop-color="var(--isle-policy)" stop-opacity="0"/>
             </linearGradient>
           </defs>
-          <path d="M0,32.0 L30,29.2 L60,19.6 L90,7.9 L120,0.0 L120,36 L0,36 Z" fill="url(#plSpkGrad)"/>
-          <polyline points="0,32.0 30,29.2 60,19.6 90,7.9 120,0.0" fill="none" stroke="var(--isle-policy)" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+          <path d="M0,32.0 L30,29.5 L60,19.7 L90,7.4 L120,0.0 L120,36 L0,36 Z" fill="url(#plSpkGrad)"/>
+          <polyline points="0,32.0 30,29.5 60,19.7 90,7.4 120,0.0" fill="none" stroke="var(--isle-policy)" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
         </svg>
         <div class="plf-spark-label">
           
-          <span class="l-en">Market prices ~2 hikes over the next 12m (funds 3.63% → 4.20%)</span>
+          <span class="l-en">Market prices ~2 hikes over the next 12m (funds 3.63% → 4.15%)</span>
           
           
-          <span class="l-zh">市场为未来12个月定价约加息2次（基金利率 3.63% → 4.20%）</span>
+          <span class="l-zh">市场为未来12个月定价约加息2次（基金利率 3.63% → 4.15%）</span>
           
           
         </div>
@@ -4136,14 +4145,14 @@
       <div class="mx5-ai-body">
         
         <span class="l-en">
-          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">2 High-Impact Items</span><br>
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">3 High-Impact Items</span><br>
           Dominant channel: <span style="color:var(--mx5-accent-ink);font-weight:600">fiscal &amp; trade</span><br>
-          2 high-impact signals across channels
+          3 high-impact signals across channels
         </span>
         <span class="l-zh">
-          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">2 条高影响信息</span><br>
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">3 条高影响信息</span><br>
           主导频道：<span style="color:var(--mx5-accent-ink);font-weight:600">财政与贸易</span><br>
-          2 条高影响信号
+          3 条高影响信号
         </span>
         
       </div>
@@ -4204,8 +4213,8 @@
               <span class="l-zh">重大事件临近 — 双向波动或加大</span>
             </div>
             <div class="mx5-alert-detail">
-              <span class="l-en">Event-risk window: FOMC rate decision in 2 days — high two-sided volatility expected · positioned fragile. Not a sell si…</span>
-              <span class="l-zh">事件风险窗口：美联储议息会议（2 天后）—— 预计偏高的两面性波动 · 仓位脆弱。非卖出信号；按噪声调整仓位。</span>
+              <span class="l-en">Event-risk window: FOMC rate decision in 3 days — high two-sided volatility expected · positioned fragile. Not a sell si…</span>
+              <span class="l-zh">事件风险窗口：美联储议息会议（3 天后）—— 预计偏高的两面性波动 · 仓位脆弱。非卖出信号；按噪声调整仓位。</span>
             </div>
           </div>
         </div>
@@ -4220,7 +4229,7 @@
             <div class="mx5-alert-title">
               <span style="font-size:12px;margin-right:3px">📰</span>
               <span class="l-en">Trader who successfully shorted Tesla into earnings now sets sights on this high…</span>
-              <span class="l-zh">做空特斯拉赚了钱的交易员，现在盯上了这只热门股</span>
+              <span class="l-zh">Trader who successfully shorted Tesla into earnings now sets…</span>
             </div>
             <div class="mx5-alert-detail">
               <span>CNBC - Investing</span> · 
@@ -4236,8 +4245,8 @@
       </div>
       <div class="mx5-alert-footer">
         <span>
-          <span class="l-en">Showing 1 of 1 in feed</span>
-          <span class="l-zh">显示 1 / 1 条</span>
+          <span class="l-en">Showing 1 of 2 in feed</span>
+          <span class="l-zh">显示 1 / 2 条</span>
         </span>
         <button type="button" class="gbtn gbtn-sm gbtn-quiet" onclick="event.stopPropagation();mx5OpenDlg('dlg-news')">
           <span class="l-en">View all &#8594;</span>
@@ -6926,44 +6935,44 @@
             </linearGradient>
           </defs>
           
-          <path class="fbm-chart-area" d="M50,105.1 L185.0,99.2 L320.0,79.1 L455.0,54.3 L590,37.7 L590,150 L50,150 Z" fill="url(#plxChartGrad)"/>
+          <path class="fbm-chart-area" d="M50,103.0 L185.0,98.0 L320.0,78.2 L455.0,53.4 L590,38.6 L590,150 L50,150 Z" fill="url(#plxChartGrad)"/>
           
-          <line x1="50" y1="106.3" x2="590" y2="106.3" stroke="rgba(255,255,255,.18)" stroke-width="1" stroke-dasharray="4,4"/>
+          <line x1="50" y1="104.2" x2="590" y2="104.2" stroke="rgba(255,255,255,.18)" stroke-width="1" stroke-dasharray="4,4"/>
           
-          <polyline class="fbm-chart-line" style="--dash:760" points="50,105.1 185.0,99.2 320.0,79.1 455.0,54.3 590,37.7" fill="none" stroke="var(--isle-policy)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
-          
-          
-          
-          
-          <circle class="fbm-chart-node" cx="50" cy="105.1" r="4" fill="var(--isle-policy)" stroke="rgba(13,17,24,.8)" stroke-width="1.5"/>
-          <text class="fbm-chart-node" x="50" y="97.1" text-anchor="middle" font-size="10" fill="var(--isle-policy)" font-family="inherit" font-variant-numeric="tabular-nums">3.63%</text>
-          
-          
-          
-          <circle class="fbm-chart-node" cx="185.0" cy="99.2" r="4" fill="var(--isle-policy)" stroke="rgba(13,17,24,.8)" stroke-width="1.5"/>
-          <text class="fbm-chart-node" x="185.0" y="91.2" text-anchor="middle" font-size="10" fill="var(--isle-policy)" font-family="inherit" font-variant-numeric="tabular-nums">3.68%</text>
-          
-          
-          
-          <circle class="fbm-chart-node" cx="320.0" cy="79.1" r="4" fill="var(--isle-policy)" stroke="rgba(13,17,24,.8)" stroke-width="1.5"/>
-          <text class="fbm-chart-node" x="320.0" y="71.1" text-anchor="middle" font-size="10" fill="var(--isle-policy)" font-family="inherit" font-variant-numeric="tabular-nums">3.85%</text>
-          
-          
-          
-          <circle class="fbm-chart-node" cx="455.0" cy="54.3" r="4" fill="var(--isle-policy)" stroke="rgba(13,17,24,.8)" stroke-width="1.5"/>
-          <text class="fbm-chart-node" x="455.0" y="46.3" text-anchor="middle" font-size="10" fill="var(--isle-policy)" font-family="inherit" font-variant-numeric="tabular-nums">4.06%</text>
-          
-          
-          
-          <circle class="fbm-chart-node" cx="590" cy="37.7" r="4" fill="var(--isle-policy)" stroke="rgba(13,17,24,.8)" stroke-width="1.5"/>
-          <text class="fbm-chart-node" x="590" y="29.700000000000003" text-anchor="middle" font-size="10" fill="var(--isle-policy)" font-family="inherit" font-variant-numeric="tabular-nums">4.20%</text>
+          <polyline class="fbm-chart-line" style="--dash:760" points="50,103.0 185.0,98.0 320.0,78.2 455.0,53.4 590,38.6" fill="none" stroke="var(--isle-policy)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
           
           
           
           
+          <circle class="fbm-chart-node" cx="50" cy="103.0" r="4" fill="var(--isle-policy)" stroke="rgba(13,17,24,.8)" stroke-width="1.5"/>
+          <text class="fbm-chart-node" x="50" y="95.0" text-anchor="middle" font-size="10" fill="var(--isle-policy)" font-family="inherit" font-variant-numeric="tabular-nums">3.63%</text>
           
           
-          <polygon class="fbm-chart-diamond" points="455.0,79.0 461.0,85.0 455.0,91.0 449.0,85.0" fill="var(--warn,#f59e0b)" fill-opacity=".85"/>
+          
+          <circle class="fbm-chart-node" cx="185.0" cy="98.0" r="4" fill="var(--isle-policy)" stroke="rgba(13,17,24,.8)" stroke-width="1.5"/>
+          <text class="fbm-chart-node" x="185.0" y="90.0" text-anchor="middle" font-size="10" fill="var(--isle-policy)" font-family="inherit" font-variant-numeric="tabular-nums">3.67%</text>
+          
+          
+          
+          <circle class="fbm-chart-node" cx="320.0" cy="78.2" r="4" fill="var(--isle-policy)" stroke="rgba(13,17,24,.8)" stroke-width="1.5"/>
+          <text class="fbm-chart-node" x="320.0" y="70.2" text-anchor="middle" font-size="10" fill="var(--isle-policy)" font-family="inherit" font-variant-numeric="tabular-nums">3.83%</text>
+          
+          
+          
+          <circle class="fbm-chart-node" cx="455.0" cy="53.4" r="4" fill="var(--isle-policy)" stroke="rgba(13,17,24,.8)" stroke-width="1.5"/>
+          <text class="fbm-chart-node" x="455.0" y="45.4" text-anchor="middle" font-size="10" fill="var(--isle-policy)" font-family="inherit" font-variant-numeric="tabular-nums">4.03%</text>
+          
+          
+          
+          <circle class="fbm-chart-node" cx="590" cy="38.6" r="4" fill="var(--isle-policy)" stroke="rgba(13,17,24,.8)" stroke-width="1.5"/>
+          <text class="fbm-chart-node" x="590" y="30.6" text-anchor="middle" font-size="10" fill="var(--isle-policy)" font-family="inherit" font-variant-numeric="tabular-nums">4.15%</text>
+          
+          
+          
+          
+          
+          
+          <polygon class="fbm-chart-diamond" points="455.0,75.9 461.0,81.9 455.0,87.9 449.0,81.9" fill="var(--warn,#f59e0b)" fill-opacity=".85"/>
           
           
           
@@ -7004,19 +7013,19 @@
         
         <div class="plx-chart-caption">
           
-          <span class="l-en">At end-2026 the market implies 3.99% vs the Fed&#39;s 3.80% median dot (+19bp — market more hawkish than the Fed). The near-term forward spread is positive — no cuts priced near-term (+0.84pp).</span>
+          <span class="l-en">At end-2026 the market implies 3.96% vs the Fed&#39;s 3.80% median dot (+16bp — market more hawkish than the Fed). The near-term forward spread is positive — no cuts priced near-term (+0.84pp).</span>
           
           
           
-          <span class="l-zh">在end-2026，市场隐含 3.99% 对比美联储 3.80% 的中位点（+19基点 — 市场比美联储更鹰派）。近端远期利差为正——近端未为降息定价（+0.84个百分点）。</span>
+          <span class="l-zh">在end-2026，市场隐含 3.96% 对比美联储 3.80% 的中位点（+16基点 — 市场比美联储更鹰派）。近端远期利差为正——近端未为降息定价（+0.84个百分点）。</span>
           
           
           
           <span class="plx-chart-gap-chip"
-            data-tip-en="Fed dot at end-2026: 3.8%. Market: 3.99%. Gap 19bp."
-            data-tip-zh="美联储点图end-2026: 3.8%，市场定价: 3.99%，差距19bp。">
-            <span class="l-en">market more hawkish than the Fed (19bp at end-2026)</span>
-            <span class="l-zh">市场比美联储更鹰派（19bp @ end-2026）</span>
+            data-tip-en="Fed dot at end-2026: 3.8%. Market: 3.96%. Gap 16bp."
+            data-tip-zh="美联储点图end-2026: 3.8%，市场定价: 3.96%，差距16bp。">
+            <span class="l-en">market more hawkish than the Fed (16bp at end-2026)</span>
+            <span class="l-zh">市场比美联储更鹰派（16bp @ end-2026）</span>
           </span>
           
         </div>
@@ -7049,7 +7058,7 @@
             
             <span class="plx-driver-chip"><span class="l-en">statement guidance on-hold</span><span class="l-zh">声明指引按兵不动</span></span>
             
-            <span class="plx-driver-chip"><span class="l-en">market more hawkish than the Fed (+19bp)</span><span class="l-zh">市场比美联储更鹰派（+19bp）</span></span>
+            <span class="plx-driver-chip"><span class="l-en">market more hawkish than the Fed (+16bp)</span><span class="l-zh">市场比美联储更鹰派（+16bp）</span></span>
             
           </div>
           
@@ -7411,13 +7420,32 @@ The dominant driver today is the rates market’s hawkish repricing. The bond de
                 <span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;background:rgba(245,158,11,.12);color:var(--mx5-warn-ink,#9c6212);border:1px solid rgba(245,158,11,.22);white-space:nowrap"><span class="l-en">Event</span><span class="l-zh">事件</span></span>
                 
               </div>
-              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.5"><span class="l-en">Event-risk window: FOMC rate decision in 2 days — high two-sided volatility expected · positioned fragile. Not a sell signal; size for the noise.</span><span class="l-zh">事件风险窗口：美联储议息会议（2 天后）—— 预计偏高的两面性波动 · 仓位脆弱。非卖出信号；按噪声调整仓位。</span></div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.5"><span class="l-en">Event-risk window: FOMC rate decision in 3 days — high two-sided volatility expected · positioned fragile. Not a sell signal; size for the noise.</span><span class="l-zh">事件风险窗口：美联储议息会议（3 天后）—— 预计偏高的两面性波动 · 仓位脆弱。非卖出信号；按噪声调整仓位。</span></div>
             </div>
           </div>
           
         </div>
         
         
+        
+        <div class="isle-head"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">Context</span><span class="l-zh">背景</span></span><div class="isle-head-line"></div></div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;opacity:.8">
+          
+          <div style="display:flex;gap:10px;padding:10px 12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid rgba(255,255,255,.05)">
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.30));flex-shrink:0;margin-top:5px"></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:3px">
+                <div style="font-size:12.5px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.7))">
+                  <span style="font-size:11px;margin-right:3px">🔌</span>
+                  <span class="l-en">A data source went dark</span><span class="l-zh">某数据源中断</span>
+                </div>
+                <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.36));border:1px solid rgba(255,255,255,.09);white-space:nowrap"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
+              </div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">Source &#39;intl_universe&#39; marked dead after 3 consecutive failures — collector skipped until it recovers; affected signals degrade</span><span class="l-zh">数据源 &#39;intl_universe&#39; 连续 3 次失败后被标记为中断 —采集器暂停直至恢复；相关信号置信度下降</span></div>
+            </div>
+          </div>
+          
+        </div>
         
         
         
@@ -7433,7 +7461,7 @@ The dominant driver today is the rates market’s hawkish repricing. The bond de
           <a class="nbx-item" href="https://seekingalpha.com/news/4618505-sa-asks-how-will-trumps-new-tariffs-impact-the-eu-trade-deal?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Fiscal</span><span class="l-zh">财政</span></span>
-              <span class="nbx-title"><span class="l-en">SA Asks: How will Trump&#39;s new tariffs impact the EU trade deal?</span><span class="l-zh">Seeking Alpha提问：特朗普的新关税将如何影响欧盟贸易协定？</span></span>
+              <span class="nbx-title"><span class="l-en">SA Asks: How will Trump&#39;s new tariffs impact the EU trade deal?</span><span class="l-zh">SA Asks: How will Trump&#39;s new tariffs impact the EU trade deal?</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7448,46 +7476,10 @@ The dominant driver today is the rates market’s hawkish repricing. The bond de
           
           
           
-          <a class="nbx-item" href="https://finance.yahoo.com/markets/stocks/articles/teslas-revenue-beat-hid-number-144356290.html" target="_blank" rel="noopener">
-            <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Tesla&#39;s Revenue Beat Hid The Number That Actually Sank The Stock</span><span class="l-zh">特斯拉的营收超预期掩盖了真正拖累股价的数据</span></span>
-            </div>
-            <div class="nbx-meta">
-              <span class="nbx-src">news_rss</span>
-              <span class="nbx-dot">·</span>
-              <span class="nbx-date">Jul 25</span>
-              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
-            </div>
-            
-          </a>
-          
-          
-          
-          
-          
-          <a class="nbx-item" href="https://www.cnbc.com/2026/07/24/trader-who-successfully-shorted-tesla-into-earnings-now-sets-sights-on-this-high-flyer-.html" target="_blank" rel="noopener">
-            <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Trader who successfully shorted Tesla into earnings now sets sights on this high flyer</span><span class="l-zh">做空特斯拉赚了钱的交易员，现在盯上了这只热门股</span></span>
-            </div>
-            <div class="nbx-meta">
-              <span class="nbx-src">news_rss</span>
-              <span class="nbx-dot">·</span>
-              <span class="nbx-date">Jul 24</span>
-              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
-            </div>
-            
-          </a>
-          
-          
-          
-          
-          
           <a class="nbx-item" href="https://www.marketwatch.com/story/the-s-p-500s-earnings-growth-has-gone-bonkers-thanks-to-one-company-1c45b2ba?mod=mw_rss_topstories" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">The S&amp;P 500’s earnings growth has gone bonkers thanks to one company</span><span class="l-zh">标普500盈利增长因一家公司而疯狂飙升</span></span>
+              <span class="nbx-title"><span class="l-en">The S&amp;P 500’s earnings growth has gone bonkers thanks to one company</span><span class="l-zh">The S&amp;P 500’s earnings growth has gone bonkers thanks to one company</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7505,7 +7497,7 @@ The dominant driver today is the rates market’s hawkish repricing. The bond de
           <a class="nbx-item" href="https://seekingalpha.com/news/4618507-oil-slides-as-trump-pauses-iran-strikes-easing-supply-fears?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nbx-title"><span class="l-en">Oil slides as Trump pauses Iran strikes, easing supply fears</span><span class="l-zh">特朗普暂停对伊朗打击，油价回落缓解供应担忧</span></span>
+              <span class="nbx-title"><span class="l-en">Oil slides as Trump pauses Iran strikes, easing supply fears</span><span class="l-zh">Oil slides as Trump pauses Iran strikes, easing supply fears</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7520,10 +7512,46 @@ The dominant driver today is the rates market’s hawkish repricing. The bond de
           
           
           
+          <a class="nbx-item" href="https://www.cnbc.com/2026/07/24/trader-who-successfully-shorted-tesla-into-earnings-now-sets-sights-on-this-high-flyer-.html" target="_blank" rel="noopener">
+            <div class="nbx-top">
+              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="nbx-title"><span class="l-en">Trader who successfully shorted Tesla into earnings now sets sights on this high flyer</span><span class="l-zh">Trader who successfully shorted Tesla into earnings now sets sights on this high flyer</span></span>
+            </div>
+            <div class="nbx-meta">
+              <span class="nbx-src">news_rss</span>
+              <span class="nbx-dot">·</span>
+              <span class="nbx-date">Jul 24</span>
+              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
+            </div>
+            
+          </a>
+          
+          
+          
+          
+          
+          <a class="nbx-item" href="https://www.cnbc.com/2026/07/21/general-motors-gm-earnings-q2-2026.html" target="_blank" rel="noopener">
+            <div class="nbx-top">
+              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="nbx-title"><span class="l-en">GM beats on earnings, raises guidance amid &#39;resilient&#39; consumer, pricing</span><span class="l-zh">通用汽车业绩超预期，在消费者和定价‘韧性’背景下上调指引</span></span>
+            </div>
+            <div class="nbx-meta">
+              <span class="nbx-src">news_rss</span>
+              <span class="nbx-dot">·</span>
+              <span class="nbx-date">Jul 21</span>
+              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
+            </div>
+            
+          </a>
+          
+          
+          
+          
+          
           <a class="nbx-item" href="https://seekingalpha.com/news/4618506-brown-forman-rejects-renewed-takeover-approach-from-sazerac?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Deals</span><span class="l-zh">并购/IPO</span></span>
-              <span class="nbx-title"><span class="l-en">Brown-Forman rejects renewed takeover approach from Sazerac</span><span class="l-zh">Brown-Forman拒绝Sazerac新提出的收购要约</span></span>
+              <span class="nbx-title"><span class="l-en">Brown-Forman rejects renewed takeover approach from Sazerac</span><span class="l-zh">Brown-Forman rejects renewed takeover approach from Sazerac</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7541,43 +7569,7 @@ The dominant driver today is the rates market’s hawkish repricing. The bond de
           <a class="nbx-item" href="https://www.cnbc.com/2026/07/23/intel-intc-earnings-report-q2-2026.html" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Intel rides AI boom to fastest revenue growth in almost 15 years, but shares sink</span><span class="l-zh">英特尔借AI东风实现近15年最快营收增长，但股价下跌</span></span>
-            </div>
-            <div class="nbx-meta">
-              <span class="nbx-src">news_rss</span>
-              <span class="nbx-dot">·</span>
-              <span class="nbx-date">Jul 24</span>
-              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
-            </div>
-            
-          </a>
-          
-          
-          
-          
-          
-          <a class="nbx-item" href="https://www.cnbc.com/2026/07/24/moodys-ai-spending-credit-quality-amazon-meta-alphabet.html" target="_blank" rel="noopener">
-            <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nbx-title"><span class="l-en">Moody&#39;s says &#39;unprecedented&#39; AI spending threatens credit quality of Amazon, Meta, Alphabet and others</span><span class="l-zh">穆迪称‘史无前例’的AI支出威胁亚马逊、Meta、Alphabet等公司信用质量</span></span>
-            </div>
-            <div class="nbx-meta">
-              <span class="nbx-src">news_rss</span>
-              <span class="nbx-dot">·</span>
-              <span class="nbx-date">Jul 24</span>
-              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
-            </div>
-            
-          </a>
-          
-          
-          
-          
-          
-          <a class="nbx-item" href="https://www.cnbc.com/2026/07/24/1-hyperscaler-megacap-down-3-to-go-alphabet-raises-the-stakes-on-ai-spending.html" target="_blank" rel="noopener">
-            <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Deals</span><span class="l-zh">并购/IPO</span></span>
-              <span class="nbx-title"><span class="l-en">1 hyperscaler megacap down, 3 to go. Alphabet raises the stakes on AI spending</span><span class="l-zh">一家超大规模科技巨头已公布财报，还有三家待发。Alphabet在AI支出上再加码</span></span>
+              <span class="nbx-title"><span class="l-en">Intel rides AI boom to fastest revenue growth in almost 15 years, but shares sink</span><span class="l-zh">Intel rides AI boom to fastest revenue growth in almost 15 years, but shares sink</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7601,6 +7593,42 @@ The dominant driver today is the rates market’s hawkish repricing. The bond de
               <span class="nbx-src">news_rss</span>
               <span class="nbx-dot">·</span>
               <span class="nbx-date">Jul 25</span>
+              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
+            </div>
+            
+          </a>
+          
+          
+          
+          
+          
+          <a class="nbx-item" href="https://www.marketwatch.com/story/oil-prices-sink-stock-futures-rally-as-u-s-and-iran-pause-attacks-wall-street-awaits-busy-week-75030e00?mod=mw_rss_topstories" target="_blank" rel="noopener">
+            <div class="nbx-top">
+              <span class="nbx-theme"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span>
+              <span class="nbx-title"><span class="l-en">Oil prices sink, stock futures rally as U.S. and Iran pause attacks, Wall Street awaits busy week</span><span class="l-zh">Oil prices sink, stock futures rally as U.S. and Iran pause attacks, Wall Street awaits busy week</span></span>
+            </div>
+            <div class="nbx-meta">
+              <span class="nbx-src">news_rss</span>
+              <span class="nbx-dot">·</span>
+              <span class="nbx-date">Jul 27</span>
+              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
+            </div>
+            
+          </a>
+          
+          
+          
+          
+          
+          <a class="nbx-item" href="https://www.marketwatch.com/story/time-will-tell-whether-that-was-a-good-bet-my-adviser-got-me-a-full-spacex-ipo-allocation-was-i-lucky-7f319645?mod=mw_rss_topstories" target="_blank" rel="noopener">
+            <div class="nbx-top">
+              <span class="nbx-theme"><span class="l-en">Deals</span><span class="l-zh">并购/IPO</span></span>
+              <span class="nbx-title"><span class="l-en">‘Time will tell whether that was a good bet’: My adviser got me a full SpaceX IPO allocation. Was I lucky?</span><span class="l-zh">‘Time will tell whether that was a good bet’: My adviser got me a full SpaceX IPO allocation. Was I lucky?</span></span>
+            </div>
+            <div class="nbx-meta">
+              <span class="nbx-src">news_rss</span>
+              <span class="nbx-dot">·</span>
+              <span class="nbx-date">Jul 26</span>
               <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
             </div>
             
@@ -11265,9 +11293,9 @@ The dominant driver today is the rates market’s hawkish repricing. The bond de
       
     </table>
     <p class="muted"><span class="l-en">A failed source never crashes the dashboard — affected signals just lose confidence until it heals.
-       Generated 2026-07-27 01:39 UTC · <a href="aibrief.html">AI daily brief</a> ·
+       Generated 2026-07-27 01:13 UTC · <a href="aibrief.html">AI daily brief</a> ·
        <a href="history.html">history & charts</a></span><span class="l-zh">数据源失败绝不会让仪表盘崩溃 — 受影响的信号只是降低置信度，直到其恢复。
-       生成于 2026-07-27 01:39 UTC · <a href="aibrief.html">AI每日简报</a> ·
+       生成于 2026-07-27 01:13 UTC · <a href="aibrief.html">AI每日简报</a> ·
        <a href="history.html">历史与图表</a></span></p>
   </details>
   
@@ -11520,5 +11548,6 @@ window.__CHART_SWAP__ = {
 <footer class="site-footer">
   <span class="made">© 2026 Mastermind Inc</span>
 </footer>
+<script defer data-whb data-root="" src="wh_banner.js?v=37bf40aa"></script>
 </body>
 </html>

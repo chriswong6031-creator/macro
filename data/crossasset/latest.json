@@ -19,8 +19,8 @@
       "verdict": "concentrated",
       "absorption_pctile": 0.86,
       "n_markets": 6,
-      "absorption_ratio": 0.411,
-      "mean_abs_corr": 0.272,
+      "absorption_ratio": 0.412,
+      "mean_abs_corr": 0.273,
       "dominant_cluster": [
         "US",
         "Commodities",
@@ -130,7 +130,7 @@
         0.463,
         0.445,
         0.422,
-        0.411
+        0.412
       ],
       "spark_asof": "2026-07-24"
     },
@@ -177,19 +177,19 @@
         "pair": "copper_gold",
         "ratio": 0.002,
         "trend": "mid",
-        "pctile": 70.0
+        "pctile": 68.0
       },
       {
         "pair": "gold_silver",
-        "ratio": 69.107,
+        "ratio": 68.339,
         "trend": "mid",
-        "pctile": 29.0
+        "pctile": 28.0
       },
       {
         "pair": "oil_gold",
-        "ratio": 0.022,
+        "ratio": 0.021,
         "trend": "mid",
-        "pctile": 63.0
+        "pctile": 57.0
       },
       {
         "pair": "stocks_gold",
@@ -335,9 +335,9 @@
       ],
       "unstable_n": 0,
       "fx_stress": {
-        "dominant": "intervention_risk",
-        "top_key": "intervention_risk",
-        "top_val": 24.4
+        "dominant": null,
+        "top_key": "reflation_risk_on",
+        "top_val": 54.1
       }
     },
     "shadow": {

@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-07-26",
+  "as_of": "2026-07-27",
   "item_count": 16,
   "counts_by_severity": {
     "P2": 14,
@@ -12,7 +12,7 @@
       "summary_en": "Tension: regime_vector-vs-risk_radar",
       "summary_zh": "矛盾张力：regime_vector-vs-risk_radar",
       "evidence_path": "site/neuralwebdata/confluence_graph.json",
-      "as_of": "2026-07-26"
+      "as_of": "2026-07-27"
     },
     {
       "kind": "contradiction_tension",
@@ -20,103 +20,103 @@
       "summary_en": "Tension: briefing-divergences",
       "summary_zh": "矛盾张力：briefing-divergences",
       "evidence_path": "site/neuralwebdata/confluence_graph.json",
-      "as_of": "2026-07-26"
+      "as_of": "2026-07-27"
     },
     {
       "kind": "lobe_sla_breach",
       "severity": "P2",
-      "summary_en": "Lobe 'site-us-standouts' overdue: 58h old vs 30h SLA (1.9×)",
-      "summary_zh": "脉叶 'site-us-standouts' 过期：58小时，SLA 30小时（1.9倍）",
+      "summary_en": "Lobe 'site-us-standouts' overdue: 76h old vs 30h SLA (2.5×)",
+      "summary_zh": "脉叶 'site-us-standouts' 过期：76小时，SLA 30小时（2.5倍）",
       "evidence_path": "site/neuralwebdata/health.json",
-      "as_of": "2026-07-26"
+      "as_of": "2026-07-27"
     },
     {
       "kind": "lobe_sla_breach",
       "severity": "P2",
-      "summary_en": "Lobe 'opex-risk-snapshot' overdue: 58h old vs 30h SLA (1.9×)",
-      "summary_zh": "脉叶 'opex-risk-snapshot' 过期：58小时，SLA 30小时（1.9倍）",
+      "summary_en": "Lobe 'confluence-strength' overdue: 52h old vs 30h SLA (1.7×)",
+      "summary_zh": "脉叶 'confluence-strength' 过期：52小时，SLA 30小时（1.7倍）",
       "evidence_path": "site/neuralwebdata/health.json",
-      "as_of": "2026-07-26"
+      "as_of": "2026-07-27"
     },
     {
       "kind": "lobe_sla_breach",
       "severity": "P2",
-      "summary_en": "Lobe 'bottom-sensors-json' overdue: 58h old vs 30h SLA (1.9×)",
-      "summary_zh": "脉叶 'bottom-sensors-json' 过期：58小时，SLA 30小时（1.9倍）",
+      "summary_en": "Lobe 'opex-risk-snapshot' overdue: 76h old vs 30h SLA (2.5×)",
+      "summary_zh": "脉叶 'opex-risk-snapshot' 过期：76小时，SLA 30小时（2.5倍）",
       "evidence_path": "site/neuralwebdata/health.json",
-      "as_of": "2026-07-26"
+      "as_of": "2026-07-27"
     },
     {
       "kind": "lobe_sla_breach",
       "severity": "P2",
-      "summary_en": "Lobe 'neuralweb-mastermind-context' overdue: 58h old vs 30h SLA (1.9×)",
-      "summary_zh": "脉叶 'neuralweb-mastermind-context' 过期：58小时，SLA 30小时（1.9倍）",
+      "summary_en": "Lobe 'bottom-sensors-json' overdue: 76h old vs 30h SLA (2.5×)",
+      "summary_zh": "脉叶 'bottom-sensors-json' 过期：76小时，SLA 30小时（2.5倍）",
       "evidence_path": "site/neuralwebdata/health.json",
-      "as_of": "2026-07-26"
+      "as_of": "2026-07-27"
     },
     {
       "kind": "lobe_sla_breach",
       "severity": "P2",
-      "summary_en": "Lobe 'site-neuralweb-mastermind-context' overdue: 58h old vs 30h SLA (1.9×)",
-      "summary_zh": "脉叶 'site-neuralweb-mastermind-context' 过期：58小时，SLA 30小时（1.9倍）",
+      "summary_en": "Lobe 'neuralweb-mastermind-context' overdue: 76h old vs 30h SLA (2.5×)",
+      "summary_zh": "脉叶 'neuralweb-mastermind-context' 过期：76小时，SLA 30小时（2.5倍）",
       "evidence_path": "site/neuralwebdata/health.json",
-      "as_of": "2026-07-26"
+      "as_of": "2026-07-27"
     },
     {
       "kind": "lobe_sla_breach",
       "severity": "P2",
-      "summary_en": "Lobe 'site-confluence-graph' overdue: 106h old vs 30h SLA (3.5×)",
-      "summary_zh": "脉叶 'site-confluence-graph' 过期：106小时，SLA 30小时（3.5倍）",
+      "summary_en": "Lobe 'site-neuralweb-mastermind-context' overdue: 76h old vs 30h SLA (2.5×)",
+      "summary_zh": "脉叶 'site-neuralweb-mastermind-context' 过期：76小时，SLA 30小时（2.5倍）",
       "evidence_path": "site/neuralwebdata/health.json",
-      "as_of": "2026-07-26"
+      "as_of": "2026-07-27"
     },
     {
       "kind": "lobe_sla_breach",
       "severity": "P2",
-      "summary_en": "Lobe 'site-liquidity-plumbing' overdue: 58h old vs 30h SLA (1.9×)",
-      "summary_zh": "脉叶 'site-liquidity-plumbing' 过期：58小时，SLA 30小时（1.9倍）",
+      "summary_en": "Lobe 'site-liquidity-plumbing' overdue: 76h old vs 30h SLA (2.5×)",
+      "summary_zh": "脉叶 'site-liquidity-plumbing' 过期：76小时，SLA 30小时（2.5倍）",
       "evidence_path": "site/neuralwebdata/health.json",
-      "as_of": "2026-07-26"
+      "as_of": "2026-07-27"
     },
     {
       "kind": "lobe_sla_breach",
       "severity": "P2",
-      "summary_en": "Lobe 'liquidity-plumbing' overdue: 58h old vs 30h SLA (1.9×)",
-      "summary_zh": "脉叶 'liquidity-plumbing' 过期：58小时，SLA 30小时（1.9倍）",
+      "summary_en": "Lobe 'liquidity-plumbing' overdue: 76h old vs 30h SLA (2.5×)",
+      "summary_zh": "脉叶 'liquidity-plumbing' 过期：76小时，SLA 30小时（2.5倍）",
       "evidence_path": "site/neuralwebdata/health.json",
-      "as_of": "2026-07-26"
+      "as_of": "2026-07-27"
     },
     {
       "kind": "lobe_sla_breach",
       "severity": "P2",
-      "summary_en": "Lobe 'rates-command-latest' overdue: 58h old vs 30h SLA (1.9×)",
-      "summary_zh": "脉叶 'rates-command-latest' 过期：58小时，SLA 30小时（1.9倍）",
+      "summary_en": "Lobe 'rates-command-latest' overdue: 76h old vs 30h SLA (2.5×)",
+      "summary_zh": "脉叶 'rates-command-latest' 过期：76小时，SLA 30小时（2.5倍）",
       "evidence_path": "site/neuralwebdata/health.json",
-      "as_of": "2026-07-26"
+      "as_of": "2026-07-27"
     },
     {
       "kind": "lobe_sla_breach",
       "severity": "P2",
-      "summary_en": "Lobe 'darkpool-context-latest' overdue: 58h old vs 36h SLA (1.6×)",
-      "summary_zh": "脉叶 'darkpool-context-latest' 过期：58小时，SLA 36小时（1.6倍）",
+      "summary_en": "Lobe 'darkpool-context-latest' overdue: 76h old vs 36h SLA (2.1×)",
+      "summary_zh": "脉叶 'darkpool-context-latest' 过期：76小时，SLA 36小时（2.1倍）",
       "evidence_path": "site/neuralwebdata/health.json",
-      "as_of": "2026-07-26"
+      "as_of": "2026-07-27"
     },
     {
       "kind": "lobe_sla_breach",
       "severity": "P2",
-      "summary_en": "Lobe 'transmission-chains-state' overdue: 58h old vs 36h SLA (1.6×)",
-      "summary_zh": "脉叶 'transmission-chains-state' 过期：58小时，SLA 36小时（1.6倍）",
+      "summary_en": "Lobe 'transmission-chains-state' overdue: 76h old vs 36h SLA (2.1×)",
+      "summary_zh": "脉叶 'transmission-chains-state' 过期：76小时，SLA 36小时（2.1倍）",
       "evidence_path": "site/neuralwebdata/health.json",
-      "as_of": "2026-07-26"
+      "as_of": "2026-07-27"
     },
     {
       "kind": "lobe_sla_breach",
       "severity": "P2",
-      "summary_en": "Lobe 'market-structure-latest' overdue: 58h old vs 30h SLA (1.9×)",
-      "summary_zh": "脉叶 'market-structure-latest' 过期：58小时，SLA 30小时（1.9倍）",
+      "summary_en": "Lobe 'market-structure-latest' overdue: 76h old vs 30h SLA (2.5×)",
+      "summary_zh": "脉叶 'market-structure-latest' 过期：76小时，SLA 30小时（2.5倍）",
       "evidence_path": "site/neuralwebdata/health.json",
-      "as_of": "2026-07-26"
+      "as_of": "2026-07-27"
     },
     {
       "kind": "cortex_degraded",
@@ -124,7 +124,7 @@
       "summary_en": "Cortex deliberation unavailable: model_unavailable",
       "summary_zh": "皮层审议当前不可用：model_unavailable",
       "evidence_path": "site/neuralwebdata/health.json",
-      "as_of": "2026-07-26"
+      "as_of": "2026-07-27"
     },
     {
       "kind": "evidence_clock_overdue",
@@ -132,7 +132,7 @@
       "summary_en": "20 evidence clock(s) overdue; top: qledger:placebo",
       "summary_zh": "20 个证据时钟逾期；最高优先级：qledger:placebo",
       "evidence_path": "data/neuralweb/evidence_clock.json",
-      "as_of": "2026-07-26"
+      "as_of": "2026-07-27"
     }
   ],
   "caveats": [
@@ -143,7 +143,7 @@
   ],
   "schema_version": 1,
   "produced_by": "scripts/build_attention_deterministic.py",
-  "produced_at": "2026-07-26T09:36:49Z",
-  "inputs_hash": "sha256:cfb89d1a78de4cb7ea1a9521ff74037e969c0fd930144a65b59c9e16506d5b66",
+  "produced_at": "2026-07-27T03:54:22Z",
+  "inputs_hash": "sha256:db7613a014964febfab3088f2995ad98ca1c7bdec3929499fb526dec4aa8b685",
   "tier": "display"
 }

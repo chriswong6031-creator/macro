@@ -1,7 +1,7 @@
 {
   "schema": "signal_governor.v1",
   "as_of": "2026-07-26",
-  "generated_at": "2026-07-26T09:32:26.317654+00:00",
+  "generated_at": "2026-07-27T03:41:59.836362+00:00",
   "region": "us",
   "gate": {
     "min_n": 150,

@@ -3207,6 +3207,19 @@
       "regime_bucket": "Q1"
     },
     {
+      "subject": "AMP",
+      "as_of": "2026-07-25",
+      "direction": 1,
+      "horizon": "63.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "altdata",
+        "radar"
+      ],
+      "regime_bucket": "Q1"
+    },
+    {
       "subject": "BF-B",
       "as_of": "2026-07-25",
       "direction": 1,
@@ -3214,8 +3227,34 @@
       "n_confirming_raw": 2,
       "n_independent_confirming": 2.0,
       "engines": [
-        "altdata_conv",
+        "altdata",
         "intel_hub"
+      ],
+      "regime_bucket": "Q1"
+    },
+    {
+      "subject": "HBAN",
+      "as_of": "2026-07-25",
+      "direction": 1,
+      "horizon": "63.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "altdata",
+        "radar"
+      ],
+      "regime_bucket": "Q1"
+    },
+    {
+      "subject": "TKO",
+      "as_of": "2026-07-25",
+      "direction": 1,
+      "horizon": "63.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "altdata",
+        "radar"
       ],
       "regime_bucket": "Q1"
     },
@@ -3296,6 +3335,19 @@
         "us_board"
       ],
       "regime_bucket": "Q1"
+    },
+    {
+      "subject": "HWM",
+      "as_of": "2026-07-16",
+      "direction": 1,
+      "horizon": "63.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "desk:stock_desk",
+        "track_record"
+      ],
+      "regime_bucket": "Q1"
     }
   ],
   "redundancy_discount": {
@@ -3307,6 +3359,6 @@
     "confluence_strength: no clusters in lobes block — no discount"
   ],
   "produced_by": "engine/neuralweb/confluence_strength.py",
-  "produced_at": "2026-07-26T09:21:10Z",
+  "produced_at": "2026-07-27T03:28:58Z",
   "authority_check": []
 }

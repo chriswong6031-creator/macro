@@ -2182,3 +2182,4 @@
 {"date": "2026-07-24", "ticker": "MANH", "score": 31.0, "percentile": 31.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-07-24", "ticker": "MAN", "score": 3.0, "percentile": 3.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-07-24", "ticker": "EPC", "score": 18.0, "percentile": 18.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-07-24", "ticker": "MGY", "score": 10.0, "percentile": 10.0, "regime": "mixed", "horizons": [21, 63, 126]}

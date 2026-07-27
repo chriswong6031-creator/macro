@@ -41,8 +41,8 @@
         "unemployment": 2.5,
         "unemployment_chg6m": -0.2,
         "m2_yoy": 4.22,
-        "fx": 163.791,
-        "fx_strength_3m": -4.42,
+        "fx": 163.832,
+        "fx_strength_3m": -4.45,
         "realvol": 36.7,
         "drawdown": -10.7
       },
@@ -72,7 +72,7 @@
         "market": "jp",
         "state": "elevated",
         "state_ungated": "elevated",
-        "top_score": 88,
+        "top_score": 89,
         "dominant_scare": "rate_shock",
         "dominant_label_en": "US rate shock",
         "dominant_label_zh": "\u7f8e\u503a\u5229\u7387\u51b2\u51fb",
@@ -127,12 +127,12 @@
             "tier": "A",
             "label_en": "Yen depreciation / outflows",
             "label_zh": "\u65e5\u5143\u8d2c\u503c\uff0f\u8d44\u91d1\u5916\u6d41",
-            "score": 65.7,
+            "score": 67.1,
             "band": "watch",
             "firing_legs": [
               {
                 "leg": "jpy_depreciation",
-                "pctile": 0.657,
+                "pctile": 0.671,
                 "confirmed": false
               }
             ]
@@ -149,11 +149,11 @@
           "measure": ">=5% index pullback within h business days (measured on this market's own history)"
         },
         "trajectory": {
-          "intensity": 88.1,
+          "intensity": 88.7,
           "peak": 95.2,
           "peak_days_ago": 16,
-          "off_peak": 7.1,
-          "velocity": 18.7,
+          "off_peak": 6.5,
+          "velocity": 19.2,
           "phase": "rising",
           "reached_risk": true,
           "state_now": "elevated",
@@ -184,16 +184,16 @@
             80.6,
             79.0,
             81.3,
-            88.1
+            88.7
           ],
-          "spark_pts": "3.0,4.7 6.9,8.8 10.8,9.0 14.7,9.1 18.7,10.5 22.6,9.2 26.5,6.8 30.4,3.0 34.3,7.8 38.2,10.5 42.1,18.8 46.0,13.7 50.0,11.3 53.9,12.5 57.8,3.9 61.7,5.2 65.6,3.9 69.5,6.8 73.4,19.2 77.3,23.0 81.3,12.2 85.2,13.2 89.1,11.7 93.0,7.5",
+          "spark_pts": "3.0,4.7 6.9,8.8 10.8,9.0 14.7,9.1 18.7,10.5 22.6,9.2 26.5,6.8 30.4,3.0 34.3,7.8 38.2,10.5 42.1,18.8 46.0,13.7 50.0,11.3 53.9,12.5 57.8,3.9 61.7,5.2 65.6,3.9 69.5,6.8 73.4,19.2 77.3,23.0 81.3,12.2 85.2,13.2 89.1,11.7 93.0,7.1",
           "spark_peak": {
             "x": 30.4,
             "y": 3.0
           },
           "spark_last": {
             "x": 93.0,
-            "y": 7.5
+            "y": 7.1
           },
           "spark_w": 96,
           "spark_h": 26,
@@ -1249,8 +1249,8 @@
         "unemployment": 6.7,
         "unemployment_chg6m": 0.1,
         "m2_yoy": 5.1,
-        "fx": 1.1375,
-        "fx_strength_3m": -3.34,
+        "fx": 1.1377,
+        "fx_strength_3m": -3.33,
         "realvol": 11.5,
         "drawdown": -1.3
       },
@@ -1330,7 +1330,7 @@
             "tier": "A",
             "label_en": "Euro depreciation / outflows",
             "label_zh": "\u6b27\u5143\u8d2c\u503c\uff0f\u8d44\u91d1\u5916\u6d41",
-            "score": 50.8,
+            "score": 50.6,
             "band": "calm",
             "firing_legs": []
           }
@@ -1607,7 +1607,7 @@
           "cc": "JP",
           "flag": "\ud83c\uddef\ud83c\uddf5",
           "name": "Japan",
-          "value": -4.42
+          "value": -4.45
         },
         {
           "cc": "AU",
@@ -1619,7 +1619,7 @@
           "cc": "EZ",
           "flag": "\ud83c\uddea\ud83c\uddfa",
           "name": "Eurozone",
-          "value": -3.34
+          "value": -3.33
         },
         {
           "cc": "TW",

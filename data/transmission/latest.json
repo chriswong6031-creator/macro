@@ -2031,7 +2031,7 @@
     ]
   },
   "dollar_channel": {
-    "asof": "2026-07-26",
+    "asof": "2026-07-27",
     "usd_dir": "strengthening",
     "roc_pct": null,
     "state": {
@@ -2085,14 +2085,7 @@
       "UST10": -0.36,
       "BTC": -0.32
     },
-    "scenario": {
-      "key": "intervention_risk",
-      "label": {
-        "en": "FX intervention risk",
-        "zh": "外汇干预风险"
-      },
-      "n_active": 1
-    },
+    "scenario": null,
     "display_only": true
   },
   "hero": {

@@ -1,6 +1,6 @@
 {
   "schema": "winner_autopsy_panel.v1",
-  "generated_at": "2026-07-26T09:36:36Z",
+  "generated_at": "2026-07-27T03:46:48Z",
   "display_only": true,
   "horizon_role": "hold_thesis",
   "census": {
@@ -62,7 +62,7 @@
     ]
   },
   "cases": {
-    "n_cases": 150,
+    "n_cases": 154,
     "items": [
       {
         "ticker": "AFRM",
@@ -676,6 +676,19 @@
         "file": "research/winners/cases/GDX_2016.md"
       },
       {
+        "ticker": "GTLB",
+        "episode_year": 2022,
+        "case_type": "failed_breakaway",
+        "mechanism": "platform_rerating",
+        "thesis_one_liner": "Exceptional growth powered a sharp rerating, but the August onset was a stale-catalyst, local-high continuation with weak liquidity confirmation and a premium valuation that failed its first public challenge.",
+        "n_catalysts": 5,
+        "case_t0": "2022-08-05",
+        "engine_t0": "2022-08-05",
+        "case_joined": true,
+        "reconcile": "matched",
+        "file": "research/winners/cases/GTLB_2022.md"
+      },
+      {
         "ticker": "HIMS",
         "episode_year": 2021,
         "case_type": "failed_breakaway",
@@ -843,6 +856,19 @@
         "case_joined": true,
         "reconcile": "matched",
         "file": "research/winners/cases/ISRG_2009.md"
+      },
+      {
+        "ticker": "JD",
+        "episode_year": 2023,
+        "case_type": "failed_breakaway",
+        "mechanism": "other",
+        "thesis_one_liner": "JD's reopening and regulatory-risk rerating failed because it was cohort beta capped by weak relative strength, slow product growth, and a costly price-war response.",
+        "n_catalysts": 10,
+        "case_t0": "2023-01-04",
+        "engine_t0": "2023-01-04",
+        "case_joined": true,
+        "reconcile": "matched",
+        "file": "research/winners/cases/JD_2023.md"
       },
       {
         "ticker": "KWEB",
@@ -1508,6 +1534,19 @@
         "file": "research/winners/cases/RMD_2021.md"
       },
       {
+        "ticker": "SEDG",
+        "episode_year": 2016,
+        "case_type": "failed_breakaway",
+        "mechanism": "platform_rerating",
+        "thesis_one_liner": "SEDG's profitable-growth rerating failed because a 57% pre-t0 run had already capitalized accelerating demand just as its largest customer cohort and sequential revenue began to slow.",
+        "n_catalysts": 8,
+        "case_t0": "2016-02-04",
+        "engine_t0": "2016-02-04",
+        "case_joined": true,
+        "reconcile": "matched",
+        "file": "research/winners/cases/SEDG_2016.md"
+      },
+      {
         "ticker": "SE",
         "episode_year": 2024,
         "case_type": "winner",
@@ -1753,6 +1792,19 @@
         "case_joined": true,
         "reconcile": "matched",
         "file": "research/winners/cases/TMDX_2021.md"
+      },
+      {
+        "ticker": "TMDX",
+        "episode_year": 2022,
+        "case_type": "failed_breakaway",
+        "mechanism": "platform_rerating",
+        "thesis_one_liner": "TMDX's approvals became a high-growth NOP commercialization story, but the standardized onset arrived after the model and tape were extended, producing a blow-off rather than a clean durable hold.",
+        "n_catalysts": 8,
+        "case_t0": "2022-08-25",
+        "engine_t0": "2022-08-25",
+        "case_joined": true,
+        "reconcile": "matched",
+        "file": "research/winners/cases/TMDX_2022.md"
       },
       {
         "ticker": "TNDM",
@@ -20657,6 +20709,23 @@
         }
       },
       {
+        "ticker": "HO_F",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "emerging",
+        "excess_21d_pp": 30.85,
+        "excess_42d_pp": 8.18,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.92,
+        "days_in_state": 0,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
         "ticker": "HTCO",
         "sector": "",
         "benchmark": "SPY",
@@ -20806,7 +20875,7 @@
         "excess_21d_pp": 30.47,
         "excess_42d_pp": -5.88,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.39,
+        "dollar_vol_z21": 0.41,
         "days_in_state": 0,
         "gex_state": null,
         "hazards": [],
@@ -22213,23 +22282,6 @@
         "excess_42d_pp": 53.98,
         "new_high_63d": false,
         "dollar_vol_z21": -0.31,
-        "days_in_state": 0,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "HO_F",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "emerging",
-        "excess_21d_pp": 28.16,
-        "excess_42d_pp": 5.98,
-        "new_high_63d": false,
-        "dollar_vol_z21": 0.53,
         "days_in_state": 0,
         "gex_state": null,
         "hazards": [],
@@ -23866,7 +23918,7 @@
         "excess_21d_pp": 26.19,
         "excess_42d_pp": -6.9,
         "new_high_63d": false,
-        "dollar_vol_z21": 1.18,
+        "dollar_vol_z21": 1.74,
         "days_in_state": 0,
         "gex_state": null,
         "hazards": [],
@@ -26052,14 +26104,14 @@
         }
       },
       {
-        "ticker": "PNBK",
+        "ticker": "GROW",
         "sector": "",
         "benchmark": "SPY",
         "state": "emerging",
         "excess_21d_pp": 23.32,
-        "excess_42d_pp": 11.06,
+        "excess_42d_pp": 15.52,
         "new_high_63d": false,
-        "dollar_vol_z21": 0.78,
+        "dollar_vol_z21": -0.48,
         "days_in_state": 0,
         "gex_state": null,
         "hazards": [],
@@ -26069,14 +26121,14 @@
         }
       },
       {
-        "ticker": "GROW",
+        "ticker": "PNBK",
         "sector": "",
         "benchmark": "SPY",
         "state": "emerging",
         "excess_21d_pp": 23.32,
-        "excess_42d_pp": 15.52,
+        "excess_42d_pp": 11.06,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.48,
+        "dollar_vol_z21": 0.78,
         "days_in_state": 0,
         "gex_state": null,
         "hazards": [],
@@ -38121,14 +38173,14 @@
         }
       },
       {
-        "ticker": "GOVZ",
+        "ticker": "PPCB",
         "sector": "",
         "benchmark": "SPY",
         "state": "emerging",
         "excess_21d_pp": 1.69,
-        "excess_42d_pp": 298.21,
+        "excess_42d_pp": 1610.11,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.97,
+        "dollar_vol_z21": 0.74,
         "days_in_state": 0,
         "gex_state": null,
         "hazards": [],
@@ -38138,14 +38190,14 @@
         }
       },
       {
-        "ticker": "PPCB",
+        "ticker": "GOVZ",
         "sector": "",
         "benchmark": "SPY",
         "state": "emerging",
         "excess_21d_pp": 1.69,
-        "excess_42d_pp": 1610.11,
+        "excess_42d_pp": 298.21,
         "new_high_63d": false,
-        "dollar_vol_z21": 0.74,
+        "dollar_vol_z21": -0.97,
         "days_in_state": 0,
         "gex_state": null,
         "hazards": [],

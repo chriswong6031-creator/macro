@@ -64,3 +64,5 @@
 {"asof": "2026-07-26", "domain": "intl", "field": "intl_in_quad", "from_value": "Q1", "to_value": "Q2", "macro_context_id": "f951edd2170c1778"}
 {"asof": "2026-07-26", "domain": "intl", "field": "intl_jp_quad", "from_value": "Q1", "to_value": "Q3", "macro_context_id": "f951edd2170c1778"}
 {"asof": "2026-07-26", "domain": "intl", "field": "intl_kr_quad", "from_value": "Q2", "to_value": "Q3", "macro_context_id": "f951edd2170c1778"}
+{"asof": "2026-07-27", "domain": "fx", "field": "fx_regime_radar", "from_value": "intervention_risk", "to_value": null, "macro_context_id": "0892d59481ac1523"}
+{"asof": "2026-07-27", "domain": "fx", "field": "fx_usdchf_action", "from_value": "LONG", "to_value": "FLAT", "macro_context_id": "0892d59481ac1523"}

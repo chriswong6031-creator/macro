@@ -6,7 +6,7 @@
   "detection_phase": "triggered_pre_t1",
   "management_confidence": 60.0,
   "raw_confidence": 62.7,
-  "delta_vs_base": -0.0,
+  "delta_vs_base": 0.0,
   "recommended_action": "hold",
   "human_state": "On Track",
   "components": {

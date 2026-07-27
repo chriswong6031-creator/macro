@@ -15,3 +15,4 @@
 {"as_of":"2026-07-21","schema":"neuralweb.mechanism_pathways.v1","pathways_count":0,"primary_family":null,"no_pathway_reason":"scare_unattributed"}
 {"as_of":"2026-07-22","schema":"neuralweb.mechanism_pathways.v1","pathways_count":0,"primary_family":null,"no_pathway_reason":"scare_unattributed"}
 {"as_of":"2026-07-26","schema":"neuralweb.mechanism_pathways.v1","pathways_count":3,"primary_family":"rates","no_pathway_reason":null}
+{"as_of":"2026-07-27","schema":"neuralweb.mechanism_pathways.v1","pathways_count":3,"primary_family":"rates","no_pathway_reason":null}
