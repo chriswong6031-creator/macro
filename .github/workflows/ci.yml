@@ -454,6 +454,10 @@ on:
       - "config/dag.yml"
       - "scripts/check_dag_conformance.py"
       - "tests/test_dag_conformance.py"
+      # Nightly lane budgets, run in the same dag-conformance job. Its subject is
+      # .github/workflows/daily.yml (already covered above); this entry is the other
+      # half — a PR editing only the budget test must reach its own guard.
+      - "tests/test_tech_lab_offrender_budget.py"
       # TXI W1 transmission chains: the chain library, the compiler/engine, the runner, and
       # the test file must all trigger the chain suite so a bad edit reds the PR (the #3357
       # vacuous-green trap needs BOTH the paths entry here AND the job below).

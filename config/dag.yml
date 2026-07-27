@@ -1047,11 +1047,14 @@ lanes:
       - id: build_tech_lab_data
         module: scripts.build_tech_lab_data
         note: >
-          TLT-R2 — rebuild 64-signal Technical Lab screener + lab artifacts
+          TLT-R2 — rebuild 195-signal Technical Lab screener + lab artifacts
           (site/factordata/tech_screener.json + tech_lab.json) off the render
           path. Display-only / research framing; no gauntlet-promotion. Reads
-          data/stocks/ parquets (committed, ~219 tickers). Non-fatal: exits 0
-          on script error, commits only if artifacts changed.
+          data/stocks/ parquets (committed, ~231 tickers). Non-fatal: exits 0
+          on script error, commits only if artifacts changed. Heavy: ~57 min
+          measured (signals went 64 → 195 in #3013); the job's timeout-minutes
+          must cover it plus every later step — see the daily.yml note, a 40m
+          cap silently skipped this lane's commit for 8 nights.
       - id: build_confluence_screener
         module: scripts.build_confluence_screener
         note: >
