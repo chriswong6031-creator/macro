@@ -42,10 +42,14 @@ _DAILY = _REPO / ".github" / "workflows" / "daily.yml"
 
 # Measured worst case for the whole job (see the daily.yml note):
 #   checkout up to ~15m on the 14k-file tree  + build_tech_lab_data ~57m
-#   + build_tech_confluence ~8m + screener page ~1m + m2_profiles ~2m
-#   + commit/push-retry band up to ~10m  ≈  93m
+#   + build_tech_confluence ~13m + screener page ~1m + m2_profiles ~2m
+#   + commit/push-retry band up to ~10m  ≈  98m
+# The combo-miner cost is MEASURED (panel 335.4s + mine_long 186.6s + mine_short
+# ≈ mine_long + write, 2026-07-27 on the runner host), not the "~8 min" the
+# workflow comment used to inherit. A stale step-cost label is what caused the
+# outage this suite exists for — re-measure when you touch this number.
 # The floor is set just above that; the shipped value carries extra headroom.
-_MEASURED_WORST_CASE_MIN = 93
+_MEASURED_WORST_CASE_MIN = 98
 _FLOOR_MIN = 100
 
 
