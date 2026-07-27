@@ -1342,7 +1342,7 @@
   },
   {
    "match": "validated two likely sources of ongoing disinflation",
-   "backing": "Verbatim third-party source language in the Goldman Sachs research-vault excerpt 'US Daily: What the Rebound in Oil Prices Means for Upcoming Inflation Prints' (24 July 2026), stored in data/research_vault/excerpts.json and rendered under site/research/. This is the source author's description of an inflation release, not a Macro Dashboard claim that a signal or edge is validated.",
+   "backing": "NOT a platform claim — a verbatim sentence inside a third-party economics note ('US Daily: What the Rebound in Oil Prices Means for Upcoming Inflation Prints', 24 July 2026) mirrored into the research vault. The word is ordinary English about CPI data confirming a disinflation channel (shelter + tariff pass-through); it asserts nothing about any Macro Dashboard signal, rank, gate, or artifact, so BC-2's stored-artifact requirement has nothing to attach to. Scoped to the quoted clause so it can never green-light one of our own claims.",
    "surfaces": [
     "research_vault"
    ]
