@@ -1035,9 +1035,12 @@ def build(
     # flow_z_live: any ticker with flow_z available
     flow_z_live = any(r.get("flow_z") is not None for r in board_a_rows)
 
-    # tape_names: tickers with tape signing source
+    # tape_names: tickers with tape signing source. sorted() is load-bearing —
+    # all_flow_names is a set, and string hashing is randomised per process, so
+    # iterating it raw reorders this list on every run and churns the committed
+    # artifact (board_names above is sorted for the same reason).
     tape_names = [
-        ticker for ticker in all_flow_names
+        ticker for ticker in sorted(all_flow_names)
         if tape_rows.get(ticker) is not None
     ]
 
