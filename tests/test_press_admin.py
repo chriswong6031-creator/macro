@@ -16,6 +16,7 @@ if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 
 from admin import press as A  # noqa: E402
+from engine.press import desk_planner as P  # noqa: E402
 from tests import press_fixtures as F  # noqa: E402
 
 
@@ -107,7 +108,11 @@ def test_overview_exposes_per_desk_cadence_and_thresholds(tmp_path):
     assert desks["research_desk"]["per_day"] == 1
     assert out["thresholds"]["our_value_min"] == 0.40
     assert out["thresholds"]["paraphrase_max_jaccard"] == 0.18
-    assert out["thresholds"]["cutover"] is False
+    # The panel must REPORT the shipped cutover state, not a literal that
+    # happens to match it today. Pinning `is False` here would turn the cutover
+    # PR red in the admin suite — a test failing because the switch it displays
+    # got flipped is a test asserting the switch may never move.
+    assert out["thresholds"]["cutover"] == P.load_config(_REPO).get("cutover")
 
 
 def test_overview_returns_the_ledger_tail(tmp_path):

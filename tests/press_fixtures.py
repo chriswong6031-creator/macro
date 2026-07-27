@@ -302,17 +302,44 @@ _GEX_FROM_THE_FUTURE = {
 
 
 def fixture_root(tmp_path: Path, *, ledger_rows=None, staged=None,
-                 engine_artifacts: bool = True) -> Path:
+                 engine_artifacts: bool = True, cutover: bool | None = None) -> Path:
     """Build a minimal repo root under tmp_path.
 
     Carries config/press.yml (the real one), a small chronicle store, a small
     vault catalog, the press data tree, and two dated engine artifacts — one
     inside the point-in-time window, one after it.  Pass
     ``engine_artifacts=False`` for the fail-soft case (no artifacts at all).
+
+    ``cutover`` pins config/press.yml's switch for this fixture.  None (the
+    default) keeps whatever the shipped config says, so a fixture tracks the
+    real state of the lane.  Pass an explicit bool from a test that is about ONE
+    side of the switch — the estate branch of --emit still exists after cutover
+    (any publication without a property_tree uses it), and a test of that branch
+    should keep testing it rather than quietly become a test of the other one on
+    the day the flag moves.
     """
     root = tmp_path / "repo"
     (root / "config").mkdir(parents=True, exist_ok=True)
     shutil.copyfile(REPO / "config" / "press.yml", root / "config" / "press.yml")
+    if cutover is not None:
+        import yaml
+
+        cfg_path = root / "config" / "press.yml"
+        raw = yaml.safe_load(cfg_path.read_text(encoding="utf-8"))
+        raw["cutover"] = bool(cutover)
+        cfg_path.write_text(yaml.safe_dump(raw, sort_keys=False, allow_unicode=True),
+                            encoding="utf-8")
+
+    # The press property templates + stylesheets (W1.5).  A fixture root that
+    # omitted them worked only by accident: at `cutover: false` the emit path
+    # never renders a property, so nothing missed them — and the day somebody
+    # set cutover true in a fixture, five orchestrator tests died on a missing
+    # stylesheet instead of testing routing.  A fixture root should be able to
+    # exercise BOTH sides of the switch it carries.
+    press_templates = REPO / "templates" / "press"
+    if press_templates.is_dir():
+        shutil.copytree(press_templates, root / "templates" / "press",
+                        dirs_exist_ok=True)
 
     chron = root / "data" / "chronicle"
     chron.mkdir(parents=True, exist_ok=True)

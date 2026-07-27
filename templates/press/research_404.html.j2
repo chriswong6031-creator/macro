@@ -1,0 +1,50 @@
+{#- Mastermind Research — not in the index. -#}
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Not in the index — {{ pub.label }}</title>
+<meta name="description" content="No note sits at this address in {{ pub.label }}.">
+<meta name="robots" content="noindex, follow">
+<link rel="alternate" type="application/rss+xml" title="{{ pub.label }}" href="/feed.xml">
+<meta property="og:site_name" content="{{ pub.label }}">
+<meta property="og:title" content="Not in the index">
+<meta property="og:description" content="No note sits at this address in {{ pub.label }}.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Not in the index">
+<meta name="twitter:description" content="No note sits at this address in {{ pub.label }}.">
+<meta name="theme-color" content="#F6F7F9">
+<link rel="stylesheet" href="{{ css_href }}">
+</head>
+<body>
+<a class="skip" href="#main">Skip to the page</a>
+
+<div class="sheet">
+
+  <header class="rh">
+    <span class="rh-sec">Not found</span>
+    <a class="rh-pub" href="/">{{ pub.label }}</a>
+  </header>
+
+  <main id="main">
+    <div class="page lost">
+      <h1 class="page-h">There is no note at this address.</h1>
+      <p class="lost-go"><a href="/">Return to the index</a></p>
+    </div>
+  </main>
+
+  <footer class="foot">
+    <p class="foot-disc">{{ footer_text }}</p>
+    <p class="foot-meta">
+      <span>&copy; Mastermind</span>
+      <a href="/about.html">About this journal</a>
+      <a href="/feed.xml">Feed</a>
+      <a href="https://www.mastermind-x.com">Part of Mastermind</a>
+    </p>
+  </footer>
+
+</div>
+</body>
+</html>

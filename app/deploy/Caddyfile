@@ -541,6 +541,164 @@ admin.mastermind-x.com {
 	}
 }
 
+# ---- press properties (D14 W1.5) — mastermindx.ai + blog.mastermind-x.com ----
+# COMMENTED OUT ON PURPOSE. This block is the SERVING half of the press cutover
+# and it is inert until the day the properties go live.
+#
+# THE PAIRING (CI-enforced, tests/test_press_properties.py::the cutover sync
+# guard): the commit that uncomments the block between the two marker lines
+# below MUST be the same commit that sets `cutover: true` in config/press.yml,
+# and vice versa. The test asserts BOTH directions, so forgetting either half
+# turns the PR red rather than shipping a live vhost with no content routed to
+# it (or a routed emit with nothing serving it).
+#
+# UNCOMMENT MECHANICALLY, do not hand-edit. The exact one-line sed lives in
+# app/deploy/README.md § "Press properties (W1.5) — cutover runbook"; it is
+# deliberately NOT quoted here, because a sed range written out in this comment
+# is itself matched by that range and gets uncommented into a syntax error
+# (found exactly that way, by validating the result). Every line between the
+# markers starts with '#' at COLUMN 0 — the leading tabs live AFTER the '#' —
+# so stripping one leading '#' from each interior line yields the intended
+# config verbatim.
+#
+# DNS FIRST, THEN THIS. Order matters and it is not reversible in the other
+# direction: point the A records at 146.190.142.17 (Spaceship DNS: mastermindx.ai
+# @ and www; blog.mastermind-x.com), confirm with `dig`, THEN merge the cutover
+# PR. Uncommenting before DNS resolves here is not dangerous — Caddy would simply
+# retry ACME HTTP-01 until the records appear, and no visitor can reach a host
+# that does not point at the box — but the pairing test forbids it anyway,
+# because the config half without the DNS half is a claim nobody verified.
+#
+# REAL CERTIFICATES, NOT `tls internal`. Every other host in this file sits
+# behind the EdgeOne CDN and uses a self-signed origin cert. These two do not:
+# they are GREY-CLOUD / direct A records, exactly like admin.mastermind-x.com
+# above, so Caddy provisions genuine Let's Encrypt certs over HTTP-01 on :80
+# (ufw keeps :80 open for the grey-cloud escape hatch). A `tls internal` here
+# would serve a self-signed cert straight to a browser — the test asserts its
+# absence.
+#
+# WHY THE http:// BLOCKS EXIST: the global `auto_https disable_redirects` (right
+# for the CDN-fronted hosts, which must not fight the edge's own redirect) means
+# Caddy adds NO automatic http->https upgrade. Without an explicit redirect these
+# hosts would answer plain http from the port-80 catch-all as a 421. Caddy answers
+# ACME HTTP-01 challenges BEFORE routing, so these redirects never interfere with
+# issuance or renewal — same arrangement admin.* has run on for months.
+#
+# ONE CANONICAL HOST. The apex (mastermindx.ai) serves; www 301s to it. Serving
+# BOTH names off one site block would put every page on two live URLs and rely
+# entirely on rel=canonical to sort it out — a hint, not an instruction, and one
+# that costs a crawl of every duplicate to even read. config/press.yml
+# `base_url` is https://mastermindx.ai, so the redirect target is the same host
+# the sitemap, the RSS feed and every JSON-LD `url` already name. www gets its
+# own site block and therefore its own ACME certificate (a redirect still needs
+# a valid cert to perform the redirect over https).
+#
+# HSTS STARTS SHORT ON PURPOSE: max-age=300, not a year. HSTS is the one header
+# a browser will not let you take back — once a client has cached a long
+# max-age it REFUSES plain http for that host for the full duration, so a
+# certificate or DNS mistake on a brand-new domain is unreachable-by-design
+# until the header expires. Five minutes is enough to be real and short enough
+# to be survivable. Raise it to 31536000 after a clean week (runbook step 5).
+#
+# ROLLBACK: revert the cutover PR. That re-comments this block and puts
+# `cutover: false` back in the same move, which is the point of pairing them.
+# The DNS records can stay pointed here — with the block commented, those hosts
+# fall through to the :80 catch-all / no TLS host and serve nothing.
+#
+# The served roots are published by app/deploy/update.sh, which rsyncs
+# properties/news -> press_news.served and properties/research ->
+# press_research.served with the same atomic-rename + --min-size=1 protections
+# site.served uses (the 2026-07-03 white-page incident).
+# PRESS-CUTOVER-BEGIN
+#mastermindx.ai {
+#	root * /opt/macro/press_news.served
+#	encode zstd gzip
+#	file_server {
+#		index index.html
+#	}
+#	handle_errors {
+#		rewrite * /404.html
+#		file_server
+#	}
+#
+#	@html path *.html /
+#	header @html Cache-Control "public, max-age=300, must-revalidate"
+#	@versioned {
+#		path /assets/*
+#		query v=*
+#	}
+#	header @versioned Cache-Control "public, max-age=31536000, immutable"
+#	@feeds path /feed.xml /sitemap.xml /robots.txt
+#	header @feeds Cache-Control "public, max-age=300, must-revalidate"
+#
+#	header {
+#		# Ramp: raise to 31536000 once the property has served a clean week
+#		# (runbook step). A long max-age on a new host is not revocable.
+#		Strict-Transport-Security "max-age=300"
+#		X-Content-Type-Options "nosniff"
+#		X-Frame-Options "DENY"
+#		Referrer-Policy "strict-origin-when-cross-origin"
+#		Content-Security-Policy "default-src 'self'; style-src 'self'; img-src 'self' data:; base-uri 'self'; frame-ancestors 'none'; form-action 'self'"
+#		-Server
+#	}
+#}
+#
+#blog.mastermind-x.com {
+#	root * /opt/macro/press_research.served
+#	encode zstd gzip
+#	file_server {
+#		index index.html
+#	}
+#	handle_errors {
+#		rewrite * /404.html
+#		file_server
+#	}
+#
+#	@html path *.html /
+#	header @html Cache-Control "public, max-age=300, must-revalidate"
+#	@versioned {
+#		path /assets/*
+#		query v=*
+#	}
+#	header @versioned Cache-Control "public, max-age=31536000, immutable"
+#	@feeds path /feed.xml /sitemap.xml /robots.txt
+#	header @feeds Cache-Control "public, max-age=300, must-revalidate"
+#
+#	header {
+#		# Ramp: raise to 31536000 once the property has served a clean week
+#		# (runbook step). A long max-age on a new host is not revocable.
+#		Strict-Transport-Security "max-age=300"
+#		X-Content-Type-Options "nosniff"
+#		X-Frame-Options "DENY"
+#		Referrer-Policy "strict-origin-when-cross-origin"
+#		Content-Security-Policy "default-src 'self'; style-src 'self'; img-src 'self' data:; base-uri 'self'; frame-ancestors 'none'; form-action 'self'"
+#		-Server
+#	}
+#}
+#
+## www -> apex, over https. Its own site block, so Caddy provisions a real
+## certificate for www too: a redirect served over https still has to complete
+## a TLS handshake before the browser will read the 301.
+## (Double '#': one is stripped by the uncomment, leaving a real Caddy comment.)
+#www.mastermindx.ai {
+#	header Strict-Transport-Security "max-age=300"
+#	redir https://mastermindx.ai{uri} permanent
+#}
+#
+#http://mastermindx.ai {
+#	redir https://mastermindx.ai{uri} permanent
+#}
+#
+## Plain http on www lands on the apex directly — one hop, not two.
+#http://www.mastermindx.ai {
+#	redir https://mastermindx.ai{uri} permanent
+#}
+#
+#http://blog.mastermind-x.com {
+#	redir https://blog.mastermind-x.com{uri} permanent
+#}
+# PRESS-CUTOVER-END
+
 # ---- home.greydeercapital.com — Grey Home private smart-home dashboard -------
 # The app and all home-device credentials stay on the Mac Studio. A dedicated,
 # restricted reverse SSH tunnel exposes only the local web server on loopback

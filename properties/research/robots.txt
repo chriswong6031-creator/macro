@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://blog.mastermind-x.com/sitemap.xml

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title><![CDATA[Mastermind Research]]></title>
+    <link>https://blog.mastermind-x.com/</link>
+    <description><![CDATA[Close readings of the reports institutions publish — what they claim, what it rests on.]]></description>
+    <language>en</language>
+    <atom:link href="https://blog.mastermind-x.com/feed.xml" rel="self" type="application/rss+xml"/>
+  </channel>
+</rss>

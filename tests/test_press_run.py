@@ -181,9 +181,19 @@ def test_slug_collisions_are_resolved_before_validation(tmp_path):
 
 
 def test_ledger_rows_carry_the_full_shape(tmp_path):
+    """The row shape run_emit writes today.
+
+    W1.5 added two fields, both additive and both on EVERY new row regardless of
+    cutover: `url` (where this piece was actually published) and `title`. `url`
+    is what makes the cutover migration-free — a row states its own URL, so
+    pre-cutover rows keep pointing at /blog/ and nothing is ever rewritten.
+    Rows written BEFORE this change carry neither, which is legal: the ledger is
+    append-only and every consumer reads it with .get().
+    """
     path = tmp_path / "published.jsonl"
     row = {"id": "press-brief-1", "ts": "2026-07-26T13:20:00Z", "desk": "brief",
            "publication": "mastermind_news", "slug": "a-slug",
+           "title": "A slug of a note", "url": "https://x/blog/a-slug.html",
            "sources": ["chronicle:x"], "seed_refs": ["artifact:y"],
            "validator_report": {"ok": True}, "urls": ["https://x/blog/a-slug.html"]}
     assert R.append_ledger(path, [row]) == 1
@@ -193,9 +203,23 @@ def test_ledger_rows_carry_the_full_shape(tmp_path):
     assert len(rows) == 2
     assert [r["id"] for r in rows] == ["press-brief-1", "press-brief-2"]
     for r in rows:
-        assert set(r) == {"id", "ts", "desk", "publication", "slug", "sources",
-                          "seed_refs", "validator_report", "urls"}
+        assert set(r) == {"id", "ts", "desk", "publication", "slug", "title", "url",
+                          "sources", "seed_refs", "validator_report", "urls"}
         assert r["publication"], "every ledger row must carry its publication"
+
+
+def test_a_pre_w1_5_ledger_row_is_still_readable(tmp_path):
+    """No migration, ever.  A row written before `url`/`title` existed must stay
+    consumable — engine/press/desk_planner.published_refs and
+    engine/press/properties.iter_publication_articles both read it."""
+    root = F.fixture_root(tmp_path, ledger_rows=[{
+        "id": "press-brief-old", "ts": "2026-07-01T13:20:00Z", "desk": "brief",
+        "publication": "mastermind_news", "slug": "old-slug",
+        "sources": ["chronicle:x"], "seed_refs": [], "validator_report": {"ok": True},
+        "urls": ["https://www.mastermind-x.com/blog/old-slug.html"],
+    }])
+    refs, slugs = P.published_refs(root, P.load_config(root))
+    assert "old-slug" in slugs and "chronicle:x" in refs
 
 
 def test_append_ledger_never_rewrites_history(tmp_path):
@@ -324,12 +348,26 @@ def test_emit_never_writes_the_sitemap(tmp_path, monkeypatch):
 
     assert out["emitted"] == 1
     assert sitemap.read_text(encoding="utf-8") == "<urlset/>"
-    assert (root / "content" / "seo" / "blog" / "emit-smoke-note.md").exists()
+
+    # Asserted through the ROUTER, not against a hardcoded estate path: the
+    # target moves at cutover, and a literal here would make this test fail on
+    # the cutover PR for a reason that has nothing to do with the sitemap.
+    cfg = P.load_config(root)
+    route = R._emit_route(cfg, root, R._paths(cfg, root),
+                          {"desk": "brief", "publication": "mastermind_news"},
+                          "emit-smoke-note")
+    assert (route["md_dir"] / "emit-smoke-note.md").exists()
+
     rows = [json.loads(l) for l in
             (root / "data" / "press" / "published.jsonl").read_text(encoding="utf-8").splitlines()]
     assert rows[-1]["slug"] == "emit-smoke-note"
     assert rows[-1]["publication"] == "mastermind_news"
-    assert rows[-1]["urls"] == ["https://www.mastermind-x.com/blog/emit-smoke-note.html"]
+    # W1.5 additive fields. `urls` and `url` always agree, and both are whatever
+    # the route says — pre-cutover that is the flagship /blog/ URL, byte-identical
+    # to what `urls` has carried since W1.
+    assert rows[-1]["url"] == route["url"]
+    assert rows[-1]["urls"] == [route["url"]]
+    assert rows[-1]["title"] == "A first-party read of the session"
     # A consumed staged item leaves staging; it now lives in the ledger.
     assert not (root / "data" / "press" / "staging" / "x.json").exists()
 
@@ -348,8 +386,17 @@ def test_a_failed_render_rolls_the_tree_back(tmp_path, monkeypatch):
     """ATOMICITY. --emit writes every .md BEFORE it renders. A raise in the
     render used to leave .md files with no matching site/ pages — the
     render-clobber class: `build_free_content --check` reports the missing
-    pages and the NEXT PR inherits a red estate it did not cause."""
-    root = F.fixture_root(tmp_path)
+    pages and the NEXT PR inherits a red estate it did not cause.
+
+    Pinned to `cutover=False` deliberately: this is a test of the ESTATE render
+    branch, which still exists after the cutover (any publication without a
+    property_tree uses it). Left on the shipped flag it would silently stop
+    testing anything the day the switch moved — the estate render is skipped for
+    a routed emit, so the injected failure would never fire and the test would
+    pass by not running. The routed branch's rollback is covered in
+    tests/test_press_properties.py.
+    """
+    root = F.fixture_root(tmp_path, cutover=False)
     (root / "site" / "blog").mkdir(parents=True)
     existing = root / "site" / "blog" / "index.html"
     existing.write_text("<html>original</html>", encoding="utf-8")
@@ -387,7 +434,9 @@ def test_a_failed_ledger_append_rolls_the_tree_back(tmp_path, monkeypatch):
 
 
 def test_rollback_annotation_starts_its_line(tmp_path, monkeypatch, capsys):
-    root = F.fixture_root(tmp_path)
+    # cutover=False for the same reason as the test above: the injected failure
+    # is in the estate render, which a routed emit skips.
+    root = F.fixture_root(tmp_path, cutover=False)
     (root / "site" / "blog").mkdir(parents=True)
     _staged_passing(root)
     monkeypatch.setattr(R, "_render_blog_subtree",
@@ -418,7 +467,15 @@ def test_quarantine_reason_is_never_a_bare_prefix():
 
 def test_emit_quarantines_a_slug_that_was_taken_since_staging(tmp_path, monkeypatch):
     root = F.fixture_root(tmp_path)
-    (root / "content" / "seo" / "blog" / "taken-slug.md").write_text("x", encoding="utf-8")
+    # The occupied file is placed at the ROUTED target, so this keeps testing
+    # collision detection on both sides of the cutover rather than testing the
+    # estate path on one side and nothing on the other.
+    cfg = P.load_config(root)
+    taken_dir = R._emit_route(cfg, root, R._paths(cfg, root),
+                              {"desk": "brief", "publication": "mastermind_news"},
+                              "taken-slug")["md_dir"]
+    taken_dir.mkdir(parents=True, exist_ok=True)
+    (taken_dir / "taken-slug.md").write_text("x", encoding="utf-8")
     (root / "data" / "press" / "staging" / "x.json").write_text(json.dumps({
         "id": "press-brief-x", "desk": "brief", "publication": "mastermind_news",
         "status": "passed", "sources": [], "seed_refs": [], "slug": "taken-slug",
@@ -432,7 +489,8 @@ def test_emit_quarantines_a_slug_that_was_taken_since_staging(tmp_path, monkeypa
     item = json.loads((root / "data" / "press" / "staging" / "x.json").read_text())
     assert item["status"] == "quarantined"
     assert "slug collision" in item["quarantine_reason"]
-    assert (root / "content" / "seo" / "blog" / "taken-slug.md").read_text() == "x"
+    assert (taken_dir / "taken-slug.md").read_text() == "x", \
+        "the occupying file must survive untouched"
 
 
 # ─────────────────────────────────────────────────────────────────────────────

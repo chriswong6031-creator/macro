@@ -27,25 +27,85 @@ schema: "press.config.v1"
 # one — the W1.5 cutover then flips output roots WITHOUT a ledger migration.
 # `output_root` is what W1.5 will start honouring; `cutover: false` means it is
 # recorded and ignored today.
+#
+# W1.5 ADDS THE PROPERTY FIELDS (below).  Read the split carefully, because
+# HALF of these fields are live today and half are not:
+#
+#   ALWAYS LIVE (today, at cutover: false)
+#     label / domain / tagline / base_url / property_tree
+#       engine/press/properties.py builds the per-publication static tree from
+#       these RIGHT NOW.  `scripts/build_press_properties.py` renders
+#       properties/news and properties/research off the EXISTING ledger, and
+#       every row it finds still points at the flagship /blog/ estate — so the
+#       front page and RSS feed carry cross-domain links and the tree ships no
+#       local article files.  That is the intended pre-cutover shape: the
+#       properties exist, are byte-deterministic, and are not yet served (the
+#       Caddy vhosts in app/deploy/Caddyfile stay commented until cutover).
+#
+#   IGNORED UNTIL `cutover: true`
+#     content_dir  — where scripts/run_press.py --emit writes a new .md.  While
+#       cutover is false EVERY desk still writes to paths.content_dir
+#       (content/seo/blog) and renders through the free-content estate, exactly
+#       as W1 does.  Nothing about the pre-cutover emit path changes.
+#     output_root  — the legacy W1 field; superseded by base_url + property_tree
+#       and kept only so an old ledger row's provenance still reads.
+#
+# WHAT FLIPPING `cutover: true` CHANGES, in one sentence: a passing draft for a
+# publication that carries property_tree stops going to content/seo/blog + the
+# /blog/ estate render and instead lands in this publication's content_dir and
+# its own property tree.  Old ledger rows are NEVER migrated — the properties
+# renderer reads `url` per row, so pre-cutover rows keep pointing at /blog/ and
+# post-cutover rows point at the property.  That is the whole no-migration
+# argument, and it is why `url` is now written on every new row.
+#
+# THE CUTOVER IS A PAIRED CHANGE (CI-enforced, tests/test_press_properties.py):
+# flipping `cutover` to true and uncommenting the PRESS-CUTOVER block in
+# app/deploy/Caddyfile must happen in the SAME commit, and DNS must already
+# point at the box.  See app/deploy/README.md § "Press properties (W1.5)".
+#
+# base_url is validated at load (engine/press/desk_planner.load_config): https
+# only, and its host must be the publication's own `domain` (or www.<domain>).
 # ─────────────────────────────────────────────────────────────────────────────
 publications:
   mastermind_news:
     label: "Mastermind News"
     domain: "mastermindx.ai"
     anchor_account: "Mastermind News"
-    output_root: "/blog/"          # W1.5: flips to the mastermindx.ai root
+    output_root: "/blog/"          # legacy W1 field; see base_url below
+    # Plain-word standing description of the desk. Rendered in the property's
+    # masthead and as the RSS channel <description>. Says what the desk does;
+    # claims nothing about accuracy or performance.
+    tagline: "A markets wire. Short notes on what moved and why, filed through the session."
+    base_url: "https://mastermindx.ai"
+    property_tree: "properties/news"
+    content_dir: "content/press/news"      # IGNORED until cutover: true
   mastermind_research:
     label: "Mastermind Research"
     domain: "blog.mastermind-x.com"
     anchor_account: "Mastermind Research"
-    output_root: "/blog/"          # W1.5: flips to the blog.mastermind-x.com root
+    output_root: "/blog/"          # legacy W1 field; see base_url below
+    tagline: "Close readings of the reports institutions publish — what they claim, what it rests on."
+    base_url: "https://blog.mastermind-x.com"
+    property_tree: "properties/research"
+    content_dir: "content/press/research"  # IGNORED until cutover: true
   flagship:
     label: "Mastermind (flagship)"
     domain: "mastermind-x.com"
     anchor_account: "Mastermind Research"
     output_root: "/blog/"
+    tagline: "The Mastermind flagship site."
+    # www, not the apex: the apex 301s to www (app/deploy/Caddyfile), so the
+    # apex form would make every emitted URL a redirect.
+    base_url: "https://www.mastermind-x.com"
+    # NO property_tree and NO content_dir, deliberately. The flagship never cuts
+    # over — it IS the existing /blog/ estate, built by
+    # scripts/build_free_content.py into site/blog/. Giving it a property tree
+    # would mean two builders writing the same corpus. load_config refuses it.
 
-# W1: all output roots stay on /blog/; W1.5 flips per-publication output.
+# THE SWITCH. false = every desk still emits to content/seo/blog and the /blog/
+# estate; the property trees are still built, but only as static artifacts that
+# nothing serves. true = per-publication routing goes live, and the Caddyfile
+# PRESS-CUTOVER block must be uncommented in the same commit.
 cutover: false
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -58,6 +118,9 @@ cutover: false
 desks:
   brief:
     publication: "mastermind_news"
+    # Display label for the desk code on property pages ([ THE BRIEF ]); the
+    # properties renderer would otherwise derive "Brief" from the key.
+    label: "The Brief"
     byline: "The Brief — Mastermind News desk"
     cadence_per_day: 2             # W1 target 1–2/day
     cadence_min_per_day: 1

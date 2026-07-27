@@ -1,0 +1,88 @@
+{#- Mastermind Research — the index.
+    Standalone document: no extends, no includes, no site chrome, no JS.
+    Signature: the margin apparatus — dates and durations hang outside the
+    text measure, so the reading block is never interrupted by furniture. -#}
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ pub.label }} — {{ pub.tagline }}</title>
+<meta name="description" content="{{ pub.tagline }}">
+<link rel="canonical" href="{{ pub.base_url }}/">
+<link rel="alternate" type="application/rss+xml" title="{{ pub.label }}" href="{{ feed_href }}">
+<meta property="og:site_name" content="{{ pub.label }}">
+<meta property="og:title" content="{{ pub.label }}">
+<meta property="og:description" content="{{ pub.tagline }}">
+<meta property="og:type" content="website">
+<meta property="og:url" content="{{ pub.base_url }}/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="{{ pub.label }}">
+<meta name="twitter:description" content="{{ pub.tagline }}">
+<meta name="theme-color" content="#F6F7F9">
+<link rel="stylesheet" href="{{ css_href }}">
+</head>
+<body>
+<a class="skip" href="#main">Skip to the index</a>
+
+<div class="sheet">
+
+  <header class="rh">
+    <span class="rh-sec">Index</span>
+    <span class="rh-pub">{{ pub.label }}</span>
+  </header>
+
+  <div class="fm">
+    <h1 class="fm-h">{{ pub.label }}</h1>
+    <p class="fm-line">{{ pub.tagline }}</p>
+    <p class="fm-sub">
+      <a href="{{ feed_href }}">Feed</a>
+      <a href="{{ about_href }}">About</a>
+      <span>Newest first</span>
+    </p>
+  </div>
+
+  <main id="main">
+    <div class="index">
+      {%- if articles -%}
+      {%- for item in articles %}
+      <article class="ix">
+        <div class="ix-margin">
+          <time class="ix-date" datetime="{{ item.published_iso }}">{{ item.published_display }}</time>
+          <span class="ix-min">{{ item.reading_minutes }} min</span>
+        </div>
+        <div class="ix-main">
+          <h2 class="ix-h"><a href="{{ item.url }}">{{ item.title }}</a></h2>
+          <p class="ix-d">{{ item.dek }}</p>
+          <p class="ix-desk">{{ item.desk_label }}</p>
+        </div>
+      </article>
+      {%- endfor -%}
+      {%- else %}
+      <article class="ix ix-empty">
+        <div class="ix-margin">
+          <span class="ix-date ix-null" aria-hidden="true">&mdash;</span>
+        </div>
+        <div class="ix-main">
+          <h2 class="ix-h">No notes published yet.</h2>
+          <p class="ix-d">Close readings of institutional reports will publish here.</p>
+          <p class="ix-desk"><a href="{{ feed_href }}">Subscribe to the feed</a></p>
+        </div>
+      </article>
+      {%- endif %}
+    </div>
+  </main>
+
+  <footer class="foot">
+    <p class="foot-disc">{{ footer_text }}</p>
+    <p class="foot-meta">
+      <span>&copy; Mastermind</span>
+      <a href="{{ about_href }}">About this journal</a>
+      <a href="{{ feed_href }}">Feed</a>
+      <a href="https://www.mastermind-x.com">Part of Mastermind</a>
+    </p>
+  </footer>
+
+</div>
+</body>
+</html>

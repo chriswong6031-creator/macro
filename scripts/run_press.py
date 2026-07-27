@@ -23,6 +23,32 @@ Two modes, and the default is the safe one:
            Only site/blog/** is copied out of the render, so this lane cannot
            clobber the learn/tools/calculator pages the render lanes own.
 
+W1.5 EMIT ROUTING (config/press.yml `cutover`).  Each passing draft is routed by
+its DESK's publication:
+
+  cutover: false (today)   every desk keeps the path above, byte for byte.  The
+                           property trees still get built by
+                           scripts/build_press_properties.py, but nothing about
+                           this lane's writes changes.
+  cutover: true            a publication that carries `property_tree` takes its
+                           own road: the .md goes to that publication's
+                           content_dir (NOT content/seo/blog), the free-content
+                           estate render is SKIPPED for it entirely, and its
+                           property tree is re-rendered from the ledger.
+
+Both branches now write `url` and `title` on the ledger row.  That is what makes
+the cutover migration-free: a row states where IT was published, so pre-cutover
+rows keep pointing at /blog/ forever and no historic row is ever rewritten.  The
+ledger is append-only and every consumer reads it with .get(), so rows written
+before this change (which carry neither field) stay readable.
+
+DELTA VS W1 (declared, not incidental): the ledger row's `publication` now comes
+from the DESK's config entry at emit time, not from the staged record's copy of
+it.  W1 read `obj["publication"]`, which was written when the draft was STAGED —
+so re-pointing a desk to another publication between staging and emit published
+the piece under the new routing while recording the old name.  The staged value
+remains the fallback for a desk that has since been deleted from config.
+
 QUARANTINE FLOW: fail -> regenerate (<= quarantine.max_regenerations) -> drop
 the slot with a logged reason.  A thin day beats a padded one, so a dropped
 slot is a normal outcome and exits 0.
@@ -52,7 +78,7 @@ _REPO = Path(__file__).resolve().parent.parent
 if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 
-from engine.press import desk_planner, validators, writer  # noqa: E402
+from engine.press import desk_planner, properties, validators, writer  # noqa: E402
 
 log = logging.getLogger("run_press")
 
@@ -76,6 +102,41 @@ def _paths(cfg: dict, root: Path) -> dict:
 
 def _now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _emit_route(cfg: dict, root: Path, paths: dict, obj: dict, slug: str) -> dict:
+    """Where this piece publishes, and under what URL.
+
+    Returns {publication, routed, md_dir, url}.  `routed` is the ONLY switch in
+    this file that the cutover flag moves, and it is deliberately conservative:
+    a publication is routed only when cutover is true AND it carries all three
+    of property_tree / content_dir / base_url.  A half-filled registry entry
+    therefore keeps the existing estate path instead of writing a page at a URL
+    it cannot name — and load_config already refuses that combination at
+    cutover, so this is the second of two locks on the same door.
+
+    The DESK's publication wins over the staged item's copy of it: the staged
+    record was written by an earlier run and a desk can be re-pointed between
+    staging and emit.
+    """
+    desks = (cfg.get("desks") or {}) if isinstance(cfg, dict) else {}
+    desk_cfg = desks.get(str(obj.get("desk") or ""))
+    desk_cfg = desk_cfg if isinstance(desk_cfg, dict) else {}
+    pub_key = str(desk_cfg.get("publication") or obj.get("publication") or "")
+
+    pubs = (cfg.get("publications") or {}) if isinstance(cfg, dict) else {}
+    pub = pubs.get(pub_key)
+    pub = pub if isinstance(pub, dict) else {}
+    tree, content_dir = pub.get("property_tree"), pub.get("content_dir")
+    base_url = str(pub.get("base_url") or "").rstrip("/")
+
+    if cfg.get("cutover") is True and tree and content_dir and base_url:
+        return {"publication": pub_key, "routed": True,
+                "md_dir": root / str(content_dir),
+                "url": f"{base_url}/articles/{slug}.html"}
+    return {"publication": pub_key, "routed": False,
+            "md_dir": paths["content"],
+            "url": f"{_SITE_BASE}/blog/{slug}.html"}
 
 
 def _env_int(name: str, default: int) -> int:
@@ -425,7 +486,8 @@ def run_emit(root: Path, cfg: dict) -> dict:
     for path, obj in items:
         slot = obj.get("slot") or {}
         draft = obj["draft"]
-        md_path = paths["content"] / f"{draft['slug']}.md"
+        route = _emit_route(cfg, root, paths, obj, draft["slug"])
+        md_path = route["md_dir"] / f"{draft['slug']}.md"
         if md_path.exists():
             # The slug was free when it was staged and is not now — another lane
             # or an earlier emit took it.  Re-slugging here would bypass the
@@ -437,58 +499,94 @@ def run_emit(root: Path, cfg: dict) -> dict:
             _annotate("warning", "press_emit_collision",
                       f"press emit: slug {draft['slug']} already exists — slot quarantined")
             continue
+        md_path.parent.mkdir(parents=True, exist_ok=True)
         md_path.write_text(_frontmatter_md(draft, slot, cfg), encoding="utf-8")
-        written.append({"staging_path": path, "obj": obj, "md_path": md_path})
+        written.append({"staging_path": path, "obj": obj, "md_path": md_path,
+                        "route": route})
 
     if not written:
         return {"emitted": 0, "items": []}
 
+    # The rows are built BEFORE the render so a routed publication's property can
+    # be re-rendered WITH the piece it is publishing in this same pass. They are
+    # appended only after everything succeeds, so a failed render still leaves
+    # the ledger untouched.
+    ledger_rows = []
+    for w in written:
+        obj, draft, route = w["obj"], w["obj"]["draft"], w["route"]
+        ledger_rows.append({
+            "id": obj["id"],
+            "ts": _now(),
+            "desk": obj.get("desk"),
+            "publication": route["publication"] or obj.get("publication"),
+            "slug": draft["slug"],
+            # W1.5 additive fields. `url` is what makes the cutover
+            # migration-free: the row states where IT was published, so no
+            # historic row ever needs rewriting. `title` lets a consumer list
+            # the archive without opening every .md.
+            "title": str(draft.get("title") or ""),
+            "url": route["url"],
+            "sources": list(obj.get("sources") or []),
+            "seed_refs": list(obj.get("seed_refs") or []),
+            "validator_report": obj.get("validator_report"),
+            "urls": [route["url"]],
+        })
+
     # ── ATOMIC FROM HERE ─────────────────────────────────────────────────────
     # The .md files are already on disk and the render is about to rewrite
-    # site/blog/. If anything below raises, the tree must go back to exactly
-    # what it was: a run that leaves .md files with no matching site/ pages is
-    # the render-clobber class — `build_free_content --check` reports the
-    # missing pages and the NEXT PR inherits a red estate it did not cause.
+    # site/blog/ (and, post-cutover, the property trees). If anything below
+    # raises, the tree must go back to exactly what it was: a run that leaves
+    # .md files with no matching rendered pages is the render-clobber class —
+    # `build_free_content --check` reports the missing pages and the NEXT PR
+    # inherits a red estate it did not cause.
     site_snapshot = {p: p.read_bytes()
                      for p in (root / "site" / "blog").rglob("*") if p.is_file()}
+    routed_pubs: list[str] = []
+    for w in written:
+        key = w["route"]["publication"]
+        if w["route"]["routed"] and key not in routed_pubs:
+            routed_pubs.append(key)
+    tree_snapshots: dict[Path, dict] = {}
+    for key in routed_pubs:
+        tree = properties.property_tree_path(root, cfg, key)
+        tree_snapshots[tree] = {p: p.read_bytes()
+                                for p in tree.rglob("*") if p.is_file()} \
+            if tree.exists() else {}
+
     try:
-        copied, unowned = _render_blog_subtree(root)
-        if unowned:
-            _annotate("warning", "press_emit_unowned_asset",
-                      "press emit produced asset(s) outside the workflow's git-add "
-                      "scope: " + ", ".join(unowned)
-                      + " — commit them or the estate drift check will go red.")
+        # A routed piece never touches the free-content estate, so an emit whose
+        # every piece is routed skips that render entirely. Pre-cutover nothing
+        # is routed and this is the existing call, unchanged.
+        if any(not w["route"]["routed"] for w in written):
+            copied, unowned = _render_blog_subtree(root)
+            if unowned:
+                _annotate("warning", "press_emit_unowned_asset",
+                          "press emit produced asset(s) outside the workflow's git-add "
+                          "scope: " + ", ".join(unowned)
+                          + " — commit them or the estate drift check will go red.")
+        else:
+            copied = []
+
+        for key in routed_pubs:
+            pending = [row for row, w in zip(ledger_rows, written)
+                       if w["route"]["routed"] and w["route"]["publication"] == key]
+            properties.render_property(root, cfg, key, extra_rows=pending)
 
         # The nightly owns the sitemap.  Assert it, do not assume it.
         sitemap_after = sitemap.read_bytes() if sitemap.exists() else None
         if sitemap_after != sitemap_before:
             raise RuntimeError("press emit modified site/sitemap.xml — the nightly owns it")
     except BaseException:
-        _rollback_emit(root, written, site_snapshot)
+        _rollback_emit(root, written, site_snapshot, tree_snapshots)
         _annotate("error", "press_emit_rollback",
                   "press emit failed after writing content — rolled the tree back "
                   "to its pre-emit state (no .md without a rendered page).")
         raise
 
-    ledger_rows = []
-    for w in written:
-        obj, draft = w["obj"], w["obj"]["draft"]
-        row = {
-            "id": obj["id"],
-            "ts": _now(),
-            "desk": obj.get("desk"),
-            "publication": obj.get("publication"),
-            "slug": draft["slug"],
-            "sources": list(obj.get("sources") or []),
-            "seed_refs": list(obj.get("seed_refs") or []),
-            "validator_report": obj.get("validator_report"),
-            "urls": [f"{_SITE_BASE}/blog/{draft['slug']}.html"],
-        }
-        ledger_rows.append(row)
     try:
         append_ledger(paths["ledger"], ledger_rows)
     except BaseException:
-        _rollback_emit(root, written, site_snapshot)
+        _rollback_emit(root, written, site_snapshot, tree_snapshots)
         _annotate("error", "press_emit_rollback",
                   "press ledger append failed — rolled the tree back. Published "
                   "content with no ledger row is an unrecorded publication.")
@@ -502,38 +600,54 @@ def run_emit(root: Path, cfg: dict) -> dict:
         except OSError:
             pass
 
+    routed_note = (f"; properties re-rendered: {', '.join(routed_pubs)}"
+                   if routed_pubs else "")
     _annotate("notice", "press_emit",
               f"press emit: {len(ledger_rows)} article(s) published; "
-              f"{len(copied)} file(s) written under site/blog/")
-    return {"emitted": len(ledger_rows), "items": ledger_rows, "site_files": copied}
+              f"{len(copied)} file(s) written under site/blog/{routed_note}")
+    return {"emitted": len(ledger_rows), "items": ledger_rows, "site_files": copied,
+            "properties": routed_pubs}
 
 
-def _rollback_emit(root: Path, written: list[dict], site_snapshot: dict) -> None:
+def _restore_tree(base: Path, snapshot: dict) -> None:
+    """Restore one rendered tree to `snapshot`, removing anything it gained.
+
+    Best-effort per path: one unwritable file must not stop the rest of the
+    rollback.  Empty directories are left behind on purpose — they hold no
+    content, and pruning them is how a rollback grows a second failure mode.
+    """
+    if not base.exists():
+        return
+    for path in list(base.rglob("*")):
+        if not path.is_file():
+            continue
+        try:
+            if path in snapshot:
+                if path.read_bytes() != snapshot[path]:
+                    path.write_bytes(snapshot[path])
+            else:
+                path.unlink()                # added by the failed render
+        except OSError as exc:  # noqa: PERF203
+            log.warning("press rollback: could not restore %s: %s", path, exc)
+
+
+def _rollback_emit(root: Path, written: list[dict], site_snapshot: dict,
+                   tree_snapshots: dict | None = None) -> None:
     """Put the tree back exactly as the emit found it.
 
-    Deletes every .md this run created and restores every site/blog file that
-    existed before it (removing any the render added).  Best-effort per path:
-    one unwritable file must not stop the rest of the rollback.
+    Deletes every .md this run created — which after cutover means the routed
+    publication's content_dir as well as content/seo/blog, because `md_path` is
+    the ROUTED path — and restores every site/blog file and every property-tree
+    file that existed before it, removing any the render added.
     """
     for w in written:
         try:
             w["md_path"].unlink(missing_ok=True)
         except OSError as exc:  # noqa: PERF203
             log.warning("press rollback: could not remove %s: %s", w["md_path"], exc)
-    blog = root / "site" / "blog"
-    if not blog.exists():
-        return
-    for path in list(blog.rglob("*")):
-        if not path.is_file():
-            continue
-        try:
-            if path in site_snapshot:
-                if path.read_bytes() != site_snapshot[path]:
-                    path.write_bytes(site_snapshot[path])
-            else:
-                path.unlink()                # added by the failed render
-        except OSError as exc:  # noqa: PERF203
-            log.warning("press rollback: could not restore %s: %s", path, exc)
+    _restore_tree(root / "site" / "blog", site_snapshot)
+    for tree, snapshot in (tree_snapshots or {}).items():
+        _restore_tree(tree, snapshot)
 
 
 def append_ledger(path: Path, rows: list[dict]) -> int:

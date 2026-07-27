@@ -1,0 +1,70 @@
+{#- Mastermind Research — about the journal.
+    Copy law: no performance claims, no statistics, no numerals, no accuracy
+    or track-record claims. Say what it covers, whose it is, and that it is
+    educational. -#}
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>About — {{ pub.label }}</title>
+<meta name="description" content="What {{ pub.label }} reads, who writes it, and how it handles a mistake.">
+<link rel="canonical" href="{{ pub.base_url }}/about.html">
+<link rel="alternate" type="application/rss+xml" title="{{ pub.label }}" href="/feed.xml">
+<meta property="og:site_name" content="{{ pub.label }}">
+<meta property="og:title" content="About {{ pub.label }}">
+<meta property="og:description" content="What {{ pub.label }} reads, who writes it, and how it handles a mistake.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="{{ pub.base_url }}/about.html">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="About {{ pub.label }}">
+<meta name="twitter:description" content="What {{ pub.label }} reads, who writes it, and how it handles a mistake.">
+<meta name="theme-color" content="#F6F7F9">
+<link rel="stylesheet" href="{{ css_href }}">
+</head>
+<body>
+<a class="skip" href="#main">Skip to the page</a>
+
+<div class="sheet">
+
+  <header class="rh">
+    <span class="rh-sec">About</span>
+    <a class="rh-pub" href="/">{{ pub.label }}</a>
+  </header>
+
+  <main id="main">
+    <div class="page">
+      <h1 class="page-h">About {{ pub.label }}</h1>
+      <div class="page-body">
+        <p>{{ pub.label }} reads what institutions publish and writes up what the document
+        actually says. The Research Desk works from the papers themselves — central bank
+        notes, working papers, official statistics releases, the reports firms put out
+        under their own name.</p>
+
+        <p>A note here sets out what a document claims, what that claim rests on, and
+        where a careful reader should stay skeptical. It is not a summary service: the
+        reading is the point, not the recap. Every note carries the date it was filed and
+        the desk that wrote it. Copy is machine-assisted and checked against the source
+        document before it publishes, and when a note turns out to be wrong the correction
+        appears on the note itself, dated, rather than as a quiet revision.</p>
+
+        <p>This journal is part of <a href="{{ flagship_url }}">Mastermind</a>, our markets
+        research desk. Everything published here is educational. It is not investment
+        advice, none of it is tailored to your circumstances, and markets involve risk.</p>
+      </div>
+    </div>
+  </main>
+
+  <footer class="foot">
+    <p class="foot-disc">{{ footer_text }}</p>
+    <p class="foot-meta">
+      <span>&copy; Mastermind</span>
+      <a href="/about.html" aria-current="page">About this journal</a>
+      <a href="/feed.xml">Feed</a>
+      <a href="{{ flagship_url }}">Part of Mastermind</a>
+    </p>
+  </footer>
+
+</div>
+</body>
+</html>

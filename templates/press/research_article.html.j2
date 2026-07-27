@@ -1,0 +1,90 @@
+{#- Mastermind Research — a note.
+    Standalone document: no extends, no includes, no site chrome, no JS.
+    The only <script> on the page is the JSON-LD slot.
+    Apparatus (dates, duration, byline, corrections) hangs in the margin;
+    the text measure stays clean. -#}
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ a.title }} — {{ pub.label }}</title>
+<meta name="description" content="{{ a.dek }}">
+<link rel="canonical" href="{{ a.url }}">
+<link rel="alternate" type="application/rss+xml" title="{{ pub.label }}" href="{{ feed_href }}">
+<meta property="og:site_name" content="{{ pub.label }}">
+<meta property="og:title" content="{{ a.title }}">
+<meta property="og:description" content="{{ a.dek }}">
+<meta property="og:type" content="article">
+<meta property="og:url" content="{{ a.url }}">
+<meta property="article:published_time" content="{{ a.published_iso }}">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="{{ a.title }}">
+<meta name="twitter:description" content="{{ a.dek }}">
+<meta name="theme-color" content="#F6F7F9">
+<link rel="stylesheet" href="{{ css_href }}">
+<script type="application/ld+json">{{ jsonld | safe }}</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the note</a>
+
+<div class="sheet">
+
+  <header class="rh">
+    <span class="rh-sec">{{ a.desk_label }}</span>
+    <a class="rh-pub" href="/">{{ pub.label }}</a>
+  </header>
+
+  <main id="main">
+    <article class="art">
+      <h1 class="art-h">{{ a.title }}</h1>
+
+      <div class="abs">
+        <p class="abs-k">Summary</p>
+        <p class="abs-v">{{ a.dek }}</p>
+      </div>
+
+      <div class="appar">
+        <p class="appar-k">Filed</p>
+        <p class="appar-v">
+          <time datetime="{{ a.published_iso }}"><b>{{ a.published_display }}</b></time>
+          <span>{{ a.byline }}</span>
+          <span>{{ a.reading_minutes }} min read</span>
+          {%- if a.updated_display %}
+          <span class="appar-upd">Updated {{ a.updated_display }}</span>
+          {%- endif %}
+        </p>
+      </div>
+
+      <div class="doc">
+        {{ a.body_html | safe }}
+      </div>
+
+      {%- if a.corrections %}
+      <aside class="corr" aria-labelledby="corr-h">
+        <p class="corr-h" id="corr-h">Corrections</p>
+        <ul class="corr-l">
+          {%- for c in a.corrections %}
+          <li><span class="corr-d">{{ c.date_display }}</span>{{ c.text }}</li>
+          {%- endfor %}
+        </ul>
+      </aside>
+      {%- endif %}
+
+      <p class="art-back"><a href="/">Return to the index</a></p>
+    </article>
+  </main>
+
+  <footer class="foot">
+    <p class="foot-disc">{{ footer_text }}</p>
+    <p class="foot-meta">
+      <span>&copy; Mastermind</span>
+      <a href="{{ about_href }}">About this journal</a>
+      <a href="{{ feed_href }}">Feed</a>
+      <a href="https://www.mastermind-x.com">Part of Mastermind</a>
+    </p>
+  </footer>
+
+</div>
+</body>
+</html>

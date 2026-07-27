@@ -1,0 +1,121 @@
+{#- Mastermind News — the wire front page.
+    Standalone document: no extends, no includes, no site chrome, no JS.
+    Signature: the session rail — timestamps as ticks on one continuous
+    hairline that fades downward, broken by day-file rules. -#}
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ pub.label }} — {{ pub.tagline }}</title>
+<meta name="description" content="{{ pub.tagline }}">
+<link rel="canonical" href="{{ pub.base_url }}/">
+<link rel="alternate" type="application/rss+xml" title="{{ pub.label }}" href="{{ feed_href }}">
+<meta property="og:site_name" content="{{ pub.label }}">
+<meta property="og:title" content="{{ pub.label }}">
+<meta property="og:description" content="{{ pub.tagline }}">
+<meta property="og:type" content="website">
+<meta property="og:url" content="{{ pub.base_url }}/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="{{ pub.label }}">
+<meta name="twitter:description" content="{{ pub.tagline }}">
+<meta name="theme-color" content="#0B0E13">
+<link rel="stylesheet" href="{{ css_href }}">
+</head>
+<body>
+<a class="skip" href="#main">Skip to the wire</a>
+
+<header class="mast">
+  <div class="wrap">
+    <div class="mast-in">
+      <h1 class="mast-name">{{ pub.label }}</h1>
+      <span class="mast-fill" aria-hidden="true"></span>
+      <span class="mast-dom">{{ pub.domain }}</span>
+    </div>
+    <p class="mast-line">{{ pub.tagline }}</p>
+    <nav class="mast-nav" aria-label="Sections">
+      <a href="/" aria-current="page">The wire</a>
+      <a href="{{ about_href }}">About</a>
+      <a href="{{ feed_href }}">Feed</a>
+    </nav>
+  </div>
+</header>
+
+<div class="band">
+  <div class="wrap">
+    <p class="band-in">
+      {%- if articles -%}
+      {%- set lead_time = (articles[0].published_iso.split('T')[1][:5]) if 'T' in articles[0].published_iso else '' -%}
+      <span class="band-k">Latest filed</span>
+      <span class="band-sep" aria-hidden="true">/</span>
+      <span class="band-v">{{ articles[0].published_display }}{% if lead_time %} &middot; {{ lead_time }}{% endif %}</span>
+      {%- if lead_time %}<span class="band-tz">All times GMT</span>{% endif -%}
+      {%- else -%}
+      <span class="band-k">The wire</span>
+      <span class="band-sep" aria-hidden="true">/</span>
+      <span class="band-v">Nothing filed yet</span>
+      {%- endif -%}
+    </p>
+  </div>
+</div>
+
+<main id="main">
+  <div class="wrap">
+    <div class="river{% if not articles %} river-empty{% endif %}">
+      {%- if articles -%}
+      {%- set ns = namespace(day='') -%}
+      {%- for item in articles -%}
+      {%- if ns.day and item.published_display != ns.day %}
+      <p class="rv-day"><span class="rv-day-t">{{ item.published_display }}</span></p>
+      {%- endif -%}
+      {%- set ns.day = item.published_display -%}
+      {%- set tick = (item.published_iso.split('T')[1][:5]) if 'T' in item.published_iso else '' %}
+      <article class="rv{% if loop.first %} rv-lead{% endif %}">
+        <div class="rv-tick">
+          {%- if tick -%}
+          <time class="rv-t" datetime="{{ item.published_iso }}">{{ tick }}</time>
+          {%- else -%}
+          <span class="rv-t rv-null" aria-hidden="true">--:--</span>
+          {%- endif -%}
+        </div>
+        <div class="rv-body">
+          <p class="rv-desk">{{ item.desk_label }}</p>
+          <h2 class="rv-h"><a href="{{ item.url }}">{{ item.title }}</a></h2>
+          <p class="rv-d">{{ item.dek }}</p>
+          <p class="rv-m">{{ item.reading_minutes }} min read</p>
+        </div>
+      </article>
+      {%- endfor -%}
+      {%- else %}
+      <article class="rv rv-lead rv-empty">
+        <div class="rv-tick">
+          <span class="rv-t rv-null" aria-hidden="true">--:--</span>
+        </div>
+        <div class="rv-body">
+          <p class="rv-desk">The wire</p>
+          <h2 class="rv-h">Nothing on the wire yet.</h2>
+          <p class="rv-d">When the desk files, it lands here.</p>
+          <p class="rv-cta"><a href="{{ feed_href }}">Take the feed</a> and it reaches you without a return visit.</p>
+        </div>
+      </article>
+      {%- endif %}
+    </div>
+  </div>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot-in">
+      <p class="foot-disc">{{ footer_text }}</p>
+      <p class="foot-meta">
+        <span class="foot-c">&copy; Mastermind</span>
+        <a href="{{ about_href }}">About this wire</a>
+        <a href="{{ feed_href }}">Feed</a>
+        <a href="https://www.mastermind-x.com">Part of Mastermind</a>
+      </p>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
