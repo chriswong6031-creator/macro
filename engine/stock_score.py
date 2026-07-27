@@ -455,16 +455,20 @@ def _overextended(rec: dict) -> bool:
 
 # ---- theme/sector SPOTLIGHT tilt (engine.spotlight) -------------------------
 # A declared, clamped narrative nudge that aligns the board with the live thematic-basket
-# recommendation + sector playbook. Enters ONLY the tailwind axis (weight 0.10) — so a full
-# +1 tilt moves comp_z by at most ~0.03 z, dominated ~20x by the macro/idio risk taxes and
-# fully orthogonal to the entry hard-block. Below the knee (BOTH channels out of play) it
-# also steps suggested SIZE down — asymmetric: a positive tilt never inflates size.
+# recommendation + sector playbook. Enters ONLY the tailwind axis — so it is bounded by that
+# axis's per-market weight in _WEIGHT_PRIOR, and is fully orthogonal to the entry hard-block.
+# On the US board that weight is 0.0 since the W9-B demotion (#1143), so the tilt is DISPLAY
+# ONLY there and re-ranks nothing; on the markets that still carry the axis (CA/CN/HK/INTL,
+# weights 0.12–0.20) a full +/-1 tilt moves comp_z by only ~+/-0.05–0.08 z, dominated by the
+# macro/idio risk taxes. Below the knee (BOTH channels out of play) it also steps suggested
+# SIZE down — asymmetric: a positive tilt never inflates size, and the size trim is live on
+# every market including US (it reads the undamped z, not the composite).
 _OOP_KNEE = 0.40          # blended spotlight z below -this => start trimming suggested size
 _OOP_SIZE_MAX = 0.5       # max risk_total contribution from the out-of-play size trim
-# Damp the tilt INTO the tailwind axis so it stays "subtle": with the tailwind weight 0.10
-# and (typically) a single-part axis, a full +/-1 tilt then moves comp_z by only ~+/-0.04 z
-# — a within-tier re-order, dominated ~20x by the macro/idio risk taxes. The UNDAMPED z is
-# still what the display chip + the out-of-play size trim read (those are deliberately legible).
+# Damp the tilt INTO the tailwind axis so it stays "subtle" wherever the axis is still
+# weighted: a full +/-1 tilt becomes a within-tier re-order, dominated by the risk taxes.
+# The UNDAMPED z is still what the display chip + the out-of-play size trim read (those are
+# deliberately legible). tests/test_spotlight.py pins both halves.
 _SPOTLIGHT_LEG_GAIN = 0.4
 
 # VALIDATED scored de-risk from the name's primary NARRATIVE BASKET (allocation trend-gate).

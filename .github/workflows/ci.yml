@@ -1713,6 +1713,17 @@ on:
       - "scripts/**/*.py"
       - "research/*.py"
       - "research/**/*.py"
+      # ── RED-on-arrival sweep, batch A: scoring engine (2026-07-27) ──────────
+      # The first pass that measured how many of the 870 remaining unrun suites are
+      # actually RED (24 of 870; see docs/UNRUN_TEST_CENSUS.md §"Red on arrival —
+      # the P4/P5 sweep").  These four were red on main and are fixed in this PR.
+      # Subjects all live under engine/**, already a broad catch-all above, so only
+      # the test halves need entries here — tests/** is deliberately NOT broad.
+      # unrun-scoring-engine
+      - "tests/test_etf_pulse.py"
+      - "tests/test_fix43_analyst_and_whitehouse.py"
+      - "tests/test_sector_central.py"
+      - "tests/test_spotlight.py"
   workflow_dispatch:
 
 permissions:

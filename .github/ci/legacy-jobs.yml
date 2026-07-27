@@ -3427,3 +3427,37 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: import-time logging.disable + warnings-filter ratchet over engine, lib, scripts, research
         run: python -m pytest tests/test_no_module_level_logging_disable.py -q
+
+  # ── RED-ON-ARRIVAL SWEEP, BATCH A (2026-07-27) ─────────────────────────────
+  # The 2026-07-26 census wired the P0–P3 tiers but left P4/P5 (861 suites) as
+  # declared backlog, so nobody had measured how many of them were already RED.
+  # This lane is the first answer: 870 unrun suites were executed one process per
+  # suite, 24 came back red, and these four are the scoring-engine share of that
+  # set (docs/UNRUN_TEST_CENSUS.md §"Red on arrival — the P4/P5 sweep").
+  #
+  # Two of the four were worse than red — they were NON-HERMETIC.  A migration
+  # that adds a preferred data source in front of an existing one silently strands
+  # the old monkeypatch on a dead branch, so the test stops testing its fixture and
+  # starts asserting against the committed production store; its verdict then moves
+  # with the market instead of with the code.  Both now pin the branch they
+  # exercise, and both gained the coverage the migration's NEW branch never had.
+  # Repeats the shared dependency install BYTE-FOR-BYTE so run_ci_pack.py keeps one
+  # venv across the unrun-* set.  Measured locally: 4 suites / 45 tests / ~43s,
+  # dominated by test_sector_central's compute() over the real store (~40s).
+  unrun-scoring-engine:
+    if: ${{ false }}
+    timeout-minutes: 6
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: spotlight tilt — W9-B US demotion is display-only + the tilt still moves weighted markets
+        run: python -m pytest tests/test_spotlight.py -q
+      - name: etf_pulse sector leg + analyst delta channel — each pins the data branch it exercises
+        run: python -m pytest tests/test_etf_pulse.py tests/test_fix43_analyst_and_whitehouse.py -q
+      - name: sector_central board order — fast-lens rotation rank, failing open to conviction
+        run: python -m pytest tests/test_sector_central.py -q
