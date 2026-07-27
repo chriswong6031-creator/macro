@@ -61,6 +61,31 @@ ENVELOPE
 The output is stamped with engine.neuralweb.envelope.stamp() — the first
 producer adoption of the envelope on the Neural Web bus.
 
+ONE CLOCK, AND IT IS `now` (determinism law)
+--------------------------------------------
+`build_world_state(root=R, now=T)` must be a pure function of (R, T).  Any lobe
+that needs the current time takes it from the `now` parameter — never from
+`datetime.now()` — and no lobe may put a clock reading *into* the payload.
+
+Both halves are load-bearing, and both were violated until 2026-07-27:
+
+* Three staleness gates read `datetime.now()` directly, so a build straddling
+  a UTC midnight could evaluate freshness two different ways within one call.
+* `china_market_state.note` embedded the measured age (``"stale: 465.4h > 30h
+  SLA"``).  Quantised to 0.1h, that made `inputs_hash` a function of wall-time
+  on a ~6-minute period: two back-to-back builds on an identical frozen tree
+  disagreed whenever a 6-minute boundary fell between them.  It surfaced as a
+  rare CI flake in tests/test_world_state.py::test_determinism (PR #3790, run
+  30239402788: red on attempt 1, green on a re-run of the *same* commit), and
+  it would have churned the git-tracked artifact on every nightly build for as
+  long as the China artifact stayed stale — defeating the byte-identity
+  fast-path that stamp_if_changed() exists to provide.
+
+The build's single clock reading belongs in the envelope's `produced_at`.
+Consumers derive an age from `as_of` + `produced_at`; the precise age stays in
+the log line.  tests/test_world_state.py::test_determinism_under_a_moving_clock
+enforces this by making `datetime.now()` raise while `now` is pinned.
+
 factor_weather lobe (§5.4): composed by _compose_factor_weather() below; panel
 calibration notes and nightly-bounds law live in scripts/build_factor_panel.py.
 """
@@ -846,6 +871,7 @@ def _compose_rotation_events(root: "Path | str | None" = None) -> dict:
 
 def _compose_stock_personality_summary(
     root: "Path | str | None" = None,
+    now: "datetime | None" = None,
 ) -> dict:
     """Compose the stock_personality_summary sub-block for world_state (R-SP20).
 
@@ -898,7 +924,9 @@ def _compose_stock_personality_summary(
         try:
             import pandas as _pd  # noqa: PLC0415 — lazy import, mirrors world_state pattern
             _asof_dt = datetime.fromisoformat(str(_agg_as_of)).replace(tzinfo=timezone.utc)
-            _now = datetime.now(timezone.utc)
+            # One clock, and it is `now` (see module docstring): a lobe that reads
+            # the wall clock makes build_world_state impure in its `now` argument.
+            _now = now or datetime.now(timezone.utc)
             _bdays = max(0, len(_pd.bdate_range(_asof_dt.date(), _now.date())) - 1)
             if _bdays > 2:
                 log.warning(
@@ -2448,7 +2476,10 @@ def _compose_intelligence(root: "Path | str | None" = None) -> dict:
         return null_out
 
 
-def _compose_macro_deltas(root: "Path | str | None" = None) -> dict:
+def _compose_macro_deltas(
+    root: "Path | str | None" = None,
+    now: "datetime | None" = None,
+) -> dict:
     """Compose macro_deltas lobe from data/macro_snapshots/transitions.jsonl.
 
     Returns a gap when the file is absent (build-order independence — the file
@@ -2472,7 +2503,9 @@ def _compose_macro_deltas(root: "Path | str | None" = None) -> dict:
     try:
         from datetime import timedelta  # noqa: PLC0415
 
-        cutoff = (datetime.now(timezone.utc) - timedelta(days=14)).strftime("%Y-%m-%d")
+        # One clock, and it is `now` (see module docstring) — otherwise a build
+        # straddling UTC midnight windows the transitions two different ways.
+        cutoff = ((now or datetime.now(timezone.utc)) - timedelta(days=14)).strftime("%Y-%m-%d")
 
         transitions: list[dict] = []
         with path.open(encoding="utf-8") as fh:
@@ -2685,7 +2718,10 @@ _CHINA_MARKET_STATE_NULL: dict = {
 }
 
 
-def _compose_china_market_state(root: "Path | str | None" = None) -> dict:
+def _compose_china_market_state(
+    root: "Path | str | None" = None,
+    now: "datetime | None" = None,
+) -> dict:
     """Compose the china_market_state sub-block for world_state (CN-SYS W7).
 
     Reads site/chinastatedata/market_state.json (schema china_market_state.v1,
@@ -2739,7 +2775,9 @@ def _compose_china_market_state(root: "Path | str | None" = None) -> dict:
         try:
             asof_str = str(as_of)[:10]
             asof_dt = datetime.fromisoformat(asof_str)
-            age_hours = (datetime.now(timezone.utc).replace(tzinfo=None) - asof_dt).total_seconds() / 3600
+            # One clock, and it is `now` (see module docstring).
+            _now = now or datetime.now(timezone.utc)
+            age_hours = (_now.replace(tzinfo=None) - asof_dt).total_seconds() / 3600
             if age_hours > _CHINA_STATE_STALENESS_HOURS:
                 log.warning(
                     "china_market_state: artifact as_of=%r is %.1fh stale (SLA %.0fh) — null lobe",
@@ -2748,7 +2786,14 @@ def _compose_china_market_state(root: "Path | str | None" = None) -> dict:
                 return {
                     "available": False,
                     "authority": "context_only",
-                    "note": f"stale: {age_hours:.1f}h > {_CHINA_STATE_STALENESS_HOURS}h SLA",
+                    # The measured age stays in the log line above and OUT of the
+                    # payload. It used to read f"stale: {age_hours:.1f}h > ...",
+                    # which put a wall-clock reading inside the hashed payload:
+                    # inputs_hash then changed every 0.1h (6 min) on an unchanged
+                    # tree — the test_determinism flake, and a nightly churn source
+                    # in the git-tracked artifact. as_of + the envelope's
+                    # produced_at give a consumer the age without a second clock.
+                    "note": f"stale: as_of {_clean(as_of)} exceeds {_CHINA_STATE_STALENESS_HOURS}h SLA",
                     "as_of": _clean(as_of),
                     "display_only": True,
                 }
@@ -4012,7 +4057,7 @@ def build_world_state(
 
     # ── 6d. stock_personality_summary (R-SP20) — one wiring line, loading inside ──
     try:
-        stock_personality_summary_block: dict = _compose_stock_personality_summary(root=repo)
+        stock_personality_summary_block: dict = _compose_stock_personality_summary(root=repo, now=now)
     except Exception as exc:  # noqa: BLE001
         log.warning("world_state: stock_personality_summary lobe failed — %s", exc)
         gaps.append(f"stock_personality_summary: {exc}")
@@ -4074,7 +4119,7 @@ def build_world_state(
     # CN-SYS-R1/R13/R14: context_only, no fused score, no LLM origination.
     _china_ms_path = site_dir / "chinastatedata" / "market_state.json"
     try:
-        china_market_state_block: dict = _compose_china_market_state(root=repo)
+        china_market_state_block: dict = _compose_china_market_state(root=repo, now=now)
     except Exception as exc:  # noqa: BLE001
         log.warning("world_state: china_market_state lobe failed — %s", exc)
         gaps.append(f"china_market_state: {exc}")
@@ -4243,7 +4288,7 @@ def build_world_state(
     # macro_deltas
     _transitions_path = data_dir / "macro_snapshots" / "transitions.jsonl"
     try:
-        macro_deltas_block: dict = _compose_macro_deltas(root=repo)
+        macro_deltas_block: dict = _compose_macro_deltas(root=repo, now=now)
     except Exception as exc:  # noqa: BLE001
         log.warning("world_state: macro_deltas lobe failed — %s", exc)
         gaps.append(f"macro_deltas: {exc}")

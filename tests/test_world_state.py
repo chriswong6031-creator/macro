@@ -42,6 +42,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
+import engine.neuralweb.world_state as _ws
 from engine.neuralweb.world_state import build_world_state, build_and_write
 
 # ---------------------------------------------------------------------------
@@ -509,22 +510,31 @@ def _make_crossasset(root: Path) -> dict:
 
 
 def _make_china_market_state(root: Path) -> dict:
-    """Write a minimal synthetic site/chinastatedata/market_state.json for CN-SYS W7."""
+    """Write a minimal synthetic site/chinastatedata/market_state.json for CN-SYS W7.
+
+    Dates are pinned RELATIVE TO _NOW (2026-07-04), not to the wall clock: the
+    lobe applies a 30h freshness SLA, and this fixture used to be stamped
+    2026-07-08 — four days AFTER the pinned `now`. Against the wall clock that
+    made the lobe permanently stale, which is how a clock reading ended up in
+    the hashed payload and flaked test_determinism. tests/test_china_nw_adapter.py
+    hit the same rot and reached for a datetime.now() fixture date; with `now`
+    threaded through the lobes, a pinned date is the fix that cannot rot.
+    """
     d: dict = {
         "schema": "china_market_state.v1",
-        "as_of": "2026-07-08",
-        "generated_utc": "2026-07-08T10:00:00Z",
+        "as_of": "2026-07-04",
+        "generated_utc": "2026-07-04T10:00:00Z",
         "authority": {"tier": "context_only"},
         "phase": {"phase": "POLICY_PUT", "confidence": 0.75, "evidence": []},
         "participation": {"regime": "unclear", "who_controls": "offshore", "risk": "normal"},
         "microstructure": {
-            "as_of": "2026-07-07",
+            "as_of": "2026-07-03",
             "aggregate": {"limit_up_count": 9.0, "limit_down_count": 5.0,
                           "sealed_up_close": 5.0, "failed_up_seal_count": 4.0,
                           "lianban_max": 1.0},
             "name_summary": {"n_packets": 10, "chase_veto_count": 2, "fillable_count": 10},
         },
-        "policy": {"as_of": "2026-07-08", "policy_impulse": "targeted_support",
+        "policy": {"as_of": "2026-07-04", "policy_impulse": "targeted_support",
                    "transmission_channel": ["liquidity"]},
         "rotation": {},
         "contradictions": [],
@@ -916,6 +926,52 @@ def test_determinism(tmp_path):
     assert p1["inputs_hash"] == p2["inputs_hash"], (
         f"non-deterministic: inputs_hash differs between two calls"
     )
+
+
+class _WallClockRead(BaseException):
+    """Signals that world_state read the wall clock while `now` was pinned.
+
+    Derives from BaseException, NOT Exception, on purpose: world_state is
+    fail-open and wraps nearly every lobe in `except Exception`, so an
+    Exception here would be swallowed and this guard would pass vacuously —
+    reviewing as a gate while testing nothing.
+    """
+
+
+def test_determinism_under_a_moving_clock(tmp_path, monkeypatch):
+    """A pinned `now` must fully determine the payload — no wall-clock reads.
+
+    test_determinism above can only catch a clock leak by luck: the two calls
+    have to straddle a boundary in whatever clock-derived value reached the
+    payload.  While china_market_state.note carried f"stale: {age_hours:.1f}h"
+    that boundary was 6 minutes wide, which made the leak a sub-1%-per-run CI
+    flake — it went red on attempt 1 and green on a re-run of the SAME frozen
+    commit (PR #3790, run 30239402788).  Here the luck is removed: with `now`
+    pinned, reading the wall clock at all IS the defect, so datetime.now()
+    fails loudly instead of quietly returning a different answer.
+
+    Scope: this pins world_state's own clock reads — it patches the `datetime`
+    name in that module, so a leak inside a lazily-imported helper would slip
+    past.  The inputs_hash assertion is the backstop for that case.
+    """
+    _full_tree(tmp_path)
+
+    class _NoClock(_ws.datetime):
+        @classmethod
+        def now(cls, tz=None):  # noqa: ARG003
+            raise _WallClockRead(
+                "build_world_state() read the wall clock while `now` was pinned. "
+                "Take the time from the `now` argument and keep clock readings "
+                "OUT of the payload — see the determinism law at the top of "
+                "engine/neuralweb/world_state.py."
+            )
+
+    monkeypatch.setattr(_ws, "datetime", _NoClock)
+
+    p1 = build_world_state(root=tmp_path, now=_NOW)
+    p2 = build_world_state(root=tmp_path, now=_NOW)
+
+    assert p1["inputs_hash"] == p2["inputs_hash"]
 
 
 # ---------------------------------------------------------------------------
