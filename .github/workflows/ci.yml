@@ -1737,6 +1737,17 @@ on:
       - "tests/test_fix43_analyst_and_whitehouse.py"
       - "tests/test_sector_central.py"
       - "tests/test_spotlight.py"
+      # ── Breakdown event tape (BD Phase-0/0b) + AVOID-1 stamper (2026-07-27) ──
+      # Subjects (scripts/research/dump_breakdown_events.py, bd_avoid1_stamper.py,
+      # engine/grading.py) ride the scripts/** + engine/** catch-alls above, so
+      # only the test halves need entries. All three run in the
+      # breakdown-control-seed-determinism lane. #3792 wired the determinism file
+      # into that lane without a path entry here, so a test-only edit could not
+      # start the packs — same gap for the two event-tape suites it left unwired.
+      # breakdown-control-seed-determinism
+      - "tests/test_breakdown_seed_determinism.py"
+      - "tests/test_breakdown_events.py"
+      - "tests/test_bd_avoid1_stamper.py"
   workflow_dispatch:
 
 permissions:
