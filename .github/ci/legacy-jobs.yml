@@ -493,6 +493,26 @@ jobs:
         # beautifulsoup4: test_china_news_engine.py patches bs4.BeautifulSoup on the
         # official-pages fetch path, and patch() imports the module.
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly pillow requests beautifulsoup4
+      # Wired 2026-07-26: test_group_flow.py was named by NO job in ANY workflow
+      # (`grep -rn test_group_flow .github/` returned nothing), so its baskets.html.j2
+      # render guard sat RED on main from 2026-07-24 — #3282's Rotation Map revamp
+      # rebuilt the "Flow lens" card into the Money-flow tile and the test's literal
+      # `{% if flow %}` source slice raised ValueError from that merge onward. Same
+      # unrun-suite darkness as test_nyse_calendar (#3779) and the #3768 sweep. It
+      # belongs in this job: it is a template render guard, it renders the same
+      # baskets.html.j2 as test_theme_scoring_conflicted below, and the job's minimal
+      # deps already carry jinja2/pandas/numpy. Path-gated in ci.yml on BOTH the test
+      # and templates/baskets.html.j2 — a guard the guarded change cannot trigger is
+      # not a guard (#3488).
+      #
+      # Ordered BEFORE the ~100-file sweep below on purpose: run_ci_pack.py abandons a
+      # job's remaining steps once one exits non-zero, so a trailing step is silently
+      # skipped whenever anything in that sweep is red — which is exactly what happened
+      # on this PR's first run (a pre-existing site/intl.html 'validated' claim on main
+      # reddened the sweep and this guard never executed). A guard reachable only when
+      # every other guard already passes is not a guard.
+      - name: group-flow display-only detector + baskets.html.j2 money-flow render guard
+        run: python -m pytest tests/test_group_flow.py -q
       - name: render-guard + engine-contract tests (rot sweep 2026-07-02)
         run: >
           python -m pytest
