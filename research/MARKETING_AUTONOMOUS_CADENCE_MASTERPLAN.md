@@ -40,6 +40,20 @@ working earnings-results provider is wired — that is its own build, not this o
 
 ---
 
+## AMENDMENT — 2026-07-27 (operator: raise throughput, unlimit breaking, harden dedup)
+
+This amendment SUPERSEDES the affected clauses of §0/§3/§5/§6 above where they conflict.
+
+- **Ladder re-spec 2h → 45-min.** The signal ladder moves from 8 two-hour slots to **19 forty-five-minute slots** (S1..S19), 4:00 AM–5:30 PM PT, still DST-safe via `ZoneInfo("America/Los_Angeles")`. `content_studio.plan_account` `per_day` 8 → **19** (`n_days` stays 7); `outbox._LADDER_PT_TIMES` carries `(hour, minute)` pairs. §0 gate 5 still holds (Pacific-clock slots, DST-correct) — only the slot count/spacing changed.
+- **Publisher sweep cadence.** `marketing-publish.yml` cron `0 1,3,11,13,15,17,19,21,23 * * *` → **`0,30 0,1,11-23 * * *`** — **30 sweeps/day on a 30-min grid** covering the 45-min ladder in both PDT and PST (last slot S19 = 17:30 PT = 00:30Z PDT / 01:30Z PST). Each sweep still posts at most ONE ladder item (10-min in-memory floor), so net throughput tracks the 19-slot ladder, not the cron grid.
+- **Breaking/immediate is fully unlimited.** An immediate item (fastlane earnings, operator "Post now", publish-time mover) is now **floor-exempt, cap-exempt, and never deferred** — it posts at `now`. This supersedes §0 gate 6 and §3 gate 6 ("budges in, respecting the floor"): breaking no longer waits on the 10-min floor. The retired knob `publish.immediate_defer_max_minutes` and the helpers `_immediate_due_at`/`_immediate_defer_cfg` are removed. A posted immediate item STILL advances the in-memory floor, so the next LADDER post budges by the 10-min spacing. The 10-min **global floor stays the one hard anti-spam rule for ladder posts** (`publish.min_minutes_between_any_posts: 10`, unchanged).
+- **Dedup upgraded to per-account near-dup.** Exact-text dedup is upgraded to **token Jaccard ≥ 0.7** (`outbox.near_duplicate` / `token_jaccard`, constant `_NEAR_DUP_JACCARD = 0.7`, matching the plan-time `distinctness()` precedent) at BOTH **enqueue time** (`outbox._check_and_append` vs same-account 7-day texts) AND **post time** (`marketing_publisher` repeat gate vs same-account posted texts, quarantine receipt names the offending item + Jaccard). "Deeply reworded" = Jaccard < 0.7. Numbers are KEPT in the token set — a genuinely changed level/price legitimately lowers similarity. Strictly per-account; cross-account near-dup stays sentinel's plan-time job. Dedup applies to immediate/breaking items too — it is a SAFETY gate, not a volume limit.
+- **Plan-tier cadence contract.** `sentinel.min_minutes_between_posts` config + `_DEFAULT_MIN_MINUTES_BETWEEN_POSTS` 120 → **45** (advisory D02 contract; NOT enforced at plan tier). The decorative ramp table is set to 45 for consistency (nothing reads it).
+- **Safety gates unchanged.** Live tape gate, text validation, channel-id requirement, kill-switch, sentinel plan gates, cashtag breadth, advice lexicon — all unchanged. No safety gate weakened (§0 gate 7 holds).
+- **Content Studio staleness fix.** The admin Content Studio now **folds outbox/posted status onto plan posts**: `emit_from_content_plan` stamps `source.plan_post_id`; `admin.marketing.content()` joins plan posts to outbox items (by `plan_post_id`, text fallback) and stamps `usage` (`posted`/`queued`/`approved`/`quarantined`) + `usage_at`; the panel badge shows real usage instead of a forever-"drafted" tag. Fail-soft: any fold error serves the plan with no usage fields.
+
+---
+
 ## §1 — Decisions locked (operator, 2026-07-24)
 
 | # | Decision | Value |

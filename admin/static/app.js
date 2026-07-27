@@ -4732,7 +4732,7 @@ RENDER.marketing_content = async () => {
   const freshHtml = `<div class="cs-freshbar">
     <span class="cs-fresh-pill ${stale ? "stale" : "fresh"}">${stale ? "stale" : "fresh"}</span>
     <span class="cs-fresh-txt">Plan for <b>${esc(asOf || "—")}</b>${producedTxt ? ` · built ${esc(producedTxt)}` : ""}</span>
-    ${stale ? `<span class="cs-fresh-fix">a fix landed 2026-07-23; tonight's run refreshes this</span>` : ""}
+    ${stale ? `<span class="cs-fresh-fix">tonight's run refreshes this plan.</span>` : ""}
   </div>`;
 
   /* Header stats */
@@ -4752,6 +4752,12 @@ RENDER.marketing_content = async () => {
         <div class="eyebrow">Max similarity</div>
         <div class="tile-value" style="color:${(distinctness.max_similarity || 0) > 0.7 ? "var(--bad)" : "var(--ok)"}">${((distinctness.max_similarity || 0) * 100).toFixed(0)}%</div>
         <div class="tile-sub">cross-desk Jaccard</div>
+      </div>` : ""}
+    ${d.posted_7d != null ? `
+      <div class="metric-tile">
+        <div class="eyebrow">posted (7d)</div>
+        <div class="tile-value" style="color:${d.posted_7d > 0 ? "var(--ok)" : "var(--muted)"}">${d.posted_7d}</div>
+        <div class="tile-sub">plan posts sent</div>
       </div>` : ""}
   </div>
   <div class="card" style="margin-bottom:12px;font-size:12px;color:var(--muted);line-height:1.55">
@@ -4819,7 +4825,11 @@ RENDER.marketing_content = async () => {
       const whenTxt = post.display_time || post.slot || "";
       const whenBadge = whenTxt ? `<span class="cs-post-time">${esc(whenTxt)}</span>` : "";
       const tickerBadge = (post.ticker && !post.cashtag) ? `<span class="statpill s-mut" style="font-size:10px">${esc(post.ticker)}</span>` : "";
-      const statusBadge = `<span class="statpill s-mut" style="font-size:10px">${esc(post.status || "drafted")}</span>`;
+      /* Usage badge — when the engine folded outbox status onto this plan post,
+         show what actually happened to it instead of the forever-"drafted" tag.
+         posted → green; queued/approved → neutral "in outbox" chip; quarantined
+         → warn. Absent usage → the legacy drafted/status badge. */
+      const statusBadge = csUsageBadge(post);
 
       let chartEmbed = "";
       if (featured && featured.svg) {
@@ -4869,6 +4879,24 @@ function csPlanStale(d) {
     const today = new Date().toISOString().slice(0, 10);
     return planDay < today;
   } catch (e) { return false; }
+}
+
+/* Usage badge for a Content Studio post. When the engine folded outbox status
+   onto the plan post (post.usage), render it with a distinct look; otherwise
+   fall back to the legacy drafted/status badge. Plain span (no button.btn
+   specificity trap). English-only console strings. */
+function csUsageBadge(post) {
+  const usage = post && post.usage;
+  if (usage === "posted") {
+    return `<span class="statpill s-ok" style="font-size:10px">posted</span>`;
+  }
+  if (usage === "queued" || usage === "approved") {
+    return `<span class="statpill s-mut" style="font-size:10px">in outbox</span>`;
+  }
+  if (usage === "quarantined") {
+    return `<span class="statpill s-warn" style="font-size:10px">quarantined</span>`;
+  }
+  return `<span class="statpill s-mut" style="font-size:10px">${esc((post && post.status) || "drafted")}</span>`;
 }
 
 /* Content Studio client-side filter helpers */

@@ -847,6 +847,80 @@ class TestContentPanel:
         r = marketing.content(tmp_path)
         assert r["stale"] is False
 
+    # ── Usage fold (staleness fix, 2026-07-27): plan posts show real outbox
+    #    status instead of a forever-"drafted" badge. ─────────────────────────
+
+    def _find_post(self, r, post_id):
+        for a in r["accounts"]:
+            for p in a.get("queue", []):
+                if p.get("id") == post_id:
+                    return p
+        return None
+
+    def test_content_usage_fold_posted_via_plan_post_id(self, seeded_content_root):
+        """An outbox item stamped source.plan_post_id and walked to 'posted' folds
+        usage=posted onto the matching plan post (exact join)."""
+        from datetime import datetime, timezone
+        from engine.marketing.outbox import make_item, enqueue, transition
+        _now = datetime(2026, 7, 18, 12, 0, tzinfo=timezone.utc)
+        it = make_item(account="flagship", kind="signal",
+                       text="Some emitted copy that need not match the plan text.",
+                       as_of="2026-07-18", provenance="content_studio",
+                       source={"plan_post_id": "post-flagship-001"}, now=_now)
+        assert enqueue(it, root=seeded_content_root, max_per_account_day=99) == "queued"
+        for to in ("approved", "posting", "posted"):
+            assert transition(it["id"], to, actor="t", root=seeded_content_root, now=_now)
+
+        r = marketing.content(seeded_content_root)
+        post = self._find_post(r, "post-flagship-001")
+        assert post is not None
+        assert post["usage"] == "posted"
+        assert post.get("usage_at")  # ISO timestamp present
+        assert r.get("posted_7d", 0) >= 1
+
+    def test_content_usage_fold_text_fallback(self, seeded_content_root):
+        """A historical outbox item WITHOUT plan_post_id folds via the (account,
+        normalized text) join built from the plan post's headline+body."""
+        from datetime import datetime, timezone
+        from engine.marketing.outbox import make_item, enqueue, transition
+        _now = datetime(2026, 7, 18, 12, 0, tzinfo=timezone.utc)
+        # Reconstruct the plan post's text exactly as emit_from_content_plan does.
+        headline = "Fed pivot window: what the bond market is telling you"
+        body = ("Rates moved; here is what it means for equity risk appetite and "
+                "where to watch for confirmation.")
+        text = f"{headline}\n\n{body}"
+        it = make_item(account="flagship", kind="macro", text=text,
+                       as_of="2026-07-18", provenance="content_studio", now=_now)
+        assert enqueue(it, root=seeded_content_root, max_per_account_day=99) == "queued"
+        assert transition(it["id"], "approved", actor="t", root=seeded_content_root, now=_now)
+
+        r = marketing.content(seeded_content_root)
+        post = self._find_post(r, "post-flagship-002")
+        assert post is not None
+        assert post["usage"] == "approved"
+
+    def test_content_usage_absent_when_never_emitted(self, seeded_content_root):
+        """A plan post with no matching outbox item carries NO usage field."""
+        r = marketing.content(seeded_content_root)
+        post = self._find_post(r, "post-flagship-001")
+        assert post is not None
+        assert "usage" not in post
+
+    def test_content_usage_fold_failure_serves_plan(self, seeded_content_root, monkeypatch):
+        """Any exception in the fold → the plan is served with no usage fields,
+        never a broken panel."""
+        import engine.marketing.outbox as _ob
+
+        def _boom(*a, **k):
+            raise RuntimeError("fold blew up")
+        monkeypatch.setattr(_ob, "fold_state", _boom)
+
+        r = marketing.content(seeded_content_root)
+        assert r["ok"] is True
+        for a in r["accounts"]:
+            for p in a.get("queue", []):
+                assert "usage" not in p
+
 
 # ---------------------------------------------------------------------------
 # Tests — department() panel (round 2)

@@ -311,6 +311,53 @@ def _within_text_window(old_as_of: object, ref_as_of: object) -> bool:
 text_key = _text_key
 
 
+# ── Near-duplicate ("deeply reworded") guard ──────────────────────────────────
+# Operator law 2026-07-27: accounts must not post repetitive same content unless
+# DEEPLY REWORDED. Exact-text dedup (_text_key) only catches whitespace-diff
+# copies; a lightly-edited repeat ("SPY holding 640" → "SPY is holding 640 today")
+# still reads as robotic spam. near_duplicate() upgrades the guard to token
+# Jaccard: two posts count as the same content when ≥ _NEAR_DUP_JACCARD of their
+# combined token set is shared. Numbers are kept in the token set on purpose — a
+# genuinely changed level/price legitimately lowers similarity, which is exactly
+# the "deep rewording" signal we want to reward. 0.7 matches the plan-time
+# distinctness() precedent (content_studio.distinctness).
+_NEAR_DUP_JACCARD = 0.7
+
+
+def token_jaccard(a: str, b: str) -> float:
+    """Token-Jaccard similarity between two strings in [0.0, 1.0].
+
+    Lowercase, tokenize on ``\\w+`` (numbers KEPT — a changed level/price should
+    lower similarity). Two empty texts → 0.0. Shared with near_duplicate() so the
+    publisher's quarantine receipt can print the same score the gate decided on."""
+    ta = set(re.findall(r"\w+", (a or "").lower()))
+    tb = set(re.findall(r"\w+", (b or "").lower()))
+    union = len(ta | tb)
+    if not union:
+        return 0.0
+    return len(ta & tb) / union
+
+
+def near_duplicate(a: str, b: str, *, threshold: float = _NEAR_DUP_JACCARD) -> bool:
+    """True when a and b share ≥ ``threshold`` of their combined token set
+    (token_jaccard). Two empty texts are NOT near-duplicates (0.0 < threshold)."""
+    return token_jaccard(a, b) >= threshold
+
+
+def _recent_texts_by_account(existing: list[dict], ref_as_of: object) -> dict[str, list[str]]:
+    """account → [normalized text, ...] for every in-window existing item.
+
+    Feeds the enqueue-time near-dup guard (near_duplicate): a new item's text is
+    compared against every same-account prior text in the 7-day window."""
+    out: dict[str, list[str]] = {}
+    for i in existing:
+        if not _within_text_window(i.get("as_of"), ref_as_of):
+            continue
+        acct = str(i.get("account") or "")
+        out.setdefault(acct, []).append(_normalize_text(str(i.get("text") or "")))
+    return out
+
+
 def recent_posted_text_keys(state: dict, ref_as_of: str) -> set:
     """Account-scoped normalized-text keys of items that already WENT OUT
     (folded status posted/posting) within the last _TEXT_DEDUP_WINDOW_DAYS.
@@ -333,6 +380,31 @@ def recent_posted_text_keys(state: dict, ref_as_of: str) -> set:
         if _within_text_window(it.get("as_of"), ref_as_of):
             keys.add(_text_key(it.get("account"), it.get("text")))
     return keys
+
+
+def recent_posted_texts(state: dict, ref_as_of: str) -> dict[str, list[tuple[str, str, str]]]:
+    """account → [(item_id, normalized text, as_of), ...] of items that already
+    WENT OUT (folded status posted/posting) within the window.
+
+    The richer sibling of recent_posted_text_keys: it carries the item id and
+    date so the publisher's post-time NEAR-DUP gate can name the offending prior
+    post in its quarantine receipt (\"near-identical (jaccard=0.83) to <id> posted
+    <date>\"). Same window/status scoping as recent_posted_text_keys."""
+    out: dict[str, list[tuple[str, str, str]]] = {}
+    items = state.get("items") or {}
+    statuses = state.get("status") or {}
+    for iid, st in statuses.items():
+        if st not in ("posted", "posting"):
+            continue
+        it = items.get(iid)
+        if not isinstance(it, dict):
+            continue
+        if not _within_text_window(it.get("as_of"), ref_as_of):
+            continue
+        acct = str(it.get("account") or "")
+        out.setdefault(acct, []).append(
+            (iid, _normalize_text(str(it.get("text") or "")), str(it.get("as_of") or "")))
+    return out
 
 
 def make_item(
@@ -605,8 +677,16 @@ def enqueue(
             # a fresh id (as_of is in the hash), so the id check above misses it.
             # recent_texts holds account-scoped normalized text from the window;
             # absent for legacy _ctx callers → the guard no-ops (back-compat).
-            text_key = _text_key(account, item.get("text"))
+            new_text = _normalize_text(str(item.get("text") or ""))
+            text_key = (account, new_text)
             if text_key in ctx.get("recent_texts", ()):
+                return "duplicate"
+            # Near-duplicate ("deeply reworded" law, 2026-07-27): also reject a
+            # lightly-edited repeat — token Jaccard ≥ 0.7 vs any same-account text
+            # in the window. recent_texts_by_account maps account → its normalized
+            # texts; absent for legacy _ctx callers → the guard no-ops.
+            prior_texts = ctx.get("recent_texts_by_account", {}).get(account, ())
+            if any(near_duplicate(new_text, prior) for prior in prior_texts):
                 return "duplicate"
             # Cap: every existing same-day item consumed a slot regardless of
             # status (quarantined/failed included — refilling a bad slot the
@@ -619,9 +699,11 @@ def enqueue(
                 return "invalid:append failed"
             ctx["ids"].add(item_id)
             ctx["day_counts"][(account, as_of)] = ctx["day_counts"].get((account, as_of), 0) + 1
-            # Keep the near-dup set current so two identical posts in ONE batch
-            # (same night) also collapse to one, not just across nights.
+            # Keep the near-dup structures current so two identical/near-identical
+            # posts in ONE batch (same night) also collapse to one, not just across
+            # nights.
             ctx.setdefault("recent_texts", set()).add(text_key)
+            ctx.setdefault("recent_texts_by_account", {}).setdefault(account, []).append(new_text)
             return "queued"
 
         if _ctx is not None:
@@ -637,6 +719,7 @@ def enqueue(
                     for i in existing
                     if _within_text_window(i.get("as_of"), as_of)
                 },
+                "recent_texts_by_account": _recent_texts_by_account(existing, as_of),
             }
             for i in existing:
                 key = (i.get("account"), i.get("as_of"))
@@ -962,12 +1045,16 @@ _SLOT_SUFFIX_TIMES = {
     "EOD": "T20:15:00Z",
 }
 
-# The 2-hour Pacific signal ladder (cadence masterplan §5): 8 slots, 4 AM–6 PM
-# LOCAL, resolved per-date through zoneinfo so the Pacific→UTC offset tracks DST
-# — never hardcode -7/-8, it would drift the whole ladder an hour twice a year.
-_LADDER_PT_HOURS = {
-    "S1": 4, "S2": 6, "S3": 8, "S4": 10,
-    "S5": 12, "S6": 14, "S7": 16, "S8": 18,
+# The 45-minute Pacific signal ladder (cadence masterplan §5, operator re-spec
+# 2026-07-27): 19 slots at 45-min steps from 4:00 AM to 5:30 PM LOCAL, resolved
+# per-date through zoneinfo so the Pacific→UTC offset tracks DST — never hardcode
+# -7/-8, it would drift the whole ladder an hour twice a year.
+_LADDER_PT_TIMES = {
+    "S1": (4, 0),   "S2": (4, 45),  "S3": (5, 30),  "S4": (6, 15),
+    "S5": (7, 0),   "S6": (7, 45),  "S7": (8, 30),  "S8": (9, 15),
+    "S9": (10, 0),  "S10": (10, 45), "S11": (11, 30), "S12": (12, 15),
+    "S13": (13, 0), "S14": (13, 45), "S15": (14, 30), "S16": (15, 15),
+    "S17": (16, 0), "S18": (16, 45), "S19": (17, 30),
 }
 _LADDER_TZ = "America/Los_Angeles"
 
@@ -977,8 +1064,9 @@ def slot_datetime(as_of: str, slot: str) -> str | None:
 
     A day slot is ``D<n>-<suffix>``: day n runs on ``as_of + (n-1) days`` (D1 is
     as_of itself). Two suffix families resolve:
-      * ladder ``S1``..``S8`` — the 2-hour Pacific clock ladder (4 AM–6 PM local),
-        converted to UTC per-date via zoneinfo so DST is handled correctly;
+      * ladder ``S1``..``S19`` — the 45-minute Pacific clock ladder (4:00 AM–5:30
+        PM local, 45-min steps), converted to UTC per-date via zoneinfo so DST is
+        handled correctly;
       * legacy ``AM``/``PM``/``EOD`` — fixed UTC times, kept so pre-ladder items
         (and their tests) still resolve.
     Returns None for immediate/publish-time slots (MOVER-/THEME-/CONF-, or any
@@ -1003,11 +1091,12 @@ def slot_datetime(as_of: str, slot: str) -> str | None:
     day = (base + timedelta(days=max(day_n - 1, 0))).date()
 
     # Ladder slot (Pacific clock) → UTC via zoneinfo (DST-safe).
-    pt_hour = _LADDER_PT_HOURS.get(suffix_key)
-    if pt_hour is not None:
+    pt_time = _LADDER_PT_TIMES.get(suffix_key)
+    if pt_time is not None:
+        pt_hour, pt_minute = pt_time
         try:
             from zoneinfo import ZoneInfo  # noqa: PLC0415
-            local = datetime(day.year, day.month, day.day, pt_hour, 0,
+            local = datetime(day.year, day.month, day.day, pt_hour, pt_minute,
                              tzinfo=ZoneInfo(_LADDER_TZ))
         except Exception:  # noqa: BLE001 — missing tz database → fail-soft to None
             return None
@@ -1086,6 +1175,7 @@ def emit_from_content_plan(
                 for i in existing
                 if _within_text_window(i.get("as_of"), as_of)
             },
+            "recent_texts_by_account": _recent_texts_by_account(existing, as_of),
         }
         for i in existing:
             key = (i.get("account"), i.get("as_of"))
@@ -1172,6 +1262,12 @@ def emit_from_content_plan(
 
                     source: dict[str, Any] = {
                         "plan_item_id": qi.get("id"),
+                        # Exact back-join key for the admin Content Studio usage
+                        # fold (admin/marketing.content): plan post id → outbox
+                        # item, so a posted post shows "posted" instead of a
+                        # forever-"drafted" badge. Does NOT enter the item id hash
+                        # (sha1 of account|kind|text|as_of only).
+                        "plan_post_id": qi.get("id"),
                         "chart_id": chart_id,
                     }
                     # Surface the chart PNG on source too (the publisher reads

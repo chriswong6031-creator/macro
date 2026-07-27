@@ -943,10 +943,84 @@ def content(root=None) -> dict:
         except Exception:  # noqa: BLE001
             _slot_dt = None
 
-        def _stamp(post: dict) -> dict:
+        # Usage fold (staleness fix, 2026-07-27): join each plan post to its
+        # outbox item so a post that was actually USED shows its real status
+        # instead of a forever-"drafted" badge. Two maps off fold_state:
+        #   plan_post_id → (usage, at)   — exact, via source.plan_post_id (new emits)
+        #   (account, normalized text) → (usage, at)  — fallback for historical
+        #     items emitted before source.plan_post_id was stamped.
+        # Folded outbox status → a plain usage word: posted/posting → "posted",
+        # approved → "approved", queued → "queued", quarantined → "quarantined".
+        # Any exception → serve the plan with no usage fields (never break panel).
+        _usage_by_plan_id: dict[str, tuple[str, str | None]] = {}
+        _usage_by_text: dict[tuple[str, str], tuple[str, str | None]] = {}
+        try:
+            from engine.marketing.outbox import (  # noqa: PLC0415
+                fold_state as _fold_state, _normalize_text as _norm,
+            )
+
+            def _usage_word(status: str) -> str | None:
+                if status in ("posted", "posting"):
+                    return "posted"
+                if status == "approved":
+                    return "approved"
+                if status == "queued":
+                    return "queued"
+                if status == "quarantined":
+                    return "quarantined"
+                return None  # failed / unknown → treat as never-usefully-emitted
+
+            _st = _fold_state(repo)
+            _items = _st.get("items") or {}
+            _statuses = _st.get("status") or {}
+            _last = _st.get("last") or {}
+            for _iid, _it in _items.items():
+                if not isinstance(_it, dict):
+                    continue
+                _word = _usage_word(_statuses.get(_iid, "queued"))
+                if _word is None:
+                    continue
+                _at = str((_last.get(_iid) or {}).get("at") or "") or None
+                _src = _it.get("source") if isinstance(_it.get("source"), dict) else {}
+                _ppid = _src.get("plan_post_id") if isinstance(_src, dict) else None
+                if _ppid is not None:
+                    _usage_by_plan_id[str(_ppid)] = (_word, _at)
+                _tkey = (str(_it.get("account") or ""), _norm(str(_it.get("text") or "")))
+                _usage_by_text[_tkey] = (_word, _at)
+        except Exception as _fold_exc:  # noqa: BLE001 — usage is best-effort
+            log.warning("marketing.content: usage fold skipped (%s)", _fold_exc)
+            _usage_by_plan_id = {}
+            _usage_by_text = {}
+
+        def _fold_usage(p: dict, acct_id: str) -> dict:
+            """Stamp usage/usage_at onto a plan post dict (best-effort)."""
+            try:
+                from engine.marketing.outbox import _normalize_text as _norm2  # noqa: PLC0415
+            except Exception:  # noqa: BLE001
+                return p
+            hit = None
+            _pid = p.get("id")
+            if _pid is not None:
+                hit = _usage_by_plan_id.get(str(_pid))
+            if hit is None:
+                parts = [str(p.get("headline") or "").strip(),
+                         str(p.get("body") or "").strip()]
+                _text = "\n\n".join(x for x in parts if x)
+                hit = _usage_by_text.get((str(acct_id or ""), _norm2(_text)))
+            if hit is None:
+                return p
+            usage, usage_at = hit
+            out = {**p, "usage": usage}
+            if usage_at:
+                out["usage_at"] = usage_at
+            return out
+
+        def _stamp(post: dict, acct_id: str = "") -> dict:
             p = _strip_post_internals(post)
             if _slot_dt is not None and isinstance(p, dict):
                 p = {**p, "display_time": _slot_dt(plan_as_of or "", str(p.get("slot") or ""))}
+            if isinstance(p, dict):
+                p = _fold_usage(p, acct_id)
             return p
 
         # Strip internal underscore-prefixed keys from every queued post before
@@ -955,12 +1029,14 @@ def content(root=None) -> dict:
         # flags survive (see _CONTENT_POST_KEEP).  Each post also gets a
         # display_time (its real advisory post datetime) for the UI.
         accounts = []
+        _posted_7d = 0
         for acct in (cp.get("accounts") or []):
             if isinstance(acct, dict) and isinstance(acct.get("queue"), list):
-                acct = {
-                    **acct,
-                    "queue": [_stamp(p) for p in acct["queue"]],
-                }
+                _acct_id = str(acct.get("id") or acct.get("name") or "")
+                _q = [_stamp(p, _acct_id) for p in acct["queue"]]
+                _posted_7d += sum(
+                    1 for p in _q if isinstance(p, dict) and p.get("usage") == "posted")
+                acct = {**acct, "queue": _q}
             accounts.append(acct)
 
         return {
@@ -970,6 +1046,10 @@ def content(root=None) -> dict:
             "featured_charts": cp.get("featured_charts") or [],
             "distinctness": cp.get("distinctness"),
             "summary": cp.get("summary"),
+            # Count of plan posts that were actually posted in the last 7 days —
+            # feeds the "posted (7d)" summary tile so an operator can see at a
+            # glance that content is being used, not stale.
+            "posted_7d": _posted_7d,
             "as_of": plan_as_of,
             "produced_at": cp.get("produced_at"),
             # A plan is stale once its as_of falls more than a day behind today —
