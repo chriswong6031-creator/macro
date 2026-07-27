@@ -317,14 +317,18 @@ publish:
     slot: "S8"               # after-close ladder slot the daily read fires on (18:00 PT; once/day)
 
   # Per-account Buffer channel id. Empty placeholder until a real token exists —
-  # discover the X channel id with:
+  # discover the X channel id with the buffer-channels workflow (Actions →
+  # buffer-channels → Run workflow), or locally:
   #   BUFFER_TOKEN=... python -m scripts.marketing_publisher --list-channels
   channels:
     flagship: "6a61f3d5e2638b94d7bd6c9b"  # @mastermindx001 (twitter)
+    founder: "6a67dd714b2d03035f4f9659"   # @w_chris6031 (twitter) — founder's personal account, wired 2026-07-27
 
   # Per-account link policy at POST time. flagship = true: the operator wants
   # links to their own site (mastermind-x.com). This is the publisher-tier gate;
   # the Sentinel plan-tier links_allowed (default false) still governs emission.
+  # founder: intentionally absent (= false) — links from a freshly wired account
+  # are a named X spam trigger; flip after ~2 weeks like the flagship ramp.
   links_allowed:
     flagship: true
 
@@ -446,6 +450,29 @@ desk_network:
         macro: 0.05
         watchlist: 0.07
 
+    - id: founder
+      kind: branded
+      beat: "Founder's desk — the day's tape, first person"
+      voice: "fast, reactive"
+      handle: "w_chris6031"      # the founder's personal X account (Buffer-linked)
+      enabled: true              # real account + Buffer channel wired in publish.channels
+      created: "2026-07-27"      # Buffer attach date — drives ramp tier lookup (D02)
+      # Founder: signals-first (house law); mover/event lean — a person reacting
+      # to the tape, not an institutional note. Voice joins the "fast, reactive"
+      # template pool (otherwise unused live: research_b is planned/disabled),
+      # so the deterministic fallback can never twin a flagship post; the LLM
+      # register lives in copywriter.personas.founder below.
+      tilt:
+        signal: 0.34
+        chart: 0.10
+        mover: 0.12
+        theme_list: 0.10
+        receipt: 0.07
+        event: 0.09
+        education: 0.05
+        macro: 0.08
+        watchlist: 0.05
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Copywriter — personas + copy laws (the anti-bot-voice system)
 # The copywriter (engine/marketing/copywriter.py) reads this block. Personas give
@@ -549,6 +576,18 @@ copywriter:
       example_lines:
         - "Last time $X put in back-to-back weeks like this was Oct 2022. That one ran 60% in six months. Rhyme, not repeat, but worth a look."
         - "Third straight 'one-time' charge. The market's memory is short. The chart's isn't."
+    founder:
+      name: "The Founder"
+      voice_notes: >
+        The guy who built the shop, posting from his own account between
+        meetings. First person singular, present tense, quick. Plain words,
+        short sentences, dry about his own misses and quiet about his wins.
+        Mentions the work naturally ("we built the screen for exactly this")
+        but never pitches it. No hashtags, no victory laps, no thread-bait.
+        Emoji budget: 0.
+      example_lines:
+        - "Watched this level hold three times since March. Fourth test today. I don't get braver with each test, just more curious."
+        - "We flagged the group Monday. I did nothing. This morning's gap is the tuition for that."
   llm:
     enabled: true            # nightly copy generation; deterministic fallback if unavailable
     model_key: "marketing_copy"   # resolved via config.yml llm_models block; sonnet-class

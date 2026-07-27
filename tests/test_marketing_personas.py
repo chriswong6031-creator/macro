@@ -5,10 +5,10 @@ which installs exactly that). No pandas, no numpy — a top-level heavy import i
 engine/marketing/personas.py must turn this suite red at collection.
 
 Test list:
-  1.  All 13 committed specs load; the ``--check`` CLI exits 0 on the real tree.
+  1.  All 14 committed specs load; the ``--check`` CLI exits 0 on the real tree.
   2.  Every loader rejection class is rejected (11 named classes + the extras).
   3.  control_v3.tilt IS content_studio._DEFAULT_TILT — the control arm is pinned.
-  4.  The 6 desk-derived specs agree with config/marketing.yml (drift fails here).
+  4.  The 7 desk-derived specs agree with config/marketing.yml (drift fails here).
   5.  Importing engine.marketing.personas mutates no content_studio/copywriter
       module state, and does not even import content_studio (lazy-import contract).
   6.  _get_copy never falls back for a configured persona's voice key.
@@ -39,9 +39,11 @@ def _worktree_root() -> Path:
 
 ROOT = _worktree_root()
 
-#: The 13 specs Persona Network W1 ships: the 6 shipped desks derived additively
-#: from config, plus the 7 authored personas (trial cohort + publication anchors).
-_DERIVED_IDS = ("flagship", "receipts", "theme_desk", "research_a", "research_b", "research_c")
+#: The 14 committed specs: the 7 shipped desks derived additively from config
+#: (the 6 W1 desks + the founder's personal account, wired 2026-07-27), plus
+#: the 7 authored personas (trial cohort + publication anchors).
+_DERIVED_IDS = ("flagship", "receipts", "theme_desk", "research_a", "research_b",
+                "research_c", "founder")
 _AUTHORED_IDS = ("corp_desk", "chart_gremlin", "zh_navigator", "control_v3",
                  "news_flash", "mastermind_news", "mastermind_research")
 _ALL_IDS = _DERIVED_IDS + _AUTHORED_IDS
@@ -71,9 +73,9 @@ def _base_spec() -> dict:
 # 1. The committed specs load
 # ---------------------------------------------------------------------------
 
-def test_all_thirteen_specs_load(specs):
+def test_all_fourteen_specs_load(specs):
     assert set(specs) == set(_ALL_IDS), f"unexpected spec id set: {sorted(specs)}"
-    assert len(specs) == 13
+    assert len(specs) == 14
 
 
 def test_base_spec_fixture_is_valid():
@@ -87,7 +89,7 @@ def test_check_cli_is_green_on_the_committed_tree():
         cwd=str(ROOT), capture_output=True, text=True,
     )
     assert proc.returncode == 0, proc.stdout + proc.stderr
-    assert "13 checked, 0 invalid" in proc.stdout
+    assert "14 checked, 0 invalid" in proc.stdout
     assert P.check(ROOT) == {}
 
 
@@ -328,7 +330,7 @@ def test_tilt_key_set_is_read_from_content_studio_not_copied():
 
 
 # ---------------------------------------------------------------------------
-# 4. The 6 derived specs agree with config/marketing.yml
+# 4. The desk-derived specs agree with config/marketing.yml
 # ---------------------------------------------------------------------------
 
 _KIND_MAP = {"branded": "branded", "generic": "specialist"}
@@ -361,7 +363,8 @@ def test_derived_spec_matches_config(acct_id, specs, marketing_cfg):
 
 
 def test_every_desk_network_account_has_a_spec(specs, marketing_cfg):
-    """W1 allows an account without a spec; today none exists, and we pin that."""
+    """W1 allows an account without a spec; today none exists, and we pin that.
+    (7 desks since 2026-07-27: the W1 six + the founder's personal account.)"""
     assert set(_desk_accounts(marketing_cfg)) == set(_DERIVED_IDS)
     assert set(_DERIVED_IDS) <= set(specs)
 
@@ -416,7 +419,7 @@ def test_derived_codex_emoji_matches_the_copywriter_block(acct_id, specs, market
             f"{acct_id}: codex declares {signature!r} but copywriter names no glyphs"
 
 
-def test_the_emoji_budget_probe_actually_finds_all_six_lines(marketing_cfg):
+def test_the_emoji_budget_probe_actually_finds_every_desk_line(marketing_cfg):
     """Guard the guard: a voice_notes rewording that drops the budget line would
     otherwise make the drift test vacuous for that desk."""
     found = {i for i in _DERIVED_IDS
@@ -646,10 +649,10 @@ def test_roster_renders_with_the_committed_specs():
 
     d = panel.roster(root=ROOT)
     assert d["ok"] is True
-    assert d["counts"]["total"] == 13
+    assert d["counts"]["total"] == 14
     assert d["counts"]["invalid"] == 0
-    # flagship is the one desk with a real X account (enabled: true).
-    assert d["counts"]["live"] == 1
+    # flagship + founder are the two desks with a real X account (enabled: true).
+    assert d["counts"]["live"] == 2
     assert d["counts"]["configured"] == 5
     assert d["counts"]["planned"] == 7
 
@@ -659,6 +662,7 @@ def test_roster_renders_with_the_committed_specs():
         assert by_id[spec_id]["status"] == "PLANNED"
         assert by_id[spec_id]["provisioned"] is False
     assert by_id["flagship"]["status"] == "LIVE"
+    assert by_id["founder"]["status"] == "LIVE"
     assert by_id["receipts"]["status"] == "CONFIGURED"
 
 
