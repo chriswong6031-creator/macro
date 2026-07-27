@@ -1,0 +1,54 @@
+name: public-render
+
+# GitHub-hosted fast lane for data-free public surfaces. Direct template/site
+# pairs already land together; this job renders the three Jinja public pages,
+# refreshes immutable asset stamps, and pushes only the derived site/templates
+# delta. It never waits for or occupies the self-hosted market renderer.
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/public-render.yml"
+      - "config/plans.yml"
+      - "scripts/build_public_pages.py"
+      - "scripts/ci/public_render.sh"
+      - "templates/*.html"
+      - "templates/*.css"
+      - "templates/*.js"
+      - "templates/*.json"
+      - "templates/*.txt"
+      - "templates/*.svg"
+      - "templates/plans.html.j2"
+      - "templates/support.html.j2"
+      - "templates/unsubscribe.html.j2"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pipeline-public-render
+  # Every run rebuilds from current main, so the newest push safely supersedes an
+  # older public render instead of creating another serial traffic jam.
+  cancel-in-progress: true
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install public-render dependencies
+        run: python -m pip install --quiet jinja2 pyyaml
+      - name: Render and publish public surfaces
+        run: bash scripts/ci/public_render.sh
