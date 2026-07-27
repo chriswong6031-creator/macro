@@ -18,6 +18,18 @@ allocations — the gauntlet/epistemics promotion law does not apply. It DOES ob
 `validated`-word ban (CI-enforced), the user-first design doctrine, bilingual EN/ZH, and
 the paywall/quota entitlement law (server enforces; client chrome is decorative).
 
+The `validated`-word ban binds **our copy, not the notes we mirror** (amended 2026-07-27,
+#3770). BC-2 governs what the platform asserts; reported speech from a named external
+author has no artifact of ours to cite — "the June CPI print validated two likely sources
+of ongoing disinflation" is ordinary economics English. The third-party text *sinks* on
+`site/research/*.html`, `site/research/index.html` and the baked catalog in
+`site/research_vault.html` are therefore skipped structurally by `_THIRD_PARTY_PAGES` in
+`scripts/check_validated_claims.py`; every platform-authored string on those pages lives
+in `templates/research_*.j2`, which stays scanned with no exemption. If a mirrored quote
+ever reds the gate, the sink is unmapped — extend `_THIRD_PARTY_PAGES` (and
+`tests/test_validated_claims_thirdparty.py`), never the allowlist. Precipitating incident:
+the 2026-07-27 nightly render red-lined main and every open PR's ci-pack-0.
+
 **Operator/legal note:** distribution rights for third-party research are an operator/legal
 responsibility. This system enforces *access control* (who may view/download, how many per
 day) and *traceability* (per-user watermark); it does not adjudicate redistribution rights.
