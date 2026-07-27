@@ -721,13 +721,20 @@ html[data-lang="zh"] .tier.hot[data-founding-tier]::before{content:"创始会员
 .price .per{font-family:'Inter',sans-serif;font-weight:500;font-size:12.5px;color:var(--muted);letter-spacing:0}
 .price .was{font-family:var(--fig);font-weight:600;font-size:16px;letter-spacing:normal;color:var(--faint);text-decoration:line-through;margin-right:7px}
 .badge{display:inline-block;margin-top:6px;font-family:var(--display);font-weight:700;font-size:10px;letter-spacing:.06em;color:var(--q-green);background:var(--green-wash);border-radius:6px;padding:4px 9px}
-.founding{margin-top:12px;padding:10px 11px;border:1px solid rgba(40,95,255,.2);border-radius:10px;background:rgba(40,95,255,.045)}
+.tier .bill{margin:7px 0 0;font-size:12px;line-height:1.45;color:var(--muted)}
+.founding{margin-top:12px;padding:11px 12px;border:1px solid rgba(40,95,255,.22);border-radius:10px;background:linear-gradient(160deg,rgba(40,95,255,.055),rgba(120,98,224,.05))}
 .founding[hidden]{display:none}
-.founding-line{display:flex;justify-content:space-between;gap:10px;font-size:10.5px;color:var(--muted)}
-.founding-line b{font-family:var(--display);font-weight:750;color:var(--ink)}
-.founding-track{height:6px;margin-top:7px;overflow:hidden;border-radius:999px;background:rgba(40,95,255,.12)}
-.founding-fill{display:block;width:0;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--blue),#7862e0);transition:width .35s ease}
-.founding-terms{margin:7px 0 0;font-size:10px;line-height:1.4;color:var(--muted)}
+.founding-line{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:10.5px;color:var(--muted)}
+.founding-line b{font-family:var(--display);font-weight:750;letter-spacing:.05em;color:var(--ink)}
+.founding-line .fcount{font-family:var(--fig);font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink);text-align:right}
+.founding-track{height:6px;margin-top:8px;overflow:hidden;border-radius:999px;background:rgba(40,95,255,.12)}
+.founding-fill{display:block;width:0;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--blue),#7862e0);transition:width .6s ease}
+@media (prefers-reduced-motion:reduce){.founding-fill{transition:none}}
+.founding-terms{margin:8px 0 0;font-size:10px;line-height:1.4;color:var(--muted)}
+.tier .tf{list-style:none;margin:15px 0 18px;padding:0;flex:1;display:flex;flex-direction:column;gap:9px}
+.tier .tf li{position:relative;padding-left:21px;font-size:13px;line-height:1.5;color:var(--muted)}
+.tier .tf li::before{content:"✓";position:absolute;left:1px;top:.05em;font-family:var(--display);font-weight:800;font-size:11px;color:var(--q-green)}
+.tier .tf li b{color:var(--ink);font-weight:600}
 .tier .gist{margin:14px 0 18px;font-size:13.5px;color:var(--muted);line-height:1.6;flex:1}
 .tier .gist b{color:var(--ink);font-weight:600}
 /* matrix */
@@ -870,6 +877,7 @@ footer{background:#04070c;border-top:1px solid #10161f;padding:46px 0 44px;color
   .tier{padding:22px 20px;border-radius:18px}
   .tier .who{min-height:0;margin-bottom:2px}
   .tier .gist{margin:12px 0 17px}
+  .tier .tf{margin:13px 0 17px;gap:8px}
   .tier .btn{min-height:48px}
   .price{font-size:37px}
   .matrix-card{margin-top:30px}

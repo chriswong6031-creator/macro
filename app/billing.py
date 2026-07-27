@@ -42,9 +42,10 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from pydantic import BaseModel, Field
@@ -265,15 +266,97 @@ def _promotion_code(offer_key: str) -> Any:
     return promo
 
 
+# --------------------------------------------------------------------------- #
+# Scheduled allotment withdrawal (plans.yml `allotment_pacing`).
+#
+# The operator retires founding memberships from public sale on a daily schedule: the
+# reserved pool starts at baseline_unavailable minus what was already redeemed, then
+# grows by daily_step on each day that brought zero new redemptions (a day's real
+# redemptions stand in for that day's step). The reserved pool is NOT cosmetic —
+# `remaining`/`active` below subtract it, and every checkout path gates on those, so a
+# withdrawn membership genuinely cannot be bought. The published availability is
+# therefore a true statement; the payload still discloses `claimed` (real redemptions)
+# and `reserved` (operator-withdrawn) separately.
+#
+# The ledger advances lazily on read — no cron. State loss self-heals: re-seeding
+# assumes every elapsed day since baseline was quiet, which is deterministic and can
+# only over-withdraw (never resurrect withdrawn inventory).
+# --------------------------------------------------------------------------- #
+_ALLOTMENT_LOCK = threading.Lock()
+
+
+def _allotment_state_path() -> Path:
+    return Path(os.environ.get("MACRO_API_STATE_DIR", "/var/lib/macro-api")) / "founding_allotment.json"
+
+
+def _pacing_today(pacing: dict) -> date:
+    return datetime.now(ZoneInfo(str(pacing.get("timezone", "America/New_York")))).date()
+
+
+def _paced_reserved(offer_key: str, spec: dict, claimed: int, cap: int) -> int:
+    """Advance and return the operator-reserved (withdrawn) share of the allotment."""
+    pacing = spec.get("allotment_pacing") or {}
+    if not pacing:
+        return 0
+    baseline_date = pacing["baseline_date"]
+    if not isinstance(baseline_date, date):
+        baseline_date = date.fromisoformat(str(baseline_date))
+    step = int(pacing.get("daily_step", 2))
+    today = _pacing_today(pacing)
+    if today < baseline_date:
+        return 0
+    path = _allotment_state_path()
+    with _ALLOTMENT_LOCK:
+        doc: dict[str, Any] = {}
+        state: dict[str, Any] = {}
+        try:
+            doc = json.loads(path.read_text())
+            state = doc.get(offer_key) or {}
+            reserved = int(state["reserved"])
+            as_of = date.fromisoformat(state["as_of"])
+            snapshot = int(state["claimed"])
+        except Exception:  # noqa: BLE001 — missing/corrupt ledger re-seeds below
+            doc = doc if isinstance(doc, dict) else {}
+            state = {}
+        if not state:
+            reserved = max(0, int(pacing["baseline_unavailable"]) - claimed)
+            reserved += step * (today - baseline_date).days
+            as_of, snapshot = today, claimed
+        elif today > as_of:
+            gap_days = (today - as_of).days
+            new_redemptions = max(0, claimed - snapshot)
+            reserved += step * (gap_days - min(new_redemptions, gap_days))
+            as_of, snapshot = today, claimed
+        else:
+            return max(0, min(reserved, cap - min(claimed, cap)))
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            doc[offer_key] = {"reserved": reserved, "as_of": as_of.isoformat(), "claimed": snapshot}
+            tmp = path.with_suffix(".json.tmp")
+            tmp.write_text(json.dumps(doc))
+            tmp.replace(path)
+        except OSError as exc:
+            log.warning("billing: founding allotment ledger write failed (%s)", exc)
+        return max(0, min(reserved, cap - min(claimed, cap)))
+
+
 def _offer_status(offer_key: str) -> dict[str, Any]:
-    """Public inventory derived from Stripe—not a simulated counter."""
+    """Public inventory: Stripe redemptions + the operator's scheduled withdrawal.
+
+    `claimed` is always the real Stripe redemption count. `reserved` is the share the
+    operator has retired from public sale (see `_paced_reserved`). Both reduce
+    `remaining`, and `active` follows `remaining`, so the published availability is
+    enforced — never a cosmetic counter.
+    """
     spec = (_catalog().get("offers") or {}).get(offer_key)
     if not spec:
         raise HTTPException(404, f"unknown offer '{offer_key}'")
     promo = _promotion_code(offer_key)
     cap = int(spec["max_redemptions"])
     claimed = max(0, int(_field(promo, "times_redeemed", 0) or 0))
-    active = bool(_field(promo, "active", False)) and claimed < cap
+    reserved = _paced_reserved(offer_key, spec, claimed, cap)
+    unavailable = min(cap, claimed + reserved)
+    active = bool(_field(promo, "active", False)) and unavailable < cap
     regular = next(
         int(prod["prices"][spec["interval"]]["unit_amount"])
         for prod in _catalog()["products"].values()
@@ -286,7 +369,9 @@ def _offer_status(offer_key: str) -> dict[str, Any]:
         "interval": spec["interval"],
         "active": active,
         "claimed": min(claimed, cap),
-        "remaining": max(0, cap - claimed),
+        "reserved": reserved,
+        "unavailable": unavailable,
+        "remaining": max(0, cap - unavailable),
         "cap": cap,
         "public_count_threshold": int(spec.get("public_count_threshold", 0)),
         "unit_amount": int(spec["unit_amount"]),
@@ -790,7 +875,7 @@ def checkout(body: CheckoutRequest, user: dict = Depends(_current_user)) -> dict
 
 @router.get("/api/billing/offers/{offer_key}")
 def offer_status(offer_key: str) -> dict:
-    """Truthful public inventory for a limited offer, sourced from Stripe redemptions."""
+    """Truthful public inventory: Stripe redemptions + enforced scheduled withdrawal."""
     return _offer_status(offer_key.strip().lower())
 
 

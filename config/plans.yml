@@ -79,6 +79,19 @@ offers:
     promotion_code: FOUNDINGPRO2026V2
     retire_promotion_codes: [FOUNDINGPRO2026]
     duration: forever
+    # Scheduled withdrawal of the founding allotment (operator, 2026-07-27). A reserved
+    # pool — memberships pulled from public sale — starts at `baseline_unavailable` minus
+    # whatever was already redeemed, then grows by `daily_step` on every day with zero new
+    # redemptions (a day's real redemptions replace that day's step). app/billing.py both
+    # PUBLISHES the shrunken availability and ENFORCES it at checkout, so the public
+    # "N of cap still available" claim is literally true. Ledger: founding_allotment.json
+    # under MACRO_API_STATE_DIR. Deleting the ledger re-seeds deterministically as if every
+    # elapsed day since baseline had been quiet.
+    allotment_pacing:
+      baseline_date: 2026-07-27
+      baseline_unavailable: 244
+      daily_step: 2
+      timezone: America/New_York
 
 # Entitlement precedence — if a customer ever holds overlapping active subscriptions, the
 # highest-ranked tier wins. Also the display order (low -> high) on the plans page.
