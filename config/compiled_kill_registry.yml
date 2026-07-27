@@ -246,6 +246,12 @@ entries:
     section: 2
     section_name: killed_signal_families
 
+  - topic: 'Synchronized active sector-peer participation at a held subject recovery after systemic fresh lows (PSS-SR3)'
+    verdict: 'KILLED — the affirmative-demand repair solved both prior objections (coverage and subject-laggard selection) and still failed in the opposite direction across every era and outcome layer. The frozen tape has 2,065 treatments across 733 names (380 with ≥3) and 91 DEV / 55 VAL exact sector×month×anchor-severity×delay strata. Treatment-control action distance is matched at −0.02/+0.02 ATR, so this is not safe-late geometry. Against controls with the same held subject recovery and the same passive majority peer level recovery, requiring a majority of peers also to advance over five sessions worsens DEV MAE −1.39pp (3-month-block CI [−2.81,−0.47], permutation p=0.9875), tail −6.39pp, W5 −6.15pp, called −2.12pp, and rebound-first −10.76pp; VAL independently worsens MAE −1.28pp, tail −2.13pp, W5 −11.83pp, called −1.89pp, and rebound-first −13.20pp. FWD worsens MAE −2.17pp and tail −7.42pp. Mechanism inversion: synchronized short-horizon peer advancement after a systemic low is often correlation-one relief-rally / beta re-risking near a local rally crest, not evidence that marginal supply is exhausted. Close the exact fresh-low anchor→three-session subject hold→majority peer +0.50ATR level recovery→majority positive-five-day active participation construction. Do not reverse the label, retime the trend lookback, change the 50% floors, shorten persistence, or replace the nested level-recovered control with weak peers on this inspected history. A future species must measure an orthogonal source of durable absorption or selective leadership—not another contemporaneous sector-breadth relief label—and any sign-reversed use must accrue prospectively or use untouched data.'
+    source: '`research/PSS_SR3_PARTICIPATION_RECOVERY_PREREG.md`; `reports/pss_sr3_participation_recovery.md` (family `pss_sr3_participation_recovery`, 2026-07-27)'
+    section: 2
+    section_name: killed_signal_families
+
   - topic: 'Washout × turn (2W operator seed)'
     verdict: 'KILLED — operator seed dies in test'
     source: 'Entry-stack Amendment-3 adjudication (#1747)'
