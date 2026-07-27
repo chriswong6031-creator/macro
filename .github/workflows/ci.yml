@@ -1194,6 +1194,17 @@ on:
       - "templates/seo_learn_index.html.j2"
       - "templates/seo_tools_index.html.j2"
       - "templates/calculators/**"
+      # D14 W1 Media Network press engine (2026-07-26): the lane that WRITES
+      # into the free estate. Listed alongside the estate's own paths because a
+      # press change is exactly the change that can break the estate contract —
+      # a guard the guarded change cannot trigger is not a guard, and the press
+      # suite lives in the `press-lane` job in .github/ci/legacy-jobs.yml.
+      - "engine/press/**"
+      - "scripts/run_press.py"
+      - "config/press.yml"
+      - "admin/press.py"
+      - "tests/test_press_*.py"
+      - ".github/workflows/press-publish.yml"
       # ── UNRUN-SUITE CENSUS (2026-07-26) ──────────────────────────────────────
       # 1135 of 1491 tests/test_*.py suites were named by NO `run:` step in ANY of
       # the 51 workflows, and there is no broad `pytest tests/` anywhere — every

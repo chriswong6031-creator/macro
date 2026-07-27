@@ -1,0 +1,929 @@
+"""engine.press.desk_planner — deterministic story/report selection for W1.
+
+NO LLM.  NO NETWORK.  Same inputs => identical slots, every time.
+
+Two desks:
+
+  brief          The Brief.  Ranks the day's candidate stories from the
+                 chronicle event store, the S&P/theme heatmaps (movers) and a
+                 small set of first-party engine artifacts, then cuts to the
+                 desk's cadence ceiling.
+  research_desk  Research Desk.  Picks ONE research-vault report by recency and
+                 tier (top_pick first, then newest), and hands the writer that
+                 report's `summary_points` — our own analyst summary, never the
+                 source PDF.
+
+What a planner slot carries is the whole contract the rest of the pipeline
+enforces:
+
+  facts[]          every number the writer is allowed to use, each tagged
+                   first_party / third_party.  validators.check_fact_anchor
+                   rejects any number in the draft that is not in here.
+  raw_documents[]  the source text the draft must NOT paraphrase closely.
+                   validators.check_close_paraphrase scores against these.
+  primary_source   {kind, name, url, ref}.  `kind` decides which source law
+                   applies (masterplan §0 W1 gate 2, amended at review):
+                   `external` slots must name the source in full and link it
+                   above the fold; `first_party` slots carry their receipts
+                   inline instead and link only PUBLIC pages from the config
+                   allowlist.  Every W1 slot is first_party — external arrives
+                   with PRESS-FEEDS.
+
+POINT-IN-TIME: `as_of` is a hard right edge for facts as well as events.  The
+engine artifacts are `latest.json` snapshots with no history, so every fact
+carries its own `dated` and _pit_filter drops anything that postdates the run.
+
+Dedupe is two-sided (both required — a staged-but-unemitted draft is not in the
+ledger yet, and re-covering it would produce two pieces on one story):
+  * data/press/published.jsonl  — sources[] and slug of everything emitted
+  * data/press/staging/*.json   — sources[] and slug of everything staged
+
+Fail-soft throughout: a missing artifact costs its candidates, never the run.
+An honest thin day is the designed outcome, not a degradation.
+"""
+from __future__ import annotations
+
+import hashlib
+import json
+import logging
+import re
+from datetime import date, datetime, timedelta
+from pathlib import Path
+from typing import Any
+
+log = logging.getLogger(__name__)
+
+_HERE = Path(__file__).resolve()
+
+# ─────────────────────────────────────────────────────────────────────────────
+# First-party engine artifacts The Brief may quote.
+#
+# Each entry: (key, relative path, extractor name).  Extractors live below and
+# each returns a list of fact dicts.  Ordered by how quotable/stable the
+# artifact is — the planner walks this order, so ranking is deterministic.
+# EVERY artifact here is ours, so every fact it yields is tier=first_party.
+# ─────────────────────────────────────────────────────────────────────────────
+_ENGINE_ARTIFACTS: tuple[tuple[str, str], ...] = (
+    ("market_state", "data/market_state/latest.json"),
+    ("gex", "data/gex/latest.json"),
+    ("breadth_split", "site/basketdata/breadth_split.json"),
+    ("fear_greed", "site/basketdata/fear_greed.json"),
+    ("risk_radar", "data/risk_radar/forward_log.jsonl"),
+)
+
+# Chronicle sources whose events are OUR OWN measurement rather than a
+# third-party publication.  A story built on one of these is first-party.
+_FIRST_PARTY_CHRONICLE_SOURCES = frozenset({
+    "prophet_ledger", "risk_band", "regime_flip", "earnings", "macro_release",
+})
+
+_SITE_BASE = "https://www.mastermind-x.com"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Config + IO helpers (all fail-soft)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def repo_root(root=None) -> Path:
+    """Repo root.  ``root`` is the test-injection point (house convention)."""
+    if root is not None:
+        return Path(root)
+    return _HERE.parent.parent.parent
+
+
+def load_config(root=None) -> dict:
+    """Load config/press.yml.  Returns {} when absent or unparsable."""
+    import yaml  # noqa: PLC0415 — keep import cost off `import engine.press`
+
+    path = repo_root(root) / "config" / "press.yml"
+    try:
+        return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except Exception as exc:  # noqa: BLE001
+        log.warning("press.desk_planner: config/press.yml load failed: %s", exc)
+        return {}
+
+
+def _read_json(path: Path) -> Any:
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _read_jsonl(path: Path) -> list[dict]:
+    out: list[dict] = []
+    try:
+        if not path.exists():
+            return []
+        for line in path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                obj = json.loads(line)
+            except Exception:  # noqa: BLE001
+                continue
+            if isinstance(obj, dict):
+                out.append(obj)
+    except Exception:  # noqa: BLE001
+        return out
+    return out
+
+
+def _as_date(val, default: date | None = None) -> date | None:
+    if isinstance(val, datetime):
+        return val.date()
+    if isinstance(val, date):
+        return val
+    try:
+        return datetime.strptime(str(val)[:10], "%Y-%m-%d").date()
+    except Exception:  # noqa: BLE001
+        return default
+
+
+def slugify(text: str, limit: int = 70) -> str:
+    """Deterministic slug: lowercase, non-alnum -> hyphen, collapse, truncate.
+
+    Mirrors scripts.build_free_content._slugify plus the research-vault length
+    cap so a press slug and a vault slug read the same way.
+    """
+    s = re.sub(r"[^a-z0-9]+", "-", str(text or "").lower()).strip("-")
+    return s[:limit].strip("-")
+
+
+def story_key(*parts: str) -> str:
+    """Short stable hash over the identifying parts of a story."""
+    raw = "\x1f".join(str(p) for p in parts)
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:12]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Dedupe surfaces
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def published_refs(root=None, cfg: dict | None = None) -> tuple[set[str], set[str]]:
+    """(source refs, slugs) already emitted, read from the ledger."""
+    cfg = cfg if cfg is not None else load_config(root)
+    rel = ((cfg.get("paths") or {}).get("ledger") or "data/press/published.jsonl")
+    refs: set[str] = set()
+    slugs: set[str] = set()
+    for row in _read_jsonl(repo_root(root) / rel):
+        for s in row.get("sources") or []:
+            refs.add(str(s))
+        for s in row.get("seed_refs") or []:
+            refs.add(str(s))
+        if row.get("slug"):
+            slugs.add(str(row["slug"]))
+    return refs, slugs
+
+
+def staged_refs(root=None, cfg: dict | None = None) -> tuple[set[str], set[str]]:
+    """(source refs, slugs) sitting in staging but not yet emitted.
+
+    A staged draft is invisible to the ledger, so a planner that only checked
+    the ledger would happily re-plan the same story on the next staging run and
+    ship two pieces about it the moment both got emitted.
+    """
+    cfg = cfg if cfg is not None else load_config(root)
+    rel = ((cfg.get("paths") or {}).get("staging_dir") or "data/press/staging")
+    refs: set[str] = set()
+    slugs: set[str] = set()
+    stage = repo_root(root) / rel
+    if not stage.exists():
+        return refs, slugs
+    for path in sorted(stage.glob("*.json")):
+        if path.name.startswith("_"):
+            continue          # `_run_summary.json` is a run artifact, not a slot
+        obj = _read_json(path)
+        if not isinstance(obj, dict):
+            continue
+        for s in obj.get("sources") or []:
+            refs.add(str(s))
+        for s in obj.get("seed_refs") or []:
+            refs.add(str(s))
+        if obj.get("slug"):
+            slugs.add(str(obj["slug"]))
+    return refs, slugs
+
+
+def taken_slugs(root=None) -> set[str]:
+    """Slugs already occupied by a committed content/seo/blog/*.md file."""
+    out: set[str] = set()
+    blog = repo_root(root) / "content" / "seo" / "blog"
+    if blog.exists():
+        for p in blog.glob("*.md"):
+            out.add(p.stem)
+    return out
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Fact builders
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+# Artifact labels that collide with the press lexicon.  These are OUR labels on
+# OUR dashboards, written for a chart legend where the word is fine; in press
+# prose "regime" is banned house vocabulary (copywriter._BANNED_WORD_BOUNDARY).
+# Rewriting the label here is the honest fix — the alternative is a planner that
+# feeds the writer a forbidden word and then quarantines it for using it.
+_LABEL_ALIASES: dict[str, str] = {
+    "volatility regime": "volatility backdrop",
+}
+
+
+def _press_label(label: str) -> str:
+    low = str(label or "").strip().lower()
+    return _LABEL_ALIASES.get(low, str(label or "").strip())
+
+
+def _press_safe(text: str) -> bool:
+    """False when a fact's own text would trip the press lexicons.
+
+    A fact that cannot legally be written about is not a fact this desk can
+    use, so it is DROPPED rather than handed to the writer as a trap.  Import,
+    never fork: the lists live in the marketing lane.
+    """
+    try:
+        from engine.marketing.copywriter import (  # noqa: PLC0415
+            _BANNED_SUBSTRINGS, _BANNED_VOCAB, _BANNED_WORD_BOUNDARY,
+        )
+    except Exception:  # noqa: BLE001 — never let a lexicon import break planning
+        return True
+    low = str(text or "").lower()
+    if any(term in low for term in _BANNED_SUBSTRINGS):
+        return False
+    for term in tuple(_BANNED_VOCAB) + tuple(_BANNED_WORD_BOUNDARY):
+        if re.search(rf"\b{re.escape(term)}\b", low):
+            return False
+    return True
+
+
+def _fact(fid: str, text: str, *, ref: str, tier: str,
+          values: list | None = None, url: str | None = None,
+          source_name: str = "", dated: str | None = None) -> dict:
+    return {
+        "id": fid,
+        "text": text,
+        "ref": ref,
+        "tier": tier,                    # first_party | third_party
+        "values": [str(v) for v in (values or [])],
+        "url": url,
+        "source_name": source_name,
+        # The fact's OWN as-of. `None` means undated, which is treated as
+        # unusable under a point-in-time query — see _pit_filter.
+        "dated": str(dated)[:10] if dated else None,
+    }
+
+
+def _pit_filter(facts: list[dict], as_of: date, label: str) -> list[dict]:
+    """Drop facts whose own as-of postdates the run date.
+
+    THE DEFECT THIS CLOSES: the engine artifacts are `latest.json` snapshots
+    with no history.  Reading them without checking their `asof` means a run
+    dated 2026-07-20 quotes a 2026-07-24 measurement — an article that cites
+    numbers from its own future.  Undated facts are dropped for the same reason:
+    a fact that cannot prove it predates the run cannot be point-in-time.
+
+    Loud on purpose.  A silently thinner fact pool is how a desk starts writing
+    padding, and the thinness has a cause the operator needs to see.
+    """
+    kept, dropped = [], []
+    edge = as_of.isoformat()
+    for f in facts:
+        if f.get("dated") and f["dated"] <= edge:
+            kept.append(f)
+        else:
+            dropped.append(f"{f['id']}@{f.get('dated') or 'undated'}")
+    if dropped:
+        log.warning("press.desk_planner: %s — %d fact(s) dropped as of %s "
+                    "(artifact postdates the run date or carries no date): %s",
+                    label, len(dropped), edge, ", ".join(dropped[:8]))
+    return kept
+
+
+def _market_state_facts(obj: dict, rel: str) -> list[dict]:
+    if not isinstance(obj, dict):
+        return []
+    facts: list[dict] = []
+    asof = obj.get("asof") or ""
+    score = obj.get("score")
+    verdict = obj.get("verdict")
+    if score is not None and verdict:
+        facts.append(_fact(
+            "market_state_score",
+            f"Mastermind's market-state composite reads {score} of 100 "
+            f"({verdict}) as of {asof}.",
+            ref=f"artifact:{rel}", tier="first_party", dated=asof,
+            values=[score], source_name="Mastermind market-state engine",
+        ))
+    for comp in (obj.get("components") or [])[:4]:
+        if not isinstance(comp, dict):
+            continue
+        label = _press_label(comp.get("label_en") or comp.get("key") or "")
+        cscore = comp.get("score")
+        if not label or cscore is None:
+            continue
+        facts.append(_fact(
+            f"market_state_{comp.get('key') or label}",
+            f"Market-state component {label} scores {cscore} "
+            f"(weight {comp.get('weight')}).",
+            ref=f"artifact:{rel}", tier="first_party", dated=asof,
+            values=[cscore, comp.get("weight")],
+            source_name="Mastermind market-state engine",
+        ))
+    return facts
+
+
+def _gex_facts(obj: dict, rel: str) -> list[dict]:
+    if not isinstance(obj, dict):
+        return []
+    facts: list[dict] = []
+    asof = obj.get("asof") or ""
+    for sym, blk in sorted((obj.get("indices") or {}).items()):
+        if not isinstance(blk, dict):
+            continue
+        net = blk.get("net_gex_bn")
+        flip = blk.get("gamma_flip")
+        dist = blk.get("dist_to_flip_pct")
+        # NOTE: blk["regime"] is deliberately NOT rendered into fact text.
+        # "regime" is on copywriter._BANNED_WORD_BOUNDARY, and a planner that
+        # seeds banned vocabulary into the writer's context is manufacturing the
+        # validator failure it will then quarantine.  Facts are written in the
+        # words the draft is allowed to use.
+        if net is None and flip is None:
+            continue
+        facts.append(_fact(
+            f"gex_{sym.lower()}",
+            f"{sym} dealer gamma is {net}bn net with the gamma flip at {flip}; "
+            f"spot sits {dist}% from it as of {asof}.",
+            ref=f"artifact:{rel}", tier="first_party", dated=asof,
+            values=[net, flip, dist, blk.get("spot")],
+            source_name="Mastermind dealer-positioning engine",
+        ))
+    return facts
+
+
+def _breadth_facts(obj: dict, rel: str) -> list[dict]:
+    if not isinstance(obj, dict):
+        return []
+    latest = obj.get("latest") or {}
+    if not isinstance(latest, dict) or not latest:
+        return []
+    asof = obj.get("as_of") or ""
+    ai50, non50 = latest.get("ai_pct50"), latest.get("nonai_pct50")
+    if ai50 is None or non50 is None:
+        return []
+    return [_fact(
+        "breadth_split",
+        f"As of {asof}, {ai50}% of the AI cohort is above its 50-day average "
+        f"against {non50}% of the non-AI cohort — a {latest.get('spread_50')} "
+        f"point spread.",
+        ref=f"artifact:{rel}", tier="first_party", dated=asof,
+        values=[ai50, non50, latest.get("spread_50"),
+                latest.get("ai_adv_share"), latest.get("nonai_adv_share")],
+        source_name="Mastermind breadth engine",
+    )]
+
+
+def _fear_greed_facts(obj: dict, rel: str) -> list[dict]:
+    if not isinstance(obj, dict):
+        return []
+    dial, label = obj.get("dial"), obj.get("label_en")
+    if dial is None or not label:
+        return []
+    return [_fact(
+        "fear_greed",
+        f"The Mastermind fear/greed dial reads {dial} ({label}) as of "
+        f"{obj.get('as_of') or ''}, built from "
+        f"{obj.get('n_legs_qualifying')} qualifying legs.",
+        ref=f"artifact:{rel}", tier="first_party", dated=obj.get("as_of"),
+        values=[dial, obj.get("n_legs_qualifying")],
+        source_name="Mastermind sentiment engine",
+    )]
+
+
+def _risk_radar_facts(rows: list[dict], rel: str) -> list[dict]:
+    # This artifact is the one with real history: an append-only forward log.
+    # `rows[-1]` is the latest row, which under a back-dated run is a row from
+    # the future — so take the latest row that is not, and let _pit_filter drop
+    # the fact entirely if even that one postdates the run.
+    if not rows:
+        return []
+    row = next((r for r in reversed(rows) if isinstance(r, dict) and r.get("state")), None)
+    if row is None:
+        return []
+    dd = row.get("drawdown_prob") or {}
+    return [_fact(
+        "risk_radar",
+        f"The risk radar is in `{row['state']}` with {row.get('dominant_scare')} the "
+        f"dominant scare (score {row.get('top_score')}); modelled 21-session "
+        f"drawdown probability {dd.get('h21')} as of {row.get('asof')}.",
+        ref=f"artifact:{rel}", tier="first_party", dated=row.get("asof"),
+        values=[row.get("top_score"), dd.get("h21"), dd.get("h10"), dd.get("h5")],
+        source_name="Mastermind risk radar",
+    )]
+
+
+_ARTIFACT_EXTRACTORS = {
+    "market_state": _market_state_facts,
+    "gex": _gex_facts,
+    "breadth_split": _breadth_facts,
+    "fear_greed": _fear_greed_facts,
+    "risk_radar": _risk_radar_facts,
+}
+
+
+def engine_stat_facts(root=None, *, as_of=None) -> list[dict]:
+    """First-party engine facts, in a deterministic artifact order.
+
+    POINT-IN-TIME: `as_of` is REQUIRED for any run that is not "today".  Every
+    artifact in _ENGINE_ARTIFACTS is a `latest.json` snapshot with no history,
+    so reading one without checking its own `asof` hands a back-dated run
+    numbers from its own future.  Facts dated after `as_of` — and facts that
+    carry no date at all — are dropped by _pit_filter, loudly.
+
+    Fail-soft per artifact: a missing or malformed file costs its own facts and
+    nothing else.
+    """
+    repo = repo_root(root)
+    out: list[dict] = []
+    for key, rel in _ENGINE_ARTIFACTS:
+        path = repo / rel
+        if not path.exists():
+            continue
+        try:
+            payload = _read_jsonl(path) if path.suffix == ".jsonl" else _read_json(path)
+            for fact in (_ARTIFACT_EXTRACTORS[key](payload, rel) or []):
+                if _press_safe(fact["text"]):
+                    out.append(fact)
+                else:
+                    log.info("press.desk_planner: dropped fact %s — its own text "
+                             "trips the press lexicon", fact["id"])
+        except Exception as exc:  # noqa: BLE001
+            log.warning("press.desk_planner: artifact %s failed: %s", rel, exc)
+    edge = _as_date(as_of)
+    return _pit_filter(out, edge, "engine artifacts") if edge else out
+
+
+def mover_facts(root=None, *, n: int = 3, as_of=None) -> list[dict]:
+    """Top gainers/losers from the committed heatmaps (first-party).
+
+    Same point-in-time law as engine_stat_facts: the heatmap is a snapshot, and
+    its `asof` is the date every fact it yields belongs to.
+    """
+    try:
+        from engine.marketing import movers_source  # noqa: PLC0415
+    except Exception:  # noqa: BLE001
+        return []
+    repo = repo_root(root)
+    try:
+        data = movers_source.load_movers(repo)
+        if not data:
+            return []
+        picks = movers_source.top_movers(data, tf="1D", n=n, min_abs=3.0)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("press.desk_planner: movers load failed: %s", exc)
+        return []
+    asof = (data or {}).get("asof") or ""
+    rel = "site/marketdata/sp500_heatmap.json"
+    out: list[dict] = []
+    for side in ("gainers", "losers"):
+        for m in (picks.get(side) or []):
+            tk, pct = m.get("ticker"), m.get("pct")
+            if not tk or pct is None:
+                continue
+            fact = _fact(
+                f"mover_{side}_{tk}",
+                f"{tk} ({m.get('name')}, {m.get('sector')}) closed {pct}% "
+                f"on the session of {asof}.",
+                ref=f"artifact:{rel}#{tk}", tier="first_party", dated=asof,
+                values=[pct], source_name="Mastermind S&P 500 heatmap",
+            )
+            # A company name can collide with the house lexicon ("Vertical
+            # Aerospace" trips _BANNED_SUBSTRINGS). Drop the fact rather than
+            # hand the writer a word it will be quarantined for using.
+            if _press_safe(fact["text"]):
+                out.append(fact)
+    edge = _as_date(as_of)
+    return _pit_filter(out, edge, "movers heatmap") if edge else out
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Chronicle candidates
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _chronicle_events(root=None) -> list[dict]:
+    return _read_jsonl(repo_root(root) / "data" / "chronicle" / "events.jsonl")
+
+
+def _event_candidates(events: list[dict], as_of: date, window_days: int) -> list[dict]:
+    """Events in (as_of - window_days, as_of], ranked deterministically.
+
+    Rank: weight_hint DESC, date DESC, id ASC.  `as_of` is a hard right edge —
+    the planner never sees an event dated after the run date.
+    """
+    lo = (as_of - timedelta(days=int(window_days))).isoformat()
+    hi = as_of.isoformat()
+    picked = [
+        e for e in events
+        if isinstance(e, dict) and e.get("date") and lo <= str(e["date"]) <= hi
+    ]
+    picked.sort(key=lambda e: (
+        -int(e.get("weight_hint") or 0),
+        _neg_ordinal(e.get("date")),
+        str(e.get("id") or ""),
+    ))
+    return picked
+
+
+def _neg_ordinal(d) -> int:
+    dd = _as_date(d)
+    return -dd.toordinal() if dd else 0
+
+
+def _event_fact(ev: dict) -> dict:
+    src = str(ev.get("source") or "")
+    tier = "first_party" if src in _FIRST_PARTY_CHRONICLE_SOURCES else "third_party"
+    facts_txt = "; ".join(str(f) for f in (ev.get("facts") or []))
+    text = f"[{ev.get('date')}] {ev.get('title')}"
+    if facts_txt:
+        text += f" — {facts_txt}"
+    site = (ev.get("links") or {}).get("site")
+    return _fact(
+        f"chronicle_{ev.get('id')}",
+        text,
+        ref=f"chronicle:{ev.get('source_ref') or ev.get('id')}",
+        tier=tier,
+        values=[],
+        dated=ev.get("date"),
+        url=site,
+        source_name=_source_label(src),
+    )
+
+
+def _source_label(src: str) -> str:
+    return {
+        "earnings": "Mastermind earnings store",
+        "prophet_ledger": "Mastermind Prophet ledger",
+        "risk_band": "Mastermind risk radar",
+        "regime_flip": "Mastermind regime engine",
+        "macro_release": "Mastermind macro release store",
+        "research_vault": "Mastermind Research vault",
+    }.get(src, src or "Mastermind")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Chronicle narrative context (engine.chronicle.context_pack — CALL, never edit)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def chronicle_context(as_of: date, *, tickers=None, topics=None,
+                      token_budget: int = 1200, window: str = "14d",
+                      root=None) -> dict:
+    """The one chronicle API every consumer binds.  Fail-soft to an empty pack."""
+    try:
+        from engine.chronicle import context_pack  # noqa: PLC0415
+        return context_pack.pack(
+            topics=topics, tickers=tickers, horizons=("short", "medium"),
+            token_budget=token_budget, as_of=as_of.isoformat(), window=window,
+            root=repo_root(root),
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("press.desk_planner: context_pack failed: %s", exc)
+        return {"lines": [], "narratives": [], "budget_used": 0,
+                "coverage": {"start": None, "end": None,
+                             "note": f"context_pack unavailable ({exc})"}}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# The Brief
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _plan_brief(cfg: dict, desk_cfg: dict, as_of: date, root,
+                blocked_refs: set[str]) -> list[dict]:
+    events = _chronicle_events(root)
+    window = int(desk_cfg.get("window_days") or 3)
+    excluded = {str(s) for s in (desk_cfg.get("exclude_sources") or [])}
+
+    cands = [
+        e for e in _event_candidates(events, as_of, window)
+        if str(e.get("source") or "") not in excluded
+    ][: int(desk_cfg.get("candidate_pool") or 12)]
+
+    stats = engine_stat_facts(root, as_of=as_of)
+    movers = mover_facts(root, as_of=as_of)
+    publication = str(desk_cfg.get("publication") or "flagship")
+    cap = int(desk_cfg.get("cadence_per_day") or 1)
+
+    slots: list[dict] = []
+    for ev in cands:
+        if len(slots) >= cap:
+            break
+        ref = f"chronicle:{ev.get('source_ref') or ev.get('id')}"
+        # Cross-namespace block: the same underlying document reaches the two
+        # desks under two ref spellings, and a set that only holds one of them
+        # is not a dedupe.
+        alias = f"{ev.get('source')}:{ev.get('source_ref') or ev.get('id')}"
+        if ref in blocked_refs or alias in blocked_refs:
+            continue
+
+        lead = _event_fact(ev)
+        if not _press_safe(lead["text"]):
+            # The story cannot be told without a banned word. Skip it rather
+            # than plan a piece that is guaranteed to be quarantined.
+            log.info("press.desk_planner: brief candidate %s skipped — its lead "
+                     "fact trips the press lexicon", ref)
+            continue
+        # A brief must be OUR read of the day, not a wire rewrite: every slot
+        # carries the day's first-party engine context alongside the event so
+        # the our-value floor is reachable without padding.
+        facts = [lead] + stats + movers
+        tickers = [str(t) for t in (ev.get("tickers") or [])]
+        ctx = chronicle_context(as_of, tickers=tickers or None, root=root)
+
+        # SOURCE LAW (amended at W1 review — masterplan §0 W1 gate 2).
+        # A Brief slot is FULLY FIRST-PARTY: the story is our own chronicle
+        # event and our own engine measurements. It carries its receipts inline
+        # (dated, fact-anchored numbers) and links nothing.
+        #
+        # W1 originally pointed these slots at /us_track_record.html,
+        # /radar.html and /macro.html as their "primary source" — all three
+        # answer 302 to /?signin=1, so the validator was forcing every public
+        # article to cite a login wall. `url: None` is the honest state: a
+        # first-party desk with no public page to show. The link allowlist in
+        # config/press.yml (validators.check_link_allowlist) is what keeps a
+        # gated URL from creeping back in through the draft body.
+        primary_url = lead.get("url")     # vault-sourced events carry /research/
+        slots.append({
+            "id": f"press-brief-{as_of.isoformat()}-{story_key('brief', ref)}",
+            "desk": "brief",
+            "publication": publication,
+            "byline": str(desk_cfg.get("byline") or "The Brief"),
+            "cluster": str(desk_cfg.get("cluster") or "market-brief"),
+            "as_of": as_of.isoformat(),
+            "model_key": str(desk_cfg.get("model_key") or "press_brief"),
+            "min_words": int(desk_cfg.get("min_words") or 300),
+            "max_words": int(desk_cfg.get("max_words") or 600),
+            "min_anchored_receipts": int(desk_cfg.get("min_anchored_receipts") or 0),
+            # What the writer may link. Empty for a Brief: the pages that carry
+            # these numbers (/radar.html, /macro.html, /us_track_record.html)
+            # are all regwall 302s, so the piece carries dated receipts instead.
+            "allowed_links": _allowed_links(cfg, [primary_url]),
+            "story": {
+                "kind": ev.get("kind"),
+                "title_hint": ev.get("title"),
+                "tickers": tickers,
+                "themes": [str(t) for t in (ev.get("themes") or [])],
+                "event_date": ev.get("date"),
+            },
+            "primary_source": {
+                "kind": "first_party",
+                "name": lead.get("source_name") or "Mastermind",
+                "url": _absolute(primary_url) if primary_url else None,
+                "ref": ref,
+            },
+            "sources": [ref],
+            "seed_refs": sorted({f["ref"] for f in facts}),
+            "facts": facts,
+            "raw_documents": _raw_documents_for_event(ev),
+            "chronicle_context": ctx,
+            "slug_hint": slugify(str(ev.get("title") or "market brief")),
+        })
+        blocked_refs.add(ref)
+    return slots
+
+
+def _raw_documents_for_event(ev: dict) -> list[dict]:
+    """The source text a Brief must not closely paraphrase."""
+    body = " ".join([str(ev.get("title") or "")] + [str(f) for f in (ev.get("facts") or [])])
+    if not body.strip():
+        return []
+    return [{"ref": f"chronicle:{ev.get('source_ref') or ev.get('id')}", "text": body}]
+
+
+def _allowed_links(cfg: dict, urls) -> list[str]:
+    """The subset of `urls` a draft may legally link.
+
+    A URL survives only if its path sits under one of
+    config/press.yml `public_link_prefixes` — the prefixes verified to answer
+    200 to a logged-out reader.  Everything else on the estate is a regwall
+    302, and validators.check_link_allowlist fails a draft that links one.
+    """
+    prefixes = [str(p) for p in (cfg.get("public_link_prefixes") or [])]
+    out: list[str] = []
+    for u in urls:
+        if not u:
+            continue
+        full = _absolute(str(u))
+        path = "/" + full.split("//", 1)[-1].split("/", 1)[-1] if "//" in full else str(u)
+        if any(path.startswith(p) for p in prefixes) and full not in out:
+            out.append(full)
+    return out
+
+
+def _absolute(url: str) -> str:
+    u = str(url or "")
+    if u.startswith("http://") or u.startswith("https://"):
+        return u
+    return f"{_SITE_BASE}/{u.lstrip('/')}"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Research Desk
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def vault_slug(item: dict, all_items: list[dict]) -> str:
+    """The report's live /research/<slug>.html slug.
+
+    Delegates to engine.research_vault.slugs.slug_map so the URL the press piece
+    links is byte-identical to the page the estate actually serves — a slug
+    reimplemented here would drift the day that module changes.
+    """
+    try:
+        from engine.research_vault import slugs as _slugs  # noqa: PLC0415
+        return _slugs.slug_map(all_items).get(item.get("id"), "") or ""
+    except Exception as exc:  # noqa: BLE001
+        log.warning("press.desk_planner: vault slug_map failed: %s", exc)
+        return ""
+
+
+def _plan_research(cfg: dict, desk_cfg: dict, as_of: date, root,
+                   blocked_refs: set[str]) -> list[dict]:
+    catalog = _read_json(repo_root(root) / "data" / "research_vault" / "catalog.json")
+    items = (catalog or {}).get("items") or []
+    if not isinstance(items, list) or not items:
+        return []
+
+    window = int(desk_cfg.get("window_days") or 21)
+    lo = as_of - timedelta(days=window)
+
+    eligible: list[dict] = []
+    for it in items:
+        if not isinstance(it, dict):
+            continue
+        pub = _as_date(it.get("published_at"))
+        # `as_of` is a hard right edge: a report published after the run date
+        # cannot be covered by that run.
+        if pub is None or pub > as_of or pub < lo:
+            continue
+        if not (it.get("summary_points") or []):
+            continue
+        eligible.append(it)
+
+    # Rank: tier first (top_pick), then recency, then id for a stable tie-break.
+    eligible.sort(key=lambda it: (
+        0 if it.get("top_pick") else 1,
+        -(_as_date(it.get("published_at")) or date.min).toordinal(),
+        str(it.get("id") or ""),
+    ))
+
+    publication = str(desk_cfg.get("publication") or "flagship")
+    cap = int(desk_cfg.get("cadence_per_day") or 1)
+    stats = engine_stat_facts(root, as_of=as_of)
+
+    slots: list[dict] = []
+    for it in eligible[: int(desk_cfg.get("candidate_pool") or 8)]:
+        if len(slots) >= cap:
+            break
+        ref = f"research_vault:{it.get('id')}"
+        if ref in blocked_refs:
+            continue
+
+        slug = vault_slug(it, items)
+        url = _absolute(f"/research/{slug}.html") if slug else f"{_SITE_BASE}/research/"
+        inst = str(it.get("institution") or "the desk")
+
+        # The vault summary is OUR analyst summary of the report, so it is a
+        # first-party ref — but the report itself is somebody else's document,
+        # which is exactly why close-paraphrase scores against these points.
+        facts = [
+            f for f in (
+                _fact(
+                    f"vault_point_{i}",
+                    _strip_md(str(pt)),
+                    ref=ref, tier="first_party",
+                    dated=str(it.get("published_at") or "")[:10],
+                    url=url, source_name=f"Mastermind Research coverage of {inst}",
+                )
+                for i, pt in enumerate(it.get("summary_points") or [])
+            )
+            # A summary point written in banned house vocabulary is one the
+            # desk cannot quote. It stays in raw_documents (so paraphrase is
+            # still scored against it) but leaves the writer's fact list.
+            if _press_safe(f["text"])
+        ]
+        if not facts:
+            log.info("press.desk_planner: research candidate %s skipped — every "
+                     "summary point trips the press lexicon", ref)
+            continue
+        facts.append(_fact(
+            "vault_meta",
+            f"The report is {inst} research published {str(it.get('published_at'))[:10]}"
+            + (f", {it.get('pages')} pages" if it.get("pages") else "") + ".",
+            ref=ref, tier="first_party",
+            dated=str(it.get("published_at") or "")[:10],
+            values=[it.get("pages")], url=url,
+            source_name="Mastermind Research vault",
+        ))
+        facts.extend(stats)
+
+        ctx = chronicle_context(as_of, topics=[inst], root=root)
+        slots.append({
+            "id": f"press-research-{as_of.isoformat()}-{story_key('research', ref)}",
+            "desk": "research_desk",
+            "publication": publication,
+            "byline": str(desk_cfg.get("byline") or "Research Desk"),
+            "cluster": str(desk_cfg.get("cluster") or "research-desk"),
+            "as_of": as_of.isoformat(),
+            "model_key": str(desk_cfg.get("model_key") or "press_research"),
+            "min_words": int(desk_cfg.get("min_words") or 500),
+            "max_words": int(desk_cfg.get("max_words") or 900),
+            "min_anchored_receipts": int(desk_cfg.get("min_anchored_receipts") or 0),
+            # /research/<slug>.html is our own PUBLIC coverage page (verified
+            # 200 logged-out), so it is on the allowlist and may be linked.
+            "allowed_links": _allowed_links(cfg, [url]),
+            "story": {
+                "kind": "research_report",
+                "title_hint": it.get("title"),
+                "institution": inst,
+                "side": it.get("side"),
+                "published_at": it.get("published_at"),
+                "tickers": [],
+                "themes": [],
+            },
+            # First-party too: /research/<slug>.html is OUR coverage page and it
+            # is PUBLIC (verified 200 logged-out), so it is on the config
+            # allowlist and the piece may link it.
+            "primary_source": {
+                "kind": "first_party",
+                "name": f"Mastermind Research: {it.get('title')}",
+                "url": url,
+                "ref": ref,
+            },
+            "sources": [ref],
+            "seed_refs": sorted({f["ref"] for f in facts}),
+            "facts": facts,
+            "raw_documents": [{
+                "ref": ref,
+                "text": " ".join(_strip_md(str(p)) for p in (it.get("summary_points") or [])),
+            }],
+            "chronicle_context": ctx,
+            "slug_hint": slugify(str(it.get("title") or "research note")),
+        })
+        blocked_refs.add(ref)
+    return slots
+
+
+_MD_BOLD_RE = re.compile(r"\*\*(.+?)\*\*")
+
+
+def _strip_md(text: str) -> str:
+    """Drop the catalog's markdown bold so shingles compare on words, not syntax."""
+    return _MD_BOLD_RE.sub(r"\1", text).replace("**", "").strip()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Public entry point
+# ─────────────────────────────────────────────────────────────────────────────
+
+_PLANNERS = {"brief": _plan_brief, "research_desk": _plan_research}
+
+
+def plan(desks=None, *, as_of=None, root=None, cfg: dict | None = None,
+         extra_blocked_refs=None) -> list[dict]:
+    """Plan today's slots for `desks` (default: every desk in config order).
+
+    Deterministic and offline.  Returns a list of slot dicts (see the module
+    docstring for the contract).  Never raises: a broken desk logs and yields
+    nothing.
+    """
+    cfg = cfg if cfg is not None else load_config(root)
+    desk_cfgs = cfg.get("desks") or {}
+    want = list(desks) if desks else list(desk_cfgs.keys())
+
+    run_date = _as_date(as_of, default=None) or date.today()
+
+    pub_refs, _pub_slugs = published_refs(root, cfg)
+    stg_refs, _stg_slugs = staged_refs(root, cfg)
+    blocked = set(pub_refs) | set(stg_refs) | {str(r) for r in (extra_blocked_refs or [])}
+
+    slots: list[dict] = []
+    for name in want:
+        desk_cfg = desk_cfgs.get(name)
+        if not isinstance(desk_cfg, dict):
+            log.warning("press.desk_planner: unknown desk %r — skipped", name)
+            continue
+        fn = _PLANNERS.get(name)
+        if fn is None:
+            log.warning("press.desk_planner: no planner for desk %r — skipped", name)
+            continue
+        try:
+            slots.extend(fn(cfg, desk_cfg, run_date, root, blocked))
+        except Exception as exc:  # noqa: BLE001
+            log.warning("press.desk_planner: desk %s planning failed: %s", name, exc)
+    return slots

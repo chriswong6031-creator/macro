@@ -3012,6 +3012,36 @@ jobs:
       - name: committed estate must match a fresh render (template↔site drift law)
         run: python -m scripts.build_free_content --check
 
+  press-lane:
+    if: ${{ false }}  # executed inside ci-pack; keep the legacy status definition runner-free
+    # D14 W1 Media Network press engine (2026-07-26). The press lane emits INTO
+    # the free acquisition estate, so its own suite has to run wherever that
+    # estate's drift law runs — a press change that breaks the frontmatter
+    # contract would otherwise surface as a red free-content-estate job on
+    # somebody else's PR. The dependency line follows free-content-estate's
+    # minimal-deps convention verbatim (`pytest pyyaml jinja2`) — the same three
+    # packages cover the same closure, so there is no reason to spell it
+    # differently. (run_ci_pack.py does share a venv between adjacent jobs with
+    # byte-identical install lines, but these two land in different packs, so
+    # matching buys convention here, not a shared environment.)
+    # Network-free: the validator suite is 100% deterministic and the writer
+    # (the one module that would make an LLM call) is never invoked by tests.
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pyyaml jinja2
+      - name: press validator suite (paraphrase, fact-anchor, our-value, lexicons)
+        run: python -m pytest tests/test_press_validators.py -q
+      - name: press planner + writer + orchestrator suites
+        run: python -m pytest tests/test_press_planner.py tests/test_press_writer.py tests/test_press_run.py -q
+      - name: press admin panel + workflow shape
+        run: python -m pytest tests/test_press_admin.py tests/test_press_workflow.py -q
+
   # ── UNRUN-SUITE CENSUS JOBS (2026-07-26) ───────────────────────────────────
   # Nine lanes covering the 130 strictly-dark suites that no workflow ran.  All
   # nine declare a byte-identical dependency install so run_ci_pack.py builds ONE

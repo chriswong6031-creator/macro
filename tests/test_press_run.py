@@ -1,0 +1,465 @@
+"""tests/test_press_run.py — D14 W1 press orchestrator (scripts/run_press.py).
+
+The load-bearing test in this file is
+`test_staging_writes_nothing_outside_the_staging_dir`: --staging is the default
+mode and the whole safety argument for shipping this lane at all rests on it
+touching nothing under content/ or site/.  That is asserted by snapshotting the
+tree, not by reading the code.
+
+Everything runs against a synthetic root under tmp_path.  No test makes a
+network call — the writer is stubbed at the module boundary.
+"""
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+import pytest
+
+_REPO = Path(__file__).resolve().parent.parent
+if str(_REPO) not in sys.path:
+    sys.path.insert(0, str(_REPO))
+
+from engine.press import desk_planner as P  # noqa: E402
+from engine.press import writer as W  # noqa: E402
+from scripts import run_press as R  # noqa: E402
+from tests import press_fixtures as F  # noqa: E402
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# helpers
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _good_draft(slot, n=0):
+    """A draft derived from the SLOT's own facts, so it genuinely passes.
+
+    An invented-number stub fails fact_anchor, which makes every assertion in
+    this file vacuous — "passed + quarantined == planned" is just as true when
+    nothing ever passes.
+    """
+    return F.draft_from_slot(slot, n)
+
+
+def _stub_writer(monkeypatch, *, draft_fn=None, ok=True, reason="stubbed failure"):
+    calls = {"n": 0}
+
+    def _write(slot, cfg, *, state=None, attempt=0, prior_failures=None):
+        calls["n"] += 1
+        if not ok:
+            (state or W.RunState()).record_failure()
+            return {"ok": False, "draft": None, "reason": reason,
+                    "provider": None, "attempt": attempt,
+                    "state": (state or W.RunState()).snapshot()}
+        draft = dict((draft_fn or _good_draft)(slot, calls["n"] - 1))
+        return {"ok": True, "draft": draft, "reason": "", "provider": "stub",
+                "model": "stub-model", "attempt": attempt,
+                "state": (state or W.RunState()).snapshot()}
+
+    monkeypatch.setattr(R.writer, "write", _write)
+    return calls
+
+
+def _snapshot(root: Path) -> set[str]:
+    return {str(p.relative_to(root)) for p in root.rglob("*") if p.is_file()}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# staging — the safety invariant
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_staging_writes_nothing_outside_the_staging_dir(tmp_path, monkeypatch):
+    root = F.fixture_root(tmp_path)
+    before = _snapshot(root)
+    _stub_writer(monkeypatch)
+
+    summary = R.run_staging(root, P.load_config(root), as_of="2026-07-26",
+                            desks=["brief"], max_slots=1)
+    assert summary["passed"] == 1, "the passing path must actually be exercised here"
+
+    new = _snapshot(root) - before
+    assert new, "the run produced nothing at all"
+    assert all(p.startswith("data/press/staging/") for p in new), sorted(new)
+    assert not (root / "site").exists()
+    assert list((root / "content" / "seo" / "blog").glob("*.md")) == []
+
+
+def test_staging_writes_one_json_per_slot_plus_a_run_summary(tmp_path, monkeypatch):
+    root = F.fixture_root(tmp_path)
+    _stub_writer(monkeypatch)
+    summary = R.run_staging(root, P.load_config(root), as_of="2026-07-26")
+
+    files = sorted(p.name for p in (root / "data" / "press" / "staging").glob("*.json"))
+    assert "_run_summary.json" in files
+    assert len(files) == summary["planned"] + 1
+    assert summary["passed"] + summary["quarantined"] == summary["planned"]
+    # Not vacuous: at least one slot must have made it through the real suite.
+    assert summary["passed"] >= 1
+
+
+def test_a_staged_item_carries_the_whole_audit_trail(tmp_path, monkeypatch):
+    root = F.fixture_root(tmp_path)
+    _stub_writer(monkeypatch)
+    R.run_staging(root, P.load_config(root), as_of="2026-07-26",
+                  desks=["brief"], max_slots=1)
+
+    item = json.loads(next(
+        p for p in sorted((root / "data" / "press" / "staging").glob("*.json"))
+        if not p.name.startswith("_")).read_text(encoding="utf-8"))
+    for key in ("id", "desk", "publication", "as_of", "staged_at", "sources",
+                "seed_refs", "slot", "attempts", "status"):
+        assert key in item
+    assert item["status"] == "passed"
+    assert item["validator_report"]["ok"] is True
+    assert item["validator_report"]["our_value_share"] is not None
+    assert item["validator_report"]["our_value_granularity"] == "sentence"
+    assert item["validator_report"]["receipts"] >= 5
+
+
+def test_a_failing_draft_is_regenerated_then_quarantined(tmp_path, monkeypatch):
+    """fail -> regenerate <= max_regenerations -> drop with a reason.
+    A thin day beats a padded one."""
+    root = F.fixture_root(tmp_path)
+    cfg = P.load_config(root)
+    max_regen = cfg["quarantine"]["max_regenerations"]
+
+    def _bad(slot, n):
+        d = _good_draft(slot, n)
+        d["body_html"] = F.body("Moreover, this trips the AI-tell rule outright.")
+        return d
+
+    calls = _stub_writer(monkeypatch, draft_fn=_bad)
+    summary = R.run_staging(root, cfg, as_of="2026-07-26")
+
+    assert summary["passed"] == 0
+    assert summary["quarantined"] == summary["planned"]
+    assert calls["n"] == summary["planned"] * (max_regen + 1)
+
+    item = json.loads(next(
+        p for p in sorted((root / "data" / "press" / "staging").glob("*.json"))
+        if not p.name.startswith("_")).read_text(encoding="utf-8"))
+    assert len(item["attempts"]) == max_regen + 1
+    assert "ai_tells" in item["quarantine_reason"]
+
+
+def test_a_run_level_stop_does_not_burn_the_regeneration_budget(tmp_path, monkeypatch):
+    """no_provider / circuit_open / budget-exhausted are run problems, not draft
+    problems — retrying them just spends the outage twice."""
+    root = F.fixture_root(tmp_path)
+    calls = _stub_writer(monkeypatch, ok=False, reason="no_provider")
+    summary = R.run_staging(root, P.load_config(root), as_of="2026-07-26")
+    assert summary["passed"] == 0
+    assert calls["n"] == summary["planned"]      # one attempt per slot, not three
+
+
+def test_staging_emits_a_line_start_annotation(tmp_path, monkeypatch, capsys):
+    root = F.fixture_root(tmp_path)
+    _stub_writer(monkeypatch)
+    R.run_staging(root, P.load_config(root), as_of="2026-07-26",
+                  desks=["brief"], max_slots=1)
+    lines = [l for l in capsys.readouterr().out.splitlines() if "press_staging" in l]
+    assert lines
+    # House law: a "::notice" behind a logger prefix is not a line start and
+    # GitHub silently drops it.
+    assert all(l.startswith("::") for l in lines)
+
+
+def test_slug_collisions_are_resolved_before_validation(tmp_path):
+    slot = F.slot()
+    taken = {"risk-radar-moves-to-caution"}
+    a = R._unique_slug("Risk Radar Moves To Caution", slot, taken)
+    assert a not in taken and a.startswith("risk-radar-moves-to-caution-")
+    # Deterministic: the same story always de-collides to the same slug.
+    assert a == R._unique_slug("Risk Radar Moves To Caution", slot, taken)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ledger
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_ledger_rows_carry_the_full_shape(tmp_path):
+    path = tmp_path / "published.jsonl"
+    row = {"id": "press-brief-1", "ts": "2026-07-26T13:20:00Z", "desk": "brief",
+           "publication": "mastermind_news", "slug": "a-slug",
+           "sources": ["chronicle:x"], "seed_refs": ["artifact:y"],
+           "validator_report": {"ok": True}, "urls": ["https://x/blog/a-slug.html"]}
+    assert R.append_ledger(path, [row]) == 1
+    assert R.append_ledger(path, [dict(row, id="press-brief-2")]) == 1
+
+    rows = [json.loads(l) for l in path.read_text(encoding="utf-8").splitlines()]
+    assert len(rows) == 2
+    assert [r["id"] for r in rows] == ["press-brief-1", "press-brief-2"]
+    for r in rows:
+        assert set(r) == {"id", "ts", "desk", "publication", "slug", "sources",
+                          "seed_refs", "validator_report", "urls"}
+        assert r["publication"], "every ledger row must carry its publication"
+
+
+def test_append_ledger_never_rewrites_history(tmp_path):
+    path = tmp_path / "published.jsonl"
+    path.write_text('{"id":"pre-existing"}\n', encoding="utf-8")
+    R.append_ledger(path, [{"id": "new"}])
+    assert path.read_text(encoding="utf-8").splitlines()[0] == '{"id":"pre-existing"}'
+
+
+def test_append_ledger_of_nothing_is_a_no_op(tmp_path):
+    path = tmp_path / "published.jsonl"
+    assert R.append_ledger(path, []) == 0
+    assert not path.exists()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# emit
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_emit_ignores_quarantined_items(tmp_path):
+    root = F.fixture_root(tmp_path, staged={"q.json": {
+        "id": "press-brief-q", "desk": "brief", "publication": "mastermind_news",
+        "status": "quarantined", "quarantine_reason": "ai_tells", "draft": None,
+        "sources": [], "seed_refs": [],
+    }})
+    out = R.run_emit(root, P.load_config(root))
+    assert out["emitted"] == 0
+    assert list((root / "content" / "seo" / "blog").glob("*.md")) == []
+    assert (root / "data" / "press" / "staging" / "q.json").exists()
+
+
+def test_emit_with_an_empty_staging_dir_is_a_clean_no_op(tmp_path):
+    root = F.fixture_root(tmp_path)
+    assert R.run_emit(root, P.load_config(root))["emitted"] == 0
+
+
+def test_frontmatter_written_by_emit_matches_the_estate_contract(tmp_path):
+    pytest.importorskip("yaml")
+    import yaml
+
+    slot = F.slot()
+    draft = _good_draft(slot)
+    md = R._frontmatter_md(draft, slot, F.config())
+    assert md.startswith("---\n")
+    fm = yaml.safe_load(md.split("---", 2)[1])
+    assert fm["slug"] == draft["slug"] == "a-first-party-read-of-the-session"
+    assert fm["family"] == "article"
+    assert 120 <= len(fm["description"]) <= 155
+    assert str(fm["published"]) == "2026-07-26"
+    # No date prefix on the stem: slug == filename stem is the estate contract.
+    assert not fm["slug"][:1].isdigit()
+
+
+def test_emit_helpers_it_borrows_from_the_estate_builder_still_exist():
+    """--emit replays the render lane's sweeps through build_free_content's own
+    helpers so what lands in site/blog/ is the post-image `--check` compares
+    against.  A rename upstream must fail HERE, loudly, not quietly ship raw
+    pages that turn the estate drift check red on somebody else's PR."""
+    pytest.importorskip("jinja2")
+    import scripts.build_free_content as B
+
+    for name in ("render_all", "_seed_hashable_assets", "_normalize_like_render_lane"):
+        assert callable(getattr(B, name, None)), f"build_free_content.{name} is gone"
+
+
+def test_render_replay_is_idempotent_against_the_committed_estate():
+    """A press emit with no new article must write NOTHING under site/blog/.
+
+    This is the property that stops the lane rewriting pages it does not own.
+    Two render-lane sweeps cannot be replayed here — daily.yml's wh_banner tag
+    and the `?v=` stamps whose hashes track shared assets — so a raw byte
+    comparison reports every already-committed article as "changed" and strips
+    the banner off six of them on the way past.  `build_free_content --check`
+    normalises exactly those two things away, so the damage is invisible to it:
+    caught once by hand, pinned here so it stays caught.
+
+    Self-healing: if the property ever breaks, the snapshot is restored before
+    the assertion fires, so a red test never leaves a dirty tree behind.
+    """
+    pytest.importorskip("jinja2")
+    site_blog = _REPO / "site" / "blog"
+    if not site_blog.exists():
+        pytest.skip("no committed site/blog to compare against")
+
+    before = {p: p.read_bytes() for p in site_blog.rglob("*") if p.is_file()}
+    try:
+        copied, unowned = R._render_blog_subtree(_REPO)
+    finally:
+        # Restore modified files AND remove any the render created — a restore
+        # that only rewrites known paths leaves new ones behind, which is how a
+        # "self-healing" test quietly pollutes the tree it was protecting.
+        for path in list(site_blog.rglob("*")):
+            if not path.is_file():
+                continue
+            if path in before:
+                if path.read_bytes() != before[path]:
+                    path.write_bytes(before[path])
+            else:
+                path.unlink()
+    assert copied == [], f"press emit rewrote pages it does not own: {copied}"
+    assert unowned == [], f"press emit minted assets outside its git-add scope: {unowned}"
+
+
+def test_emit_never_writes_the_sitemap(tmp_path, monkeypatch):
+    """The nightly owns site/sitemap.xml.  run_emit raises rather than fight it."""
+    root = F.fixture_root(tmp_path)
+    (root / "site").mkdir(parents=True, exist_ok=True)
+    sitemap = root / "site" / "sitemap.xml"
+    sitemap.write_text("<urlset/>", encoding="utf-8")
+
+    staged = {
+        "id": "press-brief-x", "desk": "brief", "publication": "mastermind_news",
+        "as_of": "2026-07-26", "status": "passed", "sources": ["chronicle:x"],
+        "seed_refs": [], "slug": "emit-smoke-note",
+        "draft": dict(_good_draft(F.slot()), slug="emit-smoke-note"),
+        "slot": F.slot(), "validator_report": {"ok": True},
+    }
+    (root / "data" / "press" / "staging" / "x.json").write_text(
+        json.dumps(staged), encoding="utf-8")
+
+    # Stub the render so the test does not need the full template tree; the
+    # sitemap assertion is what this test is for.
+    monkeypatch.setattr(R, "_render_blog_subtree", lambda r: ([], []))
+    out = R.run_emit(root, P.load_config(root))
+
+    assert out["emitted"] == 1
+    assert sitemap.read_text(encoding="utf-8") == "<urlset/>"
+    assert (root / "content" / "seo" / "blog" / "emit-smoke-note.md").exists()
+    rows = [json.loads(l) for l in
+            (root / "data" / "press" / "published.jsonl").read_text(encoding="utf-8").splitlines()]
+    assert rows[-1]["slug"] == "emit-smoke-note"
+    assert rows[-1]["publication"] == "mastermind_news"
+    assert rows[-1]["urls"] == ["https://www.mastermind-x.com/blog/emit-smoke-note.html"]
+    # A consumed staged item leaves staging; it now lives in the ledger.
+    assert not (root / "data" / "press" / "staging" / "x.json").exists()
+
+
+def _staged_passing(root, name="x.json", slug="emit-smoke-note"):
+    (root / "data" / "press" / "staging" / name).write_text(json.dumps({
+        "id": f"press-brief-{slug}", "desk": "brief",
+        "publication": "mastermind_news", "as_of": "2026-07-26",
+        "status": "passed", "sources": ["chronicle:x"], "seed_refs": [],
+        "slug": slug, "draft": dict(_good_draft(F.slot()), slug=slug),
+        "slot": F.slot(), "validator_report": {"ok": True},
+    }), encoding="utf-8")
+
+
+def test_a_failed_render_rolls_the_tree_back(tmp_path, monkeypatch):
+    """ATOMICITY. --emit writes every .md BEFORE it renders. A raise in the
+    render used to leave .md files with no matching site/ pages — the
+    render-clobber class: `build_free_content --check` reports the missing
+    pages and the NEXT PR inherits a red estate it did not cause."""
+    root = F.fixture_root(tmp_path)
+    (root / "site" / "blog").mkdir(parents=True)
+    existing = root / "site" / "blog" / "index.html"
+    existing.write_text("<html>original</html>", encoding="utf-8")
+    _staged_passing(root)
+
+    def _boom(_root):
+        # Simulate a render that got partway: a new page, a mutated page, then
+        # a raise. All three must be undone.
+        (root / "site" / "blog" / "new-page.html").write_text("x", encoding="utf-8")
+        existing.write_text("<html>CLOBBERED</html>", encoding="utf-8")
+        raise RuntimeError("render exploded")
+
+    monkeypatch.setattr(R, "_render_blog_subtree", _boom)
+    with pytest.raises(RuntimeError, match="render exploded"):
+        R.run_emit(root, P.load_config(root))
+
+    assert list((root / "content" / "seo" / "blog").glob("*.md")) == [], \
+        "a .md with no rendered page is the defect this rollback exists for"
+    assert existing.read_text(encoding="utf-8") == "<html>original</html>"
+    assert not (root / "site" / "blog" / "new-page.html").exists()
+    assert (root / "data" / "press" / "published.jsonl").read_text() == ""
+
+
+def test_a_failed_ledger_append_rolls_the_tree_back(tmp_path, monkeypatch):
+    """Published content with no ledger row is an unrecorded publication."""
+    root = F.fixture_root(tmp_path)
+    (root / "site" / "blog").mkdir(parents=True)
+    _staged_passing(root)
+    monkeypatch.setattr(R, "_render_blog_subtree", lambda r: ([], []))
+    monkeypatch.setattr(R, "append_ledger",
+                        lambda *a, **kw: (_ for _ in ()).throw(OSError("disk full")))
+    with pytest.raises(OSError, match="disk full"):
+        R.run_emit(root, P.load_config(root))
+    assert list((root / "content" / "seo" / "blog").glob("*.md")) == []
+
+
+def test_rollback_annotation_starts_its_line(tmp_path, monkeypatch, capsys):
+    root = F.fixture_root(tmp_path)
+    (root / "site" / "blog").mkdir(parents=True)
+    _staged_passing(root)
+    monkeypatch.setattr(R, "_render_blog_subtree",
+                        lambda r: (_ for _ in ()).throw(RuntimeError("boom")))
+    with pytest.raises(RuntimeError):
+        R.run_emit(root, P.load_config(root))
+    line = next(l for l in capsys.readouterr().out.splitlines()
+                if "press_emit_rollback" in l)
+    assert line.startswith("::error title=press_emit_rollback::")
+
+
+def test_quarantine_reason_is_never_a_bare_prefix():
+    """`"validators: " + ""` is TRUTHY, so the old `or` chain could not reach
+    its own fallback: an attempt-less slot was quarantined with the reason
+    "validators: " — a blank explanation in the one field the operator reads."""
+    item = R._stage_item(F.slot(), None, [], "2026-07-26")
+    assert item["quarantine_reason"] == "no draft produced"
+
+    item = R._stage_item(F.slot(), None, [{"attempt": 0, "ok": False, "failed": []}],
+                         "2026-07-26")
+    assert item["quarantine_reason"] == "no draft produced"
+
+    item = R._stage_item(F.slot(), None,
+                         [{"attempt": 0, "ok": False, "failed": ["our_value"]}],
+                         "2026-07-26")
+    assert item["quarantine_reason"] == "validators: our_value"
+
+
+def test_emit_quarantines_a_slug_that_was_taken_since_staging(tmp_path, monkeypatch):
+    root = F.fixture_root(tmp_path)
+    (root / "content" / "seo" / "blog" / "taken-slug.md").write_text("x", encoding="utf-8")
+    (root / "data" / "press" / "staging" / "x.json").write_text(json.dumps({
+        "id": "press-brief-x", "desk": "brief", "publication": "mastermind_news",
+        "status": "passed", "sources": [], "seed_refs": [], "slug": "taken-slug",
+        "draft": dict(_good_draft(F.slot()), slug="taken-slug"),
+        "slot": F.slot(), "validator_report": {"ok": True},
+    }), encoding="utf-8")
+    monkeypatch.setattr(R, "_render_blog_subtree", lambda r: ([], []))
+
+    out = R.run_emit(root, P.load_config(root))
+    assert out["emitted"] == 0
+    item = json.loads((root / "data" / "press" / "staging" / "x.json").read_text())
+    assert item["status"] == "quarantined"
+    assert "slug collision" in item["quarantine_reason"]
+    assert (root / "content" / "seo" / "blog" / "taken-slug.md").read_text() == "x"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CLI
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_cli_defaults_to_staging(tmp_path, monkeypatch, capsys):
+    root = F.fixture_root(tmp_path)
+    seen = {}
+    monkeypatch.setattr(R, "run_staging",
+                        lambda r, c, **kw: seen.update(kw, mode="staging") or {"ok": 1})
+    monkeypatch.setattr(R, "run_emit", lambda r, c: pytest.fail("emit must not run"))
+    assert R.main(["--root", str(root)]) == 0
+    assert seen["mode"] == "staging"
+    capsys.readouterr()
+
+
+def test_cli_env_overrides_the_spend_guards(tmp_path, monkeypatch):
+    monkeypatch.setenv("PRESS_RUN_TOKEN_BUDGET", "1234")
+    assert R._env_int("PRESS_RUN_TOKEN_BUDGET", 999) == 1234
+    monkeypatch.setenv("PRESS_RUN_TOKEN_BUDGET", "not-a-number")
+    assert R._env_int("PRESS_RUN_TOKEN_BUDGET", 999) == 999
+    monkeypatch.delenv("PRESS_RUN_TOKEN_BUDGET")
+    assert R._env_int("PRESS_RUN_TOKEN_BUDGET", 999) == 999
+
+
+def test_cli_reports_a_missing_config_rather_than_running_blind(tmp_path, capsys):
+    assert R.main(["--root", str(tmp_path)]) == 1
+    assert "::error title=press_config::" in capsys.readouterr().out

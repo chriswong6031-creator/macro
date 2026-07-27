@@ -41,6 +41,7 @@ from . import (actions, ai_cost, alerts as _alerts_mod, allies_store, analytics_
                neural_web,
                orchestrator_chat,
                personas,
+               press,
                prophet,
                revenue,
                services, settings, site_gate,
@@ -601,6 +602,9 @@ class Handler(BaseHTTPRequestHandler):
             # Persona Network roster (config/personas/ ⋈ desk_network) — read-only.
             if path == "/api/personas/roster":
                 return self._json(personas.roster())
+            # Press (D14 Media Network W1) inspector — read-only, fail-soft.
+            if path == "/api/press/overview":
+                return self._json(press.overview())
             # W-AI: Mastermind AI response log — batch-evaluatable corpus of every
             # user-facing answer (Macro brain + Terminal copilot), ingested from R2.
             if path == "/api/mastermind_ai/response_logs":

@@ -63,6 +63,13 @@ site/live/
 # cached cross-job in CI (actions/cache) rather than committed; site/intraday is the
 # force-tracked, shipped artifact.
 data/intraday/
+# D14 press staging (scripts/run_press.py --staging) — per-run drafts + validator
+# reports. Run artifacts, not repo content: press-publish.yml uploads them as a
+# workflow artifact and --emit consumes them, and its commit step never stages
+# this path. Committing them would put unpublished LLM drafts on main. The
+# LEDGER (data/press/published.jsonl) is the opposite — append-only, committed,
+# and the only durable record of what shipped.
+data/press/staging/*.json
 # Financial-news fetch cache (engine/financial_news) — transient 12h fetch cache,
 # regenerated every build. NOT committed: a keyless local cache must never shadow
 # CI's keyed (Polygon/Finnhub) fetch within the TTL window.
