@@ -234,6 +234,12 @@ entries:
     section: 2
     section_name: killed_signal_families
 
+  - topic: 'Stress-matched second-test elasticity collapse after a fresh-low systemic anchor (PSS-SR1)'
+    verdict: 'KILLED — the frozen challenge–response construction failed every promotion layer. It produced 236 treatments across only 200 names (one name with ≥3 fires), versus the frozen 500-name / 100-repeat floor; informative same-sector-pulse clusters fell from 45 DEV to 13 VAL. Against the disjoint tested-low geometry control, DEV effects were adverse on MAE (−1.15pp, month-block CI [−4.07,+0.84], pulse-permutation p=0.869), tail (−2.35pp, [−13.17,+8.11], p=0.631), W5 (−14.69pp), and called timing (−10.81pp). VAL MAE/tail were small and non-confirming while W5/called stayed adverse; FWD MAE/tail reversed negative. H1-2022 density also exceeded Sep–Nov (13.83 vs 11.33 actions/month). The exact anchor→pulse-A damage→1ATR rebound→stress-matched pulse-B→0.5× elasticity/0.5ATR tested-low construction is closed. Do not revive by retiming the 15-session window, loosening R²/stress/elasticity thresholds, or adding F4. The broader challenge–response idea remains open only as a genuinely different preregistered species that avoids sparse double-conditioning and does not mistake rebound distance from the trough for timing quality.'
+    source: '`research/PSS_SR1_STRESS_ELASTICITY_PREREG.md`; `reports/pss_sr1_stress_elasticity.md` (family `pss_sr1_stress_elasticity`, 2026-07-27)'
+    section: 2
+    section_name: killed_signal_families
+
   - topic: 'Washout × turn (2W operator seed)'
     verdict: 'KILLED — operator seed dies in test'
     source: 'Entry-stack Amendment-3 adjudication (#1747)'
