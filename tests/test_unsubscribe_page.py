@@ -121,6 +121,16 @@ def test_the_committed_page_matches_the_template():
     divergence, and this test was red on main (and therefore ``ci-pack-1`` red on every PR
     in the repo) from the first render after #3743 landed.
 
+    ``inject_wh_banner`` is the one sweep that CANNOT be replayed, and it is a live time
+    bomb rather than a hypothetical: ``daily.yml`` runs it over ``site/**/*.html`` with no
+    exclusion list, ``render.yml`` does not, so whether this page carries the ticker tag
+    depends on which lane touched it last. Replaying it unconditionally would redden the
+    test today (223 of 243 root pages, this one and /support.html included, currently ship
+    without the tag); NOT handling it reddens the test the first time a daily run lands the
+    tag here. So it is stripped from both sides — the treatment #3675 settled on for the
+    same sweep, whose regex is imported rather than restated so the two cannot drift. It is
+    a marker-guarded additive tag immediately before </body> that changes nothing else.
+
     Normalising the difference away instead (strip ``?v=`` stamps, ignore ``<style>`` vs
     ``<link>``) would have been the weaker fix: replaying the step keeps the externalized
     CSS compared byte-for-byte, because the href IS the content hash. What must never be
@@ -139,6 +149,7 @@ def test_the_committed_page_matches_the_template():
     from lib.pages import (css_imports, externalize_css_text, inject_text,
                            optimize_assets_text, preload_css_text)
     from lib.seo import SITE_BASE
+    from scripts.build_free_content import _WHB_TAG_RE
     from scripts.externalize_css import MIN_BYTES
     from scripts.optimize_assets import _hash_bytes
 
@@ -187,6 +198,8 @@ def test_the_committed_page_matches_the_template():
 
     fresh = preload_css_text(optimize_assets_text(fresh, hash_for), imports_for)
     shipped = (ROOT / "site" / "unsubscribe.html").read_text(encoding="utf-8")
+    # the lane-dependent ticker tag, off both sides (see the docstring)
+    fresh, shipped = _WHB_TAG_RE.sub("", fresh), _WHB_TAG_RE.sub("", shipped)
     assert shipped == fresh, "re-run the builder and commit site/unsubscribe.html"
 
 
