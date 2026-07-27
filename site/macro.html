@@ -430,7 +430,7 @@
             <div class="ms-alerts-wrap">
               <label class="ms-alerts" for="ms-alerts-toggle" tabindex="0" aria-haspopup="dialog" aria-controls="ms-alerts-pop">
                 <span class="dot"></span><span class="l-en">Fired alerts</span><span class="l-zh">已触发警报</span>
-                <span class="ct">2</span>
+                <span class="ct">1</span>
               </label>
               <div class="ms-alerts-pop" id="ms-alerts-pop" role="dialog" aria-label="Fired alerts · 已触发警报">
                 <div class="ms-pop-head">
@@ -443,15 +443,6 @@
                   
                   
                   
-                  
-                  
-                  
-                  <a class="ms-sig sev-warn" data-ms-jump href="#health">
-                    <div class="ms-sig-head"><span class="ms-sig-ico">🔌</span><span class="ms-sig-title"><span class="l-en">A data source went dark</span><span class="l-zh">某数据源中断</span></span><span class="ms-sig-jump"><span class="l-en">View ↓</span><span class="l-zh">查看 ↓</span></span></div>
-                    <div class="ms-sig-detail"><span class="l-en">Source &#39;intl_universe&#39; marked dead after 3 consecutive failures — collector skipped until it recovers; affected signals degrade</span><span class="l-zh">数据源 &#39;intl_universe&#39; 连续 3 次失败后被标记为中断 —采集器暂停直至恢复；相关信号置信度下降</span></div>
-                    <div class="ms-sig-what"><span class="l-en">A feed this dashboard relies on failed several runs in a row, so it’s paused until it recovers. Any signals that depend on it automatically lose confidence until it’s back. This is a plumbing notice, not a market signal.</span><span class="l-zh">本仪表盘依赖的某个数据源连续多次失败，已暂停直至恢复。依赖它的信号会自动降低置信度，直到其恢复。这是系统管线提示，并非市场信号。</span></div>
-                    <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Plumbing — data health, not a market signal.</span><span class="l-zh">管线 — 数据健康度，而非市场信号。</span></div>
-                  </a>
                   
                   
                   
@@ -4131,11 +4122,11 @@
       
       <div class="mx5-ai-ticker-pills">
         
-        <span class="mx5-ai-ticker-pill">QQQ</span>
-        
         <span class="mx5-ai-ticker-pill">SPY</span>
         
         <span class="mx5-ai-ticker-pill">USO</span>
+        
+        <span class="mx5-ai-ticker-pill">QQQ</span>
         
         <span class="mx5-ai-ticker-pill">XHB</span>
         
@@ -4146,12 +4137,12 @@
         
         <span class="l-en">
           <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">4 High-Impact Items</span><br>
-          Dominant channel: <span style="color:var(--mx5-accent-ink);font-weight:600">fiscal &amp; trade</span><br>
+          Dominant channel: <span style="color:var(--mx5-accent-ink);font-weight:600">rates</span><br>
           4 high-impact signals across channels
         </span>
         <span class="l-zh">
           <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">4 条高影响信息</span><br>
-          主导频道：<span style="color:var(--mx5-accent-ink);font-weight:600">财政与贸易</span><br>
+          主导频道：<span style="color:var(--mx5-accent-ink);font-weight:600">利率</span><br>
           4 条高影响信号
         </span>
         
@@ -4228,8 +4219,8 @@
           <div class="mx5-alert-content">
             <div class="mx5-alert-title">
               <span style="font-size:12px;margin-right:3px">📰</span>
-              <span class="l-en">Northeast Community Bancorp GAAP EPS of $0.72 misses by $0.07, revenue of $25.29…</span>
-              <span class="l-zh">Northeast Community Bancorp GAAP每股收益0.72美元，低于预期0.07美元，营收2529…</span>
+              <span class="l-en">Braemar Hotels &amp; Resorts 8.25 % Cum Pfd Registered Shs Series -D declares $0.515…</span>
+              <span class="l-zh">Braemar Hotels &amp; Resorts 8.25 % Cum Pfd Registered Shs Serie…</span>
             </div>
             <div class="mx5-alert-detail">
               <span>Seeking Alpha - Market Currents</span> · 
@@ -4245,8 +4236,8 @@
       </div>
       <div class="mx5-alert-footer">
         <span>
-          <span class="l-en">Showing 1 of 2 in feed</span>
-          <span class="l-zh">显示 1 / 2 条</span>
+          <span class="l-en">Showing 1 of 1 in feed</span>
+          <span class="l-zh">显示 1 / 1 条</span>
         </span>
         <button type="button" class="gbtn gbtn-sm gbtn-quiet" onclick="event.stopPropagation();mx5OpenDlg('dlg-news')">
           <span class="l-en">View all &#8594;</span>
@@ -7425,25 +7416,6 @@ The bond market is healthy but late in its cycle, and the breakdown in the stock
         
         
         
-        <div class="isle-head"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">Context</span><span class="l-zh">背景</span></span><div class="isle-head-line"></div></div>
-        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;opacity:.8">
-          
-          <div style="display:flex;gap:10px;padding:10px 12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid rgba(255,255,255,.05)">
-            <div style="width:6px;height:6px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.30));flex-shrink:0;margin-top:5px"></div>
-            <div style="flex:1;min-width:0">
-              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:3px">
-                <div style="font-size:12.5px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.7))">
-                  <span style="font-size:11px;margin-right:3px">🔌</span>
-                  <span class="l-en">A data source went dark</span><span class="l-zh">某数据源中断</span>
-                </div>
-                <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.36));border:1px solid rgba(255,255,255,.09);white-space:nowrap"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
-              </div>
-              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">Source &#39;intl_universe&#39; marked dead after 3 consecutive failures — collector skipped until it recovers; affected signals degrade</span><span class="l-zh">数据源 &#39;intl_universe&#39; 连续 3 次失败后被标记为中断 —采集器暂停直至恢复；相关信号置信度下降</span></div>
-            </div>
-          </div>
-          
-        </div>
-        
         
         
         
@@ -7455,10 +7427,10 @@ The bond market is healthy but late in its cycle, and the breakdown in the stock
           
           
           
-          <a class="nbx-item" href="https://seekingalpha.com/news/4618545-michael-burry-ramps-up-chip-shorts-holds-tsla-and-pltr-bets?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://seekingalpha.com/news/4618558-south-koreas-naver-rallies-after-nvidia-unveils-1b-strategic-investment?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nbx-title"><span class="l-en">Michael Burry ramps up chip shorts, holds TSLA and PLTR bets</span><span class="l-zh">Michael Burry加码做空芯片股，持有TSLA和PLTR头寸</span></span>
+              <span class="nbx-title"><span class="l-en">South Korea&#39;s Naver rallies after Nvidia unveils $1B strategic investment</span><span class="l-zh">South Korea&#39;s Naver rallies after Nvidia unveils $1B strategic investment</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7473,46 +7445,46 @@ The bond market is healthy but late in its cycle, and the breakdown in the stock
           
           
           
-          <a class="nbx-item" href="https://seekingalpha.com/news/4618557-synopsys-unveils-agentic-ai-advancements-powered-by-nvidia-tech?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
-            <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nbx-title"><span class="l-en">Synopsys unveils agentic AI advancements powered by Nvidia tech</span><span class="l-zh">Synopsys推出由英伟达技术驱动的智能体AI进展</span></span>
-            </div>
-            <div class="nbx-meta">
-              <span class="nbx-src">news_rss</span>
-              <span class="nbx-dot">·</span>
-              <span class="nbx-date">Jul 27</span>
-              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
-            </div>
-            
-          </a>
-          
-          
-          
-          
-          
-          <a class="nbx-item" href="https://seekingalpha.com/news/4618553-northeast-community-bancorp-gaap-eps-of-072-misses-by-007-revenue-of-2529m-misses-by-18m?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
-            <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Northeast Community Bancorp GAAP EPS of $0.72 misses by $0.07, revenue of $25.29M misses by $1.8M</span><span class="l-zh">Northeast Community Bancorp GAAP每股收益0.72美元，低于预期0.07美元，营收2529万美元，低于预期180万美元</span></span>
-            </div>
-            <div class="nbx-meta">
-              <span class="nbx-src">news_rss</span>
-              <span class="nbx-dot">·</span>
-              <span class="nbx-date">Jul 27</span>
-              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
-            </div>
-            
-          </a>
-          
-          
-          
-          
-          
-          <a class="nbx-item" href="https://seekingalpha.com/news/4618552-global-x-active-hybrid-bond-and-preferred-share-etf-declares-0_0451-dividend?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://seekingalpha.com/news/4618457-braemar-hotels-and-resorts-8_25-percent-cum-pfd-registered-shs-series-d-declares-0_5156?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Buybacks</span><span class="l-zh">回购/分红</span></span>
-              <span class="nbx-title"><span class="l-en">Global X Active Hybrid Bond and Preferred Share ETF declares $0.0451 dividend</span><span class="l-zh">Global X主动型混合债券与优先股ETF宣布每股派息0.0451美元</span></span>
+              <span class="nbx-title"><span class="l-en">Braemar Hotels &amp; Resorts 8.25 % Cum Pfd Registered Shs Series -D declares $0.5156 dividend</span><span class="l-zh">Braemar Hotels &amp; Resorts 8.25 % Cum Pfd Registered Shs Series -D declares $0.5156 dividend</span></span>
+            </div>
+            <div class="nbx-meta">
+              <span class="nbx-src">news_rss</span>
+              <span class="nbx-dot">·</span>
+              <span class="nbx-date">Jul 27</span>
+              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
+            </div>
+            
+          </a>
+          
+          
+          
+          
+          
+          <a class="nbx-item" href="https://seekingalpha.com/news/4618456-braemar-hotels-and-resorts-5_5-percent-cum-conv-pfd-registered-shs-series-b-declares-0_3438?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
+            <div class="nbx-top">
+              <span class="nbx-theme"><span class="l-en">Buybacks</span><span class="l-zh">回购/分红</span></span>
+              <span class="nbx-title"><span class="l-en">Braemar Hotels &amp; Resorts 5.5 % Cum Conv Pfd Registered Shs Series -B- declares $0.3438 dividend</span><span class="l-zh">Braemar Hotels &amp; Resorts 5.5 % Cum Conv Pfd Registered Shs Series -B- declares $0.3438 dividend</span></span>
+            </div>
+            <div class="nbx-meta">
+              <span class="nbx-src">news_rss</span>
+              <span class="nbx-dot">·</span>
+              <span class="nbx-date">Jul 27</span>
+              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
+            </div>
+            
+          </a>
+          
+          
+          
+          
+          
+          <a class="nbx-item" href="https://seekingalpha.com/news/4618512-asian-equities-rally-ass-easing-middle-east-tensions-send-oil-lower-kospi-lags?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
+            <div class="nbx-top">
+              <span class="nbx-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="nbx-title"><span class="l-en">Asian equities rally as easing Middle East tensions send oil lower; Kospi lags</span><span class="l-zh">Asian equities rally as easing Middle East tensions send oil lower; Kospi lags</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7530,7 +7502,7 @@ The bond market is healthy but late in its cycle, and the breakdown in the stock
           <a class="nbx-item" href="https://www.cnbc.com/2026/07/24/trader-who-successfully-shorted-tesla-into-earnings-now-sets-sights-on-this-high-flyer-.html" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Trader who successfully shorted Tesla into earnings now sets sights on this high flyer</span><span class="l-zh">做空特斯拉盈利的交易员现在瞄准这只高飞股</span></span>
+              <span class="nbx-title"><span class="l-en">Trader who successfully shorted Tesla into earnings now sets sights on this high flyer</span><span class="l-zh">Trader who successfully shorted Tesla into earnings now sets sights on this high flyer</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7548,7 +7520,7 @@ The bond market is healthy but late in its cycle, and the breakdown in the stock
           <a class="nbx-item" href="https://www.marketwatch.com/story/the-s-p-500s-earnings-growth-has-gone-bonkers-thanks-to-one-company-1c45b2ba?mod=mw_rss_topstories" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">The S&amp;P 500’s earnings growth has gone bonkers thanks to one company</span><span class="l-zh">标普500的盈利增长因一家公司而疯狂</span></span>
+              <span class="nbx-title"><span class="l-en">The S&amp;P 500’s earnings growth has gone bonkers thanks to one company</span><span class="l-zh">The S&amp;P 500’s earnings growth has gone bonkers thanks to one company</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7566,7 +7538,7 @@ The bond market is healthy but late in its cycle, and the breakdown in the stock
           <a class="nbx-item" href="https://www.cnbc.com/2026/07/23/intel-intc-earnings-report-q2-2026.html" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Intel rides AI boom to fastest revenue growth in almost 15 years, but shares sink</span><span class="l-zh">英特尔借助AI热潮实现近15年来最快营收增长，但股价下跌</span></span>
+              <span class="nbx-title"><span class="l-en">Intel rides AI boom to fastest revenue growth in almost 15 years, but shares sink</span><span class="l-zh">Intel rides AI boom to fastest revenue growth in almost 15 years, but shares sink</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7584,7 +7556,7 @@ The bond market is healthy but late in its cycle, and the breakdown in the stock
           <a class="nbx-item" href="https://www.cnbc.com/2026/07/24/moodys-ai-spending-credit-quality-amazon-meta-alphabet.html" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nbx-title"><span class="l-en">Moody&#39;s says &#39;unprecedented&#39; AI spending threatens credit quality of Amazon, Meta, Alphabet and others</span><span class="l-zh">穆迪称‘史无前例’的AI支出威胁亚马逊、Meta、Alphabet等公司的信用质量</span></span>
+              <span class="nbx-title"><span class="l-en">Moody&#39;s says &#39;unprecedented&#39; AI spending threatens credit quality of Amazon, Meta, Alphabet and others</span><span class="l-zh">Moody&#39;s says &#39;unprecedented&#39; AI spending threatens credit quality of Amazon, Meta, Alphabet and others</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7602,7 +7574,7 @@ The bond market is healthy but late in its cycle, and the breakdown in the stock
           <a class="nbx-item" href="https://www.cnbc.com/2026/07/24/1-hyperscaler-megacap-down-3-to-go-alphabet-raises-the-stakes-on-ai-spending.html" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Deals</span><span class="l-zh">并购/IPO</span></span>
-              <span class="nbx-title"><span class="l-en">1 hyperscaler megacap down, 3 to go. Alphabet raises the stakes on AI spending</span><span class="l-zh">1家超大规模科技巨头下跌，3家待续。Alphabet加大AI支出筹码</span></span>
+              <span class="nbx-title"><span class="l-en">1 hyperscaler megacap down, 3 to go. Alphabet raises the stakes on AI spending</span><span class="l-zh">1 hyperscaler megacap down, 3 to go. Alphabet raises the stakes on AI spending</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -9770,7 +9742,7 @@ The bond market is healthy but late in its cycle, and the breakdown in the stock
     <summary><span class="l-en">Data health</span><span class="l-zh">数据健康度</span>
       <span class="help">?<span class="tip"><span class="l-en">Every data source this dashboard depends on. OK = fresh. STALE = no new data lately (signal confidence reduced automatically). FAILED = today&#39;s fetch broke (yesterday&#39;s data still used). BLOCKED = a known, documented limitation — not a malfunction. DEAD = failed 3+ runs and paused until it recovers.</span><span class="l-zh">本仪表盘所依赖的每个数据源。OK = 新鲜。STALE = 近期无新数据（信号置信度已自动下调）。FAILED = 今日抓取失败（仍沿用昨日数据）。BLOCKED = 已知且有记录的限制 — 并非故障。DEAD = 连续 3 次以上失败，已暂停直至恢复。</span></span></span>
       
-      <span class="fold-stat">9 <span class="l-en">need attention</span><span class="l-zh">需关注</span> · 168 <span class="l-en">sources</span><span class="l-zh">数据源</span></span>
+      <span class="fold-stat">10 <span class="l-en">need attention</span><span class="l-zh">需关注</span> · 168 <span class="l-en">sources</span><span class="l-zh">数据源</span></span>
       <span class="fold-caret">▾</span>
     </summary>
     <table>
@@ -11290,9 +11262,9 @@ The bond market is healthy but late in its cycle, and the breakdown in the stock
       
     </table>
     <p class="muted"><span class="l-en">A failed source never crashes the dashboard — affected signals just lose confidence until it heals.
-       Generated 2026-07-27 05:07 UTC · <a href="aibrief.html">AI daily brief</a> ·
+       Generated 2026-07-27 05:42 UTC · <a href="aibrief.html">AI daily brief</a> ·
        <a href="history.html">history & charts</a></span><span class="l-zh">数据源失败绝不会让仪表盘崩溃 — 受影响的信号只是降低置信度，直到其恢复。
-       生成于 2026-07-27 05:07 UTC · <a href="aibrief.html">AI每日简报</a> ·
+       生成于 2026-07-27 05:42 UTC · <a href="aibrief.html">AI每日简报</a> ·
        <a href="history.html">历史与图表</a></span></p>
   </details>
   
