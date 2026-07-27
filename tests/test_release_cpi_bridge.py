@@ -618,3 +618,259 @@ class TestCoreVsHeadline:
             assert "food_at_home" not in all_blocks, (
                 f"food_at_home must not appear at all in core components: {all_blocks}"
             )
+
+
+# ---------------------------------------------------------------------------
+# 7. Partial-leg disclosure (detection half of #3735)
+# ---------------------------------------------------------------------------
+#
+# PREREG_CPI_BRIDGE_V1.md §3.4 pre-registers the reduced-leg fallback ("If one missing,
+# use the other") — that math is FROZEN and is NOT under test here. What IS under test is
+# that a block built on one leg says so on the SHIPPED artifact, instead of arriving
+# indistinguishable from a full-leg block (same confidence, prior_only=False,
+# absent_legs=[]).
+#
+# These tests assert against what scripts/build_release_forecast.py actually emits, not
+# merely what the engine returns: the engine already carried n_series=1 in
+# pit_provenance.block_provenance, and the builder dropped it on the floor.
+
+
+def _write_vintages(root: Path, series: list[str], months: int = 80) -> None:
+    """Write a real vintages.parquet containing exactly `series`."""
+    (root / "data" / "fred_vintage").mkdir(parents=True, exist_ok=True)
+    (root / "data" / "fred").mkdir(parents=True, exist_ok=True)
+    (root / "data" / "zori").mkdir(parents=True, exist_ok=True)
+    _make_vintages(series, months=months).to_parquet(
+        root / "data" / "fred_vintage" / "vintages.parquet"
+    )
+
+
+def _cpi_item() -> dict:
+    """Minimal upcoming cpi_headline item as _build_upcoming_block would produce."""
+    return {
+        "release_type": "cpi_headline",
+        "release": "cpi",
+        "period": "2026-06",
+        "release_date": "2026-07-14",
+        "projection": {"point": 0.20, "p10": 0.10, "p90": 0.30},
+    }
+
+
+def _shipped_bridge(root: Path, monkeypatch, asof: date = date(2026, 7, 13)) -> dict:
+    """Run the REAL bridge through the builder and return the shipped shadow payload.
+
+    Only the sibling shadows (v3_factor, mf_energy) are stubbed out — cpi_bridge itself
+    runs for real, because the shipped shape is precisely what is under test.
+    """
+    import scripts.build_release_forecast as producer
+
+    monkeypatch.setattr(producer, "_run_shadow_v3", lambda *a, **k: None)
+    monkeypatch.setattr(producer, "_run_shadow_mf_energy", lambda *a, **k: None)
+
+    items = [_cpi_item()]
+    producer._attach_shadows_to_items(items, root, asof)
+    shadows = items[0].get("shadows") or {}
+    assert "cpi_bridge" in shadows, f"expected a cpi_bridge shadow, got {list(shadows)}"
+    return shadows["cpi_bridge"]
+
+
+def _block(payload: dict, name: str) -> dict:
+    matches = [c for c in (payload.get("components") or []) if c.get("block") == name]
+    assert len(matches) == 1, f"expected exactly one {name} component, got {len(matches)}"
+    return matches[0]
+
+
+class TestPartialLegDisclosureOnShippedShape:
+    """A one-leg block must disclose itself in what _attach_shadows_to_items EMITS."""
+
+    def test_one_leg_pipeline_is_disclosed_on_the_shipped_shadow(self, tmp_path, monkeypatch):
+        """PPIFIS present, PPIFES absent → degradation visible on the shipped payload."""
+        _write_vintages(tmp_path, ["CPIAUCSL", "PPIFIS"])
+
+        payload = _shipped_bridge(tmp_path, monkeypatch)
+
+        # Roll-up survives the builder's literal-dict rebuild.
+        assert payload.get("degraded_blocks") == ["core_goods_pipeline"], (
+            "shipped shadow must name the partially-composed block; got "
+            f"{payload.get('degraded_blocks')!r}"
+        )
+
+        cg = _block(payload, "core_goods_pipeline")
+        assert cg["degraded"] is True, "one-leg pipeline must be flagged degraded"
+        assert cg["legs_used"] == 1
+        assert cg["legs_expected"] == 2
+        assert cg["missing_legs"] == ["PPIFES"], (
+            f"the absent leg must be named; got {cg['missing_legs']!r}"
+        )
+
+        # Still a modelled block carrying a real estimate — prereg §3.4 fallback is intact.
+        assert cg["prior_only"] is False, "one-leg fallback is pre-registered, not prior_only"
+        assert cg["mom_est"] is not None, "the §3.4 one-leg estimate must still ship"
+
+        # Confidence no longer overstates: 0.6 (two-leg prereg value) haircut by 1/2.
+        assert cg["confidence"] == pytest.approx(0.3), (
+            f"degraded block must not ship at the two-leg confidence; got {cg['confidence']}"
+        )
+
+    def test_two_leg_pipeline_does_not_flag(self, tmp_path, monkeypatch):
+        """Both PPI legs present → no degradation, frozen prereg confidence untouched."""
+        _write_vintages(tmp_path, ["CPIAUCSL", "PPIFIS", "PPIFES"])
+
+        payload = _shipped_bridge(tmp_path, monkeypatch)
+
+        assert payload.get("degraded_blocks") == [], (
+            f"full-leg bridge must flag nothing; got {payload.get('degraded_blocks')!r}"
+        )
+
+        cg = _block(payload, "core_goods_pipeline")
+        assert cg["degraded"] is False
+        assert cg["legs_used"] == 2
+        assert cg["legs_expected"] == 2
+        assert cg["missing_legs"] == []
+        # The frozen prereg §3.4 value, byte-for-byte, wherever the spec's own conditions hold.
+        assert cg["confidence"] == pytest.approx(0.6), (
+            f"full-leg confidence must equal the prereg 0.6; got {cg['confidence']}"
+        )
+
+    def test_one_leg_confidence_is_strictly_below_two_leg(self, tmp_path, monkeypatch):
+        """The whole point: the two states must be distinguishable on the artifact."""
+        one = tmp_path / "one"
+        two = tmp_path / "two"
+        _write_vintages(one, ["CPIAUCSL", "PPIFIS"])
+        _write_vintages(two, ["CPIAUCSL", "PPIFIS", "PPIFES"])
+
+        p_one = _shipped_bridge(one, monkeypatch)
+        p_two = _shipped_bridge(two, monkeypatch)
+
+        assert p_one["confidence"] < p_two["confidence"], (
+            "a one-leg bridge must not ship at the same confidence as a two-leg bridge: "
+            f"{p_one['confidence']} vs {p_two['confidence']}"
+        )
+        assert p_one["degraded_blocks"] != p_two["degraded_blocks"]
+
+    def test_ledger_row_carries_degraded_blocks(self, tmp_path, monkeypatch):
+        """The forward-ledger shadow row discloses it too (new rows only; append-only)."""
+        import scripts.build_release_forecast as producer
+
+        monkeypatch.setattr(producer, "_run_shadow_v3", lambda *a, **k: None)
+        monkeypatch.setattr(producer, "_run_shadow_mf_energy", lambda *a, **k: None)
+        _write_vintages(tmp_path, ["CPIAUCSL", "PPIFIS"])
+
+        rows = producer._build_shadow_ledger_rows(
+            date(2026, 7, 13), [_cpi_item()], tmp_path
+        )
+        bridge_rows = [r for r in rows if r.get("model") == "cpi_bridge"]
+        assert len(bridge_rows) == 1, f"expected 1 bridge ledger row, got {len(bridge_rows)}"
+        assert bridge_rows[0].get("degraded_blocks") == ["core_goods_pipeline"]
+
+    def test_absent_block_is_not_double_flagged_as_degraded(self, tmp_path, monkeypatch):
+        """Both PPI legs absent → prior_only (already visible), NOT degraded."""
+        _write_vintages(tmp_path, ["CPIAUCSL"])
+
+        payload = _shipped_bridge(tmp_path, monkeypatch)
+
+        cg = _block(payload, "core_goods_pipeline")
+        assert cg["prior_only"] is True, "no legs at all → the existing prior_only disclosure"
+        assert cg["degraded"] is False, (
+            "degraded marks a PARTIAL estimate; a block with no estimate is already "
+            "disclosed by prior_only"
+        )
+        assert cg["legs_used"] == 0
+        assert "core_goods_pipeline" not in (payload.get("degraded_blocks") or [])
+
+
+class TestPartialLegDisclosureOtherBlocks:
+    """core_goods_pipeline was not the only multi-input block hiding this state."""
+
+    def test_food_at_home_one_leg_is_disclosed(self, tmp_path, monkeypatch):
+        """CUSR0000SAF11 present, WPU01 absent → pure-prior path, flagged and haircut."""
+        _write_vintages(tmp_path, ["CPIAUCSL", "PPIFIS", "PPIFES"])
+        _make_monthly_series(months=60, start="2021-06-01").to_parquet(
+            tmp_path / "data" / "fred" / "CUSR0000SAF11.parquet"
+        )
+
+        payload = _shipped_bridge(tmp_path, monkeypatch)
+
+        fah = _block(payload, "food_at_home")
+        assert fah["degraded"] is True, "food_at_home ran without its momentum signal"
+        assert fah["legs_used"] == 1
+        assert fah["missing_legs"] == ["WPU01"]
+        assert fah["prior_only"] is False
+        # 0.4 (prereg §3.3) haircut by 1/2.
+        assert fah["confidence"] == pytest.approx(0.2)
+        assert "food_at_home" in payload["degraded_blocks"]
+
+    def test_food_at_home_two_legs_does_not_flag(self, tmp_path, monkeypatch):
+        """Both food legs present → directional blend, prereg confidence untouched."""
+        _write_vintages(tmp_path, ["CPIAUCSL", "PPIFIS", "PPIFES"])
+        _make_monthly_series(months=60, start="2021-06-01").to_parquet(
+            tmp_path / "data" / "fred" / "CUSR0000SAF11.parquet"
+        )
+        _make_monthly_series(months=60, start="2021-06-01", base=200.0, trend=0.5).to_parquet(
+            tmp_path / "data" / "fred" / "WPU01.parquet"
+        )
+
+        payload = _shipped_bridge(tmp_path, monkeypatch)
+
+        fah = _block(payload, "food_at_home")
+        assert fah["degraded"] is False
+        assert fah["legs_used"] == 2
+        assert fah["missing_legs"] == []
+        assert fah["confidence"] == pytest.approx(0.4)
+
+    def test_shelter_one_leg_is_disclosed(self, tmp_path, monkeypatch):
+        """CUSR0000SAH1 present, ZORI absent → k=0 BLS-momentum fallback, flagged.
+
+        The nowcast silently drops to pure BLS momentum (PREREG_V2.md §2.6) — a
+        pre-registered but materially weaker construction than the k=0.35 blend.
+        """
+        _write_vintages(tmp_path, ["CPIAUCSL", "PPIFIS", "PPIFES"])
+        _make_monthly_series(months=60, start="2021-06-01").to_parquet(
+            tmp_path / "data" / "fred" / "CUSR0000SAH1.parquet"
+        )
+
+        payload = _shipped_bridge(tmp_path, monkeypatch)
+
+        sh = _block(payload, "shelter")
+        assert sh["degraded"] is True, "shelter ran without its ZORI leg"
+        assert sh["legs_used"] == 1
+        assert sh["missing_legs"] == ["ZORI"]
+        assert sh["prior_only"] is False
+        # 0.6 (prereg §3.2) haircut by 1/2.
+        assert sh["confidence"] == pytest.approx(0.3)
+        assert "shelter" in payload["degraded_blocks"]
+
+
+class TestPartialLegPreregInvariants:
+    """The disclosure must not perturb any frozen prereg quantity."""
+
+    def test_degradation_does_not_change_the_point_estimate(self, tmp_path, monkeypatch):
+        """§3.4 math is frozen: flagging a block must not move its contribution."""
+        _write_vintages(tmp_path, ["CPIAUCSL", "PPIFIS"])
+
+        payload = _shipped_bridge(tmp_path, monkeypatch)
+        cg = _block(payload, "core_goods_pipeline")
+
+        # contribution_pp is still (one-leg mom / 100) * the frozen RI weight. Tolerance
+        # covers mom_est being published at 4dp while the contribution derives from the
+        # unrounded value: 0.5e-4 / 100 * 19.176 ≈ 9.6e-6.
+        assert cg["contribution_pp"] == pytest.approx(
+            (cg["mom_est"] / 100.0) * _CORE_GOODS_W, abs=2e-5
+        )
+        assert cg["weight"] == pytest.approx(_CORE_GOODS_W)
+
+    def test_degraded_block_still_counts_as_modelled_coverage(self, tmp_path, monkeypatch):
+        """prior_only drives weight_coverage/prior_driven_share — both stay prereg-defined."""
+        one = tmp_path / "one"
+        two = tmp_path / "two"
+        _write_vintages(one, ["CPIAUCSL", "PPIFIS"])
+        _write_vintages(two, ["CPIAUCSL", "PPIFIS", "PPIFES"])
+
+        p_one = _shipped_bridge(one, monkeypatch)
+        p_two = _shipped_bridge(two, monkeypatch)
+
+        assert p_one["weight_coverage"] == pytest.approx(p_two["weight_coverage"]), (
+            "a degraded block is still a modelled block — weight_coverage is prereg §5"
+        )
+        assert p_one["prior_driven_share"] == pytest.approx(p_two["prior_driven_share"])
+        assert p_one["coverage_residual_pp"] == pytest.approx(p_two["coverage_residual_pp"])
