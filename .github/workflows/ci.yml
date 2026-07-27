@@ -1248,7 +1248,14 @@ on:
       # that let two builders import a `trading_dates_between` it never defined and
       # swallow the ImportError into a permanently-false stale gate.
       - "tests/test_nyse_calendar.py"
-      - "tests/test_nyse_calendar_import_names.py"
+      # first-party-import-names — the single-module sweep in
+      # test_nyse_calendar_import_names.py was promoted repo-wide here. It resolves
+      # EVERY `from lib|engine|scripts|collectors|app|admin|tests|tools|worker import
+      # NAME` against the target's real definitions, which found five more dead
+      # imports of the same shape (engine.config, engine.data_store, lib.logging,
+      # _dna_class, _TAPE_PATH). Stdlib-only (ast + pathlib) so it stays in the
+      # minimal-deps lane. A test-only edit must reach its own guard.
+      - "tests/test_first_party_import_names.py"
       # unrun-data-plane — R2 transport, accrual audits and the ledger-advance guards
       - "tests/test_audit_options_accrual.py"
       - "tests/test_audit_r2.py"

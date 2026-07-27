@@ -1200,8 +1200,11 @@ def render_chart_v2(
     warmup = max(0, min(int(warmup or 0), n - 5))
     n_vis = n - warmup
 
-    # ── Unique id suffix: derived from ticker hash (deterministic, collision-safe) ──
-    uid = str(abs(hash(ticker)) % 10_000_000)
+    # ── Unique id suffix: CRC32 of the ticker — stable across processes, so the
+    # nightly rewrites identical bytes. Never use raw hash() here: Python salts
+    # hash(str) per process (PYTHONHASHSEED), which re-rolled every gradient and
+    # marker id on every run and broke rasterize_svg's byte-identity contract. ──
+    uid = str(zlib.crc32(ticker.encode("utf-8")) & 0xFFFFFFFF)
 
     # ── Auto-resolve logo if not provided ───────────────────────────────────
     if logo_datauri is None and logo_root is not None:
@@ -2156,8 +2159,8 @@ def render_earnings_card(
     if logo_datauri is None and logo_root is not None:
         logo_datauri = resolve_color_logo(ticker, logo_root)
 
-    # ── Unique id suffix (deterministic, collision-safe) ────────────────────
-    ec_uid = str(abs(hash(ticker + "ec")) % 10_000_000)
+    # ── Deterministic id suffix (zlib.crc32: PYTHONHASHSEED-stable) ─────────
+    ec_uid = str(zlib.crc32((ticker + "ec").encode("utf-8")) & 0xFFFFFFFF)
 
     # ── Beat/miss/inline classification ─────────────────────────────────────
     def _classify(actual: float, est: float) -> tuple[str, str, float]:
@@ -3090,7 +3093,8 @@ def render_breaking_card(
     """
     try:
         center_x = width / 2  # noqa: F841 — kept for layout symmetry with siblings
-        bc_uid = str(abs(hash((headline or "") + "bc")) % 10_000_000)
+        # Deterministic id suffix (zlib.crc32: PYTHONHASHSEED-stable).
+        bc_uid = str(zlib.crc32(((headline or "") + "bc").encode("utf-8")) & 0xFFFFFFFF)
 
         # ── Brand lockup (top-left) — identical family treatment ──────────────
         bc_logo_tile = 30.0

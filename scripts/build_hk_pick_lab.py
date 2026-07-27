@@ -520,7 +520,7 @@ def _enrich_snapshot(
 def _load_hk_close_series(ticker: str) -> Optional[pd.Series]:
     """Load a per-ticker HK close series from the data store."""
     try:
-        from engine.data_store import store  # type: ignore[import]
+        from lib import store
         df = store.read("hk", ticker)
         if df is None or df.empty:
             return None

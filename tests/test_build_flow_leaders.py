@@ -60,6 +60,23 @@ def _make_summary_parquet(tmp: Path, ticker: str, n_sessions: int = 3) -> None:
     df.to_parquet(str(out_dir / f"summary_{ticker}.parquet"))
 
 
+def _make_tape_parquet(tmp: Path, ticker: str) -> None:
+    """Write data/tape_flow/daily/<ticker>.parquet so the builder counts this
+    ticker as tape-signed (coverage.tape_names)."""
+    out_dir = tmp / "data" / "tape_flow" / "daily"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    dates = pd.bdate_range(end="2024-06-14", periods=2)
+    pd.DataFrame(
+        {
+            "dte_1_7d": [1.0, 1.0],
+            "dte_8_30d": [2.0, 2.0],
+            "dte_31_90d": [0.5, 0.5],
+            "dte_90p": [0.25, 0.25],
+        },
+        index=dates,
+    ).to_parquet(str(out_dir / f"{ticker}.parquet"))
+
+
 def _make_site_dir(tmp: Path) -> Path:
     s = tmp / "site"
     s.mkdir(parents=True, exist_ok=True)
@@ -239,6 +256,29 @@ class TestBuild:
     def test_schema_key_present(self, tmp_path):
         result = self._run_build(tmp_path, ["AAPL", "MSFT"])
         assert result.get("schema") == "flow_leaders.v1"
+
+    def test_tape_names_emitted_sorted(self, tmp_path):
+        """coverage.tape_names must be deterministic.
+
+        It is built from `all_flow_names`, a set — and CPython randomises string
+        hashing per process, so iterating it raw emitted a DIFFERENT order every
+        run. That order is written into the committed site/flowleaders/leaders.json,
+        so each nightly rebuild churned the artifact for no reason and would defeat
+        any byte-stability gate on it. Verified live 2026-07-27: two builds of the
+        same code on the same data produced payloads identical in every field
+        except this list (same 371 names, sets equal, lists unequal).
+
+        Tickers chosen so insertion order cannot accidentally equal sorted order.
+        """
+        tickers = ["ZTS", "AAPL", "MSFT", "NVDA", "AMD", "BAC"]
+        for t in tickers:
+            _make_tape_parquet(tmp_path, t)
+        result = self._run_build(tmp_path, tickers)
+
+        names = (result.get("coverage") or {}).get("tape_names") or []
+        # anti-vacuity: an empty list is trivially sorted and would prove nothing
+        assert len(names) > 1, f"fixture produced no tape names ({names!r})"
+        assert names == sorted(names), f"tape_names not sorted: {names!r}"
 
     def test_as_of_present(self, tmp_path):
         result = self._run_build(tmp_path, ["AAPL"])

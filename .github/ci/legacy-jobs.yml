@@ -860,10 +860,19 @@ jobs:
     # import a `trading_dates_between` this module never defined — swallowed by a
     # bare `except Exception: return False`, making two >2-session stale SLAs
     # return "fresh" for every input they ever saw.
-    # test_nyse_calendar_import_names.py resolves every
+    # test_nyse_calendar_import_names.py resolved every
     # `from lib.nyse_calendar import X` in the repo statically so that class of
     # dead import fails a test instead of degrading into an always-false gate.
-    # Stdlib-only module; pytest is the whole dependency set.
+    #
+    # PROMOTED repo-wide into tests/test_first_party_import_names.py: the same sweep
+    # over EVERY first-party root found five more dead imports of the identical shape
+    # — `from engine import config` (no such module; the except substituted a
+    # __file__ parent-walk), `from engine.data_store import store` (the store is
+    # lib.store; both HK and CN pick-lab benchmark loaders returned None forever),
+    # `from lib.logging import get_logger` (never existed), plus a permanently-skipped
+    # test and a dead fixture branch. The single-module guard is retired; its
+    # calendar public-API check moved into test_nyse_calendar.py.
+    # Both suites are stdlib-only (ast + pathlib); pytest is the whole dependency set.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -872,8 +881,8 @@ jobs:
           python-version: "3.12"
       - name: install minimal deps
         run: pip install pytest
-      - name: nyse calendar rules + imported-name resolution
-        run: python -m pytest tests/test_nyse_calendar.py tests/test_nyse_calendar_import_names.py -q
+      - name: nyse calendar rules + first-party imported-name resolution
+        run: python -m pytest tests/test_nyse_calendar.py tests/test_first_party_import_names.py -q
 
   dag-conformance:
     if: ${{ false }}
@@ -2740,7 +2749,7 @@ jobs:
     # conftest imports yaml in EVERY pytest run, so pyyaml is not optional
     # (a pytest-only env dies at collection). Matching marketing-engine's
     # dependency set also lets the pack runner reuse its venv. Verified green
-    # against a minimal pytest+pyyaml env: 34 passed, 6 skipped.
+    # against a minimal pytest+pyyaml env: 35 passed, 6 skipped.
     #
     # 2026-07-26: "the tests needing them importorskip cleanly" was NOT true when
     # this lane was wired — test_chart_render_inline's two load_ohlcv tests did a
@@ -2761,7 +2770,7 @@ jobs:
     # red at collection. That is worth a job on its own and is why it stays thin.
     #
     # What a thin lane CANNOT do is execute the tests that need those modules.
-    # Six of the 40 tests here skip in this env — the two load_ohlcv tests in
+    # Six of the 41 tests here skip in this env — the two load_ohlcv tests in
     # test_chart_render_inline, three in test_marketing_card_parity, one in
     # test_chart_render_m2 (engine.indicators_m2 needs numpy) — and until
     # 2026-07-27 no other job in any workflow named these files, so the skip was
@@ -2812,8 +2821,8 @@ jobs:
     # than hidden behind a bare pass count.
     #
     # Verified locally in a clean venv with this exact install line:
-    #   pytest pyyaml                      → 34 passed, 6 skipped
-    #   pytest pandas numpy pyarrow pyyaml → 40 passed
+    #   pytest pyyaml                      → 35 passed, 6 skipped
+    #   pytest pandas numpy pyarrow pyyaml → 41 passed
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

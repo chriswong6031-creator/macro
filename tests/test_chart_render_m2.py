@@ -283,3 +283,68 @@ def pytest_importorskip_soft(modname: str):
     except ImportError:
         import pytest
         pytest.importorskip(modname)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Determinism: SVG element ids must be PYTHONHASHSEED-stable
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_card_svg_ids_are_stable_across_hash_seeds():
+    """Pin the nightly byte-identity contract: SVG ids must not track the seed.
+
+    rasterize_svg promises "a re-run of the nightly rewrites identical bytes".
+    The defect shipped as ``uid = str(abs(hash(ticker)) % 10_000_000)`` in three
+    renderers — Python salts ``hash(str)`` per process (PYTHONHASHSEED), so every
+    nightly run emitted different gradient/marker id suffixes and the bytes never
+    matched. The fix is ``zlib.crc32``, which is stable across processes.
+
+    Runs all three renderers in a subprocess under seeds 0/1/42 with fully
+    synthetic inputs (no file access, no pandas/numpy — the thin CI lane must be
+    able to execute this) and asserts one identical digest.
+    """
+    import os
+    import pathlib
+    import subprocess
+    import sys
+
+    code = (
+        "import hashlib\n"
+        "from engine.marketing.chart_render import (\n"
+        "    render_chart_v2, render_earnings_card, render_breaking_card)\n"
+        "n = 60\n"
+        "dates = ['2026-%02d-%02d' % (1 + i // 28, 1 + i % 28) for i in range(n)]\n"
+        "c = [100.0 + (i * 7 % 13) for i in range(n)]\n"
+        "o = [x - 0.5 for x in c]\n"
+        "h = [x + 1.25 for x in c]\n"
+        "l = [x - 1.25 for x in c]\n"
+        "v = [1000000.0 + i * 1000 for i in range(n)]\n"
+        "s1 = render_chart_v2('AAPL', dates, o, h, l, c, v)\n"
+        "s2 = render_earnings_card('AAPL', 'Apple Inc.', 2.1, 1.9, 120.0, 118.0,\n"
+        "                          quarter='Q3 FY26')\n"
+        "s3 = render_breaking_card('Fed holds policy rate steady', 'Reuters',\n"
+        "                          'wire', '2026-07-26T12:00:00Z')\n"
+        "print(hashlib.sha256((s1 + s2 + s3).encode()).hexdigest())\n"
+    )
+
+    repo_root = str(pathlib.Path(__file__).resolve().parent.parent)
+    outs = []
+    for seed in ("0", "1", "42"):
+        r = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True, text=True,
+            env={"PATH": os.environ.get("PATH", ""), "PYTHONHASHSEED": seed},
+            cwd=repo_root,
+        )
+        # Harden: a snippet that crashes under every seed would otherwise print
+        # "" three times and false-pass this test.
+        assert r.returncode == 0, (
+            f"render snippet crashed under PYTHONHASHSEED={seed}:\n{r.stderr}"
+        )
+        out = r.stdout.strip()
+        assert out, f"render snippet printed nothing under PYTHONHASHSEED={seed}"
+        outs.append(out)
+
+    assert outs[0] == outs[1] == outs[2], (
+        "chart_render SVG ids are not deterministic across PYTHONHASHSEED "
+        f"(seeds 0/1/42 → {outs}); use zlib.crc32, never hash()"
+    )
