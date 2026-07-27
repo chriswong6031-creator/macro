@@ -1198,6 +1198,55 @@ checks:
       Complements nw.dag_conformance (lane-sequence drift on declared lanes)
       by asserting bare loadability of ALL workflow files, lane or not.
 
+  - law_id: ops.no_skip_only_suites
+    summary: >
+      No test may skip in every CI job that names it. A suite can be named by a
+      job, be triggerable, and still execute nowhere — because the one job that
+      names it does not install what its `pytest.importorskip("X")` / module-probe
+      `skipif` gates need. That is the third darkness class, between UNRUN and
+      UNTRIGGERABLE, and an importorskip added to clear a red lane creates it by
+      construction: main goes green AND weaker in the same commit. It shipped
+      twice — #3703, then #3722→#3738 (fixed by #3760, where six tests including
+      the two load_ohlcv crypto-source regressions executed in ZERO jobs for the
+      day they were on main). The check is static: per test file collect the skip
+      gates, per job collect the test files its `run:` steps name and the modules
+      its single pip install line provides, and fail when no naming job provides
+      a gated module. A first-party gate resolves to that module's own
+      third-party import closure (engine.indicators_m2 → numpy/pandas).
+    source_ref:
+      - scripts/check_skip_only_suites.py
+      - "PR #3760 (chart-render/chart-render-data pairing; filed this follow-up)"
+      - "PR #3703 (first occurrence)"
+    severity: hard
+    check_script: scripts/check_skip_only_suites.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: workflow-yaml
+        lane: pr_ci
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - >-
+        Gates on things pip cannot install are deliberately out of scope: a data
+        artifact (_PANEL.exists()) or a binary (shutil.which("node")) is a
+        different darkness class with a different fix.
+      - >-
+        Suites that NO job names are reported as UNRUN and never fail this gate —
+        scripts/audit_unrun_tests.py owns that class, and wiring every unrun suite
+        would blow the ci-pack budget.
+      - >-
+        Transitive dependency closure (PACKAGE_REQUIRES) is a hand-maintained
+        table of hard runtime deps. Under-declaring costs a false red;
+        over-declaring costs a missed skip-only suite. It is deliberately
+        restricted to certainties (pandas→numpy, jinja2→markupsafe, …).
+    owner_program: null
+    notes: >
+      Complements ops.workflow_yaml_parses and the ci-pack packing contract in the
+      same job. Its first run surfaced four pre-existing skip-only suites
+      (test_marketing_content, test_marketing_live_verify, test_publish_r2,
+      test_research_vault), all repaired in the PR that added the guard.
+
   # ── Meta-guard ─────────────────────────────────────────────────────────────
 
   - law_id: meta.house_law_registry

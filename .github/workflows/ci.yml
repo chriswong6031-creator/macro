@@ -489,6 +489,13 @@ on:
       # fail-closed tests must exercise the workflow-yaml legacy job below.
       - "scripts/run_ci_pack.py"
       - "tests/test_ci_pack.py"
+      # SKIP-ONLY suite guard (job: workflow-yaml). scripts/*.py already reaches
+      # the checker; these two are the other halves. requirements.txt matters
+      # because a `-r requirements.txt` install line is how several jobs declare
+      # what they provide — dropping a package there can strand a skip gate, and
+      # the trigger has to reach the guard for it to say so.
+      - "tests/test_check_skip_only_suites.py"
+      - "requirements.txt"
       # render.yml scope contract (job: workflow-yaml). .github/workflows/**
       # already reaches render.yml itself; this entry is so a test-only edit
       # still starts CI, per the two-halves law.
