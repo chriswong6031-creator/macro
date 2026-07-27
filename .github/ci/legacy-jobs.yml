@@ -2749,7 +2749,14 @@ jobs:
         # language contract (driver-label translation coverage, no internal-
         # machinery vocab, template coherence). Stdlib-only by construction —
         # it parses engine/market_drivers.py as TEXT instead of importing it.
-        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_marketing_personas.py tests/test_marketing_event_language.py -q
+        # test_marketing_press_feeds (PRESS-FEEDS B1, docket D05 Addendum 2) joins
+        # the same lane (2026-07-27): its import closure is stdlib+pyyaml (score_item
+        # reuse pulls pandas only via a LAZY function-level import that never fires
+        # in the fixture tests), so a heavy top-level import in engine/marketing/
+        # press_* must turn this job red at collection. test_marketing_breaking and
+        # test_marketing_fastlane are co-run in the same edit — both were never
+        # whitelisted anywhere (test-whitelist-rot) and co-run green on pytest+pyyaml.
+        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_marketing_personas.py tests/test_marketing_event_language.py tests/test_marketing_press_feeds.py tests/test_marketing_breaking.py tests/test_marketing_fastlane.py -q
       - name: persona specs validate (config/personas/*.yml)
         # The gate the specs exist for: every committed spec carries the full
         # content-studio tilt key set, a live template-pool voice key, and the
@@ -2804,7 +2811,13 @@ jobs:
       - name: prove the data-dependent modules are present
         run: python -c "import pandas, pyarrow, numpy"
       - name: marketing suites (data-dependent tests execute here)
-        run: python -m pytest tests/test_marketing_content.py tests/test_marketing_live_verify.py -q -rs
+        # test_marketing_breaking.py joins this fat lane 2026-07-27 (PRESS-FEEDS B1):
+        # two of its tests (TestUniverseCacheAndEnrichment) build parquet fixtures and
+        # were converted from a bare `import pandas` to importorskip("pandas")/("pyarrow")
+        # so the thin marketing-engine lane stays pandas-free. That made them SKIP-ONLY
+        # (marketing-engine was their only job) — scripts/check_skip_only_suites.py
+        # requires a job that actually installs pandas+pyarrow to run them, which is here.
+        run: python -m pytest tests/test_marketing_content.py tests/test_marketing_live_verify.py tests/test_marketing_breaking.py -q -rs
 
   publish-r2-client:
     if: ${{ false }}

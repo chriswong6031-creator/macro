@@ -176,8 +176,12 @@ class TrumpstruthProvider:
     # ---- network fetch (never in tests) -------------------------------------
 
     def fetch(
-        self, *, root: Path | str, session_state: dict[str, Any]
+        self, *, root: Path | str, session_state: dict[str, Any],
+        offline: bool = False,
     ) -> list[FeedItem]:
+        # FREE mirror RSS (no key, no per-request charge): `offline` is accepted
+        # for a uniform poll_all signature but ignored — a dry-run may still read
+        # this free feed to preview the pipeline (M2).
         text = _conditional_get(
             self.url, self.key, session_state,
             user_agent=self.user_agent, interval_s=self.poll_interval_s,
@@ -265,8 +269,11 @@ class CnnTruthBackfillProvider:
         return results
 
     def fetch(
-        self, *, root: Path | str, session_state: dict[str, Any]
+        self, *, root: Path | str, session_state: dict[str, Any],
+        offline: bool = False,
     ) -> list[FeedItem]:
+        # FREE mirror JSON archive (no key, no per-request charge): `offline` is
+        # accepted for a uniform poll_all signature but ignored (M2).
         text = _conditional_get(
             self.url, self.key, session_state,
             user_agent=self.user_agent, interval_s=self.poll_interval_s,
@@ -297,9 +304,16 @@ class TwitterApiIoProvider:
 
     Skips CLEANLY (returns []) when TWITTERAPI_IO_KEY is unset — no account is
     created for this build.
+
+    BILLED lane: every fetch that reaches the network costs real money (min charge
+    $0.00015/request). A dry-run/offline tick MUST NOT reach it — the spend it
+    would bill is never persisted in dry-run, so repeated dry-runs would bill the
+    monthly cap counter cannot see (M2). fetch(offline=True) returns [] before any
+    request; the free RSS/JSON mirror providers ignore `offline` and may still poll.
     """
 
     source_tier = "x_relay"
+    billed = True   # M2: this lane costs money; dry-run/offline must skip its fetch
 
     def __init__(self, x_follow_cfg: dict, *, spend_cap_usd: float,
                  satire_blocklist: list[str] | None = None):
@@ -394,7 +408,8 @@ class TwitterApiIoProvider:
     # ---- network fetch (never in tests) -------------------------------------
 
     def fetch(
-        self, *, root: Path | str, session_state: dict[str, Any]
+        self, *, root: Path | str, session_state: dict[str, Any],
+        offline: bool = False,
     ) -> list[FeedItem]:
         """Poll every handle whose per-tier interval has elapsed.
 
@@ -403,8 +418,16 @@ class TwitterApiIoProvider:
             spend:   {month_key -> {requests, tweets, usd}}
         Mutated in place; the daemon persists it. At the monthly cap the lane
         STOPS and emits a start-of-line ::warning (never via a logger).
+
+        offline=True (dry-run / disarmed): return [] before ANY network request
+        (M2). This lane is billed and dry-run does not persist spend, so a network
+        read here would bill money the cap counter never records.
         """
         import os  # noqa: PLC0415
+
+        if offline:
+            # M2: billed lane — never touch the network in a dry-run/offline tick.
+            return []
 
         api_key = os.environ.get(self.key_env, "").strip()
         if not api_key:
@@ -630,17 +653,23 @@ def build_providers(press_cfg: dict) -> list:
     return providers
 
 
-def poll_all(root: Path | str, press_cfg: dict, session_state: dict[str, Any]) -> list[FeedItem]:
+def poll_all(root: Path | str, press_cfg: dict, session_state: dict[str, Any],
+             *, offline: bool = False) -> list[FeedItem]:
     """Poll every configured press provider once; return all fetched FeedItems.
 
     NOT deduplicated here (the daemon owns the shared seen-ledger across the wire
     RSS lane and the press lane). One dead provider never kills the tick.
     session_state is mutated in place and persisted by the daemon.
+
+    offline=True (dry-run / disarmed): BILLED providers (provider.billed truthy —
+    the twitterapi.io lane) return [] without touching the network so a dry-run
+    bills nothing (M2). Free RSS/JSON mirror providers still fetch.
     """
     items: list[FeedItem] = []
     for prov in build_providers(press_cfg):
         try:
-            items.extend(prov.fetch(root=root, session_state=session_state))
+            items.extend(prov.fetch(root=root, session_state=session_state,
+                                    offline=offline))
         except Exception as exc:  # noqa: BLE001
             print(f"[press_providers] provider {type(prov).__name__} error: {exc}",
                   file=sys.stderr)

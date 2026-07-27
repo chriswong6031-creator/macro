@@ -795,7 +795,8 @@ class TestUniverseCacheAndEnrichment:
     """ENG-9 universe cache + ENG-10 ticker price enrichment."""
 
     def test_universe_cached_by_mtime(self, tmp_path):
-        import pandas as pd
+        pd = pytest.importorskip("pandas")  # skip in the minimal pytest+pyyaml lane
+        pytest.importorskip("pyarrow")      # parquet writer
         import engine.marketing.breaking_relevance as br
         store = tmp_path / "data" / "earnings"
         store.mkdir(parents=True)
@@ -808,7 +809,8 @@ class TestUniverseCacheAndEnrichment:
         assert second is first  # cache hit returns the same frozenset object
 
     def test_enrich_tickers_from_close_store(self, tmp_path):
-        import pandas as pd
+        pd = pytest.importorskip("pandas")  # skip in the minimal pytest+pyyaml lane
+        pytest.importorskip("pyarrow")      # parquet writer
         from engine.marketing.breaking_summary import _enrich_tickers
         store = tmp_path / "data" / "stocks"
         store.mkdir(parents=True)

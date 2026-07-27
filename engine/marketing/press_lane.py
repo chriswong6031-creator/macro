@@ -69,19 +69,89 @@ def _is_satire(item: dict, blocklist_lower: set[str]) -> bool:
     return False
 
 
-def _corroboration_key(item: dict) -> str:
-    """A coarse claim key for counting independent corroborating sources.
+def _emission_key(item: dict) -> str:
+    """Mirror-collapsed identity for EMISSION dedupe (M1).
 
-    For mirror items it is the Truth status id (the same post seen via two
-    mirrors is the SAME claim, not two). For x_relay it is a normalized headline
-    stub so two different handles relaying the same line count as corroboration.
+    The same Truth post seen via two mirrors (trumpstruth + cnn_truth_backfill)
+    carries two distinct FeedItem `id`s (each embeds its mirror source key) but a
+    single `truth_status_id`. Deduping emission on `id` alone therefore double-
+    emits the same post. When a truth_status_id is present the emission identity
+    collapses to `truth:{id}`; otherwise it is the plain item id. This key (not the
+    raw id) is what the seen-ledger records for mirror items, so a later tick from
+    EITHER mirror is recognised as already-emitted.
     """
     tsid = str(item.get("truth_status_id", "")).strip()
     if tsid:
         return f"truth:{tsid}"
+    return str(item.get("id", ""))
+
+
+def _strip_trailing_source_clause(summary: str, source_name: str) -> str:
+    """Remove a trailing '— {source_name}' clause from a summary (m3).
+
+    The deterministic fallback builds '{headline} — {source_name}'; when the body
+    attribution is supplied by the corroboration decision we must not leave the
+    mirror name in the body. Only strips the EXACT trailing '— {source_name}'
+    clause (any dash variant) so a legitimate em-dash inside the headline is kept.
+    """
+    text = str(summary).rstrip()
+    src = str(source_name).strip()
+    if not src:
+        return text
+    for dash in (" — ", " – ", " - ", "—", "–", "-"):
+        suffix = f"{dash}{src}"
+        if text.endswith(suffix):
+            return text[: -len(suffix)].rstrip()
+    return text
+
+
+def _corroboration_key(item: dict) -> str:
+    """A coarse claim key for counting independent corroborating sources.
+
+    For mirror items it is the Truth status id (the same post seen via two
+    mirrors is the SAME claim, not two).
+
+    For hearsay/x_relay items corroboration keys on ENTITY + event_class, NOT raw
+    headline text (M3): two handles wording the same claim differently
+    ("Trump told reporters new China tariffs" vs "Trump: China tariffs to rise")
+    share matched entity `tariffs` and event_class `policy`, so they land on the
+    same claim key and corroborate. A verbatim-headline key never matched such a
+    pair — the ≥2-source instant path was dead. `item` must be a SCORED item
+    (carrying `matched` + `event_class` from score_item); an unscored item falls
+    back to a headline stub so the function never raises.
+    """
+    tsid = str(item.get("truth_status_id", "")).strip()
+    if tsid:
+        return f"truth:{tsid}"
+
+    event_class = str(item.get("event_class", "none"))
+    entity = _primary_entity(item)
+    if entity:
+        return f"claim:{event_class}:{entity}"
+
+    # No named entity/ticker to anchor on → fall back to a normalized headline
+    # stub (unscored item, or a claim with no matched entity). This path never
+    # corroborates a differently-worded pair, which is the conservative default.
     head = re.sub(r"[^a-z0-9 ]", "", str(item.get("headline", "")).lower())
     head = re.sub(r"\s+", " ", head).strip()
     return f"head:{head[:80]}"
+
+
+def _primary_entity(item: dict) -> str:
+    """The single strongest matched entity anchoring a claim, or "".
+
+    Deterministic precedence ticker > macro_key > sector so two items about the
+    same claim resolve to the SAME anchor even when one also matched a weaker
+    signal. Reads score_item's `matched` dict; returns "" when nothing matched.
+    """
+    matched = item.get("matched")
+    if not isinstance(matched, dict):
+        return ""
+    for field in ("tickers", "macro_keys", "sectors"):
+        vals = matched.get(field) or []
+        if vals:
+            return f"{field[:3]}:{sorted(str(v) for v in vals)[0]}"
+    return ""
 
 
 def _independent_source(item: dict) -> str:
@@ -169,6 +239,7 @@ def run_press_tick(
     state: dict[str, Any],
     seen_ids: set[str] | None = None,
     dry_run: bool = False,
+    prime: bool = False,
     llm_override: Any = None,
 ) -> dict[str, list[dict]]:
     """Run one press-lane tick over a batch of FeedItems.
@@ -183,6 +254,13 @@ def run_press_tick(
         seen_ids:   ids already emitted (dedupe). When None, no cross-tick dedupe
                     (the daemon passes its persisted seen-set).
         dry_run:    compute everything, write nothing.
+        prime:      COLD-START (m2). On the very first run — no cursor/seen state —
+                    the batch is a full history snapshot, not real-time news;
+                    emitting it would flood. When True the tick runs the full
+                    pipeline (so the seen-ledger primes and provider cursors, which
+                    the provider fetch already advanced to newest, stay advanced)
+                    but emits NOTHING and logs a start-of-line "[press] primed".
+                    The daemon sets this on true cold-start only.
         llm_override: test seam forwarded to build_breaking_payload.
 
     Returns {emitted, skipped, digest, blocked}.
@@ -221,15 +299,23 @@ def run_press_tick(
     blocked: list[dict] = []
 
     # 1. Satire hard-blocklist at ingestion + dedupe.
+    # Dedupe on the MIRROR-COLLAPSED emission key (M1): the same Truth post seen
+    # via two mirrors shares one truth_status_id, so the second mirror is a
+    # dedupe skip, not a second emission. Also collapse within a single tick so a
+    # trumpstruth + cnn_truth_backfill pair arriving together emits once.
     ingest: list[dict] = []
+    seen_this_tick: set[str] = set()
     for it in items:
         iid = str(it.get("id", ""))
         if _is_satire(it, blocklist_lower):
             blocked.append({"id": iid, "reason": "satire_blocklist"})
             continue
-        if iid and iid in seen:
+        ekey = _emission_key(it)
+        if ekey and (ekey in seen or ekey in seen_this_tick):
             skipped.append({"id": iid, "reason": "dedupe"})
             continue
+        if ekey:
+            seen_this_tick.add(ekey)
         ingest.append(it)
 
     # 2. Score everything (deterministic relevance) and register corroboration.
@@ -247,6 +333,24 @@ def run_press_tick(
 
     # 3. Rank by salience so the flagship top-K takes the strongest items.
     scored.sort(key=lambda x: x.get("salience", 0.0), reverse=True)
+
+    # COLD-START (m2): on the very first run the batch is a full history snapshot
+    # (mirror archives, twitterapi.io last_tweets with no prior cursor), NOT
+    # real-time news — emitting it would flood. "Prime, don't post": record every
+    # item's emission key so the NEXT tick dedupes the history away, keep the
+    # advanced provider cursors + registered corroboration window, emit nothing.
+    if prime:
+        for s in scored:
+            seen.add(_emission_key(s))
+        print(f"[press] primed | {len(scored)} items seen, 0 emitted (cold start)",
+              flush=True)
+        return {
+            "emitted": [],
+            "skipped": [{"id": str(s.get("id", "")), "reason": "primed"} for s in scored],
+            "digest": [],
+            "blocked": blocked,
+            "_seen": sorted(seen),
+        }
 
     for s in scored:
         iid = str(s.get("id", ""))
@@ -279,15 +383,21 @@ def run_press_tick(
 
         headline = payload.get("headline", "")
         summary = payload.get("summary", "")
-        # Attribution from the corroboration decision. The DETERMINISTIC fallback
-        # summary already ends "— {source_name}", so appending would double the
-        # dash-clause; only the LLM summary (mode="llm") needs the attribution
-        # appended (its prompt forbids a trailing source line). This keeps
-        # attribution present without laundering or doubling it.
+        # Body attribution comes from the corroboration DECISION, never from the
+        # mirror name (m3). For a direct-quote the decision says "on Truth Social";
+        # the mirror ("via trumpstruth.org") belongs to provenance/ledger, not the
+        # post body. The deterministic fallback summary ends "— {source_name}",
+        # which for a mirror item names the mirror — strip that clause and replace
+        # it with the decision attribution. The LLM summary (mode="llm") carries no
+        # trailing source line (its prompt forbids one), so the attribution is
+        # appended. Either way the body attributes the ORIGINAL surface, and the
+        # mirror is named only in provenance.
         attribution = decision.get("attribution", "")
         mode = payload.get("mode", "deterministic")
-        if attribution and mode == "llm":
-            body = f"{summary} — {attribution}"
+        source_name = str(s.get("source_name", s.get("source", "")))
+        if attribution:
+            base = _strip_trailing_source_clause(summary, source_name)
+            body = f"{base} — {attribution}"
         else:
             body = summary
 
@@ -298,6 +408,9 @@ def run_press_tick(
             "corroborated_sources": n_sources,
             "salience": s.get("salience"),
             "event_class": s.get("event_class"),
+            # The mirror/relay surface is recorded HERE (provenance/ledger), never
+            # in the post body (m3): e.g. "via trumpstruth.org".
+            "via_source": source_name,
         }
 
         out_item = _write_outbox_item(
@@ -307,7 +420,9 @@ def run_press_tick(
             dry_run=dry_run,
         )
         counter["count"] = int(counter["count"]) + 1
-        seen.add(iid)
+        # Record the MIRROR-COLLAPSED key so a later tick from EITHER mirror is a
+        # dedupe skip. out_item still carries the raw id for the outbox filename.
+        seen.add(_emission_key(s))
         emitted.append(out_item)
 
     return {
@@ -315,6 +430,10 @@ def run_press_tick(
         "skipped": skipped,
         "digest": digest,
         "blocked": blocked,
+        # The full seen-set AFTER this tick, including MIRROR-COLLAPSED emission
+        # keys (M1). The daemon persists this verbatim so cross-tick dedupe works
+        # for mirror pairs — recording out_item["id"] alone would miss the collapse.
+        "_seen": sorted(seen),
     }
 
 

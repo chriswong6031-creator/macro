@@ -158,8 +158,16 @@ def _save_press_seen(seen: dict) -> None:
 # Single earnings tick (UNCHANGED behaviour)
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _run_one_tick(*, dry_run: bool) -> dict:
-    """Run one earnings fetch-and-process tick.  Returns the TickResult dict."""
+def _run_one_tick(*, dry_run: bool, armed: bool = True) -> dict:
+    """Run one earnings fetch-and-process tick.  Returns the TickResult dict.
+
+    armed=False (disarmed + --dry-run inspection, m1): earnings_feed.fetch_events
+    is a network read — a DISARMED tick must NOT reach it. We process an EMPTY
+    event batch instead so the pipeline still runs offline-safe (parity with the
+    press lane, whose billed twitterapi.io fetch is likewise skipped offline). The
+    dry-run kill-switch bypass is for inspecting the pipeline, not for making
+    upstream data reads while dark.
+    """
     from engine.marketing.earnings_feed import fetch_events
     from engine.marketing.fastlane import run_tick
 
@@ -169,7 +177,7 @@ def _run_one_tick(*, dry_run: bool) -> dict:
     from datetime import timedelta
     since = now - timedelta(minutes=30)
 
-    events = fetch_events(since)
+    events = fetch_events(since) if armed else []
     result = run_tick(events, root=ROOT, now=now, dry_run=dry_run)
     return result
 
@@ -193,17 +201,32 @@ def _run_press_tick(*, dry_run: bool) -> dict:
     marketing_cfg = _load_yaml(ROOT / "config" / "marketing.yml")
     press_cfg = _load_yaml(ROOT / "config" / "press_sources.yml")
 
+    # COLD-START (m2): true first run = neither the state nor the seen ledger file
+    # exists yet. The first batch is a full history snapshot (mirror archives,
+    # twitterapi.io last_tweets with no cursor); we PRIME (seed cursors + seen,
+    # emit nothing) rather than flood. Detect BEFORE loading, which creates dicts.
+    cold_start = not _PRESS_STATE_PATH.exists() and not _PRESS_SEEN_PATH.exists()
+
     # Persisted daemon-local state (cursors, ETags, spend, flagship counter, seen).
     state = _load_press_state()
     seen = _load_press_seen()
+
+    # M2: emission is only allowed when the outbox kill-switch is on AND not
+    # dry-run. Compute this BEFORE polling so a dry-run/disarmed tick can run the
+    # BILLED twitterapi.io lane OFFLINE — poll_all(offline=True) returns [] for it
+    # without any network read (its spend is never persisted in dry-run, so a real
+    # read would bill money the monthly cap counter never sees). Free RSS/JSON
+    # mirror + wire lanes still fetch so the pipeline stays inspectable.
+    emit_allowed = publish_enabled() and not dry_run
+    effective_dry = not emit_allowed
 
     # DRY-RUN must be non-consuming: an inspection run may never advance the wire
     # seen-ledger / provider cursors, or it would silently dedupe those items away
     # from the next LIVE run. Snapshot the wire ledger dir so we can restore it.
     _wire_ledger_snapshot = _snapshot_breaking_ledger() if dry_run else None
 
-    # 1. Poll the wire RSS lane (breaking_feed owns its own local seen-ledger; we
-    #    dedupe again below on the shared press seen so a wire item and a mirror
+    # 1. Poll the wire RSS lane (FREE; breaking_feed owns its own local seen-ledger;
+    #    we dedupe again below on the shared press seen so a wire item and a mirror
     #    item never double-emit). poll_all returns NEW wire items only.
     wire_items: list = []
     try:
@@ -212,20 +235,21 @@ def _run_press_tick(*, dry_run: bool) -> dict:
         logger.error("[press] wire poll_all error (continuing): %s", exc)
 
     # 2. Poll the press providers (mirror + x_relay). session_state carried inside
-    #    the same press state dict, mutated in place, persisted below.
+    #    the same press state dict, mutated in place, persisted below. offline=
+    #    effective_dry keeps the BILLED twitterapi.io lane off the network in a
+    #    dry-run/disarmed tick (M2); the free mirror providers still fetch.
     provider_state = state.setdefault("providers", {})
     press_items: list = []
     try:
-        press_items = press_providers.poll_all(ROOT, press_cfg, provider_state)
+        press_items = press_providers.poll_all(
+            ROOT, press_cfg, provider_state, offline=effective_dry
+        )
     except Exception as exc:  # noqa: BLE001
         logger.error("[press] provider poll_all error (continuing): %s", exc)
 
     all_items = list(wire_items) + list(press_items)
 
-    # 3. Emission is only allowed when the outbox kill-switch is on AND not dry-run.
-    emit_allowed = publish_enabled() and not dry_run
-    effective_dry = not emit_allowed
-
+    # 3. Run the tick. On cold-start we PRIME (emit nothing, seed seen/cursors).
     result = run_press_tick(
         all_items,
         root=ROOT,
@@ -235,13 +259,24 @@ def _run_press_tick(*, dry_run: bool) -> dict:
         state=state,
         seen_ids=set(seen.keys()),
         dry_run=effective_dry,
+        prime=cold_start,
     )
 
-    # 4. Advance the seen-ledger for emitted items (only when we actually wrote).
-    if emit_allowed:
+    # NOTE (m5): single-daemon deployment assumption. The seen-ledger + provider
+    # state are read-modify-written non-atomically across this function; two
+    # concurrent daemons on the same data/marketing/press/ dir could race. The
+    # systemd unit runs exactly ONE instance, so this is safe by deployment — do
+    # not add cross-process locking without also changing that assumption.
+
+    # 4. Advance the seen-ledger. Use run_press_tick's returned _seen (the full
+    #    set AFTER the tick, including MIRROR-COLLAPSED emission keys — M1), not
+    #    out_item["id"], so cross-tick mirror dedupe persists. Written on a live
+    #    emit OR a cold-start prime (priming must persist the seeded seen-set, else
+    #    the next tick re-floods). NEVER in a dry-run — it must stay non-consuming.
+    if (emit_allowed or cold_start) and not dry_run:
         now_iso = now.strftime("%Y-%m-%dT%H:%M:%SZ")
-        for it in result.get("emitted", []):
-            seen[str(it.get("id", ""))] = now_iso
+        for key in result.get("_seen", []):
+            seen.setdefault(str(key), now_iso)
         _save_press_seen(seen)
 
     # 5. Persist provider cursors / spend / flagship counter — but NOT in dry-run,
@@ -333,8 +368,14 @@ def _log_press_tick(result: dict, now: datetime, *, dry_run: bool) -> None:
             prov.get("corroboration_gate", "?"),
             (item.get("text") or {}).get("headline", "")[:60],
         )
+    # DEFERRED (m4): digest items are LOGGED-ONLY in B1. There is NO next-morning
+    # digest sink yet — a real digest surface (a queued digest ledger + a morning
+    # roll-up post) is a chartered follow-on, not part of this spine. These lines
+    # are the only record a digest-gated claim leaves; do not read them as "queued
+    # for a digest that exists".
     for d in result.get("digest", []):
-        logger.info("[press] -> digest %s | %s", d.get("id", "?"), d.get("reason", ""))
+        logger.info("[press] -> digest (logged-only, no sink — m4) %s | %s",
+                    d.get("id", "?"), d.get("reason", ""))
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -374,7 +415,8 @@ def main(argv: list[str] | None = None) -> int:
     # Kill-switch: unless we are in a pure --dry-run (which writes nothing and is
     # the operator's way to inspect the pipeline), a live run requires the fast
     # lane to be explicitly armed. A dry-run is a safe no-op regardless.
-    if not args.dry_run and os.environ.get(_KILL_SWITCH_ENV) != "1":
+    armed = os.environ.get(_KILL_SWITCH_ENV) == "1"
+    if not args.dry_run and not armed:
         print(
             f"[fastlane_daemon] {_KILL_SWITCH_ENV} != '1' — fast lane disabled. "
             "Set the env var to enable (or pass --dry-run to inspect). Exiting 0.",
@@ -383,15 +425,17 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     logger.info(
-        "[fastlane_daemon] starting | lane=%s once=%s dry_run=%s interval=%ds",
-        args.lane, args.once, args.dry_run, args.interval,
+        "[fastlane_daemon] starting | lane=%s once=%s dry_run=%s armed=%s interval=%ds",
+        args.lane, args.once, args.dry_run, armed, args.interval,
     )
 
     while True:
         now = datetime.now(timezone.utc)
         try:
             if args.lane in ("earnings", "all"):
-                result = _run_one_tick(dry_run=args.dry_run)
+                # m1: a DISARMED --dry-run must NOT reach earnings_feed.fetch_events
+                # (network). Passing armed gates the fetch to offline-safe when dark.
+                result = _run_one_tick(dry_run=args.dry_run, armed=armed)
                 _log_tick(result, now, dry_run=args.dry_run)
             if args.lane in ("press", "all"):
                 press_result = _run_press_tick(dry_run=args.dry_run)
@@ -404,6 +448,11 @@ def main(argv: list[str] | None = None) -> int:
         if args.once:
             break
 
+        # TODO (m6): a failed poll (network error caught above) still sleeps the
+        # full interval — no backoff/jitter at the daemon level. The per-source
+        # conditional-GET backoff (press_providers._conditional_get) softens this
+        # for RSS/JSON, but a persistently failing tick burns the fixed interval.
+        # Acceptable for B1; revisit with an adaptive interval if it matters.
         time.sleep(args.interval)
 
     return 0

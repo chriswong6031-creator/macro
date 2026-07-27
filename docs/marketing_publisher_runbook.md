@@ -338,8 +338,15 @@ them with citation, and emits `kind="breaking"` outbox items with
   independent sources within a window** to instant-publish, else it is downgraded to
   attributed "…reporting:" phrasing.
 - A **single-wire uncorroborated political/geopolitical** claim NEVER
-  instant-publishes — it falls to the next-morning digest.
+  instant-publishes — it is routed to the **digest** gate (see below).
 - Satire/parody accounts (seed: **HalfwayPost**) are hard-blocked at ingestion.
+
+> **Digest is logged-only in B1 (no sink yet).** A claim gated to `digest` is
+> written to the tick log (`[press] -> digest (logged-only, no sink — m4) …`) and
+> nothing more. There is **no next-morning digest surface** — no digest ledger, no
+> roll-up post. A real digest sink is a **chartered follow-on**, not part of this
+> spine. Read "falls to the digest" as "does NOT instant-publish", not as "queued
+> for a digest that exists".
 
 **Flagship interim lane.** Only the top **`wire.flagship_top_k_per_day`** (default 3)
 highest-salience items/day, above `wire.flagship_salience_floor` (default 70), may
@@ -353,13 +360,27 @@ never the repo.
   → the pipeline still runs (scores, corroborates, would-summarize) but emits nothing:
   a clean no-op tick.
 
-**Dry-run (no network writes, safe with switches off):**
+**Dry-run (no spend, no state writes, no billed reads — safe with switches off):**
 ```
 python -m scripts.marketing_fastlane_daemon --lane press --once --dry-run
 ```
 Prints the full would-emit pipeline (emitted/skipped/digest/blocked counts + a line
 per would-emit item with salience + corroboration gate). `--dry-run` bypasses the
 hard kill-switch exit precisely so the operator can inspect the pipeline while dark.
+
+A dry-run is **non-consuming but not fully offline** (M2 clarification). Precisely:
+- **No billed reads.** The twitterapi.io lane is billed per request and its spend
+  is not persisted in a dry-run, so a dry-run **never touches** it
+  (`poll_all(offline=True)` returns `[]` for it) — repeated dry-runs cost $0.
+- **Free feeds still poll.** The wire RSS lane and the trumpstruth/CNN mirror feeds
+  are free (no per-request charge); a dry-run may read them to preview the pipeline.
+- **No state writes.** Provider cursors, spend accounting, the flagship counter,
+  the seen-ledger, and the wire lane's own ledger are all left untouched (the wire
+  ledger is snapshotted and restored), so a dry-run never dedupes items away from a
+  later live run.
+- **Disarmed parity.** With `MARKETING_FASTLANE_ENABLED` unset, a `--dry-run` of the
+  **earnings** lane likewise does NOT reach `earnings_feed.fetch_events` (m1) — a
+  disarmed inspection stays on offline-safe paths only.
 
 **Local-only state** lives under `data/marketing/press/` (gitignored): provider
 cursors, conditional-GET ETags, twitterapi.io spend accounting, the flagship
