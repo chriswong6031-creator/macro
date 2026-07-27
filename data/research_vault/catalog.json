@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-27T15:35:40.808581+00:00",
-  "count": 199,
+  "generated_at": "2026-07-27T16:51:10.050073+00:00",
+  "count": 202,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -21,6 +21,57 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-9a8of85bqed-671826",
+      "title": "JPM US FOMC preview 1",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-27T16:50:05Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-apgd51lyzsd-1f9416",
+      "title": "JPM JPM Daily Credit Strategy 1",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-27T16:50:04Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 17,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-tez6s9mljz6-fc0e3f",
+      "title": "DB CoTD From Mapping Prices to Mapping Power",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-27T16:34:25Z",
+      "summary_points": [
+        "**Debt/GDP Vulnerability**: Rising yields threaten Japan's declining debt/GDP trend (post-2010), risking fiscal sustainability if r > g persists amid policy-driven investment.",
+        "**Policy-Driven Transformation**: ¥370T public-private investment targets underinvestment reversal, positioning Japan as a cheap developed economy with fiscal/industrial strategy focus.",
+        "**Policy & Yield Risk Nexus**: GPFI capital redirection (bullish JPY) vs.",
+        "BoJ bond support (bearish JPY) dictates USD/JPY; global yield rises risk undoing fiscal progress.",
+        "**Capital Flow Catalysts**: $15T household cash and $1.8T GPFI overseas portfolio create significant flow risks; domestic asset redirection could trigger yen/asset price shifts amid BoJ purchases."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-bsw5n8dbnri-2c84f6",
       "title": "The Backstop Boys",
