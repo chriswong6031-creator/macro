@@ -286,8 +286,66 @@ def _run_press_tick(*, dry_run: bool) -> dict:
     else:
         _restore_breaking_ledger(_wire_ledger_snapshot)
 
+    # 6. B4a wires.json sink — write the news.html live-wire rail payload from
+    #    the tick's rail-eligible items. Written to the VPS public live dir (or a
+    #    dev data dir), NEVER the repo/git tree. Skipped in dry-run (non-consuming).
+    if not dry_run:
+        try:
+            _write_wires_sink(result.get("rail", []), press_cfg, now)
+        except Exception as exc:  # noqa: BLE001
+            logger.error("[press] wires.json sink error (continuing): %s", exc)
+
     result["_emit_allowed"] = emit_allowed
     return result
+
+
+# Where the B4a rail payload is published. VPS public live dir first (served to
+# registered users via the @reg_asset default-deny route — see site_access.yml),
+# repo-relative dev fallback for local runs/tests. NEVER a git-tracked path.
+_WIRES_SINK_PATHS: tuple[str, ...] = (
+    "/var/lib/macro-live/public/live/wires.json",
+    "data/marketing/press/wires.json",
+)
+
+
+def _write_wires_sink(rail_items: list, press_cfg: dict, now: datetime) -> None:
+    """Atomically write the wires.v1 rail payload (tmp + fsync + os.replace).
+
+    Uses vps_live_orchestrator.atomic_write_json (the orchestrator's atomic
+    publish pattern). Picks the first WRITABLE candidate directory: the VPS live
+    dir when it exists, else the repo-relative dev path. This is a display-tier
+    live artifact (like site/live/quotes.json), never a repo/git write.
+    """
+    from pathlib import Path as _Path  # noqa: PLC0415
+
+    wire_cfg = (press_cfg or {}).get("wire", {}) if isinstance(press_cfg, dict) else {}
+    candidates = list(wire_cfg.get("wires_sink_paths") or _WIRES_SINK_PATHS)
+
+    target: _Path | None = None
+    for cand in candidates:
+        p = _Path(cand)
+        if not p.is_absolute():
+            p = ROOT / cand
+        # Choose a candidate whose parent dir exists OR can be created.
+        if p.parent.exists():
+            target = p
+            break
+        try:
+            p.parent.mkdir(parents=True, exist_ok=True)
+            target = p
+            break
+        except OSError:
+            continue
+    if target is None:
+        return
+
+    payload = {
+        "schema": "wires.v1",
+        "updated_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "items": list(rail_items or []),
+    }
+    from scripts.vps_live_orchestrator import atomic_write_json  # noqa: PLC0415
+    atomic_write_json(target, payload, mode=0o644)
 
 
 def _snapshot_breaking_ledger() -> dict[str, str | None]:

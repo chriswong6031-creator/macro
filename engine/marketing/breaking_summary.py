@@ -126,14 +126,24 @@ def _count_sentences(text: str) -> int:
 # validate_summary — adversarial number + stance checker
 # ─────────────────────────────────────────────────────────────────────────────
 
-def validate_summary(summary_text: str, item: dict) -> list[str]:
+def validate_summary(
+    summary_text: str,
+    item: dict,
+    *,
+    max_chars: int = _MAX_SUMMARY_CHARS,
+    max_sentences: int = _MAX_SUMMARY_SENTENCES,
+    skip_length_check: bool = False,
+) -> list[str]:
     """Validate a summary against the source item.
 
     Rules (stricter than validate_copy rule #5):
     1. Every digit-containing token in the summary must appear verbatim in
        item headline + body_snippet. Zero tolerance — no bare-integer exemption.
     2. Stance/interpretation vocab ban (module-level tuple _STANCE_BANNED).
-    3. Length: ≤ _MAX_SUMMARY_SENTENCES sentences AND ≤ _MAX_SUMMARY_CHARS chars.
+    3. Length: ≤ max_sentences sentences AND ≤ max_chars chars. Defaults are the
+       flash budget (2 sentences, 320 chars); the B2-COPY wire_deep format passes
+       the wider two-paragraph budget so a rich source body is not force-failed
+       back to the deterministic fallback.
     4. Also runs copywriter.validate_copy (headline="", body=summary_text,
        ctx with type="event", numbers_whitelist from source, emoji_budget=0)
        and merges violations.
@@ -180,16 +190,19 @@ def validate_summary(summary_text: str, item: dict) -> list[str]:
             if not re.search(word_pat, corpus_lower, re.IGNORECASE):
                 violations.append(f"stance/interpretation word '{word}' in summary")
 
-    # 3. Length checks
-    if len(summary_text) > _MAX_SUMMARY_CHARS:
-        violations.append(
-            f"summary too long: {len(summary_text)} chars (max {_MAX_SUMMARY_CHARS})"
-        )
-    sentence_count = _count_sentences(summary_text)
-    if sentence_count > _MAX_SUMMARY_SENTENCES:
-        violations.append(
-            f"summary too many sentences: {sentence_count} (max {_MAX_SUMMARY_SENTENCES})"
-        )
+    # 3. Length checks. skip_length_check (wire_deep) defers the char/sentence
+    #    budget to wire_format.validate_length, which enforces the 400-700 char
+    #    two-paragraph budget on the FINAL composed post.
+    if not skip_length_check:
+        if len(summary_text) > max_chars:
+            violations.append(
+                f"summary too long: {len(summary_text)} chars (max {max_chars})"
+            )
+        sentence_count = _count_sentences(summary_text)
+        if sentence_count > max_sentences:
+            violations.append(
+                f"summary too many sentences: {sentence_count} (max {max_sentences})"
+            )
 
     # 4. Run copywriter.validate_copy on the summary text
     try:
@@ -203,9 +216,14 @@ def validate_summary(summary_text: str, item: dict) -> list[str]:
                 "emoji_budget": 0,
             },
         )
-        # Filter out cashtag and theme_list rules that don't apply here
+        # Filter out cashtag and theme_list rules that don't apply here. In
+        # wire_deep mode also drop validate_copy's 275-char social-post length
+        # rule — the wide two-paragraph budget is enforced separately (as above),
+        # and validate_copy's cap would force every deep body to the fallback.
         for v in cw_violations:
             if "cashtag" in v or "theme_list" in v:
+                continue
+            if skip_length_check and "too long" in v:
                 continue
             violations.append(f"[validate_copy] {v}")
     except Exception as exc:  # noqa: BLE001
@@ -218,11 +236,18 @@ def validate_summary(summary_text: str, item: dict) -> list[str]:
 # LLM-gated summarizer (mirrors copywriter.write_posts_llm gate exactly)
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _llm_summarize(item: dict, cfg: dict) -> str | None:
+def _llm_summarize(item: dict, cfg: dict, wire: dict | None = None) -> str | None:
     """Call the LLM to produce a ≤2-sentence restate-only summary.
 
     Returns the summary string on success, None on any failure.
     NEVER called when MARKETING_LLM_ENABLED is not set (env guard).
+
+    `wire` (B2-COPY, optional): when supplied, the summarizer runs in WIRE VOICE
+    mode — the model_key is resolved per salience TIER (sonnet flagship / haiku
+    volume) via wire_voice.resolve_model_key, and the §3 key-phrase selection law
+    is appended to the system prompt. The numbers-whitelist + AI-tell validation
+    still runs after generation (this only STEERS the model, never relaxes a gate).
+    Absent => the plain B1 breaking summarizer (unchanged).
     """
     breaking_cfg = cfg if "llm" in cfg else cfg.get("breaking", {})
     llm_cfg = breaking_cfg.get("llm", {})
@@ -244,6 +269,12 @@ def _llm_summarize(item: dict, cfg: dict) -> str | None:
                 .get("llm_models", {}) or {}
             )
         model_key = llm_cfg.get("model_key", "marketing_copy")
+        if wire is not None:
+            try:
+                from engine.marketing.wire_voice import resolve_model_key  # noqa: PLC0415
+                model_key = resolve_model_key(item, cfg=wire)
+            except Exception:  # noqa: BLE001
+                pass
         model_id = llm_models.get(model_key, "")
         if not model_id:
             return None
@@ -267,6 +298,20 @@ def _llm_summarize(item: dict, cfg: dict) -> str | None:
             "- Do NOT end with a source line — we append that automatically.\n"
             "- Output ONLY the summary text, no JSON, no preamble."
         )
+        # B2-COPY wire voice: append the §3 key-phrase selection law + (for the
+        # wire_deep format) the two-paragraph instruction. Steering only — the
+        # numbers whitelist + AI-tell validation still runs after generation.
+        if wire is not None:
+            try:
+                from engine.marketing.wire_voice import (  # noqa: PLC0415
+                    key_phrase_prompt_law, wire_deep_prompt_law,
+                )
+                if str(wire.get("_format", "flash")) == "wire_deep":
+                    system_prompt += "\n\n" + wire_deep_prompt_law()
+                else:
+                    system_prompt += "\n\n" + key_phrase_prompt_law()
+            except Exception:  # noqa: BLE001
+                pass
 
         headline = item.get("headline", "")
         snippet = item.get("body_snippet", "")
@@ -347,6 +392,7 @@ def summarize_item(
     cfg: dict,
     *,
     _llm_override: Any = None,  # test seam: pass a callable(item, cfg) -> str|None
+    wire: dict | None = None,   # B2-COPY: wire-voice tier/prompt config (optional)
 ) -> dict:
     """Summarize a scored FeedItem; return summary dict.
 
@@ -374,14 +420,28 @@ def summarize_item(
         except Exception:  # noqa: BLE001
             llm_text = None
     else:
-        llm_text = _llm_summarize(item, cfg)
+        llm_text = _llm_summarize(item, cfg, wire)
 
     violations_seen: list[str] = []
     mode = "deterministic"
     summary = _deterministic_summary(item)
 
+    # B2-COPY: the wire_deep format is two short paragraphs (400-700 chars), so it
+    # validates against the wider budget — otherwise a rich source body is force-
+    # failed back to the deterministic fallback and wire_deep can never fill.
+    is_deep = (isinstance(wire, dict)
+               and str(wire.get("_format", "flash")) == "wire_deep")
+    max_chars = _MAX_SUMMARY_CHARS
+    max_sentences = _MAX_SUMMARY_SENTENCES
+    if is_deep:
+        max_chars = int(wire.get("deep_summary_max_chars", 700))
+        max_sentences = int(wire.get("deep_summary_max_sentences", 6))
+
     if llm_text is not None:
-        violations = validate_summary(llm_text, item)
+        violations = validate_summary(
+            llm_text, item, max_chars=max_chars, max_sentences=max_sentences,
+            skip_length_check=is_deep,
+        )
         if not violations:
             summary = llm_text
             mode = "llm"
@@ -412,6 +472,7 @@ def build_breaking_payload(
     *,
     root: Path | str | None = None,
     _llm_override: Any = None,
+    wire: dict | None = None,   # B2-COPY: wire-voice tier/prompt config (optional)
 ) -> dict:
     """Build the full outbox-shaped breaking payload.
 
@@ -432,7 +493,7 @@ def build_breaking_payload(
         card_svg: str        # "" if renderer not available yet
         provenance: {source_url: str, source: str, ingested_at: str}
     """
-    summary_result = summarize_item(item, cfg, _llm_override=_llm_override)
+    summary_result = summarize_item(item, cfg, _llm_override=_llm_override, wire=wire)
 
     tickers = []
     matched = item.get("matched") or {}
