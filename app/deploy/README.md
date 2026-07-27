@@ -38,6 +38,22 @@ That's it — once it prints `KEY_ADDED`, the agent can SSH in with
    add `mastermind-x.com` as a self-hosted app with an email-OTP policy. Instant
    zero-code login wall until the Supabase product auth ships in Slice 2.
 
+### Brand alias: mastermindx.ai
+
+`mastermindx.ai` is a redirect-only brand alias. It must never serve a second
+copy of the site while `www.mastermind-x.com` remains canonical.
+
+In the authoritative `mastermindx.ai` DNS zone, remove the registrar parking
+records and configure:
+
+- apex `A` → `146.190.142.17`
+- `www` `CNAME` → `mastermindx.ai`
+
+Keep these records DNS-direct (not proxied). Caddy obtains public ACME
+certificates for both names and permanently redirects HTTP and HTTPS requests
+straight to `https://www.mastermind-x.com{uri}`, preserving the path and query
+without a redirect chain.
+
 ## Step 3 — provision (agent runs this once Step 1 is done)
 
 Public repo, so the droplet self-clones:
@@ -73,6 +89,10 @@ variable `VPS_LIVE_PRIMARY=true` until the timers have passed a full-session soa
 curl -ksI https://146.190.142.17/ | head -5
 # public domain via Cloudflare:
 curl -sI https://mastermind-x.com/ | head -10        # expect 200 + x-robots-tag: noindex
+# redirect-only .ai brand alias (after DNS propagation):
+curl -sI 'https://mastermindx.ai/macro.html?from=alias' \
+  | grep -iE '^(HTTP/|location:)'
+# expect 308 + location: https://www.mastermind-x.com/macro.html?from=alias
 ```
 
 ## Files

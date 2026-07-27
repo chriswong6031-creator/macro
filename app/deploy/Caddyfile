@@ -419,6 +419,21 @@ mastermind-x.com {
 	redir https://www.mastermind-x.com{uri} permanent
 }
 
+# ---- mastermindx.ai — brand alias, never a second copy of the site ------------
+# Keep the .ai domain as a direct, permanent alias while www.mastermind-x.com
+# remains canonical. Both apex and www point DNS-direct to this VPS, so Caddy
+# provisions public ACME certificates (no `tls internal`). Redirect straight to
+# the final canonical host — not via mastermind-x.com — to avoid a redirect chain.
+# `{uri}` preserves the full path and query string.
+http://mastermindx.ai, http://www.mastermindx.ai {
+	redir https://www.mastermind-x.com{uri} permanent
+}
+
+mastermindx.ai, www.mastermindx.ai {
+	header Strict-Transport-Security "max-age=31536000"
+	redir https://www.mastermind-x.com{uri} permanent
+}
+
 # ---- plain-HTTP (:80) mirror — the 2026-07-11 /china.html poisoning fix ------
 # With `auto_https disable_redirects` and https-only site blocks, Caddy answered
 # ANY plain-HTTP request for these hosts with its IMPLICIT catch-all: an empty
