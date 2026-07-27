@@ -846,3 +846,119 @@ def test_the_landing_loads_the_shim_after_the_slots():
 
 def test_the_landing_pair_stays_byte_identical():
     assert LANDING.read_bytes() == SITE_LANDING.read_bytes()
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 9. The exposure actually leaves the page
+# ═══════════════════════════════════════════════════════════════════════════
+
+_BEACON_HARNESS = r"""
+const path = require('path');
+const cfg = JSON.parse(process.argv[1]);
+const host = process.argv[2];
+const withMmTrack = process.argv[3] === 'with-mmtrack';
+const useSendBeacon = process.argv[4] !== 'no-sendbeacon';
+const sent = [], tracked = [];
+const el = { _html: 'control', getAttribute: k => (k === 'data-adtest-slot' ? 'headline' : null),
+             setAttribute() {}, set innerHTML(v) { this._html = v; }, get innerHTML() { return this._html; },
+             set textContent(v) { this._html = v; }, get textContent() { return this._html; } };
+global.Blob = class { constructor(parts) { this.parts = parts; } };
+// Node >=21 ships a read-only `navigator` global, so `global.navigator = {...}`
+// is silently ignored — the first version of this harness "proved" no beacon was
+// sent when the shim had actually fallen through to fetch. Define it properly.
+Object.defineProperty(globalThis, 'navigator', {
+  value: useSendBeacon ? { sendBeacon: (url, body) => { sent.push([url, String(body.parts[0])]); return true; } } : {},
+  configurable: true, writable: true,
+});
+global.fetch = (url, opts) => { sent.push([url, String(opts && opts.body)]); return Promise.resolve(); };
+global.location = { hostname: host, pathname: '/' };
+global.window = {
+  localStorage: (() => { const m = {}; return { getItem: k => m[k] || null, setItem: (k, v) => { m[k] = String(v); } }; })(),
+  crypto: { randomUUID: () => 'FIXED-UNIT-ID' },
+  location: global.location,
+};
+if (withMmTrack) global.window.mmTrack = (t, e) => tracked.push([t, e]);
+global.document = {
+  readyState: 'complete', cookie: '',
+  getElementById: id => (id === 'mm-adtest' ? { textContent: JSON.stringify(cfg) } : null),
+  querySelectorAll: () => [el], addEventListener: () => {},
+};
+global.setTimeout = (fn) => fn();
+require(path.join(process.cwd(), 'templates', 'adtest.js'));
+console.log(JSON.stringify({ sent, tracked, arm: (global.window.mmAdtest || {}).creative }));
+"""
+
+
+def _run_beacon(host: str, *, with_mmtrack: bool = False, send_beacon: bool = True) -> dict:
+    cfg = {"arena_id": "hero-1", "status": "running", "mode": "live", "holdout": 0.0,
+           "arms": [{"id": "adc-only", "w": 1.0, "copy": {"headline": "variant"}}]}
+    out = subprocess.run(
+        ["node", "-e", _BEACON_HARNESS, json.dumps(cfg), host,
+         "with-mmtrack" if with_mmtrack else "-",
+         "-" if send_beacon else "no-sendbeacon"],
+        cwd=ROOT, capture_output=True, text=True, timeout=120,
+    )
+    assert out.returncode == 0, f"node failed:\n{out.stderr}"
+    return json.loads(out.stdout)
+
+
+@needs_node
+def test_the_exposure_is_sent_even_with_no_mmtrack():
+    """THE LANDING DOES NOT LOAD theme.js. An earlier version waited for mmTrack and
+    gave up quietly — the hero test assigned visitors, rewrote copy, and recorded
+    ZERO exposures. A page that looks perfect while measuring nothing."""
+    r = _run_beacon("www.mastermind-x.com")
+    assert r["arm"] == "adc-only"
+    assert len(r["sent"]) == 1, "no exposure left the page"
+    url, body = r["sent"][0]
+    assert url == "/api/collect"
+    payload = json.loads(body)["events"][0]
+    assert payload["type"] == "ad_exposure"
+    assert payload["meta"]["arena"] == "hero-1"
+    assert payload["meta"]["creative"] == "adc-only"
+    # The row carries no identity of its own — the server stamps visitor_id.
+    assert "visitor_id" not in payload and "u" not in payload
+
+
+@needs_node
+def test_mmtrack_is_still_preferred_where_it_exists():
+    """Pages that DO load theme.js keep batching through it — one row, not two."""
+    r = _run_beacon("www.mastermind-x.com", with_mmtrack=True)
+    assert len(r["tracked"]) == 1 and r["tracked"][0][0] == "ad_exposure"
+    assert r["sent"] == [], "double-reported: batched AND beaconed"
+
+
+@needs_node
+def test_no_beacon_off_the_canonical_origin():
+    """/api/collect is served only by the canonical host; a preview run must record
+    nothing rather than fire at an endpoint that is not there."""
+    for host in ("localhost", "127.0.0.1", "example.com", "mastermind-x.com.evil.test"):
+        r = _run_beacon(host)
+        assert r["sent"] == [], f"beaconed from {host}"
+        assert r["arm"] == "adc-only", f"{host}: copy should still be applied"
+
+
+def test_the_landing_carries_no_dependency_on_theme_js():
+    """A guard for the actual defect: the landing pulls only onboard.js + adtest.js,
+    so anything here that needs window.mmTrack is dead code on this page."""
+    html = LANDING.read_text(encoding="utf-8")
+    srcs = re.findall(r'<script[^>]*src="([^"]+)"', html)
+    assert not any("theme.js" in s for s in srcs), (
+        "the landing now loads theme.js — re-check whether adtest.js should defer "
+        "to mmTrack batching instead of beaconing directly"
+    )
+    code = _js_code_only(SHIM.read_text(encoding="utf-8"))
+    assert "/api/collect" in code, "the shim cannot report without theme.js"
+
+
+@needs_node
+def test_the_fetch_fallback_carries_same_origin_credentials():
+    """Without sendBeacon the shim posts with fetch — and the request must send the
+    mm_aid cookie, or the server has no identity to stamp on the row."""
+    r = _run_beacon("www.mastermind-x.com", send_beacon=False)
+    assert len(r["sent"]) == 1, "no exposure left the page on the fetch path"
+    url, body = r["sent"][0]
+    assert url == "/api/collect"
+    assert json.loads(body)["events"][0]["type"] == "ad_exposure"
+    code = _js_code_only(SHIM.read_text(encoding="utf-8"))
+    assert "credentials: 'same-origin'" in code
