@@ -1,15 +1,15 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-07-27T15:13:18.198994+00:00",
-  "posts_seen": 6,
-  "seen_total": 62,
+  "as_of": "2026-07-27T17:55:24.685444+00:00",
+  "posts_seen": 7,
+  "seen_total": 63,
   "evaluated": 1,
   "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
   "gate_scores": [
     {
-      "id": "wh-2026-07-27-first-lady-melania-trump-announces-opening-of-christmas-volunteer-performer-appl",
-      "importance": 0,
+      "id": "wh-2026-07-27-made-in-michigan-again-president-trumps-trade-agenda-is-supercharging-american-a",
+      "importance": 20,
       "activated": false,
       "degraded_reason": "served_by:deepseek"
     }
