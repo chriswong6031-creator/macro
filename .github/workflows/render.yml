@@ -38,7 +38,7 @@ on:
         description: "Which pages to rebuild from committed data (all = every page)"
         type: choice
         default: all
-        options: [all, macro, intl, china, hk, canada, markets, gex, baskets, sits]
+        options: [all, macro, intl, china, hk, markets, gex, baskets, sits]
       runner:
         description: "Runner label — re-dispatch with macstudio if the render PC (pc-render-1) is down (GHA has no automatic label fallback)"
         type: choice
