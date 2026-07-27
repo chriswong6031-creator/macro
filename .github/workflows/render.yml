@@ -622,6 +622,48 @@ jobs:
           python3 scripts/check_ms_board_coherence.py && exit 0
           python3 scripts/check_ms_board_coherence.py --heal-from HEAD || true
           exit 1
+      - name: publish rebuilt US stockdata to R2 (browser data plane)
+        # build_site creates a complete, fresh site/stockdata tree for every scope
+        # containing macro (including all). The browser reads that tree from R2, not
+        # from the committed site/, so discarding it here left engine/template changes
+        # wired into the page but inert until the next successful nightly. Publish the
+        # exact tree that just passed the render guards. --no-manifest is mandatory:
+        # this lane owns the rebuilt US objects, not the full multi-market manifest.
+        # Unlike the nightly's best-effort sync, missing credentials or exhausted
+        # retries are a hard red signal: a green express render must mean its browser
+        # data plane advanced too.
+        if: ${{ success() }}
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          SCOPE="${{ steps.pick.outputs.scope }}"; SCOPE="${SCOPE:-all}"
+          case "+$SCOPE+" in
+            *"+all+"*|*"+macro+"*) ;;
+            *) echo "::notice::scope=$SCOPE did not rebuild US stockdata — R2 sync skipped"; exit 0 ;;
+          esac
+          for V in R2_ENDPOINT R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY R2_BUCKET; do
+            if [ -z "${!V}" ]; then
+              echo "::error title=render stockdata publish unavailable::$V is unset"
+              exit 1
+            fi
+          done
+          if [ ! -s site/stockdata/index.json ]; then
+            echo "::error title=render stockdata publish refused::site/stockdata/index.json is absent or empty"
+            exit 1
+          fi
+          for ATTEMPT in 1 2 3; do
+            if python -m scripts.publish_r2 --dirs stockdata --no-manifest; then
+              echo "::notice::render stockdata published to R2 on attempt $ATTEMPT"
+              exit 0
+            fi
+            echo "::warning::render stockdata R2 attempt $ATTEMPT failed; retrying"
+            sleep $((ATTEMPT * 10))
+          done
+          echo "::error title=render stockdata publish failed::R2 sync failed after 3 attempts"
+          exit 1
       - name: inject data-base shim (site-wide; a re-render would strip it otherwise)
         # always(), NOT !cancelled(): the commit below is if: always(), so a CANCELLED
         # render still pushes site/ to main — but !cancelled() skipped this normalization
