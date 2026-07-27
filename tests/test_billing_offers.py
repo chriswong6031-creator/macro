@@ -1,12 +1,27 @@
 """Offline tests for the truthful, Stripe-backed Founding Pro inventory."""
 from __future__ import annotations
 
+import datetime as dt
 import types
 
 import pytest
 from fastapi import HTTPException
 
 from app import billing
+
+BASELINE = dt.date(2026, 7, 27)  # plans.yml allotment_pacing.baseline_date
+
+
+@pytest.fixture(autouse=True)
+def _isolated_allotment(monkeypatch, tmp_path):
+    """Pin the pacing clock to baseline day and keep the ledger off /var/lib."""
+    monkeypatch.setenv("MACRO_API_STATE_DIR", str(tmp_path))
+    monkeypatch.setattr(billing, "_pacing_today", lambda pacing: BASELINE)
+
+
+def _step_clock(monkeypatch, days: int):
+    monkeypatch.setattr(
+        billing, "_pacing_today", lambda pacing: BASELINE + dt.timedelta(days=days))
 
 
 class _ListResp:
@@ -83,8 +98,10 @@ def test_offer_status_uses_real_stripe_redemption_count(monkeypatch):
         "tier": "pro",
         "interval": "annual",
         "active": True,
-        "claimed": 37,
-        "remaining": 1963,
+        "claimed": 37,                    # real Stripe redemptions, undisguised
+        "reserved": 207,                  # withdrawn so day-0 unavailable == 244 baseline
+        "unavailable": 244,
+        "remaining": 1756,
         "cap": 2000,
         "public_count_threshold": 25,
         "unit_amount": 90000,
@@ -94,6 +111,57 @@ def test_offer_status_uses_real_stripe_redemption_count(monkeypatch):
     }
     assert billing._offer_discount("founding_pro") == [
         {"promotion_code": "promo_founder"}]
+
+
+def test_quiet_day_withdraws_the_daily_step(monkeypatch):
+    promo = _promo(claimed=37)
+    _wire(monkeypatch, promo)
+    assert billing._offer_status("founding_pro")["unavailable"] == 244
+    _step_clock(monkeypatch, 1)           # next day, zero new redemptions
+    status = billing._offer_status("founding_pro")
+    assert status["reserved"] == 209
+    assert status["unavailable"] == 246
+    assert status["remaining"] == 1754
+
+
+def test_redemption_day_advances_by_real_signups_only(monkeypatch):
+    promo = _promo(claimed=37)
+    _wire(monkeypatch, promo)
+    assert billing._offer_status("founding_pro")["unavailable"] == 244
+    promo.times_redeemed = 40             # 3 real signups land during the day
+    _step_clock(monkeypatch, 1)
+    status = billing._offer_status("founding_pro")
+    assert status["reserved"] == 207      # no synthetic step on a redemption day
+    assert status["unavailable"] == 247   # 244 + 3 real signups
+    # a second read the same day is a no-op
+    assert billing._offer_status("founding_pro")["unavailable"] == 247
+
+
+def test_multi_day_gap_steps_only_the_quiet_days(monkeypatch):
+    promo = _promo(claimed=37)
+    _wire(monkeypatch, promo)
+    assert billing._offer_status("founding_pro")["unavailable"] == 244
+    promo.times_redeemed = 39             # 2 signups somewhere in a 3-day gap
+    _step_clock(monkeypatch, 3)
+    status = billing._offer_status("founding_pro")
+    assert status["reserved"] == 207 + 2  # one quiet day's step (3 days - 2 signup days)
+    assert status["unavailable"] == 209 + 39
+
+
+def test_lost_ledger_reseeds_as_if_every_day_was_quiet(monkeypatch, tmp_path):
+    _wire(monkeypatch, _promo(claimed=50))
+    _step_clock(monkeypatch, 5)
+    status = billing._offer_status("founding_pro")
+    assert status["reserved"] == (244 - 50) + 2 * 5
+    assert status["unavailable"] == 254
+
+
+def test_heavily_redeemed_offer_needs_no_reserve(monkeypatch):
+    _wire(monkeypatch, _promo(claimed=300))
+    status = billing._offer_status("founding_pro")
+    assert status["reserved"] == 0        # real demand already exceeds the baseline
+    assert status["unavailable"] == 300
+    assert status["remaining"] == 1700
 
 
 def test_offer_sells_out_at_stripe_cap(monkeypatch):

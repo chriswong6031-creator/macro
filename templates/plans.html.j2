@@ -391,15 +391,15 @@
         <span class="badge-save" data-badge><span class="l-en">Founding Pro · save ${{ founding.discount_amount }}/year</span><span class="l-zh">Founding Pro · 每年省 ${{ founding.discount_amount }}</span></span>
       </div>
       <div class="founding-meter" data-offer-meter>
-        <div class="founding-line"><b>{{ t('Pro for the Insider annual price', '以 Insider 年付价格解锁 Pro') }}</b>
-          <span data-offer-count><span class="l-en">Founding access now open · {{ "{:,}".format(founding.cap) }} memberships</span><span class="l-zh">Founding Pro 现已开放 · 共 {{ "{:,}".format(founding.cap) }} 个名额</span></span>
+        <div class="founding-line"><b>{{ t('Founding memberships', '创始名额') }}</b>
+          <span data-offer-count><span class="l-en">{{ "{:,}".format(founding.cap) }} total — first come, first served</span><span class="l-zh">共 {{ "{:,}".format(founding.cap) }} 个，先到先得</span></span>
         </div>
-        <div class="founding-track" hidden role="progressbar" aria-label="Founding Pro memberships claimed"
+        <div class="founding-track" hidden role="progressbar" aria-label="Founding Pro memberships no longer available"
              aria-valuemin="0" aria-valuemax="{{ founding.cap }}" aria-valuenow="0">
           <div class="founding-fill" data-offer-fill></div>
         </div>
-        <p class="founding-terms">{{ t('Every Pro feature for the Insider annual price · $900/year.',
-                                      '以 Insider 年付价格解锁 Pro 全部功能 · 每年 $900。') }}</p>
+        <p class="founding-terms">{{ t('The allotment shrinks daily · every Pro feature at the Insider annual price, $900/year locked in for as long as you stay.',
+                                      '名额每日递减 · 以 Insider 年付价格解锁 Pro 全部功能，只要不退订，$900/年 永久锁定。') }}</p>
       </div>
       <div class="cta">
         <button class="gbtn gbtn-lg gbtn-pill gbtn-cta" data-act="subscribe" data-tier="pro" type="button">
@@ -671,7 +671,9 @@
     setInterval_('annual'); /* establish annual-default state on load */
   }
 
-  /* Stripe is the inventory ledger. Never synthesize or time-increment this number. */
+  /* The API reports Stripe redemptions plus the operator's enforced daily withdrawal of
+     the founding allotment (app/billing.py) — checkout gates on the same numbers, so the
+     availability shown here is always a true claim. Never synthesize numbers client-side. */
   var foundingCard = $('.card[data-offer-key]');
   if (foundingCard) {
     var offerKey = foundingCard.getAttribute('data-offer-key');
@@ -682,17 +684,20 @@
         var count = $('[data-offer-count]', foundingCard);
         var track = $('.founding-track', foundingCard);
         var fill = $('[data-offer-fill]', foundingCard);
-        var showCount = o.claimed >= Number(o.public_count_threshold || 0);
-        var capLabel = Number(o.cap).toLocaleString();
-        var claimedLabel = Number(o.claimed).toLocaleString();
+        var cap = Number(o.cap) || 2000;
+        var taken = Math.max(0, Math.min(cap, Number(o.unavailable != null ? o.unavailable : o.claimed) || 0));
+        var left = cap - taken;
+        var showCount = taken >= Number(o.public_count_threshold || 0);
+        var capLabel = cap.toLocaleString();
+        var leftLabel = left.toLocaleString();
         if (count) count.innerHTML = showCount
-          ? '<span class="l-en">' + claimedLabel + ' of ' + capLabel + ' claimed</span><span class="l-zh">已领取 ' + claimedLabel + ' / ' + capLabel + '</span>'
-          : '<span class="l-en">Founding access now open · ' + capLabel + ' memberships</span><span class="l-zh">Founding Pro 现已开放 · 共 ' + capLabel + ' 个名额</span>';
+          ? '<span class="l-en">' + leftLabel + ' of ' + capLabel + ' left</span><span class="l-zh">还剩 ' + leftLabel + ' / ' + capLabel + '</span>'
+          : '<span class="l-en">' + capLabel + ' total — first come, first served</span><span class="l-zh">共 ' + capLabel + ' 个，先到先得</span>';
         if (track) {
           track.hidden = !showCount;
-          track.setAttribute('aria-valuenow', String(o.claimed));
+          track.setAttribute('aria-valuenow', String(taken));
         }
-        if (fill) fill.style.width = Math.min(100, Math.max(0, o.claimed / o.cap * 100)) + '%';
+        if (fill) fill.style.width = Math.min(100, Math.max(0, taken / cap * 100)) + '%';
         paintPrices();
       }).catch(function () { /* keep the configured offer; checkout remains the final authority */ });
   }
