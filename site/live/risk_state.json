@@ -1,21 +1,34 @@
 {
   "schema": "risk_state.v1",
-  "built": "2026-07-24 21:34:37 UTC",
+  "built": "2026-07-27 13:31:58 UTC",
   "session": {
     "region": "us",
-    "open": false,
-    "local_time": "2026-07-24 17:34 EDT"
+    "open": true,
+    "local_time": "2026-07-27 09:31 EDT"
   },
-  "live_active": false,
-  "stale": true,
-  "stale_reason": "market closed",
+  "live_active": true,
+  "stale": false,
+  "stale_reason": null,
   "delayed_min": 15,
   "feed": "\u224815-min delayed (Polygon Standard / Yahoo)",
   "realtime": false,
   "nightly_asof": "2026-07-24",
-  "polygon_status": "unused",
-  "n_live_symbols": 0,
-  "movers": [],
+  "polygon_status": "ok",
+  "n_live_symbols": 6,
+  "movers": [
+    {
+      "sym": "SPY",
+      "chg_pct": 0.88
+    },
+    {
+      "sym": "QQQ",
+      "chg_pct": 1.37
+    },
+    {
+      "sym": "VIX",
+      "chg_pct": -4.68
+    }
+  ],
   "display": {
     "verdict": "MIXED",
     "label_en": "Mixed",
@@ -28,7 +41,7 @@
   "live": {
     "verdict": "MIXED",
     "score": 56,
-    "raw_score": 67,
+    "raw_score": 70,
     "color": "yellow",
     "label_en": "Mixed",
     "label_zh": "\u6df7\u5408",
@@ -61,7 +74,7 @@
   "nightly": {
     "verdict": "MIXED",
     "score": 56,
-    "raw_score": 67,
+    "raw_score": 68,
     "color": "yellow",
     "label_en": "Mixed",
     "label_zh": "\u6df7\u5408",
@@ -89,9 +102,9 @@
     {
       "key": "trend",
       "label_en": "Trend & technicals",
-      "score": 62,
-      "basis": "carried",
-      "asof": "2026-07-24"
+      "score": 69,
+      "basis": "live",
+      "asof": "live"
     },
     {
       "key": "risk",
@@ -104,20 +117,20 @@
       "key": "vol",
       "label_en": "Volatility regime",
       "score": 52,
-      "basis": "carried",
-      "asof": "2026-07-24"
+      "basis": "live",
+      "asof": "live"
     },
     {
       "key": "breadth",
       "label_en": "Breadth & participation",
-      "score": 62,
+      "score": 68,
       "basis": "carried",
       "asof": "2026-07-24"
     },
     {
       "key": "liquidity",
       "label_en": "Liquidity & credit",
-      "score": 78,
+      "score": 76,
       "basis": "carried",
       "asof": "2026-07-24"
     },
@@ -130,10 +143,10 @@
     }
   ],
   "legs_asof": {
-    "tape_trend": "2026-07-24",
+    "tape_trend": "live",
     "volatility": "2026-07-24",
-    "radar_fast": "2026-07-24",
-    "credit_hy_oas": "2026-07-22",
+    "radar_fast": "live",
+    "credit_hy_oas": "2026-07-23",
     "breadth": "2026-07-24",
     "liquidity": "2026-07-24",
     "macro_stress": "2026-07-24",
