@@ -24,55 +24,59 @@
    ========================================================================== */
 
 /* ── the DISPLAY face ────────────────────────────────────────────────────────
-   Outfit — a geometric sans — is the single display face for BOTH the landing and
-   this sheet: every headline, every piece of chrome, and every figure. It replaced
-   a two-face system that had drifted apart (operator, 2026-07-26: "we're a modern
-   SaaS company"):
-     · words were Archivo Expanded, a poster grotesque at font-stretch 125%. Wide
-       AND heavy, so its counters close up and its numerals read short and blocky;
-     · figures were Newsreader ExtraBold, an editorial serif — magazine numbers on
-       a product page, in a voice nothing else on the page spoke.
-   Outfit sets `96,412` at 26px in 77.0px against Archivo Expanded's 89.6px — 14%
-   narrower at identical height — so the "squashed" complaint that put the serif
-   here in the first place is answered by the display face itself, with no second
-   voice required. Measurements + specimen: mockups/refs/landing-modern-sans/.
+   The system UI face, with self-hosted Inter as the cross-platform stand-in — one
+   face for BOTH the landing and this sheet: every headline, every piece of chrome,
+   and every figure. This is the THIRD face here in one day, and the operator's
+   instruction is the reason (2026-07-26): "can you just use a regular bold font
+   like poppins or san francisco bold or extra bold, what are these weird fonts
+   you are using". The two rejected before it were both characterful display faces:
 
-   FIGURES ARE TABULAR BY DEFAULT, baked into the subset rather than asked for in
-   CSS. Outfit ships PROPORTIONAL figures (13.45px of digit spread at 48px/800);
-   Archivo's were fixed-width, so the live gauge score and every price column on
-   the landing silently depend on fixed advances. The build script remaps the digit
-   codepoints onto Outfit's own `tnum` glyphs, which is why no rule in here carries
-   `font-variant-numeric` — it cannot be forgotten on the one rule that matters.
-   (`pnum` still maps back to proportional if it is ever wanted.)
+     · Archivo Expanded — a poster grotesque at font-stretch 125%, wide AND heavy,
+       so its counters closed up and its numerals read short and blocky ("squashed");
+     · Newsreader ExtraBold — an editorial serif, magazine numbers on a product page;
+     · Outfit — a geometric sans whose circular bowls and curled g read toy-like at
+       display weight.
+
+   The pattern in all three: a face chosen for character, on a page that wants none.
+   So this one is deliberately unremarkable, and it is the operator's own pick.
+
+   -apple-system resolves to San Francisco on macOS/iOS — literally the requested
+   face, at the requested weights, with SF Pro Display's optical sizing kicking in
+   at headline sizes for free. Everyone else gets Inter, which was drawn as an
+   SF-alike for exactly this substitution and is ALREADY self-hosted below, so the
+   platform seam is invisible and this change ships ZERO new font bytes while
+   removing Outfit's 41KB. Poppins is the operator's stated alternative: swap the
+   two leading entries for 'Poppins' and add its @font-face — nothing else moves,
+   because all 105 display rules read this one token.
+
+   FIGURES: tabular-nums is now asked for in CSS (see the grouped rules in this file
+   and in landing.css). Outfit's subset had the digit codepoints REMAPPED onto its
+   own tnum glyphs, so no rule needed font-variant-numeric; drop that subset and the
+   live gauge score and every price column silently go proportional and jitter on
+   each tick. Both SF and Inter carry proper tabular figures — they just have to be
+   requested. The grouped selector is the guard: it cannot be forgotten per-rule.
+
+   WEIGHT 650 is asked for five times (.obm-cmp-cell, .obm-step-lbl,
+   .obm-mini-lbl span, .obm-sum-list li b, and the landing's .stg). SF interpolates
+   it; self-hosted Inter is STATIC per weight, so non-Apple platforms round it to
+   700. Visually indistinguishable at 9-11px, and the alternative — shipping a
+   variable Inter — would cost bytes this change is otherwise saving.
 
    It lives HERE, not in index.html, because the sheet is lazy-injected onto macro
    pages that carry none of the landing's CSS (theme.js _mmOpenOnboard -> onboard.js
-   ensureAssets): declaring it in the stylesheet makes the url() resolve relative to
-   THIS file, which is correct at any page depth, and means neither file depends on
-   the other's cascade.
+   ensureAssets), and neither file may depend on the other's cascade.
 
-   SELF-HOSTED, for the same reason theme.css self-hosts Inter: fonts.googleapis.com
-   is blocked in mainland China, so the old CDN <link> silently delivered nothing
-   there and every headline fell back to system sans with no error anywhere.
-
-   The wght axis is load-bearing and must stay a RANGE — the sheet asks for the
-   interpolated 650 four times (.obm-cmp-cell, .obm-step-lbl, .obm-mini-lbl span,
-   .obm-sum-list li b) and the landing once (.stg); a static instance would
-   silently flatten every one of them to the nearest shipped weight.
-   Outfit has no wdth or opsz axis, so no rule may ask for one; the retired
-   font-stretch:125% and font-variation-settings:'opsz' declarations are gone
-   rather than left as dead code. Glyphs are subset to latin against EXACTLY the
-   range Archivo carried, so every symbol that used to fall through to the system
-   stack (→ ⓘ ⚡ ✓ ✗ and all CJK) still does — unicode-range mirrors the subset, so
-   nothing outside it renders as tofu. 41KB, down from 112KB for the two faces it
-   replaces. Regenerate: mockups/refs/landing-modern-sans/build_outfit_subset.py.
-   Outfit is SIL Open Font License 1.1 (Smartsheet / Rodrigo Fuenzalida). */
-@font-face{font-family:'Outfit';font-style:normal;font-weight:400 900;font-display:swap;src:url("fonts/Outfit-latin.woff2") format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;}
+   Nothing is fetched from fonts.googleapis.com — it is blocked in mainland China,
+   where a CDN face silently never arrives and every headline falls back with no
+   error anywhere. The system stack cannot fail that way at all. */
 /* Landing and sheet both declare these, so neither depends on the other's cascade
    (the sheet is lazy-injected onto macro pages that have no landing CSS). --fig is
    kept as an alias rather than replaced: the eight figure rules using it are the
    ones most likely to be re-pointed at a dedicated numeral face again. */
-:root{--display:'Outfit',system-ui,-apple-system,'Segoe UI',sans-serif;--fig:var(--display)}
+:root{--display:-apple-system,'SF Pro Display','Inter',system-ui,'Segoe UI',Roboto,sans-serif;--fig:var(--display)}
+/* Figures must not jitter: the live score (#gz-score) and the price columns retick
+   in place. Grouped so it cannot be forgotten on the one rule that matters. */
+.obm-plan-price,.obm-plan-price .obm-was,.obm-order-price{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
 
 /* Self-carried control reset. The sheet was authored against the LANDING, which
    resets `button{font:inherit;color:inherit;background:none;border:0;padding:0}`
