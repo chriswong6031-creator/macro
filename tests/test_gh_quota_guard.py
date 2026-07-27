@@ -191,3 +191,41 @@ def test_a_real_invocation_after_a_heredoc_is_still_caught():
 def test_heredoc_stripping_survives_two_heredocs():
     cmd = ("cat <<'A'\ngh run watch 1\nA\ncat <<'B'\ngh run watch 2\nB\necho done")
     assert not _denied(cmd)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# A loop must actually CONTAIN the gh call
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Second production false positive, minutes after the first: a verification
+# command with `python3 -c "for m in ...: print(...)"` and an unrelated
+# `gh api rate_limit` on the same line was denied as a "poll loop". Co-presence
+# of a loop keyword and a gh call is not polling.
+
+def test_a_python_for_loop_beside_an_unrelated_gh_call_is_not_a_poll_loop():
+    cmd = (
+        "git show origin/main:.claude/settings.json | python3 -c \""
+        "import json,sys\n"
+        "d=json.load(sys.stdin)\n"
+        "for m in d['hooks']['PreToolUse']:\n"
+        "    for h in m['hooks']: print(h)\n"
+        "\"; gh api rate_limit --jq '.resources.core.remaining'"
+    )
+    assert not _denied(cmd)
+
+
+def test_a_list_comprehension_beside_a_gh_call_is_not_a_poll_loop():
+    assert not _denied(
+        """python3 -c "print([x for x in range(3)])" && gh pr view 3797 --json state""")
+
+
+def test_a_real_shell_loop_around_gh_is_still_caught():
+    """The narrowing must not blind the guard to actual polling."""
+    assert _denied("while true; do gh api repos/o/r/actions/runs/1; sleep 20; done")
+    assert _denied("for i in $(seq 1 40); do gh pr checks 1; sleep 30; done")
+
+
+def test_a_shell_loop_whose_body_has_no_gh_is_ignored_even_beside_gh():
+    cmd = ("for f in a b c; do echo $f; sleep 1; done; "
+           "gh api rate_limit --jq '.resources.core.remaining'")
+    assert not _denied(cmd)

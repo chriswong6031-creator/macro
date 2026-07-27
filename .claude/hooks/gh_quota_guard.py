@@ -73,7 +73,17 @@ INTERVAL_RE = re.compile(r"(?:--interval|(?<!\w)-i)[=\s]+(\d+)")
 # any gh subcommand that hits the API (gh auth/help/version are free)
 GH_API_RE = re.compile(CMD_POS + r"gh\s+(?:api|run|pr|workflow|search|repo|issue|release)\b")
 SLEEP_RE = re.compile(r"\bsleep\s+(\d+)")
-LOOPY_RE = re.compile(r"\b(?:while|until|for)\b")
+# A shell loop BODY, i.e. the span between `do` and `done`. Co-presence of a
+# loop keyword and a gh call is NOT enough: the second production false positive
+# was `python3 -c "for m in ...: print(...)"` in the same command line as an
+# unrelated `gh api rate_limit`. A Python `for` has no `do`/`done`, so requiring
+# the real construct — and requiring the gh call to sit INSIDE it — distinguishes
+# "polling in a loop" from "a loop and a gh call happen to share a line".
+DO_DONE_RE = re.compile(r"(?:^|[;&|\n)])\s*do\b(.*?)\bdone\b", re.S)
+
+
+def loop_bodies(cmd: str) -> list[str]:
+    return [m.group(1) for m in DO_DONE_RE.finditer(cmd)]
 PAGINATE_RE = re.compile(CMD_POS + r"gh\s+api\b[^|;&]*--paginate\b[^|;&]*"
                          r"(?:check-runs|/jobs|check_runs)")
 # same, other argument order
@@ -115,9 +125,12 @@ def check(raw: str):
                 f"Use --interval {MIN_WATCH_INTERVAL} or higher, or better:\n\n{REMEDY}"
             )
 
-    # 2. gh inside a tight poll loop
-    if GH_API_RE.search(cmd) and LOOPY_RE.search(cmd):
-        sleeps = [int(s) for s in SLEEP_RE.findall(cmd)]
+    # 2. gh inside a tight poll loop — the gh call must be INSIDE the loop body,
+    # not merely somewhere in the same command line.
+    polling = [b for b in loop_bodies(cmd) if GH_API_RE.search(b)]
+    if polling:
+        body = "\n".join(polling)
+        sleeps = [int(s) for s in SLEEP_RE.findall(body)]
         if sleeps and min(sleeps) < MIN_SLEEP:
             return (
                 f"SHARED GITHUB QUOTA: gh poll loop sleeping {min(sleeps)}s "
