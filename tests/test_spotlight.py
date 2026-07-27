@@ -114,23 +114,46 @@ def _full_rec(**kw) -> dict:
 _CTX = {"as_of": "2026-06-19", "regime": {"calm": 0.7}}
 
 
-def _prof(spot, rec=None, ctx=None):
+def _prof(spot, rec=None, ctx=None, market="US"):
     rec = rec or _full_rec()
-    return ss.conviction_profile(copy.deepcopy({**rec, "spotlight": spot}), "US",
+    return ss.conviction_profile(copy.deepcopy({**rec, "spotlight": spot}), market,
                                  ctx=ctx or _CTX)
 
 
-def test_tilt_is_subtle_and_symmetric():
-    pu = _prof({"z": 1.0})
-    p0 = _prof({"z": 0.0})
-    pd_ = _prof({"z": -1.0})
+def test_us_tailwind_is_display_only_and_never_re_ranks():
+    """W9-B DEMOTE (#1143, 2026-07-03): the US thematic-tailwind axis carries no forward
+    clean15 information (negative tercile spreads deep-panel AND OOS, sign-unstable), so
+    its US rank weight is 0.0.  The tilt must therefore still move the DISPLAYED axis while
+    leaving composite_z — and so the shipped ordering — untouched.
+
+    This is the load-bearing half of the demotion: a weight silently restored to non-zero
+    would put a null factor back into the rank with nothing else going red."""
+    assert ss._WEIGHT_PRIOR["US"]["tailwind"] == 0.0
+    pu, p0, pd_ = (_prof({"z": z}) for z in (1.0, 0.0, -1.0))
+    assert pu["composite_z"] == p0["composite_z"] == pd_["composite_z"]
+    # the axis itself still varies — it ships as display context, not as rank power
+    assert (pu["axes"]["tailwind"]["z"] > p0["axes"]["tailwind"]["z"]
+            > pd_["axes"]["tailwind"]["z"])
+
+
+@pytest.mark.parametrize("market", ["CA", "CN", "HK", "INTL"])
+def test_tilt_is_subtle_and_symmetric(market):
+    """On every market that still CARRIES a tailwind weight the tilt is monotone, symmetric
+    about neutral, and small.  The swing is pinned to the declared weight, so a tilt that
+    stops reaching the composite (swing -> 0) fails here even where the weight is non-zero.
+    US is excluded by the W9-B demotion — see the test above."""
+    w = ss._WEIGHT_PRIOR[market]
+    expected = w["tailwind"] * ss._SPOTLIGHT_LEG_GAIN / sum(w.values())
+    pu = _prof({"z": 1.0}, market=market)
+    p0 = _prof({"z": 0.0}, market=market)
+    pd_ = _prof({"z": -1.0}, market=market)
     # monotone
     assert pu["composite_z"] > p0["composite_z"] > pd_["composite_z"]
-    # full-tilt swing moves comp_z by only ~+/-0.04 (subtle) and roughly symmetric
     up, dn = pu["composite_z"] - p0["composite_z"], p0["composite_z"] - pd_["composite_z"]
-    assert 0.02 <= up <= 0.06, up
-    assert 0.02 <= dn <= 0.06, dn
+    assert up == pytest.approx(expected, abs=5e-3), up
+    assert dn == pytest.approx(expected, abs=5e-3), dn
     assert abs(up - dn) < 0.01                          # symmetric about neutral
+    assert up <= 0.10                                   # still a SMALL tilt everywhere
 
 
 def test_never_rewards_a_chase():

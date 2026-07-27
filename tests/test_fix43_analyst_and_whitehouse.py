@@ -27,6 +27,21 @@ def _make_reco_parquet(rows: list[dict]) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+@pytest.fixture
+def _legacy_finnhub_branch(monkeypatch):
+    """Force analyst_trends() down its LEGACY Finnhub-recommendation branch.
+
+    analyst_trends() now PREFERS the native revisions store and only falls back to
+    Finnhub when that store returns nothing. data/revisions/latest.parquet is committed,
+    so a test that only monkeypatches `_finnhub` never reaches the code it names — it
+    silently asserts against the production store and its verdict moves with the market.
+    Every test below must pin the branch it exercises.
+    """
+    from engine import altdata
+    monkeypatch.setattr(altdata, "_analyst_from_revisions", lambda top: [])
+
+
+@pytest.mark.usefixtures("_legacy_finnhub_branch")
 def test_analyst_hot_uses_delta_upgrading_not_level(monkeypatch) -> None:
     """A ticker with bull_ratio >= 0.6 but direction=='stable' must NOT fire hot.
     A ticker with bull_ratio < 0.6 but direction=='upgrading' MUST fire hot."""
@@ -56,6 +71,7 @@ def test_analyst_hot_uses_delta_upgrading_not_level(monkeypatch) -> None:
     )
 
 
+@pytest.mark.usefixtures("_legacy_finnhub_branch")
 def test_analyst_downgrading_does_not_fire_hot(monkeypatch) -> None:
     """A ticker where the net-buy count fell (direction=='downgrading') must not fire."""
     df = _make_reco_parquet([
@@ -70,10 +86,26 @@ def test_analyst_downgrading_does_not_fire_hot(monkeypatch) -> None:
     assert rows[0]["hot"] is False
 
 
+@pytest.mark.usefixtures("_legacy_finnhub_branch")
 def test_analyst_empty_feed_returns_empty(monkeypatch) -> None:
     from engine import altdata
     monkeypatch.setattr(altdata, "_finnhub", lambda ds: None)
     assert altdata.analyst_trends() == []
+
+
+def test_analyst_prefers_revisions_store_over_finnhub(monkeypatch) -> None:
+    """The native revisions store is the PRIMARY channel and must win over a disagreeing
+    Finnhub feed. That branch shipped with no coverage of its own, which is how the three
+    legacy tests above kept passing a dead monkeypatch straight into the production store."""
+    from engine import altdata
+    monkeypatch.setattr(altdata, "_analyst_from_revisions",
+                        lambda top: [{"ticker": "NATIVE", "hot": True}])
+    monkeypatch.setattr(altdata, "_finnhub", lambda ds: _make_reco_parquet([
+        {"ticker": "LEGACY", "period": "2026-06-01", "strongBuy": 9, "buy": 1,
+         "hold": 0, "sell": 0, "strongSell": 0, "prev_buy": 1.0},
+    ]))
+    rows = altdata.analyst_trends(top=99)
+    assert [r["ticker"] for r in rows] == ["NATIVE"]
 
 
 # ──────────────────────────────────────────────── #43b: whitehouse ticker existence gate ────
