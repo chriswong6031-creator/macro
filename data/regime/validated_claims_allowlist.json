@@ -1339,6 +1339,13 @@
    "surfaces": [
     "subsector_rotation"
    ]
+  },
+  {
+   "match": "validated two likely sources of ongoing disinflation",
+   "backing": "Verbatim third-party source language in the Goldman Sachs research-vault excerpt 'US Daily: What the Rebound in Oil Prices Means for Upcoming Inflation Prints' (24 July 2026), stored in data/research_vault/excerpts.json and rendered under site/research/. This is the source author's description of an inflation release, not a Macro Dashboard claim that a signal or edge is validated.",
+   "surfaces": [
+    "research_vault"
+   ]
   }
  ]
 }
