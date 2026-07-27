@@ -1361,11 +1361,11 @@
     <div class="cax-lbl" style="margin-top:11px">{{ t('Why this call','判断依据') }}</div>
     {% for _s in _cfm[:4] %}
     {% set _nm = _CA_SIG.get(_s) %}
-    <div class="cax-sigrow"><span class="cax-sigdot ok">✓</span><span>{{ t(_nm[0], _nm[1]) if _nm else _s.split('_', 1)[1] | replace('_',' ') | capitalize }}</span></div>
+    <div class="cax-sigrow"><span class="cax-sigdot ok">✓</span><span>{{ t(_nm[0], _nm[1]) if _nm else (_s.split('_', 1)[1] if '_' in _s else _s) | replace('_',' ') | capitalize }}</span></div>
     {% endfor %}
     {% for _s in _ctr[:3] %}
     {% set _nm = _CA_SIG.get(_s) %}
-    <div class="cax-sigrow"><span class="cax-sigdot bad">✕</span><span>{{ t(_nm[0], _nm[1]) if _nm else _s.split('_', 1)[1] | replace('_',' ') | capitalize }}</span></div>
+    <div class="cax-sigrow"><span class="cax-sigdot bad">✕</span><span>{{ t(_nm[0], _nm[1]) if _nm else (_s.split('_', 1)[1] if '_' in _s else _s) | replace('_',' ') | capitalize }}</span></div>
     {% endfor %}
     <div class="cax-foot">
       {% if _cfm and not _ctr %}<span class="cax-stword ok">{{ t('Every reading we track points the same way — the call is clean.','所有跟踪指标方向一致 — 判断明确。') }}</span>
