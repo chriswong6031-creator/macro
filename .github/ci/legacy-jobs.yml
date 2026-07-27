@@ -136,6 +136,28 @@ jobs:
       - name: annotations must start the line (bare print, never a logger)
         run: python -m pytest tests/test_gh_annotation_line_start.py -q
 
+  path-prune-lint:
+    if: ${{ false }}
+    # A tree-walk that prunes on the ABSOLUTE path also matches anything ABOVE
+    # its scan root. House law puts every agent session in a
+    # `.claude/worktrees/<name>/` checkout, so a guard excluding ".claude" or
+    # "worktrees" via `path.parts` skipped EVERY file and scanned nothing —
+    # test_press_workflow's kill-switch guard saw 0 of 130 .yml (#3802). It read
+    # green in the one checkout everybody works in and was real only in CI: the
+    # press suite passed locally at 177 tests while ci-pack-0 went red.
+    # A guard that can see nothing can refuse nothing, and nothing at runtime
+    # says so — the test passes. So it is caught in the source, like the
+    # annotation lint above.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: install test deps
+        run: pip install pytest
+      - name: walks must prune on the path RELATIVE to their scan root
+        run: python -m pytest tests/test_no_absolute_path_part_prunes.py -q
+
   rebase-css-autoresolve:
     if: ${{ false }}
     # 2026-07-22 incident: asia-close run 29904079071 committed the day's engine outputs,
