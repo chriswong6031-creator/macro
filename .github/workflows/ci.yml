@@ -1759,6 +1759,14 @@ on:
       - "tests/test_breakdown_seed_determinism.py"
       - "tests/test_breakdown_events.py"
       - "tests/test_bd_avoid1_stamper.py"
+      # ── RED-on-arrival sweep, batch B: template surfaces (2026-07-27) ───────
+      # Chip/copy suites that slice shipped markup out of templates/ and render it.
+      # Their subjects are templates/** and scripts/*.py, both broad catch-alls
+      # above, so again only the test halves need entries here.
+      # unrun-template-chips
+      - "tests/test_okx_retail.py"
+      - "tests/test_w4_us_board.py"
+      - "tests/test_w5b_edge_chips.py"
   workflow_dispatch:
 
 permissions:

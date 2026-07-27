@@ -527,6 +527,28 @@ add the missing coverage for the branch the migration actually made primary.
 | `test_setup_tier` (probe class) | asserts a live CN name's technicals (`stoch` was 24, is now 45) | **non-hermetic by design** | batch C |
 | `test_group_flow` | #3458 removed the `{% if flow %}` marker its fragment slicing needs | fixture rot | owned by #3788 — not touched here |
 
+### The second failure class: a rename disarms every absence test keyed to the old name
+
+Fixing the template suites surfaced something the red count does not show — a **vacuous
+green**, which is more dangerous than a red because it reads as coverage:
+
+`test_w5b_edge_chips` has one presence test (`"Sleeve" in html`) and three absence tests
+(`"Sleeve ×" not in html`) that check the chip degrades when `sleeve_chip` is `None`, when
+`radar_state` is `None`, and when the page is in macro mode. The chip was renamed to the
+plain-word "Risk backdrop". **Only the presence test went red.** The three absence tests
+went trivially true and kept passing — they could no longer catch a chip leaking into macro
+mode at all. All four now key off one shared sentinel.
+
+The general rule: **when a presence marker is renamed, re-point every absence assertion in
+the same edit** — otherwise the rename silently disarms them, and the suite's own red gives
+no hint that it happened. Grep for the old marker, not just for the failing test.
+
+Copy assertions on these surfaces should pin the load-bearing **noun** or the honesty
+invariant, never a sentence: the house style actively rewrites prose into plain words
+(`DESIGN_DOCTRINE.md`'s jargon ban), so a pinned sentence is a scheduled failure. Three
+separate suites here (`test_okx_retail`, `test_w5b_edge_chips`, `test_group_flow`) rotted on
+exactly that.
+
 ### Byproducts worth their own tickets
 
 - **`sector_capitulating` is a dead producer field.** `scripts/build_stock_library.py`
@@ -539,6 +561,14 @@ add the missing coverage for the branch the migration actually made primary.
   `engine/regime_one.py` logs `hmmlearn unavailable` and returns `None`, so its suite reads
   as an ordinary assertion failure rather than a missing dependency. Same family as the
   swallowed-`ImportError` freshness SLAs fixed in #3779.
+- **The Leverage-state card lost its display-only disclosure.** `test_okx_retail` asserted a
+  bilingual "display-only positioning context" / "不参与仓位或评分" caveat in
+  `templates/vector.html.j2`. #1337 ("Simplify dashboard copy and footers") deleted that
+  sentence and **no equivalent card-level disclosure replaced it** — the honesty statement
+  now survives only inside the per-metric "?" notes. The *code* invariant is intact and
+  still enforced (`allocation` / `compute_all` / `composite_*` must not read `okx_*`), so
+  this is a doctrine question about what the card tells the user, not test rot. The suite no
+  longer asserts prose that ships nowhere.
 
 ## Why the existing meta-guard did not catch this
 
