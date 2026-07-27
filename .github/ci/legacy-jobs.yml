@@ -3092,6 +3092,32 @@ jobs:
         run: python -m pytest tests/test_press_planner.py tests/test_press_writer.py tests/test_press_run.py -q
       - name: press admin panel + workflow shape
         run: python -m pytest tests/test_press_admin.py tests/test_press_workflow.py -q
+      # W1.5 property trees + the cutover sync guard. Same lane on purpose: the
+      # guard asserts that config/press.yml `cutover` and the commented Caddy
+      # block move together, and that pairing is only real if it runs on every
+      # press change, not just on a deploy change.
+      #
+      # HONEST LIMIT ON WHAT REBUILDS properties/. The committed trees are a
+      # DERIVED artifact, and the only thing in the repo that regenerates them is
+      # the `emit` job in press-publish.yml — which runs ONLY on a
+      # workflow_dispatch carrying inputs.emit=true. The daily schedule stages
+      # and stops; it never emits. So "the next publish heals it" means the next
+      # MANUAL dispatch, which may be never. A template edit, a config edit or a
+      # hand-appended ledger row therefore leaves the trees stale until somebody
+      # runs `python -m scripts.build_press_properties` and commits the result.
+      # This job does NOT run `--check`: the trees do not exist yet, so the check
+      # would be red on arrival. Wiring it is a follow-up for the session that
+      # generates and commits them.
+      - name: press properties + cutover pairing guard
+        run: python -m pytest tests/test_press_properties.py -q
+      # Derived-tree drift guard: the committed properties/ trees must byte-match
+      # a fresh rebuild from templates + config + ledger. A template or config
+      # edit that forgets `python -m scripts.build_press_properties` goes red
+      # HERE, in the lane that owns it, instead of shipping a stale tree.
+      # (press-publish.yml regenerates the trees on every armed emit, so a
+      # ledger append direct-pushed to main self-heals on the next publish.)
+      - name: property trees match a fresh rebuild (--check)
+        run: python -m scripts.build_press_properties --check
 
   # ── UNRUN-SUITE CENSUS JOBS (2026-07-26) ───────────────────────────────────
   # Nine lanes covering the 130 strictly-dark suites that no workflow ran.  All

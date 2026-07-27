@@ -43,10 +43,13 @@ name: press-publish
 # reproducing one day's plan, never a gate lever.
 #
 # WHAT IT WRITES WHEN ARMED: content/seo/blog/<slug>.md, the /blog/ pages and
-# feed.xml the free-content builder renders from them, and one append-only row
-# per piece in data/press/published.jsonl. The commit step's `git add` names
-# those three paths EXPLICITLY. site/sitemap.xml is never staged — the nightly
-# owns it, and scripts/run_press.py raises if an emit changed it.
+# feed.xml the free-content builder renders from them, one append-only row per
+# piece in data/press/published.jsonl, and (W1.5) the per-publication property
+# trees under properties/ plus, after cutover, the routed .md under
+# content/press/. The commit step's `git add` names those five paths EXPLICITLY.
+# site/sitemap.xml is never staged — the nightly owns it, and
+# scripts/run_press.py raises if an emit changed it. (The property trees carry
+# their own sitemap.xml on their own domains; those ARE this lane's to write.)
 # ─────────────────────────────────────────────────────────────────────────────
 on:
   schedule:
@@ -222,6 +225,26 @@ jobs:
       - name: emit passing drafts (content/seo/blog + site/blog + ledger)
         run: python -m scripts.run_press --emit
 
+      - name: rebuild the press property trees from the fresh ledger
+        # WHY THIS RUNS AFTER THE EMIT AND NOT INSTEAD OF IT: --emit renders the
+        # property of the publication it just published to, but the ledger it
+        # renders from is the one in memory. Front pages, RSS feeds and sitemaps
+        # are functions of the WHOLE ledger, and the emit only knows about its own
+        # rows — a run that published to news still shifts nothing on research,
+        # and a row appended by any other path would never reach a front page.
+        # This rebuilds every property from the committed ledger, so what gets
+        # committed below is a function of the ledger, not of run order.
+        #
+        # Safe pre-cutover, which is the point of running it unconditionally: at
+        # `cutover: false` every ledger row still points at the flagship /blog/
+        # estate, so the trees build with cross-domain links, no local article
+        # files, and no Caddy vhost serving them. Deterministic (no wall-clock
+        # read anywhere in the renderer), so an unchanged ledger produces
+        # byte-identical output and the commit step below finds nothing to do.
+        run: |
+          set -euo pipefail
+          python -m scripts.build_press_properties
+
       - name: estate must still match a fresh render
         # The emit replays the render lane's sweeps before copying into
         # site/blog/. If that ever stops being true this check catches it HERE,
@@ -240,16 +263,33 @@ jobs:
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
 
-          # EXPLICIT scoping. These three paths and nothing else:
+          # EXPLICIT scoping. These five paths and nothing else:
           #   content/seo/blog   the source .md the estate builder reads
           #   site/blog          the rendered pages + feed.xml
           #   data/press/published.jsonl   the append-only press ledger
+          #   content/press      (W1.5) the source .md for a CUT-OVER publication
+          #                      — a routed emit writes here instead of
+          #                      content/seo/blog, and a .md with no committed
+          #                      page is the same render-clobber class the
+          #                      rollback exists to prevent
+          #   properties         (W1.5) the built property trees (front pages,
+          #                      article pages, feeds, sitemaps, robots, css).
+          #                      app/deploy/update.sh rsyncs these to the box, so
+          #                      an unstaged tree means the box serves the
+          #                      previous build forever.
+          # Both W1.5 paths are staged BEFORE cutover too, and deliberately: the
+          # trees are built dark from day one, so the first cutover is a config
+          # flip rather than a first-ever data copy.
           # site/sitemap.xml is NOT staged here under any circumstance — the
           # nightly owns it, and a press run that touched it would fight the
-          # pipeline for the file every night.
+          # pipeline for the file every night. The press properties carry their
+          # OWN sitemap.xml inside properties/<pub>/, which is a different file
+          # on a different domain and is owned by this lane.
           git add content/seo/blog 2>/dev/null || true
           git add site/blog 2>/dev/null || true
           git add data/press/published.jsonl 2>/dev/null || true
+          git add content/press 2>/dev/null || true
+          git add properties 2>/dev/null || true
 
           if git diff --cached --name-only | grep -q '^site/sitemap.xml$'; then
             echo "::error title=press_sitemap_guard::press-publish staged site/sitemap.xml — the nightly owns it. Refusing to commit."

@@ -92,16 +92,156 @@ def repo_root(root=None) -> Path:
     return _HERE.parent.parent.parent
 
 
+# The one publication that never cuts over: it IS the existing /blog/ estate,
+# built by scripts/build_free_content.py.  Giving it a property tree would put
+# two builders on one corpus, so the loader refuses it by name.
+FLAGSHIP_KEY = "flagship"
+
+
+def _bad(problems: list[str], msg: str) -> None:
+    problems.append(msg)
+
+
+def _check_rel_under(value: str, prefix: str, label: str, problems: list[str]) -> None:
+    """`value` must be a RELATIVE repo path whose first component is `prefix`.
+
+    Absolute paths and `..` escapes are the interesting failures: both fields
+    are joined onto the repo root and then written to, so an unchecked value is
+    an arbitrary-write primitive dressed up as a config typo.
+    """
+    raw = str(value)
+    parts = Path(raw).parts
+    if Path(raw).is_absolute() or raw.startswith("/"):
+        _bad(problems, f"{label} {raw!r} must be a RELATIVE path, not absolute")
+        return
+    if ".." in parts:
+        _bad(problems, f"{label} {raw!r} must not escape the repo root ('..')")
+        return
+    if not parts or parts[0] != prefix:
+        _bad(problems, f"{label} {raw!r} must live under {prefix}/")
+
+
+def validate_publications(cfg: dict, source: str = "config/press.yml") -> None:
+    """Validate the publication registry + the desk->publication mapping.
+
+    FAIL LOUD, not fail soft.  Every other read in this module degrades to a
+    thin day, which is the right answer for a missing artifact and the WRONG
+    answer here: a desk pointing at a publication that does not exist, or a
+    base_url whose host is not the publication's own domain, produces published
+    URLs that 404 or point at somebody else's site.  There is no thin-day
+    reading of that, so it raises at load rather than at emit.
+
+    Raises ValueError listing EVERY violation found, not just the first — a
+    config fixed one line per run is a config fixed over five runs.
+    """
+    problems: list[str] = []
+    pubs = cfg.get("publications")
+    if pubs is None:
+        pubs = {}
+    if not isinstance(pubs, dict):
+        raise ValueError(f"{source}: `publications` must be a mapping, got {type(pubs).__name__}")
+
+    desks = cfg.get("desks") or {}
+    desks = desks if isinstance(desks, dict) else {}
+
+    # 1. Every desk must point at a registered publication.
+    mapped: set[str] = set()
+    for name, desk in sorted(desks.items()):
+        if not isinstance(desk, dict):
+            continue
+        key = str(desk.get("publication") or "")
+        if not key:
+            _bad(problems, f"desk {name!r} carries no `publication`")
+            continue
+        mapped.add(key)
+        if key not in pubs:
+            _bad(problems, f"desk {name!r} maps to unknown publication {key!r} "
+                           f"(registered: {sorted(pubs)})")
+
+    # 2. Per-publication field law.
+    for key, pub in sorted(pubs.items()):
+        if not isinstance(pub, dict):
+            _bad(problems, f"publication {key!r} must be a mapping")
+            continue
+        base_url = pub.get("base_url")
+        if base_url is not None:
+            raw = str(base_url)
+            domain = str(pub.get("domain") or "")
+            if not raw.startswith("https://"):
+                _bad(problems, f"publication {key!r} base_url {raw!r} must be https://")
+            elif not domain:
+                _bad(problems, f"publication {key!r} carries base_url but no `domain` to check it against")
+            else:
+                host = raw[len("https://"):].split("/", 1)[0].split(":", 1)[0].lower()
+                # www.<domain> is legal because the flagship apex 301s to www;
+                # anything else means the URL points at a site we do not own.
+                if host not in (domain.lower(), f"www.{domain.lower()}"):
+                    _bad(problems, f"publication {key!r} base_url host {host!r} is neither "
+                                   f"{domain!r} nor www.{domain!r}")
+            if raw.endswith("/"):
+                _bad(problems, f"publication {key!r} base_url {raw!r} must not end in '/' "
+                               "(every URL is built as base_url + '/path')")
+
+        tree = pub.get("property_tree")
+        if tree is not None:
+            if key == FLAGSHIP_KEY:
+                _bad(problems, f"publication {key!r} must NOT carry `property_tree` — the "
+                               "flagship IS the /blog/ estate and is built by "
+                               "scripts/build_free_content.py")
+            _check_rel_under(tree, "properties", f"publication {key!r} property_tree", problems)
+
+        content_dir = pub.get("content_dir")
+        if content_dir is not None:
+            _check_rel_under(content_dir, "content", f"publication {key!r} content_dir", problems)
+
+    # 3. At cutover, a publication a desk actually emits to must be COMPLETE.
+    #    Before cutover an incomplete entry is inert, so this stays quiet.
+    if cfg.get("cutover") is True:
+        for key in sorted(mapped):
+            pub = pubs.get(key)
+            if not isinstance(pub, dict) or pub.get("property_tree") is None:
+                continue
+            for field in ("base_url", "content_dir"):
+                if not pub.get(field):
+                    _bad(problems, f"cutover is true and publication {key!r} routes a desk "
+                                   f"through property_tree, so it must carry `{field}`")
+
+    if problems:
+        raise ValueError(f"{source}: " + "; ".join(problems))
+
+
 def load_config(root=None) -> dict:
-    """Load config/press.yml.  Returns {} when absent or unparsable."""
+    """Load config/press.yml.  Returns {} when absent or unparsable.
+
+    BEHAVIOUR CHANGE (W1.5), stated plainly because it moves a contract every
+    caller depends on: this used to be fail-soft for EVERY failure.  It still
+    is for an absent or unparsable file — `{}` — but a config that is PRESENT
+    and violates the publication contract now RAISES ValueError.
+
+    CALLER CONTRACT: a caller that wants "is the press lane configured?" keeps
+    checking the falsy return, unchanged.  A caller must NOT wrap this in a
+    bare `except` to get a dict back: the raise is the report, and a lane that
+    swallows it publishes to a URL nobody validated.  scripts/run_press.py and
+    scripts/build_press_properties.py both let it propagate on purpose; the
+    admin panel reads the YAML directly (admin/press.py::_read_yaml) and never
+    calls this, so a bad config shows up there as data rather than a 500.
+
+    See validate_publications for why that one class fails loud while every
+    other read in this module fails soft.
+    """
     import yaml  # noqa: PLC0415 — keep import cost off `import engine.press`
 
     path = repo_root(root) / "config" / "press.yml"
     try:
-        return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        cfg = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
     except Exception as exc:  # noqa: BLE001
         log.warning("press.desk_planner: config/press.yml load failed: %s", exc)
         return {}
+    if not isinstance(cfg, dict):
+        log.warning("press.desk_planner: config/press.yml is not a mapping")
+        return {}
+    validate_publications(cfg, str(path))
+    return cfg
 
 
 def _read_json(path: Path) -> Any:

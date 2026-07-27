@@ -1,0 +1,107 @@
+{#- Mastermind News — a filed piece.
+    Standalone document: no extends, no includes, no site chrome, no JS.
+    The only <script> on the page is the JSON-LD slot. -#}
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ a.title }} — {{ pub.label }}</title>
+<meta name="description" content="{{ a.dek }}">
+<link rel="canonical" href="{{ a.url }}">
+<link rel="alternate" type="application/rss+xml" title="{{ pub.label }}" href="{{ feed_href }}">
+<meta property="og:site_name" content="{{ pub.label }}">
+<meta property="og:title" content="{{ a.title }}">
+<meta property="og:description" content="{{ a.dek }}">
+<meta property="og:type" content="article">
+<meta property="og:url" content="{{ a.url }}">
+<meta property="article:published_time" content="{{ a.published_iso }}">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="{{ a.title }}">
+<meta name="twitter:description" content="{{ a.dek }}">
+<meta name="theme-color" content="#0B0E13">
+<link rel="stylesheet" href="{{ css_href }}">
+<script type="application/ld+json">{{ jsonld | safe }}</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the story</a>
+
+{%- set filed = (a.published_iso.split('T')[1][:5]) if 'T' in a.published_iso else '' %}
+
+<header class="mast">
+  <div class="wrap">
+    <div class="mast-in">
+      <a class="mast-name" href="/">{{ pub.label }}</a>
+      <span class="mast-fill" aria-hidden="true"></span>
+      <span class="mast-dom">{{ pub.domain }}</span>
+    </div>
+    <nav class="mast-nav" aria-label="Sections">
+      <a href="/">The wire</a>
+      <a href="{{ about_href }}">About</a>
+      <a href="{{ feed_href }}">Feed</a>
+    </nav>
+  </div>
+</header>
+
+<div class="band">
+  <div class="wrap">
+    <p class="band-in">
+      <span class="band-k">{{ a.desk_label }}</span>
+      <span class="band-sep" aria-hidden="true">/</span>
+      <span class="band-v">{{ a.published_display }}{% if filed %} &middot; {{ filed }} GMT{% endif %}</span>
+      <span class="band-tz">{{ a.reading_minutes }} min read</span>
+    </p>
+  </div>
+</div>
+
+<main id="main">
+  <div class="wrap">
+    <article>
+      <div class="art">
+        <h1 class="art-h">{{ a.title }}</h1>
+        <p class="art-dek">{{ a.dek }}</p>
+        <p class="art-by">
+          <b>{{ a.byline }}</b>
+          <span>Filed <time datetime="{{ a.published_iso }}">{{ a.published_display }}</time></span>
+          {%- if a.updated_display %}
+          <span class="art-upd">Updated {{ a.updated_display }}</span>
+          {%- endif %}
+        </p>
+      </div>
+
+      <div class="doc">
+        {{ a.body_html | safe }}
+      </div>
+
+      {%- if a.corrections %}
+      <aside class="corr" aria-labelledby="corr-h">
+        <p class="corr-h" id="corr-h">Corrections</p>
+        <ul class="corr-l">
+          {%- for c in a.corrections %}
+          <li><span class="corr-d">{{ c.date_display }}</span>{{ c.text }}</li>
+          {%- endfor %}
+        </ul>
+      </aside>
+      {%- endif %}
+
+      <p class="art-back"><a href="/">Back to the wire</a></p>
+    </article>
+  </div>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot-in">
+      <p class="foot-disc">{{ footer_text }}</p>
+      <p class="foot-meta">
+        <span class="foot-c">&copy; Mastermind</span>
+        <a href="{{ about_href }}">About this wire</a>
+        <a href="{{ feed_href }}">Feed</a>
+        <a href="https://www.mastermind-x.com">Part of Mastermind</a>
+      </p>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

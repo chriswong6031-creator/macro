@@ -239,9 +239,18 @@ def _commit_step() -> str:
     return ""
 
 
-def test_git_add_names_exactly_the_three_owned_paths():
+def test_git_add_names_exactly_the_owned_paths():
+    """EXPLICIT scoping, and no more than that.
+
+    W1.5 added the two property paths: `content/press` (the source .md for a
+    cut-over publication) and `properties` (the built trees app/deploy/update.sh
+    rsyncs to the box). Both are staged before cutover too — the trees are built
+    dark from day one, so the first cutover is a config flip and not a
+    first-ever data copy. site/sitemap.xml is still nobody's business here.
+    """
     added = set(re.findall(r"^\s*git add ([^\s]+)", _commit_step(), re.MULTILINE))
-    assert added == {"content/seo/blog", "site/blog", "data/press/published.jsonl"}
+    assert added == {"content/seo/blog", "site/blog", "data/press/published.jsonl",
+                     "content/press", "properties"}
 
 
 def test_the_commit_step_refuses_to_stage_the_sitemap():

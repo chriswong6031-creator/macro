@@ -1,0 +1,638 @@
+/* ===========================================================================
+   Mastermind Research — blog.mastermind-x.com
+   The complete visual system for the journal. One stylesheet, no imports,
+   no external requests, no JavaScript hooks.
+
+   LIGHT IS THE DESIGN. A dark variant follows at the bottom of this file and
+   only inverts the ground and ink — the accent, the rules and the measure are
+   unchanged, so the page reads the same in either.
+
+   PAPER NOTE (why cool, not cream)
+   Institutional research is PRINTED, not letterpressed. The ground is a cool
+   blue-grey office white, the ink is press-black with a blue undertone, and
+   the single accent is a prussian ink. No warm cream, no display serif, no
+   terracotta — that combination is a mood, and this is a document.
+
+   TYPE NOTE (the working-paper inversion)
+   Sans headings over a low-contrast print serif body: the convention of a
+   staff note or a working paper, and the opposite of a magazine's high-
+   contrast serif display. The body face is chosen to survive at reading size,
+   not to look good at 48px.
+   =========================================================================== */
+
+:root {
+  /* --- paper --------------------------------------------------------------- */
+  --leaf:      #ECEEF3;   /* the desk — cool office grey, so the sheet reads as a sheet */
+  --sheet:     #FFFFFF;   /* the page itself, laid on the desk */
+  --rule:      #DCE0E7;   /* every hairline */
+  --rule-soft: #E9ECF0;
+
+  /* --- ink ----------------------------------------------------------------- */
+  /* measured with getComputedStyle in Chrome, not estimated. Every tier here
+     carries real information (dates, durations, desk labels), so every tier
+     clears 4.5:1 — there is no "decoration only" grey in this system. */
+  --ink:      #161A22;   /* press black, blue undertone   16.2:1 on sheet */
+  --ink-mid:  #565F6E;   /* the apparatus                  6.4:1 on sheet */
+  --ink-faint:#6B7484;   /* the quietest tier              4.8:1 on sheet */
+
+  /* --- the one accent ------------------------------------------------------ */
+  --prussian:      #1E3D6B;                    /* ~10.9:1 on sheet */
+  --prussian-soft: rgba(30, 61, 107, 0.28);
+
+  /* --- type ---------------------------------------------------------------- */
+  --serif: Charter, "Bitstream Charter", "Iowan Old Style", "Palatino Linotype",
+           Palatino, Georgia, "Times New Roman", serif;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+          Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+          "Liberation Mono", monospace;
+
+  /* --- the grid: a hanging margin plus a fixed measure ---------------------- */
+  --margin-col: 116px;
+  --margin-gap: 32px;
+}
+
+/* ---------------------------------------------------------------------------
+   Base
+   --------------------------------------------------------------------------- */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--leaf);
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 17px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+img, svg { max-width: 100%; height: auto; }
+
+::selection { background: var(--prussian); color: var(--sheet); }
+
+a { color: var(--prussian); }
+
+:focus-visible {
+  outline: 2px solid var(--prussian);
+  outline-offset: 3px;
+  border-radius: 1px;
+}
+
+.skip {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 20;
+  background: var(--prussian);
+  color: var(--sheet);
+  font: 600 0.78rem/1 var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 12px 16px;
+  text-decoration: none;
+}
+.skip:focus { left: 0; }
+
+/* the sheet: a printed page laid on the desk */
+.sheet {
+  max-width: 880px;
+  margin-inline: auto;
+  background: var(--sheet);
+  border-left: 1px solid var(--rule-soft);
+  border-right: 1px solid var(--rule-soft);
+  min-height: 100vh;
+  padding-inline: clamp(20px, 5vw, 56px);
+}
+
+/* ---------------------------------------------------------------------------
+   Running head — verso: the section. recto: the publication. The printed
+   report's own navigation, and the reason this page needs no nav bar.
+   --------------------------------------------------------------------------- */
+
+.rh {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 22px 0 9px;
+  border-bottom: 1px solid var(--ink);
+}
+
+.rh-sec, .rh-pub {
+  font: 500 0.66rem/1.4 var(--mono);
+  letter-spacing: 0.19em;
+  text-transform: uppercase;
+  color: var(--ink-mid);
+  text-decoration: none;
+}
+.rh-sec { color: var(--prussian); }
+a.rh-pub:hover { color: var(--prussian); }
+
+/* ---------------------------------------------------------------------------
+   Front matter
+   --------------------------------------------------------------------------- */
+
+.fm { padding: 46px 0 34px; }
+
+.fm-h {
+  margin: 0;
+  text-wrap: balance;
+  font-family: var(--sans);
+  font-size: clamp(1.55rem, 4.6vw, 1.95rem);
+  font-weight: 600;
+  letter-spacing: -0.014em;
+  line-height: 1.15;
+  color: var(--ink);
+}
+
+.fm-line {
+  margin: 14px 0 0;
+  max-width: 56ch;
+  font-size: 1.12rem;
+  line-height: 1.6;
+  color: var(--ink-mid);
+}
+
+.fm-sub {
+  margin: 22px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  font: 500 0.68rem/1.5 var(--mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.fm-sub a { color: var(--prussian); text-decoration: none; border-bottom: 1px solid var(--prussian-soft); padding-bottom: 2px; }
+.fm-sub a:hover { border-bottom-color: var(--prussian); }
+.fm-sub span { color: var(--ink-faint); }
+
+/* ---------------------------------------------------------------------------
+   THE INDEX — the signature.
+   Every date, duration and label hangs in a margin column OUTSIDE the text
+   measure, so the reading block is never interrupted by furniture. Reads like
+   the contents page of a report series, not a card grid.
+   --------------------------------------------------------------------------- */
+
+.index { padding: 0 0 30px; border-top: 1px solid var(--ink); }
+
+.ix {
+  display: grid;
+  grid-template-columns: var(--margin-col) minmax(0, 1fr);
+  column-gap: var(--margin-gap);
+  padding: 26px 0 28px;
+}
+.ix + .ix { border-top: 1px solid var(--rule); }
+
+.ix-margin {
+  text-align: right;
+  padding-top: 5px;
+}
+
+.ix-date {
+  display: block;
+  font: 500 0.72rem/1.5 var(--mono);
+  letter-spacing: 0.04em;
+  color: var(--ink-mid);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.ix-min {
+  display: block;
+  margin-top: 5px;
+  font: 400 0.66rem/1.5 var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.ix-null { color: var(--ink-faint); }
+
+.ix-h {
+  margin: 0;
+  text-wrap: balance;
+  font-family: var(--sans);
+  font-size: 1.24rem;
+  font-weight: 600;
+  letter-spacing: -0.012em;
+  line-height: 1.32;
+  max-width: 34ch;
+}
+.ix-h a {
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+.ix-h a:hover { color: var(--prussian); border-bottom-color: var(--prussian); }
+
+.ix-d {
+  margin: 10px 0 0;
+  text-wrap: pretty;
+  max-width: 62ch;
+  font-size: 1.04rem;
+  line-height: 1.62;
+  color: var(--ink-mid);
+}
+
+.ix-desk {
+  margin: 12px 0 0;
+  font: 500 0.65rem/1.4 var(--mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.ix-desk a { color: var(--prussian); text-decoration: none; border-bottom: 1px solid var(--prussian-soft); padding-bottom: 2px; }
+.ix-desk a:hover { border-bottom-color: var(--prussian); }
+
+/* the empty index — an entry with an honest em-dash where the date would be */
+.ix-empty .ix-h { font-family: var(--sans); font-size: 1.24rem; }
+.ix-empty .ix-d { max-width: 52ch; }
+
+/* ---------------------------------------------------------------------------
+   Article
+   --------------------------------------------------------------------------- */
+
+.art { padding: 44px 0 0; }
+
+.art-h {
+  margin: 0;
+  max-width: 26ch;
+  text-wrap: balance;
+  font-family: var(--sans);
+  font-size: clamp(1.7rem, 5vw, 2.35rem);
+  font-weight: 600;
+  letter-spacing: -0.019em;
+  line-height: 1.14;
+  color: var(--ink);
+}
+
+/* the summary block — the report's abstract, hung label and all */
+.abs {
+  display: grid;
+  grid-template-columns: var(--margin-col) minmax(0, 1fr);
+  column-gap: var(--margin-gap);
+  margin: 30px 0 0;
+  padding: 18px 0;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.abs-k {
+  text-align: right;
+  padding-top: 7px;
+  font: 500 0.64rem/1.5 var(--mono);
+  letter-spacing: 0.19em;
+  text-transform: uppercase;
+  color: var(--prussian);
+}
+
+.abs-v {
+  margin: 0;
+  text-wrap: pretty;
+  max-width: 58ch;
+  font-size: 1.1rem;
+  line-height: 1.62;
+  color: var(--ink);
+}
+
+/* the apparatus line — dates, byline, duration, all in the utility face */
+.appar {
+  display: grid;
+  grid-template-columns: var(--margin-col) minmax(0, 1fr);
+  column-gap: var(--margin-gap);
+  padding: 16px 0 0;
+}
+
+.appar-k {
+  text-align: right;
+  font: 500 0.64rem/1.7 var(--mono);
+  letter-spacing: 0.19em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* a flex row rather than pipe-separated text: a wrapped line then starts with
+   a value, never with an orphaned separator glyph */
+.appar-v {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1px 20px;
+  margin: 0;
+  font: 400 0.74rem/1.7 var(--mono);
+  letter-spacing: 0.04em;
+  color: var(--ink-mid);
+}
+.appar-v b { font-weight: 500; color: var(--ink); }
+.appar-upd { color: var(--prussian); font-weight: 500; white-space: nowrap; }
+
+/* the body: ONE text column, indented to clear the hanging margin, so the
+   apparatus above it (Summary, Filed, Corrections) and the prose share a left
+   edge. The h1 alone breaks the margin — the report-title convention. */
+.doc {
+  margin-left: calc(var(--margin-col) + var(--margin-gap));
+  max-width: 58ch;
+  padding: 32px 0 0;
+  font-size: 1.14rem;
+  line-height: 1.74;
+  color: var(--ink);
+}
+.doc > :first-child { margin-top: 0; }
+.doc p { margin: 0 0 1.3em; }
+
+.doc h2 {
+  position: relative;
+  margin: 2.4em 0 0.75em;
+  padding-top: 1.1em;
+  font-family: var(--sans);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.004em;
+  line-height: 1.35;
+  color: var(--ink);
+}
+/* the footnote rule — a printed page's own divider, doing the section break */
+.doc h2::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 34%;
+  max-width: 130px;
+  height: 1px;
+  background: var(--prussian-soft);
+}
+
+.doc h3 {
+  margin: 1.9em 0 0.55em;
+  font-family: var(--sans);
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--ink-mid);
+}
+
+.doc ol { margin: 0 0 1.3em; padding-left: 1.4em; }
+.doc ul { margin: 0 0 1.3em; padding-left: 0; list-style: none; }
+.doc li { margin: 0 0 0.55em; }
+.doc ul > li { position: relative; padding-left: 1.5em; }
+.doc ul > li::before {
+  content: "–";
+  position: absolute;
+  left: 0.15em;
+  top: 0;
+  color: var(--prussian);
+  opacity: 0.65;
+}
+
+.doc a {
+  color: var(--prussian);
+  text-decoration: underline;
+  text-decoration-color: var(--prussian-soft);
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+.doc a:hover { text-decoration-color: var(--prussian); }
+
+.doc strong { font-weight: 700; }
+.doc em { font-style: italic; }
+
+.doc blockquote {
+  margin: 1.6em 0;
+  padding: 0 0 0 22px;
+  border-left: 2px solid var(--prussian-soft);
+  color: var(--ink-mid);
+  font-size: 1.06rem;
+}
+
+.doc code {
+  font: 400 0.85em/1.4 var(--mono);
+  background: var(--leaf);
+  border: 1px solid var(--rule);
+  padding: 1px 5px;
+}
+.doc pre {
+  overflow-x: auto;
+  background: var(--leaf);
+  border: 1px solid var(--rule);
+  padding: 14px 16px;
+  font: 400 0.82rem/1.6 var(--mono);
+}
+.doc pre code { background: none; border: 0; padding: 0; }
+
+.doc hr {
+  border: 0;
+  border-top: 1px solid var(--rule);
+  width: 34%;
+  max-width: 130px;
+  margin: 2.4em 0;
+}
+
+.doc table { width: 100%; border-collapse: collapse; margin: 1.5em 0; font-size: 0.98rem; }
+.doc th, .doc td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--rule); }
+.doc th {
+  font: 600 0.66rem/1.4 var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-mid);
+  border-bottom-color: var(--ink-mid);
+}
+
+/* corrections — hung in the margin like every other piece of apparatus */
+.corr {
+  display: grid;
+  grid-template-columns: var(--margin-col) minmax(0, 1fr);
+  column-gap: var(--margin-gap);
+  margin: 46px 0 0;
+  padding: 20px 0 0;
+  border-top: 1px solid var(--prussian);
+}
+
+.corr-h {
+  margin: 0;
+  text-align: right;
+  padding-top: 3px;
+  font: 500 0.64rem/1.6 var(--mono);
+  letter-spacing: 0.19em;
+  text-transform: uppercase;
+  color: var(--prussian);
+}
+
+.corr-l { margin: 0; padding: 0; list-style: none; max-width: 58ch; }
+.corr-l li { margin: 0 0 12px; font-size: 1rem; line-height: 1.6; color: var(--ink-mid); }
+.corr-l li:last-child { margin-bottom: 0; }
+.corr-d {
+  display: block;
+  font: 500 0.68rem/1.6 var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.art-back {
+  margin: 48px 0 0 calc(var(--margin-col) + var(--margin-gap));
+  max-width: 58ch;
+  padding-top: 18px;
+  border-top: 1px solid var(--rule);
+}
+.art-back a {
+  font: 500 0.68rem/1 var(--mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--prussian);
+  text-decoration: none;
+  border-bottom: 1px solid var(--prussian-soft);
+  padding-bottom: 3px;
+}
+.art-back a:hover { border-bottom-color: var(--prussian); }
+
+/* ---------------------------------------------------------------------------
+   About / 404
+   --------------------------------------------------------------------------- */
+
+.page { padding: 46px 0 0; }
+
+.page-h {
+  margin: 0;
+  max-width: 22ch;
+  text-wrap: balance;
+  font-family: var(--sans);
+  font-size: clamp(1.55rem, 4.6vw, 2rem);
+  font-weight: 600;
+  letter-spacing: -0.016em;
+  line-height: 1.16;
+}
+
+.page-body {
+  max-width: 62ch;
+  padding: 26px 0 0;
+  font-size: 1.11rem;
+  line-height: 1.74;
+}
+.page-body p { margin: 0 0 1.25em; }
+.page-body p:last-child { margin-bottom: 0; }
+
+.lost { padding: 100px 0 90px; }
+.lost .page-h { max-width: 26ch; }
+.lost-go { margin: 28px 0 0; }
+.lost-go a {
+  font: 500 0.7rem/1 var(--mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--prussian);
+  text-decoration: none;
+  border-bottom: 1px solid var(--prussian-soft);
+  padding-bottom: 4px;
+}
+.lost-go a:hover { border-bottom-color: var(--prussian); }
+
+/* ---------------------------------------------------------------------------
+   Colophon
+   --------------------------------------------------------------------------- */
+
+.foot {
+  margin-top: 60px;
+  padding: 22px 0 44px;
+  border-top: 1px solid var(--ink);
+}
+
+.foot-disc {
+  margin: 0;
+  max-width: 62ch;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--ink-mid);
+}
+
+.foot-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  margin: 16px 0 0;
+  font: 500 0.65rem/1.6 var(--mono);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.foot-meta a { color: var(--ink-mid); text-decoration: none; }
+.foot-meta a:hover { color: var(--prussian); }
+
+/* ---------------------------------------------------------------------------
+   Narrow — the margin column folds above the block it annotates
+   --------------------------------------------------------------------------- */
+
+@media (max-width: 680px) {
+  body { font-size: 16px; }
+  .sheet { border-left: 0; border-right: 0; }
+  .ix, .abs, .appar, .corr { grid-template-columns: 1fr; row-gap: 0; }
+  .ix-margin, .abs-k, .appar-k, .corr-h {
+    text-align: left;
+    padding-top: 0;
+    padding-bottom: 9px;
+  }
+  .ix-margin { display: flex; gap: 14px; align-items: baseline; }
+  .ix-min { margin-top: 0; }
+  .rh { gap: 12px; }
+  .doc { margin-left: 0; max-width: none; }
+  .art-back { margin-left: 0; max-width: none; }
+}
+
+/* ---------------------------------------------------------------------------
+   Dark — inverts the ground and the ink only. Measure, rules, accent weight
+   and the margin apparatus are unchanged, so the page reads identically.
+   --------------------------------------------------------------------------- */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --leaf:      #0F1218;
+    --sheet:     #141821;
+    --rule:      #2A303B;
+    --rule-soft: #232935;
+    --ink:       #E4E7EC;   /* ~13.4:1 on sheet */
+    --ink-mid:   #A2AAB8;   /* ~7.2:1  on sheet */
+    --ink-faint: #858E9C;   /* ~5.3:1  on sheet — same floor as light */
+    --prussian:      #8FB4E8;   /* the same ink, opened up for dark ~8.4:1 */
+    --prussian-soft: rgba(143, 180, 232, 0.32);
+  }
+  ::selection { background: var(--prussian); color: #0F1218; }
+  .skip { color: #0F1218; }
+  .doc code, .doc pre { background: #0F1218; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+
+/* ---------------------------------------------------------------------------
+   Print — the article IS a document, so it prints as one
+   --------------------------------------------------------------------------- */
+
+@media print {
+  :root {
+    --leaf: #FFFFFF;
+    --sheet: #FFFFFF;
+    --ink: #000000;
+    --ink-mid: #333333;
+    --ink-faint: #555555;
+    --rule: #BBBBBB;
+    --rule-soft: #DDDDDD;
+    --prussian: #000000;
+    --prussian-soft: #999999;
+  }
+  body { background: #fff; font-size: 11pt; line-height: 1.55; }
+  .skip, .foot-meta, .art-back, .fm-sub { display: none; }
+  .sheet { max-width: none; border: 0; min-height: 0; padding-inline: 0; }
+  .doc { margin-left: 0; max-width: none; }
+  .rh { border-bottom-color: #000; }
+  .doc a[href^="http"]::after {
+    content: " <" attr(href) ">";
+    font: 400 8.5pt var(--mono);
+    word-break: break-all;
+  }
+  .art-h, .doc h2, .doc h3 { break-after: avoid; page-break-after: avoid; }
+  .doc p, .doc li, .abs, .corr { break-inside: avoid; page-break-inside: avoid; }
+  .foot { border-top-color: #000; margin-top: 30pt; }
+}

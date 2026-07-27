@@ -1225,6 +1225,20 @@ on:
       - "admin/press.py"
       - "tests/test_press_*.py"
       - ".github/workflows/press-publish.yml"
+      # D14 W1.5 press properties (2026-07-27): the per-publication static
+      # trees, their templates, and the builder. Same reasoning as above — the
+      # cutover pairing guard and the property determinism checks have to be
+      # reachable by the changes they guard, which now includes a
+      # templates-only or a properties-only diff.
+      - "scripts/build_press_properties.py"
+      - "templates/press/**"
+      - "properties/**"
+      - "content/press/**"
+      # The ledger is the property trees' SOURCE, so a commit that appends to it
+      # can put the committed trees out of date on its own. Without this line
+      # the derived artifact and its input could move in separate PRs and only
+      # the derived one would be checked.
+      - "data/press/published.jsonl"
       # ── UNRUN-SUITE CENSUS (2026-07-26) ──────────────────────────────────────
       # 1135 of 1491 tests/test_*.py suites were named by NO `run:` step in ANY of
       # the 51 workflows, and there is no broad `pytest tests/` anywhere — every

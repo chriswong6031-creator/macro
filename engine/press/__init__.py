@@ -11,6 +11,16 @@ Pipeline shape, in dependency order:
                                             is its own function and every
                                             result lands in validator_report.
 
+    properties.render_property()
+                          deterministic — W1.5.  Builds one publication's
+                                            static property tree (front page,
+                                            article pages, RSS, sitemap,
+                                            robots, JSON-LD) from the
+                                            append-only ledger + the .md
+                                            archive.  No LLM, no network, and
+                                            no wall-clock read, so two runs
+                                            over one ledger are byte-identical.
+
 The split is the point: nothing an LLM produces is trusted, and nothing that
 verifies an LLM is written by one.  A draft that fails validation is
 regenerated at most `quarantine.max_regenerations` times and then DROPPED with
@@ -26,4 +36,4 @@ PRESS_PUBLISH_ENABLED repo variable.
 """
 from __future__ import annotations
 
-__all__ = ["desk_planner", "writer", "validators"]
+__all__ = ["desk_planner", "properties", "writer", "validators"]

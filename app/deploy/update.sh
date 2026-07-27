@@ -33,6 +33,31 @@ if [ "$OLD" != "$NEW" ]; then
 	# per-file temp-write + rename keeps every visible file whole.
 	mkdir -p "$APP_DIR/site.served"
 	rsync -a --delete --min-size=1 "$APP_DIR/site/" "$APP_DIR/site.served/"
+
+	# Press properties (D14 W1.5) — same atomic-publish contract as site.served,
+	# and for the same reason: `git reset --hard` above rewrites changed files IN
+	# PLACE, so Caddy must serve a separate rsync target whose per-file temp-write
+	# + rename keeps every visible file whole. --min-size=1 refuses to publish a
+	# 0-byte file over a good one (the 2026-07-03 white-page incident).
+	#
+	# The [ -d ] guards are load-bearing, not defensive noise: these trees are
+	# built by scripts/build_press_properties.py and may legitimately not exist
+	# yet on a box that pulled main before they landed. Without the guard, rsync
+	# of a missing source under `set -e` aborts the whole update run — and this
+	# script is what keeps the MAIN site tracking main.
+	#
+	# The Caddy vhosts that serve these roots stay COMMENTED until the cutover
+	# (see the marked block in app/deploy/Caddyfile), so syncing them early is
+	# free: the files land, nothing serves them, and cutover day is a config flip
+	# rather than a first-ever data copy.
+	if [ -d "$APP_DIR/properties/news" ]; then
+		mkdir -p "$APP_DIR/press_news.served"
+		rsync -a --delete --min-size=1 "$APP_DIR/properties/news/" "$APP_DIR/press_news.served/"
+	fi
+	if [ -d "$APP_DIR/properties/research" ]; then
+		mkdir -p "$APP_DIR/press_research.served"
+		rsync -a --delete --min-size=1 "$APP_DIR/properties/research/" "$APP_DIR/press_research.served/"
+	fi
 fi
 
 # Do not exit just because Git is current. A prior run may have self-updated

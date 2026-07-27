@@ -1,0 +1,652 @@
+/* ===========================================================================
+   Mastermind News — mastermindx.ai
+   The complete visual system for the wire. One stylesheet, no imports,
+   no external requests, no JavaScript hooks.
+
+   DARK IS THE DESIGN, NOT A TOGGLE. There is no light variant by intent:
+   a wire desk reads dark, and a theme switch would need JS this property
+   does not have.
+
+   PALETTE NOTE (why amber, and only amber)
+   On a markets surface green and red are DIRECTIONAL. Using either as brand
+   chroma would make every headline look like a price move. Amber is the one
+   hue that carries no direction here — and it is the literal wire/teleprinter
+   artifact. It appears on exactly four things: the newest rail tick, the desk
+   bracket, focus rings, and link underlines. Everything else is paper on ink.
+   =========================================================================== */
+
+:root {
+  /* --- ink: the ground is blue-cold graphite, not black -------------------- */
+  --ink:        #0B0E13;   /* midnight slate — page */
+  --ink-lift:   #11161F;   /* desk band — masthead strip, footer, notices */
+  --ink-hover:  #141A25;   /* row hover */
+  --rule:       #212936;   /* every hairline, and the rail */
+  --rule-soft:  #1A212C;
+
+  /* --- paper --------------------------------------------------------------- */
+  /* measured with getComputedStyle in Chrome, not estimated. The quiet tier is
+     pinned against the LIGHTER of the two grounds (--ink-lift, the footer and
+     masthead band), because that is where it comes closest to failing. */
+  --paper:      #E9ECF2;   /* headlines, body copy   16.3:1 on ink / 15.4:1 on lift */
+  --paper-dim:  #98A1B2;   /* deks, apparatus         7.4:1 on ink /  7.0:1 on lift */
+  --paper-mute: #808A9B;   /* the quietest tier       5.5:1 on ink /  5.2:1 on lift */
+
+  /* --- the one chroma ------------------------------------------------------ */
+  --wire:       #E9A94E;   /* filed amber                ~9.4:1  on ink */
+  --wire-soft:  rgba(233, 169, 78, 0.34);
+
+  /* --- type ---------------------------------------------------------------- */
+  --sans: "Helvetica Neue", Helvetica, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", Roboto, Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+          "Liberation Mono", monospace;
+
+  /* --- measure ------------------------------------------------------------- */
+  --gut: 64px;             /* rail gutter (timestamp column) */
+  --gap: 24px;
+  --rail: 74px;            /* x of the rail inside .river */
+}
+
+/* ---------------------------------------------------------------------------
+   Base
+   --------------------------------------------------------------------------- */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-synthesis-weight: none;
+  /* Full-height column so the footer sits at the BOTTOM of the viewport on a
+     short page. Without it, an empty wire (day one, and every 404) draws the
+     footer's lifted background band halfway down the screen with dead ink
+     below it — a stripe that reads as a broken page rather than a quiet one.
+     .skip is position:absolute and therefore not a flex item. */
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* The one growing row: masthead and band keep their intrinsic height, the
+   river absorbs whatever is left, and .foot lands on the fold. */
+main { flex: 1 1 auto; }
+
+img, svg { max-width: 100%; height: auto; }
+
+::selection { background: var(--wire); color: var(--ink); }
+
+a { color: inherit; }
+
+:focus-visible {
+  outline: 2px solid var(--wire);
+  outline-offset: 3px;
+  border-radius: 1px;
+}
+
+.skip {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 20;
+  background: var(--wire);
+  color: var(--ink);
+  font: 700 0.8rem/1 var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 12px 16px;
+  text-decoration: none;
+}
+.skip:focus { left: 0; }
+
+.wrap {
+  max-width: 900px;
+  margin-inline: auto;
+  padding-inline: clamp(18px, 5vw, 48px);
+}
+
+/* ---------------------------------------------------------------------------
+   Masthead — a wire slug line, not a logo lockup
+   --------------------------------------------------------------------------- */
+
+.mast {
+  background: var(--ink-lift);
+  border-bottom: 1px solid var(--rule);
+}
+
+.mast-in {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding-top: 26px;
+}
+
+.mast-name {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: clamp(0.92rem, 2.6vw, 1.04rem);
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--paper);
+  text-decoration: none;
+  white-space: nowrap;
+}
+a.mast-name:hover { color: var(--wire); }
+
+.mast-fill {
+  flex: 1 1 auto;
+  height: 1px;
+  background: var(--rule);
+  min-width: 12px;
+}
+
+.mast-dom {
+  font: 400 0.68rem/1 var(--mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--paper-mute);
+  white-space: nowrap;
+}
+
+.mast-line {
+  margin: 12px 0 0;
+  max-width: 54ch;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--paper-dim);
+}
+
+.mast-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+  padding-top: 18px;
+  padding-bottom: 16px;
+}
+
+.mast-nav a {
+  font: 500 0.7rem/1 var(--mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--paper-dim);
+  text-decoration: none;
+  padding-bottom: 3px;
+  border-bottom: 1px solid transparent;
+}
+.mast-nav a:hover { color: var(--paper); border-bottom-color: var(--wire); }
+.mast-nav a[aria-current] { color: var(--wire); border-bottom-color: var(--wire-soft); }
+
+/* ---------------------------------------------------------------------------
+   Desk band — the constants live here ONCE, never repeated per row
+   --------------------------------------------------------------------------- */
+
+.band {
+  border-bottom: 1px solid var(--rule);
+  background: var(--ink);
+}
+
+.band-in {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 11px 0;
+  font: 500 0.68rem/1.5 var(--mono);
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--paper-mute);
+}
+
+.band-k { color: var(--wire); }
+.band-v { color: var(--paper-dim); }
+.band-sep { color: var(--rule); }
+.band-tz { margin-left: auto; }
+
+/* ---------------------------------------------------------------------------
+   THE RIVER — the signature.
+   One continuous rail down the left. Timestamps are ticks ON it. The rail
+   fades downward: brightness IS recency, which is the whole promise of a wire.
+   --------------------------------------------------------------------------- */
+
+.river {
+  position: relative;
+  padding: 4px 0 40px;
+}
+
+.river::before {
+  content: "";
+  position: absolute;
+  left: var(--rail);
+  top: 26px;
+  bottom: 34px;
+  width: 1px;
+  background: linear-gradient(
+    180deg,
+    var(--wire) 0,
+    #4A4335 74px,
+    var(--rule) 34%,
+    var(--rule) 62%,
+    var(--rule-soft) 84%,
+    rgba(26, 33, 44, 0) 100%
+  );
+}
+
+/* nothing filed: the rail must not glow. A live top on an empty wire would
+   be the page telling a small lie about itself. */
+.river-empty::before {
+  background: linear-gradient(180deg, var(--rule) 0, rgba(26, 33, 44, 0) 100%);
+}
+
+.rv {
+  display: grid;
+  grid-template-columns: var(--gut) 1fr;
+  column-gap: var(--gap);
+  padding: 20px 0 22px;
+  border-top: 1px solid var(--rule-soft);
+  transition: background-color 0.14s ease;
+}
+.rv:first-child { border-top: 0; }
+.rv:hover { background: var(--ink-hover); }
+
+/* the tick */
+.rv-tick {
+  position: relative;
+  text-align: right;
+  padding-top: 3px;
+}
+
+.rv-t {
+  font: 500 0.78rem/1.3 var(--mono);
+  letter-spacing: 0.03em;
+  color: var(--paper-mute);
+  font-variant-numeric: tabular-nums;
+}
+
+.rv-tick::after {
+  content: "";
+  position: absolute;
+  top: 9px;
+  right: -14px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--rule);
+}
+.rv:hover .rv-tick::after { box-shadow: inset 0 0 0 1px var(--paper-mute); }
+
+.rv-null { color: var(--rule); letter-spacing: -0.05em; }
+
+/* the body */
+.rv-body { max-width: 620px; min-width: 0; }
+
+.rv-desk {
+  margin: 0 0 8px;
+  font: 500 0.64rem/1 var(--mono);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--wire);
+}
+.rv-desk::before { content: "["; margin-right: 6px; color: var(--wire-soft); }
+.rv-desk::after  { content: "]"; margin-left: 6px;  color: var(--wire-soft); }
+
+.rv-h {
+  margin: 0;
+  text-wrap: balance;
+  font-size: 1.2rem;
+  line-height: 1.24;
+  font-weight: 700;
+  letter-spacing: -0.013em;
+  color: var(--paper);
+}
+.rv-h a {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+.rv-h a:hover { border-bottom-color: var(--wire); }
+
+.rv-d {
+  margin: 9px 0 0;
+  text-wrap: pretty;
+  font-size: 0.93rem;
+  line-height: 1.55;
+  color: var(--paper-dim);
+}
+
+.rv-m {
+  margin: 11px 0 0;
+  font: 500 0.66rem/1.4 var(--mono);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--paper-mute);
+}
+.rv-m a { color: var(--paper-dim); text-decoration-color: var(--wire); text-underline-offset: 3px; }
+.rv-m a:hover { color: var(--wire); }
+
+/* the lead: the wire's own hierarchy — the top of the file reads bigger */
+.rv-lead { padding-top: 30px; padding-bottom: 30px; }
+.rv-lead .rv-t { color: var(--paper); }
+.rv-lead .rv-tick::after { background: var(--wire); box-shadow: 0 0 0 3px rgba(233,169,78,0.14); }
+.rv-lead .rv-h { font-size: clamp(1.6rem, 4.6vw, 2.05rem); line-height: 1.07; letter-spacing: -0.023em; }
+.rv-lead .rv-d { font-size: 1.02rem; margin-top: 12px; }
+
+/* the day file break */
+.rv-day {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 26px 0 6px;
+  padding-left: calc(var(--gut) + var(--gap));
+}
+.rv-day::after { content: ""; flex: 1 1 auto; height: 1px; background: var(--rule); }
+
+.rv-day-t {
+  font: 500 0.66rem/1 var(--mono);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--paper-mute);
+  white-space: nowrap;
+}
+
+/* the empty wire — a rail entry with an honest null tick, not a blank page.
+   The null must NOT inherit the lead row's bright stamp colour: a slot with no
+   time in it should not look like a time. Declared after .rv-lead so it wins
+   the equal-specificity tie. */
+.rv-empty .rv-t { color: var(--paper-mute); }
+.rv-empty .rv-tick::after { background: var(--ink); box-shadow: inset 0 0 0 1px var(--rule); }
+.rv-empty .rv-h { font-size: 1.5rem; letter-spacing: -0.018em; color: var(--paper); }
+.rv-empty .rv-d { max-width: 46ch; }
+
+/* the empty state's one instruction — a sentence, so it is set as a sentence
+   rather than in the mono meta face the row tokens use */
+.rv-cta {
+  margin: 14px 0 0;
+  max-width: 46ch;
+  font-size: 0.93rem;
+  line-height: 1.55;
+  color: var(--paper-dim);
+}
+.rv-cta a {
+  color: var(--paper);
+  text-decoration: underline;
+  text-decoration-color: var(--wire);
+  text-underline-offset: 3px;
+}
+.rv-cta a:hover { color: var(--wire); }
+
+/* ---------------------------------------------------------------------------
+   Article
+   --------------------------------------------------------------------------- */
+
+.art { padding: 34px 0 8px; }
+
+.art-h {
+  margin: 0;
+  max-width: 24ch;
+  text-wrap: balance;
+  font-size: clamp(1.85rem, 6vw, 2.55rem);
+  line-height: 1.04;
+  font-weight: 800;
+  letter-spacing: -0.028em;
+  color: var(--paper);
+}
+
+.art-dek {
+  margin: 18px 0 0;
+  text-wrap: pretty;
+  max-width: 60ch;
+  font-size: clamp(1.02rem, 2.6vw, 1.15rem);
+  line-height: 1.5;
+  color: var(--paper-dim);
+}
+
+/* a flex row rather than slash-separated text: a wrapped line then starts with
+   a value, never with an orphaned separator glyph */
+.art-by {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1px 20px;
+  margin: 24px 0 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--rule);
+  font: 500 0.72rem/1.6 var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--paper-mute);
+}
+.art-by b { color: var(--paper-dim); font-weight: 500; }
+.art-upd { color: var(--wire); white-space: nowrap; }
+
+/* body copy */
+.doc {
+  max-width: 64ch;
+  padding: 26px 0 8px;
+  font-size: 1.06rem;
+  line-height: 1.68;
+  color: var(--paper);
+}
+.doc > :first-child { margin-top: 0; }
+.doc p { margin: 0 0 1.25em; }
+.doc h2 {
+  margin: 2.4em 0 0.7em;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+  color: var(--paper);
+}
+.doc h3 {
+  margin: 1.8em 0 0.6em;
+  font-size: 0.94rem;
+  font-weight: 700;
+  color: var(--paper-dim);
+}
+.doc ul, .doc ol { margin: 0 0 1.25em; padding-left: 1.15em; }
+.doc li { margin: 0 0 0.5em; }
+.doc ul { list-style: none; padding-left: 0; }
+.doc ul > li { padding-left: 1.4em; position: relative; }
+.doc ul > li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.78em;
+  width: 8px;
+  height: 1px;
+  background: var(--wire-soft);
+}
+.doc a {
+  color: var(--paper);
+  text-decoration: underline;
+  text-decoration-color: var(--wire);
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+.doc a:hover { color: var(--wire); }
+.doc strong { font-weight: 700; color: var(--paper); }
+.doc em { font-style: italic; }
+.doc blockquote {
+  margin: 1.5em 0;
+  padding: 2px 0 2px 20px;
+  border-left: 2px solid var(--wire-soft);
+  color: var(--paper-dim);
+}
+.doc code {
+  font: 400 0.88em/1.4 var(--mono);
+  background: var(--ink-lift);
+  border: 1px solid var(--rule);
+  padding: 1px 5px;
+}
+.doc pre {
+  overflow-x: auto;
+  background: var(--ink-lift);
+  border: 1px solid var(--rule);
+  padding: 14px 16px;
+  font: 400 0.84rem/1.6 var(--mono);
+}
+.doc pre code { background: none; border: 0; padding: 0; }
+.doc hr { border: 0; border-top: 1px solid var(--rule); margin: 2em 0; }
+.doc table { width: 100%; border-collapse: collapse; margin: 1.4em 0; font-size: 0.94rem; }
+.doc th, .doc td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--rule); }
+.doc th { font: 600 0.68rem/1.4 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--paper-mute); }
+
+/* corrections — the most honest artifact in journalism; make it visible */
+.corr {
+  max-width: 64ch;
+  margin: 40px 0 0;
+  padding: 18px 20px;
+  background: var(--ink-lift);
+  border-left: 2px solid var(--wire);
+}
+.corr-h {
+  margin: 0 0 10px;
+  font: 700 0.68rem/1 var(--mono);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--wire);
+}
+.corr-l { margin: 0; padding: 0; list-style: none; }
+.corr-l li { margin: 0 0 9px; font-size: 0.93rem; line-height: 1.55; color: var(--paper-dim); }
+.corr-l li:last-child { margin-bottom: 0; }
+.corr-d {
+  font: 500 0.72rem/1 var(--mono);
+  letter-spacing: 0.06em;
+  color: var(--paper-mute);
+  margin-right: 8px;
+  white-space: nowrap;
+}
+
+.art-back {
+  max-width: 64ch;
+  margin: 44px 0 0;
+  padding-top: 18px;
+  border-top: 1px solid var(--rule);
+}
+.art-back a {
+  font: 500 0.7rem/1 var(--mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--paper-dim);
+  text-decoration: none;
+}
+.art-back a:hover { color: var(--wire); }
+
+/* ---------------------------------------------------------------------------
+   About / 404 — plain pages, same furniture
+   --------------------------------------------------------------------------- */
+
+.page { padding: 40px 0 12px; }
+
+.page-h {
+  margin: 0;
+  max-width: 22ch;
+  text-wrap: balance;
+  font-size: clamp(1.7rem, 5.4vw, 2.25rem);
+  line-height: 1.08;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
+
+.page-eyebrow {
+  margin: 0 0 14px;
+  font: 500 0.66rem/1 var(--mono);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--wire);
+}
+
+.page-body {
+  max-width: 60ch;
+  padding: 24px 0 0;
+  font-size: 1.04rem;
+  line-height: 1.68;
+  color: var(--paper);
+}
+.page-body p { margin: 0 0 1.2em; }
+.page-body p:last-child { margin-bottom: 0; }
+.page-body a {
+  color: var(--paper);
+  text-decoration: underline;
+  text-decoration-color: var(--wire);
+  text-underline-offset: 3px;
+}
+.page-body a:hover { color: var(--wire); }
+
+.lost { padding: 90px 0 80px; }
+.lost .page-h { max-width: 22ch; }
+.lost-go { margin: 26px 0 0; }
+.lost-go a {
+  display: inline-block;
+  font: 500 0.72rem/1 var(--mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--wire);
+  padding: 13px 20px;
+  text-decoration: none;
+}
+.lost-go a:hover { background: var(--paper); }
+
+/* ---------------------------------------------------------------------------
+   Footer
+   --------------------------------------------------------------------------- */
+
+.foot {
+  margin-top: 56px;
+  border-top: 1px solid var(--rule);
+  background: var(--ink-lift);
+}
+
+.foot-in { padding: 26px 0 38px; }
+
+.foot-disc {
+  margin: 0;
+  max-width: 60ch;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--paper-dim);
+}
+
+.foot-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin: 16px 0 0;
+  font: 500 0.66rem/1.6 var(--mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--paper-mute);
+}
+.foot-meta a { color: var(--paper-mute); text-decoration: none; }
+.foot-meta a:hover { color: var(--wire); }
+.foot-c { color: var(--paper-dim); }
+
+/* ---------------------------------------------------------------------------
+   Narrow — the rail collapses, the tick becomes an inline stamp
+   --------------------------------------------------------------------------- */
+
+@media (max-width: 640px) {
+  .river::before { display: none; }
+  .rv { grid-template-columns: 1fr; row-gap: 0; padding: 18px 0 20px; }
+  .rv-tick { text-align: left; padding-top: 0; padding-bottom: 8px; }
+  .rv-tick::after { display: none; }
+  .rv-t { letter-spacing: 0.12em; }
+  .rv-day { padding-left: 0; padding-top: 22px; }
+  .rv-lead { padding-top: 22px; padding-bottom: 24px; }
+  .band-tz { margin-left: 0; }
+  .mast-in { flex-wrap: wrap; gap: 10px; }
+  .mast-fill { display: none; }
+  .doc, .corr, .art-back { max-width: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
