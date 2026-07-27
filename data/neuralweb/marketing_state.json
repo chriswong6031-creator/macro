@@ -1,6 +1,6 @@
 {
   "schema": "marketing.state/v1",
-  "as_of": "2026-07-26",
+  "as_of": "2026-07-27",
   "lobe": {
     "id": "marketing",
     "name": "Marketing",
@@ -82,7 +82,7 @@
       ],
       "total_envelope_usd": 0
     },
-    "opportunity_queue_depth": 40,
+    "opportunity_queue_depth": 49,
     "self_improvement": {
       "loop_state": "observing",
       "open_hypotheses": [],
@@ -1494,30 +1494,30 @@
   },
   "pipeline": {
     "opportunities": {
-      "open": 40,
-      "scored": 83,
+      "open": 49,
+      "scored": 92,
       "newest": [
         {
-          "id": "radar-earnings-ABCB-2026-07-26",
-          "problem_or_desire": "$ABCB: earnings 2026-07-27",
+          "id": "radar-earnings-AAMI-2026-07-27",
+          "problem_or_desire": "$AAMI: earnings 2026-07-30",
           "expected_value": 0.5,
-          "score": 0.374746,
+          "score": 0.444659,
           "half_life_class": "earnings_follow_up",
           "status": "open"
         },
         {
-          "id": "radar-earnings-ACT-2026-07-26",
-          "problem_or_desire": "$ACT: earnings 2026-07-29",
+          "id": "radar-earnings-AAPL-2026-07-27",
+          "problem_or_desire": "$AAPL: earnings 2026-07-30 after hours",
           "expected_value": 0.5,
-          "score": 0.374746,
+          "score": 0.444659,
           "half_life_class": "earnings_follow_up",
           "status": "open"
         },
         {
-          "id": "radar-earnings-ADAM-2026-07-26",
-          "problem_or_desire": "$ADAM: earnings 2026-07-29",
+          "id": "radar-earnings-ABBV-2026-07-27",
+          "problem_or_desire": "$ABBV: earnings 2026-07-30",
           "expected_value": 0.5,
-          "score": 0.374746,
+          "score": 0.444659,
           "half_life_class": "earnings_follow_up",
           "status": "open"
         }
@@ -1542,30 +1542,30 @@
       ]
     },
     "publications": {
-      "total": 8,
-      "receipts": 8,
+      "total": 14,
+      "receipts": 14,
       "corrections": 0,
       "newest": [
         {
-          "id": "pub-ob-2026-07-25-b87e9ce3f7",
+          "id": "pub-ob-2026-07-26-c704d7b7c7",
           "channel": "x",
           "account": "flagship",
           "status": "clean",
-          "published_at": "2026-07-26T00:04:58Z"
+          "published_at": "2026-07-27T00:04:48Z"
         },
         {
-          "id": "pub-ob-2026-07-25-8431ea805e",
+          "id": "pub-ob-2026-07-26-422a772fe1",
           "channel": "x",
           "account": "flagship",
           "status": "clean",
-          "published_at": "2026-07-25T22:44:21Z"
+          "published_at": "2026-07-26T22:01:35Z"
         },
         {
-          "id": "pub-ob-2026-07-25-31317374b5",
+          "id": "pub-ob-2026-07-26-c6c1673b17",
           "channel": "x",
           "account": "flagship",
           "status": "clean",
-          "published_at": "2026-07-25T20:49:03Z"
+          "published_at": "2026-07-26T20:20:12Z"
         }
       ]
     },
@@ -1789,12 +1789,12 @@
     }
   ],
   "content": {
-    "total_posts": 60,
-    "signal_posts": 26,
+    "total_posts": 59,
+    "signal_posts": 25,
     "charts": 8,
     "accounts": 6,
     "state": "present",
-    "as_of": "2026-07-26"
+    "as_of": "2026-07-27"
   },
   "notes": [
     "deterministic v1 substrate; agent actuation staged",
@@ -1804,7 +1804,7 @@
   ],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/marketing_governor.py",
-  "produced_at": "2026-07-26T09:59:04Z",
-  "inputs_hash": "sha256:1badee94a393c9c7b22dc4a9884df4840fba213bf21d9cbc6ddac1045b6fb9eb",
+  "produced_at": "2026-07-27T04:03:41Z",
+  "inputs_hash": "sha256:16b92eac306642f50a783c70b480557d662cb4c2c48317d2c5b1646fa3f8d96b",
   "tier": "display"
 }

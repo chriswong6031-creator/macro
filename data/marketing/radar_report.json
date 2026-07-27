@@ -2,7 +2,7 @@
   "schema": "marketing.radar_report/v1",
   "schema_version": 1,
   "produced_by": "engine/marketing/radar_internal.py",
-  "produced_at": "2026-07-26T09:59:03Z",
+  "produced_at": "2026-07-27T04:03:41Z",
   "tier": "display",
   "as_of": "2026-07-26",
   "feeds": [
@@ -22,7 +22,7 @@
       "name": "earnings",
       "ok": true,
       "n_assets": 20,
-      "as_of": "2026-07-26"
+      "as_of": "2026-07-27"
     },
     {
       "name": "movers",
@@ -38,97 +38,89 @@
     }
   ],
   "posted_recent": {
-    "n_tickers": 80,
+    "n_tickers": 81,
     "window_plans": 7
   },
   "surplus": [
     {
+      "ticker": "AAMI",
+      "feed": "earnings",
+      "why": "earnings 2026-07-30",
+      "as_of": "2026-07-27",
+      "staleness_days": 0,
+      "opportunity_id": "radar-earnings-AAMI-2026-07-27"
+    },
+    {
+      "ticker": "AAPL",
+      "feed": "earnings",
+      "why": "earnings 2026-07-30 after hours",
+      "as_of": "2026-07-27",
+      "staleness_days": 0,
+      "opportunity_id": "radar-earnings-AAPL-2026-07-27"
+    },
+    {
+      "ticker": "ABBV",
+      "feed": "earnings",
+      "why": "earnings 2026-07-30",
+      "as_of": "2026-07-27",
+      "staleness_days": 0,
+      "opportunity_id": "radar-earnings-ABBV-2026-07-27"
+    },
+    {
       "ticker": "ABCB",
       "feed": "earnings",
       "why": "earnings 2026-07-27",
-      "as_of": "2026-07-26",
+      "as_of": "2026-07-27",
       "staleness_days": 0,
-      "opportunity_id": "radar-earnings-ABCB-2026-07-26"
+      "opportunity_id": "radar-earnings-ABCB-2026-07-27"
     },
     {
       "ticker": "ACT",
       "feed": "earnings",
       "why": "earnings 2026-07-29",
-      "as_of": "2026-07-26",
+      "as_of": "2026-07-27",
       "staleness_days": 0,
-      "opportunity_id": "radar-earnings-ACT-2026-07-26"
+      "opportunity_id": "radar-earnings-ACT-2026-07-27"
     },
     {
       "ticker": "ADAM",
       "feed": "earnings",
       "why": "earnings 2026-07-29",
-      "as_of": "2026-07-26",
+      "as_of": "2026-07-27",
       "staleness_days": 0,
-      "opportunity_id": "radar-earnings-ADAM-2026-07-26"
+      "opportunity_id": "radar-earnings-ADAM-2026-07-27"
+    },
+    {
+      "ticker": "ADC",
+      "feed": "earnings",
+      "why": "earnings 2026-07-30",
+      "as_of": "2026-07-27",
+      "staleness_days": 0,
+      "opportunity_id": "radar-earnings-ADC-2026-07-27"
     },
     {
       "ticker": "ADP",
       "feed": "earnings",
       "why": "earnings 2026-07-29",
-      "as_of": "2026-07-26",
+      "as_of": "2026-07-27",
       "staleness_days": 0,
-      "opportunity_id": "radar-earnings-ADP-2026-07-26"
+      "opportunity_id": "radar-earnings-ADP-2026-07-27"
+    },
+    {
+      "ticker": "AEE",
+      "feed": "earnings",
+      "why": "earnings 2026-07-30",
+      "as_of": "2026-07-27",
+      "staleness_days": 0,
+      "opportunity_id": "radar-earnings-AEE-2026-07-27"
     },
     {
       "ticker": "AEP",
       "feed": "earnings",
       "why": "earnings 2026-07-29",
-      "as_of": "2026-07-26",
+      "as_of": "2026-07-27",
       "staleness_days": 0,
-      "opportunity_id": "radar-earnings-AEP-2026-07-26"
-    },
-    {
-      "ticker": "AIN",
-      "feed": "earnings",
-      "why": "earnings 2026-07-29",
-      "as_of": "2026-07-26",
-      "staleness_days": 0,
-      "opportunity_id": "radar-earnings-AIN-2026-07-26"
-    },
-    {
-      "ticker": "ALB",
-      "feed": "earnings",
-      "why": "earnings 2026-07-29",
-      "as_of": "2026-07-26",
-      "staleness_days": 0,
-      "opportunity_id": "radar-earnings-ALB-2026-07-26"
-    },
-    {
-      "ticker": "ALGN",
-      "feed": "earnings",
-      "why": "earnings 2026-07-29",
-      "as_of": "2026-07-26",
-      "staleness_days": 0,
-      "opportunity_id": "radar-earnings-ALGN-2026-07-26"
-    },
-    {
-      "ticker": "ALHC",
-      "feed": "earnings",
-      "why": "earnings 2026-07-29",
-      "as_of": "2026-07-26",
-      "staleness_days": 0,
-      "opportunity_id": "radar-earnings-ALHC-2026-07-26"
-    },
-    {
-      "ticker": "ALL",
-      "feed": "earnings",
-      "why": "earnings 2026-07-29",
-      "as_of": "2026-07-26",
-      "staleness_days": 0,
-      "opportunity_id": "radar-earnings-ALL-2026-07-26"
-    },
-    {
-      "ticker": "AM",
-      "feed": "earnings",
-      "why": "earnings 2026-07-29",
-      "as_of": "2026-07-26",
-      "staleness_days": 0,
-      "opportunity_id": "radar-earnings-AM-2026-07-26"
+      "opportunity_id": "radar-earnings-AEP-2026-07-27"
     },
     {
       "ticker": "CHRW",
@@ -291,6 +283,30 @@
       "opportunity_id": "radar-stage-CB-2026-07-17"
     },
     {
+      "ticker": "BA",
+      "feed": "prophet",
+      "why": "active Prophet plan BA-BULL-20260702, phase pre_trigger, conviction 46",
+      "as_of": "2026-07-02",
+      "staleness_days": 24,
+      "opportunity_id": "radar-prophet-BA-2026-07-02"
+    },
+    {
+      "ticker": "SBUX",
+      "feed": "prophet",
+      "why": "active Prophet plan SBUX-BULL-20260702, phase triggered_pre_t1, conviction 42",
+      "as_of": "2026-07-02",
+      "staleness_days": 24,
+      "opportunity_id": "radar-prophet-SBUX-2026-07-02"
+    },
+    {
+      "ticker": "PAHC",
+      "feed": "prophet",
+      "why": "active Prophet plan PAHC-BULL-20260701, phase triggered_pre_t1, conviction 87",
+      "as_of": "2026-07-01",
+      "staleness_days": 25,
+      "opportunity_id": "radar-prophet-PAHC-2026-07-01"
+    },
+    {
       "ticker": "LMT",
       "feed": "prophet",
       "why": "active Prophet plan LMT-BULL-20260626, phase triggered_pre_t1, conviction 72",
@@ -345,30 +361,14 @@
       "as_of": "2026-05-18",
       "staleness_days": 69,
       "opportunity_id": "radar-prophet-SYK-2026-05-18"
-    },
-    {
-      "ticker": "AEO",
-      "feed": "prophet",
-      "why": "active Prophet plan AEO-BULL-20260415, phase overtime, conviction 74",
-      "as_of": "2026-04-15",
-      "staleness_days": 102,
-      "opportunity_id": "radar-prophet-AEO-2026-04-15"
-    },
-    {
-      "ticker": "KKR",
-      "feed": "prophet",
-      "why": "active Prophet plan KKR-BULL-20260318, phase overtime, conviction 77",
-      "as_of": "2026-03-18",
-      "staleness_days": 130,
-      "opportunity_id": "radar-prophet-KKR-2026-03-18"
     }
   ],
   "queue": {
-    "added": 0,
-    "expired": 11,
-    "total": 84,
-    "open": 40,
-    "doa_skipped": 19
+    "added": 10,
+    "expired": 1,
+    "total": 93,
+    "open": 49,
+    "doa_skipped": 20
   },
   "tiers_summary": {
     "as_of": "2026-07-24",

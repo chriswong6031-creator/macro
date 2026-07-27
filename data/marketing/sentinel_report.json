@@ -1,37 +1,24 @@
 {
   "schema_version": 1,
   "produced_by": "sentinel",
-  "produced_at": "2026-07-26T09:52:12Z",
-  "as_of": "2026-07-26",
+  "produced_at": "2026-07-27T04:03:40Z",
+  "as_of": "2026-07-27",
   "plan_status": "pass",
   "publish_enabled": false,
   "auditor_strict": true,
   "counts": {
-    "items": 55,
+    "items": 54,
     "passed": 43,
-    "quarantined": 12,
-    "quarantined_policy": 4,
-    "quarantined_overflow": 8,
+    "quarantined": 11,
+    "quarantined_policy": 0,
+    "quarantined_overflow": 11,
     "warnings": 0,
     "exceptions_applied": 0
   },
   "reasons_histogram": {
-    "missing_disclosure": 4,
-    "cashtag_cap": 8
+    "cashtag_cap": 11
   },
   "quarantined": [
-    {
-      "id": "post-flagship-002",
-      "account": "flagship",
-      "slot": "D1-S2",
-      "type": "signal",
-      "cashtag": "$ROST",
-      "headline": "$ROST at 235.80. Simple read.",
-      "class": "policy",
-      "reasons": [
-        "missing_disclosure"
-      ]
-    },
     {
       "id": "post-flagship-005",
       "account": "flagship",
@@ -51,9 +38,9 @@
       "type": "signal",
       "cashtag": "$ROST",
       "headline": "$ROST | 235.80 is the line",
-      "class": "policy",
+      "class": "overflow",
       "reasons": [
-        "missing_disclosure"
+        "cashtag_cap:$ROST"
       ]
     },
     {
@@ -69,15 +56,15 @@
       ]
     },
     {
-      "id": "post-flagship-010",
+      "id": "post-flagship-014",
       "account": "flagship",
-      "slot": "D2-S2",
+      "slot": "D2-S6",
       "type": "signal",
       "cashtag": "$ROST",
-      "headline": "$ROST | 235.80 is the line",
-      "class": "policy",
+      "headline": "Flagged $ROST at 235.80",
+      "class": "overflow",
       "reasons": [
-        "missing_disclosure"
+        "cashtag_cap:$ROST"
       ]
     },
     {
@@ -111,9 +98,9 @@
       "type": "signal",
       "cashtag": "$ROST",
       "headline": "$ROST | 235.80 is the line",
-      "class": "policy",
+      "class": "overflow",
       "reasons": [
-        "missing_disclosure"
+        "cashtag_cap:$ROST"
       ]
     },
     {
@@ -175,6 +162,14 @@
       "headline": "$CBOE is close"
     },
     {
+      "id": "post-flagship-002",
+      "account": "flagship",
+      "slot": "D1-S2",
+      "type": "signal",
+      "cashtag": "$ROST",
+      "headline": "$ROST at 235.80. Simple read."
+    },
+    {
       "id": "post-flagship-003",
       "account": "flagship",
       "slot": "D1-S3",
@@ -199,6 +194,14 @@
       "headline": "What just happened, and what it changes"
     },
     {
+      "id": "post-flagship-010",
+      "account": "flagship",
+      "slot": "D2-S2",
+      "type": "signal",
+      "cashtag": "$ROST",
+      "headline": "$ROST | 235.80 is the line"
+    },
+    {
       "id": "post-flagship-011",
       "account": "flagship",
       "slot": "D2-S3",
@@ -221,14 +224,6 @@
       "type": "watchlist",
       "cashtag": "$CBOE",
       "headline": "Keeping $CBOE close this week"
-    },
-    {
-      "id": "post-flagship-014",
-      "account": "flagship",
-      "slot": "D2-S6",
-      "type": "signal",
-      "cashtag": "$ROST",
-      "headline": "Flagged $ROST at 235.80"
     },
     {
       "id": "post-flagship-017",
@@ -436,28 +431,20 @@
       "slot": "CONF-01",
       "type": "signal",
       "cashtag": "$VST",
-      "headline": "Our technical signals have resolved higher 73% of the time from this spot. $VST is there now."
+      "headline": "Our technical signals have resolved higher 67% of the time from this spot. $VST is there now."
     },
     {
       "id": "post-conf-flagship-002",
       "account": "flagship",
       "slot": "CONF-02",
       "type": "signal",
-      "cashtag": "$XEL",
-      "headline": "Our technical signals have resolved higher 70% of the time from this spot. $XEL is there now."
+      "cashtag": "$IBM",
+      "headline": "Our technical signals have resolved higher 67% of the time from this spot. $IBM is there now."
     },
     {
       "id": "post-conf-flagship-003",
       "account": "flagship",
       "slot": "CONF-03",
-      "type": "signal",
-      "cashtag": "$IBM",
-      "headline": "Our technical signals have resolved higher 67% of the time from this spot. $IBM is there now."
-    },
-    {
-      "id": "post-conf-flagship-004",
-      "account": "flagship",
-      "slot": "CONF-04",
       "type": "signal",
       "cashtag": "$WMT",
       "headline": "Our technical signals have resolved higher 66% of the time from this spot. $WMT is there now."
@@ -519,7 +506,7 @@
     },
     "cadence": {
       "cadence_cap_daily_hits": 0,
-      "cashtag_cap_hits": 8,
+      "cashtag_cap_hits": 11,
       "slot_collision_hits": 0,
       "reply_cap_hits": 0
     },
@@ -527,7 +514,8 @@
       "hits": 0
     },
     "disclosure": {
-      "hits": 4
+      "hits": 0,
+      "required": false
     },
     "cherry_pick": {
       "status": "run",
@@ -535,7 +523,7 @@
       "cherry_pick_detected": false
     },
     "stale_receipts": {
-      "age_days": 4,
+      "age_days": 5,
       "max": 7
     },
     "kill_switch": {
