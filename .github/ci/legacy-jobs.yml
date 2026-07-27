@@ -535,6 +535,7 @@ jobs:
           tests/test_aibrief_page.py
           tests/test_aibrief_w4_panels.py
           tests/test_validated_claims_thirdparty.py
+          tests/test_intl_recovery_quality.py
           tests/test_sa_w5_v2_grader_hook.py
           tests/test_w8b_macro_prior_entries.py
           tests/test_rr_scorecard_card.py

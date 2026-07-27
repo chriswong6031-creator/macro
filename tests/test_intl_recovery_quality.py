@@ -109,6 +109,50 @@ def test_macro_backdrop_is_visible_but_never_scores_geopolitics_or_midterm():
     assert out["items"][1]["stale_days"] == 13
 
 
+def test_macro_backdrop_read_makes_no_unearned_validated_claim():
+    """The backdrop read must not call the HK rate/FX leg 'validated' (BC-2).
+
+    Regression: the shipped copy said "Validated HK rate/FX pressure lives in the pullback
+    radar". It reached site/intl.html on the 2026-07-27 nightly render and red-lined
+    check_validated_claims on main, i.e. ci-pack-0 on every open PR. The claim is not
+    earned: engine.risk_radar_intl.HK_PROFILE deliberately makes a WEAKER claim than the CN
+    profile — CN's caveat says "Validated but modest", HK's says "Lighter than the China
+    read and recent-era only ... Context, not a forecast" — HK leans on the external
+    rateshock/usd legs with no deep breadth history, and no artifact carries
+    validated:true for it. So there is nothing for an allowlist entry to cite.
+
+    Asserted through the real gate, not a substring match, so negation/allowlist semantics
+    stay in one place — and asserted on the ENGINE's own strings so a re-escalation fails
+    here, at the source, rather than a render later on a page far from the edit.
+    """
+    from scripts import check_validated_claims as GATE
+
+    payload = {
+        "asof": "2026-07-24",
+        "board": {
+            "rate_path_row": {"policy_rate": 3.63, "implied_bp_12m": 57},
+            "policy_row": {"intel_staleness_days": 13,
+                           "iran_context": {"unsigned_display": True}},
+        },
+    }
+    out = macro_backdrop(payload, as_of="2026-07-24")
+    allow = GATE._load_allowlist()
+
+    for field in ("read_en", "read_zh", "summary_en", "summary_zh"):
+        for line in str(out.get(field) or "").splitlines():
+            _, hits = GATE._scan_line(line, allow)
+            assert not [h for h in hits if not h[0]], (
+                f"{field} makes an unearned 'validated' claim: {line!r}. "
+                "The HK rate/FX leg is measured context, not a validated edge — "
+                "de-escalate the wording; do not add an allowlist entry (it takes "
+                "citations, and there is no HK rate/FX study to cite)."
+            )
+
+    # EN and zh must de-escalate together: only EN carries a token the gate matches
+    # ('validated|已验证' — the zh had said 经验证), so zh can over-claim invisibly.
+    assert "实测" in out["read_zh"] and "经验证" not in out["read_zh"]
+
+
 def test_builder_and_template_wire_hk_radar_and_quality_without_ranking_it():
     root = Path(__file__).resolve().parents[1]
     builder = (root / "scripts" / "build_intl.py").read_text(encoding="utf-8")

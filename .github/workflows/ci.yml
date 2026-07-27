@@ -644,6 +644,9 @@ on:
       # The third-party-sink exemption's own suite (#3770). Named so an edit to
       # the test ALONE still triggers the lane that runs it.
       - "tests/test_validated_claims_thirdparty.py"
+      # The intl backdrop copy that tripped BC-2 on 2026-07-27. engine/** already covers
+      # the module; list the suite so a test-only edit still triggers CI.
+      - "tests/test_intl_recovery_quality.py"
       # Mastermind Feedback Contract PR-A (FB-R12/R13): privacy-boundary guard.
       # Any change to the guard script, its tests, committed governance/feedback
       # artifacts, .gitignore, or operator_grading must re-prove the rail holds.
