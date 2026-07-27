@@ -1,0 +1,121 @@
+
+body.public-page{padding-top:0}
+
+/* ── public header — landing-page chrome ───────────────────────────────── */
+.public-nav{position:sticky;top:0;z-index:90;background:rgba(247,248,250,.85);
+  -webkit-backdrop-filter:saturate(140%) blur(14px);backdrop-filter:saturate(140%) blur(14px);
+  border-bottom:1px solid #e2e6ec;transition:box-shadow .25s ease,background .25s ease;
+  color:#1c2430;font-family:-apple-system,"SF Pro Display",Inter,system-ui,"Segoe UI",Roboto,sans-serif}
+.public-nav.sc{background:rgba(247,248,250,.95);box-shadow:0 10px 30px -18px rgba(18,26,45,.25)}
+.public-nav-in{max-width:1280px;margin:0 auto;padding:0 clamp(20px,4.5vw,60px);height:62px;
+  display:flex;align-items:center;gap:26px}
+.public-brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:15px;
+  color:#1c2430;text-decoration:none;white-space:nowrap}
+.public-brand:hover{color:#1c2430;text-decoration:none}
+.public-brand .m{width:27px;height:27px;border-radius:7px;background:#1c2430;display:grid;
+  place-items:center;color:#fff;font-weight:800;font-size:14px}
+.public-nav-links{display:flex;gap:22px;font-size:14px;font-weight:500}
+.public-nav-links a{color:#5d6b7e;text-decoration:none;white-space:nowrap}
+.public-nav-links a:hover{color:#1c2430;text-decoration:none}
+.public-nav-right{margin-left:auto;display:flex;align-items:center;gap:14px;font-size:14px}
+.public-nav-login{color:#5d6b7e;text-decoration:none;white-space:nowrap}
+.public-nav-login:hover{color:#1c2430;text-decoration:none}
+.public-nav-cta{display:inline-flex;align-items:center;justify-content:center;border-radius:10px;
+  padding:8px 15px;font-weight:600;font-size:13.5px;border:1px solid #285fff;
+  background:#285fff;color:#fff;text-decoration:none;box-shadow:0 2px 8px rgba(18,26,45,.08);
+  transition:transform .16s,box-shadow .16s,background .16s;white-space:nowrap}
+.public-nav-cta:hover{transform:translateY(-1px);box-shadow:0 14px 34px -14px rgba(18,26,45,.28);
+  background:#1c47cc;color:#fff;text-decoration:none}
+
+/* settings popover — same controls and account affordance as index.html */
+.public-nav .gear-wrap{position:relative;display:inline-flex}
+.public-nav .gearbtn{width:37px;height:37px;flex:none;border-radius:999px;border:1px solid #d2d8e1;
+  background:#fff;box-shadow:0 2px 8px rgba(18,26,45,.08);display:grid;place-items:center;
+  color:#5d6b7e;transition:transform .16s,box-shadow .16s,color .16s;cursor:pointer;padding:0}
+.public-nav .gearbtn:hover{color:#1c2430;transform:translateY(-1px);
+  box-shadow:0 14px 34px -14px rgba(18,26,45,.28)}
+.public-nav .gearbtn[aria-expanded="true"]{color:#1c2430;border-color:#8a95a4}
+.public-nav .gearbtn svg{width:17px;height:17px}
+.public-nav .gear-pop{position:absolute;right:0;top:calc(100% + 10px);width:236px;background:#fff;
+  border:1px solid #d2d8e1;border-radius:14px;box-shadow:0 14px 34px -14px rgba(18,26,45,.28);
+  padding:8px;z-index:95;opacity:0;visibility:hidden;transform:translateY(6px);
+  transition:opacity .18s ease,transform .18s ease,visibility 0s .18s;color:#1c2430}
+.public-nav .gear-pop.open{opacity:1;visibility:visible;transform:none;
+  transition:opacity .18s ease,transform .18s ease}
+.public-nav .gear-pop p{padding:0;border:0}
+.public-nav .gp-kicker,.public-nav .gp-acct-t{font-weight:700;font-size:9px;letter-spacing:.16em;
+  color:#8a95a4;margin:4px 8px 8px;text-transform:uppercase}
+.public-nav .gp-acct-t{margin:2px 8px 8px}
+.public-nav .gp-lang{display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:4px 8px 8px;min-width:0}
+.public-nav .gp-lbl{font-size:13px;color:#34404f;font-weight:500;min-width:0}
+.public-nav .gp-seg{display:inline-flex;border:1px solid #d2d8e1;border-radius:8px;padding:2px;
+  background:#f1f3f7;flex:none}
+.public-nav .gp-seg-b{border:0;background:transparent;font-family:inherit;font-weight:700;
+  font-size:11px;line-height:1;color:#5d6b7e;
+  border-radius:6px;padding:4px 9px;transition:color .14s,background .14s;cursor:pointer}
+.public-nav .gp-seg-b.on{background:#285fff;color:#fff}
+.public-nav .gp-div{height:1px;background:#e2e6ec;margin:4px 4px 6px}
+.public-nav .gp-link{display:block;font-size:13px;color:#34404f;border-radius:8px;padding:8px;
+  font-weight:500;text-decoration:none;transition:background .14s,color .14s}
+.public-nav .gp-link:hover{background:#f1f3f7;color:#1c2430;text-decoration:none}
+.public-nav .gp-acct-d{font-size:12px;line-height:1.5;color:#5d6b7e;margin:0 8px 10px}
+.public-nav .gp-acct-btns{display:flex;gap:8px;padding:0 4px 4px}
+.public-nav .gp-abtn{flex:1;border-radius:9px;padding:8px 10px;font-size:12.5px;font-weight:600;
+  transition:background .14s,color .14s,border-color .14s;cursor:pointer}
+.public-nav .gp-abtn.ghost{border:1px solid #d2d8e1;background:#fff;color:#34404f}
+.public-nav .gp-abtn.ghost:hover{background:#eef2ff;color:#1c47cc;border-color:#285fff}
+.public-nav .gp-abtn.solid{background:#285fff;border:1px solid #285fff;color:#fff;
+  box-shadow:0 2px 8px rgba(18,26,45,.08)}
+.public-nav .gp-abtn.solid:hover{background:#1c47cc;border-color:#1c47cc}
+.public-nav .gp-acct-card{display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;
+  cursor:pointer;min-width:0;transition:background .14s}
+.public-nav .gp-acct-card:hover{background:#f1f3f7}
+.public-nav .gp-acct-card:focus-visible{outline:2px solid #285fff;outline-offset:2px}
+.public-nav .gp-avatar{flex:none;width:28px;height:28px;border-radius:50%;display:inline-flex;
+  align-items:center;justify-content:center;font-weight:800;font-size:12px;color:#fff;background:#285fff}
+.public-nav .gp-acct-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.public-nav .gp-acct-email{font-size:12.5px;font-weight:600;color:#1c2430;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.public-nav .gp-acct-sub{font-size:11px;color:#5d6b7e}
+.public-nav .gp-signout{display:block;width:calc(100% - 8px);margin:6px 4px 2px;
+  border:1px solid #d2d8e1;border-radius:9px;padding:8px;font-size:12.5px;font-weight:600;
+  color:#34404f;background:#fff;transition:background .14s,color .14s,border-color .14s;cursor:pointer}
+.public-nav .gp-signout:hover{background:#f1f3f7;color:#1c2430}
+
+/* ── public footer — exact landing-page information architecture ───────── */
+.public-footer{background:#04070c;border-top:1px solid #10161f;padding:46px 0 44px;
+  color:#7a8496;font:13px/1.5 -apple-system,"SF Pro Display",Inter,system-ui,"Segoe UI",Roboto,sans-serif}
+.public-footer a{text-decoration:none}
+.public-footer .f-in{max-width:1280px;margin:0 auto;padding:0 clamp(20px,4.5vw,60px)}
+.public-footer .f-grid{display:flex;justify-content:space-between;align-items:flex-start;
+  gap:30px;flex-wrap:wrap}
+.public-footer .f-brand .fb-row{display:flex;align-items:center;gap:9px}
+.public-footer .f-brand .fm{width:26px;height:26px;border-radius:7px;
+  background:linear-gradient(135deg,#3f82f6,#7c5cff);display:grid;place-items:center;
+  font-weight:800;font-size:14px;color:#fff}
+.public-footer .f-brand .fn{font-weight:800;font-size:13px;letter-spacing:.08em;color:#dfe6f2}
+.public-footer .f-brand .ft{margin:10px 0 0;color:#5f6b7e;font-size:12.5px}
+.public-footer .f-cols{display:flex;gap:clamp(30px,6vw,84px)}
+.public-footer .f-col p{margin:0 0 8px;font-weight:700;font-size:9px;letter-spacing:.14em;
+  color:#46536a;text-transform:uppercase}
+.public-footer .f-col a{display:block;color:#8e99ad;padding:4.5px 0;font-size:13px}
+.public-footer .f-col a:hover{color:#dfe6f2;text-decoration:none}
+.public-footer .f-bot{display:flex;justify-content:space-between;align-items:center;gap:12px 18px;
+  flex-wrap:wrap;border-top:1px solid #10161f;margin-top:36px;padding-top:20px;
+  font-size:12px;color:#8e99ad}
+.public-footer .f-bot a{color:#8e99ad}
+.public-footer .f-bot a:hover{color:#dfe6f2}
+
+@media(max-width:680px){
+  .public-nav-links{display:none}
+  .public-nav-login{display:none}
+  .public-nav-right{gap:10px}
+  .public-footer .f-cols{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:28px 36px}
+}
+@media(max-width:420px){
+  .public-nav-in{gap:12px}
+  .public-brand{font-size:13px;gap:8px}
+  .public-nav-cta{padding:8px 11px}
+}

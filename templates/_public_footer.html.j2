@@ -1,0 +1,38 @@
+{# Anonymous visitor footer. Information architecture mirrors index.html. #}
+<footer class="public-footer">
+  <div class="f-in">
+    <div class="f-grid">
+      <div class="f-brand">
+        <div class="fb-row"><span class="fm">M</span><span class="fn">MASTERMIND</span></div>
+        <p class="ft">{{ t('Institutional-grade market intelligence.', '机构级市场情报。') }}</p>
+      </div>
+      <div class="f-cols">
+        <div class="f-col">
+          <p>{{ t('Product', '产品') }}</p>
+          <a href="https://app.mastermind-x.com">Terminal</a>
+          <a href="{{ rel }}start.html">{{ t('Dashboards', '仪表盘') }}</a>
+          <a href="{{ rel }}index.html#ai">Mastermind AI</a>
+          <a href="{{ rel }}index.html#pricing">{{ t('Pricing', '定价') }}</a>
+        </div>
+        <div class="f-col">
+          <p>{{ t('Resources', '资源') }}</p>
+          <a href="{{ rel }}methodology.html">{{ t('Methodology', '方法论') }}</a>
+          <a href="{{ rel }}tools/index.html">{{ t('Tools', '工具') }}</a>
+          <a href="{{ rel }}learn/index.html">{{ t('Learn', '学习') }}</a>
+          <a href="{{ rel }}blog/index.html">{{ t('Blog', '博客') }}</a>
+          <a href="{{ rel }}support.html">{{ t('Support', '支持') }}</a>
+        </div>
+        <div class="f-col">
+          <p>{{ t('Legal', '法律') }}</p>
+          <a href="{{ rel }}privacy.html">{{ t('Privacy', '隐私政策') }}</a>
+          <a href="{{ rel }}terms.html">{{ t('Terms', '服务条款') }}</a>
+          <a href="{{ rel }}disclaimer.html">{{ t('Disclaimer', '免责声明') }}</a>
+        </div>
+      </div>
+    </div>
+    <div class="f-bot">
+      <span>© 2026 Mastermind · mastermind-x.com</span>
+      <span class="f-legal"><a href="{{ rel }}privacy.html">{{ t('Privacy', '隐私政策') }}</a> · <a href="{{ rel }}terms.html">{{ t('Terms', '服务条款') }}</a> · <a href="{{ rel }}disclaimer.html">{{ t('Disclaimer', '免责声明') }}</a></span>
+    </div>
+  </div>
+</footer>

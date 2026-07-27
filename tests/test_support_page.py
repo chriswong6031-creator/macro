@@ -76,7 +76,10 @@ def test_page_builds_with_the_house_chrome(page):
     assert page.lstrip().startswith("<!DOCTYPE html>")
     assert "<title>Support — Mastermind</title>" in page
     assert 'href="theme.css"' in page and 'src="theme.js"' in page
-    assert 'class="site-nav"' in page and 'class="nav-links"' in page   # _site_nav include
+    assert 'class="public-nav"' in page
+    assert 'class="public-nav-links"' in page
+    assert 'class="public-footer"' in page
+    assert 'class="site-nav"' not in page
     assert "data-dbase" in page, "write_page must inject the data-base shim"
     assert 'rel="canonical" href="https://www.mastermind-x.com/support.html"' in page
 

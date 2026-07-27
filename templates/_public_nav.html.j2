@@ -1,0 +1,51 @@
+{# Anonymous visitor navigation. `rel` is the path back to site root. #}
+<nav class="public-nav" aria-label="Main">
+  <div class="public-nav-in">
+    <a class="public-brand" href="{{ rel }}index.html"><span class="m">M</span> MASTERMIND</a>
+    <div class="public-nav-links">
+      <a href="https://app.mastermind-x.com">Terminal</a>
+      <a href="{{ rel }}index.html#ai">{{ t('Mastermind AI', 'Mastermind AI') }}</a>
+      <a href="{{ rel }}index.html#pricing">{{ t('Pricing', '定价') }}</a>
+    </div>
+    <div class="public-nav-right">
+      <a id="nav-login" class="public-nav-login" href="https://app.mastermind-x.com/terminal?signin=1">{{ t('Log in', '登录') }}</a>
+      <a id="nav-cta" class="public-nav-cta" href="https://app.mastermind-x.com/terminal?signup=1">{{ t('Start free', '免费开始') }}</a>
+      <span class="gear-wrap">
+        <button class="gearbtn" id="gear-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+        <div class="gear-pop" id="gear-pop" role="menu" aria-label="Settings">
+          <p class="gp-kicker">{{ t('Settings', '设置') }}</p>
+          <div class="gp-lang">
+            <span class="gp-lbl">{{ t('Language', '语言') }}</span>
+            <span class="gp-seg" role="group" aria-label="Language">
+              <button type="button" class="gp-seg-b" data-set-lang="en">EN</button>
+              <button type="button" class="gp-seg-b" data-set-lang="zh">中文</button>
+            </span>
+          </div>
+          <div class="gp-div"></div>
+          <a class="gp-link" role="menuitem" href="{{ rel }}start.html">{{ t('Open the dashboard', '打开仪表盘') }}</a>
+          <div class="gp-div"></div>
+          <div class="gp-acct">
+            <p class="gp-acct-t">{{ t('Account', '账户') }}</p>
+            <div class="gp-acct-out" id="gp-acct-out">
+              <p class="gp-acct-d">{{ t('Sign in to sync your watchlists, alerts and settings across devices.',
+                                        '登录以在所有设备同步自选、提醒与设置。') }}</p>
+              <div class="gp-acct-btns">
+                <button type="button" class="gp-abtn ghost" id="gp-signin">{{ t('Sign in', '登录') }}</button>
+                <button type="button" class="gp-abtn solid" id="gp-signup">{{ t('Create account', '创建账户') }}</button>
+              </div>
+            </div>
+            <div class="gp-acct-in" id="gp-acct-in" hidden>
+              <div class="gp-acct-card" id="gp-acct-card" role="button" tabindex="0">
+                <span class="gp-avatar" id="gp-avatar"></span>
+                <span class="gp-acct-main"><span class="gp-acct-email" id="gp-email"></span><span class="gp-acct-sub">{{ t('Manage account & sync ›', '管理账户与同步 ›') }}</span></span>
+              </div>
+              <button type="button" class="gp-signout" id="gp-signout">{{ t('Sign out', '退出登录') }}</button>
+            </div>
+          </div>
+        </div>
+      </span>
+    </div>
+  </div>
+</nav>

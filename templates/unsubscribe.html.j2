@@ -251,10 +251,12 @@ html[data-lang="zh"] .mx-footer .f-col p{ font-family:"PingFang SC","Hiragino Sa
   .btn:hover{ transform:none; }
 }
 </style>
+{% set rel = '' %}
+{% include "_public_chrome_css.html.j2" %}
 </head>
 
-<body>
-{% include "_site_nav.html.j2" %}
+<body class="public-page">
+{% include "_public_nav.html.j2" %}
 
 <div class="wrap">
 
@@ -336,36 +338,11 @@ html[data-lang="zh"] .mx-footer .f-col p{ font-family:"PingFang SC","Hiragino Sa
 
 </div>
 
-<footer class="mx-footer">
-  <div class="f-in">
-    <div class="f-grid">
-      <div class="f-brand">
-        <div class="fb-row"><span class="fm">M</span><span class="fn">MASTERMIND</span></div>
-        <p class="ft">{{ t('Institutional-grade market intelligence.', '机构级市场情报。') }}</p>
-      </div>
-      <div class="f-cols">
-        <div class="f-col">
-          <p>{{ t('Product', '产品') }}</p>
-          <a href="https://app.mastermind-x.com">Terminal</a>
-          <a href="start.html">{{ t('Dashboards', '仪表盘') }}</a>
-          <a href="plans.html">{{ t('Pricing', '定价') }}</a>
-        </div>
-        <div class="f-col">
-          <p>{{ t('Resources', '资源') }}</p>
-          <a href="methodology.html">{{ t('Methodology', '方法论') }}</a>
-          <a href="learn/index.html">{{ t('Learn', '学习') }}</a>
-          <a href="support.html">{{ t('Support', '支持') }}</a>
-        </div>
-      </div>
-    </div>
-    <div class="f-bot">
-      <span>© 2026 Mastermind · mastermind-x.com</span>
-      <span><a href="mailto:support@mastermind-x.com">support@mastermind-x.com</a></span>
-    </div>
-  </div>
-</footer>
+{% include "_public_footer.html.j2" %}
 
 <script src="theme.js"></script>
+{% include "_public_chrome_js.html.j2" %}
+<script src="onboard.js" defer></script>
 <script>
 /* /unsubscribe.html page JS. One job: take the token out of the URL and, WHEN THE READER
    PRESSES A BUTTON, post it to POST /api/email/unsubscribe (app/unsubscribe.py, SEE W4).

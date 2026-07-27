@@ -207,7 +207,10 @@ def test_page_builds_with_the_house_chrome(page):
     assert page.lstrip().startswith("<!DOCTYPE html>")
     assert "<title>Unsubscribe — Mastermind</title>" in page
     assert 'href="theme.css"' in page and 'src="theme.js"' in page
-    assert 'class="site-nav"' in page and 'class="nav-links"' in page   # _site_nav include
+    assert 'class="public-nav"' in page
+    assert 'class="public-nav-links"' in page
+    assert 'class="public-footer"' in page
+    assert 'class="site-nav"' not in page
     assert "data-dbase" in page, "write_page must inject the data-base shim"
     assert f'rel="canonical" href="https://www.mastermind-x.com{PATH}"' in page
 
@@ -332,8 +335,12 @@ def test_the_way_back_needs_its_own_token_and_hides_without_one(page):
     assert 'html:not([data-undo="1"]) .st-off .btn-ghost{ display:none; }' in css
     assert "resubscribe_token" in page
     assert "action === 'resubscribe' ? UNDO : TOKEN" in page
-    # the capability must not be written anywhere it could outlive the tab
-    assert "localStorage" not in page.split("</head>", 1)[1], "no persistence of the undo"
+    # The public header may persist a language preference. The resubscribe
+    # capability itself must never be written anywhere that can outlive the tab.
+    body = page.split("</head>", 1)[1]
+    assert not re.search(
+        r"(?:local|session)Storage\.(?:setItem|set)\([^)]*\bUNDO\b", body
+    ), "no persistence of the undo"
     assert "textContent = UNDO" not in page and "innerHTML = UNDO" not in page
 
 

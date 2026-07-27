@@ -460,40 +460,12 @@ html[data-lang="zh"] .est-title{letter-spacing:-.01em;}
 }
 {% block estate_css %}{% endblock %}
 </style>
+{% include "_public_chrome_css.html.j2" %}
 {% block head_extra %}{% endblock %}
 </head>
-<body class="estate {% block body_class %}{% endblock %}">
+<body class="estate public-page {% block body_class %}{% endblock %}">
 
-<header class="est-bar">
-  <div class="est-bar-in">
-    <a class="est-brand" href="{{ rel }}index.html" aria-label="Mastermind home">
-      <svg class="glyph" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-        <rect x="1.5" y="1.5" width="29" height="29" rx="8" fill="var(--panel2)" stroke="var(--line)"/>
-        {# the plotted-line mark, inside the lockup: a small ink series #}
-        <path d="M7 21 L12 15 L17 18 L21 10 L25 13" stroke="var(--link)" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-        <circle cx="25" cy="13" r="2" fill="var(--link)"/>
-      </svg>
-      <span class="word">MASTERMIND<span class="sub">{{ t('FREE TERMINAL', '免费终端') }}</span></span>
-    </a>
-    <nav class="est-nav" aria-label="Estate sections">
-      <a href="{{ rel }}tools/index.html"{% if page.section == 'tools' %} aria-current="page"{% endif %}>{{ t('Tools', '工具') }}</a>
-      <a href="{{ rel }}learn/index.html"{% if page.section == 'learn' %} aria-current="page"{% endif %}>{{ t('Learn', '学习') }}</a>
-      <a href="{{ rel }}blog/index.html"{% if page.section == 'blog' %} aria-current="page"{% endif %}>{{ t('Blog', '博客') }}</a>
-    </nav>
-    <div class="est-ctrls">
-      <a class="gbtn gbtn-cta est-cta" href="{{ rel }}index.html"><span class="cta-long">{{ t('Open the dashboard', '打开仪表盘') }}</span><span class="cta-short">{{ t('Dashboard →', '仪表盘 →') }}</span></a>
-      <button class="theme-switch" type="button" aria-label="Toggle dark / light mode">
-        <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
-      </button>
-      <div class="lang-toggle" role="button" tabindex="0" aria-label="Toggle language English / 中文">
-        <span class="pill"></span>
-        <span class="opt en-opt" data-l="en">EN</span>
-        <span class="opt zh-opt" data-l="zh">中文</span>
-      </div>
-    </div>
-  </div>
-</header>
+{% include "_public_nav.html.j2" %}
 
 {% block breadcrumb %}
 <nav class="est-crumb" aria-label="Breadcrumb">
@@ -512,39 +484,11 @@ html[data-lang="zh"] .est-title{letter-spacing:-.01em;}
 {% block main %}{% endblock %}
 </main>
 
-<footer class="est-footer">
-  <div class="est-foot-links">
-    <div class="est-foot-col">
-      <span class="fh">{{ t('Free tools', '免费工具') }}</span>
-      <a href="{{ rel }}tools/index.html">{{ t('Calculator Lab', '计算器实验室') }}</a>
-      <a href="{{ rel }}learn/index.html">{{ t('Learning Center', '学习中心') }}</a>
-      <a href="{{ rel }}blog/index.html">{{ t('Blog', '博客') }}</a>
-    </div>
-    <div class="est-foot-col">
-      <span class="fh">{{ t('The desk', '工作台') }}</span>
-      <a href="{{ rel }}about-research.html">{{ t('About the research', '关于研究') }}</a>
-      <a href="{{ rel }}reports.html">{{ t('Research reports', '研究报告') }}</a>
-      <a href="{{ rel }}movers.html">{{ t('Daily movers', '每日异动') }}</a>
-      <a href="{{ rel }}congress_trades.html">{{ t('Congress trades', '国会交易') }}</a>
-    </div>
-    <div class="est-foot-col">
-      <span class="fh">{{ t('Go deeper', '深入了解') }}</span>
-      <a href="{{ rel }}index.html">{{ t('Open the dashboard', '打开仪表盘') }}</a>
-    </div>
-    <div class="est-foot-col">
-      <span class="fh">{{ t('Legal', '法律') }}</span>
-      <a href="{{ rel }}privacy.html">{{ t('Privacy Policy', '隐私政策') }}</a>
-      <a href="{{ rel }}terms.html">{{ t('Terms of Service', '服务条款') }}</a>
-      <a href="{{ rel }}disclaimer.html">{{ t('Disclaimer', '免责声明') }}</a>
-    </div>
-  </div>
-  <p class="est-foot-disc">
-    {{ t('Educational content — not investment advice. Markets involve risk.',
-         '教育内容，非投资建议。市场存在风险。') }}
-  </p>
-</footer>
+{% include "_public_footer.html.j2" %}
 
 {% block body_scripts %}{% endblock %}
 <script src="{{ rel }}theme.js"></script>
+{% include "_public_chrome_js.html.j2" %}
+<script src="{{ rel }}onboard.js" defer></script>
 </body>
 </html>
