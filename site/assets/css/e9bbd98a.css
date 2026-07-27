@@ -327,12 +327,18 @@
   .tb-state.ts-extended { background:color-mix(in srgb,#d4a017 10%,transparent); color:#d4a017; border:1px solid color-mix(in srgb,#d4a017 28%,transparent); }
   .tb-state.ts-uptrend { background:color-mix(in srgb,var(--up) 14%,transparent); color:var(--up); border:1px solid color-mix(in srgb,var(--up) 34%,transparent); }
   .tb-state.ts-recovery { background:color-mix(in srgb,var(--up) 10%,transparent); color:var(--up); border:1px solid color-mix(in srgb,var(--up) 28%,transparent); }
+  .tb-state.ts-recovery-confirmed { background:color-mix(in srgb,var(--up) 12%,transparent); color:var(--up); border:1px solid color-mix(in srgb,var(--up) 32%,transparent); }
+  .tb-state.ts-repair-attempt { background:color-mix(in srgb,#d4a017 10%,transparent); color:#b37a00; border:1px solid color-mix(in srgb,#d4a017 30%,transparent); }
+  .tb-state.ts-rollover-risk { background:color-mix(in srgb,var(--down) 11%,transparent); color:var(--down); border:1px solid color-mix(in srgb,var(--down) 30%,transparent); }
+  .tb-state.ts-failed-rebound { background:color-mix(in srgb,var(--down) 18%,transparent); color:var(--down); border:1px solid color-mix(in srgb,var(--down) 40%,transparent); }
   .tb-state.ts-basing { background:color-mix(in srgb,var(--info) 10%,transparent); color:var(--info); border:1px solid color-mix(in srgb,var(--info) 28%,transparent); }
   .tb-state.ts-downtrend { background:color-mix(in srgb,var(--down) 10%,transparent); color:var(--down); border:1px solid color-mix(in srgb,var(--down) 28%,transparent); }
   .tb-state.ts-calm { background:var(--panel2); color:var(--muted); border:1px solid var(--line); }
   .tb-stance { font-size:11.5px; color:var(--text); line-height:1.35; margin-bottom:6px; font-weight:500; }
   .tb-confirm { font-size:10.5px; color:var(--muted); line-height:1.35; margin:-1px 0 6px; }
   .tb-confirm b { color:var(--text); }
+  .tb-context { font-size:10.5px; color:var(--muted); line-height:1.35; margin:1px 0 7px; padding-top:6px; border-top:1px dashed var(--line); }
+  .tb-context b { color:var(--text); }
   .tb-metrics { display:flex; gap:10px; flex-wrap:wrap; font-size:11px; color:var(--muted); }
   .tb-metrics .tm-v { font-weight:700; }
   .tb-metrics .tm-v.pos { color:var(--up); }

@@ -10,12 +10,17 @@
       "lag_days": 0,
       "state": "fresh"
     },
-    "BIDU": {
+    "KWEB": {
       "asof": "2026-07-24",
       "lag_days": 0,
       "state": "fresh"
     },
-    "JD": {
+    "FXI": {
+      "asof": "2026-07-24",
+      "lag_days": 0,
+      "state": "fresh"
+    },
+    "BIDU": {
       "asof": "2026-07-24",
       "lag_days": 0,
       "state": "fresh"
@@ -25,12 +30,7 @@
       "lag_days": 0,
       "state": "fresh"
     },
-    "KWEB": {
-      "asof": "2026-07-24",
-      "lag_days": 0,
-      "state": "fresh"
-    },
-    "FXI": {
+    "JD": {
       "asof": "2026-07-24",
       "lag_days": 0,
       "state": "fresh"
