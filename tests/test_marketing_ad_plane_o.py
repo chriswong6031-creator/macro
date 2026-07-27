@@ -18,6 +18,7 @@ class of bug ships.
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -641,3 +642,207 @@ def test_the_runner_carries_the_waf_user_agent():
     that looks like an auth problem and is not (same fix as scripts/geo_enrich.py)."""
     src = (ROOT / "scripts" / "ad_ingest_run.py").read_text(encoding="utf-8")
     assert "User-Agent" in src and "Mozilla/5.0" in src
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 7. Rich copy: markup-preserving + bilingual
+# ═══════════════════════════════════════════════════════════════════════════
+
+_RICH_HARNESS = r"""
+const path = require('path');
+const cfg = JSON.parse(process.argv[1]);
+const langFirst = process.argv[2] === 'lang-first';
+const calls = [];
+const el = {
+  _html: '<b>control</b> copy', _attrs: { 'data-adtest-slot': 'headline', 'data-zh': '控制文案' },
+  get innerHTML() { return this._html; }, set innerHTML(v) { this._html = v; },
+  getAttribute(k) { return this._attrs[k] == null ? null : this._attrs[k]; },
+  setAttribute(k, v) { this._attrs[k] = v; },
+  set textContent(v) { this._html = v; }, get textContent() { return this._html; },
+};
+// The landing's switcher: caches the English ONCE, then rewrites from it.
+function applyLang(l) {
+  if (el.__en == null) el.__en = el.innerHTML;
+  el.innerHTML = (l === 'zh') ? el.getAttribute('data-zh') : el.__en;
+}
+if (langFirst) applyLang('en');          // switcher ran BEFORE the shim
+global.window = {
+  localStorage: (() => { const m = {}; return { getItem: k => m[k] || null, setItem: (k, v) => { m[k] = String(v); } }; })(),
+  crypto: { randomUUID: () => 'FIXED-UNIT-ID' },
+  mmTrack: (t, e) => calls.push([t, e]),
+};
+global.document = {
+  readyState: 'complete', cookie: '',
+  getElementById: id => (id === 'mm-adtest' ? { textContent: JSON.stringify(cfg) } : null),
+  querySelectorAll: () => [el], addEventListener: () => {},
+};
+global.setTimeout = (fn) => fn();
+require(path.join(process.cwd(), 'templates', 'adtest.js'));
+const afterApply = el.innerHTML;
+applyLang('zh'); const zhView = el.innerHTML;
+applyLang('en'); const backToEn = el.innerHTML;
+console.log(JSON.stringify({ afterApply, zhView, backToEn, dataZh: el.getAttribute('data-zh'),
+                             creative: (global.window.mmAdtest || {}).creative, calls }));
+"""
+
+
+def _run_rich(cfg: dict, *, lang_first: bool = False) -> dict:
+    out = subprocess.run(
+        ["node", "-e", _RICH_HARNESS, json.dumps(cfg), "lang-first" if lang_first else "-"],
+        cwd=ROOT, capture_output=True, text=True, timeout=120,
+    )
+    assert out.returncode == 0, f"node failed:\n{out.stderr}"
+    return json.loads(out.stdout)
+
+
+def _rich_cfg(**kw) -> dict:
+    base = {
+        "arena_id": "hero-1", "status": "running", "mode": "live", "holdout": 0.0,
+        "arms": [{"id": "adc-only", "w": 1.0, "copy": {"headline": {
+            "html": "Variant<br><span class=\"dim\">line two.</span>", "zh": "变体<br>第二行。"}}}],
+    }
+    base.update(kw)
+    return base
+
+
+@needs_node
+def test_rich_copy_preserves_markup_instead_of_flattening_it():
+    """textContent would strip the <br> and the dim span — changing typography as
+    well as words, so the test would no longer measure copy alone."""
+    r = _run_rich(_rich_cfg())
+    assert r["afterApply"] == 'Variant<br><span class="dim">line two.</span>'
+
+
+@needs_node
+def test_rich_copy_updates_the_chinese_too():
+    """Otherwise every zh visitor reads the control while counted in the variant."""
+    r = _run_rich(_rich_cfg())
+    assert r["dataZh"] == "变体<br>第二行。"
+    assert r["zhView"] == "变体<br>第二行。"
+
+
+@needs_node
+def test_a_language_toggle_does_not_revert_the_variant():
+    """The switcher caches the English once. If it ran first, that cache holds the
+    CONTROL — and zh→en would silently put the visitor back on the control arm."""
+    r = _run_rich(_rich_cfg(), lang_first=True)
+    assert r["afterApply"] == 'Variant<br><span class="dim">line two.</span>'
+    assert r["backToEn"] == 'Variant<br><span class="dim">line two.</span>', (
+        "toggling zh and back restored the control copy — the visitor is now on a "
+        "different arm than the one they are counted in"
+    )
+
+
+@needs_node
+def test_plain_string_slots_still_work():
+    cfg = _rich_cfg(arms=[{"id": "adc-only", "w": 1.0, "copy": {"headline": "just text"}}])
+    r = _run_rich(cfg)
+    assert r["afterApply"] == "just text"
+
+
+@needs_node
+def test_a_malformed_slot_value_leaves_the_authored_copy_alone():
+    for bad in ({}, {"zh": "只有中文"}, {"html": ""}, 42, None):
+        cfg = _rich_cfg(arms=[{"id": "adc-only", "w": 1.0, "copy": {"headline": bad}}])
+        r = _run_rich(cfg)
+        assert r["afterApply"] == "<b>control</b> copy", f"{bad!r} overwrote the hero"
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 8. The live landing hero — page config must match the ledger
+# ═══════════════════════════════════════════════════════════════════════════
+
+LANDING = ROOT / "templates" / "index.html"
+SITE_LANDING = ROOT / "site" / "index.html"
+
+
+def _page_config() -> dict:
+    html = LANDING.read_text(encoding="utf-8")
+    m = re.search(r'<script type="application/json" id="mm-adtest">(.*?)</script>', html, re.S)
+    assert m, "the landing carries no mm-adtest config block"
+    return json.loads(m.group(1))
+
+
+def test_the_landing_config_matches_the_arena_ledger():
+    """The page config is what actually assigns visitors; the ledger is what scores
+    them. Drift between the two is the same silent failure as a hash mismatch."""
+    cfg = _page_config()
+    arena = next((a for a in ad_arena.load_arenas(root=ROOT)
+                  if a.arena_id == cfg["arena_id"]), None)
+    assert arena is not None, f"{cfg['arena_id']} is on the page but not in the ledger"
+    assert cfg["status"] == arena.status
+    assert cfg["mode"] == arena.mode
+    assert cfg["holdout"] == arena.holdout
+    assert [a["id"] for a in cfg["arms"]] == arena.arm_creative_ids, (
+        "arm ORDER differs — the cumulative walk visits arms in list order, so a "
+        "reordering silently reassigns everyone"
+    )
+    for arm in cfg["arms"]:
+        assert arm["w"] == arena.assignment_weights[arm["id"]]
+
+
+def test_only_one_hero_arena_is_live():
+    """Two live arenas on one page would assign the same visitor twice and both
+    would score the other's traffic."""
+    live = [a for a in ad_arena.load_arenas(root=ROOT)
+            if a.plane == "owned" and a.status == "running" and a.mode == "live"]
+    assert len(live) <= 1, f"{[a.arena_id for a in live]} are all live on owned inventory"
+
+
+def test_every_live_arm_carries_both_languages():
+    """A variant that updates only English leaves zh visitors on the control copy
+    while counted in the variant's arm."""
+    for arm in _page_config()["arms"]:
+        for slot, value in arm["copy"].items():
+            assert isinstance(value, dict), f"{arm['id']}/{slot} is not a rich slot"
+            assert value.get("html"), f"{arm['id']}/{slot} has no English"
+            assert value.get("zh"), f"{arm['id']}/{slot} has no Chinese"
+
+
+def test_the_variants_differ_only_in_words_not_structure():
+    """An A/B test that changes two things measures neither. Both arms must keep the
+    same tags, so the test isolates copy from typography and layout."""
+    arms = _page_config()["arms"]
+    assert len(arms) == 2
+    for slot in ("hero_headline", "hero_sub"):
+        shapes = []
+        for arm in arms:
+            html = arm["copy"][slot]["html"]
+            shapes.append(sorted(re.findall(r"<(\w+)", html)))
+        assert shapes[0] == shapes[1], (
+            f"{slot}: arms use different markup {shapes} — the test would be measuring "
+            f"a typography change as well as a copy change"
+        )
+
+
+def test_the_control_arm_is_the_copy_already_on_the_page():
+    """The control must be what shipped, or 'lift vs control' is lift against a
+    variant nobody has been seeing."""
+    cfg = _page_config()
+    arena = next(a for a in ad_arena.load_arenas(root=ROOT) if a.arena_id == cfg["arena_id"])
+    control = next(a for a in cfg["arms"] if a["id"] == arena.control_creative_id)
+    html = LANDING.read_text(encoding="utf-8")
+    # NB: not `<h1 ...[^>]*>` — the data-zh attribute VALUE contains "<br>" and a
+    # span, so an attribute-scanning regex closes the tag inside the attribute and
+    # captures the tail of the Chinese string. Slice to </h1> and match the end.
+    start = html.find('<h1 data-adtest-slot="hero_headline"')
+    assert start != -1, "the hero h1 carries no adtest slot"
+    body = html[start:html.index("</h1>", start)]
+    assert body.endswith(control["copy"]["hero_headline"]["html"]), (
+        "the control arm's copy is not what the page ships — 'lift vs control' would "
+        "be lift against a variant nobody has been seeing"
+    )
+
+
+def test_the_landing_loads_the_shim_after_the_slots():
+    """Loaded in <head> it would find no slots; deferred it would paint the control
+    first. It has to sit after the block it rewrites."""
+    html = LANDING.read_text(encoding="utf-8")
+    slot_at = html.index('data-adtest-slot="hero_headline"')
+    script_at = html.index('<script src="adtest.js">')
+    assert slot_at < script_at, "adtest.js loads before the slots it rewrites"
+    assert "defer" not in html[script_at:script_at + 60]
+
+
+def test_the_landing_pair_stays_byte_identical():
+    assert LANDING.read_bytes() == SITE_LANDING.read_bytes()
