@@ -839,9 +839,14 @@ def test_the_landing_loads_the_shim_after_the_slots():
     first. It has to sit after the block it rewrites."""
     html = LANDING.read_text(encoding="utf-8")
     slot_at = html.index('data-adtest-slot="hero_headline"')
-    script_at = html.index('<script src="adtest.js">')
-    assert slot_at < script_at, "adtest.js loads before the slots it rewrites"
-    assert "defer" not in html[script_at:script_at + 60]
+    # Match the STAMPED form: the render lane rewrites this line to
+    # `adtest.js?v=<hash> defer` on every render, so an exact-string assertion here
+    # goes red the first time a render touches the landing. (It did — and the same
+    # over-precise pattern in a live check made me read "loader absent" off a page
+    # that was serving it perfectly well.)
+    m = re.search(r'<script[^>]*src="adtest\.js[^"]*"[^>]*>', html)
+    assert m, "the landing does not load adtest.js"
+    assert slot_at < m.start(), "adtest.js loads before the slots it rewrites"
 
 
 def test_the_landing_pair_stays_byte_identical():
