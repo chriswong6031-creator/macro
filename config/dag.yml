@@ -1700,6 +1700,14 @@ lanes:
           dead nightlies froze foresight.html at its pre-revamp render. ~11s
           measured on committed stores. Also rewrites
           site/basketdata/foresight_cascade.json in the same pass as its page.
+      - id: publish_r2_stockdata
+        module: scripts.publish_r2
+        args: [--dirs, stockdata, --no-manifest]
+        note: >
+          Browser data-plane handoff for the complete US stockdata tree rebuilt
+          by spine in all/macro/fast scopes. Credential and non-empty-index
+          guarded; retries three times and fails the lane after exhaustion.
+          --no-manifest preserves the remote multi-market manifest.
       - id: inject_data_base
         module: scripts.inject_data_base
         note: >
@@ -1905,6 +1913,14 @@ lanes:
           Insider+ payload site/premiumdata/china_special_situations.json
           (docs/TIER_PREVIEW_PATTERN.md) — they must never be rebuilt apart.
           Display-only; CONST-ART2 authority: false.
+      - id: publish_r2_stockdata
+        module: scripts.publish_r2
+        args: [--dirs, stockdata, --no-manifest]
+        note: >
+          Browser data-plane handoff for the complete US stockdata tree rebuilt
+          by spine in every all/macro scope. Credential and non-empty-index
+          guarded; retries three times and fails the lane after exhaustion.
+          --no-manifest preserves the remote multi-market manifest.
       - id: inject_data_base
         module: scripts.inject_data_base
         note: >
