@@ -882,6 +882,14 @@ jobs:
       # scripts/audit_unrun_tests.py on the very next census.
       - name: render-lane scope contract (intl must stay in the publish scopes)
         run: python -m pytest tests/test_render_intl_scope.py -q
+      # A run: scalar over GitHub's length cap makes GitHub DE-REGISTER the workflow.
+      # render.yml vanished from the registry on 2026-07-27 (#3826) and the express lane
+      # was dead ~1h. yaml.safe_load, check_workflow_yaml.py and actionlint ALL pass on an
+      # over-cap file, and the owning PR's checks stay green — the failure only shows in
+      # the BRANCH run list, as a zero-job run titled by PATH instead of by `name:`. This
+      # is the only gate that can catch it pre-merge.
+      - name: "no workflow run: step may exceed GitHub's observed size ceiling"
+        run: python -m pytest tests/test_render_run_size_cap.py -q
       # Same class, second instance (2026-07-27). build_canada was invoked by NO
       # workflow at all: site/canada.html existed only as a side effect of a
       # swallowed try/except inside build_vector, so a canada-only fix could ride a
