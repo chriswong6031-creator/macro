@@ -1,0 +1,3235 @@
+{
+  "availability_audit": {
+    "latest_session_distribution": {
+      "2026-06-30": 1,
+      "2026-07-10": 16,
+      "2026-07-13": 1,
+      "2026-07-15": 1,
+      "2026-07-21": 1,
+      "2026-07-24": 779
+    },
+    "maximum_latest_session": "2026-07-24"
+  },
+  "frozen_at": "2026-07-27T22:30:55Z",
+  "members": [
+    {
+      "sector": "Communication Services",
+      "sym": "CMCSA"
+    },
+    {
+      "sector": "Communication Services",
+      "sym": "CNK"
+    },
+    {
+      "sector": "Communication Services",
+      "sym": "EA"
+    },
+    {
+      "sector": "Communication Services",
+      "sym": "ECHO"
+    },
+    {
+      "sector": "Communication Services",
+      "sym": "GOGO"
+    },
+    {
+      "sector": "Communication Services",
+      "sym": "GOOG"
+    },
+    {
+      "sector": "Communication Services",
+      "sym": "GOOGL"
+    },
+    {
+      "sector": "Communication Services",
+      "sym": "LUMN"
+    },
+    {
+      "sector": "Communication Services",
+      "sym": "LYV"
+    },
+    {
+      "sector": "Communication Services",
+      "sym": "NFLX"
+    },
+    {
+      "sector": "Communication Services",
+      "sym": "PSKY"
+    },
+    {
+      "sector": "Communication Services",
+      "sym": "QNST"
+    },
+    {
+      "sector": "Communication Services",
+      "sym": "SHEN"
+    },
+    {
+      "sector": "Communication Services",
+      "sym": "T"
+    },
+    {
+      "sector": "Communication Services",
+      "sym": "TDS"
+    },
+    {
+      "sector": "Communication Services",
+      "sym": "TMUS"
+    },
+    {
+      "sector": "Communication Services",
+      "sym": "TRIP"
+    },
+    {
+      "sector": "Communication Services",
+      "sym": "TTWO"
+    },
+    {
+      "sector": "Communication Services",
+      "sym": "VZ"
+    },
+    {
+      "sector": "Communication Services",
+      "sym": "WBD"
+    },
+    {
+      "sector": "Communication Services",
+      "sym": "WLY"
+    },
+    {
+      "sector": "Communication Services",
+      "sym": "YELP"
+    },
+    {
+      "sector": "Communication Services",
+      "sym": "ZD"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "AAP"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "ABG"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "AMZN"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "APTV"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "AZO"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "BJRI"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "BKE"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "BURL"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "BYD"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "CAKE"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "CALY"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "CBRL"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "CCL"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "CMG"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "CPRI"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "CRI"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "DAN"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "DCH"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "DECK"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "DHI"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "DKS"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "DORM"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "DPZ"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "DRI"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "EAT"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "ETD"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "F"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "FIVE"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "FOXF"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "FUN"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "GHC"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "GIII"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "GM"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "GPC"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "GPI"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "GRBK"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "GT"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "H"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "HD"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "HOG"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "HZO"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "KSS"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "LCII"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "LEG"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "LEN"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "LGIH"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "LOW"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "LRN"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "LULU"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "LZB"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "MAR"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "MATW"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "MCD"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "MHK"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "MNRO"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "MTH"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "NCLH"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "NKE"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "NWL"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "ORLY"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "OXM"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "PATK"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "PENN"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "PII"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "PRDO"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "PRKS"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "PRSU"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "PZZA"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "RCL"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "RH"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "RL"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "ROST"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "SAH"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "SBH"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "SBUX"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "SCHL"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "SHOO"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "SIG"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "SMP"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "STRA"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "THRM"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "TJX"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "TPR"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "TSCO"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "TSLA"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "UAA"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "ULTA"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "URBN"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "UTI"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "VC"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "WEN"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "WINA"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "WSM"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "WWW"
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "sym": "YUM"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "ADM"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "ANDE"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "BF-B"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "BG"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "CAG"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "CALM"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "CASY"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "CENT"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "CENTA"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "CHD"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "CHEF"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "CL"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "CLX"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "COST"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "COTY"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "DG"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "DLTR"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "EL"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "EPC"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "FIZZ"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "FLO"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "GIS"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "HRL"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "HSY"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "IPAR"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "JBSS"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "JJSF"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "KDP"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "KMB"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "KO"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "KR"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "MDLZ"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "MKC"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "MNST"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "MO"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "MZTI"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "PEP"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "PM"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "SAM"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "SJM"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "STZ"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "TAP"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "TGT"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "TR"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "TSN"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "UNFI"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "UVV"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "WDFC"
+    },
+    {
+      "sector": "Consumer Staples",
+      "sym": "WMT"
+    },
+    {
+      "sector": "Energy",
+      "sym": "APA"
+    },
+    {
+      "sector": "Energy",
+      "sym": "AROC"
+    },
+    {
+      "sector": "Energy",
+      "sym": "BKR"
+    },
+    {
+      "sector": "Energy",
+      "sym": "CLB"
+    },
+    {
+      "sector": "Energy",
+      "sym": "COP"
+    },
+    {
+      "sector": "Energy",
+      "sym": "CRK"
+    },
+    {
+      "sector": "Energy",
+      "sym": "CVX"
+    },
+    {
+      "sector": "Energy",
+      "sym": "DINO"
+    },
+    {
+      "sector": "Energy",
+      "sym": "EOG"
+    },
+    {
+      "sector": "Energy",
+      "sym": "EQT"
+    },
+    {
+      "sector": "Energy",
+      "sym": "FANG"
+    },
+    {
+      "sector": "Energy",
+      "sym": "HAL"
+    },
+    {
+      "sector": "Energy",
+      "sym": "HLX"
+    },
+    {
+      "sector": "Energy",
+      "sym": "HP"
+    },
+    {
+      "sector": "Energy",
+      "sym": "KMI"
+    },
+    {
+      "sector": "Energy",
+      "sym": "MPC"
+    },
+    {
+      "sector": "Energy",
+      "sym": "MUR"
+    },
+    {
+      "sector": "Energy",
+      "sym": "NOG"
+    },
+    {
+      "sector": "Energy",
+      "sym": "OII"
+    },
+    {
+      "sector": "Energy",
+      "sym": "OKE"
+    },
+    {
+      "sector": "Energy",
+      "sym": "OXY"
+    },
+    {
+      "sector": "Energy",
+      "sym": "PBF"
+    },
+    {
+      "sector": "Energy",
+      "sym": "PSX"
+    },
+    {
+      "sector": "Energy",
+      "sym": "PTEN"
+    },
+    {
+      "sector": "Energy",
+      "sym": "RES"
+    },
+    {
+      "sector": "Energy",
+      "sym": "REX"
+    },
+    {
+      "sector": "Energy",
+      "sym": "SLB"
+    },
+    {
+      "sector": "Energy",
+      "sym": "SM"
+    },
+    {
+      "sector": "Energy",
+      "sym": "TPL"
+    },
+    {
+      "sector": "Energy",
+      "sym": "TRGP"
+    },
+    {
+      "sector": "Energy",
+      "sym": "VLO"
+    },
+    {
+      "sector": "Energy",
+      "sym": "VTOL"
+    },
+    {
+      "sector": "Energy",
+      "sym": "WKC"
+    },
+    {
+      "sector": "Energy",
+      "sym": "XOM"
+    },
+    {
+      "sector": "Financials",
+      "sym": "ABCB"
+    },
+    {
+      "sector": "Financials",
+      "sym": "ABR"
+    },
+    {
+      "sector": "Financials",
+      "sym": "ACGL"
+    },
+    {
+      "sector": "Financials",
+      "sym": "AFL"
+    },
+    {
+      "sector": "Financials",
+      "sym": "AIG"
+    },
+    {
+      "sector": "Financials",
+      "sym": "AIZ"
+    },
+    {
+      "sector": "Financials",
+      "sym": "AJG"
+    },
+    {
+      "sector": "Financials",
+      "sym": "ALL"
+    },
+    {
+      "sector": "Financials",
+      "sym": "AMP"
+    },
+    {
+      "sector": "Financials",
+      "sym": "AMSF"
+    },
+    {
+      "sector": "Financials",
+      "sym": "AON"
+    },
+    {
+      "sector": "Financials",
+      "sym": "APAM"
+    },
+    {
+      "sector": "Financials",
+      "sym": "APO"
+    },
+    {
+      "sector": "Financials",
+      "sym": "ASB"
+    },
+    {
+      "sector": "Financials",
+      "sym": "AX"
+    },
+    {
+      "sector": "Financials",
+      "sym": "AXP"
+    },
+    {
+      "sector": "Financials",
+      "sym": "BAC"
+    },
+    {
+      "sector": "Financials",
+      "sym": "BANC"
+    },
+    {
+      "sector": "Financials",
+      "sym": "BANF"
+    },
+    {
+      "sector": "Financials",
+      "sym": "BANR"
+    },
+    {
+      "sector": "Financials",
+      "sym": "BBT"
+    },
+    {
+      "sector": "Financials",
+      "sym": "BEN"
+    },
+    {
+      "sector": "Financials",
+      "sym": "BFH"
+    },
+    {
+      "sector": "Financials",
+      "sym": "BGC"
+    },
+    {
+      "sector": "Financials",
+      "sym": "BKU"
+    },
+    {
+      "sector": "Financials",
+      "sym": "BLK"
+    },
+    {
+      "sector": "Financials",
+      "sym": "BNY"
+    },
+    {
+      "sector": "Financials",
+      "sym": "BOH"
+    },
+    {
+      "sector": "Financials",
+      "sym": "BRK-B"
+    },
+    {
+      "sector": "Financials",
+      "sym": "BRO"
+    },
+    {
+      "sector": "Financials",
+      "sym": "BX"
+    },
+    {
+      "sector": "Financials",
+      "sym": "C"
+    },
+    {
+      "sector": "Financials",
+      "sym": "CASH"
+    },
+    {
+      "sector": "Financials",
+      "sym": "CATY"
+    },
+    {
+      "sector": "Financials",
+      "sym": "CBOE"
+    },
+    {
+      "sector": "Financials",
+      "sym": "CBU"
+    },
+    {
+      "sector": "Financials",
+      "sym": "CFFN"
+    },
+    {
+      "sector": "Financials",
+      "sym": "CFR"
+    },
+    {
+      "sector": "Financials",
+      "sym": "CHCO"
+    },
+    {
+      "sector": "Financials",
+      "sym": "CINF"
+    },
+    {
+      "sector": "Financials",
+      "sym": "CME"
+    },
+    {
+      "sector": "Financials",
+      "sym": "CNO"
+    },
+    {
+      "sector": "Financials",
+      "sym": "COF"
+    },
+    {
+      "sector": "Financials",
+      "sym": "COLB"
+    },
+    {
+      "sector": "Financials",
+      "sym": "CPAY"
+    },
+    {
+      "sector": "Financials",
+      "sym": "CPF"
+    },
+    {
+      "sector": "Financials",
+      "sym": "CUBI"
+    },
+    {
+      "sector": "Financials",
+      "sym": "CVBF"
+    },
+    {
+      "sector": "Financials",
+      "sym": "DCOM"
+    },
+    {
+      "sector": "Financials",
+      "sym": "ECPG"
+    },
+    {
+      "sector": "Financials",
+      "sym": "EG"
+    },
+    {
+      "sector": "Financials",
+      "sym": "EGBN"
+    },
+    {
+      "sector": "Financials",
+      "sym": "ERIE"
+    },
+    {
+      "sector": "Financials",
+      "sym": "ESNT"
+    },
+    {
+      "sector": "Financials",
+      "sym": "EVTC"
+    },
+    {
+      "sector": "Financials",
+      "sym": "EWBC"
+    },
+    {
+      "sector": "Financials",
+      "sym": "FBP"
+    },
+    {
+      "sector": "Financials",
+      "sym": "FCF"
+    },
+    {
+      "sector": "Financials",
+      "sym": "FCFS"
+    },
+    {
+      "sector": "Financials",
+      "sym": "FDS"
+    },
+    {
+      "sector": "Financials",
+      "sym": "FFBC"
+    },
+    {
+      "sector": "Financials",
+      "sym": "FFIN"
+    },
+    {
+      "sector": "Financials",
+      "sym": "FI"
+    },
+    {
+      "sector": "Financials",
+      "sym": "FIBK"
+    },
+    {
+      "sector": "Financials",
+      "sym": "FIS"
+    },
+    {
+      "sector": "Financials",
+      "sym": "FLG"
+    },
+    {
+      "sector": "Financials",
+      "sym": "FULT"
+    },
+    {
+      "sector": "Financials",
+      "sym": "GBCI"
+    },
+    {
+      "sector": "Financials",
+      "sym": "GL"
+    },
+    {
+      "sector": "Financials",
+      "sym": "GNW"
+    },
+    {
+      "sector": "Financials",
+      "sym": "GPN"
+    },
+    {
+      "sector": "Financials",
+      "sym": "GS"
+    },
+    {
+      "sector": "Financials",
+      "sym": "HAFC"
+    },
+    {
+      "sector": "Financials",
+      "sym": "HASI"
+    },
+    {
+      "sector": "Financials",
+      "sym": "HBAN"
+    },
+    {
+      "sector": "Financials",
+      "sym": "HIG"
+    },
+    {
+      "sector": "Financials",
+      "sym": "HMN"
+    },
+    {
+      "sector": "Financials",
+      "sym": "HOMB"
+    },
+    {
+      "sector": "Financials",
+      "sym": "HOPE"
+    },
+    {
+      "sector": "Financials",
+      "sym": "HTH"
+    },
+    {
+      "sector": "Financials",
+      "sym": "HWC"
+    },
+    {
+      "sector": "Financials",
+      "sym": "IBKR"
+    },
+    {
+      "sector": "Financials",
+      "sym": "IBOC"
+    },
+    {
+      "sector": "Financials",
+      "sym": "ICE"
+    },
+    {
+      "sector": "Financials",
+      "sym": "INDB"
+    },
+    {
+      "sector": "Financials",
+      "sym": "IVZ"
+    },
+    {
+      "sector": "Financials",
+      "sym": "JKHY"
+    },
+    {
+      "sector": "Financials",
+      "sym": "JPM"
+    },
+    {
+      "sector": "Financials",
+      "sym": "KEY"
+    },
+    {
+      "sector": "Financials",
+      "sym": "KMPR"
+    },
+    {
+      "sector": "Financials",
+      "sym": "L"
+    },
+    {
+      "sector": "Financials",
+      "sym": "LKFN"
+    },
+    {
+      "sector": "Financials",
+      "sym": "MA"
+    },
+    {
+      "sector": "Financials",
+      "sym": "MC"
+    },
+    {
+      "sector": "Financials",
+      "sym": "MCO"
+    },
+    {
+      "sector": "Financials",
+      "sym": "MCY"
+    },
+    {
+      "sector": "Financials",
+      "sym": "MET"
+    },
+    {
+      "sector": "Financials",
+      "sym": "MSCI"
+    },
+    {
+      "sector": "Financials",
+      "sym": "MTB"
+    },
+    {
+      "sector": "Financials",
+      "sym": "NBHC"
+    },
+    {
+      "sector": "Financials",
+      "sym": "NBTB"
+    },
+    {
+      "sector": "Financials",
+      "sym": "NDAQ"
+    },
+    {
+      "sector": "Financials",
+      "sym": "NMIH"
+    },
+    {
+      "sector": "Financials",
+      "sym": "NWBI"
+    },
+    {
+      "sector": "Financials",
+      "sym": "ONB"
+    },
+    {
+      "sector": "Financials",
+      "sym": "PFBC"
+    },
+    {
+      "sector": "Financials",
+      "sym": "PFG"
+    },
+    {
+      "sector": "Financials",
+      "sym": "PFS"
+    },
+    {
+      "sector": "Financials",
+      "sym": "PGR"
+    },
+    {
+      "sector": "Financials",
+      "sym": "PIPR"
+    },
+    {
+      "sector": "Financials",
+      "sym": "PNC"
+    },
+    {
+      "sector": "Financials",
+      "sym": "PRAA"
+    },
+    {
+      "sector": "Financials",
+      "sym": "PRG"
+    },
+    {
+      "sector": "Financials",
+      "sym": "PRK"
+    },
+    {
+      "sector": "Financials",
+      "sym": "PRU"
+    },
+    {
+      "sector": "Financials",
+      "sym": "RDN"
+    },
+    {
+      "sector": "Financials",
+      "sym": "RF"
+    },
+    {
+      "sector": "Financials",
+      "sym": "RJF"
+    },
+    {
+      "sector": "Financials",
+      "sym": "RNST"
+    },
+    {
+      "sector": "Financials",
+      "sym": "SAFT"
+    },
+    {
+      "sector": "Financials",
+      "sym": "SBCF"
+    },
+    {
+      "sector": "Financials",
+      "sym": "SBSI"
+    },
+    {
+      "sector": "Financials",
+      "sym": "SCHW"
+    },
+    {
+      "sector": "Financials",
+      "sym": "SFBS"
+    },
+    {
+      "sector": "Financials",
+      "sym": "SFNC"
+    },
+    {
+      "sector": "Financials",
+      "sym": "SIGI"
+    },
+    {
+      "sector": "Financials",
+      "sym": "SNEX"
+    },
+    {
+      "sector": "Financials",
+      "sym": "SPNT"
+    },
+    {
+      "sector": "Financials",
+      "sym": "SSB"
+    },
+    {
+      "sector": "Financials",
+      "sym": "STBA"
+    },
+    {
+      "sector": "Financials",
+      "sym": "TCBI"
+    },
+    {
+      "sector": "Financials",
+      "sym": "TFC"
+    },
+    {
+      "sector": "Financials",
+      "sym": "TMP"
+    },
+    {
+      "sector": "Financials",
+      "sym": "TRMK"
+    },
+    {
+      "sector": "Financials",
+      "sym": "TROW"
+    },
+    {
+      "sector": "Financials",
+      "sym": "TRST"
+    },
+    {
+      "sector": "Financials",
+      "sym": "TRV"
+    },
+    {
+      "sector": "Financials",
+      "sym": "TWO"
+    },
+    {
+      "sector": "Financials",
+      "sym": "UBSI"
+    },
+    {
+      "sector": "Financials",
+      "sym": "UCB"
+    },
+    {
+      "sector": "Financials",
+      "sym": "UFCS"
+    },
+    {
+      "sector": "Financials",
+      "sym": "UMBF"
+    },
+    {
+      "sector": "Financials",
+      "sym": "USB"
+    },
+    {
+      "sector": "Financials",
+      "sym": "V"
+    },
+    {
+      "sector": "Financials",
+      "sym": "VLY"
+    },
+    {
+      "sector": "Financials",
+      "sym": "VRTS"
+    },
+    {
+      "sector": "Financials",
+      "sym": "WABC"
+    },
+    {
+      "sector": "Financials",
+      "sym": "WAFD"
+    },
+    {
+      "sector": "Financials",
+      "sym": "WAL"
+    },
+    {
+      "sector": "Financials",
+      "sym": "WD"
+    },
+    {
+      "sector": "Financials",
+      "sym": "WFC"
+    },
+    {
+      "sector": "Financials",
+      "sym": "WRLD"
+    },
+    {
+      "sector": "Financials",
+      "sym": "WSFS"
+    },
+    {
+      "sector": "Financials",
+      "sym": "WTFC"
+    },
+    {
+      "sector": "Financials",
+      "sym": "WTW"
+    },
+    {
+      "sector": "Financials",
+      "sym": "WU"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "A"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "ABBV"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "ABT"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "ACAD"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "ACHC"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "ADMA"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "ADUS"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "ALGN"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "ALKS"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "AMGN"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "AMN"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "AMPH"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "ANIP"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "AORT"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "ARWR"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "ASTH"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "AZTA"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "BAX"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "BDX"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "BIIB"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "BMY"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "BSX"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "CI"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "CNC"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "COO"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "COR"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "CPRX"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "CRL"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "CRVL"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "CVS"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "DGX"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "DHR"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "DVA"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "DXCM"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "ELV"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "ENOV"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "ENSG"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "EW"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "HAE"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "HCA"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "HFWA"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "HSIC"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "HSTM"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "HUM"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "IART"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "ICUI"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "IDXX"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "INVA"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "IQV"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "ITGR"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "JNJ"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "LH"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "LLY"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "LMAT"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "MD"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "MDT"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "MMSI"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "MOH"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "MRK"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "MTD"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "NEO"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "NHC"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "OMCL"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "PAHC"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "PBH"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "PCRX"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "PFE"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "PTCT"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "QDEL"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "RDNT"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "REGN"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "RVTY"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "SEM"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "SRPT"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "STE"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "SUPN"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "SYK"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "TECH"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "TMO"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "TNDM"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "UHS"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "UNH"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "USPH"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "VCEL"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "VCYT"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "VRTX"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "WAT"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "WST"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "XNCR"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "XRAY"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "ZBH"
+    },
+    {
+      "sector": "Health Care",
+      "sym": "ZTS"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "AAL"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "ABM"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "ADP"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "AGX"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "AIN"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "AIR"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "AIT"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "ALGT"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "ALLE"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "AME"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "AOS"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "APOG"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "ARCB"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "ASTE"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "BA"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "BCC"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "BLDR"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "BR"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "CAT"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "CHRW"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "CMI"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "CPRT"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "CSX"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "CTAS"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "CXW"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "DAL"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "DE"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "DLX"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "DNOW"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "DOV"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "DXPE"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "DY"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "EFX"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "EME"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "EMR"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "ENS"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "EPAC"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "ESE"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "ETN"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "EXPD"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "EXPO"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "FAST"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "FBIN"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "FDX"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "FELE"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "FWRD"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "GATX"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "GBX"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "GD"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "GE"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "GEO"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "GFF"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "GNRC"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "GTLS"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "GVA"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "GWW"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "HII"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "HNI"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "HON"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "HTLD"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "HUBB"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "HUBG"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "IEX"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "ITW"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "J"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "JBHT"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "JBLU"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "JBTM"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "JCI"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "KAI"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "KFY"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "KMT"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "KTOS"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "LDOS"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "LHX"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "LII"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "LMT"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "LQDT"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "LUV"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "MAS"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "MATX"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "MMM"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "MMS"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "MOG-A"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "MRCY"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "MSM"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "MWA"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "MYRG"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "NDSN"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "NOC"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "NPK"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "NPO"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "NSC"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "NSIT"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "NSP"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "NX"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "PAYX"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "PCAR"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "PH"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "POOL"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "PRLB"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "PWR"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "ROCK"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "ROK"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "ROL"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "RSG"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "RTX"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "RUSHA"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "SKYW"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "SNA"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "SPXC"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "STRL"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "SXI"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "TILE"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "TNC"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "TRN"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "TT"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "TXT"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "UAL"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "UFPI"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "UNP"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "UPS"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "VICR"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "VRSK"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "WAB"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "WCC"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "WERN"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "WM"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "WOR"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "WSO"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "WTS"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "XYL"
+    },
+    {
+      "sector": "Industrials",
+      "sym": "ZWS"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "AAPL"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "ACIW"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "ACLS"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "ACN"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "ADBE"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "ADEA"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "ADI"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "ADSK"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "AKAM"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "AMD"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "ANET"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "AOSL"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "APH"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "ATEN"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "AVGO"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "BDC"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "BHE"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "BLKB"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "BMI"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "CALX"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "CDNS"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "CDW"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "CGNX"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "CIEN"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "CNXN"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "COHR"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "COHU"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "CRM"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "CSCO"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "CTS"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "CVLT"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "CXT"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "DGII"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "DXC"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "EFOR"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "FICO"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "FLEX"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "FN"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "FORM"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "FSLR"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "FTNT"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "GEN"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "GLW"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "HLIT"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "HPQ"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "IBM"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "INTC"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "IT"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "JBL"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "KLAC"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "KLIC"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "KN"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "LRCX"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "MCHP"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "MKSI"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "MPWR"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "MRVL"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "MSFT"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "MXL"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "NOVT"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "NOW"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "NTAP"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "ON"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "ORCL"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "PANW"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "PDFS"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "PLAB"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "PLUS"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "PLXS"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "PRGS"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "PTC"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "QCOM"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "QLYS"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "QTWO"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "RAMP"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "RMBS"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "ROG"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "ROP"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "SANM"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "SCSC"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "SLAB"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "SMTC"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "SNPS"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "SPSC"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "STX"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "SYNA"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "TDC"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "TDY"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "TER"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "TTMI"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "TXN"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "TYL"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "UCTT"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "VIAV"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "VRSN"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "VSAT"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "VSH"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "VYX"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "WDAY"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "WDC"
+    },
+    {
+      "sector": "Information Technology",
+      "sym": "ZBRA"
+    },
+    {
+      "sector": "Materials",
+      "sym": "ALB"
+    },
+    {
+      "sector": "Materials",
+      "sym": "AMCR"
+    },
+    {
+      "sector": "Materials",
+      "sym": "APD"
+    },
+    {
+      "sector": "Materials",
+      "sym": "ASH"
+    },
+    {
+      "sector": "Materials",
+      "sym": "AVNT"
+    },
+    {
+      "sector": "Materials",
+      "sym": "AVY"
+    },
+    {
+      "sector": "Materials",
+      "sym": "BALL"
+    },
+    {
+      "sector": "Materials",
+      "sym": "BCPC"
+    },
+    {
+      "sector": "Materials",
+      "sym": "CBT"
+    },
+    {
+      "sector": "Materials",
+      "sym": "CDE"
+    },
+    {
+      "sector": "Materials",
+      "sym": "CF"
+    },
+    {
+      "sector": "Materials",
+      "sym": "CRH"
+    },
+    {
+      "sector": "Materials",
+      "sym": "DD"
+    },
+    {
+      "sector": "Materials",
+      "sym": "ECL"
+    },
+    {
+      "sector": "Materials",
+      "sym": "FCX"
+    },
+    {
+      "sector": "Materials",
+      "sym": "FMC"
+    },
+    {
+      "sector": "Materials",
+      "sym": "FUL"
+    },
+    {
+      "sector": "Materials",
+      "sym": "GEF"
+    },
+    {
+      "sector": "Materials",
+      "sym": "HL"
+    },
+    {
+      "sector": "Materials",
+      "sym": "HWKN"
+    },
+    {
+      "sector": "Materials",
+      "sym": "IFF"
+    },
+    {
+      "sector": "Materials",
+      "sym": "IOSP"
+    },
+    {
+      "sector": "Materials",
+      "sym": "IP"
+    },
+    {
+      "sector": "Materials",
+      "sym": "KALU"
+    },
+    {
+      "sector": "Materials",
+      "sym": "KWR"
+    },
+    {
+      "sector": "Materials",
+      "sym": "LNN"
+    },
+    {
+      "sector": "Materials",
+      "sym": "LYB"
+    },
+    {
+      "sector": "Materials",
+      "sym": "MLM"
+    },
+    {
+      "sector": "Materials",
+      "sym": "MOS"
+    },
+    {
+      "sector": "Materials",
+      "sym": "MTRN"
+    },
+    {
+      "sector": "Materials",
+      "sym": "MTUS"
+    },
+    {
+      "sector": "Materials",
+      "sym": "MTX"
+    },
+    {
+      "sector": "Materials",
+      "sym": "NEM"
+    },
+    {
+      "sector": "Materials",
+      "sym": "NUE"
+    },
+    {
+      "sector": "Materials",
+      "sym": "OI"
+    },
+    {
+      "sector": "Materials",
+      "sym": "PKG"
+    },
+    {
+      "sector": "Materials",
+      "sym": "PPG"
+    },
+    {
+      "sector": "Materials",
+      "sym": "SCL"
+    },
+    {
+      "sector": "Materials",
+      "sym": "SHW"
+    },
+    {
+      "sector": "Materials",
+      "sym": "STLD"
+    },
+    {
+      "sector": "Materials",
+      "sym": "SW"
+    },
+    {
+      "sector": "Materials",
+      "sym": "SXT"
+    },
+    {
+      "sector": "Materials",
+      "sym": "VMC"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "AAT"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "AMT"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "ARE"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "ARI"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "ARR"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "AVB"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "BFS"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "BXP"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "CBRE"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "CCI"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "CPT"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "CSGP"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "DEI"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "DLR"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "DOC"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "DRH"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "EQIX"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "EQR"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "ESS"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "FRT"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "GTY"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "HIW"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "HST"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "IRM"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "JOE"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "LTC"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "LXP"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "MMI"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "O"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "OUT"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "PEB"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "PLD"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "PMT"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "PSA"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "REG"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "RHP"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "RWT"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "SAFE"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "SBAC"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "SBRA"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "SHO"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "SLG"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "TRNO"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "UDR"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "VTR"
+    },
+    {
+      "sector": "Real Estate",
+      "sym": "WSR"
+    },
+    {
+      "sector": "Utilities",
+      "sym": "AEE"
+    },
+    {
+      "sector": "Utilities",
+      "sym": "AES"
+    },
+    {
+      "sector": "Utilities",
+      "sym": "AVA"
+    },
+    {
+      "sector": "Utilities",
+      "sym": "AWR"
+    },
+    {
+      "sector": "Utilities",
+      "sym": "CPK"
+    },
+    {
+      "sector": "Utilities",
+      "sym": "ED"
+    },
+    {
+      "sector": "Utilities",
+      "sym": "EIX"
+    },
+    {
+      "sector": "Utilities",
+      "sym": "EXC"
+    },
+    {
+      "sector": "Utilities",
+      "sym": "FE"
+    },
+    {
+      "sector": "Utilities",
+      "sym": "HE"
+    },
+    {
+      "sector": "Utilities",
+      "sym": "HTO"
+    },
+    {
+      "sector": "Utilities",
+      "sym": "LNT"
+    },
+    {
+      "sector": "Utilities",
+      "sym": "MSEX"
+    },
+    {
+      "sector": "Utilities",
+      "sym": "NEE"
+    },
+    {
+      "sector": "Utilities",
+      "sym": "NI"
+    },
+    {
+      "sector": "Utilities",
+      "sym": "NJR"
+    },
+    {
+      "sector": "Utilities",
+      "sym": "NRG"
+    },
+    {
+      "sector": "Utilities",
+      "sym": "NWE"
+    },
+    {
+      "sector": "Utilities",
+      "sym": "NWN"
+    },
+    {
+      "sector": "Utilities",
+      "sym": "ORA"
+    },
+    {
+      "sector": "Utilities",
+      "sym": "OTTR"
+    },
+    {
+      "sector": "Utilities",
+      "sym": "PEG"
+    },
+    {
+      "sector": "Utilities",
+      "sym": "PNW"
+    },
+    {
+      "sector": "Utilities",
+      "sym": "SO"
+    },
+    {
+      "sector": "Utilities",
+      "sym": "SR"
+    },
+    {
+      "sector": "Utilities",
+      "sym": "SWX"
+    },
+    {
+      "sector": "Utilities",
+      "sym": "UTL"
+    }
+  ],
+  "membership_id": "pss_rh1_live_membership_20260724",
+  "not_before_session": "2026-07-24",
+  "schema": "personality_relief_hazard.membership/v1",
+  "sector_counts": {
+    "Communication Services": 23,
+    "Consumer Discretionary": 95,
+    "Consumer Staples": 49,
+    "Energy": 34,
+    "Financials": 156,
+    "Health Care": 92,
+    "Industrials": 133,
+    "Information Technology": 101,
+    "Materials": 43,
+    "Real Estate": 46,
+    "Utilities": 27
+  },
+  "selection_rule": "eligible=true in frozen PTT-W1 panel; latest frozen ticker-sector mapping; one of eleven standard GICS sectors; OHLC file present",
+  "source_commit": "71ac1df412a9cf0b32b050ff05d40ed59c0ac27c",
+  "source_files": {
+    "data/breadth/ticker_sectors.parquet": "24c0d576f800c92333bb13689a250905a1172f5dc6ca982982d3ec152d1e35f3",
+    "data/research/ptt_w1_panel.parquet": "0bf8ddbde7263c7f72f0e1aaeacef77695f81fc2ac1c05e387d200bebdd9687e"
+  },
+  "ticker_count": 799
+}
