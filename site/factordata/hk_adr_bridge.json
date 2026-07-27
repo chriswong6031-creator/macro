@@ -10,6 +10,11 @@
       "lag_days": 0,
       "state": "fresh"
     },
+    "JD": {
+      "asof": "2026-07-24",
+      "lag_days": 0,
+      "state": "fresh"
+    },
     "KWEB": {
       "asof": "2026-07-24",
       "lag_days": 0,
@@ -21,16 +26,6 @@
       "state": "fresh"
     },
     "BIDU": {
-      "asof": "2026-07-24",
-      "lag_days": 0,
-      "state": "fresh"
-    },
-    "BABA": {
-      "asof": "2026-07-24",
-      "lag_days": 0,
-      "state": "fresh"
-    },
-    "JD": {
       "asof": "2026-07-24",
       "lag_days": 0,
       "state": "fresh"
