@@ -520,11 +520,11 @@ add the missing coverage for the branch the migration actually made primary.
 | `test_fix43_analyst_and_whitehouse` | `analyst_trends()` prefers the revisions store; test patches only legacy `_finnhub` → asserts against the live store (3 tests, not 1) | non-hermetic | fixed + new coverage for the revisions branch (batch A) |
 | `test_spotlight` | W9-B (#1143) set the **US** tailwind weight to `0.0`; test still asserts a US tilt moves `composite_z` | stale assertion | retargeted to the markets that still carry the axis; US demotion now guarded (batch A) |
 | `test_sector_central` | XSR-R2/R9 re-sorts the board by rotation rank; test still asserts a plain conviction sort | stale assertion | asserts whichever order `compute()` declares (batch A) |
-| `test_okx_retail` | template slice gained a `qmark` macro the test env does not define | fixture rot | batch B |
-| `test_w5b_edge_chips` | chip deliberately renamed `Sleeve ×N` → plain-word "Risk backdrop" (jargon ban) | stale assertion | batch B |
+| `test_okx_retail` | template slice gained a `qmark` macro the test env does not define; copy also rewritten underneath | fixture rot | fixed (batch B) |
+| `test_w5b_edge_chips` | chip deliberately renamed `Sleeve ×N` → plain-word "Risk backdrop" (jargon ban); **3 sibling absence tests went vacuously green** | stale assertion | fixed (batch B) |
 | `test_w4_us_board` (1 test) | W9-A sector-cap chip **deleted** by prophet card v1 (`fe7a7426c49`) | **obsolete** | test deleted (batch B) |
-| `test_stock_personality_wiring` | stamper floors at the `2026-07-06` wire-in date; fixture uses `2024-06-03`, so nothing is written | fixture rot | batch C |
-| `test_setup_tier` (probe class) | asserts a live CN name's technicals (`stoch` was 24, is now 45) | **non-hermetic by design** | batch C |
+| `test_stock_personality_wiring` | stamper floors at the `2026-07-06` wire-in date; fixture uses `2024-06-03`, so nothing is written (3 tests, not 1) | fixture rot | fixed — fixture straddles the floor (batch C) |
+| `test_setup_tier` (probe class) | asserts a live CN name's technicals (`stoch` was 24, is now 45) | **non-hermetic by design** | fixed — frozen 2026-07-03 tape fixture (batch C) |
 | `test_group_flow` | #3458 removed the `{% if flow %}` marker its fragment slicing needs | fixture rot | owned by #3788 — not touched here |
 
 ### The second failure class: a rename disarms every absence test keyed to the old name
@@ -548,6 +548,39 @@ invariant, never a sentence: the house style actively rewrites prose into plain 
 (`DESIGN_DOCTRINE.md`'s jargon ban), so a pinned sentence is a scheduled failure. Three
 separate suites here (`test_okx_retail`, `test_w5b_edge_chips`, `test_group_flow`) rotted on
 exactly that.
+
+### The third failure class: a fixture that encodes a moment, not a contract
+
+Batch C's two suites were red for one underlying reason — each fixture recorded *when it was
+written* rather than *what the code promises*.
+
+`test_setup_tier`'s probe class read the **live** `data/china_search/closes.parquet` and
+asserted relationships about three real tickers ("`300725` must be in 2W stoch washout").
+Its own docstring claimed the relationships "pass on any panel update that keeps the same
+structural setup story" — but the structural story is the market's to change, not the
+repo's. `300725`'s 2W stoch had recovered out of the washout band (24 → 45) and `688306`'s
+2W MACD was no longer approaching up. **A relationship about a live tape is still a claim
+about the market.** Scanning cutoffs showed all six probes hold together only up to
+**2026-07-03** — the tape they were authored against — so the suite now reads a committed
+33 KB three-ticker slice frozen at that date. It tests the engine, which is what it was
+always for, and cannot decay again.
+
+The same suite also carried a `skip_if_no_data` guard for the store being absent. That is
+gone with the live read: **a skip that fires in CI is a pass you cannot see** — the failure
+mode `scripts/check_skip_only_suites.py` (#3768) exists to catch.
+
+`test_stock_personality_wiring` dated its fires `2024-06-03`. The stamper clamps its scan to
+`max(build_date - 30d, "2026-07-06")` — the ledger wire-in date, before which it never
+backfills — so the fixture matched nothing, the writer returned early, and the test failed
+on a **missing parquet**. That presents as a broken writer rather than a stale date, which
+is why it needs saying: when a producer grows a floor, every fixture below the floor stops
+exercising it and starts failing for an unrelated-looking reason. Its dates now straddle the
+floor on purpose, so the no-backfill rule is *asserted* rather than tripped over.
+
+That suite also showed the mirror of the vacuous-green problem: its "wrong date" row sat one
+day before `build_date`, from when the filter was same-day. The filter later became a 30-day
+lookback (fires land in `track_record` retroactively, so a same-day filter would match
+nothing, ever) — which made that row legitimately *in* window, proving nothing.
 
 ### Byproducts worth their own tickets
 

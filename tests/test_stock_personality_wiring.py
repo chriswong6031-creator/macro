@@ -288,7 +288,12 @@ class TestPanelDatePIT:
         # Additionally: direct test that the ledger stamp uses the passed build_date, not utcnow.
         from scripts.build_stock_library import _stamp_personality_forward_ledger
         cfg = self._make_cfg(tmp_path)
-        trading_date = "2024-06-03"   # a Monday — distinct from any UTC wall-clock date
+        # A Monday (distinct from any UTC wall-clock date) that is ALSO on or after the
+        # ledger's 2026-07-06 wire-in floor. _stamp_personality_forward_ledger clamps its
+        # lookback to max(build_date - 30d, "2026-07-06") and never backfills pre-wiring
+        # history, so the original 2024-06-03 fixture matched no fires, returned early and
+        # wrote no parquet at all — the test failed on a missing file, not on a bad date.
+        trading_date = "2026-07-13"
         tr_dir = tmp_path / "data" / "signal_archive"
         tr_dir.mkdir(parents=True)
         tr = pd.DataFrame([{"ticker": "AAPL", "date": trading_date, "type": "buy"}])
@@ -345,52 +350,65 @@ class TestStampForwardLedgerFailOpen:
         ledger = tmp_path / "data" / "stock_personality" / "forward_ledger.parquet"
         assert not ledger.exists()
 
+    # The stamper clamps its scan to max(build_date - 30d, "2026-07-06") — the ledger
+    # wire-in date, before which it never backfills. Every fixture here must sit on or
+    # after that floor or the stamper returns early and writes nothing at all.
+    BUILD_DATE = "2026-07-13"      # a Monday, after the floor
+    IN_WINDOW = "2026-07-09"       # inside the 30d lookback
+    PRE_FLOOR = "2026-07-03"       # before the wire-in floor -> must never be stamped
+
     def test_stamps_buy_rebuy_fires_only(self, tmp_path: Path):
-        """Only buy/rebuy fires from today are stamped; sell/reduce are excluded."""
+        """Only buy/rebuy fires inside the lookback are stamped; sell is excluded, and
+        nothing before the wire-in floor is ever backfilled."""
         cfg = self._make_cfg(tmp_path)
         # Create a track_record with one buy, one rebuy, one sell
         tr_dir = tmp_path / "data" / "signal_archive"
         tr_dir.mkdir(parents=True)
         tr = pd.DataFrame([
-            {"ticker": "AAPL", "date": "2024-06-01", "type": "buy"},
-            {"ticker": "MSFT", "date": "2024-06-01", "type": "rebuy"},
-            {"ticker": "NVDA", "date": "2024-06-01", "type": "sell"},
-            {"ticker": "AAPL", "date": "2024-05-31", "type": "buy"},  # wrong date
+            {"ticker": "AAPL", "date": self.BUILD_DATE, "type": "buy"},
+            {"ticker": "MSFT", "date": self.IN_WINDOW, "type": "rebuy"},
+            {"ticker": "NVDA", "date": self.BUILD_DATE, "type": "sell"},
+            {"ticker": "TSLA", "date": self.PRE_FLOOR, "type": "buy"},   # before wire-in
         ])
         tr.to_parquet(tr_dir / "track_record.parquet", index=False)
         sp_by_ticker = {
             "AAPL": {"base": {"archetype": {"key": "momentum_runner"}}, "current_mode": {}, "evidence": {}},
             "MSFT": {"base": {}, "current_mode": {"modes": ["vol_expansion"]}, "evidence": {}},
             "NVDA": {"base": {}, "current_mode": {}, "evidence": {}},
+            "TSLA": {"base": {}, "current_mode": {}, "evidence": {}},
         }
-        _stamp_personality_forward_ledger(sp_by_ticker, "2024-06-01", cfg)
+        _stamp_personality_forward_ledger(sp_by_ticker, self.BUILD_DATE, cfg)
         ledger = tmp_path / "data" / "stock_personality" / "forward_ledger.parquet"
         assert ledger.exists(), "Ledger should have been created"
         df = pd.read_parquet(ledger)
         tickers = set(df["ticker"].tolist())
-        # AAPL (buy today) + MSFT (rebuy today) should be present; NVDA (sell) must not
+        # buy + rebuy inside the window are stamped; sell is not, whatever its date
         assert "AAPL" in tickers
         assert "MSFT" in tickers
         assert "NVDA" not in tickers
-        # Only today's date rows
-        assert all(df["date"].astype(str) == "2024-06-01")
+        # The scan is a 30-DAY LOOKBACK, not a same-day filter: track_record appends entry
+        # rows retroactively, so a fire dated D lands in the parquet ~3-4 sessions later and
+        # a same-day filter would match nothing, ever. An in-window earlier fire is expected.
+        assert set(df["date"].astype(str)) == {self.BUILD_DATE, self.IN_WINDOW}
+        # …but the floor still holds: pre-wire-in history is never backfilled.
+        assert "TSLA" not in tickers
 
     def test_dedup_on_ticker_date_type(self, tmp_path: Path):
         """Running the stamper twice does not create duplicate rows."""
         cfg = self._make_cfg(tmp_path)
         tr_dir = tmp_path / "data" / "signal_archive"
         tr_dir.mkdir(parents=True)
-        tr = pd.DataFrame([{"ticker": "AAPL", "date": "2024-06-01", "type": "buy"}])
+        tr = pd.DataFrame([{"ticker": "AAPL", "date": self.BUILD_DATE, "type": "buy"}])
         tr.to_parquet(tr_dir / "track_record.parquet", index=False)
         sp_by_ticker = {
             "AAPL": {"base": {"archetype": {"key": "x"}}, "current_mode": {}, "evidence": {}},
         }
-        _stamp_personality_forward_ledger(sp_by_ticker, "2024-06-01", cfg)
-        _stamp_personality_forward_ledger(sp_by_ticker, "2024-06-01", cfg)  # second run
+        _stamp_personality_forward_ledger(sp_by_ticker, self.BUILD_DATE, cfg)
+        _stamp_personality_forward_ledger(sp_by_ticker, self.BUILD_DATE, cfg)  # second run
         ledger = tmp_path / "data" / "stock_personality" / "forward_ledger.parquet"
         df = pd.read_parquet(ledger)
-        # Must have exactly 1 row for AAPL/2024-06-01/buy
-        aapl_rows = df[(df["ticker"] == "AAPL") & (df["date"].astype(str) == "2024-06-01")]
+        # Must have exactly 1 row for AAPL/<build date>/buy
+        aapl_rows = df[(df["ticker"] == "AAPL") & (df["date"].astype(str) == self.BUILD_DATE)]
         assert len(aapl_rows) == 1, f"Expected 1 row, got {len(aapl_rows)}"
 
     def test_no_error_when_sp_by_ticker_empty(self, tmp_path: Path):

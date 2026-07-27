@@ -3553,3 +3553,44 @@ jobs:
         run: python -m pytest tests/test_w5b_edge_chips.py -q
       - name: US board W9-A producer field + cohort math
         run: python -m pytest tests/test_w4_us_board.py -q
+
+  # ── RED-ON-ARRIVAL SWEEP, BATCH C (2026-07-27) ─────────────────────────────
+  # The PIT / frozen-tape share of the 10 reds (docs/UNRUN_TEST_CENSUS.md §"Red on
+  # arrival — the P4/P5 sweep").  Both suites were red for the same underlying
+  # reason: a fixture that encodes a MOMENT rather than a contract.
+  #
+  #   - test_stock_personality_wiring dated its fires 2024-06-03/2024-06-01, but the
+  #     stamper clamps its scan to max(build_date - 30d, "2026-07-06") and never
+  #     backfills pre-wire-in history.  The fixture matched no fires, so the stamper
+  #     returned early and wrote nothing — the suite failed on a MISSING FILE, which
+  #     reads like a broken writer rather than a stale date.  Its dates now straddle
+  #     the floor deliberately, so the no-backfill rule is asserted instead of
+  #     tripped over.  The "wrong date" row had also gone stale in the other
+  #     direction: the filter moved from same-day to a 30-day lookback, so a
+  #     build_date-1 row is now legitimately IN window and proved nothing.
+  #   - test_setup_tier's probe class read the LIVE china_search store and asserted
+  #     relationships about three real tickers.  A relationship about a live tape is
+  #     still a claim about the market: two of six probes had gone red as the names
+  #     traded on, and the rest were passing on borrowed time.  It now reads a frozen
+  #     3-ticker slice truncated at 2026-07-03 — the tape the probes were authored
+  #     against and the last date on which all six hold at once — so it tests the
+  #     engine, which is what it was always for.  Its skip-if-store-absent guard is
+  #     gone with the live read: a skip that fires in CI is a pass you cannot see.
+  #
+  # Repeats the shared dependency install BYTE-FOR-BYTE so run_ci_pack.py keeps one
+  # venv across the unrun-* set.  Measured locally: 2 suites / 90 tests / ~1.4s.
+  unrun-pit-probes:
+    if: ${{ false }}
+    timeout-minutes: 4
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: w_setup probes against the FROZEN tape + the rule ladder
+        run: python -m pytest tests/test_setup_tier.py -q
+      - name: personality forward-ledger PIT stamp + the no-backfill wire-in floor
+        run: python -m pytest tests/test_stock_personality_wiring.py -q
