@@ -353,6 +353,16 @@ on:
       # file, so nothing went red.  Both halves listed on purpose (#3488).
       - "tests/test_ftr_w1_template_markup.py"
       - "tests/test_ftr_w3_ui.py"
+      # group_flow display-only detector + its baskets.html.j2 money-flow render
+      # guard (unrun-suite census, 2026-07-26).  Same defect as the FTR pair above:
+      # `grep -rn test_group_flow .github/` returned nothing, so when #3282's
+      # Rotation Map revamp rebuilt the "Flow lens" card into the Money-flow tile
+      # (2026-07-24) the suite's literal `{% if flow %}` source slice started raising
+      # ValueError and stayed red on main unseen.  Now carried by engine-render-guards.
+      # The template half of the trigger is already covered twice — "templates/**"
+      # and an explicit "templates/baskets.html.j2" above — so only the test file
+      # needs a new entry here; both halves do trigger the job (#3488).
+      - "tests/test_group_flow.py"
       # CPI net-liquidity artifact (data infrastructure): builder + contract tests
       # must re-run together so a canon-formula or stale-guard regression fails RED.
       - "scripts/build_netliq_daily.py"

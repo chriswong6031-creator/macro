@@ -546,6 +546,19 @@ jobs:
       # guard itself against the committed registry, not just its pytest coverage.
       - name: statement-tape schema guard (FL-E / FC-R9)
         run: python -m scripts.check_statement_tape
+      # Wired 2026-07-26: test_group_flow.py was named by NO job in ANY workflow
+      # (`grep -rn test_group_flow .github/` returned nothing), so its baskets.html.j2
+      # render guard sat RED on main from 2026-07-24 — #3282's Rotation Map revamp
+      # rebuilt the "Flow lens" card into the Money-flow tile and the test's literal
+      # `{% if flow %}` source slice raised ValueError from that merge onward. Same
+      # unrun-suite darkness as test_nyse_calendar (#3779) and the #3768 sweep. It
+      # belongs in this job: it is a template render guard, it renders the same
+      # baskets.html.j2 as test_theme_scoring_conflicted above, and the job's minimal
+      # deps already carry jinja2/pandas/numpy. Path-gated in ci.yml on BOTH the test
+      # and templates/baskets.html.j2 — a guard the guarded change cannot trigger is
+      # not a guard (#3488).
+      - name: group-flow display-only detector + baskets.html.j2 money-flow render guard
+        run: python -m pytest tests/test_group_flow.py -q
 
   collector-registry:
     if: ${{ false }}
