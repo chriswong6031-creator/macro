@@ -87,7 +87,7 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
 /* ---- hero ---- */
 @keyframes ss-rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 @keyframes ss-breathe{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--blue) 0%,transparent),0 0 0 0 color-mix(in srgb,#8b5cf6 0%,transparent)}50%{box-shadow:0 0 44px 6px color-mix(in srgb,var(--blue) 14%,transparent),0 0 28px 4px color-mix(in srgb,#8b5cf6 10%,transparent)}}
-.hero{position:relative;overflow:hidden;border-radius:20px;padding:32px 32px 28px;margin-bottom:28px;
+.hero{position:relative;overflow:hidden;border-radius:20px;padding:32px 32px 28px;margin:18px 0 28px;
   background:var(--surface);
   border:1px solid var(--surface-brd);
   box-shadow:var(--surface-shadow);
@@ -177,15 +177,15 @@ html[data-theme="dark"] .hero::before{background:radial-gradient(620px 320px at 
 .tw-signed a{color:var(--blue);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--blue) 40%,transparent)}
 @media(max-width:640px){
   /* No overlap on a phone: the ghosts buy nothing at this width and the card in
-     normal flow can never collide with the sticky bar. The inert filter bar also
-     gives up its sticky slot — hydration restores it with .gated. */
+     normal flow can never collide with the bar. */
   .tw-ghosts{display:none}
   .tw-card{position:static;transform:none;width:100%;padding:26px 20px 22px}
-  .filter-bar.gated{position:static}
 }
 
-/* ---- filter bar (sticky glass) ---- */
-.filter-bar{position:sticky;top:57px;z-index:20;background:var(--bg);padding:12px 0 8px;margin:0 -20px 12px;padding-left:20px;padding-right:20px;border-bottom:1px solid var(--grid)}
+/* ---- filter bar ---- */
+/* Scrolls with the page. Sticky, it detached and floated over the list, and the
+   transparent gap above it showed rows sliding through underneath. */
+.filter-bar{background:var(--bg);padding:12px 0 8px;margin:0 -20px 12px;padding-left:20px;padding-right:20px;border-bottom:1px solid var(--grid)}
 .filter-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px}
 .filter-row:last-child{margin-bottom:0}
 .filter-bar input[type=text]{flex:1;min-width:140px;max-width:240px;padding:8px 14px;border-radius:10px;border:1px solid var(--grid);background:var(--card);color:var(--text);font:inherit;font-size:13px;outline:none;transition:border-color .18s;min-height:36px}

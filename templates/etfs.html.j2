@@ -252,9 +252,12 @@ a{color:var(--link);text-decoration:none}
 
 /* ═══ tk logo ═══ */
 .tk-logo{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:6px;overflow:hidden;flex:0 0 26px;
-  background:color-mix(in srgb,var(--muted) 10%,var(--card))}
+  background:transparent}
 .tk-logo img{width:26px;height:26px;object-fit:contain;display:block}
-.tk-fb{font-size:9px;font-weight:800;letter-spacing:-.02em;color:var(--muted);align-items:center;justify-content:center;width:26px;height:26px}
+/* Fallback for a ticker with no CDN icon (the .png 404s → onerror swaps this in).
+   At 9px the 4-character ticker overran the 26px tile and the parent's
+   overflow:hidden sheared it on BOTH sides; size the type to the tile instead. */
+.tk-fb{font-size:8px;font-weight:800;letter-spacing:-.04em;line-height:1;white-space:nowrap;color:var(--muted);align-items:center;justify-content:center;width:26px;height:26px}
 .spark{display:inline-block;vertical-align:middle}
 
 /* ═══ ? tip ═══ */
