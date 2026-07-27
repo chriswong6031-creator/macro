@@ -175,9 +175,26 @@ def test_compute_is_fail_soft_and_well_formed():
         assert 0 <= c["score"] <= 100
         assert c["label_en"] in {t[1] for t in sc.TIERS}
         assert isinstance(s["reasoning"], list) and s["reasoning"]
-    # sorted by conviction descending
+    # Board order: XSR-R2/R9 re-sorts by fast-rotation rank when the rotation artifact is
+    # armed, and FAILS OPEN to the conviction sort when it is missing/stale/unparseable.
+    # Assert whichever contract compute() DECLARES it used — a bare conviction-sort
+    # assertion rotted silently here the day the rotation lens landed, because this suite
+    # was run by no CI job.
     scores = [s["conviction"]["score"] for s in out["sectors"]]
-    assert scores == sorted(scores, reverse=True)
+    assert out["meta"]["board_order"] == (
+        "fast-lens (XSR-R2)" if out["market"]["rotation_board_order"] == "fast-lens"
+        else "conviction")
+    if out["market"]["rotation_board_order"] == "fast-lens":
+        # rotation-matched records come first, ascending by per-kind ordinal (1..n) …
+        ordinals = [(s.get("rotation") or {}).get("ordinal") for s in out["sectors"]]
+        matched = [o for o in ordinals if o is not None]
+        assert matched == list(range(1, len(matched) + 1))
+        # … then the unmatched tail, which keeps the conviction sort among itself.
+        assert all(o is None for o in ordinals[len(matched):])
+        tail = scores[len(matched):]
+        assert tail == sorted(tail, reverse=True)
+    else:
+        assert scores == sorted(scores, reverse=True)
 
 
 # --------------------------------------------------------------------- grader ----

@@ -50,12 +50,29 @@ def test_risk_leg_tilt_sign(monkeypatch):
     assert risk["label_en"] == "RISK-ON"
 
 
+_SECTOR_RS_FIXTURE = [
+    {"ticker": "XLK", "mom_20d_pct": 6.0, "mom_60d_pct": 20.0, "pctile_252d": 98, "above_200d_trend": True},
+    {"ticker": "XLE", "mom_20d_pct": -2.0, "mom_60d_pct": -8.0, "pctile_252d": 12, "above_200d_trend": False},
+    {"ticker": "SMH", "mom_20d_pct": 13.0, "mom_60d_pct": 41.0, "pctile_252d": 99, "above_200d_trend": True},
+]
+
+
+@pytest.fixture
+def _no_world_state(monkeypatch):
+    """Force _sector_leg() down its LEGACY latest.json branch.
+
+    W1 PR2 made world_state the primary source, so a test that only monkeypatches
+    config.data_dir no longer reaches the code it thinks it is testing — it silently
+    asserts against the committed production store instead, and its verdict then moves
+    with the market. Every fixture-driven test below must pin the branch it exercises.
+    """
+    import engine.neuralweb.read as nw_read
+    monkeypatch.setattr(nw_read, "load_world_state", lambda *a, **k: None)
+
+
+@pytest.mark.usefixtures("_no_world_state")
 def test_sector_leg_reads_regime(monkeypatch, tmp_path):
-    reg = {"date": "2026-06-18", "sector_rs": [
-        {"ticker": "XLK", "mom_20d_pct": 6.0, "mom_60d_pct": 20.0, "pctile_252d": 98, "above_200d_trend": True},
-        {"ticker": "XLE", "mom_20d_pct": -2.0, "mom_60d_pct": -8.0, "pctile_252d": 12, "above_200d_trend": False},
-        {"ticker": "SMH", "mom_20d_pct": 13.0, "mom_60d_pct": 41.0, "pctile_252d": 99, "above_200d_trend": True},
-    ]}
+    reg = {"date": "2026-06-18", "sector_rs": _SECTOR_RS_FIXTURE}
     d = tmp_path / "regime"
     d.mkdir()
     (d / "latest.json").write_text(json.dumps(reg))
@@ -68,6 +85,28 @@ def test_sector_leg_reads_regime(monkeypatch, tmp_path):
     assert tickers[0] == "XLK"
     assert leg["leaders"][0] == "XLK"
     assert leg["rows"][0]["rank"] == 1
+
+
+def test_sector_leg_prefers_world_state_over_latest_json(monkeypatch, tmp_path):
+    """W1 PR2 migration path: world_state.regime.sector_rs is the PRIMARY source and must
+    WIN over a disagreeing latest.json. Pins the branch the migration actually shipped —
+    it had no coverage of its own, which is how the legacy-only test above went unnoticed."""
+    import engine.neuralweb.read as nw_read
+    monkeypatch.setattr(nw_read, "load_world_state",
+                        lambda *a, **k: {"regime": {"asof": "2026-06-18",
+                                                    "sector_rs": _SECTOR_RS_FIXTURE}})
+    # A latest.json that would rank XLE first if the legacy branch were taken.
+    d = tmp_path / "regime"
+    d.mkdir()
+    (d / "latest.json").write_text(json.dumps({"date": "2020-01-01", "sector_rs": [
+        {"ticker": "XLE", "mom_20d_pct": 9.9, "mom_60d_pct": 99.0, "pctile_252d": 99,
+         "above_200d_trend": True},
+    ]}))
+    monkeypatch.setattr(etf_pulse.config, "data_dir", lambda: tmp_path)
+    leg = etf_pulse._sector_leg()
+    assert leg is not None
+    assert leg["as_of"] == "2026-06-18"           # world_state's asof, not latest.json's date
+    assert [r["ticker"] for r in leg["rows"]][0] == "XLK"
 
 
 def test_compute_smoke_real_data():

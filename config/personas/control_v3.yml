@@ -1,0 +1,70 @@
+## Persona spec v1 — trial cohort CONTROL ARM (masterplan §3.3). Authored by Fable.
+## Persona Network W1 (docket D13). SPEC ONLY: no desk_network entry, no account,
+## no X handle, nothing generates from this file. The roster shows it PLANNED.
+##
+## voice: "authoritative desk" is the engine lane's current DEFAULT key, read from
+## code rather than chosen — it is the default in four independent places:
+##   content_studio.content_plan   voice = acct_cfg.get("voice", "authoritative desk")
+##   content_studio._get_copy      fallback key (type_id, "authoritative desk")
+##   content_studio._CHART/_THEME/_MOVER_VOICE_FILLER and _RECEIPT_VOICE_PENDING
+##   copywriter._fill_template     ctx.get("voice", "authoritative desk")
+##
+## tilt is EXACTLY content_studio._DEFAULT_TILT — a test pins byte-equality, so
+## if the engine default ever moves, this control arm goes red instead of
+## silently drifting off the baseline it exists to hold still.
+##
+## cadence: see the comment on the cadence block below. context_packs are
+## deliberately EMPTY: the control arm gets no codex, no chronicle injection and
+## no LLM pass — that is what makes it a control.
+id: control_v3
+persona_kind: specialist
+archetype: "voice-v3 engine baseline (control arm)"
+voice: "authoritative desk"
+voice_codex:
+  register: "control arm — no LLM voice pass; engine templates verbatim"
+  quirks: []
+  emoji_policy: none
+  banned: []
+  banned_patterns:
+    - "first-person trade/position/P&L claims"
+    - "fabricated personal experience"
+    - "testimonial-style product claims"
+  zh: false
+beat: "baseline engine lane"
+tilt:
+  signal: 0.30
+  chart: 0.13
+  education: 0.10
+  macro: 0.11
+  receipt: 0.08
+  watchlist: 0.06
+  event: 0.06
+  mover: 0.10
+  theme_list: 0.06
+pipeline: engine
+model_tier: default
+# declared W2-resolver baseline (no live per-account profile exists at W1: live cap -1/unlimited, global floor 120m, ramp table decorative — D08); W2 de-synchronizes per §2
+cadence:
+  posts_per_day: 4
+  min_spacing_min: 120
+  jitter_min: 25
+  weekend_shape: light
+isolation:
+  profile_id: null
+  egress: null
+  registered_at: null
+  warmed_through: null
+  rail: null
+context_packs:
+  chronicle: []
+  desks: []
+memory: data/marketing/personas/control_v3/theses.jsonl
+scorecard:
+  min_impressions: 20000
+  promote_after:
+    weeks: 4
+    engagement_rate_ci_lower_above: 0.015
+  kill_after:
+    weeks: 8
+    engagement_rate_ci_upper_below: 0.005
+  alpha_note: "pre-registered thresholds; the W4 grading engine applies the multiplicity correction (Bonferroni across live arms) and prints arm size/power on the report card; two looks (4w promote / 8w kill); no lane grades itself"

@@ -238,6 +238,34 @@ jobs:
         # must never drift. Skips cleanly when data/vector/*.json is absent.
         run: python -m pytest tests/test_signal_lab_vector_display.py -q
 
+  breakdown-control-seed-determinism:
+    if: ${{ false }}
+    # BD-4/5/6 control sampling derives a per-ticker RNG sub-seed from the ticker.
+    # Until 2026-07-26 that derivation was builtin hash(), which Python salts per
+    # process (PYTHONHASHSEED) — control draws differed on EVERY run while the frozen
+    # Phase-0/0b preregs promise seeded (reproducible) controls and the surrounding
+    # comment claimed "deterministic sub-seed". Same defect class as the chart_render
+    # SVG ids (#3785), fixed the same way: bd456_control_seed() now uses zlib.crc32.
+    # This lane runs the real derivation in fresh subprocesses under PYTHONHASHSEED
+    # 0/1/42 asserting identical seeds, and pins golden values so a silent regime
+    # change (mask width, XOR operator, encoding) also fails RED. The subprocess
+    # imports scripts.research.dump_breakdown_events wholesale (engine.grading +
+    # pandas/numpy/pyarrow closure; pyyaml for the repo conftest), so the install
+    # line is byte-identical to the trial-budgets/outcome-spine family and the pack
+    # runner can share a venv with any same-pack sibling on that line. Closure
+    # verified in a clean venv with exactly this install: 2 passed (plus the whole
+    # unwired-in-CI tests/test_breakdown_events.py suite: 122 passed).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: BD-4/5/6 control seeds must be PYTHONHASHSEED-stable (crc32, never hash())
+        run: python -m pytest tests/test_breakdown_seed_determinism.py -q
+
   outcome-spine:
     if: ${{ false }}
     # W4 (audit #13/#19/#23/#41/#42): the outcome spine + partial-pooling closed loop. The
@@ -465,6 +493,26 @@ jobs:
         # beautifulsoup4: test_china_news_engine.py patches bs4.BeautifulSoup on the
         # official-pages fetch path, and patch() imports the module.
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly pillow requests beautifulsoup4
+      # Wired 2026-07-26: test_group_flow.py was named by NO job in ANY workflow
+      # (`grep -rn test_group_flow .github/` returned nothing), so its baskets.html.j2
+      # render guard sat RED on main from 2026-07-24 — #3282's Rotation Map revamp
+      # rebuilt the "Flow lens" card into the Money-flow tile and the test's literal
+      # `{% if flow %}` source slice raised ValueError from that merge onward. Same
+      # unrun-suite darkness as test_nyse_calendar (#3779) and the #3768 sweep. It
+      # belongs in this job: it is a template render guard, it renders the same
+      # baskets.html.j2 as test_theme_scoring_conflicted below, and the job's minimal
+      # deps already carry jinja2/pandas/numpy. Path-gated in ci.yml on BOTH the test
+      # and templates/baskets.html.j2 — a guard the guarded change cannot trigger is
+      # not a guard (#3488).
+      #
+      # Ordered BEFORE the ~100-file sweep below on purpose: run_ci_pack.py abandons a
+      # job's remaining steps once one exits non-zero, so a trailing step is silently
+      # skipped whenever anything in that sweep is red — which is exactly what happened
+      # on this PR's first run (a pre-existing site/intl.html 'validated' claim on main
+      # reddened the sweep and this guard never executed). A guard reachable only when
+      # every other guard already passes is not a guard.
+      - name: group-flow display-only detector + baskets.html.j2 money-flow render guard
+        run: python -m pytest tests/test_group_flow.py -q
       - name: render-guard + engine-contract tests (rot sweep 2026-07-02)
         run: >
           python -m pytest
@@ -535,6 +583,7 @@ jobs:
           tests/test_aibrief_page.py
           tests/test_aibrief_w4_panels.py
           tests/test_validated_claims_thirdparty.py
+          tests/test_intl_recovery_quality.py
           tests/test_sa_w5_v2_grader_hook.py
           tests/test_w8b_macro_prior_entries.py
           tests/test_rr_scorecard_card.py
@@ -2644,7 +2693,18 @@ jobs:
         # co-run (never whitelisted → test-whitelist-rot; the admin panels are
         # plain dict-returning functions, no fastapi/httpx). All stdlib-only —
         # verified against a minimal pytest+pyyaml env.
-        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py -q
+        # test_marketing_personas (Persona Network W1, docket D13) joins the same
+        # lane: the spec loader keeps stdlib+yaml at module level and reads the
+        # content-studio type-id set through a LAZY import, so a top-level heavy
+        # import in engine/marketing/personas.py must turn this job red at
+        # collection. Verified in a clean pytest+pyyaml venv.
+        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_marketing_personas.py -q
+      - name: persona specs validate (config/personas/*.yml)
+        # The gate the specs exist for: every committed spec carries the full
+        # content-studio tilt key set, a live template-pool voice key, and the
+        # AM-R1 banned patterns. Runs as its own step so a spec-only PR fails on
+        # the spec, not inside a pytest summary.
+        run: python -m engine.marketing.personas --check
 
   marketing-data:
     if: ${{ false }}
@@ -3388,3 +3448,37 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: import-time logging.disable + warnings-filter ratchet over engine, lib, scripts, research
         run: python -m pytest tests/test_no_module_level_logging_disable.py -q
+
+  # ── RED-ON-ARRIVAL SWEEP, BATCH A (2026-07-27) ─────────────────────────────
+  # The 2026-07-26 census wired the P0–P3 tiers but left P4/P5 (861 suites) as
+  # declared backlog, so nobody had measured how many of them were already RED.
+  # This lane is the first answer: 870 unrun suites were executed one process per
+  # suite, 24 came back red, and these four are the scoring-engine share of that
+  # set (docs/UNRUN_TEST_CENSUS.md §"Red on arrival — the P4/P5 sweep").
+  #
+  # Two of the four were worse than red — they were NON-HERMETIC.  A migration
+  # that adds a preferred data source in front of an existing one silently strands
+  # the old monkeypatch on a dead branch, so the test stops testing its fixture and
+  # starts asserting against the committed production store; its verdict then moves
+  # with the market instead of with the code.  Both now pin the branch they
+  # exercise, and both gained the coverage the migration's NEW branch never had.
+  # Repeats the shared dependency install BYTE-FOR-BYTE so run_ci_pack.py keeps one
+  # venv across the unrun-* set.  Measured locally: 4 suites / 45 tests / ~43s,
+  # dominated by test_sector_central's compute() over the real store (~40s).
+  unrun-scoring-engine:
+    if: ${{ false }}
+    timeout-minutes: 6
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: spotlight tilt — W9-B US demotion is display-only + the tilt still moves weighted markets
+        run: python -m pytest tests/test_spotlight.py -q
+      - name: etf_pulse sector leg + analyst delta channel — each pins the data branch it exercises
+        run: python -m pytest tests/test_etf_pulse.py tests/test_fix43_analyst_and_whitehouse.py -q
+      - name: sector_central board order — fast-lens rotation rank, failing open to conviction
+        run: python -m pytest tests/test_sector_central.py -q

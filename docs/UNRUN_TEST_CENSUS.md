@@ -463,7 +463,82 @@ suite belongs.
 
 `P4` (416, ledger writers) and `P5` (445) are what is left. Wire them in blast-radius order,
 in batches small enough to keep the ci-pack budget sane, run each batch **serially** in a
-clean venv first, and expect ~5% red.
+clean venv first.
+
+## Red on arrival — the P4/P5 sweep (2026-07-27)
+
+The census above measures *whether a suite runs*. It never measured **whether the unrun ones
+still pass**, and an unrun suite that rots is invisible indefinitely. All 870 then-unrun
+suites were executed, one pytest process per suite (so a crash or hang costs one suite, not
+the batch), in a throwaway worktree with the `MM_DATA_GUARD` session tripwire armed.
+
+**Result: 846 passed, 24 did not — but only 10 are genuinely red on `main`.**
+
+| outcome | n | meaning |
+|---|---|---|
+| pass | 846 | |
+| **red on `main`** | **10** | fails in a fresh checkout; see the table below |
+| local-env only | 14 | green once `fastapi` / `stripe` / `hmmlearn` is installed |
+| **total unrun** | **870** | |
+
+Two measurement traps worth repeating, both of which would have inflated the red count:
+
+- **A missing third-party dep is not rot.** 13 suites failed on `ModuleNotFoundError`
+  (`fastapi` ×11, `stripe`, `hmmlearn`) and a 14th — a `hmmlearn` consumer that *fail-softs
+  to `None`* rather than raising — failed an `assert ... is not None`. All 14 pass with the
+  dep present. They are unwired because the shared `unrun-*` install does not carry those
+  deps, and adding one costs an extra venv per pack; that is a budget decision, not rot.
+- **`-x` hides siblings.** Stopping at the first failure understates damage:
+  `test_fix43_analyst_and_whitehouse.py` reported one failure and actually had three.
+  Re-run each red suite without `-x` before triaging it.
+
+The doc previously estimated "~5% red" for this remainder. Measured, it is **1.1%**.
+
+### The dominant failure class: migrations that silently un-hermeticize a test
+
+Three of the ten (`test_etf_pulse`, `test_fix43_analyst_and_whitehouse`, and in effect
+`test_regime_one`) share one shape, and it is worse than a plain red:
+
+> A migration adds a **preferred** data source in front of an existing one and keeps the old
+> path as a fallback. Any test that monkeypatched the old path is now stranded on a dead
+> branch. It does not fail loudly — it stops reading its fixture and starts asserting against
+> the **committed production store**, so its verdict moves with the market instead of with
+> the code.
+
+`data/` is committed, so this reproduces in CI rather than being a local-only artifact. The
+tell is an assertion failing against values that appear nowhere in the fixture (`XLV` where
+the fixture only defines `XLK`/`XLE`/`SMH`; real tickers where the fixture defines `A`/`B`).
+Both migrations also shipped their **new** branch with no coverage at all, which is why
+nothing caught the stranding. Fix in two parts: pin the branch each test exercises, **and**
+add the missing coverage for the branch the migration actually made primary.
+
+### The ten
+
+| suite | cause | class | disposition |
+|---|---|---|---|
+| `test_etf_pulse` | W1 PR2 made `world_state` primary; test patches only the legacy `config.data_dir` → asserts against the live store | non-hermetic | fixed + new coverage for the `world_state` branch (batch A) |
+| `test_fix43_analyst_and_whitehouse` | `analyst_trends()` prefers the revisions store; test patches only legacy `_finnhub` → asserts against the live store (3 tests, not 1) | non-hermetic | fixed + new coverage for the revisions branch (batch A) |
+| `test_spotlight` | W9-B (#1143) set the **US** tailwind weight to `0.0`; test still asserts a US tilt moves `composite_z` | stale assertion | retargeted to the markets that still carry the axis; US demotion now guarded (batch A) |
+| `test_sector_central` | XSR-R2/R9 re-sorts the board by rotation rank; test still asserts a plain conviction sort | stale assertion | asserts whichever order `compute()` declares (batch A) |
+| `test_okx_retail` | template slice gained a `qmark` macro the test env does not define | fixture rot | batch B |
+| `test_w5b_edge_chips` | chip deliberately renamed `Sleeve ×N` → plain-word "Risk backdrop" (jargon ban) | stale assertion | batch B |
+| `test_w4_us_board` (1 test) | W9-A sector-cap chip **deleted** by prophet card v1 (`fe7a7426c49`) | **obsolete** | test deleted (batch B) |
+| `test_stock_personality_wiring` | stamper floors at the `2026-07-06` wire-in date; fixture uses `2024-06-03`, so nothing is written | fixture rot | batch C |
+| `test_setup_tier` (probe class) | asserts a live CN name's technicals (`stoch` was 24, is now 45) | **non-hermetic by design** | batch C |
+| `test_group_flow` | #3458 removed the `{% if flow %}` marker its fragment slicing needs | fixture rot | owned by #3788 — not touched here |
+
+### Byproducts worth their own tickets
+
+- **`sector_capitulating` is a dead producer field.** `scripts/build_stock_library.py`
+  still computes the W9-A marker and ships it into `site/factordata/us_standouts.json`, and
+  `.nb-sector-cap` still exists in `templates/dashboard.html.j2` — but nothing renders it,
+  because prophet card v1 deleted the chip. The deletion also dropped a stop-out safety
+  disclosure ("−2.7pp deep panel / −3.5pp OOS, sign-stable"); whether the prophet card
+  re-surfaces that is a product question, not a test-wiring one.
+- **A fail-soft optional dep converts a hard failure into a wrong answer.**
+  `engine/regime_one.py` logs `hmmlearn unavailable` and returns `None`, so its suite reads
+  as an ordinary assertion failure rather than a missing dependency. Same family as the
+  swallowed-`ImportError` freshness SLAs fixed in #3779.
 
 ## Why the existing meta-guard did not catch this
 

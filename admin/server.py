@@ -40,6 +40,7 @@ from . import (actions, ai_cost, alerts as _alerts_mod, allies_store, analytics_
                metabolism_panel,
                neural_web,
                orchestrator_chat,
+               personas,
                prophet,
                revenue,
                services, settings, site_gate,
@@ -83,7 +84,9 @@ def _mm_log_filters(q: dict) -> dict:
     """Build the mastermind_logs filter dict from a parsed query string.
 
     Recognised params: surface, lane, model, mode, graded (yes|no|all),
-    thumb (up|down|all), starred (1), error (1), search (substring), since (ISO/date).
+    thumb (up|down|all), starred (1), error (1), search (substring), since (ISO/date),
+    thinking (1 → only rows carrying a reasoning trace), contra (1 → only rows the
+    deterministic conflict scan hits), verdict (LLM contradiction label).
     """
     def one(key: str) -> str:
         return (q.get(key) or [""])[0].strip()
@@ -96,6 +99,9 @@ def _mm_log_filters(q: dict) -> dict:
         "thumb": one("thumb") or "all",
         "starred": one("starred") in ("1", "true", "yes", "on"),
         "error": one("error") in ("1", "true", "yes", "on"),
+        "has_thinking": one("thinking") in ("1", "true", "yes", "on"),
+        "contra": one("contra") in ("1", "true", "yes", "on"),
+        "verdict": one("verdict"),
         "q": one("search"),
         "since": one("since"),
     }
@@ -592,6 +598,9 @@ class Handler(BaseHTTPRequestHandler):
             # Chronicle (market context timeline) admin inspector — read-only.
             if path == "/api/chronicle/overview":
                 return self._json(chronicle.overview())
+            # Persona Network roster (config/personas/ ⋈ desk_network) — read-only.
+            if path == "/api/personas/roster":
+                return self._json(personas.roster())
             # W-AI: Mastermind AI response log — batch-evaluatable corpus of every
             # user-facing answer (Macro brain + Terminal copilot), ingested from R2.
             if path == "/api/mastermind_ai/response_logs":
@@ -600,6 +609,10 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/mastermind_ai/response_logs/export":
                 fmt = (q.get("fmt") or ["jsonl"])[0]
                 return self._json(mastermind_logs.export(filters=_mm_log_filters(q), fmt=fmt))
+            # One row's reasoning trace, fetched when the operator expands that row —
+            # the list response carries only thinking_meta (see mastermind_logs.logs).
+            if path == "/api/mastermind_ai/response_logs/thinking":
+                return self._json(mastermind_logs.thinking_trace((q.get("id") or [""])[0]))
             if path in mastermind_proxy.GET_PATHS:
                 payload, code = mastermind_proxy.forward_get(path, u.query)
                 return self._json(payload, code)
@@ -981,6 +994,18 @@ class Handler(BaseHTTPRequestHandler):
                 if not ok_v:
                     return self._json({"ok": False, "error": err_msg}, 400)
                 return self._json(mastermind_logs.rate(cleaned, evaluator="operator"))
+            # Contradiction assessment (LLM tier): label the un-verdicted candidates
+            # 'system_error' vs 'market_divergence'. Fail-soft — a missing
+            # DEEPSEEK_API_KEY answers 200 with {ok: false, error: "no_llm_key"}.
+            if path == "/api/mastermind_ai/response_logs/classify":
+                try:
+                    # The module owns the ceiling — a literal here silently diverges the
+                    # day the batch cap moves.
+                    _lim = max(1, min(mastermind_logs._CLASSIFY_LIMIT_MAX,
+                                      int(b.get("limit") or 20)))
+                except (TypeError, ValueError):
+                    _lim = 20
+                return self._json(mastermind_logs.classify_contradictions(limit=_lim))
 
             if path in mastermind_proxy.POST_PATHS:
                 payload, code = mastermind_proxy.forward_post(path, b)
