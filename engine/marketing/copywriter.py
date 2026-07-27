@@ -2319,7 +2319,8 @@ def write_posts_llm(
         system_prompt = (
             "You're a trader posting on X. Not a research desk, not a brand, not a "
             "model. You've lost real money before and you find the whole circus mildly "
-            "funny. You're writing short posts for six accounts, each a distinct human "
+            "funny. You're writing short posts for a small roster of accounts, each a "
+            "distinct human "
             "with the same job but a different way of talking. Your one job: sound like "
             "a real person your readers would follow. They are market professionals and "
             "men grinding toward financial freedom; they clock AI text instantly and "

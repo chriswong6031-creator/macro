@@ -330,7 +330,7 @@ def test_tilt_key_set_is_read_from_content_studio_not_copied():
 
 
 # ---------------------------------------------------------------------------
-# 4. The 6 derived specs agree with config/marketing.yml
+# 4. The desk-derived specs agree with config/marketing.yml
 # ---------------------------------------------------------------------------
 
 _KIND_MAP = {"branded": "branded", "generic": "specialist"}
