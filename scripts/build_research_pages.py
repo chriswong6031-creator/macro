@@ -19,6 +19,14 @@ never needs R2. Also emits a ``/research/index.html`` crawl hub and merges
 ``/research/`` entries into ``site/sitemap.xml`` (preserving every other section,
 exactly like build_ticker_pages does for ``/stocks/``).
 
+These pages carry a third party's words, so the BC-2 gate
+(``scripts/check_validated_claims.py``) reads the same two snapshots to tell a
+republished sentence from a house claim: a 'validated' on ``site/research/`` is
+excused only where the rendered text reproduces a snapshot string VERBATIM. Keep the
+title/teaser/excerpt interpolations verbatim — reformat one (highlight a term, split a
+paragraph) and its provenance stops matching, the gate fires, and the fix is here, not
+in the allowlist.
+
 Called at the end of ``build_research_vault.build()`` so it rides the nightly vault
 build — no extra workflow/dag step. Fully static + additive: a missing/empty
 catalog yields zero pages and never breaks the build. Source-only; the nightly's

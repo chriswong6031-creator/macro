@@ -455,6 +455,12 @@ checks:
       - Scans templates/, site/*.js, generated *_data.js only; does not scan
         research/*.md (frozen Fable ruling 2026-07-06 — see
         epistemics.research_docs_not_scanned).
+      - On site/research/ (the research vault's republication surface) a token is
+        exempt when the text around it is reproduced verbatim from the committed
+        vault snapshots — the republished note's own words are not a house claim
+        and have no artifact to cite. Scoped to the quoted run, so house copy on
+        the same page still has to earn the word. Added 2026-07-27 after an
+        ingested economics note reddened ci-pack-0 on every open PR.
     owner_program: engine-fix-masterplan
     notes: null
 

@@ -634,6 +634,9 @@ on:
       # are caught before merge (not just in the nightly calibration run).
       - "scripts/check_validated_claims.py"
       - "data/regime/validated_claims_allowlist.json"
+      # BC-2 reads the vault snapshots to tell a republished third-party sentence
+      # from a house claim, so its verdict moves when they move.
+      - "data/research_vault/*.json"
       # Mastermind Feedback Contract PR-A (FB-R12/R13): privacy-boundary guard.
       # Any change to the guard script, its tests, committed governance/feedback
       # artifacts, .gitignore, or operator_grading must re-prove the rail holds.

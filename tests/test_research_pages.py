@@ -413,3 +413,69 @@ def test_build_removes_the_page_of_a_retitled_report(monkeypatch, tmp_path):
     assert old not in after                     # the stale URL is gone, not duplicated
     assert "pmi-fall-seven-times-get-up-eight-71f35b.html" in after
     assert "index.html" in after
+
+
+# --- BC-2: a republished note is not a house claim (main was red for this) -----
+# 2026-07-27: the nightly render mirrored an economics note whose text reads "…and
+# validated two likely sources of ongoing disinflation…" into site/research/, and
+# scripts/check_validated_claims.py failed every open PR. The word is the third
+# party's, so there is no artifact to cite and an allowlist entry would assert
+# evidence we do not have; the gate attributes the span to the committed vault
+# snapshot instead. These tests pin BOTH halves of that: the quote passes, and
+# house prose on the very same page still fails.
+
+_QUOTED_NOTE = ("The June core CPI print validated two likely sources of ongoing "
+                "disinflation: the continued slowdown in shelter inflation and "
+                "shrinking contributions from tariff-related price increases.")
+
+
+def _vault_corpus(monkeypatch, tmp_path, item, paras):
+    """Point the gate at a synthetic vault snapshot and return its corpus."""
+    import json
+
+    from scripts import check_validated_claims as gate
+    ex, cat = tmp_path / "excerpts.json", tmp_path / "catalog.json"
+    ex.write_text(json.dumps({"schema": "research_vault.excerpts.v1",
+                              "excerpts": {item["id"]: paras}}), encoding="utf-8")
+    cat.write_text(json.dumps({"items": [item]}), encoding="utf-8")
+    monkeypatch.setattr(gate, "VAULT_EXCERPTS", ex)
+    monkeypatch.setattr(gate, "VAULT_CATALOG", cat)
+    return gate._external_corpus()
+
+
+def _unearned(html_text: str, corpus: str) -> list[str]:
+    from scripts import check_validated_claims as gate
+    allow = gate._load_allowlist()
+    out = []
+    for line in html_text.splitlines():
+        _, _, hits = gate._scan_line(line, allow, corpus)
+        out += [line.strip()[:90] for backed, _ in hits if not backed]
+    return out
+
+
+def test_republished_note_does_not_trip_the_validated_gate(monkeypatch, tmp_path):
+    """Every surface the template puts the note's own words on — <h1>, the teaser,
+    the verbatim excerpt, <title>/description/JSON-LD — must read as a quote."""
+    item = dict(_ITEM, title="US Daily: What the Oil Rebound Means for Inflation Prints",
+                summary_points=[_QUOTED_NOTE, "Secretbullettwo copy."])
+    corpus = _vault_corpus(monkeypatch, tmp_path, item, [_QUOTED_NOTE])
+    assert corpus, "synthetic snapshot must yield a token-bearing corpus"
+
+    page = _norm_render(item, [_QUOTED_NOTE])
+    assert page.count("validated") >= 2, "the note's word must reach several surfaces"
+    assert _unearned(page, corpus) == []
+    # …and provenance is the ONLY reason it passes: off the vault surface it fires.
+    assert _unearned(page, "") != []
+
+
+def test_house_claim_on_a_vault_page_still_trips_the_gate(monkeypatch, tmp_path):
+    """The exemption is scoped to the quoted text, not to the page. Copy WE wrote,
+    on the same page, next to the quote, must still have to earn the word."""
+    item = dict(_ITEM, summary_points=[_QUOTED_NOTE])
+    corpus = _vault_corpus(monkeypatch, tmp_path, item, [_QUOTED_NOTE])
+    page = _norm_render(item, [_QUOTED_NOTE])
+    house = page.replace(
+        "</main>",
+        "<p>Our shelter-inflation rank is validated on the forward record.</p></main>")
+    findings = _unearned(house, corpus)
+    assert len(findings) == 1 and "shelter-inflation rank" in findings[0], findings
