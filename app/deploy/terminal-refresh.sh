@@ -92,6 +92,8 @@ run "$PY" ingest/enrich_zh.py
 # equity row always wins on every key it already carries, so this pass can never shrink or
 # overwrite the universe those two own (cf. the 2026-07-11 manifest 8,740 -> 34 incident).
 run "$PY" ingest/build_macro_symbols.py
+# FRED real rates + breakevens — keyless daily series
+run "$PY" ingest/fetch_fred_daily.py
 # fill OHLC for any name still missing one (expanded US via Polygon, HK/Canada via yfinance)
 run "$PY" ingest/backfill_ohlc.py --market all
 # broad-universe confluence slices
