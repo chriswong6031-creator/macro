@@ -46,6 +46,16 @@ import sys
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
+# Top-level ON PURPOSE (stdlib-only module): the post-time language gate must
+# fail LOUDLY at import if copywriter breaks — a lazy import inside main()
+# wrapped in try/except would silently disarm the gate (the swallowed-import
+# failure mode). Path bootstrap first so `python scripts/marketing_publisher.py`
+# from any cwd resolves `engine.` the same as `python -m scripts...` does.
+_CODE_ROOT = str(Path(__file__).resolve().parent.parent)
+if _CODE_ROOT not in sys.path:
+    sys.path.insert(0, _CODE_ROOT)
+from engine.marketing.copywriter import banned_language as _banned_language  # noqa: E402
+
 log = logging.getLogger("marketing_publisher")
 
 
@@ -797,6 +807,22 @@ def main(argv: list[str] | None = None) -> int:
                       f"posted {_pas_of or 'recently'}; deep rewording required")
             log.warning("item %s (%s) QUARANTINED as a near-duplicate of %s "
                         "(jaccard=%.2f)", iid, account, _pid, _score)
+            if live:
+                _outbox.transition(iid, "quarantined", actor="publisher", root=root, note=reason)
+            quarantined += 1
+            continue
+
+        # -- language gate: the queue is not a bypass around the copy bar ----
+        # Generation-time validators cannot reach copy already sitting in the
+        # queue: the 2026-07-27 $AVGO "POC held" post was enqueued by an older
+        # weekend_levels before the study-name bans existed and fired days
+        # later. Same bar, last gate — text validate_copy would reject for
+        # its LANGUAGE never posts, whatever lane or vintage queued it.
+        lang = _banned_language(text)
+        if lang:
+            reason = "reads too technical / banned language: " + ", ".join(lang[:4])
+            log.warning("item %s (%s) QUARANTINED by language gate: %s",
+                        iid, account, reason)
             if live:
                 _outbox.transition(iid, "quarantined", actor="publisher", root=root, note=reason)
             quarantined += 1

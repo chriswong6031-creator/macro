@@ -90,3 +90,32 @@ with the close"). Only `{top_fact}` may describe the tape.
 Operational rider: identical copy never posts twice in a 7-day window — the
 enqueue-time text guard (#3824) plus the publisher's post-time repeat gate
 (quarantines a queued byte-repeat at the last gate before the network).
+
+## 9. The queue is not a bypass, and the chart draws what the text names (2026-07-27 $AVGO "POC held" incident)
+
+Hours after §8 shipped, the flagship posted *"POC held, consolidation,
+waiting / $AVGO retested the POC at 379.32..."* — study-name jargon that had
+been validator-banned since 2026-07-26. The copy was clean-generated NOWHERE:
+it was enqueued by the pre-ban weekend_levels lane and sat in the queue until
+its ladder slot fired. Generation-time validators cannot reach copy already
+in the queue. Two laws:
+
+**9a. Post-time language gate.** The publisher screens every due item with
+`copywriter.banned_language()` — the exact screen validate_copy applies at
+generation (study names, internal machinery, dash tells, cheese) — and
+quarantines failures with "reads too technical". Same bar, last gate,
+whatever lane or vintage queued the text. The import is top-level on purpose:
+a lazily-imported gate that fails silently is a disarmed gate.
+
+**9b. The chart draws the line the text names.** The AVGO card cited "the POC
+at 379.32" over a chart with no such line — text and chart were assembled
+from different sources. `weekend_levels.cited_level(lv, state)` is now the
+single source feeding BOTH the body copy's level placeholder and the card's
+`level_overlay` (a labeled dashed line); tests pin the state→placeholder
+pairing. Any lane that names a price level on an attached chart owes the
+reader that line, drawn and labeled in plain words ("20-day avg", never a
+study acronym).
+
+Retail register reminder: the audience is not a rates desk. "POC", "VWAP",
+"value area" are validator-rejected; "the 20-day" bare is lazy — say "its
+20-day average". The reader who has to look a term up is a reader lost.

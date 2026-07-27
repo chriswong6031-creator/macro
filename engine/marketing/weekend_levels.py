@@ -118,6 +118,23 @@ _LEAN = {
 }
 
 
+def cited_level(lv: dict[str, Any], state: str) -> tuple[str, float]:
+    """(plain chip label, price) of the ONE level this state's copy cites.
+
+    Single source for the body copy and the chart overlay, so the card always
+    draws exactly the line the text names. The 2026-07-27 $AVGO post cited
+    "the POC at 379.32" over a chart that drew no such line — text and chart
+    were assembled from different sources, and the reader noticed. Every
+    _FRAMES shape for a state uses the matching placeholder ({s20}/{s50}/{lo});
+    tests pin that pairing.
+    """
+    if state == "reclaiming":
+        return ("50-day avg", float(lv["sma50"]))
+    if state == "basing":
+        return ("52-wk low", float(lv["lo52"]))
+    return ("20-day avg", float(lv["sma20"]))
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Copy (honest, terse, watchlist voice — no calls)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -242,27 +259,27 @@ _FRAMES: dict[str, tuple[str, ...]] = {
         "{wk_cap}, above both lines. I am content to sit with it. {s20} first.",
     ),
     "cooling": (
-        "Slipped under its 20-day this week, {wk}. Looks like a pause rather than "
-        "a break so far. Getting back over {s20} is what settles it.",
-        "{wk_cap} but it slipped under the 20-day. Still above the 50, so I'm "
-        "giving it room. {s20} is the number to get back.",
-        "It gave up the 20-day, {wk}. Not worried yet, but I want it back "
-        "quickly. {s20} is the ask.",
-        "{wk_cap}, and the 20-day went. The 50 is still underneath, so this is a "
-        "pause until it isn't. {s20} is the tell.",
+        "Slipped under its 20-day average this week, {wk}. Looks like a pause "
+        "rather than a break so far. Getting back over {s20} is what settles it.",
+        "{wk_cap} but it slipped under its 20-day average. Still above the "
+        "50-day, so I'm giving it room. {s20} is the number to get back.",
+        "It gave up its 20-day average, {wk}. Not worried yet, but I want it "
+        "back quickly. {s20} is the ask.",
+        "{wk_cap}, and the 20-day average went. The 50-day is still underneath, "
+        "so this is a pause until it isn't. {s20} is the tell.",
         "Some air came out this week, {wk}. Still above the longer line, so I am "
         "patient. {s20} is the reclaim.",
         "{wk_cap}, and it lost the shorter line. Not a break yet. {s20} decides.",
     ),
     "reclaiming": (
-        "Back above its 20-day after a rough stretch, {wk}. Early, and I've been "
-        "burned by early. {s50} is the level that would make it real.",
-        "{wk_cap} and it's clawed back the 20-day. The 50 at {s50} is the actual "
-        "test, so I'm waiting on that.",
+        "Back above its 20-day average after a rough stretch, {wk}. Early, and "
+        "I've been burned by early. {s50} is the level that would make it real.",
+        "{wk_cap} and it's clawed back its 20-day average. The 50-day at {s50} "
+        "is the actual test, so I'm waiting on that.",
         "It's off the mat, {wk}. One line back does not make a trend. {s50} is "
         "the one that would.",
-        "{wk_cap}, back over the 20-day. I want to see it hold more than I want "
-        "to see it spike. {s50} next.",
+        "{wk_cap}, back over its 20-day average. I want to see it hold more "
+        "than I want to see it spike. {s50} next.",
         "It found a bid, {wk}. I have seen plenty of these fail at the next line. "
         "{s50} is that line.",
         "{wk_cap}. Better, not fixed. {s50} is what turns better into fixed.",
@@ -326,7 +343,7 @@ _HEADLINES: dict[str, tuple[str, ...]] = {
         "Nothing wrong with $T",
     ),
     "cooling": (
-        "$T lost its 20-day",
+        "$T lost its 20-day line",
         "First real wobble in $T",
         "$T is cooling off",
         "A little air out of $T",
@@ -336,7 +353,7 @@ _HEADLINES: dict[str, tuple[str, ...]] = {
     "reclaiming": (
         "$T is trying to turn",
         "Signs of life in $T",
-        "$T got its 20-day back",
+        "$T got its 20-day line back",
         "$T is picking itself up",
         "$T is finding its feet",
         "$T looks less broken than it did",
@@ -528,6 +545,7 @@ def build_card(
     chart_id: str,
     as_of: str,
     n: int = 90,
+    level_overlay: dict[str, Any] | None = None,
 ) -> dict[str, Any] | None:
     """Render the v2 candlestick card for *ticker* and publish it. Fail-soft.
 
@@ -567,6 +585,9 @@ def build_card(
             subpanel_h=190,        # tall, legible MACD pane
             height=880,
             logo_root=r,
+            # The one level the copy cites, drawn as a labeled dashed line —
+            # the text may only name a level the chart shows (cited_level).
+            level_overlay=level_overlay,
             # footer_cta unset → the full marketing bar (URL + trial button).
         )
         if not svg:
@@ -777,9 +798,11 @@ def build_items(
 
         media: list[dict] = []
         if with_media:
+            _lvl_label, _lvl_price = cited_level(lv, classify_state(lv))
             entry = build_card(
                 ticker, root,
                 chart_id=f"wl-{as_of}-{ticker.lower()}", as_of=as_of,
+                level_overlay={"price": _lvl_price, "label": _lvl_label},
             )
             if entry is not None:
                 media.append(entry)

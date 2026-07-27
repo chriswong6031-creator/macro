@@ -231,3 +231,39 @@ def test_validator_rejects_internal_machinery_vocab():
     joined = " ".join(violations).lower()
     assert "cross-check" in joined
     assert "front-end" in joined
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 4. banned_language — the shared screen behind validate_copy AND the
+#    publisher's post-time gate (2026-07-27 $AVGO "POC held" incident)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_banned_language_flags_study_names_and_tells():
+    from engine.marketing.copywriter import banned_language
+
+    hits = banned_language("$AVGO retested the POC at 379.32 and held.")
+    assert any("poc" in h for h in hits)
+    hits = banned_language("Sitting right at the point of control today.")
+    assert any("point of control" in h for h in hits)
+    hits = banned_language("VWAP holds — watching the close.")
+    assert any("vwap" in h for h in hits)
+    assert any("em dash" in h for h in hits)
+
+
+def test_banned_language_passes_plain_speech():
+    from engine.marketing.copywriter import banned_language
+
+    assert banned_language(
+        "$AVGO held 379.32, the price where the most shares changed hands "
+        "lately. Up 0.8% in four weeks. Watching, no position.") == []
+
+
+def test_validate_copy_and_gate_share_one_bar():
+    """validate_copy must flag a superset of banned_language on the same text —
+    the generation bar and the post-time bar cannot drift apart."""
+    from engine.marketing.copywriter import banned_language, validate_copy
+
+    text = "POC held, waiting. The cross-checks back it up — front-end up."
+    gate = set(banned_language(text))
+    gen = set(validate_copy("h", text, {"type": "event", "ticker": ""}))
+    assert gate and gate <= gen

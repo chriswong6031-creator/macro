@@ -2716,7 +2716,11 @@ jobs:
         # fail-soft and the one pandas-dependent test importorskips).
         # test_marketing_metrics_poll: the per-post metrics poller + admin join +
         # publisher media-attach gate — stdlib+pyyaml only (Buffer transport mocked).
-        run: python -m pytest tests/test_marketing_social_publisher.py tests/test_marketing_outbox.py tests/test_marketing_publisher_autoapprove.py tests/test_marketing_live_verify.py tests/test_marketing_publish_time_content.py tests/test_marketing_metrics_poll.py -q
+        # test_marketing_weekend_levels joins (2026-07-27): it was named by NO
+        # run step anywhere (unrun-suite rot) while its lane shipped the $AVGO
+        # "POC held" post. Covers the cited-level chart contract + the floor
+        # copy's language bar; its one pandas test importorskips here.
+        run: python -m pytest tests/test_marketing_social_publisher.py tests/test_marketing_outbox.py tests/test_marketing_publisher_autoapprove.py tests/test_marketing_live_verify.py tests/test_marketing_publish_time_content.py tests/test_marketing_metrics_poll.py tests/test_marketing_weekend_levels.py -q
 
   marketing-media-pipeline:
     if: ${{ false }}
