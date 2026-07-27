@@ -63,7 +63,13 @@ import pandas as pd
 log = logging.getLogger(__name__)
 
 # Engines this module handles (path prefix under data/<engine>/)
-_ENGINES = frozenset({"sector_cycles", "country_cycles"})
+#   sector_cycles / country_cycles → the compute() shape walked by _extract_rows
+#   cycle_ontology                 → the flagship Cycle Intelligence payload built by
+#                                    scripts/build_cycle.py, walked by _extract_cycle_rows
+#                                    (its data home is already data/cycle_ontology/, so the
+#                                    module's data/<engine>/forward_log.parquet convention
+#                                    lands the ledger beside falsifiers.json / the registry)
+_ENGINES = frozenset({"sector_cycles", "country_cycles", "cycle_ontology"})
 
 
 def _extract_rows(data: dict) -> list[dict]:
@@ -118,6 +124,84 @@ def _extract_rows(data: dict) -> list[dict]:
     return rows
 
 
+def _extract_cycle_rows(data: dict) -> list[dict]:
+    """Walk the ``scripts.build_cycle.compute()`` payload and extract one row per CARD.
+
+    The flagship payload is shaped differently from the sector/country compute()
+    output — ``{"as_of", "order", "cycles": {cid: {card_tier, bands: [...], tripwires}}}``
+    — so it gets its own extractor rather than bending ``_extract_rows``.
+
+    A card's MEASURED band owns the position / projection / hazard columns.  A
+    FRAME-only card stamps those as None and still writes its row: the tier and
+    the watch counts are the point, and a null must never block the stamp
+    (house law — a null never blocks accrual).
+
+    Columns (additive to the module's data/<engine>/forward_log.parquet convention):
+
+      date          str        ISO build date ("as_of")
+      id            str        cycle id (semis, credit, housing…)
+      name          str        display name
+      card_tier     str        "measured" | "frame"
+      phase         str|None   5-phase wheel label (MEASURED only)
+      pos           float|None 0–100 detrended cycle position (MEASURED only)
+      proj_next     str|None   projected next turn kind: "peak" | "trough"
+      proj_central  str|None   projected turn date, YYYY-MM
+      proj_lo       str|None   lower cone edge, YYYY-MM
+      proj_hi       str|None   upper cone edge, YYYY-MM
+      overdue       bool|None  projection window already passed
+      overdue_frac  float|None fraction of the median half-cycle elapsed
+      hazard_{1m,3m,6m}_p    float|None  P(turn ≤ h)
+      hazard_{1m,3m,6m}_src  str|None    'MODEL' (PASS cell) | 'PRIOR' (KM baseline)
+      n_watching    int        conditions still live on the watch (ARMED)
+      n_crossed     int        conditions that have already crossed (FIRED)
+
+    The two count columns are what make window accuracy gradeable later: they
+    stamp, per night, how much of the card's forward condition set was still
+    open at the time the window was drawn.
+    """
+    asof = data.get("as_of")
+    cycles = data.get("cycles") or {}
+    order = data.get("order") or list(cycles.keys())
+    rows: list[dict] = []
+    for cid in order:
+        card = cycles.get(cid)
+        if not card:
+            continue
+        bands = card.get("bands") or []
+        # the MEASURED band owns every scalar; None for a FRAME-only card (A8)
+        mb = next((b for b in bands if b.get("tier") == "measured"), None)
+        now = (mb or {}).get("now") or {}
+        pr = (mb or {}).get("proj") or {}
+        hz = now.get("hazard") or {}
+        tws = card.get("tripwires") or []
+        rows.append({
+            "date": asof,
+            "id": cid,
+            "name": card.get("name"),
+            "card_tier": card.get("card_tier"),
+            "phase": now.get("phase"),
+            "pos": now.get("pos"),
+            # projection window — direction + the three date edges + overdue state
+            "proj_next": pr.get("nextTurn"),
+            "proj_central": pr.get("central"),
+            "proj_lo": pr.get("low"),
+            "proj_hi": pr.get("high"),
+            "overdue": pr.get("overdue"),
+            "overdue_frac": pr.get("overdue_frac"),
+            # hazard scores — None when the scorer was unavailable for this band
+            "hazard_1m_p":   (hz.get("1m") or {}).get("p"),
+            "hazard_1m_src": (hz.get("1m") or {}).get("source"),
+            "hazard_3m_p":   (hz.get("3m") or {}).get("p"),
+            "hazard_3m_src": (hz.get("3m") or {}).get("source"),
+            "hazard_6m_p":   (hz.get("6m") or {}).get("p"),
+            "hazard_6m_src": (hz.get("6m") or {}).get("source"),
+            # forward condition counts (the background engine's own states)
+            "n_watching": sum(1 for tw in tws if tw.get("state") == "ARMED"),
+            "n_crossed": sum(1 for tw in tws if tw.get("state") == "FIRED"),
+        })
+    return rows
+
+
 def append_forward_log(data: dict | None, engine: str) -> int:
     """Append today's per-series cycle signal to an append-only, point-in-time log
     (`data/<engine>/forward_log.parquet`), keyed by (date, id), keep-FIRST-per-date
@@ -125,8 +209,10 @@ def append_forward_log(data: dict | None, engine: str) -> int:
 
     Parameters
     ----------
-    data    : the dict returned by `sector_cycles.compute()` or `country_cycles.compute()`
-    engine  : "sector_cycles" or "country_cycles"
+    data    : the dict returned by `sector_cycles.compute()` / `country_cycles.compute()`,
+              or the payload built by `scripts.build_cycle.compute()` (engine
+              "cycle_ontology")
+    engine  : "sector_cycles", "country_cycles" or "cycle_ontology"
 
     Returns the number of new rows appended (0 on any error or empty input).
     Never raises.
@@ -144,8 +230,13 @@ def append_forward_log(data: dict | None, engine: str) -> int:
 def _append(data: dict | None, engine: str) -> int:
     if not data:
         return 0
-    rows = _extract_rows(data)
-    asof = (data.get("meta") or {}).get("asOf")
+    if engine == "cycle_ontology":
+        # the flagship payload carries its build date at the top level, not under meta
+        rows = _extract_cycle_rows(data)
+        asof = data.get("as_of")
+    else:
+        rows = _extract_rows(data)
+        asof = (data.get("meta") or {}).get("asOf")
     if not rows or not asof:
         return 0
     # filter out rows with no id (safety)

@@ -1,38 +1,114 @@
 <!DOCTYPE html>
 <html lang="en">
-{# Cycle Intelligence Measurement Hub — W3.7
-   Honest scorecard hub for the three promise-grader primitives:
+{# Cycle Intelligence Calibration Lab — W3.7
+   The learning loop behind the cycle reads: project → score → sharpen, nightly.
+   Scorecards for the three promise-grader primitives:
      turn P/R · cone coverage · reliability/Brier
    Data loaded via script-tag (ruling A11: zero fetch, zero runtime compute).
    BACKTEST and LIVE cohorts never blended (ruling A6).
-   §6.6: the scorecards ARE the story — render failures straight.
+
+   TIERING (docs/DESIGN_DOCTRINE.md): the hero is Tier 1 — plain words, the loop,
+   one stance line, and a pointer down. Every precise verdict (FAIL / FALSIFIED /
+   RULED OUT, CIs, gate ids) stays exactly where it belongs: Tier 3, below the
+   fold, unsoftened. Re-tiering is not hiding — the §6.6 consolidated verdict now
+   opens The Scorecards instead of shouting from the masthead.
 #}
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<title>Cycle Measurement Hub — Mastermind</title>
-{% set seo_title = "Cycle Measurement Hub — Mastermind" %}{% set seo_desc = "How Mastermind measures market cycles — the gauges, their current readings, and what each one is saying right now." %}{% set seo_path = "measurement.html" %}
+<title>Calibration Lab — Mastermind</title>
+{% set seo_title = "Calibration Lab — Mastermind" %}{% set seo_desc = "How Mastermind's cycle reads are scored and sharpened — last night's projections checked against what the market actually did, with every reading on the record." %}{% set seo_path = "measurement.html" %}
 {% include "_seo_head.html.j2" %}
 <link rel="stylesheet" href="theme.css">
 <style>
-/* ── Measurement Hub — page-specific styles ──────────────────────────────── */
+/* ── Calibration Lab — page-specific styles ──────────────────────────────── */
 body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
+
+/* ── Token bridge ────────────────────────────────────────────────────────────
+   This page loads ONLY theme.css, which does not define --border / --card /
+   --surface / --blue / --fail. Every `var(--border,rgba(255,255,255,.08))` on
+   this page was therefore resolving to its hard-coded DARK fallback in light
+   mode: invisible hairlines, invisible card fills, and — worst — the tinted
+   banners mixing over --surface:#0f1629, i.e. a near-black box with dark text
+   on the light canvas. Defining the five names on .mh-wrap (which contains the
+   whole page, but NOT the shared nav chrome) maps them onto real theme tokens,
+   so both themes resolve at paint with no per-rule edits.
+
+   --ok/--act, NOT --up/--down: theme.css swaps --up/--down under
+   html[data-lang="zh"] for the Asia 红涨绿跌 convention, and states in its own
+   comment that status colours "encode health/danger, NOT price direction".
+   Every green/red on this page is a PASS/FAIL/health reading, so painting them
+   from --up/--down rendered PASS red and FAIL green for Chinese readers. */
+.mh-wrap{
+  --border:  color-mix(in srgb, var(--text) 13%, transparent);
+  --card:    color-mix(in srgb, var(--panel) 88%, transparent);
+  --surface: var(--panel);
+  --blue:    var(--info);
+  --fail:    var(--act);
+  /* ── Chip ink ──────────────────────────────────────────────────────────────
+     Status chips paint hue-coloured text on a 12–18% tint of the same hue.
+     On the light theme's white card that lands at ~2.6–3.5:1 — under AA for
+     11–13px type, and these chips (FAIL / FALSIFIED / PASS / ACCRUING) ARE the
+     page's content. Mixing the hue toward --text deepens it on light and
+     lightens it on dark with one declaration per hue; the chip FILLS keep the
+     pure hue, so the colour language is unchanged. */
+  --ok-ink:     color-mix(in srgb, var(--ok)   66%, var(--text));
+  --act-ink:    color-mix(in srgb, var(--act)  66%, var(--text));
+  --warn-ink:   color-mix(in srgb, var(--warn) 66%, var(--text));
+  --blue-ink:   color-mix(in srgb, var(--blue) 66%, var(--text));
+  --accent-deep:color-mix(in srgb, var(--blue) 68%, #0a1930);
+}
 .mh-wrap{max-width:1100px;margin:0 auto;padding:0 16px 80px}
-.mh-hero{padding:40px 0 28px;border-bottom:1px solid var(--border,rgba(255,255,255,.08));margin-bottom:32px}
-.mh-kicker{font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--muted,#8899aa);margin-bottom:10px}
-.mh-kicker .hb{display:inline-block;width:8px;height:8px;border-radius:50%;
-  background:var(--warn,#f59e0b);margin-right:6px}
-.mh-title{font-size:clamp(1.5rem,4vw,2.2rem);font-weight:800;line-height:1.2;
-  margin:0 0 12px;color:var(--text,#e2e8f0)}
-.mh-doctrine{font-size:.92rem;line-height:1.65;color:var(--muted,#8899aa);
-  max-width:800px;margin:0 0 16px}
-.mh-verdict{background:color-mix(in srgb,var(--warn,#f59e0b) 8%,var(--surface,#0f1629));
-  border:1px solid color-mix(in srgb,var(--warn,#f59e0b) 25%,transparent);
-  border-radius:10px;padding:16px 20px;margin-top:20px;
-  font-size:.88rem;line-height:1.6;color:var(--text,#e2e8f0)}
-.mh-verdict strong{color:var(--warn,#f59e0b)}
+
+/* ── Hero — the calibration loop ─────────────────────────────────────────── */
+.mh-hero{padding:44px 0 32px;border-bottom:1px solid var(--border);margin-bottom:34px}
+.mh-kicker{font-size:.7rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:12px}
+.mh-kicker .hb{display:inline-block;width:7px;height:7px;border-radius:50%;
+  background:var(--blue);margin-right:7px;vertical-align:1px}
+.mh-title{font-size:clamp(1.6rem,4.4vw,2.35rem);font-weight:800;line-height:1.12;
+  letter-spacing:-.02em;margin:0 0 10px;color:var(--text)}
+.mh-deck{font-size:1.02rem;line-height:1.5;color:var(--muted);
+  max-width:52ch;margin:0 0 28px}
+
+/* The signature: three beats of the nightly loop, joined into one instrument,
+   with a return rail that closes it. Ordinals are earned here — this really is
+   a sequence, and the rail is what makes it a loop rather than a funnel. */
+.mh-loop{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,1fr)}
+.mh-loop-step{min-width:0;padding:15px 18px 17px;border:1px solid var(--border);
+  background:color-mix(in srgb,var(--text) 3%,transparent)}
+.mh-loop-step + .mh-loop-step{border-left:none}
+.mh-loop-step:first-child{border-radius:10px 0 0 0}
+.mh-loop-step:last-child{border-radius:0 10px 0 0}
+.mh-loop-hd{display:flex;align-items:baseline;gap:9px}
+.mh-loop-n{font-family:var(--font-mono);font-size:.72rem;font-weight:700;
+  color:var(--blue-ink);letter-spacing:.06em}
+.mh-loop-name{font-size:.72rem;font-weight:800;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--text)}
+.mh-loop-line{display:block;margin-top:9px;font-size:.82rem;line-height:1.5;color:var(--muted)}
+.mh-loop-stat{display:block;margin-top:11px;font-size:.72rem;line-height:1.4;color:var(--muted)}
+.mh-loop-num{font-family:var(--font-mono);font-size:.94rem;font-weight:700;
+  color:var(--text);letter-spacing:-.01em;margin-right:4px}
+.mh-loop-rail{position:relative;height:15px;border:1px solid var(--border);border-top:none;
+  border-radius:0 0 10px 10px;margin:0 0 26px}
+.mh-loop-return{position:absolute;left:50%;bottom:-1px;transform:translate(-50%,50%);
+  background:var(--bg);padding:0 12px;white-space:nowrap;
+  font-size:.65rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--muted)}
+.mh-loop-return .rr{color:var(--blue-ink);margin-right:5px;font-size:.8rem;line-height:1}
+
+/* Where it stands — the one stance line. Calm left rule, not an alarm box. */
+.mh-stand{font-size:.9rem;line-height:1.65;color:var(--muted);max-width:78ch;
+  margin:0;padding-left:15px;border-left:2px solid var(--blue)}
+.mh-stand strong{color:var(--text);font-weight:700}
+.mh-stand a{color:var(--link,var(--blue))}
+
+/* Tier-3 standing note (section-level, below the fold) */
+.mh-note{border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin:0 0 20px;
+  background:color-mix(in srgb,var(--text) 3%,transparent);
+  font-size:.83rem;line-height:1.6;color:var(--muted)}
+.mh-note strong{color:var(--text)}
 
 /* ── Section headings ────────────────────────────────────────────────────── */
 .mh-section{margin-bottom:48px}
@@ -45,7 +121,9 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
 .mh-tab{padding:7px 14px;border-radius:7px;border:1px solid var(--border,rgba(255,255,255,.1));
   background:transparent;color:var(--muted,#8899aa);font-size:.82rem;cursor:pointer;
   transition:all .15s}
-.mh-tab.on{background:var(--blue,#3b82f6);border-color:var(--blue,#3b82f6);
+/* Selected tab: the raw accent takes white text to only 2.8:1 in dark mode, so
+   the fill is deepened toward ink. ~5:1 dark, ~7.7:1 light. */
+.mh-tab.on{background:var(--accent-deep);border-color:var(--accent-deep);
   color:#fff;font-weight:600}
 
 /* ── Engine panel ────────────────────────────────────────────────────────── */
@@ -55,7 +133,7 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
 .mh-eng-name{font-size:1rem;font-weight:700;color:var(--text,#e2e8f0)}
 .mh-eng-epoch{font-size:.72rem;color:var(--muted,#8899aa);
   background:color-mix(in srgb,var(--text) 8%,transparent);
-  padding:3px 8px;border-radius:4px;font-family:monospace}
+  padding:3px 8px;border-radius:4px;font-family:var(--font-mono)}
 
 /* ── Cohort badges ───────────────────────────────────────────────────────── */
 .mh-cohorts{display:grid;grid-template-columns:repeat(auto-fit,minmax(480px,1fr));gap:20px}
@@ -65,9 +143,9 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
 .mh-cohort-badge{font-size:.7rem;font-weight:700;letter-spacing:.1em;
   padding:3px 8px;border-radius:4px}
 .badge-backtest{background:color-mix(in srgb,var(--blue,#3b82f6) 20%,transparent);
-  color:var(--blue,#3b82f6);border:1px solid color-mix(in srgb,var(--blue) 35%,transparent)}
-.badge-live{background:color-mix(in srgb,var(--up,#22c55e) 20%,transparent);
-  color:var(--up,#22c55e);border:1px solid color-mix(in srgb,var(--up) 35%,transparent)}
+  color:var(--blue-ink);border:1px solid color-mix(in srgb,var(--blue) 35%,transparent)}
+.badge-live{background:color-mix(in srgb,var(--ok,#3da564) 20%,transparent);
+  color:var(--ok-ink);border:1px solid color-mix(in srgb,var(--ok) 35%,transparent)}
 .mh-cohort-meta{font-size:.75rem;color:var(--muted,#8899aa)}
 
 /* ── Primitive blocks ────────────────────────────────────────────────────── */
@@ -75,24 +153,24 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
   background:color-mix(in srgb,var(--text) 4%,transparent)}
 .mh-prim-title{font-size:.78rem;font-weight:700;color:var(--text,#e2e8f0);
   margin-bottom:10px;display:flex;align-items:center;gap:8px}
-.mh-prim-gate{font-size:.68rem;font-family:monospace;padding:2px 6px;border-radius:3px;
+.mh-prim-gate{font-size:.68rem;font-family:var(--font-mono);padding:2px 6px;border-radius:3px;
   background:color-mix(in srgb,var(--muted) 15%,transparent);color:var(--muted,#8899aa)}
 
 /* ── Verdict badges ──────────────────────────────────────────────────────── */
 .verdict{display:inline-flex;align-items:center;gap:5px;font-size:.72rem;font-weight:700;
   padding:3px 8px;border-radius:4px;letter-spacing:.05em}
 .verdict::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%}
-.verdict-fail{background:color-mix(in srgb,var(--down,#ef4444) 18%,transparent);
-  color:var(--down,#ef4444);border:1px solid color-mix(in srgb,var(--down) 35%,transparent)}
-.verdict-fail::before{background:var(--down,#ef4444)}
+.verdict-fail{background:color-mix(in srgb,var(--act,#e05555) 18%,transparent);
+  color:var(--act-ink);border:1px solid color-mix(in srgb,var(--act) 35%,transparent)}
+.verdict-fail::before{background:var(--act,#e05555)}
 .verdict-miscal{background:color-mix(in srgb,var(--warn,#f59e0b) 18%,transparent);
-  color:var(--warn,#f59e0b);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent)}
+  color:var(--warn-ink);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent)}
 .verdict-miscal::before{background:var(--warn,#f59e0b)}
-.verdict-pass{background:color-mix(in srgb,var(--up,#22c55e) 18%,transparent);
-  color:var(--up,#22c55e);border:1px solid color-mix(in srgb,var(--up) 35%,transparent)}
-.verdict-pass::before{background:var(--up,#22c55e)}
+.verdict-pass{background:color-mix(in srgb,var(--ok,#3da564) 18%,transparent);
+  color:var(--ok-ink);border:1px solid color-mix(in srgb,var(--ok) 35%,transparent)}
+.verdict-pass::before{background:var(--ok,#3da564)}
 .verdict-accruing{background:color-mix(in srgb,var(--blue,#3b82f6) 18%,transparent);
-  color:var(--blue,#3b82f6);border:1px solid color-mix(in srgb,var(--blue) 35%,transparent)}
+  color:var(--blue-ink);border:1px solid color-mix(in srgb,var(--blue) 35%,transparent)}
 .verdict-accruing::before{background:var(--blue,#3b82f6)}
 .verdict-none{background:color-mix(in srgb,var(--muted) 18%,transparent);
   color:var(--muted,#8899aa);border:1px solid color-mix(in srgb,var(--muted) 25%,transparent)}
@@ -117,11 +195,11 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
 .mh-gate-table td{padding:9px 12px;border-bottom:1px solid var(--border,rgba(255,255,255,.04));
   color:var(--text,#e2e8f0);vertical-align:top;line-height:1.45}
 .mh-gate-table tr:last-child td{border-bottom:none}
-.mh-gate-table .gate-id{font-family:monospace;font-size:.75rem;font-weight:700;
+.mh-gate-table .gate-id{font-family:var(--font-mono);font-size:.75rem;font-weight:700;
   white-space:nowrap;color:var(--text,#e2e8f0)}
 .mh-gate-table .gate-result{font-size:.75rem;color:var(--muted,#8899aa);
   max-width:340px;line-height:1.4}
-.mh-gate-fam{font-size:.68rem;font-family:monospace;
+.mh-gate-fam{font-size:.68rem;font-family:var(--font-mono);
   padding:2px 6px;border-radius:3px;
   background:color-mix(in srgb,var(--text) 8%,transparent);
   color:var(--muted,#8899aa)}
@@ -153,27 +231,27 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
 .mh-exp-table tr:last-child td{border-bottom:none}
 .mh-exp-name{font-weight:600;font-size:.82rem;color:var(--text,#e2e8f0)}
 .mh-exp-what{font-size:.75rem;color:var(--muted,#8899aa);margin-top:3px}
-.mh-exp-cb{font-family:monospace;font-size:.75rem}
+.mh-exp-cb{font-family:var(--font-mono);font-size:.75rem}
 
 /* ── Sync gauge (W5.1 STOP-fallback) ─────────────────────────────────────── */
 .sg-wrap{margin-bottom:48px}
-.sg-stop-banner{background:color-mix(in srgb,var(--down,#ef4444) 7%,var(--surface,#0f1629));
-  border:1px solid color-mix(in srgb,var(--down,#ef4444) 22%,transparent);
+.sg-stop-banner{background:color-mix(in srgb,var(--act,#e05555) 7%,var(--surface,#0f1629));
+  border:1px solid color-mix(in srgb,var(--act,#e05555) 22%,transparent);
   border-radius:10px;padding:14px 18px;margin-bottom:20px;
   font-size:.85rem;line-height:1.6;color:var(--text,#e2e8f0)}
-.sg-stop-banner strong{color:var(--down,#ef4444)}
+.sg-stop-banner strong{color:var(--act-ink)}
 .sg-honest-note{background:color-mix(in srgb,var(--blue,#3b82f6) 6%,var(--surface,#0f1629));
   border:1px solid color-mix(in srgb,var(--blue,#3b82f6) 20%,transparent);
   border-radius:8px;padding:12px 16px;margin-bottom:20px;
   font-size:.8rem;line-height:1.55;color:var(--muted,#8899aa)}
-.sg-honest-note strong{color:var(--blue,#3b82f6)}
+.sg-honest-note strong{color:var(--blue-ink)}
 .sg-families{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-bottom:20px}
 .sg-family{padding:16px;border-radius:10px;
   border:1px solid var(--border,rgba(255,255,255,.08));
   background:var(--card,rgba(255,255,255,.03))}
 .sg-fam-hd{display:flex;align-items:baseline;gap:8px;margin-bottom:12px}
 .sg-fam-name{font-size:.88rem;font-weight:700;color:var(--text,#e2e8f0)}
-.sg-fam-date{font-size:.72rem;color:var(--muted,#8899aa);font-family:monospace}
+.sg-fam-date{font-size:.72rem;color:var(--muted,#8899aa);font-family:var(--font-mono)}
 .sg-sync-val{font-size:1.5rem;font-weight:800;margin:0 0 4px}
 .sg-sync-bar{height:6px;border-radius:3px;
   background:color-mix(in srgb,var(--text) 10%,transparent);margin-bottom:10px;overflow:hidden}
@@ -213,21 +291,21 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
 .eg-table td{padding:8px 10px;border-bottom:1px solid var(--border,rgba(255,255,255,.04));
   color:var(--text,#e2e8f0);vertical-align:top;line-height:1.45}
 .eg-table tr:last-child td{border-bottom:none}
-.eg-mono{font-family:monospace;font-size:.78rem;color:var(--text,#e2e8f0)}
-.eg-num{font-family:monospace;font-size:.82rem;font-weight:700;color:var(--text,#e2e8f0);white-space:nowrap}
+.eg-mono{font-family:var(--font-mono);font-size:.78rem;color:var(--text,#e2e8f0)}
+.eg-num{font-family:var(--font-mono);font-size:.82rem;font-weight:700;color:var(--text,#e2e8f0);white-space:nowrap}
 .eg-ts{font-size:.72rem;color:var(--muted,#8899aa)}
 .eg-question{font-size:.75rem;color:var(--muted,#8899aa);max-width:380px;line-height:1.4}
 .eg-starvation{font-size:.78rem;line-height:1.45}
-.eg-stv-closed{color:var(--up,#22c55e)}
-.eg-stv-time{color:var(--blue,#3b82f6)}
-.eg-stv-build{color:var(--warn,#f59e0b)}
+.eg-stv-closed{color:var(--ok-ink)}
+.eg-stv-time{color:var(--blue-ink)}
+.eg-stv-build{color:var(--warn-ink)}
 .eg-footnote{font-size:.7rem;color:var(--muted,#8899aa);margin-top:10px;line-height:1.5}
-.eg-footnote code{font-family:monospace;font-size:.7rem}
+.eg-footnote code{font-family:var(--font-mono);font-size:.7rem}
 .eg-accrual-banner{background:color-mix(in srgb,var(--warn,#f59e0b) 8%,var(--surface,#0f1629));
   border:1px solid color-mix(in srgb,var(--warn,#f59e0b) 25%,transparent);
   border-radius:8px;padding:12px 16px;margin-bottom:12px;
   font-size:.82rem;line-height:1.55;color:var(--text,#e2e8f0)}
-.eg-accrual-banner strong{color:var(--warn,#f59e0b)}
+.eg-accrual-banner strong{color:var(--warn-ink)}
 .eg-ci-caveat{font-size:.78rem;color:var(--muted,#8899aa);
   background:color-mix(in srgb,var(--blue,#3b82f6) 6%,transparent);
   border:1px solid color-mix(in srgb,var(--blue,#3b82f6) 18%,transparent);
@@ -248,7 +326,7 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
 .mh-prov-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
 .mh-prov-cell{font-size:.75rem}
 .mh-prov-cell dt{color:var(--muted,#8899aa);margin-bottom:2px}
-.mh-prov-cell dd{font-family:monospace;color:var(--text,#e2e8f0);word-break:break-all}
+.mh-prov-cell dd{font-family:var(--font-mono);color:var(--text,#e2e8f0);margin-left:0}
 
 /* ── Cone recal info ─────────────────────────────────────────────────────── */
 .mh-recal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-top:12px}
@@ -259,7 +337,7 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
 .mh-recal-stat{display:flex;justify-content:space-between;align-items:baseline;
   font-size:.8rem;margin-bottom:5px}
 .mh-recal-stat .lbl{color:var(--muted,#8899aa)}
-.mh-recal-stat .val{font-weight:700;color:var(--warn,#f59e0b)}
+.mh-recal-stat .val{font-weight:700;color:var(--warn-ink)}
 .mh-recal-note{font-size:.72rem;color:var(--muted,#8899aa);margin-top:10px;line-height:1.4}
 
 /* ── Mobile ──────────────────────────────────────────────────────────────── */
@@ -281,36 +359,59 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
 .pm-chip-promoted_null{background:color-mix(in srgb,var(--muted,#8899aa) 12%,transparent);
   color:var(--muted,#8899aa);border-color:color-mix(in srgb,var(--muted) 30%,transparent)}
 .pm-chip-display{background:color-mix(in srgb,var(--blue,#3b82f6) 12%,transparent);
-  color:var(--blue,#3b82f6);border-color:color-mix(in srgb,var(--blue) 30%,transparent)}
+  color:var(--blue-ink);border-color:color-mix(in srgb,var(--blue) 30%,transparent)}
 .pm-chip-candidate{background:color-mix(in srgb,var(--warn,#f59e0b) 12%,transparent);
-  color:var(--warn,#f59e0b);border-color:color-mix(in srgb,var(--warn) 30%,transparent)}
+  color:var(--warn-ink);border-color:color-mix(in srgb,var(--warn) 30%,transparent)}
 .pm-chip-structural{background:color-mix(in srgb,var(--text,#e2e8f0) 8%,transparent);
   color:var(--text,#e2e8f0);border-color:color-mix(in srgb,var(--text) 20%,transparent)}
 .pm-truth-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
-.pm-truth-table{width:100%;min-width:600px;border-collapse:collapse;font-size:.8rem}
+/* table-layout:fixed + the %-widths below: the ID column used to size itself to
+   a 48-char nowrap slug (`cycle_truth_cn_downturn_broken_trend_tail_null_v1`),
+   which ate ~40% of the table and shoved STATEMENT into STATUS. */
+.pm-truth-table{width:100%;min-width:640px;table-layout:fixed;border-collapse:collapse;font-size:.8rem}
 .pm-truth-table th{text-align:left;padding:8px 12px;font-size:.72rem;font-weight:700;
   color:var(--muted,#8899aa);border-bottom:1px solid var(--border,rgba(255,255,255,.08));
   text-transform:uppercase;letter-spacing:.08em}
 .pm-truth-table td{padding:8px 12px;border-bottom:1px solid var(--border,rgba(255,255,255,.04));
   vertical-align:top;line-height:1.4}
 .pm-truth-table tr:last-child td{border-bottom:none}
-.pm-truth-id{font-family:monospace;font-size:.75rem;font-weight:700;white-space:nowrap;
-  color:var(--text,#e2e8f0)}
-.pm-stmt{font-size:.78rem;color:var(--text,#e2e8f0);line-height:1.4;max-width:400px}
+.pm-truth-table th:nth-child(1),.pm-truth-table td:nth-child(1){width:18%}
+.pm-truth-table th:nth-child(2),.pm-truth-table td:nth-child(2){width:44%}
+.pm-truth-table th:nth-child(3),.pm-truth-table td:nth-child(3){width:8%}
+.pm-truth-table th:nth-child(4),.pm-truth-table td:nth-child(4){width:10%}
+.pm-truth-table th:nth-child(5),.pm-truth-table td:nth-child(5){width:11%}
+.pm-truth-table th:nth-child(6),.pm-truth-table td:nth-child(6){width:9%}
+.pm-truth-id{font-family:var(--font-mono);font-size:.75rem;font-weight:700;
+  color:var(--text,#e2e8f0);line-height:1.35}
+.pm-stmt{font-size:.78rem;color:var(--text,#e2e8f0);line-height:1.45}
 .pm-status-null{color:var(--muted,#8899aa);font-size:.72rem;font-weight:700}
-.pm-status-display{color:var(--blue,#3b82f6);font-size:.72rem;font-weight:700}
-.pm-status-candidate{color:var(--warn,#f59e0b);font-size:.72rem;font-weight:700}
+.pm-status-display{color:var(--blue-ink);font-size:.72rem;font-weight:700}
+.pm-status-candidate{color:var(--warn-ink);font-size:.72rem;font-weight:700}
 .pm-status-other{color:var(--text,#e2e8f0);font-size:.72rem;font-weight:700}
 .pm-meta{font-size:.7rem;color:var(--muted,#8899aa)}
 
 /* ── Hub v2: Null Library ───────────────────────────────────────────────── */
-.nl-wrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px;margin-top:8px}
-.nl-card{border:1px solid color-mix(in srgb,var(--muted,#8899aa) 20%,transparent);
-  border-radius:10px;padding:16px;
+/* Multi-column, not grid: these cards run from 6 lines to 40, so a row-based
+   grid either stretched the short ones into 200px of framed dead space or left
+   the same hole unframed. Column flow packs them; `columns` also has no
+   min-track, which is what was pushing the page into horizontal scroll at
+   390px. Reading order becomes column-major — fine for an id-sorted reference
+   library. */
+.nl-wrap{columns:340px 3;column-gap:16px;margin-top:8px}
+.nl-card{break-inside:avoid;-webkit-column-break-inside:avoid;page-break-inside:avoid;
+  margin:0 0 16px;
+  border:1px solid color-mix(in srgb,var(--muted,#8899aa) 20%,transparent);
+  border-radius:10px;padding:16px;min-width:0;
   background:color-mix(in srgb,var(--muted,#8899aa) 5%,transparent)}
-.nl-card-hd{display:flex;align-items:center;gap:8px;margin-bottom:10px}
-.nl-card-id{font-family:monospace;font-size:.75rem;font-weight:700;color:var(--muted,#8899aa)}
-.nl-ruled-badge{font-size:.68rem;font-weight:700;letter-spacing:.05em;padding:2px 7px;
+/* Header is a two-slot row, not a nowrap line: the id wraps in its own column
+   and the badge keeps reserved space. Before this it overflowed the card and
+   the neighbouring card's id rendered straight through the badge. */
+.nl-card-hd{display:flex;align-items:flex-start;justify-content:space-between;
+  gap:6px 10px;margin-bottom:10px;flex-wrap:wrap}
+.nl-card-id{flex:1 1 14ch;min-width:0;font-family:var(--font-mono);font-size:.75rem;
+  font-weight:700;color:var(--muted,#8899aa);line-height:1.35}
+.nl-ruled-badge{flex:0 0 auto;white-space:nowrap;
+  font-size:.68rem;font-weight:700;letter-spacing:.05em;padding:2px 7px;
   border-radius:4px;
   background:color-mix(in srgb,var(--muted,#8899aa) 12%,transparent);
   color:var(--muted,#8899aa);
@@ -320,11 +421,11 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
 .nl-refs-label{font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
   color:var(--muted,#8899aa);margin-bottom:4px}
 .nl-refs-list{list-style:none;padding:0;margin:0}
-.nl-refs-list li{font-family:monospace;font-size:.7rem;color:var(--muted,#8899aa);
-  padding:2px 0;word-break:break-all;line-height:1.4}
+.nl-refs-list li{font-family:var(--font-mono);font-size:.7rem;color:var(--muted,#8899aa);
+  padding:2px 0;line-height:1.4}
 .nl-due{font-size:.68rem;color:var(--muted,#8899aa);margin-top:8px}
 @media(max-width:600px){
-  .nl-wrap{grid-template-columns:1fr}
+  .nl-wrap{columns:1}
 }
 
 /* ── Hub v2: Accrual Clocks ─────────────────────────────────────────────── */
@@ -339,11 +440,11 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
 .ac-table tr:last-child td{border-bottom:none}
 .ac-ledger-name{font-size:.82rem;font-weight:600;color:var(--text,#e2e8f0)}
 .ac-ledger-sub{font-size:.7rem;color:var(--muted,#8899aa);margin-top:2px}
-.ac-num{font-family:monospace;font-size:.82rem;font-weight:700;color:var(--text,#e2e8f0)}
+.ac-num{font-family:var(--font-mono);font-size:.82rem;font-weight:700;color:var(--text,#e2e8f0)}
 .ac-na{color:var(--muted,#8899aa);font-size:.82rem}
-.ac-proj{font-family:monospace;font-size:.82rem;font-weight:700}
-.ac-proj-future{color:var(--blue,#3b82f6)}
-.ac-proj-done{color:var(--up,#22c55e)}
+.ac-proj{font-family:var(--font-mono);font-size:.82rem;font-weight:700}
+.ac-proj-future{color:var(--blue-ink)}
+.ac-proj-done{color:var(--ok-ink)}
 .ac-proj-none{color:var(--muted,#8899aa)}
 
 /* ── Hub v2: Prediction Layer ───────────────────────────────────────────── */
@@ -356,20 +457,20 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
   border:1px solid var(--border,rgba(255,255,255,.1));color:var(--muted,#8899aa)}
 .pl-meta-chip strong{color:var(--text,#e2e8f0)}
 .pl-stale-note{font-size:.78rem;color:var(--muted,#8899aa);font-style:italic}
-.pl-revopt-warn{font-size:.78rem;color:var(--warn,#f59e0b);margin-left:4px}
+.pl-revopt-warn{font-size:.78rem;color:var(--warn-ink);margin-left:4px}
 .pl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:28px}
 .pl-cell{border-radius:8px;padding:14px;border:1px solid var(--border,rgba(255,255,255,.08));
   background:color-mix(in srgb,var(--surface,#0f1629) 60%,transparent)}
-.pl-cell-pass{border-color:color-mix(in srgb,var(--up,#22c55e) 30%,transparent);
-  background:color-mix(in srgb,var(--up,#22c55e) 5%,transparent)}
+.pl-cell-pass{border-color:color-mix(in srgb,var(--ok,#3da564) 30%,transparent);
+  background:color-mix(in srgb,var(--ok,#3da564) 5%,transparent)}
 .pl-cell-prior{border-color:color-mix(in srgb,var(--muted,#8899aa) 20%,transparent)}
 .pl-cell-dir{font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
   color:var(--muted,#8899aa);margin-bottom:4px}
 .pl-cell-horizon{font-size:.95rem;font-weight:800;color:var(--text,#e2e8f0);margin-bottom:8px}
 .pl-badge{display:inline-block;font-size:.72rem;font-weight:700;padding:3px 8px;
   border-radius:4px;margin-bottom:8px}
-.pl-badge-pass{background:color-mix(in srgb,var(--up,#22c55e) 18%,transparent);
-  color:var(--up,#22c55e);border:1px solid color-mix(in srgb,var(--up) 30%,transparent)}
+.pl-badge-pass{background:color-mix(in srgb,var(--ok,#3da564) 18%,transparent);
+  color:var(--ok-ink);border:1px solid color-mix(in srgb,var(--ok) 30%,transparent)}
 .pl-badge-prior{background:color-mix(in srgb,var(--muted,#8899aa) 12%,transparent);
   color:var(--muted,#8899aa);border:1px solid color-mix(in srgb,var(--muted) 25%,transparent)}
 .pl-cell-stat{font-size:.72rem;color:var(--muted,#8899aa);line-height:1.5}
@@ -385,7 +486,7 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
   border-color:color-mix(in srgb,var(--fail,#ef4444) 20%,transparent)}
 .pl-gap-hd{font-weight:700;color:var(--text,#e2e8f0);margin-bottom:5px}
 .pl-gap-note{color:var(--muted,#8899aa);line-height:1.5}
-.pl-gap-meta{font-size:.7rem;color:var(--muted,#8899aa);margin-top:5px;font-family:monospace}
+.pl-gap-meta{font-size:.7rem;color:var(--muted,#8899aa);margin-top:5px;font-family:var(--font-mono)}
 .pl-gap-tag{display:inline-block;font-size:.65rem;padding:1px 6px;border-radius:3px;margin-left:6px;
   background:color-mix(in srgb,var(--muted) 12%,transparent);color:var(--muted,#8899aa)}
 
@@ -399,12 +500,36 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
 .cm-table td{padding:9px 12px;border-bottom:1px solid var(--border,rgba(255,255,255,.04));
   color:var(--text,#e2e8f0);vertical-align:middle;line-height:1.4}
 .cm-table tr:last-child td{border-bottom:none}
-.cm-page{font-size:.8rem;font-weight:600;color:var(--text,#e2e8f0);font-family:monospace}
-.cm-yes{font-weight:700;color:var(--up,#22c55e)}
-.cm-partial{font-weight:700;color:var(--warn,#f59e0b)}
+.cm-page{font-size:.8rem;font-weight:600;color:var(--text,#e2e8f0);font-family:var(--font-mono)}
+.cm-yes{font-weight:700;color:var(--ok-ink)}
+.cm-partial{font-weight:700;color:var(--warn-ink)}
 .cm-no{color:var(--muted,#8899aa);font-size:.75rem}
-.cm-hint{font-size:.65rem;color:var(--muted,#8899aa);display:block;margin-top:2px;font-family:monospace}
+.cm-hint{font-size:.65rem;color:var(--muted,#8899aa);display:block;margin-top:2px;font-family:var(--font-mono)}
 .cm-audit{font-size:.72rem;color:var(--muted,#8899aa);font-style:italic;margin-top:8px}
+
+/* ── Machine strings must break, not escape ──────────────────────────────────
+   Truth ids, feature slugs, file paths and the statements that quote them are
+   long unbroken tokens. `anywhere` rather than `break-word` on purpose: only
+   `anywhere` also shrinks min-content, and min-content is what was forcing the
+   null-library grid (and with it the whole page) to scroll sideways at 390px. */
+.pm-truth-table td,.pm-truth-table th,
+.mh-gate-table td,.mh-exp-table td,.ac-table td,.eg-table td,.cm-table td,
+.nl-card,.mh-collin-block li,.pl-gap-meta,.pl-gap-note,.mh-prov-cell dd,
+.mh-eng-epoch,.pm-status-chip,.mh-note,.mh-loop-step{overflow-wrap:anywhere}
+
+/* ── Quality floor ───────────────────────────────────────────────────────── */
+.mh-tab:focus-visible,.mh-stand a:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+@media(prefers-reduced-motion:reduce){
+  .mh-tab,.sg-sync-fill{transition:none}
+}
+@media(max-width:720px){
+  .mh-loop{grid-template-columns:1fr}
+  .mh-loop-step + .mh-loop-step{border-left:1px solid var(--border);border-top:none}
+  .mh-loop-step:first-child{border-radius:10px 10px 0 0}
+  .mh-loop-step:last-child{border-radius:0}
+  .mh-deck{font-size:.95rem}
+  .mh-stand{font-size:.86rem}
+}
 </style>
 </head>
 <body>
@@ -412,37 +537,65 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
 
 <div class="mh-wrap">
 
-  {# ── HERO ─────────────────────────────────────────────────────────────── #}
+  {# ── HERO — the calibration loop (Tier 1) ─────────────────────────────── #}
+  {% set n_engines_live = engines | rejectattr('missing') | list | length %}
   <header class="mh-hero">
-    <div class="mh-kicker"><span class="hb"></span> <span class="l-en">Cycle Intelligence · Measurement Hub</span><span class="l-zh">周期智慧 · 测量中心</span></div>
+    <div class="mh-kicker"><span class="hb"></span> <span class="l-en">Cycle Intelligence · Calibration Lab</span><span class="l-zh">周期智慧 · 校准实验室</span></div>
     <h1 class="mh-title"><span class="l-en">Measured, not asserted</span><span class="l-zh">已测量，而非断言</span></h1>
-    <p class="mh-doctrine">
-      <span class="l-en">This program's measurement doctrine: every number the platform plots must be backed by a
-      stored, leak-free, pre-registered artifact — or it does not ship with the word "validated."
-      Backfilled and prospective cohorts are always reported separately (ruling A6).
-      A bad number honestly measured is the product; a good number laundered through imprecise language is a liability.
-      The scorecards below are the first real walk-forward track record for the Cycle Intelligence suite —
-      {{ "{:,}".format(n_stamps_grand_total) }} PIT month-end stamps across US sectors, country ETFs and China Shenwan sectors, 2010–2026,
-      price basis (epoch: price_v1 / zz14_v0).</span>
-      <span class="l-zh">本程序的测量原则：平台展示的每一个数字，必须有存储的、无前视偏差的、预注册的文物作支撑——否则不得使用"已验证"一词。
-      回测与实盘队列始终分开报告（规则A6）。
-      诚实测量出的差数据就是产品；经过模糊语言掩饰的好数据才是负债。
-      以下记分卡是周期智慧套件的首份真实前向跟踪记录——
-      涵盖美国板块、国家ETF及中国申万板块，共{{ "{:,}".format(n_stamps_grand_total) }}个逐点时间戳，
-      2010–2026年，价格基准（版本：price_v1 / zz14_v0）。</span>
+    <p class="mh-deck">
+      <span class="l-en">How our cycle reads are scored and sharpened — every night.</span>
+      <span class="l-zh">周期解读如何被打分、如何被打磨——每晚一次。</span>
     </p>
 
-    <div class="mh-verdict">
-      <strong><span class="l-en">Consolidated verdict (§6.6)</span><span class="l-zh">综合裁定（§6.6）</span>：</strong>
-      <span class="l-en">Descriptive structure (confirmed turns, phase wheel, risk/vol clustering) has measurable substance.
-      Every predictive claim tested — position deciles, ladder ordering, turn projections, directional labels —
-      fails its pre-registered gate. Phase 3 (honest surfaces + tripwires + regime context) is the product.
-      Predictive and sizing outputs proceed only through their pre-registered gates, feature-set bound by the collinearity verdict.</span>
-      <span class="l-zh">描述性结构（已确认拐点、阶段轮盘、风险/波动聚集）具有可测量的实质。
-      迄今测试的所有预测性主张——仓位十分位、阶梯排序、拐点推演、方向标签——均未通过其预注册门槛。
-      第三阶段（诚实展示 + 预警触点 + 周期背景）即为产品本身。
-      预测与仓位信号仅在通过其已注册门槛后方可发布，特征集以共线性裁定为约束。</span>
+    <ol class="mh-loop">
+      <li class="mh-loop-step">
+        <span class="mh-loop-hd"><span class="mh-loop-n">1</span><span class="mh-loop-name"><span class="l-en">Project</span><span class="l-zh">推演</span></span></span>
+        <span class="mh-loop-line">
+          <span class="l-en">Every cycle read ships with a dated window, written down before the fact.</span>
+          <span class="l-zh">每个周期解读都带有事先写明的日期窗口。</span>
+        </span>
+        {% if n_engines_live %}
+        <span class="mh-loop-stat">
+          <span class="mh-loop-num">{{ n_engines_live }}</span><span class="l-en">cycle engines on the clock</span><span class="l-zh">套周期引擎在跑</span>
+        </span>
+        {% endif %}
+      </li>
+      <li class="mh-loop-step">
+        <span class="mh-loop-hd"><span class="mh-loop-n">2</span><span class="mh-loop-name"><span class="l-en">Score</span><span class="l-zh">评分</span></span></span>
+        <span class="mh-loop-line">
+          <span class="l-en">Each one is checked against the turn the market actually made.</span>
+          <span class="l-zh">每个推演都与市场真实走出的拐点逐一核对。</span>
+        </span>
+        {% if n_stamps_grand_total %}
+        <span class="mh-loop-stat">
+          <span class="mh-loop-num">{{ "{:,}".format(n_stamps_grand_total) }}</span><span class="l-en">month-end readings scored</span><span class="l-zh">个月末读数已打分</span>
+        </span>
+        {% endif %}
+      </li>
+      <li class="mh-loop-step">
+        <span class="mh-loop-hd"><span class="mh-loop-n">3</span><span class="mh-loop-name"><span class="l-en">Sharpen</span><span class="l-zh">打磨</span></span></span>
+        <span class="mh-loop-line">
+          <span class="l-en">Misses tighten the next window; dead ends go on the record so we stop paying for them twice.</span>
+          <span class="l-zh">偏差用来收紧下一个窗口；走不通的路径记录在案，不再重复投入。</span>
+        </span>
+        {% if truth_ledger and truth_ledger.get('total') %}
+        <span class="mh-loop-stat">
+          <span class="mh-loop-num">{{ truth_ledger.get('total') }}</span><span class="l-en">findings on the record</span><span class="l-zh">条发现在案</span>
+        </span>
+        {% endif %}
+      </li>
+    </ol>
+    <div class="mh-loop-rail">
+      <span class="mh-loop-return"><span class="rr" aria-hidden="true">&#8635;</span><span class="l-en">Runs again tonight</span><span class="l-zh">今夜再跑一次</span></span>
     </div>
+
+    <p class="mh-stand">
+      <strong><span class="l-en">Where it stands:</span><span class="l-zh">当前状况：</span></strong>
+      <span class="l-en">the structure reads — confirmed turns, phase clocks, risk clustering — are measured and solid; lean on them.
+      The layers that call the <em>next</em> turn are still earning their badges: context, not authority, until they clear the bars set for them in advance.
+      Every reading, clean or ugly, is in the scorecards below.</span>
+      <span class="l-zh">结构性解读——已确认拐点、阶段时钟、风险聚集——经过测量、扎实可靠，可作为依据。而试图预判下一个拐点的层级仍在争取资格：在达到事先设定的标准之前，它们只作为背景参考，而非决策依据。每一项读数，无论好看与否，都完整列在下方的记分卡中。</span>
+    </p>
   </header>
 
   {# ── THE SCORECARDS ───────────────────────────────────────────────────── #}
@@ -450,6 +603,22 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
     <div class="mh-sh">
       <h2><span class="l-en">The Scorecards</span><span class="l-zh">记分卡</span></h2>
       <span class="mh-sh-sub"><span class="l-en">Per engine — US / Country / China — never pooled (A6)</span><span class="l-zh">按引擎分类——美国/国家/中国——不混合（A6）</span></span>
+    </div>
+
+    {# The §6.6 consolidated verdict, re-tiered out of the masthead. It stays
+       verbatim-precise; it just no longer opens the page. #}
+    <div class="mh-note">
+      <strong><span class="l-en">Consolidated verdict (§6.6):</span><span class="l-zh">综合裁定（§6.6）：</span></strong>
+      <span class="l-en">Descriptive structure (confirmed turns, phase wheel, risk/vol clustering) has measurable substance.
+      The predictive claims tested so far — position deciles, ladder ordering, turn projections, directional labels —
+      have not cleared their pre-registered gates; each one's reading is in the ledger below.
+      Phase 3 (honest surfaces + tripwires + regime context) is the product. Predictive and sizing outputs
+      proceed only through their pre-registered gates, feature-set bound by the collinearity verdict.
+      Every number here must trace to a stored, leak-free, pre-registered artifact; backfilled and prospective
+      cohorts are always reported separately (ruling A6). Track record:
+      {{ "{:,}".format(n_stamps_grand_total) }} PIT month-end stamps across US sectors, country ETFs and China Shenwan sectors,
+      2010–2026, price basis (epoch: price_v1 / zz14_v0).</span>
+      <span class="l-zh">描述性结构（已确认拐点、阶段轮盘、风险/波动聚集）具有可测量的实质。迄今测试的预测性主张——仓位十分位、阶梯排序、拐点推演、方向标签——尚未通过其预注册门槛；每一项的读数均列于下方台账。第三阶段（诚实展示 + 预警触点 + 周期背景）即为产品本身。预测与仓位信号仅在通过其已注册门槛后方可发布，特征集以共线性裁定为约束。此处每一个数字都必须可追溯至存储的、无前视偏差的、预注册的文物；回测与实盘队列始终分开报告（规则A6）。跟踪记录：涵盖美国板块、国家ETF及中国申万板块，共 {{ "{:,}".format(n_stamps_grand_total) }} 个逐点月末时间戳，2010–2026年，价格基准（版本：price_v1 / zz14_v0）。</span>
     </div>
 
     <div class="mh-tabs" id="mh-eng-tabs" role="tablist">
@@ -607,7 +776,7 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
               <div class="mh-metric">
                 <div class="mh-metric-label">
                   <span class="l-en">Signal skill score</span><span class="l-zh">信号技能分</span>
-                  {% if sig.verdict %}<span class="verdict {{ sig.verdict_class }}" style="margin-left:4px;font-size:.65rem">{{ sig.verdict | upper }}</span>{% endif %}
+                  {% if sig.verdict %}<span class="verdict {{ sig.verdict_class }}" style="margin-left:4px;font-size:.65rem"><span class="l-en">{{ sig.verdict | upper }}</span><span class="l-zh">{% if sig.verdict == 'falsified' %}已证伪{% elif sig.verdict == 'accruing' %}积累中{% elif sig.verdict == 'earning' %}有效{% elif sig.verdict == 'inconclusive' %}不确定{% else %}{{ sig.verdict }}{% endif %}</span></span>{% endif %}
                 </div>
                 <div class="mh-metric-val">{{ sig.skill_str }}</div>
                 <div class="mh-metric-ci"><span class="l-en">hit {{ sig.hit_rate_pct }} vs base {{ sig.base_pct }} (n={{ sig.n }})</span><span class="l-zh">命中率 {{ sig.hit_rate_pct }} vs 基础率 {{ sig.base_pct }}（n={{ sig.n }}）</span></div>
@@ -617,7 +786,7 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
               <div class="mh-metric">
                 <div class="mh-metric-label">
                   <span class="l-en">Stance skill score</span><span class="l-zh">姿态技能分</span>
-                  {% if sta.verdict %}<span class="verdict {{ sta.verdict_class }}" style="margin-left:4px;font-size:.65rem">{{ sta.verdict | upper }}</span>{% endif %}
+                  {% if sta.verdict %}<span class="verdict {{ sta.verdict_class }}" style="margin-left:4px;font-size:.65rem"><span class="l-en">{{ sta.verdict | upper }}</span><span class="l-zh">{% if sta.verdict == 'falsified' %}已证伪{% elif sta.verdict == 'accruing' %}积累中{% elif sta.verdict == 'earning' %}有效{% elif sta.verdict == 'inconclusive' %}不确定{% else %}{{ sta.verdict }}{% endif %}</span></span>{% endif %}
                 </div>
                 <div class="mh-metric-val">{{ sta.skill_str }}</div>
                 <div class="mh-metric-ci"><span class="l-en">hit {{ sta.hit_rate_pct }} vs base {{ sta.base_pct }} (n={{ sta.n }})</span><span class="l-zh">命中率 {{ sta.hit_rate_pct }} vs 基础率 {{ sta.base_pct }}（n={{ sta.n }}）</span></div>
@@ -653,8 +822,7 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
     <p style="font-size:.82rem;color:var(--muted,#8899aa);max-width:700px;margin:0 0 16px;line-height:1.6">
       <span class="l-en">The new cone half-width = quantile(|timing_err|, 0.80) from the realized turn-timing error distribution.
       Headline multipliers are dominated by chronically overdue projections; the forward-only multiplier is the number to watch once a gated projection model replaces the current median-half-cycle engine (D5).</span>
-      <span class="l-zh">新锥形半宽 = 实测拐点时间误差分布的 quantile(|时间误差|, 0.80)。
-      整体倍数受慢性过期推演影响偏大；一旦门控推演模型取代当前中位半周期引擎（D5），请关注仅前向倍数。</span>
+      <span class="l-zh">新锥形半宽 = 实测拐点时间误差分布的 quantile(|时间误差|, 0.80)。整体倍数受慢性过期推演影响偏大；一旦门控推演模型取代当前中位半周期引擎（D5），请关注仅前向倍数。</span>
     </p>
     <div class="mh-recal-grid">
       {% for eng_key, eng_recal in cone_recalibration.engines.items() %}
@@ -670,11 +838,11 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
         </div>
         <div class="mh-recal-stat">
           <span class="lbl"><span class="l-en">Empirical coverage</span><span class="l-zh">实测覆盖率</span></span>
-          <span class="val" style="color:var(--down,#ef4444)">{{ (eng_recal.headline.empirical * 100) | round(1) }}%</span>
+          <span class="val" style="color:var(--act-ink)">{{ (eng_recal.headline.empirical * 100) | round(1) }}%</span>
         </div>
         <div class="mh-recal-stat">
           <span class="lbl"><span class="l-en">Overdue fraction</span><span class="l-zh">过期比例</span></span>
-          <span class="val" style="color:var(--warn,#f59e0b)">{{ (eng_recal.overdue_fraction * 100) | round(1) }}%</span>
+          <span class="val" style="color:var(--warn-ink)">{{ (eng_recal.overdue_fraction * 100) | round(1) }}%</span>
         </div>
         <div class="mh-recal-note">
           <span class="l-en">Epoch: {{ eng_recal.epoch.basis_version }} / {{ eng_recal.epoch.zz_version }}. BACKTEST cohort. Ships to cone_recalibration.json — replaces lerp hand constants at build.</span>
@@ -835,8 +1003,7 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
       <strong><span class="l-en">STOP decision (W5.1 LL-B NO-GO)</span><span class="l-zh">停止决定（W5.1 LL-B NO-GO）</span>: </strong>
       <span class="l-en">The lead-lag interaction layer was <em>not</em> built. Stage A found 136 FDR-surviving pairs in-sample, but Stage B (OOS 2018–2026) showed near-zero pooled Brier improvement
       (+0.029%, bar ≥2%); CI₉₀ = [−0.26%, +0.29%] spans zero; only 3 of 9 year-blocks positive (bar ≥6). All three LL-B sub-criteria fail.</span>
-      <span class="l-zh">引领-滞后交互层<em>未</em>构建。A阶段在样本内发现136个FDR存活对，但B阶段（样本外2018–2026）显示汇总Brier改进接近零
-      (+0.029%，门槛≥2%）；CI₉₀=[−0.26%,+0.29%]含零；仅3/9年份块为正（门槛≥6）。LL-B三项子标准全部失败。</span>
+      <span class="l-zh">引领-滞后交互层<em>未</em>构建。A阶段在样本内发现136个FDR存活对，但B阶段（样本外2018–2026）显示汇总Brier改进接近零(+0.029%，门槛≥2%）；CI₉₀=[−0.26%,+0.29%]含零；仅3/9年份块为正（门槛≥6）。LL-B三项子标准全部失败。</span>
     </div>
 
     <div class="sg-honest-note">
@@ -845,10 +1012,7 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
         <strong>Is:</strong> a measured dispersion statistic — sync = 1 − circ_var(2π·pos/100), the mean resultant length of phase angles. High sync ≈ all instruments in the same phase; low sync ≈ phases dispersed. Computed monthly, retroactively verified, presented as a conditioning state.<br>
         <strong>Is not:</strong> a predicted convergence. markets.html previously showed fake convergence bands drawn by assumption. This gauge replaces that with a measured time series — honest about what is descriptive and what is unknown.
       </span>
-      <span class="l-zh">
-        <strong>是：</strong>一个已测量的离散度统计——sync = 1 − circ_var(2π·pos/100)，即相位角的平均合成长度。高sync≈所有标的处于同一阶段；低sync≈阶段分散。按月计算，回溯验证，作为条件化状态呈现。<br>
-        <strong>不是：</strong>对收敛的预测。markets.html之前展示的收敛带是凭假设画出的。此指标以已测量的时间序列取而代之——诚实区分描述性内容与未知内容。
-      </span>
+      <span class="l-zh"><strong>是：</strong>一个已测量的离散度统计——sync = 1 − circ_var(2π·pos/100)，即相位角的平均合成长度。高sync≈所有标的处于同一阶段；低sync≈阶段分散。按月计算，回溯验证，作为条件化状态呈现。<br> <strong>不是：</strong>对收敛的预测。markets.html之前展示的收敛带是凭假设画出的。此指标以已测量的时间序列取而代之——诚实区分描述性内容与未知内容。</span>
     </div>
 
     <div class="sg-families" id="sg-families">
@@ -858,7 +1022,7 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
           <span class="sg-fam-name"><span class="l-en">{{ fam.label_en }}</span><span class="l-zh">{{ fam.label_zh }}</span></span>
           <span class="sg-fam-date">{{ fam.latest_date }}</span>
         </div>
-        <div class="sg-sync-val" style="color:{% if fam.latest_sync >= 0.7 %}var(--up,#22c55e){% elif fam.latest_sync >= 0.4 %}var(--warn,#f59e0b){% else %}var(--down,#ef4444){% endif %}">
+        <div class="sg-sync-val" style="color:{% if fam.latest_sync >= 0.7 %}var(--ok-ink){% elif fam.latest_sync >= 0.4 %}var(--warn-ink){% else %}var(--act-ink){% endif %}">
           {{ "%.3f"|format(fam.latest_sync) }}
         </div>
         <div class="sg-sync-bar">
@@ -901,37 +1065,37 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
     <div class="sg-gate-row">
       <div class="sg-gate-cell">
         <div class="sg-gate-lbl"><span class="l-en">Verdict</span><span class="l-zh">裁定</span></div>
-        <div class="sg-gate-val" style="color:var(--down,#ef4444)">{{ gs.get('verdict', '—') }}</div>
+        <div class="sg-gate-val" style="color:var(--act-ink)">{{ gs.get('verdict', '—') }}</div>
       </div>
       <div class="sg-gate-cell">
         <div class="sg-gate-lbl">LL-A</div>
-        <div class="sg-gate-val" style="color:{% if gs.get('LL_A_pass') %}var(--up,#22c55e){% else %}var(--down,#ef4444){% endif %}">
+        <div class="sg-gate-val" style="color:{% if gs.get('LL_A_pass') %}var(--ok-ink){% else %}var(--act-ink){% endif %}">
           {% if gs.get('LL_A_pass') %}PASS{% else %}FAIL{% endif %}
         </div>
       </div>
       <div class="sg-gate-cell">
         <div class="sg-gate-lbl">LL-B</div>
-        <div class="sg-gate-val" style="color:{% if gs.get('LL_B_pass') %}var(--up,#22c55e){% else %}var(--down,#ef4444){% endif %}">
+        <div class="sg-gate-val" style="color:{% if gs.get('LL_B_pass') %}var(--ok-ink){% else %}var(--act-ink){% endif %}">
           {% if gs.get('LL_B_pass') %}PASS{% else %}FAIL{% endif %}
         </div>
       </div>
       {% if gs.get('rel_brier_improvement') is not none %}
       <div class="sg-gate-cell">
         <div class="sg-gate-lbl"><span class="l-en">Rel Brier improvement</span><span class="l-zh">相对Brier改进</span></div>
-        <div class="sg-gate-val" style="color:var(--down,#ef4444)">{{ "+%.3f%%"|format(gs.rel_brier_improvement * 100) }}</div>
+        <div class="sg-gate-val" style="color:var(--act-ink)">{{ "%+.3f%%"|format(gs.rel_brier_improvement * 100) }}</div>
       </div>
       {% endif %}
       {% if gs.get('n_year_blocks_positive') is not none %}
       <div class="sg-gate-cell">
         <div class="sg-gate-lbl"><span class="l-en">Year-blocks positive</span><span class="l-zh">正向年份块</span></div>
-        <div class="sg-gate-val" style="color:var(--down,#ef4444)">{{ gs.n_year_blocks_positive }} / {{ gs.get('n_year_blocks', 9) }}</div>
+        <div class="sg-gate-val" style="color:var(--act-ink)">{{ gs.n_year_blocks_positive }} / {{ gs.get('n_year_blocks', 9) }}</div>
       </div>
       {% endif %}
       {% if gs.get('ci90') %}
       <div class="sg-gate-cell">
         <div class="sg-gate-lbl">CI₉₀ ΔBrier</div>
-        <div class="sg-gate-val" style="color:var(--down,#ef4444);font-size:.78rem">
-          [{{ "+%.3f%%"|format(gs.ci90[0]*100) }}, {{ "+%.3f%%"|format(gs.ci90[1]*100) }}]
+        <div class="sg-gate-val" style="color:var(--act-ink);font-size:.78rem">
+          [{{ "%+.3f%%"|format(gs.ci90[0]*100) }}, {{ "%+.3f%%"|format(gs.ci90[1]*100) }}]
         </div>
       </div>
       {% endif %}
@@ -950,9 +1114,7 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
       <span class="l-en">Each row is an adjudicated finding stored in <code>data/cycle_pattern/truths.jsonl</code>.
       <strong>Null findings are guardrails</strong>: they rule out approaches that have been tried and found to carry no edge,
       so they should not be rebuilt. Displaying them prominently is the honesty contract.</span>
-      <span class="l-zh">每一行均为存储于 <code>data/cycle_pattern/truths.jsonl</code> 的已裁定发现。
-      <strong>零效应发现是护栏</strong>：它们排除了已尝试且无优势的路径，不应被重建。
-      将其显著呈现正是诚实契约的体现。</span>
+      <span class="l-zh">每一行均为存储于 <code>data/cycle_pattern/truths.jsonl</code> 的已裁定发现。<strong>零效应发现是护栏</strong>：它们排除了已尝试且无优势的路径，不应被重建。将其显著呈现正是诚实契约的体现。</span>
     </p>
 
     {% if truth_ledger and truth_ledger.get('available') %}
@@ -1024,9 +1186,8 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
     </div>
     <p style="font-size:.82rem;color:var(--muted,#8899aa);max-width:700px;margin:0 0 16px;line-height:1.6">
       <span class="l-en">These findings reached <code>promoted_null</code> status because the evidence — at the sample sizes and horizons listed — ruled out an edge.
-      The evidence file paths below are citations, not promises. A null holds until the falsifier conditions in the truth record are met.</span>
-      <span class="l-zh">以下发现已达到 <code>promoted_null</code> 状态，因为在所列样本量与时间窗口下，证据排除了优势的存在。
-      下方文件路径为引用，非承诺。零效应结论在其真值记录中的证伪条件成立前持续有效。</span>
+      The evidence file paths below are citations, not promises. A null stands until the pre-set revival conditions in its truth record are met.</span>
+      <span class="l-zh">以下发现已达到 <code>promoted_null</code> 状态，因为在所列样本量与时间窗口下，证据排除了优势的存在。下方文件路径为引用，非承诺。零效应结论在其真值记录中预设的复启条件成立前持续有效。</span>
     </p>
     <div class="nl-wrap">
       {% for entry in truth_ledger.get('null_library', []) %}
@@ -1068,9 +1229,7 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
       of the observed cadence — it assumes the ledger continues filling at the same pace, which may not hold.
       40 unique stamp dates is the minimum for the live cohort maturity gate (n_eff threshold for meaningful
       turn P/R). No edge is implied by reaching this milestone; it only means the gate can be re-evaluated.</span>
-      <span class="l-zh">这些是积累时钟，非承诺。达到40个唯一时间戳的预测日期，是对观测节奏的机械外推——假设台账以相同速度持续填充，
-      实际情况可能并非如此。40个唯一时间戳是实盘队列成熟度门槛的最低要求（拐点精准率/召回率的有效n阈值）。
-      达到此里程碑并不意味着存在优势；仅意味着该门槛可以重新评估。</span>
+      <span class="l-zh">这些是积累时钟，非承诺。达到40个唯一时间戳的预测日期，是对观测节奏的机械外推——假设台账以相同速度持续填充，实际情况可能并非如此。40个唯一时间戳是实盘队列成熟度门槛的最低要求（拐点精准率/召回率的有效n阈值）。达到此里程碑并不意味着存在优势；仅意味着该门槛可以重新评估。</span>
     </p>
     <div class="ac-table-wrap">
     <table class="ac-table">
@@ -1097,7 +1256,7 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
           <td class="ac-num">{{ cl.n_rows }}</td>
           <td class="ac-num">{{ cl.unique_ids }}</td>
           <td class="ac-num">{{ cl.unique_dates }}</td>
-          <td style="font-family:monospace;font-size:.78rem;color:var(--muted,#8899aa)">
+          <td style="font-family:var(--font-mono);font-size:.78rem;color:var(--muted,#8899aa)">
             {{ cl.first_date or '—' }}<br>{{ cl.last_date or '—' }}
           </td>
           <td class="ac-num">
@@ -1142,10 +1301,7 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
       Per-cell criterion: OOS Brier(model) &lt; Brier(KM baseline), 90% CI excludes zero, BH-FDR q=0.10.
       Failing cells ship the KM prior — no model output, no invented confidence.
       Quad-conditioned cells are revision-optimistic (macro vintage fix pending, P-D5-1).</span>
-      <span class="l-zh">风险模型评估每个周期实体在1/3/6个月内发生拐点的概率。
-      单格标准：OOS Brier（模型）&lt; Brier（KM基准），90% CI不含零，BH-FDR q=0.10。
-      未通过的格子使用KM先验——无模型输出，无捏造的置信度。
-      四象限条件格子处于修正乐观状态（宏观数据时间点修复待处理，P-D5-1）。</span>
+      <span class="l-zh">风险模型评估每个周期实体在1/3/6个月内发生拐点的概率。单格标准：OOS Brier（模型）&lt; Brier（KM基准），90% CI不含零，BH-FDR q=0.10。未通过的格子使用KM先验——无模型输出，无捏造的置信度。四象限条件格子处于修正乐观状态（宏观数据时间点修复待处理，P-D5-1）。</span>
     </p>
 
     {% if prediction_layer and prediction_layer.get('available') %}
@@ -1187,7 +1343,7 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
         <div class="pl-cell-horizon">{{ cell.horizon }}</div>
         <div>
           <span class="pl-badge {% if cell.verdict == 'PASS' %}pl-badge-pass{% else %}pl-badge-prior{% endif %}">
-            {{ cell.verdict }}
+            <span class="l-en">{{ cell.verdict }}</span><span class="l-zh">{% if cell.verdict == 'PASS' %}通过{% elif cell.verdict == 'PRIOR' %}先验{% else %}{{ cell.verdict }}{% endif %}</span>
           </span>
         </div>
         <div class="pl-cell-stat">
@@ -1196,11 +1352,7 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
             <strong>CI 90%:</strong> {{ cell.ci90_str }}<br>
             {% if cell.n_oos %}<strong>n OOS:</strong> {{ cell.n_oos }}<br>{% endif %}
           </span>
-          <span class="l-zh">
-            <strong>ΔBrier：</strong>{{ cell.delta_brier_str }}<br>
-            <strong>CI 90%：</strong>{{ cell.ci90_str }}<br>
-            {% if cell.n_oos %}<strong>OOS样本：</strong>{{ cell.n_oos }}<br>{% endif %}
-          </span>
+          <span class="l-zh"><strong>ΔBrier：</strong>{{ cell.delta_brier_str }}<br> <strong>CI 90%：</strong>{{ cell.ci90_str }}<br> {% if cell.n_oos %}<strong>OOS样本：</strong>{{ cell.n_oos }}<br>{% endif %}</span>
         </div>
       </div>
       {% endfor %}
@@ -1214,8 +1366,7 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
       <p style="font-size:.8rem;color:var(--muted,#8899aa);margin:0 0 12px;line-height:1.5">
         <span class="l-en">Where each artifact is produced vs consumed. Machine-detectable gaps are derived from parquet non-null counts.
         Gaps marked "curated check" were verified by manual inspection and are not machine-detectable.</span>
-        <span class="l-zh">每个文物的生产地与消费地。机器可检测的差距源自 parquet 非空计数。
-        标注"人工核查"的差距经人工审核，无法由机器自动检测。</span>
+        <span class="l-zh">每个文物的生产地与消费地。机器可检测的差距源自 parquet 非空计数。标注"人工核查"的差距经人工审核，无法由机器自动检测。</span>
       </p>
 
       {# Per-engine machine-detectable gaps #}
@@ -1301,11 +1452,11 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
           {% set hint = cell.get('hint', '') %}
           <td>
             {% if val == 'yes' %}
-            <span class="cm-yes">yes</span>
+            <span class="cm-yes"><span class="l-en">yes</span><span class="l-zh">是</span></span>
             {% elif val == 'partial' %}
-            <span class="cm-partial">partial</span>
+            <span class="cm-partial"><span class="l-en">partial</span><span class="l-zh">部分</span></span>
             {% else %}
-            <span class="cm-no">no</span>
+            <span class="cm-no"><span class="l-en">no</span><span class="l-zh">否</span></span>
             {% endif %}
             {% if hint and hint != 'none' %}
             <span class="cm-hint">{{ hint }}</span>

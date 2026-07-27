@@ -458,6 +458,21 @@ def main() -> int:
 
     # 1b · compute the engine payload (raises on structural / staleness errors) ──
     payload = compute(root)
+
+    # 1c · append the prospective forward-log stamp (keep-FIRST per (date,id)) ──
+    #   Same guard semantics as scripts/build_sector_cycles.py: additive, never fatal,
+    #   the writer itself never raises, so an intraday/render lane behaves identically
+    #   to nightly (it stamps, and the lane's own data/ discard decides what persists).
+    #   This is what makes a drawn projection window gradeable after the fact — the
+    #   window edges + hazard + open-condition counts are recorded the night they are
+    #   published, and a past day's stamp is never rewritten.
+    try:
+        from engine.cycle_forward_log import append_forward_log
+        n_stamped = append_forward_log(payload, "cycle_ontology")
+        log.info("cycle: forward log: %d rows stamped", n_stamped)
+    except Exception as e:  # noqa: BLE001
+        log.warning("cycle: forward log append skipped: %s", e)
+
     _write_engine_js(site, payload)
     log.info("cycle_engine.js: %d cards (%d measured, %d frame, %d dual); "
              "%d stale bands (degraded, not fatal); %d tolerance gaps",

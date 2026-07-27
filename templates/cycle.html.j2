@@ -26,7 +26,8 @@
       <p class="cyc-sub"><span class="l-en">Two dozen boom-bust cycles on one clock. <b>MEASURED</b> cards plot the engine's own
         oscillator, turns and projection from the live backing tape; <b>FRAME</b> cards show only the curated turning-point
         history — structural clocks, never a hand-typed position. So you can see exactly where each measurable asset sits,
-        and how the long clocks line up beside them.</span><span class="l-zh">二十多个繁荣—萧条周期同处一张时钟之上。<b>已测量</b>卡片由底层数据实时计算引擎自身的振荡指标、拐点与投影；<b>框架</b>卡片仅展示人工整理的拐点历史——结构性时钟，绝无人工录入的位置。让你清楚看到每类可测量资产的位置，以及长周期时钟如何在旁排布。</span></p>
+        and how the long clocks line up beside them. Projections here are windows, not certainties — re-drawn nightly as new
+        data lands.</span><span class="l-zh">二十多个繁荣—萧条周期同处一张时钟之上。<b>已测量</b>卡片由底层数据实时计算引擎自身的振荡指标、拐点与投影；<b>框架</b>卡片仅展示人工整理的拐点历史——结构性时钟，绝无人工录入的位置。让你清楚看到每类可测量资产的位置，以及长周期时钟如何在旁排布。这里的预测是时间窗口，而非确定性结论——每晚随新数据重新计算。</span></p>
     </div>
     <div class="cyc-ctrls">
       <span class="cyc-asof"><span class="l-en">As of</span><span class="l-zh">截至</span> <span id="cyc-asof">…</span></span>
@@ -46,8 +47,10 @@
           <div class="cyc-zoom" id="cyc-zoom" aria-label="Zoom"></div>
         </div>
       </div>
+      {# ONE banner slot: cycle_app.js renderStalenessBanner() merges the analyst-note
+         age, the curated-vs-live regime reconciliation and the regime-data status into
+         a single line, detail in its plain-EN hover. #}
       <div id="cyc-stale-banner"></div>
-      <div id="regime-prior-banner"></div>
       <div class="cyc-groups" id="cyc-groups" aria-label="Group filter"></div>
       <div class="cyc-chips" id="cyc-chips" aria-label="Cycle toggles"></div>
       <div id="cyc-chart" data-h="452" role="img" aria-label="Cross-cycle overlay chart"></div>
@@ -83,61 +86,11 @@
 <script src="cycle_i18n.js"></script>
 <script src="cycle_app.js"></script>
 <script>document.addEventListener('DOMContentLoaded',function(){try{document.getElementById('cyc-asof').textContent=(window.CYCLE_ENGINE||window.CYCLE_META||{}).as_of||(window.CYCLE_META||{}).asOf||'';}catch(e){}});</script>
-<script>
-/* W4.5 regime-prior reconciliation banner — rendered after all data scripts load.
-   Two layers: (0) CONTRADICTION — curated regime_claim quad vs the live engine quad
-   (from CYCLE_ENGINE.regime_disagreement, softened to amber when the engine read is
-   itself provisional); (1) prior stale/partial; (2) curated prose > 30 days old.
-   Dual-span EN/zh — no t() in attributes. Runs on DOMContentLoaded so the deferred
-   data scripts (CYCLE_ENGINE / REGIME_PRIOR) are guaranteed loaded first. */
-document.addEventListener('DOMContentLoaded',function(){
-  try{
-    var host=document.getElementById('regime-prior-banner');
-    if(!host)return;
-    var prior=window.REGIME_PRIOR||{};
-    var meta=window.CYCLE_ENGINE||window.CYCLE_META||{};
-    var lang=(document.documentElement.getAttribute('data-lang')||'').slice(0,2).toLowerCase();
-    var zh=lang==='zh';
-    var msgs=[];
-    // 0. Contradiction: curated regime_claim quad vs live engine quad (W4.5 primary signal)
-    var rd=(window.CYCLE_ENGINE||{}).regime_disagreement;
-    if(rd&&rd.banner_en){
-      msgs.push({en:rd.banner_en,zh:rd.banner_zh,cls:rd.cls||'stale-red'});
-    }
-    // 1. Prior itself stale/partial
-    var ps=prior.status;
-    if(ps==='stale'||ps==='partial'){
-      var sources=prior.sources||{};
-      var staleSrcs=[];
-      for(var k in sources){if(sources[k]&&(sources[k].status==='stale'||sources[k].status==='unavailable'))staleSrcs.push(k);}
-      var enMsg='Regime data is '+ps+' ('+staleSrcs.join(', ')+') — some components may not reflect the latest build.';
-      var zhMsg='体制数据状态为'+ps+'（'+staleSrcs.join('、')+'）——部分组件可能未反映最新构建。';
-      msgs.push({en:enMsg,zh:zhMsg,cls:'stale-amber'});
-    }
-    // 2. Curated prose staleness (>30d from CYCLE_META.asOf or CYCLE_ENGINE.as_of)
-    var curatedAsOf=meta.asOf||meta.as_of||null;
-    if(curatedAsOf){
-      var d=new Date(curatedAsOf+'T00:00:00Z');
-      var daysDiff=Math.round((Date.now()-d.getTime())/86400000);
-      if(daysDiff>30){
-        var cls2=daysDiff>60?'stale-red':'stale-amber';
-        var enMsg2='Regime narrative notes last updated '+curatedAsOf+' ('+daysDiff+'d ago) — may not reflect the live engine ('+((prior.quad||'?')+' '+((prior.liquidity||'')))+ ').';
-        var zhMsg2='体制叙述最后更新于 '+curatedAsOf+'（已 '+daysDiff+' 天）——可能未反映实时引擎读数（当前：'+(prior.quad||'?')+' '+(prior.liquidity||'')+'）。';
-        msgs.push({en:enMsg2,zh:zhMsg2,cls:cls2});
-      }
-    }
-    if(!msgs.length){host.innerHTML='';return;}
-    var html='';
-    msgs.forEach(function(m){
-      html+='<div class="stale-banner '+m.cls+'">'
-        +'<span class="l-en">'+m.en+'</span>'
-        +'<span class="l-zh">'+m.zh+'</span>'
-        +'</div>';
-    });
-    host.innerHTML=html;
-  }catch(e){}
-});
-</script>
+{# The W4.5 regime-prior reconciliation used to render its own stacked banners here.
+   That stack (contradiction + prior status + curated-prose age) now folds into the
+   single line cycle_app.js renderStalenessBanner() writes to #cyc-stale-banner, with
+   the reconciliation detail demoted to that line's plain-EN hover.  regime_prior.js
+   still loads above — cycle_app.js reads window.REGIME_PRIOR for the hover text. #}
 <script src="theme.js"></script>
 </body>
 </html>

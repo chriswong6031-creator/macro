@@ -653,7 +653,7 @@
       '</div>' +
       '<div class="cyc-grp cyc-grp-3 mkt-col-read">' +
         '<div class="cyc-read"><div class="cyc-lbl">' + t("The read", "解读") + '</div><p>' + readT(c) + '</p></div>' +
-        '<div class="cyc-fals"><div class="cyc-lbl">' + t("Falsifier", "证伪条件") + '</div><p>' + falsT(c) + '</p></div>' +
+        '<div class="cyc-fals"><div class="cyc-lbl">' + t("What would shift this", "何种情况改变判断") + '</div><p>' + falsT(c) + '</p></div>' +
       '</div>' +
       '<div class="cyc-grp cyc-grp-3 mkt-col-side">' +
         '<div class="cyc-drivers"><div class="cyc-lbl">' + t("Swing factors", "关键变量") + '</div><ul>' +

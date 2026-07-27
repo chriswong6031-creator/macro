@@ -1616,7 +1616,7 @@ def run() -> None:
         env.globals.update(td=lambda en: en, tr=lambda en: en, t=lambda en, zh="": en)
     template = env.get_template("measurement.html.j2")
     html = template.render(
-        page_title="Cycle Measurement Hub",
+        page_title="Calibration Lab",
         engines=engines,
         gate_ledger=gates,
         accruing_experiments=accruing,
