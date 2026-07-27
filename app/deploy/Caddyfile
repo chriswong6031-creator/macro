@@ -213,7 +213,7 @@
 	# original leak: direct JSON/JS/model-output URLs no longer bypass auth.
 	# PUBLIC-BOUNDARY-START
 	@reg_asset {
-		not path /api/* /ws/tape / /index.html /plans.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /landing.css /chat.css /chat_nav.css /theme.css /product-nav-icons.css /theme.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /live/quotes.json /live/breadth.json /prophet/showcase.json /factordata/tech_lab.json /assets/css/* /assets/landing/* /factordata/tech_events/* /stocks/* /tools/* /learn/* /blog/* /research/* /fonts/* *.html
+		not path /api/* /ws/tape / /index.html /plans.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /landing.css /chat.css /chat_nav.css /theme.css /product-nav-icons.css /theme.js /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /live/quotes.json /live/breadth.json /prophet/showcase.json /factordata/tech_lab.json /assets/css/* /assets/landing/* /factordata/tech_events/* /stocks/* /tools/* /learn/* /blog/* /research/* /fonts/* *.html
 	}
 	# PUBLIC-BOUNDARY-END
 	handle @reg_asset {
@@ -296,7 +296,7 @@
 		# Protected assets fail CLOSED too. The JSON response is intentionally
 		# small and non-cacheable; never substitute the requested static file.
 		@reg_asset_err {
-			not path /api/* /ws/tape / /index.html /plans.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /landing.css /chat.css /chat_nav.css /theme.css /product-nav-icons.css /theme.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /live/quotes.json /live/breadth.json /prophet/showcase.json /factordata/tech_lab.json /assets/css/* /assets/landing/* /factordata/tech_events/* /stocks/* /tools/* /learn/* /blog/* /research/* /fonts/* *.html
+			not path /api/* /ws/tape / /index.html /plans.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /landing.css /chat.css /chat_nav.css /theme.css /product-nav-icons.css /theme.js /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /live/quotes.json /live/breadth.json /prophet/showcase.json /factordata/tech_lab.json /assets/css/* /assets/landing/* /factordata/tech_events/* /stocks/* /tools/* /learn/* /blog/* /research/* /fonts/* *.html
 		}
 		handle @reg_asset_err {
 			header Cache-Control "private, no-store"
@@ -341,7 +341,7 @@
 	# extension matcher here would override a protected response's no-store and
 	# turn the CDN into an authentication bypass.
 	@public_static {
-		path /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /landing.css /chat.css /chat_nav.css /theme.css /product-nav-icons.css /theme.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /prophet/showcase.json /assets/css/* /assets/landing/* /fonts/*
+		path /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /landing.css /chat.css /chat_nav.css /theme.css /product-nav-icons.css /theme.js /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /prophet/showcase.json /assets/css/* /assets/landing/* /fonts/*
 		not query v=*
 	}
 	header @public_static Cache-Control "public, max-age=300, must-revalidate"
@@ -361,7 +361,7 @@
 	# re-revalidated on every page navigation — the dominant mobile cost. Refs
 	# WITHOUT ?v= (e.g. a page rendered before the sweep) keep the short TTL above.
 	@public_versioned {
-		path /onboard.css /onboard.js /landing.css /chat.css /chat_nav.css /theme.css /product-nav-icons.css /theme.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /assets/css/* /assets/landing/*
+		path /onboard.css /onboard.js /landing.css /chat.css /chat_nav.css /theme.css /product-nav-icons.css /theme.js /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /assets/css/* /assets/landing/*
 		query v=*
 	}
 	header @public_versioned Cache-Control "public, max-age=31536000, immutable"
