@@ -1,0 +1,288 @@
+## config/press.yml — Media Network W1 (docket D14) press-engine configuration.
+##
+## Drives engine/press/{desk_planner,writer,validators}.py and
+## scripts/run_press.py.  Read via engine.press.desk_planner.load_config().
+##
+## W1 SHIPS DARK.  Nothing in this file publishes anything by itself:
+##   * scripts/run_press.py defaults to --staging (writes ONLY under
+##     data/press/staging/, never content/ or site/).
+##   * .github/workflows/press-publish.yml gates every job on the repo
+##     VARIABLE  PRESS_PUBLISH_ENABLED == 'true'.  That variable is NOT
+##     created by this change.  Absent variable == dark == no jobs run.
+##     Set it to 'true' to arm, anything else (or delete it) to disarm —
+##     that is the kill switch and the rollback.
+##   * `cutover: false` below keeps every desk's OUTPUT ROOT on the existing
+##     /blog/ estate regardless of which publication a desk is registered to.
+##
+## HOUSE LAW: every threshold here is a PROMOTION-tier number.  Loosening one
+## (raising paraphrase_max_jaccard, lowering our_value_min, widening a quote
+## cap) is an operator ruling, not a build decision.
+
+schema: "press.config.v1"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PUBLICATION REGISTRY (rev-4 gate)
+#
+# W1 registers the properties so the ledger can carry `publication` from row
+# one — the W1.5 cutover then flips output roots WITHOUT a ledger migration.
+# `output_root` is what W1.5 will start honouring; `cutover: false` means it is
+# recorded and ignored today.
+# ─────────────────────────────────────────────────────────────────────────────
+publications:
+  mastermind_news:
+    label: "Mastermind News"
+    domain: "mastermindx.ai"
+    anchor_account: "Mastermind News"
+    output_root: "/blog/"          # W1.5: flips to the mastermindx.ai root
+  mastermind_research:
+    label: "Mastermind Research"
+    domain: "blog.mastermind-x.com"
+    anchor_account: "Mastermind Research"
+    output_root: "/blog/"          # W1.5: flips to the blog.mastermind-x.com root
+  flagship:
+    label: "Mastermind (flagship)"
+    domain: "mastermind-x.com"
+    anchor_account: "Mastermind Research"
+    output_root: "/blog/"
+
+# W1: all output roots stay on /blog/; W1.5 flips per-publication output.
+cutover: false
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DESKS
+#
+# `cadence_per_day` is the W1 TARGET, and it is a CEILING, not a quota: a thin
+# day beats a padded one (quarantine flow below drops the slot rather than
+# regenerating forever).  The planner emits at most this many slots per run.
+# ─────────────────────────────────────────────────────────────────────────────
+desks:
+  brief:
+    publication: "mastermind_news"
+    byline: "The Brief — Mastermind News desk"
+    cadence_per_day: 2             # W1 target 1–2/day
+    cadence_min_per_day: 1
+    min_words: 300
+    max_words: 600
+    model_key: "press_brief"       # -> config.yml llm_models.press_brief
+    cluster: "market-brief"
+    # Minimum DISTINCT anchored receipts (numbers resolving to a source fact) a
+    # draft must carry. The our-value SHARE alone is dilutable — a piece can hit
+    # 40% with two numbers and a lot of confident prose. The count is the floor
+    # that share cannot be padded around.
+    min_anchored_receipts: 5
+    # How many candidate stories the planner ranks before cutting to cadence.
+    candidate_pool: 12
+    # Chronicle lookback for candidate events.
+    window_days: 3
+    # DEFENCE IN DEPTH. `research_vault` chronicle events are "an institution
+    # published a report" — the Research Desk's beat. The cross-namespace alias
+    # check in the planner already stops the two desks covering one document
+    # under two ref spellings; this makes the desk boundary explicit rather than
+    # emergent, so a future change to the alias logic cannot silently merge the
+    # two beats.
+    exclude_sources:
+      - "research_vault"
+
+  research_desk:
+    publication: "mastermind_research"
+    byline: "Research Desk — Mastermind Research"
+    cadence_per_day: 1             # W1 target 1/day
+    cadence_min_per_day: 1
+    min_words: 500
+    max_words: 900
+    model_key: "press_research"    # -> config.yml llm_models.press_research
+    cluster: "research-desk"
+    candidate_pool: 8
+    min_anchored_receipts: 4
+    # Only consider vault reports published within this many days of as_of.
+    window_days: 21
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PUBLIC LINK ALLOWLIST  (W1 review ruling — the source law, amended)
+#
+# Every INTERNAL link in a draft must sit under one of these prefixes.
+#
+# WHY THIS EXISTS: W1 shipped with a `brief_source_links` map pointing The Brief
+# at /us_track_record.html, /radar.html and /macro.html as its "primary source".
+# All three answer **302 to /?signin=1** — the validator was FORCING every public
+# article to cite a login wall. A gated link is not a source; it is a bounce.
+# Verified 2026-07-26: /research/<slug>.html and /blog/<slug>.html return 200;
+# /radar.html, /macro.html, /us_track_record.html and /movers.html return 302.
+#
+# The amended law (masterplan §0 W1 gate 2): the above-the-fold named+linked
+# source requirement applies ONLY to slots carrying an EXTERNAL primary source
+# (PRESS-FEEDS wire items, when that lane lands). Fully first-party pieces carry
+# their receipts INLINE — dated, fact-anchored numbers — and link nothing they
+# cannot show a logged-out reader.
+#
+# Adding a prefix here is a claim that the pages under it are PUBLIC. Check with
+# a logged-out request before you add one.
+public_link_prefixes:
+  - "/research/"
+  - "/blog/"
+
+# Full-name aliases for EXTERNAL primary sources (used by check_primary_source).
+# The naming check requires the source's FULL name, not a token from it: token
+# matching passed "Mastermind track record" on the word "record". An alias is
+# the explicit, reviewable way to accept a shorter form.
+source_name_aliases: {}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# VALIDATOR THRESHOLDS  (all deterministic; zero LLM, zero network)
+# ─────────────────────────────────────────────────────────────────────────────
+validators:
+  # ── close-paraphrase ──────────────────────────────────────────────────────
+  # Shingle Jaccard of the draft's UNATTRIBUTED prose against each raw source
+  # document.  Attributed-quote spans are stripped before shingling (a quote is
+  # SUPPOSED to be verbatim — scoring it as paraphrase would punish honesty).
+  #
+  # Measured per BLOCK against the best-matching same-length WINDOW of each
+  # source, not draft-vs-whole-document: whole-document Jaccard is dominated by
+  # the length ratio, so a fully lifted paragraph inside an otherwise original
+  # 500-word piece scores ~0.07 and sails through.  Same-length windowing makes
+  # the number length-invariant — a lifted block scores ~1.0, an honest rewrite
+  # of the same facts scores ~0.0 — so the threshold means what it says.
+  # The unwindowed document-level number is ALSO computed and printed in the
+  # validator_report as `doc_jaccard` (reported, never gated).
+  #
+  # raising requires an operator ruling
+  paraphrase_max_jaccard: 0.18
+  paraphrase_shingle_n: 5
+
+  # ── our-value floor ───────────────────────────────────────────────────────
+  # WHAT IS ACTUALLY MEASURED (amended at W1 review — read this before quoting
+  # the number anywhere):
+  #
+  # Share of the draft's word count sitting in SENTENCES that carry at least one
+  # anchored receipt — a number resolving to a source fact within tolerance.
+  # Sentence granularity, not block: block granularity was gameable by pure
+  # formatting. The reviewer moved identical prose from 0.0345 to 1.0 by
+  # splitting paragraphs, because one anchored number carried its whole block.
+  # A sentence is small enough that carrying it means saying something.
+  #
+  # HONEST NOTE ON THE TIERS: every fact the W1 planner emits is first_party
+  # (engine artifacts, our chronicle store, our vault summaries), so today this
+  # collapses to "share of the piece that is anchored at all". The
+  # first_party/third_party machinery in the resolver is NOT dead code — it is
+  # what makes the metric mean "OUR value" once PRESS-FEEDS starts supplying
+  # external facts. Until then, do not describe this number as measuring
+  # first-party-vs-third-party balance. It measures anchoring density.
+  #
+  # The share is paired with desks.*.min_anchored_receipts, which is the floor
+  # the share cannot be padded around. Both print into every validator_report.
+  our_value_min: 0.40
+
+  # ── quote lint ────────────────────────────────────────────────────────────
+  max_quotes: 2
+  max_quote_words: 25
+
+  # ── length budgets (per desk; desks.* min_words/max_words are authoritative)
+  # ── fact anchor ───────────────────────────────────────────────────────────
+  # Every number in the draft must ANCHOR — resolve to a supplied source fact
+  # within the rounding tolerance below.  Read that as written: it is a
+  # containment test against a pool, not proof the writer used the number
+  # correctly, and its strength DEGRADES AS THE POOL GROWS.
+  #
+  # MEASURED COINCIDENCE FLOOR (W1 review): against a full 22-fact brief pool,
+  # ~17% of arbitrary bare two-digit integers (13–99) anchor by coincidence,
+  # because the dec=0 tolerance is +/-0.5 and the pool is dense in that range.
+  # A fabricated "68% of managers" can therefore slip through on a pool that
+  # happens to contain a 68. Accepted as a residual at W1 with two mitigations:
+  # desks.*.min_anchored_receipts (a piece must carry real receipts, not one
+  # lucky integer) and the fact that decimals, percentages, currency and
+  # magnitude-suffixed figures — everything that carries actual market data —
+  # have a far smaller coincidence surface than bare integers.
+  # DO NOT quote this check as "every number is verified". It is not.
+  #
+  # Tolerance rules (documented in engine/press/validators.py:check_fact_anchor):
+  #   * commas, currency symbols, leading '+' and surrounding units stripped
+  #   * a draft number matches a source number when the draft is a CORRECT
+  #     ROUNDING of it: |draft - source| <= 0.5 * 10^-(draft decimals).
+  #     Drafts may round DOWN in precision; they may never invent precision
+  #     the source does not have (3.1 from 3.14 is fine; 3.14 from 3.1 is not).
+  #   * percent vs bare number is matched on the VALUE — "1.8%" anchors to a
+  #     source fact of 1.79 (pct) but not to a source fact of 0.0179.
+  #   * bare integers <= generic_integer_max are treated as prose counts
+  #     ("three drivers", "two sessions") and do not need an anchor.  Anything
+  #     carrying a decimal point, a %, a currency symbol or a magnitude suffix
+  #     must anchor REGARDLESS of size.
+  #   * 4-digit integers that appear as a year inside a source fact anchor.
+  generic_integer_max: 12
+
+  # ── 30-day self-similarity radar ──────────────────────────────────────────
+  # Same windowed-shingle metric, run against our OWN last-N-days
+  # content/seo/blog/*.md bodies.  Catches the engine re-writing itself.
+  self_similarity_window_days: 30
+  self_similarity_max_jaccard: 0.18
+
+  # ── AI-tell lexicon (rev 4 house-style law) ───────────────────────────────
+  # These are the machine's own fingerprints.  A piece that trips one of these
+  # reads as generated even when every fact in it is true.
+  ai_tell_phrases:
+    - "delve"
+    - "in today's fast-paced landscape"
+    - "in the ever-evolving landscape"
+    - "it's important to note"
+    - "it's worth noting"
+    - "in conclusion"
+    - "game-changer"
+    - "navigate the complexities"
+    - "underscores the importance"
+    - "a testament to"
+    - "in the realm of"
+  # Pattern rules (implemented in check_ai_tells, not regex-configurable):
+  #   * a paragraph may not OPEN with "Moreover," — banned outright.
+  #   * "not only ... but also" is budgeted at <= 1 per piece.
+  ai_tell_moreover_opener_banned: true
+  ai_tell_not_only_but_also_budget: 1
+
+  # ── standing footer ───────────────────────────────────────────────────────
+  # Every press draft carries an explicit in-body byline + disclosure footer.
+  # NOTE: the six hand-written evergreen posts in content/seo/blog/ carry NO
+  # in-body footer — the sentence lives once in the site chrome
+  # (templates/seo_base.html.j2).  Press output is DIFFERENT: it is dated,
+  # attributed, machine-assisted desk copy, so it states its own provenance on
+  # the page rather than inheriting it from the furniture.  The wording is
+  # taken verbatim from the site chrome so the estate speaks with one voice.
+  footer_required_text: "Educational content — not investment advice. Markets involve risk."
+  footer_class: "press-footer"
+  byline_class: "press-byline"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# LLM  (writer.py — the ONLY module in engine/press that touches a network)
+#
+# Credentials resolve through the existing engine.llm_auth waterfall
+# (OAuth pool -> CLAUDE_CODE_OAUTH_TOKEN -> ANTHROPIC_API_KEY -> DEEPSEEK_API_KEY).
+# With none visible, build_providers() returns [] and the writer reports
+# `no_provider` and writes NOTHING — it never falls back to a template.
+# Model ids live in config.yml `llm_models` (keys press_brief / press_research),
+# following the marketing_copy precedent.
+# ─────────────────────────────────────────────────────────────────────────────
+llm:
+  enabled: true
+  max_tokens: 4000                 # per single completion
+  # Per-RUN token budget across every desk and every regeneration attempt.
+  # Once the run's estimated spend crosses this, the writer stops starting new
+  # work and the remaining slots are dropped with reason `token_budget_exhausted`.
+  run_token_budget: 240000
+  # Circuit breaker: N consecutive writer failures (no provider, empty text,
+  # unparsable envelope, exception) trips the breaker for the rest of the run.
+  # A tripped breaker drops every remaining slot with reason `circuit_open`
+  # rather than burning the budget on a broken provider.
+  circuit_breaker_consecutive_failures: 3
+
+# ─────────────────────────────────────────────────────────────────────────────
+# QUARANTINE FLOW
+# fail -> regenerate up to `max_regenerations` -> drop the slot with a logged
+# reason.  A thin day beats a padded one.
+# ─────────────────────────────────────────────────────────────────────────────
+quarantine:
+  max_regenerations: 2
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PATHS (relative to repo root)
+# ─────────────────────────────────────────────────────────────────────────────
+paths:
+  staging_dir: "data/press/staging"
+  ledger: "data/press/published.jsonl"
+  content_dir: "content/seo/blog"

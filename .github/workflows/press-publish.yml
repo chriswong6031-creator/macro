@@ -1,0 +1,283 @@
+name: press-publish
+# ─────────────────────────────────────────────────────────────────────────────
+# D14 W1 (Media Network) — the automated press engine. DARK BY DEFAULT.
+#
+# Runs on ubuntu-latest (NOT the self-hosted macstudio): this must stay OFF the
+# nightly render path, whose ~67-minute budget is law. Two desks (The Brief,
+# Research Desk) plan -> write -> validate -> emit to the EXISTING /blog/
+# estate, on the EXISTING frontmatter contract.
+#
+# WHY IT IS SAFE / DARK: EVERY job is gated on the repo VARIABLE
+# `PRESS_PUBLISH_ENABLED == 'true'`. That variable is NOT created by the change
+# that added this file. An absent or non-'true' variable means both jobs are
+# SKIPPED — no LLM call, no staging write, no commit, no publish. There is no
+# secrets.* fallback on purpose: a lingering secret of the same name must not
+# keep the press engine live after the toggle goes off.
+#
+# HOW TO ARM IT (operator, in this order — each step is independently reversible):
+#   1. Repo secret    ANTHROPIC_API_KEY (or CLAUDE_CODE_OAUTH_TOKEN / a pool key,
+#      or DEEPSEEK_API_KEY). With none of these the writer prints a
+#      `press_writer_mute` warning and drops every slot — dark, not silent.
+#   2. Repo VARIABLE  PRESS_PUBLISH_ENABLED = true    (the kill switch)
+#   3. Watch the first `workflow_dispatch` run with emit=false: it stages drafts
+#      and uploads the validator reports as an artifact WITHOUT publishing
+#      anything.
+# Set PRESS_PUBLISH_ENABLED to anything but 'true' (or delete it) to instantly
+# revert every path to dark — that is the kill switch / rollback.
+#
+# EVIDENCE GATE (masterplan §0 gate 1 — ten consecutive zero-manual-edit passes):
+# accrue it on REAL CONSECUTIVE STAGED RUNS AT CURRENT DATES. Leave the daily
+# schedule armed with emit=false and read the `press-staging-<run_id>` artifact
+# each morning; at 2 + 1 slots a day the gate closes in roughly four sessions.
+# Each artifact carries every draft and every validator_report, pass or fail.
+# Ten consecutive PASSING drafts with no hand edit to any of them is the gate.
+# A quarantined slot is not a gate failure — that is the quarantine flow
+# working; a slot that needed a human edit to pass IS one, and resets the count.
+#
+# DO NOT collect the gate by back-walking `as_of`. The engine artifacts the
+# planner quotes are `latest.json` snapshots with no history, so a back-dated
+# run can only ever see TODAY's measurements. The planner drops every fact that
+# postdates `as_of` (and says so, loudly), which means a back-dated run is a
+# genuinely thinner run than the live one it is pretending to be — evidence
+# about a fact pool that will never exist again. `as_of` is a DEV lever for
+# reproducing one day's plan, never a gate lever.
+#
+# WHAT IT WRITES WHEN ARMED: content/seo/blog/<slug>.md, the /blog/ pages and
+# feed.xml the free-content builder renders from them, and one append-only row
+# per piece in data/press/published.jsonl. The commit step's `git add` names
+# those three paths EXPLICITLY. site/sitemap.xml is never staged — the nightly
+# owns it, and scripts/run_press.py raises if an emit changed it.
+# ─────────────────────────────────────────────────────────────────────────────
+on:
+  schedule:
+    # 13:20 UTC — after the US close settles into the committed artifacts the
+    # planner reads (data/gex, data/market_state, site/marketdata heatmaps) and
+    # well clear of the ~22:30 UTC nightly, so this never contends with the
+    # render budget. Once a day; the desks' own cadence ceilings (config/press.yml
+    # desks.*.cadence_per_day) decide how many pieces that run may produce.
+    - cron: "20 13 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      emit:
+        description: >-
+          Publish the passing staged drafts. FALSE (the default) runs staging
+          only: it writes drafts + validator reports to data/press/staging/,
+          uploads them as an artifact, and commits nothing. Set true only after
+          reading a staging artifact.
+        required: false
+        type: boolean
+        default: false
+      desks:
+        description: >-
+          Comma-separated desk names to run (brief, research_desk). Blank runs
+          every desk in config/press.yml.
+        required: false
+        default: ""
+      max_slots:
+        description: >-
+          Cap the number of slots this run attempts. Blank uses the per-desk
+          cadence ceilings.
+        required: false
+        default: ""
+      as_of:
+        description: >-
+          DEV ONLY — run date YYYY-MM-DD (blank = today). Reproduces a specific
+          day's PLAN. It is a hard right edge for facts as well as events, and
+          the engine artifacts are history-less snapshots, so a back-dated run
+          sees a thinner fact pool than the live day did. NEVER use this to
+          collect the 10-article evidence gate (see EVIDENCE GATE above).
+        required: false
+        default: ""
+
+permissions:
+  contents: write             # commit emitted articles + the ledger back to main
+
+concurrency:
+  # Two press runs must never overlap: both would plan against the same
+  # chronicle window and the staging dedupe would race.
+  group: press-publish
+  cancel-in-progress: false
+
+jobs:
+  stage:
+    # DARK BY DEFAULT. `vars.PRESS_PUBLISH_ENABLED` is absent until an operator
+    # creates it, and an absent variable is the empty string, so this job (and
+    # therefore `emit`, which needs it) simply does not run.
+    if: ${{ vars.PRESS_PUBLISH_ENABLED == 'true' }}
+    runs-on: ubuntu-latest    # OFF the render path — never the macstudio pool
+    timeout-minutes: 30
+    outputs:
+      passed: ${{ steps.stage.outputs.passed }}
+    env:
+      PRESS_PUBLISH_ENABLED: ${{ vars.PRESS_PUBLISH_ENABLED }}
+      # Credential waterfall — engine/llm_auth.py probes these in order. Any one
+      # of them arms the writer; none of them leaves it mute (and loud about it).
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+      # Spend guards. Both default from config/press.yml (llm.run_token_budget /
+      # llm.circuit_breaker_consecutive_failures); these env vars override them
+      # for THIS run, so a runaway lane can be throttled from the workflow
+      # without a config PR. Empty = use the config value.
+      PRESS_RUN_TOKEN_BUDGET: ${{ vars.PRESS_RUN_TOKEN_BUDGET }}
+      PRESS_CIRCUIT_BREAKER_FAILURES: ${{ vars.PRESS_CIRCUIT_BREAKER_FAILURES }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: install deps
+        # pyyaml: config/press.yml + config.yml. jinja2: the free-content builder
+        # the emit job renders through. anthropic: the llm_auth waterfall's client.
+        run: pip install --quiet pyyaml jinja2 anthropic
+
+      - name: stage drafts (plan -> write -> validate)
+        id: stage
+        env:
+          PRESS_DESKS: ${{ inputs.desks }}
+          PRESS_MAX_SLOTS: ${{ inputs.max_slots }}
+          PRESS_AS_OF: ${{ inputs.as_of }}
+        run: |
+          # -e matters: without it a Python traceback exits non-zero, the shell
+          # sails on, PASSED falls back to 0, and a CRASHED staging run reports
+          # green. `pipefail` alone does not save you when nothing is piped.
+          set -euo pipefail
+          ARGS="--staging"
+          if [ -n "${PRESS_DESKS:-}" ]; then ARGS="$ARGS --desks $PRESS_DESKS"; fi
+          if [ -n "${PRESS_MAX_SLOTS:-}" ]; then ARGS="$ARGS --max-slots $PRESS_MAX_SLOTS"; fi
+          if [ -n "${PRESS_AS_OF:-}" ]; then ARGS="$ARGS --as-of $PRESS_AS_OF"; fi
+          # shellcheck disable=SC2086
+          python -m scripts.run_press $ARGS
+          # A MISSING summary file is a FAILED run, not a zero-pass run: the
+          # orchestrator always writes it on a completed staging pass, so its
+          # absence means the process died. Defaulting to 0 here turned a crash
+          # into "a thin day", which is the one reading that looks fine.
+          if [ ! -f data/press/staging/_run_summary.json ]; then
+            echo "::error title=press_staging_crashed::staging produced no _run_summary.json — the run did not complete"
+            exit 1
+          fi
+          # One-liner, not a heredoc: inline workflow shell is untested code and
+          # a mis-indented heredoc terminator fails at 13:20 UTC, not in review.
+          PASSED=$(python -c "import json,pathlib;print(json.loads(pathlib.Path('data/press/staging/_run_summary.json').read_text())['passed'])")
+          echo "passed=$PASSED" >> "$GITHUB_OUTPUT"
+          # Bare print at line start, flushed — a "::notice" behind a logger
+          # prefix is not a line start and GitHub drops it silently (house law).
+          echo "::notice title=press_staged::press staging finished with $PASSED passing draft(s)"
+
+      - name: upload staging evidence (drafts + validator reports)
+        # ALWAYS uploaded, including on a thin/quarantined run — the reports are
+        # how the operator reads WHY a slot was dropped.
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: press-staging-${{ github.run_id }}
+          path: data/press/staging/
+          if-no-files-found: warn
+          retention-days: 14
+
+  emit:
+    needs: stage
+    # Publishing needs BOTH the kill switch and an explicit emit request. A
+    # scheduled run stages and stops: the first weeks of this lane are meant to
+    # be read before they are shipped.
+    if: >-
+      ${{ vars.PRESS_PUBLISH_ENABLED == 'true'
+          && needs.stage.result == 'success'
+          && github.event_name == 'workflow_dispatch'
+          && inputs.emit
+          && needs.stage.outputs.passed != ''
+          && needs.stage.outputs.passed != '0' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PRESS_PUBLISH_ENABLED: ${{ vars.PRESS_PUBLISH_ENABLED }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: install deps
+        run: pip install --quiet pyyaml jinja2
+
+      - name: download staged drafts
+        uses: actions/download-artifact@v4
+        with:
+          name: press-staging-${{ github.run_id }}
+          path: data/press/staging/
+
+      - name: emit passing drafts (content/seo/blog + site/blog + ledger)
+        run: python -m scripts.run_press --emit
+
+      - name: estate must still match a fresh render
+        # The emit replays the render lane's sweeps before copying into
+        # site/blog/. If that ever stops being true this check catches it HERE,
+        # in the lane that caused it, instead of turning someone else's PR red.
+        run: python -m scripts.build_free_content --check
+
+      - name: commit published articles (no-op when nothing changed)
+        # NO `if: always()`. It was there, and it was the render-clobber class:
+        # a failed emit or a red drift check would still have committed whatever
+        # landed on disk, putting a half-published estate on main for the next
+        # PR to inherit. The default (run only if every prior step succeeded) is
+        # the correct gate — scripts/run_press.py additionally rolls the tree
+        # back on a mid-emit failure, so a failed run leaves nothing to commit.
+        run: |
+          set -uo pipefail
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+
+          # EXPLICIT scoping. These three paths and nothing else:
+          #   content/seo/blog   the source .md the estate builder reads
+          #   site/blog          the rendered pages + feed.xml
+          #   data/press/published.jsonl   the append-only press ledger
+          # site/sitemap.xml is NOT staged here under any circumstance — the
+          # nightly owns it, and a press run that touched it would fight the
+          # pipeline for the file every night.
+          git add content/seo/blog 2>/dev/null || true
+          git add site/blog 2>/dev/null || true
+          git add data/press/published.jsonl 2>/dev/null || true
+
+          if git diff --cached --name-only | grep -q '^site/sitemap.xml$'; then
+            echo "::error title=press_sitemap_guard::press-publish staged site/sitemap.xml — the nightly owns it. Refusing to commit."
+            exit 1
+          fi
+
+          if git diff --cached --quiet; then
+            echo "::notice title=press_publish::press-publish: nothing to commit"
+            exit 0
+          fi
+
+          git commit -m "press: publish $(date -u +%FT%H:%MZ) [skip ci]"
+
+          # Retry-rebase push loop to tolerate races with the nightly and the
+          # other publishing lanes (mirrors marketing-publish.yml mechanics).
+          for i in 1 2 3 4 5; do
+            git fetch origin main || true
+            comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
+                     <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
+              | while IFS= read -r f; do rm -f -- "$f" || true; done
+            if git pull --rebase --autostash origin main && git push origin HEAD:main; then
+              echo "::notice title=press_publish::press-publish: pushed on attempt $i"
+              exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "press-publish: push attempt $i lost a race; re-syncing"
+            sleep $((i * 7))
+          done
+
+          echo "::warning title=press_publish_push::press-publish: could not push after 5 attempts (non-fatal)"
+          exit 0

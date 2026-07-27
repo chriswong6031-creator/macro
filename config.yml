@@ -21,6 +21,8 @@ llm_models:
   classify:     "claude-haiku-4-5"               # news_llm batch summaries + tag labels
   deliberation: "claude-fable-5"                 # PR-R8: Prophet/standout auditor deliberation (fallback=claude-opus-4-8)
   marketing_copy: "claude-sonnet-4-6"            # Marketing Content Studio nightly copywriter (persona posts; deterministic fallback)
+  press_brief: "claude-haiku-4-5"                # D14 W1 press: The Brief (300–600w daily market brief). Cheapest tier that clears the validator suite; a failure here drops the slot, it does NOT fall back to a template.
+  press_research: "claude-sonnet-4-6"            # D14 W1 press: Research Desk (500–900w institutional coverage). Mid tier — the paraphrase/our-value gates need real rewriting, not summarization.
 
 # ---------------------------------------------------------------------------
 # prophet — Prophet NW lobe governor config (PR-W2/PR-R3/PR-R8)
