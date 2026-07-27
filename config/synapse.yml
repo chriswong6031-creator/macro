@@ -1051,7 +1051,8 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+    - engine/personality_terminality_shadow.py
     external_consumers: []
     notes: >
       PSS-W3 FORWARD LEDGER — one row per FIRED (as_of, sym) over the codex
@@ -1093,6 +1094,122 @@ artifacts:
       operator/agent inspection surface + the source for the quarterly miss-rate
       readout (first readout ≈ 3 months post-ship). Display-tier; nothing here
       promotes to authority.
+
+  # PSS-F4H retained result: the exact orthogonal-only DEV model is exported as
+  # stable numerical tree JSON (no sklearn object in the production path).
+  personality-terminality-shadow-model-manifest:
+    path: data/personality_timing/terminality_shadow_model_v1/manifest.json
+    format: json
+    producer: scripts/research/pss_f4_hazard.py
+    known_extra_writers: []
+    owner_program: personality-timing
+    cadence: on-demand
+    storage: git
+    asof_field: train_end
+    freshness_sla_hours: 99999
+    schema: personality_terminality_shadow.model/v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+    - engine/personality_terminality_shadow.py
+    external_consumers: []
+    notes: >
+      Frozen serving contract for pss_f4h_orthogonal_dev2022_v1: DEV ends
+      2022-12-31, target coverage is 20%, feature order and threshold are pinned,
+      and SHA-256 hashes bind both numerical tree payloads. F4 features are
+      explicitly absent. The model is a prospective locator only and has no
+      authority to rank, size, gate, alert, or authorize an entry.
+  personality-terminality-shadow-near-model:
+    path: data/personality_timing/terminality_shadow_model_v1/near_low.json
+    format: json
+    producer: scripts/research/pss_f4_hazard.py
+    known_extra_writers: []
+    owner_program: personality-timing
+    cadence: on-demand
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 99999
+    schema: frozen_hist_gradient_boosting/v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+    - engine/personality_terminality_shadow.py
+    external_consumers: []
+    notes: >
+      Pure-JSON numerical trees for P(within 5% of the +/-31-session low).
+      Hash-pinned by the terminality model manifest; production rejects drift.
+  personality-terminality-shadow-safe-model:
+    path: data/personality_timing/terminality_shadow_model_v1/tail_safe.json
+    format: json
+    producer: scripts/research/pss_f4_hazard.py
+    known_extra_writers: []
+    owner_program: personality-timing
+    cadence: on-demand
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 99999
+    schema: frozen_hist_gradient_boosting/v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+    - engine/personality_terminality_shadow.py
+    external_consumers: []
+    notes: >
+      Pure-JSON numerical trees for P(avoids forward MAE <= -10%). Hash-pinned
+      by the terminality model manifest; production rejects drift.
+  personality-terminality-shadow-ledger:
+    path: data/personality_timing/terminality_shadow.jsonl
+    format: jsonl
+    producer: engine/personality_terminality_shadow.py
+    known_extra_writers: []
+    owner_program: personality-timing
+    cadence: daily-engine
+    storage: git
+    asof_field: observed_as_of
+    freshness_sla_hours: 30
+    schema: personality_terminality_shadow.ledger/v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+    - engine/personality_terminality_shadow.py
+    external_consumers: []
+    notes: >
+      Prospective keep-first ledger over every tailored incumbent fire, including
+      below-threshold controls. Selected rows open a maximum 15-session shadow
+      watch; the first causal fresh-20d-low rejection is stamped without
+      backdating. Incumbent and action entries mature under the same 63-session
+      dual ruler. Nightly is the sole lifecycle advancer. No decision authority.
+  personality-terminality-shadow-state:
+    path: data/personality_timing/terminality_shadow_state.json
+    format: json
+    producer: engine/personality_terminality_shadow.py
+    known_extra_writers: []
+    owner_program: personality-timing
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: personality_terminality_shadow.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+    - scripts/build_stock_library.py
+    external_consumers: []
+    notes: >
+      Current shadow-watch display map plus honest ledger census. The payload
+      carries may_rank/may_size/may_gate/may_alert=false and is copied into
+      stock-personality JSON only for active watches or recently observed
+      rejections. It never enters setup compatibility or any scored path.
 
   # IHM-R1..R4: Index Hybrid Momentum snapshot — display-tier daily snapshot for
   # 13 index carriers at 1D/2B/3B/W-FRI grids.  Written by engine/index_momentum.py

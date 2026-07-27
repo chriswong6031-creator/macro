@@ -123,6 +123,22 @@ rather than mis-graded). Lens: vol-structure. Panel id C10.
 > repaired causal engine, fitted thresholds, event tapes, tests, and promotion
 > law ship for prospective shadow monitoring; no authority promotion is made.
 
+> **PRODUCTION SHADOW WIRE-IN (2026-07-26):** The retained orthogonal-only model
+> is now frozen as hash-bound numerical tree JSON under
+> `data/personality_timing/terminality_shadow_model_v1/` and served by
+> `engine/personality_terminality_shadow.py`; production does not load a mutable
+> sklearn object. The existing tailored Stoch-RSI fire remains the sole arming
+> event. Every incumbent fire (selected and below-threshold control) enters the
+> prospective keep-first ledger; a frozen score above 0.6642405955 opens a
+> maximum 15-session observation window, and only the first fresh-20d-low
+> rejection observed after the prospective timestamp is recorded as an action.
+> The initial 2026-07-26 census is 99 incumbent observations / 13 watches / 86
+> controls, with zero pre-wire rejection backfill. Active observations appear in
+> the stock-personality panel as **Terminality watch · shadow** with the explicit
+> contract `may_rank=false`, `may_size=false`, `may_gate=false`,
+> `may_alert=false`. The ledger—not the historical replay—is now the evidence
+> source for any future promotion decision.
+
 ## Program conclusion — W-SIG standalone sweep (4/4 tested, 0 survived as timers)
 
 *Executed 2026-07-25→26. All four pre-registered families ran under the §7 timing ruler with per-name random-day nulls, mirror-placebo falsifiers, era split, and month-cluster bootstrap; each is a scoped DNR §2 kill (reports `pss_f1_downvol` / `pss_f2_overnight` / `pss_f3_residual` / `pss_f4_semivar`).*

@@ -1425,6 +1425,42 @@ def _stamp_personality_forward_ledger(
         log.warning("personality forward ledger stamp failed (%s)", _fl_e)
 
 
+def _load_terminality_shadow_map(data_dir: Path) -> dict[str, dict]:
+    """Load the display-only active-watch map with an authority fail-closed fence."""
+    path = data_dir / "personality_timing" / "terminality_shadow_state.json"
+    if not path.exists():
+        return {}
+    doc = json.loads(path.read_text())
+    if not (
+        doc.get("schema") == "personality_terminality_shadow.v1"
+        and doc.get("authority") == "shadow_only"
+        and doc.get("display_only") is True
+        and doc.get("artifact_ok") is True
+        and doc.get("may_rank") is False
+        and doc.get("may_size") is False
+        and doc.get("may_gate") is False
+        and doc.get("may_alert") is False
+    ):
+        raise ValueError("terminality shadow authority/schema mismatch")
+    return doc.get("per_ticker") or {}
+
+
+def _attach_terminality_shadow(
+    personality: dict,
+    ticker: str,
+    shadow_map: dict[str, dict],
+) -> None:
+    """Copy an active observation into a personality payload; never synthesize one."""
+    block = shadow_map.get(ticker)
+    if (
+        block
+        and block.get("schema") == "personality_terminality_shadow.v1"
+        and block.get("authority") == "shadow_only"
+        and block.get("display_only") is True
+    ):
+        personality["terminality_shadow"] = block
+
+
 def main() -> int:
     _main_t0 = time.time()
     site = config.ROOT / config.load()["storage"]["site_dir"]
@@ -1624,6 +1660,19 @@ def main() -> int:
     bsk_mem = _basket_membership_map()          # all active basket memberships (display-only)
     # ---- stock_personality.v1 pre-loop loads -----------------------------------
     # All hoisted outside the loop; never re-read per ticker.
+    # PSS-F4H frozen orthogonal terminality shadow. This is a DISPLAY-ONLY map
+    # written by engine/personality_terminality_shadow.py earlier in the nightly
+    # lane. It is copied into personality payloads verbatim and never enters any
+    # score, rank, gate, sizing rule, or alert.
+    _sp_terminality_shadow: "dict[str, dict]" = {}
+    try:
+        _sp_terminality_shadow = _load_terminality_shadow_map(config.data_dir())
+        log.info(
+            "terminality shadow loaded: %d active display watches",
+            len(_sp_terminality_shadow),
+        )
+    except Exception as _pts_e:  # noqa: BLE001 — additive display context; never fatal
+        log.warning("terminality shadow state load skipped (%s)", _pts_e)
     _sp_dna_class: "dict[str, dict]" = {}      # ticker -> {key, style_regime, as_of} from dna_class.json (T-1)
     _sp_dna_as_of: "str | None" = None
     try:
@@ -2479,6 +2528,12 @@ def main() -> int:
             _personality["setup_compatibility"] = _spers.setup_compatibility(
                 _personality, _sp_species_entries
             )
+            # Copy-only serving fence: the module that produced this block has
+            # already pinned authority=shadow_only. Do not transform it into an
+            # input or synthesize a neutral row for names without an active watch.
+            _attach_terminality_shadow(
+                _personality, ticker, _sp_terminality_shadow
+            )
             rec["personality"] = _personality
             _sp_by_ticker[ticker] = _personality
             _sp_n_tickers += 1
@@ -2821,6 +2876,7 @@ def main() -> int:
                     "arch": _ak, "dna": _dk,
                     "chart": _cl, "own": _ol,
                     "micro": _ml, "modes": _md,
+                    "terminality_shadow": _sp_p.get("terminality_shadow"),
                 }
             _sp_agg = {
                 "schema": "stock_personality.v1",

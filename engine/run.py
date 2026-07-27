@@ -778,6 +778,16 @@ def run(force: bool = False) -> dict:
         _pgs.update()
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("personality-gate-shadow failed: %s", e)
+    # PSS-F4H retained result: frozen ORTHOGONAL terminality locator over the
+    # tailored incumbent fires above. Every incumbent is logged for a prospective
+    # control group; top-20% DEV scores open a 15-session SHADOW watch for the first
+    # observable fresh-low rejection. F4 contributes no score. This lane never
+    # ranks, sizes, gates, alerts, or authorizes an entry. Never fatal.
+    try:
+        from engine import personality_terminality_shadow as _pts
+        _pts.update()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("personality-terminality-shadow failed: %s", e)
     # Index Hybrid Momentum organ (engine/index_momentum.py, IHM-R1..R4): RSI-MACD
     # hybrid at 1D/2B/3B/W-FRI for 13 index carriers (US/HK/CN/INTL + MAG7 carrier).
     # Depth percentile, hist_vel3, washout_turn/trap_zone quality tags, and global-turn
