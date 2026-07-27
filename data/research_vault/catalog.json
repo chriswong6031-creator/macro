@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-27T21:00:36.676864+00:00",
-  "count": 204,
+  "generated_at": "2026-07-27T21:07:44.957823+00:00",
+  "count": 211,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -21,6 +21,139 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-3e1ijbfxnnk-fa2c9a",
+      "title": "All Eyes On SOX",
+      "institution": "The Market Ear",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-27T21:05:08Z",
+      "summary_points": [
+        "**SOX Support Critical**: 11,200 (July 17th sell-off level) is key short-term support; break below risks deeper correction, bearish 21-day MA below 50-day MA signals technical risk.",
+        "**Hyperscalers exodus**: Extreme underperformance vs.",
+        "NDX signals critical flow reversal, indicating fundamental shift in AI infrastructure capital allocation.",
+        "**NVIDIA's AI Infrastructure Hub**: $4.8T centralization of AI deals (Microsoft, OpenAI, Google) reinforces NVIDIA as critical enabler, driving capital flows and infrastructure adoption.",
+        "**China's Semiconductor Shift**: CXMT's domestic capital access reduces memory imports, pressuring global pricing; ASML stock breaking trend lines signals China DUV progress, increasing risk to ASML's China revenue."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-tgn4kghjrll-56f3f0",
+      "title": "The AI Trade's Moment Of Truth",
+      "institution": "The Market Ear",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-27T21:04:54Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ena2wxfkafz-9493b9",
+      "title": "Investor Positioning and Flows July 27",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-27T21:04:01Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 59,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ptfmy4jc3i3-acd80e",
+      "title": "Amazon July 27",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-27T21:02:16Z",
+      "summary_points": [
+        "**AWS Growth Acceleration**: Deutsche Bank forecasts 33% y/y AWS revenue growth in 2Q26 (accelerating to 34% in 3Q26), 1-2% above consensus, driven by AI capacity deployments and resilient e-commerce trends.",
+        "**Capex Guide Shift**: FY27 capex estimate raised to ~$300bn (vs.",
+        "consensus $235bn), reflecting potential capacity expansion; FY26 capex guide at ~$200bn faces scrutiny amid buy-side expectations for higher near-term investment.",
+        "**Funding Structure for AI**: Amazon raised $92bn-$93bn in debt (multi-currency bonds) + $36.8bn cash/marketable securities to fund ~$200bn FY26 AI infrastructure capex, supported by operating cash flow and liquidity.",
+        "**AWS Market Share Pressure**: Incremental AWS revenue market share narrowing vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 17,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-qrbwgqhgj3m-46a055",
+      "title": "Oracle July 27",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-27T21:00:52Z",
+      "summary_points": [
+        "**Execution & Risk Management**: Site-specific delays in AI infrastructure projects (e.g., New Mexico) confirmed, but no systemic risk; disciplined capital allocation during heavy investment phase prioritized.",
+        "**AI Infrastructure Fundamentals**: Multi-year recurring revenue with 30-40% gross margins, 20s-30s EBIT, near 100% FCF conversion; 5-6 year contracts ensure capex recoupment and high ROIC.",
+        "**Credit Strategy**: Firm commitment to investment-grade rating; long-term AI leadership prioritized over short-term borrowing costs, with active external financing evaluation.",
+        "**Critical Risk Factor**: MiFID services trigger 94% Sell rating (Global) and 67% Sell (DBSI), starkly contrasting 0% Sell for covered services—key risk for portfolio managers.",
+        "**Market Dynamics**: Heavy demand/limited supply in AI infrastructure creates concentrated market leadership opportunity; compute constraints persist to FY27/28 but overbuild risk low."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-kr1yb7ccmx2-8acc82",
+      "title": "SpaceX July 27",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-27T21:00:11Z",
+      "summary_points": [
+        "**Engine Ignition Reliability**: Recurring Raptor engine ignition failures (4 failed to ignite + 2 off-nominal) on Flight 13 due to moisture freezing turbopumps, highlighting persistent technical risk for booster recovery.",
+        "**Reusable System Validation**: Successful high-thrust boostback burn with all 33 V3 engines and longest single-engine restart in space (In-Space Raptor relight), confirming critical reusable launch capability for cost efficiency.",
+        "**Starlink V3 Operational Readiness**: Functional deployment of 20 next-gen satellites with solar arrays and RF/laser links, validating revenue-generating infrastructure for satellite internet services.",
+        "**Flight 14 Catch Milestone**: Targeted first attempt to capture upper stage with Mechazilla tower arms (late Aug/Sep), representing high-risk technical hurdle for full reusability."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-g44owjwoom1-a4e240",
+      "title": "Tesla July 27",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-27T20:57:57Z",
+      "summary_points": [
+        "**Tesla Price Target Downgraded**: Deutsche Bank cuts target to $420 (from $465) due to slower Robotaxi/Optimus scaling, fading embodied AI sentiment, and SpaceX merger volatility; elevated cash burn with no major milestones until late 2026.",
+        "**Robotaxi/Cybercab Execution Delays**: V15 Robotaxi deployment lags from safety thresholds (V14 insufficient), Cybercab faces domain-shift validation hurdles, and Optimus production delayed by supply-chain constraints.",
+        "**Optimus Supply Chain Bottlenecks**: Sourcing ~10,000 unique parts (Chinese suppliers Hengli/Rongtai for some) with in-sourcing risks (e.g., PCB for V4), threatening production timelines.",
+        "**SpaceX Merger Uncertainty**: 68% likelihood of Tesla-SpaceX merger before 2028; merger volatility and EV demand softness drive price target reduction."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-k7tfccs8zue-980d74",
       "title": "Wall street de risked tech china didnt",
