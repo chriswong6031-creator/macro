@@ -106,7 +106,18 @@
   /* ---- apply --------------------------------------------------------------
      Only rewrites slots the chosen arm actually supplies. A missing key leaves
      the authored HTML alone, so a half-specified variant degrades to the
-     control instead of blanking the hero. */
+     control instead of blanking the hero.
+
+     A slot value is either a plain string (set as text) or {html, zh}. The
+     second form exists because real hero copy is not a bare string: the landing
+     h1 carries <br> and a <span class="dim">, and setting textContent would
+     strip both — changing the TYPOGRAPHY as well as the words, so the test would
+     no longer be measuring copy alone.
+
+     `zh` is not optional politeness. The landing's switcher rewrites every
+     [data-zh] element from that attribute, so a variant that updates only the
+     English leaves every Chinese visitor reading the control while counted in
+     the variant's arm — a silent confound across a whole audience. */
   function applyCopy(copy) {
     if (!copy) return 0;
     var n = 0;
@@ -115,9 +126,23 @@
       var el = nodes[i];
       var slot = el.getAttribute('data-adtest-slot');
       if (!slot || !Object.prototype.hasOwnProperty.call(copy, slot)) continue;
-      var text = copy[slot];
-      if (typeof text !== 'string' || !text) continue;
-      el.textContent = text;
+      var v = copy[slot];
+
+      if (typeof v === 'string') {
+        if (!v) continue;
+        el.textContent = v;
+      } else if (v && typeof v === 'object' && typeof v.html === 'string' && v.html) {
+        el.innerHTML = v.html;
+        if (typeof v.zh === 'string' && v.zh) el.setAttribute('data-zh', v.zh);
+        /* The switcher caches the English original in el.__en the FIRST time it
+           runs. If it ran before us that cache holds the CONTROL copy, and the
+           next toggle to zh and back restores it — putting the visitor on an arm
+           they are not counted in, with nothing anywhere going red. Drop the
+           cache so the switcher re-captures the variant. */
+        el.__en = null;
+      } else {
+        continue;
+      }
       n++;
     }
     return n;
@@ -172,11 +197,29 @@
     module.exports = { hashUnit: hashUnit, assign: assign, HOLDOUT: HOLDOUT };
   }
 
+  /* Scheduling. This file is loaded by a plain <script> placed immediately after
+     the block it rewrites, so the slots are already parsed and `run()` can
+     rewrite them synchronously — before first paint, with no flash of the
+     control copy. (Waiting for DOMContentLoaded would paint the control first;
+     a visitor who sees the control for 200ms and then the variant is a visitor
+     whose measured behaviour belongs to neither.)
+
+     DOMContentLoaded is kept only as a fallback for a page that loads this
+     earlier than its slots. `ran` makes the two paths mutually exclusive. */
+  var ran = false;
+  function once() {
+    if (ran) return;
+    ran = true;
+    run();
+  }
+
   try {
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', run);
+    if (document.getElementById(CONFIG_ID) && document.querySelectorAll('[data-adtest-slot]').length) {
+      once();
+    } else if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', once);
     } else {
-      run();
+      once();
     }
   } catch (e) {}
 })();
