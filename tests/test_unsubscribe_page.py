@@ -107,12 +107,39 @@ def test_build_site_wires_the_page_through_write_page():
 
 def test_the_committed_page_matches_the_template():
     """site/unsubscribe.html is committed so the merge cannot ship a 404 (the /support.html
-    precedent). It has to be the CURRENT render, or the boundary lists a stale file."""
+    precedent). It has to be the CURRENT render, or the boundary lists a stale file.
+
+    The comparison is against the page AS THE RENDER LANE SHIPS IT, so this rebuild has to
+    replay the lane's whole post-processing chain — ``render.yml`` runs, in this order:
+
+        build_site  ->  inject_data_base  ->  externalize_css  ->  optimize_assets
+
+    Skip a link and the assert stops meaning "the page is stale" and starts meaning "a
+    normalizer ran", which is the state main is always in between renders. It shipped that
+    way once: the chain here was missing ``externalize_css``, so every inline ``<style>``
+    over 1KB — the page's own CSS and the nav mega block, ~280 diff lines — read as
+    divergence, and this test was red on main (and therefore ``ci-pack-1`` red on every PR
+    in the repo) from the first render after #3743 landed.
+
+    Normalising the difference away instead (strip ``?v=`` stamps, ignore ``<style>`` vs
+    ``<link>``) would have been the weaker fix: replaying the step keeps the externalized
+    CSS compared byte-for-byte, because the href IS the content hash. What must never be
+    done is re-rendering the page and committing that — ``site/`` is render-lane territory
+    and a hand-render out of a worktree ships a stale-checkout clobber.
+
+    ``make_href`` below mirrors ``scripts.externalize_css`` except that it writes nothing:
+    this suite renders into tmp only and must not touch ``site/``. The lane's threshold is
+    imported rather than restated so the two cannot drift apart silently.
+    """
+    import hashlib
+
     from jinja2 import Environment, FileSystemLoader
 
     from engine import i18n
-    from lib.pages import css_imports, inject_text, optimize_assets_text, preload_css_text
+    from lib.pages import (css_imports, externalize_css_text, inject_text,
+                           optimize_assets_text, preload_css_text)
     from lib.seo import SITE_BASE
+    from scripts.externalize_css import MIN_BYTES
     from scripts.optimize_assets import _hash_bytes
 
     env = Environment(loader=FileSystemLoader(ROOT / "templates"), autoescape=True)
@@ -133,6 +160,30 @@ def test_the_committed_page_matches_the_template():
     def imports_for(url):
         target = asset(url)
         return css_imports(target.read_text(encoding="utf-8")) if target.is_file() else []
+
+    lifted = {}  # href hash -> the CSS the block held, for the dangling-link check below
+
+    def make_href(css, _index, _media):
+        """scripts.externalize_css.externalize's callback, minus the write. The page ships
+        at the site ROOT, so its prefix is "" (dbase_prefix); a sub-dir page would need
+        "../" per level."""
+        data = css.encode("utf-8")
+        if len(data) < MIN_BYTES:
+            return None  # left inline, exactly as the lane leaves it
+        h = hashlib.sha256(data).hexdigest()[:8]
+        lifted[h] = css
+        return f"assets/css/{h}.css?v={h}"
+
+    fresh = externalize_css_text(fresh, make_href)
+
+    # The href is a content hash, so a MISSING stylesheet still compares equal below while
+    # the page ships unstyled — _prune_orphans deletes any hash file no page links, and a
+    # page whose site/ copy lags this template links hashes nothing else references. That
+    # is the "boundary lists a stale file" failure this suite exists to catch, so name it.
+    for h, css in lifted.items():
+        f = site / "assets" / "css" / f"{h}.css"
+        assert f.is_file(), f"page links assets/css/{h}.css but the render lane shipped no such file"
+        assert f.read_text(encoding="utf-8") == css, f"assets/css/{h}.css is not the CSS this page lifted"
 
     fresh = preload_css_text(optimize_assets_text(fresh, hash_for), imports_for)
     shipped = (ROOT / "site" / "unsubscribe.html").read_text(encoding="utf-8")
