@@ -89,6 +89,12 @@ data/stock_personality/panel/
 # (machine state for backwards-revision detection), cached cross-run in CI rather than
 # committed. The audit JSON reports under data/quality/*.json ARE committed (trend artifact).
 data/quality/baselines/
+# Orphaned atomic-write temps under the committed data plane (same class as
+# site/go/**/.tmp_* above). Every writer here publishes through a unique temp in
+# the target's own directory and unlinks it on failure, so one can only survive a
+# hard kill mid-write — and the nightly's `git add data/` would then commit it
+# forever. The real artifacts never end in .tmp.
+data/**/*.tmp
 # w2051 housing HF: runtime data stores (R2/data-plane pattern, not git-committed)
 data/redfin_hf/
 data/zori/*
