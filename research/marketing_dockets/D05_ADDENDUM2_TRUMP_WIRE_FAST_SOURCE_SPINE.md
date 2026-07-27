@@ -49,9 +49,38 @@ Ruling: **trumpstruth = primary Truth-Social detector** (fast poll, 60–90 s in
 - Roll Call Factbase (`rollcall.com/factbase/trump/`) — the only complete transcript archive post-May-2025; hours-lagged; archival/verification tier, not detection.
 - WH public schedule + `whitehouse.gov/live` — the **event calendar** that arms the P2 speech desk.
 
-### Tier X — X API read lane (appendix §4B: cleared on policy, operator-gated; now has the value case it lacked)
+### Tier X — X read lane · ⚡ OPERATOR OVERRIDE 2026-07-27: twitterapi.io AUTHORIZED as primary
 
-A read-only App-Only Bearer credential polling a tiny allowlist — **@WHPressPool / @WHPublicPool** (pool reports land 5–15 min post-event and cover unstreamed moments; this is how "Trump told reporters on AF1…" surfaces) plus, optionally, 3–5 fast wire relays as *detection hints only*. Pay-per-use ~$0.005/read: an allowlist this small polled every 2–3 min runs **~$10–30/mo**, far under the 2M cap. All five §4B mitigations stand (separate read-only credential, spend guard, allowlist-only, honest attribution, no write scope). Managed third-party X-read APIs (TwitterAPI.io etc.) are cheaper but are scraping-by-proxy → **covered by the standing kill; do not substitute.**
+**Override (operator ruling, 2026-07-27 — precedent: rev-3 posture overrides):** managed scrape-by-proxy X reading via **twitterapi.io** is **authorized and is the PRIMARY X-read provider**. The operator weighs its breadth (Zerohedge-class accounts, the full fast-wire set, @WHPressPool and beyond at ~$0.15/1k reads) above the supply-chain risk. This supersedes this addendum's earlier "do not substitute" line and narrows appendix kill 1 to **first-party scraping**: WE never run scrapers, browser automation, or cookie-auth readers against X or Truth Social — consuming a managed provider's API is now cleared.
+
+Named conditions that keep the override bounded (all required):
+1. **Read-only lane, VPS-resident key** (`TWITTERAPI_IO_KEY`) — never mingled with posting credentials, Buffer channels, or persona-account fingerprints/egress.
+2. **Hard monthly spend cap in config** — the lane stops LOUDLY at the cap (start-of-line `::warning`), never silently degrades.
+3. **Fallback ladder on provider death/degradation:** official X API read at allowlist scale (§4B mitigations, ~$10–30/mo) → wire-only. **Never DIY scraping** — that kill stands untouched.
+4. **Allowlist-only** (`x_follow` register below) — no keyword firehose.
+5. We never claim or imply a direct platform feed; attribution rules in §3 apply unchanged.
+
+#### `x_follow` register v1 (from operator-supplied examples, evaluated for reword+value-add fit)
+
+| Handle | Why / role | Class | Poll tier |
+|---|---|---|---|
+| @DeItaone | Bloomberg-Terminal relay — the benchmark wire; broadest fast macro/political/company flashes | hearsay unless source named | fast (60–90 s) |
+| @FirstSquawk | squawk relay; geopolitical + macro flashes | hearsay | fast |
+| @financialjuice | squawk relay that NAMES upstream sources ("Mehr News citing…") — good corroboration hygiene | hearsay w/ named source | fast |
+| @zerohedge | fast one-liners + the only account in the set carrying sell-side research excerpts (JPM/GS quotes) → feeds `registers.claims` | claims/hearsay | fast |
+| @WHPressPool | pool reports — primary-adjacent record of unstreamed remarks | primary-adjacent | fast |
+| @NewsWire_US · @remarks · @Osint613 | Trump statement flashes + OSINT direct quotes | hearsay | mid (90–120 s) |
+| @BRICSinfo | huge Trump/geopolitical engagement; accuracy varies — ALWAYS corroborate; doubles as an engagement-topic sensor | hearsay (strict) | mid |
+| @rawsalerts | breaking geopolitical/security | hearsay (strict) | mid |
+| @StockMKTNewz · @tradfi | clean company-news flashes | hearsay | mid |
+| @unusual_whales | exec-voice quotes (Dimon class) + market factoids | hearsay | mid |
+| @WatcherGuru · @WhaleInsider | crypto+macro JUST-IN reach leaders; crypto-company data posts | hearsay | mid |
+| @HormuzLetter | long-form sourced geopolitical analysis → **Brief-planner story candidates, NOT the fast wire** | claims | slow (300 s) |
+| @CoinDesk · @Cointelegraph | crypto-media confirmation layer | confirm | slow |
+
+**EXCLUDED (encode the why so it isn't re-added):** **@HalfwayPost — SATIRE** (its "Obama third term" bit is a joke; a naive reworder relays it as news → hard satire/parody blocklist in the relevance filter, and any PCF-labeled account is auto-excluded); @Polymarket/@CoinbasePredict (brand/odds accounts — their news is relayed; a prediction-market "odds stamp" is a possible later content flavor, not a source); @SpencerHakimian/@FluentInFinance (opinion/takes — rewording opinion is low-value and plagiarism-adjacent; at most trend sensors); niche/foreign-language accounts deferred.
+
+**Value-add law for relayed items:** attribute the NAMED upstream when the relay names it (NYT/Bloomberg/Mehr) — never the relay handle as if it were the source; unnamed → ≥2-account/wire corroboration or explicit "reports:" phrasing; attach our tape stamp whenever the tape moved; never relay satire; never lift an account's original *analysis* without attribution. Cost estimate at v1 shape (~18 handles, tiered 60–300 s polls, since-id cursors): **~$20–60/mo**; config default hard cap $75/mo (verify twitterapi.io's per-request floor at build).
 
 ### Tier S — speech desk (P2; the moat nobody at RSS tier has)
 
@@ -106,6 +135,6 @@ Live-event pipeline: WH YouTube/C-SPAN **audio** → `whisper.cpp` `large-v3-tur
 | **B2** | Persona W2 cadence resolver + news accounts/Buffer channels/W1.5 properties → full wire cadence on `mastermind_news` + `news_flash` | operator account creation; W2 build (chartered) |
 | **B3** | P1 VPS-direct publish (<90 s) · Tier-X read lane (operator credential + spend guard) · Tier-S speech desk | B1 proven; operator decisions below |
 
-**Operator decisions:** (1) arm B1 + accept interim flagship wire posts; (2) provision the X read credential for @WHPressPool (+optional allowlist) — ~$10–30/mo metered; (3) optional Newsquawk subscription ($199–399/mo) as squawk corroboration; (4) P1 Buffer-creds-on-VPS approval.
+**Operator decisions:** (1) arm B1 + accept interim flagship wire posts; (2) ~~X read credential~~ **DECIDED 2026-07-27: twitterapi.io override (Tier X above) — operator provisions the twitterapi.io key**; official X API demoted to fallback; (3) optional Newsquawk subscription ($199–399/mo) as squawk corroboration; (4) P1 Buffer-creds-on-VPS approval.
 
 **Added kill/health criteria** (inherit appendix §5): mirror death → wire-only fallback, never scraping; STT-sourced precise numbers never post uncorroborated; if wire-account reach collapses vs. its own baseline (visibility-filter signature), the health monitor throttles the lane and rotates templates before any expansion.
