@@ -1156,6 +1156,246 @@ def test_weekend_levels_floor_survives_the_clarity_gate():
     assert not bad, "weekend floor copy trips the gate:\n" + "\n".join(bad)
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Clarity gate on the copy that NEVER reaches validate_copy
+#
+# Two marketing lanes build their post text inline and ship it as written:
+#
+#   - confluence signal posts — content_studio's copywriter pass matches
+#     `source == "confluence"` and `continue`s before any check runs, so
+#     win_rate_hook's output is the shipped copy verbatim.
+#   - mover / theme_list posts — the pass does call validate_copy on them, but
+#     only records the result on the item (`_copy_violations`) and ships the
+#     copy anyway; the call also sits inside a bare `except` that turns any
+#     failure into "no violations".
+#
+# Neither lane can be broken by the gate, so nothing stops a future edit from
+# reintroducing the 2026-07-26 $AAPL defect class (an unreadable stat, a level
+# named only by pronoun) on the flagship account. These guards apply the gate's
+# content checks to that copy in CI instead.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _clarity_gate_violations(text: str) -> list[str]:
+    """The content checks validate_copy applies, run directly against `text`.
+
+    The same four the PR #3744 template guards walk: headless counts, dangling
+    levels, banned vocab (word-boundary) and banned substrings. Structural
+    checks (length, cashtag rules, whitelist) are deliberately not here — they
+    depend on a build_context() the inline lanes never construct.
+    """
+    import re as _re
+    from engine.marketing.copywriter import (
+        _BANNED_SUBSTRINGS, _BANNED_VOCAB, dangling_levels, headless_counts,
+    )
+    out: list[str] = []
+    for clause in headless_counts(text):
+        out.append(f"headless count {clause!r}")
+    for sentence in dangling_levels(text):
+        out.append(f"level named only by pronoun: {sentence[:60]!r}")
+    low = text.lower()
+    for word in _BANNED_VOCAB:
+        if _re.search(rf"\b{_re.escape(word)}\b", low):
+            out.append(f"banned vocab {word!r}")
+    for phrase in _BANNED_SUBSTRINGS:
+        if phrase in low:
+            out.append(f"banned phrase {phrase!r}")
+    return out
+
+
+def test_clarity_gate_helper_actually_fires():
+    """The helper both guards below depend on must be able to FAIL.
+
+    A checker that silently returns [] would make every assertion under it
+    vacuous while still reading green, so pin one string per check.
+    """
+    assert _clarity_gate_violations("Four up. Nothing else to say.")
+    assert _clarity_gate_violations("It has held for 20 sessions. Watching a close below it.")
+    assert _clarity_gate_violations("VWAP holds and the trend is intact.")      # _BANNED_VOCAB
+    assert _clarity_gate_violations("The signal stack lit up again today.")     # _BANNED_SUBSTRINGS
+    # And it must stay quiet on copy that is actually clean.
+    assert _clarity_gate_violations(
+        "$AAPL has held 307.03 for 20 straight sessions. A close under that changes my mind."
+    ) == []
+
+
+def _confluence_hook_signals() -> list[dict]:
+    """Fired-combo dicts covering every branch of win_rate_hook's f-strings.
+
+    Shape matches fired_combo_signals() output. The forks are the observation
+    span ("over the past N years" / "over the past year" / "across its
+    history", including the unparsable-date fallback), the side (higher /
+    lower) and the optional "N in the last 3 years" clause.
+    """
+    from itertools import product
+    spans = (
+        ("2019-03-04", "2026-07-24"),   # multi-year span
+        ("2025-08-12", "2026-07-24"),   # ~1 year
+        ("2026-07-01", "2026-07-24"),   # under a year → "across its history"
+        ("", ""),                       # unparsable → "across its history"
+    )
+    tickers = ("VST", "BKR", "NVDA", "GE")
+    out: list[dict] = []
+    for i, ((first, last), side, fires3y) in enumerate(
+        product(spans, ("long", "short"), (0, 7))
+    ):
+        out.append({
+            "ticker": tickers[i % len(tickers)],
+            "combo_id": f"L{i:04d}",
+            "combo_name": "MACD Stack + Golden Cross",   # internal only, never in copy
+            "win_rate": 86.5 - i,
+            "edge": 29.6,
+            "n_fires": 107,
+            "fires_last3y": fires3y,
+            "last_fire": last,
+            "first_fire": first,
+            "legs_plain": ["Golden Cross (7/35)", "RSI Stack (7/14/21)"],
+            "leg_families": ["ma_crosses"],
+            "side": side,
+            "n_test": 25,
+            "months_test": 17,
+            "_score": 0.5,
+        })
+    return out
+
+
+def test_confluence_hook_copy_survives_the_clarity_gate():
+    """The confluence lane ships win_rate_hook's copy with NO gate in front of it.
+
+    content_studio appends the ContentItem straight to the queue and the
+    copywriter pass skips it by source, so whatever this function returns is
+    what posts. Every branch of its f-strings is rendered here and checked, so
+    an unreadable edit fails in CI rather than on the flagship account.
+    """
+    from engine.marketing.confluence_source import win_rate_hook
+
+    checked, bad = 0, []
+    spans_seen, directions_seen = set(), set()
+    for sig in _confluence_hook_signals():
+        headline, body = win_rate_hook(sig)
+        assert headline and body, f"hook returned empty copy for {sig['combo_id']}"
+        checked += 1
+        for v in _clarity_gate_violations(f"{headline} {body}"):
+            bad.append(f"{v} in {sig['combo_id']} ({sig['side']}): {headline!r} {body!r}")
+        for phrase in ("over the past", "across its history"):
+            if phrase in body:
+                spans_seen.add(phrase)
+        for word in ("higher", "lower"):
+            if word in body:
+                directions_seen.add(word)
+
+    assert checked >= 16, f"only {checked} hooks rendered — guard is vacuous"
+    assert spans_seen == {"over the past", "across its history"}, (
+        f"span branches not all exercised: {spans_seen}"
+    )
+    assert directions_seen == {"higher", "lower"}, (
+        f"both sides must be exercised, saw {directions_seen}"
+    )
+    assert not bad, "unvalidated confluence copy trips the gate:\n" + "\n".join(bad)
+
+
+# Two heatmap tapes. Between them the mover branch renders both of its stance
+# forks (down = flush-watch, up = respect) over all three mover_facts verbs that
+# survive the |pct| >= 3 eligibility floor (crashed <= -5, fell, surged), and the
+# theme branch renders both tones with a question from each pool.
+_MOVER_TAPES: tuple[tuple[list, list], ...] = (
+    (
+        [("NVDA", -14.2), ("AVGO", 12.6), ("MU", -3.4), ("AMD", 4.1)],
+        [("Artificial Intelligence", {"AIA": -6.2, "AIB": -5.1, "AIC": -4.4, "AID": -3.9, "AIE": -1.2}),
+         ("Quantum Computing", {"QCA": 7.8, "QCB": 6.4, "QCC": 5.1, "QCD": 4.0, "QCE": 2.2})],
+    ),
+    (
+        [("XOM", -4.1), ("SMCI", 3.6), ("KO", -3.1)],
+        [("Nuclear Renaissance", {"NRA": 4.4, "NRB": 3.9, "NRC": 3.1, "NRD": 2.8}),
+         ("Regional Banks", {"RBA": -3.3, "RBB": -2.9, "RBC": -2.4, "RBD": -1.8})],
+    ),
+)
+
+
+def _movers_desk_items(monkeypatch, tmp_path, tiles, themes) -> list[dict]:
+    """Run content_plan over one heatmap tape and return its movers_desk items.
+
+    The real content_plan is driven end-to-end so the assertions land on the
+    f-strings content_studio actually ships, not on a copy of them. The
+    watchlist card is stubbed: render_watchlist_card resolves member logos over
+    the network, which a test must never do (~0.7s per member, and flaky).
+    """
+    import json
+    import engine.marketing.chart_render as cr
+
+    monkeypatch.setattr(cr, "render_watchlist_card", lambda *a, **k: "<svg></svg>")
+
+    md = tmp_path / "site" / "marketdata"
+    md.mkdir(parents=True, exist_ok=True)
+    (md / "sp500_heatmap.json").write_text(json.dumps({
+        "asof": "2026-07-24",
+        "tiles": [{"t": t, "name": t, "sector": "Information Technology",
+                   "perf": {"1D": pct}} for t, pct in tiles],
+    }), encoding="utf-8")
+    (md / "themes_heatmap.json").write_text(json.dumps({
+        "tiles": [{"t": name[:3].upper(), "name": name, "sector": name,
+                   "perf": {"1D": 0.0},
+                   "members": [{"t": t, "perf": {"1D": p}} for t, p in members.items()]}
+                  for name, members in themes],
+    }), encoding="utf-8")
+
+    from engine.marketing.content_studio import content_plan
+    cfg = {"desk_network": {"stage": "A", "accounts": [
+        {"id": "flagship", "kind": "branded", "beat": "What changed",
+         "voice": "authoritative desk"},
+    ]}}
+    plan = content_plan(cfg, [], closes_loader=None, root=tmp_path)
+    return [it for row in plan["accounts"] for it in row["queue"]
+            if isinstance(it, dict) and it.get("provenance") == "movers_desk"]
+
+
+def test_mover_and_theme_copy_survives_the_clarity_gate(monkeypatch, tmp_path):
+    """The mover/theme lane's copy is recorded against the gate, never blocked by it.
+
+    content_studio builds these headlines and bodies inline from f-strings plus
+    movers_source facts, then keeps them whatever validate_copy says. Driving
+    content_plan over two heatmap tapes renders the real strings for both
+    stance forks and both tones, so an unreadable edit to that block fails
+    here.
+    """
+    items: list[dict] = []
+    for i, (tiles, themes) in enumerate(_MOVER_TAPES):
+        items += _movers_desk_items(monkeypatch, tmp_path / f"tape{i}", tiles, themes)
+
+    bad = []
+    for it in items:
+        text = f"{it.get('headline', '')} {it.get('body', '')}"
+        for v in _clarity_gate_violations(text):
+            bad.append(f"{v} in {it.get('slot', '?')}: {text!r}")
+
+    movers = [it for it in items if it.get("type") == "mover"]
+    themes_out = [it for it in items if it.get("type") == "theme_list"]
+    assert len(items) >= 8, f"only {len(items)} movers_desk posts built — guard is vacuous"
+    assert len(movers) >= 4, f"only {len(movers)} mover posts built — guard is vacuous"
+    assert len(themes_out) >= 4, f"only {len(themes_out)} theme posts built — guard is vacuous"
+    # Both stance forks of the mover body, and both tones of the theme headline.
+    assert {(it["_mover_data"]["pct"] < 0) for it in movers} == {True, False}, (
+        "both mover stance forks (down/up) must be exercised"
+    )
+    assert {it["_theme_data"]["direction"] for it in themes_out} == {"down", "up"}, (
+        "both theme directions must be exercised"
+    )
+    assert not bad, "unvalidated mover/theme copy trips the gate:\n" + "\n".join(bad)
+
+
+def test_every_movers_desk_question_survives_the_clarity_gate():
+    """Both reply-bait pools land verbatim in theme bodies — walk all of them.
+
+    A single content_plan run only reaches the questions its theme names hash
+    to, so the pools are walked directly to cover the ones the tapes miss.
+    """
+    from engine.marketing.movers_source import _QUESTION_DOWN, _QUESTION_UP
+
+    pools = list(_QUESTION_DOWN) + list(_QUESTION_UP)
+    bad = [f"{v} in {q!r}" for q in pools for v in _clarity_gate_violations(q)]
+    assert len(pools) >= 8, f"only {len(pools)} questions walked — guard is vacuous"
+    assert not bad, "movers-desk reply-bait trips the gate:\n" + "\n".join(bad)
+
+
 def test_through_is_not_treated_as_a_level_preposition():
     """"walk you through this" and "followed through this time" are phrasal, not
     level references. Both were false positives in content_studio's template

@@ -22,6 +22,8 @@ from pathlib import Path
 
 import pytest
 
+from engine.marketing.confluence_source import _FORBIDDEN_INDICATOR_WORDS
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -37,10 +39,13 @@ def _worktree_root() -> Path:
 
 ROOT = _worktree_root()
 
-# Forbidden indicator words — must not appear in public body copy
+# Forbidden indicator words — must not appear in public body copy.
+# Compiled FROM the engine constant, not copied from it: _FORBIDDEN_INDICATOR_WORDS
+# has no runtime reader, so this file is its only enforcement. A hand-maintained
+# duplicate of the list here would let someone add a word to the engine module,
+# believe it was covered, and ship the word anyway.
 _FORBIDDEN = re.compile(
-    r"\b(macd|rsi|stochastic|ema|sma|bollinger|atr|adx|dmi|obv|cmf|vwap|"
-    r"ichimoku|keltner|donchian|connors|ttm|squeeze|choppiness|bbwp)\b",
+    r"\b(" + "|".join(sorted(_FORBIDDEN_INDICATOR_WORDS)) + r")\b",
     re.IGNORECASE,
 )
 
