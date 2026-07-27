@@ -2,6 +2,7 @@
 
 **Prepared:** 2026-07-25 · **Author:** Fable (main loop) · **Status:** CHARTERED
 **Rev 3 (operator ruling, 2026-07-25):** the rev-2 disclosure regime (bio network lines, in-post FTC tokens, a DNR kill row, a hard handle ceiling, a "no multi-domain" answer) is **struck**. It was over-cautious, it would have cost the accounts the independence that makes them work, and it mis-stated the FTC position for accounts that carry no paid/sponsored relationship. Operating posture below is the operator's, with the engineering effort redirected from disclosure theater to the thing that actually prevents chain-bans: **account isolation and behavioral hygiene**.
+**Rev 4 (operator directive, 2026-07-26):** the named-publication estate is chartered **now** rather than earned later: **Mastermind News** on `mastermindx.ai` (news publication; anchor X account posting breaking headlines as 1–2 sentence wire posts) and **Mastermind Research** on `blog.mastermind-x.com` (state-of-the-art research-paper analysis from the vault; its own anchor X account). One publication per brand, one primary X account per publication — the operator's Zerohedge observation, now concrete (Media §1b). Breaking-news X accounts are chartered as the network's **growth spearhead** (operator: the highest-ROI way to grow a following; Persona §1b). Engineering sequencing is honest: Media W1 ships the press engine on `/blog/` unchanged, **Media W1.5** stands the two properties up and cuts over, and the **PRESS-FEEDS** lane builds the live-feed spine by extending docket D05 (wire-relay posture; its scrape-lane kills stand) — the existing breaking-dispatch rail (#3478) has posting mechanics but a dead data source, so the feed provider is a real build, not a config flip.
 
 **Operator brief:** expand organic reach beyond the 6 official desk accounts toward a large multi-persona X footprint + a fully automated blog/publication network, powered by a new timeline/"streaming consciousness" context engine over the research vault + Neural Web.
 
@@ -29,7 +30,7 @@ Everything else is open: pseudonymous identities, character voices (corporate pr
 
 **Where a real residual risk sits, and what we do about it instead of disclosure:** platform enforcement clusters on *behavioral and infrastructural correlation* — shared IPs/fingerprints, same-minute posting, near-identical text, bulk registration in one window, identical follow patterns. That is an engineering problem, and §2 is the answer to it. Disclosure lines would not have reduced that risk by a single percent.
 
-**Verified Organizations affiliation badges:** used only for the 6 Mastermind desk accounts and real employees (operator ruling). The independent accounts never carry an affiliation badge.
+**Verified Organizations affiliation badges:** used only for the official Mastermind-branded accounts (the 6 desk accounts + the two rev-4 publication anchors, Mastermind News and Mastermind Research) and real employees (operator ruling). The pseudonymous network never carries one. The independent accounts never carry an affiliation badge.
 
 ## 2. Ban-risk engineering (AM-R2, rev 3 — replaces the old scale ceiling)
 
@@ -85,7 +86,10 @@ Chronicle W0 (spine + packs + projection + brain lobe)     ← engine-only, no L
    ├─→ Persona W1 (spec + codexes + admin roster)          ← no new accounts yet
    │      └─→ Persona W2 (lanes, memory, isolation+health substrate, dedup radar)
    │             └─→ Persona W3 trial cohort (operator provisions isolated environments)
-   └─→ Media W1 (press engine + validators + 2 desks on /blog/) → Media W2 (cadence + measurement)
+   └─→ Media W1 (press engine + validators + 2 desks on /blog/)
+          ├─→ Media W1.5 (named properties: mastermindx.ai news + blog.mastermind-x.com research; cutover)
+          ├─→ PRESS-FEEDS (curated source register + live-feed poller, extends D05 — feeds Mastermind News wire)
+          └─→ Media W2 (cadence + measurement)
 Chronicle W1 (narrative compactor: off-render staging → nightly promote; budget-capped)
 Chronicle W2 (pack-injection helper — SINGLE OWNER of prompt-assembly code)
 Chronicle W3 (user-facing timeline page — designer lane)    Media W3 (Editorial desk)
@@ -108,3 +112,4 @@ Registered in `research/marketing_dockets/INDEX.md` as **D13 Persona Network** (
 - MarketDesk extractor licensing terms (personal-use vs subscriber redistribution) remain open with the operator; the Research Desk writes commentary + our own analysis rather than republishing source material, which keeps it inside normal press practice regardless.
 - `/research/<slug>.html` vault landing pages were shipped dark by #3392 and were **fixed and lit in #3487** (2026-07-25) — the Research Desk funnel target is live.
 - Chronicle narrative compaction is the one lane where LLM prose touches many downstream surfaces; its validator (references-must-exist, de-escalate-only, no originated numbers, no upward state transitions) is a §0 gate in that masterplan.
+- `mastermindx.ai` currently ships as a parked redirect to the canonical site (#3772, open at rev 4; Spaceship DNS) — correct while the News property builds. The W1.5 cutover **replaces** that Caddy redirect block with the publication vhost; `blog.mastermind-x.com` additionally needs a new Spaceship DNS record + Caddy vhost. DNS changes and X-account creation are operator-owned steps, recorded as a provisioning checklist in Media W1.5 — the engines never block on them.
