@@ -66,6 +66,19 @@ def test_landing_stage_labels_survive_browser_minimum_font_scaling():
         assert 'class="psc-stages" aria-label="Setup stage: Ready"' in html
 
 
+def test_landing_prophet_belt_is_faster_only_on_mobile():
+    """Mobile gets a shorter drift cycle without changing the desktop cadence."""
+    root = Path(__file__).resolve().parent.parent
+    for rel in ("templates/landing.css", "site/landing.css"):
+        css = (root / rel).read_text(encoding="utf-8")
+        assert ".ph-track.run{animation:phDrift 95s linear infinite}" in css
+        assert (
+            "@media (max-width:640px){\n"
+            "  .psec .ph-head{grid-template-columns:1fr;gap:12px}\n"
+            "  .ph-track.run{animation-duration:60s}\n"
+        ) in css
+
+
 def _row(**over) -> dict:
     """A minimal showable us_standouts.buy row; override freely."""
     base = {
