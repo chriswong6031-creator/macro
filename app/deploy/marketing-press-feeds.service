@@ -1,0 +1,35 @@
+[Unit]
+# PRESS-FEEDS B1 (D05 Addendum 2) — the Trump/markets wire ingestion spine.
+# VPS-resident poll daemon: wire RSS + Truth-mirror RSS + twitterapi.io x_relay
+# -> relevance -> corroboration -> summarize-with-citation -> immediate outbox.
+#
+# DARK BY DEFAULT. Ships disabled. Arming is an operator step (do NOT enable in
+# this build): set MARKETING_FASTLANE_ENABLED=1 (drive the loop) and
+# MARKETING_PUBLISH_ENABLED=1 (allow outbox emission) in /etc/macro-live.env,
+# then `systemctl enable --now marketing-press-feeds`. With either unset the
+# daemon is a clean no-op. See docs/marketing_publisher_runbook.md.
+Description=Mastermind PRESS-FEEDS wire ingestion daemon (Trump/markets spine)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/macro
+# Kill-switches + optional TWITTERAPI_IO_KEY live in this env file (unset ships dark).
+EnvironmentFile=-/etc/macro-live.env
+# --interval 75 keeps the mirror hot-poll inside its 60-90 s window; per-source
+# politeness floors + the twitterapi.io per-tier intervals throttle each provider.
+ExecStart=/opt/macro/.venv/bin/python -m scripts.marketing_fastlane_daemon --lane press --interval 75
+Restart=on-failure
+RestartSec=30
+Nice=5
+CPUWeight=40
+CPUQuota=120%
+MemoryHigh=768M
+MemoryMax=1G
+IOWeight=40
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

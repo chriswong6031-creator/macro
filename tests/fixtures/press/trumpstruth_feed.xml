@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:truth="https://truthsocial.com/ns">
+    <channel>
+        <atom:link href="https://trumpstruth.org/feed" rel="self" type="application/rss+xml" />
+        <title><![CDATA[Trump's Truth - Latest Posts]]></title>
+        <link><![CDATA[https://trumpstruth.org/feed]]></link>
+        <description><![CDATA[Archive of Donald Trump's TRUTH Social posts]]></description>
+        <language>en-US</language>
+        <pubDate>Mon, 27 Jul 2026 20:24:29 +0000</pubDate>
+
+        <item>
+            <title><![CDATA[We are placing a 50% tariff on all steel imports effective immediately.]]></title>
+            <link>https://trumpstruth.org/statuses/40320</link>
+            <description><![CDATA[<p>We are placing a 50% tariff on all steel imports effective immediately. This will protect American workers!</p>]]></description>
+            <author><![CDATA[]]></author>
+            <guid>https://trumpstruth.org/statuses/40320</guid>
+            <pubDate>Mon, 27 Jul 2026 20:24:29 +0000</pubDate>
+            <truth:originalUrl>https://truthsocial.com/@realDonaldTrump/116993810062084166</truth:originalUrl>
+            <truth:originalId>116993810062084166</truth:originalId>
+        </item>
+
+        <item>
+            <title><![CDATA[[No Title] - Post from July 27, 2026]]></title>
+            <link>https://trumpstruth.org/statuses/40311</link>
+            <description><![CDATA[<p><span class="quote-inline"><br/>RT: https://truthsocial.com/users/realDonaldTrump/statuses/116993808256006694</span></p>]]></description>
+            <author><![CDATA[]]></author>
+            <guid>https://trumpstruth.org/statuses/40311</guid>
+            <pubDate>Mon, 27 Jul 2026 20:24:22 +0000</pubDate>
+            <truth:originalUrl>https://truthsocial.com/@realDonaldTrump/116993809640438974</truth:originalUrl>
+            <truth:originalId>116993809640438974</truth:originalId>
+        </item>
+
+        <item>
+            <title><![CDATA[The Fed must cut interest rates now. Inflation is defeated.]]></title>
+            <link>https://trumpstruth.org/statuses/40315</link>
+            <description><![CDATA[<p>The Fed must cut interest rates now. Inflation is defeated.</p>]]></description>
+            <author><![CDATA[]]></author>
+            <guid>https://trumpstruth.org/statuses/40315</guid>
+            <pubDate>Mon, 27 Jul 2026 20:23:23 +0000</pubDate>
+            <truth:originalUrl>https://truthsocial.com/@realDonaldTrump/116993805746480019</truth:originalUrl>
+            <truth:originalId>116993805746480019</truth:originalId>
+        </item>
+    </channel>
+</rss>

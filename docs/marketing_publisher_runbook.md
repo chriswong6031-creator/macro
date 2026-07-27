@@ -308,6 +308,100 @@ via the button above.
 
 ---
 
+## 14. PRESS-FEEDS — Trump/markets wire ingestion spine (D05 Addendum 2, B1)
+
+The **press lane** is the automated feed side of the "post now" rail: it detects
+market-moving statements (Trump Truth-Social posts, wire headlines, allowlisted X
+relays), scores them deterministically, gates them on corroboration, summarizes
+them with citation, and emits `kind="breaking"` outbox items with
+`scheduled_at: "immediate"` — which section 13's dispatch then sends. It is built
+**dark**; nothing arms without the operator.
+
+**Sources** (`config/press_sources.yml`):
+- **wire_rss** — the six Fed/BLS/BEA/WH/CNBC/MarketWatch feeds, canonically
+  configured in `config/marketing.yml` `breaking:` (`breaking_feed.poll_all`).
+- **truth_mirrors** — `trumpstruth.org/feed` RSS (hot poll ~75 s, conditional GET,
+  honest UA) as the primary Truth-Social detector; the CNN archive JSON
+  (`ix.cnn.io/.../truth_archive.json`, 19 MB) as **backfill/corroboration only**
+  (6 h cadence, conditional GET mandatory — never the hot loop).
+- **x_follow** — the twitterapi.io read relay over an allowlist of wire/OSINT
+  handles, tiered fast/mid/slow. **Requires `TWITTERAPI_IO_KEY`**; with the key
+  unset the lane skips cleanly (no account is created for the build). Per-request
+  accounting enforces the monthly `spend.twitterapiio_monthly_cap_usd` cap (default
+  **$75**); at the cap the lane STOPS and emits a `::warning` in the Actions log.
+- **alpaca** — WS wire slot, `enabled: false` until a key exists (build gate).
+
+**Corroboration law** (`engine/marketing/press_corroboration.py`, addendum §3):
+- **direct-quote** (Trump's own post, mirror-verified via the status URL) — a single
+  primary source instant-publishes, attributed "on Truth Social".
+- **hearsay** ("Trump told reporters…", bank-call/geopolitical relays) — needs **≥2
+  independent sources within a window** to instant-publish, else it is downgraded to
+  attributed "…reporting:" phrasing.
+- A **single-wire uncorroborated political/geopolitical** claim NEVER
+  instant-publishes — it is routed to the **digest** gate (see below).
+- Satire/parody accounts (seed: **HalfwayPost**) are hard-blocked at ingestion.
+
+> **Digest is logged-only in B1 (no sink yet).** A claim gated to `digest` is
+> written to the tick log (`[press] -> digest (logged-only, no sink — m4) …`) and
+> nothing more. There is **no next-morning digest surface** — no digest ledger, no
+> roll-up post. A real digest sink is a **chartered follow-on**, not part of this
+> spine. Read "falls to the digest" as "does NOT instant-publish", not as "queued
+> for a digest that exists".
+
+**Flagship interim lane.** Only the top **`wire.flagship_top_k_per_day`** (default 3)
+highest-salience items/day, above `wire.flagship_salience_floor` (default 70), may
+emit for the flagship account. The counter is persisted in the daemon's LOCAL state,
+never the repo.
+
+**Kill-switches (BOTH gate press emission).**
+- `MARKETING_FASTLANE_ENABLED=1` — drives the daemon loop at all. Unset → the daemon
+  prints a note and exits 0 (no work).
+- `MARKETING_PUBLISH_ENABLED=1` — allows the press lane to WRITE outbox items. Unset
+  → the pipeline still runs (scores, corroborates, would-summarize) but emits nothing:
+  a clean no-op tick.
+
+**Dry-run (no spend, no state writes, no billed reads — safe with switches off):**
+```
+python -m scripts.marketing_fastlane_daemon --lane press --once --dry-run
+```
+Prints the full would-emit pipeline (emitted/skipped/digest/blocked counts + a line
+per would-emit item with salience + corroboration gate). `--dry-run` bypasses the
+hard kill-switch exit precisely so the operator can inspect the pipeline while dark.
+
+A dry-run is **non-consuming but not fully offline** (M2 clarification). Precisely:
+- **No billed reads.** The twitterapi.io lane is billed per request and its spend
+  is not persisted in a dry-run, so a dry-run **never touches** it
+  (`poll_all(offline=True)` returns `[]` for it) — repeated dry-runs cost $0.
+- **Free feeds still poll.** The wire RSS lane and the trumpstruth/CNN mirror feeds
+  are free (no per-request charge); a dry-run may read them to preview the pipeline.
+- **No state writes.** Provider cursors, spend accounting, the flagship counter,
+  the seen-ledger, and the wire lane's own ledger are all left untouched (the wire
+  ledger is snapshotted and restored), so a dry-run never dedupes items away from a
+  later live run.
+- **Disarmed parity.** With `MARKETING_FASTLANE_ENABLED` unset, a `--dry-run` of the
+  **earnings** lane likewise does NOT reach `earnings_feed.fetch_events` (m1) — a
+  disarmed inspection stays on offline-safe paths only.
+
+**Local-only state** lives under `data/marketing/press/` (gitignored): provider
+cursors, conditional-GET ETags, twitterapi.io spend accounting, the flagship
+counter, the corroboration window, and the seen-ledger. The poller makes **zero**
+git/repo writes (D05 W0 law); the nightly is the sole advancer of any forward ledger.
+
+**Arming (operator, on the VPS — NOT part of the build):**
+1. Add to `/etc/macro-live.env`: `MARKETING_FASTLANE_ENABLED=1`,
+   `MARKETING_PUBLISH_ENABLED=1`, and (optionally) `TWITTERAPI_IO_KEY=…`.
+2. Install the unit: `cp app/deploy/marketing-press-feeds.service /etc/systemd/system/`
+   then `systemctl daemon-reload && systemctl enable --now marketing-press-feeds`.
+3. Watch: `journalctl -u marketing-press-feeds -f` — one `[press] tick …` line per
+   tick; emitted items appear in the outbox and ride section 13's dispatch.
+4. Disarm: unset either env var (or `systemctl disable --now marketing-press-feeds`).
+
+**Twitterapi.io spend cap.** A `::warning title=twitterapiio-spend-cap::…` line in the
+log means the monthly cap was hit and the X relay stopped for the month; the mirror
+and wire lanes keep running. Raise `spend.twitterapiio_monthly_cap_usd` to lift it.
+
+---
+
 ### Where to look when something is off
 
 - **Admin → Marketing → Publisher** — arm state, status counts, recent posts +
