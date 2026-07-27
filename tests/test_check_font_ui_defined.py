@@ -442,28 +442,67 @@ def test_landing_surfaces_request_no_google_fonts(name):
     not (_REPO_ROOT / "templates" / "onboard.css").is_file(),
     reason="repo templates/ not present",
 )
-def test_display_face_is_self_hosted_and_variable():
-    """onboard.css must declare Outfit against a real file, keeping wght variable.
+def test_display_face_names_only_fonts_we_actually_ship():
+    """Every WEBFONT named in --display must have an @font-face on a real file.
 
-    Five rules ask for the interpolated weight 650 (.stg on the landing plus
-    .obm-cmp-cell / .obm-step-lbl / .obm-mini-lbl span / .obm-sum-list li b in
-    the sheet). A static instance satisfies none of them and the failure is
-    silent — they quietly flatten to the nearest shipped weight.
+    Generalized from an Outfit-specific check when the display face became the
+    system stack (-apple-system → San Francisco, with self-hosted Inter as the
+    cross-platform stand-in; operator 2026-07-26: "just use a regular bold font
+    like poppins or san francisco bold"). The old guard asserted the
+    IMPLEMENTATION (an @font-face for Outfit, wght declared 400 900) rather than
+    the invariant, so it failed the moment the design legitimately changed.
+
+    The invariant it was really protecting: naming a family the site does not
+    ship is SILENT. There is no error and no console warning — the browser just
+    walks to the next entry, which is how the CDN-Archivo regression hid for
+    months. System keywords are exempt because the platform provides them; a
+    quoted family name is a promise that we serve the bytes.
     """
     css = (_REPO_ROOT / "templates" / "onboard.css").read_text(encoding="utf-8")
-    face = re.search(r"@font-face\{[^}]*font-family:\s*'?Outfit'?[^}]*\}", css)
-    assert face, "onboard.css no longer declares an @font-face for Outfit"
-    block = face.group(0)
+    decl = re.search(r"--display:\s*([^;]+);", css)
+    assert decl, "onboard.css no longer declares a --display token"
+    stack = decl.group(1)
 
-    src = re.search(r"""url\(["']?([^"')]+)["']?\)""", block)
-    assert src, f"Outfit @font-face has no url(): {block[:160]}"
-    assert (_REPO_ROOT / "templates" / src.group(1)).is_file(), (
-        f"Outfit @font-face points at templates/{src.group(1)}, which is missing"
+    # Families the PLATFORM provides — exempt because we are not the ones
+    # serving the bytes. Quoting is not the discriminator: 'Segoe UI' and
+    # 'SF Pro Display' are quoted only because they contain spaces, and
+    # SF Pro cannot be self-hosted at all (Apple licence). Everything else
+    # named in the stack is a promise that we ship it.
+    system_families = {
+        "sf pro display", "sf pro text", "sf pro", "segoe ui", "helvetica neue",
+        "roboto", "system-ui", "-apple-system", "blinkmacsystemfont",
+        "sans-serif", "serif", "ui-sans-serif", "ui-serif", "arial",
+        "pingfang sc", "hiragino sans gb", "microsoft yahei",
+    }
+    entries = [e.strip().strip("'\"") for e in stack.split(",")]
+    promised = [e for e in entries if e and e.lower() not in system_families]
+    assert promised, (
+        f"--display names no self-hosted family at all: {stack.strip()} — "
+        f"non-Apple platforms would fall through to whatever the OS provides"
     )
-    # the weight axis must be declared as a RANGE, not a single value
-    assert re.search(r"font-weight:\s*400\s+900", block), (
-        "Outfit @font-face lost its variable font-weight range (400 900) — "
-        "the interpolated 650 has no instance to select without it"
+
+    faces = "\n".join(
+        (_REPO_ROOT / "templates" / n).read_text(encoding="utf-8")
+        for n in ("onboard.css", "landing.css")
+    )
+    for family in promised:
+        block = re.search(
+            r"@font-face\{[^}]*font-family:\s*['\"]?" + re.escape(family) + r"['\"]?[^}]*\}",
+            faces,
+        )
+        assert block, (
+            f"--display promises '{family}' but no @font-face declares it in "
+            f"onboard.css or landing.css — it would silently fall through"
+        )
+        src = re.search(r"""url\(["']?([^"')]+)["']?\)""", block.group(0))
+        assert src, f"'{family}' @font-face has no url(): {block.group(0)[:160]}"
+        assert (_REPO_ROOT / "templates" / src.group(1)).is_file(), (
+            f"'{family}' @font-face points at templates/{src.group(1)}, missing"
+        )
+
+    # the stack must end in a generic so there is always something to render
+    assert re.search(r"(sans-serif|serif|system-ui)\s*$", stack.strip()), (
+        f"--display has no generic fallback at the end: {stack.strip()}"
     )
 
 
@@ -476,10 +515,11 @@ def test_no_rule_asks_the_display_face_for_an_axis_it_lacks(name):
     """No live font-stretch / opsz on the landing path.
 
     The retired Archivo carried a `wdth` axis and Newsreader an `opsz` axis, so
-    the CSS drove both. Outfit has NEITHER. A leftover `font-stretch:125%` or
-    `font-variation-settings:'opsz' N` does not error — the declaration is just
-    ignored — so the only symptom is type that silently renders at the wrong
-    width, which is exactly how the CDN-font regression hid for months.
+    the CSS drove both. Neither Outfit nor the system stack that replaced it has
+    EITHER. A leftover `font-stretch:125%` or `font-variation-settings:'opsz' N`
+    does not error — the declaration is just ignored — so the only symptom is
+    type that silently renders at the wrong width, which is exactly how the
+    CDN-font regression hid for months.
 
     landing.css is in the list because that is where the display rules actually
     live since #3676 lifted the landing's inline CSS out of index.html — a
@@ -488,47 +528,61 @@ def test_no_rule_asks_the_display_face_for_an_axis_it_lacks(name):
     text = strip_comments((_REPO_ROOT / "templates" / name).read_text(encoding="utf-8"))
     stray = re.findall(r"font-stretch\s*:[^;}]+|font-variation-settings\s*:[^;}]+", text)
     assert stray == [], (
-        f"templates/{name} still drives a variation axis Outfit does not have; "
-        f"Outfit is weight-only, so these declarations are dead: {stray}"
+        f"templates/{name} still drives a variation axis the display face lacks; "
+        f"the display face is weight-only, so these are dead: {stray}"
     )
+
+
+#: rules whose digits retick or column up, and so must not use proportional
+#: figures. (selector, stylesheet) — kept explicit so adding a figure rule
+#: without its tabular guarantee shows up as a failing name, not a silent pass.
+_MUST_BE_TABULAR = (
+    (".gz-num b", "landing.css"),          # #gz-score counts up on load
+    (".fi-sum .big", "landing.css"),
+    (".dxy .n", "landing.css"),
+    (".price", "landing.css"),
+    (".price .was", "landing.css"),
+    (".obm-plan-price", "onboard.css"),
+    (".obm-plan-price .obm-was", "onboard.css"),
+    (".obm-order-price", "onboard.css"),
+)
 
 
 @pytest.mark.skipif(
-    not (_REPO_ROOT / "site" / "fonts" / "Outfit-latin.woff2").is_file(),
-    reason="repo site/ not present",
+    not (_REPO_ROOT / "templates" / "landing.css").is_file(),
+    reason="repo templates/ not present",
 )
-def test_display_face_figures_are_tabular_by_default():
-    """The shipped subset must be the one whose digits share a single advance.
+@pytest.mark.parametrize("selector,sheet", _MUST_BE_TABULAR)
+def test_figure_rules_ask_for_tabular_numerals(selector, sheet):
+    """Every reticking / columned figure must request tabular-nums in CSS.
 
-    Outfit's stock figures are PROPORTIONAL — 13.45px of digit spread at
-    48px/800. The face it replaced (Archivo) was tabular by default, so the live
-    gauge score (#gz-score, which counts up on load) and every price column on
-    the landing depend on fixed advances that NO CSS rule asks for. The property
-    is baked into the file instead: build_outfit_subset.py remaps the digit
-    codepoints onto Outfit's own `tnum` glyphs.
+    This guard used to pin the bytes of the Outfit subset, because that build
+    remapped the digit codepoints onto Outfit's own `tnum` glyphs and so made
+    the property a FILE property that no CSS rule asked for. The display face is
+    now the system stack (San Francisco / self-hosted Inter), which carries
+    proper tabular figures but only ON REQUEST — so the guarantee moved back
+    into CSS and this guard has to follow it there.
 
-    Pinning the bytes is the only zero-dependency way to guard that — the CI
-    packs install minimal dep sets, so a fontTools-based check here would be a
-    permanent silent skip rather than a test. The build script is reproducible
-    (it pins SOURCE_DATE_EPOCH and zeroes head.created/modified, without which
-    every run produced different bytes), so this digest is stable across
-    rebuilds of the same input and only moves when the font really changes. If
-    this fails because the font was legitimately rebuilt, re-run the script (it
-    asserts the ten advances are equal) and update the digest in the same commit.
+    Note the failure mode that made rewriting mandatory rather than optional:
+    the old test was `skipif` on the existence of site/fonts/Outfit-latin.woff2.
+    Deleting the font would have turned it into a permanent silent SKIP — green
+    CI over a live gauge score visibly jittering on every tick.
+
+    Proportional digits are not a crash. #gz-score just twitches horizontally as
+    it counts, and price columns stop aligning down the pricing table.
     """
-    expected = "1cf8df7d11d7fcfb97779d2ea3f2aea3a54ee7e2ca82da50e88ab5ac6745593d"
-    shipped = _REPO_ROOT / "site" / "fonts" / "Outfit-latin.woff2"
-    mirror = _REPO_ROOT / "templates" / "fonts" / "Outfit-latin.woff2"
-    digest = hashlib.sha256(shipped.read_bytes()).hexdigest()
-    assert digest == expected, (
-        f"site/fonts/Outfit-latin.woff2 hashes to {digest[:16]}…, expected "
-        f"{expected[:16]}… — if this was a deliberate rebuild, run "
-        f"`python3 mockups/refs/landing-modern-sans/build_outfit_subset.py` "
-        f"(it asserts the digits stay tabular) and update this digest"
-    )
-    assert mirror.read_bytes() == shipped.read_bytes(), (
-        "templates/fonts/Outfit-latin.woff2 and site/fonts/Outfit-latin.woff2 "
-        "differ — site/fonts is what ships; commit both copies identical"
+    text = strip_comments((_REPO_ROOT / "templates" / sheet).read_text(encoding="utf-8"))
+    # every rule whose selector list contains this exact selector
+    blocks = [
+        m.group(0)
+        for m in re.finditer(r"(?m)^([^{}@\n][^{}]*)\{([^}]*)\}", text)
+        if selector in [s.strip() for s in m.group(1).split(",")]
+    ]
+    assert blocks, f"templates/{sheet} no longer has a rule for `{selector}`"
+    assert any("tabular-nums" in b for b in blocks), (
+        f"`{selector}` in templates/{sheet} does not request tabular-nums. The "
+        f"display face has proportional figures by default, so this number will "
+        f"jitter as it reticks / stop aligning in its column."
     )
 
 

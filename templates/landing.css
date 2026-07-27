@@ -50,24 +50,35 @@
   --sh-plate:0 24px 60px -20px rgba(18,26,45,.34),0 6px 16px -6px rgba(18,26,45,.14);
   --r-sm:6px; --r:12px; --r-lg:16px;
   --maxw:1280px; --gutter:clamp(20px,4.5vw,60px);
-  /* THE DISPLAY FACE — one voice for the whole page. Outfit: a geometric sans,
-     modern and heavy at 800, set on every headline, every piece of chrome, and
-     every figure. It replaces a two-face system that had gone incoherent: words
-     in Archivo Expanded (a poster grotesque so wide and heavy its numerals read
-     short and blocky) and figures in Newsreader (an editorial serif, which put
-     magazine numbers on a product page). Outfit sets `96,412` 14% narrower than
-     Archivo Expanded at the same height, so it fixes the squashed figures WITHOUT
-     borrowing a second voice to do it.
+  /* THE DISPLAY FACE — one voice for the whole page: the system UI face, with
+     self-hosted Inter as the cross-platform stand-in. Set on every headline, every
+     piece of chrome, and every figure.
 
-     The @font-face lives in onboard.css, which index.html links alongside this
-     sheet — that sheet is also lazy-injected onto macro pages carrying no landing
-     CSS, so it must be the one to carry the face. The tokens are declared in BOTH
-     files so neither depends on the other's cascade. Small inline data (tickers,
-     %, price cells) shares the face: Outfit's figures are TABULAR BY DEFAULT
-     (baked into the subset — see the note in onboard.css), so columns align and
-     the live score cannot jitter.
-     Specimen, measurements + regeneration: mockups/refs/landing-modern-sans/. */
-  --display:'Outfit',system-ui,-apple-system,'Segoe UI',sans-serif;
+     This is the third face here in one day, and the operator's instruction is why
+     (2026-07-26): "can you just use a regular bold font like poppins or san
+     francisco bold or extra bold, what are these weird fonts you are using".
+     Rejected before it: Archivo Expanded (a poster grotesque so wide and heavy its
+     numerals read short and blocky — "squashed"), Newsreader ExtraBold (an
+     editorial serif, magazine numbers on a product page), and Outfit (a geometric
+     sans whose circular bowls and curled g read toy-like at display weight). Each
+     was picked for character on a page that wants none, so this one is deliberately
+     unremarkable — and it is the operator's own pick.
+
+     -apple-system resolves to San Francisco on macOS/iOS: literally the requested
+     face, with SF Pro Display's optical sizing at headline sizes for free. Everyone
+     else gets Inter, drawn as an SF-alike for exactly this substitution and already
+     self-hosted above — so this ships ZERO new font bytes and drops Outfit's 41KB.
+     Poppins is the stated alternative: swap the two leading entries and add its
+     @font-face; nothing else moves, because all 105 display rules read this token.
+
+     The @font-face duties live in onboard.css, which index.html links alongside
+     this sheet — that sheet is also lazy-injected onto macro pages carrying no
+     landing CSS, so it must be the one to carry face declarations. The tokens are
+     declared in BOTH files so neither depends on the other's cascade. Small inline
+     data (tickers, %, price cells) shares the face; tabular figures are requested
+     in CSS below, NOT baked into a subset the way Outfit's were.
+     Specimen: mockups/refs/landing-numerals/display-face-round3.html. */
+  --display:-apple-system,'SF Pro Display','Inter',system-ui,'Segoe UI',Roboto,sans-serif;
   /* Figures share the display voice. --fig is kept as its own token because the
      eight figure rules that use it are the ones most likely to be re-pointed at
      a dedicated numeral face again; aliasing beats find-and-replace. */
@@ -90,13 +101,18 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',system-u
   padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
 /* Chinese renders Latin/numerals in Inter, CJK glyphs in the platform's UI face */
 html[data-lang="zh"] body{font-family:'Inter','PingFang SC','Hiragino Sans GB','Microsoft YaHei',system-ui,sans-serif}
-html[data-lang="zh"] .display,html[data-lang="zh"] .sec-title,html[data-lang="zh"] .feat-title,html[data-lang="zh"] h1,html[data-lang="zh"] h2{font-family:'Outfit','Inter','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;letter-spacing:-.01em}
+html[data-lang="zh"] .display,html[data-lang="zh"] .sec-title,html[data-lang="zh"] .feat-title,html[data-lang="zh"] h1,html[data-lang="zh"] h2{font-family:var(--display),'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;letter-spacing:-.01em}
 html[data-lang="zh"] .kicker,html[data-lang="zh"] .live-pill,html[data-lang="zh"] .micro,html[data-lang="zh"] .live-tag,html[data-lang="zh"] .dk,html[data-lang="zh"] .rl,html[data-lang="zh"] .tt{letter-spacing:.06em}
 img{max-width:100%;display:block}
 a{color:var(--blue);text-decoration:none} a:hover{color:var(--blue-ink)}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
 :focus-visible{outline:2px solid var(--blue);outline-offset:2px;border-radius:4px}
 .tnum{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+/* Figures must not jitter. Outfit's subset had its digits REMAPPED onto tnum glyphs,
+   so nothing here had to ask; the system/Inter stack carries proper tabular figures
+   but only on request. Grouped so it cannot be forgotten on the one rule that
+   matters — #gz-score reticks in place, and the price columns must stay aligned. */
+.gz-num b,.fi-sum .big,.dxy .n,.price,.price .was{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
 .wrap{width:100%;max-width:var(--maxw);margin-inline:auto;padding-inline:var(--gutter)}
 .display{font-family:var(--display);font-weight:800;letter-spacing:-.02em;line-height:.98;color:var(--ink)}
 .kicker{font-family:var(--display);font-weight:700;font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}

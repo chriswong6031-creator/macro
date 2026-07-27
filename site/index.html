@@ -57,18 +57,17 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","name":"Mastermind","url":"https://www.mastermind-x.com/","logo":"https://www.mastermind-x.com/apple-touch-icon.png"},{"@type":"WebSite","name":"Mastermind","url":"https://www.mastermind-x.com/","inLanguage":["en","zh"]}]}</script>
-<!-- Both faces are self-hosted: fonts.googleapis.com is blocked in mainland China,
+<!-- No font is fetched from fonts.googleapis.com: it is blocked in mainland China,
      so the CDN <link> that used to sit here delivered NOTHING to Chinese visitors
-     and every headline fell back to system sans, silently. Outfit — the display
-     face — is declared in onboard.css (see the note there: it must also reach the
-     sheet when that is injected onto pages carrying no landing CSS); Inter is
-     declared in landing.css, because this page is the one page on the site that
-     does not link theme.css and so would otherwise lose its body face too.
-     Preloaded here rather than in a stylesheet so the fetch starts before the CSS
-     that references it has parsed. -->
-<link rel="preload" href="fonts/Outfit-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="onboard.css?v=3dfad6b6">
-<link rel="stylesheet" href="landing.css?v=82a676bb">
+     and every headline fell back to system sans, silently. The display face is now
+     the system UI face (San Francisco on Apple) with self-hosted Inter as the
+     cross-platform stand-in — see the note in onboard.css. Inter is declared in
+     landing.css, because this page is the one page on the site that does not link
+     theme.css and so would otherwise lose its body face too; it now serves as both
+     the body face and the display fallback, so there is nothing left to preload —
+     Inter's own weights are already discovered by that stylesheet. -->
+<link rel="stylesheet" href="onboard.css?v=5c897a72">
+<link rel="stylesheet" href="landing.css?v=4d3b166f">
 </head>
 <body>
 
@@ -197,7 +196,7 @@
           <svg class="gz" viewBox="0 -6 140 103" aria-hidden="true">
             <path d="M 14 75 A 56 56 0 0 1 126 75" stroke="var(--hair-2)" stroke-width="10" stroke-linecap="round" fill="none"/>
             <path class="gz-arcf" d="M 14 75 A 56 56 0 0 1 126 75" stroke="var(--q-gold)" stroke-width="10" stroke-linecap="round" fill="none" stroke-dasharray="87.9 200" opacity=".92"/>
-            <g font-family="Outfit,sans-serif" font-size="9" fill="var(--faint)" font-weight="600">
+            <g font-family="-apple-system,Inter,system-ui,sans-serif" font-size="9" fill="var(--faint)" font-weight="600">
               <text x="8" y="93">0</text><text x="70" y="2" text-anchor="middle">50</text><text x="116" y="93">100</text>
             </g>
             <g id="needle" style="transform-origin:70px 75px;transform:rotate(-90deg);transition:transform 1.1s cubic-bezier(.3,.8,.3,1)">
