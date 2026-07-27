@@ -531,6 +531,7 @@ def plan_account(
     per_day: int = 8,   # 8-slot 2h Pacific ladder (was 3 = AM/PM/EOD)
     seed: int = 0,
     tilt: dict[str, float] | None = None,
+    drop_types: set[str] | None = None,
 ) -> list[ContentItem]:
     """Generate a deterministic content queue for one account.
 
@@ -538,6 +539,12 @@ def plan_account(
     plans:   list of Prophet plan dicts
     tilt:    per-type weights (all types, sum ~1.0); falls back to _DEFAULT_TILT
     seed:    additional integer offset (account-hash provides per-account variation)
+    drop_types: type ids to remove from the tilt BEFORE allocation (weight → 0, no
+                slot allocated). Used to gate `event` out of the nightly plan when
+                publish.publish_time_read is armed — the publish-time read lane
+                (publish_time_content.generate_read_item) owns that post instead,
+                so leaving it nightly too would double-post. Applied AFTER the
+                _DEFAULT_TILT merge so it wins even for the default (no-tilt) path.
     """
     account_id = account.get("id", "unknown")
     voice = account.get("voice", "authoritative desk")
@@ -548,6 +555,9 @@ def plan_account(
         for k in _TYPE_IDS:
             if k in tilt and tilt[k] > 0:
                 effective_tilt[k] = float(tilt[k])
+    if drop_types:
+        for k in drop_types:
+            effective_tilt.pop(k, None)
     # Normalize
     total_w = sum(effective_tilt.values()) or 1.0
     effective_tilt = {k: v / total_w for k, v in effective_tilt.items()}
@@ -800,6 +810,16 @@ def content_plan(
     now_str = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     today = now_str[:10]
 
+    # When publish.publish_time_read is armed, the after-close DAILY READ is
+    # generated at PUBLISH time (publish_time_content.generate_read_item), so the
+    # nightly plan must NOT also allocate an `event` slot — else the read double-
+    # posts once armed. Dropping `event` from the tilt zeroes its allocation.
+    # Flag OFF (the default) → drop_types empty → allocation unchanged (byte-
+    # identical to today).
+    _pt_read_on = bool(
+        ((cfg or {}).get("publish") or {}).get("publish_time_read", {}).get("enabled"))
+    drop_types: set[str] = {"event"} if _pt_read_on else set()
+
     # Collect per-account items
     all_items: list[ContentItem] = []
     account_rows: list[dict] = []
@@ -817,6 +837,8 @@ def content_plan(
             for k in _TYPE_IDS:
                 if k in tilt_cfg:
                     eff_tilt[k] = float(tilt_cfg[k])
+        for k in drop_types:  # publish_time_read armed → no nightly event slot
+            eff_tilt.pop(k, None)
         total_w = sum(eff_tilt.values()) or 1.0
         eff_tilt = {k: round(v / total_w, 3) for k, v in eff_tilt.items()}
 
@@ -841,6 +863,7 @@ def content_plan(
             per_day=8,
             seed=0,
             tilt=tilt_cfg if tilt_cfg else None,
+            drop_types=drop_types,
         )
         all_items.extend(items)
 

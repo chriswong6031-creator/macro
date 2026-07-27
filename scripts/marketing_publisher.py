@@ -610,6 +610,42 @@ def main(argv: list[str] | None = None) -> int:
         log.warning("publish-time generation unavailable (%s) — legacy flow unaffected",
                     _pt_exc)
 
+    # ── Publish-time DAILY READ (kind=event, "My read on today's move") ──────
+    # DARK by default (publish.publish_time_read.enabled false → the generator
+    # returns a disabled report and writes nothing). When armed it generates the
+    # read from the FRESH daily brief on the after-close ladder slot, once/day,
+    # provenance publisher_live_movers so the scoped auto-approve (publish.
+    # auto_approve_kinds must include `event`) can pick it up this run. Sibling
+    # try so it is independently fail-soft: any error leaves the legacy flow
+    # untouched. Runs BEFORE the auto-approve pass, like the mover lane above.
+    try:
+        from engine.marketing import publish_time_content as _pt  # noqa: PLC0415
+        _read_report = _pt.generate_read_item(
+            root, cfg=cfg, now=now, state=state, live=live,
+            account_filter=args.account,
+        )
+        _read_generated = len(_read_report.get("generated") or [])
+        log.info(
+            "publish-time read | enabled=%s slot=%s generated=%d would_generate=%d "
+            "dropped=%d",
+            _read_report.get("enabled"), _read_report.get("slot") or "-",
+            _read_generated, len(_read_report.get("would_generate") or []),
+            len(_read_report.get("dropped") or []),
+        )
+        for _d in (_read_report.get("dropped") or []):
+            log.info("  read drop: %s — %s", _d.get("reason"), _d.get("detail"))
+        for _w in (_read_report.get("would_generate") or []):
+            log.info("  READ WOULD GENERATE | account=%s kind=%s | %s",
+                     _w.get("account"), _w.get("kind"), _w.get("text", ""))
+        if live and _read_generated:
+            # Re-fold so the auto-approve pass + candidate set see the new items.
+            state = _outbox.fold_state(root)
+            items_by_id = state["items"]
+            statuses = state["status"]
+    except Exception as _read_exc:  # noqa: BLE001
+        log.warning("publish-time read unavailable (%s) — legacy flow unaffected",
+                    _read_exc)
+
     # ── OPTIONAL auto-approve: queued → approved for items that pass ALL gates ─
     # Gated OFF by default; enabled by publish.auto_approve OR --auto-approve.
     # This is the operator's path to full automation — leave it off during the
