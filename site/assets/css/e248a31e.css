@@ -258,7 +258,7 @@
     background:color-mix(in srgb,var(--up) 55%,transparent);border-radius:2px 0 0 2px}
   .rr-bridge-val{width:52px;flex-shrink:0;text-align:right;font-variant-numeric:tabular-nums;
     font-size:10px;color:var(--text)}
-  .rr-bridge-prior{font-size:9px;color:var(--muted);font-style:italic}
+  .rr-bridge-prior,.rr-bridge-partial{font-size:9px;color:var(--muted);font-style:italic}
   /* v3_factor shadow row */
   .rr-shadow-row{background:var(--panel);border:1px solid var(--line);border-radius:6px;
     padding:8px 10px;margin:6px 0;font-size:11px}
