@@ -550,6 +550,7 @@ html.still .ph-belt .phc-ch svg{clip-path:none !important}
 .ph-foot b{color:var(--ink);font-weight:600}
 @media (max-width:640px){
   .psec .ph-head{grid-template-columns:1fr;gap:12px}
+  .ph-track.run{animation-duration:60s}
   .phc{width:248px}
   .phc-ch svg{height:74px}
 }
