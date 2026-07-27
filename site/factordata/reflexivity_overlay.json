@@ -2,27 +2,16 @@
   "schema": "reflexivity_overlay.v1",
   "is_context_only": true,
   "as_of": "2026-07-24",
-  "generated_utc": "2026-07-27T11:24:48Z",
+  "generated_utc": "2026-07-27T21:27:52Z",
   "note": "Risk-clustering read: 'is this the same hidden trade?'. NOT an alpha claim. Board-level, held-agnostic (US only, v1). Display-only per R-F / Signal Commons R7.",
   "factor_caveat": "Per-name secondary betas (oil/usd/btc/gold/china) are OOS-unstable and excluded. Similarity uses high-tier factors only (mkt/growth/size/rates, scope=single). Trust the MEMBERSHIP leg more than the factor leg for individual names.",
   "board_concentration": {
-    "n": 7,
-    "n_eff": 3.4,
+    "n": 6,
+    "n_eff": 3.62,
     "basis": "membership-jaccard+high-tier-factor-cosine",
-    "note": "Supersedes sector-only HHI effective_bets in build_stock_board_v2 per R-B. N_eff = participation-ratio of similarity-matrix eigenvalues. 7 candidates \u2248 3.4 independent bets."
+    "note": "Supersedes sector-only HHI effective_bets in build_stock_board_v2 per R-B. N_eff = participation-ratio of similarity-matrix eigenvalues. 6 candidates \u2248 3.62 independent bets."
   },
-  "same_thesis_groups": [
-    {
-      "members": [
-        "EVR",
-        "SW",
-        "WWD"
-      ],
-      "size": 3,
-      "basis": "factor-cosine",
-      "label": "shared-membership"
-    }
-  ],
+  "same_thesis_groups": [],
   "earnings_coverage_frac": 1.0,
   "by_ticker": {
     "XEL": {
@@ -62,7 +51,6 @@
         "next_date": "2026-07-30",
         "same_week_peers": [
           "EVR",
-          "SW",
           "WWD"
         ],
         "has_data": true
@@ -225,15 +213,6 @@
           "same_earnings_week": true
         },
         {
-          "ticker": "SW",
-          "combined": 0.9521,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.9521,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": true
-        },
-        {
           "ticker": "XEL",
           "combined": 0.0,
           "membership_jaccard": 0.0,
@@ -241,13 +220,21 @@
           "factor_basis": "beta-read-thin:r2=0.12<0.2",
           "shared_groups": [],
           "same_earnings_week": true
+        },
+        {
+          "ticker": "INSW",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.06<0.2",
+          "shared_groups": [],
+          "same_earnings_week": false
         }
       ],
       "earnings_leg": {
         "next_date": "2026-07-27",
         "same_week_peers": [
           "EVR",
-          "SW",
           "XEL"
         ],
         "has_data": true
@@ -255,52 +242,6 @@
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
       "why_en": "Same bet as EVR \u2014 shared factor profile (similarity 98%).",
       "why_zh": "\u4e0e EVR \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 98%\uff09\u3002"
-    },
-    "SW": {
-      "verdict": "duplicate",
-      "max_similarity": 0.9521,
-      "basis": "membership+high-tier-factor",
-      "nearest": [
-        {
-          "ticker": "WWD",
-          "combined": 0.9521,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.9521,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": true
-        },
-        {
-          "ticker": "EVR",
-          "combined": 0.9162,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.9162,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": true
-        },
-        {
-          "ticker": "XEL",
-          "combined": 0.0,
-          "membership_jaccard": 0.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.12<0.2",
-          "shared_groups": [],
-          "same_earnings_week": true
-        }
-      ],
-      "earnings_leg": {
-        "next_date": "2026-07-29",
-        "same_week_peers": [
-          "EVR",
-          "WWD",
-          "XEL"
-        ],
-        "has_data": true
-      },
-      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Same bet as WWD \u2014 shared factor profile (similarity 95%).",
-      "why_zh": "\u4e0e WWD \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 95%\uff09\u3002"
     },
     "EVR": {
       "verdict": "duplicate",
@@ -317,15 +258,6 @@
           "same_earnings_week": true
         },
         {
-          "ticker": "SW",
-          "combined": 0.9162,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.9162,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": true
-        },
-        {
           "ticker": "XEL",
           "combined": 0.0,
           "membership_jaccard": 0.0,
@@ -333,12 +265,20 @@
           "factor_basis": "beta-read-thin:r2=0.12<0.2",
           "shared_groups": [],
           "same_earnings_week": true
+        },
+        {
+          "ticker": "INSW",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.06<0.2",
+          "shared_groups": [],
+          "same_earnings_week": false
         }
       ],
       "earnings_leg": {
         "next_date": "2026-07-29",
         "same_week_peers": [
-          "SW",
           "WWD",
           "XEL"
         ],
@@ -378,13 +318,6 @@
       "factor_basis": "beta-read-thin:r2=0.12<0.2",
       "shared_groups": []
     },
-    "XEL__SW": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.12<0.2",
-      "shared_groups": []
-    },
     "XEL__EVR": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
@@ -415,13 +348,6 @@
       "factor_basis": "beta-read-thin:r2=0.06<0.2",
       "shared_groups": []
     },
-    "INSW__SW": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.06<0.2",
-      "shared_groups": []
-    },
     "INSW__EVR": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
@@ -443,13 +369,6 @@
       "factor_basis": "beta-read-thin:r2=0.13<0.2",
       "shared_groups": []
     },
-    "LPG__SW": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.13<0.2",
-      "shared_groups": []
-    },
     "LPG__EVR": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
@@ -464,13 +383,6 @@
       "factor_basis": "beta-read-thin:r2=0.10<0.2",
       "shared_groups": []
     },
-    "HALO__SW": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.10<0.2",
-      "shared_groups": []
-    },
     "HALO__EVR": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
@@ -478,24 +390,10 @@
       "factor_basis": "beta-read-thin:r2=0.10<0.2",
       "shared_groups": []
     },
-    "WWD__SW": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.9521,
-      "combined": 0.9521,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
     "WWD__EVR": {
       "membership_jaccard": 0.0,
       "factor_cosine": 0.9835,
       "combined": 0.9835,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
-    "SW__EVR": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.9162,
-      "combined": 0.9162,
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     }
@@ -509,7 +407,7 @@
   },
   "n_eff_by_lane": {
     "entry_open": 2.7,
-    "setting_up": 1.1
+    "setting_up": 1.0
   },
   "source_passport": {
     "factor_betas": {

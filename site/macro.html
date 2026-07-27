@@ -430,7 +430,7 @@
             <div class="ms-alerts-wrap">
               <label class="ms-alerts" for="ms-alerts-toggle" tabindex="0" aria-haspopup="dialog" aria-controls="ms-alerts-pop">
                 <span class="dot"></span><span class="l-en">Fired alerts</span><span class="l-zh">已触发警报</span>
-                <span class="ct">2</span>
+                <span class="ct">1</span>
               </label>
               <div class="ms-alerts-pop" id="ms-alerts-pop" role="dialog" aria-label="Fired alerts · 已触发警报">
                 <div class="ms-pop-head">
@@ -443,15 +443,6 @@
                   
                   
                   
-                  
-                  
-                  
-                  <a class="ms-sig sev-warn" data-ms-jump href="#health">
-                    <div class="ms-sig-head"><span class="ms-sig-ico">🔌</span><span class="ms-sig-title"><span class="l-en">A data source went dark</span><span class="l-zh">某数据源中断</span></span><span class="ms-sig-jump"><span class="l-en">View ↓</span><span class="l-zh">查看 ↓</span></span></div>
-                    <div class="ms-sig-detail"><span class="l-en">Source &#39;intl_universe&#39; marked dead after 3 consecutive failures — collector skipped until it recovers; affected signals degrade</span><span class="l-zh">数据源 &#39;intl_universe&#39; 连续 3 次失败后被标记为中断 —采集器暂停直至恢复；相关信号置信度下降</span></div>
-                    <div class="ms-sig-what"><span class="l-en">A feed this dashboard relies on failed several runs in a row, so it’s paused until it recovers. Any signals that depend on it automatically lose confidence until it’s back. This is a plumbing notice, not a market signal.</span><span class="l-zh">本仪表盘依赖的某个数据源连续多次失败，已暂停直至恢复。依赖它的信号会自动降低置信度，直到其恢复。这是系统管线提示，并非市场信号。</span></div>
-                    <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Plumbing — data health, not a market signal.</span><span class="l-zh">管线 — 数据健康度，而非市场信号。</span></div>
-                  </a>
                   
                   
                   
@@ -4229,7 +4220,7 @@
             <div class="mx5-alert-title">
               <span style="font-size:12px;margin-right:3px">📰</span>
               <span class="l-en">Principal Financial dips despite Q2 earnings beat, dividend raise</span>
-              <span class="l-zh">Principal Financial dips despite Q2 earnings beat, dividend …</span>
+              <span class="l-zh">Principal Financial尽管第二季度业绩超预期并提高股息，股价仍下跌</span>
             </div>
             <div class="mx5-alert-detail">
               <span>Seeking Alpha - Market Currents</span> · 
@@ -4245,8 +4236,8 @@
       </div>
       <div class="mx5-alert-footer">
         <span>
-          <span class="l-en">Showing 1 of 2 in feed</span>
-          <span class="l-zh">显示 1 / 2 条</span>
+          <span class="l-en">Showing 1 of 1 in feed</span>
+          <span class="l-zh">显示 1 / 1 条</span>
         </span>
         <button type="button" class="gbtn gbtn-sm gbtn-quiet" onclick="event.stopPropagation();mx5OpenDlg('dlg-news')">
           <span class="l-en">View all &#8594;</span>
@@ -5316,7 +5307,7 @@
   </div>
 
   <div class="rrx-trk">
-    <span class="l-en">Graded calls accruing — check back once alerts mature (~21 trading days)</span><span class="l-zh">评分记录积累中 — 约21个交易日后可查看</span>
+    <span class="l-en">Monitoring paused — ledger stale</span><span class="l-zh">监控暂停 — 账本数据陈旧</span>
     
     <span class="help">?<span class="tip"><span class="l-en">Past-year hit rate: too few graded alerts yet (daily readings — consecutive days overlap) | Watch/caution: too few graded | Recovery: too few graded</span><span class="l-zh">过去一年命中率：暂无足够评分记录（按日读数——连续日期相互重叠） | 观察/谨慎：暂无足够评分 | 修复信号：暂无足够评分</span></span></span>
   </div>
@@ -7425,25 +7416,6 @@ The bond market is healthy but late in its cycle, and the breakdown in the stock
         
         
         
-        <div class="isle-head"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">Context</span><span class="l-zh">背景</span></span><div class="isle-head-line"></div></div>
-        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;opacity:.8">
-          
-          <div style="display:flex;gap:10px;padding:10px 12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid rgba(255,255,255,.05)">
-            <div style="width:6px;height:6px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.30));flex-shrink:0;margin-top:5px"></div>
-            <div style="flex:1;min-width:0">
-              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:3px">
-                <div style="font-size:12.5px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.7))">
-                  <span style="font-size:11px;margin-right:3px">🔌</span>
-                  <span class="l-en">A data source went dark</span><span class="l-zh">某数据源中断</span>
-                </div>
-                <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.36));border:1px solid rgba(255,255,255,.09);white-space:nowrap"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
-              </div>
-              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">Source &#39;intl_universe&#39; marked dead after 3 consecutive failures — collector skipped until it recovers; affected signals degrade</span><span class="l-zh">数据源 &#39;intl_universe&#39; 连续 3 次失败后被标记为中断 —采集器暂停直至恢复；相关信号置信度下降</span></div>
-            </div>
-          </div>
-          
-        </div>
-        
         
         
         
@@ -7458,7 +7430,7 @@ The bond market is healthy but late in its cycle, and the breakdown in the stock
           <a class="nbx-item" href="https://seekingalpha.com/news/4619030-principal-financial-dips-despite-q2-earnings-beat-dividend-raise?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Principal Financial dips despite Q2 earnings beat, dividend raise</span><span class="l-zh">Principal Financial dips despite Q2 earnings beat, dividend raise</span></span>
+              <span class="nbx-title"><span class="l-en">Principal Financial dips despite Q2 earnings beat, dividend raise</span><span class="l-zh">Principal Financial尽管第二季度业绩超预期并提高股息，股价仍下跌</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7476,7 +7448,7 @@ The bond market is healthy but late in its cycle, and the breakdown in the stock
           <a class="nbx-item" href="https://seekingalpha.com/news/4619042-opko-health-surges-2026-revenue-guidance-boost-q2-beats?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">OPKO Health surges on 2026 revenue guidance boost, Q2 beats</span><span class="l-zh">OPKO Health surges on 2026 revenue guidance boost, Q2 beats</span></span>
+              <span class="nbx-title"><span class="l-en">OPKO Health surges on 2026 revenue guidance boost, Q2 beats</span><span class="l-zh">OPKO Health因2026年营收指引上调及第二季度业绩超预期而飙升</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7494,7 +7466,7 @@ The bond market is healthy but late in its cycle, and the breakdown in the stock
           <a class="nbx-item" href="https://seekingalpha.com/news/4619062-celestica-jumps-on-strong-q2-results-guidance?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Guidance</span><span class="l-zh">指引</span></span>
-              <span class="nbx-title"><span class="l-en">Celestica jumps on strong Q2 results, guidance</span><span class="l-zh">Celestica jumps on strong Q2 results, guidance</span></span>
+              <span class="nbx-title"><span class="l-en">Celestica jumps on strong Q2 results, guidance</span><span class="l-zh">Celestica因强劲的第二季度业绩和指引而上涨</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7512,7 +7484,7 @@ The bond market is healthy but late in its cycle, and the breakdown in the stock
           <a class="nbx-item" href="https://www.cnbc.com/2026/07/27/cme-launches-single-stock-futures-enabling-investors-to-trade-spacex-micron-23-hours-a-day.html" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nbx-title"><span class="l-en">CME launches single stock futures enabling investors to trade SpaceX, Micron and others 23 hours a day</span><span class="l-zh">CME launches single stock futures enabling investors to trade SpaceX, Micron and others 23 hours a day</span></span>
+              <span class="nbx-title"><span class="l-en">CME launches single stock futures enabling investors to trade SpaceX, Micron and others 23 hours a day</span><span class="l-zh">CME推出单一股票期货，使投资者能够23小时交易SpaceX、美光等股票</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7530,7 +7502,43 @@ The bond market is healthy but late in its cycle, and the breakdown in the stock
           <a class="nbx-item" href="https://www.cnbc.com/2026/07/27/apple-options-are-doing-something-unusual-into-earnings.html" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Apple options are doing something unusual into earnings</span><span class="l-zh">Apple options are doing something unusual into earnings</span></span>
+              <span class="nbx-title"><span class="l-en">Apple options are doing something unusual into earnings</span><span class="l-zh">苹果期权在财报前出现异常动向</span></span>
+            </div>
+            <div class="nbx-meta">
+              <span class="nbx-src">news_rss</span>
+              <span class="nbx-dot">·</span>
+              <span class="nbx-date">Jul 27</span>
+              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
+            </div>
+            
+          </a>
+          
+          
+          
+          
+          
+          <a class="nbx-item" href="https://seekingalpha.com/news/4619063-ranger-energy-services-gaap-eps-of-0_29-revenue-of-176_5m-beats-by-12_15m?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
+            <div class="nbx-top">
+              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="nbx-title"><span class="l-en">Ranger Energy Services GAAP EPS of $0.29, revenue of $176.5M beats by $12.15M</span><span class="l-zh">Ranger Energy Services GAAP每股收益0.29美元，营收1.765亿美元，超出预期1215万美元</span></span>
+            </div>
+            <div class="nbx-meta">
+              <span class="nbx-src">news_rss</span>
+              <span class="nbx-dot">·</span>
+              <span class="nbx-date">Jul 27</span>
+              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
+            </div>
+            
+          </a>
+          
+          
+          
+          
+          
+          <a class="nbx-item" href="https://www.cnbc.com/2026/07/27/nvidias-potential-250b-backstop-for-openai-is-another-strike-against-the-ai-trade.html" target="_blank" rel="noopener">
+            <div class="nbx-top">
+              <span class="nbx-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="nbx-title"><span class="l-en">Nvidia&#39;s potential $250B backstop for OpenAI is another strike against the AI trade</span><span class="l-zh">英伟达为OpenAI提供潜在2500亿美元支持，是对AI交易的又一打击</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7584,7 +7592,7 @@ The bond market is healthy but late in its cycle, and the breakdown in the stock
           <a class="nbx-item" href="https://www.npr.org/2026/07/27/nx-s1-5906428/toy-company-ceo-shares-how-trumps-new-round-of-tariffs-could-affect-business" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Fiscal</span><span class="l-zh">财政</span></span>
-              <span class="nbx-title"><span class="l-en">Toy company CEO shares how Trump&#39;s new round of tariffs could affect business</span><span class="l-zh">Toy company CEO shares how Trump&#39;s new round of tariffs could affect business</span></span>
+              <span class="nbx-title"><span class="l-en">Toy company CEO shares how Trump&#39;s new round of tariffs could affect business</span><span class="l-zh">玩具公司CEO分享特朗普新一轮关税如何影响业务</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7602,7 +7610,7 @@ The bond market is healthy but late in its cycle, and the breakdown in the stock
           <a class="nbx-item" href="https://www.marketwatch.com/story/i-know-what-he-wants-to-do-trump-says-of-feds-warsh-as-president-presses-for-rate-cuts-edaa115e?mod=mw_rss_topstories" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span>
-              <span class="nbx-title"><span class="l-en">‘I know what he wants to do,’ Trump says of Fed’s Warsh, as president presses for rate cuts</span><span class="l-zh">‘I know what he wants to do,’ Trump says of Fed’s Warsh, as president presses for rate cuts</span></span>
+              <span class="nbx-title"><span class="l-en">‘I know what he wants to do,’ Trump says of Fed’s Warsh, as president presses for rate cuts</span><span class="l-zh">特朗普谈及美联储的沃什表示‘我知道他想做什么’，同时施压降息</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7620,7 +7628,7 @@ The bond market is healthy but late in its cycle, and the breakdown in the stock
           <a class="nbx-item" href="https://www.cnbc.com/2026/07/24/trader-who-successfully-shorted-tesla-into-earnings-now-sets-sights-on-this-high-flyer-.html" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Trader who successfully shorted Tesla into earnings now sets sights on this high flyer</span><span class="l-zh">Trader who successfully shorted Tesla into earnings now sets sights on this high flyer</span></span>
+              <span class="nbx-title"><span class="l-en">Trader who successfully shorted Tesla into earnings now sets sights on this high flyer</span><span class="l-zh">成功做空特斯拉至财报日的交易员现在将目光投向这只高飞股</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -11362,9 +11370,9 @@ The bond market is healthy but late in its cycle, and the breakdown in the stock
       
     </table>
     <p class="muted"><span class="l-en">A failed source never crashes the dashboard — affected signals just lose confidence until it heals.
-       Generated 2026-07-27 20:57 UTC · <a href="aibrief.html">AI daily brief</a> ·
+       Generated 2026-07-27 20:55 UTC · <a href="aibrief.html">AI daily brief</a> ·
        <a href="history.html">history & charts</a></span><span class="l-zh">数据源失败绝不会让仪表盘崩溃 — 受影响的信号只是降低置信度，直到其恢复。
-       生成于 2026-07-27 20:57 UTC · <a href="aibrief.html">AI每日简报</a> ·
+       生成于 2026-07-27 20:55 UTC · <a href="aibrief.html">AI每日简报</a> ·
        <a href="history.html">历史与图表</a></span></p>
   </details>
   
