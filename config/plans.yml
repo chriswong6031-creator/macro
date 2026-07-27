@@ -35,32 +35,46 @@ products:
     name: Insider
     trial_days: 7
     features: [site_full, terminal_live_options]
-    legacy_lookup_keys: [insider_monthly, insider_annual]
+    legacy_lookup_keys:
+      - insider_monthly
+      - insider_annual
+      - insider_2026_monthly
+      - insider_2026_annual
     prices:
-      monthly: { lookup_key: insider_2026_monthly, unit_amount: 7900,  interval: month }
-      annual:  { lookup_key: insider_2026_annual,  unit_amount: 70800, interval: year }
+      monthly: { lookup_key: insider_2026_v2_monthly, unit_amount: 9900,  interval: month }
+      annual:  { lookup_key: insider_2026_v2_annual,  unit_amount: 90000, interval: year }
   pro:
     tier: pro
     name: Pro
     trial_days: 7
     features: [site_full, terminal_live_options, chat_opus]
-    legacy_lookup_keys: [pro_monthly, pro_annual]
+    legacy_lookup_keys:
+      - pro_monthly
+      - pro_annual
+      - pro_2026_monthly
+      - pro_2026_annual
     prices:
-      monthly: { lookup_key: pro_2026_monthly, unit_amount: 11900,  interval: month }
-      annual:  { lookup_key: pro_2026_annual,  unit_amount: 106800, interval: year }
+      monthly: { lookup_key: pro_2026_v2_monthly, unit_amount: 14900,  interval: month }
+      annual:  { lookup_key: pro_2026_v2_annual,  unit_amount: 130800, interval: year }
 
 # Founding Pro is a limited offer on the annual Pro product, not a fourth entitlement tier.
-# The checkout paths automatically apply this Stripe promotion while it is active. Stripe owns
-# the atomic redemption cap and the real `times_redeemed` counter shown in the UI.
+# The checkout paths automatically apply this Stripe promotion while it is active. The Promotion
+# Code owns the atomic cap for first-time founders. Its underlying uncapped Coupon is used only by
+# the backend for customers who already hold the durable Stripe Customer entitlement, allowing
+# them to pause, cancel, expire, and later resume at the same grandfathered rate without consuming
+# a second founding membership.
 offers:
   founding_pro:
     name: Founding Pro
     tier: pro
     interval: annual
-    unit_amount: 82800
-    max_redemptions: 250
-    coupon_id: mastermind_founding_pro_annual_2026
-    promotion_code: FOUNDINGPRO2026
+    unit_amount: 90000
+    max_redemptions: 2000
+    public_count_threshold: 25
+    entitlement_metadata_key: mm_founding_pro_entitled
+    coupon_id: mastermind_founding_pro_annual_2026_v2
+    promotion_code: FOUNDINGPRO2026V2
+    retire_promotion_codes: [FOUNDINGPRO2026]
     duration: forever
 
 # Entitlement precedence — if a customer ever holds overlapping active subscriptions, the

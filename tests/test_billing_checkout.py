@@ -31,7 +31,7 @@ def test_founding_checkout_uses_regular_price_plus_capped_promotion(monkeypatch)
     monkeypatch.setattr(billing, "_price_id", lambda lk: f"price_{lk}")
     monkeypatch.setattr(
         billing, "_offer_discount",
-        lambda key: [{"promotion_code": "promo_founder"}] if key else None)
+        lambda key, customer_id=None: [{"promotion_code": "promo_founder"}] if key else None)
 
     out = billing.checkout(
         billing.CheckoutRequest(
@@ -42,11 +42,13 @@ def test_founding_checkout_uses_regular_price_plus_capped_promotion(monkeypatch)
     assert out["id"] == "cs_test_1"
     args = fake.calls["create"]
     assert args["line_items"] == [
-        {"price": "price_pro_2026_annual", "quantity": 1}]
+        {"price": "price_pro_2026_v2_annual", "quantity": 1}]
     assert args["discounts"] == [{"promotion_code": "promo_founder"}]
     assert "allow_promotion_codes" not in args
     assert args["subscription_data"]["trial_period_days"] == 7
     assert args["subscription_data"]["metadata"] == {
+        "mm_user_id": "user_1", "mm_offer": "founding_pro"}
+    assert args["metadata"] == {
         "mm_user_id": "user_1", "mm_offer": "founding_pro"}
 
 
@@ -61,6 +63,6 @@ def test_regular_checkout_does_not_expose_manual_promotion_code_entry(monkeypatc
 
     args = fake.calls["create"]
     assert args["line_items"] == [
-        {"price": "price_insider_2026_annual", "quantity": 1}]
+        {"price": "price_insider_2026_v2_annual", "quantity": 1}]
     assert "allow_promotion_codes" not in args
     assert "discounts" not in args

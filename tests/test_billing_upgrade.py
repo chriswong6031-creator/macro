@@ -103,7 +103,19 @@ class _FakeStripe:
                     current_period_end=None,
                 )
 
+        class _Customer:
+            @staticmethod
+            def retrieve(customer_id):
+                outer.calls["customer_retrieve"] = customer_id
+                return types.SimpleNamespace(id=customer_id, metadata={})
+
+            @staticmethod
+            def modify(customer_id, **kw):
+                outer.calls["customer_modify"] = {"customer_id": customer_id, **kw}
+                return types.SimpleNamespace(id=customer_id, metadata=kw.get("metadata", {}))
+
         self.Subscription = _Subscription
+        self.Customer = _Customer
 
 
 # --------------------------------------------------------------------------- #
@@ -203,7 +215,7 @@ def test_upgrade_active_insider_to_pro_prorates_and_syncs(monkeypatch):
     # LITERAL modify kwargs — the proration contract is enforced here.
     kw = fake.calls["modify"]
     assert kw["sub_id"] == "sub_ins"
-    assert kw["items"] == [{"id": "si_ins", "price": "price_pro_2026_monthly"}]  # kept monthly cadence
+    assert kw["items"] == [{"id": "si_ins", "price": "price_pro_2026_v2_monthly"}]  # kept monthly cadence
     assert kw["proration_behavior"] == "always_invoice"
     assert kw["payment_behavior"] == "error_if_incomplete"
     assert kw["metadata"] == {"mm_user_id": "user_1"}
@@ -234,7 +246,7 @@ def test_upgrade_interval_override_switches_cadence(monkeypatch):
     monkeypatch.setattr(billing, "_invalidate", lambda *a: None)
 
     billing.upgrade(billing.UpgradeRequest(interval="annual"), user=USER)
-    assert fake.calls["modify"]["items"] == [{"id": "si_ins", "price": "price_pro_2026_annual"}]
+    assert fake.calls["modify"]["items"] == [{"id": "si_ins", "price": "price_pro_2026_v2_annual"}]
 
 
 def test_upgrade_insider_monthly_to_insider_annual(monkeypatch):
@@ -252,7 +264,7 @@ def test_upgrade_insider_monthly_to_insider_annual(monkeypatch):
     monkeypatch.setattr(billing, "_invalidate", lambda *a: None)
 
     out = billing.upgrade(billing.UpgradeRequest(tier="insider", interval="annual"), user=USER)
-    assert fake.calls["modify"]["items"] == [{"id": "si_ins", "price": "price_insider_2026_annual"}]
+    assert fake.calls["modify"]["items"] == [{"id": "si_ins", "price": "price_insider_2026_v2_annual"}]
     assert out["tier"] == "insider" and out["interval"] == "annual"
 
 
@@ -269,7 +281,7 @@ def test_upgrade_insider_monthly_to_pro_annual(monkeypatch):
     monkeypatch.setattr(billing, "_invalidate", lambda *a: None)
 
     out = billing.upgrade(billing.UpgradeRequest(tier="pro", interval="annual"), user=USER)
-    assert fake.calls["modify"]["items"] == [{"id": "si_ins", "price": "price_pro_2026_annual"}]
+    assert fake.calls["modify"]["items"] == [{"id": "si_ins", "price": "price_pro_2026_v2_annual"}]
     assert out["tier"] == "pro" and out["interval"] == "annual"
 
 
@@ -280,7 +292,7 @@ def test_upgrade_to_founding_pro_applies_promotion_and_keeps_proration(monkeypat
     monkeypatch.setattr(billing, "_price_id", lambda lk: f"price_{lk}")
     monkeypatch.setattr(
         billing, "_offer_discount",
-        lambda key: [{"promotion_code": "promo_founder"}] if key else None)
+        lambda key, customer_id=None: [{"promotion_code": "promo_founder"}] if key else None)
     monkeypatch.setattr(
         billing, "_compute_entitlement",
         lambda cid: {"tier": "pro", "status": "active", "current_period_end": None,
@@ -295,11 +307,15 @@ def test_upgrade_to_founding_pro_applies_promotion_and_keeps_proration(monkeypat
     )
 
     kw = fake.calls["modify"]
-    assert kw["items"] == [{"id": "si_ins", "price": "price_pro_2026_annual"}]
+    assert kw["items"] == [{"id": "si_ins", "price": "price_pro_2026_v2_annual"}]
     assert kw["discounts"] == [{"promotion_code": "promo_founder"}]
     assert kw["proration_behavior"] == "always_invoice"
     assert kw["payment_behavior"] == "error_if_incomplete"
     assert kw["metadata"] == {"mm_user_id": "user_1", "mm_offer": "founding_pro"}
+    assert fake.calls["customer_modify"] == {
+        "customer_id": "cus_1",
+        "metadata": {"mm_founding_pro_entitled": "true"},
+    }
 
 
 # --------------------------------------------------------------------------- #
@@ -321,7 +337,7 @@ def test_upgrade_trialing_preserves_trial_no_proration(monkeypatch):
     # RESPONSE tells the honest truth: trialing, and nothing was prorated/charged now.
     kw = fake.calls["modify"]
     assert kw["proration_behavior"] == "always_invoice"
-    assert kw["items"] == [{"id": "si_ins", "price": "price_pro_2026_monthly"}]
+    assert kw["items"] == [{"id": "si_ins", "price": "price_pro_2026_v2_monthly"}]
     assert out["trialing"] is True
     assert out["prorated"] is False
     assert out["tier"] == "pro"

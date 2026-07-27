@@ -23,22 +23,28 @@ mode** first; live-mode is gated by **W-LEGAL** (business entity, tax registrati
 
 | lookup_key | product | price |
 |---|---|---|
-| `insider_2026_monthly` | Insider | $79 / month |
-| `insider_2026_annual`  | Insider | $708 / year ($59/mo equivalent) |
-| `pro_2026_monthly`     | Pro     | $119 / month |
-| `pro_2026_annual`      | Pro     | $1,068 / year ($89/mo equivalent) |
+| `insider_2026_v2_monthly` | Insider | $99 / month |
+| `insider_2026_v2_annual`  | Insider | $900 / year ($75/mo equivalent) |
+| `pro_2026_v2_monthly`     | Pro     | $149 / month |
+| `pro_2026_v2_annual`      | Pro     | $1,308 / year ($109/mo equivalent) |
 
 Features `site_full`, `terminal_live_options`, `chat_opus` are created and attached to the products.
 The bootstrap also creates `Founding Pro`: a forever-duration, Pro-only coupon that makes annual Pro
-$828/year ($69/month equivalent), plus a `FOUNDINGPRO2026` PromotionCode capped at **250 real
-redemptions**. `GET /api/billing/offers/founding_pro` reads Stripe's `times_redeemed`; that is the
-only count shown to customers.
+$900/year ($75/month equivalent), plus a `FOUNDINGPRO2026V2` PromotionCode capped at **2,000 real
+first-time redemptions**. The PromotionCode—not the Coupon—owns this cap. The uncapped Coupon is
+backend-only and lets an already-entitled founder resume the grandfathered rate without consuming
+another acquisition slot.
+
+`GET /api/billing/offers/founding_pro` reads Stripe's real `times_redeemed`. Before the configured
+public threshold is reached, the UI says that Founding access is open and shows the total capacity
+without printing an unhelpful near-zero count. Once the threshold is reached, it shows a progress bar
+using the verified Stripe number. No seed, simulated growth, or time-based increment is used.
 
 Application code addresses prices by **lookup_key**, so the same code works in test and live mode.
-The versioned 2026 keys intentionally leave the old `insider_monthly`, `insider_annual`,
-`pro_monthly`, and `pro_annual` Prices in place. Existing subscriptions continue at their contracted
-prices and those legacy keys remain mapped to the correct entitlement tier; new purchases use the
-2026 keys. To create or reconcile the current objects:
+The versioned v2 keys intentionally leave both prior generations (`*_2026_*` and the original
+unversioned lookup keys) in place. Existing subscriptions continue at their contracted prices and
+all legacy keys remain mapped to the correct entitlement tier; new purchases use the v2 keys. To
+create or reconcile the current objects:
 
 ```bash
 STRIPE_SECRET_KEY=sk_test_... python scripts/stripe_bootstrap.py            # test
@@ -123,12 +129,26 @@ until the card is captured — SetupIntent first, subscription second.
 | `GET /api/billing/config` | none | `{"publishable_key": <STRIPE_PUBLISHABLE_KEY>}` so the sheet can boot Stripe.js. 503 when the env is unset (publishable keys are public by design). |
 | `POST /api/billing/subscribe/init` | bearer | Body `{tier, interval, offer?}`. Find-or-creates the Stripe customer (persists the `user_id → stripe_customer_id` mapping only), validates live offer inventory, then creates a `SetupIntent(usage="off_session")` with the offer bound in metadata. Returns `{client_secret, customer_id}`. 409 `already subscribed` if a live sub exists; 410 if the offer sold out; **no subscription yet**. |
 | `POST /api/billing/subscribe/complete` | bearer | Body `{setup_intent_id, tier, interval, offer?}`. Verifies the SetupIntent succeeded, belongs to this user's customer, and carries the same offer, then creates the trialing subscription (7-day trial, captured payment method, cancel-on-missing-PM, capped promotion where applicable). Recomputes + upserts the entitlement row so `/api/me` shows `trialing` instantly; the webhook remains the convergent source. Returns `{status, subscription_id, trial_end}`. |
-| `GET /api/billing/offers/founding_pro` | none | Returns the real Stripe-backed `{active, claimed, remaining, cap, unit_amount, regular_unit_amount}` inventory. No seed, simulated growth, or time-based increment. |
+| `GET /api/billing/offers/founding_pro` | none | Returns the real Stripe-backed `{active, claimed, remaining, cap, public_count_threshold, unit_amount, regular_unit_amount}` inventory. No seed, simulated growth, or time-based increment. |
 
 Requires `STRIPE_PUBLISHABLE_KEY` in `/etc/macro-api.env` (step 3) — delivered via the
 **deploy-api-secrets** workflow. No dashboard step is needed to enable the lane; it uses the same
 products/prices/customers as Checkout and fires the same webhook events, so the entitlement writes
 converge with the hosted flow.
+
+### Founding entitlement durability
+
+The first successful Founding subscription writes
+`Customer.metadata.mm_founding_pro_entitled=true`. Checkout, Elements, upgrades, and webhooks all
+carry `metadata.mm_offer=founding_pro`, and the webhook repairs the Customer marker if necessary.
+Historical subscription metadata is a second durable source: if the Customer marker is missing but
+any prior subscription carried the founding offer, billing restores the marker automatically.
+
+For an entitled Customer, a future Pro Annual subscription receives the Founding Coupon directly,
+even when the 2,000-member acquisition PromotionCode is inactive or exhausted. This is what lets
+the customer pause, cancel, expire, and later resubscribe at $900/year. Cancellation and entitlement
+reconciliation never remove the Customer marker. A returning founder does not consume a second
+PromotionCode redemption.
 
 The **webhook endpoint** (`we_…`) for this account is created via the Stripe **API** (not clicked
 in the dashboard) and its signing secret is auto-installed into `/etc/macro-api.env` by the same

@@ -323,7 +323,7 @@
       </div>
     </div>
     <p class="toggle-note" id="toggle-note">
-      <span class="l-en">Annual plans cost less. Founding Pro is applied automatically while spots remain.</span><span class="l-zh">年付更省。名额尚存时将自动应用 Founding Pro 优惠。</span>
+      <span class="l-en">Founding Pro gives you every Pro feature for the Insider annual price.</span><span class="l-zh">Founding Pro 让你以 Insider 年付价格解锁 Pro 全部功能。</span>
     </p>
   </header>
 
@@ -392,12 +392,13 @@
              data-a-total="{{ pro.annual_total }}" data-save="{{ pro.save_pct }}"
              data-offer-key="{{ founding.key }}" data-offer-active="true"
              data-offer-a-pm="{{ founding.annual_pm }}" data-offer-a-total="{{ founding.annual_total }}"
-             data-offer-discount="{{ founding.discount_pct }}" data-offer-cap="{{ founding.cap }}">
-      <div class="ribbon" data-offer-ribbon><span class="l-en">Founding rate</span><span class="l-zh">创始会员价</span></div>
+             data-offer-discount="{{ founding.discount_pct }}" data-offer-savings="{{ founding.discount_amount }}"
+             data-offer-cap="{{ founding.cap }}">
+      <div class="ribbon" data-offer-ribbon><span class="l-en">Founding Pro</span><span class="l-zh">Founding Pro</span></div>
       <div class="tname"><span class="dot"></span>{{ pro.name }}</div>
       <p class="tfor">{{ t('Everything in Insider, plus the deep Opus chat lane for real research.', 'Insider 全部内容，另加用于深度研究的 Opus 对话通道。') }}</p>
       <div class="rack-price" data-offer-rack>
-        <span class="l-en">Regular annual</span><span class="l-zh">常规年付</span>
+        <span class="l-en">Regular Pro annual</span><span class="l-zh">Pro 常规年付</span>
         <s>${{ founding.regular_annual_pm }}/{{ t('mo', '月') }}</s>
       </div>
       <div class="price">
@@ -405,18 +406,18 @@
       </div>
       <div class="billed">
         <span data-billed><span class="l-en">Billed ${{ founding.annual_total }} a year.</span><span class="l-zh">每年结算 ${{ founding.annual_total }}。</span></span>
-        <span class="badge-save" data-badge><span class="l-en">Founding · {{ founding.discount_pct }}% off</span><span class="l-zh">创始会员 · 省 {{ founding.discount_pct }}%</span></span>
+        <span class="badge-save" data-badge><span class="l-en">Founding Pro · save ${{ founding.discount_amount }}/year</span><span class="l-zh">Founding Pro · 每年省 ${{ founding.discount_amount }}</span></span>
       </div>
       <div class="founding-meter" data-offer-meter>
-        <div class="founding-line"><b>{{ t('Founding Pro', 'Founding Pro') }}</b>
-          <span data-offer-count><span class="l-en">Limited to {{ founding.cap }} memberships</span><span class="l-zh">限量 {{ founding.cap }} 个名额</span></span>
+        <div class="founding-line"><b>{{ t('Pro for the Insider annual price', '以 Insider 年付价格解锁 Pro') }}</b>
+          <span data-offer-count><span class="l-en">Founding access now open · {{ "{:,}".format(founding.cap) }} memberships</span><span class="l-zh">Founding Pro 现已开放 · 共 {{ "{:,}".format(founding.cap) }} 个名额</span></span>
         </div>
-        <div class="founding-track" role="progressbar" aria-label="Founding Pro memberships claimed"
+        <div class="founding-track" hidden role="progressbar" aria-label="Founding Pro memberships claimed"
              aria-valuemin="0" aria-valuemax="{{ founding.cap }}" aria-valuenow="0">
           <div class="founding-fill" data-offer-fill></div>
         </div>
-        <p class="founding-terms">{{ t('The $828 annual rate renews while this subscription remains uninterrupted. Canceling ends the founding rate.',
-                                      '只要订阅不中断，$828 年付创始会员价将持续续订；取消后该价格失效。') }}</p>
+        <p class="founding-terms">{{ t('Every Pro feature for the Insider annual price · $900/year.',
+                                      '以 Insider 年付价格解锁 Pro 全部功能 · 每年 $900。') }}</p>
       </div>
       <div class="cta">
         <button class="gbtn gbtn-lg gbtn-pill gbtn-cta" data-act="subscribe" data-tier="pro" type="button">
@@ -640,7 +641,7 @@
       if (badgeEl) {
         badgeEl.classList.toggle('hidden', !annual);
         badgeEl.innerHTML = offerOn
-          ? '<span class="l-en">Founding · ' + card.getAttribute('data-offer-discount') + '% off</span><span class="l-zh">创始会员 · 省 ' + card.getAttribute('data-offer-discount') + '%</span>'
+          ? '<span class="l-en">Founding Pro · save $' + card.getAttribute('data-offer-savings') + '/year</span><span class="l-zh">Founding Pro · 每年省 $' + card.getAttribute('data-offer-savings') + '</span>'
           : '<span class="l-en">save ' + save + '%</span><span class="l-zh">省 ' + save + '%</span>';
       }
       var rackEl = $('[data-offer-rack]', card), meterEl = $('[data-offer-meter]', card);
@@ -648,7 +649,7 @@
       if (meterEl) meterEl.classList.toggle('hidden', !offerOn);
       var ribbonEl = $('[data-offer-ribbon]', card);
       if (ribbonEl) ribbonEl.innerHTML = offerOn
-        ? '<span class="l-en">Founding rate</span><span class="l-zh">创始会员价</span>'
+        ? '<span class="l-en">Founding Pro</span><span class="l-zh">Founding Pro</span>'
         : '<span class="l-en">Most complete</span><span class="l-zh">最完整</span>';
     });
     /* matrix header prices track the toggle too */
@@ -664,7 +665,7 @@
     });
     if (note) {
       note.innerHTML = annual
-        ? '<span class="l-en">Annual plans cost less. Founding Pro is applied automatically while spots remain.</span><span class="l-zh">年付更省。名额尚存时将自动应用 Founding Pro 优惠。</span>'
+        ? '<span class="l-en">Founding Pro gives you every Pro feature for the Insider annual price.</span><span class="l-zh">Founding Pro 让你以 Insider 年付价格解锁 Pro 全部功能。</span>'
         : '<span class="l-en">Billed month to month. Switch to annual to pay less.</span><span class="l-zh">按月结算。切换到按年更省。</span>';
     }
   }
@@ -695,8 +696,16 @@
         var count = $('[data-offer-count]', foundingCard);
         var track = $('.founding-track', foundingCard);
         var fill = $('[data-offer-fill]', foundingCard);
-        if (count) count.innerHTML = '<span class="l-en">' + o.claimed + ' of ' + o.cap + ' claimed</span><span class="l-zh">已领取 ' + o.claimed + ' / ' + o.cap + '</span>';
-        if (track) track.setAttribute('aria-valuenow', String(o.claimed));
+        var showCount = o.claimed >= Number(o.public_count_threshold || 0);
+        var capLabel = Number(o.cap).toLocaleString();
+        var claimedLabel = Number(o.claimed).toLocaleString();
+        if (count) count.innerHTML = showCount
+          ? '<span class="l-en">' + claimedLabel + ' of ' + capLabel + ' claimed</span><span class="l-zh">已领取 ' + claimedLabel + ' / ' + capLabel + '</span>'
+          : '<span class="l-en">Founding access now open · ' + capLabel + ' memberships</span><span class="l-zh">Founding Pro 现已开放 · 共 ' + capLabel + ' 个名额</span>';
+        if (track) {
+          track.hidden = !showCount;
+          track.setAttribute('aria-valuenow', String(o.claimed));
+        }
         if (fill) fill.style.width = Math.min(100, Math.max(0, o.claimed / o.cap * 100)) + '%';
         paintPrices();
       }).catch(function () { /* keep the configured offer; checkout remains the final authority */ });

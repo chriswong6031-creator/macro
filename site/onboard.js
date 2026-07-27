@@ -45,10 +45,10 @@
   // Raw cents — the ONLY hand-entered plan numbers (mirror config/plans.yml /
   // terminal plans.ts). Every displayed figure is DERIVED from these.
   var CENTS = {
-    insider: { monthly: 7900, annual: 70800 },
-    pro:     { monthly: 11900, annual: 106800 }
+    insider: { monthly: 9900, annual: 90000 },
+    pro:     { monthly: 14900, annual: 130800 }
   };
-  var FOUNDING_PRO = { key: "founding_pro", active: true, annual: 82800, cap: 250, claimed: null };
+  var FOUNDING_PRO = { key: "founding_pro", active: true, annual: 90000, cap: 2000, claimed: null };
   function offerFor(key, period) { return key === "pro" && period === "annual" && FOUNDING_PRO.active ? FOUNDING_PRO.key : null; }
   function annualCents(key) { return offerFor(key, "annual") ? FOUNDING_PRO.annual : CENTS[key].annual; }
   function perMonth(key, period) { var c = CENTS[key]; return Math.round(period === "annual" ? annualCents(key) / 12 / 100 : c.monthly / 100); }
@@ -172,9 +172,9 @@
     perMo:        ["/mo", "/月"],
     free0:        ["$0", "$0"],
     ribbon:       ["MOST POPULAR", "最受欢迎"],
-    foundingRibbon:["FOUNDING RATE", "创始会员价"],
-    foundingFine: ["Founding Pro renews at $__T__/year while this subscription stays uninterrupted. Canceling ends the founding rate.",
-                   "只要订阅不中断，Founding Pro 将按 $__T__/年持续续订；取消后该价格失效。"],
+    foundingRibbon:["FOUNDING PRO", "FOUNDING PRO"],
+    foundingFine: ["Every Pro feature for the Insider annual price · $__T__/year.",
+                   "以 Insider 年付价格解锁 Pro 全部功能 · 每年 $__T__。"],
     foundingGone: ["The last founding spot was claimed. Review the regular Pro Annual price to continue.",
                    "最后一个创始会员名额已被领取。请查看 Pro 常规年付价格后继续。"],
     // summaries
@@ -1264,7 +1264,7 @@
     // in upgrade mode Free is the plan you already have — readable, not pickable
     return !(S.mode === "upgrade" && t === "free");
   }
-  // the same wording the landing's matrix header uses — "$59/mo" alone reads as
+  // the same wording the landing's matrix header uses — "$75/mo" alone reads as
   // the monthly price when the toggle is on Annual
   function comparePriceLbl(t) {
     if (t === "free") return "$0";

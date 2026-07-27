@@ -68,6 +68,16 @@ class _FakeStripe:
                 outer.calls["customer_create"] = kw
                 return types.SimpleNamespace(id=outer._new_customer_id)
 
+            @staticmethod
+            def retrieve(customer_id):
+                outer.calls["customer_retrieve"] = customer_id
+                return types.SimpleNamespace(id=customer_id, metadata={})
+
+            @staticmethod
+            def modify(customer_id, **kw):
+                outer.calls["customer_modify"] = {"customer_id": customer_id, **kw}
+                return types.SimpleNamespace(id=customer_id, metadata=kw.get("metadata", {}))
+
         class _SetupIntent:
             @staticmethod
             def create(**kw):
@@ -265,7 +275,7 @@ def test_complete_creates_sub_with_trial_and_syncs_entitlement(monkeypatch):
     # captured PM, save-on-subscription, cancel-on-missing-PM, mm_user_id metadata).
     kw = fake.calls["sub_create"]
     assert kw["customer"] == "cus_1"
-    assert kw["items"] == [{"price": "price_pro_2026_monthly"}]
+    assert kw["items"] == [{"price": "price_pro_2026_v2_monthly"}]
     assert kw["trial_period_days"] == 7
     assert kw["default_payment_method"] == "pm_777"
     assert kw["payment_settings"] == {"save_default_payment_method": "on_subscription"}
@@ -288,7 +298,7 @@ def test_complete_applies_bound_founding_discount(monkeypatch):
     monkeypatch.setattr(billing, "_price_id", lambda lk: f"price_{lk}")
     monkeypatch.setattr(
         billing, "_offer_discount",
-        lambda key: [{"promotion_code": "promo_founder"}] if key else None)
+        lambda key, customer_id=None: [{"promotion_code": "promo_founder"}] if key else None)
     monkeypatch.setattr(
         billing, "_compute_entitlement",
         lambda cid: {"tier": "pro", "status": "trialing", "current_period_end": None,
@@ -300,9 +310,13 @@ def test_complete_applies_bound_founding_discount(monkeypatch):
         _complete_body(tier="pro", interval="annual", offer="founding_pro"), user=USER)
 
     kw = fake.calls["sub_create"]
-    assert kw["items"] == [{"price": "price_pro_2026_annual"}]
+    assert kw["items"] == [{"price": "price_pro_2026_v2_annual"}]
     assert kw["discounts"] == [{"promotion_code": "promo_founder"}]
     assert kw["metadata"] == {"mm_user_id": "user_1", "mm_offer": "founding_pro"}
+    assert fake.calls["customer_modify"] == {
+        "customer_id": "cus_1",
+        "metadata": {"mm_founding_pro_entitled": "true"},
+    }
 
 
 def test_complete_409_double_subscribe(monkeypatch):
