@@ -488,3 +488,13 @@ law with gates inline; no child self-merge on the bot repo.
   full 5,535-name holder seed in 34 s. One-shot cache seeding committed (off render path):
   `china_irm/org_ids.json` 50/50 SZ resolved, `china_einteraction/uid_map.json` 2,312 SSE
   codes `complete=true` (directory exhausted at page 73) — night 1 runs productive.
+  **First production night VERIFIED (2026-07-27 asia-close, data commit `7ef3e68604b`)**:
+  all four sentinels clean (`n_failed=0`, `n_nulls=0`) with full 40-name shards inside the
+  budget guard (both cursors advanced exactly 0→40, no truncation). 互动易 1,590 Q&A rows /
+  40 SZ names (72% answered) + velocity `total_record=94,537` (vs 94,789 at seed — ES
+  wobble, raw totals stored as designed); e互动 skipped the map-build night as intended
+  (pre-seeded map, `map_built=0`) and pulled 284 rows — 26 of 40 shard names carried feed
+  items, the rest are genuinely quiet names (empty feeds, not nulls); reports 34 rows with
+  aggregates on all four window dates and `first_seen` populated (Monday-morning pull at
+  ~18:00 CST — the rolling window re-pull collects the evening's reports tomorrow);
+  holder counts full-market seed 5,537 rows (12 pages) with same-day notices included.
