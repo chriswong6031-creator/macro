@@ -1,4 +1,4 @@
-"""China native flash-wire JSON fetchers — 华尔街见闻 · 金十数据 · 格隆汇.
+"""China native flash-wire JSON fetchers — 华尔街见闻 · 金十数据 · 格隆汇 · 富途 · 同花顺.
 
 LEAF · KEYLESS · CONTEXT-ONLY. Direct on-the-ground Chinese financial newswires,
 fetched from each vendor's public keyless JSON endpoint (no akshare dependency,
@@ -11,6 +11,16 @@ Live-probed 2026-07-10 (all three return fresh same-minute items):
   • wallstreetcn — https://api-one.wallstcn.com/apiv1/content/lives  (华尔街见闻 7×24)
   • jin10        — https://www.jin10.com/flash_newest.js             (金十数据快讯)
   • gelonghui    — https://www.gelonghui.com/api/live-channels/all/lives (格隆汇快讯)
+Added W3, live-probed 2026-07-27 (wires 4 and 5):
+  • futu         — https://news.futunn.com/news-site-api/main/get-flash-list (富途牛牛快讯)
+  • ths          — https://news.10jqka.com.cn/tapp/news/push/stock          (同花顺快讯)
+
+TRANSPORT NOTE (W3, verified 2026-07-27): the THS push endpoint REQUIRES
+`Referer: https://news.10jqka.com.cn/realtimenews.html`. Without it the server
+drops the connection outright (empty reply, curl exit 52) — it is not a 403 you
+can see in a status code. W0's probe passed WITHOUT the header, so this is a
+tightened contract, not a long-standing one; hence the per-source `headers` hook
+on the registry below rather than a global header bump.
 
 Known-dead alternatives (do not re-add without a fresh probe): cls.cn nodeapi
 (404, and akshare stock_info_global_cls broke Feb-2025 per
@@ -182,9 +192,88 @@ def parse_gelonghui(payload: dict, cap: int = 80) -> list[dict]:
     return out
 
 
+def _vendor_flag(value) -> bool:
+    """Vendor 'this one matters' flag -> bool. 0 / "0" / "" / None are all NOT flagged.
+
+    Deliberately NOT `value == "1"`: the two W3 vendors disagree on both the TYPE and
+    the VALUE. Futu's `level` arrives as a JSON int (0 | 1); THS's `import` arrives as
+    a STRING and the captured 2026-07-27 page carries "0" ×19 and "3" ×1 — no "1" at
+    all. An `== "1"` test would read int 1 as unflagged AND flag nothing on THS, i.e.
+    the whole importance leg would ship permanently dead and review clean. Nonzero is
+    the only reading both vendors support. PURE.
+    """
+    return str(value if value is not None else "").strip() not in ("", "0")
+
+
+def parse_futu_flash(payload: dict, cap: int = 80) -> list[dict]:
+    """富途牛牛 7×24 快讯 (news-site-api get-flash-list). PURE.
+
+    Shape: items at data.data.news[] (double-nested `data` — the outer envelope
+    carries code/message, the inner one carries seqMark/hasMore + news). `title` is
+    USUALLY EMPTY on this wire (1 of 10 items on the captured page had one), so the
+    content head IS the headline — routed through the shared _split_flash so the
+    title lands on a sentence boundary instead of a hard character chop. `time` is an
+    epoch-second STRING; `level` is an int flag (0 normal, 1 vendor-highlighted).
+    """
+    out: list[dict] = []
+    try:
+        inner = ((payload or {}).get("data") or {}).get("data") or {}
+        for raw in (inner.get("news") or [])[:cap]:
+            if not isinstance(raw, dict):
+                continue
+            body = str(raw.get("content") or "").strip()
+            title = str(raw.get("title") or "").strip()
+            if title and body:
+                summary = body
+            else:
+                title, summary = _split_flash(title or body)
+            it = _item(title, summary, _iso_from_epoch(raw.get("time")),
+                       str(raw.get("detailUrl") or ""), "futu", "富途牛牛",
+                       "news.futunn.com",
+                       important=_vendor_flag(raw.get("level")))
+            if it:
+                out.append(it)
+    except Exception as e:  # noqa: BLE001 — parser must never raise
+        log.debug("cn_newswires.parse_futu_flash failed (%s)", e)
+    return out
+
+
+def parse_ths_push(payload: dict, cap: int = 80) -> list[dict]:
+    """同花顺快讯 (tapp/news/push/stock). PURE.
+
+    Shape: items at data.list[]. Unlike the other four wires THS always ships a real
+    `title` plus a longer `digest` body, so no _split_flash fallback is needed (the
+    fallback still runs if a future payload drops the title). `ctime`/`rtime` are
+    epoch-second STRINGS; `import` is the vendor's importance flag (string, nonzero
+    = flagged). The `tag` string ("美股,港股,A股") is deliberately DROPPED: the item
+    contract is shared with four other wires and HK/board routing is W5's job.
+    """
+    out: list[dict] = []
+    try:
+        for raw in (((payload or {}).get("data") or {}).get("list") or [])[:cap]:
+            if not isinstance(raw, dict):
+                continue
+            body = str(raw.get("digest") or "").strip()
+            title = str(raw.get("title") or "").strip()
+            if title and body:
+                summary = body
+            else:
+                title, summary = _split_flash(title or body)
+            it = _item(title, summary, _iso_from_epoch(raw.get("ctime")),
+                       str(raw.get("url") or ""), "ths", "同花顺", "10jqka.com.cn",
+                       important=_vendor_flag(raw.get("import")))
+            if it:
+                out.append(it)
+    except Exception as e:  # noqa: BLE001
+        log.debug("cn_newswires.parse_ths_push failed (%s)", e)
+    return out
+
+
 # --------------------------------------------------------------------------- #
 # source registry + cached fetch
 # --------------------------------------------------------------------------- #
+# Each entry: url, parse(body, cap), and an OPTIONAL `headers` dict merged OVER the
+# shared UA header at fetch time (see the THS Referer note in the module docstring).
 _SOURCES: dict[str, dict] = {
     "wallstreetcn": {
         "url": ("https://api-one.wallstcn.com/apiv1/content/lives"
@@ -199,6 +288,18 @@ _SOURCES: dict[str, dict] = {
     "gelonghui": {
         "url": "https://www.gelonghui.com/api/live-channels/all/lives?limit=100",
         "parse": lambda body, cap: parse_gelonghui(json.loads(body), cap),
+    },
+    "futu": {
+        "url": ("https://news.futunn.com/news-site-api/main/get-flash-list"
+                "?type=1&page=1&pageSize=50"),
+        "parse": lambda body, cap: parse_futu_flash(json.loads(body), cap),
+    },
+    "ths": {
+        "url": "https://news.10jqka.com.cn/tapp/news/push/stock",
+        # REQUIRED — without the Referer the server drops the connection (empty
+        # reply / curl exit 52), verified 2026-07-27. Not optional politeness.
+        "headers": {"Referer": "https://news.10jqka.com.cn/realtimenews.html"},
+        "parse": lambda body, cap: parse_ths_push(json.loads(body), cap),
     },
 }
 
@@ -222,7 +323,8 @@ def _fetch_one(name: str, cap: int, timeout: int = 15) -> list[dict]:
     if not src:
         return []
     try:
-        req = urllib.request.Request(src["url"], headers={"User-Agent": _UA})
+        headers = {"User-Agent": _UA, **(src.get("headers") or {})}
+        req = urllib.request.Request(src["url"], headers=headers)
         with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310
             body = resp.read()
         return src["parse"](body, cap)

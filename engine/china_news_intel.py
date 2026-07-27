@@ -681,8 +681,13 @@ def _fetch_all(cfg: dict, today: date) -> tuple[list[dict], str | None]:
 # --------------------------------------------------------------------------- #
 # helpers: timestamp_quality classification and qbus row builder
 # --------------------------------------------------------------------------- #
-def _timestamp_quality(seendate: str, source: str) -> str:
-    """Map a seendate + source to a qbus TIMESTAMP_QUALITY enum value.
+# futu/ths are AMBIGUOUS source slugs — see _timestamp_quality. The direct
+# cn_newswires leg is the one that carries a vendor domain; akshare's leg carries "".
+_DIRECT_WIRE_DOMAIN = {"futu": "news.futunn.com", "ths": "10jqka.com.cn"}
+
+
+def _timestamp_quality(seendate: str, source: str, domain: str = "") -> str:
+    """Map a seendate + source (+ domain) to a qbus TIMESTAMP_QUALITY enum value.
 
     Rules (spec §2.5 / probe P2):
       • Empty / corrupted seendate (caught by _clean_time) → CRAWL_BOUNDED
@@ -696,7 +701,18 @@ def _timestamp_quality(seendate: str, source: str) -> str:
         return "CRAWL_BOUNDED"
     # RSS carries sub-day pubDate (RFC-822 / ISO); akshare dates are typically
     # "YYYY-MM-DD" or "YYYY-MM-DD HH:MM" at best, so treat wire sources as SNAPSHOT.
-    if (source or "").lower() in {"rss", "wallstreetcn", "jin10", "gelonghui"}:
+    src = (source or "").lower()
+    if src in {"rss", "wallstreetcn", "jin10", "gelonghui"}:
+        return "PUBLISHER_STATED"
+    # W3: futu/ths CAN arrive on two legs with the SAME slug — akshare's
+    # stock_info_global_{futu,ths} (a documented FALLBACK since W3 removed them from
+    # config.yml china_news_intel.wire_sources; day-resolution 发布时间, and
+    # _fetch_wires strips the prefix to the bare slug) and engine/cn_newswires.py's
+    # direct endpoints (epoch-SECOND `time`/`ctime`), the live leg today. Only
+    # the direct leg may claim a publisher-stated stamp, and the domain is what tells
+    # them apart — a bare `src in {...}` test would relabel akshare's day-resolution
+    # rows as sub-minute truth.
+    if _DIRECT_WIRE_DOMAIN.get(src) == (domain or "").lower():
         return "PUBLISHER_STATED"
     return "SNAPSHOT_DATE"
 
@@ -737,7 +753,8 @@ def _build_qbus_rows(records: list[dict], raw_articles: list[dict],
                 pass
 
         tq = _timestamp_quality(str(rec.get("seendate") or ""),
-                                str(rec.get("source") or ""))
+                                str(rec.get("source") or ""),
+                                str(rec.get("domain") or ""))
         qbus_rows.append({
             "desk": "china_news_intel",
             "source": str(rec.get("source") or ""),

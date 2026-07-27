@@ -3927,8 +3927,13 @@ china_news_intel:
   wire_sources:                   # akshare flash endpoints tried in order (each degrades)
     - stock_info_global_em
     - stock_info_global_sina
-    - stock_info_global_ths
-    - stock_info_global_futu
+    # stock_info_global_futu / stock_info_global_ths REMOVED 2026-07-27 (W3 CNH):
+    # superseded by the DIRECT cn_newswires futu/ths wires (engine/cn_newswires.py,
+    # sub-minute publisher-stated stamps). Both legs strip to the SAME 'futu'/'ths'
+    # slug, so keeping them here fed the bus each vendor twice — the akshare copy at
+    # day-or-hour resolution, the direct copy at the second — and the pair only
+    # separates on the domain field. Re-enable ONLY if the direct endpoints die
+    # (CNH-R2 fallback posture); the akshare path still works, it is merely worse.
   rss_sources:                    # keyless English state-wire RSS (stdlib XML parse)
     - https://english.news.cn/rss/businessrss.xml
     - https://www.chinadaily.com.cn/rss/bizchina_rss.xml
@@ -3955,6 +3960,8 @@ cn_newswires:
     - wallstreetcn
     - jin10
     - gelonghui
+    - futu                        # 富途牛牛快讯 (W3 CNH; title often empty -> content head)
+    - ths                         # 同花顺快讯 (W3 CNH; Referer header REQUIRED, see module)
   max_per_source: 80              # normalized items kept per wire (pre theme-gate)
   cache_dir: data/china_news/cn_wire_cache
   cache_ttl_hours: 6

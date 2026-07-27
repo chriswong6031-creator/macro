@@ -225,6 +225,8 @@ def all_adapters() -> dict:
         ("china_funding", "collectors.china_funding", "ChinaFundingAdapter"),   # W2 funding curve: chinamoney FR/FDR fixings + jin10-CDN deep SHIBOR + CGB MM-quote temperature (research/china_native_data W2)
         ("china_cb", "collectors.china_cb", "ChinaCbAdapter"),                  # W2 convertible-bond plane: EastMoney full-universe breadth aggregates + jisilu CB index (keyless INDEX endpoint only — list is login-capped)
         ("china_fund_issuance", "collectors.china_fund_issuance", "ChinaFundIssuanceAdapter"),  # W2 新发基金 weekly issuance aggregates (retail risk-appetite proxy)
+        ("china_omo", "collectors.china_omo", "ChinaOmoAdapter"),                # W3 CNH: PBOC open-market bulletin tape (交易公告/业务公告/买断式逆回购/MLF) → observed OMO rows + kind="omo_observed" events (NEVER omo_mlf — that namespace is the synthetic FR007-z seed). Serial by design: www.pbc.gov.cn is shared with china_official_corpora.
+        ("china_trade_detail", "collectors.china_trade_detail", "ChinaTradeDetailAdapter"),  # W3 CNH: GACC English monthly bulletin table (2) — imports/exports BY COUNTRY, first-vintage PIT (GACC revises silently at the same URL)
         # Hong Kong / Hang Seng dashboard — see research/HK_DATA_AUDIT.md
         # (macro reused from china_macro; flows reused from china_connect/china_flows)
         ("hk_prices", "collectors.hk_prices", "HkPriceAdapter"),

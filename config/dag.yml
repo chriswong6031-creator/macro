@@ -1493,6 +1493,11 @@ lanes:
             - scripts.build_china_cycle_phase
             - scripts.build_china_market_state
             - scripts.build_china_mechanics
+            # W3 CNH forward calendar (display tier; reads data/china_omo +
+            # data/china_earnings, writes site/chinastatedata/calendar.json only).
+            # RIC-R3: context only — it never gates/sizes a risk or state channel, so
+            # it rides at the TAIL of this cluster and nothing downstream reads it.
+            - scripts.build_china_calendar
           cl_intel_tail:
             - scripts.build_china_intel_hub
             - scripts.build_china_intel

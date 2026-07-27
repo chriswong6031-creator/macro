@@ -11,8 +11,8 @@ Three probe classes:
                 actionable news; so is a new death among the live ones)
 
 Verdicts (red-team-hardened 2026-07-25):
-  OK      — status matched expectation AND content checks (json_path / min_bytes /
-            max_bytes) passed. Status-only probes are deliberately rare: a 200
+  OK      — status matched expectation AND content checks (json_path / contains /
+            min_bytes / max_bytes) passed. Status-only probes are deliberately rare: a 200
             wrapping an error envelope is the single most common failure mode on
             Chinese endpoints (thepaper code:99998, cninfo webapi 401-in-200,
             SSE "service is null"), so most probes carry a content check.
@@ -40,6 +40,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import re
 import sys
 import time
 import urllib.parse
@@ -88,8 +89,41 @@ def _dig(obj, path):
     return cur
 
 
+_META_CHARSET_RE = re.compile(rb"""<meta[^>]+charset=["']?\s*([a-zA-Z0-9_\-]+)""", re.I)
+
+
+def _page_text(r: "requests.Response") -> str:
+    """Body decoded with the PAGE's own charset, for the `contains` check.
+
+    Not ``r.text``: requests falls back to ISO-8859-1 for an HTML response that
+    carries no charset in its Content-Type, which turns every CJK content check into
+    a false CHANGED. CN portals also still serve gb2312/gbk (→ gb18030), so the meta
+    tag is sniffed the same way the collectors do.
+    """
+    raw = r.content
+    enc = None
+    m = re.search(r"charset=([\w\-]+)", r.headers.get("Content-Type", "") or "", re.I)
+    if m:
+        enc = m.group(1)
+    if not enc:
+        mm = _META_CHARSET_RE.search(raw[:4096])
+        if mm:
+            enc = mm.group(1).decode("ascii", "ignore")
+    enc = (enc or "utf-8").strip().lower()
+    if enc in {"gb2312", "gbk", "gb-2312"}:
+        enc = "gb18030"
+    try:
+        return raw.decode(enc, errors="replace")
+    except (LookupError, TypeError):
+        return raw.decode("utf-8", errors="replace")
+
+
 # Each probe: name, family, cls, method, url, headers?, data?, flaky?, dated?,
-# head_only?, expect{statuses, json_path?, min_bytes?, max_bytes?, error?}
+# head_only?, expect{statuses, json_path?, contains?, min_bytes?, max_bytes?, error?}
+#   contains — an HTML endpoint has no envelope to dig into, so the content check is
+#   that the page still carries the LABEL the parser keys on (a column heading, a
+#   table caption). Stable across days, unlike any document id, and absent from the
+#   200-wrapped error shells these CMSes serve.
 def build_probes() -> list[dict]:
     d8 = _last_weekday("%Y%m%d")
     d_iso = _last_weekday("%Y-%m-%d")
@@ -191,12 +225,56 @@ def build_probes() -> list[dict]:
         dict(name="cpca_chartlist", family="altdata", cls="candidate", method="GET",
              url="http://data.cpcadata.com/api/chartlist?charttype=1",
              expect=dict(statuses=[200], json_path=[0, "category"])),
+        # W3 TIGHTENED: the old json_path pinned data.data.hasMore, a PAGINATION FLAG
+        # that is present (and False) on an empty envelope — the probe would have gone
+        # green on a feed carrying no news at all. The first item's newsUniqueId is the
+        # leaf engine/cn_newswires.py actually keys on.
         dict(name="futu_flash", family="wire", cls="candidate", method="GET",
              url="https://news.futunn.com/news-site-api/main/get-flash-list?type=1&page=1&pageSize=3",
-             expect=dict(statuses=[200], json_path=["data", "data", "hasMore"])),
+             expect=dict(statuses=[200], json_path=["data", "data", "news", 0, "newsUniqueId"])),
+        # W3 TIGHTENED: this endpoint now REQUIRES the realtimenews Referer. Without it
+        # the server drops the connection outright (empty reply, curl exit 52) — verified
+        # 2026-07-27, and the W0 probe passed without it, so treat it as a tightened
+        # upstream contract rather than a probe bug. The production wire sends the same
+        # header; a probe that omits it would report a death the collector does not have.
         dict(name="ths_push_news", family="wire", cls="candidate", method="GET",
              url="https://news.10jqka.com.cn/tapp/news/push/stock",
+             headers={"Referer": "https://news.10jqka.com.cn/realtimenews.html"},
              expect=dict(statuses=[200], json_path=["data", "list", 0, "title"])),
+        # ---- W3 CNH: PBOC open-market bulletin columns (collectors/china_omo.py) ----
+        # https:// deliberately — http:// answers 302. Content checks pin the COLUMN
+        # NAME rather than a document id: the newest bulletin's number changes daily,
+        # the column heading does not, and min_bytes catches the CMS serving a shell.
+        dict(name="pboc_omo_trade_col", family="policy", cls="candidate", method="GET",
+             url="https://www.pbc.gov.cn/zhengcehuobisi/125207/125213/125431/125475/index.html",
+             headers={"Accept-Language": "zh-CN,zh;q=0.9"},
+             expect=dict(statuses=[200], min_bytes=20000, contains="公开市场业务交易公告")),
+        dict(name="pboc_omo_ann_col", family="policy", cls="candidate", method="GET",
+             url="https://www.pbc.gov.cn/zhengcehuobisi/125207/125213/125431/125469/index.html",
+             headers={"Accept-Language": "zh-CN,zh;q=0.9"},
+             expect=dict(statuses=[200], min_bytes=20000, contains="公开市场业务公告")),
+        dict(name="pboc_omo_outright_col", family="policy", cls="candidate", method="GET",
+             url="https://www.pbc.gov.cn/zhengcehuobisi/125207/125213/125431/5492845/index.html",
+             headers={"Accept-Language": "zh-CN,zh;q=0.9"},
+             expect=dict(statuses=[200], min_bytes=20000, contains="买断式逆回购")),
+        dict(name="pboc_mlf_col", family="policy", cls="candidate", method="GET",
+             url="https://www.pbc.gov.cn/zhengcehuobisi/125207/125213/125437/125446/125873/index.html",
+             headers={"Accept-Language": "zh-CN,zh;q=0.9"},
+             expect=dict(statuses=[200], min_bytes=20000, contains="中期借贷便利")),
+        # W3 CNH: GACC monthly bulletin index (collectors/china_trade_detail.py). The
+        # by-country row's own label is the content check — a 200 serving the site's
+        # error shell has none of it.
+        dict(name="gacc_monthly_bulletin", family="macro", cls="candidate", method="GET",
+             url="http://english.customs.gov.cn/statics/report/monthly.html",
+             expect=dict(statuses=[200], min_bytes=15000, contains="by Country")),
+        # W3 CNH: the State Council policy library's static sidecar — the transport that
+        # replaced the dead search API below (collectors/china_official_corpora.py,
+        # organ gov_policy_library). json_path pins a DATED leaf, so a feed that goes
+        # structurally valid-but-empty reads CHANGED, not OK.
+        dict(name="govcn_zuixin_feed", family="policy", cls="candidate", method="GET",
+             url="https://www.gov.cn/zhengce/zuixin/ZUIXINZHENGCE.json",
+             expect=dict(statuses=[200], min_bytes=50000,
+                         json_path=[0, "DOCRELPUBTIME"])),
         dict(name="hkma_monetary_base", family="hk", cls="candidate", method="GET",
              url=("https://api.hkma.gov.hk/public/market-data-and-statistics/"
                   "daily-monetary-statistics/daily-figures-monetary-base?pagesize=3"),
@@ -260,6 +338,12 @@ def build_probes() -> list[dict]:
         dict(name="gacc_english", family="macro", cls="candidate", method="GET",
              url="http://english.customs.gov.cn/",
              expect=dict(statuses=[200], min_bytes=5000)),
+        # DEAD TO UNAUTHENTICATED CALLERS as of 2026-07-27: the API answers 200 and
+        # echoes every parameter back, with searchVO.totalCount pinned at 0 — verified
+        # across three param variants, with a cookie warm-up and with the site referer.
+        # KEPT as a candidate rather than deleted (probe-revival law CNH-R5): a nonzero
+        # totalCount here is actionable news. The live replacement transport is
+        # govcn_zuixin_feed above, which is what W3 actually built on.
         dict(name="govcn_policy_search", family="policy", cls="candidate", method="GET",
              url="https://sousuo.www.gov.cn/search-gov/data?t=zhengcelibrary&q=%E5%88%A9%E7%8E%87&timetype=timeqb&mintime=&maxtime=&sort=score&sortType=1&searchfield=title&pcodeJiguan=&childtype=&subchildtype=&tsbq=&pubtimeyear=&puborg=&pcodeYear=&pcodeNum=&filetype=&p=1&n=5",
              expect=dict(statuses=[200], json_path=["searchVO", "totalCount"])),
@@ -322,6 +406,16 @@ def _content_checks(p: dict, r: requests.Response, out: dict) -> str:
     if exp.get("min_bytes") is not None and nbytes < exp["min_bytes"]:
         out["field"] = f"bytes<{exp['min_bytes']}"
         content_ok = False
+    # `contains`: the HTML analogue of json_path. An HTML endpoint has no envelope to
+    # dig into, so the check is that the page still carries the LABEL the parser keys
+    # on (a column heading, a table caption) — stable across days, unlike any document
+    # id, and absent from the error shells these CMSes serve with a 200.
+    needle = exp.get("contains")
+    if content_ok and needle:
+        found = needle in _page_text(r)
+        out["field"] = (("contains " if found else "MISSING ") + needle
+                        ).encode("ascii", "backslashreplace").decode()
+        content_ok = found
     jp = exp.get("json_path")
     if content_ok and jp:
         try:

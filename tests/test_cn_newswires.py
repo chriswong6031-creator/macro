@@ -2,12 +2,21 @@
 
 Fixtures are trimmed REAL payloads (live-probed 2026-07-10) from the three vendors'
 keyless JSON endpoints. No network: parsers are pure; fetch paths are monkeypatched.
+The W3 wires (futu, ths) are pinned against the FULL captured payloads committed at
+tests/fixtures/cn_newswires/ (live-probed 2026-07-27), not inline excerpts.
 """
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 from engine import cn_newswires as nw
+
+_FIXTURES = Path(__file__).resolve().parent / "fixtures" / "cn_newswires"
+
+
+def _fixture(name: str) -> dict:
+    return json.loads((_FIXTURES / name).read_text(encoding="utf-8"))
 
 # --------------------------------------------------------------------------- #
 # trimmed real payloads
@@ -96,6 +105,121 @@ def test_parsers_degrade_on_garbage():
     assert nw.parse_jin10("") == []
     assert nw.parse_jin10("var newest = not-json;") == []
     assert nw.parse_gelonghui({"result": None}) == []
+
+
+# --------------------------------------------------------------------------- #
+# W3 wires 4/5 — futu (富途牛牛) + ths (同花顺), pinned on the committed captures
+# --------------------------------------------------------------------------- #
+def test_parse_futu_flash_contract_and_empty_title_fallback():
+    items = nw.parse_futu_flash(_fixture("futu_flash.json"))
+    assert len(items) == 10                                  # every captured row survives
+    assert all(_CONTRACT_KEYS == set(it) for it in items)
+    assert all(it["source"] == "futu" and it["source_name"] == "富途牛牛"
+               and it["domain"] == "news.futunn.com" for it in items)
+    # the wire ships title="" on 9 of 10 rows — the content head IS the headline
+    first = items[0]
+    assert first["title"] == "美国原油期货结算价为每桶82.61美元，下跌6.70美元，跌幅7.50%"
+    assert first["summary"].startswith("美国原油期货结算价")
+    assert first["source_lang"] == "zh"
+    # epoch-second STRING -> tz-aware ISO the freshness ranker can parse
+    assert first["time"] == "2026-07-27T18:33:29+00:00"
+    assert first["url"].startswith("https://news.futunn.com/flash/20558030/")
+    # the one row that DOES carry a vendor title keeps it (long body stays the summary)
+    titled = next(it for it in items if it["title"].startswith("伊拉克政府已就"))
+    assert titled["summary"].startswith("当地时间27日晚")
+
+
+def test_futu_level_flag_is_int_not_string():
+    """`level` arrives as a JSON int — an `== "0"` string test would flag all 10 rows.
+
+    The captured page carries level=0 on nine rows and level=1 on exactly one.
+    """
+    items = nw.parse_futu_flash(_fixture("futu_flash.json"))
+    assert sum(it["wire_important"] for it in items) == 1
+    assert nw.parse_futu_flash(
+        {"data": {"data": {"news": [{"content": "央行开展1000亿元逆回购操作。",
+                                     "time": "1785177209", "level": 0}]}}}
+    )[0]["wire_important"] is False
+    assert nw.parse_futu_flash(
+        {"data": {"data": {"news": [{"content": "央行开展1000亿元逆回购操作。",
+                                     "time": "1785177209", "level": 1}]}}}
+    )[0]["wire_important"] is True
+
+
+def test_parse_ths_push_contract_and_import_flag():
+    items = nw.parse_ths_push(_fixture("ths_push.json"))
+    assert len(items) == 20
+    assert all(_CONTRACT_KEYS == set(it) for it in items)    # `tag` deliberately dropped
+    assert all(it["source"] == "ths" and it["source_name"] == "同花顺"
+               and it["domain"] == "10jqka.com.cn" for it in items)
+    first = items[0]
+    assert first["title"] == "摩根士丹利：投资者在美联储议息会议前增加美元多仓"
+    assert first["summary"].startswith("摩根士丹利策略师援引数据称")   # digest -> summary
+    assert first["time"] == "2026-07-27T18:41:29+00:00"              # ctime epoch-s
+    assert first["url"] == "https://news.10jqka.com.cn/20260728/c678468195.shtml"
+    # `import` is a STRING and the captured page carries "0" x19 and "3" x1 — NO "1".
+    # An `== "1"` mapping would ship the flag permanently dead and review clean.
+    assert sum(it["wire_important"] for it in items) == 1
+    flagged = next(it for it in items if it["wire_important"])
+    assert flagged["title"].startswith("国际原油期货跌幅扩大")
+    assert nw._vendor_flag("0") is False and nw._vendor_flag("") is False
+    assert nw._vendor_flag(None) is False and nw._vendor_flag("3") is True
+
+
+def test_new_wires_degrade_on_garbage():
+    for bad in ({}, {"data": None}, {"data": {"data": None}},
+                {"data": {"data": {"news": ["junk", {"content": ""}]}}}):
+        assert nw.parse_futu_flash(bad) == []
+    for bad in ({}, {"data": None}, {"data": {"list": None}},
+                {"data": {"list": ["junk", {"title": "", "digest": ""}]}}):
+        assert nw.parse_ths_push(bad) == []
+
+
+def test_ths_source_entry_carries_the_required_referer(monkeypatch):
+    """Without the Referer the THS server drops the connection (empty reply, not a
+    status code you can see). The per-source header must reach the actual Request."""
+    assert nw._SOURCES["ths"]["headers"]["Referer"] == \
+        "https://news.10jqka.com.cn/realtimenews.html"
+
+    seen: dict = {}
+
+    class _Resp:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def read(self):
+            return json.dumps(_fixture("ths_push.json")).encode()
+
+    def fake_urlopen(req, timeout=None):
+        seen["headers"] = dict(req.headers)
+        seen["url"] = req.full_url
+        return _Resp()
+
+    import urllib.request
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    items = nw._fetch_one("ths", 80)
+    assert len(items) == 20
+    # urllib title-cases header keys on the Request object
+    assert seen["headers"]["Referer"] == "https://news.10jqka.com.cn/realtimenews.html"
+    assert seen["headers"]["User-agent"] == nw._UA        # UA survives the merge
+    assert seen["url"] == "https://news.10jqka.com.cn/tapp/news/push/stock"
+    # a source WITHOUT per-source headers must NOT inherit the THS Referer
+    nw._fetch_one("gelonghui", 80)
+    assert "Referer" not in seen["headers"]
+    assert seen["headers"]["User-agent"] == nw._UA
+
+
+def test_config_sources_are_all_registered_wires():
+    """Every wire named in config.yml must exist in the registry (and vice-versa for
+    the W3 additions) — a config key with no parser degrades to silence, not an error."""
+    from lib import config
+    names = list((config.load().get("cn_newswires") or {}).get("sources") or [])
+    assert {"futu", "ths"} <= set(names)
+    assert all(n in nw._SOURCES for n in names), \
+        f"config names a wire with no parser: {sorted(set(names) - set(nw._SOURCES))}"
 
 
 def test_split_flash_paths():
@@ -329,6 +453,85 @@ def test_accrue_backfills_wire_important_on_old_schema():
     assert merged["wire_important"].dtype == bool
     assert merged.loc[merged.event_id == "old1", "wire_important"].item() is False
     assert bool(merged["wire_important"].any())      # the flagged jin10 row survived
+
+
+def test_w3_wires_rank_china_native_on_the_page(monkeypatch):
+    """Native-first ranking law: futu/ths must reach the page ranker at the SAME
+    china_native tier (+24) as the three W1 wires, not fall through to a default."""
+    from engine import china_news as cn
+    monkeypatch.setattr(
+        nw, "fetch_all",
+        lambda cfg=None, today=None: (nw.parse_futu_flash(_fixture("futu_flash.json"))
+                                      + nw.parse_ths_push(_fixture("ths_push.json"))))
+    items, reason = cn._fetch_cn_wires({"use_cn_json_wires": True})
+    assert reason is None and len(items) == 30
+    by_name = {it["source_name"] for it in items}
+    assert by_name == {"富途牛牛", "同花顺"}
+    for it in items:
+        assert it["source_tier"] == "china_native" and it["source"] == "cn_wire"
+        assert cn._source_weight(it["source_tier"], it["source_name"], it["source"])[0] == 24
+
+
+def test_w3_wires_are_tier2_publisher_stated_on_the_intel_bus():
+    """qbus PIT contract: both new wires carry vendor epoch stamps (sub-minute), and
+    both resolve tier 2 off the ONE qkernel table."""
+    from engine import china_news_intel as ni
+    assert ni._timestamp_quality("2026-07-27T18:33:29+00:00", "futu",
+                                 "news.futunn.com") == "PUBLISHER_STATED"
+    assert ni._timestamp_quality("2026-07-27T18:41:29+00:00", "ths",
+                                 "10jqka.com.cn") == "PUBLISHER_STATED"
+    assert ni._timestamp_quality("", "futu", "news.futunn.com") == "CRAWL_BOUNDED"
+    for src, dom in (("futu", "news.futunn.com"), ("ths", "10jqka.com.cn")):
+        assert ni.source_tier(src, dom) == 2
+
+
+def test_akshare_futu_ths_rows_keep_their_day_resolution_label():
+    """SLUG COLLISION GUARD (kept live after the config change below): _fetch_wires
+    strips 'stock_info_global_' to the SAME 'futu'/'ths' slug the direct wires use, so
+    a day-resolution akshare row must never be relabelled sub-minute. The domain is
+    what separates them, and this stays pinned because the akshare leg is the standing
+    CNH-R2 fallback — it is one config line away from being live again."""
+    from engine import china_news_intel as ni
+    assert ni._timestamp_quality("2026-07-27 18:33", "futu", "") == "SNAPSHOT_DATE"
+    assert ni._timestamp_quality("2026-07-27 18:41", "ths", "") == "SNAPSHOT_DATE"
+
+
+def test_futu_ths_are_not_polled_twice_through_akshare():
+    """REVIEW F9 — one vendor, one leg.
+
+    config.yml used to name akshare's stock_info_global_futu / _ths ALONGSIDE the
+    direct cn_newswires futu/ths wires. Both legs strip to the same slug, so the bus
+    ingested each vendor twice — the akshare copy at day resolution, the direct copy
+    at the second — and only the domain field told them apart. The direct wires are
+    strictly better (publisher-stated stamps), so the akshare pair is retired to a
+    documented CNH-R2 fallback.
+    """
+    from lib import config
+    cfg = config.load()
+    wire_sources = (cfg.get("china_news_intel") or {}).get("wire_sources") or []
+    stripped = {str(f).replace("stock_info_global_", "") for f in wire_sources}
+    assert not ({"futu", "ths"} & stripped), (
+        "futu/ths are polled on the direct cn_newswires leg — the akshare copies "
+        "duplicate every item into the intel bus")
+    assert stripped == {"em", "sina"}
+    # the direct leg is the one that carries them, and it still does
+    assert {"futu", "ths"} <= set((cfg.get("cn_newswires") or {}).get("sources") or [])
+
+
+def test_qbus_row_passes_the_domain_into_timestamp_quality():
+    """The disambiguation only works if the caller actually forwards the domain."""
+    from engine import china_news_intel as ni
+    direct = nw.parse_ths_push(_fixture("ths_push.json"))[:2]
+    recs = ni.build_records(direct, {}, "2026-07-27T13:00:00+00:00")
+    rows = ni._build_qbus_rows(recs, direct, "2026-07-27T13:00:00+00:00")
+    assert rows, "the THS fixture must yield at least one theme-gated record"
+    assert {r["timestamp_quality"] for r in rows} == {"PUBLISHER_STATED"}
+    # the same headline arriving on the akshare leg (no domain) stays day-resolution
+    ak_shaped = [{**it, "domain": "", "time": "2026-07-27 18:41"} for it in direct]
+    ak_rows = ni._build_qbus_rows(
+        ni.build_records(ak_shaped, {}, "2026-07-27T13:00:00+00:00"),
+        ak_shaped, "2026-07-27T13:00:00+00:00")
+    assert ak_rows and {r["timestamp_quality"] for r in ak_rows} == {"SNAPSHOT_DATE"}
 
 
 def test_feed_surfaces_wire_important(tmp_path, monkeypatch):
