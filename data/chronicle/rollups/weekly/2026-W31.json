@@ -1,0 +1,482 @@
+{
+  "as_of": "2026-07-27",
+  "coverage": {
+    "end": "2026-07-27",
+    "note": "weekly rollup spans up to 13 ISO weeks ending 2026-W31; 7 week(s) have events so far; chronicle event store begins 2025-07-22",
+    "start": "2026-04-27"
+  },
+  "iso_week": "2026-W31",
+  "schema": "chronicle.rollup.weekly/v1",
+  "weeks": [
+    {
+      "clusters": [
+        {
+          "n_events": 161,
+          "source": "research_vault",
+          "theme": null,
+          "top_events": [
+            {
+              "date": "2026-07-24",
+              "id": "cev-research_vault-16f61baeb104",
+              "kind": "report",
+              "source": "research_vault",
+              "source_ref": "marketdesk-srwcvprptla-0a320e",
+              "tickers": [],
+              "title": "Goldman Sachs: Global Rates Trader Priced For Surprise",
+              "weight_hint": 3
+            },
+            {
+              "date": "2026-07-24",
+              "id": "cev-research_vault-8d6e3ee6806a",
+              "kind": "report",
+              "source": "research_vault",
+              "source_ref": "marketdesk-jtzjieuwmz6-7f06bb",
+              "tickers": [],
+              "title": "J.P. Morgan: JPM International Market Intell | Morning Briefing",
+              "weight_hint": 3
+            },
+            {
+              "date": "2026-07-24",
+              "id": "cev-research_vault-0202e801a349",
+              "kind": "report",
+              "source": "research_vault",
+              "source_ref": "marketdesk-hougqtlxf0n-b07afe",
+              "tickers": [],
+              "title": "Goldman Sachs: EM Weekly Kickstart MSCI EM closed 1 higher in a volatile week",
+              "weight_hint": 2
+            },
+            {
+              "date": "2026-07-24",
+              "id": "cev-research_vault-033cccade4eb",
+              "kind": "report",
+              "source": "research_vault",
+              "source_ref": "marketdesk-rbcqtukaida-6028e6",
+              "tickers": [],
+              "title": "Goldman Sachs: Americas Healthcare REITs 2Q26 Preview Life Science funding greenshoots, leasing remains subdued",
+              "weight_hint": 2
+            },
+            {
+              "date": "2026-07-24",
+              "id": "cev-research_vault-066a90359d72",
+              "kind": "report",
+              "source": "research_vault",
+              "source_ref": "marketdesk-p2imlo0spdy-307064",
+              "tickers": [],
+              "title": "Goldman Sachs: China 2026 Outlook Exploring New Growth Engines",
+              "weight_hint": 2
+            }
+          ]
+        },
+        {
+          "n_events": 4,
+          "source": "prophet_ledger",
+          "theme": null,
+          "top_events": [
+            {
+              "date": "2026-07-20",
+              "id": "cev-prophet_ledger-3faec3db6c86",
+              "kind": "signal_close",
+              "source": "prophet_ledger",
+              "source_ref": "MS-BULL-20260709",
+              "tickers": [
+                "MS"
+              ],
+              "title": "Prophet close: MS BULL → INVALIDATED (-5.0% in 11d)",
+              "weight_hint": 2
+            },
+            {
+              "date": "2026-07-24",
+              "id": "cev-prophet_ledger-d614541af8ae",
+              "kind": "signal_close",
+              "source": "prophet_ledger",
+              "source_ref": "UBER-BULL-20260623",
+              "tickers": [
+                "UBER"
+              ],
+              "title": "Prophet close: UBER BULL → INVALIDATED (-11.4% in 31d)",
+              "weight_hint": 2
+            },
+            {
+              "date": "2026-07-24",
+              "id": "cev-prophet_ledger-a2a63f04d540",
+              "kind": "signal_close",
+              "source": "prophet_ledger",
+              "source_ref": "EXC-BULL-20260609",
+              "tickers": [
+                "EXC"
+              ],
+              "title": "Prophet close: EXC BULL → EXPIRED (-0.0% in 45d)",
+              "weight_hint": 1
+            },
+            {
+              "date": "2026-07-20",
+              "id": "cev-prophet_ledger-e1973420bfcf",
+              "kind": "signal_close",
+              "source": "prophet_ledger",
+              "source_ref": "LRN-BULL-20260605",
+              "tickers": [
+                "LRN"
+              ],
+              "title": "Prophet close: LRN BULL → EXPIRED (-5.3% in 45d)",
+              "weight_hint": 1
+            }
+          ]
+        },
+        {
+          "n_events": 2,
+          "source": "risk_band",
+          "theme": "risk",
+          "top_events": [
+            {
+              "date": "2026-07-24",
+              "id": "cev-risk_band-40f76052712a",
+              "kind": "state_flip",
+              "source": "risk_band",
+              "source_ref": "risk_radar_forward_log#2026-07-24",
+              "tickers": [],
+              "title": "Risk radar: watch → caution",
+              "weight_hint": 2
+            },
+            {
+              "date": "2026-07-21",
+              "id": "cev-risk_band-f80f93297f8c",
+              "kind": "state_flip",
+              "source": "risk_band",
+              "source_ref": "risk_radar_forward_log#2026-07-21",
+              "tickers": [],
+              "title": "Risk radar: caution → watch",
+              "weight_hint": 2
+            }
+          ]
+        },
+        {
+          "n_events": 1,
+          "source": "macro_release",
+          "theme": "claims",
+          "top_events": [
+            {
+              "date": "2026-07-23",
+              "id": "cev-macro_release-2b0a7c2c0b86",
+              "kind": "print",
+              "source": "macro_release",
+              "source_ref": "claims#2026-07-23",
+              "tickers": [],
+              "title": "Macro print: claims = +187 (2026-07-23)",
+              "weight_hint": 2
+            }
+          ]
+        }
+      ],
+      "iso_week": "2026-W30"
+    },
+    {
+      "clusters": [
+        {
+          "n_events": 3,
+          "source": "risk_band",
+          "theme": "risk",
+          "top_events": [
+            {
+              "date": "2026-07-13",
+              "id": "cev-risk_band-3cbf5ff03fc3",
+              "kind": "state_flip",
+              "source": "risk_band",
+              "source_ref": "risk_radar_forward_log#2026-07-13",
+              "tickers": [],
+              "title": "Risk radar: watch → caution",
+              "weight_hint": 2
+            },
+            {
+              "date": "2026-07-15",
+              "id": "cev-risk_band-8bb15e0f6550",
+              "kind": "state_flip",
+              "source": "risk_band",
+              "source_ref": "risk_radar_forward_log#2026-07-15",
+              "tickers": [],
+              "title": "Risk radar: caution → watch",
+              "weight_hint": 2
+            },
+            {
+              "date": "2026-07-16",
+              "id": "cev-risk_band-93ffecf74025",
+              "kind": "state_flip",
+              "source": "risk_band",
+              "source_ref": "risk_radar_forward_log#2026-07-16",
+              "tickers": [],
+              "title": "Risk radar: watch → caution",
+              "weight_hint": 2
+            }
+          ]
+        },
+        {
+          "n_events": 2,
+          "source": "prophet_ledger",
+          "theme": null,
+          "top_events": [
+            {
+              "date": "2026-07-16",
+              "id": "cev-prophet_ledger-095ee3b88468",
+              "kind": "signal_close",
+              "source": "prophet_ledger",
+              "source_ref": "QCOM-BULL-20260709",
+              "tickers": [
+                "QCOM"
+              ],
+              "title": "Prophet close: QCOM BULL → INVALIDATED (-10.7% in 7d)",
+              "weight_hint": 2
+            },
+            {
+              "date": "2026-07-16",
+              "id": "cev-prophet_ledger-0d4cbc63fe3d",
+              "kind": "signal_close",
+              "source": "prophet_ledger",
+              "source_ref": "QCOM-BULL-20260710",
+              "tickers": [
+                "QCOM"
+              ],
+              "title": "Prophet close: QCOM BULL → INVALIDATED (-9.8% in 6d)",
+              "weight_hint": 2
+            }
+          ]
+        },
+        {
+          "n_events": 1,
+          "source": "earnings",
+          "theme": "earnings",
+          "top_events": [
+            {
+              "date": "2026-07-14",
+              "id": "cev-earnings-ef2363d4abfe",
+              "kind": "earnings",
+              "source": "earnings",
+              "source_ref": "JPM#2026-07-14",
+              "tickers": [
+                "JPM"
+              ],
+              "title": "Earnings: JPM actual vs est",
+              "weight_hint": 1
+            }
+          ]
+        },
+        {
+          "n_events": 1,
+          "source": "macro_release",
+          "theme": "cpi_headline",
+          "top_events": [
+            {
+              "date": "2026-07-14",
+              "id": "cev-macro_release-721da5e43466",
+              "kind": "print",
+              "source": "macro_release",
+              "source_ref": "cpi_headline#2026-07-14",
+              "tickers": [],
+              "title": "Macro print: cpi_headline = -0.4225 (2026-07-14)",
+              "weight_hint": 1
+            }
+          ]
+        },
+        {
+          "n_events": 1,
+          "source": "macro_release",
+          "theme": "cpi_core",
+          "top_events": [
+            {
+              "date": "2026-07-14",
+              "id": "cev-macro_release-81dca08731d2",
+              "kind": "print",
+              "source": "macro_release",
+              "source_ref": "cpi_core#2026-07-14",
+              "tickers": [],
+              "title": "Macro print: cpi_core = -0.0167 (2026-07-14)",
+              "weight_hint": 1
+            }
+          ]
+        },
+        {
+          "n_events": 1,
+          "source": "macro_release",
+          "theme": "claims",
+          "top_events": [
+            {
+              "date": "2026-07-16",
+              "id": "cev-macro_release-11e87754e95f",
+              "kind": "print",
+              "source": "macro_release",
+              "source_ref": "claims#2026-07-16",
+              "tickers": [],
+              "title": "Macro print: claims = +208 (2026-07-16)",
+              "weight_hint": 1
+            }
+          ]
+        }
+      ],
+      "iso_week": "2026-W29"
+    },
+    {
+      "clusters": [
+        {
+          "n_events": 1,
+          "source": "macro_release",
+          "theme": "claims",
+          "top_events": [
+            {
+              "date": "2026-07-09",
+              "id": "cev-macro_release-767b37d2ecfe",
+              "kind": "print",
+              "source": "macro_release",
+              "source_ref": "claims#2026-07-09",
+              "tickers": [],
+              "title": "Macro print: claims = +215 (2026-07-09)",
+              "weight_hint": 1
+            }
+          ]
+        },
+        {
+          "n_events": 1,
+          "source": "prophet_ledger",
+          "theme": null,
+          "top_events": [
+            {
+              "date": "2026-07-10",
+              "id": "cev-prophet_ledger-1955f08dc244",
+              "kind": "signal_close",
+              "source": "prophet_ledger",
+              "source_ref": "FOXF-BULL-20260526",
+              "tickers": [
+                "FOXF"
+              ],
+              "title": "Prophet close: FOXF BULL → EXPIRED (-5.7% in 45d)",
+              "weight_hint": 1
+            }
+          ]
+        },
+        {
+          "n_events": 1,
+          "source": "risk_band",
+          "theme": "risk",
+          "top_events": [
+            {
+              "date": "2026-07-09",
+              "id": "cev-risk_band-633f6d5f94ca",
+              "kind": "state_flip",
+              "source": "risk_band",
+              "source_ref": "risk_radar_forward_log#2026-07-09",
+              "tickers": [],
+              "title": "Risk radar: caution → watch",
+              "weight_hint": 2
+            }
+          ]
+        }
+      ],
+      "iso_week": "2026-W28"
+    },
+    {
+      "clusters": [
+        {
+          "n_events": 1,
+          "source": "prophet_ledger",
+          "theme": null,
+          "top_events": [
+            {
+              "date": "2026-07-02",
+              "id": "cev-prophet_ledger-8d6e6ad65ebe",
+              "kind": "signal_close",
+              "source": "prophet_ledger",
+              "source_ref": "SYK-BULL-20260518",
+              "tickers": [
+                "SYK"
+              ],
+              "title": "Prophet close: SYK BULL → EXPIRED (-1.1% in 45d)",
+              "weight_hint": 1
+            }
+          ]
+        }
+      ],
+      "iso_week": "2026-W27"
+    },
+    {
+      "clusters": [
+        {
+          "n_events": 1,
+          "source": "earnings",
+          "theme": "earnings",
+          "top_events": [
+            {
+              "date": "2026-05-20",
+              "id": "cev-earnings-f067ce3a663a",
+              "kind": "earnings",
+              "source": "earnings",
+              "source_ref": "NVDA#2026-05-20",
+              "tickers": [
+                "NVDA"
+              ],
+              "title": "Earnings: NVDA actual vs est",
+              "weight_hint": 2
+            }
+          ]
+        }
+      ],
+      "iso_week": "2026-W21"
+    },
+    {
+      "clusters": [
+        {
+          "n_events": 1,
+          "source": "prophet_ledger",
+          "theme": null,
+          "top_events": [
+            {
+              "date": "2026-05-04",
+              "id": "cev-prophet_ledger-a8ba873f0e43",
+              "kind": "signal_close",
+              "source": "prophet_ledger",
+              "source_ref": "KKR-BULL-20260318",
+              "tickers": [
+                "KKR"
+              ],
+              "title": "Prophet close: KKR BULL → EXPIRED (+6.4% in 47d)",
+              "weight_hint": 1
+            }
+          ]
+        }
+      ],
+      "iso_week": "2026-W19"
+    },
+    {
+      "clusters": [
+        {
+          "n_events": 2,
+          "source": "earnings",
+          "theme": "earnings",
+          "top_events": [
+            {
+              "date": "2026-04-30",
+              "id": "cev-earnings-1f7fee519a2f",
+              "kind": "earnings",
+              "source": "earnings",
+              "source_ref": "AAPL#2026-04-30",
+              "tickers": [
+                "AAPL"
+              ],
+              "title": "Earnings: AAPL actual vs est",
+              "weight_hint": 1
+            },
+            {
+              "date": "2026-04-28",
+              "id": "cev-earnings-87c26d6f4dfd",
+              "kind": "earnings",
+              "source": "earnings",
+              "source_ref": "KO#2026-04-28",
+              "tickers": [
+                "KO"
+              ],
+              "title": "Earnings: KO actual vs est",
+              "weight_hint": 1
+            }
+          ]
+        }
+      ],
+      "iso_week": "2026-W18"
+    }
+  ]
+}
