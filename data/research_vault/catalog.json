@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-27T12:48:51.961740+00:00",
-  "count": 180,
+  "generated_at": "2026-07-27T13:36:02.369783+00:00",
+  "count": 184,
   "institutions": [
     "Bank of America",
     "Deutsche Bank",
@@ -20,6 +20,78 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-hpqgg0qvbhf-559874",
+      "title": "JPM Through The Retail L",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-27T13:29:50Z",
+      "summary_points": [
+        "**NVIDIA Dominance in AI Infrastructure**: Top stock by retail mentions (23.8z score), $502bn market cap, and 2.0% weekly returns signal strong technicals and AI-driven demand in IT sector.",
+        "**Critical Flow Divergence Signal**: Gross retail flows (blue) outperformed social media posts (black) since 2020, but both show sharp decline late 2025/early 2026, indicating potential retail flow stress or market correction.",
+        "**Sector Rotation to Tech/Industrials**: Retail net purchases show strong buying in IT vs selling in Industrials; TMT (Communication Services & Info Tech) and INDUSTRIALS dominate flows, signaling tactical shift toward tech-driven sectors.",
+        "**ETF Flow Surge & Shift**: Retail net flows into ETFs peaked sharply Jan-Mar 2026, indicating significant rotation from stocks to ETFs amid volatility, with cyclical ETF (JPAMCYCL) showing strongest inflows vs semiconductor ETF (SOXL) outflows.",
+        "**Retail Flow Peak & Decline**: Daily net flows peaked at ~$40Bn (early 2026, 51st percentile), but monthly rolling data shows decline, signaling potential rotation in retail sentiment critical for sector allocation timing."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-jughjuqrfzd-5622c2",
+      "title": "JPM JPM International Ma",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-27T13:29:40Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-c6ypikrmaw9-d97332",
+      "title": "JPM JPM Chips for Break",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-27T13:29:36Z",
+      "summary_points": [
+        "**AVGO Samsung MOU Catalyst**: >$200B Samsung memory/foundry purchases over 5 years (90–95% HBM) implies >$1T cumulative AI revenue through 2030, covering 75–85% of AVGO’s HBM DRAM needs and reinforcing supply chain dominance.",
+        "**Texas/Northern Mexico Supply Chain Crisis**: Grid interconnect lead times (48–84 months) vs.",
+        "IT components (3–12 months) and pipeline-reality disconnect (434 GW proposed vs.",
+        "11 GW built) create severe execution risks threatening key portfolio names.",
+        "**Apple-Micron Memory Geopolitics**: Apple lobbies Trump to permit Chinese CXMT/YMTC chips for U.S."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-umx7owojgls-78c876",
+      "title": "JPM JPM US Market Intell",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-27T13:29:33Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 25,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-xeu2rnattul-6bdafc",
       "title": "A NEW FISCAL-MONETARY ACCORD",
