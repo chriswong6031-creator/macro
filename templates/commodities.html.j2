@@ -475,14 +475,14 @@ html[data-lang="zh"] .bcolb .ic { background:rgba(211,11,11,.10); }
   <div style="font-size:12.5px;line-height:1.55">
     <div style="font-weight:700;text-transform:uppercase;letter-spacing:.04em;font-size:10px;opacity:.6;margin-bottom:2px">{{ t('Cross-asset read · Canadian energy (XEG)', '跨资产读数 · 加拿大能源 (XEG)') }}</div>
     {% if oil_episode.state == 'bull' and oil_episode.confirmed %}
-    <span class="l-en">Oil is in a <b>confirmed up-trend episode</b> ({{ oil_episode.run_len }}d). Historically, when oil enters one, Canadian energy (XEG) has returned <b>+1.9% over the next 4 weeks</b> (episode study: n=32, t=+2.75, q=0.009) — a tailwind.</span>
-    <span class="l-zh">原油处于<b>确认的上行趋势阶段</b>（{{ oil_episode.run_len }} 天）。历史上原油进入该阶段时，加拿大能源（XEG）随后 4 周平均回报 <b>+1.9%</b>（阶段研究：n=32，t=+2.75，q=0.009）——顺风。</span>
+    <span class="l-en">Oil's <b>3-month trend</b> is a <b>confirmed up-trend</b> ({{ oil_episode.run_len }}d{% if oil_episode.sz_now is not none %}, slope-z {{ oil_episode.sz_now }}{% endif %}){% if oil_episode.ret_1m is not none and oil_episode.ret_1m < 0 %}, despite a <b>{{ oil_episode.ret_1m }}% 1-month pullback</b>{% endif %}. Historically, when oil enters one, Canadian energy (XEG) has returned <b>+1.9% over the next 4 weeks</b> (episode study: n=32, t=+2.75, q=0.009) — a tailwind.</span>
+    <span class="l-zh">原油<b>3个月趋势</b>为<b>确认的上行</b>（{{ oil_episode.run_len }} 天{% if oil_episode.sz_now is not none %}，斜率-z {{ oil_episode.sz_now }}{% endif %}）{% if oil_episode.ret_1m is not none and oil_episode.ret_1m < 0 %}，尽管近 1 个月回调 <b>{{ oil_episode.ret_1m }}%</b>{% endif %}。历史上原油进入该阶段时，加拿大能源（XEG）随后 4 周平均回报 <b>+1.9%</b>（阶段研究：n=32，t=+2.75，q=0.009）——顺风。</span>
     {% elif oil_episode.state == 'bear' and oil_episode.confirmed %}
-    <span class="l-en">Oil is in a <b>confirmed down-trend episode</b> ({{ oil_episode.run_len }}d) — the up-side tailwind for Canadian energy (XEG) is <b>not active</b>. The down-side link is weaker and underpowered (C1b, provisional).</span>
-    <span class="l-zh">原油处于<b>确认的下行趋势阶段</b>（{{ oil_episode.run_len }} 天）——对加拿大能源（XEG）的上行顺风<b>未激活</b>；下行关联更弱、样本不足（C1b，暂定）。</span>
+    <span class="l-en">Oil's <b>3-month trend</b> is a <b>confirmed down-trend</b> ({{ oil_episode.run_len }}d{% if oil_episode.sz_now is not none %}, slope-z {{ oil_episode.sz_now }}{% endif %}){% if oil_episode.ret_1m is not none and oil_episode.ret_1m > 0 %}, even after a sharp <b>+{{ oil_episode.ret_1m }}% 1-month bounce</b>{% endif %} — so the up-side tailwind for Canadian energy (XEG) is <b>not yet active</b>. The down-side link is weaker and underpowered (C1b, provisional).</span>
+    <span class="l-zh">原油<b>3个月趋势</b>仍为<b>确认的下行</b>（{{ oil_episode.run_len }} 天{% if oil_episode.sz_now is not none %}，斜率-z {{ oil_episode.sz_now }}{% endif %}）{% if oil_episode.ret_1m is not none and oil_episode.ret_1m > 0 %}，尽管近 1 个月强劲反弹 <b>+{{ oil_episode.ret_1m }}%</b>{% endif %}——对加拿大能源（XEG）的上行顺风<b>尚未激活</b>；下行关联更弱、样本不足（C1b，暂定）。</span>
     {% else %}
-    <span class="l-en">Oil has <b>no confirmed trend episode</b> right now. When it enters a confirmed up-trend, Canadian energy (XEG) has historically gained <b>+1.9% / 4 weeks</b> (n=32, t=+2.75).</span>
-    <span class="l-zh">原油当前<b>无确认的趋势阶段</b>。当其进入确认上行趋势时，加拿大能源（XEG）历史上随后 4 周平均 <b>+1.9%</b>（n=32，t=+2.75）。</span>
+    <span class="l-en">Oil has <b>no confirmed 3-month trend</b> right now{% if oil_episode.sz_now is not none %} (slope-z {{ oil_episode.sz_now }}){% endif %}. When it enters a confirmed up-trend, Canadian energy (XEG) has historically gained <b>+1.9% / 4 weeks</b> (n=32, t=+2.75).</span>
+    <span class="l-zh">原油当前<b>无确认的 3 个月趋势</b>{% if oil_episode.sz_now is not none %}（斜率-z {{ oil_episode.sz_now }}）{% endif %}。当其进入确认上行趋势时，加拿大能源（XEG）历史上随后 4 周平均 <b>+1.9%</b>（n=32，t=+2.75）。</span>
     {% endif %}
     <span style="opacity:.6"> — {{ t('historical context, not a gauntleted signal (C1-R2 pre-registration)', '历史背景，非经考验的信号（C1-R2 预注册）') }}</span>
   </div>
