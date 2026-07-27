@@ -18,7 +18,7 @@ name: press-publish
 #   1. Repo secret    ANTHROPIC_API_KEY (or CLAUDE_CODE_OAUTH_TOKEN / a pool key,
 #      or DEEPSEEK_API_KEY). With none of these the writer prints a
 #      `press_writer_mute` warning and drops every slot — dark, not silent.
-#   2. Repo VARIABLE  PRESS_PUBLISH_ENABLED  (the kill switch) — set its value to the word true
+#   2. Repo VARIABLE  PRESS_PUBLISH_ENABLED = true    (the kill switch)
 #   3. Watch the first `workflow_dispatch` run with emit=false: it stages drafts
 #      and uploads the validator reports as an artifact WITHOUT publishing
 #      anything.

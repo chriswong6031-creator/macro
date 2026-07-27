@@ -83,21 +83,93 @@ def test_the_kill_switch_has_no_secrets_fallback():
     assert "secrets.PRESS_PUBLISH_ENABLED" not in _text()
 
 
-def test_the_kill_switch_variable_is_created_nowhere_in_the_repo():
-    """W1 ships dark: this change must not arm anything."""
-    hits = []
-    for path in _REPO.rglob("*.yml"):
-        if ".claude" in path.parts or "worktrees" in path.parts:
+def _scanned_yml(root: Path) -> list[Path]:
+    """Every .yml under `root`, excluding NESTED checkouts.
+
+    The exclusion is tested on the path RELATIVE to `root`. House law puts every
+    agent session in a `.claude/worktrees/<name>/` worktree, so an absolute-path
+    test (`path.parts`) matches the repo root itself and skips EVERY file — see
+    test_the_kill_switch_scan_is_not_vacuous.
+    """
+    out = []
+    for path in root.rglob("*.yml"):
+        rel = path.relative_to(root)
+        if ".claude" in rel.parts or "worktrees" in rel.parts:
             continue
+        out.append(path)
+    return out
+
+
+def _kill_switch_armings(root: Path) -> list[str]:
+    """Lines under `root` that actually ARM PRESS_PUBLISH_ENABLED."""
+    hits = []
+    for path in _scanned_yml(root):
         try:
             body = path.read_text(encoding="utf-8")
         except (OSError, UnicodeDecodeError):
             continue
         for line in body.splitlines():
-            if "PRESS_PUBLISH_ENABLED" in line and re.search(
-                    r"PRESS_PUBLISH_ENABLED\s*[:=]\s*['\"]?(true|1|yes)", line):
-                hits.append(f"{path.relative_to(_REPO)}: {line.strip()}")
+            # Only YAML that could actually arm the switch counts — same reason
+            # _code_lines() exists above: documentation about a hazard is not one.
+            # press-publish.yml documents its own arming steps, and that comment
+            # formed this exact pattern.
+            code = line.split("#", 1)[0]
+            if "PRESS_PUBLISH_ENABLED" in code and re.search(
+                    r"PRESS_PUBLISH_ENABLED\s*[:=]\s*['\"]?(true|1|yes)", code):
+                hits.append(f"{path.relative_to(root)}: {line.strip()}")
+    return hits
+
+
+def test_the_kill_switch_variable_is_created_nowhere_in_the_repo():
+    """W1 ships dark: this change must not arm anything."""
+    hits = _kill_switch_armings(_REPO)
     assert not hits, f"the kill switch is armed somewhere: {hits}"
+
+
+def test_the_kill_switch_scan_is_not_vacuous():
+    """THE DEFECT THIS CLOSES: the scan skipped a path when ".claude" or
+    "worktrees" appeared anywhere in its ABSOLUTE parts. Every agent session runs
+    from `.claude/worktrees/<name>/`, so the repo root itself matched and the
+    guard scanned 0 files — permanently green for every agent, real only in CI,
+    where it duly went red. A guard that cannot see anything cannot refuse
+    anything, so pin that it still sees the repo.
+    """
+    scanned = _scanned_yml(_REPO)
+    assert len(scanned) > 50, (
+        f"kill-switch scan covers only {len(scanned)} .yml files — it has gone "
+        "vacuous again. Check that the .claude/worktrees exclusion is tested on "
+        "the path RELATIVE to _REPO, not on its absolute parts."
+    )
+    assert _WF in scanned, "the press workflow itself must be in scope"
+
+
+def test_the_kill_switch_scan_reads_armings_not_prose(tmp_path):
+    """Real armings are caught; documentation describing the lever is not one.
+
+    press-publish.yml has to tell an operator how to arm the lane. Reading that
+    sentence as an arming forced the doc into contorted phrasing to dodge a
+    regex — which the next person to tidy the wording would silently undo.
+    """
+    (tmp_path / ".github").mkdir()
+    armed = tmp_path / ".github" / "armed.yml"
+    armed.write_text("env:\n  PRESS_PUBLISH_ENABLED: true\n", encoding="utf-8")
+    assert _kill_switch_armings(tmp_path), "a real arming must be caught"
+
+    # A trailing comment must not smuggle one past the comment-stripping.
+    armed.write_text("env:\n  PRESS_PUBLISH_ENABLED: true  # staging\n", encoding="utf-8")
+    assert _kill_switch_armings(tmp_path), "an arming with a trailing comment must be caught"
+
+    armed.write_text(
+        "# 2. Repo VARIABLE  PRESS_PUBLISH_ENABLED = true    (the kill switch)\n"
+        "name: docs-only\n", encoding="utf-8")
+    assert not _kill_switch_armings(tmp_path), "prose about the lever is not the lever"
+
+    # And a NESTED checkout is still skipped — the exclusion's real job.
+    nested = tmp_path / ".claude" / "worktrees" / "wt" / ".github"
+    nested.mkdir(parents=True)
+    (nested / "armed.yml").write_text(
+        "env:\n  PRESS_PUBLISH_ENABLED: true\n", encoding="utf-8")
+    assert not _kill_switch_armings(tmp_path), "a nested checkout must stay out of scope"
 
 
 def test_emit_needs_an_explicit_human_dispatch():
