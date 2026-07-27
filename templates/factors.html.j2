@@ -46,10 +46,14 @@
      WEIGHTS: 400 body · 600 label · 700 title · 800 numeral
      ══════════════════════════════════════════════════════════════════════ */
   * { box-sizing:border-box; }
+  /* horizontal page padding is a token so the sticky rail can cancel it and
+     run full-bleed (see .railwrap) */
+  :root{ --fx-padx:18px; }
+  @media (min-width:1100px){ :root{ --fx-padx:max(40px,calc((100vw - 1360px)/2)); } }
   body { background:var(--bg); color:var(--text);
-         font:400 13px/1.55 var(--font-ui); margin:0; padding:18px;
+         font:400 13px/1.55 var(--font-ui); margin:0; padding:18px var(--fx-padx);
          -webkit-font-smoothing:antialiased; }
-  @media (min-width:1100px){ body{ padding:26px max(40px,calc((100vw - 1360px)/2)); } }
+  @media (min-width:1100px){ body{ padding:26px var(--fx-padx); } }
   a { text-decoration:none; color:inherit; }
   h1 { font-size:20px; margin:0; letter-spacing:-.02em; }
   h2 { font-size:11px; margin:0 0 12px; color:var(--muted); text-transform:uppercase;
@@ -85,7 +89,8 @@
     background:radial-gradient(ellipse,rgba(99,102,241,.09) 0%,transparent 70%); }
   html[data-theme="light"] .fx-aurora::before{ background:radial-gradient(ellipse,color-mix(in srgb,var(--vh) 7%,transparent) 0%,transparent 70%); }
   html[data-theme="light"] .fx-aurora::after { background:radial-gradient(ellipse,rgba(99,102,241,.05) 0%,transparent 70%); }
-  body > nav, body > .panel, body > .twocol, body > script { position:relative; z-index:1; }
+  body > nav, body > .panel, body > .twocol, body > script,
+  body > section, body > .railwrap { position:relative; z-index:1; }
 
   .panel { background:var(--fx-glass); border:1px solid var(--fx-brd);
            border-radius:var(--fx-r); padding:18px 20px; margin-bottom:16px;
@@ -114,7 +119,10 @@
   .help:hover::before { content:''; position:absolute; top:100%; left:-30px; right:-30px; height:10px; }
   .help:hover .tip { display:block; }
   .lead { display:flex; flex-direction:column; gap:6px; }
-  .leadrow { display:grid; grid-template-columns:150px 1fr 64px; align-items:center; gap:10px; }
+  /* name column sizes to its content: at 2-across the fixed 150px wrapped the
+     longer labels ("Composite (de-correlated)") onto a second line */
+  .leadrow { display:grid; grid-template-columns:minmax(150px,max-content) minmax(90px,1fr) 64px;
+             align-items:center; gap:10px; }
   .leadbar { height:14px; border-radius:7px; background:var(--panel2); position:relative; overflow:hidden; }
   .leadbar > i { position:absolute; top:0; bottom:0; }
   .cardgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(258px,1fr)); gap:12px; }
@@ -322,6 +330,96 @@
   .fx-head { position:relative; z-index:1; margin:2px 0 16px; }
   .fx-head h1 { font-size:22px; font-weight:800; letter-spacing:-.025em; margin:0; }
   .fx-head p { font-size:12px; color:var(--muted); margin:6px 0 0; max-width:74ch; line-height:1.55; }
+  /* ══════════════════════════════════════════════════════════════════════
+     SECTIONED IA — this page had grown to 20 same-weight panels in a single
+     scroll, grouped by CHART TYPE rather than by factor, so reading one factor
+     meant visiting eight panels. Sections + a scroll-spy rail give it a spine;
+     the factor drawer (below) inverts it to factor-first.
+     ══════════════════════════════════════════════════════════════════════ */
+  .railwrap{ position:sticky; top:0; z-index:40; background:var(--bg);
+             border-bottom:1px solid var(--line);
+             /* negative inline margin cancels the body padding so the bar runs
+                edge-to-edge; a rail with a transparent top edge reads as a
+                detached floating box once content scrolls under it */
+             margin:0 calc(-1 * var(--fx-padx)) 20px; padding:0 var(--fx-padx); }
+  .fx-rail{ display:flex; gap:2px; overflow-x:auto; scrollbar-width:none; }
+  .fx-rail::-webkit-scrollbar{ display:none; }
+  .fx-rail a{ padding:11px 14px; font-size:11.5px; font-weight:600; color:var(--muted);
+              white-space:nowrap; border-bottom:2px solid transparent; transition:color .15s; }
+  .fx-rail a:hover{ color:var(--text); }
+  .fx-rail a.on{ color:var(--text); border-bottom-color:var(--warn); }
+
+  .fx-sec{ scroll-margin-top:56px; margin-bottom:26px; }
+  .sec-h{ display:flex; align-items:baseline; gap:12px; margin:0 0 4px; }
+  .sec-n{ font-size:10px; font-weight:800; letter-spacing:.14em; color:var(--muted); opacity:.55; }
+  /* overrides the global uppercase 11px h2 — section titles are page furniture */
+  .sec-h h2{ font-size:17px; font-weight:700; letter-spacing:-.02em; margin:0;
+             color:var(--text); text-transform:none; }
+  .sec-sub{ font-size:12px; color:var(--muted); margin:0 0 14px; max-width:78ch; }
+
+  .fx-grid2{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+             gap:16px; align-items:start; }
+  .fx-grid2 > .panel{ margin-bottom:0; }
+  @media (max-width:860px){ .fx-grid2{ grid-template-columns:minmax(0,1fr); } }
+
+  /* explorer — five stacked panels behind one tab strip */
+  .fx-tabs{ display:flex; gap:3px; flex-wrap:wrap; margin-bottom:14px; width:fit-content;
+            max-width:100%; background:color-mix(in srgb,var(--panel2) 55%,transparent);
+            padding:3px; border-radius:10px; border:1px solid var(--fx-brd); }
+  .fx-tabs button{ background:transparent; border:0; color:var(--muted); font:inherit;
+                   font-size:11.5px; font-weight:600; padding:6px 13px; border-radius:7px;
+                   cursor:pointer; white-space:nowrap; }
+  .fx-tabs button.on{ background:var(--panel); color:var(--text);
+                      box-shadow:0 1px 4px rgba(0,0,0,.25); }
+  .fx-pane{ display:none; } .fx-pane.on{ display:block; }
+
+  /* ── FACTOR DRAWER ────────────────────────────────────────────────────
+     One factor's whole story in one place: definition, measured edge, the
+     portfolio it actually produced, crowding, and its leaders. Opens from any
+     factor name on the page. Deep-linkable as #f/<key>.                   */
+  .fx-scrim{ position:fixed; inset:0; background:rgba(0,0,0,.5); opacity:0;
+             pointer-events:none; transition:opacity .22s; z-index:90; }
+  .fx-scrim.on{ opacity:1; pointer-events:auto; }
+  .fx-drawer{ position:fixed; top:0; right:0; bottom:0; width:min(430px,100vw); z-index:100;
+              background:var(--panel); border-left:1px solid var(--fx-brd);
+              box-shadow:-20px 0 60px rgba(0,0,0,.5); transform:translateX(100%);
+              transition:transform .26s cubic-bezier(.22,.61,.36,1);
+              overflow-y:auto; padding:20px 22px 40px; }
+  .fx-drawer.on{ transform:none; }
+  .dw-x{ position:absolute; top:14px; right:16px; background:transparent; border:0;
+         color:var(--muted); font-size:19px; cursor:pointer; line-height:1; padding:4px; }
+  .dw-eyebrow{ font-size:9.5px; font-weight:800; letter-spacing:.14em; text-transform:uppercase;
+               color:var(--muted); opacity:.7; }
+  .dw-title{ display:flex; align-items:center; gap:9px; margin:5px 0 3px; flex-wrap:wrap; }
+  .dw-title h3{ font-size:21px; margin:0; letter-spacing:-.025em; font-weight:700; }
+  .dw-blurb{ font-size:12px; color:var(--muted); margin:8px 0 18px; line-height:1.6; }
+  .dw-sec{ border-top:1px solid var(--fx-brd); padding-top:13px; margin-top:15px; }
+  .dw-sec h4{ font-size:9.5px; font-weight:800; letter-spacing:.13em; text-transform:uppercase;
+              color:var(--muted); margin:0 0 9px; }
+  .dw-kv{ display:grid; grid-template-columns:1fr auto; gap:6px 12px; font-size:12px; }
+  .dw-kv .k{ color:var(--muted); }
+  .dw-kv .v{ font-variant-numeric:tabular-nums; font-weight:700; text-align:right; }
+  .dw-read{ font-size:12px; line-height:1.6; margin:0; padding:10px 12px; border-radius:9px;
+            background:color-mix(in srgb,var(--panel2) 70%,transparent);
+            border:1px solid var(--fx-brd); }
+  .dw-names{ display:flex; flex-wrap:wrap; gap:5px; }
+  /* any factor name that can open the drawer */
+  .fx-open{ cursor:pointer; border-bottom:1px dotted transparent; }
+  .fx-open:hover{ border-bottom-color:var(--muted); }
+  @media (prefers-reduced-motion:reduce){ .fx-drawer,.fx-scrim{ transition:none; } }
+
+  /* ticker search across the leader cards */
+  .fx-find{ display:flex; gap:10px; align-items:center; margin-bottom:13px; flex-wrap:wrap; }
+  .fx-find .box{ position:relative; flex:1; min-width:210px; max-width:330px; }
+  .fx-find input{ width:100%; background:color-mix(in srgb,var(--panel2) 65%,transparent);
+                  border:1px solid var(--fx-brd); border-radius:9px; padding:8px 12px 8px 30px;
+                  color:var(--text); font:inherit; font-size:12px; outline:none; }
+  .fx-find input:focus{ border-color:var(--fx-hover-brd); }
+  .fx-find .mag{ position:absolute; left:10px; top:50%; transform:translateY(-50%);
+                 font-size:11px; color:var(--muted); pointer-events:none; }
+  .fx-find .note{ font-size:11px; color:var(--muted); }
+  .fcard.dim{ opacity:.28; }
+  .fcard tr.hit td{ background:color-mix(in srgb,var(--warn) 16%,transparent); }
 </style>
 <script src="lightweight-charts.js"></script>
 </head>
@@ -363,6 +461,10 @@
             '哪种风格的股票正在起作用——低估值、高质量、高分红、近期赢家——以及这是否真的有意义。') }}</p>
   </header>
 
+
+  <section class="fx-sec" id="sec-verdict">
+    <div class="sec-h"><span class="sec-n">01</span><h2>{{ t('The verdict', '结论') }}</h2></div>
+    <p class="sec-sub">{{ t('Does any of this predict? Everything below is derived from the same scorecard, so the page cannot disagree with itself.', '这些排名能预测吗？以下全部源自同一记分卡，因此本页不会自相矛盾。') }}</p>
   {# ── THE VERDICT HERO ────────────────────────────────────────────────────
      Signature element. `n_pass` counts the factor legs that clear BH-FDR with a
      POSITIVE measured edge — the same bar the composite passport uses to decide
@@ -423,7 +525,7 @@
         {% for r in _icrows if r.factor not in ['composite_orth'] %}
         {% set _p = (r.survives_fdr and r.mean_ic is not none and r.mean_ic > 0) %}
         <div class="rl-row {{ 'pass' if _p else '' }}" style="display:contents">
-          <span class="rl-name">{{ t(r.label_en, fac.factor_labels.get(r.factor, r.label_en)) }}</span>
+          <span class="rl-name fx-open" data-fx="{{ r.factor }}">{{ t(r.label_en, fac.factor_labels.get(r.factor, r.label_en)) }}</span>
           <span class="rl-track">
             {% if r.mean_ic is not none and r.mean_ic != 0 %}
             {% set _w = (r.mean_ic|abs / _icmax * 50)|round(2) %}
@@ -439,7 +541,24 @@
     </div>
   </div>
   {% endif %}
+  </section>
 
+  {# Section rail — deliberately opaque and full-bleed (--fx-padx negative
+     margin): a rail with a transparent top edge reads as 'floating'. #}
+  <div class="railwrap"><nav class="fx-rail" id="fx-rail">
+    <a href="#sec-verdict">{{ t('Verdict','结论') }}</a>
+    <a href="#sec-leadership">{{ t('Leadership','领先风格') }}</a>
+    <a href="#sec-evidence">{{ t('Evidence','证据') }}</a>
+    <a href="#sec-explorer">{{ t('Explorer','探索') }}</a>
+    <a href="#sec-names">{{ t('Names','个股') }}</a>
+    <a href="#sec-season">{{ t('Seasonality','季节性') }}</a>
+    <a href="#sec-system">{{ t('System','系统') }}</a>
+  </nav></div>
+
+  <section class="fx-sec" id="sec-leadership">
+    <div class="sec-h"><span class="sec-n">02</span><h2>{{ t('Leadership now', '当前领先') }}</h2></div>
+    <p class="sec-sub">{{ t('Where the money has actually gone. Descriptive — leadership rotates, and none of this has been tested for predictive power.', '资金实际流向。仅为描述——领先风格会轮换，且均未经过预测力检验。') }}</p>
+  <div class="fx-grid2">
   {# ── STYLE TAPE ─────────────────────────────────────────────────────────
      The three style spreads the Neural Web already computes every night and,
      until now, only wrote to `factor_weather.etf_pulse_summary` as a debug
@@ -490,7 +609,447 @@
       '过去一个月资金实际流向。仅为描述——领先风格会轮换，且这三项均未经过预测力检验。') }}</p>
   </div>
   {% endif %}
+  <!-- Factor leadership -->
+  {% if fac.leadership %}
+  <div class="panel">
+    <h2>{{ t('What is working now', '当前哪种因子在起作用') }}
+      {{ help("For each factor, the trailing-63-day return of its top quintile MINUS its bottom quintile. Positive = that factor has been rewarded recently (descriptive, not a forecast). Compare against the regime above: e.g. value & low-vol leading often accompanies risk-off / late-cycle.", "每个因子最近 63 个交易日内：顶部五分位减底部五分位的回报。正值=该因子近期获得回报（描述性，非预测）。") }}
+    </h2>
+    <p class="muted sm" style="margin:0 0 10px">{{ t(
+      'What the market has rewarded over the past 3 months. Descriptive — leadership rotates.',
+      '过去3个月市场奖励的风格。仅为描述——领先风格会轮换。') }}</p>
+    <div class="lead">
+      {% set maxsp = (fac.leadership | map(attribute='spread_pct') | map('abs') | max) or 1 %}
+      {% for L in fac.leadership %}
+      <div class="leadrow">
+        <span>{{ td(L.label) }}</span>
+        <span class="leadbar">
+          {% if L.spread_pct >= 0 %}<i style="left:50%;width:{{ (L.spread_pct/maxsp*50)|round(1) }}%;background:var(--up)"></i>
+          {% else %}<i style="right:50%;width:{{ (-L.spread_pct/maxsp*50)|round(1) }}%;background:var(--down)"></i>{% endif %}
+          <i style="left:50%;width:1px;background:var(--muted);opacity:.5"></i>
+        </span>
+        <span class="{{ 'zpos' if L.spread_pct>=0 else 'zneg' }}" style="text-align:right">{{ '%+.1f'|format(L.spread_pct) }}%</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+  <!-- Where the heat is — momentum concentration (momo.top_decile; fail-open) -->
+  {% if momo is not none and momo.get('top_decile') %}
+  {% set _mtd = momo.top_decile %}
+  {% set _mmax = (_mtd.sectors | map(attribute='share_pct') | max) if _mtd.sectors else 1 %}
+  <div class="panel">
+    <h2>{{ t('Where the heat is', '热度集中在哪') }}</h2>
+    <div class="lead" style="margin-bottom:8px">
+      {% for sec in _mtd.sectors %}
+      <div class="leadrow">
+        <span class="sm">{{ sec.sector }}</span>
+        <span class="leadbar">
+          <i style="left:0;width:{{ (sec.share_pct / _mmax * 100)|round(1) }}%;background:var(--up)"></i>
+        </span>
+        <span class="sm" style="text-align:right">{{ sec.share_pct }}%</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% if _mtd.sample %}
+    <div style="margin-bottom:8px">
+      {% for tk in _mtd.sample %}
+      <span class="chip">{{ tk }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <p class="sm" style="margin:0 0 6px">{{ t(
+      'When the hottest stocks crowd into one sector, a stumble there hits them all together.',
+      '当最热个股集中于单一板块时，该板块受挫会同时波及所有热门股。') }}</p>
+    <p class="muted sm" style="margin:0">
+      <span class="l-en">{{ momo.disclosure_en }}</span>
+      <span class="l-zh">{{ momo.disclosure_zh }}</span>
+    </p>
+  </div>
+  {% endif %}
+  <!-- Market breadth (index-member participation, not factor breadth) -->
+  {% if breadth and breadth.groups %}
+  <div class="panel">
+    <h2>{{ t('Market breadth', '市场广度') }}
+      {{ help("Share of index members trading above their own 50-day AND 200-day moving averages, across the S&P 500 / 400 / 600 caps. This is MARKET-MEMBER participation (is the rally broad or narrow?), NOT factor-portfolio breadth. Above ~60% = broad; a small/large divergence flags where participation is rotating. Small & mid breadth history starts 2023-07 (the divergence is on that common window).", "指数成分中股价同时高于自身 50 日与 200 日均线的比例，覆盖标普 500／400／600。这是市场成分的参与度（涨势是广泛还是狭窄），并非因子组合广度。约 60% 以上=广泛；大小盘背离提示参与度在轮动。中小盘广度数据自 2023-07 起。") }}
+    </h2>
+    <table>
+      <tr><th>{{ t('index', '指数') }}</th><th class="r">{{ t('% > 50d MA', '% 高于50日线') }}</th><th class="r">{{ t('% > 200d MA', '% 高于200日线') }}</th><th class="r">{{ t('members', '成分数') }}</th></tr>
+      {% for g in breadth.groups %}
+      <tr>
+        <td>{{ t(g.label_en, g.label_zh) }}</td>
+        <td class="r"><span class="bbar"><i style="width:{{ g.p50 }}%;background:{{ 'var(--up)' if g.p50>=50 else 'var(--down)' }}"></i></span> <b class="{{ 'pos' if g.p50>=50 else 'neg' }}">{{ g.p50 }}%</b></td>
+        <td class="r"><span class="bbar"><i style="width:{{ g.p200 }}%;background:{{ 'var(--up)' if g.p200>=50 else 'var(--down)' }}"></i></span> <b class="{{ 'pos' if g.p200>=50 else 'neg' }}">{{ g.p200 }}%</b></td>
+        <td class="r muted sm">{{ g.n }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% if breadth.div_small_large is not none %}
+    <p class="muted sm" style="margin:8px 0 0">{{ t(
+      'Small-cap vs large-cap breadth: ' ~ ('%+.1f'|format(breadth.div_small_large)) ~ 'pp (small minus large, % above 50d). Positive = small-caps participating MORE than mega-caps — a broadening tape; negative = leadership narrowing to the top.',
+      '小盘相对大盘广度：' ~ ('%+.1f'|format(breadth.div_small_large)) ~ ' 个百分点（小盘减大盘，% 高于50日线）。正值=小盘参与度高于大盘（涨势扩散）；负值=领先向头部集中。') }}</p>
+    {% endif %}
+  </div>
+  {% endif %}
+  </div>
+  </section>
 
+  <section class="fx-sec" id="sec-evidence">
+    <div class="sec-h"><span class="sec-n">03</span><h2>{{ t('The evidence', '证据') }}</h2></div>
+    <p class="sec-sub">{{ t('The honest test most factor dashboards never show — every factor rebuilt at each quarter-end from only what was knowable then. Judge each number against zero.', '大多数因子面板从不展示的诚实检验——每个因子在各季末仅用当时可知的信息重建。每个数字都应与零比较。') }}</p>
+  <!-- Does the rank actually predict? — leak-free point-in-time IC scorecard -->
+  {% if ic and ic.rows %}
+  <div class="panel">
+    <h2>{{ t('Do these rankings actually predict? — the honest test', '这些排名真的能预测吗？— 诚实检验') }}
+      {{ help("The honest test most factor dashboards never show. At each quarter-end we rebuild every factor AS IT WAS KNOWABLE THEN — no look-ahead into a not-yet-filed 10-K (fundamentals are point-in-time) — then rank-correlate the factor score with the NEXT " ~ ic.horizon_d ~ "-day return: the Information Coefficient (IC). mean IC = average predictive edge; 0 = none. IC-IR (annualized) = IC ÷ its own volatility; t_HAC = Newey-West t-stat (overlapping forward windows autocorrelate the IC series); q_FDR = Benjamini-Hochberg false-discovery rate across every factor screened. One caveat the deep panel can't escape: prices cover only the currently-listed (delisted names are absent), so the deep read is survivorship-biased — an OPTIMISTIC bound. Judge each number against ZERO.",
+                "大多数因子面板从不展示的诚实检验。在每个季末，我们按当时可知的信息重建每个因子（无前视、基本面为时点数据），再将因子分数与未来 " ~ ic.horizon_d ~ " 日回报做秩相关，得到信息系数 IC。平均 IC = 平均预测优势；0 = 无优势。IC-IR（年化）= IC ÷ 自身波动；t_HAC = Newey-West t 值（重叠窗口使 IC 序列自相关）；q_FDR = 跨全部因子的多重检验错误发现率。深度面板的一个无法回避的代价：价格仅覆盖现存名（已退市名缺失），故深度读数含幸存者偏差 — 为乐观上界。每个数字都应与零比较。") }}
+    </h2>
+    {# The verdict itself now leads the page (see the hero ruler); repeating it
+       here in prose was the same sentence twice. This panel is the receipt: the
+       full statistics behind that verdict. #}
+    <p class="muted sm" style="margin:0 0 10px">
+      {{ t('Deep 2011-2026 test · survivor-tilted data, so treat results as an optimistic upper bound.',
+           '2011-2026 深度检验 · 数据含幸存者偏差，结果应视为乐观上界。') }}
+      {{ help(
+        (('Span ' ~ ic.span ~ ' · ' ~ ic.rebalances ~ ' quarterly rebalances · ~' ~ ic.median_universe ~ ' names — a DEEP 2011-2026 re-test on a backfilled close panel, not the ~3y rolling cache. The catch: that panel is SURVIVORSHIP-BIASED (delisted names absent — free prices only cover the currently-listed), so it is an OPTIMISTIC bound; a lone, marginal survivor is shown, not a green light. SUE — the strongest factor on the shallow 2023-2025 window — collapses to IC≈0 here. FINRA short-interest is dropped (no point-in-time history) and fundamentals refresh only ~annually, so fundamental factors still have few independent draws.') if ic.survivorship_biased else ('Span ' ~ ic.span ~ ' · ' ~ ic.rebalances ~ ' quarterly rebalances · ~' ~ ic.median_universe ~ ' names. ~3 years of price history caps the sample at n≈' ~ ic.rebalances ~ ', so t-stats and FDR are low-power. Read it as honest context, not a green light — and note fundamentals refresh only ~annually, so the fundamental factors have even fewer independent draws.')),
+        (('区间 ' ~ ic.span ~ ' · ' ~ ic.rebalances ~ ' 次季度再平衡 · 约 ' ~ ic.median_universe ~ ' 只 — 2011-2026 深度复检。含幸存者偏差：已退市名缺失，为乐观上界；仅展示个别勉强通过者，而非买入信号。') if ic.survivorship_biased else ('区间 ' ~ ic.span ~ ' · ' ~ ic.rebalances ~ ' 次季度再平衡 · 约 ' ~ ic.median_universe ~ ' 只。约 3 年价格历史使样本仅 n≈' ~ ic.rebalances ~ '，t 统计与 FDR 检验力较低。'))
+      ) }}
+    </p>
+    {% set _comp = ic.factors.get('composite') if ic.factors else none %}
+    {% if _comp and _comp.get('mean_ic') is not none and _comp.mean_ic < 0 %}
+    <div class="ic-alert">
+      <b>⚠ {{ t('The equal-weight composite has NEGATIVE predictive IC.', '等权综合因子的预测 IC 为负。') }}</b>
+      {{ t('Its blended mean IC is ' ~ ('%+.4f'|format(_comp.mean_ic)) ~ ' over ' ~ ic.rebalances ~ ' quarters — the naive all-factor blend INVERTS the cross-section on this panel, so it is worse than useless as a stock screen. Do NOT trade the composite. Judge each factor on its own row below: only a factor tagged VALIDATED (survives BH-FDR AND positive mean IC) has earned it, and even that is a marginal survivor on a survivorship-biased panel.',
+           '其混合平均 IC 为 ' ~ ('%+.4f'|format(_comp.mean_ic)) ~ '（' ~ ic.rebalances ~ ' 个季度）— 朴素的全因子等权混合在此面板上反转了横截面，作为选股信号还不如不用。切勿交易该综合因子。请按下方每个因子各自的行判断：仅标记为 VALIDATED（通过 BH-FDR 且平均 IC 为正）的因子才成立，且即便如此也只是幸存者偏差面板上的勉强通过者。') }}
+    </div>
+    {% endif %}
+    <table>
+      <tr>
+        <th>{{ t('factor','因子') }}</th>
+        <th class="r">{{ t('mean IC','平均 IC') }}{{ help('average predictive edge; 0 = none', '平均预测优势；0 = 无优势') }}</th>
+        <th class="r">{{ t('IC-IR (ann)','IC-IR（年化）') }}{{ help('IC ÷ its own volatility, annualized — how consistent the edge is', 'IC ÷ 自身波动（年化）——优势的一致性') }}</th>
+        <th class="r">t<sub>HAC</sub>{{ help('Newey-West t-stat: accounts for overlapping return windows', 'Newey-West t 值：修正重叠窗口的自相关') }}</th>
+        <th class="r">{{ t('hit','命中率') }}{{ help('fraction of quarters the IC was positive', 'IC 为正的季度占比') }}</th>
+        <th class="r">q<sub>FDR</sub>{{ help('Benjamini-Hochberg false-discovery rate across all factors screened', 'BH 错误发现率（跨全部因子）') }}</th>
+        <th class="r">n{{ help('number of quarterly rebalances', '季度再平衡次数') }}</th>
+      </tr>
+      {% for r in ic.rows %}
+      {% set _vs = 'validated' if (r.survives_fdr and r.mean_ic is not none and r.mean_ic > 0) else ('negative-ic' if (r.mean_ic is not none and r.mean_ic < 0) else 'fdr-fail') %}
+      <tr>
+        <td><span class="fx-open" data-fx="{{ r.factor }}">{{ t(r.label_en, fac.factor_labels.get(r.factor, r.label_en)) }}</span><span class="val-chip {{ _vs }}">{% if _vs == 'validated' %}{{ t('VALIDATED','已验证') }}{% elif _vs == 'negative-ic' %}{{ t('NEG-IC','反向') }}{% else %}{{ t('FDR-FAIL','未过检') }}{% endif %}</span></td>
+        <td class="r {{ 'pos' if r.mean_ic and r.mean_ic > 0 else ('neg' if r.mean_ic and r.mean_ic < 0 else 'muted') }}">{{ '%+.4f'|format(r.mean_ic) if r.mean_ic is not none else '—' }}</td>
+        <td class="r {{ 'pos' if r.ic_ir_ann and r.ic_ir_ann > 0 else ('neg' if r.ic_ir_ann and r.ic_ir_ann < 0 else 'muted') }}">{{ '%+.2f'|format(r.ic_ir_ann) if r.ic_ir_ann is not none else '—' }}</td>
+        <td class="r muted">{{ '%+.2f'|format(r.t_hac) if r.t_hac is not none else '—' }}</td>
+        <td class="r muted">{{ '%.0f%%'|format(r.hit * 100) if r.hit is not none else '—' }}</td>
+        <td class="r muted">{{ '%.2f'|format(r.q_fdr) if r.q_fdr is not none else '—' }}</td>
+        <td class="r muted">{{ r.n }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% if ic.collinearity and ic.collinearity.top_pairs %}
+    <p class="muted sm" style="margin:10px 0 0">
+      {{ t('Crowding / overlap','拥挤／重叠') }}{{ help("Factors that move together are redundant (a 'crowded' tilt). Mean absolute pairwise factor correlation, raw vs after Löwdin de-correlation; the composite (de-correlated) row above strips this overlap. VIF > 5 would flag a factor that is a linear combination of the others.", "彼此同向移动的因子是冗余的（拥挤的押注）。下为平均 |因子相关性|（原始 vs Löwdin 去相关后）；上方“综合（去相关）”行已剔除该重叠。VIF>5 表示某因子是其它因子的线性组合。") }}:
+      {{ t('mean |corr| ' ~ ic.collinearity.mean_abs_corr_raw ~ ' raw → ' ~ ic.collinearity.mean_abs_corr_orth ~ ' de-correlated.',
+           '平均 |相关性| ' ~ ic.collinearity.mean_abs_corr_raw ~ ' 原始 → ' ~ ic.collinearity.mean_abs_corr_orth ~ ' 去相关后。') }}
+      {# display labels, not the engine's factor keys (`low_vol ↔ low_beta`) #}
+      {% for p in ic.collinearity.top_pairs %}<span class="chip">{{ fac.factor_labels.get(p.a, p.a) }} ↔ {{ fac.factor_labels.get(p.b, p.b) }} · {{ p.corr }}</span>{% endfor %}
+    </p>
+    {% endif %}
+  </div>
+  {% endif %}
+  <!-- Factor performance — point-in-time portfolios (P3 return-series) -->
+  {% if series and series.factors %}
+  <div class="panel">
+    <h2>{{ t('Factor performance — point-in-time portfolios', '因子表现 — 时点组合') }}
+      {{ help("Each factor built into a daily PORTFOLIO at every month-end, as it was knowable then (no look-ahead): long-only = cap-weighted top quintile with a 5% single-name cap; long/short = equal-weight top-minus-bottom quintile (a paper factor premium, NOT a shortable book). Long-only carries with the market (compare SPY); the long/short isolates the premium. " ~ series.honesty, "在每个月末，将每个因子构建为日度组合（无前视）：纯多头=市值加权顶部五分位（单股5%上限）；多空=等权顶部减底部五分位（纸面因子溢价，非可做空组合）。" ~ series.honesty) }}
+    </h2>
+    <p class="muted sm" style="margin:0 0 10px">{{ t(
+      'Rebased over ' ~ series.history_start ~ '→' ~ series.as_of ~ ' (' ~ series.n_rebalances ~ ' month-ends). Free fundamentals are ANNUAL, so fundamental ranks refresh only ~yearly — most turnover is the price legs (low-vol/low-beta). Every Sharpe ships with a block-bootstrap 95% CI that mostly straddles zero, and at most a lone, marginal factor clears FDR (see the IC panel above). Descriptive, not tradeable.',
+      '区间 ' ~ series.history_start ~ '→' ~ series.as_of ~ '（' ~ series.n_rebalances ~ ' 个月末）。免费基本面为年度数据，故基本面排名约每年才刷新一次 — 多数换手来自价格类因子（低波动/低贝塔）。每个夏普均附 block-bootstrap 95% 置信区间（多数跨越零），且至多个别勉强因子通过 FDR（见上方 IC 面板）。仅作描述，不可交易。') }}</p>
+    <div class="scroll"><table>
+      <tr>
+        <th>{{ t('factor','因子') }}</th>
+        <th class="r">{{ t('long-only trend','纯多头走势') }}</th>
+        <th class="r">{{ t('LO cum','纯多头累计') }}</th>
+        <th class="r">{{ t('LO Sharpe','纯多头夏普') }}</th>
+        <th class="r">{{ t('Q5−Q1 cum','多空累计') }}</th>
+        <th class="r">{{ t('Q5−Q1 Sharpe (95% CI)','多空夏普（CI）') }}</th>
+        <th class="r">{{ t('P(Sharpe>0)','P(夏普>0)') }}</th>
+      </tr>
+      {% for f in series.factors %}
+      {% set s = series.series[f] %}{% set st = series.stats[f] %}
+      <tr>
+        <td>{{ t(series.labels[f], series.labels[f]) }}</td>
+        <td class="r">{{ spark1(s.long_only.spark) }}</td>
+        <td class="r {{ 'pos' if s.long_only.cum_pct and s.long_only.cum_pct>0 else 'neg' }}">{{ '%+.0f'|format(s.long_only.cum_pct) if s.long_only.cum_pct is not none else '—' }}%</td>
+        <td class="r muted">{{ '%.2f'|format(st.sharpe_lo) if st.sharpe_lo is not none else '—' }}</td>
+        <td class="r {{ 'pos' if s.long_short.cum_pct and s.long_short.cum_pct>0 else 'neg' }}">{{ '%+.0f'|format(s.long_short.cum_pct) if s.long_short.cum_pct is not none else '—' }}%</td>
+        <td class="r muted">{{ '%.2f'|format(st.sharpe_ls) if st.sharpe_ls is not none else '—' }}{% if st.sharpe_ls_ci %} <span class="sm">[{{ st.sharpe_ls_ci[0] }}, {{ st.sharpe_ls_ci[2] }}]</span>{% endif %}</td>
+        <td class="r muted">{{ st.sharpe_gt0_prob if st.sharpe_gt0_prob is not none else '—' }}</td>
+      </tr>
+      {% endfor %}
+      {% if series.benchmark %}
+      <tr><td class="muted">{{ t('SPY (cap-wtd market)','SPY（市值加权市场）') }}</td><td class="r">{{ spark1(series.benchmark.spark) }}</td>
+        <td class="r {{ 'pos' if series.benchmark.cum_pct>0 else 'neg' }}">{{ '%+.0f'|format(series.benchmark.cum_pct) }}%</td>
+        <td class="r muted">—</td><td class="r muted">—</td><td class="r muted">—</td><td class="r muted">—</td></tr>
+      {% endif %}
+    </table></div>
+  </div>
+  {% endif %}
+  <!-- Crowding + quilt -->
+  {% if series and series.factors %}
+    {% if series.crowding %}
+    <div class="panel">
+      <h2>{{ t('Factor crowding', '因子拥挤度') }}
+        {{ help("Correlation of the factor LONG/SHORT daily return series. Deep blue = the two premiums move TOGETHER (a crowded, redundant pair); red = they hedge each other. This is return co-movement (distinct from the static z-exposure overlap in the IC panel). With annual fundamentals the price legs (low-vol/low-beta) co-move most.", "因子多空日度回报序列的相关性。深蓝=两种溢价同向（拥挤、冗余）；红=互相对冲。这是回报的同向性（区别于 IC 面板中的静态暴露重叠）。") }}
+      </h2>
+      <div class="scroll"><table class="hm">
+        <tr><th></th>{% for f in series.crowding.factors %}<th>{{ series.labels[f][:4] }}</th>{% endfor %}</tr>
+        {% for a in series.crowding.factors %}
+        <tr><th style="text-align:right">{{ series.labels[a] }}</th>
+          {% set row = series.crowding.matrix[loop.index0] %}
+          {% for c in row %}{{ hcell(c) }}{% endfor %}
+        </tr>
+        {% endfor %}
+      </table></div>
+      {% if series.crowding.pairs %}<p class="muted sm" style="margin:8px 0 0">{{ t('Most crowded:','最拥挤：') }} {% for p in series.crowding.pairs %}<span class="chip">{{ series.labels.get(p.a, p.a) }} ↔ {{ series.labels.get(p.b, p.b) }} · {{ p.corr }}</span>{% endfor %}</p>{% endif %}
+    </div>
+    {% endif %}
+  {% endif %}
+  </section>
+
+  <section class="fx-sec" id="sec-explorer">
+    <div class="sec-h"><span class="sec-n">04</span><h2>{{ t('Explorer', '探索') }}</h2></div>
+    <p class="sec-sub">{{ t('Every interactive surface behind one tab strip, sharing one universe switch.', '所有交互视图共用一个标签栏与同一口径切换。') }}</p>
+  <div class="fx-tabs" id="fx-tabs" role="tablist"></div>
+  <div class="fx-pane on" data-pane="chart">
+  <!-- Interactive factor performance chart + GICS sector monitor (lightweight-charts) -->
+  {% if series and series.chart_data %}
+  <div class="panel" id="fchart-section">
+    <h2>{{ t('Factor performance — interactive', '因子表现 — 交互图') }}
+      {{ help("Rebased to 0% at the start of the selected window. Four relational views: factors LONG-ONLY (carry with the market), factors vs S&P 500, the Q5−Q1 PREMIUM (market-neutral), and cap-weighted GICS SECTORS vs S&P. Click legend entries to toggle series; pick a range. Powered by TradingView Lightweight Charts.", "在所选窗口起点重设为 0%。四种关系视图：因子纯多头、因子相对标普、Q5−Q1 溢价（市场中性）、以及市值加权 GICS 行业相对标普。点击图例切换；可选区间。") }}
+    </h2>
+    <div class="chartbar" style="margin-bottom:4px">
+      <span class="tabs" id="fc-universe" role="group" aria-label="Universe"></span>
+      <span class="muted" style="font-size:11.5px;flex:1;min-width:240px">{{ t(
+        'Broad = S&P 1500 (large+mid+small); Narrow = S&P 500 large-cap. This switch re-ranks only the chart, table & sector monitor below — the IC scorecard, crowding, quilt and breadth panels stay on the broad universe.',
+        '广义=标普 1500（大+中+小）；狭义=标普 500 大盘。此切换仅重排下方图表、表格与行业监测 — IC 记分卡、拥挤度、拼布与广度面板保持广义口径。') }}
+        <span id="uni-note" style="display:none;color:var(--warn)"> · {{ t('S&P 500 price history starts 2025-03 (~1y) — curves are shorter and σ/z need ~1y+, so some cells show —.', '标普 500 价格历史自 2025-03（约 1 年）— 曲线更短，σ/z 需约 1 年以上，部分单元格显示 —。') }}</span>
+      </span>
+    </div>
+    <div class="chartbar"><span class="tabs" id="fc-modes" role="group"></span><span class="tabs" id="fc-ranges" role="group"></span></div>
+    <div id="fchart"></div>
+    <div class="legend" id="fc-legend"></div>
+  </div>
+
+  <div class="panel" id="fperf-section">
+    <h2>{{ t('Performance table', '表现一览') }}
+      {{ help("Every factor across horizons, watchlist-style. SCOPE toggles factor long-only portfolios vs the Q5−Q1 premium; VALUE toggles raw return, return vs the S&P, and σ (the move z-scored vs that series' own trailing year — fixed horizons only). Click a column to sort.", "各因子横跨时间跨度的自选股式表格。SCOPE 切换纯多头与 Q5−Q1 溢价；VALUE 切换原始回报、相对标普、σ（相对自身过去一年的 z，仅限定窗）。点击列排序。") }}
+    </h2>
+    <div class="chartbar"><span class="tabs" id="fp-scope" role="group"></span><span class="tabs" id="fp-mode" role="group"></span></div>
+    <div class="ts"><table id="fperf-table"></table></div>
+  </div>
+
+  <div class="panel" id="sector-section">
+    <h2>{{ t('Sector monitor — cap-weighted GICS vs S&P', '行业监测 — 市值加权 GICS 相对标普') }}
+      {{ help("Each cap-weighted GICS sector's return RELATIVE to the S&P over each horizon, colored by how unusual that move is vs the sector's own trailing-year distribution (z). Deep color + |z|≥2 = an outsized rotation. The small number is the relative return; the big number is the z.", "每个市值加权 GICS 行业相对标普的回报（各时间跨度），按该走势相对其自身过去一年分布的异常程度（z）着色。颜色越深、|z|≥2 = 异常轮动。小字为相对回报，大字为 z。") }}
+    </h2>
+    <div class="ts"><table id="sector-monitor"></table></div>
+  </div>
+  {% endif %}
+  </div>
+  <div class="fx-pane" data-pane="moves">
+  {% if series and series.factors %}
+  <!-- Recent factor moves (horizon z) + rotation -->
+  <div class="panel">
+    <div class="topline" style="margin-bottom:8px">
+      <h2 style="margin:0">{{ t('Recent moves — z vs trailing year', '近期变动 — 相对过去一年的 z') }}
+        {{ help("Each horizon's compounded return z-scored against that series' own trailing-252 distribution of overlapping returns (|z|≥2 = a notable move, marked ●). Green/red follows the sign of the move. Toggle the long-only portfolio vs the Q5−Q1 premium.", "各时间跨度的复利回报，相对该序列自身过去 252 日重叠回报分布做 z 标准化（|z|≥2 为显著，标 ●）。绿/红表示方向。可切换纯多头与多空溢价。") }}
+      </h2>
+      <span style="flex:1"></span>
+      <span class="seg" id="legseg">
+        <button data-leg="ls" class="on">Q5−Q1</button>
+        <button data-leg="lo">{{ t('Long-only','纯多头') }}</button>
+      </span>
+    </div>
+    <table id="hztab" data-leg="ls">
+      <tr><th>{{ t('factor','因子') }}</th><th class="r">1d</th><th class="r">5d</th><th class="r">20d</th>
+        <th>{{ t('20d leader','20日领先') }}</th></tr>
+      {% for f in series.factors %}
+      {% set hz = series.horizons[f] %}
+      <tr>
+        <td>{{ t(series.labels[f], series.labels[f]) }}</td>
+        {% for k in ['d1','d5','d20'] %}
+        <td class="r">
+          {% for leg in ['lo','ls'] %}{% set c = hz[('long_only' if leg=='lo' else 'long_short')][k] %}<span class="v-{{ leg }} {{ 'zpos' if c.z and c.z>0 else ('zneg' if c.z and c.z<0 else 'muted') }}" title="z {{ c.z }} · pct {{ c.pct }}">{{ ('%+.1f'|format(c.ret_pct)) if c.ret_pct is not none else '—' }}{% if c.flag %} ●{% endif %}</span>{% endfor %}
+        </td>
+        {% endfor %}
+        <td class="muted sm">{% if series.rotation.leader == f %}★ {{ t('current','当前') }}{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% if series.rotation and series.rotation.leader_label %}
+    <div style="margin-top:10px">
+      <p class="sm" style="margin:0 0 7px">{{ t('20-day leader:','20日领先因子：') }}
+        <b>{{ series.rotation.leader_label }}</b> <span class="{{ 'pos' if series.rotation.leader_ret20_pct>=0 else 'neg' }}">({{ '%+.1f'|format(series.rotation.leader_ret20_pct) }}%)</span><span class="muted">{% if series.rotation.leader_held_days %} · {{ t('held','已领先') }} {{ series.rotation.leader_held_days }}{{ t('d','天') }}{% endif %}{% if series.rotation.previous_leader_label %} · {{ t('prev','前任') }} {{ series.rotation.previous_leader_label }}{% endif %}</span>
+        {% for j in series.rotation.quartile_jumps %} <span class="flip" style="border-color:{{ 'var(--up)' if j.dir=='up' else 'var(--down)' }};color:{{ 'var(--up)' if j.dir=='up' else 'var(--down)' }}">{{ '↑' if j.dir=='up' else '↓' }} {{ j.label }} {{ t('quartile jump','分位跃迁') }} #{{ j.from }}→#{{ j.to }}</span>{% endfor %}
+        {% if series.rotation.recent_flips %} · <span class="muted">{{ t('flips:','轮动：') }}</span> {% for fl in series.rotation.recent_flips %}<span class="flip">{{ fl.date }} → {{ fl.label }}</span>{% endfor %}{% endif %}
+      </p>
+      {% if series.rotation.r20 %}
+      {% set rmax = (series.rotation.r20 | map(attribute='ret') | map('abs') | max) or 1 %}
+      <div class="r20bars">
+        {% for b in series.rotation.r20 %}
+        <span class="r20lab">{{ series.labels.get(b.factor, b.label) }}</span>
+        <span class="r20track">{% if b.ret >= 0 %}<i style="left:50%;width:{{ (b.ret/rmax*50)|round(1) }}%;background:var(--up)"></i>{% else %}<i style="right:50%;width:{{ (-b.ret/rmax*50)|round(1) }}%;background:var(--down)"></i>{% endif %}<i class="mid"></i></span>
+        <span class="r20val {{ 'pos' if b.ret>=0 else 'neg' }}">{{ '%+.1f'|format(b.ret) }}%</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+  </div>
+  <div class="fx-pane" data-pane="quilt">
+  {% if series and series.factors %}
+    {% if series.quilt and series.quilt.months %}
+    {% set qpal = ['#5aa7ff','#4ade80','#facc15','#fb923c','#f472b6','#2dd4bf','#a78bfa','#fb7185','#a3e635'] %}
+    <div class="panel">
+      <h2>{{ t('Quilt — Q5−Q1 monthly ranks', '拼布 — 多空月度排名') }}
+        {{ help("The periodic-table-of-returns: each column ranks the factor Q5−Q1 premiums best→worst that month (and a YTD column), cells colored by factor IDENTITY so you can trace one factor's path — hover a cell to highlight it across every column. ~13 months on the free cache; descriptive, not a regime-robust signal.", "收益周期表：每列按当月多空溢价从优到劣排名（含 YTD 列），单元格按因子着色以便追踪某一因子 — 悬停某格可高亮其在各列的位置。免费缓存约13个月；描述性，非稳健信号。") }}
+      </h2>
+      <div class="scroll"><table class="quilt2">
+        <tr>{% for m in series.quilt.months %}<th>{{ 'YTD' if m == 'YTD' else m[5:] }}</th>{% endfor %}</tr>
+        {% set maxrows = series.quilt.ranked.values() | map('length') | max %}
+        {% for i in range(maxrows) %}
+        <tr>
+          {% for m in series.quilt.months %}{% set col = series.quilt.ranked[m] %}{% if i < (col|length) %}{% set f = col[i] %}{% set v = series.quilt.returns[f].get(m) %}<td class="qc" data-f="{{ f }}" style="background:{{ qpal[series.factors.index(f) % (qpal|length)] }}" title="{{ series.labels[f] }} · {{ 'YTD' if m=='YTD' else m }}: {{ '%+.1f'|format(v) }}%"><span class="qf">{{ series.labels[f][:9] }}</span><span class="qv">{{ '%+.0f'|format(v) }}%</span></td>{% else %}<td></td>{% endif %}{% endfor %}
+        </tr>
+        {% endfor %}
+      </table></div>
+    </div>
+    {% endif %}
+  {% endif %}
+  </div>
+  <script>
+    (function(){ var q=document.querySelector('.quilt2'); if(!q) return;
+      q.addEventListener('mouseover',function(e){var c=e.target.closest('.qc[data-f]'); if(!c) return; var f=c.dataset.f; q.querySelectorAll('.qc[data-f="'+f+'"]').forEach(function(x){x.classList.add('hl');});});
+      q.addEventListener('mouseout',function(){ q.querySelectorAll('.qc.hl').forEach(function(x){x.classList.remove('hl');});});
+    })();
+  </script>
+  <script>
+    (function(){
+      var seg=document.getElementById('legseg'), tab=document.getElementById('hztab');
+      if(seg&&tab) seg.addEventListener('click', function(e){
+        var b=e.target.closest('button[data-leg]'); if(!b) return;
+        tab.setAttribute('data-leg', b.dataset.leg);
+        seg.querySelectorAll('button').forEach(function(x){x.classList.toggle('on', x===b);});
+      });
+    })();
+  </script>
+  </section>
+
+  <section class="fx-sec" id="sec-names">
+    <div class="sec-h"><span class="sec-n">05</span><h2>{{ t('Names', '个股') }}</h2></div>
+    <p class="sec-sub">{{ t('Which stocks actually sit at the top of each ranking.', '哪些个股真正位于各项排名的前列。') }}</p>
+  <!-- Per-factor leaderboards (Factor leaders section) -->
+  <div class="panel">
+    <h2>{{ t('Factor leaders', '各因子领先股') }}</h2>
+    {# Cross-ranking ticker lookup: the leaderboards answer "who leads Value?",
+       this answers the inverse — "what does NVDA lead?" — without a round trip. #}
+    <div class="fx-find">
+      <span class="box"><span class="mag">🔎</span>
+        <input id="fx-tq" autocomplete="off" aria-label="Find a ticker across every factor"
+               placeholder="{{ t('Find a ticker across every ranking…','在所有排名中查找个股…') }}"></span>
+      <span class="note" id="fx-tnote"></span>
+    </div>
+    <div class="cardgrid">
+      {% for f in fac.factors + ['sue','low_beta','accruals','short_interest'] %}
+      {% if fac.leaders.get(f) %}
+      <div class="fcard">
+        <h3><span class="fx-open" data-fx="{{ f }}">{{ td(fac.factor_labels.get(f, f)) }}</span>
+          {% set h = FHELP.get(f) %}{% if h %}{{ help(h[0], h[1]) }}{% endif %}
+          <span class="badge">{{ t('top', '前') }} {{ fac.leaders[f]|length }}</span></h3>
+        <table>
+          {% for x in fac.leaders[f][:10] %}
+          <tr><td><a href="stock.html#{{ x.ticker }}"><b>{{ x.ticker }}</b></a></td>
+            <td class="muted sm">{{ x.name[:18] }}</td>
+            <td class="r zpos">{{ '%+.2f'|format(x.z) }}</td></tr>
+          {% endfor %}
+        </table>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+  <!-- Composite leaders / laggards -->
+  <div class="panel">
+    <h2>{{ t('Multi-factor composite', '多因子综合') }}
+      {{ help("The RANKING here uses only the factor legs that carry a POSITIVE measured information coefficient on the deep-history (leak-free) scorecard, IC-weighted with a sign constraint — negative-IC / FDR-failing legs (e.g. low-vol, investment) are EXCLUDED from the order because they rank names in an anti-predictive direction (the blind equal-weight composite's own scorecard grades it ic_ir -0.049). The per-leg leaderboards below still show every leg, badged with its IC/FDR verdict. Validate-before-weight: the order a trader sizes off cannot be moved by a leg the scorecard rejects.", "此处排序仅采用在深度历史（无泄漏）评分卡上信息系数为正的因子腿，按 IC 加权并施加符号约束——负 IC／未通过 FDR 的腿（如低波动、投资）被排除，因为它们会使排序反向。下方各腿榜单仍展示全部腿并标注其 IC/FDR 结论。") }}
+      {% if fac.rank_legs %}<span class="muted sm">· {{ t('ranked by','排序依据') }}: {% for l in fac.rank_legs %}{{ fac.factor_labels.get(l, l) }}{% if not loop.last %} · {% endif %}{% endfor %}{% if fac.composite_passport and fac.composite_passport.excluded_legs %} · {{ t('excluded (negative IC)','已排除（负IC）') }}: {% for l in fac.composite_passport.excluded_legs %}{{ fac.factor_labels.get(l, l) }}{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}</span>{% endif %}
+    </h2>
+    <div class="twocol">
+      <div>
+        <h3 class="sm pos" style="margin:0 0 6px">{{ t('Top composite', '综合最高') }}</h3>
+        <table>
+          <tr><th>{{ t('stock','个股') }}</th><th>{{ t('sector','板块') }}</th><th class="r">z</th><th class="r">{{ t('mkt cap','市值') }}</th></tr>
+          {% for x in fac.composite_top %}
+          <tr><td><a href="stock.html#{{ x.ticker }}"><b>{{ x.ticker }}</b></a> <span class="muted sm">{{ x.name[:22] }}</span></td>
+            <td class="muted sm">{{ td(x.sector) }}</td><td class="r zpos">{{ '%+.2f'|format(x.z) }}</td>
+            <td class="r muted sm">{{ ('$%.0fB'|format(x.mktcap_bn)) if x.mktcap_bn else '—' }}</td></tr>
+          {% endfor %}
+        </table>
+      </div>
+      <div>
+        <h3 class="sm neg" style="margin:0 0 6px">{{ t('Bottom composite', '综合最低') }}</h3>
+        <table>
+          <tr><th>{{ t('stock','个股') }}</th><th>{{ t('sector','板块') }}</th><th class="r">z</th><th class="r">{{ t('mkt cap','市值') }}</th></tr>
+          {% for x in fac.composite_bottom %}
+          <tr><td><a href="stock.html#{{ x.ticker }}"><b>{{ x.ticker }}</b></a> <span class="muted sm">{{ x.name[:22] }}</span></td>
+            <td class="muted sm">{{ td(x.sector) }}</td><td class="r zneg">{{ '%+.2f'|format(x.z) }}</td>
+            <td class="r muted sm">{{ ('$%.0fB'|format(x.mktcap_bn)) if x.mktcap_bn else '—' }}</td></tr>
+          {% endfor %}
+        </table>
+      </div>
+    </div>
+  </div>
+  <!-- Insider conviction (SEC Form-4) -->
+  {% if fac.insider %}
+  <div class="panel">
+    <h2>{{ t('Insider conviction', '内部人信念') }} <span class="muted sm">{{ t('SEC Form-4 ·', 'SEC Form-4 ·') }} {{ fac.insider.quarter }}</span>
+      {{ help("Net OPEN-MARKET insider buying minus selling per company from SEC Form-4 filings (purchases code P, sales code S; grants and option exercises excluded). The SEC ships these as a quarterly bulk dataset, so this is the most recent COMPLETED quarter — a slow conviction read, not real-time. Clustered open-market BUYING is the more informative side (insiders buy for one reason; they sell for many).", "来自 SEC Form-4 的每家公司净公开市场内部人买入减卖出（买入代码 P、卖出 S；排除授予与期权行权）。SEC 按季度发布，故为最近一个完整季度 — 慢速信念信号，非实时。") }}
+    </h2>
+    <div class="twocol">
+      <div>
+        <h3 class="sm pos" style="margin:0 0 6px">{{ t('Biggest net BUYING', '最大净买入') }}</h3>
+        <table>
+          <tr><th>{{ t('stock','个股') }}</th><th>{{ t('sector','板块') }}</th><th class="r">{{ t('net $','净额') }}</th><th class="r">B/S</th></tr>
+          {% for x in fac.insider.top_buying %}
+          <tr><td><a href="stock.html#{{ x.ticker }}"><b>{{ x.ticker }}</b></a> <span class="muted sm">{{ x.name[:20] }}</span></td>
+            <td class="muted sm">{{ td(x.sector) }}</td><td class="r zpos">+${{ '%.1f'|format(x.net_usd_mn) }}M</td>
+            <td class="r muted sm">{{ x.buys }}/{{ x.sells }}</td></tr>
+          {% endfor %}
+        </table>
+      </div>
+      <div>
+        <h3 class="sm neg" style="margin:0 0 6px">{{ t('Biggest net SELLING', '最大净卖出') }}</h3>
+        <table>
+          <tr><th>{{ t('stock','个股') }}</th><th>{{ t('sector','板块') }}</th><th class="r">{{ t('net $','净额') }}</th><th class="r">B/S</th></tr>
+          {% for x in fac.insider.top_selling %}
+          <tr><td><a href="stock.html#{{ x.ticker }}"><b>{{ x.ticker }}</b></a> <span class="muted sm">{{ x.name[:20] }}</span></td>
+            <td class="muted sm">{{ td(x.sector) }}</td><td class="r zneg">−${{ '%.1f'|format(-x.net_usd_mn) }}M</td>
+            <td class="r muted sm">{{ x.buys }}/{{ x.sells }}</td></tr>
+          {% endfor %}
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  </section>
+
+  <section class="fx-sec" id="sec-season">
+    <div class="sec-h"><span class="sec-n">06</span><h2>{{ t('Seasonality', '季节性') }}</h2></div>
+    <p class="sec-sub">{{ t('Long-run calendar tendencies from academic total-market portfolios. Kept out of every score.', '来自学术全市场组合的长期日历规律。不进入任何评分。') }}</p>
   <!-- Factor weather hero — fail-open: seas absent or seas.now absent → panel hides -->
   {% if seas is not none and seas %}
   <div class="panel">
@@ -553,7 +1112,6 @@
       '长期倾向与描述——不是预测，也不进入任何评分。') }}</p>
   </div>
   {% endif %}
-
   <!-- Factor calendar — fail-open: seas absent → panel hides -->
   {% if seas is not none and seas and seas.factors %}
   {% set _cal_months_en = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] %}
@@ -672,7 +1230,11 @@
   })();
   </script>
   {% endif %}
+  </section>
 
+  <section class="fx-sec" id="sec-system">
+    <div class="sec-h"><span class="sec-n">07</span><h2>{{ t('What this feeds', '本页如何接入系统') }}</h2></div>
+    <p class="sec-sub">{{ t('Factor intelligence is context-only inside the Neural Web: it explains, and it never ranks, scores, or originates a signal.', '因子智能在神经网络中仅作为背景：它解释行情，绝不排名、评分或发起信号。') }}</p>
   <!-- NW panel variables (set early so they're available when we render at bottom) -->
   {% set _nws = nw_state %}
   {% set _nw_avail = (_nws is defined and _nws is not none) %}
@@ -685,409 +1247,6 @@
   {% set _nw_att = (_nws.get('attention') or {}).get('factor_attention', {}) if _nw_avail else {} %}
   {% set _nw_hyp = (_nws.get('hypotheses') or {}) if _nw_avail else {} %}
   {% set _nw_as_of = _nws.get('as_of') if _nw_avail else none %}
-
-  <!-- Factor leadership -->
-  {% if fac.leadership %}
-  <div class="panel">
-    <h2>{{ t('What is working now', '当前哪种因子在起作用') }}
-      {{ help("For each factor, the trailing-63-day return of its top quintile MINUS its bottom quintile. Positive = that factor has been rewarded recently (descriptive, not a forecast). Compare against the regime above: e.g. value & low-vol leading often accompanies risk-off / late-cycle.", "每个因子最近 63 个交易日内：顶部五分位减底部五分位的回报。正值=该因子近期获得回报（描述性，非预测）。") }}
-    </h2>
-    <p class="muted sm" style="margin:0 0 10px">{{ t(
-      'What the market has rewarded over the past 3 months. Descriptive — leadership rotates.',
-      '过去3个月市场奖励的风格。仅为描述——领先风格会轮换。') }}</p>
-    <div class="lead">
-      {% set maxsp = (fac.leadership | map(attribute='spread_pct') | map('abs') | max) or 1 %}
-      {% for L in fac.leadership %}
-      <div class="leadrow">
-        <span>{{ td(L.label) }}</span>
-        <span class="leadbar">
-          {% if L.spread_pct >= 0 %}<i style="left:50%;width:{{ (L.spread_pct/maxsp*50)|round(1) }}%;background:var(--up)"></i>
-          {% else %}<i style="right:50%;width:{{ (-L.spread_pct/maxsp*50)|round(1) }}%;background:var(--down)"></i>{% endif %}
-          <i style="left:50%;width:1px;background:var(--muted);opacity:.5"></i>
-        </span>
-        <span class="{{ 'zpos' if L.spread_pct>=0 else 'zneg' }}" style="text-align:right">{{ '%+.1f'|format(L.spread_pct) }}%</span>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-  {% endif %}
-
-  <!-- Where the heat is — momentum concentration (momo.top_decile; fail-open) -->
-  {% if momo is not none and momo.get('top_decile') %}
-  {% set _mtd = momo.top_decile %}
-  {% set _mmax = (_mtd.sectors | map(attribute='share_pct') | max) if _mtd.sectors else 1 %}
-  <div class="panel">
-    <h2>{{ t('Where the heat is', '热度集中在哪') }}</h2>
-    <div class="lead" style="margin-bottom:8px">
-      {% for sec in _mtd.sectors %}
-      <div class="leadrow">
-        <span class="sm">{{ sec.sector }}</span>
-        <span class="leadbar">
-          <i style="left:0;width:{{ (sec.share_pct / _mmax * 100)|round(1) }}%;background:var(--up)"></i>
-        </span>
-        <span class="sm" style="text-align:right">{{ sec.share_pct }}%</span>
-      </div>
-      {% endfor %}
-    </div>
-    {% if _mtd.sample %}
-    <div style="margin-bottom:8px">
-      {% for tk in _mtd.sample %}
-      <span class="chip">{{ tk }}</span>
-      {% endfor %}
-    </div>
-    {% endif %}
-    <p class="sm" style="margin:0 0 6px">{{ t(
-      'When the hottest stocks crowd into one sector, a stumble there hits them all together.',
-      '当最热个股集中于单一板块时，该板块受挫会同时波及所有热门股。') }}</p>
-    <p class="muted sm" style="margin:0">
-      <span class="l-en">{{ momo.disclosure_en }}</span>
-      <span class="l-zh">{{ momo.disclosure_zh }}</span>
-    </p>
-  </div>
-  {% endif %}
-
-  <!-- Does the rank actually predict? — leak-free point-in-time IC scorecard -->
-  {% if ic and ic.rows %}
-  <div class="panel">
-    <h2>{{ t('Do these rankings actually predict? — the honest test', '这些排名真的能预测吗？— 诚实检验') }}
-      {{ help("The honest test most factor dashboards never show. At each quarter-end we rebuild every factor AS IT WAS KNOWABLE THEN — no look-ahead into a not-yet-filed 10-K (fundamentals are point-in-time) — then rank-correlate the factor score with the NEXT " ~ ic.horizon_d ~ "-day return: the Information Coefficient (IC). mean IC = average predictive edge; 0 = none. IC-IR (annualized) = IC ÷ its own volatility; t_HAC = Newey-West t-stat (overlapping forward windows autocorrelate the IC series); q_FDR = Benjamini-Hochberg false-discovery rate across every factor screened. One caveat the deep panel can't escape: prices cover only the currently-listed (delisted names are absent), so the deep read is survivorship-biased — an OPTIMISTIC bound. Judge each number against ZERO.",
-                "大多数因子面板从不展示的诚实检验。在每个季末，我们按当时可知的信息重建每个因子（无前视、基本面为时点数据），再将因子分数与未来 " ~ ic.horizon_d ~ " 日回报做秩相关，得到信息系数 IC。平均 IC = 平均预测优势；0 = 无优势。IC-IR（年化）= IC ÷ 自身波动；t_HAC = Newey-West t 值（重叠窗口使 IC 序列自相关）；q_FDR = 跨全部因子的多重检验错误发现率。深度面板的一个无法回避的代价：价格仅覆盖现存名（已退市名缺失），故深度读数含幸存者偏差 — 为乐观上界。每个数字都应与零比较。") }}
-    </h2>
-    {# The verdict itself now leads the page (see the hero ruler); repeating it
-       here in prose was the same sentence twice. This panel is the receipt: the
-       full statistics behind that verdict. #}
-    <p class="muted sm" style="margin:0 0 10px">
-      {{ t('Deep 2011-2026 test · survivor-tilted data, so treat results as an optimistic upper bound.',
-           '2011-2026 深度检验 · 数据含幸存者偏差，结果应视为乐观上界。') }}
-      {{ help(
-        (('Span ' ~ ic.span ~ ' · ' ~ ic.rebalances ~ ' quarterly rebalances · ~' ~ ic.median_universe ~ ' names — a DEEP 2011-2026 re-test on a backfilled close panel, not the ~3y rolling cache. The catch: that panel is SURVIVORSHIP-BIASED (delisted names absent — free prices only cover the currently-listed), so it is an OPTIMISTIC bound; a lone, marginal survivor is shown, not a green light. SUE — the strongest factor on the shallow 2023-2025 window — collapses to IC≈0 here. FINRA short-interest is dropped (no point-in-time history) and fundamentals refresh only ~annually, so fundamental factors still have few independent draws.') if ic.survivorship_biased else ('Span ' ~ ic.span ~ ' · ' ~ ic.rebalances ~ ' quarterly rebalances · ~' ~ ic.median_universe ~ ' names. ~3 years of price history caps the sample at n≈' ~ ic.rebalances ~ ', so t-stats and FDR are low-power. Read it as honest context, not a green light — and note fundamentals refresh only ~annually, so the fundamental factors have even fewer independent draws.')),
-        (('区间 ' ~ ic.span ~ ' · ' ~ ic.rebalances ~ ' 次季度再平衡 · 约 ' ~ ic.median_universe ~ ' 只 — 2011-2026 深度复检。含幸存者偏差：已退市名缺失，为乐观上界；仅展示个别勉强通过者，而非买入信号。') if ic.survivorship_biased else ('区间 ' ~ ic.span ~ ' · ' ~ ic.rebalances ~ ' 次季度再平衡 · 约 ' ~ ic.median_universe ~ ' 只。约 3 年价格历史使样本仅 n≈' ~ ic.rebalances ~ '，t 统计与 FDR 检验力较低。'))
-      ) }}
-    </p>
-    {% set _comp = ic.factors.get('composite') if ic.factors else none %}
-    {% if _comp and _comp.get('mean_ic') is not none and _comp.mean_ic < 0 %}
-    <div class="ic-alert">
-      <b>⚠ {{ t('The equal-weight composite has NEGATIVE predictive IC.', '等权综合因子的预测 IC 为负。') }}</b>
-      {{ t('Its blended mean IC is ' ~ ('%+.4f'|format(_comp.mean_ic)) ~ ' over ' ~ ic.rebalances ~ ' quarters — the naive all-factor blend INVERTS the cross-section on this panel, so it is worse than useless as a stock screen. Do NOT trade the composite. Judge each factor on its own row below: only a factor tagged VALIDATED (survives BH-FDR AND positive mean IC) has earned it, and even that is a marginal survivor on a survivorship-biased panel.',
-           '其混合平均 IC 为 ' ~ ('%+.4f'|format(_comp.mean_ic)) ~ '（' ~ ic.rebalances ~ ' 个季度）— 朴素的全因子等权混合在此面板上反转了横截面，作为选股信号还不如不用。切勿交易该综合因子。请按下方每个因子各自的行判断：仅标记为 VALIDATED（通过 BH-FDR 且平均 IC 为正）的因子才成立，且即便如此也只是幸存者偏差面板上的勉强通过者。') }}
-    </div>
-    {% endif %}
-    <table>
-      <tr>
-        <th>{{ t('factor','因子') }}</th>
-        <th class="r">{{ t('mean IC','平均 IC') }}{{ help('average predictive edge; 0 = none', '平均预测优势；0 = 无优势') }}</th>
-        <th class="r">{{ t('IC-IR (ann)','IC-IR（年化）') }}{{ help('IC ÷ its own volatility, annualized — how consistent the edge is', 'IC ÷ 自身波动（年化）——优势的一致性') }}</th>
-        <th class="r">t<sub>HAC</sub>{{ help('Newey-West t-stat: accounts for overlapping return windows', 'Newey-West t 值：修正重叠窗口的自相关') }}</th>
-        <th class="r">{{ t('hit','命中率') }}{{ help('fraction of quarters the IC was positive', 'IC 为正的季度占比') }}</th>
-        <th class="r">q<sub>FDR</sub>{{ help('Benjamini-Hochberg false-discovery rate across all factors screened', 'BH 错误发现率（跨全部因子）') }}</th>
-        <th class="r">n{{ help('number of quarterly rebalances', '季度再平衡次数') }}</th>
-      </tr>
-      {% for r in ic.rows %}
-      {% set _vs = 'validated' if (r.survives_fdr and r.mean_ic is not none and r.mean_ic > 0) else ('negative-ic' if (r.mean_ic is not none and r.mean_ic < 0) else 'fdr-fail') %}
-      <tr>
-        <td>{{ t(r.label_en, fac.factor_labels.get(r.factor, r.label_en)) }}<span class="val-chip {{ _vs }}">{% if _vs == 'validated' %}{{ t('VALIDATED','已验证') }}{% elif _vs == 'negative-ic' %}{{ t('NEG-IC','反向') }}{% else %}{{ t('FDR-FAIL','未过检') }}{% endif %}</span></td>
-        <td class="r {{ 'pos' if r.mean_ic and r.mean_ic > 0 else ('neg' if r.mean_ic and r.mean_ic < 0 else 'muted') }}">{{ '%+.4f'|format(r.mean_ic) if r.mean_ic is not none else '—' }}</td>
-        <td class="r {{ 'pos' if r.ic_ir_ann and r.ic_ir_ann > 0 else ('neg' if r.ic_ir_ann and r.ic_ir_ann < 0 else 'muted') }}">{{ '%+.2f'|format(r.ic_ir_ann) if r.ic_ir_ann is not none else '—' }}</td>
-        <td class="r muted">{{ '%+.2f'|format(r.t_hac) if r.t_hac is not none else '—' }}</td>
-        <td class="r muted">{{ '%.0f%%'|format(r.hit * 100) if r.hit is not none else '—' }}</td>
-        <td class="r muted">{{ '%.2f'|format(r.q_fdr) if r.q_fdr is not none else '—' }}</td>
-        <td class="r muted">{{ r.n }}</td>
-      </tr>
-      {% endfor %}
-    </table>
-    {% if ic.collinearity and ic.collinearity.top_pairs %}
-    <p class="muted sm" style="margin:10px 0 0">
-      {{ t('Crowding / overlap','拥挤／重叠') }}{{ help("Factors that move together are redundant (a 'crowded' tilt). Mean absolute pairwise factor correlation, raw vs after Löwdin de-correlation; the composite (de-correlated) row above strips this overlap. VIF > 5 would flag a factor that is a linear combination of the others.", "彼此同向移动的因子是冗余的（拥挤的押注）。下为平均 |因子相关性|（原始 vs Löwdin 去相关后）；上方“综合（去相关）”行已剔除该重叠。VIF>5 表示某因子是其它因子的线性组合。") }}:
-      {{ t('mean |corr| ' ~ ic.collinearity.mean_abs_corr_raw ~ ' raw → ' ~ ic.collinearity.mean_abs_corr_orth ~ ' de-correlated.',
-           '平均 |相关性| ' ~ ic.collinearity.mean_abs_corr_raw ~ ' 原始 → ' ~ ic.collinearity.mean_abs_corr_orth ~ ' 去相关后。') }}
-      {# display labels, not the engine's factor keys (`low_vol ↔ low_beta`) #}
-      {% for p in ic.collinearity.top_pairs %}<span class="chip">{{ fac.factor_labels.get(p.a, p.a) }} ↔ {{ fac.factor_labels.get(p.b, p.b) }} · {{ p.corr }}</span>{% endfor %}
-    </p>
-    {% endif %}
-  </div>
-  {% endif %}
-
-  <!-- Market breadth (index-member participation, not factor breadth) -->
-  {% if breadth and breadth.groups %}
-  <div class="panel">
-    <h2>{{ t('Market breadth', '市场广度') }}
-      {{ help("Share of index members trading above their own 50-day AND 200-day moving averages, across the S&P 500 / 400 / 600 caps. This is MARKET-MEMBER participation (is the rally broad or narrow?), NOT factor-portfolio breadth. Above ~60% = broad; a small/large divergence flags where participation is rotating. Small & mid breadth history starts 2023-07 (the divergence is on that common window).", "指数成分中股价同时高于自身 50 日与 200 日均线的比例，覆盖标普 500／400／600。这是市场成分的参与度（涨势是广泛还是狭窄），并非因子组合广度。约 60% 以上=广泛；大小盘背离提示参与度在轮动。中小盘广度数据自 2023-07 起。") }}
-    </h2>
-    <table>
-      <tr><th>{{ t('index', '指数') }}</th><th class="r">{{ t('% > 50d MA', '% 高于50日线') }}</th><th class="r">{{ t('% > 200d MA', '% 高于200日线') }}</th><th class="r">{{ t('members', '成分数') }}</th></tr>
-      {% for g in breadth.groups %}
-      <tr>
-        <td>{{ t(g.label_en, g.label_zh) }}</td>
-        <td class="r"><span class="bbar"><i style="width:{{ g.p50 }}%;background:{{ 'var(--up)' if g.p50>=50 else 'var(--down)' }}"></i></span> <b class="{{ 'pos' if g.p50>=50 else 'neg' }}">{{ g.p50 }}%</b></td>
-        <td class="r"><span class="bbar"><i style="width:{{ g.p200 }}%;background:{{ 'var(--up)' if g.p200>=50 else 'var(--down)' }}"></i></span> <b class="{{ 'pos' if g.p200>=50 else 'neg' }}">{{ g.p200 }}%</b></td>
-        <td class="r muted sm">{{ g.n }}</td>
-      </tr>
-      {% endfor %}
-    </table>
-    {% if breadth.div_small_large is not none %}
-    <p class="muted sm" style="margin:8px 0 0">{{ t(
-      'Small-cap vs large-cap breadth: ' ~ ('%+.1f'|format(breadth.div_small_large)) ~ 'pp (small minus large, % above 50d). Positive = small-caps participating MORE than mega-caps — a broadening tape; negative = leadership narrowing to the top.',
-      '小盘相对大盘广度：' ~ ('%+.1f'|format(breadth.div_small_large)) ~ ' 个百分点（小盘减大盘，% 高于50日线）。正值=小盘参与度高于大盘（涨势扩散）；负值=领先向头部集中。') }}</p>
-    {% endif %}
-  </div>
-  {% endif %}
-
-  <!-- Interactive factor performance chart + GICS sector monitor (lightweight-charts) -->
-  {% if series and series.chart_data %}
-  <div class="panel" id="fchart-section">
-    <h2>{{ t('Factor performance — interactive', '因子表现 — 交互图') }}
-      {{ help("Rebased to 0% at the start of the selected window. Four relational views: factors LONG-ONLY (carry with the market), factors vs S&P 500, the Q5−Q1 PREMIUM (market-neutral), and cap-weighted GICS SECTORS vs S&P. Click legend entries to toggle series; pick a range. Powered by TradingView Lightweight Charts.", "在所选窗口起点重设为 0%。四种关系视图：因子纯多头、因子相对标普、Q5−Q1 溢价（市场中性）、以及市值加权 GICS 行业相对标普。点击图例切换；可选区间。") }}
-    </h2>
-    <div class="chartbar" style="margin-bottom:4px">
-      <span class="tabs" id="fc-universe" role="group" aria-label="Universe"></span>
-      <span class="muted" style="font-size:11.5px;flex:1;min-width:240px">{{ t(
-        'Broad = S&P 1500 (large+mid+small); Narrow = S&P 500 large-cap. This switch re-ranks only the chart, table & sector monitor below — the IC scorecard, crowding, quilt and breadth panels stay on the broad universe.',
-        '广义=标普 1500（大+中+小）；狭义=标普 500 大盘。此切换仅重排下方图表、表格与行业监测 — IC 记分卡、拥挤度、拼布与广度面板保持广义口径。') }}
-        <span id="uni-note" style="display:none;color:var(--warn)"> · {{ t('S&P 500 price history starts 2025-03 (~1y) — curves are shorter and σ/z need ~1y+, so some cells show —.', '标普 500 价格历史自 2025-03（约 1 年）— 曲线更短，σ/z 需约 1 年以上，部分单元格显示 —。') }}</span>
-      </span>
-    </div>
-    <div class="chartbar"><span class="tabs" id="fc-modes" role="group"></span><span class="tabs" id="fc-ranges" role="group"></span></div>
-    <div id="fchart"></div>
-    <div class="legend" id="fc-legend"></div>
-  </div>
-
-  <div class="panel" id="fperf-section">
-    <h2>{{ t('Performance table', '表现一览') }}
-      {{ help("Every factor across horizons, watchlist-style. SCOPE toggles factor long-only portfolios vs the Q5−Q1 premium; VALUE toggles raw return, return vs the S&P, and σ (the move z-scored vs that series' own trailing year — fixed horizons only). Click a column to sort.", "各因子横跨时间跨度的自选股式表格。SCOPE 切换纯多头与 Q5−Q1 溢价；VALUE 切换原始回报、相对标普、σ（相对自身过去一年的 z，仅限定窗）。点击列排序。") }}
-    </h2>
-    <div class="chartbar"><span class="tabs" id="fp-scope" role="group"></span><span class="tabs" id="fp-mode" role="group"></span></div>
-    <div class="ts"><table id="fperf-table"></table></div>
-  </div>
-
-  <div class="panel" id="sector-section">
-    <h2>{{ t('Sector monitor — cap-weighted GICS vs S&P', '行业监测 — 市值加权 GICS 相对标普') }}
-      {{ help("Each cap-weighted GICS sector's return RELATIVE to the S&P over each horizon, colored by how unusual that move is vs the sector's own trailing-year distribution (z). Deep color + |z|≥2 = an outsized rotation. The small number is the relative return; the big number is the z.", "每个市值加权 GICS 行业相对标普的回报（各时间跨度），按该走势相对其自身过去一年分布的异常程度（z）着色。颜色越深、|z|≥2 = 异常轮动。小字为相对回报，大字为 z。") }}
-    </h2>
-    <div class="ts"><table id="sector-monitor"></table></div>
-  </div>
-  {% endif %}
-
-  <!-- Factor performance — point-in-time portfolios (P3 return-series) -->
-  {% if series and series.factors %}
-  <div class="panel">
-    <h2>{{ t('Factor performance — point-in-time portfolios', '因子表现 — 时点组合') }}
-      {{ help("Each factor built into a daily PORTFOLIO at every month-end, as it was knowable then (no look-ahead): long-only = cap-weighted top quintile with a 5% single-name cap; long/short = equal-weight top-minus-bottom quintile (a paper factor premium, NOT a shortable book). Long-only carries with the market (compare SPY); the long/short isolates the premium. " ~ series.honesty, "在每个月末，将每个因子构建为日度组合（无前视）：纯多头=市值加权顶部五分位（单股5%上限）；多空=等权顶部减底部五分位（纸面因子溢价，非可做空组合）。" ~ series.honesty) }}
-    </h2>
-    <p class="muted sm" style="margin:0 0 10px">{{ t(
-      'Rebased over ' ~ series.history_start ~ '→' ~ series.as_of ~ ' (' ~ series.n_rebalances ~ ' month-ends). Free fundamentals are ANNUAL, so fundamental ranks refresh only ~yearly — most turnover is the price legs (low-vol/low-beta). Every Sharpe ships with a block-bootstrap 95% CI that mostly straddles zero, and at most a lone, marginal factor clears FDR (see the IC panel above). Descriptive, not tradeable.',
-      '区间 ' ~ series.history_start ~ '→' ~ series.as_of ~ '（' ~ series.n_rebalances ~ ' 个月末）。免费基本面为年度数据，故基本面排名约每年才刷新一次 — 多数换手来自价格类因子（低波动/低贝塔）。每个夏普均附 block-bootstrap 95% 置信区间（多数跨越零），且至多个别勉强因子通过 FDR（见上方 IC 面板）。仅作描述，不可交易。') }}</p>
-    <div class="scroll"><table>
-      <tr>
-        <th>{{ t('factor','因子') }}</th>
-        <th class="r">{{ t('long-only trend','纯多头走势') }}</th>
-        <th class="r">{{ t('LO cum','纯多头累计') }}</th>
-        <th class="r">{{ t('LO Sharpe','纯多头夏普') }}</th>
-        <th class="r">{{ t('Q5−Q1 cum','多空累计') }}</th>
-        <th class="r">{{ t('Q5−Q1 Sharpe (95% CI)','多空夏普（CI）') }}</th>
-        <th class="r">{{ t('P(Sharpe>0)','P(夏普>0)') }}</th>
-      </tr>
-      {% for f in series.factors %}
-      {% set s = series.series[f] %}{% set st = series.stats[f] %}
-      <tr>
-        <td>{{ t(series.labels[f], series.labels[f]) }}</td>
-        <td class="r">{{ spark1(s.long_only.spark) }}</td>
-        <td class="r {{ 'pos' if s.long_only.cum_pct and s.long_only.cum_pct>0 else 'neg' }}">{{ '%+.0f'|format(s.long_only.cum_pct) if s.long_only.cum_pct is not none else '—' }}%</td>
-        <td class="r muted">{{ '%.2f'|format(st.sharpe_lo) if st.sharpe_lo is not none else '—' }}</td>
-        <td class="r {{ 'pos' if s.long_short.cum_pct and s.long_short.cum_pct>0 else 'neg' }}">{{ '%+.0f'|format(s.long_short.cum_pct) if s.long_short.cum_pct is not none else '—' }}%</td>
-        <td class="r muted">{{ '%.2f'|format(st.sharpe_ls) if st.sharpe_ls is not none else '—' }}{% if st.sharpe_ls_ci %} <span class="sm">[{{ st.sharpe_ls_ci[0] }}, {{ st.sharpe_ls_ci[2] }}]</span>{% endif %}</td>
-        <td class="r muted">{{ st.sharpe_gt0_prob if st.sharpe_gt0_prob is not none else '—' }}</td>
-      </tr>
-      {% endfor %}
-      {% if series.benchmark %}
-      <tr><td class="muted">{{ t('SPY (cap-wtd market)','SPY（市值加权市场）') }}</td><td class="r">{{ spark1(series.benchmark.spark) }}</td>
-        <td class="r {{ 'pos' if series.benchmark.cum_pct>0 else 'neg' }}">{{ '%+.0f'|format(series.benchmark.cum_pct) }}%</td>
-        <td class="r muted">—</td><td class="r muted">—</td><td class="r muted">—</td><td class="r muted">—</td></tr>
-      {% endif %}
-    </table></div>
-  </div>
-
-  <!-- Recent factor moves (horizon z) + rotation -->
-  <div class="panel">
-    <div class="topline" style="margin-bottom:8px">
-      <h2 style="margin:0">{{ t('Recent moves — z vs trailing year', '近期变动 — 相对过去一年的 z') }}
-        {{ help("Each horizon's compounded return z-scored against that series' own trailing-252 distribution of overlapping returns (|z|≥2 = a notable move, marked ●). Green/red follows the sign of the move. Toggle the long-only portfolio vs the Q5−Q1 premium.", "各时间跨度的复利回报，相对该序列自身过去 252 日重叠回报分布做 z 标准化（|z|≥2 为显著，标 ●）。绿/红表示方向。可切换纯多头与多空溢价。") }}
-      </h2>
-      <span style="flex:1"></span>
-      <span class="seg" id="legseg">
-        <button data-leg="ls" class="on">Q5−Q1</button>
-        <button data-leg="lo">{{ t('Long-only','纯多头') }}</button>
-      </span>
-    </div>
-    <table id="hztab" data-leg="ls">
-      <tr><th>{{ t('factor','因子') }}</th><th class="r">1d</th><th class="r">5d</th><th class="r">20d</th>
-        <th>{{ t('20d leader','20日领先') }}</th></tr>
-      {% for f in series.factors %}
-      {% set hz = series.horizons[f] %}
-      <tr>
-        <td>{{ t(series.labels[f], series.labels[f]) }}</td>
-        {% for k in ['d1','d5','d20'] %}
-        <td class="r">
-          {% for leg in ['lo','ls'] %}{% set c = hz[('long_only' if leg=='lo' else 'long_short')][k] %}<span class="v-{{ leg }} {{ 'zpos' if c.z and c.z>0 else ('zneg' if c.z and c.z<0 else 'muted') }}" title="z {{ c.z }} · pct {{ c.pct }}">{{ ('%+.1f'|format(c.ret_pct)) if c.ret_pct is not none else '—' }}{% if c.flag %} ●{% endif %}</span>{% endfor %}
-        </td>
-        {% endfor %}
-        <td class="muted sm">{% if series.rotation.leader == f %}★ {{ t('current','当前') }}{% endif %}</td>
-      </tr>
-      {% endfor %}
-    </table>
-    {% if series.rotation and series.rotation.leader_label %}
-    <div style="margin-top:10px">
-      <p class="sm" style="margin:0 0 7px">{{ t('20-day leader:','20日领先因子：') }}
-        <b>{{ series.rotation.leader_label }}</b> <span class="{{ 'pos' if series.rotation.leader_ret20_pct>=0 else 'neg' }}">({{ '%+.1f'|format(series.rotation.leader_ret20_pct) }}%)</span><span class="muted">{% if series.rotation.leader_held_days %} · {{ t('held','已领先') }} {{ series.rotation.leader_held_days }}{{ t('d','天') }}{% endif %}{% if series.rotation.previous_leader_label %} · {{ t('prev','前任') }} {{ series.rotation.previous_leader_label }}{% endif %}</span>
-        {% for j in series.rotation.quartile_jumps %} <span class="flip" style="border-color:{{ 'var(--up)' if j.dir=='up' else 'var(--down)' }};color:{{ 'var(--up)' if j.dir=='up' else 'var(--down)' }}">{{ '↑' if j.dir=='up' else '↓' }} {{ j.label }} {{ t('quartile jump','分位跃迁') }} #{{ j.from }}→#{{ j.to }}</span>{% endfor %}
-        {% if series.rotation.recent_flips %} · <span class="muted">{{ t('flips:','轮动：') }}</span> {% for fl in series.rotation.recent_flips %}<span class="flip">{{ fl.date }} → {{ fl.label }}</span>{% endfor %}{% endif %}
-      </p>
-      {% if series.rotation.r20 %}
-      {% set rmax = (series.rotation.r20 | map(attribute='ret') | map('abs') | max) or 1 %}
-      <div class="r20bars">
-        {% for b in series.rotation.r20 %}
-        <span class="r20lab">{{ series.labels.get(b.factor, b.label) }}</span>
-        <span class="r20track">{% if b.ret >= 0 %}<i style="left:50%;width:{{ (b.ret/rmax*50)|round(1) }}%;background:var(--up)"></i>{% else %}<i style="right:50%;width:{{ (-b.ret/rmax*50)|round(1) }}%;background:var(--down)"></i>{% endif %}<i class="mid"></i></span>
-        <span class="r20val {{ 'pos' if b.ret>=0 else 'neg' }}">{{ '%+.1f'|format(b.ret) }}%</span>
-        {% endfor %}
-      </div>
-      {% endif %}
-    </div>
-    {% endif %}
-  </div>
-
-  <!-- Crowding + quilt -->
-  <div class="twocol">
-    {% if series.crowding %}
-    <div class="panel">
-      <h2>{{ t('Factor crowding', '因子拥挤度') }}
-        {{ help("Correlation of the factor LONG/SHORT daily return series. Deep blue = the two premiums move TOGETHER (a crowded, redundant pair); red = they hedge each other. This is return co-movement (distinct from the static z-exposure overlap in the IC panel). With annual fundamentals the price legs (low-vol/low-beta) co-move most.", "因子多空日度回报序列的相关性。深蓝=两种溢价同向（拥挤、冗余）；红=互相对冲。这是回报的同向性（区别于 IC 面板中的静态暴露重叠）。") }}
-      </h2>
-      <div class="scroll"><table class="hm">
-        <tr><th></th>{% for f in series.crowding.factors %}<th>{{ series.labels[f][:4] }}</th>{% endfor %}</tr>
-        {% for a in series.crowding.factors %}
-        <tr><th style="text-align:right">{{ series.labels[a] }}</th>
-          {% set row = series.crowding.matrix[loop.index0] %}
-          {% for c in row %}{{ hcell(c) }}{% endfor %}
-        </tr>
-        {% endfor %}
-      </table></div>
-      {% if series.crowding.pairs %}<p class="muted sm" style="margin:8px 0 0">{{ t('Most crowded:','最拥挤：') }} {% for p in series.crowding.pairs %}<span class="chip">{{ series.labels.get(p.a, p.a) }} ↔ {{ series.labels.get(p.b, p.b) }} · {{ p.corr }}</span>{% endfor %}</p>{% endif %}
-    </div>
-    {% endif %}
-    {% if series.quilt and series.quilt.months %}
-    {% set qpal = ['#5aa7ff','#4ade80','#facc15','#fb923c','#f472b6','#2dd4bf','#a78bfa','#fb7185','#a3e635'] %}
-    <div class="panel">
-      <h2>{{ t('Quilt — Q5−Q1 monthly ranks', '拼布 — 多空月度排名') }}
-        {{ help("The periodic-table-of-returns: each column ranks the factor Q5−Q1 premiums best→worst that month (and a YTD column), cells colored by factor IDENTITY so you can trace one factor's path — hover a cell to highlight it across every column. ~13 months on the free cache; descriptive, not a regime-robust signal.", "收益周期表：每列按当月多空溢价从优到劣排名（含 YTD 列），单元格按因子着色以便追踪某一因子 — 悬停某格可高亮其在各列的位置。免费缓存约13个月；描述性，非稳健信号。") }}
-      </h2>
-      <div class="scroll"><table class="quilt2">
-        <tr>{% for m in series.quilt.months %}<th>{{ 'YTD' if m == 'YTD' else m[5:] }}</th>{% endfor %}</tr>
-        {% set maxrows = series.quilt.ranked.values() | map('length') | max %}
-        {% for i in range(maxrows) %}
-        <tr>
-          {% for m in series.quilt.months %}{% set col = series.quilt.ranked[m] %}{% if i < (col|length) %}{% set f = col[i] %}{% set v = series.quilt.returns[f].get(m) %}<td class="qc" data-f="{{ f }}" style="background:{{ qpal[series.factors.index(f) % (qpal|length)] }}" title="{{ series.labels[f] }} · {{ 'YTD' if m=='YTD' else m }}: {{ '%+.1f'|format(v) }}%"><span class="qf">{{ series.labels[f][:9] }}</span><span class="qv">{{ '%+.0f'|format(v) }}%</span></td>{% else %}<td></td>{% endif %}{% endfor %}
-        </tr>
-        {% endfor %}
-      </table></div>
-    </div>
-    {% endif %}
-  </div>
-  <script>
-    (function(){ var q=document.querySelector('.quilt2'); if(!q) return;
-      q.addEventListener('mouseover',function(e){var c=e.target.closest('.qc[data-f]'); if(!c) return; var f=c.dataset.f; q.querySelectorAll('.qc[data-f="'+f+'"]').forEach(function(x){x.classList.add('hl');});});
-      q.addEventListener('mouseout',function(){ q.querySelectorAll('.qc.hl').forEach(function(x){x.classList.remove('hl');});});
-    })();
-  </script>
-  {% endif %}
-
-  <!-- Composite leaders / laggards -->
-  <div class="panel">
-    <h2>{{ t('Multi-factor composite', '多因子综合') }}
-      {{ help("The RANKING here uses only the factor legs that carry a POSITIVE measured information coefficient on the deep-history (leak-free) scorecard, IC-weighted with a sign constraint — negative-IC / FDR-failing legs (e.g. low-vol, investment) are EXCLUDED from the order because they rank names in an anti-predictive direction (the blind equal-weight composite's own scorecard grades it ic_ir -0.049). The per-leg leaderboards below still show every leg, badged with its IC/FDR verdict. Validate-before-weight: the order a trader sizes off cannot be moved by a leg the scorecard rejects.", "此处排序仅采用在深度历史（无泄漏）评分卡上信息系数为正的因子腿，按 IC 加权并施加符号约束——负 IC／未通过 FDR 的腿（如低波动、投资）被排除，因为它们会使排序反向。下方各腿榜单仍展示全部腿并标注其 IC/FDR 结论。") }}
-      {% if fac.rank_legs %}<span class="muted sm">· {{ t('ranked by','排序依据') }}: {% for l in fac.rank_legs %}{{ fac.factor_labels.get(l, l) }}{% if not loop.last %} · {% endif %}{% endfor %}{% if fac.composite_passport and fac.composite_passport.excluded_legs %} · {{ t('excluded (negative IC)','已排除（负IC）') }}: {% for l in fac.composite_passport.excluded_legs %}{{ fac.factor_labels.get(l, l) }}{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}</span>{% endif %}
-    </h2>
-    <div class="twocol">
-      <div>
-        <h3 class="sm pos" style="margin:0 0 6px">{{ t('Top composite', '综合最高') }}</h3>
-        <table>
-          <tr><th>{{ t('stock','个股') }}</th><th>{{ t('sector','板块') }}</th><th class="r">z</th><th class="r">{{ t('mkt cap','市值') }}</th></tr>
-          {% for x in fac.composite_top %}
-          <tr><td><a href="stock.html#{{ x.ticker }}"><b>{{ x.ticker }}</b></a> <span class="muted sm">{{ x.name[:22] }}</span></td>
-            <td class="muted sm">{{ td(x.sector) }}</td><td class="r zpos">{{ '%+.2f'|format(x.z) }}</td>
-            <td class="r muted sm">{{ ('$%.0fB'|format(x.mktcap_bn)) if x.mktcap_bn else '—' }}</td></tr>
-          {% endfor %}
-        </table>
-      </div>
-      <div>
-        <h3 class="sm neg" style="margin:0 0 6px">{{ t('Bottom composite', '综合最低') }}</h3>
-        <table>
-          <tr><th>{{ t('stock','个股') }}</th><th>{{ t('sector','板块') }}</th><th class="r">z</th><th class="r">{{ t('mkt cap','市值') }}</th></tr>
-          {% for x in fac.composite_bottom %}
-          <tr><td><a href="stock.html#{{ x.ticker }}"><b>{{ x.ticker }}</b></a> <span class="muted sm">{{ x.name[:22] }}</span></td>
-            <td class="muted sm">{{ td(x.sector) }}</td><td class="r zneg">{{ '%+.2f'|format(x.z) }}</td>
-            <td class="r muted sm">{{ ('$%.0fB'|format(x.mktcap_bn)) if x.mktcap_bn else '—' }}</td></tr>
-          {% endfor %}
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- Insider conviction (SEC Form-4) -->
-  {% if fac.insider %}
-  <div class="panel">
-    <h2>{{ t('Insider conviction', '内部人信念') }} <span class="muted sm">{{ t('SEC Form-4 ·', 'SEC Form-4 ·') }} {{ fac.insider.quarter }}</span>
-      {{ help("Net OPEN-MARKET insider buying minus selling per company from SEC Form-4 filings (purchases code P, sales code S; grants and option exercises excluded). The SEC ships these as a quarterly bulk dataset, so this is the most recent COMPLETED quarter — a slow conviction read, not real-time. Clustered open-market BUYING is the more informative side (insiders buy for one reason; they sell for many).", "来自 SEC Form-4 的每家公司净公开市场内部人买入减卖出（买入代码 P、卖出 S；排除授予与期权行权）。SEC 按季度发布，故为最近一个完整季度 — 慢速信念信号，非实时。") }}
-    </h2>
-    <div class="twocol">
-      <div>
-        <h3 class="sm pos" style="margin:0 0 6px">{{ t('Biggest net BUYING', '最大净买入') }}</h3>
-        <table>
-          <tr><th>{{ t('stock','个股') }}</th><th>{{ t('sector','板块') }}</th><th class="r">{{ t('net $','净额') }}</th><th class="r">B/S</th></tr>
-          {% for x in fac.insider.top_buying %}
-          <tr><td><a href="stock.html#{{ x.ticker }}"><b>{{ x.ticker }}</b></a> <span class="muted sm">{{ x.name[:20] }}</span></td>
-            <td class="muted sm">{{ td(x.sector) }}</td><td class="r zpos">+${{ '%.1f'|format(x.net_usd_mn) }}M</td>
-            <td class="r muted sm">{{ x.buys }}/{{ x.sells }}</td></tr>
-          {% endfor %}
-        </table>
-      </div>
-      <div>
-        <h3 class="sm neg" style="margin:0 0 6px">{{ t('Biggest net SELLING', '最大净卖出') }}</h3>
-        <table>
-          <tr><th>{{ t('stock','个股') }}</th><th>{{ t('sector','板块') }}</th><th class="r">{{ t('net $','净额') }}</th><th class="r">B/S</th></tr>
-          {% for x in fac.insider.top_selling %}
-          <tr><td><a href="stock.html#{{ x.ticker }}"><b>{{ x.ticker }}</b></a> <span class="muted sm">{{ x.name[:20] }}</span></td>
-            <td class="muted sm">{{ td(x.sector) }}</td><td class="r zneg">−${{ '%.1f'|format(-x.net_usd_mn) }}M</td>
-            <td class="r muted sm">{{ x.buys }}/{{ x.sells }}</td></tr>
-          {% endfor %}
-        </table>
-      </div>
-    </div>
-  </div>
-  {% endif %}
-
-  <!-- Per-factor leaderboards (Factor leaders section) -->
-  <div class="panel">
-    <h2>{{ t('Factor leaders', '各因子领先股') }}</h2>
-    <div class="cardgrid">
-      {% for f in fac.factors + ['sue','low_beta','accruals','short_interest'] %}
-      {% if fac.leaders.get(f) %}
-      <div class="fcard">
-        <h3>{{ td(fac.factor_labels.get(f, f)) }}
-          {% set h = FHELP.get(f) %}{% if h %}{{ help(h[0], h[1]) }}{% endif %}
-          <span class="badge">{{ t('top', '前') }} {{ fac.leaders[f]|length }}</span></h3>
-        <table>
-          {% for x in fac.leaders[f][:10] %}
-          <tr><td><a href="stock.html#{{ x.ticker }}"><b>{{ x.ticker }}</b></a></td>
-            <td class="muted sm">{{ x.name[:18] }}</td>
-            <td class="r zpos">{{ '%+.2f'|format(x.z) }}</td></tr>
-          {% endfor %}
-        </table>
-      </div>
-      {% endif %}
-      {% endfor %}
-    </div>
-  </div>
-
   {# ── HOW THIS FEEDS THE NEURAL WEB ───────────────────────────────────────
      Was: a status grid of five identical BH-WITHHELD chips, a DORMANT chip and a
      four-chip constitutional row — ~40 tokens of internal vocabulary that said
@@ -1170,23 +1329,13 @@
       '它目前被允许做的：解释行情、低调标记值得关注的个股。它永远不被允许做的：自行排名、评分或下调信号。五项关于因子如何为系统提供信息的注册假设仍在检验中，均未投入使用。') }}</p>
     {% endif %}
   </div>
-
   <div class="panel">
     <p class="muted" style="font-size:12px;margin:0">{{ t(
       "Source: SEC EDGAR XBRL 'frames' API (free, keyless) for FY" ~ (fac.fy or '') ~ " fundamentals, joined to the S&P 1500 price universe; " ~ fac.n ~ " names with a full composite as of " ~ fac.as_of ~ ". Fundamentals refresh weekly; ranks recompute daily with prices. Factors are decayed/crowded and free fundamentals are imperfect — treat as a research lens, not a buy list. See research/QUANT_FACTOR_EXPANSION.md and LIMITATIONS.md.",
       "来源：SEC EDGAR XBRL 'frames' API（免费、无需密钥）的 FY" ~ (fac.fy or '') ~ " 基本面，与标普 1500 价格域连接；截至 " ~ fac.as_of ~ " 有 " ~ fac.n ~ " 只具备完整综合分。基本面每周刷新，排名随价格每日重算。因子已衰减／拥挤且免费基本面并不完美 — 视作研究视角，而非买入清单。") }}
       {{ t('Generated', '生成于') }} {{ generated_utc }} UTC</p>
   </div>
-  <script>
-    (function(){
-      var seg=document.getElementById('legseg'), tab=document.getElementById('hztab');
-      if(seg&&tab) seg.addEventListener('click', function(e){
-        var b=e.target.closest('button[data-leg]'); if(!b) return;
-        tab.setAttribute('data-leg', b.dataset.leg);
-        seg.querySelectorAll('button').forEach(function(x){x.classList.toggle('on', x===b);});
-      });
-    })();
-  </script>
+  </section>
   {% if series and series.chart_data %}
   <script>
   const CHART_DATA = {{ series.chart_data | tojson }};
@@ -1286,6 +1435,168 @@
   })();
   </script>
   {% endif %}
+  {# ── FACTOR DRAWER ──────────────────────────────────────────────────────
+     One factor's whole story in one place. It is assembled from the SAME
+     artifacts the panels above render (ic.rows, series.stats, fac.leaders), so
+     it can never disagree with them. Display-only: it reads nothing new, emits
+     nothing, and feeds no score. Every field is fail-open — a missing artifact
+     just drops that row from the drawer. #}
+  <div class="fx-scrim" id="fx-scrim"></div>
+  <aside class="fx-drawer" id="fx-drawer" role="dialog" aria-modal="true"
+         aria-label="{{ t('Factor detail','因子详情') }}">
+    <button class="dw-x" id="fx-dwx" aria-label="{{ t('Close','关闭') }}">&#10005;</button>
+    <div id="fx-dwbody"></div>
+  </aside>
+  <script>
+  const FX_F = {};
+  function _fx(k){ return (FX_F[k] = FX_F[k] || {}); }
+  {% if ic and ic.rows %}{% for r in ic.rows %}
+  Object.assign(_fx({{ r.factor|tojson }}), {
+    label: {{ (fac.factor_labels.get(r.factor, r.label_en))|tojson }},
+    val: {{ ('validated' if (r.survives_fdr and r.mean_ic is not none and r.mean_ic > 0)
+             else ('negative-ic' if (r.mean_ic is not none and r.mean_ic < 0) else 'fdr-fail'))|tojson }},
+    ic: {{ r.mean_ic|tojson }}, ir: {{ r.ic_ir_ann|tojson }}, t: {{ r.t_hac|tojson }},
+    hit: {{ r.hit|tojson }}, q: {{ r.q_fdr|tojson }}, n: {{ r.n|tojson }},
+    blurb: {{ (FHELP.get(r.factor)[0] if FHELP.get(r.factor) else none)|tojson }},
+    blurbZh: {{ (FHELP.get(r.factor)[1] if FHELP.get(r.factor) else none)|tojson }} });
+  {% endfor %}{% endif %}
+  {% if series and series.factors %}{% for f in series.factors %}
+  Object.assign(_fx({{ f|tojson }}), {
+    loCum: {{ series.series[f].long_only.cum_pct|tojson }},
+    lsCum: {{ series.series[f].long_short.cum_pct|tojson }},
+    loS: {{ series.stats[f].sharpe_lo|tojson }}, lsS: {{ series.stats[f].sharpe_ls|tojson }},
+    ci: {{ series.stats[f].sharpe_ls_ci|tojson }}, p: {{ series.stats[f].sharpe_gt0_prob|tojson }} });
+  if(!_fx({{ f|tojson }}).label) _fx({{ f|tojson }}).label = {{ series.labels[f]|tojson }};
+  {% endfor %}{% endif %}
+  {% for L in (fac.leadership or []) %}{% if L.factor is defined and L.factor %}
+  _fx({{ L.factor|tojson }}).spread = {{ L.spread_pct|tojson }};
+  {% endif %}{% endfor %}
+  {% for f in (fac.factors + ['sue','low_beta','accruals','short_interest']) %}{% if fac.leaders.get(f) %}
+  Object.assign(_fx({{ f|tojson }}), {
+    names: {{ (fac.leaders[f][:10] | map(attribute='ticker') | list)|tojson }} });
+  if(!_fx({{ f|tojson }}).label) _fx({{ f|tojson }}).label = {{ fac.factor_labels.get(f, f)|tojson }};
+  {% endif %}{% endfor %}
+
+  (function(){
+    const $=s=>document.querySelector(s), esc=s=>String(s==null?'':s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    /* bilingual pair — labels TOGGLE via l-en / l-zh, never both on screen */
+    const L=(en,zh)=>'<span class="l-en">'+en+'</span><span class="l-zh">'+(zh||en)+'</span>';
+    const VL={validated:[ 'VALIDATED','已验证'],'fdr-fail':['FDR-FAIL','未过检'],
+              'negative-ic':['NEG-IC','反向']};
+    const num=(v,d,s)=>v==null?'—':((v>=0&&s?'+':'')+v.toFixed(d));
+    const pct=v=>v==null?'—':((v>=0?'+':'')+v.toFixed(0)+'%');
+
+    const dw=$('#fx-drawer'), sc=$('#fx-scrim'), body=$('#fx-dwbody'), x=$('#fx-dwx');
+    let last=null;
+
+    function row(k,kz,v){ return v==null||v==='—'?'':
+      '<span class="k">'+L(k,kz)+'</span><span class="v">'+v+'</span>'; }
+
+    function open(key){
+      const f=FX_F[key]; if(!f||!f.label) return;
+      last=document.activeElement;
+      const vc=f.val?'<span class="val-chip '+f.val+'">'+L(VL[f.val][0],VL[f.val][1])+'</span>':'';
+      const edge=row('mean IC','平均 IC',num(f.ic,4,1))+row('IC-IR (ann)','IC-IR（年化）',num(f.ir,2,1))
+        +row('t-HAC','t 值',num(f.t,2,1))
+        +row('hit rate','命中率',f.hit==null?null:(f.hit*100).toFixed(0)+'%')
+        +row('q-FDR','q 值',num(f.q,2,0))+row('quarters','季度数',f.n==null?null:String(f.n));
+      const ci=f.ci&&f.ci.length>2?' <span class="muted sm">['+f.ci[0]+', '+f.ci[2]+']</span>':'';
+      const port=row('long-only cumulative','纯多头累计',pct(f.loCum))
+        +row('long-only Sharpe','纯多头夏普',num(f.loS,2,0))
+        +row('Q5−Q1 cumulative','多空累计',pct(f.lsCum))
+        +row('Q5−Q1 Sharpe','多空夏普',f.lsS==null?null:num(f.lsS,2,0)+ci)
+        +row('P(Sharpe > 0)','P(夏普>0)',f.p==null?null:String(f.p));
+      const rec=row('63-day Q5−Q1 spread','63日多空价差',
+        f.spread==null?null:'<span class="'+(f.spread>=0?'pos':'neg')+'">'
+        +(f.spread>=0?'+':'')+f.spread.toFixed(1)+'%</span>');
+      /* the read: validation state is the honest headline, not the return */
+      const read = f.val==='validated'
+        ? L('Clears BH-FDR with a positive measured edge — the only bar on this page that means anything. Still a marginal survivor on a survivorship-biased panel: a tilt, not a trade.',
+            '通过 BH-FDR 且实测优势为正 — 本页唯一有意义的门槛。但在含幸存者偏差的面板上仍属勉强通过：可作倾斜，而非交易。')
+        : f.val==='negative-ic'
+        ? L('Measured edge points the WRONG way on this panel. Whatever its portfolio did, this ranking sorted the cross-section anti-predictively. Read it as description only.',
+            '在此面板上实测优势方向为负。无论其组合表现如何，该排名对横截面的排序是反预测的。仅作描述阅读。')
+        : L('Does not survive multiple-testing control. Suggestive at best — treat it as a description of what is cheap or high quality, not as a signal.',
+            '未通过多重检验控制。至多具有提示性 — 应视为对“什么便宜／什么优质”的描述，而非信号。');
+
+      body.innerHTML =
+        '<div class="dw-eyebrow">'+L('Factor','因子')+'</div>'
+        +'<div class="dw-title"><h3>'+esc(f.label)+'</h3>'+vc+'</div>'
+        +(f.blurb?'<p class="dw-blurb">'+L(esc(f.blurb),esc(f.blurbZh))+'</p>':'')
+        +(edge?'<div class="dw-sec"><h4>'+L('Measured edge','实测优势')+'</h4><div class="dw-kv">'+edge+'</div></div>':'')
+        +(port?'<div class="dw-sec"><h4>'+L('As a portfolio','作为组合')+'</h4><div class="dw-kv">'+port+'</div></div>':'')
+        +(rec?'<div class="dw-sec"><h4>'+L('Recent','近期')+'</h4><div class="dw-kv">'+rec+'</div></div>':'')
+        +(f.names&&f.names.length?'<div class="dw-sec"><h4>'+L('Top of this ranking','该排名前列')
+          +'</h4><div class="dw-names">'+f.names.map(t=>'<a class="chip" href="stock.html#'+esc(t)+'">'
+          +esc(t)+'</a>').join('')+'</div></div>':'')
+        +'<div class="dw-sec"><h4>'+L('Read','解读')+'</h4><p class="dw-read">'+read+'</p></div>';
+      dw.classList.add('on'); sc.classList.add('on');
+      if(location.hash!=='#f/'+key) history.replaceState(null,'','#f/'+key);
+      x.focus();
+    }
+    function close(){ dw.classList.remove('on'); sc.classList.remove('on');
+      if(location.hash.indexOf('#f/')===0) history.replaceState(null,'',location.pathname);
+      if(last&&last.focus) last.focus(); }
+
+    document.addEventListener('click',e=>{
+      const el=e.target.closest('[data-fx]'); if(el&&FX_F[el.dataset.fx]){ e.preventDefault(); open(el.dataset.fx); } });
+    sc.addEventListener('click',close); x.addEventListener('click',close);
+    document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&dw.classList.contains('on')) close(); });
+    /* deep link: factors.html#f/value opens Value straight from a shared URL */
+    function fromHash(){ const m=(location.hash||'').match(/^#f\/([\w]+)$/); if(m&&FX_F[m[1]]) open(m[1]); }
+    addEventListener('hashchange',fromHash); fromHash();
+
+    /* ── explorer tabs — build from the panes actually present ──────────── */
+    const TAB=[['chart','Chart','图表'],['moves','Recent moves','近期变动'],['quilt','Quilt','拼布']];
+    const strip=$('#fx-tabs'), panes=[...document.querySelectorAll('.fx-pane')];
+    if(strip&&panes.length){
+      const live=TAB.filter(t=>panes.some(p=>p.dataset.pane===t[0]&&p.children.length));
+      if(live.length>1){
+        strip.innerHTML=live.map((t,i)=>'<button role="tab" data-p="'+t[0]+'" class="'
+          +(i?'':'on')+'">'+L(t[1],t[2])+'</button>').join('');
+        panes.forEach(p=>p.classList.toggle('on',p.dataset.pane===live[0][0]));
+        strip.addEventListener('click',e=>{ const b=e.target.closest('button[data-p]'); if(!b)return;
+          strip.querySelectorAll('button').forEach(z=>z.classList.toggle('on',z===b));
+          panes.forEach(p=>p.classList.toggle('on',p.dataset.pane===b.dataset.p));
+          window.dispatchEvent(new Event('resize')); });
+      } else { strip.style.display='none'; panes.forEach(p=>p.classList.add('on')); }
+    }
+
+    /* ── ticker lookup across every leaderboard ─────────────────────────── */
+    const q=$('#fx-tq'), note=$('#fx-tnote');
+    if(q&&note){
+      const cards=[...document.querySelectorAll('.fcard')];
+      cards.forEach(c=>c.querySelectorAll('tr').forEach(r=>{
+        const b=r.querySelector('b'); if(b) r.dataset.tk=b.textContent.trim().toUpperCase(); }));
+      const base=()=>{ note.innerHTML=L('Type a ticker to see every ranking it leads.',
+        '输入代码，查看它在哪些排名中领先。'); };
+      base();
+      q.addEventListener('input',()=>{
+        const v=q.value.trim().toUpperCase(); let n=0;
+        cards.forEach(c=>{ let has=false;
+          c.querySelectorAll('tr[data-tk]').forEach(r=>{ const m=!!v&&r.dataset.tk===v;
+            r.classList.toggle('hit',m); if(m) has=true; });
+          c.classList.toggle('dim',!!v&&!has); if(has) n++; });
+        if(!v) return base();
+        note.innerHTML = n
+          ? L(v+' leads '+n+' ranking'+(n>1?'s':'')+'.', v+' 在 '+n+' 项排名中领先。')
+          : L(v+' does not lead any ranking.', v+' 未在任何排名中领先。');
+      });
+    }
+
+    /* ── section rail scroll-spy ────────────────────────────────────────── */
+    const links=[...document.querySelectorAll('#fx-rail a')];
+    const secs=links.map(a=>document.querySelector(a.getAttribute('href'))).filter(Boolean);
+    if(secs.length&&'IntersectionObserver' in window){
+      const io=new IntersectionObserver(es=>{ es.forEach(en=>{ if(!en.isIntersecting) return;
+        const i=secs.indexOf(en.target);
+        links.forEach((a,j)=>a.classList.toggle('on',j===i)); }); },
+        {rootMargin:'-18% 0px -72% 0px'});
+      secs.forEach(s=>io.observe(s));
+    }
+  })();
+  </script>
   <script src="theme.js"></script>
 </body>
 </html>
