@@ -8326,6 +8326,37 @@ function mmlEvalBadges(ev) {
   return out.join(" ");
 }
 
+/* Contradiction assessment chips. Two independent tiers, deliberately distinct:
+   ⚡ is the free keyword scan (a QUESTION — "conflict?"), the verdict pill is the LLM's
+   answer. system_error is red because it means OUR data was wrong, not the market. */
+const MML_VERDICT = {
+  system_error: ["s-bad", "data may be wrong"],
+  market_divergence: ["s-warn", "market split"],
+  none: ["s-mut", "no conflict"],
+  unclear: ["s-mut", "unclear"],
+};
+function mmlVerdictPill(ev) {
+  const v = ev && ev.contra_verdict;
+  if (!v) return "";
+  const [cls, label] = MML_VERDICT[v] || ["s-mut", v];
+  const note = (ev.contra_note || "").trim();
+  const sigs = (ev.contra_signals || []).join(" vs ");
+  const title = [label, sigs, note, ev.contra_model && `by ${ev.contra_model}`].filter(Boolean).join(" · ");
+  return `<span class="statpill ${cls}" title="${esc(title)}">${esc(label)}</span>`;
+}
+function mmlThinkChip(r) {
+  const tm = r.thinking_meta || {};
+  if (!tm.segments) return "";
+  return `<span class="statpill s-mut" title="${tm.segments} reasoning segment${tm.segments === 1 ? "" : "s"} · ${tm.chars} chars captured">🧠 ${tm.segments}</span>`;
+}
+function mmlContraChip(r) {
+  const c = r.contra || {};
+  if (!c.hit) return "";
+  const where = c.src === "thinking" ? "only in the model's reasoning — not in the answer"
+    : c.src === "answer" ? "in the answer" : "in both the answer and the reasoning";
+  return `<span class="statpill s-warn" title="conflict language ${where}: ${esc((c.terms || []).join(", "))}">⚡ conflict?</span>`;
+}
+
 RENDER.mastermind_logs = async () => {
   const v = $("#view");
   v.innerHTML = `<div class="spin">loading…</div>`;
@@ -8337,11 +8368,13 @@ async function mmlLoad() {
   const qs = new URLSearchParams();
   qs.set("limit", "300");
   const f = MML.filters;
-  ["surface", "lane", "model", "graded", "thumb", "search", "since"].forEach(k => {
+  ["surface", "lane", "model", "graded", "thumb", "search", "since", "verdict"].forEach(k => {
     if (f[k] && f[k] !== "all") qs.set(k, f[k]);
   });
   if (f.starred) qs.set("starred", "1");
   if (f.error) qs.set("error", "1");
+  if (f.thinking) qs.set("thinking", "1");
+  if (f.contra) qs.set("contra", "1");
   const d = await api("/api/mastermind_ai/response_logs?" + qs.toString());
   if (CURRENT !== "mastermind_logs") return;
   if (!d || d.error) {
@@ -8360,12 +8393,19 @@ async function mmlLoad() {
     if (!(days >= (ing.threshold_days || 2))) return "";
     return `<span class="statpill s-bad" title="no ${esc(s)} responses since ${esc(String(ts).slice(0, 10))}">${esc(s)} dark ${Math.floor(days)}d</span>`;
   }).join("");
+  /* Contradiction verdict counts — only the labels actually present, so an
+     un-classified corpus shows nothing rather than four zeroes. */
+  const verdictChips = Object.entries(st.verdicts || {}).map(([v, n]) => {
+    const [cls, label] = MML_VERDICT[v] || ["s-mut", v];
+    return `<span class="statpill ${cls}" title="LLM verdict: ${esc(label)}">${esc(label)} ${n}</span>`;
+  }).join("");
   const heroHtml = `<div class="mb-hero">
     <div class="mb-hero-top">
       <span class="mb-hero-kicker">Mastermind AI</span>
       <span class="mb-hero-name">Response logs — evaluation corpus</span>
       <span class="spacer"></span>
       <button class="btn" id="mmlRefresh" title="Pull new rows from R2 (both surfaces write there)">⟳ Refresh from R2</button>
+      <button class="btn" id="mmlClassify" title="Ask a small model to label the un-verdicted conflict candidates: our data wrong, or the market genuinely split?">⚡ Classify conflicts (LLM)</button>
       <button class="btn" id="mmlExportJ" title="Download current filter as JSONL">⭳ JSONL</button>
       <button class="btn" id="mmlExportC" title="Download current filter as CSV">⭳ CSV</button>
     </div>
@@ -8377,9 +8417,13 @@ async function mmlLoad() {
       <span class="statpill s-ok">👍 ${st.thumbs_up || 0}</span>
       <span class="statpill s-bad">👎 ${st.thumbs_down || 0}</span>
       ${st.errors ? `<span class="statpill s-bad">${st.errors} errored</span>` : ""}
+      <span class="statpill ${st.n_thinking ? "s-ok" : "s-mut"}" title="rows carrying the model's captured reasoning">🧠 ${st.n_thinking || 0}</span>
+      <span class="statpill ${st.n_contra ? "s-warn" : "s-mut"}" title="rows whose answer or reasoning uses conflict language">⚡ ${st.n_contra || 0}</span>
+      ${verdictChips}
       ${d.read_capped ? `<span class="statpill s-warn" title="showing the most recent window">window capped</span>` : ""}
       ${surfDarkHtml}
     </div>
+    <div id="mmlStatus" class="sub muted" style="margin-top:6px"></div>
   </div>`;
 
   const filterHtml = `<div class="section" style="margin-top:14px;display:flex;flex-wrap:wrap;gap:8px;align-items:center">
@@ -8389,8 +8433,11 @@ async function mmlLoad() {
     <select id="mmlThumb" class="btn">${[["all", "any 👍/👎"], ["up", "👍 up"], ["down", "👎 down"]].map(([o, t]) => `<option value="${o}"${f.thumb === o ? " selected" : ""}>${t}</option>`).join("")}</select>
     <input id="mmlModel" class="btn" style="width:120px" placeholder="model…" value="${esc(f.model || "")}">
     <input id="mmlSearch" class="btn" style="width:180px" placeholder="search text…" value="${esc(f.search || "")}">
+    <select id="mmlVerdict" class="btn" title="LLM contradiction verdict">${[["all", "any verdict"], ["system_error", "data may be wrong"], ["market_divergence", "market split"], ["none", "no conflict"], ["unclear", "unclear"]].map(([o, t]) => `<option value="${o}"${f.verdict === o ? " selected" : ""}>${t}</option>`).join("")}</select>
     <label class="sub" style="display:flex;align-items:center;gap:4px"><input type="checkbox" id="mmlStar"${f.starred ? " checked" : ""}> flagged</label>
     <label class="sub" style="display:flex;align-items:center;gap:4px"><input type="checkbox" id="mmlErr"${f.error ? " checked" : ""}> errors</label>
+    <label class="sub" style="display:flex;align-items:center;gap:4px" title="only rows carrying the model's captured reasoning"><input type="checkbox" id="mmlThink"${f.thinking ? " checked" : ""}> 🧠 thinking</label>
+    <label class="sub" style="display:flex;align-items:center;gap:4px" title="only rows whose answer or reasoning uses conflict language"><input type="checkbox" id="mmlContra"${f.contra ? " checked" : ""}> ⚡ conflicts</label>
     <button class="btn primary" id="mmlApply">Apply</button>
     <span class="sub muted">${d.matched || 0} match</span>
   </div>`;
@@ -8413,15 +8460,41 @@ function mmlRowHtml(r) {
   const tok = (r.input_tokens || 0) + (r.output_tokens || 0);
   const lane = r.lane ? `<span class="sub muted"> · ${esc(r.lane)}</span>` : "";
   const errDot = (r.flags && r.flags.error) ? ` <span class="statpill s-bad" title="errored/degraded">!</span>` : "";
+  const contraChips = [mmlThinkChip(r), mmlContraChip(r), mmlVerdictPill(ev)].filter(Boolean).join(" ");
   return `<tr class="mml-row" data-id="${esc(r.id)}" style="cursor:pointer">
     <td class="sub mono">${when}</td>
     <td>${mmlSurfacePill(r.surface)}</td>
-    <td><div><b>${qSnip || "<span class='muted'>(no question)</span>"}</b>${errDot}</div><div class="sub muted">${aSnip}</div>${mmlEvalBadges(ev)}</td>
+    <td><div><b>${qSnip || "<span class='muted'>(no question)</span>"}</b>${errDot}</div><div class="sub muted">${aSnip}</div>${[mmlEvalBadges(ev), contraChips].filter(Boolean).join(" ")}</td>
     <td class="sub mono">${esc(orchTrunc(r.model || "?", 16))}${lane}</td>
     <td class="r mono sub">${tok || "—"}</td>
     <td>${mmlEvalBadges(ev) || '<span class="sub muted">ungraded</span>'}</td>
   </tr>
   <tr class="mml-detail" data-for="${esc(r.id)}" style="display:none"><td colspan="6" style="background:rgba(255,255,255,.02)"></td></tr>`;
+}
+
+/* The model's captured reasoning — collapsed by default: it is long, and the answer
+   above it is what an operator reads first. Opened when they want to see WHETHER the
+   model wrestled a conflict, and how it decided which side to believe. */
+function mmlThinkingHtml(r) {
+  const segs = (r.thinking || []).filter(s => s && typeof s === "object");
+  if (!segs.length) return "";
+  const tm = r.thinking_meta || {};
+  const c = r.contra || {};
+  const contraLine = c.hit
+    ? `<div class="sub muted" style="margin:6px 0">⚡ conflict language ${esc(c.src === "thinking" ? "in the reasoning only — check whether the answer surfaced it" : c.src === "answer" ? "in the answer" : "in both the answer and the reasoning")}: ${esc((c.terms || []).join(", "))}</div>`
+    : "";
+  const body = segs.map(s => {
+    const label = `[${esc(s.phase || "?")} · round ${esc(String(s.round == null ? "?" : s.round))} · ${esc(s.model || "?")}]`;
+    const text = s.redacted && !s.text
+      ? "(redacted by the provider — the model reasoned here, the text is unavailable)"
+      : (s.text || "");
+    return `<div style="margin:8px 0"><div class="sub mono muted">${label}</div>
+      <div class="mono" style="white-space:pre-wrap;font-size:12px;line-height:1.5;padding:8px;border-left:2px solid rgba(255,255,255,.14);background:rgba(255,255,255,.02)">${esc(text)}</div></div>`;
+  }).join("");
+  return `<details class="mml-think">
+    <summary class="sub" style="font-weight:700;cursor:pointer">🧠 Thinking (${segs.length} segment${segs.length === 1 ? "" : "s"} · ${tm.chars || 0} chars)</summary>
+    ${contraLine}${body}
+  </details>`;
 }
 
 function mmlDetailHtml(r) {
@@ -8442,6 +8515,7 @@ function mmlDetailHtml(r) {
     <div class="sub muted">${meta}</div>
     <div><div class="sub" style="font-weight:700;margin-bottom:3px">Question</div><div style="white-space:pre-wrap">${esc(r.question || "")}</div></div>
     <div><div class="sub" style="font-weight:700;margin-bottom:3px">Answer</div><div style="white-space:pre-wrap">${esc(r.answer || "")}</div></div>
+    ${mmlThinkingHtml(r)}
     <div class="section" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;border-top:1px solid rgba(255,255,255,.08);padding-top:10px">
       <span class="sub" style="font-weight:700">Grade</span>
       <div style="display:flex;gap:4px">${grades}</div>
@@ -8464,6 +8538,28 @@ function mmlWire() {
     else toast((r && r.note) || "Refresh failed (R2 creds?)", true);
     await mmlLoad();
   });
+  /* Classify conflicts: label the un-verdicted candidates via the small LLM. Verdicts
+     merge into the SAME sidecar as manual grades, so a rated row keeps its rating. */
+  on("mmlClassify", "click", async (e) => {
+    const btn = e.target;
+    btn.disabled = true; btn.textContent = "⚡ classifying…";
+    mmlStatus("Reading the un-verdicted conflict candidates…");
+    const r = await post("/api/mastermind_ai/response_logs/classify", { limit: 20 });
+    btn.disabled = false; btn.textContent = "⚡ Classify conflicts (LLM)";
+    if (r && r.ok) {
+      mmlStatus(`classified ${r.classified || 0} / skipped ${r.skipped || 0}${r.candidates ? ` (of ${r.candidates} candidate${r.candidates === 1 ? "" : "s"})` : ""}`);
+      toast(`Classified ${r.classified || 0} response${r.classified === 1 ? "" : "s"}`);
+      await mmlLoad();
+      mmlStatus(`classified ${r.classified || 0} / skipped ${r.skipped || 0}`);
+    } else if (r && r.error === "no_llm_key") {
+      /* Non-blocking: the deterministic ⚡ scan keeps working without a key. */
+      mmlStatus("No LLM key — set DEEPSEEK_API_KEY for the admin process to classify conflicts. The ⚡ keyword scan still works.");
+      toast("DEEPSEEK_API_KEY not set on this host", true);
+    } else {
+      mmlStatus("");
+      toast((r && r.error) || "Classify failed", true);
+    }
+  });
   on("mmlExportJ", "click", () => mmlExport("jsonl"));
   on("mmlExportC", "click", () => mmlExport("csv"));
   on("mmlApply", "click", mmlApplyFilters);
@@ -8475,16 +8571,26 @@ function mmlWire() {
   });
 }
 
+/* The tab's own status line (classify results, LLM-key notice) — survives a re-render
+   because mmlLoad rebuilds the node, so callers set it AFTER the reload they trigger. */
+function mmlStatus(msg) {
+  const el = $("#mmlStatus");
+  if (el) el.textContent = msg || "";
+}
+
 function mmlApplyFilters() {
   MML.filters = {
     surface: $("#mmlSurface").value,
     lane: $("#mmlLane").value,
     graded: $("#mmlGraded").value,
     thumb: $("#mmlThumb").value,
+    verdict: $("#mmlVerdict").value,
     model: $("#mmlModel").value.trim(),
     search: $("#mmlSearch").value.trim(),
     starred: $("#mmlStar").checked,
     error: $("#mmlErr").checked,
+    thinking: $("#mmlThink").checked,
+    contra: $("#mmlContra").checked,
   };
   mmlLoad();
 }
@@ -8542,9 +8648,11 @@ async function mmlExport(fmt) {
   const qs = new URLSearchParams();
   qs.set("fmt", fmt);
   const f = MML.filters;
-  ["surface", "lane", "model", "graded", "thumb", "search", "since"].forEach(k => { if (f[k] && f[k] !== "all") qs.set(k, f[k]); });
+  ["surface", "lane", "model", "graded", "thumb", "search", "since", "verdict"].forEach(k => { if (f[k] && f[k] !== "all") qs.set(k, f[k]); });
   if (f.starred) qs.set("starred", "1");
   if (f.error) qs.set("error", "1");
+  if (f.thinking) qs.set("thinking", "1");
+  if (f.contra) qs.set("contra", "1");
   const d = await api("/api/mastermind_ai/response_logs/export?" + qs.toString());
   if (!d || !d.ok) { toast((d && d.error) || "Export failed", true); return; }
   const blob = new Blob([d.content || ""], { type: d.mime || "text/plain" });

@@ -3,8 +3,11 @@ answer produced by the Mastermind assistant, across BOTH surfaces:
 
     * "macro"    — the Macro Dashboard brain chat (engine/neuralweb/brain_gateway.py,
                    served by macro-api / app/main.py's POST /api/brain/stream).
-    * "terminal" — the charting-app Terminal copilot (terminal/app/api/copilot/route.ts),
-                   which writes the SAME schema to the SAME R2 prefix from Node.
+    * "terminal" — the charting-app Terminal copilot, which reaches the SAME gateway
+                   (mm_brain.js → /api/brain/stream, context.page == "terminal"), so
+                   ONE instrumentation point covers both. (The old Node-side writer in
+                   terminal/app/api/copilot/route.ts is DEPRECATED and unused; both
+                   surfaces now flow through the gateway.)
 
 Why a shared bus and not a DB: the two AIs run on two separate remote deployments,
 while the operator's admin panel reads local files on the Mac. Cloudflare R2 is the
@@ -39,6 +42,15 @@ CONTRACT (schema "mastermind.response_log.v1"):
     tools         list of tool names invoked ([] when unknown)
     lang          "en" | "zh" | null
     flags         {"filtered": bool, "degraded": bool, "error": bool, "screened": bool}
+    thinking      OPTIONAL list of reasoning segments (added 2026-07-26, no version
+                  bump — readers tolerate extra keys and older rows simply lack it):
+                  [{"round": int, "phase": "tool"|"synthesis", "model": str,
+                    "text": str}]; a Claude redacted_thinking block becomes the same
+                  shape with "text": "" and "redacted": true.
+                  WHY: the model's own reasoning is the eval corpus for CONTRADICTION
+                  ASSESSMENT — whether it wrestled genuinely conflicting site signals,
+                  and whether the conflict was our data being wrong (system error) or
+                  the market being honestly split. The answer text alone hides that.
 
 FAIL-SOFT: every public function is best-effort and must NEVER raise into the
 request path. A missing R2 credential is a graceful no-op (returns False), exactly
@@ -60,6 +72,13 @@ SCHEMA = "mastermind.response_log.v1"
 R2_PREFIX = "mastermind_response_logs"
 
 _VALID_SURFACES = ("macro", "terminal")
+
+# Reasoning-trace bounds. A single Opus round can think for pages; the log is an eval
+# corpus, not an archive, so each segment is clipped and the trace itself is capped.
+# The FIRST segments are kept: a chain of thought frames the conflict up front and
+# converges later, so the opening rounds are what the contradiction audit reads.
+_THINKING_TEXT_CAP = 6000
+_THINKING_MAX_SEGMENTS = 24
 
 
 # ---------------------------------------------------------------------------
@@ -141,6 +160,41 @@ def _clean_context(context: Any) -> dict:
     return out
 
 
+def _clean_thinking(thinking: Any) -> list[dict]:
+    """Sanitize a captured reasoning trace into the schema's `thinking` list.
+
+    Keeps dict segments only; clips each text to _THINKING_TEXT_CAP; caps the trace at
+    _THINKING_MAX_SEGMENTS (the FIRST N); coerces round→int and phase/model→str; drops
+    empty-text segments UNLESS they are redacted (a redacted_thinking block is evidence
+    the model reasoned even though the text is unavailable). Pure — never raises."""
+    out: list[dict] = []
+    if not isinstance(thinking, list):
+        return out
+    for seg in thinking:
+        if not isinstance(seg, dict):
+            continue
+        redacted = bool(seg.get("redacted"))
+        text = _clip(seg.get("text") or "", _THINKING_TEXT_CAP)
+        if not text and not redacted:
+            continue
+        try:
+            rnd = int(seg.get("round") or 0)
+        except (TypeError, ValueError):
+            rnd = 0
+        item: dict[str, Any] = {
+            "round": rnd,
+            "phase": str(seg.get("phase") or ""),
+            "model": str(seg.get("model") or ""),
+            "text": text,
+        }
+        if redacted:
+            item["redacted"] = True
+        out.append(item)
+        if len(out) >= _THINKING_MAX_SEGMENTS:
+            break
+    return out
+
+
 def build_row(
     *,
     surface: str,
@@ -162,6 +216,7 @@ def build_row(
     tools: list | None = None,
     lang: str | None = None,
     flags: dict | None = None,
+    thinking: list | None = None,
     row_id: str | None = None,
 ) -> dict:
     """Build one `mastermind.response_log.v1` row. Pure — no I/O, never raises."""
@@ -195,6 +250,7 @@ def build_row(
             "error": bool((flags or {}).get("error")),
             "screened": bool((flags or {}).get("screened")),
         },
+        "thinking": _clean_thinking(thinking),
     }
     return row
 

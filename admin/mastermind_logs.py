@@ -13,8 +13,20 @@ This module is the READ + EVAL half, running inside the admin panel on the Mac:
                      and return newest-first rows + summary stats.
   * rate(...)      — append an eval verdict (grade / thumb / star / tags / note)
                      to the local, mutable sidecar data/mastermind/response_eval.jsonl.
+  * classify_contradictions(...)
+                   — LLM tier over the same corpus: read each candidate's answer +
+                     captured `thinking` and label the conflict `none` /
+                     `system_error` / `market_divergence` / `unclear`, MERGED into the
+                     same sidecar so an operator's manual grade is never clobbered.
   * export(...)    — the filtered set as a JSONL or CSV string for batch eval /
                      training-set curation outside the panel.
+
+CONTRADICTION ASSESSMENT: rows now carry the model's own reasoning (`thinking`, see
+lib/mastermind_response_log.py). The operator's question is whether the assistant is
+wrestling contradictory site signals, and which kind of conflict it is — OUR data being
+wrong (system error) versus the market being honestly split (divergence). Two tiers
+answer it: a free deterministic keyword scan computed at READ time (so widening the
+pattern list re-scores the whole existing corpus), and an on-demand LLM verdict.
 
 The log ledger is APPEND-ONLY and immutable (it mirrors R2). Evaluation is a
 SEPARATE local sidecar overlaid at read time by id — so grading never mutates
@@ -29,6 +41,8 @@ import csv
 import io
 import json
 import os
+import re
+import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -50,6 +64,31 @@ _ALLOWED_TAGS_MAX = 12
 # Ingest-health: warn when the newest ledger row is at least this many days old.
 _DARK_AFTER_DAYS = 2
 _EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
+
+# ---------------------------------------------------------------------------
+# Contradiction scan — deterministic tier
+# ---------------------------------------------------------------------------
+# Stems, not whole words: "contradict" catches contradicts/contradiction/contradictory,
+# "diverg" catches diverge/divergence/diverging. Bilingual because the assistant answers
+# in the user's language and a ZH turn reasons in ZH. Substring matching is deliberate —
+# a false positive costs the operator one glance, a false negative hides the case the
+# whole feature exists to find.
+_CONTRA_STEMS = (
+    "contradict", "conflict", "inconsisten", "disagree", "diverg",
+    "at odds", "mixed signals", "tension between", "opposite direction",
+    "矛盾", "冲突", "不一致", "分歧", "相悖",
+)
+_CONTRA_PATTERNS = [(s, re.compile(re.escape(s), re.IGNORECASE)) for s in _CONTRA_STEMS]
+_CONTRA_TERMS_MAX = 8
+
+# LLM tier (DeepSeek over its Anthropic-compatible endpoint — raw urllib, no SDK dep
+# in the admin venv). Verdicts land in the SAME sidecar as manual ratings.
+_CLASSIFY_URL = "https://api.deepseek.com/anthropic/v1/messages"
+_CLASSIFY_MODEL = "deepseek-v4-flash"
+_CLASSIFY_LIMIT_MAX = 50
+_CLASSIFY_EXCERPT_CHARS = 4000
+_CLASSIFY_TIMEOUT_S = 30
+_VALID_VERDICTS = ("none", "system_error", "market_divergence", "unclear")
 
 
 # ---------------------------------------------------------------------------
@@ -118,12 +157,19 @@ def _append_jsonl(p: Path, row: dict) -> None:
 # ---------------------------------------------------------------------------
 
 def _eval_overlay(root: Path | None) -> dict[str, dict]:
-    """Collapse the eval sidecar to latest-wins by id → the current verdict."""
+    """Collapse the eval sidecar to the current verdict per id — latest wins PER FIELD.
+
+    Two writers share the sidecar: rate() appends a complete RATING snapshot
+    (grade/thumb/star/tags/note — cleared values ride as explicit nulls, so a newer
+    rating still resets an older one), and classify_contradictions() appends the
+    contra_* verdict fields. Folding rows with update() instead of replacing them
+    keeps whichever fields the newer row does NOT carry — an operator rating a row
+    after the LLM classified it must not erase the verdict, and vice versa."""
     latest: dict[str, dict] = {}
     for row in _read_jsonl(_eval_path(root), _READ_CAP):
         rid = row.get("id")
         if isinstance(rid, str) and rid:
-            latest[rid] = row  # append-only file → last write wins naturally
+            latest.setdefault(rid, {}).update(row)
     return latest
 
 
@@ -132,6 +178,7 @@ def _public_eval(ev: dict | None) -> dict:
     if not isinstance(ev, dict):
         return {}
     tags = ev.get("tags")
+    sigs = ev.get("contra_signals")
     return {
         "grade": ev.get("grade"),
         "thumb": ev.get("thumb"),
@@ -140,7 +187,68 @@ def _public_eval(ev: dict | None) -> dict:
         "note": str(ev.get("note") or ""),
         "evaluator": ev.get("evaluator") or "",
         "updated_ts": ev.get("updated_ts") or "",
+        # Contradiction verdict (LLM tier). Rides the SAME sidecar row as the manual
+        # grade — merged, never clobbered, in either direction.
+        "contra_verdict": ev.get("contra_verdict") or None,
+        "contra_signals": [str(s) for s in sigs][:_CONTRA_TERMS_MAX] if isinstance(sigs, list) else [],
+        "contra_note": str(ev.get("contra_note") or ""),
+        "contra_model": ev.get("contra_model") or "",
+        "contra_ts": ev.get("contra_ts") or "",
     }
+
+
+# ---------------------------------------------------------------------------
+# Contradiction scan (deterministic, read-time)
+# ---------------------------------------------------------------------------
+
+def _thinking_meta(row: dict) -> dict:
+    """Cheap size summary of a row's captured reasoning — the UI shows it on the
+    collapsed header so an operator can see there IS a trace before opening it."""
+    try:
+        segs = [s for s in (row.get("thinking") or []) if isinstance(s, dict)]
+        return {"segments": len(segs),
+                "chars": sum(len(str(s.get("text") or "")) for s in segs)}
+    except Exception:  # noqa: BLE001
+        return {"segments": 0, "chars": 0}
+
+
+def _scan_contradiction(row: dict) -> dict:
+    """Deterministic conflict scan over the answer AND every thinking segment.
+
+    Returns {hit, terms, src} where src ∈ answer|thinking|both|None. `src` is the
+    interesting field: a conflict the model worked through in its reasoning but never
+    surfaced in the answer ("thinking" only) is exactly the smoothing-over failure the
+    contradiction doctrine forbids. Computed at read time, never stored. Never raises."""
+    try:
+        answer = str(row.get("answer") or "")
+        think_parts = []
+        for seg in row.get("thinking") or []:
+            if isinstance(seg, dict):
+                think_parts.append(str(seg.get("text") or ""))
+        think = " ".join(think_parts)
+        terms: list[str] = []
+        in_answer = False
+        in_think = False
+        for stem, pat in _CONTRA_PATTERNS:
+            hit_a = bool(pat.search(answer))
+            hit_t = bool(pat.search(think))
+            if not (hit_a or hit_t):
+                continue
+            if stem not in terms:
+                terms.append(stem)
+            in_answer = in_answer or hit_a
+            in_think = in_think or hit_t
+        if in_answer and in_think:
+            src = "both"
+        elif in_answer:
+            src = "answer"
+        elif in_think:
+            src = "thinking"
+        else:
+            src = None
+        return {"hit": bool(terms), "terms": terms[:_CONTRA_TERMS_MAX], "src": src}
+    except Exception:  # noqa: BLE001
+        return {"hit": False, "terms": [], "src": None}
 
 
 # ---------------------------------------------------------------------------
@@ -267,7 +375,9 @@ def refresh(root: Path | None = None) -> dict:
 # Read + filter
 # ---------------------------------------------------------------------------
 
-def _matches(row: dict, ev: dict, f: dict) -> bool:
+def _matches(row: dict, ev: dict, f: dict, contra: dict | None = None) -> bool:
+    """Does one row pass the filter set? `contra` is the already-computed deterministic
+    scan when the caller has it (logs() does), recomputed lazily otherwise."""
     surface = f.get("surface")
     if surface and surface != "all" and row.get("surface") != surface:
         return False
@@ -288,6 +398,15 @@ def _matches(row: dict, ev: dict, f: dict) -> bool:
     if f.get("starred") and not ev.get("star"):
         return False
     if f.get("error") and not (row.get("flags") or {}).get("error"):
+        return False
+    if f.get("has_thinking") and not _thinking_meta(row)["segments"]:
+        return False
+    if f.get("contra"):
+        c = contra if contra is not None else _scan_contradiction(row)
+        if not c.get("hit"):
+            return False
+    verdict = (f.get("verdict") or "").strip()
+    if verdict and verdict != "all" and str(ev.get("contra_verdict") or "") != verdict:
         return False
     since = f.get("since")
     if since:
@@ -318,11 +437,23 @@ def logs(limit: int = 100, filters: dict | None = None, root: Path | None = None
             "by_surface": {}, "by_provider": {},
             "graded": 0, "starred": 0, "thumbs_up": 0, "thumbs_down": 0,
             "errors": 0,
+            # Contradiction assessment: how much of the corpus carries reasoning at all,
+            # how much of it trips the conflict scan, and how the LLM verdicts split.
+            "n_thinking": 0, "n_contra": 0, "verdicts": {},
         }
         matched: list[dict] = []
         for r in rows:
             rid = r.get("id") or ""
             ev = _public_eval(overlay.get(rid))
+            tmeta = _thinking_meta(r)
+            contra = _scan_contradiction(r)
+            if tmeta["segments"]:
+                stats["n_thinking"] += 1
+            if contra["hit"]:
+                stats["n_contra"] += 1
+            verdict = ev.get("contra_verdict")
+            if verdict:
+                stats["verdicts"][verdict] = stats["verdicts"].get(verdict, 0) + 1
             stats["by_surface"][r.get("surface") or "?"] = stats["by_surface"].get(r.get("surface") or "?", 0) + 1
             prov = r.get("provider") or "?"
             stats["by_provider"][prov] = stats["by_provider"].get(prov, 0) + 1
@@ -336,9 +467,13 @@ def logs(limit: int = 100, filters: dict | None = None, root: Path | None = None
                 stats["thumbs_down"] += 1
             if (r.get("flags") or {}).get("error"):
                 stats["errors"] += 1
-            if _matches(r, ev, f):
+            if _matches(r, ev, f, contra):
                 out = dict(r)
                 out["eval"] = ev
+                # The thinking itself stays on the row — the UI renders it. These two
+                # are the derived read-time views over it.
+                out["contra"] = contra
+                out["thinking_meta"] = tmeta
                 matched.append(out)
 
         matched.sort(key=lambda r: _parse_ts(r.get("ts")), reverse=True)
@@ -420,6 +555,179 @@ def rate(cleaned: dict, evaluator: str = "", root: Path | None = None) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# Contradiction classification (LLM tier)
+# ---------------------------------------------------------------------------
+
+_CLASSIFY_INSTRUCTIONS = """You are auditing ONE answer from a markets assistant that reads a dashboard's precomputed signals and explains them to a user. Decide whether the assistant was dealing with CONTRADICTORY signals, and if so what kind of contradiction it was.
+
+Labels:
+- "system_error": the conflict looks like OUR data being wrong — one reading is stale, broken, internally inconsistent, or disagrees with the raw price/volume the assistant checked.
+- "market_divergence": the readings all look valid and the market itself is genuinely split.
+- "none": no real conflict in this turn.
+- "unclear": there may be a conflict but what is shown here cannot settle which kind.
+
+Return ONLY JSON, no prose, no code fence:
+{"contradiction": "none"|"system_error"|"market_divergence"|"unclear", "signals": ["short names of the conflicting readings"], "note": "<one sentence>"}
+"""
+
+
+def _classify_prompt(row: dict) -> str:
+    """Build the one user message for a classification call: question, answer, and the
+    reasoning excerpts, clipped to ~_CLASSIFY_EXCERPT_CHARS total (the thinking absorbs
+    the clipping — it is the longest and the most tolerant of truncation)."""
+    q = str(row.get("question") or "")[:600]
+    a = str(row.get("answer") or "")[:1600]
+    parts = []
+    for seg in row.get("thinking") or []:
+        if not isinstance(seg, dict):
+            continue
+        text = str(seg.get("text") or "")
+        if not text:
+            continue
+        parts.append(f"[{seg.get('phase') or '?'} · round {seg.get('round') or 0}]\n{text}")
+    think = "\n\n".join(parts)
+    room = max(0, _CLASSIFY_EXCERPT_CHARS - len(q) - len(a))
+    think = think[:room]
+    return (f"{_CLASSIFY_INSTRUCTIONS}\n\nQUESTION:\n{q}\n\nANSWER:\n{a}\n\n"
+            f"MODEL REASONING (may be empty or truncated):\n{think}\n")
+
+
+def _parse_verdict(text: str) -> dict:
+    """Parse the model's JSON verdict defensively — first '{' to last '}'. A model that
+    wraps its JSON in prose or a fence is normal; a model whose output cannot be parsed
+    at all is recorded as an 'unclear'/'unparseable' verdict rather than dropped, so the
+    row is not re-classified (and re-billed) on every pass."""
+    raw = str(text or "")
+    i, j = raw.find("{"), raw.rfind("}")
+    obj: Any = None
+    if i >= 0 and j > i:
+        try:
+            obj = json.loads(raw[i:j + 1])
+        except Exception:  # noqa: BLE001
+            obj = None
+    if not isinstance(obj, dict):
+        return {"contradiction": "unclear", "signals": [], "note": "unparseable"}
+    v = str(obj.get("contradiction") or "").strip().lower()
+    if v not in _VALID_VERDICTS:
+        v = "unclear"
+    sigs = obj.get("signals")
+    signals = [str(s)[:60] for s in sigs][:_CONTRA_TERMS_MAX] if isinstance(sigs, list) else []
+    return {"contradiction": v, "signals": signals, "note": str(obj.get("note") or "")[:400]}
+
+
+def _classify_call(prompt: str, api_key: str) -> dict | None:
+    """One DeepSeek call over its Anthropic-compatible endpoint. Raw urllib on purpose:
+    the admin venv carries no LLM SDK, and this is a single unstreamed POST. Raises on a
+    network/HTTP problem — the caller counts it as a skip."""
+    body = json.dumps({
+        "model": _CLASSIFY_MODEL,
+        "max_tokens": 400,
+        # The classifier is a labeller, not a reasoner — thinking here buys nothing and
+        # costs latency on a batch of 20.
+        "thinking": {"type": "disabled"},
+        "messages": [{"role": "user", "content": prompt}],
+    }).encode("utf-8")
+    req = urllib.request.Request(
+        _CLASSIFY_URL, data=body, method="POST",
+        headers={
+            "content-type": "application/json",
+            "x-api-key": api_key,
+            "anthropic-version": "2023-06-01",
+        },
+    )
+    with urllib.request.urlopen(req, timeout=_CLASSIFY_TIMEOUT_S) as resp:  # noqa: S310
+        payload = json.loads(resp.read().decode("utf-8"))
+    text = ""
+    for blk in (payload or {}).get("content") or []:
+        if isinstance(blk, dict) and blk.get("type") == "text":
+            text += str(blk.get("text") or "")
+    return _parse_verdict(text)
+
+
+def classify_contradictions(limit: int = 20, root: Path | None = None) -> dict:
+    """Label the un-verdicted contradiction candidates, newest first.
+
+    Candidates: rows the deterministic scan hits OR that carry any reasoning at all,
+    minus every row that already has a `contra_verdict` in the sidecar (so repeated
+    runs are cheap and additive).
+
+    Persistence MERGES into the existing sidecar row for that id — the operator's
+    grade/thumb/star/tags/note, and their `evaluator`/`updated_ts`, survive untouched;
+    only the five `contra_*` fields are written. Latest-wins overlay then carries both.
+
+    Fail-soft everywhere: no key → {ok: False, error: "no_llm_key"} without raising; a
+    per-row network error is skipped and counted, never fatal to the batch."""
+    try:
+        limit = max(1, min(_CLASSIFY_LIMIT_MAX, int(limit)))
+    except (TypeError, ValueError):
+        limit = 20
+    try:
+        api_key = os.environ.get("DEEPSEEK_API_KEY", "").strip()
+        if not api_key:
+            return {"ok": False, "error": "no_llm_key", "classified": 0, "skipped": 0,
+                    "note": "DEEPSEEK_API_KEY is not set for the admin process — "
+                            "the deterministic ⚡ scan still works without it.",
+                    "generated_at": _now_iso()}
+
+        rows = _read_jsonl(_log_path(root), _READ_CAP)
+        overlay = _eval_overlay(root)
+        cands: list[dict] = []
+        for r in rows:
+            rid = r.get("id")
+            if not isinstance(rid, str) or not rid:
+                continue
+            if (overlay.get(rid) or {}).get("contra_verdict"):
+                continue
+            if not (_scan_contradiction(r)["hit"] or _thinking_meta(r)["segments"]):
+                continue
+            cands.append(r)
+        cands.sort(key=lambda r: _parse_ts(r.get("ts")), reverse=True)
+        cands = cands[:limit]
+
+        classified = 0
+        skipped = 0
+        verdicts: dict[str, int] = {}
+        for r in cands:
+            rid = str(r.get("id"))
+            try:
+                res = _classify_call(_classify_prompt(r), api_key)
+            except Exception:  # noqa: BLE001 — network/HTTP/decode → skip this row only
+                res = None
+            if not res:
+                skipped += 1
+                continue
+            merged = dict(overlay.get(rid) or {})
+            merged.update({
+                "id": rid,
+                "schema": "mastermind.response_eval.v1",
+                "contra_verdict": res["contradiction"],
+                "contra_signals": res["signals"],
+                "contra_note": res["note"],
+                "contra_model": _CLASSIFY_MODEL,
+                "contra_ts": _now_iso(),
+            })
+            # setdefault, never assignment: an operator-rated row keeps ITS evaluator and
+            # updated_ts, so the panel never shows a machine pass as a human verdict.
+            merged.setdefault("evaluator", "llm")
+            merged.setdefault("updated_ts", merged["contra_ts"])
+            try:
+                _append_jsonl(_eval_path(root), merged)
+            except Exception:  # noqa: BLE001 — disk problem → count as a skip, keep going
+                skipped += 1
+                continue
+            overlay[rid] = merged
+            classified += 1
+            verdicts[res["contradiction"]] = verdicts.get(res["contradiction"], 0) + 1
+
+        return {"ok": True, "classified": classified, "skipped": skipped,
+                "candidates": len(cands), "verdicts": verdicts,
+                "model": _CLASSIFY_MODEL, "generated_at": _now_iso()}
+    except Exception as exc:  # noqa: BLE001
+        return {"ok": False, "error": str(exc), "classified": 0, "skipped": 0,
+                "generated_at": _now_iso()}
+
+
+# ---------------------------------------------------------------------------
 # Export
 # ---------------------------------------------------------------------------
 
@@ -433,8 +741,9 @@ _EXPORT_FIELDS = (
 def export(filters: dict | None = None, fmt: str = "jsonl", root: Path | None = None) -> dict:
     """Return the filtered corpus as a downloadable string.
 
-    fmt='jsonl' → one full row (with eval) per line.
-    fmt='csv'   → flattened core fields + eval grade/thumb/star/tags/note.
+    fmt='jsonl' → one full row (with eval, thinking, and the contradiction scan) per line.
+    fmt='csv'   → flattened core fields + eval grade/thumb/star/tags/note + the
+                  contradiction columns (thinking_chars, contra_hit, contra_verdict).
     Returns {ok, filename, mime, content, count}. Never raises."""
     try:
         fmt = "csv" if str(fmt).lower() == "csv" else "jsonl"
@@ -444,9 +753,12 @@ def export(filters: dict | None = None, fmt: str = "jsonl", root: Path | None = 
         sel: list[dict] = []
         for r in rows:
             ev = _public_eval(overlay.get(r.get("id") or ""))
-            if _matches(r, ev, f):
+            contra = _scan_contradiction(r)
+            if _matches(r, ev, f, contra):
                 out = dict(r)
                 out["eval"] = ev
+                out["contra"] = contra
+                out["thinking_meta"] = _thinking_meta(r)
                 sel.append(out)
         sel.sort(key=lambda r: _parse_ts(r.get("ts")), reverse=True)
         sel = sel[:_EXPORT_CAP]
@@ -456,17 +768,22 @@ def export(filters: dict | None = None, fmt: str = "jsonl", root: Path | None = 
             content = "\n".join(json.dumps(r, ensure_ascii=False) for r in sel)
             return {"ok": True, "filename": f"mastermind_responses_{stamp}.jsonl",
                     "mime": "application/x-ndjson", "content": content, "count": len(sel)}
-        # CSV
+        # CSV — the reasoning itself is far too long for a cell, so CSV carries its SIZE
+        # plus both contradiction verdicts; JSONL is the format that carries the trace.
         buf = io.StringIO()
-        cols = list(_EXPORT_FIELDS) + ["grade", "thumb", "star", "tags", "note"]
+        cols = (list(_EXPORT_FIELDS) + ["grade", "thumb", "star", "tags", "note"]
+                + ["thinking_chars", "contra_hit", "contra_verdict"])
         w = csv.writer(buf)
         w.writerow(cols)
         for r in sel:
             ev = r.get("eval") or {}
+            contra = r.get("contra") or {}
             w.writerow(
                 [r.get(k, "") for k in _EXPORT_FIELDS]
                 + [ev.get("grade", ""), ev.get("thumb", ""), ev.get("star", ""),
                    " ".join(ev.get("tags") or []), (ev.get("note") or "").replace("\n", " ")]
+                + [(r.get("thinking_meta") or {}).get("chars", 0),
+                   bool(contra.get("hit")), ev.get("contra_verdict") or ""]
             )
         return {"ok": True, "filename": f"mastermind_responses_{stamp}.csv",
                 "mime": "text/csv", "content": buf.getvalue(), "count": len(sel)}

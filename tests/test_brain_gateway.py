@@ -4472,3 +4472,249 @@ def test_china_flows_schema_declares_staleness_and_authority():
     assert "not live" in low
     assert "as_of" in low
     assert "never originate" in low
+
+
+# ---------------------------------------------------------------------------
+# Thinking-process capture (Mastermind contradiction assessment)
+# ---------------------------------------------------------------------------
+# The model's reasoning is the corpus for "is it wrestling contradictory site signals,
+# and is the conflict OUR data or a genuinely split market?".  Capture is LOG-ONLY:
+# the leak test below is the load-bearing one — this gateway serves paying users'
+# widgets, and private reasoning is not product copy.
+
+_SECRET_THOUGHT = ("the breadth read and the credit read point opposite ways here — "
+                   "one of them is probably stale")
+
+
+class _ThinkBlock:
+    """A Claude/DeepSeek thinking block: `.thinking`, never `.text`."""
+
+    def __init__(self, thinking: str = _SECRET_THOUGHT, type_: str = "thinking"):
+        self.type = type_
+        self.thinking = thinking
+
+
+class _ThinkingStreamCtx(_FakeStreamCtx):
+    """Synthesis stream whose FINAL message carries a thinking block — the text stream
+    never yields it (the SDK skips thinking deltas), which is why capture must read
+    get_final_message() rather than the delta stream."""
+
+    def __init__(self, text: str, thinking: str = _SECRET_THOUGHT, blocks: list | None = None):
+        super().__init__(text)
+        self._blocks = blocks if blocks is not None else [_ThinkBlock(thinking)]
+
+    def get_final_message(self):
+        return _MockResponse([*self._blocks, _MockBlock("text", self._text)], "end_turn")
+
+
+class _ThinkingClient(_CaptureClient):
+    def __init__(self, responses: list | None = None, answer: str = _CLEAN_ANSWER,
+                 synth_ctx: Any = None):
+        super().__init__(responses, answer)
+        self._synth_ctx = synth_ctx
+
+    def stream(self, **kwargs):
+        self.stream_kwargs.append(kwargs)
+        return self._synth_ctx if self._synth_ctx is not None else _FakeStreamCtx(self._answer)
+
+
+def _loop_capture(client, root, tmp_path, model="claude-opus-5", lane="pro"):
+    """Drive _run_brain_loop_stream directly — chat_stream owns its own thinking_out,
+    so the side channel is only observable from here. Returns (raw SSE, thinking_out)."""
+    thinking_out: list = []
+    providers = [{"client": client, "model": model}]
+    with patch.object(gw, "_dispatch_brain_tool", return_value={"symbol": "AAPL", "price": 1.0}):
+        events = list(gw._run_brain_loop_stream(
+            "How is AAPL doing?", lane, [], {}, root, tmp_path, "",
+            client, model, 1024, 4, {"type": "meta"},
+            [], [], thinking_out, providers=providers))
+    return events, thinking_out
+
+
+def test_thinking_capture_phase_one_tool_round(tmp_path):
+    """A tool round's thinking block lands in thinking_out tagged phase='tool'."""
+    root = _make_temp_root()
+    client = _ThinkingClient([
+        _MockResponse([_ThinkBlock(),
+                       _MockBlock("tool_use", name="get_quote", input_={"symbol": "aapl"}, id_="t1")],
+                      "tool_use"),
+    ])
+    _, thinking_out = _loop_capture(client, root, tmp_path, model="deepseek-v4-flash", lane="fast")
+
+    assert thinking_out, "the side channel must always be handed back"
+    trace = thinking_out[0]
+    tool_segs = [s for s in trace if s["phase"] == "tool"]
+    assert len(tool_segs) == 1
+    assert tool_segs[0]["text"] == _SECRET_THOUGHT
+    assert tool_segs[0]["round"] == 1
+    assert tool_segs[0]["model"] == "deepseek-v4-flash"
+
+
+def test_thinking_capture_phase_two_synthesis(tmp_path):
+    """get_final_message()'s thinking block lands tagged phase='synthesis'."""
+    root = _make_temp_root()
+    client = _ThinkingClient(
+        [_MockResponse([_MockBlock("tool_use", name="get_quote", input_={"symbol": "aapl"}, id_="t1")],
+                       "tool_use"),
+         _MockResponse([_MockBlock("text", "Let me pull that together.")], "tool_use")],
+        synth_ctx=_ThinkingStreamCtx(_CLEAN_ANSWER),
+    )
+    _, thinking_out = _loop_capture(client, root, tmp_path)
+
+    synth = [s for s in thinking_out[0] if s["phase"] == "synthesis"]
+    assert len(synth) == 1
+    assert synth[0]["text"] == _SECRET_THOUGHT
+    assert synth[0]["model"] == "claude-opus-5"
+
+
+def test_thinking_capture_records_redacted_blocks(tmp_path):
+    """A redacted_thinking block still records THAT the model reasoned (empty text)."""
+    root = _make_temp_root()
+    client = _ThinkingClient([
+        _MockResponse([_ThinkBlock("", type_="redacted_thinking"),
+                       _MockBlock("tool_use", name="get_quote", input_={"symbol": "aapl"}, id_="t1")],
+                      "tool_use"),
+    ])
+    _, thinking_out = _loop_capture(client, root, tmp_path)
+    seg = thinking_out[0][0]
+    assert seg["redacted"] is True and seg["text"] == "" and seg["phase"] == "tool"
+
+
+def test_thinking_capture_empty_when_model_does_not_think(tmp_path):
+    """No thinking blocks → an empty trace, never a missing side channel."""
+    _, thinking_out = _loop_capture(_two_round_client(), _make_temp_root(), tmp_path)
+    assert thinking_out == [[]]
+
+
+def test_thinking_from_a_failed_over_candidate_is_discarded(tmp_path):
+    """A synthesis candidate that comes back EMPTY is failed over; its reasoning must
+    go with its buffer, or the log would attribute thinking to an answer nobody saw."""
+    root = _make_temp_root()
+
+    class _EmptyThinkingCtx(_ThinkingStreamCtx):
+        @property
+        def text_stream(self):
+            return iter(())          # healthy stream, no text → treated as a failure
+
+    dead = _ThinkingClient(
+        [_MockResponse([_MockBlock("tool_use", name="get_quote", input_={"symbol": "aapl"}, id_="t1")],
+                       "tool_use"),
+         _MockResponse([_MockBlock("text", "…")], "tool_use")],
+        synth_ctx=_EmptyThinkingCtx("", thinking="DISCARDED CANDIDATE REASONING"),
+    )
+    live = _ThinkingClient(synth_ctx=_ThinkingStreamCtx(_CLEAN_ANSWER, thinking="SHIPPED REASONING"))
+    providers = [{"client": dead, "model": "claude-opus-5"},
+                 {"client": live, "model": "deepseek-v4-flash"}]
+    thinking_out: list = []
+    with patch.object(gw, "_dispatch_brain_tool", return_value={"symbol": "AAPL"}):
+        list(gw._run_brain_loop_stream(
+            "How is AAPL doing?", "pro", [], {}, root, tmp_path, "",
+            dead, "claude-opus-5", 1024, 4, {"type": "meta"},
+            [], [], thinking_out, providers=providers))
+
+    texts = [s["text"] for s in thinking_out[0]]
+    assert "SHIPPED REASONING" in texts
+    assert "DISCARDED CANDIDATE REASONING" not in texts
+
+
+def test_thinking_never_reaches_the_sse_wire(tmp_path):
+    """LEAK LAW. Join EVERY yielded SSE string from a full chat_stream run and assert the
+    reasoning text appears in none of them, under no event type. Capture is log-only."""
+    root = _make_temp_root()
+    client = _ThinkingClient(
+        [_MockResponse([_ThinkBlock(),
+                        _MockBlock("tool_use", name="get_quote", input_={"symbol": "aapl"}, id_="t1")],
+                       "tool_use"),
+         _MockResponse([_ThinkBlock(), _MockBlock("text", "Let me pull that together.")], "tool_use")],
+        synth_ctx=_ThinkingStreamCtx(_CLEAN_ANSWER),
+    )
+    providers = [{"client": client, "model": "claude-opus-5"}]
+    with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+        with patch.object(gw, "_build_lane_providers", return_value=providers):
+            with patch.object(gw, "_resolve_tier", return_value={"tier": "pro", "status": "active", "current_period_end": None}):
+                with patch.object(gw, "_ensure_thread", return_value=None):
+                    with patch.object(gw, "_dispatch_brain_tool", return_value={"symbol": "AAPL", "price": 1.0}):
+                        with patch("lib.ai_costs.record_usage", return_value=True):
+                            raw = list(gw.chat_stream("How is AAPL doing?", "user-leak",
+                                                      lane="pro", root=root))
+
+    wire = "".join(raw)
+    assert _SECRET_THOUGHT not in wire
+    # …and not smuggled through JSON escaping or a new event type either.
+    for frag in ("opposite ways", "probably stale", "thinking"):
+        assert frag not in wire, f"{frag!r} leaked onto the SSE wire"
+    # The turn still worked: the answer was delivered.
+    assert any('"type": "delta"' in e for e in raw)
+
+
+def test_chat_stream_hands_thinking_to_the_response_log(tmp_path, monkeypatch):
+    """Step 9 must forward the captured trace to the response log — the whole point."""
+    from lib import mastermind_response_log as mm
+
+    monkeypatch.setenv("MASTERMIND_RESPONSE_LOG_LOCAL_DIR", str(tmp_path / "mmlog"))
+    captured: dict = {}
+    monkeypatch.setattr(mm, "log_response_async", lambda **kw: captured.update(kw))
+
+    root = _make_temp_root()
+    client = _ThinkingClient(
+        [_MockResponse([_ThinkBlock(),
+                        _MockBlock("tool_use", name="get_quote", input_={"symbol": "aapl"}, id_="t1")],
+                       "tool_use"),
+         _MockResponse([_MockBlock("text", "Let me pull that together.")], "tool_use")],
+        synth_ctx=_ThinkingStreamCtx(_CLEAN_ANSWER),
+    )
+    providers = [{"client": client, "model": "claude-opus-5"}]
+    with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+        with patch.object(gw, "_build_lane_providers", return_value=providers):
+            with patch.object(gw, "_resolve_tier", return_value={"tier": "pro", "status": "active", "current_period_end": None}):
+                with patch.object(gw, "_ensure_thread", return_value=None):
+                    with patch.object(gw, "_dispatch_brain_tool", return_value={"symbol": "AAPL", "price": 1.0}):
+                        with patch("lib.ai_costs.record_usage", return_value=True):
+                            list(gw.chat_stream("How is AAPL doing?", "user-log",
+                                                lane="pro", root=root))
+
+    assert "thinking" in captured, "the response log call must carry the thinking kwarg"
+    phases = {s["phase"] for s in captured["thinking"]}
+    assert phases == {"tool", "synthesis"}
+    assert any(s["text"] == _SECRET_THOUGHT for s in captured["thinking"])
+
+
+def test_thinking_segments_accepts_plain_dict_blocks():
+    """Some providers hand back plain dicts rather than SDK objects."""
+    segs = gw._thinking_segments(
+        [{"type": "thinking", "thinking": "dict-shaped"},
+         {"type": "text", "text": "the answer"},
+         {"type": "redacted_thinking"}],
+        2, "tool", "deepseek-v4-flash")
+    assert [s["text"] for s in segs] == ["dict-shaped", ""]
+    assert segs[1]["redacted"] is True
+    assert all(s["round"] == 2 and s["phase"] == "tool" for s in segs)
+
+
+def test_thinking_segments_never_raises_on_junk():
+    assert gw._thinking_segments(None, 1, "tool", "m") == []
+    assert gw._thinking_segments(object(), 1, "tool", "m") == []
+    assert gw._thinking_segments([None, 7, "x"], 1, "tool", "m") == []
+
+
+# ── Contradiction doctrine (system prompt pin) ───────────────────────────────
+
+def test_system_prompt_carries_contradiction_doctrine_in_every_mode():
+    """Disagreeing readings are the case the answer most often gets wrong, so the block
+    rides in chat AND research, on every page."""
+    for prompt in (gw._build_system_prompt("chat"),
+                   gw._build_system_prompt("research"),
+                   gw._build_system_prompt("chat", page="terminal"),
+                   gw._build_system_prompt("chat", internals_allowed=True)):
+        assert "CONTRADICTORY SIGNALS" in prompt
+
+
+def test_contradiction_doctrine_names_both_causes_and_the_stance():
+    """The two causes need OPPOSITE handling — our data being wrong vs a split market —
+    and a genuine split resolves to 'watch, don't chase', not a forced call."""
+    prompt = gw._build_system_prompt("chat")
+    low = prompt.lower()
+    assert "stale" in low                       # the system-error tell
+    assert "the market itself is split" in low  # the divergence branch
+    assert "watch, don't chase" in low
+    assert "mushy middle" in low                # no averaging opposing signals away
