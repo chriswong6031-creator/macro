@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-27T09:25:44.032071+00:00",
-  "count": 178,
+  "generated_at": "2026-07-27T10:07:16.316519+00:00",
+  "count": 180,
   "institutions": [
     "Bank of America",
     "Deutsche Bank",
@@ -20,6 +20,36 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-xeu2rnattul-6bdafc",
+      "title": "A NEW FISCAL-MONETARY ACCORD",
+      "institution": "TS Lombard",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-27T10:04:47Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-xtzsmqcgwoi-b37e1d",
+      "title": "FOMO = Fear Of Momentum How Much More Pain, Is The Billion Dollar Question",
+      "institution": "Zero Hedge",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-27T10:03:50Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-u7rtn3b1y0w-1ffd42",
       "title": "Short and strong Sliding shorter",
