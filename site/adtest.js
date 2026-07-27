@@ -149,17 +149,47 @@
   }
 
   /* ---- report -------------------------------------------------------------
-     window.mmTrack is defined by theme.js, which may not have run yet. Retry a
-     few times on a short timer rather than racing it; if it never appears the
-     exposure is simply not reported, and an unreported exposure is a missing
-     row, never a wrong one. */
-  function report(payload, tries) {
+     THE LANDING DOES NOT LOAD theme.js. It pulls exactly two scripts —
+     onboard.js and this file — so `window.mmTrack` never exists there. An
+     earlier version of this function waited for mmTrack and gave up quietly,
+     which meant the hero test assigned visitors, rewrote the copy, and recorded
+     ZERO exposures: a page that looks perfect measuring nothing at all.
+
+     So the beacon is sent here, directly, in the envelope /api/collect already
+     expects. mmTrack is still preferred where it exists (pages that load
+     theme.js get their events batched with the rest), but nothing depends on
+     it. The origin guard mirrors theme.js's own: /api/collect is served only by
+     the canonical host, so a preview or localhost run records nothing rather
+     than firing at an endpoint that is not there.
+
+     The server stamps visitor_id from the httpOnly mm_aid cookie on receipt —
+     which is why this sends same-origin credentials and why the row's identity
+     is not ours to choose. */
+  function beacon(payload) {
+    try {
+      if (!/mastermind-x\.com$/.test(location.hostname)) return;
+      var body = JSON.stringify({
+        events: [{
+          type: 'ad_exposure', site: 'macro',
+          path: location.pathname, t: Date.now(), meta: payload,
+        }],
+      });
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon('/api/collect', new Blob([body], { type: 'application/json' }));
+        return;
+      }
+      fetch('/api/collect', {
+        method: 'POST', body: body, keepalive: true, credentials: 'same-origin',
+        headers: { 'content-type': 'application/json' },
+      }).catch(function () {});
+    } catch (e) {}
+  }
+
+  function report(payload) {
     if (typeof window.mmTrack === 'function') {
-      try { window.mmTrack('ad_exposure', { meta: payload }); } catch (e) {}
-      return;
+      try { window.mmTrack('ad_exposure', { meta: payload }); return; } catch (e) {}
     }
-    if ((tries || 0) >= 20) return;
-    setTimeout(function () { report(payload, (tries || 0) + 1); }, 250);
+    beacon(payload);
   }
 
   /* ---- run ---------------------------------------------------------------- */
