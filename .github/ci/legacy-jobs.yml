@@ -2745,7 +2745,11 @@ jobs:
         # content-studio type-id set through a LAZY import, so a top-level heavy
         # import in engine/marketing/personas.py must turn this job red at
         # collection. Verified in a clean pytest+pyyaml venv.
-        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_marketing_personas.py -q
+        # test_marketing_event_language joins too (2026-07-27): the event-post
+        # language contract (driver-label translation coverage, no internal-
+        # machinery vocab, template coherence). Stdlib-only by construction —
+        # it parses engine/market_drivers.py as TEXT instead of importing it.
+        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_marketing_personas.py tests/test_marketing_event_language.py -q
       - name: persona specs validate (config/personas/*.yml)
         # The gate the specs exist for: every committed spec carries the full
         # content-studio tilt key set, a live template-pool voice key, and the

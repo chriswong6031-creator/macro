@@ -280,11 +280,13 @@ _COPY_TEMPLATES: dict[tuple[str, str], tuple[str, str]] = {
         "Patterns I'm watching",
         "Names tracing shapes worth monitoring. Context below.",
     ),
-    # event — per voice
+    # event — per voice. Plan copy must stay FACT-NEUTRAL: "the data says one
+    # thing, the price says another" asserts a divergence the template cannot
+    # know. Only the fact layer may describe the tape.
     ("event", "authoritative desk"): (
         "My read on today's move",
-        "Here's how I'm reading today's move. The data says one thing, the price says another. "
-        "Watching how it resolves.",
+        "Here's how I'm reading today's move, and what would change my mind. "
+        "Watching the close.",
     ),
     ("event", "dry, receipts-forward"): (
         "Today's event, numbers first",

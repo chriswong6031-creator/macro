@@ -307,6 +307,34 @@ def _within_text_window(old_as_of: object, ref_as_of: object) -> bool:
     return abs((ref - old).days) <= _TEXT_DEDUP_WINDOW_DAYS
 
 
+# Public alias for the publisher's post-time repeat gate.
+text_key = _text_key
+
+
+def recent_posted_text_keys(state: dict, ref_as_of: str) -> set:
+    """Account-scoped normalized-text keys of items that already WENT OUT
+    (folded status posted/posting) within the last _TEXT_DEDUP_WINDOW_DAYS.
+
+    The enqueue() text guard stops identical copy ENTERING the queue, but an
+    item that slipped in before that guard shipped (the 2026-07-26/27 "My read
+    on today's move" pair) sits queued under a fresh id and fires a night
+    later. This is the post-time half: the publisher checks a due item's text
+    against this set and quarantines a repeat instead of sending it.
+    """
+    keys: set = set()
+    items = state.get("items") or {}
+    statuses = state.get("status") or {}
+    for iid, st in statuses.items():
+        if st not in ("posted", "posting"):
+            continue
+        it = items.get(iid)
+        if not isinstance(it, dict):
+            continue
+        if _within_text_window(it.get("as_of"), ref_as_of):
+            keys.add(_text_key(it.get("account"), it.get("text")))
+    return keys
+
+
 def make_item(
     *,
     account: str,
