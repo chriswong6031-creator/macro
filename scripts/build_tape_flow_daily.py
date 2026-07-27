@@ -40,7 +40,10 @@ import logging
 import os
 import subprocess
 import sys
+import tempfile
+import threading
 import time
+from collections.abc import Callable, Iterable
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -148,6 +151,72 @@ def _save_state(state: dict) -> None:
     os.replace(tmp, p)
 
 
+def _store_dates(root: str) -> set[str] | None:
+    """The set of dates actually present in `root`'s daily parquet.
+
+    None means the file exists but could not be read — distinct from an empty
+    set (no file / no rows yet), because the two demand opposite responses.
+    """
+    p = _daily_store_dir() / f"{root.upper()}.parquet"
+    if not p.exists():
+        return set()
+    try:
+        df = pd.read_parquet(p, columns=["date"])
+    except Exception:  # noqa: BLE001
+        try:
+            df = pd.read_parquet(p)      # older rows may lack the projection
+        except Exception:  # noqa: BLE001
+            return None
+    if "date" not in df.columns:
+        return None
+    return set(df["date"].astype(str).str[:10])
+
+
+def _reconcile_state_with_store(state: dict, mode: str, roots: Iterable[str]) -> int:
+    """Un-mark `completed` root-days whose row is not actually in the store.
+
+    The state file is the ONLY thing standing between a root-day and being
+    re-pulled, so a `completed` entry for a row that is not on disk is permanent
+    data loss: the lane will never walk that day again.  The concurrent-writer
+    defect fixed in _upsert_daily produced exactly that — 1,824 SPY root-days
+    marked done against 4 rows on disk (diagnosed 2026-07-27, nightly 30225310298).
+
+    Reconciling at startup makes any such loss self-healing: whatever state
+    claims but the store cannot show goes straight back into the work list.
+    Returns the number of entries dropped.
+    """
+    by_mode = state.get("completed", {}).get(mode, {})
+    if not by_mode:
+        return 0
+    dropped = 0
+    for root in {r.upper() for r in roots}:
+        done = by_mode.get(root)
+        if not done:
+            continue
+        present = _store_dates(root)
+        if present is None:
+            # Unreadable store: we cannot tell what survived, and guessing
+            # "nothing" would re-pull a full history off one bad read.  Leave
+            # state alone and make the file loud instead.
+            print(f"::error title=tape-flow-store-unreadable::{root} daily parquet is "
+                  f"unreadable — state left untouched; repair or delete the file",
+                  flush=True)
+            log.warning("tape_flow: %s store unreadable — skipping reconciliation", root)
+            continue
+        missing = [d for d in done if d not in present]
+        if not missing:
+            continue
+        by_mode[root] = [d for d in done if d in present]
+        dropped += len(missing)
+        print(f"::warning title=tape-flow-state-reconciled::{mode}/{root}: "
+              f"{len(missing)} root-days were marked complete but are absent from the "
+              f"store ({min(missing)} .. {max(missing)}) — re-queued for re-pull",
+              flush=True)
+        log.warning("tape_flow: %s/%s re-queued %d done-but-absent root-days (%s .. %s)",
+                    mode, root, len(missing), min(missing), max(missing))
+    return dropped
+
+
 def _is_done(state: dict, mode: str, root: str, trade_date: date) -> bool:
     return str(trade_date) in state.get("completed", {}).get(mode, {}).get(root.upper(), [])
 
@@ -206,7 +275,76 @@ def _raw_manifest_path() -> Path:
     return p / "_manifest.json"
 
 
+# ── store-write serialisation (data-loss fix, 2026-07-27) ────────────────────
+# _upsert_daily is a read-modify-write of ONE per-root parquet, called from
+# ThreadPoolExecutor workers.  In etf-history mode the work list is root-major
+# (`for r in roots for d in trading_days`), so up to max_workers days of the SAME
+# root are in flight at once and every one of them reads → combines → publishes
+# the same file.  Two defects compounded there:
+#
+#   * the temp file was a deterministic `<ROOT>.tmp`, so concurrent writers
+#     interleaved bytes into ONE buffer — os.replace is atomic, but what it
+#     published was an already-torn parquet; and
+#   * even with distinct temps the unguarded read-modify-write drops whatever a
+#     sibling appended between our read and our write (lost update).
+#
+# A per-root lock closes both: read, combine and publish are one critical
+# section.  The slow part — the ThetaData pull in _process_root_day — stays
+# fully parallel, so this costs throughput nothing.
+_ROOT_LOCKS: dict[str, threading.Lock] = {}
+_ROOT_LOCKS_GUARD = threading.Lock()
+# The raw manifest is a SINGLE file shared by every root, so it needs one global
+# lock rather than a per-root one.
+_MANIFEST_LOCK = threading.Lock()
+
+
+def _root_lock(root: str) -> threading.Lock:
+    """Return the write lock for `root`, creating it on first use."""
+    key = root.upper()
+    with _ROOT_LOCKS_GUARD:
+        lock = _ROOT_LOCKS.get(key)
+        if lock is None:
+            lock = _ROOT_LOCKS[key] = threading.Lock()
+    return lock
+
+
+def _atomic_write(target: Path, write: Callable[[Path], None]) -> None:
+    """Write via a UNIQUE temp file in the target's directory, then os.replace.
+
+    Never a deterministic `<stem>.tmp`: a shared temp *name* is not a temp file,
+    it is a shared mutable buffer, and os.replace then publishes it atomically
+    however torn it happens to be.  mkstemp gives every writer its own inode.
+    """
+    fd, tmp_name = tempfile.mkstemp(
+        dir=str(target.parent), prefix=f".{target.name}.", suffix=".tmp")
+    os.close(fd)
+    tmp = Path(tmp_name)
+    try:
+        write(tmp)
+        os.replace(tmp, target)
+    except BaseException:
+        tmp.unlink(missing_ok=True)
+        raise
+
+
+class TapeFlowStoreUnreadable(RuntimeError):
+    """The per-root daily parquet exists but cannot be read.
+
+    Never swallowed into an empty frame.  An empty frame flows straight into
+    ``upsert_feature_row(existing=<empty>, row)``, and the next write then
+    publishes ONLY that worker's row — a corrupt read silently ERASES every
+    session accrued so far, while the step stays green because the nightly wraps
+    it in `|| echo "::warning::"`.  A corrupt store must fail its root-day loudly
+    and leave the file untouched for repair.
+    """
+
+
 def _read_daily(root: str) -> pd.DataFrame:
+    """Return the accrued rows for `root`.
+
+    Absent file → legitimately empty (first session for this root).
+    Present but unreadable → raises; see TapeFlowStoreUnreadable.
+    """
     p = _daily_store_dir() / f"{root.upper()}.parquet"
     if not p.exists():
         return pd.DataFrame()
@@ -214,20 +352,24 @@ def _read_daily(root: str) -> pd.DataFrame:
         return pd.read_parquet(p)
     except Exception as e:  # noqa: BLE001
         log.warning("build_tape_flow_daily: read_daily(%s) failed — %s", root, e)
-        return pd.DataFrame()
+        raise TapeFlowStoreUnreadable(f"{p} exists but is unreadable — {e}") from e
 
 
 def _upsert_daily(root: str, row: dict) -> None:
-    """Idempotent: replace the row for row['date'] in the per-root daily parquet."""
+    """Idempotent: replace the row for row['date'] in the per-root daily parquet.
+
+    Serialised per root so a concurrent sibling day can neither lose our rows nor
+    publish a torn file (see _ROOT_LOCKS).
+    """
     from engine.tape_flow import upsert_feature_row, add_zscores
     p = _daily_store_dir() / f"{root.upper()}.parquet"
-    existing = _read_daily(root)
-    combined = upsert_feature_row(existing, row)
-    # Recompute z-scores on every upsert (cheap; derived quantity)
-    combined = add_zscores(combined)
-    tmp = p.with_suffix(".tmp")
-    combined.to_parquet(tmp, index=False, engine="pyarrow")
-    os.replace(tmp, p)
+    with _root_lock(root):
+        existing = _read_daily(root)   # raises on a present-but-corrupt store
+        combined = upsert_feature_row(existing, row)
+        # Recompute z-scores on every upsert (cheap; derived quantity)
+        combined = add_zscores(combined)
+        _atomic_write(
+            p, lambda t: combined.to_parquet(t, index=False, engine="pyarrow"))
 
 
 def _update_raw_manifest(root: str, trade_date: date, rows: int, bytes_approx: int) -> None:
@@ -237,21 +379,34 @@ def _update_raw_manifest(root: str, trade_date: date, rows: int, bytes_approx: i
     aggregation and are NOT uploaded to R2 — no raw-plane exists today. The
     raw-plane implementation is tracked as WP-TAPE-TRUTH in
     research/OPTIONS_CONFLUENCE_PROGRAM_BY_FABLE.md.
+
+    Concurrency: ONE file for every root, so this read-modify-write takes a
+    single global lock and publishes through a unique temp — the same defect
+    class that shredded the daily parquets (see _ROOT_LOCKS).
     """
     mp = _raw_manifest_path()
-    try:
-        manifest: dict = json.loads(mp.read_text()) if mp.exists() else {}
-    except Exception:  # noqa: BLE001
-        manifest = {}
-    entries = manifest.get(root.upper(), [])
-    ds = str(trade_date)
-    entries = [e for e in entries if e.get("date") != ds]
-    entries.append({"date": ds, "rows": rows, "bytes_approx": bytes_approx})
-    entries.sort(key=lambda e: e["date"])
-    manifest[root.upper()] = entries
-    tmp = mp.with_suffix(".tmp")
-    tmp.write_text(json.dumps(manifest, indent=2))
-    os.replace(tmp, mp)
+    with _MANIFEST_LOCK:
+        if mp.exists():
+            try:
+                manifest: dict = json.loads(mp.read_text())
+            except Exception as e:  # noqa: BLE001
+                # Do NOT restart from {} — that would overwrite an unreadable
+                # manifest with an empty one and destroy the byte-count history
+                # for every root.  Skip the update and leave the file for repair.
+                print(f"::error title=tape-flow-manifest-unreadable::{mp} exists but is "
+                      f"unreadable ({e}) — manifest update skipped, file left for repair",
+                      flush=True)
+                log.warning("build_tape_flow_daily: raw manifest unreadable — %s", e)
+                return
+        else:
+            manifest = {}
+        entries = manifest.get(root.upper(), [])
+        ds = str(trade_date)
+        entries = [e for e in entries if e.get("date") != ds]
+        entries.append({"date": ds, "rows": rows, "bytes_approx": bytes_approx})
+        entries.sort(key=lambda e: e["date"])
+        manifest[root.upper()] = entries
+        _atomic_write(mp, lambda t: t.write_text(json.dumps(manifest, indent=2)))
 
 
 # ── OI prior-day lookup ───────────────────────────────────────────────────────
@@ -369,8 +524,17 @@ def _process_root_day(root: str, trade_date: date, mode: str,
         greeks_chain=greeks,
     )
 
-    # Upsert into daily store
-    _upsert_daily(root, row)
+    # Upsert into daily store.  A corrupt store fails THIS root-day loudly
+    # rather than silently republishing the file with only today's row.
+    try:
+        _upsert_daily(root, row)
+    except TapeFlowStoreUnreadable as e:
+        print(f"::error title=tape-flow-store-unreadable::{root} daily parquet is "
+              f"unreadable — {root} {trade_date} skipped, store left untouched "
+              f"for repair ({e})", flush=True)
+        log.warning("tape_flow: %s %s store unreadable — skipping", root, trade_date)
+        return {"root": root, "date": str(trade_date),
+                "status": "error", "reason": "store_unreadable"}
 
     elapsed = time.perf_counter() - t0
     total_rows = (len(calls_df) if not calls_df.empty else 0) + \
@@ -498,8 +662,15 @@ def _audit_store(root: str, trade_date: date) -> dict:
     """Verify the just-written row is readable and has the expected date.
 
     Returns dict with 'ok' bool and 'reason' string. P0.7 pattern.
+
+    Load-bearing since 2026-07-27: a failed audit now blocks _mark_done, so a
+    root-day whose row did not survive the write is retried on the next run
+    instead of being recorded as complete and never walked again.
     """
-    df = _read_daily(root)
+    try:
+        df = _read_daily(root)
+    except TapeFlowStoreUnreadable as e:
+        return {"ok": False, "reason": f"store unreadable — {e}"}
     if df.empty:
         return {"ok": False, "reason": "store empty after write"}
     if "date" not in df.columns:
@@ -653,6 +824,21 @@ def main(argv: list[str] | None = None) -> None:
 
     n_total = len(work)
 
+    # Reconcile state against the store BEFORE the skip filter: any root-day the
+    # state calls complete but the store cannot show is un-marked here and walks
+    # again below.  Without this, a lost row is lost forever — nothing else in
+    # the lane ever revisits a completed day.  Cheap: one date-column read per
+    # root (~0.7s for the full 375-root forward universe).
+    n_reconciled = _reconcile_state_with_store(state, args.mode, {r for r, _ in work})
+    if n_reconciled:
+        # --dry-run stays read-only (it only prints the plan), but the plan it
+        # prints does reflect the re-queued days.
+        if not args.dry_run:
+            _save_state(state)
+        log.warning("tape_flow: re-queued %d done-but-absent root-days for mode=%s%s",
+                    n_reconciled, args.mode, " (dry-run: not persisted)" if args.dry_run else "")
+    _tick("state/store reconciliation")
+
     # Filter already-completed root-days (unless --force)
     if not args.force:
         work = [(r, d) for r, d in work
@@ -707,6 +893,37 @@ def main(argv: list[str] | None = None) -> None:
     # This bounds the overshoot to at most (workers) in-flight tasks past the deadline.
     BATCH_SIZE = workers  # one batch = one "wave" of concurrent requests
 
+    def _record(result: dict, root: str, td: date) -> None:
+        """Count a finished root-day and mark it done only if the store shows it.
+
+        Audit tripwire (P0.7) runs BEFORE _mark_done.  Marking a root-day complete
+        is irreversible in practice — nothing ever re-walks it — so the check that
+        the row actually landed has to gate the mark.  Until 2026-07-27 the audit
+        ran after the mark and its failure only logged, so the runs that shredded
+        the store recorded 1,824 root-days as complete while the tripwire fired
+        into the void.  A failed audit is now an error and the day is retried.
+        """
+        nonlocal n_ok, n_err, last_date
+        if result.get("status") != "ok":
+            n_err += 1
+            log.warning("tape_flow: %s %s %s — %s",
+                        result.get("status", "error"), root, td,
+                        result.get("reason", "unknown"))
+            return
+        audit = {"ok": True, "reason": "skipped"} if args.no_audit else _audit_store(root, td)
+        if not audit["ok"]:
+            n_err += 1
+            print(f"::warning title=tape-flow-audit-failed::{root} {td} reported ok but "
+                  f"the store does not show it ({audit['reason']}) — NOT marked "
+                  f"complete, will retry", flush=True)
+            log.warning("tape_flow: audit FAILED %s %s — %s — not marking done",
+                        root, td, audit["reason"])
+            return
+        n_ok += 1
+        last_date = result.get("date", last_date)
+        _mark_done(state, args.mode, root, td)
+        _save_state(state)
+
     executor = ThreadPoolExecutor(max_workers=workers)
     try:
         work_iter = iter(work)
@@ -742,23 +959,7 @@ def main(argv: list[str] | None = None) -> None:
                     result = {"root": root, "date": str(td),
                               "status": "error", "reason": str(e)}
 
-                if result.get("status") == "ok":
-                    n_ok += 1
-                    last_date = result.get("date", last_date)
-                    _mark_done(state, args.mode, root, td)
-                    _save_state(state)
-
-                    # Audit tripwire (P0.7)
-                    if not args.no_audit:
-                        audit = _audit_store(root, td)
-                        if not audit["ok"]:
-                            log.warning("tape_flow: audit FAILED %s %s — %s",
-                                        root, td, audit["reason"])
-                else:
-                    n_err += 1
-                    log.warning("tape_flow: %s %s %s — %s",
-                                result.get("status", "error"), root, td,
-                                result.get("reason", "unknown"))
+                _record(result, root, td)
 
             # Hard-stop: check budget BEFORE submitting the next batch.
             # This ensures we never start new work past the deadline.
@@ -781,13 +982,7 @@ def main(argv: list[str] | None = None) -> None:
                         except Exception as e_d:  # noqa: BLE001
                             res_d = {"root": root_d, "date": str(td_d),
                                      "status": "error", "reason": str(e_d)}
-                        if res_d.get("status") == "ok":
-                            n_ok += 1
-                            last_date = res_d.get("date", last_date)
-                            _mark_done(state, args.mode, root_d, td_d)
-                            _save_state(state)
-                        else:
-                            n_err += 1
+                        _record(res_d, root_d, td_d)
                 # Cancel remaining queued-but-not-started futures (Python 3.9+)
                 for f in list(pending.keys()):
                     f.cancel()

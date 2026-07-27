@@ -24,6 +24,8 @@ from __future__ import annotations
 
 import io
 import json
+import threading
+import time
 from datetime import date, timedelta
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -1129,9 +1131,16 @@ class TestBudgetMinutes:
         mod.main(["--mode", "episodes", "--no-audit"])
         assert len(call_log) == 5, "All 5 items must be processed when no budget is set"
 
-    def test_state_resumable_after_budget_stop(self, monkeypatch):
-        """Items marked done before budget-stop are skipped on the next run."""
+    def test_state_resumable_after_budget_stop(self, tmp_path, monkeypatch):
+        """Items marked done before budget-stop are skipped on the next run.
+
+        The store must actually contain those days: since the 2026-07-27
+        data-loss fix a `completed` entry with no row behind it is reconciled
+        away and re-queued (TestStateStoreReconciliation), so "done" only skips
+        when the row is really there.
+        """
         import scripts.build_tape_flow_daily as mod
+        from lib import config
 
         # Pre-populate state with 3 completed items
         d = date(2024, 1, 2)
@@ -1139,6 +1148,14 @@ class TestBudgetMinutes:
         state: dict = {}
         for root, td in completed:
             mod._mark_done(state, "episodes", root, td)
+
+        # Hermetic store backing those three days (also keeps this test off the
+        # repo's real data/tape_flow/daily/SPY.parquet, which it read before).
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        store = tmp_path / "tape_flow" / "daily"
+        store.mkdir(parents=True)
+        pd.DataFrame({"date": [str(td) for _, td in completed]}).to_parquet(
+            store / "SPY.parquet", index=False)
 
         # Work = 5 items (first 3 already done)
         work = self._make_work(5)
@@ -1488,4 +1505,349 @@ class TestRoundRobinCursor:
         assert cursor2 == expected, (
             f"Cursor must advance by n_processed ({n_proc2}) not n_attempted. "
             f"Expected {expected}, got {cursor2}"
+        )
+
+
+# ── data-loss regression: concurrent writers to one root (2026-07-27) ──────────
+#
+# The etf-history / episodes lanes destroyed their own accumulated history every
+# night while the CI step stayed green.  Three defects compounded, and each one
+# gets its own test below:
+#
+#   1. _upsert_daily published through a DETERMINISTIC `<ROOT>.tmp`, so the ~6
+#      concurrent days of the same root (the work list is root-major) interleaved
+#      bytes into one buffer and os.replace atomically published a torn parquet.
+#   2. the read-modify-write was unguarded, so even with distinct temps a sibling
+#      worker's rows were lost between our read and our write.
+#   3. _read_daily swallowed EVERY read failure into an empty DataFrame, so a
+#      corrupt read did not fail the run — it made the next write publish only
+#      that worker's row, erasing the accrued history.
+#
+# Diagnosed from nightly run 30225310298: data/tape_flow/daily/SPY.parquet held 4
+# rows against 1,824 root-days that data/tape_flow/_state.json called complete.
+
+class TestConcurrentStoreWrites:
+    """Concurrent upserts to ONE root must preserve every prior row."""
+
+    @staticmethod
+    def _store(tmp_path, monkeypatch):
+        from lib import config
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        return tmp_path / "tape_flow" / "daily" / "SPY.parquet"
+
+    def test_concurrent_upserts_preserve_every_row(self, tmp_path, monkeypatch):
+        """32 threads upserting 32 distinct days of one root → 32 rows survive.
+
+        Pre-fix this lost almost everything: each writer read the store, added
+        its own row and republished, so the last writer to finish won.
+        """
+        import scripts.build_tape_flow_daily as mod
+        from concurrent.futures import ThreadPoolExecutor
+
+        p = self._store(tmp_path, monkeypatch)
+        days = [date(2024, 1, 2) + timedelta(days=i) for i in range(32)]
+
+        with ThreadPoolExecutor(max_workers=8) as ex:
+            list(ex.map(
+                lambda d: mod._upsert_daily(
+                    "SPY", {"root": "SPY", "date": str(d),
+                            "net_signed_premium": float(d.toordinal())}),
+                days))
+
+        got = pd.read_parquet(p)
+        assert set(got["date"].astype(str)) == {str(d) for d in days}, (
+            f"expected all 32 days to survive, got {len(got)} rows"
+        )
+        # Every row keeps its own value — no cross-writer smearing.
+        by_date = dict(zip(got["date"].astype(str), got["net_signed_premium"]))
+        for d in days:
+            assert by_date[str(d)] == float(d.toordinal())
+
+    def test_concurrent_upserts_never_publish_unreadable_parquet(self, tmp_path, monkeypatch):
+        """A reader polling the store during concurrent writes never sees a torn file.
+
+        os.replace is atomic, so the only way a reader observes corruption is if
+        what got replaced IN was already torn — which is exactly what a shared
+        temp *name* produces.
+        """
+        import scripts.build_tape_flow_daily as mod
+        from concurrent.futures import ThreadPoolExecutor
+
+        p = self._store(tmp_path, monkeypatch)
+        days = [date(2024, 1, 2) + timedelta(days=i) for i in range(24)]
+        failures: list[str] = []
+        stop = threading.Event()
+
+        def _poll() -> None:
+            while not stop.is_set():
+                if p.exists():
+                    try:
+                        pd.read_parquet(p)
+                    except Exception as e:  # noqa: BLE001
+                        failures.append(str(e))
+
+        reader = threading.Thread(target=_poll, daemon=True)
+        reader.start()
+        try:
+            with ThreadPoolExecutor(max_workers=8) as ex:
+                list(ex.map(
+                    lambda d: mod._upsert_daily(
+                        "SPY", {"root": "SPY", "date": str(d), "net_signed_premium": 1.0}),
+                    days))
+        finally:
+            stop.set()
+            reader.join(timeout=5)
+
+        assert not failures, f"reader saw {len(failures)} torn parquet(s): {failures[:2]}"
+
+    def test_atomic_write_gives_every_writer_its_own_temp(self, tmp_path):
+        """_atomic_write must never reuse a deterministic temp name.
+
+        Pins defect 1 directly, independently of the per-root lock: if the temp
+        path were derived from the target (`p.with_suffix('.tmp')`), concurrent
+        writers would all be handed the same path.
+        """
+        import scripts.build_tape_flow_daily as mod
+        from concurrent.futures import ThreadPoolExecutor
+
+        target = tmp_path / "SPY.parquet"
+        seen: list[str] = []
+        seen_lock = threading.Lock()
+
+        def _write(t: Path) -> None:
+            with seen_lock:
+                seen.append(str(t))
+            time.sleep(0.01)          # widen the window a shared name would share
+            t.write_text("x")
+
+        with ThreadPoolExecutor(max_workers=8) as ex:
+            list(ex.map(lambda _: mod._atomic_write(target, _write), range(8)))
+
+        assert len(set(seen)) == len(seen), f"temp paths were reused: {seen}"
+        assert not str(target.with_suffix(".tmp")) in seen, (
+            "temp path must not be the deterministic '<target>.tmp'"
+        )
+
+    def test_failed_write_leaves_no_temp_behind(self, tmp_path):
+        """A raising writer cleans up its temp and does not publish."""
+        import scripts.build_tape_flow_daily as mod
+
+        target = tmp_path / "SPY.parquet"
+        target.write_text("original")
+
+        def _boom(t: Path) -> None:
+            t.write_text("partial")
+            raise RuntimeError("write failed")
+
+        with pytest.raises(RuntimeError):
+            mod._atomic_write(target, _boom)
+
+        assert target.read_text() == "original", "a failed write must not publish"
+        assert not list(tmp_path.glob("*.tmp")), "temp file leaked after failure"
+
+
+class TestCorruptStoreIsLoud:
+    """A corrupt store must fail its root-day, never silently reset the history."""
+
+    @staticmethod
+    def _store(tmp_path, monkeypatch):
+        from lib import config
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        p = tmp_path / "tape_flow" / "daily"
+        p.mkdir(parents=True)
+        return p / "SPY.parquet"
+
+    def test_read_daily_empty_when_file_absent(self, tmp_path, monkeypatch):
+        """No file is a legitimate empty — the first session for a root."""
+        import scripts.build_tape_flow_daily as mod
+        self._store(tmp_path, monkeypatch)
+        assert mod._read_daily("SPY").empty
+
+    def test_read_daily_raises_when_file_unreadable(self, tmp_path, monkeypatch):
+        """Present-but-unreadable is NOT empty — swallowing it erased the history."""
+        import scripts.build_tape_flow_daily as mod
+        p = self._store(tmp_path, monkeypatch)
+        p.write_bytes(b"not a parquet file at all")
+        with pytest.raises(mod.TapeFlowStoreUnreadable):
+            mod._read_daily("SPY")
+
+    def test_upsert_does_not_clobber_an_unreadable_store(self, tmp_path, monkeypatch):
+        """The bytes on disk survive for repair; the row is not published over them.
+
+        Pre-fix, _upsert_daily read the corrupt file as empty and republished the
+        store containing ONLY the new row — the accrual was gone.
+        """
+        import scripts.build_tape_flow_daily as mod
+        p = self._store(tmp_path, monkeypatch)
+        p.write_bytes(b"not a parquet file at all")
+
+        with pytest.raises(mod.TapeFlowStoreUnreadable):
+            mod._upsert_daily("SPY", {"root": "SPY", "date": "2024-01-02",
+                                      "net_signed_premium": 1.0})
+
+        assert p.read_bytes() == b"not a parquet file at all", (
+            "a corrupt store must be left untouched for repair, not overwritten"
+        )
+
+    def test_process_root_day_reports_error_on_unreadable_store(self, tmp_path, monkeypatch, capsys):
+        """The root-day errors (so it is not marked done) and annotates the run."""
+        import scripts.build_tape_flow_daily as mod
+
+        monkeypatch.setattr(mod, "_get_prior_oi", lambda *a, **kw: None)
+        monkeypatch.setattr(mod, "_get_greeks_chain", lambda *a, **kw: None)
+        monkeypatch.setattr("collectors.thetadata.bulk_trade_quote",
+                            lambda *a, **kw: pd.DataFrame({"x": [1]}), raising=False)
+        monkeypatch.setattr("engine.tape_flow.aggregate_day",
+                            lambda **kw: {"root": "SPY", "date": "2024-01-02"},
+                            raising=False)
+
+        def _raise(root, row):
+            raise mod.TapeFlowStoreUnreadable("boom")
+
+        monkeypatch.setattr(mod, "_upsert_daily", _raise)
+
+        result = mod._process_root_day("SPY", date(2024, 1, 2), "etf-history")
+        assert result["status"] == "error"
+        assert result["reason"] == "store_unreadable"
+
+        out = capsys.readouterr().out
+        assert any(line.startswith("::error") for line in out.splitlines()), (
+            "annotation must start its line or GitHub silently drops it"
+        )
+
+
+class TestAuditGatesMarkDone:
+    """The audit tripwire is load-bearing: a day the store cannot show is retried."""
+
+    def test_audit_failure_blocks_mark_done(self, tmp_path, monkeypatch, capsys):
+        """A worker that reports ok but leaves no row must NOT be recorded complete.
+
+        This is the guard that would have caught the shredding on night one: the
+        tripwire already detected it, but it ran after _mark_done and only logged.
+        """
+        import scripts.build_tape_flow_daily as mod
+        from lib import config
+
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        monkeypatch.setattr("collectors.thetadata.reachable", lambda: True, raising=False)
+
+        state: dict = {}
+        monkeypatch.setattr(mod, "_load_state", lambda: state)
+        monkeypatch.setattr(mod, "_save_state", lambda s: None)
+        monkeypatch.setattr(mod, "_register_run_status", lambda *a, **kw: None)
+
+        # Reports ok but writes nothing — exactly the post-corruption shape.
+        monkeypatch.setattr(mod, "_process_root_day",
+                            lambda root, td, mode, retain_raw: {
+                                "status": "ok", "root": root, "date": str(td)})
+
+        work = [("SPY", date(2024, 1, 2) + timedelta(days=i)) for i in range(3)]
+        monkeypatch.setattr(mod, "_episode_root_days",
+                            lambda episode_root_filter=None: work)
+
+        mod.main(["--mode", "episodes"])
+
+        done = state.get("completed", {}).get("episodes", {}).get("SPY", [])
+        assert done == [], f"audit-failed days must not be marked complete, got {done}"
+
+        out = capsys.readouterr().out
+        assert any(line.startswith("::warning title=tape-flow-audit-failed")
+                   for line in out.splitlines()), "audit failure must annotate the run"
+
+
+class TestStateStoreReconciliation:
+    """State claiming a root-day the store cannot show is permanent data loss."""
+
+    @staticmethod
+    def _store(tmp_path, monkeypatch):
+        from lib import config
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        p = tmp_path / "tape_flow" / "daily"
+        p.mkdir(parents=True)
+        return p
+
+    def test_requeues_done_but_absent_root_days(self, tmp_path, monkeypatch, capsys):
+        """The SPY case: 3 days marked done, 1 row on disk → 2 go back in the queue."""
+        import scripts.build_tape_flow_daily as mod
+
+        d = self._store(tmp_path, monkeypatch)
+        pd.DataFrame({"date": ["2024-01-03"]}).to_parquet(d / "SPY.parquet", index=False)
+
+        state: dict = {}
+        for i in range(3):
+            mod._mark_done(state, "etf-history", "SPY", date(2024, 1, 2) + timedelta(days=i))
+
+        dropped = mod._reconcile_state_with_store(state, "etf-history", ["SPY"])
+        assert dropped == 2
+        assert state["completed"]["etf-history"]["SPY"] == ["2024-01-03"]
+
+        out = capsys.readouterr().out
+        assert any(line.startswith("::warning title=tape-flow-state-reconciled")
+                   for line in out.splitlines())
+
+    def test_keeps_root_days_the_store_shows(self, tmp_path, monkeypatch):
+        """A consistent state is left completely alone."""
+        import scripts.build_tape_flow_daily as mod
+
+        d = self._store(tmp_path, monkeypatch)
+        days = ["2024-01-02", "2024-01-03", "2024-01-04"]
+        pd.DataFrame({"date": days}).to_parquet(d / "SPY.parquet", index=False)
+
+        state: dict = {}
+        for ds in days:
+            mod._mark_done(state, "etf-history", "SPY", date.fromisoformat(ds))
+
+        assert mod._reconcile_state_with_store(state, "etf-history", ["SPY"]) == 0
+        assert state["completed"]["etf-history"]["SPY"] == days
+
+    def test_unreadable_store_does_not_trigger_mass_requeue(self, tmp_path, monkeypatch, capsys):
+        """One bad read must not re-queue a full history — it must be loud instead."""
+        import scripts.build_tape_flow_daily as mod
+
+        d = self._store(tmp_path, monkeypatch)
+        (d / "SPY.parquet").write_bytes(b"garbage")
+
+        state: dict = {}
+        for i in range(5):
+            mod._mark_done(state, "etf-history", "SPY", date(2024, 1, 2) + timedelta(days=i))
+        before = list(state["completed"]["etf-history"]["SPY"])
+
+        assert mod._reconcile_state_with_store(state, "etf-history", ["SPY"]) == 0
+        assert state["completed"]["etf-history"]["SPY"] == before
+
+        out = capsys.readouterr().out
+        assert any(line.startswith("::error title=tape-flow-store-unreadable")
+                   for line in out.splitlines())
+
+    def test_main_requeues_absent_days_into_the_work_list(self, tmp_path, monkeypatch):
+        """End-to-end: a day the state calls done but the store lost is re-pulled."""
+        import scripts.build_tape_flow_daily as mod
+        from lib import config
+
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        (tmp_path / "tape_flow" / "daily").mkdir(parents=True)
+        monkeypatch.setattr("collectors.thetadata.reachable", lambda: True, raising=False)
+
+        state: dict = {}
+        work = [("SPY", date(2024, 1, 2) + timedelta(days=i)) for i in range(3)]
+        for root, td in work:
+            mod._mark_done(state, "episodes", root, td)   # all "done", store is empty
+
+        monkeypatch.setattr(mod, "_load_state", lambda: state)
+        monkeypatch.setattr(mod, "_save_state", lambda s: None)
+        monkeypatch.setattr(mod, "_register_run_status", lambda *a, **kw: None)
+        monkeypatch.setattr(mod, "_audit_store", lambda root, d: {"ok": True})
+        monkeypatch.setattr(mod, "_episode_root_days",
+                            lambda episode_root_filter=None: work)
+
+        processed: list[tuple] = []
+        monkeypatch.setattr(mod, "_process_root_day",
+                            lambda root, td, mode, retain_raw: (
+                                processed.append((root, td)),
+                                {"status": "ok", "root": root, "date": str(td)})[1])
+
+        mod.main(["--mode", "episodes"])
+
+        assert len(processed) == 3, (
+            f"all 3 done-but-absent days must be re-pulled, got {processed}"
         )
