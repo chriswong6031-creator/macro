@@ -97,8 +97,92 @@ _BLOCK_CONFIDENCE: dict[str, float] = {
     "core_services_ex_shelter": 0.4,
 }
 
+# Fresh-proxy input legs declared per modelled block.
+#
+# A block that still produces an estimate from FEWER than its full complement of legs is
+# DEGRADED. The reduced-leg fallback itself is pre-registered and correct (§3.4 "If one
+# missing, use the other"); what was invisible is that such a block shipped indistinguishable
+# from a full-leg one — same confidence, prior_only=False, absent_legs=[].
+_BLOCK_LEGS: dict[str, tuple[str, ...]] = {
+    "energy_gasoline": ("GASREGW",),
+    "energy_electricity": ("APU000072610",),
+    "shelter": ("ZORI", "CUSR0000SAH1"),
+    "food_at_home": ("CUSR0000SAF11", "WPU01"),
+    "core_goods_pipeline": ("PPIFIS", "PPIFES"),
+    "core_services_ex_shelter": ("CUSR0000SASLE",),
+    "unmodelled_residual": (),
+}
+
 # ZORI PIT conservative lag (mirrors engine/release_components_cpi.py)
 _ZORI_LAG_DAYS = 45
+
+
+def _degraded_confidence(block: str, legs_used: int, legs_expected: int) -> float:
+    """Block confidence, scaled by the share of declared proxy legs actually used.
+
+    PREREG_CPI_BRIDGE_V1.md pins each block's confidence to its FULL-leg construction
+    (§3.2–§3.5) and pre-registers the reduced-leg fallback (§3.4) WITHOUT pricing it.
+    When every declared leg is present this returns the frozen prereg value unchanged —
+    the frozen spec is untouched wherever the spec's own conditions hold. Only the state
+    the prereg left unpriced is scaled, by legs_used / legs_expected. That scale has no
+    free parameter, so it cannot be tuned to a result.
+
+    Permitted at display tier: the bridge is display_only=True / authority=False, so this
+    number is shown to a reader and never gates ranking, sizing, or scoring.
+    """
+    base = _BLOCK_CONFIDENCE[block]
+    if legs_expected <= 1 or legs_used <= 0 or legs_used >= legs_expected:
+        return base
+    return round(base * (legs_used / legs_expected), 4)
+
+
+def _modelled_component(block: str, mom_est: float, weight: float, prov: dict) -> dict:
+    """Build a modelled (non-prior) component row with its leg disclosure stamped.
+
+    `legs_used` / `missing_legs` come from the block's own provenance; a single-leg block
+    that returned a value is 1-of-1 by construction.
+    """
+    legs_expected = len(_BLOCK_LEGS.get(block, ()))
+    legs_used = int(prov.get("legs_used", legs_expected))
+    return {
+        "block": block,
+        "mom_est": round(mom_est, 4),
+        "weight": weight,
+        "contribution_pp": round((mom_est / 100.0) * weight, 6),
+        "confidence": _degraded_confidence(block, legs_used, legs_expected),
+        "prior_only": False,
+        "legs_used": legs_used,
+        "legs_expected": legs_expected,
+        "missing_legs": list(prov.get("missing_legs", [])),
+        "degraded": bool(legs_expected > 1 and 0 < legs_used < legs_expected),
+    }
+
+
+def _prior_component(
+    block: str,
+    weight: float,
+    contribution_pp: float,
+    mom_est: float | None = None,
+) -> dict:
+    """Build a prior-only component row. No fresh proxy ran, so no legs were used.
+
+    `degraded` is False by design: a block carrying NO estimate is already disclosed by
+    prior_only=True. `degraded` marks the narrower, previously-invisible state of a block
+    that DID ship an estimate built on partial inputs.
+    """
+    legs = _BLOCK_LEGS.get(block, ())
+    return {
+        "block": block,
+        "mom_est": mom_est,
+        "weight": weight,
+        "contribution_pp": round(float(contribution_pp), 6),
+        "confidence": 0.0,
+        "prior_only": True,
+        "legs_used": 0,
+        "legs_expected": len(legs),
+        "missing_legs": list(legs),
+        "degraded": False,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -225,6 +309,19 @@ def _compute_shelter_block(
 
         val, prov = _compute_shelter_nowcast(zori_df, shelter_df, ref_month, asof)
         prov["block"] = "shelter"
+        # Leg accounting: the nowcast silently falls to pure-BLS momentum (k=0) when ZORI
+        # is absent, or to ZORI alone (k=1.0) when BLS shelter is. Both are pre-registered
+        # (PREREG_V2.md §2.6) and both are weaker than the k=0.35 blend.
+        missing_shelter = [
+            sid for sid, val_leg in (
+                ("ZORI", prov.get("zori_signal")),
+                ("CUSR0000SAH1", prov.get("cpi_shelter_mom_last")),
+            )
+            if val_leg is None
+        ]
+        prov["legs_expected"] = 2
+        prov["legs_used"] = 2 - len(missing_shelter)
+        prov["missing_legs"] = missing_shelter
         return val, prov
     except Exception as e:
         log.debug("shelter block failed: %s", e)
@@ -289,6 +386,16 @@ def _compute_food_at_home(
         except Exception as e:
             log.debug("WPU01 read failed: %s", e)
 
+    # Leg accounting: either single-leg path below (WPU01-scaled, or pure prior with no
+    # forward signal) is pre-registered but weaker than the two-leg directional blend.
+    missing_fah = [
+        sid for sid, val in (("CUSR0000SAF11", fah_prior_mom), ("WPU01", wpu01_mom))
+        if val is None
+    ]
+    prov["legs_expected"] = 2
+    prov["legs_used"] = 2 - len(missing_fah)
+    prov["missing_legs"] = missing_fah
+
     if fah_prior_mom is None and wpu01_mom is None:
         prov["status"] = "both_absent"
         return None, prov
@@ -343,20 +450,28 @@ def _compute_core_goods_pipeline(
     from engine.release_forecast import knowable_series
 
     moms: list[float] = []
+    missing: list[str] = []
     for sid in ("PPIFIS", "PPIFES"):
         df = knowable_series(vintages, sid, asof)
+        mom_val: float | None = None
         if len(df) >= 2:
             levels = df.set_index("period")["value"]
             mom_s = levels.pct_change() * 100.0
             mom_s = mom_s.dropna()
             if len(mom_s) >= 1:
                 mom_val = float(mom_s.iloc[-1])
-                prov[f"{sid.lower()}_mom_lag1"] = round(mom_val, 4)
-                moms.append(mom_val)
-            else:
-                prov[f"{sid.lower()}_mom_lag1"] = None
-        else:
+        if mom_val is None:
             prov[f"{sid.lower()}_mom_lag1"] = None
+            missing.append(sid)
+        else:
+            prov[f"{sid.lower()}_mom_lag1"] = round(mom_val, 4)
+            moms.append(mom_val)
+
+    # Leg accounting: a one-leg average is pre-registered (§3.4) but materially weaker
+    # than the two-leg construction whose confidence §3.4 pins. Declare it.
+    prov["legs_expected"] = 2
+    prov["legs_used"] = len(moms)
+    prov["missing_legs"] = missing
 
     if not moms:
         prov["status"] = "both_absent"
@@ -473,7 +588,9 @@ def compute_cpi_bridge(
         display_only = True
         authority = False
     Key additional fields:
-        components: list of {block, contribution_pp, weight, confidence, prior_only}
+        components: list of {block, contribution_pp, weight, confidence, prior_only,
+                    legs_used, legs_expected, missing_legs, degraded}
+        degraded_blocks: names of modelled blocks that shipped on PARTIAL inputs
         weight_coverage: share of CPI basket backed by modelled blocks (float)
         residual_pp: reconciliation check (should be ~0.0)
         modelled_sum_pp: sum of modelled contributions
@@ -532,28 +649,15 @@ def compute_cpi_bridge(
         all_prov["energy_gasoline"] = gas_prov
         unrevised_legs.append("GASREGW")
         if gas_mom is not None:
-            contribution = (gas_mom / 100.0) * _ENERGY_GASOLINE_W
-            components.append({
-                "block": "energy_gasoline",
-                "mom_est": round(gas_mom, 4),
-                "weight": _ENERGY_GASOLINE_W,
-                "contribution_pp": round(contribution, 6),
-                "confidence": _BLOCK_CONFIDENCE["energy_gasoline"],
-                "prior_only": False,
-            })
+            components.append(_modelled_component(
+                "energy_gasoline", gas_mom, _ENERGY_GASOLINE_W, gas_prov))
         else:
             absent_legs.append("energy_gasoline")
             # Fall to prior for this sub-block
             prior_mom_gas = _compute_prior_mom_from_own_series(vintages, "CPIAUCSL", asof)
             fallback = 0.0 if prior_mom_gas is None else prior_mom_gas * (_ENERGY_GASOLINE_W / _ALL_ITEMS_W)
-            components.append({
-                "block": "energy_gasoline",
-                "mom_est": None,
-                "weight": _ENERGY_GASOLINE_W,
-                "contribution_pp": round(fallback, 6),
-                "confidence": 0.0,
-                "prior_only": True,
-            })
+            components.append(_prior_component(
+                "energy_gasoline", _ENERGY_GASOLINE_W, fallback))
 
     # Block 1b: energy_electricity (headline only)
     if not is_core:
@@ -561,50 +665,23 @@ def compute_cpi_bridge(
         all_prov["energy_electricity"] = elec_prov
         revision_optimistic_legs.append("APU000072610")
         if elec_mom is not None:
-            contribution = (elec_mom / 100.0) * _ENERGY_ELEC_W
-            components.append({
-                "block": "energy_electricity",
-                "mom_est": round(elec_mom, 4),
-                "weight": _ENERGY_ELEC_W,
-                "contribution_pp": round(contribution, 6),
-                "confidence": _BLOCK_CONFIDENCE["energy_electricity"],
-                "prior_only": False,
-            })
+            components.append(_modelled_component(
+                "energy_electricity", elec_mom, _ENERGY_ELEC_W, elec_prov))
         else:
             absent_legs.append("energy_electricity")
-            components.append({
-                "block": "energy_electricity",
-                "mom_est": None,
-                "weight": _ENERGY_ELEC_W,
-                "contribution_pp": 0.0,
-                "confidence": 0.0,
-                "prior_only": True,
-            })
+            components.append(_prior_component(
+                "energy_electricity", _ENERGY_ELEC_W, 0.0))
 
     # Block 2: shelter
     shelter_mom, shelter_prov = _compute_shelter_block(root, asof, ref_month)
     all_prov["shelter"] = shelter_prov
     revision_optimistic_legs.extend(["CUSR0000SAH1", "ZORI"])
     if shelter_mom is not None:
-        contribution = (shelter_mom / 100.0) * _SHELTER_W
-        components.append({
-            "block": "shelter",
-            "mom_est": round(shelter_mom, 4),
-            "weight": _SHELTER_W,
-            "contribution_pp": round(contribution, 6),
-            "confidence": _BLOCK_CONFIDENCE["shelter"],
-            "prior_only": False,
-        })
+        components.append(_modelled_component(
+            "shelter", shelter_mom, _SHELTER_W, shelter_prov))
     else:
         absent_legs.append("shelter")
-        components.append({
-            "block": "shelter",
-            "mom_est": None,
-            "weight": _SHELTER_W,
-            "contribution_pp": 0.0,
-            "confidence": 0.0,
-            "prior_only": True,
-        })
+        components.append(_prior_component("shelter", _SHELTER_W, 0.0))
 
     # Block 3: food at home (HEADLINE ONLY — food excluded from core CPI by definition)
     if not is_core:
@@ -612,15 +689,8 @@ def compute_cpi_bridge(
         all_prov["food_at_home"] = fah_prov
         revision_optimistic_legs.extend(["WPU01", "CUSR0000SAF11"])
         if fah_mom is not None:
-            contribution = (fah_mom / 100.0) * _FOOD_AT_HOME_W
-            components.append({
-                "block": "food_at_home",
-                "mom_est": round(fah_mom, 4),
-                "weight": _FOOD_AT_HOME_W,
-                "contribution_pp": round(contribution, 6),
-                "confidence": _BLOCK_CONFIDENCE["food_at_home"],
-                "prior_only": False,
-            })
+            components.append(_modelled_component(
+                "food_at_home", fah_mom, _FOOD_AT_HOME_W, fah_prov))
         else:
             absent_legs.append("food_at_home")
             # Fall to prior for this sub-block
@@ -629,63 +699,31 @@ def compute_cpi_bridge(
                 0.0 if prior_mom_fah is None
                 else (prior_mom_fah / 100.0) * _FOOD_AT_HOME_W
             )
-            components.append({
-                "block": "food_at_home",
-                "mom_est": None,
-                "weight": _FOOD_AT_HOME_W,
-                "contribution_pp": round(fah_fallback, 6),
-                "confidence": 0.0,
-                "prior_only": True,
-            })
+            components.append(_prior_component(
+                "food_at_home", _FOOD_AT_HOME_W, fah_fallback))
 
     # Block 4: core goods pipeline
     pipeline_mom, pipeline_prov = _compute_core_goods_pipeline(vintages, asof)
     all_prov["core_goods_pipeline"] = pipeline_prov
     if pipeline_mom is not None:
-        contribution = (pipeline_mom / 100.0) * _CORE_GOODS_W
-        components.append({
-            "block": "core_goods_pipeline",
-            "mom_est": round(pipeline_mom, 4),
-            "weight": _CORE_GOODS_W,
-            "contribution_pp": round(contribution, 6),
-            "confidence": _BLOCK_CONFIDENCE["core_goods_pipeline"],
-            "prior_only": False,
-        })
+        components.append(_modelled_component(
+            "core_goods_pipeline", pipeline_mom, _CORE_GOODS_W, pipeline_prov))
     else:
         absent_legs.append("core_goods_pipeline")
-        components.append({
-            "block": "core_goods_pipeline",
-            "mom_est": None,
-            "weight": _CORE_GOODS_W,
-            "contribution_pp": 0.0,
-            "confidence": 0.0,
-            "prior_only": True,
-        })
+        components.append(_prior_component(
+            "core_goods_pipeline", _CORE_GOODS_W, 0.0))
 
     # Block 5: core services ex-shelter
     csxs_mom, csxs_prov = _compute_core_services_ex_shelter(root, asof)
     all_prov["core_services_ex_shelter"] = csxs_prov
     revision_optimistic_legs.append("CUSR0000SASLE")
     if csxs_mom is not None:
-        contribution = (csxs_mom / 100.0) * _CORE_SVC_XS_W
-        components.append({
-            "block": "core_services_ex_shelter",
-            "mom_est": round(csxs_mom, 4),
-            "weight": _CORE_SVC_XS_W,
-            "contribution_pp": round(contribution, 6),
-            "confidence": _BLOCK_CONFIDENCE["core_services_ex_shelter"],
-            "prior_only": False,
-        })
+        components.append(_modelled_component(
+            "core_services_ex_shelter", csxs_mom, _CORE_SVC_XS_W, csxs_prov))
     else:
         absent_legs.append("core_services_ex_shelter")
-        components.append({
-            "block": "core_services_ex_shelter",
-            "mom_est": None,
-            "weight": _CORE_SVC_XS_W,
-            "contribution_pp": 0.0,
-            "confidence": 0.0,
-            "prior_only": True,
-        })
+        components.append(_prior_component(
+            "core_services_ex_shelter", _CORE_SVC_XS_W, 0.0))
 
     # ---- Unmodelled residual block: TRUE 100pp partition --------------------------
     # Add one aggregate "unmodelled_residual" block to absorb the basket share not
@@ -698,14 +736,12 @@ def compute_cpi_bridge(
             0.0 if prior_mom_residual is None
             else (prior_mom_residual / 100.0) * unmodelled_w
         )
-        components.append({
-            "block": "unmodelled_residual",
-            "mom_est": round(prior_mom_residual, 4) if prior_mom_residual is not None else None,
-            "weight": unmodelled_w,
-            "contribution_pp": round(float(residual_contrib), 6),
-            "confidence": 0.0,
-            "prior_only": True,
-        })
+        components.append(_prior_component(
+            "unmodelled_residual",
+            unmodelled_w,
+            float(residual_contrib),
+            mom_est=round(prior_mom_residual, 4) if prior_mom_residual is not None else None,
+        ))
 
     # ---- Reconciliation: sum contributions → point estimate --------------------
     modelled_contribs = [c["contribution_pp"] for c in components if not c["prior_only"]]
@@ -729,6 +765,11 @@ def compute_cpi_bridge(
     # prior_driven_share: fraction of the estimate driven by extrapolation (confidence=0)
     prior_weight_sum = sum(c["weight"] for c in components if c["prior_only"])
     prior_driven_share = round(prior_weight_sum / _ALL_ITEMS_W, 6)
+
+    # degraded_blocks: modelled blocks that shipped an estimate on PARTIAL inputs.
+    # Distinct from absent_legs (block produced nothing) and from prior_only (no proxy at
+    # all) — this is the previously-invisible middle state.
+    degraded_blocks = [c["block"] for c in components if c["degraded"]]
 
     # Bridge confidence: weighted average of block confidences for modelled blocks
     total_abs_modelled = sum(abs(c["contribution_pp"]) for c in components if not c["prior_only"])
@@ -764,6 +805,7 @@ def compute_cpi_bridge(
         "prior_sum_pp": round(prior_sum, 6),
         "coverage_residual_pp": coverage_residual_pp,
         "prior_driven_share": prior_driven_share,
+        "degraded_blocks": degraded_blocks,
         "benchmark_set": {
             "naive_prior": round(naive_prior, 4) if naive_prior is not None else None,
             "trailing_3m": round(trailing_3m, 4) if trailing_3m is not None else None,
@@ -772,6 +814,7 @@ def compute_cpi_bridge(
             "revision_optimistic_legs": list(dict.fromkeys(revision_optimistic_legs)),  # dedup
             "unrevised_legs": list(dict.fromkeys(unrevised_legs)),
             "absent_legs": absent_legs,
+            "degraded_blocks": degraded_blocks,
             "display_only": True,
             "authority": False,
             "block_provenance": all_prov,
@@ -892,11 +935,13 @@ def _empty_bridge(release: str, asof: date, reason: str) -> dict:
         "prior_sum_pp": None,
         "coverage_residual_pp": None,
         "prior_driven_share": None,
+        "degraded_blocks": [],
         "benchmark_set": {"naive_prior": None, "trailing_3m": None},
         "pit_provenance": {
             "revision_optimistic_legs": [],
             "unrevised_legs": [],
             "absent_legs": [],
+            "degraded_blocks": [],
             "display_only": True,
             "authority": False,
             "reason": reason,

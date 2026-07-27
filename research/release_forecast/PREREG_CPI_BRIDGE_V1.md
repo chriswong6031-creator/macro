@@ -169,7 +169,7 @@ momentum as in the champion pipeline leg.
 core_goods_contribution_pp = (pipeline_mom_est/100) × core_goods_weight
 ```
 
-**Confidence:** 0.6 (ALFRED-vintaged proxy).
+**Confidence:** 0.6 (ALFRED-vintaged proxy) — **full-leg construction only**; see §11.
 
 ### 3.5 Block 5 — Core Services ex-Shelter (modelled, confidence = 0.4)
 
@@ -337,3 +337,57 @@ confidence=0.0 for all. Headline grand-total Σ = 100.0; core grand-total Σ = 7
 Note: "own prior series" = last knowable MoM of the headline own-series (CPIAUCSL for headline,
 CPILFESL for core) used as the fallback prior MoM for unlisted sub-items. This is the most
 conservative proxy: it assumes prior-only blocks track the aggregate at the prior MoM rate.
+
+---
+
+## 11. AMENDMENT (2026-07-26) — Partial-leg disclosure, display tier only
+
+**Nothing frozen changes.** No block weight, MoM method, fallback rule, bridge math (§5),
+output contract (§6), or kill rule (§7) is touched. The point estimate for every input
+state is byte-identical to the pre-amendment engine. This amendment is DISCLOSURE only,
+and applies to a `display_only=True` / `authority=False` surface, so no gauntlet applies.
+
+### What was wrong
+
+§3.2–§3.5 pin each modelled block's confidence to a single number, stated flatly, while
+three of those blocks pre-register a **reduced-leg fallback**:
+
+| Block | Legs | Pre-registered fallback | Prereg confidence |
+|---|---|---|---|
+| shelter (§3.2) | ZORI + CUSR0000SAH1 | k=0 pure-BLS, or ZORI-only (PREREG_V2 §2.6) | 0.6 |
+| food_at_home (§3.3) | CUSR0000SAF11 + WPU01 | pure prior, or WPU01-scaled | 0.4 |
+| core_goods_pipeline (§3.4) | PPIFIS + PPIFES | "If one missing, use the other" | 0.6 |
+
+The fallback **math is correct and stays frozen**. What the spec never priced is the
+*confidence* of the reduced-leg state — so a one-leg block shipped indistinguishable from
+a full-leg one: same confidence, `prior_only: false`, `absent_legs: []`. The degradation
+existed only inside `pit_provenance.block_provenance` (e.g. `n_series: 1`), which
+`scripts/build_release_forecast.py::_attach_shadows_to_items` discarded when it rebuilt
+the shadow as a literal dict. Net effect: the shipped artifact could not distinguish the
+two states at all.
+
+### What this amendment adds
+
+1. **Per-component disclosure** on every component row: `legs_used`, `legs_expected`,
+   `missing_legs`, `degraded`. `degraded` is True only for the middle state — a block that
+   SHIPPED an estimate on partial inputs. A block with no estimate at all remains disclosed
+   by the existing `prior_only: true`, and is NOT double-flagged.
+2. **`degraded_blocks`** roll-up at bridge top level, in `pit_provenance`, on the shipped
+   shadow payload, and on new forward-ledger shadow rows.
+3. **Confidence haircut:** `block_confidence × (legs_used / legs_expected)`.
+
+### Why the haircut is legitimate here
+
+- It **cannot be tuned to a result** — the scale is the leg fraction, with no free parameter.
+- It is **inert wherever the frozen spec's own conditions hold**: with every leg present the
+  factor is 1 and each block returns its §3.2–§3.5 value unchanged.
+- It governs **only the state the prereg left unpriced**, and the direction is forced —
+  fewer inputs cannot mean more confidence.
+- It reaches **no authority surface**. The bridge is display-tier; `release_combined.py`
+  weights inputs by shrunk inverse-MAE from scored errors, not by this number, and
+  `release_block_scoring.py` reads `contribution_pp`/`weight`, not confidence.
+
+`prior_only` is deliberately NOT flipped for a degraded block: that field drives
+`weight_coverage`, `prior_driven_share`, `modelled_sum_pp` and `prior_sum_pp`, all defined
+in §5. A degraded block is still a modelled block. Test-enforced in
+`tests/test_release_cpi_bridge.py::TestPartialLegPreregInvariants`.
