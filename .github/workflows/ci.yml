@@ -72,6 +72,10 @@ on:
       # fire on EVERY python change needs "scripts/**"/"engine/**" here, which is a
       # CI-cost call for the operator (it would run the whole pack on most PRs).
       - "tests/test_gh_annotation_line_start.py"
+      # Absolute-path prune guard (#3802): a walk excluding ".claude"/"worktrees"
+      # via `path.parts` also matches the checkout's own path and scans nothing.
+      # Named so a test-only edit still triggers the lane that runs it.
+      - "tests/test_no_absolute_path_part_prunes.py"
       # template↔site sync guard: plain-copy page assets must byte-match their templates.
       - "scripts/check_template_site_sync.py"
       # ?v= stamp lane guard (ui.asset_stamp): the sweep that moves a stamp, and the

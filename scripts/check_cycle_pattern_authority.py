@@ -126,7 +126,10 @@ def _scan_dirs(root: Path) -> list[Path]:
         if not d.is_dir():
             continue
         for f in sorted(d.rglob("*.py")):
-            if "__pycache__" in f.parts:
+            # Relative to the scan root `d`: an absolute-parts prune also matches
+            # anything ABOVE the root, which silently skips every file when the
+            # checkout path happens to contain the token (#3802).
+            if "__pycache__" in f.relative_to(d).parts:
                 continue
             files.append(f)
     return files
