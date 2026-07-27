@@ -25,6 +25,7 @@ Covers:
 from __future__ import annotations
 
 import json
+import zlib
 from pathlib import Path
 from typing import Any
 from unittest.mock import patch
@@ -1459,7 +1460,9 @@ class TestSectorPrePass:
         # Build a minimal close series for each ticker
         def mock_read_massive(ticker):
             n = 500
-            rng = np.random.default_rng(hash(ticker) % (2**31))
+            # zlib.crc32, NEVER builtin hash() — hash(str) is PYTHONHASHSEED-salted
+            # per process, so the fixture panel differed on every CI run (#3785/#3792).
+            rng = np.random.default_rng(zlib.crc32(ticker.encode("utf-8")) % (2**31))
             vals = 50.0 + np.cumsum(rng.normal(0, 0.5, n))
             vals = np.clip(vals, 5.0, 200.0)
             idx = pd.bdate_range("2021-01-04", periods=n)
@@ -1499,7 +1502,9 @@ class TestSectorPrePass:
 
         def mock_read_massive(ticker):
             n = 500
-            rng = np.random.default_rng(hash(ticker) % (2**31))
+            # zlib.crc32, NEVER builtin hash() — hash(str) is PYTHONHASHSEED-salted
+            # per process, so the fixture panel differed on every CI run (#3785/#3792).
+            rng = np.random.default_rng(zlib.crc32(ticker.encode("utf-8")) % (2**31))
             vals = 50.0 + np.cumsum(rng.normal(0, 0.5, n))
             vals = np.clip(vals, 5.0, 200.0)
             idx = pd.bdate_range("2021-01-04", periods=n)
