@@ -2622,6 +2622,26 @@ jobs:
     # pandas AND pyarrow (.to_parquet needs an engine). Keep the deps minimal and
     # the tests skip-clean rather than growing this list: a lane that installs the
     # world stops being the cheap guard it was added to be.
+    #
+    # 2026-07-27: the minimal env is kept, but its REASON is restated, because
+    # "cheap" stopped being the reason the day #3754 packed the jobs. The pack
+    # runner reuses one venv per byte-identical install line, so joining the fat
+    # `pytest pandas numpy pyarrow pyyaml` group would have cost zero extra
+    # provisioning — cost is no longer an argument for or against either set.
+    # What this lane actually buys is the LAZY-IMPORT CONTRACT: chart_render is
+    # imported on the brain gateway's request path, and a future top-level
+    # `import pandas` in the renderer (or in one of these suites) turns this lane
+    # red at collection. That is worth a job on its own and is why it stays thin.
+    #
+    # What a thin lane CANNOT do is execute the tests that need those modules.
+    # Six of the 40 tests here skip in this env — the two load_ohlcv tests in
+    # test_chart_render_inline, three in test_marketing_card_parity, one in
+    # test_chart_render_m2 (engine.indicators_m2 needs numpy) — and until
+    # 2026-07-27 no other job in any workflow named these files, so the skip was
+    # total absence of coverage rather than reduced coverage. chart-render-data
+    # below runs the SAME three files with those modules present. The lanes are
+    # deliberately paired, not alternatives: thin proves the imports stay lazy,
+    # fat proves the code behind them is correct. The ~6s of overlap is the price.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -2632,6 +2652,53 @@ jobs:
         run: pip install pytest pyyaml
       - name: chart_render SVG suites
         run: python -m pytest tests/test_chart_render_inline.py tests/test_chart_render_m2.py tests/test_marketing_card_parity.py -q
+
+  chart-render-data:
+    if: ${{ false }}
+    # The data-dependent half of the chart-render suites (see the job above).
+    #
+    # Added 2026-07-27. #3722 shipped load_ohlcv's crypto source resolution
+    # (data/yahoo/<SYM>-USD.parquet + close-to-close H/L synthesis, the fix for
+    # "analyse ETH → 没有可用的日线图表数据") with two regression tests. Those tests
+    # imported pandas and wrote parquet; chart-render installs pytest+pyyaml, so
+    # they errored the lane red, and #3738 made them importorskip pandas/pyarrow.
+    # That was the right fix for the red — but chart-render was the ONLY job in
+    # ANY workflow naming these files, so the importorskip did not reduce the
+    # coverage to a subset, it removed it outright: #3722's data-source
+    # resolution shipped with a guard that could not execute anywhere.
+    #
+    # Same family as #3703 — an `importorskip` added to clear a red leaves main
+    # green AND weaker, and nothing in CI notices, because every existing guard
+    # asks "is this suite named by a job" (scripts/audit_unrun_tests.py) and
+    # never "does the job that names it install what it needs to run".
+    #
+    # Deps are byte-identical to the 21-job `pytest pandas numpy pyarrow pyyaml`
+    # group (trial-budgets, outcome-spine, site-gate, …), which run_ci_pack.py
+    # keys its venv reuse on, so this job provisions NO new environment: both
+    # packs already build that venv for jobs they already carry.
+    #
+    # The import probe is the lane's own tripwire. If a future dependency edit
+    # drops pandas or pyarrow from this install line, the six tests would go back
+    # to skipping silently and the lane would stay green while guarding nothing —
+    # exactly the failure this job exists to close. The probe makes that red.
+    # -rs prints every skip reason, so a NEW skip is visible in the log rather
+    # than hidden behind a bare pass count.
+    #
+    # Verified locally in a clean venv with this exact install line:
+    #   pytest pyyaml                      → 34 passed, 6 skipped
+    #   pytest pandas numpy pyarrow pyyaml → 40 passed
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: prove the data-dependent modules are present
+        run: python -c "import pandas, pyarrow, numpy"
+      - name: chart_render SVG suites (data-dependent tests execute here)
+        run: python -m pytest tests/test_chart_render_inline.py tests/test_chart_render_m2.py tests/test_marketing_card_parity.py -q -rs
 
   portfolio-ctx:
     if: ${{ false }}

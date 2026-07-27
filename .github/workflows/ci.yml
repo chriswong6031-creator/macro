@@ -1081,12 +1081,17 @@ on:
       - "tests/test_marketing_chart_png.py"
       - "tests/test_marketing_media_publish.py"
       - "tests/test_share_cards.py"
-      # chart_render SVG suites (job: chart-render). Added 2026-07-26; never
-      # whitelisted anywhere → test-whitelist-rot. Found via
+      # chart_render SVG suites (jobs: chart-render, chart-render-data). Added
+      # 2026-07-26; never whitelisted anywhere → test-whitelist-rot. Found via
       # test_chart_render_inline sitting RED on main since #3088, which moved the
       # MACD stroke off raw material-blue and left the test's colour probe behind.
       # engine/marketing/** already triggers on renderer changes; these entries
       # make a test-only edit reach its own guard.
+      # 2026-07-27: the two lanes run the same three files, thin (pytest+pyyaml,
+      # pins the lazy-import contract) and fat (pandas/numpy/pyarrow, the only
+      # place the six data-dependent tests actually execute). Both are reachable
+      # from these paths already — engine/marketing/** covers chart_render.py and
+      # engine/** covers indicators_m2.py — so this list needs no new entry.
       - "tests/test_chart_render_inline.py"
       - "tests/test_chart_render_m2.py"
       - "tests/test_marketing_card_parity.py"
