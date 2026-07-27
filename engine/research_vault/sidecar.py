@@ -219,7 +219,10 @@ def normalize(
       - title: sidecar.title → PDF-embedded title → filename → 'Untitled research',
         then :func:`clean_title` (dedupe marker + unbalanced parens).
       - institution: sidecar.institution → caller fallback → 'Unknown' (+needs_metadata).
-      - published_at: sidecar.published_at → R2 upload time (caller) → '' (no crash).
+      - published_at: sidecar.published_at → caller fallback → '' (no crash). The
+        research-vault ingest caller deliberately passes NO fallback: a missing
+        MarketDesk publish date stays blank (and sorts LAST) rather than being
+        stamped with our ingest clock, so a stale backfill never appears as new.
       - summary_points: sidecar list → [] ("Summary pending").
       - side: sidecar.side (validated) → 'sell'.
       - id: sidecar.id → derived slug id.

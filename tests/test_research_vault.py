@@ -280,11 +280,22 @@ def test_normalize_blank_institution_uses_caller_fallback():
     assert item["institution"] == "Morgan Stanley"
 
 
-def test_normalize_missing_published_at_uses_upload_time_fallback():
+def test_normalize_missing_published_at_honors_explicit_fallback():
+    # normalize() keeps a generic published_at fallback param, but the research-vault
+    # ingest caller deliberately never feeds it our clock (see the ingest test
+    # test_ingest_missing_sidecar_leaves_date_blank_never_our_time). An EXPLICIT
+    # known-good date passed by a caller is still honored.
     item = sidecar_mod.normalize(
         {"title": "T", "institution": "GS"},
         fallback_published_at="2026-07-22T09:00:00Z")
     assert item["published_at"] == "2026-07-22T09:00:00Z"
+
+
+def test_normalize_missing_published_at_and_no_fallback_stays_blank():
+    # No sidecar date + no fallback → blank, never fabricated. A blank date sorts
+    # LAST in the catalog, so an undated paper can never masquerade as the newest.
+    item = sidecar_mod.normalize({"title": "T", "institution": "GS"})
+    assert item["published_at"] == ""
 
 
 def test_normalize_invalid_side_defaults_sell():
@@ -686,19 +697,38 @@ def test_ingest_bad_sidecar_needs_metadata_but_not_dropped(tmp_path, canned_pdft
     assert "orphan" in row["title"].lower()
 
 
-def test_ingest_missing_sidecar_uses_upload_time(tmp_path, canned_pdftotext):
+def test_ingest_missing_sidecar_leaves_date_blank_never_our_time(tmp_path, canned_pdftotext):
+    # A paper with NO sidecar (hence no MarketDesk publish date) must NOT be stamped
+    # with our R2-upload / ingest time — that would post a stale backfill as brand-new
+    # at the TOP of "latest". It ingests with a BLANK published_at (which sorts it to
+    # the BOTTOM, below every dated paper) and is flagged needs_metadata.
+    #
+    # Regression guard: LocalStore.upload_time() returns a real mtime for the seeded
+    # file, so if the ingest ever re-adds `fallback_published_at=upload_time` the
+    # blank assertion below fails.
     store = LocalStore(tmp_path / "store")
     corpus_path = tmp_path / "corpus.sqlite"
-    # No sidecar at all.
+
+    # A genuinely-dated paper, to prove the undated one sorts BELOW it (never above).
+    _seed_pdf(store, "research_inbox/dated.pdf", {
+        "title": "Real Dated Report", "institution": "Goldman Sachs",
+        "published_at": "2026-07-20T09:00:00Z",
+    })
+    # No sidecar at all → no publish date recoverable.
     store.put_bytes("research_inbox/nosidecar.pdf", _MINIMAL_PDF, "application/pdf")
 
     summary = ingest_mod.run(store, corpus_path)
-    assert summary["ingested"] == 1
+    assert summary["ingested"] == 2
+    assert summary["needs_metadata"] == 1
+
     cat = catalog_mod.load(store)
-    row = cat["items"][0]
-    assert row["needs_metadata"] is True     # no institution
-    assert row["institution"] == "Unknown"
-    assert row["published_at"]               # filled from upload time (mtime)
+    undated = [it for it in cat["items"] if it["institution"] == "Unknown"]
+    assert len(undated) == 1
+    assert undated[0]["published_at"] == ""      # NOT stamped with our upload/ingest clock
+    assert undated[0]["needs_metadata"] is True
+    # Sorts LAST — below the dated report, never at the top of "latest".
+    assert cat["items"][0]["published_at"] == "2026-07-20T09:00:00Z"
+    assert cat["items"][-1]["institution"] == "Unknown"
 
 
 def test_ingest_top_picks_prefix_sets_top_pick(tmp_path, canned_pdftotext):
