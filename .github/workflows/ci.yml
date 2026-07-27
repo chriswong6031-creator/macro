@@ -1776,6 +1776,21 @@ on:
       - "tests/test_setup_tier.py"
       - "tests/test_stock_personality_wiring.py"
       - "tests/fixtures/setup_tier_probe_closes.parquet"
+      # ── The strictly-dark set reopened TWICE in one day (2026-07-27) ────────
+      # #3776 landed the public signup email gate and #3797 the shared-quota hook,
+      # each with its regression suite named by no workflow — arriving unrun the
+      # way the census keeps predicting. Both reach their subject WITHOUT importing
+      # it (one reads templates/onboard.js as text, one runs the hook as a
+      # subprocess), so audit_unrun_tests.py — which derives subjects from imports —
+      # reports subjects=[] and calls both UNTRIGGERABLE. That half is a false
+      # positive: templates/** and .claude/** above already match their subjects.
+      # The unrun half was real in both cases. Every half is pinned explicitly here
+      # so neither a guard nor the file it inspects can drift out of coverage.
+      # unrun-dark-guards
+      - "tests/test_signup_email_validation.py"
+      - "templates/onboard.js"
+      - "tests/test_gh_quota_guard.py"
+      - ".claude/hooks/gh_quota_guard.py"
   workflow_dispatch:
 
 permissions:

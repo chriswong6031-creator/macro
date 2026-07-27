@@ -3594,3 +3594,45 @@ jobs:
         run: python -m pytest tests/test_setup_tier.py -q
       - name: personality forward-ledger PIT stamp + the no-backfill wire-in floor
         run: python -m pytest tests/test_stock_personality_wiring.py -q
+
+  # ── THE STRICTLY-DARK SET REOPENED TWICE IN ONE DAY (2026-07-27) ───────────
+  # #3636 emptied the strictly-dark set, #3645 emptied it again the same day, and
+  # docs/UNRUN_TEST_CENSUS.md says outright that it is not a one-time cleanup — a
+  # suite arrives dark whenever it lands without a paths entry.  Two did today:
+  #
+  #   #3776  tests/test_signup_email_validation.py — the public account-creation
+  #          email gate.  The highest-risk shape in the census: a security-adjacent
+  #          guard on the signup path, run by nothing.  It pins the email-format
+  #          validator AND that the check runs BEFORE sb.auth.signUp.
+  #   #3797  tests/test_gh_quota_guard.py — the shared-GitHub-quota hook, itself
+  #          added because two watchers on one endpoint drained the 5,000/hr REST
+  #          pool to zero and 403'd every session.  36 tests, run by nothing.
+  #
+  # Neither needs third-party deps, but both repeat the shared install BYTE-FOR-BYTE
+  # so run_ci_pack.py keeps one venv across the unrun-* set rather than building a
+  # second one for 38 tests.
+  #
+  # Measurement note for whoever next reads the auditor — BOTH are the same false
+  # positive.  audit_unrun_tests.py derives subjects from IMPORTS; neither suite
+  # imports its subject.  test_signup_email_validation reads templates/onboard.js as
+  # text and regexes it; test_gh_quota_guard invokes .claude/hooks/gh_quota_guard.py
+  # as a SUBPROCESS.  So the auditor reports subjects=[] and calls both
+  # untriggerable, when templates/** and .claude/** already match their subjects.
+  # Only the UNRUN half was real in each case.  Guards that reach their subject by
+  # path string or subprocess are a blind spot in the auditor, not a dark corner of
+  # ci.yml — check how a suite reaches its subject before believing a dark verdict.
+  unrun-dark-guards:
+    if: ${{ false }}
+    timeout-minutes: 4
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: signup email gate — format validator + it runs BEFORE supabase signUp
+        run: python -m pytest tests/test_signup_email_validation.py -q
+      - name: shared-GitHub-quota hook — the guard that keeps polling loops off the REST pool
+        run: python -m pytest tests/test_gh_quota_guard.py -q
