@@ -12,11 +12,24 @@ import json
 import pytest
 
 
+# Per-ticker DISTINCT copy: the enqueue-time near-dup guard (2026-07-27, token
+# Jaccard ≥ 0.7 per account) would collapse two watchlist posts that share the
+# same skeleton and only swap the cashtag — a real "deeply reworded" repeat. Real
+# per-ticker posts differ in price/move/wording, so give each its own body.
+_TICKER_COPY = {
+    "TSLA": "$TSLA into the week\n\nClosed 313, down 18% — still bleeding below the 200-day.",
+    "MSFT": "$MSFT heading into earnings\n\nHolding 420 after a shallow three percent dip.",
+    "NVDA": "$NVDA momentum check\n\nRipped to 132 on a nine percent breakout, volume huge.",
+    "AAPL": "$AAPL quietly basing\n\nCoiled near 195 for weeks; a breakout would need catalysts.",
+}
+
+
 def _item(root, ticker="TSLA", text=None, as_of="2026-07-26"):
     from engine.marketing.outbox import make_item, enqueue
+    _default = _TICKER_COPY.get(ticker, f"${ticker} weekly note\n\nUnique read on {ticker} today.")
     it = make_item(
         account="flagship", kind="watchlist",
-        text=text or f"${ticker} into the week\n\nClosed 313, down 18%.",
+        text=text or _default,
         as_of=as_of, provenance="weekend_levels",
         source={"ticker": ticker, "state": "downtrend"},
         media=[{"kind": "chart_svg", "path": f"p/{ticker}.svg", "chart_id": ticker,

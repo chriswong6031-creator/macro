@@ -195,7 +195,7 @@ def test_all_types_present_in_every_account():
     cfg = {"desk_network": {"stage": "A", "accounts": _SAMPLE_ACCOUNTS}}
     plan = content_plan(cfg, _SAMPLE_PLANS, closes_loader=None)
     all_type_ids = {t["id"] for t in CONTENT_TYPES}
-    total_slots = 7 * 8  # n_days * per_day = 56 (8-slot 2h Pacific ladder)
+    total_slots = 7 * 19  # n_days * per_day = 133 (19-slot 45-min Pacific ladder)
 
     # mover and theme_list posts are injected only into the first account (flagship)
     # from real heatmap data.  Non-flagship accounts will have these stripped from
@@ -1109,15 +1109,16 @@ def test_content_plan_all_enabled_by_default():
         assert len(acct["queue"]) > 0, f"{acct['id']} got no queue"
 
 
-def test_slot_labels_are_the_2h_pacific_ladder():
-    """The plan schedules onto the 8-slot 2h Pacific ladder (S1..S8), replacing
-    the old AM/PM/EOD triple; day N labels prefix D<N>-, and no legacy suffix
-    survives (outbox.slot_datetime resolves S1..S8 to real Pacific-clock times)."""
+def test_slot_labels_are_the_45min_pacific_ladder():
+    """The plan schedules onto the 19-slot 45-min Pacific ladder (S1..S19),
+    replacing the old AM/PM/EOD triple; day N labels prefix D<N>-, and no legacy
+    suffix survives (outbox.slot_datetime resolves S1..S19 to real Pacific-clock
+    times)."""
     from engine.marketing.content_studio import _slot_labels
-    assert _slot_labels(1, 8) == [f"D1-S{i}" for i in range(1, 9)]
-    two_days = _slot_labels(2, 8)
-    assert two_days[:8] == [f"D1-S{i}" for i in range(1, 9)]
-    assert two_days[8:] == [f"D2-S{i}" for i in range(1, 9)]
+    assert _slot_labels(1, 19) == [f"D1-S{i}" for i in range(1, 20)]
+    two_days = _slot_labels(2, 19)
+    assert two_days[:19] == [f"D1-S{i}" for i in range(1, 20)]
+    assert two_days[19:] == [f"D2-S{i}" for i in range(1, 20)]
     assert not any(lbl.endswith(("-AM", "-PM", "-EOD")) for lbl in two_days)
 
 
@@ -1132,7 +1133,7 @@ def test_content_plan_queue_uses_resolvable_ladder_slots():
     as_of = plan.get("as_of") or "2026-07-15"
     slots = [it.get("slot") for acct in plan["accounts"] for it in acct["queue"]
              if isinstance(it, dict)]
-    day_slots = [s for s in slots if s and _re.match(r"^D\d+-S[1-8]$", s)]
+    day_slots = [s for s in slots if s and _re.match(r"^D\d+-S(?:[1-9]|1[0-9])$", s)]
     assert day_slots, f"no ladder slots in queue: {slots[:8]}"
     assert all(slot_datetime(as_of, s) is not None for s in day_slots)
 

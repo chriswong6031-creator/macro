@@ -74,10 +74,11 @@ _SCHEMA_VERSION = 1
 # asserts these match config/marketing.yml sentinel:.
 _DEFAULT_NEAR_DUP_JACCARD = 0.50              # "substantially similar" policy bar
 _DEFAULT_MAX_POSTS_PER_ACCOUNT_PER_DAY = 2    # weeks_1_2 floor
-_DEFAULT_MIN_MINUTES_BETWEEN_POSTS = 120       # NOT enforced at plan tier (slots have
+_DEFAULT_MIN_MINUTES_BETWEEN_POSTS = 45        # NOT enforced at plan tier (slots have
                                                # no timestamps); contract value the D02
                                                # actuator must read from sentinel config.
-                                               # weeks_1_2 = 120; relax to 90 at week 5+.
+                                               # 45-min ladder re-spec (2026-07-27):
+                                               # was 120, now matches config default 45.
 _DEFAULT_MAX_SAME_CASHTAG_PER_ACCOUNT_PER_DAY = 1  # weeks_1_2 floor
 _DEFAULT_MAX_REPLIES_PER_ACCOUNT_PER_DAY = 0
 _DEFAULT_MAX_RECEIPT_AGE_DAYS = 7

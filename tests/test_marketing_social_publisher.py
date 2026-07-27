@@ -529,9 +529,12 @@ def test_runner_respects_daily_cap(monkeypatch, tmp_path):
     transition(already["id"], "approved", actor="t", root=tmp_path, now=_FIXED_NOW)
     transition(already["id"], "posted", actor="t", root=tmp_path, now=_FIXED_NOW)
 
-    # Two more approved and due.
-    a = _seed_approved_item(tmp_path, text="Second post of the day here.")
-    b = _seed_approved_item(tmp_path, text="Third post would exceed the cap.")
+    # Two more approved and due LADDER items (explicit past slot — the immediate
+    # default is cap-EXEMPT as of 2026-07-27 and would defeat this cap test).
+    a = _seed_approved_item(tmp_path, text="Second post of the day here.",
+                            scheduled_at="2026-07-19T12:00:00Z")
+    b = _seed_approved_item(tmp_path, text="Third post would exceed the cap.",
+                            scheduled_at="2026-07-19T12:00:00Z")
 
     fake = _FakePublisher(ok=True)
     rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake, kill_switch=True)
@@ -560,9 +563,12 @@ def test_runner_cap_counts_nightly_item_posted_today(monkeypatch, tmp_path):
     transition(nightly["id"], "approved", actor="t", root=tmp_path, now=_FIXED_NOW)
     transition(nightly["id"], "posted", actor="t", root=tmp_path, now=_FIXED_NOW)
 
-    # Two more approved and due.
-    a = _seed_approved_item(tmp_path, text="Second post of the day here.")
-    b = _seed_approved_item(tmp_path, text="Third post would exceed the cap.")
+    # Two more approved and due LADDER items (explicit past slot — the immediate
+    # default is cap-EXEMPT as of 2026-07-27 and would defeat this cap test).
+    a = _seed_approved_item(tmp_path, text="Second post of the day here.",
+                            scheduled_at="2026-07-19T12:00:00Z")
+    b = _seed_approved_item(tmp_path, text="Third post would exceed the cap.",
+                            scheduled_at="2026-07-19T12:00:00Z")
 
     fake = _FakePublisher(ok=True)
     rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake, kill_switch=True)

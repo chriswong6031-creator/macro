@@ -461,15 +461,17 @@ def _largest_remainder(weights: dict[str, float], total_slots: int) -> dict[str,
 # Slot labels
 # ─────────────────────────────────────────────────────────────────────────────
 
-# The 2-hour Pacific ladder slots (cadence masterplan §5); outbox._LADDER_PT_HOURS
-# resolves each to a real per-date UTC time via zoneinfo. 8 slots, 4 AM–6 PM PT.
-_LADDER_SLOTS = ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8"]
+# The 45-minute Pacific ladder slots (cadence masterplan §5, operator re-spec
+# 2026-07-27); outbox._LADDER_PT_TIMES resolves each to a real per-date UTC time
+# via zoneinfo. 19 slots at 45-min steps, 4:00 AM–5:30 PM PT.
+_LADDER_SLOTS = [f"S{i}" for i in range(1, 20)]
 
 
 def _slot_labels(n_days: int, per_day: int) -> list[str]:
-    """Generate ladder slot labels D1-S1, D1-S2, ..., D2-S1, ... — the 2-hour
+    """Generate ladder slot labels D1-S1, D1-S2, ..., D2-S1, ... — the 45-minute
     Pacific ladder. ``per_day`` slots are taken from the front of the ladder, so
-    per_day=8 uses the full 4 AM–6 PM span; fewer packs the earliest slots."""
+    per_day=19 uses the full 4:00 AM–5:30 PM span; fewer packs the earliest
+    slots."""
     labels = []
     for day in range(1, n_days + 1):
         for i in range(per_day):
@@ -528,7 +530,7 @@ def plan_account(
     plans: list[dict],
     *,
     n_days: int = 7,
-    per_day: int = 8,   # 8-slot 2h Pacific ladder (was 3 = AM/PM/EOD)
+    per_day: int = 19,   # 19-slot 45-min Pacific ladder (was 8 = 2h ladder)
     seed: int = 0,
     tilt: dict[str, float] | None = None,
 ) -> list[ContentItem]:
@@ -838,7 +840,7 @@ def content_plan(
             account=acct_cfg,
             plans=plans,
             n_days=7,
-            per_day=8,
+            per_day=19,
             seed=0,
             tilt=tilt_cfg if tilt_cfg else None,
         )

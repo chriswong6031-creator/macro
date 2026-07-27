@@ -266,9 +266,16 @@ def test_account_at_ledger_daily_cap_gets_nothing(tmp_path):
     # Seed two posted items today (as_of yesterday to prove ledger-based counting,
     # not as_of-based). Transition them to posted so the last ledger `at` is today
     # — stamped from the test clock, or the fixture breaks past UTC midnight.
+    # Texts are DEEPLY distinct (token Jaccard < 0.7) so the enqueue-time near-dup
+    # guard (2026-07-27) does not collapse the two into one — this test needs both
+    # to reach the cap.
+    _posted_texts = [
+        "Gold cleared its downtrend line on the strongest volume in weeks.",
+        "Regional banks stabilized after deposit outflows finally slowed.",
+    ]
     for n in range(2):
         it = outbox.make_item(account="flagship", kind="signal",
-                              text=f"Posted item {n} yesterday's plan.",
+                              text=_posted_texts[n],
                               as_of="2026-07-22", provenance="content_studio", now=NOW)
         outbox.enqueue(it, root=tmp_path, max_per_account_day=99)
         outbox.transition(it["id"], "approved", actor="t", root=tmp_path, now=NOW)

@@ -234,43 +234,6 @@ def _floor_minutes_cfg(pub_cfg: dict) -> int:
     return v if v > 0 else 0
 
 
-def _immediate_defer_cfg(pub_cfg: dict) -> int:
-    """publish.immediate_defer_max_minutes — how far ahead an IMMEDIATE item may
-    be Buffer-scheduled to clear the global floor (see _immediate_due_at). Past
-    this horizon the item defers to the next publisher run instead, so a long
-    backlog can never book the whole afternoon off one sweep. Absent/unparseable
-    → 60; 0 or negative → no horizon (always schedule)."""
-    if "immediate_defer_max_minutes" not in pub_cfg:
-        return 60
-    try:
-        return int(pub_cfg.get("immediate_defer_max_minutes"))
-    except (TypeError, ValueError):
-        return 60
-
-
-def _immediate_due_at(now: datetime, last_post_at: "datetime | None",
-                      floor_min: int, max_defer_min: int) -> "datetime | None":
-    """When an IMMEDIATE (breaking / operator "post now") item may go out.
-
-    Cadence masterplan gate 6: a breaking item posts immediately when the floor
-    is clear, or at ``last_post + floor`` when something posted recently — it
-    does NOT re-anchor the ladder, and it is NOT dropped. Scheduled items keep
-    the plain skip-and-retry behaviour of _within_floor(); only immediate items
-    take this path, because "retry in 2 hours" is not a breaking post.
-
-    Returns the datetime to hand Buffer, or None when the wait would exceed
-    ``max_defer_min`` (caller falls back to deferring to the next run).
-    """
-    if last_post_at is None or floor_min <= 0:
-        return now
-    earliest = last_post_at + timedelta(minutes=floor_min)
-    if earliest <= now:
-        return now
-    if max_defer_min > 0 and earliest > now + timedelta(minutes=max_defer_min):
-        return None
-    return earliest
-
-
 def _last_global_post_at(root) -> "datetime | None":
     """The most recent 'posted' transition time across ALL accounts (the floor is
     account-agnostic), or None if nothing has ever posted. Seeds the floor across
@@ -425,7 +388,12 @@ def _auto_approve_pass(
         if not _channel_id_for(pub_cfg, acct):
             log.info("auto-approve SKIP %s (%s): no channel id configured", iid, acct)
             continue
-        if _at_cap(budget.get(acct, 0), cap):
+        # Breaking/immediate items are cap-EXEMPT (operator 2026-07-27: breaking
+        # has no volume limits). An item is immediate when it is an operator
+        # "post now" (only_ids) or carries no ladder slot (_is_immediate).
+        _immediate = (only_ids is not None and iid in only_ids) \
+            or _is_immediate(it.get("scheduled_at"))
+        if not _immediate and _at_cap(budget.get(acct, 0), cap):
             log.info("auto-approve SKIP %s (%s): account at daily cap (%d/day)", iid, acct, cap)
             continue
 
@@ -701,12 +669,12 @@ def main(argv: list[str] | None = None) -> int:
     # emits at most one item per window (the rest defer to the next slot). 0 =
     # disabled. This is the Phase-2 floor from the cadence masterplan.
     #
-    # IMMEDIATE items take the Phase-3 path instead (_immediate_due_at): rather
-    # than deferring to the next 2-hourly sweep — which is not a breaking post —
-    # they hand Buffer a dueAt of last_post + floor and go out then. A ladder
-    # item still defers, unchanged.
+    # IMMEDIATE items are floor-EXEMPT (operator 2026-07-27: breaking has no
+    # limits). They post at ``now`` unconditionally — never floor-booked, never
+    # deferred, never dropped. A posted immediate item STILL advances the
+    # in-memory floor, so the next ladder post budges by the 10-min spacing. A
+    # ladder item still defers when inside the floor, unchanged.
     floor_min = _floor_minutes_cfg(pub_cfg)
-    immediate_defer_max = _immediate_defer_cfg(pub_cfg)
     last_post_at = _last_global_post_at(root) if floor_min else None
 
     # ── Live tape gate context: load once per run (fail-soft) ────────────────
@@ -731,7 +699,14 @@ def main(argv: list[str] | None = None) -> int:
     # and fires a night later (the 2026-07-26/27 byte-identical "My read on
     # today's move" pair). Text that already went out this window never goes
     # out again — checked here, at the last gate before the network.
-    posted_text_keys = _outbox.recent_posted_text_keys(state, now.strftime("%Y-%m-%d"))
+    # UPGRADED 2026-07-27 to NEAR-dup: a lightly-reworded repeat (token Jaccard
+    # ≥ 0.7 vs a same-account posted text) is quarantined too — "deeply reworded"
+    # is the bar. Strictly per-account (cross-account near-dup is sentinel's
+    # plan-time job). This gate applies to immediate/breaking items as well —
+    # dedup is a safety gate the operator explicitly kept.
+    _ref_day = now.strftime("%Y-%m-%d")
+    posted_text_keys = _outbox.recent_posted_text_keys(state, _ref_day)
+    posted_texts_by_account = _outbox.recent_posted_texts(state, _ref_day)
 
     for it in approved_due:
         iid = it["id"]
@@ -742,6 +717,14 @@ def main(argv: list[str] | None = None) -> int:
         # in the post text. Pass link=None so validate_postable checks the body
         # length and the account's link policy is still available for the future.
         link = it.get("link")
+
+        # Breaking/immediate items (a fastlane earnings post, an operator "post
+        # now" click, a publish-time mover) have NO volume limits (operator
+        # 2026-07-27): they are exempt from the daily cap and the global floor and
+        # post at ``now``. Every SAFETY gate below (validate, repeat/near-dup,
+        # tape gate, channel, kill-switch) still runs. Computed up front so the
+        # cap gate can see it.
+        is_immediate = _is_immediate(it.get("scheduled_at")) or iid in post_now
 
         # -- validate → quarantine on failure --------------------------------
         problems = validate_postable(text, link, links_allowed)
@@ -758,6 +741,26 @@ def main(argv: list[str] | None = None) -> int:
             reason = (f"repeat: identical to a post from the last "
                       f"{_outbox._TEXT_DEDUP_WINDOW_DAYS} days")
             log.warning("item %s (%s) QUARANTINED as a repeat", iid, account)
+            if live:
+                _outbox.transition(iid, "quarantined", actor="publisher", root=root, note=reason)
+            quarantined += 1
+            continue
+
+        # -- near-dup gate: a lightly-reworded repeat also never posts --------
+        # Per-account token Jaccard ≥ 0.7 vs any same-account posted text in the
+        # window → quarantine; "deeply reworded" (< 0.7) passes.
+        _near_hit = None
+        for _pid, _ptext, _pas_of in posted_texts_by_account.get(account, ()):
+            _score = _outbox.token_jaccard(text, _ptext)
+            if _score >= _outbox._NEAR_DUP_JACCARD:
+                _near_hit = (_pid, _pas_of, _score)
+                break
+        if _near_hit is not None:
+            _pid, _pas_of, _score = _near_hit
+            reason = (f"repeat: near-identical (jaccard={_score:.2f}) to {_pid} "
+                      f"posted {_pas_of or 'recently'}; deep rewording required")
+            log.warning("item %s (%s) QUARANTINED as a near-duplicate of %s "
+                        "(jaccard=%.2f)", iid, account, _pid, _score)
             if live:
                 _outbox.transition(iid, "quarantined", actor="publisher", root=root, note=reason)
             quarantined += 1
@@ -785,8 +788,8 @@ def main(argv: list[str] | None = None) -> int:
             tape_skipped += 1
             continue
 
-        # -- per-account daily cap -------------------------------------------
-        if _at_cap(posted_today.get(account, 0), cap):
+        # -- per-account daily cap (immediate/breaking is EXEMPT) ------------
+        if not is_immediate and _at_cap(posted_today.get(account, 0), cap):
             log.info("item %s (%s) skipped — account at daily cap (%d/day)",
                      iid, account, cap)
             skipped_cap += 1
@@ -816,29 +819,13 @@ def main(argv: list[str] | None = None) -> int:
         # -- global min-spacing floor: at most one post per window (any acct) --
         # Checked AFTER the tape/cap/channel gates so a held item never consumes
         # the window. A blocked LADDER item stays approved and retries the next
-        # slot. A BREAKING/immediate item instead books the first legal moment
-        # (last_post + floor) with Buffer — masterplan gate 6: breaking budges
-        # in under the floor, it does not re-anchor the ladder and is not lost.
-        is_immediate = _is_immediate(it.get("scheduled_at")) or iid in post_now
+        # slot. A BREAKING/immediate item is floor-EXEMPT (operator 2026-07-27):
+        # it posts at NOW unconditionally — never floor-booked, never deferred,
+        # never dropped. It STILL advances the in-memory floor so the next ladder
+        # post budges by the spacing (and a burst of immediates all fire at now).
         send_at: "datetime | None" = None
         if is_immediate:
-            send_at = _immediate_due_at(now, last_post_at, floor_min,
-                                        immediate_defer_max)
-            if send_at is None:
-                _wait = int(((last_post_at + timedelta(minutes=floor_min)) - now)
-                            .total_seconds() // 60)
-                log.info("item %s (%s) deferred — the floor does not clear for %dm "
-                         "(> %dm immediate horizon); retries next slot",
-                         iid, account, _wait, immediate_defer_max)
-                skipped_floor += 1
-                continue
-            if send_at > now:
-                deferred_immediate += 1
-                log.info("item %s (%s) is immediate but a post went out %dm ago — "
-                         "scheduling it at %s (last post + %dm floor)",
-                         iid, account,
-                         int((now - last_post_at).total_seconds() // 60),
-                         send_at.strftime("%H:%MZ"), floor_min)
+            send_at = now
         elif _within_floor(last_post_at, now, floor_min):
             _ago = int((now - last_post_at).total_seconds() // 60)
             log.info("item %s (%s) deferred — a post went out %dm ago (< %dm "
@@ -846,13 +833,12 @@ def main(argv: list[str] | None = None) -> int:
             skipped_floor += 1
             continue
 
-        # The wall-clock this post is booked for: an immediate item's resolved
-        # share-now/floor time, else the item's own ladder slot. Also the value
-        # the in-memory floor advances to, so a second immediate item in the same
-        # run books the NEXT window rather than piling onto this one.
+        # The wall-clock this post is booked for: an immediate item's NOW, else
+        # the item's own ladder slot. Also the value the in-memory floor advances
+        # to after a post.
         send_scheduled_at = (send_at.strftime("%Y-%m-%dT%H:%M:%SZ")
                              if is_immediate else it.get("scheduled_at"))
-        floor_advance = send_at if is_immediate else now
+        floor_advance = now
 
         # Public chart-image URLs (PNG on X) when publish.media_enabled + a plan-
         # build-time R2 upload produced one; else [] → text-only (graceful).
@@ -1075,7 +1061,6 @@ def dry_run_report(root=None, *, account: str | None = None,
         skipped_cap = skipped_channel = skipped_floor = deferred_immediate = 0
         budget = dict(posted_today)
         floor_min = _floor_minutes_cfg(pub_cfg)
-        immediate_defer_max = _immediate_defer_cfg(pub_cfg)
         last_post_at = _last_global_post_at(r) if floor_min else None
         for it in approved_due:
             iid = it["id"]
@@ -1086,39 +1071,32 @@ def dry_run_report(root=None, *, account: str | None = None,
             if problems:
                 quarantine.append({"id": iid, "account": acct, "reasons": problems})
                 continue
-            if _at_cap(budget.get(acct, 0), cap):
+            # Mirror main() exactly: an immediate item is cap-EXEMPT and floor-
+            # EXEMPT — it projects as posting NOW; a ladder item skips at cap and
+            # defers inside the floor.
+            is_immediate = _is_immediate(it.get("scheduled_at"))
+            if not is_immediate and _at_cap(budget.get(acct, 0), cap):
                 skipped_cap += 1
                 continue
             channel_id = _channel_id_for(pub_cfg, acct)
             if not channel_id:
                 skipped_channel += 1
                 continue
-            # Mirror main()'s floor handling exactly: a ladder item defers, an
-            # immediate item books last_post + floor (or defers past the horizon).
-            is_immediate = _is_immediate(it.get("scheduled_at"))
-            send_at = (_immediate_due_at(now, last_post_at, floor_min,
-                                         immediate_defer_max)
-                       if is_immediate else None)
-            if is_immediate and send_at is None:
-                skipped_floor += 1
-                continue
             if not is_immediate and _within_floor(last_post_at, now, floor_min):
                 skipped_floor += 1
                 continue
-            if send_at is not None and send_at > now:
-                deferred_immediate += 1
             media = [m.get("path") for m in (it.get("media") or []) if m.get("path")]
             would_post.append({
                 "id": iid, "account": acct, "channel": channel_id,
                 "chars": len(text), "media": len(media),
                 "scheduled_at": it.get("scheduled_at"),
-                "send_at": (send_at or now).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "send_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "immediate": bool(is_immediate),
                 "preview": text.replace("\n", " ")[:200],
             })
             budget[acct] = budget.get(acct, 0) + 1
             # advance the floor so the preview mirrors live pacing
-            last_post_at = send_at if send_at is not None else now
+            last_post_at = now
 
         return {
             "ok": True,

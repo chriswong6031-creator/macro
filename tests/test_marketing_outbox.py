@@ -44,6 +44,22 @@ _AS_OF = "2026-07-19"
 # cap EXPLICITLY — the authority stays with the sentinel: block, never outbox.
 _EMIT_CFG = {"sentinel": {"max_posts_per_account_per_day": 8}}
 
+# Nine DEEPLY distinct post texts (max pairwise token Jaccard ~0.09, well under
+# the 0.7 near-dup bar) so cap-gate tests exercise the CAP, not the enqueue-time
+# near-dup guard (2026-07-27 dedup upgrade). A trivially-indexed "post number {i}"
+# fixture would now collide as a near-duplicate.
+_DISTINCT_TEXTS = [
+    "Nvidia broke out above its fifty day average on record volume today.",
+    "Gold futures slid two percent as the dollar index reclaimed key resistance.",
+    "Small caps quietly outperformed while mega tech chopped sideways all session.",
+    "Crude oil printed a fresh weekly low ahead of the inventory report Wednesday.",
+    "Regional bank shares stabilized after last week's deposit flight scare eased.",
+    "Bitcoin coiled inside a tight range as options expiry loomed over the weekend.",
+    "Semiconductor equipment names caught a bid on upbeat foundry capex guidance.",
+    "Treasury yields cooled sharply after a soft services survey landed midmorning.",
+    "Homebuilders rallied hard when mortgage rates dipped below the seven handle.",
+]
+
 
 def _make_minimal_item(
     tmp_path: Path,
@@ -292,6 +308,72 @@ def test_identical_text_outside_window_both_queue(tmp_path):
     assert len(read_items(root=tmp_path)) == 2
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# 4c. Enqueue-time NEAR-duplicate guard ("deeply reworded" law, 2026-07-27)
+#    Exact-text dedup only catches whitespace diffs; a lightly-reworded repeat
+#    (token Jaccard ≥ 0.7 vs a same-account 7-day text) is now blocked too. A
+#    DEEPLY reworded post (< 0.7) passes. Strictly per-account.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_near_duplicate_helper_thresholds():
+    from engine.marketing.outbox import near_duplicate, token_jaccard, _NEAR_DUP_JACCARD
+    assert _NEAR_DUP_JACCARD == 0.7
+    # Two empty strings are NOT near-duplicates.
+    assert near_duplicate("", "") is False
+    assert token_jaccard("", "") == 0.0
+    # Identical → jaccard 1.0 → near-dup.
+    assert near_duplicate("SPY is holding 640 today", "SPY is holding 640 today") is True
+    # A changed number lowers similarity (numbers kept in the token set).
+    assert near_duplicate("SPY holding 640", "SPY holding 655") is False
+
+
+def test_enqueue_near_dup_lightly_reworded_is_blocked(tmp_path):
+    """Same account, ≥0.7 Jaccard (only filler words added) → 'duplicate'."""
+    from engine.marketing.outbox import make_item, enqueue, read_items, token_jaccard
+    a_text = "SPY reclaimed the fifty day moving average on strong breadth today"
+    b_text = "SPY reclaimed the fifty day moving average on strong breadth again today"
+    assert token_jaccard(a_text, b_text) >= 0.7
+    a = make_item(account="flagship", kind="signal", text=a_text, as_of="2026-07-26",
+                  provenance="content_studio", now=_FIXED_NOW)
+    b = make_item(account="flagship", kind="signal", text=b_text, as_of="2026-07-27",
+                  provenance="content_studio", now=_FIXED_NOW)
+    assert a["id"] != b["id"]
+    assert enqueue(a, root=tmp_path) == "queued"
+    assert enqueue(b, root=tmp_path) == "duplicate"
+    assert len(read_items(root=tmp_path)) == 1
+
+
+def test_enqueue_deeply_reworded_passes(tmp_path):
+    """Same account but < 0.7 Jaccard (genuinely different copy) → both queue."""
+    from engine.marketing.outbox import make_item, enqueue, read_items, token_jaccard
+    a_text = "SPY reclaimed the fifty day moving average on strong breadth today"
+    b_text = "Breadth thrust fired as the equal weight index cleared its downtrend line"
+    assert token_jaccard(a_text, b_text) < 0.7
+    a = make_item(account="flagship", kind="signal", text=a_text, as_of="2026-07-26",
+                  provenance="content_studio", now=_FIXED_NOW)
+    b = make_item(account="flagship", kind="signal", text=b_text, as_of="2026-07-27",
+                  provenance="content_studio", now=_FIXED_NOW)
+    assert enqueue(a, root=tmp_path) == "queued"
+    assert enqueue(b, root=tmp_path) == "queued"
+    assert len(read_items(root=tmp_path)) == 2
+
+
+def test_enqueue_near_dup_is_per_account_not_cross_account(tmp_path):
+    """A near-identical post on a DIFFERENT account is NOT blocked at enqueue —
+    cross-account near-dup is the sentinel's plan-time job, not this guard."""
+    from engine.marketing.outbox import make_item, enqueue, read_items, token_jaccard
+    a_text = "SPY reclaimed the fifty day moving average on strong breadth today"
+    b_text = "SPY reclaimed the fifty day moving average on strong breadth again today"
+    assert token_jaccard(a_text, b_text) >= 0.7
+    a = make_item(account="deskA", kind="signal", text=a_text, as_of="2026-07-26",
+                  provenance="content_studio", now=_FIXED_NOW)
+    b = make_item(account="deskB", kind="signal", text=b_text, as_of="2026-07-27",
+                  provenance="content_studio", now=_FIXED_NOW)
+    assert enqueue(a, root=tmp_path) == "queued"
+    assert enqueue(b, root=tmp_path) == "queued"
+    assert len(read_items(root=tmp_path)) == 2
+
+
 def test_cross_account_identical_text_both_queue(tmp_path):
     """The guard is account-scoped: two desks may carry the same line."""
     from engine.marketing.outbox import make_item, enqueue, read_items
@@ -313,11 +395,13 @@ def test_cross_account_identical_text_both_queue(tmp_path):
 def test_cap_8_items_ok_9th_rejected(tmp_path):
     from engine.marketing.outbox import make_item, enqueue
 
+    # Deeply distinct texts (well under the 0.7 near-dup bar) so this test
+    # isolates the CAP gate, not the enqueue-time dedup gate.
     results = []
     for i in range(9):
         item = make_item(
             account="flagship", kind="signal",
-            text=f"Cap test post number {i} with unique text here.",
+            text=_DISTINCT_TEXTS[i],
             as_of=_AS_OF,
             provenance="content_studio", now=_FIXED_NOW,
         )
@@ -362,7 +446,7 @@ def test_cap_9th_item_not_written_to_file(tmp_path):
     for i in range(9):
         item = make_item(
             account="flagship", kind="signal",
-            text=f"Cap test item {i} unique payload for file count.",
+            text=_DISTINCT_TEXTS[i],
             as_of=_AS_OF,
             provenance="content_studio", now=_FIXED_NOW,
         )
@@ -1205,7 +1289,7 @@ def test_sentinel_contract_resolves_config_and_defaults():
     c = sentinel_contract({})
     assert c["source"] == "sentinel_defaults"
     assert c["effective_cap"] == 2
-    assert c["min_minutes_between_posts"] == 120
+    assert c["min_minutes_between_posts"] == 45  # 45-min ladder re-spec (2026-07-27)
     assert c["links_allowed"] is False
 
     c2 = sentinel_contract({"sentinel": {"max_posts_per_account_per_day": 4,
@@ -1213,7 +1297,7 @@ def test_sentinel_contract_resolves_config_and_defaults():
     assert c2["source"] == "config"
     assert c2["effective_cap"] == 4
     assert c2["links_allowed"] is True
-    assert c2["min_minutes_between_posts"] == 120  # default fills the gap
+    assert c2["min_minutes_between_posts"] == 45  # default fills the gap (45-min ladder)
 
 
 def test_actuator_report_carries_sentinel_contract(tmp_path):
@@ -1228,7 +1312,7 @@ def test_actuator_report_carries_sentinel_contract(tmp_path):
     report = json.loads(
         (tmp_path / "data" / "marketing" / "outbox" / "dryrun_report.json").read_text())
     assert "sentinel" in report
-    assert report["sentinel"]["min_minutes_between_posts"] >= 90
+    assert report["sentinel"]["min_minutes_between_posts"] == 45  # 45-min ladder re-spec
     assert "applied_decisions" in report
     assert report["kill_switch"]["publish_enabled"] is False
 
@@ -1308,19 +1392,21 @@ class TestSlotDatetime:
         assert slot_datetime("2026-07-20", "D7-EOD") == "2026-07-26T20:15:00Z"
 
     def test_ladder_pacific_slots_summer_pdt(self):
-        """Gate 5: the 2h ladder (S1..S8) resolves to Pacific-clock UTC. July = PDT
-        (UTC-7): 4 AM→11:00, 12 PM→19:00, 6 PM→01:00 next-day."""
+        """Gate 5: the 45-min ladder (S1..S19) resolves to Pacific-clock UTC.
+        July = PDT (UTC-7): S1 4:00 AM→11:00, S5 7:00 AM→14:00, S8 9:15 AM→16:15,
+        S19 5:30 PM→00:30 next-day."""
         from engine.marketing.outbox import slot_datetime
-        assert slot_datetime("2026-07-15", "D1-S1") == "2026-07-15T11:00:00Z"  # 4 AM
-        assert slot_datetime("2026-07-15", "D1-S5") == "2026-07-15T19:00:00Z"  # 12 PM
-        assert slot_datetime("2026-07-15", "D1-S8") == "2026-07-16T01:00:00Z"  # 6 PM
+        assert slot_datetime("2026-07-15", "D1-S1") == "2026-07-15T11:00:00Z"   # 4:00 AM
+        assert slot_datetime("2026-07-15", "D1-S5") == "2026-07-15T14:00:00Z"   # 7:00 AM
+        assert slot_datetime("2026-07-15", "D1-S8") == "2026-07-15T16:15:00Z"   # 9:15 AM
+        assert slot_datetime("2026-07-15", "D1-S19") == "2026-07-16T00:30:00Z"  # 5:30 PM
 
     def test_ladder_pacific_slots_winter_pst(self):
         """Gate 5: the SAME local slots shift +1h in UTC under PST (winter) —
         DST handled by zoneinfo, never a hardcoded offset."""
         from engine.marketing.outbox import slot_datetime
-        assert slot_datetime("2026-01-15", "D1-S1") == "2026-01-15T12:00:00Z"  # 4 AM PST
-        assert slot_datetime("2026-01-15", "D1-S8") == "2026-01-16T02:00:00Z"  # 6 PM PST
+        assert slot_datetime("2026-01-15", "D1-S1") == "2026-01-15T12:00:00Z"   # 4:00 AM PST
+        assert slot_datetime("2026-01-15", "D1-S19") == "2026-01-16T01:30:00Z"  # 5:30 PM PST
 
     def test_ladder_day_offset(self):
         """D<n> offsets by n-1 days, then resolves the Pacific slot on THAT date."""

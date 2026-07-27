@@ -34,12 +34,16 @@ _AS_OF = "2026-07-19"
 
 def _seed_queued_item(tmp_path: Path, *, text: str = "$PLTR reclaimed the 50-day. Watching now.",
                       account: str = "flagship", as_of: str = _AS_OF,
-                      scheduled_at: str = "immediate") -> str:
-    """Enqueue one item, leaving it in the 'queued' state. Returns its id."""
+                      scheduled_at: str = "immediate", priority: int = 5) -> str:
+    """Enqueue one item, leaving it in the 'queued' state. Returns its id.
+
+    ``priority`` steers the publisher's consideration order (lower posts first);
+    the default matches make_item's default."""
     from engine.marketing.outbox import make_item, enqueue
     item = make_item(
         account=account, kind="signal", text=text, as_of=as_of,
-        scheduled_at=scheduled_at, provenance="content_studio", now=_FIXED_NOW,
+        scheduled_at=scheduled_at, priority=priority,
+        provenance="content_studio", now=_FIXED_NOW,
     )
     enqueue(item, root=tmp_path, max_per_account_day=99)
     return item["id"]
@@ -296,13 +300,20 @@ def test_auto_approve_skips_when_no_channel(monkeypatch, tmp_path):
 
 
 def test_auto_approve_respects_daily_cap(monkeypatch, tmp_path):
-    """cap=2 → of three gate-clean queued items, only two are auto-approved."""
+    """cap=2 → of three gate-clean queued LADDER items, only two are auto-approved.
+
+    Ladder items carry an explicit past slot time: the cap governs LADDER volume;
+    immediate/breaking items are cap-EXEMPT (operator 2026-07-27) and would defeat
+    this test if left on the _seed_queued_item default scheduled_at="immediate"."""
     from engine.marketing.outbox import current_statuses
     _write_publish_cfg(tmp_path, auto_approve=True, cap=2)
     ids = [
-        _seed_queued_item(tmp_path, text="First queued post here."),
-        _seed_queued_item(tmp_path, text="Second queued post here."),
-        _seed_queued_item(tmp_path, text="Third queued post here."),
+        _seed_queued_item(tmp_path, text="First queued post here.",
+                          scheduled_at="2026-07-19T12:00:00Z"),
+        _seed_queued_item(tmp_path, text="Second queued post here.",
+                          scheduled_at="2026-07-19T12:00:00Z"),
+        _seed_queued_item(tmp_path, text="Third queued post here.",
+                          scheduled_at="2026-07-19T12:00:00Z"),
     ]
 
     fake = _FakePublisher(ok=True)
@@ -626,12 +637,16 @@ def test_floor_posts_one_per_run(monkeypatch, tmp_path):
 
 
 def test_floor_disabled_posts_all(monkeypatch, tmp_path):
-    """floor_min=0 (the default) disables the floor — both items post in one run."""
+    """floor_min=0 (the default) disables the floor — both LADDER items post in
+    one run. Explicit past slots so they take the ladder path, not the immediate
+    (breaking) path (which would post regardless of the floor)."""
     from engine.marketing.outbox import current_statuses
     _write_publish_cfg(tmp_path, auto_approve=True, cap=-1, floor_min=0)
     ids = [
-        _seed_queued_item(tmp_path, text="Post one text here."),
-        _seed_queued_item(tmp_path, text="Post two text here."),
+        _seed_queued_item(tmp_path, text="Post one text here.",
+                          scheduled_at="2026-07-19T12:00:00Z"),
+        _seed_queued_item(tmp_path, text="Post two text here.",
+                          scheduled_at="2026-07-19T12:00:00Z"),
     ]
     fake = _FakePublisher(ok=True)
     rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake, kill_switch=True)
@@ -665,7 +680,10 @@ def test_floor_allows_after_window(monkeypatch, tmp_path):
     _write_publish_cfg(tmp_path, auto_approve=True, cap=-1, floor_min=10)
     _seed_posted_at(tmp_path, datetime(2026, 7, 19, 12, 45, tzinfo=timezone.utc),
                     text="Older post.")
-    fresh = _seed_queued_item(tmp_path, text="Fresh post now.")
+    # Explicit past slot → LADDER item (the immediate default would post
+    # regardless of the floor and not exercise "allows after window").
+    fresh = _seed_queued_item(tmp_path, text="Fresh post now.",
+                              scheduled_at="2026-07-19T12:30:00Z")
     fake = _FakePublisher(ok=True)
     rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake, kill_switch=True)
     assert rc == 0
@@ -674,37 +692,19 @@ def test_floor_allows_after_window(monkeypatch, tmp_path):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 8. Phase 3 — breaking dispatch: immediate items budge in under the floor
-#    (cadence masterplan gate 6) instead of waiting out a 2-hourly sweep.
+# 8. Phase 3 — breaking dispatch: immediate items are UNLIMITED (operator
+#    2026-07-27). They are floor-exempt, cap-exempt, and never deferred — they
+#    post at `now`. Safety gates (validate, dedup, tape, channel, kill) still run.
+#    A posted immediate STILL advances the in-memory floor for the next ladder.
 # ─────────────────────────────────────────────────────────────────────────────
 
-def test_immediate_due_at_unit():
-    """_immediate_due_at: clear floor → now; inside the floor → last + floor;
-    past the horizon → None (caller defers as before)."""
-    from scripts.marketing_publisher import _immediate_due_at
-    now = datetime(2026, 7, 19, 13, 0, tzinfo=timezone.utc)
-
-    # nothing posted yet, or the floor is disabled → post now
-    assert _immediate_due_at(now, None, 10, 60) == now
-    assert _immediate_due_at(now, now, 0, 60) == now
-    # last post 15m ago, 10m floor → clear → now
-    assert _immediate_due_at(now, now - timedelta(minutes=15), 10, 60) == now
-    # last post 4m ago → book the 10m mark (6m out), not now, not never
-    assert (_immediate_due_at(now, now - timedelta(minutes=4), 10, 60)
-            == now + timedelta(minutes=6))
-    # a 120m floor with a 60m horizon → too far out → defer to the next run
-    assert _immediate_due_at(now, now - timedelta(minutes=1), 120, 60) is None
-    # horizon 0 = no horizon → always schedule, however far
-    assert (_immediate_due_at(now, now - timedelta(minutes=1), 120, 0)
-            == now + timedelta(minutes=119))
-
-
-def test_immediate_item_schedules_at_floor_instead_of_deferring(monkeypatch, tmp_path):
-    """A BREAKING item inside the floor window posts — booked at last_post + 10m
-    via Buffer — where a ladder item would have deferred to the next sweep."""
+def test_immediate_posts_now_even_inside_the_floor(monkeypatch, tmp_path):
+    """A BREAKING item posts at `now` even when a post went out seconds ago —
+    floor-EXEMPT. (Old behavior booked it at last_post + floor; that is retired.)"""
     from engine.marketing.outbox import current_statuses
     _write_publish_cfg(tmp_path, auto_approve=True, cap=-1, floor_min=10)
-    _seed_posted_at(tmp_path, datetime(2026, 7, 19, 12, 55, tzinfo=timezone.utc),
+    # A post went out one minute ago — well inside the 10-min floor.
+    _seed_posted_at(tmp_path, datetime(2026, 7, 19, 12, 59, tzinfo=timezone.utc),
                     text="Earlier post.")
     breaking = _seed_queued_item(tmp_path, text="Breaking post now.",
                                  scheduled_at="immediate")
@@ -713,38 +713,20 @@ def test_immediate_item_schedules_at_floor_instead_of_deferring(monkeypatch, tmp
     assert rc == 0
     assert current_statuses(tmp_path)[breaking] == "posted"
     assert len(fake.calls) == 1
-    # 12:55 + 10m floor = 13:05, five minutes after the run's 13:00 "now".
-    assert fake.calls[0]["scheduled_at"] == "2026-07-19T13:05:00Z"
+    # Posts at the run's "now" (13:00Z), NOT deferred to last_post + floor.
+    assert fake.calls[0]["scheduled_at"] == "2026-07-19T13:00:00Z"
     assert fake.calls[0]["immediate"] is True
 
 
-def test_immediate_item_past_horizon_still_defers(monkeypatch, tmp_path):
-    """The floor-booking is bounded: when the wait exceeds
-    publish.immediate_defer_max_minutes the item defers to the next run, so one
-    sweep can never book hours of future posts."""
-    from engine.marketing.outbox import current_statuses
-    _write_publish_cfg(tmp_path, auto_approve=True, cap=-1, floor_min=10)
-    # 5m horizon vs a floor that clears in 9m → past the horizon.
-    _append_publish_key(tmp_path, "immediate_defer_max_minutes", 5)
-    _seed_posted_at(tmp_path, datetime(2026, 7, 19, 12, 59, tzinfo=timezone.utc),
-                    text="Earlier post.")
-    breaking = _seed_queued_item(tmp_path, text="Breaking post now.",
-                                 scheduled_at="immediate")
-    fake = _FakePublisher(ok=True)
-    rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake, kill_switch=True)
-    assert rc == 0
-    assert current_statuses(tmp_path)[breaking] == "approved"
-    assert fake.calls == []
-
-
-def test_two_immediate_items_ladder_by_the_floor(monkeypatch, tmp_path):
-    """A burst of breaking items goes out spaced by the floor (+0, +10), not all
-    at once and not one-per-two-hours."""
+def test_burst_of_immediates_all_post_now_no_stagger(monkeypatch, tmp_path):
+    """A burst of THREE breaking items all post in one run, all at `now` — no
+    stagger, none deferred (floor-exempt)."""
     from engine.marketing.outbox import current_statuses
     _write_publish_cfg(tmp_path, auto_approve=True, cap=-1, floor_min=10)
     ids = [
-        _seed_queued_item(tmp_path, text="Breaking one here.", scheduled_at="immediate"),
-        _seed_queued_item(tmp_path, text="Breaking two here.", scheduled_at="immediate"),
+        _seed_queued_item(tmp_path, text="Breaking one about oil here.", scheduled_at="immediate"),
+        _seed_queued_item(tmp_path, text="Breaking two about gold here.", scheduled_at="immediate"),
+        _seed_queued_item(tmp_path, text="Breaking three about yields.", scheduled_at="immediate"),
     ]
     fake = _FakePublisher(ok=True)
     rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake, kill_switch=True)
@@ -752,7 +734,54 @@ def test_two_immediate_items_ladder_by_the_floor(monkeypatch, tmp_path):
     statuses = current_statuses(tmp_path)
     assert all(statuses[i] == "posted" for i in ids), statuses
     sent = [c["scheduled_at"] for c in fake.calls]
-    assert sent == ["2026-07-19T13:00:00Z", "2026-07-19T13:10:00Z"], sent
+    assert sent == ["2026-07-19T13:00:00Z"] * 3, sent
+
+
+def test_immediate_exempt_from_cap_while_ladder_is_capped(monkeypatch, tmp_path):
+    """A positive daily cap blocks a LADDER item but NOT an immediate/breaking
+    item — breaking has no volume limits."""
+    from engine.marketing.outbox import current_statuses
+    # cap=1, floor disabled so the floor never confounds the cap check.
+    _write_publish_cfg(tmp_path, auto_approve=True, cap=1, floor_min=0)
+    # One post already went out today → the account is AT the cap of 1.
+    _seed_posted_at(tmp_path, datetime(2026, 7, 19, 12, 30, tzinfo=timezone.utc),
+                    text="Already posted today filling the cap.")
+    ladder = _seed_queued_item(tmp_path, text="Ladder item wants the slot too.",
+                               scheduled_at="2026-07-19T12:00:00Z")
+    breaking = _seed_queued_item(tmp_path, text="Breaking overrides the cap now.",
+                                 scheduled_at="immediate")
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake, kill_switch=True)
+    assert rc == 0
+    statuses = current_statuses(tmp_path)
+    assert statuses[breaking] == "posted", statuses    # cap-exempt → posts
+    assert statuses[ladder] != "posted", statuses      # capped → never posts
+    assert len(fake.calls) == 1
+    assert fake.calls[0]["immediate"] is True
+
+
+def test_posted_immediate_advances_floor_and_skips_due_ladder(monkeypatch, tmp_path):
+    """A posted immediate item STILL advances the in-memory floor, so a due
+    LADDER item in the SAME run is floor-skipped (the 10-min spacing survives for
+    ladder posts)."""
+    from engine.marketing.outbox import current_statuses
+    _write_publish_cfg(tmp_path, auto_approve=True, cap=-1, floor_min=10)
+    # priority steers order: the immediate (priority 1) is considered first and
+    # advances the floor; the ladder item (priority 5) then sits inside the floor.
+    breaking = _seed_queued_item(tmp_path, text="Breaking goes first here.",
+                                 scheduled_at="immediate", priority=1)
+    ladder = _seed_queued_item(tmp_path, text="Ladder item due right now too.",
+                               scheduled_at="2026-07-19T12:00:00Z", priority=5)
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake, kill_switch=True)
+    assert rc == 0
+    statuses = current_statuses(tmp_path)
+    # The immediate posts (advancing the floor to now); the ladder item, now
+    # inside the floor window, defers.
+    assert statuses[breaking] == "posted", statuses
+    assert statuses[ladder] == "approved", statuses
+    assert len(fake.calls) == 1
+    assert fake.calls[0]["immediate"] is True
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -947,3 +976,88 @@ def test_repeat_gate_lets_fresh_text_post(monkeypatch, tmp_path):
     assert rc == 0
     assert len(fake.calls) == 1
     assert current_statuses(tmp_path)[fresh] == "posted"
+
+
+# A lightly-reworded variant of _REPEAT_TEXT (token Jaccard ~0.89 ≥ 0.7).
+_REPEAT_TEXT_REWORDED = ("My read on today's move\n\nRates are doing the driving "
+                         "today. Traders are now pricing out Fed cuts here.")
+
+
+def test_post_time_near_dup_quarantines_with_receipt(monkeypatch, tmp_path):
+    """LIVE: a lightly-reworded repeat (Jaccard ≥ 0.7 vs a same-account posted
+    text) is quarantined; the receipt names the offending item and the score."""
+    from engine.marketing.outbox import (
+        current_statuses, read_ledger, transition, token_jaccard, fold_state,
+    )
+    assert token_jaccard(_REPEAT_TEXT, _REPEAT_TEXT_REWORDED) >= 0.7
+
+    _write_publish_cfg(tmp_path, auto_approve=False, cap=-1, floor_min=0)
+    first = _post_first_copy(tmp_path, text=_REPEAT_TEXT, as_of="2026-07-18")
+
+    reworded = _seed_item_bypassing_enqueue_guard(tmp_path,
+                                                  text=_REPEAT_TEXT_REWORDED,
+                                                  as_of="2026-07-19")
+    assert transition(reworded, "approved", actor="test", root=tmp_path, now=_FIXED_NOW)
+
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake,
+                        kill_switch=True)
+    assert rc == 0
+    assert fake.calls == []                               # never reached Buffer
+    assert current_statuses(tmp_path)[reworded] == "quarantined"
+    note = next(r for r in read_ledger(tmp_path)
+                if r.get("id") == reworded and r["to"] == "quarantined")["note"]
+    assert "near-identical" in note
+    assert "jaccard=" in note
+    assert first in note                                  # names the prior post
+
+
+def test_post_time_deeply_reworded_passes(monkeypatch, tmp_path):
+    """A DEEPLY reworded post (Jaccard < 0.7) is NOT caught by the near-dup gate."""
+    from engine.marketing.outbox import current_statuses, transition, token_jaccard
+    deep = "Credit is the story today. Spreads are widening across high yield."
+    assert token_jaccard(_REPEAT_TEXT, deep) < 0.7
+
+    _write_publish_cfg(tmp_path, auto_approve=False, cap=-1, floor_min=0)
+    _post_first_copy(tmp_path, text=_REPEAT_TEXT, as_of="2026-07-18")
+    fresh = _seed_item_bypassing_enqueue_guard(tmp_path, text=deep, as_of="2026-07-19")
+    assert transition(fresh, "approved", actor="test", root=tmp_path, now=_FIXED_NOW)
+
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake,
+                        kill_switch=True)
+    assert rc == 0
+    assert len(fake.calls) == 1
+    assert current_statuses(tmp_path)[fresh] == "posted"
+
+
+def test_post_time_near_dup_is_per_account(monkeypatch, tmp_path):
+    """A near-identical post from a DIFFERENT account is NOT quarantined here —
+    cross-account near-dup is the sentinel's plan-time job."""
+    from engine.marketing.outbox import (
+        current_statuses, transition, token_jaccard, make_item, append_jsonl, _items_path,
+    )
+    assert token_jaccard(_REPEAT_TEXT, _REPEAT_TEXT_REWORDED) >= 0.7
+
+    # flagship posted the original; a DIFFERENT account "second" carries the
+    # near-identical copy and must pass (its channel is configured too).
+    _write_publish_cfg(tmp_path, auto_approve=False, cap=-1, floor_min=0)
+    cfg_p = tmp_path / "config" / "marketing.yml"
+    txt = cfg_p.read_text(encoding="utf-8").replace(
+        '    flagship: "buf-chan-123"',
+        '    flagship: "buf-chan-123"\n    second: "buf-chan-456"')
+    cfg_p.write_text(txt, encoding="utf-8")
+
+    _post_first_copy(tmp_path, text=_REPEAT_TEXT, as_of="2026-07-18")  # flagship
+    other = make_item(account="second", kind="event", text=_REPEAT_TEXT_REWORDED,
+                      as_of="2026-07-19", scheduled_at="immediate",
+                      provenance="content_studio", now=_FIXED_NOW)
+    append_jsonl(_items_path(tmp_path), other)
+    assert transition(other["id"], "approved", actor="test", root=tmp_path, now=_FIXED_NOW)
+
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake,
+                        kill_switch=True)
+    assert rc == 0
+    # The cross-account near-identical copy is NOT quarantined by this gate.
+    assert current_statuses(tmp_path)[other["id"]] != "quarantined"
