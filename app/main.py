@@ -191,6 +191,12 @@ _MM_MAX_BATCH = 40
 _MM_EVENT_TYPES = {
     "pageview", "route", "ticker_view", "search", "terminal_jump",
     "click", "scroll", "session_start", "heartbeat", "exit",
+    # Ad Central Plane O (research/AD_CENTRAL_MASTERPLAN.md §2): which split-test
+    # variant a visitor was shown. The arm rides in `meta` as {arena, creative};
+    # the unit identity is the mm_aid `visitor_id` this endpoint stamps, NOT
+    # anything the client sends — which is what keeps the denominator honest when
+    # the client is the thing choosing the arm. Read by engine/marketing/ad_ingest.py.
+    "ad_exposure",
 }
 
 

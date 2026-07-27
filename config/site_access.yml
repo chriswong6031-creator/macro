@@ -58,6 +58,13 @@ public:
     # navigation icon masks; no customer data or application logic.
     - /product-nav-icons.css
     - /theme.js
+    # Ad Central Plane O split-test shim (research/AD_CENTRAL_MASTERPLAN.md §2).
+    # Must be public for the same reason theme.js is: it runs before auth resolves,
+    # on anonymous visitors — who are precisely the population a landing-page test
+    # measures. Contains no customer data: it reads an inline arena config, picks a
+    # variant from a local id, and reports the choice. The visitor identity it is
+    # joined on is the httpOnly mm_aid cookie, which this file cannot read.
+    - /adtest.js
     - /account.js
     # Loaded by account.js on every page to fold the non-home country menus into
     # International. Must be public for the same reason theme.js and account.js

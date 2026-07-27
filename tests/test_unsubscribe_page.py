@@ -646,6 +646,9 @@ PUBLIC_EXACT = frozenset({
     "/robots.txt", "/sitemap.xml", "/llms.txt", "/brand-facts.json",
     "/onboard.css", "/onboard.js", "/landing.css", "/chat.css", "/chat_nav.css",
     "/theme.css", "/product-nav-icons.css", "/theme.js", "/account.js",
+    # Ad Central Plane O split-test shim — public for the same reason theme.js is:
+    # it runs on anonymous visitors before auth resolves (AD_CENTRAL_MASTERPLAN §2).
+    "/adtest.js",
     "/nav_market.js", "/supabase.js", "/data_base.js", "/live.js", "/live_config.js",
     "/live/quotes.json", "/live/breadth.json", "/prophet/showcase.json",
     "/factordata/tech_lab.json",

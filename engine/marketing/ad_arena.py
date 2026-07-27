@@ -31,7 +31,7 @@ Forward-only ledgers; nightly is the sole advancer (G-I).
 """
 from __future__ import annotations
 
-import hashlib
+import struct
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -57,7 +57,11 @@ SCHEMA = "marketing.ad_arena/v1"
 UNITS: tuple[str, ...] = ("visitor", "session", "impression", "account")
 STATUSES: tuple[str, ...] = ("planned", "running", "halted", "concluded")
 
-_HASH_SPACE = 1 << 64
+# FNV-1a 32-bit — see `_unit_hash` for why this and not SHA-256.
+_FNV_OFFSET = 0x811C9DC5
+_FNV_PRIME = 0x01000193
+_U32 = 0xFFFFFFFF
+_HASH_SPACE = 1 << 32
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -154,16 +158,48 @@ def create(
 # Assignment
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _utf16_units(text: str) -> tuple[int, ...]:
+    """The exact sequence JS `String.prototype.charCodeAt` walks.
+
+    Python iterates *code points*; JS iterates *UTF-16 code units*, so an
+    astral character (emoji, rare CJK) is one step in Python and two in JS.
+    Encoding to UTF-16-LE and reading 16-bit words makes the two agree — the
+    whole assignment contract depends on it.
+    """
+    raw = text.encode("utf-16-le")
+    return struct.unpack(f"<{len(raw) // 2}H", raw)
+
+
 def _unit_hash(arena_id: str, unit_key: str, salt: str = "") -> float:
     """Stable uniform draw in [0, 1) from (arena, unit).
+
+    **Deliberately not SHA-256.**  This hash has to be computed identically in
+    the browser (`templates/adtest.js`) so a visitor sees their variant in the
+    first paint.  Web Crypto's digest is Promise-only, so a SHA-based assignment
+    would render the control, resolve, then swap — a flash of the wrong variant
+    on every load, which biases the very metric the test measures.
+
+    So: FNV-1a 32-bit, run forward and then backward, exactly the construction
+    already used by the fingerprint in `templates/theme.js`.  Synchronous on
+    both sides, and every operation is 32-bit so JS's `Math.imul` / `^` / `>>> 0`
+    and Python's mask arithmetic produce bit-identical results.
 
     Salted per purpose so the holdout draw and the arm draw are independent —
     without the salt, a unit near the bottom of the hash space would be both
     held out *and* systematically assigned to the first arm.
+
+    Parity is enforced by `tests/test_marketing_ad_plane_o.py`, which executes
+    the real `adtest.js` under node and compares. Changing either side alone
+    silently corrupts every running test, so change both or neither.
     """
-    payload = f"{arena_id}\x1f{unit_key}\x1f{salt}".encode("utf-8")
-    digest = hashlib.sha256(payload).digest()
-    return int.from_bytes(digest[:8], "big") / _HASH_SPACE
+    units = _utf16_units(f"{arena_id}\x1f{unit_key}\x1f{salt}")
+    a = _FNV_OFFSET
+    for u in units:
+        a = ((a ^ u) * _FNV_PRIME) & _U32
+    b = (_FNV_OFFSET ^ a) & _U32
+    for u in reversed(units):
+        b = ((b ^ u) * _FNV_PRIME) & _U32
+    return b / _HASH_SPACE
 
 
 def assign(arena: Arena, unit_key: str) -> str | None:
