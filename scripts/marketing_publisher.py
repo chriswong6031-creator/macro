@@ -725,6 +725,14 @@ def main(argv: list[str] | None = None) -> int:
         _tape = {"quotes": {}, "asof": None, "source": "none"}
         _earn_set = frozenset()
 
+    # ── Post-time repeat gate (the second half of the enqueue text guard) ────
+    # The enqueue-time guard stops identical copy ENTERING the queue, but an
+    # item enqueued before that guard shipped sits approved under a fresh id
+    # and fires a night later (the 2026-07-26/27 byte-identical "My read on
+    # today's move" pair). Text that already went out this window never goes
+    # out again — checked here, at the last gate before the network.
+    posted_text_keys = _outbox.recent_posted_text_keys(state, now.strftime("%Y-%m-%d"))
+
     for it in approved_due:
         iid = it["id"]
         account = it.get("account", "")
@@ -740,6 +748,16 @@ def main(argv: list[str] | None = None) -> int:
         if problems:
             reason = "unpostable: " + ", ".join(problems)
             log.warning("item %s (%s) failed validation: %s", iid, account, problems)
+            if live:
+                _outbox.transition(iid, "quarantined", actor="publisher", root=root, note=reason)
+            quarantined += 1
+            continue
+
+        # -- repeat gate: identical copy never posts twice in the window -----
+        if _outbox.text_key(account, text) in posted_text_keys:
+            reason = (f"repeat: identical to a post from the last "
+                      f"{_outbox._TEXT_DEDUP_WINDOW_DAYS} days")
+            log.warning("item %s (%s) QUARANTINED as a repeat", iid, account)
             if live:
                 _outbox.transition(iid, "quarantined", actor="publisher", root=root, note=reason)
             quarantined += 1
@@ -895,6 +913,10 @@ def main(argv: list[str] | None = None) -> int:
             )
             posted_today[account] = posted_today.get(account, 0) + 1
             posted += 1
+            # Feed the repeat gate so two identical items due in ONE run can't
+            # both go out (the enqueue guard should prevent that pair existing,
+            # but the last gate assumes nothing upstream).
+            posted_text_keys.add(_outbox.text_key(account, text))
             # Advance the global floor. A ladder item consumes the window from
             # NOW; an immediate item consumes it from the time it is booked for,
             # so a burst of breaking items lands at +0/+10/+20, never together.

@@ -63,6 +63,12 @@ _BANNED_SUBSTRINGS: tuple[str, ...] = (
     "positioning in",
     "implications for",
     "the backdrop",
+    # Internal machinery vocabulary. "The cross-checks back it up" shipped on
+    # the flagship 2026-07-27 — a reference to the pipeline's own coherence
+    # flag that means nothing to a reader. Same class: rates-desk shorthand
+    # like "front-end up" (say "short-term yields").
+    "cross-check",
+    "front-end",
 )
 # "regime" and "narrative" must be word-boundary matched to avoid false-positives
 # on "regimen", "narratives", etc.
@@ -1867,9 +1873,13 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     # ── event (all voices) — {top_fact} carries today's catalyst read ────────
     ("event", "authoritative desk"): [
         (
+            # The aphorism must AGREE with the headline: a post titled "my read"
+            # cannot end "I wait for the second one" — that announces a read and
+            # then disowns it (shipped 2026-07-27, read as bot copy). Give the
+            # read, then state the revision rule.
             "My read on today's move",
-            "{top_fact} The first-hour take and the end-of-day take usually disagree. "
-            "I wait for the second one.",
+            "{top_fact} That's the early read. If the close disagrees, "
+            "I go with the close.",
         ),
         (
             "What just happened, and what it changes",
@@ -1893,13 +1903,17 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
             "Today's event, numbers first",
             "{top_fact} A few of my names care. Watching them, not the panel discussion.",
         ),
+        # Template sentences must stay FACT-NEUTRAL: "the board barely moved" /
+        # "not much drama in the numbers" are claims about the day that the
+        # template cannot know — on a big day they ship as falsehoods. Only
+        # {top_fact} may describe the tape.
         (
             "Event, logged",
-            "{top_fact} Noted. The board barely moved, and that's information too.",
+            "{top_fact} Noted and filed. No conclusions before the close.",
         ),
         (
             "What actually shifted today",
-            "{top_fact} Not much drama in the numbers. The drama was elsewhere, as usual.",
+            "{top_fact} The numbers are the story. The commentary is decoration.",
         ),
         (
             "Reaction noted",
@@ -1931,7 +1945,8 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "Why markets moved on this",
-            "{top_fact} Markets move on surprise, not news. Today had some of the first.",
+            "{top_fact} Markets move on surprise, not news. Worth asking how "
+            "much of today actually surprised anyone.",
         ),
         (
             "How to read what just happened",
@@ -2388,7 +2403,10 @@ def write_posts_llm(
             "comma, or a new sentence. Hyphens in compounds (52-week) are fine.\n"
             "- Banned words: vertical, signal stack, receipt book, accountability layer, "
             "honest model, regime, goldilocks, growth score, inflation score, de-rating, "
-            "narrative, positioning in, implications for, the backdrop, '(read:'.\n"
+            "narrative, positioning in, implications for, the backdrop, '(read:', "
+            "cross-checks, front-end. The reader cannot see our internal checks, so "
+            "never cite them as evidence; if other markets confirm a read, name the "
+            "market ('the dollar agrees'), not the machinery.\n"
             "- Banned study names: VWAP, AVWAP, POC, point of control, value "
             "area, volume profile, MACD, RSI, Stochastic, Ichimoku, Bollinger. "
             "The chart may label a line; your sentence may not name the study.\n"

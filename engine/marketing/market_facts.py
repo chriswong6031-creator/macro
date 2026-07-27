@@ -70,21 +70,92 @@ _LIQUIDITY_PLAIN: dict[str, str] = {
 }
 
 
-def _sanitize_tape(text: str) -> str:
-    """Strip banned punctuation/vocab from a pulled tape/direction string so it's
-    safe to drop into copy. Replaces em/en dashes with a comma and swaps the banned
-    word 'de-rating' for a plain synonym. This is translation, not invention."""
-    out = str(text).strip().rstrip(".")
-    for dash in ("—", " – ", "–"):  # em dash, spaced en dash, en dash
-        out = out.replace(dash, ", ")
-    # Banned vocab swaps (case-insensitive, plain synonyms)
-    import re as _re
-    out = _re.sub(r"de-?rating", "selloff", out, flags=_re.IGNORECASE)
-    out = _re.sub(r"\bnarrative\b", "story", out, flags=_re.IGNORECASE)
-    out = _re.sub(r"\s+,", ",", out)          # tidy " ," → ","
-    out = _re.sub(r",\s*,", ",", out)         # collapse ", ,"
-    out = _re.sub(r"\s{2,}", " ", out).strip().strip(",").strip()
-    return out
+# ── Driver-label translation (market_drivers → plain speech) ─────────────────
+# engine/market_drivers.py labels are dashboard shorthand ("hawkish repricing —
+# cuts priced out, front-end up"). On the dashboard a legend and a chart carry
+# the context; in a post the sentence is all the reader gets, so shorthand
+# ships as gibberish — the 2026-07-27 flagship event post was these fragments
+# verbatim. Every label the driver engine can emit gets a full sentence here
+# with a subject and no desk vocabulary. A label with no entry is DROPPED, not
+# sanitized: an untranslated driver read must never reach copy.
+# tests/test_marketing_event_language.py fails if a driver is added to
+# market_drivers.DRIVERS without a translation, so this table cannot fall
+# behind silently.
+_DRIVER_PLAIN: dict[str, str] = {
+    "hawkish repricing — cuts priced out, front-end up":
+        "Rates are doing the driving today. Traders are pricing out Fed cuts "
+        "and short-term yields are climbing.",
+    "dovish repricing — cuts priced in, front-end down":
+        "Rates are doing the driving today. Traders are adding back Fed cut "
+        "bets and short-term yields are falling.",
+    "real yields rising — restrictive, gold & duration hit":
+        "Real yields are pushing higher today. Gold and the big growth names "
+        "are wearing it.",
+    "real yields falling — easing, gold & duration bid":
+        "Real yields are easing today. Gold and the big growth names are "
+        "catching the bid.",
+    "dollar surging — squeeze, commodities & em pressured":
+        "The dollar is surging today, and it's squeezing commodities and "
+        "emerging markets.",
+    "dollar falling — risk tailwind, commodities & em bid":
+        "The dollar is falling today, a tailwind for commodities and "
+        "emerging markets.",
+    "credit spreads widening — stress":
+        "Credit is the story today. Spreads are widening, which is the bond "
+        "market getting nervous.",
+    "credit spreads compressing — risk-on":
+        "Credit is setting the tone today. Spreads are tightening, which is "
+        "the bond market giving risk a green light.",
+    "net liquidity expanding — broad risk-on tailwind":
+        "Liquidity is doing the lifting today. More money in the system, and "
+        "risk assets are riding it.",
+    "net liquidity draining — risk headwind":
+        "Liquidity is the drag today. Money is draining out of the system "
+        "and risk assets are fighting it.",
+    "china risk-on — a-shares/hk & copper lead up":
+        "China is leading today. Mainland and Hong Kong stocks are up and "
+        "copper is moving with them.",
+    "china risk-off — a-shares/hk & copper lead down":
+        "China is the drag today. Mainland and Hong Kong stocks are down and "
+        "copper is falling with them.",
+    "oil spiking — energy leads, breakevens up":
+        "Oil is the mover today. Energy names are leading and inflation "
+        "expectations are creeping up with crude.",
+    "oil collapsing — energy lags, breakevens down":
+        "Oil is breaking down today. Energy names are lagging and inflation "
+        "expectations are sliding with crude.",
+    "ai/semis leadership — narrow tech-led tape":
+        "AI and the chip names are carrying the tape today, and the "
+        "leadership is narrow.",
+    "ai/semis unwind — tech-led de-rating":
+        "The AI and chip trade is unwinding today, with tech leading the "
+        "selloff.",
+    "crypto liquidity surging — btc/eth lead up":
+        "Crypto is leading the risk appetite today. Bitcoin and ether are "
+        "both bid.",
+    "crypto liquidity draining — btc/eth lead down":
+        "Crypto is leaking first today. Bitcoin and ether are both heavy.",
+}
+
+# Coherence flag → plain aside. The flag is INTERNAL machinery; the reader
+# never hears "cross-checks" (the 2026-07-27 post did exactly that and read
+# as a claim about nothing). Say what it means in tape terms instead.
+_COHERENCE_PLAIN: dict[str, str] = {
+    "supported": " The rest of the tape lines up with that.",
+    "conflicted": " Not every market is on board with that read, though.",
+    "mixed": " Not every market is on board with that read, though.",
+    "unsupported": " The rest of the tape isn't really confirming it, though.",
+}
+
+
+def _plain_driver_read(direction: object) -> str | None:
+    """Plain-English sentence for a market_drivers direction label.
+
+    Returns None for an unknown label — callers must SKIP the fact, never
+    ship the raw shorthand.
+    """
+    key = " ".join(str(direction or "").strip().lower().split())
+    return _DRIVER_PLAIN.get(key)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -145,7 +216,7 @@ def macro_facts(root: PathLike) -> dict:
       "Growth data keeps coming in soft while inflation readings are still warm."
       "Liquidity's loosening a bit."
       "The picture's still shifting, not settled yet."
-      "Today's tape: AI and semis unwinding, tech leading the selloff."
+      "The AI and chip trade is unwinding today, with tech leading the selloff."
     """
     root = Path(root)
     regime_path = root / "data" / "regime" / "latest.json"
@@ -241,16 +312,16 @@ def macro_facts(root: PathLike) -> dict:
         tape = brief.get("why_the_tape_moved") or {}
         if isinstance(tape, dict) and tape.get("available"):
             primary = tape.get("primary") or {}
-            direction = primary.get("direction") or ""
-            if direction:
-                text_clean = _sanitize_tape(direction)
-                if text_clean:
-                    facts.append({
-                        "id": "tape_direction",
-                        "text": f"Today's tape: {text_clean}.",
-                        "salience": 9,
-                        "numbers": [],
-                    })
+            # Translated to a full plain sentence, or dropped. An unknown
+            # driver label never ships as raw shorthand (2026-07-27 post).
+            plain = _plain_driver_read(primary.get("direction"))
+            if plain:
+                facts.append({
+                    "id": "tape_direction",
+                    "text": plain,
+                    "salience": 9,
+                    "numbers": [],
+                })
 
         # Thematic line breadth number — only as a STANDALONE fact when it wasn't
         # already folded into the growth/inflation read (i.e. no regime data).
@@ -504,11 +575,13 @@ def breadth_facts(root: PathLike) -> dict:
 def event_facts(root: PathLike) -> dict:
     """Best-available event/catalyst fact for the day.
 
-    Tries daily_brief first (why_the_tape_moved). Falls back to macro_facts.
+    Tries daily_brief first (why_the_tape_moved). Falls back to macro_facts —
+    including when the driver label has no plain-English translation: a post
+    built on macro context beats a post built on desk shorthand.
 
-    Example output (plain words, no "(read: ...)" asides, no em dashes):
-      "What's driving today: AI and semis unwinding, tech leading the selloff. The
-       cross-checks back it up."
+    Example output (a full sentence with a subject, no internal vocabulary):
+      "The AI and chip trade is unwinding today, with tech leading the
+       selloff. The rest of the tape lines up with that."
     """
     root = Path(root)
     brief_path = root / "site" / "neuralwebdata" / "daily_brief.json"
@@ -520,27 +593,15 @@ def event_facts(root: PathLike) -> dict:
         tape = brief.get("why_the_tape_moved") or {}
         if isinstance(tape, dict) and tape.get("available"):
             primary = tape.get("primary") or {}
-            direction = primary.get("direction") or ""
             coherence = str(primary.get("coherence") or "").lower()
-            if direction:
-                text_clean = _sanitize_tape(direction)
-                if text_clean:
-                    # Translate the coherence flag into a plain aside (no "(read: ...)")
-                    if coherence == "supported":
-                        tail = " The cross-checks back it up."
-                    elif coherence in ("conflicted", "mixed"):
-                        tail = " Though the cross-checks are mixed on it."
-                    elif coherence == "unsupported":
-                        tail = " The rest of the data doesn't really back it up though."
-                    else:
-                        tail = ""
-                    text = f"What's driving today: {text_clean}.{tail}"
-                    facts.append({
-                        "id": "event_catalyst",
-                        "text": text,
-                        "salience": 10,
-                        "numbers": [],
-                    })
+            plain = _plain_driver_read(primary.get("direction"))
+            if plain:
+                facts.append({
+                    "id": "event_catalyst",
+                    "text": plain + _COHERENCE_PLAIN.get(coherence, ""),
+                    "salience": 10,
+                    "numbers": [],
+                })
 
     if not facts:
         # Fall back to macro facts as best available context

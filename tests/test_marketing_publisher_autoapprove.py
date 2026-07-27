@@ -829,3 +829,121 @@ def test_post_now_dry_run_exits_zero(monkeypatch, tmp_path):
                         fake_publisher=fake, kill_switch=False)
     assert rc == 0
     assert fake.calls == []
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Post-time repeat gate — identical copy never posts twice in the window
+# ─────────────────────────────────────────────────────────────────────────────
+# The enqueue-time text guard (#3824) stops identical copy ENTERING the queue,
+# but the byte-identical 2026-07-26/27 "My read on today's move" pair was
+# enqueued BEFORE that guard shipped: the second copy sat approved under a
+# fresh id, due a night later. The publisher's repeat gate is the post-time
+# half — text that already went out this window is quarantined at the last
+# gate before the network, whatever path put it in the queue.
+
+_REPEAT_TEXT = ("My read on today's move\n\nRates are doing the driving today. "
+                "Traders are pricing out Fed cuts.")
+
+
+def _seed_item_bypassing_enqueue_guard(tmp_path: Path, *, text: str, as_of: str,
+                                       kind: str = "event",
+                                       account: str = "flagship") -> str:
+    """Append an item straight to items.jsonl, exactly like the pre-guard
+    legacy rows the gate exists for (enqueue() would rightly refuse it)."""
+    from engine.marketing import outbox
+    item = outbox.make_item(account=account, kind=kind, text=text, as_of=as_of,
+                            scheduled_at="immediate", provenance="content_studio",
+                            now=_FIXED_NOW)
+    assert outbox.append_jsonl(outbox._items_path(tmp_path), item)
+    return item["id"]
+
+
+def _post_first_copy(tmp_path: Path, *, text: str, as_of: str) -> str:
+    """Seed + walk one item to folded status 'posted' (night one)."""
+    from engine.marketing.outbox import transition
+    first = _seed_item_bypassing_enqueue_guard(tmp_path, text=text, as_of=as_of)
+    for to in ("approved", "posting", "posted"):
+        assert transition(first, to, actor="test", root=tmp_path, now=_FIXED_NOW)
+    return first
+
+
+def test_recent_posted_text_keys_scopes_by_status_and_window():
+    """Unit contract: only posted/posting items inside the dedup window feed
+    the gate; queued/approved/old items never do."""
+    from engine.marketing.outbox import recent_posted_text_keys, text_key
+
+    def _item(iid, account, text, as_of):
+        return iid, {"id": iid, "account": account, "text": text, "as_of": as_of}
+
+    items = dict([
+        _item("a", "flagship", "same words", "2026-07-26"),   # posted, in window
+        _item("b", "flagship", "same words", "2026-07-27"),   # approved → ignored
+        _item("c", "flagship", "old words", "2026-07-01"),    # posted, OUT of window
+        _item("d", "second", "other words", "2026-07-27"),    # posting counts too
+    ])
+    state = {"items": items,
+             "status": {"a": "posted", "b": "approved", "c": "posted",
+                        "d": "posting"}}
+    keys = recent_posted_text_keys(state, "2026-07-27")
+    assert text_key("flagship", "same words") in keys
+    assert text_key("second", "other words") in keys
+    assert text_key("flagship", "old words") not in keys
+
+
+def test_repeat_gate_quarantines_identical_text_live(monkeypatch, tmp_path):
+    """LIVE: the second byte-identical copy is quarantined, never sent."""
+    from engine.marketing.outbox import current_statuses, read_ledger, transition
+
+    _write_publish_cfg(tmp_path, auto_approve=False, cap=-1, floor_min=0)
+    _post_first_copy(tmp_path, text=_REPEAT_TEXT, as_of="2026-07-18")
+
+    dup = _seed_item_bypassing_enqueue_guard(tmp_path, text=_REPEAT_TEXT,
+                                             as_of="2026-07-19")
+    assert transition(dup, "approved", actor="test", root=tmp_path, now=_FIXED_NOW)
+
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake,
+                        kill_switch=True)
+
+    assert rc == 0
+    assert fake.calls == []                       # the repeat never reached Buffer
+    assert current_statuses(tmp_path)[dup] == "quarantined"
+    note = next(r for r in read_ledger(tmp_path)
+                if r.get("id") == dup and r["to"] == "quarantined")["note"]
+    assert "repeat" in note
+
+
+def test_repeat_gate_dry_run_counts_but_does_not_mutate(monkeypatch, tmp_path):
+    """DRY-RUN: the repeat is reported, the ledger is untouched."""
+    from engine.marketing.outbox import current_statuses, transition
+
+    _write_publish_cfg(tmp_path, auto_approve=False, cap=-1, floor_min=0)
+    _post_first_copy(tmp_path, text=_REPEAT_TEXT, as_of="2026-07-18")
+
+    dup = _seed_item_bypassing_enqueue_guard(tmp_path, text=_REPEAT_TEXT,
+                                             as_of="2026-07-19")
+    assert transition(dup, "approved", actor="test", root=tmp_path, now=_FIXED_NOW)
+
+    rc = _run_publisher(monkeypatch, tmp_path, [], kill_switch=False)
+    assert rc == 0
+    assert current_statuses(tmp_path)[dup] == "approved"   # untouched in dry-run
+
+
+def test_repeat_gate_lets_fresh_text_post(monkeypatch, tmp_path):
+    """Different words sail through — the gate matches identical copy only."""
+    from engine.marketing.outbox import current_statuses, transition
+
+    _write_publish_cfg(tmp_path, auto_approve=False, cap=-1, floor_min=0)
+    _post_first_copy(tmp_path, text=_REPEAT_TEXT, as_of="2026-07-18")
+
+    fresh = _seed_item_bypassing_enqueue_guard(
+        tmp_path, text="Credit is the story today. Spreads are widening.",
+        as_of="2026-07-19")
+    assert transition(fresh, "approved", actor="test", root=tmp_path, now=_FIXED_NOW)
+
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake,
+                        kill_switch=True)
+    assert rc == 0
+    assert len(fake.calls) == 1
+    assert current_statuses(tmp_path)[fresh] == "posted"
