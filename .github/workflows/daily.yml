@@ -3098,6 +3098,28 @@ jobs:
             echo "::warning title=ad_ingest::rc=$rc (arena ledgers may not have advanced)"
           fi
           exit 0
+      # Persona memory consolidation (XG-W3). Emission-time counters — phrase
+      # fatigue, open promises, relationship touches — accumulate all day in the
+      # GITIGNORED host spool under data/marketing/personas_host/ (zero
+      # tracked-repo writes intraday, the same posture as the outbox's
+      # items-host.jsonl). Nightly is the SOLE advancer of the tracked ledgers
+      # under data/marketing/personas/, so this is the only writer — charter §2
+      # amendment 13. It is idempotent: records dedup on a stable key, because a
+      # retried nightly that double-counted would silently TIGHTEN every
+      # per-quirk frequency cap those counters bound.
+      #
+      # A host with no spool is a no-op that exits 0 and prints a ::notice, not a
+      # failure — most runners never emit anything.
+      - name: marketing — consolidate persona memory
+        env:
+          MARKETING_PERSONA_MEMORY_ENABLED: "1"
+        run: |
+          set +e
+          python -m engine.marketing.persona_memory; rc=$?
+          if [ "$rc" -ne 0 ]; then
+            echo "::warning title=persona_memory::rc=$rc (persona ledgers may not have advanced)"
+          fi
+          exit 0
       - name: commit standout audit US artifacts
         run: |
           . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
@@ -3123,6 +3145,10 @@ jobs:
           git add data/marketing/outbox 2>/dev/null || true
           # Ad Central arena ledgers — forward-only, advanced by the ingest step above.
           git add data/marketing/ad_central 2>/dev/null || true
+          # Persona memory ledgers (XG-W3) — forward-only, advanced by the
+          # consolidate step above. The host spool (data/marketing/personas_host/)
+          # is gitignored and must never appear here.
+          git add data/marketing/personas 2>/dev/null || true
           if git diff --cached --quiet; then echo "no standout audit US changes"; exit 0; fi
           git commit -m "standout-audit-us: nightly US attribution + fitness card $(date -u +%F)"
           # best-effort rebase-push (own files — no other job writes these paths)

@@ -473,6 +473,19 @@ data/marketing/outbox/.lock
 # verify with `git check-ignore data/marketing/outbox/items-host.jsonl` (ignored)
 # vs `.../items.jsonl` (NOT ignored) after any edit here.
 data/marketing/outbox/items-host.jsonl
+# XG-W3 persona-memory host spool. Same posture, same reason: emission-time
+# counters (phrase fatigue, open promises, relationship touches) accumulate
+# intraday on whichever host emitted, and the nightly consolidator
+# (engine/marketing/persona_memory.consolidate) is the SOLE advancer of the
+# tracked ledgers under data/marketing/personas/ — the nightly-sole-advancer
+# law, charter §2 amendment 13. Readers see the union of both trees, so a cap
+# still counts today's un-consolidated posts.
+# LOUDNESS: this pattern is personas_HOST-scoped. It must NOT swallow the
+# tracked ledgers — verify with
+#   git check-ignore data/marketing/personas_host/cici/phrases.jsonl   (ignored)
+#   git check-ignore data/marketing/personas/cici/phrases.jsonl        (NOT ignored)
+# after any edit here.
+data/marketing/personas_host/
 # D02 chart-image pipeline: chart *PNGs* are R2-DELIVERED BY DESIGN. The PNG's sole
 # delivery plane is its public R2 URL (media_url on the item); the local file is a
 # throwaway render input, never a delivery artifact. The recursive `git add

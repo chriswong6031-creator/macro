@@ -550,7 +550,13 @@ _SPEC_REF_RE = re.compile(
     r"|^[ \t]*import[ \t]+[\w\.]*\bpersonas\b"                      # import ...personas [as P]
     r"|import_module\([^)]*personas"                                # importlib indirection
     r"|^[ \t]*personas[,)]"                                         # from . import (\n personas,\n)
-    r"|/[ \t]*['\"]personas['\"]",                                  # Path("config") / "personas"
+    # Path("config") / "personas" — ANCHORED ON `config`. The bare `/ "personas"`
+    # form also matched the DATA ledger path (`data/marketing/personas/`, the
+    # XG-W3 persona memory store), which is a different tree entirely: it holds
+    # emitted-post counters, not specs, and reading it is not a spec read. The
+    # anchor keeps this predicate about the SPEC dir, which is what the fence is
+    # about — see test_spec_reference_predicate_ignores_the_config_block.
+    r"|config['\"]?[ \t]*\)?[ \t]*/[ \t]*['\"]personas['\"]",
     re.MULTILINE,
 )
 
@@ -571,6 +577,33 @@ _SPEC_CONSUMERS_ALLOWED = {
     # cadence_resolver, never personas — which is why scripts/
     # marketing_publisher.py must still be absent from this set.
     "engine/marketing/cadence_resolver.py",
+    # ── XG-W3 (charter §4 + §6 XG-W3 row) — THE ADJUDICATED WIDENING ─────────
+    # This wave is the adjudication this fence was waiting for. Charter §4 is
+    # explicit: "Every generation call receives: context packs ..., persona
+    # memory ..., and the codex", and config/marketing.yml's own note says
+    # "TRUE quirk INJECTION (franchise-shaped generation from persona memory)
+    # lands with XG-W3 desk feeds". Until now the codex was SUBTRACTIVE — the
+    # dial could strip a quirk it was never granted but nothing wrote a
+    # persona's worldview INTO the prompt, which is why two desks sharing a
+    # voice landed near-identical copy on the deterministic floor.
+    #
+    # What each of the three reads, and nothing more:
+    #   franchises.py  cross-checks the register against the specs' `franchises:`
+    #                  prose (spec_drift) so a code register cannot drift from
+    #                  its YAML source of record.
+    #   desk_feed.py   reads `worldview`/`franchises`/`restraint`/`context_packs`
+    #                  /`cadence.session` to build the per-account context pack.
+    #   copywriter.py  grafts the COGNITIVE layers onto the LLM persona cards.
+    #                  The `canon` (lifestyle texture) is deliberately NOT read —
+    #                  it ships dark under charter §2 amendment 8 until each real
+    #                  employee confirms it, and handing it to a model is exactly
+    #                  the fabricated-personal-texture failure AM-R1 prevents.
+    #
+    # content_studio.py must still be ABSENT from this set: it reaches voice
+    # through copywriter, never through the spec layer directly.
+    "engine/marketing/franchises.py",
+    "engine/marketing/desk_feed.py",
+    "engine/marketing/copywriter.py",
 }
 
 
@@ -603,6 +636,10 @@ def test_spec_reference_predicate_catches_every_consumption_form(snippet):
     "for k, v in personas_cfg.items() if k in used_accounts",
     'if path == "/api/personas/roster":',
     "    voice_notes from the copywriter personas block",
+    # The XG-W3 persona MEMORY ledgers live under data/marketing/personas/ —
+    # emitted-post counters, not specs. Reading that tree is not a spec read.
+    'return _root_path(root) / "data" / "marketing" / "personas" / str(account)',
+    "base = root / 'data' / 'marketing' / 'personas'",
 ])
 def test_spec_reference_predicate_ignores_the_config_block(snippet):
     """copywriter.personas is a CONFIG BLOCK, not this module — it must not trip."""

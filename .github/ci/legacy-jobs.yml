@@ -2864,7 +2864,19 @@ jobs:
         # other 3 need real bars off a parquet (the tape card has no v1 fallback by
         # design) and importorskip here; chart-render-data below names the file so
         # they are not unrun.
-        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_marketing_personas.py tests/test_marketing_event_language.py tests/test_marketing_press_feeds.py tests/test_marketing_breaking.py tests/test_marketing_fastlane.py tests/test_marketing_press_copy.py tests/test_marketing_ramp_cta_jitter.py tests/test_marketing_expression_dial.py tests/test_marketing_cadence_spine.py tests/test_marketing_chart_coverage.py -q
+        # test_marketing_desk_feeds (X Growth W3, XG-W3) joins the same lane
+        # (2026-07-28): the franchise register + slot scheduler, the four-lane
+        # desk feed, the persona memory stores, and the Gift-Grip-Proof gate.
+        # Import closure is stdlib + pyyaml — franchises/desk_feed/value_gate/
+        # persona_memory keep copywriter, outbox, content_studio, story_lock,
+        # cadence_resolver and engine.chronicle.context_pack LAZY (function-level
+        # imports), so a heavy top-level import in any of them turns this job red
+        # at collection, which is the point. Two guards in the suite are AST
+        # walks over committed source (the consolidator-only-writer guard and the
+        # no-promotion guard) and need no imports at all. Nothing is
+        # importorskip-gated, so it can never decay into a skip-only suite —
+        # verified in a clean pytest+pyyaml venv.
+        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_marketing_personas.py tests/test_marketing_event_language.py tests/test_marketing_press_feeds.py tests/test_marketing_breaking.py tests/test_marketing_fastlane.py tests/test_marketing_press_copy.py tests/test_marketing_ramp_cta_jitter.py tests/test_marketing_expression_dial.py tests/test_marketing_cadence_spine.py tests/test_marketing_chart_coverage.py tests/test_marketing_desk_feeds.py -q
       - name: persona specs validate (config/personas/*.yml)
         # The gate the specs exist for: every committed spec carries the full
         # content-studio tilt key set, a live template-pool voice key, and the

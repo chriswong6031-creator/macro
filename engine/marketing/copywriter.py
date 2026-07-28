@@ -26,7 +26,7 @@ import logging
 import os
 import re
 from datetime import date, datetime, timezone
-from typing import Any
+from typing import Any, Iterable
 
 # This module had NO logger while carrying a `log.warning(...)` call in
 # write_posts_llm's armed-but-mute branch (the credential-missing path). That
@@ -2487,7 +2487,114 @@ def _variant_allowed(variant: tuple, ctx: dict) -> bool:
     return True
 
 
-def write_posts_deterministic(contexts: list[dict]) -> list[dict]:
+def memory_recent_seed(
+    accounts: Iterable[str],
+    *,
+    now: datetime | None = None,
+    root: Any = None,
+) -> dict[str, list[dict]]:
+    """Seed the per-account `recent` history from DURABLE persona memory (XG-W3).
+
+    `expression_dial.frequency_violations` bounds a whitelisted quirk by
+    `max_per_day` / `max_per_7d` / `max_share_7d` — but it evaluates those caps
+    against the `recent` list it is handed, and returns `[]` when that list is
+    empty. Before XG-W3 the only history available was the CURRENT BATCH, so a
+    signature opener capped at "≤1/day and ≤30% of posts over any rolling 7
+    days" was enforced within one nightly run and unenforced across days: an
+    account could open every single day with the same line and never trip a cap.
+
+    `engine.marketing.persona_memory.phrases.jsonl` is the durable store that
+    closes that hole. A missing store returns `{}` — the caps then behave
+    exactly as they did before this function existed, which is the honest
+    degradation rather than a hard failure on a fresh checkout.
+    """
+    out: dict[str, list[dict]] = {}
+    try:
+        from engine.marketing import persona_memory as _pm  # noqa: PLC0415
+    except Exception:  # noqa: BLE001
+        return out
+    when = now or datetime.now(timezone.utc)
+    for account in {str(a) for a in accounts if a}:
+        try:
+            rows = _pm.recent_posts(account, now=when, root=root)
+        except Exception:  # noqa: BLE001
+            rows = []
+        if rows:
+            out[account] = list(rows)
+    return out
+
+
+def _codex_cards(accounts: Iterable[str], *, root: Any = None) -> dict[str, dict]:
+    """The cognitive layers of each account's codex, for prompt injection (XG-W3).
+
+    XG-W1 shipped the codex as a SUBTRACTIVE pass — `expression_dial` strips and
+    rejects, but nothing ever wrote a persona's worldview or franchises INTO the
+    prompt (`config/marketing.yml` says so in its own comment: "TRUE quirk
+    INJECTION (franchise-shaped generation from persona memory) lands with XG-W3
+    desk feeds"). This is that injection: the spec's `worldview`, `franchises`
+    and `restraint` reach the model, and the deterministic post-check enforces
+    the dial exactly as before.
+
+    Only the cognitive layers travel. The `canon` (lifestyle texture) does NOT —
+    it ships DARK under charter §2 amendment 8 until each real employee confirms
+    their own texture list, and handing it to a model would be precisely the
+    fabricated-personal-texture failure AM-R1 exists to prevent.
+    """
+    out: dict[str, dict] = {}
+    want = {str(a) for a in accounts if a}
+    if not want:
+        return out
+    try:
+        from engine.marketing.personas import load_all  # noqa: PLC0415
+
+        # dict[str, PersonaSpec] — a mapping of dataclasses, not a list of dicts.
+        specs = load_all(root) if root is not None else load_all()
+    except Exception:  # noqa: BLE001
+        return out
+    for sid in want:
+        spec = specs.get(sid)
+        if spec is None:
+            continue
+        raw = spec.as_dict()
+        card = {
+            "worldview": raw.get("worldview") or "",
+            "franchises": list(raw.get("franchises") or []),
+            "restraint": raw.get("restraint") or "",
+        }
+        if any(card.values()):
+            out[sid] = card
+    return out
+
+
+def _franchise_payload(ctx: dict) -> dict | None:
+    """The franchise block for one item's LLM payload (XG-W3), or None.
+
+    Withholds the display NAME when `copy_safe_name` is False — a franchise
+    whose own title trips the house banned-vocab guard must never be handed to a
+    drafter as a phrase to use. The format survives; the label does not.
+    """
+    fr = ctx.get("franchise")
+    if not isinstance(fr, dict) or not fr:
+        return None
+    out: dict[str, Any] = {"contract": list(fr.get("contract") or [])}
+    if fr.get("copy_safe_name"):
+        out["name"] = fr.get("display_name") or ""
+    if fr.get("requires_measured_input"):
+        # Charter §2 amendment 10 — surfaced to the model as an instruction, and
+        # enforced deterministically afterwards by
+        # `franchises.measured_input_violations`.
+        out["rule"] = (
+            "the crowd/mood side must QUOTE an attributed headline or post; "
+            "never assert what the crowd feels without a cited source"
+        )
+    return out or None
+
+
+def write_posts_deterministic(
+    contexts: list[dict],
+    *,
+    recent_seed: dict[str, list[dict]] | None = None,
+) -> list[dict]:
     """Generate (headline, body) for each context via deterministic variant selection.
 
     Returns a list of dicts {headline, body, violations, mode}.
@@ -2508,11 +2615,14 @@ def write_posts_deterministic(contexts: list[dict]) -> list[dict]:
     all_headlines: list[str] = []
     # Rotation counter per (type, voice) for non-ticker types
     type_voice_counters: dict[tuple[str, str], int] = {}
-    # Per-account history WITHIN this batch, so the codex frequency caps
-    # (max_per_day / max_per_7d / max_share_7d) see the day's other posts. A
-    # durable cross-day store arrives with XG-W3's phrases.jsonl; until then the
-    # batch is the honest window rather than a silently unenforced cap.
-    recent_by_account: dict[str, list[dict]] = {}
+    # Per-account history, so the codex frequency caps (max_per_day /
+    # max_per_7d / max_share_7d) see BOTH the day's other posts and the durable
+    # cross-day record. XG-W3 seeds this from persona_memory's phrases.jsonl
+    # (see `memory_recent_seed`); an absent store seeds nothing and the batch
+    # remains the window, exactly as before.
+    recent_by_account: dict[str, list[dict]] = {
+        k: list(v) for k, v in (recent_seed or {}).items()
+    }
 
     for i, ctx in enumerate(contexts):
         type_id = ctx.get("type", "signal")
@@ -2644,6 +2754,38 @@ def write_posts_llm(
             }
             for k, v in personas_cfg.items() if k in used_accounts
         }
+        # ── XG-W3 TRUE QUIRK INJECTION ──────────────────────────────────────
+        # Graft the codex COGNITIVE layers (worldview / franchises / restraint)
+        # onto each card. Constitution Law 2: "Perception before prose" —
+        # personality comes from asking a different question, not from adding
+        # matcha to a generic analysis, so what reaches the model is the
+        # persona's WAY OF SEEING, not a list of catchphrases. The canon
+        # (lifestyle texture) is deliberately withheld: it ships dark under
+        # charter §2 amendment 8 until each employee confirms it.
+        for _acct, _codex in _codex_cards(used_accounts).items():
+            persona_cards.setdefault(_acct, {"name": _acct})
+            persona_cards[_acct].update(_codex)
+        # Open promises + phrase fatigue: the model must be able to close its
+        # own loops (constitution §11.6) and must not re-run a phrase the desk
+        # has already worn out this week (§13.7 anti-sameness).
+        persona_memory_cards: dict[str, dict] = {}
+        try:
+            from engine.marketing import persona_memory as _pm  # noqa: PLC0415
+
+            _now = datetime.now(timezone.utc)
+            for _acct in used_accounts:
+                _promises = [
+                    {"text": p.get("text"), "due_condition": p.get("due_condition")}
+                    for p in _pm.open_promises(_acct, now=_now)[:5]
+                ]
+                _fatigue = sorted(_pm.ngram_fatigue(_acct, now=_now))[:12]
+                if _promises or _fatigue:
+                    persona_memory_cards[_acct] = {
+                        "open_promises": _promises,
+                        "worn_out_phrases": _fatigue,
+                    }
+        except Exception:  # noqa: BLE001
+            persona_memory_cards = {}
 
         system_prompt = (
             "You're a trader posting on X. Not a research desk, not a brand, not a "
@@ -2656,8 +2798,21 @@ def write_posts_llm(
             "punish cheese with the quote-tweet. If a line would sound weird said out "
             "loud to a trading buddy, rewrite it.\n\n"
             "PERSONAS (write each post as that account's human; the example_lines show "
-            "the register, match their rhythm, never copy them):\n"
+            "the register, match their rhythm, never copy them. `worldview` is how this "
+            "person SEES a market — the question they ask first; let it shape which fact "
+            "they lead with. `franchises` are the recurring formats readers expect from "
+            "them; when an item names a franchise, write that format. `restraint` is what "
+            "they refuse to do, and it is binding):\n"
             + json.dumps(persona_cards, indent=1)
+            + (
+                "\n\nMEMORY (this desk's own recent record — `open_promises` are loops "
+                "this account promised to close, so close one when the item allows; "
+                "`worn_out_phrases` are n-grams it has already leaned on this week, so "
+                "do not reach for them again):\n"
+                + json.dumps(persona_memory_cards, indent=1)
+                if persona_memory_cards
+                else ""
+            )
             + "\n\nVOICE (this is the bar; match it, don't drift formal):\n"
             "- X is casual. Contractions always. Sentence fragments are fine. Short is "
             "good, but natural-short, the way people type, not clipped telegraph style.\n"
@@ -2795,6 +2950,13 @@ def write_posts_llm(
                 "inv": ctx.get("inv_str"),
                 "win_rate": ctx.get("win_rate_str") or None,
                 "numbers_whitelist": ctx.get("numbers_whitelist", [])[:14],
+                # XG-W3: the franchise this slot belongs to, when the desk feed
+                # set one. `contract` is what the format must contain. The
+                # display NAME is passed only when `copy_safe_name` held — e.g.
+                # Sophia's "Narrative Shift" contains a house-banned word, so
+                # the model gets the format without the label and cannot smuggle
+                # the token into copy.
+                "franchise": _franchise_payload(ctx),
             }
             for i, ctx in enumerate(batch)
         ]
@@ -2853,10 +3015,14 @@ def write_posts_llm(
         # Validate each output; fall back per-post on failure
         from engine.marketing import expression_dial as _expression_dial  # noqa: PLC0415
 
-        det_fallbacks = write_posts_deterministic(batch)
+        # Same durable seed on both paths (XG-W3): a fallback post spends the
+        # persona's quirk budget exactly like an LLM post, so the caps have to
+        # see the same history either way.
+        _seed = memory_recent_seed(used_accounts)
+        det_fallbacks = write_posts_deterministic(batch, recent_seed=_seed)
         results: list[dict] = []
         all_headlines: list[str] = []
-        recent_by_account: dict[str, list[dict]] = {}
+        recent_by_account: dict[str, list[dict]] = {k: list(v) for k, v in _seed.items()}
         # Per-account tally of fallbacks the DIAL caused. A codex whose account
         # falls back every night is a codex to edit — without this the symptom is
         # invisible, because a dial fallback and an invented-number fallback look

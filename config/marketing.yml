@@ -576,6 +576,66 @@ wire_routing:
     #   company_news: mastermind_news
     # and nothing in engine/ changes.
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Desk feeds + franchises + persona memory (XG-W3)
+#   engine/marketing/desk_feed.py · franchises.py · persona_memory.py · value_gate.py
+#
+# Charter §4: every account knows its day. The feed ASSEMBLES candidates from
+# four lanes (scheduled franchise slots, breaking, market-hours, analysis) and
+# hands them to the existing generation paths. It posts nothing and queues
+# nothing — the sentinel, the approve-ladder and the cadence resolver all still
+# bind exactly as before.
+#
+# EVERY NUMBER HERE IS A HYPOTHESIS (charter §8, and the constitution's own §20
+# closing instruction: suggested weights and thresholds are to be calibrated,
+# never fixed truth). They are config precisely so XG-W6 telemetry can re-rank
+# them without a code change, and no weight is load-bearing until it has.
+# ─────────────────────────────────────────────────────────────────────────────
+desk_feed:
+  # Lane base scores. Breaking outranks a scheduled slot because a franchise
+  # window is open all session and a print is not (§7.5 "why now?").
+  lane_weights:
+    breaking: 40
+    scheduled: 30
+    market_hours: 25
+    analysis: 20
+  # A franchise slot is a recurring promise to the reader — §8.5's last-nine-post
+  # diagnostic wants at least two items from a recognisable franchise.
+  franchise_bonus: 6
+  # Anti-sameness (§13.7): an over-used n-gram is penalised, not banned.
+  fatigue_penalty: 8
+  # Chronicle context budget per candidate. Chronicle W1/W2 are UNBUILT; the W0
+  # pack() returns narratives: [] by contract, which is the honest empty.
+  chronicle_token_budget: 1200
+
+franchises:
+  # Force a franchise dark WITHOUT editing the register. The register itself
+  # already ships "Tea and Tickers" disabled (charter §2 amendment 8 — Cici's
+  # canon is dark until she confirms her own texture list).
+  disabled: []
+  # ARMING A PARKED FRANCHISE IS A FLIP HERE, not a code change. Setting
+  # `cici_tea_and_tickers: true` arms it — but do NOT do that before the real
+  # Cici confirms her lifestyle texture list, because that franchise spends the
+  # same tea-lexicon budget the dark `lifestyle_tea_travel` marker governs.
+  enabled_overrides: {}
+
+persona_memory:
+  # How much history the TRACKED ledgers keep. The caps that consume this store
+  # look back 7 days (expression_dial.SHARE_WINDOW_DAYS); 90 leaves room for the
+  # XG-W6 diagnostics without unbounded growth in a committed file. Open
+  # promises are exempt from retention by design — an old open loop is the one
+  # most in need of closing (§11.6).
+  retention_days: 90
+
+value_gate:
+  # RECORD-ONLY at W3 (the XG-W2 "LAND DARK" precedent). Every emission carries
+  # its Gift-Grip-Proof verdict in item metadata from day one — that is the §0
+  # gate — but making an abstention BLOCK a live desk is a separate arming
+  # decision for the operator/session, not a builder's, and it wants one cycle
+  # of recorded verdicts read first. Flipping this to true is what turns the
+  # verdict into a publish gate.
+  enforce: false
+
 departments:
   growth_os:
     lifecycle_state: building
