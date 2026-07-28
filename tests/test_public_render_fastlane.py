@@ -86,6 +86,13 @@ def test_public_builder_renders_current_pricing_without_market_data(tmp_path):
     assert 'data-m-pm="149" data-a-pm="109"' in plans
     assert "Founding Pro" in plans
     assert "$900 a year" in plans
-    assert "2,000 memberships" in plans
+    # Founding copy is availability-framed (#3856): the cap is real enforced
+    # inventory, never a fabricated "signed up/claimed" count.
+    assert 'data-offer-cap="2000"' in plans
+    assert "2,000 total" in plans
+    assert "first come, first served" in plans
+    assert "The allotment shrinks daily" in plans
+    assert 'aria-label="Founding Pro memberships no longer available"' in plans
+    assert "signed up" not in plans
     assert (tmp_path / "support.html").is_file()
     assert (tmp_path / "unsubscribe.html").is_file()
