@@ -41,6 +41,8 @@ Public API:
     for_account(account, *, root=None)          -> tuple[Franchise, ...]
     by_id(franchise_id, *, root=None)           -> Franchise | None
     open_slots(account, *, now, ...)            -> list[FranchiseSlot]
+    history_from_items(items, *, account)       -> [(when, franchise_id), ...]
+    item_franchise_id(item)                     -> str
     abstain(slot, reason, *, now, detail=None)  -> Abstention
     measured_input_violations(headline, body, *, franchise, sources=()) -> list[str]
     spec_drift(*, root=None)                    -> list[str]
@@ -50,7 +52,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
@@ -64,6 +66,8 @@ __all__ = [
     "for_account",
     "by_id",
     "open_slots",
+    "history_from_items",
+    "item_franchise_id",
     "abstain",
     "measured_input_violations",
     "spec_drift",
@@ -888,6 +892,63 @@ def open_slots(
             )
         )
     return slots
+
+
+def item_franchise_id(item: dict) -> str:
+    """The franchise an outbox item belongs to, or "".
+
+    The franchise id travels in `item["source"]["franchise"]` — the same
+    metadata slot `story_lock.item_story_key` reads for the story key. Kept as a
+    named accessor so the key is written once, not spelled out at every reader.
+    """
+    src = item.get("source")
+    if not isinstance(src, dict):
+        return ""
+    return str(src.get("franchise") or "")
+
+
+def history_from_items(
+    items: Iterable[dict],
+    *,
+    account: str,
+) -> list[tuple[datetime, str]]:
+    """Derive `open_slots(history=...)` from outbox items.
+
+    THE PRODUCER for the scheduler's cadence ceilings. Without it
+    `franchise_history` has no in-repo source and every daily slot would look
+    permanently unspent — the franchise would re-open on every tick and the
+    "windows, not quotas" discipline would silently become "unlimited".
+
+    Reads `created_at`, falling back to `as_of`. An item with neither is SKIPPED
+    rather than treated as now: counting an undateable item as today's use would
+    close a slot the desk never actually spent.
+    """
+    out: list[tuple[datetime, str]] = []
+    acct = str(account or "")
+    for item in items or ():
+        if str(item.get("account") or "") != acct:
+            continue
+        fid = item_franchise_id(item)
+        if not fid:
+            continue
+        stamp = str(item.get("created_at") or item.get("as_of") or "").strip()
+        if not stamp:
+            continue
+        when: datetime | None = None
+        try:
+            when = datetime.fromisoformat(stamp.replace("Z", "+00:00"))
+        except ValueError:
+            try:
+                when = datetime.strptime(stamp[:10], "%Y-%m-%d")
+            except ValueError:
+                when = None
+        if when is None:
+            continue
+        if when.tzinfo is None:
+            when = when.replace(tzinfo=timezone.utc)
+        out.append((when, fid))
+    out.sort(key=lambda x: x[0], reverse=True)
+    return out
 
 
 def abstain(

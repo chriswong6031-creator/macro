@@ -588,6 +588,20 @@ def assemble(
     spec = spec if spec is not None else _load_spec(account, root=root)
     as_of = now.strftime("%Y-%m-%d")
     weights = _weights(cfg)
+
+    # Franchise history drives the per-day / per-week ceilings. When the caller
+    # does not supply it explicitly, derive it from the outbox items it already
+    # handed us — the franchise id round-trips through
+    # `item["source"]["franchise"]`. Without this the scheduler would see every
+    # daily slot as permanently unspent and "windows, not quotas" would quietly
+    # become "unlimited".
+    if not franchise_history and outbox_items:
+        try:
+            from engine.marketing import franchises as _fr
+
+            franchise_history = _fr.history_from_items(outbox_items, account=account)
+        except Exception:
+            franchise_history = ()
     if token_budget == 1200:
         # An explicit argument still wins; otherwise config decides.
         token_budget = weights["token_budget"]

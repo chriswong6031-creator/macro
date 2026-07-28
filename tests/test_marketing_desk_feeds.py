@@ -183,6 +183,59 @@ def test_daily_franchise_closes_after_one_use_that_day():
     assert fid in {s.franchise_id for s in fr.open_slots("cici", now=tomorrow, history=history)}
 
 
+def test_franchise_history_is_derived_from_outbox_items():
+    """THE PRODUCER. The franchise id round-trips through item metadata.
+
+    Without an in-repo producer for `franchise_history`, every daily slot would
+    look permanently unspent and the "windows, not quotas" discipline would
+    quietly become "unlimited". The id travels in `source.franchise`, the same
+    metadata slot the story key uses.
+    """
+    from engine.marketing import franchises as fr
+    from engine.marketing import outbox
+
+    fid = "cici_before_new_york_wakes"
+    item = outbox.make_item(
+        account="cici", kind="macro", text="While New York slept, HK closed green.",
+        as_of="2026-07-22", provenance="test",
+        source={"franchise": fid}, now=_WED_HK_CASH - timedelta(minutes=20),
+    )
+    assert fr.item_franchise_id(item) == fid
+
+    history = fr.history_from_items([item], account="cici")
+    assert history and history[0][1] == fid
+    # Another account's item must not spend cici's slot.
+    assert fr.history_from_items([item], account="kelly") == []
+
+    # And the derived history closes the slot.
+    assert fid not in {s.franchise_id for s in fr.open_slots("cici", now=_WED_HK_CASH, history=history)}
+
+
+def test_feed_derives_franchise_history_from_the_outbox_it_was_given():
+    from engine.marketing import desk_feed, outbox
+
+    fid = "cici_before_new_york_wakes"
+    spent = outbox.make_item(
+        account="cici", kind="macro", text="While New York slept, HK closed green.",
+        as_of="2026-07-22", provenance="test",
+        source={"franchise": fid}, now=_WED_HK_CASH - timedelta(minutes=20),
+    )
+    feed = desk_feed.assemble("cici", now=_WED_HK_CASH, cfg=_CFG, outbox_items=[spent])
+    assert fid not in {c.franchise_id for c in feed.by_lane("scheduled")}, (
+        "the feed re-opened a franchise the desk already spent today"
+    )
+
+
+def test_undateable_item_does_not_spend_a_slot():
+    """Counting an undateable item as today's use would close an unspent slot."""
+    from engine.marketing import franchises as fr
+
+    assert fr.history_from_items(
+        [{"account": "cici", "source": {"franchise": "cici_before_new_york_wakes"}}],
+        account="cici",
+    ) == []
+
+
 def test_weekly_franchise_respects_max_per_week():
     from engine.marketing import franchises as fr
 
