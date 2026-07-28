@@ -288,6 +288,15 @@ sentinel:
         max_posts_per_account_per_day: 20
         max_media_posts_per_account_per_day: 20
         min_minutes_between_posts: 30
+        # Operator 2026-07-28 ("when semiconductors are all down big we should
+        # already be posting lists"): flagship is the warmed desk, and the
+        # sector/theme lists the publish-time lane generates every 30 minutes
+        # from live quotes were 100% dropped — 18 per sweep on a day semis were
+        # routing — because no account was past the theme_list ramp. The ramp's
+        # cold-account piggybacking concern (≥4 cashtags, no history to read
+        # against) does not describe flagship; it stays in force for every
+        # other desk.
+        theme_list_allowed: true
     weeks_1_2:
       # Operator re-spec 2026-07-28: 10 posts/account/day (was 2). The desks were
       # publishing ~5 posts across the WHOLE network because 2/day is a launch
