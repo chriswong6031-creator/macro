@@ -1906,17 +1906,26 @@ jobs:
     # Skipping here cancels the obsolete pack without allocating a replacement.
     if: github.event.action != 'closed'
     # The logical jobs in .github/ci/legacy-jobs.yml remain the reviewable
-    # source of truth, but GitHub sees only this matrix. Two pack runners execute
-    # every legacy run step against a clean working tree, sharing one checkout
-    # and reusing only identical dependency sets instead of provisioning more
-    # than one hundred separate VMs/check records.
+    # source of truth, but GitHub sees only this matrix. Four pack runners
+    # execute every legacy run step against a clean working tree, sharing one
+    # checkout and reusing only identical dependency sets instead of
+    # provisioning more than one hundred separate VMs/check records.
+    #
+    # Four, up from two (operator 2026-07-28): two packs put ~35 minutes
+    # between a PR opening and a verdict, and the operator + sessions merge in
+    # 0-8 — the whole merge-outruns-CI class lives in that gap. The greedy
+    # partition balances 4x619 weight against 2x1238 (run_ci_pack.py
+    # --validate-only), so wall-clock to green roughly halves; GitHub-hosted
+    # pickup is 2-3 s per job, so two more runners cost queue nothing. These
+    # names are the intended required-checks set (ci-pack-0..3) for branch
+    # protection; renaming or renumbering them must update that setting too.
     name: ci-pack-${{ matrix.pack }}
     runs-on: ubuntu-latest
     timeout-minutes: 180
     strategy:
       fail-fast: false
       matrix:
-        pack: [0, 1]
+        pack: [0, 1, 2, 3]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -1939,5 +1948,5 @@ jobs:
           "$RUNNER_TEMP/ci-pack-runner/bin/python" scripts/run_ci_pack.py
           --workflow .github/ci/legacy-jobs.yml
           --pack-index ${{ matrix.pack }}
-          --pack-count 2
+          --pack-count 4
           --execute
