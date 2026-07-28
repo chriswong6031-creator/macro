@@ -754,6 +754,11 @@ def run_press_tick(
         # it. If the immediate rail ever needs bounding, the lever that exists is
         # cadence_resolver.exempt_immediate: false — one config flip, already
         # tested — not a new knob.
+        #
+        # TODO(xg-w2-review): the top-K/day counter is global, keyed
+        # 'flagship_top_k_per_day', not per routed account — when mastermind_news
+        # arms, its wire volume shares this one 3/day budget; per-account
+        # counters are the XG-W2 follow-up before that arming.
         if s.get("salience", 0.0) < floor:
             skipped.append({"id": iid, "reason": "below_flagship_floor",
                             "salience": s.get("salience")})

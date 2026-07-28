@@ -1028,6 +1028,12 @@ def main(argv: list[str] | None = None) -> int:
         # them from the daily cap and the global floor. It is a config key
         # (cadence_resolver.exempt_immediate), not a buried constant, because a
         # wire-cadence property may well want its breaking flow bounded too.
+        #
+        # TODO(xg-w2-review): immediate items bypass the resolver but their
+        # posted receipts still count in posting_history — a breaking storm
+        # silently exhausts the ladder's daily budget for the rest of the local
+        # day with no log naming the cause; split the history count or log the
+        # attribution when this first bites.
         if _cadence is not None and not (is_immediate and _cadence_exempt_immediate):
             try:
                 _decision = _cadence.resolve(

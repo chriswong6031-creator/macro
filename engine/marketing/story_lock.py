@@ -73,6 +73,10 @@ def lock_config(cfg: dict | None) -> dict[str, Any]:
 
 
 def _normalize_headline(headline: Any) -> str:
+    # TODO(xg-w2-review): exact-after-normalization only — two providers wording
+    # one event differently produce different keys and BOTH emit; acceptable
+    # today because press keys come from _corroboration_key and earnings from
+    # ticker:quarter, but do not claim reworded-mirror coverage for this fallback.
     text = re.sub(r"[^a-z0-9 ]", " ", str(headline or "").lower())
     return re.sub(r"\s+", " ", text).strip()
 
@@ -131,6 +135,10 @@ def owner_of(
     whose timestamps are both unreadable is treated as IN WINDOW, so a malformed
     row tightens the lock rather than disarming it.
     """
+    # TODO(xg-w2-review): owner_of locks on items of ANY status — a story whose
+    # only emission failed validation locks the whole network out for the 12h
+    # window; consider restricting lock ownership to non-dead statuses when the
+    # first real case appears.
     if not key:
         return None
     horizon = now - timedelta(minutes=max(0, window_minutes))
