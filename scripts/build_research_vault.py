@@ -144,13 +144,12 @@ def _logo_for(inst: str) -> str:
 
 
 def _title_link(x: dict) -> str:
-    """Report title linked to its research/<slug>.html landing page when a slug is
-    present (crawlable internal link + shareable permalink); plain text otherwise."""
-    title = _e(x.get("title"))
-    slug = (x.get("slug") or "").strip()
-    if not slug:
-        return title
-    return f'<a class="rep-titlelink" href="research/{_e(slug)}.html">{title}</a>'
+    """Plain report title for the anonymous SSR preview.
+
+    The hydrated Pro feed restores the interactive viewer link. Keeping the
+    no-JS public baseline plain ensures its three summaries cannot open a report.
+    """
+    return _e(x.get("title"))
 
 
 def _ssr_card(x: dict) -> str:
@@ -194,11 +193,54 @@ def _ssr_card(x: dict) -> str:
     )
 
 
+def _preview_items(items: list[dict], limit: int = 3) -> list[dict]:
+    """Latest reports with real summaries, filled from the latest rows if needed."""
+    ready = [
+        item for item in items
+        if any(str(point or "").strip() for point in (item.get("summary_points") or []))
+    ]
+    preview = ready[:limit]
+    selected = {str(item.get("id") or "") for item in preview}
+    if len(preview) < limit:
+        preview.extend(
+            item for item in items
+            if str(item.get("id") or "") not in selected
+        )
+    return preview[:limit]
+
+
 def _ssr_feed(catalog: dict) -> str:
     items = catalog.get("items") or []
     if not items:
         return ""  # client renders the honest bilingual empty state
-    return "".join(_ssr_card(x) for x in items)
+    preview_items = _preview_items(items)
+    preview = "".join(_ssr_card(x) for x in preview_items)
+    remaining = max(0, len(items) - len(preview_items))
+    if not remaining:
+        return preview
+    gate = (
+        '<div class="rv-lockwrap">'
+        '<div class="rv-lockghosts" aria-hidden="true">'
+        '<article class="rep glass"><div class="rep-top"><span class="rep-logo">PRO</span>'
+        '<span class="rep-inst">Institutional desk</span></div>'
+        '<h3>Pro research report</h3><ul class="rep-points">'
+        '<li>Full summary available with Pro.</li></ul></article>'
+        '</div><div class="rv-lockover glass">'
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" '
+        'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+        '<rect x="3" y="11" width="18" height="11" rx="2"/>'
+        '<path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'
+        f'<h3><span class="l-en">{remaining} more institutional '
+        f'{"report" if remaining == 1 else "reports"}</span>'
+        f'<span class="l-zh">还有 {remaining} 篇机构研报</span></h3>'
+        '<p><span class="l-en">You’re previewing the latest three summaries. '
+        'Upgrade to Pro to open every desk and read the full PDFs.</span>'
+        '<span class="l-zh">你正在预览最新三篇摘要。升级 Pro 即可查看全部机构研报并阅读 PDF 全文。</span></p>'
+        '<a class="btn upgrade" href="plans.html">'
+        '<span class="l-en">Upgrade to Pro</span><span class="l-zh">升级 Pro</span></a>'
+        '</div></div>'
+    )
+    return preview + gate
 
 
 def render(catalog: dict | None = None) -> str:
@@ -211,9 +253,15 @@ def render(catalog: dict | None = None) -> str:
     tmpl = env.get_template("research_vault.html.j2")
     if catalog is None:
         catalog = _public_catalog(load_catalog())
-    # Bake as a JSON island. ensure_ascii=False keeps CJK readable; </script> is
-    # escaped so a title/summary containing it can't break out of the island.
-    catalog_json = json.dumps(catalog, ensure_ascii=False).replace("</", "<\\/")
+    # The anonymous JSON island carries only the same three reports rendered in
+    # the public SSR preview. ``count`` remains the full inventory size so the
+    # upgrade wall can state what is locked without embedding later summaries.
+    baked_catalog = dict(catalog)
+    baked_catalog["items"] = _preview_items(list(catalog.get("items") or []))
+    baked_catalog["count"] = len(catalog.get("items") or [])
+    # ensure_ascii=False keeps CJK readable; </script> is escaped so a
+    # title/summary containing it can't break out of the island.
+    catalog_json = json.dumps(baked_catalog, ensure_ascii=False).replace("</", "<\\/")
     ssr_feed = _ssr_feed(catalog)
     return tmpl.render(catalog_json=catalog_json, ssr_feed=ssr_feed)
 

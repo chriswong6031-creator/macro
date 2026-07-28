@@ -351,9 +351,8 @@ html[data-theme="light"] .rv-empty.rv-gate svg{ color:var(--rv); }
   font-size:12px; line-height:1.6; color:var(--muted); max-width:78ch; }
 .rv-foot b{ color:color-mix(in srgb,var(--text) 80%,var(--muted)); font-weight:700; }
 
-/* ── teaser: non-Pro sees the latest 3 summaries; the rest sit blurred under an
-      upgrade card. Summaries are already public via the catalog API — this is a
-      marketing wall, not a security boundary (PDF viewing is server-gated). ── */
+/* ── teaser: non-Pro sees the latest 3 summaries; the rest sit under an upgrade
+      card. Original PDF viewing and downloads are server-gated for Pro. ── */
 .rv-lockwrap{ position:relative; margin-top:14px; }
 .rv-lockghosts{ display:flex; flex-direction:column; gap:14px; filter:blur(6px) saturate(.85);
   opacity:.5; pointer-events:none; user-select:none; -webkit-user-select:none; max-height:440px; overflow:hidden;
