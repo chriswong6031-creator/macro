@@ -1,7 +1,7 @@
 {
   "schema": "signal_governor.v1",
   "as_of": "2026-07-28",
-  "generated_at": "2026-07-28T09:41:23.559061+00:00",
+  "generated_at": "2026-07-28T11:26:51.506105+00:00",
   "region": "cn",
   "gate": {
     "min_n": 150,
@@ -27,13 +27,13 @@
     },
     "hub": {
       "signal": "hub",
-      "n_matured": null,
-      "ic": null,
-      "t_hac": null,
-      "horizon": null,
+      "n_matured": 187,
+      "ic": 0.071,
+      "t_hac": 0.594,
+      "horizon": "5",
       "demoted": false,
       "trust": 1.0,
-      "reason": "no matured track record \u2014 measuring, trust 1.0 (identity)"
+      "reason": "healthy: 5d IC=+0.071 not wrong-sign \u2014 trust 1.0"
     }
   },
   "n_demoted": 0,

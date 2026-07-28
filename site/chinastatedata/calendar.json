@@ -1,7 +1,7 @@
 {
   "schema": "china_calendar.v1",
   "asof": "2026-07-28",
-  "generated_at_utc": "2026-07-28T09:41:24.948102+00:00",
+  "generated_at_utc": "2026-07-28T11:26:53.052617+00:00",
   "horizon_days": 45,
   "entries": [
     {
@@ -19,6 +19,18 @@
     {
       "date": "2026-07-29",
       "window_end": null,
+      "etype": "omo_reverse_repo_preannounce",
+      "label_en": "PBoC reverse repo (pre-announced) — 隔夜, RMB 600bn",
+      "label_zh": "央行逆回购操作（预告）：隔夜，6,000亿元",
+      "region": "cn",
+      "impact": "medium",
+      "source_class": "feed",
+      "source": "china_omo.operations",
+      "approx": false
+    },
+    {
+      "date": "2026-07-29",
+      "window_end": null,
       "etype": "FOMC",
       "label_en": "US FOMC decision",
       "label_zh": "美联储 FOMC 决议",
@@ -26,6 +38,18 @@
       "impact": "high",
       "source_class": "static",
       "source": "engine.hk_event_calendar",
+      "approx": false
+    },
+    {
+      "date": "2026-07-30",
+      "window_end": null,
+      "etype": "omo_reverse_repo_preannounce",
+      "label_en": "PBoC reverse repo (pre-announced) — 隔夜, RMB 600bn",
+      "label_zh": "央行逆回购操作（预告）：隔夜，6,000亿元",
+      "region": "cn",
+      "impact": "medium",
+      "source_class": "feed",
+      "source": "china_omo.operations",
       "approx": false
     },
     {
@@ -55,6 +79,18 @@
     {
       "date": "2026-07-31",
       "window_end": null,
+      "etype": "omo_reverse_repo_preannounce",
+      "label_en": "PBoC reverse repo (pre-announced) — 隔夜, RMB 600bn",
+      "label_zh": "央行逆回购操作（预告）：隔夜，6,000亿元",
+      "region": "cn",
+      "impact": "medium",
+      "source_class": "feed",
+      "source": "china_omo.operations",
+      "approx": false
+    },
+    {
+      "date": "2026-07-31",
+      "window_end": null,
       "etype": "HK_RETAIL",
       "label_en": "HK retail sales",
       "label_zh": "香港零售业销货",
@@ -63,6 +99,18 @@
       "source_class": "static",
       "source": "engine.hk_event_calendar",
       "approx": true
+    },
+    {
+      "date": "2026-08-01",
+      "window_end": "2026-08-31",
+      "etype": "earnings_season",
+      "label_en": "A-share interim results season — 99% of the covered board reports in 2026-08",
+      "label_zh": "A股中报密集披露期：2026年8月约99%的覆盖名单披露",
+      "region": "cn",
+      "impact": "high",
+      "source_class": "feed",
+      "source": "china_earnings.calendar",
+      "approx": false
     },
     {
       "date": "2026-08-03",
@@ -74,6 +122,18 @@
       "impact": "medium",
       "source_class": "rule",
       "source": "engine.china_event_calendar",
+      "approx": false
+    },
+    {
+      "date": "2026-08-03",
+      "window_end": null,
+      "etype": "omo_reverse_repo_preannounce",
+      "label_en": "PBoC reverse repo (pre-announced) — 隔夜, RMB 300bn",
+      "label_zh": "央行逆回购操作（预告）：隔夜，3,000亿元",
+      "region": "cn",
+      "impact": "medium",
+      "source_class": "feed",
+      "source": "china_omo.operations",
       "approx": false
     },
     {
@@ -413,10 +473,7 @@
       "approx": false
     }
   ],
-  "data_gaps": [
-    "china_omo store unavailable (operations.parquet present but UNREADABLE) — no announced PBoC operations in this calendar",
-    "china_earnings store unavailable (calendar.parquet present but UNREADABLE) — no reporting-season windows"
-  ],
+  "data_gaps": [],
   "authority": {
     "tier": "context_only",
     "may_rank": false
