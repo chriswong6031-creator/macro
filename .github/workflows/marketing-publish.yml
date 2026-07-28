@@ -71,6 +71,20 @@ on:
         required: false
         type: boolean
         default: false
+      recall_pending:
+        description: >-
+          KILL-SWITCH RECALL — cancel every post already booked at Buffer that
+          has not sent yet, instead of publishing. This is the other half of
+          MARKETING_PUBLISH_ENABLED=0: the variable stops NEW sends, but
+          publish.max_forward_book_min hands posts to Buffer up to an hour
+          ahead and those fire on Buffer's schedule regardless (2026-07-28:
+          five booked posts survived the disarm by 41 minutes). The admin
+          Publisher panel's DISARM toggle sets this automatically. Runs
+          scripts.marketing_recall, which is deliberately NOT gated on the arm
+          variable — recall must work while the publisher is off.
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write             # commit changed outbox ledgers back to main
@@ -141,9 +155,16 @@ jobs:
         # bare form also works), this makes the scheduled lane provably identical
         # to before this input existed. The scheduled lane is not a place to be
         # clever about expression semantics we cannot run locally.
+        #
+        # Also SKIPPED on a recall dispatch, for the same reason and then some:
+        # a recall is racing posts that are already scheduled — the 2026-07-28
+        # incident had the first booked post firing 5 minutes after the operator
+        # disarmed — so sleeping up to 2 minutes before cancelling them would
+        # spend a quarter of the entire window on a de-sync nobody needs.
         if: >-
           ${{ !(github.event_name == 'workflow_dispatch'
-                && (inputs.skip_jitter || inputs.post_now_item != '')) }}
+                && (inputs.skip_jitter || inputs.recall_pending
+                    || inputs.post_now_item != '')) }}
         run: sleep $((RANDOM % 120))
 
       - name: fetch full-universe live quotes (tape gate input)
@@ -164,7 +185,29 @@ jobs:
             rm -f data/marketing/live_quotes_snapshot.json
           fi
 
+      - name: recall booked-but-unsent posts (kill-switch recall)
+        # THE OTHER HALF OF THE KILL SWITCH. Runs INSTEAD of the publisher when
+        # dispatched with recall_pending — see the input's description and
+        # scripts/marketing_recall.py's module docstring for the incident.
+        #
+        # Not gated on MARKETING_PUBLISH_ENABLED on purpose: the operator has
+        # just set that variable to 0, and a recall that only worked while the
+        # publisher was armed would be inoperable exactly when it is needed. The
+        # runner's own safety is the candidate rule — it will only cancel a post
+        # whose booked send time is still in the FUTURE, and only moves the
+        # ledger on a confirmed backend delete.
+        #
+        # Exits 1 if any delete failed, which turns this job red on purpose:
+        # a failed recall means posts the operator asked to stop are still going
+        # out, and that must not go green.
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.recall_pending }}
+        run: python -m scripts.marketing_recall --recall-pending --live
+
       - name: run publisher (dark until the kill-switch secret is set)
+        # Skipped on a recall dispatch — that run is here to STOP posts, not to
+        # send more. (With the variable already 0 the runner would dry-run
+        # anyway; this makes the intent explicit rather than incidental.)
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.recall_pending) }}
         env:
           # Breaking dispatch: empty on every scheduled sweep, so the normal
           # ladder run is byte-identical to before this input existed.
@@ -195,7 +238,19 @@ jobs:
         # VARIABLE whose disarmed value is the literal "0" (non-empty), so this
         # guard tests `== '1'` (armed), NOT `!= ''` — otherwise a disarmed "0"
         # would wrongly commit the dry-run's audit row.
-        if: always() && env.MARKETING_PUBLISH_ENABLED == '1'
+        #
+        # A RECALL DISPATCH IS THE EXCEPTION, and it has to be. The operator
+        # flips the variable to 0 and the recall runs moments later, so the
+        # armed test is false by construction — yet that run writes REAL ledger
+        # state (posted→recalled transitions plus the publications retraction
+        # rows). Without this second clause every recall would cancel the posts
+        # at Buffer and then throw away the record of having done so: main would
+        # still show them `posted`, the next fold would disagree with reality,
+        # and the audit trail for a kill-switch event would be empty.
+        if: >-
+          ${{ always()
+              && (env.MARKETING_PUBLISH_ENABLED == '1'
+                  || (github.event_name == 'workflow_dispatch' && inputs.recall_pending)) }}
         run: |
           set -uo pipefail
           git config user.name "dashboard-bot"

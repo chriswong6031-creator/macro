@@ -43,7 +43,10 @@ if str(ROOT) not in sys.path:
 log = logging.getLogger("requeue_stale_copy")
 
 # Statuses a rewrite may not touch: the post is gone or deliberately killed.
-_TERMINAL = frozenset({"posted", "posting", "quarantined", "failed"})
+# `recalled` is terminal in outbox.TRANSITIONS — a rewrite in place is not just
+# pointless there, it is the wrong shape: the operator recalled that copy, and
+# the replacement belongs in a NEW item, not a second attempt at a dead one.
+_TERMINAL = frozenset({"posted", "posting", "quarantined", "failed", "recalled"})
 
 
 def _load_cfg(root: Path) -> dict:

@@ -2890,7 +2890,21 @@ jobs:
         # outbox ledgers with no union merge, so every retry-rebase conflicted.
         # Those three guards read committed YAML/gitattributes and need no
         # imports; the rest are stdlib + pyyaml. Nothing importorskip-gated.
-        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_marketing_personas.py tests/test_marketing_event_language.py tests/test_marketing_press_feeds.py tests/test_marketing_breaking.py tests/test_marketing_fastlane.py tests/test_marketing_press_copy.py tests/test_marketing_ramp_cta_jitter.py tests/test_marketing_expression_dial.py tests/test_marketing_cadence_spine.py tests/test_marketing_chart_coverage.py tests/test_marketing_desk_feeds.py tests/test_marketing_reply_desk.py tests/test_marketing_forward_booking.py -q
+        # test_marketing_recall (2026-07-28) joins the same lane: the other half
+        # of the operator kill switch. max_forward_book_min (the suite above)
+        # made a sweep book posts into Buffer's queue up to an hour ahead, and
+        # MARKETING_PUBLISH_ENABLED=0 has no reach into those — five booked posts
+        # outlived the disarm by 41 minutes the day it shipped. The suite pins
+        # the Buffer deletePost adapter, the posted→recalled edge and its
+        # terminality, the already-sent-is-untouchable rule, the zero-network
+        # dry-run, and the workflow/admin wiring that makes DISARM mean stop.
+        # Import closure is stdlib + pyyaml — the same two deps the publisher
+        # half runs on in marketing-social-publisher, with every Buffer call
+        # behind the _transport()/fake-publisher seam, so a heavy top-level
+        # import in social_publisher or marketing_recall turns this job red at
+        # collection. Its one yaml-reading helper importorskips, which is moot
+        # here (pyyaml is installed above) and keeps the file honest elsewhere.
+        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_marketing_personas.py tests/test_marketing_event_language.py tests/test_marketing_press_feeds.py tests/test_marketing_breaking.py tests/test_marketing_fastlane.py tests/test_marketing_press_copy.py tests/test_marketing_ramp_cta_jitter.py tests/test_marketing_expression_dial.py tests/test_marketing_cadence_spine.py tests/test_marketing_chart_coverage.py tests/test_marketing_desk_feeds.py tests/test_marketing_reply_desk.py tests/test_marketing_forward_booking.py tests/test_marketing_recall.py -q
       - name: reply-target register validates (config/reply_targets.yml)
         # The register is operator-curated, so a bad handle or an unknown tier is
         # an editing mistake, not a code change. Runs as its own step so a
