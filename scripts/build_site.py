@@ -4321,7 +4321,8 @@ def main() -> int:
     # (theme.js signInWithOAuth redirectTo), not a fixed host — the allowed
     # origins live in the Supabase dashboard (see ACCOUNTS_SETUP.md).
     # copy shared static assets (theme + visual widgets) into the site
-    for asset in ("theme.css", "product-nav-icons.css", "theme.js", "mtf.js", "chart_i18n.js", "timemachine.js",
+    for asset in ("theme.css", "product-nav-icons.css", "dashboard-icons.js",
+                  "theme.js", "mtf.js", "chart_i18n.js", "timemachine.js",
                   "illus.css", "illus.js",
                   "account.js",
                   # landing onboarding sheet (paired templates/ -> site/ byte copy)
