@@ -105,8 +105,12 @@ sentinel:
   #   1. the per-account CADENCE RESOLVER (cadence_resolver: below) — each
   #      account's own posts_per_day / min_spacing_min / session window, read
   #      from config/personas/<id>.yml. This is the per-account law; the specs'
-  #      cadence blocks were decorative until XG-W2 and are now enforced.
-  #   2. the post-time 10-minute global floor (publish.min_minutes_between_any_posts).
+  #      cadence blocks were decorative until XG-W2, and ARMED 2026-07-28 once
+  #      their numbers were reconciled with the ramp tiers below. It is the only
+  #      per-account SPACING bound in the stack.
+  #   2. the post-time global floor (publish.min_minutes_between_any_posts) — 4
+  #      minutes since #3924, network-wide. It was 10 and was pacing seven desks
+  #      as if they were one; it is an anti-collision floor, not a cadence.
   #   3. this key, narrowed by the ramp tier — the network-wide ceiling. Still
   #      honoured, still able to LOWER any account below its spec. Setting it
   #      back to a real number is a valid tightening at any time; the resolver
@@ -602,18 +606,33 @@ publish:
 # consults an LLM, and the resolver can only refuse, never escalate.
 # ─────────────────────────────────────────────────────────────────────────────
 cadence_resolver:
-  # LAND DARK (XG-W2 arming ruling). false = SHADOW MODE: the resolver runs its
-  # full computation and logs the verdict it WOULD return (detail.would_refuse)
-  # but binds nothing. Arm after reading one cycle of would_refuse — flipping
-  # this to true is the operator/session arming decision, not a builder's.
+  # ARMED 2026-07-28, after the persona cadence blocks were reconciled with the
+  # D08 ramp. It landed dark (XG-W2) for a good reason: the specs still carried
+  # their W1 declarations — 3-4 posts/day at a 120-180 MINUTE spacing floor —
+  # against a ramp that grants 10/day per desk and 20 to the flagship, and the two
+  # are ANDed at post time. One cycle of shadow verdicts said exactly that:
   #
-  # What arming turns on, concretely: every live account gains its persona
-  # spec's posts_per_day / min_spacing_min / session window as a hard bound. Note
-  # weekend_shape below — flagship and founder are `light`, which resolves to
-  # 1 post on a Saturday or Sunday. That is a real reduction from today's
-  # behaviour and it is the single change most likely to surprise, which is
-  # exactly why this ships off.
-  enabled: false
+  #   flagship posts_per_day=4 posted_today=3 min_spacing_min=120 -> min_spacing
+  #   sophia   posts_per_day=3 posted_today=2 min_spacing_min=180 -> min_spacing
+  #   founder  posts_per_day=3 posted_today=3                     -> daily_cap
+  #
+  # Arming on those numbers would have cut the network from 70 posts/day to 20 and
+  # made every cap #3904 raised dead config. The specs now sit at or above every
+  # ramp tier they will reach, so on a weekday the resolver binds nothing the ramp
+  # was not already binding (measured: 70/70 today, 90/90 at the +14d tier).
+  #
+  # What arming ADDS is the per-account SPACING floor. #3924 removed the 10-minute
+  # global floor because it paced seven desks as if they were one; that left only
+  # publish.min_minutes_between_any_posts (4 min, network-wide) and NOTHING
+  # bounding a single desk's burstiness — which is the shape an automation
+  # heuristic actually reads. This is the per-account bound the global floor was
+  # wrongly standing in for.
+  #
+  # It also turns on weekend shaping (weekend_shape below) and Cici's territory
+  # clock. The specs moved to `medium` (0.67 -> 13 posts of 20) rather than
+  # `light` (0.34 -> 7), which would have fallen under the operator's 10/day floor.
+  # Guard: tests/test_marketing_cadence_ramp_coherence.py.
+  enabled: true
 
   # IMMEDIATE / breaking items skip the resolver, honouring the standing
   # operator ruling of 2026-07-27 ("breaking has no limits") that already

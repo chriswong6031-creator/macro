@@ -1246,6 +1246,16 @@ on:
       # config/marketing.yml + config/personas/** above; the suite is listed by
       # name so a TEST-ONLY edit still reaches the lane that runs it.
       - "tests/test_marketing_cadence_spine.py"
+      # The cadence spec <-> D08 ramp coherence guard (2026-07-28). The two are
+      # ANDed at post time, so a persona `cadence:` block below its ramp tier is a
+      # silent network-wide throttle. Its subjects are config/personas/** and
+      # config/marketing.yml (both listed above) plus .github/workflows/
+      # marketing-publish.yml, which is NOT otherwise matched by anything in this
+      # list — the suite derives the sweep grid from that cron, so a cron edit has
+      # to reach the lane too. Both are named so a workflow-only or test-only edit
+      # still runs the guard.
+      - "tests/test_marketing_cadence_ramp_coherence.py"
+      - ".github/workflows/marketing-publish.yml"
       # X Growth W3 (XG-W3): the franchise register + slot scheduler, the
       # four-lane desk feed, the persona memory stores (promises/phrases/
       # relations) and the Gift-Grip-Proof value gate. Its subject modules are

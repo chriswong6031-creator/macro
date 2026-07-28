@@ -34,8 +34,10 @@ ROOT = Path(__file__).resolve().parent.parent
 _WED_UTC = datetime(2026, 7, 22, 12, 0, 0, tzinfo=timezone.utc)
 # The same Wednesday at 04:00 UTC — 12:00 in Hong Kong (cash session).
 _WED_HK_CASH = datetime(2026, 7, 22, 4, 0, 0, tzinfo=timezone.utc)
-# The same Wednesday at 18:00 UTC — 02:00 Thursday in Hong Kong (outside both).
-_WED_HK_ASLEEP = datetime(2026, 7, 22, 18, 0, 0, tzinfo=timezone.utc)
+# The same Wednesday at 22:00 UTC — 06:00 Thursday in Hong Kong (outside both).
+# 06:00 rather than 02:00 since 2026-07-28: her evening leg now runs to 05:00 HK
+# so it covers the whole US cash session, and 02:00 HK is inside it.
+_WED_HK_ASLEEP = datetime(2026, 7, 22, 22, 0, 0, tzinfo=timezone.utc)
 # A Saturday, for weekend_shape.
 _SAT_UTC = datetime(2026, 7, 25, 12, 0, 0, tzinfo=timezone.utc)
 
@@ -535,9 +537,10 @@ def test_cici_out_of_session_allowance_is_spent_then_refused():
     next one is refused for being out of session.
 
     Every timestamp below is chosen to land on the SAME Hong Kong calendar day
-    (Thu 2026-07-23) and outside both of her windows, and to clear her 150-minute
-    spacing floor — otherwise an earlier gate would fire and the session branch
-    would never be reached.
+    (Thu 2026-07-23) and outside both of her windows, and to clear her spacing
+    floor — otherwise an earlier gate would fire and the session branch would
+    never be reached. Her out-of-window hours are 05:00-08:00 and 17:00-20:00 HK
+    since the evening leg was widened to cover the US cash session (2026-07-28).
     """
     from engine.marketing import cadence_resolver as CR
     from engine.marketing import personas as P
@@ -545,8 +548,8 @@ def test_cici_out_of_session_allowance_is_spent_then_refused():
     prof = CR.load_profile("cici", specs=P.load_all(ROOT))
     assert prof is not None
 
-    now = datetime(2026, 7, 22, 21, 0, tzinfo=timezone.utc)      # 05:00 Thu HK
-    earlier = datetime(2026, 7, 22, 17, 0, tzinfo=timezone.utc)  # 01:00 Thu HK
+    now = datetime(2026, 7, 22, 23, 30, tzinfo=timezone.utc)      # 07:30 Thu HK
+    earlier = datetime(2026, 7, 22, 21, 30, tzinfo=timezone.utc)  # 05:30 Thu HK
     assert not CR.in_session(prof, now) and not CR.in_session(prof, earlier)
 
     # Nothing posted yet → the single out-of-window allowance is available.
@@ -1285,34 +1288,41 @@ def test_posting_history_prefers_booked_at_over_the_ledger_write_time():
         datetime(2026, 7, 22, 9, 0, tzinfo=timezone.utc)
 
 
-def test_the_shipped_config_lands_the_resolver_dark():
-    """MAJOR-4. The arming decision is the operator's, made after reading one
-    cycle of detail.would_refuse — not a builder's, and not implicit in a merge.
-    Note what arming changes: weekend_shape `light` resolves to 1 post/day on a
-    Saturday or Sunday for flagship and founder."""
+def test_the_shipped_config_arms_the_resolver():
+    """MAJOR-4, resolved 2026-07-28. It landed dark because arming it against the
+    W1 spec declarations (3-4 posts/day at a 120-180 minute floor) would have cut
+    the network from 70 posts/day to 20 — the specs, not the ramp, were the
+    binding number. They have been reconciled with the ramp tiers, so the resolver
+    now adds pacing without removing volume, and the per-account spacing floor it
+    carries is the bound #3924 left the stack without. The full set of relations
+    that keeps this true lives in tests/test_marketing_cadence_ramp_coherence.py.
+    """
     import yaml
 
     from engine.marketing import cadence_resolver as CR
 
     cfg = yaml.safe_load((ROOT / "config" / "marketing.yml").read_text(encoding="utf-8"))
-    assert CR.resolver_config(cfg)["enabled"] is False, \
-        "XG-W2 lands dark; arming is a separate, deliberate config flip"
-    # …but the machinery is fully wired, so arming is one key and nothing else.
+    assert CR.resolver_config(cfg)["enabled"] is True, \
+        "the per-account bound is armed; disarming leaves only the 4-min network floor"
     assert cfg["cadence_resolver"]["exempt_immediate"] is True
     assert set(cfg["cadence_resolver"]["weekend_factors"]) == {"light", "medium", "full"}
 
 
 def test_shadow_mode_still_computes_the_verdict_it_would_have_returned():
-    """Landing dark is only useful if the dark run tells you what arming does."""
+    """Shadow mode stays wired even though the live config is armed: it is how the
+    NEXT cadence change gets read before it binds. `dark` is passed explicitly."""
     from engine.marketing import cadence_resolver as CR
     from engine.marketing import personas as P
 
     prof = CR.load_profile("flagship", specs=P.load_all(ROOT))
     assert prof is not None
     dark = {"cadence_resolver": {"enabled": False}}
-    history = [(_SAT_UTC - timedelta(hours=6), "signal")]
+    # weekend_shape `medium` -> round(20 * 0.67) = 13 on a Saturday. Fill it, then
+    # the next item is over the daily cap; the budget gate runs before spacing, so
+    # the spread of these stamps does not matter.
+    history = [(_SAT_UTC - timedelta(minutes=30 * (i + 1)), "signal") for i in range(13)]
     d = CR.resolve("flagship", "signal", now=_SAT_UTC, profile=prof,
                    history=history, cfg=dark)
-    assert d.allow
+    assert d.allow, "shadow mode must not bind"
     assert d.detail["would_refuse"] == CR.REASON_DAILY_CAP
-    assert d.detail["daily_budget"] == 1, "flagship weekend_shape light -> 1/day"
+    assert d.detail["daily_budget"] == 13, "flagship weekend_shape medium -> 13/day"
