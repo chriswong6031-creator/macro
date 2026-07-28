@@ -627,6 +627,7 @@ a.mast-name:hover { color: var(--wire); }
 }
 .foot-meta a { color: var(--paper-mute); text-decoration: none; }
 .foot-meta a:hover { color: var(--wire); }
+.foot-meta a.foot-x { font-variant-numeric: tabular-nums; }
 .foot-c { color: var(--paper-dim); }
 
 /* ---------------------------------------------------------------------------

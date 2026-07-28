@@ -430,8 +430,13 @@ def _build_rail_item(
 
     An item that emitted to X reuses its fully-composed body (opener + summary +
     attribution + tape). A rail-only item (digest-class or below the X post floor)
-    gets a DETERMINISTIC display text — headline + attribution + tape — with NO
-    extra LLM call, so the rail stays cost-free display-tier.
+    gets a DETERMINISTIC display text — headline + attribution + tape — so this
+    builder makes no LLM call of its own.
+
+    BOTH paths end the text with " · {tape_stamp}" when a stamp exists, and the
+    stamp also ships as its own field. The news.html rail therefore strips that
+    tail for display and re-renders the stamp from the structured field, which is
+    the only way it can carry its window in words and be translated.
     """
     iid = str(scored.get("id", ""))
     corr_class = str(scored.get("corroboration_class", "hearsay"))
@@ -945,8 +950,13 @@ def run_press_tick(
     # The rail shows EVERYTHING above a LOWER floor (incl. digest-class items X
     # never posts) — the news.html retention surface. Items that emitted to X reuse
     # their composed body; rail-only items (digest/below-post-floor) get a
-    # deterministic display text (headline + attribution + tape) — NO extra LLM
-    # call, so the rail is cost-free display-tier. Ranked by salience, capped.
+    # deterministic display text (headline + attribution + tape). Ranked by
+    # salience, capped.
+    #
+    # NOTE: this builder itself makes no LLM call, but the rail is no longer
+    # cost-free end to end — the daemon's B4c zh pass translates each NEW item
+    # once before publishing (scripts/marketing_fastlane_daemon.py::_attach_zh,
+    # capped per tick and disarmable via wire.zh_enabled).
     rail_seen: set[str] = set()
     for s in scored:
         try:

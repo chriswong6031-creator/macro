@@ -43,9 +43,12 @@ Heartbeat:
     Each successful tick touches data/marketing/fastlane_heartbeat.txt with the
     current UTC timestamp.  --dry-run skips the heartbeat write.
 
-Press-lane local state (gitignored — data/marketing/press/state.json):
+Press-lane local state (gitignored — data/marketing/press/):
     provider cursors / conditional-GET ETags / spend accounting / flagship counter
-    / corroboration window / seen-ledger.  The poller makes ZERO repo/git writes.
+    / corroboration window / seen-ledger / the B4c zh translation cache.  The poller
+    makes ZERO repo/git writes and advances NO forward ledger (the zh pass therefore
+    keeps its cache here rather than in the git-tracked news-translation cache, and
+    suppresses the lib.ai_costs append that the nightly is the sole advancer of).
 
 No git writes.  No ledger advances.  The daemon is a fully intraday lane.
 """
@@ -56,7 +59,7 @@ import logging
 import os
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 
@@ -95,7 +98,10 @@ _HEARTBEAT_PATH = ROOT / "data" / "marketing" / "fastlane_heartbeat.txt"
 _KILL_SWITCH_ENV = "MARKETING_FASTLANE_ENABLED"
 _DEFAULT_INTERVAL_S = 120
 
-# Press-lane local-only state (gitignored). The poller writes ONLY here.
+# Press-lane local-only state. The poller writes ONLY under data/marketing/press/,
+# which .gitignore covers as a whole directory: state.json, seen.json and the B4c
+# zh translation cache (_WIRES_ZH_CACHE). Anything this lane needs to persist goes
+# HERE — not into a git-tracked cache and not into a nightly-owned forward ledger.
 _PRESS_STATE_PATH = ROOT / "data" / "marketing" / "press" / "state.json"
 _PRESS_SEEN_PATH = ROOT / "data" / "marketing" / "press" / "seen.json"
 _PRESS_SEEN_CAP = 8000
@@ -187,7 +193,6 @@ def _run_one_tick(*, dry_run: bool, armed: bool = True) -> dict:
     now = datetime.now(timezone.utc)
     # Fetch events since a lookback window (last 30 minutes) — the seen-ledger
     # handles deduplication so overlap is safe.
-    from datetime import timedelta
     since = now - timedelta(minutes=30)
 
     events = fetch_events(since) if armed else []
@@ -398,6 +403,9 @@ _WIRES_SINK_PATHS: tuple[str, ...] = (
 # therefore MERGE the tick's items into the persisted window and cap the result,
 # not overwrite — otherwise the wire rail blanks the moment nothing new crosses.
 _DEFAULT_WIRES_RAIL_MAX = 50
+# Age bound as well as a count bound: the count alone lets a quiet feed serve
+# days-old items as if they were the live wire.
+_DEFAULT_WIRES_MAX_AGE_H = 48.0
 
 
 def _wires_sink_target(press_cfg: dict) -> "Path | None":
@@ -455,27 +463,191 @@ def _wire_sort_key(item: dict) -> str:
 
 
 def _merge_wires_window(
-    existing: list[dict], new_items: list, rail_max: int
+    existing: list[dict], new_items: list, rail_max: int, wire_cfg: dict | None = None
 ) -> list[dict]:
     """Merge this tick's rail items into the persisted window (M1).
 
-    - Merge by item id; a NEW item wins (replaces the persisted copy — its body may
-      have been recomposed, e.g. a tape stamp attached on a later tick).
+    - Merge by item id; a NEW item wins field-by-field, but a field the new copy
+      LACKS keeps the persisted value. The one that matters is `zh`: an item that
+      re-arrives on a later tick (a recomposed body, a tape stamp attached late)
+      arrives untranslated, and a blind replace would drop a translation we have
+      already paid for and re-buy it next tick.
     - Sort newest-first by ts.
+    - Drop items older than max_age_h. Without this the window is bounded only by
+      COUNT, so a quiet feed keeps serving days-old items forever — and the rail
+      would present them as the current wire.
     - Cap at rail_max (keep the newest).
     """
     by_id: dict[str, dict] = {}
-    # Persisted items first, then new items overwrite same-id entries (new wins).
     for it in existing:
         if isinstance(it, dict) and it.get("id"):
             by_id[str(it["id"])] = it
     for it in new_items or []:
-        if isinstance(it, dict) and it.get("id"):
-            by_id[str(it["id"])] = it
+        if not isinstance(it, dict) or not it.get("id"):
+            continue
+        key = str(it["id"])
+        old = by_id.get(key)
+        by_id[key] = {**old, **it} if isinstance(old, dict) else it
+
     merged = sorted(by_id.values(), key=_wire_sort_key, reverse=True)
+
+    cfg = wire_cfg or {}
+    try:
+        max_age_h = float(cfg.get("rail_max_age_h", _DEFAULT_WIRES_MAX_AGE_H))
+    except (TypeError, ValueError):
+        max_age_h = _DEFAULT_WIRES_MAX_AGE_H
+    if max_age_h > 0:
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=max_age_h)
+
+        def _fresh(it: dict) -> bool:
+            raw = str(it.get("ts") or "")
+            if not raw:
+                return True          # unparseable ts: keep, the count cap still bounds it
+            try:
+                ts = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+            except ValueError:
+                return True
+            if ts.tzinfo is None:
+                ts = ts.replace(tzinfo=timezone.utc)
+            return ts >= cutoff
+
+        merged = [it for it in merged if _fresh(it)]
+
     if rail_max > 0:
         merged = merged[:rail_max]
     return merged
+
+
+# B4c: where the wire lane's translation cache lives. The shared news-translation
+# cache (data/news_translation/cache/) is git-TRACKED and the nightly commits it;
+# this daemon runs against a deployed checkout that update.sh hard-resets every
+# few minutes, so writing there both dirties the work-tree (D05 W0 zero-repo-
+# writes law) and throws the cache away on the next reset. data/marketing/press/
+# is gitignored and is already this lane's own state directory.
+_WIRES_ZH_CACHE = "data/marketing/press/zh_cache"
+
+# One batch per tick, matching news_translate's own batch_size. The tick budget is
+# ~75s and the heartbeat only touches AFTER it returns, so the zh pass may never
+# be the thing that makes a healthy daemon look dead. Items past the cap keep
+# their English text and the client's plain 英文原文 marker, and roll into the
+# next tick — the rolling window means they are still there.
+_WIRES_ZH_PER_TICK = 16
+_WIRES_ZH_TIMEOUT_S = 20.0
+
+
+def _zh_cfg(wire_cfg: dict) -> dict:
+    """Translation config for the wire lane — nothing it writes lands in the repo.
+
+    `cache_dir` is made ABSOLUTE under the gitignored lane directory, and
+    `usage_sink: none` suppresses the lib.ai_costs append: data/ai_costs/usage.jsonl
+    is a forward ledger that the nightly is the sole advancer of, and an intraday
+    poller must not append to it. The spend is surfaced instead in this lane's own
+    log line and in the wires payload meta, both of which are host state.
+    """
+    from lib import config as _config  # noqa: PLC0415
+    base = dict(_config.load().get("news_translation", {}) or {})
+    base.update({
+        "cache_dir": str((ROOT / _WIRES_ZH_CACHE).resolve()),
+        "usage_sink": "none",
+        "usage_lane": "press-wire-zh",
+        "timeout_s": float(wire_cfg.get("zh_timeout_s", _WIRES_ZH_TIMEOUT_S)),
+        "max_retries": 0,
+        # Wire bodies run to the wire_deep budget (~700 chars); the shared default
+        # of 360 would truncate them mid-sentence.
+        "max_chars": int(wire_cfg.get("zh_max_chars", 700)),
+    })
+    return base
+
+
+def _attach_zh(new_items: list, wire_cfg: dict,
+               have_zh: set[str] | frozenset[str] = frozenset()) -> tuple[int, int]:
+    """B4c: give this tick's NEW rail items a Chinese twin, in place (fail-soft).
+
+    The news.html rail is a bilingual surface, but wire copy arrives in English.
+    Only items entering the window this tick are translated. `have_zh` carries the
+    ids the PERSISTED window already has a twin for, and they are skipped: an item
+    re-arrives on later ticks (a recomposed body, a tape stamp attached late) with
+    no `zh` on it, and without this it would be re-sent every tick for as long as
+    it stays in the window — the merge would then throw the freshly-bought
+    translation away in favour of the persisted one. The text-hash cache usually
+    absorbs that, but "usually free" is not a budget, and one cache wipe would turn
+    it into a real per-tick bill.
+
+    The trailing " · <tape_stamp>" is stripped before translating: the stamp is a
+    language-neutral "LABEL ±X.X%" that the rail re-renders from the structured
+    field with its own bilingual gloss, so sending it to the model would both cost
+    tokens and produce a mangled duplicate.
+
+    Fail-soft is the whole contract: translate_to_zh returns None per item when
+    the feature is disabled, unkeyed, rate-limited or malformed, and the item then
+    simply ships without `zh`. The client renders the English with a plain
+    "英文原文" marker rather than passing English off as translated, so a dead
+    translator degrades to honest disclosure, never to a blank rail.
+
+    Returns (filled, attempted) for the caller's log/meta line.
+    """
+    # Default OFF in code: deleting the config key must DISARM the spend, never
+    # silently arm it. config/press_sources.yml carries the explicit `true`.
+    if not new_items or not wire_cfg.get("zh_enabled", False):
+        return (0, 0)
+    pending = [it for it in new_items
+               if isinstance(it, dict) and it.get("en") and not it.get("zh")
+               and str(it.get("id", "")) not in have_zh]
+    if not pending:
+        return (0, 0)
+    try:
+        per_tick = int(wire_cfg.get("zh_per_tick", _WIRES_ZH_PER_TICK))
+    except (TypeError, ValueError):
+        per_tick = _WIRES_ZH_PER_TICK
+    if per_tick > 0:
+        pending = pending[:per_tick]
+
+    def _strip_stamp(it: dict) -> str:
+        text = str(it.get("en") or "")
+        stamp = str(it.get("tape_stamp") or "")
+        tail = " · " + stamp
+        return text[:-len(tail)] if stamp and text.endswith(tail) else text
+
+    cfg = _zh_cfg(wire_cfg)
+    try:
+        from engine.news_translate import translate_to_zh  # noqa: PLC0415
+        out = translate_to_zh([_strip_stamp(it) for it in pending], cfg)
+    except Exception as exc:  # noqa: BLE001 — a translator fault never breaks the sink
+        logger.warning("[press] wires zh translation skipped (%s: %s)",
+                       type(exc).__name__, exc)
+        return (0, len(pending))
+    filled = 0
+    for it, zh in zip(pending, out or [], strict=False):
+        zh_s = str(zh).strip() if zh else ""
+        if zh_s and zh_s != _strip_stamp(it).strip():
+            it["zh"] = zh_s
+            filled += 1
+    if filled < len(pending):
+        # One line, not one per item: a keyless host would otherwise log a wall.
+        logger.info("[press] wires zh: %d/%d translated (the rest ship as English "
+                    "with the 英文原文 marker)", filled, len(pending))
+    return (filled, len(pending))
+
+
+def _zh_preflight(wire_cfg: dict) -> None:
+    """One notice when the zh pass is armed but cannot possibly run.
+
+    DEEPSEEK_API_KEY is not provisioned in the VPS unit today, so without this the
+    lane is silently English-only forever and looks like a rail bug rather than a
+    missing secret.
+    """
+    if not wire_cfg.get("zh_enabled", False):
+        return
+    cfg = _zh_cfg(wire_cfg)
+    if not cfg.get("enabled"):
+        logger.info("[press] wires zh armed but news_translation.enabled is false "
+                    "— items ship English-only")
+        return
+    from lib import config as _config  # noqa: PLC0415
+    if not _config.secret(cfg.get("api_key_env", "DEEPSEEK_API_KEY")):
+        logger.warning("[press] wires zh armed but %s is not set on this host "
+                       "— items ship English-only (see docs/marketing_publisher_runbook.md)",
+                       cfg.get("api_key_env", "DEEPSEEK_API_KEY"))
 
 
 def _write_wires_sink(rail_items: list, press_cfg: dict, now: datetime) -> None:
@@ -499,14 +671,27 @@ def _write_wires_sink(rail_items: list, press_cfg: dict, now: datetime) -> None:
     except (TypeError, ValueError):
         rail_max = _DEFAULT_WIRES_RAIL_MAX
 
+    # B4c: translate before the merge, so a persisted item keeps the `zh` it was
+    # given on the tick it arrived and is never re-translated.
+    # Read the persisted window BEFORE translating: it tells the zh pass which ids
+    # already have a twin we paid for, so a re-arriving item is never re-sent.
     existing = _read_existing_wires(target)
-    merged = _merge_wires_window(existing, rail_items, rail_max)
+    have_zh = {str(it.get("id")) for it in existing if isinstance(it, dict) and it.get("zh")}
+
+    _zh_preflight(wire_cfg)
+    zh_filled, zh_tried = _attach_zh(rail_items, wire_cfg, have_zh)
+
+    merged = _merge_wires_window(existing, rail_items, rail_max, wire_cfg)
 
     payload = {
         "schema": "wires.v1",
         "updated_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
         "items": merged,
     }
+    if zh_tried:
+        # Lane spend/effort visible in host state, since this lane deliberately
+        # does not append to the nightly-owned data/ai_costs ledger.
+        payload["zh"] = {"translated": zh_filled, "attempted": zh_tried}
     from scripts.vps_live_orchestrator import atomic_write_json  # noqa: PLC0415
     atomic_write_json(target, payload, mode=0o644)
 

@@ -441,11 +441,22 @@ git/repo writes (D05 W0 law); the nightly is the sole advancer of any forward le
 **Arming (operator, on the VPS — NOT part of the build):**
 1. Add to `/etc/macro-live.env`: `MARKETING_FASTLANE_ENABLED=1`,
    `MARKETING_PUBLISH_ENABLED=1`, and (optionally) `TWITTERAPI_IO_KEY=…`.
-2. Install the unit: `cp app/deploy/marketing-press-feeds.service /etc/systemd/system/`
+2. **For Chinese wire items on the news.html rail (B4c), also add `DEEPSEEK_API_KEY=…`.**
+   It is NOT provisioned on the VPS today. Without it the lane still runs: items
+   ship English-only and the rail marks them 「英文原文」 rather than faking a
+   translation — but the daemon logs one `wires zh armed but DEEPSEEK_API_KEY is
+   not set` warning per tick so the gap is visible instead of silent. The pass is
+   also disarmable in config (`wire.zh_enabled: false` in `config/press_sources.yml`,
+   which defaults to OFF in code — deleting the key disarms the spend).
+   The lane keeps its translation cache under the gitignored
+   `data/marketing/press/zh_cache/` and does NOT append to `data/ai_costs/usage.jsonl`
+   (nightly is the sole ledger advancer); per-tick counts appear in the log line and
+   in the `zh` block of the published `wires.json`.
+3. Install the unit: `cp app/deploy/marketing-press-feeds.service /etc/systemd/system/`
    then `systemctl daemon-reload && systemctl enable --now marketing-press-feeds`.
-3. Watch: `journalctl -u marketing-press-feeds -f` — one `[press] tick …` line per
+4. Watch: `journalctl -u marketing-press-feeds -f` — one `[press] tick …` line per
    tick; emitted items appear in the outbox and ride section 13's dispatch.
-4. Disarm: unset either env var (or `systemctl disable --now marketing-press-feeds`).
+5. Disarm: unset either env var (or `systemctl disable --now marketing-press-feeds`).
 
 **Twitterapi.io spend cap.** A `::warning title=twitterapiio-spend-cap::…` line in the
 log means the monthly cap was hit and the X relay stopped for the month; the mirror
