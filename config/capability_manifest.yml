@@ -411,12 +411,22 @@ capabilities:
     kind: llm_api_key
     secret_ref: DEEPSEEK_API_KEY
     scope: >
-      DeepSeek API key for the brain-fast lane (deepseek-chat via Anthropic-compatible
-      endpoint at https://api.deepseek.com/anthropic).  Primary provider for the fast
-      lane; falls back to claude-haiku-4-5 via Anthropic key when absent/dead.
+      DeepSeek API key used by the shared Anthropic-compatible provider waterfall.
+      Primary provider for brain-fast and a metered fallback for other configured
+      lanes. A DeepSeek V4 Pro request maps to Codex Sol when the Codex fallback is
+      reached; V4 Flash maps to Codex Terra.
     storage_locus: gh-secret
     allowed_lanes:
-      - brain-fast        # MNZ-W6a: fast lane primary
+      - brain-fast
+      - brain-pro
+      - news-llm
+      - commodity-news
+      - risk-brain
+      - risk-radar-review
+      - influence-extract
+      - narrative-brain
+      - altdata-brain
+      - whitehouse
     allowed_tiers:
       - T0
       - T1
@@ -424,9 +434,52 @@ capabilities:
     rotation_state: active
     kill_state: active
     notes: >
-      MNZ-W6a §3.5 Amendment 2: deepseek-chat via Anthropic-compatible endpoint.
-      Gateway degrades to claude-haiku-4-5 (ANTHROPIC_API_KEY) when this key is absent.
-      Conservative least-privilege: brain-fast only; not allowed for pro lane.
+      DeepSeek is already a shared waterfall provider. It now has the same
+      cross-process usage/cooling ledger identity as the Claude OAuth pool.
+
+  # ── Attached Codex account (shared subscription fallback) ─────────────────
+
+  - capability_id: codex_account
+    kind: llm_subscription
+    secret_ref: CODEX_ACCESS_TOKEN
+    scope: >
+      Attached Codex/ChatGPT account exposed through a text-only Codex CLI adapter.
+      It is inserted after the Claude OAuth pool and before metered providers, or
+      appended as the final fallback in lanes without OAuth. Requested tiers map
+      as follows: Claude Opus/Fable and DeepSeek V4 Pro to Sol; Claude Sonnet and
+      DeepSeek V4 Flash to Terra; Claude Haiku to Luna.
+    storage_locus: self-hosted-runner-auth-cache
+    allowed_lanes:
+      - metabolism-shadow
+      - metabolism-standout
+      - cortex
+      - whitehouse
+      - causal-brainstorm
+      - signal-foundry
+      - extraction-drift
+      - commodity-news
+      - risk-brain
+      - risk-radar-review
+      - influence-extract
+      - narrative-brain
+      - altdata-brain
+      - news-llm
+      - ask-brain
+      - orchestrator-chat
+      - brain-fast
+      - brain-pro
+    allowed_tiers:
+      - T0
+      - T1
+      - T2
+    rotation_state: active
+    kill_state: active
+    notes: >
+      Production auto-discovers the local Codex CLI plus attached auth without
+      reading or copying credential values. CODEX_ACCESS_TOKEN is the optional
+      trusted-automation transport; the current self-hosted runner uses its
+      existing ~/.codex/auth.json login. Public hosts without that login skip
+      this provider. CODEX_PROVIDER_ENABLED=0 is the emergency kill switch.
 
   # ── GitHub token (read/write for PR operations) ──────────────────────────
 

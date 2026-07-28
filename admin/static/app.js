@@ -2123,6 +2123,9 @@ RENDER.cost = async () => {
 
   // ── (g) raw key usage (async-loaded below) — preserved ──
   const rawKeySection = `<div class="section">Raw key usage (rate-limit headers)</div>
+    <div class="card sub muted" style="margin-bottom:8px">
+      Shared fallback translation: Claude Opus/Fable → Codex Sol · Sonnet → Terra · Haiku → Luna · DeepSeek V4 Pro → Sol · V4 Flash → Terra.
+    </div>
     <div class="card" id="costKeysCard"><div class="sub muted">Loading…</div></div>`;
 
   // ── (h) legacy forward estimate — collapsed ──
@@ -2186,6 +2189,9 @@ RENDER.cost = async () => {
         ? Object.entries(k.ratelimit_headers).map(([h, hv]) => `<div class="sub mono">${esc(h)}: <b>${esc(String(hv))}</b> <span class="muted">(reported)</span></div>`).join("")
         : `<span class="muted sub">—</span>`;
       const displayKeyId = k.key_id === "legacy" ? "legacy (deprecated)" : (k.key_id || "—");
+      const providerDetail = k.provider || k.model_translation
+        ? `<div class="sub muted">${esc(k.provider || "")}${k.provider && k.model_translation ? " · " : ""}${esc(k.model_translation || "")}</div>`
+        : "";
       // Bot (MM) cell: bot-side key-pool health from the federation join.
       // AUTH DEAD (red) > cooling window/weekly (amber) > OK (muted green).
       const botTip = `bot last: ${k.mm_last_outcome || "—"}${k.mm_last_ts ? " @ " + k.mm_last_ts : ""}`;
@@ -2201,7 +2207,7 @@ RENDER.cost = async () => {
         botLabel = `<span class="muted sub" title="no bot activity reported">—</span>`;
       }
       return `<tr>
-        <td class="mono">${esc(displayKeyId)}${presentLabel}</td>
+        <td class="mono">${esc(displayKeyId)}${presentLabel}${providerDetail}</td>
         <td>${enabledLabel}</td>
         <td>${coolLabel}</td>
         <td class="sub mono">${esc(k.reset_hint || "—")}</td>
@@ -2216,7 +2222,7 @@ RENDER.cost = async () => {
       </tr>`;
     }).join("")}
     </tbody></table>
-    <div class="sub muted" style="margin-top:8px">est. = locally-observed rolling window estimate · reported = Anthropic response header value · MM 7d = Mastermind bot sessions in last 7 days · Bot (MM) = bot-reported key-pool health (OK / cooling reset / AUTH DEAD)</div>`;
+    <div class="sub muted" style="margin-top:8px">est. = locally-observed rolling window estimate · reported = provider response quota/rate-limit value · MM 7d = Mastermind bot sessions in last 7 days · Bot (MM) = bot-reported Claude key-pool health (OK / cooling reset / AUTH DEAD)</div>`;
   })();
 };
 

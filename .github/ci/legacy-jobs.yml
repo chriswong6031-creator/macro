@@ -1739,7 +1739,7 @@ jobs:
       - name: metabolism v4 w1 suite (real BUILD dispatch — R-V4-2)
         run: python -m pytest tests/test_metabolism_v4_w1_dispatch.py tests/test_metabolism_buildlane.py -q
       - name: llm auth waterfall + multi-key failover suite
-        run: python -m pytest tests/test_llm_auth.py tests/test_key_pool.py -q
+        run: python -m pytest tests/test_codex_provider.py tests/test_llm_auth.py tests/test_key_pool.py -q
       - name: V10 key economy suite (enabled-set, header capture, usage snapshot)
         run: python -m pytest tests/test_key_pool_economy.py -q
       - name: cortex provider routing + tool loop suite

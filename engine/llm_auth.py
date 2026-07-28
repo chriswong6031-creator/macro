@@ -306,7 +306,7 @@ def _cool_pool_key(p: dict, kind: str) -> None:
 # provider descriptor (what each brain passes in)
 # --------------------------------------------------------------------------- #
 # A provider descriptor is a plain dict with keys:
-#   name      (str)  — "oauth" | "anthropic" | "deepseek" (for logging)
+#   name      (str)  — "oauth" | "codex" | "anthropic" | "deepseek" (logging)
 #   env_var   (str)  — the env-var name whose presence enables this provider
 #   cred      (str)  — the actual credential value (NOT logged)
 #   client    (Any)  — a pre-built anthropic.Anthropic client for this provider
@@ -469,6 +469,9 @@ def _capture_usage(p: dict, usage_obj, context: str) -> None:
         elif name == "deepseek":
             ai_provider = "deepseek"
             cost_basis = "metered"
+        elif name == "codex":
+            ai_provider = "codex"
+            cost_basis = "subscription"
         else:
             ai_provider = "claude_oauth"
             cost_basis = "subscription"
@@ -554,8 +557,12 @@ def build_providers(
 ) -> list[dict]:
     """Build a provider list from a brain's config dict.
 
-    Handles the standard three-provider waterfall:
-        oauth → anthropic → deepseek
+    Handles the standard provider waterfall:
+        oauth pool → attached Codex account → anthropic → deepseek
+
+    When a lane has no OAuth rung (for example DeepSeek-first brain-fast),
+    Codex is appended as the final fallback.  A host without the Codex CLI and
+    an attached login omits that rung without affecting existing providers.
 
     Reads credentials via lib.config.secret() so they are NEVER hardcoded.
     Returns only providers whose credential is present (non-empty).
@@ -564,7 +571,7 @@ def build_providers(
     ----------
     cfg:
         Brain config dict with standard keys:
-          provider_order    (list[str])  — defaults to ["oauth","anthropic","deepseek"]
+          provider_order    (list[str])  — Codex is auto-inserted unless disabled
           oauth_token_env   (str)        — env-var for OAuth token
           api_key_env       (str)        — env-var for Anthropic API key
           deepseek_key_env  (str)        — env-var for DeepSeek key
@@ -587,10 +594,28 @@ def build_providers(
     OAUTH_BETA = "oauth-2025-04-20"
     DEEPSEEK_DEFAULT_BASE = "https://api.deepseek.com/anthropic"
 
-    order = cfg.get("provider_order") or ["oauth", "anthropic", "deepseek"]
+    configured_order = list(
+        cfg.get("provider_order") or ["oauth", "anthropic", "deepseek"]
+    )
     opus = opus_model or cfg.get("opus_model", "claude-opus-4-8")
     ds_model = deepseek_model or cfg.get("deepseek_model", "deepseek-v4-pro")
     ds_base = cfg.get("deepseek_base_url", DEEPSEEK_DEFAULT_BASE)
+    # Treat the attached account like another subscription token: immediately
+    # after the OAuth pool, before metered API providers. DeepSeek-only/Anthropic-
+    # only lanes keep their existing order and receive Codex as the last resort.
+    order = list(configured_order)
+    if "codex" not in order and cfg.get("codex_provider", True) is not False:
+        if "oauth" in order:
+            order.insert(order.index("oauth") + 1, "codex")
+        else:
+            order.append("codex")
+
+    codex_source_model = cfg.get("codex_source_model")
+    if not codex_source_model:
+        if any(p in configured_order for p in ("oauth", "anthropic")):
+            codex_source_model = opus
+        else:
+            codex_source_model = ds_model
     # Latency guards for every client built below — {} unless the caller's cfg opts in.
     tuning = _client_tuning_kwargs(cfg)
 
@@ -778,6 +803,28 @@ def build_providers(
                     if prov is not None:
                         out.append(prov)
 
+        elif p == "codex":
+            try:
+                from engine import codex_provider as _codex  # noqa: PLC0415
+                if not _codex.is_available():
+                    continue
+                codex_timeout = cfg.get(
+                    "codex_timeout_s",
+                    cfg.get("client_timeout_s", 180),
+                )
+                client = _codex.CodexClient(timeout_s=int(float(codex_timeout)))
+                out.append({
+                    "name": "codex",
+                    "env_var": _codex.CODEX_ENV_ID,
+                    "cred": "attached",
+                    "client": client,
+                    "model": _codex.translate_model(str(codex_source_model)),
+                    "source_model": str(codex_source_model),
+                    "cap_id": _codex.CODEX_CAPABILITY_ID,
+                })
+            except Exception as e:  # noqa: BLE001
+                log.warning("llm_auth: Codex provider init failed (%s)", e)
+
         elif p == "anthropic":
             env = cfg.get("api_key_env", "ANTHROPIC_API_KEY")
             key = _config.secret(env)
@@ -807,11 +854,46 @@ def build_providers(
                 continue
             try:
                 import anthropic
-                client = anthropic.Anthropic(api_key=key, base_url=ds_base, **tuning)
+                def _deepseek_usage_hook(response) -> None:
+                    try:
+                        from engine.neuralweb import key_pool as _kp  # noqa: PLC0415
+                        _kp.record_usage_headers(
+                            "deepseek_api_key",
+                            dict(response.headers),
+                            response.status_code,
+                        )
+                    except Exception as _hook_exc:  # noqa: BLE001
+                        log.debug("llm_auth: DeepSeek usage hook failed (%s)", _hook_exc)
+
+                http_client = None
+                try:
+                    http_client = anthropic.DefaultHttpxClient(
+                        event_hooks={"response": [_deepseek_usage_hook]}
+                    )
+                except Exception:  # noqa: BLE001
+                    http_client = None
+                client_kwargs = {"api_key": key, "base_url": ds_base, **tuning}
+                if http_client is not None:
+                    client_kwargs["http_client"] = http_client
+                client = anthropic.Anthropic(**client_kwargs)
                 out.append({"name": "deepseek", "env_var": env, "cred": key,
-                             "client": client, "model": ds_model})
+                             "client": client, "model": ds_model,
+                             "cap_id": "deepseek_api_key"})
             except Exception as e:  # noqa: BLE001
                 log.warning("llm_auth: deepseek client init failed (%s)", e)
+
+    # Cross-process cooldown: keep every configured provider as a last resort,
+    # but move a key that another process recently rate-limited/auth-failed
+    # behind all non-cooling candidates. Stable sort preserves the configured
+    # waterfall within each group.
+    if cfg.get("respect_provider_cooling", True):
+        try:
+            from engine.neuralweb.key_pool import is_cooling as _is_cooling  # noqa: PLC0415
+            out.sort(key=lambda prov: bool(
+                prov.get("cap_id") and _is_cooling(str(prov["cap_id"]))
+            ))
+        except Exception as e:  # noqa: BLE001
+            log.debug("llm_auth: provider cooldown ordering failed (%s)", e)
 
     # Inject usage attribution metadata from cfg into every provider descriptor.
     # _capture_usage() reads these keys to populate the ai_costs ledger row.

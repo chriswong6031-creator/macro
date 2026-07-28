@@ -5452,7 +5452,11 @@ def chat(
             lane=usage_lane,
             # Attribute to the provider that ACTUALLY served the turn, not the lane:
             # a Fast image turn is served by Haiku (claude_api), not DeepSeek.
-            provider="claude_api" if str(model).startswith("claude") else "deepseek",
+            provider=(
+                "codex" if str(model).startswith("gpt-")
+                else "claude_api" if str(model).startswith("claude")
+                else "deepseek"
+            ),
             model=model,
             stage="brain-chat",
             input_tokens=in_tok,
@@ -5745,7 +5749,11 @@ def chat_stream(
             lane=usage_lane,
             # Attribute to the provider that ACTUALLY served the turn, not the lane:
             # a Fast image turn is served by Haiku (claude_api), not DeepSeek.
-            provider="claude_api" if str(model).startswith("claude") else "deepseek",
+            provider=(
+                "codex" if str(model).startswith("gpt-")
+                else "claude_api" if str(model).startswith("claude")
+                else "deepseek"
+            ),
             model=model,
             stage="brain-stream",
             input_tokens=in_tok,

@@ -767,11 +767,13 @@ on:
       - "engine/signal_foundry/**"
       - "engine/trial_ledger.py"
       - "engine/validation.py"
+      - "engine/codex_provider.py"
       - "engine/llm_auth.py"
       - "engine/neuralweb/key_pool.py"
       # Multi-key OAuth failover surface: the auth waterfall, the key pool,
       # the dispatcher, and the build lane must re-prove failover on change.
       - "tests/test_llm_auth.py"
+      - "tests/test_codex_provider.py"
       - "tests/test_key_pool.py"
       - "tests/test_key_pool_economy.py"
       - "scripts/metabolism_build.py"

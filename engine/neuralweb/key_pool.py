@@ -112,6 +112,14 @@ POOL_CAPABILITY_IDS = [
     "claude_code_oauth_7",
 ]
 
+# Non-Claude credentials that participate in the shared LLM waterfall.  These
+# are displayed and cooled by the same ledger, but deliberately remain outside
+# POOL_CAPABILITY_IDS so the seven-slot Claude rotation contract stays exact.
+PROVIDER_CAPABILITY_IDS = [
+    "codex_account",
+    "deepseek_api_key",
+]
+
 # 5-hour window in seconds
 _WINDOW_SECONDS = 5 * 3600
 # 1 week in seconds
@@ -456,8 +464,8 @@ def record_usage_headers(
 ) -> None:
     """Append one header-capture row to data/metabolism/key_usage.jsonl.
 
-    Only headers whose names start with "anthropic-ratelimit" are stored.
-    Token values are never stored (REDLINE).  NEVER raises.
+    Only recognized provider rate-limit metadata is stored. Token/credential
+    headers are never stored (REDLINE).  NEVER raises.
 
     Parameters
     ----------
@@ -472,9 +480,16 @@ def record_usage_headers(
         Repo root override (for tests).
     """
     try:
+        safe_prefixes = (
+            "anthropic-ratelimit",
+            "codex-ratelimit",
+            "x-ratelimit-",
+            "ratelimit-",
+            "retry-after",
+        )
         ratelimit_headers = {
             k: v for k, v in headers.items()
-            if k.lower().startswith("anthropic-ratelimit")
+            if k.lower().startswith(safe_prefixes)
         }
         row: dict[str, Any] = {
             "schema": _USAGE_SCHEMA,
@@ -529,7 +544,7 @@ def usage_snapshot(root: Path | None = None) -> list[dict[str, Any]]:
             else reconstructed from the key_events.jsonl tail.  Default
             False/None when the bot has published nothing.
 
-    Covers POOL_CAPABILITY_IDS + "legacy".
+    Covers POOL_CAPABILITY_IDS + PROVIDER_CAPABILITY_IDS + "legacy".
     Returns [] on error (NEVER-RAISE).
     """
     try:
@@ -542,7 +557,9 @@ def usage_snapshot(root: Path | None = None) -> list[dict[str, Any]]:
 
         # Read Mastermind bot events and filter to known key_ids + correct schema
         # (display-only join; rotation reads stay macro-only — see _read_mm_events)
-        _valid_key_ids: set[str] = set(POOL_CAPABILITY_IDS) | {"legacy"}
+        _valid_key_ids: set[str] = (
+            set(POOL_CAPABILITY_IDS) | set(PROVIDER_CAPABILITY_IDS) | {"legacy"}
+        )
         mm_rows = [
             r for r in _read_mm_events(root)
             if r.get("schema") == _SCHEMA
@@ -647,16 +664,45 @@ def usage_snapshot(root: Path | None = None) -> list[dict[str, Any]]:
         try:
             from lib import config as _config  # noqa: PLC0415
             legacy_present = bool(_config.secret("CLAUDE_CODE_OAUTH_TOKEN"))
+            deepseek_present = bool(_config.secret("DEEPSEEK_API_KEY"))
         except Exception:  # noqa: BLE001
             legacy_present = bool(os.environ.get("CLAUDE_CODE_OAUTH_TOKEN", ""))
+            deepseek_present = bool(os.environ.get("DEEPSEEK_API_KEY", ""))
+        try:
+            from engine import codex_provider as _codex  # noqa: PLC0415
+            codex_present = _codex.is_available()
+            codex_enabled = _codex.provider_enabled()
+        except Exception:  # noqa: BLE001
+            codex_present = False
+            codex_enabled = False
 
-        all_ids = list(POOL_CAPABILITY_IDS) + ["legacy"]
+        all_ids = list(POOL_CAPABILITY_IDS) + list(PROVIDER_CAPABILITY_IDS) + ["legacy"]
         enabled_ids = enabled_key_ids()  # None = all enabled
 
         result: list[dict[str, Any]] = []
         for kid in all_ids:
-            present = (legacy_present if kid == "legacy" else kid in present_set)
-            enabled = (enabled_ids is None or kid in enabled_ids)
+            if kid == "legacy":
+                present = legacy_present
+                enabled = enabled_ids is None or kid in enabled_ids
+                provider = "Claude OAuth"
+                model_translation = None
+            elif kid == "codex_account":
+                present = codex_present
+                enabled = codex_enabled
+                provider = "Codex subscription"
+                model_translation = (
+                    "Opus/Fable→Sol · Sonnet→Terra · Haiku→Luna"
+                )
+            elif kid == "deepseek_api_key":
+                present = deepseek_present
+                enabled = True
+                provider = "DeepSeek API"
+                model_translation = "V4 Pro→Sol · V4 Flash→Terra"
+            else:
+                present = kid in present_set
+                enabled = enabled_ids is None or kid in enabled_ids
+                provider = "Claude OAuth"
+                model_translation = None
             cooling = is_cooling(kid, root) if kid != "legacy" else False
             ci = cooling_info.get(kid, {})
             agg = per_key.get(kid, {})
@@ -664,6 +710,8 @@ def usage_snapshot(root: Path | None = None) -> list[dict[str, Any]]:
             ms = mm_state.get(kid, {})
             result.append({
                 "key_id": kid,
+                "provider": provider,
+                "model_translation": model_translation,
                 "present": present,
                 "enabled": enabled,
                 "cooling": cooling,
