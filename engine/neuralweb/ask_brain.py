@@ -2282,6 +2282,7 @@ _ASK_PROVIDER_MAP: dict[str, tuple[str, str]] = {
     "oauth": ("claude_oauth", "subscription"),
     "anthropic": ("claude_api", "metered"),
     "deepseek": ("deepseek", "metered"),
+    "codex": ("codex", "subscription"),
 }
 
 

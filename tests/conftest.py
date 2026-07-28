@@ -66,6 +66,10 @@ def _set_nightly_lane(monkeypatch):
     monkeypatch.setenv uses the live os.environ dict.
     """
     monkeypatch.setenv("COLLECT_LANE", "nightly")
+    # Unit tests must never consume the developer/runner's attached Codex
+    # subscription merely because ~/.codex/auth.json exists on the host.
+    # Provider-specific tests opt back in and stub run_codex explicitly.
+    monkeypatch.setenv("CODEX_PROVIDER_ENABLED", "0")
 
 
 @pytest.fixture(autouse=True)

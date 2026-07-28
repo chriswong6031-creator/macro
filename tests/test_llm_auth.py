@@ -911,6 +911,123 @@ def test_build_providers_injects_usage_lane(monkeypatch):
     assert provs[0]["usage_stage"] == "build"
 
 
+def test_build_providers_inserts_codex_after_oauth_before_metered(monkeypatch):
+    import sys
+    from unittest.mock import patch
+
+    from engine import codex_provider, llm_auth
+
+    monkeypatch.setitem(sys.modules, "anthropic", _fake_anthropic_module())
+    monkeypatch.setattr(llm_auth, "_oauth_pool_candidates", lambda lane, ceiling_pct=None: [])
+    monkeypatch.setattr("engine.neuralweb.key_pool.discover_present_keys", lambda root=None: [])
+    monkeypatch.setattr(codex_provider, "is_available", lambda: True)
+    monkeypatch.setattr(
+        codex_provider,
+        "CodexClient",
+        lambda timeout_s=180: _make_fake_client("codex"),
+    )
+
+    cfg = {
+        "provider_order": ["oauth", "anthropic"],
+        "opus_model": "claude-opus-5",
+    }
+    with patch("lib.config.secret", return_value="credential-present"):
+        providers = llm_auth.build_providers(cfg)
+
+    assert [p["name"] for p in providers] == ["oauth", "codex", "anthropic"]
+    codex = providers[1]
+    assert codex["source_model"] == "claude-opus-5"
+    assert codex["model"] == "gpt-5.6-sol"
+    assert codex["cap_id"] == "codex_account"
+
+
+def test_deepseek_flash_gets_terra_codex_fallback_and_shared_cap_id(monkeypatch):
+    import sys
+    from unittest.mock import patch
+
+    from engine import codex_provider, llm_auth
+
+    monkeypatch.setitem(sys.modules, "anthropic", _fake_anthropic_module())
+    monkeypatch.setattr(codex_provider, "is_available", lambda: True)
+    monkeypatch.setattr(
+        codex_provider,
+        "CodexClient",
+        lambda timeout_s=180: _make_fake_client("codex"),
+    )
+
+    cfg = {
+        "provider_order": ["deepseek"],
+        "deepseek_model": "deepseek-v4-flash",
+    }
+    with patch("lib.config.secret", return_value="credential-present"):
+        providers = llm_auth.build_providers(cfg)
+
+    assert [p["name"] for p in providers] == ["deepseek", "codex"]
+    assert providers[0]["cap_id"] == "deepseek_api_key"
+    assert providers[1]["source_model"] == "deepseek-v4-flash"
+    assert providers[1]["model"] == "gpt-5.6-terra"
+
+
+def test_cross_process_cooling_moves_codex_behind_other_fallbacks(monkeypatch):
+    import sys
+    from unittest.mock import patch
+
+    from engine import codex_provider, llm_auth
+
+    monkeypatch.setitem(sys.modules, "anthropic", _fake_anthropic_module())
+    monkeypatch.setattr(llm_auth, "_oauth_pool_candidates", lambda lane, ceiling_pct=None: [])
+    monkeypatch.setattr("engine.neuralweb.key_pool.discover_present_keys", lambda root=None: [])
+    monkeypatch.setattr(
+        "engine.neuralweb.key_pool.is_cooling",
+        lambda cap_id, root=None: cap_id == "codex_account",
+    )
+    monkeypatch.setattr(codex_provider, "is_available", lambda: True)
+    monkeypatch.setattr(
+        codex_provider,
+        "CodexClient",
+        lambda timeout_s=180: _make_fake_client("codex"),
+    )
+    with patch("lib.config.secret", return_value="credential-present"):
+        providers = llm_auth.build_providers({
+            "provider_order": ["oauth", "anthropic"],
+            "opus_model": "claude-opus-5",
+        })
+
+    assert [p["name"] for p in providers] == ["oauth", "anthropic", "codex"]
+
+
+def test_codex_usage_is_subscription_and_uses_shared_key_id(monkeypatch):
+    import lib.ai_costs as _ac
+    from engine import llm_auth
+
+    recorded = []
+    monkeypatch.setattr(_ac, "record_usage", lambda **kw: recorded.append(kw) or True)
+    monkeypatch.setattr(
+        "engine.neuralweb.key_pool.record_session",
+        lambda cap_id, **kw: True,
+    )
+    response = _FakeResp(usage=_FakeUsage(input_tokens=40, output_tokens=10))
+    providers = [{
+        "name": "codex",
+        "env_var": "CODEX_ACCOUNT_ATTACHED",
+        "cred": "attached",
+        "client": _make_fake_client("codex"),
+        "model": "gpt-5.6-sol",
+        "cap_id": "codex_account",
+        "usage_lane": "test",
+    }]
+
+    text, reason, used = llm_auth.make_call(
+        providers,
+        lambda client, model: ("ok", None, response),
+        context="test",
+    )
+    assert (text, reason, used) == ("ok", None, "codex")
+    assert recorded[0]["provider"] == "codex"
+    assert recorded[0]["cost_basis"] == "subscription"
+    assert recorded[0]["key_id"] == "codex_account"
+
+
 # ---------------------------------------------------------------------------
 # Client latency guards (SPEC B1): client_max_retries / client_timeout_s
 # ---------------------------------------------------------------------------
