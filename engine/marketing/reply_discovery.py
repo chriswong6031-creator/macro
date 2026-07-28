@@ -38,8 +38,10 @@ Public API:
     ReplyDiscoveryProvider(cfg, *, sub_cap_usd, global_cap_usd, ...)
         .fetch(*, session_state, offline=False, wire_spend_usd=None) -> list[dict]
         .poll_outcomes(*, session_state, status_ids, offline=False) -> list[dict]
+    run_tick(provider, *, root=None, offline=False) -> dict   # load, poll, SAVE
     load_state(root=None) / save_state(state, root=None)
-    build_provider(cfg, press_cfg, *, root=None) -> ReplyDiscoveryProvider | None
+    build_provider(press_cfg, marketing_cfg=None, *, root=None)
+        -> ReplyDiscoveryProvider | None
 """
 from __future__ import annotations
 
@@ -344,12 +346,36 @@ class ReplyDiscoveryProvider:
         spend = ns.setdefault("spend", {})
         return spend.setdefault(self._month_key(now), {"requests": 0, "items": 0, "usd": 0.0})
 
+    @staticmethod
+    def wire_spend(session_state: dict, *, now: datetime | None = None) -> float:
+        """Read the WIRE lane's spend for this month out of shared session state.
+
+        The two lanes share one twitterapi.io account, and when both run off the
+        same daemon state their counters sit side by side. Reading the wire's
+        number here is what makes the shared-bucket stop live rather than
+        theoretical — an earlier version took it as a parameter no caller passed,
+        so the combined ceiling was $75 + $15 = $90 against a $75 bucket.
+
+        This lane only READS that counter; it never writes it. The wire's own
+        cap check therefore still cannot see reply spend, which is what keeps
+        reply polling structurally unable to starve the wire.
+        """
+        month = (now or datetime.now(tz=timezone.utc)).strftime("%Y-%m")
+        spend = ((session_state or {}).get("twitterapiio") or {}).get("spend") or {}
+        try:
+            return float((spend.get(month) or {}).get("usd", 0.0) or 0.0)
+        except (TypeError, ValueError):
+            return 0.0
+
     def budget_check(self, month_spend: dict, *, wire_spend_usd: float | None = None) -> tuple[bool, str]:
         """May this lane make one more billed request?
 
         Two independent stops. The sub-cap is the lane's own ceiling. The
         shared-bucket stop makes this lane yield to the wire — never the
-        reverse, which is why the wire's counter is not touched here.
+        reverse, which is why the wire's counter is read but never written.
+
+        ``wire_spend_usd`` of None means "not observable", which falls back to
+        the sub-cap alone. That is still safe in the protected direction.
         """
         usd = float(month_spend.get("usd", 0.0) or 0.0)
         if usd >= self.sub_cap_usd:
@@ -493,6 +519,10 @@ class ReplyDiscoveryProvider:
 
         month_spend = self.budget_state(session_state, now=now)
         cursors = self._cursors(session_state)
+        # Observe the wire's spend from shared state unless the caller overrode
+        # it, so the shared-bucket stop binds without every caller remembering.
+        if wire_spend_usd is None:
+            wire_spend_usd = self.wire_spend(session_state, now=now)
 
         ok, reason = self.budget_check(month_spend, wire_spend_usd=wire_spend_usd)
         if not ok:
@@ -502,15 +532,32 @@ class ReplyDiscoveryProvider:
 
         targets: list[dict] = []
         requests_made = 0
-        want_accounts = accounts if accounts is not None else sorted(
-            set((self.register.get("accounts") or {}).keys()) | set(self.our_accounts.keys())
-        )
+        if accounts is not None:
+            want_accounts = list(accounts)
+        else:
+            want_accounts = sorted(
+                set((self.register.get("accounts") or {}).keys()) | set(self.our_accounts.keys())
+            )
+            # ROTATE. A fixed alphabetical order plus a per-tick request cap
+            # starves the tail of the list forever — with 6 desks and a cap of
+            # 12, `meagan` and `sophia` were never polled on any tick. The
+            # rotation cursor lives in the same state blob as the spend counters.
+            ns = session_state.setdefault(STATE_NS, {})
+            start = int(ns.get("rotation", 0) or 0)
+            if want_accounts:
+                start %= len(want_accounts)
+                want_accounts = want_accounts[start:] + want_accounts[:start]
+                ns["rotation"] = (start + 1) % len(want_accounts)
 
+        truncated = False
         for account in want_accounts:
+            if truncated:
+                break
             # (a) curated authors from the register
             for entry in register_for_account(self.register, account):
                 if requests_made >= self.max_requests_per_tick:
-                    return targets
+                    truncated = True
+                    break
                 ok, reason = self.budget_check(month_spend, wire_spend_usd=wire_spend_usd)
                 if not ok:
                     cap = self.sub_cap_usd if reason == "reply_sub_cap" else self.global_cap_usd
@@ -538,9 +585,10 @@ class ReplyDiscoveryProvider:
             # (b) mentions of / replies to our own account — the M2 lane's
             #     lowest-risk surface, and inbound is always worth reading.
             our_handle = self.our_accounts.get(account)
-            if our_handle:
+            if our_handle and not truncated:
                 if requests_made >= self.max_requests_per_tick:
-                    return targets
+                    truncated = True
+                    break
                 ok, reason = self.budget_check(month_spend, wire_spend_usd=wire_spend_usd)
                 if not ok:
                     cap = self.sub_cap_usd if reason == "reply_sub_cap" else self.global_cap_usd
@@ -557,6 +605,14 @@ class ReplyDiscoveryProvider:
                 cursors[ckey] = new_since or cursors.get(ckey) or ""
                 targets.extend(got)
 
+        if truncated:
+            print(
+                f"::warning title=reply-discovery-tick-cap::hit max_requests_per_tick "
+                f"({self.max_requests_per_tick}) before covering every desk — the "
+                f"rotation cursor resumes at the next desk, but a persistently "
+                f"truncated tick means some desks are polled rarely",
+                flush=True,
+            )
         return targets
 
     def poll_outcomes(
@@ -603,6 +659,40 @@ class ReplyDiscoveryProvider:
 # ---------------------------------------------------------------------------
 # Construction from config
 # ---------------------------------------------------------------------------
+def run_tick(
+    provider: ReplyDiscoveryProvider,
+    *,
+    root: Path | str | None = None,
+    offline: bool = False,
+    accounts: list[str] | None = None,
+    now: datetime | None = None,
+) -> dict[str, Any]:
+    """Load host state, poll once, persist. THE entry point for a scheduled tick.
+
+    Persistence is the whole point. Without it the monthly spend counter resets
+    to zero on every process, which makes the sub-cap vacuous, and the since-id
+    cursors reset too, so every author's full timeline is re-read and re-billed
+    every tick. Both failures are silent and both cost money, which is why the
+    load/save pair lives inside the tick rather than in a caller's good
+    intentions.
+
+    Returns {targets, spend, requests, persisted}.
+    """
+    state = load_state(root)
+    targets = provider.fetch(session_state=state, offline=offline,
+                             accounts=accounts, now=now)
+    persisted = False if offline else save_state(state, root)
+    month = (now or datetime.now(tz=timezone.utc)).strftime("%Y-%m")
+    spend = ((state.get(STATE_NS) or {}).get("spend") or {}).get(month) or {}
+    return {
+        "targets": targets,
+        "count": len(targets),
+        "spend": spend,
+        "wire_spend": provider.wire_spend(state, now=now),
+        "persisted": persisted,
+    }
+
+
 def build_provider(
     press_cfg: dict | None,
     marketing_cfg: dict | None = None,
@@ -649,7 +739,8 @@ def build_provider(
 
 
 __all__ = [
-    "ReplyDiscoveryProvider", "build_provider", "count_items", "extract_items",
+    "ReplyDiscoveryProvider", "build_provider", "run_tick",
+    "count_items", "extract_items",
     "load_register", "validate_register", "register_for_account",
     "load_state", "save_state", "STATE_NS", "TIERS",
     "DEFAULT_SUB_CAP_USD", "DEFAULT_GLOBAL_CAP_USD",

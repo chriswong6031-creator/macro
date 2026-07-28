@@ -47,6 +47,7 @@ from typing import Any, Callable
 # here fails at publish time (or, worse, the reverse). The import is deliberately
 # UNGUARDED — a swallowed ImportError would turn the fact-discipline critic into
 # a permanently-true gate, which is the exact failure class the house traps list.
+from engine.marketing.copywriter import _NUMBER_RE as _SHARED_NUMBER_RE
 from engine.marketing.copywriter import _extract_number_tokens, banned_language
 from engine.marketing.outbox import token_jaccard
 
@@ -108,7 +109,34 @@ _MECHANISM_TOKENS: tuple[str, ...] = (
 )
 
 _CASHTAG_RE = re.compile(r"\$[A-Za-z][A-Za-z0-9.\-]{0,9}\b")
-_TOKEN_RE = re.compile(r"[a-z0-9']+")
+#: Hyphens are kept so hyphenated stance words ("risk-on") survive tokenisation
+#: — without them the directional antonym table below has dead entries.
+_TOKEN_RE = re.compile(r"[a-z0-9'\-]+")
+
+#: Number forms `copywriter._extract_number_tokens` does not tokenise. That
+#: regex is the SHARED bar and stays authoritative for everything it recognises;
+#: this is additive coverage, not a fork. It exists because a reply is the one
+#: surface where a fabricated figure reaches a hostile audience under our name,
+#: and the shared tokenizer silently passes exactly the shapes finance copy
+#: hallucinates most: scaled magnitudes ($4.5B, 1.2T), basis points (100bp),
+#: leading-decimal ratios (0.35), signed decimals (-3.4), and thousands
+#: separators (3,500 — which the shared regex reads as the bare integer "500",
+#: so a whitelist entry of "3,500" would reject the true figure and admit a
+#: fabricated one).
+_EXTRA_NUMBER_RE = re.compile(
+    r"""
+    [+-]?\$?\d+(?:,\d{3})+(?:\.\d+)?   # thousands separators: 3,500 / $1,234.50
+    |
+    [+-]?\$?\d+\.?\d*\s?(?:[KMBT]|bn|mn|tn)\b   # scaled: $4.5B, 1.2T, 300mn
+    |
+    [+-]?\d+\.?\d*\s?(?:bps?|bp)\b     # basis points: 100bp, 25 bps
+    |
+    [+-]?0\.\d+                        # leading-decimal ratio: 0.35
+    |
+    [+-]\d+\.\d+                       # signed decimal: -3.4
+    """,
+    re.VERBOSE | re.IGNORECASE,
+)
 
 #: Explicit change markers. Constitution §6.3 (opinion ledger) + charter §0: a
 #: contradiction is legitimate when the account OWNS the change in the draft.
@@ -219,8 +247,10 @@ def blocklist(draft: str, ctx: dict) -> dict[str, Any]:
     if author and author in satire:
         reasons.append(f"parent author {author!r} is on the satire blocklist")
 
-    terms = ctx.get("sensitive_terms")
-    terms = DEFAULT_SENSITIVE_TERMS if terms is None else tuple(terms)
+    # The defaults are a FLOOR, not a default-if-unset. A caller passing an
+    # empty list must not be able to switch a hard blocklist off; extra terms
+    # are additive.
+    terms = tuple(DEFAULT_SENSITIVE_TERMS) + tuple(ctx.get("sensitive_terms") or ())
     haystack = f"{draft}\n{ctx.get('parent_text') or ''}".lower()
     for term in terms:
         if term in haystack:
@@ -305,7 +335,7 @@ def _referents(text: str) -> set[str]:
     """
     out: set[str] = set()
     out |= {c.lower() for c in _CASHTAG_RE.findall(text or "")}
-    out |= set(_extract_number_tokens(text or ""))
+    out |= set(number_tokens(text or ""))
     words = _words(text)
     out |= {w for w in words if w in _MECHANISM_TOKENS}
     return out
@@ -332,22 +362,68 @@ def persona_label(draft: str, ctx: dict) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 # 6. Fact discipline — numbers whitelist
 # ---------------------------------------------------------------------------
+def number_tokens(text: str) -> list[str]:
+    """Every number-like token, shared tokenizer PLUS the reply-desk additions.
+
+    Spans are merged, not just strings: the shared regex reads "3,500" as the
+    bare integer "500", so emitting both would make a whitelist entry of "3,500"
+    fail on its own figure. A match wholly inside a longer match is dropped, so
+    the widest reading of each figure is the one that must be whitelisted.
+    """
+    text = text or ""
+    spans: list[tuple[int, int, str]] = []
+    for regex in (_SHARED_NUMBER_RE, _EXTRA_NUMBER_RE):
+        for m in regex.finditer(text):
+            tok = m.group(0).strip()
+            if tok:
+                spans.append((m.start(), m.end(), tok))
+
+    # Widest first, then leftmost, so containment is decided against a keeper.
+    spans.sort(key=lambda s: (-(s[1] - s[0]), s[0]))
+    kept: list[tuple[int, int, str]] = []
+    for start, end, tok in spans:
+        if any(k_start <= start and end <= k_end for k_start, k_end, _ in kept):
+            continue
+        kept.append((start, end, tok))
+
+    kept.sort(key=lambda s: s[0])
+    out: list[str] = []
+    seen: set[str] = set()
+    for _, _, tok in kept:
+        if tok not in seen:
+            seen.add(tok)
+            out.append(tok)
+    return out
+
+
 def fact_discipline(draft: str, ctx: dict) -> dict[str, Any]:
     """Numbers only from whitelisted own-feed values.
 
-    Same rule and the same tokenizer as ``copywriter.validate_copy``: bare 1-2
-    digit integers are prose, everything else must have come from a fact we
-    computed. A reply is the one surface where a hallucinated number reaches a
-    hostile audience with our name on it.
+    Same rule as ``copywriter.validate_copy``: bare 1-2 digit integers are
+    prose, everything else must have come from a fact we computed. The
+    tokenizer is the shared one plus the scaled/basis-point/separator forms it
+    does not recognise (see ``_EXTRA_NUMBER_RE``) — a reply is the one surface
+    where a hallucinated number reaches a hostile audience with our name on it,
+    so a gap here is not survivable the way it is in a scheduled post.
+
+    A whitelist entry matches a token either exactly or with punctuation and a
+    currency mark normalised away, so a fact carrying "$4.5B" licenses "4.5B".
     """
-    whitelist = {str(v) for v in (ctx.get("numbers_whitelist") or [])}
+    raw_whitelist = {str(v) for v in (ctx.get("numbers_whitelist") or [])}
+    normalised = {_norm_number(v) for v in raw_whitelist}
     reasons: list[str] = []
-    for token in _extract_number_tokens(draft):
-        if re.match(r"^\d{1,2}$", token):
+    for token in number_tokens(draft):
+        if re.fullmatch(r"\d{1,2}", token):
             continue
-        if token not in whitelist:
-            reasons.append(f"number '{token}' not in whitelist")
+        if token in raw_whitelist or _norm_number(token) in normalised:
+            continue
+        reasons.append(f"number '{token}' not in whitelist")
     return _verdict("fact_discipline", reasons)
+
+
+def _norm_number(token: str) -> str:
+    """Comparable form: strip currency, separators, spaces; fold case."""
+    return re.sub(r"[\s,$]", "", str(token or "")).lower()
 
 
 # ---------------------------------------------------------------------------
@@ -480,7 +556,7 @@ def run_critics(
 
 __all__ = [
     "CRITICS", "DEFAULT_THRESHOLDS", "DEFAULT_SENSITIVE_TERMS",
-    "run_critics", "load_theses",
+    "run_critics", "load_theses", "number_tokens",
     "informational_surplus", "corpus_near_dup", "blocklist",
     "position_consistency", "persona_label", "fact_discipline", "vocab", "dignity",
 ]

@@ -110,14 +110,29 @@ def reply_send_cap(cfg: dict, account_id: str, *, mode: str) -> int:
         return 0
 
     rd = (cfg or {}).get("reply_desk") or {}
+    # The whole-desk kill switch binds the cap too, so a disabled desk cannot be
+    # left with a live per-account allowance.
+    if rd.get("enabled") is False:
+        return 0
+
     caps = rd.get("daily_caps") or {}
     per_account = caps.get("accounts") or {}
+    raw = per_account.get(account_id, caps.get(
+        "per_account_target", _DEFAULT_REPLY_TARGET_PER_ACCOUNT_PER_DAY))
+    if raw is None:
+        # An explicit null is an operator SILENCING one account, not a request
+        # for the default. Falling through to 18 would be the opposite of the
+        # instruction.
+        return 0
     try:
-        target = int(per_account.get(account_id, caps.get(
-            "per_account_target", _DEFAULT_REPLY_TARGET_PER_ACCOUNT_PER_DAY)))
+        target = int(raw)
     except (TypeError, ValueError):
-        log.warning("sentinel.reply_send_cap: bad target for %r — using default", account_id)
-        target = _DEFAULT_REPLY_TARGET_PER_ACCOUNT_PER_DAY
+        print(
+            f"::warning title=reply-cap-unparseable::reply_desk daily cap {raw!r} for "
+            f"{account_id!r} is not an integer — falling back to 0 (no sends)",
+            flush=True,
+        )
+        return 0
 
     if target < 0:
         target = 0

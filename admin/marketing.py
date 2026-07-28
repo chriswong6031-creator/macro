@@ -2383,8 +2383,11 @@ def reply_queue(root=None, *, store=None, now=None) -> dict:
         cfg = _read_yaml(repo / "config" / "marketing.yml")
         ts = now or datetime.now(timezone.utc)
 
-        killed = _rq.expire_due(now=ts, root=store)
+        # Same order as reply_export.sweep: release leases FIRST so an item
+        # whose desktop session died is reclaimable, then expire. Expiring
+        # before releasing would leave an in-flight item unreachable.
         released = _rq.release_expired_claims(now=ts, root=store)
+        killed = _rq.expire_due(now=ts, root=store)
 
         state = _rq.fold_state(store)
         outcomes = _rq.outcomes(store)

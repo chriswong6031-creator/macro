@@ -305,18 +305,34 @@ def prerender_artillery(
     """
     if not tickers:
         return []
+    if closes_for is None:
+        raise ValueError(
+            "prerender_artillery needs a closes_for(ticker) callable — a sweep "
+            "that silently renders nothing is indistinguishable from one that ran"
+        )
     from engine.marketing import chart_render as _cr  # noqa: PLC0415
     from engine.marketing import media_publish as _mp  # noqa: PLC0415
 
     out: list[dict] = []
     for ticker in list(tickers)[:limit]:
-        if closes_for is None:
-            break
         series = closes_for(ticker)
         if not series:
             continue
+        # The documented contract is a (dates, o, h, l, c, v) tuple; a mapping
+        # of the same fields is accepted too. Anything else is a caller bug and
+        # says so, rather than rendering zero charts in silence.
+        if isinstance(series, dict):
+            kwargs = dict(series)
+        elif isinstance(series, (tuple, list)) and len(series) == 6:
+            dates, o, h, low, close, vol = series
+            kwargs = {"dates": dates, "o": o, "h": h, "l": low, "c": close, "v": vol}
+        else:
+            raise TypeError(
+                f"closes_for({ticker!r}) returned {type(series).__name__}; expected a "
+                "(dates, o, h, l, c, v) tuple or an equivalent mapping"
+            )
         try:
-            svg = _cr.render_chart_v2(ticker=ticker, **series) if isinstance(series, dict) else None
+            svg = _cr.render_chart_v2(ticker=ticker, **kwargs)
             if not svg:
                 continue
             chart_id = f"reply-{str(ticker).lstrip('$').lower()}"
@@ -396,6 +412,10 @@ def draft_reply(
     # Voice pass: the SHARED dial, kind="reply". apply_pass is deterministic
     # clean-up only (off-signature emoji, exclamation downgrade); everything
     # else the dial dislikes is reported, never silently rewritten.
+    # The dial's own findings on the PRIMARY draft, reported not swallowed: the
+    # critics re-run this independently, but a drafter that returns an empty
+    # violation list it never populated is a permanent all-clear to any caller
+    # that trusts the field.
     dial_violations: list[str] = []
     polished: list[tuple[str, str]] = []
     for fam, text in drafts:
@@ -403,6 +423,11 @@ def draft_reply(
             from engine.marketing import expression_dial as _dial  # noqa: PLC0415
 
             _, body = _dial.apply_pass("", text, account=account, kind="reply", root=root)
+            if not polished:  # primary only; alternates are graded if promoted
+                dial_violations = list(_dial.violations(
+                    "", body, account=account, kind="reply", root=root,
+                    include_house_bans=False,
+                ))
         except Exception as exc:  # noqa: BLE001
             log.warning("reply_drafter: dial pass unavailable for %r: %s", account, exc)
             body = text

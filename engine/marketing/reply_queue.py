@@ -89,12 +89,22 @@ SHIPPABLE_MODES: frozenset[str] = frozenset({"M0", "M1"})
 TRANSITIONS: dict[str, frozenset[str]] = {
     "queued":   frozenset({"approved", "rejected", "expired"}),
     "approved": frozenset({"claimed", "queued", "rejected", "expired"}),
-    "claimed":  frozenset({"sent", "failed", "queued", "rejected", "expired"}),
+    # `claimed` deliberately does NOT admit `expired`. An item whose lease is
+    # live may already be posted; expiring it under the desktop session turns a
+    # PUBLIC reply into an unrecorded one, and the receipt then bounces forever
+    # against a terminal status. The lease governs an in-flight item — when it
+    # runs out the item returns to `queued`, and expiry may take it there.
+    "claimed":  frozenset({"sent", "failed", "queued", "rejected"}),
     "failed":   frozenset({"approved", "queued", "rejected", "expired"}),
     "sent":     frozenset(),   # terminal
     "rejected": frozenset(),   # terminal
     "expired":  frozenset(),   # terminal
 }
+
+#: Entering either of these states means the item is live toward a send, so the
+#: attempts cap is checked on EVERY edge into them. Guarding only `failed →
+#: approved` left `failed → queued → approved` as a free re-arm.
+_ATTEMPT_GATED_STATUSES: frozenset[str] = frozenset({"approved", "claimed"})
 
 #: Statuses that HOLD the one-conversation-one-owner lock on a thread. `sent`
 #: holds it forever (we spoke; the thread is ours). `rejected`/`expired` release
@@ -209,6 +219,12 @@ def resolve_mode(cfg: dict | None, account: str) -> str:
     with no way to halt it alone.
     """
     rd = ((cfg or {}).get("reply_desk") or {})
+    # The whole-desk kill switch. Documented to the operator in the runbook, so
+    # it has to actually do something: a switch that reads as off while the desk
+    # keeps exporting is worse than no switch at all.
+    if rd.get("enabled") is False:
+        return DEFAULT_MODE
+
     enabled_raw = rd.get("modes_enabled") or list(SHIPPABLE_MODES)
     enabled = {str(m).strip().upper() for m in enabled_raw} & set(MODES)
     # XG-W6 precondition: M2/M3 can never be enabled by a config edit alone.
@@ -281,6 +297,23 @@ def _parse_iso(value: object) -> datetime | None:
         return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
 
 
+def ttl_min_for(cfg: dict | None) -> int:
+    """Configured draft lifetime. Config must actually reach the constructor —
+    a documented knob nothing reads is a knob that lies."""
+    try:
+        return int(((cfg or {}).get("reply_desk") or {}).get("ttl_min", DEFAULT_TTL_MIN))
+    except (TypeError, ValueError):
+        return DEFAULT_TTL_MIN
+
+
+def lease_s_for(cfg: dict | None) -> int:
+    """Configured lease length (see ttl_min_for)."""
+    try:
+        return int(((cfg or {}).get("reply_desk") or {}).get("lease_s", DEFAULT_LEASE_S))
+    except (TypeError, ValueError):
+        return DEFAULT_LEASE_S
+
+
 def make_item(
     *,
     account: str,
@@ -299,7 +332,8 @@ def make_item(
     as_of: str | None = None,
     mode: str = DEFAULT_MODE,
     not_before: str | None = None,
-    ttl_min: int = DEFAULT_TTL_MIN,
+    ttl_min: int | None = None,
+    cfg: dict | None = None,
     now: datetime | None = None,
     provenance: str = "reply_desk",
 ) -> dict:
@@ -307,7 +341,12 @@ def make_item(
 
     ``chart`` carries BOTH ``local_path`` and ``public_url`` (charter §5) so a
     future official-API write rail needs no schema rewrite.
+
+    ``ttl_min`` falls back to ``cfg.reply_desk.ttl_min`` and only then to the
+    module default, so the documented config knob actually governs.
     """
+    if ttl_min is None:
+        ttl_min = ttl_min_for(cfg)
     if not account or not str(account).strip():
         raise ValueError("account must be a non-empty string")
     if not draft or not str(draft).strip():
@@ -550,11 +589,11 @@ def transition(
                     current, to, item_id, sorted(TRANSITIONS.get(current, frozenset())),
                 )
                 return False
-            if to == "approved" and current == "failed":
+            if to in _ATTEMPT_GATED_STATUSES:
                 if state["attempts"].get(item_id, 0) >= MAX_SEND_ATTEMPTS:
                     log.warning(
-                        "reply_queue.transition: %r hit the attempts cap (%d) — refusing re-arm",
-                        item_id, MAX_SEND_ATTEMPTS,
+                        "reply_queue.transition: %r hit the attempts cap (%d) — refusing %r",
+                        item_id, MAX_SEND_ATTEMPTS, to,
                     )
                     return False
             row = {
@@ -615,6 +654,11 @@ def expire_due(*, now: datetime | None = None, root: Path | str | None = None,
         for iid, item in state["items"].items():
             st = state["status"].get(iid, "queued")
             if st in TERMINAL_STATUSES:
+                continue
+            if st == "claimed":
+                # In flight: a desktop session holds a live lease and may have
+                # already posted. Killing it here would orphan a public reply.
+                # release_expired_claims() returns it to `queued` first.
                 continue
             deadline = _parse_iso(item.get("expires_at"))
             if deadline is None or ts < deadline:
@@ -680,6 +724,10 @@ def may_send(account: str, *, cfg: dict | None, root: Path | str | None = None,
     Returns {ok, mode, cap, sent, reason}. M0 always returns ok=False with
     cap=0 — the standing 0-cap (D08) opens per the mode dial only, never by a
     builder config edit.
+
+    ``as_of`` defaults to the SEND day, never the draft's creation day. Gating a
+    send against the day a draft was written lets a queue that straddles
+    midnight spend two days' allowance in one afternoon.
     """
     from engine.marketing import sentinel as _sentinel  # local: avoid import cycles
 
@@ -711,7 +759,8 @@ def mark_sent(item_id: str, *, receipt: dict, actor: str = "desktop",
     if item is None:
         return {"ok": False, "reason": "unknown_item"}
     account = str(item.get("account") or "")
-    gate = may_send(account, cfg=cfg, root=root, as_of=item.get("as_of"), now=ts)
+    # Gate on the SEND day, not the item's as_of — see may_send().
+    gate = may_send(account, cfg=cfg, root=root, now=ts)
     if not gate["ok"]:
         return {"ok": False, "reason": gate["reason"], "cap": gate["cap"], "sent": gate["sent"]}
     ok = transition(item_id, "sent", actor=actor, root=root, receipt=receipt, now=ts)
@@ -783,7 +832,7 @@ def summary(root: Path | str | None = None) -> dict[str, Any]:
 __all__ = [
     "SCHEMA_ID", "MODES", "SHIPPABLE_MODES", "DEFAULT_MODE", "TRANSITIONS",
     "OWNING_STATUSES", "TERMINAL_STATUSES", "TIERS", "MAX_SEND_ATTEMPTS",
-    "DEFAULT_LEASE_S", "DEFAULT_TTL_MIN",
+    "DEFAULT_LEASE_S", "DEFAULT_TTL_MIN", "ttl_min_for", "lease_s_for",
     "state_dir", "store_dir", "resolve_mode", "status_id_from_url",
     "make_item", "validate_item", "enqueue", "read_items", "read_ledger",
     "fold_state", "sends_today", "thread_owner", "transition", "approve",

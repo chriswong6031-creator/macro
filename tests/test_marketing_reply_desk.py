@@ -156,6 +156,117 @@ class TestDiscoveryBudget:
         shared = float(press_cfg["spend"]["twitterapiio_monthly_cap_usd"])
         assert 0 < sub < shared, "the reply sub-budget must fit inside the wire's bucket"
 
+    def test_combined_spend_cannot_exceed_the_shared_bucket(self, monkeypatch, capsys):
+        """CARVED, not additive. Asserting 0 < 15 < 75 is true of an additive
+        budget too — this pins that the combined ceiling is really $75."""
+        monkeypatch.setenv("TWITTERAPI_IO_KEY", "test-key")
+        provider = rd.ReplyDiscoveryProvider(
+            {}, sub_cap_usd=15.0, global_cap_usd=75.0,
+            register={"accounts": {"kelly": [{"handle": "a", "tier": "relationship"}]}},
+        )
+        monkeypatch.setattr(provider, "_request",
+                            lambda *a, **k: pytest.fail("must not spend past the bucket"))
+        month = NOW.strftime("%Y-%m")
+        # Reply is under its own $15 sub-cap, but the wire has taken $70 of $75.
+        state = {
+            "twitterapiio": {"spend": {month: {"usd": 70.0}}},
+            rd.STATE_NS: {"spend": {month: {"usd": 5.0}}},
+        }
+        assert provider.fetch(session_state=state, now=NOW) == []
+        assert any(ln.startswith("::warning title=reply-discovery-bucket::")
+                   for ln in capsys.readouterr().out.splitlines())
+
+    def test_the_wire_counter_is_read_never_written(self, monkeypatch):
+        """Reading the wire's spend must not perturb it, or this lane could
+        starve the wire through its own bookkeeping."""
+        monkeypatch.setenv("TWITTERAPI_IO_KEY", "test-key")
+        provider = rd.ReplyDiscoveryProvider(
+            {}, sub_cap_usd=15.0, global_cap_usd=75.0,
+            register={"accounts": {"kelly": {"authors": [
+                {"handle": "a", "tier": "relationship"}]}}},
+        )
+        monkeypatch.setattr(provider, "_request", lambda *a, **k: {"tweets": []})
+        month = NOW.strftime("%Y-%m")
+        state = {"twitterapiio": {"spend": {month: {"usd": 10.0, "requests": 3}}}}
+        provider.fetch(session_state=state, now=NOW)
+        assert state["twitterapiio"]["spend"][month] == {"usd": 10.0, "requests": 3}
+        assert state[rd.STATE_NS]["spend"][month]["usd"] > 0
+
+    def test_wire_spend_reads_the_shared_namespace(self):
+        month = NOW.strftime("%Y-%m")
+        state = {"twitterapiio": {"spend": {month: {"usd": 12.5}}}}
+        assert rd.ReplyDiscoveryProvider.wire_spend(state, now=NOW) == 12.5
+        assert rd.ReplyDiscoveryProvider.wire_spend({}, now=NOW) == 0.0
+
+
+class TestDiscoveryStatePersistence:
+    """Without persistence the sub-cap resets to zero every process and the
+    cursors re-read (and re-bill) every author's whole timeline."""
+
+    def test_run_tick_persists_spend_and_cursors(self, monkeypatch, store):
+        monkeypatch.setenv("TWITTERAPI_IO_KEY", "test-key")
+        provider = rd.ReplyDiscoveryProvider(
+            {}, sub_cap_usd=15.0, global_cap_usd=75.0,
+            register={"accounts": {"kelly": {"authors": [
+                {"handle": "someauthor", "tier": "relationship"}]}}},
+        )
+        monkeypatch.setattr(provider, "_request", lambda *a, **k: {"tweets": [
+            {"id": "1900000000000000009", "text": "hi",
+             "author": {"userName": "someauthor"}}]})
+
+        first = rd.run_tick(provider, root=store, now=NOW)
+        assert first["count"] == 1 and first["persisted"] is True
+        assert rd._state_path(store).exists()
+
+        # A brand-new process must see the prior spend AND the prior cursor.
+        reloaded = rd.load_state(store)
+        assert reloaded[rd.STATE_NS]["spend"][NOW.strftime("%Y-%m")]["usd"] > 0
+        assert reloaded[rd.STATE_NS]["cursors"]["author:someauthor"] == "1900000000000000009"
+        second = rd.run_tick(provider, root=store, now=NOW)
+        assert second["count"] == 0, "the persisted cursor must gate the re-read"
+
+    def test_offline_tick_persists_nothing(self, store):
+        provider = rd.ReplyDiscoveryProvider({}, sub_cap_usd=15.0, global_cap_usd=75.0)
+        result = rd.run_tick(provider, root=store, offline=True, now=NOW)
+        assert result["count"] == 0 and result["persisted"] is False
+        assert not rd._state_path(store).exists()
+
+
+class TestDiscoveryFairness:
+    """A fixed order plus a per-tick request cap starves the tail forever."""
+
+    def _provider(self, monkeypatch, accounts, cap):
+        monkeypatch.setenv("TWITTERAPI_IO_KEY", "test-key")
+        register = {"accounts": {
+            a: {"authors": [{"handle": f"{a}{i}", "tier": "conversion"} for i in range(3)]}
+            for a in accounts}}
+        provider = rd.ReplyDiscoveryProvider(
+            {"max_requests_per_tick": cap}, sub_cap_usd=15.0, global_cap_usd=75.0,
+            register=register)
+        seen: list[str] = []
+
+        def _fake(api_key, endpoint, params):
+            seen.append(params.get("userName"))
+            return {"tweets": []}
+
+        monkeypatch.setattr(provider, "_request", _fake)
+        return provider, seen
+
+    def test_every_desk_is_reached_across_ticks(self, monkeypatch):
+        desks = ["cici", "flagship", "founder", "kelly", "meagan", "sophia"]
+        provider, seen = self._provider(monkeypatch, desks, cap=12)
+        state: dict = {}
+        for _ in range(6):
+            provider.fetch(session_state=state, now=NOW)
+        polled = {h[:-1] for h in seen}
+        assert set(desks) <= polled, f"starved desks: {set(desks) - polled}"
+
+    def test_truncation_is_announced(self, monkeypatch, capsys):
+        provider, _ = self._provider(monkeypatch, ["a", "b", "c"], cap=2)
+        provider.fetch(session_state={}, now=NOW)
+        assert any(ln.startswith("::warning title=reply-discovery-tick-cap::")
+                   for ln in capsys.readouterr().out.splitlines())
+
     def test_sub_cap_exhaustion_stops_reply_polling(self, monkeypatch, capsys):
         """GATE fixture, half 1: at its own sub-cap, reply discovery stops."""
         monkeypatch.setenv("TWITTERAPI_IO_KEY", "test-key")
@@ -195,15 +306,19 @@ class TestDiscoveryBudget:
         monkeypatch.setattr(wire, "_request",
                             lambda key, handle: wire_calls.append(handle) or {"tweets": []})
 
-        # One shared session_state carrying an EXHAUSTED reply bucket.
-        month = datetime.now(tz=timezone.utc).strftime("%Y-%m")
-        shared_state: dict = {rd.STATE_NS: {"spend": {month: {"usd": 15.0}}}}
+        # One shared session_state carrying an EXHAUSTED reply bucket. Seed
+        # both the current and next month so a rollover between these two lines
+        # cannot turn a real assertion into a KeyError.
+        now = datetime.now(tz=timezone.utc)
+        months = {now.strftime("%Y-%m"), (now + timedelta(days=2)).strftime("%Y-%m")}
+        shared_state: dict = {rd.STATE_NS: {"spend": {m: {"usd": 15.0} for m in months}}}
         wire.fetch(root=ROOT, session_state=shared_state, offline=False)
 
         assert wire_calls == ["DeItaone"], "reply exhaustion must not stop the wire"
-        assert shared_state["twitterapiio"]["spend"][month]["usd"] > 0
-        # And the two counters never merged.
-        assert shared_state[rd.STATE_NS]["spend"][month]["usd"] == 15.0
+        wire_spend = shared_state["twitterapiio"]["spend"]
+        assert any(v["usd"] > 0 for v in wire_spend.values())
+        # And the two counters never merged: reply spend is untouched by a wire poll.
+        assert all(v["usd"] == 15.0 for v in shared_state[rd.STATE_NS]["spend"].values())
 
     def test_reply_lane_yields_inside_the_shared_bucket(self):
         """Reply yields to the wire; the wire never yields to reply."""
@@ -495,6 +610,12 @@ class TestSharedVocabGuardIsCalledNotForked:
 
     def test_critics_use_the_copywriter_number_tokenizer(self):
         assert rc._extract_number_tokens is copywriter._extract_number_tokens
+        assert rc._SHARED_NUMBER_RE is copywriter._NUMBER_RE
+
+    def test_the_extra_number_regex_is_additive_not_a_replacement(self):
+        """Everything the shared tokenizer catches must still be caught."""
+        sample = "spreads widened 12.5% to 226.50, a 3x move on 1000 units"
+        assert set(copywriter._extract_number_tokens(sample)) <= set(rc.number_tokens(sample))
 
     def test_critics_own_no_banned_list_of_their_own(self):
         for forked in ("_BANNED_VOCAB", "_BANNED_SUBSTRINGS", "_BANNED_CHEESE_WORDS"):
@@ -529,6 +650,26 @@ class TestSharedVocabGuardIsCalledNotForked:
         from engine.marketing import expression_dial as dial
         assert dial.PROFILES["employee"]["reply"] == 2
         assert dial.PROFILES["flagship"]["reply"] == 1
+
+    def test_which_accounts_the_register_half_of_the_vocab_critic_binds_for(self):
+        """Documents a PRE-EXISTING gap rather than implying it is closed.
+
+        `expression_dial.violations` returns [] for any account with no codex,
+        and `flagship`'s spec carries a prose-only voice_codex that the loader
+        rejects — so the register half of the vocab critic is inert there. The
+        word law still binds flagship via copywriter.banned_language (asserted
+        below). Closing the flagship codex is XG-W1/W3 spec territory, not this
+        wave's; this test fails loudly if that changes so the note gets updated.
+        """
+        from engine.marketing import expression_dial as dial
+
+        codexed = set(dial.codex_index(ROOT))
+        assert {"kelly", "cici", "meagan", "sophia"} <= codexed
+        assert "flagship" not in codexed, (
+            "flagship gained a codex — the vocab critic's register half now "
+            "binds there; update this note")
+        # The shared word law is account-independent, so flagship is not unguarded.
+        assert rc.vocab("Our validated read.", {"account": "flagship"})["verdict"] == "reject"
 
     def test_a_dial_failure_holds_the_draft_rather_than_passing_it(self, monkeypatch, critic_ctx):
         from engine.marketing import expression_dial as dial
@@ -630,6 +771,36 @@ class TestCriticMutations:
         assert rc.fact_discipline("Two of 3 legs agree on the funding side.",
                                   critic_ctx)["verdict"] == "pass"
 
+    @pytest.mark.parametrize("draft,token", [
+        ("Credit spreads widened to $4.5B of issuance.", "$4.5B"),
+        ("Funding stress at 1.2T notional.", "1.2T"),
+        ("Basis at 100bp on the curve.", "100bp"),
+        ("Carry ratio 0.35 on the spread.", "0.35"),
+        ("Margins fell -3.4 on the quarter.", "-3.4"),
+        ("Issuance of 3,500 units cleared.", "3,500"),
+    ])
+    def test_fact_discipline_catches_the_shapes_finance_copy_hallucinates(
+            self, draft, token, critic_ctx):
+        """The shared tokenizer passes all of these; a reply is the worst place
+        for a fabricated figure, so the critic adds coverage on top of it."""
+        ctx = {**critic_ctx, "numbers_whitelist": []}
+        verdict = rc.fact_discipline(draft, ctx)
+        assert verdict["verdict"] == "reject", f"{token} slipped through"
+        assert any(token in r for r in verdict["reasons"]), verdict["reasons"]
+
+    def test_a_whitelisted_scaled_number_is_allowed(self, critic_ctx):
+        ctx = {**critic_ctx, "numbers_whitelist": ["$4.5B"]}
+        assert rc.fact_discipline("Issuance hit $4.5B this week.", ctx)["verdict"] == "pass"
+        # Same figure, currency mark dropped in the prose.
+        assert rc.fact_discipline("Issuance hit 4.5B this week.", ctx)["verdict"] == "pass"
+
+    def test_a_thousands_separator_is_not_read_as_its_tail(self, critic_ctx):
+        """The shared regex reads "3,500" as the bare integer "500", so a
+        whitelist of 3,500 would reject the truth and admit a fabrication."""
+        ctx = {**critic_ctx, "numbers_whitelist": ["3,500"]}
+        assert rc.fact_discipline("Issuance of 3,500 units.", ctx)["verdict"] == "pass"
+        assert rc.fact_discipline("Issuance of 500 units.", ctx)["verdict"] == "reject"
+
     def test_vocab_rejects_a_banned_study_name(self, critic_ctx):
         assert "vocab" in rc.run_critics("The vwap held at 12.5% on credit.",
                                          critic_ctx)["rejected_by"]
@@ -645,10 +816,22 @@ class TestCriticMutations:
     def test_dignity_rejects_personal_correction(self, critic_ctx):
         assert rc.dignity("you are wrong about the funding side", critic_ctx)["verdict"] == "reject"
 
-    @pytest.mark.parametrize("critic", rc.CRITICS)
+    @pytest.mark.parametrize("critic", [
+        # Enumerated by hand ON PURPOSE. Parametrising over rc.CRITICS compares
+        # the output against the constant that drove it, so deleting a critic
+        # from the register would keep the test green.
+        "informational_surplus", "corpus_near_dup", "blocklist",
+        "position_consistency", "persona_label", "fact_discipline",
+        "vocab", "dignity",
+    ])
     def test_every_critic_is_wired_into_the_pass(self, critic, critic_ctx):
         verdict = rc.run_critics(CLEAN_DRAFT, critic_ctx)
         assert critic in {c["critic"] for c in verdict["critics"]}
+        assert critic in rc.CRITICS and critic in rc._CRITIC_FUNCS
+
+    def test_the_critic_register_has_not_silently_shrunk(self):
+        assert len(rc.CRITICS) == 8
+        assert set(rc.CRITICS) == set(rc._CRITIC_FUNCS)
 
     def test_a_crashing_critic_rejects_rather_than_passes(self, monkeypatch, critic_ctx):
         """A pass-by-exception is how a gate silently stops gating."""
@@ -861,6 +1044,21 @@ class TestAttemptsCap:
         assert rq.transition(iid, "approved", actor="admin", root=store) is False
         assert rq.fold_state(store)["status"][iid] == "failed"
 
+    def test_the_cap_cannot_be_walked_around_via_queued(self, store):
+        """`failed -> queued -> approved` was a free re-arm: the guard sat on
+        one edge instead of on the state."""
+        item = _item()
+        rq.enqueue(item, store)
+        iid = item["id"]
+        for _ in range(rq.MAX_SEND_ATTEMPTS):
+            assert rq.approve(iid, root=store)
+            assert rq.claim(iid, holder="d", root=store, now=NOW) is not None
+            assert rq.transition(iid, "failed", actor="d", root=store)
+            rq.transition(iid, "queued", actor="admin", root=store)
+        assert rq.fold_state(store)["attempts"][iid] == rq.MAX_SEND_ATTEMPTS
+        assert rq.approve(iid, root=store) is False
+        assert rq.claim(iid, holder="d", root=store, now=NOW) is None
+
     def test_illegal_transitions_are_refused(self, store):
         item = _item()
         rq.enqueue(item, store)
@@ -906,6 +1104,76 @@ class TestModeDial:
 
     def test_unknown_mode_falls_back_to_m0(self):
         assert rq.resolve_mode({"reply_desk": {"mode": {"default": "M9"}}}, "kelly") == "M0"
+
+
+class TestKillSwitches:
+    """A kill switch documented to the operator that does nothing is worse than
+    no kill switch."""
+
+    def test_disabling_the_desk_forces_m0(self, m1_cfg):
+        off = json.loads(json.dumps(m1_cfg))
+        off["reply_desk"]["enabled"] = False
+        assert rq.resolve_mode(off, "kelly") == "M0"
+
+    def test_disabling_the_desk_zeroes_the_cap(self, m1_cfg):
+        off = json.loads(json.dumps(m1_cfg))
+        off["reply_desk"]["enabled"] = False
+        assert sentinel.reply_send_cap(off, "kelly", mode="M1") == 0
+
+    def test_disabling_the_desk_stops_every_export(self, store, m1_cfg):
+        off = json.loads(json.dumps(m1_cfg))
+        off["reply_desk"]["enabled"] = False
+        item = _item()
+        rq.enqueue(item, store)
+        rq.approve(item["id"], root=store)
+        assert rx.export_approved(cfg=off, root=store, now=NOW)["count"] == 0
+
+    def test_a_null_per_account_cap_silences_that_account(self, m1_cfg):
+        """An explicit null is an operator silencing one desk, not asking for
+        the default."""
+        cfg = json.loads(json.dumps(m1_cfg))
+        cfg["reply_desk"]["daily_caps"]["accounts"] = {"kelly": None}
+        assert sentinel.reply_send_cap(cfg, "kelly", mode="M1") == 0
+
+    def test_an_unparseable_cap_fails_closed(self, m1_cfg, capsys):
+        cfg = json.loads(json.dumps(m1_cfg))
+        cfg["reply_desk"]["daily_caps"]["accounts"] = {"kelly": "eighteen"}
+        assert sentinel.reply_send_cap(cfg, "kelly", mode="M1") == 0
+        assert capsys.readouterr().out.startswith("::warning title=reply-cap-unparseable::")
+
+    def test_config_ttl_and_lease_actually_govern(self, m1_cfg):
+        cfg = json.loads(json.dumps(m1_cfg))
+        cfg["reply_desk"]["ttl_min"] = 7
+        cfg["reply_desk"]["lease_s"] = 42
+        assert rq.ttl_min_for(cfg) == 7
+        assert rq.lease_s_for(cfg) == 42
+        item = rq.make_item(
+            account="kelly", target_url=f"https://x.com/a/status/{THREAD}",
+            parent_author="a", parent_excerpt="p", draft="d 12.5%",
+            tier="relationship", score=0.5, cfg=cfg, now=NOW)
+        assert item["expires_at"] == "2026-07-28T15:07:00Z"
+
+
+class TestCrossMidnightCap:
+    def test_a_stale_dated_draft_cannot_spend_a_second_days_allowance(self, store, m1_cfg):
+        """Gating on the draft's creation day let a queue straddling midnight
+        send twice its cap in one afternoon."""
+        cfg = json.loads(json.dumps(m1_cfg))
+        cfg["reply_desk"]["daily_caps"]["accounts"] = {"kelly": 1}
+        send_day = NOW + timedelta(days=1)
+
+        fresh = _item(thread="1900000000000000600", draft="Fresh 12.5%.", now=send_day)
+        rq.enqueue(fresh, store)
+        _advance_to_claimed(fresh["id"], store, now=send_day)
+        assert rq.mark_sent(fresh["id"], receipt={"url": "u"}, root=store,
+                            cfg=cfg, now=send_day)["ok"] is True
+
+        stale = _item(thread="1900000000000000601", draft="Yesterday 12.5%.", now=NOW)
+        rq.enqueue(stale, store)
+        _advance_to_claimed(stale["id"], store, now=send_day)
+        result = rq.mark_sent(stale["id"], receipt={"url": "u"}, root=store,
+                              cfg=cfg, now=send_day)
+        assert result["ok"] is False and result["reason"] == "reply_cap_daily"
 
 
 class TestExporterModeGate:
@@ -1100,7 +1368,11 @@ class TestReceiptIngest:
             json.dumps({"id": item["id"], "url": "u"}), encoding="utf-8")
         result = rx.ingest_receipts(cfg=cfg, root=store, now=NOW)
         assert result["refused"][0]["reason"] == "reply_cap_daily"
-        assert capsys.readouterr().out.startswith("::warning title=reply-cap-daily::")
+        lines = [ln for ln in capsys.readouterr().out.splitlines() if ln.strip()]
+        # Every annotation must START its line (GH drops the rest), and the cap
+        # warning must be among them regardless of what else was announced.
+        assert all(ln.startswith("::") for ln in lines), lines
+        assert any(ln.startswith("::warning title=reply-cap-daily::") for ln in lines), lines
 
     def test_sweep_runs_the_full_tick(self, store, m1_cfg):
         item = _item()
@@ -1110,16 +1382,245 @@ class TestReceiptIngest:
         assert result["export"]["count"] == 1
         assert result["released_claims"] == []
 
+    def test_sweep_ingests_before_it_sizes_the_cap(self, store, m1_cfg):
+        """A send from the last tick must be on the books before headroom is
+        computed, or export hands out allowance that is already spent."""
+        cfg = json.loads(json.dumps(m1_cfg))
+        cfg["reply_desk"]["daily_caps"]["accounts"] = {"kelly": 1}
+
+        sent_item = _item(thread="1900000000000000900", draft="First reply 12.5%.")
+        rq.enqueue(sent_item, store)
+        _advance_to_claimed(sent_item["id"], store)
+        rx.receipts_dir(store).mkdir(parents=True, exist_ok=True)
+        (rx.receipts_dir(store) / f"{sent_item['id']}.json").write_text(
+            json.dumps({"id": sent_item["id"], "url": "https://x.com/a/status/1",
+                        "screenshot": "s.png"}), encoding="utf-8")
+
+        pending = _item(thread="1900000000000000901", draft="Second reply 12.5%.")
+        rq.enqueue(pending, store)
+        rq.approve(pending["id"], root=store)
+
+        result = rx.sweep(cfg=cfg, root=store, now=NOW)
+        assert result["ingest"]["recorded"] == [sent_item["id"]]
+        assert result["export"]["count"] == 0, "the cap was already spent this tick"
+        assert pending["id"] in result["export"]["skipped_cap"]
+
+    def test_a_receipt_with_no_url_is_refused_and_retired(self, store, m1_cfg, capsys):
+        """A receipt is the only evidence a reply went out; an empty one is not
+        evidence, and it must not loop forever."""
+        item = _item()
+        rq.enqueue(item, store)
+        _advance_to_claimed(item["id"], store)
+        rx.receipts_dir(store).mkdir(parents=True, exist_ok=True)
+        path = rx.receipts_dir(store) / f"{item['id']}.json"
+        path.write_text(json.dumps({"id": item["id"]}), encoding="utf-8")
+
+        result = rx.ingest_receipts(cfg=m1_cfg, root=store, now=NOW)
+        assert result["refused"][0]["reason"] == "receipt_missing_url"
+        assert rq.fold_state(store)["status"][item["id"]] == "claimed"
+        assert not path.exists() and path.with_suffix(".invalid").exists()
+        assert any(ln.startswith("::warning title=reply-receipt-invalid::")
+                   for ln in capsys.readouterr().out.splitlines())
+
+    def test_an_unresolvable_receipt_is_parked_not_retried_forever(self, store, m1_cfg):
+        """An orphan receipt re-refused on every sweep is a permanent warning
+        nobody can clear."""
+        item = _item()
+        rq.enqueue(item, store)
+        rq.reject(item["id"], root=store)          # terminal: no send is possible
+        rx.receipts_dir(store).mkdir(parents=True, exist_ok=True)
+        path = rx.receipts_dir(store) / f"{item['id']}.json"
+        path.write_text(json.dumps({"id": item["id"], "url": "u", "screenshot": "s"}),
+                        encoding="utf-8")
+
+        first = rx.ingest_receipts(cfg=m1_cfg, root=store, now=NOW)
+        assert first["refused"][0]["reason"] == "illegal_transition"
+        assert path.with_suffix(".unresolved").exists()
+        assert rx.ingest_receipts(cfg=m1_cfg, root=store, now=NOW)["refused"] == []
+
+
+class TestExportCapEnforcement:
+    """GATE: the daily cap must bind BEFORE the desktop lane can send, not when
+    a receipt comes back — by then the reply is already public."""
+
+    def test_export_never_exceeds_the_daily_cap(self, store, m1_cfg):
+        cfg = json.loads(json.dumps(m1_cfg))
+        cfg["reply_desk"]["daily_caps"]["accounts"] = {"kelly": 1}
+        ids = []
+        for i in range(3):
+            item = _item(thread=str(1900000000000000200 + i), draft=f"Draft {i} at 12.5%.")
+            rq.enqueue(item, store)
+            rq.approve(item["id"], root=store)
+            ids.append(item["id"])
+
+        result = rx.export_approved(cfg=cfg, root=store, now=NOW)
+        assert result["count"] == 1, "three approved items against a cap of one"
+        assert len(result["skipped_cap"]) == 2
+        assert len(list(rx.queue_dir(store).glob("*.json"))) == 1
+
+    def test_export_counts_sends_already_made_today(self, store, m1_cfg):
+        cfg = json.loads(json.dumps(m1_cfg))
+        cfg["reply_desk"]["daily_caps"]["accounts"] = {"kelly": 2}
+        sent = _item(thread="1900000000000000300", draft="Already sent 12.5%.")
+        rq.enqueue(sent, store)
+        _advance_to_claimed(sent["id"], store)
+        rq.mark_sent(sent["id"], receipt={"url": "u"}, root=store, cfg=cfg, now=NOW)
+
+        for i in range(2):
+            nxt = _item(thread=str(1900000000000000310 + i), draft=f"Next {i} 12.5%.")
+            rq.enqueue(nxt, store)
+            rq.approve(nxt["id"], root=store)
+
+        result = rx.export_approved(cfg=cfg, root=store, now=NOW)
+        assert result["count"] == 1, "one send already spent, cap 2 leaves headroom 1"
+
+    def test_export_counts_mirrors_still_in_flight(self, store, m1_cfg):
+        cfg = json.loads(json.dumps(m1_cfg))
+        cfg["reply_desk"]["daily_caps"]["accounts"] = {"kelly": 1}
+        first = _item(thread="1900000000000000400", draft="First 12.5%.")
+        rq.enqueue(first, store)
+        rq.approve(first["id"], root=store)
+        assert rx.export_approved(cfg=cfg, root=store, now=NOW)["count"] == 1
+
+        second = _item(thread="1900000000000000401", draft="Second 12.5%.")
+        rq.enqueue(second, store)
+        rq.approve(second["id"], root=store)
+        result = rx.export_approved(cfg=cfg, root=store, now=NOW)
+        assert result["count"] == 0, "the first mirror is unsent and still holds the slot"
+
+    def test_export_prefers_the_highest_scoring_opportunity(self, store, m1_cfg):
+        cfg = json.loads(json.dumps(m1_cfg))
+        cfg["reply_desk"]["daily_caps"]["accounts"] = {"kelly": 1}
+        low = rq.make_item(account="kelly", target_url="https://x.com/a/status/1900000000000000500",
+                           parent_author="a", parent_excerpt="p", draft="Low 12.5%.",
+                           tier="conversion", score=0.10, score_components={}, now=NOW)
+        high = rq.make_item(account="kelly", target_url="https://x.com/a/status/1900000000000000501",
+                            parent_author="a", parent_excerpt="p", draft="High 12.5%.",
+                            tier="relationship", score=0.95, score_components={}, now=NOW)
+        for it in (low, high):
+            rq.enqueue(it, store)
+            rq.approve(it["id"], root=store)
+        result = rx.export_approved(cfg=cfg, root=store, now=NOW)
+        assert result["exported"] == [high["id"]]
+
+
+class TestMirrorGarbageCollection:
+    """A kill that never reaches the handoff directory is not a kill."""
+
+    def test_an_expired_items_mirror_is_removed(self, store, m1_cfg):
+        item = _item(ttl_min=10)
+        rq.enqueue(item, store)
+        rq.approve(item["id"], root=store)
+        rx.export_approved(cfg=m1_cfg, root=store, now=NOW)
+        assert (rx.queue_dir(store) / f"{item['id']}.json").exists()
+
+        result = rx.export_approved(cfg=m1_cfg, root=store, now=NOW + timedelta(minutes=30))
+        assert item["id"] in result["expired_ids"]
+        assert item["id"] in result["swept_mirrors"]
+        assert not (rx.queue_dir(store) / f"{item['id']}.json").exists()
+
+    def test_a_released_lease_removes_the_mirror(self, store, m1_cfg):
+        """Otherwise the desktop lane can post it a second time, invisibly."""
+        item = _item()
+        rq.enqueue(item, store)
+        rq.approve(item["id"], root=store)
+        rx.export_approved(cfg=m1_cfg, root=store, now=NOW)
+        rq.claim(item["id"], holder="desk-1", root=store, now=NOW)
+        rq.release_expired_claims(now=NOW + timedelta(seconds=rq.DEFAULT_LEASE_S + 1), root=store)
+
+        rx.export_approved(cfg=m1_cfg, root=store, now=NOW + timedelta(seconds=700))
+        assert not (rx.queue_dir(store) / f"{item['id']}.json").exists()
+
+    def test_a_rejected_items_mirror_is_removed(self, store, m1_cfg):
+        item = _item()
+        rq.enqueue(item, store)
+        rq.approve(item["id"], root=store)
+        rx.export_approved(cfg=m1_cfg, root=store, now=NOW)
+        rq.reject(item["id"], root=store, reason="off-beat")
+        assert rx.sweep_mirrors(store) == [item["id"]]
+        assert not (rx.queue_dir(store) / f"{item['id']}.json").exists()
+
+    def test_a_claimed_items_mirror_survives(self, store, m1_cfg):
+        item = _item()
+        rq.enqueue(item, store)
+        rq.approve(item["id"], root=store)
+        rx.export_approved(cfg=m1_cfg, root=store, now=NOW)
+        rq.claim(item["id"], holder="desk-1", root=store, now=NOW)
+        assert rx.sweep_mirrors(store) == []
+        assert (rx.queue_dir(store) / f"{item['id']}.json").exists()
+
+    def test_claim_for_desktop_writes_the_published_contract_dir(self, store, m1_cfg):
+        item = _item()
+        rq.enqueue(item, store)
+        rq.approve(item["id"], root=store)
+        claim = rx.claim_for_desktop(item["id"], holder="desk-1", cfg=m1_cfg,
+                                     root=store, now=NOW)
+        assert claim["holder"] == "desk-1"
+        assert (rx.claims_dir(store) / f"{item['id']}.json").exists()
+
+
+class TestInFlightItemsAreNotExpired:
+    def test_a_claimed_item_is_not_expired_out_from_under_the_sender(self, store):
+        """It may already be posted; expiring it orphans a PUBLIC reply."""
+        item = _item(ttl_min=45)
+        rq.enqueue(item, store)
+        _advance_to_claimed(item["id"], store, now=NOW + timedelta(minutes=40))
+        assert rq.expire_due(now=NOW + timedelta(minutes=46), root=store) == []
+        assert rq.fold_state(store)["status"][item["id"]] == "claimed"
+
+    def test_the_receipt_still_records_after_the_ttl(self, store, m1_cfg):
+        item = _item(ttl_min=45)
+        rq.enqueue(item, store)
+        _advance_to_claimed(item["id"], store, now=NOW + timedelta(minutes=40))
+        rq.expire_due(now=NOW + timedelta(minutes=46), root=store)
+        result = rq.mark_sent(item["id"], receipt={"url": "u"}, root=store, cfg=m1_cfg,
+                              now=NOW + timedelta(minutes=47))
+        assert result["ok"] is True
+
+    def test_expiry_resumes_once_the_lease_is_released(self, store):
+        item = _item(ttl_min=45)
+        rq.enqueue(item, store)
+        _advance_to_claimed(item["id"], store, now=NOW)
+        later = NOW + timedelta(seconds=rq.DEFAULT_LEASE_S + 1)
+        rq.release_expired_claims(now=later, root=store)
+        assert rq.expire_due(now=NOW + timedelta(hours=2), root=store) == [item["id"]]
+
 
 # ===========================================================================
 # House-law guards
 # ===========================================================================
 class TestHouseLaws:
-    def test_no_module_writes_inside_the_repo_checkout(self):
-        """The M1 is the nightly render host: zero repo writes, intraday."""
-        for name in ("reply_queue", "reply_discovery", "reply_export"):
-            src = (ROOT / "engine" / "marketing" / f"{name}.py").read_text(encoding="utf-8")
-            assert 'Path("data")' not in src, f"{name} must not write under data/"
+    def test_a_full_lifecycle_writes_nothing_inside_the_repo(self, tmp_path, m1_cfg):
+        """The M1 is the nightly render host: an intraday writer inside the
+        render checkout collides with render-lane resets.
+
+        Functional, not a substring scan — a grep for 'Path("data")' would miss
+        `base / "data"`, single quotes, and f-strings alike.
+        """
+        tracked = ROOT / "data" / "marketing"
+        before = {p: p.stat().st_mtime_ns for p in tracked.rglob("*") if p.is_file()} \
+            if tracked.exists() else {}
+
+        store = tmp_path / "desk"
+        item = _item()
+        rq.enqueue(item, store)
+        rq.approve(item["id"], root=store)
+        rx.export_approved(cfg=m1_cfg, root=store, now=NOW)
+        rx.claim_for_desktop(item["id"], holder="d", cfg=m1_cfg, root=store, now=NOW)
+        rq.mark_sent(item["id"], receipt={"url": "u"}, root=store, cfg=m1_cfg, now=NOW)
+        rq.expire_due(now=NOW, root=store)
+        rd.run_tick(rd.ReplyDiscoveryProvider({}, sub_cap_usd=1.0, global_cap_usd=75.0),
+                    root=store, offline=True, now=NOW)
+
+        after = {p: p.stat().st_mtime_ns for p in tracked.rglob("*") if p.is_file()} \
+            if tracked.exists() else {}
+        assert after == before, "the reply desk wrote inside the repo checkout"
+        assert (store / "store" / "items.jsonl").exists(), "…and wrote nothing at all"
+
+    def test_state_dir_default_is_outside_the_repo(self, monkeypatch):
+        monkeypatch.delenv("MASTERMIND_REPLY_DESK_DIR", raising=False)
+        resolved = rq.state_dir()
+        assert ROOT not in resolved.parents and resolved != ROOT
 
     def test_annotations_start_the_line(self):
         """GH annotations emitted via a logger are silently dropped."""

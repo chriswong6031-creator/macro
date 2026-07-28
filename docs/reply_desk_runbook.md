@@ -92,6 +92,23 @@ Cursors and spend live in `~/.mastermind/reply_desk/discovery/state.json` — ne
 in the repo, because the M1 is the nightly render host and an intraday writer in
 the render checkout collides with render-lane resets.
 
+**Poll through `run_tick`, never `fetch` directly.** `run_tick` loads that state,
+polls once, and saves. Calling `fetch` with a bare dict skips persistence, which
+silently resets the monthly spend counter to zero every process (making the
+sub-cap vacuous) and resets the since-id cursors (re-reading and re-billing every
+author's whole timeline each tick):
+
+```bash
+python3 -c "import yaml; from engine.marketing import reply_discovery as d; \
+            p = d.build_provider(yaml.safe_load(open('config/press_sources.yml')), \
+                                 yaml.safe_load(open('config/marketing.yml'))); \
+            print(d.run_tick(p))"
+```
+
+Desks are polled in rotation, so a `max_requests_per_tick` smaller than the fleet
+does not starve the tail of the list; a truncated tick prints
+`::warning title=reply-discovery-tick-cap::`.
+
 ---
 
 ## 3. The mode dial
@@ -122,8 +139,18 @@ the dial only*. At M0 the cap is 0 no matter what config says. At M1+ it is
 quality bar), clamped to a **hard ceiling of 30** that is a code constant in
 `sentinel.py` — config can lower it, never raise it.
 
-The cap counts **real sends** (ledger rows), and it is re-checked when a receipt
-is ingested, not only at export time: the desktop session runs on its own clock.
+The cap binds in **two** places, and both matter:
+
+1. **At export.** Headroom is `cap - sends already made today - mirrors still in
+   flight`, so ten approved items against a cap of one export exactly one. This
+   is the gate that matters — enforcing the cap only on the way back would gate
+   bookkeeping, because by then the reply is already public.
+2. **At receipt ingest.** Re-checked because the desktop session runs on its own
+   clock and a cap enforced only upstream is one a slow queue walks through.
+
+Held-back items stay approved and are exported on a later tick if their window
+has not closed. When the cap holds items back, the tick prints a
+`::warning title=reply-cap-export::` naming the remaining headroom.
 
 ---
 
@@ -209,20 +236,28 @@ The session reads and writes three directories under
 
 1. **Read** `queue/`. Each file carries `draft`, `target_url`, `parent_author`,
    `parent_excerpt`, `chart` (`local_path` + `public_url`), `tier`, `not_before`,
-   and `expires_at`.
-2. **Check `expires_at` before doing anything.** A stale reply is dead. If the
-   window has closed, do not send — the queue will kill it on the next tick.
+   and `expires_at`. A file in `queue/` is a live instruction: the sweep deletes
+   the mirror as soon as its item expires, is rejected, or loses its lease, so
+   you are not relying on your own vigilance to avoid sending a dead draft.
+2. **Check `expires_at` anyway.** Belt and braces — the sweep runs on a tick, and
+   you may be reading between ticks.
 3. **Claim before navigating.** Take the lease first, then open the thread:
 
    ```bash
-   python3 -c "from engine.marketing import reply_queue as q; \
-               print(q.claim('<item-id>', holder='desk-1'))"
+   python3 -c "import yaml; from engine.marketing import reply_export as x; \
+               print(x.claim_for_desktop('<item-id>', holder='desk-1', \
+                     cfg=yaml.safe_load(open('config/marketing.yml'))))"
    ```
 
-   The default lease is **600 seconds**. An expired lease returns the item to
-   `queued` — deliberately *not* to `approved`, because a lease that timed out
-   gives us no way to know whether the reply was posted. A human re-approves.
-   That friction is the point; it is what prevents a double-post.
+   This writes `claims/<id>.json` and takes the lease in one step. The default
+   lease is **600 seconds** (`reply_desk.lease_s`). An expired lease returns the
+   item to `queued` — deliberately *not* to `approved`, because a lease that
+   timed out gives us no way to know whether the reply was posted. A human
+   re-approves. That friction is the point; it is what prevents a double-post.
+
+   **A claimed item is never expired out from under you.** The lease governs an
+   in-flight item, so a TTL that lapses mid-send cannot orphan a reply you have
+   already posted.
 4. **Send the reply** in the account's own browser profile. Attach the chart from
    `chart.local_path` when present. The chart carries an as-of stamp — charts are
    EOD-only, and yesterday's bar must never be presented as live.
@@ -239,18 +274,31 @@ The session reads and writes three directories under
    ```
 
    **Both the URL and the screenshot are required.** The URL is the machine-
-   checkable receipt; the screenshot is what lets a human audit the rendered
-   result, including how it looks under the parent post.
+   checkable receipt and is **enforced** — a receipt without one is refused and
+   parked as `.invalid`, because an empty receipt is not evidence. A missing
+   screenshot is announced but still records the send: refusing it would leave a
+   reply that is already public permanently uncounted.
 6. The next sweep ingests receipts, records the send against the daily cap, and
-   clears the queue mirror. A consumed receipt is renamed `.done` so a re-run
-   never double-counts a send.
+   clears the queue mirror and the claim. A consumed receipt is renamed `.done`
+   so a re-run never double-counts a send.
 
-Run a full tick (reclaim expired leases, expire stale drafts, export, ingest):
+Run a full tick (ingest receipts, reclaim leases, expire, sweep mirrors, export):
 
 ```bash
 python3 -c "import yaml; from engine.marketing import reply_export as x; \
             print(x.sweep(cfg=yaml.safe_load(open('config/marketing.yml'))))"
 ```
+
+Ingest runs **first** so a send from the previous tick is on the books before
+the cap is sized; otherwise the export step hands out headroom already spent.
+
+### Receipts that cannot be resolved
+
+A receipt for an item that can no longer transition (already sent, rejected, or
+unknown) is parked as `.unresolved` with a
+`::warning title=reply-receipt-orphan::`. Read these: the reply may be **public
+but unrecorded**, which means the daily cap is under-counting. Reconcile by hand
+before raising any dial.
 
 ### If a send fails
 
@@ -268,6 +316,21 @@ account actioned.
 ---
 
 ## 7. Approving drafts
+
+> **Which machine runs the admin matters.** The reply queue lives in host state
+> on the M1 Mac Studio (`~/.mastermind/reply_desk`). The deployed admin on the
+> VPS resolves *its own* home directory, so it renders an empty queue — there is
+> no sync between the two. Approve from an admin running **on the M1**:
+>
+> ```bash
+> MACRO_ADMIN_ROOT=<repo> python3 -m admin      # on the M1, not the VPS
+> ```
+>
+> To point an admin elsewhere at a shared or mounted store, set
+> `MASTERMIND_REPLY_DESK_DIR` in that service's environment. **Do not** relocate
+> the store into the repo checkout to work around this — the M1 is the nightly
+> render host and an intraday writer there collides with render-lane resets.
+> A proper VPS-side approval surface needs a sync or an API and is not built.
 
 Admin → **Marketing → Reply Queue**, two zones per account:
 
@@ -289,12 +352,16 @@ rubric). What reaches you is a *taste* decision, not a safety decision.
 
 ## 8. Kill switches
 
-| Scope | Action |
-|---|---|
-| One account | set its mode back to `M0` |
-| The whole desk | `reply_desk.enabled: false` in `config/marketing.yml` |
-| Discovery only | `reply_discovery.enabled: false` in `config/press_sources.yml` |
-| Everything in flight | delete `~/.mastermind/reply_desk/queue/*.json` |
+| Scope | Action | Effect |
+|---|---|---|
+| One account | set its mode back to `M0` | that desk exports nothing; cap 0 |
+| One account, keep the dial | `reply_desk.daily_caps.accounts.<id>: null` | cap 0 for that desk |
+| The whole desk | `reply_desk.enabled: false` in `config/marketing.yml` | every account forced to M0, every cap 0, nothing exports |
+| Discovery only | `reply_discovery.enabled: false` in `config/press_sources.yml` | no polling, no spend; the queue drains |
+| Everything in flight | delete `~/.mastermind/reply_desk/queue/*.json` | the desktop lane has nothing to send |
+
+All four are verified by tests, not just documented — a kill switch that reads
+as off while the desk keeps exporting is worse than no switch.
 
 Nothing in this system posts on a schedule of its own. Every send is a human in
 a browser acting on an item a human approved.
