@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.confluence_graph.v1",
   "artifact_id": "confluence-graph",
-  "asof": "2026-07-26",
+  "asof": "2026-07-27",
   "is_context_only": true,
   "display_only": true,
   "hard_law": "HARD LAW: confluence never gates, never ranks, never raises a priority.  All edges are display_only=True.  Cross-engine hard gates require their own pre-registered gauntlet (China falsification precedent).  Edge promotion beyond display requires a registered gauntlet result in config/qual_ladder.yml.",
@@ -11,7 +11,15 @@
       "type": "engine",
       "label": "altdata",
       "meta": {
-        "n_spine_rows": 910
+        "n_spine_rows": 924
+      }
+    },
+    {
+      "id": "engine:altdata_conv",
+      "type": "engine",
+      "label": "altdata_conv",
+      "meta": {
+        "n_spine_rows": 4
       }
     },
     {
@@ -19,7 +27,7 @@
       "type": "engine",
       "label": "ca_board",
       "meta": {
-        "n_spine_rows": 796
+        "n_spine_rows": 868
       }
     },
     {
@@ -35,7 +43,7 @@
       "type": "engine",
       "label": "china_special_sits",
       "meta": {
-        "n_spine_rows": 50
+        "n_spine_rows": 53
       }
     },
     {
@@ -43,7 +51,7 @@
       "type": "engine",
       "label": "cn_board",
       "meta": {
-        "n_spine_rows": 3608
+        "n_spine_rows": 3848
       }
     },
     {
@@ -51,7 +59,7 @@
       "type": "engine",
       "label": "cn_importance_v0",
       "meta": {
-        "n_spine_rows": 1874
+        "n_spine_rows": 1951
       }
     },
     {
@@ -59,7 +67,7 @@
       "type": "engine",
       "label": "cn_importance_v0_pit",
       "meta": {
-        "n_spine_rows": 1874
+        "n_spine_rows": 1951
       }
     },
     {
@@ -91,7 +99,7 @@
       "type": "engine",
       "label": "hk_board",
       "meta": {
-        "n_spine_rows": 1064
+        "n_spine_rows": 1164
       }
     },
     {
@@ -99,7 +107,7 @@
       "type": "engine",
       "label": "intel_hub",
       "meta": {
-        "n_spine_rows": 1274
+        "n_spine_rows": 1336
       }
     },
     {
@@ -107,7 +115,7 @@
       "type": "engine",
       "label": "macro_context",
       "meta": {
-        "n_spine_rows": 173
+        "n_spine_rows": 184
       }
     },
     {
@@ -139,7 +147,7 @@
       "type": "engine",
       "label": "policy",
       "meta": {
-        "n_spine_rows": 34
+        "n_spine_rows": 36
       }
     },
     {
@@ -147,7 +155,7 @@
       "type": "engine",
       "label": "radar",
       "meta": {
-        "n_spine_rows": 8767
+        "n_spine_rows": 9990
       }
     },
     {
@@ -163,7 +171,7 @@
       "type": "engine",
       "label": "reflex.options_flow_attention",
       "meta": {
-        "n_spine_rows": 104
+        "n_spine_rows": 109
       }
     },
     {
@@ -171,7 +179,7 @@
       "type": "engine",
       "label": "reflex.regime_stale_selfheal",
       "meta": {
-        "n_spine_rows": 13
+        "n_spine_rows": 14
       }
     },
     {
@@ -179,7 +187,7 @@
       "type": "engine",
       "label": "stock_personality",
       "meta": {
-        "n_spine_rows": 2931
+        "n_spine_rows": 2928
       }
     },
     {
@@ -195,7 +203,7 @@
       "type": "engine",
       "label": "track_record",
       "meta": {
-        "n_spine_rows": 287535
+        "n_spine_rows": 287550
       }
     },
     {
@@ -211,7 +219,7 @@
       "type": "engine",
       "label": "us_importance_v0",
       "meta": {
-        "n_spine_rows": 7841
+        "n_spine_rows": 8399
       }
     },
     {
@@ -219,7 +227,7 @@
       "type": "engine",
       "label": "us_importance_v0_pit",
       "meta": {
-        "n_spine_rows": 7841
+        "n_spine_rows": 8399
       }
     },
     {
@@ -1556,6 +1564,15 @@
       }
     },
     {
+      "id": "thesis:2026-07-27-radar-us_sector_comm",
+      "type": "thesis",
+      "label": "2026-07-27-radar-us_sector_comm",
+      "meta": {
+        "direction": null,
+        "onset_date": null
+      }
+    },
+    {
       "id": "macro:fx_dollar",
       "type": "macro",
       "label": "FX / Dollar",
@@ -1564,15 +1581,15 @@
         "regime": "US growth premium",
         "risk": "risk-on",
         "usd_trend": "up",
-        "asof": "2026-07-26",
+        "asof": "2026-07-27",
         "display_only": true,
         "source_lobe": "fx_dollar",
         "smile_regime": "rates-driven",
         "dollar_day_flag": false,
-        "regime_radar_dominant": "intervention_risk",
-        "stance_word": "Get ready",
-        "dominant_scenario": "intervention_risk",
-        "days_in_regime": 98
+        "regime_radar_dominant": null,
+        "stance_word": "Watch — don't chase",
+        "dominant_scenario": null,
+        "days_in_regime": 99
       }
     },
     {
@@ -1660,7 +1677,7 @@
           "Gold",
           "Copper"
         ],
-        "asof": "2026-07-24",
+        "asof": "2026-07-26",
         "display_only": true,
         "source_lobe": "commodity_context"
       }
@@ -4288,6 +4305,16 @@
       "note": "structural: engine/personality_gate_shadow.py writes data/personality_timing/gate_shadow.jsonl"
     },
     {
+      "src": "artifact:personality-gate-shadow-ledger",
+      "dst": "module:engine/personality_terminality_shadow.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/personality_timing/gate_shadow.jsonl consumed by engine/personality_terminality_shadow.py"
+    },
+    {
       "src": "module:engine/personality_gate_shadow.py",
       "dst": "artifact:personality-gate-shadow-state",
       "edge_type": "feeds",
@@ -4296,6 +4323,176 @@
       "display_only": true,
       "regime": null,
       "note": "structural: engine/personality_gate_shadow.py writes data/personality_timing/gate_shadow_state.json"
+    },
+    {
+      "src": "module:scripts/research/pss_f4_hazard.py",
+      "dst": "artifact:personality-terminality-shadow-model-manifest",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/research/pss_f4_hazard.py writes data/personality_timing/terminality_shadow_model_v1/manifest.json"
+    },
+    {
+      "src": "artifact:personality-terminality-shadow-model-manifest",
+      "dst": "module:engine/personality_terminality_shadow.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/personality_timing/terminality_shadow_model_v1/manifest.json consumed by engine/personality_terminality_shadow.py"
+    },
+    {
+      "src": "module:scripts/research/pss_f4_hazard.py",
+      "dst": "artifact:personality-terminality-shadow-near-model",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/research/pss_f4_hazard.py writes data/personality_timing/terminality_shadow_model_v1/near_low.json"
+    },
+    {
+      "src": "artifact:personality-terminality-shadow-near-model",
+      "dst": "module:engine/personality_terminality_shadow.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/personality_timing/terminality_shadow_model_v1/near_low.json consumed by engine/personality_terminality_shadow.py"
+    },
+    {
+      "src": "module:scripts/research/pss_f4_hazard.py",
+      "dst": "artifact:personality-terminality-shadow-safe-model",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/research/pss_f4_hazard.py writes data/personality_timing/terminality_shadow_model_v1/tail_safe.json"
+    },
+    {
+      "src": "artifact:personality-terminality-shadow-safe-model",
+      "dst": "module:engine/personality_terminality_shadow.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/personality_timing/terminality_shadow_model_v1/tail_safe.json consumed by engine/personality_terminality_shadow.py"
+    },
+    {
+      "src": "module:engine/personality_terminality_shadow.py",
+      "dst": "artifact:personality-terminality-shadow-ledger",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/personality_terminality_shadow.py writes data/personality_timing/terminality_shadow.jsonl"
+    },
+    {
+      "src": "artifact:personality-terminality-shadow-ledger",
+      "dst": "module:engine/personality_terminality_shadow.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/personality_timing/terminality_shadow.jsonl consumed by engine/personality_terminality_shadow.py"
+    },
+    {
+      "src": "module:engine/personality_terminality_shadow.py",
+      "dst": "artifact:personality-terminality-shadow-state",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/personality_terminality_shadow.py writes data/personality_timing/terminality_shadow_state.json"
+    },
+    {
+      "src": "artifact:personality-terminality-shadow-state",
+      "dst": "module:scripts/build_stock_library.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/personality_timing/terminality_shadow_state.json consumed by scripts/build_stock_library.py"
+    },
+    {
+      "src": "module:scripts/research/freeze_pss_rh1_relief_hazard.py",
+      "dst": "artifact:personality-relief-hazard-manifest",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/research/freeze_pss_rh1_relief_hazard.py writes data/personality_timing/relief_hazard_manifest_v1.json"
+    },
+    {
+      "src": "artifact:personality-relief-hazard-manifest",
+      "dst": "module:engine/personality_relief_hazard.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/personality_timing/relief_hazard_manifest_v1.json consumed by engine/personality_relief_hazard.py"
+    },
+    {
+      "src": "module:scripts/research/freeze_pss_rh1_relief_hazard.py",
+      "dst": "artifact:personality-relief-hazard-membership",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/research/freeze_pss_rh1_relief_hazard.py writes data/personality_timing/relief_hazard_membership_v1.json"
+    },
+    {
+      "src": "artifact:personality-relief-hazard-membership",
+      "dst": "module:engine/personality_relief_hazard.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/personality_timing/relief_hazard_membership_v1.json consumed by engine/personality_relief_hazard.py"
+    },
+    {
+      "src": "module:engine/personality_relief_hazard.py",
+      "dst": "artifact:personality-relief-hazard-ledger",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/personality_relief_hazard.py writes data/personality_timing/relief_hazard.jsonl"
+    },
+    {
+      "src": "artifact:personality-relief-hazard-ledger",
+      "dst": "module:engine/personality_relief_hazard.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/personality_timing/relief_hazard.jsonl consumed by engine/personality_relief_hazard.py"
+    },
+    {
+      "src": "module:engine/personality_relief_hazard.py",
+      "dst": "artifact:personality-relief-hazard-state",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/personality_relief_hazard.py writes data/personality_timing/relief_hazard_state.json"
     },
     {
       "src": "module:engine/index_momentum.py",
@@ -7666,6 +7863,16 @@
       "display_only": true,
       "regime": null,
       "note": "structural: site/chinastatedata/cycle_phase.json consumed by engine/china_market_state.py"
+    },
+    {
+      "src": "module:scripts/build_china_calendar.py",
+      "dst": "artifact:site-china-calendar",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_china_calendar.py writes site/chinastatedata/calendar.json"
     },
     {
       "src": "module:scripts/build_china_market_state.py",
@@ -16165,29 +16372,29 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "pair_id=briefing-divergences kind=directional-opposition severity=tension a=36 ticker-level demand-vs-supply divergences b=n_divergences=36, top tickers=['NVDA', 'C', 'COF', 'GS', 'PS"
+      "note": "pair_id=briefing-divergences kind=directional-opposition severity=tension a=33 ticker-level demand-vs-supply divergences b=n_divergences=33, top tickers=['NVDA', 'C', 'PSKY', 'FTNT', "
     },
     {
       "src": "engine:altdata",
       "dst": "engine:intel_hub",
       "edge_type": "confirms",
-      "n": 2,
+      "n": 4,
       "lift": null,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "n=2 < MIN_N=10 — lift=null (insufficient sample; display-only)"
+      "note": "n=4 < MIN_N=10 — lift=null (insufficient sample; display-only)"
     },
     {
       "src": "engine:altdata",
       "dst": "engine:radar",
       "edge_type": "confirms",
-      "n": 64,
-      "lift": -0.03482,
+      "n": 68,
+      "lift": -0.03536,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=-0.0348 n=64 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=-0.0354 n=68 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:altdata",
@@ -16226,12 +16433,12 @@
       "src": "engine:intel_hub",
       "dst": "engine:radar",
       "edge_type": "confirms",
-      "n": 196,
-      "lift": 0.00194,
+      "n": 358,
+      "lift": -0.00093,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=0.0019 n=196 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=-0.0009 n=358 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:intel_hub",
@@ -16248,34 +16455,34 @@
       "src": "engine:policy",
       "dst": "engine:radar",
       "edge_type": "confirms",
-      "n": 13,
-      "lift": -0.00051,
+      "n": 16,
+      "lift": -0.00762,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=-0.0005 n=13 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=-0.0076 n=16 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:radar",
       "dst": "engine:track_record",
       "edge_type": "confirms",
-      "n": 12,
-      "lift": -0.01901,
+      "n": 14,
+      "lift": -0.006,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=-0.0190 n=12 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=-0.0060 n=14 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:radar",
       "dst": "engine:us_board",
       "edge_type": "confirms",
       "n": 37,
-      "lift": 0.00981,
+      "lift": 0.0078,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=0.0098 n=37 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=0.0078 n=37 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:track_record",
@@ -16292,11 +16499,11 @@
       "src": "options.skew_rising",
       "dst": "us_board.buy_lane",
       "edge_type": "contradicts",
-      "n": 2,
+      "n": 3,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "buy-lane names with 5d-rising OTM-put skew (as_of 2026-07-15); e.g. QCOM, TGT. Display-only de-escalation context; W-E1 prior: bullish skew-decel UNSUPPORTED on sector history."
+      "note": "buy-lane names with 5d-rising OTM-put skew (as_of 2026-07-17); e.g. AEIS, TEL, XOM. Display-only de-escalation context; W-E1 prior: bullish skew-decel UNSUPPORTED on sector history."
     },
     {
       "src": "options.skew_decel",
@@ -16306,17 +16513,17 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "buy-lane names with top-tercile skew now falling (as_of 2026-07-15); e.g. none. Display-only; S-SKEW_DECEL gate building_history, W-E1 sector-history prior is SKEPTICAL."
+      "note": "buy-lane names with top-tercile skew now falling (as_of 2026-07-17); e.g. none. Display-only; S-SKEW_DECEL gate building_history, W-E1 sector-history prior is SKEPTICAL."
     },
     {
       "src": "options.ivspread_positive_call_doi",
       "dst": "us_board.watch_lane",
       "edge_type": "confirms",
-      "n": 2,
+      "n": 3,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "watch-lane names with CW ivspread>0 and net ΔOI>0 (as_of 2026-07-15); e.g. ROST, SNDK. Display-only; S-IVSPREAD-F gate building_history; W-E1: CWIV Era3 5d IC survives on sector history."
+      "note": "watch-lane names with CW ivspread>0 and net ΔOI>0 (as_of 2026-07-17); e.g. FIVE, MARA, SNDK. Display-only; S-IVSPREAD-F gate building_history; W-E1: CWIV Era3 5d IC survives on sector history."
     },
     {
       "src": "options.skew_rising_or_call_wall_pin",
@@ -16390,23 +16597,23 @@
       "pair_id": "briefing-divergences",
       "a": {
         "artifact": "site/intelligence/by_ticker.json (demand/tape)",
-        "reading": "36 ticker-level demand-vs-supply divergences"
+        "reading": "33 ticker-level demand-vs-supply divergences"
       },
       "b": {
         "artifact": "site/intelligence/briefing.json",
-        "reading": "n_divergences=36, top tickers=['NVDA', 'C', 'COF', 'GS', 'PSKY']"
+        "reading": "n_divergences=33, top tickers=['NVDA', 'C', 'PSKY', 'FTNT', 'KDP']"
       },
       "kind": "directional-opposition",
       "severity": "tension",
-      "as_of": "2026-07-27",
-      "note": "36 ticker-level demand (news_dir) vs supply (alt+radar) direction disagreements detected by engine/briefing.py.  Top 5: NVDA, C, COF, GS, PSKY.  These are pre-computed; no recomputation here.  Display-only context (news_dir×supply_dir sign-product < 0 or early_edge/crowded_top labels).",
+      "as_of": "2026-07-28",
+      "note": "33 ticker-level demand (news_dir) vs supply (alt+radar) direction disagreements detected by engine/briefing.py.  Top 5: NVDA, C, PSKY, FTNT, KDP.  These are pre-computed; no recomputation here.  Display-only context (news_dir×supply_dir sign-product < 0 or early_edge/crowded_top labels).",
       "display_only": true
     }
   ],
   "independence": {
     "effective_independent_lobes": 1.0,
     "n_lobes_measurable": 1,
-    "n_lobes_total": 27,
+    "n_lobes_total": 28,
     "pctile_vs_null": 1.0,
     "same_bet_warning": null,
     "dominant_overlap_cluster": null,
@@ -16420,7 +16627,7 @@
   ],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/confluence.py",
-  "produced_at": "2026-07-27T03:28:58Z",
-  "inputs_hash": "sha256:0c423d797bbe1024785f71b5cdeb79615b77f227c1efb227175bffcc8ff781bd",
+  "produced_at": "2026-07-28T02:47:57Z",
+  "inputs_hash": "sha256:da96c70e60532935c185618eebe0ae6a01bb979d3f34cb1794adfc318c914e93",
   "tier": "display"
 }

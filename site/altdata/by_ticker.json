@@ -1,8 +1,8 @@
 {
   "schema": "altdata.by_ticker.v2",
   "as_of": "2026-07-28",
-  "generated_utc": "2026-07-28T03:06:16.861550+00:00",
-  "n_tickers": 2585,
+  "generated_utc": "2026-07-28T04:46:57.784987+00:00",
+  "n_tickers": 2590,
   "note": "Per-ticker weighted alt-data rollup. convergence_score = distinct independent channels (count); weighted_score ranks by channel quality. Donors / position-size recorded as context, never a voting channel.",
   "tickers": {
     "HUBB": {
@@ -3246,20 +3246,6 @@
       "analyst_bull_ratio": 1.0,
       "days_to_earnings": 1,
       "next_earnings": "2026-07-29",
-      "convergence_score": 1,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "ADP": {
-      "ticker": "ADP",
-      "channels": [
-        "analyst_upgrade_cluster"
-      ],
-      "weighted_score": 0.35,
-      "analyst_bull_ratio": 1.0,
-      "days_to_earnings": 1,
-      "next_earnings": "2026-07-29",
-      "congress_position_usd": 17985000.0,
       "convergence_score": 1,
       "trump_linked": false,
       "affiliated": false
