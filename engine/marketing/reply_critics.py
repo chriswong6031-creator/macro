@@ -109,9 +109,12 @@ _MECHANISM_TOKENS: tuple[str, ...] = (
 )
 
 _CASHTAG_RE = re.compile(r"\$[A-Za-z][A-Za-z0-9.\-]{0,9}\b")
-#: Hyphens are kept so hyphenated stance words ("risk-on") survive tokenisation
-#: — without them the directional antonym table below has dead entries.
-_TOKEN_RE = re.compile(r"[a-z0-9'\-]+")
+#: Word tokenizer. Hyphens SPLIT (so "capex-heavy" yields "capex" and a draft is
+#: never rejected merely for hyphenating a mechanism), and a bare "-" is not a
+#: word — keeping it made an unrelated draft share a token with any thesis whose
+#: subject contained a dash, which read as a self-contradiction.
+#: Hyphenated stance words ("risk-on") are matched against the raw text instead.
+_TOKEN_RE = re.compile(r"[a-z0-9']+")
 
 #: Number forms `copywriter._extract_number_tokens` does not tokenise. That
 #: regex is the SHARED bar and stays authoritative for everything it recognises;
@@ -131,12 +134,17 @@ _EXTRA_NUMBER_RE = re.compile(
     |
     [+-]?\d+\.?\d*\s?(?:bps?|bp)\b     # basis points: 100bp, 25 bps
     |
-    [+-]?0\.\d+                        # leading-decimal ratio: 0.35
-    |
-    [+-]\d+\.\d+                       # signed decimal: -3.4
+    [+-]?\$?\d+\.\d+                   # ANY decimal: 4.25, 3.75, 1.05, -3.4
     """,
     re.VERBOSE | re.IGNORECASE,
 )
+# The final alternative is the load-bearing one. A policy rate, a bond yield, an
+# FX cross and an unemployment print are all `X.YY` with ONE integer digit, and
+# the shared regex requires `\d{2,4}\.\d{2}` for its price form — so "the 10y at
+# 3.75" and "EURUSD 1.05" cleared an empty whitelist entirely. It also fixes the
+# fragment bug for decimals: without a wider span, `\b\d{3,6}\b` matched the
+# FRACTIONAL TAIL of 4.567 as "567", so whitelisting the true figure rejected it
+# while any N.567 fabrication produced the same token.
 
 #: Explicit change markers. Constitution §6.3 (opinion ledger) + charter §0: a
 #: contradiction is legitimate when the account OWNS the change in the draft.
@@ -169,6 +177,8 @@ def _verdict(name: str, reasons: list[str]) -> dict[str, Any]:
 
 
 def _words(text: str) -> set[str]:
+    """Lowercased word set. Hyphenated compounds contribute their parts, so
+    "capex-heavy" carries the mechanism token "capex"."""
     return set(_TOKEN_RE.findall(str(text or "").lower()))
 
 
@@ -315,7 +325,14 @@ def position_consistency(draft: str, ctx: dict) -> dict[str, Any]:
         if not subject_words or not (subject_words & draft_words):
             continue  # the draft is not about this thesis
         opposite = _ANTONYMS.get(direction)
-        if opposite and opposite in draft_words:
+        # Hyphenated stances ("risk-on") are not single word tokens, so they are
+        # matched against the raw text with word boundaries either side.
+        hit = bool(opposite) and (
+            opposite in draft_words
+            or ("-" in (opposite or "")
+                and re.search(rf"(?<!\w){re.escape(opposite)}(?!\w)", low) is not None)
+        )
+        if hit:
             reasons.append(
                 f"contradicts the open position on {subject!r} "
                 f"(held {direction!r}, draft says {opposite!r}) with no change marker in-draft"

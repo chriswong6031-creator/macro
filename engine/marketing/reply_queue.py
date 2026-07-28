@@ -221,8 +221,9 @@ def resolve_mode(cfg: dict | None, account: str) -> str:
     rd = ((cfg or {}).get("reply_desk") or {})
     # The whole-desk kill switch. Documented to the operator in the runbook, so
     # it has to actually do something: a switch that reads as off while the desk
-    # keeps exporting is worse than no switch at all.
-    if rd.get("enabled") is False:
+    # keeps exporting is worse than no switch at all. Truthiness, not `is False`
+    # — a hand-edited `enabled: 0` must disable too. Absent means enabled.
+    if "enabled" in rd and not rd["enabled"]:
         return DEFAULT_MODE
 
     enabled_raw = rd.get("modes_enabled") or list(SHIPPABLE_MODES)
@@ -474,7 +475,7 @@ def fold_state(root: Path | str | None = None) -> dict[str, Any]:
                 "lease_until": row.get("lease_until"),
                 "at": row.get("at"),
             }
-        elif to in TERMINAL_STATUSES or to in {"queued", "approved"}:
+        elif to in TERMINAL_STATUSES or to in {"queued", "approved", "failed"}:
             claims.pop(iid, None)
 
     return {"items": items, "status": status, "attempts": attempts, "last": last, "claims": claims}
@@ -690,26 +691,40 @@ def claim(item_id: str, *, holder: str, lease_s: int = DEFAULT_LEASE_S,
 
 
 def release_expired_claims(*, now: datetime | None = None, root: Path | str | None = None,
-                           actor: str = "reply_queue") -> list[str]:
+                           actor: str = "reply_queue",
+                           skip_ids: "frozenset[str] | set[str] | None" = None) -> list[str]:
     """Return items whose lease expired to `queued`. Returns the released ids.
 
     Deliberately `queued`, not `approved`: an expired lease means we do not know
     whether the desktop session posted before it died. A human re-approves, so a
     lease timeout can never silently double-post.
+
+    ``skip_ids`` holds items with an unconsumed receipt waiting. Releasing one of
+    those strands it forever — `queued` has no edge to `sent`, so a receipt that
+    was merely deferred (a cap refusal, say) could never be recorded afterwards,
+    and the send would vanish from the very count the cap is sized against. The
+    exporter passes the pending-receipt set.
     """
     ts = now or datetime.now(timezone.utc)
+    skip = set(skip_ids or ())
     released: list[str] = []
     with _store_lock(root):
         state = fold_state(root)
         for iid, cl in list(state["claims"].items()):
             if state["status"].get(iid) != "claimed":
                 continue
-            lease_until = _parse_iso(cl.get("lease_until"))
-            if lease_until is None or ts < lease_until:
+            if iid in skip:
                 continue
+            lease_until = _parse_iso(cl.get("lease_until"))
+            # A claim with no parseable lease has no natural exit and would hold
+            # the thread-owner lock forever. Treat it as already expired.
+            if lease_until is not None and ts < lease_until:
+                continue
+            note = (f"lease expired at {cl.get('lease_until')} "
+                    f"(held by {cl.get('holder')!r})") if lease_until is not None else \
+                   f"claim carried no lease (held by {cl.get('holder')!r}) — reclaimed"
             if transition(iid, "queued", actor=actor, root=root, now=ts,
-                          note=f"lease expired at {cl.get('lease_until')} (held by {cl.get('holder')!r})",
-                          _state=state):
+                          note=note, _state=state):
                 released.append(iid)
     return released
 

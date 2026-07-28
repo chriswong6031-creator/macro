@@ -198,6 +198,61 @@ class TestDiscoveryBudget:
         assert rd.ReplyDiscoveryProvider.wire_spend(state, now=NOW) == 12.5
         assert rd.ReplyDiscoveryProvider.wire_spend({}, now=NOW) == 0.0
 
+    def test_wire_spend_is_read_from_the_daemons_real_state_file(self, tmp_path):
+        """The two lanes keep their counters in DIFFERENT FILES. Reading only
+        the reply lane's session dict left the shared stop inert in every real
+        invocation, which is how the ceiling became $90 against a $75 bucket."""
+        month = NOW.strftime("%Y-%m")
+        press = tmp_path / "data" / "marketing" / "press"
+        press.mkdir(parents=True)
+        (press / "state.json").write_text(json.dumps(
+            {"providers": {"twitterapiio": {"spend": {month: {"usd": 61.25}}}}}),
+            encoding="utf-8")
+        assert rd.load_wire_spend(tmp_path, now=NOW) == 61.25
+
+    def test_wire_spend_is_fail_soft_when_the_daemon_has_never_run(self, tmp_path):
+        assert rd.load_wire_spend(tmp_path, now=NOW) == 0.0
+
+    def _seed_wire(self, tmp_path: Path, usd: float) -> None:
+        press = tmp_path / "data" / "marketing" / "press"
+        press.mkdir(parents=True, exist_ok=True)
+        (press / "state.json").write_text(json.dumps(
+            {"providers": {"twitterapiio": {"spend": {NOW.strftime("%Y-%m"): {"usd": usd}}}}}),
+            encoding="utf-8")
+
+    def _reply_provider(self, monkeypatch, *, fail_on_request: bool):
+        monkeypatch.setenv("TWITTERAPI_IO_KEY", "test-key")
+        provider = rd.ReplyDiscoveryProvider(
+            {}, sub_cap_usd=15.0, global_cap_usd=75.0,
+            register={"accounts": {"kelly": {"authors": [
+                {"handle": "a", "tier": "relationship"}]}}})
+        if fail_on_request:
+            monkeypatch.setattr(provider, "_request",
+                                lambda *a, **k: pytest.fail("must not spend past the bucket"))
+        else:
+            monkeypatch.setattr(provider, "_request", lambda *a, **k: {"tweets": []})
+        return provider
+
+    def test_run_tick_stops_when_the_wire_has_taken_the_whole_bucket(
+            self, monkeypatch, tmp_path, capsys):
+        """End to end through the REAL state file: reply yields to the wire."""
+        self._seed_wire(tmp_path, 75.0)
+        provider = self._reply_provider(monkeypatch, fail_on_request=True)
+        result = rd.run_tick(provider, root=tmp_path / "host", repo_root=tmp_path, now=NOW)
+        assert result["count"] == 0
+        assert result["wire_spend"] == 75.0
+        assert any(ln.startswith("::warning title=reply-discovery-bucket::")
+                   for ln in capsys.readouterr().out.splitlines())
+
+    def test_run_tick_still_polls_while_the_bucket_has_room(self, monkeypatch, tmp_path):
+        """The stop is a shared-bucket ceiling, not a wire-activity veto — a
+        busy wire that is still inside the cap must not halt reply discovery."""
+        self._seed_wire(tmp_path, 40.0)
+        provider = self._reply_provider(monkeypatch, fail_on_request=False)
+        result = rd.run_tick(provider, root=tmp_path / "host", repo_root=tmp_path, now=NOW)
+        assert result["wire_spend"] == 40.0
+        assert result["spend"]["requests"] == 1, "room in the bucket means keep polling"
+
 
 class TestDiscoveryStatePersistence:
     """Without persistence the sub-cap resets to zero every process and the
@@ -230,6 +285,33 @@ class TestDiscoveryStatePersistence:
         result = rd.run_tick(provider, root=store, offline=True, now=NOW)
         assert result["count"] == 0 and result["persisted"] is False
         assert not rd._state_path(store).exists()
+
+    def test_a_crash_mid_tick_still_persists_the_spend_already_billed(
+            self, monkeypatch, store):
+        """Bailing without saving discards spend that WAS charged — an
+        under-count in the direction that costs money."""
+        monkeypatch.setenv("TWITTERAPI_IO_KEY", "test-key")
+        provider = rd.ReplyDiscoveryProvider(
+            {}, sub_cap_usd=15.0, global_cap_usd=75.0,
+            register={"accounts": {"kelly": {"authors": [
+                {"handle": "a", "tier": "relationship"},
+                {"handle": "b", "tier": "relationship"},
+            ]}}})
+        calls = {"n": 0}
+
+        def _boom(*a, **k):
+            calls["n"] += 1
+            if calls["n"] >= 2:
+                raise RuntimeError("boom mid-tick")
+            return {"tweets": [{"id": "1", "author": {"userName": "a"}}]}
+
+        monkeypatch.setattr(provider, "_request", _boom)
+        with pytest.raises(RuntimeError):
+            rd.run_tick(provider, root=store, now=NOW)
+
+        persisted = rd.load_state(store)
+        billed = persisted[rd.STATE_NS]["spend"][NOW.strftime("%Y-%m")]
+        assert billed["requests"] >= 1, "billed requests must survive the crash"
 
 
 class TestDiscoveryFairness:
@@ -612,10 +694,28 @@ class TestSharedVocabGuardIsCalledNotForked:
         assert rc._extract_number_tokens is copywriter._extract_number_tokens
         assert rc._SHARED_NUMBER_RE is copywriter._NUMBER_RE
 
-    def test_the_extra_number_regex_is_additive_not_a_replacement(self):
-        """Everything the shared tokenizer catches must still be caught."""
-        sample = "spreads widened 12.5% to 226.50, a 3x move on 1000 units"
-        assert set(copywriter._extract_number_tokens(sample)) <= set(rc.number_tokens(sample))
+    @pytest.mark.parametrize("sample", [
+        "spreads widened 12.5% to 226.50, a 3x move on 1000 units",
+        "a 3x move",
+        "1000 units and 12.5%",
+    ])
+    def test_no_shared_token_is_lost_except_to_a_wider_reading(self, sample):
+        """The merge may only DROP a shared token when a wider span contains it.
+
+        The earlier form asserted a plain subset on a fixture where the extra
+        regex contributed nothing, so it degenerated to `X <= X` and could not
+        fail for any content of _EXTRA_NUMBER_RE.
+        """
+        shared = set(copywriter._extract_number_tokens(sample))
+        merged = rc.number_tokens(sample)
+        for tok in shared - set(merged):
+            assert any(tok in wider and tok != wider for wider in merged), (
+                f"{tok!r} vanished with no wider token containing it: {merged}")
+
+    def test_a_dropped_shared_token_is_always_covered_by_a_wider_one(self):
+        sample = "Issuance of 3,500 units cleared."
+        merged = rc.number_tokens(sample)
+        assert "500" not in merged and "3,500" in merged
 
     def test_critics_own_no_banned_list_of_their_own(self):
         for forked in ("_BANNED_VOCAB", "_BANNED_SUBSTRINGS", "_BANNED_CHEESE_WORDS"):
@@ -1141,17 +1241,34 @@ class TestKillSwitches:
         assert sentinel.reply_send_cap(cfg, "kelly", mode="M1") == 0
         assert capsys.readouterr().out.startswith("::warning title=reply-cap-unparseable::")
 
-    def test_config_ttl_and_lease_actually_govern(self, m1_cfg):
+    def test_config_ttl_governs_the_real_item(self, m1_cfg):
         cfg = json.loads(json.dumps(m1_cfg))
         cfg["reply_desk"]["ttl_min"] = 7
-        cfg["reply_desk"]["lease_s"] = 42
-        assert rq.ttl_min_for(cfg) == 7
-        assert rq.lease_s_for(cfg) == 42
         item = rq.make_item(
             account="kelly", target_url=f"https://x.com/a/status/{THREAD}",
             parent_author="a", parent_excerpt="p", draft="d 12.5%",
             tier="relationship", score=0.5, cfg=cfg, now=NOW)
         assert item["expires_at"] == "2026-07-28T15:07:00Z"
+
+    def test_config_lease_governs_the_real_claim(self, store, m1_cfg):
+        """Asserting lease_s_for() alone proved nothing — it had no production
+        caller. This drives the path the runbook actually documents."""
+        cfg = json.loads(json.dumps(m1_cfg))
+        cfg["reply_desk"]["lease_s"] = 42
+        item = _item()
+        rq.enqueue(item, store)
+        rq.approve(item["id"], root=store)
+        claim = rx.claim_for_desktop(item["id"], holder="d", cfg=cfg, root=store, now=NOW)
+        assert claim["lease_until"] == "2026-07-28T15:00:42Z"
+
+    def test_a_bad_lease_value_does_not_break_the_claim_path(self, store, m1_cfg):
+        cfg = json.loads(json.dumps(m1_cfg))
+        cfg["reply_desk"]["lease_s"] = "ten minutes"
+        item = _item()
+        rq.enqueue(item, store)
+        rq.approve(item["id"], root=store)
+        claim = rx.claim_for_desktop(item["id"], holder="d", cfg=cfg, root=store, now=NOW)
+        assert claim is not None, "a typo must not take down the desktop claim path"
 
 
 class TestCrossMidnightCap:
@@ -1422,6 +1539,65 @@ class TestReceiptIngest:
         assert any(ln.startswith("::warning title=reply-receipt-invalid::")
                    for ln in capsys.readouterr().out.splitlines())
 
+    def test_a_receipt_refused_for_any_reason_is_parked_not_looped(self, store, cfg, capsys):
+        """`mode_m0_draft_only` fell through a list of two known reasons and
+        looped forever in SILENCE — the worst version of this bug. The handler
+        is a catch-all now, so a new refusal reason cannot reopen it."""
+        item = _item()
+        rq.enqueue(item, store)
+        _advance_to_claimed(item["id"], store)
+        rx.receipts_dir(store).mkdir(parents=True, exist_ok=True)
+        path = rx.receipts_dir(store) / f"{item['id']}.json"
+        path.write_text(json.dumps({"id": item["id"], "url": "u", "screenshot": "s"}),
+                        encoding="utf-8")
+
+        # cfg is the shipped M0 config: the desk was disabled after the send.
+        first = rx.ingest_receipts(cfg=cfg, root=store, now=NOW)
+        assert first["refused"][0]["reason"] == "mode_m0_draft_only"
+        assert path.with_suffix(".unresolved").exists()
+        assert any(ln.startswith("::warning title=reply-receipt-orphan::")
+                   for ln in capsys.readouterr().out.splitlines())
+        assert rx.ingest_receipts(cfg=cfg, root=store, now=NOW)["refused"] == []
+
+    def test_retiring_two_receipts_to_one_suffix_never_clobbers(self, store, m1_cfg):
+        rx.receipts_dir(store).mkdir(parents=True, exist_ok=True)
+        for name in ("a", "b"):
+            (rx.receipts_dir(store) / f"{name}.json").write_text(
+                json.dumps({"id": name, "url": "u"}), encoding="utf-8")
+        rx.ingest_receipts(cfg=m1_cfg, root=store, now=NOW)
+        retired = sorted(p.name for p in rx.receipts_dir(store).iterdir()
+                         if ".unresolved" in p.name)
+        assert len(retired) == 2, retired
+
+    def test_a_deferred_receipt_keeps_its_lease(self, store, m1_cfg):
+        """A cap-refused receipt still describes a PUBLIC reply. Releasing its
+        lease strands it — `queued` has no edge to `sent` — and the lost send
+        buys back a slot in the very count the cap is sized against."""
+        cfg = json.loads(json.dumps(m1_cfg))
+        cfg["reply_desk"]["daily_caps"]["accounts"] = {"kelly": 1}
+
+        first = _item(thread="1900000000000000700", draft="First 12.5%.")
+        second = _item(thread="1900000000000000701", draft="Second 12.5%.")
+        for it in (first, second):
+            rq.enqueue(it, store)
+            _advance_to_claimed(it["id"], store)
+        rx.receipts_dir(store).mkdir(parents=True, exist_ok=True)
+        for it in (first, second):
+            (rx.receipts_dir(store) / f"{it['id']}.json").write_text(
+                json.dumps({"id": it["id"], "url": "u", "screenshot": "s"}), encoding="utf-8")
+
+        # Far past the lease, so a naive release would fire.
+        late = NOW + timedelta(seconds=rq.DEFAULT_LEASE_S + 60)
+        result = rx.sweep(cfg=cfg, root=store, now=late)
+        assert len(result["ingest"]["recorded"]) == 1
+        assert result["released_claims"] == [], "a pending receipt must keep its lease"
+
+        # Whichever one the cap deferred must still be claimed, so its retained
+        # receipt can still be recorded once the cap clears.
+        [deferred] = [r["id"] for r in result["ingest"]["refused"]]
+        assert result["ingest"]["refused"][0]["reason"] == "reply_cap_daily"
+        assert rq.fold_state(store)["status"][deferred] == "claimed"
+
     def test_an_unresolvable_receipt_is_parked_not_retried_forever(self, store, m1_cfg):
         """An orphan receipt re-refused on every sweep is a permanent warning
         nobody can clear."""
@@ -1539,6 +1715,29 @@ class TestMirrorGarbageCollection:
         rq.reject(item["id"], root=store, reason="off-beat")
         assert rx.sweep_mirrors(store) == [item["id"]]
         assert not (rx.queue_dir(store) / f"{item['id']}.json").exists()
+
+    def test_a_stale_claim_file_is_swept_too(self, store, m1_cfg):
+        """claims/ is a published contract directory; a lease file outliving its
+        lease is exactly the divergence wiring it up was meant to avoid."""
+        item = _item()
+        rq.enqueue(item, store)
+        rq.approve(item["id"], root=store)
+        rx.export_approved(cfg=m1_cfg, root=store, now=NOW)
+        rx.claim_for_desktop(item["id"], holder="d", cfg=m1_cfg, root=store, now=NOW)
+        assert (rx.claims_dir(store) / f"{item['id']}.json").exists()
+
+        rq.release_expired_claims(now=NOW + timedelta(seconds=rq.DEFAULT_LEASE_S + 1),
+                                  root=store)
+        rx.sweep_mirrors(store)
+        assert not (rx.claims_dir(store) / f"{item['id']}.json").exists()
+
+    def test_a_live_claim_file_survives(self, store, m1_cfg):
+        item = _item()
+        rq.enqueue(item, store)
+        rq.approve(item["id"], root=store)
+        rx.claim_for_desktop(item["id"], holder="d", cfg=m1_cfg, root=store, now=NOW)
+        rx.sweep_mirrors(store)
+        assert (rx.claims_dir(store) / f"{item['id']}.json").exists()
 
     def test_a_claimed_items_mirror_survives(self, store, m1_cfg):
         item = _item()

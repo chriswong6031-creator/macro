@@ -274,6 +274,47 @@ def save_state(state: dict, root: Path | str | None = None) -> bool:
         return False
 
 
+#: Where the WIRE lane's daemon keeps its spend. Repo-relative and gitignored;
+#: we only ever READ it (the zero-repo-writes law is about writes).
+_WIRE_STATE_REL = Path("data") / "marketing" / "press" / "state.json"
+
+
+def load_wire_spend(root: Path | str | None = None, *, now: datetime | None = None) -> float:
+    """This month's twitterapi.io spend by the Trump wire lane, read from disk.
+
+    The two lanes keep their counters in DIFFERENT FILES — the wire's daemon
+    writes ``data/marketing/press/state.json`` inside the checkout, while the
+    reply desk's state lives in host state. Without this read the shared-bucket
+    stop is inert in every real invocation and the combined ceiling is
+    $15 + $75 = $90 against a $75 bucket, which is exactly the defect the
+    sub-budget exists to prevent.
+
+    Read-only and fail-soft: an unreadable file returns 0.0, which falls back to
+    the sub-cap alone. That is still safe in the protected direction — the wire
+    can never be starved by this lane either way.
+    """
+    base = Path(root) if root is not None else _repo_root()
+    path = base / _WIRE_STATE_REL
+    try:
+        if not path.exists():
+            return 0.0
+        blob = json.loads(path.read_text(encoding="utf-8")) or {}
+    except Exception as exc:  # noqa: BLE001
+        log.warning("reply_discovery: cannot read wire spend at %s: %s", path, exc)
+        return 0.0
+    month = (now or datetime.now(tz=timezone.utc)).strftime("%Y-%m")
+    # The daemon nests provider state under "providers".
+    for holder in (blob.get("providers") or {}, blob):
+        spend = ((holder or {}).get("twitterapiio") or {}).get("spend") or {}
+        try:
+            usd = float((spend.get(month) or {}).get("usd", 0.0) or 0.0)
+        except (TypeError, ValueError):
+            continue
+        if usd:
+            return usd
+    return 0.0
+
+
 def _as_int(value: object) -> int | None:
     try:
         return int(str(value).strip())
@@ -553,8 +594,17 @@ class ReplyDiscoveryProvider:
         for account in want_accounts:
             if truncated:
                 break
-            # (a) curated authors from the register
-            for entry in register_for_account(self.register, account):
+            # (a) curated authors from the register, rotated per desk. Rotating
+            # only ACROSS desks still leaves the tail of a long author list
+            # permanently dark once a desk has more authors than the tick cap.
+            entries = register_for_account(self.register, account)
+            if entries:
+                ns = session_state.setdefault(STATE_NS, {})
+                rot = ns.setdefault("author_rotation", {})
+                a_start = int(rot.get(account, 0) or 0) % len(entries)
+                entries = entries[a_start:] + entries[:a_start]
+                rot[account] = (a_start + 1) % len(entries)
+            for entry in entries:
                 if requests_made >= self.max_requests_per_tick:
                     truncated = True
                     break
@@ -663,6 +713,7 @@ def run_tick(
     provider: ReplyDiscoveryProvider,
     *,
     root: Path | str | None = None,
+    repo_root: Path | str | None = None,
     offline: bool = False,
     accounts: list[str] | None = None,
     now: datetime | None = None,
@@ -676,19 +727,32 @@ def run_tick(
     load/save pair lives inside the tick rather than in a caller's good
     intentions.
 
-    Returns {targets, spend, requests, persisted}.
+    ``root`` is the HOST state dir (cursors + this lane's spend); ``repo_root``
+    is the checkout the wire's spend file is read from.
+
+    Returns {targets, count, spend, wire_spend, persisted}.
     """
     state = load_state(root)
-    targets = provider.fetch(session_state=state, offline=offline,
-                             accounts=accounts, now=now)
-    persisted = False if offline else save_state(state, root)
+    # The wire's counter lives in a different file, so hand it in explicitly.
+    # Without this the shared-bucket stop never fires in a real tick.
+    wire = load_wire_spend(repo_root, now=now)
+    targets: list[dict] = []
+    try:
+        targets = provider.fetch(session_state=state, offline=offline,
+                                 wire_spend_usd=wire, accounts=accounts, now=now)
+    finally:
+        # Persist even on the exception path. `state` is mutated in place as
+        # requests are billed, so bailing out without saving discards spend that
+        # WAS charged — an under-count in the direction that costs money.
+        persisted = False if offline else save_state(state, root)
+
     month = (now or datetime.now(tz=timezone.utc)).strftime("%Y-%m")
     spend = ((state.get(STATE_NS) or {}).get("spend") or {}).get(month) or {}
     return {
         "targets": targets,
         "count": len(targets),
         "spend": spend,
-        "wire_spend": provider.wire_spend(state, now=now),
+        "wire_spend": wire,
         "persisted": persisted,
     }
 
@@ -739,7 +803,7 @@ def build_provider(
 
 
 __all__ = [
-    "ReplyDiscoveryProvider", "build_provider", "run_tick",
+    "ReplyDiscoveryProvider", "build_provider", "run_tick", "load_wire_spend",
     "count_items", "extract_items",
     "load_register", "validate_register", "register_for_account",
     "load_state", "save_state", "STATE_NS", "TIERS",

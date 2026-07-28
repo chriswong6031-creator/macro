@@ -93,10 +93,13 @@ in the repo, because the M1 is the nightly render host and an intraday writer in
 the render checkout collides with render-lane resets.
 
 **Poll through `run_tick`, never `fetch` directly.** `run_tick` loads that state,
-polls once, and saves. Calling `fetch` with a bare dict skips persistence, which
-silently resets the monthly spend counter to zero every process (making the
-sub-cap vacuous) and resets the since-id cursors (re-reading and re-billing every
-author's whole timeline each tick):
+reads the wire's spend, polls once, and saves. Calling `fetch` with a bare dict
+does none of that: it skips persistence (silently resetting the monthly counter
+every process, which makes the sub-cap vacuous, and resetting the since-id
+cursors so every author's whole timeline is re-read and re-billed), and it
+leaves the shared-bucket stop inert, because the wire's counter lives in a
+different file (`data/marketing/press/state.json`, read-only from here) and is
+not in the reply lane's state at all:
 
 ```bash
 python3 -c "import yaml; from engine.marketing import reply_discovery as d; \
@@ -104,6 +107,11 @@ python3 -c "import yaml; from engine.marketing import reply_discovery as d; \
                                  yaml.safe_load(open('config/marketing.yml'))); \
             print(d.run_tick(p))"
 ```
+
+The returned `wire_spend` is what the shared stop was sized against. If it reads
+`0.0` while the wire lane is known to be running, the two lanes are looking at
+different checkouts and the combined ceiling is not being enforced — pass
+`repo_root=` explicitly.
 
 Desks are polled in rotation, so a `max_requests_per_tick` smaller than the fleet
 does not starve the tail of the list; a truncated tick prints
@@ -273,11 +281,15 @@ The session reads and writes three directories under
    }
    ```
 
-   **Both the URL and the screenshot are required.** The URL is the machine-
-   checkable receipt and is **enforced** — a receipt without one is refused and
-   parked as `.invalid`, because an empty receipt is not evidence. A missing
-   screenshot is announced but still records the send: refusing it would leave a
-   reply that is already public permanently uncounted.
+   **Always write both fields.** They are enforced differently on purpose:
+
+   - **`url` is required.** A receipt without one is refused and parked as
+     `.invalid` — an empty receipt is not evidence of anything.
+   - **`screenshot` is expected but not blocking.** A receipt missing one warns
+     and still records the send, because refusing it would leave a reply that is
+     already public permanently uncounted — and an uncounted send silently buys
+     back room under the daily cap. Fill it in anyway: it is the only artefact
+     that lets a human audit how the reply rendered under the parent post.
 6. The next sweep ingests receipts, records the send against the daily cap, and
    clears the queue mirror and the claim. A consumed receipt is renamed `.done`
    so a re-run never double-counts a send.
@@ -294,11 +306,15 @@ the cap is sized; otherwise the export step hands out headroom already spent.
 
 ### Receipts that cannot be resolved
 
-A receipt for an item that can no longer transition (already sent, rejected, or
-unknown) is parked as `.unresolved` with a
-`::warning title=reply-receipt-orphan::`. Read these: the reply may be **public
-but unrecorded**, which means the daily cap is under-counting. Reconcile by hand
+A receipt for an item that can no longer record a send — already sent, rejected,
+unknown, or belonging to a desk you disabled after it went out — is parked as
+`.unresolved` with a `::warning title=reply-receipt-orphan::`. Read these: the
+reply may be **public but unrecorded**, which means the daily cap is
+under-counting and will hand out room that is already spent. Reconcile by hand
 before raising any dial.
+
+A receipt refused only because the account hit its cap is **kept**, and the
+item keeps its lease so the send can still be recorded once the cap clears.
 
 ### If a send fails
 

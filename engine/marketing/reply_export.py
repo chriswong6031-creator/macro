@@ -101,29 +101,51 @@ def _read_json(path: Path) -> dict | None:
 _MIRRORED_STATUSES: frozenset[str] = frozenset({"approved", "claimed"})
 
 
+def pending_receipt_ids(root: Path | str | None = None) -> set[str]:
+    """Item ids with an unconsumed receipt waiting to be ingested."""
+    d = receipts_dir(root)
+    if not d.exists():
+        return set()
+    return {p.stem for p in d.glob("*.json")}
+
+
 def sweep_mirrors(root: Path | str | None = None, *, _state: dict | None = None) -> list[str]:
-    """Delete queue mirrors whose item is no longer headed for a send.
+    """Delete queue mirrors AND stale claims whose item is no longer live.
 
     Expiry, rejection, and a released lease all have to reach the DESKTOP LANE,
     not just the ledger. A mirror left behind after its item expired is an
     instruction to post a stale reply, and the runbook's "check expires_at" step
     is a human, not a gate. Returns the ids whose mirrors were removed.
+
+    ``claims/`` is swept on the same rule: it is a published contract directory,
+    and a lease file that outlives its lease is exactly the divergence the
+    directory was wired up to avoid.
     """
-    d = queue_dir(root)
-    if not d.exists():
-        return []
     state = _state if _state is not None else _rq.fold_state(root)
     removed: list[str] = []
-    for path in sorted(d.glob("*.json")):
-        iid = path.stem
-        status = state["status"].get(iid)
-        if status in _MIRRORED_STATUSES:
-            continue
-        try:
-            path.unlink()
-            removed.append(iid)
-        except OSError as exc:
-            log.warning("reply_export: cannot clear stale mirror %s: %s", path, exc)
+
+    d = queue_dir(root)
+    if d.exists():
+        for path in sorted(d.glob("*.json")):
+            if state["status"].get(path.stem) in _MIRRORED_STATUSES:
+                continue
+            try:
+                path.unlink()
+                removed.append(path.stem)
+            except OSError as exc:
+                log.warning("reply_export: cannot clear stale mirror %s: %s", path, exc)
+
+    c = claims_dir(root)
+    if c.exists():
+        for path in sorted(c.glob("*.json")):
+            # A claim file is only meaningful while the item is actually claimed.
+            if state["status"].get(path.stem) == "claimed":
+                continue
+            try:
+                path.unlink()
+            except OSError as exc:
+                log.warning("reply_export: cannot clear stale claim %s: %s", path, exc)
+
     return removed
 
 
@@ -163,6 +185,7 @@ def export_approved(
     skipped_cap: list[str] = []
     modes: dict[str, str] = {}
     headroom: dict[str, int] = {}
+    caps_seen: dict[str, int] = {}
 
     # Deterministic order: best score first, so a capped account exports its
     # strongest opportunities rather than whichever item hashed first.
@@ -190,6 +213,7 @@ def export_approved(
                 1 for other in already
                 if str((state["items"].get(other) or {}).get("account") or "") == account
             )
+            caps_seen[account] = int(gate["cap"])
             headroom[account] = max(0, int(gate["cap"]) - int(gate["sent"]) - in_flight)
 
         if iid in already:
@@ -205,10 +229,15 @@ def export_approved(
             headroom[account] -= 1
 
     if skipped_cap:
+        # Report the caps that BOUND, not the post-loop headroom (which is 0 for
+        # every account by construction and tells the operator nothing).
+        bound = {a: caps_seen[a] for a in sorted({
+            str((state["items"].get(i) or {}).get("account") or "") for i in skipped_cap
+        }) if a in caps_seen}
         print(
             f"::warning title=reply-cap-export::{len(skipped_cap)} approved repl"
             f"{'ies' if len(skipped_cap) != 1 else 'y'} held back at the daily cap "
-            f"(headroom {headroom}) — raise the dial or let them expire",
+            f"(caps {bound}) — raise the dial or let them expire",
             flush=True,
         )
 
@@ -242,7 +271,9 @@ def claim_for_desktop(
     other side of the boundary.
     """
     if lease_s is None:
-        lease_s = int(((cfg or {}).get("reply_desk") or {}).get("lease_s", _rq.DEFAULT_LEASE_S))
+        # Via the fail-soft helper: a typo'd lease_s must not take down the
+        # desktop claim path, which is step 3 of the runbook.
+        lease_s = _rq.lease_s_for(cfg)
     claim = _rq.claim(item_id, holder=holder, lease_s=lease_s, root=root, now=now)
     if claim is None:
         return None
@@ -328,10 +359,14 @@ def ingest_receipts(
                     f"hit its daily reply cap ({result.get('sent')}/{result.get('cap')})",
                     flush=True,
                 )
-            elif reason in {"illegal_transition", "unknown_item"}:
-                # Terminal: retrying can never succeed, and a receipt that is
-                # re-read and re-refused on every sweep is a permanent warning
-                # nobody can clear. Park it for a human instead.
+            else:
+                # Everything else is terminal for this receipt: retrying can
+                # never succeed, and a receipt re-read and re-refused on every
+                # sweep is a permanent warning nobody can clear. This branch is
+                # deliberately a catch-all rather than a list of known reasons —
+                # `mode_m0_draft_only` (the desk disabled after a send went out)
+                # fell through an earlier list of two and looped forever in
+                # silence, which is the worst version of this bug.
                 _retire(path, ".unresolved")
                 print(
                     f"::warning title=reply-receipt-orphan::receipt for {iid} refused "
@@ -344,9 +379,18 @@ def ingest_receipts(
 
 
 def _retire(path: Path, suffix: str) -> None:
-    """Rename a consumed receipt so a re-run never re-reads it."""
+    """Rename a consumed receipt so a re-run never re-reads it.
+
+    Never clobbers: two receipts retiring to the same suffix would otherwise
+    silently overwrite, and a receipt is evidence about a public reply.
+    """
+    target = path.with_suffix(suffix)
+    n = 1
+    while target.exists():
+        target = path.with_suffix(f"{suffix}.{n}")
+        n += 1
     try:
-        path.rename(path.with_suffix(suffix))
+        path.rename(target)
     except OSError as exc:
         log.warning("reply_export: cannot retire receipt %s: %s", path, exc)
 
@@ -373,7 +417,12 @@ def sweep(
     """
     ts = now or datetime.now(timezone.utc)
     ingested = ingest_receipts(cfg=cfg, root=root, now=ts)
-    released = _rq.release_expired_claims(now=ts, root=root)
+    # A receipt that survived ingest (a cap deferral, say) still describes a
+    # PUBLIC reply. Releasing its lease would move the item to `queued`, which
+    # has no edge to `sent`, so the send could never be recorded afterwards —
+    # and the cap is sized against that count, so the loss buys back a slot.
+    released = _rq.release_expired_claims(now=ts, root=root,
+                                          skip_ids=pending_receipt_ids(root))
     result = export_approved(cfg=cfg, root=root, now=ts)
     return {
         "ingest": ingested,
@@ -386,5 +435,5 @@ def sweep(
 __all__ = [
     "queue_dir", "claims_dir", "receipts_dir", "exported_ids",
     "export_approved", "ingest_receipts", "sweep", "sweep_mirrors",
-    "claim_for_desktop",
+    "claim_for_desktop", "pending_receipt_ids",
 ]

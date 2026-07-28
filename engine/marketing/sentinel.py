@@ -111,8 +111,9 @@ def reply_send_cap(cfg: dict, account_id: str, *, mode: str) -> int:
 
     rd = (cfg or {}).get("reply_desk") or {}
     # The whole-desk kill switch binds the cap too, so a disabled desk cannot be
-    # left with a live per-account allowance.
-    if rd.get("enabled") is False:
+    # left with a live per-account allowance. Truthiness, not `is False`, so a
+    # hand-edited `enabled: 0` disables. Absent means enabled.
+    if "enabled" in rd and not rd["enabled"]:
         return 0
 
     caps = rd.get("daily_caps") or {}
