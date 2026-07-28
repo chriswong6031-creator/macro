@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-28T21:05:28.636929+00:00",
-  "count": 280,
+  "generated_at": "2026-07-28T22:13:58.457328+00:00",
+  "count": 283,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -27,6 +27,67 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-hapxx9yyvrk-d1c39e",
+      "title": "MS July FOMC A question of patience",
+      "institution": "Morgan Stanley",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T22:01:56Z",
+      "summary_points": [
+        "**Fed Rate Hold & Key Risks**: Fed expected to hold rates at 3.50–3.75% in July due to soft labor market (unemployment 4.2%, wage growth 3.5% y/y) and disinflation (CPI down 0.4%, core flat), but risks include Middle East escalation, oil price rebound, and AI-driven capital spending elevating neutral rates.",
+        "**Tariff Regime Transition**: Permanent Section 301/232 tariff regime in place, statutory effective rate converging to ~10% by year-end (vs.",
+        "prior IEEPA regime), with no legal rollover risk but implementation uncertainty persisting.",
+        "**SPR Inventory Crisis**: Strategic Petroleum Reserve at 311m barrels (lowest since 1984), declining at 30m barrels/4 weeks pace, risking operational minimum (70m barrels) by February 2027.",
+        "**Oil Price & Conflict Impact**: Middle East re-escalation drove Brent prices up, tightening financial conditions equivalent to ~67bp rise in Fed funds rate, reversing prior easing via dollar weakness and higher Treasury yields."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 18,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-hzebfndxoor-439e5f",
+      "title": "US Economics Analyst July FOMC Preview Better Inflation Data, Worse Geopolitical News",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T22:01:45Z",
+      "summary_points": [
+        "**Inflation-Geopolitical Divergence**: Core CPI (18bp core PCE) signals softening inflation, but Iran escalation and Russian oil attacks drive energy price spikes, creating supply shock pressure that narrows Fed’s margin for error on rate decisions.",
+        "**Fed Hike Probability Revised Up**: Goldman Sachs raises Fed rate hike probability to 35% (from 25%) due to unanchored inflation expectations and public perception risks, despite baseline hold through year-end.",
+        "**Geopolitical Risk Tightens Policy Margin**: Iran conflict re-escalation adds supply shock beyond oil pass-through, reducing Fed’s flexibility to hike rates without risking market misinterpretation of inflation dynamics.",
+        "**Official Readiness vs.",
+        "Limited Efficacy**: Multiple Fed officials (Jefferson, Williams, Waller) signal willingness to hike if inflation persists, but rate hikes face diminished disinflationary impact against persistent supply shocks (energy, tariffs)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-giah1vatdvt-46a447",
+      "title": "Capitulating or bottoming",
+      "institution": "The Market Ear",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-28T21:45:08Z",
+      "summary_points": [
+        "**Korean AI liquidity risk**: Leveraged ETF turnover surged to 50% of cash equity turnover (vs Samsung’s 20%), with rebalancing flows hitting 25% during volatility—signaling extreme speculative positioning and amplified downside risk.",
+        "**Credit stress & bubble signals**: SOX/Nvidia 5-year CDS inverse relationship indicates credit market stress; Korean market mirrors 2025-2026 silver mania via volatility feedback loops, raising acute bubble risk.",
+        "**Semiconductor exhaustion**: Korea’s semiconductor sector suffered brutal unwind with AI indicators flashing exhaustion, confirming sector-specific risk and potential reversal catalyst amid technical breakdowns."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-5ngx8y8vbla-948c3a",
       "title": "Amid 'Exhausting Confusing' Iran Headlines, Goldman Partner Highlights The Rates Level Where Equities Will Struggle",
