@@ -861,7 +861,12 @@ def _build_source(cand: dict, slot: str, now: datetime, quote_source: str) -> di
 # In-code defaults for the publish.publish_time_read block (mirror _DEFAULTS).
 _READ_DEFAULTS: dict[str, Any] = {
     "enabled": False,       # DARK by default (operator arms after dry-runs)
-    "slot": "S8",           # after-close ladder slot (outbox._LADDER_PT_HOURS: 18:00 PT)
+    # After-close ladder slot. Under the 45-min ladder (#3855,
+    # outbox._LADDER_PT_TIMES) the last slot S19 (17:30 PT) owns the open-ended
+    # evening tail, so it is the after-close block the daily read fires in.
+    # (Was "S8" = 18:00 PT under the retired 2-hour 8-slot ladder — #3849
+    # shipped against that ladder minutes before #3855 replaced it.)
+    "slot": "S19",
 }
 
 _READ_KIND = "event"
@@ -894,7 +899,7 @@ def _ladder_local(now: datetime) -> datetime | None:
     """`now` in the ladder's Pacific clock, or None if the tz database is absent.
 
     The after-close ladder is a PACIFIC-clock concept, so both the weekday gate
-    and the slot gate must read the Pacific frame — an S8 (18:00 PT) instant is
+    and the slot gate must read the Pacific frame — an S19 (17:30 PT) evening instant is
     the NEXT UTC calendar day (Fri 18:00 PT == Sat 01:00 UTC), so a UTC-based
     weekday check would wrongly reject a legitimate Friday after-close read and
     wrongly admit a Sunday-evening one. zoneinfo keeps the Pacific→UTC offset
@@ -908,18 +913,26 @@ def _ladder_local(now: datetime) -> datetime | None:
 
 
 def _ladder_slot_label(local: datetime) -> str | None:
-    """Map a Pacific-LOCAL datetime to its 2-hour ladder slot label (S1..S8).
+    """Map a Pacific-LOCAL datetime to its 45-min ladder slot label (S1..S19).
 
-    The daily read fires on an after-close ladder slot (config default S8 =
-    18:00 PT), NOT on the AM/PM/EOD publish window `_slot_label` returns. Each
-    ladder slot owns the 2-hour block [pt_hour, pt_hour+2) (outbox._LADDER_PT_HOURS).
+    The daily read fires on an after-close ladder slot (config default S19 =
+    17:30 PT), NOT on the AM/PM/EOD publish window `_slot_label` returns. Each
+    slot owns [t, t+45min) per outbox._LADDER_PT_TIMES; the LAST slot owns the
+    open-ended evening tail (17:30 PT to midnight) so every after-close sweep
+    lands in it. Ported from outbox._LADDER_PT_HOURS (2-hour, S1..S8) after
+    #3855 replaced that ladder and left this consumer referencing a name that
+    no longer existed — the lane failed soft to a no-op on every sweep.
     """
-    hour = local.hour
+    minutes = local.hour * 60 + local.minute
+    ordered = sorted(outbox._LADDER_PT_TIMES.items(),
+                     key=lambda kv: kv[1][0] * 60 + kv[1][1])
+    last_slot = ordered[-1][0]
     best: str | None = None
-    best_h = -1
-    for slot, pt_hour in outbox._LADDER_PT_HOURS.items():
-        if pt_hour <= hour < pt_hour + 2 and pt_hour > best_h:
-            best, best_h = slot, pt_hour
+    for slot, (h, m) in ordered:
+        start = h * 60 + m
+        end = start + 45 if slot != last_slot else 24 * 60
+        if start <= minutes < end:
+            best = slot
     return best
 
 
@@ -953,7 +966,7 @@ def _read_top_fact(facts_data: dict | None) -> str:
 def _queued_read_today(state: dict, today: str) -> set[str]:
     """Accounts that already have a publish-time-lane `event` item queued today
     (provenance publisher_live_movers, created today). Enforces once/day per
-    account across sweeps — a second sweep in the same S8 block must not re-post.
+    account across sweeps — a second sweep in the same after-close block must not re-post.
     """
     out: set[str] = set()
     for it in (state.get("items") or {}).values():

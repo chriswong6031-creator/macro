@@ -29,17 +29,17 @@ _PT = ZoneInfo("America/Los_Angeles")
 
 def _pt_utc(y: int, m: int, d: int, hh: int, mm: int = 0) -> datetime:
     """A Pacific wall-clock instant, as an aware UTC datetime (what the publisher
-    passes as `now`). S8 = 18:00 PT; a Pacific evening is the NEXT UTC day."""
+    passes as `now`). S19 owns 17:30 PT onward; a Pacific evening is the NEXT UTC day."""
     return datetime(y, m, d, hh, mm, tzinfo=_PT).astimezone(timezone.utc)
 
 
-# Thursday 2026-07-23, 18:30 PT → the S8 (after-close) ladder slot.
+# Thursday 2026-07-23, 18:30 PT → the S19 after-close tail of the 45-min ladder.
 NOW_S8 = _pt_utc(2026, 7, 23, 18, 30)
-# Same day, 10:05 PT → S4 (mid-morning), a WRONG slot for the daily read.
+# Same day, 10:05 PT → S9 (mid-morning), a WRONG slot for the daily read.
 NOW_WRONG = _pt_utc(2026, 7, 23, 10, 5)
 # Saturday 2026-07-25, 18:30 PT → weekend (Pacific), must never fire.
 NOW_SAT = _pt_utc(2026, 7, 25, 18, 30)
-# Friday 2026-07-24, 18:30 PT → S8; its UTC instant is SATURDAY — the Pacific
+# Friday 2026-07-24, 18:30 PT → S19; its UTC instant is SATURDAY — the Pacific
 # weekday gate must still admit it (a UTC weekday check would wrongly reject).
 NOW_FRI_S8 = _pt_utc(2026, 7, 24, 18, 30)
 
@@ -67,7 +67,7 @@ def _write_brief(tmp: Path, *, direction: str = _DIRECTION,
     }), encoding="utf-8")
 
 
-def _cfg(*, enabled: bool = True, slot: str = "S8",
+def _cfg(*, enabled: bool = True, slot: str = "S19",
          accounts: list[dict] | None = None,
          channels: dict | None = None,
          personas: dict | None = None) -> dict:
@@ -138,7 +138,7 @@ def test_armed_dry_run_fills_would_generate_with_driver(tmp_path):
     _write_brief(tmp_path)
     rep = _gen(tmp_path, _cfg(), now=NOW_S8, live=False)
     assert rep["enabled"] is True
-    assert rep["slot"] == "S8"
+    assert rep["slot"] == "S19"
     assert len(rep["would_generate"]) == 1
     wg = rep["would_generate"][0]
     assert wg["kind"] == "event"
@@ -166,7 +166,7 @@ def test_armed_live_enqueues_one_event_per_account(tmp_path):
     for r in rows:
         assert r["kind"] == "event"
         assert r["provenance"] == "publisher_live_movers"
-        assert r["slot"] == "LIVE-S8"
+        assert r["slot"] == "LIVE-S19"
         assert _DRIVER_SUBSTR in r["text"]
 
 
@@ -201,7 +201,7 @@ def test_friday_after_close_is_admitted(tmp_path):
     instant is Saturday — the read must still generate."""
     _write_brief(tmp_path)
     rep = _gen(tmp_path, _cfg(), now=NOW_FRI_S8, live=True)
-    assert rep["slot"] == "S8"
+    assert rep["slot"] == "S19"
     assert len(rep["generated"]) == 1
 
 
