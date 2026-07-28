@@ -43,8 +43,11 @@ import hashlib
 import logging
 import os
 import sys
+import zlib
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
+
+_TS_FMT = "%Y-%m-%dT%H:%M:%SZ"
 
 # Top-level ON PURPOSE (stdlib-only module): the post-time language gate must
 # fail LOUDLY at import if copywriter breaks — a lazy import inside main()
@@ -244,16 +247,59 @@ def _floor_minutes_cfg(pub_cfg: dict) -> int:
     return v if v > 0 else 0
 
 
+def _jitter_max_cfg(pub_cfg: dict) -> int:
+    """publish.post_jitter_max_min — the widest send-time offset, in minutes, a
+    LADDER item may be booked past the sweep minute.
+
+    Fixed cron-sweep minutes are a temporal-regularity bot signature (the June
+    2026 purge detection class): an account whose posts land on the same minute
+    every day looks scheduled, because it is. 0 / absent / negative / unparseable
+    → 0 = disabled, which reproduces the exact pre-jitter booking behaviour.
+    """
+    raw = pub_cfg.get("post_jitter_max_min", 0)
+    try:
+        v = int(raw)
+    except (TypeError, ValueError):
+        return 0
+    return v if v > 0 else 0
+
+
+def _post_jitter_minutes(item_id: str, jitter_max: int) -> int:
+    """The send-time offset for one item, in [0, jitter_max].
+
+    DERIVED FROM THE ITEM ID, never from a clock or an RNG: a dry-run, the admin
+    preview and the live run must all book the same minute, and no test may need
+    a frozen clock to assert on it. crc32 is used as a cheap stable hash — it is
+    not a checksum here, and it must never be swapped for hash() (PYTHONHASHSEED
+    randomises str hashing per process).
+    """
+    if jitter_max <= 0 or not item_id:
+        return 0
+    return zlib.crc32(item_id.encode("utf-8")) % (jitter_max + 1)
+
+
 def _last_global_post_at(root) -> "datetime | None":
     """The most recent 'posted' transition time across ALL accounts (the floor is
     account-agnostic), or None if nothing has ever posted. Seeds the floor across
-    cron runs. Fail-soft: malformed rows / timestamps are skipped, never raises."""
+    cron runs. Fail-soft: malformed rows / timestamps are skipped, never raises.
+
+    Prefers the receipt's ``booked_at`` — the wall-clock the post was actually
+    BOOKED for — over the row's ``at``, which is only when the ledger row was
+    written. With send-time jitter the two diverge by up to
+    publish.post_jitter_max_min minutes, and seeding the floor from the write
+    time would let the next run book inside the previous post's floor window.
+    Rows with no booked_at (everything written before jitter shipped) fall back
+    to ``at``, where the two were equal anyway.
+    """
     from engine.marketing.outbox import read_ledger  # noqa: PLC0415
     latest: "datetime | None" = None
     for row in read_ledger(root):
         if row.get("to") != "posted":
             continue
-        raw = str(row.get("at") or "").strip()
+        receipt = row.get("receipt")
+        booked = (str(receipt.get("booked_at") or "").strip()
+                  if isinstance(receipt, dict) else "")
+        raw = booked or str(row.get("at") or "").strip()
         if not raw:
             continue
         try:
@@ -723,6 +769,16 @@ def main(argv: list[str] | None = None) -> int:
     floor_min = _floor_minutes_cfg(pub_cfg)
     last_post_at = _last_global_post_at(root) if floor_min else None
 
+    # ── Send-time jitter (publish.post_jitter_max_min) ───────────────────────
+    # A ladder item books at (floor-cleared time + a per-item offset) instead of
+    # the exact sweep minute, so the account's send times stop landing on the
+    # cron's clock. The offset is ADDED on top of the floor-cleared time, so
+    # ordering is preserved and the spacing floor is never shortened: the floor
+    # then advances to the BOOKED time (not "now"), which is also what the
+    # receipt's booked_at carries so the next cron run seeds from it. Immediate /
+    # breaking items are never jittered.
+    jitter_max = _jitter_max_cfg(pub_cfg)
+
     # ── Live tape gate context: load once per run (fail-soft) ────────────────
     # The plan was written off yesterday's EOD; the tape has been open for
     # hours by the AM/PM/EOD slots. Every item re-verifies against the freshest
@@ -885,22 +941,26 @@ def main(argv: list[str] | None = None) -> int:
         # it posts at NOW unconditionally — never floor-booked, never deferred,
         # never dropped. It STILL advances the in-memory floor so the next ladder
         # post budges by the spacing (and a burst of immediates all fire at now).
-        send_at: "datetime | None" = None
-        if is_immediate:
-            send_at = now
-        elif _within_floor(last_post_at, now, floor_min):
+        if not is_immediate and _within_floor(last_post_at, now, floor_min):
             _ago = int((now - last_post_at).total_seconds() // 60)
             log.info("item %s (%s) deferred — a post went out %dm ago (< %dm "
                      "global floor); retries next slot", iid, account, _ago, floor_min)
             skipped_floor += 1
             continue
 
-        # The wall-clock this post is booked for: an immediate item's NOW, else
-        # the item's own ladder slot. Also the value the in-memory floor advances
-        # to after a post.
-        send_scheduled_at = (send_at.strftime("%Y-%m-%dT%H:%M:%SZ")
-                             if is_immediate else it.get("scheduled_at"))
-        floor_advance = now
+        # The wall-clock this post is booked for. An immediate item books at NOW.
+        # A ladder item books at NOW + its deterministic jitter offset; with
+        # jitter off (0) that is NOW, and send_scheduled_at stays the item's own
+        # ladder slot exactly as before. Also the value the in-memory floor
+        # advances to after a post — the floor must count from the time a post
+        # actually goes out, not from the sweep that queued it.
+        jitter_minutes = 0 if is_immediate else _post_jitter_minutes(iid, jitter_max)
+        booked_at = now + timedelta(minutes=jitter_minutes)
+        if is_immediate or jitter_max > 0:
+            send_scheduled_at = booked_at.strftime(_TS_FMT)
+        else:
+            send_scheduled_at = it.get("scheduled_at")
+        floor_advance = booked_at
 
         # Public chart-image URLs (PNG on X) when publish.media_enabled + a plan-
         # build-time R2 upload produced one; else [] → text-only (graceful).
@@ -947,6 +1007,11 @@ def main(argv: list[str] | None = None) -> int:
                     "external_id": receipt.external_id,
                     "external_url": receipt.external_url,
                     "at": receipt.at,
+                    # The wall-clock this post was BOOKED for (== `at` when
+                    # jitter is off). _last_global_post_at seeds the next cron
+                    # run's spacing floor from this, so a jittered post can never
+                    # be followed inside its own floor window.
+                    "booked_at": floor_advance.strftime(_TS_FMT),
                 },
             )
             # ALSO record a publication receipt so the Channels page (reads
@@ -965,13 +1030,13 @@ def main(argv: list[str] | None = None) -> int:
             # both go out (the enqueue guard should prevent that pair existing,
             # but the last gate assumes nothing upstream).
             posted_text_keys.add(_outbox.text_key(account, text))
-            # Advance the global floor. A ladder item consumes the window from
-            # NOW; an immediate item consumes it from the time it is booked for,
-            # so a burst of breaking items lands at +0/+10/+20, never together.
+            # Advance the global floor to the time this post was BOOKED for —
+            # NOW for an immediate item, NOW + jitter for a ladder item — so the
+            # next post budges from when this one actually goes out.
             last_post_at = floor_advance
             log.info("item %s POSTED via %s id=%s%s", iid, receipt.backend,
                      receipt.external_id,
-                     (f" (scheduled {send_scheduled_at})" if send_at and send_at > now else ""))
+                     (f" (scheduled {send_scheduled_at})" if booked_at > now else ""))
         else:
             _outbox.transition(iid, "failed", actor="publisher", root=root,
                                note=receipt.error or "publish failed",
@@ -1123,6 +1188,7 @@ def dry_run_report(root=None, *, account: str | None = None,
         skipped_cap = skipped_channel = skipped_floor = deferred_immediate = 0
         budget = dict(posted_today)
         floor_min = _floor_minutes_cfg(pub_cfg)
+        jitter_max = _jitter_max_cfg(pub_cfg)
         last_post_at = _last_global_post_at(r) if floor_min else None
         for it in approved_due:
             iid = it["id"]
@@ -1148,17 +1214,23 @@ def dry_run_report(root=None, *, account: str | None = None,
                 skipped_floor += 1
                 continue
             media = [m.get("path") for m in (it.get("media") or []) if m.get("path")]
+            # Mirror main()'s booking exactly, jitter included: the offset is
+            # derived from the item id, so this preview names the SAME minute the
+            # live run will book (jitter_max 0 → booked_at == now, unchanged).
+            jitter_minutes = 0 if is_immediate else _post_jitter_minutes(iid, jitter_max)
+            booked_at = now + timedelta(minutes=jitter_minutes)
             would_post.append({
                 "id": iid, "account": acct, "channel": channel_id,
                 "chars": len(text), "media": len(media),
                 "scheduled_at": it.get("scheduled_at"),
-                "send_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "send_at": booked_at.strftime(_TS_FMT),
                 "immediate": bool(is_immediate),
                 "preview": text.replace("\n", " ")[:200],
             })
             budget[acct] = budget.get(acct, 0) + 1
-            # advance the floor so the preview mirrors live pacing
-            last_post_at = now
+            # advance the floor so the preview mirrors live pacing — from the
+            # BOOKED time, as main() does
+            last_post_at = booked_at
 
         return {
             "ok": True,

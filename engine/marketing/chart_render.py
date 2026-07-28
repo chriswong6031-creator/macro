@@ -990,6 +990,35 @@ def resolve_color_logo(ticker: str, root: Path | str) -> str | None:
         return None
 
 
+# publish.chart_cta_enabled in-code default. True = the legacy card (trial button
+# in the footer) for every caller that does not thread the knob.
+_DEFAULT_CHART_CTA_ENABLED = True
+
+
+def chart_cta_enabled(cfg: "dict | None") -> bool:
+    """Resolve ``publish.chart_cta_enabled`` — may the outbound card footer carry
+    the trial button?
+
+    False keeps the brand lockup (favicon + URL + tagline) and drops ONLY the
+    saturated CTA button: a trial button burned into every image is a
+    promotional / content-farm fingerprint (D08 R4), which a cold account with no
+    posting history cannot absorb. Parsed strictly — a quoted ``"false"`` must not
+    re-enable the pitch. Missing key / unreadable cfg → the in-code default
+    (True), so nothing changes for a config that never heard of this knob.
+
+    Pure: takes the already-parsed cfg. chart_render never reads config from disk
+    (it runs on hosts that install pandas but not necessarily anything else).
+    """
+    try:
+        v = ((cfg or {}).get("publish") or {}).get(
+            "chart_cta_enabled", _DEFAULT_CHART_CTA_ENABLED)
+    except Exception:  # noqa: BLE001 — a malformed cfg must never break a render
+        return _DEFAULT_CHART_CTA_ENABLED
+    if isinstance(v, bool):
+        return v
+    return str(v).strip().lower() in {"1", "true", "yes"}
+
+
 def _brand_bar(
     width: int,
     height: int,
@@ -1160,6 +1189,7 @@ def render_chart_v2(
     width: int = 1000,
     height: int = 850,
     footer_cta: str | None = None,
+    cta: bool = True,
     avwap_overlay: dict | None = None,
     poc_overlay: dict | None = None,
     level_overlay: dict | None = None,
@@ -1944,9 +1974,12 @@ def render_chart_v2(
     # ── Footer: brand bar (band + laser hairline + lockup + CTA button) ─────
     # footer_cta=None → full marketing bar; ""=brand-only (brain/admin);
     # custom text → quiet informational descriptor, no sales button (dossiers).
+    # cta=False drops the trial button from the full marketing bar and keeps the
+    # URL lockup (publish.chart_cta_enabled — see chart_cta_enabled()); the other
+    # two branches never carried a button, so the knob cannot reach them.
     if footer_cta is None:
         bar_defs, footer_svg = _brand_bar(
-            width, height, uid, descriptor="Daily stock signals"
+            width, height, uid, descriptor="Daily stock signals", show_button=cta
         )
     elif footer_cta == "":
         bar_defs, footer_svg = _brand_bar(width, height, uid, show_button=False)
@@ -2151,6 +2184,7 @@ def render_earnings_card(
     logo_root: "Path | str | None" = None,
     width: int = 1000,
     height: int = 610,
+    cta: bool = True,
 ) -> str:
     """Render a branded earnings illustration SVG.
 
@@ -2368,6 +2402,7 @@ def render_earnings_card(
     ec_bar_defs, footer_svg = _brand_bar(
         width, height, ec_uid,
         copyright_text="© 2026 Mastermind · Source: Company IR",
+        show_button=cta,
     )
 
     svg = (
@@ -2570,6 +2605,7 @@ def render_watchlist_card(
     subtitle: str | None = None,
     width: int = 1080,
     height: int | None = 1350,
+    cta: bool = True,
 ) -> str:
     """Render a branded watchlist share-card SVG in the Mastermind card family.
 
@@ -2930,6 +2966,7 @@ def render_watchlist_card(
         width, H, wl_uid,
         copyright_text="© 2026 Mastermind",
         band_h=FOOTER_H,
+        show_button=cta,
     )
 
     defs_svg = "".join(defs_parts) + wl_bar_defs
@@ -3087,6 +3124,7 @@ def render_breaking_card(
     logo_root: "Path | str | None" = None,  # noqa: ARG001 — reserved; text cashtags used
     width: int = 1000,
     height: int = 560,
+    cta: bool = True,
 ) -> str:
     """Render a branded breaking-news card SVG in the Mastermind card family.
 
@@ -3107,6 +3145,11 @@ def render_breaking_card(
             up/down coloring; strip omitted entirely when empty/None.
         suppress_cta: Sentinel tone rule — True on human-tragedy items removes
             the trial CTA line so the footer collapses to just the brand mark.
+            Distinct from `cta`: this one is PER-ITEM tone (and also drops the
+            URL); `cta` is the account-wide posture knob.
+        cta: False drops the trial button from the ordinary footer while keeping
+            the URL lockup (publish.chart_cta_enabled — see chart_cta_enabled()).
+            Ignored when suppress_cta is set, which already removes everything.
         summary: Optional ≤2-sentence cited summary; omitted cleanly when None.
         event_class: Optional relevance class ("macro_print"|"policy"|
             "geopolitical"|"company_news") rendered as a quiet plain-word
@@ -3343,6 +3386,7 @@ def render_breaking_card(
             bc_bar_defs, footer_svg = _brand_bar(
                 width, height, bc_uid,
                 copyright_text="© 2026 Mastermind · cited source above",
+                show_button=cta,
             )
 
         # summary_bottom documents where the summary block ends; the ticker strip

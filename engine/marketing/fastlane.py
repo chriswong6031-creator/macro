@@ -435,6 +435,7 @@ def run_tick(
     now: datetime,
     universe: set[str] | None = None,
     dry_run: bool = False,
+    cta: bool = True,
 ) -> dict[str, list[dict[str, Any]]]:
     """Process one tick of earnings events through the fast-lane pipeline.
 
@@ -446,6 +447,10 @@ def run_tick(
         universe: Set of eligible uppercase tickers.  When None, derived from
                   site/marketdata/sp500_heatmap.json (cheapest read available).
         dry_run:  When True, computes everything but writes nothing to disk.
+        cta:      publish.chart_cta_enabled — False renders the earnings card
+                  footer without the trial button (URL lockup stays). The caller
+                  resolves it from config; the default keeps the legacy card for
+                  any caller that has no config in hand.
 
     Returns:
         {
@@ -559,6 +564,7 @@ def run_tick(
                 rev_est,
                 quarter=quarter,
                 logo_root=root,
+                cta=cta,
             )
         except Exception as exc:  # noqa: BLE001
             logger.error("[fastlane] render_earnings_card(%s) failed: %s", ticker, exc)

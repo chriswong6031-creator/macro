@@ -599,10 +599,18 @@ def generate_slot_items(
         # hardcode a cap constant here).
         near_dup_thresh = float(_sentinel_knob(cfg, "near_dup_jaccard",
                                                sentinel._DEFAULT_NEAR_DUP_JACCARD))
-        max_cashtags = int(_sentinel_knob(cfg, "max_cashtags_per_post",
-                                          sentinel._DEFAULT_MAX_CASHTAGS_PER_POST))
-        max_same_cashtag = int(_sentinel_knob(cfg, "max_same_cashtag_per_account_per_day",
-                                              sentinel._DEFAULT_MAX_SAME_CASHTAG_PER_ACCOUNT_PER_DAY))
+
+        # Per-account caps come from the SAME tier resolver the plan-time gate
+        # uses (sentinel.resolve_ramp): this lane auto-approves its own output, so
+        # if it read the base block directly a cold account would auto-post the
+        # very shapes the D08 ramp exists to withhold. `today` is derived from the
+        # injected `now`, so the resolution is as deterministic as the caller's
+        # clock — the tier itself never reads a clock of its own.
+        _ramp = sentinel.resolve_ramp(cfg or {}, today, root=r)
+
+        def _acct_caps(aid: str) -> dict[str, Any]:
+            entry = _ramp["accounts"].get(aid)
+            return entry["caps"] if entry else _ramp["fallback"]
 
         max_per_run = int(pt["max_per_run"])
 
@@ -645,6 +653,20 @@ def generate_slot_items(
                     dropped.append({"reason": "dup_today_theme", "detail": theme_name})
                     continue
 
+            # ── Ramp gate: theme_list does not ship from a cold account ─────
+            # A theme_list carries ≥4 member cashtags by format — the cashtag-
+            # piggybacking fingerprint (D08 R3) — so the tier row withholds the
+            # whole format until week 5. Mirrors the plan-tier ramp_theme_list
+            # quarantine; without it this lane would auto-approve around the gate.
+            if cand["type"] == "theme_list":
+                if not any(_acct_caps(a)["theme_list_allowed"] for a in rotated):
+                    dropped.append({
+                        "reason": "ramp_theme_list",
+                        "detail": f"{cand.get('_theme_name', '') or lead_cashtag}: "
+                                  f"no eligible account is past the theme_list ramp gate",
+                    })
+                    continue
+
             # ── Pick an eligible account for this candidate ─────────────────
             chosen: str | None = None
             for _ in range(len(rotated)):
@@ -656,11 +678,15 @@ def generate_slot_items(
                     continue  # spacing: one post per account per slot run
                 if posted_today.get(aid, 0) >= cap:
                     continue  # ledger-based daily cap
+                if cand["type"] == "theme_list" and not _acct_caps(aid)["theme_list_allowed"]:
+                    continue  # this desk is still ramping — see the gate above
                 # Per-account same-cashtag day cap: skip an account already
                 # carrying an item today with this candidate's ticker or lead
-                # cashtag in its text (sentinel max_same_cashtag_per_account_per_day).
+                # cashtag in its text (sentinel max_same_cashtag_per_account_per_day,
+                # tier-narrowed for a ramping desk).
                 if _account_same_cashtag_today(existing_today, aid, lead_ticker,
-                                               lead_cashtag) >= max_same_cashtag:
+                                               lead_cashtag) \
+                        >= _acct_caps(aid)["max_same_cashtag_per_account_per_day"]:
                     continue
                 chosen = aid
                 break
@@ -690,7 +716,10 @@ def generate_slot_items(
                 continue
 
             # ── Cashtag breadth (movers only; theme_list exempt, per sentinel) ─
+            # Cap is the chosen account's effective one: a ramping desk gets its
+            # tier's tighter value, a graduated desk keeps the base block's.
             if cand["type"] == "mover":
+                max_cashtags = _acct_caps(chosen)["max_cashtags_per_post"]
                 distinct = set(_CASHTAG_RE.findall(text))
                 if len(distinct) > max_cashtags:
                     dropped.append({"reason": "cashtag_breadth",

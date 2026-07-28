@@ -793,12 +793,19 @@ def content_plan(
     Returns the frozen dict structure with envelope fields caller will stamp.
     """
     from engine.marketing.chart_render import (
+        chart_cta_enabled,
         macd_cross,
         render_signal_chart,
         load_ohlcv,
         load_ohlcv_windowed,
         render_chart_v2,
     )
+
+    # publish.chart_cta_enabled — the account-wide footer posture. THE POSTED
+    # IMAGE IS THE PREVIEWED IMAGE (2026-07-26 single-renderer fix), so setting it
+    # once here reaches every outbound card: the publisher rasterises this exact
+    # SVG and the admin preview shows the same artifact by construction.
+    _card_cta = chart_cta_enabled(cfg)
 
     # Iterate the EFFECTIVE account list (engine.marketing.accounts): only
     # accounts with a real X account behind them (enabled) get a generated queue.
@@ -1026,6 +1033,7 @@ def content_plan(
                             logo_root=_ohlcv_root,
                             avwap_overlay=_m2_ovl.get("avwap_overlay"),
                             poc_overlay=_m2_ovl.get("poc_overlay"),
+                            cta=_card_cta,
                         )
 
                 # Fallback: v1 render (marker-only) so nothing breaks
@@ -1223,6 +1231,7 @@ def content_plan(
                             logo_root=_ohlcv_root_conf,
                             avwap_overlay=_m2_ovl_conf.get("avwap_overlay"),
                             poc_overlay=_m2_ovl_conf.get("poc_overlay"),
+                            cta=_card_cta,
                         )
 
                         conf_item.chart_id = chart_id
@@ -1435,6 +1444,7 @@ def content_plan(
                             # un-cropped on a phone timeline (mobile-first surface).
                             width=1080,
                             height=1350,
+                            cta=_card_cta,
                         )
                         _wl_chart_id = f"chart-{chart_id_counter:03d}"
                         _tl_item["chart_id"] = _wl_chart_id
@@ -1540,6 +1550,7 @@ def content_plan(
                             height=880,
                             company_name=_mv_ticker,
                             logo_root=_ohlcv_root_mv,
+                            cta=_card_cta,
                         )
                     if svg is None:
                         svg = render_signal_chart(

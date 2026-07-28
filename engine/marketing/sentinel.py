@@ -7,6 +7,8 @@ Public API:
     gate_plan(plan, cfg, *, receipts_age_days, graded_window, exceptions)
         -> (annotated_plan, report)                    # pure, no I/O
     run_gate(root, *, plan, cfg, ...) -> report        # loads, gates, writes
+    resolve_ramp(cfg, as_of, *, root, announce) -> ramp report (tiers + caps)
+    resolve_ramp_tier(created, as_of, *, graduate_after_days) -> tier name
     receipts_context(root) -> (age_days, graded_window)
     load_exceptions(root) -> {item_id: row}
     publish_enabled() -> bool                          # global kill-switch
@@ -69,9 +71,19 @@ def publish_enabled() -> bool:
 _SCHEMA_VERSION = 1
 
 # Conservative in-code defaults (all knobs are also in config/marketing.yml sentinel:)
-# Base = weeks_1_2 tier: W1 has no account-age wiring, so defaults assume brand-new
-# accounts. D02 actuator RAISES caps by ramp tier, never lowers. A drift-guard test
-# asserts these match config/marketing.yml sentinel:.
+# Base = weeks_1_2 tier: these are the missing-key fallbacks, so they assume a
+# brand-new account.
+#
+# RAMP LAW (enforced 2026-07-27; the old "D02 raises caps by ramp tier" premise
+# died when the base caps went unlimited on 2026-07-24): an account that has not
+# GRADUATED is governed by the STRICTER of (this base block, its age tier's row in
+# sentinel.ramp) — numeric caps take the minimum with -1/unlimited as the loosest
+# value, links_allowed is a logical AND, min_minutes_between_posts takes the
+# maximum. A ramp row can therefore only ever tighten a cold account, never loosen
+# a warm one; a graduated account (age >= ramp.graduate_after_days) uses the base
+# block untouched, which is what preserves the operator's unlimited-cadence
+# ruling for warmed accounts. See resolve_ramp().
+# A drift-guard test asserts these match config/marketing.yml sentinel:.
 _DEFAULT_NEAR_DUP_JACCARD = 0.50              # "substantially similar" policy bar
 _DEFAULT_MAX_POSTS_PER_ACCOUNT_PER_DAY = 2    # weeks_1_2 floor
 _DEFAULT_MIN_MINUTES_BETWEEN_POSTS = 45        # NOT enforced at plan tier (slots have
@@ -94,6 +106,43 @@ _DEFAULT_MAX_NEW_FOLLOWS_PER_ACCOUNT_PER_DAY = 0   # follow churn = fastest ban 
 # rev-3, #3490) — flipping it never touches the advice-lexicon guard below, which
 # always bans reckless phrasing ("guaranteed", "can't lose", "to the moon", …).
 _DEFAULT_REQUIRE_SIGNAL_DISCLOSURE = True
+
+# ── Age ramp (D08 §3) ────────────────────────────────────────────────────────
+# Tier names are the config/marketing.yml sentinel.ramp keys. "graduated" is not
+# a config row: it means "old enough that the ramp no longer applies", and such an
+# account is governed by the base block alone.
+_TIER_WEEKS_1_2 = "weeks_1_2"
+_TIER_WEEKS_3_4 = "weeks_3_4"
+_TIER_WEEK_5_PLUS = "week_5_plus"
+_TIER_GRADUATED = "graduated"
+_RAMP_TIER_ORDER: tuple[str, ...] = (_TIER_WEEKS_1_2, _TIER_WEEKS_3_4, _TIER_WEEK_5_PLUS)
+
+# Tier boundaries in days of account age (as_of - created), half-open on the left:
+# age 13 is still weeks_1_2, age 14 is weeks_3_4.
+_RAMP_WEEKS_1_2_MAX_DAYS = 14
+_RAMP_WEEKS_3_4_MAX_DAYS = 28
+_DEFAULT_GRADUATE_AFTER_DAYS = 56
+
+# Caps whose -1 means "unlimited" (loosest possible value in a stricter-of merge).
+_RAMP_UNLIMITED_CAPS: tuple[str, ...] = (
+    "max_posts_per_account_per_day",
+    "max_media_posts_per_account_per_day",
+)
+# Plain non-negative integer caps: stricter = smaller.
+_RAMP_BOUNDED_CAPS: tuple[str, ...] = (
+    "max_same_cashtag_per_account_per_day",
+    "max_replies_per_account_per_day",
+    "max_new_follows_per_account_per_day",
+    "max_cashtags_per_post",
+)
+# Boolean permissions: stricter = logical AND.
+_RAMP_BOOL_KNOBS: tuple[str, ...] = ("links_allowed", "theme_list_allowed")
+# Waits: stricter = the LONGER wait.
+_RAMP_MAX_WINS_KNOBS: tuple[str, ...] = ("min_minutes_between_posts",)
+
+# theme_list has no base-block knob — the format is allowed unless a tier row
+# turns it off, which keeps every pre-ramp config byte-identical in behaviour.
+_DEFAULT_THEME_LIST_ALLOWED = True
 
 # Financial-advice lexicon — defense-in-depth at the plan layer.
 # Some overlap with copywriter._BANNED_VOCAB is intentional (different layers).
@@ -277,6 +326,246 @@ def _cap_unlimited(block: dict, key: str, default: int) -> int | None:
     except (TypeError, ValueError):
         return default
     return None if val < 0 else val
+
+
+def _flag(block: dict, key: str, default: bool) -> bool:
+    """Read a boolean policy knob STRICTLY.
+
+    A quoted ``"false"`` in YAML must never silently enable a policy — the same
+    parse outbox.sentinel_contract uses, because links_allowed guards D08 R2.
+    """
+    v = _get(block, key, default)
+    if isinstance(v, bool):
+        return v
+    return str(v).strip().lower() in {"1", "true", "yes"}
+
+
+def _parse_iso_date(raw: Any) -> "date | None":
+    """``YYYY-MM-DD`` (or the date half of an ISO timestamp) → date, else None."""
+    s = str(raw or "").strip()[:10]
+    if not s:
+        return None
+    try:
+        return date.fromisoformat(s)
+    except (ValueError, TypeError):
+        return None
+
+
+def resolve_ramp_tier(
+    created: Any,
+    as_of: Any,
+    *,
+    graduate_after_days: int = _DEFAULT_GRADUATE_AFTER_DAYS,
+) -> str:
+    """The D08 ramp tier for an account, from account age in days.
+
+    Age is ``as_of - created`` where BOTH come from the plan inputs — never a
+    wall clock. Re-gating the same plan must always produce the same verdict, so
+    a gate that reads ``datetime.now()`` here would be a determinism bug, not a
+    convenience.
+
+        age <  14                    -> weeks_1_2
+        age <  28                    -> weeks_3_4
+        age <  graduate_after_days   -> week_5_plus
+        age >= graduate_after_days   -> graduated  (base caps only)
+
+    FAILS CLOSED to weeks_1_2 (the strictest tier) when either date is missing or
+    unparseable, and when ``created`` is in the future relative to ``as_of``
+    (corrupt data must not read as an aged account).
+    """
+    c = _parse_iso_date(created)
+    a = _parse_iso_date(as_of)
+    if c is None or a is None:
+        return _TIER_WEEKS_1_2
+    age = (a - c).days
+    if age < 0:
+        return _TIER_WEEKS_1_2
+    if age < _RAMP_WEEKS_1_2_MAX_DAYS:
+        return _TIER_WEEKS_1_2
+    if age < _RAMP_WEEKS_3_4_MAX_DAYS:
+        return _TIER_WEEKS_3_4
+    if age < max(0, int(graduate_after_days)):
+        return _TIER_WEEK_5_PLUS
+    return _TIER_GRADUATED
+
+
+def _base_caps(sc: dict) -> dict[str, Any]:
+    """The base (non-ramped) cap contract, resolved from the sentinel: block.
+
+    ``None`` in an unlimited-capable cap means NO limit (config ``-1``).
+    """
+    return {
+        "max_posts_per_account_per_day": _cap_unlimited(
+            sc, "max_posts_per_account_per_day", _DEFAULT_MAX_POSTS_PER_ACCOUNT_PER_DAY),
+        "max_media_posts_per_account_per_day": _cap_unlimited(
+            sc, "max_media_posts_per_account_per_day",
+            _DEFAULT_MAX_MEDIA_POSTS_PER_ACCOUNT_PER_DAY),
+        "max_same_cashtag_per_account_per_day": _cap(
+            sc, "max_same_cashtag_per_account_per_day",
+            _DEFAULT_MAX_SAME_CASHTAG_PER_ACCOUNT_PER_DAY),
+        "max_replies_per_account_per_day": _cap(
+            sc, "max_replies_per_account_per_day", _DEFAULT_MAX_REPLIES_PER_ACCOUNT_PER_DAY),
+        "max_new_follows_per_account_per_day": _cap(
+            sc, "max_new_follows_per_account_per_day",
+            _DEFAULT_MAX_NEW_FOLLOWS_PER_ACCOUNT_PER_DAY),
+        "max_cashtags_per_post": _cap(
+            sc, "max_cashtags_per_post", _DEFAULT_MAX_CASHTAGS_PER_POST),
+        "min_minutes_between_posts": _cap(
+            sc, "min_minutes_between_posts", _DEFAULT_MIN_MINUTES_BETWEEN_POSTS),
+        "links_allowed": _flag(sc, "links_allowed", _DEFAULT_LINKS_ALLOWED),
+        "theme_list_allowed": _DEFAULT_THEME_LIST_ALLOWED,
+    }
+
+
+def _stricter_caps(base: dict[str, Any], tier_row: dict) -> dict[str, Any]:
+    """Merge one ramp tier row onto the base caps, KEEPING THE STRICTER of each.
+
+    * unlimited-capable numeric caps → minimum, with ``None`` (unlimited) as the
+      loosest value: base ``-1`` + tier ``2`` ⇒ ``2``.
+    * bounded numeric caps → minimum.
+    * boolean permissions → logical AND: base ``false`` + tier ``true`` ⇒ ``false``.
+    * min_minutes_between_posts → maximum (the longer wait wins).
+
+    Keys absent from the tier row leave the base value untouched, so a partial
+    tier row is legal and narrows only what it names.
+    """
+    out = dict(base)
+    if not isinstance(tier_row, dict):
+        return out
+
+    for key in _RAMP_UNLIMITED_CAPS:
+        if key not in tier_row:
+            continue
+        tier_val = _cap_unlimited(tier_row, key, -1)
+        base_val = base.get(key)
+        if tier_val is None:
+            continue                      # tier says unlimited — never loosens base
+        out[key] = tier_val if base_val is None else min(base_val, tier_val)
+
+    for key in _RAMP_BOUNDED_CAPS:
+        if key not in tier_row:
+            continue
+        base_val = int(base.get(key, 0))
+        out[key] = min(base_val, _cap(tier_row, key, base_val))
+
+    for key in _RAMP_MAX_WINS_KNOBS:
+        if key not in tier_row:
+            continue
+        base_val = int(base.get(key, 0))
+        out[key] = max(base_val, _cap(tier_row, key, base_val))
+
+    for key in _RAMP_BOOL_KNOBS:
+        if key not in tier_row:
+            continue
+        out[key] = bool(base.get(key, True)) and _flag(tier_row, key, True)
+
+    return out
+
+
+def _ramp_annotation(account_id: str) -> None:
+    """Print the missing-`created` annotation so it reaches the Actions summary.
+
+    A bare ``print`` at line start is LOAD-BEARING: every builder here logs with a
+    prefixing format, so ``log.warning("::warning …")`` emits ``WARNING ::warning …``
+    and GitHub silently drops it (tests/test_gh_annotation_line_start.py). ``flush``
+    matters too — stdout is block-buffered when piped in CI.
+    """
+    print(
+        f"::warning title=sentinel-ramp-created-missing::desk_network account "
+        f"'{account_id}' is enabled but carries no usable created: date — the D08 "
+        f"age ramp fails closed to weeks_1_2 (strictest caps). Set created: "
+        f"YYYY-MM-DD in config/marketing.yml to the account's real registration date.",
+        flush=True,
+    )
+    log.warning(
+        "sentinel.resolve_ramp: enabled account %r has no usable created: date — "
+        "falling back to the %s tier", account_id, _TIER_WEEKS_1_2,
+    )
+
+
+def resolve_ramp(
+    cfg: dict,
+    as_of: Any,
+    *,
+    root: Path | str | None = None,
+    announce: bool = True,
+) -> dict[str, Any]:
+    """Per-account ramp tier + the effective (stricter-of) caps that govern it.
+
+    THE single tier-resolution seam: gate_plan (plan tier) and
+    publish_time_content.generate_slot_items (publish tier) both read caps from
+    here so the two lanes can never drift apart on what a cold account may post.
+
+    Returns::
+
+        {"enforced": bool,               # False when sentinel.ramp is absent/empty
+         "graduate_after_days": int,
+         "as_of": str,
+         "base": {...caps...},           # the un-ramped contract
+         "fallback": {...caps...},       # caps for an account not in desk_network
+         "accounts": {account_id: {"created", "age_days", "tier", "enabled",
+                                   "caps": {...}}},
+         "missing_created": [account_id, ...]}   # ENABLED accounts, annotated
+
+    ``enforced`` False (no ramp table) ⇒ every account resolves to the base caps
+    and the whole feature is a no-op, which is what keeps configs written before
+    2026-07-27 behaving byte-identically.
+    """
+    sc = _cfg_sentinel(cfg)
+    base = _base_caps(sc)
+    ramp_cfg = sc.get("ramp") if isinstance(sc.get("ramp"), dict) else {}
+    tier_rows = {t: ramp_cfg.get(t) for t in _RAMP_TIER_ORDER
+                 if isinstance(ramp_cfg.get(t), dict)}
+    enforced = bool(tier_rows)
+    graduate_after = _cap(ramp_cfg, "graduate_after_days", _DEFAULT_GRADUATE_AFTER_DAYS)
+
+    as_of_s = str(as_of or "")
+    out_accounts: dict[str, dict[str, Any]] = {}
+    missing_created: list[str] = []
+
+    from engine.marketing.accounts import effective_accounts as _eff_accounts  # noqa: PLC0415
+    for acc in _eff_accounts(cfg if isinstance(cfg, dict) else {}, root):
+        acc_id = str(acc.get("id", ""))
+        if not acc_id:
+            continue
+        enabled = bool(acc.get("enabled"))
+        created_raw = acc.get("created")
+        created = _parse_iso_date(created_raw)
+        as_of_d = _parse_iso_date(as_of_s)
+        age_days = (as_of_d - created).days if (created and as_of_d) else None
+
+        if enforced and enabled and created is None:
+            missing_created.append(acc_id)
+            if announce:
+                _ramp_annotation(acc_id)
+
+        tier = (resolve_ramp_tier(created_raw, as_of_s,
+                                  graduate_after_days=graduate_after)
+                if enforced else _TIER_GRADUATED)
+        caps = (_stricter_caps(base, tier_rows[tier])
+                if tier in tier_rows else dict(base))
+        out_accounts[acc_id] = {
+            "created": str(created_raw or "") or None,
+            "age_days": age_days,
+            "tier": tier,
+            "enabled": enabled,
+            "caps": caps,
+        }
+
+    # An account that appears in a plan but NOT in desk_network is a config bug;
+    # fail closed to the strictest tier rather than handing it the warm caps.
+    fallback = (_stricter_caps(base, tier_rows[_TIER_WEEKS_1_2])
+                if _TIER_WEEKS_1_2 in tier_rows else dict(base))
+
+    return {
+        "enforced": enforced,
+        "graduate_after_days": graduate_after,
+        "as_of": as_of_s,
+        "base": base,
+        "fallback": fallback,
+        "accounts": out_accounts,
+        "missing_created": missing_created,
+    }
 
 
 def load_exceptions(root: Path | str | None = None) -> dict[str, dict]:
@@ -490,14 +779,19 @@ def gate_plan(
             all_items.append((acc_id, item, ai, qi))
 
     # --- knobs ---------------------------------------------------------------
+    # Age ramp: every ENABLED account resolves a tier from its `created:` date vs
+    # THIS plan's as_of, and the caps that govern its items are the stricter of
+    # (base block, tier row). A graduated account keeps the base caps untouched.
+    # No ramp table in cfg ⇒ enforced False ⇒ base caps everywhere (no-op).
+    ramp = resolve_ramp(cfg, as_of, root=root)
+    base_caps = ramp["base"]
+
+    def _caps_for(acc_id: str) -> dict[str, Any]:
+        entry = ramp["accounts"].get(acc_id)
+        return entry["caps"] if entry else ramp["fallback"]
+
     near_dup_thresh = float(_get(sc, "near_dup_jaccard", _DEFAULT_NEAR_DUP_JACCARD))
-    max_posts_day = _cap_unlimited(sc, "max_posts_per_account_per_day", _DEFAULT_MAX_POSTS_PER_ACCOUNT_PER_DAY)
-    max_same_cashtag = _cap(sc, "max_same_cashtag_per_account_per_day", _DEFAULT_MAX_SAME_CASHTAG_PER_ACCOUNT_PER_DAY)
-    max_replies_day = _cap(sc, "max_replies_per_account_per_day", _DEFAULT_MAX_REPLIES_PER_ACCOUNT_PER_DAY)
     max_receipt_age = _cap(sc, "max_receipt_age_days", _DEFAULT_MAX_RECEIPT_AGE_DAYS)
-    links_allowed = bool(_get(sc, "links_allowed", _DEFAULT_LINKS_ALLOWED))
-    max_media_posts_day = _cap_unlimited(sc, "max_media_posts_per_account_per_day", _DEFAULT_MAX_MEDIA_POSTS_PER_ACCOUNT_PER_DAY)
-    max_cashtags_per_post = _cap(sc, "max_cashtags_per_post", _DEFAULT_MAX_CASHTAGS_PER_POST)
     lexicon_phrases = list(_get(sc, "lexicon_phrases", _DEFAULT_LEXICON_PHRASES))
     lexicon_patterns = list(_get(sc, "lexicon_patterns", _DEFAULT_LEXICON_PATTERNS))
     require_signal_disclosure = bool(
@@ -507,6 +801,12 @@ def gate_plan(
     # Per-item violation accumulator {(ai, qi): list[str]}
     violations: dict[tuple[int, int], list[str]] = defaultdict(list)
     notes: list[str] = []
+
+    for _no_date in ramp["missing_created"]:
+        notes.append(
+            f"ramp: enabled account {_no_date} has no created: date — "
+            f"fail-closed to the {_TIER_WEEKS_1_2} tier"
+        )
 
     # =========================================================================
     # STEP 1: Content-level checks (item-intrinsic, order-independent)
@@ -545,30 +845,49 @@ def gate_plan(
                 violations[(ai, qi)].append("missing_disclosure")
                 disclosure_hits += 1
 
-    # --- link rule -----------------------------------------------------------
+    # --- link rule (per-account: base AND the account's tier) -----------------
     link_re = re.compile(r"https?://|\bt\.co/", re.IGNORECASE)
     link_hits = 0
-    if not links_allowed:
-        for _acc_id, item, ai, qi in all_items:
-            if link_re.search(_item_text(item)):
-                violations[(ai, qi)].append("link_not_allowed")
-                link_hits += 1
+    for acc_id, item, ai, qi in all_items:
+        if _caps_for(acc_id)["links_allowed"]:
+            continue
+        if link_re.search(_item_text(item)):
+            violations[(ai, qi)].append("link_not_allowed")
+            link_hits += 1
 
     # --- cashtag breadth (per post) ------------------------------------------
     # Distinct $TICKER tokens in headline+body (case-sensitive: real cashtags are
     # uppercase; "$oil" is prose, "$200" is a price — neither matches).
-    # theme_list is exempt: validate_copy requires ≥4 member cashtags there by
-    # format. Tension: memo §2 R3 flags multi-cashtag lists as the piggybacking
-    # heuristic; revisit when theme_list volume is measurable.
+    # theme_list is exempt from the COUNT: validate_copy requires ≥4 member
+    # cashtags there by format, so counting them would quarantine the format
+    # itself. The tension memo §2 R3 names (multi-cashtag lists ARE the
+    # piggybacking heuristic) is resolved one block down: on a cold account the
+    # theme_list format is quarantined outright rather than exempted.
+    # The cap itself is per-account — a ramping desk uses its tier's value.
     cashtag_re = re.compile(r"\$[A-Z]{1,5}(?:\.[A-Z]{1,2})?\b")
     cashtag_breadth_hits = 0
-    for _acc_id, item, ai, qi in all_items:
+    for acc_id, item, ai, qi in all_items:
         if item.get("type") == "theme_list":
             continue
         distinct = set(cashtag_re.findall(_item_text(item)))
-        if len(distinct) > max_cashtags_per_post:
+        if len(distinct) > _caps_for(acc_id)["max_cashtags_per_post"]:
             violations[(ai, qi)].append("cashtag_breadth")
             cashtag_breadth_hits += 1
+
+    # --- ramp: theme_list quarantine on a cold account ------------------------
+    # A ≥4-cashtag list post is the documented cashtag-piggybacking fingerprint
+    # (D08 R3), and a young account has no posting history to be read against —
+    # so while `theme_list_allowed` is false for the account's tier, the format
+    # does not ship at all. week_5_plus and graduated accounts keep the ordinary
+    # exemption above. Reads the tier key rather than the tier NAME so the
+    # operator can move the line in config without a code change.
+    ramp_theme_list_hits = 0
+    for acc_id, item, ai, qi in all_items:
+        if item.get("type") != "theme_list":
+            continue
+        if not _caps_for(acc_id)["theme_list_allowed"]:
+            violations[(ai, qi)].append("ramp_theme_list")
+            ramp_theme_list_hits += 1
 
     # =========================================================================
     # STEP 2: Always-enforced classes (never exception-overridable)
@@ -704,6 +1023,14 @@ def gate_plan(
         is_reply = item.get("type") == "reply"
         has_media = bool(item.get("chart_id"))
         dk = (acc_id, _slot_day_bucket(slot))  # per-(account, day) cap key
+
+        # Caps are per-ACCOUNT once the ramp is enforced: two desks in one plan
+        # can sit on different tiers (a week-1 desk next to a graduated one).
+        _c = _caps_for(acc_id)
+        max_media_posts_day = _c["max_media_posts_per_account_per_day"]
+        max_replies_day = _c["max_replies_per_account_per_day"]
+        max_posts_day = _c["max_posts_per_account_per_day"]
+        max_same_cashtag = _c["max_same_cashtag_per_account_per_day"]
 
         # Decide every cap first; commit counters only if the item survives —
         # a killed item must never waste a slot a clean sibling needed.
@@ -904,17 +1231,29 @@ def gate_plan(
                 "env": publish_enabled(),
                 "accounts_disabled": disabled_accounts,
             },
+            # The *_cap / *_rule blocks report the BASE contract; the per-account
+            # values that actually governed are under "ramp" below.
             "media_cap": {
-                "max_media_posts_per_account_per_day": max_media_posts_day,
+                "max_media_posts_per_account_per_day":
+                    base_caps["max_media_posts_per_account_per_day"],
                 "hits": media_cap_hits,
             },
             "cashtag_breadth": {
-                "max_cashtags_per_post": max_cashtags_per_post,
+                "max_cashtags_per_post": base_caps["max_cashtags_per_post"],
                 "hits": cashtag_breadth_hits,
             },
             "link_rule": {
-                "links_allowed": links_allowed,
+                "links_allowed": base_caps["links_allowed"],
                 "hits": link_hits,
+            },
+            "ramp": {
+                "enforced": ramp["enforced"],
+                "graduate_after_days": ramp["graduate_after_days"],
+                "as_of": ramp["as_of"],
+                "base": base_caps,
+                "accounts": ramp["accounts"],
+                "missing_created": ramp["missing_created"],
+                "theme_list_hits": ramp_theme_list_hits,
             },
         },
         "notes": notes,

@@ -178,7 +178,12 @@ def _run_one_tick(*, dry_run: bool, armed: bool = True) -> dict:
     since = now - timedelta(minutes=30)
 
     events = fetch_events(since) if armed else []
-    result = run_tick(events, root=ROOT, now=now, dry_run=dry_run)
+    # Card footer posture (publish.chart_cta_enabled) — the fast lane emits an
+    # outbound card like every other lane, so it must not keep pitching a trial
+    # button after the operator turned the CTA off network-wide.
+    from engine.marketing.chart_render import chart_cta_enabled  # noqa: PLC0415
+    _cta = chart_cta_enabled(_load_yaml(ROOT / "config" / "marketing.yml"))
+    result = run_tick(events, root=ROOT, now=now, dry_run=dry_run, cta=_cta)
     return result
 
 
