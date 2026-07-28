@@ -482,3 +482,103 @@ def test_ramp_media_cap_never_sits_below_the_post_cap():
             f"carries a chart, so {posts - media} post(s)/day would be "
             f"quarantined as media_cap_daily rather than shipped."
         )
+
+
+# ---------------------------------------------------------------------------
+# 7. Volume: a demoted signal is publishable, but only as a WATCH
+# ---------------------------------------------------------------------------
+
+def test_a_stale_signal_emits_as_a_watch_and_never_as_a_signal():
+    """39 of 47 Prophet signals are past the 10-day window on any given day. The
+    outbox used to drop every one of them, so 6 desks published ~5 posts total.
+    They now emit — as watchlist posts with no entry claim — but an item that is
+    STILL typed `signal` and failed the live gate must never reach the queue."""
+    from engine.marketing.outbox import emit_from_content_plan
+
+    plan = {
+        "as_of": "2026-07-28",
+        "featured_charts": [],
+        "accounts": [{"id": "flagship", "queue": [
+            # Demoted: no entry claim, must ship.
+            {"slot": "D1-S1", "type": "watchlist", "ticker": "AAA",
+             "headline": "Watching $AAA", "body": "On the radar.",
+             "_live_gate_fail": "signal is 20d old (max 10d)", "sentinel_ok": True},
+            # Still claiming an entry on a dead signal: must NOT ship.
+            {"slot": "D1-S2", "type": "signal", "ticker": "BBB",
+             "headline": "In on $BBB at 10", "body": "Entry 10, target 12.",
+             "_live_gate_fail": "signal is 20d old (max 10d)", "sentinel_ok": True},
+        ]}],
+    }
+    import tempfile
+    with tempfile.TemporaryDirectory() as td:
+        summary = emit_from_content_plan(plan, root=Path(td), cfg={})
+        import json as _json
+        items_p = Path(td) / "data" / "marketing" / "outbox" / "items.jsonl"
+        items = [_json.loads(x) for x in items_p.read_text().splitlines() if x.strip()]
+
+    kinds = {i["kind"] for i in items}
+    assert "watchlist" in kinds, (
+        "the demoted watch post was dropped — this is the drop that was costing "
+        "the network almost its entire daily volume"
+    )
+    assert "signal" not in kinds, (
+        "a stale signal reached the queue STILL CLAIMING AN ENTRY — the live gate "
+        "must keep barring that, it is the whole reason the gate exists"
+    )
+    assert summary["skipped_gate"] == 1
+
+
+def test_runaway_watch_copy_never_claims_the_name_is_near_entry():
+    """A name that blew through the entry gets its own template family. The
+    ordinary watchlist bank is proximity copy ("Near entry", "close, not
+    triggered") and every line of it is a false statement about our own book once
+    price is well past the level."""
+    from engine.marketing.copywriter import (
+        WATCH_RUNAWAY, watch_reason_from_gate, build_context,
+        write_posts_deterministic,
+    )
+
+    assert watch_reason_from_gate("ran away +18.2% — no longer actionable") == WATCH_RUNAWAY
+    assert watch_reason_from_gate("underwater -3.3% (last=1, entry=2)") == "underwater"
+    assert watch_reason_from_gate("signal is 20d old (max 10d)") == "stale"
+    # Unrecognised prose must fall to the bucket that claims the least.
+    assert watch_reason_from_gate("something new the gate learned to say") == "stale"
+
+    banned = ("near entry", "close, not triggered", "closest name to triggering",
+              "near the level", "it's close")
+    for voice in ("authoritative desk", "dry, receipts-forward", "specialist",
+                  "educational", "fast, reactive", "pattern/history"):
+        ctx = build_context({
+            "type": "watchlist", "ticker": "AAA", "account": "flagship",
+            "slot": "D1-S1", "watch_reason": WATCH_RUNAWAY,
+        }, persona=None, facts=None, extra=None)
+        ctx["voice"] = voice
+        ctx["type"] = "watchlist"
+        post = write_posts_deterministic([ctx])[0]
+        blob = f"{post['headline']} {post['body']}".lower()
+        hit = [p for p in banned if p in blob]
+        assert not hit, (
+            f"{voice}: runaway watch copy claims proximity {hit} — "
+            f"got {post['headline']!r} / {post['body']!r}"
+        )
+
+
+def test_every_enabled_desk_has_its_own_template_bank():
+    """Two desks sharing a `voice` draw the SAME deterministic template bank, so
+    their posts come out near-identical and the cross-account near-dup guard
+    quarantines whichever the gate reaches second. On 2026-07-28 meagan (voice
+    twin of founder) shipped 0 posts and sophia (twin of flagship) shipped 1."""
+    import yaml
+
+    cfg = yaml.safe_load((ROOT / "config" / "marketing.yml").read_text(encoding="utf-8"))
+    enabled = [a for a in cfg["desk_network"]["accounts"] if a.get("enabled")]
+    assert enabled, "no enabled desks — the guard would pass vacuously"
+
+    by_voice: dict[str, list[str]] = {}
+    for a in enabled:
+        by_voice.setdefault(str(a.get("voice", "")), []).append(a["id"])
+    shared = {v: ids for v, ids in by_voice.items() if len(ids) > 1}
+    assert not shared, (
+        f"desks sharing a voice (and therefore a template bank): {shared}. "
+        f"The later desk will be near-dup quarantined into near-silence."
+    )

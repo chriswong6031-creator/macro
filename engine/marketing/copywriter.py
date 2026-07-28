@@ -172,6 +172,34 @@ def _signal_age_days(signal_date: object, *, today_date: date | None = None) -> 
     return (nd - sd).days
 
 
+# Watch reasons — WHY a signal stopped being an actionable entry. The demoted
+# post is still publishable ("on my radar") but what it may CLAIM differs, so the
+# reason is a first-class field rather than a parsed string at the call site.
+WATCH_STALE = "stale"            # signal aged out; price may still be at the level
+WATCH_UNDERWATER = "underwater"  # trading BELOW the entry
+WATCH_RUNAWAY = "runaway"        # blew through the entry — proximity copy is FALSE here
+WATCH_UNVERIFIED = "unverified"  # no usable price data
+
+
+def watch_reason_from_gate(reason: str) -> str:
+    """Classify a verify_signal_live failure string into a WATCH_* reason.
+
+    The gate returns prose ("ran away +18.2% — no longer actionable (last=…)"),
+    which is the operator-facing record; this maps it to the token the copy layer
+    switches on. Unrecognised prose falls back to WATCH_STALE, the most
+    conservative bucket — its templates make no claim about where price sits
+    relative to the entry.
+    """
+    r = (reason or "").lower()
+    if "ran away" in r:
+        return WATCH_RUNAWAY
+    if "underwater" in r:
+        return WATCH_UNDERWATER
+    if "no close data" in r or "cannot verify" in r or "empty close" in r:
+        return WATCH_UNVERIFIED
+    return WATCH_STALE
+
+
 def verify_signal_live(
     plan: dict,
     closes: tuple[list[str], list[float]] | None,
@@ -461,6 +489,11 @@ def build_context(
         "cashtag_list": cashtag_list_str,  # space-joined "$A $B $C"
         "type": item.get("type", ""),
         "account": item.get("account", ""),
+        # WHY a demoted signal is only a watch now. Decides which watchlist
+        # template family may be used — proximity copy is a false statement over
+        # a name that already ran through the level. "" for a native watchlist
+        # post (no entry was ever claimed, so nothing to contradict).
+        "watch_reason": item.get("watch_reason", ""),
         # Persona
         "persona_name": persona_name,
         "voice_notes": voice_notes,
@@ -1914,6 +1947,72 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
     ],
 
+    # ── watchlist, RUNAWAY — the name blew through the entry ───────────────────
+    # Selected when watch_reason == WATCH_RUNAWAY. The ordinary watchlist copy
+    # below is proximity copy ("Near entry", "close, not triggered", "closest
+    # name to triggering") and every line of it is FALSE for a name trading well
+    # above the level we flagged. This family says the true thing instead — it
+    # moved without us and we are not chasing — which is both honest and the
+    # stronger post: a desk that publicly declines to chase is worth more than
+    # one that pretends it is still early. Never claims a position, never implies
+    # we caught the move. Voice keys mirror the families below so the selector
+    # falls through identically.
+    ("watchlist_runaway", "authoritative desk"): [
+        (
+            "{cashtag} went without me",
+            "{top_fact} I flagged the level, it didn't wait. Chasing it here is a "
+            "worse trade than missing it was.",
+        ),
+        (
+            "Missed {cashtag}, saying so",
+            "{top_fact} It cleared my level and kept going. No position, no regrets "
+            "worth acting on.",
+        ),
+        (
+            "{cashtag} is past me",
+            "{top_fact} The entry I wanted is behind the tape now. I'll wait for it "
+            "to come back to me or I'll skip it.",
+        ),
+    ],
+    ("watchlist_runaway", "dry, receipts-forward"): [
+        (
+            "{cashtag} | missed, no position",
+            "{top_fact} Gone past the level. Not chasing. Logging it as a miss.",
+        ),
+        (
+            "{cashtag} ran, no entry taken",
+            "{top_fact} Level cleared without me. That's the record.",
+        ),
+    ],
+    ("watchlist_runaway", "specialist"): [
+        (
+            "{cashtag} left the level behind",
+            "{top_fact} It's well past where the setup was worth taking. I don't pay "
+            "up for a chart that already worked.",
+        ),
+    ],
+    ("watchlist_runaway", "educational"): [
+        (
+            "Why I'm not buying {cashtag} here",
+            "{top_fact} It already made the move I was waiting for. Buying after the "
+            "fact is how a good idea turns into a bad entry.",
+        ),
+    ],
+    ("watchlist_runaway", "fast, reactive"): [
+        (
+            "{cashtag} gone, not chasing",
+            "{top_fact} Blew through the level. I'm out of position to act and "
+            "that's fine.",
+        ),
+    ],
+    ("watchlist_runaway", "pattern/history"): [
+        (
+            "{cashtag} ran before I got there",
+            "{top_fact} The setup resolved without a pullback. Those are the ones you "
+            "let go.",
+        ),
+    ],
+
     # ── watchlist (all voices) — {top_fact} carries breadth/sector context ──────
     #
     # TWO SHAPES PER BANK, and the split is load-bearing (see _variant_allowed):
@@ -2518,11 +2617,26 @@ def write_posts_deterministic(contexts: list[dict]) -> list[dict]:
         type_id = ctx.get("type", "signal")
         voice = ctx.get("voice", "authoritative desk")
 
-        key = (type_id, voice)
+        # A watchlist post demoted from a RUNAWAY signal must not use the ordinary
+        # watchlist bank — every line there is proximity copy ("Near entry",
+        # "close, not triggered") and all of it is false once price has blown
+        # through the level. Swap the template family, not the type: the item is
+        # still a watchlist post everywhere else (charting, caps, gates).
+        _tpl_type = type_id
+        if type_id == "watchlist" and ctx.get("watch_reason") == WATCH_RUNAWAY:
+            _tpl_type = "watchlist_runaway"
+
+        key = (_tpl_type, voice)
         variants = _TEMPLATES.get(key)
         if not variants:
             # Fallback: authoritative desk for same type
-            variants = _TEMPLATES.get((type_id, "authoritative desk"))
+            variants = _TEMPLATES.get((_tpl_type, "authoritative desk"))
+        if not variants and _tpl_type != type_id:
+            # Runaway bank missing for this voice AND for the default voice —
+            # fall back to the plain type rather than the last-resort generic,
+            # but only after both runaway lookups miss.
+            variants = _TEMPLATES.get((type_id, voice)) or _TEMPLATES.get(
+                (type_id, "authoritative desk"))
         if not variants:
             # Last-resort generic
             variants = [("{cashtag} update", "Tracking {ticker}. {top_fact}.")]

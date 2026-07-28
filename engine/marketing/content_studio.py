@@ -466,7 +466,11 @@ def _largest_remainder(weights: dict[str, float], total_slots: int) -> dict[str,
 # The 45-minute Pacific ladder slots (cadence masterplan §5, operator re-spec
 # 2026-07-27); outbox._LADDER_PT_TIMES resolves each to a real per-date UTC time
 # via zoneinfo. 19 slots at 45-min steps, 4:00 AM–5:30 PM PT.
-_LADDER_SLOTS = [f"S{i}" for i in range(1, 20)]
+# Mirrors outbox._LADDER_PT_TIMES — 28 rungs at 30-min steps (operator
+# re-spec 2026-07-28). The clock table lives in ONE place (outbox); this
+# side only needs labels. A mismatch shows up as a slot whose scheduled_at
+# resolves to None, which tests/test_marketing_outbox.py pins.
+_LADDER_SLOTS = [f"S{i}" for i in range(1, 29)]
 
 
 def _slot_labels(n_days: int, per_day: int) -> list[str]:
@@ -532,7 +536,7 @@ def plan_account(
     plans: list[dict],
     *,
     n_days: int = 7,
-    per_day: int = 19,   # 19-slot 45-min Pacific ladder (was 8 = 2h ladder)
+    per_day: int = 28,   # 28-slot 30-min Pacific ladder (was 19 = 45-min)
     seed: int = 0,
     tilt: dict[str, float] | None = None,
     drop_types: set[str] | None = None,
@@ -827,7 +831,13 @@ def raster_plan_media(
                 continue
             if item.get("status") == "quarantined" or item.get("sentinel_ok") is False:
                 continue
-            if item.get("_live_gate_fail"):
+            # Mirror outbox.emit_from_content_plan EXACTLY: a failed live gate
+            # only bars an item that still claims an entry. Skipping every
+            # _live_gate_fail item here pruned the cards off precisely the
+            # demoted watchlist posts that now ship, so they emitted text-only
+            # (coverage fell 21/22 -> 16/29 when the emit rule moved and this
+            # one did not). These two predicates must stay in lockstep.
+            if item.get("_live_gate_fail") and item.get("type") == "signal":
                 continue
             wanted.add(str(cid))
 
@@ -1052,7 +1062,7 @@ def content_plan(
             account=acct_cfg,
             plans=plans,
             n_days=7,
-            per_day=19,
+            per_day=len(_LADDER_SLOTS),
             seed=0,
             tilt=tilt_cfg if tilt_cfg else None,
             drop_types=drop_types,
@@ -1913,6 +1923,7 @@ def content_plan(
     try:
         from engine.marketing.copywriter import (
             verify_signal_live,
+            watch_reason_from_gate,
             build_context,
             write_posts_deterministic,
         )
@@ -1968,6 +1979,14 @@ def content_plan(
                         # Demote to watchlist — dead/runaway/stale signal
                         item_dict["type"] = "watchlist"
                         item_dict["_live_gate_fail"] = reason
+                        # WHY it failed decides what the copy may claim. The
+                        # watchlist bank is proximity copy ("Near entry",
+                        # "close, not triggered") — true for a name that has not
+                        # reached the level, FALSE for one that blew through it.
+                        # Not underscore-prefixed on purpose: it survives
+                        # strip_scaffolding into the artifact, where the Outbox
+                        # audit needs to see why a post is only a watch.
+                        item_dict["watch_reason"] = watch_reason_from_gate(reason)
                         type_id = "watchlist"
                         _copy_signal_killed += 1
 

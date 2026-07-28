@@ -522,11 +522,47 @@ class TestLiveConfigRamp:
                 assert acc.get("created"), f"{acc['id']} is enabled with no created:"
 
     def test_flagship_is_ramped_today_not_unlimited(self):
+        """Flagship is BOUNDED, and the growth gates it has not earned stay shut.
+
+        Re-pinned 2026-07-28: the operator widened flagship to 20 posts/day at a
+        30-minute cadence via sentinel.ramp.account_overrides. The number is a
+        policy dial and will move again; what this test defends is the invariant
+        that did NOT move — flagship still resolves to a FINITE cap (never the
+        base `unlimited`), and the two reputation gates the ramp exists to hold
+        shut on a young account are still shut. Asserting the literal 2 made this
+        a change-detector for a knob rather than a guard on the contract.
+        """
         from engine.marketing.sentinel import resolve_ramp
-        caps = resolve_ramp(self._live_cfg(), "2026-07-27")["accounts"]["flagship"]["caps"]
-        assert caps["max_posts_per_account_per_day"] == 2
+        entry = resolve_ramp(self._live_cfg(), "2026-07-27")["accounts"]["flagship"]
+        caps = entry["caps"]
+        n = caps["max_posts_per_account_per_day"]
+        assert n is not None, "flagship fell through to the base unlimited cap"
+        assert isinstance(n, int) and n > 0
+        # theme_list and links are the two gates a <5-week account must not have.
         assert caps["theme_list_allowed"] is False
         assert caps["links_allowed"] is False
+
+    def test_a_widened_account_says_so_in_the_ramp_report(self):
+        """A cap wider than its own tier row must be traceable to a named
+        override. An unexplained wide cap on a young account is precisely the
+        thing the age ramp exists to make impossible by accident."""
+        from engine.marketing.sentinel import resolve_ramp
+
+        resolved = resolve_ramp(self._live_cfg(), "2026-07-27")
+        tier_rows = (self._live_cfg().get("sentinel") or {}).get("ramp") or {}
+        for acc_id, entry in resolved["accounts"].items():
+            if not entry.get("enabled"):
+                continue
+            tier_row = tier_rows.get(entry["tier"]) or {}
+            tier_cap = tier_row.get("max_posts_per_account_per_day")
+            cap = entry["caps"]["max_posts_per_account_per_day"]
+            if tier_cap is None or cap is None or cap <= tier_cap:
+                continue
+            assert "max_posts_per_account_per_day" in (entry.get("overrides") or {}), (
+                f"{acc_id} resolves to {cap}/day against a tier row of "
+                f"{tier_cap}/day with no recorded override — a widened cap must "
+                f"be attributable to an operator decision, not to a merge accident"
+            )
 
 
 # ─────────────────────────────────────────────────────────────────────────────

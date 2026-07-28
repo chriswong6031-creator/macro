@@ -1283,16 +1283,32 @@ _SLOT_SUFFIX_TIMES = {
     "EOD": "T20:15:00Z",
 }
 
-# The 45-minute Pacific signal ladder (cadence masterplan §5, operator re-spec
-# 2026-07-27): 19 slots at 45-min steps from 4:00 AM to 5:30 PM LOCAL, resolved
-# per-date through zoneinfo so the Pacific→UTC offset tracks DST — never hardcode
-# -7/-8, it would drift the whole ladder an hour twice a year.
+# The 30-minute Pacific signal ladder (operator re-spec 2026-07-28): 28 slots at
+# 30-min steps from 4:00 AM to 5:30 PM LOCAL, resolved per-date through zoneinfo
+# so the Pacific→UTC offset tracks DST — never hardcode -7/-8, it would drift the
+# whole ladder an hour twice a year.
+#
+# Was 19 slots at 45-min steps (2026-07-27). The operator asked for a 30-minute
+# flagship cadence and up to 20 posts/day there, which 19 slots cannot hold. The
+# window is unchanged (4:00 AM–5:30 PM) so no post moves into low-engagement
+# hours; only the step tightens, which is what makes room for 28.
+#
+# Slot NUMBERS therefore point at different clock times than they did (old S9 was
+# 10:00, new S9 is 8:00). Nothing in flight moves: outbox items carry an absolute
+# `scheduled_at` stamped at enqueue time, and this table is only consulted when a
+# plan slot is first resolved. Generated from a step so the table cannot drift
+# out of arithmetic — the previous hand-written dict is exactly the kind of thing
+# that rots when someone inserts a slot.
+_LADDER_START_PT = (4, 0)      # 4:00 AM Pacific
+_LADDER_STEP_MIN = 30
+_LADDER_N_SLOTS = 28           # 4:00 AM + 27*30min = 5:30 PM
+
 _LADDER_PT_TIMES = {
-    "S1": (4, 0),   "S2": (4, 45),  "S3": (5, 30),  "S4": (6, 15),
-    "S5": (7, 0),   "S6": (7, 45),  "S7": (8, 30),  "S8": (9, 15),
-    "S9": (10, 0),  "S10": (10, 45), "S11": (11, 30), "S12": (12, 15),
-    "S13": (13, 0), "S14": (13, 45), "S15": (14, 30), "S16": (15, 15),
-    "S17": (16, 0), "S18": (16, 45), "S19": (17, 30),
+    f"S{i + 1}": (
+        (_LADDER_START_PT[0] * 60 + _LADDER_START_PT[1] + i * _LADDER_STEP_MIN) // 60,
+        (_LADDER_START_PT[0] * 60 + _LADDER_START_PT[1] + i * _LADDER_STEP_MIN) % 60,
+    )
+    for i in range(_LADDER_N_SLOTS)
 }
 _LADDER_TZ = "America/Los_Angeles"
 
@@ -1368,8 +1384,11 @@ def emit_from_content_plan(
     """Map a content_plan dict to outbox items and enqueue them.
 
     Only processes items whose slot startswith f"{day_prefix}-".
-    Items with a truthy "_live_gate_fail" field are skipped (never queue stale
-    or invalidated signals). Items the D08 Sentinel gate quarantined
+    An item that still claims an entry (type == "signal") and carries a truthy
+    "_live_gate_fail" is skipped — a stale or invalidated signal never queues AS
+    A SIGNAL. The same item after content_plan demotes it to "watchlist" DOES
+    queue: it claims no entry, carries the no-marker tape card, and its copy is
+    chosen by watch_reason. Items the D08 Sentinel gate quarantined
     (status == "quarantined") or left unverified (sentinel_ok is False — the
     gate's crash path stamps this) are skipped too: quarantined items surface
     on the admin Sentinel/Outbox views with reasons, never as queueable posts.
@@ -1433,7 +1452,20 @@ def emit_from_content_plan(
                     if not slot.startswith(f"{day_prefix}-"):
                         continue
 
-                    if qi.get("_live_gate_fail"):
+                    # The live gate protects the ENTRY CLAIM, so it only bars an
+                    # item that is still making one. An item that failed it was
+                    # demoted signal→watchlist by content_plan: it claims no
+                    # entry, its card is the no-marker tape variant, and its copy
+                    # comes from a template family chosen by watch_reason (a name
+                    # that ran away gets "went without me", never "near entry").
+                    # Dropping those was silently costing almost the whole day's
+                    # volume — 39 of 47 Prophet signals are older than the 10-day
+                    # window, so the network was living on the 8 fresh ones and
+                    # publishing ~5 posts across 6 desks (measured 2026-07-28).
+                    # A stale signal must never post AS A SIGNAL; "we're watching
+                    # this name, here's the tape" is honest content and is the
+                    # entry-timing material the desks exist to publish.
+                    if qi.get("_live_gate_fail") and qi.get("type") == "signal":
                         counts["skipped_gate"] += 1
                         continue
 
