@@ -1876,6 +1876,17 @@ on:
       - "templates/onboard.js"
       - "tests/test_gh_quota_guard.py"
       - ".claude/hooks/gh_quota_guard.py"
+      # ── Public-render fastlane (2026-07-28) ─────────────────────────────────
+      # test_public_render_fastlane pins the heavy/public render split and the
+      # rendered pricing copy; it was named by no lane and rotted red when #3856
+      # reframed the founding copy. Its subjects mostly ride catch-alls above
+      # (scripts/*.py covers the builder, templates/** the plans template,
+      # .github/workflows/** the split lanes, and config/plans.yml is listed for
+      # the billing lanes) — only the fast-path shell script and the test half
+      # need their own entries.
+      # public-render-fastlane
+      - "tests/test_public_render_fastlane.py"
+      - "scripts/ci/public_render.sh"
   workflow_dispatch:
 
 permissions:

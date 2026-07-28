@@ -3134,6 +3134,31 @@ jobs:
       - name: committed estate must match a fresh render (template↔site drift law)
         run: python -m scripts.build_free_content --check
 
+  public-render-fastlane:
+    if: ${{ false }}  # executed inside ci-pack; keep the legacy status definition runner-free
+    # Public fast-path contract (2026-07-28): scripts/build_public_pages.py plus
+    # the render.yml/public-render.yml surface split. Named by ZERO workflows
+    # until now, so it rotted red on main invisibly — #3856 moved the founding
+    # copy to the availability-framed meter ("2,000 total — first come, first
+    # served") and the suite's stale "2,000 memberships" pin had no lane to
+    # object from. Guards: GitHub's 21,000-char run-expression limit across all
+    # workflows, the heavy/public render path split (neither lane silently
+    # absorbing the other's surfaces), the fast path's no-market-data promise,
+    # and the rendered pricing/founding copy itself. Renders to a tmp dir;
+    # network-free. The dependency line follows free-content-estate's verbatim
+    # (`pytest pyyaml jinja2`) so run_ci_pack shares the virtualenv.
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pyyaml jinja2
+      - name: public fastlane split + rendered pricing copy pins
+        run: python -m pytest tests/test_public_render_fastlane.py -q
+
   press-lane:
     if: ${{ false }}  # executed inside ci-pack; keep the legacy status definition runner-free
     # D14 W1 Media Network press engine (2026-07-26). The press lane emits INTO
