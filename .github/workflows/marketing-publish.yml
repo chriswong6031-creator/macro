@@ -30,22 +30,28 @@ name: marketing-publish
 # ─────────────────────────────────────────────────────────────────────────────
 on:
   schedule:
-    # 45-minute Pacific signal ladder (cadence masterplan §5, operator re-spec
-    # 2026-07-27). Sweep every 30 min across the 00:00–23:30 UTC window that covers
-    # the 4:00 AM–5:30 PM PT 45-min ladder grid in BOTH PDT and PST — 30 sweeps/day,
-    # EVERY day. The window spans 00:00,00:30 and 01:00..23:30 because the last slot
-    # (S19 = 17:30 PT) lands at 00:30Z in PDT and 01:30Z in PST. Each sweep posts at
-    # most ONE ladder item that is DUE (scheduled_at ≤ now): the 10-min global floor
-    # advances in-memory per run, so per-sweep throughput is capped at one and the
-    # net rate tracks the 19-slot 45-min ladder, not the 30-min cron grid. The
-    # humanizing jitter scatters off the round minute. Breaking/news fire via
-    # event-driven dispatch (workflow_dispatch below), unlimited and off the cron.
-    # The ~22:30 UTC nightly (daily.yml) also commits the outbox ledger; the sweeps
-    # overlapping it use a retry-rebase push loop that tolerates the overlap. Cost
-    # note: each sweep does a full-history checkout (~7m) for a race-safe ledger
-    # push — reducing that (shallow + unshallow-on-commit) is the lever if runner
-    # minutes matter, but it is NOT done here because a failed post-commit push
-    # double-posts.
+    # 30-minute Pacific signal ladder — 28 rungs, S1=4:00 AM … S28=5:30 PM PT
+    # (cadence masterplan §5; operator re-spec 2026-07-27, widened from 19 rungs
+    # at 45 min on 2026-07-28, #3904). Sweep every 30 min across the 00:00–23:30
+    # UTC window that covers that grid in BOTH PDT and PST — 30 sweeps/day, EVERY
+    # day. The window spans 00:00,00:30 and 01:00..23:30 because the last rung
+    # lands at 00:30Z in PDT and 01:30Z in PST.
+    #
+    # A sweep is NO LONGER capped at one post (#3913). It used to be: an item
+    # inside the 10-min global floor deferred to the next sweep, which made the
+    # CRON GRID the unit of volume — 30 sweeps/day meant 30 posts/day
+    # network-wide however many the desks generated, and every dropped sweep cut
+    # into that. publish.max_forward_book_min now books such an item at the
+    # moment the floor clears (Buffer customScheduled) instead of deferring, so
+    # the spacing is unchanged and the floor is the real governor: ~6 posts/hr,
+    # bounded by a tape-freshness horizon. The humanizing jitter still scatters
+    # off the round minute. Breaking/news fire via event-driven dispatch
+    # (workflow_dispatch below), unlimited and off the cron.
+    #
+    # The ~22:30 UTC nightly (daily.yml) also commits the outbox ledger; the
+    # sweeps overlapping it use a retry-rebase push loop, and the ledgers carry
+    # merge=union (.gitattributes) so a concurrent append resolves instead of
+    # conflicting the loop to death. The checkout is SHALLOW — see the step.
     - cron: "0,30 0,1,11-23 * * *"
   workflow_dispatch:          # manual runs (still dark unless the secret is set)
     inputs:
