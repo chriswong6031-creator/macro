@@ -1,0 +1,222 @@
+# MARKETING HOT TAPE — attention-driven, intraday-first content
+
+Operator directive 2026-07-28 (verbatim intent): *"We should be reporting on
+tickers that are very hot… people want live data as it happens… when
+semiconductors and memory are all down big during market hours, early into the
+day, we should already be posting lists… This stale data issue is so serious."*
+Same day the operator supplied a 20-post reference corpus from their timeline
+(§2) and ruled: sensational reporting on names people know beats signals on
+obscure names; posting during market hours on live data is the product.
+
+Program name: **Hot Tape**. One sentence: a 5-minute intraday loop that turns
+live tape events on high-attention names into wire-voice posts with charts,
+booked to X within minutes of the event, while the nightly pipeline keeps the
+persona desks' proof-of-work content.
+
+## §0 ACCEPTANCE GATES — not done unless
+
+1. **Latency**: on a day a sector crosses ±2% (median, breadth ≥70%) during
+   RTH, a sector post is BOOKED at Buffer within **20 minutes** of the cross.
+   Same bar for a |≥4%| move on a top-attention name. Demonstrated in the PR
+   with a real fired event: detector log line → outbox item id → Buffer
+   receipt, timestamps visible.
+2. **Differentiating stat**: every Hot Tape post carries ≥1 device from §2.D —
+   a "since <date>", a streak count, a dollar translation, or a record/rank.
+   A bare "%-move + chart" post is the corpus's 95-view flop; the template
+   layer must structurally refuse it (test-pinned).
+3. **Facts are engine-computed**: every number in the copy exists in the
+   item's FactPacket (provenance-committed). The copy layer (template or LLM)
+   may phrase, never originate. Numeric-consistency check is a hard gate,
+   test-pinned. [Epistemics law: LLMs never originate signals.]
+4. **Observations, not calls**: Hot Tape items carry NO entry/buy/sell/added
+   language. "Reporting the tape" is display-tier and needs no gauntlet;
+   a directive call on an un-gauntleted read is the Mag-7 killed class
+   (DO_NOT_REBUILD: operator force-add kill, 2026-07-23). Test-pinned ban
+   list on the wire templates.
+5. **Existing safety stack untouched**: sentinel near-dup/caps, post-time tape
+   gate, kill switch + recall, per-ticker cooldowns (one post per ticker per
+   direction per 2h unless the move doubles), sector once-per-direction-per-day.
+6. **Charts on every ticker post** (operator law): single-name events reuse the
+   v2 tape card; sector events ship the sector grid card (Phase 1.5) or a
+   clean list format until it exists.
+7. **CI**: every new suite named in a run line in BOTH lanes it belongs to,
+   plus ci.yml trigger paths for every new file — a suite that ships dark is
+   the unrun-suite rot class.
+8. **Measured, then tuned**: every Hot Tape item's provenance carries its
+   trigger type; the metrics poller already returns per-post impressions.
+   After 7 days, a per-trigger engagement table exists (even a crude one) so
+   weights move on evidence, not taste. "Today"-keyword hypothesis (operator)
+   gets an A/B cell here rather than an assumption.
+
+## §1 Why volume alone failed (diagnosis, 2026-07-28)
+
+Selection was supply-driven: nightly Prophet plans on quality-filtered
+small/mids (LKFN, CVI, CBOE) — names with no search volume, posted 12–40h
+stale through a ladder. Engagement follows attention; attention lives on
+household names, big movers, earnings, and NOW. Meanwhile the intraday
+machinery that existed was dark or strangled:
+
+- `publish_time_content` generated sector/theme lists from live quotes every
+  30 min — Semiconductors, Software, FinTech, on the semis-crash day itself —
+  and **100% died at the theme ramp** (no desk past week-5).
+  Fixed 2026-07-28: #3932 (bool account_overrides + flagship grant).
+- `marketing_fastlane_daemon` (earnings + press lanes): **never ticked** — no
+  heartbeat file, no workflow, no MARKETING_FASTLANE_ENABLED anywhere.
+- Prophet levels are computed nightly and never re-armed intraday: a level
+  crossed at 10:04 AM is our own proprietary event, currently unused.
+
+Repositioning (operator-endorsed): Prophet obscure-name posts move to the
+RECEIPTS/track-record job at lower cadence (wins on names nobody covers =
+proof of alpha); Hot Tape does reach. Reach pulls followers; receipts convert.
+
+## §2 The corpus (operator timeline, 2026-07-28 — a semis-crash day)
+
+20 posts transcribed; engagement recorded. The teachable structure:
+
+**T. Triggers** (what makes them post):
+- T1 big intraday move, household name (AMD −10% "so far today", 56K views;
+  KO +6%, PLTR −10%)
+- T2 threshold/milestone cross (QQQ "ENTERS CORRECTION WITH 10% DROP FROM
+  RECORD", 49K; AAPL "second company in history to hit $5T", 29K; META below
+  $600 "for the 10th time this year"; NVDA "$1 TRILLION wiped out… −18.5%
+  from ALL TIME HIGH", 23K)
+- T3 historical rarity/streak ("META has not seen a double digit streak of
+  red daily candles in over 5 years. Today is Day #9", 46K; "TSLA falls to
+  its most oversold level since March 2025", 26K; "Oracle's credit risk HAS
+  NEVER BEEN HIGHER" + CDS record, 24K)
+- T4 earnings reaction in minutes ("$BE is up over 12% AH after a monster
+  quarter. Top and bottom beat." + numbers in the reply)
+- T5 event anticipation ("Tomorrow is going to be a historic day… ~30% chance
+  of a hike… nearly every Fed meeting since March 2020 entered decision day
+  with ~99% consensus… We think the Fed PAUSE continues" — **312.7K views,
+  corpus winner**)
+- T6 sector/market aggregation in dollars ("$820,000,000,000 added to the US
+  stock market in the last 3 hours as mediators say…", 85K, heatmap image)
+- T7 unusual options flow ("Very unusual $SOXX Call Flow Detected. They are
+  buying the semiconductor dip", 57K)
+- T8 narrative irony / since-event anchor ("Marvell down almost 50% since
+  Nvidia CEO Jensen Huang said it will be the next trillion dollar company")
+- T9 contrarian breadth flip ("'The markets crashing' the market:" + a list
+  card of GREEN defensives — COST HD MMM KO MCD…)
+
+**D. Devices** (how the copy is built):
+- D1 number stacking, zooming out: "−17% on the day, now −30% in 5 days and
+  −55% from its record high. That's officially over −$200 billion in lost
+  market cap since June 22nd." (Kobeissi SNDK, 614K)
+- D2 dollar translation: "investors now pay ~$215,000 annually to insure
+  $10 million of Oracle debt"; zeros written out for scale ($820,000,000,000)
+- D3 "since <date/event>" on nearly every winner — recency-rarity quantifier
+- D4 streak/count: "Today is Day #9"; "10th time this year"; 🔴×10 (one per
+  percent down — emoji as data)
+- D5 live markers: "so far today", "right now", "just became", BREAKING/caps
+  for wire items
+- D6 superlative + receipt: record claim immediately backed by the number
+- D7 stance or question ender: "We think the Fed PAUSE continues tomorrow";
+  "Why $AMZN wouldn't work from here?"
+- D8 pseudo-official milestone language: "officially", "enters correction"
+- D9 one chart, one story; annotation sparing
+
+**The control case**: Mimo's $MU post — same trigger as Kobeissi's SNDK on the
+same day's memory-sector crash (−9%!), zero devices, hedged ("seems like it
+will keep dumping") — **95 views vs 614K**. Execution, not access, is the moat.
+The differentiating stat IS the product; gate 0.2 encodes it.
+
+**Voice note**: wire tone is declarative, unhedged, numbers carry the drama.
+Persona desks keep their diary voice for nightly content; Hot Tape speaks wire.
+`mastermind_news` (Buffer channel configured, zero use to date) is the wire
+desk's home; flagship mirrors the biggest events only.
+
+## §3 Architecture
+
+Two speeds, one skeleton — heavy compute nightly, light joins intraday
+(render budget stays law; intraday lanes stay OFF the render path):
+
+1. **Nightly context pack** (new; runs inside the existing marketing step):
+   for every liquid name in `data/massive_stock_day` (~20k parquets, floor by
+   ADV/mcap to ~2–3k), precompute the stat kit the devices need: 52w/ATH
+   distance, consecutive up/down days + how rare (last time a streak this
+   long), biggest 1d/5d moves of the past year with dates, MA relationships,
+   RSI + last-time-this-oversold date, round-number and correction/bear
+   thresholds adjacent, mcap + shares (for $-translation), earnings date/time
+   from `data/earnings/earnings.parquet`. One compact JSON, no pandas needed
+   to READ it.
+2. **Attention radar** (new workflow `marketing-hot-tape.yml`, */5 during
+   13:25–20:05Z weekdays, ubuntu, shallow checkout, pyyaml+requests only):
+   load live quotes (the same three-source merge the tape gate uses) + the
+   context pack → run detectors → fire events.
+   v1 detectors: `sector_rout/rip` (median + breadth from heatmap sectors),
+   `mover_pop/drop` (|Δ|≥4% on attention-universe names), `threshold_cross`
+   (correction/bear/ATH-distance/round-number/mcap milestone),
+   `streak_rarity` (today extends a streak the pack says is ≥N-year rare),
+   `signal_fired` (live price crosses a Prophet plan level — our proprietary
+   event, links to the site), `contrarian_breadth` (index red + defensive
+   sector green, the T9 flip). Persist a rolling intraday snapshot ring
+   (last ~36 × 5-min) in the workflow's commit to enable "$X added in 3
+   hours" claims (T6) and re-fire suppression.
+3. **Wire copy layer**: FactPacket (typed, all numbers) → template families
+   per trigger with the §2.D device library; every template REQUIRES its
+   device slots filled or it refuses (gate 0.2). Phase 2: LLM phrasing via
+   the shared AI provider waterfall behind the numeric-consistency gate
+   (gate 0.3) with template fallback on any failure. [Coordinate with the
+   in-flight word-salad copy session — template mechanics are theirs; the
+   trigger/device taxonomy and wire voice are this program's.]
+4. **Delivery** (exists): enqueue `kind="breaking"` `scheduled_at="immediate"`
+   → immediate items are floor/cap-exempt and unjittered (2026-07-27 re-spec)
+   → self-dispatch `marketing-publish.yml post_now_item=<ids>` → ~2–3 min to
+   Buffer post-shallow-checkout. End-to-end latency = detector cadence (≤5m)
+   + radar runtime (~1m) + dispatch (~3m) ≈ **≤9 min typical**, inside gate 1.
+5. **Charts**: single-name → v2 tape card (extend `_PRICE_SUBDIRS` to
+   `data/massive_stock_day` so ANY liquid name renders); sector → new grid
+   card (tiles + % + logos, Phase 1.5); market-wide → heatmap image reuse.
+   R2 upload at raster time (media backfill lane is the recovery path).
+
+**Consolidation**: the never-run `marketing_fastlane_daemon` earnings/press
+lanes fold INTO the radar loop as detectors (one intraday loop, N detectors)
+rather than reviving a separate daemon. Its emit/dedupe plumbing is reusable.
+
+## §4 Data inventory — have vs need
+
+| Capability | Source | Status |
+|---|---|---|
+| 5-min live quotes, ~2.1k names | live-data branch + site/live + heatmap | HAVE (merge is freshness-safe since #3913) |
+| Sector membership + sizes | sp500_heatmap tiles (503, sector+size) | HAVE |
+| Daily bars, 20k names | data/massive_stock_day | HAVE |
+| Earnings calendar + AH/BMO flag | data/earnings/earnings.parquet (1,364) | HAVE |
+| Prophet levels for signal_fired | content_plan `_plan` | HAVE |
+| Shares/mcap beyond S&P | Polygon reference (key exists) or nightly join | SMALL GAP |
+| Extended-hours quotes (T4 speed play) | Polygon snapshot / webull-sina refs | PHASE 2 |
+| Intraday minute bars for cards | Polygon aggs (plan-dependent) | PHASE 2; daily card + live marker until then |
+| Social heat (X/Stocktwits/Google) | twitterapi.io relay (press lane), Stocktwits trending endpoint, pytrends | PHASE 2 |
+| Fed/event odds (T5 stance posts) | none in-repo | PHASE 3, LLM desk |
+| Options flow (T7) | options estate (flow_hist, screener) | PHASE 3 |
+| Congress/13F/rating changes | EDGAR adapters exist nightly; disclosures TBD | PHASE 3 |
+
+## §5 Phases
+
+- **P0 (SHIPPED 2026-07-28)**: theme ramp unblock (#3932) — sector lists live
+  from tomorrow's open on flagship. Floor 10→4 (#3924), forward booking +
+  shallow checkout + union ledgers + quote-freshness merge (#3913).
+- **P1 (chip: hot-tape radar)**: context pack + radar workflow + v1 detectors
+  + wire templates with device library + mastermind_news activation + tape
+  card for any liquid name + tests/CI. Gates 0.1–0.7.
+- **P1.5**: sector grid card; per-trigger engagement table (gate 0.8).
+- **P2 (chip: LLM wire desk)**: waterfall phrasing behind numeric-consistency;
+  extended-hours quotes → earnings speed play (T4); social-heat scorers into
+  the attention universe; "$X in 3h" claims from the snapshot ring.
+- **P3**: T5 stance posts (odds data + LLM, operator-reviewed), options-flow
+  detector (T7), congress/13F/ratings wires, weights tuned by measured
+  engagement.
+
+## §6 Collisions & standing law
+
+- DO_NOT_REBUILD: Mag-7 forced-call kill → gate 0.4 (observations only).
+  Chronicle gate 5 (nightly sole advancer of forward ledgers) → the radar
+  writes ONLY outbox items + its own snapshot ring, never forward ledgers.
+- XG charter §6: employee desks join per-call lanes only after XG-W2 enables —
+  Hot Tape routes to mastermind_news + flagship until then (cadence-spec chip
+  task_0cd280af is in flight; its resolver enablement widens routing later).
+- In-flight sessions to coordinate with: word-salad copy rewrite
+  (task_445d4ea5 — owns template mechanics), Buffer recall (task_318af965 —
+  shipped `recall_pending`), cadence specs (task_0cd280af).
+- Ledger law: intraday lanes discard data/ writes EXCEPT outbox + the radar
+  snapshot ring (append-only, merge=union, same class as the publish ledgers).
