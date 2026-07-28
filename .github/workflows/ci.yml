@@ -1132,6 +1132,12 @@ on:
       - "engine/marketing/**"
       - "tests/test_marketing_engine.py"
       - "tests/test_marketing_sentinel.py"
+      # D08 age ramp + chart-CTA + send-time jitter (2026-07-27). Listed by name
+      # so a TEST-ONLY edit reaches its own guard: the subject code is already
+      # covered by engine/marketing/** + scripts/marketing_publisher.py above,
+      # but this suite also pins live config/marketing.yml values (ramp armed,
+      # CTA off, jitter 7) that nothing else asserts.
+      - "tests/test_marketing_ramp_cta_jitter.py"
       # Event-post language contract (2026-07-27 incident): driver-label
       # translation coverage + template coherence. The subject module halves
       # (engine/marketing/market_facts.py, copywriter.py, content_studio.py)
