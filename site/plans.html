@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -40,9 +39,9 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'light');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css?v=370c3de0">
-<link rel="stylesheet" href="assets/css/425a9749.css?v=425a9749">
+<link rel="stylesheet" href="assets/css/b92f9102.css?v=b92f9102">
 
 
 <link rel="stylesheet" href="assets/css/c68d2db1.css?v=c68d2db1">
@@ -91,7 +90,7 @@
             <div class="gp-acct-in" id="gp-acct-in" hidden>
               <div class="gp-acct-card" id="gp-acct-card" role="button" tabindex="0">
                 <span class="gp-avatar" id="gp-avatar"></span>
-                <span class="gp-acct-main"><span class="gp-acct-email" id="gp-email"></span><span class="gp-acct-sub"><span class="l-en">Manage account &amp; sync ›</span><span class="l-zh">管理账户与同步 ›</span></span></span>
+                <span class="gp-acct-main"><span class="gp-acct-email" id="gp-email"></span><span class="gp-acct-sub"><span class="l-en">Manage account & sync ›</span><span class="l-zh">管理账户与同步 ›</span></span></span>
               </div>
               <button type="button" class="gp-signout" id="gp-signout"><span class="l-en">Sign out</span><span class="l-zh">退出登录</span></button>
             </div>
@@ -109,208 +108,196 @@
   </div>
 
   
-  <header class="hero">
-    <span class="eyebrow"><span class="l-en">Membership</span><span class="l-zh">会员方案</span></span>
-    <h1><span class="l-en">One market brain.</span><span class="l-zh">一个市场大脑，</span> <span class="accent"><span class="l-en">Every desk on it.</span><span class="l-zh">所有桌面尽在其中。</span></span></h1>
-    <p class="sub"><span class="l-en">Every dashboard, the full research desk, and the Mastermind chat — in one place. Start free, or take a 7-day trial of the paid tiers.</span><span class="l-zh">所有仪表盘、完整研究桌面，以及操盘大脑对话——尽在一处。免费开始，或试用付费方案 7 天。</span></p>
-
-    
-    <div class="toggle-wrap">
-      <div class="btoggle annual" id="btoggle" role="group" aria-label="Billing interval">
-        <span class="knob" aria-hidden="true"></span>
+  <section class="pricing-sec section-pad">
+    <div class="p-head">
+      <span class="kicker"><span class="l-en">Pricing</span><span class="l-zh">定价</span></span>
+      <h2 class="sec-title"><span class="l-en">Free to explore.</span><span class="l-zh">免费探索。</span><br><span class="l-en">Built for deeper decisions.</span><span class="l-zh">为更深的决策而生。</span></h2>
+      <div class="toggle" role="group" aria-label="Billing interval" id="btoggle">
+        <button type="button" data-interval="annual" aria-pressed="true"><span class="l-en">Annual</span><span class="l-zh">按年</span>
+          <span class="save l-en">FOUNDING PRO AVAILABLE</span><span class="save l-zh">FOUNDING PRO 开放中</span>
+        </button>
         <button type="button" data-interval="monthly" aria-pressed="false"><span class="l-en">Monthly</span><span class="l-zh">按月</span></button>
-        <button type="button" data-interval="annual" class="on" aria-pressed="true">
-          <span class="l-en">Annual</span><span class="l-zh">按年</span>
-          <span class="save-flag l-en">Founding Pro available</span><span class="save-flag l-zh">Founding Pro 开放中</span>
-        </button>
       </div>
+      <p class="toggle-note" id="toggle-note">
+        <span class="l-en">Founding Pro gives you every Pro feature for the Insider annual price.</span><span class="l-zh">Founding Pro 让你以 Insider 年付价格解锁 Pro 全部功能。</span>
+      </p>
     </div>
-    <p class="toggle-note" id="toggle-note">
-      <span class="l-en">Founding Pro gives you every Pro feature for the Insider annual price.</span><span class="l-zh">Founding Pro 让你以 Insider 年付价格解锁 Pro 全部功能。</span>
-    </p>
-  </header>
-
-  <div class="cards">
 
     
-    <section class="card free" aria-label="Free plan">
-      <div class="tname"><span class="dot"></span><span class="l-en">Free</span><span class="l-zh">免费</span></div>
-      <p class="tfor"><span class="l-en">A real taste of the desk — sample dashboards and one research report.</span><span class="l-zh">桌面的真实体验——样板仪表盘与一份研究报告。</span></p>
-      <div class="price free-price">
-        <span class="amt"><span class="l-en">Free</span><span class="l-zh">免费</span></span>
-      </div>
-      <div class="billed"><span class="l-en">Always free · sign in to save your watchlist.</span><span class="l-zh">永久免费 · 登录即可保存自选。</span></div>
-      <div class="cta">
-        <button class="gbtn gbtn-lg gbtn-pill" data-act="free" type="button"><span class="l-en">Sign in — it’s free</span><span class="l-zh">登录 — 完全免费</span></button>
-      </div>
-      <p class="cta-note" id="free-note"><span class="l-en">Your current plan.</span><span class="l-zh">你当前的方案。</span></p>
-      <ul class="feats">
-        <li class="on"><span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span><span><span class="l-en">Sample dashboards</span><span class="l-zh">样板仪表盘</span> — <b><span class="l-en">macro, news, methodology</span><span class="l-zh">宏观、新闻、方法论</span></b></span></li>
-        <li class="on"><span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span><span><span class="l-en">One research report</span><span class="l-zh">一份研究报告</span></span></li>
-        <li class="on"><span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span><span><span class="l-en">Special situations</span><span class="l-zh">特殊事件</span> — <b><span class="l-en">the 3 newest filings</span><span class="l-zh">最新 3 份申报</span></b></span></li>
-        <li class="on"><span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span><span><span class="l-en">China special situations</span><span class="l-zh">中国特殊事件</span> — <b><span class="l-en">the full overhang read + the 3 nearest unlocks</span><span class="l-zh">完整压力概览 + 最近 3 笔解禁</span></b></span></li>
-        <li class="on"><span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span><span><span class="l-en">Committee &amp; brief — a teaser</span><span class="l-zh">委员会与简报 — 预览</span></span></li>
-        <li class="on"><span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span><span><span class="l-en">Mastermind chat</span><span class="l-zh">操盘大脑对话</span> — <b><span class="l-en">5 quick questions a week</span><span class="l-zh">每周 5 个快速提问</span></b></span></li>
-        <li class="on"><span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span><span><span class="l-en">Charts terminal</span><span class="l-zh">图表终端</span> — <b><span class="l-en">free for everyone</span><span class="l-zh">所有人免费</span></b></span></li>
-      </ul>
-    </section>
+    <div class="tiers">
 
-    
-    <section class="card insider" aria-label="Insider plan"
-             data-tier="insider" data-m-cents="9900" data-a-cents="90000"
-             data-m-pm="99" data-a-pm="75"
-             data-a-total="900" data-save="24">
-      <div class="tname"><span class="dot"></span>Insider</div>
-      <p class="tfor"><span class="l-en">The whole desk — every market, every heatmap, all the research.</span><span class="l-zh">完整桌面——所有市场、所有热力图、全部研究。</span></p>
-      <div class="price">
-        <span class="cur">$</span><span class="amt" data-price>75</span><span class="per">/<span class="l-en">mo</span><span class="l-zh">月</span></span>
-      </div>
-      <div class="billed">
-        <span data-billed><span class="l-en">Billed $900 a year.</span><span class="l-zh">每年结算 $900。</span></span>
-        <span class="badge-save" data-badge><span class="l-en">save 24%</span><span class="l-zh">省 24%</span></span>
-      </div>
-      <div class="cta">
-        <button class="gbtn gbtn-lg gbtn-pill gbtn-cta" data-act="subscribe" data-tier="insider" type="button">
-          <span class="btxt"><span class="l-en">Start 7-day trial</span><span class="l-zh">开始 7 天试用</span></span>
-        </button>
-      </div>
-      <p class="cta-note"><span class="l-en">Card required · cancel anytime before day 7.</span><span class="l-zh">需绑卡 · 第 7 天前可随时取消。</span></p>
-      <ul class="feats">
-        <li class="on"><span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span><span><b><span class="l-en">All dashboards</span><span class="l-zh">所有仪表盘</span></b> — <span class="l-en">markets, desks, heatmaps, baskets, sectors, flow</span><span class="l-zh">市场、桌面、热力图、篮子、板块、资金流</span></span></li>
-        <li class="on"><span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span><span><b><span class="l-en">Every research report</span><span class="l-zh">全部研究报告</span></b> + <span class="l-en">the intelligence hub</span><span class="l-zh">情报中心</span></span></li>
-        <li class="on"><span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span><span><b><span class="l-en">The special situations desk</span><span class="l-zh">完整特殊事件交易台</span></b> — <span class="l-en">activist, M&amp;A, spin-offs, take-privates</span><span class="l-zh">维权、并购、分拆、私有化</span></span></li>
-        <li class="on"><span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span><span><b><span class="l-en">The China event desk</span><span class="l-zh">完整中国事件交易台</span></b> — <span class="l-en">every named unlock, inquiry letter, buyback and pledge risk</span><span class="l-zh">全部解禁、问询函、回购与质押风险个股</span></span></li>
-        <li class="on"><span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span><span><span class="l-en">Committee, brief &amp; track record</span><span class="l-zh">委员会、简报与业绩记录</span> — <span class="l-en">in full</span><span class="l-zh">完整版</span></span></li>
-        <li class="on"><span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span><span><span class="l-en">Mastermind chat</span><span class="l-zh">操盘大脑对话</span> — <b><span class="l-en">300 a month</span><span class="l-zh">每月 300 次</span></b></span></li>
-        <li class="on"><span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span><span><span class="l-en">Terminal live options</span><span class="l-zh">终端实时期权</span> — <b><span class="l-en">included</span><span class="l-zh">含</span></b></span></li>
-      </ul>
-    </section>
+      
+      <section class="tier" aria-label="Free plan">
+        <h3><span class="l-en">Free</span><span class="l-zh">免费</span></h3>
+        <p class="who"><span class="l-en">A real taste of the desk — sample dashboards and one research report.</span><span class="l-zh">桌面的真实体验——样板仪表盘与一份研究报告。</span></p>
+        <div class="price">$0</div>
+        <p class="bill"><span class="l-en">No card. Sign in to save your watchlist.</span><span class="l-zh">无需绑卡。登录即可保存自选。</span></p>
+        <ul class="tf">
+          <li><b><span class="l-en">Sample dashboards</span><span class="l-zh">样板仪表盘</span></b> — <span class="l-en">macro, news, methodology</span><span class="l-zh">宏观、新闻、方法论</span></li>
+          <li><span class="l-en">One research report</span><span class="l-zh">一份研究报告</span></li>
+          <li><span class="l-en">Special situations</span><span class="l-zh">特殊事件</span> — <b><span class="l-en">the 3 newest filings</span><span class="l-zh">最新 3 份申报</span></b></li>
+          <li><span class="l-en">China special situations</span><span class="l-zh">中国特殊事件</span> — <b><span class="l-en">the full overhang read + the 3 nearest unlocks</span><span class="l-zh">完整压力概览 + 最近 3 笔解禁</span></b></li>
+          <li><span class="l-en">Committee &amp; brief — a teaser</span><span class="l-zh">委员会与简报 — 预览</span></li>
+          <li><span class="l-en">Mastermind chat</span><span class="l-zh">操盘大脑对话</span> — <b><span class="l-en">5 quick questions a week</span><span class="l-zh">每周 5 个快速提问</span></b></li>
+          <li><span class="l-en">Charts terminal</span><span class="l-zh">图表终端</span> — <b><span class="l-en">free for everyone</span><span class="l-zh">所有人免费</span></b></li>
+        </ul>
+        <button class="btn" data-act="free" type="button"><span class="btxt"><span class="l-en">Sign in — it’s free</span><span class="l-zh">登录 — 完全免费</span></span></button>
+        <p class="cta-note" id="free-note"><span class="l-en">Your current plan.</span><span class="l-zh">你当前的方案。</span></p>
+      </section>
 
-    
-    <section class="card pro" aria-label="Pro plan"
-             data-tier="pro" data-m-cents="14900" data-a-cents="130800"
-             data-m-pm="149" data-a-pm="109"
-             data-a-total="1308" data-save="27"
-             data-offer-key="founding_pro" data-offer-active="true"
-             data-offer-a-pm="75" data-offer-a-total="900"
-             data-offer-discount="31" data-offer-savings="408"
-             data-offer-cap="2000">
-      <div class="ribbon" data-offer-ribbon><span class="l-en">Founding Pro</span><span class="l-zh">Founding Pro</span></div>
-      <div class="tname"><span class="dot"></span>Pro</div>
-      <p class="tfor"><span class="l-en">Everything in Insider, plus the deep Opus chat lane for real research.</span><span class="l-zh">Insider 全部内容，另加用于深度研究的 Opus 对话通道。</span></p>
-      <div class="rack-price" data-offer-rack>
-        <span class="l-en">Regular Pro annual</span><span class="l-zh">Pro 常规年付</span>
-        <s>$109/<span class="l-en">mo</span><span class="l-zh">月</span></s>
-      </div>
-      <div class="price">
-        <span class="cur">$</span><span class="amt" data-price>75</span><span class="per">/<span class="l-en">mo</span><span class="l-zh">月</span></span>
-      </div>
-      <div class="billed">
-        <span data-billed><span class="l-en">Billed $900 a year.</span><span class="l-zh">每年结算 $900。</span></span>
-        <span class="badge-save" data-badge><span class="l-en">Founding Pro · save $408/year</span><span class="l-zh">Founding Pro · 每年省 $408</span></span>
-      </div>
-      <div class="founding-meter" data-offer-meter>
-        <div class="founding-line"><b><span class="l-en">Founding memberships</span><span class="l-zh">创始名额</span></b>
-          <span data-offer-count><span class="l-en">2,000 total — first come, first served</span><span class="l-zh">共 2,000 个，先到先得</span></span>
+      
+      <section class="tier" aria-label="Insider plan"
+               data-tier="insider" data-m-cents="9900" data-a-cents="90000"
+               data-m-pm="99" data-a-pm="75"
+               data-a-total="900" data-save="24">
+        <h3>Insider</h3>
+        <p class="who"><span class="l-en">The whole desk — every market, every heatmap, all the research.</span><span class="l-zh">完整桌面——所有市场、所有热力图、全部研究。</span></p>
+        <div class="price">
+          <span class="cur">$</span><span class="amt" data-price>75</span>
+          <span class="per" data-per><span class="l-en">/mo billed annually</span><span class="l-zh">/月 · 年付</span></span>
         </div>
-        <div class="founding-track" hidden role="progressbar" aria-label="Founding Pro memberships no longer available"
-             aria-valuemin="0" aria-valuemax="2000" aria-valuenow="0">
-          <div class="founding-fill" data-offer-fill></div>
+        <p class="bill" data-billed><span class="l-en">Billed $900 a year.</span><span class="l-zh">每年结算 $900。</span></p>
+        <span class="save-badge" data-badge><span class="l-en">SAVE 24% VS MONTHLY</span><span class="l-zh">比月付省 24%</span></span>
+        <ul class="tf">
+          <li><b><span class="l-en">All dashboards</span><span class="l-zh">所有仪表盘</span></b> — <span class="l-en">markets, desks, heatmaps, baskets, sectors, flow</span><span class="l-zh">市场、桌面、热力图、篮子、板块、资金流</span></li>
+          <li><b><span class="l-en">Every research report</span><span class="l-zh">全部研究报告</span></b> + <span class="l-en">the intelligence hub</span><span class="l-zh">情报中心</span></li>
+          <li><b><span class="l-en">The special situations desk</span><span class="l-zh">完整特殊事件交易台</span></b> — <span class="l-en">activist, M&amp;A, spin-offs, take-privates</span><span class="l-zh">维权、并购、分拆、私有化</span></li>
+          <li><b><span class="l-en">The China event desk</span><span class="l-zh">完整中国事件交易台</span></b> — <span class="l-en">every named unlock, inquiry letter, buyback and pledge risk</span><span class="l-zh">全部解禁、问询函、回购与质押风险个股</span></li>
+          <li><span class="l-en">Committee, brief &amp; track record</span><span class="l-zh">委员会、简报与业绩记录</span> — <span class="l-en">in full</span><span class="l-zh">完整版</span></li>
+          <li><span class="l-en">Mastermind chat</span><span class="l-zh">操盘大脑对话</span> — <b><span class="l-en">300 a month</span><span class="l-zh">每月 300 次</span></b></li>
+          <li><span class="l-en">Terminal live options</span><span class="l-zh">终端实时期权</span> — <b><span class="l-en">included</span><span class="l-zh">含</span></b></li>
+        </ul>
+        <button class="btn primary" data-act="subscribe" data-tier="insider" type="button"><span class="btxt"><span class="l-en">Start 7-day trial</span><span class="l-zh">开始 7 天试用</span></span></button>
+        <p class="cta-note"><span class="l-en">Card required · cancel anytime before day 7.</span><span class="l-zh">需绑卡 · 第 7 天前可随时取消。</span></p>
+      </section>
+
+      
+      <section class="tier hot" aria-label="Pro plan"
+               data-tier="pro" data-m-cents="14900" data-a-cents="130800"
+               data-m-pm="149" data-a-pm="109"
+               data-a-total="1308" data-save="27"
+               data-offer-key="founding_pro" data-offer-active="true"
+               data-offer-a-pm="75" data-offer-a-total="900"
+               data-offer-discount="31" data-offer-savings="408"
+               data-offer-cap="2000">
+        <span class="hot-tab" data-offer-ribbon><span class="l-en">Founding rate</span><span class="l-zh">创始会员价</span></span>
+        <h3>Pro</h3>
+        <p class="who"><span class="l-en">Everything in Insider, plus the deep Opus chat lane for real research.</span><span class="l-zh">Insider 全部内容，另加用于深度研究的 Opus 对话通道。</span></p>
+        <div class="price">
+          <span class="was" data-offer-rack>$109</span><span class="cur">$</span><span class="amt" data-price>75</span>
+          <span class="per" data-per><span class="l-en">/mo billed annually</span><span class="l-zh">/月 · 年付</span></span>
         </div>
-        <p class="founding-terms"><span class="l-en">The allotment shrinks daily · every Pro feature at the Insider annual price, $900/year locked in for as long as you stay.</span><span class="l-zh">名额每日递减 · 以 Insider 年付价格解锁 Pro 全部功能，只要不退订，$900/年 永久锁定。</span></p>
-      </div>
-      <div class="cta">
-        <button class="gbtn gbtn-lg gbtn-pill gbtn-cta" data-act="subscribe" data-tier="pro" type="button">
-          <span class="btxt"><span class="l-en">Start 7-day trial</span><span class="l-zh">开始 7 天试用</span></span>
-        </button>
-      </div>
-      <p class="cta-note"><span class="l-en">Card required · cancel anytime before day 7.</span><span class="l-zh">需绑卡 · 第 7 天前可随时取消。</span></p>
-      <ul class="feats">
-        <li class="on"><span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span><span><b><span class="l-en">Everything in Insider</span><span class="l-zh">Insider 全部内容</span></b></span></li>
-        <li class="on"><span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span><span><span class="l-en">Mastermind chat</span><span class="l-zh">操盘大脑对话</span> — <b><span class="l-en">1,000 a month</span><span class="l-zh">每月 1,000 次</span></b></span></li>
-        <li class="on"><span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span><span><b><span class="l-en">Deep Opus chat</span><span class="l-zh">深度 Opus 对话</span></b> — <span class="l-en">150 a month</span><span class="l-zh">每月 150 次</span></span></li>
-        <li class="on"><span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span><span><span class="l-en">Priority research answers</span><span class="l-zh">优先研究回答</span></span></li>
-        <li class="on"><span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span><span><span class="l-en">Terminal live options</span><span class="l-zh">终端实时期权</span> — <b><span class="l-en">included</span><span class="l-zh">含</span></b></span></li>
-      </ul>
-    </section>
+        <p class="bill" data-billed><span class="l-en">Billed $900 a year — the Insider annual price, for the Pro desk.</span><span class="l-zh">每年结算 $900——以 Insider 年付价格解锁 Pro 台席。</span></p>
+        <span class="save-badge" data-badge><span class="l-en">SAVE $408 A YEAR</span><span class="l-zh">每年省 $408</span></span>
+        <div class="founding" data-offer-meter>
+          <div class="founding-line"><b><span class="l-en">FOUNDING MEMBERSHIPS</span><span class="l-zh">创始名额</span></b>
+            <span class="fcount" data-offer-count><span class="l-en">2,000 total — first come, first served</span><span class="l-zh">共 2,000 个，先到先得</span></span>
+          </div>
+          <div class="founding-track" hidden role="progressbar" aria-label="Founding Pro memberships no longer available"
+               aria-valuemin="0" aria-valuemax="2000" aria-valuenow="0">
+            <span class="founding-fill" data-offer-fill></span>
+          </div>
+          <p class="founding-terms"><span class="l-en">The allotment shrinks daily · every Pro feature at the Insider annual price, locked in for as long as you stay.</span><span class="l-zh">名额每日递减 · 以 Insider 年付价格解锁 Pro 全部功能，只要不退订即永久锁定。</span></p>
+        </div>
+        <ul class="tf">
+          <li><b><span class="l-en">Everything in Insider</span><span class="l-zh">Insider 全部内容</span></b></li>
+          <li><span class="l-en">Mastermind chat</span><span class="l-zh">操盘大脑对话</span> — <b><span class="l-en">1,000 a month</span><span class="l-zh">每月 1,000 次</span></b></li>
+          <li><b><span class="l-en">Deep Opus chat</span><span class="l-zh">深度 Opus 对话</span></b> — <span class="l-en">150 a month</span><span class="l-zh">每月 150 次</span></li>
+          <li><span class="l-en">Priority research answers</span><span class="l-zh">优先研究回答</span></li>
+          <li><span class="l-en">Terminal live options</span><span class="l-zh">终端实时期权</span> — <b><span class="l-en">included</span><span class="l-zh">含</span></b></li>
+        </ul>
+        <button class="btn primary" data-act="subscribe" data-tier="pro" type="button"><span class="btxt"><span class="l-en">Try Pro free for 7 days</span><span class="l-zh">免费试用 Pro 7 天</span></span></button>
+        <p class="cta-note"><span class="l-en">Card required · cancel anytime before day 7.</span><span class="l-zh">需绑卡 · 第 7 天前可随时取消。</span></p>
+      </section>
 
-  </div>
+    </div>
 
-  
-  <section class="matrix-sec">
-    <div class="sec-head">
-      <h2><span class="l-en">Compare every line</span><span class="l-zh">逐项对比</span></h2>
-      <p><span class="l-en">What each plan actually unlocks — no asterisks.</span><span class="l-zh">每个方案实际解锁的内容——没有小字陷阱。</span></p>
-    </div><div class="mtx-shell scroll">
-      <table class="mtx">
+    <div class="matrix-card" data-plan="insider">
+      <div class="mx-mobile-head">
+        <p class="mx-mobile-label"><span class="l-en">Choose a plan to compare every feature</span><span class="l-zh">选择方案查看每项功能</span></p>
+        <div class="mx-plan-tabs" role="group" aria-label="Plan shown in feature comparison">
+          <button type="button" data-mx-plan="free" aria-pressed="false"><span><span class="l-en">Free</span><span class="l-zh">免费</span></span><small>$0</small></button>
+          <button type="button" data-mx-plan="insider" aria-pressed="true"><span>Insider</span><small data-mtx-mobile-price="insider">$75/<span class="l-en">mo</span><span class="l-zh">月</span></small></button>
+          <button type="button" data-mx-plan="pro" aria-pressed="false"><span>Pro</span><small data-mtx-mobile-price="pro">$75/<span class="l-en">mo</span><span class="l-zh">月</span></small></button>
+        </div>
+        <p class="mx-mobile-hint"><span class="l-en">Tap any feature marked ⓘ for a plain-language description.</span><span class="l-zh">点击带 ⓘ 的功能查看说明。</span></p>
+      </div>
+      <table class="mx" id="pricing-matrix" aria-label="Plan feature comparison">
         <thead>
           <tr>
-            <th class="col-feat"><span class="l-en">What you get</span><span class="l-zh">你能获得</span></th>
-            <th class="col-tier"><span class="th-tier th-free"><span class="tn"><span class="l-en">Free</span><span class="l-zh">免费</span></span><span class="tp">$0</span></span></th>
-            <th class="col-tier"><span class="th-tier th-insider"><span class="tn">Insider</span><span class="tp" data-mtx-price="insider">$75/mo</span></span></th>
-            <th class="col-tier col-pro"><span class="th-tier th-pro"><span class="tn">Pro</span><span class="tp" data-mtx-price="pro">$75/mo</span></span></th>
+            <th><span class="l-en">Compare every feature</span><span class="l-zh">逐项对比</span></th>
+            <th><span class="l-en">Free</span><span class="l-zh">免费</span><small>$0</small></th>
+            <th>Insider<small data-mtx-price="insider">$75/<span class="l-en">mo</span><span class="l-zh">月</span> <span class="l-en">annual</span><span class="l-zh">年付</span></small></th>
+            <th>Pro<small data-mtx-price="pro">$75/<span class="l-en">mo</span><span class="l-zh">月</span> <span class="l-en">annual</span><span class="l-zh">年付</span></small></th>
           </tr>
         </thead>
         <tbody>
+          <tr class="grp"><td colspan="4"><span class="l-en">DASHBOARDS &amp; DESKS</span><span class="l-zh">仪表盘与交易台</span></td></tr>
           <tr>
-            <td class="col-feat"><span class="rlabel"><span class="l-en">Dashboards</span><span class="l-zh">仪表盘</span></span><span class="rsub"><span class="l-en">markets, desks, heatmaps, baskets, sectors, options &amp; flow, smart-money, cycle</span><span class="l-zh">市场、桌面、热力图、篮子、板块、期权与资金流、聪明钱、周期</span></span></td>
-            <td class="col-tier"><span class="val val-muted"><span class="l-en">Sample only</span><span class="l-zh">仅样板</span></span></td>
-            <td class="col-tier"><span class="val"><span class="l-en">All markets &amp; desks</span><span class="l-zh">所有市场与桌面</span></span></td>
-            <td class="col-tier col-pro"><span class="val"><span class="l-en">Everything</span><span class="l-zh">全部</span></span></td>
+            <td class="feat has-tip"><span class="ft"><span class="l-en">Dashboards</span><span class="l-zh">仪表盘</span></span><span class="tipbox"><span class="l-en">Markets, desks, heatmaps, baskets, sectors, options &amp; flow, smart-money and cycle — rebuilt nightly.</span><span class="l-zh">市场、桌面、热力图、篮子、板块、期权与资金流、聪明钱与周期——每晚重建。</span></span></td>
+            <td class="val"><span class="l-en">Sample only</span><span class="l-zh">仅样板</span></td>
+            <td class="val"><span class="l-en">All markets &amp; desks</span><span class="l-zh">所有市场与桌面</span></td>
+            <td class="val"><span class="l-en">Everything</span><span class="l-zh">全部</span></td>
           </tr>
           <tr>
-            <td class="col-feat"><span class="rlabel"><span class="l-en">Research reports</span><span class="l-zh">研究报告</span></span><span class="rsub"><span class="l-en">state-of-themes + the intelligence hub</span><span class="l-zh">主题态势 + 情报中心</span></span></td>
-            <td class="col-tier"><span class="val val-muted"><span class="l-en">1 sample</span><span class="l-zh">1 份样板</span></span></td>
-            <td class="col-tier"><span class="val"><span class="l-en">All reports</span><span class="l-zh">全部报告</span></span></td>
-            <td class="col-tier col-pro"><span class="val"><span class="l-en">Everything</span><span class="l-zh">全部</span></span></td>
+            <td class="feat has-tip"><span class="ft"><span class="l-en">Research reports</span><span class="l-zh">研究报告</span></span><span class="tipbox"><span class="l-en">State-of-themes reports plus the intelligence hub.</span><span class="l-zh">主题态势报告与情报中心。</span></span></td>
+            <td class="val"><span class="l-en">1 sample</span><span class="l-zh">1 份样板</span></td>
+            <td class="val"><span class="l-en">All reports</span><span class="l-zh">全部报告</span></td>
+            <td class="val"><span class="l-en">Everything</span><span class="l-zh">全部</span></td>
           </tr>
           <tr>
-            <td class="col-feat"><span class="rlabel"><span class="l-en">Special situations desk</span><span class="l-zh">特殊事件交易台</span></span><span class="rsub"><span class="l-en">activist · M&amp;A · spin-offs · take-privates · tenders</span><span class="l-zh">维权 · 并购 · 分拆 · 私有化 · 要约</span></span></td>
-            <td class="col-tier"><span class="val val-muted"><span class="l-en">3 newest filings</span><span class="l-zh">最新 3 份申报</span></span></td>
-            <td class="col-tier"><span class="val"><span class="l-en">Whole board</span><span class="l-zh">完整看板</span></span></td>
-            <td class="col-tier col-pro"><span class="val"><span class="l-en">Whole board</span><span class="l-zh">完整看板</span></span></td>
+            <td class="feat has-tip"><span class="ft"><span class="l-en">Special situations desk</span><span class="l-zh">特殊事件交易台</span></span><span class="tipbox"><span class="l-en">Activist · M&amp;A · spin-offs · take-privates · tenders.</span><span class="l-zh">维权 · 并购 · 分拆 · 私有化 · 要约。</span></span></td>
+            <td class="val"><span class="l-en">3 newest filings</span><span class="l-zh">最新 3 份申报</span></td>
+            <td class="val"><span class="l-en">Whole board</span><span class="l-zh">完整看板</span></td>
+            <td class="val"><span class="l-en">Whole board</span><span class="l-zh">完整看板</span></td>
           </tr>
           <tr>
-            <td class="col-feat"><span class="rlabel"><span class="l-en">China special situations</span><span class="l-zh">中国特殊事件</span></span><span class="rsub"><span class="l-en">unlocks · inquiry letters · earnings previews · buybacks · pledge stress · block trades</span><span class="l-zh">解禁 · 问询函 · 业绩预告 · 回购 · 质押压力 · 大宗交易</span></span></td>
-            <td class="col-tier"><span class="val val-muted"><span class="l-en">All 7 gauges + 3 unlocks</span><span class="l-zh">全部 7 条线 + 3 笔解禁</span></span></td>
-            <td class="col-tier"><span class="val"><span class="l-en">Every name</span><span class="l-zh">全部个股</span></span></td>
-            <td class="col-tier col-pro"><span class="val"><span class="l-en">Every name</span><span class="l-zh">全部个股</span></span></td>
+            <td class="feat has-tip"><span class="ft"><span class="l-en">China special situations</span><span class="l-zh">中国特殊事件</span></span><span class="tipbox"><span class="l-en">Unlocks · inquiry letters · earnings previews · buybacks · pledge stress · block trades.</span><span class="l-zh">解禁 · 问询函 · 业绩预告 · 回购 · 质押压力 · 大宗交易。</span></span></td>
+            <td class="val"><span class="l-en">All 7 gauges + 3 unlocks</span><span class="l-zh">全部 7 条线 + 3 笔解禁</span></td>
+            <td class="val"><span class="l-en">Every name</span><span class="l-zh">全部个股</span></td>
+            <td class="val"><span class="l-en">Every name</span><span class="l-zh">全部个股</span></td>
           </tr>
           <tr>
-            <td class="col-feat"><span class="rlabel"><span class="l-en">Committee, brief &amp; track record</span><span class="l-zh">委员会、简报与业绩记录</span></span></td>
-            <td class="col-tier"><span class="val val-muted"><span class="l-en">Teaser</span><span class="l-zh">预览</span></span></td>
-            <td class="col-tier"><span class="yes"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span></td>
-            <td class="col-tier col-pro"><span class="yes"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span></td>
+            <td class="feat"><span class="ft"><span class="l-en">Committee, brief &amp; track record</span><span class="l-zh">委员会、简报与业绩记录</span></span></td>
+            <td class="val"><span class="l-en">Teaser</span><span class="l-zh">预览</span></td>
+            <td class="ok">✓</td>
+            <td class="ok">✓</td>
+          </tr>
+
+          <tr class="grp"><td colspan="4">MASTERMIND AI</td></tr>
+          <tr>
+            <td class="feat has-tip"><span class="ft"><span class="l-en">Mastermind chat</span><span class="l-zh">操盘大脑对话</span></span><span class="tipbox"><span class="l-en">The fast lane — quick market questions, answered on any page.</span><span class="l-zh">快速通道——在任意页面提出快速市场问题。</span></span></td>
+            <td class="val">5<small>/ <span class="l-en">week</span><span class="l-zh">周</span></small></td>
+            <td class="val">300<small>/ <span class="l-en">mo</span><span class="l-zh">月</span></small></td>
+            <td class="val">1,000<small>/ <span class="l-en">mo</span><span class="l-zh">月</span></small></td>
           </tr>
           <tr>
-            <td class="col-feat"><span class="rlabel"><span class="l-en">Mastermind chat</span><span class="l-zh">操盘大脑对话</span></span><span class="rsub"><span class="l-en">fast lane — quick market questions</span><span class="l-zh">快速通道——快速市场提问</span></span></td>
-            <td class="col-tier"><span class="val"><span class="num">5</span> <span class="val-muted">/ <span class="l-en">week</span><span class="l-zh">周</span></span></span></td>
-            <td class="col-tier"><span class="val"><span class="num">300</span> <span class="val-muted">/ <span class="l-en">mo</span><span class="l-zh">月</span></span></span></td>
-            <td class="col-tier col-pro"><span class="val"><span class="num">1,000</span> <span class="val-muted">/ <span class="l-en">mo</span><span class="l-zh">月</span></span></span></td>
+            <td class="feat has-tip"><span class="ft"><span class="l-en">Deep Opus chat</span><span class="l-zh">深度 Opus 对话</span></span><span class="mchip">Insider</span><span class="tipbox"><span class="l-en">The heavyweight research lane — long answers with receipts.</span><span class="l-zh">重量级研究通道——附出处的长篇分析。</span></span></td>
+            <td class="no">✗</td>
+            <td class="val">10<small>/ <span class="l-en">mo</span><span class="l-zh">月</span></small></td>
+            <td class="val">150<small>/ <span class="l-en">mo</span><span class="l-zh">月</span></small></td>
+          </tr>
+
+          <tr class="grp"><td colspan="4">TERMINAL</td></tr>
+          <tr>
+            <td class="feat has-tip"><span class="ft"><span class="l-en">Charts terminal</span><span class="l-zh">图表终端</span></span><span class="tipbox up"><span class="l-en">Live charting in the browser — nothing to install, free for everyone.</span><span class="l-zh">浏览器内实时图表——无需安装，所有人免费。</span></span></td>
+            <td class="val"><span class="l-en">Free</span><span class="l-zh">免费</span></td>
+            <td class="ok">✓</td>
+            <td class="ok">✓</td>
           </tr>
           <tr>
-            <td class="col-feat"><span class="rlabel"><span class="l-en">Deep Opus chat</span><span class="l-zh">深度 Opus 对话</span></span><span class="rsub"><span class="l-en">the heavyweight research lane</span><span class="l-zh">重量级研究通道</span></span></td>
-            <td class="col-tier"><span class="dash">—</span></td>
-            <td class="col-tier"><span class="val"><span class="num">10</span> <span class="val-muted">/ <span class="l-en">mo</span><span class="l-zh">月</span></span></span></td>
-            <td class="col-tier col-pro"><span class="val"><span class="num">150</span> <span class="val-muted">/ <span class="l-en">mo</span><span class="l-zh">月</span></span></span></td>
+            <td class="feat has-tip"><span class="ft"><span class="l-en">Terminal live options</span><span class="l-zh">终端实时期权</span></span><span class="mchip">Insider</span><span class="tipbox up"><span class="l-en">Live options data inside the terminal — included during the trial too.</span><span class="l-zh">终端内的实时期权数据——试用期同样包含。</span></span></td>
+            <td class="no">✗</td>
+            <td class="val"><span class="l-en">Included</span><span class="l-zh">含</span><small>(<span class="l-en">trial too</span><span class="l-zh">试用期也含</span>)</small></td>
+            <td class="val"><span class="l-en">Included</span><span class="l-zh">含</span><small>(<span class="l-en">trial too</span><span class="l-zh">试用期也含</span>)</small></td>
           </tr>
+
+          <tr class="grp"><td colspan="4"><span class="l-en">GETTING STARTED</span><span class="l-zh">开始使用</span></td></tr>
           <tr>
-            <td class="col-feat"><span class="rlabel"><span class="l-en">Charts terminal</span><span class="l-zh">图表终端</span></span></td>
-            <td class="col-tier"><span class="val"><span class="l-en">Free</span><span class="l-zh">免费</span></span></td>
-            <td class="col-tier"><span class="yes"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span></td>
-            <td class="col-tier col-pro"><span class="yes"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span></td>
-          </tr>
-          <tr>
-            <td class="col-feat"><span class="rlabel"><span class="l-en">Terminal live options</span><span class="l-zh">终端实时期权</span></span></td>
-            <td class="col-tier"><span class="dash">—</span></td>
-            <td class="col-tier"><span class="val"><span class="l-en">Included</span><span class="l-zh">含</span> <span class="val-muted">(<span class="l-en">trial too</span><span class="l-zh">试用期也含</span>)</span></span></td>
-            <td class="col-tier col-pro"><span class="val"><span class="l-en">Included</span><span class="l-zh">含</span> <span class="val-muted">(<span class="l-en">trial too</span><span class="l-zh">试用期也含</span>)</span></span></td>
-          </tr>
-          <tr>
-            <td class="col-feat"><span class="rlabel"><span class="l-en">Free trial</span><span class="l-zh">免费试用</span></span></td>
-            <td class="col-tier"><span class="dash">—</span></td>
-            <td class="col-tier"><span class="val"><b>7-<span class="l-en">day</span><span class="l-zh">天</span></b> <span class="val-muted">· <span class="l-en">card required</span><span class="l-zh">需绑卡</span></span></span></td>
-            <td class="col-tier col-pro"><span class="val"><b>7-<span class="l-en">day</span><span class="l-zh">天</span></b> <span class="val-muted">· <span class="l-en">card required</span><span class="l-zh">需绑卡</span></span></span></td>
+            <td class="feat"><span class="ft"><span class="l-en">Free trial</span><span class="l-zh">免费试用</span></span><span class="mchip">Insider</span></td>
+            <td class="no">✗</td>
+            <td class="val">7-<span class="l-en">day</span><span class="l-zh">天</span><small><span class="l-en">card required</span><span class="l-zh">需绑卡</span></small></td>
+            <td class="val">7-<span class="l-en">day</span><span class="l-zh">天</span><small><span class="l-en">card required</span><span class="l-zh">需绑卡</span></small></td>
           </tr>
         </tbody>
       </table>
@@ -369,7 +356,7 @@
           <a href="products/market-terminal.html"><span class="l-en">Market Terminal</span><span class="l-zh">市场终端</span></a>
           <a href="products/mastermind-ai.html">Mastermind AI</a>
           <a href="products/market-dashboards.html"><span class="l-en">Market dashboards</span><span class="l-zh">市场仪表盘</span></a>
-          <a href="plans.html"><span class="l-en">Plans &amp;amp; pricing</span><span class="l-zh">方案与定价</span></a>
+          <a href="plans.html"><span class="l-en">Plans &amp; pricing</span><span class="l-zh">方案与定价</span></a>
         </div>
         <div class="f-col">
           <p><span class="l-en">Research</span><span class="l-zh">研究</span></p>
@@ -499,7 +486,7 @@
 
   function paintPrices() {
     var annual = interval === 'annual';
-    $$('.card[data-tier]').forEach(function (card) {
+    $$('.tier[data-tier]').forEach(function (card) {
       var mPm = card.getAttribute('data-m-pm'), aPm = card.getAttribute('data-a-pm');
       var aTot = card.getAttribute('data-a-total'), save = card.getAttribute('data-save');
       var offerOn = annual && card.getAttribute('data-offer-active') === 'true';
@@ -508,6 +495,7 @@
         aTot = card.getAttribute('data-offer-a-total') || aTot;
       }
       var priceEl = $('[data-price]', card), billedEl = $('[data-billed]', card), badgeEl = $('[data-badge]', card);
+      var perEl = $('[data-per]', card);
       if (priceEl) {
         priceEl.style.opacity = '0';
         setTimeout(function () { priceEl.textContent = annual ? aPm : mPm; priceEl.style.opacity = '1'; }, 90);
@@ -515,32 +503,40 @@
       if (billedEl) {
         billedEl.innerHTML = annual
           ? '<span class="l-en">Billed $' + aTot + ' a year.</span><span class="l-zh">每年结算 $' + aTot + '。</span>'
-          : '<span class="l-en">Billed monthly.</span><span class="l-zh">按月结算。</span>';
+          : '<span class="l-en">Billed monthly — cancel anytime.</span><span class="l-zh">按月结算——随时取消。</span>';
+      }
+      if (perEl) {
+        perEl.innerHTML = annual
+          ? '<span class="l-en">/mo billed annually</span><span class="l-zh">/月 · 年付</span>'
+          : '<span class="l-en">/mo billed monthly</span><span class="l-zh">/月 · 月付</span>';
       }
       if (badgeEl) {
         badgeEl.classList.toggle('hidden', !annual);
         badgeEl.innerHTML = offerOn
-          ? '<span class="l-en">Founding Pro · save $' + card.getAttribute('data-offer-savings') + '/year</span><span class="l-zh">Founding Pro · 每年省 $' + card.getAttribute('data-offer-savings') + '</span>'
-          : '<span class="l-en">save ' + save + '%</span><span class="l-zh">省 ' + save + '%</span>';
+          ? '<span class="l-en">SAVE $' + card.getAttribute('data-offer-savings') + ' A YEAR</span><span class="l-zh">每年省 $' + card.getAttribute('data-offer-savings') + '</span>'
+          : '<span class="l-en">SAVE ' + save + '% VS MONTHLY</span><span class="l-zh">比月付省 ' + save + '%</span>';
       }
       var rackEl = $('[data-offer-rack]', card), meterEl = $('[data-offer-meter]', card);
       if (rackEl) rackEl.classList.toggle('hidden', !offerOn);
       if (meterEl) meterEl.classList.toggle('hidden', !offerOn);
       var ribbonEl = $('[data-offer-ribbon]', card);
       if (ribbonEl) ribbonEl.innerHTML = offerOn
-        ? '<span class="l-en">Founding Pro</span><span class="l-zh">Founding Pro</span>'
+        ? '<span class="l-en">Founding rate</span><span class="l-zh">创始会员价</span>'
         : '<span class="l-en">Most complete</span><span class="l-zh">最完整</span>';
     });
     /* matrix header prices track the toggle too */
-    $$('[data-mtx-price]').forEach(function (el) {
-      var tier = el.getAttribute('data-mtx-price');
-      var card = $('.card[data-tier="' + tier + '"]');
+    $$('[data-mtx-price],[data-mtx-mobile-price]').forEach(function (el) {
+      var mobile = el.hasAttribute('data-mtx-mobile-price');
+      var tier = el.getAttribute(mobile ? 'data-mtx-mobile-price' : 'data-mtx-price');
+      var card = $('.tier[data-tier="' + tier + '"]');
       if (!card) return;
       var pm = annual ? card.getAttribute('data-a-pm') : card.getAttribute('data-m-pm');
       if (annual && card.getAttribute('data-offer-active') === 'true') {
         pm = card.getAttribute('data-offer-a-pm') || pm;
       }
-      el.textContent = '$' + pm + '/mo';
+      var mo = zh() ? '月' : 'mo';
+      el.textContent = mobile ? '$' + pm + '/' + mo
+        : '$' + pm + '/' + mo + ' ' + (annual ? (zh() ? '年付' : 'annual') : (zh() ? '月付' : 'monthly'));
     });
     if (note) {
       note.innerHTML = annual
@@ -564,10 +560,56 @@
     setInterval_('annual'); /* establish annual-default state on load */
   }
 
+  /* ── mobile matrix: one readable plan column + tap-to-expand mechanics ──
+     Wide tables do not survive a phone. Under 760px the matrix collapses to a
+     single plan column chosen by these tabs, and the hover tipbox (a cursor
+     affordance that does not exist on touch) becomes a tap-to-expand row. */
+  (function () {
+    var card = $('.matrix-card');
+    if (!card) return;
+    var planButtons = $$('[data-mx-plan]', card);
+    var tipCells = $$('td.feat.has-tip', card);
+    var mobile = window.matchMedia('(max-width:760px)');
+
+    planButtons.forEach(function (button) {
+      button.addEventListener('click', function () {
+        card.setAttribute('data-plan', button.getAttribute('data-mx-plan'));
+        planButtons.forEach(function (item) {
+          item.setAttribute('aria-pressed', String(item === button));
+        });
+      });
+    });
+
+    function closeTips(except) {
+      tipCells.forEach(function (cell) { if (cell !== except) cell.classList.remove('tip-open'); });
+    }
+    tipCells.forEach(function (cell) {
+      cell.setAttribute('tabindex', '0');
+      cell.addEventListener('click', function () {
+        if (!mobile.matches) return;
+        var open = cell.classList.contains('tip-open');
+        closeTips(cell);
+        cell.classList.toggle('tip-open', !open);
+      });
+      cell.addEventListener('keydown', function (e) {
+        if (!mobile.matches) return;
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        e.preventDefault();
+        var open = cell.classList.contains('tip-open');
+        closeTips(cell);
+        cell.classList.toggle('tip-open', !open);
+      });
+    });
+    /* leaving the mobile breakpoint must not strand an expanded row open */
+    var onChange = function () { if (!mobile.matches) closeTips(null); };
+    if (mobile.addEventListener) mobile.addEventListener('change', onChange);
+    else if (mobile.addListener) mobile.addListener(onChange);
+  })();
+
   /* The API reports Stripe redemptions plus the operator's enforced daily withdrawal of
      the founding allotment (app/billing.py) — checkout gates on the same numbers, so the
      availability shown here is always a true claim. Never synthesize numbers client-side. */
-  var foundingCard = $('.card[data-offer-key]');
+  var foundingCard = $('.tier[data-offer-key]');
   if (foundingCard) {
     var offerKey = foundingCard.getAttribute('data-offer-key');
     fetch(API + '/api/billing/offers/' + encodeURIComponent(offerKey), { cache: 'no-store' })
