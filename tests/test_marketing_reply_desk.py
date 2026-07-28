@@ -82,13 +82,25 @@ def critic_ctx(cfg: dict) -> dict:
     }
 
 
+def _pass_stamp() -> dict:
+    """A stamp from a real full critic pass, not a hand-written literal."""
+    return rc.stamp({
+        "verdict": "pass",
+        "rejected_by": [],
+        "critics": [{"critic": name, "verdict": "pass", "reasons": []}
+                    for name in rc.CRITICS],
+    })
+
+
 def _item(account: str = "kelly", thread: str = THREAD, draft: str = CLEAN_DRAFT,
-          tier: str = "relationship", ttl_min: int = 45, now: datetime = NOW) -> dict:
+          tier: str = "relationship", ttl_min: int = 45, now: datetime = NOW,
+          critics: dict | None = -1) -> dict:  # type: ignore[assignment]
     return rq.make_item(
         account=account,
         target_url=f"https://x.com/somequant/status/{thread}",
         parent_author="somequant", parent_excerpt=PARENT, draft=draft,
         tier=tier, score=0.8, score_components={"author_tier": 0.26},
+        critics=_pass_stamp() if critics == -1 else critics,
         ttl_min=ttl_min, now=now,
     )
 
@@ -348,6 +360,104 @@ class TestDiscoveryFairness:
         provider.fetch(session_state={}, now=NOW)
         assert any(ln.startswith("::warning title=reply-discovery-tick-cap::")
                    for ln in capsys.readouterr().out.splitlines())
+
+    def test_the_cursor_advances_by_desks_covered_not_by_one(self, monkeypatch):
+        """m5 — advancing by one re-polls the same head every tick whenever a
+        tick covers several desks, so the tail still starves, just slower."""
+        provider, seen = self._provider(monkeypatch, ["a", "b", "c", "d"], cap=6)
+        state: dict = {}
+        provider.fetch(session_state=state, now=NOW)   # covers a, b (3 authors each)
+        first = {h[0] for h in seen}
+        assert state[rd.STATE_NS]["rotation"] == len(first) % 4
+
+        seen.clear()
+        provider.fetch(session_state=state, now=NOW)
+        second = {h[0] for h in seen}
+        assert not (first & second), f"tick 2 re-polled {first & second}"
+
+
+class TestUnknownResponseShapeIsAnnounced:
+    """m4 — an unparseable envelope bills at the floor and counts ZERO items,
+    which is how a renamed response key becomes a silent under-read of the very
+    counter this lane's budget depends on."""
+
+    def test_an_unrecognised_shape_warns(self, monkeypatch, capsys):
+        monkeypatch.setenv("TWITTERAPI_IO_KEY", "test-key")
+        provider = rd.ReplyDiscoveryProvider(
+            {}, sub_cap_usd=15.0, global_cap_usd=75.0,
+            register={"accounts": {"kelly": {"authors": [
+                {"handle": "a", "tier": "relationship"}]}}})
+        monkeypatch.setattr(provider, "_request",
+                            lambda *a, **k: {"posts": [{"id": "1"}], "next": None})
+        provider.fetch(session_state={}, now=NOW)
+        assert any(ln.startswith("::warning title=reply-discovery-shape::")
+                   for ln in capsys.readouterr().out.splitlines())
+
+    def test_a_genuinely_empty_page_does_not_warn(self, monkeypatch, capsys):
+        monkeypatch.setenv("TWITTERAPI_IO_KEY", "test-key")
+        provider = rd.ReplyDiscoveryProvider(
+            {}, sub_cap_usd=15.0, global_cap_usd=75.0,
+            register={"accounts": {"kelly": {"authors": [
+                {"handle": "a", "tier": "relationship"}]}}})
+        monkeypatch.setattr(provider, "_request", lambda *a, **k: {"tweets": []})
+        provider.fetch(session_state={}, now=NOW)
+        assert not any("reply-discovery-shape" in ln
+                       for ln in capsys.readouterr().out.splitlines())
+
+    def test_poll_outcomes_honours_the_shared_bucket_stop(self, monkeypatch, capsys):
+        """M5 — telemetry polling must not reopen the $90-against-$75 shape."""
+        monkeypatch.setenv("TWITTERAPI_IO_KEY", "test-key")
+        provider = rd.ReplyDiscoveryProvider({}, sub_cap_usd=15.0, global_cap_usd=75.0)
+        monkeypatch.setattr(provider, "_request",
+                            lambda *a, **k: pytest.fail("must not spend past the bucket"))
+        month = NOW.strftime("%Y-%m")
+        state = {"twitterapiio": {"spend": {month: {"usd": 75.0}}}}
+        assert provider.poll_outcomes(session_state=state, status_ids=["1"], now=NOW) == []
+        assert any(ln.startswith("::warning title=reply-discovery-bucket::")
+                   for ln in capsys.readouterr().out.splitlines())
+
+
+class TestSilencedVersusSpentCap:
+    """m3 — they read the same to a caller checking ok=False, but need opposite
+    receipt handling: a spent cap clears at midnight, a silenced account never
+    does on its own."""
+
+    def test_a_silenced_account_reports_account_silenced(self, store, m1_cfg):
+        cfg = json.loads(json.dumps(m1_cfg))
+        cfg["reply_desk"]["daily_caps"]["accounts"] = {"kelly": None}
+        gate = rq.may_send("kelly", cfg=cfg, root=store, now=NOW)
+        assert gate["ok"] is False and gate["reason"] == "account_silenced"
+
+    def test_m0_reports_draft_only(self, store, cfg):
+        gate = rq.may_send("kelly", cfg=cfg, root=store, now=NOW)
+        assert gate["reason"] == "mode_m0_draft_only"
+
+    def test_a_spent_cap_reports_reply_cap_daily(self, store, m1_cfg):
+        cfg = json.loads(json.dumps(m1_cfg))
+        cfg["reply_desk"]["daily_caps"]["accounts"] = {"kelly": 1}
+        item = _item()
+        rq.enqueue(item, store)
+        _advance_to_claimed(item["id"], store)
+        rq.mark_sent(item["id"], receipt={"url": "u"}, root=store, cfg=cfg, now=NOW)
+        gate = rq.may_send("kelly", cfg=cfg, root=store, now=NOW)
+        assert gate["reason"] == "reply_cap_daily"
+
+    def test_a_silenced_accounts_receipt_is_parked_not_retained(self, store, m1_cfg):
+        """Retaining it would warn on every sweep forever with nothing an
+        operator could do about it."""
+        cfg = json.loads(json.dumps(m1_cfg))
+        cfg["reply_desk"]["daily_caps"]["accounts"] = {"kelly": None}
+        item = _item()
+        rq.enqueue(item, store)
+        _advance_to_claimed(item["id"], store)
+        rx.receipts_dir(store).mkdir(parents=True, exist_ok=True)
+        path = rx.receipts_dir(store) / f"{item['id']}.json"
+        path.write_text(json.dumps({"id": item["id"], "url": "u", "screenshot": "s"}),
+                        encoding="utf-8")
+        result = rx.ingest_receipts(cfg=cfg, root=store, now=NOW)
+        assert result["refused"][0]["reason"] == "account_silenced"
+        assert path.with_suffix(".unresolved").exists()
+        assert rx.ingest_receipts(cfg=cfg, root=store, now=NOW)["refused"] == []
 
     def test_sub_cap_exhaustion_stops_reply_polling(self, monkeypatch, capsys):
         """GATE fixture, half 1: at its own sub-cap, reply discovery stops."""
@@ -1023,6 +1133,198 @@ class TestReplyQueueStore:
         assert rq.enqueue(item, store)["reason"] == "duplicate"
 
 
+class TestCriticStampIsStructural:
+    """M1 — the runbook tells the operator every draft cleared eight critics.
+
+    That was a claim about a PRODUCER, and the producer (discovery -> score ->
+    draft -> critics -> enqueue) is not built in this wave. Enforcing the stamp
+    at the STORE makes the claim true for anything that ever reaches the desktop
+    lane, whoever built it and whenever that lands.
+    """
+
+    def test_an_unstamped_item_cannot_be_enqueued(self, store):
+        item = _item(critics=None)
+        result = rq.enqueue(item, store)
+        assert result["ok"] is False and result["reason"] == "invalid"
+        assert any("critics" in e for e in result["errors"])
+        assert rq.read_items(store) == []
+
+    def test_a_rejected_verdict_cannot_be_enqueued(self, store):
+        stamp = rc.stamp({
+            "verdict": "reject", "rejected_by": ["dignity"],
+            "critics": [{"critic": n, "verdict": "pass", "reasons": []} for n in rc.CRITICS],
+        })
+        result = rq.enqueue(_item(critics=stamp), store)
+        assert result["ok"] is False
+        assert any("verdict must be 'pass'" in e for e in result["errors"])
+
+    def test_a_hand_written_pass_does_not_satisfy_the_gate(self, store):
+        """Forging the verdict is not enough — the roster must have run."""
+        result = rq.enqueue(_item(critics={"verdict": "pass"}), store)
+        assert result["ok"] is False
+        assert any("schema" in e for e in result["errors"])
+
+    def test_a_partial_pass_is_refused(self, store):
+        partial = rc.stamp({
+            "verdict": "pass", "rejected_by": [],
+            "critics": [{"critic": n, "verdict": "pass", "reasons": []}
+                        for n in list(rc.CRITICS)[:4]],
+        })
+        result = rq.enqueue(_item(critics=partial), store)
+        assert result["ok"] is False
+        assert any("did not all run" in e for e in result["errors"])
+
+    def test_screen_produces_a_stamp_the_queue_accepts(self, store, critic_ctx):
+        """End to end on the REAL critic pass, not a fabricated stamp."""
+        verdict, stamp = rc.screen(CLEAN_DRAFT, critic_ctx)
+        assert verdict["verdict"] == "pass"
+        assert rq.enqueue(_item(critics=stamp), store)["ok"] is True
+
+    def test_screen_on_a_bad_draft_produces_a_stamp_the_queue_refuses(self, store, critic_ctx):
+        _, stamp = rc.screen("Our validated read.", critic_ctx)
+        assert rq.enqueue(_item(critics=stamp), store)["ok"] is False
+
+    def test_every_stored_item_carries_a_passing_stamp(self, store):
+        """The invariant stated positively: nothing in the store lacks one."""
+        rq.enqueue(_item(), store)
+        rq.enqueue(_item(thread="1900000000000000950", draft="Another 12.5%."), store)
+        for item in rq.read_items(store):
+            assert rq.validate_critic_stamp(item) == []
+
+    def test_the_producer_chain_is_documented_as_absent(self):
+        """Pins the honesty claim. No production module calls `enqueue`, so the
+        queue does not fill on its own in this wave — the runbook and the module
+        docstring both say so, and the store-side stamp is what makes the safety
+        claim true anyway.
+
+        When XG-W6 wires the producer this test FAILS, which is the point: the
+        docs saying "not built yet" must be updated in the same change.
+        """
+        import ast
+
+        callers: list[str] = []
+        for directory in ("engine", "scripts", "admin", "app", "lib"):
+            base = ROOT / directory
+            if not base.is_dir():
+                continue
+            for path in base.rglob("*.py"):
+                if path.name == "reply_queue.py":
+                    continue  # the definition site
+                try:
+                    src = path.read_text(encoding="utf-8")
+                except OSError:
+                    continue
+                # Scope to modules that actually bind the reply queue —
+                # `outbox.enqueue` is a different function on a different rail.
+                if "reply_queue" not in src:
+                    continue
+                try:
+                    tree = ast.parse(src)
+                except SyntaxError:
+                    continue
+                aliases = {"reply_queue"}
+                for node in ast.walk(tree):
+                    if isinstance(node, ast.ImportFrom) and node.module and \
+                            node.module.endswith("marketing"):
+                        aliases |= {a.asname or a.name for a in node.names
+                                    if a.name == "reply_queue"}
+                for node in ast.walk(tree):
+                    if (isinstance(node, ast.Call)
+                            and getattr(node.func, "attr", None) == "enqueue"
+                            and getattr(node.func.value, "id", None) in aliases):
+                        callers.append(f"{path.relative_to(ROOT)}:{node.lineno}")
+        assert callers == [], (
+            f"a producer now calls enqueue ({callers}) — update the 'not built "
+            "yet' notes in docs/reply_desk_runbook.md §9 and reply_queue's docstring")
+
+    def test_the_docs_name_the_wave_that_builds_the_producer(self):
+        runbook = (ROOT / "docs" / "reply_desk_runbook.md").read_text(encoding="utf-8")
+        assert "producer chain" in runbook.lower()
+        assert "XG-W6" in runbook
+        src = (ROOT / "engine" / "marketing" / "reply_queue.py").read_text(encoding="utf-8")
+        assert "XG-W6" in src
+
+
+class TestZeroCrossAccountEngagement:
+    """M4 — the fleet-linkage hard law, in code rather than in the runbook.
+
+    It is the STRONGER of the two coordination rules; the weaker
+    one-conversation-one-owner rule already has a hard lock, so leaving this one
+    to operator discipline was backwards.
+    """
+
+    def test_replying_to_our_own_account_is_rejected(self, critic_ctx, cfg):
+        ctx = {**critic_ctx, "parent_author": "mastermindkelly",
+               "our_handles": rc.our_handles(cfg)}
+        verdict = rc.run_critics(CLEAN_DRAFT, ctx)
+        assert "blocklist" in verdict["rejected_by"]
+        assert any("cross-account" in r for r in verdict["reasons"])
+
+    def test_an_ancestor_author_in_the_thread_is_rejected(self, critic_ctx, cfg):
+        ctx = {**critic_ctx, "parent_author": "someoutsider",
+               "thread_authors": ["someoneelse", "mastermindcici"],
+               "our_handles": rc.our_handles(cfg)}
+        assert "blocklist" in rc.run_critics(CLEAN_DRAFT, ctx)["rejected_by"]
+
+    def test_an_outsider_thread_still_passes(self, critic_ctx, cfg):
+        ctx = {**critic_ctx, "parent_author": "someoutsider",
+               "thread_authors": ["anotheroutsider"],
+               "our_handles": rc.our_handles(cfg)}
+        assert rc.run_critics(CLEAN_DRAFT, ctx)["verdict"] == "pass"
+
+    def test_our_handles_covers_every_desk_including_dark_ones(self, cfg):
+        handles = {h.lower() for h in rc.our_handles(cfg)}
+        for handle in ("mastermindx001", "w_chris6031", "meagmastermind",
+                       "sophmastermind", "mastermindkelly", "mastermindcici"):
+            assert handle in handles
+        # mastermind_news is wired-but-dark; replying to it is the same signal.
+        assert "mastermindnews1" in handles
+
+    def test_the_law_is_case_and_at_insensitive(self, critic_ctx, cfg):
+        ctx = {**critic_ctx, "parent_author": "@MastermindKelly",
+               "our_handles": rc.our_handles(cfg)}
+        assert rc.blocklist(CLEAN_DRAFT, ctx)["verdict"] == "reject"
+
+
+class TestExpiredItemsAreUnclaimable:
+    """M3 — an item expiring between the sweep and the claim would otherwise be
+    sent stale AND become permanently unexpirable, since `claimed` is (rightly)
+    not expirable."""
+
+    def test_claim_refuses_an_expired_item(self, store):
+        item = _item(ttl_min=10)
+        rq.enqueue(item, store)
+        rq.approve(item["id"], root=store)
+        assert rq.claim(item["id"], holder="d", root=store,
+                        now=NOW + timedelta(minutes=30)) is None
+        assert rq.fold_state(store)["status"][item["id"]] == "approved"
+
+    def test_the_item_remains_expirable_after_the_refused_claim(self, store):
+        item = _item(ttl_min=10)
+        rq.enqueue(item, store)
+        rq.approve(item["id"], root=store)
+        rq.claim(item["id"], holder="d", root=store, now=NOW + timedelta(minutes=30))
+        assert rq.expire_due(now=NOW + timedelta(minutes=31), root=store) == [item["id"]]
+
+    def test_a_live_item_is_still_claimable(self, store):
+        item = _item(ttl_min=45)
+        rq.enqueue(item, store)
+        rq.approve(item["id"], root=store)
+        assert rq.claim(item["id"], holder="d", root=store,
+                        now=NOW + timedelta(minutes=5)) is not None
+
+    def test_claim_for_desktop_is_behind_the_dial(self, store, cfg, m1_cfg):
+        """M0 must export NOTHING — including a claim file."""
+        item = _item()
+        rq.enqueue(item, store)
+        rq.approve(item["id"], root=store)
+        assert rx.claim_for_desktop(item["id"], holder="d", cfg=cfg,
+                                    root=store, now=NOW) is None
+        assert not (rx.claims_dir(store) / f"{item['id']}.json").exists()
+        assert rx.claim_for_desktop(item["id"], holder="d", cfg=m1_cfg,
+                                    root=store, now=NOW) is not None
+
+
 class TestOneConversationOneOwner:
     def test_a_second_desk_cannot_take_an_owned_thread(self, store):
         assert rq.enqueue(_item(account="kelly"), store)["ok"]
@@ -1285,7 +1587,10 @@ class TestCrossMidnightCap:
         assert rq.mark_sent(fresh["id"], receipt={"url": "u"}, root=store,
                             cfg=cfg, now=send_day)["ok"] is True
 
-        stale = _item(thread="1900000000000000601", draft="Yesterday 12.5%.", now=NOW)
+        # Long TTL so the item is still LIVE on the send day — this test is
+        # about the cap's day arithmetic, not about expiry.
+        stale = _item(thread="1900000000000000601", draft="Yesterday 12.5%.",
+                      now=NOW, ttl_min=48 * 60)
         rq.enqueue(stale, store)
         _advance_to_claimed(stale["id"], store, now=send_day)
         result = rq.mark_sent(stale["id"], receipt={"url": "u"}, root=store,
@@ -1475,8 +1780,14 @@ class TestReceiptIngest:
         assert rq.sends_today("kelly", "2026-07-28", store) == 1
 
     def test_a_receipt_beyond_the_cap_is_refused_loudly(self, store, m1_cfg, capsys):
+        """A SPENT cap (not a silenced account) — the retryable case."""
         cfg = json.loads(json.dumps(m1_cfg))
-        cfg["reply_desk"]["daily_caps"]["accounts"] = {"kelly": 0}
+        cfg["reply_desk"]["daily_caps"]["accounts"] = {"kelly": 1}
+        spent = _item(thread="1900000000000000800", draft="Spent the cap 12.5%.")
+        rq.enqueue(spent, store)
+        _advance_to_claimed(spent["id"], store)
+        rq.mark_sent(spent["id"], receipt={"url": "u"}, root=store, cfg=cfg, now=NOW)
+
         item = _item()
         rq.enqueue(item, store)
         _advance_to_claimed(item["id"], store)
@@ -1669,10 +1980,12 @@ class TestExportCapEnforcement:
         cfg["reply_desk"]["daily_caps"]["accounts"] = {"kelly": 1}
         low = rq.make_item(account="kelly", target_url="https://x.com/a/status/1900000000000000500",
                            parent_author="a", parent_excerpt="p", draft="Low 12.5%.",
-                           tier="conversion", score=0.10, score_components={}, now=NOW)
+                           tier="conversion", score=0.10, score_components={},
+                           critics=_pass_stamp(), now=NOW)
         high = rq.make_item(account="kelly", target_url="https://x.com/a/status/1900000000000000501",
                             parent_author="a", parent_excerpt="p", draft="High 12.5%.",
-                            tier="relationship", score=0.95, score_components={}, now=NOW)
+                            tier="relationship", score=0.95, score_components={},
+                            critics=_pass_stamp(), now=NOW)
         for it in (low, high):
             rq.enqueue(it, store)
             rq.approve(it["id"], root=store)
@@ -1959,17 +2272,43 @@ class TestAdminReplyQueuePanel:
         assert rq.thread_owner(THREAD, store) is None
 
     def test_reject_writes_the_taste_corpus_row(self, store, tmp_path):
+        """The corpus survives — but in HOST state, not the render checkout."""
         from admin import marketing as adm
-        from engine.marketing import rejections as rej
 
         item = _item()
         rq.enqueue(item, store)
-        adm.reject_reply(item["id"], reason="no surplus over the parent",
-                         root=tmp_path, store=store)
-        rows = rej.pending(tmp_path)
+        result = adm.reject_reply(item["id"], reason="no surplus over the parent",
+                                  root=tmp_path, store=store)
+        assert result["ok"] and result["logged"]
+
+        rows = rq.read_rejections(store)
         assert len(rows) == 1
         assert rows[0]["reason"] == "no surplus over the parent"
         assert rows[0]["kind"] == "reply"
+        assert rows[0]["text"] == CLEAN_DRAFT, "snapshot the draft, not a pointer"
+
+    def test_reject_never_writes_into_the_repo_checkout(self, store, tmp_path):
+        """The deciding operator runs the admin on the M1 render host."""
+        from admin import marketing as adm
+
+        item = _item()
+        rq.enqueue(item, store)
+        adm.reject_reply(item["id"], reason="off-beat", root=tmp_path, store=store)
+        assert not (tmp_path / "data" / "marketing" / "rejections.jsonl").exists()
+        assert rq.rejections_path(store).exists()
+        assert ROOT not in rq.rejections_path(store).parents
+
+    def test_hold_leaves_a_ledger_trace(self, store):
+        """"The operator held this" and "nobody looked" are different facts."""
+        from admin import marketing as adm
+
+        item = _item()
+        rq.enqueue(item, store)
+        result = adm.decide_reply(item["id"], "hold", note="wrong read", store=store)
+        assert result["ok"] and result["logged"]
+        rows = rq.decisions(store)[item["id"]]
+        assert rows[0]["decision"] == "hold" and rows[0]["note"] == "wrong read"
+        assert rq.fold_state(store)["status"][item["id"]] == "queued"
 
     def test_rejecting_twice_is_refused(self, store, tmp_path):
         from admin import marketing as adm
@@ -1978,6 +2317,29 @@ class TestAdminReplyQueuePanel:
         rq.enqueue(item, store)
         adm.reject_reply(item["id"], root=tmp_path, store=store)
         assert adm.reject_reply(item["id"], root=tmp_path, store=store)["ok"] is False
+
+    def test_opening_the_panel_never_strands_a_pending_receipt(self, store, m1_cfg):
+        """M2 — the panel releases leases too. Without skip_ids, merely OPENING
+        the admin page drops an item whose receipt is pending to `queued`, which
+        has no edge to `sent`: a PUBLIC reply then goes permanently uncounted
+        while the cap hands its slot back."""
+        from admin import marketing as adm
+
+        item = _item()
+        rq.enqueue(item, store)
+        _advance_to_claimed(item["id"], store)
+        rx.receipts_dir(store).mkdir(parents=True, exist_ok=True)
+        (rx.receipts_dir(store) / f"{item['id']}.json").write_text(
+            json.dumps({"id": item["id"], "url": "u", "screenshot": "s"}), encoding="utf-8")
+
+        late = NOW + timedelta(seconds=rq.DEFAULT_LEASE_S + 60)
+        payload = adm.reply_queue(root=ROOT, store=store, now=late)
+        assert payload["released_now"] == []
+        assert rq.fold_state(store)["status"][item["id"]] == "claimed"
+
+        # And the send still records afterwards.
+        assert rx.ingest_receipts(cfg=m1_cfg, root=store,
+                                  now=late)["recorded"] == [item["id"]]
 
     def test_panel_is_fail_soft(self, monkeypatch):
         from admin import marketing as adm

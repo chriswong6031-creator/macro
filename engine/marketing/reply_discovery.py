@@ -224,6 +224,25 @@ def count_items(response: str | dict | None) -> int:
     return 0
 
 
+def _has_known_shape(response: Any) -> bool:
+    """True when the payload carries a list under a key this lane recognises.
+
+    An empty page is a known shape with zero items; an unrecognised envelope is
+    not the same thing and must not be billed as if it were.
+    """
+    if isinstance(response, list):
+        return True
+    if not isinstance(response, dict):
+        return False
+    for key in _ITEM_KEYS:
+        val = response.get(key)
+        if isinstance(val, list):
+            return True
+        if isinstance(val, dict) and any(isinstance(val.get(n), list) for n in _ITEM_KEYS):
+            return True
+    return False
+
+
 def extract_items(response: dict | None) -> list[dict]:
     """Pull the tweet-like objects out of any supported response shape."""
     if isinstance(response, list):
@@ -426,7 +445,22 @@ class ReplyDiscoveryProvider:
                 return False, "shared_bucket_cap"
         return True, ""
 
-    def _bill(self, month_spend: dict, n_items: int) -> float:
+    def _bill(self, month_spend: dict, n_items: int, *, response: Any = None,
+              endpoint: str = "") -> float:
+        # A response we got but could not parse bills at the minimum charge and
+        # counts zero items — indistinguishable from an empty page. That is how a
+        # renamed response key becomes a silent under-read of the very counter
+        # this lane's budget depends on, so it is announced.
+        if n_items == 0 and isinstance(response, (dict, list)) and response:
+            if not _has_known_shape(response):
+                print(
+                    f"::warning title=reply-discovery-shape::unrecognised twitterapi.io "
+                    f"response shape from {endpoint or 'endpoint'} "
+                    f"(keys={sorted(response)[:6] if isinstance(response, dict) else 'list'}) "
+                    "— billed at the minimum charge and counted as ZERO items; the "
+                    "spend counter is under-reading until the shape is added",
+                    flush=True,
+                )
         cost = max(_MIN_CHARGE, n_items / 1000.0 * _PRICE_PER_1K)
         month_spend["requests"] = int(month_spend.get("requests", 0)) + 1
         month_spend["items"] = int(month_spend.get("items", 0)) + n_items
@@ -573,6 +607,9 @@ class ReplyDiscoveryProvider:
 
         targets: list[dict] = []
         requests_made = 0
+        rotation_base: int | None = None
+        rotation_span = 0
+        desks_covered = 0
         if accounts is not None:
             want_accounts = list(accounts)
         else:
@@ -588,7 +625,11 @@ class ReplyDiscoveryProvider:
             if want_accounts:
                 start %= len(want_accounts)
                 want_accounts = want_accounts[start:] + want_accounts[:start]
-                ns["rotation"] = (start + 1) % len(want_accounts)
+                # The cursor is advanced AFTER the loop by the number of desks
+                # actually covered. Advancing by one here would re-poll the same
+                # desks every tick whenever the tick cap covers several, so the
+                # tail would still starve — just more slowly.
+                rotation_base, rotation_span = start, len(want_accounts)
 
         truncated = False
         for account in want_accounts:
@@ -624,7 +665,8 @@ class ReplyDiscoveryProvider:
                 }
                 resp = self._request(api_key, self.ep_author_posts, params)
                 requests_made += 1
-                self._bill(month_spend, count_items(resp))
+                self._bill(month_spend, count_items(resp), response=resp,
+                           endpoint=self.ep_author_posts)
                 got, new_since = self._harvest(
                     resp, kind="author_post", author_tier=tier, beats=entry["beats"],
                     account=account, since_id=cursors.get(ckey),
@@ -647,7 +689,8 @@ class ReplyDiscoveryProvider:
                 ckey = f"mentions:{our_handle}"
                 resp = self._request(api_key, self.ep_mentions, {"userName": our_handle})
                 requests_made += 1
-                self._bill(month_spend, count_items(resp))
+                self._bill(month_spend, count_items(resp), response=resp,
+                           endpoint=self.ep_mentions)
                 got, new_since = self._harvest(
                     resp, kind="mention", author_tier="inbound", beats=[],
                     account=account, since_id=cursors.get(ckey), our_handle=our_handle,
@@ -655,12 +698,26 @@ class ReplyDiscoveryProvider:
                 cursors[ckey] = new_since or cursors.get(ckey) or ""
                 targets.extend(got)
 
+            # Counted only when the desk was FULLY processed. A desk the tick cap
+            # cut short was not covered, and the next tick must resume AT it
+            # rather than skipping past it — that skip is the starvation bug in
+            # miniature.
+            if not truncated:
+                desks_covered += 1
+
+        # Advance the cursor by the desks actually COVERED, so the next tick
+        # resumes where this one stopped rather than re-polling the same head.
+        if rotation_base is not None and rotation_span:
+            session_state.setdefault(STATE_NS, {})["rotation"] = (
+                (rotation_base + max(1, desks_covered)) % rotation_span
+            )
+
         if truncated:
             print(
                 f"::warning title=reply-discovery-tick-cap::hit max_requests_per_tick "
-                f"({self.max_requests_per_tick}) before covering every desk — the "
-                f"rotation cursor resumes at the next desk, but a persistently "
-                f"truncated tick means some desks are polled rarely",
+                f"({self.max_requests_per_tick}) after {desks_covered} of "
+                f"{len(want_accounts)} desks — the rotation cursor resumes at the next "
+                f"desk, but a persistently truncated tick means some desks are polled rarely",
                 flush=True,
             )
         return targets
@@ -688,6 +745,11 @@ class ReplyDiscoveryProvider:
         if not api_key:
             return []
         month_spend = self.budget_state(session_state, now=now)
+        # Same default resolution as fetch(). Without it this path spends against
+        # the sub-cap ALONE, which is the $15-on-top-of-$75 shape the sub-budget
+        # exists to prevent — telemetry polling would quietly reopen it.
+        if wire_spend_usd is None:
+            wire_spend_usd = self.wire_spend(session_state, now=now)
         out: list[dict] = []
         for sid in status_ids[: self.max_requests_per_tick]:
             ok, reason = self.budget_check(month_spend, wire_spend_usd=wire_spend_usd)
@@ -696,7 +758,8 @@ class ReplyDiscoveryProvider:
                 self._announce_stop(reason, month_spend, cap)
                 break
             resp = self._request(api_key, self.ep_post_replies, {"tweetId": str(sid)})
-            self._bill(month_spend, count_items(resp))
+            self._bill(month_spend, count_items(resp), response=resp,
+                       endpoint=self.ep_post_replies)
             items = extract_items(resp)
             out.append({
                 "status_id": str(sid),

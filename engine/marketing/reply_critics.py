@@ -39,6 +39,7 @@ from __future__ import annotations
 
 import logging
 import re
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
 
@@ -246,16 +247,38 @@ def corpus_near_dup(draft: str, ctx: dict) -> dict[str, Any]:
 # 3. Blocklists — satire handles + sensitive events
 # ---------------------------------------------------------------------------
 def blocklist(draft: str, ctx: dict) -> dict[str, Any]:
-    """Reuse the press satire blocklist; add the sensitive-event stop.
+    """Satire + sensitive events + ZERO CROSS-ACCOUNT ENGAGEMENT.
 
     The satire list is the SAME config key the wire lane reads
     (``config/press_sources.yml`` ``satire_blocklist``) — one list, two lanes.
+
+    The fleet-linkage law (charter §2 amendment 6: "zero cross-account
+    engagement ever — no mutual likes/reposts/replies") is enforced HERE, in
+    code, not left to operator discipline. It is the STRONGER of the two
+    coordination rules — the weaker one-conversation-one-owner rule already has
+    a hard lock in the queue — and text-similarity clustering plus a reply from
+    one of our accounts to another is precisely the signal that chain-suspends a
+    linked fleet.
     """
     reasons: list[str] = []
     satire = {str(h).lower().lstrip("@") for h in (ctx.get("satire_blocklist") or [])}
     author = str(ctx.get("parent_author") or "").lower().lstrip("@")
     if author and author in satire:
         reasons.append(f"parent author {author!r} is on the satire blocklist")
+
+    ours = {str(h).lower().lstrip("@") for h in (ctx.get("our_handles") or ()) if h}
+    if ours:
+        # The parent, and every ancestor author the thread context carries.
+        candidates = [author] + [
+            str(h).lower().lstrip("@") for h in (ctx.get("thread_authors") or ()) if h
+        ]
+        for who in candidates:
+            if who and who in ours:
+                reasons.append(
+                    f"{who!r} is one of OUR accounts — zero cross-account engagement "
+                    "(fleet-linkage law, charter §2 amendment 6)"
+                )
+                break
 
     # The defaults are a FLOOR, not a default-if-unset. A caller passing an
     # empty list must not be able to switch a hard blocklist off; extra terms
@@ -520,6 +543,44 @@ _CRITIC_FUNCS: dict[str, Callable[[str, dict], dict]] = {
 }
 
 
+#: Schema of the stamp a queue item must carry. `reply_queue.validate_item`
+#: REFUSES any item without a passing one, which is what makes "every draft that
+#: reaches the desktop cleared the critics" a structural fact rather than a
+#: property of whichever producer happened to build the item.
+STAMP_SCHEMA = "marketing.reply_critics/v1"
+
+
+def stamp(verdict: dict) -> dict[str, Any]:
+    """Reduce a `run_critics` result to the stamp that rides on a queue item.
+
+    Carries the LIST of critics that actually ran, not just the verdict, so the
+    queue can refuse a stamp produced by a partial pass — a hand-written
+    ``{"verdict": "pass"}`` does not satisfy the check.
+    """
+    return {
+        "schema": STAMP_SCHEMA,
+        "verdict": verdict.get("verdict"),
+        "rejected_by": list(verdict.get("rejected_by") or []),
+        "critics_run": [c["critic"] for c in (verdict.get("critics") or [])],
+        "stamped_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    }
+
+
+def screen(
+    draft: str,
+    ctx: dict | None = None,
+    *,
+    llm_de_escalate: Callable[[str, dict], bool] | None = None,
+) -> tuple[dict, dict]:
+    """Run the pass and return ``(verdict, stamp)`` in one call.
+
+    The intended producer entry point: anything building a queue item calls this
+    and hands the stamp to ``reply_queue.make_item(critics=...)``.
+    """
+    verdict = run_critics(draft, ctx, llm_de_escalate=llm_de_escalate)
+    return verdict, stamp(verdict)
+
+
 def run_critics(
     draft: str,
     ctx: dict | None = None,
@@ -571,9 +632,26 @@ def run_critics(
     }
 
 
+def our_handles(cfg: dict | None) -> list[str]:
+    """Every handle the fleet owns, live or dark, from ``desk_network``.
+
+    Dark and planned desks are included deliberately: an account that is not
+    posting today may still exist and be followed, and replying to it is the
+    same linkage signal as replying to a live one.
+    """
+    out: list[str] = []
+    for acct in ((cfg or {}).get("desk_network") or {}).get("accounts") or []:
+        if not isinstance(acct, dict):
+            continue
+        handle = str(acct.get("handle") or "").strip().lstrip("@")
+        if handle:
+            out.append(handle)
+    return out
+
+
 __all__ = [
-    "CRITICS", "DEFAULT_THRESHOLDS", "DEFAULT_SENSITIVE_TERMS",
-    "run_critics", "load_theses", "number_tokens",
+    "CRITICS", "DEFAULT_THRESHOLDS", "DEFAULT_SENSITIVE_TERMS", "STAMP_SCHEMA",
+    "run_critics", "screen", "stamp", "our_handles", "load_theses", "number_tokens",
     "informational_surplus", "corpus_near_dup", "blocklist",
     "position_consistency", "persona_label", "fact_discipline", "vocab", "dignity",
 ]

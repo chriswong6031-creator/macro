@@ -2386,7 +2386,16 @@ def reply_queue(root=None, *, store=None, now=None) -> dict:
         # Same order as reply_export.sweep: release leases FIRST so an item
         # whose desktop session died is reclaimable, then expire. Expiring
         # before releasing would leave an in-flight item unreachable.
-        released = _rq.release_expired_claims(now=ts, root=store)
+        #
+        # skip_ids is NOT optional here. A panel read that releases a lease whose
+        # receipt is still pending drops the item to `queued`, which has no edge
+        # to `sent` — so ingest then fails with illegal_transition and a reply
+        # that is already PUBLIC goes permanently uncounted while the cap hands
+        # its slot back. Opening the admin page must not be able to do that.
+        from engine.marketing import reply_export as _rx  # noqa: PLC0415
+
+        released = _rq.release_expired_claims(now=ts, root=store,
+                                              skip_ids=_rx.pending_receipt_ids(store))
         killed = _rq.expire_due(now=ts, root=store)
 
         state = _rq.fold_state(store)
@@ -2481,8 +2490,9 @@ def decide_reply(item_id: str, decision: str, note: str | None = None,
             return {"ok": False, "error": "unknown item id"}
 
         if decision == "hold":
+            logged = _rq.hold(iid, actor="admin", root=store, note=note)
             return {"ok": True, "id": iid, "decision": "hold",
-                    "status": state["status"].get(iid),
+                    "status": state["status"].get(iid), "logged": bool(logged),
                     "note": "held in the rail; approve when the read is right"}
 
         ok = _rq.approve(iid, root=store, note=note)
@@ -2505,9 +2515,7 @@ def reject_reply(item_id: str, reason: str | None = None, root=None, *, store=No
     """
     try:
         from engine.marketing import reply_queue as _rq  # noqa: PLC0415
-        from engine.marketing import rejections as _rej  # noqa: PLC0415
 
-        repo = Path(root) if root is not None else _default_root()
         iid = str(item_id or "").strip()
         if not iid:
             return {"ok": False, "error": "id required"}
@@ -2525,14 +2533,14 @@ def reject_reply(item_id: str, reason: str | None = None, root=None, *, store=No
 
         # Feedback is best-effort and deliberately AFTER the kill: a failure to
         # record the reason must never leave a bad draft still approvable.
-        row = None
+        #
+        # It lands in the reply desk's OWN corpus in host state, not
+        # data/marketing/rejections.jsonl — the operator doing this runs the
+        # admin on the M1, which is the nightly render host, so an intraday
+        # write into the checkout is exactly what this desk is built to avoid.
+        row = False
         try:
-            row = _rej.record(
-                {"id": iid, "account": item.get("account"), "kind": "reply",
-                 "provenance": item.get("provenance"), "as_of": item.get("as_of"),
-                 "text": item.get("draft"), "state": status},
-                reason=reason, actor="admin", root=repo,
-            )
+            row = _rq.record_rejection(item, reason=reason, actor="admin", root=store)
         except Exception as rexc:  # noqa: BLE001
             log.warning("marketing.reject_reply: feedback row failed: %s", rexc)
 

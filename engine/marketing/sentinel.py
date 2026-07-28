@@ -76,11 +76,17 @@ def is_reply_item(item: dict) -> bool:
 
     THE BUG THIS FIXES (charter §5, assigned to XG-W4): the cap counter below
     read ``item["type"] == "reply"`` only. Content-plan items key on ``type``,
-    but outbox and reply-queue items key on ``kind`` — and no producer has ever
-    set either to "reply", so ``reply_cap_daily`` counted zero replies forever
-    and the cap it "enforced" was decorative. Reading both fields makes the
-    counter true for every schema that reaches it, so the gate cannot go
-    vacuous again the next time a lane picks a different field name.
+    but outbox and reply-queue items key on ``kind``, so the gate could not see
+    a reply arriving in the other schema.
+
+    HONEST STATUS: this makes the counter CAPABLE, not yet exercised. No
+    producer in the tree sets ``kind``/``type`` to "reply" today — the reply
+    desk runs its own store and its own cap (``reply_send_cap`` +
+    ``reply_queue.may_send``), and the content-plan producer that would feed
+    THIS counter lands with the rest of the reply pipeline in XG-W6. Until then
+    ``reply_cap_daily`` still counts zero in production; the difference is that
+    it now counts correctly the moment something arrives, instead of being
+    structurally unable to.
     """
     for field in ("kind", "type"):
         if str(item.get(field) or "").strip().lower() == "reply":

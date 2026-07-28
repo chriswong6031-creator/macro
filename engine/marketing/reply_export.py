@@ -208,7 +208,9 @@ def export_approved(
             continue
 
         if account not in headroom:
-            gate = _rq.may_send(account, cfg=cfg, root=root, now=ts)
+            # Reuse the fold already computed above — may_send would otherwise
+            # re-read and re-fold the whole ledger once per account.
+            gate = _rq.may_send(account, cfg=cfg, root=root, now=ts, _state=state)
             in_flight = sum(
                 1 for other in already
                 if str((state["items"].get(other) or {}).get("account") or "") == account
@@ -274,6 +276,17 @@ def claim_for_desktop(
         # Via the fail-soft helper: a typo'd lease_s must not take down the
         # desktop claim path, which is step 3 of the runbook.
         lease_s = _rq.lease_s_for(cfg)
+
+    # The dial gates EVERY host-dir write, not just the export. This was the one
+    # path that wrote into ~/.mastermind while an account sat at M0, which made
+    # "M0 exports NOTHING" false by a file.
+    state = _rq.fold_state(root)
+    account = str((state["items"].get(item_id) or {}).get("account") or "")
+    if account and _rq.resolve_mode(cfg, account) == "M0":
+        log.warning("reply_export.claim_for_desktop: %r is at M0 — nothing may be claimed",
+                    account)
+        return None
+
     claim = _rq.claim(item_id, holder=holder, lease_s=lease_s, root=root, now=now)
     if claim is None:
         return None
@@ -353,7 +366,11 @@ def ingest_receipts(
             reason = result.get("reason")
             refused.append({"id": iid, "reason": reason})
             if reason == "reply_cap_daily":
-                # Retryable: the cap clears at midnight, so the receipt stays.
+                # Retryable and ONLY this one: a spent cap clears at midnight, so
+                # the receipt is worth keeping. A silenced account (cap nulled,
+                # desk disabled, M0) never clears on its own, so retaining its
+                # receipt would warn on every sweep forever with nothing an
+                # operator could do about it — those fall to the park branch.
                 print(
                     f"::warning title=reply-cap-daily::receipt for {iid} refused: account "
                     f"hit its daily reply cap ({result.get('sent')}/{result.get('cap')})",

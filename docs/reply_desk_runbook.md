@@ -360,9 +360,15 @@ in the rail; reject is terminal and releases the thread so a sibling desk may
 legitimately take it.
 
 Every draft you see has already cleared eight critics (near-dup vs the parent,
-near-dup vs our own corpus, satire/sensitivity blocklists, position consistency,
-the persona-label test, fact discipline, the shared vocab guard, and the dignity
-rubric). What reaches you is a *taste* decision, not a safety decision.
+near-dup vs our own corpus, satire/sensitivity blocklists + zero-cross-account
+engagement, position consistency, the persona-label test, fact discipline, the
+shared vocab guard, and the dignity rubric). What reaches you is a *taste*
+decision, not a safety decision.
+
+That is a **structural** guarantee, not a description of a pipeline: the queue
+itself refuses any item whose critic stamp is missing, not a `pass`, or produced
+by a partial run (`reply_queue.validate_critic_stamp`). It holds no matter which
+producer built the item, including one written after this document.
 
 ---
 
@@ -386,6 +392,17 @@ a browser acting on an item a human approved.
 
 ## 9. What is deliberately not built yet
 
+- **The producer chain.** Nothing in this wave calls
+  discovery → scorer → drafter → critics → `enqueue` in sequence, so **the queue
+  does not fill on its own yet**. Every piece is built, tested and callable; the
+  connective tissue (the scheduled tick that walks discovery output through the
+  scorer and drafter and enqueues what survives the critics) lands with the rest
+  of the reply pipeline in **XG-W6**, alongside telemetry wiring. Until then the
+  desk is a library plus an operator surface, not a running loop.
+
+  This is why the critic guarantee is enforced at the STORE rather than in the
+  producer: an item can only enter the queue with a full passing critic stamp,
+  so the safety claim above is true for whatever eventually fills it.
 - **Auto-approval (M2/M3)** — gated on XG-W6's per-account health monitor and
   network tripwire.
 - **Parent-adjusted outcome labels** — the queue records `sent_at`,

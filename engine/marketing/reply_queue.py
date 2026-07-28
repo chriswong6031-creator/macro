@@ -18,7 +18,15 @@ Why a separate store (charter §5, load-bearing facts):
     A reply outside its window is worse than no reply, so ``expires_at`` is
     enforced by the store itself, not by a caller's good intentions.
 
-Two laws this module enforces that live nowhere else:
+**Producer status (honest).** The connective tissue that walks discovery output
+through the scorer and drafter and enqueues survivors is NOT in this wave — it
+lands in XG-W6 with the telemetry wiring. Every piece exists and is callable;
+the scheduled loop does not. That is precisely why the critic guarantee is
+enforced HERE rather than in a producer: ``validate_item`` refuses any item
+without a full passing critic stamp, so "everything that reaches the desktop
+cleared the critics" is true of whatever eventually fills this store.
+
+Three laws this module enforces that live nowhere else:
 
   * **One conversation, one owner** (charter §2 amendment 6, §5). Two of our
     accounts must never reply to the same thread — the coordination signal no
@@ -30,6 +38,9 @@ Two laws this module enforces that live nowhere else:
     2026-07-28 directive is the opening ruling). ``may_send()`` refuses every
     send at M0 regardless of config, and clamps M1+ to a hard ceiling that no
     config edit can raise.
+  * **No item enters without a passing critic stamp** (``validate_critic_stamp``).
+    The full roster must have run — a forged ``{"verdict": "pass"}`` and a
+    partial pass are both refused.
 
 Public API:
     state_dir(root=None) -> Path                  # host state root, never repo
@@ -331,6 +342,7 @@ def make_item(
     thread_root_id: str | None = None,
     target_status_id: str | None = None,
     as_of: str | None = None,
+    critics: dict | None = None,
     mode: str = DEFAULT_MODE,
     not_before: str | None = None,
     ttl_min: int | None = None,
@@ -385,6 +397,9 @@ def make_item(
         "family": family,
         "chart": media,
         "tier": tier,
+        # The critic stamp. Not optional in practice — validate_item refuses an
+        # item without a passing one, so an unstamped item cannot be enqueued.
+        "critics": dict(critics) if critics else None,
         "score": round(float(score), 6),
         "score_components": dict(score_components or {}),
         "not_before": not_before or _iso(ts_now),
@@ -399,6 +414,40 @@ def make_item(
         "likes": None,
         "follower_delta": None,
     }
+
+
+def validate_critic_stamp(item: dict) -> list[str]:
+    """Errors in an item's critic stamp; [] means it cleared the full pass.
+
+    THE STRUCTURAL GUARANTEE. The runbook tells the operator that every draft
+    they see has already cleared eight critics. That was a claim about the
+    producer, and the producer is not built yet (XG-W6 wires
+    discovery -> score -> draft -> critics -> enqueue), so it was a claim about
+    nothing. Enforcing it at the STORE makes it true for anything that ever
+    reaches the desktop lane, whoever built it and whenever that lands.
+
+    Requires the full critic roster, not just a verdict: a hand-written
+    ``{"verdict": "pass"}`` and a partial pass both fail here.
+    """
+    from engine.marketing import reply_critics as _rc  # noqa: PLC0415
+
+    stamp = item.get("critics")
+    if not isinstance(stamp, dict):
+        return ["field 'critics' must be a critic stamp (reply_critics.stamp) — "
+                "an item that never faced the critics may not enter the queue"]
+
+    errors: list[str] = []
+    if stamp.get("schema") != _rc.STAMP_SCHEMA:
+        errors.append(f"critics.schema must be {_rc.STAMP_SCHEMA!r}; got {stamp.get('schema')!r}")
+    if stamp.get("verdict") != "pass":
+        errors.append(
+            f"critics.verdict must be 'pass'; got {stamp.get('verdict')!r} "
+            f"(rejected_by={stamp.get('rejected_by')})")
+    ran = {str(c) for c in (stamp.get("critics_run") or [])}
+    missing = set(_rc.CRITICS) - ran
+    if missing:
+        errors.append(f"critics did not all run; missing {sorted(missing)}")
+    return errors
 
 
 def validate_item(item: dict) -> list[str]:
@@ -427,6 +476,7 @@ def validate_item(item: dict) -> list[str]:
             errors.append("chart must be a dict or None")
         elif not chart.get("local_path") and not chart.get("public_url"):
             errors.append("chart must carry at least one of local_path/public_url")
+    errors.extend(validate_critic_stamp(item))
     return errors
 
 
@@ -481,14 +531,15 @@ def fold_state(root: Path | str | None = None) -> dict[str, Any]:
     return {"items": items, "status": status, "attempts": attempts, "last": last, "claims": claims}
 
 
-def sends_today(account: str, as_of: str, root: Path | str | None = None) -> int:
+def sends_today(account: str, as_of: str, root: Path | str | None = None,
+                *, _state: dict | None = None) -> int:
     """Count REAL sends for one account on one day.
 
     This is the number the sentinel's reply cap gates. It counts ledger rows
     (``to == "sent"``), not queue depth — the pre-XG-W4 counter was vacuous
     precisely because nothing ever produced a countable send.
     """
-    state = fold_state(root)
+    state = _state if _state is not None else fold_state(root)
     n = 0
     for iid, st in state["status"].items():
         if st != "sent":
@@ -630,6 +681,80 @@ def approve(item_id: str, *, actor: str = "admin", root=None, note: str | None =
     return transition(item_id, "approved", actor=actor, root=root, note=note)
 
 
+def hold(item_id: str, *, actor: str = "admin", root: Path | str | None = None,
+         note: str | None = None, now: datetime | None = None) -> bool:
+    """Record that an operator looked at an item and chose not to send it yet.
+
+    Not a status change — the item stays `queued` and remains approvable. It is
+    a LEDGER row so the decision leaves a trace: "the operator held this" and
+    "the operator never opened it" are different facts, and only one of them
+    says anything about the draft.
+    """
+    row = {
+        "id": item_id,
+        "row": "decision",
+        "decision": "hold",
+        "at": _iso(now or datetime.now(timezone.utc)),
+        "actor": actor,
+        "note": note,
+    }
+    return append_jsonl(_ledger_path(root), row)
+
+
+def decisions(root: Path | str | None = None) -> dict[str, list[dict]]:
+    """Operator decision rows per item id, oldest first."""
+    out: dict[str, list[dict]] = {}
+    for row in read_ledger(root):
+        if row.get("row") != "decision":
+            continue
+        iid = str(row.get("id") or "")
+        if iid:
+            out.setdefault(iid, []).append(row)
+    return out
+
+
+def rejections_path(root: Path | str | None = None) -> Path:
+    """The reply desk's OWN taste corpus, in host state.
+
+    Not ``data/marketing/rejections.jsonl``: the operator approving replies runs
+    the admin on the M1, which is the nightly render host, so writing the corpus
+    into the checkout dirties the render tree from an intraday human action —
+    the exact collision the whole desk is kept out of the repo to avoid. The
+    corpus survives; the checkout stays clean.
+    """
+    return store_dir(root) / "rejections.jsonl"
+
+
+def record_rejection(item: dict, *, reason: str | None, actor: str = "admin",
+                     root: Path | str | None = None,
+                     now: datetime | None = None) -> bool:
+    """Append one rejection row. Snapshots the draft, never a pointer."""
+    row = {
+        "schema": "marketing.reply_rejection/v1",
+        "id": f"rej-{item.get('id')}",
+        "item_id": item.get("id"),
+        "as_of": item.get("as_of"),
+        "account": item.get("account"),
+        "kind": "reply",
+        "tier": item.get("tier"),
+        "family": item.get("family"),
+        "target_url": item.get("target_url"),
+        "parent_author": item.get("parent_author"),
+        "parent_excerpt": item.get("parent_excerpt"),
+        "text": item.get("draft"),
+        "score": item.get("score"),
+        "reason": (str(reason or "").strip() or None),
+        "actor": actor,
+        "rejected_at": _iso(now or datetime.now(timezone.utc)),
+    }
+    return append_jsonl(rejections_path(root), row)
+
+
+def read_rejections(root: Path | str | None = None) -> list[dict]:
+    """The taste corpus, oldest first."""
+    return read_jsonl(rejections_path(root))
+
+
 def reject(item_id: str, *, actor: str = "admin", root=None, reason: str | None = None) -> bool:
     """Terminal kill WITH a reason. Rejections are the taste corpus."""
     return transition(item_id, "rejected", actor=actor, root=root,
@@ -679,8 +804,25 @@ def claim(item_id: str, *, holder: str, lease_s: int = DEFAULT_LEASE_S,
     """Claim one APPROVED item before navigating to the thread.
 
     Returns the claim row, or None when the item is not claimable.
+
+    An item past ``expires_at`` is refused even if the sweep has not reached it
+    yet. Claiming one would be doubly wrong: it sends a stale reply, and because
+    `claimed` is (correctly) not expirable, it would also make the item
+    permanently unexpirable — a dead draft pinned live by the race between the
+    sweep and the claim.
     """
     ts = now or datetime.now(timezone.utc)
+    state = fold_state(root)
+    item = state["items"].get(item_id)
+    if item is None:
+        log.warning("reply_queue.claim: unknown item_id %r", item_id)
+        return None
+    deadline = _parse_iso(item.get("expires_at"))
+    if deadline is not None and ts >= deadline:
+        log.warning("reply_queue.claim: %r expired at %s — refusing the claim",
+                    item_id, item.get("expires_at"))
+        return None
+
     lease_until = _iso(ts + timedelta(seconds=int(lease_s)))
     ok = transition(item_id, "claimed", actor=holder, root=root,
                     holder=holder, lease_until=lease_until, now=ts,
@@ -733,7 +875,8 @@ def release_expired_claims(*, now: datetime | None = None, root: Path | str | No
 # Send gate — the cap the sentinel counter now actually enforces
 # ---------------------------------------------------------------------------
 def may_send(account: str, *, cfg: dict | None, root: Path | str | None = None,
-             as_of: str | None = None, now: datetime | None = None) -> dict:
+             as_of: str | None = None, now: datetime | None = None,
+             _state: dict | None = None) -> dict:
     """May this account send one more reply today?
 
     Returns {ok, mode, cap, sent, reason}. M0 always returns ok=False with
@@ -750,10 +893,15 @@ def may_send(account: str, *, cfg: dict | None, root: Path | str | None = None,
     day = as_of or ts.strftime("%Y-%m-%d")
     mode = resolve_mode(cfg, account)
     cap = _sentinel.reply_send_cap(cfg or {}, account, mode=mode)
-    sent = sends_today(account, day, root)
+    sent = sends_today(account, day, root, _state=_state)
     if cap <= 0:
-        return {"ok": False, "mode": mode, "cap": cap, "sent": sent,
-                "reason": "reply_cap_daily" if mode != "M0" else "mode_m0_draft_only"}
+        # A silenced account is NOT a spent cap. They read the same to a caller
+        # that only checks ok=False, but they need opposite handling: a spent cap
+        # clears at midnight so a receipt is worth retaining, while a silenced
+        # account never clears on its own, so retaining the receipt means warning
+        # about it on every sweep forever with nothing an operator can do.
+        reason = "mode_m0_draft_only" if mode == "M0" else "account_silenced"
+        return {"ok": False, "mode": mode, "cap": cap, "sent": sent, "reason": reason}
     if sent >= cap:
         return {"ok": False, "mode": mode, "cap": cap, "sent": sent, "reason": "reply_cap_daily"}
     return {"ok": True, "mode": mode, "cap": cap, "sent": sent, "reason": None}
@@ -849,8 +997,10 @@ __all__ = [
     "OWNING_STATUSES", "TERMINAL_STATUSES", "TIERS", "MAX_SEND_ATTEMPTS",
     "DEFAULT_LEASE_S", "DEFAULT_TTL_MIN", "ttl_min_for", "lease_s_for",
     "state_dir", "store_dir", "resolve_mode", "status_id_from_url",
-    "make_item", "validate_item", "enqueue", "read_items", "read_ledger",
-    "fold_state", "sends_today", "thread_owner", "transition", "approve",
-    "reject", "expire_due", "claim", "release_expired_claims", "may_send",
-    "mark_sent", "record_outcome", "outcomes", "summary",
+    "make_item", "validate_item", "validate_critic_stamp", "enqueue",
+    "read_items", "read_ledger", "fold_state", "sends_today", "thread_owner",
+    "transition", "approve", "hold", "decisions", "reject", "expire_due",
+    "claim", "release_expired_claims", "may_send", "mark_sent",
+    "record_outcome", "outcomes", "summary",
+    "rejections_path", "record_rejection", "read_rejections",
 ]
