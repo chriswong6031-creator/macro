@@ -32,7 +32,8 @@
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
-<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../theme.css?v=370c3de0">
+<link rel="preload" as="style" href="../product-nav-icons.css?v=7b0290e9">
 <style>
 :root{ --num: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
   --rv:#4f8ff7; --rv-2:#38bdf8; --rv-ink:#9cc2ff; --rv-dim:rgba(79,143,247,.13);
@@ -324,8 +325,8 @@ html[data-theme="light"] .rx-eyebrow{ color:var(--rv); }
       </div>
     </div>
   </div>
-  <script src="../live_config.js"></script>
-  <script src="../live.js"></script>  <div class="nav-search">
+  <script src="../live_config.js?v=52943e92" defer></script>
+  <script src="../live.js?v=e19f6af3" defer></script>  <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
       placeholder="Search any stock — US, China, HK, Canada &amp; more…"
