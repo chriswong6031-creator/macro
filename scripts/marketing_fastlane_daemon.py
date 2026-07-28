@@ -286,8 +286,143 @@ def _run_press_tick(*, dry_run: bool) -> dict:
     else:
         _restore_breaking_ledger(_wire_ledger_snapshot)
 
+    # 6. B4a wires.json sink — write the news.html live-wire rail payload from
+    #    the tick's rail-eligible items. Written to the VPS public live dir (or a
+    #    dev data dir), NEVER the repo/git tree. Skipped in dry-run (non-consuming).
+    if not dry_run:
+        try:
+            _write_wires_sink(result.get("rail", []), press_cfg, now)
+        except Exception as exc:  # noqa: BLE001
+            logger.error("[press] wires.json sink error (continuing): %s", exc)
+
     result["_emit_allowed"] = emit_allowed
     return result
+
+
+# Where the B4a rail payload is published. VPS public live dir first (served to
+# registered users via the @reg_asset default-deny route — see site_access.yml),
+# repo-relative dev fallback for local runs/tests. NEVER a git-tracked path.
+_WIRES_SINK_PATHS: tuple[str, ...] = (
+    "/var/lib/macro-live/public/live/wires.json",
+    "data/marketing/press/wires.json",
+)
+
+# M1: rolling-window cap. Each press tick's rail carries only THIS tick's newly
+# seen items above the floor, so a quiet tick's rail is near-empty. The sink must
+# therefore MERGE the tick's items into the persisted window and cap the result,
+# not overwrite — otherwise the wire rail blanks the moment nothing new crosses.
+_DEFAULT_WIRES_RAIL_MAX = 50
+
+
+def _wires_sink_target(press_cfg: dict) -> "Path | None":
+    """First writable sink path: the VPS live dir when present, else the dev path.
+
+    Returned so the READ (existing window) and the WRITE (merged window) use the
+    SAME file — reading one candidate and writing another would lose history.
+    """
+    wire_cfg = (press_cfg or {}).get("wire", {}) if isinstance(press_cfg, dict) else {}
+    candidates = list(wire_cfg.get("wires_sink_paths") or _WIRES_SINK_PATHS)
+    for cand in candidates:
+        p = Path(cand)
+        if not p.is_absolute():
+            p = ROOT / cand
+        # Choose a candidate whose parent dir exists OR can be created.
+        if p.parent.exists():
+            return p
+        try:
+            p.parent.mkdir(parents=True, exist_ok=True)
+            return p
+        except OSError:
+            continue
+    return None
+
+
+def _read_existing_wires(target: Path) -> list[dict]:
+    """Read the persisted wires.v1 items list (fail-soft).
+
+    Missing file OR corrupt/unexpected JSON => [] (start fresh, log a warning) so a
+    single bad write never wedges the rolling window. Never raises.
+    """
+    if not target.exists():
+        return []
+    try:
+        import json  # noqa: PLC0415
+        data = json.loads(target.read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001
+        logger.warning(
+            "[press] wires.json unreadable (%s: %s) — starting a fresh window",
+            target, exc,
+        )
+        return []
+    items = data.get("items") if isinstance(data, dict) else None
+    if not isinstance(items, list):
+        return []
+    # Keep only well-shaped dict items carrying an id (defensive against a
+    # partially-corrupt file that still parsed as JSON).
+    return [it for it in items if isinstance(it, dict) and it.get("id")]
+
+
+def _wire_sort_key(item: dict) -> str:
+    """Sort key for newest-first ordering: the item's ts (published_at ISO). A
+    missing/blank ts sorts oldest (empty string < any real ISO timestamp)."""
+    return str(item.get("ts") or "")
+
+
+def _merge_wires_window(
+    existing: list[dict], new_items: list, rail_max: int
+) -> list[dict]:
+    """Merge this tick's rail items into the persisted window (M1).
+
+    - Merge by item id; a NEW item wins (replaces the persisted copy — its body may
+      have been recomposed, e.g. a tape stamp attached on a later tick).
+    - Sort newest-first by ts.
+    - Cap at rail_max (keep the newest).
+    """
+    by_id: dict[str, dict] = {}
+    # Persisted items first, then new items overwrite same-id entries (new wins).
+    for it in existing:
+        if isinstance(it, dict) and it.get("id"):
+            by_id[str(it["id"])] = it
+    for it in new_items or []:
+        if isinstance(it, dict) and it.get("id"):
+            by_id[str(it["id"])] = it
+    merged = sorted(by_id.values(), key=_wire_sort_key, reverse=True)
+    if rail_max > 0:
+        merged = merged[:rail_max]
+    return merged
+
+
+def _write_wires_sink(rail_items: list, press_cfg: dict, now: datetime) -> None:
+    """Atomically publish the wires.v1 rolling-window rail payload (M1).
+
+    Reads the persisted window, MERGES this tick's rail items (merge by id, new
+    wins), sorts newest-first, caps at rail_max_items, then atomic-writes (tmp +
+    fsync + os.replace via vps_live_orchestrator.atomic_write_json). A quiet tick
+    (zero new items) therefore leaves the existing window intact rather than
+    blanking it. Corrupt/missing existing file => fresh window (fail-soft, logged).
+    This is a display-tier live artifact (like site/live/quotes.json), never a
+    repo/git write.
+    """
+    target = _wires_sink_target(press_cfg)
+    if target is None:
+        return
+
+    wire_cfg = (press_cfg or {}).get("wire", {}) if isinstance(press_cfg, dict) else {}
+    try:
+        rail_max = int(wire_cfg.get("rail_max_items", _DEFAULT_WIRES_RAIL_MAX))
+    except (TypeError, ValueError):
+        rail_max = _DEFAULT_WIRES_RAIL_MAX
+
+    existing = _read_existing_wires(target)
+    merged = _merge_wires_window(existing, rail_items, rail_max)
+
+    payload = {
+        "schema": "wires.v1",
+        "updated_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "items": merged,
+    }
+    from scripts.vps_live_orchestrator import atomic_write_json  # noqa: PLC0415
+    atomic_write_json(target, payload, mode=0o644)
 
 
 def _snapshot_breaking_ledger() -> dict[str, str | None]:

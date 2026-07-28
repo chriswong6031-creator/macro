@@ -120,6 +120,15 @@ free_registered:
     - /coming-soon.html
     - /report_bessent_jun24.html
     - /regime_timeline.json
+    # PRESS-FEEDS B4a live-wire rail (D05 Addendum 2 §6). The news.html audience is
+    # exactly this tier: the X account is the teaser, the signed-in wire is the
+    # retention surface + registration driver. Published by atomic rename into
+    # /var/lib/macro-live/public/live/ by the fastlane daemon (display-tier breadth,
+    # honest corroboration chips — no ranked signal); the repo copy is dev-only and
+    # gitignored. Kept free_registered (NOT public): registered users only, unlike
+    # /live/quotes.json's public breadth. No Caddyfile change — an un-allowlisted
+    # /live/wires.json already flows through the @reg_asset default-deny route.
+    - /live/wires.json
     # Tier-preview shells (paid content lives in /premiumdata/, enforced below).
     - /special_situations.html
     - /china_special_situations.html

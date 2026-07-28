@@ -2781,7 +2781,12 @@ jobs:
         # press_* must turn this job red at collection. test_marketing_breaking and
         # test_marketing_fastlane are co-run in the same edit — both were never
         # whitelisted anywhere (test-whitelist-rot) and co-run green on pytest+pyyaml.
-        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_marketing_personas.py tests/test_marketing_event_language.py tests/test_marketing_press_feeds.py tests/test_marketing_breaking.py tests/test_marketing_fastlane.py -q
+        # test_marketing_press_copy (PRESS-FEEDS B2-COPY + B4a, docket D05 Add.2)
+        # joins the same lane (2026-07-27): the wire-voice / dual-format / tape-stamp
+        # / wires.json-sink layers. Import closure is stdlib+pyyaml (wire_* +
+        # tape_stamp keep pandas/yaml LAZY at import), so a heavy top-level import
+        # turns this job red at collection.
+        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_marketing_personas.py tests/test_marketing_event_language.py tests/test_marketing_press_feeds.py tests/test_marketing_breaking.py tests/test_marketing_fastlane.py tests/test_marketing_press_copy.py -q
       - name: persona specs validate (config/personas/*.yml)
         # The gate the specs exist for: every committed spec carries the full
         # content-studio tilt key set, a live template-pool voice key, and the

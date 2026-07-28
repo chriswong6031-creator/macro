@@ -553,13 +553,19 @@ class TestReviewFixes:
 
     def test_percent_word_source_symbol_summary_ok(self):
         # Source spells "0.3 percent"; summary writes "0.3%" — same number,
-        # equivalent representation, must pass.
+        # equivalent representation, must pass. The summary is a RESTATEMENT (adds
+        # framing) so it also clears the M2 near-verbatim guard; a whole-headline
+        # relay ("CPI rose 0.3% in June.") is now correctly rejected as copypasta.
         item = self._item("CPI rose 0.3 percent in June")
-        assert validate_summary("CPI rose 0.3% in June.", item) == []
+        assert validate_summary(
+            "The June CPI reading came in at 0.3% on the month.", item
+        ) == []
 
     def test_percent_symbol_source_word_summary_ok(self):
         item = self._item("CPI rose 0.3% in June")
-        assert validate_summary("CPI rose 0.3 percent in June.", item) == []
+        assert validate_summary(
+            "The June CPI reading came in at 0.3 percent on the month.", item
+        ) == []
 
     def test_equivalence_never_admits_new_digits(self):
         # Equivalence only re-shapes numbers already in the source — an
@@ -729,12 +735,95 @@ class TestStanceSourceBoundary:
         assert any("'buy'" in v for v in violations)
 
     def test_standalone_source_word_still_allowed(self):
+        # "rally" is a standalone word in the SOURCE (headline+snippet), so the
+        # summary may use it. The summary is a RESTATEMENT (not a headline relay) so
+        # it also clears the M2 near-verbatim guard — the stance whitelist is what
+        # is under test here, not copypasta.
         item = {
-            "headline": "Stocks rally after the print", "body_snippet": "",
+            "headline": "Stocks rally after the print",
+            "body_snippet": "Equities extended a broad rally following the release.",
             "source_name": "X", "source_tier": "wire", "url": "https://x",
             "published_at": "2026-07-14T12:00:00Z",
         }
-        assert validate_summary("Stocks rally after the print.", item) == []
+        assert validate_summary(
+            "Equities pushed higher in a broad rally once the data landed.", item
+        ) == []
+
+
+class TestCopypastaLaw:
+    """M2 (opus review): §3 key-phrase / copypasta runtime guard in
+    validate_summary — at most ONE short quote, and no near-verbatim headline
+    relay. The prompt text alone could not stop an LLM returning the whole source
+    headline; these deterministic checks do.
+    """
+
+    @staticmethod
+    def _item(headline: str, snippet: str = "") -> dict:
+        return {
+            "id": "x", "source": "wire", "source_name": "Reuters",
+            "source_tier": "wire", "url": "https://example.com/x",
+            "published_at": "2026-07-27T12:00:00Z",
+            "headline": headline, "body_snippet": snippet,
+        }
+
+    def test_whole_headline_in_quotes_rejected(self):
+        # The exact §3 failure: the LLM returns the whole source headline wrapped
+        # in quotes. It must be rejected (quoted span > 6 words AND near-verbatim).
+        hl = "Trump orders sweeping new tariffs on all Chinese imports effective Monday"
+        v = validate_summary(f'"{hl}"', self._item(hl))
+        assert v, "whole-headline-in-quotes must be rejected"
+        assert any("quoted span too long" in x or "near-verbatim" in x for x in v)
+
+    def test_byte_identical_headline_rejected(self):
+        # Unquoted byte-identical relay -> near-verbatim guard fires.
+        hl = "Fed holds rates steady and signals one cut later this year"
+        v = validate_summary(hl + ".", self._item(hl))
+        assert any("near-verbatim" in x for x in v)
+
+    def test_trivially_reordered_headline_rejected(self):
+        hl = "Consumer confidence fell sharply in July amid tariff worries"
+        reordered = "Amid tariff worries, consumer confidence fell sharply in July."
+        v = validate_summary(reordered, self._item(hl))
+        assert any("near-verbatim" in x for x in v)
+
+    def test_two_quoted_spans_rejected(self):
+        hl = "Officials describe the talks and the mood"
+        summary = 'Negotiators called the talks "very friendly" and the mood "warm".'
+        v = validate_summary(summary, self._item(hl))
+        assert any("too many quoted spans" in x for x in v)
+
+    def test_seven_word_quote_rejected(self):
+        hl = "A minister comments at length on the plan"
+        # A 7-word quoted span (> 6) is rejected even as the only quote.
+        summary = 'The plan drew a rebuke: "this is a very bad and rushed idea".'
+        v = validate_summary(summary, self._item(hl))
+        assert any("quoted span too long" in x for x in v)
+
+    def test_legit_short_quote_paraphrase_passes(self):
+        # A genuine restatement quoting ONE short (<=6 word) source phrase passes.
+        hl = "Trump says China trade talks were very friendly and productive overall"
+        snippet = 'The president added the sessions were "very friendly" throughout.'
+        summary = (
+            'The president framed the sessions with China as "very friendly," '
+            "signalling progress on the trade file."
+        )
+        assert validate_summary(summary, self._item(hl, snippet)) == []
+
+    def test_deterministic_fallback_exempt_from_near_verbatim(self):
+        # The "{headline} — {source}" fallback IS the headline with attribution; the
+        # is_deterministic_fallback flag exempts it from the (c) near-verbatim guard.
+        # (Assert specifically on the near-verbatim rule — an unrelated validate_copy
+        # rule such as the em-dash check is out of scope for this bypass.)
+        hl = "Fed holds rates steady and signals one cut later this year"
+        fallback = f"{hl} - Reuters"  # ASCII hyphen: isolate the near-verbatim rule
+        # Without the flag it would trip near-verbatim...
+        assert any(
+            "near-verbatim" in x for x in validate_summary(fallback, self._item(hl))
+        )
+        # ...with the flag set, the near-verbatim guard is skipped.
+        v = validate_summary(fallback, self._item(hl), is_deterministic_fallback=True)
+        assert not any("near-verbatim" in x for x in v)
+        assert v == [], f"fallback should be clean under ASCII hyphen, got: {v}"
 
 
 class TestAliasWordBoundary:

@@ -179,6 +179,55 @@ wire:
   # arrive within this window for a hearsay item to clear to instant-publish.
   corroboration_window_s: 1800
 
+  # ── B4a live-wire rail (news.html retention surface) ──────────────────────
+  # The rail shows EVERYTHING above this LOWER floor (incl. digest-class items X
+  # never posts); X gets only the flagship top-K. Rail payload = last N items.
+  rail_salience_floor: 40.0
+  rail_max_items: 50
+  # Where the wires.v1 rail payload is published (first writable wins). VPS live
+  # dir first (served to registered users via the @reg_asset default-deny route);
+  # repo-relative dev path is gitignored (data/marketing/press/). NEVER a git write.
+  wires_sink_paths:
+    - "/var/lib/macro-live/public/live/wires.json"
+    - "data/marketing/press/wires.json"
+
+  # ── B2-COPY wire voice ────────────────────────────────────────────────────
+  # Rotating opener pool (deterministic hash + per-account no-repeat), key-phrase
+  # law in the LLM prompt, AI-tell rejection (imported from press validators),
+  # model tiering (sonnet flagship / haiku volume). Absent => deterministic
+  # defaults, so a B1-shaped config is a clean no-op enhancement.
+  voice:
+    enabled: true
+    # LLM tier: sonnet-class above the salience floor, haiku below. Keys resolve
+    # via config.yml llm_models. A disarmed/keyless run never reaches an LLM call
+    # (breaking.llm env gate holds) and lands on the deterministic fallback.
+    llm_tier_salience_floor: 80.0
+    llm_tier_flagship: "marketing_copy"   # sonnet-class (config.yml llm_models)
+    llm_tier_volume: "press_brief"        # haiku-class  (config.yml llm_models)
+    # opener_pools: {register: [openers...]} may override the built-in per-register
+    # pools (engine/marketing/wire_voice.py). Omitted => the seed pools ship.
+
+  # ── B2-COPY dual-format law (deterministic picker — NEVER the LLM) ─────────
+  format:
+    # wire_deep is reserved for high-salience explanatory registers (topics /
+    # claims / brief_candidates) with a rich enough source body; else flash.
+    deep_salience_floor: 75.0
+    deep_source_min_chars: 220
+    flash_max_chars: 280
+    flash_max_sentences: 2
+    deep_min_chars: 400
+    deep_max_chars: 700
+
+  # ── B2-COPY tape-stamp engine (threshold-gated; missing/stale/quiet => none) ─
+  tape:
+    enabled: true
+    min_move_pct: 0.4          # |changePct| floor for a stamp to appear
+    staleness_max_s: 1800      # quote older than this => NO stamp (never stale)
+    # quote_store_paths: VPS live store first, repo fallback (matches the daemon).
+    quote_store_paths:
+      - "/var/lib/macro-live/public/live/quotes.json"
+      - "site/live/quotes.json"
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Summarize-with-citation LLM lane — reuses config/marketing.yml breaking.llm
 # gating exactly (both cfg enabled AND env MARKETING_LLM_ENABLED). Referenced here
