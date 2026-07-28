@@ -1113,6 +1113,9 @@ on:
       - "tests/test_marketing_outbox.py"
       # W1 wiring layer: auto-approve gate + writeless dry-run report + admin panel.
       - "tests/test_marketing_publisher_autoapprove.py"
+      # Weekend levels lane (2026-07-27): previously unrun; carries the
+      # cited-level chart contract + floor-copy language bar.
+      - "tests/test_marketing_weekend_levels.py"
       # Post-time tape gate: never post yesterday's read against today's tape.
       - "tests/test_marketing_live_verify.py"
       # Publish-time mover/theme generation: honest live tape posts, scoped

@@ -645,6 +645,58 @@ def _extract_number_tokens(text: str) -> list[str]:
     return _NUMBER_RE.findall(text)
 
 
+def banned_language(text: str) -> list[str]:
+    """Language-only screen: dash tells, banned vocabulary/substrings, and the
+    v3 cheese list. [] = clean.
+
+    Two callers, one bar: validate_copy (generation time) and the publisher's
+    post-time gate. The 2026-07-27 $AVGO "POC held" post proved the queue is a
+    bypass — the copy was enqueued by an older weekend_levels lane BEFORE the
+    study-name bans existed, then fired days later where no generation-time
+    validator could reach it. The publisher screens every due item with this
+    exact function, so copy from any lane or vintage meets the same bar.
+    """
+    violations: list[str] = []
+
+    # Dash tells. Em dash (U+2014), en dash (U+2013), horizontal bar (U+2015)
+    # anywhere → banned. Hyphen-minus (U+002D / ASCII 45) stays allowed.
+    if "—" in text:
+        violations.append("em dash (U+2014)")
+    if "–" in text:
+        violations.append("en dash (U+2013)")
+    if "―" in text:
+        violations.append("horizontal bar (U+2015)")
+
+    # Banned vocabulary (word-boundary match, case-insensitive)
+    for word in _BANNED_VOCAB:
+        pattern = r"\b" + re.escape(word) + r"\b"
+        if re.search(pattern, text, re.IGNORECASE):
+            violations.append(f"banned vocab: '{word}'")
+
+    # Banned substring phrases (case-insensitive, no word-boundary needed)
+    lower_text = text.lower()
+    for phrase in _BANNED_SUBSTRINGS:
+        if phrase in lower_text:
+            violations.append(f"banned vocab: '{phrase}'")
+
+    # Banned word-boundary terms
+    for word in _BANNED_WORD_BOUNDARY:
+        pattern = r"\b" + re.escape(word) + r"\b"
+        if re.search(pattern, text, re.IGNORECASE):
+            violations.append(f"banned vocab: '{word}'")
+
+    # v3 cheese test: meme cosplay + sitcom beats (doctrine v3 §3)
+    for phrase in _BANNED_CHEESE_SUBSTRINGS:
+        if phrase in lower_text:
+            violations.append(f"cheese: '{phrase}'")
+    for word in _BANNED_CHEESE_WORDS:
+        pattern = r"\b" + re.escape(word) + r"\b"
+        if re.search(pattern, text, re.IGNORECASE):
+            violations.append(f"cheese: '{word}'")
+
+    return violations
+
+
 def validate_copy(
     headline: str,
     body: str,
@@ -707,44 +759,10 @@ def validate_copy(
     if emoji_budget == 0 and emoji_count > 0:
         violations.append("persona has 0-emoji budget but copy contains emoji")
 
-    # 3b. Em dash, en dash, and horizontal bar checks.
-    # Em dash (U+2014) anywhere → banned.
-    # En dash (U+2013) anywhere → banned (bare or spaced).
-    # Horizontal bar (U+2015) anywhere → banned.
-    # Hyphen-minus (U+002D / ASCII 45) stays allowed.
-    if "—" in full_text:
-        violations.append("em dash (U+2014)")
-    if "–" in full_text:
-        violations.append("en dash (U+2013)")
-    if "―" in full_text:
-        violations.append("horizontal bar (U+2015)")
-
-    # 4. Banned vocabulary (word-boundary match, case-insensitive)
-    for word in _BANNED_VOCAB:
-        pattern = r"\b" + re.escape(word) + r"\b"
-        if re.search(pattern, full_text, re.IGNORECASE):
-            violations.append(f"banned vocab: '{word}'")
-
-    # 4b. Banned substring phrases (case-insensitive, no word-boundary needed)
-    lower_text = full_text.lower()
-    for phrase in _BANNED_SUBSTRINGS:
-        if phrase in lower_text:
-            violations.append(f"banned vocab: '{phrase}'")
-
-    # 4c. Banned word-boundary terms
-    for word in _BANNED_WORD_BOUNDARY:
-        pattern = r"\b" + re.escape(word) + r"\b"
-        if re.search(pattern, full_text, re.IGNORECASE):
-            violations.append(f"banned vocab: '{word}'")
-
-    # 4d. v3 cheese test: meme cosplay + sitcom beats (doctrine v3 §3)
-    for phrase in _BANNED_CHEESE_SUBSTRINGS:
-        if phrase in lower_text:
-            violations.append(f"cheese: '{phrase}'")
-    for word in _BANNED_CHEESE_WORDS:
-        pattern = r"\b" + re.escape(word) + r"\b"
-        if re.search(pattern, full_text, re.IGNORECASE):
-            violations.append(f"cheese: '{word}'")
+    # 3b/4/4b/4c/4d. Language screen (dash tells, banned vocab/substrings,
+    # cheese). Shared with the publisher's post-time gate via banned_language()
+    # so the generation bar and the last-gate bar cannot drift apart.
+    violations.extend(banned_language(full_text))
 
     # 4e. Clarity: a stranger must be able to decode the post cold (2026-07-26).
     # Both are hard violations, not warnings, and that is deliberate: a failed

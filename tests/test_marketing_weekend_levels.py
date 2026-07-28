@@ -158,3 +158,96 @@ def test_weekend_schedule_resolves_ladder_to_utc():
     assert sched[0][1] == "2026-07-25T11:00:00Z"
     # every entry resolved to a real datetime (not the "immediate" fallback)
     assert all(at.endswith("Z") and at != "immediate" for _, at in sched)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Cited-level contract — the chart draws the line the text names
+# ─────────────────────────────────────────────────────────────────────────────
+# The 2026-07-27 $AVGO incident: copy cited "the POC at 379.32" over a card
+# that drew no such line, because text and chart were assembled from different
+# sources. cited_level() is now the single source; these tests pin (a) the
+# state→level mapping, (b) that every body frame for a state formats the SAME
+# level its card will draw, and (c) that the renderer actually draws it.
+
+_LV_FIXTURE = {
+    "last": 100.0, "wk_pct": 1.0, "sma20": 98.0, "sma50": 95.0,
+    "hi52": 110.0, "lo52": 80.0, "above20": True, "above50": True,
+    "pct_from_hi": -9.1, "pct_from_lo": 25.0,
+}
+
+_STATE_PLACEHOLDER = {
+    "leading": "{s20}", "uptrend": "{s20}", "cooling": "{s20}",
+    "downtrend": "{s20}", "reclaiming": "{s50}", "basing": "{lo}",
+}
+
+
+def test_cited_level_maps_every_state():
+    for state, ph in _STATE_PLACEHOLDER.items():
+        label, price = wl.cited_level(_LV_FIXTURE, state)
+        expected = {"{s20}": 98.0, "{s50}": 95.0, "{lo}": 80.0}[ph]
+        assert price == expected, (state, label, price)
+        assert label and "poc" not in label.lower()
+
+
+def test_every_frame_cites_the_level_its_card_draws():
+    """Each body shape for a state must format the placeholder matching
+    cited_level(state) — otherwise the copy names a number the chart does
+    not draw, which is the exact AVGO defect."""
+    for state, frames in wl._FRAMES.items():
+        ph = _STATE_PLACEHOLDER[state]
+        for frame in frames:
+            assert ph in frame, (
+                f"{state} frame formats no {ph} (would cite a level the "
+                f"card does not draw): {frame!r}")
+
+
+def test_floor_copy_passes_the_language_bar():
+    """Every headline and body the deterministic floor can emit clears the
+    same banned-language screen the publisher enforces at post time —
+    no study names (POC/VWAP), no dash tells, no cheese."""
+    from engine.marketing.copywriter import banned_language
+
+    for state, frames in wl._FRAMES.items():
+        for sv, _ in enumerate(frames):
+            lv = dict(_LV_FIXTURE)
+            headline, body = wl.render_post("AVGO", lv, variant=sv,
+                                            state_variant=sv)
+            # render_post classifies state from lv; we only need SOME valid
+            # copy per shape here, plus the full pools screened directly:
+            assert not banned_language(f"{headline}\n\n{body}"), (headline, body)
+    for pools in (wl._HEADLINES, wl._FRAMES):
+        for state, entries in pools.items():
+            for e in entries:
+                text = e.replace("$T", "$AVGO").replace("{wk_cap}", "Up 2%")
+                text = text.replace("{wk}", "up 2% on the week")
+                text = text.replace("{s20}", "98").replace("{s50}", "95")
+                text = text.replace("{lo}", "80").replace("{px}", "100")
+                assert not banned_language(text), (state, e)
+
+
+def test_render_chart_v2_draws_the_cited_level():
+    from engine.marketing.chart_render import render_chart_v2
+
+    n = 60
+    c = [100.0 + (i % 7) - 3 for i in range(n)]
+    o = [x - 0.5 for x in c]
+    h = [x + 1.5 for x in c]
+    l = [x - 1.5 for x in c]
+    v = [1_000_000.0] * n
+    dates = [f"2026-05-{(i % 28) + 1:02d}" for i in range(n)]
+
+    svg = render_chart_v2(
+        ticker="AVGO", dates=dates, o=o, h=h, l=l, c=c, volume=v,
+        show_indicators=False,
+        level_overlay={"price": 99.0, "label": "20-day avg"},
+    )
+    assert "20-day avg" in svg
+    assert 'stroke-dasharray="6 4"' in svg
+
+    # Out-of-range level: skipped silently, no phantom label.
+    svg2 = render_chart_v2(
+        ticker="AVGO", dates=dates, o=o, h=h, l=l, c=c, volume=v,
+        show_indicators=False,
+        level_overlay={"price": 5.0, "label": "52-wk low"},
+    )
+    assert "52-wk low" not in svg2

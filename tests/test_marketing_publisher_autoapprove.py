@@ -978,13 +978,14 @@ def test_repeat_gate_lets_fresh_text_post(monkeypatch, tmp_path):
     assert current_statuses(tmp_path)[fresh] == "posted"
 
 
-# A lightly-reworded variant of _REPEAT_TEXT (token Jaccard ~0.89 ≥ 0.7).
+
+# A lightly-reworded variant of _REPEAT_TEXT (token Jaccard ~0.89 >= 0.7).
 _REPEAT_TEXT_REWORDED = ("My read on today's move\n\nRates are doing the driving "
                          "today. Traders are now pricing out Fed cuts here.")
 
 
 def test_post_time_near_dup_quarantines_with_receipt(monkeypatch, tmp_path):
-    """LIVE: a lightly-reworded repeat (Jaccard ≥ 0.7 vs a same-account posted
+    """LIVE: a lightly-reworded repeat (Jaccard >= 0.7 vs a same-account posted
     text) is quarantined; the receipt names the offending item and the score."""
     from engine.marketing.outbox import (
         current_statuses, read_ledger, transition, token_jaccard, fold_state,
@@ -1061,3 +1062,67 @@ def test_post_time_near_dup_is_per_account(monkeypatch, tmp_path):
     assert rc == 0
     # The cross-account near-identical copy is NOT quarantined by this gate.
     assert current_statuses(tmp_path)[other["id"]] != "quarantined"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Post-time language gate — the queue is not a bypass around the copy bar
+# ─────────────────────────────────────────────────────────────────────────────
+# The 2026-07-27 $AVGO "POC held" post was enqueued by an older weekend_levels
+# lane BEFORE the study-name bans existed, then fired days later: no
+# generation-time validator can reach copy already in the queue. The publisher
+# screens every due item with copywriter.banned_language — same bar, last gate.
+
+_JARGON_TEXT = ("POC held, waiting\n\n$AVGO retested the POC at 379.32 and "
+                "held, now 0.7% above it. Not yet.")
+
+
+def test_language_gate_quarantines_jargon_live(monkeypatch, tmp_path):
+    from engine.marketing.outbox import current_statuses, read_ledger, transition
+
+    _write_publish_cfg(tmp_path, auto_approve=False, cap=-1, floor_min=0)
+    bad = _seed_item_bypassing_enqueue_guard(tmp_path, text=_JARGON_TEXT,
+                                             as_of="2026-07-19", kind="watchlist")
+    assert transition(bad, "approved", actor="test", root=tmp_path, now=_FIXED_NOW)
+
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake,
+                        kill_switch=True)
+
+    assert rc == 0
+    assert fake.calls == []                       # jargon never reached Buffer
+    assert current_statuses(tmp_path)[bad] == "quarantined"
+    note = next(r for r in read_ledger(tmp_path)
+                if r.get("id") == bad and r["to"] == "quarantined")["note"]
+    assert "poc" in note.lower()
+
+
+def test_language_gate_dry_run_reports_only(monkeypatch, tmp_path):
+    from engine.marketing.outbox import current_statuses, transition
+
+    _write_publish_cfg(tmp_path, auto_approve=False, cap=-1, floor_min=0)
+    bad = _seed_item_bypassing_enqueue_guard(tmp_path, text=_JARGON_TEXT,
+                                             as_of="2026-07-19", kind="watchlist")
+    assert transition(bad, "approved", actor="test", root=tmp_path, now=_FIXED_NOW)
+
+    rc = _run_publisher(monkeypatch, tmp_path, [], kill_switch=False)
+    assert rc == 0
+    assert current_statuses(tmp_path)[bad] == "approved"   # untouched
+
+
+def test_language_gate_passes_plain_copy(monkeypatch, tmp_path):
+    from engine.marketing.outbox import current_statuses, transition
+
+    _write_publish_cfg(tmp_path, auto_approve=False, cap=-1, floor_min=0)
+    ok_item = _seed_item_bypassing_enqueue_guard(
+        tmp_path,
+        text=("$AVGO is holding the line\n\n$AVGO held 379.32, the price where "
+              "the most shares changed hands lately. Watching, no position."),
+        as_of="2026-07-19", kind="watchlist")
+    assert transition(ok_item, "approved", actor="test", root=tmp_path, now=_FIXED_NOW)
+
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake,
+                        kill_switch=True)
+    assert rc == 0
+    assert len(fake.calls) == 1
+    assert current_statuses(tmp_path)[ok_item] == "posted"

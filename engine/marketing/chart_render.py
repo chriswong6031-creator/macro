@@ -1162,6 +1162,7 @@ def render_chart_v2(
     footer_cta: str | None = None,
     avwap_overlay: dict | None = None,
     poc_overlay: dict | None = None,
+    level_overlay: dict | None = None,
 ) -> str:
     """Render a TrendSpider-grade candlestick SVG chart.
 
@@ -1182,6 +1183,13 @@ def render_chart_v2(
             curve drawn in house indigo (#7c5cff) under candles, over SMA.
         poc_overlay: {"poc": float, "va_low": float, "va_high": float, "label": str}
             — volume point-of-control dashed line + value area band.
+        level_overlay: {"price": float, "label": str} — ONE labeled dashed
+            horizontal line at the price the post copy cites (weekend-levels
+            contract: the text may only name a level the chart draws — the
+            2026-07-27 $AVGO post cited "the POC at 379.32" over a card that
+            drew no such line). Drawn only when the price is inside the
+            visible axis range; label chip uses the same reserved-lane system
+            as the M2 overlays.
         Both default None; None and omitted are byte-identical to each other.
         NOTE vs pre-M2 output: the SMA layer now paints UNDER the candles (it
         used to paint over them) so the M2 overlays could slot between —
@@ -1548,6 +1556,27 @@ def render_chart_v2(
                     m2_label_svg += _overlay_chip(
                         _poc_label, _poc_y + 12, "#5b9dff", anchor_up=False
                     )
+
+    # Cited-level overlay ─────────────────────────────────────────────────────
+    # One labeled dashed line at the price the post copy names. Skipped
+    # silently when out of the visible range (an average of the drawn window
+    # is in-range by construction; a far-away 52-week level would squish the
+    # candles if we forced the axis to include it).
+    if level_overlay is not None:
+        _lvl_price = level_overlay.get("price")
+        _lvl_label = level_overlay.get("label", "")
+        if _lvl_price is not None and y_min <= _lvl_price <= y_max:
+            _lvl_y = py_price(_lvl_price)
+            m2_overlay_svg += (
+                f'<line x1="{PAD_L:.1f}" y1="{_lvl_y:.1f}" '
+                f'x2="{PAD_L + chart_w:.1f}" y2="{_lvl_y:.1f}" '
+                f'stroke="#5b9dff" stroke-width="1.5" stroke-dasharray="6 4" '
+                f'opacity="0.85"/>'
+            )
+            if _lvl_label:
+                m2_label_svg += _overlay_chip(
+                    _lvl_label, _lvl_y + 12, "#5b9dff", anchor_up=False
+                )
 
     # AVWAP overlay ───────────────────────────────────────────────────────────
     if avwap_overlay is not None:
