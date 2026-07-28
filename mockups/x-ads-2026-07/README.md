@@ -9,7 +9,7 @@ constant while changing one primary persuasion variable.
 - `index.html` — editable artboard/gallery and exact-size render surface.
 - `manifest.json` — post copy, headlines, CTAs, destinations, hypotheses and
   offer guardrails.
-- `site/assets/marketing/x-ads-2026-07/*.png` — final 1200 × 628 launch assets.
+- `site/assets/landing/x-ads-2026-07/*.png` — final 1200 × 628 launch assets.
 
 To preview all artboards, open `index.html`. To render one artboard at its exact
 size, add its ID:

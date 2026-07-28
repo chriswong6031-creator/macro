@@ -9,7 +9,7 @@ from urllib.parse import parse_qs, urlparse
 
 ROOT = Path(__file__).resolve().parents[1]
 CAMPAIGN_DIR = ROOT / "mockups" / "x-ads-2026-07"
-ASSET_DIR = ROOT / "site" / "assets" / "marketing" / "x-ads-2026-07"
+ASSET_DIR = ROOT / "site" / "assets" / "landing" / "x-ads-2026-07"
 
 
 def _manifest() -> dict:

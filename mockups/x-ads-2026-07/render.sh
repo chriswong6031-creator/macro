@@ -3,7 +3,7 @@ set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "${script_dir}/../.." && pwd)"
-output_dir="${repo_root}/site/assets/marketing/x-ads-2026-07"
+output_dir="${repo_root}/site/assets/landing/x-ads-2026-07"
 source_url="file://${script_dir}/index.html"
 
 mkdir -p "${output_dir}"
