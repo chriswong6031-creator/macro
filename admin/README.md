@@ -67,6 +67,9 @@ GH_TOKEN=ghp_...                 # Contents:write + Actions:write → flag toggl
 GA4_PROPERTY_ID / GA4_SA_JSON    # optional legacy GA4 reader
 ```
 
+`deploy-api-secrets.yml` delivers the existing `SUPABASE_OPERATOR_USER_ID`
+repository secret to the VPS admin environment without exposing its value.
+
 ## API endpoints
 
 | Endpoint | Description |
