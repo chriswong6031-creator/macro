@@ -1,6 +1,11 @@
-
 <!DOCTYPE html>
-<html lang="en">
+<!-- mastermind product page — landing-native chapter of index.html ("Neural Cover" family).
+     HAND-AUTHORED SOURCE (carved out of scripts/build_free_content.py via HAND_AUTHORED):
+     edit this file directly; the estate generator owns only the .md front-matter
+     (hub cards / related links). Chrome (nav+gear+footer+LANG/MMX_NAV JS) is copied
+     byte-exact from site/index.html with hrefs depth-fixed for /products/ — when the
+     landing chrome changes, re-sync these blocks. -->
+<html lang="en" data-lang="en">
 <head>
 <script data-dbase>(function () {
   window.DATA_BASE = window.DATA_BASE || "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev";  // R2 public data plane (flip: clear to revert to Pages)
@@ -20,29 +25,34 @@
     return orig.call(this, u, o);
   };
 })();</script>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AI Market Research Assistant — MastermindX</title>
-
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.classList.add('has-js');}catch(e){}</script><meta name="description" content="Ask questions across MastermindX dashboards, signals and market data. Get context-only explanations and, when available, citations. Depth varies by plan.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>
+/* language boot — mirrors site-wide localStorage['lang']; runs pre-paint. */
+(function(){try{var q=(location.search.match(/[?&]lang=(zh|en)/)||[])[1];
+  var l=q||localStorage.getItem('lang');
+  if(l!=='en'&&l!=='zh')l=(navigator.language||'').toLowerCase().indexOf('zh')===0?'zh':'en';
+  document.documentElement.setAttribute('data-lang',l);
+  document.documentElement.lang=l==='zh'?'zh-CN':'en';}catch(e){}})();
+</script>
+<title>Mastermind AI — Market Research Assistant — MastermindX</title>
+<meta name="description" content="An AI analyst grounded in the page you're on — it cites the desks it used, draws what it means, and leaves decisions to the engines. Fast and Pro lanes.">
 <link rel="canonical" href="https://www.mastermind-x.com/products/mastermind-ai.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="MastermindX">
-<meta property="og:title" content="AI Market Research Assistant">
-<meta property="og:description" content="Ask questions across MastermindX dashboards, signals and market data. Get context-only explanations and, when available, citations. Depth varies by plan.">
+<meta property="og:title" content="Mastermind AI — Market Research Assistant">
+<meta property="og:description" content="An AI analyst grounded in the page you're on — it cites the desks it used, draws what it means, and leaves decisions to the engines. Fast and Pro lanes.">
 <meta property="og:url" content="https://www.mastermind-x.com/products/mastermind-ai.html">
 <meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="AI Market Research Assistant">
-<meta name="twitter:description" content="Ask questions across MastermindX dashboards, signals and market data. Get context-only explanations and, when available, citations. Depth varies by plan.">
+<meta name="twitter:title" content="Mastermind AI — Market Research Assistant">
+<meta name="twitter:description" content="An AI analyst grounded in the page you're on — it cites the desks it used, draws what it means, and leaves decisions to the engines. Fast and Pro lanes.">
 <meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
-<link rel="icon" href="../favicon.svg" type="image/svg+xml">
-<link rel="icon" href="../favicon.ico" sizes="any">
-<link rel="apple-touch-icon" href="../apple-touch-icon.png"><link rel="stylesheet" href="../theme.css?v=370c3de0"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.mastermind-x.com/"},{"@type":"ListItem","position":2,"name":"Platform","item":"https://www.mastermind-x.com/products/index.html"},{"@type":"ListItem","position":3,"name":"Mastermind AI"}]}</script><script type="application/ld+json">{
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.mastermind-x.com/"},{"@type":"ListItem","position":2,"name":"Platform","item":"https://www.mastermind-x.com/products/index.html"},{"@type":"ListItem","position":3,"name":"Mastermind AI"}]}</script><script type="application/ld+json">{
   "@context": "https://schema.org",
   "@type": "WebPage",
-  "name": "AI Market Research Assistant",
-  "description": "Ask questions across MastermindX dashboards, signals and market data. Get context-only explanations and, when available, citations. Depth varies by plan.",
+  "name": "Mastermind AI — Market Research Assistant",
+  "description": "An AI analyst grounded in the page you're on — it cites the desks it used, draws what it means, and leaves decisions to the engines. Fast and Pro lanes.",
   "url": "https://www.mastermind-x.com/products/mastermind-ai.html",
   "isPartOf": {
     "@type": "WebSite",
@@ -57,60 +67,417 @@
     "url": "https://www.mastermind-x.com/products/mastermind-ai.html"
   }
 }</script>
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="stylesheet" href="../onboard.css?v=5c897a72">
+<link rel="stylesheet" href="../landing.css?v=abf00766">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   PRODUCT-PAGE SHARED LAYER — identical bytes on all three pages.
+   Landing tokens only (landing.css is linked above): no new hex
+   beyond var() derivations. Change here → change on all three.
+   ════════════════════════════════════════════════════════════════ */
 
-<link rel="stylesheet" href="../assets/css/43592e0a.css?v=43592e0a">
+/* ── chapter ribbon: the platform's three pillars; current chapter inked ── */
+.chap{display:flex;align-items:center;gap:26px;flex-wrap:wrap;margin-bottom:clamp(26px,4vw,42px)}
+.chap-x{display:inline-flex;align-items:baseline;gap:8px;font-family:var(--display);font-weight:700;
+  font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);transition:color .15s}
+.chap-x i{font-style:normal;font-weight:800;font-size:.66rem;color:var(--faint)}
+.chap-x:hover{color:var(--muted)}
+.chap-x.on{color:var(--ink);position:relative}
+.chap-x.on i{color:var(--pg-accent,var(--blue))}
+.chap-x.on::after{content:"";position:absolute;left:0;right:0;bottom:-8px;height:2px;border-radius:2px;background:var(--pg-accent,var(--blue))}
 
-<link rel="stylesheet" href="../assets/css/c68d2db1.css?v=c68d2db1">
-<link rel="preload" as="style" href="../product-nav-icons.css?v=7b0290e9">
+/* ── product hero ── */
+.phero{padding:clamp(46px,7vw,84px) 0 clamp(30px,4.5vw,56px)}
+.phero .kicker{color:var(--pg-accent,var(--blue))}
+.phero h1{font-family:var(--display);font-weight:800;letter-spacing:-.02em;line-height:1.02;
+  font-size:clamp(2.5rem,5.6vw,4.35rem);margin:14px 0 0;color:var(--ink)}
+.phero .sub{font-size:clamp(1.02rem,1.5vw,1.2rem);line-height:1.6;color:var(--muted);max-width:56ch;margin:18px 0 0}
+.phero .sub b{color:var(--ink-soft)}
+.phero .cta-row{margin-top:26px}
+.phero .micro{margin-top:14px}
+/* one gradient arc for the whole family (the ads' blue→violet→teal) */
+.pgrad{background:linear-gradient(92deg,var(--blue) 8%,var(--violet) 52%,var(--teal) 96%);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+@supports not (background-clip:text){.pgrad{color:var(--blue)}}
 
+/* ── hero artifact shell: the drawn product surface under the hero copy ── */
+.pstage{position:relative;margin-top:clamp(30px,4.5vw,52px)}
+.pstage .plate{border-radius:var(--r-lg);box-shadow:var(--sh-plate);overflow:hidden}
 
+/* ── annotation callouts pinned around a hero artifact ── */
+.anno{position:absolute;z-index:6;display:inline-flex;align-items:center;gap:7px;padding:5px 10px;
+  background:var(--panel);border:1px solid var(--hair-2);border-radius:999px;box-shadow:var(--sh-card);
+  font-family:var(--display);font-weight:700;font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)}
+.anno i{font-style:normal;width:7px;height:7px;border-radius:50%;background:var(--pg-accent,var(--blue));flex:none}
+@media (max-width:900px){.anno{display:none}}
+
+/* ── honest tag for drawn (non-live) vignettes; extends landing .live-tag ── */
+.live-tag.ill i{background:var(--faint)}
+
+/* ── desk chip (ad idiom): icon tile + label + reading + right stat ── */
+.dchip{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--hair);
+  border-radius:var(--r);box-shadow:var(--sh-card);padding:12px 14px}
+.dchip .ic{flex:none;width:38px;height:38px;border-radius:10px;display:grid;place-items:center;
+  background:var(--blue-wash);color:var(--blue-ink);font-family:var(--display);font-weight:800;font-size:.72rem}
+.dchip .tx{min-width:0;flex:1}
+.dchip .tx .k{display:block;font-family:var(--display);font-weight:700;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+.dchip .tx b{display:block;font-size:.86rem;color:var(--ink);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dchip .st{flex:none;font-family:var(--fig);font-weight:800;font-size:.8rem;color:var(--q-green)}
+
+/* ── stage meter (Bottoming → Turning → Ready → Trend) ── */
+.stgm{display:flex;align-items:center;margin:10px 0 2px}
+.stgm .seg{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;position:relative}
+.stgm .seg::before{content:"";position:absolute;top:5px;left:-50%;width:100%;height:2px;background:var(--hair-2)}
+.stgm .seg:first-child::before{display:none}
+.stgm .seg i{width:12px;height:12px;border-radius:50%;background:var(--hair-2);border:3px solid var(--panel);position:relative;z-index:1}
+.stgm .seg span{font-size:.66rem;color:var(--faint)}
+.stgm .seg.on i{background:var(--q-green)}
+.stgm .seg.on span{color:var(--q-green);font-weight:700}
+
+/* ── entry / invalidation twin cells ── */
+.ezc{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.ezc .c{border-radius:10px;padding:10px 12px;background:var(--bg);border:1px solid var(--hair)}
+.ezc .c .k{display:block;font-family:var(--display);font-weight:700;font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.ezc .c b{font-family:var(--fig);font-size:.95rem;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+.ezc .c.bad{background:var(--red-wash);border-color:#f2d7d5}
+.ezc .c.bad b{color:var(--q-red)}
+
+/* ── breadcrumb (SEO-stable markup, landing skin) ── */
+.est-crumb{max-width:var(--maxw);margin:18px auto 0;padding-inline:var(--gutter);font-size:.78rem;color:var(--faint)}
+.est-crumb ol{list-style:none;display:flex;gap:8px;margin:0;padding:0}
+.est-crumb a{color:var(--muted)} .est-crumb a:hover{color:var(--ink)}
+.est-crumb .sep{color:var(--hair-2)}
+
+/* ── honesty callout (access & limitations) ── */
+.callout{border:1px solid var(--hair-2);border-left:3px solid var(--q-gold);background:var(--gold-wash);
+  border-radius:var(--r);padding:16px 18px;margin:18px 0}
+.callout .co-h{display:block;font-family:var(--display);font-weight:800;font-size:.86rem;color:var(--ink);margin-bottom:6px}
+.callout p{margin:0;font-size:.92rem;line-height:1.55;color:var(--ink-soft)}
+
+/* ── section rhythm helpers ── */
+.psec-note{font-size:.8rem;color:var(--faint);max-width:70ch}
+</style>
+<style>
+/* ═══════════════════════════════════════════════════════════════════════════
+   PER-PAGE SYSTEMS — 02 Mastermind AI.  Accent: violet.
+   Every new class is .ma-*; every colour resolves to a landing.css token.
+
+   MOTION CONTRACT: each bespoke animation's BASE rule is already its FINISHED
+   frame, and the @keyframes runs *into* it.  landing.css kills animation under
+   html.still and prefers-reduced-motion, so both render the completed answer —
+   never an empty bubble or an undrawn level.  The block at the foot of this
+   sheet restates that by name, so the guarantee survives a landing.css edit.
+   ═══════════════════════════════════════════════════════════════════════════ */
+body{--pg-accent:var(--violet);--ma-wash:var(--blue-wash);--ma-hair:var(--hair-2)}
+@supports (color:color-mix(in srgb,red,blue)){
+  body{--ma-wash:color-mix(in srgb,var(--violet) 9%,#fff);
+       --ma-hair:color-mix(in srgb,var(--violet) 32%,#fff)}
+}
+
+/* ─────────── hero ─────────── */
+.ma-cta{justify-content:flex-start}
+.ma-stage{position:relative;max-width:1000px;margin-inline:auto}
+/* annotations read as one margin column down the artifact's right edge */
+.ma-stage .anno{right:-46px;left:auto;white-space:nowrap}
+.ma-a1{top:27%} .ma-a2{top:61%} .ma-a3{top:80%}
+@media (max-width:1080px){.ma-stage .anno{display:none}}
+
+/* the conversation artifact — the landing .chat, opened up to hold one whole exchange */
+.ma-chat{height:auto}
+.ma-chat .chat-head .who{color:var(--violet)}
+.ma-chat .chat-head .who i{background:var(--violet)}
+.ma-seg{margin-left:auto;display:flex;gap:4px;background:var(--panel-2);border:1px solid var(--hair-2);
+  border-radius:99px;padding:3px}
+.ma-seg span{font-family:var(--display);font-weight:700;font-size:9.5px;letter-spacing:.03em;color:var(--muted);
+  border-radius:99px;padding:4px 11px;white-space:nowrap}
+.ma-seg span.on{background:var(--violet);color:#fff}
+.ma-thread{overflow:visible;justify-content:flex-start;gap:13px;padding:clamp(15px,2.2vw,24px);
+  -webkit-mask-image:none;mask-image:none}
+.ma-chat .msg.a{max-width:92%}
+@media (max-width:680px){.ma-chat .msg.a,.ma-chat .msg.q{max-width:100%}}
+.ma-thread>*{animation:maRise .52s cubic-bezier(.22,.8,.3,1) both;animation-delay:var(--md,0s)}
+@keyframes maRise{from{opacity:0;transform:translateY(11px)}to{opacity:1;transform:none}}
+
+/* the working receipt — a narrated activity trace, folded into one chip */
+.ma-rcpt{align-self:flex-start;max-width:100%}
+.ma-rcpt-s{display:inline-flex;align-items:center;gap:8px;cursor:pointer;list-style:none;
+  font-family:var(--display);font-weight:700;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted);background:var(--panel-2);border:1px dashed var(--ma-hair);border-radius:99px;
+  padding:6px 13px;transition:color .15s,border-color .15s}
+.ma-rcpt-s::-webkit-details-marker{display:none}
+.ma-rcpt-s::marker{content:""}
+.ma-rcpt-s:hover{color:var(--ink-soft);border-color:var(--violet)}
+.ma-rcpt-s i{width:6px;height:6px;border-radius:50%;background:var(--violet);flex:none;font-style:normal}
+.ma-rcpt-s b{font-size:8px;color:var(--faint);transition:transform .18s}
+.ma-rcpt[open] .ma-rcpt-s b{transform:rotate(180deg)}
+.ma-rcpt-h{margin:12px 0 2px;font-family:var(--display);font-weight:700;font-size:9px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--faint)}
+.ma-steps{margin:7px 0 0;padding:0 0 0 16px;list-style:none;border-left:1px solid var(--ma-hair)}
+.ma-steps li{position:relative;font-size:12.5px;line-height:1.5;color:var(--muted);padding:4px 0}
+.ma-steps li::before{content:"";position:absolute;left:-20px;top:10px;width:7px;height:7px;border-radius:50%;
+  background:#fff;border:1.5px solid var(--ma-hair)}
+
+/* the chart drawn inside a reply */
+.ma-ichart{margin:14px 0 0;border:1px solid var(--hair);border-radius:12px;background:#fff;overflow:hidden}
+.ma-plot{position:relative}
+.ma-plot svg{display:block;width:100%;height:auto}
+.ma-plot .lvl{stroke:var(--violet);stroke-width:1.2;stroke-dasharray:5 4;fill:none;vector-effect:non-scaling-stroke;
+  transform-origin:left center;animation:maDraw .75s ease .95s both}
+.ma-plot .lvl.s{opacity:.55}
+@keyframes maDraw{from{transform:scaleX(0);opacity:0}to{transform:none;opacity:1}}
+.ma-plot .base{stroke:var(--hair-2);stroke-width:1;vector-effect:non-scaling-stroke}
+.ma-plot .cn line{stroke-width:1.1;vector-effect:non-scaling-stroke}
+.ma-plot .cn.u line{stroke:var(--q-green)} .ma-plot .cn.u rect{fill:var(--q-green)}
+.ma-plot .cn.d line{stroke:var(--q-red)} .ma-plot .cn.d rect{fill:var(--q-red)}
+.ma-plot .cn{animation:maPop .34s ease both;animation-delay:calc(.5s + var(--i,0) * .022s)}
+@keyframes maPop{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+.ma-lab{position:absolute;transform:translateY(-50%);display:inline-flex;align-items:center;gap:5px;
+  font-family:var(--display);font-weight:700;font-size:8.5px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--violet);background:var(--panel);border:1px solid var(--ma-hair);border-radius:99px;padding:3px 8px}
+.ma-ichart figcaption{padding:8px 12px;border-top:1px solid var(--hair);font-size:11px;line-height:1.45;color:var(--faint)}
+
+/* citation chips — the real desks the answer used */
+.ma-cites{display:flex;flex-wrap:wrap;gap:7px;margin-top:13px;padding-top:12px;border-top:1px solid var(--hair)}
+.ma-cite{position:relative;display:inline-flex;align-items:center;gap:6px;font-family:var(--display);font-weight:700;
+  font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--violet);background:var(--ma-wash);
+  border:1px solid var(--ma-hair);border-radius:99px;padding:5px 11px;transition:transform .15s,box-shadow .15s}
+.ma-cite::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--violet);flex:none}
+a.ma-cite:hover{color:var(--violet);transform:translateY(-1px);box-shadow:var(--sh-card)}
+
+/* the stance every answer closes on */
+.ma-stance{display:flex;align-items:center;gap:11px;margin:0;padding:11px 15px;background:var(--ma-wash);
+  border:1px solid var(--ma-hair);border-radius:var(--r);align-self:stretch;max-width:92%}
+.ma-stance .k{flex:none;font-family:var(--display);font-weight:700;font-size:8.5px;letter-spacing:.17em;
+  text-transform:uppercase;color:var(--violet)}
+.ma-stance b{font-family:var(--display);font-weight:800;font-size:15px;letter-spacing:-.01em;color:var(--ink)}
+.ma-stance.sm{margin-top:13px;padding:9px 12px;max-width:100%}
+.ma-stance.sm b{font-size:13px}
+
+/* follow-ups + composer */
+.ma-fups{display:flex;flex-wrap:wrap;gap:7px}
+.ma-fup{font-size:12.5px;line-height:1.3;color:var(--ink-soft);background:#fff;border:1px solid var(--hair-2);
+  border-radius:99px;padding:7px 13px}
+.ma-attach{flex:none;width:38px;height:38px;border-radius:11px;display:grid;place-items:center;color:var(--faint);
+  border:1px solid var(--hair-2);background:var(--panel-2)}
+.ma-attach svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+/* ─────────── shared vignette furniture ─────────── */
+.ma-cap{margin:13px 0 0;font-size:11.5px;line-height:1.55;color:var(--faint)}
+.ma-cap b{color:var(--muted);font-weight:600}
+.ma-tag{display:inline-flex;align-items:center;gap:6px;font-family:var(--display);font-weight:700;font-size:10px;
+  letter-spacing:.07em;color:var(--ink-soft);background:#fff;border:1px solid var(--hair-2);border-radius:99px;padding:5px 11px}
+.ma-tag i{width:5px;height:5px;border-radius:50%;background:var(--violet);flex:none;font-style:normal}
+
+/* 1 · where it lives — three entry points strung to one core */
+.ma-net{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 136px;column-gap:26px;
+  align-items:center;margin-top:12px}
+.ma-nodes{display:flex;flex-direction:column;gap:10px;min-width:0}
+.ma-node{position:relative;display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--hair);
+  border-radius:var(--r);box-shadow:var(--sh-card);padding:11px 13px;min-width:0}
+.ma-node::after{content:"";position:absolute;left:100%;top:50%;width:26px;height:1px;background:var(--ma-hair)}
+.ma-node i{flex:none;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-style:normal;
+  font-size:15px;background:var(--ma-wash);border:1px solid var(--ma-hair)}
+.ma-node b{display:block;font-family:var(--display);font-weight:700;font-size:12.5px;color:var(--ink);line-height:1.25}
+.ma-node small{display:block;margin-top:3px;font-size:11px;line-height:1.4;color:var(--muted)}
+.ma-core{position:relative;text-align:center;background:var(--ma-wash);border:1px solid var(--ma-hair);
+  border-radius:var(--r-lg);padding:16px 12px}
+.ma-core::before{content:"";position:absolute;right:100%;top:15%;bottom:15%;width:1px;background:var(--ma-hair)}
+.ma-core-m{display:grid;place-items:center;width:40px;height:40px;margin:0 auto 9px;border-radius:12px;
+  background:var(--violet);color:#fff;font-family:var(--display);font-weight:800;font-size:18px}
+.ma-core b{display:block;font-family:var(--display);font-weight:700;font-size:12.5px;color:var(--ink)}
+.ma-core small{display:block;margin-top:4px;font-size:10.5px;line-height:1.4;color:var(--muted)}
+@media (max-width:640px){
+  .ma-net{grid-template-columns:1fr;row-gap:16px}
+  .ma-node::after,.ma-core::before{display:none}
+}
+
+/* 2 · grounding — the page's state travelling into the composer */
+.ma-ctx{margin-top:12px}
+.ma-ctx-chips{display:flex;flex-wrap:wrap;gap:7px}
+.ma-wire{position:relative;height:26px;margin:4px 0 2px}
+.ma-wire::before{content:"";position:absolute;left:10px;right:10px;top:50%;border-top:1px dashed var(--ma-hair)}
+.ma-spark{position:absolute;top:50%;left:calc(100% - 14px);width:7px;height:7px;margin-top:-3.5px;border-radius:50%;
+  background:var(--violet);animation:maTravel 2.4s cubic-bezier(.5,0,.5,1) .5s both}
+@keyframes maTravel{from{left:10px;opacity:0}18%{opacity:1}to{left:calc(100% - 14px);opacity:1}}
+.ma-mc{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--hair-2);
+  border-radius:14px;padding:10px 12px;box-shadow:var(--sh-card)}
+.ma-mc>span:first-child{flex:1;min-width:0;font-size:13px;color:var(--ink-soft)}
+.ma-mc .s{flex:none;width:30px;height:30px;border-radius:50%;background:var(--violet);display:grid;place-items:center;color:#fff}
+.ma-mc .s svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.ma-slash{margin-top:14px;background:var(--panel-2);border:1px solid var(--hair);border-radius:var(--r);padding:11px 13px}
+.ma-slash-h{margin:0 0 8px;font-family:var(--display);font-weight:700;font-size:9px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--faint)}
+.ma-srow{display:flex;align-items:baseline;gap:11px;padding:5px 0;font-size:12px;color:var(--muted);line-height:1.4}
+.ma-srow+.ma-srow{border-top:1px solid var(--hair)}
+.ma-srow b{flex:none;min-width:78px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;
+  font-weight:700;color:var(--violet)}
+
+/* 3 · receipts — one answer taken apart */
+.ma-rec{margin-top:12px;background:var(--panel);border:1px solid var(--hair);border-radius:var(--r);padding:14px}
+.ma-rec .ma-steps{margin-top:9px}
+/* the vignette's chip is a DRAWING of the real one — it must not claim to be clickable */
+.ma-rec .ma-rcpt-s,.ma-rec .ma-rcpt-s:hover{cursor:default;color:var(--muted);border-color:var(--ma-hair)}
+.ma-rec-a{margin:14px 0 0;font-size:13.5px;line-height:1.55;color:var(--ink-soft)}
+.ma-rec-a b{color:var(--ink);font-weight:600}
+.ma-pop{position:absolute;bottom:calc(100% + 10px);left:-6px;z-index:4;width:min(228px,72vw);text-align:left;
+  background:var(--panel);border:1px solid var(--hair-2);border-radius:12px;box-shadow:var(--sh-lift);padding:10px 12px;
+  font-family:'Inter',system-ui,sans-serif;letter-spacing:0;text-transform:none}
+.ma-pop b{display:block;font-size:11.5px;font-weight:700;color:var(--ink);margin-bottom:3px}
+.ma-pop em{display:block;font-size:11px;line-height:1.45;font-weight:400;font-style:normal;color:var(--muted)}
+.ma-pop::after{content:"";position:absolute;top:100%;left:22px;border:6px solid transparent;border-top-color:var(--panel)}
+
+/* 4 · the six stances */
+.ma-stances{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.ma-st{font-family:var(--display);font-weight:700;font-size:12.5px;color:var(--muted);background:var(--panel-2);
+  border:1px solid var(--hair-2);border-radius:99px;padding:8px 14px;line-height:1.25}
+.ma-st.on{color:#fff;background:var(--violet);border-color:var(--violet);box-shadow:0 8px 20px -10px var(--violet)}
+
+/* 5 · visual answers */
+.ma-draw{margin-top:12px}
+.ma-draw .msg.a{max-width:100%;align-self:stretch;display:block}
+.ma-arow{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:11px}
+.ma-achip{display:inline-flex;align-items:center;gap:8px;font-size:11.5px;color:var(--muted);background:var(--panel-2);
+  border:1px dashed var(--hair-2);border-radius:99px;padding:6px 12px}
+.ma-achip svg{width:13px;height:13px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.ma-protag{font-family:var(--display);font-weight:700;font-size:9.5px;letter-spacing:.09em;color:#fff;
+  background:var(--violet);border-radius:99px;padding:5px 10px}
+
+/* 6 · two lanes */
+.ma-lanes{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:12px}
+.ma-lane{display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--hair);border-radius:var(--r);
+  box-shadow:var(--sh-card);padding:14px}
+.ma-lane.deep{background:var(--ma-wash);border-color:var(--ma-hair)}
+.ma-lane-g{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;font-size:15px;
+  background:var(--panel-2);border:1px solid var(--hair-2)}
+.ma-lane.deep .ma-lane-g{background:var(--violet);border-color:var(--violet);color:#fff}
+.ma-lane b{display:block;margin-top:10px;font-family:var(--display);font-weight:800;font-size:14px;color:var(--ink)}
+.ma-lane small{display:block;margin-top:4px;font-size:11.5px;line-height:1.45;color:var(--muted)}
+.ma-outline{list-style:none;margin:11px 0 0;padding:0}
+.ma-outline li{position:relative;padding:5px 0 5px 15px;font-size:11.5px;color:var(--ink-soft);border-top:1px solid var(--ma-hair)}
+.ma-outline li:first-child{border-top:0}
+.ma-outline li::before{content:"";position:absolute;left:1px;top:12px;width:7px;height:1px;background:var(--violet)}
+.ma-meter{margin-top:auto;padding-top:11px;font-family:var(--display);font-weight:700;font-size:10px;
+  letter-spacing:.06em;color:var(--faint)}
+.ma-lane.deep .ma-meter{color:var(--violet)}
+@media (max-width:560px){.ma-lanes{grid-template-columns:1fr}}
+
+/* ─────────── honesty station + legal microline ─────────── */
+.ma-guard{max-width:74ch}
+.ma-guard .sec-title{font-size:clamp(1.7rem,3vw,2.4rem)}
+.ma-legal{max-width:var(--maxw);margin:0 auto;padding:clamp(26px,4vw,40px) var(--gutter) clamp(30px,4vw,44px);
+  font-size:11.5px;line-height:1.6;color:var(--faint);text-align:center}
+
+/* ─────────── zh: uppercase micro-labels want less tracking on CJK ─────────── */
+html[data-lang="zh"] .ma-cite,html[data-lang="zh"] .ma-rcpt-s,html[data-lang="zh"] .ma-lab,
+html[data-lang="zh"] .ma-stance .k,html[data-lang="zh"] .ma-slash-h,html[data-lang="zh"] .ma-rcpt-h,
+html[data-lang="zh"] .ma-meter,html[data-lang="zh"] .ma-protag,html[data-lang="zh"] .ma-tag{letter-spacing:.04em}
+
+/* ─────────── motion contract, restated by name ───────────
+   Both switches must land on the FINISHED answer, so the fix is to drop the
+   animations entirely — every base rule above already draws the final frame. */
+@media (prefers-reduced-motion:reduce){
+  .ma-thread>*,.ma-plot .cn,.ma-plot .lvl,.ma-spark{animation:none}
+  .ma-spark{left:calc(100% - 14px);opacity:1}
+}
+html.still .ma-thread>*,html.still .ma-plot .cn,html.still .ma-plot .lvl,html.still .ma-spark{animation:none}
+html.still .ma-spark{left:calc(100% - 14px);opacity:1}
+</style>
 </head>
-<body class="estate public-page est-product product-mastermind-ai">
-
-
-<nav class="public-nav" aria-label="Main">
-  <div class="public-nav-in">
-    <a class="public-brand" href="../index.html" aria-label="MastermindX home"><span class="m">M</span> MASTERMINDX</a>
-    <div class="public-nav-links">
-      <a href="../products/index.html"><span class="l-en">Platform</span><span class="l-zh">平台</span></a>
-      <a href="../research/index.html"><span class="l-en">Research</span><span class="l-zh">研究</span></a>
-      <a href="../tools/index.html"><span class="l-en">Resources</span><span class="l-zh">资源</span></a>
-      <a href="../plans.html"><span class="l-en">Pricing</span><span class="l-zh">定价</span></a>
-    </div>
-    <div class="public-nav-right">
-      <a id="nav-login" class="public-nav-login" href="https://app.mastermind-x.com/terminal?signin=1"><span class="l-en">Log in</span><span class="l-zh">登录</span></a>
-      <a id="nav-cta" class="public-nav-cta" href="https://app.mastermind-x.com/terminal?signup=1"><span class="l-en">Start free</span><span class="l-zh">免费开始</span></a>
+<body>
+<nav class="nav" aria-label="Main">
+  <div class="nav-in">
+    <a class="brand" href="../index.html" aria-label="MastermindX home"><span class="m">M</span> MASTERMINDX</a>
+    <button class="nav-toggle" id="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-navigation" aria-label="Open navigation">
+      <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+    </button>
+    <ul class="nav-links" id="primary-navigation">
+      <li class="nav-group">
+        <button class="nav-trigger" id="nav-platform-trigger" type="button" aria-expanded="false" aria-controls="nav-platform-panel">
+          <span data-zh="平台">Platform</span><svg viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5 6 6.5l5-5"/></svg>
+        </button>
+        <div class="nav-panel nav-panel-platform" id="nav-platform-panel" aria-labelledby="nav-platform-trigger" hidden>
+          <div class="nav-panel-head">
+            <div><span class="nav-panel-k" data-zh="互联研究工作台">CONNECTED RESEARCH DESK</span><strong data-zh="从市场状态一路深入到底层证据">Move from market state to the underlying evidence</strong></div>
+            <a href="../products/index.html" data-zh="平台概览 →">Platform overview →</a>
+          </div>
+          <div class="nav-card-grid">
+            <a class="nav-card" href="../products/market-terminal.html"><span class="nav-card-mark">01</span><span><strong data-zh="市场终端">Market Terminal</strong><small data-zh="浏览器图表、观察列表与股票研究背景。">Browser charting, watchlists and stock research context.</small></span></a>
+            <a class="nav-card" href="../products/mastermind-ai.html" aria-current="page"><span class="nav-card-mark">02</span><span><strong>Mastermind AI</strong><small data-zh="结合当前页面与来源的市场研究助手。">A market research assistant grounded in the page and its sources.</small></span></a>
+            <a class="nav-card" href="../products/market-dashboards.html"><span class="nav-card-mark">03</span><span><strong data-zh="市场仪表盘">Market Dashboards</strong><small data-zh="宏观、周期、行业轮动与跨资产背景。">Macro, cycle, sector rotation and cross-asset context.</small></span></a>
+          </div>
+        </div>
+      </li>
+      <li class="nav-group">
+        <button class="nav-trigger" id="nav-research-trigger" type="button" aria-expanded="false" aria-controls="nav-research-panel">
+          <span data-zh="研究">Research</span><svg viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5 6 6.5l5-5"/></svg>
+        </button>
+        <div class="nav-panel nav-panel-research" id="nav-research-panel" aria-labelledby="nav-research-trigger" hidden>
+          <div class="nav-panel-head">
+            <div><span class="nav-panel-k" data-zh="公开研究界面">PUBLIC RESEARCH SURFACES</span><strong data-zh="从报告节选到逐股档案">From report excerpts to ticker-level dossiers</strong></div>
+          </div>
+          <div class="nav-card-grid two">
+            <a class="nav-card" href="../research/index.html"><span class="nav-card-mark">R</span><span><strong data-zh="机构研报">Institutional Research</strong><small data-zh="已索引的报告页面与可搜索节选；完整报告可能需要账户权限。">Indexed report pages and searchable excerpts; complete reports may require access.</small></span></a>
+            <a class="nav-card" href="../stocks/index.html"><span class="nav-card-mark">S</span><span><strong data-zh="股票档案">Stock Dossiers</strong><small data-zh="按股票整理的技术面、基本面、持仓与期权背景。">Ticker pages for technical, fundamental, ownership and options context.</small></span></a>
+          </div>
+        </div>
+      </li>
+      <li class="nav-group">
+        <button class="nav-trigger" id="nav-resources-trigger" type="button" aria-expanded="false" aria-controls="nav-resources-panel">
+          <span data-zh="资源">Resources</span><svg viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5 6 6.5l5-5"/></svg>
+        </button>
+        <div class="nav-panel nav-panel-resources" id="nav-resources-panel" aria-labelledby="nav-resources-trigger" hidden>
+          <div class="nav-panel-head">
+            <div><span class="nav-panel-k" data-zh="无需账户即可使用">USEFUL BEFORE SIGNUP</span><strong data-zh="先解决一个真实问题">Start by solving one real problem</strong></div>
+          </div>
+          <div class="nav-card-grid two">
+            <a class="nav-card" href="../tools/index.html"><span class="nav-card-mark">T</span><span><strong data-zh="免费工具">Free Tools</strong><small data-zh="仓位、风险、回报与投资组合计算器。">Calculators for sizing, risk, returns and portfolios.</small></span></a>
+            <a class="nav-card" href="../learn/index.html"><span class="nav-card-mark">L</span><span><strong data-zh="学习中心">Learning Center</strong><small data-zh="技术分析、风险、期权与申报文件课程。">Lessons on technicals, risk, options and filings.</small></span></a>
+            <a class="nav-card" href="../blog/index.html"><span class="nav-card-mark">B</span><span><strong data-zh="博客">Blog</strong><small data-zh="关于交易数学与市场机制的朴素文章。">Plain-English articles on trading math and market mechanics.</small></span></a>
+            <a class="nav-card" href="../support.html"><span class="nav-card-mark">?</span><span><strong data-zh="支持">Support</strong><small data-zh="账户、产品与访问问题的帮助入口。">Help with account, product and access questions.</small></span></a>
+          </div>
+        </div>
+      </li>
+      <li class="nav-direct"><a href="../plans.html" data-zh="定价">Pricing</a></li>
+    </ul>
+    <div class="nav-right">
+      <a id="nav-login" href="https://app.mastermind-x.com/terminal?signin=1" style="color:var(--muted)" data-zh="登录">Log in</a>
+      <a id="nav-cta" class="btn primary sm" href="https://app.mastermind-x.com/terminal?signup=1" data-zh="免费开始">Start free</a>
       <span class="gear-wrap">
         <button class="gearbtn" id="gear-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Settings">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </button>
         <div class="gear-pop" id="gear-pop" role="menu" aria-label="Settings">
-          <p class="gp-kicker"><span class="l-en">Settings</span><span class="l-zh">设置</span></p>
+          <p class="gp-kicker" data-zh="设置">SETTINGS</p>
           <div class="gp-lang">
-            <span class="gp-lbl"><span class="l-en">Language</span><span class="l-zh">语言</span></span>
+            <span class="gp-lbl" data-zh="语言">Language</span>
             <span class="gp-seg" role="group" aria-label="Language">
               <button type="button" class="gp-seg-b" data-set-lang="en">EN</button>
               <button type="button" class="gp-seg-b" data-set-lang="zh">中文</button>
             </span>
           </div>
           <div class="gp-div"></div>
-          <a class="gp-link" role="menuitem" href="../start.html"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></a>
+          <a class="gp-link" role="menuitem" href="../start.html" data-zh="打开仪表盘">Open the dashboard</a>
+          <!-- ACCOUNT section — mirrors the macro dashboard gear's ACCOUNT block, in
+               landing light tokens. onboard.js's auth-chrome module swaps -out ⇄ -in. -->
           <div class="gp-div"></div>
           <div class="gp-acct">
-            <p class="gp-acct-t"><span class="l-en">Account</span><span class="l-zh">账户</span></p>
+            <p class="gp-acct-t" data-zh="账户">ACCOUNT</p>
             <div class="gp-acct-out" id="gp-acct-out">
-              <p class="gp-acct-d"><span class="l-en">Sign in to sync your watchlists, alerts and settings across devices.</span><span class="l-zh">登录以在所有设备同步自选、提醒与设置。</span></p>
+              <p class="gp-acct-d" data-zh="登录以在所有设备同步自选、提醒与设置。">Sign in to sync your watchlists, alerts and settings across devices.</p>
               <div class="gp-acct-btns">
-                <button type="button" class="gp-abtn ghost" id="gp-signin"><span class="l-en">Sign in</span><span class="l-zh">登录</span></button>
-                <button type="button" class="gp-abtn solid" id="gp-signup"><span class="l-en">Create account</span><span class="l-zh">创建账户</span></button>
+                <button type="button" class="gp-abtn ghost" id="gp-signin" data-zh="登录">Sign in</button>
+                <button type="button" class="gp-abtn solid" id="gp-signup" data-zh="创建账户">Create account</button>
               </div>
             </div>
             <div class="gp-acct-in" id="gp-acct-in" hidden>
               <div class="gp-acct-card" id="gp-acct-card" role="button" tabindex="0">
                 <span class="gp-avatar" id="gp-avatar"></span>
-                <span class="gp-acct-main"><span class="gp-acct-email" id="gp-email"></span><span class="gp-acct-sub"><span class="l-en">Manage account & sync ›</span><span class="l-zh">管理账户与同步 ›</span></span></span>
+                <span class="gp-acct-main"><span class="gp-acct-email" id="gp-email"></span><span class="gp-acct-sub" data-zh="管理账户与同步 ›">Manage account &amp; sync ›</span></span>
               </div>
-              <button type="button" class="gp-signout" id="gp-signout"><span class="l-en">Sign out</span><span class="l-zh">退出登录</span></button>
+              <button type="button" class="gp-signout" id="gp-signout" data-zh="退出登录">Sign out</button>
             </div>
           </div>
         </div>
@@ -119,230 +486,606 @@
   </div>
 </nav>
 
-
-
 <nav class="est-crumb" aria-label="Breadcrumb">
   <ol>
-
-    <li>
-      <a href="../">Home</a>
-    </li>
+    <li><a href="../" data-zh="首页">Home</a></li>
     <li class="sep" aria-hidden="true">/</li>
-
-    <li>
-      <a href="../products/index.html">Platform</a>
-    </li>
+    <li><a href="../products/index.html" data-zh="平台">Platform</a></li>
     <li class="sep" aria-hidden="true">/</li>
-
-    <li aria-current="page">
-      Mastermind AI
-    </li>
-
-
+    <li aria-current="page">Mastermind AI</li>
   </ol>
 </nav>
 
-
 <main id="main">
 
-<section class="prod-hero">
-  <div class="prod-copy">
-    <span class="est-kicker">Context-aware AI analyst</span>
-    <h1 class="est-title">AI Market Research Assistant</h1>
-    <p class="est-dek">Ask questions across MastermindX dashboards, signals and market data. Get context-only explanations and, when available, citations. Depth varies by plan.</p>
+<!-- ══════════════ HERO — a conversation with receipts ══════════════ -->
+<section class="phero">
+  <div class="wrap">
+    <nav class="chap" aria-label="Platform chapters">
+      <a class="chap-x" href="../products/market-terminal.html"><i>01</i><span data-zh="市场终端">Market Terminal</span></a>
+      <span class="chap-x on" aria-current="page"><i>02</i><span>Mastermind AI</span></span>
+      <a class="chap-x" href="../products/market-dashboards.html"><i>03</i><span data-zh="市场仪表盘">Market Dashboards</span></a>
+    </nav>
 
-    <div class="prod-cta">
-      <a class="gbtn gbtn-lg gbtn-cta" href="../chat.html">Ask Mastermind AI →</a>
+    <div class="rv">
+      <span class="kicker">Mastermind AI</span>
+      <h1>
+        <span data-zh="有问题，问台席。">Ask the desk anything.</span><br>
+        <span class="pgrad" data-zh="回答必附出处。">It answers with receipts.</span>
+      </h1>
+      <p class="sub" data-zh="Mastermind AI 开口前先读完各台席——信号、申报、资金流、市场格局——引用所依据的来源，并以一句大白话立场收尾。<b>哪怕立场是「先等」。</b>">Mastermind AI reads the desks before it speaks — signals, filings, flow, the regime — cites what it used, and ends every answer on a plain stance. <b>Even when the stance is wait.</b></p>
+      <div class="cta-row ma-cta">
+        <a class="btn primary" href="../chat.html" data-zh="向 Mastermind 提问 →">Ask Mastermind →</a>
+        <a class="btn" href="../plans.html" data-zh="查看方案">See plans</a>
+      </div>
+      <p class="micro" data-zh="快速通道免费体验 · 每周5问">FAST LANE FREE TO TRY · 5 QUESTIONS A WEEK</p>
     </div>
 
+    <div class="pstage">
+      <div class="ma-stage rv" style="--d:.12s">
+        <span class="live-tag ill" data-zh="<i></i>示意"><i></i>ILLUSTRATIVE</span>
+        <div class="chat ma-chat">
+          <div class="chat-head">
+            <span class="who"><i></i>MASTERMIND AI</span>
+            <div class="ma-seg">
+              <span class="on" data-zh="⚡ 快速">⚡ Fast</span>
+              <span>◈ Pro</span>
+            </div>
+          </div>
+          <div class="thread ma-thread">
+            <p class="msg q" style="--md:.06s" data-zh="这周半导体发生了什么变化？">What changed in semiconductors this week?</p>
+
+            <details class="ma-rcpt" style="--md:.34s">
+              <summary class="ma-rcpt-s"><i></i><span data-zh="分析6秒 · 4项核对">Analyzed for 6s · 4 checks</span><b aria-hidden="true">▼</b></summary>
+              <p class="ma-rcpt-h" data-zh="它做了哪几步">WHAT IT DID</p>
+              <ol class="ma-steps">
+                <li data-zh="读取今晚的宏观格局看板">Read tonight's macro regime board</li>
+                <li data-zh="在期权台席核对当日资金流">Checked the day's flow on the options desk</li>
+                <li data-zh="比对因子层面的领涨与落后">Compared factor leadership against the laggards</li>
+                <li data-zh="交叉核对该板块近期的申报披露">Cross-checked the group's recent filings</li>
+              </ol>
+            </details>
+
+            <div class="msg a" style="--md:.64s">
+              <p data-zh="领涨面在收窄：本周是存储和设备类个股在拉动，整体芯片篮子横着走。">Leadership narrowed: memory and equipment names carried the group this week, while the broader chip basket went sideways.</p>
+              <p data-zh="期权资金流偏向对冲，而不是新增买入，所以价格和仓位说的不是一回事——这一点我如实留作未定，没有折中平均。">Options flow leaned to hedges rather than fresh buying, so price and positioning disagree — I've left that unresolved rather than averaging it.</p>
+              <figure class="ma-ichart">
+                <div class="ma-plot">
+                  <svg viewBox="0 0 420 128" role="img" aria-label="Drawn candle strip with two marked levels">
+                    <line class="base" x1="8" y1="120" x2="412" y2="120"/>
+                    <line class="lvl r" x1="8" y1="15" x2="412" y2="15"/>
+                    <line class="lvl s" x1="8" y1="39.5" x2="412" y2="39.5"/>
+                    <g class="cn u" style="--i:0"><line x1="15.5" y1="95.7" x2="15.5" y2="106.0"/><rect x="11" y="97.3" width="9" height="4.8" rx="1"/></g><g class="cn u" style="--i:1"><line x1="32.5" y1="92.1" x2="32.5" y2="99.9"/><rect x="28" y="95.5" width="9" height="1.8" rx="1"/></g><g class="cn u" style="--i:2"><line x1="49.5" y1="90.6" x2="49.5" y2="96.6"/><rect x="45" y="93.9" width="9" height="1.6" rx="1"/></g><g class="cn u" style="--i:3"><line x1="66.5" y1="86.5" x2="66.5" y2="95.2"/><rect x="62" y="87.7" width="9" height="6.2" rx="1"/></g><g class="cn u" style="--i:4"><line x1="83.5" y1="76.9" x2="83.5" y2="89.2"/><rect x="79" y="81.6" width="9" height="6.1" rx="1"/></g><g class="cn u" style="--i:5"><line x1="100.5" y1="74.2" x2="100.5" y2="86.8"/><rect x="96" y="78.0" width="9" height="3.6" rx="1"/></g><g class="cn u" style="--i:6"><line x1="117.5" y1="67.4" x2="117.5" y2="83.4"/><rect x="113" y="70.1" width="9" height="7.9" rx="1"/></g><g class="cn u" style="--i:7"><line x1="134.5" y1="63.8" x2="134.5" y2="72.3"/><rect x="130" y="68.6" width="9" height="1.6" rx="1"/></g><g class="cn u" style="--i:8"><line x1="151.5" y1="64.5" x2="151.5" y2="70.9"/><rect x="147" y="65.9" width="9" height="2.7" rx="1"/></g><g class="cn u" style="--i:9"><line x1="168.5" y1="53.4" x2="168.5" y2="69.5"/><rect x="164" y="55.1" width="9" height="10.8" rx="1"/></g><g class="cn u" style="--i:10"><line x1="185.5" y1="43.8" x2="185.5" y2="58.5"/><rect x="181" y="46.4" width="9" height="8.7" rx="1"/></g><g class="cn u" style="--i:11"><line x1="202.5" y1="43.6" x2="202.5" y2="48.3"/><rect x="198" y="44.8" width="9" height="1.6" rx="1"/></g><g class="cn u" style="--i:12"><line x1="219.5" y1="32.7" x2="219.5" y2="47.1"/><rect x="215" y="35.6" width="9" height="9.2" rx="1"/></g><g class="cn u" style="--i:13"><line x1="236.5" y1="31.3" x2="236.5" y2="37.9"/><rect x="232" y="34.2" width="9" height="1.6" rx="1"/></g><g class="cn u" style="--i:14"><line x1="253.5" y1="26.3" x2="253.5" y2="36.3"/><rect x="249" y="30.4" width="9" height="3.8" rx="1"/></g><g class="cn u" style="--i:15"><line x1="270.5" y1="25.8" x2="270.5" y2="35.3"/><rect x="266" y="29.1" width="9" height="1.6" rx="1"/></g><g class="cn u" style="--i:16"><line x1="287.5" y1="23.8" x2="287.5" y2="34.5"/><rect x="283" y="26.1" width="9" height="3.0" rx="1"/></g><g class="cn d" style="--i:17"><line x1="304.5" y1="23.2" x2="304.5" y2="34.8"/><rect x="300" y="26.1" width="9" height="4.3" rx="1"/></g><g class="cn d" style="--i:18"><line x1="321.5" y1="27.3" x2="321.5" y2="35.4"/><rect x="317" y="30.4" width="9" height="3.9" rx="1"/></g><g class="cn u" style="--i:19"><line x1="338.5" y1="27.6" x2="338.5" y2="37.8"/><rect x="334" y="32.0" width="9" height="2.3" rx="1"/></g><g class="cn u" style="--i:20"><line x1="355.5" y1="24.8" x2="355.5" y2="36.0"/><rect x="351" y="27.1" width="9" height="4.9" rx="1"/></g><g class="cn u" style="--i:21"><line x1="372.5" y1="22.1" x2="372.5" y2="30.1"/><rect x="368" y="25.7" width="9" height="1.6" rx="1"/></g><g class="cn u" style="--i:22"><line x1="389.5" y1="16.0" x2="389.5" y2="28.7"/><rect x="385" y="21.2" width="9" height="4.5" rx="1"/></g><g class="cn u" style="--i:23"><line x1="406.5" y1="17.7" x2="406.5" y2="25.3"/><rect x="402" y="18.9" width="9" height="2.3" rx="1"/></g>
+                  </svg>
+                  <span class="ma-lab" style="left:10px;top:11.7%" data-zh="阻力">Resistance</span>
+                  <span class="ma-lab" style="left:10px;top:30.9%" data-zh="支撑">Support</span>
+                </div>
+                <figcaption data-zh="点位取自该板块自身的行情数据——不虚构。">Levels drawn from the group's own bars — never invented.</figcaption>
+              </figure>
+              <div class="ma-cites">
+                <a class="ma-cite" href="../macro.html" data-zh="宏观格局">Macro regime</a>
+                <a class="ma-cite" href="../options.html" data-zh="期权台席">Options desk</a>
+                <a class="ma-cite" href="../factors.html" data-zh="因子">Factors</a>
+              </div>
+            </div>
+
+            <p class="ma-stance" style="--md:1.02s"><span class="k" data-zh="立场">STANCE</span><b data-zh="观察——不追高。">Watch — don't chase.</b></p>
+
+            <div class="ma-fups" style="--md:1.26s">
+              <span class="ma-fup" data-zh="是哪几只在拉动？">Which names carried it?</span>
+              <span class="ma-fup" data-zh="看资金流明细">Show me the flow detail</span>
+              <span class="ma-fup" data-zh="什么会改变这个判断？">What would change this read?</span>
+            </div>
+          </div>
+          <div class="composer">
+            <span class="ma-attach" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.2-9.19a3.67 3.67 0 0 1 5.18 5.18l-9.2 9.2a1.83 1.83 0 0 1-2.6-2.6l8.5-8.48"/></svg>
+            </span>
+            <div class="cfield ph"><span data-zh="问某只股票、某个台席，或你正在看的这一页">Ask about a symbol, a desk, or the page you're on</span><span class="caret"></span></div>
+            <span class="send" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9l20-7z"/></svg>
+            </span>
+          </div>
+        </div>
+        <span class="anno ma-a1"><i></i><span data-zh="展示分析过程">Shows its working</span></span>
+        <span class="anno ma-a2"><i></i><span data-zh="引用直达台席">Citations open the real desk</span></span>
+        <span class="anno ma-a3"><i></i><span data-zh="每个回答都有立场">Every answer lands on a stance</span></span>
+      </div>
+    </div>
   </div>
-  <aside class="prod-workflow" aria-label="Product workflow">
-    <span class="pw-k"><span class="l-en">How it fits</span><span class="l-zh">使用流程</span></span>
-    <ol>
-      <li>Ask from the page or symbol you are viewing</li><li>Inspect the sources used in the answer</li><li>Continue into the linked research surface</li>
-    </ol>
-  </aside>
 </section>
 
-<div class="prod-layout">
-  <nav class="prod-toc" aria-label="On this page">
-    <p class="toc-h"><span class="l-en">On this page</span><span class="l-zh">本页目录</span></p>
-    <a href="#ask-from-the-page-you-are-reading">Ask from the page you are reading</a><a href="#use-the-right-depth-for-the-question">Use the right depth for the question</a><a href="#see-what-the-assistant-checked">See what the assistant checked</a><a href="#work-with-symbols-charts-and-images">Work with symbols, charts and images</a><a href="#limitations">Limitations</a>
-  </nav>
-  <div class="prod-main">
-    <article class="est-prose">
-      <p>Mastermind AI is a market research assistant that explains dashboards, symbols and available market context with read-only tools connected to the MastermindX workspace.</p>
-
-<h2 id="ask-from-the-page-you-are-reading">Ask from the page you are reading</h2>
-<p>Open the assistant from a dashboard or symbol view and the relevant page, panel or ticker can accompany the question. That context makes it possible to ask what a field is showing without restating every value on screen.</p>
-
-<h2 id="use-the-right-depth-for-the-question">Use the right depth for the question</h2>
-<p>Short questions can use the faster response lane, while deeper research work can produce a more structured, multi-section answer. Access and allowances vary by plan, so the pricing page remains the source for current entitlements.</p>
-
-<h2 id="see-what-the-assistant-checked">See what the assistant checked</h2>
-<p>When sources are available, the response can show the research surfaces consulted and attach citations. Those links are the useful part: they let a reader inspect the underlying dashboard, dossier or report instead of accepting a summary on trust.</p>
-
-<h2 id="work-with-symbols-charts-and-images">Work with symbols, charts and images</h2>
-<p>The assistant can use supported symbol, page, chart or screenshot context. In compatible Terminal sessions it may return visual annotations or chart commands, which are aids for investigation rather than original trading signals.</p>
-
-<h2 id="limitations">Limitations</h2>
-<div class="callout warn"><span class="co-h">A cited answer can still be wrong</span><p>Mastermind AI can be incomplete, misread a source or lag the latest market move. It does not place trades or provide personalized investment advice. Verify important claims against the linked evidence and its timestamp.</p></div>
-<p>Signals and scores come from the platform's deterministic engines; the assistant explains available outputs and may de-escalate uncertainty, but it does not originate those signals.</p>
-    </article>
-
-
-    <aside class="prod-related" aria-label="Related product and research pages">
-      <h2><span class="l-en">Continue the workflow</span><span class="l-zh">继续探索</span></h2>
-      <div class="prod-rel-grid">
-
-        <a class="prod-rel" href="../products/market-terminal.html">
-          <span class="kind"><span class="l-en">Product</span><span class="l-zh">产品</span></span>
-          <span class="name">Market Terminal &amp; Browser Charting</span>
-          <span class="go"><span class="l-en">Explore</span><span class="l-zh">查看</span> →</span>
-        </a>
-
-        <a class="prod-rel" href="../products/market-dashboards.html">
-          <span class="kind"><span class="l-en">Product</span><span class="l-zh">产品</span></span>
-          <span class="name">Market Intelligence Dashboards</span>
-          <span class="go"><span class="l-en">Explore</span><span class="l-zh">查看</span> →</span>
-        </a>
-
-
-        <a class="prod-rel" href="../research/index.html">
-          <span class="kind"><span class="l-en">Research surface</span><span class="l-zh">研究页面</span></span>
-          <span class="name">Browse institutional research</span>
-          <span class="go"><span class="l-en">Open</span><span class="l-zh">打开</span> →</span>
-        </a>
-
-        <a class="prod-rel" href="../stocks/index.html">
-          <span class="kind"><span class="l-en">Research surface</span><span class="l-zh">研究页面</span></span>
-          <span class="name">Open public stock dossiers</span>
-          <span class="go"><span class="l-en">Open</span><span class="l-zh">打开</span> →</span>
-        </a>
-
+<!-- ══════════════ 1 · WHERE IT LIVES ══════════════ -->
+<section class="feature" id="everywhere">
+  <div class="wrap feat-grid">
+    <div class="feat-copy rv">
+      <span class="kicker" data-zh="入口">Entry points</span>
+      <h2 class="feat-title" data-zh="一位分析师，<br>每页都在。">One analyst,<br>every page.</h2>
+      <p class="feat-sub" data-zh="站内每页都挂着一个悬浮入口。「向操盘大脑提问」是带对话记录的整页台席。鼠标停在任意仪表盘面板上，它会主动提出讲讲这一块。在 Terminal 里，它直接对着你正在看的那只股票打开。">A floating launcher rides every page. Ask the Mastermind is a full-page desk with saved threads. Hover any dashboard panel and it offers to explain that panel. In the Terminal it opens on the symbol you're already reading.</p>
+      <ul class="fx">
+        <li data-zh="<b>每页都有入口。</b>不用离开你正在看的东西。"><b>A launcher on every page.</b> You never leave what you were reading.</li>
+        <li data-zh="<b>整页台席，保留记录。</b>之前的对话随时翻回来。"><b>A full-page desk with history.</b> Old threads are still there when you come back.</li>
+        <li data-zh="<b>关掉标签页也不丢。</b>中途关闭，那次回答照样跑完，回来接着看。"><b>Answers survive the tab.</b> Close it mid-answer; the run finishes and picks up where it was when you return.</li>
+      </ul>
+      <a class="feat-cta" href="../chat.html" data-zh="打开整页台席 →">Open the full-page desk →</a>
+    </div>
+    <div class="rv" style="--d:.1s">
+      <div class="demo">
+        <span class="live-tag ill" data-zh="<i></i>示意"><i></i>ILLUSTRATIVE</span>
+        <p class="dk" data-zh="它待在哪里 <span class='asof'>站内每一页</span>">WHERE IT LIVES <span class="asof">every page on the site</span></p>
+        <div class="ma-net">
+          <div class="ma-nodes">
+            <span class="ma-node"><i aria-hidden="true">💬</i><span><b data-zh="悬浮入口">Floating launcher</b><small data-zh="每页角落常驻，随时点开">Parked in the corner of every page</small></span></span>
+            <span class="ma-node"><i aria-hidden="true">▤</i><span><b data-zh="向操盘大脑提问">Ask the Mastermind</b><small data-zh="整页台席，保留对话记录">A full page, with thread history</small></span></span>
+            <span class="ma-node"><i aria-hidden="true">◎</i><span><b data-zh="解释这一块">Explain this panel</b><small data-zh="鼠标停在任意面板上就会出现">Hover any dashboard panel</small></span></span>
+          </div>
+          <div class="ma-core">
+            <span class="ma-core-m" aria-hidden="true">M</span>
+            <b data-zh="同一个助手">One assistant</b>
+            <small data-zh="同一套上下文，同样以立场收尾">Same context, same closing stance</small>
+          </div>
+        </div>
+        <p class="ma-cap" data-zh="三个入口通向同一段对话——<b>无论从哪里问，答案守的规矩都一样。</b>">Three doors, one conversation — <b>wherever you ask from, the answer plays by the same rules.</b></p>
       </div>
-    </aside>
-
+    </div>
   </div>
-</div>
+</section>
+
+<!-- ══════════════ 2 · GROUNDING ══════════════ -->
+<section class="feature flip" id="grounded">
+  <div class="wrap feat-grid">
+    <div class="feat-copy rv">
+      <span class="kicker" data-zh="上下文">Grounding</span>
+      <h2 class="feat-title" data-zh="你看哪页，<br>它读哪页。">It reads the page<br>you're reading.</h2>
+      <p class="feat-sub" data-zh="你打开的那只股票，加上当前仪表盘的状态快照，会随问题一起送过去——<b>屏幕上已经写着的东西，你不用再敲一遍。</b>斜杠命令直接切换用法：/图表、/研究、/解释。">The symbol you have open and a snapshot of what the dashboard is showing ride along with your question — <b>you never re-type what the screen already says.</b> Slash commands jump straight to a lane: /chart, /research, /explain.</p>
+      <ul class="fx">
+        <li data-zh="<b>当前股票自动带上。</b>不用先解释「我在看哪一只」。"><b>The active symbol comes with it.</b> No preamble about what you're looking at.</li>
+        <li data-zh="<b>带的是页面状态，不只是页面名字。</b>面板此刻显示什么，它就读到什么。"><b>The page's state, not just its name.</b> What the panel is showing right now is what it reads.</li>
+        <li data-zh="<b>斜杠命令。</b>/图表 看结构 · /研究 做深度 · /解释 讲当前页。"><b>Slash commands.</b> /chart maps structure · /research goes deep · /explain reads this page.</li>
+      </ul>
+      <a class="feat-cta" href="../macro.html" data-zh="在仪表盘上试试 →">Try it on a dashboard →</a>
+    </div>
+    <div class="rv" style="--d:.1s">
+      <div class="demo">
+        <span class="live-tag ill" data-zh="<i></i>示意"><i></i>ILLUSTRATIVE</span>
+        <p class="dk" data-zh="随问题一起送出 <span class='asof'>当前页面状态</span>">WHAT RIDES ALONG <span class="asof">the page's current state</span></p>
+        <div class="ma-ctx">
+          <div class="ma-ctx-chips">
+            <span class="ma-tag"><i></i>NVDA</span>
+            <span class="ma-tag" data-zh="美股看板">US stocks board</span>
+            <span class="ma-tag" data-zh="面板状态快照">Panel snapshot</span>
+          </div>
+          <div class="ma-wire" aria-hidden="true"><span class="ma-spark"></span></div>
+          <div class="ma-mc">
+            <span data-zh="它现在的形态怎么样？">How does this setup look now?</span>
+            <span class="s" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9l20-7z"/></svg></span>
+          </div>
+        </div>
+        <div class="ma-slash">
+          <p class="ma-slash-h" data-zh="斜杠命令">SLASH COMMANDS</p>
+          <span class="ma-srow"><b data-zh="/图表">/chart</b><span data-zh="结构、关键位与关注点">Map structure, levels &amp; what to watch</span></span>
+          <span class="ma-srow"><b data-zh="/研究">/research</b><span data-zh="开启深度研究">Deep-dive with Deep Research</span></span>
+          <span class="ma-srow"><b data-zh="/解释">/explain</b><span data-zh="解读当前页面">Read this page right now</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 3 · RECEIPTS ══════════════ -->
+<section class="feature" id="receipts">
+  <div class="wrap feat-grid">
+    <div class="feat-copy rv">
+      <span class="kicker" data-zh="出处">Receipts</span>
+      <h2 class="feat-title" data-zh="每个回答，<br>都亮出功课。">Answers that<br>show their work.</h2>
+      <p class="feat-sub" data-zh="它干活的时候，你能看着步骤一条条走过去；做完之后，那条进度收成一张随时能再打开的凭据——回答底下的引用按钮，直接打开它用过的那几个台席。">While it works you watch the steps go by. When it's done the strip folds into a receipt you can open again — and the citation chips under the answer open the exact desks it used.</p>
+      <ul class="fx">
+        <li data-zh="<b>一张工作凭据。</b>「分析N秒 · N项核对」，点开就能看它做了哪几步。"><b>A working receipt.</b> "Analyzed for Ns · N checks" — open it and read the steps it ran.</li>
+        <li data-zh="<b>引用直达原页。</b>每个回答最多附八条，点开就是那一页本身。"><b>Citations open the real page.</b> Up to eight per answer, each one the page itself.</li>
+        <li data-zh="<b>分歧照直说。</b>几个看板结论打架时，它如实标为未定，绝不和成一碗稀泥。"><b>Disagreement said out loud.</b> When boards conflict it reports them unresolved, never averaged into mush.</li>
+      </ul>
+      <a class="feat-cta" href="../macro.html" data-zh="打开宏观格局看板 →">Open the macro regime board →</a>
+    </div>
+    <div class="rv" style="--d:.1s">
+      <div class="demo">
+        <span class="live-tag ill" data-zh="<i></i>示意"><i></i>ILLUSTRATIVE</span>
+        <p class="dk" data-zh="一个回答的构造 <span class='asof'>凭据已展开</span>">ANATOMY OF ONE ANSWER <span class="asof">receipt opened</span></p>
+        <div class="ma-rec">
+          <span class="ma-rcpt-s"><i></i><span data-zh="分析6秒 · 4项核对">Analyzed for 6s · 4 checks</span><b aria-hidden="true">▲</b></span>
+          <ol class="ma-steps">
+            <li data-zh="读取今晚的宏观格局看板">Read tonight's macro regime board</li>
+            <li data-zh="在期权台席核对当日资金流">Checked the day's flow on the options desk</li>
+            <li data-zh="比对因子层面的领涨与落后">Compared factor leadership against the laggards</li>
+            <li data-zh="交叉核对该板块近期的申报披露">Cross-checked the group's recent filings</li>
+          </ol>
+          <p class="ma-rec-a" data-zh="资金流台席和格局看板这次说的不一样。<b>我把这条分歧原样留着</b>，没有折中成一个中间答案。">The flow desk and the regime board disagree here. <b>I've kept that disagreement visible</b> instead of splitting the difference.</p>
+          <p class="ma-stance sm"><span class="k" data-zh="立场">STANCE</span><b data-zh="观察——不追高。">Watch — don't chase.</b></p>
+          <div class="ma-cites">
+            <span class="ma-cite" data-zh="宏观格局">Macro regime</span>
+            <span class="ma-cite">
+              <span class="ma-pop"><b data-zh="打开期权台席">Opens the options desk</b><em data-zh="那一页带着自己的时间戳，不会借用这个回答的时间。">That page carries its own timestamp — it never borrows the answer's.</em></span>
+              <span data-zh="期权台席">Options desk</span>
+            </span>
+            <span class="ma-cite" data-zh="因子">Factors</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 4 · STANCES ══════════════ -->
+<section class="feature flip" id="stance">
+  <div class="wrap feat-grid">
+    <div class="feat-copy rv">
+      <span class="kicker" data-zh="立场">Stances</span>
+      <h2 class="feat-title" data-zh="每个回答，<br>落在立场上。">Every answer lands<br>on a stance.</h2>
+      <p class="feat-sub" data-zh="你问什么，它就答什么，用大白话，并且总以六种立场之一收尾——<b>哪怕诚实的那个就是先等。</b>">It answers the question you actually asked, in plain words, and closes on one of six stances — <b>even when the honest one is wait.</b></p>
+      <ul class="fx">
+        <li data-zh="<b>六种立场，不用解码分数。</b>不会甩给你一个数字让你自己猜。"><b>Six stances, no score to decode.</b> You never get a number and have to guess.</li>
+        <li data-zh="<b>「观察——不追高」本身就是完整答案。</b>该等的时候它就写等。"><b>"Watch — don't chase" is a complete answer.</b> When the read says wait, it says wait.</li>
+        <li data-zh="<b>它负责解释；由引擎做决定。</b>助手不自己产生信号。"><b>It explains; the engines decide.</b> The assistant never originates a signal of its own.</li>
+      </ul>
+      <a class="feat-cta" href="../us_stocks.html" data-zh="在实时看板上看这些立场 →">See these stances on a live board →</a>
+    </div>
+    <div class="rv" style="--d:.1s">
+      <div class="demo">
+        <span class="live-tag ill" data-zh="<i></i>示意"><i></i>ILLUSTRATIVE</span>
+        <p class="dk" data-zh="六种立场 <span class='asof'>每个回答只落一个</span>">THE SIX STANCES <span class="asof">one per answer</span></p>
+        <div class="ma-stances">
+          <span class="ma-st" data-zh="现在出手">Act</span>
+          <span class="ma-st" data-zh="做好准备">Get ready</span>
+          <span class="ma-st on" data-zh="观察——不追高">Watch — don't chase</span>
+          <span class="ma-st" data-zh="保护利润">Protect gains</span>
+          <span class="ma-st" data-zh="观望回避">Stand aside</span>
+          <span class="ma-st" data-zh="无需理会">Ignore</span>
+        </div>
+        <p class="ma-cap" data-zh="上面那个半导体的回答，落在<b>观察——不追高</b>上。这是一个完整答案，不是回避。">The semiconductor answer above lands on <b>watch — don't chase</b>. That is a complete answer, not a dodge.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 5 · VISUAL ANSWERS ══════════════ -->
+<section class="feature" id="draws">
+  <div class="wrap feat-grid">
+    <div class="feat-copy rv">
+      <span class="kicker" data-zh="可视回答">Visual answers</span>
+      <h2 class="feat-title" data-zh="它会画出<br>自己的意思。">It draws<br>what it means.</h2>
+      <p class="feat-sub" data-zh="回答里可以直接出现一张图。在 Terminal 里，它按取到的行情数据标出支撑与阻力——<b>不虚构点位。</b>用 Pro 通道时，还能附上最多四张图表或截图，直接就图提问。">A chart can appear inside the reply. In the Terminal it marks support and resistance from the bars it fetched — <b>never invented levels.</b> On the Pro lane you can attach up to four charts or screenshots and ask about those.</p>
+      <ul class="fx">
+        <li data-zh="<b>点位来自行情数据。</b>取自真实K线，不是为了好看编出来的数字。"><b>Levels come from the bars.</b> Read off real candles, not made up to look tidy.</li>
+        <li data-zh="<b>每次最多四张图。</b>图表、截图，屏幕上有什么都能问。"><b>Up to four images per question.</b> Charts, screenshots, whatever is on your screen.</li>
+        <li data-zh="<b>图片解读属于 Pro 通道。</b>具体权限以定价页为准。"><b>Image analysis is a Pro lane feature.</b> The pricing page owns the current boundary.</li>
+      </ul>
+      <a class="feat-cta" href="../products/market-terminal.html" data-zh="认识 Market Terminal →">Meet the Market Terminal →</a>
+    </div>
+    <div class="rv" style="--d:.1s">
+      <div class="demo">
+        <span class="live-tag ill" data-zh="<i></i>示意"><i></i>ILLUSTRATIVE</span>
+        <p class="dk" data-zh="回答里的那张图 <span class='asof'>点位取自行情数据</span>">A CHART INSIDE THE REPLY <span class="asof">levels read off the bars</span></p>
+        <div class="ma-draw">
+          <div class="msg a">
+            <p data-zh="它守住了先前突破的那条位置，成交量也跟上了。上方最近的关口还没碰到。">It's holding the level it cleared, and volume came with it. The next level overhead is still untouched.</p>
+            <figure class="ma-ichart">
+              <div class="ma-plot">
+                <svg viewBox="0 0 360 116" role="img" aria-label="Drawn candle strip with a cleared level and the next level overhead">
+                  <line class="base" x1="7" y1="110" x2="353" y2="110"/>
+                  <line class="lvl r" x1="7" y1="18" x2="353" y2="18"/>
+                  <line class="lvl s" x1="7" y1="62.4" x2="353" y2="62.4"/>
+                  <g class="cn d" style="--i:0"><line x1="14.5" y1="63.4" x2="14.5" y2="83.9"/><rect x="10.0" y="69.9" width="9" height="7.9" rx="1"/></g><g class="cn d" style="--i:1"><line x1="32.0" y1="74.8" x2="32.0" y2="86.9"/><rect x="27.5" y="77.8" width="9" height="1.9" rx="1"/></g><g class="cn u" style="--i:2"><line x1="49.5" y1="70.0" x2="49.5" y2="84.8"/><rect x="45.0" y="75.2" width="9" height="4.5" rx="1"/></g><g class="cn d" style="--i:3"><line x1="67.0" y1="73.7" x2="67.0" y2="85.9"/><rect x="62.5" y="75.2" width="9" height="6.5" rx="1"/></g><g class="cn u" style="--i:4"><line x1="84.5" y1="79.6" x2="84.5" y2="89.0"/><rect x="80.0" y="81.5" width="9" height="1.6" rx="1"/></g><g class="cn d" style="--i:5"><line x1="102.0" y1="78.4" x2="102.0" y2="89.9"/><rect x="97.5" y="81.5" width="9" height="6.7" rx="1"/></g><g class="cn u" style="--i:6"><line x1="119.5" y1="73.2" x2="119.5" y2="96.0"/><rect x="115.0" y="80.0" width="9" height="8.2" rx="1"/></g><g class="cn u" style="--i:7"><line x1="137.0" y1="77.5" x2="137.0" y2="83.8"/><rect x="132.5" y="79.2" width="9" height="1.6" rx="1"/></g><g class="cn d" style="--i:8"><line x1="154.5" y1="76.9" x2="154.5" y2="89.1"/><rect x="150.0" y="79.2" width="9" height="1.6" rx="1"/></g><g class="cn d" style="--i:9"><line x1="172.0" y1="78.1" x2="172.0" y2="88.2"/><rect x="167.5" y="80.7" width="9" height="1.6" rx="1"/></g><g class="cn d" style="--i:10"><line x1="189.5" y1="72.6" x2="189.5" y2="90.4"/><rect x="185.0" y="80.8" width="9" height="4.9" rx="1"/></g><g class="cn u" style="--i:11"><line x1="207.0" y1="78.3" x2="207.0" y2="90.7"/><rect x="202.5" y="82.2" width="9" height="3.5" rx="1"/></g><g class="cn u" style="--i:12"><line x1="224.5" y1="77.4" x2="224.5" y2="90.0"/><rect x="220.0" y="79.1" width="9" height="3.1" rx="1"/></g><g class="cn u" style="--i:13"><line x1="242.0" y1="67.9" x2="242.0" y2="82.1"/><rect x="237.5" y="75.0" width="9" height="4.1" rx="1"/></g><g class="cn u" style="--i:14"><line x1="259.5" y1="48.8" x2="259.5" y2="82.0"/><rect x="255.0" y="56.7" width="9" height="18.3" rx="1"/></g><g class="cn u" style="--i:15"><line x1="277.0" y1="36.8" x2="277.0" y2="63.5"/><rect x="272.5" y="42.4" width="9" height="14.3" rx="1"/></g><g class="cn u" style="--i:16"><line x1="294.5" y1="35.6" x2="294.5" y2="49.9"/><rect x="290.0" y="40.5" width="9" height="1.9" rx="1"/></g><g class="cn u" style="--i:17"><line x1="312.0" y1="29.0" x2="312.0" y2="48.5"/><rect x="307.5" y="37.1" width="9" height="3.4" rx="1"/></g><g class="cn u" style="--i:18"><line x1="329.5" y1="25.6" x2="329.5" y2="41.9"/><rect x="325.0" y="29.7" width="9" height="7.4" rx="1"/></g><g class="cn u" style="--i:19"><line x1="347.0" y1="14.0" x2="347.0" y2="33.9"/><rect x="342.5" y="22.7" width="9" height="7.0" rx="1"/></g>
+                </svg>
+                <span class="ma-lab" style="left:9px;top:15.5%" data-zh="上方关口">Next level up</span>
+                <span class="ma-lab" style="right:9px;top:53.8%" data-zh="已突破，现为支撑">Cleared — now support</span>
+              </div>
+              <figcaption data-zh="两条线都取自图上这段行情本身；它不会自己发明一个点位。">Both lines are read off the bars on this chart; it will not invent one.</figcaption>
+            </figure>
+            <p class="ma-stance sm"><span class="k" data-zh="立场">STANCE</span><b data-zh="做好准备。">Get ready.</b></p>
+          </div>
+          <div class="ma-arow">
+            <span class="ma-achip">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.2-9.19a3.67 3.67 0 0 1 5.18 5.18l-9.2 9.2a1.83 1.83 0 0 1-2.6-2.6l8.5-8.48"/></svg>
+              <span data-zh="已附图表与截图">Chart and screenshot attached</span>
+            </span>
+            <span class="ma-protag">◈ Pro</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 6 · FAST & DEEP ══════════════ -->
+<section class="feature flip" id="lanes">
+  <div class="wrap feat-grid">
+    <div class="feat-copy rv">
+      <span class="kicker" data-zh="快与深">Fast &amp; Deep</span>
+      <h2 class="feat-title" data-zh="快，答问题。<br>深，做研究。">Fast for the question.<br>Deep for the research.</h2>
+      <p class="feat-sub" data-zh="快速通道回答即时的市场问题——免费体验，每周 5 个提问。深度 Opus 对话与深度研究给的则是一份结构化报告：格局、轮动、仓位、分歧、后面要看什么。<b>用量按套餐计量，具体数字以定价页为准。</b>">The Fast lane answers quick market questions — free to try at five a week. Deep Opus chat and Deep Research return a structured report instead: regime, rotation, positioning, tensions, what's ahead. <b>Allowances are metered by plan; the pricing page owns the numbers.</b></p>
+      <ul class="fx">
+        <li data-zh="<b>快速：每周 5 个提问，免费。</b>不用绑卡就能试。"><b>Fast: five quick questions a week, free.</b> No card needed to try it.</li>
+        <li data-zh="<b>深度：一份分节写好的报告，不是把对话拉长。</b>"><b>Deep: a structured report, not a longer chat.</b> Written out in sections.</li>
+        <li data-zh="<b>边界写在定价页上。</b>本页不复述任何价格或额度。"><b>The boundary lives on the pricing page.</b> This page restates no price and no allowance.</li>
+      </ul>
+      <a class="feat-cta" href="../plans.html" data-zh="查看方案 →">See plans →</a>
+    </div>
+    <div class="rv" style="--d:.1s">
+      <div class="demo">
+        <span class="live-tag ill" data-zh="<i></i>示意"><i></i>ILLUSTRATIVE</span>
+        <p class="dk" data-zh="两条通道 <span class='asof'>用量以定价页为准</span>">TWO LANES <span class="asof">allowances live on the pricing page</span></p>
+        <div class="ma-lanes">
+          <div class="ma-lane">
+            <span class="ma-lane-g" aria-hidden="true">⚡</span>
+            <b data-zh="快速">Fast</b>
+            <small data-zh="即时的市场问题，附上出处，收在一个立场上。">Quick market questions, answered with citations and one stance.</small>
+            <span class="ma-meter" data-zh="每周 5 个快速提问，免费">5 QUICK QUESTIONS A WEEK, FREE</span>
+          </div>
+          <div class="ma-lane deep">
+            <span class="ma-lane-g" aria-hidden="true">◈</span>
+            <b data-zh="深度">Deep</b>
+            <small data-zh="一份分节写好的报告，不是更长的对话。">A report written in sections, not a longer chat.</small>
+            <ul class="ma-outline">
+              <li data-zh="市场格局">Regime</li>
+              <li data-zh="轮动">Rotation</li>
+              <li data-zh="仓位">Positioning</li>
+              <li data-zh="分歧">Tensions</li>
+              <li data-zh="后面要看什么">What's ahead</li>
+            </ul>
+            <span class="ma-meter" data-zh="按套餐计量">METERED BY PLAN</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ HONESTY STATION — no reveal, no motion ══════════════ -->
+<section class="section-pad hair-top" id="guardrails">
+  <div class="wrap">
+    <div class="ma-guard">
+      <span class="kicker" data-zh="边界">Guardrails</span>
+      <h2 class="sec-title" style="margin-top:12px" data-zh="它会做什么，不会做什么。">What it will and won't do.</h2>
+      <div class="callout">
+        <span class="co-h" data-zh="有出处的回答，也可能出错">A cited answer can still be wrong</span>
+        <p data-zh="Mastermind AI 可能不完整、可能误读来源，也可能落后于最新的市场变化。它不下单交易，也不提供个性化投资建议。重要结论请对照所附证据及其时间戳自行核实。">Mastermind AI can be incomplete, misread a source or lag the latest market move. It does not place trades or provide personalized investment advice. Verify important claims against the linked evidence and its timestamp.</p>
+      </div>
+      <p class="psec-note" data-zh="研究工具，不是投资建议——它从不碰下单流程。信号与评分来自平台自身的引擎；助手解释引擎已经给出的结论，把握不足时可以把口径说得更保守，但它不自己产生信号。各通道的权限与用量随套餐不同，当前的权限边界以定价页为准。">Research, not advice — it never touches order flow. Signals and scores come from the platform's own engines; the assistant explains what those engines already say and can soften an uncertain read, but it never originates a signal of its own. Lane access and allowances vary by plan, and the pricing page owns the current access boundary.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ CLOSER ══════════════ -->
+<section class="cband">
+  <div class="wrap rv">
+    <span class="kicker" data-zh="开始使用">Get started</span>
+    <h2 class="sec-title display" style="margin-top:12px" data-zh="提出你的第一个问题。">Ask your first question.</h2>
+    <p class="sec-sub" style="max-width:46ch;margin-inline:auto" data-zh="快速通道免费体验，每周 5 个提问。打开台席，问一件你今天真想弄明白的事。">The Fast lane is free to try — five quick questions a week. Open the desk and ask something you actually want settled today.</p>
+    <div class="cta-row" style="justify-content:center;margin-top:28px">
+      <a class="btn primary" href="../chat.html" data-zh="向 Mastermind 提问">Ask Mastermind</a>
+      <a class="btn" href="../plans.html" data-zh="查看方案">See plans</a>
+    </div>
+    <div class="trust">
+      <span data-zh="<i style='background:#2ebd85'></i>免费套餐，无需绑卡"><i style="background:#2ebd85"></i>Free plan — no card required</span>
+      <span data-zh="<i style='background:#3f82f6'></i>无需安装，浏览器即用"><i style="background:#3f82f6"></i>Nothing to install</span>
+      <span data-zh="<i style='background:#e8c34c'></i>随时取消"><i style="background:#e8c34c"></i>Cancel anytime</span>
+    </div>
+  </div>
+</section>
+
+<p class="ma-legal" data-zh="市场情报，非个性化投资建议。页面中的产品界面示例均为示意。">Market intelligence, not individualized investment advice. Product UI examples are illustrative.</p>
 
 </main>
 
-
-<footer class="public-footer">
+<footer>
   <div class="f-in">
     <div class="f-grid">
       <div class="f-brand">
         <div class="fb-row"><span class="fm">M</span><span class="fn">MASTERMINDX</span></div>
-        <p class="ft"><span class="l-en">Institutional-grade market intelligence.</span><span class="l-zh">机构级市场情报。</span></p>
+        <p class="ft" data-zh="机构级市场情报。">Institutional-grade market intelligence.</p>
       </div>
       <div class="f-cols">
         <div class="f-col">
-          <p><span class="l-en">Platform</span><span class="l-zh">平台</span></p>
-          <a href="../products/index.html"><span class="l-en">Platform overview</span><span class="l-zh">平台概览</span></a>
-          <a href="../products/market-terminal.html"><span class="l-en">Market Terminal</span><span class="l-zh">市场终端</span></a>
+          <p data-zh="平台">Platform</p>
+          <a href="../products/index.html" data-zh="平台概览">Platform overview</a>
+          <a href="../products/market-terminal.html">Market Terminal</a>
           <a href="../products/mastermind-ai.html">Mastermind AI</a>
-          <a href="../products/market-dashboards.html"><span class="l-en">Market dashboards</span><span class="l-zh">市场仪表盘</span></a>
-          <a href="../plans.html"><span class="l-en">Plans &amp; pricing</span><span class="l-zh">方案与定价</span></a>
+          <a href="../products/market-dashboards.html" data-zh="市场仪表盘">Market dashboards</a>
+          <a href="../plans.html" data-zh="方案与定价">Plans &amp; pricing</a>
         </div>
         <div class="f-col">
-          <p><span class="l-en">Research</span><span class="l-zh">研究</span></p>
-          <a href="../research/index.html"><span class="l-en">Institutional research</span><span class="l-zh">机构研报</span></a>
-          <a href="../stocks/index.html"><span class="l-en">Stock dossiers</span><span class="l-zh">股票档案</span></a>
-          <a href="../about-research.html"><span class="l-en">About the research</span><span class="l-zh">关于研究</span></a>
+          <p data-zh="研究">Research</p>
+          <a href="../research/index.html" data-zh="机构研报">Institutional research</a>
+          <a href="../stocks/index.html" data-zh="股票档案">Stock dossiers</a>
+          <a href="../about-research.html" data-zh="关于研究">About the research</a>
         </div>
         <div class="f-col">
-          <p><span class="l-en">Resources</span><span class="l-zh">资源</span></p>
-          <a href="../tools/index.html"><span class="l-en">Tools</span><span class="l-zh">工具</span></a>
-          <a href="../learn/index.html"><span class="l-en">Learn</span><span class="l-zh">学习</span></a>
-          <a href="../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
-          <a href="../support.html"><span class="l-en">Support</span><span class="l-zh">支持</span></a>
+          <p data-zh="资源">Resources</p>
+          <a href="../tools/index.html" data-zh="工具">Tools</a>
+          <a href="../learn/index.html" data-zh="学习">Learn</a>
+          <a href="../blog/index.html" data-zh="博客">Blog</a>
+          <a href="../support.html" data-zh="支持">Support</a>
         </div>
         <div class="f-col">
-          <p><span class="l-en">Legal</span><span class="l-zh">法律</span></p>
-          <a href="../privacy.html"><span class="l-en">Privacy</span><span class="l-zh">隐私政策</span></a>
-          <a href="../terms.html"><span class="l-en">Terms</span><span class="l-zh">服务条款</span></a>
-          <a href="../disclaimer.html"><span class="l-en">Disclaimer</span><span class="l-zh">免责声明</span></a>
+          <p data-zh="法律">Legal</p>
+          <a href="../privacy.html" data-zh="隐私政策">Privacy</a>
+          <a href="../terms.html" data-zh="服务条款">Terms</a>
+          <a href="../disclaimer.html" data-zh="免责声明">Disclaimer</a>
         </div>
       </div>
     </div>
     <div class="f-bot">
       <span>© 2026 MastermindX · mastermind-x.com</span>
-      <span class="f-legal"><a href="../privacy.html"><span class="l-en">Privacy</span><span class="l-zh">隐私政策</span></a> · <a href="../terms.html"><span class="l-en">Terms</span><span class="l-zh">服务条款</span></a> · <a href="../disclaimer.html"><span class="l-en">Disclaimer</span><span class="l-zh">免责声明</span></a></span>
+      <span class="f-legal"><a href="../privacy.html" data-zh="隐私政策">Privacy</a> · <a href="../terms.html" data-zh="服务条款">Terms</a> · <a href="../disclaimer.html" data-zh="免责声明">Disclaimer</a></span>
     </div>
   </div>
 </footer>
 
-
-
-
 <script>
-(function(){
-  var links=[].slice.call(document.querySelectorAll('.prod-toc a'));
-  var heads=links.map(function(a){return document.querySelector(a.getAttribute('href'));});
-  if(!links.length)return;
-  function spy(){
-    var y=window.scrollY+100, active=0;
-    heads.forEach(function(h,i){if(h&&h.offsetTop<=y)active=i;});
-    links.forEach(function(a,i){a.classList.toggle('active',i===active);});
-  }
-  window.addEventListener('scroll',spy,{passive:true}); spy();
+/* capture hook for visual QA (see .still CSS) */
+if (location.search.indexOf('still') !== -1) document.documentElement.classList.add('still');
+
+/* nav: elevate once the page starts scrolling */
+(function(){ const nav=document.querySelector('.nav'); if(!nav) return;
+  let raf=false;
+  const upd=()=>{ nav.classList.toggle('sc', scrollY>10); raf=false; };
+  addEventListener('scroll',()=>{ if(!raf){ raf=true; requestAnimationFrame(upd); } },{passive:true}); upd();
 })();
-</script>
 
-
-
-<script>window.MM_API=window.MM_API||'https://app.mastermind-x.com';window.__mmAccountLoading=true;</script>
-<script src="../supabase.js?v=8596965f" defer></script>
-<script src="../account.js?v=e48d35c8" defer></script>
-<script src="../mm_brain.js?v=02e3e5a2" defer></script>
-<script src="../theme.js?v=c094a665" defer></script>
-
-<script>
-(function(){
-  var nav=document.querySelector('.public-nav');
-  if(nav){
-    var raf=false;
-    var update=function(){nav.classList.toggle('sc',window.scrollY>10);raf=false;};
-    window.addEventListener('scroll',function(){
-      if(!raf){raf=true;window.requestAnimationFrame(update);}
-    },{passive:true});
-    update();
+/* ───── i18n: EN ⇄ 中文 — mirrors the site-wide localStorage['lang'] contract
+   (data-lang on <html>, label shows the OTHER language, fires 'langchange').
+   Static prose swaps via [data-zh]; live components subscribe to LANG.onChange. */
+const LANG = (() => {
+  const subs = [];
+  const cur = () => document.documentElement.getAttribute('data-lang') === 'zh' ? 'zh' : 'en';
+  function apply(l){
+    document.documentElement.setAttribute('data-lang', l);
+    document.documentElement.lang = l === 'zh' ? 'zh-CN' : 'en';
+    document.querySelectorAll('[data-zh]').forEach(el => {
+      if (el.__en == null) el.__en = el.innerHTML;          // capture the English original once
+      el.innerHTML = (l === 'zh') ? el.getAttribute('data-zh') : el.__en;
+    });
+    try { localStorage.setItem('lang', l); } catch(e){}
+    subs.forEach(fn => { try { fn(l); } catch(e){} });
   }
+  return { cur, apply, toggle(){ apply(cur() === 'zh' ? 'en' : 'zh'); }, onChange(fn){ subs.push(fn); } };
+})();
 
-  var btn=document.getElementById('gear-btn');
-  var pop=document.getElementById('gear-pop');
-  if(!btn||!pop)return;
-  var segs=Array.prototype.slice.call(pop.querySelectorAll('.gp-seg-b'));
-  var current=function(){return document.documentElement.getAttribute('data-lang')==='zh'?'zh':'en';};
-  var close=function(){pop.classList.remove('open');btn.setAttribute('aria-expanded','false');};
-  var sync=function(){var lang=current();segs.forEach(function(s){s.classList.toggle('on',s.getAttribute('data-set-lang')===lang);});};
-  btn.addEventListener('click',function(e){
-    e.stopPropagation();
-    var opening=!pop.classList.contains('open');
-    pop.classList.toggle('open',opening);
-    btn.setAttribute('aria-expanded',opening?'true':'false');
-  });
-  segs.forEach(function(s){
-    s.addEventListener('click',function(e){
-      e.stopPropagation();
-      var lang=s.getAttribute('data-set-lang')==='zh'?'zh':'en';
-      document.documentElement.setAttribute('data-lang',lang);
-      document.documentElement.lang=lang==='zh'?'zh-CN':'en';
-      try{localStorage.setItem('lang',lang);}catch(ignore){}
-      try{document.dispatchEvent(new CustomEvent('langchange',{detail:{lang:lang}}));}catch(ignore){}
-      sync();
+/* ───── primary navigation: click disclosures + mobile accordion ───── */
+const MMX_NAV = (() => {
+  const nav = document.querySelector('.nav');
+  const list = document.getElementById('primary-navigation');
+  const mobile = document.getElementById('nav-toggle');
+  const triggers = [...document.querySelectorAll('.nav-trigger')];
+  const mq = matchMedia('(max-width: 900px)');
+  if (!nav || !list || !mobile) return { closeAll(){} };
+  const panelFor = trigger => document.getElementById(trigger.getAttribute('aria-controls'));
+  const openTrigger = () => triggers.find(trigger => trigger.getAttribute('aria-expanded') === 'true');
+  function syncMobileLabel(){
+    const isOpen = mobile.getAttribute('aria-expanded') === 'true';
+    mobile.setAttribute('aria-label', LANG.cur() === 'zh'
+      ? (isOpen ? '关闭导航' : '打开导航')
+      : (isOpen ? 'Close navigation' : 'Open navigation'));
+  }
+  function closePanels(focusTrigger){
+    const active = openTrigger();
+    triggers.forEach(trigger => {
+      const panel = panelFor(trigger);
+      trigger.setAttribute('aria-expanded','false');
+      if (panel) panel.hidden = true;
+    });
+    if (focusTrigger && active) active.focus();
+  }
+  function closeDrawer(focusToggle){
+    list.classList.remove('open');
+    nav.classList.remove('nav-open');
+    mobile.setAttribute('aria-expanded','false');
+    syncMobileLabel();
+    if (focusToggle) mobile.focus();
+  }
+  function closeAll(focusControl){
+    closePanels(Boolean(focusControl && openTrigger()));
+    closeDrawer(Boolean(focusControl && !openTrigger()));
+  }
+  function closeSettings(){
+    const pop = document.getElementById('gear-pop');
+    const btn = document.getElementById('gear-btn');
+    if (pop) pop.classList.remove('open');
+    if (btn) btn.setAttribute('aria-expanded','false');
+  }
+  function openPanel(trigger, focusLast){
+    closePanels(false);
+    closeSettings();
+    const panel = panelFor(trigger);
+    if (!panel) return;
+    trigger.setAttribute('aria-expanded','true');
+    panel.hidden = false;
+    if (focusLast !== undefined) {
+      const links = [...panel.querySelectorAll('a[href]')];
+      const target = focusLast ? links[links.length - 1] : links[0];
+      if (target) target.focus();
+    }
+  }
+  triggers.forEach(trigger => {
+    trigger.addEventListener('click', event => {
+      event.stopPropagation();
+      const wasOpen = trigger.getAttribute('aria-expanded') === 'true';
+      if (wasOpen) closePanels(false); else openPanel(trigger);
+    });
+    trigger.addEventListener('keydown', event => {
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        openPanel(trigger, event.key === 'ArrowUp');
+      }
+    });
+    trigger.closest('.nav-group').addEventListener('focusout', event => {
+      if (mq.matches || event.currentTarget.contains(event.relatedTarget)) return;
+      if (trigger.getAttribute('aria-expanded') === 'true') closePanels(false);
     });
   });
-  document.addEventListener('click',function(e){if(!pop.contains(e.target)&&e.target!==btn)close();});
-  document.addEventListener('keydown',function(e){
-    if(e.key==='Escape'&&pop.classList.contains('open')){close();btn.focus();}
+  mobile.addEventListener('click', event => {
+    event.stopPropagation();
+    const willOpen = mobile.getAttribute('aria-expanded') !== 'true';
+    closeSettings();
+    if (willOpen) {
+      list.classList.add('open');
+      nav.classList.add('nav-open');
+      mobile.setAttribute('aria-expanded','true');
+      syncMobileLabel();
+    } else {
+      closePanels(false);
+      closeDrawer(false);
+    }
   });
-  sync();
+  list.querySelectorAll('a[href]').forEach(link => link.addEventListener('click', () => closeAll(false)));
+  document.addEventListener('pointerdown', event => {
+    if (!nav.contains(event.target)) closeAll(false);
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'Escape') return;
+    if (openTrigger()) {
+      event.preventDefault();
+      closePanels(true);
+    } else if (mobile.getAttribute('aria-expanded') === 'true') {
+      event.preventDefault();
+      closeDrawer(true);
+    }
+  });
+  const reset = () => closeAll(false);
+  if (mq.addEventListener) mq.addEventListener('change', reset); else mq.addListener(reset);
+  LANG.onChange(syncMobileLabel);
+  syncMobileLabel();
+  return { closeAll };
 })();
-</script>
 
-<script src="../onboard.js?v=5b030335" defer></script>
+/* ───── nav settings popover ───── */
+(function(){
+  const btn = document.getElementById('gear-btn');
+  const pop = document.getElementById('gear-pop');
+  if (!btn || !pop) return;
+  const segs = [...pop.querySelectorAll('.gp-seg-b')];
+  const open = () => { MMX_NAV.closeAll(false); pop.classList.add('open'); btn.setAttribute('aria-expanded','true'); };
+  const close = () => { pop.classList.remove('open'); btn.setAttribute('aria-expanded','false'); };
+  const toggle = () => pop.classList.contains('open') ? close() : open();
+  btn.addEventListener('click', e => { e.stopPropagation(); toggle(); });
+  segs.forEach(s => s.addEventListener('click', e => { e.stopPropagation(); LANG.apply(s.dataset.setLang); }));
+  const syncSeg = () => segs.forEach(s => s.classList.toggle('on', s.dataset.setLang === LANG.cur()));
+  syncSeg(); LANG.onChange(syncSeg);
+  document.addEventListener('click', e => { if (!pop.contains(e.target) && e.target !== btn) close(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && pop.classList.contains('open')){ close(); btn.focus(); } });
+})();
+
+/* ───── reveal on scroll ───── */
+const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target);} }), { rootMargin:'0px 0px -8% 0px', threshold:.08 });
+document.querySelectorAll('.rv:not(.in)').forEach(el => io.observe(el));
+
+/* ───── i18n boot — the landing runs this after its live-data wiring (index.html:1906);
+   the product chrome carries no live wiring, so it runs here: swap static [data-zh]
+   prose into the boot language captured by the <head> lang snippet. ───── */
+LANG.apply(LANG.cur());
+</script>
+<script>window.MM_API=window.MM_API||'https://app.mastermind-x.com';</script>
+<script src="../mm_brain.js?v=02e3e5a2" defer></script>
+<script src="../onboard.js?v=8f1b52d1" defer></script>
 <script defer data-whb data-root="../" src="../wh_banner.js?v=37bf40aa"></script>
 </body>
 </html>

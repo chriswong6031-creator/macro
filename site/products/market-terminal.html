@@ -1,6 +1,12 @@
-
 <!DOCTYPE html>
-<html lang="en">
+<!-- mastermind product page 01 — Market Terminal.
+     HAND-AUTHORED SOURCE (carved out of scripts/build_free_content.py via HAND_AUTHORED):
+     edit this file directly; the estate generator owns only the .md front-matter
+     (hub cards / related links). Chrome (nav+gear+footer+LANG/MMX_NAV JS) is copied
+     byte-exact from site/index.html with hrefs depth-fixed for /products/ — when the
+     landing chrome changes, re-sync these blocks.
+     Spec: research/products_estate/PRODUCT_PAGES_MASTERPLAN.md §3. -->
+<html lang="en" data-lang="en">
 <head>
 <script data-dbase>(function () {
   window.DATA_BASE = window.DATA_BASE || "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev";  // R2 public data plane (flip: clear to revert to Pages)
@@ -20,29 +26,37 @@
     return orig.call(this, u, o);
   };
 })();</script>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>
+/* language boot — mirrors site-wide localStorage['lang']; runs pre-paint. */
+(function(){try{var q=(location.search.match(/[?&]lang=(zh|en)/)||[])[1];
+  var l=q||localStorage.getItem('lang');
+  if(l!=='en'&&l!=='zh')l=(navigator.language||'').toLowerCase().indexOf('zh')===0?'zh':'en';
+  document.documentElement.setAttribute('data-lang',l);
+  document.documentElement.lang=l==='zh'?'zh-CN':'en';}catch(e){}})();
+</script>
 <title>Market Terminal &amp; Browser Charting — MastermindX</title>
-
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.classList.add('has-js');}catch(e){}</script><meta name="description" content="Chart markets in your browser with watchlists, indicators, key statistics and research context. Core terminal access is free; live options requires a plan.">
+<meta name="description" content="Institutional-grade charting in your browser — candles, indicators, watchlists, key stats, engine reads and Mastermind AI beside the chart. Free to start.">
 <link rel="canonical" href="https://www.mastermind-x.com/products/market-terminal.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="MastermindX">
 <meta property="og:title" content="Market Terminal &amp; Browser Charting">
-<meta property="og:description" content="Chart markets in your browser with watchlists, indicators, key statistics and research context. Core terminal access is free; live options requires a plan.">
+<meta property="og:description" content="Institutional-grade charting in your browser — candles, indicators, watchlists, key stats, engine reads and Mastermind AI beside the chart. Free to start.">
 <meta property="og:url" content="https://www.mastermind-x.com/products/market-terminal.html">
 <meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Market Terminal &amp; Browser Charting">
-<meta name="twitter:description" content="Chart markets in your browser with watchlists, indicators, key statistics and research context. Core terminal access is free; live options requires a plan.">
+<meta name="twitter:description" content="Institutional-grade charting in your browser — candles, indicators, watchlists, key stats, engine reads and Mastermind AI beside the chart. Free to start.">
 <meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 <link rel="icon" href="../favicon.ico" sizes="any">
-<link rel="apple-touch-icon" href="../apple-touch-icon.png"><link rel="stylesheet" href="../theme.css?v=370c3de0"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.mastermind-x.com/"},{"@type":"ListItem","position":2,"name":"Platform","item":"https://www.mastermind-x.com/products/index.html"},{"@type":"ListItem","position":3,"name":"Market Terminal"}]}</script><script type="application/ld+json">{
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.mastermind-x.com/"},{"@type":"ListItem","position":2,"name":"Platform","item":"https://www.mastermind-x.com/products/index.html"},{"@type":"ListItem","position":3,"name":"Market Terminal"}]}</script><script type="application/ld+json">{
   "@context": "https://schema.org",
   "@type": "WebPage",
   "name": "Market Terminal & Browser Charting",
-  "description": "Chart markets in your browser with watchlists, indicators, key statistics and research context. Core terminal access is free; live options requires a plan.",
+  "description": "Institutional-grade charting in your browser — candles, indicators, watchlists, key stats, engine reads and Mastermind AI beside the chart. Free to start.",
   "url": "https://www.mastermind-x.com/products/market-terminal.html",
   "isPartOf": {
     "@type": "WebSite",
@@ -57,60 +71,430 @@
     "url": "https://www.mastermind-x.com/products/market-terminal.html"
   }
 }</script>
+<link rel="stylesheet" href="../onboard.css?v=5c897a72">
+<link rel="stylesheet" href="../landing.css?v=abf00766">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   PRODUCT-PAGE SHARED LAYER — identical bytes on all three pages.
+   Landing tokens only (landing.css is linked above): no new hex
+   beyond var() derivations. Change here → change on all three.
+   ════════════════════════════════════════════════════════════════ */
 
-<link rel="stylesheet" href="../assets/css/43592e0a.css?v=43592e0a">
+/* ── chapter ribbon: the platform's three pillars; current chapter inked ── */
+.chap{display:flex;align-items:center;gap:26px;flex-wrap:wrap;margin-bottom:clamp(26px,4vw,42px)}
+.chap-x{display:inline-flex;align-items:baseline;gap:8px;font-family:var(--display);font-weight:700;
+  font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);transition:color .15s}
+.chap-x i{font-style:normal;font-weight:800;font-size:.66rem;color:var(--faint)}
+.chap-x:hover{color:var(--muted)}
+.chap-x.on{color:var(--ink);position:relative}
+.chap-x.on i{color:var(--pg-accent,var(--blue))}
+.chap-x.on::after{content:"";position:absolute;left:0;right:0;bottom:-8px;height:2px;border-radius:2px;background:var(--pg-accent,var(--blue))}
 
-<link rel="stylesheet" href="../assets/css/c68d2db1.css?v=c68d2db1">
-<link rel="preload" as="style" href="../product-nav-icons.css?v=7b0290e9">
+/* ── product hero ── */
+.phero{padding:clamp(46px,7vw,84px) 0 clamp(30px,4.5vw,56px)}
+.phero .kicker{color:var(--pg-accent,var(--blue))}
+.phero h1{font-family:var(--display);font-weight:800;letter-spacing:-.02em;line-height:1.02;
+  font-size:clamp(2.5rem,5.6vw,4.35rem);margin:14px 0 0;color:var(--ink)}
+.phero .sub{font-size:clamp(1.02rem,1.5vw,1.2rem);line-height:1.6;color:var(--muted);max-width:56ch;margin:18px 0 0}
+.phero .sub b{color:var(--ink-soft)}
+.phero .cta-row{margin-top:26px}
+.phero .micro{margin-top:14px}
+/* one gradient arc for the whole family (the ads' blue→violet→teal) */
+.pgrad{background:linear-gradient(92deg,var(--blue) 8%,var(--violet) 52%,var(--teal) 96%);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+@supports not (background-clip:text){.pgrad{color:var(--blue)}}
 
+/* ── hero artifact shell: the drawn product surface under the hero copy ── */
+.pstage{position:relative;margin-top:clamp(30px,4.5vw,52px)}
+.pstage .plate{border-radius:var(--r-lg);box-shadow:var(--sh-plate);overflow:hidden}
 
+/* ── annotation callouts pinned around a hero artifact ── */
+.anno{position:absolute;z-index:6;display:inline-flex;align-items:center;gap:7px;padding:5px 10px;
+  background:var(--panel);border:1px solid var(--hair-2);border-radius:999px;box-shadow:var(--sh-card);
+  font-family:var(--display);font-weight:700;font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)}
+.anno i{font-style:normal;width:7px;height:7px;border-radius:50%;background:var(--pg-accent,var(--blue));flex:none}
+@media (max-width:900px){.anno{display:none}}
+
+/* ── honest tag for drawn (non-live) vignettes; extends landing .live-tag ── */
+.live-tag.ill i{background:var(--faint)}
+
+/* ── desk chip (ad idiom): icon tile + label + reading + right stat ── */
+.dchip{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--hair);
+  border-radius:var(--r);box-shadow:var(--sh-card);padding:12px 14px}
+.dchip .ic{flex:none;width:38px;height:38px;border-radius:10px;display:grid;place-items:center;
+  background:var(--blue-wash);color:var(--blue-ink);font-family:var(--display);font-weight:800;font-size:.72rem}
+.dchip .tx{min-width:0;flex:1}
+.dchip .tx .k{display:block;font-family:var(--display);font-weight:700;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+.dchip .tx b{display:block;font-size:.86rem;color:var(--ink);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dchip .st{flex:none;font-family:var(--fig);font-weight:800;font-size:.8rem;color:var(--q-green)}
+
+/* ── stage meter (Bottoming → Turning → Ready → Trend) ── */
+.stgm{display:flex;align-items:center;margin:10px 0 2px}
+.stgm .seg{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;position:relative}
+.stgm .seg::before{content:"";position:absolute;top:5px;left:-50%;width:100%;height:2px;background:var(--hair-2)}
+.stgm .seg:first-child::before{display:none}
+.stgm .seg i{width:12px;height:12px;border-radius:50%;background:var(--hair-2);border:3px solid var(--panel);position:relative;z-index:1}
+.stgm .seg span{font-size:.66rem;color:var(--faint)}
+.stgm .seg.on i{background:var(--q-green)}
+.stgm .seg.on span{color:var(--q-green);font-weight:700}
+
+/* ── entry / invalidation twin cells ── */
+.ezc{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.ezc .c{border-radius:10px;padding:10px 12px;background:var(--bg);border:1px solid var(--hair)}
+.ezc .c .k{display:block;font-family:var(--display);font-weight:700;font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.ezc .c b{font-family:var(--fig);font-size:.95rem;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+.ezc .c.bad{background:var(--red-wash);border-color:#f2d7d5}
+.ezc .c.bad b{color:var(--q-red)}
+
+/* ── breadcrumb (SEO-stable markup, landing skin) ── */
+.est-crumb{max-width:var(--maxw);margin:18px auto 0;padding-inline:var(--gutter);font-size:.78rem;color:var(--faint)}
+.est-crumb ol{list-style:none;display:flex;gap:8px;margin:0;padding:0}
+.est-crumb a{color:var(--muted)} .est-crumb a:hover{color:var(--ink)}
+.est-crumb .sep{color:var(--hair-2)}
+
+/* ── honesty callout (access & limitations) ── */
+.callout{border:1px solid var(--hair-2);border-left:3px solid var(--q-gold);background:var(--gold-wash);
+  border-radius:var(--r);padding:16px 18px;margin:18px 0}
+.callout .co-h{display:block;font-family:var(--display);font-weight:800;font-size:.86rem;color:var(--ink);margin-bottom:6px}
+.callout p{margin:0;font-size:.92rem;line-height:1.55;color:var(--ink-soft)}
+
+/* ── section rhythm helpers ── */
+.psec-note{font-size:.8rem;color:var(--faint);max-width:70ch}
+</style>
+<style>
+/* ═══ PER-PAGE SYSTEMS — 01 Market Terminal (accent blue).
+   New classes are namespaced .mt-*; colour comes from landing tokens and
+   white/transparent derivations only. Every bespoke animation carries a
+   resting state for prefers-reduced-motion and for html.still (?still). ═══ */
+.pg-terminal{--pg-accent:var(--blue)}
+
+/* hero copy is left-set (the shared .phero .sub uses margin:18px 0 0) */
+.phero .cta-row{justify-content:flex-start}
+.mt-hero{max-width:66ch}
+
+/* ══ HERO ARTIFACT — a whole drawn Terminal inside the browser plate ══ */
+.mt-frame{position:relative;border-radius:14px;box-shadow:var(--sh-plate)}
+.mt-frame .sf{border-bottom:1px solid rgba(255,255,255,.11);border-radius:14px}
+.mt-frame .tt-cwrap{flex:1;min-height:clamp(268px,27vw,338px)}
+.mt-frame .tt-right{width:296px}
+.mt-frame .twl-rows{height:auto;padding-bottom:9px}
+/* honest basis pill: the real product shows a delayed basis on US symbols, so
+   the drawing must too — neutral, never the live green. */
+.mt-del{border-color:rgba(255,255,255,.17);background:rgba(255,255,255,.05);color:rgba(255,255,255,.64)}
+.mt-del i{background:rgba(255,255,255,.42)}
+
+/* the chart: authored geometry, candles fade in, averages draw themselves */
+.mt-ch{position:absolute;inset:0;width:100%;height:100%;display:block}
+.mt-ch path,.mt-ch line{vector-effect:non-scaling-stroke}
+.mt-ch text{font-family:var(--display);font-variant-numeric:tabular-nums}
+.mt-ch .g line{stroke:var(--thl);stroke-width:1}
+.mt-ch .ez{fill:var(--tb);opacity:.13}
+.mt-ch .inv{stroke:var(--tr);stroke-width:1;stroke-dasharray:5 4;opacity:.5}
+.mt-ch .dl{fill:none;stroke:rgba(255,255,255,.3);stroke-width:1.2;stroke-dasharray:4 4}
+.mt-ch .cd{opacity:0}
+.mt-ch .cd.u{color:var(--tg)}
+.mt-ch .cd.d{color:var(--tr)}
+.mt-ch .cd rect{fill:currentColor}
+.mt-ch .cd .v{opacity:.4}
+.mt-ch .cd .w{fill:none;stroke:currentColor;stroke-width:1}
+.mt-ch .ma{fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:1}
+.mt-ch .m9{stroke:var(--tb)}
+.mt-ch .m21{stroke:var(--violet)}
+.mt-ch .rl{stroke:var(--tb);stroke-width:1.3;opacity:.9}
+.mt-ch .lp line{stroke:rgba(255,255,255,.28);stroke-width:1;stroke-dasharray:3 3}
+.mt-ch .lp rect{fill:var(--tb)}
+.mt-ch .lp text{fill:#fff;font-size:9.5px;font-weight:700}
+.mt-ch .ax text{fill:rgba(255,255,255,.4);font-size:9px}
+.rv.in .mt-ch .cd{animation:mtFade .32s ease forwards;animation-delay:calc(var(--i) * 17ms)}
+.rv.in .mt-ch .ma{animation:mtDraw 1.5s cubic-bezier(.35,0,.2,1) .3s forwards}
+@keyframes mtFade{to{opacity:1}}
+@keyframes mtDraw{to{stroke-dashoffset:0}}
+
+/* the intelligence layer, floating over the chart (ad mx-cat-03 idiom) */
+.mt-il{position:absolute;right:13px;bottom:13px;z-index:4;width:min(320px,74%);padding:13px 14px;
+  border-radius:14px;background:rgba(4,7,12,.94);border:1px solid rgba(255,255,255,.15);
+  box-shadow:0 22px 56px -16px rgba(0,0,0,.85)}
+.mt-il .ih{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.mt-il .ic{display:flex;align-items:center;gap:9px;margin-top:11px}
+.mt-il .tk{font-family:var(--display);font-weight:800;font-size:16px;color:#fff}
+.mt-il .eg{margin-left:auto;font-family:var(--display);font-weight:700;font-size:8px;letter-spacing:.11em;color:rgba(255,255,255,.5)}
+.mt-il .eg b{font-size:15px;color:#fff;margin-left:4px}
+.mt-il .ezc{margin-top:11px;gap:8px}
+.mt-il .ezc .c{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.12);padding:8px 10px}
+.mt-il .ezc .c .k{color:rgba(255,255,255,.48)}
+.mt-il .ezc .c b{color:#fff;font-size:.86rem}
+.mt-il .ezc .c.bad{background:color-mix(in srgb,var(--q-red) 17%,transparent);border-color:color-mix(in srgb,var(--q-red) 36%,transparent)}
+.mt-il .ezc .c.bad b{color:var(--tr)}
+.mt-il .st{margin:11px 0 0;font-size:11px;line-height:1.5;color:rgba(255,255,255,.66)}
+.mt-il .st b{color:#fff;font-weight:600}
+.mt-vb{font-family:var(--display);font-weight:800;font-size:9.5px;letter-spacing:.1em;border-radius:99px;padding:4px 11px;
+  background:color-mix(in srgb,var(--q-green) 24%,transparent);color:var(--tg);
+  border:1px solid color-mix(in srgb,var(--q-green) 46%,transparent)}
+.mt-lb{font-family:var(--display);font-weight:700;font-size:7.6px;letter-spacing:.13em;text-transform:uppercase;color:rgba(255,255,255,.5)}
+@media (max-width:640px){.mt-il{left:9px;right:9px;bottom:9px;width:auto}}
+
+/* ══ VIGNETTES ══ */
+/* the dark plate: a window into the product's own chrome, on a white .demo */
+.mt-plate{background:var(--plate);border-radius:12px;padding:12px 13px;color:rgba(255,255,255,.9);
+  font-size:11.5px;margin-top:10px;
+  --pl-mu:rgba(255,255,255,.56);--pl-fa:rgba(255,255,255,.36);--pl-hr:rgba(255,255,255,.09);
+  --pl-up:color-mix(in srgb,var(--q-green) 50%,#fff);
+  --pl-dn:color-mix(in srgb,var(--q-red) 56%,#fff);
+  --pl-ac:color-mix(in srgb,var(--blue) 42%,#fff)}
+.mt-plate svg{display:block;width:100%}
+.mt-k{font-family:var(--display);font-weight:700;font-size:7.8px;letter-spacing:.13em;text-transform:uppercase;color:var(--pl-fa,var(--faint))}
+.mt-k.v{color:rgba(255,255,255,.82);letter-spacing:.04em;font-variant-numeric:tabular-nums}
+.mt-up{color:var(--pl-up)} .mt-dn{color:var(--pl-dn)}
+
+/* 01 charting — timeframe row, price strip, two indicator panes, replay scrubber */
+.mt-tf .tfr{display:flex;align-items:center;gap:5px;padding-bottom:10px;border-bottom:1px solid var(--pl-hr)}
+.mt-tf .tfr span{font-family:var(--display);font-weight:700;font-size:9.5px;letter-spacing:.05em;color:var(--pl-mu);
+  border:1px solid transparent;border-radius:6px;padding:3px 9px}
+.mt-tf .tfr span.on{color:#fff;background:color-mix(in srgb,var(--blue) 28%,transparent);border-color:color-mix(in srgb,var(--blue) 46%,transparent)}
+.mt-tf .tfr span.ct{margin-left:auto;border-color:var(--pl-hr)}
+.mt-tf .pn{padding:9px 0;border-bottom:1px solid var(--pl-hr)}
+.mt-tf .pn:last-of-type{border-bottom:0}
+.mt-tf .pl{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:0 0 6px}
+.mt-tf .u path{stroke:var(--pl-up)} .mt-tf .u rect{fill:var(--pl-up)}
+.mt-tf .d path{stroke:var(--pl-dn)} .mt-tf .d rect{fill:var(--pl-dn)}
+.mt-tf .ln{fill:none;stroke:var(--pl-ac);stroke-width:1.3;vector-effect:non-scaling-stroke}
+.mt-tf .zl,.mt-tf .gl{stroke:var(--pl-hr);stroke-width:1;vector-effect:non-scaling-stroke}
+.mt-tf .rep{display:flex;align-items:center;gap:10px;margin-top:11px;padding-top:10px;border-top:1px solid var(--pl-hr)}
+.mt-tf .trk{position:relative;flex:1;height:3px;border-radius:2px;background:var(--pl-hr)}
+.mt-tf .trk i{position:absolute;left:0;top:0;bottom:0;width:64%;border-radius:2px;background:var(--pl-ac)}
+.mt-tf .trk i::after{content:"";position:absolute;right:-5px;top:50%;width:10px;height:10px;margin-top:-5px;border-radius:50%;
+  background:#fff;box-shadow:0 1px 5px rgba(0,0,0,.6)}
+
+/* 02 indicators — picker column beside a script editor card */
+.mt-ig{display:grid;grid-template-columns:minmax(0,.86fr) minmax(0,1.14fr);gap:12px;margin-top:10px}
+.mt-pick{border:1px solid var(--hair);border-radius:12px;background:var(--panel-2);padding:11px 12px}
+.mt-pick .row{display:flex;align-items:center;gap:9px;padding:6.5px 0;border-top:1px solid var(--hair);font-size:12px;color:var(--ink-soft)}
+.mt-pick .row:first-of-type{border-top:0}
+.mt-pick .bx{flex:none;width:14px;height:14px;border-radius:4px;border:1px solid var(--hair-2);background:#fff}
+.mt-pick .row.on .bx{background:var(--blue);border-color:var(--blue);position:relative}
+.mt-pick .row.on .bx::after{content:"";position:absolute;left:4px;top:1px;width:4px;height:8px;border:solid #fff;border-width:0 1.6px 1.6px 0;transform:rotate(42deg)}
+.mt-pick .row.on{color:var(--ink);font-weight:600}
+.mt-pick .n{margin-left:auto;font-family:var(--display);font-weight:700;font-size:9.5px;color:var(--faint)}
+.mt-ed{border:1px solid var(--hair);border-radius:12px;background:var(--plate);padding:11px 12px;display:flex;flex-direction:column;
+  --pl-fa:rgba(255,255,255,.36);--pl-hr:rgba(255,255,255,.09)}
+.mt-ed pre{margin:9px 0 0;font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:10.5px;line-height:1.62;
+  color:rgba(255,255,255,.8);white-space:pre-wrap;word-break:break-word}
+.mt-ed .cmp{display:flex;align-items:center;gap:7px;margin-top:11px;padding-top:10px;border-top:1px solid var(--pl-hr);
+  font-family:var(--display);font-weight:700;font-size:9px;letter-spacing:.09em;text-transform:uppercase;
+  color:color-mix(in srgb,var(--q-green) 50%,#fff)}
+.mt-ed .cmp i{width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}
+.mt-ed .cmp .pro{margin-left:auto;color:rgba(255,255,255,.5);letter-spacing:.06em}
+
+/* 03 watchlists — grouped rail, a basis badge on every group, one row updating */
+.mt-wl .gp{display:flex;align-items:center;gap:8px;padding:11px 0 6px;border-top:1px solid var(--pl-hr)}
+.mt-wl .gp:first-child{border-top:0;padding-top:2px}
+.mt-wl .bs{margin-left:auto;font-family:var(--display);font-weight:700;font-size:7.4px;letter-spacing:.1em;text-transform:uppercase;
+  border:1px solid rgba(255,255,255,.15);border-radius:99px;padding:3px 8px;color:rgba(255,255,255,.6)}
+.mt-wl .r{display:grid;grid-template-columns:1fr 74px 58px;gap:8px;align-items:center;height:27px;padding:0 6px;
+  border-radius:6px;font-size:11.5px;font-variant-numeric:tabular-nums}
+.mt-wl .r .sy{font-weight:600;color:rgba(255,255,255,.88)}
+.mt-wl .r .la,.mt-wl .r .ch{text-align:right}
+.mt-wl .r .la{color:rgba(255,255,255,.72)}
+.mt-wl .r.sel{background:color-mix(in srgb,var(--blue) 16%,transparent);box-shadow:inset 2px 0 0 var(--pl-ac)}
+.mt-wl .r.tick{background:color-mix(in srgb,var(--q-green) 16%,transparent)}
+.rv.in .mt-wl .r.tick{animation:mtTick 2.6s ease-in-out .6s infinite}
+@keyframes mtTick{0%,72%{background:color-mix(in srgb,var(--q-green) 16%,transparent)}90%,100%{background:transparent}}
+
+/* 04 dossier — tab cards fanned behind the open one */
+.mt-dos{position:relative;margin-top:14px;padding:16px 0 8px}
+.mt-dos .bk{position:absolute;left:8%;right:8%;top:0;height:64px;border:1px solid var(--hair-2);border-radius:12px;background:var(--panel-2);
+  box-shadow:var(--sh-card);display:flex;align-items:flex-start;padding:9px 13px}
+.mt-dos .bk.b2{left:4%;right:4%;top:9px;transform:rotate(-1.1deg)}
+.mt-dos .bk.b1{transform:rotate(1.4deg)}
+.mt-dos .card{position:relative;z-index:2;margin-top:26px;border:1px solid var(--hair-2);border-radius:12px;background:var(--panel);
+  box-shadow:var(--sh-lift);padding:13px 15px 15px}
+.mt-dos .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:11px}
+.mt-dos .tabs span{font-family:var(--display);font-weight:700;font-size:9.5px;letter-spacing:.06em;color:var(--muted);
+  border:1px solid var(--hair);border-radius:99px;padding:4px 10px}
+.mt-dos .tabs span.on{color:#fff;background:var(--blue);border-color:var(--blue)}
+.mt-dos .fr{display:grid;grid-template-columns:minmax(0,1fr) 84px 56px;gap:10px;align-items:center;padding:7px 0;border-top:1px solid var(--hair);font-size:12px;color:var(--muted)}
+.mt-dos .fr:first-of-type{border-top:0}
+.mt-dos .fr .bar{position:relative;height:7px;border-radius:99px;background:var(--hair)}
+.mt-dos .fr .bar i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:var(--blue);width:var(--w,50%)}
+.mt-dos .fr b{text-align:right;color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+.mt-dos .lk{display:inline-flex;align-items:center;gap:6px;margin-top:12px;font-size:12px;font-weight:600;color:var(--blue)}
+
+/* 05 engine read — the hero card's anatomy, in the page's light dress */
+.mt-read{border:1px solid var(--hair-2);border-radius:12px;background:var(--panel);box-shadow:var(--sh-card);padding:14px 15px;margin-top:12px}
+.mt-read .top{display:flex;align-items:center;gap:9px}
+.mt-read .top .tk{font-family:var(--display);font-weight:800;font-size:17px;color:var(--ink)}
+.mt-read .top .eg{margin-left:auto;font-family:var(--display);font-weight:700;font-size:8px;letter-spacing:.11em;color:var(--faint)}
+.mt-read .top .eg b{font-size:15px;color:var(--ink);margin-left:4px}
+.mt-read .vb{font-family:var(--display);font-weight:800;font-size:9.5px;letter-spacing:.1em;border-radius:99px;padding:4px 11px;
+  background:var(--green-wash);color:var(--q-green);border:1px solid rgba(31,139,65,.35)}
+.mt-read .st{margin:13px 0 0;font-size:12.5px;line-height:1.55;color:var(--ink-soft)}
+.mt-read .st b{color:var(--ink);font-weight:600}
+.mt-read .ts{display:block;margin-top:11px;padding-top:10px;border-top:1px solid var(--hair);
+  font-family:var(--display);font-weight:700;font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+
+/* 06 options — a strike ladder beside the flow tape, with the plan line said out loud */
+.mt-og{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+.mt-gx .sr{display:grid;grid-template-columns:44px minmax(0,1fr);gap:8px;align-items:center;padding:3.5px 0;font-size:10.5px;font-variant-numeric:tabular-nums}
+.mt-gx .sr .k2{color:var(--pl-mu);text-align:right}
+.mt-gx .sr .bar{position:relative;height:9px;border-radius:3px;background:var(--pl-hr)}
+.mt-gx .sr .bar i{position:absolute;top:0;bottom:0;left:0;border-radius:3px;background:color-mix(in srgb,var(--blue) 52%,#fff);width:var(--w,40%);opacity:.75}
+.mt-gx .sr.wall .k2{color:#fff;font-weight:700}
+.mt-gx .sr.wall .bar i{background:color-mix(in srgb,var(--q-gold) 46%,#fff);opacity:1}
+.mt-fl .fr{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:6px 0;
+  border-top:1px solid var(--pl-hr);font-size:11px;font-variant-numeric:tabular-nums}
+.mt-fl .fr:first-of-type{border-top:0}
+.mt-fl .sd{font-family:var(--display);font-weight:700;font-size:8px;letter-spacing:.08em;border-radius:5px;padding:3px 7px}
+.mt-fl .sd.c{color:var(--pl-up);background:color-mix(in srgb,var(--q-green) 20%,transparent)}
+.mt-fl .sd.p{color:var(--pl-dn);background:color-mix(in srgb,var(--q-red) 20%,transparent)}
+.mt-lock{display:flex;align-items:center;gap:8px;margin-top:12px;padding-top:11px;border-top:1px solid var(--pl-hr);
+  font-family:var(--display);font-weight:700;font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:rgba(255,255,255,.62)}
+.mt-lock svg{flex:none;width:11px;height:12px;stroke:currentColor;fill:none;stroke-width:1.3}
+
+/* 07 the copilot in the terminal */
+.mt-thread{display:flex;flex-direction:column;gap:9px;margin-top:12px}
+.mt-thread .msg{font-size:13px;max-width:88%}
+.mt-sym{align-self:flex-start;display:inline-flex;align-items:center;gap:7px;border:1px solid var(--hair-2);border-radius:99px;
+  padding:4px 11px;background:var(--panel);box-shadow:var(--sh-card);font-size:11.5px;font-weight:600;color:var(--ink-soft)}
+.mt-sym i{width:6px;height:6px;border-radius:50%;background:var(--blue);flex:none;font-style:normal}
+.mt-tools{display:flex;flex-wrap:wrap;gap:6px;align-self:flex-start;align-items:center}
+.mt-tools span{font-family:var(--display);font-weight:700;font-size:8.5px;letter-spacing:.07em;text-transform:uppercase;
+  border:1px solid var(--hair-2);border-radius:99px;padding:3px 9px;color:var(--muted);background:var(--panel)}
+.mt-tools span.lb{border:0;background:none;color:var(--faint);padding-left:0}
+.mt-aic{display:block;margin-top:9px;border-radius:9px;background:var(--plate);padding:8px 9px 6px}
+.mt-aic svg{display:block;width:100%}
+.mt-aic .u path{stroke:color-mix(in srgb,var(--q-green) 50%,#fff)}
+.mt-aic .u rect{fill:color-mix(in srgb,var(--q-green) 50%,#fff)}
+.mt-aic .d path{stroke:color-mix(in srgb,var(--q-red) 56%,#fff)}
+.mt-aic .d rect{fill:color-mix(in srgb,var(--q-red) 56%,#fff)}
+.mt-aic .lv{stroke-width:1;stroke-dasharray:4 3;vector-effect:non-scaling-stroke}
+.mt-aic .lv.r{stroke:color-mix(in srgb,var(--q-red) 56%,#fff)}
+.mt-aic .lv.s{stroke:color-mix(in srgb,var(--blue) 46%,#fff)}
+.mt-aic .lg{display:flex;justify-content:space-between;margin-top:6px}
+
+/* ══ HONESTY STATION — no motion here, by house rule ══ */
+.mt-access{max-width:74ch}
+.mt-access .kicker{display:block;color:var(--pg-accent);margin-bottom:12px}
+.mt-access .sec-title{font-size:clamp(1.55rem,2.8vw,2.25rem)}
+.mt-access .lk{display:inline-flex;align-items:center;gap:7px;margin-top:16px;font-weight:600;font-size:14.5px}
+
+/* ══ CLOSER ══ */
+.mt-trust i{background:color-mix(in srgb,var(--teal) 52%,#fff)}
+.mt-trust span:nth-child(2) i{background:color-mix(in srgb,var(--blue) 44%,#fff)}
+.mt-trust span:nth-child(3) i{background:color-mix(in srgb,var(--q-gold) 52%,#fff)}
+.mt-fine{margin:34px auto 0;max-width:60ch;font-size:11.5px;line-height:1.6;color:rgba(255,255,255,.4)}
+
+/* ══ RESTING STATES — motion is decoration; the drawing survives without it ══ */
+@media (prefers-reduced-motion:reduce){
+  .mt-ch .cd{opacity:1}
+  .mt-ch .ma{stroke-dashoffset:0}
+}
+html.still .mt-ch .cd{opacity:1}
+html.still .mt-ch .ma{stroke-dashoffset:0}
+
+@media (max-width:1080px){
+  .mt-ig{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:640px){
+  .mt-frame .tt-cwrap{min-height:250px}
+  .mt-og{grid-template-columns:minmax(0,1fr)}
+  .mt-dos .bk{display:none}
+  .mt-dos .card{margin-top:0}
+  .mt-thread .msg{max-width:96%}
+}
+</style>
 </head>
-<body class="estate public-page est-product product-market-terminal">
-
-
-<nav class="public-nav" aria-label="Main">
-  <div class="public-nav-in">
-    <a class="public-brand" href="../index.html" aria-label="MastermindX home"><span class="m">M</span> MASTERMINDX</a>
-    <div class="public-nav-links">
-      <a href="../products/index.html"><span class="l-en">Platform</span><span class="l-zh">平台</span></a>
-      <a href="../research/index.html"><span class="l-en">Research</span><span class="l-zh">研究</span></a>
-      <a href="../tools/index.html"><span class="l-en">Resources</span><span class="l-zh">资源</span></a>
-      <a href="../plans.html"><span class="l-en">Pricing</span><span class="l-zh">定价</span></a>
-    </div>
-    <div class="public-nav-right">
-      <a id="nav-login" class="public-nav-login" href="https://app.mastermind-x.com/terminal?signin=1"><span class="l-en">Log in</span><span class="l-zh">登录</span></a>
-      <a id="nav-cta" class="public-nav-cta" href="https://app.mastermind-x.com/terminal?signup=1"><span class="l-en">Start free</span><span class="l-zh">免费开始</span></a>
+<body class="pg-terminal">
+<nav class="nav" aria-label="Main">
+  <div class="nav-in">
+    <a class="brand" href="../index.html" aria-label="MastermindX home"><span class="m">M</span> MASTERMINDX</a>
+    <button class="nav-toggle" id="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-navigation" aria-label="Open navigation">
+      <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+    </button>
+    <ul class="nav-links" id="primary-navigation">
+      <li class="nav-group">
+        <button class="nav-trigger" id="nav-platform-trigger" type="button" aria-expanded="false" aria-controls="nav-platform-panel">
+          <span data-zh="平台">Platform</span><svg viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5 6 6.5l5-5"/></svg>
+        </button>
+        <div class="nav-panel nav-panel-platform" id="nav-platform-panel" aria-labelledby="nav-platform-trigger" hidden>
+          <div class="nav-panel-head">
+            <div><span class="nav-panel-k" data-zh="互联研究工作台">CONNECTED RESEARCH DESK</span><strong data-zh="从市场状态一路深入到底层证据">Move from market state to the underlying evidence</strong></div>
+            <a href="../products/index.html" data-zh="平台概览 →">Platform overview →</a>
+          </div>
+          <div class="nav-card-grid">
+            <a class="nav-card" href="../products/market-terminal.html" aria-current="page"><span class="nav-card-mark">01</span><span><strong data-zh="市场终端">Market Terminal</strong><small data-zh="浏览器图表、观察列表与股票研究背景。">Browser charting, watchlists and stock research context.</small></span></a>
+            <a class="nav-card" href="../products/mastermind-ai.html"><span class="nav-card-mark">02</span><span><strong>Mastermind AI</strong><small data-zh="结合当前页面与来源的市场研究助手。">A market research assistant grounded in the page and its sources.</small></span></a>
+            <a class="nav-card" href="../products/market-dashboards.html"><span class="nav-card-mark">03</span><span><strong data-zh="市场仪表盘">Market Dashboards</strong><small data-zh="宏观、周期、行业轮动与跨资产背景。">Macro, cycle, sector rotation and cross-asset context.</small></span></a>
+          </div>
+        </div>
+      </li>
+      <li class="nav-group">
+        <button class="nav-trigger" id="nav-research-trigger" type="button" aria-expanded="false" aria-controls="nav-research-panel">
+          <span data-zh="研究">Research</span><svg viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5 6 6.5l5-5"/></svg>
+        </button>
+        <div class="nav-panel nav-panel-research" id="nav-research-panel" aria-labelledby="nav-research-trigger" hidden>
+          <div class="nav-panel-head">
+            <div><span class="nav-panel-k" data-zh="公开研究界面">PUBLIC RESEARCH SURFACES</span><strong data-zh="从报告节选到逐股档案">From report excerpts to ticker-level dossiers</strong></div>
+          </div>
+          <div class="nav-card-grid two">
+            <a class="nav-card" href="../research/index.html"><span class="nav-card-mark">R</span><span><strong data-zh="机构研报">Institutional Research</strong><small data-zh="已索引的报告页面与可搜索节选；完整报告可能需要账户权限。">Indexed report pages and searchable excerpts; complete reports may require access.</small></span></a>
+            <a class="nav-card" href="../stocks/index.html"><span class="nav-card-mark">S</span><span><strong data-zh="股票档案">Stock Dossiers</strong><small data-zh="按股票整理的技术面、基本面、持仓与期权背景。">Ticker pages for technical, fundamental, ownership and options context.</small></span></a>
+          </div>
+        </div>
+      </li>
+      <li class="nav-group">
+        <button class="nav-trigger" id="nav-resources-trigger" type="button" aria-expanded="false" aria-controls="nav-resources-panel">
+          <span data-zh="资源">Resources</span><svg viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5 6 6.5l5-5"/></svg>
+        </button>
+        <div class="nav-panel nav-panel-resources" id="nav-resources-panel" aria-labelledby="nav-resources-trigger" hidden>
+          <div class="nav-panel-head">
+            <div><span class="nav-panel-k" data-zh="无需账户即可使用">USEFUL BEFORE SIGNUP</span><strong data-zh="先解决一个真实问题">Start by solving one real problem</strong></div>
+          </div>
+          <div class="nav-card-grid two">
+            <a class="nav-card" href="../tools/index.html"><span class="nav-card-mark">T</span><span><strong data-zh="免费工具">Free Tools</strong><small data-zh="仓位、风险、回报与投资组合计算器。">Calculators for sizing, risk, returns and portfolios.</small></span></a>
+            <a class="nav-card" href="../learn/index.html"><span class="nav-card-mark">L</span><span><strong data-zh="学习中心">Learning Center</strong><small data-zh="技术分析、风险、期权与申报文件课程。">Lessons on technicals, risk, options and filings.</small></span></a>
+            <a class="nav-card" href="../blog/index.html"><span class="nav-card-mark">B</span><span><strong data-zh="博客">Blog</strong><small data-zh="关于交易数学与市场机制的朴素文章。">Plain-English articles on trading math and market mechanics.</small></span></a>
+            <a class="nav-card" href="../support.html"><span class="nav-card-mark">?</span><span><strong data-zh="支持">Support</strong><small data-zh="账户、产品与访问问题的帮助入口。">Help with account, product and access questions.</small></span></a>
+          </div>
+        </div>
+      </li>
+      <li class="nav-direct"><a href="../plans.html" data-zh="定价">Pricing</a></li>
+    </ul>
+    <div class="nav-right">
+      <a id="nav-login" href="https://app.mastermind-x.com/terminal?signin=1" style="color:var(--muted)" data-zh="登录">Log in</a>
+      <a id="nav-cta" class="btn primary sm" href="https://app.mastermind-x.com/terminal?signup=1" data-zh="免费开始">Start free</a>
       <span class="gear-wrap">
         <button class="gearbtn" id="gear-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Settings">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </button>
         <div class="gear-pop" id="gear-pop" role="menu" aria-label="Settings">
-          <p class="gp-kicker"><span class="l-en">Settings</span><span class="l-zh">设置</span></p>
+          <p class="gp-kicker" data-zh="设置">SETTINGS</p>
           <div class="gp-lang">
-            <span class="gp-lbl"><span class="l-en">Language</span><span class="l-zh">语言</span></span>
+            <span class="gp-lbl" data-zh="语言">Language</span>
             <span class="gp-seg" role="group" aria-label="Language">
               <button type="button" class="gp-seg-b" data-set-lang="en">EN</button>
               <button type="button" class="gp-seg-b" data-set-lang="zh">中文</button>
             </span>
           </div>
           <div class="gp-div"></div>
-          <a class="gp-link" role="menuitem" href="../start.html"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></a>
+          <a class="gp-link" role="menuitem" href="../start.html" data-zh="打开仪表盘">Open the dashboard</a>
+          <!-- ACCOUNT section — mirrors the macro dashboard gear's ACCOUNT block, in
+               landing light tokens. onboard.js's auth-chrome module swaps -out ⇄ -in. -->
           <div class="gp-div"></div>
           <div class="gp-acct">
-            <p class="gp-acct-t"><span class="l-en">Account</span><span class="l-zh">账户</span></p>
+            <p class="gp-acct-t" data-zh="账户">ACCOUNT</p>
             <div class="gp-acct-out" id="gp-acct-out">
-              <p class="gp-acct-d"><span class="l-en">Sign in to sync your watchlists, alerts and settings across devices.</span><span class="l-zh">登录以在所有设备同步自选、提醒与设置。</span></p>
+              <p class="gp-acct-d" data-zh="登录以在所有设备同步自选、提醒与设置。">Sign in to sync your watchlists, alerts and settings across devices.</p>
               <div class="gp-acct-btns">
-                <button type="button" class="gp-abtn ghost" id="gp-signin"><span class="l-en">Sign in</span><span class="l-zh">登录</span></button>
-                <button type="button" class="gp-abtn solid" id="gp-signup"><span class="l-en">Create account</span><span class="l-zh">创建账户</span></button>
+                <button type="button" class="gp-abtn ghost" id="gp-signin" data-zh="登录">Sign in</button>
+                <button type="button" class="gp-abtn solid" id="gp-signup" data-zh="创建账户">Create account</button>
               </div>
             </div>
             <div class="gp-acct-in" id="gp-acct-in" hidden>
               <div class="gp-acct-card" id="gp-acct-card" role="button" tabindex="0">
                 <span class="gp-avatar" id="gp-avatar"></span>
-                <span class="gp-acct-main"><span class="gp-acct-email" id="gp-email"></span><span class="gp-acct-sub"><span class="l-en">Manage account & sync ›</span><span class="l-zh">管理账户与同步 ›</span></span></span>
+                <span class="gp-acct-main"><span class="gp-acct-email" id="gp-email"></span><span class="gp-acct-sub" data-zh="管理账户与同步 ›">Manage account &amp; sync ›</span></span>
               </div>
-              <button type="button" class="gp-signout" id="gp-signout"><span class="l-en">Sign out</span><span class="l-zh">退出登录</span></button>
+              <button type="button" class="gp-signout" id="gp-signout" data-zh="退出登录">Sign out</button>
             </div>
           </div>
         </div>
@@ -119,230 +503,687 @@
   </div>
 </nav>
 
-
-
 <nav class="est-crumb" aria-label="Breadcrumb">
   <ol>
-
-    <li>
-      <a href="../">Home</a>
-    </li>
+    <li><a href="../" data-zh="首页">Home</a></li>
     <li class="sep" aria-hidden="true">/</li>
-
-    <li>
-      <a href="../products/index.html">Platform</a>
-    </li>
+    <li><a href="../products/index.html" data-zh="平台">Platform</a></li>
     <li class="sep" aria-hidden="true">/</li>
-
-    <li aria-current="page">
-      Market Terminal
-    </li>
-
-
+    <li aria-current="page" data-zh="市场终端">Market Terminal</li>
   </ol>
 </nav>
 
-
 <main id="main">
 
-<section class="prod-hero">
-  <div class="prod-copy">
-    <span class="est-kicker">Browser charting workspace</span>
-    <h1 class="est-title">Market Terminal &amp; Browser Charting</h1>
-    <p class="est-dek">Chart markets in your browser with watchlists, indicators, key statistics and research context. Core terminal access is free; live options requires a plan.</p>
+<!-- ══════════════ HERO — the browser IS the hero ══════════════ -->
+<section class="phero">
+  <div class="wrap">
+    <nav class="chap rv" aria-label="Platform chapters">
+      <span class="chap-x on" aria-current="page" data-zh="<i>01</i>市场终端"><i>01</i>Market Terminal</span>
+      <a class="chap-x" href="mastermind-ai.html"><i>02</i>Mastermind AI</a>
+      <a class="chap-x" href="market-dashboards.html" data-zh="<i>03</i>市场仪表盘"><i>03</i>Market Dashboards</a>
+    </nav>
 
-    <div class="prod-cta">
-      <a class="gbtn gbtn-lg gbtn-cta" href="https://app.mastermind-x.com">Open the Market Terminal →</a>
+    <div class="mt-hero rv">
+      <span class="kicker" data-zh="终端">The Terminal</span>
+      <h1 data-zh="机构级图表，<br><span class='pgrad'>台席内建其中。</span>">Institutional charting,<br><span class="pgrad">with a desk built in.</span></h1>
+      <p class="sub" data-zh="蜡烛图、指标与实时自选就在浏览器里——无需安装。K线旁边：分级信号、关键数据、申报披露与 Mastermind AI。<b>免费开始，几秒上手。</b>">Candles, indicators and live watchlists in your browser — nothing to install. Beside the chart: ranked signals, key stats, filings and Mastermind AI. <b>Free to start, in seconds.</b></p>
+      <div class="cta-row">
+        <a class="btn primary" href="https://app.mastermind-x.com" data-zh="打开 Terminal →">Open the Terminal →</a>
+        <a class="btn" href="../plans.html" data-zh="查看方案">See plans</a>
+      </div>
+      <p class="micro" data-zh="核心功能免费 · 无需安装">FREE CORE ACCESS · NOTHING TO INSTALL</p>
     </div>
 
+    <div class="pstage rv" style="--d:.12s">
+      <span class="live-tag ill" data-zh="<i></i>示意"><i></i>ILLUSTRATIVE</span>
+      <span class="anno" style="top:28px;left:-14px" data-zh="<i></i>报价条"><i></i>Quote strip</span>
+      <span class="anno" style="top:128px;right:-16px" data-zh="<i></i>你的自选"><i></i>Your watchlists</span>
+      <span class="anno" style="bottom:158px;left:-20px" data-zh="<i></i>随手绘图"><i></i>Draws with you</span>
+      <span class="anno" style="bottom:34px;right:-10px" data-zh="<i></i>引擎研判——独立时间戳"><i></i>Engine read — its own timestamp</span>
+
+      <div class="mt-frame" role="img" aria-label="The MastermindX Terminal in a browser window: an NVDA candlestick chart with moving averages, volume and RSI, a grouped watchlist rail, and a floating engine-read card showing a NEAR call with its entry zone and invalidation level.">
+        <div class="sf" aria-hidden="true">
+          <div class="sf-bar">
+            <div class="sf-l">
+              <div class="sf-dots"><i></i><i></i><i></i></div>
+              <svg width="17" height="14" viewBox="0 0 17 14" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="1" width="15" height="12" rx="2.5"/><line x1="6" y1="1" x2="6" y2="13"/></svg>
+              <svg width="9" height="6" viewBox="0 0 9 6" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M1 1.2l3.5 3.5L8 1.2"/></svg>
+              <svg width="7" height="12" viewBox="0 0 7 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 1L1.5 6L6 11"/></svg>
+              <svg class="dim" width="7" height="12" viewBox="0 0 7 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 1l4.5 5L1 11"/></svg>
+            </div>
+            <div class="sf-url">
+              <svg width="9" height="11" viewBox="0 0 9 11" fill="none" stroke="currentColor" stroke-width="1.1"><rect x="1" y="4.5" width="7" height="5.5" rx="1.2"/><path d="M2.5 4.5V3a2 2 0 0 1 4 0v1.5"/></svg>
+              <span>app.mastermind-x.com/terminal</span>
+              <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.1"><path d="M9.5 5.5a4 4 0 1 1-1.2-2.85"/><path d="M8.6 0.6v2.3H6.3" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="sf-r">
+              <svg width="12" height="14" viewBox="0 0 12 14" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M6 1v8M3.4 3.2L6 .8l2.6 2.4"/><path d="M2.5 6H1.5v7h9V6h-1"/></svg>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M6 1v10M1 6h10"/></svg>
+              <svg width="13" height="12" viewBox="0 0 13 12" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="3.5" y="1" width="8.5" height="8.5" rx="1.6"/><path d="M1.2 3.5v5.8a1.5 1.5 0 0 0 1.5 1.5h6"/></svg>
+            </div>
+          </div>
+          <div class="tapp">
+            <div class="tt-top">
+              <div class="tt-logo"><span class="lm">M</span><span class="ln"><b>MASTERMINDX</b><span>TERMINAL</span></span></div>
+              <div class="tt-sym"><span class="sic">n</span>NVDA <svg width="8" height="5" viewBox="0 0 8 5" fill="none" stroke="#5c6879" stroke-width="1.2"><path d="M1 1l3 3 3-3"/></svg></div>
+              <div class="tt-cmp hx3"><svg width="11" height="10" viewBox="0 0 11 10" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M1 3h7M6 1l2 2-2 2M10 7H3M5 5L3 7l2 2"/></svg><span data-zh="对比">Compare</span></div>
+              <div class="tt-cell"><span class="l" data-zh="最新价">Last price</span><span class="v mo">211.07</span></div>
+              <div class="tt-cell"><span class="l" data-zh="24小时涨跌">24H change</span><span class="v mo up">+1.82%</span></div>
+              <div class="tt-cell hx2"><span class="l" data-zh="成交量">Volume</span><span class="v mo">103.1M</span></div>
+              <div class="tt-rng hx1"><span class="lb"><span data-zh="日内区间">Day range</span><em class="mo">211.07</em></span><span class="trk"><i></i></span><span class="mm mo"><span data-zh="低 204.95">L 204.95</span><span data-zh="214.49 高">214.49 H</span></span></div>
+              <div class="tt-del mt-del hx1" data-zh="<i></i>延迟15分钟"><i></i>15-MIN DELAYED</div>
+              <div class="tt-ai"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="#fff" stroke-width="1.5"><path d="M5 1v8M1 5h8"/></svg>Mastermind AI</div>
+              <div class="tt-av">U</div>
+            </div>
+            <div class="tt-body">
+              <div class="tt-rail">
+                <span class="ri on"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4.5 2v3M4.5 11v3M11.5 1v2M11.5 12v2"/><rect x="2.8" y="5" width="3.4" height="6" rx="1" fill="currentColor" stroke="none"/><rect x="9.8" y="3" width="3.4" height="9" rx="1"/></svg></span>
+                <span class="ri"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6.4"/><path d="M8 4.5V8l2.4 1.6"/></svg></span>
+                <span class="ri"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="7" cy="7" r="4.6"/><path d="M10.5 10.5L14 14"/></svg></span>
+                <span class="ri"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12.8 2.2l1 1L5 12l-2.4.9L3.5 10.5z"/></svg></span>
+                <span class="ri"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2.2" y="2.2" width="11.6" height="11.6" rx="2"/></svg></span>
+                <span class="ri"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6.4"/><path d="M10.4 5.6L9 9l-3.4 1.4L7 7z"/></svg></span>
+                <span class="ri"><svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M13 9.2A5.8 5.8 0 1 1 5.8 2a4.6 4.6 0 0 0 7.2 7.2z"/></svg></span>
+                <span class="sp"></span>
+                <span class="ri"><svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M7.5 1.5l1.4 4.6 4.6 1.4-4.6 1.4-1.4 4.6-1.4-4.6-4.6-1.4 4.6-1.4z"/></svg></span>
+              </div>
+              <div class="tt-main">
+                <div class="tt-tabs">
+                  <span class="tab" data-zh="价格图">Price chart</span>
+                  <span class="on2">1m</span><span>5m</span><span>15m</span><span>D</span>
+                  <span class="sep"></span>
+                  <span class="it"><svg width="10" height="12" viewBox="0 0 10 12" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M2.5 1v2M2.5 9v2M7.5 2v1.5M7.5 10v1"/><rect x="1" y="3" width="3" height="6" rx=".8"/><rect x="6" y="3.5" width="3" height="6.5" rx=".8"/></svg><span data-zh="K线">Candles</span> <svg width="7" height="4" viewBox="0 0 8 5" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M1 1l3 3 3-3"/></svg></span>
+                  <span class="it hx3"><svg width="12" height="10" viewBox="0 0 12 10" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M1 8.5l3-4 2.5 2L11 1.5"/></svg><span data-zh="指标">Indicators</span></span>
+                  <span class="pg hx2"><span class="on">1</span><span>2</span><span>4</span></span>
+                  <span class="it hx2"><svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.1"><rect x="1" y="1" width="4" height="4" rx=".8"/><rect x="6.5" y="1" width="3.5" height="4" rx=".8"/><rect x="1" y="6.5" width="4" height="3.5" rx=".8"/><rect x="6.5" y="6.5" width="3.5" height="3.5" rx=".8"/></svg>MTF</span>
+                  <span class="it hx1"><svg width="9" height="12" viewBox="0 0 9 12" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M5.5 1L1.5 7h3l-1 4 4-6h-3z"/></svg><span data-zh="日内">Day</span></span>
+                  <span class="it hx1"><svg width="10" height="11" viewBox="0 0 10 11" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M2 1.5l7 4-7 4z" stroke-linejoin="round"/></svg><span data-zh="回放">Replay</span></span>
+                  <span class="it hx1"><svg width="13" height="9" viewBox="0 0 13 9" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M1 4.5h2.2L5 1.5l2.5 6L9 4.5h3"/></svg><span data-zh="自动识别">Detect</span> <svg width="7" height="4" viewBox="0 0 8 5" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M1 1l3 3 3-3"/></svg></span>
+                </div>
+                <div class="tt-cwrap">
+                  <div class="tt-leg">
+                    <span class="row"><i style="background:var(--tb)"></i><i style="background:var(--violet)"></i><span data-zh="均线 9 · 21">Moving averages 9 · 21</span></span>
+                    <span class="row"><i style="background:rgba(255,255,255,.3)"></i><span data-zh="手绘趋势线 · 买区 · 失效位">Drawn trendline · entry zone · invalidation</span></span>
+                  </div>
+                  <svg class="mt-ch" viewBox="0 0 820 352" preserveAspectRatio="none" aria-hidden="true"><g class="g"><line x1="30.0" y1="60.5" x2="760.0" y2="60.5"/><line x1="30.0" y1="107.0" x2="760.0" y2="107.0"/><line x1="30.0" y1="153.5" x2="760.0" y2="153.5"/><line x1="30.0" y1="262" x2="760.0" y2="262"/><line x1="30.0" y1="14.0" x2="30.0" y2="338"/></g><rect class="ez" x="30.0" y="80.0" width="730.0" height="24.6"/><line class="inv" x1="30.0" y1="153.8" x2="760.0" y2="153.8"/><path class="dl" d="M128.9 158.0L493.9 140.8L760.0 84.9"/><g class="cd u" style="--i:0"><path class="w" d="M37.6 176.1V190.0"/><rect x="33.6" y="179.2" width="8.0" height="8.9"/><rect class="v" x="33.6" y="223.0" width="8.0" height="29.0"/></g><g class="cd u" style="--i:1"><path class="w" d="M52.8 165.5V185.5"/><rect x="48.8" y="170.8" width="8.0" height="8.3"/><rect class="v" x="48.8" y="221.9" width="8.0" height="30.1"/></g><g class="cd d" style="--i:2"><path class="w" d="M68.0 160.1V174.6"/><rect x="64.0" y="168.2" width="8.0" height="2.9"/><rect class="v" x="64.0" y="234.1" width="8.0" height="17.9"/></g><g class="cd u" style="--i:3"><path class="w" d="M83.2 154.7V179.4"/><rect x="79.2" y="158.5" width="8.0" height="15.2"/><rect class="v" x="79.2" y="213.0" width="8.0" height="39.0"/></g><g class="cd u" style="--i:4"><path class="w" d="M98.4 144.0V167.3"/><rect x="94.4" y="151.2" width="8.0" height="9.4"/><rect class="v" x="94.4" y="224.3" width="8.0" height="27.7"/></g><g class="cd u" style="--i:5"><path class="w" d="M113.6 140.3V153.2"/><rect x="109.6" y="146.3" width="8.0" height="2.6"/><rect class="v" x="109.6" y="239.2" width="8.0" height="12.8"/></g><g class="cd u" style="--i:6"><path class="w" d="M128.9 134.8V153.1"/><rect x="124.9" y="136.6" width="8.0" height="11.4"/><rect class="v" x="124.9" y="218.3" width="8.0" height="33.7"/></g><g class="cd u" style="--i:7"><path class="w" d="M144.1 121.9V141.3"/><rect x="140.1" y="126.8" width="8.0" height="7.6"/><rect class="v" x="140.1" y="227.8" width="8.0" height="24.2"/></g><g class="cd u" style="--i:8"><path class="w" d="M159.3 119.2V133.4"/><rect x="155.3" y="122.0" width="8.0" height="2.7"/><rect class="v" x="155.3" y="234.7" width="8.0" height="17.3"/></g><g class="cd u" style="--i:9"><path class="w" d="M174.5 107.4V129.3"/><rect x="170.5" y="109.9" width="8.0" height="12.6"/><rect class="v" x="170.5" y="216.4" width="8.0" height="35.6"/></g><g class="cd u" style="--i:10"><path class="w" d="M189.7 100.6V116.0"/><rect x="185.7" y="102.3" width="8.0" height="5.6"/><rect class="v" x="185.7" y="230.3" width="8.0" height="21.7"/></g><g class="cd u" style="--i:11"><path class="w" d="M204.9 87.5V104.3"/><rect x="200.9" y="91.9" width="8.0" height="10.2"/><rect class="v" x="200.9" y="221.0" width="8.0" height="31.0"/></g><g class="cd u" style="--i:12"><path class="w" d="M220.1 83.6V97.3"/><rect x="216.1" y="92.0" width="8.0" height="2.2"/><rect class="v" x="216.1" y="233.9" width="8.0" height="18.1"/></g><g class="cd u" style="--i:13"><path class="w" d="M235.3 73.9V94.7"/><rect x="231.3" y="79.5" width="8.0" height="9.5"/><rect class="v" x="231.3" y="225.1" width="8.0" height="26.9"/></g><g class="cd d" style="--i:14"><path class="w" d="M250.5 70.4V86.4"/><rect x="246.5" y="76.6" width="8.0" height="6.2"/><rect class="v" x="246.5" y="229.7" width="8.0" height="22.3"/></g><g class="cd u" style="--i:15"><path class="w" d="M265.7 69.2V87.7"/><rect x="261.7" y="72.5" width="8.0" height="8.5"/><rect class="v" x="261.7" y="225.4" width="8.0" height="26.6"/></g><g class="cd u" style="--i:16"><path class="w" d="M280.9 63.2V81.3"/><rect x="276.9" y="69.4" width="8.0" height="3.9"/><rect class="v" x="276.9" y="235.4" width="8.0" height="16.6"/></g><g class="cd d" style="--i:17"><path class="w" d="M296.1 65.3V80.6"/><rect x="292.1" y="71.5" width="8.0" height="4.8"/><rect class="v" x="292.1" y="230.6" width="8.0" height="21.4"/></g><g class="cd d" style="--i:18"><path class="w" d="M311.4 68.1V84.6"/><rect x="307.4" y="73.3" width="8.0" height="7.8"/><rect class="v" x="307.4" y="222.7" width="8.0" height="29.3"/></g><g class="cd u" style="--i:19"><path class="w" d="M326.6 78.0V90.4"/><rect x="322.6" y="82.2" width="8.0" height="1.2"/><rect class="v" x="322.6" y="242.0" width="8.0" height="10.0"/></g><g class="cd d" style="--i:20"><path class="w" d="M341.8 74.5V90.1"/><rect x="337.8" y="82.9" width="8.0" height="3.4"/><rect class="v" x="337.8" y="229.9" width="8.0" height="22.1"/></g><g class="cd d" style="--i:21"><path class="w" d="M357.0 81.0V107.7"/><rect x="353.0" y="87.9" width="8.0" height="16.0"/><rect class="v" x="353.0" y="210.0" width="8.0" height="42.0"/></g><g class="cd d" style="--i:22"><path class="w" d="M372.2 93.9V113.0"/><rect x="368.2" y="102.3" width="8.0" height="7.6"/><rect class="v" x="368.2" y="228.8" width="8.0" height="23.2"/></g><g class="cd d" style="--i:23"><path class="w" d="M387.4 104.2V122.1"/><rect x="383.4" y="109.5" width="8.0" height="11.1"/><rect class="v" x="383.4" y="219.2" width="8.0" height="32.8"/></g><g class="cd d" style="--i:24"><path class="w" d="M402.6 114.3V129.8"/><rect x="398.6" y="119.5" width="8.0" height="8.7"/><rect class="v" x="398.6" y="220.9" width="8.0" height="31.1"/></g><g class="cd u" style="--i:25"><path class="w" d="M417.8 125.2V139.3"/><rect x="413.8" y="130.6" width="8.0" height="1.2"/><rect class="v" x="413.8" y="241.8" width="8.0" height="10.2"/></g><g class="cd d" style="--i:26"><path class="w" d="M433.0 125.7V144.0"/><rect x="429.0" y="128.2" width="8.0" height="9.8"/><rect class="v" x="429.0" y="221.8" width="8.0" height="30.2"/></g><g class="cd u" style="--i:27"><path class="w" d="M448.2 130.8V142.0"/><rect x="444.2" y="135.4" width="8.0" height="4.4"/><rect class="v" x="444.2" y="230.8" width="8.0" height="21.2"/></g><g class="cd d" style="--i:28"><path class="w" d="M463.4 128.7V143.3"/><rect x="459.4" y="132.5" width="8.0" height="8.2"/><rect class="v" x="459.4" y="225.6" width="8.0" height="26.4"/></g><g class="cd u" style="--i:29"><path class="w" d="M478.6 122.9V147.2"/><rect x="474.6" y="130.7" width="8.0" height="7.7"/><rect class="v" x="474.6" y="227.7" width="8.0" height="24.3"/></g><g class="cd d" style="--i:30"><path class="w" d="M493.9 125.3V135.3"/><rect x="489.9" y="128.6" width="8.0" height="1.5"/><rect class="v" x="489.9" y="235.6" width="8.0" height="16.4"/></g><g class="cd u" style="--i:31"><path class="w" d="M509.1 115.6V134.5"/><rect x="505.1" y="117.7" width="8.0" height="9.9"/><rect class="v" x="505.1" y="226.0" width="8.0" height="26.0"/></g><g class="cd u" style="--i:32"><path class="w" d="M524.3 109.5V127.4"/><rect x="520.3" y="112.3" width="8.0" height="8.1"/><rect class="v" x="520.3" y="222.0" width="8.0" height="30.0"/></g><g class="cd u" style="--i:33"><path class="w" d="M539.5 102.7V119.1"/><rect x="535.5" y="107.6" width="8.0" height="2.9"/><rect class="v" x="535.5" y="239.3" width="8.0" height="12.7"/></g><g class="cd u" style="--i:34"><path class="w" d="M554.7 93.2V113.5"/><rect x="550.7" y="97.3" width="8.0" height="11.4"/><rect class="v" x="550.7" y="215.8" width="8.0" height="36.2"/></g><g class="cd u" style="--i:35"><path class="w" d="M569.9 85.3V100.9"/><rect x="565.9" y="91.7" width="8.0" height="4.8"/><rect class="v" x="565.9" y="231.5" width="8.0" height="20.5"/></g><g class="cd u" style="--i:36"><path class="w" d="M585.1 69.9V95.0"/><rect x="581.1" y="77.0" width="8.0" height="16.1"/><rect class="v" x="581.1" y="211.8" width="8.0" height="40.2"/></g><g class="cd u" style="--i:37"><path class="w" d="M600.3 68.1V84.4"/><rect x="596.3" y="71.4" width="8.0" height="6.4"/><rect class="v" x="596.3" y="225.3" width="8.0" height="26.7"/></g><g class="cd u" style="--i:38"><path class="w" d="M615.5 52.6V79.3"/><rect x="611.5" y="61.3" width="8.0" height="11.1"/><rect class="v" x="611.5" y="217.7" width="8.0" height="34.3"/></g><g class="cd u" style="--i:39"><path class="w" d="M630.7 53.4V62.3"/><rect x="626.7" y="55.8" width="8.0" height="2.6"/><rect class="v" x="626.7" y="231.1" width="8.0" height="20.9"/></g><g class="cd d" style="--i:40"><path class="w" d="M645.9 48.8V61.8"/><rect x="641.9" y="57.8" width="8.0" height="1.9"/><rect class="v" x="641.9" y="239.4" width="8.0" height="12.6"/></g><g class="cd u" style="--i:41"><path class="w" d="M661.1 49.2V58.8"/><rect x="657.1" y="51.1" width="8.0" height="6.1"/><rect class="v" x="657.1" y="227.9" width="8.0" height="24.1"/></g><g class="cd u" style="--i:42"><path class="w" d="M676.4 42.4V56.6"/><rect x="672.4" y="49.0" width="8.0" height="3.2"/><rect class="v" x="672.4" y="236.5" width="8.0" height="15.5"/></g><g class="cd u" style="--i:43"><path class="w" d="M691.6 38.0V52.9"/><rect x="687.6" y="42.8" width="8.0" height="3.6"/><rect class="v" x="687.6" y="231.0" width="8.0" height="21.0"/></g><g class="cd d" style="--i:44"><path class="w" d="M706.8 31.6V54.6"/><rect x="702.8" y="40.4" width="8.0" height="5.1"/><rect class="v" x="702.8" y="230.4" width="8.0" height="21.6"/></g><g class="cd u" style="--i:45"><path class="w" d="M722.0 24.0V47.2"/><rect x="718.0" y="33.1" width="8.0" height="11.0"/><rect class="v" x="718.0" y="218.6" width="8.0" height="33.4"/></g><g class="cd d" style="--i:46"><path class="w" d="M737.2 26.7V33.8"/><rect x="733.2" y="29.8" width="8.0" height="1.2"/><rect class="v" x="733.2" y="235.0" width="8.0" height="17.0"/></g><g class="cd u" style="--i:47"><path class="w" d="M752.4 27.4V39.9"/><rect x="748.4" y="30.3" width="8.0" height="3.0"/><rect class="v" x="748.4" y="232.2" width="8.0" height="19.8"/></g><path class="ma m9" pathLength="1" d="M37.6 179.2L52.8 175.0L68.0 173.7L83.2 169.9L98.4 166.1L113.6 162.8L128.9 159.1L144.1 155.0L159.3 151.4L174.5 143.7L189.7 136.1L204.9 127.3L220.1 119.9L235.3 111.9L250.5 104.9L265.7 97.7L280.9 91.4L296.1 86.3L311.4 83.1L326.6 80.9L341.8 80.2L357.0 81.6L372.2 84.9L387.4 89.1L402.6 95.3L417.8 102.1L433.0 109.0L448.2 115.0L463.4 121.5L478.6 126.5L493.9 129.4L509.1 130.2L524.3 129.3L539.5 127.0L554.7 123.3L569.9 118.2L585.1 111.7L600.3 104.0L615.5 96.3L630.7 88.0L645.9 81.5L661.1 74.7L676.4 68.2L691.6 62.2L706.8 57.0L722.0 52.2L737.2 47.6L752.4 44.1"/><path class="ma m21" pathLength="1" d="M37.6 179.2L52.8 175.0L68.0 173.7L83.2 169.9L98.4 166.1L113.6 162.8L128.9 159.1L144.1 155.0L159.3 151.4L174.5 147.2L189.7 143.1L204.9 138.9L220.1 135.3L235.3 131.3L250.5 128.1L265.7 124.6L280.9 121.3L296.1 118.8L311.4 116.8L326.6 115.1L341.8 113.7L357.0 110.2L372.2 107.3L387.4 104.9L402.6 103.4L417.8 102.4L433.0 102.0L448.2 102.0L463.4 102.6L478.6 103.1L493.9 104.0L509.1 104.8L524.3 105.7L539.5 106.5L554.7 107.3L569.9 107.7L585.1 108.0L600.3 108.1L615.5 107.3L630.7 106.1L645.9 105.1L661.1 103.4L676.4 100.8L691.6 97.6L706.8 94.0L722.0 89.5L737.2 84.7L752.4 79.5"/><g class="lp"><line x1="30.0" y1="30.3" x2="760.0" y2="30.3"/><rect x="758.0" y="22.8" width="52" height="15" rx="3"/><text x="764.0" y="33.9">211.07</text></g><g class="ax"><text x="764.0" y="9.1">215.00</text><text x="764.0" y="70.7">205.00</text><text x="764.0" y="132.2">195.00</text><text x="764.0" y="219.0">VOL</text><text x="764.0" y="281.0">RSI 14</text></g><g class="g"><line x1="30.0" y1="291.8" x2="760.0" y2="291.8"/><line x1="30.0" y1="318.2" x2="760.0" y2="318.2"/></g><path class="ma rl" pathLength="1" d="M37.6 303.7L52.8 303.7L68.0 273.8L83.2 272.7L98.4 272.6L113.6 272.5L128.9 272.4L144.1 272.3L159.3 272.3L174.5 272.2L189.7 272.2L204.9 272.2L220.1 272.3L235.3 272.3L250.5 274.3L265.7 274.3L280.9 274.1L296.1 278.6L311.4 282.0L326.6 283.1L341.8 286.8L357.0 297.4L372.2 301.0L387.4 308.6L402.6 313.7L417.8 319.1L433.0 320.5L448.2 326.0L463.4 326.3L478.6 326.5L493.9 328.0L509.1 319.8L524.3 316.1L539.5 313.7L554.7 308.5L569.9 300.5L585.1 294.1L600.3 287.8L615.5 282.2L630.7 280.3L645.9 278.2L661.1 277.9L676.4 274.6L691.6 274.7L706.8 276.5L722.0 276.5L737.2 276.6L752.4 277.1"/></svg>
+                  <div class="mt-il">
+                    <div class="ih"><span class="mt-lb" data-zh="智能层">Intelligence layer</span><span class="mt-lb" data-zh="截至7月20日 · 2天前">As of Jul 20 · 2d</span></div>
+                    <div class="ic"><span class="mt-vb" data-zh="临近">NEAR</span><span class="tk">NVDA</span><span class="eg" data-zh="优势 <b>81</b>">EDGE <b>81</b></span></div>
+                    <div class="ezc">
+                      <div class="c"><span class="k" data-zh="买入区间">Entry zone</span><b>$199 – $203</b></div>
+                      <div class="c bad"><span class="k" data-zh="失效位">Invalidation</span><b>$191</b></div>
+                    </div>
+                    <p class="st" data-zh="<b>结构完好；入场门未开。</b>格局、主题与资金流一致——等价格。"><b>Setup intact; entry gate closed.</b> Regime, theme and flow agree — wait for price.</p>
+                  </div>
+                </div>
+              </div>
+              <div class="tt-right">
+                <div class="ttp">
+                  <div class="ttp-h"><span data-zh="默认">Default</span> <svg width="8" height="5" viewBox="0 0 8 5" fill="none" stroke="#5c6879" stroke-width="1.2"><path d="M1 1l3 3 3-3"/></svg><span class="mr"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M5 1v8M1 5h8"/></svg><svg width="12" height="3" viewBox="0 0 12 3" fill="currentColor"><circle cx="1.5" cy="1.5" r="1.3"/><circle cx="6" cy="1.5" r="1.3"/><circle cx="10.5" cy="1.5" r="1.3"/></svg></span></div>
+                  <div class="twl-cols"><span data-zh="代码">Symbol</span><span data-zh="最新">Last</span><span data-zh="涨跌%">Chg%</span></div>
+                  <div class="twl-rows">
+                    <div class="twl-g" data-zh="加密货币">CRYPTO</div>
+                    <div class="twl-r"><span class="sic" style="background:#f7931a"><svg width="9" height="11" viewBox="0 0 9 11" fill="none" stroke="#fff" stroke-width="1.2" stroke-linecap="round"><path d="M2.3 2.7h2.9a1.5 1.5 0 0 1 0 3h-2.9zM2.3 5.7h3.3a1.5 1.5 0 0 1 0 3H2.3z"/><path d="M3.5 1.3v1.2M5.5 1.3v1.2M3.5 8.9v1.2M5.5 8.9v1.2"/></svg></span><span class="sy">BTC-USD</span><span class="la mo">65,894.53</span><span class="ch mo dn">−0.92%</span></div>
+                    <div class="twl-r"><span class="sic" style="background:#627eea"><svg width="9" height="12" viewBox="0 0 10 14"><path d="M5 1L8.6 7L5 9.4L1.4 7z" fill="#fff" opacity=".95"/><path d="M5 10.6L8.6 8.2L5 13L1.4 8.2z" fill="#fff" opacity=".65"/></svg></span><span class="sy">ETH-USD</span><span class="la mo">1,924.59</span><span class="ch mo dn">−0.23%</span></div>
+                    <div class="twl-g" data-zh="股票">EQUITIES</div>
+                    <div class="twl-r on"><span class="sic" style="background:#76b900;color:#0b0e14">n</span><span class="sy">NVDA</span><span class="la mo up">211.07</span><span class="ch mo up">+1.82%</span></div>
+                    <div class="twl-r"><span class="sic" style="background:#333b46"><svg width="10" height="12" viewBox="0 0 12 14" fill="#fff"><path d="M9.6 7.4c0-1.7 1.4-2.5 1.4-2.5S10.2 3.6 8.6 3.6c-1 0-1.6.5-2.1.5-.6 0-1.3-.5-2.2-.5C2.6 3.6 1 5 1 7.5 1 10.2 3 13 4.3 13c.6 0 1-.4 1.9-.4.9 0 1.2.4 1.9.4 1.3 0 3-2.7 3-4.1 0 0-1.5-.6-1.5-1.5z"/><path d="M7.7 2.6c.5-.6.8-1.4.7-2.2-.7.1-1.5.5-2 1.1-.4.5-.8 1.3-.7 2.1.8 0 1.5-.4 2-1z"/></svg></span><span class="sy">AAPL</span><span class="la mo">325.49</span><span class="ch mo dn">−0.69%</span></div>
+                    <div class="twl-r"><span class="sic" style="background:#1d242f"><svg width="9" height="9" viewBox="0 0 9 9"><rect width="4.2" height="4.2" fill="#f25022"/><rect x="4.8" width="4.2" height="4.2" fill="#7fba00"/><rect y="4.8" width="4.2" height="4.2" fill="#00a4ef"/><rect x="4.8" y="4.8" width="4.2" height="4.2" fill="#ffb900"/></svg></span><span class="sy">MSFT</span><span class="la mo">387.50</span><span class="ch mo dn">−2.58%</span></div>
+                    <div class="twl-sb"></div>
+                  </div>
+                </div>
+                <div class="ttp">
+                  <div class="ttp-h" style="padding-bottom:9px"><span class="bar"></span><span data-zh="关键数据">KEY STATS</span></div>
+                  <div class="tks-r" style="padding-top:0"><span data-zh="下次财报">Next earnings report</span><b class="mo" data-zh="35天后">In 35 days</b></div>
+                  <div class="tks-r"><span data-zh="成交量">Volume</span><b class="mo">128.18 M</b></div>
+                  <div class="tks-r"><span data-zh="30日均量">Avg volume (30D)</span><b class="mo">141.43 M</b></div>
+                  <div class="tks-r" style="padding-bottom:11px"><span data-zh="总市值">Market capitalization</span><b class="mo">4.91 T</b></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
-  <aside class="prod-workflow" aria-label="Product workflow">
-    <span class="pw-k"><span class="l-en">How it fits</span><span class="l-zh">使用流程</span></span>
-    <ol>
-      <li>Open a symbol and read the chart</li><li>Keep market and company context beside it</li><li>Continue into the dossier or research page</li>
-    </ol>
-  </aside>
 </section>
 
-<div class="prod-layout">
-  <nav class="prod-toc" aria-label="On this page">
-    <p class="toc-h"><span class="l-en">On this page</span><span class="l-zh">本页目录</span></p>
-    <a href="#chart-without-a-desktop-install">Chart without a desktop install</a><a href="#keep-the-evidence-beside-the-chart">Keep the evidence beside the chart</a><a href="#move-from-chart-to-dossier">Move from chart to dossier</a><a href="#bring-mastermind-ai-into-the-symbol">Bring Mastermind AI into the symbol</a><a href="#access-and-limitations">Access and limitations</a>
-  </nav>
-  <div class="prod-main">
-    <article class="est-prose">
-      <p>The Market Terminal is a browser-based workspace for moving from a live chart to the company and research context behind it, without installing desktop software.</p>
-
-<h2 id="chart-without-a-desktop-install">Chart without a desktop install</h2>
-<p>Use candlestick charts, multiple timeframes and indicators directly in the browser. Current quote context stays near the chart so price structure and the broader workspace do not become separate research tasks.</p>
-
-<h2 id="keep-the-evidence-beside-the-chart">Keep the evidence beside the chart</h2>
-<p>Watchlists, comparison controls, key statistics and earnings context sit inside the same working view. When MastermindX has a current engine reading for a symbol, the Terminal can connect that reading to the chart without presenting the two as if they share one timestamp.</p>
-
-<h2 id="move-from-chart-to-dossier">Move from chart to dossier</h2>
-<p>Open a public stock dossier when the chart is only the beginning. Dossiers organize available technical, financial, valuation, options, ownership and company context by ticker, with their own freshness labels where available.</p>
-
-<h2 id="bring-mastermind-ai-into-the-symbol">Bring Mastermind AI into the symbol</h2>
-<p>Supported sessions can pass the active symbol or page context into Mastermind AI. The assistant may explain a field or map chart structure visually, but its answer remains a research aid that should be checked against the linked source.</p>
-
-<h2 id="access-and-limitations">Access and limitations</h2>
-<div class="callout warn"><span class="co-h">Research workspace, not execution venue</span><p>The Terminal does not place trades. Market data, research panels and engine outputs can update on different schedules, and some live options or intraday features require an eligible plan or trial. The pricing page owns the current access boundary.</p></div>
-<p>Always check the timestamp attached to the surface you are reading. A chart label, engine state or AI annotation is not a recommendation and cannot guarantee an outcome.</p>
-    </article>
-
-
-    <aside class="prod-related" aria-label="Related product and research pages">
-      <h2><span class="l-en">Continue the workflow</span><span class="l-zh">继续探索</span></h2>
-      <div class="prod-rel-grid">
-
-        <a class="prod-rel" href="../products/mastermind-ai.html">
-          <span class="kind"><span class="l-en">Product</span><span class="l-zh">产品</span></span>
-          <span class="name">AI Market Research Assistant</span>
-          <span class="go"><span class="l-en">Explore</span><span class="l-zh">查看</span> →</span>
-        </a>
-
-        <a class="prod-rel" href="../products/market-dashboards.html">
-          <span class="kind"><span class="l-en">Product</span><span class="l-zh">产品</span></span>
-          <span class="name">Market Intelligence Dashboards</span>
-          <span class="go"><span class="l-en">Explore</span><span class="l-zh">查看</span> →</span>
-        </a>
-
-
-        <a class="prod-rel" href="../stocks/index.html">
-          <span class="kind"><span class="l-en">Research surface</span><span class="l-zh">研究页面</span></span>
-          <span class="name">Browse public stock dossiers</span>
-          <span class="go"><span class="l-en">Open</span><span class="l-zh">打开</span> →</span>
-        </a>
-
-        <a class="prod-rel" href="../research/index.html">
-          <span class="kind"><span class="l-en">Research surface</span><span class="l-zh">研究页面</span></span>
-          <span class="name">Browse institutional research</span>
-          <span class="go"><span class="l-en">Open</span><span class="l-zh">打开</span> →</span>
-        </a>
-
+<!-- ══════════════ 01 CHARTING ══════════════ -->
+<section class="feature" id="charting">
+  <div class="wrap feat-grid">
+    <div class="feat-copy rv">
+      <span class="kicker" data-zh="图表引擎">Charting engine</span>
+      <h2 class="feat-title" data-zh="从日内到月线，<br>一张图。">Every timeframe,<br>one chart.</h2>
+      <p class="feat-sub" data-zh="从蜡烛图到月线，14个周期、5种图型；最多四个联动窗格，逐根回放，还有一键日内模式。">Candles to monthly across 14 timeframes and 5 chart types, up to four synced panes, bar replay and a one-toggle Day Trade Mode.</p>
+      <ul class="fx">
+        <li data-zh="<b>14个周期，5种图型。</b>分钟到月线。"><b>14 timeframes, 5 chart types.</b> Minutes to months.</li>
+        <li data-zh="<b>四个联动窗格。</b>一键排出 日 / 3日 / 周 / 月。"><b>Four synced panes.</b> One click lays out D / 3D / W / 1M.</li>
+        <li data-zh="<b>回放盘面。</b>逐根走过历史，看当时能看到什么。"><b>Replay the tape.</b> Step through history bar by bar.</li>
+      </ul>
+      <a class="feat-cta" href="https://app.mastermind-x.com" data-zh="打开 Terminal →">Open the Terminal →</a>
+    </div>
+    <div class="rv" style="--d:.1s">
+      <div class="demo">
+        <span class="live-tag ill" data-zh="<i></i>示意"><i></i>ILLUSTRATIVE</span>
+        <p class="dk" data-zh="价格图 · NVDA <span class='asof'>日线 · 两个指标窗格</span>">PRICE CHART · NVDA <span class="asof">daily · two indicator panes</span></p>
+        <div class="mt-plate mt-tf">
+          <div class="tfr">
+            <span class="on">D</span><span>3D</span><span>W</span><span>1M</span>
+            <span class="ct" data-zh="K线">Candles</span>
+          </div>
+          <div class="pn">
+            <p class="pl"><span class="mt-k" data-zh="价格">Price</span><span class="mt-k v">211.07</span></p>
+            <svg viewBox="0 0 300 70" preserveAspectRatio="none" aria-hidden="true"><g class="u"><path d="M6.8 55.3V61.7"/><rect x="3.4" y="57.1" width="6.8" height="3.7"/></g><g class="u"><path d="M20.5 52.4V58.5"/><rect x="17.1" y="55.3" width="6.8" height="2.0"/></g><g class="u"><path d="M34.1 49.7V57.6"/><rect x="30.7" y="50.4" width="6.8" height="5.3"/></g><g class="u"><path d="M47.7 39.0V52.2"/><rect x="44.3" y="41.6" width="6.8" height="8.8"/></g><g class="u"><path d="M61.4 38.4V43.7"/><rect x="58.0" y="39.5" width="6.8" height="3.1"/></g><g class="d"><path d="M75.0 36.5V43.8"/><rect x="71.6" y="39.0" width="6.8" height="4.0"/></g><g class="d"><path d="M88.6 41.2V48.5"/><rect x="85.2" y="42.3" width="6.8" height="3.7"/></g><g class="d"><path d="M102.3 42.6V51.3"/><rect x="98.9" y="45.4" width="6.8" height="4.7"/></g><g class="u"><path d="M115.9 42.1V52.2"/><rect x="112.5" y="43.4" width="6.8" height="6.3"/></g><g class="u"><path d="M129.5 32.4V45.7"/><rect x="126.1" y="35.3" width="6.8" height="9.0"/></g><g class="d"><path d="M143.2 34.2V38.9"/><rect x="139.8" y="35.7" width="6.8" height="1.2"/></g><g class="u"><path d="M156.8 24.1V37.7"/><rect x="153.4" y="26.5" width="6.8" height="10.2"/></g><g class="u"><path d="M170.5 23.0V28.0"/><rect x="167.1" y="25.7" width="6.8" height="1.2"/></g><g class="u"><path d="M184.1 20.3V28.7"/><rect x="180.7" y="21.1" width="6.8" height="5.6"/></g><g class="u"><path d="M197.7 16.6V22.0"/><rect x="194.3" y="18.9" width="6.8" height="1.2"/></g><g class="d"><path d="M211.4 16.8V23.2"/><rect x="208.0" y="20.0" width="6.8" height="1.2"/></g><g class="u"><path d="M225.0 17.6V20.7"/><rect x="221.6" y="19.5" width="6.8" height="1.2"/></g><g class="d"><path d="M238.6 15.9V24.8"/><rect x="235.2" y="19.0" width="6.8" height="5.1"/></g><g class="u"><path d="M252.3 21.6V27.0"/><rect x="248.9" y="22.7" width="6.8" height="2.1"/></g><g class="u"><path d="M265.9 17.6V25.3"/><rect x="262.5" y="20.3" width="6.8" height="3.0"/></g><g class="u"><path d="M279.5 10.7V23.3"/><rect x="276.1" y="13.7" width="6.8" height="6.4"/></g><g class="u"><path d="M293.2 8.3V15.4"/><rect x="289.8" y="9.2" width="6.8" height="5.3"/></g><path class="ln" d="M6.8 57.1L20.5 56.2L34.1 54.3L47.7 51.1L61.4 48.8L75.0 47.8L88.6 46.0L102.3 45.1L115.9 43.9L129.5 42.9L143.2 42.3L156.8 39.5L170.5 36.2L184.1 31.3L197.7 27.2L211.4 24.7L225.0 22.0L238.6 21.6L252.3 21.1L265.9 20.9L279.5 20.1L293.2 18.2"/></svg>
+          </div>
+          <div class="pn">
+            <p class="pl"><span class="mt-k">MACD</span></p>
+            <svg viewBox="0 0 300 36" preserveAspectRatio="none" aria-hidden="true"><line class="zl" x1="0" y1="18" x2="300" y2="18"/><rect class="d" x="4.2" y="18.0" width="5.2" height="6.8"/><rect class="d" x="17.9" y="18.0" width="5.2" height="4.1"/><rect class="d" x="31.5" y="18.0" width="5.2" height="1.0"/><rect class="u" x="45.1" y="14.0" width="5.2" height="4.0"/><rect class="u" x="58.8" y="11.7" width="5.2" height="6.3"/><rect class="u" x="72.4" y="12.5" width="5.2" height="5.5"/><rect class="u" x="86.0" y="9.4" width="5.2" height="8.6"/><rect class="u" x="99.7" y="11.1" width="5.2" height="6.9"/><rect class="u" x="113.3" y="12.7" width="5.2" height="5.3"/><rect class="u" x="126.9" y="15.4" width="5.2" height="2.6"/><rect class="u" x="140.6" y="16.1" width="5.2" height="1.9"/><rect class="d" x="154.2" y="18.0" width="5.2" height="1.4"/><rect class="d" x="167.9" y="18.0" width="5.2" height="7.3"/><rect class="d" x="181.5" y="18.0" width="5.2" height="7.4"/><rect class="d" x="195.1" y="18.0" width="5.2" height="9.3"/><rect class="d" x="208.8" y="18.0" width="5.2" height="7.5"/><rect class="d" x="222.4" y="18.0" width="5.2" height="4.0"/><rect class="u" x="236.0" y="16.4" width="5.2" height="1.6"/><rect class="u" x="249.7" y="11.5" width="5.2" height="6.5"/><rect class="u" x="263.3" y="9.9" width="5.2" height="8.1"/><rect class="u" x="276.9" y="9.2" width="5.2" height="8.8"/><rect class="u" x="290.6" y="8.4" width="5.2" height="9.6"/><path class="ln" d="M6.8 23.2L20.5 21.2L34.1 18.1L47.7 14.9L61.4 13.2L75.0 13.7L88.6 11.4L102.3 12.7L115.9 14.0L129.5 16.0L143.2 16.5L156.8 19.1L170.5 23.6L184.1 23.7L197.7 25.1L211.4 23.7L225.0 21.1L238.6 16.8L252.3 13.0L265.9 11.8L279.5 11.3L293.2 10.7"/></svg>
+          </div>
+          <div class="pn">
+            <p class="pl"><span class="mt-k">RSI 14</span></p>
+            <svg viewBox="0 0 300 32" preserveAspectRatio="none" aria-hidden="true"><line class="gl" x1="0" y1="9.6" x2="300" y2="9.6"/><line class="gl" x1="0" y1="22.4" x2="300" y2="22.4"/><path class="ln" d="M6.8 18.6L20.5 16.9L34.1 14.5L47.7 13.5L61.4 13.5L75.0 12.1L88.6 12.4L102.3 12.0L115.9 10.7L129.5 11.3L143.2 9.2L156.8 9.1L170.5 11.9L184.1 13.0L197.7 14.8L211.4 14.9L225.0 14.7L238.6 15.4L252.3 16.5L265.9 13.8L279.5 13.3L293.2 11.2"/></svg>
+          </div>
+          <div class="rep">
+            <span class="mt-k" data-zh="回放">Replay</span>
+            <span class="trk"><i></i></span>
+            <span class="mt-k v">248 / 380</span>
+          </div>
+        </div>
       </div>
-    </aside>
-
+    </div>
   </div>
-</div>
+</section>
+
+<!-- ══════════════ 02 INDICATORS ══════════════ -->
+<section class="feature flip" id="indicators">
+  <div class="wrap feat-grid">
+    <div class="feat-copy rv">
+      <span class="kicker" data-zh="指标体系">Indicators</span>
+      <h2 class="feat-title" data-zh="内置十七种。<br>还能自己写。">Seventeen built in.<br>Then write your own.</h2>
+      <p class="feat-sub" data-zh="均线、布林带、VWAP、MACD、RSI，还有一套日内指标——每一个的参数和样式都能改。脚本编辑器还能编译你自己写的指标；<b>保存自定义脚本属于 Pro 功能。</b>">Moving averages, Bollinger, VWAP, MACD, RSI and a day-trade suite — each with editable inputs and styles. A script editor compiles studies you write yourself; <b>saving custom scripts is a Pro feature.</b></p>
+      <ul class="fx">
+        <li data-zh="<b>选择器里 17 个指标。</b>开箱即用。"><b>17 indicators in the picker.</b> Ready to switch on.</li>
+        <li data-zh="<b>每个参数都能改。</b>周期、颜色、线宽。"><b>Every input editable.</b> Lengths, colours, widths.</li>
+        <li data-zh="<b>一个脚本编辑器。</b>自己写、编译、运行。"><b>A script editor.</b> Write it, compile it, run it.</li>
+      </ul>
+      <a class="feat-cta" href="../plans.html" data-zh="查看方案 →">See plans →</a>
+    </div>
+    <div class="rv" style="--d:.1s">
+      <div class="demo">
+        <span class="live-tag ill" data-zh="<i></i>示意"><i></i>ILLUSTRATIVE</span>
+        <p class="dk" data-zh="指标 <span class='asof'>选择器 + 脚本编辑器</span>">INDICATORS <span class="asof">picker + script editor</span></p>
+        <div class="mt-ig">
+          <div class="mt-pick">
+            <div class="row on"><span class="bx"></span><span data-zh="均线">Moving averages</span><span class="n">9 · 21</span></div>
+            <div class="row on"><span class="bx"></span><span data-zh="布林带">Bollinger Bands</span><span class="n">20 · 2</span></div>
+            <div class="row"><span class="bx"></span><span>VWAP</span><span class="n" data-zh="当日">session</span></div>
+            <div class="row on"><span class="bx"></span><span>MACD</span><span class="n">12 · 26 · 9</span></div>
+            <div class="row"><span class="bx"></span><span>RSI</span><span class="n">14</span></div>
+            <div class="row"><span class="bx"></span><span data-zh="日内套件">Day-trade suite</span><span class="n">6</span></div>
+          </div>
+          <div class="mt-ed">
+            <span class="mt-k" data-zh="我的脚本">My scripts</span>
+            <pre data-zh="study(&quot;区间突破&quot;, overlay=true)
+len  = input(20, &quot;回看根数&quot;)
+top  = highest(high, len)
+plot(top, width=2)">study("Range break", overlay=true)
+len  = input(20, "Lookback")
+top  = highest(high, len)
+plot(top, width=2)</pre>
+            <div class="cmp"><i></i><span data-zh="编译通过">Compiled</span><span class="pro" data-zh="保存 · Pro">Save · Pro</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 03 WATCHLISTS ══════════════ -->
+<section class="feature" id="watchlists">
+  <div class="wrap feat-grid">
+    <div class="feat-copy rv">
+      <span class="kicker" data-zh="自选与报价">Watchlists &amp; quotes</span>
+      <h2 class="feat-title" data-zh="自选列表，<br>报价如实标注。">Watchlists with<br>honest quotes.</h2>
+      <p class="feat-sub" data-zh="自选可分组、可拖动排序；每一条报价都写明它的基准——实时、延迟15分钟，或收盘价——因为把什么都说成「实时」，正是台席骗人的方式。">Named lists with sections and drag order; every quote wears its basis — live, 15-minute delayed or end-of-day — because pretending everything is live is how desks lie.</p>
+      <ul class="fx">
+        <li data-zh="<b>分组随你怎么想。</b>加密货币 · 股票 · 主题。"><b>Sections that match how you think.</b> Crypto · equities · themes.</li>
+        <li data-zh="<b>每条报价都带基准标签。</b>实时、延迟或已收盘。"><b>A basis badge on every quote.</b> Live, delayed or settled.</li>
+        <li data-zh="<b>五个市场。</b>美股 · A股 · 港股 · 加拿大 · 加密货币。"><b>Five markets.</b> US · China A · Hong Kong · Canada · crypto.</li>
+      </ul>
+      <a class="feat-cta" href="https://app.mastermind-x.com" data-zh="建一张自选表 →">Build a watchlist →</a>
+    </div>
+    <div class="rv" style="--d:.1s">
+      <div class="demo">
+        <span class="live-tag ill" data-zh="<i></i>示意"><i></i>ILLUSTRATIVE</span>
+        <p class="dk" data-zh="自选 · 默认 <span class='asof'>基准逐组标注</span>">WATCHLIST · DEFAULT <span class="asof">basis labelled per section</span></p>
+        <div class="mt-plate mt-wl">
+          <div class="gp"><span class="mt-k" data-zh="加密货币">Crypto</span><span class="bs" data-zh="延迟15分钟">15-min delayed</span></div>
+          <div class="r"><span class="sy">BTC-USD</span><span class="la">65,894.53</span><span class="ch mt-dn">−0.92%</span></div>
+          <div class="r"><span class="sy">ETH-USD</span><span class="la">1,924.59</span><span class="ch mt-dn">−0.23%</span></div>
+          <div class="gp"><span class="mt-k" data-zh="股票">Equities</span><span class="bs" data-zh="延迟15分钟">15-min delayed</span></div>
+          <div class="r sel tick"><span class="sy">NVDA</span><span class="la">211.07</span><span class="ch mt-up">+1.82%</span></div>
+          <div class="r"><span class="sy">AAPL</span><span class="la">325.49</span><span class="ch mt-dn">−0.69%</span></div>
+          <div class="gp"><span class="mt-k" data-zh="加拿大">Canada</span><span class="bs" data-zh="收盘价">End-of-day</span></div>
+          <div class="r"><span class="sy">SHOP</span><span class="la">148.20</span><span class="ch mt-up">+0.74%</span></div>
+          <div class="r"><span class="sy">ENB</span><span class="la">62.11</span><span class="ch mt-dn">−0.31%</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 04 DOSSIER ══════════════ -->
+<section class="feature flip" id="dossier">
+  <div class="wrap feat-grid">
+    <div class="feat-copy rv">
+      <span class="kicker" data-zh="个股档案">The dossier</span>
+      <h2 class="feat-title" data-zh="图表背后，<br>整柜资料。">The filing cabinet<br>behind the chart.</h2>
+      <p class="feat-sub" data-zh="财务报表连着电话会记录，财报带预期与超预期，还有分红、分析师目标区间、内部人信心表和多年季节性——按股票整理，就摆在图表旁边。">Statements with earnings-call transcripts, earnings with estimates and surprises, dividends, analyst forecast fans, an insider-conviction gauge and multi-year seasonality — per symbol, beside the chart.</p>
+      <ul class="fx">
+        <li data-zh="<b>从报表到电话会记录。</b>一键直达。"><b>Statements to transcripts.</b> One click deep.</li>
+        <li data-zh="<b>目标价画成区间。</b>不装成一个准数。"><b>Forecast fans, honest.</b> Targets drawn as ranges, not one number.</li>
+        <li data-zh="<b>季节性把波动一并画出。</b>"><b>Seasonality that admits variance.</b></li>
+      </ul>
+      <a class="feat-cta" href="../stocks/index.html" data-zh="翻阅股票档案 →">Browse stock dossiers →</a>
+    </div>
+    <div class="rv" style="--d:.1s">
+      <div class="demo">
+        <span class="live-tag ill" data-zh="<i></i>示意"><i></i>ILLUSTRATIVE</span>
+        <p class="dk" data-zh="个股档案 · NVDA <span class='asof'>随图表一同打开</span>">DOSSIER · NVDA <span class="asof">opens beside the chart</span></p>
+        <div class="mt-dos">
+          <div class="bk b1"><span class="mt-k" style="color:var(--faint)" data-zh="季节性">Seasonality</span></div>
+          <div class="bk b2"><span class="mt-k" style="color:var(--faint)" data-zh="概览">Overview</span></div>
+          <div class="card">
+            <div class="tabs">
+              <span data-zh="概览">Overview</span>
+              <span class="on" data-zh="财务报表">Statements</span>
+              <span data-zh="财报">Earnings</span>
+              <span data-zh="分红">Dividends</span>
+              <span data-zh="季节性">Seasonality</span>
+            </div>
+            <div class="fr"><span data-zh="营业收入">Revenue</span><span class="bar"><i style="--w:88%"></i></span><b>+42%</b></div>
+            <div class="fr"><span data-zh="营业利润">Operating income</span><span class="bar"><i style="--w:71%"></i></span><b>+35%</b></div>
+            <div class="fr"><span data-zh="自由现金流">Free cash flow</span><span class="bar"><i style="--w:58%"></i></span><b>+28%</b></div>
+            <span class="lk" data-zh="打开财报电话会记录 →">Open the earnings-call transcript →</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 05 ENGINE READS ══════════════ -->
+<section class="feature" id="signals">
+  <div class="wrap feat-grid">
+    <div class="feat-copy rv">
+      <span class="kicker" data-zh="引擎研判">Engine reads</span>
+      <h2 class="feat-title" data-zh="台席研判，<br>一眼可及。">The desk's read,<br>one glance away.</h2>
+      <p class="feat-sub" data-zh="当 MastermindX 的引擎对这只股票有当前研判时，终端就把它放在图表旁边——附上它自己的时间戳，绝不假装和K线同一时刻。">When MastermindX engines carry a current reading for the symbol, the Terminal shows it beside the chart — with its own timestamp, never pretending to share the chart's.</p>
+      <ul class="fx">
+        <li data-zh="<b>立场用大白话写。</b>出手 · 准备 · 观察——不追高。"><b>Stances in plain words.</b> Act · Get ready · Watch — don't chase.</li>
+        <li data-zh="<b>自带时间戳。</b>研判和K线从不共用一个时钟。"><b>Its own timestamp.</b> The read and the chart never share one clock.</li>
+        <li data-zh="<b>没得追就是没得追。</b>诚实的答案是等，它就写等。"><b>Nothing to chase.</b> When the honest read is wait, it says wait.</li>
+      </ul>
+      <a class="feat-cta" href="../us_stocks.html" data-zh="查看今晚看板 →">See tonight's board →</a>
+    </div>
+    <div class="rv" style="--d:.1s">
+      <div class="demo">
+        <span class="live-tag ill" data-zh="<i></i>示意"><i></i>ILLUSTRATIVE</span>
+        <p class="dk" data-zh="引擎研判 <span class='asof'>与图表分开计时</span>">ENGINE READ <span class="asof">timed separately from the chart</span></p>
+        <div class="mt-read">
+          <div class="top"><span class="vb" data-zh="临近">NEAR</span><span class="tk">NVDA</span><span class="eg" data-zh="优势 <b>81</b>">EDGE <b>81</b></span></div>
+          <div class="stgm">
+            <span class="seg"><i></i><span data-zh="筑底">Bottoming</span></span>
+            <span class="seg"><i></i><span data-zh="转向">Turning</span></span>
+            <span class="seg on"><i></i><span data-zh="就绪">Ready</span></span>
+            <span class="seg"><i></i><span data-zh="趋势">Trend</span></span>
+          </div>
+          <div class="ezc">
+            <div class="c"><span class="k" data-zh="买入区间">Entry zone</span><b>$199 – $203</b></div>
+            <div class="c bad"><span class="k" data-zh="失效位">Invalidation</span><b>$191</b></div>
+          </div>
+          <p class="st" data-zh="<b>已就绪，但价格还没回到买区。</b>观察——不追高。"><b>Ready, but price hasn't come back to the zone.</b> Watch — don't chase.</p>
+          <span class="ts" data-zh="引擎研判 · 截至7月20日 · 2天前">Engine read · as of Jul 20 · 2d ago</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 06 OPTIONS ══════════════ -->
+<section class="feature flip" id="options">
+  <div class="wrap feat-grid">
+    <div class="feat-copy rv">
+      <span class="kicker" data-zh="期权套件">Options suite</span>
+      <h2 class="feat-title" data-zh="十个页签的<br>期权台。">A ten-desk<br>options floor.</h2>
+      <p class="feat-sub" data-zh="资金流台、成交带、市场潮汐、逐股隐波曲面与微笑、GEX 行权价阶梯，还有结构矩阵。实时期权需要相应方案——<b>权限边界以定价页为准。</b>">Flow desk, tape, market tide, per-ticker IV surface and smile, GEX strike ladders and a structure matrix. Live options requires an eligible plan — <b>the pricing page owns the boundary.</b></p>
+      <ul class="fx">
+        <li data-zh="<b>资金流、成交带与潮汐。</b>当天的期权资金去了哪。"><b>Flow, tape and tide.</b> Where the day's options money went.</li>
+        <li data-zh="<b>GEX 墙画出来。</b>看做市对冲把价格钉在哪一档。"><b>GEX walls drawn.</b> Where dealer hedging pins price.</li>
+        <li data-zh="<b>有门槛就直说。</b>实时期权是付费的那条线。"><b>Plan-gated, said plainly.</b> Live options is the paid line.</li>
+      </ul>
+      <a class="feat-cta" href="../plans.html" data-zh="查看方案 →">See plans →</a>
+    </div>
+    <div class="rv" style="--d:.1s">
+      <div class="demo">
+        <span class="live-tag ill" data-zh="<i></i>示意"><i></i>ILLUSTRATIVE</span>
+        <p class="dk" data-zh="期权 · NVDA <span class='asof'>行权价阶梯 + 资金流</span>">OPTIONS · NVDA <span class="asof">strike ladder + flow</span></p>
+        <div class="mt-plate">
+          <div class="mt-og">
+            <div class="mt-gx">
+              <span class="mt-k" data-zh="GEX 行权价阶梯">GEX strike ladder</span>
+              <div class="sr"><span class="k2">225</span><span class="bar"><i style="--w:28%"></i></span></div>
+              <div class="sr"><span class="k2">220</span><span class="bar"><i style="--w:46%"></i></span></div>
+              <div class="sr wall"><span class="k2">215</span><span class="bar"><i style="--w:92%"></i></span></div>
+              <div class="sr"><span class="k2">210</span><span class="bar"><i style="--w:61%"></i></span></div>
+              <div class="sr"><span class="k2">205</span><span class="bar"><i style="--w:37%"></i></span></div>
+              <div class="sr"><span class="k2">200</span><span class="bar"><i style="--w:22%"></i></span></div>
+            </div>
+            <div class="mt-fl">
+              <span class="mt-k" data-zh="资金流台">Flow desk</span>
+              <div class="fr"><span>NVDA 215C</span><span class="sd c" data-zh="卖价成交">Ask side</span><span>$3.1M</span></div>
+              <div class="fr"><span>NVDA 205P</span><span class="sd p" data-zh="买价成交">Bid side</span><span>$1.4M</span></div>
+              <div class="fr"><span>NVDA 220C</span><span class="sd c" data-zh="卖价成交">Ask side</span><span>$0.9M</span></div>
+              <div class="fr"><span>NVDA 210P</span><span class="sd p" data-zh="买价成交">Bid side</span><span>$0.6M</span></div>
+            </div>
+          </div>
+          <div class="mt-lock">
+            <svg viewBox="0 0 11 12" aria-hidden="true"><rect x="1" y="5" width="9" height="6.2" rx="1.4"/><path d="M2.9 5V3.2a2.6 2.6 0 0 1 5.2 0V5"/></svg>
+            <span data-zh="实时期权 · Insider 与 Pro">Live options · Insider &amp; Pro</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 07 MASTERMIND AI ══════════════ -->
+<section class="feature" id="ai">
+  <div class="wrap feat-grid">
+    <div class="feat-copy rv">
+      <span class="kicker">Mastermind AI</span>
+      <h2 class="feat-title" data-zh="分析师就坐在<br>终端里。">The analyst rides<br>in the terminal.</h2>
+      <p class="feat-sub" data-zh="在你正看的股票上打开助手——它能解释某个字段、在图上标出支撑与压力，或者筛一遍全市场，并且会列出它调用了哪些工具。<b>它是研究辅助：请对着来源核对。</b>">Open the copilot on the symbol you're reading — it can explain a field, mark support and resistance on the chart, or screen the universe, and it shows the tools it called. <b>A research aid: check it against the source.</b></p>
+      <ul class="fx">
+        <li data-zh="<b>打开就在当前股票上。</b>不用重打屏幕上已有的东西。"><b>Opens on the active symbol.</b> No re-typing what's already on screen.</li>
+        <li data-zh="<b>把点位画到图上。</b>取自真实数据，不是编出来的。"><b>Marks levels on the chart.</b> Drawn from fetched data, never invented.</li>
+        <li data-zh="<b>列出它调用的工具。</b>你能顺着查回去。"><b>Shows the tools it called.</b> You can trace it back.</li>
+      </ul>
+      <a class="feat-cta" href="mastermind-ai.html" data-zh="认识 Mastermind AI →">Meet Mastermind AI →</a>
+    </div>
+    <div class="rv" style="--d:.1s">
+      <div class="demo">
+        <span class="live-tag ill" data-zh="<i></i>示意"><i></i>ILLUSTRATIVE</span>
+        <p class="dk" data-zh="Mastermind AI <span class='asof'>在当前股票上打开</span>">MASTERMIND AI <span class="asof">opened on the active symbol</span></p>
+        <div class="mt-thread">
+          <span class="mt-sym" data-zh="<i></i>NVDA · 美股 · 日线"><i></i>NVDA · US equities · daily</span>
+          <div class="msg q" data-zh="这张图上的支撑和压力在哪？">Where are support and resistance on this chart?</div>
+          <div class="mt-tools">
+            <span class="lb" data-zh="调用的工具">Tools called</span>
+            <span data-zh="日线K线">Daily candles</span>
+            <span data-zh="成交量分布">Volume profile</span>
+            <span data-zh="绘图工具">Chart drawing</span>
+          </div>
+          <div class="msg a"><span data-zh="价格被 <b>$203 附近的压力</b>压住，最近的支撑在 <b>$191</b>——正是那条研判用来判定失效的位置。两条线我已经画到图上了。"><b>Resistance sits near $203</b> and the nearest support is <b>$191</b> — the same level the engine read uses as its invalidation. I've drawn both on the chart.</span>
+            <span class="mt-aic">
+              <svg viewBox="0 0 260 78" preserveAspectRatio="none" aria-hidden="true"><line class="lv r" x1="0" y1="15.5" x2="260" y2="15.5"/><line class="lv s" x1="0" y1="63.0" x2="260" y2="63.0"/><g class="d"><path d="M5.0 51.4V65.6"/><rect x="2.1" y="56.4" width="5.8" height="4.1"/></g><g class="u"><path d="M15.0 46.7V60.1"/><rect x="12.1" y="49.9" width="5.8" height="8.6"/></g><g class="d"><path d="M25.0 47.8V54.1"/><rect x="22.1" y="48.9" width="5.8" height="1.1"/></g><g class="u"><path d="M35.0 35.0V53.6"/><rect x="32.1" y="38.8" width="5.8" height="10.5"/></g><g class="u"><path d="M45.0 33.6V42.6"/><rect x="42.1" y="36.3" width="5.8" height="3.0"/></g><g class="u"><path d="M55.0 28.6V42.4"/><rect x="52.1" y="32.1" width="5.8" height="5.5"/></g><g class="d"><path d="M65.0 31.5V37.2"/><rect x="62.1" y="33.9" width="5.8" height="1.1"/></g><g class="d"><path d="M75.0 31.6V46.9"/><rect x="72.1" y="34.7" width="5.8" height="7.8"/></g><g class="d"><path d="M85.0 38.0V51.5"/><rect x="82.1" y="42.2" width="5.8" height="4.5"/></g><g class="d"><path d="M95.0 44.5V50.3"/><rect x="92.1" y="47.2" width="5.8" height="1.1"/></g><g class="d"><path d="M105.0 42.6V56.5"/><rect x="102.1" y="47.4" width="5.8" height="6.6"/></g><g class="u"><path d="M115.0 40.4V54.3"/><rect x="112.1" y="44.9" width="5.8" height="7.6"/></g><g class="u"><path d="M125.0 32.8V46.6"/><rect x="122.1" y="35.8" width="5.8" height="7.8"/></g><g class="u"><path d="M135.0 29.4V39.6"/><rect x="132.1" y="33.9" width="5.8" height="1.3"/></g><g class="u"><path d="M145.0 20.1V37.1"/><rect x="142.1" y="24.8" width="5.8" height="9.3"/></g><g class="u"><path d="M155.0 18.1V28.4"/><rect x="152.1" y="22.7" width="5.8" height="3.9"/></g><g class="d"><path d="M165.0 19.4V25.6"/><rect x="162.1" y="20.8" width="5.8" height="2.8"/></g><g class="d"><path d="M175.0 20.5V33.4"/><rect x="172.1" y="23.2" width="5.8" height="8.9"/></g><g class="d"><path d="M185.0 27.6V35.5"/><rect x="182.1" y="31.7" width="5.8" height="1.1"/></g><g class="d"><path d="M195.0 32.8V38.9"/><rect x="192.1" y="34.0" width="5.8" height="1.1"/></g><g class="d"><path d="M205.0 30.9V45.3"/><rect x="202.1" y="35.4" width="5.8" height="8.0"/></g><g class="u"><path d="M215.0 29.7V45.2"/><rect x="212.1" y="33.9" width="5.8" height="9.1"/></g><g class="u"><path d="M225.0 25.1V37.6"/><rect x="222.1" y="28.9" width="5.8" height="5.6"/></g><g class="u"><path d="M235.0 19.2V33.2"/><rect x="232.1" y="22.3" width="5.8" height="7.3"/></g><g class="u"><path d="M245.0 15.2V26.4"/><rect x="242.1" y="18.8" width="5.8" height="4.9"/></g><g class="u"><path d="M255.0 12.4V19.2"/><rect x="252.1" y="14.3" width="5.8" height="2.9"/></g></svg>
+              <span class="lg"><span class="mt-k" style="color:rgba(255,255,255,.5)" data-zh="支撑 $191">Support $191</span><span class="mt-k" style="color:rgba(255,255,255,.5)" data-zh="压力 $203">Resistance $203</span></span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ ACCESS &amp; LIMITATIONS — no motion here ══════════════ -->
+<section class="section-pad hair-top" id="access">
+  <div class="wrap">
+    <div class="mt-access">
+      <span class="kicker" data-zh="权限与限制">Access &amp; limitations</span>
+      <h2 class="sec-title" data-zh="这是研究工作台，<br>不是交易通道。">A research workspace,<br>not an execution venue.</h2>
+      <div class="callout">
+        <span class="co-h" data-zh="研究工作台，不是交易通道">Research workspace, not execution venue</span>
+        <p data-zh="终端不下单。行情数据、研究面板与引擎输出各自按不同节奏更新；部分实时期权或日内功能需要相应方案或试用。当前的权限边界以定价页为准。">The Terminal does not place trades. Market data, research panels and engine outputs can update on different schedules, and some live options or intraday features require an eligible plan or trial. The pricing page owns the current access boundary.</p>
+      </div>
+      <p class="psec-note" data-zh="看任何一块面板，都请先看它自带的时间戳。图上的标注、引擎状态或 AI 注释都不是买卖建议，也无法保证结果。">Always check the timestamp attached to the surface you are reading. A chart label, engine state or AI annotation is not a recommendation and cannot guarantee an outcome.</p>
+      <a class="lk" href="../plans.html" data-zh="看看每个方案包含什么 →">See what each plan includes →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ CLOSING BAND ══════════════ -->
+<section class="cband">
+  <div class="wrap rv">
+    <span class="kicker" data-zh="开始使用">Get started</span>
+    <h2 class="sec-title display" style="margin-top:12px" data-zh="台席已就绪。">The desk is open.</h2>
+    <p class="sec-sub" style="max-width:46ch;margin-inline:auto" data-zh="图表、自选与台席研判此刻就在运行。免费开始——无需安装。">Charts, watchlists and the desk's read are running right now. Start free — nothing to install.</p>
+    <div class="cta-row" style="justify-content:center;margin-top:28px">
+      <a class="btn primary" href="https://app.mastermind-x.com/terminal?signup=1" data-zh="免费开始">Start free</a>
+      <a class="btn" href="https://app.mastermind-x.com" data-zh="打开 Terminal">Open the Terminal</a>
+    </div>
+    <div class="trust mt-trust">
+      <span data-zh="<i></i>免费套餐，无需绑卡"><i></i>Free plan — no card required</span>
+      <span data-zh="<i></i>无需安装"><i></i>Nothing to install</span>
+      <span data-zh="<i></i>随时取消"><i></i>Cancel anytime</span>
+    </div>
+    <p class="mt-fine" data-zh="产品界面示例均为示意图。本站提供市场情报，不构成个性化投资建议。">Product UI examples are illustrative. Market intelligence, not individualized investment advice.</p>
+  </div>
+</section>
 
 </main>
 
-
-<footer class="public-footer">
+<footer>
   <div class="f-in">
     <div class="f-grid">
       <div class="f-brand">
         <div class="fb-row"><span class="fm">M</span><span class="fn">MASTERMINDX</span></div>
-        <p class="ft"><span class="l-en">Institutional-grade market intelligence.</span><span class="l-zh">机构级市场情报。</span></p>
+        <p class="ft" data-zh="机构级市场情报。">Institutional-grade market intelligence.</p>
       </div>
       <div class="f-cols">
         <div class="f-col">
-          <p><span class="l-en">Platform</span><span class="l-zh">平台</span></p>
-          <a href="../products/index.html"><span class="l-en">Platform overview</span><span class="l-zh">平台概览</span></a>
-          <a href="../products/market-terminal.html"><span class="l-en">Market Terminal</span><span class="l-zh">市场终端</span></a>
+          <p data-zh="平台">Platform</p>
+          <a href="../products/index.html" data-zh="平台概览">Platform overview</a>
+          <a href="../products/market-terminal.html">Market Terminal</a>
           <a href="../products/mastermind-ai.html">Mastermind AI</a>
-          <a href="../products/market-dashboards.html"><span class="l-en">Market dashboards</span><span class="l-zh">市场仪表盘</span></a>
-          <a href="../plans.html"><span class="l-en">Plans &amp; pricing</span><span class="l-zh">方案与定价</span></a>
+          <a href="../products/market-dashboards.html" data-zh="市场仪表盘">Market dashboards</a>
+          <a href="../plans.html" data-zh="方案与定价">Plans &amp; pricing</a>
         </div>
         <div class="f-col">
-          <p><span class="l-en">Research</span><span class="l-zh">研究</span></p>
-          <a href="../research/index.html"><span class="l-en">Institutional research</span><span class="l-zh">机构研报</span></a>
-          <a href="../stocks/index.html"><span class="l-en">Stock dossiers</span><span class="l-zh">股票档案</span></a>
-          <a href="../about-research.html"><span class="l-en">About the research</span><span class="l-zh">关于研究</span></a>
+          <p data-zh="研究">Research</p>
+          <a href="../research/index.html" data-zh="机构研报">Institutional research</a>
+          <a href="../stocks/index.html" data-zh="股票档案">Stock dossiers</a>
+          <a href="../about-research.html" data-zh="关于研究">About the research</a>
         </div>
         <div class="f-col">
-          <p><span class="l-en">Resources</span><span class="l-zh">资源</span></p>
-          <a href="../tools/index.html"><span class="l-en">Tools</span><span class="l-zh">工具</span></a>
-          <a href="../learn/index.html"><span class="l-en">Learn</span><span class="l-zh">学习</span></a>
-          <a href="../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
-          <a href="../support.html"><span class="l-en">Support</span><span class="l-zh">支持</span></a>
+          <p data-zh="资源">Resources</p>
+          <a href="../tools/index.html" data-zh="工具">Tools</a>
+          <a href="../learn/index.html" data-zh="学习">Learn</a>
+          <a href="../blog/index.html" data-zh="博客">Blog</a>
+          <a href="../support.html" data-zh="支持">Support</a>
         </div>
         <div class="f-col">
-          <p><span class="l-en">Legal</span><span class="l-zh">法律</span></p>
-          <a href="../privacy.html"><span class="l-en">Privacy</span><span class="l-zh">隐私政策</span></a>
-          <a href="../terms.html"><span class="l-en">Terms</span><span class="l-zh">服务条款</span></a>
-          <a href="../disclaimer.html"><span class="l-en">Disclaimer</span><span class="l-zh">免责声明</span></a>
+          <p data-zh="法律">Legal</p>
+          <a href="../privacy.html" data-zh="隐私政策">Privacy</a>
+          <a href="../terms.html" data-zh="服务条款">Terms</a>
+          <a href="../disclaimer.html" data-zh="免责声明">Disclaimer</a>
         </div>
       </div>
     </div>
     <div class="f-bot">
       <span>© 2026 MastermindX · mastermind-x.com</span>
-      <span class="f-legal"><a href="../privacy.html"><span class="l-en">Privacy</span><span class="l-zh">隐私政策</span></a> · <a href="../terms.html"><span class="l-en">Terms</span><span class="l-zh">服务条款</span></a> · <a href="../disclaimer.html"><span class="l-en">Disclaimer</span><span class="l-zh">免责声明</span></a></span>
+      <span class="f-legal"><a href="../privacy.html" data-zh="隐私政策">Privacy</a> · <a href="../terms.html" data-zh="服务条款">Terms</a> · <a href="../disclaimer.html" data-zh="免责声明">Disclaimer</a></span>
     </div>
   </div>
 </footer>
 
-
-
-
 <script>
-(function(){
-  var links=[].slice.call(document.querySelectorAll('.prod-toc a'));
-  var heads=links.map(function(a){return document.querySelector(a.getAttribute('href'));});
-  if(!links.length)return;
-  function spy(){
-    var y=window.scrollY+100, active=0;
-    heads.forEach(function(h,i){if(h&&h.offsetTop<=y)active=i;});
-    links.forEach(function(a,i){a.classList.toggle('active',i===active);});
-  }
-  window.addEventListener('scroll',spy,{passive:true}); spy();
+/* capture hook for visual QA (see .still CSS) */
+if (location.search.indexOf('still') !== -1) document.documentElement.classList.add('still');
+
+/* nav: elevate once the page starts scrolling */
+(function(){ const nav=document.querySelector('.nav'); if(!nav) return;
+  let raf=false;
+  const upd=()=>{ nav.classList.toggle('sc', scrollY>10); raf=false; };
+  addEventListener('scroll',()=>{ if(!raf){ raf=true; requestAnimationFrame(upd); } },{passive:true}); upd();
 })();
-</script>
 
-
-
-<script>window.MM_API=window.MM_API||'https://app.mastermind-x.com';window.__mmAccountLoading=true;</script>
-<script src="../supabase.js?v=8596965f" defer></script>
-<script src="../account.js?v=e48d35c8" defer></script>
-<script src="../mm_brain.js?v=02e3e5a2" defer></script>
-<script src="../theme.js?v=c094a665" defer></script>
-
-<script>
-(function(){
-  var nav=document.querySelector('.public-nav');
-  if(nav){
-    var raf=false;
-    var update=function(){nav.classList.toggle('sc',window.scrollY>10);raf=false;};
-    window.addEventListener('scroll',function(){
-      if(!raf){raf=true;window.requestAnimationFrame(update);}
-    },{passive:true});
-    update();
+/* ───── i18n: EN ⇄ 中文 — mirrors the site-wide localStorage['lang'] contract
+   (data-lang on <html>, label shows the OTHER language, fires 'langchange').
+   Static prose swaps via [data-zh]; live components subscribe to LANG.onChange. */
+const LANG = (() => {
+  const subs = [];
+  const cur = () => document.documentElement.getAttribute('data-lang') === 'zh' ? 'zh' : 'en';
+  function apply(l){
+    document.documentElement.setAttribute('data-lang', l);
+    document.documentElement.lang = l === 'zh' ? 'zh-CN' : 'en';
+    document.querySelectorAll('[data-zh]').forEach(el => {
+      if (el.__en == null) el.__en = el.innerHTML;          // capture the English original once
+      el.innerHTML = (l === 'zh') ? el.getAttribute('data-zh') : el.__en;
+    });
+    try { localStorage.setItem('lang', l); } catch(e){}
+    subs.forEach(fn => { try { fn(l); } catch(e){} });
   }
+  return { cur, apply, toggle(){ apply(cur() === 'zh' ? 'en' : 'zh'); }, onChange(fn){ subs.push(fn); } };
+})();
 
-  var btn=document.getElementById('gear-btn');
-  var pop=document.getElementById('gear-pop');
-  if(!btn||!pop)return;
-  var segs=Array.prototype.slice.call(pop.querySelectorAll('.gp-seg-b'));
-  var current=function(){return document.documentElement.getAttribute('data-lang')==='zh'?'zh':'en';};
-  var close=function(){pop.classList.remove('open');btn.setAttribute('aria-expanded','false');};
-  var sync=function(){var lang=current();segs.forEach(function(s){s.classList.toggle('on',s.getAttribute('data-set-lang')===lang);});};
-  btn.addEventListener('click',function(e){
-    e.stopPropagation();
-    var opening=!pop.classList.contains('open');
-    pop.classList.toggle('open',opening);
-    btn.setAttribute('aria-expanded',opening?'true':'false');
-  });
-  segs.forEach(function(s){
-    s.addEventListener('click',function(e){
-      e.stopPropagation();
-      var lang=s.getAttribute('data-set-lang')==='zh'?'zh':'en';
-      document.documentElement.setAttribute('data-lang',lang);
-      document.documentElement.lang=lang==='zh'?'zh-CN':'en';
-      try{localStorage.setItem('lang',lang);}catch(ignore){}
-      try{document.dispatchEvent(new CustomEvent('langchange',{detail:{lang:lang}}));}catch(ignore){}
-      sync();
+/* ───── primary navigation: click disclosures + mobile accordion ───── */
+const MMX_NAV = (() => {
+  const nav = document.querySelector('.nav');
+  const list = document.getElementById('primary-navigation');
+  const mobile = document.getElementById('nav-toggle');
+  const triggers = [...document.querySelectorAll('.nav-trigger')];
+  const mq = matchMedia('(max-width: 900px)');
+  if (!nav || !list || !mobile) return { closeAll(){} };
+  const panelFor = trigger => document.getElementById(trigger.getAttribute('aria-controls'));
+  const openTrigger = () => triggers.find(trigger => trigger.getAttribute('aria-expanded') === 'true');
+  function syncMobileLabel(){
+    const isOpen = mobile.getAttribute('aria-expanded') === 'true';
+    mobile.setAttribute('aria-label', LANG.cur() === 'zh'
+      ? (isOpen ? '关闭导航' : '打开导航')
+      : (isOpen ? 'Close navigation' : 'Open navigation'));
+  }
+  function closePanels(focusTrigger){
+    const active = openTrigger();
+    triggers.forEach(trigger => {
+      const panel = panelFor(trigger);
+      trigger.setAttribute('aria-expanded','false');
+      if (panel) panel.hidden = true;
+    });
+    if (focusTrigger && active) active.focus();
+  }
+  function closeDrawer(focusToggle){
+    list.classList.remove('open');
+    nav.classList.remove('nav-open');
+    mobile.setAttribute('aria-expanded','false');
+    syncMobileLabel();
+    if (focusToggle) mobile.focus();
+  }
+  function closeAll(focusControl){
+    closePanels(Boolean(focusControl && openTrigger()));
+    closeDrawer(Boolean(focusControl && !openTrigger()));
+  }
+  function closeSettings(){
+    const pop = document.getElementById('gear-pop');
+    const btn = document.getElementById('gear-btn');
+    if (pop) pop.classList.remove('open');
+    if (btn) btn.setAttribute('aria-expanded','false');
+  }
+  function openPanel(trigger, focusLast){
+    closePanels(false);
+    closeSettings();
+    const panel = panelFor(trigger);
+    if (!panel) return;
+    trigger.setAttribute('aria-expanded','true');
+    panel.hidden = false;
+    if (focusLast !== undefined) {
+      const links = [...panel.querySelectorAll('a[href]')];
+      const target = focusLast ? links[links.length - 1] : links[0];
+      if (target) target.focus();
+    }
+  }
+  triggers.forEach(trigger => {
+    trigger.addEventListener('click', event => {
+      event.stopPropagation();
+      const wasOpen = trigger.getAttribute('aria-expanded') === 'true';
+      if (wasOpen) closePanels(false); else openPanel(trigger);
+    });
+    trigger.addEventListener('keydown', event => {
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        openPanel(trigger, event.key === 'ArrowUp');
+      }
+    });
+    trigger.closest('.nav-group').addEventListener('focusout', event => {
+      if (mq.matches || event.currentTarget.contains(event.relatedTarget)) return;
+      if (trigger.getAttribute('aria-expanded') === 'true') closePanels(false);
     });
   });
-  document.addEventListener('click',function(e){if(!pop.contains(e.target)&&e.target!==btn)close();});
-  document.addEventListener('keydown',function(e){
-    if(e.key==='Escape'&&pop.classList.contains('open')){close();btn.focus();}
+  mobile.addEventListener('click', event => {
+    event.stopPropagation();
+    const willOpen = mobile.getAttribute('aria-expanded') !== 'true';
+    closeSettings();
+    if (willOpen) {
+      list.classList.add('open');
+      nav.classList.add('nav-open');
+      mobile.setAttribute('aria-expanded','true');
+      syncMobileLabel();
+    } else {
+      closePanels(false);
+      closeDrawer(false);
+    }
   });
-  sync();
+  list.querySelectorAll('a[href]').forEach(link => link.addEventListener('click', () => closeAll(false)));
+  document.addEventListener('pointerdown', event => {
+    if (!nav.contains(event.target)) closeAll(false);
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'Escape') return;
+    if (openTrigger()) {
+      event.preventDefault();
+      closePanels(true);
+    } else if (mobile.getAttribute('aria-expanded') === 'true') {
+      event.preventDefault();
+      closeDrawer(true);
+    }
+  });
+  const reset = () => closeAll(false);
+  if (mq.addEventListener) mq.addEventListener('change', reset); else mq.addListener(reset);
+  LANG.onChange(syncMobileLabel);
+  syncMobileLabel();
+  return { closeAll };
 })();
-</script>
 
-<script src="../onboard.js?v=5b030335" defer></script>
+/* ───── nav settings popover ───── */
+(function(){
+  const btn = document.getElementById('gear-btn');
+  const pop = document.getElementById('gear-pop');
+  if (!btn || !pop) return;
+  const segs = [...pop.querySelectorAll('.gp-seg-b')];
+  const open = () => { MMX_NAV.closeAll(false); pop.classList.add('open'); btn.setAttribute('aria-expanded','true'); };
+  const close = () => { pop.classList.remove('open'); btn.setAttribute('aria-expanded','false'); };
+  const toggle = () => pop.classList.contains('open') ? close() : open();
+  btn.addEventListener('click', e => { e.stopPropagation(); toggle(); });
+  segs.forEach(s => s.addEventListener('click', e => { e.stopPropagation(); LANG.apply(s.dataset.setLang); }));
+  const syncSeg = () => segs.forEach(s => s.classList.toggle('on', s.dataset.setLang === LANG.cur()));
+  syncSeg(); LANG.onChange(syncSeg);
+  document.addEventListener('click', e => { if (!pop.contains(e.target) && e.target !== btn) close(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && pop.classList.contains('open')){ close(); btn.focus(); } });
+})();
+
+/* ───── reveal on scroll ───── */
+const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target);} }), { rootMargin:'0px 0px -8% 0px', threshold:.08 });
+document.querySelectorAll('.rv:not(.in)').forEach(el => io.observe(el));
+
+/* ───── i18n boot — the landing runs this after its live-data wiring (index.html:1906);
+   the product chrome carries no live wiring, so it runs here: swap static [data-zh]
+   prose into the boot language captured by the <head> lang snippet. ───── */
+LANG.apply(LANG.cur());
+</script>
+<script>window.MM_API=window.MM_API||'https://app.mastermind-x.com';</script>
+<script src="../mm_brain.js?v=02e3e5a2" defer></script>
+<script src="../onboard.js?v=8f1b52d1" defer></script>
 <script defer data-whb data-root="../" src="../wh_banner.js?v=37bf40aa"></script>
 </body>
 </html>
