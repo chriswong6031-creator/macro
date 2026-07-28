@@ -369,7 +369,17 @@ publish:
   # ledger row so it holds across cron runs, so an accumulated backlog drains
   # gradually instead of bursting. Distinct from the sentinel's per-account
   # PLAN-time min_minutes_between_posts. 0 = disabled.
-  min_minutes_between_any_posts: 10
+  # 10 -> 4 (2026-07-28). Ten minutes GLOBAL is one post per desk per hour
+  # across seven accounts, and it was the binding constraint the moment the
+  # cron-grid coupling was removed: a sweep with 24 due items posted 2 and
+  # logged skipped_floor=18. Bursting is a PER-ACCOUNT risk — one desk firing
+  # six posts in a minute is the spam signature; six desks posting once each
+  # across four minutes is not — and the per-account bound already exists in
+  # cadence_resolver (running in shadow, cadence_shadow=14 that same sweep).
+  # 4m keeps a hard anti-burst floor while letting the desks pace themselves:
+  # 15/hr network, 2.5/hr per desk. Send-time jitter still scatters each post
+  # off the round minute so two desks never land on the same second.
+  min_minutes_between_any_posts: 4
 
   # How far ahead of `now` one sweep may book an item that is inside the floor
   # above (scripts/marketing_publisher.py: _forward_book_horizon_cfg). 0 = off,
