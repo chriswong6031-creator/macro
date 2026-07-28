@@ -41,10 +41,13 @@ The network tripwire (fleet level, per-account effect):
                          One account falling is weather; six falling together is
                          the fleet-linkage signal the charter's risk register
                          names.
-  cross_account_corr     rank correlation of daily engagement across account
+  cross_account_corr     rank correlation of PER-POST engagement across account
                          pairs. Independently-run desks should not move in
                          lockstep; lockstep is the shape a shared limiter
-                         leaves behind.
+                         leaves behind. Per-POST, not summed: one nightly
+                         content plan drives all seven desks, so their daily
+                         post counts move together by construction and summed
+                         engagement would correlate on our own scheduler.
 
 Halt semantics: a tripped account halts THAT ACCOUNT ONLY. ``is_halted`` is
 consulted by ``scripts/marketing_publisher.py`` (the post rail) and
@@ -61,9 +64,10 @@ Public API:
     halted_accounts(root=None) -> list[str]
     trip(account, *, reason, evidence, now, root=None, actor=...) -> dict
     clear(account, *, actor, now, note=None, root=None) -> dict
-    evaluate_account(account, *, labels, reply_state, decisions, now, cfg) -> dict
+    evaluate_account(account, *, labels, decisions, reason_list, now, cfg) -> dict
     evaluate_fleet(per_account, *, labels, now, cfg) -> dict
-    run(*, now, root=None, store=None, cfg=None, apply_halts=True) -> dict
+    roster(cfg, *, root=None) -> list[str]
+    run(*, now, root=None, store=None, cfg=None, accounts=None, apply_halts=True) -> dict
     health_path(root) / load_health(root)
 """
 from __future__ import annotations
@@ -126,9 +130,20 @@ DEFAULTS: dict[str, Any] = {
         "corr_min_days": 10,
         # How many correlated PAIRS trip the wire.
         "corr_min_pairs": 3,
-        # What a fleet trip does. `halt_implicated` writes ONE HALT ROW PER
-        # IMPLICATED ACCOUNT — there is no global switch to set, by design.
-        "action": "halt_implicated",
+        # What a fleet trip does — "warn" AT LAUNCH, same reasoning as
+        # `account_action`: surface it, do not silence seven desks.
+        #
+        # `halt_implicated` shipped as the default in the first draft and that
+        # was wrong. `implicated` is every account in any correlated pair, and
+        # with 3-of-21 pairs enough to fire, a single confounded reading halts
+        # the whole fleet and costs seven manual clears. We have NO correlation
+        # baseline yet — zero nights of real telemetry — so the honest launch
+        # posture is to measure the wire before arming it.
+        #
+        # `halt_implicated` stays available and is a one-key arming step once
+        # the baseline exists. The mechanism is unchanged either way: a trip
+        # writes one halt row per implicated account, never a global switch.
+        "action": "warn",
     },
 }
 
@@ -574,8 +589,21 @@ def evaluate_account(
 # The network tripwire — fleet level, per-account effect
 # ---------------------------------------------------------------------------
 def _daily_engagement(rows: Sequence[dict]) -> dict[str, dict[str, float]]:
-    """{account: {day: engagement}} from the labels store."""
-    out: dict[str, dict[str, float]] = {}
+    """{account: {day: MEAN engagement per post} } from the labels store.
+
+    PER POST, NOT SUMMED — this is the difference between measuring the fleet
+    and measuring the content plan. All seven desks are fed by ONE nightly plan,
+    so their daily POST COUNTS move together by construction: a heavy news day
+    is heavy for everybody. Summed daily engagement therefore correlates across
+    every pair for a reason that has nothing to do with the platform, and the
+    correlation tripwire fires on our own scheduler.
+
+    Dividing by the day's post count removes the shared driver: per-post
+    engagement can still move together, but now only if the AUDIENCE moved
+    together, which is the signal the tripwire is actually looking for.
+    """
+    totals: dict[str, dict[str, float]] = {}
+    counts: dict[str, dict[str, int]] = {}
     for row in rows:
         acc = str(row.get("account") or "")
         day = _day(row.get("as_of"))
@@ -584,9 +612,12 @@ def _daily_engagement(rows: Sequence[dict]) -> dict[str, dict[str, float]]:
         obs = row.get("observed") or {}
         eng = float(_int(obs.get("likes")) + _int(obs.get("reposts"))
                     + _int(obs.get("comments")))
-        bucket = out.setdefault(acc, {})
-        bucket[day] = bucket.get(day, 0.0) + eng
-    return out
+        totals.setdefault(acc, {})[day] = totals.setdefault(acc, {}).get(day, 0.0) + eng
+        counts.setdefault(acc, {})[day] = counts.setdefault(acc, {}).get(day, 0) + 1
+    return {
+        acc: {day: total / max(1, counts[acc][day]) for day, total in days.items()}
+        for acc, days in totals.items()
+    }
 
 
 def _rank(values: Sequence[float]) -> list[float]:
@@ -671,7 +702,7 @@ def evaluate_fleet(
                         set(corr_accounts if corr_fired else []))
     return {
         "tripped": bool(collapse_fired or corr_fired),
-        "action": str(conf.get("action") or "halt_implicated"),
+        "action": str(conf.get("action") or "warn"),
         "implicated": implicated,
         "signals": {
             "simultaneous_collapse": {
@@ -688,9 +719,11 @@ def evaluate_fleet(
             },
         },
         "note": (
-            "A fleet signal halts each IMPLICATED account individually. There is "
-            "no global halt switch in this module by design (charter §5: a failure "
-            "must be able to halt one account without halting seven)."
+            "At the launch default (action=warn) a trip is SURFACED, not enforced — "
+            "there is no correlation baseline yet. Under action=halt_implicated a "
+            "trip halts each IMPLICATED account individually; there is no global "
+            "halt switch in this module by design (charter §5: a failure must be "
+            "able to halt one account without halting seven)."
         ),
     }
 
@@ -740,6 +773,26 @@ def reply_decisions(store: Path | str | None = None) -> tuple[dict[str, dict], d
     return counts, reasons
 
 
+def roster(cfg: dict | None, *, root: Path | str | None = None) -> list[str]:
+    """Every ENABLED desk, from config — the roster health is graded against.
+
+    A desk with no telemetry is exactly the desk most worth a look: it may be
+    fine (nothing scheduled) or it may be silently broken, and those two read
+    identically if it is simply absent from the report. Grading the roster
+    turns "missing" into "unmeasured", which is a fact an operator can act on.
+    """
+    try:
+        from engine.marketing import accounts as _accounts  # noqa: PLC0415
+
+        return sorted(
+            str(a.get("id")) for a in _accounts.effective_accounts(cfg or {}, root)
+            if a.get("enabled") and a.get("id")
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("health_monitor.roster: account resolution failed: %s", exc)
+        return []
+
+
 # ---------------------------------------------------------------------------
 # The nightly run
 # ---------------------------------------------------------------------------
@@ -756,17 +809,29 @@ def run(
 
     Runs AFTER ``labels.consolidate`` in the nightly (the health card is a read
     of the labels store, so evaluating first would grade yesterday).
-    ``apply_halts=False`` gives the operator a dry-run: identical evaluation,
-    no registry writes.
+
+    ``apply_halts=False`` makes NO HALT-REGISTRY WRITES — it does not suppress
+    health.json. Operator visibility is the whole point of the flag: a dry run
+    that also withheld the report would leave nothing to look at, which is the
+    opposite of what "evaluate without acting" should mean.
+
+    ``accounts`` should be the DESK ROSTER, not whoever happens to have
+    telemetry. Deriving the roster from the label rows means a desk that posted
+    nothing — the desk most likely to be broken — silently vanishes from
+    health.json instead of reporting "unmeasured". The nightly passes the
+    roster from config; the fallback below is for callers that have none.
     """
     from engine.marketing import labels as _labels  # noqa: PLC0415
 
     rows = _labels.load_labels(root)
     counts, reasons = reply_decisions(store)
 
-    ids = list(accounts) if accounts is not None else sorted(
-        {str(r.get("account") or "") for r in rows if r.get("account")} | set(counts)
-    )
+    if accounts is not None:
+        ids = [str(a) for a in accounts]
+    else:
+        ids = roster(cfg, root=root) or sorted(
+            {str(r.get("account") or "") for r in rows if r.get("account")} | set(counts)
+        )
     per_account = {
         acc: evaluate_account(
             acc, labels=rows, decisions=counts.get(acc) or {},
@@ -825,5 +890,6 @@ __all__ = [
     "halts_path", "health_path", "load_halts", "load_health",
     "is_halted", "halt_record", "halted_accounts", "trip", "clear",
     "approval_rate", "rejection_reason_mix", "engagement_trend", "last_nine",
-    "evaluate_account", "evaluate_fleet", "spearman", "reply_decisions", "run",
+    "evaluate_account", "evaluate_fleet", "spearman", "reply_decisions",
+    "roster", "run",
 ]

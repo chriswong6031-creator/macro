@@ -143,6 +143,14 @@ The dial itself is unchanged: `SHIPPABLE_MODES` still admits only M0/M1, and
 widening it is a separate, explicit decision with its own record — the
 precondition being met is not the same as the flip being made.
 
+**A SECOND precondition, still open: halts trip NIGHTLY ONLY.** Every monitor
+input is daily-cadence telemetry (the Buffer metrics poll refreshes about once a
+day), so an incident starting at 10:00 is caught that night, not that hour. At
+M0/M1 you approve every send, so a nightly halt is proportionate. **At M2/M3 it
+is not** — auto-approval means an account can keep sending for a full day after
+the signal that should have stopped it. **Intraday halt evaluation is a
+precondition for any flip above M1**, alongside the monitor itself (charter §5).
+
 M3 additionally requires, per account: ≥100 M1/M2 sends with zero incidents,
 passing blind-identity and anti-sameness evals, and an explicit operator flip.
 
@@ -474,11 +482,26 @@ the registry can hold.
 each account on four deterministic monitors — operator approval rate, rejection
 reason mix, engagement trend, and the last-nine-post profile diagnostic — and
 runs the fleet tripwire (simultaneous engagement collapse; cross-account
-engagement correlation). A fleet trip writes one halt row per **implicated**
-account. Per-account warnings default to `warn` (surfaced, not halted); set
-`learning.health.account_action: halt` to change that.
+**per-post** engagement correlation).
+
+**Both actions default to `warn` at launch, so nothing halts automatically yet:**
+
+| Config key | Default | Arming step |
+|---|---|---|
+| `learning.health.account_action` | `warn` | `halt` |
+| `learning.health.network_tripwire.action` | `warn` | `halt_implicated` |
+
+The tripwire is deliberately unarmed because there is **no correlation baseline
+yet**. `implicated` is every account in any correlated pair, and 3 of 21 pairs
+is enough to fire — one confounded reading would halt the fleet and cost you
+seven manual clears. Measure the wire for a few weeks, then arm it. (Correlation
+runs on engagement *per post*, not summed: one nightly plan drives all seven
+desks, so their post counts move together by construction and summed engagement
+would correlate on our own scheduler.)
 
 Every input is deterministic telemetry. No model scores anything here.
+
+**Cadence:** nightly. See §3 — intraday evaluation is a precondition for M2/M3.
 
 **What clears one.** You do, from the admin health panel
 (`POST /api/marketing/health/clear-halt`), or:

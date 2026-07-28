@@ -47,7 +47,7 @@ Public API:
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable, Sequence
 
@@ -69,6 +69,10 @@ DEFAULTS: dict[str, Any] = {
     "family_history": 20,
     # Alternates per draft (reply_drafter composes from DIFFERENT families).
     "n_alts": 2,
+    # Outcome polling (the reply half of the labels loop). How far back to look
+    # for sent replies worth re-polling, and the per-night request ceiling.
+    "outcome_lookback_days": 7,
+    "max_outcome_polls_per_night": 40,
 }
 
 
@@ -419,6 +423,130 @@ def run_producer(
     return result
 
 
+# ---------------------------------------------------------------------------
+# Outcome polling — the reply half of the labels loop
+# ---------------------------------------------------------------------------
+def poll_reply_outcomes(
+    *,
+    cfg: dict | None,
+    press_cfg: dict | None = None,
+    root: Path | str | None = None,
+    store: Path | str | None = None,
+    now: datetime | None = None,
+    offline: bool = False,
+    provider: Any = None,
+) -> dict[str, Any]:
+    """Poll twitterapi.io for outcomes on replies we actually SENT.
+
+    THE MISSING HALF OF THE LOOP. ``reply_discovery.poll_outcomes`` and
+    ``reply_queue.record_outcome`` both shipped in XG-W4 with no production
+    caller between them, so every reply label was permanently null and the
+    parent adjustment had nothing to adjust. This is that caller.
+
+    Charter §3: "author reply-back is the highest-value outcome", so that is
+    what this reads — did the PARENT AUTHOR appear among the replies under our
+    reply. Likes on our own reply are deliberately NOT invented here: the
+    endpoint returns the replies under a post, not the post's own counters, and
+    a fabricated zero would be indistinguishable from a measured one.
+
+    **At M0 this is an honest no-op**: nothing has sent, so the sent set is
+    empty, ``poll_outcomes`` short-circuits on an empty id list, and zero
+    requests are billed. That is the expected state today, not a failure.
+
+    Spend rides XG-W4's accounting unchanged — the same host state file, the
+    same monthly counter, the same sub-cap and shared-bucket stop the discovery
+    tick uses. No second budget.
+    """
+    from engine.marketing import reply_discovery as _discovery  # noqa: PLC0415
+    from engine.marketing import reply_queue as _rq  # noqa: PLC0415
+
+    ts = now or datetime.now(timezone.utc)
+    conf = _cfg(cfg)
+    lookback = max(1, _int(conf.get("outcome_lookback_days"), 7))
+    max_polls = max(0, _int(conf.get("max_outcome_polls_per_night"), 40))
+    result: dict[str, Any] = {
+        "at": _iso(ts), "offline": bool(offline), "sent": 0, "polled": 0,
+        "recorded": 0, "author_replied": 0, "spend": {}, "note": None,
+    }
+
+    state = _rq.fold_state(store)
+    cutoff = (ts - timedelta(days=lookback)).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    # Our OWN status ids, recovered from the desktop lane's receipt URL. That
+    # receipt is the only record of where our reply actually landed.
+    by_status: dict[str, dict] = {}
+    for iid, item in state.get("items", {}).items():
+        if state.get("status", {}).get(iid) != "sent":
+            continue
+        row = state.get("last", {}).get(iid) or {}
+        receipt = row.get("receipt") if isinstance(row.get("receipt"), dict) else {}
+        at = str(row.get("at") or "")
+        if at and at < cutoff:
+            continue
+        sid = _rq.status_id_from_url(str(receipt.get("url") or ""))
+        if sid:
+            by_status[sid] = {"id": iid, "parent_author": str(item.get("parent_author") or "")}
+    result["sent"] = len(by_status)
+
+    if not by_status:
+        result["note"] = ("no sent replies in the window — at M0 this is the "
+                          "expected state, and it bills nothing")
+        return result
+    if offline:
+        result["note"] = "offline — zero network, zero spend"
+        return result
+
+    if provider is None:
+        provider = _discovery.build_provider(press_cfg, cfg, root=root)
+    if provider is None:
+        result["note"] = "reply discovery lane is off (press_sources.reply_discovery)"
+        return result
+
+    session = _discovery.load_state(store)
+    wire = _discovery.load_wire_spend(root, now=ts)
+    status_ids = sorted(by_status)[:max_polls]
+    try:
+        observed = provider.poll_outcomes(
+            session_state=session, status_ids=status_ids,
+            offline=False, wire_spend_usd=wire, now=ts,
+        )
+    finally:
+        # Persist even on the exception path: `session` is mutated in place as
+        # requests are billed, so bailing without saving discards spend that WAS
+        # charged — an under-count in the direction that costs money.
+        _discovery.save_state(session, store)
+
+    for entry in observed:
+        sid = str(entry.get("status_id") or "")
+        meta = by_status.get(sid)
+        if meta is None:
+            continue
+        result["polled"] += 1
+        parent = meta["parent_author"].lower().lstrip("@")
+        replied = None
+        if parent:
+            # A KNOWN parent handle gives a real yes/no. Without one we cannot
+            # tell "they did not answer" from "we do not know who they are", so
+            # the outcome stays null rather than becoming a false negative.
+            replied = any(
+                str((raw.get("author") or raw.get("user") or {}).get("userName")
+                    or (raw.get("author") or raw.get("user") or {}).get("screen_name")
+                    or "").lower().lstrip("@") == parent
+                for raw in (entry.get("raw") or []) if isinstance(raw, dict)
+            )
+        if replied is None:
+            continue
+        if _rq.record_outcome(meta["id"], root=store, author_replied=bool(replied)):
+            result["recorded"] += 1
+            if replied:
+                result["author_replied"] += 1
+
+    month = ts.strftime("%Y-%m")
+    result["spend"] = ((session.get(_discovery.STATE_NS) or {}).get("spend") or {}
+                       ).get(month) or {}
+    return result
+
+
 def _tier_of(target: dict) -> str:
     """Map a discovery target's author tier onto a queue tier.
 
@@ -524,4 +652,5 @@ def _record_abstention(root: Path | str | None, *, account: str, as_of: str,
     _labels.record_observation(row, root=root)
 
 
-__all__ = ["DEFAULTS", "run_producer", "eligible_accounts", "persona_beats"]
+__all__ = ["DEFAULTS", "run_producer", "poll_reply_outcomes",
+           "eligible_accounts", "persona_beats"]

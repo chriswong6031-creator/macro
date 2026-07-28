@@ -38,8 +38,9 @@ Public API:
     RULE_SCHEMA / KINDS / DEFAULTS
     rules_log_path(root) / rules_active_path(root)
     make_rule(...) -> dict
-    validate_rule(rule) -> list[str]        # [] means it can be reverted
+    validate_rule(rule) -> list[str]        # [] means the SHAPE can be reverted
     apply_rule(rule, *, now, root=None, actor=...) -> dict
+        # ...and verifies the declared revert against the ACTUAL active state
     rollback(version_id, *, now, root=None, actor=...) -> dict
     history(root=None) -> list[dict]
     active(root=None) -> dict
@@ -263,6 +264,34 @@ def validate_rule(rule: dict, *, cfg: dict | None = None) -> list[str]:
 # ---------------------------------------------------------------------------
 # Apply / rollback / read
 # ---------------------------------------------------------------------------
+def _revert_matches_state(rule: dict, table: dict[str, dict]) -> list[str]:
+    """Does the rule's declared revert describe the ACTUAL current state?
+
+    Two ways to be wrong, and both make the rollback path a lie:
+
+      * ``present: False`` ("nothing was here") on a path that IS active — a
+        rollback would delete a rule someone else applied.
+      * ``present: True`` with a ``value`` that is not what is currently
+        active — a rollback would write a value that was never there.
+    """
+    key = str(rule.get("path") or "")
+    revert = rule.get("revert") or {}
+    current = table.get(key)
+    declared_present = bool(revert.get("present"))
+
+    if current is None:
+        if declared_present:
+            return [f"revert.present is True but nothing is active at {key!r}"]
+        return []
+    if not declared_present:
+        return [f"revert.present is False but {key!r} is already active "
+                f"(version {current.get('version_id')!r})"]
+    if revert.get("value") != current.get("value"):
+        return [f"revert.value {revert.get('value')!r} does not match the active "
+                f"value {current.get('value')!r} at {key!r}"]
+    return []
+
+
 def apply_rule(
     rule: dict,
     *,
@@ -292,6 +321,23 @@ def apply_rule(
     vid = str(rule["version_id"])
     key = str(rule["path"])
     superseded = table.get(key, {}).get("version_id")
+
+    # REVERSIBILITY MUST BE TRUE, NOT WELL-FORMED. `validate_rule` proves the
+    # revert block has the right SHAPE; it cannot know whether the value it
+    # promises to restore is the value that is actually there. A proposer built
+    # against a stale read would declare `revert: {present: false}` on a path
+    # something else already set, and rolling it back would DELETE a live rule
+    # instead of restoring one — a rollback that changes state is not a
+    # rollback. This is the only place with both halves in hand, so it checks.
+    errs = _revert_matches_state(rule, table)
+    if errs:
+        print(
+            f"::warning title=learned-rule-stale::rule {vid!r} refused: {errs[0]} "
+            "— the declared revert does not describe the CURRENT active state, so "
+            "rolling it back would not undo it",
+            flush=True,
+        )
+        return {"ok": False, "errors": errs, "version_id": vid}
 
     entry = dict(rule)
     entry.update({"applied_at": _iso(ts), "applied_by": actor, "state": "active",

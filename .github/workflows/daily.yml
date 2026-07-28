@@ -3192,6 +3192,36 @@ jobs:
             echo "::warning title=marketing_learning::rc=$rc (label ledger / health report may not have advanced)"
           fi
           exit 0
+      # XG-W6 learning artifacts get their OWN commit, not a ride on the
+      # standout-audit subject line. These are marketing-desk safety and
+      # measurement records — labels.jsonl, scorecard.json, health.json,
+      # halts.json and the learned-rule version log — and a HALT landing under
+      # "standout-audit-us: nightly US attribution" is a commit message that
+      # actively misleads whoever goes looking for when a desk went dark.
+      #
+      # halts.json is also written by the operator's admin clear, which commits
+      # it separately; last writer wins and both are recorded in the registry's
+      # own log. The host spool (data/marketing/learning_host/) is gitignored
+      # and must never appear here.
+      - name: commit marketing learning artifacts (XG-W6)
+        run: |
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/marketing/learning 2>/dev/null || true
+          if git diff --cached --quiet; then echo "no marketing learning changes"; exit 0; fi
+          HALTED=$(python3 -c "import json,pathlib;p=pathlib.Path('data/marketing/learning/halts.json');d=json.loads(p.read_text()) if p.exists() else {};print(','.join(sorted(a for a,r in (d.get('accounts') or {}).items() if isinstance(r,dict) and r.get('state')=='halted')) or 'none')" 2>/dev/null || echo "unknown")
+          git commit -m "marketing-learning: labels + scorecard + desk health $(date -u +%F) (halted: ${HALTED})"
+          PUSH_ALARM=420
+          push_retry_init "marketing learning artifacts"
+          while push_attempt; do
+            perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main; then
+              if push_do; then echo "pushed marketing learning artifacts on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
+            fi
+          done
+          echo "::warning title=marketing_learning::could not push learning artifacts (they advance again tomorrow)"
+          exit 0
       - name: commit standout audit US artifacts
         run: |
           . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
@@ -3222,13 +3252,6 @@ jobs:
           # consolidate step above. The host spool (data/marketing/personas_host/)
           # is gitignored and must never appear here.
           git add data/marketing/personas 2>/dev/null || true
-          # XG-W6 learning: labels.jsonl + scorecard.json + health.json +
-          # halts.json + the learned-rule version log. Advanced by the
-          # marketing_learning_nightly step above; halts.json is ALSO written by
-          # the operator's admin clear, which commits it separately. The host
-          # spool (data/marketing/learning_host/) is gitignored and must never
-          # appear here.
-          git add data/marketing/learning 2>/dev/null || true
           if git diff --cached --quiet; then echo "no standout audit US changes"; exit 0; fi
           git commit -m "standout-audit-us: nightly US attribution + fitness card $(date -u +%F)"
           # best-effort rebase-push (own files — no other job writes these paths)

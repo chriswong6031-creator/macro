@@ -1399,6 +1399,13 @@ reply_desk:
     # Alternates per draft. The drafter composes them from DIFFERENT families
     # (constitution §9.4: three paraphrases of one thought is the failure mode).
     n_alts: 2
+    # Outcome polling — the reply half of the labels loop, run by the nightly
+    # (scripts/marketing_learning_nightly.py step 0). Charter §3: author
+    # reply-back is the highest-value outcome, so that is what gets read. Bills
+    # against the SAME reply sub-budget as discovery; no second counter. At M0
+    # nothing has sent, so the poll is a no-op that bills nothing.
+    outcome_lookback_days: 7
+    max_outcome_polls_per_night: 40
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # LEARNING (XG-W6) — the ONE feedback loop, four consumers
@@ -1472,13 +1479,25 @@ learning:
       min_accounts: 3
       # Independently-run desks should not move in lockstep. Lockstep is the
       # shape a shared limiter leaves behind.
+      #
+      # Correlation is measured on engagement PER POST, not summed daily
+      # engagement: all seven desks are fed by ONE nightly content plan, so
+      # their post COUNTS move together by construction and summed engagement
+      # would correlate because of our own scheduler. Per-post divides that out.
       corr_threshold: 0.90
       corr_min_days: 10
       corr_min_pairs: 3
-      # A fleet trip writes ONE HALT ROW PER IMPLICATED ACCOUNT. There is no
-      # global halt switch anywhere in the module, by design: charter §5 needs a
-      # failure to be able to halt one account without halting seven.
-      action: halt_implicated
+      # "warn" AT LAUNCH — same reasoning as account_action above: surface it,
+      # do not silence seven desks. `implicated` is every account in any
+      # correlated pair, and 3 of 21 possible pairs is enough to fire, so one
+      # confounded reading would cost seven manual clears. There is NO
+      # correlation baseline yet (zero nights of real telemetry), so the wire
+      # gets measured before it gets armed.
+      #
+      # ARMING STEP, once the baseline exists: action: halt_implicated. The
+      # mechanism is identical either way — a trip writes ONE HALT ROW PER
+      # IMPLICATED ACCOUNT, never a global switch (charter §5).
+      action: warn
 
   learned_rules:
     # DARK BY DEFAULT. Applying a learned rule is a PROMOTION (it changes what

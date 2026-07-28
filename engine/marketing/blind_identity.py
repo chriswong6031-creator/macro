@@ -43,6 +43,7 @@ from __future__ import annotations
 import hashlib
 import logging
 import math
+import re
 from typing import Any, Sequence
 
 log = logging.getLogger(__name__)
@@ -82,28 +83,84 @@ PREREG: dict[str, Any] = {
             "EMITTED posts only (persona_memory phrases.jsonl), excluding any "
             "post whose text was used to tune a codex."
         ),
+        # ONE RULE, stated once (amended 2026-07-28 — see `amendments`). The
+        # first draft said both "strip account-specific cashtags" and "cashtags
+        # stay", which is not a rule, and the harness implemented neither.
         "blinding": (
-            "Strip handle, byline, signature emoji, account-specific cashtags "
-            "and franchise titles. A franchise title is a label, not a voice, "
-            "and leaving it in measures our naming, not our writing."
+            "STRIP: bylines, handles, avatars, ACCOUNT-SPECIFIC cashtags (a "
+            "persona's signature coverage is an identity tell, not a voice), "
+            "franchise titles, and signature emoji. KEEP: generic market "
+            "cashtags — they are the finance substance the identities are "
+            "supposed to differ in their HANDLING of, and stripping them would "
+            "measure topic assignment instead of writing."
         ),
+        # The per-identity tells the strip list removes. Populated from the
+        # codexes at run time; declared here so the rule is auditable in advance.
+        "account_specific_cashtags": {
+            "flagship": [],
+            "meagan": [],
+            "sophia": [],
+            "kelly": [],
+            "cici": ["$FXI", "$KWEB", "$BABA", "$HSI", "$MCHI", "$ASHR"],
+        },
+        "franchise_titles": [
+            "Before New York Wakes", "Mood vs Money", "Confirmation Check",
+            "The Story the Market Believes", "What Changed Since Yesterday",
+            "Tea and Tickers", "What Would Prove This Wrong?",
+        ],
         "date_span": "the trailing 60 days at run time, so no single week dominates",
         "assignment": "deterministic given (sample id, seed) — re-runnable and auditable",
         "seed": 20260728,
     },
 
+    #: A per-identity floor on ANSWERED samples. Without it, an identity the
+    #: rater skipped entirely drops out of the weakness check and silently
+    #: licenses the fleet claim it was supposed to be able to veto.
+    "min_answered_per_persona": 20,
+
+    "amendments": [
+        {
+            "at": "2026-07-28",
+            "what": (
+                "Blinding rule made self-consistent and the strip list "
+                "implemented in full (handles, bylines, ACCOUNT-SPECIFIC "
+                "cashtags, franchise titles, signature emoji; generic market "
+                "cashtags kept). The registered text previously contradicted "
+                "itself on cashtags and the harness implemented neither half."
+            ),
+            "also": (
+                "Added min_answered_per_persona=20 so an unanswered identity "
+                "cannot pass the promotion rule's second clause by absence."
+            ),
+            "legitimate_because": (
+                "THE EVAL HAS NEVER RUN. No data exists that this amendment "
+                "could be fitted to, which is the only condition under which "
+                "amending a pre-registration is honest. Once it runs, no field "
+                "here may change."
+            ),
+        },
+    ],
+
     "promotion_rule": (
         "The eval supports a claim ONLY if the Wilson 95% lower bound on overall "
-        "accuracy exceeds the 0.20 chance baseline AND no single identity's "
-        "per-persona accuracy lower bound is at or below chance. A fleet average "
-        "carried by two distinctive voices while three are indistinguishable is "
-        "the failure this second clause exists to catch."
+        "accuracy exceeds the 0.20 chance baseline AND every identity clears "
+        "min_answered_per_persona AND no single identity's BONFERRONI-CORRECTED "
+        "per-persona lower bound is at or below chance. A fleet average carried "
+        "by two distinctive voices while three are indistinguishable is the "
+        "failure the second and third clauses exist to catch."
     ),
     "multiplicity": (
         "Five per-persona intervals plus one overall: report all six, apply "
-        "Bonferroni (alpha 0.05/6) to the per-persona claims, and print every "
-        "null. Concurrent-arm correction per charter §8 experiment law."
+        "Bonferroni (alpha 0.05/6, two-sided => z = 2.638) to the PER-PERSONA "
+        "intervals that feed the promotion rule, and print every null. The "
+        "overall interval stays at the uncorrected z = 1.96 because it is one "
+        "pre-registered primary comparison, not one of the family. "
+        "Concurrent-arm correction per charter §8 experiment law."
     ),
+    #: z for alpha = 0.05/6, two-sided. Computed once and pinned so the harness
+    #: cannot quietly run the more lenient uncorrected interval against its own
+    #: registration — which is exactly what the first draft did.
+    "bonferroni_z": 2.638,
     "confound_declared_in_advance": (
         "The rater is a model of the same family as the generator, so a high "
         "score is consistent with 'the personas are distinct' AND with 'two "
@@ -187,23 +244,65 @@ def build_holdout(
 
 _SIGNATURE_MARKS = ("@", "#")
 
+#: Any codepoint in these ranges counts as an emoji for the strip. Deliberately
+#: broad: an emoji we fail to strip is an identity tell we left in the sample,
+#: and over-stripping a decorative glyph costs the eval nothing.
+_EMOJI_RANGES: tuple[tuple[int, int], ...] = (
+    (0x1F300, 0x1FAFF), (0x2600, 0x27BF), (0x2B00, 0x2BFF),
+    (0x1F000, 0x1F2FF), (0xFE00, 0xFE0F), (0x1F1E6, 0x1F1FF),
+)
+
+
+def _is_emoji(ch: str) -> bool:
+    cp = ord(ch)
+    return any(lo <= cp <= hi for lo, hi in _EMOJI_RANGES)
+
+
+def account_cashtags(persona: str) -> set[str]:
+    """The ACCOUNT-SPECIFIC cashtags registered as identity tells for a persona.
+
+    A persona's signature coverage identifies it as reliably as its handle —
+    "the desk that always posts $FXI" is a byline in cashtag form.
+    """
+    reg = (PREREG["holdout"].get("account_specific_cashtags") or {})
+    return {str(t).lstrip("$").upper() for t in (reg.get(persona) or [])}
+
 
 def blind(text: str, *, persona: str = "") -> str:
-    """Strip the identity tells the prereg names, leaving only the voice.
+    """Apply the registered strip list, leaving only the voice.
 
-    Handles, hashtags and the persona's own name go. Cashtags STAY: they are
-    market content, and removing them would strip the finance substance the
-    identities are supposed to differ in the handling of.
+    STRIP: bylines, handles, hashtags, ACCOUNT-SPECIFIC cashtags, franchise
+    titles, signature emoji.
+    KEEP: generic market cashtags — they are the finance substance the
+    identities are supposed to differ in their HANDLING of, so removing them
+    would measure topic assignment rather than writing.
+
+    This is the single rule the amended prereg registers. The first draft
+    contradicted itself (strip account cashtags / cashtags stay) and stripped
+    neither emoji nor franchise titles, so a sample could carry "Before New York
+    Wakes 🍵" straight through and the eval would have been grading our naming.
     """
     out = str(text or "")
+
+    # Franchise titles first: they are multi-word, so they have to go before
+    # tokenisation splits them into words that look innocent on their own.
+    for title in PREREG["holdout"].get("franchise_titles") or []:
+        out = re.sub(re.escape(str(title)), " ", out, flags=re.IGNORECASE)
+
     if persona:
-        out = out.replace(persona, "").replace(persona.capitalize(), "")
+        out = re.sub(re.escape(persona), " ", out, flags=re.IGNORECASE)
+
+    own = account_cashtags(persona)
     cleaned: list[str] = []
     for token in out.split():
         if token[:1] in _SIGNATURE_MARKS:
             continue
-        cleaned.append(token)
-    return " ".join(cleaned).strip()
+        if token.startswith("$") and token.lstrip("$").rstrip(".,;:!?").upper() in own:
+            continue
+        stripped = "".join(ch for ch in token if not _is_emoji(ch))
+        if stripped.strip():
+            cleaned.append(stripped)
+    return re.sub(r"\s+", " ", " ".join(cleaned)).strip()
 
 
 # ---------------------------------------------------------------------------
@@ -259,12 +358,25 @@ def grade(responses: dict[str, str], holdout: dict) -> dict:
             if truth in per_persona:
                 per_persona[truth]["correct"] += 1
 
+    # The OVERALL interval is the one pre-registered primary comparison, so it
+    # runs uncorrected at z = 1.96.
     overall_lo, overall_hi = wilson_interval(correct, answered)
+    # The FIVE per-persona intervals are a family, and the registration says
+    # Bonferroni. Running them at 1.96 would be the harness quietly applying a
+    # more lenient test than its own prereg — the exact thing pre-registration
+    # exists to prevent.
+    z_corr = float(PREREG["bonferroni_z"])
+    floor = int(PREREG["min_answered_per_persona"])
     for p, block in per_persona.items():
-        lo, hi = wilson_interval(block["correct"], block["n"])
+        lo, hi = wilson_interval(block["correct"], block["n"], z_corr)
         block["accuracy"] = round(block["correct"] / block["n"], 4) if block["n"] else None
-        block["ci95"] = [lo, hi]
-        block["above_chance"] = bool(block["n"] and lo > CHANCE_BASELINE)
+        block["ci95_bonferroni"] = [lo, hi]
+        block["z"] = z_corr
+        block["min_answered"] = floor
+        block["enough_answered"] = block["n"] >= floor
+        # BOTH clauses. An identity nobody answered has no evidence of being
+        # distinguishable, so it must not read as above chance by default.
+        block["above_chance"] = bool(block["n"] >= floor and lo > CHANCE_BASELINE)
 
     return {
         "prereg_id": PREREG["id"],
@@ -284,10 +396,11 @@ def grade(responses: dict[str, str], holdout: dict) -> dict:
 def verdict(result: dict) -> dict:
     """Apply the PRE-REGISTERED promotion rule. Still gates nothing.
 
-    Both clauses bind: the overall lower bound must clear chance, and no
-    identity may sit at or below chance. Meeting the charter's 0.80 target is
-    reported separately and explicitly does not authorise anything — the target
-    was a point estimate with no n behind it.
+    All three clauses bind: the overall lower bound must clear chance, every
+    identity must clear ``min_answered_per_persona``, and no identity's
+    Bonferroni-corrected lower bound may sit at or below chance. Meeting the
+    charter's 0.80 target is reported separately and explicitly does not
+    authorise anything — the target was a point estimate with no n behind it.
     """
     if not result or result.get("accuracy") is None:
         return {
@@ -297,12 +410,22 @@ def verdict(result: dict) -> dict:
         }
     lo = float((result.get("ci95") or [0.0, 1.0])[0])
     per = result.get("per_persona") or {}
-    weak = sorted(p for p, b in per.items() if b.get("n") and not b.get("above_chance"))
+    floor = int(PREREG["min_answered_per_persona"])
+
+    # AN IDENTITY WITH TOO FEW ANSWERS CANNOT BE VOUCHED FOR. The first draft
+    # tested `if b.get("n")`, so an identity the rater skipped entirely fell out
+    # of the weakness list and silently licensed the fleet claim it exists to be
+    # able to veto. Absence of evidence, counted as evidence of absence.
+    thin = sorted(p for p, b in per.items() if int(b.get("n") or 0) < floor)
+    weak = sorted(p for p, b in per.items()
+                  if int(b.get("n") or 0) >= floor and not b.get("above_chance"))
     overall_ok = lo > CHANCE_BASELINE
     meets_target = float(result.get("accuracy") or 0.0) >= float(PREREG["charter_target"])
 
     if not overall_ok:
         status = "not_above_chance"
+    elif thin:
+        status = "unmeasured"
     elif weak:
         status = "above_chance_but_uneven"
     else:
@@ -313,6 +436,9 @@ def verdict(result: dict) -> dict:
         "overall_lower_bound": lo,
         "chance_baseline": CHANCE_BASELINE,
         "identities_at_or_below_chance": weak,
+        "identities_below_answer_floor": thin,
+        "min_answered_per_persona": floor,
+        "bonferroni_z": float(PREREG["bonferroni_z"]),
         "meets_charter_target": meets_target,
         "gates": [],
         "note": (

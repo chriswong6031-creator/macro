@@ -505,19 +505,51 @@ def _latest_metrics_by_remote_id(root: Path | str | None) -> dict[str, dict]:
     Same fold the admin publisher panel uses (``admin/marketing.py``
     ``_latest_metrics_by_remote_id``). Metrics are CUMULATIVE, so the latest
     poll is the current truth and older rows are history, not evidence.
+
+    Each entry also carries ``_first_seen``: the EARLIEST ``polled_at`` we ever
+    recorded for that id. That is the stable day an orphan is pinned to — see
+    ``_orphan_day``.
     """
     out: dict[str, dict] = {}
     best: dict[str, str] = {}
+    first: dict[str, str] = {}
     for row in _read_jsonl(_post_metrics_path(root)):
         rid = str(row.get("remote_id") or "").strip()
         if not rid:
             continue
         ts = str(row.get("polled_at") or "")
+        if rid not in first or (ts and ts < first[rid]):
+            first[rid] = ts
         if rid in best and ts < best[rid]:
             continue
         best[rid] = ts
         out[rid] = row
+    for rid, row in out.items():
+        row["_first_seen"] = first.get(rid, "")
     return out
+
+
+def _orphan_day(mrow: dict) -> str:
+    """The STABLE ``as_of`` for a metrics row with no outbox item.
+
+    An orphan has no item to take a business date from, and falling back to
+    ``polled_at`` makes the day move every night — which mints a NEW ``row_id``
+    every night, because the id is (surface, subject, day). One orphan then
+    becomes one row per night for the whole retention window, and every one of
+    them counts toward the n the n-floor gates on: a cell could clear the floor
+    on a single unattributable post polled 20 times.
+
+    Preference order is "closest thing to a publication date that does not move":
+    the backend's own metrics timestamp, then a published_at if the row carries
+    one, then the FIRST poll we ever saw. All three are fixed once written;
+    ``polled_at`` is the only one that is not, so it is last and only as a
+    tie-breaker of last resort.
+    """
+    for key in ("metrics_updated_at", "published_at", "_first_seen", "polled_at"):
+        day = _day(mrow.get(key))
+        if day:
+            return day
+    return ""
 
 
 def _engagement(metrics: dict) -> int:
@@ -592,7 +624,10 @@ def harvest_post_labels(
         if not account:
             continue
         kind = str(item.get("kind") or item.get("type") or "unknown")
-        as_of = _day(item.get("as_of") or posted_day.get(remote) or mrow.get("polled_at"))
+        # A joined row takes the item's business date. An ORPHAN has no item, so
+        # it takes a date that does not move between polls (see _orphan_day) —
+        # `polled_at` would mint a fresh row_id every night.
+        as_of = _day(item.get("as_of") or posted_day.get(remote)) or _orphan_day(mrow)
         label, reason = _post_label(metrics)
         rows.append(new_row(
             surface="post",
@@ -726,11 +761,22 @@ def harvest_reply_labels(
                 "tier": item.get("tier"),
             },
             features={
-                "score": _float(item.get("score")),
+                # NULL SURVIVES. `_float(None)` would coerce an unobserved
+                # parent to 0.0, which buckets as "lt50" — the SMALLEST parent
+                # stratum — instead of "unknown". The row then gets a
+                # parent-adjusted lift computed against a peer group it was
+                # never in. And because harvest wins the consolidator's
+                # last-writer dedup over the producer's enqueue row, the
+                # coerced zero would overwrite the correct None the producer
+                # banked at draft time.
+                "score": _opt_float(item.get("score")),
                 "tier": str(item.get("tier") or ""),
                 "has_chart": bool(item.get("chart")),
-                "parent_engagement": _float(ctx.get("engagement")),
-                "post_age_min": ctx.get("age_min"),
+                "parent_engagement": _opt_float(ctx.get("engagement")),
+                "post_age_min": _opt_float(ctx.get("age_min")),
+                "thread_saturation": _opt_float(ctx.get("reply_count")),
+                # Market intensity is a COUNT WE OWN: no rows for a day means
+                # zero breaking/wire emissions that day, which is a real zero.
                 "market_intensity": _int(intensity.get(as_of)),
             },
             label=label,
@@ -991,24 +1037,51 @@ def bottleneck_table(rows: list[dict], *, cfg: dict | None = None, now: datetime
     Charter §8 ruling: the north-star metric is undefined at zero, so during
     cold start the simple bottleneck table on raw counts is what the operator
     reads. Ratios over a follower base of ~0 are noise wearing a decimal point.
+
+    THREE KINDS OF REPLY ROW EXIST AND THEY ARE NOT INTERCHANGEABLE. The store
+    carries an ``enqueued`` row when the producer banks a draft's covariates, an
+    ``abstained`` row (``weight == 0.0``) when the critics killed one, and a
+    harvested row for a reply the desk actually SENT. At M0 the true sent count
+    is ZERO by construction — nothing sends — so a counter that says "replies
+    sent: 14" from draft rows is not an optimistic estimate, it is a false
+    statement about public activity on a surface built to be careful about
+    exactly that. The three are counted separately and named for what they are.
     """
     per: dict[str, dict] = {}
     for row in rows:
         acc = str(row.get("account") or "unknown")
         block = per.setdefault(acc, {
-            "account": acc, "contributions": 0, "measured": 0, "unmeasured": 0,
-            "impressions": 0, "engagements": 0, "replies_sent": 0, "author_replies": 0,
+            "account": acc,
+            # Rows that describe something we PUBLISHED (a post, or a reply that
+            # left). Drafts and abstentions are activity, not contribution.
+            "contributions": 0, "measured": 0, "unmeasured": 0,
+            "impressions": 0, "engagements": 0,
+            "replies_sent": 0, "replies_enqueued": 0, "replies_abstained": 0,
+            "author_replies": 0,
         })
+        obs = row.get("observed") or {}
+        stage = str(obs.get("stage") or "")
+        is_reply = row.get("surface") == "reply"
+        # A producer-side row: enqueued (a draft) or abstained (a kill). Neither
+        # is public, so neither counts as a contribution or gets an impression.
+        if is_reply and stage in {"enqueued", "abstained"}:
+            block["replies_enqueued" if stage == "enqueued" else "replies_abstained"] += 1
+            continue
+        # An abstention row carries weight 0.0 by construction — belt and braces
+        # for a row whose stage field a future writer forgets to set.
+        if _float(row.get("weight"), 1.0) == 0.0:
+            block["replies_abstained"] += 1
+            continue
+
         block["contributions"] += 1
         if row.get("label") is None:
             block["unmeasured"] += 1
         else:
             block["measured"] += 1
-        obs = row.get("observed") or {}
         block["impressions"] += _int(obs.get("impressions"))
         block["engagements"] += (_int(obs.get("likes")) + _int(obs.get("reposts"))
                                  + _int(obs.get("comments")))
-        if row.get("surface") == "reply":
+        if is_reply:
             block["replies_sent"] += 1
             if obs.get("author_replied"):
                 block["author_replies"] += 1
@@ -1018,51 +1091,69 @@ def bottleneck_table(rows: list[dict], *, cfg: dict | None = None, now: datetime
             "north-star (qualified retained followers per 100 contributions) is "
             "undefined at zero followers — charter §8"
         ),
+        "counter_note": (
+            "replies_sent counts replies that actually LEFT (send-state rows only). "
+            "replies_enqueued are drafts awaiting approval and replies_abstained "
+            "are critic kills — neither is public. At M0 replies_sent is 0 by "
+            "construction; contributions counts published items only."
+        ),
         "accounts": sorted(per.values(), key=lambda b: b["account"]),
     }
 
 
-def north_star(rows: list[dict], *, cfg: dict | None = None, now: datetime) -> dict:
-    """Qualified retained followers per 100 contributions — INACTIVE at cold start.
+#: The observed-field key a follower series would land under, when one exists.
+#: Named here rather than left implicit so the future wiring has one place to
+#: target: whoever teaches the metrics poll to return follower counts writes
+#: this key, and `north_star` starts having an input.
+FOLLOWERS_OBSERVED_KEY = "followers_at_post"
 
-    Returns ``{"active": False, ...}`` until an account clears the configured
-    follower floor. The metric is not computed-and-hidden: it is not computed,
-    and the reason is printed. A ratio whose denominator is zero is not a small
-    number, it is not a number.
+
+def north_star(rows: list[dict], *, cfg: dict | None = None, now: datetime) -> dict:
+    """Qualified retained followers per 100 contributions — NOT COMPUTED.
+
+    Charter §8: the metric is undefined at zero followers. It is also, today,
+    undefined at ANY follower count, because **nothing writes a follower
+    series**: ``scripts/marketing_metrics_poll.py`` reads Buffer's per-post
+    analytics (impressions, likes, reposts, comments, clicks) and Buffer does
+    not return an account follower count, so ``observed[FOLLOWERS_OBSERVED_KEY]``
+    is never populated by any production path.
+
+    So this returns the honest null, always, with the reason stated. An earlier
+    draft carried an ``active: True`` branch that computed a per-account block
+    with ``per_100: None`` inside it — a branch no input could reach, which
+    would have read to a future maintainer as "this works once you cross the
+    floor" when in fact the numerator does not exist either. Dead code that
+    implies a capability is worse than no code.
+
+    THE TWO THINGS THIS NEEDS, both absent: a follower count per account per
+    day (the denominator's base), and a retention definition — "qualified" and
+    "retained" are not measurable from a follower total alone.
     """
     conf = _cfg(cfg)
     floor = _int(conf.get("north_star_follower_floor"), 250)
-    followers: dict[str, int] = {}
-    for row in rows:
-        acc = str(row.get("account") or "unknown")
-        obs = row.get("observed") or {}
-        fa = obs.get("followers_at_post")
-        if isinstance(fa, int):
-            followers[acc] = max(followers.get(acc, 0), fa)
-    eligible = sorted(a for a, f in followers.items() if f >= floor)
-    if not eligible:
-        return {
-            "active": False,
-            "follower_floor": floor,
-            "observed_followers": followers,
-            "reason": (
-                "no account clears the follower floor — undefined at zero; read "
-                "the bottleneck table on raw counts instead (charter §8)"
-            ),
-        }
-    per: dict[str, dict] = {}
-    for acc in eligible:
-        contribs = sum(1 for r in rows if str(r.get("account") or "") == acc)
-        per[acc] = {
-            "contributions": contribs,
-            "followers_observed": followers[acc],
-            "per_100": None,
-            "note": (
-                "retention needs a follower-cohort series the poller does not "
-                "yet return; the denominator is live, the numerator is not"
-            ),
-        }
-    return {"active": True, "follower_floor": floor, "accounts": per}
+    # Read anyway: the day a follower series lands, this reports it instead of
+    # silently continuing to say "no data".
+    followers = {
+        str(row.get("account") or "unknown"): (row.get("observed") or {})[FOLLOWERS_OBSERVED_KEY]
+        for row in rows
+        if isinstance((row.get("observed") or {}).get(FOLLOWERS_OBSERVED_KEY), int)
+    }
+    return {
+        "active": False,
+        "follower_floor": floor,
+        "observed_followers": followers,
+        "needs": [
+            f"a follower series on observed['{FOLLOWERS_OBSERVED_KEY}'] — Buffer's "
+            "per-post analytics do not return one",
+            "a definition of 'qualified' and 'retained' that a follower total "
+            "cannot supply",
+        ],
+        "reason": (
+            "not computed: no production path writes a follower count, so both "
+            "the denominator base and the numerator are missing. Read the "
+            "bottleneck table on raw counts instead (charter §8)."
+        ),
+    }
 
 
 # ---------------------------------------------------------------------------

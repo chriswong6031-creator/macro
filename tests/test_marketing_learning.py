@@ -168,6 +168,57 @@ class TestPostLabelHarvest:
         assert rows[0]["observed"]["orphan"] is True
         assert rows[0]["format"] == "unknown"
 
+    def test_an_orphan_polled_on_two_days_stays_ONE_row(self, tmp_path):
+        """An orphan has no item to take a business date from. Falling back to
+        polled_at moves the day every night, which mints a fresh row_id every
+        night — one orphan becomes 180 rows, and every one counts toward the n
+        the n-floor gates on."""
+        mp = tmp_path / "data" / "marketing" / "post_metrics.jsonl"
+        mp.parent.mkdir(parents=True, exist_ok=True)
+        with mp.open("w", encoding="utf-8") as fh:
+            for polled in ("2026-07-28T14:00:00Z", "2026-07-29T14:00:00Z",
+                           "2026-07-30T14:00:00Z"):
+                fh.write(json.dumps({
+                    "remote_id": "buf-orphan", "account": "sophia",
+                    "metrics": {"impressions": 500, "likes": 5},
+                    "metrics_updated_at": "2026-07-28T09:00:00Z",
+                    "polled_at": polled,
+                }) + "\n")
+
+        ids = set()
+        for day in (28, 29, 30):
+            when = datetime(2026, 7, day, 15, 0, tzinfo=timezone.utc)
+            rows = lb.harvest_post_labels(root=tmp_path, now=when)
+            assert len(rows) == 1
+            ids.add(rows[0]["id"])
+        assert len(ids) == 1, f"three nightlies minted {len(ids)} ids for one orphan"
+
+    def test_orphan_day_prefers_a_fixed_timestamp_over_the_poll_clock(self):
+        assert lb._orphan_day({"metrics_updated_at": "2026-07-01T00:00:00Z",
+                               "polled_at": "2026-07-30T00:00:00Z"}) == "2026-07-01"
+        assert lb._orphan_day({"published_at": "2026-07-02T00:00:00Z",
+                               "polled_at": "2026-07-30T00:00:00Z"}) == "2026-07-02"
+        assert lb._orphan_day({"_first_seen": "2026-07-03T00:00:00Z",
+                               "polled_at": "2026-07-30T00:00:00Z"}) == "2026-07-03"
+        # polled_at only as the last resort.
+        assert lb._orphan_day({"polled_at": "2026-07-30T00:00:00Z"}) == "2026-07-30"
+
+    def test_orphan_consolidates_to_one_row_across_nightlies(self, tmp_path):
+        """The same guarantee through the production consolidator."""
+        mp = tmp_path / "data" / "marketing" / "post_metrics.jsonl"
+        mp.parent.mkdir(parents=True, exist_ok=True)
+        with mp.open("w", encoding="utf-8") as fh:
+            for polled in ("2026-07-28T14:00:00Z", "2026-07-29T14:00:00Z"):
+                fh.write(json.dumps({
+                    "remote_id": "buf-orphan", "account": "sophia",
+                    "metrics": {"impressions": 500, "likes": 5},
+                    "polled_at": polled,
+                }) + "\n")
+        for day in (28, 29):
+            lb.consolidate(now=datetime(2026, 7, day, 23, 0, tzinfo=timezone.utc),
+                           root=tmp_path, store=tmp_path / "desk")
+        assert len(lb._read_jsonl(lb.labels_path(tmp_path))) == 1
+
     def test_latest_poll_wins(self, tmp_path):
         self._seed(tmp_path)
         mp = tmp_path / "data" / "marketing" / "post_metrics.jsonl"
@@ -284,6 +335,49 @@ class TestParentAdjustment:
         assert out[0]["adjusted"] is None
         assert out[0]["adjusted_reason"]
 
+    def test_HARVEST_preserves_an_unobserved_parent_as_None(self, tmp_path):
+        """Through the PRODUCTION path, not a hand-built row. Coercing an
+        unobserved parent to 0.0 buckets it as the SMALLEST parent stratum
+        instead of `unknown`, and harvest wins dedup over the producer's
+        correct None — so the coerced zero would overwrite the truth."""
+        from tests._xgw6_helpers import make_reply_item  # type: ignore
+
+        store = tmp_path / "desk"
+        item = make_reply_item()
+        assert rq.enqueue(item, store)["ok"]
+        for to in ("approved", "claimed", "sent"):
+            rq.transition(item["id"], to, actor="t", root=store, now=NOW,
+                          receipt={"url": "https://x.com/a/status/1"})
+        rq.record_outcome(item["id"], root=store, author_replied=True)
+
+        row = lb.harvest_reply_labels(store=store, root=tmp_path, now=NOW)[0]
+        feats = row["features"]
+        assert feats["parent_engagement"] is None, "never observed — not zero"
+        assert feats["post_age_min"] is None
+        assert feats["score"] is not None, "score IS on the item"
+
+        adjusted = lb.parent_adjust([row], cfg={"learning": {"parent_adjust": {
+            "covariates": ["parent_size"], "samples_per_covariate": 1,
+            "buckets": {"parent_size": [50, 500]}}}})
+        assert adjusted[0]["covariates"]["parent_size"] == "unknown", \
+            "an unobserved parent must not join the small-parent stratum"
+
+    def test_HARVEST_keeps_a_real_reading_when_the_producer_banked_one(self, tmp_path):
+        from tests._xgw6_helpers import make_reply_item  # type: ignore
+
+        store = tmp_path / "desk"
+        item = make_reply_item()
+        item["score_features"] = {"_context": {"engagement": 120.0, "age_min": 9.0,
+                                               "reply_count": 4}}
+        assert rq.enqueue(item, store)["ok"]
+        for to in ("approved", "claimed", "sent"):
+            rq.transition(item["id"], to, actor="t", root=store, now=NOW,
+                          receipt={"url": "https://x.com/a/status/1"})
+        row = lb.harvest_reply_labels(store=store, root=tmp_path, now=NOW)[0]
+        assert row["features"]["parent_engagement"] == 120.0
+        assert row["features"]["post_age_min"] == 9.0
+        assert row["features"]["thread_saturation"] == 4.0
+
 
 # ===========================================================================
 # GATE: weekly admin scorecard — hook family x format x register x account
@@ -310,16 +404,74 @@ class TestScorecard:
         cell = lb.scorecard(rows, now=NOW)["cells"][0]
         assert cell["n"] == 2 and cell["n_labelled"] == 1 and cell["n_null"] == 1
 
-    def test_north_star_is_INACTIVE_at_cold_start(self):
-        """Charter §8: undefined at zero. Not computed-and-hidden — not computed."""
+    def test_north_star_is_NOT_COMPUTED_and_says_what_it_needs(self):
+        """Charter §8: undefined at zero. Not computed-and-hidden — not
+        computed, with both missing inputs named."""
         ns = lb.north_star([_row()], now=NOW)
         assert ns["active"] is False
-        assert "undefined at zero" in ns["reason"]
+        assert "not computed" in ns["reason"]
+        assert len(ns["needs"]) == 2
+
+    def test_north_star_has_no_unreachable_active_branch(self):
+        """Nothing writes a follower series, so an `active: True` branch could
+        never be reached — and dead code that implies a capability reads to the
+        next maintainer as 'this works once you cross the floor'."""
+        rows = [_row(subject=f"r{i}", observed={"impressions": 10, "likes": 1,
+                                                "followers_at_post": 99999})
+                for i in range(30)]
+        ns = lb.north_star(rows, now=NOW)
+        assert ns["active"] is False, "even a fabricated follower count cannot arm it"
+        # ...but the reading IS surfaced, so the day a series lands it shows up.
+        assert ns["observed_followers"]["kelly"] == 99999
+
+    def test_no_production_path_writes_a_follower_count(self):
+        """The premise of the branch removal, pinned. If someone wires a
+        follower series, this fails and north_star gets revisited."""
+        writers = []
+        for rel in ("scripts/marketing_metrics_poll.py",
+                    "engine/marketing/social_publisher.py",
+                    "engine/marketing/labels.py"):
+            src = (ROOT / rel).read_text(encoding="utf-8")
+            for i, line in enumerate(src.splitlines(), 1):
+                if f'"{lb.FOLLOWERS_OBSERVED_KEY}":' in line:
+                    writers.append(f"{rel}:{i}")
+        assert not writers, (
+            "a follower series now exists — north_star can be computed: " + str(writers))
 
     def test_bottleneck_table_is_raw_counts_during_cold_start(self):
         table = lb.bottleneck_table([_row(), _row(account="cici")], now=NOW)
         assert table["basis"] == "raw_counts"
         assert {b["account"] for b in table["accounts"]} == {"kelly", "cici"}
+
+    def test_drafts_and_kills_are_NOT_counted_as_replies_sent(self):
+        """At M0 the true sent count is ZERO. A counter reporting drafts as
+        'replies sent' is a false statement about public activity."""
+        enqueued = _row(subject="q1", surface="reply", label=None,
+                        observed={"stage": "enqueued"})
+        killed = _row(subject="k1", surface="reply", label=None,
+                      observed={"stage": "abstained"})
+        killed["weight"] = 0.0
+        block = lb.bottleneck_table([enqueued, killed], now=NOW)["accounts"][0]
+        assert block["replies_sent"] == 0
+        assert block["replies_enqueued"] == 1
+        assert block["replies_abstained"] == 1
+        assert block["contributions"] == 0, "nothing was published"
+        assert block["unmeasured"] == 0, "a draft is not an unmeasured post"
+
+    def test_a_weight_zero_row_counts_as_a_kill_even_without_a_stage(self):
+        """Belt and braces for a future writer that forgets the stage field."""
+        row = _row(subject="w0", surface="reply", label=None, observed={})
+        row["weight"] = 0.0
+        block = lb.bottleneck_table([row], now=NOW)["accounts"][0]
+        assert block["replies_abstained"] == 1 and block["replies_sent"] == 0
+
+    def test_a_genuinely_sent_reply_counts_as_sent(self):
+        sent = _row(subject="s1", surface="reply", label=1.0,
+                    observed={"author_replied": True, "sent_at": "2026-07-28T15:00:00Z"})
+        block = lb.bottleneck_table([sent], now=NOW)["accounts"][0]
+        assert block["replies_sent"] == 1
+        assert block["author_replies"] == 1
+        assert block["contributions"] == 1
 
 
 # ===========================================================================
@@ -502,21 +654,119 @@ class TestNetworkTripwire:
         assert out["implicated"] == ["cici", "kelly", "sophia"]
         assert out["signals"]["simultaneous_collapse"]["fired"] is True
 
-    def test_lockstep_engagement_across_desks_trips_the_correlation_wire(self):
-        rows = []
-        for i in range(12):
+    def _series(self, per_account_by_day: dict[str, list[float]],
+                posts_by_day: list[int] | None = None) -> list[dict]:
+        """Build label rows with an explicit POST COUNT per day per account.
+
+        The post count is the confound: one nightly content plan drives all
+        seven desks, so their daily post counts move together whatever the
+        audience does.
+        """
+        rows: list[dict] = []
+        days = len(next(iter(per_account_by_day.values())))
+        posts = posts_by_day or [1] * days
+        for i in range(days):
             day = (datetime(2026, 7, 1, tzinfo=timezone.utc)
                    + timedelta(days=i)).strftime("%Y-%m-%d")
-            for acc in ("kelly", "cici", "sophia"):
-                rows.append(_row(subject=f"{acc}{i}", account=acc, day=day,
-                                 observed={"likes": i * 3, "reposts": 0,
-                                           "comments": 0}))
-        out = hm.evaluate_fleet({}, labels=rows, now=NOW)
+            for acc, per_post in per_account_by_day.items():
+                for k in range(posts[i]):
+                    rows.append(_row(subject=f"{acc}-{i}-{k}", account=acc, day=day,
+                                     observed={"likes": per_post[i], "reposts": 0,
+                                               "comments": 0}))
+        return rows
+
+    def test_shared_posting_volume_alone_does_NOT_trip_the_wire(self):
+        """THE CONFOUND, excluded. Every desk posts more on busy days (one
+        nightly plan drives all seven) while per-post engagement is flat and
+        independent. Summed daily engagement would correlate perfectly here and
+        halt the whole fleet; per-post engagement must not."""
+        flat = {
+            "kelly":  [10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0],
+            "cici":   [7.0, 9.0, 6.0, 8.0, 7.0, 9.0, 6.0, 8.0, 7.0, 9.0, 6.0, 8.0],
+            "sophia": [5.0, 4.0, 6.0, 4.0, 5.0, 6.0, 4.0, 5.0, 6.0, 4.0, 5.0, 6.0],
+        }
+        busy = [1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5]   # the shared driver
+        out = hm.evaluate_fleet({}, labels=self._series(flat, busy), now=NOW)
+        assert out["signals"]["cross_account_corr"]["fired"] is False, (
+            "posting volume is our own scheduler, not a platform signal")
+
+    def test_lockstep_PER_POST_engagement_trips_the_correlation_wire(self):
+        """The real signal: post counts differ, but every desk's per-post
+        engagement moves the same way on the same days."""
+        rising = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0]
+        moves_together = {
+            "kelly":  rising,
+            "cici":   [v * 2 for v in rising],
+            "sophia": [v + 3 for v in rising],
+        }
+        # Deliberately UNEQUAL post counts, so the correlation cannot be coming
+        # from a shared volume driver.
+        out = hm.evaluate_fleet({}, labels=self._series(
+            moves_together, [1, 3, 2, 1, 4, 1, 2, 3, 1, 2, 1, 3]), now=NOW)
         assert out["signals"]["cross_account_corr"]["fired"] is True
         assert out["tripped"] is True
 
     def test_spearman_is_none_not_zero_on_a_constant_series(self):
         assert hm.spearman([1, 1, 1, 1], [1, 2, 3, 4]) is None
+
+    def test_the_nightly_only_cadence_is_recorded_as_an_M2_precondition(self):
+        """The reviewer's observation, pinned in both docs: at M2/M3 an account
+        can keep sending for a full day after the signal that should have
+        stopped it."""
+        charter = (ROOT / "research" / "agentic_media"
+                   / "X_GROWTH_UNIFIED_OPERATION_BY_FABLE.md").read_text(encoding="utf-8")
+        runbook = (ROOT / "docs" / "reply_desk_runbook.md").read_text(encoding="utf-8")
+        for text in (charter, runbook):
+            assert "NIGHTLY ONLY" in text or "nightly-only" in text.lower()
+            assert "precondition for any dial flip above M1" in text \
+                or "precondition for any flip above M1" in text
+
+    def test_the_charter_records_what_XG_W6_shipped(self):
+        charter = (ROOT / "research" / "agentic_media"
+                   / "X_GROWTH_UNIFIED_OPERATION_BY_FABLE.md").read_text(encoding="utf-8")
+        assert "docs/blind_identity_eval_prereg.md" in charter
+        assert "GATES_NOTHING" in charter
+        assert "engine/marketing/health_monitor.py" in charter
+
+    def test_the_launch_default_WARNS_rather_than_halting_seven_desks(self, cfg):
+        """`implicated` is every account in any correlated pair, and 3 of 21
+        pairs fires it. Halting on that with no correlation baseline costs
+        seven manual clears on one confounded reading."""
+        assert cfg["learning"]["health"]["network_tripwire"]["action"] == "warn"
+        assert hm.DEFAULTS["network_tripwire"]["action"] == "warn"
+
+    def test_a_trip_at_the_launch_default_writes_NO_halt_rows(self, tmp_path, cfg):
+        lb._write_tracked(lb.labels_path(tmp_path), self._series_collapse())
+        report = hm.run(now=NOW, root=tmp_path, store=tmp_path / "desk", cfg=cfg)
+        # The wire FIRES — it is measuring, which is the point of warn mode...
+        assert report["network_tripwire"]["tripped"] is True
+        assert report["network_tripwire"]["implicated"] == ["cici", "kelly", "sophia"]
+        # ...and halts nothing.
+        assert report["tripped_this_run"] == []
+        assert hm.halted_accounts(tmp_path) == []
+
+    def test_arming_halt_implicated_writes_one_row_per_implicated_account(
+            self, tmp_path, cfg):
+        armed = json.loads(json.dumps(cfg))
+        armed["learning"]["health"]["network_tripwire"]["action"] = "halt_implicated"
+        lb._write_tracked(lb.labels_path(tmp_path), self._series_collapse())
+        report = hm.run(now=NOW, root=tmp_path, store=tmp_path / "desk", cfg=armed)
+        assert sorted(report["tripped_this_run"]) == ["cici", "kelly", "sophia"]
+        # One row per account — never a fleet switch.
+        assert sorted(hm.halted_accounts(tmp_path)) == ["cici", "kelly", "sophia"]
+
+    def _series_collapse(self) -> list[dict]:
+        """Three desks whose engagement collapses on the same day."""
+        rows: list[dict] = []
+        base_day = (NOW - timedelta(days=20)).strftime("%Y-%m-%d")
+        for acc in ("kelly", "cici", "sophia"):
+            rows += [_row(subject=f"{acc}-b{i}", account=acc, day=base_day,
+                          observed={"likes": 100, "reposts": 0, "comments": 0})
+                     for i in range(6)]
+            rows += [_row(subject=f"{acc}-r{i}", account=acc, day="2026-07-27",
+                          observed={"likes": 1, "reposts": 0, "comments": 0})
+                     for i in range(6)]
+        return rows
 
     def test_there_is_no_global_halt_code_path(self):
         """Charter §5: a failure must halt one account without halting seven.
@@ -577,6 +827,86 @@ class TestHaltRegistry:
                         apply_halts=False)
         assert report["apply_halts"] is False
         assert report["tripped_this_run"] == []
+
+    def test_dry_run_STILL_writes_health_json(self, tmp_path, cfg):
+        """apply_halts=False means no HALT-REGISTRY writes, not no report.
+        Operator visibility is the point of the flag."""
+        hm.run(now=NOW, root=tmp_path, store=tmp_path / "desk", cfg=cfg,
+               apply_halts=False)
+        assert hm.health_path(tmp_path).exists()
+        assert hm.load_health(tmp_path)["schema"] == hm.HEALTH_SCHEMA
+        assert not hm.halts_path(tmp_path).exists(), "no registry write"
+
+    def test_a_telemetry_SILENT_desk_still_appears_as_unmeasured(self, tmp_path, cfg):
+        """A desk that posted nothing is the desk most likely to be broken.
+        Deriving the roster from label rows would drop it out entirely, and
+        'missing' and 'healthy' read identically."""
+        lb._write_tracked(lb.labels_path(tmp_path),
+                          [_row(account="kelly", subject="k1")])
+        report = hm.run(now=NOW, root=tmp_path, store=tmp_path / "desk", cfg=cfg)
+        graded = {c["account"] for c in report["accounts"]}
+        assert "kelly" in graded
+        assert len(graded) > 1, "the whole enabled roster must be graded"
+        silent = next(c for c in report["accounts"] if c["account"] != "kelly")
+        assert silent["verdict"] == "unmeasured"
+        assert silent["n_rows"] == 0
+
+    def test_the_roster_comes_from_enabled_desks_in_config(self, cfg):
+        names = hm.roster(cfg, root=ROOT)
+        assert names, "config must yield a desk roster"
+        enabled = {a["id"] for a in (cfg.get("desk_network") or {}).get("accounts") or []
+                   if a.get("enabled")}
+        assert set(names) <= enabled
+
+    def test_the_NIGHTLY_passes_the_config_roster(self):
+        src = (ROOT / "scripts" / "marketing_learning_nightly.py").read_text(
+            encoding="utf-8")
+        assert "_health.roster(cfg" in src
+        assert "accounts=_health.roster" in src
+
+
+class TestNightlyEntryPoint:
+    """The documented CLI semantics have to be the implemented ones."""
+
+    def test_dry_run_does_NOT_advance_the_tracked_ledger(self, tmp_path):
+        import scripts.marketing_learning_nightly as nightly
+
+        lb.record_observation(_row(), root=tmp_path)
+        rc = nightly.main(["--root", str(tmp_path), "--store", str(tmp_path / "desk"),
+                           "--dry-run", "--now", "2026-07-28T23:00:00Z"])
+        assert rc == 0
+        assert not lb.labels_path(tmp_path).exists(), \
+            "--dry-run consolidating is the opposite of a dry run"
+        assert not lb.scorecard_path(tmp_path).exists()
+        # ...but health IS evaluated and reported.
+        assert hm.health_path(tmp_path).exists()
+        assert not hm.halts_path(tmp_path).exists()
+
+    def test_a_real_run_DOES_advance_it(self, tmp_path):
+        import scripts.marketing_learning_nightly as nightly
+
+        lb.record_observation(_row(), root=tmp_path)
+        rc = nightly.main(["--root", str(tmp_path), "--store", str(tmp_path / "desk"),
+                           "--now", "2026-07-28T23:00:00Z"])
+        assert rc == 0
+        assert lb.labels_path(tmp_path).exists()
+        assert lb.scorecard_path(tmp_path).exists()
+
+    def test_an_empty_tree_is_a_clean_exit_zero(self, tmp_path):
+        import scripts.marketing_learning_nightly as nightly
+
+        assert nightly.main(["--root", str(tmp_path),
+                             "--store", str(tmp_path / "desk")]) == 0
+
+    def test_outcome_polling_runs_before_consolidation(self, tmp_path, capsys):
+        import scripts.marketing_learning_nightly as nightly
+
+        nightly.main(["--root", str(tmp_path), "--store", str(tmp_path / "desk"),
+                      "--now", "2026-07-28T23:00:00Z"])
+        out = capsys.readouterr().out
+        assert "reply outcomes" in out
+        assert out.index("reply outcomes") < out.index("labels tracked_before"), \
+            "outcomes must be polled before the labels that read them"
 
 
 # ===========================================================================
@@ -695,6 +1025,37 @@ class TestPerAccountHaltIsolation:
         assert statuses[ids["cici"]] == "posted", "the other desk must be unaffected"
         assert len(posted) == 1 and "Shanghai" in posted[0]
 
+    def test_the_admin_dry_run_preview_hides_a_halted_desk(self, tmp_path):
+        """A halted desk under 'would post' tells the operator the exact
+        opposite of what a live run does."""
+        import scripts.marketing_publisher as pub
+        from engine.marketing import outbox as ob  # noqa: PLC0415
+
+        (tmp_path / "config").mkdir(parents=True, exist_ok=True)
+        (tmp_path / "config" / "marketing.yml").write_text(
+            "sentinel:\n  max_posts_per_account_per_day: 9\n"
+            "publish:\n  backend: buffer\n  min_minutes_between_any_posts: 0\n"
+            "  channels:\n    kelly: \"buf-kelly\"\n    cici: \"buf-cici\"\n",
+            encoding="utf-8")
+        texts = {
+            "kelly": "Credit spreads widened while capex guidance held steady.",
+            "cici": "Shanghai turnover thinned into the close ahead of the print.",
+        }
+        for acc in ("kelly", "cici"):
+            item = ob.make_item(account=acc, kind="macro", text=texts[acc],
+                                as_of="2026-07-28", scheduled_at="immediate",
+                                provenance="content_studio", now=NOW)
+            ob.enqueue(item, root=tmp_path, max_per_account_day=99)
+            ob.transition(item["id"], "approved", actor="t", root=tmp_path)
+
+        hm.trip("kelly", reason="network_tripwire", evidence={}, now=NOW, root=tmp_path)
+        rep = pub.dry_run_report(root=tmp_path, now=NOW)
+
+        assert rep["ok"] is True
+        assert rep["counts"]["skipped_halt"] == 1
+        assert rep["halted_accounts"] == ["kelly"]
+        assert {r["account"] for r in rep["would_post"]} == {"cici"}
+
     def test_post_rail_auto_approve_skips_a_halted_desk(self, tmp_path):
         from engine.marketing import outbox as ob  # noqa: PLC0415
 
@@ -774,13 +1135,51 @@ class TestLearnedRules:
         assert rule["path"] not in lr.active(tmp_path)
 
     def test_rollback_restores_a_previous_value_and_stays_revertible(self, tmp_path):
-        rule = self._rule(revert_present=True, revert_value=["compression"])
-        assert lr.apply_rule(rule, now=NOW, root=tmp_path)["ok"]
-        out = lr.rollback(rule["version_id"], now=NOW, root=tmp_path, actor="chris")
+        """The realistic sequence: a first rule sets the key, a second
+        supersedes it declaring the first's value as its revert."""
+        first = self._rule(value=["compression"])          # revert_present=False
+        assert lr.apply_rule(first, now=NOW, root=tmp_path)["ok"]
+
+        second = self._rule(value=["missing_variable"], revert_present=True,
+                            revert_value=["compression"])
+        assert lr.apply_rule(second, now=NOW, root=tmp_path)["ok"]
+        assert lr.active(tmp_path)[second["path"]]["value"] == ["missing_variable"]
+
+        out = lr.rollback(second["version_id"], now=NOW, root=tmp_path, actor="chris")
         assert out["restored"]["value"] == ["compression"]
-        restored = lr.active(tmp_path)[rule["path"]]
+        restored = lr.active(tmp_path)[second["path"]]
         assert restored["value"] == ["compression"]
         assert lr.validate_rule(restored) == [], "the restored state is itself revertible"
+
+    def test_a_revert_that_lies_about_the_current_state_is_REFUSED(self, tmp_path):
+        """Shape is not truth. A proposer built against a stale read would
+        declare 'nothing was here' on a live path, and rolling that back would
+        DELETE someone else's rule instead of restoring one."""
+        first = self._rule(value=["compression"])
+        assert lr.apply_rule(first, now=NOW, root=tmp_path)["ok"]
+
+        # (a) claims the path is empty when it is not
+        stale = self._rule(value=["reframe"])              # revert_present=False
+        out = lr.apply_rule(stale, now=NOW, root=tmp_path)
+        assert out["ok"] is False
+        assert any("already active" in e for e in out["errors"])
+
+        # (b) claims a previous value that was never there
+        wrong = self._rule(value=["reframe"], revert_present=True,
+                           revert_value=["second_order"])
+        out = lr.apply_rule(wrong, now=NOW, root=tmp_path)
+        assert out["ok"] is False
+        assert any("does not match the active value" in e for e in out["errors"])
+
+        # the live state is untouched by either refusal
+        assert lr.active(tmp_path)[first["path"]]["value"] == ["compression"]
+
+    def test_claiming_a_prior_value_on_an_empty_path_is_REFUSED(self, tmp_path):
+        out = lr.apply_rule(self._rule(revert_present=True, revert_value=["x"]),
+                            now=NOW, root=tmp_path)
+        assert out["ok"] is False
+        assert any("nothing is active" in e for e in out["errors"])
+        assert lr.active(tmp_path) == {}
 
     def test_an_invalid_rule_never_reaches_the_store(self, tmp_path, capsys):
         bad = self._rule()
@@ -869,11 +1268,40 @@ class TestBlindIdentityPrereg:
             per[item["truth"]] = per.get(item["truth"], 0) + 1
         assert per == {"kelly": 5, "cici": 5}
 
-    def test_blinding_strips_handles_but_keeps_cashtags(self):
+    def test_blinding_strips_handles_but_keeps_GENERIC_cashtags(self):
         blinded = bie.blind("@kelly here: $NVDA capex is the tell #macro",
                             persona="kelly")
         assert "@kelly" not in blinded and "#macro" not in blinded
-        assert "$NVDA" in blinded, "cashtags are market content, not an identity tell"
+        assert "$NVDA" in blinded, "a generic market cashtag is substance, not a tell"
+
+    def test_blinding_strips_ACCOUNT_SPECIFIC_cashtags(self):
+        """'the desk that always posts $FXI' is a byline in cashtag form."""
+        blinded = bie.blind("$FXI slipped while $SPX held.", persona="cici")
+        assert "$FXI" not in blinded
+        assert "$SPX" in blinded
+
+    def test_blinding_strips_franchise_titles_and_signature_emoji(self):
+        blinded = bie.blind("Before New York Wakes 🍵 — breadth narrowed.",
+                            persona="cici")
+        assert "Before New York Wakes" not in blinded
+        assert "🍵" not in blinded
+        assert "breadth narrowed" in blinded
+
+    def test_the_registered_strip_list_and_the_harness_agree(self):
+        """The defect this pair exists to catch: a rule stated in the prereg
+        that the harness never implemented."""
+        rule = bie.PREREG["holdout"]["blinding"]
+        assert "STRIP" in rule and "KEEP" in rule
+        assert "$FXI" in bie.PREREG["holdout"]["account_specific_cashtags"]["cici"]
+        assert bie.account_cashtags("cici") >= {"FXI", "KWEB"}
+        assert bie.account_cashtags("kelly") == set()
+
+    def test_the_amendment_is_recorded_with_its_justification(self):
+        """Amending a prereg is only honest before the data exists."""
+        amendment = bie.PREREG["amendments"][-1]
+        assert amendment["at"] == "2026-07-28"
+        assert "NEVER RUN" in amendment["legitimate_because"]
+        assert bie.PREREG["status"] == "not_run"
 
     def test_wilson_lower_bound_never_goes_below_zero(self):
         lo, hi = bie.wilson_interval(0, 5)
@@ -904,6 +1332,56 @@ class TestBlindIdentityPrereg:
         assert out["status"] == "above_chance_but_uneven"
         assert out["identities_at_or_below_chance"] == ["cici"]
         assert out["gates"] == []
+
+    def test_an_UNANSWERED_identity_cannot_license_the_fleet_claim(self):
+        """Absence of evidence is not evidence of absence. An identity the
+        rater skipped must not drop out of the weakness check."""
+        result = {
+            "accuracy": 0.9, "ci95": [0.8, 0.95],
+            "per_persona": {
+                "kelly": {"n": 30, "above_chance": True},
+                "cici": {"n": 0, "above_chance": False},
+            },
+        }
+        out = bie.verdict(result)
+        assert out["status"] == "unmeasured"
+        assert out["identities_below_answer_floor"] == ["cici"]
+        assert out["gates"] == []
+
+    def test_a_thinly_answered_identity_also_blocks(self):
+        result = {
+            "accuracy": 0.9, "ci95": [0.8, 0.95],
+            "per_persona": {
+                "kelly": {"n": 30, "above_chance": True},
+                "cici": {"n": 5, "above_chance": True},
+            },
+        }
+        assert bie.verdict(result)["status"] == "unmeasured"
+
+    def test_per_persona_intervals_run_the_REGISTERED_bonferroni_z(self):
+        """The harness must not quietly apply a more lenient test than its own
+        pre-registration."""
+        assert bie.PREREG["bonferroni_z"] == pytest.approx(2.638, abs=0.001)
+        holdout = bie.build_holdout(
+            [{"id": f"k{i}", "persona": "kelly", "text": f"post {i}"}
+             for i in range(30)], n_per_persona=30)
+        ids = [i["sample_id"] for i in holdout["items"]]
+        # 24 of 30 correct — comfortably above chance at z=1.96, and the point
+        # is that the CORRECTED interval is the one reported.
+        responses = {sid: ("kelly" if i < 24 else "cici")
+                     for i, sid in enumerate(ids)}
+        block = bie.grade(responses, holdout)["per_persona"]["kelly"]
+        assert block["z"] == pytest.approx(2.638, abs=0.001)
+        assert "ci95_bonferroni" in block
+        wide = bie.wilson_interval(24, 30, 2.638)
+        narrow = bie.wilson_interval(24, 30, 1.96)
+        assert wide[0] < narrow[0], "the corrected interval must be the wider one"
+        assert block["ci95_bonferroni"] == list(wide)
+
+    def test_min_answered_floor_is_registered_in_both_doc_and_code(self):
+        text = self.DOC.read_text(encoding="utf-8")
+        assert str(bie.PREREG["min_answered_per_persona"]) in text
+        assert str(bie.PREREG["bonferroni_z"]) in text
 
 
 # ===========================================================================
@@ -1025,9 +1503,9 @@ class TestAdminPanels:
         from admin import marketing as adm
 
         rule = lr.make_rule(kind="timing", path="reply_desk.window",
-                            value=12, revert_present=True, revert_value=15,
+                            value=12, revert_present=False,
                             evidence={"n": 40}, now=NOW)
-        lr.apply_rule(rule, now=NOW, root=tmp_path)
+        assert lr.apply_rule(rule, now=NOW, root=tmp_path)["ok"]
         lb.record_observation(_row(), root=tmp_path)
         lb.consolidate(now=NOW, root=tmp_path, store=tmp_path / "desk")
 
@@ -1039,14 +1517,20 @@ class TestAdminPanels:
     def test_rollback_is_reachable_from_the_panel(self, tmp_path):
         from admin import marketing as adm
 
-        rule = lr.make_rule(kind="timing", path="reply_desk.window",
-                            value=12, revert_present=True, revert_value=15,
-                            evidence={"n": 40}, now=NOW)
-        lr.apply_rule(rule, now=NOW, root=tmp_path)
-        out = adm.rollback_learned_rule(rule["version_id"], actor="chris",
-                                        root=tmp_path)
+        first = lr.make_rule(kind="timing", path="reply_desk.window", value=15,
+                             revert_present=False, evidence={"n": 40}, now=NOW)
+        assert lr.apply_rule(first, now=NOW, root=tmp_path)["ok"]
+        second = lr.make_rule(kind="timing", path="reply_desk.window", value=12,
+                              revert_present=True, revert_value=15,
+                              evidence={"n": 40}, now=NOW)
+        assert lr.apply_rule(second, now=NOW, root=tmp_path)["ok"]
+
+        out = adm.rollback_learned_rule(second["version_id"], actor="chris",
+                                        root=tmp_path, push=False)
         assert out["ok"] is True
-        assert lr.active(tmp_path)[rule["path"]]["value"] == 15
+        assert lr.active(tmp_path)[second["path"]]["value"] == 15
+        assert out["pushed"] is False
+        assert "locally" in out["note"].lower()
 
     def test_every_panel_and_action_has_a_route(self):
         """A panel with no route is a panel nobody can open (#3871)."""
@@ -1068,6 +1552,15 @@ class TestAdminPanels:
         # ...and both views are in the nav, or nothing can open them.
         assert '["marketing_health", "Desk Health"]' in app_js
         assert '["marketing_learning", "Learning"]' in app_js
+
+    def test_the_new_buttons_use_data_attributes_not_inline_onclick(self):
+        """esc() is an HTML escaper; an onclick body is a JS-STRING context.
+        An id carrying a quote would break out of the argument."""
+        app_js = (ROOT / "admin" / "static" / "app.js").read_text(encoding="utf-8")
+        assert 'onclick="mhClearHalt' not in app_js
+        assert 'onclick="mlRollback' not in app_js
+        assert 'data-clear-halt="' in app_js and 'data-rollback="' in app_js
+        assert '[data-clear-halt]' in app_js and '[data-rollback]' in app_js
 
     def test_there_is_no_route_that_HALTS_an_account(self):
         """A halt is a consequence of measured telemetry, not a button."""

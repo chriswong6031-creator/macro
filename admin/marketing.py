@@ -2868,14 +2868,22 @@ def _clear_halt_via_api(aid: str, actor: str, note) -> dict:
             "note": f"Halt on {aid} cleared on main. Both rails see it on the next pull."}
 
 
-def rollback_learned_rule(version_id: str, actor: str = "admin", root=None) -> dict:
+_RULES_ACTIVE_REL = Path("data/marketing/learning/rules_active.json")
+
+
+def rollback_learned_rule(version_id: str, actor: str = "admin", root=None,
+                          push: bool = True) -> dict:
     """Undo one applied learned rule. The rollback path charter §8 requires.
 
-    Local-checkout only for now, and the return says so: the learned-rule store
-    is nightly-advanced, so an unpushed rollback is RE-APPLIED by the next
-    nightly rather than merely reverted on pull. Consumption is dark by default
-    (``learning.learned_rules.enabled``), which bounds the blast radius of that
-    gap until the deployed path lands.
+    Same persistence posture as ``clear_halt``, and for the same reason: the
+    learned-rule store is a TRACKED file on a checkout the VPS ``git pull``s
+    every three minutes, so a rollback written locally and never pushed is
+    simply undone. Worse than the halt case — the store is nightly-advanced, so
+    an unpushed rollback is RE-APPLIED rather than merely reverted.
+
+    Deployed admin therefore commits through the GitHub Contents API; a local
+    checkout commits+pushes the one file; and a rollback that did not reach main
+    says so instead of reporting a success it did not achieve.
     """
     try:
         from datetime import datetime, timezone  # noqa: PLC0415
@@ -2887,13 +2895,98 @@ def rollback_learned_rule(version_id: str, actor: str = "admin", root=None) -> d
             return {"ok": False, "error": "version_id required"}
         who = str(actor or "").strip()[:100] or "admin"
         repo = Path(root) if root is not None else _default_root()
+
+        from . import settings  # noqa: PLC0415
+        if settings.deployed():
+            return _rollback_rule_via_api(vid, who)
+
         res = _rules.rollback(vid, now=datetime.now(timezone.utc), root=repo, actor=who)
-        if res.get("ok"):
-            res["note"] = (
-                "Rolled back locally and logged. Commit data/marketing/learning/ "
-                "so the nightly does not re-apply the superseded rule."
-            )
+        if not res.get("ok"):
+            return res
+
+        if push:
+            try:
+                from . import gitops  # noqa: PLC0415
+                git_res = gitops.commit_paths(
+                    [str(_RULES_ACTIVE_REL).replace("\\", "/"),
+                     "data/marketing/learning/rules_log.jsonl"],
+                    message=f"admin: roll back learned rule {vid} (by {who})",
+                    push=True, confirm=True)
+                res["pushed"] = bool(git_res.get("pushed"))
+                res["git"] = git_res
+                res["note"] = (
+                    "Rolled back and pushed."
+                    if git_res.get("pushed") else
+                    "Rolled back LOCALLY ONLY. The store is nightly-advanced, so "
+                    "until this reaches main the next nightly RE-APPLIES the rule — "
+                    + str(git_res.get("warning") or git_res.get("error")
+                          or "push not available from this checkout") + "."
+                )
+            except Exception as gexc:  # noqa: BLE001
+                res["pushed"] = False
+                res["note"] = ("Rolled back locally; the commit/push step failed "
+                               f"({gexc}). The next nightly will re-apply the rule.")
+        else:
+            res["pushed"] = False
+            res["note"] = "Rolled back locally (push skipped)."
         return res
     except Exception as exc:  # noqa: BLE001
         log.warning("marketing.rollback_learned_rule failed: %s", exc)
         return {"ok": False, "error": str(exc)}
+
+
+def _rollback_rule_via_api(vid: str, actor: str) -> dict:
+    """Deployed-mode rollback: read rules_active.json off main, undo ONE
+    version, commit it straight back. Read-modify-write against the ON-MAIN
+    copy so a rollback never drops another path's rule."""
+    from datetime import datetime, timezone  # noqa: PLC0415
+
+    from . import github_api  # noqa: PLC0415
+
+    rel = str(_RULES_ACTIVE_REL).replace("\\", "/")
+    gf = github_api.get_file(rel)
+    if not gf.get("ok"):
+        return {"ok": False, "error": f"could not read {rel} on main: {gf.get('error')}"}
+    blob: dict = {}
+    if gf.get("content"):
+        try:
+            parsed = json.loads(gf["content"])
+            if isinstance(parsed, dict):
+                blob = parsed
+        except Exception:  # noqa: BLE001
+            blob = {}
+    rules = blob.get("rules")
+    if not isinstance(rules, dict):
+        return {"ok": False, "error": "unknown_or_inactive_version", "version_id": vid}
+
+    match = next(((k, v) for k, v in rules.items()
+                  if isinstance(v, dict) and str(v.get("version_id")) == vid), None)
+    if match is None:
+        return {"ok": False, "error": "unknown_or_inactive_version", "version_id": vid}
+
+    key, entry = match
+    ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    revert = entry.get("revert") or {}
+    if revert.get("present"):
+        # Re-apply the previous value AS A RULE, so the active set stays a
+        # complete description of current state and remains rollback-able.
+        rules[key] = {**entry, "value": revert.get("value"),
+                      "revert": {"present": True, "value": entry.get("value")},
+                      "state": "active", "applied_at": ts, "applied_by": actor,
+                      "rolled_back_from": vid}
+        outcome = {"path": key, "action": "restored", "value": revert.get("value")}
+    else:
+        rules.pop(key, None)
+        outcome = {"path": key, "action": "deleted", "value": None}
+    blob["rules"] = rules
+    blob["updated_at"] = ts
+
+    pf = github_api.put_file(
+        rel, json.dumps(blob, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        f"admin: roll back learned rule {vid} (by {actor})", sha=gf.get("sha"))
+    if not pf.get("ok"):
+        return {"ok": False, "error": f"commit failed: {pf.get('error')}"}
+    return {"ok": True, "version_id": vid, "restored": outcome, "pushed": True,
+            "via": "github_api", "commit_sha": pf.get("commit_sha"),
+            "note": f"Rolled back on main. {key} is now "
+                    f"{outcome['action']} for the next nightly."}

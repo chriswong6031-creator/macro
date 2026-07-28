@@ -1,7 +1,10 @@
 """scripts/marketing_learning_nightly.py — the XG-W6 nightly step.
 
-ONE nightly step, three ordered actions:
+ONE nightly step, four ordered actions:
 
+    0. ``reply_producer.poll_reply_outcomes``
+                               — poll twitterapi.io for outcomes on replies we
+                                 SENT, inside the existing reply sub-budget.
     1. ``labels.consolidate``  — advance the tracked labels ledger + scorecard
                                  from the LIVE metrics poll, the reply desk's
                                  host store, and the gitignored intraday spool.
@@ -9,8 +12,10 @@ ONE nightly step, three ordered actions:
                                  tripwire, write health.json, trip halts.
     3. report                  — one JSON blob for the nightly log.
 
-**Order is load-bearing.** The health card is a READ of the labels store, so
-running it first would grade yesterday's corpus and call it today's health.
+**Order is load-bearing, twice.** Outcomes are polled BEFORE consolidation or
+every reply label lags a night behind its own evidence. Health runs AFTER
+consolidation because the health card is a READ of the labels store, so grading
+first would grade yesterday's corpus and call it today's health.
 
 **Nightly is the sole advancer.** Everything under
 ``data/marketing/learning/`` is written here and only here (plus the operator's
@@ -19,11 +24,15 @@ touch ``data/marketing/learning_host/`` and nothing else.
 
 DARK-SAFE. With no telemetry, no reply store and no host spool this is a clean
 no-op that writes an empty-but-valid ledger and exits 0 — most runners will
-never have anything to consolidate.
+never have anything to consolidate. At M0 nothing has sent, so the outcome poll
+bills nothing.
 
 Usage:
     python -m scripts.marketing_learning_nightly
-    python -m scripts.marketing_learning_nightly --dry-run     # evaluate, write nothing
+    # --dry-run: EVALUATE ONLY. No outcome network calls, no labels
+    # consolidation, no halt-registry writes. health.json is still written —
+    # operator visibility is the point of the flag, not a side effect.
+    python -m scripts.marketing_learning_nightly --dry-run
     python -m scripts.marketing_learning_nightly --no-halts    # consolidate + evaluate,
                                                                # never trip a halt
     MARKETING_LEARNING_ENABLED=0 python -m scripts.marketing_learning_nightly  # skip
@@ -45,6 +54,19 @@ log = logging.getLogger("marketing_learning_nightly")
 
 def _code_root() -> Path:
     return Path(__file__).resolve().parent.parent
+
+
+def _load_press_cfg(root: Path) -> dict:
+    """config/press_sources.yml — carries the twitterapi.io sub-budget the
+    outcome poll bills against. Fail-soft: absent means the lane is off."""
+    try:
+        import yaml  # noqa: PLC0415
+
+        return yaml.safe_load((root / "config" / "press_sources.yml").read_text(
+            encoding="utf-8")) or {}
+    except Exception as exc:  # noqa: BLE001
+        log.warning("press config load failed (%s) — outcome polling stays off", exc)
+        return {}
 
 
 def _load_cfg(root: Path) -> dict:
@@ -80,6 +102,7 @@ def main(argv: list[str] | None = None) -> int:
 
     from engine.marketing import health_monitor as _health  # noqa: PLC0415
     from engine.marketing import labels as _labels  # noqa: PLC0415
+    from engine.marketing import reply_producer as _reply_producer  # noqa: PLC0415
 
     root = Path(args.root) if args.root else _code_root()
     cfg = _load_cfg(root)
@@ -92,8 +115,39 @@ def main(argv: list[str] | None = None) -> int:
         except ValueError:
             log.warning("bad --now %r; using wall clock", args.now)
 
-    # 1. Labels first — health reads what this writes.
-    consolidated = _labels.consolidate(now=now, root=root, store=args.store, cfg=cfg)
+    # 0. Poll outcomes on replies we SENT, before consolidating — otherwise the
+    #    labels harvested a line below would carry last night's outcomes and
+    #    every reply label would lag a full day behind the evidence.
+    #
+    #    At M0 the sent set is empty, so this bills nothing and returns an
+    #    honest no-op. It is wired anyway because reply labels have no other
+    #    source: reply_discovery.poll_outcomes and reply_queue.record_outcome
+    #    both shipped in XG-W4 with no caller between them, which left every
+    #    reply label permanently null and the parent adjustment inert.
+    outcomes = _reply_producer.poll_reply_outcomes(
+        cfg=cfg, press_cfg=_load_press_cfg(root), root=root, store=args.store,
+        now=now, offline=bool(args.dry_run),
+    )
+    print(
+        f"marketing_learning: reply outcomes sent_in_window={outcomes.get('sent', 0)} "
+        f"polled={outcomes.get('polled', 0)} recorded={outcomes.get('recorded', 0)} "
+        f"author_replied={outcomes.get('author_replied', 0)} "
+        f"spend={outcomes.get('spend') or {}}"
+        + (f" — {outcomes['note']}" if outcomes.get("note") else ""),
+        flush=True,
+    )
+
+    # 1. Labels — health reads what this writes.
+    if args.dry_run:
+        # The documented semantics: --dry-run EVALUATES, it does not advance a
+        # tracked ledger. Calling consolidate() here would write labels.jsonl and
+        # scorecard.json, which is the opposite of a dry run.
+        consolidated = {"skipped": "dry_run"}
+        print("::notice title=learning::--dry-run — labels NOT consolidated "
+              "(no tracked-ledger writes); health is evaluated below and the "
+              "halt registry is left alone", flush=True)
+    else:
+        consolidated = _labels.consolidate(now=now, root=root, store=args.store, cfg=cfg)
     if consolidated.get("skipped"):
         # Bare print at line start: a logger prefixes the annotation and GitHub
         # silently drops it (house law).
@@ -119,7 +173,12 @@ def main(argv: list[str] | None = None) -> int:
 
     # 2. Health + tripwire.
     apply_halts = not (args.dry_run or args.no_halts)
+    # The roster comes from CONFIG, not from whoever happens to have telemetry:
+    # a desk that posted nothing is the desk most worth a look, and deriving the
+    # roster from label rows would drop it out of health.json entirely instead
+    # of reporting "unmeasured".
     report = _health.run(now=now, root=root, store=args.store, cfg=cfg,
+                         accounts=_health.roster(cfg, root=root) or None,
                          apply_halts=apply_halts)
     print(
         f"marketing_learning: health accounts={len(report.get('accounts') or [])} "

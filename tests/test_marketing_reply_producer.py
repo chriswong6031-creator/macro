@@ -492,6 +492,152 @@ class TestSpend:
 
 
 # ===========================================================================
+# GATE: reply labels HAVE a data source (poll_outcomes is finally wired)
+# ===========================================================================
+class _OutcomeProvider:
+    """Stand-in for the discovery provider's telemetry read."""
+
+    def __init__(self, replies_by_status: dict[str, list[dict]]) -> None:
+        self._replies = replies_by_status
+        self.calls: list[list[str]] = []
+
+    def poll_outcomes(self, *, session_state, status_ids, offline=False,
+                      wire_spend_usd=None, now=None):
+        self.calls.append(list(status_ids))
+        ns = session_state.setdefault("reply_discovery", {})
+        month = (now or NOW).strftime("%Y-%m")
+        spend = ns.setdefault("spend", {}).setdefault(
+            month, {"requests": 0, "items": 0, "usd": 0.0})
+        out = []
+        for sid in status_ids:
+            raw = self._replies.get(sid, [])
+            spend["requests"] += 1
+            spend["items"] += len(raw)
+            spend["usd"] = round(spend["usd"] + 0.00015, 6)
+            out.append({"status_id": sid, "replies": len(raw), "raw": raw})
+        return out
+
+
+def _send(store, *, account="kelly", thread="1900000000000000900",
+          parent="somequant", our_status="1900000000000000999"):
+    """Drive one item all the way to `sent` with a receipt, as the desk does."""
+    from tests._xgw6_helpers import make_reply_item  # type: ignore
+
+    item = make_reply_item(account=account, thread=thread)
+    item["parent_author"] = parent
+    assert rq.enqueue(item, store)["ok"]
+    rq.transition(item["id"], "approved", actor="t", root=store, now=NOW)
+    rq.transition(item["id"], "claimed", actor="t", root=store, now=NOW)
+    rq.transition(item["id"], "sent", actor="desk", root=store, now=NOW,
+                  receipt={"url": f"https://x.com/us/status/{our_status}"})
+    return item
+
+
+class TestOutcomePolling:
+    def test_M0_is_an_honest_no_op_that_bills_nothing(self, armed_cfg, repo, store):
+        """The expected state today: nothing has sent, so nothing is polled."""
+        prov = _OutcomeProvider({})
+        out = rp.poll_reply_outcomes(cfg=armed_cfg, press_cfg={}, root=repo,
+                                     store=store, now=NOW, provider=prov)
+        assert out["sent"] == 0 and out["polled"] == 0 and out["recorded"] == 0
+        assert prov.calls == [], "an empty sent set must not reach the provider"
+        assert "M0" in (out["note"] or "")
+
+    def test_author_replyback_is_recorded_against_the_item(self, armed_cfg, repo, store):
+        item = _send(store, parent="somequant")
+        prov = _OutcomeProvider({"1900000000000000999": [
+            {"author": {"userName": "randoposter"}},
+            {"author": {"userName": "SomeQuant"}},      # case-insensitive match
+        ]})
+        out = rp.poll_reply_outcomes(cfg=armed_cfg, press_cfg={}, root=repo,
+                                     store=store, now=NOW, provider=prov)
+        assert out["sent"] == 1 and out["polled"] == 1
+        assert out["recorded"] == 1 and out["author_replied"] == 1
+        assert rq.outcomes(store)[item["id"]]["author_replied"] is True
+
+    def test_silence_from_the_author_records_a_real_false(self, armed_cfg, repo, store):
+        item = _send(store, parent="somequant")
+        prov = _OutcomeProvider({"1900000000000000999": [
+            {"author": {"userName": "randoposter"}}]})
+        rp.poll_reply_outcomes(cfg=armed_cfg, press_cfg={}, root=repo,
+                               store=store, now=NOW, provider=prov)
+        assert rq.outcomes(store)[item["id"]]["author_replied"] is False
+
+    def test_an_unknown_parent_handle_stays_NULL_not_a_false_negative(
+            self, armed_cfg, repo, store):
+        """"they did not answer" and "we do not know who they are" are
+        different facts."""
+        item = _send(store, parent="")
+        prov = _OutcomeProvider({"1900000000000000999": []})
+        out = rp.poll_reply_outcomes(cfg=armed_cfg, press_cfg={}, root=repo,
+                                     store=store, now=NOW, provider=prov)
+        assert out["recorded"] == 0
+        assert rq.outcomes(store).get(item["id"], {}).get("author_replied") is None
+
+    def test_the_outcome_becomes_a_REAL_reply_label(self, armed_cfg, repo, store):
+        """End to end: the poll is what turns a permanently-null reply label
+        into a measured one."""
+        item = _send(store, parent="somequant")
+        before = lb.harvest_reply_labels(store=store, root=repo, now=NOW)[0]
+        assert before["label"] is None
+        assert before["adjusted_reason"] == "outcome_not_polled"
+
+        prov = _OutcomeProvider({"1900000000000000999": [
+            {"author": {"userName": "somequant"}}]})
+        rp.poll_reply_outcomes(cfg=armed_cfg, press_cfg={}, root=repo,
+                               store=store, now=NOW, provider=prov)
+
+        after = lb.harvest_reply_labels(store=store, root=repo, now=NOW)[0]
+        assert after["label"] == 1.0
+        assert after["subject_id"] == item["id"]
+
+    def test_spend_rides_the_shared_counter_and_persists(self, armed_cfg, repo, store):
+        from engine.marketing import reply_discovery as rd  # noqa: PLC0415
+
+        _send(store)
+        prov = _OutcomeProvider({"1900000000000000999": []})
+        out = rp.poll_reply_outcomes(cfg=armed_cfg, press_cfg={}, root=repo,
+                                     store=store, now=NOW, provider=prov)
+        assert out["spend"]["requests"] == 1
+        month = NOW.strftime("%Y-%m")
+        assert rd.load_state(store)["reply_discovery"]["spend"][month]["requests"] == 1
+
+    def test_offline_makes_no_call_and_no_spend(self, armed_cfg, repo, store):
+        from engine.marketing import reply_discovery as rd  # noqa: PLC0415
+
+        _send(store)
+        prov = _OutcomeProvider({"1900000000000000999": []})
+        out = rp.poll_reply_outcomes(cfg=armed_cfg, press_cfg={}, root=repo,
+                                     store=store, now=NOW, offline=True, provider=prov)
+        assert prov.calls == [] and out["polled"] == 0
+        assert rd.load_state(store) == {}
+
+    def test_sends_outside_the_lookback_window_are_not_repolled(self, armed_cfg,
+                                                                repo, store):
+        _send(store)
+        prov = _OutcomeProvider({"1900000000000000999": []})
+        later = NOW + timedelta(days=30)
+        out = rp.poll_reply_outcomes(cfg=armed_cfg, press_cfg={}, root=repo,
+                                     store=store, now=later, provider=prov)
+        assert out["sent"] == 0 and prov.calls == []
+
+    def test_the_NIGHTLY_is_the_production_call_site(self):
+        """A wired module with no scheduled caller is vacuous green."""
+        src = (ROOT / "scripts" / "marketing_learning_nightly.py").read_text(
+            encoding="utf-8")
+        assert "poll_reply_outcomes(" in src
+        tree = ast.parse(src)
+        main = next(n for n in ast.walk(tree)
+                    if isinstance(n, ast.FunctionDef) and n.name == "main")
+        called = {getattr(c.func, "attr", "") for c in ast.walk(main)
+                  if isinstance(c, ast.Call)}
+        assert "poll_reply_outcomes" in called
+        assert "consolidate" in called, "and it must run BEFORE consolidation"
+        assert src.index("poll_reply_outcomes(") < src.index("_labels.consolidate("), \
+            "outcomes must be polled before the labels that read them"
+
+
+# ===========================================================================
 # GATE: learned-rule consumption is real but dark
 # ===========================================================================
 class TestLearnedRuleConsumption:

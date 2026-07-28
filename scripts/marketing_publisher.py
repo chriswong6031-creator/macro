@@ -1663,6 +1663,17 @@ def dry_run_report(root=None, *, account: str | None = None,
         items_by_id = state["items"]
         statuses = state["status"]
 
+        # The halt gate main() applies at post time. The admin preview MUST
+        # apply it too: a halted desk showing up under "would post" tells the
+        # operator the exact opposite of the truth, and the preview's whole job
+        # is to say what a live run would do.
+        try:
+            from engine.marketing import health_monitor as _health  # noqa: PLC0415
+
+            _halts = _health.load_halts(r)
+        except Exception:  # noqa: BLE001
+            _halts = {}
+
         def _acct_ok(it: dict) -> bool:
             return account is None or it.get("account") == account
 
@@ -1685,7 +1696,7 @@ def dry_run_report(root=None, *, account: str | None = None,
                 account=account, posted_today=posted_today,
                 validate_postable=validate_postable, root=r,
                 allowed_kinds=(None if auto_on else allowed_kinds),
-                cap_for=_cap_for,
+                cap_for=_cap_for, halted=set(_halts),
             )
             for iid in ids:
                 it = items_by_id.get(iid, {})
@@ -1703,6 +1714,7 @@ def dry_run_report(root=None, *, account: str | None = None,
         would_post: list[dict] = []
         quarantine: list[dict] = []
         skipped_cap = skipped_channel = skipped_floor = deferred_immediate = 0
+        skipped_halt = 0
         budget = dict(posted_today)
         floor_min = _floor_minutes_cfg(pub_cfg)
         jitter_max = _jitter_max_cfg(pub_cfg)
@@ -1712,6 +1724,10 @@ def dry_run_report(root=None, *, account: str | None = None,
             acct = it.get("account", "")
             text = it.get("text", "") or ""
             link = it.get("link")
+            # Halt first, exactly as main() orders it.
+            if acct in _halts:
+                skipped_halt += 1
+                continue
             problems = validate_postable(text, link, _links_allowed_for(pub_cfg, acct))
             if problems:
                 quarantine.append({"id": iid, "account": acct, "reasons": problems})
@@ -1765,6 +1781,7 @@ def dry_run_report(root=None, *, account: str | None = None,
                 "skipped_no_channel": skipped_channel,
                 "skipped_floor": skipped_floor,
                 "deferred_immediate": deferred_immediate,
+                "skipped_halt": skipped_halt,
                 "stuck_posting": len(stuck),
                 "would_auto_approve": len(would_auto),
             },
@@ -1772,6 +1789,7 @@ def dry_run_report(root=None, *, account: str | None = None,
             "quarantine": quarantine,
             "would_auto_approve": would_auto,
             "stuck_posting": stuck,
+            "halted_accounts": sorted(_halts),
         }
     except Exception as exc:  # noqa: BLE001
         log.warning("dry_run_report failed: %s", exc)

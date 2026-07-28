@@ -5532,7 +5532,7 @@ RENDER.marketing_health = async () => {
           <strong>${esc(h.account)}</strong>
           <div class="muted small">${esc(h.reason || "")} · since ${esc(h.since || "?")}</div>
         </div>
-        <button class="btn" onclick="mhClearHalt('${esc(h.account)}', this)">Clear halt</button>
+        <button class="btn" data-clear-halt="${esc(h.account)}">Clear halt</button>
       </div>`).join("")}
       <div class="muted small">Clearing writes to the tracked registry and commits it.
         Until that reaches main, the VPS's next pull restores the halt.</div>
@@ -5577,6 +5577,14 @@ RENDER.marketing_health = async () => {
     </section>`;
 
   v.innerHTML = head + haltBlock + wireBlock + accountBlock + bieBlock;
+
+  // data- attribute + listener, not inline onclick: esc() is an HTML escaper
+  // and an onclick body is a JS-STRING context, so an account id containing a
+  // quote or backslash would break out of the argument. In an attribute value
+  // esc() is the right escaper, and dataset gives the value back verbatim.
+  v.querySelectorAll("[data-clear-halt]").forEach(btn => {
+    btn.addEventListener("click", () => mhClearHalt(btn.dataset.clearHalt, btn));
+  });
 };
 
 async function mhClearHalt(account, btn) {
@@ -5642,14 +5650,18 @@ RENDER.marketing_learning = async () => {
   const bottBlock = `<section class="card">
       <h3>Bottleneck (raw counts)</h3>
       <div class="muted small">${esc(ns.active ? "north-star active" : (ns.reason || ""))}</div>
-      <table><thead><tr><th>account</th><th>contributions</th>
+      <table><thead><tr><th>account</th><th>published</th>
         <th>measured</th><th>impressions</th><th>engagements</th>
-        <th>replies sent</th><th>author replies</th></tr></thead><tbody>
+        <th>replies sent</th><th>drafts queued</th><th>drafts killed</th>
+        <th>author replies</th></tr></thead><tbody>
       ${bott.map(b => `<tr><td>${esc(b.account)}</td><td>${esc(String(b.contributions))}</td>
         <td>${esc(String(b.measured))}</td><td>${esc(String(b.impressions))}</td>
         <td>${esc(String(b.engagements))}</td><td>${esc(String(b.replies_sent))}</td>
+        <td class="muted">${esc(String(b.replies_enqueued || 0))}</td>
+        <td class="muted">${esc(String(b.replies_abstained || 0))}</td>
         <td>${esc(String(b.author_replies))}</td></tr>`).join("")}
       </tbody></table>
+      <div class="muted small">${esc((card.bottleneck || {}).counter_note || "")}</div>
     </section>`;
 
   const grid = `<section class="card">
@@ -5686,12 +5698,18 @@ RENDER.marketing_learning = async () => {
           <div class="muted small">${esc(r.path || "")} · ${esc(r.at || "")} · ${esc(r.actor || "")}</div>
         </div>
         ${r.action === "apply"
-          ? `<button class="btn" onclick="mlRollback('${esc(r.version_id)}', this)">Roll back</button>`
+          ? `<button class="btn" data-rollback="${esc(r.version_id)}">Roll back</button>`
           : ""}
       </div>`).join("") : `<div class="muted small">no rules learned yet.</div>`}
     </section>`;
 
   v.innerHTML = head + counts + bottBlock + grid + rulesBlock;
+
+  // See the note in marketing_health: attribute + listener, never an inline
+  // onclick built by an HTML escaper.
+  v.querySelectorAll("[data-rollback]").forEach(btn => {
+    btn.addEventListener("click", () => mlRollback(btn.dataset.rollback, btn));
+  });
 };
 
 async function mlRollback(versionId, btn) {
