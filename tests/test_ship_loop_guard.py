@@ -291,12 +291,225 @@ def test_needs_render_matches_the_real_merges_it_was_written_for(tmp_path):
     assert GUARD._needs_render(ROOT, "a7e8c15b30b", "HEAD", "HEAD") is True
 
 
+def _public_lane_repo(tmp_path: Path) -> Path:
+    """A fixture repo carrying the real pair enumerator AND both real workflows.
+
+    Copied rather than stubbed, for the same reason `_paired_repo` copies the
+    sync gate: the point of the #3834 split is that the guard READS the two
+    workflows instead of transcribing them, so the test has to exercise the very
+    files CI and GitHub read.
+    """
+    repo = _paired_repo(tmp_path)
+    workflows = repo / ".github" / "workflows"
+    workflows.mkdir(parents=True, exist_ok=True)
+    for name in ("render.yml", "public-render.yml"):
+        shutil.copy(ROOT / ".github" / "workflows" / name, workflows / name)
+    _git(repo, "add", ".github")
+    _git(repo, "commit", "-m", "chore: both render lanes")
+    return repo
+
+
+def test_a_public_surface_merge_owes_the_fast_lane_not_the_heavy_render(tmp_path):
+    """THE false gate the #3834 split created. PR #3897's exact shape.
+
+    render.yml's push filter negates `templates/plans.html.j2`, so a
+    push-triggered render.yml run for this merge CANNOT EXIST — and the guard
+    demanded one forever. Observed 2026-07-28: merged as 7fe17018,
+    public-render.yml run 30349907107 concluded success on that exact sha and
+    pushed d4ac971df7a, https://www.mastermind-x.com/plans.html was browser-
+    verified live in production, and Stop still returned `render_pending`.
+    """
+    repo = _public_lane_repo(tmp_path)
+    start_head = _git(repo, "rev-parse", "HEAD")
+    merged = _commit_files(
+        repo,
+        {
+            "templates/plans.html.j2": "{% extends 'seo_base.html.j2' %}\n",
+            "site/plans.html": "<h1>Plans</h1>\n",
+        },
+        "feat(plans): rebuild the pricing page",
+    )
+    assert GUARD._needs_render(repo, merged, start_head, merged) is False, (
+        "render.yml excludes this path, so demanding its run blocks forever"
+    )
+    assert GUARD._needs_public_render(repo, merged, start_head, merged) is True, (
+        "the fast lane owns it, and its green run is what satisfies the gate"
+    )
+
+
+def test_every_surface_render_yml_negates_is_owned_by_the_public_lane(tmp_path):
+    """The whole negation list, path by path — no lane may be left unowned.
+
+    A path render.yml excludes and public-render.yml never claims is a dead
+    wire: nothing renders it, and a guard that exempted it would be fail-OPEN.
+    """
+    repo = _public_lane_repo(tmp_path)
+    start_head = _git(repo, "rev-parse", "HEAD")
+    for rel in (
+        "templates/plans.html.j2",
+        "templates/support.html.j2",
+        "templates/unsubscribe.html.j2",
+        "templates/seo_base.html.j2",
+        "templates/_public_nav.html.j2",
+        "templates/_public_footer.html.j2",
+        "templates/_public_chrome_css.html.j2",
+        "templates/_public_chrome_js.html.j2",
+        "scripts/build_public_pages.py",
+        "config/plans.yml",
+    ):
+        sha = _commit(repo, rel, f"# {rel}\n", f"feat: {rel}")
+        assert GUARD._needs_render(repo, sha, start_head, sha) is False, rel
+        assert GUARD._needs_public_render(repo, sha, start_head, sha) is True, rel
+
+
+def test_the_heavy_lane_keeps_everything_the_split_left_it(tmp_path):
+    """The fix must not hand the market renderer's own work to the fast lane."""
+    repo = _public_lane_repo(tmp_path)
+    start_head = _git(repo, "rev-parse", "HEAD")
+    for rel in (
+        "templates/macro.html.j2",
+        "templates/intl.html.j2",
+        "templates/fonts/x.woff2",
+        "scripts/build_site.py",
+        "scripts/optimize_assets.py",
+        "lib/pages.py",
+    ):
+        sha = _commit(repo, rel, f"# {rel}\n", f"fix: {rel}")
+        assert GUARD._needs_render(repo, sha, start_head, sha) is True, rel
+        assert GUARD._needs_public_render(repo, sha, start_head, sha) is False, rel
+
+
+def test_the_paired_plain_copy_exemption_outranks_the_public_lane(tmp_path):
+    """#3671's ruling survives the split: a paired asset owes NEITHER lane.
+
+    `templates/theme.css` is public-render territory now, but the operator
+    already decided this shape needs no lane at all — the site/ twin is committed
+    straight to main and the VPS pulls it within 3 minutes, and the only thing
+    forfeited is the `?v=` re-stamp. Routing it to the fast lane instead would
+    quietly re-impose the wait that ruling removed.
+    """
+    repo = _public_lane_repo(tmp_path)
+    start_head = _git(repo, "rev-parse", "HEAD")
+    paired = _commit_files(
+        repo,
+        {"templates/theme.css": "body{color:#111}\n", "site/theme.css": "body{color:#111}\n"},
+        "fix(theme): restyle",
+    )
+    assert GUARD._required_render_lanes(repo, paired, start_head, paired) == set()
+
+    # One-sided is still one-sided: the live bytes have not moved, so the lane
+    # that owns the path is owed a run.
+    one_sided = _commit(repo, "templates/theme.css", "body{color:#222}\n", "fix: source only")
+    assert GUARD._required_render_lanes(repo, one_sided, start_head, one_sided) == {
+        "public-render"
+    }
+
+
+def test_a_mixed_merge_owes_both_lanes(tmp_path):
+    """One diff can straddle the split, and each half must still be proved."""
+    repo = _public_lane_repo(tmp_path)
+    start_head = _git(repo, "rev-parse", "HEAD")
+    mixed = _commit_files(
+        repo,
+        {"templates/plans.html.j2": "{{ x }}\n", "templates/macro.html.j2": "{{ y }}\n"},
+        "feat: pricing + macro",
+    )
+    assert GUARD._required_render_lanes(repo, mixed, start_head, mixed) == {
+        "render",
+        "public-render",
+    }
+
+
+def test_an_unreadable_workflow_pair_falls_back_to_demanding_the_heavy_render(tmp_path):
+    """Fail CLOSED, exactly like the pair list: ignorance is not permission.
+
+    With neither filter parseable the ownership test goes silent and the
+    pre-split behaviour returns — every templates/ path demands render.yml.
+    """
+    assert GUARD._render_lane_filters(tmp_path) == ([], [])
+    assert GUARD._public_render_owns("templates/plans.html.j2", ([], [])) is False
+    assert GUARD._render_lanes_for_paths(
+        ["templates/plans.html.j2"], set(), ([], [])
+    ) == {"render"}
+    # A path only ONE side vouches for is not a split either.
+    assert GUARD._public_render_owns("templates/plans.html.j2", ([], ["templates/*.j2"])) is False
+
+
+def test_a_push_filter_is_read_in_order_because_the_last_match_wins(tmp_path):
+    """GitHub lets a later pattern overturn an earlier one, and so must this.
+
+    "Any negation excludes" happens to agree with render.yml today, but only
+    because no positive pattern currently follows a negation of the same path.
+    """
+    patterns = ["templates/**", "!templates/*.js", "templates/keep.js"]
+    assert GUARD._path_filter_includes("templates/keep.js", patterns) is True
+    assert GUARD._path_filter_includes("templates/other.js", patterns) is False
+    assert GUARD._path_filter_includes("templates/page.html.j2", patterns) is True
+    # `*` does not cross a slash; `**` does.
+    assert GUARD._path_filter_includes("templates/sub/other.js", ["templates/*.js"]) is False
+    assert GUARD._path_filter_includes("templates/sub/other.js", ["templates/**"]) is True
+    assert GUARD._path_filter_includes("scripts/research/build_x.py", ["scripts/build_*.py"]) is False
+
+
+def test_the_push_paths_scanner_reads_the_real_filter_and_fails_closed(tmp_path):
+    """Parsed from the workflow, never transcribed — and silent when unsure."""
+    heavy, public = GUARD._render_lane_filters(ROOT)
+    assert heavy[0] == "templates/**", "order matters; the scanner must preserve it"
+    assert "!templates/plans.html.j2" in heavy
+    assert "!scripts/build_public_pages.py" in heavy
+    assert "config/plans.yml" in public and "templates/plans.html.j2" in public
+    assert not any(p.startswith("!") for p in public), "the fast lane claims, it does not negate"
+
+    # Every negated path must be claimed by the other lane — the same no-dead-wire
+    # invariant tests/test_public_render_fastlane.py pins from the workflow side.
+    for pattern in (p[1:] for p in heavy if p.startswith("!")):
+        assert pattern in public, f"render.yml drops {pattern} and nothing picks it up"
+
+    # Unreadable, and a workflow with no push trigger at all, both yield nothing.
+    assert GUARD._workflow_push_paths(tmp_path / "absent.yml") == []
+    no_push = tmp_path / "no-push.yml"
+    no_push.write_text("name: x\non:\n  workflow_dispatch: {}\njobs: {}\n", encoding="utf-8")
+    assert GUARD._workflow_push_paths(no_push) == []
+    flow = tmp_path / "flow.yml"
+    flow.write_text(
+        "name: x\non:\n  push:\n    paths: [templates/**]\njobs: {}\n", encoding="utf-8"
+    )
+    assert GUARD._workflow_push_paths(flow) == [], "a flow list is not guessed at"
+
+
+def test_needs_public_render_matches_the_real_merge_it_was_written_for():
+    """Replayed against this repo's own history, not a fixture.
+
+    7fe17018 = #3897 (templates/plans.html.j2 + site/plans.html) — the merge that
+    returned `render_pending` forever while its public-render run was green and
+    the page was live.
+    """
+    if subprocess.run(
+        ("git", "cat-file", "-e", "7fe17018^{commit}"), cwd=ROOT, check=False
+    ).returncode:
+        pytest.skip("7fe17018 not present (shallow clone)")
+    assert GUARD._required_render_lanes(ROOT, "7fe17018", "HEAD", "HEAD") == {"public-render"}
+
+
 @pytest.fixture(autouse=True)
 def _clear_token_cache(monkeypatch):
     """The token is memoised per process; tests must not inherit each other's."""
     monkeypatch.setattr(GUARD, "_TOKEN_CACHE", None, raising=False)
     for key in ("GH_TOKEN", "GITHUB_TOKEN"):
         monkeypatch.delenv(key, raising=False)
+
+
+@pytest.fixture(autouse=True)
+def _clear_render_lane_cache():
+    """`_stop` asks the lane question once per lane, so the answer is memoised.
+
+    One hook process only ever sees one merge, but this module reuses a single
+    imported guard across every test — so the memo is dropped between them
+    rather than left to make a later fixture's answer depend on an earlier one's.
+    """
+    GUARD._RENDER_LANE_CACHE.clear()
+    yield
+    GUARD._RENDER_LANE_CACHE.clear()
 
 
 def _fake_gh(returncode: int, stdout: str, calls: list):
@@ -1223,13 +1436,14 @@ def _render_run(run_id: int, head_sha: str, event: str, created_at: str, status:
     }
 
 
-def _fake_render_api(monkeypatch, *, exact: list, branch: list) -> list:
+def _fake_render_api(monkeypatch, *, exact: list, branch: list, workflow: str = "render.yml") -> list:
     """Serve the two render listings by query string and record every URL fetched."""
     urls: list = []
+    endpoint = f"actions/workflows/{workflow}/runs"
 
     def fake_get_json(url: str):
         urls.append(url)
-        assert _RENDER_ENDPOINT in url, f"unexpected endpoint: {url}"
+        assert endpoint in url, f"unexpected endpoint: {url}"
         if "head_sha=" in url:
             return {"workflow_runs": exact}
         assert "branch=main" in url, f"neither an exact-sha nor a main listing: {url}"
@@ -1378,6 +1592,100 @@ def test_only_a_push_lane_render_after_the_merge_can_cover_it(monkeypatch, tmp_p
 def test_no_render_run_at_all_is_still_the_just_merged_race(monkeypatch, tmp_path):
     """Nothing has started yet must stay pending — the widened scan must not turn it red."""
     repo, _parent, merge, _descendant = _merge_train(tmp_path)
+    _fake_render_api(monkeypatch, exact=[], branch=[])
+    assert GUARD._render_status(repo, "acme", "widgets", merge, _MERGED_AT) == (
+        "pending",
+        "The required render workflow has not started yet.",
+    )
+
+
+_PUBLIC_WORKFLOW = "public-render.yml"
+
+
+def test_a_green_public_render_run_satisfies_the_gate(monkeypatch, tmp_path):
+    """The other half of the #3897 fix: the fast lane's own run is proof.
+
+    Run 30349907107 concluded success at the merge sha, pushed d4ac971df7a and
+    put plans.html live — the guard just had no way to look at it. One API call,
+    against public-render.yml's endpoint and no other.
+    """
+    repo, _parent, merge, _descendant = _merge_train(tmp_path)
+    urls = _fake_render_api(
+        monkeypatch,
+        exact=[
+            _render_run(
+                30349907107, merge, "push", "2026-07-28T14:41:00Z", "completed", "success"
+            )
+        ],
+        branch=[],
+        workflow=_PUBLIC_WORKFLOW,
+    )
+    assert GUARD._render_status(
+        repo, "acme", "widgets", merge, _MERGED_AT, _PUBLIC_WORKFLOW
+    ) == ("success", "")
+    assert len(urls) == 1 and _PUBLIC_WORKFLOW in urls[0], urls
+
+
+def test_a_superseded_public_render_is_covered_by_the_run_that_replaced_it(
+    monkeypatch, tmp_path
+):
+    """The fast lane runs `cancel-in-progress: TRUE`, so supersession is routine.
+
+    A killed run can never re-conclude, so exact-sha-only would be unsatisfiable
+    here for the same reason it was on the heavy lane — with an even shorter
+    fuse, since ANY newer push kills the running job rather than only a pending
+    one. Coverage still holds: every run checks out `ref: main` and rebuilds the
+    public surfaces from scratch, so the survivor's tree contains what it killed.
+    """
+    repo, _parent, merge, descendant = _merge_train(tmp_path)
+    _fake_render_api(
+        monkeypatch,
+        exact=[_render_run(1, merge, "push", "2026-07-28T14:41:00Z", "completed", "cancelled")],
+        branch=[
+            _render_run(2, descendant, "push", "2026-07-28T14:49:00Z", "completed", "success")
+        ],
+        workflow=_PUBLIC_WORKFLOW,
+    )
+    assert GUARD._render_status(
+        repo, "acme", "widgets", merge, _MERGED_AT, _PUBLIC_WORKFLOW
+    ) == ("success", "")
+
+
+def test_every_public_lane_verdict_names_the_public_lane(monkeypatch, tmp_path):
+    """A verdict that says "render" sends the operator to the wrong workflow."""
+    repo, _parent, merge, _descendant = _merge_train(tmp_path)
+
+    _fake_render_api(monkeypatch, exact=[], branch=[], workflow=_PUBLIC_WORKFLOW)
+    assert GUARD._render_status(
+        repo, "acme", "widgets", merge, _MERGED_AT, _PUBLIC_WORKFLOW
+    ) == ("pending", "The required public-render workflow has not started yet.")
+
+    _fake_render_api(
+        monkeypatch,
+        exact=[_render_run(5, merge, "push", "2026-07-28T14:41:00Z", "completed", "failure")],
+        branch=[],
+        workflow=_PUBLIC_WORKFLOW,
+    )
+    status, detail = GUARD._render_status(
+        repo, "acme", "widgets", merge, _MERGED_AT, _PUBLIC_WORKFLOW
+    )
+    assert status == "failed"
+    assert "gh run rerun 5" in detail and "public-render.yml on main" in detail
+    assert "scope=all" not in detail, "the fast lane has no scope union to dispatch"
+
+    _fake_render_api(
+        monkeypatch,
+        exact=[_render_run(6, merge, "push", "2026-07-28T14:41:00Z", "in_progress")],
+        branch=[],
+        workflow=_PUBLIC_WORKFLOW,
+    )
+    status, detail = GUARD._render_status(
+        repo, "acme", "widgets", merge, _MERGED_AT, _PUBLIC_WORKFLOW
+    )
+    assert status == "deferred"
+    assert "Public-render run 6" in detail and "public fast lane" in detail
+
+    # And the heavy lane's own wording is untouched by the parameterisation.
     _fake_render_api(monkeypatch, exact=[], branch=[])
     assert GUARD._render_status(repo, "acme", "widgets", merge, _MERGED_AT) == (
         "pending",
@@ -1622,6 +1930,119 @@ def test_stop_reads_a_persisted_render_deferral_and_still_notes_it(monkeypatch, 
     lines = [json.loads(line) for line in capsys.readouterr().out.splitlines() if line.strip()]
     assert not any(line.get("decision") == "block" for line in lines), lines
     assert any(note in str(line.get("systemMessage") or "") for line in lines), lines
+
+
+def _public_lane_session(tmp_path: Path) -> tuple[Path, Path, str, dict]:
+    """A session whose merged commit is #3897's shape, in a repo with both lanes.
+
+    Nothing about the lane decision is stubbed here — the guard reads the real
+    workflows out of the fixture and diffs the real merge — so this is the
+    end-to-end statement of the fix rather than a restatement of its unit tests.
+    """
+    repo = _public_lane_repo(tmp_path)
+    start_head = _git(repo, "rev-parse", "HEAD")
+    _git(repo, "checkout", "-b", "claude/plans")
+    merge_sha = _commit_files(
+        repo,
+        {
+            "templates/plans.html.j2": "{% extends 'seo_base.html.j2' %}\n",
+            "site/plans.html": "<h1>Plans</h1>\n",
+        },
+        "feat(plans): rebuild the pricing page",
+    )
+    state_path = tmp_path / "state.json"
+    GUARD._save(
+        state_path,
+        {
+            "root": str(repo),
+            "start_head": start_head,
+            "baseline": GUARD._fingerprint(repo),
+            "last_blocker": "",
+            "blocker_count": 0,
+        },
+    )
+    pull = {
+        "number": 3897,
+        "head": {"sha": merge_sha, "ref": "claude/plans"},
+        "merge_commit_sha": merge_sha,
+        "merged_at": "2026-07-28T14:38:00Z",
+    }
+    return repo, state_path, merge_sha, pull
+
+
+def test_stop_clears_a_public_only_merge_on_the_fast_lane_alone(monkeypatch, tmp_path, capsys):
+    """THE regression, end to end. A green public-render run must release Stop.
+
+    And the heavy lane must not even be ASKED: render.yml's push filter excludes
+    every path in this merge, so polling it can only ever return the
+    `render_pending` that blocked PR #3897 forever — which is why the router
+    below fails the test outright if that endpoint is touched.
+    """
+    repo, state_path, merge_sha, pull = _public_lane_session(tmp_path)
+    seen: list[str] = []
+
+    monkeypatch.setattr(GUARD, "_github_slug", lambda _root: ("acme", "widgets"))
+    monkeypatch.setattr(GUARD, "_latest_merged_pr", lambda *_a: pull)
+    monkeypatch.setattr(GUARD, "_check_ci", lambda *_a, **_k: (True, ""))
+    monkeypatch.setattr(GUARD, "_open_pull", lambda *_a: None)
+
+    def router(url: str):
+        if "actions/workflows/" in url:
+            seen.append(url)
+        if "actions/workflows/render.yml/runs" in url:
+            pytest.fail("the heavy lane can never have a run for this merge")
+        if "actions/workflows/public-render.yml/runs" in url:
+            return {
+                "workflow_runs": [
+                    _render_run(
+                        30349907107,
+                        merge_sha,
+                        "push",
+                        "2026-07-28T14:41:00Z",
+                        "completed",
+                        "success",
+                    )
+                ]
+            }
+        return {"commit": _git(repo, "rev-parse", "HEAD")}
+
+    monkeypatch.setattr(GUARD, "_get_json", router)
+    _stub_remote_git(monkeypatch)
+
+    GUARD._stop(repo, state_path, {"hook_event_name": "Stop"})
+
+    lines = [json.loads(line) for line in capsys.readouterr().out.splitlines() if line.strip()]
+    assert not any(line.get("decision") == "block" for line in lines), lines
+    assert seen and all("public-render.yml" in url for url in seen), seen
+
+
+def test_stop_still_blocks_when_the_public_lane_never_fired(monkeypatch, tmp_path, capsys):
+    """The fix widens what SATISFIES the gate; it must not delete the gate.
+
+    A dead wire on the fast lane is still a missing render, and `pending` still
+    blocks — the one verdict that means no run exists at all.
+    """
+    repo, state_path, _merge_sha, pull = _public_lane_session(tmp_path)
+
+    monkeypatch.setattr(GUARD, "_github_slug", lambda _root: ("acme", "widgets"))
+    monkeypatch.setattr(GUARD, "_latest_merged_pr", lambda *_a: pull)
+    monkeypatch.setattr(GUARD, "_check_ci", lambda *_a, **_k: (True, ""))
+    monkeypatch.setattr(GUARD, "_open_pull", lambda *_a: None)
+    monkeypatch.setattr(
+        GUARD,
+        "_get_json",
+        lambda url: {"workflow_runs": []}
+        if "actions/workflows/" in url
+        else {"commit": _git(repo, "rev-parse", "HEAD")},
+    )
+    _stub_remote_git(monkeypatch)
+
+    GUARD._stop(repo, state_path, {"hook_event_name": "Stop"})
+
+    lines = [json.loads(line) for line in capsys.readouterr().out.splitlines() if line.strip()]
+    blocks = [line for line in lines if line.get("decision") == "block"]
+    assert blocks, lines
+    assert "public-render workflow has not started" in blocks[0]["reason"]
 
 
 def test_stop_folds_ci_and_render_notes_into_one_system_message(monkeypatch, tmp_path, capsys):
