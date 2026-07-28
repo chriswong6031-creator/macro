@@ -222,6 +222,166 @@ def test_pair_set_comes_from_the_guard_that_enforces_it(tmp_path):
     assert _paired_page_names(tmp_path / "site") == {"index.html"}  # no .css, no unshipped
 
 
+# ---- hand-authored SOURCE pages are excluded (lib.pages.HAND_AUTHORED_PAGES) --
+# The flagship product pages stopped being generator output on 2026-07-28: their
+# committed bytes are hand-edited source. This sweep would otherwise lift their
+# large inline <style> into a hash file on the NEXT render after merge, silently
+# rewriting a human's file and leaving them holding a <link> into the derived
+# tree — the same objection that excluded the plain-copy pairs, arriving by a
+# different route (a sub-dir page, so the pair's basename rule cannot reach it).
+
+
+def _flagship_rels() -> list:
+    from lib.pages import HAND_AUTHORED_PAGES
+    return sorted(HAND_AUTHORED_PAGES)
+
+
+def test_hand_authored_pages_keep_their_inline_style(tmp_path):
+    site = tmp_path / "site"
+    page = f"<html><head><style>{_BIG}</style></head><body>hi</body></html>"
+    for rel in _flagship_rels():
+        dst = site / rel
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        dst.write_text(page, encoding="utf-8")
+    (site / "macro.html").write_text(page, encoding="utf-8")
+
+    assert externalize(site) == 1  # macro only — the flagships are not counted
+    for rel in _flagship_rels():
+        text = (site / rel).read_text()
+        assert f"<style>{_BIG}</style>" in text, f"{rel} was externalized"
+        assert 'href="../assets/css/' not in text, f"{rel} gained a hash <link>"
+    assert 'href="assets/css/' in (site / "macro.html").read_text()
+
+
+def test_hand_authored_page_bytes_are_untouched(tmp_path):
+    """Not merely 'still inline' — byte-identical. The sweep writes through
+    write_page(), which would also inject the data-base shim into a page whose
+    author deliberately laid out its <head>."""
+    site = tmp_path / "site"
+    page = f"<html><head><style>{_BIG}</style></head><body>hi</body></html>"
+    rel = _flagship_rels()[0]
+    dst = site / rel
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    dst.write_text(page, encoding="utf-8")
+    before = dst.read_bytes()
+
+    externalize(site)
+
+    assert dst.read_bytes() == before, f"{rel} was rewritten by the sweep"
+
+
+def test_hand_authored_page_mints_no_unprunable_orphan(tmp_path):
+    """The pair lesson, re-applied: a skipped page must not leave a hash file
+    behind that no page links and _prune_orphans can never reclaim."""
+    site = tmp_path / "site"
+    rel = _flagship_rels()[0]
+    dst = site / rel
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    dst.write_text(f"<html><head><style>{_BIG}</style></head><body></body></html>",
+                   encoding="utf-8")
+
+    externalize(site)
+
+    css_dir = site / "assets" / "css"
+    assert not css_dir.is_dir() or not list(css_dir.glob("*.css"))
+
+
+def test_hash_file_linked_only_by_hand_authored_pages_is_not_pruned(tmp_path):
+    """The regression the exclusion nearly shipped.
+
+    The committed flagships link site/assets/css/43592e0a.css TODAY — they were
+    generator output until this carve-out. `referenced` is what _prune_orphans
+    spares, so if excluding a page also dropped it from the reference scan, the
+    very first render after merge would delete a stylesheet three live pages
+    still link and ship them unstyled. Excluded means not-rewritten, never
+    not-read.
+    """
+    site = tmp_path / "site"
+    css = site / "assets" / "css"
+    css.mkdir(parents=True)
+    sheet = css / "43592e0a.css"
+    sheet.write_text(".flagship{color:red}", encoding="utf-8")
+    for rel in _flagship_rels():
+        dst = site / rel
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        dst.write_text(
+            '<html><head><link rel="stylesheet" '
+            'href="../assets/css/43592e0a.css?v=43592e0a"></head></html>',
+            encoding="utf-8")
+
+    externalize(site)
+
+    assert sheet.exists(), (
+        "a stylesheet still linked by the hand-authored pages was pruned — "
+        "excluded pages must stay in the reference scan"
+    )
+
+
+def test_ordinary_subdir_product_page_is_still_swept(tmp_path):
+    """The exclusion is a path allowlist, not a /products/ blanket: any other
+    page under products/ is ordinary output and must still be externalized."""
+    site = tmp_path / "site"
+    ordinary = site / "products" / "index.html"
+    ordinary.parent.mkdir(parents=True, exist_ok=True)
+    ordinary.write_text(f"<head><style>{_BIG}</style></head><body></body>",
+                        encoding="utf-8")
+
+    externalize(site)
+
+    assert 'href="../assets/css/' in ordinary.read_text()
+
+
+def test_exclusion_list_is_shared_with_the_estate_builder():
+    """One source of truth: the sweep and build_free_content read the SAME set.
+
+    A duplicated literal is what this pins against — the sweep skipping a page
+    the builder still writes (or vice versa) is silent in both directions.
+    build_free_content is imported lazily HERE, not in the sweep, precisely
+    because it pulls jinja2 and the CI pack that runs this file does not
+    install it; skip rather than fail if that is the venv we are in.
+    """
+    import pytest
+
+    from lib.pages import HAND_AUTHORED_PAGES
+
+    pytest.importorskip("jinja2")
+    pytest.importorskip("yaml")
+    from scripts.build_free_content import HAND_AUTHORED
+
+    assert HAND_AUTHORED is HAND_AUTHORED_PAGES, (
+        "build_free_content.HAND_AUTHORED must BE lib.pages.HAND_AUTHORED_PAGES, "
+        "not a copy of it"
+    )
+
+
+def test_sweep_module_imports_without_jinja2(tmp_path):
+    """The sweep must not acquire build_free_content's jinja2 dependency.
+
+    tests/test_externalize_css.py runs in ci-main-heartbeat's
+    template-site-sync pack, which installs only `pyyaml pytest`. A module-level
+    `from scripts.build_free_content import HAND_AUTHORED` here would fail
+    collection of this whole file in that venv while staying green locally —
+    the exact shape the pack's own jinja2 comment was written about.
+    """
+    import subprocess
+
+    root = Path(__file__).resolve().parent.parent
+    probe = (
+        "import sys;"
+        "sys.modules['jinja2'] = None;"
+        "import scripts.externalize_css as m;"
+        "print(sorted(m.HAND_AUTHORED_PAGES))"
+    )
+    proc = subprocess.run(
+        [sys.executable, "-c", probe], cwd=root,
+        capture_output=True, text=True,
+    )
+    assert proc.returncode == 0, (
+        f"externalize_css cannot import without jinja2:\n{proc.stderr}"
+    )
+    assert "products/market-terminal.html" in proc.stdout
+
+
 # ---------------------------------------------------------------------------
 # committed-tree tripwire: a paired stylesheet must never be linked by zero pages
 # ---------------------------------------------------------------------------

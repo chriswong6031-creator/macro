@@ -17,7 +17,13 @@ a CSS change) are pruned each run — scoped strictly to site/assets/css/*.css.
 
 The two plain-copy PAIRS (index.html, chat.html) are deliberately EXCLUDED — see
 _paired_page_names. Their CSS is worth externalizing on the numbers, but not by
-this sweep: it would move the source of truth out of templates/.
+this sweep: it would move the source of truth out of templates/. The same
+exclusion covers lib.pages.HAND_AUTHORED_PAGES (the flagship product pages),
+whose committed bytes are hand-edited source for exactly the same reason.
+
+Excluded pages are still READ for the reference scan even though they are never
+rewritten — _prune_orphans reclaims a hash file the moment no page links it, so
+an excluded page that legitimately links one must keep it alive.
 
 Runs after all builders + inject_data_base, before optimize_assets. Idempotent +
 never raises. Core rewrite: lib.pages.externalize_css_text.
@@ -35,7 +41,12 @@ from typing import Optional, Set
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from lib.pages import dbase_prefix, externalize_css_text, write_page  # noqa: E402
+from lib.pages import (  # noqa: E402
+    HAND_AUTHORED_PAGES,
+    dbase_prefix,
+    externalize_css_text,
+    write_page,
+)
 
 log = logging.getLogger("externalize_css")
 
@@ -97,13 +108,25 @@ def externalize(site_dir: Path) -> int:
     # Pairs always ship at the site ROOT, so match on the full path — a sub-dir
     # page that happens to be named index.html is a normal page and IS swept.
     skip = {site_dir / name for name in _paired_page_names(site_dir)}
+    # Hand-authored SOURCE pages (lib.pages.HAND_AUTHORED_PAGES) get the same
+    # treatment for the same reason as the pairs: their committed bytes are the
+    # source, so lifting a large inline <style> out of them would mutate a
+    # hand-edited file on every render and leave the human holding a <link> to a
+    # hash-named file in the derived tree. These rels are site-root-anchored.
+    skip |= {site_dir / rel for rel in HAND_AUTHORED_PAGES}
 
     for html in sorted(site_dir.rglob("*.html")):
-        if html in skip:
-            continue
         try:
             text = html.read_text(encoding="utf-8")
         except (OSError, UnicodeDecodeError):
+            continue
+        if html in skip:
+            # NOT rewritten — but still READ, because a hash file is an orphan
+            # only when NO shipped page links it. The flagship product pages
+            # currently link assets/css/43592e0a.css; dropping them from this
+            # scan would hand _prune_orphans a stylesheet that three live pages
+            # still reference and it would delete it on the next render.
+            referenced.update(_REF_RE.findall(text))
             continue
         prefix = dbase_prefix(html)  # "" at root, "../" per sub-dir (matches the shim)
 
@@ -137,8 +160,9 @@ def externalize(site_dir: Path) -> int:
                 log.warning("write page %s failed: %s", html.name, e)
 
     pruned = _prune_orphans(css_root, referenced)
-    log.info("externalized CSS on %d page(s); skipped %d plain-copy pair(s); "
-             "pruned %d orphan file(s)", pages_changed, len(skip), pruned)
+    log.info("externalized CSS on %d page(s); skipped %d source page(s) "
+             "(plain-copy pairs + hand-authored); pruned %d orphan file(s)",
+             pages_changed, len(skip), pruned)
     return pages_changed
 
 

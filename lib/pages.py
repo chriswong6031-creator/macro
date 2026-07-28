@@ -28,6 +28,25 @@ log = logging.getLogger("pages")
 DBASE_MARKER = "data-dbase"
 _HEAD_RE = re.compile(r"<head[^>]*>", re.IGNORECASE)
 
+# Site-relative pages whose BYTES are hand-authored source, not build output
+# (operator-ordered flagship redesign 2026-07-28) — like site/index.html, the
+# committed file IS the source and no generator derives it.
+# Lives HERE, not in the builder, because two independent consumers need the
+# same fact and neither can import the other cheaply: scripts/build_free_content
+# (skips the write; exempts them from its drift + D5 orphan checks, re-exported
+# there as HAND_AUTHORED) and scripts/externalize_css (skips the post-render
+# inline-<style> lift that would otherwise rewrite committed bytes every render).
+# A module-level import of build_free_content from the sweep is NOT an option:
+# it pulls jinja2, which the ci-main-heartbeat template-site-sync pack that runs
+# tests/test_externalize_css.py deliberately does not install.
+# Paths are posix, anchored at the site root — a sub-directory page that merely
+# shares a basename is an ordinary page and stays swept.
+HAND_AUTHORED_PAGES: frozenset[str] = frozenset({
+    "products/market-terminal.html",
+    "products/mastermind-ai.html",
+    "products/market-dashboards.html",
+})
+
 # --- asset optimization (content-hash cache-busting + defer) -----------------
 # A post-render sweep (scripts/optimize_assets.py) rewrites every local .js/.css
 # reference to carry a ?v=<content-hash> query and marks non-critical <script>s
