@@ -26,7 +26,7 @@ answers three of five is a website section, not an ad — round 1's exact failur
 Dimensions are verified programmatically by the renderer, not by eye. A 540–720px
 "card" is a mockup, not a creative.
 
-**AG-3 — Mobile legibility floor.** On a 1080-wide canvas: headline ≥ 84px, subline ≥ 40px,
+**AG-3 — Mobile legibility floor.** On a 1080-wide canvas: headline ≥ 84px (a locked phrase that cannot break into ≤19-character lines takes a third line rather than a smaller size; 76px is the absolute floor), subline ≥ 40px,
 feature chips ≥ 27px, offer text ≥ 30px, micro-footer ≥ 22px. Verify at 25% zoom — that is
 feed scale. If any load-bearing text needs squinting at 25%, it fails.
 

@@ -59,7 +59,7 @@ Asset files (inline via `<img src="../assets/….svg" style="width:100%;display:
 ## price — paper+violet · 1080x1350 · 1080x1080
 
 - pill: `● THE VALUE CASE`
-- H: `A $24,000 desk.<br><span class="grad">Yours for $2.50 a day.</span>`
+- H: `A $24,000 desk.<br><span class="grad">Yours: $2.50 a day.</span>`
 - sub: `Signals, 13F flow, options tape, terminal and AI analyst — the full desk, $75 a month.`
 - stage: LEFT behind (tilt-l): dark compare card (`.card` with inline
   `background:var(--plate);color:#fff;border-color:#26324e`, width 430): kick (inline
@@ -90,7 +90,7 @@ Asset files (inline via `<img src="../assets/….svg" style="width:100%;display:
 ## rotation — paper · 1080x1350 · 1080x1080
 
 - pill: `● THEME ROTATION`
-- H: `See the rotation before<br>your watchlist does.`
+- H (3-line staircase): `See the rotation<br>before your<br>watchlist does.`
 - sub: `34 themes across four plain lanes — watch money change lanes as leadership turns.`
 - stage: FRONT: wide lanes board (`w-lanes` variant, width 640, lanes in 2×2 grid via inline
   `display:grid;grid-template-columns:1fr 1fr;gap:4px 22px` on a wrapper): BUY NOW: Big
@@ -192,7 +192,7 @@ Asset files (inline via `<img src="../assets/….svg" style="width:100%;display:
 
 - `.ad--dark` + candle field.
 - pill: `● THE TERMINAL`
-- H: `A real terminal,<br>in your browser. Free.`
+- H: `A real terminal,<br>in your browser. Free.` — set `font-size:84px` inline on the headline for 4:5/square (22-char line 2 needs it).
 - sub: `Institutional-grade charting with an AI analyst on call — nothing to install.`
 - stage: ONE hero: `w-term` frame (width 960 on 4:5, centered): mac dots bar + url pill
   `app.mastermind-x.com/terminal`; inside body a 2-col flex: LEFT (flex 1): stat strip
@@ -209,7 +209,7 @@ Asset files (inline via `<img src="../assets/….svg" style="width:100%;display:
 ## founding — paper+violet · 1080x1350 · 1080x1080 · 1200x628
 
 - pill: `● FOUNDING RATE` with inline `background:var(--violet)`.
-- H: `Founding rate: 50% off,<br>locked in while you stay.`
+- H (3-line staircase — 2 lines cannot fit at 92px): `Founding rate:<br>50% off, locked in<br>while you stay.` Use `--stageh:390px` on 4:5; the 4 chips may sit as a 2×2 grid (two rows is correct here).
 - sub: `The whole Pro desk at the Insider price — $75/mo, billed $900 a year.`
 - stage: FRONT-center: `w-founding` (width 560 on 4:5): frate pill `FOUNDING RATE`; plan `Pro`;
   price: was `$149` → now `$75` + per `/mo billed annually`; save badge `SAVE $408 A YEAR`;
