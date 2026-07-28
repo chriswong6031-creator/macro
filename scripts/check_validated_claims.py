@@ -156,7 +156,10 @@ _THIRD_PARTY_PAGES = (
     #    n.title (title/h1/og/twitter/JSON-LD headline), n.teaser + meta_desc, the verbatim
     #    first-pages excerpt, and the related-reports list (other notes' titles).
     (re.compile(r"^site/research/(?!index\.html$)[^/]+\.html$"),
-     "Mastermind hosts third-party institutional research",
+     # Brand-invariant core of the attestation note: #3850 renamed the corporate entity
+     # Mastermind -> MastermindX in research_report.html.j2, and live pages exist in both
+     # vintages until every page is re-rendered. The substring matches both.
+     "hosts third-party institutional research",
      (
          ("span", re.compile(r"<title>"), re.compile(r"</title>")),
          ("span", re.compile(r'<script type="application/ld\+json">'), re.compile(r"</script>")),
@@ -589,7 +592,7 @@ SELFTEST_REPORT_PAGE = """<!DOCTYPE html>
 </body>
 </html>
 """
-_ATTEST = "Mastermind hosts third-party institutional research"
+_ATTEST = "hosts third-party institutional research"
 _NEUTRAL = {"title": "Oil Prices and Upcoming Inflation Prints", "teaser": "Oil rebounded 35%.",
             "body": "Core CPI slowed broadly in June.", "platform": "Pro members get the PDF.",
             "platform_zh": "Pro 会员可读全文。", "related": "Three things in China",
