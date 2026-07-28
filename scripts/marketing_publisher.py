@@ -42,6 +42,7 @@ import argparse
 import hashlib
 import logging
 import os
+import re
 import sys
 import zlib
 from datetime import date, datetime, timedelta, timezone
@@ -237,6 +238,99 @@ def _media_paths_for(it: dict, pub_cfg: dict, sidecar: dict | None = None) -> li
         if u.lower().startswith(("http://", "https://")):
             urls.append(u)
     return urls
+
+
+# Kinds whose post is ABOUT a specific name. The operator's standing rule is
+# that these always carry their chart ("we should always have illustrations for
+# charting tickers ... we're doing entry timing so charting should be used").
+# Every other member of outbox.KINDS — macro, education, event, theme_list,
+# wire, breaking, earnings, mover — is a method, breadth or news post that
+# legitimately goes out as text and must keep flowing.
+_CHART_BEARING_KINDS: frozenset[str] = frozenset({
+    "signal", "chart", "watchlist", "receipt",
+})
+
+# A ticker post whose chart never resolves may not defer forever. Past this age
+# the publisher gives up and QUARANTINES it instead of shipping it bare: an
+# entry-timing read this stale is not worth posting even if the picture finally
+# lands, and posting it text-only is exactly the violation this gate exists to
+# prevent. Set to match the no-channel expiry below (deliberately a separate
+# number: one is an upload race, the other a misconfiguration).
+_MEDIA_DEFER_MAX_AGE_DAYS = 3
+
+_CASHTAG_RE = re.compile(r"\$[A-Z]{1,5}\b")
+
+
+def _item_age_days(it: dict, now: datetime) -> int:
+    """Whole days since the item's as_of (else created_at) stamp.
+
+    Unparseable → 0, i.e. "brand new, don't expire": a malformed stamp must
+    never be the reason a post is dropped.
+    """
+    stamp = str(it.get("as_of") or it.get("created_at") or "")[:10]
+    try:
+        return (now.date() - date.fromisoformat(stamp)).days
+    except (ValueError, TypeError):
+        return 0
+
+
+def _item_ticker(it: dict) -> str:
+    """The name this post is about, or "" for a method/macro/breadth post.
+
+    Emitted items carry NO top-level `ticker`: the outbox writes it to
+    `source.ticker` (every signal/chart/watchlist row has one) and mirrors it
+    onto each `media[]` entry. Top-level `ticker`/`cashtag` are still read first
+    so an emitter that later promotes the field is picked up for free.
+
+    The copy's own cashtag is the last resort. By the time we look there `kind`
+    has already narrowed us to the chart-bearing four, so a `$SPY` mentioned in
+    passing by a macro or education post can never reach this line.
+    """
+    src = it.get("source") if isinstance(it.get("source"), dict) else {}
+    for v in (it.get("ticker"), it.get("cashtag"),
+              src.get("ticker"), src.get("cashtag")):
+        if isinstance(v, str) and v.strip():
+            return v.strip().lstrip("$")
+    for m in it.get("media") or []:
+        if isinstance(m, dict) and str(m.get("ticker") or "").strip():
+            return str(m["ticker"]).strip().lstrip("$")
+    hit = _CASHTAG_RE.search(str(it.get("text") or ""))
+    return hit.group(0).lstrip("$") if hit else ""
+
+
+def _missing_required_media(it: dict, pub_cfg: dict, media_paths: list[str]) -> bool:
+    """True when this is a ticker post that HAS a chart and cannot reach it.
+
+    The gap: media_url is stamped once, inside the nightly's content_studio, and
+    only if R2 creds were live in that process. Any publish sweep that fires
+    between a failed upload and scripts/marketing_media_backfill.py resolves
+    nothing and ships the read BARE to all seven desks — a silent violation of
+    the illustrate-every-ticker rule, and a live race rather than a rare one.
+
+    All four conditions are load-bearing:
+      * media_enabled ON — with the global gate off NOTHING resolves a URL, so
+        deferring on that would wedge the entire ticker queue instead of one item;
+      * no resolved URL — neither the plan-build stamp nor the backfill sidecar;
+      * chart-bearing kind — a macro/education/breadth post has no chart to miss;
+      * a non-empty media[] — the chart was BUILT, so the URL is recoverable and
+        deferring is honest. An item that never had a media entry is a different
+        gap (nothing was rendered) and is out of scope here.
+    """
+    if not _media_enabled_cfg(pub_cfg) or media_paths:
+        return False
+    if str(it.get("kind") or "").strip().lower() not in _CHART_BEARING_KINDS:
+        return False
+    if not any(isinstance(m, dict) for m in (it.get("media") or [])):
+        return False
+    return bool(_item_ticker(it))
+
+
+def _chart_ids_for(it: dict) -> str:
+    """The item's chart ids, for the operator log line — so a deferral names
+    exactly which chart failed to upload rather than just the item id."""
+    ids = [str(m.get("chart_id") or "").strip()
+           for m in (it.get("media") or []) if isinstance(m, dict)]
+    return ",".join(i for i in ids if i) or "?"
 
 
 def _auto_approve_cfg(pub_cfg: dict) -> bool:
@@ -864,7 +958,7 @@ def main(argv: list[str] | None = None) -> int:
 
     posted = failed = quarantined = skipped_cap = skipped_channel = would_post = 0
     tape_quarantined = tape_skipped = skipped_floor = deferred_immediate = 0
-    forward_booked = 0
+    forward_booked = deferred_no_media = 0
 
     # ── Global min-spacing floor (publish.min_minutes_between_any_posts) ──────
     # Post-time anti-spam guard: at most one post per floor-minute window across
@@ -1187,15 +1281,46 @@ def main(argv: list[str] | None = None) -> int:
             # forever (re-skipped every run, never expiring). After 3 days,
             # quarantine so the queue drains honestly. Only in --live (dry-run
             # never mutates the ledger).
-            if live:
-                _stamp = str(it.get("as_of") or it.get("created_at") or "")[:10]
-                try:
-                    _age_days = (now.date() - date.fromisoformat(_stamp)).days
-                except (ValueError, TypeError):
-                    _age_days = 0  # unparseable stamp → don't expire (fail-soft)
-                if _age_days > 3:
+            if live and _item_age_days(it, now) > 3:
+                _outbox.transition(iid, "quarantined", actor="publisher",
+                                   root=root, note="expired_no_channel")
+            continue
+
+        # -- a ticker post must carry its chart -------------------------------
+        # Public chart-image URLs (PNG on X) from the plan-build stamp or, when
+        # that R2 upload failed, the backfill sidecar. Resolved HERE — ahead of
+        # the floor gate — so an item held for a missing chart never consumes
+        # the spacing window or a forward-book slot, the same reason the tape,
+        # cap and channel gates run first.
+        media_paths = _media_paths_for(it, pub_cfg, _media_sidecar)
+        # An operator "post now" click is explicit intent and outranks the hold:
+        # they asked for this item, on this tape, now. Everything else waits for
+        # its picture.
+        if iid not in post_now and _missing_required_media(it, pub_cfg, media_paths):
+            _charts = _chart_ids_for(it)
+            _age_days = _item_age_days(it, now)
+            if _age_days > _MEDIA_DEFER_MAX_AGE_DAYS:
+                # Bounded escape: the chart is not coming. Quarantine rather
+                # than post bare — see _MEDIA_DEFER_MAX_AGE_DAYS. Annotation is
+                # a BARE print (a logger prefix would make GitHub drop it).
+                print(f"::warning title=marketing-chart-missing::item {iid} "
+                      f"({account}/{it.get('kind')}, ${_item_ticker(it)}) "
+                      f"quarantined after {_age_days}d — chart {_charts} never "
+                      f"got a public URL; run scripts/marketing_media_backfill.py",
+                      flush=True)
+                log.warning("item %s (%s, %s) quarantined — chart %s still has no "
+                            "public URL after %dd", iid, account, it.get("kind"),
+                            _charts, _age_days)
+                if live:
                     _outbox.transition(iid, "quarantined", actor="publisher",
-                                       root=root, note="expired_no_channel")
+                                       root=root, note="expired_no_media")
+                quarantined += 1
+            else:
+                log.info("item %s (%s, %s) deferred — chart %s has no public URL "
+                         "yet (age %dd); stays approved and retries once the "
+                         "media backfill lands", iid, account, it.get("kind"),
+                         _charts, _age_days)
+                deferred_no_media += 1
             continue
 
         # -- global min-spacing floor: at most one post per window (any acct) --
@@ -1240,10 +1365,6 @@ def main(argv: list[str] | None = None) -> int:
         else:
             send_scheduled_at = it.get("scheduled_at")
         floor_advance = booked_at
-
-        # Public chart-image URLs (PNG on X) when publish.media_enabled + a plan-
-        # build-time R2 upload produced one; else [] → text-only (graceful).
-        media_paths = _media_paths_for(it, pub_cfg, _media_sidecar)
 
         # -- DRY-RUN: print, never touch the network or the ledger -----------
         if not live:
@@ -1351,16 +1472,26 @@ def main(argv: list[str] | None = None) -> int:
             log.warning("item %s FAILED: %s", iid, receipt.error)
 
     # ── Summary + activity row ──────────────────────────────────────────────
+    # A held post is invisible unless we say so. marketing-media-backfill is a
+    # workflow_dispatch lane — nothing schedules it — so the recovery this hold
+    # waits on only happens if a human starts it. Warn on the FIRST sweep that
+    # holds anything, not at quarantine time three days later.
+    if deferred_no_media:
+        print(f"::warning title=marketing-charts-missing::{deferred_no_media} ticker "
+              f"post(s) held: chart built but no public URL. Recover with the "
+              f"marketing-media-backfill workflow (gh workflow run "
+              f"marketing-media-backfill.yml) — held items quarantine after "
+              f"{_MEDIA_DEFER_MAX_AGE_DAYS}d.", flush=True)
     log.info(
         "%s complete | posted=%d failed=%d quarantined=%d would_post=%d "
         "tape_quarantined=%d tape_skipped=%d skipped_floor=%d "
-        "forward_booked=%d deferred_immediate=%d "
+        "forward_booked=%d deferred_immediate=%d deferred_no_media=%d "
         "skipped_cap=%d skipped_cadence=%d cadence_shadow=%d deferred_xa=%d "
         "skipped_no_channel=%d "
         "stuck_posting=%d auto_approved=%d",
         mode, posted, failed, quarantined, would_post,
         tape_quarantined, tape_skipped, skipped_floor,
-        forward_booked, deferred_immediate,
+        forward_booked, deferred_immediate, deferred_no_media,
         skipped_cap, skipped_cadence, shadow_cadence, deferred_xa, skipped_channel,
         len(stuck_posting),
         len(auto_approved),
@@ -1380,6 +1511,7 @@ def main(argv: list[str] | None = None) -> int:
             "skipped_floor": skipped_floor,
             "forward_booked": forward_booked,
             "deferred_immediate": deferred_immediate,
+            "deferred_no_media": deferred_no_media,
             "skipped_cap": skipped_cap,
             "skipped_cadence": skipped_cadence,
             "cadence_shadow": shadow_cadence,

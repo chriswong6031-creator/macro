@@ -185,6 +185,241 @@ class TestMediaSidecarFallback:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# 3b. A ticker post must carry its chart
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _signal_item(**over):
+    """A real emitted signal row (shape copied from data/marketing/outbox/
+    items.jsonl): the ticker lives in `source`, NOT at the top level."""
+    it = {
+        "id": "itm-0001",
+        "kind": "signal",
+        "as_of": "2026-07-28",
+        "account": "w_chris6031",
+        "source": {"ticker": "ROST", "chart_id": "chart-001",
+                   "direction": "long", "signal_id": "sig-1"},
+        "media": [{"kind": "chart_svg", "chart_id": "chart-001", "ticker": "ROST",
+                   "path": "data/marketing/outbox/media/2026-07-28/chart-001.svg"}],
+        "text": "$ROST back on the board\n\nHeld the anchored VWAP for 13 days.",
+    }
+    it.update(over)
+    return it
+
+
+class TestTickerPostMustCarryItsChart:
+    """The last gap in the illustration chain (operator's standing rule: "we
+    should always have illustrations for charting tickers ... we're doing entry
+    timing so charting should be used").
+
+    media_url is stamped ONCE, inside the nightly, and only if R2 creds were
+    live in that process. Before this gate, any sweep firing between a failed
+    upload and marketing_media_backfill.py resolved nothing and posted the read
+    BARE to all seven desks — silently, because [] is also the legitimate
+    text-only answer for a macro post. The publisher now DEFERS such an item
+    (leaves it approved) instead of posting it naked.
+    """
+    PUB_CFG = {"media_enabled": True}
+
+    # -- the defect: a ticker post whose chart will not resolve ---------------
+
+    def test_ticker_post_with_an_unresolvable_chart_defers(self):
+        from scripts.marketing_publisher import (
+            _media_paths_for, _missing_required_media)
+
+        it = _signal_item()
+        media_paths = _media_paths_for(it, self.PUB_CFG, {})   # no stamp, no sidecar
+        assert media_paths == []
+        assert _missing_required_media(it, self.PUB_CFG, media_paths) is True
+
+    def test_the_same_post_goes_out_once_the_sidecar_supplies_the_url(self):
+        """The deferral must be TRANSIENT — this is the whole reason it is a
+        defer and not a quarantine."""
+        from scripts.marketing_publisher import (
+            _media_paths_for, _missing_required_media)
+
+        it = _signal_item()
+        sidecar = {"2026-07-28/chart-001": "https://cdn.example/recovered.png"}
+        media_paths = _media_paths_for(it, self.PUB_CFG, sidecar)
+        assert media_paths == ["https://cdn.example/recovered.png"]
+        assert _missing_required_media(it, self.PUB_CFG, media_paths) is False
+
+    def test_a_plan_build_stamp_also_clears_the_hold(self):
+        from scripts.marketing_publisher import (
+            _media_paths_for, _missing_required_media)
+
+        it = _signal_item(media=[{"chart_id": "chart-001", "ticker": "ROST",
+                                  "media_url": "https://cdn.example/stamped.png"}])
+        media_paths = _media_paths_for(it, self.PUB_CFG, {})
+        assert _missing_required_media(it, self.PUB_CFG, media_paths) is False
+
+    # -- what must KEEP flowing ----------------------------------------------
+
+    def test_a_method_post_with_no_ticker_and_no_media_still_posts(self):
+        """"Why I post the losers", "Macro without the jargon" — these carry no
+        chart by design. Deferring them would strangle the desks' whole
+        non-ticker voice."""
+        from scripts.marketing_publisher import _missing_required_media
+
+        for kind in ("education", "macro", "event", "theme_list", "wire"):
+            it = {"id": "itm-x", "kind": kind, "as_of": "2026-07-28", "media": [],
+                  "source": {}, "text": "The stop matters more than the target"}
+            assert _missing_required_media(it, self.PUB_CFG, []) is False, kind
+
+    def test_a_breadth_post_that_mentions_a_cashtag_still_posts(self):
+        """"231 of 231 names..." may name a ticker in passing and even carry an
+        illustration. The KIND gate, not the text, decides — so a macro post can
+        never be held for a chart it was never required to have."""
+        from scripts.marketing_publisher import _missing_required_media
+
+        it = {"id": "itm-y", "kind": "macro", "as_of": "2026-07-28",
+              "source": {}, "media": [{"chart_id": "chart-009"}],
+              "text": "231 of 231 names above the 200-day. Even $SPY is stretched."}
+        assert _missing_required_media(it, self.PUB_CFG, []) is False
+
+    def test_a_ticker_post_that_never_had_a_chart_is_out_of_scope(self):
+        """A missing media[] is a DIFFERENT gap (nothing was rendered) and is
+        not recoverable by the backfill — holding it here would wedge it until
+        the escape hatch, for a picture that does not exist."""
+        from scripts.marketing_publisher import _missing_required_media
+
+        it = _signal_item(media=[])
+        assert _missing_required_media(it, self.PUB_CFG, []) is False
+
+    def test_media_enabled_off_never_defers_anything(self):
+        """With the global gate off NOTHING resolves a URL. Deferring on that
+        would wedge every ticker post on every desk, not one item."""
+        from scripts.marketing_publisher import _missing_required_media
+
+        assert _missing_required_media(_signal_item(), {"media_enabled": False}, []) is False
+
+    # -- ticker resolution ----------------------------------------------------
+
+    @pytest.mark.parametrize("it,expected", [
+        (_signal_item(), "ROST"),                                    # source.ticker
+        (_signal_item(source={}), "ROST"),                           # media[].ticker
+        (_signal_item(source={}, media=[{"chart_id": "c1"}]), "ROST"),  # $ROST in copy
+        (_signal_item(ticker="NVDA"), "NVDA"),                       # top-level wins
+        (_signal_item(source={}, media=[{"chart_id": "c1"}], text="no name here"), ""),
+    ])
+    def test_ticker_is_found_wherever_the_emitter_put_it(self, it, expected):
+        """Emitted items carry NO top-level `ticker` — it is in `source` and
+        mirrored onto `media[]`. A resolver that only read the top level would
+        find nothing and this whole gate would be dead code."""
+        from scripts.marketing_publisher import _item_ticker
+        assert _item_ticker(it) == expected
+
+    def test_the_chart_bearing_kinds_are_real_outbox_kinds(self):
+        """A typo here silently removes a desk's posts from the gate."""
+        from engine.marketing.outbox import KINDS
+        from scripts.marketing_publisher import _CHART_BEARING_KINDS
+
+        assert _CHART_BEARING_KINDS <= KINDS
+        assert _CHART_BEARING_KINDS == {"signal", "chart", "watchlist", "receipt"}
+
+    # -- the bounded escape ---------------------------------------------------
+
+    def test_escape_hatch_is_quarantine_not_a_bare_post(self):
+        """THE PINNED CHOICE. Past _MEDIA_DEFER_MAX_AGE_DAYS the publisher gives
+        up — and it QUARANTINES rather than posting text-only. Posting bare is
+        the exact violation this gate exists to prevent, and an entry-timing
+        read that is days stale is not worth sending even with the picture.
+        If someone flips this to a text-only escape, this test must fail."""
+        import inspect
+        from scripts.marketing_publisher import main
+
+        src = inspect.getsource(main)
+        gate = src.split("a ticker post must carry its chart", 1)[1]
+        gate = gate.split("global min-spacing floor", 1)[0]
+        assert 'note="expired_no_media"' in gate, (
+            "the escape hatch no longer quarantines — a stale ticker post is "
+            "about to go out with no chart"
+        )
+        assert "_MEDIA_DEFER_MAX_AGE_DAYS" in gate
+        # The operator has to be able to SEE it in the Actions summary, and the
+        # annotation must start the line (a logger prefix makes GitHub drop it).
+        assert 'print(f"::warning title=marketing-chart-missing::' in gate
+
+    @pytest.mark.parametrize("age_days,expect_quarantine", [
+        (0, False), (3, False), (4, True), (40, True),
+    ])
+    def test_escape_hatch_fires_only_past_the_bound(self, age_days, expect_quarantine):
+        from datetime import datetime, timezone
+
+        from scripts.marketing_publisher import (
+            _MEDIA_DEFER_MAX_AGE_DAYS, _item_age_days)
+
+        now = datetime(2026, 7, 28, 15, 0, tzinfo=timezone.utc)
+        as_of = (now - timedelta(days=age_days)).date().isoformat()
+        it = _signal_item(as_of=as_of)
+        assert _item_age_days(it, now) == age_days
+        assert (_item_age_days(it, now) > _MEDIA_DEFER_MAX_AGE_DAYS) is expect_quarantine
+
+    def test_an_unparseable_stamp_never_expires_an_item(self):
+        """Fail-soft: a malformed date must not be the reason a post is dropped."""
+        from datetime import datetime, timezone
+
+        from scripts.marketing_publisher import _item_age_days
+
+        now = datetime(2026, 7, 28, 15, 0, tzinfo=timezone.utc)
+        assert _item_age_days({"as_of": "not-a-date"}, now) == 0
+        assert _item_age_days({}, now) == 0
+
+    # -- wiring ---------------------------------------------------------------
+
+    def test_the_gate_is_wired_ahead_of_the_spacing_floor(self):
+        """Order is load-bearing: a held item must not consume the spacing
+        window or a forward-book slot, the same reason the tape/cap/channel
+        gates run first. Also pins that the predicate is actually acted on —
+        computing it and falling through would be dead code."""
+        import inspect
+        from scripts.marketing_publisher import main
+
+        src = inspect.getsource(main)
+        assert src.index("_missing_required_media") < src.index(
+            "global min-spacing floor: at most one post"), (
+            "the media gate moved below the floor — deferred items now burn "
+            "the spacing window"
+        )
+        gate = src.split("a ticker post must carry its chart", 1)[1]
+        gate = gate.split("global min-spacing floor", 1)[0]
+        assert "deferred_no_media += 1" in gate and "continue" in gate
+
+    def test_an_operator_post_now_click_is_never_held(self):
+        """Explicit intent outranks the hold: the operator asked for THIS item,
+        on THIS tape, now."""
+        import inspect
+        from scripts.marketing_publisher import main
+
+        gate = inspect.getsource(main).split(
+            "a ticker post must carry its chart", 1)[1]
+        assert "iid not in post_now and _missing_required_media" in gate
+
+    def test_the_counter_reaches_the_operator(self):
+        """A silent hold is the defect this replaces. The count must show up in
+        the run summary AND the activity row next to its sibling counters."""
+        import inspect
+        from scripts.marketing_publisher import main
+
+        src = inspect.getsource(main)
+        assert "deferred_no_media=%d" in src, "missing from the summary log line"
+        assert '"deferred_no_media": deferred_no_media' in src, \
+            "missing from the activity row"
+
+    def test_a_held_sweep_names_the_recovery_lane_on_the_first_run(self):
+        """marketing-media-backfill is workflow_dispatch-only — NOTHING schedules
+        it. A hold therefore waits on a human, so the very first sweep that holds
+        anything must say so in the Actions summary, with the command. Warning
+        only at quarantine time would tell the operator three days too late."""
+        import inspect
+        from scripts.marketing_publisher import main
+
+        src = inspect.getsource(main)
+        assert 'print(f"::warning title=marketing-charts-missing::' in src
+        assert "if deferred_no_media:" in src
+        assert "marketing-media-backfill" in src
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # 4. Backfill ledger semantics
 # ─────────────────────────────────────────────────────────────────────────────
 
