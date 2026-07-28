@@ -16,8 +16,9 @@ and **looking at the PNG**, minimum two rounds.
 2. **Headline width.** ~0.55em avg glyph at weight 800: chars × 0.55 × px ≤ 952 (1080 canvas,
    64px pads) / ≤ ~620 for the landscape left column. Break lines with explicit `<br>` — never
    let auto-wrap choose. Squares use `--hl:86px`; 4:5 92px; landscape ~58px inline.
-3. **Chips wrap.** One row only. 4:5 fits 6 chips; square fits 3–4; landscape 3. If it wraps,
-   cut chips (prefer features already visible in the stage).
+3. **Chips wrap.** ONE full row, or TWO balanced rows (3+3, or founding's 2×2) — never a
+   widow chip alone on row 2. 4:5 fits 6 (as 3+3) or 3–4 on one row; square 3; landscape 3.
+   If it breaks unevenly, cut chips (prefer features already visible in the stage).
 4. **Occlusion law.** Cards cut at ATOMIC boundaries. Amputating a row label mid-word reads
    broken; hiding a right-hand number column or bleeding off-canvas reads deliberate. The
    front card covers side cards' right columns, never their identity column (left).
@@ -59,7 +60,7 @@ Asset files (inline via `<img src="../assets/….svg" style="width:100%;display:
 ## price — paper+violet · 1080x1350 · 1080x1080
 
 - pill: `● THE VALUE CASE`
-- H: `A $24,000 desk.<br><span class="grad">Yours for $2.50 a day.</span>`
+- H: `A $24,000 desk.<br><span class="grad">Yours: $2.50 a day.</span>`
 - sub: `Signals, 13F flow, options tape, terminal and AI analyst — the full desk, $75 a month.`
 - stage: LEFT behind (tilt-l): dark compare card (`.card` with inline
   `background:var(--plate);color:#fff;border-color:#26324e`, width 430): kick (inline
@@ -90,7 +91,7 @@ Asset files (inline via `<img src="../assets/….svg" style="width:100%;display:
 ## rotation — paper · 1080x1350 · 1080x1080
 
 - pill: `● THEME ROTATION`
-- H: `See the rotation before<br>your watchlist does.`
+- H (3-line staircase): `See the rotation<br>before your<br>watchlist does.`
 - sub: `34 themes across four plain lanes — watch money change lanes as leadership turns.`
 - stage: FRONT: wide lanes board (`w-lanes` variant, width 640, lanes in 2×2 grid via inline
   `display:grid;grid-template-columns:1fr 1fr;gap:4px 22px` on a wrapper): BUY NOW: Big
@@ -118,7 +119,8 @@ Asset files (inline via `<img src="../assets/….svg" style="width:100%;display:
   stages with **Base** on (`.stg.on` recolored inline `color:var(--q-gold)`, dot
   `background:var(--q-gold);border-color:var(--q-gold)`); zone row replaced by:
   `<div class="zone" style="color:var(--q-gold)">WAIT <b style="color:var(--muted)">no entry
-  signal</b><span class="dt">Jun 12</span></div>`.
+  signal</b><span class="dt">Jun 3</span></div>`. (Jun 3 → Jul 8 = 35 days, so the
+  "five weeks apart" caption is exact — R2 review #2.) Headline apostrophe is curly (’).
   RIGHT front (larger, z2): REZI again — NEAR pill, chg `+1.8%`, green spark path B (from
   signals), EDGE 76, **Ready** on, ZONE `$29.83 – $31.04`, dt Jul 8.
   Between/below the two cards: a small caption strip (28px, muted, 600):
@@ -192,7 +194,7 @@ Asset files (inline via `<img src="../assets/….svg" style="width:100%;display:
 
 - `.ad--dark` + candle field.
 - pill: `● THE TERMINAL`
-- H: `A real terminal,<br>in your browser. Free.`
+- H: `A real terminal,<br>in your browser. Free.` — set `font-size:84px` inline on the headline for 4:5/square (22-char line 2 needs it).
 - sub: `Institutional-grade charting with an AI analyst on call — nothing to install.`
 - stage: ONE hero: `w-term` frame (width 960 on 4:5, centered): mac dots bar + url pill
   `app.mastermind-x.com/terminal`; inside body a 2-col flex: LEFT (flex 1): stat strip
@@ -202,22 +204,30 @@ Asset files (inline via `<img src="../assets/….svg" style="width:100%;display:
   `BTC-USD 63,462 <r>−0.38%</r>` / `NVDA 211.10 <g>+1.84%</g>` / `AAPL 325.48 <r>−0.70%</r>` /
   `MSFT 387.50 <r>−2.58%</r>` (g=#37d67a, r=#ff7a76, chg 22px).
   Under the frame, small line (26px, #9db0d0): `Golden Oracle: “Uptrend — no entry signal.” · demo`
-- chips (dark): `Live charting(blue) · AI analyst(r) · Signals overlay(g) · Watchlists(t)` (square 3).
-- offer: cell1 t `TERMINAL — FREE FOREVER` d `NOTHING TO INSTALL`; cell2 t `<was>$149</was>$75/mo`
-  d `PRO · 50% OFF`; CTA `Open the Terminal`. micro: standard.
+- chips (dark): `Live charting(blue) · AI analyst(r) · Signals overlay(g)` (3 on every size —
+  a 4th wraps; "Watchlists" cut 2026-07-28, the frame's watchlist column already shows it).
+- offer: cell1 t `FREE FOREVER` d `NOTHING TO INSTALL` (the word TERMINAL lives in the pill +
+  headline; the long cell overflowed the CTA off-canvas); cell2 t `<was>$149</was>$75/mo`
+  d `PRO 50% OFF · 7-DAY TRIAL` (AG-6: the trial appears on every ad — R2 review #4);
+  CTA `Open the Terminal`; `style="--offer:30px"` on `.offer` (4:5/square).
+  micro: standard.
 
 ## founding — paper+violet · 1080x1350 · 1080x1080 · 1200x628
 
 - pill: `● FOUNDING RATE` with inline `background:var(--violet)`.
-- H: `Founding rate: 50% off,<br>locked in while you stay.`
+- H (3-line staircase — 2 lines cannot fit at 92px): `Founding rate:<br>50% off, locked in<br>while you stay.` Use `--stageh:390px` on 4:5; the 4 chips may sit as a 2×2 grid (two rows is correct here).
 - sub: `The whole Pro desk at the Insider price — $75/mo, billed $900 a year.`
 - stage: FRONT-center: `w-founding` (width 560 on 4:5): frate pill `FOUNDING RATE`; plan `Pro`;
-  price: was `$149` → now `$75` + per `/mo billed annually`; save badge `SAVE $408 A YEAR`;
+  price: was `$109` → now `$75` + per `/mo billed annually` (the card mirrors the LANDING's
+  annual anchor so `SAVE $408 A YEAR` is computable inside one frame — $109×12−$900=$408;
+  the OFFER BAR keeps the $149-struck monthly anchor for the 50%-off claim. Never mix the
+  two anchors in one element — R2 review #1, the round's only blocker); save badge `SAVE $408 A YEAR`;
   meter: l1 `FOUNDING MEMBERSHIPS` + span `2,000 total — first come, first served`; track
   fill 12%; l2 `The allotment shrinks daily · $900/yr locked in for as long as you stay.`
   BEHIND-left: read sliver; BEHIND-right: prophet sliver.
-- chips: `Everything in Insider(v) · 50 Pro AI deep dives(blue) · Mastermind research(g) ·
-  Bot Portfolios — soon(gold)` (square: first 3).
+- chips: `Everything in Insider(v) · 50 AI deep dives / mo(blue) · Mastermind research(g) ·
+  Bot Portfolios — soon(gold)` (square: first 3 with `--chip:27px;gap:12px` on `.chips`;
+  the `/ mo` is load-bearing — the landing grants 50 per month, not 50 ever — R2 review #10).
 - offer: cell1 t `7-DAY FREE TRIAL` d `FULL PRO ACCESS`; cell2 t was/`$75/mo` d `50% OFF · ANNUAL`;
   CTA `Try Pro free`. micro: standard.
 

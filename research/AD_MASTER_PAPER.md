@@ -26,7 +26,7 @@ answers three of five is a website section, not an ad — round 1's exact failur
 Dimensions are verified programmatically by the renderer, not by eye. A 540–720px
 "card" is a mockup, not a creative.
 
-**AG-3 — Mobile legibility floor.** On a 1080-wide canvas: headline ≥ 84px, subline ≥ 40px,
+**AG-3 — Mobile legibility floor.** On a 1080-wide canvas: headline ≥ 84px (a locked phrase that cannot break into ≤19-character lines takes a third line rather than a smaller size; 76px is the absolute floor), subline ≥ 40px,
 feature chips ≥ 27px, offer text ≥ 30px, micro-footer ≥ 22px. Verify at 25% zoom — that is
 feed scale. If any load-bearing text needs squinting at 25%, it fails.
 
@@ -52,9 +52,11 @@ the operator's approval recorded via `engine/marketing/ad_review.py`. This paper
 overrides H-1…H-6. Rejections get specific reasons; the reasons feed §9.
 
 **AG-8 — Honest voice survives advertising.** Stance language over hype ("watch, don't
-chase" is on-brand; "guaranteed winners" is a firing offense). Any ad showing
-ticker-level entries/stops carries the micro-line "Research tools — not investment
-advice." The product's honesty is a selling point, not a liability to hide.
+chase" is on-brand; "guaranteed winners" is a firing offense). Any ad whose **copy or hero
+element quotes actionable levels** (entry zones, stops — e.g. entry, ai-no) carries the
+micro-line "Research tools — not investment advice." in place of the "allotment shrinks
+daily" clause; a demo-tagged ZONE inside a background widget sliver does not trigger it.
+The product's honesty is a selling point, not a liability to hide.
 
 ---
 
@@ -105,9 +107,10 @@ pay for one or more tools and still feel behind. Each pain maps to a desk that a
 **Rules:** ≤ 9 words hard cap, ≤ 7 preferred. Plain verbs, no jargon, no internal vocab
 (doctrine Law 2 applies to ads). Esoteric is allowed only if the picture resolves it
 within the same glance. Subline ≤ 18 words, adds the mechanism ("how"), never repeats
-the headline. Feature chips are 1–3 words each, 4–6 chips, drawn from: Stock signals ·
+the headline. Feature chips are 1–3 words each, 3–6 chips, drawn from: Stock signals ·
 Risk score · Theme rotation · 13F & insiders · Options flow · AI analyst · Free terminal ·
-Nightly rebuild.
+Nightly rebuild. Chip rows are either ONE full row or TWO balanced rows (3+3, or the
+founding 2×2) — never a widow chip alone on row 2 (round-2 review law, 2026-07-28).
 
 **Offer bar (standard, every ad):** `7-DAY FREE TRIAL` · `FOUNDING · 50% OFF — $75/mo` ·
 CTA pill `Try Pro free` · micro: `2,000 founding memberships · allotment shrinks daily ·
@@ -137,8 +140,10 @@ Accents: blue `#285fff` (CTA, links; ink `#1c47cc`, wash `#eef2ff`), green `#1f8
 (+wash `#e9f5ec`), red `#c12f2f` (+wash `#faeceb`), gold `#b07d05` (+wash `#faf3e2`),
 violet `#7862e0` (founding/pricing only), teal `#0f9d8f` (sparingly).
 Dark plate mode: `#0b1120` ground, panels `#111a2e`-ish derived, same accent hues.
-Gradient allowance: the hero's blue→violet→teal text gradient on **at most one word**
-per ad; the founding card's violet wash; the faded-candle plate (§4.5). Nothing else.
+Gradient allowance: the hero's blue→violet→teal text gradient on **at most one word or
+one short payoff phrase (≤4 words, one per ad)** — e.g. price's "Yours: $2.50 a day."
+(amended 2026-07-28); the founding card's violet wash; the faded-candle plate (§4.5).
+Nothing else.
 
 ### §4.3 Type (Inter only — operator's ruling)
 
@@ -199,6 +204,7 @@ specific-signal widgets keep the site's small `demo` as-of tag.
 | "Founding 50% off — $75/mo" | pricing: `data-annual="$75"` vs `data-monthly="$149"` |
 | "Billed $900 a year" / "locked in for as long as you stay" | pricing founding terms |
 | "2,000 founding memberships · allotment shrinks daily" | pricing founding block (enforced, #3856) |
+| "SAVE $408 A YEAR" | landing founding badge — regular annual $109/mo ×12 = $1,308 vs $900 |
 | "356 tracked funds" (13F) | landing Smart Money section |
 | "34 themes, four lanes" | landing Theme Rotations section |
 | "Terminal free forever / nothing to install" | landing Terminal section |
@@ -257,3 +263,21 @@ Full copy blocks (subline, chips, illustration recipe) live beside the sources i
 - **Standing operator taste:** plain bold system type, no decorative faces (2026-07-26
   font ruling); "beautiful illustration and design" reusing the site's own elements;
   name concrete desks, not uncountable abstractions.
+- **R2 reviewer sweep (2026-07-28, independent Opus pass before the operator gate):** 13
+  confirmed findings, all resolved same-day. The one blocker is the lesson: **a struck
+  price and a savings badge must be computable against the same anchor** — the founding
+  card paired was-$149 (monthly anchor) with SAVE $408 (annual-anchor math). Cards now
+  mirror the landing's $109 annual anchor; offer bars alone carry the $149→$75 monthly
+  50%-off. Also: an illustration must not contradict its own copy (knife's "five weeks"
+  vs 26 rendered days; entry's stop line drawn above 10 candle lows it called the swing
+  low) — the chart is a claim. Occlusion re-lands: ghost trails never under the solid
+  chip, slivers carry identity atoms only (tk, stages) with nm/zone dropped rather than
+  amputated.
+- **R2 internal review (2026-07-28, caught before the operator saw them)** — the four
+  defect classes that recur, now checked on every file: (a) **bottom clip** — vertical
+  budget blown, offer/micro cut (risk 4:5, rotation 4:5, founding 628); (b) **auto-wrap
+  headline** — a locked phrase left to wrap chooses ugly breaks; always explicit `<br>`,
+  three clean lines beat a smaller size (risk 4:5); (c) **non-atomic occlusion** — a
+  half-covered chip/pill reads as a floating blob (rotation's +5.4% pill); (d) **offer
+  overflow** — long cell text pushes the CTA off-canvas (terminal 4:5; fix the cell, not
+  the CTA). The renderer catches none of these — only looking at the PNG does.
