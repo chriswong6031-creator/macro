@@ -134,8 +134,10 @@ def derive_register(item: dict) -> str:
     pipeline. Precedence:
         route=="brief_candidates"     -> brief_candidates (HormuzLetter long-form)
         event_class=="geopolitical"   -> topics
-        crypto ticker/keyword         -> crypto
-        event_class=="company_news"   -> companies
+        event_class=="company_news"   -> companies  (m1: wins over crypto ticker —
+                                         COIN/CRCL/HOOD/MSTR earnings are company_news,
+                                         not a crypto-instrument item)
+        crypto ticker/keyword         -> crypto     (reserved for NON-equity crypto)
         corroboration_class=="claims" -> claims
         else                          -> people (statement lane) / markets
     """
@@ -147,14 +149,19 @@ def derive_register(item: dict) -> str:
     if event_class == "geopolitical":
         return "topics"
 
+    # m1: when the classifier already calls this company_news, companies wins — a
+    # "COIN earnings" item is a company item that happens to carry a crypto-adjacent
+    # ticker, not a crypto-instrument item. The crypto register is reserved for
+    # non-equity crypto items (BTC/ETH keywords, or a crypto ticker with no
+    # company_news classification).
+    if event_class == "company_news":
+        return "companies"
+
     matched = item.get("matched") if isinstance(item.get("matched"), dict) else {}
     tickers = {str(t).upper() for t in (matched.get("tickers") or [])}
     text = f"{item.get('headline', '')} {item.get('body_snippet', '')}".lower()
     if tickers & _CRYPTO_TICKERS or any(w in text for w in _CRYPTO_WORDS):
         return "crypto"
-
-    if event_class == "company_news":
-        return "companies"
 
     corr = str(item.get("corroboration_class", "hearsay") or "hearsay")
     if corr == "claims":

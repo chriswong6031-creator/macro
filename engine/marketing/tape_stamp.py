@@ -45,6 +45,10 @@ from typing import Any
 
 _DEFAULT_MIN_MOVE_PCT = 0.4          # |changePct| floor for a stamp to appear
 _DEFAULT_STALENESS_MAX_S = 1800      # quote older than this -> NO stamp (30 min)
+# m3: a quote whose timestamp is MORE than this many seconds in the FUTURE is a
+# clock-skew / corrupt-feed signal, NOT a fresh quote -> NO stamp (fail-closed). A
+# small tolerance absorbs benign sub-2-minute skew between the feed clock and ours.
+_DEFAULT_FUTURE_SKEW_TOLERANCE_S = 120
 
 # Store path candidates (VPS first, repo fallback). The daemon overrides these
 # via cfg["quote_store_paths"]; kept here so the module is usable standalone.
@@ -204,18 +208,33 @@ def _quote_epoch_ms(quote: dict, store: dict) -> int | None:
     return None
 
 
-def _is_fresh(quote: dict, store: dict, now: datetime, staleness_max_s: int) -> bool:
+def _is_fresh(
+    quote: dict,
+    store: dict,
+    now: datetime,
+    staleness_max_s: int,
+    future_skew_tolerance_s: int = _DEFAULT_FUTURE_SKEW_TOLERANCE_S,
+) -> bool:
     """True when the quote's timestamp is within staleness_max_s of `now`.
 
     No timestamp at all -> NOT fresh (fail-closed: an unstamped time is a stamp we
     refuse to make, never one we fabricate).
+
+    m3: a quote timestamped MORE than future_skew_tolerance_s in the future is a
+    clock-skew / corrupt-feed signal, not a fresh quote -> NOT fresh (fail-closed).
+    Previously any future-dated quote passed as fresh, so a garbage-future ts could
+    mint a stamp off a stale or wrong number. A small tolerance still admits benign
+    sub-tolerance skew between the feed clock and ours.
     """
     ms = _quote_epoch_ms(quote, store)
     if ms is None:
         return False
     age_s = now.timestamp() - (ms / 1000.0)
-    # A future-dated quote (clock skew) is treated as fresh (age negative is fine);
-    # only an OLD quote past the bound is stale.
+    # Future-skew clamp (fail-closed): age below -tolerance means the quote is dated
+    # meaningfully after `now` -> reject. Benign skew (age >= -tolerance) is fine.
+    if age_s < -abs(future_skew_tolerance_s):
+        return False
+    # An OLD quote past the staleness bound is likewise not fresh.
     return age_s <= staleness_max_s
 
 
@@ -245,6 +264,9 @@ def compute_stamp(
     cfg = cfg or {}
     min_move = float(cfg.get("min_move_pct", _DEFAULT_MIN_MOVE_PCT))
     staleness_max_s = int(cfg.get("staleness_max_s", _DEFAULT_STALENESS_MAX_S))
+    future_skew_tolerance_s = int(
+        cfg.get("future_skew_tolerance_s", _DEFAULT_FUTURE_SKEW_TOLERANCE_S)
+    )
 
     if not isinstance(quotes, dict):
         return {"stamp": "", "symbol": None, "move_pct": None, "reason": "no_store"}
@@ -265,7 +287,7 @@ def compute_stamp(
         if not isinstance(q, dict):
             continue
         checked_any = True
-        if not _is_fresh(q, quotes, now, staleness_max_s):
+        if not _is_fresh(q, quotes, now, staleness_max_s, future_skew_tolerance_s):
             continue
         try:
             pct = float(q.get("changePct"))

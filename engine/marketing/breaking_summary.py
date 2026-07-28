@@ -123,6 +123,74 @@ def _count_sentences(text: str) -> int:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# §3 key-phrase / copypasta law — deterministic runtime checks (M2)
+#
+# The §3 copy law bans a near-verbatim relay of the source. The prompt text alone
+# cannot stop an LLM returning the whole source headline in quotes — that passes
+# the number/stance/length gates and ships exactly the relay §3 bans. These
+# deterministic checks close it:
+#   (a) at most ONE double-quoted span;
+#   (b) a quoted span is <= 6 words;
+#   (c) near-verbatim guard — the summary must not reproduce the source headline.
+#       A byte-identical or trivially-reordered headline fails; a genuine
+#       restatement (re-sentenced, re-worded framing) passes.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Double-quoted spans: straight and curly quotes. Non-greedy, no embedded quote.
+_QUOTED_SPAN_RE = re.compile(r"[\"“]([^\"“”]+)[\"”]")
+_MAX_QUOTED_SPANS = 1
+_MAX_QUOTED_WORDS = 6
+
+# Near-verbatim thresholds (see the module unit tests for the tuning cases):
+#   token-set Jaccard is the containment proxy the copy law names (< 0.7 passes);
+#   the bigram-adjacency gate is the discriminator that lets a real restatement
+#   through — a relay preserves the headline's word ADJACENCY, a restatement does
+#   not. BOTH must trip for a reject, so a legit paraphrase (which re-orders and
+#   re-frames) never fails, while a copy / trivial reorder does.
+_NEARVERB_JACCARD = 0.7
+_NEARVERB_BIGRAM = 0.5
+
+
+def _content_tokens(text: str) -> list[str]:
+    """Lowercased alphanumeric tokens (surface form preserved — no %<->percent
+    normalization here, so a relay's exact surface run is what we compare)."""
+    return re.findall(r"[a-z0-9]+", str(text or "").lower())
+
+
+def _jaccard(a: set, b: set) -> float:
+    if not a or not b:
+        return 0.0
+    return len(a & b) / len(a | b)
+
+
+def _bigram_overlap(a: list[str], b: list[str]) -> float:
+    """Jaccard over adjacent token bigrams — measures preserved word ADJACENCY."""
+    ba = set(zip(a, a[1:]))
+    bb = set(zip(b, b[1:]))
+    if not ba or not bb:
+        return 0.0
+    return len(ba & bb) / len(ba | bb)
+
+
+def _is_near_verbatim(summary_text: str, headline: str) -> bool:
+    """True when the summary reproduces the source headline near-verbatim.
+
+    Both gates must trip: high token-set overlap (Jaccard >= 0.7) AND high
+    word-adjacency overlap (bigram Jaccard >= 0.5). A byte-identical or
+    trivially-reordered headline trips both; a genuine restatement (extra framing
+    words, re-sentenced structure) breaks the adjacency gate and passes.
+    """
+    st = _content_tokens(summary_text)
+    ht = _content_tokens(headline)
+    if not st or not ht:
+        return False
+    return (
+        _jaccard(set(st), set(ht)) >= _NEARVERB_JACCARD
+        and _bigram_overlap(st, ht) >= _NEARVERB_BIGRAM
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # validate_summary — adversarial number + stance checker
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -133,6 +201,7 @@ def validate_summary(
     max_chars: int = _MAX_SUMMARY_CHARS,
     max_sentences: int = _MAX_SUMMARY_SENTENCES,
     skip_length_check: bool = False,
+    is_deterministic_fallback: bool = False,
 ) -> list[str]:
     """Validate a summary against the source item.
 
@@ -144,9 +213,19 @@ def validate_summary(
        flash budget (2 sentences, 320 chars); the B2-COPY wire_deep format passes
        the wider two-paragraph budget so a rich source body is not force-failed
        back to the deterministic fallback.
-    4. Also runs copywriter.validate_copy (headline="", body=summary_text,
+    4. §3 key-phrase / copypasta law (M2): (a) at most ONE double-quoted span;
+       (b) a quoted span ≤ 6 words; (c) the summary must not reproduce the source
+       headline near-verbatim (byte-identical / trivially-reordered fails, a real
+       restatement passes).
+    5. Also runs copywriter.validate_copy (headline="", body=summary_text,
        ctx with type="event", numbers_whitelist from source, emoji_budget=0)
        and merges violations.
+
+    is_deterministic_fallback (M2): the "{headline} — {source_name}" fallback IS the
+    headline with attribution by construction, so it would always trip the
+    near-verbatim guard (c). When True, (c) is skipped — the deterministic path is
+    an intentional, honest headline-relay-with-attribution, not an LLM near-copy.
+    Checks (a)/(b) still run (a fallback carries no quotes, so they are no-ops).
 
     Returns list[str] of violations (empty = clean).
     """
@@ -204,7 +283,31 @@ def validate_summary(
                 f"summary too many sentences: {sentence_count} (max {max_sentences})"
             )
 
-    # 4. Run copywriter.validate_copy on the summary text
+    # 4. §3 key-phrase / copypasta law (M2) — deterministic runtime checks.
+    #    (a) at most ONE double-quoted span; (b) each ≤ 6 words.
+    quoted_spans = _QUOTED_SPAN_RE.findall(summary_text)
+    if len(quoted_spans) > _MAX_QUOTED_SPANS:
+        violations.append(
+            f"too many quoted spans: {len(quoted_spans)} (max {_MAX_QUOTED_SPANS})"
+        )
+    for span in quoted_spans:
+        n_words = len(span.split())
+        if n_words > _MAX_QUOTED_WORDS:
+            violations.append(
+                f"quoted span too long: {n_words} words (max {_MAX_QUOTED_WORDS}) — "
+                f"quote the source's strongest SHORT phrase, never a whole sentence"
+            )
+    #    (c) near-verbatim guard vs the SOURCE HEADLINE. The deterministic fallback
+    #    IS the headline (with attribution) by construction, so it is exempt.
+    if not is_deterministic_fallback:
+        headline = str(item.get("headline") or "")
+        if headline and _is_near_verbatim(summary_text, headline):
+            violations.append(
+                "summary near-verbatim of source headline — restate in your own "
+                "words, do not relay the headline"
+            )
+
+    # 5. Run copywriter.validate_copy on the summary text
     try:
         from engine.marketing.copywriter import validate_copy  # noqa: PLC0415
         cw_violations = validate_copy(

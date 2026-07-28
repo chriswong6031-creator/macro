@@ -132,6 +132,25 @@ class TestRegister:
              "headline": "some flash", "body_snippet": ""}
         ) == "markets"
 
+    def test_company_news_beats_crypto_ticker(self):
+        # m1 (opus review): a "COIN earnings" item is company_news, NOT crypto —
+        # company_news precedence wins even though COIN is a crypto-adjacent ticker.
+        assert wv.derive_register({
+            "event_class": "company_news",
+            "headline": "Coinbase (COIN) beats on Q2 earnings",
+            "body_snippet": "Revenue rose", "matched": {"tickers": ["COIN"]},
+        }) == "companies"
+
+    def test_crypto_ticker_without_company_news_is_crypto(self):
+        # The other direction: the SAME crypto ticker with NO company_news
+        # classification stays in the crypto register (register reserved for
+        # non-equity crypto items — here a keyword/ticker crypto item).
+        assert wv.derive_register({
+            "event_class": "none",
+            "headline": "MSTR adds to its bitcoin holdings",
+            "body_snippet": "", "matched": {"tickers": ["MSTR"]},
+        }) == "crypto"
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 3. Format-picker matrix + wire_deep length-budget enforcement
@@ -266,6 +285,37 @@ class TestTapeStamp:
         item = {"headline": "market flash", "body_snippet": "", "matched": {"tickers": ["SPY"]}}
         assert "SPY" in ts.map_entities(item)
 
+    def test_future_skew_clamp(self):
+        # m3 (opus review): a quote timestamped far in the FUTURE (clock skew /
+        # corrupt feed) is NOT fresh -> no stamp (fail-closed). Previously any
+        # future-dated quote passed as fresh.
+        future_ms = int((self._now() + timedelta(minutes=10)).timestamp() * 1000)
+        quotes = {"ts": future_ms,
+                  "quotes": {"CL=F": {"changePct": -1.8, "ts": future_ms}}}
+        out = ts.compute_stamp(self._oil_item(), quotes, now=self._now())
+        assert out["stamp"] == ""
+        assert out["reason"] == "quiet_or_stale"
+
+    def test_benign_future_skew_within_tolerance_is_fresh(self):
+        # Sub-tolerance future skew (default 120s) is still fresh -> a valid move
+        # earns its stamp. 30s ahead is inside the benign window.
+        near_ms = int((self._now() + timedelta(seconds=30)).timestamp() * 1000)
+        quotes = {"ts": near_ms,
+                  "quotes": {"CL=F": {"changePct": -1.8, "ts": near_ms}}}
+        out = ts.compute_stamp(self._oil_item(), quotes, now=self._now())
+        assert out["reason"] == "moved"
+        assert out["stamp"] == "WTI -1.8%"
+
+    def test_future_skew_tolerance_configurable(self):
+        # The clamp tolerance is config-driven; a tighter tolerance rejects a skew
+        # the default would admit.
+        skew_ms = int((self._now() + timedelta(seconds=90)).timestamp() * 1000)
+        quotes = {"ts": skew_ms,
+                  "quotes": {"CL=F": {"changePct": -1.8, "ts": skew_ms}}}
+        out = ts.compute_stamp(self._oil_item(), quotes, now=self._now(),
+                               cfg={"future_skew_tolerance_s": 30})
+        assert out["stamp"] == ""
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 6. Model tiering + deterministic keyless path
@@ -336,8 +386,13 @@ class TestRail:
         result, _ = self._run()
         assert "rail" in result
         for item in result["rail"]:
-            assert {"id", "ts", "class", "register", "text_en",
+            # m2: spec field is `en` (was text_en); `class` slug stays for machine
+            # use and label_en/label_zh are the plain-word display labels.
+            assert {"id", "ts", "class", "label_en", "label_zh", "register", "en",
                     "attribution", "corroboration"} <= set(item.keys())
+            # The raw slug is never the ONLY class signal the client sees.
+            assert item["label_en"] and item["label_zh"]
+            assert "text_en" not in item
 
     def test_rail_floor_eligibility_includes_weak(self):
         # The weak item is below the X post floor but above the rail floor, so it
@@ -378,6 +433,127 @@ class TestRail:
                                 cfg=marketing_cfg, press_cfg=press_cfg, state={},
                                 seen_ids=set(), dry_run=True)
         assert len(result["rail"]) <= 1
+
+    def test_rail_plain_word_labels(self):
+        # m2 (opus review): every rail item carries plain-word EN/ZH labels so the
+        # B4b client never renders the raw slug. The known classes map explicitly.
+        from engine.marketing.press_lane import _class_labels
+        assert _class_labels("macro_print") == ("Macro", "宏观")
+        assert _class_labels("policy") == ("Washington", "政策")
+        assert _class_labels("geopolitical") == ("Geopolitics", "地缘")
+        assert _class_labels("company_news") == ("Companies", "公司")
+        assert _class_labels("none") == ("Wire", "快讯")
+        # An unknown/未来 class falls back to Wire/快讯 (never a bare slug leak).
+        assert _class_labels("some_future_class") == ("Wire", "快讯")
+
+    def test_rail_item_carries_labels_and_en_field(self):
+        # The composed rail item uses `en` (not text_en) and carries both labels.
+        result, _ = self._run()
+        assert result["rail"], "expected at least one rail item"
+        for item in result["rail"]:
+            assert "en" in item and "text_en" not in item
+            assert item["label_en"] and item["label_zh"]
+
+
+class TestWiresRollingWindow:
+    """M1 (opus review): the wires.json sink is a ROLLING WINDOW, not per-tick.
+
+    Each tick's `rail` carries only THIS tick's newly-seen items, so a naive
+    overwrite blanks the rail the moment a quiet tick lands. The sink must merge by
+    id (new wins), sort newest-first, cap at rail_max_items, and fail-soft on a
+    corrupt existing file.
+    """
+
+    @staticmethod
+    def _daemon():
+        import scripts.marketing_fastlane_daemon as d
+        return d
+
+    @staticmethod
+    def _now():
+        return datetime(2026, 7, 27, 14, 0, tzinfo=timezone.utc)
+
+    @staticmethod
+    def _item(iid: str, ts: str) -> dict:
+        return {"id": iid, "ts": ts, "class": "none", "label_en": "Wire",
+                "label_zh": "快讯", "register": "markets", "en": f"body {iid}",
+                "attribution": "", "corroboration": "reports"}
+
+    def _read(self, sink: Path) -> list:
+        return json.loads(sink.read_text())["items"]
+
+    def test_quiet_tick_keeps_prior_items(self):
+        d = self._daemon()
+        with tempfile.TemporaryDirectory() as td:
+            sink = Path(td) / "live" / "wires.json"
+            cfg = {"wire": {"wires_sink_paths": [str(sink)]}}
+            # tick1: two items.
+            d._write_wires_sink(
+                [self._item("a", "2026-07-27T13:00:00Z"),
+                 self._item("b", "2026-07-27T13:05:00Z")], cfg, self._now())
+            assert {i["id"] for i in self._read(sink)} == {"a", "b"}
+            # tick2: ZERO new items -> the file still has both (rolling window).
+            d._write_wires_sink([], cfg, self._now())
+            assert {i["id"] for i in self._read(sink)} == {"a", "b"}
+
+    def test_new_item_merges_newest_first(self):
+        d = self._daemon()
+        with tempfile.TemporaryDirectory() as td:
+            sink = Path(td) / "live" / "wires.json"
+            cfg = {"wire": {"wires_sink_paths": [str(sink)]}}
+            d._write_wires_sink(
+                [self._item("a", "2026-07-27T13:00:00Z"),
+                 self._item("b", "2026-07-27T13:05:00Z")], cfg, self._now())
+            # tick3: one NEW item, newest ts -> 3 items, newest first.
+            d._write_wires_sink(
+                [self._item("c", "2026-07-27T13:10:00Z")], cfg, self._now())
+            items = self._read(sink)
+            assert [i["id"] for i in items] == ["c", "b", "a"]
+
+    def test_same_id_new_wins(self):
+        d = self._daemon()
+        with tempfile.TemporaryDirectory() as td:
+            sink = Path(td) / "live" / "wires.json"
+            cfg = {"wire": {"wires_sink_paths": [str(sink)]}}
+            d._write_wires_sink([self._item("a", "2026-07-27T13:00:00Z")],
+                                cfg, self._now())
+            updated = self._item("a", "2026-07-27T13:00:00Z")
+            updated["en"] = "REVISED body a"
+            d._write_wires_sink([updated], cfg, self._now())
+            items = self._read(sink)
+            assert len(items) == 1
+            assert items[0]["en"] == "REVISED body a"
+
+    def test_cap_enforced_across_window(self):
+        d = self._daemon()
+        with tempfile.TemporaryDirectory() as td:
+            sink = Path(td) / "live" / "wires.json"
+            cfg = {"wire": {"wires_sink_paths": [str(sink)], "rail_max_items": 3}}
+            # Seed 3, then add 2 newer -> window capped to the 3 newest.
+            d._write_wires_sink(
+                [self._item(f"old{i}", f"2026-07-27T12:0{i}:00Z") for i in range(3)],
+                cfg, self._now())
+            d._write_wires_sink(
+                [self._item("new1", "2026-07-27T13:00:00Z"),
+                 self._item("new2", "2026-07-27T13:05:00Z")], cfg, self._now())
+            ids = [i["id"] for i in self._read(sink)]
+            assert len(ids) == 3
+            assert ids[0] == "new2" and ids[1] == "new1"
+            # The oldest seed item fell out of the capped window.
+            assert "old0" not in ids
+
+    def test_corrupt_existing_file_starts_fresh(self):
+        d = self._daemon()
+        with tempfile.TemporaryDirectory() as td:
+            sink = Path(td) / "live" / "wires.json"
+            sink.parent.mkdir(parents=True, exist_ok=True)
+            sink.write_text("{ this is not valid json ][")
+            cfg = {"wire": {"wires_sink_paths": [str(sink)]}}
+            # Must not raise; the new items are written, corrupt history dropped.
+            d._write_wires_sink([self._item("a", "2026-07-27T13:00:00Z")],
+                                cfg, self._now())
+            items = self._read(sink)
+            assert [i["id"] for i in items] == ["a"]
 
 
 # ─────────────────────────────────────────────────────────────────────────────

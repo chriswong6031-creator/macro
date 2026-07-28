@@ -248,6 +248,26 @@ def _corroboration_chip(n_sources: int, corr_class: str) -> str:
     return "reports"
 
 
+# m2: plain-word class labels (EN + ZH) so the B4b rail client renders a human
+# label and NEVER the raw event_class slug. `class` still carries the slug for
+# machine use; label_en/label_zh are the display strings. Any class not listed
+# falls back to the "none" -> Wire/快讯 entry (never a bare slug leak).
+_CLASS_LABELS: dict[str, tuple[str, str]] = {
+    "macro_print": ("Macro", "宏观"),
+    "policy": ("Washington", "政策"),
+    "geopolitical": ("Geopolitics", "地缘"),
+    "company_news": ("Companies", "公司"),
+    "earnings": ("Companies", "公司"),
+    "none": ("Wire", "快讯"),
+}
+_CLASS_LABEL_FALLBACK: tuple[str, str] = _CLASS_LABELS["none"]
+
+
+def _class_labels(event_class: str) -> tuple[str, str]:
+    """(label_en, label_zh) for an event_class slug; Wire/快讯 for anything unlisted."""
+    return _CLASS_LABELS.get(str(event_class), _CLASS_LABEL_FALLBACK)
+
+
 def _build_rail_item(
     scored: dict,
     now: datetime,
@@ -314,12 +334,19 @@ def _build_rail_item(
         if tape_stamp:
             text_en = f"{text_en} · {tape_stamp}"
 
+    event_class = str(scored.get("event_class", "none"))
+    label_en, label_zh = _class_labels(event_class)
     item: dict = {
         "id": iid,
         "ts": str(scored.get("published_at", "")) or now_iso,
-        "class": str(scored.get("event_class", "none")),
+        # `class` = machine slug; label_en/label_zh = plain-word display (m2). The
+        # B4b client renders the labels and never needs the slug.
+        "class": event_class,
+        "label_en": label_en,
+        "label_zh": label_zh,
         "register": register,
-        "text_en": text_en,
+        # m2: spec field name is `en` (was text_en).
+        "en": text_en,
         "attribution": attribution,
         "corroboration": _corroboration_chip(n_sources, corr_class),
     }
