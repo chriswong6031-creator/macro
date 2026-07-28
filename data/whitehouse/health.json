@@ -1,10 +1,17 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-07-28T03:34:20.117531+00:00",
-  "posts_seen": 6,
-  "seen_total": 64,
-  "evaluated": 0,
+  "as_of": "2026-07-28T06:39:59.924276+00:00",
+  "posts_seen": 7,
+  "seen_total": 65,
+  "evaluated": 1,
   "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
-  "gate_scores": []
+  "gate_scores": [
+    {
+      "id": "wh-2026-07-28-presidential-message-on-the-45th-anniversary-of-the-martyrdom-of-father-stanley-",
+      "importance": 0,
+      "activated": false,
+      "degraded_reason": "served_by:deepseek"
+    }
+  ]
 }
