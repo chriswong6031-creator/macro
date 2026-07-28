@@ -239,6 +239,10 @@ fi
 #                          globbed: 30 of the 53 marketing modules are nightly-only.
 #                          (ad_creative/ad_matrix are NOT here: the panel reads the
 #                          creatives ledger, it does not build creatives.)
+#   marketing/sentinel     marketing.py's ramp resolver (resolve_ramp) + the
+#                          /api/marketing/sentinel panel endpoints — the ramp
+#                          caps would deploy dead to the running panel without
+#                          a restart (2026-07-28, same class as the outbox gap).
 #   scripts/               marketing.py's publish dry-run → marketing_publisher
 #                          → copywriter (top-level import: the post-time language
 #                          gate banned_language() must fail loudly, so the publisher
