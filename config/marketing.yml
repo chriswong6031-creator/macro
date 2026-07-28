@@ -72,9 +72,13 @@ radar:
 # in the actuator. If this block is absent the sentinel falls back to in-code
 # conservative defaults, but the actuator must not have its own fallback copy.
 #
-# The ramp schedule below is binding once D08 is live. D02 reads
-# sentinel.ramp.weeks_1_2 / weeks_3_4 / week_5_plus by account age.
-# Week-1-2 numbers come from the D08 red-team appendix (X policy conservative floor).
+# The ramp schedule below is ENFORCED as of 2026-07-27. The seam is
+# sentinel.resolve_ramp() → gate_plan(): every ENABLED desk_network account
+# resolves an age tier from its `created:` date against the PLAN's as_of date
+# (never a wall clock — the gate must be deterministic from plan inputs), and
+# the caps that actually govern its items are the STRICTER of (base block below,
+# that tier's row). Week-1-2 numbers come from the D08 red-team appendix (X
+# policy conservative floor).
 # ─────────────────────────────────────────────────────────────────────────────
 sentinel:
   # Cross-account near-duplicate threshold — lowered from 0.60 to 0.50 per
@@ -89,8 +93,9 @@ sentinel:
   # NOT work: _get collapses a present-null back to the default). Volume is paced
   # instead by the post-time 10-minute floor (min_minutes_between_any_posts, a
   # later phase) + the 2-week link gate below. The code default stays 2 as a safe
-  # bounded fallback if this key is ever missing. NOTE: the ramp: table below is
-  # currently decorative — no account-age selector reads it (see MASTERPLAN F1).
+  # bounded fallback if this key is ever missing. NOTE: unlimited is the base
+  # value for a WARMED account. A ramping account (see ramp: below) is bounded by
+  # the STRICTER of this and its tier row, so a week-1 desk still gets 2/day.
   max_posts_per_account_per_day: -1   # unlimited
   max_same_cashtag_per_account_per_day: 1
   max_replies_per_account_per_day: 0
@@ -123,6 +128,8 @@ sentinel:
   # Per-post cashtag breadth cap — cashtag piggybacking (many tickers in one post)
   # is an actively-suspended financial-spam vector (D08 R3). Cap distinct $TICKER
   # tokens in headline+body. theme_list is exempt (see sentinel.py comment).
+  # A ramping account uses the STRICTER of this and its tier's own
+  # max_cashtags_per_post (2 for weeks 1-4).
   max_cashtags_per_post: 3
 
   # New-follows cap — follow churn is the fastest X suspension trigger; automated
@@ -171,14 +178,38 @@ sentinel:
     - '\b(will|going to|gonna)\s+(hit|reach|touch|double|triple|10x)\b'
     - '\bcan''?t\s+(go|drop|fall)\b'
 
-  # Ramp schedule — full per-tier cap table (D08 §3).
-  # D02 actuator selects the right tier by account creation date (see desk_network
-  # accounts for the `created:` field to fill at account creation).
-  # Base values above = weeks_1_2 floor. D02 raises caps when the account ages.
-  # NOTE: this table is DECORATIVE — no account-age selector reads it (MASTERPLAN
-  # F1). The min_minutes_between_posts values are set to 45 to match the 45-min
-  # ladder re-spec (2026-07-27) for consistency, but nothing enforces them.
+  # Ramp schedule — full per-tier cap table (D08 §3). ENFORCED since 2026-07-27
+  # (the "decorative table" gap, MASTERPLAN F1, is closed).
+  #
+  # HOW IT BINDS. sentinel.resolve_ramp() reads each ENABLED desk_network
+  # account's `created:` date, subtracts it from the PLAN's as_of date, and picks
+  # a tier: <14d weeks_1_2, <28d weeks_3_4, <graduate_after_days week_5_plus,
+  # and at/after graduate_after_days the account is GRADUATED — it uses the base
+  # block above untouched. Never a wall-clock read: the tier is a pure function of
+  # (as_of, created), so re-gating the same plan always yields the same verdict.
+  #
+  # MERGE LAW while ramping (not graduated) — the effective cap is the STRICTER
+  # of (base, tier), per knob:
+  #   * numeric caps  → the MINIMUM, where -1/unlimited is the LOOSEST value
+  #                     (base -1 + tier 2 ⇒ 2)
+  #   * links_allowed → logical AND (base false + tier true ⇒ false)
+  #   * min_minutes_between_posts → the MAXIMUM (the longer wait wins)
+  # This is what lets both operator rulings stand at once: the 2026-07-24
+  # unlimited-cadence ruling keeps governing WARMED (graduated) accounts, while
+  # the D08 floor governs COLD ones. A ramp row can therefore only ever tighten a
+  # cold account, never loosen a warm one.
+  #
+  # Missing/unparseable `created:` on an ENABLED account fails CLOSED to
+  # weeks_1_2 and prints a ::warning annotation in the Actions summary.
+  #
+  # The min_minutes_between_posts values are 45 to match the 45-min ladder
+  # re-spec (2026-07-27); that knob is still a contract value the D02 actuator
+  # honours at post time, not a plan-tier gate (queue slots have no timestamps).
   ramp:
+    # Days of account age at which the ramp stops applying entirely and the base
+    # block above governs alone. 8 weeks — one full ramp plus a 4-week cushion
+    # past week_5_plus, which is where D08 §3 stops prescribing.
+    graduate_after_days: 56
     weeks_1_2:
       max_posts_per_account_per_day: 2
       min_minutes_between_posts: 45
@@ -187,6 +218,15 @@ sentinel:
       max_same_cashtag_per_account_per_day: 1
       max_replies_per_account_per_day: 0
       max_new_follows_per_account_per_day: 0
+      # Cashtag breadth on a cold account. A post naming 3+ tickers is the
+      # piggybacking fingerprint D08 R3 describes; 2 is the conservative floor.
+      max_cashtags_per_post: 2
+      # theme_list ("Theme Tape") posts carry ≥4 member cashtags BY FORMAT
+      # (copywriter.validate_copy requires it), which is exactly the shape the
+      # breadth cap exists to stop — so on a cold account the format itself is
+      # quarantined (reason ramp_theme_list) rather than exempted. Re-allowed at
+      # week 5, when the account has a posting history to be read against.
+      theme_list_allowed: false
     weeks_3_4:
       max_posts_per_account_per_day: 3
       min_minutes_between_posts: 45
@@ -195,6 +235,8 @@ sentinel:
       max_same_cashtag_per_account_per_day: 2
       max_replies_per_account_per_day: 0
       max_new_follows_per_account_per_day: 0
+      max_cashtags_per_post: 2
+      theme_list_allowed: false
     week_5_plus:
       max_posts_per_account_per_day: 4
       min_minutes_between_posts: 45
@@ -203,6 +245,8 @@ sentinel:
       max_same_cashtag_per_account_per_day: 2
       max_replies_per_account_per_day: 2   # Sentinel-gated
       max_new_follows_per_account_per_day: 5   # manual-only; actuator must NOT script follows
+      max_cashtags_per_post: 3
+      theme_list_allowed: true
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Publish — W1 live social publisher (scripts/marketing_publisher.py +
@@ -235,6 +279,30 @@ publish:
   # gradually instead of bursting. Distinct from the sentinel's per-account
   # PLAN-time min_minutes_between_posts. 0 = disabled.
   min_minutes_between_any_posts: 10
+
+  # Send-time jitter, in minutes (scripts/marketing_publisher.py). A LADDER item
+  # no longer books at the exact sweep minute: it books at (floor-cleared time +
+  # crc32(item_id) % (post_jitter_max_min + 1)) minutes. Fixed cron-sweep minutes
+  # are a temporal-regularity bot signature — an account whose posts land at
+  # :00/:15/:30 every day reads as scheduled automation, which is the detection
+  # class the June 2026 purge leaned on. The offset is derived from the item id,
+  # never from a clock or an RNG, so a dry-run and the live run book the SAME
+  # minute and no test needs a frozen clock. 0 = disabled (exact sweep minute,
+  # the pre-2026-07-27 behaviour), which is also the in-code default. IMMEDIATE /
+  # breaking items are NOT jittered — added latency is the one thing breaking
+  # cannot afford. Note the Buffer adapter enforces a 3-minute minimum lead on
+  # any scheduled post, so offsets under 3 land at that lead.
+  post_jitter_max_min: 7
+
+  # Chart-card CTA. false = the outbound post card's footer keeps the brand
+  # lockup (favicon + mastermind-x.com + tagline) but DROPS the "Start free
+  # 14-day trial" button. A trial button burned into every single image is a
+  # promotional / content-farm fingerprint (D08 R4) and the flagship is a cold
+  # account with no posting history to offset it. The in-code default is true
+  # (the legacy card, unchanged for every caller that does not thread this knob);
+  # false here is the cold-account reputation posture. Re-enable at operator
+  # discretion once the accounts are past the ramp.
+  chart_cta_enabled: false
 
   # Breaking dispatch (cadence masterplan Phase 3, operator re-spec 2026-07-27).
   # An IMMEDIATE item — a fastlane earnings post, an operator "Post now" click, a
@@ -352,7 +420,12 @@ desk_network:
       enabled: true              # a real account exists → generate + (can) post
       # Per-account kill-switch: uncomment to disable this account's items in the sentinel gate.
       # disabled: true
-      # created: YYYY-MM-DD   # fill at account creation — drives ramp tier lookup (D02)
+      # First POSTED-ACTIVITY date (data/marketing/outbox/activity.jsonl), used as a
+      # conservative floor for the real X registration date, which we do not have on
+      # file. OPERATOR: correct this to the true registration date if it is EARLIER —
+      # an earlier date only ages the account faster. Reading younger is the safe
+      # direction (stricter caps), so an unknown-but-bounded date belongs here.
+      created: "2026-07-24"      # drives ramp tier lookup (sentinel.resolve_ramp)
       # Flagship: signals-first flagship; operator law: signal is highest weight on every account
       tilt:
         signal: 0.40
@@ -370,6 +443,10 @@ desk_network:
       beat: "Visual evidence + public report card"
       voice: "dry, receipts-forward"
       enabled: false             # no real X account yet → planned (no queue, no posting)
+      # created: YYYY-MM-DD   # fill THE DAY the X account is registered, in the same
+      #   PR that flips enabled: true. Sentinel resolves the ramp tier from this date
+      #   vs the plan's as_of; on an ENABLED account a missing or unparseable value
+      #   FAILS CLOSED to weeks_1_2 (the strictest tier) and prints a ::warning.
       # Receipts: signals-first; receipt + chart secondary; accountability desk
       tilt:
         signal: 0.38
@@ -387,6 +464,10 @@ desk_network:
       beat: "Rotating high-attention sector"
       voice: "specialist"
       enabled: false             # no real X account yet → planned (no queue, no posting)
+      # created: YYYY-MM-DD   # fill THE DAY the X account is registered, in the same
+      #   PR that flips enabled: true. Sentinel resolves the ramp tier from this date
+      #   vs the plan's as_of; on an ENABLED account a missing or unparseable value
+      #   FAILS CLOSED to weeks_1_2 (the strictest tier) and prints a ::warning.
       # Theme: signals-first; theme_list + mover boost for group reach
       tilt:
         signal: 0.39
@@ -404,6 +485,10 @@ desk_network:
       beat: "Macro/rates/liquidity explainers"
       voice: "educational"
       enabled: false             # no real X account yet → planned (no queue, no posting)
+      # created: YYYY-MM-DD   # fill THE DAY the X account is registered, in the same
+      #   PR that flips enabled: true. Sentinel resolves the ramp tier from this date
+      #   vs the plan's as_of; on an ENABLED account a missing or unparseable value
+      #   FAILS CLOSED to weeks_1_2 (the strictest tier) and prints a ::warning.
       # Research A: signals-first; education secondary; chart-rich explainer desk
       tilt:
         signal: 0.36
@@ -421,6 +506,10 @@ desk_network:
       beat: "Single-stock why-is-it-moving fast desk"
       voice: "fast, reactive"
       enabled: false             # no real X account yet → planned (no queue, no posting)
+      # created: YYYY-MM-DD   # fill THE DAY the X account is registered, in the same
+      #   PR that flips enabled: true. Sentinel resolves the ramp tier from this date
+      #   vs the plan's as_of; on an ENABLED account a missing or unparseable value
+      #   FAILS CLOSED to weeks_1_2 (the strictest tier) and prints a ::warning.
       # Research B: highest signal weight; max mover + theme_list for reach
       tilt:
         signal: 0.42
@@ -438,6 +527,10 @@ desk_network:
       beat: "Charts + historical analogues"
       voice: "pattern/history"
       enabled: false             # no real X account yet → planned (no queue, no posting)
+      # created: YYYY-MM-DD   # fill THE DAY the X account is registered, in the same
+      #   PR that flips enabled: true. Sentinel resolves the ramp tier from this date
+      #   vs the plan's as_of; on an ENABLED account a missing or unparseable value
+      #   FAILS CLOSED to weeks_1_2 (the strictest tier) and prints a ::warning.
       # Research C: signals-first; chart + watchlist secondary; pattern context desk
       tilt:
         signal: 0.37
@@ -456,7 +549,7 @@ desk_network:
       voice: "fast, reactive"
       handle: "w_chris6031"      # the founder's personal X account (Buffer-linked)
       enabled: true              # real account + Buffer channel wired in publish.channels
-      created: "2026-07-27"      # Buffer attach date — drives ramp tier lookup (D02)
+      created: "2026-07-27"      # Buffer attach date — drives ramp tier lookup (sentinel.resolve_ramp)
       # Founder: signals-first (house law); mover/event lean — a person reacting
       # to the tape, not an institutional note. Voice joins the "fast, reactive"
       # template pool (otherwise unused live: research_b is planned/disabled),

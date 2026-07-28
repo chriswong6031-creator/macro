@@ -606,7 +606,10 @@ def build_breaking_payload(
     # Lazy import of card renderer (degrades gracefully)
     card_svg = ""
     try:
-        from engine.marketing.chart_render import render_breaking_card  # noqa: PLC0415
+        from engine.marketing.chart_render import (  # noqa: PLC0415
+            chart_cta_enabled,
+            render_breaking_card,
+        )
         card_kwargs = dict(
             headline=item.get("headline", ""),
             source_name=item.get("source_name", item.get("source", "")),
@@ -614,6 +617,9 @@ def build_breaking_payload(
             published_at=item.get("published_at", ""),
             tickers=_enrich_tickers(tickers, root),
             suppress_cta=bool(item.get("cta_suppress", False)),
+            # Account-wide footer posture (publish.chart_cta_enabled); distinct
+            # from the per-item tragedy rule above, which drops the URL too.
+            cta=chart_cta_enabled(cfg),
             summary=summary_result["summary"],
             logo_root=root,
         )

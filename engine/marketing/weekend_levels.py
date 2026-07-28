@@ -546,6 +546,7 @@ def build_card(
     as_of: str,
     n: int = 90,
     level_overlay: dict[str, Any] | None = None,
+    cta: bool = True,
 ) -> dict[str, Any] | None:
     """Render the v2 candlestick card for *ticker* and publish it. Fail-soft.
 
@@ -588,7 +589,9 @@ def build_card(
             # The one level the copy cites, drawn as a labeled dashed line —
             # the text may only name a level the chart shows (cited_level).
             level_overlay=level_overlay,
-            # footer_cta unset → the full marketing bar (URL + trial button).
+            # footer_cta unset → the full marketing bar (URL, tagline, and — when
+            # publish.chart_cta_enabled is on — the trial button).
+            cta=cta,
         )
         if not svg:
             return None
@@ -686,6 +689,16 @@ def _assert_clean(text: str, ticker: str) -> None:
     distinct = set(_CASHTAG_RE.findall(text))
     if distinct != {ticker.upper()}:
         raise ValueError(f"{ticker} copy cashtags {distinct or '∅'}, want exactly {{{ticker.upper()}}}")
+
+
+def _chart_cta_enabled(cfg: dict | None) -> bool:
+    """publish.chart_cta_enabled, via chart_render's resolver. Lazy import keeps
+    this module importable on a host with no pandas (chart_render pulls it in)."""
+    try:
+        from engine.marketing.chart_render import chart_cta_enabled  # noqa: PLC0415
+        return chart_cta_enabled(cfg)
+    except Exception:  # noqa: BLE001 — a missing renderer must not break item build
+        return True
 
 
 def build_items(
@@ -803,6 +816,7 @@ def build_items(
                 ticker, root,
                 chart_id=f"wl-{as_of}-{ticker.lower()}", as_of=as_of,
                 level_overlay={"price": _lvl_price, "label": _lvl_label},
+                cta=_chart_cta_enabled(cfg),
             )
             if entry is not None:
                 media.append(entry)
