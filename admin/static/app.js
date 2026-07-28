@@ -4993,6 +4993,11 @@ function csUsageBadge(post) {
   if (usage === "quarantined") {
     return `<span class="statpill s-warn" style="font-size:10px">quarantined</span>`;
   }
+  /* Booked at the backend, then cancelled before it sent — it never reached
+     anyone, so it must not read as "posted". */
+  if (usage === "recalled") {
+    return `<span class="statpill s-warn" style="font-size:10px">recalled</span>`;
+  }
   return `<span class="statpill s-mut" style="font-size:10px">${esc((post && post.status) || "drafted")}</span>`;
 }
 
@@ -5569,6 +5574,7 @@ function obxRenderLive(d) {
     ["posted",      "Posted",      "var(--muted)"],
     ["failed",      "Failed",      "var(--bad)"],
     ["quarantined", "Quarantined", "var(--bad)"],
+    ["recalled",    "Recalled",    "var(--warn)"],
   ];
   const tiles = `<div class="metric-tiles-row">
     ${tileDefs.map(([k, lbl, color]) => {
@@ -6084,6 +6090,7 @@ RENDER.marketing_publish = async () => {
     ["posted", "Posted", "var(--muted)"],
     ["failed", "Failed", "var(--bad)"],
     ["quarantined", "Quarantined", "var(--bad)"],
+    ["recalled", "Recalled", "var(--warn)"],
   ];
   /* Each tile is a LINK to the Outbox, not a dead number. "17 queued" with no
      way to see the seventeen is a count the operator cannot act on or verify

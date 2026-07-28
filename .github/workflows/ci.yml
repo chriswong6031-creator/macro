@@ -1187,6 +1187,14 @@ on:
       - ".github/workflows/marketing-publish.yml"
       - ".github/workflows/marketing-media-backfill.yml"
       - ".gitattributes"
+      # Kill-switch recall (2026-07-28) — the other half of forward booking
+      # above. Same reasoning for listing the runner by name: scripts/ is not
+      # reached by the engine/marketing/** globs, so without this entry an edit
+      # to the recall runner would never meet its own guard. The suite also
+      # asserts on .github/workflows/marketing-publish.yml (already listed
+      # above) and admin/marketing.py (listed further down).
+      - "scripts/marketing_recall.py"
+      - "tests/test_marketing_recall.py"
       # Persona Network W1 (docket D13): the persona spec layer + its roster panel,
       # co-run in the marketing-engine job (same stdlib+pyyaml closure). The SPECS
       # are listed, not only the code — a PR that edits ONLY config/personas/*.yml

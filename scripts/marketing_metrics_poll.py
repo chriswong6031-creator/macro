@@ -144,11 +144,24 @@ def gather_targets(root: Path, *, now: datetime, max_age_days: int) -> list[dict
 
     # (2) Publications bridge ledger: rows carry remote_id + account.
     try:
-        for row in read_jsonl(_publications_path(root)):
-            if not isinstance(row, dict):
-                continue
+        pub_rows = [r for r in read_jsonl(_publications_path(root)) if isinstance(r, dict)]
+        # A post RECALLED before it sent (scripts/marketing_recall.py) leaves a
+        # `retracted` correction row beside its original `clean` one — the ledger
+        # is append-only, so both survive. It never reached X, so it has no
+        # analytics to poll and asking Buffer for them would be noise at best.
+        # Collected up front because the retraction is appended AFTER the row it
+        # corrects, so an in-order scan would have already admitted the post.
+        retracted = {
+            str(r.get("remote_id") or "").strip()
+            for r in pub_rows
+            if str(r.get("correction_state") or "") == "retracted"
+        } - {""}
+        for rid in retracted & set(by_id):
+            del by_id[rid]
+
+        for row in pub_rows:
             remote_id = str(row.get("remote_id") or "").strip()
-            if not remote_id:
+            if not remote_id or remote_id in retracted:
                 continue
             src_ts = _parse_iso(row.get("published_at"))
             if src_ts is None or src_ts < cutoff:

@@ -105,14 +105,65 @@ unconditionally and stay dark until you arm it.
 
 **Click Disarm** in the admin Publisher panel — it sets the
 `MARKETING_PUBLISH_ENABLED` repo **variable** to `0`. Every path — workflow,
-local runner, admin dry-run — instantly reverts to dry-run and posts nothing.
-No code change, no deploy. This is the first thing to reach for if anything looks
-wrong.
+local runner, admin dry-run — instantly reverts to dry-run and creates no NEW
+posts. No code change, no deploy. This is the first thing to reach for if
+anything looks wrong.
 
 Manual fallback: set the `MARKETING_PUBLISH_ENABLED` **variable** to `0` (or
 delete it) at **Settings → Secrets and variables → Actions → Variables**, or
 unset the env var locally. (It is a variable now, not a secret — see the note in
 §6.)
+
+### 7a. The variable alone does NOT stop posts already booked
+
+Read this part before you need it. `publish.max_forward_book_min` (§8) lets one
+sweep hand Buffer several posts at once as `customScheduled` sends, up to an hour
+ahead. Those posts live in **Buffer's** queue, not ours. The variable governs
+what our runner does next; it has no reach into a post Buffer has already
+accepted, and Buffer will send it on schedule regardless.
+
+This is not hypothetical. On **2026-07-28** a sweep at 16:25:46Z booked five
+posts for 16:31 / 16:41 / 16:56 / 17:12 / 17:27Z. The operator found quality
+defects and disarmed at 16:26:47Z — **61 seconds later** — and it changed
+nothing. All five were already in Buffer's queue and all five went out, three of
+them posts that had already been identified as defective.
+
+**Disarm now dispatches the recall for you.** Clicking Disarm writes the variable
+AND starts a `marketing-publish` run with `recall_pending`, which cancels every
+booked post that has not sent yet. The panel's response says whether that
+dispatch succeeded — if it did not, it tells you so explicitly, because those
+posts are still going out.
+
+Run it by hand any time (it is **not** gated on the arm variable — recall has to
+work while the publisher is off):
+
+```bash
+# see what would be pulled back — no network, no writes
+python -m scripts.marketing_recall --recall-pending
+
+# actually cancel them
+BUFFER_TOKEN=... python -m scripts.marketing_recall --recall-pending --live
+
+# or name specific items
+BUFFER_TOKEN=... python -m scripts.marketing_recall --ids ob-2026-07-28-abc123 --live
+```
+
+What it will and will not do:
+
+* It cancels a post **only** if the send time it was booked for is still in the
+  future and Buffer confirms the delete. Those items move `posted → recalled`,
+  which is terminal — they can never re-send, and the copy is replaced with a new
+  item, not retried.
+* A post that **already went out** is never touched. It stays `posted`, it keeps
+  counting against the day's cap, and it is reported as `already_sent`. Nothing
+  here can un-send a live post — for that, delete it on X.
+* A cancel that fails leaves the item `posted` and turns the Actions run **red**.
+  That means those posts are still scheduled: delete them by hand in the Buffer
+  queue.
+
+The run's ledger changes are committed even though the variable is `0` — that is
+a deliberate exception in `marketing-publish.yml`, otherwise the recall would
+cancel the posts and then throw away the record of having done so.
 
 ## 8. Raise the daily cap for warm-up
 

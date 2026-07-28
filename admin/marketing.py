@@ -389,7 +389,7 @@ def arm_publisher(enabled) -> dict:
                 "has Variables write permission.")
             return {"ok": False, "enabled": None, "error": err,
                     "note": "variable write failed"}
-        return {
+        out = {
             "ok": True,
             "enabled": en,
             "variable_value": new_value,
@@ -397,6 +397,34 @@ def arm_publisher(enabled) -> dict:
                     if en else
                     "Publisher DISARMED — every path reverts to dry-run.",
         }
+        if not en:
+            # DISARM MEANS STOP. Writing the variable only prevents NEW sends;
+            # publish.max_forward_book_min hands posts to Buffer up to an hour
+            # ahead, and those fire on Buffer's schedule no matter what this
+            # variable says. On 2026-07-28 the operator disarmed 61 seconds
+            # after a sweep booked five posts and all five still went out —
+            # three of them already known-defective — recoverable only by hand
+            # in the Buffer UI. So the toggle now also dispatches the recall.
+            #
+            # FAIL-SOFT AND SUBORDINATE: the disarm itself already succeeded, so
+            # a failed recall dispatch must not report the disarm as failed. It
+            # degrades to ok:True with an honest `recall` block telling the
+            # operator to run it by hand — never a silent swallow.
+            out["recall"] = recall_pending()
+            if out["recall"].get("ok"):
+                out["note"] = ("Publisher DISARMED — every path reverts to dry-run, "
+                               "and a recall run was dispatched to cancel posts "
+                               "already booked at Buffer but not yet sent.")
+            else:
+                out["note"] = ("Publisher DISARMED — every path reverts to dry-run. "
+                               "WARNING: the recall of already-booked posts could not "
+                               "be dispatched (" + str(out["recall"].get("error") or
+                                                       "unknown error") +
+                               "). Posts already handed to Buffer WILL still send — "
+                               "delete them in the Buffer queue or run "
+                               "`python -m scripts.marketing_recall --recall-pending "
+                               "--live`.")
+        return out
     except Exception as exc:  # noqa: BLE001
         log.warning("marketing.arm_publisher failed: %s", exc)
         return {"ok": False, "enabled": None, "error": str(exc),
@@ -479,6 +507,59 @@ def post_now(item_id) -> dict:
     except Exception as exc:  # noqa: BLE001
         log.warning("marketing.post_now failed: %s", exc)
         return {"ok": False, "error": str(exc), "note": "post-now dispatch failed"}
+
+
+def recall_pending() -> dict:
+    """KILL-SWITCH RECALL — cancel every post booked at Buffer but not yet sent.
+
+    Dispatches marketing-publish.yml with `recall_pending`, which runs
+    scripts.marketing_recall instead of the publisher. That runner cancels only
+    bookings whose send time is still in the FUTURE and only moves an item out
+    of `posted` on a confirmed backend delete, so a post that already went out
+    is never touched and never resurrected.
+
+    Deliberately NOT gated on arm_state(): unlike post_now(), which correctly
+    refuses to dispatch a send while the publisher is disarmed, this is the
+    action an operator takes BECAUSE they just disarmed. Requiring the switch to
+    be on would make it unusable in its only real scenario. arm_publisher(False)
+    calls this automatically; it is also exposed on its own so a recall can be
+    re-run after a failed dispatch without toggling the switch again.
+
+    Fail-soft: returns {ok: False, error, note} with an actionable message and
+    never raises. Requires a GH token with Actions: write.
+    """
+    try:
+        from . import github_api  # noqa: PLC0415
+        if not github_api.token():
+            return {
+                "ok": False,
+                "error": "No GitHub token configured. Set GH_TOKEN in "
+                         "/etc/macro-admin.env (needs Actions: read & write) to "
+                         "dispatch a recall.",
+                "note": "GitHub token required",
+            }
+        # "true" as a STRING, not a JSON boolean: that is what the Actions UI
+        # sends for a `type: boolean` input and what the dispatch API accepts
+        # across both its typed and untyped input handling. A raw boolean can be
+        # rejected 422 depending on the endpoint's mood; the string never is,
+        # and the workflow expression reads it as truthy either way.
+        res = github_api.dispatch(workflow=_PUBLISH_WORKFLOW, ref="main",
+                                  inputs={"recall_pending": "true"})
+        if not res.get("ok"):
+            return {"ok": False, "error": res.get("error") or "dispatch failed",
+                    "note": "could not start the recall run"}
+        return {
+            "ok": True,
+            "dispatched": True,
+            "note": ("Recall dispatched. Posts already booked at Buffer that have "
+                     "not sent yet are cancelled within a couple of minutes — check "
+                     "the run in Actions. Anything already sent stays sent; the run "
+                     "goes RED if a cancel failed, which means those posts are still "
+                     "scheduled and need deleting in the Buffer queue."),
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing.recall_pending failed: %s", exc)
+        return {"ok": False, "error": str(exc), "note": "recall dispatch failed"}
 
 
 # Cap on the accepted Buffer token length. A Buffer personal token is short
@@ -968,6 +1049,11 @@ def content(root=None) -> dict:
                     return "queued"
                 if status == "quarantined":
                     return "quarantined"
+                if status == "recalled":
+                    # Booked, then cancelled before it sent. NOT "posted" — it
+                    # reached nobody — and not "drafted" either, which would hide
+                    # that the copy got as far as the backend queue.
+                    return "recalled"
                 return None  # failed / unknown → treat as never-usefully-emitted
 
             _st = _fold_state(repo)
@@ -1620,10 +1706,14 @@ _OUTBOX_EMPTY_NOTE = (
     "with MARKETING_OUTBOX_ENABLED=1."
 )
 
-_TERMINAL_STATUSES = frozenset({"posted", "failed", "quarantined"})
+_TERMINAL_STATUSES = frozenset({"posted", "failed", "quarantined", "recalled"})
 # "posting" = W1 publisher in-flight marker (approved→posting before the network
 # call); surfaced so a crashed/stuck post is visible on the panel, not dropped.
-_STATUS_KEYS = ("queued", "approved", "held", "posting", "posted", "failed", "quarantined")
+# "recalled" = booked at the backend, then CANCELLED before it sent
+# (scripts/marketing_recall.py). Terminal — it never went out and can never
+# re-send; see the TRANSITIONS note in engine/marketing/outbox.py.
+_STATUS_KEYS = ("queued", "approved", "held", "posting", "posted", "failed",
+                "quarantined", "recalled")
 
 
 def _zero_counts() -> dict:

@@ -32,6 +32,14 @@ Buffer GraphQL contract (confirmed 2026-07-22 from developers.buffer.com):
              response is a UNION resolved with inline fragments:
                ... on PostActionSuccess { post { id text dueAt } }
                ... on MutationError    { message }
+  delete     mutation { deletePost(input: DeletePostInput!): DeletePostPayload! }
+             DeletePostInput = { id: PostId! }
+             DeletePostPayload is a union of DeletePostSuccess { id } and
+             VoidMutationError. Per the error-handling guide the API never
+             returns VoidMutationError by name — the documented pattern is to
+             select the `... on MutationError { message }` CATCH-ALL (which
+             VoidMutationError satisfies) so a later-added error member still
+             delivers its message without a query change. Same shape as create.
   The endpoint + query/mutation strings live in the module constants below so
   they are trivial to update as the beta evolves.
 """
@@ -103,6 +111,36 @@ mutation CreatePost($input: CreatePostInput!) {
 }
 """.strip()
 
+# Delete (cancel) ONE post by id. For a post that has not gone out yet — a
+# customScheduled item still sitting in Buffer's queue — this is a CANCEL: it
+# never reaches the network. For one Buffer has already sent, deleting removes
+# Buffer's record; whether the live post survives on X is Buffer's business and
+# NOT something this module may assume either way. That asymmetry is exactly why
+# the recall runner (scripts/marketing_recall.py) refuses to call this on an item
+# whose booked send time has passed — see its `_is_still_pending`.
+#
+# Contract confirmed 2026-07-28 against developers.buffer.com's reference +
+# error-handling guides (direct fetch is Cloudflare-gated; read via the search
+# index, corroborated across four independent queries):
+#   deletePost(input: DeletePostInput!): DeletePostPayload!
+#   DeletePostInput  = { id: PostId! }
+#   DeletePostPayload = DeletePostSuccess { id } | VoidMutationError
+# `... on MutationError { message }` is the documented catch-all — see the
+# module docstring. If the beta renames this, THIS constant is the one edit.
+_DELETE_POST_MUTATION = """
+mutation DeletePost($input: DeletePostInput!) {
+  deletePost(input: $input) {
+    __typename
+    ... on DeletePostSuccess {
+      id
+    }
+    ... on MutationError {
+      message
+    }
+  }
+}
+""".strip()
+
 # Read back one post's analytics + its public permalink. The `post(input:{id})`
 # query returns the x.com permalink (externalLink) — which createPost's payload
 # does NOT expose — plus a normalized metrics list (impressions/reactions/…,
@@ -152,6 +190,28 @@ class Receipt:
     ok: bool
     external_id: str | None
     external_url: str | None
+    error: str | None
+    backend: str
+    at: str
+
+
+@dataclass
+class DeleteResult:
+    """The outcome of one delete/cancel attempt (BufferPublisher.delete_post).
+
+    ok          True ONLY when the backend confirmed the post was deleted. Every
+                other outcome — GraphQL error, "not found", transport failure,
+                an unreadable payload — is False. This flag is load-bearing: the
+                recall runner transitions an item out of `posted` if and only if
+                ok is True, so anything short of a confirmed delete must leave
+                the item exactly where it was. FAIL CLOSED, always.
+    external_id the backend post id that was deleted — None on failure.
+    error       human-readable failure string — None on success.
+    backend     backend name, e.g. "buffer".
+    at          iso8601 UTC timestamp of the attempt.
+    """
+    ok: bool
+    external_id: str | None
     error: str | None
     backend: str
     at: str
@@ -353,6 +413,9 @@ class SocialPublisher(Protocol):
     ) -> Receipt:
         ...
 
+    def delete_post(self, post_id: str, *, now: datetime | None = None) -> DeleteResult:
+        ...
+
     def list_channels(self) -> list[dict]:
         ...
 
@@ -511,6 +574,83 @@ class BufferPublisher:
         except Exception as exc:  # noqa: BLE001
             log.warning("BufferPublisher.list_channels failed: %s", exc)
             return []
+
+    def delete_post(self, post_id: str, *, now: datetime | None = None) -> DeleteResult:
+        """Delete (cancel) one Buffer post by id.
+
+        THE HOLE THIS CLOSES. `publish.max_forward_book_min` lets one sweep hand
+        Buffer several posts as customScheduled sends up to an hour out. Those
+        live in BUFFER's queue, not ours — so `MARKETING_PUBLISH_ENABLED=0`, which
+        only stops the runner from creating NEW posts, does not stop them. On
+        2026-07-28 a 16:25:46Z sweep booked five posts through 17:27Z, the
+        operator disarmed at 16:26:47Z on quality defects, and all five still
+        fired; the only recall available was deleting them by hand in Buffer's
+        UI. This is the missing half of the kill switch.
+
+        Uses the SAME transport/auth/timeout plumbing as publish(), so tests
+        exercise it with zero live traffic.
+
+        Fail-soft AND fail-closed: returns DeleteResult(ok=False, error=...) on
+        any transport/GraphQL/parse failure and never raises. `ok` is True only
+        on a confirmed DeletePostSuccess — a missing/ambiguous payload is a
+        failure, because the caller uses this flag to decide whether a post may
+        be marked recalled, and guessing there would resurrect a live post as
+        "never sent".
+        """
+        at = _iso_now(now)
+        pid = str(post_id or "").strip()
+        if not pid:
+            return DeleteResult(False, None, "empty_post_id", self.backend, at)
+        try:
+            resp = self._transport({
+                "query": _DELETE_POST_MUTATION,
+                "variables": {"input": {"id": pid}},
+            })
+            err = self._graphql_errors(resp)
+            if err:
+                log.warning("BufferPublisher.delete_post(%s): GraphQL error: %s", pid, err)
+                return DeleteResult(False, None, f"graphql_error: {err}", self.backend, at)
+
+            result = ((resp.get("data") or {}).get("deletePost")) or {}
+            typename = result.get("__typename")
+
+            # Union: DeletePostSuccess carries the deleted id; any error member
+            # carries a message (the `... on MutationError` catch-all). Mirror
+            # publish()'s __typename-absent fallback so a beta that stops
+            # returning __typename still resolves an error message correctly.
+            if typename not in (None, "DeletePostSuccess") or (
+                    typename is None and result.get("message")):
+                msg = result.get("message") or f"unknown error ({typename})"
+                log.warning("BufferPublisher.delete_post(%s) refused: %s", pid, msg)
+                return DeleteResult(False, None, f"buffer_error: {msg}", self.backend, at)
+
+            deleted_id = str(result.get("id") or "").strip()
+            if not deleted_id:
+                # No confirmed id back = no confirmed delete. Do NOT assume the
+                # post is gone (see the fail-closed note in the docstring).
+                log.warning("BufferPublisher.delete_post(%s): no id in payload — "
+                            "treating as NOT deleted", pid)
+                return DeleteResult(
+                    False, None,
+                    f"buffer_no_deleted_id: {json.dumps(result)[:300]}",
+                    self.backend, at)
+            return DeleteResult(True, deleted_id, None, self.backend, at)
+
+        except HTTPError as exc:
+            detail = ""
+            try:
+                detail = exc.read(_MAX_RESPONSE_BYTES).decode("utf-8", "replace")[:300]
+            except Exception:  # noqa: BLE001
+                pass
+            log.warning("BufferPublisher.delete_post(%s): http %s", pid, exc.code)
+            return DeleteResult(False, None, f"http_error {exc.code}: {detail}",
+                                self.backend, at)
+        except URLError as exc:
+            log.warning("BufferPublisher.delete_post(%s): network error: %s", pid, exc.reason)
+            return DeleteResult(False, None, f"network_error: {exc.reason}", self.backend, at)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("BufferPublisher.delete_post(%s) failed: %s", pid, exc)
+            return DeleteResult(False, None, f"error: {exc}", self.backend, at)
 
     def fetch_post_metrics(self, post_id: str, *, now: datetime | None = None) -> MetricsResult:
         """Read one post's analytics + public permalink by Buffer post id.

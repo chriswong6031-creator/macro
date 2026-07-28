@@ -254,9 +254,24 @@ def build_state(root: Path | str | None = None, cfg: dict | None = None) -> dict
         shadow_campaigns = [c for c in campaigns if c.get("mode") == "shadow"]
         newest_campaigns = sorted(campaigns, key=lambda c: c.get("campaign_id", ""), reverse=False)[:3]
 
-        total_pubs = len(publications)
-        corrections = [p for p in publications if p.get("correction_state") != "clean"]
-        newest_pubs = sorted(publications, key=lambda p: p.get("published_at", ""), reverse=True)[:3]
+        # publications.jsonl is APPEND-ONLY, so a correction to an existing
+        # publication arrives as a NEW row carrying the same publication_id
+        # (scripts/marketing_recall.py writes one with correction_state
+        # "retracted" when a booked post is cancelled before it sends). Fold
+        # last-row-wins so a correction SUPERSEDES the row it corrects instead
+        # of counting as a second publication — a retracted post must not
+        # inflate total_pubs, and the summary must not report a post as both
+        # clean and retracted. Rows with no publication_id keep their own
+        # identity so nothing is silently merged away.
+        _folded_pubs: dict[str, dict] = {}
+        for _i, _p in enumerate(publications):
+            _key = str(_p.get("publication_id") or "") or f"__row{_i}"
+            _folded_pubs[_key] = _p
+        pubs_current = list(_folded_pubs.values())
+
+        total_pubs = len(pubs_current)
+        corrections = [p for p in pubs_current if p.get("correction_state") != "clean"]
+        newest_pubs = sorted(pubs_current, key=lambda p: p.get("published_at", ""), reverse=True)[:3]
 
         running_exps = [e for e in experiments_raw if e.get("status") == "running"]
         newest_exps = experiments_raw[:3]
