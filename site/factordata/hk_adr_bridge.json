@@ -10,12 +10,12 @@
       "lag_days": 1,
       "state": "fresh"
     },
-    "PDD": {
+    "JD": {
       "asof": "2026-07-27",
       "lag_days": 1,
       "state": "fresh"
     },
-    "JD": {
+    "PDD": {
       "asof": "2026-07-27",
       "lag_days": 1,
       "state": "fresh"

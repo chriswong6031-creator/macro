@@ -59,14 +59,34 @@
       "nearest_magnet_pct": -5.0,
       "magnet_clusters": [
         {
-          "bucket": -1,
-          "distance_pct": -1.0,
-          "level_approx": 442.73,
-          "side": "bull",
-          "outstanding_sum": 0,
+          "bucket": 0,
+          "distance_pct": 1.0,
+          "level_approx": 451.67,
+          "side": "bear",
+          "outstanding_sum": 440000,
           "n_contracts": 1,
           "bull_outstanding": 0,
+          "bear_outstanding": 440000
+        },
+        {
+          "bucket": -2,
+          "distance_pct": -3.0,
+          "level_approx": 433.78,
+          "side": "bull",
+          "outstanding_sum": 2215000,
+          "n_contracts": 1,
+          "bull_outstanding": 2215000,
           "bear_outstanding": 0
+        },
+        {
+          "bucket": 1,
+          "distance_pct": 3.0,
+          "level_approx": 460.62,
+          "side": "bear",
+          "outstanding_sum": 585000,
+          "n_contracts": 1,
+          "bull_outstanding": 0,
+          "bear_outstanding": 585000
         },
         {
           "bucket": 0,
