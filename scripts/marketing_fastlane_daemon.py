@@ -106,6 +106,21 @@ _PRESS_STATE_PATH = ROOT / "data" / "marketing" / "press" / "state.json"
 _PRESS_SEEN_PATH = ROOT / "data" / "marketing" / "press" / "seen.json"
 _PRESS_SEEN_CAP = 8000
 
+# XG-W5: the golden-set / eval corpus. Every item that reached the press lane
+# lands here with its deterministic `_components` — the labeling exporter and the
+# precision@20 harness both read it (engine/marketing/golden_set.py).
+# data/marketing/press/ is GITIGNORED, so this is host state exactly like the
+# cursors and the seen ledger: the poller makes zero git writes, and the nightly
+# stays the sole advancer of every tracked ledger.
+_PRESS_CORPUS_PATH = ROOT / "data" / "marketing" / "press" / "ingest_corpus.jsonl"
+# Review F-17: both caps are CONFIG KEYS (breaking.scoring.corpus_sink), with
+# these as the fallbacks a config-less checkout uses. Rolling is size-gated —
+# checking "over N lines?" by reading the file would re-read tens of MB every
+# 120 seconds — and the roll itself is STREAMING (see _roll_press_corpus), so
+# even the rare roll never materialises the whole file inside the live tick.
+_PRESS_CORPUS_CAP = 20000
+_PRESS_CORPUS_MAX_BYTES = 64 * 1024 * 1024
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Heartbeat
@@ -160,6 +175,55 @@ def _load_press_seen() -> dict:
         return json.loads(_PRESS_SEEN_PATH.read_text(encoding="utf-8"))
     except Exception:  # noqa: BLE001
         return {}
+
+
+def _roll_press_corpus(keep: int) -> None:
+    """Truncate the corpus to its newest `keep` rows — STREAMING, two passes.
+
+    Review F-17: the first cut did ``read_text().splitlines()`` and then joined
+    the tail, which materialises the entire file PLUS a list of every line PLUS
+    the rebuilt tail — three copies of a 64 MB file inside the live press tick.
+    Pass one counts lines; pass two copies the tail out line by line. Peak
+    memory is one line, whatever the file size.
+    """
+    with _PRESS_CORPUS_PATH.open("r", encoding="utf-8") as fh:
+        total = sum(1 for _ in fh)
+    skip = max(0, total - keep)
+    tmp = _PRESS_CORPUS_PATH.with_suffix(".tmp")
+    with _PRESS_CORPUS_PATH.open("r", encoding="utf-8") as src, \
+            tmp.open("w", encoding="utf-8") as dst:
+        for index, line in enumerate(src):
+            if index >= skip:
+                dst.write(line)
+    tmp.replace(_PRESS_CORPUS_PATH)
+    logger.info("[press] corpus rolled %d -> %d rows", total, min(total, keep))
+
+
+def _append_press_corpus(rows: list, *, cfg: dict | None = None) -> int:
+    """Append this tick's scoring-brain corpus rows; roll past the byte ceiling.
+
+    Fail-soft: the corpus is a labeling/evaluation convenience, so a write error
+    logs and the tick continues. NEVER runs in a dry-run (the caller gates it) —
+    an inspection run must stay non-consuming.
+    """
+    if not rows:
+        return 0
+    import json  # noqa: PLC0415
+
+    sink = (((cfg or {}).get("breaking") or {}).get("scoring") or {}).get("corpus_sink") or {}
+    keep = int(sink.get("max_rows", _PRESS_CORPUS_CAP))
+    max_bytes = int(sink.get("max_bytes", _PRESS_CORPUS_MAX_BYTES))
+    try:
+        _PRESS_CORPUS_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with _PRESS_CORPUS_PATH.open("a", encoding="utf-8") as fh:
+            for row in rows:
+                fh.write(json.dumps(row, ensure_ascii=False) + "\n")
+        if _PRESS_CORPUS_PATH.stat().st_size > max_bytes:
+            _roll_press_corpus(keep)
+        return len(rows)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("[press] corpus append failed (continuing): %s", exc)
+        return 0
 
 
 def _save_press_seen(seen: dict) -> None:
@@ -369,6 +433,13 @@ def _run_press_tick(*, dry_run: bool) -> dict:
         for key in result.get("_seen", []):
             seen.setdefault(str(key), now_iso)
         _save_press_seen(seen)
+
+    # 4b. XG-W5 scoring-brain corpus. Every item the lane saw this tick, with its
+    #     deterministic `_components`, appended to the GITIGNORED host-local
+    #     corpus that feeds the labeling exporter and the precision@20 harness.
+    #     Skipped in dry-run for the same non-consuming reason as everything else.
+    if not dry_run:
+        _append_press_corpus(result.get("corpus", []), cfg=marketing_cfg)
 
     # 5. Persist provider cursors / spend / flagship counter — but NOT in dry-run,
     #    which must leave zero footprint so it is non-consuming. NEVER a git write.
