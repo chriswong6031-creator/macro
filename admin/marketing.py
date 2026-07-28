@@ -2351,3 +2351,203 @@ def accounts_toggle(account_id, enabled, note=None, root=None,
     except Exception as exc:  # noqa: BLE001
         log.warning("marketing.accounts_toggle failed: %s", exc)
         return {"ok": False, "error": str(exc)}
+
+
+# ---------------------------------------------------------------------------
+# Reply desk (XG-W4)
+#
+# The reply queue is a SEPARATE store from the outbox and lives in HOST state
+# (~/.mastermind/reply_desk), not the repo: Buffer cannot post replies, so a
+# reply must never be mistaken for a postable outbox item, and the M1 is the
+# nightly render host so nothing may write inside the checkout intraday.
+#
+# `store` here is the host-state root (reply_queue.state_dir), NOT the repo root
+# — the two are different directories and conflating them is how a poller ends
+# up dirtying the render tree.
+# ---------------------------------------------------------------------------
+
+def reply_queue(root=None, *, store=None, now=None) -> dict:
+    """Reply-queue panel payload: per-account two-zone rail + dial + caps.
+
+    Expiry runs first, so a draft whose window has closed is never presented
+    for approval. A stale reply is dead, not a backlog item.
+
+    ``now`` is injectable so expiry and the daily-send count are testable
+    against a fixed clock rather than the wall clock.
+    """
+    try:
+        from engine.marketing import reply_queue as _rq  # noqa: PLC0415
+        from engine.marketing import sentinel as _sentinel  # noqa: PLC0415
+
+        repo = Path(root) if root is not None else _default_root()
+        cfg = _read_yaml(repo / "config" / "marketing.yml")
+        ts = now or datetime.now(timezone.utc)
+
+        # Same order as reply_export.sweep: release leases FIRST so an item
+        # whose desktop session died is reclaimable, then expire. Expiring
+        # before releasing would leave an in-flight item unreachable.
+        #
+        # skip_ids is NOT optional here. A panel read that releases a lease whose
+        # receipt is still pending drops the item to `queued`, which has no edge
+        # to `sent` — so ingest then fails with illegal_transition and a reply
+        # that is already PUBLIC goes permanently uncounted while the cap hands
+        # its slot back. Opening the admin page must not be able to do that.
+        from engine.marketing import reply_export as _rx  # noqa: PLC0415
+
+        released = _rq.release_expired_claims(now=ts, root=store,
+                                              skip_ids=_rx.pending_receipt_ids(store))
+        killed = _rq.expire_due(now=ts, root=store)
+
+        state = _rq.fold_state(store)
+        outcomes = _rq.outcomes(store)
+        accounts: dict[str, dict] = {}
+
+        for iid, item in state["items"].items():
+            status = state["status"].get(iid, "queued")
+            acc_id = str(item.get("account") or "unknown")
+            block = accounts.setdefault(acc_id, {
+                "id": acc_id, "awaiting": [], "approved": [], "done": [],
+                "mode": _rq.resolve_mode(cfg, acc_id), "counts": {},
+            })
+            block["counts"][status] = block["counts"].get(status, 0) + 1
+
+            row = {
+                "id": iid,
+                "status": status,
+                "account": acc_id,
+                "target_url": item.get("target_url"),
+                "parent_author": item.get("parent_author"),
+                "parent_excerpt": item.get("parent_excerpt"),
+                "draft": item.get("draft"),
+                "alt_drafts": item.get("alt_drafts") or [],
+                "family": item.get("family"),
+                "tier": item.get("tier"),
+                "score": item.get("score"),
+                "score_components": item.get("score_components") or {},
+                "chart": item.get("chart"),
+                "expires_at": item.get("expires_at"),
+                "created_at": item.get("created_at"),
+                "outcome": outcomes.get(iid) or {},
+                "claim": state["claims"].get(iid),
+                "attempts": state["attempts"].get(iid, 0),
+            }
+            if status == "queued":
+                block["awaiting"].append(row)
+            elif status in {"approved", "claimed", "failed"}:
+                block["approved"].append(row)
+            else:
+                block["done"].append(row)
+
+        for block in accounts.values():
+            block["awaiting"].sort(key=lambda r: -float(r.get("score") or 0.0))
+            block["approved"].sort(key=lambda r: -float(r.get("score") or 0.0))
+            block["done"] = sorted(block["done"],
+                                   key=lambda r: str(r.get("created_at") or ""),
+                                   reverse=True)[:20]
+            block["cap"] = _sentinel.reply_send_cap(cfg, block["id"], mode=block["mode"])
+            block["sent_today"] = _rq.sends_today(
+                block["id"], ts.strftime("%Y-%m-%d"), store)
+
+        return {
+            "ok": True,
+            "store": str(_rq.state_dir(store)),
+            "modes_enabled": sorted(_rq.SHIPPABLE_MODES),
+            "hard_ceiling": _sentinel.REPLY_HARD_CEILING_PER_ACCOUNT_PER_DAY,
+            "summary": _rq.summary(store),
+            "accounts": sorted(accounts.values(), key=lambda a: a["id"]),
+            "expired_now": killed,
+            "released_now": released,
+            "note": (
+                "Replies never post from this repo. At M0 nothing exports; at M1 "
+                "items you approve are handed to the desktop session, which is the "
+                "only sender. See docs/reply_desk_runbook.md."
+            ),
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing.reply_queue failed: %s", exc)
+        return {"ok": False, "error": str(exc), "accounts": [], "summary": {}}
+
+
+def decide_reply(item_id: str, decision: str, note: str | None = None,
+                 root=None, *, store=None) -> dict:
+    """Approve or hold one reply draft.
+
+    Approve moves the item to `approved`; at M1 the next export tick hands it to
+    the desktop session. Hold is a no-op transition that records the operator
+    looked and chose not to send yet, keeping the item in the rail.
+    """
+    try:
+        from engine.marketing import reply_queue as _rq  # noqa: PLC0415
+
+        iid = str(item_id or "").strip()
+        if not iid:
+            return {"ok": False, "error": "id required"}
+        if decision not in {"approve", "hold"}:
+            return {"ok": False, "error": "decision must be 'approve' or 'hold'"}
+
+        state = _rq.fold_state(store)
+        if iid not in state["items"]:
+            return {"ok": False, "error": "unknown item id"}
+
+        if decision == "hold":
+            logged = _rq.hold(iid, actor="admin", root=store, note=note)
+            return {"ok": True, "id": iid, "decision": "hold",
+                    "status": state["status"].get(iid), "logged": bool(logged),
+                    "note": "held in the rail; approve when the read is right"}
+
+        ok = _rq.approve(iid, root=store, note=note)
+        if not ok:
+            return {"ok": False,
+                    "error": f"cannot approve an item that is "
+                             f"{state['status'].get(iid)!r}"}
+        return {"ok": True, "id": iid, "decision": "approve", "status": "approved"}
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing.decide_reply failed: %s", exc)
+        return {"ok": False, "error": str(exc)}
+
+
+def reject_reply(item_id: str, reason: str | None = None, root=None, *, store=None) -> dict:
+    """REJECT one reply draft, with a reason.
+
+    Rejections are the taste corpus: they are the only signal that says what this
+    desk should sound like. Rejecting also RELEASES the thread's one-owner lock,
+    so a sibling desk may legitimately take a conversation this one declined.
+    """
+    try:
+        from engine.marketing import reply_queue as _rq  # noqa: PLC0415
+
+        iid = str(item_id or "").strip()
+        if not iid:
+            return {"ok": False, "error": "id required"}
+
+        state = _rq.fold_state(store)
+        item = state["items"].get(iid)
+        if item is None:
+            return {"ok": False, "error": "unknown item id"}
+        status = state["status"].get(iid, "queued")
+
+        if not _rq.reject(iid, root=store, reason=reason):
+            return {"ok": False,
+                    "error": f"cannot reject an item that is {status!r}",
+                    "note": "sent, rejected and expired items are terminal"}
+
+        # Feedback is best-effort and deliberately AFTER the kill: a failure to
+        # record the reason must never leave a bad draft still approvable.
+        #
+        # It lands in the reply desk's OWN corpus in host state, not
+        # data/marketing/rejections.jsonl — the operator doing this runs the
+        # admin on the M1, which is the nightly render host, so an intraday
+        # write into the checkout is exactly what this desk is built to avoid.
+        row = False
+        try:
+            row = _rq.record_rejection(item, reason=reason, actor="admin", root=store)
+        except Exception as rexc:  # noqa: BLE001
+            log.warning("marketing.reject_reply: feedback row failed: %s", rexc)
+
+        return {"ok": True, "id": iid, "rejected": True, "logged": bool(row),
+                "thread_released": True,
+                "note": None if row else
+                        "rejected, but the feedback row could not be written"}
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing.reject_reply failed: %s", exc)
+        return {"ok": False, "error": str(exc)}

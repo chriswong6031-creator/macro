@@ -13,6 +13,8 @@ Public API:
     receipts_context(root) -> (age_days, graded_window)
     load_exceptions(root) -> {item_id: row}
     publish_enabled() -> bool                          # global kill-switch
+    is_reply_item(item) -> bool                        # kind OR type (XG-W4)
+    reply_send_cap(cfg, account_id, *, mode) -> int    # reply-desk rail cap
     mark_all_unverified(plan) -> None                  # crash-path stamp
     error_report(as_of=..., exc=...) -> dict           # fail-closed report shape
     write_report(root, report) -> Path
@@ -66,6 +68,93 @@ def publish_enabled() -> bool:
 
 
 # ---------------------------------------------------------------------------
+# Reply identification + the reply-send cap (XG-W4)
+# ---------------------------------------------------------------------------
+
+def is_reply_item(item: dict) -> bool:
+    """True when an item is a reply, whichever schema it arrived in.
+
+    THE BUG THIS FIXES (charter §5, assigned to XG-W4): the cap counter below
+    read ``item["type"] == "reply"`` only. Content-plan items key on ``type``,
+    but outbox and reply-queue items key on ``kind``, so the gate could not see
+    a reply arriving in the other schema.
+
+    HONEST STATUS: this makes the counter CAPABLE, not yet exercised. No
+    producer in the tree sets ``kind``/``type`` to "reply" today — the reply
+    desk runs its own store and its own cap (``reply_send_cap`` +
+    ``reply_queue.may_send``), and the content-plan producer that would feed
+    THIS counter lands with the rest of the reply pipeline in XG-W6. Until then
+    ``reply_cap_daily`` still counts zero in production; the difference is that
+    it now counts correctly the moment something arrives, instead of being
+    structurally unable to.
+    """
+    for field in ("kind", "type"):
+        if str(item.get(field) or "").strip().lower() == "reply":
+            return True
+    return False
+
+
+def reply_send_cap(cfg: dict, account_id: str, *, mode: str) -> int:
+    """Effective per-account daily reply-SEND cap for the reply desk.
+
+    Two rails, two authorities. ``max_replies_per_account_per_day`` (base +
+    ramp) governs engine-originated reply items travelling the content-plan and
+    outbox rail, and ``gate_plan`` still enforces it there. The REPLY DESK is a
+    different rail: its own store, its own critics, and a human-supervised
+    desktop session as the only sender. Its cap is the mode dial, per the
+    charter's explicit ruling that reply caps "open per the mode dial only,
+    never by a builder config edit".
+
+    * M0 returns 0 unconditionally. This is the standing 0-cap (D08: "default to
+      0 indefinitely unless the operator explicitly opens it"), and no config
+      key can move it.
+    * M1+ returns the configured per-account target, clamped to
+      ``REPLY_HARD_CEILING_PER_ACCOUNT_PER_DAY``. The clamp is one-directional:
+      config may lower the cap, never raise it past the ceiling.
+    """
+    if str(mode or "").strip().upper() == "M0":
+        return 0
+
+    rd = (cfg or {}).get("reply_desk") or {}
+    # The whole-desk kill switch binds the cap too, so a disabled desk cannot be
+    # left with a live per-account allowance. Truthiness, not `is False`, so a
+    # hand-edited `enabled: 0` disables. Absent means enabled.
+    if "enabled" in rd and not rd["enabled"]:
+        return 0
+
+    caps = rd.get("daily_caps") or {}
+    per_account = caps.get("accounts") or {}
+    raw = per_account.get(account_id, caps.get(
+        "per_account_target", _DEFAULT_REPLY_TARGET_PER_ACCOUNT_PER_DAY))
+    if raw is None:
+        # An explicit null is an operator SILENCING one account, not a request
+        # for the default. Falling through to 18 would be the opposite of the
+        # instruction.
+        return 0
+    try:
+        target = int(raw)
+    except (TypeError, ValueError):
+        print(
+            f"::warning title=reply-cap-unparseable::reply_desk daily cap {raw!r} for "
+            f"{account_id!r} is not an integer — falling back to 0 (no sends)",
+            flush=True,
+        )
+        return 0
+
+    if target < 0:
+        target = 0
+    if target > REPLY_HARD_CEILING_PER_ACCOUNT_PER_DAY:
+        print(
+            f"::warning title=reply-cap-clamped::reply_desk daily cap {target} for "
+            f"{account_id!r} exceeds the hard ceiling "
+            f"{REPLY_HARD_CEILING_PER_ACCOUNT_PER_DAY} — clamped",
+            flush=True,
+        )
+        target = REPLY_HARD_CEILING_PER_ACCOUNT_PER_DAY
+    return target
+
+
+# ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
 
@@ -107,6 +196,20 @@ _DEFAULT_MAX_NEW_FOLLOWS_PER_ACCOUNT_PER_DAY = 0   # follow churn = fastest ban 
 # rev-3, #3490) — flipping it never touches the advice-lexicon guard below, which
 # always bans reckless phrasing ("guaranteed", "can't lose", "to the moon", …).
 _DEFAULT_REQUIRE_SIGNAL_DISCLOSURE = True
+
+# ── Reply desk send cap (XG-W4) ──────────────────────────────────────────────
+# A SEPARATE rail from _DEFAULT_MAX_REPLIES_PER_ACCOUNT_PER_DAY above: that key
+# governs engine-originated reply items on the content-plan/outbox rail, while
+# these govern the reply desk's own store and its desktop sender. See
+# reply_send_cap() for why the two do not merge.
+#
+# The hard ceiling comes from the growth doctrine (charter §3): 15-20/day is the
+# quality bar, 30 is the wall. It is a CODE constant, not a config key, precisely
+# because the charter says reply caps open per the mode dial "never by a builder
+# config edit" — a config typo must not be able to raise it.
+REPLY_HARD_CEILING_PER_ACCOUNT_PER_DAY = 30
+#: Target used when the dial is open but no per-account target is configured.
+_DEFAULT_REPLY_TARGET_PER_ACCOUNT_PER_DAY = 18
 
 # ── Age ramp (D08 §3) ────────────────────────────────────────────────────────
 # Tier names are the config/marketing.yml sentinel.ramp keys. "graduated" is not
@@ -1198,7 +1301,7 @@ def gate_plan(
 
         cashtag = str(item.get("cashtag") or "").strip()
         slot = str(item.get("slot") or "").strip()
-        is_reply = item.get("type") == "reply"
+        is_reply = is_reply_item(item)
         has_media = bool(item.get("chart_id"))
         dk = (acc_id, _slot_day_bucket(slot))  # per-(account, day) cap key
 

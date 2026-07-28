@@ -679,10 +679,23 @@ def test_spec_reference_predicate_catches_every_consumption_form(snippet):
     # emitted-post counters, not specs. Reading that tree is not a spec read.
     'return _root_path(root) / "data" / "marketing" / "personas" / str(account)',
     "base = root / 'data' / 'marketing' / 'personas'",
+    # XG-W4 reads the same tree for the opinion ledger and relationship context.
+    'path = base / "data" / "marketing" / "personas" / account / "theses.jsonl"',
+    "path = base / 'data' / 'marketing' / 'personas' / acct / 'relations.jsonl'",
 ])
 def test_spec_reference_predicate_ignores_the_config_block(snippet):
     """copywriter.personas is a CONFIG BLOCK, not this module — it must not trip."""
     assert not _references_persona_specs(snippet), f"false positive: {snippet!r}"
+
+
+def test_the_ledger_line_exemption_does_not_hide_a_real_spec_read():
+    """Guard the guard: judging the ambiguous path form line-by-line must not
+    let a genuine spec read through elsewhere in the same file."""
+    blob = (
+        'mem = base / "data" / "marketing" / "personas" / acct / "theses.jsonl"\n'
+        'specs = root / "config" / "personas"\n'
+    )
+    assert _references_persona_specs(blob)
 
 
 def test_no_generation_module_reads_a_persona_spec():

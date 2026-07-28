@@ -1,0 +1,129 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Reply-desk author register (XG-W4)
+#
+# WHAT THIS IS: the per-persona community map from the editorial constitution
+# §14.2, made machine-readable. Discovery polls ONLY the handles listed here
+# (allowlist-only, same law as the Trump wire's x_follow register) plus mentions
+# of our own accounts. There is no keyword firehose and no first-party scraping;
+# twitterapi.io is the only X read path.
+#
+# WHO CURATES IT: the OPERATOR. The schema, the loader, and the validator are
+# the engineering deliverable; the handle list is an editorial judgment about
+# who is worth being in conversation with, and it is not a builder's call to
+# invent. The entries below are deliberately a handful of placeholders marked
+# `enabled: false` — they document the shape and exercise the validator without
+# committing us to poll anyone.
+#
+# TIERS (constitution §9.2):
+#   relationship — smaller/mid-sized experts who answer good replies. These
+#                  build repeated recognition. Their threads are read INCLUDING
+#                  replies (see reply_discovery.include_replies_for_tiers),
+#                  because that is where a conversation actually starts.
+#   conversion   — niche accounts with highly relevant audiences. Fewer raw
+#                  impressions, better profile visits and qualified follows.
+#   breakout     — very large or fast-accelerating posts. Enter ONLY with a
+#                  fast, differentiated chart, correction, or mechanism.
+#                  Generic commentary under a giant post is invisible clutter.
+#
+# The portfolio needs all three, but the charter is explicit that conversion and
+# relationship carry more weight than vanity reach — that ordering is encoded in
+# reply_score.DEFAULT_TIER_PRIOR, not here.
+#
+# ONE AUTHOR, ONE DESK: the validator rejects a handle registered to two
+# accounts. One conversation / one owner is enforced again at enqueue time, but
+# a shared author in the register guarantees the collision, so it fails earlier.
+#
+# ADDING AN ENTRY:
+#   handle:  the bare handle, no leading "@"
+#   tier:    relationship | conversion | breakout
+#   beats:   optional; overrides the desk's default beats for scoring beat-fit
+#   notes:   free text for the curator (never read by the engine)
+#   enabled: false parks an entry without deleting the curation work
+#
+# Validate after editing:
+#   python3 -c "from engine.marketing import reply_discovery as r; \
+#               print(r.validate_register(r.load_register()) or 'OK')"
+# ─────────────────────────────────────────────────────────────────────────────
+
+schema: marketing.reply_targets/v1
+
+accounts:
+
+  # ── Kelly — the mechanism detective ────────────────────────────────────────
+  # Constitution §14.2: "Kelly core: macro, credit, vol, market structure /
+  # Kelly bridge: AI/semis, tech investors, portfolio managers"
+  kelly:
+    beats: ["macro", "credit", "spreads", "volatility", "market structure",
+            "cross-asset", "rates", "curve", "semis", "capex"]
+    authors:
+      - handle: PLACEHOLDER_credit_analyst
+        tier: relationship
+        enabled: false
+        notes: "OPERATOR: a mid-tier credit/spreads account that answers replies."
+      - handle: PLACEHOLDER_vol_desk
+        tier: conversion
+        enabled: false
+        notes: "OPERATOR: vol/options account with a highly relevant audience."
+
+  # ── Cici — the cross-border correspondent ─────────────────────────────────
+  # §14.2: "Cici core: China/HK/Asia markets / bridge: commodities, shipping,
+  # luxury, semis, global macro"
+  cici:
+    beats: ["china", "hong kong", "asia", "a-shares", "pboc", "yuan",
+            "commodities", "shipping", "freight", "exports", "semis"]
+    authors:
+      - handle: PLACEHOLDER_asia_macro
+        tier: relationship
+        enabled: false
+        notes: "OPERATOR: China/HK macro voice active during Asia hours."
+      - handle: PLACEHOLDER_shipping_desk
+        tier: conversion
+        enabled: false
+        notes: "OPERATOR: shipping/commodities bridge community."
+
+  # ── Sophia — the narrative architect ──────────────────────────────────────
+  # §14.2: "Sophia core: policy, economics, narrative / bridge: brand, media,
+  # technology, consumer behaviour"
+  sophia:
+    beats: ["policy", "economics", "inflation", "fiscal", "central banks",
+            "elections", "regulation", "consumer", "media"]
+    authors:
+      - handle: PLACEHOLDER_policy_econ
+        tier: relationship
+        enabled: false
+        notes: "OPERATOR: policy/econ writer who engages thoughtfully."
+
+  # ── Meagan — the crowd translator ─────────────────────────────────────────
+  # §14.2: "Meagan core: retail market conversation and sentiment / bridge:
+  # consumer, technology, startup, lifestyle finance"
+  #
+  # NOTE (charter §2 amendment 10): Meagan's crowd-state beat has no sanctioned
+  # sentiment source until XG-W5. Until then her replies quote attributed
+  # headlines/posts and never assert an unmeasured crowd state.
+  meagan:
+    beats: ["retail", "sentiment", "consumer", "earnings reactions",
+            "tech", "positioning", "flows"]
+    authors:
+      - handle: PLACEHOLDER_retail_sentiment
+        tier: conversion
+        enabled: false
+        notes: "OPERATOR: retail-conversation account with a real audience."
+
+  # ── Flagship — the evidence desk ──────────────────────────────────────────
+  # Charter §1: chart / state-change / receipts. Dial 1 on replies (§2
+  # amendment 3) — flagship stays evidence-forward even in conversation.
+  flagship:
+    beats: ["data", "quant", "backtest", "breadth", "charts", "receipts",
+            "statistics", "market internals"]
+    authors:
+      - handle: PLACEHOLDER_quant_researcher
+        tier: relationship
+        enabled: false
+        notes: "OPERATOR: data/quant account where our chart speed is the edge."
+
+  # ── Founder — the founder's own read ──────────────────────────────────────
+  # Charter §1: first-person, dry, never pitches. Register intentionally empty:
+  # the founder curates his own conversations.
+  founder:
+    beats: ["macro", "markets", "building", "research"]
+    authors: []

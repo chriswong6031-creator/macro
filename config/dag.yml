@@ -1169,6 +1169,20 @@ lanes:
           missed night self-heals and a re-read appends nothing.
           Unconfigured (no PAT) is a SKIP, not a failure — exits 0 having written
           nothing. Never-raise; display-only; originates no market signal.
+      - id: persona_memory
+        module: engine.marketing.persona_memory
+        note: >
+          XG-W3 persona-memory consolidator. Folds the host/VPS runtime spool
+          (emission-time phrase-fatigue, relationship-touch and open-promise
+          counters, which make ZERO tracked-repo writes intraday — the same
+          posture as the outbox's items-host.jsonl) into the tracked ledgers
+          under data/marketing/personas/. Nightly is the SOLE advancer of those
+          ledgers (charter §2 amendment 13), so this is their only writer.
+          Idempotent: records dedup on a stable key, because a retried nightly
+          that double-counted would silently TIGHTEN every per-quirk frequency
+          cap those counters bound. A host with no spool is a no-op that exits 0
+          and prints a ::notice — most runners never emit anything. Never-raise
+          (set +e, exit 0); a non-zero rc only prints a ::warning.
 
   # ── daily.yml / oracle_offrender ────────────────────────────────────────
   # Oracle off-render job: panel rebuild + episodes + Time Machine + Ratio Lens.
