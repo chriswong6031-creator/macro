@@ -2,31 +2,368 @@
   "schema": "reflexivity_overlay.v1",
   "is_context_only": true,
   "as_of": "2026-07-27",
-  "generated_utc": "2026-07-28T21:32:19Z",
+  "generated_utc": "2026-07-28T21:58:11Z",
   "note": "Risk-clustering read: 'is this the same hidden trade?'. NOT an alpha claim. Board-level, held-agnostic (US only, v1). Display-only per R-F / Signal Commons R7.",
   "factor_caveat": "Per-name secondary betas (oil/usd/btc/gold/china) are OOS-unstable and excluded. Similarity uses high-tier factors only (mkt/growth/size/rates, scope=single). Trust the MEMBERSHIP leg more than the factor leg for individual names.",
   "board_concentration": {
-    "n": 5,
-    "n_eff": 1.07,
+    "n": 9,
+    "n_eff": 1.51,
     "basis": "membership-jaccard+high-tier-factor-cosine",
-    "note": "Supersedes sector-only HHI effective_bets in build_stock_board_v2 per R-B. N_eff = participation-ratio of similarity-matrix eigenvalues. 5 candidates \u2248 1.07 independent bets."
+    "note": "Supersedes sector-only HHI effective_bets in build_stock_board_v2 per R-B. N_eff = participation-ratio of similarity-matrix eigenvalues. 9 candidates \u2248 1.51 independent bets."
   },
   "same_thesis_groups": [
     {
       "members": [
         "CCS",
+        "HALO",
         "JBTM",
         "NVST",
+        "RBA",
+        "RCL",
         "TNL",
         "WWD"
       ],
-      "size": 5,
+      "size": 9,
       "basis": "membership-jaccard",
       "label": "Consumer Discretionary"
     }
   ],
-  "earnings_coverage_frac": 0.6,
+  "earnings_coverage_frac": 0.667,
   "by_ticker": {
+    "LEA": {
+      "verdict": "duplicate",
+      "max_similarity": 1.0,
+      "basis": "membership+high-tier-factor",
+      "nearest": [
+        {
+          "ticker": "CCS",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": 0.8521,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
+          "same_earnings_week": null
+        },
+        {
+          "ticker": "TNL",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": 0.8573,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
+          "same_earnings_week": null
+        },
+        {
+          "ticker": "WWD",
+          "combined": 0.9816,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.9816,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": null
+        }
+      ],
+      "earnings_leg": {
+        "next_date": null,
+        "same_week_peers": [],
+        "has_data": false
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as CCS \u2014 Consumer Discretionary (similarity 100%).",
+      "why_zh": "\u4e0e CCS \u62bc\u6ce8\u76f8\u540c \u2014 Consumer Discretionary\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
+    },
+    "HALO": {
+      "verdict": "duplicate",
+      "max_similarity": 1.0,
+      "basis": "membership-only:r2=0.10<0.2",
+      "nearest": [
+        {
+          "ticker": "NVST",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.10<0.2",
+          "shared_groups": [
+            "sector:Health Care"
+          ],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "LEA",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.10<0.2",
+          "shared_groups": [],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "WWD",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.10<0.2",
+          "shared_groups": [],
+          "same_earnings_week": false
+        }
+      ],
+      "earnings_leg": {
+        "next_date": "2026-08-04",
+        "same_week_peers": [
+          "JBTM",
+          "RBA",
+          "RCL"
+        ],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as NVST \u2014 Health Care (similarity 100%).",
+      "why_zh": "\u4e0e NVST \u62bc\u6ce8\u76f8\u540c \u2014 Health Care\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
+    },
+    "NVST": {
+      "verdict": "duplicate",
+      "max_similarity": 1.0,
+      "basis": "membership+high-tier-factor",
+      "nearest": [
+        {
+          "ticker": "HALO",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.10<0.2",
+          "shared_groups": [
+            "sector:Health Care"
+          ],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "JBTM",
+          "combined": 0.9979,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.9979,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "TNL",
+          "combined": 0.99,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.99,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": false
+        }
+      ],
+      "earnings_leg": {
+        "next_date": "2026-07-30",
+        "same_week_peers": [
+          "WWD"
+        ],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as HALO \u2014 Health Care (similarity 100%).",
+      "why_zh": "\u4e0e HALO \u62bc\u6ce8\u76f8\u540c \u2014 Health Care\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
+    },
+    "WWD": {
+      "verdict": "duplicate",
+      "max_similarity": 1.0,
+      "basis": "membership+high-tier-factor",
+      "nearest": [
+        {
+          "ticker": "RBA",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": 0.9713,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [
+            "sector:Industrials"
+          ],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "JBTM",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": 0.9708,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [
+            "sector:Industrials"
+          ],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "LEA",
+          "combined": 0.9816,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.9816,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": false
+        }
+      ],
+      "earnings_leg": {
+        "next_date": "2026-07-27",
+        "same_week_peers": [
+          "NVST"
+        ],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as RBA \u2014 Industrials (similarity 100%).",
+      "why_zh": "\u4e0e RBA \u62bc\u6ce8\u76f8\u540c \u2014 Industrials\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
+    },
+    "RBA": {
+      "verdict": "duplicate",
+      "max_similarity": 1.0,
+      "basis": "membership+high-tier-factor",
+      "nearest": [
+        {
+          "ticker": "WWD",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": 0.9713,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [
+            "sector:Industrials"
+          ],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "JBTM",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": 0.9551,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [
+            "sector:Industrials"
+          ],
+          "same_earnings_week": true
+        },
+        {
+          "ticker": "NVST",
+          "combined": 0.9512,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.9512,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": false
+        }
+      ],
+      "earnings_leg": {
+        "next_date": "2026-08-05",
+        "same_week_peers": [
+          "HALO",
+          "JBTM",
+          "RCL"
+        ],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as WWD \u2014 Industrials (similarity 100%).",
+      "why_zh": "\u4e0e WWD \u62bc\u6ce8\u76f8\u540c \u2014 Industrials\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
+    },
+    "JBTM": {
+      "verdict": "duplicate",
+      "max_similarity": 1.0,
+      "basis": "membership+high-tier-factor",
+      "nearest": [
+        {
+          "ticker": "WWD",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": 0.9708,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [
+            "sector:Industrials"
+          ],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "RBA",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": 0.9551,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [
+            "sector:Industrials"
+          ],
+          "same_earnings_week": true
+        },
+        {
+          "ticker": "NVST",
+          "combined": 0.9979,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.9979,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": false
+        }
+      ],
+      "earnings_leg": {
+        "next_date": "2026-08-03",
+        "same_week_peers": [
+          "HALO",
+          "RBA",
+          "RCL"
+        ],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as WWD \u2014 Industrials (similarity 100%).",
+      "why_zh": "\u4e0e WWD \u62bc\u6ce8\u76f8\u540c \u2014 Industrials\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
+    },
+    "RCL": {
+      "verdict": "duplicate",
+      "max_similarity": 0.9804,
+      "basis": "membership+high-tier-factor",
+      "nearest": [
+        {
+          "ticker": "JBTM",
+          "combined": 0.9804,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.9804,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": true
+        },
+        {
+          "ticker": "WWD",
+          "combined": 0.9783,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.9783,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "NVST",
+          "combined": 0.9666,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.9666,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": false
+        }
+      ],
+      "earnings_leg": {
+        "next_date": "2026-08-04",
+        "same_week_peers": [
+          "HALO",
+          "JBTM",
+          "RBA"
+        ],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as JBTM \u2014 shared factor profile (similarity 98%).",
+      "why_zh": "\u4e0e JBTM \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 98%\uff09\u3002"
+    },
     "CCS": {
       "verdict": "duplicate",
       "max_similarity": 1.0,
@@ -51,15 +388,6 @@
           "factor_basis": "high-tier-factors:4of4",
           "shared_groups": [],
           "same_earnings_week": null
-        },
-        {
-          "ticker": "JBTM",
-          "combined": 0.9491,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.9491,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": null
         }
       ],
       "earnings_leg": {
@@ -68,142 +396,8 @@
         "has_data": false
       },
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Same bet as TNL \u2014 Consumer Discretionary (similarity 100%).",
-      "why_zh": "\u4e0e TNL \u62bc\u6ce8\u76f8\u540c \u2014 Consumer Discretionary\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
-    },
-    "NVST": {
-      "verdict": "duplicate",
-      "max_similarity": 0.9979,
-      "basis": "membership+high-tier-factor",
-      "nearest": [
-        {
-          "ticker": "JBTM",
-          "combined": 0.9979,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.9979,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": false
-        },
-        {
-          "ticker": "TNL",
-          "combined": 0.99,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.99,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": false
-        },
-        {
-          "ticker": "WWD",
-          "combined": 0.9571,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.9571,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": true
-        }
-      ],
-      "earnings_leg": {
-        "next_date": "2026-07-30",
-        "same_week_peers": [
-          "WWD"
-        ],
-        "has_data": true
-      },
-      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Same bet as JBTM \u2014 shared factor profile (similarity 100%).",
-      "why_zh": "\u4e0e JBTM \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
-    },
-    "WWD": {
-      "verdict": "duplicate",
-      "max_similarity": 1.0,
-      "basis": "membership+high-tier-factor",
-      "nearest": [
-        {
-          "ticker": "JBTM",
-          "combined": 1.0,
-          "membership_jaccard": 1.0,
-          "factor_cosine": 0.9708,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [
-            "sector:Industrials"
-          ],
-          "same_earnings_week": false
-        },
-        {
-          "ticker": "NVST",
-          "combined": 0.9571,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.9571,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": true
-        },
-        {
-          "ticker": "TNL",
-          "combined": 0.9254,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.9254,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": false
-        }
-      ],
-      "earnings_leg": {
-        "next_date": "2026-07-27",
-        "same_week_peers": [
-          "NVST"
-        ],
-        "has_data": true
-      },
-      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Same bet as JBTM \u2014 Industrials (similarity 100%).",
-      "why_zh": "\u4e0e JBTM \u62bc\u6ce8\u76f8\u540c \u2014 Industrials\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
-    },
-    "JBTM": {
-      "verdict": "duplicate",
-      "max_similarity": 1.0,
-      "basis": "membership+high-tier-factor",
-      "nearest": [
-        {
-          "ticker": "WWD",
-          "combined": 1.0,
-          "membership_jaccard": 1.0,
-          "factor_cosine": 0.9708,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [
-            "sector:Industrials"
-          ],
-          "same_earnings_week": false
-        },
-        {
-          "ticker": "NVST",
-          "combined": 0.9979,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.9979,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": false
-        },
-        {
-          "ticker": "TNL",
-          "combined": 0.9845,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.9845,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": false
-        }
-      ],
-      "earnings_leg": {
-        "next_date": "2026-08-03",
-        "same_week_peers": [],
-        "has_data": true
-      },
-      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Same bet as WWD \u2014 Industrials (similarity 100%).",
-      "why_zh": "\u4e0e WWD \u62bc\u6ce8\u76f8\u540c \u2014 Industrials\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
+      "why_en": "Same bet as LEA \u2014 Consumer Discretionary (similarity 100%).",
+      "why_zh": "\u4e0e LEA \u62bc\u6ce8\u76f8\u540c \u2014 Consumer Discretionary\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
     },
     "TNL": {
       "verdict": "duplicate",
@@ -251,40 +445,130 @@
     }
   },
   "pair_basis": {
-    "CCS__NVST": {
+    "LEA__HALO": {
       "membership_jaccard": 0.0,
-      "factor_cosine": 0.9517,
-      "combined": 0.9517,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.10<0.2",
+      "shared_groups": []
+    },
+    "LEA__NVST": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.9133,
+      "combined": 0.9133,
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
-    "CCS__WWD": {
+    "LEA__WWD": {
       "membership_jaccard": 0.0,
-      "factor_cosine": 0.8794,
-      "combined": 0.8794,
+      "factor_cosine": 0.9816,
+      "combined": 0.9816,
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
-    "CCS__JBTM": {
+    "LEA__RBA": {
       "membership_jaccard": 0.0,
-      "factor_cosine": 0.9491,
-      "combined": 0.9491,
+      "factor_cosine": 0.9352,
+      "combined": 0.9352,
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
-    "CCS__TNL": {
+    "LEA__JBTM": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.9284,
+      "combined": 0.9284,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "LEA__RCL": {
+      "membership_jaccard": 0.3333,
+      "factor_cosine": 0.9256,
+      "combined": 0.9256,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "LEA__CCS": {
       "membership_jaccard": 1.0,
-      "factor_cosine": 0.9247,
+      "factor_cosine": 0.8521,
       "combined": 1.0,
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": [
         "sector:Consumer Discretionary"
       ]
     },
+    "LEA__TNL": {
+      "membership_jaccard": 1.0,
+      "factor_cosine": 0.8573,
+      "combined": 1.0,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "HALO__NVST": {
+      "membership_jaccard": 1.0,
+      "factor_cosine": null,
+      "combined": 1.0,
+      "factor_basis": "beta-read-thin:r2=0.10<0.2",
+      "shared_groups": [
+        "sector:Health Care"
+      ]
+    },
+    "HALO__WWD": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.10<0.2",
+      "shared_groups": []
+    },
+    "HALO__RBA": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.10<0.2",
+      "shared_groups": []
+    },
+    "HALO__JBTM": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.10<0.2",
+      "shared_groups": []
+    },
+    "HALO__RCL": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.10<0.2",
+      "shared_groups": []
+    },
+    "HALO__CCS": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.10<0.2",
+      "shared_groups": []
+    },
+    "HALO__TNL": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.10<0.2",
+      "shared_groups": []
+    },
     "NVST__WWD": {
       "membership_jaccard": 0.0,
       "factor_cosine": 0.9571,
       "combined": 0.9571,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "NVST__RBA": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.9512,
+      "combined": 0.9512,
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
@@ -295,12 +579,35 @@
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
+    "NVST__RCL": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.9666,
+      "combined": 0.9666,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "NVST__CCS": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.9517,
+      "combined": 0.9517,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
     "NVST__TNL": {
       "membership_jaccard": 0.0,
       "factor_cosine": 0.99,
       "combined": 0.99,
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
+    },
+    "WWD__RBA": {
+      "membership_jaccard": 1.0,
+      "factor_cosine": 0.9713,
+      "combined": 1.0,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": [
+        "sector:Industrials"
+      ]
     },
     "WWD__JBTM": {
       "membership_jaccard": 1.0,
@@ -311,10 +618,68 @@
         "sector:Industrials"
       ]
     },
+    "WWD__RCL": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.9783,
+      "combined": 0.9783,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "WWD__CCS": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.8794,
+      "combined": 0.8794,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
     "WWD__TNL": {
       "membership_jaccard": 0.0,
       "factor_cosine": 0.9254,
       "combined": 0.9254,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "RBA__JBTM": {
+      "membership_jaccard": 1.0,
+      "factor_cosine": 0.9551,
+      "combined": 1.0,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": [
+        "sector:Industrials"
+      ]
+    },
+    "RBA__RCL": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.947,
+      "combined": 0.947,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "RBA__CCS": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.8188,
+      "combined": 0.8188,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "RBA__TNL": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.9423,
+      "combined": 0.9423,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "JBTM__RCL": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.9804,
+      "combined": 0.9804,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "JBTM__CCS": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.9491,
+      "combined": 0.9491,
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
@@ -324,6 +689,33 @@
       "combined": 0.9845,
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
+    },
+    "RCL__CCS": {
+      "membership_jaccard": 0.3333,
+      "factor_cosine": 0.9043,
+      "combined": 0.9043,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "RCL__TNL": {
+      "membership_jaccard": 0.3333,
+      "factor_cosine": 0.9553,
+      "combined": 0.9553,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "CCS__TNL": {
+      "membership_jaccard": 1.0,
+      "factor_cosine": 0.9247,
+      "combined": 1.0,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
     }
   },
   "verdicts": {

@@ -25,6 +25,12 @@
   .chip.tag-china   { color:#d0554f; border-color:#d0554f55; }
   .chip.tag-credit  { color:#d08770; border-color:#d0877055; }
   footer.rfoot { color:var(--muted); font-size:11.5px; margin:46px auto 0; max-width:1060px; border-top:1px solid var(--line); padding-top:14px; }
+  /* XG-W7 follow line — its own row, never appended to the disclaimer sentence:
+     a legal notice and a marketing CTA must not read as one thought. */
+  footer.rfoot .rf-x { display:inline-flex; align-items:center; gap:6px; margin-top:11px; padding:4px 10px;
+    border-radius:100px; border:1px solid var(--line); color:var(--muted); font-size:11px; font-weight:600;
+    transition:color .16s, border-color .16s; }
+  footer.rfoot .rf-x:hover { color:var(--text); border-color:color-mix(in srgb,var(--text) 26%,transparent); }
   
 /* ===================== MARKETS NEWS — mx5 idiom ===================== */
 .nxx{ --num:var(--font-mono,ui-monospace,"SF Mono",SFMono-Regular,"Cascadia Mono","JetBrains Mono",Menlo,Consolas,monospace);
@@ -213,6 +219,142 @@
 .nx-diag td{ padding:3px 6px; border-top:1px solid var(--nx-hair); vertical-align:top; }
 .nx-diag .rej-reason{ color:var(--warn); font-weight:600; }
 .nx-disc{ margin:22px 0 0; font-size:11px; color:var(--muted); font-style:italic; }
+
+/* ======================= LIVE WIRE (B4b) =======================
+   The page's ONE achromatic instrument. Everything above it is edited and
+   colour-coded (ranked cards, tinted theme chips); the wire is the raw feed,
+   so it is deliberately drained of hue. Colour appears in exactly two places —
+   the state lamp and the newest item's node — and the panel is carried instead
+   by its structure: a time gutter, an arrival spine, and a node whose FORM
+   encodes how well the item is sourced (doctrine §7: non-verbal encodings that
+   need no vocabulary). Hidden until the client has something honest to show. */
+.nxw{ margin:0 0 18px; border-radius:var(--nx-radius); overflow:hidden;
+  /* The page's --nx-hair is mixed off --line, which all but vanishes on the dark
+     panel. The spine IS this panel, so it gets a --text-derived rule that holds
+     its weight in both themes. */
+  --nxw-spine:color-mix(in srgb, var(--text) 17%, transparent);
+  --nxw-rule:color-mix(in srgb, var(--text) 11%, transparent);
+  background:var(--nx-card); border:1px solid var(--nx-brd); box-shadow:var(--nx-shadow);
+  -webkit-backdrop-filter:var(--nx-blur); backdrop-filter:var(--nx-blur); }
+.nxw[hidden]{ display:none; }
+
+/* header */
+.nxw-hd{ padding:14px 16px 12px; border-bottom:1px solid var(--nxw-rule); }
+.nxw-hd-main{ min-width:0; }
+.nxw-eyebrow{ display:flex; align-items:center; gap:7px; font-size:10.5px; font-weight:700;
+  letter-spacing:.16em; text-transform:uppercase; color:var(--muted); }
+.nxw-lamp{ flex:0 0 auto; width:7px; height:7px; border-radius:50%;
+  background:color-mix(in srgb,var(--text) 26%,transparent); }
+.nxw[data-state="live"] .nxw-lamp{ background:var(--info);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--info) 20%,transparent); }
+/* stale = the WIRE has gone quiet (newest item older than the stale window), not
+   the daemon. The lamp hollows out, the newest-node accent is withdrawn, and the
+   header says so in words — nothing here may keep signalling "live". */
+.nxw[data-state="stale"] .nxw-lamp{ background:transparent;
+  border:1.5px solid color-mix(in srgb,var(--text) 34%,transparent); }
+.nxw-stale{ font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+  color:color-mix(in srgb,var(--text) 52%,transparent); }
+.nxw-title{ font-size:15px; font-weight:800; letter-spacing:-.012em; margin:6px 0 3px; }
+.nxw-sub{ font-size:12px; color:var(--muted); max-width:64ch; }
+.nxw-meta{ margin-top:6px; font-size:10.5px; color:var(--muted); }
+.nxw-meta .num{ color:color-mix(in srgb,var(--text) 74%,transparent); font-weight:600; }
+
+/* The wire has NO filter row of its own: the page's All/Markets/Macro/Fed/
+   Companies segment sits directly above and drives both lists. A second,
+   near-duplicate pill row six inches from the first is two controls for one job. */
+/* an empty LANE is the reader's filter, not a dead wire — it reads as a sentence,
+   not as a blank box, and names the way back */
+.nxw-lanenone{ margin:0; padding:18px 16px 16px 74px; font-size:12.5px; color:var(--muted); }
+@media(max-width:560px){ .nxw-lanenone{ padding-left:20px; } }
+
+/* list + arrival spine */
+/* The window is capped so the wire never pushes the ranked board off the page.
+   The fade tells you the clip is depth, not a broken row. */
+.nxw-list{ max-height:394px; overflow-y:auto; overscroll-behavior:contain; padding:4px 16px 8px 0;
+  -webkit-mask-image:linear-gradient(to bottom, #000 calc(100% - 34px), transparent 100%);
+  mask-image:linear-gradient(to bottom, #000 calc(100% - 34px), transparent 100%); }
+.nxw-list::-webkit-scrollbar{ width:8px; }
+.nxw-list::-webkit-scrollbar-thumb{ background:var(--nxw-spine); border-radius:100px; }
+.nxw-item{ position:relative; display:flex; align-items:flex-start; padding:9px 0; }
+.nxw-item::before{ content:""; position:absolute; left:62px; top:0; bottom:0; width:1px;
+  background:var(--nxw-spine); }
+.nxw-item:first-child::before{ top:11px; }
+.nxw-item:last-child::before{ bottom:auto; height:11px; }
+.nxw-age{ flex:0 0 52px; text-align:right; padding-right:11px; font-family:var(--num); font-size:10.5px;
+  font-variant-numeric:tabular-nums; letter-spacing:-.02em; color:var(--muted); line-height:1.95;
+  white-space:nowrap; overflow:hidden; }
+.nxw-node{ flex:0 0 21px; align-self:stretch; position:relative; }
+.nxw-node::after{ content:""; position:absolute; left:0; top:6px; width:9px; height:9px; box-sizing:border-box;
+  border-radius:50%; border:1.5px solid color-mix(in srgb,var(--text) 40%,transparent);
+  background:var(--nx-card-solid); z-index:1; }
+/* node FORM = how well sourced: filled = matched to the original;
+   ringed dot = two or more independent sources; dashed = a single report */
+.nxw-node[data-corr="verified"]::after{ background:color-mix(in srgb,var(--text) 60%,transparent);
+  border-color:color-mix(in srgb,var(--text) 60%,transparent); }
+.nxw-node[data-corr="sources"]::before{ content:""; position:absolute; left:3px; top:9px;
+  width:3px; height:3px; border-radius:50%; z-index:2;
+  background:color-mix(in srgb,var(--text) 58%,transparent); }
+.nxw-node[data-corr="reports"]::after{ border-style:dashed;
+  border-color:color-mix(in srgb,var(--text) 32%,transparent); }
+/* wording the client does not recognise: plain ring, neither filled nor dashed */
+.nxw-node[data-corr="neutral"]::after{ border-style:solid; }
+/* the single accent + the single motion: the newest arrival */
+.nxw[data-state="live"] .nxw-item.is-newest .nxw-node::after{ border-color:var(--info);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--info) 15%,transparent); animation:nxwLamp 2.8s ease-in-out infinite; }
+@keyframes nxwLamp{ 0%,100%{ opacity:1; } 50%{ opacity:.5; } }
+
+.nxw-body{ flex:1; min-width:0; padding-left:12px; }
+.nxw-text{ margin:0; font-size:13.5px; line-height:1.5; font-weight:500; color:var(--text);
+  letter-spacing:-.003em; text-wrap:pretty; }
+.nxw-line{ margin-top:5px; display:flex; flex-wrap:wrap; gap:8px; align-items:center;
+  font-size:10.5px; color:var(--muted); }
+.nxw-cls{ font-weight:700; letter-spacing:.09em; text-transform:uppercase;
+  color:color-mix(in srgb,var(--text) 58%,transparent); }
+.nxw-corr{ font-weight:600; }
+.nxw-tapewrap{ display:inline-flex; align-items:baseline; gap:4px; }
+.nxw-tape{ font-family:var(--num); font-variant-numeric:tabular-nums; font-weight:600;
+  color:color-mix(in srgb,var(--text) 66%,transparent); }
+.nxw-tapesfx{ opacity:.75; }
+.nxw-orig{ font-style:italic; opacity:.8; }
+.nxw-item.is-new{ animation:nxwIn .34s cubic-bezier(.22,.9,.3,1) both; }
+@keyframes nxwIn{ from{ opacity:0; transform:translateY(-4px); } to{ opacity:1; transform:none; } }
+
+/* honest non-list states: loading skeleton, quiet desk, signed-out, unreachable */
+.nxw-state{ padding:20px 18px 22px 20px; }
+.nxw-state .h{ font-size:13.5px; font-weight:700; color:var(--text); margin:0 0 4px; }
+.nxw-state .s{ font-size:12px; color:var(--muted); margin:0; max-width:58ch; }
+.nxw-state .cta{ appearance:none; font-family:inherit; margin-top:12px; cursor:pointer;
+  display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700; color:var(--info);
+  background:transparent; border:1px solid color-mix(in srgb,var(--info) 40%,transparent);
+  padding:7px 14px; border-radius:100px; transition:background .16s, border-color .16s; }
+.nxw-state .cta:hover{ background:color-mix(in srgb,var(--info) 10%,transparent);
+  border-color:color-mix(in srgb,var(--info) 65%,transparent); }
+/* footer: one footnote + the quiet X handles */
+.nxw-ft{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:11px 16px;
+  border-top:1px solid var(--nxw-rule); background:color-mix(in srgb,var(--panel2) 40%,transparent); }
+.nxw-note{ flex:1 1 260px; font-size:11px; color:var(--muted); }
+.nxw-social{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.nxw-social>span{ font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--muted); margin-right:1px; }
+.nxw-x{ display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700;
+  font-family:var(--num); color:color-mix(in srgb,var(--text) 80%,transparent); white-space:nowrap;
+  padding:5px 11px; border-radius:100px; border:1px solid var(--nxw-rule);
+  transition:color .16s, border-color .16s, background .16s; }
+.nxw-x:hover{ color:var(--text); border-color:var(--nx-brd);
+  background:color-mix(in srgb,var(--text) 6%,transparent); }
+.nxw-x:focus-visible{ outline:2px solid var(--info); outline-offset:2px; }
+.nxw-x svg{ width:10px; height:10px; flex:0 0 auto; }
+
+@media(max-width:560px){
+  .nxw-item::before{ left:52px; }
+  .nxw-age{ flex-basis:44px; }
+  .nxw-text{ font-size:13px; }
+}
+@media(prefers-reduced-motion:reduce){
+  .nxw-item.is-new{ animation:none; }
+  .nxw .nxw-item.is-newest .nxw-node::after{ animation:none; }
+}
+@media(pointer:coarse){ .nxw .nxw-item.is-newest .nxw-node::after{ animation:none; } }
 
 /* ---- responsive ---- */
 @media(max-width:900px){
