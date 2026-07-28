@@ -1876,7 +1876,18 @@ concurrency:
   # it here prevents rapid agent pushes from leaving full packed runs in queue.
   # Manual full-CI dispatches are also deduplicated per ref; several ship-loop
   # sessions may request the same main proof at once, but only the newest matters.
-  group: ci-${{ github.event.pull_request.number || github.ref }}
+  #
+  # A MERGED close is fenced into its own group (2026-07-28). The operator and
+  # sessions routinely squash-merge 0-8 minutes after opening while a pack run
+  # takes ~35, and the `closed` event landing in the live group cancelled the
+  # PR's own in-flight proof run — the merged head then carried `cancelled`
+  # packs FOREVER (PR #3867: merged at +3 min, both packs died, no verdict
+  # possible), which is how unproven merges stack up on main and every
+  # ship-loop session pins on the next full-CI dispatch. Measured 2026-07-28:
+  # 100 ci.yml runs in 8h, 6 successes, 67 cancelled/skipped. A close WITHOUT
+  # merge keeps the old behaviour — its packs are obsolete and cancelling them
+  # is pure savings; only a merge's evidence is worth finishing.
+  group: ci-${{ github.event.pull_request.number || github.ref }}${{ github.event.action == 'closed' && github.event.pull_request.merged && '-merged' || '' }}
   cancel-in-progress: true
 
 jobs:
