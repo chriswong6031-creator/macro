@@ -52,9 +52,11 @@ the operator's approval recorded via `engine/marketing/ad_review.py`. This paper
 overrides H-1…H-6. Rejections get specific reasons; the reasons feed §9.
 
 **AG-8 — Honest voice survives advertising.** Stance language over hype ("watch, don't
-chase" is on-brand; "guaranteed winners" is a firing offense). Any ad showing
-ticker-level entries/stops carries the micro-line "Research tools — not investment
-advice." The product's honesty is a selling point, not a liability to hide.
+chase" is on-brand; "guaranteed winners" is a firing offense). Any ad whose **copy or hero
+element quotes actionable levels** (entry zones, stops — e.g. entry, ai-no) carries the
+micro-line "Research tools — not investment advice." in place of the "allotment shrinks
+daily" clause; a demo-tagged ZONE inside a background widget sliver does not trigger it.
+The product's honesty is a selling point, not a liability to hide.
 
 ---
 
@@ -105,9 +107,10 @@ pay for one or more tools and still feel behind. Each pain maps to a desk that a
 **Rules:** ≤ 9 words hard cap, ≤ 7 preferred. Plain verbs, no jargon, no internal vocab
 (doctrine Law 2 applies to ads). Esoteric is allowed only if the picture resolves it
 within the same glance. Subline ≤ 18 words, adds the mechanism ("how"), never repeats
-the headline. Feature chips are 1–3 words each, 4–6 chips, drawn from: Stock signals ·
+the headline. Feature chips are 1–3 words each, 3–6 chips, drawn from: Stock signals ·
 Risk score · Theme rotation · 13F & insiders · Options flow · AI analyst · Free terminal ·
-Nightly rebuild.
+Nightly rebuild. Chip rows are either ONE full row or TWO balanced rows (3+3, or the
+founding 2×2) — never a widow chip alone on row 2 (round-2 review law, 2026-07-28).
 
 **Offer bar (standard, every ad):** `7-DAY FREE TRIAL` · `FOUNDING · 50% OFF — $75/mo` ·
 CTA pill `Try Pro free` · micro: `2,000 founding memberships · allotment shrinks daily ·
@@ -257,3 +260,11 @@ Full copy blocks (subline, chips, illustration recipe) live beside the sources i
 - **Standing operator taste:** plain bold system type, no decorative faces (2026-07-26
   font ruling); "beautiful illustration and design" reusing the site's own elements;
   name concrete desks, not uncountable abstractions.
+- **R2 internal review (2026-07-28, caught before the operator saw them)** — the four
+  defect classes that recur, now checked on every file: (a) **bottom clip** — vertical
+  budget blown, offer/micro cut (risk 4:5, rotation 4:5, founding 628); (b) **auto-wrap
+  headline** — a locked phrase left to wrap chooses ugly breaks; always explicit `<br>`,
+  three clean lines beat a smaller size (risk 4:5); (c) **non-atomic occlusion** — a
+  half-covered chip/pill reads as a floating blob (rotation's +5.4% pill); (d) **offer
+  overflow** — long cell text pushes the CTA off-canvas (terminal 4:5; fix the cell, not
+  the CTA). The renderer catches none of these — only looking at the PNG does.

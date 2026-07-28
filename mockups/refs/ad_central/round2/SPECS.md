@@ -16,8 +16,9 @@ and **looking at the PNG**, minimum two rounds.
 2. **Headline width.** ~0.55em avg glyph at weight 800: chars × 0.55 × px ≤ 952 (1080 canvas,
    64px pads) / ≤ ~620 for the landscape left column. Break lines with explicit `<br>` — never
    let auto-wrap choose. Squares use `--hl:86px`; 4:5 92px; landscape ~58px inline.
-3. **Chips wrap.** One row only. 4:5 fits 6 chips; square fits 3–4; landscape 3. If it wraps,
-   cut chips (prefer features already visible in the stage).
+3. **Chips wrap.** ONE full row, or TWO balanced rows (3+3, or founding's 2×2) — never a
+   widow chip alone on row 2. 4:5 fits 6 (as 3+3) or 3–4 on one row; square 3; landscape 3.
+   If it breaks unevenly, cut chips (prefer features already visible in the stage).
 4. **Occlusion law.** Cards cut at ATOMIC boundaries. Amputating a row label mid-word reads
    broken; hiding a right-hand number column or bleeding off-canvas reads deliberate. The
    front card covers side cards' right columns, never their identity column (left).
@@ -202,9 +203,12 @@ Asset files (inline via `<img src="../assets/….svg" style="width:100%;display:
   `BTC-USD 63,462 <r>−0.38%</r>` / `NVDA 211.10 <g>+1.84%</g>` / `AAPL 325.48 <r>−0.70%</r>` /
   `MSFT 387.50 <r>−2.58%</r>` (g=#37d67a, r=#ff7a76, chg 22px).
   Under the frame, small line (26px, #9db0d0): `Golden Oracle: “Uptrend — no entry signal.” · demo`
-- chips (dark): `Live charting(blue) · AI analyst(r) · Signals overlay(g) · Watchlists(t)` (square 3).
-- offer: cell1 t `TERMINAL — FREE FOREVER` d `NOTHING TO INSTALL`; cell2 t `<was>$149</was>$75/mo`
-  d `PRO · 50% OFF`; CTA `Open the Terminal`. micro: standard.
+- chips (dark): `Live charting(blue) · AI analyst(r) · Signals overlay(g)` (3 on every size —
+  a 4th wraps; "Watchlists" cut 2026-07-28, the frame's watchlist column already shows it).
+- offer: cell1 t `FREE FOREVER` d `NOTHING TO INSTALL` (the word TERMINAL lives in the pill +
+  headline; the long cell overflowed the CTA off-canvas); cell2 t `<was>$149</was>$75/mo`
+  d `PRO · 50% OFF`; CTA `Open the Terminal`; `style="--offer:30px"` on `.offer` (4:5/square).
+  micro: standard.
 
 ## founding — paper+violet · 1080x1350 · 1080x1080 · 1200x628
 
