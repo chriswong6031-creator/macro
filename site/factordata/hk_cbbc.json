@@ -32,8 +32,8 @@
       "total_outstanding": 60100000,
       "bull_bear_ratio": 1.96,
       "leverage_state": "bull_skew",
-      "n_cbbc_contracts": 95,
-      "data_note": "call price coverage 4% \u2014 low SLD coverage; magnets may be incomplete",
+      "n_cbbc_contracts": 60,
+      "data_note": "call price coverage 5% \u2014 low SLD coverage; magnets may be incomplete",
       "magnet_below": false,
       "magnet_above": false,
       "nearest_magnet_pct": null,
@@ -55,39 +55,9 @@
       "n_cbbc_contracts": 157,
       "data_note": "call price coverage 7% \u2014 low SLD coverage; magnets may be incomplete",
       "magnet_below": true,
-      "magnet_above": true,
+      "magnet_above": false,
       "nearest_magnet_pct": -5.0,
       "magnet_clusters": [
-        {
-          "bucket": 0,
-          "distance_pct": 1.0,
-          "level_approx": 451.67,
-          "side": "bear",
-          "outstanding_sum": 440000,
-          "n_contracts": 1,
-          "bull_outstanding": 0,
-          "bear_outstanding": 440000
-        },
-        {
-          "bucket": -2,
-          "distance_pct": -3.0,
-          "level_approx": 433.78,
-          "side": "bull",
-          "outstanding_sum": 2215000,
-          "n_contracts": 1,
-          "bull_outstanding": 2215000,
-          "bear_outstanding": 0
-        },
-        {
-          "bucket": 1,
-          "distance_pct": 3.0,
-          "level_approx": 460.62,
-          "side": "bear",
-          "outstanding_sum": 585000,
-          "n_contracts": 1,
-          "bull_outstanding": 0,
-          "bear_outstanding": 585000
-        },
         {
           "bucket": 0,
           "distance_pct": 1.0,
@@ -202,7 +172,7 @@
       "total_outstanding": 231585000,
       "bull_bear_ratio": 45.41,
       "leverage_state": "bull_skew_froth",
-      "n_cbbc_contracts": 46,
+      "n_cbbc_contracts": 29,
       "data_note": "outstanding qty from daily XLSX; mandatory call price not yet in SLD store",
       "magnet_below": false,
       "magnet_above": false,
@@ -334,7 +304,7 @@
       "data_note": "call price coverage 1% \u2014 low SLD coverage; magnets may be incomplete",
       "magnet_below": true,
       "magnet_above": false,
-      "nearest_magnet_pct": -9.0,
+      "nearest_magnet_pct": -7.0,
       "magnet_clusters": [
         {
           "bucket": -4,
