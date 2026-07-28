@@ -668,6 +668,82 @@ def dangling_levels(text: str) -> list[str]:
     return out
 
 
+# Connectives that must not END a headline: still waiting on an object that the
+# empty slot took with it. "Radar check on" is the tell that "{cashtag}" rendered
+# to nothing.
+#
+# The list is deliberately aggressive (like 4e, a false positive only drops LLM
+# copy to the deterministic floor) with ONE hard constraint: the floor itself
+# must never trip it, or a rejected post has nowhere to land. Four words are
+# therefore excluded even though they are connectives, because the curated bank
+# ends real headlines on them and those endings are correct English:
+#   "this" / "that" as a terminal DEMONSTRATIVE PRONOUN, i.e. the object itself
+#     rather than a determiner waiting on a noun — "Last time the tape looked
+#     like this", "Why markets moved on this", "What happened last time we saw
+#     this", "The usual pattern after days like this".
+#   "to" / "in" STRANDED by a phrasal verb — "{cashtag} chart I keep coming back
+#     to", "The current my group is swimming in".
+# Stranding is possible for most prepositions here; these are the ones the house
+# voice actually uses, and tests/test_copywriter.py walks the whole bank so a
+# future headline that strands another one fails there rather than in production.
+_FRAGMENT_TAIL_WORDS = frozenset({
+    "on", "at", "of", "for", "with", "near", "from", "by",
+    "and", "or", "the", "a", "an", "my", "your", "into",
+    "vs", "versus", "around",
+})
+
+# Trailing punctuation stripped before the tail-word test, so "Radar check on:"
+# and "Radar check on |" are caught alongside the bare form.
+_FRAGMENT_TAIL_PUNCT = ".,:;|!?\"'"
+
+
+def headline_fragments(headline: str) -> list[str]:
+    """Headlines left grammatically incomplete by a slot that rendered empty.
+
+    The defect class this exists for: a template written for a ticker-bearing
+    post ("{cashtag} is close", "Radar check on {cashtag}") gets a context whose
+    ticker is "" — planner-scheduled watchlist posts are a NON-ticker type, they
+    carry breadth/sector facts and no ticker at all. _render_template substitutes
+    the empty string and the headline ships as a fragment: "is close", "Circling",
+    "Radar check on", "close to going", "on my radar this week", "watching, not
+    acting". Every one of those queued with ``_copy_violations: []``, because
+    validate_copy's cashtag law is gated on ``if ticker:`` and no other check
+    looks at the SHAPE of a headline.
+
+    Returns the violations (empty list = clean). Four shapes:
+      1. empty / whitespace only
+      2. a single word ("Circling")
+      3. an opening ASCII lowercase letter — templates always open with a
+         capital, a $cashtag, or a digit, so a lowercase opener means the
+         leading slot vanished ("is close")
+      4. a trailing connective still waiting on its object ("Radar check on")
+    """
+    out: list[str] = []
+    raw = headline or ""
+    stripped = raw.strip()
+    if not stripped:
+        out.append("headline fragment: empty headline")
+        return out
+
+    words = stripped.split()
+    if len(words) < 2:
+        out.append(f"headline fragment: single word '{stripped[:40]}'")
+
+    if "a" <= stripped[0] <= "z":
+        out.append(
+            f"headline fragment: opens lowercase (leading slot rendered empty): "
+            f"'{stripped[:40]}'"
+        )
+
+    tail = words[-1].strip(_FRAGMENT_TAIL_PUNCT).lower()
+    if tail in _FRAGMENT_TAIL_WORDS:
+        out.append(
+            f"headline fragment: ends on connective '{tail}' with nothing after it: "
+            f"'{stripped[:40]}'"
+        )
+    return out
+
+
 def _extract_number_tokens(text: str) -> list[str]:
     """Extract all number-like tokens from text."""
     return _NUMBER_RE.findall(text)
@@ -809,6 +885,21 @@ def validate_copy(
         violations.append(
             f"level named only by pronoun, no price given: '{sentence[:60]}'"
         )
+
+    # 4f. Fragment screen: a headline whose leading/trailing slot rendered empty
+    # ("is close", "Radar check on"). Same philosophy as 4e — a hard violation,
+    # not a warning. A false positive on LLM copy only drops that post to the
+    # deterministic floor, which is the right swap; a false negative ships a
+    # half-sentence to the flagship account with _copy_violations: [].
+    #
+    # Gated on a headline actually being SUPPLIED, which is not the same gate
+    # that caused the defect. breaking_summary calls this with headline="" on
+    # purpose — a wire summary is one text block with no headline — so screening
+    # the absent string would fail every breaking post on a headline it was never
+    # going to have. A caller that passes one gets it screened; headline_fragments
+    # itself still reports the empty case for direct callers.
+    if headline and headline.strip():
+        violations.extend(headline_fragments(headline))
 
     # 5. Numbers not in whitelist
     whitelist = set(ctx.get("numbers_whitelist") or [])
@@ -1824,6 +1915,17 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     ],
 
     # ── watchlist (all voices) — {top_fact} carries breadth/sector context ──────
+    #
+    # TWO SHAPES PER BANK, and the split is load-bearing (see _variant_allowed):
+    #   - ticker-bearing lines ("{cashtag} is close") for the publish-time lane,
+    #     which hands the writer a real ticker;
+    #   - ticker-FREE lines for the planner's scheduled watchlist slot, which is
+    #     a non-ticker content type (breadth + sector facts, ticker ""). Before
+    #     these existed, every bank was ticker-only and the planner's posts
+    #     shipped as fragments ("is close", "Circling", "Radar check on").
+    # _variant_allowed partitions the bank by context, so neither shape can be
+    # selected for the other's lane. Any new line here is classified by its own
+    # tokens — nothing to declare, nothing to forget.
     ("watchlist", "authoritative desk"): [
         (
             "{cashtag} on my radar this week",
@@ -1847,6 +1949,22 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
             "Circling {cashtag}",
             "{top_fact} Closest name to triggering on my list. The read's up top.",
         ),
+        # ── ticker-free (planner's scheduled watchlist slot) ──
+        (
+            "The watch list this week",
+            "{top_fact} A few names are close. None have triggered. "
+            "Entries get posted when they trigger, not before.",
+        ),
+        (
+            "Nothing has triggered yet. That's the update",
+            "{top_fact} The list is doing its job: filtering, not chasing. "
+            "When something goes, it gets posted here.",
+        ),
+        (
+            "Patience week on the desk",
+            "{top_fact} The setups I track are forming, not finished. "
+            "Waiting is part of the job, so I wait.",
+        ),
     ],
     ("watchlist", "dry, receipts-forward"): [
         (
@@ -1864,6 +1982,21 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         (
             "{cashtag} | watching only",
             "{top_fact} Conditions not met. That's the whole update.",
+        ),
+        # ── ticker-free (planner's scheduled watchlist slot) ──
+        (
+            "Watch list check: no entries",
+            "{top_fact} Names are setting up. Nothing triggered. "
+            "I post entries, not previews.",
+        ),
+        (
+            "Still watching, still flat",
+            "{top_fact} The list is live. No triggers. "
+            "Nothing to report is also a report.",
+        ),
+        (
+            "List update: zero triggers",
+            "{top_fact} Setups forming. Conditions unmet. Next post when that changes.",
         ),
     ],
     ("watchlist", "specialist"): [
@@ -1883,6 +2016,21 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         (
             "{cashtag} setup in progress",
             "{top_fact} Monitoring. The entry isn't clean yet, and dirty entries are donations.",
+        ),
+        # ── ticker-free (planner's scheduled watchlist slot) ──
+        (
+            "This week's watch in my corner",
+            "{top_fact} A couple of setups forming in my group. None finished. "
+            "The group decides when, not me.",
+        ),
+        (
+            "Group check: forming, not ready",
+            "{top_fact} My lane is showing early shapes. Early is not an entry.",
+        ),
+        (
+            "What my group is telling me this week",
+            "{top_fact} Constructive, not conclusive. "
+            "I trade my corner when it confirms, and it hasn't.",
         ),
     ],
     ("watchlist", "educational"): [
@@ -1904,6 +2052,22 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
             "What I'm waiting on with {cashtag}",
             "{top_fact} One thing still missing before it triggers. The market will provide it or it won't.",
         ),
+        # ── ticker-free (planner's scheduled watchlist slot) ──
+        (
+            "Why a watch list beats a buy list",
+            "{top_fact} A watch list is a filter with patience built in. "
+            "Most names never make it through. That's the point.",
+        ),
+        (
+            "What a quiet watch list tells you",
+            "{top_fact} No triggers is information too. The market isn't offering "
+            "the setup, and you don't have to swing this week.",
+        ),
+        (
+            "The discipline a watch list enforces",
+            "{top_fact} Writing a name down is a commitment to wait for conditions. "
+            "Skipping the wait is how good lists become bad trades.",
+        ),
     ],
     ("watchlist", "fast, reactive"): [
         (
@@ -1921,6 +2085,21 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         (
             "{cashtag} close to going",
             "{top_fact} Almost there. Haven't touched it. Watching live.",
+        ),
+        # ── ticker-free (planner's scheduled watchlist slot) ──
+        (
+            "Watch list is live. Nothing triggered",
+            "{top_fact} Eyes on the screens. Names are close. "
+            "The moment one goes, it gets posted.",
+        ),
+        (
+            "Quick list check",
+            "{top_fact} Setups forming, none confirmed. Fast doesn't mean early.",
+        ),
+        (
+            "Live watch, no entries yet",
+            "{top_fact} A few names near their levels. Near doesn't count. "
+            "Triggered counts.",
         ),
     ],
     ("watchlist", "pattern/history"): [
@@ -1940,6 +2119,22 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         (
             "{cashtag} | a setup with a memory",
             "{top_fact} Not every one completes. Worth the watch anyway.",
+        ),
+        # ── ticker-free (planner's scheduled watchlist slot) ──
+        (
+            "The shapes forming this week",
+            "{top_fact} A few familiar patterns across the list. "
+            "History says wait for the completion, not the sketch.",
+        ),
+        (
+            "Old patterns, new week",
+            "{top_fact} The list rhymes with setups I've tracked before. "
+            "Rhyme isn't a trigger.",
+        ),
+        (
+            "Pattern watch: forming, not resolved",
+            "{top_fact} A half-built pattern carries no obligation. "
+            "The completed ones get posted.",
         ),
     ],
 
@@ -2221,10 +2416,43 @@ def _pick_variant(
 # write_posts_deterministic
 # ─────────────────────────────────────────────────────────────────────────────
 
+# Tokens only a single-ticker context can fill. Kept as data, and matched
+# against the template TEXT rather than a declared tag, so a variant added later
+# cannot forget to declare its dependency. Note "{cashtag}" does NOT substring-
+# match "{cashtag_list}" — the closing brace differs — so theme_list variants are
+# untouched by this rule.
+_CASHTAG_TOKENS = ("{cashtag}", "{ticker}")
+_PRICE_TOKENS = (
+    "{entry}", "{t1}", "{t2}", "{inv}", "{stop}", "{gain}", "{loss}", "{win_rate}",
+)
+# The full ticker-dependency set. Theme/mover tokens ({cashtag_list}, {theme_*},
+# {mover_pct}) are deliberately NOT here: a no-ticker theme_list context fills
+# those legitimately.
+_TICKER_DEPENDENT_TOKENS = _CASHTAG_TOKENS + _PRICE_TOKENS
+
+# Types whose posts validate_copy rule 1 requires to carry the cashtag.
+_CASHTAG_REQUIRED_TYPES = ("signal", "chart", "receipt", "watchlist", "mover")
+
+
 def _variant_allowed(variant: tuple, ctx: dict) -> bool:
     """Applicability filter for a template variant against this context.
 
-    Variants may carry an optional third element: a tuple of tags —
+    TICKER DEPENDENCY (derived from the template text, no tag to forget). A
+    watchlist post scheduled by the planner is a NON-ticker content type — it
+    gets breadth/sector facts and ticker "" — so a variant written around
+    "{cashtag}" renders as a fragment ("{cashtag} is close" → "is close") and
+    ships, because validate_copy's cashtag law is gated on ``if ticker:``. So:
+      - no ticker in ctx → every variant using a single-ticker token
+        (_TICKER_DEPENDENT_TOKENS: the cashtag pair plus the plan/receipt price
+        slots, which a no-ticker context has none of either) is excluded;
+      - ticker present on a type whose posts MUST carry the cashtag
+        (_CASHTAG_REQUIRED_TYPES) → a ticker-free variant is excluded, because
+        rendering it would ship a "missing cashtag" violation. This keeps the
+        pool for every existing ticker-bearing post byte-identical to what it
+        was before the ticker-free lines were added, so hash-based variant
+        assignments do not move.
+
+    Variants may also carry an optional third element: a tuple of tags —
       "down_only" / "up_only": the line's flavor only fits that tape direction
         (mover direction from the signed mover_pct, theme from theme_direction);
         unknown direction (empty fields) filters NOTHING, so the nightly D-slot
@@ -2233,6 +2461,14 @@ def _variant_allowed(variant: tuple, ctx: dict) -> bool:
         "levels are on the chart"); filtered ONLY when the caller explicitly set
         ctx["has_chart"] = False (text-only publish-time items). Unset → kept.
     """
+    hl_t, body_t = variant[0], variant[1]
+    uses_ticker = any(tok in hl_t or tok in body_t for tok in _CASHTAG_TOKENS)
+    if not ctx.get("ticker"):
+        if any(tok in hl_t or tok in body_t for tok in _TICKER_DEPENDENT_TOKENS):
+            return False
+    elif ctx.get("type") in _CASHTAG_REQUIRED_TYPES and not uses_ticker:
+        return False
+
     tags = variant[2] if len(variant) > 2 else ()
     if not tags:
         return True
