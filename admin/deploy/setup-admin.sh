@@ -35,6 +35,8 @@ ADMIN_PASSWORD=
 ADMIN_SESSION_SECRET=$("$VENV/bin/python" -c "import secrets;print(secrets.token_hex(32))")
 # Optional integrations (panels degrade gracefully until set):
 SUPABASE_ACCESS_TOKEN=
+# Required for the owner-private Prophet Trade Memory panel:
+SUPABASE_OPERATOR_USER_ID=
 # UMAMI_API_KEY=
 # GH_TOKEN=
 EOF

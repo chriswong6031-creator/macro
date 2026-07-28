@@ -89,28 +89,37 @@ def test_run_tick_emits_outbox_item(tmp_path: Path) -> None:
 
     item = result["emitted"][0]
 
-    # Outbox item has required keys
+    # Outbox item has required keys. XG-W2: the lane emits through the CANONICAL
+    # outbox path (make_item/validate_item/enqueue), so `text` is the flattened
+    # post string, `priority` is an int, the rich event record moved to `source`,
+    # and the two copy halves stay readable as top-level headline/body.
     assert item["account"] == "flagship"
     assert item["kind"] == "earnings"
     assert item["immediate"] is True
-    assert item["priority"] == "high"
+    assert isinstance(item["priority"], int)
     assert item["status"] == "queued"
-    assert "headline" in item["text"]
-    assert "body" in item["text"]
+    assert item["headline"]
+    assert item["body"]
+    assert item["text"] == f"{item['headline']}\n\n{item['body']}"
     assert len(item["media"]) == 1
-    assert item["provenance"]["ticker"] == "AAPL"
+    assert item["source"]["ticker"] == "AAPL"
 
-    # Outbox JSON file exists on disk
-    event_id = item["id"]
-    outbox_file = tmp_path / "data" / "marketing" / "outbox" / f"{event_id}.json"
-    assert outbox_file.exists(), f"Outbox JSON not found at {outbox_file}"
+    # The item lands in the canonical queue (items.jsonl), which is what the
+    # publisher folds — the old per-item <id>.json file had no reader at all.
+    items_file = tmp_path / "data" / "marketing" / "outbox" / "items.jsonl"
+    assert items_file.exists(), f"outbox items.jsonl not found at {items_file}"
+    queued = [json.loads(line) for line in
+              items_file.read_text().splitlines() if line.strip()]
+    assert [q for q in queued if q["id"] == item["id"]], "item not in items.jsonl"
+    assert queued[0]["kind"] == "earnings"
+    assert queued[0]["schema"] == "marketing.outbox/v1"
 
-    saved = json.loads(outbox_file.read_text())
-    assert saved["id"] == event_id
-    assert saved["kind"] == "earnings"
+    # No hand-rolled per-item JSON is written any more.
+    stray = list((tmp_path / "data" / "marketing" / "outbox").glob("*.json"))
+    assert stray == [], f"raw-file bypass still writing: {stray}"
 
-    # Media SVG file exists
-    media_rel = item["media"][0]  # "data/marketing/outbox/media/<id>.svg"
+    # Media SVG file exists (path unchanged — keyed on the EVENT id).
+    media_rel = item["media"][0]["path"]  # "data/marketing/outbox/media/<id>.svg"
     media_file = tmp_path / media_rel
     assert media_file.exists(), f"Media SVG not found at {media_file}"
     svg_text = media_file.read_text()

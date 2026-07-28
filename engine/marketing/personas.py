@@ -141,6 +141,14 @@ _CODEX_KEYS = ("register", "quirks", "emoji_policy", "banned", "banned_patterns"
 #:     Both are required for ``employee``.
 _CODEX_OPTIONAL_KEYS = ("emoji_signature", "dial_profile", "quirk_markers")
 _CADENCE_KEYS = ("posts_per_day", "min_spacing_min", "jitter_min", "weekend_shape")
+#: Optional cadence keys.
+#:   session — the account's TERRITORY CLOCK (XG-W2). Constitution §13.8 makes
+#:     time zone a first-class cadence input ("Cici should naturally carry more
+#:     live coverage during Asia hours"); before XG-W2 the schema had no field
+#:     for it, so her spec DECLARED the weighting in prose and nothing read it.
+#:     engine/marketing/cadence_resolver.py reads this block.
+_CADENCE_OPTIONAL_KEYS = ("session",)
+_SESSION_KEYS = ("tz", "windows", "outside_window_posts_per_day")
 _ISOLATION_KEYS = ("profile_id", "egress", "registered_at", "warmed_through", "rail")
 _CONTEXT_PACK_KEYS = ("chronicle", "desks")
 _SCORECARD_KEYS = ("min_impressions", "promote_after", "kill_after", "alpha_note")
@@ -470,7 +478,7 @@ def _validate_codex(codex: Any) -> list[str]:
 
 
 def _validate_cadence(cadence: Any) -> list[str]:
-    errs = _key_errors("cadence", cadence, _CADENCE_KEYS)
+    errs = _key_errors("cadence", cadence, _CADENCE_KEYS, _CADENCE_OPTIONAL_KEYS)
     if errs:
         return errs
 
@@ -479,11 +487,82 @@ def _validate_cadence(cadence: Any) -> list[str]:
         if not _is_int(value):
             errs.append(f"cadence.{key}: expected an integer, got {value!r}")
         elif value < floor:
-            errs.append(f"cadence.{key}: {value} must be >= {floor}")
+            if key == "posts_per_day":
+                # The dialect trap this floor exists to catch: `-1` means
+                # UNLIMITED in the sentinel block (max_posts_per_account_per_day)
+                # and a spec author copying that idiom here would, without the
+                # resolver's matching negative branch, have silenced the account
+                # permanently. A spec must say a real number: use the sentinel
+                # block for "no per-account limit", not a negative here. `0` is
+                # neither dialect and always means "this spec is wrong".
+                errs.append(
+                    f"cadence.posts_per_day: {value} must be >= 1 — a spec states a "
+                    f"REAL daily number. -1 is the sentinel block's 'unlimited' "
+                    f"idiom and does not belong in a persona spec; 0 is not a "
+                    f"cadence at all."
+                )
+            else:
+                errs.append(f"cadence.{key}: {value} must be >= {floor}")
 
     shape = cadence.get("weekend_shape")
     if shape not in WEEKEND_SHAPES:
         errs.append(f"cadence.weekend_shape: {shape!r} not one of {list(WEEKEND_SHAPES)}")
+
+    if "session" in cadence:
+        errs += _validate_session(cadence["session"], cadence.get("posts_per_day"))
+    return errs
+
+
+def _validate_session(session: Any, posts_per_day: Any) -> list[str]:
+    """The ``cadence.session`` territory clock (XG-W2).
+
+    ``tz`` is an IANA zone name RESOLVED here, not merely shape-checked: a
+    typo'd zone would otherwise degrade silently to UTC inside the resolver and
+    an Asia desk would quietly become a UTC desk. ``windows`` are local-clock
+    ``HH:MM-HH:MM`` ranges (a wrapping range like ``22:00-02:00`` is legal — the
+    Asia pre-open leg starts before the UTC date rolls).
+    ``outside_window_posts_per_day`` is the weighting knob: how many of the daily
+    budget may land outside the windows. It may not exceed ``posts_per_day``,
+    because an allowance at or above the budget makes the windows decorative —
+    which is precisely the failure this field exists to end.
+    """
+    errs = _key_errors("cadence.session", session, _SESSION_KEYS)
+    if errs:
+        return errs
+
+    tz = session.get("tz")
+    if not isinstance(tz, str) or not tz.strip():
+        errs.append("cadence.session.tz: expected a non-empty IANA zone name")
+    else:
+        try:
+            from zoneinfo import ZoneInfo  # noqa: PLC0415
+
+            ZoneInfo(tz)
+        except Exception:  # noqa: BLE001
+            errs.append(f"cadence.session.tz: {tz!r} is not a resolvable IANA zone")
+
+    windows = session.get("windows")
+    if not isinstance(windows, list) or not windows:
+        errs.append("cadence.session.windows: expected a non-empty list of "
+                    "'HH:MM-HH:MM' local-clock ranges")
+    else:
+        from engine.marketing.cadence_resolver import _parse_window  # noqa: PLC0415
+
+        bad = [w for w in windows if _parse_window(w) is None]
+        if bad:
+            errs.append(f"cadence.session.windows: unparseable range(s) {bad!r} "
+                        f"— expected 'HH:MM-HH:MM'")
+
+    outside = session.get("outside_window_posts_per_day")
+    if not _is_int(outside) or outside < 0:
+        errs.append("cadence.session.outside_window_posts_per_day: expected an "
+                    f"integer >= 0, got {outside!r}")
+    elif _is_int(posts_per_day) and outside > posts_per_day:
+        errs.append(
+            f"cadence.session.outside_window_posts_per_day: {outside} exceeds "
+            f"posts_per_day ({posts_per_day}) — the session windows would be "
+            f"decorative"
+        )
     return errs
 
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import yaml
@@ -86,6 +87,32 @@ def test_public_builder_renders_current_pricing_without_market_data(tmp_path):
     assert 'data-m-pm="149" data-a-pm="109"' in plans
     assert "Founding Pro" in plans
     assert "$900 a year" in plans
-    assert "2,000 memberships" in plans
+    # Founding copy is availability-framed (#3856): the cap is real enforced
+    # inventory, never a fabricated "signed up/claimed" count.
+    assert 'data-offer-cap="2000"' in plans
+    assert "2,000 total" in plans
+    assert "first come, first served" in plans
+    assert "The allotment shrinks daily" in plans
+    assert 'aria-label="Founding Pro memberships no longer available"' in plans
+    assert "signed up" not in plans
     assert (tmp_path / "support.html").is_file()
     assert (tmp_path / "unsubscribe.html").is_file()
+
+
+def test_public_pages_do_not_double_escape_entities(tmp_path):
+    """An HTML entity written inside a t() string gets escaped a second time.
+
+    The builder renders with autoescape ON, so a source "&amp;" reaches the
+    reader as "&amp;amp;" — literally "&amp;" on the page. This shipped twice:
+    the shared footer link read "Plans &amp; pricing" on every public page, and
+    two feature tips on plans.html read "options &amp; flow" / "M&amp;A". Write
+    a bare "&" in the Jinja string and let autoescape do its job.
+    """
+    build_public_pages.build(tmp_path)
+
+    offenders = {
+        page.name: sorted({m for m in re.findall(r"&amp;(?:amp|lt|gt|quot|#\d+);", page.read_text())})
+        for page in sorted(tmp_path.glob("*.html"))
+    }
+    offenders = {name: hits for name, hits in offenders.items() if hits}
+    assert not offenders, f"double-escaped entities reach the reader: {offenders}"

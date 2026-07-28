@@ -37,7 +37,9 @@ from lib.pages import write_page  # noqa: E402
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_canada")
 
-ASSETS = ("theme.css", "theme.js", "mtf.js", "chart_i18n.js", "timemachine.js",
+ASSETS = ("theme.css", "product-nav-icons.css", "dashboard-icons.css",
+          "dashboard-icons.js", "theme.js",
+          "mtf.js", "chart_i18n.js", "timemachine.js",
           "charts.js", "tablesort.js", "stockview.js", "stocktable.js", "heatmap.js",
           "illus.css", "illus.js")
 

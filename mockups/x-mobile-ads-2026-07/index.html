@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>MastermindX — mobile campaign system</title>
+  <style>
+    :root{
+      --ink:#172131;
+      --muted:#5e6e85;
+      --faint:#8895a8;
+      --paper:#f5f7fa;
+      --white:#fff;
+      --hair:#dbe2ec;
+      --blue:#2f65ff;
+      --violet:#6e54ee;
+      --teal:#00a397;
+      --green:#1c9148;
+      --green2:#31c875;
+      --red:#ce3640;
+      --amber:#b67a07;
+      --night:#07101d;
+      --night2:#0e1a2d;
+      --display:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      --mono:"SFMono-Regular",Consolas,monospace;
+      --shadow:0 26px 80px rgba(20,37,63,.15),0 4px 15px rgba(20,37,63,.08);
+      --shadow-dark:0 34px 110px rgba(0,0,0,.48),0 5px 22px rgba(0,0,0,.28);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;background:#080f19;color:var(--ink);font-family:var(--display)}
+    body{padding:48px}
+    .gallery-head{max-width:1800px;margin:0 auto 38px;color:#eef4ff}
+    .gallery-head h1{margin:0 0 11px;font-size:42px;letter-spacing:-.04em}
+    .gallery-head p{max-width:1000px;margin:0;color:#91a1b8;font-size:19px;line-height:1.5}
+    .gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:36px;max-width:2200px;margin:auto}
+    .preview-meta{display:flex;justify-content:space-between;align-items:center;margin:0 0 11px;color:#aebbd0;font-size:14px;font-weight:750}
+    .preview-meta code{padding:7px 10px;border-radius:8px;background:#172642;color:#9ab5ff;font-family:var(--mono)}
+    .scale{width:100%;aspect-ratio:4/5;overflow:hidden;border-radius:15px;background:#fff;box-shadow:0 24px 70px rgba(0,0,0,.4)}
+    .scale .ad{width:1440px;height:1800px;transform:scale(calc((100vw - 132px) / 1440));transform-origin:top left}
+    @media(min-width:840px){.scale .ad{transform:scale(calc((50vw - 92px) / 1440))}}
+    @media(min-width:1480px){.scale .ad{transform:scale(calc((33.333vw - 80px) / 1440))}}
+
+    .ad{
+      position:relative;width:1440px;height:1800px;overflow:hidden;isolation:isolate;
+      background:var(--paper);color:var(--ink);
+    }
+    .ad::after{content:"";position:absolute;inset:0;z-index:50;pointer-events:none;box-shadow:inset 0 0 0 1px rgba(20,35,60,.05)}
+    .safe{position:absolute;inset:70px 78px 62px;z-index:3}
+    .brandrow{height:72px;display:flex;align-items:center;justify-content:space-between}
+    .brand{display:flex;align-items:center;gap:17px;font-size:29px;font-weight:900;letter-spacing:.01em}
+    .brandmark{width:54px;height:54px;display:grid;place-items:center;border-radius:15px;background:linear-gradient(135deg,var(--blue),var(--violet));color:#fff;font-size:31px;box-shadow:0 12px 28px rgba(47,101,255,.28)}
+    .brand small{display:block;margin-top:2px;color:var(--faint);font-size:13px;letter-spacing:.24em;font-weight:850}
+    .live{display:flex;align-items:center;gap:11px;padding:13px 19px;border:1px solid rgba(54,75,105,.18);border-radius:999px;background:rgba(255,255,255,.78);font-size:18px;letter-spacing:.11em;font-weight:850}
+    .live i{width:10px;height:10px;border-radius:50%;background:var(--teal);box-shadow:0 0 0 5px rgba(0,163,151,.13)}
+    .stepper{display:flex;align-items:center;gap:16px;color:#66768e;font-size:22px;font-weight:800}
+    .stepper b{color:var(--ink);font-family:var(--mono);font-size:24px}
+    .swipe{display:flex;align-items:center;gap:12px;color:var(--blue);font-size:21px;letter-spacing:.08em;font-weight:900}
+    .kicker{margin:0 0 22px;color:var(--blue);font-size:25px;letter-spacing:.15em;text-transform:uppercase;font-weight:900}
+    .headline{max-width:1240px;margin:0;font-size:126px;line-height:.93;letter-spacing:-.062em;font-weight:860}
+    .headline.compact{font-size:112px}
+    .headline .accent{background:linear-gradient(90deg,var(--blue),var(--violet),var(--teal));-webkit-background-clip:text;background-clip:text;color:transparent}
+    .subhead{max-width:1210px;margin:30px 0 0;color:var(--muted);font-size:46px;line-height:1.3;letter-spacing:-.022em}
+    .subhead b{color:var(--ink)}
+    .copy{position:absolute;left:0;right:0;top:176px}
+    .dark{background:
+      radial-gradient(circle at 88% 13%,rgba(47,101,255,.28),transparent 30%),
+      radial-gradient(circle at 8% 64%,rgba(0,163,151,.16),transparent 27%),
+      linear-gradient(150deg,#050c16,#0a1526 55%,#102039);color:#f2f6ff}
+    .dark .brand small,.dark .subhead,.dark .stepper{color:#94a6c0}
+    .dark .live{background:rgba(14,27,46,.84);border-color:#293c59}
+    .dark .stepper b{color:#f4f8ff}
+    .dark .headline .accent{background:linear-gradient(90deg,#78a0ff,#60daca);-webkit-background-clip:text;background-clip:text}
+    .warm{background:
+      radial-gradient(circle at 80% 16%,rgba(222,176,66,.17),transparent 28%),
+      linear-gradient(145deg,rgba(255,255,255,.7),transparent 52%),#f3f0e9}
+
+    .pillrow{display:flex;gap:18px;flex-wrap:wrap}
+    .evidence-pill{display:flex;align-items:center;gap:17px;min-height:96px;padding:17px 23px;border:1px solid #dbe3ee;border-radius:21px;background:rgba(255,255,255,.9);box-shadow:0 10px 28px rgba(25,43,70,.07)}
+    .evidence-pill i{width:47px;height:47px;display:grid;place-items:center;flex:none;border-radius:14px;background:#edf2ff;color:var(--blue);font-style:normal;font-size:22px;font-weight:900}
+    .evidence-pill:nth-child(even) i{background:#e9f8f2;color:var(--green)}
+    .evidence-pill label{display:block;color:#7a889c;font-size:17px;letter-spacing:.1em;text-transform:uppercase;font-weight:850}
+    .evidence-pill b{display:block;margin-top:3px;font-size:27px}
+    .dark .evidence-pill{border-color:#273a57;background:#111f34;color:#eaf0fa}
+    .dark .evidence-pill label{color:#8396b2}
+
+    .signal-card{position:relative;padding:34px 36px;border:1px solid #d7e0ea;border-radius:30px;background:#fff;box-shadow:var(--shadow);overflow:hidden;color:var(--ink)}
+    .signal-card::before{content:"";position:absolute;left:0;right:0;top:0;height:7px;background:linear-gradient(90deg,#24a55b,#84dfac,transparent)}
+    .panel-h{display:flex;justify-content:space-between;align-items:center;color:#63738a;font-size:22px;letter-spacing:.12em;text-transform:uppercase;font-weight:900}
+    .demo{display:inline-flex;align-items:center;gap:9px;padding:10px 16px;border-radius:999px;background:#ebf8f1;color:var(--green);font-size:18px;letter-spacing:.06em;font-weight:900}
+    .demo::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--green)}
+    .sig-top{display:flex;align-items:center;gap:18px;margin-top:31px}
+    .verb{padding:11px 18px;border:1px solid #8bd8a8;border-radius:999px;background:#e8f8ee;color:var(--green);font-size:25px;letter-spacing:.07em;font-weight:950}
+    .ticker{font-size:54px;letter-spacing:-.03em;font-weight:950}
+    .price{margin-left:auto;font-family:var(--mono);font-size:37px;font-weight:850}
+    .spark{display:block;width:100%;height:220px;margin:24px 0 13px;border-radius:18px;background:linear-gradient(180deg,rgba(35,165,88,.06),transparent)}
+    .sig-id{display:flex;align-items:baseline;gap:14px;font-size:31px}
+    .sig-id .name{color:var(--muted)}
+    .edge{margin-left:auto;color:#64758c;font-size:24px;letter-spacing:.05em;font-weight:850}
+    .edge b{margin-left:7px;color:var(--green);font-size:43px}
+    .stages{position:relative;display:grid;grid-template-columns:repeat(4,1fr);margin-top:29px;padding-top:22px;color:#97a3b4;text-align:center;font-size:22px;font-weight:760}
+    .stages::before{content:"";position:absolute;left:8%;right:8%;top:7px;height:4px;background:#dce2e9}
+    .stages span::before{content:"";position:absolute;top:0;width:15px;height:15px;transform:translateX(27px);border:4px solid #fff;border-radius:50%;background:#cbd3df;box-shadow:0 0 0 1px #d8dfe8}
+    .stages .on{color:var(--green);font-weight:950}
+    .stages .on::before{background:var(--green);box-shadow:0 0 0 7px rgba(30,145,72,.15)}
+    .planrow{display:grid;grid-template-columns:1.18fr 1fr;gap:16px;margin-top:31px;padding-top:27px;border-top:1px solid #e1e7ee}
+    .planbox{padding:17px 20px;border-radius:16px;background:#f3f6fa;color:#69788c;font-size:19px;letter-spacing:.08em;text-transform:uppercase;font-weight:900}
+    .planbox b{display:block;margin-top:7px;color:var(--ink);font-family:var(--mono);font-size:32px;letter-spacing:-.04em}
+    .planbox.risk{background:#fff0f1}.planbox.risk b{color:#ba2e37}
+
+    .decision{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+    .decision-card{position:relative;min-height:245px;padding:29px;border:1px solid rgba(72,94,124,.18);border-radius:26px;background:rgba(255,255,255,.92);box-shadow:0 14px 38px rgba(23,41,69,.09)}
+    .decision-card:not(:last-child)::after{content:"→";position:absolute;right:-33px;top:91px;z-index:4;width:47px;height:47px;display:grid;place-items:center;border-radius:50%;background:var(--blue);color:#fff;font-size:28px;font-weight:900;box-shadow:0 10px 24px rgba(47,101,255,.25)}
+    .decision-card small{color:#7b899d;font-size:18px;letter-spacing:.12em;text-transform:uppercase;font-weight:900}
+    .decision-card h3{margin:17px 0 8px;font-size:37px;letter-spacing:-.035em}
+    .decision-card p{margin:0;color:#66758a;font-size:24px;line-height:1.35}
+    .decision-card strong{display:block;margin-top:18px;color:var(--green);font-family:var(--mono);font-size:29px}
+    .dark .decision-card{border-color:#263b58;background:#101f34}
+    .dark .decision-card h3{color:#f1f6ff}.dark .decision-card p{color:#98abc5}
+
+    .offer{
+      position:absolute;left:0;right:0;bottom:0;height:224px;display:grid;
+      grid-template-columns:1fr 360px;align-items:center;gap:32px;padding:30px 34px;
+      border-radius:31px;background:#0e192b;color:#fff;box-shadow:var(--shadow-dark)
+    }
+    .offer-kicker{display:inline-block;margin-bottom:8px;color:#88a9ff;font-size:18px;letter-spacing:.13em;font-weight:900}
+    .offer-main{display:flex;align-items:baseline;gap:15px}
+    .offer-main strong{font-size:76px;line-height:.9;letter-spacing:-.055em}
+    .offer-main span{color:#bdc8d8;font-size:27px;font-weight:720}
+    .offer-save{margin-top:13px;color:#96a7bd;font-size:23px}
+    .offer-save b{color:#4ed38d}
+    .cta{height:104px;display:grid;place-items:center;border-radius:22px;background:linear-gradient(135deg,#2e69ff,#596ff6);color:#fff;font-size:29px;font-weight:900;box-shadow:0 16px 35px rgba(47,101,255,.3)}
+    .fine{position:absolute;left:4px;bottom:236px;color:rgba(84,97,116,.78);font-size:16px}
+    .dark .fine{color:#687a94}
+    .suite-line{display:flex;align-items:center;justify-content:center;gap:13px;color:#617188;font-size:21px;font-weight:760;white-space:nowrap}
+    .suite-line i{width:6px;height:6px;border-radius:50%;background:#97a6ba}
+    .dark .suite-line{color:#879ab5}
+
+    /* Standalone mobile heroes */
+    .hero1{background:
+      radial-gradient(circle at 90% 16%,rgba(78,104,255,.14),transparent 28%),
+      radial-gradient(circle at 6% 68%,rgba(0,163,151,.10),transparent 27%),#f7f8fb}
+    .hero1 .headline{font-size:120px}
+    .hero1 .subhead{font-size:41px}
+    .hero1 .visual{position:absolute;left:0;right:0;top:710px}
+    .hero1 .signal-card{width:850px;padding:29px 30px}
+    .hero1 .signal-card .sig-top{margin-top:22px}
+    .hero1 .signal-card .spark{height:184px;margin:18px 0 8px}
+    .hero1 .signal-card .stages{margin-top:21px}
+    .hero1 .signal-card .planrow{margin-top:22px;padding-top:19px}
+    .hero1 .pillrow{position:absolute;right:0;top:16px;width:405px;display:grid;gap:17px}
+    .hero1 .suite-line{position:absolute;left:0;right:0;bottom:273px}
+
+    .hero2 .headline{font-size:123px}
+    .hero2 .decision{position:absolute;left:0;right:0;top:670px}
+    .hero2 .mini-plan{position:absolute;left:0;right:0;top:955px;display:grid;grid-template-columns:1fr 1fr;gap:20px}
+    .hero2 .mini-plan div{padding:33px;border:1px solid #273b58;border-radius:26px;background:#101f34}
+    .hero2 .mini-plan label{display:block;color:#8194b0;font-size:20px;letter-spacing:.1em;text-transform:uppercase;font-weight:900}
+    .hero2 .mini-plan strong{display:block;margin-top:11px;color:#eef4ff;font-family:var(--mono);font-size:50px}
+    .hero2 .mini-plan .risk strong{color:#ff7a82}
+    .hero2 .suite-line{position:absolute;left:0;right:0;bottom:273px}
+
+    .hero3 .copy{top:168px}.hero3 .headline{font-size:112px}
+    .terminal{position:absolute;left:0;right:0;top:755px;height:590px;border:1px solid #29364a;border-radius:31px;background:#080e17;box-shadow:var(--shadow-dark);overflow:hidden}
+    .browserbar{height:66px;display:flex;align-items:center;gap:13px;padding:0 24px;background:#20242c}
+    .browserbar i{width:16px;height:16px;border-radius:50%;background:#ff625d}
+    .browserbar i:nth-child(2){background:#ffbd44}.browserbar i:nth-child(3){background:#29c941}
+    .address{margin:auto;width:590px;padding:10px 18px;border-radius:10px;background:#2c3039;color:#b3bac7;text-align:center;font-size:18px}
+    .terminal img{position:absolute;left:0;top:66px;width:100%;height:524px;object-fit:cover;object-position:27% top;filter:saturate(.94) brightness(.92)}
+    .terminal::after{content:"";position:absolute;inset:66px 0 0;background:linear-gradient(90deg,transparent 38%,rgba(4,9,16,.1) 62%,rgba(4,9,16,.54))}
+    .terminal-call{position:absolute;z-index:2;right:31px;bottom:31px;width:485px;padding:25px;border:1px solid #39517a;border-radius:23px;background:rgba(9,18,33,.96);box-shadow:0 22px 55px rgba(0,0,0,.5)}
+    .terminal-call .panel-h{color:#8092ad;font-size:17px}
+    .terminal-call h3{margin:19px 0 5px;color:#fff;font-size:36px}
+    .terminal-call p{margin:0;color:#90a1ba;font-size:22px;line-height:1.35}
+    .termplan{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:19px}
+    .termplan div{padding:14px;border:1px solid #2a3d5a;border-radius:13px;color:#8395af;font-size:15px;letter-spacing:.07em;text-transform:uppercase;font-weight:850}
+    .termplan b{display:block;margin-top:6px;color:#f1f5fb;font-family:var(--mono);font-size:23px}
+    .termplan .risk b{color:#ff8087}
+    .hero3 .suite-line{position:absolute;left:0;right:0;bottom:273px}
+
+    .hero4{background:
+      radial-gradient(circle at 87% 28%,rgba(47,101,255,.16),transparent 30%),
+      radial-gradient(circle at 12% 68%,rgba(0,163,151,.10),transparent 28%),#f7f8fc}
+    .hero4 .headline{font-size:116px}
+    .ai-stage{position:absolute;left:0;right:0;top:630px;height:710px;display:grid;grid-template-columns:365px 1fr;gap:23px}
+    .ai-evidence{display:grid;grid-template-rows:repeat(3,1fr);gap:17px}
+    .ai-evidence .evidence-pill{position:relative;padding:20px}
+    .ai-evidence .evidence-pill::after{content:"→";position:absolute;right:-34px;color:#8599b6;font-size:28px;font-weight:900}
+    .ai-panel{position:relative;border:1px solid #d8e0eb;border-radius:29px;background:#fff;box-shadow:var(--shadow);overflow:hidden}
+    .ai-top{height:79px;display:flex;align-items:center;padding:0 25px;border-bottom:1px solid #e2e7ef;color:var(--blue);font-size:21px;letter-spacing:.11em;font-weight:900}
+    .ai-mode{margin-left:auto;padding:10px 16px;border-radius:999px;background:var(--blue);color:#fff;font-size:17px;letter-spacing:0}
+    .question{margin:27px 25px 20px auto;width:max-content;max-width:85%;padding:18px 22px;border-radius:19px 19px 6px 19px;background:linear-gradient(135deg,var(--blue),#5b71f6);color:#fff;font-size:25px;font-weight:800}
+    .reading{margin:0 25px;color:#7c8ba0;font-size:19px}
+    .answer{margin:21px 25px 0;padding:25px;border:1px solid #dde4ed;border-radius:20px;background:#f7f9fc}
+    .answer h3{margin:0;font-size:38px;letter-spacing:-.035em}
+    .answer p{margin:10px 0 0;color:#5d6d83;font-size:23px;line-height:1.38}
+    .answer-plan{display:grid;grid-template-columns:1.15fr 1fr;gap:12px;margin-top:19px}
+    .answer-plan div{padding:15px;border:1px solid #e0e6ee;border-radius:14px;background:#fff;color:#75849a;font-size:16px;letter-spacing:.07em;text-transform:uppercase;font-weight:900}
+    .answer-plan b{display:block;margin-top:6px;color:var(--ink);font-family:var(--mono);font-size:25px}
+    .answer-plan .risk b{color:#bd2e38}
+    .hero4 .suite-line{position:absolute;left:0;right:0;bottom:273px}
+
+    .hero5 .headline{font-size:124px}
+    .hero5 .proof{position:absolute;left:0;right:0;top:640px;display:grid;grid-template-columns:800px 1fr;gap:23px}
+    .hero5 .signal-card{height:675px}
+    .hero5 .reason-stack{display:grid;grid-template-rows:repeat(3,1fr);gap:16px}
+    .reason{display:flex;align-items:center;gap:18px;padding:23px;border:1px solid #dedbd3;border-radius:22px;background:rgba(255,255,255,.88);box-shadow:0 12px 34px rgba(36,42,52,.08)}
+    .reason i{width:51px;height:51px;display:grid;place-items:center;flex:none;border-radius:15px;background:#eef2ff;color:var(--blue);font-style:normal;font-size:23px;font-weight:900}
+    .reason:nth-child(even) i{background:#eaf8f2;color:var(--green)}
+    .reason label{display:block;color:#7d8897;font-size:16px;letter-spacing:.1em;text-transform:uppercase;font-weight:900}
+    .reason b{display:block;margin-top:5px;font-size:28px;line-height:1.15}
+    .hero5 .suite-line{position:absolute;left:0;right:0;bottom:273px}
+
+    /* Carousel slides */
+    .carousel .copy{top:194px}
+    .carousel .headline{font-size:128px}
+    .carousel .subhead{font-size:48px}
+    .carousel .footer-brand{position:absolute;left:0;right:0;bottom:0;height:86px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid rgba(84,104,132,.18);color:#6c7b90;font-size:21px;font-weight:780}
+    .dark .footer-brand{border-color:#243750;color:#8497b3}
+    .hero-signal{position:absolute;left:0;right:0;top:770px}
+    .hero-signal .signal-card{width:100%;padding:42px}
+    .hero-signal .spark{height:280px}
+    .hero-signal .ticker{font-size:64px}.hero-signal .price{font-size:43px}
+    .hero-signal .sig-id{font-size:37px}.hero-signal .edge{font-size:27px}.hero-signal .edge b{font-size:50px}
+    .hero-signal .planbox{font-size:22px}.hero-signal .planbox b{font-size:39px}
+    .hero-signal .stages{font-size:25px}
+    .big-question{position:absolute;left:0;right:0;top:760px;padding:42px;border:1px solid #d9e1eb;border-radius:31px;background:#fff;box-shadow:var(--shadow)}
+    .big-question .q{margin-left:auto;width:max-content;max-width:82%;padding:24px 30px;border-radius:24px 24px 7px 24px;background:linear-gradient(135deg,var(--blue),#5a70f7);color:#fff;font-size:35px;font-weight:850}
+    .big-question .read{margin:29px 0 0;color:#718198;font-size:26px}
+    .big-question .a{margin-top:22px;padding:29px;border:1px solid #dde4ed;border-radius:22px;background:#f6f8fb}
+    .big-question .a h3{margin:0;font-size:50px;letter-spacing:-.04em}
+    .big-question .a p{margin:12px 0 0;color:#5e6e84;font-size:30px;line-height:1.4}
+    .evidence-title{margin:0 0 22px;font-size:57px;letter-spacing:-.04em}
+    .evidence-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+    .evidence-block{min-height:205px;padding:28px;border:1px solid #dbe3ed;border-radius:24px;background:#fff;box-shadow:0 12px 32px rgba(25,43,70,.07)}
+    .evidence-block small{color:#79889d;font-size:18px;letter-spacing:.11em;text-transform:uppercase;font-weight:900}
+    .evidence-block h3{margin:15px 0 7px;font-size:37px;letter-spacing:-.035em}
+    .evidence-block p{margin:0;color:#63738a;font-size:24px;line-height:1.34}
+    .evidence-block b.metric{display:block;margin-top:15px;color:var(--green);font-family:var(--mono);font-size:29px}
+    .dark .evidence-block{border-color:#273a57;background:#101e33}
+    .dark .evidence-block h3{color:#f1f5fc}.dark .evidence-block p{color:#92a5bf}
+    .evidence-stage{position:absolute;left:0;right:0;top:505px}
+    .evidence-stage .signal-card{margin-top:22px}
+    .terminal-wide{position:absolute;left:0;right:0;top:835px;height:725px}
+    .terminal-wide .terminal{position:relative;top:0;height:725px}
+    .terminal-wide .terminal img{height:659px}
+    .terminal-wide .terminal-call{width:535px;padding:30px}
+    .pipeline-vertical{display:grid;gap:17px}
+    .pipe-row{display:grid;grid-template-columns:72px 1fr auto;align-items:center;gap:22px;min-height:126px;padding:21px 25px;border:1px solid #263b58;border-radius:23px;background:#101f34}
+    .pipe-row i{width:60px;height:60px;display:grid;place-items:center;border-radius:17px;background:#172b49;color:#88a8ff;font-family:var(--mono);font-size:23px;font-style:normal;font-weight:900}
+    .pipe-row label{display:block;color:#8497b3;font-size:17px;letter-spacing:.11em;text-transform:uppercase;font-weight:900}
+    .pipe-row b{display:block;margin-top:5px;color:#f1f5fc;font-size:29px}
+    .pipe-row em{color:#54d497;font-family:var(--mono);font-size:25px;font-style:normal;font-weight:900}
+    .pipe-arrow{height:30px;display:grid;place-items:center;color:#59759e;font-size:31px;font-weight:900}
+    .proof-list{display:grid;gap:18px}
+    .proof-row{display:grid;grid-template-columns:68px 1fr auto;align-items:center;gap:20px;min-height:135px;padding:24px 28px;border:1px solid #dad8d1;border-radius:24px;background:rgba(255,255,255,.9);box-shadow:0 10px 28px rgba(31,42,58,.07)}
+    .proof-row i{width:58px;height:58px;display:grid;place-items:center;border-radius:17px;background:#edf2ff;color:var(--blue);font-style:normal;font-size:25px;font-weight:900}
+    .proof-row:nth-child(even) i{background:#eaf8f2;color:var(--green)}
+    .proof-row label{display:block;color:#7a8798;font-size:18px;letter-spacing:.11em;text-transform:uppercase;font-weight:900}
+    .proof-row b{display:block;margin-top:6px;font-size:31px}
+    .proof-row em{color:var(--green);font-family:var(--mono);font-size:24px;font-style:normal;font-weight:900}
+    .resolution{display:grid;grid-template-columns:1fr 1.2fr 1fr;align-items:center;gap:20px;margin-top:22px;padding:27px 30px;border:1px solid #cad8ea;border-radius:26px;background:linear-gradient(135deg,#f7faff,#fff);box-shadow:var(--shadow)}
+    .resolution div{min-width:0}
+    .resolution small{display:block;color:#718199;font-size:17px;letter-spacing:.1em;text-transform:uppercase;font-weight:900}
+    .resolution strong{display:block;margin-top:6px;font-size:34px;letter-spacing:-.035em}
+    .resolution .call{text-align:center;border-right:1px solid #dde4ed;border-left:1px solid #dde4ed}
+    .resolution .call strong{color:var(--green);font-size:42px}
+    .resolution .risk{text-align:right}
+    .resolution .risk strong{color:var(--red);font-family:var(--mono);font-size:31px}
+
+    .offer-slide{background:
+      radial-gradient(circle at 86% 12%,rgba(87,103,255,.22),transparent 28%),
+      radial-gradient(circle at 9% 72%,rgba(0,163,151,.13),transparent 28%),
+      linear-gradient(150deg,#07101d,#0d1a2d 60%,#11223a);color:#f3f7ff}
+    .offer-slide .brand small,.offer-slide .stepper{color:#91a3bd}
+    .offer-slide .stepper b{color:#fff}
+    .offer-slide .copy{top:205px}
+    .offer-slide .headline{max-width:1190px;font-size:120px}
+    .rate-card{position:absolute;left:0;right:0;top:630px;padding:41px;border:1px solid #2a3f60;border-radius:31px;background:rgba(15,30,51,.91);box-shadow:var(--shadow-dark)}
+    .rate-label{color:#8caaff;font-size:21px;letter-spacing:.13em;font-weight:900}
+    .rate-price{display:flex;align-items:baseline;gap:19px;margin-top:17px}
+    .rate-price strong{font-size:118px;line-height:.9;letter-spacing:-.065em}
+    .rate-price span{color:#b5c1d2;font-size:34px;font-weight:750}
+    .rate-save{margin-top:19px;color:#9dafc7;font-size:30px}
+    .rate-save b{color:#51d592}
+    .rate-cta{height:112px;display:grid;place-items:center;margin-top:30px;border-radius:22px;background:linear-gradient(135deg,#2f68ff,#596ff7);color:#fff;font-size:34px;font-weight:900;box-shadow:0 17px 38px rgba(47,101,255,.32)}
+    .suite-grid{position:absolute;left:0;right:0;top:1135px;display:grid;grid-template-columns:1fr 1fr;gap:15px}
+    .suite-grid span{min-height:79px;display:flex;align-items:center;gap:15px;padding:0 21px;border:1px solid #273b58;border-radius:19px;background:#101e32;color:#d4deed;font-size:24px;font-weight:820}
+    .suite-grid i{width:11px;height:11px;border-radius:50%;background:#658cff;box-shadow:0 0 0 5px rgba(101,140,255,.12)}
+    .suite-grid span:nth-child(3n+1) i{background:#4ed393;box-shadow:0 0 0 5px rgba(78,211,147,.11)}
+    .offer-slide .footer-brand{border-color:#253750;color:#8295b1}
+
+    body.single{width:1440px;height:1800px;overflow:hidden;padding:0;background:transparent}
+    body.single .gallery-head,body.single .preview-meta{display:none}
+    body.single .gallery{display:block;width:1440px;height:1800px;margin:0}
+    body.single .preview{display:none}
+    body.single .preview.active{display:block}
+    body.single .scale{width:1440px;height:1800px;border-radius:0;box-shadow:none}
+    body.single .scale .ad{transform:none}
+  </style>
+</head>
+<body>
+  <header class="gallery-head">
+    <h1>MastermindX — mobile acquisition campaign</h1>
+    <p>Five standalone 4:5 hero ads and five three-card carousel stories. Every critical line is designed to survive a 390px-wide X feed without zooming.</p>
+  </header>
+  <main class="gallery" id="gallery"></main>
+
+  <script>
+    const terminalImage = "../landing/assets/terminal_live.png";
+    const concepts = [
+      {
+        n:"01", id:"whole-market", label:"Whole-market signal",
+        headline:`Don’t just trade the ticker. <span class="accent">Trade the market behind it.</span>`,
+        support:`Regime, rotation, flow and funds resolve into <b>one ranked signal</b>—with entry and risk mapped.`
+      },
+      {
+        n:"02", id:"trade-plan", label:"Noise to trade plan",
+        headline:`The market is noisy. <span class="accent">Your trade plan shouldn’t be.</span>`,
+        support:`One ranked signal. One entry zone. One level that tells you when the thesis is wrong.`
+      },
+      {
+        n:"03", id:"terminal", label:"Terminal difference",
+        headline:`Your chart shows what happened. <span class="accent">See what to do next.</span>`,
+        support:`A real browser Terminal with ranked stock signals and institutional context built in.`
+      },
+      {
+        n:"04", id:"market-ai", label:"Market-aware AI",
+        headline:`Ask about a stock. <span class="accent">Get the market around it.</span>`,
+        support:`Mastermind AI reads every desk before it returns the setup, entry and risk.`
+      },
+      {
+        n:"05", id:"receipts", label:"Signals with receipts",
+        headline:`Every stock signal should <span class="accent">show its work.</span>`,
+        support:`See the market case behind the call—then get one honest action, entry and invalidation.`
+      }
+    ];
+
+    function brand(step=""){
+      return `<div class="brandrow">
+        <div class="brand"><span class="brandmark">M</span><span>MASTERMINDX<small>MARKET INTELLIGENCE</small></span></div>
+        ${step ? `<div class="stepper"><b>${step}</b><span>SWIPE →</span></div>` : `<span class="live"><i></i>LIVE · MARKET READ</span>`}
+      </div>`;
+    }
+    function spark(){
+      return `<svg class="spark" viewBox="0 0 760 220" preserveAspectRatio="none" aria-label="Illustrative price path approaching an entry zone">
+        <defs><linearGradient id="area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#28ad62" stop-opacity=".25"/><stop offset="1" stop-color="#28ad62" stop-opacity="0"/></linearGradient></defs>
+        <path d="M0 185L0 145L49 157L94 139L139 169L185 143L231 150L278 113L324 128L370 101L417 110L463 81L510 93L557 62L605 71L654 42L703 36L760 15L760 185Z" fill="url(#area)"/>
+        <path d="M0 145L49 157L94 139L139 169L185 143L231 150L278 113L324 128L370 101L417 110L463 81L510 93L557 62L605 71L654 42L703 36L760 15" fill="none" stroke="#22a357" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="580" y="28" width="180" height="36" rx="10" fill="rgba(30,145,72,.08)" stroke="#54bd7a" stroke-width="2" stroke-dasharray="8 7"/>
+        <circle cx="557" cy="62" r="13" fill="#2f65ff" stroke="#fff" stroke-width="6"/>
+      </svg>`;
+    }
+    function signalCard(opts={}){
+      const x={ticker:"AVGO",sector:"Semiconductors",price:"$184.20",verb:"NEAR",edge:"76",entry:"$184.20 – $187.10",risk:"$176.80",...opts};
+      return `<div class="signal-card">
+        <div class="panel-h"><span>PROPHET · TONIGHT’S SIGNAL</span><span class="demo">illustrative</span></div>
+        <div class="sig-top"><span class="verb">${x.verb}</span><strong class="ticker">${x.ticker}</strong><span class="price">${x.price}</span></div>
+        ${spark()}
+        <div class="sig-id"><strong>${x.ticker}</strong><span class="name">${x.sector}</span><span class="edge">EDGE <b>${x.edge}</b></span></div>
+        <div class="stages"><span>Bottoming</span><span>Turning</span><span class="on">Ready</span><span>Trend</span></div>
+        <div class="planrow"><span class="planbox">Entry zone<b>${x.entry}</b></span><span class="planbox risk">Invalidates below<b>${x.risk}</b></span></div>
+      </div>`;
+    }
+    function evidencePills(items){
+      return `<div class="pillrow">${items.map((x,i)=>`<div class="evidence-pill"><i>${String(i+1).padStart(2,"0")}</i><span><label>${x[0]}</label><b>${x[1]}</b></span></div>`).join("")}</div>`;
+    }
+    function suiteLine(){
+      return `<div class="suite-line"><span>Macro</span><i></i><span>Signals</span><i></i><span>Flow</span><i></i><span>Filings</span><i></i><span>Funds</span><i></i><span>Terminal</span><i></i><span>AI</span></div>`;
+    }
+    function offer(){
+      return `<div class="fine">Market intelligence, not individualized investment advice. Product UI examples are illustrative.</div>
+        <div class="offer">
+          <div><span class="offer-kicker">FOUNDING RATE · LIMITED</span><div class="offer-main"><strong>$75</strong><span>/mo billed annually</span></div><div class="offer-save"><b>About 50% less</b> than $149 monthly Pro</div></div>
+          <div class="cta">Start 7-day trial&nbsp; →</div>
+        </div>`;
+    }
+    function footer(step){
+      return `<div class="footer-brand"><span>MASTERMINDX · MARKET INTELLIGENCE</span><span>${step}</span></div>`;
+    }
+    function terminal(){
+      return `<div class="terminal">
+        <div class="browserbar"><i></i><i></i><i></i><span class="address">app.mastermind-x.com/terminal</span></div>
+        <img src="${terminalImage}" alt="MastermindX browser Terminal">
+        <div class="terminal-call">
+          <div class="panel-h"><span>NVDA · PROPHET SIGNAL</span><span class="demo">LIVE</span></div>
+          <h3>Uptrend. No entry yet.</h3>
+          <p>The trend is intact; wait for price to return to the plan.</p>
+          <div class="termplan"><div>Entry zone<b>$199 – $203</b></div><div class="risk">Invalidates below<b>$191</b></div></div>
+        </div>
+      </div>`;
+    }
+    function hero(c){
+      const common=`${brand()}<div class="copy"><p class="kicker">STOCK SIGNALS · FULL MARKET CONTEXT</p><h1 class="headline">${c.headline}</h1><p class="subhead">${c.support}</p></div>`;
+      if(c.n==="01") return `<article class="ad hero1"><div class="safe">${common}<div class="visual">${signalCard()}${evidencePills([["Market regime","Risk-on · 67"],["Theme rotation","Semis · Ready"],["Smart money","Funds adding"]])}</div>${suiteLine()}${offer()}</div></article>`;
+      if(c.n==="02") return `<article class="ad hero2 dark"><div class="safe">${common}<div class="decision"><div class="decision-card"><small>01 · Context</small><h3>Read the market</h3><p>Regime, themes, flow and funds.</p><strong>RISK-ON · 67</strong></div><div class="decision-card"><small>02 · Signal</small><h3>Rank the stock</h3><p>One honest action, with evidence.</p><strong>XLE · EDGE 74</strong></div><div class="decision-card"><small>03 · Plan</small><h3>Map the trade</h3><p>Know where to act—and exit.</p><strong>READY</strong></div></div><div class="mini-plan"><div><label>Entry zone</label><strong>$57.95 – $58.60</strong></div><div class="risk"><label>Invalidates below</label><strong>$55.80</strong></div></div>${suiteLine()}${offer()}</div></article>`;
+      if(c.n==="03") return `<article class="ad hero3 dark"><div class="safe">${common}${terminal()}${suiteLine()}${offer()}</div></article>`;
+      if(c.n==="04") return `<article class="ad hero4"><div class="safe">${common}<div class="ai-stage"><div class="ai-evidence">${evidencePills([["Regime","67 · Risk-on"],["Prophet","81 · Uptrend"],["Options flow","$3.1M call bias"]])}</div><div class="ai-panel"><div class="ai-top">● MASTERMIND AI <span class="ai-mode">⚡ Flash AI</span></div><div class="question">Is NVDA a buy right now?</div><div class="reading">● Reading regime · Prophet · options flow · funds</div><div class="answer"><h3>Strong tape. Wrong entry—for now.</h3><p>The uptrend is intact, but price is extended. Don’t chase it; let the setup come to you.</p><div class="answer-plan"><div>Entry if the gate reopens<b>$199 – $203</b></div><div class="risk">Thesis fails below<b>$191</b></div></div></div></div></div>${suiteLine()}${offer()}</div></article>`;
+      return `<article class="ad hero5 warm"><div class="safe">${common}<div class="proof">${signalCard()}<div class="reason-stack"><div class="reason"><i>01</i><span><label>Regime</label><b>Risk-on · leaders first</b></span></div><div class="reason"><i>02</i><span><label>Theme</label><b>Semis rotating ready</b></span></div><div class="reason"><i>03</i><span><label>Smart money</label><b>Funds + insiders aligned</b></span></div></div></div>${suiteLine()}${offer()}</div></article>`;
+    }
+
+    function slideOne(c){
+      const top=`${brand("01 / 03")}<div class="copy"><p class="kicker">${c.label}</p><h1 class="headline">${c.headline}</h1><p class="subhead">${c.support}</p></div>`;
+      if(c.n==="01"||c.n==="05") return `<article class="ad carousel ${c.n==="05"?"warm":""}"><div class="safe">${top}<div class="hero-signal">${signalCard(c.n==="05"?{ticker:"AVGO",edge:"76"}:{ticker:"XLE",sector:"Energy Select",price:"$58.50",edge:"74",entry:"$57.95 – $58.60",risk:"$55.80"})}</div>${footer("01 / 03 · THE PROMISE")}</div></article>`;
+      if(c.n==="02") return `<article class="ad carousel dark"><div class="safe">${top}<div class="decision" style="position:absolute;left:0;right:0;top:850px"><div class="decision-card"><small>CONTEXT</small><h3>Read it</h3><p>What market are you trading?</p></div><div class="decision-card"><small>SIGNAL</small><h3>Rank it</h3><p>Is this stock worth acting on?</p></div><div class="decision-card"><small>PLAN</small><h3>Map it</h3><p>Where are you wrong?</p></div></div>${footer("01 / 03 · THE PROMISE")}</div></article>`;
+      if(c.n==="03") return `<article class="ad carousel dark"><div class="safe">${top}<div class="terminal-wide">${terminal()}</div>${footer("01 / 03 · THE PROMISE")}</div></article>`;
+      return `<article class="ad carousel"><div class="safe">${top}<div class="big-question"><div class="q">Is NVDA a buy right now?</div><div class="read">● Reading every market desk before answering…</div><div class="a"><h3>Strong tape. Wrong entry—for now.</h3><p>Trend intact. Wait for $199–$203. Thesis invalid below $191.</p></div></div>${footer("01 / 03 · THE PROMISE")}</div></article>`;
+    }
+    function slideTwo(c){
+      if(c.n==="01") return `<article class="ad carousel"><div class="safe">${brand("02 / 03")}<div class="copy"><p class="kicker">THE MARKET BEHIND THE STOCK</p><h1 class="headline compact">Four forces. <span class="accent">One ranked call.</span></h1></div><div class="evidence-stage"><h2 class="evidence-title">The signal carries its context.</h2><div class="evidence-grid"><div class="evidence-block"><small>Macro regime</small><h3>Risk-on · shifting</h3><p>Know whether leaders or defense deserve the first look.</p><b class="metric">67 / 100</b></div><div class="evidence-block"><small>Theme rotation</small><h3>Energy · Ready</h3><p>See where capital is moving before choosing the name.</p><b class="metric">LANE 1</b></div><div class="evidence-block"><small>Institutional flow</small><h3>Funds adding XLE</h3><p>Track adds, trims and new stakes behind the setup.</p><b class="metric">+3.8M SH</b></div><div class="evidence-block"><small>Prophet signal</small><h3>XLE · Near</h3><p>One action, exact entry zone and invalidation.</p><b class="metric">EDGE 74</b></div></div><div class="resolution"><div><small>Entry zone</small><strong>$57.95 – $58.60</strong></div><div class="call"><small>All evidence resolves to</small><strong>XLE · NEAR · 74</strong></div><div class="risk"><small>Invalidates below</small><strong>$55.80</strong></div></div></div>${footer("02 / 03 · THE EVIDENCE")}</div></article>`;
+      if(c.n==="02") return `<article class="ad carousel dark"><div class="safe">${brand("02 / 03")}<div class="copy"><p class="kicker">THE DECISION PIPELINE</p><h1 class="headline compact">Noise goes in. <span class="accent">A trade plan comes out.</span></h1></div><div class="evidence-stage" style="top:565px"><div class="pipeline-vertical"><div class="pipe-row"><i>01</i><span><label>Market context</label><b>Regime + rotation + flow</b></span><em>RISK-ON</em></div><div class="pipe-arrow">↓</div><div class="pipe-row"><i>02</i><span><label>Ranked stock signal</label><b>XLE · Near · Edge 74</b></span><em>READY</em></div><div class="pipe-arrow">↓</div><div class="pipe-row"><i>03</i><span><label>Executable plan</label><b>Entry $57.95–$58.60</b></span><em>RISK $55.80</em></div></div></div>${footer("02 / 03 · HOW IT WORKS")}</div></article>`;
+      if(c.n==="03") return `<article class="ad carousel dark"><div class="safe">${brand("02 / 03")}<div class="copy"><p class="kicker">THE INTELLIGENCE LAYER</p><h1 class="headline compact">A chart plus the <span class="accent">decision behind it.</span></h1></div><div class="evidence-stage" style="top:570px"><div class="evidence-grid"><div class="evidence-block"><small>Prophet</small><h3>One ranked action</h3><p>Buy, Near, Wait, Hold or Avoid—without hype.</p><b class="metric">EDGE 81</b></div><div class="evidence-block"><small>Trade plan</small><h3>Entry + invalidation</h3><p>The chart carries the level to act and the level to leave.</p><b class="metric">$199–$203 / $191</b></div><div class="evidence-block"><small>Market read</small><h3>Regime + rotation</h3><p>See whether the market is helping the setup.</p><b class="metric">RISK-ON · 67</b></div><div class="evidence-block"><small>Institutional context</small><h3>Flow + funds</h3><p>Know who is pressing the trade behind price.</p><b class="metric">CALL BIAS</b></div></div></div>${footer("02 / 03 · THE DIFFERENCE")}</div></article>`;
+      if(c.n==="04") return `<article class="ad carousel"><div class="safe">${brand("02 / 03")}<div class="copy"><p class="kicker">WHAT THE AI READS FIRST</p><h1 class="headline compact">Not just the ticker. <span class="accent">The whole setup.</span></h1></div><div class="evidence-stage" style="top:580px"><div class="proof-list"><div class="proof-row"><i>01</i><span><label>Market regime</label><b>Risk-on, but leadership is narrow</b></span><em>67</em></div><div class="proof-row"><i>02</i><span><label>Prophet + chart</label><b>Uptrend intact; price extended</b></span><em>EDGE 81</em></div><div class="proof-row"><i>03</i><span><label>Options flow</label><b>Call bias supports the thesis</b></span><em>$3.1M</em></div><div class="proof-row"><i>04</i><span><label>Risk plan</label><b>Wait for the entry gate to reopen</b></span><em>$191</em></div></div></div>${footer("02 / 03 · THE REASONING")}</div></article>`;
+      return `<article class="ad carousel warm"><div class="safe">${brand("02 / 03")}<div class="copy"><p class="kicker">SIGNALS WITH RECEIPTS</p><h1 class="headline compact">The call is short. <span class="accent">The evidence isn’t hidden.</span></h1></div><div class="evidence-stage" style="top:565px"><div class="proof-list"><div class="proof-row"><i>01</i><span><label>Regime</label><b>Risk-on · leaders deserve the first look</b></span><em>67</em></div><div class="proof-row"><i>02</i><span><label>Theme</label><b>Semiconductors rotating into Ready</b></span><em>LANE 1</em></div><div class="proof-row"><i>03</i><span><label>Smart money</label><b>Funds and insider activity aligned</b></span><em>ADDING</em></div><div class="proof-row"><i>04</i><span><label>Trade plan</label><b>Entry and invalidation stamped on the call</b></span><em>EDGE 76</em></div></div></div>${footer("02 / 03 · THE RECEIPTS")}</div></article>`;
+    }
+    function slideThree(c){
+      return `<article class="ad carousel offer-slide"><div class="safe">${brand("03 / 03")}<div class="copy"><p class="kicker">${c.label.toUpperCase()} · FOUNDING OFFER</p><h1 class="headline">One market desk. <span class="accent">One Founding Rate.</span></h1><p class="subhead">Start with the full intelligence stack—and keep the founding price while your membership stays active.</p></div><div class="rate-card"><div class="rate-label">FOUNDING PRO · LIMITED</div><div class="rate-price"><strong>$75</strong><span>/mo billed annually</span></div><div class="rate-save"><b>About 50% less</b> than $149 monthly Pro · $900/year</div><div class="rate-cta">Start your 7-day trial&nbsp; →</div></div><div class="suite-grid"><span><i></i>Macro regime</span><span><i></i>Prophet stock signals</span><span><i></i>Options flow</span><span><i></i>Theme rotation</span><span><i></i>Insider + Congress</span><span><i></i>13F funds</span><span><i></i>Browser Terminal</span><span><i></i>Mastermind AI</span></div>${footer("03 / 03 · THE OFFER")}</div></article>`;
+    }
+
+    const creatives=[];
+    concepts.forEach(c=>{
+      creatives.push({id:`mx-mobile-${c.n}`,label:`Hero ${c.n} · ${c.label}`,render:()=>hero(c)});
+      creatives.push({id:`mx-carousel-${c.n}-1`,label:`Carousel ${c.n}.1 · Promise`,render:()=>slideOne(c)});
+      creatives.push({id:`mx-carousel-${c.n}-2`,label:`Carousel ${c.n}.2 · Evidence`,render:()=>slideTwo(c)});
+      creatives.push({id:`mx-carousel-${c.n}-3`,label:`Carousel ${c.n}.3 · Offer`,render:()=>slideThree(c)});
+    });
+    const selected=new URLSearchParams(location.search).get("creative");
+    if(selected) document.body.classList.add("single");
+    const gallery=document.getElementById("gallery");
+    gallery.innerHTML=creatives.map(c=>`<section class="preview ${selected===c.id?"active":""}" data-id="${c.id}"><div class="preview-meta"><span>${c.label}</span><code>${c.id}</code></div><div class="scale">${c.render()}</div></section>`).join("");
+  </script>
+</body>
+</html>

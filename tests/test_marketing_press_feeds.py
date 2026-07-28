@@ -295,7 +295,7 @@ class TestPressLane:
         res = run_press_tick(_fixture_items(), root=tmp_path, now=_MARKET_HOURS,
                              cfg=_CFG, press_cfg=_PRESS_CFG, state={}, seen_ids=set(),
                              dry_run=True)
-        emitted_heads = [e["text"]["headline"].lower() for e in res["emitted"]]
+        emitted_heads = [e["headline"].lower() for e in res["emitted"]]
         assert any("tariff" in h for h in emitted_heads)
         assert not any("pop star" in h for h in emitted_heads)
 
@@ -351,17 +351,28 @@ class TestPressLane:
                        dry_run=True)
         outbox = tmp_path / "data" / "marketing" / "outbox"
         assert not outbox.exists() or not list(outbox.glob("*.json"))
+        # XG-W2: the canonical queue must be untouched by a dry run too.
+        assert not (outbox / "items.jsonl").exists()
 
     def test_live_write_lands_in_outbox_only(self, tmp_path):
+        """XG-W2: emissions land in the CANONICAL queue (items.jsonl), which is
+        what the publisher folds — not in per-item <id>.json files nothing read."""
         res = run_press_tick(_fixture_items(), root=tmp_path, now=_MARKET_HOURS,
                              cfg=_CFG, press_cfg=_PRESS_CFG, state={}, seen_ids=set(),
                              dry_run=False)
+        outbox = tmp_path / "data" / "marketing" / "outbox"
+        items_file = outbox / "items.jsonl"
+        assert items_file.exists()
+        queued = {json.loads(line)["id"]: json.loads(line)
+                  for line in items_file.read_text().splitlines() if line.strip()}
         for e in res["emitted"]:
-            jpath = tmp_path / "data" / "marketing" / "outbox" / f"{e['id']}.json"
-            assert jpath.exists()
-            written = json.loads(jpath.read_text())
+            written = queued.get(e["id"])
+            assert written is not None, f"{e['id']} not in items.jsonl"
             assert written["kind"] == "breaking"
             assert written["scheduled_at"] == "immediate"
+            assert written["schema"] == "marketing.outbox/v1"
+        # No hand-rolled per-item JSON remains.
+        assert list(outbox.glob("*.json")) == []
 
     def test_corroboration_stale_entries_pruned(self, tmp_path):
         # A claim entry older than the window must be pruned, not grow forever.
@@ -521,7 +532,7 @@ class TestM1CrossMirrorDedupe:
                              cfg=_CFG, press_cfg=_PRESS_CFG, state={}, seen_ids=set(),
                              dry_run=True)
         tariff_emits = [e for e in res["emitted"]
-                        if "tariff" in e["text"]["headline"].lower()]
+                        if "tariff" in e["headline"].lower()]
         assert len(tariff_emits) == 1, "cross-mirror double-emit (M1) not fixed"
         # the second mirror is a dedupe skip, not a second emission
         assert any(s["reason"] == "dedupe" for s in res["skipped"])
@@ -532,7 +543,7 @@ class TestM1CrossMirrorDedupe:
                               cfg=_CFG, press_cfg=_PRESS_CFG, state={}, seen_ids=set(),
                               dry_run=False)
         assert len([e for e in res1["emitted"]
-                    if "tariff" in e["text"]["headline"].lower()]) == 1
+                    if "tariff" in e["headline"].lower()]) == 1
         # carry the returned collapsed seen-set into a re-poll of BOTH mirrors
         res2 = run_press_tick([a, b], root=tmp_path, now=_MARKET_HOURS,
                               cfg=_CFG, press_cfg=_PRESS_CFG, state={},
@@ -573,7 +584,7 @@ class TestM3EntityCorroboration:
         b = _hearsay("FirstSquawk", "BREAKING: China tariffs to rise, Trump says")
         res = run_press_tick([a, b], root=tmp_path, now=_MARKET_HOURS, cfg=_CFG,
                              press_cfg=_M3_CFG, state={}, seen_ids=set(), dry_run=True)
-        gates = {e["provenance"]["corroboration_gate"] for e in res["emitted"]}
+        gates = {e["source"]["corroboration_gate"] for e in res["emitted"]}
         assert res["emitted"], "≥2-source instant path is still dead (M3)"
         assert "instant" in gates
         # neither differently-worded claim fell to digest
@@ -586,7 +597,7 @@ class TestM3EntityCorroboration:
         res = run_press_tick([a, b], root=tmp_path, now=_MARKET_HOURS, cfg=_CFG,
                              press_cfg=_M3_CFG, state={}, seen_ids=set(), dry_run=True)
         # single political hearsay source -> digest, never an instant emit
-        assert not any(e["provenance"]["corroboration_gate"] == "instant"
+        assert not any(e["source"]["corroboration_gate"] == "instant"
                        for e in res["emitted"])
         assert res["digest"], "same-handle-twice must NOT corroborate to instant (M3)"
 
@@ -597,8 +608,8 @@ class TestM3EntityCorroboration:
         res = run_press_tick([a, b], root=tmp_path, now=_MARKET_HOURS, cfg=_CFG,
                              press_cfg=_M3_CFG, state={}, seen_ids=set(), dry_run=True)
         # the tariff claim has only ONE source of its class -> not instant -> digest
-        assert not any(e["provenance"]["corroboration_gate"] == "instant"
-                       and e["provenance"]["event_class"] == "policy"
+        assert not any(e["source"]["corroboration_gate"] == "instant"
+                       and e["source"]["event_class"] == "policy"
                        for e in res["emitted"])
         assert any(d.get("salience") is not None for d in res["digest"])
 
@@ -739,10 +750,10 @@ class Testm2ColdStartPrime:
                    or "interest rate" in i["headline"].lower())
         res2 = run_press_tick([a, fed], root=tmp_path, now=_MARKET_HOURS, cfg=_CFG,
                               press_cfg=_PRESS_CFG, state={}, seen_ids=seen, dry_run=True)
-        emitted_tsids = {e["provenance"].get("via_source") is not None for e in res2["emitted"]}
+        emitted_tsids = {e["source"].get("via_source") is not None for e in res2["emitted"]}
         assert res2["emitted"], "a genuinely new item after prime must emit (m2)"
         # the primed tariff post does NOT re-emit
-        assert not any("tariff" in e["text"]["headline"].lower() for e in res2["emitted"])
+        assert not any("tariff" in e["headline"].lower() for e in res2["emitted"])
 
 
 class Testm3DeterministicAttribution:
@@ -753,12 +764,12 @@ class Testm3DeterministicAttribution:
         res = run_press_tick([a], root=tmp_path, now=_MARKET_HOURS, cfg=_CFG,
                              press_cfg=_PRESS_CFG, state={}, seen_ids=set(), dry_run=True)
         emit = next(e for e in res["emitted"]
-                    if "tariff" in e["text"]["headline"].lower())
-        body = emit["text"]["body"]
+                    if "tariff" in e["headline"].lower())
+        body = emit["body"]
         # deterministic mode (no LLM) -> body carries the DECISION attribution
         assert "on Truth Social" in body, "deterministic body missing decision attribution (m3)"
         # the mirror surface is NOT named in the post body
         assert "trumpstruth" not in body.lower()
         assert "via" not in body.lower()
         # but the mirror IS recorded in provenance/ledger
-        assert "trumpstruth" in emit["provenance"]["via_source"].lower()
+        assert "trumpstruth" in emit["source"]["via_source"].lower()

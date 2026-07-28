@@ -6,7 +6,7 @@ slots without breaking any generic parsing logic:
   1. POOL_CAPABILITY_IDS contains exactly the 7 expected capability ids.
   2. discover_present_keys with only _2 and _6 present returns exactly those two.
   3. enabled_key_ids("5,7") maps correctly to {oauth_5, oauth_7}.
-  4. usage_snapshot includes 7 pool rows + 1 legacy row (8 total).
+  4. usage_snapshot includes 7 pool rows + Codex + DeepSeek + legacy (10 total).
   5. METAB_KEYS_ENABLED="1,2,3,4,5,6,7" full-set roundtrip.
 """
 from __future__ import annotations
@@ -180,11 +180,11 @@ class TestEnabledKeyIdsSeven:
         )
 
 
-# ── 4. usage_snapshot includes 7 pool rows + legacy (8 total) ────────────────
+# ── 4. usage_snapshot includes Claude pool + shared providers + legacy ────────
 
 class TestUsageSnapshotSeven:
-    def test_snapshot_has_eight_rows(self, tmp_path: Path, monkeypatch) -> None:
-        """usage_snapshot must return 7 pool rows + 1 legacy = 8 rows."""
+    def test_snapshot_has_ten_rows(self, tmp_path: Path, monkeypatch) -> None:
+        """Snapshot has 7 Claude rows + Codex + DeepSeek + legacy = 10."""
         monkeypatch.delenv("METAB_KEYS_ENABLED", raising=False)
         monkeypatch.setattr(
             "engine.neuralweb.key_pool.discover_present_keys",
@@ -195,12 +195,12 @@ class TestUsageSnapshotSeven:
         from engine.neuralweb.key_pool import usage_snapshot  # noqa: PLC0415
         snap = usage_snapshot(root=tmp_path)
 
-        assert len(snap) == 8, (
-            f"Expected 8 rows (7 pool + 1 legacy), got {len(snap)}.\n"
+        assert len(snap) == 10, (
+            f"Expected 10 rows (7 pool + 2 providers + legacy), got {len(snap)}.\n"
             f"key_ids present: {[r['key_id'] for r in snap]}"
         )
 
-    def test_snapshot_contains_all_pool_ids_and_legacy(self, tmp_path: Path, monkeypatch) -> None:
+    def test_snapshot_contains_pool_providers_and_legacy(self, tmp_path: Path, monkeypatch) -> None:
         monkeypatch.delenv("METAB_KEYS_ENABLED", raising=False)
         monkeypatch.setattr(
             "engine.neuralweb.key_pool.discover_present_keys",
@@ -214,7 +214,35 @@ class TestUsageSnapshotSeven:
 
         for cap_id in _EXPECTED_POOL_IDS:
             assert cap_id in snap_ids, f"{cap_id} missing from usage_snapshot"
+        assert "codex_account" in snap_ids
+        assert "deepseek_api_key" in snap_ids
         assert "legacy" in snap_ids
+
+    def test_provider_rows_expose_translation(self, tmp_path: Path, monkeypatch) -> None:
+        monkeypatch.setattr(
+            "engine.neuralweb.key_pool.discover_present_keys",
+            lambda root=None: [],
+        )
+        monkeypatch.setattr(
+            "engine.codex_provider.is_available",
+            lambda: True,
+        )
+        monkeypatch.setattr(
+            "engine.codex_provider.provider_enabled",
+            lambda: True,
+        )
+        monkeypatch.setattr(
+            "lib.config.secret",
+            lambda name: "present" if name == "DEEPSEEK_API_KEY" else None,
+        )
+
+        from engine.neuralweb.key_pool import usage_snapshot  # noqa: PLC0415
+        rows = {row["key_id"]: row for row in usage_snapshot(root=tmp_path)}
+        assert rows["codex_account"]["present"] is True
+        assert rows["codex_account"]["provider"] == "Codex subscription"
+        assert "Opus/Fable→Sol" in rows["codex_account"]["model_translation"]
+        assert rows["deepseek_api_key"]["present"] is True
+        assert "V4 Flash→Terra" in rows["deepseek_api_key"]["model_translation"]
 
     def test_snapshot_row_for_key_six(self, tmp_path: Path, monkeypatch) -> None:
         """Spot-check: key 6 appears in the snapshot with correct structure."""

@@ -18,6 +18,7 @@ from __future__ import annotations
 import json
 import shutil
 import sqlite3
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -1298,6 +1299,380 @@ def test_repair_titles_survives_a_missing_corpus_row(tmp_path, canned_pdftotext)
     assert summary["titles_repaired"] == 1
     titles = {it["title"] for it in catalog_mod.load(store)["items"]}
     assert "Swiss economy" in titles            # cleaned without a body, never dropped
+
+
+# ===========================================================================
+# sidecar refresh: the upstream desk writes summary_points ASYNCHRONOUSLY
+# ===========================================================================
+
+def _dt(iso: str) -> datetime:
+    """Pin the run clock — the refresh lookback window is measured against it."""
+    return datetime.fromisoformat(iso.replace("Z", "+00:00"))
+
+
+def test_late_sidecar_summary_reaches_an_already_published_row(tmp_path, canned_pdftotext):
+    """The defect this pass exists for: we routinely read the sidecar between the
+    upstream's identity write and its summary write, and receipt-idempotency then
+    froze the half-written copy forever ("Summary pending" on the public site)."""
+    store = LocalStore(tmp_path / "store")
+    corpus_path = tmp_path / "corpus.sqlite"
+
+    # Phase 1 of the upstream write: identity present, summary not yet generated.
+    _seed_pdf(store, "research_inbox/late.pdf", {
+        "id": "marketdesk-late-000001", "title": "G10 FX Daily",
+        "institution": "Scotiabank", "side": "sell",
+        "published_at": "2026-07-28T00:47:05Z",
+    })
+    ingest_mod.run(store, corpus_path)
+    row = catalog_mod.load(store)["items"][0]
+    assert row["summary_points"] == []          # renders "Summary pending"
+
+    # Phase 2: the desk's summarizer finishes and rewrites the SAME sidecar key.
+    store.put_bytes("research_inbox/late.json", json.dumps({
+        "id": "marketdesk-late-000001", "title": "G10 FX Daily",
+        "institution": "Scotiabank", "side": "sell",
+        "published_at": "2026-07-28T00:47:05Z",
+        "summary_points": ["CAD firms into the BoC", "Front-end spreads compress"],
+        "tags": ["fx"], "tickers": ["fxc"], "desk": "FX Strategy",
+    }).encode(), "application/json")
+
+    summary = ingest_mod.run(store, corpus_path, now=_dt("2026-07-28T05:00:00Z"))
+    assert summary["ingested"] == 0 and summary["skipped"] == 1   # nothing re-ingested
+    assert summary["summaries_recovered"] == 1
+    assert summary["sidecars_refreshed"] == 1
+
+    row = catalog_mod.load(store)["items"][0]
+    assert row["summary_points"] == ["CAD firms into the BoC",
+                                     "Front-end spreads compress"]
+    assert row["tags"] == ["fx"] and row["tickers"] == ["FXC"]    # coerced, upper-cased
+    assert row["desk"] == "FX Strategy"
+
+    # The corpus summary column is updated too, so FTS ranks on the new bullets
+    # (weight 3) — the UPDATE trigger has to have re-synced the postings.
+    conn = corpus_mod.open_db(corpus_path)
+    hits = corpus_mod.search(conn, "front-end spreads compress")
+    assert hits and hits[0]["id"] == "marketdesk-late-000001"
+    conn.close()
+
+    # Idempotent: a filled row leaves the candidate set, so the pass does not flap.
+    again = ingest_mod.run(store, corpus_path, now=_dt("2026-07-28T06:00:00Z"))
+    assert again["summaries_recovered"] == 0 and again["sidecars_refreshed"] == 0
+
+
+def test_sidecar_refresh_never_overwrites_identity_when_it_fills_a_gap(tmp_path, canned_pdftotext):
+    """Fill-only. A row that IS a candidate still only gains its missing fields —
+    a repaired title must never regress to the raw sidecar string, and identity
+    (institution/side/published_at) must never move under a published row."""
+    store = LocalStore(tmp_path / "store")
+    corpus_path = tmp_path / "corpus.sqlite"
+    _seed_pdf(store, "research_inbox/keep.pdf", {
+        "id": "marketdesk-keep-000002", "title": "Rates Weekly Outlook en 1663849 1",
+        "institution": "UBS", "side": "sell", "published_at": "2026-07-28T09:00:00Z",
+    })
+    ingest_mod.run(store, corpus_path)
+    kept_title = catalog_mod.load(store)["items"][0]["title"]   # already title-repaired
+
+    # Phase 2 arrives, but with DIFFERENT values for every field we already hold.
+    store.put_bytes("research_inbox/keep.json", json.dumps({
+        "id": "marketdesk-keep-000002", "title": "Rates Weekly Outlook en 1663849 1",
+        "institution": "Nobody Bank", "side": "buy",
+        "published_at": "1999-01-01T00:00:00Z",
+        "summary_points": ["The genuine gap"], "tags": ["rates"], "pages": 9999,
+    }).encode(), "application/json")
+
+    summary = ingest_mod.run(store, corpus_path, now=_dt("2026-07-28T10:00:00Z"))
+    row = catalog_mod.load(store)["items"][0]
+    assert summary["summaries_recovered"] == 1
+    assert row["summary_points"] == ["The genuine gap"]   # the gap filled
+    assert row["tags"] == ["rates"]                       # filled opportunistically
+    assert row["title"] == kept_title                     # repair NOT regressed
+    assert row["institution"] == "UBS"                    # identity untouched
+    assert row["published_at"] == "2026-07-28T09:00:00Z"
+    assert row["side"] == "sell"
+    assert row["pages"] != 9999                           # MEASURED (§5b) outranks
+
+
+def test_a_row_with_bullets_is_never_re_fetched(tmp_path, canned_pdftotext):
+    """Candidacy keys on summary_points ALONE. desk/tags/tickers have no producer
+    and are empty on every document, so gating on all four would re-GET every
+    in-window row every hour forever — the opposite of a self-quiescing pass."""
+    store = LocalStore(tmp_path / "store")
+    corpus_path = tmp_path / "corpus.sqlite"
+    # Bullets present; desk/tags/tickers absent — the shape of a real vault row.
+    _seed_pdf(store, "research_inbox/done.pdf", {
+        "id": "marketdesk-done-000008", "title": "Already Summarized",
+        "institution": "UBS", "side": "sell", "published_at": "2026-07-28T09:00:00Z",
+        "summary_points": ["Arrived with the PDF"],
+    })
+    ingest_mod.run(store, corpus_path)
+
+    # A rewritten sidecar must not even be FETCHED, three runs running.
+    store.put_bytes("research_inbox/done.json", json.dumps({
+        "id": "marketdesk-done-000008", "title": "Already Summarized",
+        "institution": "UBS", "published_at": "2026-07-28T09:00:00Z",
+        "summary_points": ["Arrived with the PDF"], "tags": ["x"], "desk": "y",
+    }).encode(), "application/json")
+    for hour in (10, 11, 12):
+        s = ingest_mod.run(store, corpus_path, now=_dt(f"2026-07-28T{hour}:00:00Z"))
+        assert s["sidecars_checked"] == 0, f"re-fetched at hour {hour}"
+    assert catalog_mod.load(store)["items"][0]["summary_points"] == ["Arrived with the PDF"]
+
+
+def test_a_duplicate_re_drop_cannot_blank_a_recovered_summary(tmp_path, canned_pdftotext):
+    """The refresh runs AFTER the ingest loop for this reason: upsert_item does a
+    whole-ROW replace, so the same report re-dropped under a second filename with
+    the SAME explicit sidecar id would otherwise overwrite a just-recovered
+    summary with that second sidecar's still-empty one — shipping "Summary
+    pending" while the run reported summaries_recovered=1, and flapping hourly."""
+    store = LocalStore(tmp_path / "store")
+    corpus_path = tmp_path / "corpus.sqlite"
+    _seed_pdf(store, "research_inbox/v1.pdf", {
+        "id": "marketdesk-dup-000009", "title": "Re-dropped Report",
+        "institution": "UBS", "side": "sell", "published_at": "2026-07-28T09:00:00Z",
+    })
+    ingest_mod.run(store, corpus_path)
+
+    # v1's summarizer finishes...
+    store.put_bytes("research_inbox/v1.json", json.dumps({
+        "id": "marketdesk-dup-000009", "title": "Re-dropped Report",
+        "institution": "UBS", "side": "sell", "published_at": "2026-07-28T09:00:00Z",
+        "summary_points": ["Recovered from v1"],
+    }).encode(), "application/json")
+    # ...and in the SAME hour the desk re-drops the identical report under a new
+    # filename, whose sidecar is back in the half-written phase-1 state.
+    _seed_pdf(store, "research_inbox/v2.pdf", {
+        "id": "marketdesk-dup-000009", "title": "Re-dropped Report",
+        "institution": "UBS", "side": "sell", "published_at": "2026-07-28T09:00:00Z",
+    })
+
+    summary = ingest_mod.run(store, corpus_path, now=_dt("2026-07-28T10:00:00Z"))
+    row = catalog_mod.load(store)["items"][0]
+    assert summary["ingested"] == 1                      # v2 really was ingested
+    # The reported count and the shipped row must agree — that is the whole point.
+    assert row["summary_points"] == ["Recovered from v1"]
+    assert summary["summaries_recovered"] == 1
+    conn = corpus_mod.open_db(corpus_path)
+    stored = conn.execute("SELECT summary FROM documents WHERE doc_id=?",
+                          ("marketdesk-dup-000009",)).fetchone()[0]
+    assert stored == "Recovered from v1"                 # and search agrees
+    conn.close()
+
+
+def test_sidecar_refresh_survives_a_catalog_row_with_an_unhashable_id(tmp_path, canned_pdftotext):
+    """The catalog is JSON reloaded from the store. An unhashable id must not raise
+    out of the pass — that would abort the WHOLE hourly run before anything
+    ingested, surfacing only as a logger line with no GitHub annotation."""
+    store = LocalStore(tmp_path / "store")
+    corpus_path = tmp_path / "corpus.sqlite"
+    _seed_pdf(store, "research_inbox/ok.pdf", {
+        "id": "marketdesk-ok-000010", "title": "Fine Row",
+        "institution": "UBS", "side": "sell", "published_at": "2026-07-28T09:00:00Z",
+    })
+    ingest_mod.run(store, corpus_path)
+    cat = catalog_mod.load(store)
+    cat["items"].append({"id": ["not", "hashable"], "title": "Broken",
+                         "published_at": "2026-07-28T09:00:00Z"})
+    catalog_mod.write(store, cat)
+    store.put_bytes("research_inbox/ok.json", json.dumps({
+        "id": "marketdesk-ok-000010", "title": "Fine Row", "institution": "UBS",
+        "published_at": "2026-07-28T09:00:00Z", "summary_points": ["Still healed"],
+    }).encode(), "application/json")
+
+    summary = ingest_mod.run(store, corpus_path, now=_dt("2026-07-28T10:00:00Z"))
+    assert summary["summaries_recovered"] == 1           # the good row still healed
+    rows = {str(it["id"]): it for it in catalog_mod.load(store)["items"]}
+    assert rows["marketdesk-ok-000010"]["summary_points"] == ["Still healed"]
+
+
+def test_a_non_iso_published_at_stays_in_refresh_scope(tmp_path, canned_pdftotext):
+    """A bare [:10] slice on "07/28/2026" sorts BELOW any 2026-… cutoff, which
+    would silently exclude the row from every future refresh. An unusable date is
+    the same half-written state this pass exists for — it must stay IN scope."""
+    store = LocalStore(tmp_path / "store")
+    corpus_path = tmp_path / "corpus.sqlite"
+    _seed_pdf(store, "research_inbox/us.pdf", {
+        "id": "marketdesk-us-000011", "title": "US Format Date",
+        "institution": "UBS", "side": "sell", "published_at": "07/28/2026",
+    })
+    ingest_mod.run(store, corpus_path)
+    store.put_bytes("research_inbox/us.json", json.dumps({
+        "id": "marketdesk-us-000011", "title": "US Format Date", "institution": "UBS",
+        "published_at": "07/28/2026", "summary_points": ["Reachable anyway"],
+    }).encode(), "application/json")
+
+    summary = ingest_mod.run(store, corpus_path, now=_dt("2026-07-28T10:00:00Z"))
+    assert summary["summaries_recovered"] == 1
+    assert catalog_mod.load(store)["items"][0]["summary_points"] == ["Reachable anyway"]
+
+
+def test_sidecar_refresh_skips_documents_past_the_lookback_window(tmp_path, canned_pdftotext):
+    """A sidecar still empty after two weeks was never summarized upstream, not
+    raced — polling it hourly forever would grow per-run GETs without bound."""
+    store = LocalStore(tmp_path / "store")
+    corpus_path = tmp_path / "corpus.sqlite"
+    # Two documents, identical except for age — so the window, and nothing else,
+    # is what separates them. Without both, "checked == 0" would also pass against
+    # a refresh pass that never ran at all.
+    _seed_pdf(store, "research_inbox/old.pdf", {
+        "id": "marketdesk-old-000003", "title": "Ancient Note",
+        "institution": "UBS", "published_at": "2026-01-05T09:00:00Z",
+    })
+    _seed_pdf(store, "research_inbox/new.pdf", {
+        "id": "marketdesk-new-000006", "title": "Fresh Note",
+        "institution": "UBS", "published_at": "2026-07-27T09:00:00Z",
+    }, marker=b"ALPHA")
+    ingest_mod.run(store, corpus_path)
+    for key, doc_id, pub in (("old", "marketdesk-old-000003", "2026-01-05T09:00:00Z"),
+                             ("new", "marketdesk-new-000006", "2026-07-27T09:00:00Z")):
+        store.put_bytes(f"research_inbox/{key}.json", json.dumps({
+            "id": doc_id, "title": "Note", "institution": "UBS",
+            "published_at": pub, "summary_points": ["Arrived late"],
+        }).encode(), "application/json")
+
+    summary = ingest_mod.run(store, corpus_path, now=_dt("2026-07-28T10:00:00Z"))
+    assert summary["sidecars_checked"] == 1          # the fresh one only
+    assert summary["summaries_recovered"] == 1
+    rows = {it["id"]: it for it in catalog_mod.load(store)["items"]}
+    assert rows["marketdesk-new-000006"]["summary_points"] == ["Arrived late"]
+    assert rows["marketdesk-old-000003"]["summary_points"] == []   # aged out
+
+
+def test_sidecar_refresh_survives_a_sidecar_that_went_bad(tmp_path, canned_pdftotext):
+    """One unreadable sidecar must not stop the pass — or the run."""
+    store = LocalStore(tmp_path / "store")
+    corpus_path = tmp_path / "corpus.sqlite"
+    _seed_pdf(store, "research_inbox/bad.pdf", {
+        "id": "marketdesk-bad-000004", "title": "Bad Sidecar Later",
+        "institution": "UBS", "published_at": "2026-07-28T09:00:00Z",
+    })
+    _seed_pdf(store, "research_inbox/good.pdf", {
+        "id": "marketdesk-good-000005", "title": "Good Sidecar Later",
+        "institution": "UBS", "published_at": "2026-07-28T09:30:00Z",
+    })
+    ingest_mod.run(store, corpus_path)
+    store.put_bytes("research_inbox/bad.json", b"{not json at all", "application/json")
+    store.put_bytes("research_inbox/good.json", json.dumps({
+        "id": "marketdesk-good-000005", "title": "Good Sidecar Later",
+        "institution": "UBS", "published_at": "2026-07-28T09:30:00Z",
+        "summary_points": ["It arrived"],
+    }).encode(), "application/json")
+
+    summary = ingest_mod.run(store, corpus_path, now=_dt("2026-07-28T10:00:00Z"))
+    assert summary["summaries_recovered"] == 1       # the good one still healed
+    rows = {it["id"]: it for it in catalog_mod.load(store)["items"]}
+    assert rows["marketdesk-good-000005"]["summary_points"] == ["It arrived"]
+    assert rows["marketdesk-bad-000004"]["summary_points"] == []
+
+
+def test_sidecar_refresh_cap_is_announced_not_silent(tmp_path, canned_pdftotext, monkeypatch, capsys):
+    """A bound that truncates coverage must SAY so — a silent cap reads downstream
+    as 'every incomplete row was re-checked', which is the opposite of the truth."""
+    store = LocalStore(tmp_path / "store")
+    corpus_path = tmp_path / "corpus.sqlite"
+    for i in range(3):
+        _seed_pdf(store, f"research_inbox/c{i}.pdf", {
+            "id": f"marketdesk-cap-00000{i}", "title": f"Capped {i}",
+            "institution": "UBS", "published_at": f"2026-07-2{i+5}T09:00:00Z",
+        }, marker=f"cap{i}".encode())
+    ingest_mod.run(store, corpus_path)
+    for i in range(3):
+        store.put_bytes(f"research_inbox/c{i}.json", json.dumps({
+            "id": f"marketdesk-cap-00000{i}", "title": f"Capped {i}",
+            "institution": "UBS", "published_at": f"2026-07-2{i+5}T09:00:00Z",
+            "summary_points": [f"bullet {i}"],
+        }).encode(), "application/json")
+
+    monkeypatch.setattr(ingest_mod, "REFRESH_MAX", 2)
+    capsys.readouterr()
+    summary = ingest_mod.run(store, corpus_path, now=_dt("2026-07-28T10:00:00Z"))
+    out = capsys.readouterr().out
+
+    assert summary["sidecars_capped"] == 1
+    assert summary["sidecars_checked"] == 2          # the cap bounds the FETCH path
+    # GitHub only parses a workflow command when "::" STARTS the line.
+    assert any(ln.startswith("::warning") and "capped at 2" in ln
+               for ln in out.splitlines())
+    # Newest-first, so the row dropped is the OLDEST — least likely to be mid-summary.
+    rows = {it["id"]: it for it in catalog_mod.load(store)["items"]}
+    assert rows["marketdesk-cap-000000"]["summary_points"] == []
+    assert rows["marketdesk-cap-000002"]["summary_points"] == ["bullet 2"]
+
+
+def test_the_cap_keeps_undated_rows_the_ones_it_exists_for(tmp_path, canned_pdftotext, monkeypatch):
+    """_reindex sorts blank published_at LAST, but those are exactly the
+    half-written rows the refresh exists for — a naive head-slice would discard
+    the highest-priority candidates first."""
+    store = LocalStore(tmp_path / "store")
+    corpus_path = tmp_path / "corpus.sqlite"
+    seeds = [("d0", "2026-07-26T09:00:00Z"), ("d1", "2026-07-27T09:00:00Z"), ("un", "")]
+    for n, pub in seeds:
+        _seed_pdf(store, f"research_inbox/{n}.pdf", {
+            "id": f"marketdesk-{n}-x", "title": f"Row {n}",
+            "institution": "UBS", "published_at": pub,
+        }, marker=n.encode())
+    ingest_mod.run(store, corpus_path)
+    for n, pub in seeds:
+        store.put_bytes(f"research_inbox/{n}.json", json.dumps({
+            "id": f"marketdesk-{n}-x", "title": f"Row {n}", "institution": "UBS",
+            "published_at": pub, "summary_points": [f"{n} bullet"],
+        }).encode(), "application/json")
+
+    monkeypatch.setattr(ingest_mod, "REFRESH_MAX", 1)
+    summary = ingest_mod.run(store, corpus_path, now=_dt("2026-07-28T10:00:00Z"))
+    assert summary["sidecars_capped"] == 2
+    rows = {it["id"]: it for it in catalog_mod.load(store)["items"]}
+    assert rows["marketdesk-un-x"]["summary_points"] == ["un bullet"]   # kept
+
+
+def test_corpus_summary_resync_heals_a_failed_corpus_publish(tmp_path, canned_pdftotext):
+    """run() writes the catalog BEFORE publishing the corpus, so a failed publish
+    strands bullets in the catalog with a blank corpus summary — and that row is
+    no longer a refresh candidate, so search would rank it on stale text forever."""
+    store = LocalStore(tmp_path / "store")
+    corpus_path = tmp_path / "corpus.sqlite"
+    # Every refresh field filled, so the row is NOT a refresh candidate — the
+    # resync is then the only path that can reach it.
+    _seed_pdf(store, "research_inbox/skew.pdf", {
+        "id": "marketdesk-skew-000007", "title": "Skewed Row",
+        "institution": "UBS", "published_at": "2026-07-28T09:00:00Z",
+        "summary_points": ["Only in the catalog"],
+        "tags": ["macro"], "tickers": ["SPY"], "desk": "Rates",
+    })
+    ingest_mod.run(store, corpus_path)
+
+    # Reproduce the skew: catalog keeps the bullets, the corpus summary is blank.
+    conn = corpus_mod.open_db(corpus_path)
+    conn.execute("UPDATE documents SET summary='' WHERE doc_id=?",
+                 ("marketdesk-skew-000007",))
+    conn.commit(); conn.close()
+    ingest_mod.publish_corpus(store, corpus_path)   # the store copy is the truth
+    assert catalog_mod.load(store)["items"][0]["summary_points"] == ["Only in the catalog"]
+
+    summary = ingest_mod.run(store, corpus_path, now=_dt("2026-07-28T10:00:00Z"))
+    assert summary["sidecars_checked"] == 0         # not a refresh candidate — no GET
+    # Pin the key the ::warning reads. Five dead-annotation regressions shipped
+    # here (#3487/#3515/#3562/#3563/#3570) because nothing asserted the counter.
+    assert summary["summaries_resynced"] == 1
+    conn = corpus_mod.open_db(corpus_path)
+    stored = conn.execute("SELECT summary FROM documents WHERE doc_id=?",
+                          ("marketdesk-skew-000007",)).fetchone()[0]
+    assert stored == "Only in the catalog"
+    hits = corpus_mod.search(conn, "Only in the catalog")
+    assert hits and hits[0]["id"] == "marketdesk-skew-000007"
+    conn.close()
+
+
+def test_corpus_summary_text_is_the_single_definition(tmp_path):
+    """upsert() and the refresh pass BOTH write the summary column; a second join
+    in either place would give the same bullets two different searchable forms."""
+    item = {"id": "x", "summary_points": ["one", "two"]}
+    assert corpus_mod.summary_text(item) == "one • two"
+    assert corpus_mod.summary_text({"id": "x"}) == ""
+    conn = corpus_mod.open_db(tmp_path / "c.sqlite")
+    corpus_mod.upsert(conn, item, "body")
+    stored = conn.execute("SELECT summary FROM documents WHERE doc_id='x'").fetchone()[0]
+    assert stored == corpus_mod.summary_text(item)
+    conn.close()
 
 
 # ===========================================================================

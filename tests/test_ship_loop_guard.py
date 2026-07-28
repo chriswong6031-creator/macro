@@ -1405,16 +1405,25 @@ def _session_repo(tmp_path: Path) -> tuple[Path, Path]:
     return repo, state_path
 
 
-def _stop_verdict(monkeypatch, capsys, repo, state_path, *, merged_pr, ci=(True, "")):
+def _stop_verdict(
+    monkeypatch, capsys, repo, state_path, *, merged_pr, ci=(True, ""), open_pull=None
+):
     monkeypatch.setattr(GUARD, "_github_slug", lambda _root: ("acme", "widgets"))
     monkeypatch.setattr(GUARD, "_latest_merged_pr", lambda *_a: merged_pr)
     monkeypatch.setattr(GUARD, "_check_ci", lambda *_a: ci)
+    # The labeled-handoff probe sits on the no-merged-pull-request path, so every
+    # test that reaches it would otherwise hit the real API. No open pull request
+    # is the default shape; the handoff tests below pass one explicitly.
+    monkeypatch.setattr(GUARD, "_open_pull", lambda *_a: open_pull)
     GUARD._stop(repo, state_path, {"hook_event_name": "Stop"})
     out = capsys.readouterr().out.strip()
     if not out:
         return None
+    emitted = json.loads(out)
+    if "reason" not in emitted:
+        return None  # a clean stop (e.g. the labeled handoff), not a block
     # Reason reads "SHIP LOOP <code>: <detail>" — the code sits before the colon.
-    return json.loads(out)["reason"].split(":", 1)[0].split()[-1]
+    return emitted["reason"].split(":", 1)[0].split()[-1]
 
 
 _MERGED_PR = {"merged_at": "2026-07-25T22:18:56Z", "head": {"sha": "a" * 40}, "merge_commit_sha": "b" * 40}
@@ -2199,6 +2208,211 @@ def test_guard_error_falls_back_to_a_plain_block_when_state_cannot_load(monkeypa
     emitted = json.loads(buffer.getvalue().strip())
     assert emitted["decision"] == "block"
     assert "guard_error" in emitted["reason"] and "boom" in emitted["reason"]
+
+
+# --- the merge-on-green labeled handoff (operator ruling 2026-07-28) ---
+
+
+def _pushed_unmerged_session(tmp_path: Path) -> tuple[Path, Path, str]:
+    """A session that committed and pushed, with an upstream and no merged PR.
+
+    This is the exact shape the handoff is judged in: without the upstream the
+    `unpushed` gate answers first and the probe is never reached.
+    """
+    repo, state_path = _session_repo(tmp_path)
+    bare = tmp_path / "origin.git"
+    subprocess.run(("git", "init", "--bare", str(bare)), check=True, capture_output=True)
+    _git(repo, "remote", "add", "origin", str(bare))
+    _git(repo, "push", "-q", "-u", "origin", "claude/feature")
+    return repo, state_path, _git(repo, "rev-parse", "HEAD")
+
+
+def _armed_pr(head_sha: str, *, number=4242, labels=(GUARD.MERGE_ON_GREEN_LABEL,)) -> dict:
+    return {
+        "number": number,
+        "head": {"sha": head_sha, "ref": "claude/feature"},
+        "labels": [{"name": name} for name in labels],
+    }
+
+
+def _run_stub(name: str, status: str = "completed", conclusion=None) -> dict:
+    return {"name": name, "status": status, "conclusion": conclusion}
+
+
+def test_handoff_verdict_classifies_the_three_outcomes():
+    """The pure classifier, pinned directly.
+
+    Red OUTRANKS pending here — the reverse of the sweeper's own precedence —
+    because this verdict only shapes a message to a session that can act on the
+    red now, while the sweeper gates an irreversible merge and waits.
+    """
+    assert GUARD._handoff_verdict([]) == ("unproven", [])
+    # A head whose ONLY run is the known-spurious X proves nothing either.
+    assert GUARD._handoff_verdict(
+        [_run_stub("Workers Builds: macro", conclusion="failure")]
+    ) == ("unproven", [])
+
+    verdict, names = GUARD._handoff_verdict(
+        [_run_stub("ci-pack-1", conclusion="failure"), _run_stub("nav-gap", "in_progress")]
+    )
+    assert verdict == "red" and names == ["ci-pack-1 (failure)"]
+
+    assert GUARD._handoff_verdict([_run_stub("ci-pack-1", "queued")]) == ("armed", [])
+    assert GUARD._handoff_verdict(
+        [_run_stub("ci-pack-1", conclusion="success"), _run_stub("legacy", conclusion="skipped")]
+    ) == ("armed", [])
+
+
+def test_a_labeled_pull_request_with_checks_pending_releases_the_session(
+    monkeypatch, tmp_path, capsys
+):
+    """THE release valve. Merge-on-CONCLUDED made every session a CI hostage for
+    20-60 minutes; an armed pull request hands that wait to the sweeper.
+
+    The session may stop, the handoff is documented as a systemMessage naming the
+    pull request and the 10-minute sweep, and the state file is dropped like any
+    other clean stop.
+    """
+    repo, state_path, head = _pushed_unmerged_session(tmp_path)
+    monkeypatch.setattr(GUARD, "_github_slug", lambda _root: ("acme", "widgets"))
+    monkeypatch.setattr(GUARD, "_latest_merged_pr", lambda *_a: None)
+    monkeypatch.setattr(GUARD, "_open_pull", lambda *_a: _armed_pr(head))
+    monkeypatch.setattr(
+        GUARD, "_head_check_runs", lambda *_a: [_run_stub("ci-pack-1", "in_progress")]
+    )
+
+    GUARD._stop(repo, state_path, {"hook_event_name": "Stop"})
+
+    raw = [line for line in capsys.readouterr().out.splitlines() if line.strip()]
+    assert not any(json.loads(line).get("decision") == "block" for line in raw), raw
+    assert len(raw) == 1, f"stdout must stay a single JSON object, got {raw}"
+    emitted = json.loads(raw[0])
+    assert "decision" not in emitted
+    message = emitted["systemMessage"]
+    assert "#4242" in message
+    assert "merge-on-green" in message and "10 minutes" in message
+    assert "CONCLUDED" in message, "the message must restate the merge discipline"
+    assert not state_path.exists(), "a clean stop drops the state file"
+
+
+def test_a_labeled_pull_request_with_a_genuine_red_blocks_as_ci_failed(
+    monkeypatch, tmp_path, capsys
+):
+    """The sweeper never merges a red, so releasing the session would strand it.
+
+    Blocking here is what tells the session the label alone will not save it.
+    """
+    repo, state_path, head = _pushed_unmerged_session(tmp_path)
+    monkeypatch.setattr(
+        GUARD,
+        "_head_check_runs",
+        lambda *_a: [
+            _run_stub("ci-pack-1", conclusion="failure"),
+            _run_stub("nav-gap", conclusion="success"),
+        ],
+    )
+    verdict = _stop_verdict(
+        monkeypatch, capsys, repo, state_path, merged_pr=None, open_pull=_armed_pr(head)
+    )
+    assert verdict == "ci_failed", f"a red armed PR must block, got {verdict}"
+
+
+def test_a_spurious_only_red_still_releases_a_labeled_session(monkeypatch, tmp_path, capsys):
+    """`Workers Builds: macro` is the known-spurious X on both sides of the handoff."""
+    repo, state_path, head = _pushed_unmerged_session(tmp_path)
+    monkeypatch.setattr(
+        GUARD,
+        "_head_check_runs",
+        lambda *_a: [
+            _run_stub("Workers Builds: macro", conclusion="failure"),
+            _run_stub("ci-pack-2", "in_progress"),
+        ],
+    )
+    verdict = _stop_verdict(
+        monkeypatch, capsys, repo, state_path, merged_pr=None, open_pull=_armed_pr(head)
+    )
+    assert verdict is None, f"only the spurious check is red, so the session may stop ({verdict})"
+
+
+def test_a_labeled_pull_request_with_no_check_runs_still_blocks_as_unmerged(
+    monkeypatch, tmp_path, capsys
+):
+    """A paths-filtered docs-only PR is unproven, and the sweeper will never merge it.
+
+    Releasing the session on a head nothing has checked would ORPHAN the work —
+    labeled forever, swept forever, merged never.
+    """
+    repo, state_path, head = _pushed_unmerged_session(tmp_path)
+    monkeypatch.setattr(GUARD, "_head_check_runs", lambda *_a: [])
+    verdict = _stop_verdict(
+        monkeypatch, capsys, repo, state_path, merged_pr=None, open_pull=_armed_pr(head)
+    )
+    assert verdict == "unmerged", f"an unproven head must keep the session, got {verdict}"
+
+
+def test_an_open_pull_request_without_the_label_is_not_a_handoff(monkeypatch, tmp_path, capsys):
+    """Opening a PR is not arming one — the label is the whole contract."""
+    repo, state_path, head = _pushed_unmerged_session(tmp_path)
+    monkeypatch.setattr(
+        GUARD, "_head_check_runs", lambda *_a: pytest.fail("an unlabeled PR must not be probed")
+    )
+    verdict = _stop_verdict(
+        monkeypatch,
+        capsys,
+        repo,
+        state_path,
+        merged_pr=None,
+        open_pull=_armed_pr(head, labels=("enhancement",)),
+    )
+    assert verdict == "unmerged"
+
+
+def test_a_labeled_pull_request_on_a_stale_head_is_not_a_handoff(monkeypatch, tmp_path, capsys):
+    """The armed head must be THIS work. A force-moved branch reaches here with a
+    clean ahead-count, and merging its older head would ship the wrong tree."""
+    repo, state_path, _head = _pushed_unmerged_session(tmp_path)
+    monkeypatch.setattr(
+        GUARD, "_head_check_runs", lambda *_a: pytest.fail("a stale head must not be probed")
+    )
+    verdict = _stop_verdict(
+        monkeypatch,
+        capsys,
+        repo,
+        state_path,
+        merged_pr=None,
+        open_pull=_armed_pr("f" * 40),
+    )
+    assert verdict == "unmerged", f"a stale armed head must keep the session, got {verdict}"
+
+
+def test_a_failing_handoff_probe_falls_through_to_the_normal_block(
+    monkeypatch, tmp_path, capsys
+):
+    """Fail-closed: an API failure in the probe never releases a session.
+
+    The external escape ladder in `_block` already covers a persistently broken
+    API, so the probe itself has no business inventing a second exit.
+    """
+    repo, state_path, _head = _pushed_unmerged_session(tmp_path)
+    monkeypatch.setattr(GUARD, "_github_slug", lambda _root: ("acme", "widgets"))
+    monkeypatch.setattr(GUARD, "_latest_merged_pr", lambda *_a: None)
+
+    def exploding(*_args):
+        raise RuntimeError("pull listing exploded")
+
+    monkeypatch.setattr(GUARD, "_open_pull", exploding)
+    GUARD._stop(repo, state_path, {"hook_event_name": "Stop"})
+    emitted = json.loads(capsys.readouterr().out.strip())
+    assert emitted["decision"] == "block"
+    assert "unmerged" in emitted["reason"]
+
+
+def test_the_spurious_check_rule_is_one_definition(monkeypatch, tmp_path):
+    """`_check_ci` and the handoff must never disagree about the spurious X."""
+    assert GUARD._is_spurious_check("Workers Builds: macro") is True
+    assert GUARD._is_spurious_check("workers builds: MACRO (preview)") is True
+    assert GUARD._is_spurious_check("Workers Builds: charting-app") is False
+    assert GUARD._is_spurious_check("ci-pack-1") is False
 
 
 def test_settings_wire_session_start_and_stop():

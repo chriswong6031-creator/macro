@@ -1,6 +1,6 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-28T04:52:31.325749+00:00",
+  "generated_at": "2026-07-28T09:01:30.614169+00:00",
   "count": 236,
   "institutions": [
     "BTIG",
@@ -1121,7 +1121,13 @@
       "side": "sell",
       "desk": "",
       "published_at": "2026-07-27T07:01:49Z",
-      "summary_points": [],
+      "summary_points": [
+        "**Q2 Earnings vs.",
+        "Tech Rotation**: S&P 500 Q2 earnings growth at 34% (vs.",
+        "26% consensus), but large-cap Tech positioning down 75% from peak amid capex concerns; Tech underperformed post-earnings (1.9pp median) while S&P 500 flat, signaling sector rotation toward value/defensive stocks.",
+        "**Oil Overvaluation & Geopolitical Risk**: WTI at 92.2 (51.8% above fair value of 60.7), with disruption premium and front-month volatility elevated but below March peaks; Middle East escalation drove 40% oil surge, creating technical risk for energy equities.",
+        "**Atypical Earnings Consensus Momentum**: Q3 2026 S&P 500 consensus earnings estimates trending upward (vs."
+      ],
       "tags": [],
       "tickers": [],
       "top_pick": false,
@@ -1157,7 +1163,12 @@
       "side": "sell",
       "desk": "",
       "published_at": "2026-07-27T07:01:14Z",
-      "summary_points": [],
+      "summary_points": [
+        "**FOMC & Inflation Risk**: Middle East conflict and energy spikes risk 25bps Fed hike despite base case steady rates; market expectations rose after cease-fire collapse and energy surge.",
+        "**Inflation Outlook & Fed Stance**: June core PCE at 3.3% YoY (0.19% MoM) and ECI forecast at 3.4% YoY; Fed Chair Warsh states inflation \"not mission accomplished\" amid deteriorating near-term outlook vs.",
+        "0% target.",
+        "**GDP Growth Deceleration**: Q2F growth downgraded to 1.9% (net exports), but strong underlying demand (private domestic sales at 3.3%) signals potential earnings impact despite headline slowdown."
+      ],
       "tags": [],
       "tickers": [],
       "top_pick": false,
@@ -1172,7 +1183,13 @@
       "side": "sell",
       "desk": "",
       "published_at": "2026-07-27T07:01:12Z",
-      "summary_points": [],
+      "summary_points": [
+        "**Sector Divergence & Underperformance**: IT Services lagged severely YTD (-48.3%) vs SPX (+8.3%), while Payments/Fintech showed QTD strength (+5.4%) but YTD weakness (-5.5%), signaling sector rotation risks and valuation concerns.",
+        "**Policy Risk for Fintech**: Trump’s Brazil tariffs on payments systems directly disadvantage Visa/Mastercard (V/MA), creating near-term policy headwinds for key holdings.",
+        "**Macro Data Shifts**: US consumer spending decelerated (-4.2% Y/Y through July 12) and ADP employment cooled (peak April 2026), signaling labor market slowdown and potential Fed rate cuts.",
+        "**WEX Earnings Catalyst**: FY26-28 EPS upgraded to $19.88/$20.56/$22.76, reflecting near-term earnings optimism amid Brent oil rise ($98) aiding back-half performance.",
+        "**Geopolitical & Event Risks**: Middle East conflict escalation and World Cup volume shifts (79 vs 25 games) pose short-term sector volatility but not long-term structural impacts."
+      ],
       "tags": [],
       "tickers": [],
       "top_pick": false,

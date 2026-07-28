@@ -1,7 +1,7 @@
 {
   "schema": "china_market_state.v1",
-  "as_of": "2026-07-27",
-  "generated_utc": "2026-07-27T11:31:34Z",
+  "as_of": "2026-07-28",
+  "generated_utc": "2026-07-28T09:41:23Z",
   "authority": {
     "tier": "context_only",
     "why": [
@@ -137,7 +137,7 @@
     }
   },
   "rotation": {
-    "as_of": "2026-07-27",
+    "as_of": "2026-07-28",
     "sector_phase_distribution": {
       "Bottoming": 39,
       "Topping": 7,
@@ -161,7 +161,7 @@
       "LAGGARD: Agriculture ranked #29/31 (-26.3%) — among the weakest this leg"
     ],
     "ths_heat": {
-      "as_of": "2026-07-27",
+      "as_of": "2026-07-28",
       "basket_count": 237,
       "above_200d_pct": 43.5,
       "hot_baskets": [
@@ -389,32 +389,16 @@
     }
   },
   "external": {
-    "yield_curve": {
-      "as_of": "2026-07-27",
-      "staleness_days": 0,
-      "cn_10y": 1.7337,
-      "cn_2y": 1.2688,
-      "cn_slope_10_2": 0.4649000000000001,
-      "cn_us_10y_spread": null
-    },
-    "cgb_curve": {
-      "as_of": "2026-07-27",
-      "staleness_days": 0,
-      "m3": 1.1413,
-      "y1": 1.1409,
-      "y5": 1.4451,
-      "y10": 1.7337,
-      "y30": 2.193,
-      "slope_10y_3m": 0.5924
-    },
+    "yield_curve": null,
+    "cgb_curve": null,
     "usdcnh": {
-      "quote": 6.749,
+      "quote": 6.7425,
       "chg_pct": -0.4,
-      "as_of": "Jul 27, 2026"
+      "as_of": "Jul 28, 2026"
     },
     "dxy": {
-      "quote": 101.31,
-      "chg": -0.0,
+      "quote": 101.51,
+      "chg": 0.4,
       "label": "DXY"
     }
   },
@@ -462,6 +446,8 @@
   "data_gaps": [
     "participation: zt_breadth:null on 2026-07-23",
     "participation: northbound:DEAD post-2024-08-16 SLF-050",
-    "participation: snapshot_staleness:published row 2026-07-23 is 4d behind tape tail 2026-07-27; tail row missing core legs (turnover_z20, margin_chg_5d) — union-index freshness lag"
+    "participation: snapshot_staleness:published row 2026-07-23 is 4d behind tape tail 2026-07-27; tail row missing core legs (turnover_z20, margin_chg_5d) — union-index freshness lag",
+    "external: china_yield/rates.parquet absent",
+    "external: china_cgb_curve/cgb.parquet absent"
   ]
 }

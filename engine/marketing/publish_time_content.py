@@ -875,11 +875,16 @@ def generate_slot_items(
                 posted_today[chosen] = posted_today.get(chosen, 0) + 1
                 existing_token_sets.append(tokset)
                 existing_today.append(item)
-            elif result == "duplicate":
+            elif result in ("duplicate", "cross_account_duplicate"):
                 # EXPECTED when the tape hasn't moved since the prior slot: the
                 # identical text hashes to the same id. That idempotency is a
                 # feature — report it quietly, don't treat it as an error.
-                dropped.append({"reason": "duplicate", "detail": f"{lead_cashtag} ({item['id']})"})
+                # cross_account_duplicate (XG-W2) is the same class of quiet
+                # drop: another desk already carries near-identical copy, so
+                # this one must not go out. Named explicitly rather than falling
+                # into the generic failure branch, which would report a working
+                # guard as an error.
+                dropped.append({"reason": result, "detail": f"{lead_cashtag} ({item['id']})"})
             elif result == "cap_exceeded":
                 dropped.append({"reason": "cap_exceeded", "detail": lead_cashtag})
                 # Roll back the account reservation — nothing was written.
@@ -1262,12 +1267,14 @@ def generate_read_item(
             result = outbox.enqueue(item, r)
             if result == "queued":
                 generated.append(item["id"])
-            elif result == "duplicate":
+            elif result in ("duplicate", "cross_account_duplicate"):
                 # EXPECTED if the brief hasn't changed since a prior sweep: the
                 # identical text hashes to the same id (idempotent). The cross-
                 # night dedup in enqueue (#3824) likewise catches a same-week
-                # identical repeat. Report quietly, not as an error.
-                dropped.append({"reason": "duplicate", "detail": f"{aid} ({item['id']})"})
+                # identical repeat, and the cross-ACCOUNT radar (XG-W2) catches
+                # another desk already carrying near-identical copy. All three
+                # are guards doing their job — report quietly, not as an error.
+                dropped.append({"reason": result, "detail": f"{aid} ({item['id']})"})
             else:
                 dropped.append({"reason": "enqueue_failed", "detail": f"{aid}: {result}"})
 

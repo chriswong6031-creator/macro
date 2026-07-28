@@ -2123,6 +2123,9 @@ RENDER.cost = async () => {
 
   // ── (g) raw key usage (async-loaded below) — preserved ──
   const rawKeySection = `<div class="section">Raw key usage (rate-limit headers)</div>
+    <div class="card sub muted" style="margin-bottom:8px">
+      Shared fallback translation: Claude Opus/Fable → Codex Sol · Sonnet → Terra · Haiku → Luna · DeepSeek V4 Pro → Sol · V4 Flash → Terra.
+    </div>
     <div class="card" id="costKeysCard"><div class="sub muted">Loading…</div></div>`;
 
   // ── (h) legacy forward estimate — collapsed ──
@@ -2186,6 +2189,9 @@ RENDER.cost = async () => {
         ? Object.entries(k.ratelimit_headers).map(([h, hv]) => `<div class="sub mono">${esc(h)}: <b>${esc(String(hv))}</b> <span class="muted">(reported)</span></div>`).join("")
         : `<span class="muted sub">—</span>`;
       const displayKeyId = k.key_id === "legacy" ? "legacy (deprecated)" : (k.key_id || "—");
+      const providerDetail = k.provider || k.model_translation
+        ? `<div class="sub muted">${esc(k.provider || "")}${k.provider && k.model_translation ? " · " : ""}${esc(k.model_translation || "")}</div>`
+        : "";
       // Bot (MM) cell: bot-side key-pool health from the federation join.
       // AUTH DEAD (red) > cooling window/weekly (amber) > OK (muted green).
       const botTip = `bot last: ${k.mm_last_outcome || "—"}${k.mm_last_ts ? " @ " + k.mm_last_ts : ""}`;
@@ -2201,7 +2207,7 @@ RENDER.cost = async () => {
         botLabel = `<span class="muted sub" title="no bot activity reported">—</span>`;
       }
       return `<tr>
-        <td class="mono">${esc(displayKeyId)}${presentLabel}</td>
+        <td class="mono">${esc(displayKeyId)}${presentLabel}${providerDetail}</td>
         <td>${enabledLabel}</td>
         <td>${coolLabel}</td>
         <td class="sub mono">${esc(k.reset_hint || "—")}</td>
@@ -2216,7 +2222,7 @@ RENDER.cost = async () => {
       </tr>`;
     }).join("")}
     </tbody></table>
-    <div class="sub muted" style="margin-top:8px">est. = locally-observed rolling window estimate · reported = Anthropic response header value · MM 7d = Mastermind bot sessions in last 7 days · Bot (MM) = bot-reported key-pool health (OK / cooling reset / AUTH DEAD)</div>`;
+    <div class="sub muted" style="margin-top:8px">est. = locally-observed rolling window estimate · reported = provider response quota/rate-limit value · MM 7d = Mastermind bot sessions in last 7 days · Bot (MM) = bot-reported Claude key-pool health (OK / cooling reset / AUTH DEAD)</div>`;
   })();
 };
 
@@ -3363,7 +3369,10 @@ RENDER.orchestrator = async () => {
 RENDER.prophet = async () => {
   const v = $("#view");
   v.innerHTML = `<div class="spin">loading…</div>`;
-  const d = await api("/api/prophet");
+  const [d, tm] = await Promise.all([
+    api("/api/prophet"),
+    api("/api/prophet/trade-memory").catch(() => ({ ok:false, error:"Trade Memory unavailable" })),
+  ]);
   if (!d || !d.ok) {
     v.innerHTML = nwEmpty("Prophet unavailable", (d && d.error) || "panel error");
     return;
@@ -3377,6 +3386,9 @@ RENDER.prophet = async () => {
   const tr   = d.track_record;
   const sp   = d.fable_spend      || {};
   const cfg  = d.settings         || {};
+  const tmSummary = (tm && tm.summary) || {};
+  const tmEpisodes = (tm && tm.episodes) || [];
+  const tmPatterns = (tm && tm.patterns) || [];
 
   /* --- Cross-market record cards --- */
   const markets = Object.keys((ps.markets) || {});
@@ -3502,6 +3514,60 @@ RENDER.prophet = async () => {
     ${meter("Today's deliberation tokens", spendPct, `${(sp.today_tokens_model || 0).toLocaleString()} / ${(sp.cap || 0).toLocaleString()}`, spendPct >= 80 ? "bad" : spendPct >= 50 ? "warn" : "")}
     <div class="note muted" style="margin-top:4px">Est. cost today: $${Number(sp.today_usd_model || 0).toFixed(4)} &mdash; cap ${(sp.cap || 0).toLocaleString()} tokens/day (config.yml <code>prophet.deliberation_daily_token_cap</code>)</div>`;
 
+  /* --- Owner-private episodic Trade Memory --- */
+  const tmConfigured = !!(tm && tm.configured);
+  const tmEpisodeRows = tmEpisodes.length
+    ? `<div class="tbl-scroll"><table><thead><tr><th>Ticker</th><th>Source</th><th>Trade</th><th>Result</th><th>Review</th><th>What Prophet learned</th></tr></thead><tbody>
+       ${tmEpisodes.map(e => `<tr>
+         <td class="mono"><b>${esc(e.ticker || "—")}</b></td>
+         <td class="sub">${esc((e.source || "—").replace(/_/g, " "))}</td>
+         <td class="sub mono">${esc(e.entry_date || "—")} → ${esc(e.exit_date || "open")}</td>
+         <td><span class="statpill ${e.outcome === "win" ? "s-ok" : e.outcome === "loss" ? "s-bad" : "s-mut"}">${esc(e.outcome || "—")}</span></td>
+         <td class="sub">${esc((e.autopsy_state || "—").replace(/_/g, " "))}</td>
+         <td class="sub" style="max-width:430px">${esc(e.autopsy_summary || e.lesson || "Awaiting nightly review")}</td>
+       </tr>`).join("")}
+       </tbody></table></div>`
+    : `<div class="sub muted">${tmConfigured ? "No trades recorded yet." : esc((tm && (tm.reason || tm.error)) || "Private store unavailable.")}</div>`;
+
+  const tmPatternRows = tmPatterns.length
+    ? `<div class="tm-patterns">${tmPatterns.map(row => {
+         const p = row.pattern || {};
+         return `<div class="card">
+           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+             <b>${esc(p.feature || row.feature_key || "Pattern")}</b>
+             <span class="statpill ${row.status === "ready_for_prereg" ? "s-warn" : "s-mut"}">${esc((row.status || "accruing").replace(/_/g, " "))}</span>
+           </div>
+           <div class="note">${esc(p.measurement || "Measurement definition pending.")}</div>
+           <div class="note muted">${Number(p.support_n || 0)} supporting · ${Number(p.contradict_n || 0)} contradicting · ${Number(p.time_cluster_n || 0)} time clusters. Research only.</div>
+         </div>`;
+       }).join("")}</div>`
+    : `<div class="sub muted">No repeated pattern candidates yet. One anecdote stays one anecdote.</div>`;
+
+  const tradeMemoryHtml = `<div class="section">Trade Memory <span class="cnt">${Number(tmSummary.total || 0)} private episodes</span></div>
+    <div class="card tm-intro">
+      <h3>Record what happened</h3>
+      <div class="sub">Prophet reviews closed winners and losers overnight, separates market, sector, and stock effects, then looks for repeatable lessons.</div>
+      <div class="note muted">Private Supabase storage. Position size and dollar P&amp;L are never collected. Reviews cannot change live rankings.</div>
+    </div>
+    ${tmConfigured ? `<form id="tradeMemoryForm" class="tm-form">
+      <label><span>Ticker</span><input name="ticker" type="text" maxlength="20" placeholder="JNJ" required></label>
+      <label><span>Caught by</span><select name="source"><option value="operator">Me</option><option value="prophet">Prophet</option><option value="historical_replay">Historical replay</option></select></label>
+      <label><span>Side</span><select name="side"><option value="long">Long</option><option value="short">Short</option></select></label>
+      <label><span>Result</span><select name="outcome"><option value="win">Win</option><option value="loss">Loss</option><option value="flat">Flat</option><option value="open">Still open</option></select></label>
+      <label><span>Entry date</span><input name="entry_date" type="date" required></label>
+      <label><span>Exit date</span><input name="exit_date" type="date"></label>
+      <label><span>Entry price <i>optional</i></span><input name="entry_price" type="number" min="0.00000001" step="any"></label>
+      <label><span>Exit price <i>optional</i></span><input name="exit_price" type="number" min="0.00000001" step="any"></label>
+      <label class="tm-wide"><span>Why I entered</span><textarea name="thesis_at_entry" maxlength="8000" rows="3" placeholder="What was knowable at entry?"></textarea></label>
+      <label class="tm-wide"><span>What happened</span><textarea name="observed_result" maxlength="8000" rows="4" placeholder="Describe the market, sector, company, catalyst, timing, and anything Prophet may have missed."></textarea></label>
+      <label class="tm-wide"><span>Prophet pick reference <i>optional</i></span><input name="prophet_pick_ref" type="text" maxlength="240" placeholder="Board date or pick ID"></label>
+      <div class="tm-wide"><button class="btn" type="submit">Save private episode</button><span id="tradeMemorySaveState" class="sub muted"></span></div>
+    </form>` : `<div class="card"><b>Private storage needs setup</b><div class="note muted">${esc((tm && (tm.reason || tm.error)) || "Supabase integration unavailable.")}</div></div>`}
+    <div class="section">Recent episodes <span class="cnt">${Number(tmSummary.autopsied || 0)} reviewed · ${Number(tmSummary.awaiting_review || 0)} waiting</span></div>
+    ${tmEpisodeRows}
+    <div class="section">Pattern candidates <span class="cnt">research only</span></div>
+    ${tmPatternRows}`;
+
   /* --- Settings form --- */
   const numInputP = (key, val, lo, hi) => `<input type="number" data-prophset="${esc(key)}" data-prev="${esc(String(val != null ? val : ''))}" min="${Number(lo)}" max="${Number(hi)}" value="${esc(String(val != null ? val : ''))}" style="width:120px">`;
   const boolSwitchP = (key, val) => `<label class="switch"><input type="checkbox" data-prophsetb="${key}" ${val ? "checked" : ""}><span class="slider"></span></label>`;
@@ -3513,7 +3579,7 @@ RENDER.prophet = async () => {
     <div class="row"><div class="lab" style="min-width:220px">Daily token cap</div>${numInputP("deliberation_daily_token_cap", cfg.deliberation_daily_token_cap, 0, 5000000)}
       <div class="note">Daily deliberation token budget. When exhausted, lanes fall back to claude-opus-4-8. Range 0–5,000,000. <code class="muted">prophet.deliberation_daily_token_cap</code></div></div>`;
 
-  v.innerHTML = mktCardsHtml + integrityHtml + suggestionsHtml + autopsiesHtml + pmHtml + fitHtml + trHtml + spendHtml + settingsHtml;
+  v.innerHTML = tradeMemoryHtml + mktCardsHtml + integrityHtml + suggestionsHtml + autopsiesHtml + pmHtml + fitHtml + trHtml + spendHtml + settingsHtml;
 
   /* Wire up settings inputs */
   const meta2 = (SUMMARY && SUMMARY.meta) || {};
@@ -3529,6 +3595,36 @@ RENDER.prophet = async () => {
     if (r.ok) { inp.dataset.prev = String(r.new); toast(`${inp.dataset.prophset} → ${r.new}`); }
     else { inp.value = inp.dataset.prev; toast(r.error || "failed", true); }
   });
+
+  const tmForm = $("#tradeMemoryForm");
+  if (tmForm) tmForm.onsubmit = async (event) => {
+    event.preventDefault();
+    const state = $("#tradeMemorySaveState");
+    const fd = new FormData(tmForm);
+    const value = (key) => String(fd.get(key) || "").trim();
+    const body = {
+      ticker: value("ticker"),
+      source: value("source"),
+      side: value("side"),
+      outcome: value("outcome"),
+      entry_date: value("entry_date"),
+      exit_date: value("exit_date"),
+      entry_price: value("entry_price") || null,
+      exit_price: value("exit_price") || null,
+      thesis_at_entry: value("thesis_at_entry"),
+      observed_result: value("observed_result"),
+      prophet_pick_ref: value("prophet_pick_ref"),
+    };
+    if (state) state.textContent = "Saving…";
+    const result = await post("/api/prophet/trade-memory", body);
+    if (!result.ok) {
+      if (state) state.textContent = result.error || "Save failed";
+      toast(result.error || "Save failed", true);
+      return;
+    }
+    toast(`${result.ticker || body.ticker} saved privately`);
+    await RENDER.prophet();
+  };
 };
 
 /* ---- MARKETING LOBE -------------------------------------------------------- */

@@ -9,6 +9,8 @@ Public API:
     distinctness(items)    -> {max_similarity, flags, note}
     content_plan(cfg, plans, *, closes_loader) -> dict  (frozen §2.3 shape)
     content_mix(items)     -> dict  {type_id: count}
+    strip_scaffolding(plan) -> dict  (copy, minus in-process "_" keys)
+    ARTIFACT_KEEP_KEYS     — the "_" keys allowed to reach the artifact
 
 Spec constraints (§2.1 / §2.2 / §5):
   - Deterministic: NO RNG; stable per run; differs per account via account-hash.
@@ -771,6 +773,179 @@ def _attach_chart_media(
             "content_studio: chart PNG render failed for %s: %s", fc.get("id"), exc)
 
 
+def raster_plan_media(
+    plan: dict,
+    *,
+    cfg: dict | None,
+    root: str | Path | None,
+    day_prefix: str = "D1",
+) -> dict:
+    """Raster + upload the PNGs for charts on posts that SURVIVED the gate.
+
+    The companion to ``content_plan(..., defer_media=True)``. Call it AFTER
+    sentinel.gate_plan and BEFORE outbox.emit_from_content_plan; it mutates the
+    plan's featured_charts in place, stamping the same media_png_path /
+    media_url / media_render keys the inline path stamps, so every downstream
+    reader is unchanged.
+
+    WHY DEFER. Each PNG is one headless-Chrome launch (~13s). Rastering at plan
+    time paid that for all 8 cards whether or not any post could carry them — on
+    the 2026-07-28 plan every single rastered card was then quarantined by the
+    cadence cap, so the whole spend shipped nothing. Charting every ticker post
+    (which is the point) would have multiplied that waste by ten. Here we know
+    which items passed, so we raster only what can actually post: ~2 cards per
+    desk instead of every card in the plan.
+
+    Selection: a featured chart is rastered when at least one queue item
+    references its id, sits on the emit day, and is NOT quarantined. A plan whose
+    gate crashed stamps sentinel_ok=False everywhere and correctly rasters
+    nothing. Fully fail-soft — a card that cannot be rastered stays SVG-only and
+    its post degrades to text.
+
+    PRUNING. content_plan renders an SVG for every candidate ticker post because
+    an SVG is ~1ms and capping it would mean guessing which posts survive. Those
+    SVGs are ~45KB each and would bloat content_plan.json well past its current
+    size, so the cards no surviving post references are dropped here — the
+    artifact ends up carrying only the cards that ship. Reach-lane cards
+    (theme/mover, which raster inline and carry no deferral blob) are kept
+    regardless, since they are the plan's own reach content.
+
+    Returns {"rastered": int, "skipped": int, "hosted": int, "pruned": int}.
+    """
+    charts = {
+        str(fc.get("id")): fc
+        for fc in (plan.get("featured_charts") or [])
+        if fc.get("id")
+    }
+    wanted: set[str] = set()
+    for acct in plan.get("accounts") or []:
+        for item in acct.get("queue") or []:
+            cid = item.get("chart_id")
+            if not cid or cid not in charts:
+                continue
+            if not str(item.get("slot", "")).startswith(f"{day_prefix}-"):
+                continue
+            if item.get("status") == "quarantined" or item.get("sentinel_ok") is False:
+                continue
+            if item.get("_live_gate_fail"):
+                continue
+            wanted.add(str(cid))
+
+    counts = {"rastered": 0, "skipped": 0, "hosted": 0, "pruned": 0}
+    keep: list[dict] = []
+    for cid, fc in charts.items():
+        deferred = fc.pop("_defer", None)
+        if deferred is None:
+            # Reach-lane card (theme/mover): rastered inline, always kept.
+            keep.append(fc)
+            counts["skipped"] += 1
+            continue
+        if cid not in wanted:
+            counts["pruned"] += 1
+            continue
+        _attach_chart_media(
+            fc,
+            closes=deferred.get("closes") or [],
+            dates=deferred.get("dates") or [],
+            marker_index=int(deferred.get("marker_index") or 0),
+            as_of=str(plan.get("as_of") or ""),
+            root=root,
+            cfg=cfg,
+            subtitle=deferred.get("subtitle"),
+        )
+        if fc.get("media_png_path"):
+            counts["rastered"] += 1
+        if fc.get("media_url"):
+            counts["hosted"] += 1
+        keep.append(fc)
+
+    # Preserve the original ordering of whatever survived.
+    kept_ids = {str(fc.get("id")) for fc in keep}
+    plan["featured_charts"] = [
+        fc for fc in (plan.get("featured_charts") or [])
+        if str(fc.get("id")) in kept_ids
+    ]
+    return counts
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Artifact boundary — which scaffolding keys may cross it
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: Underscore-prefixed queue-item keys allowed to reach content_plan.json.
+#: Every other "_" key is in-process scaffolding (see strip_scaffolding). Each
+#: entry below has a NAMED reader of the written artifact — add one only with
+#: the same evidence, never just because it looks small:
+#:   _live_gate_fail  → admin/marketing._CONTENT_POST_KEEP ("signal demoted"
+#:                      badge). Also gates outbox.emit_from_content_plan, but
+#:                      that reads the in-memory plan.
+#:   _copy_violations → admin/marketing._CONTENT_POST_KEEP (caution chip).
+#:   _copy_mode       → telemetry._build_post_index, which re-opens
+#:                      content_plan.json from disk for the Lab roll-up.
+ARTIFACT_KEEP_KEYS: frozenset[str] = frozenset({
+    "_live_gate_fail",
+    "_copy_violations",
+    "_copy_mode",
+})
+
+
+def strip_scaffolding(plan: dict) -> dict:
+    """Return a COPY of ``plan`` with in-process scaffolding keys dropped.
+
+    The copywriter pass hangs the whole Prophet plan dict on every queue item
+    (``_plan``), plus its receipt and mover/theme fact blobs, so build_context
+    can read them without a second lookup. Those are locals with a long
+    lifetime, not artifact fields — nothing that re-opens content_plan.json
+    reads them. Left in, ``_plan`` alone was the largest per-item field in the
+    artifact by ~9x over the next one (239 KB of a 1.11 MB, 7-desk, 218-item
+    plan) and grows linearly with the desk count.
+
+    COPY-ON-WRITE IS LOAD-BEARING. The governor keeps using the in-memory plan
+    AFTER the write: links.build_short_link_pages, and critically
+    outbox.emit_from_content_plan, which reads ``_plan`` to stamp
+    source.signal_id / direction / entry / invalidation for the publisher's
+    post-time live gate (engine/marketing/live_verify.py). Stripping in place
+    would silently disarm that gate — every post would lose its structured
+    tape-claim and fall back to regexing cashtags out of the copy. So this
+    never mutates its argument.
+    """
+    if not isinstance(plan, dict):
+        return plan
+
+    def _clean_item(item: Any) -> Any:
+        if not isinstance(item, dict):
+            return item
+        return {
+            k: v for k, v in item.items()
+            if not k.startswith("_") or k in ARTIFACT_KEEP_KEYS
+        }
+
+    out = dict(plan)
+
+    if isinstance(plan.get("accounts"), list):
+        accounts: list[Any] = []
+        for acct in plan["accounts"]:
+            if not isinstance(acct, dict):
+                accounts.append(acct)
+                continue
+            a = dict(acct)
+            if isinstance(acct.get("queue"), list):
+                a["queue"] = [_clean_item(i) for i in acct["queue"]]
+            accounts.append(a)
+        out["accounts"] = accounts
+
+    # featured_charts get NO keep-list: `_defer` is the raster pass's internal
+    # hand-off blob, which the governor already pops on its failure path.
+    if isinstance(plan.get("featured_charts"), list):
+        out["featured_charts"] = [
+            {k: v for k, v in fc.items() if not k.startswith("_")}
+            if isinstance(fc, dict) else fc
+            for fc in plan["featured_charts"]
+        ]
+
+    return out
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # content_plan — the full §2.3 artifact
 # ─────────────────────────────────────────────────────────────────────────────
@@ -781,14 +956,22 @@ def content_plan(
     *,
     closes_loader: Callable[[str], tuple[list[str], list[float]] | None] | None = None,
     root: str | Path | None = None,
+    defer_media: bool = False,
 ) -> dict:
     """Build the full content plan artifact (frozen §2.3 shape).
 
     cfg:          parsed config/marketing.yml
     plans:        list of Prophet plan dicts (may be empty)
     closes_loader: callable(ticker) -> (dates, closes) | None
-    root:         repo root for OHLCV loading (data/stocks/<TICKER>.parquet). If
+    root:         repo root for OHLCV loading (chart_render._PRICE_SUBDIRS —
+                  data/baskets/ohlcv/<TICKER>.parquet, then data/stocks/). If
                   None, inferred from a closes_loader built by _make_closes_loader.
+    defer_media:  when True, render the SVGs but DO NOT raster/upload the PNGs.
+                  Each featured chart carries a private "_defer" blob instead, and
+                  the caller finishes the job with raster_plan_media() AFTER the
+                  Sentinel gate — so only cards attached to a post that actually
+                  survives cost a headless-Chrome launch (~13s each). The governor
+                  passes True; every other caller keeps the inline behaviour.
 
     Returns the frozen dict structure with envelope fields caller will stamp.
     """
@@ -896,30 +1079,77 @@ def content_plan(
     # fully-planned network still produces a plan rather than crashing).
     enabled_rows = [r for r in account_rows if r.get("status") != "planned"] or account_rows
 
-    # Select featured charts: ≤2 per account, max 6 Prophet + up to 2 confluence = 8 total.
-    # Only with closes. Eligibility gate always applies.
-    _CHART_CAP = 6
+    # ── Featured charts: EVERY post that names a ticker gets a card ───────────
+    # Operator law, 2026-07-28: "we should always have illustrations for charting
+    # tickers, unless it's some kind of event that occurred with the company —
+    # but we're doing entry timing, so charting should be used."
+    #
+    # This loop used to read `if item_dict["type"] != "signal": continue`, which
+    # made three of the four ticker-bearing content types STRUCTURALLY incapable
+    # of carrying an image. The Outbox showed the result verbatim: a post headed
+    # "$LKFN chart I keep coming back to" whose body ends "mine's on the chart",
+    # shipped with no chart; a "Radar check on $CVI — near entry, nothing's
+    # triggered" with nothing to look at. Across the 7-day plan that was ~25
+    # `chart` posts and ~120 `watchlist` posts at chart_id=None, every one.
+    #
+    # It was worse than it looked. Most `signal` items are demoted to `watchlist`
+    # by the live-price gate in the copywriter pass BELOW this loop, so watchlist
+    # dominates the early ladder slots — and the Sentinel cadence cap keeps the
+    # EARLIEST surviving slots. The charted signal posts sat at D1-S12/S16 and
+    # were quarantined as cadence_cap_daily before they could post. Measured on
+    # the 2026-07-28 plan: 8 charts rendered, 0 reached a post that shipped.
+    #
+    # A demoted signal is exactly the entry-timing post the operator means: "near
+    # entry, not triggered" is a statement ABOUT THE TAPE and is worthless without
+    # it. So the type filter widens to every ticker-bearing type, and the two
+    # gates split by what each actually protects (see `variant` in the loop).
+    _CHARTABLE_TYPES = ("signal", "chart", "watchlist", "receipt")
+
+    # Only D1 slots are ever emitted (outbox.emit_from_content_plan defaults to
+    # day_prefix="D1" and the governor takes the default), so charting D2+ would
+    # raster images no post can ever attach.
+    _CHART_DAY_PREFIX = "D1"
+
+    # No per-account cap on the SVG lane, deliberately. An SVG is ~1ms and the
+    # EXPENSIVE half (one headless-Chrome launch per PNG, ~13s) is already
+    # deferred to raster_plan_media, which only pays for cards on posts that
+    # survive the gate. A cap here would have to guess WHICH posts survive, and
+    # guessing in slot order is wrong: the budget gets spent on early items that
+    # near-dup then kills, leaving the items that actually ship with nothing
+    # (measured — a cap of 3 left meagan's surviving D1-S12 post uncharted while
+    # three dead earlier slots held the budget). Render every candidate; the gate
+    # decides; raster_plan_media prunes the rest back out of the artifact.
+
     featured_charts: list[dict] = []
     chart_id_counter = 1
 
     if closes_loader is not None and plans:
-        # Deduplicate: one chart per ticker
-        seen_tickers: set[str] = set()
+        # Render cache keyed by (account, ticker, variant). PER-ACCOUNT is not an
+        # optimisation detail — sentinel.gate_plan quarantines any second account
+        # carrying a chart_id another desk already used (reason shared_media:<id>),
+        # because two desks posting the identical image is the coordinated-posting
+        # fingerprint it exists to catch. Each desk therefore gets its own card id.
+        #
+        # What is fixed here is the opposite failure: the cache used to be a single
+        # GLOBAL `seen_tickers` set, so the first desk to chart a ticker locked
+        # every other desk out of it entirely — the founder desk's own $EQT and
+        # $ROST signal posts got no chart because flagship had already claimed
+        # both names. Global dedupe starved desks; per-account dedupe feeds them
+        # without tripping the shared-media guard.
+        rendered: dict[tuple[str, str, str], str] = {}
         # Root for OHLCV loading: explicit param preferred; "." as a safe default.
         _ohlcv_root: str = str(root) if root is not None else "."
 
         for acct_row in account_rows:
-            if len(featured_charts) >= _CHART_CAP:
-                break
             acct_id = acct_row["id"]
-            acct_count = 0
             for item_dict in acct_row["queue"]:
-                if len(featured_charts) >= _CHART_CAP or acct_count >= 2:
-                    break
-                if item_dict["type"] != "signal":
+                item_type = item_dict.get("type", "")
+                if item_type not in _CHARTABLE_TYPES:
+                    continue
+                if not str(item_dict.get("slot", "")).startswith(f"{_CHART_DAY_PREFIX}-"):
                     continue
                 ticker = item_dict.get("ticker", "")
-                if not ticker or ticker in seen_tickers:
+                if not ticker:
                     continue
 
                 # Find plan for this ticker — must pass the eligibility gate.
@@ -940,15 +1170,43 @@ def content_plan(
                 if len(closes) < 10:
                     continue
 
-                # LIVE gate for charts too: a featured chart is the loudest post
-                # we make — an underwater/runaway/stale signal must never get one
-                # (the BA case: down 5.5% from entry yet still charted with a BUY).
-                try:
-                    from engine.marketing.copywriter import verify_signal_live as _vsl
-                    _ok_live, _ = _vsl(plan_match, closes_result, today=today)
-                except Exception:  # noqa: BLE001
-                    _ok_live = True  # fail-open only if the gate itself is broken
-                if not _ok_live:
+                # A `signal` post makes an ENTRY CLAIM, so its card carries the
+                # setup marker and the % callout. Every other type describes the
+                # tape ("watching", "not buying yet", "here's the chart") and gets
+                # the SAME card with no marker, no highlight disc and no SETUP
+                # pill — an honest chart with no claim attached. Marking a "not
+                # buying yet" post with a SETUP pill is the lie this split exists
+                # to prevent.
+                variant = "signal" if item_type == "signal" else "tape"
+
+                # LIVE gate — decides the VARIANT, it does not veto the chart.
+                # A featured chart on a signal is the loudest post we make, so an
+                # underwater/runaway/stale signal must never carry the marker (the
+                # BA case: down 5.5% from entry yet still charted with a BUY). But
+                # that reasoning is entirely about the ENTRY CLAIM. An item that
+                # fails here is about to be demoted signal→watchlist by the
+                # copywriter pass below, becoming a "watching, not triggered" post
+                # — which needs the tape MORE than a live signal does, not less.
+                #
+                # Getting this backwards is what made the first cut of this fix a
+                # no-op: the gate ran before the demotion, so it stripped the card
+                # from an item that was still typed `signal`, and the post that
+                # eventually shipped was an uncharted watchlist. Downgrade the
+                # variant here; never `continue`.
+                if variant == "signal":
+                    try:
+                        from engine.marketing.copywriter import verify_signal_live as _vsl
+                        _ok_live, _ = _vsl(plan_match, closes_result, today=today)
+                    except Exception:  # noqa: BLE001
+                        _ok_live = True  # fail-open only if the gate itself is broken
+                    if not _ok_live:
+                        variant = "tape"
+
+                # Reuse before the cap: a second post on an already-rendered
+                # ticker costs nothing and must never be starved by the budget.
+                cached = rendered.get((acct_id, ticker, variant))
+                if cached is not None:
+                    item_dict["chart_id"] = cached
                     continue
 
                 # Place the BUY marker at the REAL signal — the Prophet signal
@@ -967,6 +1225,11 @@ def content_plan(
                     if turn is not None:
                         marker_index = turn["index"]
                         marker_source = "momentum_turn"
+
+                if variant == "tape":
+                    # No claim, no anchor: the card is the last N sessions as they
+                    # are. marker_* stay as metadata for the artifact only.
+                    marker_source = "none"
 
                 marker_date = dates[marker_index] if marker_index < len(dates) else dates[-1]
                 marker_price = closes[marker_index]
@@ -1011,6 +1274,9 @@ def content_plan(
                                 )
                             except Exception:
                                 _m2_ovl = {}
+                        # A tape card draws NO marker, NO highlight disc and NO
+                        # SETUP pill — render_chart_v2 suppresses all three when
+                        # both indices are None (eff_highlight stays None).
                         svg = render_chart_v2(
                             ticker=ticker,
                             dates=ohlcv_dates,
@@ -1020,9 +1286,14 @@ def content_plan(
                             c=ohlcv_c,
                             volume=ohlcv_v,
                             timeframe="DAILY",
-                            marker_index=ohlcv_marker,
-                            highlight_index=ohlcv_marker,
-                            pct_from_index=(ohlcv_marker if (len(ohlcv_c) - 1 - (ohlcv_marker or 0)) >= 5 else None),
+                            marker_index=(ohlcv_marker if variant == "signal" else None),
+                            highlight_index=(ohlcv_marker if variant == "signal" else None),
+                            pct_from_index=(
+                                ohlcv_marker
+                                if (variant == "signal"
+                                    and (len(ohlcv_c) - 1 - (ohlcv_marker or 0)) >= 5)
+                                else None
+                            ),
                             show_indicators=True,
                             indicators=("volume", "macd"),
                             warmup=_warmup,
@@ -1036,8 +1307,12 @@ def content_plan(
                             cta=_card_cta,
                         )
 
-                # Fallback: v1 render (marker-only) so nothing breaks
-                if svg is None:
+                # Fallback: v1 render (marker-only) so nothing breaks.
+                # SIGNAL ONLY — the v1 card hard-draws a green "BUY" label at the
+                # marker, which on a "watching, not buying yet" post would be a
+                # flat contradiction of the copy. A tape post with no v2 render
+                # available ships text-only rather than mislabelled.
+                if svg is None and variant == "signal":
                     subtitle = f"{cashtag} · signal"
                     svg = render_signal_chart(
                         ticker=ticker,
@@ -1046,21 +1321,22 @@ def content_plan(
                         marker_index=marker_index,
                         subtitle=subtitle,
                     )
+                if svg is None:
+                    continue
 
                 # Get headline/body from queue item
                 headline = item_dict.get("headline", f"{cashtag} opportunity flagged")
                 body = item_dict.get("body", "")
 
-                # Assign chart_id back to all items for this ticker+account
-                for item_dict2 in acct_row["queue"]:
-                    if item_dict2["ticker"] == ticker and item_dict2["type"] == "signal":
-                        item_dict2["chart_id"] = chart_id
+                item_dict["chart_id"] = chart_id
+                rendered[(acct_id, ticker, variant)] = chart_id
 
                 _fc = {
                     "id": chart_id,
                     "ticker": ticker,
                     "account": acct_id,
                     "cashtag": cashtag,
+                    "variant": variant,
                     "marker_source": marker_source,
                     "marker_date": marker_date,
                     "marker_price": round(marker_price, 4),
@@ -1069,20 +1345,42 @@ def content_plan(
                     "body": body,
                 }
                 # PNG variant for X (gated by publish.media_enabled; SVG can't post).
-                _attach_chart_media(
-                    _fc, closes=closes, dates=dates, marker_index=marker_index,
-                    as_of=today, root=root, cfg=cfg, subtitle=f"{cashtag} · signal")
+                # With defer_media the raster is postponed until after the Sentinel
+                # gate so only cards on posts that SURVIVE cost a Chrome launch —
+                # see raster_plan_media().
+                if not defer_media:
+                    _attach_chart_media(
+                        _fc, closes=closes, dates=dates, marker_index=marker_index,
+                        as_of=today, root=root, cfg=cfg,
+                        subtitle=f"{cashtag} · {'signal' if variant == 'signal' else 'tape'}")
+                else:
+                    # Everything raster_plan_media needs to finish the job later.
+                    _fc["_defer"] = {
+                        "closes": closes, "dates": dates,
+                        "marker_index": marker_index,
+                        "subtitle": f"{cashtag} · {'signal' if variant == 'signal' else 'tape'}",
+                    }
                 featured_charts.append(_fc)
 
-                seen_tickers.add(ticker)
                 chart_id_counter += 1
-                acct_count += 1
 
     # ── Confluence-sourced signal posts (§3 confluence→chart-post loop) ───────
-    # Read fired combos from tech_confluence.json. Cap confluence charts so total
-    # featured_charts stays <= 8 (Prophet uses up to 6). Fail-soft: if the file is
+    # Read fired combos from tech_confluence.json. Fail-soft: if the file is
     # absent or has no fresh fired combos, Prophet posts still flow unchanged.
-    _TOTAL_CHART_CAP = 8
+    #
+    # REACH-LANE BUDGET, counted separately from the ticker-post lane above.
+    # These three lanes (confluence / theme_list watchlist cards / mover cards)
+    # used to measure headroom as `len(featured_charts) < 8`, which worked only
+    # while the ticker lane was capped at 6. Now that every D1 ticker post gets a
+    # card, a shared counter would starve the reach lanes to zero on the first
+    # busy desk — so they get their own allowance, unchanged at 8.
+    _REACH_CHART_CAP = 8
+    _ticker_charts_n = len(featured_charts)
+
+    def _reach_headroom() -> bool:
+        """True while the reach lanes still have budget of their own."""
+        return (len(featured_charts) - _ticker_charts_n) < _REACH_CHART_CAP
+
     confluence_posts_added: list[dict] = []  # for the summary block
     conf_charts_added = 0
 
@@ -1158,7 +1456,7 @@ def content_plan(
 
                 # Attempt v2 chart for this confluence ticker
                 # Only if we have headroom under the total cap
-                if len(featured_charts) < _TOTAL_CHART_CAP and _ohlcv_root_conf:
+                if _reach_headroom() and _ohlcv_root_conf:
                     from engine.marketing.chart_render import load_ohlcv_windowed, render_chart_v2
                     _windowed = load_ohlcv_windowed(conf_ticker, _ohlcv_root_conf)
                     ohlcv, _warmup = _windowed if _windowed else (None, 0)
@@ -1411,11 +1709,11 @@ def content_plan(
             # {ticker, price, pct_change}, subtitle = the item's stance line (question).
             # Card goes into featured_charts the same way signal charts do; chart_id
             # is attached to the item dict.
-            if len(featured_charts) < _TOTAL_CHART_CAP:
+            if _reach_headroom():
                 try:
                     from engine.marketing.chart_render import render_watchlist_card as _rwc
                     for _tl_item in _theme_items_for_queue:
-                        if len(featured_charts) >= _TOTAL_CHART_CAP:
+                        if not _reach_headroom():
                             break
                         _tl_data = _tl_item.get("_theme_data") or {}
                         _tl_members_raw = _tl_data.get("members") or []
@@ -1517,7 +1815,7 @@ def content_plan(
                 from engine.marketing.chart_render import load_ohlcv_windowed, render_chart_v2, render_signal_chart
                 for _mv_item in _mover_items_for_queue:
                     _mv_ticker = _mv_item["ticker"]
-                    if len(featured_charts) >= _TOTAL_CHART_CAP:
+                    if not _reach_headroom():
                         break
                     _mv_closes = closes_loader(_mv_ticker)
                     if _mv_closes is None:

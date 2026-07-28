@@ -624,9 +624,9 @@ def test_wire_deep_emits_with_tape_stamp():
                                 seen_ids=set(), dry_run=True, llm_override=llm)
     assert result["emitted"], "corroborated geopolitical pair must emit"
     deep = result["emitted"][0]
-    assert deep["provenance"]["wire_format"] == "wire_deep"
-    assert deep["provenance"]["tape_stamp"] == "WTI -2.3%"
-    body = deep["text"]["body"]
+    assert deep["source"]["wire_format"] == "wire_deep"
+    assert deep["source"]["tape_stamp"] == "WTI -2.3%"
+    body = deep["body"]
     assert "WTI -2.3%" in body
     # The composed wire_deep post is within the 400-700 budget.
     assert wf.validate_length(body, "wire_deep") == []
@@ -647,8 +647,8 @@ def test_full_tick_emits_keyless_with_voice():
                             seen_ids=set(), dry_run=True)
     assert result["emitted"], "the strong direct-quote item must emit"
     emit = result["emitted"][0]
-    body = emit["text"]["body"]
-    prov = emit["provenance"]
+    body = emit["body"]
+    prov = emit["source"]
     # Attribution present, register derived, format recorded.
     assert "on Truth Social" in body
     assert prov["register"] == "people"
