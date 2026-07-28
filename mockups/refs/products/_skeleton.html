@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<!-- mastermind product page — landing-native chapter of index.html ("Neural Cover" family).
+     HAND-AUTHORED SOURCE (carved out of scripts/build_free_content.py via HAND_AUTHORED):
+     edit this file directly; the estate generator owns only the .md front-matter
+     (hub cards / related links). Chrome (nav+gear+footer+LANG/MMX_NAV JS) is copied
+     byte-exact from site/index.html with hrefs depth-fixed for /products/ — when the
+     landing chrome changes, re-sync these blocks. -->
+<html lang="en" data-lang="en">
+<head>
+<script data-dbase>(function () {
+  window.DATA_BASE = window.DATA_BASE || "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev";  // R2 public data plane (flip: clear to revert to Pages)
+  var B = window.DATA_BASE;
+  if (!B) return;                                         // no-op when unset -> zero behavior change
+  B = B.replace(/\/+$/, "");                              // strip trailing slash
+  // the per-ticker stores that live in R2 (mirror scripts/publish_r2.py DEFAULT_DIRS)
+  var RE = /^(ohlc|chinaohlc|hkohlc|intlohlc|canadaohlc|subsectorohlc(?:_china|_russell|_nasdaq)?|stockdata|chinastockdata|hkstockdata|canadastockdata|intlstockdata|intraday)\//;
+  var orig = window.fetch;
+  window.fetch = function (u, o) {
+    try {
+      if (typeof u === "string") {
+        var rel = u.replace(/^(?:\.\.\/)+/, "");          // strip any ../ depth prefix
+        if (RE.test(rel)) u = B + "/" + rel;              // -> https://<data-host>/ohlc/AAPL.json
+      }
+    } catch (e) { /* never let the shim break a fetch */ }
+    return orig.call(this, u, o);
+  };
+})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>
+/* language boot — mirrors site-wide localStorage['lang']; runs pre-paint. */
+(function(){try{var q=(location.search.match(/[?&]lang=(zh|en)/)||[])[1];
+  var l=q||localStorage.getItem('lang');
+  if(l!=='en'&&l!=='zh')l=(navigator.language||'').toLowerCase().indexOf('zh')===0?'zh':'en';
+  document.documentElement.setAttribute('data-lang',l);
+  document.documentElement.lang=l==='zh'?'zh-CN':'en';}catch(e){}})();
+</script>
+<!-- ═══ PER-PAGE SEO HEAD — builder fills from the masterplan (title, description,
+     canonical, OG/twitter, BreadcrumbList + WebPage/SoftwareApplication JSON-LD:
+     keep the exact JSON-LD shapes the current generated pages carry). ═══ -->
+<title>[[PAGE TITLE]] — MastermindX</title>
+<meta name="description" content="[[META DESCRIPTION]]">
+<link rel="canonical" href="https://www.mastermind-x.com/products/[[SLUG]].html">
+<!-- [[OG + TWITTER + JSON-LD BLOCKS]] -->
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="stylesheet" href="../onboard.css?v=5c897a72">
+<link rel="stylesheet" href="../landing.css?v=abf00766">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   PRODUCT-PAGE SHARED LAYER — identical bytes on all three pages.
+   Landing tokens only (landing.css is linked above): no new hex
+   beyond var() derivations. Change here → change on all three.
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── chapter ribbon: the platform's three pillars; current chapter inked ── */
+.chap{display:flex;align-items:center;gap:26px;flex-wrap:wrap;margin-bottom:clamp(26px,4vw,42px)}
+.chap-x{display:inline-flex;align-items:baseline;gap:8px;font-family:var(--display);font-weight:700;
+  font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);transition:color .15s}
+.chap-x i{font-style:normal;font-weight:800;font-size:.66rem;color:var(--faint)}
+.chap-x:hover{color:var(--muted)}
+.chap-x.on{color:var(--ink);position:relative}
+.chap-x.on i{color:var(--pg-accent,var(--blue))}
+.chap-x.on::after{content:"";position:absolute;left:0;right:0;bottom:-8px;height:2px;border-radius:2px;background:var(--pg-accent,var(--blue))}
+
+/* ── product hero ── */
+.phero{padding:clamp(46px,7vw,84px) 0 clamp(30px,4.5vw,56px)}
+.phero .kicker{color:var(--pg-accent,var(--blue))}
+.phero h1{font-family:var(--display);font-weight:800;letter-spacing:-.02em;line-height:1.02;
+  font-size:clamp(2.5rem,5.6vw,4.35rem);margin:14px 0 0;color:var(--ink)}
+.phero .sub{font-size:clamp(1.02rem,1.5vw,1.2rem);line-height:1.6;color:var(--muted);max-width:56ch;margin:18px 0 0}
+.phero .sub b{color:var(--ink-soft)}
+.phero .cta-row{margin-top:26px}
+.phero .micro{margin-top:14px}
+/* one gradient arc for the whole family (the ads' blue→violet→teal) */
+.pgrad{background:linear-gradient(92deg,var(--blue) 8%,var(--violet) 52%,var(--teal) 96%);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+@supports not (background-clip:text){.pgrad{color:var(--blue)}}
+
+/* ── hero artifact shell: the drawn product surface under the hero copy ── */
+.pstage{position:relative;margin-top:clamp(30px,4.5vw,52px)}
+.pstage .plate{border-radius:var(--r-lg);box-shadow:var(--sh-plate);overflow:hidden}
+
+/* ── annotation callouts pinned around a hero artifact ── */
+.anno{position:absolute;z-index:6;display:inline-flex;align-items:center;gap:7px;padding:5px 10px;
+  background:var(--panel);border:1px solid var(--hair-2);border-radius:999px;box-shadow:var(--sh-card);
+  font-family:var(--display);font-weight:700;font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)}
+.anno i{font-style:normal;width:7px;height:7px;border-radius:50%;background:var(--pg-accent,var(--blue));flex:none}
+@media (max-width:900px){.anno{display:none}}
+
+/* ── honest tag for drawn (non-live) vignettes; extends landing .live-tag ── */
+.live-tag.ill i{background:var(--faint)}
+
+/* ── desk chip (ad idiom): icon tile + label + reading + right stat ── */
+.dchip{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--hair);
+  border-radius:var(--r);box-shadow:var(--sh-card);padding:12px 14px}
+.dchip .ic{flex:none;width:38px;height:38px;border-radius:10px;display:grid;place-items:center;
+  background:var(--blue-wash);color:var(--blue-ink);font-family:var(--display);font-weight:800;font-size:.72rem}
+.dchip .tx{min-width:0;flex:1}
+.dchip .tx .k{display:block;font-family:var(--display);font-weight:700;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+.dchip .tx b{display:block;font-size:.86rem;color:var(--ink);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dchip .st{flex:none;font-family:var(--fig);font-weight:800;font-size:.8rem;color:var(--q-green)}
+
+/* ── stage meter (Bottoming → Turning → Ready → Trend) ── */
+.stgm{display:flex;align-items:center;margin:10px 0 2px}
+.stgm .seg{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;position:relative}
+.stgm .seg::before{content:"";position:absolute;top:5px;left:-50%;width:100%;height:2px;background:var(--hair-2)}
+.stgm .seg:first-child::before{display:none}
+.stgm .seg i{width:12px;height:12px;border-radius:50%;background:var(--hair-2);border:3px solid var(--panel);position:relative;z-index:1}
+.stgm .seg span{font-size:.66rem;color:var(--faint)}
+.stgm .seg.on i{background:var(--q-green)}
+.stgm .seg.on span{color:var(--q-green);font-weight:700}
+
+/* ── entry / invalidation twin cells ── */
+.ezc{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.ezc .c{border-radius:10px;padding:10px 12px;background:var(--bg);border:1px solid var(--hair)}
+.ezc .c .k{display:block;font-family:var(--display);font-weight:700;font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.ezc .c b{font-family:var(--fig);font-size:.95rem;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+.ezc .c.bad{background:var(--red-wash);border-color:#f2d7d5}
+.ezc .c.bad b{color:var(--q-red)}
+
+/* ── breadcrumb (SEO-stable markup, landing skin) ── */
+.est-crumb{max-width:var(--maxw);margin:18px auto 0;padding-inline:var(--gutter);font-size:.78rem;color:var(--faint)}
+.est-crumb ol{list-style:none;display:flex;gap:8px;margin:0;padding:0}
+.est-crumb a{color:var(--muted)} .est-crumb a:hover{color:var(--ink)}
+.est-crumb .sep{color:var(--hair-2)}
+
+/* ── honesty callout (access & limitations) ── */
+.callout{border:1px solid var(--hair-2);border-left:3px solid var(--q-gold);background:var(--gold-wash);
+  border-radius:var(--r);padding:16px 18px;margin:18px 0}
+.callout .co-h{display:block;font-family:var(--display);font-weight:800;font-size:.86rem;color:var(--ink);margin-bottom:6px}
+.callout p{margin:0;font-size:.92rem;line-height:1.55;color:var(--ink-soft)}
+
+/* ── section rhythm helpers ── */
+.psec-note{font-size:.8rem;color:var(--faint);max-width:70ch}
+</style>
+<style>
+/* ═══ PER-PAGE SYSTEMS — builder writes this block to the masterplan spec:
+   set --pg-accent on body, then the page's own vignette systems. ═══ */
+</style>
+</head>
+<body>
+<nav class="nav" aria-label="Main">
+  <div class="nav-in">
+    <a class="brand" href="../index.html" aria-label="MastermindX home"><span class="m">M</span> MASTERMINDX</a>
+    <button class="nav-toggle" id="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-navigation" aria-label="Open navigation">
+      <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+    </button>
+    <ul class="nav-links" id="primary-navigation">
+      <li class="nav-group">
+        <button class="nav-trigger" id="nav-platform-trigger" type="button" aria-expanded="false" aria-controls="nav-platform-panel">
+          <span data-zh="平台">Platform</span><svg viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5 6 6.5l5-5"/></svg>
+        </button>
+        <div class="nav-panel nav-panel-platform" id="nav-platform-panel" aria-labelledby="nav-platform-trigger" hidden>
+          <div class="nav-panel-head">
+            <div><span class="nav-panel-k" data-zh="互联研究工作台">CONNECTED RESEARCH DESK</span><strong data-zh="从市场状态一路深入到底层证据">Move from market state to the underlying evidence</strong></div>
+            <a href="../products/index.html" data-zh="平台概览 →">Platform overview →</a>
+          </div>
+          <div class="nav-card-grid">
+            <a class="nav-card" href="../products/market-terminal.html"><span class="nav-card-mark">01</span><span><strong data-zh="市场终端">Market Terminal</strong><small data-zh="浏览器图表、观察列表与股票研究背景。">Browser charting, watchlists and stock research context.</small></span></a>
+            <a class="nav-card" href="../products/mastermind-ai.html"><span class="nav-card-mark">02</span><span><strong>Mastermind AI</strong><small data-zh="结合当前页面与来源的市场研究助手。">A market research assistant grounded in the page and its sources.</small></span></a>
+            <a class="nav-card" href="../products/market-dashboards.html"><span class="nav-card-mark">03</span><span><strong data-zh="市场仪表盘">Market Dashboards</strong><small data-zh="宏观、周期、行业轮动与跨资产背景。">Macro, cycle, sector rotation and cross-asset context.</small></span></a>
+          </div>
+        </div>
+      </li>
+      <li class="nav-group">
+        <button class="nav-trigger" id="nav-research-trigger" type="button" aria-expanded="false" aria-controls="nav-research-panel">
+          <span data-zh="研究">Research</span><svg viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5 6 6.5l5-5"/></svg>
+        </button>
+        <div class="nav-panel nav-panel-research" id="nav-research-panel" aria-labelledby="nav-research-trigger" hidden>
+          <div class="nav-panel-head">
+            <div><span class="nav-panel-k" data-zh="公开研究界面">PUBLIC RESEARCH SURFACES</span><strong data-zh="从报告节选到逐股档案">From report excerpts to ticker-level dossiers</strong></div>
+          </div>
+          <div class="nav-card-grid two">
+            <a class="nav-card" href="../research/index.html"><span class="nav-card-mark">R</span><span><strong data-zh="机构研报">Institutional Research</strong><small data-zh="已索引的报告页面与可搜索节选；完整报告可能需要账户权限。">Indexed report pages and searchable excerpts; complete reports may require access.</small></span></a>
+            <a class="nav-card" href="../stocks/index.html"><span class="nav-card-mark">S</span><span><strong data-zh="股票档案">Stock Dossiers</strong><small data-zh="按股票整理的技术面、基本面、持仓与期权背景。">Ticker pages for technical, fundamental, ownership and options context.</small></span></a>
+          </div>
+        </div>
+      </li>
+      <li class="nav-group">
+        <button class="nav-trigger" id="nav-resources-trigger" type="button" aria-expanded="false" aria-controls="nav-resources-panel">
+          <span data-zh="资源">Resources</span><svg viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5 6 6.5l5-5"/></svg>
+        </button>
+        <div class="nav-panel nav-panel-resources" id="nav-resources-panel" aria-labelledby="nav-resources-trigger" hidden>
+          <div class="nav-panel-head">
+            <div><span class="nav-panel-k" data-zh="无需账户即可使用">USEFUL BEFORE SIGNUP</span><strong data-zh="先解决一个真实问题">Start by solving one real problem</strong></div>
+          </div>
+          <div class="nav-card-grid two">
+            <a class="nav-card" href="../tools/index.html"><span class="nav-card-mark">T</span><span><strong data-zh="免费工具">Free Tools</strong><small data-zh="仓位、风险、回报与投资组合计算器。">Calculators for sizing, risk, returns and portfolios.</small></span></a>
+            <a class="nav-card" href="../learn/index.html"><span class="nav-card-mark">L</span><span><strong data-zh="学习中心">Learning Center</strong><small data-zh="技术分析、风险、期权与申报文件课程。">Lessons on technicals, risk, options and filings.</small></span></a>
+            <a class="nav-card" href="../blog/index.html"><span class="nav-card-mark">B</span><span><strong data-zh="博客">Blog</strong><small data-zh="关于交易数学与市场机制的朴素文章。">Plain-English articles on trading math and market mechanics.</small></span></a>
+            <a class="nav-card" href="../support.html"><span class="nav-card-mark">?</span><span><strong data-zh="支持">Support</strong><small data-zh="账户、产品与访问问题的帮助入口。">Help with account, product and access questions.</small></span></a>
+          </div>
+        </div>
+      </li>
+      <li class="nav-direct"><a href="../plans.html" data-zh="定价">Pricing</a></li>
+    </ul>
+    <div class="nav-right">
+      <a id="nav-login" href="https://app.mastermind-x.com/terminal?signin=1" style="color:var(--muted)" data-zh="登录">Log in</a>
+      <a id="nav-cta" class="btn primary sm" href="https://app.mastermind-x.com/terminal?signup=1" data-zh="免费开始">Start free</a>
+      <span class="gear-wrap">
+        <button class="gearbtn" id="gear-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+        <div class="gear-pop" id="gear-pop" role="menu" aria-label="Settings">
+          <p class="gp-kicker" data-zh="设置">SETTINGS</p>
+          <div class="gp-lang">
+            <span class="gp-lbl" data-zh="语言">Language</span>
+            <span class="gp-seg" role="group" aria-label="Language">
+              <button type="button" class="gp-seg-b" data-set-lang="en">EN</button>
+              <button type="button" class="gp-seg-b" data-set-lang="zh">中文</button>
+            </span>
+          </div>
+          <div class="gp-div"></div>
+          <a class="gp-link" role="menuitem" href="../start.html" data-zh="打开仪表盘">Open the dashboard</a>
+          <!-- ACCOUNT section — mirrors the macro dashboard gear's ACCOUNT block, in
+               landing light tokens. onboard.js's auth-chrome module swaps -out ⇄ -in. -->
+          <div class="gp-div"></div>
+          <div class="gp-acct">
+            <p class="gp-acct-t" data-zh="账户">ACCOUNT</p>
+            <div class="gp-acct-out" id="gp-acct-out">
+              <p class="gp-acct-d" data-zh="登录以在所有设备同步自选、提醒与设置。">Sign in to sync your watchlists, alerts and settings across devices.</p>
+              <div class="gp-acct-btns">
+                <button type="button" class="gp-abtn ghost" id="gp-signin" data-zh="登录">Sign in</button>
+                <button type="button" class="gp-abtn solid" id="gp-signup" data-zh="创建账户">Create account</button>
+              </div>
+            </div>
+            <div class="gp-acct-in" id="gp-acct-in" hidden>
+              <div class="gp-acct-card" id="gp-acct-card" role="button" tabindex="0">
+                <span class="gp-avatar" id="gp-avatar"></span>
+                <span class="gp-acct-main"><span class="gp-acct-email" id="gp-email"></span><span class="gp-acct-sub" data-zh="管理账户与同步 ›">Manage account &amp; sync ›</span></span>
+              </div>
+              <button type="button" class="gp-signout" id="gp-signout" data-zh="退出登录">Sign out</button>
+            </div>
+          </div>
+        </div>
+      </span>
+    </div>
+  </div>
+</nav>
+<!-- NOTE (builder): inside the Platform nav panel above, add aria-current="page"
+     to this page's own .nav-card so the current chapter reads in the menu. -->
+
+<nav class="est-crumb" aria-label="Breadcrumb">
+  <ol>
+    <li><a href="../" data-zh="首页">Home</a></li>
+    <li class="sep" aria-hidden="true">/</li>
+    <li><a href="../products/index.html" data-zh="平台">Platform</a></li>
+    <li class="sep" aria-hidden="true">/</li>
+    <li aria-current="page">[[PRODUCT NAME]]</li>
+  </ol>
+</nav>
+
+<main id="main">
+<!-- ═══ PER-PAGE BODY — hero (.phero with .chap ribbon), sections, honesty
+     station, cband closer: build to research/products_estate/PRODUCT_PAGES_MASTERPLAN.md.
+     Every .rv element reveals via the chrome JS below. ═══ -->
+</main>
+
+<footer>
+  <div class="f-in">
+    <div class="f-grid">
+      <div class="f-brand">
+        <div class="fb-row"><span class="fm">M</span><span class="fn">MASTERMINDX</span></div>
+        <p class="ft" data-zh="机构级市场情报。">Institutional-grade market intelligence.</p>
+      </div>
+      <div class="f-cols">
+        <div class="f-col">
+          <p data-zh="平台">Platform</p>
+          <a href="../products/index.html" data-zh="平台概览">Platform overview</a>
+          <a href="../products/market-terminal.html">Market Terminal</a>
+          <a href="../products/mastermind-ai.html">Mastermind AI</a>
+          <a href="../products/market-dashboards.html" data-zh="市场仪表盘">Market dashboards</a>
+          <a href="../plans.html" data-zh="方案与定价">Plans &amp; pricing</a>
+        </div>
+        <div class="f-col">
+          <p data-zh="研究">Research</p>
+          <a href="../research/index.html" data-zh="机构研报">Institutional research</a>
+          <a href="../stocks/index.html" data-zh="股票档案">Stock dossiers</a>
+          <a href="../about-research.html" data-zh="关于研究">About the research</a>
+        </div>
+        <div class="f-col">
+          <p data-zh="资源">Resources</p>
+          <a href="../tools/index.html" data-zh="工具">Tools</a>
+          <a href="../learn/index.html" data-zh="学习">Learn</a>
+          <a href="../blog/index.html" data-zh="博客">Blog</a>
+          <a href="../support.html" data-zh="支持">Support</a>
+        </div>
+        <div class="f-col">
+          <p data-zh="法律">Legal</p>
+          <a href="../privacy.html" data-zh="隐私政策">Privacy</a>
+          <a href="../terms.html" data-zh="服务条款">Terms</a>
+          <a href="../disclaimer.html" data-zh="免责声明">Disclaimer</a>
+        </div>
+      </div>
+    </div>
+    <div class="f-bot">
+      <span>© 2026 MastermindX · mastermind-x.com</span>
+      <span class="f-legal"><a href="../privacy.html" data-zh="隐私政策">Privacy</a> · <a href="../terms.html" data-zh="服务条款">Terms</a> · <a href="../disclaimer.html" data-zh="免责声明">Disclaimer</a></span>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* capture hook for visual QA (see .still CSS) */
+if (location.search.indexOf('still') !== -1) document.documentElement.classList.add('still');
+
+/* nav: elevate once the page starts scrolling */
+(function(){ const nav=document.querySelector('.nav'); if(!nav) return;
+  let raf=false;
+  const upd=()=>{ nav.classList.toggle('sc', scrollY>10); raf=false; };
+  addEventListener('scroll',()=>{ if(!raf){ raf=true; requestAnimationFrame(upd); } },{passive:true}); upd();
+})();
+
+/* ───── i18n: EN ⇄ 中文 — mirrors the site-wide localStorage['lang'] contract
+   (data-lang on <html>, label shows the OTHER language, fires 'langchange').
+   Static prose swaps via [data-zh]; live components subscribe to LANG.onChange. */
+const LANG = (() => {
+  const subs = [];
+  const cur = () => document.documentElement.getAttribute('data-lang') === 'zh' ? 'zh' : 'en';
+  function apply(l){
+    document.documentElement.setAttribute('data-lang', l);
+    document.documentElement.lang = l === 'zh' ? 'zh-CN' : 'en';
+    document.querySelectorAll('[data-zh]').forEach(el => {
+      if (el.__en == null) el.__en = el.innerHTML;          // capture the English original once
+      el.innerHTML = (l === 'zh') ? el.getAttribute('data-zh') : el.__en;
+    });
+    try { localStorage.setItem('lang', l); } catch(e){}
+    subs.forEach(fn => { try { fn(l); } catch(e){} });
+  }
+  return { cur, apply, toggle(){ apply(cur() === 'zh' ? 'en' : 'zh'); }, onChange(fn){ subs.push(fn); } };
+})();
+
+/* ───── primary navigation: click disclosures + mobile accordion ───── */
+const MMX_NAV = (() => {
+  const nav = document.querySelector('.nav');
+  const list = document.getElementById('primary-navigation');
+  const mobile = document.getElementById('nav-toggle');
+  const triggers = [...document.querySelectorAll('.nav-trigger')];
+  const mq = matchMedia('(max-width: 900px)');
+  if (!nav || !list || !mobile) return { closeAll(){} };
+  const panelFor = trigger => document.getElementById(trigger.getAttribute('aria-controls'));
+  const openTrigger = () => triggers.find(trigger => trigger.getAttribute('aria-expanded') === 'true');
+  function syncMobileLabel(){
+    const isOpen = mobile.getAttribute('aria-expanded') === 'true';
+    mobile.setAttribute('aria-label', LANG.cur() === 'zh'
+      ? (isOpen ? '关闭导航' : '打开导航')
+      : (isOpen ? 'Close navigation' : 'Open navigation'));
+  }
+  function closePanels(focusTrigger){
+    const active = openTrigger();
+    triggers.forEach(trigger => {
+      const panel = panelFor(trigger);
+      trigger.setAttribute('aria-expanded','false');
+      if (panel) panel.hidden = true;
+    });
+    if (focusTrigger && active) active.focus();
+  }
+  function closeDrawer(focusToggle){
+    list.classList.remove('open');
+    nav.classList.remove('nav-open');
+    mobile.setAttribute('aria-expanded','false');
+    syncMobileLabel();
+    if (focusToggle) mobile.focus();
+  }
+  function closeAll(focusControl){
+    closePanels(Boolean(focusControl && openTrigger()));
+    closeDrawer(Boolean(focusControl && !openTrigger()));
+  }
+  function closeSettings(){
+    const pop = document.getElementById('gear-pop');
+    const btn = document.getElementById('gear-btn');
+    if (pop) pop.classList.remove('open');
+    if (btn) btn.setAttribute('aria-expanded','false');
+  }
+  function openPanel(trigger, focusLast){
+    closePanels(false);
+    closeSettings();
+    const panel = panelFor(trigger);
+    if (!panel) return;
+    trigger.setAttribute('aria-expanded','true');
+    panel.hidden = false;
+    if (focusLast !== undefined) {
+      const links = [...panel.querySelectorAll('a[href]')];
+      const target = focusLast ? links[links.length - 1] : links[0];
+      if (target) target.focus();
+    }
+  }
+  triggers.forEach(trigger => {
+    trigger.addEventListener('click', event => {
+      event.stopPropagation();
+      const wasOpen = trigger.getAttribute('aria-expanded') === 'true';
+      if (wasOpen) closePanels(false); else openPanel(trigger);
+    });
+    trigger.addEventListener('keydown', event => {
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        openPanel(trigger, event.key === 'ArrowUp');
+      }
+    });
+    trigger.closest('.nav-group').addEventListener('focusout', event => {
+      if (mq.matches || event.currentTarget.contains(event.relatedTarget)) return;
+      if (trigger.getAttribute('aria-expanded') === 'true') closePanels(false);
+    });
+  });
+  mobile.addEventListener('click', event => {
+    event.stopPropagation();
+    const willOpen = mobile.getAttribute('aria-expanded') !== 'true';
+    closeSettings();
+    if (willOpen) {
+      list.classList.add('open');
+      nav.classList.add('nav-open');
+      mobile.setAttribute('aria-expanded','true');
+      syncMobileLabel();
+    } else {
+      closePanels(false);
+      closeDrawer(false);
+    }
+  });
+  list.querySelectorAll('a[href]').forEach(link => link.addEventListener('click', () => closeAll(false)));
+  document.addEventListener('pointerdown', event => {
+    if (!nav.contains(event.target)) closeAll(false);
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'Escape') return;
+    if (openTrigger()) {
+      event.preventDefault();
+      closePanels(true);
+    } else if (mobile.getAttribute('aria-expanded') === 'true') {
+      event.preventDefault();
+      closeDrawer(true);
+    }
+  });
+  const reset = () => closeAll(false);
+  if (mq.addEventListener) mq.addEventListener('change', reset); else mq.addListener(reset);
+  LANG.onChange(syncMobileLabel);
+  syncMobileLabel();
+  return { closeAll };
+})();
+
+/* ───── nav settings popover ───── */
+(function(){
+  const btn = document.getElementById('gear-btn');
+  const pop = document.getElementById('gear-pop');
+  if (!btn || !pop) return;
+  const segs = [...pop.querySelectorAll('.gp-seg-b')];
+  const open = () => { MMX_NAV.closeAll(false); pop.classList.add('open'); btn.setAttribute('aria-expanded','true'); };
+  const close = () => { pop.classList.remove('open'); btn.setAttribute('aria-expanded','false'); };
+  const toggle = () => pop.classList.contains('open') ? close() : open();
+  btn.addEventListener('click', e => { e.stopPropagation(); toggle(); });
+  segs.forEach(s => s.addEventListener('click', e => { e.stopPropagation(); LANG.apply(s.dataset.setLang); }));
+  const syncSeg = () => segs.forEach(s => s.classList.toggle('on', s.dataset.setLang === LANG.cur()));
+  syncSeg(); LANG.onChange(syncSeg);
+  document.addEventListener('click', e => { if (!pop.contains(e.target) && e.target !== btn) close(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && pop.classList.contains('open')){ close(); btn.focus(); } });
+})();
+
+/* ───── reveal on scroll ───── */
+const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target);} }), { rootMargin:'0px 0px -8% 0px', threshold:.08 });
+document.querySelectorAll('.rv:not(.in)').forEach(el => io.observe(el));
+</script>
+<script>window.MM_API=window.MM_API||'https://app.mastermind-x.com';</script>
+<script src="../mm_brain.js?v=02e3e5a2" defer></script>
+<script src="../onboard.js?v=8f1b52d1" defer></script>
+<script defer data-whb data-root="../" src="../wh_banner.js?v=37bf40aa"></script>
+</body>
+</html>

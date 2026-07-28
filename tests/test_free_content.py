@@ -767,6 +767,104 @@ class TestDeterminism:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# HAND_AUTHORED carve-out (flagship product pages are source, not output)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestHandAuthoredPages:
+    """The three flagship product pages are hand-authored source files.
+
+    The generator must keep CONSUMING their content/seo/products/*.md
+    front-matter (hub cards, related links, clusters) while never writing,
+    drift-comparing, or orphan-flagging their HTML.
+    """
+
+    def test_constant_names_files_that_are_actually_committed(self):
+        """A typo in HAND_AUTHORED would silently disable the exemption."""
+        import scripts.build_free_content as bfc
+        missing = [
+            rel for rel in sorted(bfc.HAND_AUTHORED)
+            if not (_SITE_DIR / rel).is_file()
+        ]
+        assert not missing, f"HAND_AUTHORED names non-existent site/ files: {missing}"
+
+    def test_is_hand_authored_normalises_path_forms(self):
+        """url_path, site-relative str, native Path and backslashes all match."""
+        import scripts.build_free_content as bfc
+        assert bfc._is_hand_authored("/products/market-terminal.html")
+        assert bfc._is_hand_authored("products/market-terminal.html")
+        assert bfc._is_hand_authored(Path("products/market-terminal.html"))
+        assert bfc._is_hand_authored("products\\market-terminal.html")
+        assert not bfc._is_hand_authored("/products/index.html")
+        assert not bfc._is_hand_authored("blog/index.html")
+
+    @pytest.mark.skipif(
+        not _required_templates_present() or not _any_content_exists(),
+        reason="Designer templates or content .md files not yet present",
+    )
+    def test_render_skips_hand_authored_but_still_writes_the_hub(self, tmp_path):
+        """render_all writes products/index.html and none of the flagships."""
+        import scripts.build_free_content as bfc
+        out = tmp_path / "site"
+        out.mkdir()
+        bfc.render_all(out)
+
+        assert (out / "products" / "index.html").is_file(), \
+            "products hub must still be generated"
+        written = [
+            rel for rel in sorted(bfc.HAND_AUTHORED) if (out / rel).exists()
+        ]
+        assert not written, f"render_all overwrote hand-authored source: {written}"
+
+    @pytest.mark.skipif(
+        not _required_templates_present() or not _any_content_exists(),
+        reason="Designer templates or content .md files not yet present",
+    )
+    def test_hub_still_carries_a_card_for_every_hand_authored_product(self, tmp_path):
+        """Skipping the WRITE must not drop the page from `pages`.
+
+        The .md front-matter is what builds the hub cards, so the carve-out is
+        wrong the moment a flagship stops appearing on products/index.html.
+        """
+        import scripts.build_free_content as bfc
+        pages, _ = bfc.load_content()
+        ctx = bfc._products_hub_ctx(pages)
+        listed = {item["url_path"] for item in ctx["items"]}
+        for rel in sorted(bfc.HAND_AUTHORED):
+            assert f"/{rel}" in listed, f"{rel} missing from products hub context"
+
+        # …and the card actually reaches the rendered hub, not just the context.
+        out = tmp_path / "site"
+        out.mkdir()
+        bfc.render_all(out)
+        html = (out / "products" / "index.html").read_text(encoding="utf-8")
+        for rel in sorted(bfc.HAND_AUTHORED):
+            assert Path(rel).name in html, f"{rel} not linked from rendered hub"
+
+    @pytest.mark.skipif(
+        not _required_templates_present() or not _any_content_exists(),
+        reason="Designer templates or content .md files not yet present",
+    )
+    def test_orphan_walk_does_not_flag_hand_authored_pages(self, capsys):
+        """D5 must not call a committed hand-authored page an orphan.
+
+        This is the load-bearing exemption: render_all no longer produces these
+        files, so without the carve-out every one of them reports ORPHAN and the
+        CI estate check goes red.  The rc assertion is the anti-vacuity sentinel
+        — the orphan walk only runs after a clean drift compare, so a red check
+        would make the ORPHAN assertions below pass by never executing.
+        """
+        import scripts.build_free_content as bfc
+        rc = bfc._check_mode()
+        captured = capsys.readouterr()
+        assert rc == 0, (
+            "estate --check is red, so the orphan walk never ran and this pin "
+            f"proves nothing:\n{captured.err}"
+        )
+        for rel in sorted(bfc.HAND_AUTHORED):
+            assert f"ORPHAN (not produced by builder): {rel}" not in captured.err
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Uniqueness tests (require content files to exist)
 # ─────────────────────────────────────────────────────────────────────────────
 

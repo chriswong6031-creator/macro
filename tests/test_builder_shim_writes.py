@@ -210,13 +210,24 @@ def test_free_content_renders_every_family_with_shim(tmp_path):
     standing between that write path and a silent regression.
     """
     fixture = _fixture_root(tmp_path, content=True)
-    _mod("build_free_content").render_all(fixture / "site")
+    bfc = _mod("build_free_content")
+    bfc.render_all(fixture / "site")
 
     site = fixture / "site"
     pages = sorted(site.rglob("*.html"))
     assert len(pages) > 20, f"expected the full free estate, got {len(pages)} page(s)"
     assert (site / "products" / "index.html").exists()
-    assert (site / "products" / "market-terminal.html").exists()
+
+    # The flagship product pages are hand-authored SOURCE (build_free_content's
+    # HAND_AUTHORED carve-out), so a fresh render deliberately produces none of
+    # them — their committed bytes carry their own shim and this builder must
+    # not overwrite them. Asserting their ABSENCE keeps the shim sweep below
+    # honest: without it, a regression that resumed writing them would be graded
+    # by a loop that never saw the file.
+    rendered_flagships = [rel for rel in sorted(bfc.HAND_AUTHORED) if (site / rel).exists()]
+    assert not rendered_flagships, (
+        f"render_all overwrote hand-authored source page(s): {rendered_flagships}"
+    )
 
     missing = [str(p.relative_to(site)) for p in pages if DBASE_MARKER not in p.read_text(errors="ignore")]
     assert not missing, f"{len(missing)} free-estate page(s) written without the shim: {missing[:10]}"
