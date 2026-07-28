@@ -538,7 +538,7 @@
       trigger.innerHTML = ini ? esc(ini) : PERSON;
       trigger.classList.toggle('mmacc-trigger-ini', !!ini);
       trigger.classList.add('mmacc-trigger-on');
-      trigger.setAttribute('aria-label', a.email || T('account'));
+      trigger.setAttribute('aria-label', a.name || a.email || T('account'));
     } else {
       trigger.innerHTML = PERSON;
       trigger.classList.remove('mmacc-trigger-ini', 'mmacc-trigger-on');

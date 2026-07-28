@@ -1232,7 +1232,7 @@ const AN_ROWS_OPTS = [100, 250, 500, 1000, 2000];
 function anTableBar(kind) {
   const st = AN.tbl[kind];
   const opts = AN_ROWS_OPTS.map(n => `<option value="${n}"${st.rows === n ? " selected" : ""}>${fmtNum(n)} rows</option>`).join("");
-  const ph = kind === "visitors" ? "filter email / id / IP / city / country…" : "filter id / IP / site / city / country…";
+  const ph = kind === "visitors" ? "filter name / email / id / IP / location…" : "filter name / email / id / IP / site…";
   return `<div class="an-tbar">
     <input id="anQ" class="an-q" type="search" placeholder="${ph}" value="${esc(st.q)}" autocomplete="off" spellcheck="false">
     <select id="anRows" class="an-rows" title="max rows loaded">${opts}</select>
@@ -1265,18 +1265,25 @@ const AN_BOT_PILL = '<span class="statpill s-mut" title="detected crawler/automa
 /* Soft-identity pill: an anonymous cookie's LIKELY registered owner, guessed from a shared
    device fingerprint or IP — a suggestion, not a confirmed login (the "~"), so it reads
    distinctly from the solid "registered" pill a real login-stitch earns. */
-function anCandPill(email, basis) {
-  if (!email) return "";
+function anCandPill(name, email, basis) {
+  const label = name || email;
+  if (!label) return "";
   const via = basis === "device" ? "shared device" : "shared IP";
-  return ` <span class="statpill s-warn" title="likely — not a confirmed login (${via} as this account)">~ ${esc(email)}</span>`;
+  const emailHint = name && email ? ` · ${email}` : "";
+  return ` <span class="statpill s-warn" title="${esc(`likely — not a confirmed login (${via} as ${label}${emailHint})`)}">~ ${esc(label)}</span>`;
+}
+function anRegisteredIdentity(name, email, visitorId) {
+  const label = name || email || "registered user";
+  const emailLine = name && email ? `<div class="mono sub">${esc(email)}</div>` : "";
+  return `<a href="#/visitor/${encodeURIComponent(visitorId || "")}"><b>${esc(label)}</b></a> <span class="statpill s-ok">registered</span>${emailLine}`;
 }
 function anSessionsTable(rows, q) {
   const empty = q ? "no sessions match this filter" : "no sessions yet";
   return `<table><thead><tr><th>Started</th><th>Visitor</th><th>IP</th><th>Location</th><th>Site</th><th class="r">Pages</th><th class="r">Events</th><th class="r">Duration</th><th></th></tr></thead><tbody>
     ${rows.map(s => `<tr><td class="mono sub">${esc(s.started || "")}</td>
-      <td>${s.email
-        ? `<a href="#/visitor/${encodeURIComponent(s.visitor_id || "")}"><b>${esc(s.email)}</b></a> <span class="statpill s-ok">registered</span>`
-        : `<a class="mono" href="#/visitor/${encodeURIComponent(s.visitor_id || "")}">${esc((s.visitor_id || "—").slice(0, 8))}…</a>${anCandPill(s.candidate_email, s.candidate_basis)}`
+      <td>${s.email || s.name || s.user_id
+        ? anRegisteredIdentity(s.name, s.email, s.user_id || s.visitor_id)
+        : `<a class="mono" href="#/visitor/${encodeURIComponent(s.visitor_id || "")}">${esc((s.visitor_id || "—").slice(0, 8))}…</a>${anCandPill(s.candidate_name, s.candidate_email, s.candidate_basis)}`
       }${s.is_bot ? " " + AN_BOT_PILL : ""}</td>
       <td class="mono">${esc(s.ip || "—")}</td>
       <td class="sub">${esc(s.city || "—")}${s.region ? ", " + esc(s.region) : ""}${s.country_code ? " · " + esc(s.country_code) : ""}</td>
@@ -1291,8 +1298,8 @@ function anVisitorsTable(rows, q) {
   return `<table><thead><tr><th>Visitor</th><th>Last IP</th><th>Location</th><th>Net</th><th class="r">Sessions</th><th class="r">Events</th><th class="r">IPs</th><th>First seen</th><th>Last seen</th></tr></thead><tbody>
     ${rows.map(v => `<tr>
       <td>${v.is_user
-        ? `<a href="#/visitor/${encodeURIComponent(v.visitor_id || "")}"><b>${esc(v.email || "registered user")}</b></a> <span class="statpill s-ok">registered</span>`
-        : `<a class="mono" href="#/visitor/${encodeURIComponent(v.visitor_id || "")}">${esc((v.visitor_id || "—").slice(0, 10))}…</a>${anCandPill(v.candidate_email, v.candidate_basis)}`
+        ? anRegisteredIdentity(v.name, v.email, v.visitor_id)
+        : `<a class="mono" href="#/visitor/${encodeURIComponent(v.visitor_id || "")}">${esc((v.visitor_id || "—").slice(0, 10))}…</a>${anCandPill(v.candidate_name, v.candidate_email, v.candidate_basis)}`
       }${(v.identities > 1) ? ` <span class="statpill s-mut">${fmtNum(v.identities)} devices</span>` : ""}${v.is_bot ? " " + AN_BOT_PILL : ""}</td>
       <td class="mono">${esc(v.last_ip || "—")}</td>
       <td>${esc(v.city || "—")}${v.region ? ", " + esc(v.region) : ""}${v.country_code ? " · " + esc(v.country_code) : ""}</td>
@@ -1311,7 +1318,7 @@ AN_RENDER.sessions = async () => {
 };
 AN_RENDER.visitors = async () => {
   const b = $("#anBody");
-  b.innerHTML = `<div class="section">Frequent visitors <span class="sub">— one profile per person. Signed-in users are shown by email with every device/cookie merged into one; anonymous visitors keep their cookie id. Most sessions first — click to open full history + tickers searched.</span></div>
+  b.innerHTML = `<div class="section">Frequent visitors <span class="sub">— one profile per person. Signed-in users are shown by name when available (otherwise email), with every device/cookie merged into one; anonymous visitors keep their cookie id. Most sessions first — click to open full history + tickers searched.</span></div>
     ${anTableBar("visitors")}
     <div id="anTbl"><div class="spin">loading…</div></div>`;
   anWireTableBar("visitors");
@@ -1379,9 +1386,11 @@ async function renderSessionDetail(id) {
   const det = $("#anDet");
   if (!d.ok) { det.innerHTML = card("Session", `<div class="sub">${esc(d.reason || d.error || "not found")}</div>`); return; }
   const head = d.head || {}, path = d.path || [];
+  const headLabel = head.name || head.email;
+  const headTarget = head.user_id || head.visitor_id || "";
   det.innerHTML = `
     <div class="grid">
-      ${card("Visitor", `<div class="big" style="font-size:15px"><a class="mono" href="#/visitor/${encodeURIComponent(head.visitor_id || "")}">${esc((head.visitor_id || "—").slice(0, 12))}…</a></div><div class="sub">${head.user_id ? "user " + esc(String(head.user_id).slice(0, 8)) : "anonymous"}</div>`)}
+      ${card("Visitor", `<div class="big" style="font-size:15px"><a href="#/visitor/${encodeURIComponent(headTarget)}">${esc(headLabel || ((head.visitor_id || "—").slice(0, 12) + "…"))}</a></div><div class="sub">${head.name && head.email ? esc(head.email) + " · " : ""}${head.user_id ? "registered" : "anonymous"}</div>`)}
       ${card("Origin", `<div class="big" style="font-size:15px">${esc(head.site || "—")}</div><div class="sub mono">${esc(head.ip || "")}</div>`)}
       ${card("Events", `<div class="big">${fmtNum(path.length)}</div><div class="sub">ordered path below</div>`)}
     </div>
@@ -1398,9 +1407,13 @@ async function renderVisitorDetail(id) {
   const det = $("#anDet");
   if (!d.ok) { det.innerHTML = card("Visitor", `<div class="sub">${esc(d.reason || d.error || "not found")}</div>`); return; }
   const p = d.profile || {}, ips = d.ips || [], linked = d.linked || [], recent = d.recent || [], searches = d.searches || [], viewed = d.tickers_viewed || [];
+  const registeredLabel = d.name || d.email;
+  const candidateLabel = d.candidate && (d.candidate.name || d.candidate.email);
+  const identityLabel = registeredLabel || (candidateLabel ? "~ " + candidateLabel : (p.user_id ? "user " + String(p.user_id).slice(0, 8) : "anonymous"));
+  const identityEmail = d.name && d.email ? `${esc(d.email)} · ` : (d.candidate && d.candidate.name && d.candidate.email ? `${esc(d.candidate.email)} · ` : "");
   det.innerHTML = `
     <div class="grid">
-      ${card("Identity", `<div class="big" style="font-size:15px">${d.email ? esc(d.email) : (d.candidate && d.candidate.email ? "~ " + esc(d.candidate.email) : (p.user_id ? "user " + esc(String(p.user_id).slice(0, 8)) : "anonymous"))}</div><div class="sub">${d.email ? '<span class="statpill s-ok">registered</span> ' : (d.candidate && d.candidate.email ? `<span class="statpill s-warn" title="likely — not a confirmed login (shared ${d.candidate.via_fp ? "device" : "IP"} as this account)">likely account</span> ` : "")}${(p.identities > 1) ? fmtNum(p.identities) + " cookies merged · " : ""}first ${esc(String(p.first_seen || "").slice(0, 16))}</div>`)}
+      ${card("Identity", `<div class="big" style="font-size:15px">${esc(identityLabel)}</div><div class="sub">${identityEmail}${registeredLabel ? '<span class="statpill s-ok">registered</span> ' : (candidateLabel ? `<span class="statpill s-warn" title="likely — not a confirmed login (shared ${d.candidate.via_fp ? "device" : "IP"} as this account)">likely account</span> ` : "")}${(p.identities > 1) ? fmtNum(p.identities) + " cookies merged · " : ""}first ${esc(String(p.first_seen || "").slice(0, 16))}</div>`)}
       ${card("Activity", `<div class="big">${fmtNum(p.events)}</div><div class="sub">${fmtNum(p.sessions)} sessions</div>`)}
       ${card("Devices / IPs", `<div class="big">${fmtNum(p.ips)}<span class="sub"> IPs</span></div><div class="sub">${fmtNum(p.fingerprints)} fingerprints</div>`)}
       ${card("Linked identities", `<div class="big" style="color:${linked.length ? "var(--warn)" : "var(--text)"}">${fmtNum(linked.length)}</div><div class="sub">same device/IP, other cookie</div>`)}
@@ -1409,9 +1422,9 @@ async function renderVisitorDetail(id) {
     <table><thead><tr><th>IP</th><th>City</th><th>Country</th><th>Network</th><th>Flags</th><th class="r">Events</th></tr></thead><tbody>
     ${ips.map(r => `<tr><td class="mono">${esc(r.ip || "")}</td><td>${esc(r.city || "—")}${r.region ? ", " + esc(r.region) : ""}</td><td>${esc(r.country_code || "—")}</td><td class="sub">${esc(r.org || r.asn || "—")}</td><td>${anFlags(r)}</td><td class="r">${fmtNum(r.events)}</td></tr>`).join("") || "<tr><td colspan='6' class='muted'>no IPs</td></tr>"}
     </tbody></table>
-    ${linked.length ? `<div class="section">Linked visitors <span class="cnt">${linked.length}</span> <span class="sub">— same fingerprint or IP, different cookie (likely one person). A registered email here means that shared device/IP also signed into an account.</span></div>
+    ${linked.length ? `<div class="section">Linked visitors <span class="cnt">${linked.length}</span> <span class="sub">— same fingerprint or IP, different cookie (likely one person). A registered name or email here means that shared device/IP also signed into an account.</span></div>
     <table><thead><tr><th>Visitor</th><th>Matched by</th><th class="r">Shared events</th></tr></thead><tbody>
-    ${linked.map(l => `<tr><td>${l.email ? `<a href="#/visitor/${encodeURIComponent(l.visitor_id)}"><b>${esc(l.email)}</b></a> <span class="statpill s-ok">registered</span>` : `<a class="mono" href="#/visitor/${encodeURIComponent(l.visitor_id)}">${esc((l.visitor_id || "").slice(0, 12))}…</a>`}</td><td>${l.via_fp ? '<span class="statpill s-warn">device</span> ' : ""}${l.via_ip ? '<span class="statpill s-mut">IP</span>' : ""}</td><td class="r">${fmtNum(l.shared_events)}</td></tr>`).join("")}
+    ${linked.map(l => `<tr><td>${l.email || l.name || l.user_id ? anRegisteredIdentity(l.name, l.email, l.user_id || l.visitor_id) : `<a class="mono" href="#/visitor/${encodeURIComponent(l.visitor_id)}">${esc((l.visitor_id || "").slice(0, 12))}…</a>`}</td><td>${l.via_fp ? '<span class="statpill s-warn">device</span> ' : ""}${l.via_ip ? '<span class="statpill s-mut">IP</span>' : ""}</td><td class="r">${fmtNum(l.shared_events)}</td></tr>`).join("")}
     </tbody></table>` : ""}
     <div class="grid" style="margin-top:4px">
       <div class="card"><h3>Tickers searched <span class="cnt">${searches.length}</span></h3>${searches.length ? anBars(searches, r => `<b class="mono">${esc(r.ticker || "")}</b>`, "n", { sub: r => r.last ? esc(String(r.last).slice(0, 10)) : "" }) : "<span class='muted sub'>none yet</span>"}</div>
@@ -1458,8 +1471,8 @@ RENDER.users = async () => {
   const rec = await api("/api/users/recent?limit=50");
   if (rec.ok) {
     $("#uCnt").textContent = rec.users.length;
-    $("#uTbl").innerHTML = `<table><thead><tr><th>Email</th><th>Provider</th><th>Joined</th><th>Last sign-in</th><th>Confirmed</th></tr></thead><tbody>
-      ${rec.users.map(u => `<tr><td class="mono">${esc(u.email)}</td><td>${esc(u.provider)}</td><td class="mono sub">${esc(u.created_at || "—")}</td>
+    $("#uTbl").innerHTML = `<table><thead><tr><th>User</th><th>Provider</th><th>Joined</th><th>Last sign-in</th><th>Confirmed</th></tr></thead><tbody>
+      ${rec.users.map(u => `<tr><td><b>${esc(u.name || u.email || "—")}</b>${u.name && u.email ? `<div class="mono sub">${esc(u.email)}</div>` : ""}</td><td>${esc(u.provider)}</td><td class="mono sub">${esc(u.created_at || "—")}</td>
         <td class="mono sub">${esc(u.last_sign_in_at || "—")}</td><td>${u.confirmed ? "<span class='statpill s-ok'>yes</span>" : "<span class='statpill s-mut'>no</span>"}</td></tr>`).join("")}
     </tbody></table>`;
   } else { $("#uTbl").innerHTML = `<div class="card sub">${esc(rec.error || "could not load")}</div>`; }
@@ -1478,6 +1491,8 @@ RENDER.users = async () => {
 const ENT = { filter: { tier: null, status: null, search: "" }, page: 1, rows: [] };
 const ENT_TIERS = ["free", "insider", "pro"];
 const ENT_STATUSES = ["active", "trialing", "past_due", "canceled", "none"];
+
+function entIdentity(u) { return u.name || u.email || u.user_id; }
 
 function entChip(label, active, on) {
   return `<button class="ent-chip${active ? " on" : ""}" onclick="${on}">${esc(label)}</button>`;
@@ -1615,7 +1630,7 @@ function entChangeTier(i) {
 async function entChangeTierGo(i) {
   const u = ENT.rows[i];
   const tier = $("#entTier").value;
-  if (!confirm(`Write a comp entitlement setting ${u.email || u.user_id} to tier "${tier}"?`)) return;
+  if (!confirm(`Write a comp entitlement setting ${entIdentity(u)} to tier "${tier}"?`)) return;
   await _entPost({ user_id: u.user_id, action: "change_tier", params: { tier, ..._entForceParams() } },
     `tier → ${tier}`);
 }
@@ -1623,7 +1638,7 @@ async function entChangeTierGo(i) {
 function entTrial(i, mode) {
   const u = ENT.rows[i];
   if (mode === "reset") {
-    if (!confirm(`Reset ${u.email || u.user_id}'s trial to 7 days from now?`)) return;
+    if (!confirm(`Reset ${entIdentity(u)}'s trial to 7 days from now?`)) return;
     _entPost({ user_id: u.user_id, action: "reset_trial", params: {} }, "trial reset to 7d");
     return;
   }
@@ -1642,7 +1657,7 @@ async function entExtendGo(i) {
   const u = ENT.rows[i];
   const days = parseInt($("#entDays").value, 10);
   if (!(days >= 1 && days <= 365)) { toast("days must be 1..365", true); return; }
-  if (!confirm(`Extend ${u.email || u.user_id}'s trial by ${days} day(s)?`)) return;
+  if (!confirm(`Extend ${entIdentity(u)}'s trial by ${days} day(s)?`)) return;
   await _entPost({ user_id: u.user_id, action: "extend_trial", params: { days } }, `trial +${days}d`);
 }
 
@@ -1663,7 +1678,7 @@ function entPass(i, kind) {
 async function entPassGo(i, kind) {
   const u = ENT.rows[i];
   const tier = $("#entPassTier").value;
-  if (!confirm(`Grant a ${kind} ${tier} comp pass to ${u.email || u.user_id}?`)) return;
+  if (!confirm(`Grant a ${kind} ${tier} comp pass to ${entIdentity(u)}?`)) return;
   await _entPost({ user_id: u.user_id, action: "grant_pass", params: { kind, tier, ..._entForceParams() } },
     `${kind} ${tier} pass granted`);
 }
@@ -1683,7 +1698,7 @@ function entRemove(i) {
 }
 async function entRemoveGo(i) {
   const u = ENT.rows[i];
-  if (!confirm(`Revert ${u.email || u.user_id} to Free?`)) return;
+  if (!confirm(`Revert ${entIdentity(u)} to Free?`)) return;
   await _entPost({ user_id: u.user_id, action: "remove_comp", params: { ..._entForceParams() } }, "reverted to free");
 }
 
