@@ -58,10 +58,25 @@ but the discipline stands: wait for the packs to conclude (green, or spurious-on
 red) before squash-merging. Do NOT arm `gh pr merge --auto --squash` as the wait:
 main carries no branch protection, so auto-merge has no required checks to gate on
 and merges IMMEDIATELY (verified PR #3889, 2026-07-28 — merged ~1 min after arming
-with packs still pending). The manual wait is the only compliant form; after any
-accidental fast merge, the surviving PR proof run is the merge's evidence — watch
-it to conclusion. `--admin` exists to clear the spurious Workers check, not to
-outrun CI.
+with packs still pending).
+
+**DEFAULT FINISH — hand the wait to the sweeper, do not sit on it.** After opening
+the pull request, run `gh pr edit <n> --add-label merge-on-green` and stop.
+`.github/workflows/merge-on-green.yml` (GitHub-hosted, every 10 minutes,
+deliberately off the mac pool so it never queues behind a render) squash-merges the
+pull request once every check has CONCLUDED clean, with the known-spurious
+`Workers Builds: macro` X excluded. A genuine red or a merge conflict gets the
+`merge-blocked` label plus ONE explanatory comment instead of a merge; the
+`merge-on-green` label stays armed, so a rerun that greens the head merges on the
+next sweep. `ship_loop_guard.py` releases a session whose armed pull request
+carries no concluded red — a head with NO non-spurious checks at all is unproven
+and still blocks, because the sweeper will never merge that either. This is what
+ends the 20-60 minute CI-hostage wait; the merge-on-CONCLUDED discipline itself is
+unchanged, only who waits. Merging by hand on concluded-green stays valid whenever
+you prefer to watch it. After any accidental fast merge, the surviving PR proof run
+is the merge's evidence — watch it to conclusion. `--admin` remains only for the
+spurious Workers X, docs-only pull requests that trigger no pack checks, and
+genuine wedges — never to outrun CI.
 
 ### Waiting on CI without jamming every other session
 
