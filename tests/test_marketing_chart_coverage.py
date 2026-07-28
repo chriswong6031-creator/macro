@@ -41,6 +41,23 @@ def _worktree_root() -> Path:
 ROOT = _worktree_root()
 _FRESH = (datetime.now(timezone.utc).date() - timedelta(days=3)).isoformat()
 
+
+@pytest.fixture(autouse=True)
+def _no_logo_cache_writes(monkeypatch):
+    """Never touch the repo's real logo cache (MM_DATA_GUARD law).
+
+    These tests call content_plan with the REAL root so the loaders can read the
+    committed parquet trees — which means render_chart_v2's logo_root kwarg would
+    otherwise fetch and cache company logos into data/marketing/logos/. Caught the
+    honest way: an early run of this file left 19 untracked *_color.png files in
+    the worktree. Neutralised for every test in the module, so the cards render
+    offline (monograms) and write nothing.
+    """
+    import engine.marketing.chart_render as cr
+
+    monkeypatch.setattr(cr, "resolve_color_logo", lambda *a, **k: None)
+    monkeypatch.setattr(cr, "resolve_logo", lambda *a, **k: None)
+
 # Ticker-bearing post types. `mover` is charted by its own reach lane.
 _CHARTABLE = ("signal", "chart", "watchlist", "receipt")
 
@@ -75,6 +92,14 @@ def test_every_ticker_bearing_type_can_carry_a_chart():
     This is the operator's headline defect: a post headed "$LKFN chart I keep
     coming back to" whose body says "mine's on the chart", shipped with no chart.
     """
+    # DATA-DEPENDENT: the tape variant has no v1 fallback by design (the v1 card
+    # hard-draws a green "BUY" label), so a `chart`/`watchlist` post only gets an
+    # image when render_chart_v2 succeeds — which needs real bars off a parquet.
+    # Skipped on the thin pytest+pyyaml lane, executed on the fat chart-render-data
+    # lane. Both lanes must name this file or the gate below is unrun.
+    pytest.importorskip("pandas")
+    pytest.importorskip("pyarrow")
+
     from engine.marketing.content_studio import content_plan
 
     dates, closes = _series()
@@ -132,6 +157,14 @@ def test_stale_signal_still_gets_a_card_but_without_the_setup_marker():
     content_plan. It must keep a chart — a "watching, not triggered" post needs
     the tape MORE than a live signal does — but must NOT wear the SETUP pill,
     which would contradict its own copy."""
+    # DATA-DEPENDENT: the tape variant has no v1 fallback by design (the v1 card
+    # hard-draws a green "BUY" label), so a `chart`/`watchlist` post only gets an
+    # image when render_chart_v2 succeeds — which needs real bars off a parquet.
+    # Skipped on the thin pytest+pyyaml lane, executed on the fat chart-render-data
+    # lane. Both lanes must name this file or the gate below is unrun.
+    pytest.importorskip("pandas")
+    pytest.importorskip("pyarrow")
+
     from engine.marketing.content_studio import content_plan
 
     dates, closes = _series()
@@ -236,6 +269,14 @@ def test_price_search_order_matches_prophet():
 def test_loaders_find_a_baskets_only_ticker():
     """A ticker present ONLY in data/baskets/ohlcv must load. $CBOE and $LKFN are
     the operator's own uncharted posts and both are baskets-only names."""
+    # DATA-DEPENDENT: the tape variant has no v1 fallback by design (the v1 card
+    # hard-draws a green "BUY" label), so a `chart`/`watchlist` post only gets an
+    # image when render_chart_v2 succeeds — which needs real bars off a parquet.
+    # Skipped on the thin pytest+pyyaml lane, executed on the fat chart-render-data
+    # lane. Both lanes must name this file or the gate below is unrun.
+    pytest.importorskip("pandas")
+    pytest.importorskip("pyarrow")
+
     from engine.marketing.chart_render import load_closes, load_ohlcv
 
     baskets = ROOT / "data" / "baskets" / "ohlcv"

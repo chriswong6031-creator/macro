@@ -1158,6 +1158,14 @@ on:
       - "tests/test_admin_marketing.py"
       - "admin/marketing.py"
       - "config/marketing.yml"
+      # chart coverage (#3895, 2026-07-28): every ticker-bearing post carries an
+      # illustration; the live gate picks the card VARIANT rather than vetoing it;
+      # chart ids stay per-account; the ramp media cap never sits below the post
+      # cap. Runs in BOTH marketing-engine (9 pandas-free tests) and
+      # chart-render-data (the 3 that need real bars). engine/marketing/** and
+      # config/marketing.yml already reach its subjects — this entry is so a
+      # test-only edit reaches its own guard.
+      - "tests/test_marketing_chart_coverage.py"
       # Persona Network W1 (docket D13): the persona spec layer + its roster panel,
       # co-run in the marketing-engine job (same stdlib+pyyaml closure). The SPECS
       # are listed, not only the code — a PR that edits ONLY config/personas/*.yml
