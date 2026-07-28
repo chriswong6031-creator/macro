@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-28T13:59:10.164216+00:00",
-  "count": 251,
+  "generated_at": "2026-07-28T14:15:44.295371+00:00",
+  "count": 254,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -26,6 +26,68 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-lemohkuezgc-4056e1",
+      "title": "JPM Silver Sunset",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T14:00:29Z",
+      "summary_points": [
+        "**ASML China DUV: Sentiment Over Fundamentals**: Market prioritizes short-term sentiment over fundamentals, with ASML shares down 7% despite strategic risk, as China's DUV production plans dismissed as \"clickbait.\" - **TMT Momentum Unwinding**: AI beneficiaries underperform AI losers (e.g., SAP +7.5% vs.",
+        "Nokia pressure), driven by positioning rotation, not fundamentals, raising doubts on catalysts for growth stock recovery.",
+        "**ASMI Revenue & EPS Upside**: FY26/28 revenue forecasted 13%/6% higher; EPS expectations revised upward to €70-75 (from €60), implying significant upside at 20x/30x multiples despite recent results failing to lift shares.",
+        "**WOLTERS KLUWER Narrative Shift**: Investor focus shifts from AI threat to long-term beneficiaries, with hedge funds revisiting case as valuations fall below US peers, triggering incremental buying."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-1exrtozk2o7-d8e099",
+      "title": "JPM Delta One Flows & Positioning",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T14:00:04Z",
+      "summary_points": [
+        "**AI-Driven Sector Rotation**: Semiconductors/tech outflows ($6.9Bn) amid AI concerns; commodities ($1.5Bn) and options strategies ($1.7Bn) attract inflows, signaling defensive shift.",
+        "**Bond Bearishness Dominates**: Dominant CTA \"Short\" signals across US/EMEA/APAC sovereign bonds (e.g., US 2y UST), with oil correlation (-17%) amplifying geopolitical risk.",
+        "**APAC Short Risk Concentration**: Hang Seng (HII/HC Index) shows significant net short flows (1w/4w negative) with CTA \"Short\" signal, indicating downside risk from regional geopolitics/policy shifts.",
+        "**Commodity Divergence**: Brent Crude (Long signal, +9.9% 1w) vs.",
+        "US Natural Gas (Short signal, -1.4% return), highlighting sector-specific energy volatility."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 26,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ruxj2fpsj3p-48f051",
+      "title": "JPM Bits, Broadcasts & Bandwidth",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T13:59:25Z",
+      "summary_points": [
+        "**Alphabet Q2: AI monetization strain**: Negative FCF ($5.9bn), raised capex guidance, cloud growth (82%) offset by debt ($100bn), supply constraints delaying revenue; structural cash outlay mismatch.",
+        "**AMD/Anthropic AI infrastructure deal**: $5bn server agreement (2GW chips), deployment 1H27; accelerates AI infrastructure growth amid OpenAI’s $750B capex surge (2030).",
+        "**US-EU tech tariff escalation**: Trump to consider Section 301 tariffs on EU tech firms post-EU Google fine; heightens trade risk for US tech stocks.",
+        "**TMT market flows & geopolitics**: Secondary markets underperformed (Tech +9.0bps, Media +11.4bps) during Iran escalations; Netflix/Equifax drove $331bn TMT supply.",
+        "**Telecom credit spread stress**: CHTR (243bps), COX (234bps) show highest 10s30s spreads; TELEFO/TMUS spreads widening (Nov-27 to Mar-66) signaling deteriorating credit quality."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 27,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-rmexkysj48u-9d5703",
       "title": "The AI casino is closing",
