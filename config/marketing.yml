@@ -200,15 +200,35 @@ sentinel:
   # cold account, never loosen a warm one.
   #
   # Missing/unparseable `created:` on an ENABLED account fails CLOSED to
-  # weeks_1_2 and prints a ::warning annotation in the Actions summary.
+  # weeks_1_2 and prints a ::warning. So does a missing/unparseable plan `as_of`
+  # (which fails the WHOLE network closed) and an unparseable value inside a tier
+  # row below (that value is ignored; the base block governs that one knob).
   #
-  # The min_minutes_between_posts values are 45 to match the 45-min ladder
-  # re-spec (2026-07-27); that knob is still a contract value the D02 actuator
-  # honours at post time, not a plan-tier gate (queue slots have no timestamps).
+  # WHAT IS AND IS NOT WIRED. The tier rows below are enforced by the PLAN gate
+  # (sentinel.gate_plan) and by the two post-time seams that consult
+  # sentinel.resolve_ramp — outbox.effective_cap_for (daily volume, publisher +
+  # actuator + admin) and the publish-time mover/theme lane. Two entries are
+  # computed but NOT consumed anywhere yet:
+  #   * min_minutes_between_posts — the D02 actuator reads its spacing floor from
+  #     outbox.sentinel_contract, which returns BASE values only. The tier values
+  #     are 45 to match the 45-min ladder re-spec (2026-07-27) and are carried in
+  #     the gate report, but nothing narrows post-time spacing per tier today. A
+  #     tier-aware cadence contract is XG-W2 cadence-resolver work.
+  #   * max_new_follows_per_account_per_day — the plan tier computes it, but the
+  #     only consumer of a follows number is the actuator contract, which is
+  #     likewise base-only. Follows are manual-only regardless (D08 R7: the
+  #     actuator must never script a follow), so the tier value is documentation
+  #     of intent, not an enforced ceiling.
+  # Do not write a comment claiming either is honoured at post time until a
+  # consumer actually reads it.
   ramp:
     # Days of account age at which the ramp stops applying entirely and the base
     # block above governs alone. 8 weeks — one full ramp plus a 4-week cushion
     # past week_5_plus, which is where D08 §3 stops prescribing.
+    # CLAMPED to >= 28 in code (sentinel.effective_graduate_after_days): below
+    # that the knob is inert, because the age<14 and age<28 branches fire first,
+    # so a configured 20 would delete the week_5_plus window without graduating
+    # anyone sooner. The resolved value is printed in the gate report.
     graduate_after_days: 56
     weeks_1_2:
       max_posts_per_account_per_day: 2
@@ -290,8 +310,16 @@ publish:
   # minute and no test needs a frozen clock. 0 = disabled (exact sweep minute,
   # the pre-2026-07-27 behaviour), which is also the in-code default. IMMEDIATE /
   # breaking items are NOT jittered — added latency is the one thing breaking
-  # cannot afford. Note the Buffer adapter enforces a 3-minute minimum lead on
-  # any scheduled post, so offsets under 3 land at that lead.
+  # cannot afford.
+  #
+  # THE REAL DISTRIBUTION IS NOT UNIFORM. The Buffer adapter refuses a dueAt that
+  # is not comfortably in the future and floors every scheduled post at now+3min
+  # (social_publisher._MIN_DUE_LEAD). Offsets 0-3 therefore all land on the same
+  # minute, so at max 7 the delivered offsets are {3,3,3,3,4,5,6,7} — HALF the
+  # mass sits on the lead minute, and only 5 distinct minutes are reachable. That
+  # is still enough to break an exact-minute signature and it is why the number
+  # is 7 rather than 3; do not read this knob as "uniform 0..N". Raising
+  # _MIN_DUE_LEAD, or raising this value, are the two levers on that shape.
   post_jitter_max_min: 7
 
   # Chart-card CTA. false = the outbound post card's footer keeps the brand

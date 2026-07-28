@@ -1447,6 +1447,33 @@ def sentinel(root=None) -> dict:
         return {"ok": False, "error": str(exc)}
 
 
+def _caps_by_account(cfg: dict, repo, *, as_of: str | None = None) -> dict:
+    """Per-account daily post cap: the base ceiling narrowed by each desk's D08
+    age-ramp tier.
+
+    The scalar ``cap`` every payload already carries is the BASE number and stays
+    exactly as it was (frozen contract). This is ADDITIVE: without it a panel
+    shows "unlimited" next to a week-1 desk whose real allowance is 2. -1 still
+    means unlimited. Fail-soft: {} when the ramp cannot be resolved.
+    """
+    try:
+        from engine.marketing import outbox as _ob  # noqa: PLC0415
+        from engine.marketing.accounts import effective_accounts  # noqa: PLC0415
+        from engine.marketing.sentinel import resolve_ramp  # noqa: PLC0415
+        ref = as_of or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        # announce=False: an admin page render must never write to the CI
+        # annotation stream — the nightly gate owns those warnings.
+        ramp = resolve_ramp(cfg or {}, ref, root=repo, announce=False)
+        return {
+            str(acc.get("id", "")): _ob.effective_cap_for(
+                cfg, str(acc.get("id", "")), ref, root=repo, ramp=ramp)
+            for acc in effective_accounts(cfg, repo) if acc.get("id")
+        }
+    except Exception as exc:  # noqa: BLE001 — a display extra must never 500 a panel
+        log.warning("marketing._caps_by_account: %s", exc)
+        return {}
+
+
 def _seo_director_state() -> dict:
     """Read the SEO Director on/off state from the GitHub Actions repo variable.
 
@@ -1635,6 +1662,7 @@ def outbox(root=None) -> dict:
                 "note": _OUTBOX_EMPTY_NOTE,
                 "as_of": None,
                 "cap": cap,
+                "caps_by_account": _caps_by_account(cfg, repo),
                 "sentinel": sentinel,
                 "summary": _zero_counts() | {"total": 0},
                 "accounts": [],
@@ -1756,6 +1784,7 @@ def outbox(root=None) -> dict:
             "ok": True,
             "as_of": max_as_of,
             "cap": cap,
+            "caps_by_account": _caps_by_account(cfg, repo, as_of=max_as_of),
             "sentinel": sentinel,
             "summary": summary,
             "accounts": accounts_out,
@@ -1900,6 +1929,7 @@ def publisher(root=None) -> dict:
         config = {
             "backend": str(pub_cfg.get("backend") or "buffer"),
             "cap": cap,
+            "caps_by_account": _caps_by_account(cfg, repo),
             "require_approval": _parse_bool(pub_cfg.get("require_approval"), True),
             "auto_approve": _parse_bool(pub_cfg.get("auto_approve"), False),
             "channels_set": channel_set,

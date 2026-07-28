@@ -228,9 +228,74 @@ def effective_cap(cfg: dict) -> int:
     return -1 if eff == float("inf") else max(0, int(eff))
 
 
+def stricter_daily_cap(base_cap: int, tier_cap: "int | None") -> int:
+    """Combine a base daily cap with a ramp tier's, keeping the STRICTER.
+
+    Both sides speak the same unlimited dialect from opposite ends: ``base_cap``
+    negative means unlimited (the -1 sentinel every consumer already handles),
+    ``tier_cap`` None means unlimited (what sentinel's resolved caps carry). The
+    result is a plain cap in the base dialect: -1 for "still unlimited", else a
+    non-negative bound.
+    """
+    if tier_cap is None:
+        return base_cap
+    t = max(0, int(tier_cap))
+    return t if base_cap < 0 else max(0, min(int(base_cap), t))
+
+
+def effective_cap_for(
+    cfg: dict,
+    account_id: str,
+    as_of: str,
+    *,
+    root: "Path | str | None" = None,
+    ramp: "dict | None" = None,
+) -> int:
+    """``effective_cap`` narrowed by ONE account's D08 age-ramp tier.
+
+    WHY THIS EXISTS. effective_cap() reads only the base
+    ``sentinel.max_posts_per_account_per_day``, which is -1 (unlimited) live — so
+    every post-time cap check was vacuously False and an approved backlog
+    (retries, operator approvals, items queued before the ramp shipped) could
+    drain at roughly one per publisher sweep, far past a week-1 account's 2/day.
+    The plan-tier gate cannot catch that: those items already cleared it, on an
+    earlier day or by a different route.
+
+    ``as_of`` is the caller's OWN reference date — the plan date at plan tier, the
+    posting date at post tier. An account can cross a tier boundary between the
+    two, and that is fine: each seam applies the stricter answer for its own
+    moment, and the ramp only ever loosens with age, so the later seam can only
+    agree or be more permissive than the earlier one.
+
+    Pass ``ramp`` (a resolve_ramp result) when calling this in a loop — otherwise
+    each call re-resolves the tier table and re-reads the override file.
+    Fail-soft: any resolution error falls back to the base cap.
+    """
+    base = effective_cap(cfg)
+    try:
+        if ramp is None:
+            from engine.marketing.sentinel import resolve_ramp  # noqa: PLC0415
+            ramp = resolve_ramp(cfg or {}, as_of, root=root)
+        entry = (ramp.get("accounts") or {}).get(str(account_id))
+        caps = entry["caps"] if entry else (ramp.get("fallback") or {})
+        tier_cap = caps.get("max_posts_per_account_per_day")
+    except Exception as exc:  # noqa: BLE001 — a cap lookup must never break a post
+        log.warning("outbox.effective_cap_for(%r): %s — using the base cap",
+                    account_id, exc)
+        return base
+    return stricter_daily_cap(base, tier_cap)
+
+
 def sentinel_contract(cfg: dict) -> dict[str, Any]:
     """The Sentinel knobs the D02 actuator must honour, resolved from config
     with Sentinel in-code defaults. One read path for actuator + admin display.
+
+    BASE VALUES ONLY — this is deliberately NOT ramp-aware. Every knob here is
+    the un-tiered contract; the per-account narrowing lives in
+    effective_cap_for() (daily volume) and sentinel.resolve_ramp() (everything
+    else). ``effective_cap`` in the returned dict is likewise the base number, so
+    a caller showing it next to a week-1 desk is showing the ceiling, not that
+    desk's actual allowance.
     """
     defaults = _sentinel_defaults()
     sc = cfg.get("sentinel") or {}

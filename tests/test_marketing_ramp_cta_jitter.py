@@ -39,6 +39,26 @@ import pytest
 
 _AS_OF = "2026-07-27"
 
+# An outbox id whose crc32 residue is a PROVABLY NON-ZERO jitter offset. Every
+# jitter assertion below is written against this literal rather than against a
+# re-derivation of the function under test — an id with offset 0 makes the whole
+# suite pass with jitter switched off, which is exactly how the first round of
+# these tests shipped vacuous.
+_JITTER_ID = "it-jitter-4"
+_JITTER_OFFSET = zlib.crc32(_JITTER_ID.encode("utf-8")) % 8   # == 7 at max 7
+
+
+@pytest.fixture(autouse=True)
+def _fresh_annotations():
+    """sentinel emits each ramp ``::warning`` at most once per PROCESS (so one
+    publisher sweep does not print the same config defect six times). Under
+    pytest the whole file is one process, so without this reset the first test to
+    trip a warning would silence every later test asserting on the same one."""
+    from engine.marketing.sentinel import reset_ramp_announcements
+    reset_ramp_announcements()
+    yield
+    reset_ramp_announcements()
+
 _RAMP_TABLE: dict[str, Any] = {
     "graduate_after_days": 56,
     "weeks_1_2": {
@@ -834,13 +854,16 @@ class TestSendTimeJitter:
             encoding="utf-8")
         obx = tmp_path / "data" / "marketing" / "outbox"
         obx.mkdir(parents=True)
-        item = {"id": "it-jitter-1", "account": "flagship", "kind": "signal",
+        # crc32("it-jitter-4") % 8 == 7 — a PROVABLY NON-ZERO offset. The
+        # original test used an id whose offset was 0, so it passed identically
+        # with jitter disabled and proved nothing.
+        item = {"id": _JITTER_ID, "account": "flagship", "kind": "signal",
                 "text": "A perfectly ordinary post about the tape.",
                 "scheduled_at": "2026-07-27T13:00:00Z", "status": "queued",
                 "priority": 5, "as_of": "2026-07-27"}
         (obx / "items.jsonl").write_text(json.dumps(item) + "\n", encoding="utf-8")
         (obx / "status_ledger.jsonl").write_text(json.dumps(
-            {"id": "it-jitter-1", "from": "queued", "to": "approved",
+            {"id": _JITTER_ID, "from": "queued", "to": "approved",
              "at": "2026-07-27T13:30:00Z", "actor": "operator"}) + "\n",
             encoding="utf-8")
 
@@ -848,10 +871,12 @@ class TestSendTimeJitter:
         rep = mp.dry_run_report(tmp_path, now=now)
         assert rep["ok"], rep
         assert len(rep["would_post"]) == 1, rep
-        expected = (now + timedelta(
-            minutes=mp._post_jitter_minutes("it-jitter-1", 7))).strftime(mp._TS_FMT)
-        assert rep["would_post"][0]["send_at"] == expected
+        assert _JITTER_OFFSET == 7, "fixture id no longer has the asserted offset"
+        # The literal minute, not a re-derivation of the code under test.
+        assert rep["would_post"][0]["send_at"] == "2026-07-27T14:07:00Z"
         assert rep["would_post"][0]["immediate"] is False
+        # ...and it is NOT the un-jittered sweep minute.
+        assert rep["would_post"][0]["send_at"] != now.strftime(mp._TS_FMT)
 
     def test_immediate_items_are_never_jittered(self, tmp_path):
         """Breaking cannot pay latency — an immediate item still books at now."""
@@ -883,6 +908,568 @@ class TestSendTimeJitter:
         rep = mp.dry_run_report(tmp_path, now=now)
         assert rep["ok"], rep
         assert rep["would_post"][0]["immediate"] is True
-        assert rep["would_post"][0]["send_at"] == now.strftime(mp._TS_FMT)
-        # ...and the id WOULD have drawn a non-zero offset had it been a ladder item.
-        assert mp._post_jitter_minutes("it-immediate-1", 7) >= 0
+        assert rep["would_post"][0]["send_at"] == "2026-07-27T14:00:00Z"
+        # Load-bearing: this id draws a 7-minute offset as a LADDER item, so the
+        # assertion above would fail if the immediate path were jittered. The old
+        # version asserted `>= 0`, which is true of every possible offset.
+        assert mp._post_jitter_minutes("it-immediate-1", 7) == 7
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# F1. The per-account, tier-aware post-time cap
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestPerAccountEffectiveCap:
+    """The plan gate cannot govern post time. An approved backlog — retries,
+    operator approvals, items queued before the ramp shipped — has ALREADY
+    cleared the gate, so the only thing standing between it and ~30 posts a day
+    is the publisher's own cap check, which read the unlimited base value."""
+
+    def test_stricter_daily_cap_dialects(self):
+        from engine.marketing.outbox import stricter_daily_cap
+        # base unlimited (-1) + tier bounded -> the tier
+        assert stricter_daily_cap(-1, 2) == 2
+        # base bounded + tier unlimited (None) -> the base
+        assert stricter_daily_cap(3, None) == 3
+        # both unlimited stays unlimited
+        assert stricter_daily_cap(-1, None) == -1
+        # both bounded -> the smaller, from either side
+        assert stricter_daily_cap(5, 2) == 2
+        assert stricter_daily_cap(1, 4) == 1
+        assert stricter_daily_cap(-1, 0) == 0
+
+    def test_week_one_account_is_capped_at_its_tier_not_unlimited(self):
+        from engine.marketing.outbox import effective_cap, effective_cap_for
+        cfg = _cfg(accounts=[_acct("cold", created=_minus(3))], ramp=_RAMP_TABLE)
+        assert effective_cap(cfg) == -1              # the base is unlimited...
+        assert effective_cap_for(cfg, "cold", _AS_OF) == 2   # ...the desk is not
+
+    def test_graduated_account_keeps_the_unlimited_base(self):
+        from engine.marketing.outbox import effective_cap_for
+        cfg = _cfg(accounts=[_acct("warm", created=_minus(200))], ramp=_RAMP_TABLE)
+        assert effective_cap_for(cfg, "warm", _AS_OF) == -1
+
+    def test_outbox_ceiling_still_lowers_a_tier_cap(self):
+        from engine.marketing.outbox import effective_cap_for
+        cfg = _cfg(accounts=[_acct("cold", created=_minus(3))], ramp=_RAMP_TABLE)
+        cfg["outbox"] = {"max_posts_per_account_per_day": 1}
+        assert effective_cap_for(cfg, "cold", _AS_OF) == 1
+
+    def test_unknown_account_falls_closed_to_the_strictest_tier(self):
+        from engine.marketing.outbox import effective_cap_for
+        cfg = _cfg(accounts=[_acct("known", created=_minus(200))], ramp=_RAMP_TABLE)
+        assert effective_cap_for(cfg, "ghost", _AS_OF) == 2
+
+    def test_no_ramp_table_is_a_no_op(self):
+        from engine.marketing.outbox import effective_cap, effective_cap_for
+        cfg = _cfg(accounts=[_acct("cold", created=_minus(1))])
+        assert effective_cap_for(cfg, "cold", _AS_OF) == effective_cap(cfg) == -1
+
+
+_PUB_CFG_YAML = (
+    "sentinel:\n"
+    "  max_posts_per_account_per_day: -1\n"
+    "  ramp:\n"
+    "    graduate_after_days: 56\n"
+    "    weeks_1_2:\n"
+    "      max_posts_per_account_per_day: 2\n"
+    "publish:\n"
+    "  backend: buffer\n"
+    "  min_minutes_between_any_posts: 0\n"
+    "  channels:\n"
+    "    flagship: chan-1\n"
+    "desk_network:\n"
+    "  accounts:\n"
+    "    - id: flagship\n"
+    "      enabled: true\n"
+    "      created: \"{created}\"\n"
+)
+
+
+def _backlog_tree(tmp_path, created: str) -> None:
+    """Two posts already out today + a third approved and due, on one account."""
+    import json
+    (tmp_path / "config").mkdir()
+    (tmp_path / "config" / "marketing.yml").write_text(
+        _PUB_CFG_YAML.format(created=created), encoding="utf-8")
+    obx = tmp_path / "data" / "marketing" / "outbox"
+    obx.mkdir(parents=True)
+
+    items, ledger = [], []
+    for n in range(2):
+        iid = f"done-{n}"
+        items.append({"id": iid, "account": "flagship", "kind": "signal",
+                      "text": f"Post number {n} about the tape today.",
+                      "scheduled_at": "2026-07-27T12:00:00Z",
+                      "status": "queued", "priority": 5, "as_of": "2026-07-27"})
+        ledger += [
+            {"id": iid, "from": "queued", "to": "approved",
+             "at": "2026-07-27T12:00:00Z", "actor": "operator"},
+            {"id": iid, "from": "approved", "to": "posting",
+             "at": "2026-07-27T12:01:00Z", "actor": "publisher"},
+            {"id": iid, "from": "posting", "to": "posted",
+             "at": "2026-07-27T12:02:00Z", "actor": "publisher"},
+        ]
+    items.append({"id": "third", "account": "flagship", "kind": "signal",
+                  "text": "A third, entirely different post for today.",
+                  "scheduled_at": "2026-07-27T13:00:00Z",
+                  "status": "queued", "priority": 5, "as_of": "2026-07-27"})
+    ledger.append({"id": "third", "from": "queued", "to": "approved",
+                   "at": "2026-07-27T13:30:00Z", "actor": "operator"})
+    (obx / "items.jsonl").write_text(
+        "".join(json.dumps(i) + "\n" for i in items), encoding="utf-8")
+    (obx / "status_ledger.jsonl").write_text(
+        "".join(json.dumps(r) + "\n" for r in ledger), encoding="utf-8")
+
+
+class TestPublisherCapIsRampAware:
+
+    def test_week_one_backlog_is_held_at_the_tier_cap(self, tmp_path):
+        """END TO END on the defect: base cap -1, two posts already out today, a
+        third approved and due. Before the fix `_at_cap(2, -1)` was False and the
+        third went out — and the next sweep took the fourth."""
+        from scripts import marketing_publisher as mp
+        _backlog_tree(tmp_path, "2026-07-25")           # 2 days old → weeks_1_2
+        rep = mp.dry_run_report(
+            tmp_path, now=datetime(2026, 7, 27, 14, 0, tzinfo=timezone.utc))
+        assert rep["ok"], rep
+        assert rep["cap"] == -1, "the BASE cap is still unlimited"
+        assert rep["counts"]["skipped_cap"] == 1, rep
+        assert rep["would_post"] == [], rep
+
+    def test_graduated_backlog_still_drains(self, tmp_path):
+        """The mirror image: the same backlog on a warm desk is NOT capped."""
+        from scripts import marketing_publisher as mp
+        _backlog_tree(tmp_path, "2025-01-01")           # graduated
+        rep = mp.dry_run_report(
+            tmp_path, now=datetime(2026, 7, 27, 14, 0, tzinfo=timezone.utc))
+        assert rep["ok"], rep
+        assert rep["counts"]["skipped_cap"] == 0, rep
+        assert len(rep["would_post"]) == 1, rep
+
+    def test_admin_outbox_exposes_the_per_account_caps(self, tmp_path):
+        """The scalar `cap` stays the base ceiling (frozen contract); the honest
+        per-desk number rides alongside it."""
+        import admin.marketing as am
+        (tmp_path / "config").mkdir()
+        (tmp_path / "config" / "marketing.yml").write_text(
+            "sentinel:\n"
+            "  max_posts_per_account_per_day: -1\n"
+            "  ramp:\n"
+            "    graduate_after_days: 56\n"
+            "    weeks_1_2:\n"
+            "      max_posts_per_account_per_day: 2\n"
+            "publish:\n"
+            "  backend: buffer\n"
+            "desk_network:\n"
+            "  accounts:\n"
+            "    - id: cold\n"
+            "      enabled: true\n"
+            "      created: \"2026-07-25\"\n"
+            "    - id: warm\n"
+            "      enabled: true\n"
+            "      created: \"2025-01-01\"\n",
+            encoding="utf-8")
+        (tmp_path / "data" / "marketing" / "outbox").mkdir(parents=True)
+
+        obx = am.outbox(tmp_path)
+        assert obx["ok"], obx
+        assert obx["cap"] == -1
+        assert obx["caps_by_account"] == {"cold": 2, "warm": -1}, obx["caps_by_account"]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# F2. The publish-time lane was DEAD at the live cap
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestPublishTimeLaneRevival:
+    """`posted_today.get(aid, 0) >= cap` with the live unlimited cap of -1 is
+    `0 >= -1` — True for every account, every run. The auto-approved mover/theme
+    lane therefore generated NOTHING from 2026-07-24 onward. The existing suite
+    only ever passed cap=2, which is why it survived."""
+
+    def test_unlimited_cap_does_not_block_every_account(self, tmp_path):
+        """THE REGRESSION: at cap=-1 the lane must still generate."""
+        from engine.marketing import outbox, publish_time_content as ptc
+        TestPublishTimeLaneRamp._write_fixtures(tmp_path)
+        report = ptc.generate_slot_items(
+            tmp_path, cfg=TestPublishTimeLaneRamp._pt_cfg(_minus(200, _AS_OF)),
+            now=TestPublishTimeLaneRamp.NOW, state=outbox.fold_state(tmp_path),
+            approved_due=[], posted_counts={}, cap=-1, live=True,
+        )
+        assert report.get("generated"), report
+        assert [i for i in outbox.read_items(tmp_path) if i["kind"] == "theme_list"]
+        assert "no_account" not in {d["reason"] for d in report.get("dropped", [])}
+
+    @staticmethod
+    def _prefill(tmp_path, n_posted: int) -> None:
+        """n already-POSTED items on `flagship` today."""
+        import json
+        obx = tmp_path / "data" / "marketing" / "outbox"
+        obx.mkdir(parents=True, exist_ok=True)
+        today = TestPublishTimeLaneRamp.NOW.strftime("%Y-%m-%d")
+        rows, items = [], []
+        for n in range(n_posted):
+            iid = f"pt-done-{n}"
+            items.append({"id": iid, "account": "flagship", "kind": "mover",
+                          "text": f"Earlier post number {n} about the tape.",
+                          "scheduled_at": "immediate", "status": "queued",
+                          "priority": 6, "as_of": today})
+            rows += [
+                {"id": iid, "from": "queued", "to": "approved",
+                 "at": f"{today}T13:00:00Z", "actor": "operator"},
+                {"id": iid, "from": "approved", "to": "posting",
+                 "at": f"{today}T13:01:00Z", "actor": "publisher"},
+                {"id": iid, "from": "posting", "to": "posted",
+                 "at": f"{today}T13:02:00Z", "actor": "publisher"},
+            ]
+        (obx / "items.jsonl").write_text(
+            "".join(json.dumps(i) + "\n" for i in items), encoding="utf-8")
+        (obx / "status_ledger.jsonl").write_text(
+            "".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
+
+    @pytest.mark.parametrize("posted,expect_generation", [(3, True), (4, False)])
+    def test_unlimited_cap_is_still_narrowed_by_the_tier(
+            self, tmp_path, posted, expect_generation):
+        """A desk at cap=-1 gets its TIER's ceiling, not no ceiling at all.
+
+        week_5_plus allows 4/day and allows theme_list, so ONLY the cap can bite.
+        BOTH halves matter: at 3 posted the lane must still generate (that half
+        fails on the pre-fix tree, where -1 blocked everything), and at 4 it must
+        stop (that half is the new tier bound).
+        """
+        from engine.marketing import outbox, publish_time_content as ptc
+        TestPublishTimeLaneRamp._write_fixtures(tmp_path)
+        self._prefill(tmp_path, posted)
+
+        report = ptc.generate_slot_items(
+            tmp_path, cfg=TestPublishTimeLaneRamp._pt_cfg(_minus(30, _AS_OF)),
+            now=TestPublishTimeLaneRamp.NOW, state=outbox.fold_state(tmp_path),
+            approved_due=[], posted_counts={}, cap=-1, live=True,
+        )
+        if expect_generation:
+            assert report.get("generated"), report
+        else:
+            assert not report.get("generated"), report
+            assert "no_account" in {d["reason"] for d in report.get("dropped", [])}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# F3. A typo in a tier row must not silently flip the whole gate
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestTierValueParseFailure:
+
+    def _caps(self, tier_row: dict) -> dict:
+        from engine.marketing.sentinel import resolve_ramp
+        cfg = _cfg(accounts=[_acct("a", created=_minus(1))],
+                   ramp={"graduate_after_days": 56, "weeks_1_2": tier_row})
+        return resolve_ramp(cfg, _AS_OF)["accounts"]["a"]["caps"]
+
+    def test_unparseable_unlimited_cap_does_not_become_minus_one(self, capsys):
+        """THE 100%-QUARANTINE BUG: the -1 fallback was stored as a BOUNDED cap,
+        so `posts_count >= -1` was true for every item in the plan."""
+        caps = self._caps({"max_posts_per_account_per_day": "two"})
+        assert caps["max_posts_per_account_per_day"] is None, \
+            "a typo must leave the base (unlimited) in place, never -1"
+        out = capsys.readouterr().out
+        hits = [ln for ln in out.splitlines()
+                if "sentinel-ramp-tier-value-unparseable" in ln]
+        assert hits and hits[0].startswith("::"), out
+        assert "weeks_1_2" in hits[0] and "max_posts_per_account_per_day" in hits[0]
+
+    def test_unparseable_bounded_cap_keeps_base_and_warns(self, capsys):
+        """The opposite silent failure: this branch fell back to the LOOSER base
+        without a word. Same answer now, but out loud."""
+        caps = self._caps({"max_cashtags_per_post": "two"})
+        assert caps["max_cashtags_per_post"] == 3      # the base value
+        out = capsys.readouterr().out
+        assert "sentinel-ramp-tier-value-unparseable" in out
+        assert any(ln.startswith("::") for ln in out.splitlines())
+
+    def test_present_null_is_treated_as_a_typo(self, capsys):
+        caps = self._caps({"max_posts_per_account_per_day": None})
+        assert caps["max_posts_per_account_per_day"] is None
+        assert "sentinel-ramp-tier-value-unparseable" in capsys.readouterr().out
+
+    def test_a_full_plan_is_not_quarantined_by_the_typo(self):
+        """The user-visible consequence, end to end."""
+        from engine.marketing.sentinel import gate_plan
+        cfg = _cfg(accounts=[_acct("a", created=_minus(1))],
+                   ramp={"graduate_after_days": 56,
+                         "weeks_1_2": {"max_posts_per_account_per_day": "two"}})
+        plan = _plan({"a": [_item("i1", cashtag="$AAA", slot="D1-a"),
+                            _item("i2", cashtag="$BBB", slot="D1-b")]})
+        _annotated, report = gate_plan(plan, cfg, receipts_age_days=1, graded_window=[])
+        assert report["counts"]["quarantined"] == 0, report["quarantined"]
+
+    def test_a_valid_tier_row_emits_no_warning(self, capsys):
+        caps = self._caps({"max_posts_per_account_per_day": 2})
+        assert caps["max_posts_per_account_per_day"] == 2
+        assert "unparseable" not in capsys.readouterr().out
+
+    def test_unlimited_string_is_valid_not_a_typo(self, capsys):
+        caps = self._caps({"max_posts_per_account_per_day": "unlimited"})
+        assert caps["max_posts_per_account_per_day"] is None
+        assert "unparseable" not in capsys.readouterr().out
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# F4. A missing as_of degrades the WHOLE network — say so
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestMissingAsOfAnnotation:
+
+    def test_old_account_with_no_as_of_falls_closed_and_warns(self, capsys):
+        from engine.marketing.sentinel import resolve_ramp
+        cfg = _cfg(accounts=[_acct("ancient", created="2020-01-01")], ramp=_RAMP_TABLE)
+        ramp = resolve_ramp(cfg, "")
+        assert ramp["as_of_usable"] is False
+        assert ramp["accounts"]["ancient"]["tier"] == "weeks_1_2", \
+            "a 6-year-old account must still fail CLOSED without a reference date"
+        assert ramp["accounts"]["ancient"]["caps"]["max_posts_per_account_per_day"] == 2
+        out = capsys.readouterr().out
+        hits = [ln for ln in out.splitlines() if "sentinel-ramp-as-of-missing" in ln]
+        assert hits, out
+        assert hits[0].startswith("::")
+
+    def test_unparseable_as_of_warns_too(self, capsys):
+        from engine.marketing.sentinel import resolve_ramp
+        cfg = _cfg(accounts=[_acct("ancient", created="2020-01-01")], ramp=_RAMP_TABLE)
+        assert resolve_ramp(cfg, "not-a-date")["as_of_usable"] is False
+        assert "sentinel-ramp-as-of-missing" in capsys.readouterr().out
+
+    def test_usable_as_of_emits_nothing(self, capsys):
+        from engine.marketing.sentinel import resolve_ramp
+        cfg = _cfg(accounts=[_acct("ancient", created="2020-01-01")], ramp=_RAMP_TABLE)
+        assert resolve_ramp(cfg, _AS_OF)["as_of_usable"] is True
+        assert "sentinel-ramp-as-of-missing" not in capsys.readouterr().out
+
+    def test_gate_report_carries_the_note(self, capsys):
+        from engine.marketing.sentinel import gate_plan
+        cfg = _cfg(accounts=[_acct("ancient", created="2020-01-01")], ramp=_RAMP_TABLE)
+        plan = _plan({"ancient": [_item("i1")]}, as_of="")
+        _annotated, report = gate_plan(plan, cfg, receipts_age_days=1, graded_window=[])
+        assert report["checks"]["ramp"]["as_of_usable"] is False
+        assert any("as_of" in n and "network-wide" in n for n in report["notes"]), \
+            report["notes"]
+        assert "sentinel-ramp-as-of-missing" in capsys.readouterr().out
+
+    def test_no_ramp_table_stays_silent(self, capsys):
+        """Nothing is enforced, so nothing degraded — no warning."""
+        from engine.marketing.sentinel import resolve_ramp
+        cfg = _cfg(accounts=[_acct("ancient", created="2020-01-01")])
+        resolve_ramp(cfg, "")
+        assert "sentinel-ramp-as-of-missing" not in capsys.readouterr().out
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# N7 / N8 / N10 — the nits, each with a live consequence
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestRampNits:
+
+    def test_graduate_after_days_is_clamped_to_the_week_3_4_boundary(self):
+        """Below 28 the knob is inert: the age<14 / age<28 branches fire first.
+        Clamping makes it mean what it says at every value."""
+        from engine.marketing.sentinel import (
+            effective_graduate_after_days, resolve_ramp_tier)
+        assert effective_graduate_after_days(56) == 56
+        assert effective_graduate_after_days(20) == 28
+        assert effective_graduate_after_days(0) == 28
+        assert effective_graduate_after_days("junk") == 56    # in-code default
+        # A 30-day account under a configured-20 ramp: inert before, graduated now.
+        assert resolve_ramp_tier(_minus(30), _AS_OF, graduate_after_days=20) == "graduated"
+
+    def test_clamped_value_is_reported(self):
+        from engine.marketing.sentinel import resolve_ramp
+        cfg = _cfg(accounts=[_acct("a", created=_minus(1))],
+                   ramp={**_RAMP_TABLE, "graduate_after_days": 5})
+        assert resolve_ramp(cfg, _AS_OF)["graduate_after_days"] == 28
+
+    def test_theme_list_allowed_is_readable_from_the_base_block(self):
+        """N8: it was the one base knob hardcoded in Python."""
+        from engine.marketing.sentinel import resolve_ramp
+        cfg = _cfg(accounts=[_acct("warm", created=_minus(200))], ramp=_RAMP_TABLE,
+                   base_overrides={"theme_list_allowed": False})
+        caps = resolve_ramp(cfg, _AS_OF)["accounts"]["warm"]["caps"]
+        assert caps["theme_list_allowed"] is False, \
+            "a graduated desk must still honour a base-block theme_list ban"
+
+    def test_base_theme_list_ban_quarantines_on_a_graduated_account(self):
+        from engine.marketing.sentinel import gate_plan
+        cfg = _cfg(accounts=[_acct("warm", created=_minus(200))], ramp=_RAMP_TABLE,
+                   base_overrides={"theme_list_allowed": False})
+        plan = _plan({"warm": [_item("t1", type="theme_list", slot="D1-t",
+                                     body="$AAA $BBB $CCC $DDD moved together.")]})
+        _annotated, report = gate_plan(plan, cfg, receipts_age_days=1, graded_window=[])
+        assert "ramp_theme_list" in _reasons(report, "t1")
+
+    def test_theme_list_default_is_still_allowed(self):
+        from engine.marketing.sentinel import resolve_ramp
+        cfg = _cfg(accounts=[_acct("warm", created=_minus(200))], ramp=_RAMP_TABLE)
+        caps = resolve_ramp(cfg, _AS_OF)["accounts"]["warm"]["caps"]
+        assert caps["theme_list_allowed"] is True
+
+    def test_each_annotation_prints_once_per_process(self, capsys):
+        """N10: resolve_ramp runs several times per publisher sweep (the gate, the
+        cap resolver, the publish-time lane). A config defect does not become
+        more true by being printed six times."""
+        from engine.marketing.sentinel import resolve_ramp
+        cfg = _cfg(accounts=[_acct("nodate")], ramp=_RAMP_TABLE)
+        for _ in range(5):
+            resolve_ramp(cfg, _AS_OF)
+        out = capsys.readouterr().out
+        assert out.count("sentinel-ramp-created-missing") == 1, out
+
+    def test_reset_makes_the_annotation_available_again(self, capsys):
+        from engine.marketing.sentinel import resolve_ramp, reset_ramp_announcements
+        cfg = _cfg(accounts=[_acct("nodate")], ramp=_RAMP_TABLE)
+        resolve_ramp(cfg, _AS_OF)
+        capsys.readouterr()
+        reset_ramp_announcements()
+        resolve_ramp(cfg, _AS_OF)
+        assert "sentinel-ramp-created-missing" in capsys.readouterr().out
+
+    def test_announce_false_never_prints_even_when_fresh(self, capsys):
+        from engine.marketing.sentinel import resolve_ramp
+        cfg = _cfg(accounts=[_acct("nodate")], ramp=_RAMP_TABLE)
+        resolve_ramp(cfg, "", announce=False)
+        assert capsys.readouterr().out == ""
+
+    def test_distinct_accounts_each_get_their_own_warning(self, capsys):
+        from engine.marketing.sentinel import resolve_ramp
+        cfg = _cfg(accounts=[_acct("a1"), _acct("a2")], ramp=_RAMP_TABLE)
+        resolve_ramp(cfg, _AS_OF)
+        out = capsys.readouterr().out
+        assert out.count("sentinel-ramp-created-missing") == 2, out
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# F5. main()'s booking path — the thing dry_run_report only projects
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestMainBookingPath:
+    """dry_run_report mirrors main(), but a mirror is not the original: nothing
+    covered the dueAt actually handed to Buffer, or the receipt's booked_at."""
+
+    @staticmethod
+    def _tree(tmp_path, item_id: str, scheduled_at: str) -> None:
+        import json
+        (tmp_path / "config").mkdir()
+        (tmp_path / "config" / "marketing.yml").write_text(
+            "sentinel:\n"
+            "  max_posts_per_account_per_day: -1\n"
+            "publish:\n"
+            "  backend: buffer\n"
+            "  min_minutes_between_any_posts: 10\n"
+            "  post_jitter_max_min: 7\n"
+            "  channels:\n"
+            "    flagship: chan-1\n"
+            "desk_network:\n"
+            "  accounts:\n"
+            "    - id: flagship\n"
+            "      enabled: true\n"
+            "      created: \"2025-01-01\"\n",
+            encoding="utf-8")
+        obx = tmp_path / "data" / "marketing" / "outbox"
+        obx.mkdir(parents=True)
+        (obx / "items.jsonl").write_text(json.dumps(
+            {"id": item_id, "account": "flagship", "kind": "signal",
+             "text": "A perfectly ordinary post about the tape.",
+             "scheduled_at": scheduled_at, "status": "queued",
+             "priority": 5, "as_of": "2026-07-27"}) + "\n", encoding="utf-8")
+        (obx / "status_ledger.jsonl").write_text(json.dumps(
+            {"id": item_id, "from": "queued", "to": "approved",
+             "at": "2026-07-27T13:30:00Z", "actor": "operator"}) + "\n",
+            encoding="utf-8")
+
+    def _run_live(self, tmp_path, monkeypatch, item_id, scheduled_at) -> dict:
+        """Drive main() --live with the network and the tape gate stubbed out.
+        Returns the kwargs the backend publisher was called with."""
+        from scripts import marketing_publisher as mp
+        from engine.marketing import live_verify as lv
+        from engine.marketing import social_publisher as sp
+
+        self._tree(tmp_path, item_id, scheduled_at)
+        captured: dict = {}
+
+        class _FakeReceipt:
+            ok = True
+            backend = "buffer"
+            external_id = "ext-1"
+            external_url = "https://x.com/p/1"
+            error = None
+            at = "2026-07-27T14:07:03Z"
+
+        class _FakePublisher:
+            def publish(self, **kwargs):
+                captured.update(kwargs)
+                # Resolve the dueAt exactly as the real adapter would, so the
+                # 3-minute Buffer lead is part of what this test observes.
+                captured["due_at"] = sp._effective_due_at(
+                    kwargs.get("scheduled_at"), kwargs.get("now"),
+                    immediate=kwargs.get("immediate", False))
+                return _FakeReceipt()
+
+        monkeypatch.setattr(mp, "_make_publisher", lambda *a, **k: _FakePublisher())
+        monkeypatch.setenv("MARKETING_PUBLISH_ENABLED", "1")
+        monkeypatch.setenv("BUFFER_TOKEN", "tok")
+        # The live tape gate reads repo data this tmp tree does not have.
+        monkeypatch.setattr(lv, "verify_item",
+                            lambda *a, **k: {"action": "post", "reasons": []})
+
+        rc = mp.main(["--live", "--root", str(tmp_path),
+                      "--now", "2026-07-27T14:00:00Z"])
+        assert rc == 0, rc
+        assert captured, "the publisher was never called — nothing posted"
+        return captured
+
+    def test_ladder_item_books_now_plus_its_jitter(self, tmp_path, monkeypatch):
+        captured = self._run_live(tmp_path, monkeypatch, _JITTER_ID,
+                                  "2026-07-27T13:00:00Z")
+        assert _JITTER_OFFSET == 7
+        # main() hands Buffer the BOOKED wall-clock, not the item's stale slot.
+        assert captured["scheduled_at"] == "2026-07-27T14:07:00Z"
+        assert captured["immediate"] is False
+        # And the adapter honours it: max(now+3min lead, booked) == booked here.
+        assert captured["due_at"] == "2026-07-27T14:07:00Z"
+
+    def test_receipt_records_the_booked_time(self, tmp_path, monkeypatch):
+        """_last_global_post_at seeds the NEXT cron run's floor from this field —
+        without it a jittered post could be followed 3 minutes later."""
+        from engine.marketing import outbox
+        from scripts import marketing_publisher as mp
+        self._run_live(tmp_path, monkeypatch, _JITTER_ID, "2026-07-27T13:00:00Z")
+        rows = [r for r in outbox.read_ledger(tmp_path) if r.get("to") == "posted"]
+        assert len(rows) == 1, rows
+        assert rows[0]["receipt"]["booked_at"] == "2026-07-27T14:07:00Z"
+        # ...and the floor reads it back.
+        assert mp._last_global_post_at(tmp_path) == datetime(
+            2026, 7, 27, 14, 7, tzinfo=timezone.utc)
+
+    def test_short_offset_lands_on_the_buffer_lead_not_its_own_minute(
+            self, tmp_path, monkeypatch):
+        """The distribution is NOT uniform: offsets 0-3 all deliver at now+3."""
+        from scripts import marketing_publisher as mp
+        assert mp._post_jitter_minutes("it-jitter-2", 7) == 2
+        captured = self._run_live(tmp_path, monkeypatch, "it-jitter-2",
+                                  "2026-07-27T13:00:00Z")
+        assert captured["scheduled_at"] == "2026-07-27T14:02:00Z"   # what we book
+        assert captured["due_at"] == "2026-07-27T14:03:00Z"         # what ships
+
+    def test_immediate_item_books_now_and_shares_now(self, tmp_path, monkeypatch):
+        captured = self._run_live(tmp_path, monkeypatch, "it-immediate-1", "immediate")
+        assert captured["immediate"] is True
+        assert captured["scheduled_at"] == "2026-07-27T14:00:00Z"
+        assert captured["due_at"] == "2026-07-27T14:03:00Z"   # share-now + lead
+
+    def test_delivered_offsets_collapse_onto_the_lead(self):
+        """The honest shape the config comment now states: at max 7 the delivered
+        offsets are {3,3,3,3,4,5,6,7} — half the mass on the lead minute."""
+        from scripts.marketing_publisher import _post_jitter_minutes
+        delivered = [max(3, _post_jitter_minutes(f"x{i}", 7)) for i in range(4000)]
+        assert set(delivered) == {3, 4, 5, 6, 7}
+        # 0,1,2,3 out of 0..7 all deliver at 3 → about half of everything.
+        share_at_lead = delivered.count(3) / len(delivered)
+        assert 0.4 < share_at_lead < 0.6, share_at_lead
