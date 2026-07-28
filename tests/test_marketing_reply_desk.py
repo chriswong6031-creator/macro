@@ -2197,7 +2197,7 @@ class TestAdminReplyQueuePanel:
 
         item = _item()
         rq.enqueue(item, store)
-        payload = adm.reply_queue(root=ROOT, store=store)
+        payload = adm.reply_queue(root=ROOT, store=store, now=NOW)
         assert payload["ok"] is True
         [block] = payload["accounts"]
         assert block["id"] == "kelly"
@@ -2208,7 +2208,7 @@ class TestAdminReplyQueuePanel:
         from admin import marketing as adm
 
         rq.enqueue(_item(), store)
-        payload = adm.reply_queue(root=ROOT, store=store)
+        payload = adm.reply_queue(root=ROOT, store=store, now=NOW)
         block = payload["accounts"][0]
         assert block["mode"] == "M0"
         assert block["cap"] == 0, "M0 must render a zero cap"
@@ -2228,7 +2228,7 @@ class TestAdminReplyQueuePanel:
         from admin import marketing as adm
 
         rq.enqueue(_item(), store)
-        row = adm.reply_queue(root=ROOT, store=store)["accounts"][0]["awaiting"][0]
+        row = adm.reply_queue(root=ROOT, store=store, now=NOW)["accounts"][0]["awaiting"][0]
         assert row["score_components"] == {"author_tier": 0.26}
 
     def test_approve_moves_the_item(self, store):
@@ -2346,7 +2346,7 @@ class TestAdminReplyQueuePanel:
 
         monkeypatch.setattr(rq, "expire_due",
                             lambda **kw: (_ for _ in ()).throw(RuntimeError("boom")))
-        payload = adm.reply_queue(root=ROOT, store="/nonexistent")
+        payload = adm.reply_queue(root=ROOT, store="/nonexistent", now=NOW)
         assert payload["ok"] is False
         assert payload["accounts"] == []
 
@@ -2374,3 +2374,31 @@ class TestAdminRoutesAreWired:
         assert "marketing_reply_queue:" in src, "nav icon missing"
         for fn in ("rqDecide", "rqReject"):
             assert f"function {fn}(" in src
+
+    def test_no_panel_read_in_this_suite_relies_on_the_wall_clock(self):
+        """NOW is a fixed 2026-07-28T15:00Z and _item() defaults to ttl_min=45,
+        so an item built here expires at 15:45Z. adm.reply_queue() runs
+        expire_due() before every read and falls back to datetime.now() when no
+        clock is injected — which meant these panel tests passed on the morning
+        they were written and went PERMANENTLY red at 15:45Z that same day, on a
+        suite that gates the marketing-engine lane. Not a flake: a time bomb with
+        a known detonation time. Every panel read must pin the clock.
+        """
+        import ast
+
+        src = Path(__file__).read_text(encoding="utf-8")
+        tree = ast.parse(src)
+        unpinned = []
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            fn = node.func
+            if not (isinstance(fn, ast.Attribute) and fn.attr == "reply_queue"):
+                continue
+            if not any(kw.arg == "now" for kw in node.keywords):
+                unpinned.append(node.lineno)
+        assert not unpinned, (
+            f"adm.reply_queue() called without now= at line(s) {unpinned}; "
+            "expire_due() will kill the fixture item once the wall clock passes "
+            "its TTL and this suite goes red for good"
+        )
