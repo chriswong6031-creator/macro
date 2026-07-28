@@ -93,11 +93,11 @@
     tlCharts:  ["Live charts", "实时图表"],
     tlFlow:    ["Options flow", "期权资金流"],
     tlDesks:   ["Insider & Congress", "内部人与国会"],
-    tlFlash:   ["Unlimited Flash AI", "无限 Flash AI"],
+    tlFlash:   ["Flash AI answers", "Flash AI 问答"],
     tlReports: ["Research reports", "研究报告"],
-    // the quota, not the feature: Insider already includes 20 dives a month, so a
+    // the quota, not the feature: Insider already includes 10 dives a month, so a
     // bare "Pro AI dives" lock on this row would overstate what Pro adds
-    tlDives:   ["50 AI dives a month", "每月 50 次 AI 深度分析"],
+    tlDives:   ["150 AI dives a month", "每月 150 次 AI 深度分析"],
     tlBots:    ["Bot portfolios", "机器人组合"],
     meterHd:   ["7-DAY FREE TRIAL", "7 天免费试用"],
     meterToday:["TODAY · YOU'RE IN", "今天 · 已开通"],
@@ -185,13 +185,13 @@
     getFree1:     ["The daily read + <b>every macro dashboard</b>", "每日研判 + <b>全部宏观看板</b>"],
     getFree2:     ["<b>6 buy signals a day</b> with a public track record", "<b>每天 6 条买入信号</b>，战绩公开可查"],
     getFree3:     ["The full Terminal — live charts, no install", "完整 Terminal——实时图表，无需安装"],
-    missIns1:     ["Unlimited Flash AI + 20 Pro AI dives a month", "无限量 Flash AI + 每月 20 次 Pro AI 深度分析"],
+    missIns1:     ["300 Flash AI answers + 10 Pro AI dives a month", "每月 300 次 Flash AI + 10 次 Pro AI 深度分析"],
     missIns2:     ["Intraday options flow, Insider & Congress desks", "日内期权流、内部人与国会台席"],
     missPro1:     ["Mastermind + institutional research reports", "Mastermind + 机构研究报告"],
-    plusIns1:     ["<b>Unlimited Flash AI</b>, 20 Pro AI dives a month", "<b>无限量 Flash AI</b>、每月 20 次 Pro AI 深度分析"],
+    plusIns1:     ["<b>300 Flash AI answers</b>, 10 Pro AI dives a month", "<b>每月 300 次 Flash AI</b>、10 次 Pro AI 深度分析"],
     plusIns2:     ["<b>Intraday options flow</b> — sweeps and blocks as they print", "<b>日内期权流</b>——扫单与大宗成交实时打印"],
     plusIns3:     ["Insider/Congress & 13F desks, transcripts, daily briefs", "内部人/国会与 13F 台席、电话会记录、每日简报"],
-    plusPro1:     ["<b>50 Pro AI dives a month</b>", "<b>每月 50 次 Pro AI 深度分析</b>"],
+    plusPro1:     ["<b>150 Pro AI dives + 1,000 Flash AI a month</b>", "<b>每月 150 次 Pro AI 深度分析 + 1,000 次 Flash AI</b>"],
     plusPro2:     ["Mastermind + institutional research reports", "Mastermind + 机构研究报告"],
     plusPro3:     ["Mastermind Bot Portfolios", "Mastermind 机器人组合"],
     proFine:      ["Institutional research library: JPM · Citi · Morgan Stanley · UBS · Goldman Sachs · BofA.", "机构研究库：摩根大通 · 花旗 · 摩根士丹利 · 瑞银 · 高盛 · 美银。"],
@@ -315,8 +315,8 @@
       { l: ["Earnings call transcripts", "财报电话会记录"], v: [0, 1, 1] }
     ] },
     { g: ["MASTERMIND AI", "MASTERMIND AI"], rows: [
-      { l: ["Flash AI", "Flash AI"], v: [0, ["Unlimited", "无限量"], ["Unlimited", "无限量"]] },
-      { l: ["Pro AI", "Pro AI"],     v: [0, ["20 / mo", "20 次/月"], ["50 / mo", "50 次/月"]] },
+      { l: ["Flash AI", "Flash AI"], v: [0, ["300 / mo", "300 次/月"], ["1,000 / mo", "1,000 次/月"]] },
+      { l: ["Pro AI", "Pro AI"],     v: [0, ["10 / mo", "10 次/月"], ["150 / mo", "150 次/月"]] },
       { l: ["Drives Terminal charts", "操控 Terminal 图表"], v: [0, 1, 1] }
     ] },
     { g: ["RESEARCH", "研究"], rows: [
