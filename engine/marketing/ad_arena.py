@@ -126,13 +126,22 @@ def create(
     secondary_metrics: list[str] | None = None,
     envelope_usd: float = 0.0,
     mode: str = "shadow",
+    approvals: set[str] | None = None,
 ) -> Arena:
     """Create an arena with equal frozen assignment weights.
 
     The first creative is the control unless one is named.  Weights are equal and
     frozen here on purpose — see the module docstring.
+
+    `mode="live"` requires `approvals` covering every arm (operator ruling
+    2026-07-27, `ad_review`).  Shadow arenas are pre-registrations and need none —
+    writing down a test you intend to run is not running it.  There is no bypass
+    flag: a live arena without a human's approval raises.
     """
     ids = [str(c) for c in creative_ids if str(c)]
+    if str(mode) == "live":
+        from . import ad_review  # noqa: PLC0415 — avoids an import cycle
+        ad_review.assert_approved(ids, approvals)
     control = control_creative_id if control_creative_id in ids else (ids[0] if ids else None)
     weight = round(1.0 / len(ids), 8) if ids else 0.0
     return Arena(
@@ -274,6 +283,30 @@ def record_outcome(
         "value": float(value),
         "at": at or _now(),
     })
+
+
+def arm(arena: Arena, approvals: set[str] | None, *, note: str = "") -> Arena:
+    """The ONLY sanctioned way an arena starts showing ads to real visitors.
+
+    Setting `status`/`mode` by hand is what let an un-reviewed hero test go live;
+    this is the transition with the gate attached. Raises unless a person has
+    approved every arm.
+    """
+    from . import ad_review  # noqa: PLC0415
+    ad_review.assert_approved(arena.arm_creative_ids, approvals)
+    arena.status = "running"
+    arena.mode = "live"
+    if note:
+        arena.hypothesis = arena.hypothesis or note
+    return arena
+
+
+def pause(arena: Arena) -> Arena:
+    """Stop showing ads without concluding the test. Always allowed — the brake
+    never needs permission."""
+    arena.status = "planned"
+    arena.mode = "shadow"
+    return arena
 
 
 def save_arena(arena: Arena, *, root: Path | str | None = None) -> bool:
