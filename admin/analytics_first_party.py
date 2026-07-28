@@ -28,7 +28,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from . import settings
+from . import settings, users
 
 try:
     import requests
@@ -486,26 +486,29 @@ def sessions(limit=100, q="", include_bots=False, minutes=None, days=None) -> di
     m = _win(minutes, days, 43200)
     qq = _sanitize_q(q)
     # Filter clauses, applied AFTER the user+geo joins and BEFORE the limit so they see full
-    # history — `email` is the login-attributed user of the session's cookie, `candidate_email`
-    # the soft device/IP guess, so the operator can search Sessions by either.
+    # history — name/email identify the login-attributed user of the session's cookie;
+    # candidate_name/candidate_email are the soft device/IP guess, so the operator can
+    # search Sessions by either.
     conds = []
     if qq:
         cols = ("s.visitor_id", "s.ip", "s.site", "g.city", "g.region", "g.country_code",
-                "hu.email", "cu.email")
+                "hu.email", users.display_name_sql("hu"),
+                "cu.email", users.display_name_sql("cu"))
         conds.append("(" + " or ".join(f"{c} ilike '%{qq}%'" for c in cols) + ")")
     if not include_bots:
         conds.append("s.is_bot = 0")          # crawlers hidden unless explicitly revealed
     where = ("where " + " and ".join(conds) + " ") if conds else ""
     def run():
         rows = _query(_cte(include_candidate=True, candidate_window=m) +
-            "select s.session_id, s.visitor_id, s.site, s.events, s.pages, "
+            "select s.session_id, s.visitor_id, hi.uid as user_id, s.site, s.events, s.pages, "
             "to_char(s.started,'YYYY-MM-DD HH24:MI') as started, "
             "round(extract(epoch from (s.ended - s.started)))::int as duration_s, "
             "s.ip, s.is_bot, g.city, g.region, g.country_code, "
-            # hard: the verified user this session's cookie is stitched to (email shown as-is).
-            "hu.email as email, "
+            # hard: the verified user this session's cookie is stitched to.
+            f"hu.email as email, {users.display_name_sql('hu')} as name, "
             # soft: the registered user this anonymous cookie most likely belongs to (device/IP).
-            "cu.email as candidate_email, c.basis as candidate_basis "
+            f"cu.email as candidate_email, {users.display_name_sql('cu')} as candidate_name, "
+            "c.basis as candidate_basis "
             "from (select session_id, max(visitor_id) as visitor_id, max(site) as site, "
             "  count(*)::int as events, count(*) filter (where type in ('pageview','route'))::int as pages, "
             "  min(created_at) as started, max(created_at) as ended, "
@@ -530,8 +533,9 @@ def visitors(limit=250, q="", include_bots=False, minutes=None, days=None) -> di
 
     Identity resolution: any anonymous cookie (mm_aid) that ever appears on a signed-in
     event is merged under that user, so all of one person's cookies/devices collapse into
-    a single row keyed by their Supabase user id and labelled with their email. Purely
-    anonymous visitors stay keyed by their mm_aid. `identities` = how many cookies merged.
+    a single row keyed by their Supabase user id and labelled with their name when available
+    (otherwise email). Purely anonymous visitors stay keyed by their mm_aid. `identities` =
+    how many cookies merged.
     Ordered by session count."""
     n = _limit(limit, 250, 2000)
     m = _win(minutes, days, 43200)
@@ -539,7 +543,9 @@ def visitors(limit=250, q="", include_bots=False, minutes=None, days=None) -> di
     # Filters, applied AFTER the user+geo joins and BEFORE the limit so they see the whole roster.
     conds = []
     if qq:
-        cols = ("u.email", "cu.email", "v.canon", "v.last_ip", "g.city", "g.region", "g.country", "g.country_code")
+        cols = ("u.email", users.display_name_sql("u"),
+                "cu.email", users.display_name_sql("cu"),
+                "v.canon", "v.last_ip", "g.city", "g.region", "g.country", "g.country_code")
         conds.append("(" + " or ".join(f"{c} ilike '%{qq}%'" for c in cols) + ")")
     if not include_bots:
         conds.append("v.is_bot = 0")           # crawlers hidden unless explicitly revealed
@@ -562,9 +568,11 @@ def visitors(limit=250, q="", include_bots=False, minutes=None, days=None) -> di
             f"    and e.created_at > now() - interval '{m} minutes'"
             ") "
             "select v.canon as visitor_id, (v.uid is not null) as is_user, u.email, "
+            f"  {users.display_name_sql('u')} as name, "
             # candidate: for an ANONYMOUS row (canon is a cookie, not a uid), the registered user
             # it most likely belongs to via a shared device/IP — a suggestion, never merged.
-            "  cu.email as candidate_email, c.basis as candidate_basis, "
+            f"  cu.email as candidate_email, {users.display_name_sql('cu')} as candidate_name, "
+            "  c.basis as candidate_basis, "
             "  v.events, v.sessions, v.identities, v.ips, v.last_ip, v.is_bot, "
             "  to_char(v.first_seen,'YYYY-MM-DD HH24:MI') as first_seen, "
             "  to_char(v.last_seen,'YYYY-MM-DD HH24:MI') as last_seen, "
@@ -596,10 +604,14 @@ def session(session_id: str) -> dict:
             f"from public.analytics_events where session_id = '{session_id}' "
             "order by id asc limit 1000") or []
         head = (_query(
+            "select s.*, u.email, "
+            f"{users.display_name_sql('u')} as name from ("
             "select max(visitor_id) as visitor_id, max(site) as site, "
             "max(user_id::text) as user_id, min(created_at) as started, "
-            "(array_agg(ip order by created_at))[1] as ip, (array_agg(fp) filter (where fp is not null))[1] as fp "
-            f"from public.analytics_events where session_id = '{session_id}'") or [{}])[0]
+            "(array_agg(ip order by created_at))[1] as ip, "
+            "(array_agg(fp) filter (where fp is not null))[1] as fp "
+            f"from public.analytics_events where session_id = '{session_id}') s "
+            "left join auth.users u on u.id::text = s.user_id") or [{}])[0]
         return {"session_id": session_id, "head": head, "path": path}
     return _guard(run)
 
@@ -672,8 +684,12 @@ def visitor(visitor_id: str) -> dict:
             "count(distinct ip)::int as ips, count(distinct fp)::int as fingerprints, "
             "count(distinct visitor_id)::int as identities, max(user_id::text) as user_id "
             f"from public.analytics_events where {inaids}") or [{}])[0]
-        er = _query(f"select email from auth.users where id::text = '{v}'") or []
+        er = _query(
+            "select u.email, "
+            f"{users.display_name_sql('u')} as name "
+            f"from auth.users u where u.id::text = '{v}'") or []
         email = er[0].get("email") if er else None
+        name = er[0].get("name") if er else None
         ips = _apply_geo_overrides(_query(cte +
             "select e.ip, g.city, g.region, g.country_code, g.asn, g.org, "
             "g.is_vpn, g.is_proxy, g.is_hosting, count(*)::int as events "
@@ -683,10 +699,11 @@ def visitor(visitor_id: str) -> dict:
         # Each linked cookie is resolved to its registered email when it is itself login-stitched,
         # so a shared device/IP surfaces WHO the other identity is — not just an opaque cookie.
         linked = _query(cte +
-            "select e2.visitor_id, count(*)::int as shared_events, "
+            "select e2.visitor_id, max(li.uid) as user_id, count(*)::int as shared_events, "
             "max(case when e2.fp = k.e1fp then 1 else 0 end) as via_fp, "
             "max(case when e2.ip = k.e1ip then 1 else 0 end) as via_ip, "
-            "max(lu.email) as email "
+            "max(lu.email) as email, "
+            f"max({users.display_name_sql('lu')}) as name "
             "from public.analytics_events e2 "
             "join (select distinct fp as e1fp, ip as e1ip from public.analytics_events "
             f"      where {inaids}) k "
@@ -695,12 +712,13 @@ def visitor(visitor_id: str) -> dict:
             "left join ident li on li.visitor_id = e2.visitor_id "
             "left join auth.users lu on lu.id::text = li.uid "
             "where e2.visitor_id not in (select visitor_id from myaids) "
-            "group by 1 order by max(lu.email) is null, shared_events desc limit 50") or []
+            f"group by 1 order by coalesce(max({users.display_name_sql('lu')}), "
+            "max(lu.email)) is null, shared_events desc limit 50") or []
         # If THIS profile is an anonymous cookie, name the registered user it most likely belongs
         # to: the account owning a fingerprint/routable-IP it shares — but only when exactly one
         # account matches (ambiguous shared device/IP → no guess). Suggestion only, never a merge.
         candidate = None
-        if not email:
+        if not (name or email):
             crows = _query(cte +
                 "select i2.uid, "
                 "  max(case when e2.fp = k.e1fp and e2.fp is not null then 1 else 0 end) as via_fp, "
@@ -713,8 +731,13 @@ def visitor(visitor_id: str) -> dict:
                 "join ident i2 on i2.visitor_id = e2.visitor_id "   # e2 is a KNOWN user's cookie
                 "group by i2.uid") or []
             if len(crows) == 1 and crows[0].get("uid"):
-                er2 = _query(f"select email from auth.users where id::text = '{crows[0]['uid']}'") or []
-                candidate = {"uid": crows[0]["uid"], "email": (er2[0].get("email") if er2 else None),
+                er2 = _query(
+                    "select u.email, "
+                    f"{users.display_name_sql('u')} as name "
+                    f"from auth.users u where u.id::text = '{crows[0]['uid']}'") or []
+                candidate = {"uid": crows[0]["uid"],
+                             "email": (er2[0].get("email") if er2 else None),
+                             "name": (er2[0].get("name") if er2 else None),
                              "via_fp": crows[0].get("via_fp"), "via_ip": crows[0].get("via_ip")}
         recent = _query(cte +
             "select type, coalesce(path,'') as path, ticker, "
@@ -732,7 +755,8 @@ def visitor(visitor_id: str) -> dict:
             "select ticker, count(*)::int as n "
             f"from public.analytics_events where {inaids} and type='ticker_view' and ticker is not null "
             "group by 1 order by n desc limit 50") or []
-        return {"visitor_id": v, "email": email, "candidate": candidate, "profile": profile,
+        return {"visitor_id": v, "email": email, "name": name,
+                "candidate": candidate, "profile": profile,
                 "ips": ips, "linked": linked, "recent": recent, "searches": searches,
                 "tickers_viewed": tickers_viewed}
     return _guard(run)

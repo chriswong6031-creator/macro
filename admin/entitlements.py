@@ -76,19 +76,6 @@ def _billing():
 # --------------------------------------------------------------------------- #
 # READ — the roster (Management-API PAT, read-only; mirrors users.subscribers)
 # --------------------------------------------------------------------------- #
-# raw_user_meta_data is Supabase's user_metadata JSON. Google OAuth populates
-# first_name/last_name (and name/full_name); email/password sign-ups may have none.
-# COALESCE across the common shapes; trim to a display name, empty -> null.
-_NAME_SQL = (
-    "nullif(trim(coalesce("
-    "u.raw_user_meta_data->>'first_name','') || ' ' || "
-    "coalesce(u.raw_user_meta_data->>'last_name','')), '')"
-)
-_NAME_FALLBACK_SQL = (
-    "coalesce(u.raw_user_meta_data->>'name', u.raw_user_meta_data->>'full_name')"
-)
-
-
 def _clamp(v, default: int, lo: int, hi: int) -> int:
     try:
         return max(lo, min(hi, int(v)))
@@ -130,8 +117,8 @@ def list_users(*, tier: str | None = None, status: str | None = None,
         needle = str(search).replace("'", "''").strip()
         if needle:
             where.append(
-                f"(u.email ilike '%{needle}%' or {_NAME_SQL} ilike '%{needle}%' "
-                f"or {_NAME_FALLBACK_SQL} ilike '%{needle}%')"
+                f"(u.email ilike '%{needle}%' or "
+                f"{users.display_name_sql('u')} ilike '%{needle}%')"
             )
     where_sql = " and ".join(where)
 
@@ -143,7 +130,7 @@ def list_users(*, tier: str | None = None, status: str | None = None,
         rows = users._query(
             "select u.id::text as user_id, "
             "u.email as email, "
-            f"coalesce({_NAME_SQL}, {_NAME_FALLBACK_SQL}) as name, "
+            f"{users.display_name_sql('u')} as name, "
             "coalesce(u.raw_app_meta_data->>'provider','email') as provider, "
             "coalesce(e.tier,'free') as tier, coalesce(e.status,'none') as status, "
             "coalesce(e.source,'') as source, "

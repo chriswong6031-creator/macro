@@ -165,12 +165,14 @@ def test_sessions_resolves_hard_email_and_soft_candidate(monkeypatch):
     # hard: the login-attributed user of the session's cookie
     assert "left join ident hi on hi.visitor_id = s.visitor_id" in sql
     assert "left join auth.users hu on hu.id::text = hi.uid" in sql
-    assert "hu.email as email" in sql
+    assert "hu.email as email" in sql and "as name" in sql
     # soft: the likely registered owner via shared device/IP
     assert "left join cand c on c.visitor_id = s.visitor_id" in sql
-    assert "cu.email as candidate_email" in sql and "c.basis as candidate_basis" in sql
-    # the operator can now filter Sessions by either email
+    assert "cu.email as candidate_email" in sql and "as candidate_name" in sql
+    assert "c.basis as candidate_basis" in sql
+    # the operator can filter Sessions by either name or email
     assert "hu.email ilike '%jiaying%'" in sql and "cu.email ilike '%jiaying%'" in sql
+    assert "hu.raw_user_meta_data" in sql and "cu.raw_user_meta_data" in sql
 
 
 def test_visitors_adds_soft_candidate_for_anon(monkeypatch):
@@ -179,9 +181,26 @@ def test_visitors_adds_soft_candidate_for_anon(monkeypatch):
     sql = seen["sql"]
     assert "cand as (" in sql                                       # candidate chain present
     assert "left join cand c on c.visitor_id = v.canon" in sql      # joined per canonical id
-    assert "cu.email as candidate_email" in sql and "c.basis as candidate_basis" in sql
+    assert "cu.email as candidate_email" in sql and "as candidate_name" in sql
+    assert "c.basis as candidate_basis" in sql
+    assert "as name" in sql
     # counts are still identity-honest (candidate never feeds the aggregates)
     assert "count(distinct session_id)::int as sessions" in sql
+
+
+def test_session_and_visitor_profiles_select_names(monkeypatch):
+    seen = _capture(monkeypatch)
+    a.session("session-1")
+    joined = " ".join(seen["all"])
+    assert "left join auth.users u on u.id::text = s.user_id" in joined
+    assert "as name" in joined
+
+    seen["all"].clear()
+    out = a.visitor("visitor-1")
+    assert out["name"] is None
+    joined = " ".join(seen["all"])
+    assert "from auth.users u where u.id::text = 'visitor-1'" in joined
+    assert "max(coalesce(" in joined and "as name" in joined
 
 
 def test_overview_and_realtime_filter_excluded(monkeypatch):

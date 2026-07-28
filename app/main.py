@@ -666,14 +666,36 @@ def require_site_full_user(user: dict = Depends(require_user)) -> dict:
     return enforce_site_full(user)
 
 
+def _user_display_name(user: dict) -> str | None:
+    """Return the best non-empty profile name from a Supabase user record."""
+    metadata = user.get("user_metadata") or user.get("raw_user_meta_data") or {}
+    if not isinstance(metadata, dict):
+        return None
+    for key in ("display_name", "name", "full_name"):
+        value = metadata.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    first = metadata.get("first_name") or metadata.get("given_name")
+    last = metadata.get("last_name") or metadata.get("family_name")
+    parts = [value.strip() for value in (first, last)
+             if isinstance(value, str) and value.strip()]
+    return " ".join(parts) or None
+
+
 @app.get("/api/me")
 def me(user: dict = Depends(require_user)) -> dict:
     """Whoami + entitlement + chat budget.
 
-    {id, email, role, tier, features, status, current_period_end, chat_budget}. Entitlement
-    fields fail-safe to the free default; chat_budget mirrors /api/brain/me's quota shape.
+    {id, name, email, role, tier, features, status, current_period_end, chat_budget}.
+    Entitlement fields fail-safe to the free default; chat_budget mirrors
+    /api/brain/me's quota shape.
     """
-    out: dict[str, Any] = {"id": user.get("id"), "email": user.get("email"), "role": user.get("role")}
+    out: dict[str, Any] = {
+        "id": user.get("id"),
+        "name": _user_display_name(user),
+        "email": user.get("email"),
+        "role": user.get("role"),
+    }
     user_id = user.get("id") or user.get("email") or ""
     try:
         from app import billing  # noqa: PLC0415
@@ -708,6 +730,7 @@ def account(user: dict = Depends(require_user)) -> dict:
     tier = ent["tier"]
     return {
         "authenticated": True,
+        "name": _user_display_name(user),
         "email": user.get("email"),
         "email_confirmed": bool(user.get("email_confirmed_at") or user.get("confirmed_at")),
         "tier": tier,
