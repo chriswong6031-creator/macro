@@ -28,7 +28,8 @@ from lib.pages import write_page  # noqa: E402
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_intl")
 
-ASSETS = ("theme.css", "product-nav-icons.css", "dashboard-icons.js", "theme.js",
+ASSETS = ("theme.css", "product-nav-icons.css", "dashboard-icons.css",
+          "dashboard-icons.js", "theme.js",
           "mtf.js", "chart_i18n.js", "charts.js",
           "tablesort.js", "stockdata.js", "stockview.js")
 
