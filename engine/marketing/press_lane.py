@@ -83,17 +83,11 @@ def _day_key(now: datetime) -> str:
     return now.astimezone(timezone.utc).strftime("%Y-%m-%d")
 
 
-def _is_satire(item: dict, blocklist_lower: set[str]) -> bool:
-    """True when the item comes from a satire/parody-blocklisted handle.
-
-    XG-W5 folded this rule into engine/marketing/garbage_gate.py so the repo has
-    exactly ONE satire list and ONE satire rule; this wrapper stays because the
-    lane and its tests have always spoken it, and it now delegates rather than
-    duplicating.
-    """
-    from engine.marketing import garbage_gate as _gg  # noqa: PLC0415
-
-    return bool(_gg._satire(item, {s.lower() for s in blocklist_lower}))
+# XG-W5 removed this lane's own `_is_satire`. The rule now lives ONCE, in
+# engine/marketing/garbage_gate.py, reached through `_garbage_check` below —
+# the list itself still lives ONCE too, in config/press_sources.yml
+# `satire_blocklist`, and is handed in by the caller. Keeping a delegating
+# wrapper here would have left a second name for one rule with no caller.
 
 
 def _garbage_check(item: dict, *, gate_cfg: dict, blocklist_lower: set[str]) -> dict | None:

@@ -165,7 +165,7 @@ def check(item: dict, *, cfg: dict | None = None,
     text = f"{headline} {body}".strip()
 
     if _enabled(cfg, "satire_blocklist"):
-        hit = _satire(item, blocklist)
+        hit = satire_hit(item, blocklist)
         if hit:
             return {"reason": "satire_blocklist", "detail": hit}
 
@@ -196,8 +196,13 @@ def check(item: dict, *, cfg: dict | None = None,
 # Detectors
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _satire(item: dict, blocklist: set[str]) -> str:
-    """The historical press_lane._is_satire rule, unchanged."""
+def satire_hit(item: dict, blocklist: set[str]) -> str:
+    """The historical press_lane satire rule, unchanged, now with one home.
+
+    Public because it is the whole satire rule for the repo: any caller that
+    needs "is this a blocklisted parody handle" asks here rather than growing a
+    second copy. Returns the matching identity (a debug detail) or "".
+    """
     if not blocklist:
         return ""
     handle = str(item.get("x_handle", "") or "").lower()
