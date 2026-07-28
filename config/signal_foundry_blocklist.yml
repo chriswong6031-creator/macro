@@ -1110,12 +1110,56 @@ entries:
   - id: BL-G087
     match:
       any_of:
+        - 'exact.{0,30}label.{0,30}adverse'
+    reason: >
+      PROSPECTIVE-ONLY ACCRUAL — lawful use of the SR3 mechanism
+      inversion, but historical SR3 rows count as zero and the
+      2026-07-24 boundary is absolute. Frozen 799-name membership; one
+      exact configuration
+    source: '`research/PSS_RH1_RELIEF_HAZARD_PROSPECTIVE_CHARTER.md`; `data/personality_timing/relief_hazard_manifest_v1.json` (family `pss_rh1_relief_hazard_prospective`, frozen 2026-07-27)'
+
+  - id: BL-G088
+    match:
+      any_of:
+        - 'first.{0,30}real.{0,30}sector'
+    reason: >
+      PROSPECTIVE-ONLY ACCRUAL — future RH1 relief-hazard rows only;
+      first peer pullback completion B+5:B+20 against a q20 threshold
+      frozen at B; same frozen recovery required; top-quartile and
+      +0.50-ATR re
+    source: '`research/PSS_CR1_CHALLENGE_RESILIENCE_PROSPECTIVE_CHARTER.md`; `data/personality_timing/challenge_resilience_manifest_v1.json` (family `pss_cr1_challenge_resilience_prospective`, frozen 2026-07-27)'
+
+  - id: BL-G089
+    match:
+      any_of:
+        - 'correlation.{0,30}dispersion.{0,30}overlay'
+    reason: >
+      PROSPECTIVE-ONLY ACCRUAL — future RH1 relief-hazard rows only;
+      ten-session ex-self peer PC1 share and five-session return
+      dispersion compared with strictly prior 126-session q80/q20
+      thresholds. Joint
+    source: '`research/PSS_CD1_CORRELATION_DISPERSION_PROSPECTIVE_CHARTER.md`; `data/personality_timing/crowding_hazard_manifest_v1.json` (family `pss_cd1_correlation_dispersion_prospective`, frozen 2026-07-27)'
+
+  - id: BL-G090
+    match:
+      any_of:
+        - 'finra.{0,30}short.{0,30}marked'
+    reason: >
+      PROSPECTIVE-ONLY ACCRUAL — future CR1 resilient leaders only;
+      exact 20-session own-history baseline and three-session challenge
+      coverage; challenge short ratio versus prior
+      rolling-three-session q75,
+    source: '`research/PSS_AF1_FINRA_ABSORPTION_PROSPECTIVE_CHARTER.md`; `data/personality_timing/flow_absorption_manifest_v1.json` (family `pss_af1_finra_absorption_witness_prospective`, frozen 2026-07-27)'
+
+  - id: BL-G091
+    match:
+      any_of:
         - 'ontology.{0,30}acceptance'
     reason: >
       HOLD — peak gate IQR 48.8 > 25
     source: 'Open PR #1639 (do not accidentally revive)'
 
-  - id: BL-G088
+  - id: BL-G092
     match:
       any_of:
         - 'theta.{0,30}tape'
@@ -1123,7 +1167,7 @@ entries:
       SUSPENDED
     source: 'Final3-lobes program (2026-07-06)'
 
-  - id: BL-G089
+  - id: BL-G093
     match:
       any_of:
         - 'disp.{0,30}gate'
@@ -1131,7 +1175,7 @@ entries:
       DEFER ×2-replicated
     source: 'Final3-lobes program (#1696)'
 
-  - id: BL-G090
+  - id: BL-G094
     match:
       any_of:
         - 'price.{0,30}memory.{0,30}trials'
@@ -1140,7 +1184,7 @@ entries:
       60% floor at execution)
     source: 'PM0 prereg (#1761) + EI-PM0 run (2026-07-10)'
 
-  - id: BL-G091
+  - id: BL-G095
     match:
       any_of:
         - 'g1'
@@ -1148,7 +1192,7 @@ entries:
       DEFERRED
     source: 'Long-hold thesis program (#1507/#1588)'
 
-  - id: BL-G092
+  - id: BL-G096
     match:
       any_of:
         - 'options'
@@ -1156,7 +1200,7 @@ entries:
       PARKED until preconditions (1)+(2)
     source: 'Options→NW masterplan'
 
-  - id: BL-G093
+  - id: BL-G097
     match:
       any_of:
         - 'codeowners.{0,30}branch.{0,30}protection'
@@ -1164,7 +1208,7 @@ entries:
       DEFERRED to RF codegen lane scope
     source: 'ABM-R3; `RF_CODEGEN_LANE_FOR_FABLE.md`'
 
-  - id: BL-G094
+  - id: BL-G098
     match:
       any_of:
         - 'ticker.{0,30}multi.{0,30}label'
@@ -1173,7 +1217,7 @@ entries:
       revenue-geography ingestion + own adjudication
     source: 'TI-R2, `TECH_INTERNALS_CODEX_ADJUDICATION_BY_FABLE.md`'
 
-  - id: BL-G095
+  - id: BL-G099
     match:
       any_of:
         - 'public.{0,30}breakaway.{0,30}desk'
@@ -1182,7 +1226,7 @@ entries:
       its own wave
     source: '`WINNER_AUTOPSY_MASTERPLAN_BY_FABLE.md` §8'
 
-  - id: BL-G096
+  - id: BL-G100
     match:
       any_of:
         - 'winner.{0,30}autopsy.{0,30}short'
@@ -1191,7 +1235,7 @@ entries:
       settlement date)
     source: 'WA-R (docket adjudication), aligns NEXTL-U19'
 
-  - id: BL-G097
+  - id: BL-G101
     match:
       any_of:
         - 'full.{0,30}graph.{0,30}causal'
@@ -1201,7 +1245,7 @@ entries:
       clock
     source: 'CHF-R14, `CAUSAL_HYPOTHESIS_FACTORY_MASTERPLAN_BY_FABLE.md`'
 
-  - id: BL-G098
+  - id: BL-G102
     match:
       any_of:
         - 'dedicated.{0,30}machine.{0,30}registration'
@@ -1211,7 +1255,7 @@ entries:
       stands (QS-U2)
     source: 'CHF-R2, `CAUSAL_HYPOTHESIS_FACTORY_MASTERPLAN_BY_FABLE.md`'
 
-  - id: BL-G099
+  - id: BL-G103
     match:
       any_of:
         - 'ignition.{0,30}radar.{0,30}user'
