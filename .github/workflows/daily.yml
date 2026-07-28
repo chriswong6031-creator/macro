@@ -3015,6 +3015,52 @@ jobs:
             echo "::warning title=standout_audit_us::rc=$rc (attribution artifacts may be stale)"
           fi
           exit 0
+      - name: Prophet Trade Memory — accrue matured pick autopsies
+        # Observation/reflection only: this explicitly arms the old metabolism
+        # guard for this one process, but the writer remains research-only and
+        # cannot rank, size, gate, suppress, or escalate a live signal.
+        env:
+          AUTONOMY_PAUSED: "false"
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          CLAUDE_CODE_OAUTH_TOKEN_1: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_1 }}
+          CLAUDE_CODE_OAUTH_TOKEN_2: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_2 }}
+          CLAUDE_CODE_OAUTH_TOKEN_3: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_3 }}
+          CLAUDE_CODE_OAUTH_TOKEN_4: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_4 }}
+          CLAUDE_CODE_OAUTH_TOKEN_5: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_5 }}
+          CLAUDE_CODE_OAUTH_TOKEN_6: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_6 }}
+          CLAUDE_CODE_OAUTH_TOKEN_7: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_7 }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: |
+          set +e
+          python -m scripts.run_prophet_pick_autopsies --market us; rc=$?
+          if [ "$rc" -ne 0 ]; then
+            echo "::warning title=prophet_trade_memory::pick autopsy lane failed (rc=$rc)"
+          fi
+          exit 0
+      - name: Prophet Trade Memory — review private operator episodes
+        # Personal facts/autopsies remain in owner-scoped Supabase rows. The
+        # runner prints counts only and commits no private artifact.
+        env:
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          SUPABASE_OPERATOR_USER_ID: ${{ secrets.SUPABASE_OPERATOR_USER_ID }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          CLAUDE_CODE_OAUTH_TOKEN_1: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_1 }}
+          CLAUDE_CODE_OAUTH_TOKEN_2: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_2 }}
+          CLAUDE_CODE_OAUTH_TOKEN_3: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_3 }}
+          CLAUDE_CODE_OAUTH_TOKEN_4: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_4 }}
+          CLAUDE_CODE_OAUTH_TOKEN_5: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_5 }}
+          CLAUDE_CODE_OAUTH_TOKEN_6: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_6 }}
+          CLAUDE_CODE_OAUTH_TOKEN_7: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_7 }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: |
+          set +e
+          python -m scripts.run_trade_memory --cap 8; rc=$?
+          if [ "$rc" -ne 0 ]; then
+            echo "::warning title=prophet_trade_memory::private episode lane failed (rc=$rc)"
+          fi
+          exit 0
       - name: Prophet W1 — US track record page
         run: |
           set +e
@@ -3106,6 +3152,7 @@ jobs:
           git add data/standout_audit/us_attribution.parquet 2>/dev/null || true
           git add data/standout_audit/us_evidence.jsonl 2>/dev/null || true
           git add data/standout_audit/us_audit_state.json 2>/dev/null || true
+          git add data/standout_audit/pick_autopsies/us 2>/dev/null || true
           git add site/factordata/us_audit_scoreboard.json 2>/dev/null || true
           git add data/metabolism/fitness/standouts_us.json 2>/dev/null || true
           git add site/factordata/us_track_history.json 2>/dev/null || true

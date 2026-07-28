@@ -61,6 +61,7 @@ ADMIN_SESSION_TTL_HOURS=168      # optional (default 7 days)
 # --- integrations (all optional; panels degrade with setup steps) ---
 SUPABASE_ACCESS_TOKEN=sbp_...    # Supabase PAT → Users panel (Management API SQL)
 SUPABASE_PROJECT_REF=...         # optional (defaults to the MarketIntelligence project)
+SUPABASE_OPERATOR_USER_ID=...    # operator auth.users UUID → private Trade Memory rows
 UMAMI_API_KEY=...                # optional → in-panel analytics (paid/self-hosted)
 GH_TOKEN=ghp_...                 # Contents:write + Actions:write → flag toggles + rebuild
 GA4_PROPERTY_ID / GA4_SA_JSON    # optional legacy GA4 reader
@@ -72,6 +73,8 @@ GA4_PROPERTY_ID / GA4_SA_JSON    # optional legacy GA4 reader
 |----------|-------------|
 | `GET /api/metabolism` | Metabolism panel: armed state, recent runs, organism state, key pool health. |
 | `GET /api/metabolism/history?limit=N` | **Change History:** unified reverse-chronological event feed over all metabolism and Neural Web ledgers (PRs, audit verdicts, reverts, immune heals, governance events, charter proposals, revamp adjudications, lifecycle docket, cycle journals, dispatch freezes, verify outcomes, lessons, parked constructions, heartbeat probes, shadow rehearsals). Returns `{events, sources, phase0, generated_at}`. |
+| `GET /api/prophet/trade-memory` | Owner-private trade episodes, nightly autopsy status, and research-only pattern candidates. |
+| `POST /api/prophet/trade-memory` | Record one owner-private trade episode; position size and dollar P&L are not accepted. |
 
 ## Deploy to admin.mastermind-x.com
 

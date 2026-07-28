@@ -1498,7 +1498,18 @@ _MITIGATION_VERDICTS = frozenset({
     "not_a_failure",
 })
 
-SCHEMA_PICK_AUTOPSY = "prophet.pick_autopsy/v1"
+SCHEMA_PICK_AUTOPSY = "prophet.pick_autopsy/v2"
+
+_AUTOPSY_LAYERS = frozenset({
+    "macro_regime", "market_rotation", "sector", "company_alpha",
+    "catalyst", "entry_timing", "path_risk", "counterfactual",
+})
+_AUTOPSY_EVIDENCE_STATES = frozenset({
+    "corroborated", "contradicted", "claimed", "unknown",
+})
+_AUTOPSY_TIMING_STATES = frozenset({
+    "known_at_entry", "emerged_after", "hindsight_only", "unknown",
+})
 
 
 def _autopsy_cap_from_config(root: Path) -> int:
@@ -1612,10 +1623,11 @@ def _invoke_autopsy_llm(
 ) -> list[dict]:
     """Invoke LLM for per-pick autopsies in a single batched call.
 
-    Returns a list of parsed autopsy dicts (one per pick).
-    model_caller must be injected (dry_run contract).  NEVER raises.
+    Returns a list of parsed autopsy dicts (one per pick).  ``model_caller`` is
+    required by the dry-run caller; the armed path uses the shared provider
+    waterfall when it is None.  NEVER raises.
     """
-    if not picks or model_caller is None:
+    if not picks:
         return []
 
     try:
@@ -1637,9 +1649,16 @@ def _invoke_autopsy_llm(
 
         picks_text = "\n".join(picks_summary)
 
-        prompt = f"""You are the Prophet standout-audit lobe for the {market.upper()} market.
-Analyze these {len(picks)} matured picks from audit cycle {cycle_id} and write
-a per-pick postmortem for each.
+        prompt = f"""You are Prophet Trade Memory, reviewing {len(picks)} matured
+{market.upper()} picks from audit cycle {cycle_id}.
+
+Separate deterministic facts from inference. Reconstruct first-, second-, and
+third-order mechanisms, but never invent evidence. A factor that appeared after
+the pick date is hindsight, not an ex-ante reason. Test macro/regime, market
+rotation, sector, company-specific alpha, catalyst, entry timing, path risk, and
+counterfactual explanations. Name missing evidence. Return research hypotheses
+only: you may not emit a live signal, score, rank, size, gate, suppression, or
+attention escalation.
 
 SA-R13 VERBATIM (non-negotiable):
 {_SA_R13_VERBATIM}
@@ -1652,14 +1671,25 @@ Successes: rotation identified early; T1-T4 confluence timing; momentum precedin
 external re-rating with visible ex-ante accumulation.
 
 For EACH pick, you MUST produce:
-- root_cause: 1-3 sentences naming what drove the outcome (was it mitigable?)
+- summary: 1-3 sentences naming what drove the outcome
 - mitigation_verdict: EXACTLY one of: mitigable_process | mitigable_conditioning |
   external_unforeseeable | external_foreseeable_unpriced | not_a_failure
 - lesson: 1 sentence tagging which engines/books surfaced or missed this
 - engines_credit: 1 sentence naming which books/organs were role models or laggards
+- causal_chain: ordered list of causal factors with order 1, 2, or 3; layer;
+  mechanism; evidence_status; timing_status; counterfactual; and evidence_refs
+- alternate_explanations and missing_evidence: lists of strings
+- signal_hypotheses: measurable research ideas with feature_key, feature,
+  measurement, expected_direction, falsifier, and authority="research_only"
 
-DO NOT include any numbers, percentages, or scores in your prose — those come from
-the attribution system. Write ONLY prose + the closed enum verdict.
+Closed enums:
+- layer: macro_regime | market_rotation | sector | company_alpha | catalyst |
+  entry_timing | path_risk | counterfactual
+- evidence_status: corroborated | contradicted | claimed | unknown
+- timing_status: known_at_entry | emerged_after | hindsight_only | unknown
+
+DO NOT include invented numbers, percentages, or scores in prose. Do not use the
+word validated.
 
 Picks to analyze:
 {picks_text}
@@ -1667,22 +1697,84 @@ Picks to analyze:
 Return a JSON array of objects, one per pick, in the SAME ORDER as the picks above.
 Each object must have exactly these keys:
   pick_index (int, 1-based)
-  root_cause (str)
+  summary (str)
   mitigation_verdict (str, must be exactly one of the closed enum values)
   lesson (str)
   engines_credit (str)
+  causal_chain (list)
+  alternate_explanations (list)
+  missing_evidence (list)
+  signal_hypotheses (list)
 """
 
         reply_text = None
-        try:
-            result = model_caller(prompt)
-            if isinstance(result, tuple):
-                reply_text = result[0]
-            else:
-                reply_text = str(result) if result else None
-        except Exception as exc:  # noqa: BLE001
-            log.warning("standout_auditor: autopsy LLM call failed: %s", exc)
-            return []
+        if model_caller is not None:
+            try:
+                result = model_caller(prompt)
+                if isinstance(result, tuple):
+                    reply_text = result[0]
+                else:
+                    reply_text = str(result) if result else None
+            except Exception as exc:  # noqa: BLE001
+                log.warning("standout_auditor: autopsy LLM call failed: %s", exc)
+                return []
+        else:
+            # The original armed path silently passed model_caller=None into this
+            # helper, which returned [] without ever contacting a provider.  Use the
+            # same shared waterfall and deliberation-budget selector as cohort audits.
+            try:
+                from engine import llm_auth  # noqa: PLC0415
+                active_model = _get_deliberation_model()
+                conf = {**_LLM_CFG, "opus_model": active_model}
+                providers = llm_auth.build_providers(
+                    conf,
+                    opus_model=active_model,
+                    deepseek_model=conf.get("deepseek_model"),
+                )
+                if not providers:
+                    return []
+
+                def _do_call(client: Any, model: str) -> tuple:
+                    response = client.messages.create(
+                        model=model,
+                        max_tokens=int(conf.get("max_tokens", 7000)),
+                        system=(
+                            "You are a private, research-only Prophet postmortem writer. "
+                            "Return strict JSON and follow every authority boundary in the user prompt."
+                        ),
+                        messages=[{"role": "user", "content": prompt}],
+                    )
+                    if getattr(response, "stop_reason", None) == "refusal":
+                        return None, "stop_refusal", response
+                    text = "".join(
+                        block.text for block in response.content
+                        if getattr(block, "type", "") == "text"
+                    )
+                    return text or None, None, response
+
+                reply_text, reason, _provider = llm_auth.make_call(
+                    providers, _do_call, context="prophet_pick_autopsy"
+                )
+                if (
+                    reply_text is None
+                    and active_model != _OPUS_MODEL
+                    and reason not in {"no_provider", "rate_limited_all", "auth_invalid_all"}
+                ):
+                    fallback = llm_auth.build_providers(
+                        {**conf, "opus_model": _OPUS_MODEL},
+                        opus_model=_OPUS_MODEL,
+                        deepseek_model=conf.get("deepseek_model"),
+                    )
+                    if fallback:
+                        reply_text, _reason, _provider = llm_auth.make_call(
+                            fallback, _do_call, context="prophet_pick_autopsy_fallback"
+                        )
+            except Exception as exc:  # noqa: BLE001
+                log.warning(
+                    "standout_auditor: production autopsy LLM call failed: %s",
+                    type(exc).__name__,
+                )
+                return []
 
         if not reply_text:
             return []
@@ -1707,11 +1799,77 @@ Each object must have exactly these keys:
             if not isinstance(item, dict):
                 continue
             verdict = str(item.get("mitigation_verdict", "")).strip()
+            def _bounded_list(value: Any, limit: int, item_limit: int) -> list[str]:
+                return [
+                    str(x).strip()[:item_limit]
+                    for x in (value or [])
+                    if str(x).strip()
+                ][:limit]
+
+            chain: list[dict] = []
+            for raw in item.get("causal_chain") or []:
+                if not isinstance(raw, dict):
+                    continue
+                try:
+                    order = int(raw.get("order"))
+                except (TypeError, ValueError):
+                    continue
+                layer = str(raw.get("layer") or "")
+                evidence = str(raw.get("evidence_status") or "")
+                timing = str(raw.get("timing_status") or "")
+                if order not in (1, 2, 3) or layer not in _AUTOPSY_LAYERS:
+                    continue
+                chain.append({
+                    "order": order,
+                    "layer": layer,
+                    "factor": str(raw.get("factor") or "")[:300],
+                    "mechanism": str(raw.get("mechanism") or "")[:900],
+                    "evidence_status": (
+                        evidence if evidence in _AUTOPSY_EVIDENCE_STATES else "unknown"
+                    ),
+                    "timing_status": (
+                        timing if timing in _AUTOPSY_TIMING_STATES else "unknown"
+                    ),
+                    "counterfactual": str(raw.get("counterfactual") or "")[:600],
+                    "evidence_refs": _bounded_list(raw.get("evidence_refs"), 8, 240),
+                })
+
+            hypotheses: list[dict] = []
+            for raw in item.get("signal_hypotheses") or []:
+                if not isinstance(raw, dict):
+                    continue
+                key = re.sub(
+                    r"[^a-z0-9]+", "_",
+                    str(raw.get("feature_key") or raw.get("feature") or "").lower(),
+                ).strip("_")[:96]
+                if not key:
+                    continue
+                hypotheses.append({
+                    "feature_key": key,
+                    "feature": str(raw.get("feature") or "")[:300],
+                    "measurement": str(raw.get("measurement") or "")[:700],
+                    "expected_direction": str(raw.get("expected_direction") or "")[:180],
+                    "falsifier": str(raw.get("falsifier") or "")[:500],
+                    "authority": "research_only",
+                    "direct_authority": False,
+                })
+
+            summary = str(item.get("summary") or item.get("root_cause") or "")[:800]
             row: dict = {
                 "pick_index": item.get("pick_index"),
-                "root_cause": str(item.get("root_cause", ""))[:500],
+                "summary": summary,
+                # Compatibility alias for existing readers; v2 readers use summary.
+                "root_cause": summary,
                 "lesson": str(item.get("lesson", ""))[:300],
                 "engines_credit": str(item.get("engines_credit", ""))[:300],
+                "causal_chain": chain[:18],
+                "alternate_explanations": _bounded_list(
+                    item.get("alternate_explanations"), 10, 500
+                ),
+                "missing_evidence": _bounded_list(item.get("missing_evidence"), 12, 500),
+                "signal_hypotheses": hypotheses[:12],
+                "authority": "research_only",
+                "direct_authority": False,
             }
             if verdict not in _MITIGATION_VERDICTS:
                 # Reject invalid enum value — record raw LLM string for diagnostics
@@ -1772,10 +1930,17 @@ def _write_pick_autopsies(
         # missing → mitigation_verdict = "" (empty string)
         llm_block = llm_by_idx.get(i) or {}
         llm_doc: dict = {
+            "summary": llm_block.get("summary", llm_block.get("root_cause", "")),
             "root_cause": llm_block.get("root_cause", ""),
             "mitigation_verdict": llm_block.get("mitigation_verdict", ""),
             "lesson": llm_block.get("lesson", ""),
             "engines_credit": llm_block.get("engines_credit", ""),
+            "causal_chain": llm_block.get("causal_chain", []),
+            "alternate_explanations": llm_block.get("alternate_explanations", []),
+            "missing_evidence": llm_block.get("missing_evidence", []),
+            "signal_hypotheses": llm_block.get("signal_hypotheses", []),
+            "authority": "research_only",
+            "direct_authority": False,
         }
 
         # Validate verdict; applies when llm_block came directly from LLM without parse stage
@@ -1805,6 +1970,8 @@ def _write_pick_autopsies(
             "attribution": {k: v for k, v in pick.items()
                             if not k.startswith("_")},
             "llm": llm_doc,
+            "authority": "research_only",
+            "direct_authority": False,
             "model": model,
             "cycle_id": cycle_id,
             "asof": today,
@@ -1924,6 +2091,27 @@ def run_pick_autopsies(
                 "written": [],
             }
 
+        # Append-only memory semantics: do not spend tokens re-autopsying the same
+        # stable pick every night. Filter completed IDs BEFORE extremes selection,
+        # otherwise the same top/bottom rows would occupy the cap forever and the
+        # next layer of matured episodes would never be reviewed.
+        if not dry_run:
+            try:
+                existing_ids = {
+                    path.stem for path in _autopsy_dir(market, repo).glob("*.json")
+                }
+                if existing_ids and not attr_df.empty:
+                    keep = attr_df.apply(
+                        lambda row: _pick_id(row.to_dict()) not in existing_ids,
+                        axis=1,
+                    )
+                    attr_df = attr_df[keep]
+            except Exception as exc:  # noqa: BLE001
+                log.warning(
+                    "standout_auditor: existing-autopsy filter failed (%s)",
+                    type(exc).__name__,
+                )
+
         cap = _autopsy_cap_from_config(repo)
         picks = select_autopsy_picks(market, attr_df, cap=cap)
 
@@ -1941,6 +2129,15 @@ def run_pick_autopsies(
         llm_results = _invoke_autopsy_llm(
             market, picks, cycle_id, model_caller, repo
         )
+        if not llm_results:
+            return {
+                "schema": SCHEMA_PICK_AUTOPSY,
+                "market": market,
+                "cycle_id": cycle_id,
+                "status": "no_llm_reply",
+                "note": "no structured LLM reply; no empty autopsy artifact written",
+                "written": [],
+            }
 
         # Write artifacts — record which model actually served (PR-R8 traceability)
         written = _write_pick_autopsies(
