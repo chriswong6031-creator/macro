@@ -1,0 +1,281 @@
+{
+  "campaign_id": "mx-x-founding-pro-2026-07",
+  "platform": "X",
+  "format": {
+    "width": 1200,
+    "height": 628,
+    "aspect_ratio": "1.91:1",
+    "file_type": "png"
+  },
+  "objective": "qualified trial starts",
+  "primary_conversion": "trial_started",
+  "secondary_conversions": [
+    "landing_view",
+    "signup_started",
+    "free_account_created",
+    "founding_pro_selected"
+  ],
+  "offer_terms": {
+    "monthly_pro_usd": 149,
+    "founding_pro_annual_usd": 900,
+    "founding_pro_monthly_equivalent_usd": 75,
+    "savings_vs_twelve_monthly_payments_usd": 888,
+    "trial_days": 7,
+    "founding_membership_cap": 2000,
+    "claim_guidance": "Use 'about 50% less than monthly Pro' or show $149/mo versus $75/mo billed annually. Do not call this 50% off the standard annual price."
+  },
+  "testing_rules": {
+    "structure": "10 A/B pairs, 20 creatives total",
+    "change_one_primary_variable": true,
+    "minimum_conversions_per_arm_before_decision": 100,
+    "recommended_decision_metric": "trial_started / landing_view",
+    "guardrails": [
+      "Do not compare arms across different audiences or bid strategies.",
+      "Keep destination, audience, placement, budget and schedule identical inside each pair.",
+      "Do not declare a winner before both arms clear the conversion floor.",
+      "Use pair 10 only while the founding offer is active."
+    ]
+  },
+  "creatives": [
+    {
+      "id": "mx-x-01a",
+      "pair": 1,
+      "variant": "A",
+      "angle": "category consolidation",
+      "hypothesis": "Problem-led fragmentation framing will outperform an abstract institutional-grade promise.",
+      "primary_text": "Eight moving parts. One market desk. See macro, signals, flow and research together.",
+      "headline": "Eight moving parts. One market desk.",
+      "cta": "Sign up",
+      "destination": "https://mastermind-x.com/?utm_source=x&utm_medium=paid&utm_campaign=founding_pro_launch&utm_content=mx-x-01a",
+      "asset": "site/assets/marketing/x-ads-2026-07/mx-x-01a.png"
+    },
+    {
+      "id": "mx-x-01b",
+      "pair": 1,
+      "variant": "B",
+      "angle": "daily decision outcome",
+      "hypothesis": "Outcome-led changed/why/next framing will outperform product-consolidation framing.",
+      "primary_text": "Know what changed, why it matters and what to watch next—before the next move.",
+      "headline": "Know what changed. Know what is next.",
+      "cta": "Learn more",
+      "destination": "https://mastermind-x.com/?utm_source=x&utm_medium=paid&utm_campaign=founding_pro_launch&utm_content=mx-x-01b",
+      "asset": "site/assets/marketing/x-ads-2026-07/mx-x-01b.png"
+    },
+    {
+      "id": "mx-x-02a",
+      "pair": 2,
+      "variant": "A",
+      "angle": "tips are incomplete",
+      "hypothesis": "Calling out the missing trade plan will create more qualified signal-page visits.",
+      "primary_text": "A stock tip is not a plan. Get the entry, edge grade and invalidation level.",
+      "headline": "A stock tip is not a plan.",
+      "cta": "Learn more",
+      "destination": "https://mastermind-x.com/?utm_source=x&utm_medium=paid&utm_campaign=founding_pro_launch&utm_content=mx-x-02a",
+      "asset": "site/assets/marketing/x-ads-2026-07/mx-x-02a.png"
+    },
+    {
+      "id": "mx-x-02b",
+      "pair": 2,
+      "variant": "B",
+      "angle": "simple decision vocabulary",
+      "hypothesis": "The five-word decision system will be more memorable than problem-led signal framing.",
+      "primary_text": "Buy. Near. Wait. Hold. Avoid. One honest word, entry zone and edge grade per stock.",
+      "headline": "One honest word per stock.",
+      "cta": "Sign up",
+      "destination": "https://mastermind-x.com/?utm_source=x&utm_medium=paid&utm_campaign=founding_pro_launch&utm_content=mx-x-02b",
+      "asset": "site/assets/marketing/x-ads-2026-07/mx-x-02b.png"
+    },
+    {
+      "id": "mx-x-03a",
+      "pair": 3,
+      "variant": "A",
+      "angle": "late theme discovery",
+      "hypothesis": "Loss-aversion around arriving late will beat leadership-discovery framing.",
+      "primary_text": "Stop finding themes after the move. See 34 themes in four live action lanes.",
+      "headline": "Stop finding themes after the move.",
+      "cta": "Learn more",
+      "destination": "https://mastermind-x.com/?utm_source=x&utm_medium=paid&utm_campaign=founding_pro_launch&utm_content=mx-x-03a",
+      "asset": "site/assets/marketing/x-ads-2026-07/mx-x-03a.png"
+    },
+    {
+      "id": "mx-x-03b",
+      "pair": 3,
+      "variant": "B",
+      "angle": "leadership discovery",
+      "hypothesis": "Positive early-leadership framing will beat loss-aversion framing.",
+      "primary_text": "See leadership turn before your watchlist does—then open the names leading it.",
+      "headline": "Leadership, made visible.",
+      "cta": "Sign up",
+      "destination": "https://mastermind-x.com/?utm_source=x&utm_medium=paid&utm_campaign=founding_pro_launch&utm_content=mx-x-03b",
+      "asset": "site/assets/marketing/x-ads-2026-07/mx-x-03b.png"
+    },
+    {
+      "id": "mx-x-04a",
+      "pair": 4,
+      "variant": "A",
+      "angle": "proof by processing scale",
+      "hypothesis": "A concrete volume-to-signal proof point will beat timing-led benefit copy.",
+      "primary_text": "96,412 filings read. 23 worth your attention. See the scored copy candidates.",
+      "headline": "Filings, filtered for what matters.",
+      "cta": "Learn more",
+      "destination": "https://mastermind-x.com/?utm_source=x&utm_medium=paid&utm_campaign=founding_pro_launch&utm_content=mx-x-04a",
+      "asset": "site/assets/marketing/x-ads-2026-07/mx-x-04a.png"
+    },
+    {
+      "id": "mx-x-04b",
+      "pair": 4,
+      "variant": "B",
+      "angle": "entry timing",
+      "hypothesis": "Entry-timing value will beat data-volume proof for active investors.",
+      "primary_text": "See who bought, who joined and whether price already left the useful entry zone.",
+      "headline": "Insider activity with entry timing.",
+      "cta": "Learn more",
+      "destination": "https://mastermind-x.com/?utm_source=x&utm_medium=paid&utm_campaign=founding_pro_launch&utm_content=mx-x-04b",
+      "asset": "site/assets/marketing/x-ads-2026-07/mx-x-04b.png"
+    },
+    {
+      "id": "mx-x-05a",
+      "pair": 5,
+      "variant": "A",
+      "angle": "actions over commentary",
+      "hypothesis": "The contrast between fund actions and public statements will increase curiosity.",
+      "primary_text": "What funds did—not what they said. Track adds, trims and new stakes across 356 funds.",
+      "headline": "Follow the holdings, not the headlines.",
+      "cta": "Learn more",
+      "destination": "https://mastermind-x.com/?utm_source=x&utm_medium=paid&utm_campaign=founding_pro_launch&utm_content=mx-x-05a",
+      "asset": "site/assets/marketing/x-ads-2026-07/mx-x-05a.png"
+    },
+    {
+      "id": "mx-x-05b",
+      "pair": 5,
+      "variant": "B",
+      "angle": "time saved",
+      "hypothesis": "The time-saving promise will beat the provocative actions-versus-words hook.",
+      "primary_text": "Track 356 funds without reading 356 filings. See the changes that matter.",
+      "headline": "Skip the filing pile.",
+      "cta": "Learn more",
+      "destination": "https://mastermind-x.com/?utm_source=x&utm_medium=paid&utm_campaign=founding_pro_launch&utm_content=mx-x-05b",
+      "asset": "site/assets/marketing/x-ads-2026-07/mx-x-05b.png"
+    },
+    {
+      "id": "mx-x-06a",
+      "pair": 6,
+      "variant": "A",
+      "angle": "reduce options noise",
+      "hypothesis": "Firehose relief will resonate with flow-aware users who find existing tools noisy.",
+      "primary_text": "Options flow without the firehose. Sweeps, blocks and premium, organized live.",
+      "headline": "Options flow that reads like a signal.",
+      "cta": "Sign up",
+      "destination": "https://mastermind-x.com/?utm_source=x&utm_medium=paid&utm_campaign=founding_pro_launch&utm_content=mx-x-06a",
+      "asset": "site/assets/marketing/x-ads-2026-07/mx-x-06a.png"
+    },
+    {
+      "id": "mx-x-06b",
+      "pair": 6,
+      "variant": "B",
+      "angle": "speed and discovery",
+      "hypothesis": "Early-discovery framing will beat noise-reduction framing for active options users.",
+      "primary_text": "Find the contract that matters. See size, side and urgency as it hits the tape.",
+      "headline": "See size as it hits.",
+      "cta": "Sign up",
+      "destination": "https://mastermind-x.com/?utm_source=x&utm_medium=paid&utm_campaign=founding_pro_launch&utm_content=mx-x-06b",
+      "asset": "site/assets/marketing/x-ads-2026-07/mx-x-06b.png"
+    },
+    {
+      "id": "mx-x-07a",
+      "pair": 7,
+      "variant": "A",
+      "angle": "cross-desk synthesis",
+      "hypothesis": "The one-question/whole-desk promise will beat generic AI differentiation.",
+      "primary_text": "Ask one question. Get the whole desk's answer—with entry and risk levels drawn.",
+      "headline": "One question. Every desk.",
+      "cta": "Sign up",
+      "destination": "https://mastermind-x.com/?utm_source=x&utm_medium=paid&utm_campaign=founding_pro_launch&utm_content=mx-x-07a",
+      "asset": "site/assets/marketing/x-ads-2026-07/mx-x-07a.png"
+    },
+    {
+      "id": "mx-x-07b",
+      "pair": 7,
+      "variant": "B",
+      "angle": "market-aware AI",
+      "hypothesis": "Explicit contrast with ticker-only AI will produce more Pro trial starts.",
+      "primary_text": "AI that knows the market, not just the ticker. See the setup, gate and invalidation.",
+      "headline": "An analyst that did the reading.",
+      "cta": "Sign up",
+      "destination": "https://mastermind-x.com/?utm_source=x&utm_medium=paid&utm_campaign=founding_pro_launch&utm_content=mx-x-07b",
+      "asset": "site/assets/marketing/x-ads-2026-07/mx-x-07b.png"
+    },
+    {
+      "id": "mx-x-08a",
+      "pair": 8,
+      "variant": "A",
+      "angle": "integrated workflow",
+      "hypothesis": "Charting-plus-research integration will beat the free-product hook.",
+      "primary_text": "Your charts and research finally share a screen. Nothing to install.",
+      "headline": "Research meets execution.",
+      "cta": "Sign up",
+      "destination": "https://mastermind-x.com/?utm_source=x&utm_medium=paid&utm_campaign=founding_pro_launch&utm_content=mx-x-08a",
+      "asset": "site/assets/marketing/x-ads-2026-07/mx-x-08a.png"
+    },
+    {
+      "id": "mx-x-08b",
+      "pair": 8,
+      "variant": "B",
+      "angle": "free terminal",
+      "hypothesis": "A concrete free-terminal offer will drive more top-of-funnel accounts than workflow copy.",
+      "primary_text": "A real browser terminal, free. Chart 2,700+ names with research one glance away.",
+      "headline": "The browser terminal that reads with you.",
+      "cta": "Sign up",
+      "destination": "https://mastermind-x.com/?utm_source=x&utm_medium=paid&utm_campaign=founding_pro_launch&utm_content=mx-x-08b",
+      "asset": "site/assets/marketing/x-ads-2026-07/mx-x-08b.png"
+    },
+    {
+      "id": "mx-x-09a",
+      "pair": 9,
+      "variant": "A",
+      "angle": "tool consolidation",
+      "hypothesis": "Subscription consolidation will beat end-to-end workflow framing.",
+      "primary_text": "Macro, signals, flow, themes, filings, charting and AI. One login, one market desk.",
+      "headline": "One desk, not eight subscriptions.",
+      "cta": "Sign up",
+      "destination": "https://mastermind-x.com/?utm_source=x&utm_medium=paid&utm_campaign=founding_pro_launch&utm_content=mx-x-09a",
+      "asset": "site/assets/marketing/x-ads-2026-07/mx-x-09a.png"
+    },
+    {
+      "id": "mx-x-09b",
+      "pair": 9,
+      "variant": "B",
+      "angle": "end-to-end workflow",
+      "hypothesis": "Context-to-risk workflow framing will beat subscription-count framing.",
+      "primary_text": "Go from macro regime to entry level and invalidation—without changing tools.",
+      "headline": "From context to action.",
+      "cta": "Learn more",
+      "destination": "https://mastermind-x.com/?utm_source=x&utm_medium=paid&utm_campaign=founding_pro_launch&utm_content=mx-x-09b",
+      "asset": "site/assets/marketing/x-ads-2026-07/mx-x-09b.png"
+    },
+    {
+      "id": "mx-x-10a",
+      "pair": 10,
+      "variant": "A",
+      "angle": "price-led founding offer",
+      "hypothesis": "Explicit savings will create more Founding Pro selections than trial-first framing.",
+      "primary_text": "Founding Pro: $75/mo billed annually—about 50% less than $149/mo monthly.",
+      "headline": "About 50% less than monthly Pro.",
+      "cta": "Sign up",
+      "destination": "https://mastermind-x.com/?utm_source=x&utm_medium=paid&utm_campaign=founding_pro_launch&utm_content=mx-x-10a",
+      "asset": "site/assets/marketing/x-ads-2026-07/mx-x-10a.png"
+    },
+    {
+      "id": "mx-x-10b",
+      "pair": 10,
+      "variant": "B",
+      "angle": "risk-reversal trial offer",
+      "hypothesis": "A seven-day full-product trial will outperform price-led savings at trial-start conversion.",
+      "primary_text": "Try every Pro feature free for 7 days. Cancel before trial end and pay nothing.",
+      "headline": "Try the full Pro desk free for 7 days.",
+      "cta": "Sign up",
+      "destination": "https://mastermind-x.com/?utm_source=x&utm_medium=paid&utm_campaign=founding_pro_launch&utm_content=mx-x-10b",
+      "asset": "site/assets/marketing/x-ads-2026-07/mx-x-10b.png"
+    }
+  ]
+}
