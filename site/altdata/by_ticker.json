@@ -1,8 +1,8 @@
 {
   "schema": "altdata.by_ticker.v2",
   "as_of": "2026-07-28",
-  "generated_utc": "2026-07-28T02:49:22.039941+00:00",
-  "n_tickers": 2590,
+  "generated_utc": "2026-07-28T03:06:16.861550+00:00",
+  "n_tickers": 2585,
   "note": "Per-ticker weighted alt-data rollup. convergence_score = distinct independent channels (count); weighted_score ranks by channel quality. Donors / position-size recorded as context, never a voting channel.",
   "tickers": {
     "HUBB": {
@@ -296,18 +296,6 @@
       "gov_contract_usd_30d": 27963851.0,
       "gov_contract_accel": 13.13,
       "congress_position_usd": 39220500.0,
-      "convergence_score": 1,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "GD": {
-      "ticker": "GD",
-      "channels": [
-        "gov_contract"
-      ],
-      "weighted_score": 0.45,
-      "gov_contract_usd_30d": 26081864.0,
-      "gov_contract_accel": 0.26,
       "convergence_score": 1,
       "trump_linked": false,
       "affiliated": false
@@ -1374,7 +1362,7 @@
       "weighted_score": 1.05,
       "days_to_earnings": 7,
       "next_earnings": "2026-08-04",
-      "clinical_phase3_starts": 9,
+      "clinical_phase3_starts": 10,
       "clinical_halts": 1,
       "congress_position_usd": 24948000.0,
       "convergence_score": 2,
@@ -3258,6 +3246,20 @@
       "analyst_bull_ratio": 1.0,
       "days_to_earnings": 1,
       "next_earnings": "2026-07-29",
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "ADP": {
+      "ticker": "ADP",
+      "channels": [
+        "analyst_upgrade_cluster"
+      ],
+      "weighted_score": 0.35,
+      "analyst_bull_ratio": 1.0,
+      "days_to_earnings": 1,
+      "next_earnings": "2026-07-29",
+      "congress_position_usd": 17985000.0,
       "convergence_score": 1,
       "trump_linked": false,
       "affiliated": false

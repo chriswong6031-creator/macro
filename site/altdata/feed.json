@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-07-28T02:49:14.716575+00:00",
+  "generated_utc": "2026-07-28T03:06:09.454150+00:00",
   "as_of": "2026-07-28",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -25218,7 +25218,7 @@
       },
       {
         "ticker": "PFE",
-        "phase3_starts": 9,
+        "phase3_starts": 10,
         "halts": 1,
         "hot": true,
         "sample": "A Study to Learn About the Study Medicine Called Rimegepant in Adults When Used for the Prevention of Chronic Migraine"
@@ -30243,7 +30243,7 @@
           "clinical_phase3_start",
           "fda_label_expansion"
         ],
-        "why": "clinical_phase3_start: 9 new Phase-3, 1 halt(s) \u00b7 fda_label_expansion: IBRANCE"
+        "why": "clinical_phase3_start: 10 new Phase-3, 1 halt(s) \u00b7 fda_label_expansion: IBRANCE"
       },
       {
         "ticker": "AZN",

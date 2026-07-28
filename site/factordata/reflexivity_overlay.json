@@ -2,20 +2,19 @@
   "schema": "reflexivity_overlay.v1",
   "is_context_only": true,
   "as_of": "2026-07-27",
-  "generated_utc": "2026-07-28T01:53:19Z",
+  "generated_utc": "2026-07-28T03:37:54Z",
   "note": "Risk-clustering read: 'is this the same hidden trade?'. NOT an alpha claim. Board-level, held-agnostic (US only, v1). Display-only per R-F / Signal Commons R7.",
   "factor_caveat": "Per-name secondary betas (oil/usd/btc/gold/china) are OOS-unstable and excluded. Similarity uses high-tier factors only (mkt/growth/size/rates, scope=single). Trust the MEMBERSHIP leg more than the factor leg for individual names.",
   "board_concentration": {
-    "n": 9,
-    "n_eff": 1.96,
+    "n": 8,
+    "n_eff": 1.48,
     "basis": "membership-jaccard+high-tier-factor-cosine",
-    "note": "Supersedes sector-only HHI effective_bets in build_stock_board_v2 per R-B. N_eff = participation-ratio of similarity-matrix eigenvalues. 9 candidates \u2248 1.96 independent bets."
+    "note": "Supersedes sector-only HHI effective_bets in build_stock_board_v2 per R-B. N_eff = participation-ratio of similarity-matrix eigenvalues. 8 candidates \u2248 1.48 independent bets."
   },
   "same_thesis_groups": [
     {
       "members": [
         "CCS",
-        "HALO",
         "JBTM",
         "LEA",
         "NVST",
@@ -23,12 +22,12 @@
         "TNL",
         "WWD"
       ],
-      "size": 8,
+      "size": 7,
       "basis": "membership-jaccard",
       "label": "Consumer Discretionary"
     }
   ],
-  "earnings_coverage_frac": 0.556,
+  "earnings_coverage_frac": 0.5,
   "by_ticker": {
     "LEA": {
       "verdict": "duplicate",
@@ -36,10 +35,10 @@
       "basis": "membership+high-tier-factor",
       "nearest": [
         {
-          "ticker": "TNL",
+          "ticker": "CCS",
           "combined": 1.0,
           "membership_jaccard": 1.0,
-          "factor_cosine": 0.8573,
+          "factor_cosine": 0.8521,
           "factor_basis": "high-tier-factors:4of4",
           "shared_groups": [
             "sector:Consumer Discretionary"
@@ -47,10 +46,10 @@
           "same_earnings_week": null
         },
         {
-          "ticker": "CCS",
+          "ticker": "TNL",
           "combined": 1.0,
           "membership_jaccard": 1.0,
-          "factor_cosine": 0.8521,
+          "factor_cosine": 0.8573,
           "factor_basis": "high-tier-factors:4of4",
           "shared_groups": [
             "sector:Consumer Discretionary"
@@ -73,8 +72,8 @@
         "has_data": false
       },
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Same bet as TNL \u2014 Consumer Discretionary (similarity 100%).",
-      "why_zh": "\u4e0e TNL \u62bc\u6ce8\u76f8\u540c \u2014 Consumer Discretionary\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
+      "why_en": "Same bet as CCS \u2014 Consumer Discretionary (similarity 100%).",
+      "why_zh": "\u4e0e CCS \u62bc\u6ce8\u76f8\u540c \u2014 Consumer Discretionary\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
     },
     "INSW": {
       "verdict": "new",
@@ -91,7 +90,7 @@
           "same_earnings_week": false
         },
         {
-          "ticker": "STBA",
+          "ticker": "CCS",
           "combined": 0.0,
           "membership_jaccard": 0.0,
           "factor_cosine": null,
@@ -100,7 +99,7 @@
           "same_earnings_week": false
         },
         {
-          "ticker": "NVST",
+          "ticker": "STBA",
           "combined": 0.0,
           "membership_jaccard": 0.0,
           "factor_cosine": null,
@@ -112,7 +111,6 @@
       "earnings_leg": {
         "next_date": "2026-08-05",
         "same_week_peers": [
-          "HALO",
           "JBTM"
         ],
         "has_data": true
@@ -120,6 +118,52 @@
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
       "why_en": "Distinct bet \u2014 nearest peer LEA at 0% similarity.",
       "why_zh": "\u72ec\u7acb\u62bc\u6ce8 \u2014 \u6700\u8fd1\u7684\u5019\u9009\u540d\u79f0 LEA\uff0c\u76f8\u4f3c\u5ea6 0%\u3002"
+    },
+    "CCS": {
+      "verdict": "duplicate",
+      "max_similarity": 1.0,
+      "basis": "membership+high-tier-factor",
+      "nearest": [
+        {
+          "ticker": "LEA",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": 0.8521,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
+          "same_earnings_week": null
+        },
+        {
+          "ticker": "TNL",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": 0.9247,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
+          "same_earnings_week": null
+        },
+        {
+          "ticker": "NVST",
+          "combined": 0.9517,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.9517,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": null
+        }
+      ],
+      "earnings_leg": {
+        "next_date": null,
+        "same_week_peers": [],
+        "has_data": false
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as LEA \u2014 Consumer Discretionary (similarity 100%).",
+      "why_zh": "\u4e0e LEA \u62bc\u6ce8\u76f8\u540c \u2014 Consumer Discretionary\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
     },
     "STBA": {
       "verdict": "duplicate",
@@ -165,20 +209,9 @@
     },
     "NVST": {
       "verdict": "duplicate",
-      "max_similarity": 1.0,
+      "max_similarity": 0.9979,
       "basis": "membership+high-tier-factor",
       "nearest": [
-        {
-          "ticker": "HALO",
-          "combined": 1.0,
-          "membership_jaccard": 1.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.10<0.2",
-          "shared_groups": [
-            "sector:Health Care"
-          ],
-          "same_earnings_week": false
-        },
         {
           "ticker": "JBTM",
           "combined": 0.9979,
@@ -196,6 +229,15 @@
           "factor_basis": "high-tier-factors:4of4",
           "shared_groups": [],
           "same_earnings_week": false
+        },
+        {
+          "ticker": "WWD",
+          "combined": 0.9571,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.9571,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": true
         }
       ],
       "earnings_leg": {
@@ -206,55 +248,8 @@
         "has_data": true
       },
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Same bet as HALO \u2014 Health Care (similarity 100%).",
-      "why_zh": "\u4e0e HALO \u62bc\u6ce8\u76f8\u540c \u2014 Health Care\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
-    },
-    "HALO": {
-      "verdict": "duplicate",
-      "max_similarity": 1.0,
-      "basis": "membership-only:r2=0.10<0.2",
-      "nearest": [
-        {
-          "ticker": "NVST",
-          "combined": 1.0,
-          "membership_jaccard": 1.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.10<0.2",
-          "shared_groups": [
-            "sector:Health Care"
-          ],
-          "same_earnings_week": false
-        },
-        {
-          "ticker": "LEA",
-          "combined": 0.0,
-          "membership_jaccard": 0.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.10<0.2",
-          "shared_groups": [],
-          "same_earnings_week": false
-        },
-        {
-          "ticker": "INSW",
-          "combined": 0.0,
-          "membership_jaccard": 0.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.06<0.2",
-          "shared_groups": [],
-          "same_earnings_week": true
-        }
-      ],
-      "earnings_leg": {
-        "next_date": "2026-08-04",
-        "same_week_peers": [
-          "INSW",
-          "JBTM"
-        ],
-        "has_data": true
-      },
-      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Same bet as NVST \u2014 Health Care (similarity 100%).",
-      "why_zh": "\u4e0e NVST \u62bc\u6ce8\u76f8\u540c \u2014 Health Care\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
+      "why_en": "Same bet as JBTM \u2014 shared factor profile (similarity 100%).",
+      "why_zh": "\u4e0e JBTM \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
     },
     "WWD": {
       "verdict": "duplicate",
@@ -340,7 +335,6 @@
       "earnings_leg": {
         "next_date": "2026-08-03",
         "same_week_peers": [
-          "HALO",
           "INSW"
         ],
         "has_data": true
@@ -394,52 +388,6 @@
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
       "why_en": "Same bet as LEA \u2014 Consumer Discretionary (similarity 100%).",
       "why_zh": "\u4e0e LEA \u62bc\u6ce8\u76f8\u540c \u2014 Consumer Discretionary\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
-    },
-    "CCS": {
-      "verdict": "duplicate",
-      "max_similarity": 1.0,
-      "basis": "membership+high-tier-factor",
-      "nearest": [
-        {
-          "ticker": "LEA",
-          "combined": 1.0,
-          "membership_jaccard": 1.0,
-          "factor_cosine": 0.8521,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [
-            "sector:Consumer Discretionary"
-          ],
-          "same_earnings_week": null
-        },
-        {
-          "ticker": "TNL",
-          "combined": 1.0,
-          "membership_jaccard": 1.0,
-          "factor_cosine": 0.9247,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [
-            "sector:Consumer Discretionary"
-          ],
-          "same_earnings_week": null
-        },
-        {
-          "ticker": "NVST",
-          "combined": 0.9517,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.9517,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": null
-        }
-      ],
-      "earnings_leg": {
-        "next_date": null,
-        "same_week_peers": [],
-        "has_data": false
-      },
-      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Same bet as LEA \u2014 Consumer Discretionary (similarity 100%).",
-      "why_zh": "\u4e0e LEA \u62bc\u6ce8\u76f8\u540c \u2014 Consumer Discretionary\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
     }
   },
   "pair_basis": {
@@ -449,6 +397,15 @@
       "combined": 0.0,
       "factor_basis": "beta-read-thin:r2=0.06<0.2",
       "shared_groups": []
+    },
+    "LEA__CCS": {
+      "membership_jaccard": 1.0,
+      "factor_cosine": 0.8521,
+      "combined": 1.0,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
     },
     "LEA__STBA": {
       "membership_jaccard": 0.0,
@@ -462,13 +419,6 @@
       "factor_cosine": 0.9133,
       "combined": 0.9133,
       "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
-    "LEA__HALO": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.10<0.2",
       "shared_groups": []
     },
     "LEA__WWD": {
@@ -494,14 +444,12 @@
         "sector:Consumer Discretionary"
       ]
     },
-    "LEA__CCS": {
-      "membership_jaccard": 1.0,
-      "factor_cosine": 0.8521,
-      "combined": 1.0,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": [
-        "sector:Consumer Discretionary"
-      ]
+    "INSW__CCS": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.06<0.2",
+      "shared_groups": []
     },
     "INSW__STBA": {
       "membership_jaccard": 0.0,
@@ -511,13 +459,6 @@
       "shared_groups": []
     },
     "INSW__NVST": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.06<0.2",
-      "shared_groups": []
-    },
-    "INSW__HALO": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
@@ -545,25 +486,48 @@
       "factor_basis": "beta-read-thin:r2=0.06<0.2",
       "shared_groups": []
     },
-    "INSW__CCS": {
+    "CCS__STBA": {
       "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.06<0.2",
+      "factor_cosine": 0.7763,
+      "combined": 0.7763,
+      "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
+    },
+    "CCS__NVST": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.9517,
+      "combined": 0.9517,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "CCS__WWD": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.8794,
+      "combined": 0.8794,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "CCS__JBTM": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.9491,
+      "combined": 0.9491,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "CCS__TNL": {
+      "membership_jaccard": 1.0,
+      "factor_cosine": 0.9247,
+      "combined": 1.0,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
     },
     "STBA__NVST": {
       "membership_jaccard": 0.0,
       "factor_cosine": 0.8826,
       "combined": 0.8826,
       "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
-    "STBA__HALO": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.10<0.2",
       "shared_groups": []
     },
     "STBA__WWD": {
@@ -587,22 +551,6 @@
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
-    "STBA__CCS": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.7763,
-      "combined": 0.7763,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
-    "NVST__HALO": {
-      "membership_jaccard": 1.0,
-      "factor_cosine": null,
-      "combined": 1.0,
-      "factor_basis": "beta-read-thin:r2=0.10<0.2",
-      "shared_groups": [
-        "sector:Health Care"
-      ]
-    },
     "NVST__WWD": {
       "membership_jaccard": 0.0,
       "factor_cosine": 0.9571,
@@ -624,41 +572,6 @@
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
-    "NVST__CCS": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.9517,
-      "combined": 0.9517,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
-    "HALO__WWD": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.10<0.2",
-      "shared_groups": []
-    },
-    "HALO__JBTM": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.10<0.2",
-      "shared_groups": []
-    },
-    "HALO__TNL": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.10<0.2",
-      "shared_groups": []
-    },
-    "HALO__CCS": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.10<0.2",
-      "shared_groups": []
-    },
     "WWD__JBTM": {
       "membership_jaccard": 1.0,
       "factor_cosine": 0.9708,
@@ -672,13 +585,6 @@
       "membership_jaccard": 0.0,
       "factor_cosine": 0.9254,
       "combined": 0.9254,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
-    "WWD__CCS": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.8794,
-      "combined": 0.8794,
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
@@ -714,7 +620,7 @@
     "new_note": "similarity < 0.35 \u2192 distinct bet"
   },
   "n_eff_by_lane": {
-    "entry_open": 2.6,
+    "entry_open": 1.7,
     "setting_up": 1.1
   },
   "source_passport": {
