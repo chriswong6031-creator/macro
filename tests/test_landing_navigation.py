@@ -61,7 +61,7 @@ def test_primary_nav_links_only_to_real_destinations(path: Path):
         "products/market-terminal.html",
         "products/mastermind-ai.html",
         "products/market-dashboards.html",
-        "research/index.html",
+        "https://www.mastermind-x.com/research_vault.html",
         "stocks/index.html",
         "tools/index.html",
         "learn/index.html",

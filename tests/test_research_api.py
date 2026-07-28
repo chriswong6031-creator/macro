@@ -169,6 +169,37 @@ def test_catalog_read_through_returns_items(client):
     assert body["count"] >= 1
 
 
+def test_catalog_exposes_only_three_summaries_until_pro(client, monkeypatch):
+    import app.research as research_mod
+
+    c, _ = client
+    catalog = {
+        "items": [
+            {
+                "id": f"report-{i}",
+                "title": f"Report {i}",
+                "summary_points": [f"Summary {i}"],
+            }
+            for i in range(5)
+        ],
+        "count": 5,
+    }
+    monkeypatch.setattr(research_mod, "_load_catalog", lambda: catalog)
+
+    public = c.get("/api/research/catalog")
+    assert public.status_code == 200
+    assert public.json()["count"] == 5
+    assert public.json()["institutions"] == []
+    assert [item["id"] for item in public.json()["items"]] == [
+        "report-0", "report-1", "report-2",
+    ]
+
+    monkeypatch.setattr(research_mod, "_optional_tier", lambda _authorization: "pro")
+    pro = c.get("/api/research/catalog", headers=_AUTH)
+    assert pro.status_code == 200
+    assert len(pro.json()["items"]) == 5
+
+
 def test_search_returns_body_hit_from_seeded_corpus(client):
     c, _ = client
     r = c.get("/api/research/search", params={"q": "hyperscaler"})

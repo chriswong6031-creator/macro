@@ -6,8 +6,8 @@ the two PUBLIC routes, and the ``brain_gateway`` gate idiom (Supabase tier resol
 
 Routes
 ------
-GET  /api/research/catalog            unauth  — R2 read-through of catalog.json (60s TTL)
-GET  /api/research/search?q=&…        unauth  — FTS over corpus.sqlite (TTL-cached from R2)
+GET  /api/research/catalog            public  — latest 3 summaries; full catalog for Pro
+GET  /api/research/search?q=&…        public  — preview-only results; full search for Pro
 GET  /api/research/view/{doc_id}      PRO     — stream PDF inline (rate-limited, no quota)
 POST /api/research/download/{doc_id}  PRO     — watermark + attachment (daily quota
                                                 10/day; 50/day on a lifetime grant)
@@ -63,10 +63,11 @@ _VAULT_PREFIX = "research_vault/"                      # ingest VAULT_PREFIX
 
 _UPGRADE_URL = "/plans.html"
 # Reading research (stream PDF + download) is a PRO-only benefit. Insider is a
-# TEASER tier: it may browse the public catalog and read the latest few summaries
-# (client-side), but the view/download endpoints require PRO — insider/free/unknown
-# all resolve to 402 paid_required here. Fails CLOSED (unknown is never granted).
+# TEASER tier: it may browse the latest three summaries, but the full catalog,
+# full search, view, and download surfaces require PRO — insider/free/unknown all
+# stay on the preview or resolve to 402 paid_required. Fails CLOSED.
 _VIEW_TIERS = frozenset({"pro"})
+_PUBLIC_PREVIEW_COUNT = 3
 
 # ── doc_id validation ──────────────────────────────────────────────────────
 # The slug shape produced by sidecar.slug (lowercase alnum + hyphens, first char
@@ -411,6 +412,21 @@ def _user_id_of(user: dict) -> str:
     return str((user or {}).get("id") or (user or {}).get("email") or "unknown")
 
 
+def _optional_tier(authorization: str | None) -> str:
+    """Resolve a bearer when present; missing/invalid credentials stay anonymous.
+
+    These read routes remain reachable without an account, but an invalid token
+    must never unlock more than the public preview.
+    """
+    if not authorization:
+        return "anon"
+    try:
+        return _resolve_tier(_user_id_of(require_user(authorization)))
+    except Exception as exc:  # noqa: BLE001 — fail closed to the public preview
+        log.debug("research_vault: optional auth failed (%s) — anon preview", exc)
+        return "anon"
+
+
 def _client_ip(request: Request) -> str:
     """Best-effort client IP for the view rate-limiter (hashed downstream).
 
@@ -457,19 +473,47 @@ def _safe_filename(doc_id: str, title: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# PUBLIC routes (unauth)
+# PUBLIC PREVIEW routes (optional Pro bearer)
 # ---------------------------------------------------------------------------
 
+
+def _catalog_preview(catalog: dict, limit: int = _PUBLIC_PREVIEW_COUNT) -> dict:
+    """Return only the newest summary-ready reports while retaining total count."""
+    items = list(catalog.get("items") or [])
+    ready = [
+        item for item in items
+        if any(str(point or "").strip() for point in ((item or {}).get("summary_points") or []))
+    ]
+    preview = ready[:limit]
+    selected = {str((item or {}).get("id") or "") for item in preview}
+    if len(preview) < limit:
+        preview.extend(
+            item for item in items
+            if str((item or {}).get("id") or "") not in selected
+        )
+    public = dict(catalog)
+    public["items"] = preview[:limit]
+    public["count"] = len(items)
+    public["institutions"] = sorted({
+        str((item or {}).get("institution") or "").strip()
+        for item in public["items"]
+        if str((item or {}).get("institution") or "").strip()
+    })
+    return public
+
+
 @router.get("/api/research/catalog")
-def research_catalog() -> dict[str, Any]:
-    """Public-safe catalog (title/summary/institution/date per item).
+def research_catalog(
+    authorization: str | None = Header(default=None),
+) -> dict[str, Any]:
+    """Three public summaries, or the complete catalog for an authenticated Pro.
 
     R2 read-through of ``research_vault/catalog.json`` from the PRIVATE bucket via
     server creds, 60s TTL cache. ``{stale:true}`` merged when a refresh fails but a
-    prior copy exists; 503 only if never fetched. No PDF bytes here — the catalog
-    is the only publicly-visible research content.
+    prior copy exists; 503 only if never fetched. No PDF bytes are returned.
     """
-    return _load_catalog()
+    catalog = _load_catalog()
+    return catalog if _can_view(_optional_tier(authorization)) else _catalog_preview(catalog)
 
 
 @router.get("/api/research/search")
@@ -479,14 +523,13 @@ def research_search(
     from_: str = Query("", alias="from", max_length=32),
     to: str = Query("", max_length=32),
     limit: int = Query(_SEARCH_LIMIT_DEFAULT),
+    authorization: str | None = Header(default=None),
 ) -> dict[str, Any]:
-    """FTS search over the corpus (title/summary/BODY), with facet filters.
+    """FTS search over the corpus, restricted to preview IDs unless caller is Pro.
 
-    Unauthenticated. Input is clamped (limit ≤ 50) and the query sanitizer lives
-    in ``corpus.sanitize_fts5`` (already strips FTS5 operators/special chars), so
-    a malformed query degrades to ``{items: []}`` — never a 500. When the corpus
-    is unavailable the response is an empty result set with ``available: false``
-    rather than an error (the teaser list still renders).
+    Input is clamped (limit ≤ 50) and malformed queries degrade to an empty result.
+    Anonymous, free, and Insider callers can receive hits only for the three
+    public preview reports; an authenticated Pro can search the complete corpus.
     """
     try:
         lim = int(limit)
@@ -515,6 +558,13 @@ def research_search(
             conn.close()
         except Exception:  # noqa: BLE001
             pass
+
+    if not _can_view(_optional_tier(authorization)):
+        preview_ids = {
+            str((item or {}).get("id") or "")
+            for item in _catalog_preview(_load_catalog()).get("items", [])
+        }
+        items = [item for item in items if str((item or {}).get("id") or "") in preview_ids]
 
     return {"items": items, "count": len(items), "available": True}
 

@@ -70,7 +70,7 @@ def test_shared_public_nav_matches_landing_core_information_architecture():
     }
     core = {
         "products/index.html",
-        "research/index.html",
+        "https://www.mastermind-x.com/research_vault.html",
         "tools/index.html",
         "plans.html",
     }
