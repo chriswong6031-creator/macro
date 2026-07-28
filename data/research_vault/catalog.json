@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-28T22:13:58.457328+00:00",
-  "count": 283,
+  "generated_at": "2026-07-28T22:55:27.886310+00:00",
+  "count": 284,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -27,6 +27,25 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-gwnwpgdgot6-9406cb",
+      "title": "GS CAS Views The July FOMC – Goldman’s Take from Traders and Research",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T22:41:32Z",
+      "summary_points": [
+        "**FOMC Rate Decision & Geopolitical Risks**: Fed likely holds rates amid Iran escalation, with dissent possible; supply shocks from conflict create inflation unpredictability, potentially lowering bar for July hike despite tariffs/AI effects on inflation.",
+        "**Forward OIS Expectations**: Terminal pricing above 50bps through March/April 2026 (e.g., 54.3 for 17Mar2027) signals persistent rate expectations, reflecting market pricing of prolonged higher rates.",
+        "**Credit Markets & Geopolitics**: Credit spreads widening due to Middle East tensions, IG/HY volatility, and hawkish repricing; credit shorts remain attractive amid CPI/earnings support and capital reset."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-hapxx9yyvrk-d1c39e",
       "title": "MS July FOMC A question of patience",
