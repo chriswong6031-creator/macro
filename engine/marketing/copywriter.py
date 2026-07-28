@@ -703,6 +703,7 @@ def validate_copy(
     ctx: dict,
     *,
     batch_headlines: list[str] | None = None,
+    recent: list[dict] | None = None,
 ) -> list[str]:
     """Validate a (headline, body) pair against all copy_laws.
 
@@ -710,6 +711,9 @@ def validate_copy(
 
     ctx must come from build_context().
     batch_headlines: other headlines in this batch (for duplicate detection).
+    recent: this account's prior posts as ``{"text", "date"}`` — feeds the codex
+      frequency caps (a signature quirk is exempt from the anti-sameness
+      discipline only up to its declared per-day / rolling-window rate).
     """
     violations: list[str] = []
     full_text = f"{headline} {body}"
@@ -808,6 +812,22 @@ def validate_copy(
             violations.append(
                 "signal post missing honesty disclosure / historical caveat"
             )
+
+    # 6b. Expression dial + codex quirk whitelist + AM-R1 detection (XG-W1).
+    # Returns [] for every account without a persona codex, so the six desks that
+    # predate the dial keep exactly the bar they had. include_house_bans=False:
+    # banned_language() already ran on this same text at step 3b/4 — one guard,
+    # two callers, reported once.
+    from engine.marketing import expression_dial as _expression_dial  # noqa: PLC0415
+
+    violations.extend(_expression_dial.violations(
+        headline, body,
+        account=str(ctx.get("account", "")),
+        kind=str(item_type),
+        as_of=ctx.get("as_of"),
+        recent=recent,
+        include_house_bans=False,
+    ))
 
     # 7. Duplicate headline within batch (case-insensitive exact + Jaccard)
     if batch_headlines:
@@ -2211,10 +2231,17 @@ def write_posts_deterministic(contexts: list[dict]) -> list[dict]:
       when they contradict the item's tape direction or claim an absent chart;
       an over-filtered (empty) pool falls back to the full bank rather than crash
     """
+    from engine.marketing import expression_dial as _expression_dial  # noqa: PLC0415
+
     results: list[dict] = []
     all_headlines: list[str] = []
     # Rotation counter per (type, voice) for non-ticker types
     type_voice_counters: dict[tuple[str, str], int] = {}
+    # Per-account history WITHIN this batch, so the codex frequency caps
+    # (max_per_day / max_per_7d / max_share_7d) see the day's other posts. A
+    # durable cross-day store arrives with XG-W3's phrases.jsonl; until then the
+    # batch is the honest window rather than a silently unenforced cap.
+    recent_by_account: dict[str, list[dict]] = {}
 
     for i, ctx in enumerate(contexts):
         type_id = ctx.get("type", "signal")
@@ -2267,8 +2294,21 @@ def write_posts_deterministic(contexts: list[dict]) -> list[dict]:
         if type_id == "receipt" and not ctx.get("gain_pct_str") and not ctx.get("loss_pct_str"):
             body = _RECEIPT_VOICE_PENDING.get(voice, _RECEIPT_VOICE_PENDING["authoritative desk"])
 
-        violations = validate_copy(headline, body, ctx, batch_headlines=all_headlines)
+        # Codex quirk pass — deterministic clean-up BEFORE validation (strips
+        # off-signature emoji, downgrades exclamations the persona was not
+        # granted). A no-op for accounts without a codex.
+        account_id = str(ctx.get("account", ""))
+        headline, body = _expression_dial.apply_pass(
+            headline, body, account=account_id, kind=type_id)
+
+        violations = validate_copy(
+            headline, body, ctx,
+            batch_headlines=all_headlines,
+            recent=recent_by_account.get(account_id),
+        )
         all_headlines.append(headline)
+        recent_by_account.setdefault(account_id, []).append(
+            {"text": f"{headline} {body}", "date": ctx.get("as_of")})
 
         results.append({
             "headline": headline,
@@ -2540,22 +2580,41 @@ def write_posts_llm(
             return None
 
         # Validate each output; fall back per-post on failure
+        from engine.marketing import expression_dial as _expression_dial  # noqa: PLC0415
+
         det_fallbacks = write_posts_deterministic(batch)
         results: list[dict] = []
         all_headlines: list[str] = []
+        recent_by_account: dict[str, list[dict]] = {}
 
         for i, (llm_out, ctx) in enumerate(zip(llm_outputs, batch)):
             hl = str(llm_out.get("headline", ""))
             bd = str(llm_out.get("body", ""))
-            violations = validate_copy(hl, bd, ctx, batch_headlines=all_headlines)
+            # The codex quirk pass runs on LLM output too, and it runs AFTER the
+            # model. That ordering is the whole point: the prompt asks for the
+            # register, the pass is what makes the whitelist binding. A model
+            # that invents a signature emoji or a quirk this persona was never
+            # granted gets stripped here and rejected below, never posted.
+            account_id = str(ctx.get("account", ""))
+            kind = str(ctx.get("type", ""))
+            hl, bd = _expression_dial.apply_pass(hl, bd, account=account_id, kind=kind)
+            violations = validate_copy(
+                hl, bd, ctx,
+                batch_headlines=all_headlines,
+                recent=recent_by_account.get(account_id),
+            )
             if violations:
                 # Fall back to deterministic for this post
                 fb = det_fallbacks[i]
                 results.append({**fb, "mode": "llm_fallback"})
                 all_headlines.append(fb["headline"])
+                recent_by_account.setdefault(account_id, []).append(
+                    {"text": f"{fb['headline']} {fb['body']}", "date": ctx.get("as_of")})
             else:
                 results.append({"headline": hl, "body": bd, "violations": [], "mode": "llm"})
                 all_headlines.append(hl)
+                recent_by_account.setdefault(account_id, []).append(
+                    {"text": f"{hl} {bd}", "date": ctx.get("as_of")})
 
         return results
 

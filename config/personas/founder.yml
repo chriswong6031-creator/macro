@@ -32,6 +32,15 @@ voice_codex:
     - "'I' for the read, 'we' only for what the shop built or called"
     - "dry self-deprecation on misses ('the tuition for that'), no lap on wins"
     - "no hashtags, no victory laps, no thread-bait"
+  # XG-W1: the founder joins the expression dial. He is the OTHER real named
+  # human on an official rail, so the same enforcement the four employee desks
+  # get applies here — AM-R1 detection in copy, the per-kind personality budget,
+  # and a whitelist that is deliberately EMPTY. He has no granted quirks: his
+  # register is plainness itself ("no hashtags, no victory laps, no thread-bait"),
+  # so any house quirk marker that fires on his copy is a defect, not a signature.
+  # Profile "flagship" is the branded/house dial (charter §2 amendment 3: replies
+  # stay at 1 for the evidence-desk voices, 2 only for the employees).
+  dial_profile: flagship
   emoji_policy: none
   banned: ["moon", "rocket", "guaranteed", "trust me", "huge", "insane", "printing", "free money"]
   banned_patterns:

@@ -2798,7 +2798,14 @@ jobs:
         # renderers it exercises take plain lists — verified in a clean
         # pytest+pyyaml venv, so a heavy top-level import in chart_render turns
         # this job red at collection, which is the point.
-        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_marketing_personas.py tests/test_marketing_event_language.py tests/test_marketing_press_feeds.py tests/test_marketing_breaking.py tests/test_marketing_fastlane.py tests/test_marketing_press_copy.py tests/test_marketing_ramp_cta_jitter.py -q
+        # test_marketing_expression_dial (X Growth W1, XG-W1) joins the same lane
+        # (2026-07-28): the employee expression dial, the codex quirk pass and the
+        # AM-R1 text detectors. engine/marketing/expression_dial.py keeps stdlib +
+        # personas at module level (personas itself is stdlib+yaml), so a heavy
+        # top-level import there must turn this job red at collection. NOTHING in
+        # the suite is importorskip-gated — it runs in full on pytest+pyyaml, so
+        # it can never become a skip-only suite. Verified in a clean venv.
+        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_marketing_personas.py tests/test_marketing_event_language.py tests/test_marketing_press_feeds.py tests/test_marketing_breaking.py tests/test_marketing_fastlane.py tests/test_marketing_press_copy.py tests/test_marketing_ramp_cta_jitter.py tests/test_marketing_expression_dial.py -q
       - name: persona specs validate (config/personas/*.yml)
         # The gate the specs exist for: every committed spec carries the full
         # content-studio tilt key set, a live template-pool voice key, and the
