@@ -123,7 +123,14 @@ sentinel:
   # not built here — it needs the resolver to take an account age, which is a
   # design decision, not a patch.
   max_posts_per_account_per_day: -1   # unlimited (global backstop; see above)
-  max_same_cashtag_per_account_per_day: 1
+  # Raised 1 -> 3 (operator 2026-07-28) alongside the 10/20-per-day volume.
+  # At 1/day the cashtag cap became the binding limit the instant volume rose:
+  # a 47-name plan pool spread over 10 posts collides constantly, and the base
+  # is the STRICTER half of the ramp merge, so leaving it at 1 would have
+  # silently pinned every tier back to 1 no matter what the tier rows said.
+  # The per-POST breadth guard (max_cashtags_per_post, the actual D08 R3
+  # piggybacking vector) is untouched at 2 for ramping desks.
+  max_same_cashtag_per_account_per_day: 3
   max_replies_per_account_per_day: 0
 
   # min_minutes_between_posts is NOT enforced at plan tier (queue slots have no
@@ -133,7 +140,11 @@ sentinel:
   # (19 slots/day, S1..S19), so this plan-tier floor drops from 120 to 45 to
   # match. The hard anti-spam rule stays the publish.min_minutes_between_any_posts
   # 10-min global floor (unchanged).
-  min_minutes_between_posts: 45
+  # 45 -> 30 (operator 2026-07-28) to match the 30-minute ladder step. This is
+  # a MAX-WINS knob in the ramp merge (the longer wait governs), so the base
+  # value is a FLOOR on how fast any tier may go — at 45 it would have
+  # overridden every 30 in the tier rows below.
+  min_minutes_between_posts: 30
 
   # Stale-receipts refusal: if the graded-receipts ledger is older than this
   # many days, the whole plan is refused (we must not post receipts we can't back).
@@ -256,17 +267,47 @@ sentinel:
     # so a configured 20 would delete the week_5_plus window without graduating
     # anyone sooner. The resolved value is printed in the gate report.
     graduate_after_days: 56
+
+    # Per-account cap overrides — sentinel.resolve_ramp applies these ON TOP of
+    # the account's tier row, and unlike the tier merge they may LOOSEN (an
+    # override means what it says). Same value contract as a tier row: -1 or
+    # "unlimited" = no limit, junk = ignored with a ::warning.
+    #
+    # WHY THIS EXISTS. The tier ladder is purely age-based, so on 2026-07-28 every
+    # enabled desk was under 14 days old and flagship — the warmed, established
+    # account — sat on the identical 2-posts/day floor as a desk created that
+    # morning. The alternatives were both worse: back-dating flagship's `created:`
+    # would silently walk it through the whole ramp and corrupt the one field the
+    # age gate trusts, and loosening weeks_1_2 far enough for flagship would hand
+    # every cold desk the same cadence. Overrides are named, per-desk, and printed
+    # in the gate report so a wide cap is always traceable to a decision.
+    #
+    # Operator 2026-07-28: flagship posts every 30 minutes, up to 20/day.
+    account_overrides:
+      flagship:
+        max_posts_per_account_per_day: 20
+        max_media_posts_per_account_per_day: 20
+        min_minutes_between_posts: 30
     weeks_1_2:
-      max_posts_per_account_per_day: 2
-      min_minutes_between_posts: 45
+      # Operator re-spec 2026-07-28: 10 posts/account/day (was 2). The desks were
+      # publishing ~5 posts across the WHOLE network because 2/day is a launch
+      # floor, not a working cadence. Spacing drops 45 -> 30 to match the 30-min
+      # ladder. See account_overrides below for flagship's 20.
+      max_posts_per_account_per_day: 10
+      min_minutes_between_posts: 30
       links_allowed: false
       # Tracks max_posts_per_account_per_day ON PURPOSE — see the base block's
       # note: charts and daily volume "must move together". A media cap BELOW
       # the post cap does not strip the image, it QUARANTINES the post
       # (reason media_cap_daily), so every ticker post now carrying a chart
       # would have cost this desk half its daily volume. (operator 2026-07-28)
-      max_media_posts_per_account_per_day: 2
-      max_same_cashtag_per_account_per_day: 1
+      max_media_posts_per_account_per_day: 10
+      # 1/day made the cashtag cap the binding limit the moment volume rose:
+      # 10 posts drawn from a 47-name plan pool collide constantly. 3 keeps the
+      # piggybacking guard meaningful (D08 R3 is about MANY tickers in ONE post,
+      # which max_cashtags_per_post still bounds at 2 here) without throwing away
+      # most of the day's queue.
+      max_same_cashtag_per_account_per_day: 3
       max_replies_per_account_per_day: 0
       max_new_follows_per_account_per_day: 0
       # Cashtag breadth on a cold account. A post naming 3+ tickers is the
@@ -279,21 +320,21 @@ sentinel:
       # week 5, when the account has a posting history to be read against.
       theme_list_allowed: false
     weeks_3_4:
-      max_posts_per_account_per_day: 3
-      min_minutes_between_posts: 45
+      max_posts_per_account_per_day: 14
+      min_minutes_between_posts: 30
       links_allowed: false
-      max_media_posts_per_account_per_day: 3
-      max_same_cashtag_per_account_per_day: 2
+      max_media_posts_per_account_per_day: 14
+      max_same_cashtag_per_account_per_day: 3
       max_replies_per_account_per_day: 0
       max_new_follows_per_account_per_day: 0
       max_cashtags_per_post: 2
       theme_list_allowed: false
     week_5_plus:
-      max_posts_per_account_per_day: 4
-      min_minutes_between_posts: 45
+      max_posts_per_account_per_day: 20
+      min_minutes_between_posts: 30
       links_allowed: true   # ≤1 link post/day enforced by actuator
-      max_media_posts_per_account_per_day: 4
-      max_same_cashtag_per_account_per_day: 2
+      max_media_posts_per_account_per_day: 20
+      max_same_cashtag_per_account_per_day: 3
       max_replies_per_account_per_day: 2   # Sentinel-gated
       max_new_follows_per_account_per_day: 5   # manual-only; actuator must NOT script follows
       max_cashtags_per_post: 3
@@ -783,7 +824,15 @@ desk_network:
     - id: meagan
       kind: employee
       beat: "Crowd translator — market psychology, mood vs positioning, consumer and tech stories with market consequence"
-      voice: "fast, reactive"
+      # Was "fast, reactive", shared with founder. Two desks on one voice draw the
+      # SAME deterministic template bank (_TEMPLATES is keyed by (type, voice)),
+      # so their posts come out near-identical and the cross-account near-dup
+      # guard quarantines whichever desk the gate reaches second — meagan shipped
+      # 0 posts and sophia 1 on 2026-07-28 while their voice-twins shipped 19 and
+      # 8. "educational" was unused and is the closer fit anyway: the crowd
+      # translator explains one thing plainly to a non-professional. The persona
+      # block (voice_notes — what the LLM lane actually writes from) is unchanged.
+      voice: "educational"
       handle: "meagmastermind"    # Buffer channel wired in publish.channels
       enabled: true
       created: "2026-07-28"       # Buffer attach date — drives ramp tier lookup (D02)
@@ -801,7 +850,10 @@ desk_network:
     - id: sophia
       kind: employee
       beat: "Narrative architect — the story that organises the market, the incentives holding it together, and the fact that changes its meaning"
-      voice: "authoritative desk"
+      # Was "authoritative desk", shared with flagship — same collision as meagan.
+      # "pattern/history" was unused and fits the narrative architect: the story
+      # the market believes, and how it has resolved before. Persona unchanged.
+      voice: "pattern/history"
       handle: "sophmastermind"
       enabled: true
       created: "2026-07-28"

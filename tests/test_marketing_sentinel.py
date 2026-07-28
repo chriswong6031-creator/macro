@@ -1374,7 +1374,15 @@ class TestM3ConfigDriftGuard:
         # the code defaults stay bounded (2 / 1) as the missing-key fallback.
         assert sc["max_posts_per_account_per_day"] == -1
         assert sc["max_media_posts_per_account_per_day"] == -1
-        assert sc["max_same_cashtag_per_account_per_day"] == _DEFAULT_MAX_SAME_CASHTAG_PER_ACCOUNT_PER_DAY
+        # Same intentional-divergence pattern: raised 1 -> 3 (operator 2026-07-28)
+        # alongside the 10/20-per-day volume. At 1/day the cashtag cap became the
+        # binding limit the moment volume rose — and because the base block is the
+        # STRICTER half of the ramp merge, leaving it at 1 would have silently
+        # pinned every tier row back to 1 no matter what the tier said. The code
+        # default stays 1 as the missing-key fallback (a lost key must fail toward
+        # the quieter account, never toward a louder one).
+        assert _DEFAULT_MAX_SAME_CASHTAG_PER_ACCOUNT_PER_DAY == 1
+        assert sc["max_same_cashtag_per_account_per_day"] == 3
         assert sc["max_replies_per_account_per_day"] == _DEFAULT_MAX_REPLIES_PER_ACCOUNT_PER_DAY
         assert sc["max_receipt_age_days"] == _DEFAULT_MAX_RECEIPT_AGE_DAYS
         assert sc["links_allowed"] == _DEFAULT_LINKS_ALLOWED

@@ -1426,21 +1426,43 @@ class TestSlotDatetime:
         assert slot_datetime("2026-07-20", "D7-EOD") == "2026-07-26T20:15:00Z"
 
     def test_ladder_pacific_slots_summer_pdt(self):
-        """Gate 5: the 45-min ladder (S1..S19) resolves to Pacific-clock UTC.
-        July = PDT (UTC-7): S1 4:00 AM→11:00, S5 7:00 AM→14:00, S8 9:15 AM→16:15,
-        S19 5:30 PM→00:30 next-day."""
+        """Gate 5: the 30-min ladder (S1..S28) resolves to Pacific-clock UTC.
+        July = PDT (UTC-7): S1 4:00 AM→11:00, S5 6:00 AM→13:00, S8 7:30 AM→14:30,
+        S28 5:30 PM→00:30 next-day.
+
+        Re-pinned 2026-07-28 when the ladder went 45-min/19-slot → 30-min/28-slot
+        so flagship could hold a 30-minute cadence. The WINDOW is deliberately
+        unchanged (4:00 AM–5:30 PM local) — only the step tightened, so the first
+        and last rungs still land where they always did and no post moved into
+        low-engagement hours."""
         from engine.marketing.outbox import slot_datetime
         assert slot_datetime("2026-07-15", "D1-S1") == "2026-07-15T11:00:00Z"   # 4:00 AM
-        assert slot_datetime("2026-07-15", "D1-S5") == "2026-07-15T14:00:00Z"   # 7:00 AM
-        assert slot_datetime("2026-07-15", "D1-S8") == "2026-07-15T16:15:00Z"   # 9:15 AM
-        assert slot_datetime("2026-07-15", "D1-S19") == "2026-07-16T00:30:00Z"  # 5:30 PM
+        assert slot_datetime("2026-07-15", "D1-S5") == "2026-07-15T13:00:00Z"   # 6:00 AM
+        assert slot_datetime("2026-07-15", "D1-S8") == "2026-07-15T14:30:00Z"   # 7:30 AM
+        assert slot_datetime("2026-07-15", "D1-S28") == "2026-07-16T00:30:00Z"  # 5:30 PM
+
+    def test_ladder_step_is_thirty_minutes_end_to_end(self):
+        """The step is the contract flagship's cadence rests on, so pin it
+        directly rather than inferring it from two sampled rungs: every adjacent
+        pair is exactly 30 minutes apart and the span is 28 rungs."""
+        from datetime import datetime, timezone
+
+        from engine.marketing.outbox import _LADDER_PT_TIMES, slot_datetime
+
+        assert len(_LADDER_PT_TIMES) == 28
+        stamps = [slot_datetime("2026-07-15", f"D1-S{i}") for i in range(1, 29)]
+        assert all(s is not None for s in stamps), "a ladder rung resolves to no time"
+        parsed = [datetime.strptime(s, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+                  for s in stamps]
+        gaps = {int((b - a).total_seconds() // 60) for a, b in zip(parsed, parsed[1:])}
+        assert gaps == {30}, f"ladder step is not a uniform 30 min: {sorted(gaps)}"
 
     def test_ladder_pacific_slots_winter_pst(self):
         """Gate 5: the SAME local slots shift +1h in UTC under PST (winter) —
         DST handled by zoneinfo, never a hardcoded offset."""
         from engine.marketing.outbox import slot_datetime
         assert slot_datetime("2026-01-15", "D1-S1") == "2026-01-15T12:00:00Z"   # 4:00 AM PST
-        assert slot_datetime("2026-01-15", "D1-S19") == "2026-01-16T01:30:00Z"  # 5:30 PM PST
+        assert slot_datetime("2026-01-15", "D1-S28") == "2026-01-16T01:30:00Z"  # 5:30 PM PST
 
     def test_ladder_day_offset(self):
         """D<n> offsets by n-1 days, then resolves the Pacific slot on THAT date."""
