@@ -55,8 +55,13 @@ every ship-loop session pinned on the next full-CI dispatch (measured 2026-07-28
 100 ci.yml runs in 8h, 6 successes). ci.yml now fences merged-close events into
 their own concurrency group so a fast merge no longer destroys its own evidence,
 but the discipline stands: wait for the packs to conclude (green, or spurious-only
-red), or arm `gh pr merge --auto --squash` and let GitHub complete the merge on
-green. `--admin` exists to clear the spurious Workers check, not to outrun CI.
+red) before squash-merging. Do NOT arm `gh pr merge --auto --squash` as the wait:
+main carries no branch protection, so auto-merge has no required checks to gate on
+and merges IMMEDIATELY (verified PR #3889, 2026-07-28 — merged ~1 min after arming
+with packs still pending). The manual wait is the only compliant form; after any
+accidental fast merge, the surviving PR proof run is the merge's evidence — watch
+it to conclusion. `--admin` exists to clear the spurious Workers check, not to
+outrun CI.
 
 ### Waiting on CI without jamming every other session
 
