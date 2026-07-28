@@ -16,7 +16,7 @@
    Bilingual EN/ZH via l-en / l-zh dual-spans (theme.css flips them off [data-lang]).
    No translated text in title= (CI-guarded); help/detail lives in .l-en/.l-zh spans. -#}
 {% macro t(en, zh='') -%}
-<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+<span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
 {%- endmacro %}
 <!DOCTYPE html>
 <html lang="en">
@@ -419,7 +419,7 @@
           <li>{{ t('One research report', '一份研究报告') }}</li>
           <li>{{ t('Special situations', '特殊事件') }} — <b>{{ t('the 3 newest filings', '最新 3 份申报') }}</b></li>
           <li>{{ t('China special situations', '中国特殊事件') }} — <b>{{ t('the full overhang read + the 3 nearest unlocks', '完整压力概览 + 最近 3 笔解禁') }}</b></li>
-          <li>{{ t('Committee & brief — a teaser', '委员会与简报 — 预览') }}</li>
+          <li>{{ t('Committee &amp; brief — a teaser', '委员会与简报 — 预览') }}</li>
           <li>{{ t('Mastermind chat', '操盘大脑对话') }} — <b>{{ t('5 quick questions a week', '每周 5 个快速提问') }}</b></li>
           <li>{{ t('Charts terminal', '图表终端') }} — <b>{{ t('free for everyone', '所有人免费') }}</b></li>
         </ul>
@@ -443,9 +443,9 @@
         <ul class="tf">
           <li><b>{{ t('All dashboards', '所有仪表盘') }}</b> — {{ t('markets, desks, heatmaps, baskets, sectors, flow', '市场、桌面、热力图、篮子、板块、资金流') }}</li>
           <li><b>{{ t('Every research report', '全部研究报告') }}</b> + {{ t('the intelligence hub', '情报中心') }}</li>
-          <li><b>{{ t('The special situations desk', '完整特殊事件交易台') }}</b> — {{ t('activist, M&A, spin-offs, take-privates', '维权、并购、分拆、私有化') }}</li>
+          <li><b>{{ t('The special situations desk', '完整特殊事件交易台') }}</b> — {{ t('activist, M&amp;A, spin-offs, take-privates', '维权、并购、分拆、私有化') }}</li>
           <li><b>{{ t('The China event desk', '完整中国事件交易台') }}</b> — {{ t('every named unlock, inquiry letter, buyback and pledge risk', '全部解禁、问询函、回购与质押风险个股') }}</li>
-          <li>{{ t('Committee, brief & track record', '委员会、简报与业绩记录') }} — {{ t('in full', '完整版') }}</li>
+          <li>{{ t('Committee, brief &amp; track record', '委员会、简报与业绩记录') }} — {{ t('in full', '完整版') }}</li>
           <li>{{ t('Mastermind chat', '操盘大脑对话') }} — <b>{{ t('300 a month', '每月 300 次') }}</b></li>
           <li>{{ t('Terminal live options', '终端实时期权') }} — <b>{{ t('included', '含') }}</b></li>
         </ul>
@@ -519,11 +519,11 @@
           </tr>
         </thead>
         <tbody>
-          <tr class="grp"><td colspan="4">{{ t('DASHBOARDS & DESKS', '仪表盘与交易台') }}</td></tr>
+          <tr class="grp"><td colspan="4">{{ t('DASHBOARDS &amp; DESKS', '仪表盘与交易台') }}</td></tr>
           <tr>
-            <td class="feat has-tip"><span class="ft">{{ t('Dashboards', '仪表盘') }}</span><span class="tipbox">{{ t('Markets, desks, heatmaps, baskets, sectors, options & flow, smart-money and cycle — rebuilt nightly.', '市场、桌面、热力图、篮子、板块、期权与资金流、聪明钱与周期——每晚重建。') }}</span></td>
+            <td class="feat has-tip"><span class="ft">{{ t('Dashboards', '仪表盘') }}</span><span class="tipbox">{{ t('Markets, desks, heatmaps, baskets, sectors, options &amp; flow, smart-money and cycle — rebuilt nightly.', '市场、桌面、热力图、篮子、板块、期权与资金流、聪明钱与周期——每晚重建。') }}</span></td>
             <td class="val">{{ t('Sample only', '仅样板') }}</td>
-            <td class="val">{{ t('All markets & desks', '所有市场与桌面') }}</td>
+            <td class="val">{{ t('All markets &amp; desks', '所有市场与桌面') }}</td>
             <td class="val">{{ t('Everything', '全部') }}</td>
           </tr>
           <tr>
@@ -533,7 +533,7 @@
             <td class="val">{{ t('Everything', '全部') }}</td>
           </tr>
           <tr>
-            <td class="feat has-tip"><span class="ft">{{ t('Special situations desk', '特殊事件交易台') }}</span><span class="tipbox">{{ t('Activist · M&A · spin-offs · take-privates · tenders.', '维权 · 并购 · 分拆 · 私有化 · 要约。') }}</span></td>
+            <td class="feat has-tip"><span class="ft">{{ t('Special situations desk', '特殊事件交易台') }}</span><span class="tipbox">{{ t('Activist · M&amp;A · spin-offs · take-privates · tenders.', '维权 · 并购 · 分拆 · 私有化 · 要约。') }}</span></td>
             <td class="val">{{ t('3 newest filings', '最新 3 份申报') }}</td>
             <td class="val">{{ t('Whole board', '完整看板') }}</td>
             <td class="val">{{ t('Whole board', '完整看板') }}</td>
@@ -545,7 +545,7 @@
             <td class="val">{{ t('Every name', '全部个股') }}</td>
           </tr>
           <tr>
-            <td class="feat"><span class="ft">{{ t('Committee, brief & track record', '委员会、简报与业绩记录') }}</span></td>
+            <td class="feat"><span class="ft">{{ t('Committee, brief &amp; track record', '委员会、简报与业绩记录') }}</span></td>
             <td class="val">{{ t('Teaser', '预览') }}</td>
             <td class="ok">✓</td>
             <td class="ok">✓</td>
