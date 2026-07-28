@@ -366,11 +366,28 @@ publish:
   # Global post-time anti-spam floor (cadence masterplan Phase 2): no two posts
   # go out within this many minutes of each other, across ALL accounts — enforced
   # in scripts/marketing_publisher.py (_within_floor), seeded from the last posted
-  # ledger row so it holds across cron runs. A single run emits at most one post
-  # per window; the rest defer to the next slot, so an accumulated backlog drains
+  # ledger row so it holds across cron runs, so an accumulated backlog drains
   # gradually instead of bursting. Distinct from the sentinel's per-account
   # PLAN-time min_minutes_between_posts. 0 = disabled.
   min_minutes_between_any_posts: 10
+
+  # How far ahead of `now` one sweep may book an item that is inside the floor
+  # above (scripts/marketing_publisher.py: _forward_book_horizon_cfg). 0 = off,
+  # which restores the old behaviour: the item defers to the NEXT cron sweep.
+  #
+  # Why it is on (2026-07-28). Deferring made the CRON GRID the throughput unit —
+  # one post per sweep, 30 sweeps/day, so 30 posts/day network-wide however many
+  # the desks generated. With seven desks producing ~59/day that stranded most of
+  # the queue nightly, and any dropped sweep made it worse. Booking forward keeps
+  # the spacing identical (the item goes to Buffer customScheduled at the moment
+  # the floor clears) and lets the 10-min floor be the real governor: ~6 posts/hr,
+  # ~81 across the 4:00 AM–5:30 PM PT window, paced exactly as before.
+  #
+  # 60, not higher: every item is tape-verified at BOOK time, so this is how
+  # stale a booked read may be when it actually sends. Keep it near the live
+  # gate's max_quote_age_min (45) — booking the whole day at 09:00 would ship
+  # 5 PM posts written against the 09:00 tape.
+  max_forward_book_min: 60
 
   # Send-time jitter, in minutes (scripts/marketing_publisher.py). A LADDER item
   # no longer books at the exact sweep minute: it books at (floor-cleared time +

@@ -208,7 +208,7 @@ def _media_enabled_cfg(pub_cfg: dict) -> bool:
     return str(v).strip().lower() in {"1", "true", "yes"}
 
 
-def _media_paths_for(it: dict, pub_cfg: dict) -> list[str]:
+def _media_paths_for(it: dict, pub_cfg: dict, sidecar: dict | None = None) -> list[str]:
     """Public media URLs to attach to a post (PNG on X; Buffer needs a hosted URL).
 
     Prefers the chart's public https media_url (stamped at plan-build time when
@@ -216,6 +216,13 @@ def _media_paths_for(it: dict, pub_cfg: dict) -> list[str]:
     repo file Buffer cannot fetch — _build_assets() skips non-http paths anyway —
     so we never pass it. Returns [] (text-only) when the gate is off or no post
     carries a public URL: the graceful, always-correct fallback.
+
+    `sidecar` is the media-backfill map (scripts/marketing_media_backfill.py),
+    consulted ONLY for an entry the plan build left unstamped. That stamp happens
+    once, inside the nightly, and only if R2 creds were live in that process —
+    so without this fallback a single R2 hiccup makes a whole day's posts
+    text-only forever, with the charts rendered and committed but unreachable.
+    An item that already carries its own media_url never looks here.
     """
     if not _media_enabled_cfg(pub_cfg):
         return []
@@ -224,6 +231,9 @@ def _media_paths_for(it: dict, pub_cfg: dict) -> list[str]:
         if not isinstance(m, dict):
             continue
         u = str(m.get("media_url") or "").strip()
+        if not u and sidecar:
+            key = f"{str(it.get('as_of') or '').strip()}/{str(m.get('chart_id') or '').strip()}"
+            u = str(sidecar.get(key) or "").strip()
         if u.lower().startswith(("http://", "https://")):
             urls.append(u)
     return urls
@@ -302,6 +312,40 @@ def _jitter_max_cfg(pub_cfg: dict) -> int:
     → 0 = disabled, which reproduces the exact pre-jitter booking behaviour.
     """
     raw = pub_cfg.get("post_jitter_max_min", 0)
+    try:
+        v = int(raw)
+    except (TypeError, ValueError):
+        return 0
+    return v if v > 0 else 0
+
+
+def _forward_book_horizon_cfg(pub_cfg: dict) -> int:
+    """publish.max_forward_book_min — how far AHEAD of now one sweep may book a
+    ladder item that is inside the global spacing floor. 0 / absent → 0, which
+    reproduces the pre-2026-07-28 behaviour exactly (the item defers to the next
+    sweep instead of being booked).
+
+    WHY THIS EXISTS. The floor guarantees "no two posts closer than
+    min_minutes_between_any_posts". The original enforcement deferred any item
+    inside the floor to the next cron sweep, which silently made the SWEEP the
+    unit of throughput: 30 sweeps/day → at most 30 posts/day network-wide, no
+    matter how many the desks generated or what the per-account caps allowed.
+    With the desks generating ~59/day that quietly strands more than half the
+    queue every day, and it degrades further whenever a sweep is dropped.
+
+    Booking forward enforces the SAME spacing without that coupling: the item is
+    handed to Buffer as a customScheduled post at (floor + spacing), so the send
+    times are identical to what the defer path would eventually have produced —
+    they are simply reserved now instead of re-derived one sweep at a time.
+
+    The horizon is the safety bound, and it is a TAPE-FRESHNESS bound, not a
+    performance knob: every item is verified against live quotes at BOOK time
+    (live_verify), so booking N minutes ahead ships a read that is up to N
+    minutes stale. Keep it near the live gate's own max_quote_age_min rather
+    than raising it to drain the queue faster — a whole day booked at 09:00 is
+    a whole day of reads written against the 09:00 tape.
+    """
+    raw = pub_cfg.get("max_forward_book_min", 0)
     try:
         v = int(raw)
     except (TypeError, ValueError):
@@ -820,6 +864,7 @@ def main(argv: list[str] | None = None) -> int:
 
     posted = failed = quarantined = skipped_cap = skipped_channel = would_post = 0
     tape_quarantined = tape_skipped = skipped_floor = deferred_immediate = 0
+    forward_booked = 0
 
     # ── Global min-spacing floor (publish.min_minutes_between_any_posts) ──────
     # Post-time anti-spam guard: at most one post per floor-minute window across
@@ -836,6 +881,29 @@ def main(argv: list[str] | None = None) -> int:
     # ladder item still defers when inside the floor, unchanged.
     floor_min = _floor_minutes_cfg(pub_cfg)
     last_post_at = _last_global_post_at(root) if floor_min else None
+
+    # ── Media backfill sidecar (fail-soft) ───────────────────────────────────
+    # Public chart URLs recovered by scripts/marketing_media_backfill.py for
+    # items whose plan build could not reach R2. Loaded ONCE per run; an empty
+    # map (no sidecar, unreadable file) reproduces the pre-sidecar behaviour
+    # exactly, so a broken ledger costs an image and never a post.
+    _media_sidecar: dict = {}
+    try:
+        from scripts.marketing_media_backfill import load_sidecar as _load_sidecar  # noqa: PLC0415
+        _media_sidecar = _load_sidecar(root)
+        if _media_sidecar:
+            log.info("media backfill sidecar: %d recovered chart URLs", len(_media_sidecar))
+    except Exception as _sc_exc:  # noqa: BLE001
+        log.warning("media backfill sidecar unavailable (%s) — items keep their own "
+                    "media_url only", _sc_exc)
+
+    # ── Forward-booking horizon (publish.max_forward_book_min) ───────────────
+    # Decouples network throughput from the cron grid: an item inside the floor
+    # is booked at the moment the floor clears (Buffer customScheduled) instead
+    # of deferring a whole sweep. Spacing is unchanged; only the reservation
+    # moves earlier. 0 = off = the pre-2026-07-28 defer path. See
+    # _forward_book_horizon_cfg for why the bound is about tape freshness.
+    forward_horizon_min = _forward_book_horizon_cfg(pub_cfg)
 
     # ── Send-time jitter (publish.post_jitter_max_min) ───────────────────────
     # A ladder item books at (floor-cleared time + a per-item offset) instead of
@@ -1137,22 +1205,37 @@ def main(argv: list[str] | None = None) -> int:
         # it posts at NOW unconditionally — never floor-booked, never deferred,
         # never dropped. It STILL advances the in-memory floor so the next ladder
         # post budges by the spacing (and a burst of immediates all fire at now).
+        # The earliest wall-clock this item may go out without breaking the
+        # floor. `now` once the floor is clear; otherwise the moment it clears.
+        floor_clear_at = now
         if not is_immediate and _within_floor(last_post_at, now, floor_min):
-            _ago = int((now - last_post_at).total_seconds() // 60)
-            log.info("item %s (%s) deferred — a post went out %dm ago (< %dm "
-                     "global floor); retries next slot", iid, account, _ago, floor_min)
-            skipped_floor += 1
-            continue
+            floor_clear_at = last_post_at + timedelta(minutes=floor_min)
+            _ahead = int((floor_clear_at - now).total_seconds() // 60)
+            # Forward-booking (publish.max_forward_book_min) hands the item to
+            # Buffer scheduled at floor_clear_at instead of dropping it back in
+            # the queue for the next sweep. Same spacing, same send time — the
+            # slot is just reserved now. Bounded by the horizon so a booked read
+            # is never verified against a tape much older than it claims.
+            if forward_horizon_min <= 0 or _ahead > forward_horizon_min:
+                _ago = int((now - last_post_at).total_seconds() // 60)
+                log.info("item %s (%s) deferred — a post went out %dm ago (< %dm "
+                         "global floor); retries next slot", iid, account, _ago, floor_min)
+                skipped_floor += 1
+                continue
+            log.info("item %s (%s) forward-booked +%dm (global floor %dm, horizon %dm)",
+                     iid, account, _ahead, floor_min, forward_horizon_min)
+            forward_booked += 1
 
         # The wall-clock this post is booked for. An immediate item books at NOW.
-        # A ladder item books at NOW + its deterministic jitter offset; with
-        # jitter off (0) that is NOW, and send_scheduled_at stays the item's own
-        # ladder slot exactly as before. Also the value the in-memory floor
-        # advances to after a post — the floor must count from the time a post
-        # actually goes out, not from the sweep that queued it.
+        # A ladder item books at floor_clear_at + its deterministic jitter offset;
+        # with the floor clear and jitter off (0) that is NOW, and
+        # send_scheduled_at stays the item's own ladder slot exactly as before.
+        # Also the value the in-memory floor advances to after a post — the floor
+        # must count from the time a post actually goes out, not from the sweep
+        # that queued it.
         jitter_minutes = 0 if is_immediate else _post_jitter_minutes(iid, jitter_max)
-        booked_at = now + timedelta(minutes=jitter_minutes)
-        if is_immediate or jitter_max > 0:
+        booked_at = floor_clear_at + timedelta(minutes=jitter_minutes)
+        if is_immediate or jitter_max > 0 or booked_at > now:
             send_scheduled_at = booked_at.strftime(_TS_FMT)
         else:
             send_scheduled_at = it.get("scheduled_at")
@@ -1160,7 +1243,7 @@ def main(argv: list[str] | None = None) -> int:
 
         # Public chart-image URLs (PNG on X) when publish.media_enabled + a plan-
         # build-time R2 upload produced one; else [] → text-only (graceful).
-        media_paths = _media_paths_for(it, pub_cfg)
+        media_paths = _media_paths_for(it, pub_cfg, _media_sidecar)
 
         # -- DRY-RUN: print, never touch the network or the ledger -----------
         if not live:
@@ -1271,12 +1354,13 @@ def main(argv: list[str] | None = None) -> int:
     log.info(
         "%s complete | posted=%d failed=%d quarantined=%d would_post=%d "
         "tape_quarantined=%d tape_skipped=%d skipped_floor=%d "
-        "deferred_immediate=%d "
+        "forward_booked=%d deferred_immediate=%d "
         "skipped_cap=%d skipped_cadence=%d cadence_shadow=%d deferred_xa=%d "
         "skipped_no_channel=%d "
         "stuck_posting=%d auto_approved=%d",
         mode, posted, failed, quarantined, would_post,
-        tape_quarantined, tape_skipped, skipped_floor, deferred_immediate,
+        tape_quarantined, tape_skipped, skipped_floor,
+        forward_booked, deferred_immediate,
         skipped_cap, skipped_cadence, shadow_cadence, deferred_xa, skipped_channel,
         len(stuck_posting),
         len(auto_approved),
@@ -1294,6 +1378,7 @@ def main(argv: list[str] | None = None) -> int:
             "tape_quarantined": tape_quarantined,
             "tape_skipped": tape_skipped,
             "skipped_floor": skipped_floor,
+            "forward_booked": forward_booked,
             "deferred_immediate": deferred_immediate,
             "skipped_cap": skipped_cap,
             "skipped_cadence": skipped_cadence,

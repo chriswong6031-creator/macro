@@ -1,0 +1,120 @@
+name: marketing-media-backfill
+# ─────────────────────────────────────────────────────────────────────────────
+# Republish outbox chart images to R2 and record their public URLs.
+#
+# A post attaches a chart only if its outbox item carries a public https
+# media_url. That stamp happens exactly once — inside the nightly's
+# content_studio build, and only when R2 creds are live in THAT process. Any
+# build that runs without them (an operator rebuild, a lane where the secrets
+# were never plumbed, an R2 outage) ships the whole day text-only, permanently:
+# the SVGs are committed but the PNGs are gitignored and nothing re-stamps.
+#
+# This lane is the recovery path. It re-rasterizes the committed SVG, uploads it
+# to the same R2 key content_studio would have used, and appends the resulting
+# URL to data/marketing/outbox/media_urls.jsonl — an append-only sidecar the
+# publisher reads as a fallback (scripts/marketing_publisher._media_paths_for).
+# The outbox items themselves are never rewritten, so this never races the
+# nightly or a publish sweep appending to items.jsonl.
+#
+# SAFE TO RE-RUN: charts already in the sidecar are skipped, and an item that
+# carries its own media_url is never touched.
+# ─────────────────────────────────────────────────────────────────────────────
+on:
+  workflow_dispatch:
+    inputs:
+      as_of:
+        description: >-
+          Only backfill items with this as_of date (YYYY-MM-DD). Blank = every
+          item in the outbox that lacks a public chart URL.
+        required: false
+        default: ""
+      dry_run:
+        description: "Report what is missing; no rasterize, no upload, no commit."
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write             # commit the recovered-URL sidecar
+
+concurrency:
+  # Serialize with itself only. It appends to a ledger the publish lane also
+  # stages, and both use a retry-rebase push (the file carries merge=union).
+  group: marketing-media-backfill
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest    # OFF the render path — never the macstudio pool
+    timeout-minutes: 30
+    steps:
+      - name: checkout (shallow + write token)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: install deps
+        # boto3: the R2 upload. pyyaml: config load for the public base URL.
+        run: pip install --quiet boto3 pyyaml
+
+      - name: verify chrome
+        # The rasterizer shells to headless Chrome (chart_render.find_chrome
+        # probes `google-chrome`/`chrome` on PATH). ubuntu-latest ships Chrome
+        # preinstalled; fail LOUDLY here rather than let every chart silently
+        # return b"" and the whole backfill report "published=0" as if the
+        # outbox were already clean.
+        run: |
+          which google-chrome || which chrome || {
+            echo "::error title=no-chrome::headless Chrome not on PATH — every rasterize would return empty"
+            exit 1
+          }
+          google-chrome --version || chrome --version
+
+      - name: backfill chart media
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          AS_OF: ${{ inputs.as_of }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          ARGS=""
+          [ -n "${AS_OF:-}" ] && ARGS="$ARGS --as-of $AS_OF"
+          [ "${DRY_RUN:-false}" = "true" ] && ARGS="$ARGS --dry-run"
+          python -m scripts.marketing_media_backfill $ARGS
+
+      - name: commit recovered URLs (no-op when nothing changed)
+        if: always() && inputs.dry_run != true
+        run: |
+          set -uo pipefail
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/marketing/outbox/media_urls.jsonl 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "marketing-media-backfill: no new chart URLs to commit"
+            exit 0
+          fi
+          git commit -m "marketing-media-backfill: recovered chart URLs $(date -u +%FT%H:%MZ) [skip ci]"
+          for i in 1 2 3 4 5; do
+            # --depth 20 mirrors marketing-publish.yml: the checkout is shallow,
+            # so `pull --rebase` needs deepening to find a merge base once main
+            # advances mid-run. The sidecar carries merge=union, so a concurrent
+            # append resolves instead of conflicting.
+            git fetch --depth 20 origin main || true
+            if git pull --rebase --autostash origin main && git push origin HEAD:main; then
+              echo "marketing-media-backfill: pushed on attempt $i"
+              exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "marketing-media-backfill: push attempt $i lost a race; re-syncing"
+            sleep $((i * 7))
+          done
+          echo "::warning::marketing-media-backfill: could not push after 5 attempts (non-fatal)"
+          exit 0

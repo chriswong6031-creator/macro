@@ -1177,6 +1177,16 @@ on:
       # config/marketing.yml already reach its subjects — this entry is so a
       # test-only edit reaches its own guard.
       - "tests/test_marketing_chart_coverage.py"
+      # Publish-lane throughput + media recovery (2026-07-28). Its subjects are
+      # scripts/marketing_publisher.py, scripts/marketing_media_backfill.py, the
+      # two marketing workflow files and .gitattributes — none of which the
+      # engine/marketing/** globs above reach, so without these entries a change
+      # to any of them (or to the suite itself) would never meet its own guard.
+      - "tests/test_marketing_forward_booking.py"
+      - "scripts/marketing_media_backfill.py"
+      - ".github/workflows/marketing-publish.yml"
+      - ".github/workflows/marketing-media-backfill.yml"
+      - ".gitattributes"
       # Persona Network W1 (docket D13): the persona spec layer + its roster panel,
       # co-run in the marketing-engine job (same stdlib+pyyaml closure). The SPECS
       # are listed, not only the code — a PR that edits ONLY config/personas/*.yml

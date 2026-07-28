@@ -78,11 +78,12 @@ concurrency:
 jobs:
   publish:
     runs-on: ubuntu-latest    # OFF the render path — never the macstudio pool
-    # 25m, not 15m: the full-history checkout (fetch-depth:0) of this
-    # heavy-churn repo alone runs ~7m and grows nightly; + deps install (~2m)
-    # + humanizing jitter (≤5m) + publish/poll left NO margin under a 15m cap,
-    # so high-jitter draws blew the wall and the whole run was CANCELLED before
-    # the publisher step ever ran (2026-07-24 regression: 4 consecutive kills).
+    # 25m is plenty NOW THAT THE CHECKOUT IS SHALLOW (see fetch-depth below).
+    # It was not before: on 2026-07-28 the full-history checkout ran the entire
+    # 25m and was CANCELLED mid-clone, so `run publisher` never executed and the
+    # desk network published nothing all day. Raising the cap is the wrong lever
+    # — the clone grows nightly, so any fixed wall is a future outage. Keep the
+    # checkout shallow and this budget stays generous.
     timeout-minutes: 25
     env:
       BUFFER_TOKEN: ${{ secrets.BUFFER_TOKEN }}
@@ -92,10 +93,18 @@ jobs:
       # of this name must NOT keep the publisher live after the toggle is off.
       MARKETING_PUBLISH_ENABLED: ${{ vars.MARKETING_PUBLISH_ENABLED }}
     steps:
-      - name: checkout (full history + write token)
+      - name: checkout (shallow + write token)
+        # SHALLOW ON PURPOSE (2026-07-28). This was fetch-depth: 0 and the clone
+        # of this heavy-churn repo grew past the 25m job timeout — the 12:58Z
+        # sweep spent 12:58:08→13:23:07 inside `checkout` and was cancelled with
+        # every later step skipped, so the publisher never ran and NOTHING went
+        # out that day. Nothing here needs history: the runner reads the outbox
+        # ledgers at HEAD, and the commit step below commits one row on top of
+        # main and pushes it. The push loop deepens to 20 so `pull --rebase`
+        # always has a merge base even when main advanced mid-run.
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: setup python
@@ -208,7 +217,12 @@ jobs:
           # (mirrors seo-director.yml push mechanics). --autostash parks nothing
           # here since everything is already committed above.
           for i in 1 2 3 4 5; do
-            git fetch origin main || true
+            # --depth 20: the checkout is shallow, so a bare fetch would leave
+            # `pull --rebase` without a merge base once main advances. 20 covers
+            # any realistic mid-run drift; the ledgers themselves carry
+            # merge=union (.gitattributes) so a concurrent nightly commit to the
+            # same JSONL resolves instead of conflicting.
+            git fetch --depth 20 origin main || true
             # Drop any untracked file that shadows an origin/main path (a mid-run
             # commit could TRACK a path we wrote as an untracked side-effect,
             # which would make the rebase checkout refuse). Everything we publish
