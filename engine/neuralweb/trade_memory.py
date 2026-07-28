@@ -149,6 +149,8 @@ def normalize_episode(payload: dict[str, Any]) -> dict[str, Any]:
 
     entry_price = _price(payload.get("entry_price"), "entry_price")
     exit_price = _price(payload.get("exit_price"), "exit_price")
+    if outcome == "open" and (exit_date or exit_price is not None):
+        raise ValueError("open outcomes cannot have an exit_date or exit_price")
     if outcome != "open" and (entry_price is None) != (exit_price is None):
         raise ValueError("provide both entry_price and exit_price, or leave both blank")
 

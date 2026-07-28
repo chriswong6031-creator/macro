@@ -35,8 +35,19 @@ create table if not exists public.trade_episodes (
   updated_at          timestamptz not null default now(),
   check (exit_date is null or exit_date >= entry_date),
   check (
-    (entry_price is null and exit_price is null)
-    or (entry_price is not null and exit_price is not null)
+    (
+      outcome = 'open'
+      and exit_date is null
+      and exit_price is null
+    )
+    or (
+      outcome <> 'open'
+      and exit_date is not null
+      and (
+        (entry_price is null and exit_price is null)
+        or (entry_price is not null and exit_price is not null)
+      )
+    )
   )
 );
 create index if not exists trade_episodes_owner_date

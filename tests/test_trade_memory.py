@@ -78,6 +78,18 @@ def test_normalize_episode_requires_closed_exit_and_price_pair():
         tm.normalize_episode(_episode(exit_price=None))
 
 
+def test_normalize_episode_allows_open_entry_but_rejects_open_exit():
+    episode = tm.normalize_episode(
+        _episode(outcome="open", exit_date=None, entry_price=150, exit_price=None)
+    )
+    assert episode["entry_price"] == 150.0
+    assert episode["exit_price"] is None
+    with pytest.raises(ValueError, match="open outcomes cannot have"):
+        tm.normalize_episode(_episode(outcome="open", exit_date="2026-07-20"))
+    with pytest.raises(ValueError, match="open outcomes cannot have"):
+        tm.normalize_episode(_episode(outcome="open", exit_date=None, exit_price=180))
+
+
 def test_build_evidence_packet_decomposes_market_sector_stock(monkeypatch, tmp_path):
     idx = pd.to_datetime(["2026-06-10", "2026-06-20", "2026-07-20"])
     prices = {
