@@ -483,9 +483,12 @@ _FOOTER_BRAND = "Mastermind"
 _SITE_URL = "https://www.mastermind-x.com"
 _SITE_LABEL = "mastermind-x.com"
 _SUPPORT_ADDR = "support@mastermind-x.com"
-# XG-W7: flagship first, wire property second. Handles only — the roster of
-# employee accounts belongs on the site, not in every marketing send.
-_X_HANDLES = ("mastermindx001", "mastermindnews1")
+# XG-W7. FLAGSHIP ONLY, and that is a live-account rule rather than a taste
+# call: @mastermindnews1 is configured DARK (config/marketing.yml — wired
+# Buffer channel, account disabled pending the XG-W2 cadence resolver) and
+# receives no emissions, so pointing readers at it advertises an empty feed.
+# Adding it back is a one-line change HERE once that account is enabled.
+_X_HANDLES = ("mastermindx001",)
 _WHY_EN = "You received this because you contacted Mastermind support or hold an account with us."
 _WHY_ZH = "你收到这封邮件，是因为你联系了 Mastermind 客服，或拥有我们的账户。"
 
@@ -765,11 +768,14 @@ def render_email(title_en: str, title_zh: str, blocks: list[dict], *,
             f' style="color:{_C_MUTED}; text-decoration:underline;">@{h}</a>'
             for h in _X_HANDLES
         )
+        # EN half only. x.com is unreachable behind the GFW, and the Chinese half
+        # of the message is read by exactly the people it is unreachable for — a
+        # dead link there is worse than no link. Same reasoning that keeps the
+        # handle off the anonymous public estate (tests/test_support_page.py).
         social = (
             f'<p class="mx-foot" style="margin:0 0 8px; font-family:{_F_UI}; font-size:12px;'
             f' line-height:1.6; color:{_C_FOOT};">'
-            f'Follow the desk on X: {links}<br />'
-            f'在 X 上关注我们：{links}</p>'
+            f'Follow the desk on X: {links}</p>'
         )
 
     unsub = ""
@@ -894,7 +900,7 @@ def render_email(title_en: str, title_zh: str, blocks: list[dict], *,
         shared_text += (f"{label}\n" if label else "") + body + "\n\n"
     unsub_text = f"\nUnsubscribe / 退订: {unsubscribe_url}\n" if unsubscribe_url else ""
     social_text = (
-        "\nOn X / X 账号: " + " · ".join(f"@{h} (https://x.com/{h})" for h in _X_HANDLES) + "\n"
+        "\nOn X: " + " · ".join(f"@{h} (https://x.com/{h})" for h in _X_HANDLES) + "\n"
         if follow else ""
     )
     text = (
