@@ -258,9 +258,22 @@ def build_and_write(root: Path | str | None = None) -> dict[str, Any]:
             for _fc in (content_plan_obj.get("featured_charts") or []):
                 _fc.pop("_defer", None)
 
-        # Write annotated content plan
+        # Write annotated content plan, minus the copywriter's in-process
+        # scaffolding (`_plan` alone was 239KB of a 1.11MB artifact, ~9x the
+        # next-largest per-item field, growing with the desk count).
+        # strip_scaffolding returns a COPY on purpose: everything below still
+        # needs the fat in-memory plan — short-link pages, and above all
+        # outbox.emit_from_content_plan, which reads `_plan` to stamp the
+        # publisher's post-time live gate. Fail-soft: a strip failure writes the
+        # unstripped plan, which is merely large, never wrong.
         content_plan_path = r / _CONTENT_PLAN_PATH
-        _write_json_atomic(content_plan_path, content_plan_obj)
+        try:
+            from engine.marketing.content_studio import strip_scaffolding  # noqa: PLC0415
+            _plan_to_write = strip_scaffolding(content_plan_obj)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("marketing_governor: scaffolding strip failed: %s", exc)
+            _plan_to_write = content_plan_obj
+        _write_json_atomic(content_plan_path, _plan_to_write)
         result["content_plan_path"] = str(content_plan_path)
         log.info("marketing_governor: wrote %s", content_plan_path)
 

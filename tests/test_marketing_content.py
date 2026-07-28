@@ -1174,3 +1174,133 @@ def test_the_clarity_laws_are_present_and_readable():
     assert "four up" in blob, "the worked counter-example is missing"
     assert "print the level" in blob
     assert "vwap" in blob, "the M2 study names are not banned in copy_laws"
+
+
+# ---------------------------------------------------------------------------
+# 7. In-process scaffolding never reaches content_plan.json
+#
+# The copywriter pass hangs the whole Prophet plan dict on every queue item
+# (`_plan`) so build_context can read it without a second lookup. Measured
+# 2026-07-28 on the tracked 7-desk artifact: `_plan` was 239KB of 1.11MB — the
+# largest per-item field by ~9x over the next one (`body`, 27KB) — and it grows
+# with the desk count. Nothing that re-opens the artifact reads it.
+# ---------------------------------------------------------------------------
+
+def _scaffolding_in(cp: dict) -> set[str]:
+    """Underscore-prefixed keys present anywhere in a written plan that are NOT
+    on the artifact keep-list."""
+    from engine.marketing.content_studio import ARTIFACT_KEEP_KEYS
+
+    found: set[str] = {k for k in cp if k.startswith("_")}
+    for fc in cp.get("featured_charts") or []:
+        if isinstance(fc, dict):
+            found |= {k for k in fc if k.startswith("_")}
+    for acct in cp.get("accounts") or []:
+        if not isinstance(acct, dict):
+            continue
+        found |= {k for k in acct if k.startswith("_")}
+        for item in acct.get("queue") or []:
+            if isinstance(item, dict):
+                found |= {k for k in item if k.startswith("_")}
+    return found - ARTIFACT_KEEP_KEYS
+
+
+def test_strip_scaffolding_drops_bulk_keys_and_keeps_the_read_ones():
+    """The keep-list is exactly the keys with a named reader of the artifact;
+    every other "_" key is scaffolding and must not survive the write."""
+    from engine.marketing.content_studio import strip_scaffolding
+
+    plan = {
+        "as_of": "2026-07-28",
+        "featured_charts": [{"id": "c1", "svg": "<svg/>", "_defer": {"big": "blob"}}],
+        "accounts": [{
+            "id": "flagship",
+            "queue": [{
+                "id": "p1", "type": "signal", "ticker": "PLTR",
+                "_plan": {"id": "prophet-PLTR-1", "entry": 120.0},
+                "_receipt": {"kind": "win"},
+                "_mover_data": {"pct": 3.1}, "_mover_facts": {"a": 1},
+                "_theme_data": {"agg_pct": 2.0}, "_theme_facts": {"b": 2},
+                "_live_gate_fail": "stale", "_copy_violations": ["x"],
+                "_copy_mode": "llm",
+            }],
+        }],
+    }
+    out = strip_scaffolding(plan)
+    item = out["accounts"][0]["queue"][0]
+
+    for gone in ("_plan", "_receipt", "_mover_data", "_mover_facts",
+                 "_theme_data", "_theme_facts"):
+        assert gone not in item, f"{gone} is scaffolding but reached the artifact"
+    # Read downstream — admin badges (_live_gate_fail, _copy_violations) and the
+    # Lab roll-up (_copy_mode, via telemetry._build_post_index re-reading disk).
+    assert item["_live_gate_fail"] == "stale"
+    assert item["_copy_violations"] == ["x"]
+    assert item["_copy_mode"] == "llm"
+    # Non-underscore fields are untouched.
+    assert item["id"] == "p1" and item["ticker"] == "PLTR"
+    assert "_defer" not in out["featured_charts"][0]
+    assert out["featured_charts"][0]["svg"] == "<svg/>"
+    assert _scaffolding_in(out) == set()
+
+
+def test_strip_scaffolding_leaves_the_in_memory_plan_intact():
+    """COPY-ON-WRITE IS LOAD-BEARING. The governor writes the stripped copy but
+    keeps using the fat in-memory plan afterwards — above all
+    outbox.emit_from_content_plan, which reads `_plan` to stamp
+    source.signal_id/direction/entry/invalidation for the publisher's post-time
+    live gate. A strip that mutated in place would disarm that gate silently."""
+    from engine.marketing.content_studio import strip_scaffolding
+
+    plan = {"accounts": [{"id": "a", "queue": [
+        {"id": "p1", "_plan": {"id": "prophet-NVDA-1", "direction": "BULL"}},
+    ]}], "featured_charts": [{"id": "c1", "_defer": {"blob": 1}}]}
+    out = strip_scaffolding(plan)
+
+    assert plan["accounts"][0]["queue"][0]["_plan"]["direction"] == "BULL", (
+        "strip_scaffolding mutated its argument — outbox.emit_from_content_plan "
+        "runs on this object AFTER the write and would lose its live-gate stamp")
+    assert plan["featured_charts"][0]["_defer"] == {"blob": 1}
+    assert "_plan" not in out["accounts"][0]["queue"][0]
+
+
+def test_written_content_plan_carries_no_scaffolding(tmp_path):
+    """End-to-end: the artifact the governor writes carries no scaffolding."""
+    (tmp_path / "config").mkdir()
+    (tmp_path / "data" / "marketing").mkdir(parents=True)
+    (tmp_path / "data" / "neuralweb").mkdir(parents=True)
+    (tmp_path / "site" / "neuralwebdata").mkdir(parents=True)
+    shutil.copy(ROOT / "config" / "marketing.yml", tmp_path / "config" / "marketing.yml")
+
+    from engine.neuralweb.marketing_governor import build_and_write
+    build_and_write(root=tmp_path)
+
+    cp = json.loads(
+        (tmp_path / "data" / "marketing" / "content_plan.json").read_text())
+
+    n_items = sum(len(a.get("queue") or []) for a in cp.get("accounts") or [])
+    assert n_items > 0, "no queue items — this guard would pass vacuously"
+
+    leaked = _scaffolding_in(cp)
+    assert leaked == set(), (
+        f"in-process scaffolding reached content_plan.json: {sorted(leaked)}. "
+        f"Strip it in marketing_governor.build_and_write (strip_scaffolding), "
+        f"or add it to ARTIFACT_KEEP_KEYS if a reader of the WRITTEN artifact "
+        f"needs it.")
+    # The specific 239KB regression this pins.
+    assert all(
+        "_plan" not in item
+        for a in cp["accounts"] for item in (a.get("queue") or [])
+    ), "the full Prophet plan dict is back in the artifact"
+
+
+def test_artifact_keep_list_covers_what_admin_renders():
+    """Cross-module contract: every underscore key the admin Content Studio
+    render whitelists must survive the write, or the badge silently goes dark."""
+    from admin.marketing import _CONTENT_POST_KEEP
+    from engine.marketing.content_studio import ARTIFACT_KEEP_KEYS
+
+    missing = set(_CONTENT_POST_KEEP) - set(ARTIFACT_KEEP_KEYS)
+    assert not missing, (
+        f"admin renders {sorted(missing)} but the writer strips them — the "
+        f"Content Studio badge would read empty for every post")
