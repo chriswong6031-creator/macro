@@ -127,13 +127,22 @@ DIAL_CEILING = 2
 #: amendment 3: replies are persona-forward by nature for the employees, and the
 #: flagship stays an evidence desk even in someone else's thread.
 #:
-#: ``wire``/``news``/``breaking`` are NOT in ``outbox.KINDS`` yet (IS-W3 admits
-#: them) and neither is ``reply`` (XG-W4). They are mapped now so the dial is
-#: ready the day the kind lands rather than defaulting into personality.
+#: ``wire``, ``breaking`` and ``earnings`` joined ``outbox.KINDS`` in XG-W2 (the
+#: wave that moved press_lane + fastlane onto the canonical outbox path); the
+#: dial already carried the first two and gained ``earnings`` with them.
+#: ``news`` and ``reply`` are still ahead of their kinds (``reply`` lands in
+#: XG-W4) — mapped now so the dial is ready the day the kind lands rather than
+#: defaulting into personality.
 PROFILES: dict[str, dict[str, int]] = {
     "employee": {
         # 0 — the house wire voice. Zero personality, no exceptions.
-        "wire": 0, "news": 0, "breaking": 0, "event": 0,
+        # XG-W2 admitted "earnings" to outbox.KINDS (the fastlane's kind, moved
+        # onto the canonical outbox path). ADJUDICATED to 0, not defaulted: an
+        # earnings post is "EPS $x vs $y est (+z%)" from a deterministic
+        # template with no take in it — a numbers wire, not analysis. The
+        # UNLISTED_KIND_DIAL fallback of 1 would have granted it a personality
+        # budget it has no use for.
+        "wire": 0, "news": 0, "breaking": 0, "event": 0, "earnings": 0,
         # 1 — analysis. Vocabulary tilt plus at most one framing device.
         # Cici's "Before New York Wakes" is an ANALYSIS franchise, not a wire:
         # it is her overnight read, so it lands on macro/signal and dials to 1.
@@ -142,7 +151,13 @@ PROFILES: dict[str, dict[str, int]] = {
         "chart": 2, "watchlist": 2, "receipt": 2, "reply": 2,
     },
     "flagship": {
-        "wire": 0, "news": 0, "breaking": 0, "event": 0,
+        # XG-W2 admitted "earnings" to outbox.KINDS (the fastlane's kind, moved
+        # onto the canonical outbox path). ADJUDICATED to 0, not defaulted: an
+        # earnings post is "EPS $x vs $y est (+z%)" from a deterministic
+        # template with no take in it — a numbers wire, not analysis. The
+        # UNLISTED_KIND_DIAL fallback of 1 would have granted it a personality
+        # budget it has no use for.
+        "wire": 0, "news": 0, "breaking": 0, "event": 0, "earnings": 0,
         "signal": 1, "macro": 1, "education": 1, "mover": 1, "theme_list": 1,
         "chart": 2, "watchlist": 2, "receipt": 2,
         # charter §2 amendment 3: the flagship stays an evidence desk in replies.

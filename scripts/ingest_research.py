@@ -39,7 +39,7 @@ _REPO_CATALOG = Path(__file__).resolve().parent.parent / "data" / "research_vaul
 _REPO_EXCERPTS = Path(__file__).resolve().parent.parent / "data" / "research_vault" / "excerpts.json"
 
 
-def _report_measured(summary: dict) -> None:
+def _report_measured(summary: dict, dry_run: bool = False) -> None:
     """Print the per-field fill rate + the engine-measured tripwires.
 
     Annotations use a BARE print starting at column 0: GitHub only parses a
@@ -66,6 +66,27 @@ def _report_measured(summary: dict) -> None:
                 print(f"::warning::research_vault: catalog field '{field}' is empty on "
                       f"ALL {cov[field]['total']} items — no producer fills it",
                       flush=True)
+
+        # Both of these describe rows that were CHANGED, so neither may claim
+        # anything under --dry-run, which publishes nothing: "folded into
+        # already-published rows" would be simply false.
+        if summary.get("summaries_recovered") and not dry_run:
+            # A NOTICE, not a warning: this is the repair working. It is worth
+            # surfacing because the number is also the count of rows that shipped
+            # "Summary pending" to the public site until this run healed them.
+            print(f"::notice title=research_vault::{summary['summaries_recovered']} "
+                  f"late sidecar summary(ies) folded into already-published rows "
+                  f"({summary.get('sidecars_checked', 0)} sidecar(s) re-checked)",
+                  flush=True)
+
+        if summary.get("summaries_resynced") and not dry_run:
+            # Rows whose bullets reached the catalog but not the corpus — the
+            # skew a failed corpus publish leaves behind. Non-zero means a PRIOR
+            # run's publish failed, so it is worth seeing even though it healed.
+            print(f"::warning title=research_vault::"
+                  f"{summary['summaries_resynced']} corpus summary(ies) were out of "
+                  f"sync with the catalog and have been resynced — a previous "
+                  f"corpus publish did not land", flush=True)
 
         if summary.get("no_text_layer"):
             print(f"::warning::research_vault: {summary['no_text_layer']} document(s) "
@@ -117,8 +138,9 @@ def main() -> int:
                   f"skipped={summary['skipped']} failed={summary['failed']} "
                   f"needs_metadata={summary['needs_metadata']} "
                   f"titles_repaired={summary.get('titles_repaired', 0)} "
+                  f"summaries_recovered={summary.get('summaries_recovered', 0)} "
                   f"(corpus={corpus_path}; nothing published)")
-            _report_measured(summary)
+            _report_measured(summary, dry_run=True)
             return 0
 
         # Catalog + corpus were already published to the store by run(); snapshot
@@ -159,6 +181,9 @@ def main() -> int:
               f"titles_repaired={summary.get('titles_repaired', 0)} "
               f"(from_pdf={summary.get('titles_recovered', 0)}, "
               f"filename_only={summary.get('titles_unresolved', 0)}) "
+              f"summaries_recovered={summary.get('summaries_recovered', 0)} "
+              f"(checked={summary.get('sidecars_checked', 0)}, "
+              f"resynced={summary.get('summaries_resynced', 0)}) "
               f"corpus_published={summary.get('corpus_published')} "
               f"excerpts={n_excerpts} snapshot={_REPO_CATALOG}")
         _report_measured(summary)

@@ -875,11 +875,16 @@ def generate_slot_items(
                 posted_today[chosen] = posted_today.get(chosen, 0) + 1
                 existing_token_sets.append(tokset)
                 existing_today.append(item)
-            elif result == "duplicate":
+            elif result in ("duplicate", "cross_account_duplicate"):
                 # EXPECTED when the tape hasn't moved since the prior slot: the
                 # identical text hashes to the same id. That idempotency is a
                 # feature — report it quietly, don't treat it as an error.
-                dropped.append({"reason": "duplicate", "detail": f"{lead_cashtag} ({item['id']})"})
+                # cross_account_duplicate (XG-W2) is the same class of quiet
+                # drop: another desk already carries near-identical copy, so
+                # this one must not go out. Named explicitly rather than falling
+                # into the generic failure branch, which would report a working
+                # guard as an error.
+                dropped.append({"reason": result, "detail": f"{lead_cashtag} ({item['id']})"})
             elif result == "cap_exceeded":
                 dropped.append({"reason": "cap_exceeded", "detail": lead_cashtag})
                 # Roll back the account reservation — nothing was written.
@@ -983,15 +988,37 @@ def _build_source(cand: dict, slot: str, now: datetime, quote_source: str) -> di
 # disabled the function returns a disabled report and writes NOTHING — nothing
 # can auto-post under the default config.
 
+def _after_close_slot() -> str:
+    """The ladder's LAST rung — the after-close block the daily read fires in.
+
+    DERIVED, never a literal. What this knob means is "the slot that owns the
+    open-ended evening tail", which is always the final rung of
+    outbox._LADDER_PT_TIMES — but it was written as a hardcoded label three
+    times and went stale on two of the three ladder changes:
+      * "S8"  (18:00 PT) under the retired 2-hour 8-slot ladder
+      * "S19" (17:30 PT) under the 45-min 19-slot ladder — #3849 shipped
+        against the 2-hour ladder minutes before #3855 replaced it
+      * the 30-min 28-rung ladder (2026-07-28) made "S19" mean 13:00 PT, i.e.
+        the middle of the trading day, and the read lane silently generated
+        NOTHING because its gate never matched an after-close instant.
+    A literal here is a landmine that only goes off when someone edits the
+    ladder, which is exactly when nobody is looking at this file.
+    """
+    from engine.marketing import outbox  # noqa: PLC0415
+
+    times = getattr(outbox, "_LADDER_PT_TIMES", None) or {}
+    if not times:
+        return "S19"  # fail-soft: the historical label, better than crashing
+    # Last by clock time, not by dict order or label sort ("S9" > "S28" as text).
+    return max(times.items(), key=lambda kv: (kv[1][0], kv[1][1]))[0]
+
+
 # In-code defaults for the publish.publish_time_read block (mirror _DEFAULTS).
 _READ_DEFAULTS: dict[str, Any] = {
     "enabled": False,       # DARK by default (operator arms after dry-runs)
-    # After-close ladder slot. Under the 45-min ladder (#3855,
-    # outbox._LADDER_PT_TIMES) the last slot S19 (17:30 PT) owns the open-ended
-    # evening tail, so it is the after-close block the daily read fires in.
-    # (Was "S8" = 18:00 PT under the retired 2-hour 8-slot ladder — #3849
-    # shipped against that ladder minutes before #3855 replaced it.)
-    "slot": "S19",
+    # After-close ladder slot — resolved from the ladder at call time by
+    # _read_cfg so it tracks any future ladder change automatically.
+    "slot": "",
 }
 
 _READ_KIND = "event"
@@ -1004,6 +1031,7 @@ def _read_cfg(cfg: dict | None) -> dict[str, Any]:
     and a junk value coerces to the default type rather than raising.
     """
     out = dict(_READ_DEFAULTS)
+    out["slot"] = _after_close_slot()
     try:
         block = ((cfg or {}).get("publish") or {}).get("publish_time_read") or {}
         for k, dv in _READ_DEFAULTS.items():
@@ -1262,12 +1290,14 @@ def generate_read_item(
             result = outbox.enqueue(item, r)
             if result == "queued":
                 generated.append(item["id"])
-            elif result == "duplicate":
+            elif result in ("duplicate", "cross_account_duplicate"):
                 # EXPECTED if the brief hasn't changed since a prior sweep: the
                 # identical text hashes to the same id (idempotent). The cross-
                 # night dedup in enqueue (#3824) likewise catches a same-week
-                # identical repeat. Report quietly, not as an error.
-                dropped.append({"reason": "duplicate", "detail": f"{aid} ({item['id']})"})
+                # identical repeat, and the cross-ACCOUNT radar (XG-W2) catches
+                # another desk already carrying near-identical copy. All three
+                # are guards doing their job — report quietly, not as an error.
+                dropped.append({"reason": result, "detail": f"{aid} ({item['id']})"})
             else:
                 dropped.append({"reason": "enqueue_failed", "detail": f"{aid}: {result}"})
 

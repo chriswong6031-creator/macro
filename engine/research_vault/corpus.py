@@ -237,6 +237,17 @@ def open_db(path: str | Path) -> sqlite3.Connection:
 # upsert
 # ---------------------------------------------------------------------------
 
+def summary_text(item: dict) -> str:
+    """The ``summary`` FTS column value for a catalog/sidecar item.
+
+    Defined once because TWO paths write it: :func:`upsert` at ingest, and
+    ``ingest._refresh_sidecars`` when a late-arriving sidecar summary is folded
+    into a row that was already published. A separate join in either place would
+    let the two drift into different searchable text for the same bullets.
+    """
+    return " • ".join(item.get("summary_points") or [])
+
+
 def upsert(conn: sqlite3.Connection, item: dict, body_text: str,
            facts: dict | None = None) -> None:
     """Insert/replace one document's searchable row.
@@ -260,7 +271,7 @@ def upsert(conn: sqlite3.Connection, item: dict, body_text: str,
     row: dict = {
         "doc_id": doc_id,
         "title": item.get("title") or "",
-        "summary": " • ".join(item.get("summary_points") or []),
+        "summary": summary_text(item),
         "institution": item.get("institution") or "",
         "side": item.get("side") or "",
         "published_at": published_at,

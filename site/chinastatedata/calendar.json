@@ -1,7 +1,7 @@
 {
   "schema": "china_calendar.v1",
-  "asof": "2026-07-27",
-  "generated_at_utc": "2026-07-27T22:19:17.420206+00:00",
+  "asof": "2026-07-28",
+  "generated_at_utc": "2026-07-28T11:26:53.052617+00:00",
   "horizon_days": 45,
   "entries": [
     {
@@ -14,18 +14,6 @@
       "impact": "high",
       "source_class": "static",
       "source": "china_calendar.political_windows",
-      "approx": true
-    },
-    {
-      "date": "2026-07-27",
-      "window_end": null,
-      "etype": "HK_TRADE",
-      "label_en": "HK external trade",
-      "label_zh": "香港对外商品贸易",
-      "region": "hk",
-      "impact": "medium",
-      "source_class": "static",
-      "source": "engine.hk_event_calendar",
       "approx": true
     },
     {
@@ -470,6 +458,18 @@
       "impact": "high",
       "source_class": "static",
       "source": "engine.china_event_calendar",
+      "approx": false
+    },
+    {
+      "date": "2026-09-11",
+      "window_end": null,
+      "etype": "US_CPI",
+      "label_en": "US CPI",
+      "label_zh": "美国 CPI",
+      "region": "hk",
+      "impact": "high",
+      "source_class": "static",
+      "source": "engine.hk_event_calendar",
       "approx": false
     }
   ],

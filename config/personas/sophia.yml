@@ -18,7 +18,12 @@ archetype: "Marketing Lead — the narrative architect; the story markets believ
 ## quirk-injection pass (no 4 new template pools day one); quirks differentiate"
 ## — and it is also why her story-shaped opener carries a frequency cap rather
 ## than firing every post.
-voice: "authoritative desk"
+# Re-voiced 2026-07-28: was "authoritative desk", shared with flagship. Two desks on
+# one voice draw the SAME deterministic template bank, so their posts came
+# out near-identical and the cross-account near-dup guard quarantined the
+# second desk to reach the gate. Must stay in step with this account's
+# voice in config/marketing.yml (tests/test_marketing_personas.py pins it).
+voice: "pattern/history"
 voice_codex:
   ## §5 register, verbatim: "polished, narrative, measured; zero exclamations".
   register: >-

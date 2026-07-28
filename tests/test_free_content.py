@@ -767,6 +767,104 @@ class TestDeterminism:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# HAND_AUTHORED carve-out (flagship product pages are source, not output)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestHandAuthoredPages:
+    """The three flagship product pages are hand-authored source files.
+
+    The generator must keep CONSUMING their content/seo/products/*.md
+    front-matter (hub cards, related links, clusters) while never writing,
+    drift-comparing, or orphan-flagging their HTML.
+    """
+
+    def test_constant_names_files_that_are_actually_committed(self):
+        """A typo in HAND_AUTHORED would silently disable the exemption."""
+        import scripts.build_free_content as bfc
+        missing = [
+            rel for rel in sorted(bfc.HAND_AUTHORED)
+            if not (_SITE_DIR / rel).is_file()
+        ]
+        assert not missing, f"HAND_AUTHORED names non-existent site/ files: {missing}"
+
+    def test_is_hand_authored_normalises_path_forms(self):
+        """url_path, site-relative str, native Path and backslashes all match."""
+        import scripts.build_free_content as bfc
+        assert bfc._is_hand_authored("/products/market-terminal.html")
+        assert bfc._is_hand_authored("products/market-terminal.html")
+        assert bfc._is_hand_authored(Path("products/market-terminal.html"))
+        assert bfc._is_hand_authored("products\\market-terminal.html")
+        assert not bfc._is_hand_authored("/products/index.html")
+        assert not bfc._is_hand_authored("blog/index.html")
+
+    @pytest.mark.skipif(
+        not _required_templates_present() or not _any_content_exists(),
+        reason="Designer templates or content .md files not yet present",
+    )
+    def test_render_skips_hand_authored_but_still_writes_the_hub(self, tmp_path):
+        """render_all writes products/index.html and none of the flagships."""
+        import scripts.build_free_content as bfc
+        out = tmp_path / "site"
+        out.mkdir()
+        bfc.render_all(out)
+
+        assert (out / "products" / "index.html").is_file(), \
+            "products hub must still be generated"
+        written = [
+            rel for rel in sorted(bfc.HAND_AUTHORED) if (out / rel).exists()
+        ]
+        assert not written, f"render_all overwrote hand-authored source: {written}"
+
+    @pytest.mark.skipif(
+        not _required_templates_present() or not _any_content_exists(),
+        reason="Designer templates or content .md files not yet present",
+    )
+    def test_hub_still_carries_a_card_for_every_hand_authored_product(self, tmp_path):
+        """Skipping the WRITE must not drop the page from `pages`.
+
+        The .md front-matter is what builds the hub cards, so the carve-out is
+        wrong the moment a flagship stops appearing on products/index.html.
+        """
+        import scripts.build_free_content as bfc
+        pages, _ = bfc.load_content()
+        ctx = bfc._products_hub_ctx(pages)
+        listed = {item["url_path"] for item in ctx["items"]}
+        for rel in sorted(bfc.HAND_AUTHORED):
+            assert f"/{rel}" in listed, f"{rel} missing from products hub context"
+
+        # …and the card actually reaches the rendered hub, not just the context.
+        out = tmp_path / "site"
+        out.mkdir()
+        bfc.render_all(out)
+        html = (out / "products" / "index.html").read_text(encoding="utf-8")
+        for rel in sorted(bfc.HAND_AUTHORED):
+            assert Path(rel).name in html, f"{rel} not linked from rendered hub"
+
+    @pytest.mark.skipif(
+        not _required_templates_present() or not _any_content_exists(),
+        reason="Designer templates or content .md files not yet present",
+    )
+    def test_orphan_walk_does_not_flag_hand_authored_pages(self, capsys):
+        """D5 must not call a committed hand-authored page an orphan.
+
+        This is the load-bearing exemption: render_all no longer produces these
+        files, so without the carve-out every one of them reports ORPHAN and the
+        CI estate check goes red.  The rc assertion is the anti-vacuity sentinel
+        — the orphan walk only runs after a clean drift compare, so a red check
+        would make the ORPHAN assertions below pass by never executing.
+        """
+        import scripts.build_free_content as bfc
+        rc = bfc._check_mode()
+        captured = capsys.readouterr()
+        assert rc == 0, (
+            "estate --check is red, so the orphan walk never ran and this pin "
+            f"proves nothing:\n{captured.err}"
+        )
+        for rel in sorted(bfc.HAND_AUTHORED):
+            assert f"ORPHAN (not produced by builder): {rel}" not in captured.err
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Uniqueness tests (require content files to exist)
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -841,7 +939,18 @@ class TestRenderedOutput:
     """
 
     def _get_rendered_html_files(self) -> list[Path]:
-        """Return all rendered free-estate HTML files."""
+        """Return all shipped free-estate HTML files.
+
+        Deliberately NOT filtered by bfc.HAND_AUTHORED. Who typed the bytes
+        changes nothing about the invariants the tests below assert — one
+        canonical, a www canonical, parseable JSON-LD, resolving internal links
+        are page-quality laws that a hand-authored flagship must meet exactly
+        like a rendered one, and dropping those pages here would silently delete
+        four tests' worth of coverage of the estate's most-trafficked surfaces.
+        The one contract that IS authorship-specific (the runtime script tail)
+        is handled inside the single test that cares — see
+        test_rendered_nested_runtime_assets_resolve.
+        """
         files = []
         for d in ("products", "blog", "learn", "tools"):
             subdir = _SITE_DIR / d
@@ -945,9 +1054,27 @@ class TestRenderedOutput:
     def test_rendered_nested_runtime_assets_resolve(self):
         """Every estate page loads shared scripts from site root and never emits
         the root-only inline font URLs that become /products/fonts/* 404s."""
+        import scripts.build_free_content as bfc
+
         files = self._get_rendered_html_files()
         if not files:
             pytest.skip("No rendered free-estate HTML files found in site/")
+
+        # Two legitimate script tails, ONE resolution rule.
+        # Generator-rendered estate pages carry the estate tail.
+        _ESTATE_TAIL = ("supabase.js", "account.js", "mm_brain.js", "theme.js")
+        # The hand-authored flagships (bfc.HAND_AUTHORED) ship the LANDING tail
+        # instead — masterplan §1, chrome-verified in-browser: onboard.js owns
+        # the gear/auth chrome on landing-family pages, so supabase.js,
+        # account.js and theme.js are deliberately absent there. They are not
+        # missing; they are not that page's contract.
+        # These pages are re-checked against their own tail rather than skipped.
+        # The depth-resolution assertion below is what this test exists for — a
+        # nested page linking "mm_brain.js" without the "../" 404s — and that
+        # applies to hand-authored bytes exactly as much as to rendered ones.
+        # So do NOT convert this into a skip: it would stop checking the three
+        # pages most likely to get a hand-typed src wrong.
+        _LANDING_TAIL = ("mm_brain.js", "onboard.js", "wh_banner.js")
 
         errors = []
         for page in files:
@@ -956,7 +1083,12 @@ class TestRenderedOutput:
                 errors.append(
                     f"{page.relative_to(_REPO)}: nested inline font URL"
                 )
-            for asset in ("supabase.js", "account.js", "mm_brain.js", "theme.js"):
+            tail = (
+                _LANDING_TAIL
+                if bfc._is_hand_authored(page.relative_to(_SITE_DIR))
+                else _ESTATE_TAIL
+            )
+            for asset in tail:
                 refs = re.findall(
                     rf'<script[^>]+src=["\']([^"\']*{re.escape(asset)}'
                     rf'(?:\?[^"\']*)?)["\']',

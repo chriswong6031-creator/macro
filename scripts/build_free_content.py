@@ -4,7 +4,10 @@ Renders content/seo/{products,blog,learn,pages,tools}/*.md +
 templates/seo_*.html.j2
 into committed site/ output.  Deterministic: same inputs => identical bytes.
 
-Ownership: B1 (this file) per content/seo/CONTRACT.md §2.
+Ownership: B1 (this file) per content/seo/CONTRACT.md §2.  The HAND_AUTHORED
+frozenset carves out the flagship product pages: their .md front-matter still
+drives hub cards / related links / clusters, but their HTML is source, so this
+builder neither writes nor drift-checks nor orphan-checks those files.
 
 Usage:
     python3 -m scripts.build_free_content           # full build
@@ -47,7 +50,7 @@ from jinja2 import Environment, FileSystemLoader, TemplateNotFound
 _REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_REPO))
 
-from lib.pages import write_page  # noqa: E402
+from lib.pages import HAND_AUTHORED_PAGES, write_page  # noqa: E402
 from lib.seo import (  # noqa: E402
     BRAND_NAME,
     BRAND_RESEARCH_NAME,
@@ -65,6 +68,21 @@ _ALLOWED_EXTERNAL_CTAS: frozenset[str] = frozenset({
     "https://app.mastermind-x.com",
     "https://app.mastermind-x.com/terminal?signup=1",
 })
+
+# Flagship product pages whose HTML BYTES are hand-authored source files rather
+# than generator output (operator-ordered redesign 2026-07-28) — like
+# site/index.html, the committed page IS the source and nothing derives it.
+# Their content/seo/products/*.md front-matter is still LOADED and consumed: the
+# products/index.html hub cards, related.products resolution, cluster wiring and
+# the slug->title map every other page draws from all read it.
+# Only the WRITE changes — render_all skips the output file for these rels.
+# --check therefore exempts them from the drift compare (nothing is rendered to
+# compare) and, load-bearingly, from the D5 orphan walk: "not produced by this
+# build" is the normal, correct state of a hand-authored page, not a defect.
+# Defined in lib.pages so scripts/externalize_css can skip the same pages from
+# ONE source of truth without importing this module (and its jinja2 dependency);
+# re-exported under the local name the rest of this file and its tests use.
+HAND_AUTHORED: frozenset[str] = HAND_AUTHORED_PAGES
 
 # ---------------------------------------------------------------------------
 # CONTRACT §1 URL map — all paths the builder owns
@@ -178,6 +196,16 @@ def _depth_of(url_path: str) -> int:
     """
     parts = url_path.lstrip("/").split("/")
     return max(0, len(parts) - 1)
+
+
+def _is_hand_authored(rel: Path | str) -> bool:
+    """True when this page's bytes are hand-authored source (see HAND_AUTHORED).
+
+    Accepts either a root-relative url_path ("/products/market-terminal.html")
+    or a Path relative to the site root, and normalises the separator so a
+    native Windows Path still matches the posix keys in the frozenset.
+    """
+    return str(rel).replace("\\", "/").lstrip("/") in HAND_AUTHORED
 
 
 def _canonical(url_path: str) -> str:
@@ -1097,6 +1125,13 @@ def render_all(out_dir: Path) -> None:
     for page in pages:
         fm = page["fm"]
         url_path = page["url_path"]
+        if _is_hand_authored(url_path):
+            # Hand-authored flagship: its .md still fed slug_title_map above and
+            # still feeds _products_hub_ctx / related resolution below, so the
+            # page stays in `pages` — we skip only the write, before the output
+            # directory is even touched, so nothing half-processed is left for
+            # the externalize_css / optimize_assets sweeps to pick up.
+            continue
         out_path = _output_path(url_path, out_dir)
         out_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -1382,6 +1417,11 @@ def _check_mode() -> int:
             rel = out_path.relative_to(tmp_dir)
             if rel in seeded:
                 continue
+            if _is_hand_authored(rel):
+                # render_all never writes these, so this arm is normally dead —
+                # kept so a future stray write can only be silent, never a red
+                # drift report against bytes this builder does not own.
+                continue
             site_path = _SITE_DIR / rel
             if not site_path.exists():
                 drifted.append(f"MISSING in site/: {rel}")
@@ -1418,6 +1458,10 @@ def _check_mode() -> int:
                 if committed_file.suffix not in (".html", ".xml"):
                     continue
                 rel = committed_file.relative_to(_SITE_DIR)
+                # HAND_AUTHORED pages are source, not output — the builder is
+                # meant not to produce them, so they are never orphans.
+                if _is_hand_authored(rel):
+                    continue
                 rendered = tmp_dir / rel
                 if not rendered.exists():
                     orphans.append(f"ORPHAN (not produced by builder): {rel}")
@@ -1426,6 +1470,8 @@ def _check_mode() -> int:
             committed_file = _SITE_DIR / fname
             if committed_file.exists():
                 rel = Path(fname)
+                if _is_hand_authored(rel):
+                    continue
                 rendered = tmp_dir / rel
                 if not rendered.exists():
                     orphans.append(f"ORPHAN (not produced by builder): {rel}")
@@ -1444,7 +1490,12 @@ def _check_mode() -> int:
             for p in tmp_dir.rglob("*")
             if p.is_file() and p.relative_to(tmp_dir) not in seeded
         )
-        print(f"OK: {rendered_count} files, all byte-identical with site/; no orphans")
+        # Name what was NOT verified: the hand-authored pages are outside this
+        # check's accountability, so a silent count would read as full coverage.
+        print(
+            f"OK: {rendered_count} files, all byte-identical with site/; no orphans "
+            f"({len(HAND_AUTHORED)} hand-authored page(s) exempt — bytes not owned here)"
+        )
         return 0
 
 

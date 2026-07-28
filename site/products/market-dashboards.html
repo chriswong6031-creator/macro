@@ -1,6 +1,12 @@
-
 <!DOCTYPE html>
-<html lang="en">
+<!-- mastermind product page 03 — market dashboards. Landing-native chapter of
+     index.html ("Neural Cover" family). HAND-AUTHORED SOURCE (carved out of
+     scripts/build_free_content.py via HAND_AUTHORED): edit this file directly; the
+     estate generator owns only the .md front-matter (hub cards / related links).
+     Chrome (nav+gear+footer+LANG/MMX_NAV JS) is copied byte-exact from
+     site/index.html with hrefs depth-fixed for /products/ — when the landing chrome
+     changes, re-sync these blocks. Spec: research/products_estate/PRODUCT_PAGES_MASTERPLAN.md §5. -->
+<html lang="en" data-lang="en">
 <head>
 <script data-dbase>(function () {
   window.DATA_BASE = window.DATA_BASE || "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev";  // R2 public data plane (flip: clear to revert to Pages)
@@ -20,29 +26,37 @@
     return orig.call(this, u, o);
   };
 })();</script>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>
+/* language boot — mirrors site-wide localStorage['lang']; runs pre-paint. */
+(function(){try{var q=(location.search.match(/[?&]lang=(zh|en)/)||[])[1];
+  var l=q||localStorage.getItem('lang');
+  if(l!=='en'&&l!=='zh')l=(navigator.language||'').toLowerCase().indexOf('zh')===0?'zh':'en';
+  document.documentElement.setAttribute('data-lang',l);
+  document.documentElement.lang=l==='zh'?'zh-CN':'en';}catch(e){}})();
+</script>
 <title>Market Intelligence Dashboards — MastermindX</title>
-
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.classList.add('has-js');}catch(e){}</script><meta name="description" content="Read nightly market dashboards for the US, China, Hong Kong, Canada and international markets, with macro, cycle, sector and cross-asset context.">
+<meta name="description" content="Macro regime, plain-language stock lanes, theme rotations, filings, options flow, China and Hong Kong — a full research floor, rebuilt nightly. Free to read.">
 <link rel="canonical" href="https://www.mastermind-x.com/products/market-dashboards.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="MastermindX">
 <meta property="og:title" content="Market Intelligence Dashboards">
-<meta property="og:description" content="Read nightly market dashboards for the US, China, Hong Kong, Canada and international markets, with macro, cycle, sector and cross-asset context.">
+<meta property="og:description" content="Macro regime, plain-language stock lanes, theme rotations, filings, options flow, China and Hong Kong — a full research floor, rebuilt nightly. Free to read.">
 <meta property="og:url" content="https://www.mastermind-x.com/products/market-dashboards.html">
 <meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Market Intelligence Dashboards">
-<meta name="twitter:description" content="Read nightly market dashboards for the US, China, Hong Kong, Canada and international markets, with macro, cycle, sector and cross-asset context.">
+<meta name="twitter:description" content="Macro regime, plain-language stock lanes, theme rotations, filings, options flow, China and Hong Kong — a full research floor, rebuilt nightly. Free to read.">
 <meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 <link rel="icon" href="../favicon.ico" sizes="any">
-<link rel="apple-touch-icon" href="../apple-touch-icon.png"><link rel="stylesheet" href="../theme.css?v=370c3de0"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.mastermind-x.com/"},{"@type":"ListItem","position":2,"name":"Platform","item":"https://www.mastermind-x.com/products/index.html"},{"@type":"ListItem","position":3,"name":"Market Dashboards"}]}</script><script type="application/ld+json">{
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.mastermind-x.com/"},{"@type":"ListItem","position":2,"name":"Platform","item":"https://www.mastermind-x.com/products/index.html"},{"@type":"ListItem","position":3,"name":"Market Dashboards"}]}</script><script type="application/ld+json">{
   "@context": "https://schema.org",
   "@type": "WebPage",
   "name": "Market Intelligence Dashboards",
-  "description": "Read nightly market dashboards for the US, China, Hong Kong, Canada and international markets, with macro, cycle, sector and cross-asset context.",
+  "description": "Macro regime, plain-language stock lanes, theme rotations, filings, options flow, China and Hong Kong — a full research floor, rebuilt nightly. Free to read.",
   "url": "https://www.mastermind-x.com/products/market-dashboards.html",
   "isPartOf": {
     "@type": "WebSite",
@@ -57,60 +71,421 @@
     "url": "https://www.mastermind-x.com/products/market-dashboards.html"
   }
 }</script>
+<link rel="stylesheet" href="../onboard.css?v=5c897a72">
+<link rel="stylesheet" href="../landing.css?v=abf00766">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   PRODUCT-PAGE SHARED LAYER — identical bytes on all three pages.
+   Landing tokens only (landing.css is linked above): no new hex
+   beyond var() derivations. Change here → change on all three.
+   ════════════════════════════════════════════════════════════════ */
 
-<link rel="stylesheet" href="../assets/css/43592e0a.css?v=43592e0a">
+/* ── chapter ribbon: the platform's three pillars; current chapter inked ── */
+.chap{display:flex;align-items:center;gap:26px;flex-wrap:wrap;margin-bottom:clamp(26px,4vw,42px)}
+.chap-x{display:inline-flex;align-items:baseline;gap:8px;font-family:var(--display);font-weight:700;
+  font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);transition:color .15s}
+.chap-x i{font-style:normal;font-weight:800;font-size:.66rem;color:var(--faint)}
+.chap-x:hover{color:var(--muted)}
+.chap-x.on{color:var(--ink);position:relative}
+.chap-x.on i{color:var(--pg-accent,var(--blue))}
+.chap-x.on::after{content:"";position:absolute;left:0;right:0;bottom:-8px;height:2px;border-radius:2px;background:var(--pg-accent,var(--blue))}
 
-<link rel="stylesheet" href="../assets/css/c68d2db1.css?v=c68d2db1">
-<link rel="preload" as="style" href="../product-nav-icons.css?v=7b0290e9">
+/* ── product hero ── */
+.phero{padding:clamp(46px,7vw,84px) 0 clamp(30px,4.5vw,56px)}
+.phero .kicker{color:var(--pg-accent,var(--blue))}
+.phero h1{font-family:var(--display);font-weight:800;letter-spacing:-.02em;line-height:1.02;
+  font-size:clamp(2.5rem,5.6vw,4.35rem);margin:14px 0 0;color:var(--ink)}
+.phero .sub{font-size:clamp(1.02rem,1.5vw,1.2rem);line-height:1.6;color:var(--muted);max-width:56ch;margin:18px 0 0}
+.phero .sub b{color:var(--ink-soft)}
+.phero .cta-row{margin-top:26px}
+.phero .micro{margin-top:14px}
+/* one gradient arc for the whole family (the ads' blue→violet→teal) */
+.pgrad{background:linear-gradient(92deg,var(--blue) 8%,var(--violet) 52%,var(--teal) 96%);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+@supports not (background-clip:text){.pgrad{color:var(--blue)}}
 
+/* ── hero artifact shell: the drawn product surface under the hero copy ── */
+.pstage{position:relative;margin-top:clamp(30px,4.5vw,52px)}
+.pstage .plate{border-radius:var(--r-lg);box-shadow:var(--sh-plate);overflow:hidden}
 
+/* ── annotation callouts pinned around a hero artifact ── */
+.anno{position:absolute;z-index:6;display:inline-flex;align-items:center;gap:7px;padding:5px 10px;
+  background:var(--panel);border:1px solid var(--hair-2);border-radius:999px;box-shadow:var(--sh-card);
+  font-family:var(--display);font-weight:700;font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)}
+.anno i{font-style:normal;width:7px;height:7px;border-radius:50%;background:var(--pg-accent,var(--blue));flex:none}
+@media (max-width:900px){.anno{display:none}}
+
+/* ── honest tag for drawn (non-live) vignettes; extends landing .live-tag ── */
+.live-tag.ill i{background:var(--faint)}
+
+/* ── desk chip (ad idiom): icon tile + label + reading + right stat ── */
+.dchip{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--hair);
+  border-radius:var(--r);box-shadow:var(--sh-card);padding:12px 14px}
+.dchip .ic{flex:none;width:38px;height:38px;border-radius:10px;display:grid;place-items:center;
+  background:var(--blue-wash);color:var(--blue-ink);font-family:var(--display);font-weight:800;font-size:.72rem}
+.dchip .tx{min-width:0;flex:1}
+.dchip .tx .k{display:block;font-family:var(--display);font-weight:700;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+.dchip .tx b{display:block;font-size:.86rem;color:var(--ink);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dchip .st{flex:none;font-family:var(--fig);font-weight:800;font-size:.8rem;color:var(--q-green)}
+
+/* ── stage meter (Bottoming → Turning → Ready → Trend) ── */
+.stgm{display:flex;align-items:center;margin:10px 0 2px}
+.stgm .seg{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;position:relative}
+.stgm .seg::before{content:"";position:absolute;top:5px;left:-50%;width:100%;height:2px;background:var(--hair-2)}
+.stgm .seg:first-child::before{display:none}
+.stgm .seg i{width:12px;height:12px;border-radius:50%;background:var(--hair-2);border:3px solid var(--panel);position:relative;z-index:1}
+.stgm .seg span{font-size:.66rem;color:var(--faint)}
+.stgm .seg.on i{background:var(--q-green)}
+.stgm .seg.on span{color:var(--q-green);font-weight:700}
+
+/* ── entry / invalidation twin cells ── */
+.ezc{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.ezc .c{border-radius:10px;padding:10px 12px;background:var(--bg);border:1px solid var(--hair)}
+.ezc .c .k{display:block;font-family:var(--display);font-weight:700;font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.ezc .c b{font-family:var(--fig);font-size:.95rem;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+.ezc .c.bad{background:var(--red-wash);border-color:#f2d7d5}
+.ezc .c.bad b{color:var(--q-red)}
+
+/* ── breadcrumb (SEO-stable markup, landing skin) ── */
+.est-crumb{max-width:var(--maxw);margin:18px auto 0;padding-inline:var(--gutter);font-size:.78rem;color:var(--faint)}
+.est-crumb ol{list-style:none;display:flex;gap:8px;margin:0;padding:0}
+.est-crumb a{color:var(--muted)} .est-crumb a:hover{color:var(--ink)}
+.est-crumb .sep{color:var(--hair-2)}
+
+/* ── honesty callout (access & limitations) ── */
+.callout{border:1px solid var(--hair-2);border-left:3px solid var(--q-gold);background:var(--gold-wash);
+  border-radius:var(--r);padding:16px 18px;margin:18px 0}
+.callout .co-h{display:block;font-family:var(--display);font-weight:800;font-size:.86rem;color:var(--ink);margin-bottom:6px}
+.callout p{margin:0;font-size:.92rem;line-height:1.55;color:var(--ink-soft)}
+
+/* ── section rhythm helpers ── */
+.psec-note{font-size:.8rem;color:var(--faint);max-width:70ch}
+</style>
+<style>
+/* ═══════════════════════════════════════════════════════════════════
+   PAGE 03 — MARKET DASHBOARDS · accent teal.  Namespace: .md-*
+   Landing var() tokens only.  Q-colors stay reserved for market
+   semantics inside vignettes.  Motion: .rv owns the reveal (landing.css
+   honours prefers-reduced-motion and ?still); the one bespoke animation
+   is a dash drift that reads as a static dashed line when frozen.
+   ═══════════════════════════════════════════════════════════════════ */
+body{--pg-accent:var(--teal)}
+.phero .cta-row{justify-content:flex-start}
+.feat-copy .kicker{color:var(--pg-accent)}
+html[data-lang="zh"] .md-st,html[data-lang="zh"] .md-rk,
+html[data-lang="zh"] .anno,html[data-lang="zh"] .md-hubc,
+html[data-lang="zh"] .md-oc,html[data-lang="zh"] .md-anchors{letter-spacing:.02em}
+
+/* ─────────────── THE WALL — the floor, drawn as a sitemap ─────────────── */
+.md-wall{list-style:none;margin:0;padding:0;display:grid;gap:clamp(10px,1.1vw,14px);
+  grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (min-width:640px){.md-wall{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (min-width:1040px){
+  .md-wall{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .md-wall>li:nth-child(2n){margin-top:24px}   /* the stagger: columns 2 + 4 drop */
+}
+.md-wall>li{min-width:0}
+.md-tile{position:relative;display:flex;flex-direction:column;height:100%;overflow:hidden;
+  padding:12px 13px 13px;background:var(--panel);border:1px solid var(--hair);
+  border-radius:var(--r);box-shadow:var(--sh-card);color:var(--ink);
+  transition:transform .18s cubic-bezier(.22,.8,.3,1),box-shadow .18s,border-color .18s}
+.md-tile::before{content:"";position:absolute;left:0;right:0;top:0;height:2px;
+  background:var(--pg-accent);transform:scaleX(0);transform-origin:0 50%;
+  transition:transform .26s cubic-bezier(.22,.8,.3,1)}
+.md-tile:hover,.md-tile:focus-visible{transform:translateY(-3px);box-shadow:var(--sh-lift);
+  border-color:var(--hair-2);color:var(--ink)}
+.md-tile:hover::before,.md-tile:focus-visible::before{transform:none}
+.md-tv{display:block;height:56px;margin-bottom:11px;padding:5px 7px;overflow:hidden;
+  border:1px solid var(--hair);border-radius:8px;background:var(--panel-2)}
+.md-tv svg{display:block;width:100%;height:100%}
+.md-tn{display:flex;align-items:center;gap:8px}
+.md-tn b{flex:1;min-width:0;font-family:var(--display);font-weight:700;font-size:12.5px;line-height:1.25}
+.md-st{flex:none;font-style:normal;font-family:var(--display);font-weight:700;font-size:8.5px;
+  letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;color:var(--muted);
+  background:var(--bg);border:1px solid var(--hair);border-radius:99px;padding:3px 7px}
+.md-tm{display:block;margin-top:5px;font-size:11px;line-height:1.45;color:var(--faint)}
+.md-open{position:absolute;top:9px;right:10px;font-family:var(--display);font-weight:700;
+  font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--pg-accent);
+  background:var(--panel);border-radius:99px;padding:2px 7px;
+  opacity:0;transform:translateY(-3px);transition:opacity .2s,transform .2s}
+.md-open::after{content:" \2197"}
+.md-tile:hover .md-open,.md-tile:focus-visible .md-open{opacity:1;transform:none}
+/* wall pins — four corners frame the artifact */
+.pstage .live-tag{right:8px}
+.md-p1{top:-15px;left:8px}
+.md-p2{bottom:-15px;left:8px}
+.md-p3{bottom:-15px;right:8px}
+
+/* wall tile drawings (all aria-hidden; the meaning lives in the tile's text) */
+.md-ml{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;height:100%}
+.md-ml i{display:flex;flex-direction:column;gap:4px;padding-top:6px;border-top:2px solid var(--faint)}
+.md-ml i.a{border-top-color:var(--q-green)}
+.md-ml i.b{border-top-color:var(--q-blue)}
+.md-ml i.c{border-top-color:var(--q-gold)}
+.md-ml b{display:block;height:7px;border-radius:2px;background:var(--hair)}
+.md-fd{display:flex;flex-direction:column;justify-content:center;gap:7px;height:100%}
+.md-fd i{display:flex;align-items:center;gap:6px}
+.md-fd i span{display:block;height:7px;border-radius:2px}
+.md-fd i .w{flex:none;width:17px;background:var(--blue-wash)}
+.md-fd i.v .w{background:rgba(120,98,224,.18)}
+.md-fd i .n{flex:1;height:6px;border-radius:3px;background:var(--hair)}
+.md-fd i .s{flex:none;width:15px;background:var(--green-wash)}
+.md-fd i.sl .s{background:var(--red-wash)}
+.md-tp{position:relative;display:flex;flex-direction:column;justify-content:center;gap:5px;height:100%}
+.md-tp::before{content:"";position:absolute;left:50%;top:2px;bottom:2px;width:1px;background:var(--hair-2)}
+.md-tp .r{display:flex;align-items:center;gap:3px;height:7px}
+.md-tp .h{flex:1;display:flex;height:100%}
+.md-tp .h.l{justify-content:flex-end}
+.md-tp .h i{display:block;height:100%;border-radius:2px}
+.md-tp .h.l i{background:var(--q-red);opacity:.5}
+.md-tp .h.r i{background:var(--q-green);opacity:.75}
+.md-bb{display:flex;align-items:flex-end;gap:2px;height:100%;padding-top:3px}
+.md-bb i{flex:1;border-radius:1.5px;background:var(--q-green);opacity:.82}
+.md-bb i.d{background:var(--q-red);opacity:.6}
+.md-nf{display:flex;flex-wrap:wrap;align-content:center;gap:5px;height:100%}
+.md-nf i{height:9px;border-radius:99px;background:var(--hair)}
+.md-nf i.a{background:var(--blue-wash)}
+.md-nf i.g{background:var(--green-wash)}
+.md-gr{display:flex;align-items:flex-end;gap:6px;height:100%;padding-bottom:2px}
+.md-gr span{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px}
+.md-gr i{display:grid;place-items:center;width:15px;height:15px;border-radius:50%;
+  font-style:normal;font-size:9px;font-weight:800;line-height:1;color:#fff;background:var(--faint)}
+.md-gr span.w i{background:var(--q-green)}
+.md-gr span.l i{background:var(--q-red)}
+.md-gr span.o i{background:var(--q-gold)}
+.md-gr b{display:block;width:100%;height:5px;border-radius:2.5px;background:var(--hair)}
+
+/* ─────────────── section vignettes ─────────────── */
+.md-vnote{margin:10px 0 0;font-size:11.5px;line-height:1.5;color:var(--faint)}
+.md-vnote b{color:var(--ink-soft);font-weight:600}
+.md-stance{margin:12px 0 0;padding-top:10px;border-top:1px solid var(--hair);
+  font-size:12.5px;line-height:1.55;color:var(--muted)}
+.md-stance b{color:var(--ink);font-weight:700}
+
+/* 1 · regime */
+.md-regime{display:grid;grid-template-columns:1.05fr .95fr;gap:14px;margin-top:12px;align-items:center}
+@media (max-width:620px){.md-regime{grid-template-columns:1fr}}
+.md-quad{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.md-quad .q{display:grid;place-items:center;min-height:54px;padding:5px;text-align:center;
+  border:1px solid var(--hair);border-radius:9px;background:var(--panel-2);
+  font-family:var(--display);font-weight:700;font-size:9.5px;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--faint)}
+.md-quad .q.on{color:var(--q-green);background:var(--green-wash);border-color:#cbe6d3}
+.md-you{position:absolute;left:33%;top:29%;width:9px;height:9px;border-radius:50%;
+  background:var(--ink);box-shadow:0 0 0 4px rgba(28,36,48,.13)}
+.md-gauge{text-align:center}
+.md-gauge svg{display:block;width:100%;max-width:196px;height:auto;margin:0 auto}
+.md-anchors{display:flex;justify-content:space-between;max-width:196px;margin:2px auto 0;
+  font-family:var(--display);font-weight:700;font-size:8.5px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--faint)}
+
+/* 2 · lanes */
+.md-moved{display:flex;align-items:center;gap:5px;margin:5px 0 0;padding-left:2px;
+  font-family:var(--display);font-weight:700;font-size:8px;letter-spacing:.05em;color:var(--q-green)}
+.md-moved::before{content:"\2191";font-size:9px}
+
+/* 3 · rotation ribbon */
+.md-rib{margin-top:10px;padding:10px 12px;border:1px solid var(--hair);border-radius:10px;background:var(--panel-2)}
+.md-rl{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:7px 0}
+.md-rl+.md-rl{border-top:1px dashed var(--hair-2)}
+.md-rk{flex:none;width:78px;font-family:var(--display);font-weight:700;font-size:8.5px;
+  letter-spacing:.09em;text-transform:uppercase;color:var(--faint)}
+.md-rl.up .md-rk{color:var(--q-green)}
+.md-rl.dn .md-rk{color:var(--q-gold)}
+.md-tc{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;white-space:nowrap;
+  background:var(--panel);border:1px solid var(--hair);border-radius:99px;box-shadow:var(--sh-card);
+  font-size:10.5px;font-weight:600;color:var(--ink-soft)}
+.md-tc i{flex:none;width:5px;height:5px;border-radius:50%;font-style:normal;background:var(--faint)}
+.md-tc.g i{background:var(--q-green)}
+.md-tc.o i{background:var(--q-gold)}
+.md-tc.mv{border-color:var(--teal);box-shadow:0 0 0 1px rgba(15,157,143,.32),var(--sh-card)}
+.md-trail{display:block;height:22px;margin-left:78px}
+.md-trail path{fill:none;stroke:var(--pg-accent);stroke-width:1.5;stroke-linecap:round;
+  stroke-dasharray:4 4;opacity:.72;animation:mdTrail 1.7s linear infinite}
+@keyframes mdTrail{to{stroke-dashoffset:-16}}
+
+/* 5 · options flow tape */
+.md-tape{margin-top:10px;border:1px solid var(--hair);border-radius:10px;overflow:hidden}
+.md-tr{display:grid;grid-template-columns:46px 62px auto minmax(0,1fr);gap:9px;align-items:center;
+  padding:8px 10px;border-bottom:1px solid var(--hair);background:var(--panel);font-size:11.5px;color:var(--muted)}
+.md-tr:last-child{border-bottom:0}
+.md-tr .tm{font-family:var(--fig);font-variant-numeric:tabular-nums;font-size:10.5px;color:var(--faint)}
+.md-tr .sy{font-family:var(--display);font-weight:800;font-size:11.5px;color:var(--ink)}
+.md-tr .sd{font-family:var(--display);font-weight:700;font-size:8.5px;letter-spacing:.08em;
+  border-radius:5px;padding:3px 6px;text-align:center}
+.md-tr .sd.c{color:var(--q-green);background:var(--green-wash)}
+.md-tr .sd.p{color:var(--q-red);background:var(--red-wash)}
+.md-tr .bz{height:6px;border-radius:3px;background:var(--hair);overflow:hidden}
+.md-tr .bz i{display:block;height:100%;border-radius:3px;background:var(--q-green)}
+.md-tr .bz.p i{background:var(--q-red)}
+.md-fresh{display:inline-flex;align-items:center;gap:6px;margin:10px 0 0;padding:4px 9px;
+  border:1px solid #ecdcb2;border-radius:99px;background:var(--gold-wash);color:var(--q-gold);
+  font-family:var(--display);font-weight:700;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase}
+.md-fresh i{flex:none;width:5px;height:5px;border-radius:50%;background:var(--q-gold);font-style:normal}
+
+/* 6 · china & hk dual strip */
+.md-dual{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}
+@media (max-width:520px){.md-dual{grid-template-columns:1fr}}
+.md-mk{padding:10px 11px;border:1px solid var(--hair);border-radius:10px;background:var(--panel-2)}
+.md-mk .zh{display:block;font-family:var(--display);font-weight:700;font-size:13px;color:var(--ink)}
+.md-mk .en{display:block;margin-top:2px;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+.md-brd{display:flex;align-items:flex-end;gap:2px;height:30px;margin-top:10px}
+.md-brd i{flex:1;border-radius:1.5px;background:var(--q-green);opacity:.82}
+.md-brd i.d{background:var(--q-red);opacity:.6}
+
+/* 7 · track record strip */
+.md-rec{display:grid;grid-template-columns:repeat(auto-fit,minmax(88px,1fr));gap:8px;margin-top:12px}
+.md-rc{padding:9px 10px;border:1px solid var(--hair);border-radius:9px;background:var(--panel-2)}
+.md-rc .mk{display:grid;place-items:center;width:19px;height:19px;border-radius:50%;
+  font-size:10px;font-weight:800;line-height:1;color:#fff;background:var(--faint)}
+.md-rc.w .mk{background:var(--q-green)}
+.md-rc.l .mk{background:var(--q-red)}
+.md-rc.o .mk{background:var(--q-gold)}
+.md-rc .vb{display:block;height:5px;border-radius:2.5px;background:var(--hair);margin:9px 0 7px}
+.md-rc .dt{display:block;font-family:var(--fig);font-variant-numeric:tabular-nums;font-size:10px;color:var(--faint)}
+.md-rc .wd{display:block;margin-top:3px;font-size:10.5px;font-weight:600;color:var(--ink-soft)}
+
+/* 8 · beyond stocks — one engine bus, four assets */
+.md-hub{text-align:center;margin-top:12px}
+.md-hubc{display:inline-flex;align-items:center;gap:7px;padding:6px 13px;
+  border:1px solid var(--hair-2);border-radius:99px;background:var(--panel);box-shadow:var(--sh-card);
+  font-family:var(--display);font-weight:700;font-size:9.5px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-soft)}
+.md-hubc i{flex:none;width:6px;height:6px;border-radius:50%;background:var(--pg-accent);font-style:normal}
+.md-hubl{display:block;width:1px;height:12px;margin:0 auto;background:var(--hair-2)}
+.md-assets{position:relative;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding-top:12px}
+@media (min-width:540px){.md-assets{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.md-assets::before{content:"";position:absolute;left:12.5%;right:12.5%;top:0;height:1px;background:var(--hair-2)}
+.md-as{position:relative;padding:10px 11px;border:1px solid var(--hair);border-radius:10px;background:var(--panel-2)}
+.md-as::before{content:"";position:absolute;left:50%;top:-12px;width:1px;height:12px;background:var(--hair-2)}
+@media (max-width:539px){.md-assets::before,.md-as::before,.md-hubl{display:none}.md-assets{padding-top:0}}
+.md-as .ic{display:grid;place-items:center;width:27px;height:27px;border-radius:8px;
+  border:1px solid var(--hair);background:var(--panel);
+  font-family:var(--display);font-weight:800;font-size:13px;color:var(--ink)}
+.md-as .ic svg{width:15px;height:15px}
+.md-as .nm{display:block;margin-top:8px;font-family:var(--display);font-weight:700;font-size:11.5px;color:var(--ink)}
+.md-as .sp{display:block;height:22px;margin-top:6px}
+.md-as .sp svg{display:block;width:100%;height:100%}
+.md-as .wd{display:block;margin-top:6px;font-size:10.5px;line-height:1.4;color:var(--muted)}
+
+/* 9 · nightly conveyor */
+.md-conv{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:center;margin-top:12px}
+@media (max-width:600px){.md-conv{grid-template-columns:1fr;justify-items:stretch}}
+.md-moon{display:grid;place-items:center;width:48px;height:48px;border-radius:50%;background:var(--plate)}
+.md-moon svg{width:23px;height:23px}
+.md-eng{position:relative;display:grid;gap:7px;padding-left:8px}
+.md-eng::before{content:"";position:absolute;left:0;top:16px;bottom:16px;width:1px;background:var(--hair-2)}
+.md-eb{position:relative;display:flex;align-items:center;gap:9px;padding:8px 10px;
+  border:1px solid var(--hair);border-radius:9px;background:var(--panel-2);font-size:11.5px;color:var(--ink-soft)}
+.md-eb::before{content:"";position:absolute;left:-8px;top:50%;width:8px;height:1px;background:var(--hair-2)}
+.md-eb i{flex:none;width:7px;height:7px;border-radius:2px;background:var(--pg-accent);font-style:normal}
+.md-eb em{margin-left:auto;font-style:normal;font-size:10px;color:var(--faint);text-align:right}
+.md-out{display:grid;gap:6px}
+.md-oc{padding:7px 10px;border:1px solid var(--hair);border-radius:8px;background:var(--panel);
+  box-shadow:var(--sh-card);white-space:nowrap;
+  font-family:var(--display);font-weight:700;font-size:9.5px;letter-spacing:.06em;color:var(--muted)}
+.md-oc b{display:block;font-size:10.5px;color:var(--ink)}
+
+/* honesty station + the legal seam above the footer */
+.md-honest{max-width:78ch}
+.md-honest .psec-note{margin-top:14px}
+.md-legal{margin:0;padding:22px var(--gutter);text-align:center;background:#04070c;
+  border-top:1px solid #10161f;color:#6f7a8c;font-size:11.5px;line-height:1.65}
+.md-legal span{display:block;max-width:70ch;margin:0 auto}
+</style>
 </head>
-<body class="estate public-page est-product product-market-dashboards">
-
-
-<nav class="public-nav" aria-label="Main">
-  <div class="public-nav-in">
-    <a class="public-brand" href="../index.html" aria-label="MastermindX home"><span class="m">M</span> MASTERMINDX</a>
-    <div class="public-nav-links">
-      <a href="../products/index.html"><span class="l-en">Platform</span><span class="l-zh">平台</span></a>
-      <a href="../research/index.html"><span class="l-en">Research</span><span class="l-zh">研究</span></a>
-      <a href="../tools/index.html"><span class="l-en">Resources</span><span class="l-zh">资源</span></a>
-      <a href="../plans.html"><span class="l-en">Pricing</span><span class="l-zh">定价</span></a>
-    </div>
-    <div class="public-nav-right">
-      <a id="nav-login" class="public-nav-login" href="https://app.mastermind-x.com/terminal?signin=1"><span class="l-en">Log in</span><span class="l-zh">登录</span></a>
-      <a id="nav-cta" class="public-nav-cta" href="https://app.mastermind-x.com/terminal?signup=1"><span class="l-en">Start free</span><span class="l-zh">免费开始</span></a>
+<body>
+<nav class="nav" aria-label="Main">
+  <div class="nav-in">
+    <a class="brand" href="../index.html" aria-label="MastermindX home"><span class="m">M</span> MASTERMINDX</a>
+    <button class="nav-toggle" id="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-navigation" aria-label="Open navigation">
+      <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+    </button>
+    <ul class="nav-links" id="primary-navigation">
+      <li class="nav-group">
+        <button class="nav-trigger" id="nav-platform-trigger" type="button" aria-expanded="false" aria-controls="nav-platform-panel">
+          <span data-zh="平台">Platform</span><svg viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5 6 6.5l5-5"/></svg>
+        </button>
+        <div class="nav-panel nav-panel-platform" id="nav-platform-panel" aria-labelledby="nav-platform-trigger" hidden>
+          <div class="nav-panel-head">
+            <div><span class="nav-panel-k" data-zh="互联研究工作台">CONNECTED RESEARCH DESK</span><strong data-zh="从市场状态一路深入到底层证据">Move from market state to the underlying evidence</strong></div>
+            <a href="../products/index.html" data-zh="平台概览 →">Platform overview →</a>
+          </div>
+          <div class="nav-card-grid">
+            <a class="nav-card" href="../products/market-terminal.html"><span class="nav-card-mark">01</span><span><strong data-zh="市场终端">Market Terminal</strong><small data-zh="浏览器图表、观察列表与股票研究背景。">Browser charting, watchlists and stock research context.</small></span></a>
+            <a class="nav-card" href="../products/mastermind-ai.html"><span class="nav-card-mark">02</span><span><strong>Mastermind AI</strong><small data-zh="结合当前页面与来源的市场研究助手。">A market research assistant grounded in the page and its sources.</small></span></a>
+            <a class="nav-card" href="../products/market-dashboards.html" aria-current="page"><span class="nav-card-mark">03</span><span><strong data-zh="市场仪表盘">Market Dashboards</strong><small data-zh="宏观、周期、行业轮动与跨资产背景。">Macro, cycle, sector rotation and cross-asset context.</small></span></a>
+          </div>
+        </div>
+      </li>
+      <li class="nav-group">
+        <button class="nav-trigger" id="nav-research-trigger" type="button" aria-expanded="false" aria-controls="nav-research-panel">
+          <span data-zh="研究">Research</span><svg viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5 6 6.5l5-5"/></svg>
+        </button>
+        <div class="nav-panel nav-panel-research" id="nav-research-panel" aria-labelledby="nav-research-trigger" hidden>
+          <div class="nav-panel-head">
+            <div><span class="nav-panel-k" data-zh="公开研究界面">PUBLIC RESEARCH SURFACES</span><strong data-zh="从报告节选到逐股档案">From report excerpts to ticker-level dossiers</strong></div>
+          </div>
+          <div class="nav-card-grid two">
+            <a class="nav-card" href="../research/index.html"><span class="nav-card-mark">R</span><span><strong data-zh="机构研报">Institutional Research</strong><small data-zh="已索引的报告页面与可搜索节选；完整报告可能需要账户权限。">Indexed report pages and searchable excerpts; complete reports may require access.</small></span></a>
+            <a class="nav-card" href="../stocks/index.html"><span class="nav-card-mark">S</span><span><strong data-zh="股票档案">Stock Dossiers</strong><small data-zh="按股票整理的技术面、基本面、持仓与期权背景。">Ticker pages for technical, fundamental, ownership and options context.</small></span></a>
+          </div>
+        </div>
+      </li>
+      <li class="nav-group">
+        <button class="nav-trigger" id="nav-resources-trigger" type="button" aria-expanded="false" aria-controls="nav-resources-panel">
+          <span data-zh="资源">Resources</span><svg viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5 6 6.5l5-5"/></svg>
+        </button>
+        <div class="nav-panel nav-panel-resources" id="nav-resources-panel" aria-labelledby="nav-resources-trigger" hidden>
+          <div class="nav-panel-head">
+            <div><span class="nav-panel-k" data-zh="无需账户即可使用">USEFUL BEFORE SIGNUP</span><strong data-zh="先解决一个真实问题">Start by solving one real problem</strong></div>
+          </div>
+          <div class="nav-card-grid two">
+            <a class="nav-card" href="../tools/index.html"><span class="nav-card-mark">T</span><span><strong data-zh="免费工具">Free Tools</strong><small data-zh="仓位、风险、回报与投资组合计算器。">Calculators for sizing, risk, returns and portfolios.</small></span></a>
+            <a class="nav-card" href="../learn/index.html"><span class="nav-card-mark">L</span><span><strong data-zh="学习中心">Learning Center</strong><small data-zh="技术分析、风险、期权与申报文件课程。">Lessons on technicals, risk, options and filings.</small></span></a>
+            <a class="nav-card" href="../blog/index.html"><span class="nav-card-mark">B</span><span><strong data-zh="博客">Blog</strong><small data-zh="关于交易数学与市场机制的朴素文章。">Plain-English articles on trading math and market mechanics.</small></span></a>
+            <a class="nav-card" href="../support.html"><span class="nav-card-mark">?</span><span><strong data-zh="支持">Support</strong><small data-zh="账户、产品与访问问题的帮助入口。">Help with account, product and access questions.</small></span></a>
+          </div>
+        </div>
+      </li>
+      <li class="nav-direct"><a href="../plans.html" data-zh="定价">Pricing</a></li>
+    </ul>
+    <div class="nav-right">
+      <a id="nav-login" href="https://app.mastermind-x.com/terminal?signin=1" style="color:var(--muted)" data-zh="登录">Log in</a>
+      <a id="nav-cta" class="btn primary sm" href="https://app.mastermind-x.com/terminal?signup=1" data-zh="免费开始">Start free</a>
       <span class="gear-wrap">
         <button class="gearbtn" id="gear-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Settings">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </button>
         <div class="gear-pop" id="gear-pop" role="menu" aria-label="Settings">
-          <p class="gp-kicker"><span class="l-en">Settings</span><span class="l-zh">设置</span></p>
+          <p class="gp-kicker" data-zh="设置">SETTINGS</p>
           <div class="gp-lang">
-            <span class="gp-lbl"><span class="l-en">Language</span><span class="l-zh">语言</span></span>
+            <span class="gp-lbl" data-zh="语言">Language</span>
             <span class="gp-seg" role="group" aria-label="Language">
               <button type="button" class="gp-seg-b" data-set-lang="en">EN</button>
               <button type="button" class="gp-seg-b" data-set-lang="zh">中文</button>
             </span>
           </div>
           <div class="gp-div"></div>
-          <a class="gp-link" role="menuitem" href="../start.html"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></a>
+          <a class="gp-link" role="menuitem" href="../start.html" data-zh="打开仪表盘">Open the dashboard</a>
+          <!-- ACCOUNT section — mirrors the macro dashboard gear's ACCOUNT block, in
+               landing light tokens. onboard.js's auth-chrome module swaps -out ⇄ -in. -->
           <div class="gp-div"></div>
           <div class="gp-acct">
-            <p class="gp-acct-t"><span class="l-en">Account</span><span class="l-zh">账户</span></p>
+            <p class="gp-acct-t" data-zh="账户">ACCOUNT</p>
             <div class="gp-acct-out" id="gp-acct-out">
-              <p class="gp-acct-d"><span class="l-en">Sign in to sync your watchlists, alerts and settings across devices.</span><span class="l-zh">登录以在所有设备同步自选、提醒与设置。</span></p>
+              <p class="gp-acct-d" data-zh="登录以在所有设备同步自选、提醒与设置。">Sign in to sync your watchlists, alerts and settings across devices.</p>
               <div class="gp-acct-btns">
-                <button type="button" class="gp-abtn ghost" id="gp-signin"><span class="l-en">Sign in</span><span class="l-zh">登录</span></button>
-                <button type="button" class="gp-abtn solid" id="gp-signup"><span class="l-en">Create account</span><span class="l-zh">创建账户</span></button>
+                <button type="button" class="gp-abtn ghost" id="gp-signin" data-zh="登录">Sign in</button>
+                <button type="button" class="gp-abtn solid" id="gp-signup" data-zh="创建账户">Create account</button>
               </div>
             </div>
             <div class="gp-acct-in" id="gp-acct-in" hidden>
               <div class="gp-acct-card" id="gp-acct-card" role="button" tabindex="0">
                 <span class="gp-avatar" id="gp-avatar"></span>
-                <span class="gp-acct-main"><span class="gp-acct-email" id="gp-email"></span><span class="gp-acct-sub"><span class="l-en">Manage account & sync ›</span><span class="l-zh">管理账户与同步 ›</span></span></span>
+                <span class="gp-acct-main"><span class="gp-acct-email" id="gp-email"></span><span class="gp-acct-sub" data-zh="管理账户与同步 ›">Manage account &amp; sync ›</span></span>
               </div>
-              <button type="button" class="gp-signout" id="gp-signout"><span class="l-en">Sign out</span><span class="l-zh">退出登录</span></button>
+              <button type="button" class="gp-signout" id="gp-signout" data-zh="退出登录">Sign out</button>
             </div>
           </div>
         </div>
@@ -119,232 +494,850 @@
   </div>
 </nav>
 
-
-
 <nav class="est-crumb" aria-label="Breadcrumb">
   <ol>
-
-    <li>
-      <a href="../">Home</a>
-    </li>
+    <li><a href="../" data-zh="首页">Home</a></li>
     <li class="sep" aria-hidden="true">/</li>
-
-    <li>
-      <a href="../products/index.html">Platform</a>
-    </li>
+    <li><a href="../products/index.html" data-zh="平台">Platform</a></li>
     <li class="sep" aria-hidden="true">/</li>
-
-    <li aria-current="page">
-      Market Dashboards
-    </li>
-
-
+    <li aria-current="page" data-zh="市场仪表盘">Market Dashboards</li>
   </ol>
 </nav>
 
-
 <main id="main">
 
-<section class="prod-hero">
-  <div class="prod-copy">
-    <span class="est-kicker">Macro, cycle and rotation</span>
-    <h1 class="est-title">Market Intelligence Dashboards</h1>
-    <p class="est-dek">Read nightly market dashboards for the US, China, Hong Kong, Canada and international markets, with macro, cycle, sector and cross-asset context.</p>
+<!-- ══════════════ HERO — the floor, and THE WALL ══════════════ -->
+<section class="phero">
+  <div class="wrap">
+    <nav class="chap rv" aria-label="Platform chapters">
+      <a class="chap-x" href="../products/market-terminal.html"><i>01</i><span data-zh="市场终端">Market Terminal</span></a>
+      <a class="chap-x" href="../products/mastermind-ai.html"><i>02</i><span>Mastermind AI</span></a>
+      <span class="chap-x on" aria-current="page"><i>03</i><span data-zh="市场仪表盘">Market Dashboards</span></span>
+    </nav>
 
-    <div class="prod-cta">
-      <a class="gbtn gbtn-lg gbtn-cta" href="https://app.mastermind-x.com/terminal?signup=1">Start free →</a>
+    <div class="rv">
+      <span class="kicker" data-zh="市场仪表盘">The Dashboards</span>
+      <h1>
+        <span data-zh="所有台席，同层排开。">Every desk, one floor.</span><br>
+        <span class="pgrad" data-zh="每晚整体重建。">Rebuilt every night.</span>
+      </h1>
+      <p class="sub" data-zh="宏观格局、个股通道、主题轮动、申报披露、资金流、中国与港股——整层台席一起读市场，引擎相互校验。<b>免费阅读。</b>">Macro regime, stock lanes, rotations, filings, flow, China and HK — the whole floor reads the market together, and the engines check each other's work. <b>Free to read.</b></p>
+      <div class="cta-row">
+        <a class="btn primary" href="../start.html" data-zh="打开仪表盘 →">Open the dashboards →</a>
+        <a class="btn" href="../plans.html" data-zh="查看方案">See plans</a>
+      </div>
+      <p class="micro" data-zh="免费阅读 · 每晚重建">FREE TO READ · REBUILT NIGHTLY</p>
     </div>
 
+    <!-- THE WALL — twelve desks; every tile opens a real page -->
+    <div class="pstage">
+      <span class="live-tag ill" data-zh="<i></i>示意"><i></i>ILLUSTRATIVE</span>
+      <span class="anno md-p1"><i></i><span data-zh="每块都是真实页面——免费阅读">Each tile is a real page — free to read</span></span>
+      <span class="anno md-p2"><i></i><span data-zh="状态，而非分数">States, not scores</span></span>
+      <span class="anno md-p3"><i></i><span data-zh="每晚重建">Rebuilt nightly</span></span>
+
+      <ul class="md-wall">
+        <!-- 01 · macro -->
+        <li class="rv" style="--d:.04s"><a class="md-tile" href="../macro.html">
+          <span class="md-tv" aria-hidden="true">
+            <svg viewBox="0 0 120 50">
+              <path d="M18 44 A44 44 0 0 1 102 44" fill="none" stroke="var(--hair-2)" stroke-width="6.5" stroke-linecap="round"/>
+              <path d="M18 44 A44 44 0 0 1 102 44" fill="none" stroke="var(--q-gold)" stroke-width="6.5" stroke-linecap="round" stroke-dasharray="60 260"/>
+              <line x1="60" y1="44" x2="45" y2="19" stroke="var(--ink)" stroke-width="2.2" stroke-linecap="round"/>
+              <circle cx="60" cy="44" r="4.2" fill="#fff" stroke="var(--hair-2)" stroke-width="1.3"/>
+              <circle cx="60" cy="44" r="1.8" fill="var(--ink)"/>
+            </svg>
+          </span>
+          <span class="md-tn"><b data-zh="宏观仪表盘">Macro Dashboard</b><em class="md-st" data-zh="喜忧参半">Mixed</em></span>
+          <span class="md-tm" data-zh="增长 · 通胀 · 流动性">Growth, inflation, liquidity</span>
+          <span class="md-open" data-zh="打开">open</span>
+        </a></li>
+
+        <!-- 02 · us stocks -->
+        <li class="rv" style="--d:.07s"><a class="md-tile" href="../us_stocks.html">
+          <span class="md-tv" aria-hidden="true">
+            <span class="md-ml">
+              <i class="a"><b></b><b></b><b></b></i>
+              <i class="b"><b></b><b></b></i>
+              <i class="c"><b></b></i>
+              <i class="d"><b></b><b></b></i>
+            </span>
+          </span>
+          <span class="md-tn"><b data-zh="股票仪表盘">Stock Dashboard</b><em class="md-st" data-zh="分化">Selective</em></span>
+          <span class="md-tm" data-zh="个股按大白话分道">Names sorted into plain lanes</span>
+          <span class="md-open" data-zh="打开">open</span>
+        </a></li>
+
+        <!-- 03 · baskets -->
+        <li class="rv" style="--d:.1s"><a class="md-tile" href="../baskets.html">
+          <span class="md-tv" aria-hidden="true">
+            <svg viewBox="0 0 120 46">
+              <line x1="4" y1="13" x2="116" y2="13" stroke="var(--hair-2)" stroke-width="1"/>
+              <line x1="4" y1="37" x2="116" y2="37" stroke="var(--hair-2)" stroke-width="1"/>
+              <rect x="6" y="8" width="24" height="10" rx="5" fill="var(--hair)"/>
+              <rect x="34" y="8" width="17" height="10" rx="5" fill="var(--hair)"/>
+              <rect x="8" y="32" width="20" height="10" rx="5" fill="var(--hair)"/>
+              <path d="M60 13 C 72 13 74 37 86 37" fill="none" stroke="var(--teal)" stroke-width="1.4" stroke-dasharray="3 3" opacity=".7"/>
+              <rect x="88" y="32" width="26" height="10" rx="5" fill="var(--teal)" opacity=".16"/>
+              <circle cx="101" cy="37" r="2.6" fill="var(--teal)"/>
+            </svg>
+          </span>
+          <span class="md-tn"><b data-zh="主题篮子与轮动">Thematic Baskets</b><em class="md-st" data-zh="轮动中">Rotating</em></span>
+          <span class="md-tm" data-zh="领涨正在换道">Leadership, changing lanes</span>
+          <span class="md-open" data-zh="打开">open</span>
+        </a></li>
+
+        <!-- 04 · congress trades -->
+        <li class="rv" style="--d:.13s"><a class="md-tile" href="../congress_trades.html">
+          <span class="md-tv" aria-hidden="true">
+            <span class="md-fd">
+              <i><span class="w"></span><span class="n"></span><span class="s"></span></i>
+              <i class="v"><span class="w"></span><span class="n"></span><span class="s"></span></i>
+              <i class="sl"><span class="w"></span><span class="n"></span><span class="s"></span></i>
+            </span>
+          </span>
+          <span class="md-tn"><b data-zh="国会交易">Congressional Trades</b><em class="md-st" data-zh="抱团">Clustered</em></span>
+          <span class="md-tm" data-zh="逐份读取并打分">Read and scored, one by one</span>
+          <span class="md-open" data-zh="打开">open</span>
+        </a></li>
+
+        <!-- 05 · intraday flow -->
+        <li class="rv" style="--d:.16s"><a class="md-tile" href="../intraday_flow.html">
+          <span class="md-tv" aria-hidden="true">
+            <span class="md-tp">
+              <span class="r"><span class="h l"><i style="width:44%"></i></span><span class="h r"><i style="width:72%"></i></span></span>
+              <span class="r"><span class="h l"><i style="width:68%"></i></span><span class="h r"><i style="width:36%"></i></span></span>
+              <span class="r"><span class="h l"><i style="width:28%"></i></span><span class="h r"><i style="width:84%"></i></span></span>
+              <span class="r"><span class="h l"><i style="width:55%"></i></span><span class="h r"><i style="width:50%"></i></span></span>
+            </span>
+          </span>
+          <span class="md-tn"><b data-zh="盘中资金流">Intraday Flow</b><em class="md-st" data-zh="多空互见">Two-sided</em></span>
+          <span class="md-tm" data-zh="延迟标注照常显示">Delayed marks stay visible</span>
+          <span class="md-open" data-zh="打开">open</span>
+        </a></li>
+
+        <!-- 06 · china -->
+        <li class="rv" style="--d:.19s"><a class="md-tile" href="../china.html">
+          <span class="md-tv" aria-hidden="true">
+            <span class="md-bb">
+              <i style="height:38%"></i><i style="height:62%"></i><i class="d" style="height:30%"></i><i style="height:74%"></i>
+              <i style="height:52%"></i><i class="d" style="height:26%"></i><i style="height:88%"></i><i style="height:60%"></i>
+              <i class="d" style="height:34%"></i><i style="height:70%"></i><i style="height:46%"></i><i style="height:80%"></i>
+            </span>
+          </span>
+          <span class="md-tn"><b data-zh="中国A股">China A-Shares</b><em class="md-st" data-zh="广度转好">Broadening</em></span>
+          <span class="md-tm" data-zh="取自本土数据源">Built from native sources</span>
+          <span class="md-open" data-zh="打开">open</span>
+        </a></li>
+
+        <!-- 07 · hong kong -->
+        <li class="rv" style="--d:.22s"><a class="md-tile" href="../hk.html">
+          <span class="md-tv" aria-hidden="true">
+            <svg viewBox="0 0 120 44">
+              <polyline points="4,30 15,26 26,29 37,20 48,23 59,15 70,18 81,12 92,14 103,9 116,6" fill="none" stroke="var(--q-green)" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"/>
+              <polyline points="4,40 15,39 26,41 37,37 48,38 59,35 70,36 81,33 92,34 103,31 116,29" fill="none" stroke="var(--q-blue)" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round" opacity=".55"/>
+              <circle cx="116" cy="6" r="2.3" fill="var(--q-green)"/>
+            </svg>
+          </span>
+          <span class="md-tn"><b data-zh="香港">Hong Kong</b><em class="md-st" data-zh="趋稳">Firming</em></span>
+          <span class="md-tm" data-zh="南向资金与全球背景">Southbound and global context</span>
+          <span class="md-open" data-zh="打开">open</span>
+        </a></li>
+
+        <!-- 08 · news -->
+        <li class="rv" style="--d:.25s"><a class="md-tile" href="../news.html">
+          <span class="md-tv" aria-hidden="true">
+            <span class="md-nf">
+              <i class="a" style="width:46%"></i><i style="width:30%"></i>
+              <i style="width:26%"></i><i class="g" style="width:38%"></i><i style="width:22%"></i>
+              <i style="width:34%"></i><i class="a" style="width:28%"></i><i style="width:24%"></i>
+            </span>
+          </span>
+          <span class="md-tn"><b data-zh="新闻流">News Feed</b><em class="md-st" data-zh="平静">Quiet</em></span>
+          <span class="md-tm" data-zh="当下要闻">What matters now</span>
+          <span class="md-open" data-zh="打开">open</span>
+        </a></li>
+
+        <!-- 09 · leader radar -->
+        <li class="rv" style="--d:.28s"><a class="md-tile" href="../leader_radar.html">
+          <span class="md-tv" aria-hidden="true">
+            <svg viewBox="0 0 120 46">
+              <g fill="none" stroke="var(--hair-2)" stroke-width="1">
+                <path d="M14 44 A50 50 0 0 1 106 44"/>
+                <path d="M32 44 A32 32 0 0 1 88 44"/>
+                <path d="M48 44 A14 14 0 0 1 72 44"/>
+              </g>
+              <circle cx="43" cy="24" r="2.7" fill="var(--teal)"/>
+              <circle cx="79" cy="30" r="2.1" fill="var(--faint)"/>
+              <circle cx="61" cy="16" r="2.1" fill="var(--faint)"/>
+            </svg>
+          </span>
+          <span class="md-tn"><b data-zh="领袖雷达">Leader Radar</b><em class="md-st" data-zh="观察中">Watching</em></span>
+          <span class="md-tm" data-zh="观察，非预测">Observation, not prediction</span>
+          <span class="md-open" data-zh="打开">open</span>
+        </a></li>
+
+        <!-- 10 · cycle -->
+        <li class="rv" style="--d:.31s"><a class="md-tile" href="../cycle.html">
+          <span class="md-tv" aria-hidden="true">
+            <svg viewBox="0 0 120 46">
+              <circle cx="60" cy="23" r="17" fill="none" stroke="var(--hair-2)" stroke-width="2"/>
+              <path d="M60 6 A17 17 0 0 1 77 23" fill="none" stroke="var(--teal)" stroke-width="4.5" stroke-linecap="round" opacity=".32"/>
+              <line x1="60" y1="23" x2="72" y2="11" stroke="var(--ink)" stroke-width="1.5" stroke-linecap="round"/>
+              <circle cx="72" cy="11" r="3" fill="var(--teal)"/>
+              <circle cx="60" cy="23" r="2" fill="var(--ink)"/>
+            </svg>
+          </span>
+          <span class="md-tn"><b data-zh="周期智慧">Cycle Intelligence</b><em class="md-st" data-zh="周期中段">Mid-cycle</em></span>
+          <span class="md-tm" data-zh="是窗口，不是定论">Windows, not certainties</span>
+          <span class="md-open" data-zh="打开">open</span>
+        </a></li>
+
+        <!-- 11 · bitcoin vector -->
+        <li class="rv" style="--d:.34s"><a class="md-tile" href="../vector.html">
+          <span class="md-tv" aria-hidden="true">
+            <svg viewBox="0 0 120 46">
+              <polyline points="4,34 15,31 26,33 37,26 48,28 59,20 70,23 81,15 92,17 103,10 116,7" fill="none" stroke="var(--q-gold)" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"/>
+              <circle cx="116" cy="7" r="2.4" fill="var(--q-gold)"/>
+              <g fill="var(--hair-2)">
+                <rect x="4" y="41" width="25" height="3" rx="1.5"/>
+                <rect x="33" y="41" width="25" height="3" rx="1.5"/>
+                <rect x="62" y="41" width="25" height="3" rx="1.5" fill="var(--q-gold)" opacity=".5"/>
+                <rect x="91" y="41" width="25" height="3" rx="1.5"/>
+              </g>
+            </svg>
+          </span>
+          <span class="md-tn"><b data-zh="比特币向量">Bitcoin Vector</b><em class="md-st" data-zh="后段">Late</em></span>
+          <span class="md-tm" data-zh="周期位置，并附立场">Cycle position, with a stance</span>
+          <span class="md-open" data-zh="打开">open</span>
+        </a></li>
+
+        <!-- 12 · calibration lab -->
+        <li class="rv" style="--d:.37s"><a class="md-tile" href="../measurement.html">
+          <span class="md-tv" aria-hidden="true">
+            <span class="md-gr">
+              <span class="w"><i>✓</i><b></b></span>
+              <span class="l"><i>✗</i><b></b></span>
+              <span class="w"><i>✓</i><b></b></span>
+              <span class="o"><i>…</i><b></b></span>
+              <span class="w"><i>✓</i><b></b></span>
+            </span>
+          </span>
+          <span class="md-tn"><b data-zh="校准实验室">Calibration Lab</b><em class="md-st" data-zh="已评分">Graded</em></span>
+          <span class="md-tm" data-zh="已测量，而非断言">Measured, not asserted</span>
+          <span class="md-open" data-zh="打开">open</span>
+        </a></li>
+      </ul>
+    </div>
   </div>
-  <aside class="prod-workflow" aria-label="Product workflow">
-    <span class="pw-k"><span class="l-en">How it fits</span><span class="l-zh">使用流程</span></span>
-    <ol>
-      <li>Orient with the regional market state</li><li>Trace the reading into sectors and assets</li><li>Open the underlying ticker or research context</li>
-    </ol>
-  </aside>
 </section>
 
-<div class="prod-layout">
-  <nav class="prod-toc" aria-label="On this page">
-    <p class="toc-h"><span class="l-en">On this page</span><span class="l-zh">本页目录</span></p>
-    <a href="#read-regional-markets-on-their-own-terms">Read regional markets on their own terms</a><a href="#start-with-market-state-and-health">Start with market state and health</a><a href="#move-from-markets-to-sectors-and-themes">Move from markets to sectors and themes</a><a href="#add-cross-asset-context">Add cross-asset context</a><a href="#connect-the-reading-to-ai-and-research">Connect the reading to AI and research</a><a href="#coverage-cadence-and-access-limits">Coverage, cadence and access limits</a>
-  </nav>
-  <div class="prod-main">
-    <article class="est-prose">
-      <p>MastermindX market dashboards turn nightly engine output into focused views of regional markets, macro conditions, cycles, sectors, themes and cross-asset relationships.</p>
-
-<h2 id="read-regional-markets-on-their-own-terms">Read regional markets on their own terms</h2>
-<p>Coverage spans the US, China, Hong Kong, Canada and an international comparison set. Each region has dedicated macro and equity views, while region-specific surfaces add the flows, policy, currency or commodity context that matters there.</p>
-
-<h2 id="start-with-market-state-and-health">Start with market state and health</h2>
-<p>Macro views organize available growth, inflation, liquidity, rates, credit and regime context. Market-health views add breadth, volatility, index condition and scheduled catalysts where those inputs exist. They describe state at their stated cadence rather than pretending every field is a real-time feed.</p>
-
-<h2 id="move-from-markets-to-sectors-and-themes">Move from markets to sectors and themes</h2>
-<p>Sector and thematic views organize heat, cycle position, breadth and rotation for scanning. Links into baskets and stock dossiers make a broad observation investigable at the constituent level.</p>
-
-<h2 id="add-cross-asset-context">Add cross-asset context</h2>
-<p>Dedicated surfaces cover commodities, foreign exchange, bonds, Bitcoin and cross-asset relationships. They help reveal whether rates, the dollar, credit or commodity moves support or conflict with the equity picture.</p>
-
-<h2 id="connect-the-reading-to-ai-and-research">Connect the reading to AI and research</h2>
-<p>Mastermind AI can explain a page or panel using the current context, while linked stock dossiers and institutional research pages provide ticker- and report-level detail. The dashboard is a starting point for investigation, not the final word.</p>
-
-<h2 id="coverage-cadence-and-access-limits">Coverage, cadence and access limits</h2>
-<div class="callout warn"><span class="co-h">Not every surface updates together</span><p>Most engine-generated dashboards rebuild nightly; selected quote or intraday surfaces may update more frequently. Regions do not expose identical fields, missing data can produce unavailable readings, and deeper dashboards may require registration or a paid plan.</p></div>
-<p>Dashboard outputs are research context, not investment advice. Read the timestamp and limitation labels attached to each surface before comparing two states.</p>
-    </article>
-
-
-    <aside class="prod-related" aria-label="Related product and research pages">
-      <h2><span class="l-en">Continue the workflow</span><span class="l-zh">继续探索</span></h2>
-      <div class="prod-rel-grid">
-
-        <a class="prod-rel" href="../products/market-terminal.html">
-          <span class="kind"><span class="l-en">Product</span><span class="l-zh">产品</span></span>
-          <span class="name">Market Terminal &amp; Browser Charting</span>
-          <span class="go"><span class="l-en">Explore</span><span class="l-zh">查看</span> →</span>
-        </a>
-
-        <a class="prod-rel" href="../products/mastermind-ai.html">
-          <span class="kind"><span class="l-en">Product</span><span class="l-zh">产品</span></span>
-          <span class="name">AI Market Research Assistant</span>
-          <span class="go"><span class="l-en">Explore</span><span class="l-zh">查看</span> →</span>
-        </a>
-
-
-        <a class="prod-rel" href="../research/index.html">
-          <span class="kind"><span class="l-en">Research surface</span><span class="l-zh">研究页面</span></span>
-          <span class="name">Browse institutional research</span>
-          <span class="go"><span class="l-en">Open</span><span class="l-zh">打开</span> →</span>
-        </a>
-
-        <a class="prod-rel" href="../tools/index.html">
-          <span class="kind"><span class="l-en">Research surface</span><span class="l-zh">研究页面</span></span>
-          <span class="name">Use free market calculators</span>
-          <span class="go"><span class="l-en">Open</span><span class="l-zh">打开</span> →</span>
-        </a>
-
+<!-- ══════════════ 1 · the regime ══════════════ -->
+<section class="feature" id="regime">
+  <div class="wrap feat-grid">
+    <div class="feat-copy rv">
+      <span class="kicker" data-zh="市场格局">The regime</span>
+      <h2 class="feat-title" data-zh="先看<br>大势。">Start with<br>the weather.</h2>
+      <p class="feat-sub" data-zh="晨间研判只回答一个问题，而且用大白话：<b>现在这个市场，该进攻，还是该守住？</b>">The morning read answers one question in plain words: <b>is this a market to press, or a market to protect?</b></p>
+      <ul class="fx">
+        <li data-zh="<b>增长、通胀、流动性。</b>放在一起读，而不是各看各的。"><b>Growth, inflation, liquidity.</b> Read together, not one at a time.</li>
+        <li data-zh="<b>给立场，不给分数。</b>刻度盘落在「该怎么做」上。"><b>A stance, not a score.</b> The dial lands on what to do.</li>
+        <li data-zh="<b>漂移会标出来。</b>格局一旦开始移动，页面直说。"><b>Drift is shown.</b> When the regime starts moving, the page says so.</li>
+      </ul>
+      <a class="feat-cta" href="../macro.html" data-zh="打开宏观台席 →">Open the regime desk →</a>
+    </div>
+    <div class="rv" style="--d:.1s">
+      <div class="demo">
+        <span class="live-tag ill" data-zh="<i></i>示意"><i></i>ILLUSTRATIVE</span>
+        <p class="dk" data-zh="今日研判 · 美国 <span class='asof'>每晚重建</span>">TODAY'S READ · US <span class="asof">rebuilt nightly</span></p>
+        <div class="md-regime">
+          <div class="md-quad">
+            <span class="q on" data-zh="温和增长">Goldilocks</span>
+            <span class="q" data-zh="再通胀">Reflation</span>
+            <span class="q" data-zh="通缩">Deflation</span>
+            <span class="q" data-zh="滞胀">Stagflation</span>
+            <i class="md-you" aria-hidden="true"></i>
+          </div>
+          <div class="md-gauge">
+            <svg viewBox="0 -4 150 96" aria-hidden="true">
+              <path d="M16 78 A59 59 0 0 1 134 78" fill="none" stroke="var(--hair-2)" stroke-width="10" stroke-linecap="round"/>
+              <path d="M16 78 A59 59 0 0 1 134 78" fill="none" stroke="var(--q-gold)" stroke-width="10" stroke-linecap="round" stroke-dasharray="102 300" opacity=".92"/>
+              <line x1="75" y1="76" x2="82" y2="33" stroke="var(--ink)" stroke-width="2.8" stroke-linecap="round"/>
+              <circle cx="82" cy="33" r="3.2" fill="var(--q-gold)"/>
+              <circle cx="75" cy="78" r="7" fill="#fff" stroke="var(--hair-2)" stroke-width="1.6"/>
+              <circle cx="75" cy="78" r="3.2" fill="var(--ink)"/>
+            </svg>
+            <p class="md-anchors"><span data-zh="恐慌">Panic</span><span data-zh="中性">Neutral</span><span data-zh="狂热">Euphoria</span></p>
+          </div>
+        </div>
+        <p class="md-stance"><b data-zh="做好准备——龙头先行。">Get ready — leaders first.</b> <span data-zh="增长为正、通胀不烫，但正朝再通胀漂移。偏向已经在动的名字；别追跳空。">Growth positive, inflation not hot — but drifting toward reflation. Favour what is already working; don't chase the gap-ups.</span></p>
       </div>
-    </aside>
-
+    </div>
   </div>
-</div>
+</section>
+
+<!-- ══════════════ 2 · stock lanes ══════════════ -->
+<section class="feature flip" id="lanes">
+  <div class="wrap feat-grid">
+    <div class="feat-copy rv">
+      <span class="kicker" data-zh="个股通道">Stock lanes</span>
+      <h2 class="feat-title" data-zh="个股按<br>大白话分道。">Stocks in<br>plain lanes.</h2>
+      <p class="feat-sub" data-zh="排好序的个股被放进四条通道，通道名本身就是立场——立即买入、即将就绪、止盈了结、观望回避。<b>没有需要破译的分数。</b>">Ranked names are sorted into lanes whose names <i>are</i> the stance — Buy now, Almost ready, Take profits, Stand aside. <b>No score to decode.</b></p>
+      <ul class="fx">
+        <li data-zh="<b>通道名就是立场。</b>看一眼表头就知道该做什么。"><b>Lane names are stances.</b> Read the header, you know the action.</li>
+        <li data-zh="<b>状态不明的一律停在观望回避。</b>没有个股会因为漏判被放行。"><b>Unknown states park in the cautious lane.</b> Nothing gets a green light by accident.</li>
+        <li data-zh="<b>每条通道都能展开成个股。</b>点进去就是排好序的名单。"><b>Every lane opens into the names.</b> Click through to the ranked stocks.</li>
+      </ul>
+      <a class="feat-cta" href="../us_stocks.html" data-zh="打开个股看板 →">Open the stock board →</a>
+    </div>
+    <div class="rv" style="--d:.1s">
+      <div class="demo">
+        <span class="live-tag ill" data-zh="<i></i>示意"><i></i>ILLUSTRATIVE</span>
+        <p class="dk" data-zh="现在该做什么 <span class='asof'>每晚重建</span>">WHAT TO ACT ON NOW <span class="asof">rebuilt nightly</span></p>
+        <div class="lanes">
+          <div class="lane l-buy">
+            <p class="lh" data-zh="<i></i>立即买入"><i></i>BUY NOW</p>
+            <div class="thm hot"><span class="nm2" data-zh="半导体">Semiconductors</span></div>
+            <p class="md-moved" data-zh="由「即将就绪」升入">from Almost ready</p>
+            <div class="thm"><span class="nm2" data-zh="电网设备">Grid equipment</span></div>
+          </div>
+          <div class="lane l-alm">
+            <p class="lh" data-zh="<i></i>即将就绪"><i></i>ALMOST READY</p>
+            <div class="thm"><span class="nm2" data-zh="区域性银行">Regional banks</span></div>
+            <div class="thm"><span class="nm2" data-zh="油服">Oil services</span></div>
+            <div class="thm"><span class="nm2" data-zh="医疗器械">Medical devices</span></div>
+          </div>
+          <div class="lane l-tp">
+            <p class="lh" data-zh="<i></i>止盈了结"><i></i>TAKE PROFITS</p>
+            <div class="thm"><span class="nm2" data-zh="黄金矿业">Gold miners</span></div>
+          </div>
+          <div class="lane l-sa">
+            <p class="lh" data-zh="<i></i>观望回避"><i></i>STAND ASIDE</p>
+            <div class="thm"><span class="nm2" data-zh="住宅建筑">Homebuilders</span></div>
+            <div class="thm"><span class="nm2" data-zh="公用事业">Utilities</span></div>
+          </div>
+        </div>
+        <p class="md-vnote" data-zh="<b>状态不明的停在观望回避。</b>只有证据齐了，个股才会向上换道——绝不因为漏判而放行。"><b>Unknown states park in Stand aside.</b> A name only moves up a lane when the evidence is in — never because a check went missing.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 3 · theme rotations ══════════════ -->
+<section class="feature" id="rotations">
+  <div class="wrap feat-grid">
+    <div class="feat-copy rv">
+      <span class="kicker" data-zh="主题轮动">Theme rotations</span>
+      <h2 class="feat-title" data-zh="看着领涨<br>当场换道。">Watch leadership<br>change lanes.</h2>
+      <p class="feat-sub" data-zh="资金在轮动。看板让主题筹码随领涨切换而换道——<b>每个篮子展开就是排好序的成分股。</b>">Money rotates. The board shows theme chips moving between lanes as leadership turns — <b>and every basket opens into its ranked members.</b></p>
+      <ul class="fx">
+        <li data-zh="<b>轮动看得见。</b>主题转向，当场换道。"><b>Rotation made visible.</b> A theme turns, it moves lanes.</li>
+        <li data-zh="<b>从主题到个股。</b>篮子展开就是排好序的成分股。"><b>From theme to names.</b> Every basket opens into ranked stocks.</li>
+        <li data-zh="<b>每晚重排。</b>昨天的领涨，今天可能换了位置。"><b>Re-sorted every night.</b> Yesterday's leader can wake up somewhere else.</li>
+      </ul>
+      <a class="feat-cta" href="../baskets.html" data-zh="查看今日通道 →">See today's lanes →</a>
+    </div>
+    <div class="rv" style="--d:.1s">
+      <div class="demo">
+        <span class="live-tag ill" data-zh="<i></i>示意"><i></i>ILLUSTRATIVE</span>
+        <p class="dk" data-zh="主题轮动 <span class='asof'>每晚重排</span>">THEME ROTATION <span class="asof">re-sorted nightly</span></p>
+        <div class="md-rib">
+          <div class="md-rl up">
+            <span class="md-rk" data-zh="转强">Gaining</span>
+            <span class="md-tc g"><i></i><span data-zh="电力与电网">Power &amp; grid</span></span>
+            <span class="md-tc g"><i></i><span data-zh="国防电子">Defence electronics</span></span>
+            <span class="md-tc mv"><i></i><span data-zh="半导体设备">Semicap</span></span>
+          </div>
+          <svg class="md-trail" viewBox="0 0 300 22" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M232 0 C 232 12 150 10 150 22"/>
+          </svg>
+          <div class="md-rl dn">
+            <span class="md-rk" data-zh="转弱">Cooling</span>
+            <span class="md-tc o"><i></i><span data-zh="黄金矿业">Gold miners</span></span>
+            <span class="md-tc"><i></i><span data-zh="必需消费">Staples</span></span>
+          </div>
+        </div>
+        <p class="md-vnote" data-zh="一个主题换道，它的成分股就在个股看板上换道——<b>两块板讲同一个故事。</b>">When a theme changes lanes, its members change lanes on the stock board too — <b>the two boards tell one story.</b></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 4 · filings ══════════════ -->
+<section class="feature flip" id="filings">
+  <div class="wrap feat-grid">
+    <div class="feat-copy rv">
+      <span class="kicker" data-zh="申报披露">Filings</span>
+      <h2 class="feat-title" data-zh="内部人与国会申报，<br>逐份读取打分。">Insiders and Congress,<br>read and scored.</h2>
+      <p class="feat-sub" data-zh="国会议员、参议员、CEO 与 CFO 都要申报交易。每一份披露都被读取并打分——<b>还带上决定它是否还来得及的时机背景。</b>">Congress, senators, CEOs and CFOs file their trades. Every disclosure is read and scored — <b>with the timing context that decides whether it is still tradable.</b></p>
+      <ul class="fx">
+        <li data-zh="<b>96,000+ 份披露</b>已读取、已打分。"><b>96,000+ disclosures</b> read and scored to date.</li>
+        <li data-zh="<b>抱团胜过单打。</b>三人同买，分量远超一人。"><b>Clusters beat one-offs.</b> Three buyers mean more than one.</li>
+        <li data-zh="<b>含入场时机。</b>好申报跟晚了也是坏交易。"><b>Entry timing included.</b> A good filing late is a bad trade.</li>
+      </ul>
+      <a class="feat-cta" href="../congress_trades.html" data-zh="打开申报台席 →">Open the filings desk →</a>
+    </div>
+    <div class="rv" style="--d:.1s">
+      <div class="demo">
+        <span class="live-tag ill" data-zh="<i></i>示意"><i></i>ILLUSTRATIVE</span>
+        <p class="dk" data-zh="内部人 &amp; 国会 <span class='asof'>申报即录</span>">INSIDER &amp; CONGRESS <span class="asof">as filings land</span></p>
+        <div class="filings-grid">
+          <div class="filings">
+            <div class="fi-row"><span class="who sen" data-zh="参议院">SENATE</span><span class="nm" data-zh="能源基础设施 · <b>三人同买</b>">Energy infrastructure · <b>3 buyers</b></span><span class="rt"><span class="side b" data-zh="买入">BUY</span></span></div>
+            <div class="fi-row"><span class="who ceo">CEO</span><span class="nm" data-zh="区域性银行 · <b>公开市场买入</b>">Regional bank · <b>open-market buy</b></span><span class="rt"><span class="side b" data-zh="买入">BUY</span></span></div>
+            <div class="fi-row"><span class="who rep" data-zh="众议院">HOUSE</span><span class="nm" data-zh="半导体设备 · <b>加仓</b>">Semicap · <b>added</b></span><span class="rt"><span class="side b" data-zh="买入">BUY</span></span></div>
+            <div class="fi-row"><span class="who cfo">CFO</span><span class="nm" data-zh="软件 · <b>计划内减持</b>">Software · <b>scheduled sale</b></span><span class="rt"><span class="side s" data-zh="卖出">SELL</span></span></div>
+          </div>
+          <div class="fi-sum">
+            <div class="big tnum">96,000+</div>
+            <p class="lb" data-zh="份披露至今已读取并打分">disclosures read &amp; scored to date</p>
+            <div class="div"></div>
+            <p class="lb" data-zh="每个候选都附带仓位、抱团与入场时机——单独一份申报很少值得跟随。">Every candidate ships with size, cluster and entry-timing context — a lone filing rarely earns a follow.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 5 · options flow ══════════════ -->
+<section class="feature" id="flow">
+  <div class="wrap feat-grid">
+    <div class="feat-copy rv">
+      <span class="kicker" data-zh="期权资金流">Options flow</span>
+      <h2 class="feat-title" data-zh="资金流，<br>对着盘面看。">Flow, beside<br>the tape.</h2>
+      <p class="feat-sub" data-zh="盘中期权资金流就摆在盘面旁边，并如实标注数据新鲜度——<b>延迟的标记照常显示，不会被包装成实时。</b>">Intraday options flow next to the tape, with honest freshness labels — <b>delayed marks stay visible instead of being dressed up as live.</b></p>
+      <ul class="fx">
+        <li data-zh="<b>看方向，不只看金额。</b>认购与认沽分开读。"><b>Sides, not just size.</b> Calls and puts read separately.</li>
+        <li data-zh="<b>新鲜度直接印在面板上。</b>延迟约15分钟，就写延迟约15分钟。"><b>Freshness is printed on the panel.</b> Roughly 15 minutes behind says exactly that.</li>
+        <li data-zh="<b>是背景，不是扳机。</b>观察——不追高。"><b>Context, not a trigger.</b> Watch — don't chase.</li>
+      </ul>
+      <a class="feat-cta" href="../intraday_flow.html" data-zh="打开资金流台席 →">Open the flow desk →</a>
+    </div>
+    <div class="rv" style="--d:.1s">
+      <div class="demo">
+        <span class="live-tag ill" data-zh="<i></i>示意"><i></i>ILLUSTRATIVE</span>
+        <p class="dk" data-zh="期权资金流 · 盘中 <span class='asof'>盘中刷新</span>">OPTIONS FLOW · INTRADAY <span class="asof">refreshes in session</span></p>
+        <div class="md-tape">
+          <div class="md-tr"><span class="tm">10:14</span><span class="sy" data-zh="半导体">SEMIS</span><span class="sd c" data-zh="认购">CALLS</span><span class="bz"><i style="width:78%"></i></span></div>
+          <div class="md-tr"><span class="tm">10:41</span><span class="sy" data-zh="能源">ENERGY</span><span class="sd c" data-zh="认购">CALLS</span><span class="bz"><i style="width:54%"></i></span></div>
+          <div class="md-tr"><span class="tm">11:02</span><span class="sy" data-zh="地产">REITS</span><span class="sd p" data-zh="认沽">PUTS</span><span class="bz p"><i style="width:63%"></i></span></div>
+          <div class="md-tr"><span class="tm">11:27</span><span class="sy" data-zh="银行">BANKS</span><span class="sd c" data-zh="认购">CALLS</span><span class="bz"><i style="width:35%"></i></span></div>
+        </div>
+        <p class="md-fresh"><i></i><span data-zh="延迟约15分钟">≈15-min delayed</span></p>
+        <p class="md-vnote" data-zh="资金流告诉你钱去了哪里，不告诉你现在该不该追。<b>观察——不追高。</b>">Flow tells you where the money went, not whether to chase it now. <b>Watch — don't chase.</b></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 6 · china & hong kong ══════════════ -->
+<section class="feature flip" id="china">
+  <div class="wrap feat-grid">
+    <div class="feat-copy rv">
+      <span class="kicker" data-zh="中国与港股">China &amp; HK</span>
+      <h2 class="feat-title" data-zh="中国与港股，<br>本土视角解读。">China and Hong Kong,<br>read natively.</h2>
+      <p class="feat-sub" data-zh="A股广度、行业台席与港股背景，全部取自本土数据源——<b>而且是中文原生撰写，不是事后翻译。</b>">A-share breadth, sector desks and Hong Kong context built from native sources — <b>and written in Chinese first, not translated after the fact.</b></p>
+      <ul class="fx">
+        <li data-zh="<b>广度附带分母。</b>统计了多少只股票，直接写出来。"><b>Breadth with its denominator.</b> How many names it counts is printed.</li>
+        <li data-zh="<b>行业台席本土化。</b>按中国投资者真正交易的分类来分。"><b>Sector desks, natively.</b> The groups Chinese investors actually trade.</li>
+        <li data-zh="<b>港股放进背景里读。</b>南向资金与全球盘面并排。"><b>Hong Kong in context.</b> Southbound flow and the global tape beside it.</li>
+      </ul>
+      <a class="feat-cta" href="../china.html" data-zh="打开中国台席 →">Open the China desk →</a>
+    </div>
+    <div class="rv" style="--d:.1s">
+      <div class="demo">
+        <span class="live-tag ill" data-zh="<i></i>示意"><i></i>ILLUSTRATIVE</span>
+        <p class="dk" data-zh="A股与港股广度 <span class='asof'>每晚重建</span>">A-SHARE &amp; HK BREADTH <span class="asof">rebuilt nightly</span></p>
+        <div class="md-dual">
+          <div class="md-mk">
+            <span class="zh">上证综指</span><span class="en">Shanghai Composite</span>
+            <span class="md-brd" aria-hidden="true"><i style="height:58%"></i><i style="height:74%"></i><i class="d" style="height:32%"></i><i style="height:86%"></i><i style="height:64%"></i><i class="d" style="height:28%"></i><i style="height:78%"></i></span>
+          </div>
+          <div class="md-mk">
+            <span class="zh">深证成指</span><span class="en">Shenzhen Component</span>
+            <span class="md-brd" aria-hidden="true"><i style="height:44%"></i><i class="d" style="height:36%"></i><i style="height:70%"></i><i style="height:52%"></i><i class="d" style="height:30%"></i><i style="height:66%"></i><i style="height:48%"></i></span>
+          </div>
+          <div class="md-mk">
+            <span class="zh">恒生指数</span><span class="en">Hang Seng</span>
+            <span class="md-brd" aria-hidden="true"><i style="height:36%"></i><i style="height:56%"></i><i style="height:48%"></i><i class="d" style="height:26%"></i><i style="height:72%"></i><i style="height:60%"></i><i style="height:80%"></i></span>
+          </div>
+        </div>
+        <p class="md-vnote" data-zh="每根柱子代表当日上涨与下跌家数的对比，<b>面板会写明统计了多少只股票。</b>南向资金与全球盘面另行标注。">Each bar is the day's advancers against decliners, <b>and the panel prints how many names it counted.</b> Southbound flow and the global tape are labelled separately.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 7 · track record ══════════════ -->
+<section class="feature" id="record">
+  <div class="wrap feat-grid">
+    <div class="feat-copy rv">
+      <span class="kicker" data-zh="公开留档">Track record</span>
+      <h2 class="feat-title" data-zh="每次研判，<br>都公开留档。">Every call goes<br>on the record.</h2>
+      <p class="feat-sub" data-zh="研判在发出的当下打上时间戳，等市场给出答案后再评分——<b>包括做错的那些。</b>投影是窗口，不是定论——每晚重画。">Reads are timestamped when they're made and graded after the market answers — <b>including the ones that were wrong.</b> Projections are windows, not certainties — re-drawn nightly.</p>
+      <ul class="fx">
+        <li data-zh="<b>说出口就打时间戳。</b>事后不做悄悄修改。"><b>Timestamped when said.</b> No quiet edits after the fact.</li>
+        <li data-zh="<b>由市场给出答案后评分。</b>对的和错的都留在页面上。"><b>Graded after the market answers.</b> Wins and misses both stay up.</li>
+        <li data-zh="<b>完整结论放在校准实验室。</b>刻意收在下方，不做首页装饰。"><b>Full verdicts in the Calibration Lab.</b> Below the fold on purpose, not front-page decoration.</li>
+      </ul>
+      <a class="feat-cta" href="../measurement.html" data-zh="打开校准实验室 →">Open the Calibration Lab →</a>
+    </div>
+    <div class="rv" style="--d:.1s">
+      <div class="demo">
+        <span class="live-tag ill" data-zh="<i></i>示意"><i></i>ILLUSTRATIVE</span>
+        <p class="dk" data-zh="已评分研判 <span class='asof'>每晚重画</span>">GRADED READS <span class="asof">re-drawn nightly</span></p>
+        <div class="md-rec">
+          <div class="md-rc w"><span class="mk" aria-hidden="true">✓</span><span class="vb"></span><span class="dt">05-14</span><span class="wd" data-zh="对">Right</span></div>
+          <div class="md-rc l"><span class="mk" aria-hidden="true">✗</span><span class="vb"></span><span class="dt">05-29</span><span class="wd" data-zh="错">Wrong</span></div>
+          <div class="md-rc w"><span class="mk" aria-hidden="true">✓</span><span class="vb"></span><span class="dt">06-11</span><span class="wd" data-zh="对">Right</span></div>
+          <div class="md-rc o"><span class="mk" aria-hidden="true">…</span><span class="vb"></span><span class="dt">07-02</span><span class="wd" data-zh="未结">Still open</span></div>
+          <div class="md-rc w"><span class="mk" aria-hidden="true">✓</span><span class="vb"></span><span class="dt">07-18</span><span class="wd" data-zh="对">Right</span></div>
+        </div>
+        <p class="md-vnote" data-zh="<b>是窗口，不是定论——每晚重画。</b>未结的研判就标为未结，不会先算成一场胜利。"><b>Windows, not certainties — re-drawn nightly.</b> An open read is shown as open, not banked early as a win.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 8 · beyond stocks ══════════════ -->
+<section class="feature flip" id="beyond">
+  <div class="wrap feat-grid">
+    <div class="feat-copy rv">
+      <span class="kicker" data-zh="股票之外">Beyond stocks</span>
+      <h2 class="feat-title" data-zh="一层台席，<br>纵览资产。">One floor,<br>every asset.</h2>
+      <p class="feat-sub" data-zh="同一套引擎也在跑比特币、大宗商品、债券与美元——<b>同样的大白话、同样的立场、同样的每晚重建。</b>">The same engines run Bitcoin, commodities, bonds and the dollar — <b>same plain words, same stances, same nightly rebuild.</b></p>
+      <ul class="fx">
+        <li data-zh="<b>比特币向量。</b>周期位置，并附上立场。"><b>Bitcoin Vector.</b> Cycle position, with a stance attached.</li>
+        <li data-zh="<b>17 个商品品种，同在一张板上。</b>黄金、原油、铜，读法一致。"><b>17 commodities on one board.</b> Gold, oil and copper read the same way.</li>
+        <li data-zh="<b>利率、信用与美元。</b>用大白话讲传导。"><b>Rates, credit and the dollar.</b> Transmission in plain words.</li>
+      </ul>
+      <a class="feat-cta" href="../vector.html" data-zh="打开比特币向量 →">Open Bitcoin Vector →</a>
+    </div>
+    <div class="rv" style="--d:.1s">
+      <div class="demo">
+        <span class="live-tag ill" data-zh="<i></i>示意"><i></i>ILLUSTRATIVE</span>
+        <p class="dk" data-zh="跨资产 <span class='asof'>每晚重建</span>">CROSS-ASSET <span class="asof">rebuilt nightly</span></p>
+        <div class="md-hub">
+          <span class="md-hubc"><i></i><span data-zh="同一套引擎">One set of engines</span></span>
+          <span class="md-hubl" aria-hidden="true"></span>
+        </div>
+        <div class="md-assets">
+          <div class="md-as">
+            <span class="ic" aria-hidden="true">₿</span>
+            <span class="nm" data-zh="比特币">Bitcoin</span>
+            <span class="sp" aria-hidden="true"><svg viewBox="0 0 90 22"><polyline points="2,17 13,15 24,16 35,11 46,13 57,8 68,10 79,5 88,6" fill="none" stroke="var(--q-gold)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+            <span class="wd" data-zh="周期后段——保护利润">Late cycle — protect gains</span>
+          </div>
+          <div class="md-as">
+            <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="var(--ink)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c3.6 4.4 6 7.8 6 10.6A6 6 0 0 1 6 13.6C6 10.8 8.4 7.4 12 3Z"/></svg></span>
+            <span class="nm" data-zh="大宗商品">Commodities</span>
+            <span class="sp" aria-hidden="true"><svg viewBox="0 0 90 22"><polyline points="2,9 13,12 24,8 35,13 46,10 57,15 68,12 79,16 88,14" fill="none" stroke="var(--q-blue)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+            <span class="wd" data-zh="17 个品种，同在一张板上">17 members, one board</span>
+          </div>
+          <div class="md-as">
+            <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="var(--ink)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16M6 20V10M12 20V10M18 20V10M3 9l9-5 9 5"/></svg></span>
+            <span class="nm" data-zh="利率与信用">Rates &amp; credit</span>
+            <span class="sp" aria-hidden="true"><svg viewBox="0 0 90 22"><polyline points="2,6 13,8 24,7 35,11 46,10 57,14 68,12 79,15 88,17" fill="none" stroke="var(--violet)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+            <span class="wd" data-zh="传导，用大白话讲">Transmission, in plain words</span>
+          </div>
+          <div class="md-as">
+            <span class="ic" aria-hidden="true">$</span>
+            <span class="nm" data-zh="美元">The dollar</span>
+            <span class="sp" aria-hidden="true"><svg viewBox="0 0 90 22"><polyline points="2,13 13,11 24,14 35,10 46,12 57,9 68,11 79,7 88,9" fill="none" stroke="var(--teal)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+            <span class="wd" data-zh="汇率推动市场时会提示">Says so when FX is pushing</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 9 · the engines ══════════════ -->
+<section class="feature" id="nightly">
+  <div class="wrap feat-grid">
+    <div class="feat-copy rv">
+      <span class="kicker" data-zh="引擎">The engines</span>
+      <h2 class="feat-title" data-zh="引擎之间，<br>相互校验。">Engines that check<br>each other's work.</h2>
+      <p class="feat-sub" data-zh="每晚，整层台席作为一个整体重建——信号与申报披露、资金流和市场格局相互校验。<b>当某个信号没有优势时，页面会用大白话直说。</b>">Every night the whole floor is rebuilt as one piece — signals cross-checked against filings, flow and the regime. <b>When a signal has no edge, the page says so in plain words.</b></p>
+      <ul class="fx">
+        <li data-zh="<b>一次重建，一个版本。</b>各台席不会在日期上悄悄打架。"><b>One rebuild, one story.</b> Desks can't quietly disagree about the date.</li>
+        <li data-zh="<b>相互校验，而非简单叠加。</b>一致性要靠证据换来。"><b>Cross-checked, not stacked.</b> Agreement has to be earned.</li>
+        <li data-zh="<b>「没有优势」也是一种结论。</b>沉默不是信号。"><b>&quot;No edge&quot; is a printed result.</b> Silence is not a signal.</li>
+      </ul>
+      <a class="feat-cta" href="../start.html" data-zh="逛一圈台席 →">Walk the floor →</a>
+    </div>
+    <div class="rv" style="--d:.1s">
+      <div class="demo">
+        <span class="live-tag ill" data-zh="<i></i>示意"><i></i>ILLUSTRATIVE</span>
+        <p class="dk" data-zh="夜间重建 <span class='asof'>每晚一次</span>">THE NIGHTLY REBUILD <span class="asof">once a night</span></p>
+        <div class="md-conv">
+          <div class="md-moon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M20.6 14.8A8.7 8.7 0 0 1 9.2 3.4 8.7 8.7 0 1 0 20.6 14.8Z" fill="#e8c34c"/></svg>
+          </div>
+          <div class="md-eng">
+            <div class="md-eb"><i></i><span data-zh="信号">Signals</span><em data-zh="对照申报披露校验">checked against filings</em></div>
+            <div class="md-eb"><i></i><span data-zh="资金流">Flow</span><em data-zh="对照盘面校验">checked against the tape</em></div>
+            <div class="md-eb"><i></i><span data-zh="市场格局">Regime</span><em data-zh="对照广度校验">checked against breadth</em></div>
+          </div>
+          <div class="md-out">
+            <div class="md-oc"><b data-zh="宏观仪表盘">Macro Dashboard</b><span data-zh="每晚重建">rebuilt nightly</span></div>
+            <div class="md-oc"><b data-zh="股票仪表盘">Stock Dashboard</b><span data-zh="每晚重建">rebuilt nightly</span></div>
+            <div class="md-oc"><b data-zh="主题篮子">Thematic Baskets</b><span data-zh="每晚重建">rebuilt nightly</span></div>
+          </div>
+        </div>
+        <p class="md-vnote" data-zh="若某个引擎的读数与其他引擎冲突，页面会把分歧写出来——<b>而不是取平均糊过去。</b>">When one engine's read conflicts with the others, the page reports the disagreement — <b>it doesn't average it into mush.</b></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ honesty station ══════════════ -->
+<section class="section-pad hair-top" id="access">
+  <div class="wrap md-honest">
+    <div class="rv">
+      <span class="kicker" data-zh="权限与边界">Access &amp; limits</span>
+      <div class="callout">
+        <span class="co-h" data-zh="免费阅读，如实标注">Free to read, honestly labeled</span>
+        <p data-zh="仪表盘免费阅读。部分台席与实时功能需要相应方案——当前的权限边界以定价页为准。每个界面都带有自己的时间戳；这些解读是研究背景，不构成个性化投资建议。">The dashboards are free to read. Some desks and live features require an eligible plan — the pricing page owns the current access boundary. Every surface carries its own timestamp, and the readings are research context, not individualized investment advice.</p>
+      </div>
+      <p class="psec-note" data-zh="各界面的更新节奏并不相同：多数台席每晚重建；少数盘中面板在交易时段刷新，并会在面板上写明。数据缺失时显示为「暂无」，而不是拿旧数字凑数。">Surfaces update on different schedules: most desks rebuild nightly, while a few intraday panels refresh during the session and say so on the panel. Where data is missing, it reads as unavailable rather than being padded with a stale number.</p>
+      <p class="psec-note" data-zh="本页的产品界面图为手绘示例，用于说明布局与措辞；其中的数字并非实时行情。">Product UI drawings on this page are hand-drawn examples that show layout and wording; the figures in them are not live market data.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ closer ══════════════ -->
+<section class="cband">
+  <div class="wrap rv">
+    <span class="kicker" data-zh="开始使用">Get started</span>
+    <h2 class="sec-title display" style="margin-top:12px" data-zh="逛一圈台席。">Walk the floor.</h2>
+    <p class="sec-sub" style="max-width:48ch;margin-inline:auto" data-zh="本页每个台席都已上线，免费阅读。打开台席，从今晚的重建开始。">Every desk on this page is live and free to read. Open the floor and start with tonight's rebuild.</p>
+    <div class="cta-row" style="justify-content:center;margin-top:28px">
+      <a class="btn primary" href="../start.html" data-zh="打开仪表盘">Open the dashboards</a>
+      <a class="btn js-startfree" href="https://app.mastermind-x.com/terminal?signup=1" data-zh="免费开始">Start free</a>
+    </div>
+    <div class="trust">
+      <span data-zh="<i style='background:#2ebd85'></i>免费阅读，无需绑卡"><i style="background:#2ebd85"></i>Free to read — no card required</span>
+      <span data-zh="<i style='background:#3f82f6'></i>每晚重建"><i style="background:#3f82f6"></i>Rebuilt every night</span>
+      <span data-zh="<i style='background:#e8c34c'></i>中英双语原生"><i style="background:#e8c34c"></i>Bilingual by design</span>
+    </div>
+  </div>
+</section>
+
+<p class="md-legal"><span data-zh="市场情报，不构成个性化投资建议。产品界面示例仅为示意。">Market intelligence, not individualized investment advice. Product UI examples are illustrative.</span></p>
 
 </main>
 
-
-<footer class="public-footer">
+<footer>
   <div class="f-in">
     <div class="f-grid">
       <div class="f-brand">
         <div class="fb-row"><span class="fm">M</span><span class="fn">MASTERMINDX</span></div>
-        <p class="ft"><span class="l-en">Institutional-grade market intelligence.</span><span class="l-zh">机构级市场情报。</span></p>
+        <p class="ft" data-zh="机构级市场情报。">Institutional-grade market intelligence.</p>
       </div>
       <div class="f-cols">
         <div class="f-col">
-          <p><span class="l-en">Platform</span><span class="l-zh">平台</span></p>
-          <a href="../products/index.html"><span class="l-en">Platform overview</span><span class="l-zh">平台概览</span></a>
-          <a href="../products/market-terminal.html"><span class="l-en">Market Terminal</span><span class="l-zh">市场终端</span></a>
+          <p data-zh="平台">Platform</p>
+          <a href="../products/index.html" data-zh="平台概览">Platform overview</a>
+          <a href="../products/market-terminal.html">Market Terminal</a>
           <a href="../products/mastermind-ai.html">Mastermind AI</a>
-          <a href="../products/market-dashboards.html"><span class="l-en">Market dashboards</span><span class="l-zh">市场仪表盘</span></a>
-          <a href="../plans.html"><span class="l-en">Plans &amp; pricing</span><span class="l-zh">方案与定价</span></a>
+          <a href="../products/market-dashboards.html" data-zh="市场仪表盘">Market dashboards</a>
+          <a href="../plans.html" data-zh="方案与定价">Plans &amp; pricing</a>
         </div>
         <div class="f-col">
-          <p><span class="l-en">Research</span><span class="l-zh">研究</span></p>
-          <a href="../research/index.html"><span class="l-en">Institutional research</span><span class="l-zh">机构研报</span></a>
-          <a href="../stocks/index.html"><span class="l-en">Stock dossiers</span><span class="l-zh">股票档案</span></a>
-          <a href="../about-research.html"><span class="l-en">About the research</span><span class="l-zh">关于研究</span></a>
+          <p data-zh="研究">Research</p>
+          <a href="../research/index.html" data-zh="机构研报">Institutional research</a>
+          <a href="../stocks/index.html" data-zh="股票档案">Stock dossiers</a>
+          <a href="../about-research.html" data-zh="关于研究">About the research</a>
         </div>
         <div class="f-col">
-          <p><span class="l-en">Resources</span><span class="l-zh">资源</span></p>
-          <a href="../tools/index.html"><span class="l-en">Tools</span><span class="l-zh">工具</span></a>
-          <a href="../learn/index.html"><span class="l-en">Learn</span><span class="l-zh">学习</span></a>
-          <a href="../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
-          <a href="../support.html"><span class="l-en">Support</span><span class="l-zh">支持</span></a>
+          <p data-zh="资源">Resources</p>
+          <a href="../tools/index.html" data-zh="工具">Tools</a>
+          <a href="../learn/index.html" data-zh="学习">Learn</a>
+          <a href="../blog/index.html" data-zh="博客">Blog</a>
+          <a href="../support.html" data-zh="支持">Support</a>
         </div>
         <div class="f-col">
-          <p><span class="l-en">Legal</span><span class="l-zh">法律</span></p>
-          <a href="../privacy.html"><span class="l-en">Privacy</span><span class="l-zh">隐私政策</span></a>
-          <a href="../terms.html"><span class="l-en">Terms</span><span class="l-zh">服务条款</span></a>
-          <a href="../disclaimer.html"><span class="l-en">Disclaimer</span><span class="l-zh">免责声明</span></a>
+          <p data-zh="法律">Legal</p>
+          <a href="../privacy.html" data-zh="隐私政策">Privacy</a>
+          <a href="../terms.html" data-zh="服务条款">Terms</a>
+          <a href="../disclaimer.html" data-zh="免责声明">Disclaimer</a>
         </div>
       </div>
     </div>
     <div class="f-bot">
       <span>© 2026 MastermindX · mastermind-x.com</span>
-      <span class="f-legal"><a href="../privacy.html"><span class="l-en">Privacy</span><span class="l-zh">隐私政策</span></a> · <a href="../terms.html"><span class="l-en">Terms</span><span class="l-zh">服务条款</span></a> · <a href="../disclaimer.html"><span class="l-en">Disclaimer</span><span class="l-zh">免责声明</span></a></span>
+      <span class="f-legal"><a href="../privacy.html" data-zh="隐私政策">Privacy</a> · <a href="../terms.html" data-zh="服务条款">Terms</a> · <a href="../disclaimer.html" data-zh="免责声明">Disclaimer</a></span>
     </div>
   </div>
 </footer>
 
-
-
-
 <script>
-(function(){
-  var links=[].slice.call(document.querySelectorAll('.prod-toc a'));
-  var heads=links.map(function(a){return document.querySelector(a.getAttribute('href'));});
-  if(!links.length)return;
-  function spy(){
-    var y=window.scrollY+100, active=0;
-    heads.forEach(function(h,i){if(h&&h.offsetTop<=y)active=i;});
-    links.forEach(function(a,i){a.classList.toggle('active',i===active);});
-  }
-  window.addEventListener('scroll',spy,{passive:true}); spy();
+/* capture hook for visual QA (see .still CSS) */
+if (location.search.indexOf('still') !== -1) document.documentElement.classList.add('still');
+
+/* nav: elevate once the page starts scrolling */
+(function(){ const nav=document.querySelector('.nav'); if(!nav) return;
+  let raf=false;
+  const upd=()=>{ nav.classList.toggle('sc', scrollY>10); raf=false; };
+  addEventListener('scroll',()=>{ if(!raf){ raf=true; requestAnimationFrame(upd); } },{passive:true}); upd();
 })();
-</script>
 
-
-
-<script>window.MM_API=window.MM_API||'https://app.mastermind-x.com';window.__mmAccountLoading=true;</script>
-<script src="../supabase.js?v=8596965f" defer></script>
-<script src="../account.js?v=e48d35c8" defer></script>
-<script src="../mm_brain.js?v=02e3e5a2" defer></script>
-<script src="../theme.js?v=c094a665" defer></script>
-
-<script>
-(function(){
-  var nav=document.querySelector('.public-nav');
-  if(nav){
-    var raf=false;
-    var update=function(){nav.classList.toggle('sc',window.scrollY>10);raf=false;};
-    window.addEventListener('scroll',function(){
-      if(!raf){raf=true;window.requestAnimationFrame(update);}
-    },{passive:true});
-    update();
+/* ───── i18n: EN ⇄ 中文 — mirrors the site-wide localStorage['lang'] contract
+   (data-lang on <html>, label shows the OTHER language, fires 'langchange').
+   Static prose swaps via [data-zh]; live components subscribe to LANG.onChange. */
+const LANG = (() => {
+  const subs = [];
+  const cur = () => document.documentElement.getAttribute('data-lang') === 'zh' ? 'zh' : 'en';
+  function apply(l){
+    document.documentElement.setAttribute('data-lang', l);
+    document.documentElement.lang = l === 'zh' ? 'zh-CN' : 'en';
+    document.querySelectorAll('[data-zh]').forEach(el => {
+      if (el.__en == null) el.__en = el.innerHTML;          // capture the English original once
+      el.innerHTML = (l === 'zh') ? el.getAttribute('data-zh') : el.__en;
+    });
+    try { localStorage.setItem('lang', l); } catch(e){}
+    subs.forEach(fn => { try { fn(l); } catch(e){} });
   }
+  return { cur, apply, toggle(){ apply(cur() === 'zh' ? 'en' : 'zh'); }, onChange(fn){ subs.push(fn); } };
+})();
 
-  var btn=document.getElementById('gear-btn');
-  var pop=document.getElementById('gear-pop');
-  if(!btn||!pop)return;
-  var segs=Array.prototype.slice.call(pop.querySelectorAll('.gp-seg-b'));
-  var current=function(){return document.documentElement.getAttribute('data-lang')==='zh'?'zh':'en';};
-  var close=function(){pop.classList.remove('open');btn.setAttribute('aria-expanded','false');};
-  var sync=function(){var lang=current();segs.forEach(function(s){s.classList.toggle('on',s.getAttribute('data-set-lang')===lang);});};
-  btn.addEventListener('click',function(e){
-    e.stopPropagation();
-    var opening=!pop.classList.contains('open');
-    pop.classList.toggle('open',opening);
-    btn.setAttribute('aria-expanded',opening?'true':'false');
-  });
-  segs.forEach(function(s){
-    s.addEventListener('click',function(e){
-      e.stopPropagation();
-      var lang=s.getAttribute('data-set-lang')==='zh'?'zh':'en';
-      document.documentElement.setAttribute('data-lang',lang);
-      document.documentElement.lang=lang==='zh'?'zh-CN':'en';
-      try{localStorage.setItem('lang',lang);}catch(ignore){}
-      try{document.dispatchEvent(new CustomEvent('langchange',{detail:{lang:lang}}));}catch(ignore){}
-      sync();
+/* ───── primary navigation: click disclosures + mobile accordion ───── */
+const MMX_NAV = (() => {
+  const nav = document.querySelector('.nav');
+  const list = document.getElementById('primary-navigation');
+  const mobile = document.getElementById('nav-toggle');
+  const triggers = [...document.querySelectorAll('.nav-trigger')];
+  const mq = matchMedia('(max-width: 900px)');
+  if (!nav || !list || !mobile) return { closeAll(){} };
+  const panelFor = trigger => document.getElementById(trigger.getAttribute('aria-controls'));
+  const openTrigger = () => triggers.find(trigger => trigger.getAttribute('aria-expanded') === 'true');
+  function syncMobileLabel(){
+    const isOpen = mobile.getAttribute('aria-expanded') === 'true';
+    mobile.setAttribute('aria-label', LANG.cur() === 'zh'
+      ? (isOpen ? '关闭导航' : '打开导航')
+      : (isOpen ? 'Close navigation' : 'Open navigation'));
+  }
+  function closePanels(focusTrigger){
+    const active = openTrigger();
+    triggers.forEach(trigger => {
+      const panel = panelFor(trigger);
+      trigger.setAttribute('aria-expanded','false');
+      if (panel) panel.hidden = true;
+    });
+    if (focusTrigger && active) active.focus();
+  }
+  function closeDrawer(focusToggle){
+    list.classList.remove('open');
+    nav.classList.remove('nav-open');
+    mobile.setAttribute('aria-expanded','false');
+    syncMobileLabel();
+    if (focusToggle) mobile.focus();
+  }
+  function closeAll(focusControl){
+    closePanels(Boolean(focusControl && openTrigger()));
+    closeDrawer(Boolean(focusControl && !openTrigger()));
+  }
+  function closeSettings(){
+    const pop = document.getElementById('gear-pop');
+    const btn = document.getElementById('gear-btn');
+    if (pop) pop.classList.remove('open');
+    if (btn) btn.setAttribute('aria-expanded','false');
+  }
+  function openPanel(trigger, focusLast){
+    closePanels(false);
+    closeSettings();
+    const panel = panelFor(trigger);
+    if (!panel) return;
+    trigger.setAttribute('aria-expanded','true');
+    panel.hidden = false;
+    if (focusLast !== undefined) {
+      const links = [...panel.querySelectorAll('a[href]')];
+      const target = focusLast ? links[links.length - 1] : links[0];
+      if (target) target.focus();
+    }
+  }
+  triggers.forEach(trigger => {
+    trigger.addEventListener('click', event => {
+      event.stopPropagation();
+      const wasOpen = trigger.getAttribute('aria-expanded') === 'true';
+      if (wasOpen) closePanels(false); else openPanel(trigger);
+    });
+    trigger.addEventListener('keydown', event => {
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        openPanel(trigger, event.key === 'ArrowUp');
+      }
+    });
+    trigger.closest('.nav-group').addEventListener('focusout', event => {
+      if (mq.matches || event.currentTarget.contains(event.relatedTarget)) return;
+      if (trigger.getAttribute('aria-expanded') === 'true') closePanels(false);
     });
   });
-  document.addEventListener('click',function(e){if(!pop.contains(e.target)&&e.target!==btn)close();});
-  document.addEventListener('keydown',function(e){
-    if(e.key==='Escape'&&pop.classList.contains('open')){close();btn.focus();}
+  mobile.addEventListener('click', event => {
+    event.stopPropagation();
+    const willOpen = mobile.getAttribute('aria-expanded') !== 'true';
+    closeSettings();
+    if (willOpen) {
+      list.classList.add('open');
+      nav.classList.add('nav-open');
+      mobile.setAttribute('aria-expanded','true');
+      syncMobileLabel();
+    } else {
+      closePanels(false);
+      closeDrawer(false);
+    }
   });
-  sync();
+  list.querySelectorAll('a[href]').forEach(link => link.addEventListener('click', () => closeAll(false)));
+  document.addEventListener('pointerdown', event => {
+    if (!nav.contains(event.target)) closeAll(false);
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'Escape') return;
+    if (openTrigger()) {
+      event.preventDefault();
+      closePanels(true);
+    } else if (mobile.getAttribute('aria-expanded') === 'true') {
+      event.preventDefault();
+      closeDrawer(true);
+    }
+  });
+  const reset = () => closeAll(false);
+  if (mq.addEventListener) mq.addEventListener('change', reset); else mq.addListener(reset);
+  LANG.onChange(syncMobileLabel);
+  syncMobileLabel();
+  return { closeAll };
 })();
-</script>
 
+/* ───── nav settings popover ───── */
+(function(){
+  const btn = document.getElementById('gear-btn');
+  const pop = document.getElementById('gear-pop');
+  if (!btn || !pop) return;
+  const segs = [...pop.querySelectorAll('.gp-seg-b')];
+  const open = () => { MMX_NAV.closeAll(false); pop.classList.add('open'); btn.setAttribute('aria-expanded','true'); };
+  const close = () => { pop.classList.remove('open'); btn.setAttribute('aria-expanded','false'); };
+  const toggle = () => pop.classList.contains('open') ? close() : open();
+  btn.addEventListener('click', e => { e.stopPropagation(); toggle(); });
+  segs.forEach(s => s.addEventListener('click', e => { e.stopPropagation(); LANG.apply(s.dataset.setLang); }));
+  const syncSeg = () => segs.forEach(s => s.classList.toggle('on', s.dataset.setLang === LANG.cur()));
+  syncSeg(); LANG.onChange(syncSeg);
+  document.addEventListener('click', e => { if (!pop.contains(e.target) && e.target !== btn) close(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && pop.classList.contains('open')){ close(); btn.focus(); } });
+})();
+
+/* ───── reveal on scroll ───── */
+const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target);} }), { rootMargin:'0px 0px -8% 0px', threshold:.08 });
+document.querySelectorAll('.rv:not(.in)').forEach(el => io.observe(el));
+
+/* ───── i18n boot — the landing runs this after its live-data wiring (index.html:1906);
+   the product chrome carries no live wiring, so it runs here: swap static [data-zh]
+   prose into the boot language captured by the <head> lang snippet. ───── */
+LANG.apply(LANG.cur());
+</script>
+<script>window.MM_API=window.MM_API||'https://app.mastermind-x.com';</script>
+<script src="../mm_brain.js?v=02e3e5a2" defer></script>
 <script src="../onboard.js?v=8f1b52d1" defer></script>
 <script defer data-whb data-root="../" src="../wh_banner.js?v=37bf40aa"></script>
 </body>

@@ -137,6 +137,51 @@ def _publication_row(it: dict, text: str, receipt, *, published_at: str) -> dict
     }
 
 
+def _record_persona_post(
+    root: Path | str | None,
+    item: dict,
+    account: str,
+    text: str,
+    now: datetime,
+) -> None:
+    """Record a SHIPPED post into persona memory (XG-W3, charter §4).
+
+    Called from the one posting-success branch, which both the ladder and the
+    immediate/fastlane lanes flow through — so a post shipped by either lane
+    spends the same quirk budget.
+
+    DIAL-GOVERNED ACCOUNTS ONLY. The store exists to arm the XG-W1 per-quirk
+    frequency caps, and those live in a persona's `voice_codex`. An account with
+    no codex has no caps to enforce, so recording its posts would grow a tracked
+    ledger nothing ever reads.
+
+    FAIL-SOFT, DELIBERATELY. The post has already gone out by the time we get
+    here; raising would turn a successful publish into a failed run and could
+    re-drive the item. A lost counter costs one unit of cap precision, which is
+    strictly cheaper than a double-post.
+    """
+    try:
+        from engine.marketing import expression_dial as _ed  # noqa: PLC0415
+
+        if _ed.codex_for(account) is None:
+            return
+        from engine.marketing import persona_memory as _pm  # noqa: PLC0415
+
+        _pm.record_post(
+            account,
+            text,
+            now=now,
+            as_of=str(item.get("as_of") or ""),
+            franchise=str((item.get("source") or {}).get("franchise") or ""),
+            kind=str(item.get("kind") or ""),
+            item_id=str(item.get("id") or ""),
+            root=root,
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("persona_memory: could not record post for %s (%s) — "
+                    "frequency caps lose one unit of history", account, exc)
+
+
 def _append_publication(root: Path | str | None, row: dict) -> None:
     """Append a publication receipt to publications.jsonl. Fail-soft — a ledger
     write must never turn a successful post into a crash."""
@@ -833,6 +878,50 @@ def main(argv: list[str] | None = None) -> int:
     posted_text_keys = _outbox.recent_posted_text_keys(state, _ref_day)
     posted_texts_by_account = _outbox.recent_posted_texts(state, _ref_day)
 
+    # ── Cross-account near-dup bar (XG-W2) ───────────────────────────────────
+    # The gate above is strictly per-account. With seven live accounts the
+    # failure that matters is TWO of ours posting near-identical text — the
+    # text-similarity clustering signal, not a style problem. Sentinel applies
+    # this bar across accounts inside ONE nightly plan; here it covers the queue,
+    # which spans nights and carries the fast lanes that never enter a plan.
+    # Threshold from sentinel.near_dup_jaccard (stricter than the same-account
+    # 0.7 on purpose — see outbox.cross_account_threshold).
+    _xa_threshold = _outbox.cross_account_threshold(cfg)
+
+    # ── Per-account cadence resolver (XG-W2) ─────────────────────────────────
+    # config/marketing.yml keeps sentinel.max_posts_per_account_per_day: -1 as
+    # the GLOBAL backstop the operator chose on 2026-07-24. The per-account law
+    # is now each persona spec's own cadence block, read by
+    # engine/marketing/cadence_resolver.py. The two compose: an item posts only
+    # when BOTH allow it. Fail-soft — a broken resolver must never wedge the
+    # queue, so any failure here leaves the pre-XG-W2 behaviour intact.
+    _cadence = None
+    _cadence_profiles: dict = {}
+    _cadence_history: dict = {}
+    _cadence_exempt_immediate = True
+    try:
+        from engine.marketing import cadence_resolver as _cadence  # noqa: PLC0415
+        # Specs come from the SAME root the run's marketing.yml came from — a
+        # run's cadence law and its posting config must not come from two trees.
+        # A root with no persona-spec directory yields no profiles and the
+        # resolver abstains, which is the honest behaviour for a checkout that
+        # carries none. (This module never reads a spec itself; the resolver is
+        # the one adjudicated reader — see the fence in test_marketing_personas.)
+        _cadence_profiles = _cadence.load_profiles(root=root)
+        _cadence_history = _cadence.posting_history(state)
+        _cadence_knobs = _cadence.resolver_config(cfg)
+        _cadence_exempt_immediate = bool(
+            (cfg.get("cadence_resolver") or {}).get("exempt_immediate", True))
+        log.info("cadence resolver | enabled=%s profiles=%d exempt_immediate=%s",
+                 _cadence_knobs["enabled"], len(_cadence_profiles),
+                 _cadence_exempt_immediate)
+    except Exception as _cr_exc:  # noqa: BLE001
+        log.warning("cadence resolver unavailable (%s) — sentinel cap only", _cr_exc)
+        _cadence = None
+    skipped_cadence = 0
+    shadow_cadence = 0
+    deferred_xa = 0
+
     for it in approved_due:
         iid = it["id"]
         account = it.get("account", "")
@@ -891,6 +980,41 @@ def main(argv: list[str] | None = None) -> int:
             quarantined += 1
             continue
 
+        # -- cross-account near-dup radar: two of OUR accounts never post ----
+        # near-identical text. Same Jaccard machinery, wider corpus, stricter
+        # bar. This is the fleet-linkage defense, not a style rule, so it binds
+        # on breaking items too — a coordinated-looking pair is worse when it is
+        # fast.
+        _xa_hit = None
+        for _other_acct, _rows in posted_texts_by_account.items():
+            if _other_acct == account:
+                continue
+            for _pid, _ptext, _pas_of in _rows:
+                _score = _outbox.token_jaccard(text, _ptext)
+                if _score >= _xa_threshold:
+                    _xa_hit = (_other_acct, _pid, _pas_of, _score)
+                    break
+            if _xa_hit is not None:
+                break
+        if _xa_hit is not None:
+            _oacct, _pid, _pas_of, _score = _xa_hit
+            # DEFER, DO NOT QUARANTINE. Quarantine is TERMINAL, and the item
+            # that loses this race is decided by hash-ordered iteration — an
+            # arbitrary one of the two desks would be permanently killed for a
+            # collision that is a property of the PAIR, not a defect in either
+            # post. The same-account gates above quarantine correctly (a repeat
+            # of your own copy is defective on its own terms); this one is a
+            # scheduling conflict, so the item stays `approved` and retries on a
+            # later sweep, by which time the counterpart has aged out of the
+            # window or an editor has reworded it. The counterpart id is logged
+            # so the deferral is diagnosable rather than mysterious.
+            log.warning(
+                "item %s (%s) DEFERRED — cross-account near-duplicate of %s (%s, "
+                "jaccard=%.2f, posted %s); stays approved and retries next sweep",
+                iid, account, _pid, _oacct, _score, _pas_of or "recently")
+            deferred_xa += 1
+            continue
+
         # -- language gate: the queue is not a bypass around the copy bar ----
         # Generation-time validators cannot reach copy already sitting in the
         # queue: the 2026-07-27 $AVGO "POC held" post was enqueued by an older
@@ -936,6 +1060,54 @@ def main(argv: list[str] | None = None) -> int:
                      "ramp-narrowed from base %d)", iid, account, _acct_cap, cap)
             skipped_cap += 1
             continue
+
+        # -- per-account cadence resolver (XG-W2) ----------------------------
+        # The persona spec's own posts_per_day / min_spacing_min / session
+        # window, read from its persona spec by the resolver (this module never
+        # touches the spec layer itself). The sentinel -1 above is the
+        # global backstop; THIS is the per-account law. An account with no spec
+        # abstains (reason no_profile) and is governed exactly as before.
+        #
+        # IMMEDIATE items are exempt by default, honouring the standing operator
+        # ruling of 2026-07-27 ("breaking has no limits") that already exempts
+        # them from the daily cap and the global floor. It is a config key
+        # (cadence_resolver.exempt_immediate), not a buried constant, because a
+        # wire-cadence property may well want its breaking flow bounded too.
+        #
+        # TODO(xg-w2-review): immediate items bypass the resolver but their
+        # posted receipts still count in posting_history — a breaking storm
+        # silently exhausts the ladder's daily budget for the rest of the local
+        # day with no log naming the cause; split the history count or log the
+        # attribution when this first bites.
+        if _cadence is not None and not (is_immediate and _cadence_exempt_immediate):
+            try:
+                _decision = _cadence.resolve(
+                    account, str(it.get("kind") or ""),
+                    now=now,
+                    profile=_cadence_profiles.get(account),
+                    history=_cadence_history.get(account, []),
+                    cfg=cfg,
+                    seed=iid,
+                )
+            except Exception as _cd_exc:  # noqa: BLE001
+                log.warning("cadence resolve failed for %s (%s) — allowing",
+                            iid, _cd_exc)
+                _decision = None
+            if _decision is not None and not _decision.allow:
+                log.info("item %s (%s) held by the cadence resolver: %s | %s",
+                         iid, account, _decision.reason, _decision.detail)
+                skipped_cadence += 1
+                continue
+            # SHADOW MODE (cadence_resolver.enabled: false — the land-dark
+            # default). The verdict was computed in full and is NOT binding;
+            # log what arming WOULD have refused, because reading one cycle of
+            # this is the precondition for the arming decision. Counted
+            # separately so a shadow run's summary never reads as enforcement.
+            if _decision is not None and _decision.detail.get("would_refuse"):
+                log.info("item %s (%s) cadence SHADOW — would refuse: %s | %s",
+                         iid, account, _decision.detail["would_refuse"],
+                         _decision.detail)
+                shadow_cadence += 1
 
         # -- channel id must exist -------------------------------------------
         channel_id = _channel_id_for(pub_cfg, account)
@@ -1002,6 +1174,11 @@ def main(argv: list[str] | None = None) -> int:
             )
             would_post += 1
             last_post_at = floor_advance   # mirror live pacing in the projection
+            # Mirror the cadence resolver's accounting too, so a dry-run
+            # projection shows the same per-account bound the live run enforces
+            # (otherwise a whole day's backlog "would post" in one sweep).
+            _cadence_history.setdefault(account, []).append(
+                (floor_advance, str(it.get("kind") or "")))
             continue
 
         # -- LIVE: approved → posting BEFORE the network call ----------------
@@ -1049,6 +1226,11 @@ def main(argv: list[str] | None = None) -> int:
                 ),
             )
             posted_today[account] = posted_today.get(account, 0) + 1
+            # Feed the cadence resolver so ONE run cannot burst past an
+            # account's posts_per_day / min_spacing (the folded state was read
+            # before the loop and does not see posts made inside it).
+            _cadence_history.setdefault(account, []).append(
+                (floor_advance, str(it.get("kind") or "")))
             posted += 1
             # Feed the repeat gate so two identical items due in ONE run can't
             # both go out (the enqueue guard should prevent that pair existing,
@@ -1058,6 +1240,22 @@ def main(argv: list[str] | None = None) -> int:
             # NOW for an immediate item, NOW + jitter for a ladder item — so the
             # next post budges from when this one actually goes out.
             last_post_at = floor_advance
+            # PERSONA MEMORY (XG-W3). Record the emitted text so the codex
+            # frequency caps (max_per_day / max_per_7d / max_share_7d) can see
+            # it TOMORROW. Without this call the caps evaluate against an empty
+            # `recent` and `expression_dial.frequency_violations` returns [] —
+            # i.e. a signature opener capped at "≤1/day and ≤30% over 7 days"
+            # would be enforced only within a single nightly batch, and an
+            # account could open with the same line every day forever.
+            #
+            # THIS IS THE ONLY PLACE A POST IS KNOWN TO HAVE ACTUALLY SHIPPED.
+            # Recording at enqueue would charge the budget for items that are
+            # never approved or that expire in the queue.
+            #
+            # Host-spool write (gitignored); the nightly consolidator is the
+            # sole advancer of the tracked ledger. Fail-soft: a memory write
+            # must never turn a SUCCESSFUL post into an error path.
+            _record_persona_post(root, it, account, text, now)
             log.info("item %s POSTED via %s id=%s%s", iid, receipt.backend,
                      receipt.external_id,
                      (f" (scheduled {send_scheduled_at})" if booked_at > now else ""))
@@ -1074,10 +1272,14 @@ def main(argv: list[str] | None = None) -> int:
         "%s complete | posted=%d failed=%d quarantined=%d would_post=%d "
         "tape_quarantined=%d tape_skipped=%d skipped_floor=%d "
         "deferred_immediate=%d "
-        "skipped_cap=%d skipped_no_channel=%d stuck_posting=%d auto_approved=%d",
+        "skipped_cap=%d skipped_cadence=%d cadence_shadow=%d deferred_xa=%d "
+        "skipped_no_channel=%d "
+        "stuck_posting=%d auto_approved=%d",
         mode, posted, failed, quarantined, would_post,
         tape_quarantined, tape_skipped, skipped_floor, deferred_immediate,
-        skipped_cap, skipped_channel, len(stuck_posting), len(auto_approved),
+        skipped_cap, skipped_cadence, shadow_cadence, deferred_xa, skipped_channel,
+        len(stuck_posting),
+        len(auto_approved),
     )
     try:
         _outbox._append_activity(root, {
@@ -1094,6 +1296,9 @@ def main(argv: list[str] | None = None) -> int:
             "skipped_floor": skipped_floor,
             "deferred_immediate": deferred_immediate,
             "skipped_cap": skipped_cap,
+            "skipped_cadence": skipped_cadence,
+            "cadence_shadow": shadow_cadence,
+            "deferred_cross_account": deferred_xa,
             "skipped_no_channel": skipped_channel,
             "stuck_posting": len(stuck_posting),
             "auto_approved": len(auto_approved),

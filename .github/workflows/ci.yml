@@ -631,7 +631,15 @@ on:
       - "tests/test_mastermind_feedback.py"
       - "tests/test_admin_orchestrator.py"
       - "tests/test_admin_prophet.py"
+      - "tests/test_admin_trade_memory.py"
       - "admin/prophet.py"
+      - "admin/trade_memory.py"
+      - "engine/neuralweb/trade_memory.py"
+      - "engine/neuralweb/trade_memory_store.py"
+      - "scripts/run_trade_memory.py"
+      - "scripts/run_prophet_pick_autopsies.py"
+      - "scripts/deploy/0008_trade_memory.sql"
+      - "tests/test_trade_memory.py"
       # Mastermind AI response log (both surfaces → R2 → admin eval view).
       - "admin/mastermind_logs.py"
       - "tests/test_mastermind_response_log.py"
@@ -767,11 +775,13 @@ on:
       - "engine/signal_foundry/**"
       - "engine/trial_ledger.py"
       - "engine/validation.py"
+      - "engine/codex_provider.py"
       - "engine/llm_auth.py"
       - "engine/neuralweb/key_pool.py"
       # Multi-key OAuth failover surface: the auth waterfall, the key pool,
       # the dispatcher, and the build lane must re-prove failover on change.
       - "tests/test_llm_auth.py"
+      - "tests/test_codex_provider.py"
       - "tests/test_key_pool.py"
       - "tests/test_key_pool_economy.py"
       - "scripts/metabolism_build.py"
@@ -790,6 +800,7 @@ on:
       # SA-W3 standout accountability metabolism wiring: charter upgrades, budget caps,
       # roles, rubric W-4, standout_auditor organ, insight_bus audit_due kind, shadow probe.
       - "tests/test_metabolism_sa_w3.py"
+      - "tests/test_pick_autopsy_selection.py"
       - "engine/metabolism/standout_auditor.py"
       - "config/lobe_charters.yml"
       - "config/metabolism_roles.yml"
@@ -1158,6 +1169,14 @@ on:
       - "tests/test_admin_marketing.py"
       - "admin/marketing.py"
       - "config/marketing.yml"
+      # chart coverage (#3895, 2026-07-28): every ticker-bearing post carries an
+      # illustration; the live gate picks the card VARIANT rather than vetoing it;
+      # chart ids stay per-account; the ramp media cap never sits below the post
+      # cap. Runs in BOTH marketing-engine (9 pandas-free tests) and
+      # chart-render-data (the 3 that need real bars). engine/marketing/** and
+      # config/marketing.yml already reach its subjects — this entry is so a
+      # test-only edit reaches its own guard.
+      - "tests/test_marketing_chart_coverage.py"
       # Persona Network W1 (docket D13): the persona spec layer + its roster panel,
       # co-run in the marketing-engine job (same stdlib+pyyaml closure). The SPECS
       # are listed, not only the code — a PR that edits ONLY config/personas/*.yml
@@ -1174,6 +1193,20 @@ on:
       # codex (config/personas/**, already listed) or only this test still
       # reaches the lane that runs it.
       - "tests/test_marketing_expression_dial.py"
+      # X Growth W2 (XG-W2): the per-account cadence resolver, the persona
+      # `session` territory clock, the one-owner story lock, the cross-account
+      # near-dup radar, and the outbox KINDS hardening. Its subject modules are
+      # all matched by engine/marketing/** + scripts/marketing_publisher.py +
+      # config/marketing.yml + config/personas/** above; the suite is listed by
+      # name so a TEST-ONLY edit still reaches the lane that runs it.
+      - "tests/test_marketing_cadence_spine.py"
+      # X Growth W3 (XG-W3): the franchise register + slot scheduler, the
+      # four-lane desk feed, the persona memory stores (promises/phrases/
+      # relations) and the Gift-Grip-Proof value gate. Its subject modules are
+      # all matched by engine/marketing/** + config/marketing.yml +
+      # config/personas/** above; the suite is listed by name so a TEST-ONLY
+      # edit still reaches the lane that runs it.
+      - "tests/test_marketing_desk_feeds.py"
       # D02 per-post metrics poller + chart-image (PNG) pipeline. The poller
       # reads back Buffer analytics; media_publish uploads chart PNGs to R2;
       # content_studio renders the PNG at plan-build time. engine/marketing/**
@@ -1876,6 +1909,26 @@ on:
       - "templates/onboard.js"
       - "tests/test_gh_quota_guard.py"
       - ".claude/hooks/gh_quota_guard.py"
+      # ── Public-render fastlane (2026-07-28) ─────────────────────────────────
+      # test_public_render_fastlane pins the heavy/public render split and the
+      # rendered pricing copy; it was named by no lane and rotted red when #3856
+      # reframed the founding copy. Its subjects mostly ride catch-alls above
+      # (scripts/*.py covers the builder, templates/** the plans template,
+      # .github/workflows/** the split lanes, and config/plans.yml is listed for
+      # the billing lanes) — only the fast-path shell script and the test half
+      # need their own entries.
+      # public-render-fastlane
+      - "tests/test_public_render_fastlane.py"
+      - "scripts/ci/public_render.sh"
+      # ── Founding offer inventory + pacing (2026-07-28) ──────────────────────
+      # test_billing_offers pins app/billing.py's offer/pacing logic (the #3856
+      # enforced-withdrawal meter). The suite landed a day after the unrun-suite
+      # census and was named by no lane. Both subjects already reach this
+      # workflow by name (app/billing.py via the prelaunch-hardening cluster,
+      # config/plans.yml via the billing-emails cluster) — only the test half
+      # needs an entry.
+      # billing-offers
+      - "tests/test_billing_offers.py"
   workflow_dispatch:
 
 permissions:
@@ -1906,17 +1959,26 @@ jobs:
     # Skipping here cancels the obsolete pack without allocating a replacement.
     if: github.event.action != 'closed'
     # The logical jobs in .github/ci/legacy-jobs.yml remain the reviewable
-    # source of truth, but GitHub sees only this matrix. Two pack runners execute
-    # every legacy run step against a clean working tree, sharing one checkout
-    # and reusing only identical dependency sets instead of provisioning more
-    # than one hundred separate VMs/check records.
+    # source of truth, but GitHub sees only this matrix. Four pack runners
+    # execute every legacy run step against a clean working tree, sharing one
+    # checkout and reusing only identical dependency sets instead of
+    # provisioning more than one hundred separate VMs/check records.
+    #
+    # Four, up from two (operator 2026-07-28): two packs put ~35 minutes
+    # between a PR opening and a verdict, and the operator + sessions merge in
+    # 0-8 — the whole merge-outruns-CI class lives in that gap. The greedy
+    # partition balances 4x619 weight against 2x1238 (run_ci_pack.py
+    # --validate-only), so wall-clock to green roughly halves; GitHub-hosted
+    # pickup is 2-3 s per job, so two more runners cost queue nothing. These
+    # names are the intended required-checks set (ci-pack-0..3) for branch
+    # protection; renaming or renumbering them must update that setting too.
     name: ci-pack-${{ matrix.pack }}
     runs-on: ubuntu-latest
     timeout-minutes: 180
     strategy:
       fail-fast: false
       matrix:
-        pack: [0, 1]
+        pack: [0, 1, 2, 3]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -1939,5 +2001,5 @@ jobs:
           "$RUNNER_TEMP/ci-pack-runner/bin/python" scripts/run_ci_pack.py
           --workflow .github/ci/legacy-jobs.yml
           --pack-index ${{ matrix.pack }}
-          --pack-count 2
+          --pack-count 4
           --execute

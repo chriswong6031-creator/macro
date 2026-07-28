@@ -358,34 +358,68 @@ def test_enqueue_deeply_reworded_passes(tmp_path):
     assert len(read_items(root=tmp_path)) == 2
 
 
-def test_enqueue_near_dup_is_per_account_not_cross_account(tmp_path):
-    """A near-identical post on a DIFFERENT account is NOT blocked at enqueue —
-    cross-account near-dup is the sentinel's plan-time job, not this guard."""
-    from engine.marketing.outbox import make_item, enqueue, read_items, token_jaccard
+def test_enqueue_near_dup_blocks_cross_account_too(tmp_path):
+    """XG-W2 INVERTED this contract, deliberately.
+
+    The old law here was "cross-account near-dup is the sentinel's plan-time
+    job, not this guard". That was defensible with one live account and became a
+    hole at seven: sentinel's cross-account pass only sees items inside ONE
+    nightly content plan, so it never sees the queue across nights and never
+    sees the fast lanes (press/earnings), which do not enter a plan at all. Two
+    of OUR accounts posting near-identical text is the text-similarity
+    clustering signal, not a style problem — so the outbox now carries the bar
+    too, at the STRICTER sentinel.near_dup_jaccard threshold.
+    """
+    from engine.marketing.outbox import (
+        cross_account_threshold, enqueue, make_item, read_items, token_jaccard,
+    )
     a_text = "SPY reclaimed the fifty day moving average on strong breadth today"
     b_text = "SPY reclaimed the fifty day moving average on strong breadth again today"
-    assert token_jaccard(a_text, b_text) >= 0.7
+    assert token_jaccard(a_text, b_text) >= cross_account_threshold(None)
     a = make_item(account="deskA", kind="signal", text=a_text, as_of="2026-07-26",
                   provenance="content_studio", now=_FIXED_NOW)
     b = make_item(account="deskB", kind="signal", text=b_text, as_of="2026-07-27",
                   provenance="content_studio", now=_FIXED_NOW)
     assert enqueue(a, root=tmp_path) == "queued"
+    assert enqueue(b, root=tmp_path) == "cross_account_duplicate"
+    assert len(read_items(root=tmp_path)) == 1
+
+
+def test_cross_account_distinct_text_still_queues(tmp_path):
+    """The cross-account bar is SIMILARITY, not account identity.
+
+    Two desks covering the same day in genuinely different words both queue —
+    otherwise the guard would be a one-post-per-network rule. This is the
+    companion to the test above: it proves the bar can be cleared.
+    """
+    from engine.marketing.outbox import (
+        cross_account_threshold, enqueue, make_item, read_items, token_jaccard,
+    )
+
+    a_text = "Breadth improved into the close; new highs outnumbered new lows."
+    b_text = "Credit spreads tightened while the dollar gave back yesterday's bid."
+    assert token_jaccard(a_text, b_text) < cross_account_threshold(None)
+    a = make_item(account="flagship", kind="event", text=a_text, as_of="2026-07-27",
+                  provenance="content_studio", now=_FIXED_NOW)
+    b = make_item(account="specialist", kind="event", text=b_text, as_of="2026-07-27",
+                  provenance="content_studio", now=_FIXED_NOW)
+    assert enqueue(a, root=tmp_path) == "queued"
     assert enqueue(b, root=tmp_path) == "queued"
     assert len(read_items(root=tmp_path)) == 2
 
 
-def test_cross_account_identical_text_both_queue(tmp_path):
-    """The guard is account-scoped: two desks may carry the same line."""
+def test_cross_account_identical_text_is_refused(tmp_path):
+    """Byte-identical copy on two desks is the most obvious fleet tell of all."""
     from engine.marketing.outbox import make_item, enqueue, read_items
 
-    text = "Same wording, different desks — both allowed."
+    text = "Same wording, different desks — no longer allowed (XG-W2)."
     a = make_item(account="flagship", kind="event", text=text, as_of="2026-07-27",
                   provenance="content_studio", now=_FIXED_NOW)
     b = make_item(account="specialist", kind="event", text=text, as_of="2026-07-27",
                   provenance="content_studio", now=_FIXED_NOW)
     assert enqueue(a, root=tmp_path) == "queued"
-    assert enqueue(b, root=tmp_path) == "queued"
-    assert len(read_items(root=tmp_path)) == 2
+    assert enqueue(b, root=tmp_path) == "cross_account_duplicate"
+    assert len(read_items(root=tmp_path)) == 1
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1392,21 +1426,43 @@ class TestSlotDatetime:
         assert slot_datetime("2026-07-20", "D7-EOD") == "2026-07-26T20:15:00Z"
 
     def test_ladder_pacific_slots_summer_pdt(self):
-        """Gate 5: the 45-min ladder (S1..S19) resolves to Pacific-clock UTC.
-        July = PDT (UTC-7): S1 4:00 AM→11:00, S5 7:00 AM→14:00, S8 9:15 AM→16:15,
-        S19 5:30 PM→00:30 next-day."""
+        """Gate 5: the 30-min ladder (S1..S28) resolves to Pacific-clock UTC.
+        July = PDT (UTC-7): S1 4:00 AM→11:00, S5 6:00 AM→13:00, S8 7:30 AM→14:30,
+        S28 5:30 PM→00:30 next-day.
+
+        Re-pinned 2026-07-28 when the ladder went 45-min/19-slot → 30-min/28-slot
+        so flagship could hold a 30-minute cadence. The WINDOW is deliberately
+        unchanged (4:00 AM–5:30 PM local) — only the step tightened, so the first
+        and last rungs still land where they always did and no post moved into
+        low-engagement hours."""
         from engine.marketing.outbox import slot_datetime
         assert slot_datetime("2026-07-15", "D1-S1") == "2026-07-15T11:00:00Z"   # 4:00 AM
-        assert slot_datetime("2026-07-15", "D1-S5") == "2026-07-15T14:00:00Z"   # 7:00 AM
-        assert slot_datetime("2026-07-15", "D1-S8") == "2026-07-15T16:15:00Z"   # 9:15 AM
-        assert slot_datetime("2026-07-15", "D1-S19") == "2026-07-16T00:30:00Z"  # 5:30 PM
+        assert slot_datetime("2026-07-15", "D1-S5") == "2026-07-15T13:00:00Z"   # 6:00 AM
+        assert slot_datetime("2026-07-15", "D1-S8") == "2026-07-15T14:30:00Z"   # 7:30 AM
+        assert slot_datetime("2026-07-15", "D1-S28") == "2026-07-16T00:30:00Z"  # 5:30 PM
+
+    def test_ladder_step_is_thirty_minutes_end_to_end(self):
+        """The step is the contract flagship's cadence rests on, so pin it
+        directly rather than inferring it from two sampled rungs: every adjacent
+        pair is exactly 30 minutes apart and the span is 28 rungs."""
+        from datetime import datetime, timezone
+
+        from engine.marketing.outbox import _LADDER_PT_TIMES, slot_datetime
+
+        assert len(_LADDER_PT_TIMES) == 28
+        stamps = [slot_datetime("2026-07-15", f"D1-S{i}") for i in range(1, 29)]
+        assert all(s is not None for s in stamps), "a ladder rung resolves to no time"
+        parsed = [datetime.strptime(s, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+                  for s in stamps]
+        gaps = {int((b - a).total_seconds() // 60) for a, b in zip(parsed, parsed[1:])}
+        assert gaps == {30}, f"ladder step is not a uniform 30 min: {sorted(gaps)}"
 
     def test_ladder_pacific_slots_winter_pst(self):
         """Gate 5: the SAME local slots shift +1h in UTC under PST (winter) —
         DST handled by zoneinfo, never a hardcoded offset."""
         from engine.marketing.outbox import slot_datetime
         assert slot_datetime("2026-01-15", "D1-S1") == "2026-01-15T12:00:00Z"   # 4:00 AM PST
-        assert slot_datetime("2026-01-15", "D1-S19") == "2026-01-16T01:30:00Z"  # 5:30 PM PST
+        assert slot_datetime("2026-01-15", "D1-S28") == "2026-01-16T01:30:00Z"  # 5:30 PM PST
 
     def test_ladder_day_offset(self):
         """D<n> offsets by n-1 days, then resolves the Pacific slot on THAT date."""

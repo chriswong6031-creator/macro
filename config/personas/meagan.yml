@@ -23,7 +23,12 @@ archetype: "Growth Manager — the crowd translator; what the room feels vs what
 ## §5 voice base: "fast, reactive". Shared with the founder's desk; the codex
 ## quirk-injection pass is what differentiates them (§5 plumbing law: employees
 ## ride the existing 6-voice template pools, no new pools day one).
-voice: "fast, reactive"
+# Re-voiced 2026-07-28: was "fast, reactive", shared with founder. Two desks on
+# one voice draw the SAME deterministic template bank, so their posts came
+# out near-identical and the cross-account near-dup guard quarantined the
+# second desk to reach the gate. Must stay in step with this account's
+# voice in config/marketing.yml (tests/test_marketing_personas.py pins it).
+voice: "educational"
 voice_codex:
   ## §5 register, verbatim: "upbeat, quick, human".
   register: >-

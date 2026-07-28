@@ -168,7 +168,8 @@ def main() -> int:
     # by build_sector_cycles, which must run before this; we copy the page assets and warn if
     # required runtime files are absent.
     import shutil
-    for asset in ("sector_cycles.css", "sector_cycles.js"):
+    for asset in ("product-nav-icons.css", "dashboard-icons.css", "dashboard-icons.js",
+                  "sector_cycles.css", "sector_cycles.js"):
         src = root / "templates" / asset
         if src.exists():
             shutil.copy2(src, site / asset)

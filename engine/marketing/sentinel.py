@@ -679,13 +679,44 @@ def resolve_ramp(
         tier = (resolve_ramp_tier(created_raw, as_of_s,
                                   graduate_after_days=graduate_after)
                 if enforced else _TIER_GRADUATED)
-        caps = merged_tiers.get(tier) or dict(base)
+        caps = dict(merged_tiers.get(tier) or base)
+
+        # Per-account override — sentinel.ramp.account_overrides.<id>.<cap>.
+        # The tier ladder is age-based and uniform, which is right as a default
+        # and wrong for a desk the operator has judged warmed up ahead of its
+        # calendar age: on 2026-07-28 every enabled desk was <14 days old, so
+        # flagship sat on the same 2-posts/day floor as a desk created that
+        # morning. This is the ONLY way to widen one desk without either lying
+        # about its `created:` date (which would silently move it through the
+        # whole ramp) or loosening the tier for every account at once.
+        #
+        # LOOSENING here is deliberate and operator-scoped, so unlike
+        # _stricter_caps this does NOT take the stricter of the two — an override
+        # means what it says. It is announced in the gate report for exactly that
+        # reason; an unexplained wide cap should be traceable to a named desk.
+        _ov = (ramp_cfg.get("account_overrides") or {}).get(acc_id) or {}
+        applied_overrides: dict[str, Any] = {}
+        if isinstance(_ov, dict):
+            for cap_key in _ov:
+                if cap_key not in caps:
+                    continue  # unknown knob: ignore rather than invent a cap
+                # Same parse contract as a tier row (-1/"unlimited" → None, junk
+                # → ignored + ::warning), so an override typo behaves like a tier
+                # typo instead of inventing a third failure mode.
+                ok, val = _tier_int(_ov, f"account_overrides.{acc_id}", cap_key,
+                                    announce=announce)
+                if not ok:
+                    continue
+                caps[cap_key] = val
+                applied_overrides[cap_key] = val
+
         out_accounts[acc_id] = {
             "created": str(created_raw or "") or None,
             "age_days": age_days,
             "tier": tier,
             "enabled": enabled,
             "caps": dict(caps),
+            "overrides": applied_overrides,
         }
 
     # An account that appears in a plan but NOT in desk_network is a config bug;

@@ -1,0 +1,73 @@
+name: merge-on-green
+# The account-side substitute for branch protection (operator ruling 2026-07-28).
+#
+# The merge-on-CONCLUDED-checks law is right, but obeying it by hand made every
+# session a CI hostage for 20-60 minutes. Every GitHub-native alternative is
+# structurally unavailable on this account:
+#   * a user-account ruleset cannot grant the github-actions app a bypass
+#     (422 — organization-only), so the lanes cannot be exempted from a rule;
+#   * ANY required-status-check rule (ruleset OR classic protection) would also
+#     block render.yml / the nightly lanes' direct GITHUB_TOKEN pushes to main,
+#     breaking the deploy path in order to fix the merge path;
+#   * `gh pr merge --auto --squash` is not a wait — with no branch protection
+#     there are no required checks to gate on, so it merges IMMEDIATELY
+#     (verified PR #3889, 2026-07-28: merged ~1 min after arming, packs pending).
+#
+# So a session arms its PR with the `merge-on-green` label and stops; this sweep
+# performs the merge it would otherwise have sat there waiting to perform. The
+# discipline is unchanged — nothing merges until every check has CONCLUDED clean
+# (the known-spurious `Workers Builds: macro` X excluded). A genuine red or a
+# conflict gets the `merge-blocked` label plus one explanatory comment instead.
+on:
+  schedule:
+    # Every 10 minutes: fast enough that an armed PR merges within one CI-tail of
+    # its last check concluding, cheap enough to stay far inside the hosted-runner
+    # budget. GitHub may delay scheduled runs under load; a late sweep merges the
+    # same PRs, so lateness costs latency and nothing else.
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write        # squash-merge, and delete the merged head ref
+  pull-requests: write   # add/remove merge-blocked, post the explanatory comment
+
+concurrency:
+  # One sweep at a time. cancel-in-progress: false because a sweep that is
+  # mid-merge must finish — cancelling it could leave a PR labeled but unmerged.
+  group: merge-on-green
+  cancel-in-progress: false
+
+jobs:
+  sweep:
+    name: sweep
+    # DELIBERATELY GitHub-hosted, never [self-hosted, macstudio]. The mac pool is
+    # the render/nightly/engine lane and is routinely saturated; a merge sweep
+    # queued behind a 67-minute render would defeat its own purpose. This job is
+    # a handful of API calls and needs nothing from that pool.
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      # The sweeper script is tracked in this repo, so the checkout IS the
+      # deployment: editing scripts/merge_on_green.py on main changes the next
+      # sweep with no separate release step.
+      - uses: actions/checkout@v4
+
+      - name: sweep merge-on-green pull requests
+        env:
+          GH_REPO: ${{ github.repository }}
+          # READS use the job's own GITHUB_TOKEN. Its quota is per-repository and
+          # separate from the shared 5,000/hr account pool that ship_loop_guard.py
+          # and every parallel session draw on — a sweep every 10 minutes must not
+          # spend the budget those depend on to finish their own work.
+          READ_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # WRITES prefer the PAT, and the reason is load-bearing: a merge made
+          # with GITHUB_TOKEN does NOT fire push-triggered workflows (GitHub's
+          # anti-recursion rule), so render.yml would never see a sweeper merge
+          # and the ?v= re-stamp / .j2 re-bake would silently never happen. With
+          # ADMIN_GH_TOKEN the push event fires and render.yml runs normally.
+          # On the fallback the merge still lands and the VPS's 3-minute pull of
+          # main plus the nightly scope=all re-render still deliver it — degraded,
+          # not broken, which is why the fallback is allowed to exist at all.
+          MERGE_TOKEN: ${{ secrets.ADMIN_GH_TOKEN || secrets.GITHUB_TOKEN }}
+        run: python3 scripts/merge_on_green.py

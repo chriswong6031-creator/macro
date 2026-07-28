@@ -11,13 +11,22 @@ Reuses the existing display-tier machinery:
     breaking_summary.build_breaking_payload   LLM summarize-with-citation + card
     press_corroboration.corroboration_decision   the §3 gate
 
-The emitted outbox item mirrors the earnings fast-lane shape (fastlane._write_outbox)
-so it rides the SAME #3478 breaking dispatch rail (scheduled_at="immediate" ->
-publisher._is_immediate -> Buffer customScheduled). The earnings path is untouched.
+XG-W2 moved this lane onto the CANONICAL outbox path — outbox.make_item() ->
+outbox.validate_item() -> outbox.enqueue() — so it inherits the id-dedup,
+text-dedup, same-account near-dup and cross-account near-dup guards it used to
+bypass by writing its own data/marketing/outbox/<id>.json (a shape nothing read:
+the publisher folds items.jsonl). It still rides the SAME #3478 breaking dispatch
+rail (scheduled_at="immediate" -> publisher._is_immediate -> Buffer
+customScheduled). The earnings fast lane moved in the same wave and by the same
+route, so the two shapes stay identical.
+
+Two XG-W2 gates run BEFORE any LLM spend: the account is resolved per item by
+wire_routing (no module-level account constant), and the one-conversation-one-
+owner story lock refuses a claim another account already took.
 
 Public API:
     run_press_tick(items, *, root, now, cfg, press_cfg, state, dry_run=False,
-                   llm_override=None) -> dict
+                   spool=False, llm_override=None) -> dict
         {emitted:[...], skipped:[...], digest:[...], blocked:[...]}
 
 State (daemon-local, gitignored — data/marketing/press/):
@@ -28,7 +37,6 @@ State (daemon-local, gitignored — data/marketing/press/):
 """
 from __future__ import annotations
 
-import json
 import os
 import re
 import sys
@@ -43,7 +51,20 @@ from typing import Any
 
 _OUTBOX_DIR = Path("data/marketing/outbox")
 _MEDIA_DIR = _OUTBOX_DIR / "media"
-_ACCOUNT = "flagship"
+
+# XG-W2: the account is RESOLVED per item by engine/marketing/wire_routing.py
+# from the `wire_routing:` config map, not pinned to a module constant. The old
+# `_ACCOUNT = "flagship"` hardcode meant the wire lane could address exactly one
+# of the seven live Buffer channels — including never the account whose entire
+# job is the wire (mastermind_news). This constant survives ONLY as the fallback
+# wire_routing itself falls back to, so a config-less checkout behaves as before.
+_FALLBACK_ACCOUNT = "flagship"
+
+# Breaking sorts ahead of the ladder. The publisher orders candidates by
+# (priority, scheduled_at, id) with a default of 5, so 1 is "first in the run".
+# The pre-XG-W2 raw writer wrote the string "high" here, which make_item rejects
+# (priority must be an int) and which no consumer ever compared against anything.
+_BREAKING_PRIORITY = 1
 
 _DEFAULT_FLAGSHIP_TOP_K = 3
 _DEFAULT_FLAGSHIP_FLOOR = 70.0
@@ -164,25 +185,175 @@ def _independent_source(item: dict) -> str:
     return str(item.get("x_handle") or item.get("source") or "")
 
 
-def _write_outbox_item(
+def _route_account(scored: dict, *, cfg: dict, root: Path) -> str:
+    """The account that owns this wire item (XG-W2 per-account wire routing).
+
+    Fail-soft to the historical flagship: a routing lookup must never be able to
+    stop a breaking item from emitting at all.
+    """
+    try:
+        from engine.marketing.wire_routing import route  # noqa: PLC0415
+
+        return route(scored.get("event_class", "none"), cfg=cfg, root=root)
+    except Exception as exc:  # noqa: BLE001
+        print(f"::warning title=wire-routing-failed::falling back to "
+              f"{_FALLBACK_ACCOUNT}: {exc}", flush=True)
+        return _FALLBACK_ACCOUNT
+
+
+def _story_key_for(scored: dict, corroboration_key: str) -> str:
+    """The one-owner lock identity for a press item.
+
+    The lane's own ``_corroboration_key`` is the primary input: it is already the
+    engine's answer to "is this the same claim?", including the mirror collapse
+    (one Truth status id across two mirrors) and the M3 entity+event_class key
+    that made two differently-worded relays of one claim resolve together. The
+    normalized-headline hash is only the last-resort fallback inside
+    ``story_lock.story_key``.
+    """
+    try:
+        from engine.marketing.story_lock import story_key  # noqa: PLC0415
+
+        return story_key(
+            cluster_key=corroboration_key,
+            event_id=scored.get("id"),
+            headline=scored.get("headline"),
+        )
+    except Exception:  # noqa: BLE001
+        return ""
+
+
+def _story_lock_check(account: str, key: str, *, root: Path, now: datetime,
+                      cfg: dict):
+    """Run the cross-account one-owner lock against the outbox queue.
+
+    Returns a LockVerdict, or None when the lock could not run (import or read
+    failure) — the caller treats None as "no verdict, proceed", because a lock
+    that cannot read its state must not become a silent publication stopper.
+    """
+    if not key:
+        return None
+    try:
+        from engine.marketing import outbox as _ob  # noqa: PLC0415
+        from engine.marketing import story_lock as _sl  # noqa: PLC0415
+
+        return _sl.check(account, key, _ob.read_items_all(root), now=now, cfg=cfg)
+    except Exception as exc:  # noqa: BLE001
+        print(f"::warning title=story-lock-unavailable::{key}: {exc}", flush=True)
+        return None
+
+
+def _emit_outbox_item(
     root: Path,
     item_id: str,
+    account: str,
     headline: str,
     body: str,
     svg: str,
     provenance: dict,
     now: datetime,
     *,
+    story_key: str,
     cta_suppress: bool,
     dry_run: bool,
-) -> dict[str, Any]:
-    """Write media SVG + outbox JSON (kind='breaking') and return the item dict.
+    cfg: dict | None = None,
+    spool: bool = False,
+) -> dict[str, Any] | None:
+    """Build a CANONICAL outbox item (kind='breaking') and enqueue it.
 
-    Mirrors fastlane._write_outbox exactly (atomic temp+replace) so the item rides
-    the identical breaking dispatch rail. dry_run writes nothing.
+    XG-W2 replaced the hand-rolled ``data/marketing/outbox/<id>.json`` writer this
+    used to be. That writer produced a shape no reader consumed (the publisher
+    folds ``items.jsonl`` and nothing else), so every press emission bypassed
+    ``make_item``/``validate_item`` AND the id-dedup, text-dedup, same-account
+    near-dup and cross-account near-dup guards that live in ``enqueue``. The lane
+    now goes through the front door.
+
+    Returns the item dict, or None when validation or the queue refused it (the
+    caller records a skip). ``dry_run`` builds and validates but writes nothing —
+    the media SVG included.
     """
+    from engine.marketing import outbox as _ob  # noqa: PLC0415
+
     media_rel = f"data/marketing/outbox/media/{item_id}.svg"
-    if not dry_run and svg:
+    as_of = now.astimezone(timezone.utc).strftime("%Y-%m-%d")
+
+    # Media keeps its historical filename (the FEED item id) so nothing that
+    # already points at data/marketing/outbox/media/<feed id>.svg moves; only the
+    # ITEM id becomes canonical (ob-<as_of>-<hash>, derived from the copy).
+    media = (
+        [{"kind": "chart_svg", "path": media_rel, "chart_id": item_id}]
+        if svg else []
+    )
+
+    _source: dict = {
+        "lane": "press",
+        "feed_item_id": item_id,
+        "story_key": story_key,
+        **provenance,
+    }
+    # GIFT-GRIP-PROOF VERDICT (XG-W3, charter §0) — every emission carries it.
+    # `source_headline` is the UPSTREAM wire headline, so the informational-
+    # surplus test (§7.2: "We rewrote the headline is not an answer") actually
+    # has something to compare against on this lane — the one lane where
+    # restating the source is the live failure mode.
+    _would_block = _ob.stamp_value_gate(
+        _source,
+        headline=headline,
+        body=body,
+        kind="breaking",
+        has_media=bool(media),
+        source_headline=str(provenance.get("source_headline") or ""),
+        citation=str(provenance.get("url") or ""),
+        cfg=cfg,
+    )
+    if _would_block:
+        _verdict = _source.get("value_gate") or {}
+        print(
+            "::notice title=press-lane-value-gate::"
+            f"{item_id}: would abstain ({','.join(_verdict.get('reasons') or [])}) "
+            f"— enforce={_verdict.get('enforced')}",
+            flush=True,
+        )
+        if _ob._value_gate_enforced(cfg):
+            return None
+
+    try:
+        item = _ob.make_item(
+            account=account,
+            kind="breaking",
+            text=_ob.compose_text(headline, body),
+            as_of=as_of,
+            media=media,
+            scheduled_at="immediate",
+            priority=_BREAKING_PRIORITY,
+            provenance="press_lane",
+            source=_source,
+            now=now,
+        )
+    except ValueError as exc:
+        print(f"::warning title=press-lane-item-invalid::{item_id}: {exc}", flush=True)
+        return None
+
+    # Fields the canonical schema has no slot for but the breaking rail reads.
+    # Additive: validate_item does not reject extra keys, and each is load-bearing
+    # downstream — `immediate` is the legacy share-now marker, `cta_suppress`
+    # steers the card footer, and headline/body keep the two halves separately
+    # readable (the rail and the admin preview want them apart).
+    item["immediate"] = True
+    item["cta_suppress"] = bool(cta_suppress)
+    item["headline"] = headline
+    item["body"] = body
+
+    errors = _ob.validate_item(item)
+    if errors:
+        print(f"::warning title=press-lane-item-invalid::{item_id}: {errors[0]}",
+              flush=True)
+        return None
+
+    if dry_run:
+        return item
+
+    if svg:
         media_path = root / _MEDIA_DIR / f"{item_id}.svg"
         media_path.parent.mkdir(parents=True, exist_ok=True)
         tmp_fd, tmp_path = tempfile.mkstemp(dir=media_path.parent, suffix=".svg.tmp")
@@ -197,37 +368,12 @@ def _write_outbox_item(
                 pass
             raise
 
-    out_item: dict[str, Any] = {
-        "id": item_id,
-        "account": _ACCOUNT,
-        "kind": "breaking",
-        "text": {"headline": headline, "body": body},
-        "media": [media_rel] if svg else [],
-        "immediate": True,
-        "scheduled_at": "immediate",
-        "priority": "high",
-        "cta_suppress": bool(cta_suppress),
-        "provenance": provenance,
-        "status": "queued",
-        "created_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
-    }
-
-    if not dry_run:
-        outbox_path = root / _OUTBOX_DIR / f"{item_id}.json"
-        outbox_path.parent.mkdir(parents=True, exist_ok=True)
-        tmp_fd2, tmp_path2 = tempfile.mkstemp(dir=outbox_path.parent, suffix=".json.tmp")
-        try:
-            with os.fdopen(tmp_fd2, "w", encoding="utf-8") as fh:
-                json.dump(out_item, fh, indent=2)
-            os.replace(tmp_path2, outbox_path)
-        except Exception:
-            try:
-                os.unlink(tmp_path2)
-            except OSError:
-                pass
-            raise
-
-    return out_item
+    result = _ob.enqueue(item, root, cfg=cfg, spool=spool)
+    if result != "queued":
+        print(f"::warning title=press-lane-not-queued::{item_id} refused by the "
+              f"outbox: {result}", flush=True)
+        return None
+    return item
 
 
 _RECENT_OPENERS_KEEP = 3   # per-account no-repeat window depth (only [-1] gates)
@@ -455,6 +601,7 @@ def run_press_tick(
     seen_ids: set[str] | None = None,
     dry_run: bool = False,
     prime: bool = False,
+    spool: bool = False,
     llm_override: Any = None,
 ) -> dict[str, list[dict]]:
     """Run one press-lane tick over a batch of FeedItems.
@@ -469,6 +616,12 @@ def run_press_tick(
         seen_ids:   ids already emitted (dedupe). When None, no cross-tick dedupe
                     (the daemon passes its persisted seen-set).
         dry_run:    compute everything, write nothing.
+        spool:      True routes the emission to the GITIGNORED daemon-local
+                    outbox spool (outbox._host_items_path) instead of the
+                    git-TRACKED items.jsonl. The VPS daemon sets it so a press
+                    tick cannot dirty the checkout its 3-minute `git pull`
+                    depends on. Read-side guards are unaffected — they read the
+                    union of both files.
         prime:      COLD-START (m2). On the very first run — no cursor/seen state —
                     the batch is a full history snapshot, not real-time news;
                     emitting it would flood. When True the tick runs the full
@@ -610,6 +763,29 @@ def run_press_tick(
             continue
 
         # 5. Flagship interim lane: top-K/day + salience floor.
+        #
+        # ⚠ THIS COUNTER IS THE END-TO-END VOLUME BOUND ON THE WIRE RAIL.
+        # Trace the composition honestly: press items are emitted with
+        # scheduled_at="immediate", and an immediate item is EXEMPT from the
+        # per-account daily cap, the tier ramp, the global 10-minute floor
+        # (operator 2026-07-27, "breaking has no limits") and — by
+        # cadence_resolver.exempt_immediate, which defaults true for the same
+        # reason — from the XG-W2 cadence resolver as well. Nothing downstream
+        # bounds how many of these go out in a day. So `wire.flagship_top_k_per_day`
+        # here, plus the earnings lane's own per-event key space (one item per
+        # ticker+quarter, deduped by the seen ledger), are the ONLY end-to-end
+        # limits on the immediate rail.
+        #
+        # This is documented, not "fixed": the exemption is a standing operator
+        # ruling, and adding a second competing cap here would quietly overrule
+        # it. If the immediate rail ever needs bounding, the lever that exists is
+        # cadence_resolver.exempt_immediate: false — one config flip, already
+        # tested — not a new knob.
+        #
+        # TODO(xg-w2-review): the top-K/day counter is global, keyed
+        # 'flagship_top_k_per_day', not per routed account — when mastermind_news
+        # arms, its wire volume shares this one 3/day budget; per-account
+        # counters are the XG-W2 follow-up before that arming.
         if s.get("salience", 0.0) < floor:
             skipped.append({"id": iid, "reason": "below_flagship_floor",
                             "salience": s.get("salience")})
@@ -617,6 +793,23 @@ def run_press_tick(
         if counter["count"] >= top_k:
             skipped.append({"id": iid, "reason": "flagship_top_k_reached",
                             "salience": s.get("salience")})
+            continue
+
+        # 5b. ROUTE (XG-W2). Which account owns this wire class? Config, not a
+        #     module constant — see engine/marketing/wire_routing.py.
+        account = _route_account(s, cfg=cfg, root=root)
+
+        # 5c. ONE CONVERSATION, ONE OWNER (charter §2 amendment 6). The story key
+        #     reuses the lane's OWN claim identity (_corroboration_key), so the
+        #     lock inherits the M3 collapse that makes two differently-worded
+        #     relays of one claim the same story. A second account drawing it
+        #     inside the window is refused here, before any LLM spend.
+        skey = _story_key_for(s, ck)
+        verdict = _story_lock_check(account, skey, root=root, now=now, cfg=cfg)
+        if verdict is not None and not verdict.allowed:
+            skipped.append({"id": iid, "reason": "story_locked",
+                            "story_key": skey, "owner": verdict.owner,
+                            "account": account})
             continue
 
         # 6. Pick the wire FORMAT first (deterministic — code, never the LLM), so
@@ -675,7 +868,7 @@ def run_press_tick(
                 body, register, opener, wire_format, tape_stamp, voice_applied = (
                     _apply_wire_voice(
                         s, base_summary, attribution,
-                        account=_ACCOUNT,
+                        account=account,
                         recent_openers=recent_openers_state,
                         quotes_store=quotes_store,
                         fmt=chosen_format,
@@ -710,15 +903,36 @@ def run_press_tick(
             "tape_stamp": tape_stamp,
         }
 
-        out_item = _write_outbox_item(
-            root, iid, headline, body, payload.get("card_svg", ""),
+        out_item = _emit_outbox_item(
+            root, iid, account, headline, body, payload.get("card_svg", ""),
             provenance, now,
+            story_key=skey,
             cta_suppress=bool(s.get("cta_suppress", False)),
             dry_run=dry_run,
+            cfg=cfg,
+            spool=spool,
         )
+        if out_item is None:
+            # RECORDED AS SEEN, deliberately. The canonical path refused it
+            # (invalid, duplicate, cross-account near-dup, or over cap), and the
+            # LLM summarize-with-citation call above has ALREADY been paid for.
+            # The refusal cannot be evaluated any earlier — every guard that
+            # produced it keys on the generated TEXT — so leaving the item
+            # unseen means re-generating and re-refusing the same story on every
+            # tick, forever, burning billed spend on an outcome we already know.
+            # Every refusal reason is a stable property of the copy, so a retry
+            # cannot change the answer. The seen ledger is size-capped and rolls
+            # (daemon _PRESS_SEEN_CAP), so this is a suppression with a horizon,
+            # not a permanent kill.
+            seen.add(_emission_key(s))
+            skipped.append({"id": iid, "reason": "outbox_refused",
+                            "account": account})
+            continue
         counter["count"] = int(counter["count"]) + 1
         # Record the MIRROR-COLLAPSED key so a later tick from EITHER mirror is a
-        # dedupe skip. out_item still carries the raw id for the outbox filename.
+        # dedupe skip. (There is no per-item outbox FILENAME any more — XG-W2
+        # moved this lane onto items.jsonl/the daemon spool — but the feed id
+        # still names the media SVG and rides on the item as source.feed_item_id.)
         seen.add(_emission_key(s))
         emitted.append(out_item)
         # An emitted item is rail-eligible with its FULLY-composed body (opener +

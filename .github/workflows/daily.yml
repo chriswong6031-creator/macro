@@ -3015,6 +3015,52 @@ jobs:
             echo "::warning title=standout_audit_us::rc=$rc (attribution artifacts may be stale)"
           fi
           exit 0
+      - name: Prophet Trade Memory — accrue matured pick autopsies
+        # Observation/reflection only: this explicitly arms the old metabolism
+        # guard for this one process, but the writer remains research-only and
+        # cannot rank, size, gate, suppress, or escalate a live signal.
+        env:
+          AUTONOMY_PAUSED: "false"
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          CLAUDE_CODE_OAUTH_TOKEN_1: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_1 }}
+          CLAUDE_CODE_OAUTH_TOKEN_2: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_2 }}
+          CLAUDE_CODE_OAUTH_TOKEN_3: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_3 }}
+          CLAUDE_CODE_OAUTH_TOKEN_4: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_4 }}
+          CLAUDE_CODE_OAUTH_TOKEN_5: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_5 }}
+          CLAUDE_CODE_OAUTH_TOKEN_6: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_6 }}
+          CLAUDE_CODE_OAUTH_TOKEN_7: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_7 }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: |
+          set +e
+          python -m scripts.run_prophet_pick_autopsies --market us; rc=$?
+          if [ "$rc" -ne 0 ]; then
+            echo "::warning title=prophet_trade_memory::pick autopsy lane failed (rc=$rc)"
+          fi
+          exit 0
+      - name: Prophet Trade Memory — review private operator episodes
+        # Personal facts/autopsies remain in owner-scoped Supabase rows. The
+        # runner prints counts only and commits no private artifact.
+        env:
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          SUPABASE_OPERATOR_USER_ID: ${{ secrets.SUPABASE_OPERATOR_USER_ID }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          CLAUDE_CODE_OAUTH_TOKEN_1: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_1 }}
+          CLAUDE_CODE_OAUTH_TOKEN_2: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_2 }}
+          CLAUDE_CODE_OAUTH_TOKEN_3: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_3 }}
+          CLAUDE_CODE_OAUTH_TOKEN_4: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_4 }}
+          CLAUDE_CODE_OAUTH_TOKEN_5: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_5 }}
+          CLAUDE_CODE_OAUTH_TOKEN_6: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_6 }}
+          CLAUDE_CODE_OAUTH_TOKEN_7: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_7 }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: |
+          set +e
+          python -m scripts.run_trade_memory --cap 8; rc=$?
+          if [ "$rc" -ne 0 ]; then
+            echo "::warning title=prophet_trade_memory::private episode lane failed (rc=$rc)"
+          fi
+          exit 0
       - name: Prophet W1 — US track record page
         run: |
           set +e
@@ -3098,6 +3144,28 @@ jobs:
             echo "::warning title=ad_ingest::rc=$rc (arena ledgers may not have advanced)"
           fi
           exit 0
+      # Persona memory consolidation (XG-W3). Emission-time counters — phrase
+      # fatigue, open promises, relationship touches — accumulate all day in the
+      # GITIGNORED host spool under data/marketing/personas_host/ (zero
+      # tracked-repo writes intraday, the same posture as the outbox's
+      # items-host.jsonl). Nightly is the SOLE advancer of the tracked ledgers
+      # under data/marketing/personas/, so this is the only writer — charter §2
+      # amendment 13. It is idempotent: records dedup on a stable key, because a
+      # retried nightly that double-counted would silently TIGHTEN every
+      # per-quirk frequency cap those counters bound.
+      #
+      # A host with no spool is a no-op that exits 0 and prints a ::notice, not a
+      # failure — most runners never emit anything.
+      - name: marketing — consolidate persona memory
+        env:
+          MARKETING_PERSONA_MEMORY_ENABLED: "1"
+        run: |
+          set +e
+          python -m engine.marketing.persona_memory; rc=$?
+          if [ "$rc" -ne 0 ]; then
+            echo "::warning title=persona_memory::rc=$rc (persona ledgers may not have advanced)"
+          fi
+          exit 0
       - name: commit standout audit US artifacts
         run: |
           . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
@@ -3106,6 +3174,7 @@ jobs:
           git add data/standout_audit/us_attribution.parquet 2>/dev/null || true
           git add data/standout_audit/us_evidence.jsonl 2>/dev/null || true
           git add data/standout_audit/us_audit_state.json 2>/dev/null || true
+          git add data/standout_audit/pick_autopsies/us 2>/dev/null || true
           git add site/factordata/us_audit_scoreboard.json 2>/dev/null || true
           git add data/metabolism/fitness/standouts_us.json 2>/dev/null || true
           git add site/factordata/us_track_history.json 2>/dev/null || true
@@ -3123,6 +3192,10 @@ jobs:
           git add data/marketing/outbox 2>/dev/null || true
           # Ad Central arena ledgers — forward-only, advanced by the ingest step above.
           git add data/marketing/ad_central 2>/dev/null || true
+          # Persona memory ledgers (XG-W3) — forward-only, advanced by the
+          # consolidate step above. The host spool (data/marketing/personas_host/)
+          # is gitignored and must never appear here.
+          git add data/marketing/personas 2>/dev/null || true
           if git diff --cached --quiet; then echo "no standout audit US changes"; exit 0; fi
           git commit -m "standout-audit-us: nightly US attribution + fitness card $(date -u +%F)"
           # best-effort rebase-push (own files — no other job writes these paths)

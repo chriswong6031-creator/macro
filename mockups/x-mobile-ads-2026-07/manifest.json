@@ -1,0 +1,159 @@
+{
+  "campaign_id": "mx-x-mobile-system-2026-07",
+  "platform": "X",
+  "objective": "qualified trial starts",
+  "primary_conversion": "trial_started",
+  "format": {
+    "width": 1440,
+    "height": 1800,
+    "aspect_ratio": "4:5",
+    "file_type": "png",
+    "strategy": "mobile-first feed creative",
+    "mobile_qa_width_px": 390
+  },
+  "offer_terms": {
+    "monthly_pro_usd": 149,
+    "founding_pro_annual_usd": 900,
+    "founding_pro_monthly_equivalent_usd": 75,
+    "savings_vs_twelve_monthly_payments_usd": 888,
+    "trial_days": 7,
+    "claim_guidance": "Use 'about 50% less than monthly Pro' or show $149/mo versus $75/mo billed annually. Do not call this 50% off the standard annual price."
+  },
+  "testing_rules": {
+    "hero_set": "Test the five standalone mobile heroes against one another.",
+    "carousel_set": "Test the five three-card carousel stories against one another.",
+    "carousel_structure": "promise -> evidence -> offer",
+    "recommended_decision_metric": "trial_started / landing_view",
+    "minimum_conversions_per_creative_before_decision": 100,
+    "guardrails": [
+      "Keep audience, placement, bid strategy, destination and schedule identical within each format.",
+      "Run every creative in the same 4:5 mobile placement.",
+      "Do not compare hero and carousel results until both format sets clear the conversion floor.",
+      "Pause all offer creatives immediately if Founding Pro terms change."
+    ]
+  },
+  "hero_creatives": [
+    {
+      "id": "mx-mobile-01",
+      "angle": "whole-market signal",
+      "hypothesis": "The market-behind-the-stock promise will communicate product breadth while a single Prophet card keeps the outcome concrete.",
+      "primary_text": "Don’t just trade the ticker. Trade the market behind it—with entry and risk mapped.",
+      "headline": "Trade the market behind the stock.",
+      "cta": "Sign up",
+      "destination": "https://mastermind-x.com/?utm_source=x&utm_medium=paid&utm_campaign=mobile_hero&utm_content=mx-mobile-01",
+      "asset": "site/assets/landing/x-mobile-ads-2026-07/mx-mobile-01.png"
+    },
+    {
+      "id": "mx-mobile-02",
+      "angle": "noise to trade plan",
+      "hypothesis": "A three-stage context-to-plan visual will make the transformation from information overload to an executable trade clearest.",
+      "primary_text": "Turn market noise into one ranked stock signal, exact entry zone and invalidation.",
+      "headline": "The market is noisy. Your trade plan shouldn’t be.",
+      "cta": "Sign up",
+      "destination": "https://mastermind-x.com/?utm_source=x&utm_medium=paid&utm_campaign=mobile_hero&utm_content=mx-mobile-02",
+      "asset": "site/assets/landing/x-mobile-ads-2026-07/mx-mobile-02.png"
+    },
+    {
+      "id": "mx-mobile-03",
+      "angle": "terminal differentiation",
+      "hypothesis": "A large real Terminal crop plus an actionable signal overlay will distinguish MastermindX from chart-only products.",
+      "primary_text": "Your chart shows what happened. See what to do next—with market context built in.",
+      "headline": "A browser Terminal with the intelligence layer built in.",
+      "cta": "Sign up",
+      "destination": "https://mastermind-x.com/?utm_source=x&utm_medium=paid&utm_campaign=mobile_hero&utm_content=mx-mobile-03",
+      "asset": "site/assets/landing/x-mobile-ads-2026-07/mx-mobile-03.png"
+    },
+    {
+      "id": "mx-mobile-04",
+      "angle": "market-aware AI",
+      "hypothesis": "Showing the evidence read before the answer will make Mastermind AI feel materially different from ticker-only chat.",
+      "primary_text": "Ask about a stock. Get the market around it—then the setup, entry and risk.",
+      "headline": "AI that reads the whole market before it answers.",
+      "cta": "Sign up",
+      "destination": "https://mastermind-x.com/?utm_source=x&utm_medium=paid&utm_campaign=mobile_hero&utm_content=mx-mobile-04",
+      "asset": "site/assets/landing/x-mobile-ads-2026-07/mx-mobile-04.png"
+    },
+    {
+      "id": "mx-mobile-05",
+      "angle": "signals with receipts",
+      "hypothesis": "A concise call paired with three visible reasons will build more trust than a black-box buy or sell label.",
+      "primary_text": "Every stock signal should show its work: market case, entry and invalidation.",
+      "headline": "Every stock signal should show its work.",
+      "cta": "Sign up",
+      "destination": "https://mastermind-x.com/?utm_source=x&utm_medium=paid&utm_campaign=mobile_hero&utm_content=mx-mobile-05",
+      "asset": "site/assets/landing/x-mobile-ads-2026-07/mx-mobile-05.png"
+    }
+  ],
+  "carousel_creatives": [
+    {
+      "id": "mx-carousel-01",
+      "angle": "whole-market signal",
+      "hypothesis": "Separating the promise, four market forces and offer will preserve the complete product story without shrinking its proof.",
+      "primary_text": "Trade the market behind the stock. Swipe to see what one ranked signal carries.",
+      "headline": "Trade the market behind the stock.",
+      "cta": "Sign up",
+      "destination": "https://mastermind-x.com/?utm_source=x&utm_medium=paid&utm_campaign=mobile_carousel&utm_content=mx-carousel-01",
+      "assets": [
+        "site/assets/landing/x-mobile-ads-2026-07/mx-carousel-01-1.png",
+        "site/assets/landing/x-mobile-ads-2026-07/mx-carousel-01-2.png",
+        "site/assets/landing/x-mobile-ads-2026-07/mx-carousel-01-3.png"
+      ]
+    },
+    {
+      "id": "mx-carousel-02",
+      "angle": "noise to trade plan",
+      "hypothesis": "A process story will convert information overload into a visible before-and-after outcome over three cards.",
+      "primary_text": "Market noise in. One ranked signal, exact entry and invalidation out.",
+      "headline": "The market is noisy. Your trade plan shouldn’t be.",
+      "cta": "Sign up",
+      "destination": "https://mastermind-x.com/?utm_source=x&utm_medium=paid&utm_campaign=mobile_carousel&utm_content=mx-carousel-02",
+      "assets": [
+        "site/assets/landing/x-mobile-ads-2026-07/mx-carousel-02-1.png",
+        "site/assets/landing/x-mobile-ads-2026-07/mx-carousel-02-2.png",
+        "site/assets/landing/x-mobile-ads-2026-07/mx-carousel-02-3.png"
+      ]
+    },
+    {
+      "id": "mx-carousel-03",
+      "angle": "terminal differentiation",
+      "hypothesis": "A full-card real Terminal view followed by the intelligence layer will show the product difference better than a generic browser mockup.",
+      "primary_text": "Your chart shows what happened. MastermindX shows what to watch next—and why.",
+      "headline": "A real Terminal with the intelligence layer built in.",
+      "cta": "Sign up",
+      "destination": "https://mastermind-x.com/?utm_source=x&utm_medium=paid&utm_campaign=mobile_carousel&utm_content=mx-carousel-03",
+      "assets": [
+        "site/assets/landing/x-mobile-ads-2026-07/mx-carousel-03-1.png",
+        "site/assets/landing/x-mobile-ads-2026-07/mx-carousel-03-2.png",
+        "site/assets/landing/x-mobile-ads-2026-07/mx-carousel-03-3.png"
+      ]
+    },
+    {
+      "id": "mx-carousel-04",
+      "angle": "market-aware AI",
+      "hypothesis": "A promise-answer-reasoning sequence will prove that Mastermind AI synthesizes market evidence rather than returning generic ticker commentary.",
+      "primary_text": "Ask about a stock. Get the market around it—then the setup, entry and risk.",
+      "headline": "AI that reads the whole market before it answers.",
+      "cta": "Sign up",
+      "destination": "https://mastermind-x.com/?utm_source=x&utm_medium=paid&utm_campaign=mobile_carousel&utm_content=mx-carousel-04",
+      "assets": [
+        "site/assets/landing/x-mobile-ads-2026-07/mx-carousel-04-1.png",
+        "site/assets/landing/x-mobile-ads-2026-07/mx-carousel-04-2.png",
+        "site/assets/landing/x-mobile-ads-2026-07/mx-carousel-04-3.png"
+      ]
+    },
+    {
+      "id": "mx-carousel-05",
+      "angle": "signals with receipts",
+      "hypothesis": "A proof-led sequence that exposes the evidence behind the call will increase trust among skeptical active investors.",
+      "primary_text": "Every stock signal should show its work. Swipe from the call to the receipts.",
+      "headline": "Every stock signal should show its work.",
+      "cta": "Sign up",
+      "destination": "https://mastermind-x.com/?utm_source=x&utm_medium=paid&utm_campaign=mobile_carousel&utm_content=mx-carousel-05",
+      "assets": [
+        "site/assets/landing/x-mobile-ads-2026-07/mx-carousel-05-1.png",
+        "site/assets/landing/x-mobile-ads-2026-07/mx-carousel-05-2.png",
+        "site/assets/landing/x-mobile-ads-2026-07/mx-carousel-05-3.png"
+      ]
+    }
+  ]
+}

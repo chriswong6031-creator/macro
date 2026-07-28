@@ -550,9 +550,30 @@ _SPEC_REF_RE = re.compile(
     r"|^[ \t]*import[ \t]+[\w\.]*\bpersonas\b"                      # import ...personas [as P]
     r"|import_module\([^)]*personas"                                # importlib indirection
     r"|^[ \t]*personas[,)]"                                         # from . import (\n personas,\n)
-    r"|/[ \t]*['\"]personas['\"]",                                  # Path("config") / "personas"
+    # Path("config") / "personas" — BOTH forms, deliberately (review F16).
+    #
+    # The config-anchored alternative catches the literal idiom. The BROAD one
+    # after it catches the VARIABLE-TARGET case — `base = Path("config"); ... base
+    # / "personas"` — which the anchored form is blind to, and variable-target
+    # blindness is a known house trap (`source-guard-regex-blind-to-variable-
+    # target`). Narrowing to the anchored form ALONE, as the first XG-W3 cut did,
+    # traded one false positive for that whole blind spot.
+    #
+    # The false positive it was avoiding (the XG-W3 persona MEMORY ledger at
+    # `data/marketing/personas/`, which holds emitted-post counters and is not a
+    # spec) is excluded in `_references_persona_specs` by LINE CONTEXT instead —
+    # a match whose own line names the data tree is a ledger reference, not a
+    # spec read. That keeps the broad pattern's coverage and still tells the two
+    # trees apart.
+    r"|config['\"]?[ \t]*\)?[ \t]*/[ \t]*['\"]personas['\"]"
+    r"|/[ \t]*['\"]personas['\"]",
     re.MULTILINE,
 )
+
+#: A matched line that names the DATA tree is the XG-W3 memory ledger, not the
+#: spec dir. Kept as an explicit, greppable exclusion rather than lookbehind
+#: gymnastics (Python `re` has no variable-length lookbehind anyway).
+_LEDGER_LINE_RE = re.compile(r"\bmarketing\b|\bdata\b", re.I)
 
 #: The three files W1 permits to reach the spec layer: the loader, the read-only
 #: roster panel, and the one route registration that serves it.
@@ -564,11 +585,66 @@ _SPEC_CONSUMERS_ALLOWED = {
     # layer calls expression_dial, never personas — which is why copywriter.py
     # and content_studio.py must still be absent from this set.
     "engine/marketing/expression_dial.py",
+    # XG-W2 opened the SECOND, and for the same reason: the specs' `cadence:`
+    # blocks were decorative until something read them, and a per-account
+    # posting law cannot be enforced from a layer nothing reads. This module
+    # (and ONLY this module) resolves cadence at POST time. The publisher calls
+    # cadence_resolver, never personas — which is why scripts/
+    # marketing_publisher.py must still be absent from this set.
+    "engine/marketing/cadence_resolver.py",
+    # ── XG-W3 (charter §4 + §6 XG-W3 row) — THE ADJUDICATED WIDENING ─────────
+    # This wave is the adjudication this fence was waiting for. Charter §4 is
+    # explicit: "Every generation call receives: context packs ..., persona
+    # memory ..., and the codex", and config/marketing.yml's own note says
+    # "TRUE quirk INJECTION (franchise-shaped generation from persona memory)
+    # lands with XG-W3 desk feeds". Until now the codex was SUBTRACTIVE — the
+    # dial could strip a quirk it was never granted but nothing wrote a
+    # persona's worldview INTO the prompt, which is why two desks sharing a
+    # voice landed near-identical copy on the deterministic floor.
+    #
+    # What each of the three reads, and nothing more:
+    #   franchises.py  cross-checks the register against the specs' `franchises:`
+    #                  prose (spec_drift) so a code register cannot drift from
+    #                  its YAML source of record.
+    #   desk_feed.py   reads `worldview`/`franchises`/`restraint`/`context_packs`
+    #                  /`cadence.session` to build the per-account context pack.
+    #   copywriter.py  grafts the COGNITIVE layers onto the LLM persona cards.
+    #                  The `canon` (lifestyle texture) is deliberately NOT read —
+    #                  it ships dark under charter §2 amendment 8 until each real
+    #                  employee confirms it, and handing it to a model is exactly
+    #                  the fabricated-personal-texture failure AM-R1 prevents.
+    #
+    # content_studio.py must still be ABSENT from this set: it reaches voice
+    # through copywriter, never through the spec layer directly.
+    "engine/marketing/franchises.py",
+    "engine/marketing/desk_feed.py",
+    "engine/marketing/copywriter.py",
 }
 
 
 def _references_persona_specs(blob: str) -> bool:
-    return bool(_SPEC_REF_RE.search(blob))
+    """Does this source read the persona SPEC layer (`config/personas/`)?
+
+    A match whose own line names the data tree is the XG-W3 memory LEDGER
+    (`data/marketing/personas/`) — emitted-post counters, not specs — so it does
+    not count. An explicit `config/personas` match always counts, whatever else
+    is on the line.
+    """
+    for m in _SPEC_REF_RE.finditer(blob):
+        hit = m.group(0)
+        # An IMPORT of the personas module is a spec read, full stop — the word
+        # "marketing" appearing in `from engine.marketing import personas` says
+        # nothing about the data tree. Same for an explicit `config` anchor.
+        if ("import" in hit) or ("from" in hit) or ("config" in hit):
+            return True
+        # Only the BARE path form (`… / "personas"`) is ambiguous between the
+        # spec dir and the XG-W3 memory ledger; that one is judged on its line.
+        line_start = blob.rfind("\n", 0, m.start()) + 1
+        line_end = blob.find("\n", m.end())
+        line = blob[line_start : line_end if line_end != -1 else len(blob)]
+        if not _LEDGER_LINE_RE.search(line):
+            return True
+    return False
 
 
 @pytest.mark.parametrize("snippet", [
@@ -583,6 +659,9 @@ def _references_persona_specs(blob: str) -> bool:
     "from engine.marketing import personas as _personas",
     "from . import (actions,\n               personas,\n               prophet)",
     "spec_dir = root / 'config/personas'",
+    # VARIABLE TARGET (review F16) — the anchored-only form was blind to this.
+    "spec_dir = base / 'personas'",
+    'spec_dir = cfg_root / "personas"',
 ])
 def test_spec_reference_predicate_catches_every_consumption_form(snippet):
     """Guard the guard: a substring scan for 'config/personas' misses all of these."""
@@ -596,6 +675,10 @@ def test_spec_reference_predicate_catches_every_consumption_form(snippet):
     "for k, v in personas_cfg.items() if k in used_accounts",
     'if path == "/api/personas/roster":',
     "    voice_notes from the copywriter personas block",
+    # The XG-W3 persona MEMORY ledgers live under data/marketing/personas/ —
+    # emitted-post counters, not specs. Reading that tree is not a spec read.
+    'return _root_path(root) / "data" / "marketing" / "personas" / str(account)',
+    "base = root / 'data' / 'marketing' / 'personas'",
 ])
 def test_spec_reference_predicate_ignores_the_config_block(snippet):
     """copywriter.personas is a CONFIG BLOCK, not this module — it must not trip."""

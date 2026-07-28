@@ -147,11 +147,18 @@ def test_workflows_cancel_superseded_pr_runs() -> None:
     assert "pull_request.number" in fences["concurrency"]["group"]
 
 
-def test_ci_pack_is_two_hosted_jobs_not_eighty_six() -> None:
+def test_ci_pack_is_a_few_hosted_jobs_not_eighty_six() -> None:
     workflow = _yaml(WORKFLOW)
     assert set(workflow["jobs"]) == {"ci-pack"}
     pack = workflow["jobs"]["ci-pack"]
-    assert pack["strategy"]["matrix"]["pack"] == [0, 1]
+    # The pack COUNT tunes (2 -> 4 on 2026-07-28 to halve time-to-green); the
+    # SHAPE is the contract: a small ordered matrix of balanced packs on hosted
+    # runners, never one job per legacy suite (86 VMs), and the matrix must
+    # agree with the --pack-count handed to the runner or some packs' jobs
+    # would execute nowhere.
+    matrix = pack["strategy"]["matrix"]["pack"]
+    assert matrix == list(range(len(matrix)))
+    assert 2 <= len(matrix) <= 8
     assert pack["runs-on"] == "ubuntu-latest"
     assert pack["strategy"]["fail-fast"] is False
     assert pack["if"] == "github.event.action != 'closed'"
@@ -159,6 +166,7 @@ def test_ci_pack_is_two_hosted_jobs_not_eighty_six() -> None:
         str(step.get("run", "")) for step in pack["steps"] if isinstance(step, dict)
     )
     assert "--workflow .github/ci/legacy-jobs.yml" in run_text
+    assert f"--pack-count {len(matrix)}" in run_text
 
     # A manifest edit must trigger CI even though GitHub does not interpret the
     # manifest itself as a workflow.

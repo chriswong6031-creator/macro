@@ -14,6 +14,19 @@ self-heals a failed lane within a day — so ``_stop`` defers to the shared
 coalescing lane rather than holding a session the lane's ~67+ minutes (observed
 sessions sat 3h46m-4h02m for a lane they may not touch).
 
+An open pull request armed with the ``merge-on-green`` label likewise releases the
+session (see ``_stop``). The merge-on-CONCLUDED-checks law is correct and stays —
+a pending check is not a pass, and an ``--admin`` merge mid-flight destroyed the
+PR's own proof run (#3867) — but obeying it by hand made every session a CI hostage
+for 20-60 minutes, and every GitHub-native alternative is structurally unavailable
+on this account: a user-account ruleset cannot grant the github-actions app a
+bypass (422, organization-only), ANY required-status-check rule would also block
+the render/nightly lanes' direct ``GITHUB_TOKEN`` pushes to main, and
+``gh pr merge --auto`` merges INSTANTLY because there are no required checks to
+gate on (verified PR #3889, 2026-07-28). So the wait moved off the session:
+``.github/workflows/merge-on-green.yml`` sweeps every 10 minutes and merges an
+armed pull request once every check concludes clean.
+
 Every blocker also carries an escape ladder, because the field kept producing
 UNSATISFIABLE gates: one session refused Stop 258 consecutive times on ``unmerged``
 and another 245 times on ``render_failed``, and the guard took 13 patches in 17
@@ -50,6 +63,8 @@ GITHUB_API_HOST = "api.github.com"
 GITHUB_API_CACHE_TTL_SECONDS = 30
 GITHUB_RATE_LIMIT_RESERVE = 300
 GITHUB_RATE_LIMIT_REFRESH_SECONDS = 60
+# The label a session arms to hand its merge to `.github/workflows/merge-on-green.yml`.
+MERGE_ON_GREEN_LABEL = "merge-on-green"
 EXTERNAL_BLOCKERS = {
     "github_unreachable",
     "github_rate_limited",
@@ -508,6 +523,114 @@ def _latest_merged_pr(owner: str, repo: str, branch: str) -> dict[str, Any] | No
     return max(merged, key=lambda pull: pull.get("merged_at") or "") if merged else None
 
 
+def _is_spurious_check(name: str) -> bool:
+    """The known-spurious Cloudflare check both CI gates have always ignored.
+
+    One definition for `_check_ci` and the labeled handoff below, so the rule can
+    never drift between "what pins a merged session" and "what releases an armed
+    one". `scripts/merge_on_green.py` carries the same predicate for the sweeper.
+    """
+    lowered = name.lower()
+    return "workers builds" in lowered and "macro" in lowered
+
+
+def _open_pull(owner: str, repo: str, branch: str) -> dict[str, Any] | None:
+    """The branch's OPEN pull request against main, or None.
+
+    Same endpoint shape as `_latest_merged_pr`, so it shares the 30-second shared
+    cache and costs one call that sibling worktrees reuse.
+    """
+    query = urllib.parse.urlencode(
+        {"state": "open", "head": f"{owner}:{branch}", "base": "main", "per_page": "20"}
+    )
+    pulls = _get_json(f"https://api.github.com/repos/{owner}/{repo}/pulls?{query}")
+    return pulls[0] if pulls else None
+
+
+def _handoff_verdict(runs: list[dict[str, Any]]) -> tuple[str, list[str]]:
+    """Classify an armed pull request's head check runs for the labeled handoff.
+
+    Returns ``(verdict, names)``:
+
+      ``unproven`` — no non-spurious check run exists on the head. The sweeper
+        will never merge such a pull request (nothing proves it), so releasing
+        the session here would ORPHAN the work. Falls through to `unmerged`.
+      ``red`` — a non-spurious check CONCLUDED outside {success, neutral,
+        skipped}. The sweeper never merges a red, so the session must fix it or
+        pull the label; naming the checks is the whole value of blocking here.
+      ``armed`` — everything that concluded is clean; anything else is still
+        running. The sweeper is a valid owner of the rest.
+
+    Red OUTRANKS pending here, the reverse of `decide_verdict` in
+    scripts/merge_on_green.py. The difference is deliberate: this verdict only
+    shapes a MESSAGE to a session that can act on a red immediately, so telling it
+    early is pure benefit, whereas the sweeper gates an irreversible merge and a
+    one-shot comment and therefore waits for full information.
+    """
+    considered = [run for run in runs if not _is_spurious_check(str(run.get("name") or ""))]
+    if not considered:
+        return "unproven", []
+    red = [
+        f"{run.get('name') or 'unnamed check'} ({run.get('conclusion')})"
+        for run in considered
+        if run.get("status") == "completed"
+        and run.get("conclusion") not in {"success", "neutral", "skipped"}
+    ]
+    if red:
+        return "red", red
+    return "armed", []
+
+
+def _merge_on_green_handoff(
+    owner: str, repo: str, branch: str, head: str
+) -> tuple[str, str]:
+    """Whether this branch's open pull request is armed for the sweeper.
+
+    Returns ``(verdict, detail)`` where verdict is ``none`` (no armed pull
+    request — the caller keeps its existing unmerged/unpushed block), ``red``,
+    or ``armed`` (the session may stop).
+
+    The head sha must equal the LOCAL HEAD. An armed pull request whose head is
+    older than the worktree means the session's latest work is not what the
+    sweeper would merge, so it must push first — the `unpushed` gate above
+    usually catches that, but a force-moved branch reaches here with a clean
+    ahead-count and must not slip through.
+    """
+    pull = _open_pull(owner, repo, branch)
+    if not pull:
+        return "none", ""
+    labels = {str((label or {}).get("name") or "") for label in (pull.get("labels") or [])}
+    if MERGE_ON_GREEN_LABEL not in labels:
+        return "none", ""
+    number = pull.get("number")
+    head_sha = str((pull.get("head") or {}).get("sha") or "")
+    if not head_sha or head_sha != head:
+        return "none", ""
+
+    verdict, names = _handoff_verdict(_head_check_runs(owner, repo, head_sha))
+    if verdict == "unproven":
+        return "none", ""
+    if verdict == "red":
+        return "red", (
+            f"Pull request #{number} is labeled `{MERGE_ON_GREEN_LABEL}`, but its head "
+            f"carries concluded red checks: {', '.join(names[:8])}. The sweeper never "
+            "merges a red pull request, so nothing will pick this up: fix the cause and "
+            "re-run the failed job (the label stays armed and the next sweep merges once "
+            f"the head is clean), or remove the `{MERGE_ON_GREEN_LABEL}` label and finish "
+            "the merge by hand."
+        )
+    return "armed", (
+        f"Ship-loop handoff: pull request #{number} is armed with "
+        f"`{MERGE_ON_GREEN_LABEL}` and carries no concluded red checks, so this session "
+        "may stop here. The `merge-on-green` workflow sweeps every 10 minutes and "
+        "squash-merges it once every check has CONCLUDED clean (the known-spurious "
+        "`Workers Builds: macro` X excluded); a genuine red or a conflict gets the "
+        "`merge-blocked` label plus an explanatory comment instead. Delivery after the "
+        "merge is unchanged: the VPS pulls main every 3 minutes and the nightly "
+        "`scope=all` re-render is the backstop."
+    )
+
+
 def _failing_ci_message(display: list[str]) -> str:
     """The blocking verdict for reds this pull request genuinely owns.
 
@@ -802,8 +925,7 @@ def _check_ci(
     failure_starts: list[str] = []
     for run in runs:
         name = str(run.get("name") or "unnamed check")
-        lowered = name.lower()
-        if "workers builds" in lowered and "macro" in lowered:
+        if _is_spurious_check(name):
             continue
         if run.get("status") != "completed":
             pending.append(name)
@@ -1210,6 +1332,12 @@ def _block(
     `last_blocker`/`blocker_count` track the CONSECUTIVE same-code run and are left
     exactly as they were. `total_blocks` and `external_blocks` are cumulative and
     are NEVER reset within a session, so a ping-pong cannot erase them.
+
+    The ladders are a LAST resort, not the intended exit. Each release valve added
+    upstream of them — the stand-down exemption, the deferred render, and the
+    `merge-on-green` labeled handoff (operator 2026-07-28, which ended the 20-60
+    minute CI-hostage wait the merge-on-concluded law had imposed) — exists so a
+    healthy session reaches a clean stop and never counts toward a ceiling at all.
     """
     previous = state.get("last_blocker")
     count = int(state.get("blocker_count") or 0) + 1 if previous == code else 1
@@ -1372,6 +1500,30 @@ def _branch_was_pushed(root: Path, branch: str) -> bool:
 
 
 def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
+    """Judge the completion chain, in the order the cheapest evidence answers it.
+
+    Dirty tree -> no-op/stand-down exemptions -> branch -> pushed -> merged pull
+    request -> CI -> origin/main -> render -> live. Each gate blocks with a code
+    `_block` can count, and every gate that proved something durable stores a
+    proof so a later Stop turn does not re-poll GitHub for it.
+
+    TWO gates release a session that has genuinely finished its part rather than
+    holding it for machinery it does not own:
+
+      * a DEFERRED render — an in-flight covering run, satisfied rather than
+        waited on (see `_render_status`);
+      * the LABELED HANDOFF at the `if not pull:` branch — an open pull request
+        carrying `merge-on-green` with no concluded red is a complete ship,
+        because `.github/workflows/merge-on-green.yml` sweeps every 10 minutes
+        and performs the merge. This is the release valve for the
+        merge-on-CONCLUDED-checks law (operator 2026-07-28): that law is correct
+        and stays, but obeying it by hand made every session sit 20-60 minutes as
+        a CI hostage, and the GitHub-native fixes are all unavailable here — a
+        user-account ruleset cannot grant the github-actions app a bypass (422,
+        org-only), any required-status-check rule would block the render/nightly
+        lanes' direct GITHUB_TOKEN pushes to main, and `gh pr merge --auto` merges
+        INSTANTLY with no required checks to gate on (verified PR #3889).
+    """
     state = _load(path)
     # Hooks can be installed during an already-running session. Fail open once so
     # that pre-hook work is not misclassified; every later session is enforced.
@@ -1458,6 +1610,34 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
             }
             _remember_proof(path, state, "merged_pull", pull_key, pull)
     if not pull:
+        # THE LABELED HANDOFF. Before judging this unmerged, ask whether the
+        # session already handed the merge to the sweeper. An armed pull request
+        # with no concluded red is a COMPLETE ship in the new model: the session
+        # did everything it can do, and `.github/workflows/merge-on-green.yml`
+        # owns the rest. Holding it here is what made sessions CI hostages.
+        #
+        # Fail-closed in every direction: a probe that raises, a pull request
+        # without the label, a head that does not match the local HEAD, or a head
+        # with nothing proving it all fall through to the ordinary block below.
+        # The escape ladder in `_block` already covers a persistently failing API.
+        try:
+            handoff, detail = _merge_on_green_handoff(owner, repo, branch, head)
+        except Exception:
+            handoff, detail = "none", ""
+        if handoff == "red":
+            _block(path, state, payload, "ci_failed", detail)
+            return
+        if handoff == "armed":
+            # A clean stop: emit the audit line, drop the state file, and return.
+            # Nothing may follow a systemMessage on stdout (see the note at the
+            # end of `_stop`), and nothing does — this path returns immediately.
+            _emit({"systemMessage": detail})
+            try:
+                path.unlink()
+            except OSError:
+                pass
+            return
+
         # No merged pull request: an absent upstream now genuinely means unpushed.
         if not upstream:
             _block(path, state, payload, "unpushed", f"{branch} has no upstream branch.")

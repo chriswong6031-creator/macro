@@ -1,1 +1,1 @@
-{"schema": "hk_1d_velocity_desk.v1", "as_of": "2026-07-27", "rows": [], "n_rows": 0, "authority": "display_only"}
+{"schema": "hk_1d_velocity_desk.v1", "as_of": "2026-07-28", "rows": [{"ticker": "0322.HK", "name": "Tingyi", "name_zh": "\u9876\u76ca\u63a7\u80a1", "rank": 1, "confluence_n": 1, "chips": {"1d_pure": true, "d1_macd_xup_bars": 0.0, "d1_stoch_xup_bars": 0.0, "from_os": true, "beta_role": "cushion"}, "close": 11.77, "sector": "Consumer", "edge_z": -0.17, "authority": "display_only"}], "n_rows": 1, "authority": "display_only"}

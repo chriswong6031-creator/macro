@@ -35,6 +35,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+import time
 import zlib
 from pathlib import Path
 from typing import Any
@@ -109,6 +110,11 @@ def svg_dimensions(svg: str) -> tuple[int, int] | None:
     return (w, h) if w > 0 and h > 0 else None
 
 
+# Poll interval while waiting for headless Chrome to finish writing a screenshot.
+# 0.25s costs at most a quarter-second of slack per card and keeps the loop idle.
+_RASTER_POLL_S = 0.25
+
+
 def rasterize_svg(
     svg: str,
     *,
@@ -177,10 +183,42 @@ def rasterize_svg(
             # Chrome writes the screenshot BEFORE it sometimes hangs on exit, so
             # cap the wait and check for the file rather than trust a clean exit
             # (same handling as scripts/make_favicon.py).
+            #
+            # POLL for the screenshot instead of waiting out `timeout_s`. On this
+            # Mac, `--headless=new` writes the complete PNG at ~11s and then never
+            # exits, so a plain run(timeout=45) paid the FULL 45s on every single
+            # chart — 34s of pure hang per card, ~75% of the cost. That is what
+            # made "a chart on every post" look unaffordable (74 D1 posts × 45s =
+            # 55 min against a ~67 min render budget). Watching for the file and
+            # killing Chrome the moment the PNG stops growing costs ~11.5s.
+            #
+            # Stability rule: the size must repeat across two consecutive polls
+            # before we kill, so we never read a half-flushed PNG. Bytes are
+            # unchanged — this only stops waiting on a process with nothing left
+            # to say. Same deadline and same pkill fallback as before.
+            deadline = time.monotonic() + timeout_s
+            proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL,
+                                    stderr=subprocess.DEVNULL)
             try:
-                subprocess.run(cmd, timeout=timeout_s,
-                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            except subprocess.TimeoutExpired:
+                prev_size = -1
+                while time.monotonic() < deadline:
+                    try:
+                        size = out.stat().st_size
+                    except OSError:
+                        size = 0
+                    if size > 0 and size == prev_size:
+                        break          # written and stable — Chrome is just hanging
+                    prev_size = size
+                    if proc.poll() is not None and size > 0:
+                        break          # exited cleanly with output
+                    time.sleep(_RASTER_POLL_S)
+            finally:
+                proc.kill()
+                try:
+                    proc.wait(timeout=5)
+                except Exception:  # noqa: BLE001
+                    pass
+                # Belt-and-braces for a Chrome that forked past its parent.
                 subprocess.run(["pkill", "-9", "-f", str(tdp / "cr")],
                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                                check=False)
@@ -198,19 +236,47 @@ def rasterize_svg(
 # Closes loader
 # ─────────────────────────────────────────────────────────────────────────────
 
+# Daily-bar search order for a US equity. IDENTICAL to the order Prophet itself
+# uses (scripts/build_prophet._load_price_history_for_management): baskets first,
+# then the large-cap tree.
+#
+# Marketing used to read data/stocks/ ALONE — 232 large caps — while Prophet
+# picks the signals it publishes from data/baskets/ohlcv/, which carries 2,758
+# names. So 30 of the 43 tickers in the plan had no bars ANYWHERE marketing could
+# see them, and every post on those names was uncharted no matter what the
+# content lane did. That is why the operator's $CBOE, $LKFN, $TEL and $CVI posts
+# shipped bare on 2026-07-28: all four are baskets-only names. The engine that
+# chose the ticker and the lane that draws it must look in the same place.
+#
+# Bonus: the baskets parquet carries a REAL `open` column, which data/stocks/
+# does not — those candles no longer need the prev-close proxy.
+_PRICE_SUBDIRS = ("data/baskets/ohlcv", "data/stocks")
+
+
+def _price_parquet(ticker: str, root: Path | str) -> Path | None:
+    """First existing daily-bar parquet for *ticker*, in Prophet's search order."""
+    for sub in _PRICE_SUBDIRS:
+        p = Path(root) / sub / f"{ticker}.parquet"
+        if p.exists():
+            return p
+    return None
+
+
 def load_closes(
     ticker: str,
     root: Path | str,
     n: int = 90,
 ) -> tuple[list[str], list[float]] | None:
-    """Load last *n* closing prices for *ticker* from data/stocks/<TICKER>.parquet.
+    """Load last *n* closing prices for *ticker* from its daily-bar parquet.
+
+    Source order is _PRICE_SUBDIRS (data/baskets/ohlcv, then data/stocks).
 
     Returns (dates, closes) where dates are ISO strings and closes are floats.
     Returns None on any error (missing file, bad data).
     """
     try:
-        path = Path(root) / "data" / "stocks" / f"{ticker}.parquet"
-        if not path.exists():
+        path = _price_parquet(ticker, root)
+        if path is None:
             return None
         import pandas as pd  # only import when needed
         df = pd.read_parquet(path)
@@ -693,29 +759,29 @@ def load_ohlcv(
 ) -> tuple[list[str], list[float], list[float], list[float], list[float], list[float]] | None:
     """Load last *n* bars of OHLCV for *ticker*.
 
-    US equities/ETFs come from data/stocks/<TICKER>.parquet (full OHLCV). Crypto
-    (ETH, BTC, SOL, …) has no row in data/stocks/; its daily bars live in
+    US equities/ETFs come from _PRICE_SUBDIRS — data/baskets/ohlcv/<TICKER>.parquet
+    (2,758 names, real OHLCV) then data/stocks/<TICKER>.parquet (232 large caps).
+    Crypto (ETH, BTC, SOL, …) appears in neither; its daily bars live in
     data/yahoo/<TICKER>-USD.parquet, which carries close+volume only. For that feed
     high/low are synthesized as a close-to-close body (no wicks) so crypto charts
     render instead of coming back "chart unavailable" — the bug where "analyse ETH"
     reported no daily chart data even though ETH price history exists.
 
-    Neither parquet has an 'open' column so we proxy open_t = close_{t-1} (standard
-    prev-close proxy for candlestick rendering; the first bar's open = its close).
+    'open' is used when the source has it (the baskets tree does); otherwise we
+    proxy open_t = close_{t-1} (standard prev-close proxy for candlestick
+    rendering; the first bar's open = its close).
 
     Returns (dates, opens, highs, lows, closes, volumes) — all lists of length ≤ n.
     Returns None on any error (missing file, bad data, insufficient rows).
     """
     try:
-        stock_path = Path(root) / "data" / "stocks" / f"{ticker}.parquet"
-        # Crypto convention in data/yahoo/: <SYMBOL>-USD.parquet (BTC-USD, ETH-USD, …).
-        crypto_path = Path(root) / "data" / "yahoo" / f"{ticker}-USD.parquet"
-        if stock_path.exists():
-            path = stock_path
-        elif crypto_path.exists():
+        path = _price_parquet(ticker, root)
+        if path is None:
+            # Crypto convention in data/yahoo/: <SYMBOL>-USD.parquet (BTC-USD, …).
+            crypto_path = Path(root) / "data" / "yahoo" / f"{ticker}-USD.parquet"
+            if not crypto_path.exists():
+                return None
             path = crypto_path
-        else:
-            return None
         import pandas as pd  # only import when needed
         df = pd.read_parquet(path)
         # close + volume are the hard requirement; high/low are optional and
@@ -731,8 +797,12 @@ def load_ohlcv(
         dates = [str(d)[:10] for d in df.index]
         closes_raw = [float(c) for c in df["close"]]
         vols_raw = [float(v) if not (v != v) else 0.0 for v in df["volume"]]
-        # prev-close proxy for open: open_t = close_{t-1}; first bar open = its close
-        opens_raw = [closes_raw[0]] + closes_raw[:-1]
+        if "open" in df.columns and not df["open"].isna().any():
+            # Real opens (data/baskets/ohlcv) — true candle bodies, gaps included.
+            opens_raw = [float(o) for o in df["open"]]
+        else:
+            # prev-close proxy: open_t = close_{t-1}; first bar open = its close
+            opens_raw = [closes_raw[0]] + closes_raw[:-1]
         if has_hl:
             highs_raw = [float(h) for h in df["high"]]
             lows_raw = [float(l) for l in df["low"]]

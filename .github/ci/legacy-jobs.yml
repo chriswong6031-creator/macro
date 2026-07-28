@@ -572,6 +572,7 @@ jobs:
           tests/test_prophet_showcase.py
           tests/test_prophet_options_context.py
           tests/test_pick_autopsy_selection.py
+          tests/test_trade_memory.py
           tests/test_options_stamp.py tests/test_options_entry_state.py tests/test_sector_pulse_wiring.py
           tests/test_news_page_render.py tests/test_china_lens_hub.py
           tests/test_news_rank_aging.py
@@ -835,7 +836,7 @@ jobs:
         #    exercises that degraded branch instead of the shipped one.
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 requests
       - name: neural-web core suite (mastermind context + confluence + spine query + ask brain + world state + R5 macro context + ADB-W1 brief context + ADB-W2 forward calendar)
-        run: python -m pytest tests/test_mastermind_context.py tests/test_confluence.py tests/test_spine_query.py tests/test_ask_brain.py tests/test_world_state.py tests/test_macro_snapshot.py tests/test_macro_context_authority.py tests/test_law_dates.py tests/test_confluence_strength.py tests/test_neuralweb_health.py tests/test_neuralweb_daily_brief.py tests/test_brief_context.py tests/test_forward_calendar.py tests/test_orchestrator_log.py tests/test_mastermind_feedback.py tests/test_admin_orchestrator.py tests/test_admin_prophet.py tests/test_brain_doctrine.py tests/test_mastermind_response_log.py tests/test_admin_mastermind_logs.py -q
+        run: python -m pytest tests/test_mastermind_context.py tests/test_confluence.py tests/test_spine_query.py tests/test_ask_brain.py tests/test_world_state.py tests/test_macro_snapshot.py tests/test_macro_context_authority.py tests/test_law_dates.py tests/test_confluence_strength.py tests/test_neuralweb_health.py tests/test_neuralweb_daily_brief.py tests/test_brief_context.py tests/test_forward_calendar.py tests/test_orchestrator_log.py tests/test_mastermind_feedback.py tests/test_admin_orchestrator.py tests/test_admin_prophet.py tests/test_admin_trade_memory.py tests/test_brain_doctrine.py tests/test_mastermind_response_log.py tests/test_admin_mastermind_logs.py -q
 
   cn-standout-audit:
     if: ${{ false }}
@@ -1739,7 +1740,7 @@ jobs:
       - name: metabolism v4 w1 suite (real BUILD dispatch — R-V4-2)
         run: python -m pytest tests/test_metabolism_v4_w1_dispatch.py tests/test_metabolism_buildlane.py -q
       - name: llm auth waterfall + multi-key failover suite
-        run: python -m pytest tests/test_llm_auth.py tests/test_key_pool.py -q
+        run: python -m pytest tests/test_codex_provider.py tests/test_llm_auth.py tests/test_key_pool.py -q
       - name: V10 key economy suite (enabled-set, header capture, usage snapshot)
         run: python -m pytest tests/test_key_pool_economy.py -q
       - name: cortex provider routing + tool loop suite
@@ -2533,6 +2534,33 @@ jobs:
       - name: billing webhook spine regression (app/billing.py::_handle_event)
         run: python -m pytest tests/test_billing_webhook.py -v
 
+  billing-offers:
+    if: ${{ false }}  # executed inside ci-pack; keep the legacy status definition runner-free
+    # Founding Pro offer inventory + allotment pacing (app/billing.py, #3856).
+    # tests/test_billing_offers.py was named by NO workflow (the unrun-suite
+    # census class — the suite landed 2026-07-27, a day AFTER the census swept),
+    # so a regression in the offer/pacing logic could never turn CI red. Guards:
+    # the pro/annual-only offer key, real-Stripe-redemption-count inventory (the
+    # #3856 contract: enforced withdrawal meter, never a fabricated signed-up
+    # count), quiet-day withdrawal stepping vs redemption-day advancement, the
+    # multi-day-gap and lost-ledger reseed paths, sell-out at the Stripe cap,
+    # the checkout race recheck, and grandfathered-customer entitlement repair.
+    # Stripe is faked via monkeypatched billing._stripe (no network); the
+    # dependency line follows billing-emails' verbatim so run_ci_pack shares the
+    # virtualenv, and it keeps the pinned Stripe SDK the sibling billing lanes
+    # test against.
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest fastapi pydantic pandas numpy pyarrow pyyaml requests "stripe>=11,<13"
+      - name: founding offer inventory + allotment pacing (app/billing.py)
+        run: python -m pytest tests/test_billing_offers.py -v
+
   site-gate:
     if: ${{ false }}
     # Site Access Gate: IP/country blocklist enforced at the origin.
@@ -2813,7 +2841,43 @@ jobs:
         # top-level import there must turn this job red at collection. NOTHING in
         # the suite is importorskip-gated — it runs in full on pytest+pyyaml, so
         # it can never become a skip-only suite. Verified in a clean venv.
-        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_marketing_personas.py tests/test_marketing_event_language.py tests/test_marketing_press_feeds.py tests/test_marketing_breaking.py tests/test_marketing_fastlane.py tests/test_marketing_press_copy.py tests/test_marketing_ramp_cta_jitter.py tests/test_marketing_expression_dial.py -q
+        # test_marketing_cadence_spine (X Growth W2, XG-W2) joins the same lane
+        # (2026-07-28): the per-account cadence resolver, the `session` schema
+        # field, the one-conversation-one-owner lock, the cross-account near-dup
+        # radar, and the outbox KINDS hardening that moved press_lane + fastlane
+        # onto make_item/validate_item. It reaches ACROSS both marketing lanes on
+        # purpose — press_lane/fastlane/personas live here, the publisher half
+        # lives in marketing-social-publisher — because the wave's whole point is
+        # that those halves now share one contract, and a test exercising only
+        # one side would miss the seam. Import closure is stdlib+pyyaml:
+        # cadence_resolver/story_lock/wire_routing keep personas, outbox and
+        # zoneinfo lazy or stdlib, and scripts/marketing_publisher already runs
+        # on the same two deps in the sibling lane. Nothing is importorskip-gated,
+        # so it can never decay into a skip-only suite — verified in a clean
+        # pytest+pyyaml venv.
+        # test_marketing_chart_coverage (2026-07-28, #3895) joins the same lane:
+        # the guard that every ticker-bearing post carries an illustration, that a
+        # demoted signal keeps its card WITHOUT the SETUP pill, that chart ids stay
+        # per-account (the Sentinel shared_media fingerprint), and that the ramp's
+        # media cap never sits below its post cap. 9 of its 12 tests are pandas-free
+        # and run here — content_studio/chart_render keep pandas LAZY, so a heavy
+        # top-level import turns this job red at collection, which is the point. The
+        # other 3 need real bars off a parquet (the tape card has no v1 fallback by
+        # design) and importorskip here; chart-render-data below names the file so
+        # they are not unrun.
+        # test_marketing_desk_feeds (X Growth W3, XG-W3) joins the same lane
+        # (2026-07-28): the franchise register + slot scheduler, the four-lane
+        # desk feed, the persona memory stores, and the Gift-Grip-Proof gate.
+        # Import closure is stdlib + pyyaml — franchises/desk_feed/value_gate/
+        # persona_memory keep copywriter, outbox, content_studio, story_lock,
+        # cadence_resolver and engine.chronicle.context_pack LAZY (function-level
+        # imports), so a heavy top-level import in any of them turns this job red
+        # at collection, which is the point. Two guards in the suite are AST
+        # walks over committed source (the consolidator-only-writer guard and the
+        # no-promotion guard) and need no imports at all. Nothing is
+        # importorskip-gated, so it can never decay into a skip-only suite —
+        # verified in a clean pytest+pyyaml venv.
+        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_marketing_personas.py tests/test_marketing_event_language.py tests/test_marketing_press_feeds.py tests/test_marketing_breaking.py tests/test_marketing_fastlane.py tests/test_marketing_press_copy.py tests/test_marketing_ramp_cta_jitter.py tests/test_marketing_expression_dial.py tests/test_marketing_cadence_spine.py tests/test_marketing_chart_coverage.py tests/test_marketing_desk_feeds.py -q
       - name: persona specs validate (config/personas/*.yml)
         # The gate the specs exist for: every committed spec carries the full
         # content-studio tilt key set, a live template-pool voice key, and the
@@ -2883,7 +2947,18 @@ jobs:
         # a test optional, it makes it unrun, and that is what turned main red rather
         # than the suite's own lane. The thin lane keeps the file for its pandas-free
         # tests; :105's cited-level round-trip executes here.
-        run: python -m pytest tests/test_marketing_content.py tests/test_marketing_live_verify.py tests/test_marketing_breaking.py tests/test_marketing_weekend_levels.py -q -rs
+        #
+        # test_marketing_chart_coverage.py joins 2026-07-28 (#3895), same class,
+        # fourth time: three of its tests importorskip pandas/pyarrow because a
+        # `chart`/`watchlist` card only exists when render_chart_v2 reads real bars
+        # (the tape variant has NO v1 fallback — v1 hard-draws a green "BUY" label,
+        # which would contradict a "not buying yet" post). Those three are the ones
+        # that actually pin the operator's defect — the widened type filter, the
+        # live-gate-picks-the-variant rule, and the data/baskets/ohlcv search order
+        # that made 30 of the plan's 43 tickers unchartable. Named in the thin lane
+        # only, they would have skipped everywhere and the fix would have shipped
+        # unguarded.
+        run: python -m pytest tests/test_marketing_content.py tests/test_marketing_live_verify.py tests/test_marketing_breaking.py tests/test_marketing_weekend_levels.py tests/test_marketing_chart_coverage.py -q -rs
 
   publish-r2-client:
     if: ${{ false }}
@@ -3133,6 +3208,45 @@ jobs:
         run: python -m pytest tests/test_free_content.py -q
       - name: committed estate must match a fresh render (template↔site drift law)
         run: python -m scripts.build_free_content --check
+      # SECOND home for this suite, and the only one where all of it RUNS.
+      # tests/test_externalize_css.py also runs in template-site-sync, whose
+      # `pip install pyyaml pytest` deliberately has no jinja2 — so its
+      # cross-module test (externalize_css and build_free_content must share ONE
+      # HAND_AUTHORED frozenset, never a copy) importorskips there and executed
+      # in ZERO jobs: a SKIP-ONLY suite, the #3703 / #3722→#3738→#3760 class that
+      # scripts/check_skip_only_suites.py exists to catch. It caught this one.
+      # This job already installs jinja2 and already owns the estate contract the
+      # shared constant belongs to, so the pairing is free (no new dependency).
+      # Do NOT "de-duplicate" this by deleting it because the suite is named
+      # above in template-site-sync: that lane runs the other 27 tests in a thin
+      # venv and re-darkens the jinja2 one the moment this step goes away.
+      - name: inline-CSS externalization units (incl. the jinja2 cross-module gate)
+        run: python -m pytest tests/test_externalize_css.py -q
+
+  public-render-fastlane:
+    if: ${{ false }}  # executed inside ci-pack; keep the legacy status definition runner-free
+    # Public fast-path contract (2026-07-28): scripts/build_public_pages.py plus
+    # the render.yml/public-render.yml surface split. Named by ZERO workflows
+    # until now, so it rotted red on main invisibly — #3856 moved the founding
+    # copy to the availability-framed meter ("2,000 total — first come, first
+    # served") and the suite's stale "2,000 memberships" pin had no lane to
+    # object from. Guards: GitHub's 21,000-char run-expression limit across all
+    # workflows, the heavy/public render path split (neither lane silently
+    # absorbing the other's surfaces), the fast path's no-market-data promise,
+    # and the rendered pricing/founding copy itself. Renders to a tmp dir;
+    # network-free. The dependency line follows free-content-estate's verbatim
+    # (`pytest pyyaml jinja2`) so run_ci_pack shares the virtualenv.
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pyyaml jinja2
+      - name: public fastlane split + rendered pricing copy pins
+        run: python -m pytest tests/test_public_render_fastlane.py -q
 
   press-lane:
     if: ${{ false }}  # executed inside ci-pack; keep the legacy status definition runner-free
