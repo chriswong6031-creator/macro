@@ -1,9 +1,9 @@
 {
-  "as_of": "2026-07-27",
+  "as_of": "2026-07-28",
   "coverage": {
-    "end": "2026-07-27",
-    "note": "weekly rollup spans up to 13 ISO weeks ending 2026-W31; 7 week(s) have events so far; chronicle event store begins 2025-07-22",
-    "start": "2026-04-27"
+    "end": "2026-07-28",
+    "note": "weekly rollup spans up to 13 ISO weeks ending 2026-W31; 8 week(s) have events so far; chronicle event store begins 2025-07-22; trimmed lowest-salience events to fit the display budget",
+    "start": "2026-04-28"
   },
   "iso_week": "2026-W31",
   "schema": "chronicle.rollup.weekly/v1",
@@ -11,7 +11,86 @@
     {
       "clusters": [
         {
-          "n_events": 161,
+          "n_events": 70,
+          "source": "research_vault",
+          "theme": null,
+          "top_events": [
+            {
+              "date": "2026-07-28",
+              "id": "cev-research_vault-039e4bcf4727",
+              "kind": "report",
+              "source": "research_vault",
+              "source_ref": "marketdesk-9hdhbruqtcx-9dbf0a",
+              "tickers": [],
+              "title": "Scotiabank: FX Snapshot",
+              "weight_hint": 2
+            },
+            {
+              "date": "2026-07-27",
+              "id": "cev-research_vault-05ca4d62e1fd",
+              "kind": "report",
+              "source": "research_vault",
+              "source_ref": "marketdesk-v0ibtkjwezy-7bcfb7",
+              "tickers": [],
+              "title": "Deutsche Bank: Early Morning Reid Macro Strategy",
+              "weight_hint": 2
+            },
+            {
+              "date": "2026-07-27",
+              "id": "cev-research_vault-074afa5583d2",
+              "kind": "report",
+              "source": "research_vault",
+              "source_ref": "marketdesk-g44owjwoom1-a4e240",
+              "tickers": [],
+              "title": "Deutsche Bank: Tesla July 27",
+              "weight_hint": 2
+            },
+            {
+              "date": "2026-07-27",
+              "id": "cev-research_vault-0c3e4f029439",
+              "kind": "report",
+              "source": "research_vault",
+              "source_ref": "marketdesk-9a8of85bqed-671826",
+              "tickers": [],
+              "title": "J.P. Morgan: JPM US FOMC preview 1",
+              "weight_hint": 2
+            },
+            {
+              "date": "2026-07-28",
+              "id": "cev-research_vault-0c6b5ae3c578",
+              "kind": "report",
+              "source": "research_vault",
+              "source_ref": "marketdesk-vmwyiteqz8x-6ae5de",
+              "tickers": [],
+              "title": "Other: Economics Economics Daily Alert 27 07 2026",
+              "weight_hint": 2
+            }
+          ]
+        },
+        {
+          "n_events": 1,
+          "source": "risk_band",
+          "theme": "risk",
+          "top_events": [
+            {
+              "date": "2026-07-27",
+              "id": "cev-risk_band-8489299a6c95",
+              "kind": "state_flip",
+              "source": "risk_band",
+              "source_ref": "risk_radar_forward_log#2026-07-27",
+              "tickers": [],
+              "title": "Risk radar: caution → watch",
+              "weight_hint": 2
+            }
+          ]
+        }
+      ],
+      "iso_week": "2026-W31"
+    },
+    {
+      "clusters": [
+        {
+          "n_events": 166,
           "source": "research_vault",
           "theme": null,
           "top_events": [
@@ -23,6 +102,16 @@
               "source_ref": "marketdesk-srwcvprptla-0a320e",
               "tickers": [],
               "title": "Goldman Sachs: Global Rates Trader Priced For Surprise",
+              "weight_hint": 3
+            },
+            {
+              "date": "2026-07-26",
+              "id": "cev-research_vault-1b1a30ca03e5",
+              "kind": "report",
+              "source": "research_vault",
+              "source_ref": "marketdesk-5jjtogk3lv8-5fdba8",
+              "tickers": [],
+              "title": "S&T: GS Brian Garrett Weekend Prep July 26",
               "weight_hint": 3
             },
             {
@@ -53,16 +142,6 @@
               "source_ref": "marketdesk-rbcqtukaida-6028e6",
               "tickers": [],
               "title": "Goldman Sachs: Americas Healthcare REITs 2Q26 Preview Life Science funding greenshoots, leasing remains subdued",
-              "weight_hint": 2
-            },
-            {
-              "date": "2026-07-24",
-              "id": "cev-research_vault-066a90359d72",
-              "kind": "report",
-              "source": "research_vault",
-              "source_ref": "marketdesk-p2imlo0spdy-307064",
-              "tickers": [],
-              "title": "Goldman Sachs: China 2026 Outlook Exploring New Growth Engines",
               "weight_hint": 2
             }
           ]
@@ -95,30 +174,6 @@
               ],
               "title": "Prophet close: UBER BULL → INVALIDATED (-11.4% in 31d)",
               "weight_hint": 2
-            },
-            {
-              "date": "2026-07-24",
-              "id": "cev-prophet_ledger-a2a63f04d540",
-              "kind": "signal_close",
-              "source": "prophet_ledger",
-              "source_ref": "EXC-BULL-20260609",
-              "tickers": [
-                "EXC"
-              ],
-              "title": "Prophet close: EXC BULL → EXPIRED (-0.0% in 45d)",
-              "weight_hint": 1
-            },
-            {
-              "date": "2026-07-20",
-              "id": "cev-prophet_ledger-e1973420bfcf",
-              "kind": "signal_close",
-              "source": "prophet_ledger",
-              "source_ref": "LRN-BULL-20260605",
-              "tickers": [
-                "LRN"
-              ],
-              "title": "Prophet close: LRN BULL → EXPIRED (-5.3% in 45d)",
-              "weight_hint": 1
             }
           ]
         },
@@ -243,20 +298,7 @@
           "n_events": 1,
           "source": "earnings",
           "theme": "earnings",
-          "top_events": [
-            {
-              "date": "2026-07-14",
-              "id": "cev-earnings-ef2363d4abfe",
-              "kind": "earnings",
-              "source": "earnings",
-              "source_ref": "JPM#2026-07-14",
-              "tickers": [
-                "JPM"
-              ],
-              "title": "Earnings: JPM actual vs est",
-              "weight_hint": 1
-            }
-          ]
+          "top_events": []
         },
         {
           "n_events": 1,
