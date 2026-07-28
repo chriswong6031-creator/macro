@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-28T14:15:44.295371+00:00",
-  "count": 254,
+  "generated_at": "2026-07-28T15:05:36.253576+00:00",
+  "count": 262,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -26,6 +26,162 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-46dnpxdhqlg-af940d",
+      "title": "JPM Cembalest",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T14:58:01Z",
+      "summary_points": [
+        "**<strong>1999-2000 market cycle parallels</strong>**: Semiconductors (NVIDIA, AMD) surge while hyperscalers (META, MSFT) stagnate with declining free cash flow, mirroring 1999-2000 where communications equipment (Cisco) rallied as services rolled over.",
+        "**<strong>Technical exhaustion warning</strong>**: Capital spending beneficiaries (semiconductors) rise as final-demand players (hyperscalers) roll over, signaling potential market top per historical cycle patterns.",
+        "**<strong>Earnings divergence & AI price war</strong>**: US tech earnings diverge from AI-dependent sectors; 45% shift to cheaper Chinese models (e.g., Kimi 3) triggers price war, risking profitability amid token commoditization.",
+        "**<strong>Chinese model market share surge</strong>**: Chinese open-weight models (Kimi K3) capture 30-60% of OpenRouter queries, forcing US giants to adapt amid cybersecurity risks and cost-per-task dominance ($3/million input token)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-cra0d5yy2ud-2787ca",
+      "title": "GS Lee Coppersmith recent observations",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T14:54:34Z",
+      "summary_points": [
+        "**Korean Market Breakdown & Leverage Dynamics**: KOSPI2 fell 11.55% (4th worst session), driven by AI financing/China DUV concerns, but SMAV(50) break (1248.95) signals primary leverage risk; positioning cleanup masks structural vulnerability.",
+        "**AI Sector Drawdown Acceleration**: US AI sector down >30% from highs (largest drawdown on record), indicating indiscriminate selling and sector-specific exposure; positioning cleanup offers short-term relief but long-term risk.",
+        "**SMH Unwind Intensity & HF Positioning Extremes**: SMH saw largest volume day in 5+ years with massive put activity; HF net selling in global IT hit -3.6 Z score (extreme statistical deviation), signaling sector vulnerability/rotation.",
+        "**Market Structure Shift**: Significant drawdown (-31.3) reflects lasting scars from peak leverage demand, higher volatility, and altered PnL dynamics post-July unwind, altering sector risk profiles."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ka6nrdzcont-a8a23d",
+      "title": "Brazil Lower Than Expected Jul IPCA 15",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T14:53:47Z",
+      "summary_points": [
+        "**Brazil IPCA-15 Miss**: Actual 0.06% mom vs 0.22% consensus, driven by falling food/fuel prices; core inflation eased to 0.21% mom (4.35% yoy), signaling near-term relief but persistent structural pressures.",
+        "**Core Inflation Deceleration**: 3-mma sa core inflation fell 60bp to 4.5%, reflecting moderation in food-at-home and services (0.41% vs 0.59% consensus), though still elevated at 4.35% yoy.",
+        "**Services Inflation Structural Risk**: Services inflation at 6.3% (3MMA sa annualized), led by Labor Intensive (7.1%) and Slack Sensitive (5.8%) components, indicating persistent service-sector pricing power.",
+        "**Policy Normalization Caution**: Favorable inflation print reduces near-term spike fears, but persistent services inflation and pre-election fiscal measures necessitate conservative monetary policy normalization."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-832fkgjp8ek-09058d",
+      "title": "Brazil Low Current Account Deficit in Jun",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T14:53:44Z",
+      "summary_points": [
+        "**FDI Surprise**: $9.1bn FDI inflow (surprise), exceeding consensus, critical for external balance sustainability amid current account deficit.",
+        "**Portfolio Outflow Risk**: $1.1bn June portfolio outflow (driven by $2.2bn local equity sell-off), key near-term capital flow risk for positioning.",
+        "**Structural Fiscal Risk**: Deep fiscal adjustment required to enable permanent current account adjustment, creating space for investment without external balance deterioration.",
+        "**Non-Oil Trade Strength**: Sustained positive non-oil trade balance since 2022 (exports > imports), signaling improving competitiveness and structural demand."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-rmmnbbldmew-ba6b39",
+      "title": "Asia Pacific Portfolio Strategy Asian equity market daily update",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T14:53:42Z",
+      "summary_points": [
+        "**MXAPJ Valuation Discount**: MXAPJ iPB (2.3) vs MXCN iPB (1.3) signals significant undervaluation in China, with +31% upside target (1080) for MXAPJ under GS base case.",
+        "**FII Outflows Crisis**: Severe net FII outflows in EM Asia ex-China (Taiwan: -160bn, Korea: -210bn YTD), contrasting with positive DII inflows (105bn), indicating capital flight risk.",
+        "**Korea & Info Tech Collapse**: Korea down -10.2% MTD and Info Tech down -20.1% MTD, driving portfolio drag amid sector-specific risks and negative breadth (-95%).",
+        "**Japan FX Vulnerability**: MXJP Financials lag -6.0% FX impact (2026), while Real Estate leads 35.1% 2025 USD return, exposing sector-specific FX risks.",
+        "**Earnings Revision Divergence**: Taiwan/Korea negative earnings revisions (-3.5% to -7.0%) vs China/Singapore positive (0.0% to 3.5%), signaling regional fragmentation."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-gpjbea8oujz-ba4e49",
+      "title": "LATAM Today July 28, 2026",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T14:53:39Z",
+      "summary_points": [
+        "**Brazil Inflation Surprise**: Jul IPCA-15 at 0.06% mom (vs 0.22% consensus), core inflation eased to 4.35% yoy; persistent service inflation at 4.9% yoy remains a key constraint.",
+        "**Monetary Policy Constraint**: Conservative normalization due to tight labor market, fiscal pressures ahead of 4Q26 election, limiting near-term rate cuts despite easing headline inflation.",
+        "**FDI Flow Strength**: FDI inflows surged to $9.1bn (surprising upside), offsetting current account deficit of $2.3bn (vs consensus), signaling strong foreign capital attraction.",
+        "**Service Inflation Persistence**: Policy-sensitive core services inflation at 0.30% (vs consensus 0.34%), labor-sensitive services at 0.48% (annual 7.30%), indicating structural pricing pressures."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-oi80t5d88ls-375abb",
+      "title": "Global Markets Daily Hyperscaler Credit vs. Equity More Issuance, a Higher Beta, and a Different Focus on Cash Flow",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T14:53:37Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-7qzpvtfthy7-f68e32",
+      "title": "Euro Area Data Update A Further Easing in Price Related Surveys",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T14:53:36Z",
+      "summary_points": [
+        "**GDP Revision**: Euro Area Q2 GDP tracking revised up to +0.29% qoq (vs.",
+        "+0.28%), with Germany, France, Italy at +0.2% qoq and Spain at +0.5% qoq, signaling broad-based near-term growth momentum.",
+        "**Spain Demand Resilience**: June retail sales volume rose (index 2024=100), unemployment rates trend downward (harmonized LFS), confirming robust domestic demand and labor market strength.",
+        "**Price Pressure Moderation**: ifo Survey Z-Scores decline across manufacturing/services/chemicals, indicating easing inflation expectations and potential relief for consumer spending."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-lemohkuezgc-4056e1",
       "title": "JPM Silver Sunset",
