@@ -97,18 +97,52 @@ def test_visitor_templates_use_public_chrome_not_member_navigation():
 
 
 def test_all_committed_free_estate_pages_have_public_chrome():
-    from scripts.build_free_content import _URL_MAP
+    """Every committed §1 page carries visitor chrome — in one of TWO families.
+
+    Generator-rendered estate pages get the SHARED public chrome
+    (_public_nav.html.j2 / _public_footer.html.j2 via seo_base), including the
+    products/index.html hub.
+
+    The hand-authored flagships (lib.pages.HAND_AUTHORED_PAGES) are landing-
+    native chapters of index.html, so they carry the LANDING chrome instead:
+    `<nav class="nav">` and the landing's BARE `<footer>` — landing.css styles
+    the element itself, not a class — byte-copied from the landing down to the
+    Platform / Research / Resources / Legal columns. That is a chrome FAMILY
+    split, not a missing-chrome gap: both families ship the full legal column
+    set (privacy, terms, disclaimer), verified on the committed bytes.
+
+    Neither family is skipped. A flagship that silently lost its nav, its
+    footer, or its breadcrumb still fails here, and the families are asserted
+    EXCLUSIVE so a page drifting onto the other's chrome is caught too. The
+    est-bar / est-footer prohibition is the superseded chrome and binds both.
+    """
+    from scripts.build_free_content import _URL_MAP, _is_hand_authored
 
     pages = sorted(path for path in _URL_MAP if path.endswith(".html"))
     assert pages
+    landing_family: list[str] = []
+    estate_family: list[str] = []
     for url_path in pages:
         output = SITE / url_path.lstrip("/")
         assert output.exists(), url_path
         text = output.read_text(encoding="utf-8")
-        assert '<nav class="public-nav"' in text, url_path
-        assert '<footer class="public-footer">' in text, url_path
+        if _is_hand_authored(url_path):
+            landing_family.append(url_path)
+            assert '<nav class="nav"' in text, url_path
+            assert "<footer>" in text, url_path
+            assert "est-crumb" in text, url_path
+            assert '<nav class="public-nav"' not in text, url_path
+        else:
+            estate_family.append(url_path)
+            assert '<nav class="public-nav"' in text, url_path
+            assert '<footer class="public-footer">' in text, url_path
         assert 'class="est-bar"' not in text, url_path
         assert 'class="est-footer"' not in text, url_path
+
+    # Anti-vacuity: if either branch stopped matching, the other would grade
+    # every page against the wrong contract — or against none at all.
+    assert landing_family, "no hand-authored page checked — the carve-out went vacuous"
+    assert estate_family, "no estate page checked — the carve-out swallowed everything"
 
 
 def test_other_public_visitor_pages_have_public_chrome():

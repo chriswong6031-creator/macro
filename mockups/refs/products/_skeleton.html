@@ -459,6 +459,11 @@ const MMX_NAV = (() => {
 /* ───── reveal on scroll ───── */
 const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target);} }), { rootMargin:'0px 0px -8% 0px', threshold:.08 });
 document.querySelectorAll('.rv:not(.in)').forEach(el => io.observe(el));
+
+/* ───── i18n boot — the landing runs this after its live-data wiring (index.html:1906);
+   the product chrome carries no live wiring, so it runs here: swap static [data-zh]
+   prose into the boot language captured by the <head> lang snippet. ───── */
+LANG.apply(LANG.cur());
 </script>
 <script>window.MM_API=window.MM_API||'https://app.mastermind-x.com';</script>
 <script src="../mm_brain.js?v=02e3e5a2" defer></script>

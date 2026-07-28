@@ -939,7 +939,18 @@ class TestRenderedOutput:
     """
 
     def _get_rendered_html_files(self) -> list[Path]:
-        """Return all rendered free-estate HTML files."""
+        """Return all shipped free-estate HTML files.
+
+        Deliberately NOT filtered by bfc.HAND_AUTHORED. Who typed the bytes
+        changes nothing about the invariants the tests below assert — one
+        canonical, a www canonical, parseable JSON-LD, resolving internal links
+        are page-quality laws that a hand-authored flagship must meet exactly
+        like a rendered one, and dropping those pages here would silently delete
+        four tests' worth of coverage of the estate's most-trafficked surfaces.
+        The one contract that IS authorship-specific (the runtime script tail)
+        is handled inside the single test that cares — see
+        test_rendered_nested_runtime_assets_resolve.
+        """
         files = []
         for d in ("products", "blog", "learn", "tools"):
             subdir = _SITE_DIR / d
@@ -1043,9 +1054,27 @@ class TestRenderedOutput:
     def test_rendered_nested_runtime_assets_resolve(self):
         """Every estate page loads shared scripts from site root and never emits
         the root-only inline font URLs that become /products/fonts/* 404s."""
+        import scripts.build_free_content as bfc
+
         files = self._get_rendered_html_files()
         if not files:
             pytest.skip("No rendered free-estate HTML files found in site/")
+
+        # Two legitimate script tails, ONE resolution rule.
+        # Generator-rendered estate pages carry the estate tail.
+        _ESTATE_TAIL = ("supabase.js", "account.js", "mm_brain.js", "theme.js")
+        # The hand-authored flagships (bfc.HAND_AUTHORED) ship the LANDING tail
+        # instead — masterplan §1, chrome-verified in-browser: onboard.js owns
+        # the gear/auth chrome on landing-family pages, so supabase.js,
+        # account.js and theme.js are deliberately absent there. They are not
+        # missing; they are not that page's contract.
+        # These pages are re-checked against their own tail rather than skipped.
+        # The depth-resolution assertion below is what this test exists for — a
+        # nested page linking "mm_brain.js" without the "../" 404s — and that
+        # applies to hand-authored bytes exactly as much as to rendered ones.
+        # So do NOT convert this into a skip: it would stop checking the three
+        # pages most likely to get a hand-typed src wrong.
+        _LANDING_TAIL = ("mm_brain.js", "onboard.js", "wh_banner.js")
 
         errors = []
         for page in files:
@@ -1054,7 +1083,12 @@ class TestRenderedOutput:
                 errors.append(
                     f"{page.relative_to(_REPO)}: nested inline font URL"
                 )
-            for asset in ("supabase.js", "account.js", "mm_brain.js", "theme.js"):
+            tail = (
+                _LANDING_TAIL
+                if bfc._is_hand_authored(page.relative_to(_SITE_DIR))
+                else _ESTATE_TAIL
+            )
+            for asset in tail:
                 refs = re.findall(
                     rf'<script[^>]+src=["\']([^"\']*{re.escape(asset)}'
                     rf'(?:\?[^"\']*)?)["\']',
