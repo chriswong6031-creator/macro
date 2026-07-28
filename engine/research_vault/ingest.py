@@ -343,6 +343,16 @@ def _repair_titles(cat: dict, conn) -> dict:
 # MEASURED page count authoritative over the sidecar's claim.
 _REFRESH_FIELDS = ("summary_points", "tags", "tickers", "desk")
 
+# CANDIDACY keys on summary_points ALONE — not on all of _REFRESH_FIELDS.
+# `desk`/`tags`/`tickers` are empty on EVERY document in the vault because no
+# producer writes them (catalog.coverage exists to report exactly that), so an
+# all-fields gate is never satisfied and every in-window row would be re-fetched
+# every hour forever — the opposite of the self-quiescing pass this claims to be,
+# at ~236 wasted GETs/hour. summary_points is the one field with a real producer
+# and therefore the only honest liveness signal. The other three are still FILLED
+# opportunistically whenever a fetch happens; they just cannot keep a row alive.
+_REFRESH_TRIGGER = "summary_points"
+
 # Only re-check documents published inside this window. A sidecar still empty
 # after two weeks is a document the upstream never summarized, not one we raced;
 # polling it hourly forever would grow the per-run GET count without bound as the
@@ -407,7 +417,9 @@ def _refresh_sidecars(store, cat: dict, conn, id_to_pdf_key: dict[str, str],
 
     Fill-only, never overwrite: a field we already have is left exactly as it is,
     so this pass can only add information. That is what makes it safe to re-run
-    hourly, and idempotent — a filled row drops out of the candidate set.
+    hourly, and idempotent — a row whose ``summary_points`` arrive drops out of
+    the candidate set (see _REFRESH_TRIGGER for why candidacy keys on that one
+    field and not on all of _REFRESH_FIELDS).
 
     Returns ``{checked, refreshed, summaries, capped, resynced}``; never raises —
     a late summary is never worth failing the hourly job.
@@ -417,25 +429,36 @@ def _refresh_sidecars(store, cat: dict, conn, id_to_pdf_key: dict[str, str],
 
     candidates = []
     for item in cat.get("items") or []:
+        # str() every value read out of the catalog before using it: this is JSON
+        # reloaded from the store, so a non-string is possible, and an unhashable
+        # id (`"id": ["x"]`) would raise straight out of the pass — which, running
+        # inside run()'s try, would abort the WHOLE hourly job before any document
+        # ingested, and surface only as a logger line with no GitHub annotation.
         if not isinstance(item, dict):
             continue
-        doc_id = item.get("id") or ""
+        doc_id = str(item.get("id") or "")
         if not doc_id or doc_id not in id_to_pdf_key:
             continue
-        if all(item.get(f) for f in _REFRESH_FIELDS):
+        if item.get(_REFRESH_TRIGGER):
             continue
-        # A blank published_at is kept in scope: it means the sidecar had no date
-        # either, which is the same half-written state this pass exists to heal.
-        # str() first: the catalog is JSON we reloaded from the store, so a
-        # non-string here is possible, and slicing an int would raise straight out
-        # of the pass — the one thing a never-raise job must not do.
-        pub = str(item.get("published_at") or "")[:10]
+        # An unparseable or absent published_at is kept IN scope: it means the
+        # sidecar had no usable date either, which is the same half-written state
+        # this pass exists to heal. Anchored parse, not a bare slice — a non-ISO
+        # date like "07/28/2026" slices to "07/28/2026"[:10], which sorts BELOW
+        # any "2026-…" cutoff and would silently exclude the row forever.
+        pub = sidecar_mod.date_part(str(item.get("published_at") or ""))
         if pub and pub < cutoff:
             continue
         candidates.append(item)
 
-    # Items are stored newest-first, so a cap drops the OLDEST candidates — the
-    # ones least likely to still be mid-summarization.
+    # Prioritize the rows a cap must NOT drop. Items are stored newest-first, but
+    # _reindex sorts blank published_at LAST — and those are precisely the
+    # half-written rows this pass exists for, so a naive head-slice would discard
+    # the highest-priority candidates first. Undated ahead of dated, newest first
+    # within each (the sort is stable, so the catalog order is preserved).
+    candidates.sort(key=lambda it: bool(
+        sidecar_mod.date_part(str(it.get("published_at") or ""))))
+
     if len(candidates) > REFRESH_MAX:
         out["capped"] = len(candidates) - REFRESH_MAX
         candidates = candidates[:REFRESH_MAX]
@@ -611,16 +634,6 @@ def run(store, corpus_path: str | Path, now: datetime | None = None,
 
         done_pdf_keys, id_to_pdf_key = _processed_index(store)
 
-        # Re-read the sidecars of rows that are still missing enrichment fields.
-        # The upstream fills summary_points asynchronously, so the copy we read at
-        # first sight is routinely the half-written one (see _refresh_sidecars).
-        ref = _refresh_sidecars(store, cat, conn, id_to_pdf_key, now)
-        summary["sidecars_checked"] = ref["checked"]
-        summary["sidecars_refreshed"] = ref["refreshed"]
-        summary["summaries_recovered"] = ref["summaries"]
-        summary["sidecars_capped"] = ref["capped"]
-        summary["summaries_resynced"] = ref["resynced"]
-
         # {content_sha256: doc_id} for everything already indexed. Idempotency keys
         # on the SOURCE KEY, so the same report re-dropped under a different
         # filename is a genuinely new object and gets its own row. The hash makes
@@ -713,6 +726,24 @@ def run(store, corpus_path: str | Path, now: datetime | None = None,
                     _flush_receipts(store, pending_receipts)
                 log.info("research_vault: checkpoint at %d ingested",
                          summary["ingested"])
+
+        # Re-read the sidecars of rows still missing summary_points. The upstream
+        # fills them asynchronously, so the copy we read at first sight is routinely
+        # the half-written one (see _refresh_sidecars).
+        #
+        # AFTER the ingest loop, not before: upsert_item does a whole-ROW replace,
+        # so a report re-dropped under a second filename with the SAME explicit
+        # sidecar id would overwrite a just-recovered summary with that second
+        # sidecar's still-empty one — shipping "Summary pending" while the run
+        # reported summaries_recovered=1, and flapping every hour. Running last
+        # means the refresh sees the post-ingest row and heals it from the sidecar
+        # the receipt actually points at.
+        ref = _refresh_sidecars(store, cat, conn, id_to_pdf_key, now)
+        summary["sidecars_checked"] = ref["checked"]
+        summary["sidecars_refreshed"] = ref["refreshed"]
+        summary["summaries_recovered"] = ref["summaries"]
+        summary["sidecars_capped"] = ref["capped"]
+        summary["summaries_resynced"] = ref["resynced"]
 
         # Per-field fill rate over the FINAL catalog — reported whether or not this
         # run ingested anything, because a dead contract field is a standing state,

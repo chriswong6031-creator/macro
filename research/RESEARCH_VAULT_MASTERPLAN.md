@@ -192,8 +192,23 @@ missing `summary_points` / `tags` / `tickers` / `desk` and folds in what has sin
 Rules that are load-bearing, not stylistic:
 
 - **Fill-only, never overwrite.** A field we already hold is left exactly as it is, so the
-  pass can only ADD information. That is what makes it safe hourly and idempotent (a filled
-  row leaves the candidate set).
+  pass can only ADD information. That is what makes it safe hourly and idempotent.
+- **Candidacy keys on `summary_points` ALONE, not on all four fields.** `desk`/`tags`/
+  `tickers` are empty on EVERY document because no producer writes them (§6b exists to report
+  exactly that), so an all-fields gate is never satisfied — every in-window row would be
+  re-fetched every hour forever, ~236 wasted GETs/hour, the opposite of a self-quiescing
+  pass. `summary_points` is the one field with a real producer and so the only honest
+  liveness signal; the other three are still filled opportunistically when a fetch happens,
+  they just cannot keep a row alive.
+- **The pass runs AFTER the ingest loop.** `upsert_item` does a whole-ROW replace, so a
+  report re-dropped under a second filename carrying the SAME explicit sidecar `id` would
+  overwrite a just-recovered summary with that second sidecar's still-empty one — shipping
+  "Summary pending" while the run reported `summaries_recovered=1`, and flapping hourly.
+- **Dates are parsed, not sliced.** A bare `[:10]` on a non-ISO `"07/28/2026"` sorts below
+  any `2026-…` cutoff and would silently exclude that row from every future refresh;
+  `sidecar.date_part` returns `''` instead, and an unusable date is treated as IN scope.
+  A cap likewise sorts undated rows FIRST — `_reindex` puts them last, and they are exactly
+  the half-written rows this pass exists for.
 - **Identity and measured fields are out of scope.** `title` has by then been through
   `title.resolve` + `_repair_titles` and must never regress to the raw sidecar string;
   `pages` is MEASURED (§5b) and outranks the claim; `published_at` must never move under a

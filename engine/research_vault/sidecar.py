@@ -52,8 +52,15 @@ def slug(text: str, max_len: int = 60) -> str:
     return s
 
 
-def _date_part(published_at: str) -> str:
-    """YYYY-MM-DD prefix of an ISO-8601 timestamp; '' when unparseable."""
+def date_part(published_at: str) -> str:
+    """YYYY-MM-DD prefix of an ISO-8601 timestamp; '' when unparseable.
+
+    Public because ``ingest._refresh_sidecars`` compares dates the same way. A
+    bare ``[:10]`` slice is NOT equivalent: a non-ISO ``"07/28/2026"`` slices to
+    something that sorts below any ``"2026-…"`` cutoff, silently excluding the row
+    from every future refresh. The anchored regex returns '' instead, which the
+    caller treats as "no usable date" — in scope, not aged out.
+    """
     if not published_at:
         return ""
     m = re.match(r"(\d{4}-\d{2}-\d{2})", str(published_at))
@@ -68,7 +75,7 @@ def derive_id(institution: str, published_at: str, title: str) -> str:
     non-empty, url-safe id.
     """
     inst = slug(institution) or "unknown"
-    date = _date_part(published_at) or "undated"
+    date = date_part(published_at) or "undated"
     ttl = slug(title, max_len=40) or "untitled"
     return f"{inst}-{date}-{ttl}"
 
