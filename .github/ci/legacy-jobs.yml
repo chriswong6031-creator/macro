@@ -2533,6 +2533,33 @@ jobs:
       - name: billing webhook spine regression (app/billing.py::_handle_event)
         run: python -m pytest tests/test_billing_webhook.py -v
 
+  billing-offers:
+    if: ${{ false }}  # executed inside ci-pack; keep the legacy status definition runner-free
+    # Founding Pro offer inventory + allotment pacing (app/billing.py, #3856).
+    # tests/test_billing_offers.py was named by NO workflow (the unrun-suite
+    # census class — the suite landed 2026-07-27, a day AFTER the census swept),
+    # so a regression in the offer/pacing logic could never turn CI red. Guards:
+    # the pro/annual-only offer key, real-Stripe-redemption-count inventory (the
+    # #3856 contract: enforced withdrawal meter, never a fabricated signed-up
+    # count), quiet-day withdrawal stepping vs redemption-day advancement, the
+    # multi-day-gap and lost-ledger reseed paths, sell-out at the Stripe cap,
+    # the checkout race recheck, and grandfathered-customer entitlement repair.
+    # Stripe is faked via monkeypatched billing._stripe (no network); the
+    # dependency line follows billing-emails' verbatim so run_ci_pack shares the
+    # virtualenv, and it keeps the pinned Stripe SDK the sibling billing lanes
+    # test against.
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest fastapi pydantic pandas numpy pyarrow pyyaml requests "stripe>=11,<13"
+      - name: founding offer inventory + allotment pacing (app/billing.py)
+        run: python -m pytest tests/test_billing_offers.py -v
+
   site-gate:
     if: ${{ false }}
     # Site Access Gate: IP/country blocklist enforced at the origin.

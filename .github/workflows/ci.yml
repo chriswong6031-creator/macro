@@ -1887,6 +1887,15 @@ on:
       # public-render-fastlane
       - "tests/test_public_render_fastlane.py"
       - "scripts/ci/public_render.sh"
+      # ── Founding offer inventory + pacing (2026-07-28) ──────────────────────
+      # test_billing_offers pins app/billing.py's offer/pacing logic (the #3856
+      # enforced-withdrawal meter). The suite landed a day after the unrun-suite
+      # census and was named by no lane. Both subjects already reach this
+      # workflow by name (app/billing.py via the prelaunch-hardening cluster,
+      # config/plans.yml via the billing-emails cluster) — only the test half
+      # needs an entry.
+      # billing-offers
+      - "tests/test_billing_offers.py"
   workflow_dispatch:
 
 permissions:
