@@ -96,6 +96,13 @@ run "$PY" ingest/build_macro_symbols.py
 run "$PY" ingest/fetch_fred_daily.py
 # fill OHLC for any name still missing one (expanded US via Polygon, HK/Canada via yfinance)
 run "$PY" ingest/backfill_ohlc.py --market all
+# crypto OHLC from Coinbase daily candles — backfills new pairs, appends recent bars to the rest.
+# backfill_ohlc skips every "-USD" row (market_of returns None for a dashed ticker) and
+# refresh_ohlc is US-equity grouped-daily only, so crypto had NO ohlc lane: the majors added to
+# macro_catalog in July were searchable with a 404 on <SYM>.json from the day they landed. Runs
+# after build_macro_symbols (which writes the crypto manifest rows this reads) and before the
+# final hydrate, so a new pair's LAST/CHG lands in the manifest the same night.
+run "$PY" ingest/refresh_crypto_ohlc.py --write
 # broad-universe confluence slices
 run "$PY" ingest/gen_slices_all.py
 # artifact freshness conformance
