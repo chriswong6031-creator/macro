@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-28T15:24:31.785728+00:00",
-  "count": 264,
+  "generated_at": "2026-07-28T19:04:11.293516+00:00",
+  "count": 268,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -10,6 +10,7 @@
     "Goldman Sachs",
     "J.P. Morgan",
     "MUFG",
+    "Mizuho",
     "Morgan Stanley",
     "Natixis",
     "Other",
@@ -26,6 +27,88 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-fnnrvphaobk-4120a7",
+      "title": "Don't Go Chasing Waterfalls",
+      "institution": "BTIG",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T16:02:33Z",
+      "summary_points": [
+        "**RSP vs.",
+        "QQQ 40-day ROC divergence**: Near +15% 40-day rate-of-change (20-year high) signals RSP likely \"catching down\" to QQQ, implying reversal risk.",
+        "**SOX technical retracement**: Down 26% from June 22 peak (50% retracement of March rally); avoid selling near 200 DMA ahead of earnings/FOMC.",
+        "**RSP trend channel resistance**: Equal-weight S&P 500 nearing trend channel resistance, requiring consolidation after strong run; ratio at ~0.32456 indicates heavy resistance."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-u32wj876x54-da53e9",
+      "title": "GS MORNING 1 Oil Tracker, 2 USDJPY Topside, 3 Korea Update, 4 Just The Charts and 5 AUD CPI Preview",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T16:01:20Z",
+      "summary_points": [
+        "**Persian Gulf Supply Shock**: Persian Gulf oil flows at 13.7 mb/d (doubled since early July), driven by Hormuz/Red Sea disruptions (Houthi attacks on Saudi infrastructure), signaling severe supply risk and upside crude price pressure.",
+        "**FOMC Dovish Surprise Pricing**: Market implies second-most dovish FOMC surprise (50bps cut), with dovish surprises causing larger negative pricing deviations than hawkish moves, critical for interest rate risk assessment.",
+        "**Korea-Taiwan Capital Flow Divergence**: Foreigners net sold $4.451B in Korea (KOSPI/KOSDAQ) vs.",
+        "$3.585B inflows in Taiwan (TWSE) over 1 week, reflecting stark capital dynamics amid China geopolitical spillover and KRW rate pricing."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-bkeuyva91o4-6124c0",
+      "title": "GS Eq Positioning and Key CTA Levels",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T15:46:36Z",
+      "summary_points": [
+        "**Geopolitical Energy Flows**: Middle East hostilities drive HFs to net buy US Energy stocks for 6th straight week (short covers outpacing long sales 1.8:1, largest 5-month short covering), signaling strategic sector tilt amid rising oil prices.",
+        "**SPX Technical Pivots**: Key SPX support levels at short-term 7455, medium-term 7204, long-term 6765; global sell flow forecast $7.5bn (S&P 500: $4.5bn) despite positive trend signals for next month.",
+        "**CTA Drawdown Risk**: GS CTA \"Down >2 Std Dev\" line rising since late 2023 (peaking Aug 2026), with 1x std dev = 1.62% weekly drawdown, indicating heightened risk of extreme S&P 500 downside moves.",
+        "**US Equity Futures Overextension**: Non-dealers’ net longs at $264.24B (near historical high $342.14B), high volatility (StdDev 81.07B), signaling potential sharp reversal if sentiment shifts.",
+        "**Gamma Volatility Risk**: Highest gamma sensitivity at 1-2% spot move (3-4k $mm), requiring frequent hedging; negative gamma at 10% spot level increases delta hedging risk for SPX-linked portfolios."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 20,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-2fpb8pq24uc-886cca",
+      "title": "Mizuho EMEA BoE Meeting Preview",
+      "institution": "Mizuho",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T15:31:12Z",
+      "summary_points": [
+        "**BoE Hold & A/B Scenario Focus**: MPC holds rates at 3.75% (6-3 vote), prioritizing A/B scenarios (2-3 hikes) over C (wage-driven inflation), driven by moderating growth, softening labor market, and no evidence of inflation reacceleration.",
+        "**Labor Market & Economic Stress**: PAYE employment declining (-3,854), bankruptcies near GFC levels, and rising business failures signal severe economic stress amid higher rates and consumption weakness.",
+        "**Inflation Deceleration Without Second-Round Effects**: Core/services inflation decelerating, headline CPI peaking, with no embedded energy shock in wages/services—removing catalyst for further hikes.",
+        "**Fiscal Headroom Deterioration**: OBR headroom shrinking by £10-12bn (2029/30) due to spending overshots, risking fiscal rule shifts to PSNGL \"flexibilities\" amid election pressure and market skepticism.",
+        "**UK-German Spread Divergence**: UK 10Y Gilt-Bund spread shows positive correlation but latest data hints at divergence; UK term premium significantly exceeds US/GE, signaling elevated risk premium and policy divergence."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-gtbcr7yiuvg-4ea6af",
       "title": "The Most Important Iran Oil Chart 1",
