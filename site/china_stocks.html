@@ -12062,6 +12062,8 @@ window.__CHART_SWAP__ = {
 /* W8-E: StockTable init — standout board table view (CN market).
    Wired only on the stocks mode page (setups.buy exists); safe no-op if element absent. */
 (function(){
+function initStockTableView(){
+  if (!window.StockTable) return;
   var SECZH = {"Technology":"科技","Industrials":"工业","Basic Materials":"原材料","Financial Services":"金融","Consumer Cyclical":"可选消费","Healthcare":"医疗保健","Utilities":"公用事业","Consumer Defensive":"必需消费","Energy":"能源","Communication Services":"通信服务","Real Estate":"房地产"};
   var STAGE_LABELS = {"ENTRY":["ENTRY","入场"],"RAN_LATE":["RAN/LATE","信号已过"],"RIPENING":["RIPENING","蓄势中"]};
   var ZONE_LABELS = {"READY":["READY","就绪"],"BASING":["BASING","筑底"],"FALLING":["FALLING","下跌"]};
@@ -12250,6 +12252,12 @@ window.__CHART_SWAP__ = {
 
   /* restore persisted view */
   applyView(currentView);
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initStockTableView, { once: true });
+} else {
+  initStockTableView();
+}
 })();
 </script>
 <script>

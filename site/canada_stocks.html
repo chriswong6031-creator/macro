@@ -1444,6 +1444,8 @@
    Wired only on the stocks mode page (setups.buy exists); safe no-op if element absent.
    market key 'ca' / localStorage key mdx_stocktable_ca / link pattern canada_stock.html#{ticker}. */
 (function(){
+function initStockTableView(){
+  if (!window.StockTable) return;
   var SECZH = {"Energy":"能源","Materials":"材料","Financials":"金融","Information Technology":"科技","Communication Services":"通信服务","Consumer Staples":"必需消费","Consumer Discretionary":"可选消费","Health Care":"医疗保健","Industrials":"工业","Real Estate":"房地产","Utilities":"公用事业"};
   var GROUP_LABELS = {"entry_open":["ENTRY OPEN","入场开启"],"setting_up":["SETTING UP","蓄势中"]};
   var TIER_ZH = {"PRIME":"极佳","CONFIRMED":"确认","CONFIRMING":"确认中","APPROACHING":"临近","FIRST SPARK":"首信号"};
@@ -1542,6 +1544,12 @@
 
   /* restore persisted view */
   applyView(currentView);
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initStockTableView, { once: true });
+} else {
+  initStockTableView();
+}
 })();
 </script>
 
