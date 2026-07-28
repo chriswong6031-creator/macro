@@ -182,6 +182,17 @@ _DEFAULT_MIN_MINUTES_BETWEEN_POSTS = 45        # NOT enforced at plan tier (slot
                                                # 45-min ladder re-spec (2026-07-27):
                                                # was 120, now matches config default 45.
 _DEFAULT_MAX_SAME_CASHTAG_PER_ACCOUNT_PER_DAY = 1  # weeks_1_2 floor
+# Per-account TEMPLATE-FRAME similarity (2026-07-28). Two posts by one account
+# on one day whose skeletons (tickers and numbers blanked) score at or above
+# this are the same post wearing two tickers. See skeleton_similarity().
+_DEFAULT_FRAME_SIMILARITY = 0.60
+# Per-account daily cap on the no-ticker, no-chart content types. Kelly's ENTIRE
+# 2026-07-28 output was four `macro`/`education` posts, each a different way to
+# say "I post my results", so after the operator's review she shipped nothing.
+# One a day per desk: they are seasoning, not a meal.
+_DEFAULT_MAX_FILLER_PER_ACCOUNT_PER_DAY = 1
+# The types that cap covers: no ticker, no chart, no per-name evidence.
+_FILLER_TYPES: frozenset[str] = frozenset({"macro", "event", "education"})
 _DEFAULT_MAX_REPLIES_PER_ACCOUNT_PER_DAY = 0
 _DEFAULT_MAX_RECEIPT_AGE_DAYS = 7
 _DEFAULT_LINKS_ALLOWED = False                 # forbidden until week 5 (D08 R2)
@@ -393,6 +404,38 @@ def _item_text(item: dict) -> str:
     headline = str(item.get("headline") or "")
     body = str(item.get("body") or "")
     return f"{headline} {body}"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Template-frame (skeleton) detection — 2026-07-28
+#
+# The founder desk ran "$TEL close to going", "$CBOE close to going" and
+# "$FDS close to going" on one account in one day, two of them sharing the
+# byte-identical tail "Almost there. Haven't touched it. Watching live."
+#
+# The near-dup check above could not see it, and never could: it compares TOKEN
+# sets, and the tickers and prices differ, so three renders of one template read
+# as three different posts. Token Jaccard measured 0.3-0.4 on posts that are the
+# same post.
+#
+# Blank the tickers and the numbers and what is left is the TEMPLATE. A repeat
+# of one template on one account in one day is the templated-content fingerprint
+# that accounts get purged for, and it is what this pair of functions measures.
+# Threshold 0.60 (operator, verified over the 2026-07-28 queue in PR #3922:
+# zero collisions on the 31 approved posts, every rejected frame-repeat caught).
+_SKELETON_TICKER_RE = re.compile(r"\$?[A-Z]{2,5}\b")
+_SKELETON_NUMBER_RE = re.compile(r"[\d.,%$-]+")
+
+
+def skeleton(text: str) -> str:
+    """The copy with every ticker and number blanked. What's left is the frame."""
+    out = _SKELETON_TICKER_RE.sub("X", text or "")
+    return _SKELETON_NUMBER_RE.sub("N", out)
+
+
+def skeleton_similarity(a: str, b: str) -> float:
+    """Token Jaccard over the two skeletons. 1.0 = the same template."""
+    return _jaccard_sets(_token_set(skeleton(a)), _token_set(skeleton(b)))
 
 
 def _cfg_sentinel(cfg: dict) -> dict:
@@ -1270,6 +1313,47 @@ def gate_plan(
             surviving_cross.append((acc_id, item_id, tokens))
 
     # =========================================================================
+    # STEP 4b: Per-account TEMPLATE FRAME repeats (alive items only)
+    # =========================================================================
+    # The defect step 4 structurally cannot see. Step 4 compares TOKEN sets and
+    # skips same-account pairs on the reasoning that "same-account dups are
+    # copywriter's job"; on 2026-07-28 the founder desk shipped "$TEL close to
+    # going", "$CBOE close to going" and "$FDS close to going" in one day and
+    # every one of those assumptions failed at once. Different tickers and
+    # different prices put token Jaccard at 0.3-0.4 on three renders of ONE
+    # template, and the copywriter had no cross-item view to catch it with.
+    #
+    # Blanking tickers and numbers leaves the frame, and two frames alike on one
+    # account in one day is the templated-content fingerprint. Deliberately
+    # WITHIN-account and within-DAY: two desks may legitimately use the same
+    # house frame (they are different voices to different audiences), and one
+    # desk reusing a frame next week is cadence, not spam.
+    frame_thresh = float(_get(sc, "frame_similarity", _DEFAULT_FRAME_SIMILARITY))
+    frame_hits = 0
+    frame_pairs_checked = 0
+    # (account, day) → [(item_id, skeleton_token_set)] for items still alive
+    frames_seen: dict[tuple[str, str], list[tuple[str, frozenset[str]]]] = defaultdict(list)
+
+    for acc_id, item, ai, qi in all_items:
+        key = (ai, qi)
+        if violations[key]:
+            continue
+        fk = (acc_id, _slot_day_bucket(str(item.get("slot") or "").strip()))
+        item_id = str(item.get("id") or f"{acc_id}/{qi}")
+        skel_tokens = _token_set(skeleton(_item_text(item)))
+        frame_of: str | None = None
+        for prev_id, prev_tokens in frames_seen[fk]:
+            frame_pairs_checked += 1
+            if _jaccard_sets(skel_tokens, prev_tokens) >= frame_thresh:
+                frame_of = prev_id
+                break
+        if frame_of is not None:
+            violations[key].append(f"frame_repeat:{frame_of}")
+            frame_hits += 1
+        else:
+            frames_seen[fk].append((item_id, skel_tokens))
+
+    # =========================================================================
     # STEP 5: Caps — check-then-commit over alive items, in queue order
     # =========================================================================
 
@@ -1285,10 +1369,20 @@ def gate_plan(
     slot_by_account: dict[str, set[str]] = defaultdict(set)
     replies_by_account: dict[tuple[str, str], int] = defaultdict(int)
     media_by_account: dict[tuple[str, str], int] = defaultdict(int)
+    # (account, day) → {cashtag → {kinds already used}}. Backs the kind-aware
+    # half of the cashtag rule below.
+    cashtag_kinds_by_account: dict[tuple[str, str], dict[str, set[str]]] = defaultdict(
+        lambda: defaultdict(set))
+    # (account, day) → count of no-ticker filler posts (macro/event/education).
+    filler_by_account: dict[tuple[str, str], int] = defaultdict(int)
+    max_filler_day = _cap(
+        sc, "max_filler_per_account_per_day", _DEFAULT_MAX_FILLER_PER_ACCOUNT_PER_DAY)
 
     cadence_stats: dict[str, int] = {
         "cadence_cap_daily_hits": 0,
         "cashtag_cap_hits": 0,
+        "cashtag_same_kind_hits": 0,
+        "filler_cap_hits": 0,
         "slot_collision_hits": 0,
         "reply_cap_hits": 0,
     }
@@ -1303,6 +1397,8 @@ def gate_plan(
         slot = str(item.get("slot") or "").strip()
         is_reply = is_reply_item(item)
         has_media = bool(item.get("chart_id"))
+        item_kind = str(item.get("type") or item.get("kind") or "").strip()
+        is_filler = item_kind in _FILLER_TYPES
         dk = (acc_id, _slot_day_bucket(slot))  # per-(account, day) cap key
 
         # Caps are per-ACCOUNT once the ramp is enforced: two desks in one plan
@@ -1328,6 +1424,21 @@ def gate_plan(
         elif cashtag and cashtag_by_account[dk][cashtag] >= max_same_cashtag:
             reason = f"cashtag_cap:{cashtag}"
             cadence_stats["cashtag_cap_hits"] += 1
+        # KIND-AWARE half of the cashtag rule (2026-07-28). #3904 raised
+        # max_same_cashtag_per_account_per_day 1 -> 3 to unlock volume, and that
+        # is exactly how flagship got two $CBOE posts and cici two $LKFN in one
+        # day. The cap is back at 1, and this second gate is what keeps a future
+        # volume push from re-opening the hole: whatever the cap says, two posts
+        # by one account on one cashtag must at least be genuinely different
+        # reads. Two `chart` posts on $CBOE are the same post twice; a `chart`
+        # and a `receipt` are not.
+        elif cashtag and item_kind and item_kind in cashtag_kinds_by_account[dk][cashtag]:
+            reason = f"cashtag_same_kind:{cashtag}:{item_kind}"
+            cadence_stats["cashtag_same_kind_hits"] += 1
+        # No-ticker filler cap. Kelly's whole 2026-07-28 day was four of these.
+        elif is_filler and max_filler_day is not None and filler_by_account[dk] >= max_filler_day:
+            reason = f"filler_cap_daily:{item_kind}"
+            cadence_stats["filler_cap_hits"] += 1
         elif slot and slot in slot_by_account[acc_id]:
             reason = f"slot_collision:{slot}"
             cadence_stats["slot_collision_hits"] += 1
@@ -1340,9 +1451,13 @@ def gate_plan(
             media_by_account[dk] += 1
         if is_reply:
             replies_by_account[dk] += 1
+        if is_filler:
+            filler_by_account[dk] += 1
         posts_by_account[dk] += 1
         if cashtag:
             cashtag_by_account[dk][cashtag] += 1
+            if item_kind:
+                cashtag_kinds_by_account[dk][cashtag].add(item_kind)
         if slot:
             slot_by_account[acc_id].add(slot)
 
@@ -1502,6 +1617,15 @@ def gate_plan(
                 "pairs_checked": near_dup_pairs_checked,
                 "hits": near_dup_hits,
                 "shared_media_hits": shared_media_hits,
+            },
+            # Per-account template-frame repeats (tickers and numbers blanked).
+            # Reported separately from near_dup because they are a different
+            # defect measured a different way: near_dup is cross-account token
+            # overlap, this is within-account frame reuse.
+            "frame_repeat": {
+                "pairs_checked": frame_pairs_checked,
+                "hits": frame_hits,
+                "threshold": frame_thresh,
             },
             "cadence": cadence_stats,
             "lexicon": {"hits": lexicon_hits},

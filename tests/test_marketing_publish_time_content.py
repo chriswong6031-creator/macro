@@ -644,7 +644,15 @@ def test_variant_pool_fallback_never_empty():
     # ticker-dependency, and a mover ctx ALWAYS carries one (_render_copy sets
     # it from candidate["ticker"]). Omitting it here described a context this
     # lane never builds.
-    ctx = {"type": "mover", "ticker": "AAPL", "mover_pct": "+8.2%", "has_chart": False}
+    # "consequence_text" is not decoration either, for the same reason (added
+    # 2026-07-28): _variant_allowed also partitions a bank by CONSEQUENCE
+    # dependency, because a {consequence} variant with nothing to substitute
+    # renders a bare fact plus a stance — the says-nothing shape the token
+    # exists to remove. build_context always writes the key, and every real
+    # mover ctx resolves one (mover_pct / mover_magnitude both have bank
+    # entries), so omitting it here described a context this lane never builds.
+    ctx = {"type": "mover", "ticker": "AAPL", "mover_pct": "+8.2%", "has_chart": False,
+           "consequence_text": "A move that size repriced it in a session."}
     pool = [v for v in _TEMPLATES[("mover", "authoritative desk")]
             if _variant_allowed(v, ctx)]
     # The authoritative up+no-chart pool is exactly the one untagged variant.
@@ -662,7 +670,10 @@ def test_nightly_path_selection_unchanged_by_tags():
         # every real ctx has it (build_context always writes the key) and it now
         # also drives the ticker-dependency partition; a mover bank is entirely
         # cashtag-bearing, so a ticker-less ctx would legitimately select none.
-        ctx = {"type": key[0], "ticker": "AAPL"}
+        # "consequence_text" is set for the same reason (2026-07-28): it drives
+        # the consequence-dependency partition, and every real ctx resolves one.
+        ctx = {"type": key[0], "ticker": "AAPL",
+               "consequence_text": "A move that size repriced it in a session."}
         assert [v for v in bank if _variant_allowed(v, ctx)] == list(bank)
 
 

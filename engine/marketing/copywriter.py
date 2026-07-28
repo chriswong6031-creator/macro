@@ -28,6 +28,10 @@ import re
 from datetime import date, datetime, timezone
 from typing import Any, Iterable
 
+from engine.marketing.consequence import (
+    consequence_from_facts as _consequence_from_facts,
+)
+
 # This module had NO logger while carrying a `log.warning(...)` call in
 # write_posts_llm's armed-but-mute branch (the credential-missing path). That
 # name resolved to nothing, so the call raised NameError inside the function's
@@ -502,6 +506,18 @@ def build_context(
         # Chart facts
         "top_facts": top_facts,       # list of {id, text, salience, numbers}
         "top_fact_text": top_facts[0]["text"] if top_facts else "",
+        # The sentence that FOLLOWS from the lead fact, keyed on that fact's
+        # KIND (see engine/marketing/consequence.py). This is the fix for the
+        # 2026-07-28 wholesale rejection: the tail used to be a constant baked
+        # into the template, and a constant cannot follow from an arbitrary
+        # fact. "" when no fact kind in top_facts has a consequence, which
+        # leaves the copy to fail consequence_violations rather than ship
+        # filler. Seeded on ticker|account|slot so two tickers on one account
+        # take different variants and do not collide as repeated skeletons.
+        "consequence_text": _consequence_from_facts(
+            top_facts,
+            seed=f"{ticker}|{item.get('account', '')}|{item.get('slot', '')}",
+        ),
         # Plan numbers
         "entry_str": entry_str or "",
         "t1_str": t1_str or "",
@@ -777,6 +793,268 @@ def headline_fragments(headline: str) -> list[str]:
     return out
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Substance screen (2026-07-28 wholesale rejection)
+#
+# The operator read the whole Outbox and rejected it: "we're just spitting out
+# word salad", "these aren't X posts". 42 of 72 posts were quarantined by hand.
+# Every post is `generated headline + real data sentence + generated tail`, the
+# data sentence was fine, and every failure was in the generated wrapper.
+#
+# THE BAR, which is what these functions enforce: a post must name a ticker,
+# state a dated fact with its numbers, and then say something that FOLLOWS from
+# that fact.
+#
+# Four failure classes, all real examples from that day:
+#   1. UNSUPPORTED CLAIM  "$FDS | the group in one chart ... This is the name I
+#      read the whole space through."   → no group is named anywhere in the post
+#   2. SAYS NOTHING       "$ROST | on my desk all week ... One picture, whole
+#      thesis."                         → the tail carries no information at all
+#   3. HEADLINE/BODY MISMATCH  headline "How I filter what I watch" over a body
+#      entirely about $TEL              → the headline is about a different post
+#   4. CIRCULAR           "That's most of why $FDS at 247.10 is worth your
+#      attention."                      → the fact is its own justification
+#
+# These are hard violations, not warnings, on the same reasoning as 4e/4f above:
+# a violation drops the post to the deterministic floor, and the floor is now
+# fact-anchored (engine/marketing/consequence.py), so the swap is always the
+# right one. A false negative ships word salad on the flagship account.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Class 1. Phrases that point at a peer set. Each one PROMISES a group and is a
+# lie unless the post actually names one.
+_GROUP_REFERENTS: tuple[str, ...] = (
+    "the group", "the space", "the whole space", "the rest of the space",
+    "my corner", "these names", "the sector", "its peers", "the peer group",
+    "the complex", "the rest of them", "the others", "my group",
+    "the neighborhood", "the cohort",
+)
+
+# What discharges that promise: the post names the peer set, either as a theme
+# name from the plan or by listing the members.
+_MIN_CASHTAGS_AS_GROUP = 2
+
+# Class 2. STEMS naming market structure: prices, levels, participants, time,
+# breadth. A tail containing one of these is talking about the market; a tail
+# containing none of them and no number is talking about nothing.
+#
+# Matched as PREFIXES (\bstem, no trailing boundary) because the first version
+# of this list was word-exact and produced a wall of false positives on its own
+# consequence bank: "seller" missed "sellers", "move" missed "moves"/"moving".
+# A word list that rejects the copy it was written to bless is not a screen, it
+# is a coin flip.
+#
+# Deliberately EXCLUDED, and this is the whole point of the check: author-stance
+# words. "watch", "chase", "touch", "note", "log", "eye", "hand", "patience",
+# "hurry", "ready". Those are what "Almost there. Haven't touched it. Watching
+# live." is made of, and a post made only of those says nothing no matter how
+# many of them it uses. Saying a stance AFTER a consequence is fine; saying one
+# INSTEAD of a consequence is the defect.
+_FACT_ANCHORS: tuple[str, ...] = (
+    # price and levels
+    "level", "high", "low", "averag", "the line", "base", "range", "retest",
+    "support", "resist", "supply", "overhead", "entry", "stop", "target",
+    "breakout", "break", "gap", "band", "floor", "ceiling", "above", "below",
+    "pric", "cheap", "expensive", "multiple", "premium", "discount",
+    # participants and their state
+    "sell", "buy", "holder", "own", "trapped", "underwater", "flat",
+    "position", "crowd", "consensus", "capitul", "profit-taking",
+    # flow and activity
+    "volum", "shares", "liquidit", "flow", "rotat", "breadth", "count",
+    "momentum", "spike", "drift", "follow-through", "participat",
+    # movement
+    "mov", "rall", "bounce", "pullback", "reclaim", "trend", "streak",
+    "gain", "loss", "reprice", "resolve", "confirm",
+    # time
+    "session", "week", "month", "day", "year", "close", "hold", "held",
+    "defend", "retrace",
+    # macro structure
+    "growth", "inflation", "rate", "tape", "index", "sector", "market",
+    "data", "risk", "size",
+    # NOT "print"/"reading": "Logged. Waiting on the next print." is exactly the
+    # vacuous macro tail this screen exists to catch, and admitting either word
+    # as an anchor waves it straight through.
+)
+
+# Class 4. A justification connective followed by an evaluative that adds no
+# content: the post says the fact matters because the fact happened.
+_JUSTIFICATION_CONNECTIVES: tuple[str, ...] = (
+    "that's why", "that is why", "that's most of why", "which is why",
+    "that's the reason", "here's why", "this is why", "that's what makes",
+)
+_VACUOUS_EVALUATIVES: tuple[str, ...] = (
+    "worth your attention", "worth a look", "worth watching", "worth the time",
+    "is interesting", "gets interesting", "matters", "is notable",
+    "is important", "the whole point", "on my radar", "caught my eye",
+    "worth flagging", "stands out",
+)
+
+
+def _strip_fact(body: str, ctx: dict) -> str:
+    """The GENERATED tail: the body with the computed fact sentence removed.
+
+    The fact is real data and always passes; the tail is what the template
+    author wrote and is where every rejected post failed. Falls back to the
+    whole body when the fact text is absent (LLM copy paraphrases it), which
+    makes the screen conservative there rather than wrong.
+    """
+    fact = (ctx.get("top_fact_text") or "").strip().rstrip(".!?")
+    if not fact:
+        return body
+    norm_body = re.sub(r"\s+", " ", body)
+    norm_fact = re.sub(r"\s+", " ", fact)
+    if norm_fact and norm_fact in norm_body:
+        return norm_body.replace(norm_fact, " ")
+    return body
+
+
+def consequence_violations(headline: str, body: str, ctx: dict) -> list[str]:
+    """Screen the generated wrapper for the four substance failures. [] = clean.
+
+    ctx must come from build_context(). Returns violation strings in the same
+    shape validate_copy uses, so the caller treats them like any other law.
+    """
+    out: list[str] = []
+    full_text = f"{headline} {body}"
+    lower_full = full_text.lower()
+    item_type = str(ctx.get("type", ""))
+    ticker = str(ctx.get("ticker", ""))
+
+    # ── Class 3: headline/body mismatch ──────────────────────────────────────
+    # A ticker post's headline is the line people actually read in the timeline.
+    # If the body is about $TEL the headline has to be too. Every one of the
+    # operator's own hand-rewritten target posts names the cashtag in the
+    # headline ("$CUBI is back above the buyers' average").
+    if ticker and item_type in _CASHTAG_REQUIRED_TYPES:
+        hl = headline or ""
+        if f"${ticker}" not in hl and not re.search(rf"\b{re.escape(ticker)}\b", hl):
+            out.append(
+                f"headline/body mismatch: body is about {ticker}, headline names "
+                f"no ticker: '{hl[:60]}'"
+            )
+
+    # ── Class 1: unsupported group claim ─────────────────────────────────────
+    hits = [ref for ref in _GROUP_REFERENTS if ref in lower_full]
+    if hits:
+        named_theme = str(ctx.get("theme_name") or "").strip()
+        cashtags_present = len(set(re.findall(r"\$[A-Z]{1,5}\b", full_text)))
+        group_is_named = bool(named_theme and named_theme.lower() in lower_full)
+        group_is_named = group_is_named or cashtags_present >= _MIN_CASHTAGS_AS_GROUP
+        if not group_is_named:
+            out.append(
+                f"unsupported claim: post says '{hits[0]}' but names no group, "
+                f"sector or peer list anywhere"
+            )
+
+    # ── Class 2: the tail says nothing ───────────────────────────────────────
+    # theme_list is exempt, and only theme_list. Its substance IS the member
+    # list, not a tail: validate_copy rule 1b already requires >=4 cashtags from
+    # the approved members and a closing question ("$SMCI $AMD $MU $AVGO $NVDA.
+    # Which one's already run too far?"). Screening that for a fact-anchored
+    # tail asks a reply-bait format to be a different format.
+    if item_type != "theme_list":
+        tail = _strip_fact(body, ctx)
+        tail_lower = tail.lower()
+        has_number = bool(_NUMBER_RE.search(tail))
+        has_anchor = any(
+            re.search(rf"\b{re.escape(a)}", tail_lower) for a in _FACT_ANCHORS
+        )
+        if tail.strip() and not has_number and not has_anchor:
+            out.append(
+                f"says nothing: tail carries no number and nothing the fact "
+                f"established: '{tail.strip()[:70]}'"
+            )
+
+    # ── Class 4: circular justification ──────────────────────────────────────
+    for conn in _JUSTIFICATION_CONNECTIVES:
+        idx = lower_full.find(conn)
+        if idx < 0:
+            continue
+        consequent = lower_full[idx + len(conn):]
+        # Only the clause the connective introduces, not the rest of the post.
+        # DECIMAL-SAFE split: a plain [.!?] split cuts "247.10" in half, which
+        # truncated the clause to "$fds at 247" and lost the evaluative that
+        # makes it circular — the operator's own example walked straight
+        # through this check until the split was fixed.
+        consequent = _SENTENCE_SPLIT_RE.split(consequent)[0]
+        if any(ev in consequent for ev in _VACUOUS_EVALUATIVES):
+            # A NEW number or an anchor inside the SAME clause rescues it:
+            # "that's why 212.00 is the level to clear" is a real claim.
+            # Re-stating the fact's own price is not a rescue, it IS the
+            # circularity: "That's most of why $FDS at 247.10 is worth your
+            # attention" cites 247.10, which the fact already said.
+            fact_numbers = set(_NUMBER_RE.findall(ctx.get("top_fact_text") or ""))
+            new_numbers = [
+                n for n in _NUMBER_RE.findall(consequent) if n not in fact_numbers
+            ]
+            rescued = bool(new_numbers) or any(
+                re.search(rf"\b{re.escape(a)}", consequent) for a in _FACT_ANCHORS
+            )
+            if not rescued:
+                out.append(
+                    f"circular: '{conn}{consequent[:50]}' justifies the fact "
+                    f"with the fact"
+                )
+                break
+
+    return out
+
+
+def _sentence_spans(text: str) -> list[tuple[int, int]]:
+    """(start, end) of each sentence, terminators included. Decimal-safe."""
+    spans: list[tuple[int, int]] = []
+    start = 0
+    for m in _SENTENCE_SPLIT_RE.finditer(text):
+        spans.append((start, m.end()))
+        start = m.end()
+    if start < len(text):
+        spans.append((start, len(text)))
+    return spans
+
+
+def fit_to_budget(headline: str, body: str, ctx: dict) -> str:
+    """Trim the body to the post budget by dropping trailing GARNISH only.
+
+    Introduced with the {consequence} token (2026-07-28). A post is now
+    fact + consequence + stance, and the three together can overrun 275 chars
+    when the fact is a long one: the macro growth/inflation read is 103 chars on
+    its own and the anchored-price facts are ~99.
+
+    What gets dropped is the trailing stance ("Watching, not chasing.", "No
+    entry yet."), never the fact and never the consequence. That ordering is the
+    whole point: the stance is garnish and the consequence is the reason the
+    post exists, so a length overrun must not be allowed to silently turn a real
+    post back into the fact-plus-vibe shape this work removed.
+
+    Returns the body unchanged when it already fits, or when nothing outside the
+    protected span can be dropped (the caller's length check then fires, exactly
+    as it did before).
+    """
+    limit = _MAX_CHARS - len(headline) - 1
+    if len(body) <= limit:
+        return body
+
+    # Never cut before the end of the fact or the consequence, whichever is
+    # later in the body.
+    protect_end = 0
+    for key in ("top_fact_text", "consequence_text"):
+        needle = (ctx.get(key) or "").strip().rstrip(".!?")
+        if not needle:
+            continue
+        idx = body.find(needle)
+        if idx >= 0:
+            protect_end = max(protect_end, idx + len(needle))
+
+    out = body
+    for start, _end in reversed(_sentence_spans(body)):
+        if len(out) <= limit:
+            break
+        if start < protect_end:
+            break  # the next cut would eat the fact or the consequence
+        out = body[:start].rstrip()
+    return out
+
+
 def _extract_number_tokens(text: str) -> list[str]:
     """Extract all number-like tokens from text."""
     return _NUMBER_RE.findall(text)
@@ -934,6 +1212,13 @@ def validate_copy(
     if headline and headline.strip():
         violations.extend(headline_fragments(headline))
 
+    # 4g. Substance screen (2026-07-28). The wrapper around the fact must say
+    # something that FOLLOWS from it: no unsupported group claims, no empty
+    # tails, no headline about a different post, no circular justification.
+    # See consequence_violations() for the four classes and the day they were
+    # rejected on.
+    violations.extend(consequence_violations(headline, body, ctx))
+
     # 5. Numbers not in whitelist
     whitelist = set(ctx.get("numbers_whitelist") or [])
     found_tokens = _extract_number_tokens(full_text)
@@ -1081,26 +1366,32 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     ],
 
     # ── signal / specialist ───────────────────────────────────────────────────
+    # 2026-07-28: every variant here used to open on a peer set the post never
+    # named ("the rest of the space is moving with it", "the group told me
+    # first", "these names don't do this on nothing"). A single-ticker signal
+    # context carries NO group data, so the claim was unfalsifiable decoration
+    # on the flagship's live copy. Rewritten onto the one thing a signal always
+    # has evidence for: the distance between the entry and the invalidation.
     ("signal", "specialist"): [
         (
-            "{cashtag} at {entry}, and the group's confirming",
-            "{top_fact}. The rest of the space is moving with it, which is what I want. "
-            "In {entry}, first level {t1}. Below {inv} I'm out. Historical, not a promise.",
+            "{cashtag} at {entry}, stop's tight",
+            "{top_fact}. In at {entry}, first level {t1}. The stop at {inv} is close "
+            "enough that being wrong is cheap. Historical, not a promise.",
         ),
         (
-            "{cashtag} | the setup I wait for in this group",
-            "{top_fact}. One name is noise, the group moving is a message. "
-            "Entry {entry}, target {t1}. A close below {inv} ends it. Win or lose it gets graded.",
+            "{cashtag} | the level I wanted at {entry}",
+            "{top_fact}. Entry {entry}, target {t1}. A close below {inv} ends it, and "
+            "that's a short distance to be wrong. Win or lose it gets graded.",
         ),
         (
-            "{cashtag} in my corner at {entry}",
-            "{top_fact}. These names don't do this on nothing. Entry {entry}, T1 {t1}, "
-            "gone below {inv}. Historical odds, sizing beats conviction.",
+            "{cashtag} on the board at {entry}",
+            "{top_fact}. Entry {entry}, T1 {t1}, gone below {inv}. Size it so the stop "
+            "doesn't hurt. Historical odds, sizing beats conviction.",
         ),
         (
-            "{cashtag} at {entry} | the group told me first",
-            "{top_fact}. The space has been leaning this way for days. In {entry}, "
-            "first take {t1}. Below {inv} I was wrong. Historical, not certain.",
+            "{cashtag} at {entry} | the setup finished",
+            "{top_fact}. The level finally did what it needed to. In {entry}, first "
+            "take {t1}. Below {inv} I was wrong. Historical, not certain.",
         ),
     ],
 
@@ -1223,21 +1514,28 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
 
     # ── chart / specialist ────────────────────────────────────────────────────
     ("chart", "specialist"): [
+        # 2026-07-28: all four variants were rejected wholesale. The first three
+        # promised a peer set the post never named ("the rest usually follow",
+        # "the name I read the whole space through", "the group rarely lies");
+        # the fourth ("One picture, whole thesis.") is the textbook says-nothing
+        # tail, equally true under any fact and therefore informationless. The
+        # tail is now {consequence}, which is keyed on the fact's KIND, so what
+        # follows the fact actually follows FROM it.
         (
-            "{ticker} chart, and the group should care",
-            "{cashtag}: {top_fact}. When this one moves the rest usually follow. Level {entry}.",
+            "{cashtag} at {entry}",
+            "{cashtag}: {top_fact}. {consequence}",
         ),
         (
-            "{cashtag} | the group in one chart",
-            "{top_fact}. {ticker} at {entry}. This is the name I read the whole space through.",
+            "{cashtag} | what the chart changed",
+            "{top_fact}. {consequence}",
         ),
         (
-            "{ticker} | the tell for the theme",
-            "{cashtag}: {top_fact}. Level {entry}. The group rarely lies for long.",
+            "{cashtag}, and the level that matters",
+            "{cashtag}: {top_fact}. {consequence} Level {entry}.",
         ),
         (
-            "{cashtag} | on my desk all week",
-            "{top_fact}. {ticker} at {entry}. One picture, whole thesis.",
+            "{cashtag} | on my desk this week",
+            "{top_fact}. {ticker} at {entry}. {consequence}",
         ),
     ],
 
@@ -1248,8 +1546,12 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
             "{cashtag}: {top_fact}. Watch how {entry} keeps mattering. Levels work because everyone's staring at the same ones.",
         ),
         (
-            "{ticker} | one thing to notice",
-            "{top_fact}. That's most of why {cashtag} at {entry} is worth your attention.",
+            # The operator's own CIRCULAR example (2026-07-28): "That's most of
+            # why $FDS at 247.10 is worth your attention" cites the price the
+            # fact just gave and calls that a reason. The post said the fact
+            # matters because the fact happened.
+            "{cashtag} | one thing to notice",
+            "{top_fact}. {consequence}",
         ),
         (
             "What {ticker}'s chart is quietly saying",
@@ -1342,30 +1644,30 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "The whole method, plainly",
-            "Call goes up. Result goes up. No cherry-picking, no memory-holing the bad ones. "
-            "If it's on the page it stays on the page.",
+            "{top_fact} {consequence} Call goes up, result goes up, no cherry-picking.",
         ),
     ],
+    # 2026-07-28: all four specialist education variants were built on a peer
+    # set ("this group", "these names", "the tide moves most of the boats
+    # here") that an education post has no data for and never names. An
+    # education post that wants to make a claim about today has to stand on
+    # today's numbers, so these lead with the fact and teach off it.
     ("education", "specialist"): [
         (
-            "The thing most people get wrong about this group",
-            "Most folks read these names through the index lens. The group has its own weather. "
-            "Get that right first and the single names get a lot easier.",
+            "The thing most people get wrong here",
+            "{top_fact} {consequence} Read that first and the single names get easier.",
         ),
         (
-            "What actually moves these names",
-            "Not the headline everyone watches. One quieter driver has run this group for years, "
-            "and the people who know it don't tweet much.",
+            "What actually moves the tape",
+            "{top_fact} {consequence} Not the headline everyone is watching.",
         ),
         (
-            "Why the group beats the single name",
-            "The tide moves most of the boats here. One name ripping is a story. "
-            "The whole group ripping is a fact. I trade the facts.",
+            "Why breadth beats the single name",
+            "{top_fact} {consequence} One name ripping is a story, the count is a fact.",
         ),
         (
-            "Timing in these names, honestly",
-            "Early looks identical to wrong for longer than anyone admits. "
-            "The checklist I run before flagging anything is short and boring on purpose.",
+            "Timing, honestly",
+            "{top_fact} {consequence} Early looks identical to wrong for longer than anyone admits.",
         ),
     ],
     ("education", "educational"): [
@@ -1386,8 +1688,7 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "What 'it goes on the page' means",
-            "Win, lose, or nothing happened, the result gets posted. "
-            "Anyone can show winners. The full list is the only honest one.",
+            "{top_fact} {consequence} Win, lose or nothing happened, the result gets posted.",
         ),
     ],
     ("education", "fast, reactive"): [
@@ -1420,13 +1721,11 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "Last time the tape looked like this",
-            "I'm not calling a repeat, I'm counting how often it worked before. "
-            "Base rates over vibes, every time.",
+            "{top_fact} {consequence} Base rates over vibes, every time.",
         ),
         (
             "The base-rate way of thinking",
-            "What usually happened from a similar spot is context, not destiny. "
-            "The market's under no obligation to rhyme on schedule.",
+            "{top_fact} {consequence} Context, not destiny.",
         ),
         (
             "Using analogues without kidding yourself",
@@ -1436,120 +1735,149 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     ],
 
     # ── macro (all voices) — {top_fact} carries plain observable macro/tape text ─
+    # ── macro (no ticker, no chart) ──────────────────────────────────────────
+    # 2026-07-28: this bank plus event/education produced 17 of the 42 posts the
+    # operator quarantined by hand. Nine of them opened with the byte-identical
+    # sentence because growth_inflation sits at salience 10 and always wins the
+    # lead slot, and every tail behind it was commentary that would have been
+    # equally true under any print ("Logged. Waiting on the next print.").
+    #
+    # Two changes: the tail is {consequence}, keyed on the market fact's kind,
+    # and sentinel now caps these no-ticker types per account per day so one
+    # desk's whole output can never be four of them again (Kelly's was).
     ("macro", "authoritative desk"): [
         (
             "What the data's actually saying",
-            "{top_fact} I'd rather own quality and be patient than chase this tape.",
+            "{top_fact} {consequence}",
         ),
         (
             "The macro read this week",
-            "{top_fact} Not a comfortable mix. Cautious until it clears.",
+            "{top_fact} {consequence} Cautious until it clears.",
         ),
         (
             "Where the big picture stands",
-            "{top_fact} That sets the tone for everything else on the screen.",
+            "{top_fact} {consequence} That sets the tone for the rest of the screen.",
         ),
         (
             "One thing worth watching up top",
-            "{top_fact} How this resolves decides how much risk I want on.",
+            "{top_fact} {consequence} How it resolves decides how much risk I want on.",
         ),
         (
             "Quick macro note",
-            "{top_fact} The piece I care about most right now. The rest is noise with a chyron.",
+            "{top_fact} {consequence} The rest is noise with a chyron.",
         ),
         (
             "The honest macro read",
-            "{top_fact} One data point, no spin. The spin is available elsewhere, free of charge.",
+            "{top_fact} {consequence} One data point, no spin.",
         ),
     ],
+    # Kelly's bank. WIDENED 2026-07-28 from 4 to 7: her entire day was four
+    # no-ticker posts, each a different way to say "I post my results", so after
+    # the operator's review she shipped nothing at all. A four-variant bank on a
+    # type that can run daily is a repeat generator by construction.
     ("macro", "dry, receipts-forward"): [
         (
             "Macro, plainly",
-            "{top_fact} I'll update when the picture shifts, not when the coverage does.",
+            "{top_fact} {consequence}",
         ),
         (
             "Where things stand up top",
-            "{top_fact} Staying selective on risk until this clears.",
+            "{top_fact} {consequence} Staying selective until it clears.",
         ),
         (
             "Macro note",
-            "{top_fact} Logged. Waiting on the next print.",
+            "{top_fact} {consequence} Logged, waiting on the next print.",
         ),
         (
             "Macro | numbers first",
-            "{top_fact} That's the state of play. Feelings not included.",
+            "{top_fact} {consequence} That's the state of play.",
+        ),
+        (
+            "The number I'd actually check",
+            "{top_fact} {consequence} Everything else today is commentary.",
+        ),
+        (
+            "Today's read, no adjectives",
+            "{top_fact} {consequence} I'll update it when the data does.",
+        ),
+        (
+            "What changed up top",
+            "{top_fact} {consequence} Same process, new print.",
         ),
     ],
+    # The specialist macro bank claimed a peer set on three of four variants
+    # ("the group I watch", "the current my group is swimming in", "my corner")
+    # while carrying no ticker and no group data at all.
     ("macro", "specialist"): [
         (
-            "Why the macro matters for these names",
-            "{top_fact} That flows straight into the group I watch, whether the group likes it or not.",
+            "Why the macro matters here",
+            "{top_fact} {consequence}",
         ),
         (
-            "The current my group is swimming in",
-            "{top_fact} Fighting it is expensive. Plenty of people keep trying anyway.",
+            "The current everything's swimming in",
+            "{top_fact} {consequence} Fighting it is expensive.",
         ),
         (
-            "How the big picture hits my corner",
-            "{top_fact} A couple of my names care a lot. The rest can pretend for another week.",
+            "How the big picture lands",
+            "{top_fact} {consequence} Some of it takes weeks to show up in price.",
         ),
         (
             "The one macro driver I'm tracking",
-            "{top_fact} One thing is carrying the read here. Everything else is commentary.",
+            "{top_fact} {consequence} One thing is carrying the read here.",
         ),
     ],
     ("macro", "educational"): [
         (
             "The macro in plain words",
-            "{top_fact} Watching which side blinks first.",
+            "{top_fact} {consequence}",
         ),
         (
             "Reading the big picture",
-            "{top_fact} Most of what you'll hear today is noise. That part isn't.",
+            "{top_fact} {consequence} Most of what you'll hear today isn't that.",
         ),
         (
             "Macro without the jargon",
-            "{top_fact} None of this says what to buy. It says what the weather is, and you dress for the weather.",
+            "{top_fact} {consequence} None of it says what to buy.",
         ),
         (
             "Why this changes how you size",
-            "{top_fact} The honest response is smaller and pickier, not smarter and louder.",
+            "{top_fact} {consequence} The honest response is smaller and pickier.",
         ),
     ],
     ("macro", "fast, reactive"): [
         (
             "Fast macro read",
-            "{top_fact} Adjusting for it, not arguing with it.",
+            "{top_fact} {consequence} Adjusting for it, not arguing with it.",
         ),
         (
             "Macro, quick",
-            "{top_fact} Short version, no panel discussion required.",
+            "{top_fact} {consequence}",
         ),
         (
             "What just shifted up top",
-            "{top_fact} Market's still chewing. Watching the reaction more than the print.",
+            "{top_fact} {consequence} Market's still chewing on it.",
         ),
         (
             "Macro note, fast",
-            "{top_fact} That's the one that stands out. Moving on.",
+            "{top_fact} {consequence} That's the one that stands out.",
         ),
     ],
     ("macro", "pattern/history"): [
         (
             "This macro setup rhymes with something",
-            "{top_fact} There's a parallel worth knowing before the crowd rediscovers it.",
+            "{top_fact} {consequence} Worth knowing before the crowd rediscovers it.",
         ),
         (
             "Last time the data looked like this",
-            "{top_fact} The closest matches went a particular way. Not destiny, worth knowing.",
+            "{top_fact} {consequence} Not destiny, worth knowing.",
         ),
         (
             "The rhyme, not a prediction",
-            "{top_fact} Just pointing at how it went before. Markets ignore history right up until they don't.",
+            "{top_fact} {consequence} Markets ignore history right up until they don't.",
         ),
         (
             "History's take on this print",
-            "{top_fact} This kind of read has a base rate. Most hot takes don't.",
+            "{top_fact} {consequence} This kind of read has a base rate.",
         ),
     ],
 
@@ -1597,15 +1925,19 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
     ],
     ("receipt", "specialist"): [
+        # 2026-07-28: "The space told you first" / "The group zigged" / "The
+        # group read held" all cite a peer set that a single-ticker receipt
+        # context has no data for. A receipt's evidence is the entry, the exit
+        # and the result, so that is what these say now.
         (
-            "{cashtag} | the group read paid, {gain}",
-            "Called off the group's move. {cashtag}: entry {entry}, {target_label} at {t1}, {gain}. "
-            "The space told you first.",
+            "{cashtag} | closed for {gain}",
+            "{cashtag}: entry {entry}, {target_label} at {t1}, {gain}. "
+            "Took the target rather than pushing for more.",
         ),
         (
             "{cashtag} | didn't work, {loss}",
-            "Entry {entry}, stopped at {stop}, {loss}. The group zigged, this one zagged. "
-            "Posted anyway.",
+            "Entry {entry}, stopped at {stop}, {loss}. The stop did its job and kept it "
+            "small. Posted anyway.",
         ),
         (
             "{cashtag} | mixed result",
@@ -1614,8 +1946,8 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "{cashtag} follow-up | {gain} on {target_label}",
-            "Entry {entry}. {target_label} at {t1} for {gain}. The group read held. "
-            "It usually knows before the name does.",
+            "Entry {entry}. {target_label} at {t1} for {gain}. The level held the whole "
+            "way, which is the only reason this one was easy.",
         ),
     ],
     ("receipt", "educational"): [
@@ -1841,7 +2173,7 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "{cashtag}, biggest move in the index today",
-            "{top_fact} Real strength or real damage, either way I'd let it settle first.",
+            "{top_fact} {consequence} Letting it settle first.",
         ),
         (
             "{cashtag} | {mover_pct}, noted",
@@ -1852,7 +2184,7 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     ("mover", "dry, receipts-forward"): [
         (
             "{cashtag} | {mover_pct} today",
-            "{top_fact} Watching, not chasing.",
+            "{top_fact} {consequence} Watching, not chasing.",
         ),
         (
             "{cashtag} {mover_pct}",
@@ -1861,59 +2193,62 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "{cashtag} | biggest mover, {mover_pct}",
-            "{top_fact} Logged. Not stepping in.",
+            "{top_fact} {consequence} Logged, not stepping in.",
         ),
         (
             "{cashtag} | {mover_pct}",
-            "{top_fact} On the radar. No position, no hurry.",
+            "{top_fact} {consequence} No position, no hurry.",
         ),
     ],
+    # The specialist mover bank promised a peer reaction on every variant ("the
+    # rest of the space", "the group will vote", "the neighbors' reaction") with
+    # no peer data in the context to support any of it. What a mover post can
+    # honestly say is what a move that size does to the people already holding.
     ("mover", "specialist"): [
         (
-            "{cashtag} {mover_pct} | the group should care",
-            "{top_fact} Moves like this in these names are rarely random. Watching what "
-            "the rest of the space does next.",
+            "{cashtag} {mover_pct} | worth reading twice",
+            "{top_fact} {consequence} Watching what it does next.",
         ),
         (
             "{cashtag} | {mover_pct}, and it echoes",
-            "{top_fact} This one ripples past the single name. Letting it settle before I touch anything.",
+            "{top_fact} {consequence} Letting it settle before I touch anything.",
         ),
         (
             "{cashtag} moved {mover_pct} today",
-            "{top_fact} The group will vote on whether it's real within days. Watching, not chasing.",
+            "{top_fact} {consequence} Watching, not chasing.",
         ),
         (
-            "{cashtag} | {mover_pct}, group read",
-            "{top_fact} Chart below. The neighbors' reaction tells you more than the name itself.",
+            "{cashtag} | {mover_pct}, the read",
+            "{top_fact} {consequence} Chart below.",
             ("needs_chart",),
         ),
     ],
     ("mover", "educational"): [
         (
             "{cashtag} {mover_pct} | what a move this size means",
-            "{top_fact} A move like this is information first, opportunity maybe. The order matters.",
+            "{top_fact} {consequence} Information first, opportunity maybe.",
         ),
         (
             "{cashtag} {mover_pct} | read it, don't chase it",
-            "{top_fact} Day one after a move this size is for watching, not heroics.",
+            "{top_fact} {consequence} Day one is for watching, not heroics.",
         ),
         (
             "How to sit with a move like {cashtag}",
-            "{top_fact} Moves this size need time. The setup comes later or not at all, and both are fine.",
+            "{top_fact} {consequence} Moves this size need time.",
         ),
         (
             "{cashtag} | {mover_pct}, what to watch next",
-            "{top_fact} The first day or two after a move this size tells you the most. Watching.",
+            "{top_fact} {consequence} That's the part I'd actually watch.",
         ),
     ],
     ("mover", "fast, reactive"): [
         (
             "{cashtag} {mover_pct} 👀",
-            "{top_fact} Watching, not chasing. What's your read?",
+            "{top_fact} {consequence} What's your read?",
         ),
         (
             "{cashtag} | {mover_pct}, fast chart",
-            "{top_fact} Letting the dust settle before doing anything clever.",
+            "{top_fact} {consequence} Letting the dust settle before doing anything clever.",
             ("needs_chart",),
         ),
         (
@@ -1923,22 +2258,22 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "{cashtag} {mover_pct}",
-            "{top_fact} Tape check. Not touching it yet.",
+            "{top_fact} {consequence} Not touching it yet.",
         ),
     ],
     ("mover", "pattern/history"): [
         (
             "{cashtag} {mover_pct} | seen this movie",
-            "{top_fact} These have a rough pattern. Watching for the setup, not catching the drop.",
+            "{top_fact} {consequence} Watching for the setup, not catching the drop.",
             ("down_only",),
         ),
         (
             "{cashtag} | {mover_pct}, the base rate",
-            "{top_fact} Moves this size have a track record, and it counsels patience. Watching.",
+            "{top_fact} {consequence} It counsels patience.",
         ),
         (
             "{cashtag} {mover_pct} today | the precedent",
-            "{top_fact} Not predicting, pointing at how it usually goes. Not chasing here.",
+            "{top_fact} {consequence} Pointing at how it usually goes, not predicting.",
         ),
         (
             "{cashtag} {mover_pct} | rhyme, not repeat",
@@ -1987,8 +2322,8 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     ("watchlist_runaway", "specialist"): [
         (
             "{cashtag} left the level behind",
-            "{top_fact} It's well past where the setup was worth taking. I don't pay "
-            "up for a chart that already worked.",
+            "{top_fact} It's past the level where the setup was worth taking, and I don't "
+            "pay up for a chart that already worked.",
         ),
     ],
     ("watchlist_runaway", "educational"): [
@@ -2025,28 +2360,33 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     # _variant_allowed partitions the bank by context, so neither shape can be
     # selected for the other's lane. Any new line here is classified by its own
     # tokens — nothing to declare, nothing to forget.
+    # 2026-07-28: the watchlist bank was the worst offender in the rejected
+    # queue. Every ticker-bearing variant restated "on the list, not triggered"
+    # in a different set of words and said nothing about the fact it sat behind
+    # ("Almost there. Haven't touched it. Watching live." ran verbatim on two
+    # founder posts about different tickers). A watchlist post still has a real
+    # fact, so it still has a real consequence: {consequence} carries it and the
+    # stance follows the argument instead of replacing it.
     ("watchlist", "authoritative desk"): [
         (
             "{cashtag} on my radar this week",
-            "{top_fact} Watching {ticker}, haven't touched it. "
-            "The setup isn't finished and I don't front-run my own rules.",
+            "{top_fact} {consequence} Watching, haven't touched it.",
         ),
         (
             "Watching {cashtag}, not buying yet",
-            "{top_fact} Interesting name, unfinished setup. The list stays honest that way.",
+            "{top_fact} {consequence} Interesting, unfinished. No entry.",
         ),
         (
             "{cashtag} is close",
-            "{top_fact} Near the level I care about. When it triggers, the entry gets posted. "
-            "Until then, hands in pockets.",
+            "{top_fact} {consequence} When it triggers the entry gets posted, not before.",
         ),
         (
             "Keeping {cashtag} close this week",
-            "{top_fact} Not ready for me yet. Patience is a position too.",
+            "{top_fact} {consequence} Not ready for me yet.",
         ),
         (
             "Circling {cashtag}",
-            "{top_fact} Closest name to triggering on my list. The read's up top.",
+            "{top_fact} {consequence} Closest name to triggering on my list.",
         ),
         # ── ticker-free (planner's scheduled watchlist slot) ──
         (
@@ -2068,19 +2408,19 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     ("watchlist", "dry, receipts-forward"): [
         (
             "{cashtag} | watching, no position",
-            "{top_fact} On the list, not in. I'll post when it triggers.",
+            "{top_fact} {consequence} On the list, not in.",
         ),
         (
             "{cashtag} on the radar, not the board",
-            "{top_fact} Tracking it. Setup unfinished.",
+            "{top_fact} {consequence} Tracking it, no entry.",
         ),
         (
             "{cashtag} close, not triggered",
-            "{top_fact} Near. No entry. The entry post comes when it comes.",
+            "{top_fact} {consequence} Near. No entry yet.",
         ),
         (
             "{cashtag} | watching only",
-            "{top_fact} Conditions not met. That's the whole update.",
+            "{top_fact} {consequence} Conditions still not met.",
         ),
         # ── ticker-free (planner's scheduled watchlist slot) ──
         (
@@ -2100,56 +2440,59 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     ],
     ("watchlist", "specialist"): [
         (
-            "{cashtag} is the one I'm watching in my group",
-            "{top_fact} Setting up, not triggered. The group's leaning the right way, which helps.",
+            "{cashtag} is the one I'm watching",
+            "{top_fact} {consequence} Setting up, not triggered.",
         ),
         (
             "Watching {cashtag}, sitting on my hands",
-            "{top_fact} Near my conditions. The hard part of this job is the waiting. "
-            "The easy part is tweeting about it.",
+            "{top_fact} {consequence} Near my conditions, and waiting is the job.",
         ),
         (
-            "{cashtag} near entry in my corner",
-            "{top_fact} Not finished setting up. Close.",
+            "{cashtag} near entry",
+            "{top_fact} {consequence} Not finished setting up. Close.",
         ),
         (
             "{cashtag} setup in progress",
-            "{top_fact} Monitoring. The entry isn't clean yet, and dirty entries are donations.",
+            "{top_fact} {consequence} The entry isn't clean yet, and dirty entries are donations.",
         ),
         # ── ticker-free (planner's scheduled watchlist slot) ──
+        # These three were the last templates in the bank still promising a peer
+        # set they never name ("my group", "my corner", "the group decides
+        # when"). They sit on the NO-TICKER watchlist slot, so they carry even
+        # less group evidence than the ticker-bearing variants did.
         (
-            "This week's watch in my corner",
-            "{top_fact} A couple of setups forming in my group. None finished. "
-            "The group decides when, not me.",
+            "This week's watch, nothing finished",
+            "{top_fact} {consequence} A couple of setups forming, none finished.",
         ),
         (
-            "Group check: forming, not ready",
-            "{top_fact} My lane is showing early shapes. Early is not an entry.",
+            "List check: forming, not ready",
+            "{top_fact} {consequence} Early shapes only, and early is not an entry.",
         ),
         (
-            "What my group is telling me this week",
-            "{top_fact} Constructive, not conclusive. "
-            "I trade my corner when it confirms, and it hasn't.",
+            "What the list is telling me this week",
+            "{top_fact} {consequence} Constructive, not conclusive.",
         ),
     ],
     ("watchlist", "educational"): [
+        # The three headlines here used to be generic essay titles ("How I
+        # filter what I watch") sitting over a body entirely about one ticker.
+        # That is the headline/body mismatch class: the line in the timeline
+        # was about a different post than the one underneath it.
         (
-            "What earns a spot on a watch list",
-            "{top_fact} Not every interesting name is ready. {cashtag} is interesting and not ready. "
-            "Both facts matter.",
+            "What earns {cashtag} a spot on the list",
+            "{top_fact} {consequence} Interesting and not ready, both at once.",
         ),
         (
-            "How I filter what I watch",
-            "{top_fact} {cashtag} stays on watch until the missing piece shows up. "
-            "Rushing doesn't make it show up faster.",
+            "{cashtag} | what I'm still waiting on",
+            "{top_fact} {consequence} It stays on watch until that shows up.",
         ),
         (
-            "Why show the watch list at all",
-            "{top_fact} It keeps me honest about what almost made it. {cashtag} is the near-miss this week.",
+            "Why {cashtag} is on the list and not the board",
+            "{top_fact} {consequence} The near-miss is worth showing.",
         ),
         (
             "What I'm waiting on with {cashtag}",
-            "{top_fact} One thing still missing before it triggers. The market will provide it or it won't.",
+            "{top_fact} {consequence} The market provides that or it doesn't.",
         ),
         # ── ticker-free (planner's scheduled watchlist slot) ──
         (
@@ -2169,21 +2512,27 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
     ],
     ("watchlist", "fast, reactive"): [
+        # "$TEL close to going" / "$CBOE close to going" / "$FDS close to going"
+        # ran on one account in one day, two of them sharing the byte-identical
+        # tail "Almost there. Haven't touched it. Watching live." Token Jaccard
+        # could not see it because the tickers differ; sentinel's skeleton gate
+        # can, and these variants no longer produce the collision in the first
+        # place because the tail now varies with the fact.
         (
             "Watching {cashtag} right now",
-            "{top_fact} On the list, not triggered. Eyes on it.",
+            "{top_fact} {consequence} On the list, not triggered.",
         ),
         (
             "{cashtag} watching, not acting",
-            "{top_fact} Close setup, no entry. I'll post when it goes.",
+            "{top_fact} {consequence} Close setup, no entry.",
         ),
         (
             "Radar check on {cashtag}",
-            "{top_fact} Near entry. Nothing's triggered. Patience, annoyingly, is the play.",
+            "{top_fact} {consequence} Nothing's triggered yet.",
         ),
         (
             "{cashtag} close to going",
-            "{top_fact} Almost there. Haven't touched it. Watching live.",
+            "{top_fact} {consequence} Almost there, haven't touched it.",
         ),
         # ── ticker-free (planner's scheduled watchlist slot) ──
         (
@@ -2204,20 +2553,19 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     ("watchlist", "pattern/history"): [
         (
             "Watching a pattern in {cashtag}",
-            "{top_fact} Tracing a shape worth monitoring. Half-formed patterns are just art, "
-            "so I'm not acting yet.",
+            "{top_fact} {consequence} Half-formed patterns are just art, so I'm not acting.",
         ),
         (
             "Old shapes showing up in {cashtag}",
-            "{top_fact} It has analogues I've watched before. No entry yet.",
+            "{top_fact} {consequence} It has analogues I've watched before. No entry yet.",
         ),
         (
             "{cashtag} rhyming with an old setup",
-            "{top_fact} Seen this shape resolve both ways. Waiting for it to pick a direction.",
+            "{top_fact} {consequence} Waiting for it to pick a direction.",
         ),
         (
             "{cashtag} | a setup with a memory",
-            "{top_fact} Not every one completes. Worth the watch anyway.",
+            "{top_fact} {consequence} Not every one completes. Worth the watch.",
         ),
         # ── ticker-free (planner's scheduled watchlist slot) ──
         (
@@ -2250,11 +2598,11 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "What just happened, and what it changes",
-            "{top_fact} Less than the coverage suggests, more than zero. Watching the follow-through.",
+            "{top_fact} {consequence}",
         ),
         (
             "Two reads on today",
-            "{top_fact} The knee-jerk and the one you keep. Mine's the second.",
+            "{top_fact} {consequence} The knee-jerk and the one you keep.",
         ),
         (
             "What I'm watching after today",
@@ -2262,13 +2610,13 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "One clean read on today",
-            "{top_fact} The piece I'd actually act on. The rest is programming.",
+            "{top_fact} {consequence} The rest is programming.",
         ),
     ],
     ("event", "dry, receipts-forward"): [
         (
             "Today's event, numbers first",
-            "{top_fact} A few of my names care. Watching them, not the panel discussion.",
+            "{top_fact} {consequence}",
         ),
         # Template sentences must stay FACT-NEUTRAL: "the board barely moved" /
         # "not much drama in the numbers" are claims about the day that the
@@ -2280,29 +2628,33 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "What actually shifted today",
-            "{top_fact} The numbers are the story. The commentary is decoration.",
+            "{top_fact} {consequence} The commentary is decoration.",
         ),
         (
             "Reaction noted",
             "{top_fact} Watching for confirmation next session. Reactions lie, follow-through doesn't.",
         ),
     ],
+    # Every specialist event variant asserted a peer set reacting ("my group",
+    # "my corner", "the names voted") on a post type that carries no ticker and
+    # no group data. Rewritten onto the event itself, which is what the fact is
+    # actually about.
     ("event", "specialist"): [
         (
-            "What today's event does to my group",
-            "{top_fact} Flows straight into the names I watch, whether they've noticed yet or not.",
+            "What today's event actually changes",
+            "{top_fact} {consequence}",
         ),
         (
-            "How this hits my corner",
-            "{top_fact} My names take events differently than the index. Watching which ones actually react.",
+            "How this lands",
+            "{top_fact} {consequence} Watching which parts of the tape react.",
         ),
         (
-            "Does the group's reaction add up?",
-            "{top_fact} Sometimes the group knows better than the headline. Checking which one's lying today.",
+            "Does the reaction add up?",
+            "{top_fact} {consequence} Checking whether the tape agrees.",
         ),
         (
-            "My take on the group's reaction",
-            "{top_fact} The names voted. I read the votes, not the speeches.",
+            "My take on the reaction",
+            "{top_fact} {consequence} I read the votes, not the speeches.",
         ),
     ],
     ("event", "educational"): [
@@ -2312,22 +2664,21 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "Why markets moved on this",
-            "{top_fact} Markets move on surprise, not news. Worth asking how "
-            "much of today actually surprised anyone.",
+            "{top_fact} {consequence}",
         ),
         (
             "How to read what just happened",
-            "{top_fact} The oversimplified takes go both ways. The tape settles the argument eventually.",
+            "{top_fact} {consequence} The tape settles the argument eventually.",
         ),
         (
             "Cutting through today's noise",
-            "{top_fact} Loud day. The part that matters is quieter, as usual.",
+            "{top_fact} {consequence} The part that matters is quieter, as usual.",
         ),
     ],
     ("event", "fast, reactive"): [
         (
             "What just happened",
-            "{top_fact} Fast take. Watching the follow-through, not the replays.",
+            "{top_fact} {consequence} Watching the follow-through, not the replays.",
         ),
         (
             "Quick read on today",
@@ -2335,11 +2686,11 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "What moved and why",
-            "{top_fact} Simpler than the headline made it. Usually is.",
+            "{top_fact} {consequence}",
         ),
         (
             "Price moved, here's the tape",
-            "{top_fact} The tape's version is shorter than the article's. I trust the tape.",
+            "{top_fact} {consequence} I trust the tape over the article.",
         ),
     ],
     ("event", "pattern/history"): [
@@ -2349,11 +2700,11 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "This one rhymes with something",
-            "{top_fact} The closest matches went a particular way. Worth a look before the hot takes harden.",
+            "{top_fact} {consequence} Worth a look before the hot takes harden.",
         ),
         (
             "What happened last time we saw this",
-            "{top_fact} The setup into it has precedent. The reaction is the part history grades.",
+            "{top_fact} {consequence} The reaction is the part history grades.",
         ),
         (
             "The usual pattern after days like this",
@@ -2470,6 +2821,10 @@ def _render_template(template: str, ctx: dict) -> str:
         "{theme_agg_pct}": ctx.get("theme_agg_pct", ""),
         "{theme_question}": ctx.get("theme_question", ""),
         "{mover_pct}": ctx.get("mover_pct", ""),
+        # The fact-derived tail. Empty when no fact kind in this context has a
+        # consequence; the resulting bare post then fails consequence_violations
+        # instead of shipping a fact with nothing after it.
+        "{consequence}": ctx.get("consequence_text", ""),
     }
     for token, value in substitutions.items():
         result = result.replace(token, value or "")
@@ -2567,6 +2922,16 @@ def _variant_allowed(variant: tuple, ctx: dict) -> bool:
             return False
     elif ctx.get("type") in _CASHTAG_REQUIRED_TYPES and not uses_ticker:
         return False
+
+    # CONSEQUENCE DEPENDENCY (2026-07-28). A variant whose tail is {consequence}
+    # renders as a bare fact with a stance stuck on the end when this context's
+    # facts have no consequence bank entry ("TEL is up 3% this week. Watching.").
+    # That is the says-nothing defect the token exists to remove, so the variant
+    # is simply not eligible. Same shape as the ticker rule above: derived from
+    # the template TEXT, so a variant added later cannot forget to declare it.
+    if "{consequence}" in hl_t or "{consequence}" in body_t:
+        if not (ctx.get("consequence_text") or "").strip():
+            return False
 
     tags = variant[2] if len(variant) > 2 else ()
     if not tags:
@@ -2828,6 +3193,11 @@ def write_posts_deterministic(
         # so bodies are distinct across voices even when gain/loss are absent
         if type_id == "receipt" and not ctx.get("gain_pct_str") and not ctx.get("loss_pct_str"):
             body = _RECEIPT_VOICE_PENDING.get(voice, _RECEIPT_VOICE_PENDING["authoritative desk"])
+
+        # Budget trim BEFORE the codex pass and validation: drop trailing
+        # stance sentences when fact + consequence + stance overruns 275 chars.
+        # The fact and the consequence are protected (see fit_to_budget).
+        body = fit_to_budget(headline, body, ctx)
 
         # Codex quirk pass — deterministic clean-up BEFORE validation (strips
         # off-signature emoji, downgrades exclamations the persona was not

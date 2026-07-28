@@ -29,6 +29,7 @@ Coverage:
 """
 from __future__ import annotations
 
+import itertools
 import json
 import os
 from pathlib import Path
@@ -43,23 +44,59 @@ from engine.marketing.sentinel import gate_plan, run_gate, publish_enabled
 # Fixture helpers
 # ---------------------------------------------------------------------------
 
+# Distinct default bodies for fixtures that do not care about copy. They share
+# only the "Size appropriately." disclosure, so any two score well under the
+# 0.60 frame threshold. Varying by ID DOES NOT WORK and that is the whole point
+# of the gate: skeleton() blanks digits, so "Test body for p1." and "Test body
+# for p2." are the same frame, correctly.
+_FIXTURE_BODIES: tuple[str, ...] = (
+    "Reclaimed the level today. Size appropriately.",
+    "Lost support on heavy volume. Size appropriately.",
+    "Held the base into the close. Size appropriately.",
+    "Cleared the prior high. Size appropriately.",
+    "Faded from overhead resistance. Size appropriately.",
+    "Coiling in a tight range. Size appropriately.",
+    "Bounced off the moving average. Size appropriately.",
+    "Broke the rising trend line. Size appropriately.",
+    "Gapped up and filled it. Size appropriately.",
+    "Quiet drift, no participation. Size appropriately.",
+    "Third test of the same floor. Size appropriately.",
+    "Reversed hard off the open. Size appropriately.",
+    "Sellers stepped away midday. Size appropriately.",
+    "New buyers showed up late. Size appropriately.",
+    "Round trip back to flat. Size appropriately.",
+    "Squeezed through the ceiling. Size appropriately.",
+)
+_fixture_body_counter = itertools.count()
+
+
 def _item(
     id: str,
     account: str,
     headline: str = "Test headline",
-    body: str = "Test body. Size appropriately.",
+    body: str | None = None,
     type: str = "signal",
     cashtag: str = "$AAPL",
     ticker: str = "AAPL",
     slot: str | None = None,
     chart_id: str | None = None,
 ) -> dict:
+    # The default body rotates through _FIXTURE_BODIES instead of being one
+    # shared constant. It used to be the literal "Test body. Size
+    # appropriately." on every item, so most fixtures in this file queued
+    # byte-identical copy on one account — and once the per-account
+    # template-frame gate landed (2026-07-28) those fixtures quarantined on
+    # frame_repeat before reaching the cap they were written to exercise. Ten
+    # cadence/media/per-day tests went red for a reason unrelated to what they
+    # assert. Each test now points at its own gate; the frame gate has its own
+    # suite in tests/test_marketing_copy_substance.py.
     item: dict[str, Any] = {
         "id": id,
         "account": account,
         "type": type,
         "headline": headline,
-        "body": body,
+        "body": body if body is not None else _FIXTURE_BODIES[
+            next(_fixture_body_counter) % len(_FIXTURE_BODIES)],
         "cashtag": cashtag,
         "ticker": ticker,
         "status": "drafted",
@@ -219,7 +256,7 @@ class TestCadence:
         """5 items on one account with cap=4 → 5th quarantined."""
         body = "Size appropriately."
         items = [
-            _item(f"i{n}", "flagship", headline=f"Headline {n}", body=body,
+            _item(f"i{n}", "flagship", headline=f"Headline {n}",
                   cashtag=f"${chr(65+n)}", ticker=chr(65+n), slot=f"s{n}")
             for n in range(5)
         ]
@@ -232,10 +269,17 @@ class TestCadence:
         assert cadence_q[0]["id"] == "i4"
 
     def test_third_same_cashtag_quarantined(self):
-        """3 items with same cashtag on same account, cap=2 → 3rd quarantined."""
-        body = "Size appropriately."
+        """3 items with same cashtag on same account, cap=2 → 3rd quarantined.
+
+        The three items carry three DIFFERENT types on purpose. Since 2026-07-28
+        a repeat cashtag on one account must also be a different kind of read
+        (gate_plan's cashtag_same_kind rule, which sits underneath the numeric
+        cap), so three same-type items would die on that rule and never exercise
+        the counting this test is about. Different types isolate the cap.
+        """
+        kinds = ("signal", "chart", "watchlist")
         items = [
-            _item(f"i{n}", "flagship", headline=f"AAPL note {n}", body=body,
+            _item(f"i{n}", "flagship", headline=f"AAPL note {n}", type=kinds[n],
                   cashtag="$AAPL", ticker="AAPL", slot=f"s{n}")
             for n in range(3)
         ]
@@ -864,7 +908,7 @@ class TestMediaCap:
         """3 chart items on one account, cap=1 → 2 quarantined with media_cap_daily."""
         body = "Size appropriately."
         items = [
-            _item(f"i{n}", "flagship", headline=f"Chart {n}", body=body,
+            _item(f"i{n}", "flagship", headline=f"Chart {n}",
                   type="chart", cashtag="$AAPL", ticker="AAPL",
                   slot=f"s{n}", chart_id=f"chart_{n}")
             for n in range(3)
@@ -1100,15 +1144,20 @@ class TestM1QuarantineAwareSequencing:
         # cross = near-dup seed on receipts (processed FIRST in plan order)
         cross = _item("cross", "receipts", headline=shared_text, body=body_disclosure,
                       cashtag="$AAPL", ticker="AAPL", slot="sc")
-        # a1 = clean on flagship
+        # a1 = clean on flagship. Bodies here must differ in WORDS, not just in
+        # the leading id: skeleton() blanks digits, so "A1 body." and "A3 body."
+        # are one frame and the per-account frame gate kills a3 before this test
+        # ever reaches the cap arithmetic it exists to check.
         a1 = _item("a1", "flagship", headline="A1 unique content about earnings",
-                   body="A1 body. Size appropriately.", cashtag="$AAPL", ticker="AAPL", slot="s1")
+                   body="Gapped up on the print. Size appropriately.",
+                   cashtag="$AAPL", ticker="AAPL", slot="s1")
         # a2 = near-dup of cross → will be killed by near-dup in step 4
         a2 = _item("a2", "flagship", headline=shared_text, body=body_disclosure,
                    cashtag="$AAPL", ticker="AAPL", slot="s2")
         # a3 = clean on flagship — should survive (cap=2, only a1 and a3 are alive)
         a3 = _item("a3", "flagship", headline="A3 different content about semis",
-                   body="A3 body. Size appropriately.", cashtag="$MSFT", ticker="MSFT", slot="s3")
+                   body="Faded from the highs all session. Size appropriately.",
+                   cashtag="$MSFT", ticker="MSFT", slot="s3")
 
         # receipts first in the dict so cross is processed before flagship items
         plan = _plan({"receipts": [cross], "flagship": [a1, a2, a3]})
@@ -1374,15 +1423,16 @@ class TestM3ConfigDriftGuard:
         # the code defaults stay bounded (2 / 1) as the missing-key fallback.
         assert sc["max_posts_per_account_per_day"] == -1
         assert sc["max_media_posts_per_account_per_day"] == -1
-        # Same intentional-divergence pattern: raised 1 -> 3 (operator 2026-07-28)
-        # alongside the 10/20-per-day volume. At 1/day the cashtag cap became the
-        # binding limit the moment volume rose — and because the base block is the
-        # STRICTER half of the ramp merge, leaving it at 1 would have silently
-        # pinned every tier row back to 1 no matter what the tier said. The code
-        # default stays 1 as the missing-key fallback (a lost key must fail toward
-        # the quieter account, never toward a louder one).
+        # The cashtag cap is BACK IN SYNC with the code default (operator
+        # 2026-07-28 evening). #3904 raised the yaml 1 -> 3 that morning for
+        # volume and the divergence was asserted here; by the evening review it
+        # had produced two flagship $CBOE posts and two cici $LKFN posts and the
+        # operator rejected the queue wholesale. Restored to 1, which is also
+        # the missing-key fallback (a lost key must fail toward the quieter
+        # account, never toward a louder one).
         assert _DEFAULT_MAX_SAME_CASHTAG_PER_ACCOUNT_PER_DAY == 1
-        assert sc["max_same_cashtag_per_account_per_day"] == 3
+        assert sc["max_same_cashtag_per_account_per_day"] == \
+            _DEFAULT_MAX_SAME_CASHTAG_PER_ACCOUNT_PER_DAY
         assert sc["max_replies_per_account_per_day"] == _DEFAULT_MAX_REPLIES_PER_ACCOUNT_PER_DAY
         assert sc["max_receipt_age_days"] == _DEFAULT_MAX_RECEIPT_AGE_DAYS
         assert sc["links_allowed"] == _DEFAULT_LINKS_ALLOWED
@@ -1448,8 +1498,8 @@ class TestM4MarkAllUnverified:
         body = "Size appropriately."
         plan = _plan({
             "flagship": [
-                _item("i1", "flagship", body=body, slot="s1"),
-                _item("i2", "flagship", body=body, slot="s2"),
+                _item("i1", "flagship", slot="s1"),
+                _item("i2", "flagship", slot="s2"),
             ],
             "receipts": [
                 _item("i3", "receipts", body=body, slot="s3"),
@@ -1528,10 +1578,10 @@ class TestCapSlotEconomics:
         cfg["sentinel"]["max_media_posts_per_account_per_day"] = 1
         body = "Size appropriately."
         plan = _plan({"flagship": [
-            _item("a1", "flagship", headline="Post one plain", body=body, cashtag="$A", ticker="A", slot="s1"),
-            _item("a2", "flagship", headline="Post two plain", body=body, cashtag="$B", ticker="B", slot="s2"),
+            _item("a1", "flagship", headline="Post one plain", cashtag="$A", ticker="A", slot="s1"),
+            _item("a2", "flagship", headline="Post two plain", cashtag="$B", ticker="B", slot="s2"),
             # a3 is over the daily cap (2) — killed by cadence, has media
-            _item("a3", "flagship", headline="Post three chart", body=body, cashtag="$C", ticker="C",
+            _item("a3", "flagship", headline="Post three chart", cashtag="$C", ticker="C",
                   slot="s3", chart_id="c3"),
         ]})
         _, report = gate_plan(plan, cfg, receipts_age_days=3)
@@ -1697,7 +1747,7 @@ class TestPerDayCap:
             for suffix in ("AM", "PM", "EOD"):
                 items.append(_item(
                     f"i{n}", "flagship",
-                    headline=f"Headline {n}", body="Size appropriately.",
+                    headline=f"Headline {n}",
                     cashtag=f"${chr(65 + n)}{n}", ticker=f"T{n}",
                     slot=f"D{d}-{suffix}",
                 ))
@@ -1743,7 +1793,7 @@ class TestPerDayCap:
             for suffix in ("AM", "PM", "EOD"):
                 items.append(_item(
                     f"i{n}", "flagship",
-                    headline=f"Headline {n}", body="Size appropriately.",
+                    headline=f"Headline {n}",
                     cashtag=f"${chr(65 + n)}{n}", ticker=f"T{n}",
                     slot=f"D{d}-{suffix}",
                 ))

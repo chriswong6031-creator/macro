@@ -123,14 +123,31 @@ sentinel:
   # not built here — it needs the resolver to take an account age, which is a
   # design decision, not a patch.
   max_posts_per_account_per_day: -1   # unlimited (global backstop; see above)
-  # Raised 1 -> 3 (operator 2026-07-28) alongside the 10/20-per-day volume.
-  # At 1/day the cashtag cap became the binding limit the instant volume rose:
-  # a 47-name plan pool spread over 10 posts collides constantly, and the base
-  # is the STRICTER half of the ramp merge, so leaving it at 1 would have
-  # silently pinned every tier back to 1 no matter what the tier rows said.
-  # The per-POST breadth guard (max_cashtags_per_post, the actual D08 R3
-  # piggybacking vector) is untouched at 2 for ramping desks.
-  max_same_cashtag_per_account_per_day: 3
+  # RESTORED 3 -> 1 (operator 2026-07-28, same day, after reading the queue).
+  # #3904 raised this 1 -> 3 that morning to unlock volume; by the evening
+  # review it had produced two flagship posts on $CBOE and two cici posts on
+  # $LKFN, and the operator rejected the queue wholesale. One cashtag, one post,
+  # one account, one day.
+  #
+  # The volume argument #3904 made was real but it was aimed at the wrong knob:
+  # a 47-name pool spread over 10 posts only "collides constantly" when 39 of
+  # the 47 signals are stale and get dropped, which is the actual bottleneck
+  # that PR was chasing. Repeating a ticker is not how you fix a supply problem.
+  # sentinel.gate_plan additionally enforces a KIND-AWARE rule underneath this
+  # cap, so a future volume push that raises the number again still cannot ship
+  # the same read on the same ticker twice.
+  max_same_cashtag_per_account_per_day: 1
+  # Per-account template-FRAME similarity (tickers and numbers blanked, token
+  # Jaccard). Two posts by one desk in one day at or above this are one template
+  # wearing two tickers: "$TEL close to going" / "$CBOE close to going" /
+  # "$FDS close to going" all shipped on the founder desk on 2026-07-28 because
+  # near_dup_jaccard compares raw tokens and the tickers differ.
+  frame_similarity: 0.60
+  # Per-account daily cap on the no-ticker, no-chart types (macro/event/
+  # education). Kelly's entire 2026-07-28 output was four of them, each a
+  # different way to say "I post my results", so she shipped nothing after
+  # review. They are seasoning, not a meal.
+  max_filler_per_account_per_day: 1
   max_replies_per_account_per_day: 0
 
   # min_minutes_between_posts is NOT enforced at plan tier (queue slots have no
@@ -302,12 +319,13 @@ sentinel:
       # (reason media_cap_daily), so every ticker post now carrying a chart
       # would have cost this desk half its daily volume. (operator 2026-07-28)
       max_media_posts_per_account_per_day: 10
-      # 1/day made the cashtag cap the binding limit the moment volume rose:
-      # 10 posts drawn from a 47-name plan pool collide constantly. 3 keeps the
-      # piggybacking guard meaningful (D08 R3 is about MANY tickers in ONE post,
-      # which max_cashtags_per_post still bounds at 2 here) without throwing away
-      # most of the day's queue.
-      max_same_cashtag_per_account_per_day: 3
+      # RESTORED 3 -> 1 (operator 2026-07-28 evening review). See the base
+      # sentinel: block for the full reasoning — two flagship $CBOE posts and
+      # two cici $LKFN posts is what 3 bought, and the operator rejected the
+      # whole queue over it. The ramp merge takes the STRICTER of base and tier,
+      # so the base at 1 already pins every tier; these rows are set to match so
+      # the table reads honestly instead of implying a 3 that never applies.
+      max_same_cashtag_per_account_per_day: 1
       max_replies_per_account_per_day: 0
       max_new_follows_per_account_per_day: 0
       # Cashtag breadth on a cold account. A post naming 3+ tickers is the
@@ -324,7 +342,7 @@ sentinel:
       min_minutes_between_posts: 30
       links_allowed: false
       max_media_posts_per_account_per_day: 14
-      max_same_cashtag_per_account_per_day: 3
+      max_same_cashtag_per_account_per_day: 1
       max_replies_per_account_per_day: 0
       max_new_follows_per_account_per_day: 0
       max_cashtags_per_post: 2
@@ -334,7 +352,7 @@ sentinel:
       min_minutes_between_posts: 30
       links_allowed: true   # ≤1 link post/day enforced by actuator
       max_media_posts_per_account_per_day: 20
-      max_same_cashtag_per_account_per_day: 3
+      max_same_cashtag_per_account_per_day: 1
       max_replies_per_account_per_day: 2   # Sentinel-gated
       max_new_follows_per_account_per_day: 5   # manual-only; actuator must NOT script follows
       max_cashtags_per_post: 3

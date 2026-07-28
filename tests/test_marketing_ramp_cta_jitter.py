@@ -26,6 +26,7 @@ Coverage:
 """
 from __future__ import annotations
 
+import itertools
 import zlib
 from datetime import date, datetime, timedelta, timezone
 from typing import Any
@@ -133,11 +134,40 @@ def _acct(acc_id: str, *, created: str | None = None, enabled: bool = True) -> d
     return out
 
 
+# Distinct default bodies, rotated per call. The old default was the single
+# constant "Plain body copy." on every item, so any plan here queued
+# byte-identical copy on one account — and the per-account template-frame gate
+# (sentinel, 2026-07-28) correctly quarantines that as a repeated frame, which
+# turned seven ramp/cap tests red for a reason unrelated to ramps. These share
+# no content words, so any two score far below the 0.60 frame threshold.
+_FIXTURE_BODIES: tuple[str, ...] = (
+    "Reclaimed the level today.",
+    "Lost support on heavy volume.",
+    "Held the base into the close.",
+    "Cleared the prior high.",
+    "Faded from overhead resistance.",
+    "Coiling in a tight range.",
+    "Bounced off the moving average.",
+    "Broke the rising trend line.",
+    "Gapped up and filled it.",
+    "Quiet drift, no participation.",
+    "Third test of the same floor.",
+    "Reversed hard off the open.",
+    "Sellers stepped away midday.",
+    "New buyers showed up late.",
+    "Round trip back to flat.",
+    "Squeezed through the ceiling.",
+)
+_fixture_body_counter = itertools.count()
+
+
 def _item(iid: str, *, type: str = "signal", headline: str = "A clean headline",
-          body: str = "Plain body copy.", cashtag: str = "$AAPL",
+          body: str | None = None, cashtag: str = "$AAPL",
           slot: str | None = None, chart_id: str | None = None) -> dict:
     out: dict[str, Any] = {
-        "id": iid, "type": type, "headline": headline, "body": body,
+        "id": iid, "type": type, "headline": headline,
+        "body": body if body is not None else _FIXTURE_BODIES[
+            next(_fixture_body_counter) % len(_FIXTURE_BODIES)],
         "cashtag": cashtag, "ticker": cashtag.lstrip("$"),
         "status": "drafted", "provenance": "test", "slot": slot or f"D1-{iid}",
     }

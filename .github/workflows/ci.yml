@@ -1177,6 +1177,14 @@ on:
       # config/marketing.yml already reach its subjects — this entry is so a
       # test-only edit reaches its own guard.
       - "tests/test_marketing_chart_coverage.py"
+      # Copy substance + repetition gates (2026-07-28 wholesale rejection). The
+      # bank walk asserts every (template x fact kind) render says something
+      # that follows from its fact, and the sentinel half pins per-account
+      # cashtag and template-frame uniqueness. engine/marketing/** and
+      # config/marketing.yml already reach its subjects (copywriter.py,
+      # consequence.py, sentinel.py) — this entry is so a test-only edit
+      # reaches its own guard.
+      - "tests/test_marketing_copy_substance.py"
       # Publish-lane throughput + media recovery (2026-07-28). Its subjects are
       # scripts/marketing_publisher.py, scripts/marketing_media_backfill.py, the
       # two marketing workflow files and .gitattributes — none of which the
