@@ -641,6 +641,10 @@ class TestChartCtaKnob:
         assert chart_cta_enabled({"publish": {"chart_cta_enabled": "true"}}) is True
 
     def test_live_config_has_the_cta_off(self):
+        """Pins the SHIPPED posture, same idiom as the M3 config-drift guard: the
+        knob's in-code default is True, so only this assertion records that the
+        operator deliberately turned it off. If the operator re-arms the CTA
+        post-ramp, flip this line in the same PR — it is a record, not a law."""
         import yaml
         from pathlib import Path
         from engine.marketing.chart_render import chart_cta_enabled
@@ -729,6 +733,9 @@ class TestSendTimeJitter:
         assert _jitter_max_cfg({"post_jitter_max_min": "7"}) == 7
 
     def test_live_config_sets_seven(self):
+        """Pins the SHIPPED value — the in-code default is 0 (off), so without
+        this assertion nothing records that jitter is actually armed. Change the
+        number here in the same PR that changes it in config."""
         import yaml
         from pathlib import Path
         from scripts.marketing_publisher import _jitter_max_cfg
