@@ -60,6 +60,17 @@
   .sb-detail-inner summary::-webkit-details-marker{display:none}
   .sb-detail-inner[open] summary span:first-child{content:'▼'}
 
+  /* ── V-LAB-5/6 stratified cuts (nested inside the detail row) ── */
+  .sb-cuts-inner{margin-top:8px;padding-top:6px;border-top:1px dashed var(--line)}
+  .sb-cuts-inner summary::-webkit-details-marker{display:none}
+  .sb-cuts-note{font-size:11px;color:var(--muted);margin:2px 0 8px;font-style:italic}
+  .sb-cut-block{margin-bottom:10px}
+  .sb-cut-title{font-size:11px;font-weight:700;color:var(--text);margin:2px 0 3px}
+  .sb-cut-tbl{margin-bottom:3px}
+  .sb-cut-suppress{text-align:left!important;color:var(--muted);font-style:italic}
+  .sb-cut-unmapped td{color:var(--muted)}
+  .sb-cut-coverage{font-size:10.5px;color:var(--muted);margin:0 0 2px}
+
   /* ── lh control chip ── */
   .lh-control-chip{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;
     border:1px solid color-mix(in srgb,var(--muted) 50%,var(--line));

@@ -1,98 +1,106 @@
 {
   "schema": "subsector_rotation.track_record.v1",
-  "as_of": "2026-07-27",
-  "generated_at": "2026-07-27T01:21:33.375382+00:00",
+  "as_of": "2026-07-28",
+  "generated_at": "2026-07-28T01:25:59.014287+00:00",
   "is_context_only": true,
-  "n_snapshots": 5639,
-  "n_days": 21,
+  "n_snapshots": 5908,
+  "n_days": 22,
   "horizons": {
     "5": {
-      "n_matured": 3596,
-      "score_ic": 0.1418,
-      "score_ic_t_hac": 1.615,
+      "n_matured": 4319,
+      "score_ic": 0.1436,
+      "score_ic_t_hac": 1.871,
       "score_ic_detail": {
-        "mean_ic": 0.1418,
-        "ic_vol": 0.4173,
-        "ic_ir": 0.34,
-        "ic_ir_ann": 1.075,
-        "t_hac": 1.615,
-        "p_hac": 0.1063,
+        "mean_ic": 0.1436,
+        "ic_vol": 0.3909,
+        "ic_ir": 0.367,
+        "ic_ir_ann": 1.161,
+        "t_hac": 1.871,
+        "p_hac": 0.0613,
         "hit": 0.667,
-        "n": 15,
+        "n": 18,
         "hac_lags": 5
       },
       "by_stage": {
         "emerging": {
-          "n": 136,
-          "mean_fwd_rel": 0.0027,
-          "hit_rate": 0.559
+          "n": 158,
+          "mean_fwd_rel": 0.0016,
+          "hit_rate": 0.538
         },
         "neutral": {
-          "n": 3295,
-          "mean_fwd_rel": -0.0027,
+          "n": 3962,
+          "mean_fwd_rel": -0.0025,
           "hit_rate": null
         },
         "fading": {
-          "n": 165,
-          "mean_fwd_rel": -0.0145,
-          "hit_rate": 0.655
+          "n": 199,
+          "mean_fwd_rel": -0.0121,
+          "hit_rate": 0.633
         }
       }
     },
     "10": {
-      "n_matured": 2873,
-      "score_ic": 0.2533,
-      "score_ic_t_hac": 3.405,
+      "n_matured": 3114,
+      "score_ic": 0.2112,
+      "score_ic_t_hac": 4.014,
       "score_ic_detail": {
-        "mean_ic": 0.2533,
-        "ic_vol": 0.2903,
-        "ic_ir": 0.872,
-        "ic_ir_ann": 3.901,
-        "t_hac": 3.405,
-        "p_hac": 0.0007,
-        "hit": 0.833,
-        "n": 12,
+        "mean_ic": 0.2112,
+        "ic_vol": 0.3166,
+        "ic_ir": 0.667,
+        "ic_ir_ann": 2.984,
+        "t_hac": 4.014,
+        "p_hac": 0.0001,
+        "hit": 0.769,
+        "n": 13,
         "hac_lags": 10
       },
       "by_stage": {
         "emerging": {
-          "n": 110,
-          "mean_fwd_rel": 0.005,
-          "hit_rate": 0.573
+          "n": 122,
+          "mean_fwd_rel": 0.0013,
+          "hit_rate": 0.525
         },
         "neutral": {
-          "n": 2631,
-          "mean_fwd_rel": -0.0081,
+          "n": 2849,
+          "mean_fwd_rel": -0.0077,
           "hit_rate": null
         },
         "fading": {
-          "n": 132,
-          "mean_fwd_rel": -0.039,
-          "hit_rate": 0.788
+          "n": 143,
+          "mean_fwd_rel": -0.033,
+          "hit_rate": 0.741
         }
       }
     },
     "21": {
-      "n_matured": 1195,
-      "score_ic": null,
+      "n_matured": 1434,
+      "score_ic": 0.2057,
       "score_ic_t_hac": null,
       "score_ic_detail": {
-        "n_days": 5
+        "mean_ic": 0.2057,
+        "ic_vol": 0.3539,
+        "ic_ir": 0.581,
+        "ic_ir_ann": 3.767,
+        "t_hac": null,
+        "p_hac": null,
+        "hit": 0.5,
+        "n": 6,
+        "hac_lags": 21
       },
       "by_stage": {
         "emerging": {
-          "n": 43,
-          "mean_fwd_rel": -0.0094,
-          "hit_rate": 0.419
+          "n": 53,
+          "mean_fwd_rel": -0.0134,
+          "hit_rate": 0.396
         },
         "neutral": {
-          "n": 1097,
-          "mean_fwd_rel": -0.0136,
+          "n": 1315,
+          "mean_fwd_rel": -0.0147,
           "hit_rate": null
         },
         "fading": {
-          "n": 55,
-          "mean_fwd_rel": -0.0583,
+          "n": 66,
+          "mean_fwd_rel": -0.0542,
           "hit_rate": 0.818
         }
       }
@@ -108,7 +116,7 @@
     }
   },
   "lead_time_d": 10,
-  "peak_score_ic": 0.2533,
+  "peak_score_ic": 0.2112,
   "proven": {
     "5": false,
     "10": true,
@@ -121,75 +129,75 @@
   "note_zh": "\u5347\u6e29\u8bc4\u5206\u7684\u4fe1\u606f\u7cfb\u6570\u5728 10 \u5929\u5468\u671f\u4e0a\u663e\u8457\uff08\u5df2\u6d4b\u5f97\uff09\u3002\u4ec5\u4f9b\u53c2\u8003\u2014\u2014\u8f85\u52a9\u7814\u5224\uff0c\u4ece\u4e0d\u7528\u4e8e\u4ed3\u4f4d\u3002",
   "recent_misses": [
     {
-      "date": "2026-07-02",
-      "key": "telecomsatcom",
-      "name": "Satcom",
-      "theme": "Telecommunications",
+      "date": "2026-07-05",
+      "key": "healthcarenextgen",
+      "name": "Next-Gen",
+      "theme": "Healthcare & Biotech",
       "stage": "emerging",
-      "fwd_rel": -0.143,
+      "fwd_rel": -0.1306,
       "horizon_d": 21
     },
     {
-      "date": "2026-07-02",
-      "key": "hardwarestorage",
-      "name": "Storage",
-      "theme": "Hardware",
-      "stage": "fading",
-      "fwd_rel": 0.1152,
-      "horizon_d": 21
-    },
-    {
-      "date": "2026-07-02",
-      "key": "blockchainmining",
-      "name": "Mining",
-      "theme": "Crypto & Blockchain",
-      "stage": "fading",
-      "fwd_rel": 0.1046,
-      "horizon_d": 21
-    },
-    {
-      "date": "2026-07-02",
+      "date": "2026-07-05",
       "key": "socialadvertising",
       "name": "Advertising",
       "theme": "Social Media",
       "stage": "emerging",
-      "fwd_rel": -0.0883,
+      "fwd_rel": -0.0875,
       "horizon_d": 21
     },
     {
-      "date": "2026-07-02",
-      "key": "hardwaredatacenters",
-      "name": "Data Centers",
+      "date": "2026-07-05",
+      "key": "hardwarestorage",
+      "name": "Storage",
       "theme": "Hardware",
       "stage": "fading",
-      "fwd_rel": 0.0807,
+      "fwd_rel": 0.0858,
       "horizon_d": 21
     },
     {
-      "date": "2026-07-02",
-      "key": "semismemory",
-      "name": "Memory",
-      "theme": "Semiconductors",
-      "stage": "fading",
-      "fwd_rel": 0.0637,
+      "date": "2026-07-05",
+      "key": "spacedefense",
+      "name": "Defense",
+      "theme": "Space Tech",
+      "stage": "emerging",
+      "fwd_rel": -0.043,
       "horizon_d": 21
     },
     {
-      "date": "2026-07-02",
+      "date": "2026-07-05",
+      "key": "autonomousdefense",
+      "name": "Defense",
+      "theme": "Autonomous Systems",
+      "stage": "emerging",
+      "fwd_rel": -0.0341,
+      "horizon_d": 21
+    },
+    {
+      "date": "2026-07-05",
       "key": "softwarevsaas",
       "name": "V-SaaS",
       "theme": "Software",
       "stage": "emerging",
-      "fwd_rel": -0.0581,
+      "fwd_rel": -0.0254,
       "horizon_d": 21
     },
     {
-      "date": "2026-07-02",
-      "key": "cybersecuritycloud",
-      "name": "Cloud",
-      "theme": "Cybersecurity",
+      "date": "2026-07-05",
+      "key": "varealityapplications",
+      "name": "Applications",
+      "theme": "Virtual & Augmented Reality",
       "stage": "emerging",
-      "fwd_rel": -0.0483,
+      "fwd_rel": -0.0205,
+      "horizon_d": 21
+    },
+    {
+      "date": "2026-07-05",
+      "key": "cloudhardware",
+      "name": "Hardware",
+      "theme": "Cloud Computing",
+      "stage": "fading",
+      "fwd_rel": 0.0199,
       "horizon_d": 21
     }
   ],

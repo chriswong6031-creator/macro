@@ -1,112 +1,112 @@
 {
   "schema": "radar_ic.v1",
-  "as_of": "2026-07-26",
-  "generated_at": "2026-07-27T03:31:06.808482+00:00",
+  "as_of": "2026-07-27",
+  "generated_at": "2026-07-28T02:50:25.818421+00:00",
   "horizon_d": 21,
   "horizons": [
     21,
     63
   ],
-  "n_snapshots": 7028,
-  "n_matured": 2456,
-  "ic_all": -0.2906,
-  "ic_rolling_90": 0.0966,
+  "n_snapshots": 7232,
+  "n_matured": 3190,
+  "ic_all": -0.2684,
+  "ic_rolling_90": -0.2446,
   "by_bucket": {
     "0-40": {
-      "n": 1957,
-      "hit_rate": 0.45,
-      "mean_fwd_ret": -0.0207
+      "n": 2606,
+      "hit_rate": 0.452,
+      "mean_fwd_ret": -0.0179
     },
     "40-70": {
-      "n": 355,
-      "hit_rate": 0.183,
-      "mean_fwd_ret": -0.1253
+      "n": 432,
+      "hit_rate": 0.204,
+      "mean_fwd_ret": -0.1194
     },
     "70-100": {
-      "n": 144,
-      "hit_rate": 0.222,
-      "mean_fwd_ret": -0.0934
+      "n": 152,
+      "hit_rate": 0.224,
+      "mean_fwd_ret": -0.0906
     }
   },
   "by_state": {
     "CONFIRMED_UP": {
-      "n": 927,
-      "dir_accuracy": 0.3,
-      "mean_fwd_ret": -0.0505
+      "n": 1089,
+      "dir_accuracy": 0.289,
+      "mean_fwd_ret": -0.0486
     },
     "POSITIVE_DIVERGENCE": {
-      "n": 1001,
-      "dir_accuracy": 0.377,
-      "mean_fwd_ret": -0.0311
-    },
-    "NEGATIVE_DIVERGENCE": {
-      "n": 251,
-      "dir_accuracy": 0.685,
-      "mean_fwd_ret": -0.0478
+      "n": 1131,
+      "dir_accuracy": 0.394,
+      "mean_fwd_ret": -0.0257
     },
     "CONFIRMED_DOWN": {
-      "n": 277,
-      "dir_accuracy": 0.542,
-      "mean_fwd_ret": -0.0307
+      "n": 472,
+      "dir_accuracy": 0.511,
+      "mean_fwd_ret": -0.0226
+    },
+    "NEGATIVE_DIVERGENCE": {
+      "n": 454,
+      "dir_accuracy": 0.659,
+      "mean_fwd_ret": -0.0416
     }
   },
-  "note": "2456 matured observations (horizon=21d). IC_all=-0.2906, IC_rolling_90=0.0966. CONTEXT-ONLY \u2014 never fed into a score/size/allocation.",
+  "note": "3190 matured observations (horizon=21d). IC_all=-0.2684, IC_rolling_90=-0.2446. CONTEXT-ONLY \u2014 never fed into a score/size/allocation.",
   "by_horizon": {
     "21": {
-      "n_matured": 2456,
-      "ic_all": -0.2906,
-      "ic_rolling_90": 0.0966,
+      "n_matured": 3190,
+      "ic_all": -0.2684,
+      "ic_rolling_90": -0.2446,
       "ic_daily_hac": {
-        "mean_ic": -0.2202,
-        "ic_vol": 0.1508,
-        "ic_ir": -1.46,
-        "ic_ir_ann": -9.464,
-        "t_hac": -4.023,
-        "p_hac": 0.0001,
-        "hit": 0.077,
-        "n": 13,
+        "mean_ic": -0.1766,
+        "ic_vol": 0.1651,
+        "ic_ir": -1.07,
+        "ic_ir_ann": -6.934,
+        "t_hac": -2.712,
+        "p_hac": 0.0067,
+        "hit": 0.125,
+        "n": 16,
         "hac_lags": 21
       },
       "by_bucket": {
         "0-40": {
-          "n": 1957,
-          "hit_rate": 0.45,
-          "mean_fwd_ret": -0.0207
+          "n": 2606,
+          "hit_rate": 0.452,
+          "mean_fwd_ret": -0.0179
         },
         "40-70": {
-          "n": 355,
-          "hit_rate": 0.183,
-          "mean_fwd_ret": -0.1253
+          "n": 432,
+          "hit_rate": 0.204,
+          "mean_fwd_ret": -0.1194
         },
         "70-100": {
-          "n": 144,
-          "hit_rate": 0.222,
-          "mean_fwd_ret": -0.0934
+          "n": 152,
+          "hit_rate": 0.224,
+          "mean_fwd_ret": -0.0906
         }
       },
       "by_state": {
         "CONFIRMED_UP": {
-          "n": 927,
-          "dir_accuracy": 0.3,
-          "mean_fwd_ret": -0.0505
+          "n": 1089,
+          "dir_accuracy": 0.289,
+          "mean_fwd_ret": -0.0486
         },
         "POSITIVE_DIVERGENCE": {
-          "n": 1001,
-          "dir_accuracy": 0.377,
-          "mean_fwd_ret": -0.0311
-        },
-        "NEGATIVE_DIVERGENCE": {
-          "n": 251,
-          "dir_accuracy": 0.685,
-          "mean_fwd_ret": -0.0478
+          "n": 1131,
+          "dir_accuracy": 0.394,
+          "mean_fwd_ret": -0.0257
         },
         "CONFIRMED_DOWN": {
-          "n": 277,
-          "dir_accuracy": 0.542,
-          "mean_fwd_ret": -0.0307
+          "n": 472,
+          "dir_accuracy": 0.511,
+          "mean_fwd_ret": -0.0226
+        },
+        "NEGATIVE_DIVERGENCE": {
+          "n": 454,
+          "dir_accuracy": 0.659,
+          "mean_fwd_ret": -0.0416
         }
       },
-      "note": "2456 matured observations (horizon=21d). IC_all=-0.2906, IC_rolling_90=0.0966. CONTEXT-ONLY \u2014 never fed into a score/size/allocation."
+      "note": "3190 matured observations (horizon=21d). IC_all=-0.2684, IC_rolling_90=-0.2446. CONTEXT-ONLY \u2014 never fed into a score/size/allocation."
     },
     "63": {
       "n_matured": 0,

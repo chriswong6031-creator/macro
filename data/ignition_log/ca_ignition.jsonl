@@ -174,3 +174,19 @@
 {"asof":"2026-07-24","market":"ca","basket":"ca_tech","name":"Technology","ignition_score":0.0781,"state":"idle","alert":false,"logged_at":"2026-07-26T02:37:06+00:00","graded":null}
 {"asof":"2026-07-24","market":"ca","basket":"ca_consumer","name":"Consumer Staples & Retail","ignition_score":0.0427,"state":"idle","alert":false,"logged_at":"2026-07-26T02:37:06+00:00","graded":null}
 {"asof":"2026-07-24","market":"ca","basket":"ca_banks","name":"Big Banks","ignition_score":0.0354,"state":"idle","alert":false,"logged_at":"2026-07-26T02:37:06+00:00","graded":null}
+{"asof":"2026-07-27","market":"ca","basket":"ca_base_metals","name":"Base Metals & Copper","ignition_score":1.0,"state":"igniting","alert":true,"logged_at":"2026-07-28T02:39:01+00:00","graded":null}
+{"asof":"2026-07-27","market":"ca","basket":"ca_silver_royalty","name":"Silver & Royalties","ignition_score":0.8833,"state":"igniting","alert":true,"logged_at":"2026-07-28T02:39:01+00:00","graded":null}
+{"asof":"2026-07-27","market":"ca","basket":"ca_gold","name":"Gold Miners","ignition_score":0.8228,"state":"igniting","alert":true,"logged_at":"2026-07-28T02:39:01+00:00","graded":null}
+{"asof":"2026-07-27","market":"ca","basket":"ca_asset_mgrs","name":"Asset Managers & Alternatives","ignition_score":0.6852,"state":"igniting","alert":true,"logged_at":"2026-07-28T02:39:01+00:00","graded":null}
+{"asof":"2026-07-27","market":"ca","basket":"ca_materials","name":"Fertilizer, Chemicals & Forestry","ignition_score":0.6666,"state":"igniting","alert":true,"logged_at":"2026-07-28T02:39:01+00:00","graded":null}
+{"asof":"2026-07-27","market":"ca","basket":"ca_oil_gas","name":"Oil & Gas Producers","ignition_score":0.4983,"state":"running","alert":true,"logged_at":"2026-07-28T02:39:01+00:00","graded":null}
+{"asof":"2026-07-27","market":"ca","basket":"ca_uranium","name":"Uranium & Nuclear","ignition_score":0.4623,"state":"running","alert":true,"logged_at":"2026-07-28T02:39:01+00:00","graded":null}
+{"asof":"2026-07-27","market":"ca","basket":"ca_rails_ind","name":"Rails & Industrials","ignition_score":0.432,"state":"running","alert":true,"logged_at":"2026-07-28T02:39:01+00:00","graded":null}
+{"asof":"2026-07-27","market":"ca","basket":"ca_telecom","name":"Telecom","ignition_score":0.4221,"state":"running","alert":true,"logged_at":"2026-07-28T02:39:01+00:00","graded":null}
+{"asof":"2026-07-27","market":"ca","basket":"ca_tech","name":"Technology","ignition_score":0.3286,"state":"fading","alert":false,"logged_at":"2026-07-28T02:39:01+00:00","graded":null}
+{"asof":"2026-07-27","market":"ca","basket":"ca_banks","name":"Big Banks","ignition_score":0.2971,"state":"fading","alert":false,"logged_at":"2026-07-28T02:39:01+00:00","graded":null}
+{"asof":"2026-07-27","market":"ca","basket":"ca_insurers","name":"Insurers","ignition_score":0.2895,"state":"fading","alert":false,"logged_at":"2026-07-28T02:39:01+00:00","graded":null}
+{"asof":"2026-07-27","market":"ca","basket":"ca_consumer","name":"Consumer Staples & Retail","ignition_score":0.2494,"state":"fading","alert":false,"logged_at":"2026-07-28T02:39:01+00:00","graded":null}
+{"asof":"2026-07-27","market":"ca","basket":"ca_pipelines","name":"Pipelines & Midstream","ignition_score":0.2252,"state":"fading","alert":false,"logged_at":"2026-07-28T02:39:01+00:00","graded":null}
+{"asof":"2026-07-27","market":"ca","basket":"ca_utilities","name":"Utilities & Renewables","ignition_score":0.117,"state":"idle","alert":false,"logged_at":"2026-07-28T02:39:01+00:00","graded":null}
+{"asof":"2026-07-27","market":"ca","basket":"ca_reits","name":"REITs","ignition_score":0.0712,"state":"idle","alert":false,"logged_at":"2026-07-28T02:39:01+00:00","graded":null}

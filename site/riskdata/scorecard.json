@@ -1,14 +1,14 @@
 {
   "schema": "risk_radar_scorecard.v1",
-  "generated_at": "2026-07-28T01:20:05+00:00",
+  "generated_at": "2026-07-28T02:34:32+00:00",
   "markets": {
     "us": {
-      "asof_last_row": "2026-07-24",
+      "asof_last_row": "2026-07-27",
       "monitoring": {
-        "log_fresh": false,
-        "last_logged_days_ago": 4,
-        "ungraded_backlog": 16,
-        "graded_n": 2
+        "log_fresh": true,
+        "last_logged_days_ago": 0,
+        "ungraded_backlog": 14,
+        "graded_n": 3
       },
       "windows": {
         "full": {
@@ -19,9 +19,9 @@
             "hit_rate": null
           },
           "watch_caution": {
-            "n": 2,
+            "n": 3,
             "tp": 0,
-            "tn": 2,
+            "tn": 3,
             "precursor_rate": null
           },
           "calm": {
@@ -41,9 +41,9 @@
             "hit_rate": null
           },
           "watch_caution": {
-            "n": 2,
+            "n": 3,
             "tp": 0,
-            "tn": 2,
+            "tn": 3,
             "precursor_rate": null
           },
           "calm": {
@@ -61,7 +61,7 @@
       "asof_last_row": "2026-07-16",
       "monitoring": {
         "log_fresh": false,
-        "last_logged_days_ago": 12,
+        "last_logged_days_ago": 11,
         "ungraded_backlog": 12,
         "graded_n": 0
       },
@@ -116,7 +116,7 @@
       "asof_last_row": "2026-07-16",
       "monitoring": {
         "log_fresh": false,
-        "last_logged_days_ago": 12,
+        "last_logged_days_ago": 11,
         "ungraded_backlog": 11,
         "graded_n": 0
       },
@@ -168,11 +168,11 @@
       }
     },
     "ca": {
-      "asof_last_row": "2026-07-24",
+      "asof_last_row": "2026-07-27",
       "monitoring": {
-        "log_fresh": false,
-        "last_logged_days_ago": 4,
-        "ungraded_backlog": 11,
+        "log_fresh": true,
+        "last_logged_days_ago": 0,
+        "ungraded_backlog": 10,
         "graded_n": 0
       },
       "windows": {
@@ -225,9 +225,9 @@
     "kr": {
       "asof_last_row": "2026-07-24",
       "monitoring": {
-        "log_fresh": false,
-        "last_logged_days_ago": 4,
-        "ungraded_backlog": 2,
+        "log_fresh": true,
+        "last_logged_days_ago": 3,
+        "ungraded_backlog": 1,
         "graded_n": 0
       },
       "windows": {
@@ -280,8 +280,8 @@
     "jp": {
       "asof_last_row": "2026-07-24",
       "monitoring": {
-        "log_fresh": false,
-        "last_logged_days_ago": 4,
+        "log_fresh": true,
+        "last_logged_days_ago": 3,
         "ungraded_backlog": 2,
         "graded_n": 0
       },
@@ -335,9 +335,9 @@
     "tw": {
       "asof_last_row": "2026-07-24",
       "monitoring": {
-        "log_fresh": false,
-        "last_logged_days_ago": 4,
-        "ungraded_backlog": 3,
+        "log_fresh": true,
+        "last_logged_days_ago": 3,
+        "ungraded_backlog": 2,
         "graded_n": 0
       },
       "windows": {
@@ -390,9 +390,9 @@
     "in": {
       "asof_last_row": "2026-07-24",
       "monitoring": {
-        "log_fresh": false,
-        "last_logged_days_ago": 4,
-        "ungraded_backlog": 3,
+        "log_fresh": true,
+        "last_logged_days_ago": 3,
+        "ungraded_backlog": 2,
         "graded_n": 0
       },
       "windows": {
@@ -445,9 +445,9 @@
     "au": {
       "asof_last_row": "2026-07-24",
       "monitoring": {
-        "log_fresh": false,
-        "last_logged_days_ago": 4,
-        "ungraded_backlog": 3,
+        "log_fresh": true,
+        "last_logged_days_ago": 3,
+        "ungraded_backlog": 2,
         "graded_n": 0
       },
       "windows": {
@@ -500,9 +500,9 @@
     "gb": {
       "asof_last_row": "2026-07-24",
       "monitoring": {
-        "log_fresh": false,
-        "last_logged_days_ago": 4,
-        "ungraded_backlog": 4,
+        "log_fresh": true,
+        "last_logged_days_ago": 3,
+        "ungraded_backlog": 3,
         "graded_n": 0
       },
       "windows": {
@@ -555,9 +555,9 @@
     "ez": {
       "asof_last_row": "2026-07-24",
       "monitoring": {
-        "log_fresh": false,
-        "last_logged_days_ago": 4,
-        "ungraded_backlog": 4,
+        "log_fresh": true,
+        "last_logged_days_ago": 3,
+        "ungraded_backlog": 3,
         "graded_n": 0
       },
       "windows": {

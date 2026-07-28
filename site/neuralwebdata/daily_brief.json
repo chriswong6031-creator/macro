@@ -1,9 +1,9 @@
 {
   "schema": "neuralweb.daily_brief.v1",
-  "produced_at": "2026-07-27T20:56:33.691741+00:00",
+  "produced_at": "2026-07-28T03:11:36.875087+00:00",
   "as_of": "2026-07-24",
   "status": "warn",
-  "phase": "final",
+  "phase": "engine",
   "did_the_brain_run": {
     "cortex_status": "degraded",
     "tool_call_batches": 0,
@@ -11,7 +11,120 @@
     "context_stale": false,
     "summary": "cortex degraded — model_unavailable"
   },
-  "what_changed": [],
+  "what_changed": [
+    {
+      "kind": "lobe_row_count_changed",
+      "id": "spine-index",
+      "summary": "lobe spine-index row count changed: 331101 → 334120 (1%)",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "lobe_row_count_changed",
+      "id": "confluence-strength",
+      "summary": "lobe confluence-strength row count changed: 257 → 340 (32%)",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "lobe_row_count_changed",
+      "id": "confluence-tape",
+      "summary": "lobe confluence-tape row count changed: 284 → 373 (31%)",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "lobe_row_count_changed",
+      "id": "reflex-firings-regime-selfheal",
+      "summary": "lobe reflex-firings-regime-selfheal row count changed: 13 → 14 (8%)",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "lobe_row_count_changed",
+      "id": "nw-health-run-history",
+      "summary": "lobe nw-health-run-history row count changed: 9 → 10 (11%)",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "lobe_row_count_changed",
+      "id": "governance-ledger",
+      "summary": "lobe governance-ledger row count changed: 47 → 48 (2%)",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "lobe_row_count_changed",
+      "id": "neuralweb-orchestrator-runlog",
+      "summary": "lobe neuralweb-orchestrator-runlog row count changed: 12 → 13 (8%)",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "lobe_refresh",
+      "id": "site-neuralweb-health-history",
+      "summary": "lobe site-neuralweb-health-history refreshed: as_of 2026-07-27T01:44:04Z → 2026-07-28T01:52:00Z, rows 9 → 10",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "lobe_row_count_changed",
+      "id": "mechanism-pathways-history",
+      "summary": "lobe mechanism-pathways-history row count changed: 18 → 19 (6%)",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "lobe_row_count_changed",
+      "id": "theme-phase-history",
+      "summary": "lobe theme-phase-history row count changed: 101 → 103 (2%)",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "lobe_row_count_changed",
+      "id": "theme-thesis-ledger",
+      "summary": "lobe theme-thesis-ledger row count changed: 89 → 91 (2%)",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "lobe_status_changed",
+      "id": "treasury-watch",
+      "summary": "lobe treasury-watch status: stale → fresh",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "lobe_row_count_changed",
+      "id": "covariance-spine-history",
+      "summary": "lobe covariance-spine-history row count changed: 15 → 16 (7%)",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "lobe_status_changed",
+      "id": "causal-edges",
+      "summary": "lobe causal-edges status: stale → fresh",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "lobe_status_changed",
+      "id": "causal-nulls",
+      "summary": "lobe causal-nulls status: stale → fresh",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "lobe_status_changed",
+      "id": "causal-llm-lane",
+      "summary": "lobe causal-llm-lane status: degraded → fresh",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    }
+  ],
   "what_contradicted": [
     {
       "id": "",
@@ -32,7 +145,7 @@
     {
       "id": "cortex-attention-firings",
       "as_of": null,
-      "age_hours": 261.87,
+      "age_hours": 71.15,
       "freshness_sla_hours": 30,
       "severity": "warn",
       "kind": "stale"
@@ -40,50 +153,18 @@
     {
       "id": "cortex-attention-grades",
       "as_of": null,
-      "age_hours": 261.87,
+      "age_hours": 71.15,
       "freshness_sla_hours": 30,
-      "severity": "warn",
-      "kind": "stale"
-    },
-    {
-      "id": "causal-edges",
-      "as_of": null,
-      "age_hours": 261.87,
-      "freshness_sla_hours": 192,
-      "severity": "warn",
-      "kind": "stale"
-    },
-    {
-      "id": "causal-nulls",
-      "as_of": null,
-      "age_hours": 261.87,
-      "freshness_sla_hours": 192,
       "severity": "warn",
       "kind": "stale"
     },
     {
       "id": "context-candidates",
       "as_of": null,
-      "age_hours": 120.08,
+      "age_hours": 71.15,
       "freshness_sla_hours": 36,
       "severity": "warn",
       "kind": "stale"
-    },
-    {
-      "id": "treasury-watch",
-      "as_of": "2026-07-23",
-      "age_hours": 99.91,
-      "freshness_sla_hours": 48,
-      "severity": "warn",
-      "kind": "stale"
-    },
-    {
-      "id": "causal-llm-lane",
-      "as_of": "2026-07-22T03:47:55+00:00",
-      "age_hours": 120.11,
-      "freshness_sla_hours": 200,
-      "severity": "watch",
-      "kind": "degraded"
     },
     {
       "id": "risk-radar-review-log",
@@ -208,23 +289,12 @@
   ],
   "why_the_tape_moved": {
     "available": true,
-    "as_of": "2026-07-27",
-    "primary": {
-      "family": "rates",
-      "direction": "hawkish repricing — cuts priced out, front-end up",
-      "coverage": 1.0,
-      "coherence": "supported",
-      "evidence_legs": [
-        "2y yield",
-        "rate-path (2y−FF)",
-        "10y yield"
-      ],
-      "stale_legs_count": 0
+    "no_pathway": {
+      "reason": "scare_unattributed",
+      "printed": true
     },
-    "alternates": [
-      "inflation",
-      "rates"
-    ]
+    "alternates": [],
+    "note": "no pathway emitted: scare_unattributed"
   },
   "operator_attention": [
     {
@@ -236,43 +306,19 @@
     {
       "priority": 2,
       "area": "cortex-attention-firings",
-      "summary": "lobe cortex-attention-firings is warn — age 261.87h vs SLA 30h",
+      "summary": "lobe cortex-attention-firings is warn — age 71.15h vs SLA 30h",
       "action_type": "inspect"
     },
     {
       "priority": 2,
       "area": "cortex-attention-grades",
-      "summary": "lobe cortex-attention-grades is warn — age 261.87h vs SLA 30h",
-      "action_type": "inspect"
-    },
-    {
-      "priority": 2,
-      "area": "causal-edges",
-      "summary": "lobe causal-edges is warn — age 261.87h vs SLA 192h",
-      "action_type": "inspect"
-    },
-    {
-      "priority": 2,
-      "area": "causal-nulls",
-      "summary": "lobe causal-nulls is warn — age 261.87h vs SLA 192h",
+      "summary": "lobe cortex-attention-grades is warn — age 71.15h vs SLA 30h",
       "action_type": "inspect"
     },
     {
       "priority": 2,
       "area": "context-candidates",
-      "summary": "lobe context-candidates is warn — age 120.08h vs SLA 36h",
-      "action_type": "inspect"
-    },
-    {
-      "priority": 2,
-      "area": "treasury-watch",
-      "summary": "lobe treasury-watch is warn — age 99.91h vs SLA 48h",
-      "action_type": "inspect"
-    },
-    {
-      "priority": 2,
-      "area": "causal-llm-lane",
-      "summary": "lobe causal-llm-lane is watch — age 120.11h vs SLA 200h",
+      "summary": "lobe context-candidates is warn — age 71.15h vs SLA 36h",
       "action_type": "inspect"
     },
     {
@@ -469,7 +515,7 @@
   },
   "thematic_line": {
     "available": true,
-    "as_of": "2026-07-27",
+    "as_of": "2026-07-28",
     "n_themes": 18,
     "stage_counts": {
       "RE-RATING": 2,
@@ -478,7 +524,7 @@
       "PRECIPICE": 4
     },
     "n_falsifiers_fired": 7,
-    "n_stale_legs": 5,
+    "n_stale_legs": 4,
     "display_only": true,
     "is_context_only": true
   },

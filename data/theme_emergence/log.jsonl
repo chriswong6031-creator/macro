@@ -6,3 +6,6 @@
 {"sic":"3674","sic_desc":"Semiconductors & Related Devices","asof":"2026-07-07","ts":"2026-07-13T08:22:48.597154+00:00","n_new_filers":11,"velocity":7,"new_filers":["ALAB","CBRS","CRDO","CRUS","KOPN","MCHP","MRVL","MX","PENG","PRSO","SMTK"]}
 {"sic":"3620","sic_desc":"Electrical Industrial Apparatus","asof":"2026-06-15","ts":"2026-07-13T08:22:48.597154+00:00","n_new_filers":3,"velocity":3,"new_filers":["BE","EROC","FPS"]}
 {"sic":"3690","sic_desc":"Miscellaneous Electrical Machinery, Equipment & Supplies","asof":"2026-07-15","ts":"2026-07-21T02:19:40.714889+00:00","n_new_filers":3,"velocity":2,"new_filers":["AETN","DFLI","EOSE"]}
+{"sic":"3674","sic_desc":"Semiconductors & Related Devices","asof":"2026-07-24","ts":"2026-07-28T01:55:57.657412+00:00","n_new_filers":12,"velocity":8,"new_filers":["ALAB","CBRS","CRDO","CRUS","KOPN","MCHP","MRVL","MX","PENG","PRSO","SMTK","TXN"]}
+{"sic":"3760","sic_desc":"Guided Missiles & Space Vehicles & Parts","asof":"2026-07-23","ts":"2026-07-28T01:55:57.657412+00:00","n_new_filers":4,"velocity":3,"new_filers":["FLY","MNTS","RKLB","YSS"]}
+{"sic":"7372","sic_desc":"Services-Prepackaged Software","asof":"2026-07-27","ts":"2026-07-28T01:55:57.657412+00:00","n_new_filers":3,"velocity":0,"new_filers":["BSY","CDNS","PCTY"]}

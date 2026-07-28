@@ -1,7 +1,7 @@
 {
  "schema": "track_ledger/v1",
  "market": "CA",
- "as_of": "2026-07-24",
+ "as_of": "2026-07-27",
  "state": "accruing",
  "bench": {
   "code": "_GSPTSE",
@@ -10,8 +10,8 @@
  },
  "summary": {
   "state": "accruing",
-  "n_calls": 199,
-  "n_logged": 181,
+  "n_calls": 217,
+  "n_logged": 199,
   "n_matured": 0,
   "n_beat": 0,
   "n_lag": 0,
@@ -23,9 +23,351 @@
  },
  "rows": [
   {
+   "t": "DSV.TO",
+   "nm": "DISCOVERY MINING LTD",
+   "sec": "Materials",
+   "grp": "entry_open",
+   "d": "2026-07-24",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 1,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "VZLA.TO",
+   "nm": "VIZSLA SILVER CORP",
+   "sec": "Materials",
+   "grp": "entry_open",
+   "d": "2026-07-24",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 2,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
    "t": "FTT.TO",
-   "nm": "FINNING INTL",
-   "sec": "Industrials",
+   "nm": null,
+   "sec": null,
+   "grp": "setting_up",
+   "d": "2026-07-24",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 3,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "RCI-B.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "setting_up",
+   "d": "2026-07-24",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 4,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "WN.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "setting_up",
+   "d": "2026-07-24",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 5,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "DOO.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "setting_up",
+   "d": "2026-07-24",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 6,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "NWC.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "setting_up",
+   "d": "2026-07-24",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 7,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "CAE.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "setting_up",
+   "d": "2026-07-24",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 8,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "TVK.TO",
+   "nm": "TERRAVEST INDUSTRIES INC",
+   "sec": "Energy",
+   "grp": "setting_up",
+   "d": "2026-07-24",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 9,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "LUG.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "setting_up",
+   "d": "2026-07-24",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 10,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "CLS.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-07-24",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 11,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "QBR-B.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-07-24",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 12,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "VNP.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-07-24",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 13,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "EFX.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-07-24",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 14,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "ALS.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-07-24",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 15,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "FCR-UN.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-07-24",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 16,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "HPS-A.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-07-24",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 17,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "ATZ.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-07-24",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 18,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "FTT.TO",
+   "nm": null,
+   "sec": null,
    "grp": "entry_open",
    "d": "2026-07-21",
    "e": null,
@@ -119,8 +461,8 @@
   },
   {
    "t": "LB.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "LAURENTIAN BANK",
+   "sec": "Financials",
    "grp": "setting_up",
    "d": "2026-07-21",
    "e": null,
@@ -157,8 +499,8 @@
   },
   {
    "t": "LUG.TO",
-   "nm": "LUNDIN GOLD INC",
-   "sec": "Materials",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-21",
    "e": null,
@@ -423,8 +765,8 @@
   },
   {
    "t": "LB.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "LAURENTIAN BANK",
+   "sec": "Financials",
    "grp": "setting_up",
    "d": "2026-07-20",
    "e": null,
@@ -721,9 +1063,7 @@
    "m": false,
    "rk": 1,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "TKO.TO",
@@ -740,9 +1080,7 @@
    "m": false,
    "rk": 2,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "L.TO",
@@ -759,9 +1097,7 @@
    "m": false,
    "rk": 3,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "AG.TO",
@@ -778,14 +1114,12 @@
    "m": false,
    "rk": 4,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "WN.TO",
-   "nm": "WESTON GEORGE",
-   "sec": "Consumer Staples",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-17",
    "e": null,
@@ -797,14 +1131,12 @@
    "m": false,
    "rk": 5,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "LB.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "LAURENTIAN BANK",
+   "sec": "Financials",
    "grp": "setting_up",
    "d": "2026-07-17",
    "e": null,
@@ -816,14 +1148,12 @@
    "m": false,
    "rk": 6,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "KEL.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "KELT EXPLORATION LTD",
+   "sec": "Energy",
    "grp": "setting_up",
    "d": "2026-07-17",
    "e": null,
@@ -835,9 +1165,7 @@
    "m": false,
    "rk": 7,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "TVK.TO",
@@ -854,9 +1182,7 @@
    "m": false,
    "rk": 8,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "AQN.TO",
@@ -873,9 +1199,7 @@
    "m": false,
    "rk": 9,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "BIR.TO",
@@ -892,9 +1216,7 @@
    "m": false,
    "rk": 10,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "CLS.TO",
@@ -911,9 +1233,7 @@
    "m": false,
    "rk": 11,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "VNP.TO",
@@ -930,9 +1250,7 @@
    "m": false,
    "rk": 12,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "EFX.TO",
@@ -949,9 +1267,7 @@
    "m": false,
    "rk": 13,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "TIH.TO",
@@ -968,9 +1284,7 @@
    "m": false,
    "rk": 14,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "HPS-A.TO",
@@ -987,9 +1301,7 @@
    "m": false,
    "rk": 15,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "FCR-UN.TO",
@@ -1006,9 +1318,7 @@
    "m": false,
    "rk": 16,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "ATZ.TO",
@@ -1025,9 +1335,7 @@
    "m": false,
    "rk": 17,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "HBM.TO",
@@ -1044,9 +1352,7 @@
    "m": false,
    "rk": 18,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "SII.TO",
@@ -1118,8 +1424,8 @@
   },
   {
    "t": "NWC.TO",
-   "nm": "THE NORTH WEST COMPANY INC",
-   "sec": "Consumer Staples",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-15",
    "e": null,
@@ -1458,8 +1764,8 @@
   },
   {
    "t": "LUG.TO",
-   "nm": "LUNDIN GOLD INC",
-   "sec": "Materials",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-13",
    "e": null,
@@ -2495,8 +2801,8 @@
   },
   {
    "t": "FTT.TO",
-   "nm": "FINNING INTL",
-   "sec": "Industrials",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-07-06",
    "e": null,
@@ -2801,8 +3107,8 @@
   },
   {
    "t": "FTT.TO",
-   "nm": "FINNING INTL",
-   "sec": "Industrials",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-07-03",
    "e": null,
@@ -3141,8 +3447,8 @@
   },
   {
    "t": "FTT.TO",
-   "nm": "FINNING INTL",
-   "sec": "Industrials",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-06-30",
    "e": null,
@@ -3209,7 +3515,7 @@
   }
  ],
  "meta": {
-  "n_total": 181,
+  "n_total": 199,
   "truncated": 0,
   "grain": "board_day",
   "survivorship": {

@@ -1,16 +1,16 @@
 {
   "schema": "ai_desk_track_record.v1",
-  "as_of": "2026-07-26",
-  "scored_total": 18,
-  "open": 30,
+  "as_of": "2026-07-27",
+  "scored_total": 21,
+  "open": 27,
   "unscored_soft": 0,
   "expired": 0,
   "overall": {
-    "n": 18,
-    "hits": 16,
+    "n": 21,
+    "hits": 19,
     "misses": 2,
-    "hit_rate": 0.889,
-    "dir_accuracy": 0.889
+    "hit_rate": 0.905,
+    "dir_accuracy": 0.857
   },
   "by_conviction": {
     "high": {
@@ -28,20 +28,20 @@
       "dir_accuracy": null
     },
     "low": {
-      "n": 18,
-      "hits": 16,
+      "n": 21,
+      "hits": 19,
       "misses": 2,
-      "hit_rate": 0.889,
-      "dir_accuracy": 0.889
+      "hit_rate": 0.905,
+      "dir_accuracy": 0.857
     }
   },
   "by_kind": {
     "rel_return": {
-      "n": 16,
-      "hits": 16,
+      "n": 19,
+      "hits": 19,
       "misses": 0,
       "hit_rate": 1.0,
-      "dir_accuracy": 0.938
+      "dir_accuracy": 0.895
     },
     "level": {
       "n": 2,
@@ -53,15 +53,42 @@
   },
   "by_regime": {
     "Goldilocks": {
-      "n": 11,
-      "hits": 11,
+      "n": 14,
+      "hits": 14,
       "misses": 0,
       "hit_rate": 1.0,
-      "dir_accuracy": 0.909
+      "dir_accuracy": 0.857
     }
   },
-  "calibration_note": "18 scored, hit-rate 0.889 (directional accuracy 0.889).",
+  "calibration_note": "21 scored, hit-rate 0.905 (directional accuracy 0.857).",
   "recent": [
+    {
+      "id": "2026-06-29-3",
+      "subject": "Health Care",
+      "lean": "underweight",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": 0.0191,
+      "check_by": "2026-07-27"
+    },
+    {
+      "id": "2026-06-29-2",
+      "subject": "Information Technology",
+      "lean": "underweight",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": -0.0573,
+      "check_by": "2026-07-27"
+    },
+    {
+      "id": "2026-06-29-1",
+      "subject": "Real Estate",
+      "lean": "overweight",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": 0.0213,
+      "check_by": "2026-07-27"
+    },
     {
       "id": "2026-06-26-3",
       "subject": "Information Technology",
@@ -124,34 +151,7 @@
       "outcome": "hit",
       "realized": -0.0352,
       "check_by": "2026-07-21"
-    },
-    {
-      "id": "2026-06-22-1",
-      "subject": "Consumer Discretionary",
-      "lean": "underweight",
-      "conviction": "low",
-      "outcome": "hit",
-      "realized": 0.0002,
-      "check_by": "2026-07-20"
-    },
-    {
-      "id": "2026-06-18-3",
-      "subject": "Materials",
-      "lean": "avoid",
-      "conviction": "low",
-      "outcome": "hit",
-      "realized": -0.0231,
-      "check_by": "2026-07-16"
-    },
-    {
-      "id": "2026-06-18-2",
-      "subject": "Industrials",
-      "lean": "avoid",
-      "conviction": "low",
-      "outcome": "hit",
-      "realized": -0.0095,
-      "check_by": "2026-07-16"
     }
   ],
-  "calibration_note_zh": "\u5df2\u8bc4\u5206 18 \u6761\uff0c\u547d\u4e2d\u7387 0.889\uff08\u65b9\u5411\u51c6\u786e\u7387 0.889\uff09\u3002"
+  "calibration_note_zh": "\u5df2\u8bc4\u5206 21 \u6761\uff0c\u547d\u4e2d\u7387 0.905\uff08\u65b9\u5411\u51c6\u786e\u7387 0.857\uff09\u3002"
 }

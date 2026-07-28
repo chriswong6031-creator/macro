@@ -1,32 +1,32 @@
 {
+  "05aa65499365": {
+    "name_en": "Cross-sector cluster \u00b7 Financials + Communication",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Financials + Communication",
+    "score": 55.5
+  },
+  "08b80102b582": {
+    "name_en": "Cross-sector cluster \u00b7 Industrials + Energy",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Industrials + Energy",
+    "score": 57.5
+  },
+  "104b8145550c": {
+    "name_en": "Cross-sector cluster \u00b7 Information Technology + Communication",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Information Technology + Communication",
+    "score": 63.0
+  },
   "3e7462242031": {
     "name_en": "Cross-sector cluster \u00b7 Consumer Staples + Communication",
     "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Consumer Staples + Communication",
-    "score": 64.1
-  },
-  "828ac61f132a": {
-    "name_en": "Cross-sector cluster \u00b7 Financials + Communication",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Financials + Communication",
-    "score": 53.5
-  },
-  "860b4941b551": {
-    "name_en": "Emerging Consumer Staples cluster",
-    "name_zh": "\u65b0\u5174 Consumer Staples \u96c6\u7fa4",
-    "score": 43.8
-  },
-  "9de1537ed35f": {
-    "name_en": "Cross-sector cluster \u00b7 Information Technology + Industrials",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Information Technology + Industrials",
-    "score": 65.8
-  },
-  "b6e9deee1ac4": {
-    "name_en": "Cross-sector cluster \u00b7 Information Technology + Communication",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Information Technology + Communication",
-    "score": 65.3
+    "score": 66.4
   },
   "df20df47af73": {
     "name_en": "Emerging Consumer Staples cluster",
     "name_zh": "\u65b0\u5174 Consumer Staples \u96c6\u7fa4",
-    "score": 53.0
+    "score": 53.3
+  },
+  "f80907f99c38": {
+    "name_en": "Cross-sector cluster \u00b7 Information Technology + Financials",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Information Technology + Financials",
+    "score": 62.9
   }
 }

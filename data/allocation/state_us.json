@@ -9,6 +9,7 @@
     "crypto",
     "cybersecurity",
     "data_center_power",
+    "defense",
     "defensives",
     "energy_complex",
     "industrial_distribution",
@@ -20,9 +21,11 @@
     "power_grid",
     "regional_banks",
     "reshoring",
+    "retail",
     "robotics_automation",
     "semicap_equipment",
     "travel",
+    "us_sector_discretionary",
     "us_sector_energy",
     "us_sector_financials",
     "us_sector_health",
@@ -36,7 +39,7 @@
   "held": [
     "memory_storage",
     "cybersecurity",
-    "ai_infra",
+    "us_sector_financials",
     "managed_care"
   ],
   "leader": "memory_storage",

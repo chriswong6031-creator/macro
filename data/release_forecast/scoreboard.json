@@ -1,6 +1,6 @@
 {
   "schema": "release_forecast_scoreboard.v2",
-  "asof": "2026-07-27T03:44:09Z",
+  "asof": "2026-07-28T03:03:58Z",
   "forward_accrual_began": "2026-07-07",
   "note": "Forward-only: no backtest rows enter this scoreboard (MRI-R8).",
   "by_release": {

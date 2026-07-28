@@ -66,3 +66,7 @@
 {"asof": "2026-07-26", "domain": "intl", "field": "intl_kr_quad", "from_value": "Q2", "to_value": "Q3", "macro_context_id": "f951edd2170c1778"}
 {"asof": "2026-07-27", "domain": "fx", "field": "fx_regime_radar", "from_value": "intervention_risk", "to_value": null, "macro_context_id": "0892d59481ac1523"}
 {"asof": "2026-07-27", "domain": "fx", "field": "fx_usdchf_action", "from_value": "LONG", "to_value": "FLAT", "macro_context_id": "0892d59481ac1523"}
+{"asof": "2026-07-28", "domain": "us", "field": "us_risk_radar", "from_value": "caution", "to_value": "watch", "macro_context_id": "a7723f06d9ad332d"}
+{"asof": "2026-07-28", "domain": "market", "field": "market_state_verdict", "from_value": "MIXED", "to_value": "RISK_ON", "macro_context_id": "a7723f06d9ad332d"}
+{"asof": "2026-07-28", "domain": "fx", "field": "fx_eurusd_action", "from_value": "SHORT", "to_value": "FLAT", "macro_context_id": "a7723f06d9ad332d"}
+{"asof": "2026-07-28", "domain": "fx", "field": "fx_usdchf_action", "from_value": "FLAT", "to_value": "LONG", "macro_context_id": "a7723f06d9ad332d"}

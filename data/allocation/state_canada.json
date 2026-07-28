@@ -16,8 +16,8 @@
   ],
   "held": [
     "ca_banks",
-    "ca_pipelines",
     "ca_base_metals",
+    "ca_pipelines",
     "ca_utilities"
   ],
   "leader": "ca_banks",

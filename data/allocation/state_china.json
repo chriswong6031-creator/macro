@@ -1,16 +1,18 @@
 {
-  "cash": 0.25,
+  "cash": 0.0,
   "crash": false,
   "eligible": [
     "cn_ai_compute",
     "cn_coal",
     "cn_consumer_elec",
     "cn_pharma_cxo",
+    "cn_robotics",
     "cn_semis"
   ],
   "held": [
     "cn_semis",
     "cn_pharma_cxo",
+    "cn_robotics",
     "cn_coal"
   ],
   "leader": "cn_semis",

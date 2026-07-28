@@ -1,7 +1,7 @@
 {
   "schema": "signal_governor.v1",
-  "as_of": "2026-07-26",
-  "generated_at": "2026-07-27T03:41:59.836362+00:00",
+  "as_of": "2026-07-27",
+  "generated_at": "2026-07-28T03:01:41.953196+00:00",
   "region": "us",
   "gate": {
     "min_n": 150,
@@ -17,23 +17,23 @@
   "signals": {
     "radar": {
       "signal": "radar",
-      "n_matured": 2456,
+      "n_matured": 3190,
       "ic": null,
       "t_hac": null,
       "horizon": null,
       "demoted": false,
       "trust": 1.0,
-      "reason": "measuring: no VALID-HAC horizon yet \u2014 best is 21d with 13 daily ICs (need \u226521 for a non-degenerate lag-21 HAC) \u2014 trust 1.0 (shadow)"
+      "reason": "measuring: no VALID-HAC horizon yet \u2014 best is 21d with 16 daily ICs (need \u226521 for a non-degenerate lag-21 HAC) \u2014 trust 1.0 (shadow)"
     },
     "hub": {
       "signal": "hub",
-      "n_matured": 10521,
-      "ic": 0.0092,
-      "t_hac": 0.11,
+      "n_matured": 12272,
+      "ic": 0.0203,
+      "t_hac": 0.261,
       "horizon": "10",
       "demoted": false,
       "trust": 1.0,
-      "reason": "healthy: 10d IC=+0.009 not wrong-sign \u2014 trust 1.0"
+      "reason": "healthy: 10d IC=+0.020 not wrong-sign \u2014 trust 1.0"
     }
   },
   "n_demoted": 0,

@@ -1,15 +1,15 @@
 {
   "schema": "macro_snapshot.v1.2",
-  "asof": "2026-07-27",
+  "asof": "2026-07-28",
   "oldest_component_asof": "2026-07-24",
-  "macro_context_id": "0892d59481ac1523",
+  "macro_context_id": "a7723f06d9ad332d",
   "labels": {
     "us": {
       "us_quad": "Q1",
       "us_transition_state": "TRANSITIONING",
       "us_fused_risk": "caution",
       "us_vol_regime": "normalizing",
-      "us_risk_radar": "caution",
+      "us_risk_radar": "watch",
       "us_rate_pressure": "pressure",
       "us_business_cycle_phase": "recovery",
       "us_liquidity_quality": "stress-expansion",
@@ -23,7 +23,7 @@
       "cross_asset_verdict": "mixed"
     },
     "market": {
-      "market_state_verdict": "MIXED"
+      "market_state_verdict": "RISK_ON"
     },
     "transmission": {
       "yield_curve_regime": "bear_steepener",
@@ -39,10 +39,10 @@
       "usd_valuation": "fair",
       "usd_positioning": "neutral",
       "fed_path_lean": "hawkish_repricing",
-      "fx_eurusd_action": "SHORT",
+      "fx_eurusd_action": "FLAT",
       "fx_gbpusd_action": "FLAT",
       "fx_usdjpy_action": "SHORT",
-      "fx_usdchf_action": "FLAT",
+      "fx_usdchf_action": "LONG",
       "fx_audusd_action": "SHORT",
       "fx_usdcad_action": "FLAT",
       "fx_usdmxn_action": "SHORT",
@@ -98,16 +98,16 @@
     }
   },
   "sources": {
-    "data/regime/latest.json": "2026-07-24",
-    "data/market_state/latest.json": "2026-07-24",
-    "data/transmission/latest.json": "2026-07-24",
-    "data/forex/latest.json": "2026-07-27",
-    "data/bonds/bond_health.json": "2026-07-24",
-    "data/commodity/latest.json": "2026-07-26",
-    "data/china_regime/latest.json": "2026-07-24",
-    "data/hk_regime/latest.json": "2026-07-24",
-    "data/canada_regime/latest.json": "2026-07-24",
-    "data/dispersion/regime.json": "2026-07-26",
+    "data/regime/latest.json": "2026-07-27",
+    "data/market_state/latest.json": "2026-07-27",
+    "data/transmission/latest.json": "2026-07-27",
+    "data/forex/latest.json": "2026-07-28",
+    "data/bonds/bond_health.json": "2026-07-27",
+    "data/commodity/latest.json": "2026-07-27",
+    "data/china_regime/latest.json": "2026-07-27",
+    "data/hk_regime/latest.json": "2026-07-27",
+    "data/canada_regime/latest.json": "2026-07-27",
+    "data/dispersion/regime.json": "2026-07-27",
     "data/intl_regime/AU_history.parquet": "2026-07-24",
     "data/intl_regime/EZ_history.parquet": "2026-07-24",
     "data/intl_regime/GB_history.parquet": "2026-07-24",
