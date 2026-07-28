@@ -46,6 +46,18 @@ For Macro, the `Workers Builds: macro` red X is known-spurious. Template/source
 changes must include their paired `site/` artifact when required, and “merged” is
 not “live” until the VPS/render path and live marker are verified.
 
+**Merge on CONCLUDED checks, never mid-flight (operator 2026-07-28).** A pending
+check is not a pass: an `--admin` squash-merge while the PR's packs are still
+running used to fire a `pull_request: closed` event into the live concurrency
+group and cancel the PR's own proof run — the merged head then carried
+`cancelled` packs forever (PR #3867), unproven merges stacked up red on main, and
+every ship-loop session pinned on the next full-CI dispatch (measured 2026-07-28:
+100 ci.yml runs in 8h, 6 successes). ci.yml now fences merged-close events into
+their own concurrency group so a fast merge no longer destroys its own evidence,
+but the discipline stands: wait for the packs to conclude (green, or spurious-only
+red), or arm `gh pr merge --auto --squash` and let GitHub complete the merge on
+green. `--admin` exists to clear the spurious Workers check, not to outrun CI.
+
 ### Waiting on CI without jamming every other session
 
 `gh` authenticates as ONE account token, so GitHub REST's 5,000/hr `core` pool is a
