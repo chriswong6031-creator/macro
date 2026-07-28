@@ -119,7 +119,8 @@ Asset files (inline via `<img src="../assets/….svg" style="width:100%;display:
   stages with **Base** on (`.stg.on` recolored inline `color:var(--q-gold)`, dot
   `background:var(--q-gold);border-color:var(--q-gold)`); zone row replaced by:
   `<div class="zone" style="color:var(--q-gold)">WAIT <b style="color:var(--muted)">no entry
-  signal</b><span class="dt">Jun 12</span></div>`.
+  signal</b><span class="dt">Jun 3</span></div>`. (Jun 3 → Jul 8 = 35 days, so the
+  "five weeks apart" caption is exact — R2 review #2.) Headline apostrophe is curly (’).
   RIGHT front (larger, z2): REZI again — NEAR pill, chg `+1.8%`, green spark path B (from
   signals), EDGE 76, **Ready** on, ZONE `$29.83 – $31.04`, dt Jul 8.
   Between/below the two cards: a small caption strip (28px, muted, 600):
@@ -207,7 +208,8 @@ Asset files (inline via `<img src="../assets/….svg" style="width:100%;display:
   a 4th wraps; "Watchlists" cut 2026-07-28, the frame's watchlist column already shows it).
 - offer: cell1 t `FREE FOREVER` d `NOTHING TO INSTALL` (the word TERMINAL lives in the pill +
   headline; the long cell overflowed the CTA off-canvas); cell2 t `<was>$149</was>$75/mo`
-  d `PRO · 50% OFF`; CTA `Open the Terminal`; `style="--offer:30px"` on `.offer` (4:5/square).
+  d `PRO 50% OFF · 7-DAY TRIAL` (AG-6: the trial appears on every ad — R2 review #4);
+  CTA `Open the Terminal`; `style="--offer:30px"` on `.offer` (4:5/square).
   micro: standard.
 
 ## founding — paper+violet · 1080x1350 · 1080x1080 · 1200x628
@@ -216,12 +218,16 @@ Asset files (inline via `<img src="../assets/….svg" style="width:100%;display:
 - H (3-line staircase — 2 lines cannot fit at 92px): `Founding rate:<br>50% off, locked in<br>while you stay.` Use `--stageh:390px` on 4:5; the 4 chips may sit as a 2×2 grid (two rows is correct here).
 - sub: `The whole Pro desk at the Insider price — $75/mo, billed $900 a year.`
 - stage: FRONT-center: `w-founding` (width 560 on 4:5): frate pill `FOUNDING RATE`; plan `Pro`;
-  price: was `$149` → now `$75` + per `/mo billed annually`; save badge `SAVE $408 A YEAR`;
+  price: was `$109` → now `$75` + per `/mo billed annually` (the card mirrors the LANDING's
+  annual anchor so `SAVE $408 A YEAR` is computable inside one frame — $109×12−$900=$408;
+  the OFFER BAR keeps the $149-struck monthly anchor for the 50%-off claim. Never mix the
+  two anchors in one element — R2 review #1, the round's only blocker); save badge `SAVE $408 A YEAR`;
   meter: l1 `FOUNDING MEMBERSHIPS` + span `2,000 total — first come, first served`; track
   fill 12%; l2 `The allotment shrinks daily · $900/yr locked in for as long as you stay.`
   BEHIND-left: read sliver; BEHIND-right: prophet sliver.
-- chips: `Everything in Insider(v) · 50 Pro AI deep dives(blue) · Mastermind research(g) ·
-  Bot Portfolios — soon(gold)` (square: first 3).
+- chips: `Everything in Insider(v) · 50 AI deep dives / mo(blue) · Mastermind research(g) ·
+  Bot Portfolios — soon(gold)` (square: first 3 with `--chip:27px;gap:12px` on `.chips`;
+  the `/ mo` is load-bearing — the landing grants 50 per month, not 50 ever — R2 review #10).
 - offer: cell1 t `7-DAY FREE TRIAL` d `FULL PRO ACCESS`; cell2 t was/`$75/mo` d `50% OFF · ANNUAL`;
   CTA `Try Pro free`. micro: standard.
 

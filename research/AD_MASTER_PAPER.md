@@ -263,6 +263,16 @@ Full copy blocks (subline, chips, illustration recipe) live beside the sources i
 - **Standing operator taste:** plain bold system type, no decorative faces (2026-07-26
   font ruling); "beautiful illustration and design" reusing the site's own elements;
   name concrete desks, not uncountable abstractions.
+- **R2 reviewer sweep (2026-07-28, independent Opus pass before the operator gate):** 13
+  confirmed findings, all resolved same-day. The one blocker is the lesson: **a struck
+  price and a savings badge must be computable against the same anchor** — the founding
+  card paired was-$149 (monthly anchor) with SAVE $408 (annual-anchor math). Cards now
+  mirror the landing's $109 annual anchor; offer bars alone carry the $149→$75 monthly
+  50%-off. Also: an illustration must not contradict its own copy (knife's "five weeks"
+  vs 26 rendered days; entry's stop line drawn above 10 candle lows it called the swing
+  low) — the chart is a claim. Occlusion re-lands: ghost trails never under the solid
+  chip, slivers carry identity atoms only (tk, stages) with nm/zone dropped rather than
+  amputated.
 - **R2 internal review (2026-07-28, caught before the operator saw them)** — the four
   defect classes that recur, now checked on every file: (a) **bottom clip** — vertical
   budget blown, offer/micro cut (risk 4:5, rotation 4:5, founding 628); (b) **auto-wrap
