@@ -111,8 +111,36 @@ def test_build_evidence_packet_decomposes_market_sector_stock(monkeypatch, tmp_p
     assert attr["sector_leg"]["return"] == pytest.approx(0.10)
     assert attr["sector_minus_market"] == pytest.approx(0.08)
     assert attr["stock_minus_sector"] == pytest.approx(0.10)
-    assert attr["method"].endswith("not causal")
+    assert attr["stock"]["asset_return"] == pytest.approx(0.20)
+    assert attr["method"].endswith("descriptive, not causal")
     assert packet["epistemic_rules"]["direct_authority"] is False
+
+
+def test_build_evidence_packet_side_adjusts_short_attribution(monkeypatch, tmp_path):
+    idx = pd.to_datetime(["2026-06-10", "2026-07-20"])
+    prices = {
+        "JNJ": pd.Series([150.0, 120.0], index=idx),
+        "SPY": pd.Series([600.0, 630.0], index=idx),
+        "XLV": pd.Series([140.0, 133.0], index=idx),
+    }
+    monkeypatch.setattr(tm, "_load_close", lambda root, ticker: prices.get(ticker))
+    monkeypatch.setattr(tm, "_sector_for", lambda root, ticker: "Health Care")
+    with patch(
+        "engine.neuralweb.context_api.context_snapshot",
+        return_value={"ticker": "JNJ", "date": "2026-06-10", "dimensions": {}},
+    ):
+        packet = tm.build_evidence_packet(
+            _episode(side="short", entry_price=150, exit_price=120),
+            root=tmp_path,
+        )
+
+    attr = packet["return_attribution"]
+    assert attr["stock"]["asset_return"] == pytest.approx(-0.20)
+    assert attr["stock"]["return"] == pytest.approx(0.20)
+    assert attr["market"]["return"] == pytest.approx(-0.05)
+    assert attr["sector_leg"]["return"] == pytest.approx(0.05)
+    assert attr["sector_minus_market"] == pytest.approx(0.10)
+    assert attr["stock_minus_sector"] == pytest.approx(0.15)
 
 
 def test_parse_autopsy_enforces_closed_enums_and_research_only():
@@ -159,6 +187,17 @@ def test_pattern_gate_requires_contradiction_cases_and_time_clusters():
 
     only_wins = [r for r in rows if r["outcome"] == "win"]
     assert tm.build_pattern_candidates(only_wins)[0]["status"] == "accruing"
+
+
+def test_pattern_gate_counts_one_feature_once_per_episode():
+    parsed = tm.parse_autopsy(
+        _autopsy_json(),
+        {"episode": {"id": "one", "ticker": "X", "entry_date": "2026-01-02", "outcome": "win"}},
+    )
+    parsed["signal_hypotheses"] *= 4
+    candidate = tm.build_pattern_candidates([parsed])[0]
+    assert candidate["support_n"] == 1
+    assert candidate["episode_n"] == 1
 
 
 class _Response:

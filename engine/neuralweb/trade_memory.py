@@ -290,6 +290,27 @@ def _return_leg(series, start: str, end: str, start_override: float | None = Non
     }
 
 
+def _align_leg_to_side(leg: dict[str, Any], side: str) -> dict[str, Any]:
+    """Express a price leg as P&L on entry notional for the trade's side."""
+    if not leg.get("available"):
+        return leg
+    out = dict(leg)
+    raw_return = float(out["return"])
+    raw_mfe = float(out["mfe"])
+    raw_mae = float(out["mae"])
+    out.update({
+        "asset_return": raw_return,
+        "asset_mfe": raw_mfe,
+        "asset_mae": raw_mae,
+        "return_basis": "position_return_on_entry_notional",
+    })
+    if side == "short":
+        out["return"] = round(-raw_return, 8)
+        out["mfe"] = round(-raw_mae, 8)
+        out["mae"] = round(-raw_mfe, 8)
+    return out
+
+
 def build_evidence_packet(episode: dict[str, Any], root: str | Path | None = None) -> dict[str, Any]:
     """Build the deterministic, point-in-time packet an autopsy is allowed to read."""
     normalized = normalize_episode(episode)
@@ -299,27 +320,39 @@ def build_evidence_packet(episode: dict[str, Any], root: str | Path | None = Non
     if not exit_date:
         raise ValueError("an autopsy requires a closed episode with exit_date")
 
-    stock = _return_leg(
-        _load_close(repo, ticker),
-        normalized["entry_date"],
-        exit_date,
-        normalized.get("entry_price"),
-        normalized.get("exit_price"),
+    stock = _align_leg_to_side(
+        _return_leg(
+            _load_close(repo, ticker),
+            normalized["entry_date"],
+            exit_date,
+            normalized.get("entry_price"),
+            normalized.get("exit_price"),
+        ),
+        normalized["side"],
     )
     market_ticker = "SPY" if normalized["market"] == "us" else None
     market = (
-        _return_leg(_load_close(repo, market_ticker), normalized["entry_date"], exit_date)
+        _align_leg_to_side(
+            _return_leg(_load_close(repo, market_ticker), normalized["entry_date"], exit_date),
+            normalized["side"],
+        )
         if market_ticker else {"available": False, "reason": "market proxy not mapped"}
     )
     sector = _sector_for(repo, ticker)
     sector_ticker = GICS_ETF.get(sector or "")
     sector_leg = (
-        _return_leg(_load_close(repo, sector_ticker), normalized["entry_date"], exit_date)
+        _align_leg_to_side(
+            _return_leg(_load_close(repo, sector_ticker), normalized["entry_date"], exit_date),
+            normalized["side"],
+        )
         if sector_ticker else {"available": False, "reason": "sector proxy not mapped"}
     )
 
     decomposition: dict[str, Any] = {
-        "method": "arithmetic return attribution; descriptive, not causal",
+        "method": (
+            "side-adjusted arithmetic return attribution on entry notional; "
+            "descriptive, not causal"
+        ),
         "market_proxy": market_ticker,
         "sector": sector,
         "sector_proxy": sector_ticker,
@@ -589,12 +622,14 @@ def build_pattern_candidates(autopsies: list[dict[str, Any]]) -> list[dict[str, 
     for autopsy in autopsies:
         if not isinstance(autopsy, dict):
             continue
+        seen_in_episode: set[str] = set()
         for hypothesis in autopsy.get("signal_hypotheses") or []:
             if not isinstance(hypothesis, dict):
                 continue
             key = _feature_key(hypothesis.get("feature_key") or hypothesis.get("feature"))
-            if key:
+            if key and key not in seen_in_episode:
                 groups[key].append({"autopsy": autopsy, "hypothesis": hypothesis})
+                seen_in_episode.add(key)
 
     out: list[dict[str, Any]] = []
     for key, rows in sorted(groups.items()):
