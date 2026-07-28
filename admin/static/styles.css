@@ -690,6 +690,65 @@ input:focus, select:focus {
   box-shadow: 0 0 0 3px rgba(106,141,255,.15);
 }
 
+/* Prophet Trade Memory — compact study-tier intake, private operator surface. */
+.tm-intro { border-left: 3px solid var(--accent); margin-bottom: 10px; }
+.tm-form {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(145px, 1fr));
+  gap: 10px;
+  padding: 14px;
+  margin-bottom: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+.tm-form label { display: flex; flex-direction: column; gap: 5px; }
+.tm-form label > span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.tm-form label i {
+  font-style: normal;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.tm-form input[type=date],
+.tm-form input[type=text],
+.tm-form input[type=number],
+.tm-form select,
+.tm-form textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 9px;
+  color: var(--text);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  font: inherit;
+}
+.tm-form textarea { resize: vertical; min-height: 68px; line-height: 1.45; }
+.tm-form input:focus,
+.tm-form select:focus,
+.tm-form textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(106,141,255,.15);
+}
+.tm-wide { grid-column: 1 / -1; }
+.tm-patterns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+@media (max-width: 900px) {
+  .tm-form { grid-template-columns: repeat(2, minmax(140px, 1fr)); }
+  .tm-patterns { grid-template-columns: 1fr; }
+}
+
 /* --------------------------------------------------------------------------
    14. STAT PILLS
    -------------------------------------------------------------------------- */

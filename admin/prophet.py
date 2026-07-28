@@ -149,11 +149,13 @@ def _pick_autopsies(repo: Path) -> list[dict]:
             data = _read_json(f)
             if not isinstance(data, dict):
                 continue
+            llm = data.get("llm") if isinstance(data.get("llm"), dict) else {}
             out.append({
                 "ticker":              data.get("ticker") or f.stem,
                 "market":              data.get("market") or f.parent.name,
-                "mitigation_verdict":  data.get("mitigation_verdict"),
-                "lesson":              data.get("lesson") or data.get("lesson_line"),
+                "mitigation_verdict":  llm.get("mitigation_verdict") or data.get("mitigation_verdict"),
+                "lesson":              llm.get("lesson") or data.get("lesson") or data.get("lesson_line"),
+                "summary":             llm.get("summary") or llm.get("root_cause"),
                 "as_of":               data.get("asof") or data.get("as_of"),
             })
         except Exception:  # noqa: BLE001

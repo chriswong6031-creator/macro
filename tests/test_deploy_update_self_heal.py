@@ -225,6 +225,7 @@ ADMIN_MUST_RESTART = [
     "admin/ai_cost.py",
     "admin/mastermind_logs.py",
     "admin/prophet.py",
+    "admin/trade_memory.py",
     # outbox approve / reject / decide endpoints (admin/marketing.py).  This was
     # the 2026-07-26 gap: an outbox.py fix deployed to the VPS and the running
     # panel kept serving the previous module, with no signal.
@@ -248,6 +249,8 @@ ADMIN_MUST_RESTART = [
     "scripts/marketing_publisher.py",
     # deliberation-spend panel (admin/prophet.py)
     "engine/llm_auth.py",
+    # private episode validator imported by admin/trade_memory.py
+    "engine/neuralweb/trade_memory.py",
     # reached via importlib.import_module("...") string literals — a grep for
     # `from engine`/`from lib` does not see these at all
     "engine/neuralweb/support_map.py",

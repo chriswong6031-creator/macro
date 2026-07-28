@@ -369,8 +369,8 @@ LOBE_DESCRIPTIONS = {
     },
     "prophet-pick-autopsies": {
         "short": "One postmortem file per selected pick, written after the pick matures, naming what drove the outcome and whether a better process could have changed it.",
-        "full": "After a Prophet pick matures, the audit lane selects a subset for individual review — favouring the biggest winners, the worst losers, any picks that were held back by a data problem, and any that barely missed the board. For each selected pick, one artifact records the deterministic performance numbers alongside a plain-language postmortem: what drove the result, whether it was a process misstep or simply unforeseeable, which signals performed well and which were late, and what a future board should keep in mind. The verdict falls into one of five closed categories ranging from a correctable process fault to a result that was simply outside anyone's control. These files accrue as picks mature and are read by the Prophet governor when compiling the cross-market health report.",
-        "src_fp": "0ac50e4ed40f3d3c",
+        "full": "After a Prophet pick matures, the nightly Trade Memory lane selects a subset for individual review — favouring the biggest winners, the worst losers, and process/data faults. It now skips IDs already reviewed, so memory accrues instead of spending every night on the same extremes. Each artifact keeps deterministic attribution separate from an LLM causal map: first-, second-, and third-order mechanisms; what was knowable at entry versus hindsight; counterfactuals; missing evidence; and measurable research hypotheses. Every hypothesis is research-only and has no direct authority over ranking, sizing, gates, suppression, or alerts. The Prophet admin reads these files; evidence candidates must pass through Research Factory and Causal Lab before any future production proposal.",
+        "src_fp": "c0a9f1624abed33c",
     },
     "prophet-status": {
         "short": "Cross-market accountability summary: what each Prophet board has accrued, which inputs are healthy, and how the whole system is holding up.",
