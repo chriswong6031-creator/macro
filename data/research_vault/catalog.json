@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-28T12:29:24.275110+00:00",
-  "count": 249,
+  "generated_at": "2026-07-28T13:59:10.164216+00:00",
+  "count": 251,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -26,6 +26,41 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-rmexkysj48u-9d5703",
+      "title": "The AI casino is closing",
+      "institution": "The Market Ear",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-28T13:57:13Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-lg1rgdoesk5-8beea4",
+      "title": "DB CoTD The gravitational pull of midterms",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T13:56:02Z",
+      "summary_points": [
+        "**Midterm Election Cycle**: S&P 500 consistently outperforms 9 months post-WWII US midterms, signaling structural market reaction critical for election positioning.",
+        "**Earnings Momentum**: Q2 S&P 500 earnings growth at 34% YoY (vs.",
+        "26% consensus), with 90% of companies beating expectations—strong fundamentals amid market flatness.",
+        "**Election Impact with Geopolitical Risks**: Current cycle features summer dip pattern complicated by Iran tensions, oil price volatility, and election uncertainty driving investor caution."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-mqk8zr7uofe-4bbafa",
       "title": "The AI Bubble's Canary Just Died",
