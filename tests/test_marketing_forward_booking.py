@@ -272,7 +272,107 @@ class TestBackfillSidecarLedger:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 5. The lane that must not die again
+# 5. A stale quote source must not displace a fresh one
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestStaleQuoteSourceNeverWins:
+    """2026-07-28: VPS_LIVE_PRIMARY flipped true, the GitHub live-quotes lane
+    correctly stood down, and nothing repointed the `live-data` branch. The tape
+    gate kept loading that 2105-symbol snapshot — seventeen hours old — and
+    dict.update() let it overwrite the genuinely current heatmap and display
+    quotes. Every signal then failed the 45-minute age check and the desk network
+    held its entire queue."""
+
+    NOW_MS = 1785000000000       # arbitrary fixed epoch-ms; no clock reads
+    HOUR_MS = 3600 * 1000
+
+    def _write(self, tmp_path, rel, obj):
+        p = tmp_path / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps(obj), encoding="utf-8")
+
+    def _iso(self, ms):
+        return datetime.fromtimestamp(ms / 1000.0, tz=timezone.utc).isoformat()
+
+    def test_seventeen_hour_snapshot_does_not_overwrite_fresh_display(self, tmp_path):
+        from engine.marketing.live_verify import load_live_quotes
+
+        fresh_ms = self.NOW_MS
+        stale_ms = self.NOW_MS - 17 * self.HOUR_MS
+        self._write(tmp_path, "site/live/quotes.json", {
+            "asof": self._iso(fresh_ms),
+            "quotes": {"ROST": {"price": 240.0, "ts": fresh_ms}},
+        })
+        self._write(tmp_path, "data/marketing/live_quotes_snapshot.json", {
+            "asof": self._iso(stale_ms),
+            "quotes": {"ROST": {"price": 999.0, "ts": stale_ms}},
+        })
+
+        got = load_live_quotes(tmp_path)
+        assert got["quotes"]["ROST"]["price"] == 240.0, (
+            "the 17h-old snapshot displaced the current quote — the exact "
+            "failure that held every signal on 2026-07-28"
+        )
+        assert got["quotes"]["ROST"]["ts_ms"] == fresh_ms
+
+    def test_a_fresh_snapshot_still_wins_over_older_display(self, tmp_path):
+        """The fix must not invert the normal case: when the snapshot IS the
+        freshest source (its usual state) it keeps precedence."""
+        from engine.marketing.live_verify import load_live_quotes
+
+        older_ms = self.NOW_MS - 30 * 60 * 1000
+        self._write(tmp_path, "site/live/quotes.json", {
+            "asof": self._iso(older_ms),
+            "quotes": {"ROST": {"price": 240.0, "ts": older_ms}},
+        })
+        self._write(tmp_path, "data/marketing/live_quotes_snapshot.json", {
+            "asof": self._iso(self.NOW_MS),
+            "quotes": {"ROST": {"price": 245.0, "ts": self.NOW_MS}},
+        })
+        assert load_live_quotes(tmp_path)["quotes"]["ROST"]["price"] == 245.0
+
+    def test_untimed_heatmap_pct_is_not_clobbered_by_a_stale_snapshot(self, tmp_path):
+        """Heatmap tiles carry no per-quote ts, so their freshness is the
+        artifact's asof. A stale snapshot must still lose to them."""
+        from engine.marketing.live_verify import load_live_quotes
+
+        stale_ms = self.NOW_MS - 17 * self.HOUR_MS
+        self._write(tmp_path, "site/marketdata/sp500_heatmap.json", {
+            "asof": self._iso(self.NOW_MS),
+            "tiles": [{"ticker": "ROST", "pct": 1.5}],
+        })
+        self._write(tmp_path, "data/marketing/live_quotes_snapshot.json", {
+            "asof": self._iso(stale_ms),
+            "quotes": {"ROST": {"price": 999.0, "changePct": -9.9, "ts": stale_ms}},
+        })
+        assert load_live_quotes(tmp_path)["quotes"]["ROST"]["change_pct"] == 1.5
+
+    def test_reported_asof_is_the_newest_artifact_not_the_last_read(self, tmp_path):
+        """`asof` is the fallback age for any quote with no ts of its own, so
+        taking the last-read (stale) artifact's asof would age out fresh
+        heatmap entries wholesale."""
+        from engine.marketing.live_verify import load_live_quotes
+
+        stale_ms = self.NOW_MS - 17 * self.HOUR_MS
+        self._write(tmp_path, "site/live/quotes.json", {
+            "asof": self._iso(self.NOW_MS),
+            "quotes": {"AAPL": {"price": 1.0, "ts": self.NOW_MS}},
+        })
+        self._write(tmp_path, "data/marketing/live_quotes_snapshot.json", {
+            "asof": self._iso(stale_ms),
+            "quotes": {"MSFT": {"price": 2.0, "ts": stale_ms}},
+        })
+        assert load_live_quotes(tmp_path)["asof"] == self._iso(self.NOW_MS)
+
+    def test_no_sources_is_empty_not_a_crash(self, tmp_path):
+        from engine.marketing.live_verify import load_live_quotes
+
+        got = load_live_quotes(tmp_path)
+        assert got == {"quotes": {}, "asof": None, "source": "none"}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 6. The lane that must not die again
 # ─────────────────────────────────────────────────────────────────────────────
 
 class TestPublishLaneCheckout:
