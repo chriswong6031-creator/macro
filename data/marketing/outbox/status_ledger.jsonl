@@ -220,3 +220,5 @@
 {"id":"ob-2026-07-28-046253c4d2","from":"approved","to":"quarantined","at":"2026-07-28T17:02:45Z","actor":"publisher","note":"reads too technical / banned language: em dash (U+2014)","receipt":null}
 {"id":"ob-2026-07-28-805a7a626a","from":"approved","to":"quarantined","at":"2026-07-28T17:02:45Z","actor":"publisher","note":"reads too technical / banned language: em dash (U+2014)","receipt":null}
 {"id":"ob-2026-07-28-9199babf5f","from":"approved","to":"quarantined","at":"2026-07-28T17:02:45Z","actor":"publisher","note":"reads too technical / banned language: em dash (U+2014)","receipt":null}
+{"id":"ob-2026-07-28-b3ff41765a","from":"approved","to":"posting","at":"2026-07-28T17:07:31Z","actor":"publisher","note":"in-flight (pre-publish)","receipt":null}
+{"id":"ob-2026-07-28-b3ff41765a","from":"posting","to":"posted","at":"2026-07-28T17:07:32Z","actor":"publisher","note":"published","receipt":{"backend":"buffer","external_id":"6a68e1d40277fa98c50973c1","external_url":null,"at":"2026-07-28T17:07:31Z","booked_at":"2026-07-28T18:09:34Z"}}
