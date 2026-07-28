@@ -75,9 +75,14 @@ rested on a number and not on vibes, and so XG-W6 can tighten a tier once
 telemetry exists.
 
 LLM MAY ONLY DE-ESCALATE.  `deescalate()` turns a pass into an abstention. There
-is deliberately no inverse: no function in this module can raise a failing
-element to passing, and `tests/test_marketing_desk_feeds.py` asserts that by
-walking the module's AST. A critic may veto; it may never promote.
+is deliberately no inverse. The guard in `tests/test_marketing_desk_feeds.py` is
+CAPABILITY-shaped, not name-shaped (review F14): it walks the AST and requires
+every `Verdict(...)` construction to sit inside a blessed constructor, and
+requires `deescalate`'s own construction to hard-code `verdict="abstain"`. The
+earlier name-scan version — "no function called promote/escalate" — would have
+waved through a `_recheck()` that quietly rebuilt a Verdict with `proof=True`,
+which is the shape this rule actually has to stop. A critic may veto; it may
+never promote.
 
 Public API:
     evaluate(headline, body, *, kind, ...) -> Verdict
