@@ -453,6 +453,36 @@ class TestSpend:
         _run(armed_cfg, repo, store, [_target()], offline=True)
         assert rd.load_state(store) == {}
 
+    def test_an_explicit_account_list_still_ROTATES(self):
+        """The producer passes the non-halted desks explicitly, and that path
+        used to skip the desk rotation entirely — reintroducing XG-W4's
+        starvation bug for every tick after a halt existed. With a per-tick
+        request cap below the desk count, the tail must eventually be polled."""
+        from engine.marketing import reply_discovery as rd  # noqa: PLC0415
+
+        provider = rd.ReplyDiscoveryProvider(
+            {"max_requests_per_tick": 1},
+            register={"accounts": {
+                a: {"authors": [{"handle": f"h_{a}", "tier": "relationship"}]}
+                for a in ("alpha", "bravo", "charlie")}},
+        )
+        polled: list[str] = []
+        provider._request = lambda key, ep, params: (  # noqa: SLF001
+            polled.append(params.get("userName")) or {"tweets": []})
+
+        state: dict = {}
+        import os
+        os.environ["TWITTERAPI_IO_KEY"] = "test-key"
+        try:
+            for _ in range(3):
+                provider.fetch(session_state=state,
+                               accounts=["alpha", "bravo", "charlie"], now=NOW)
+        finally:
+            os.environ.pop("TWITTERAPI_IO_KEY", None)
+
+        assert set(polled) == {"h_alpha", "h_bravo", "h_charlie"}, (
+            f"a capped tick must rotate across desks; only polled {polled}")
+
     def test_the_producer_owns_no_second_budget(self):
         """A lane with two budgets has none."""
         src = (ROOT / "engine" / "marketing" / "reply_producer.py").read_text(
