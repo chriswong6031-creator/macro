@@ -486,6 +486,18 @@ data/marketing/outbox/items-host.jsonl
 #   git check-ignore data/marketing/personas/cici/phrases.jsonl        (NOT ignored)
 # after any edit here.
 data/marketing/personas_host/
+# XG-W6 learning host spool. Third instance of the same posture: the reply
+# producer banks draft-time label observations (parent engagement, post age,
+# thread saturation — readings that are UNRECOVERABLE once the thread moves on)
+# at tick cadence on whichever host produced, and the nightly consolidator
+# (engine/marketing/labels.consolidate) is the SOLE advancer of the tracked
+# ledgers under data/marketing/learning/. Readers see the union of both trees.
+# LOUDNESS: this pattern is learning_HOST-scoped. It must NOT swallow the
+# tracked ledgers — verify with
+#   git check-ignore data/marketing/learning_host/labels.jsonl  (ignored)
+#   git check-ignore data/marketing/learning/labels.jsonl       (NOT ignored)
+# after any edit here.
+data/marketing/learning_host/
 # D02 chart-image pipeline: chart *PNGs* are R2-DELIVERED BY DESIGN. The PNG's sole
 # delivery plane is its public R2 URL (media_url on the item); the local file is a
 # throwaway render input, never a delivery artifact. The recursive `git add

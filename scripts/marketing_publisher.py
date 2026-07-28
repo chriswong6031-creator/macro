@@ -544,10 +544,14 @@ def _auto_approve_pass(
     allowed_kinds: "frozenset[str] | None" = None,
     only_ids: "frozenset[str] | None" = None,
     cap_for=None,
+    halted: "set[str] | frozenset[str] | None" = None,
 ) -> list[str]:
     """Auto-advance queued → approved for items passing ALL publish gates.
 
     Gates (an item must clear every one to be auto-approved):
+      * the account is NOT halted (XG-W6 health monitor / network tripwire).
+        Auto-approving for a halted desk would build a pile of approved items
+        the post loop then refuses one by one — noise that hides the halt.
       * NOT held (a queued item whose latest operator decision is 'hold' stays put)
       * kind scope: when ``allowed_kinds`` is not None (global publish.auto_approve
         is OFF but publish.auto_approve_kinds is set), an item is a candidate ONLY
@@ -620,6 +624,10 @@ def _auto_approve_pass(
         text = it.get("text", "") or ""
         link = it.get("link")
         links_allowed = _links_allowed_for(pub_cfg, acct)
+
+        if halted and acct in halted:
+            log.info("auto-approve SKIP %s (%s): account HALTED", iid, acct)
+            continue
 
         problems = validate_postable(text, link, links_allowed)
         if problems:
@@ -891,6 +899,27 @@ def main(argv: list[str] | None = None) -> int:
     # ids: the operator clicking "Post now" IS the approval, so the run must not
     # depend on publish.auto_approve being on — but only for those ids, and only
     # through the same gates.
+    # ── PER-ACCOUNT HALT (XG-W6) ─────────────────────────────────────────────
+    # The post half of the health monitor's guarantee: a tripped account halts
+    # THAT ACCOUNT ONLY (charter §5 — "a failure must be able to halt one
+    # account without halting seven"). The registry is read ONCE per run and the
+    # table threaded through both the auto-approve pass and the post loop; a
+    # per-item read would re-parse the file once per post. Fail-soft by design:
+    # an unreadable registry yields {} and announces itself loudly rather than
+    # silencing all seven desks, which is the fleet-wide outage the per-account
+    # design exists to prevent.
+    try:
+        from engine.marketing import health_monitor as _health  # noqa: PLC0415
+
+        _halts = _health.load_halts(root)
+    except Exception as _hm_exc:  # noqa: BLE001
+        log.warning("health monitor unavailable (%s) — no halts enforced", _hm_exc)
+        _health, _halts = None, {}
+    if _halts:
+        log.warning("halted account(s): %s — their posts are blocked; every other "
+                    "desk posts normally", sorted(_halts))
+    skipped_halt = 0
+
     auto_approve_on = bool(args.auto_approve) or _auto_approve_cfg(pub_cfg)
     allowed_kinds = _auto_approve_kinds_cfg(pub_cfg)
     scoped_on = (not auto_approve_on) and bool(allowed_kinds)
@@ -904,7 +933,7 @@ def main(argv: list[str] | None = None) -> int:
             _outbox, state, pub_cfg, cap=cap, now=now, live=live,
             account=args.account, posted_today=posted_today,
             validate_postable=validate_postable, root=root,
-            only_ids=post_now, cap_for=_cap_for,
+            only_ids=post_now, cap_for=_cap_for, halted=set(_halts),
         )
     elif auto_approve_on or scoped_on:
         # allowed_kinds param: None when the global flag is ON (unrestricted,
@@ -914,7 +943,7 @@ def main(argv: list[str] | None = None) -> int:
             _outbox, state, pub_cfg, cap=cap, now=now, live=live,
             account=args.account, posted_today=posted_today,
             validate_postable=validate_postable, root=root,
-            allowed_kinds=_kinds_param, cap_for=_cap_for,
+            allowed_kinds=_kinds_param, cap_for=_cap_for, halted=set(_halts),
         )
     if live and auto_approved:
         # Re-fold so the candidate set below sees the freshly-approved items.
@@ -1088,6 +1117,18 @@ def main(argv: list[str] | None = None) -> int:
         iid = it["id"]
         account = it.get("account", "")
         text = it.get("text", "") or ""
+
+        # -- halt gate: BEFORE validation, the cap, and the channel lookup ----
+        # A halted desk must cost nothing and touch nothing, so this is the
+        # first thing the loop asks. It is deliberately not a quarantine: the
+        # item is fine, the desk is halted, and quarantining would bury a good
+        # post under a reason that has nothing to do with it.
+        if _health is not None and _health.is_halted(account, halts=_halts):
+            log.warning("item %s (%s) SKIPPED — account HALTED (%s)", iid, account,
+                        (_halts.get(account) or {}).get("reason"))
+            skipped_halt += 1
+            continue
+
         links_allowed = _links_allowed_for(pub_cfg, account)
         # Items carry no separate link field today; the link (if any) is inline
         # in the post text. Pass link=None so validate_postable checks the body
@@ -1482,17 +1523,29 @@ def main(argv: list[str] | None = None) -> int:
               f"marketing-media-backfill workflow (gh workflow run "
               f"marketing-media-backfill.yml) — held items quarantine after "
               f"{_MEDIA_DEFER_MAX_AGE_DAYS}d.", flush=True)
+
+    if skipped_halt:
+        # Bare print at line start — a logger prefixes the annotation and GitHub
+        # silently drops it (house law).
+        print(
+            f"::warning title=publisher-account-halted::{skipped_halt} post(s) held "
+            f"back — account(s) {sorted(_halts)} are HALTED (health monitor / network "
+            "tripwire). Every other desk posted normally. Clear the halt in the admin "
+            "health panel once the cause is understood.",
+            flush=True,
+        )
     log.info(
         "%s complete | posted=%d failed=%d quarantined=%d would_post=%d "
         "tape_quarantined=%d tape_skipped=%d skipped_floor=%d "
         "forward_booked=%d deferred_immediate=%d deferred_no_media=%d "
         "skipped_cap=%d skipped_cadence=%d cadence_shadow=%d deferred_xa=%d "
-        "skipped_no_channel=%d "
+        "skipped_no_channel=%d skipped_halt=%d "
         "stuck_posting=%d auto_approved=%d",
         mode, posted, failed, quarantined, would_post,
         tape_quarantined, tape_skipped, skipped_floor,
         forward_booked, deferred_immediate, deferred_no_media,
         skipped_cap, skipped_cadence, shadow_cadence, deferred_xa, skipped_channel,
+        skipped_halt,
         len(stuck_posting),
         len(auto_approved),
     )
@@ -1517,6 +1570,8 @@ def main(argv: list[str] | None = None) -> int:
             "cadence_shadow": shadow_cadence,
             "deferred_cross_account": deferred_xa,
             "skipped_no_channel": skipped_channel,
+            "skipped_halt": skipped_halt,
+            "halted_accounts": sorted(_halts),
             "stuck_posting": len(stuck_posting),
             "auto_approved": len(auto_approved),
             "pt_generated": pt_generated,

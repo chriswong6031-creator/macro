@@ -1373,3 +1373,122 @@ reply_desk:
   critic_thresholds:
     parent_jaccard: 0.55
     corpus_jaccard: 0.50
+
+  # ── Producer (XG-W6) ──────────────────────────────────────────────────────
+  # The scheduled pipeline XG-W4 deliberately did not build: discovery -> score
+  # -> draft -> critics -> enqueue. It runs on the wire daemon's host
+  # (`marketing_fastlane_daemon.py --lane reply`), never on the render path, and
+  # NOTHING IT PRODUCES SENDS — output lands in the M0 queue for operator review.
+  #
+  # DARK BY DEFAULT. This lane bills twitterapi.io, so it does not inherit the
+  # wire lane's MARKETING_FASTLANE_ENABLED switch; arming is a deliberate,
+  # separate act. Spend rides XG-W4's accounting unchanged (the reply sub-budget
+  # in config/press_sources.yml plus the shared-bucket stop that makes reply
+  # polling yield to the Trump wire and never the reverse).
+  producer:
+    enabled: false
+    # Per tick, per account. Small on purpose: the charter's quality bar is
+    # 15-20 replies a DAY and the daemon ticks many times an hour.
+    max_drafts_per_account_per_tick: 3
+    # How many scored targets to attempt before giving up on a tick. Drafting is
+    # cheap; the eight critics are not, and a pathological target list must not
+    # spin the tick.
+    max_draft_attempts_per_account: 12
+    # How many recent items feed the least-recently-used family rotation.
+    family_history: 20
+    # Alternates per draft. The drafter composes them from DIFFERENT families
+    # (constitution §9.4: three paraphrases of one thought is the failure mode).
+    n_alts: 2
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LEARNING (XG-W6) — the ONE feedback loop, four consumers
+# ═══════════════════════════════════════════════════════════════════════════════
+# Four charters described the same machine (D05 §7, IS-W5, Persona W4, Media W2);
+# charter §6 reconciles them into one loop. engine/marketing/labels.py is that
+# loop, engine/marketing/health_monitor.py grades the accounts, and
+# engine/marketing/learned_rules.py holds anything the loop concludes.
+#
+# EVERY VALUE BELOW IS A HYPOTHESIS, NOT A MEASUREMENT (charter §8). They are
+# initial config values with a pre-registered evaluation plan. Nothing here is
+# user-facing: no score, no label and no health verdict appears in site/.
+learning:
+  # Cell n-floor for the scorecard. Matches engine/marketing/telemetry.py's own
+  # floor so the two surfaces cannot disagree about what "enough" means. A cell
+  # below it is PRINTED with verdict="seeding" and makes no ranking claim.
+  n_floor: 20
+  # How long the tracked labels ledger keeps rows.
+  retention_days: 180
+  # The scorecard window.
+  scorecard_window_days: 7
+  # THE NORTH STAR IS UNDEFINED AT ZERO (charter §8). "Qualified retained
+  # followers per 100 contributions" divides by a follower base that does not
+  # exist yet, so it activates only once an account clears this floor. Below it
+  # the bottleneck table on RAW COUNTS is the honest instrument, and that is
+  # what the admin renders.
+  north_star_follower_floor: 250
+
+  parent_adjust:
+    # START AT 2-3 COVARIATES (charter §8 ruling): the constitution's
+    # 8-covariate parent-adjusted evaluation is over-parameterized at launch
+    # volume. The expansion is ENCODED HERE rather than left to a later
+    # judgement call — labels.active_covariates truncates this list to
+    # (labelled rows / samples_per_covariate) and announces the truncation.
+    covariates: [parent_size, post_age, market_intensity]
+    expansion_pool: [author_tier, beat_fit, time_of_day, reply_family, thread_saturation]
+    samples_per_covariate: 40
+    # A stratum thinner than this yields adjusted=null WITH THE REASON PRINTED.
+    stratum_n_floor: 5
+    buckets:
+      parent_size: [50, 500]        # engagement on the parent at draft time
+      post_age: [5, 15]             # minutes — the charter §3 reply window
+      market_intensity: [3, 12]     # breaking+wire emissions that day
+
+  health:
+    # Windows.
+    recent_days: 7
+    baseline_days: 28
+    # Below this many observations a metric reports NULL, never a verdict. A
+    # thin window is not a healthy window and it is not an unhealthy one.
+    min_observations: 5
+    # Operator approval rate on the reply desk below this is a WARN.
+    approval_rate_warn: 0.40
+    # One rejection reason holding this share is a CONCENTRATED (fixable)
+    # defect rather than a diffuse taste gap — same rate, opposite response.
+    reason_concentration_warn: 0.60
+    # Recent median engagement below this multiple of the trailing baseline is
+    # a collapse. 0.35 = "lost two thirds", not "a slow week".
+    engagement_collapse_ratio: 0.35
+    # The profile-conversion floor's last-nine-post diagnostic (charter §3.6):
+    # what a profile visitor actually sees, measured on the window they see.
+    last_nine_window: 9
+    last_nine_receipt_floor: 3
+    last_nine_unmeasured_ceiling: 6
+    # What an account-level WARN does. NOT "halt" by default: one soft metric
+    # should surface to the operator, not silence a desk.
+    account_action: warn
+    network_tripwire:
+      # One account falling is weather; this many falling together is the
+      # fleet-linkage signal the charter's risk register names.
+      min_accounts: 3
+      # Independently-run desks should not move in lockstep. Lockstep is the
+      # shape a shared limiter leaves behind.
+      corr_threshold: 0.90
+      corr_min_days: 10
+      corr_min_pairs: 3
+      # A fleet trip writes ONE HALT ROW PER IMPLICATED ACCOUNT. There is no
+      # global halt switch anywhere in the module, by design: charter §5 needs a
+      # failure to be able to halt one account without halting seven.
+      action: halt_implicated
+
+  learned_rules:
+    # DARK BY DEFAULT. Applying a learned rule is a PROMOTION (it changes what
+    # gets ranked or emitted) and promotions run the gauntlet. The store, the
+    # version log, the shape enforcement and the admin surface ship armed; only
+    # CONSUMPTION waits on this flag.
+    enabled: false
+    # "No learning promotes from one viral accident" (charter §8 experiment law)
+    # with teeth: a proposal must cite at least this many labelled observations.
+    min_evidence_n: 30
+    # ...and may not cite a cell the scorecard marked "seeding" — a cell that
+    # makes no ranking claim cannot support one.
+    require_cell_verdict_not_seeding: true

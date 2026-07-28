@@ -2904,7 +2904,22 @@ jobs:
         # import in social_publisher or marketing_recall turns this job red at
         # collection. Its one yaml-reading helper importorskips, which is moot
         # here (pyyaml is installed above) and keeps the file honest elsewhere.
-        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_marketing_personas.py tests/test_marketing_event_language.py tests/test_marketing_press_feeds.py tests/test_marketing_breaking.py tests/test_marketing_fastlane.py tests/test_marketing_press_copy.py tests/test_marketing_ramp_cta_jitter.py tests/test_marketing_expression_dial.py tests/test_marketing_cadence_spine.py tests/test_marketing_chart_coverage.py tests/test_marketing_desk_feeds.py tests/test_marketing_reply_desk.py tests/test_marketing_forward_booking.py tests/test_marketing_recall.py -q
+        # test_marketing_learning + test_marketing_reply_producer (XG-W6) join
+        # the same lane (2026-07-28): the labels store and its nightly
+        # consolidator, parent-adjusted reply labels, the per-account health
+        # monitor + network tripwire + halt registry, the pre-registered
+        # blind-identity harness, the learned-rule reversibility gate, and the
+        # producer that finally walks discovery -> score -> draft -> critics ->
+        # enqueue. Import closure is stdlib+pyyaml by construction: labels,
+        # health_monitor, learned_rules, blind_identity and reply_producer keep
+        # outbox, reply_queue, expression_dial and market_facts behind LAZY
+        # function-level imports, so a heavy top-level import in any of them
+        # turns this job red at collection, which is the point. Three guards in
+        # the suite are AST walks over committed source (the consolidator-only-
+        # writer guard, the no-LLM-in-the-monitor guard, and the
+        # blind-identity-gates-nothing grep) and need no imports at all. Nothing
+        # is importorskip-gated, so neither suite can decay into a skip-only one.
+        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_marketing_personas.py tests/test_marketing_event_language.py tests/test_marketing_press_feeds.py tests/test_marketing_breaking.py tests/test_marketing_fastlane.py tests/test_marketing_press_copy.py tests/test_marketing_ramp_cta_jitter.py tests/test_marketing_expression_dial.py tests/test_marketing_cadence_spine.py tests/test_marketing_chart_coverage.py tests/test_marketing_desk_feeds.py tests/test_marketing_reply_desk.py tests/test_marketing_forward_booking.py tests/test_marketing_recall.py tests/test_marketing_learning.py tests/test_marketing_reply_producer.py -q
       - name: reply-target register validates (config/reply_targets.yml)
         # The register is operator-curated, so a bad handle or an unknown tier is
         # an editing mistake, not a code change. Runs as its own step so a

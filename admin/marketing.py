@@ -2643,3 +2643,257 @@ def reject_reply(item_id: str, reason: str | None = None, root=None, *, store=No
     except Exception as exc:  # noqa: BLE001
         log.warning("marketing.reject_reply failed: %s", exc)
         return {"ok": False, "error": str(exc)}
+
+
+# ---------------------------------------------------------------------------
+# Learning + account health (XG-W6)
+#
+# The operator console half of the ONE feedback loop. Three panels:
+#
+#   learning_scorecard()  the weekly hook x format x register x account grid,
+#                         the cold-start bottleneck table, and the learned-rule
+#                         VERSION LOG shipped alongside it (charter §8).
+#   account_health()      per-account health cards, the network tripwire verdict,
+#                         the halt registry, and the blind-identity eval's
+#                         pre-registration (status: not_run — it gates nothing).
+#   clear_halt()          the operator's ONLY way to end a halt. The monitor
+#                         cannot clear its own trip.
+#
+# NOTHING ON THESE PANELS IS USER-FACING. No score, label, health verdict or
+# halt reason appears anywhere in site/; these are admin-console reads.
+# ---------------------------------------------------------------------------
+
+_HALTS_REL = Path("data/marketing/learning/halts.json")
+
+
+def learning_scorecard(root=None) -> dict:
+    """The weekly scorecard + the learned-rule version log.
+
+    Fail-soft: a repo with no consolidated labels returns ok:True with an empty
+    scorecard and a note. That is the honest cold-start state — the metrics poll
+    is dark without BUFFER_TOKEN and the reply desk has sent nothing — not an
+    error to surface as a red panel.
+    """
+    try:
+        from engine.marketing import labels as _labels  # noqa: PLC0415
+        from engine.marketing import learned_rules as _rules  # noqa: PLC0415
+
+        repo = Path(root) if root is not None else _default_root()
+        cfg = _read_yaml(repo / _CONFIG_REL)
+        card = _labels.load_scorecard(repo)
+        rows = _labels.load_labels(repo)
+        return {
+            "ok": True,
+            "consumers": list(_labels.CONSUMERS),
+            "dims": list(_labels.DIMS),
+            "scorecard": card,
+            "n_labels": len(rows),
+            "n_labelled": sum(1 for r in rows if r.get("label") is not None),
+            "n_null": sum(1 for r in rows if r.get("label") is None),
+            "rules": {
+                "enabled": _rules.enabled(cfg),
+                "active": _rules.active(repo),
+                # The version log ships ALONGSIDE the scorecards (charter §8) — a
+                # rule whose history you cannot see is a rule you cannot argue
+                # with. Newest first for the panel.
+                "log": list(reversed(_rules.history(repo)))[:100],
+            },
+            "note": (
+                "Operator console only. No score or label here is user-facing. "
+                "Cells below the n-floor read 'seeding' and make no ranking claim."
+                if card else
+                "No labels consolidated yet — the metrics poll is dark without "
+                "BUFFER_TOKEN and the reply desk has sent nothing. Empty is the "
+                "honest state, not a failure."
+            ),
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing.learning_scorecard failed: %s", exc)
+        return {"ok": False, "error": str(exc), "scorecard": {}, "rules": {}}
+
+
+def account_health(root=None, *, store=None) -> dict:
+    """Per-account health cards + network tripwire + the halt registry.
+
+    Read-only: this NEVER trips or clears a halt. Opening a panel must not be
+    able to silence a desk, and it must not be able to un-silence one either —
+    the nightly trips, the operator clears, and the panel only shows.
+    """
+    try:
+        from engine.marketing import blind_identity as _bie  # noqa: PLC0415
+        from engine.marketing import health_monitor as _hm  # noqa: PLC0415
+
+        repo = Path(root) if root is not None else _default_root()
+        report = _hm.load_health(repo)
+        halts = _hm.load_halts(repo)
+        return {
+            "ok": True,
+            "metrics": list(_hm.METRICS),
+            "tripwires": list(_hm.TRIPWIRES),
+            "health": report,
+            "halted": [
+                {"account": acc, **{k: v for k, v in rec.items() if k != "evidence"}}
+                for acc, rec in sorted(halts.items())
+            ],
+            "halt_count": len(halts),
+            # Pre-registered, NOT RUN, and gating nothing. Surfaced so the panel
+            # never implies a >=80% number is enforcing something.
+            "blind_identity": {
+                "prereg_id": _bie.PREREG["id"],
+                "status": _bie.PREREG["status"],
+                "chance_baseline": _bie.CHANCE_BASELINE,
+                "charter_target": _bie.PREREG["charter_target"],
+                "gates_nothing": _bie.GATES_NOTHING,
+                "doc": "docs/blind_identity_eval_prereg.md",
+            },
+            "note": (
+                "A halted account is blocked on BOTH rails (posts and replies) and "
+                "every other desk keeps running. Only an operator can clear a halt."
+                if halts else
+                "No account is halted. Health verdicts here are surfaced, not "
+                "enforced — account_action defaults to 'warn'."
+            ),
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing.account_health failed: %s", exc)
+        return {"ok": False, "error": str(exc), "health": {}, "halted": []}
+
+
+def clear_halt(account_id: str, actor: str = "admin", note=None, root=None,
+               push: bool = True) -> dict:
+    """Operator-clear ONE halted account. The only way a halt ends.
+
+    Same persistence posture as ``accounts_toggle``: the halt registry is a
+    TRACKED file because both rails must see it and they run on different
+    machines, so a deployed admin commits through the GitHub Contents API and a
+    local checkout commits+pushes the one file. A clear that never reaches main
+    is undone by the VPS's next pull, so an unpushed clear reports honestly
+    instead of looking successful.
+    """
+    try:
+        from datetime import datetime, timezone  # noqa: PLC0415
+
+        from engine.marketing import health_monitor as _hm  # noqa: PLC0415
+
+        aid = str(account_id or "").strip()[:100]
+        if not aid:
+            return {"ok": False, "error": "account_id required"}
+        who = str(actor or "").strip()[:100]
+        if not who:
+            return {"ok": False, "error": "actor required — a cleared halt needs an owner"}
+
+        repo = Path(root) if root is not None else _default_root()
+        from . import settings  # noqa: PLC0415
+        if settings.deployed():
+            return _clear_halt_via_api(aid, who, note)
+
+        res = _hm.clear(aid, actor=who, now=datetime.now(timezone.utc),
+                        note=note, root=repo)
+        if not res.get("ok"):
+            return res
+
+        if push:
+            try:
+                from . import gitops  # noqa: PLC0415
+                git_res = gitops.commit_paths(
+                    [str(_HALTS_REL).replace("\\", "/")],
+                    message=f"admin: clear halt on {aid} (by {who})",
+                    push=True, confirm=True)
+                res["pushed"] = bool(git_res.get("pushed"))
+                res["git"] = git_res
+                res["note"] = (
+                    f"Halt on {aid} cleared and pushed. Both rails see it on the "
+                    "next pull."
+                    if git_res.get("pushed") else
+                    "Halt cleared LOCALLY ONLY. Until this file reaches main the "
+                    "VPS's next pull will restore the halt — "
+                    + str(git_res.get("warning") or git_res.get("error")
+                          or "push not available from this checkout") + "."
+                )
+            except Exception as gexc:  # noqa: BLE001
+                res["pushed"] = False
+                res["note"] = ("Halt cleared locally; the commit/push step failed "
+                               f"({gexc}). The next pull will restore it.")
+        else:
+            res["pushed"] = False
+            res["note"] = "Halt cleared locally (push skipped)."
+        return res
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing.clear_halt failed: %s", exc)
+        return {"ok": False, "error": str(exc)}
+
+
+def _clear_halt_via_api(aid: str, actor: str, note) -> dict:
+    """Deployed-mode halt clear: read the registry off main, clear ONE account,
+    commit it straight back. Read-modify-write against the ON-MAIN copy, so
+    clearing one desk never resurrects or drops another desk's halt."""
+    from datetime import datetime, timezone  # noqa: PLC0415
+
+    from . import github_api  # noqa: PLC0415
+
+    rel = str(_HALTS_REL).replace("\\", "/")
+    gf = github_api.get_file(rel)
+    if not gf.get("ok"):
+        return {"ok": False, "error": f"could not read {rel} on main: {gf.get('error')}"}
+    blob: dict = {}
+    if gf.get("content"):
+        try:
+            parsed = json.loads(gf["content"])
+            if isinstance(parsed, dict):
+                blob = parsed
+        except Exception:  # noqa: BLE001
+            blob = {}
+    accounts = blob.get("accounts")
+    if not isinstance(accounts, dict) or not isinstance(accounts.get(aid), dict):
+        return {"ok": False, "error": "not_halted", "account": aid}
+    if accounts[aid].get("state") != "halted":
+        return {"ok": False, "error": "not_halted", "account": aid}
+
+    ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    accounts[aid] = {**accounts[aid], "state": "cleared", "cleared_at": ts,
+                     "cleared_by": actor,
+                     "clear_note": (str(note).strip()[:500] if note else None)}
+    blob["accounts"] = accounts
+    blob["log"] = (blob.get("log") or [])[-199:] + [
+        {"at": ts, "account": aid, "action": "clear", "actor": actor, "note": note}
+    ]
+    pf = github_api.put_file(
+        rel,
+        json.dumps(blob, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        f"admin: clear halt on {aid} (by {actor})", sha=gf.get("sha"))
+    if not pf.get("ok"):
+        return {"ok": False, "error": f"commit failed: {pf.get('error')}"}
+    return {"ok": True, "account": aid, "state": "cleared", "cleared_at": ts,
+            "pushed": True, "via": "github_api", "commit_sha": pf.get("commit_sha"),
+            "note": f"Halt on {aid} cleared on main. Both rails see it on the next pull."}
+
+
+def rollback_learned_rule(version_id: str, actor: str = "admin", root=None) -> dict:
+    """Undo one applied learned rule. The rollback path charter §8 requires.
+
+    Local-checkout only for now, and the return says so: the learned-rule store
+    is nightly-advanced, so an unpushed rollback is RE-APPLIED by the next
+    nightly rather than merely reverted on pull. Consumption is dark by default
+    (``learning.learned_rules.enabled``), which bounds the blast radius of that
+    gap until the deployed path lands.
+    """
+    try:
+        from datetime import datetime, timezone  # noqa: PLC0415
+
+        from engine.marketing import learned_rules as _rules  # noqa: PLC0415
+
+        vid = str(version_id or "").strip()
+        if not vid:
+            return {"ok": False, "error": "version_id required"}
+        who = str(actor or "").strip()[:100] or "admin"
+        repo = Path(root) if root is not None else _default_root()
+        res = _rules.rollback(vid, now=datetime.now(timezone.utc), root=repo, actor=who)
+        if res.get("ok"):
+            res["note"] = (
+                "Rolled back locally and logged. Commit data/marketing/learning/ "
+                "so the nightly does not re-apply the superseded rule."
+            )
+        return res
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing.rollback_learned_rule failed: %s", exc)
+        return {"ok": False, "error": str(exc)}
