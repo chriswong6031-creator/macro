@@ -1200,6 +1200,13 @@ on:
       # config/marketing.yml + config/personas/** above; the suite is listed by
       # name so a TEST-ONLY edit still reaches the lane that runs it.
       - "tests/test_marketing_cadence_spine.py"
+      # X Growth W3 (XG-W3): the franchise register + slot scheduler, the
+      # four-lane desk feed, the persona memory stores (promises/phrases/
+      # relations) and the Gift-Grip-Proof value gate. Its subject modules are
+      # all matched by engine/marketing/** + config/marketing.yml +
+      # config/personas/** above; the suite is listed by name so a TEST-ONLY
+      # edit still reaches the lane that runs it.
+      - "tests/test_marketing_desk_feeds.py"
       # D02 per-post metrics poller + chart-image (PNG) pipeline. The poller
       # reads back Buffer analytics; media_publish uploads chart PNGs to R2;
       # content_studio renders the PNG at plan-build time. engine/marketing/**

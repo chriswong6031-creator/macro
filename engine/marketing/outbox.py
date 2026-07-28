@@ -579,6 +579,66 @@ def compose_text(headline: object, body: object) -> str:
     return "\n\n".join(p for p in parts if p)
 
 
+def _value_gate_enforced(cfg: dict | None) -> bool:
+    """Is the Gift-Grip-Proof gate armed to BLOCK, or only to record?
+
+    THE SINGLE READER of `config/marketing.yml` `value_gate.enforce`. Ships
+    false (the XG-W2 "LAND DARK" precedent): every emission carries its verdict
+    from day one, but an abstention does not stop a live desk until an operator
+    flips this after reading a cycle of `value_gate_would_block` counts.
+
+    A config key nothing reads is a lie in a config file, which is precisely
+    what the XG-W3 review caught — so this function exists to be the reader, and
+    `tests/test_marketing_desk_feeds.py` asserts both branches are live.
+    """
+    return bool(((cfg or {}).get("value_gate") or {}).get("enforce", False))
+
+
+def stamp_value_gate(
+    source: dict,
+    *,
+    headline: str,
+    body: str,
+    kind: str,
+    has_media: bool = False,
+    numbers_whitelist: Any = (),
+    source_headline: str = "",
+    citation: str = "",
+    cfg: dict | None = None,
+) -> bool:
+    """Evaluate the Gift-Grip-Proof gate and STAMP the verdict onto `source`.
+
+    Charter §0 XG-W3: "every emission carries its Gift-Grip-Proof gate verdict
+    in the item metadata (abstention logged with reason)". This is the function
+    that makes that true of real emissions — the gate module itself only
+    computes; without a call here the verdict existed in tests and nowhere else.
+
+    Returns True when the verdict is an ABSTENTION (i.e. the gate WOULD block if
+    armed). The caller decides what to do with that: record-only today,
+    skip-the-emission once `value_gate.enforce` is flipped.
+
+    Fail-soft: if the gate raises, the item is stamped `error` and treated as
+    PASSING. A publish gate that goes down must not silence the desks — the
+    whole calibration exercise was about not doing that.
+    """
+    try:
+        from engine.marketing import value_gate as _vg  # noqa: PLC0415
+
+        verdict = _vg.evaluate(
+            headline, body, kind=kind, has_media=has_media,
+            numbers_whitelist=numbers_whitelist,
+            source_headline=source_headline, citation=citation,
+        )
+        meta = _vg.verdict_metadata(verdict)
+        meta["enforced"] = _value_gate_enforced(cfg)
+        source["value_gate"] = meta
+        return verdict.verdict != "pass"
+    except Exception as exc:  # noqa: BLE001
+        log.warning("value_gate: verdict unavailable (%s) — emitting unstamped", exc)
+        source["value_gate"] = {"verdict": "error", "error": str(exc)[:200]}
+        return False
+
+
 def make_item(
     *,
     account: str,
@@ -1575,6 +1635,29 @@ def emit_from_content_plan(
                     _th_blk = qi.get("_theme_data")
                     if isinstance(_th_blk, dict) and _th_blk.get("agg_pct") is not None:
                         source["baseline_pct"] = _th_blk.get("agg_pct")
+
+                    # GIFT-GRIP-PROOF VERDICT (XG-W3, charter §0). Every
+                    # emission carries its verdict in metadata. RECORD-ONLY
+                    # unless config value_gate.enforce is true — see
+                    # `stamp_value_gate`.
+                    _would_block = stamp_value_gate(
+                        source,
+                        headline=qi.get("headline") or "",
+                        body=qi.get("body") or "",
+                        kind=qi.get("type") or "signal",
+                        has_media=bool(media),
+                        numbers_whitelist=qi.get("numbers_whitelist") or (),
+                        cfg=cfg,
+                    )
+                    if _would_block:
+                        counts["value_gate_would_block"] = (
+                            counts.get("value_gate_would_block", 0) + 1
+                        )
+                        if _value_gate_enforced(cfg):
+                            counts["value_gate_blocked"] = (
+                                counts.get("value_gate_blocked", 0) + 1
+                            )
+                            continue
 
                     try:
                         item = make_item(
