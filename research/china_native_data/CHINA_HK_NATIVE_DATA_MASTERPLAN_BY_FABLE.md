@@ -540,3 +540,15 @@ law with gates inline; no child self-merge on the bot repo.
   reached the seeded ledger, a dated time-bomb test reading the live store,
   abort-yet-append ledger divergence, double-leg vendor duplication, multi-price-auction
   rate capture) — all closed in the same PR; the single-review-misses pattern held.
+  **First production night VERIFIED (2026-07-28 asia-close, data commits `c1a969ed4c7`+
+  `abae6fd071b`)**: OMO backlog fully drained (n_deferred 35→0, n_store_abort=0) — 52
+  store rows across all four columns incl. SAME-DAY capture of the 07-28 交易公告
+  (3055亿元 7天 @1.40%); events.jsonl 49 omo_observed, 0 duplicate hashes; the F3
+  January fix landed in production (2026-01 GACC month stored its 271 rows on night
+  one; second run then a clean quiet night n_new=0/n_failed=0, NOT a year-resolution
+  failure); corpora gov_policy_library organ live (12 docs); calendar.json regenerated
+  in-run (39 entries, 5 feed rows, data_gaps=[]); all 5 wires cached (futu 50 / ths 20
+  items). Six 央票-family bulletins remain honest parse-fails in the retry diff
+  (retroactive-heal path). The merge-night covering-run saga resolved: ci.yml GREEN on
+  main descendant `c0e1724a` at 05:26Z after the SEO lane healed its #3850 gates —
+  every merge pinned in the 07-27 burst cleared.
