@@ -38,6 +38,21 @@ def test_availability_requires_enable_binary_and_auth(monkeypatch):
     assert cp.is_available() is False
 
 
+def test_availability_uses_vps_codex_home(monkeypatch, tmp_path):
+    codex_home = tmp_path / "macro-codex"
+    codex_home.mkdir()
+    (codex_home / "auth.json").write_text('{"auth_mode":"chatgpt"}', encoding="utf-8")
+
+    monkeypatch.setenv("CODEX_PROVIDER_ENABLED", "1")
+    monkeypatch.setenv("CODEX_HOME", str(codex_home))
+    monkeypatch.delenv("CODEX_ACCESS_TOKEN", raising=False)
+    monkeypatch.delenv("CODEX_API_KEY", raising=False)
+    monkeypatch.setattr(cp, "resolve_codex_bin", lambda: "/usr/bin/true")
+
+    assert cp.auth_file_path() == codex_home / "auth.json"
+    assert cp.is_available() is True
+
+
 def test_create_runs_locked_text_only_codex_turn(monkeypatch):
     captured = {}
 

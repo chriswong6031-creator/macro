@@ -94,6 +94,13 @@ if ! cmp -s "$APP_DIR/app/deploy/Caddyfile" /etc/caddy/Caddyfile; then
 	fi
 fi
 
+# Codex CLI: keep the provider runtime pinned and self-healing just like the
+# reviewed systemd units below. Authentication is durable VPS state under
+# /var/lib/macro-codex and is never copied from or written into git.
+if ! bash "$APP_DIR/app/deploy/codex-runtime-setup.sh" --quiet; then
+	echo "macro-update: Codex runtime reconciliation failed; Claude/DeepSeek fallbacks remain available" >&2
+fi
+
 # macro-api systemd sandbox: keep the installed unit aligned with the reviewed
 # repo copy. Validate before installation; a broken unit never replaces the
 # running one. The restart decision below includes this path.
@@ -134,6 +141,8 @@ fi
 #   neuralweb/*            /api/ask + /api/brain: ask_brain → cortex, llm_auth,
 #                          envelope → synapse, tushare_freshness; brain_gateway →
 #                          chart_perception, doctrine, key_pool (CMX W2/W4)
+#   codex_provider/runner  llm_auth's request-time Codex fallback imports both;
+#                          either module stays cached after the first Codex turn
 #   research_vault/        app/research.py imports catalog, corpus, download_quota,
 #                          view_ratelimit, watermark (→ sidecar, r2_store) at MODULE
 #                          level. Whole-package pattern on purpose: this is the
@@ -169,7 +178,7 @@ fi
 #     schemas/implementations only and never calls run(), so those ~90 modules are
 #     NOT in the API's sys.modules. Adding them would restart /api on nearly every
 #     engine commit — exactly what this narrow list exists to prevent.
-if [ "$API_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(app/.*\.py|app/requirements\.txt|app/deploy/macro-api\.service|config/site_access\.yml|engine/neuralweb/(ask_brain|cortex|brain_gateway|chart_perception|doctrine|envelope|key_pool|synapse)\.py|engine/(codex_provider|llm_auth|portfolio_brief|live_quotes|tushare_freshness)\.py|engine/research_vault/.*\.py|engine/context_index/(packet|fusion|gitinfo|lexical|structured)\.py|engine/marketing/(__init__|authority|chart_render|charter|claims|cmo|confluence_source|departments|economics|events|ledgers|opportunity_bus|publication|state)\.py|lib/(config|ai_costs|mastermind_response_log)\.py)$'; then
+if [ "$API_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(app/.*\.py|app/requirements\.txt|app/deploy/macro-api\.service|config/site_access\.yml|engine/neuralweb/(ask_brain|cortex|brain_gateway|chart_perception|doctrine|envelope|key_pool|synapse)\.py|engine/(codex_provider|llm_auth|portfolio_brief|live_quotes|tushare_freshness)\.py|engine/codex_lane/runner\.py|engine/research_vault/.*\.py|engine/context_index/(packet|fusion|gitinfo|lexical|structured)\.py|engine/marketing/(__init__|authority|chart_render|charter|claims|cmo|confluence_source|departments|economics|events|ledgers|opportunity_bus|publication|state)\.py|lib/(config|ai_costs|mastermind_response_log)\.py)$'; then
 	systemctl is-enabled macro-api >/dev/null 2>&1 && systemctl restart macro-api || true
 fi
 
@@ -228,7 +237,9 @@ fi
 #                          support_map, orchestrator_log
 #   metabolism/*           metabolism_panel → throttle; server manual-run gate →
 #                          budget_gate
-#   engine/llm_auth.py     prophet.py deliberation-spend panel
+#   engine/{codex_provider,llm_auth}.py + engine/codex_lane/runner.py
+#                          orchestrator_chat Codex fallback + prophet.py
+#                          deliberation-spend panel
 #   marketing/             marketing.py's outbox approve/reject/decide endpoints →
 #                          outbox + rejections. marketing.py's Ad Central panel →
 #                          ad_central → ad_allocator, ad_arena, ad_stats. The other
@@ -261,7 +272,22 @@ fi
 #     tool dispatcher.
 #   - The rest of engine/marketing (breaking_feed, seo_director, social_publisher,
 #     …) — nightly-only, never imported by a panel.
-if echo "$CHANGED" | grep -qE '^(admin/.*|lib/(ai_costs|mastermind_response_log)\.py|engine/llm_auth\.py|engine/neuralweb/(key_pool|ask_brain|support_map|orchestrator_log|trade_memory)\.py|engine/metabolism/(throttle|budget_gate)\.py|engine/marketing/(__init__|accounts|ad_allocator|ad_arena|ad_central|ad_stats|authority|charter|claims|cmo|copywriter|departments|economics|events|ledgers|opportunity_bus|outbox|personas|publication|rejections|reply_export|reply_queue|sentinel|state)\.py|scripts/marketing_publisher\.py)$'; then
+# Admin systemd sandbox: reconcile the reviewed unit before deciding whether to
+# restart, so a unit-only hardening/provider change cannot land dead on disk.
+ADMIN_UNIT_UPDATED=0
+if ! cmp -s "$APP_DIR/admin/deploy/admin.service" /etc/systemd/system/admin.service; then
+	if systemd-analyze verify "$APP_DIR/admin/deploy/admin.service"; then
+		install -m 0644 "$APP_DIR/admin/deploy/admin.service" /etc/systemd/system/admin.service
+		systemctl daemon-reload
+		ADMIN_UNIT_UPDATED=1
+		RECONCILED=1
+		echo "macro-update: admin systemd sandbox updated"
+	else
+		echo "macro-update: refusing admin unit update — systemd-analyze verify failed" >&2
+	fi
+fi
+
+if [ "$ADMIN_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(admin/.*|lib/(ai_costs|mastermind_response_log)\.py|engine/(codex_provider|llm_auth)\.py|engine/codex_lane/runner\.py|engine/neuralweb/(key_pool|ask_brain|support_map|orchestrator_log|trade_memory)\.py|engine/metabolism/(throttle|budget_gate)\.py|engine/marketing/(__init__|accounts|ad_allocator|ad_arena|ad_central|ad_stats|authority|charter|claims|cmo|copywriter|departments|economics|events|ledgers|opportunity_bus|outbox|personas|publication|rejections|reply_export|reply_queue|sentinel|state)\.py|scripts/marketing_publisher\.py)$'; then
 	systemctl is-enabled admin >/dev/null 2>&1 && systemctl restart admin || true
 fi
 
