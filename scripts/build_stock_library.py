@@ -33,7 +33,7 @@ from engine.cycles import analyze, market_vix_context  # noqa: E402
 from engine.extension import extension_signals  # noqa: E402
 from engine.playbook import SECTOR_NAMES  # noqa: E402
 from engine.setups import (  # noqa: E402
-    US_ALPHA_WEIGHT, entry_open_first, rank_setups, setup_score,
+    US_ALPHA_WEIGHT, entry_open_first, norm_company, rank_setups, setup_score,
     sue_confirmer)
 from engine import stock_score  # noqa: E402
 from engine import name_score  # noqa: E402  — per-name POTENTIAL (buy-readiness) score, edge-blended
@@ -86,15 +86,15 @@ _SPDR_TO_GICS = {"Technology": "Information Technology",
 
 
 def _drop_spurious_sector_rows(wide: dict) -> dict[str, list[tuple]]:
-    """Drop buy/watch/laggards rows whose sector label is corrupt.
+    """Drop buy/watch/laggards/leaders rows whose sector label is corrupt.
 
     A row is kept when its sector is empty/None (unknown — missing metadata is
     not a reason to drop a scored setup) or one of the 11 GICS names. Mutates
     *wide* in place; returns {lane: [(ticker, sector), ...]} for what was
-    dropped so the caller can log it.
+    dropped so the caller can log it. A lane absent from *wide* is skipped.
     """
     dropped: dict[str, list[tuple]] = {}
-    for lane in ("buy", "watch", "laggards"):
+    for lane in ("buy", "watch", "laggards", "leaders"):
         rows = wide.get(lane) or []
         bad = [(r.get("ticker"), r.get("sector")) for r in rows
                if (r.get("sector") or "") and r.get("sector") not in GICS_SECTORS]
@@ -765,6 +765,67 @@ def _cascade_elig(scored: list[tuple], sig_verdict: dict) -> list[tuple]:
     applied by the caller via signal_gate.blend_sorted."""
     return [(t, p, _atier(p)) for t, p in scored
             if (sig_verdict.get(t) or {}).get("eligible")]
+
+
+LEADERS_CAP = 15           # max leaders-strip rows
+LEADERS_ALPHA_FLOOR = 0.5  # basis: prior — engine/setups.py BUY_MIN, the classic alpha buy floor
+
+
+def _select_leaders(scored, row_by_t, sig_verdict, exclude, *,
+                    cap=LEADERS_CAP, floor=LEADERS_ALPHA_FLOOR):
+    """Leaders strip (2026-07-28 gate-width order): the strongest runners by
+    residual alpha that the fresh-cross confluence gate structurally cannot
+    admit (measured 2026-07-28: of the top-100 3-month runners, 2 passed the
+    gate; 53 sat at flat-sell). DISPLAY-TIER coverage, never an entry claim:
+    admission requires an INTACT trend (above200 AND weekly_bull from the
+    signal_gate verdict), residual alpha >= floor (basis: prior BUY_MIN), not
+    already on the board (exclude), dir != 'down'. Ranked alpha-desc, ticker
+    tiebreak; dual-class deduped. Rows are tagged lane='leader'.
+    Alpha is the one leg the US board measurement ranked positively
+    (research/US_BOARD_MEASUREMENT.md §3) — order by edge, gate by structure.
+    """
+    picked: list[tuple[float, str, dict]] = []
+    for t, _p in scored:
+        if t in exclude:
+            continue
+        sv = sig_verdict.get(t) or {}
+        # Structure gate: intact uptrend only. `is True` is deliberate — a None
+        # (unknown/unanalysed) must never read as an intact trend.
+        if not (sv.get("above200") is True and sv.get("weekly_bull") is True):
+            continue
+        r = row_by_t.get(t)
+        if r is None:
+            continue
+        alpha = r.get("alpha")
+        if alpha is None:
+            continue
+        try:
+            alpha_f = float(alpha)
+        except (TypeError, ValueError):
+            continue
+        # NaN fails this comparison, which is the wanted outcome (no alpha, no row).
+        if not alpha_f >= floor:
+            continue
+        if r.get("dir") == "down":
+            continue
+        picked.append((alpha_f, t, r))
+    picked.sort(key=lambda x: (-x[0], x[1]))
+    # Dual-class dedup (GOOG+GOOGL) — keep the first-ranked variant, same
+    # engine.setups.norm_company normalisation the wide board's per-sector cap uses.
+    _seen_name: set[str] = set()
+    out: list[dict] = []
+    for _a, _t, r in picked:
+        _nm = norm_company(r.get("name"))
+        if _nm and _nm in _seen_name:
+            continue
+        if _nm:
+            _seen_name.add(_nm)
+        out.append(r)
+        if len(out) >= cap:
+            break
+    for r in out:
+        r["lane"] = "leader"
+    return out
 
 
 # ── P2.4 Board Contract v2 lane taxonomy ─────────────────────────────────────
@@ -3175,15 +3236,20 @@ def main() -> int:
                  "%d eligible on trend lane)", len(buyable))
 
         # W6-US fix 6: soft per-sector cap + dual-class dedup on the wide board.
-        # The same PER_SECTOR=5 cap that guards action_board.notable in build_site.py
-        # is now applied here so the cascade gate can't over-concentrate in one sector
+        # The cap keeps the cascade gate from over-concentrating in one sector
         # (live pre-migration: 10 Industrials + 9 Utilities = 19/34 = 56% of buys).
         # Soft: names that exceed the cap overflow into the watch strip instead of
         # being discarded — the board is transparent about them.
         # Dual-class dedup: names sharing a normalised company name (GOOG+GOOGL) keep
         # only the first-ranked variant. Uses engine.setups.norm_company.
+        # CAP RE-TUNE 5 -> 10 (2026-07-28, operator gate-width order): the 5-cap was
+        # calibrated 2026-07-01 against the 34-row bottoming-alignment-era board (and
+        # mirrored build_site.py's action_board PER_SECTOR=5). The 2026-07-16 cascade-
+        # gate migration (#2701) tripled the eligible pool (~89 names) and the cap was
+        # never re-tuned — at 5 it removed ~half the eligible names (overflow_count 45
+        # on the 07-27 board). Still a SOFT cap: overflow goes to watch.
         from engine.setups import norm_company as _norm_co
-        _WIDE_PER_SECTOR = 5
+        _WIDE_PER_SECTOR = 10
         _by_sec_w: dict[str | None, int] = {}
         _seen_name_w: set[str] = set()
         _buyable_capped: list[tuple] = []
@@ -3334,6 +3400,23 @@ def main() -> int:
                            if (profiles.get(t) or {}).get("composite_z", 0) > 0]
         watch = _overflow_watch + watch
 
+        # ── Leaders strip (2026-07-28 gate-width order) ──────────────────────
+        # Coverage lane for the strongest runners the fresh-cross gate cannot admit.
+        # Exclusion set = the CASCADE-ELIGIBLE set (elig) + buy shelf + laggards tail
+        # (scored[-12:], the same slice wide["laggards"] uses). Eligible names carry a
+        # fresh/live signal — they belong on the board or its overflow, and the strip's
+        # copy promises "no fresh entry signal", so admitting one would be dishonest.
+        # The internal `watch` list must NOT be excluded here: pre-slice it holds every
+        # positive-composite non-buy name in the market (~hundreds), which would starve
+        # the strip down to negative-composite names; artifact-watch is not rendered on
+        # the page, so a leaders/watch overlap duplicates nothing user-facing.
+        _leader_exclude = ({t for t, _, _ in elig} | buy_ids
+                           | {t for t, _ in scored[-12:]})
+        leaders = _select_leaders(scored, row_by_t, sig_verdict, _leader_exclude)
+        log.info("leaders strip: %d rows (cap %d, alpha floor %.2f, %d excluded as "
+                 "already-surfaced)", len(leaders), LEADERS_CAP, LEADERS_ALPHA_FLOOR,
+                 len(_leader_exclude))
+
         # ── P2.4 Board Contract v2: lane taxonomy + weekly_phase capture ─────
         # Spec: research/entry_intel/P2_4_BOARD_CONTRACT_V2_DESIGN.md
         # Step A: populate weekly_phase on every cand row from
@@ -3466,7 +3549,13 @@ def main() -> int:
 
         wide = {"as_of": alpha_asof, "rank_by": "confluence", "gate_go": gate_go,
                 "buy": _all_buy_rows,
-                "watch": [_tag_watch(t) for t, _ in watch[:24]],
+                # Slice raised 24 -> 48 (2026-07-28) so capped-overflow names are never
+                # silently dropped: under the 5-cap, 45 overflow rows were squeezed into
+                # 24 slots and 21 gate-passing names vanished from the artifact entirely.
+                "watch": [_tag_watch(t) for t, _ in watch[:48]],
+                # Leaders strip — a SEPARATE display lane (lane='leader'); never mixed
+                # into buy[], and prophet_bridge does not originate plans from it.
+                "leaders": leaders,
                 "laggards": [row_by_t[t] for t, _ in scored[-12:][::-1]] if len(scored) > 24 else [],
                 "concentration": _concentration_stat,
                 # G6a donor-sector: page-level context chip (not per-row; None when insufficient data)
@@ -3483,7 +3572,9 @@ def main() -> int:
             log.warning("sector-integrity guard: dropped %d %s row(s) with spurious "
                         "sector label: %s", len(_rows_s), _lane_s, _rows_s)
         eligible = len(elig)
-        for r in wide["buy"] + wide["watch"] + wide["laggards"]:
+        # leaders join the enrichment pass so the strip carries conviction + ext_z
+        # (the strip's "extended" chase-risk chip reads ext_z).
+        for r in wide["buy"] + wide["watch"] + wide["leaders"] + wide["laggards"]:
             t = r.get("ticker")
             r["conviction"] = profiles.get(t)
             # P2.4 Step D: ext_z top-level field — extension z-score for the anti-chase
