@@ -2813,7 +2813,21 @@ jobs:
         # top-level import there must turn this job red at collection. NOTHING in
         # the suite is importorskip-gated — it runs in full on pytest+pyyaml, so
         # it can never become a skip-only suite. Verified in a clean venv.
-        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_marketing_personas.py tests/test_marketing_event_language.py tests/test_marketing_press_feeds.py tests/test_marketing_breaking.py tests/test_marketing_fastlane.py tests/test_marketing_press_copy.py tests/test_marketing_ramp_cta_jitter.py tests/test_marketing_expression_dial.py -q
+        # test_marketing_cadence_spine (X Growth W2, XG-W2) joins the same lane
+        # (2026-07-28): the per-account cadence resolver, the `session` schema
+        # field, the one-conversation-one-owner lock, the cross-account near-dup
+        # radar, and the outbox KINDS hardening that moved press_lane + fastlane
+        # onto make_item/validate_item. It reaches ACROSS both marketing lanes on
+        # purpose — press_lane/fastlane/personas live here, the publisher half
+        # lives in marketing-social-publisher — because the wave's whole point is
+        # that those halves now share one contract, and a test exercising only
+        # one side would miss the seam. Import closure is stdlib+pyyaml:
+        # cadence_resolver/story_lock/wire_routing keep personas, outbox and
+        # zoneinfo lazy or stdlib, and scripts/marketing_publisher already runs
+        # on the same two deps in the sibling lane. Nothing is importorskip-gated,
+        # so it can never decay into a skip-only suite — verified in a clean
+        # pytest+pyyaml venv.
+        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_marketing_personas.py tests/test_marketing_event_language.py tests/test_marketing_press_feeds.py tests/test_marketing_breaking.py tests/test_marketing_fastlane.py tests/test_marketing_press_copy.py tests/test_marketing_ramp_cta_jitter.py tests/test_marketing_expression_dial.py tests/test_marketing_cadence_spine.py -q
       - name: persona specs validate (config/personas/*.yml)
         # The gate the specs exist for: every committed spec carries the full
         # content-studio tilt key set, a live template-pool voice key, and the

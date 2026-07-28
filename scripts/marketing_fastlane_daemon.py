@@ -182,8 +182,13 @@ def _run_one_tick(*, dry_run: bool, armed: bool = True) -> dict:
     # outbound card like every other lane, so it must not keep pitching a trial
     # button after the operator turned the CTA off network-wide.
     from engine.marketing.chart_render import chart_cta_enabled  # noqa: PLC0415
-    _cta = chart_cta_enabled(_load_yaml(ROOT / "config" / "marketing.yml"))
-    result = run_tick(events, root=ROOT, now=now, dry_run=dry_run, cta=_cta)
+    _cfg = _load_yaml(ROOT / "config" / "marketing.yml")
+    _cta = chart_cta_enabled(_cfg)
+    # cfg is threaded through (XG-W2) so the lane can resolve wire routing, the
+    # one-owner lock window and the cross-account near-dup threshold from config
+    # rather than from in-code fallbacks.
+    result = run_tick(events, root=ROOT, now=now, dry_run=dry_run, cta=_cta,
+                      cfg=_cfg)
     return result
 
 

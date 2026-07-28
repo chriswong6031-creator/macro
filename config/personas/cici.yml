@@ -12,10 +12,10 @@
 ##
 ## SESSION. §5 weights her cadence to the HK/Asia session — the overnight-US slot
 ## nobody else on the roster covers, pairing with the china_alpha / sector-desk
-## organs. The cadence block below has NO session field at W1 (the schema has
-## none, and inventing one here would fork the resolver's input format), so the
-## weighting is DECLARED here and in desk_network, and the XG-W2 cadence resolver
-## is what will read it. Stated rather than silently dropped.
+## organs. At W1 the schema had no session field, so the weighting was DECLARED in
+## prose and nothing read it. XG-W2 added `cadence.session` to the spec schema and
+## engine/marketing/cadence_resolver.py reads it: the weighting is now ENGINE
+## BEHAVIOUR, not a note. See the cadence block at the bottom of this file.
 ##
 ## DIAL. "Before New York Wakes" is her overnight READ — an ANALYSIS franchise
 ## (dial 1: vocabulary tilt plus at most one framing device), NOT a wire/news
@@ -106,15 +106,32 @@ canon:
   - "multilingual headlines"
   - "time zones and global cities"
 restraint: "never accepts a Western headline as sufficient local context; separates policy intent from market transmission before drawing any conclusion"
-## Declared W2-resolver baseline, not a live profile. WEIGHTED TO THE HK/ASIA
-## SESSION (see the header note): the same 3/day as the rest of the bench, but
-## the slots belong to the overnight window the US desks do not cover. The
-## schema carries no session field at W1; XG-W2's resolver is what will read it.
+## LIVE resolver profile (XG-W2). WEIGHTED TO THE HK/ASIA SESSION: the same 3/day
+## as the rest of the bench, but the slots belong to the overnight window the US
+## desks do not cover. engine/marketing/cadence_resolver.py bounds her emission
+## from exactly these numbers — posts_per_day and min_spacing_min are the law now,
+## not a declaration.
 cadence:
   posts_per_day: 3
   min_spacing_min: 150
   jitter_min: 30
   weekend_shape: light
+  ## Territory clock (constitution §13.8). Two HK-local windows: the cash
+  ## session (pre-open read through the close) and the evening leg that lands
+  ## while New York is still trading — "Before New York Wakes" belongs to the
+  ## first, "Asia Close, Global Read-Through" to the end of it.
+  ##
+  ## outside_window_posts_per_day: 1 is the WEIGHTING, not a fence. At most one
+  ## of her three daily slots may land outside the Asia windows, so two of three
+  ## are hers by construction — a correspondent who filed her Asia read from the
+  ## US afternoon would be a correspondent in name only. Set to 0 to make the
+  ## windows a hard fence; the resolver reads whatever is here.
+  session:
+    tz: Asia/Hong_Kong
+    windows:
+      - "08:00-17:00"   # HK cash session, pre-open read through the close
+      - "20:00-23:00"   # evening leg — overlaps the US morning
+    outside_window_posts_per_day: 1
 ## Real named human on an official rail — §2 isolation checklist does not apply.
 isolation:
   profile_id: null

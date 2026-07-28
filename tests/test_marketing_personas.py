@@ -564,6 +564,13 @@ _SPEC_CONSUMERS_ALLOWED = {
     # layer calls expression_dial, never personas — which is why copywriter.py
     # and content_studio.py must still be absent from this set.
     "engine/marketing/expression_dial.py",
+    # XG-W2 opened the SECOND, and for the same reason: the specs' `cadence:`
+    # blocks were decorative until something read them, and a per-account
+    # posting law cannot be enforced from a layer nothing reads. This module
+    # (and ONLY this module) resolves cadence at POST time. The publisher calls
+    # cadence_resolver, never personas — which is why scripts/
+    # marketing_publisher.py must still be absent from this set.
+    "engine/marketing/cadence_resolver.py",
 }
 
 

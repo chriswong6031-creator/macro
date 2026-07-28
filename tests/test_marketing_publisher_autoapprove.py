@@ -1032,16 +1032,26 @@ def test_post_time_deeply_reworded_passes(monkeypatch, tmp_path):
     assert current_statuses(tmp_path)[fresh] == "posted"
 
 
-def test_post_time_near_dup_is_per_account(monkeypatch, tmp_path):
-    """A near-identical post from a DIFFERENT account is NOT quarantined here —
-    cross-account near-dup is the sentinel's plan-time job."""
+def test_post_time_near_dup_quarantines_cross_account_too(monkeypatch, tmp_path):
+    """XG-W2 INVERTED this contract, deliberately.
+
+    The old law was "cross-account near-dup is the sentinel's plan-time job".
+    Sentinel's cross-account pass only sees items inside ONE nightly content
+    plan, so it never covered the queue across nights or the fast lanes (which
+    never enter a plan). Two of OUR accounts posting near-identical text is the
+    fleet-linkage signal, and the last gate before the network is where it must
+    be caught. Threshold: sentinel.near_dup_jaccard, stricter than the
+    same-account 0.7 on purpose.
+    """
     from engine.marketing.outbox import (
-        current_statuses, transition, token_jaccard, make_item, append_jsonl, _items_path,
+        current_statuses, transition, token_jaccard, make_item, append_jsonl,
+        _items_path, cross_account_threshold,
     )
-    assert token_jaccard(_REPEAT_TEXT, _REPEAT_TEXT_REWORDED) >= 0.7
+    assert token_jaccard(_REPEAT_TEXT, _REPEAT_TEXT_REWORDED) >= cross_account_threshold(None)
 
     # flagship posted the original; a DIFFERENT account "second" carries the
-    # near-identical copy and must pass (its channel is configured too).
+    # near-identical copy and must now be REFUSED (its channel is configured, so
+    # nothing else could be stopping it).
     _write_publish_cfg(tmp_path, auto_approve=False, cap=-1, floor_min=0)
     cfg_p = tmp_path / "config" / "marketing.yml"
     txt = cfg_p.read_text(encoding="utf-8").replace(
@@ -1060,8 +1070,10 @@ def test_post_time_near_dup_is_per_account(monkeypatch, tmp_path):
     rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake,
                         kill_switch=True)
     assert rc == 0
-    # The cross-account near-identical copy is NOT quarantined by this gate.
-    assert current_statuses(tmp_path)[other["id"]] != "quarantined"
+    # The cross-account near-identical copy IS quarantined by this gate (XG-W2).
+    assert current_statuses(tmp_path)[other["id"]] == "quarantined"
+    # …and it never reached the network.
+    assert all(_REPEAT_TEXT_REWORDED not in c.get("text", "") for c in fake.calls)
 
 
 # ─────────────────────────────────────────────────────────────────────────────

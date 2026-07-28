@@ -16,22 +16,17 @@ TickResult is a dict with three keys:
 Each entry in emitted / skipped / quarantined is a dict with at least:
     {"id": str, "ticker": str, "reason": str | None}
 
-Outbox contract (D02):
-    D02's engine/marketing/outbox.py will own the outbox publishing contract when
-    it lands.  This emitter is intentionally minimal so it can be refactored onto
-    that module without changes to callers.  The emitted JSON shape is:
-    {
-        "id":        str,
-        "account":   "flagship",
-        "kind":      "earnings",
-        "text":      {"headline": str, "body": str},
-        "media":     [str],            # relative paths under data/marketing/outbox/
-        "immediate": true,
-        "priority":  "high",
-        "provenance": {<event fields> + "source": str},
-        "status":    "queued",
-        "created_at": str,             # ISO-8601 UTC
-    }
+Outbox contract (D02 → XG-W2):
+    This emitter used to hand-roll `data/marketing/outbox/<id>.json` with its own
+    schema ({"text": {"headline", "body"}, "priority": "high", "provenance": {…}}).
+    Nothing read that file — the publisher folds items.jsonl — so every earnings
+    emission also skipped the id-dedup, text-dedup and near-dup guards that live
+    in outbox.enqueue().  XG-W2 moved the lane onto the canonical path:
+    outbox.make_item() → outbox.validate_item() → outbox.enqueue(), kind
+    "earnings" (admitted to outbox.KINDS in the same wave), text FLATTENED to the
+    real post string (outbox.compose_text), the rich event record
+    carried in `source`, and the account RESOLVED from the wire_routing config
+    map instead of a module constant.
 
 Ledger:
     data/marketing/fastlane_seen.jsonl is daemon-local state.  It is append-only
@@ -61,7 +56,17 @@ _SEEN_LEDGER_PATH = Path("data/marketing/fastlane_seen.jsonl")
 _QUARANTINE_LEDGER_PATH = Path("data/marketing/fastlane_quarantine.jsonl")
 _OUTBOX_DIR = Path("data/marketing/outbox")
 _MEDIA_DIR = _OUTBOX_DIR / "media"
-_ACCOUNT = "flagship"
+
+# XG-W2: the earnings lane's account is resolved from the same `wire_routing:`
+# config map the press lane uses (class "earnings"), so a second hardcoded
+# account cannot quietly outlive the first. The map ships routing earnings to
+# flagship, i.e. today's behaviour, expressed as config instead of a constant.
+_FALLBACK_ACCOUNT = "flagship"
+
+# Earnings is a breaking-class post: it sorts ahead of the ladder. The publisher
+# orders by (priority, scheduled_at, id) with a default of 5, so 1 is first.
+# The pre-XG-W2 raw writer wrote the string "high", which make_item rejects.
+_EARNINGS_PRIORITY = 1
 
 # Bump this constant whenever the copy template changes so that previously
 # quarantined events are retried against the new template.
@@ -333,7 +338,10 @@ def _build_earnings_copy(event: dict[str, Any]) -> dict[str, Any]:
         "cashtag": cashtag,
         "type": "earnings",   # not a standard content_type; validate_copy won't
                                # apply signal/theme rules to it
-        "account": _ACCOUNT,
+        # Overwritten by run_tick with the ROUTED account before validate_copy
+        # runs (XG-W2). Kept as a default here so the function stays a pure
+        # single-argument builder — the tests monkeypatch it with that shape.
+        "account": _FALLBACK_ACCOUNT,
         "numbers_whitelist": unique_whitelist,
         "emoji_budget": 1,    # Scorekeeper allows 1 emoji
         "voice": "dry, receipts-forward",
@@ -346,81 +354,153 @@ def _build_earnings_copy(event: dict[str, Any]) -> dict[str, Any]:
 # Outbox writer
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _write_outbox(
+def _story_key_for(event: dict[str, Any]) -> str:
+    """The one-owner lock identity for an earnings event."""
+    try:
+        from engine.marketing.story_lock import story_key  # noqa: PLC0415
+
+        ticker = str(event.get("ticker") or "").upper()
+        quarter = str(event.get("quarter") or "")
+        cluster = f"earnings:{ticker}:{quarter}" if ticker else ""
+        return story_key(cluster_key=cluster, event_id=event.get("id"))
+    except Exception:  # noqa: BLE001
+        return ""
+
+
+def _story_locked(account: str, key: str, *, root: Path, now: datetime,
+                  cfg: dict | None) -> bool:
+    """True when ANOTHER account already owns this story inside the window.
+
+    Fail-soft: a lock that cannot read its state returns False (proceed) rather
+    than becoming a silent publication stopper.
+    """
+    if not key:
+        return False
+    try:
+        from engine.marketing import outbox as _ob  # noqa: PLC0415
+        from engine.marketing import story_lock as _sl  # noqa: PLC0415
+
+        verdict = _sl.check(account, key, _ob.read_items(root), now=now, cfg=cfg)
+        if not verdict.allowed:
+            logger.info("[fastlane] story %s already owned by %s — standing down",
+                        key, verdict.owner)
+        return not verdict.allowed
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("[fastlane] story lock unavailable (%s) — proceeding", exc)
+        return False
+
+
+def _route_account(cfg: dict | None, root: Path) -> str:
+    """The account that owns an earnings emission (XG-W2 wire routing).
+
+    Fail-soft to the historical flagship — a routing lookup must never stop an
+    earnings post from emitting at all.
+    """
+    try:
+        from engine.marketing.wire_routing import route  # noqa: PLC0415
+
+        return route("earnings", cfg=cfg, root=root)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("[fastlane] wire routing failed (%s) — using %s",
+                       exc, _FALLBACK_ACCOUNT)
+        return _FALLBACK_ACCOUNT
+
+
+def _emit_outbox(
     root: Path,
     event: dict[str, Any],
+    account: str,
     headline: str,
     body: str,
     svg: str,
     now: datetime,
     *,
+    story_key: str = "",
     dry_run: bool = False,
-) -> dict[str, Any]:
-    """Write media SVG + outbox JSON and return the outbox item dict.
+    cfg: dict | None = None,
+) -> dict[str, Any] | None:
+    """Build a CANONICAL outbox item (kind='earnings') and enqueue it.
 
-    When dry_run=True, writes nothing to disk and returns the item dict
-    (the caller may log it).
+    XG-W2 replaced the hand-rolled ``data/marketing/outbox/<id>.json`` writer this
+    used to be. That file shape had no reader — the publisher folds
+    ``items.jsonl`` and nothing else — so every earnings emission bypassed
+    ``make_item``/``validate_item`` and the id-dedup, text-dedup, same-account
+    near-dup and cross-account near-dup guards that live in ``enqueue``.
+
+    Returns the item, or None when validation or the queue refused it.
+    ``dry_run`` builds and validates but writes nothing.
     """
+    from engine.marketing import outbox as _ob  # noqa: PLC0415
+
     event_id: str = str(event["id"])
     media_rel = f"data/marketing/outbox/media/{event_id}.svg"
+    as_of = now.astimezone(timezone.utc).strftime("%Y-%m-%d")
 
-    if not dry_run:
-        media_path = root / _MEDIA_DIR / f"{event_id}.svg"
-        media_path.parent.mkdir(parents=True, exist_ok=True)
-        # Write via temp+replace to avoid torn writes (law from mm-data-guard lessons)
-        import tempfile, os  # noqa: E401
-        tmp_fd, tmp_path = tempfile.mkstemp(
-            dir=media_path.parent, suffix=".svg.tmp"
+    try:
+        item = _ob.make_item(
+            account=account,
+            kind="earnings",
+            text=_ob.compose_text(headline, body),
+            as_of=as_of,
+            # Media keeps its historical filename (the EVENT id); only the item
+            # id becomes canonical (ob-<as_of>-<hash>, derived from the copy).
+            media=[{"kind": "chart_svg", "path": media_rel, "chart_id": event_id}],
+            # Explicit sentinel, not an absent key: the publisher decides the
+            # breaking path off scheduled_at (_is_immediate), and the admin
+            # renders it.
+            scheduled_at="immediate",
+            priority=_EARNINGS_PRIORITY,
+            provenance="fastlane",
+            source={
+                "lane": "earnings",
+                "event_id": event_id,
+                "story_key": story_key,
+                **{k: v for k, v in event.items() if not str(k).startswith("_")},
+                "source": event.get("source", "unknown"),
+            },
+            now=now,
         )
+    except ValueError as exc:
+        print(f"::warning title=fastlane-item-invalid::{event_id}: {exc}", flush=True)
+        return None
+
+    # Additive fields the canonical schema has no slot for; validate_item does
+    # not reject extras and each is read downstream (see press_lane).
+    item["immediate"] = True
+    item["headline"] = headline
+    item["body"] = body
+
+    errors = _ob.validate_item(item)
+    if errors:
+        print(f"::warning title=fastlane-item-invalid::{event_id}: {errors[0]}",
+              flush=True)
+        return None
+
+    if dry_run:
+        return item
+
+    media_path = root / _MEDIA_DIR / f"{event_id}.svg"
+    media_path.parent.mkdir(parents=True, exist_ok=True)
+    # Write via temp+replace to avoid torn writes (law from mm-data-guard lessons)
+    import os  # noqa: PLC0415
+    import tempfile  # noqa: PLC0415
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=media_path.parent, suffix=".svg.tmp")
+    try:
+        with os.fdopen(tmp_fd, "w", encoding="utf-8") as fh:
+            fh.write(svg)
+        os.replace(tmp_path, media_path)
+    except Exception:
         try:
-            with os.fdopen(tmp_fd, "w", encoding="utf-8") as fh:
-                fh.write(svg)
-            os.replace(tmp_path, media_path)
-        except Exception:
-            try:
-                os.unlink(tmp_path)
-            except OSError:
-                pass
-            raise
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+        raise
 
-    item: dict[str, Any] = {
-        "id": event_id,
-        "account": _ACCOUNT,
-        "kind": "earnings",
-        "text": {"headline": headline, "body": body},
-        "media": [media_rel],
-        "immediate": True,
-        # Explicit sentinel, not an absent key: the publisher decides the breaking
-        # path off scheduled_at (_is_immediate), and the admin renders it. Missing
-        # already meant "immediate" by fallback — saying it is what makes an
-        # earnings item legible as a share-now post everywhere it is read.
-        "scheduled_at": "immediate",
-        "priority": "high",
-        "provenance": {
-            **{k: v for k, v in event.items() if not k.startswith("_")},
-            "source": event.get("source", "unknown"),
-        },
-        "status": "queued",
-        "created_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
-    }
-
-    if not dry_run:
-        outbox_path = root / _OUTBOX_DIR / f"{event_id}.json"
-        outbox_path.parent.mkdir(parents=True, exist_ok=True)
-        tmp_fd2, tmp_path2 = tempfile.mkstemp(
-            dir=outbox_path.parent, suffix=".json.tmp"
-        )
-        try:
-            with os.fdopen(tmp_fd2, "w", encoding="utf-8") as fh:
-                json.dump(item, fh, indent=2)
-            os.replace(tmp_path2, outbox_path)
-        except Exception:
-            try:
-                os.unlink(tmp_path2)
-            except OSError:
-                pass
-            raise
-
+    result = _ob.enqueue(item, root, cfg=cfg)
+    if result != "queued":
+        print(f"::warning title=fastlane-not-queued::{event_id} refused by the "
+              f"outbox: {result}", flush=True)
+        return None
     return item
 
 
@@ -436,6 +516,7 @@ def run_tick(
     universe: set[str] | None = None,
     dry_run: bool = False,
     cta: bool = True,
+    cfg: dict | None = None,
 ) -> dict[str, list[dict[str, Any]]]:
     """Process one tick of earnings events through the fast-lane pipeline.
 
@@ -451,6 +532,11 @@ def run_tick(
                   footer without the trial button (URL lockup stays). The caller
                   resolves it from config; the default keeps the legacy card for
                   any caller that has no config in hand.
+        cfg:      The full config/marketing.yml dict (XG-W2). Read for wire
+                  routing, the one-owner lock window, and the cross-account
+                  near-dup threshold. None (the default) keeps every one of
+                  those on its in-code fallback, which is the pre-XG-W2
+                  behaviour — so a caller with no config in hand still works.
 
     Returns:
         {
@@ -521,9 +607,27 @@ def run_tick(
         # ── Tag session window ────────────────────────────────────────────────
         event = {**event, "_session": _session_window(str(event.get("when", "")))}
 
+        # ── Route (XG-W2): which account owns this earnings emission? ─────────
+        account = _route_account(cfg, root)
+
+        # ── One conversation, one owner (charter §2 amendment 6) ──────────────
+        # An earnings print is a story like any other: if the wire lane already
+        # emitted it under another account, this lane stands down. The key is the
+        # event id (already the lane's dedupe identity), headline as fallback.
+        story_key = _story_key_for(event)
+        if _story_locked(account, story_key, root=root, now=now, cfg=cfg):
+            skipped.append({"id": event_id, "ticker": ticker,
+                            "reason": "story_locked"})
+            continue
+
         # ── Build copy (Scorekeeper voice) ────────────────────────────────────
         copy_result = _build_earnings_copy(event)
         ctx = copy_result["ctx"]
+        # The routed account is what validate_copy must judge against — a
+        # per-account copy law is only real if the account it sees is the
+        # account that posts.
+        if isinstance(ctx, dict):
+            ctx["account"] = account
         headline = copy_result["headline"]
         body = copy_result["body"]
 
@@ -570,14 +674,22 @@ def run_tick(
             logger.error("[fastlane] render_earnings_card(%s) failed: %s", ticker, exc)
             svg = f"<svg xmlns='http://www.w3.org/2000/svg' width='100' height='50'><text y='20'>{ticker} card render failed</text></svg>"
 
-        # ── Write outbox item ─────────────────────────────────────────────────
+        # ── Emit through the canonical outbox path ────────────────────────────
         try:
-            outbox_item = _write_outbox(
-                root, event, headline, body, svg, now, dry_run=dry_run
+            outbox_item = _emit_outbox(
+                root, event, account, headline, body, svg, now,
+                story_key=story_key, dry_run=dry_run, cfg=cfg,
             )
         except Exception as exc:  # noqa: BLE001
             logger.error("[fastlane] outbox write(%s) failed: %s", event_id, exc)
             skipped.append({"id": event_id, "ticker": ticker, "reason": f"outbox_write_error: {exc}"})
+            continue
+        if outbox_item is None:
+            # The canonical path refused it (invalid, duplicate, cross-account
+            # near-dup, or over cap). NOT recorded as seen — a refusal is not an
+            # emission, and a later tick may legitimately retry it.
+            skipped.append({"id": event_id, "ticker": ticker,
+                            "reason": "outbox_refused"})
             continue
 
         # ── Record in seen-ledger ─────────────────────────────────────────────

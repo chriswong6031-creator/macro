@@ -50,9 +50,19 @@ log = logging.getLogger(__name__)
 
 SCHEMA_ID = "marketing.outbox/v1"
 
+# The nine nightly content-plan kinds, plus the three FAST-LANE kinds admitted
+# by XG-W2. The fast lanes (press_lane, fastlane) were writing raw per-item JSON
+# files straight to data/marketing/outbox/<id>.json — a shape nothing read, that
+# bypassed make_item/validate_item, and that therefore inherited NONE of the
+# id-dedup, text-dedup or near-dup guarantees this module exists to provide.
+# Admitting their kinds is what lets those writers use the canonical path:
+#   wire      — a wire-lane emission routed by wire_routing (press_lane)
+#   breaking  — a corroborated press/breaking post (press_lane)
+#   earnings  — an earnings fast-lane post (fastlane)
 KINDS: frozenset[str] = frozenset({
     "signal", "chart", "education", "macro", "receipt",
     "watchlist", "event", "mover", "theme_list",
+    "wire", "breaking", "earnings",
 })
 
 # Status machine — only these transitions are legal.
@@ -409,6 +419,26 @@ def near_duplicate(a: str, b: str, *, threshold: float = _NEAR_DUP_JACCARD) -> b
     return token_jaccard(a, b) >= threshold
 
 
+def cross_account_threshold(cfg: dict | None) -> float:
+    """The CROSS-ACCOUNT near-dup Jaccard bar, from Sentinel config.
+
+    ``sentinel.near_dup_jaccard`` is by its own config comment the cross-account
+    threshold ("lowered from 0.60 to 0.50 per D08_APPENDIX_X_POLICY_REDTEAM §4 …
+    the policy bar is 'substantially similar'"), and it is DELIBERATELY stricter
+    than the same-account bar (_NEAR_DUP_JACCARD = 0.7): one account rewording
+    its own coverage is a style problem, two accounts converging on one wording
+    is a network-linkage tell — the text-similarity clustering X has run since
+    2026-03. Sentinel already applies this bar ACROSS accounts inside a single
+    nightly content plan (sentinel.py STEP 4); this is the same bar applied to
+    the outbox queue, which spans nights and carries the fast lanes that never
+    enter a plan at all.
+    """
+    try:
+        return float(sentinel_contract(cfg or {})["near_dup_jaccard"])
+    except Exception:  # noqa: BLE001
+        return float(_sentinel_defaults()["near_dup_jaccard"])
+
+
 def _recent_texts_by_account(existing: list[dict], ref_as_of: object) -> dict[str, list[str]]:
     """account → [normalized text, ...] for every in-window existing item.
 
@@ -470,6 +500,28 @@ def recent_posted_texts(state: dict, ref_as_of: str) -> dict[str, list[tuple[str
         out.setdefault(acct, []).append(
             (iid, _normalize_text(str(it.get("text") or "")), str(it.get("as_of") or "")))
     return out
+
+
+def compose_text(headline: object, body: object) -> str:
+    """Flatten a {headline, body} pair into the canonical item ``text`` (XG-W2).
+
+    WHY THE SCHEMA HAS ONE STRING. ``text`` is the post, and every guard in this
+    module is built on that: :func:`_item_id` hashes ``_normalize_text(text)``,
+    the exact-text dedup keys on it, and :func:`near_duplicate` tokenizes it. The
+    fast lanes (press_lane, fastlane) used to carry ``{"headline":…, "body":…}``
+    in that slot, which is not merely unsupported — it silently DEFEATS the
+    guards (``_normalize_text`` raises on a dict, and a stringified dict
+    tokenizes the schema key names alongside the copy). Routing those lanes
+    through the canonical path is only worth anything if the text they carry is
+    the text the guards can see.
+
+    ``"\\n\\n".join`` is the house convention, not a new one: ``admin/marketing.py``
+    already reconstructs a plan post's outbox text as headline + blank line +
+    body when it joins usage back onto the plan. Producers that want the two
+    halves separately readable keep them as top-level ``headline``/``body``.
+    """
+    parts = [str(headline or "").strip(), str(body or "").strip()]
+    return "\n\n".join(p for p in parts if p)
 
 
 def make_item(
@@ -713,12 +765,17 @@ def enqueue(
     root: Path | str | None = None,
     *,
     max_per_account_day: int | None = None,
+    cfg: dict | None = None,
     _ctx: dict | None = None,
 ) -> str:
     """Append an item to items.jsonl if valid and not duplicate/over-cap.
 
-    Returns one of: "queued" | "duplicate" | "cap_exceeded" | "invalid:<msg>".
-    Never raises.
+    Returns one of: "queued" | "duplicate" | "cross_account_duplicate" |
+    "cap_exceeded" | "invalid:<msg>". Never raises.
+
+    cfg: the marketing config, read ONLY for the cross-account near-dup
+    threshold (sentinel.near_dup_jaccard). None → Sentinel's in-code default,
+    so the guard is on either way; the config can tune it, never disarm it.
 
     _ctx (internal, used by emit_from_content_plan): a preloaded
     {"ids": set, "day_counts": {(account, as_of): int}} snapshot so a batch of
@@ -753,6 +810,25 @@ def enqueue(
             prior_texts = ctx.get("recent_texts_by_account", {}).get(account, ())
             if any(near_duplicate(new_text, prior) for prior in prior_texts):
                 return "duplicate"
+            # CROSS-ACCOUNT near-dup radar (XG-W2). The guard above is strictly
+            # same-account; with seven live accounts the failure that matters is
+            # TWO of ours posting near-identical text, which reads as one
+            # operator running a fleet — the coordination signal the near-dup
+            # bar exists to deny. Same Jaccard machinery, wider corpus, stricter
+            # threshold (sentinel.near_dup_jaccard — see cross_account_threshold).
+            xa_thresh = ctx.get("cross_account_threshold")
+            if xa_thresh is not None:
+                by_account = ctx.get("recent_texts_by_account", {})
+                for other_acct, other_texts in by_account.items():
+                    if other_acct == account:
+                        continue
+                    if any(near_duplicate(new_text, prior, threshold=xa_thresh)
+                           for prior in other_texts):
+                        log.warning(
+                            "outbox.enqueue: %s rejected — near-identical to a "
+                            "recent %s item (cross-account jaccard >= %.2f)",
+                            account, other_acct, xa_thresh)
+                        return "cross_account_duplicate"
             # Cap: every existing same-day item consumed a slot regardless of
             # status (quarantined/failed included — refilling a bad slot the
             # same day is how retry-spam starts). A negative cap = unlimited
@@ -772,6 +848,7 @@ def enqueue(
             return "queued"
 
         if _ctx is not None:
+            _ctx.setdefault("cross_account_threshold", cross_account_threshold(cfg))
             return _check_and_append(_ctx)
 
         with _outbox_lock(root):
@@ -785,6 +862,7 @@ def enqueue(
                     if _within_text_window(i.get("as_of"), as_of)
                 },
                 "recent_texts_by_account": _recent_texts_by_account(existing, as_of),
+                "cross_account_threshold": cross_account_threshold(cfg),
             }
             for i in existing:
                 key = (i.get("account"), i.get("as_of"))
@@ -1241,6 +1319,7 @@ def emit_from_content_plan(
                 if _within_text_window(i.get("as_of"), as_of)
             },
             "recent_texts_by_account": _recent_texts_by_account(existing, as_of),
+            "cross_account_threshold": cross_account_threshold(cfg),
         }
         for i in existing:
             key = (i.get("account"), i.get("as_of"))
@@ -1389,7 +1468,7 @@ def emit_from_content_plan(
                     if result_code == "queued":
                         counts["emitted"] += 1
                         counts["by_account"][account_id] = counts["by_account"].get(account_id, 0) + 1
-                    elif result_code == "duplicate":
+                    elif result_code in ("duplicate", "cross_account_duplicate"):
                         counts["skipped_dupe"] += 1
                     elif result_code == "cap_exceeded":
                         counts["skipped_cap"] += 1

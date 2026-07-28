@@ -88,15 +88,33 @@ sentinel:
   near_dup_jaccard: 0.50
 
   # Base cadence caps.
-  # Daily post volume is UNLIMITED (operator 2026-07-24 — autonomous cadence).
-  # -1 is the "no limit" sentinel decoded by sentinel._cap_unlimited (null does
-  # NOT work: _get collapses a present-null back to the default). Volume is paced
-  # instead by the post-time 10-minute floor (min_minutes_between_any_posts, a
-  # later phase) + the 2-week link gate below. The code default stays 2 as a safe
-  # bounded fallback if this key is ever missing. NOTE: unlimited is the base
-  # value for a WARMED account. A ramping account (see ramp: below) is bounded by
-  # the STRICTER of this and its tier row, so a week-1 desk still gets 2/day.
-  max_posts_per_account_per_day: -1   # unlimited
+  # Daily post volume is UNLIMITED HERE (operator 2026-07-24 — autonomous
+  # cadence). -1 is the "no limit" sentinel decoded by sentinel._cap_unlimited
+  # (null does NOT work: _get collapses a present-null back to the default). The
+  # code default stays 2 as a safe bounded fallback if this key is ever missing.
+  # NOTE on the ramp: table below — it is NOT a general bound on this key.
+  # sentinel.resolve_ramp() merges a tier row as the stricter-of, but the only
+  # caller is engine/marketing/publish_time_content.py (the publish-time mover
+  # lane). The publisher's own cap path is outbox.effective_cap(), which reads
+  # this key and the outbox: block and never consults the ramp. So a week-1 desk
+  # is bounded at 2/day on the mover lane ONLY; everywhere else the bound is the
+  # cadence resolver below. Stated because the previous comment here read as
+  # though the ramp governed every lane, and it does not.
+  #
+  # WHAT PACES VOLUME (updated XG-W2). The 2026-07-24 decision left this key as a
+  # deliberately blunt GLOBAL backstop — one number for every account, which read
+  # fine with one live desk and became a hole at seven. The pacing that actually
+  # binds is, in order:
+  #   1. the per-account CADENCE RESOLVER (cadence_resolver: below) — each
+  #      account's own posts_per_day / min_spacing_min / session window, read
+  #      from config/personas/<id>.yml. This is the per-account law; the specs'
+  #      cadence blocks were decorative until XG-W2 and are now enforced.
+  #   2. the post-time 10-minute global floor (publish.min_minutes_between_any_posts).
+  #   3. this key, as the network-wide ceiling — still honoured, still able to
+  #      LOWER any account below its spec. Setting it back to a real number is a
+  #      valid tightening at any time; the resolver does not replace it.
+  # The 2-week link gate below is unchanged.
+  max_posts_per_account_per_day: -1   # unlimited (global backstop; see above)
   max_same_cashtag_per_account_per_day: 1
   max_replies_per_account_per_day: 0
 
@@ -452,6 +470,90 @@ publish:
   # are a named X spam trigger; flip after ~2 weeks like the flagship ramp.
   links_allowed:
     flagship: true
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Cadence resolver (XG-W2) — the PER-ACCOUNT posting law
+# engine/marketing/cadence_resolver.py; wired into scripts/marketing_publisher.py
+#
+# Each account's numbers live in its own spec (config/personas/<id>.yml
+# `cadence:` — posts_per_day, min_spacing_min, jitter_min, weekend_shape, and
+# the XG-W2 `session` territory clock). This block carries only the knobs that
+# are network-wide. An account with no persona spec ABSTAINS: the resolver never
+# invents a bound, so nothing regresses for a lane that has no spec behind it.
+#
+# Doctrine: editorial constitution §13.8 (adaptive cadence). v1 covers the
+# config-driven half of that list — time zone, territory, weekend shape, and
+# anti-regularity jitter. Market opportunity, topic load, relationship follow-ups
+# and output quality need signals that do not exist yet; they arrive with the
+# XG-W5 scoring brain through the documented `market_state` seam. Nothing here
+# consults an LLM, and the resolver can only refuse, never escalate.
+# ─────────────────────────────────────────────────────────────────────────────
+cadence_resolver:
+  # false = SHADOW MODE: the resolver still computes and logs the verdict it
+  # WOULD return (detail.would_refuse) but allows everything through. Use it to
+  # read what arming would change before arming it.
+  enabled: true
+
+  # IMMEDIATE / breaking items skip the resolver, honouring the standing
+  # operator ruling of 2026-07-27 ("breaking has no limits") that already
+  # exempts them from the daily cap and the global 10-minute floor. Surfaced as
+  # a key rather than a buried constant: a wire-cadence property (mastermind_news)
+  # may well want its breaking flow bounded when it arms, and that must be a
+  # config flip, not a code change.
+  exempt_immediate: true
+
+  # weekend_shape -> the fraction of posts_per_day an account may spend on a
+  # Saturday/Sunday. Charter §8 law: a suggested cadence is a HYPOTHESIS, so
+  # these are config, not constants. A shaped weekend THINS an account (the
+  # resolved budget floors at 1); it never silences one.
+  weekend_factors:
+    light: 0.34
+    medium: 0.67
+    full: 1.0
+
+# ─────────────────────────────────────────────────────────────────────────────
+# One conversation, one owner (XG-W2) — engine/marketing/story_lock.py
+# Charter §2 amendment 6: a cross-account same-story lock at emission time, a
+# hard lock and not an editorial preference. Two of our accounts covering one
+# story is a network-linkage tell that the near-dup radar CANNOT catch, because
+# two desks writing the same event in two genuine voices do not collide on
+# wording. Scope is cross-account only — an account re-drawing its own story is
+# a repeat, which is the near-dup guard's job.
+# ─────────────────────────────────────────────────────────────────────────────
+story_lock:
+  enabled: true
+  # How long one account owns a story. After the window a second desk may
+  # legitimately pick up a developing story with a new angle. A hypothesis like
+  # every other cadence number here — grade it when XG-W6 telemetry exists.
+  window_minutes: 720   # 12h
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Wire routing (XG-W2) — engine/marketing/wire_routing.py
+# Which account owns a wire/breaking emission, by breaking_relevance event_class.
+# Before XG-W2 this was `_ACCOUNT = "flagship"` hardcoded in press_lane.py, so
+# the wire lane could address exactly one of the seven live Buffer channels —
+# including never the account whose entire job IS the wire. Routing is config
+# now: changing it is an edit here, never a code change.
+#
+# LIVENESS IS NOT ROUTING. A class routed to an account that is not enabled in
+# desk_network falls back to `default` with a ::warning, so intent and reality
+# are both visible. mastermind_news is wired-but-dark on purpose; enabling that
+# desk is the single flip that arms its routes.
+# ─────────────────────────────────────────────────────────────────────────────
+wire_routing:
+  default: flagship
+  classes:
+    macro_print: flagship
+    policy: flagship
+    geopolitical: flagship
+    company_news: flagship
+    earnings: flagship
+    none: flagship
+    # When mastermind_news arms, the wire classes that belong to the publication
+    # move here — e.g.
+    #   macro_print: mastermind_news
+    #   company_news: mastermind_news
+    # and nothing in engine/ changes.
 
 departments:
   growth_os:
