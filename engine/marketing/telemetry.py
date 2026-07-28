@@ -14,12 +14,29 @@ Row schema (stored as JSONL at data/marketing/telemetry/YYYY-MM.jsonl):
 Entry points
     ingest_rows(rows, *, root)                  validate + append
     load_telemetry(root) -> list[dict]           read all monthly files
+    load_live_rows(root, plan) -> dict           derive rows from the LIVE ledger
     join_provenance(rows, plan) -> dict          join to content_plan
     rollup(joined, orphans, *, as_of) -> dict   compute roll-up artifact
     write_rollup(root, *, as_of=None) -> dict   orchestrator — reads+writes
 
+Production feed: the monthly store under data/marketing/telemetry/ is
+manual/test-fed. The live evidence comes from data/marketing/post_metrics.jsonl
+(the append-only Buffer analytics ledger the marketing-publish workflow commits
+nightly). load_live_rows() derives telemetry rows from it READ-THROUGH — the
+ledger stays the single source of truth, nothing is copied into the monthly
+store, and the XG-W6 labels loop reading the same file has no second writer to
+race. Provenance for live rows comes from the outbox receipt chain
+(post_metrics.remote_id → status_ledger receipt.external_id → outbox item),
+NOT from content_plan.json: plan queue ids (post-flagship-001, …) are re-issued
+every plan generation, so joining yesterday's metrics against today's plan
+would attach the wrong post's dims.
+
 N-floor law: any cell with n < 20 carries verdict="seeding"; no hypothesis
 is promoted above "seeding" in W0.
+
+Null law: a live post with zero impressions is an UNMEASURED post, not a zero —
+it is excluded from cell evidence and counted in n_unmeasured (printed, never
+folded in as 0). See labels._post_label for the argued version.
 
 Never-raise at orchestrator level: exceptions are caught; returns a dict
 with an "error" key on failure.
@@ -153,6 +170,10 @@ def _cashtag_tiers_path(root: Path | str | None = None) -> Path:
     return _repo_root(root) / "data" / "marketing" / "cashtag_tiers.json"
 
 
+def _post_metrics_path(root: Path | str | None = None) -> Path:
+    return _repo_root(root) / "data" / "marketing" / "post_metrics.jsonl"
+
+
 def _monthly_path(root: Path | str | None, captured_at: str) -> Path:
     """Return the YYYY-MM.jsonl path for a captured_at ISO string."""
     try:
@@ -271,8 +292,217 @@ def load_telemetry(root: Path | str | None = None) -> list[dict[str, Any]]:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Live feed — post_metrics.jsonl → derived telemetry rows (read-through)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Buffer metric name → telemetry row field. Buffer reports X replies as
+# "comments" and link clicks as "clicks"; it does not report bookmarks, so
+# that field is honestly absent from live rows (medians skip absent fields).
+_LIVE_METRIC_MAP = {
+    "impressions": "impressions",
+    "likes": "likes",
+    "comments": "replies",
+    "reposts": "reposts",
+    "clicks": "link_clicks",
+}
+
+
+def _live_int(value: Any) -> int:
+    """Coerce a ledger metric to a non-negative int; anything else is 0."""
+    if isinstance(value, bool):
+        return 0
+    if isinstance(value, (int, float)):
+        return max(0, int(value))
+    return 0
+
+
+def _latest_live_metrics(root: Path | str | None = None) -> dict[str, dict[str, Any]]:
+    """Fold post_metrics.jsonl to the newest row per Buffer post id.
+
+    Same fold the admin publisher panel and the XG-W6 labels loop use: metrics
+    are CUMULATIVE, so the latest poll is the current truth and older rows are
+    history, not evidence. Malformed lines are skipped with a warning.
+    """
+    path = _post_metrics_path(root)
+    out: dict[str, dict[str, Any]] = {}
+    best: dict[str, str] = {}
+    if not path.exists():
+        return out
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except Exception as exc:  # noqa: BLE001
+        log.warning("telemetry._latest_live_metrics: error reading %s: %s", path, exc)
+        return out
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError:
+            log.warning("telemetry._latest_live_metrics: skipping malformed line in %s", path)
+            continue
+        if not isinstance(row, dict):
+            continue
+        rid = str(row.get("remote_id") or "").strip()
+        if not rid:
+            continue
+        ts = str(row.get("polled_at") or "")
+        if rid in best and ts < best[rid]:
+            continue
+        best[rid] = ts
+        out[rid] = row
+    return out
+
+
+def _posted_items_by_remote(root: Path | str | None = None) -> dict[str, dict[str, Any]]:
+    """Map Buffer post id → outbox item, via receipt.external_id on `posted`.
+
+    This is the provenance join the metrics poller itself uses to decide what
+    to poll — the outbox is the actuation source of truth. Fail-soft: an
+    unavailable outbox yields {} and every live row becomes an orphan (kept,
+    never dropped).
+    """
+    try:
+        from engine.marketing import outbox as _outbox  # noqa: PLC0415
+
+        state = _outbox.fold_state(_repo_root(root))
+        items = state.get("items") or {}
+        last = state.get("last") or {}
+        by_remote: dict[str, dict[str, Any]] = {}
+        for iid, st in (state.get("status") or {}).items():
+            if st != "posted":
+                continue
+            rec = (last.get(iid) or {}).get("receipt")
+            rec = rec if isinstance(rec, dict) else {}
+            remote = str(rec.get("external_id") or "").strip()
+            if not remote:
+                continue
+            by_remote[remote] = items.get(iid) or {}
+        return by_remote
+    except Exception as exc:  # noqa: BLE001
+        log.warning("telemetry._posted_items_by_remote: outbox fold unavailable: %s", exc)
+        return {}
+
+
+def load_live_rows(
+    root: Path | str | None = None,
+    plan: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Derive telemetry rows from the LIVE analytics ledger, read-through.
+
+    Sources (both committed by the nightly pipeline; this function only reads):
+      * data/marketing/post_metrics.jsonl — Buffer analytics, cumulative
+      * data/marketing/outbox/            — provenance via receipt.external_id
+
+    Returns:
+        {
+            "joined": [row + dims],      # measured posts with outbox provenance
+            "orphans": [row + {orphan: True}],  # no outbox item — never dropped
+            "n_unmeasured": int,          # zero-impression posts, EXCLUDED
+        }
+
+    Joined rows carry the same dims join_provenance produces (kind, account,
+    slot, persona, mode, cashtag_tier) so rollup() treats both feeds
+    identically — but dims come from the OUTBOX ITEM, not content_plan.json:
+    plan queue ids are re-issued each generation, so the current plan cannot
+    attribute yesterday's posts. post_id is the outbox item id (globally
+    unique, day-stamped); the plan id that seeded it is kept as plan_item_id.
+    Copy mode is not recorded on outbox items, so live rows carry
+    mode="unknown" rather than a guess. persona comes from the plan's
+    account→voice registry (account identity is stable across generations).
+
+    Null law: impressions <= 0 is an unmeasured post (analytics not populated
+    yet), not a zero — folding it in would drag every cell median toward zero
+    in proportion to how many posts the poller had not yet seen. It is counted
+    in n_unmeasured and excluded from evidence.
+    """
+    metrics_by_id = _latest_live_metrics(root)
+    if not metrics_by_id:
+        return {"joined": [], "orphans": [], "n_unmeasured": 0}
+
+    item_by_remote = _posted_items_by_remote(root)
+    cashtag_tiers = _load_cashtag_tiers(root)
+
+    # account → voice from the plan's account registry (stable identity).
+    if plan is None:
+        plan = {}
+        cp = _content_plan_path(root)
+        if cp.exists():
+            try:
+                plan = json.loads(cp.read_text(encoding="utf-8"))
+            except Exception as exc:  # noqa: BLE001
+                log.warning("telemetry.load_live_rows: could not load content_plan: %s", exc)
+    persona_by_account = {
+        str(acct.get("id") or ""): str(acct.get("voice") or "")
+        for acct in (plan.get("accounts") or [])
+        if isinstance(acct, dict)
+    }
+
+    joined: list[dict[str, Any]] = []
+    orphans: list[dict[str, Any]] = []
+    n_unmeasured = 0
+
+    for remote, mrow in sorted(metrics_by_id.items()):
+        metrics = mrow.get("metrics")
+        metrics = metrics if isinstance(metrics, dict) else {}
+        captured_at = str(mrow.get("metrics_updated_at") or mrow.get("polled_at") or "")
+
+        row: dict[str, Any] = {
+            "captured_at": captured_at,
+            "remote_id": remote,
+            "source": "post_metrics",
+        }
+        for buffer_name, field in _LIVE_METRIC_MAP.items():
+            row[field] = _live_int(metrics.get(buffer_name))
+
+        item = item_by_remote.get(remote)
+        if item is None:
+            row["post_id"] = remote
+            row["orphan"] = True
+            orphans.append(row)
+            continue
+
+        if row["impressions"] <= 0:
+            n_unmeasured += 1
+            continue
+
+        account = str(item.get("account") or mrow.get("account") or "")
+        source = item.get("source")
+        source = source if isinstance(source, dict) else {}
+        ticker = str(source.get("ticker") or "").lstrip("$").upper()
+
+        row["post_id"] = str(item.get("id") or remote)
+        row["plan_item_id"] = str(source.get("plan_item_id") or source.get("plan_post_id") or "")
+        row["kind"] = str(item.get("kind") or "")
+        row["account"] = account
+        row["slot"] = str(item.get("slot") or "")
+        row["persona"] = persona_by_account.get(account, "")
+        row["mode"] = "unknown"
+        if ticker:
+            row["cashtag"] = f"${ticker}"
+        row["cashtag_tier"] = cashtag_tiers.get(ticker, "unknown") if ticker else "unknown"
+        joined.append(row)
+
+    return {"joined": joined, "orphans": orphans, "n_unmeasured": n_unmeasured}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Provenance join
 # ─────────────────────────────────────────────────────────────────────────────
+
+def _load_cashtag_tiers(root: Path | str | None = None) -> dict[str, str]:
+    """Load cashtag tiers if available (future Radar artifact); {} otherwise."""
+    tiers_path = _cashtag_tiers_path(root)
+    if not tiers_path.exists():
+        return {}
+    try:
+        tiers = json.loads(tiers_path.read_text(encoding="utf-8"))
+        return tiers if isinstance(tiers, dict) else {}
+    except Exception as exc:  # noqa: BLE001
+        log.warning("telemetry: failed to load cashtag_tiers: %s", exc)
+        return {}
+
 
 def _build_post_index(plan: dict[str, Any]) -> dict[str, dict[str, Any]]:
     """Build {post_id: {kind, account, slot, persona, mode}} from content_plan."""
@@ -327,15 +557,7 @@ def join_provenance(
     Orphan rows gain flag {"orphan": True}.
     """
     post_index = _build_post_index(plan)
-
-    # Load cashtag tiers if available (future Radar artifact)
-    cashtag_tiers: dict[str, str] = {}
-    tiers_path = _cashtag_tiers_path(root)
-    if tiers_path.exists():
-        try:
-            cashtag_tiers = json.loads(tiers_path.read_text(encoding="utf-8"))
-        except Exception as exc:  # noqa: BLE001
-            log.warning("telemetry.join_provenance: failed to load cashtag_tiers: %s", exc)
+    cashtag_tiers = _load_cashtag_tiers(root)
 
     joined: list[dict[str, Any]] = []
     orphans: list[dict[str, Any]] = []
@@ -384,6 +606,7 @@ def rollup(
     orphans: list[dict[str, Any]],
     *,
     as_of: str | None = None,
+    n_unmeasured: int = 0,
 ) -> dict[str, Any]:
     """Compute the Lab roll-up artifact.
 
@@ -391,6 +614,8 @@ def rollup(
         joined:  list of joined+enriched rows.
         orphans: list of orphan rows.
         as_of:   ISO date string; defaults to today UTC.
+        n_unmeasured: zero-impression live posts excluded from evidence —
+            disclosed on the artifact, never folded in as zeros.
 
     Returns:
         Roll-up dict matching lab_rollup.json schema.
@@ -498,6 +723,7 @@ def rollup(
         "n_posts": n_posts,
         "n_rows": n_rows,
         "n_orphans": n_orphans,
+        "n_unmeasured": n_unmeasured,
         "cells": cells,
         "top_posts": top_posts,
         "hypotheses": hypotheses,
@@ -520,13 +746,14 @@ def write_rollup(
         as_of: ISO date override; defaults to today UTC.
 
     Returns:
-        {"ok": True, "n_posts": N, "n_rows": M, "n_orphans": K, "path": str}
+        {"ok": True, "n_posts": N, "n_rows": M, "n_orphans": K,
+         "n_unmeasured": U, "path": str}
         or {"error": str, ...} on failure — never raises.
     """
     try:
         r = _repo_root(root)
 
-        # Load telemetry
+        # Load the manual/test-fed monthly store
         rows = load_telemetry(r)
 
         # Load content plan
@@ -538,13 +765,19 @@ def write_rollup(
             except Exception as exc:  # noqa: BLE001
                 log.warning("telemetry.write_rollup: could not load content_plan: %s", exc)
 
-        # Join
+        # Join store rows against the plan (store rows carry plan post ids)
         join_result = join_provenance(rows, plan, root=r)
-        joined = join_result["joined"]
-        orphans = join_result["orphans"]
+
+        # Live feed: post_metrics.jsonl joined via the outbox receipt chain.
+        # These rows arrive pre-dimensioned — the current plan cannot
+        # attribute past days' posts (queue ids are re-issued nightly).
+        live = load_live_rows(r, plan)
+
+        joined = join_result["joined"] + live["joined"]
+        orphans = join_result["orphans"] + live["orphans"]
 
         # Compute rollup
-        result = rollup(joined, orphans, as_of=as_of)
+        result = rollup(joined, orphans, as_of=as_of, n_unmeasured=live["n_unmeasured"])
 
         # Atomic write
         out_path = _rollup_path(r)
@@ -569,6 +802,7 @@ def write_rollup(
             "n_posts": result["n_posts"],
             "n_rows": result["n_rows"],
             "n_orphans": result["n_orphans"],
+            "n_unmeasured": result["n_unmeasured"],
             "path": str(out_path),
         }
 

@@ -644,3 +644,300 @@ class TestRollupDedupePerPost:
         # Last-write-wins: acct-2's entry should win
         assert index["dup-post-id"]["account"] == "acct-2"
         assert index["dup-post-id"]["kind"] == "mover"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Live feed — post_metrics.jsonl → derived telemetry rows (read-through)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _write_jsonl(path: pathlib.Path, rows: list[dict]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows),
+        encoding="utf-8",
+    )
+
+
+def _outbox_item(
+    item_id: str,
+    *,
+    account: str = "flagship",
+    kind: str = "signal",
+    slot: str = "D1-AM",
+    plan_item_id: str = "post-flagship-001",
+    ticker: str = "ROST",
+    as_of: str = "2026-07-24",
+) -> dict:
+    return {
+        "schema": "marketing.outbox/v1",
+        "id": item_id,
+        "as_of": as_of,
+        "account": account,
+        "kind": kind,
+        "text": f"${ticker} on the tape",
+        "media": [],
+        "scheduled_at": f"{as_of}T14:00:00Z",
+        "slot": slot,
+        "priority": 5,
+        "provenance": "content_studio",
+        "source": {"plan_item_id": plan_item_id, "ticker": ticker},
+        "status": "queued",
+        "created_at": f"{as_of}T12:00:00Z",
+    }
+
+
+def _posted_transitions(item_id: str, remote_id: str, at: str) -> list[dict]:
+    """Legal queued→approved→posted ledger walk with a Buffer receipt."""
+    return [
+        {"id": item_id, "from": "queued", "to": "approved", "at": at, "actor": "test"},
+        {
+            "id": item_id,
+            "from": "approved",
+            "to": "posted",
+            "at": at,
+            "actor": "publisher",
+            "note": "published",
+            "receipt": {
+                "backend": "buffer",
+                "external_id": remote_id,
+                "external_url": None,
+                "at": at,
+            },
+        },
+    ]
+
+
+def _metrics_row(
+    remote_id: str,
+    *,
+    account: str = "flagship",
+    impressions: int = 0,
+    likes: int = 0,
+    comments: int = 0,
+    reposts: int = 0,
+    clicks: int = 0,
+    polled_at: str = "2026-07-25T16:00:00Z",
+    metrics_updated_at: str | None = None,
+) -> dict:
+    return {
+        "remote_id": remote_id,
+        "account": account,
+        "external_url": None,
+        "metrics": {
+            "likes": likes,
+            "comments": comments,
+            "engagement_rate": 0,
+            "reposts": reposts,
+            "impressions": impressions,
+            "clicks": clicks,
+        },
+        "metrics_raw": [],
+        "metrics_updated_at": metrics_updated_at or polled_at,
+        "polled_at": polled_at,
+        "ok": True,
+    }
+
+
+def _seed_live_root(tmp_path) -> pathlib.Path:
+    """Fake repo root with outbox + post_metrics + plan wired end-to-end.
+
+    Two posted items on DIFFERENT days that share the re-issued plan id
+    post-flagship-001, one measured + one zero-impression item, plus one
+    orphan metrics row with no outbox item.
+    """
+    root = tmp_path
+    mdir = root / "data" / "marketing"
+    _write_jsonl(mdir / "outbox" / "items.jsonl", [
+        _outbox_item("ob-2026-07-24-aaaa", as_of="2026-07-24", kind="signal",
+                     slot="D1-AM", ticker="ROST"),
+        _outbox_item("ob-2026-07-25-bbbb", as_of="2026-07-25", kind="watchlist",
+                     slot="D1-S1", ticker="GPI"),
+        _outbox_item("ob-2026-07-25-cccc", as_of="2026-07-25", kind="chart",
+                     slot="D2-PM", ticker="NVDA", plan_item_id="post-flagship-009"),
+    ])
+    ledger = (
+        _posted_transitions("ob-2026-07-24-aaaa", "buf-aaa", "2026-07-24T14:00:01Z")
+        + _posted_transitions("ob-2026-07-25-bbbb", "buf-bbb", "2026-07-25T14:00:01Z")
+        + _posted_transitions("ob-2026-07-25-cccc", "buf-ccc", "2026-07-25T18:00:01Z")
+    )
+    _write_jsonl(mdir / "outbox" / "status_ledger.jsonl", ledger)
+    _write_jsonl(mdir / "post_metrics.jsonl", [
+        # buf-aaa: two polls — the later one must win (metrics are cumulative)
+        _metrics_row("buf-aaa", impressions=100, likes=3, comments=1,
+                     reposts=1, clicks=2, polled_at="2026-07-25T16:00:00Z"),
+        _metrics_row("buf-aaa", impressions=400, likes=9, comments=4,
+                     reposts=2, clicks=5, polled_at="2026-07-26T16:00:00Z"),
+        # buf-bbb: measured
+        _metrics_row("buf-bbb", impressions=250, likes=5, comments=2,
+                     polled_at="2026-07-26T16:00:00Z"),
+        # buf-ccc: polled but analytics not populated yet → unmeasured NULL
+        _metrics_row("buf-ccc", impressions=0, polled_at="2026-07-26T16:00:00Z"),
+        # buf-zzz: no outbox item → orphan
+        _metrics_row("buf-zzz", impressions=50, likes=1,
+                     polled_at="2026-07-26T16:00:00Z"),
+    ])
+    (mdir / "content_plan.json").write_text(json.dumps(_make_plan()), encoding="utf-8")
+    return root
+
+
+class TestLiveFeed:
+    def test_absent_ledger_yields_empty(self, tmp_path):
+        from engine.marketing.telemetry import load_live_rows
+
+        result = load_live_rows(tmp_path, {})
+        assert result == {"joined": [], "orphans": [], "n_unmeasured": 0}
+
+    def test_metric_name_mapping(self, tmp_path):
+        """Buffer names map onto the telemetry row schema: comments→replies,
+        clicks→link_clicks; bookmarks (unreported by Buffer) stays absent."""
+        from engine.marketing.telemetry import load_live_rows
+
+        root = _seed_live_root(tmp_path)
+        result = load_live_rows(root)
+        by_id = {r["post_id"]: r for r in result["joined"]}
+        row = by_id["ob-2026-07-24-aaaa"]
+        assert row["impressions"] == 400
+        assert row["likes"] == 9
+        assert row["replies"] == 4      # Buffer "comments"
+        assert row["reposts"] == 2
+        assert row["link_clicks"] == 5  # Buffer "clicks"
+        assert "bookmarks" not in row   # unmeasured, not fabricated as 0
+
+    def test_latest_poll_wins(self, tmp_path):
+        """Metrics are cumulative — the newest poll per remote_id is the truth."""
+        from engine.marketing.telemetry import load_live_rows
+
+        root = _seed_live_root(tmp_path)
+        result = load_live_rows(root)
+        rows = [r for r in result["joined"] if r["remote_id"] == "buf-aaa"]
+        assert len(rows) == 1
+        assert rows[0]["impressions"] == 400
+
+    def test_zero_impressions_is_null_not_zero(self, tmp_path):
+        """A polled post with 0 impressions is unmeasured: excluded from
+        evidence and counted, never folded in as a zero."""
+        from engine.marketing.telemetry import load_live_rows
+
+        root = _seed_live_root(tmp_path)
+        result = load_live_rows(root)
+        assert result["n_unmeasured"] == 1
+        joined_ids = {r["post_id"] for r in result["joined"]}
+        assert "ob-2026-07-25-cccc" not in joined_ids
+
+    def test_orphan_metrics_row_kept(self, tmp_path):
+        """A metrics row with no outbox item is an orphan — kept, flagged,
+        never dropped."""
+        from engine.marketing.telemetry import load_live_rows
+
+        root = _seed_live_root(tmp_path)
+        result = load_live_rows(root)
+        assert len(result["orphans"]) == 1
+        orphan = result["orphans"][0]
+        assert orphan["post_id"] == "buf-zzz"
+        assert orphan["orphan"] is True
+
+    def test_dims_from_outbox_not_current_plan(self, tmp_path):
+        """Dims come from the outbox item (actuation truth). The current plan
+        re-issues queue ids nightly, so it cannot attribute past posts:
+        ob-2026-07-24-aaaa seeded from plan id post-flagship-001 must keep its
+        own kind=signal/slot=D1-AM even though today's plan reuses that id for
+        a different post (watchlist / D1-AM in the fixture plan)."""
+        from engine.marketing.telemetry import load_live_rows
+
+        root = _seed_live_root(tmp_path)
+        result = load_live_rows(root)
+        by_id = {r["post_id"]: r for r in result["joined"]}
+
+        row = by_id["ob-2026-07-24-aaaa"]
+        assert row["kind"] == "signal"
+        assert row["slot"] == "D1-AM"
+        assert row["account"] == "flagship"
+        assert row["persona"] == "authoritative desk"  # account→voice registry
+        assert row["mode"] == "unknown"  # copy mode not recorded on outbox items
+        assert row["plan_item_id"] == "post-flagship-001"
+        assert row["cashtag"] == "$ROST"
+
+    def test_plan_id_collision_does_not_collapse(self, tmp_path):
+        """Two posts on different days sharing a re-issued plan id must stay
+        two posts — post_id is the outbox item id, not the plan id."""
+        from engine.marketing.telemetry import load_live_rows, rollup
+
+        root = _seed_live_root(tmp_path)
+        result = load_live_rows(root)
+        shared = [r for r in result["joined"]
+                  if r["plan_item_id"] == "post-flagship-001"]
+        assert len(shared) == 2
+        assert len({r["post_id"] for r in shared}) == 2
+
+        art = rollup(result["joined"], result["orphans"], as_of="2026-07-26")
+        assert art["n_posts"] == 2
+
+    def test_cashtag_tier_lookup(self, tmp_path):
+        from engine.marketing.telemetry import load_live_rows
+
+        root = _seed_live_root(tmp_path)
+        (root / "data" / "marketing" / "cashtag_tiers.json").write_text(
+            json.dumps({"ROST": "t2"}), encoding="utf-8"
+        )
+        result = load_live_rows(root)
+        by_id = {r["post_id"]: r for r in result["joined"]}
+        assert by_id["ob-2026-07-24-aaaa"]["cashtag_tier"] == "t2"
+        assert by_id["ob-2026-07-25-bbbb"]["cashtag_tier"] == "unknown"
+
+    def test_malformed_ledger_line_skipped(self, tmp_path):
+        from engine.marketing.telemetry import load_live_rows
+
+        root = _seed_live_root(tmp_path)
+        pm = root / "data" / "marketing" / "post_metrics.jsonl"
+        pm.write_text(pm.read_text(encoding="utf-8") + "NOT JSON\n", encoding="utf-8")
+        result = load_live_rows(root)
+        assert len(result["joined"]) == 2  # unaffected by the bad line
+
+
+class TestWriteRollupLiveFeed:
+    def test_end_to_end_live_bridge(self, tmp_path):
+        """write_rollup on a live-seeded root: the Lab accrues real evidence —
+        n_posts > 0 — with the null and the orphan disclosed, not hidden."""
+        root = _seed_live_root(tmp_path)
+        result = write_rollup(root=root, as_of="2026-07-26")
+        assert result.get("ok") is True
+        assert result["n_posts"] == 2       # measured live posts
+        assert result["n_orphans"] == 1     # buf-zzz
+        assert result["n_unmeasured"] == 1  # buf-ccc, disclosed
+
+        obj = json.loads(
+            (root / "data" / "marketing" / "lab_rollup.json").read_text(encoding="utf-8")
+        )
+        assert obj["n_posts"] == 2
+        assert obj["n_unmeasured"] == 1
+        # N-floor law unchanged: 2 posts is far below 20 → every cell seeding
+        assert obj["cells"], "expected live cells"
+        for cell in obj["cells"]:
+            assert cell["verdict"] == "seeding"
+        # The unmeasured post must not appear as a zero anywhere
+        for cell in obj["cells"]:
+            assert cell["med_impressions"] > 0
+        top_ids = {p["post_id"] for p in obj["top_posts"]}
+        assert "ob-2026-07-25-cccc" not in top_ids
+
+    def test_store_and_live_feeds_merge(self, tmp_path):
+        """The manual/test-fed monthly store still contributes alongside the
+        live feed (store rows join via the plan, live rows via the outbox)."""
+        root = _seed_live_root(tmp_path)
+        ingest_rows(
+            [_valid_row(post_id="post-flagship-002",
+                        captured_at="2026-07-26T10:00:00Z")],
+            root=root,
+        )
+        result = write_rollup(root=root, as_of="2026-07-26")
+        assert result.get("ok") is True
+        assert result["n_posts"] == 3  # 2 live + 1 store
+
+    def test_live_only_root_without_plan(self, tmp_path):
+        """No content_plan.json: live rows still accrue (persona falls back to
+        empty string); nothing raises."""
+        root = _seed_live_root(tmp_path)
+        (root / "data" / "marketing" / "content_plan.json").unlink()
+        result = write_rollup(root=root, as_of="2026-07-26")
+        assert result.get("ok") is True
+        assert result["n_posts"] == 2
