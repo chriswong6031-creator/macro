@@ -44,16 +44,19 @@ ROOT = _worktree_root()
 #: _DERIVED_IDS — a desk_network entry AND a copywriter.personas block back this
 #: spec, so config drift in either must fail here. The 6 W1 desks + the founder's
 #: personal account (2026-07-27) + the four employee desks (XG-W1, 2026-07-28).
-#: _WIRED_DARK_IDS — a desk_network entry but NO copywriter block: the news
-#: property's register is the house wire voice, not a desk persona, and its
-#: account is disabled until the XG-W2 cadence resolver lands.
+#: _WIRED_DARK_IDS — a desk_network entry but NO copywriter block: the two
+#: publication properties' registers are the house wire / analyst voice rather
+#: than a desk persona.  mastermind_news is disabled until the XG-W2 cadence
+#: resolver lands; mastermind_research joined at W2R (XG-W8) and is darker still
+#: — its X account does not exist yet, so it carries no `handle` and no Buffer
+#: channel on top of `enabled: false` + `disabled: true`.
 #: _AUTHORED_IDS — spec-only, no account behind them.
 _DERIVED_IDS = ("flagship", "receipts", "theme_desk", "research_a", "research_b",
                 "research_c", "founder", "meagan", "sophia", "kelly", "cici")
 _EMPLOYEE_IDS = ("meagan", "sophia", "kelly", "cici")
-_WIRED_DARK_IDS = ("mastermind_news",)
+_WIRED_DARK_IDS = ("mastermind_news", "mastermind_research")
 _AUTHORED_IDS = ("corp_desk", "chart_gremlin", "zh_navigator", "control_v3",
-                 "news_flash", "mastermind_research")
+                 "news_flash")
 _ALL_IDS = _DERIVED_IDS + _WIRED_DARK_IDS + _AUTHORED_IDS
 
 
@@ -372,15 +375,15 @@ def test_derived_spec_matches_config(acct_id, specs, marketing_cfg):
 
 def test_every_desk_network_account_has_a_spec(specs, marketing_cfg):
     """W1 allows an account without a spec; today none exists, and we pin that.
-    (12 desks since 2026-07-28: the W1 six, the founder's personal account, the
-    four employee desks, and the wired-but-dark news property.)"""
+    (13 desks since 2026-07-28: the W1 six, the founder's personal account, the
+    four employee desks, and the two wired-but-dark publication properties.)"""
     wired = set(_DERIVED_IDS) | set(_WIRED_DARK_IDS)
     assert set(_desk_accounts(marketing_cfg)) == wired
     assert wired <= set(specs)
 
 
 def test_authored_specs_are_spec_only(specs, marketing_cfg):
-    """No W1 spec creates an account: the 7 authored ids are NOT in desk_network."""
+    """No W1 spec creates an account: the authored ids are NOT in desk_network."""
     accounts = set(_desk_accounts(marketing_cfg))
     assert accounts.isdisjoint(_AUTHORED_IDS)
 
@@ -781,9 +784,12 @@ def test_roster_renders_with_the_committed_specs():
     assert d["counts"]["invalid"] == 0
     # LIVE = flagship + founder + the four employee desks (enabled: true).
     assert d["counts"]["live"] == 6
-    # CONFIGURED = the five planned W1 desks + the wired-but-dark news property.
-    assert d["counts"]["configured"] == 6
-    assert d["counts"]["planned"] == 6
+    # CONFIGURED = the five planned W1 desks + the two wired-but-dark
+    # publication properties (news, research).  `configured` here is the roster's
+    # word for "has a desk_network entry but is not live"; mastermind_research
+    # additionally has no handle and no Buffer channel (W2R / XG-W8).
+    assert d["counts"]["configured"] == 7
+    assert d["counts"]["planned"] == 5
 
     by_id = {r["id"]: r for r in d["personas"]}
     assert set(by_id) == set(_ALL_IDS)

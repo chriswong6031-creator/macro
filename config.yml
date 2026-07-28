@@ -23,6 +23,8 @@ llm_models:
   marketing_copy: "claude-sonnet-4-6"            # Marketing Content Studio nightly copywriter (persona posts; deterministic fallback)
   press_brief: "claude-haiku-4-5"                # D14 W1 press: The Brief (300–600w daily market brief). Cheapest tier that clears the validator suite; a failure here drops the slot, it does NOT fall back to a template.
   press_research: "claude-sonnet-4-6"            # D14 W1 press: Research Desk (500–900w institutional coverage). Mid tier — the paraphrase/our-value gates need real rewriting, not summarization.
+  press_research_note: "claude-haiku-4-5"        # D14 W2R (XG-W8): Research desk NOTES (300–500w). Haiku tier per masterplan §5b (~$0.01/note). DARK until research_triage.volume.stage moves off cold_start.
+  press_research_veto: "claude-haiku-4-5"        # D14 W2R (XG-W8): the DEMOTE-ONLY triage veto pass. Cheapest passing tier — it reads a ranked list and answers with a JSON array of demotions; it never writes prose and never produces a score.
 
 # ---------------------------------------------------------------------------
 # prophet — Prophet NW lobe governor config (PR-W2/PR-R3/PR-R8)

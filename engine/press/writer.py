@@ -186,7 +186,11 @@ def build_prompt(slot: dict, cfg: dict, *, attempt: int = 0,
     footer_text = str(v.get("footer_required_text") or
                       "Educational content — not investment advice. Markets involve risk.")
 
-    if desk == "research_desk":
+    # W2R (XG-W8): `research_note` is the SAME desk contract at a smaller size —
+    # the word budget and the model tier come from the slot, not from a second
+    # prose contract. Two contracts for one beat is how two voices appear on one
+    # masthead.
+    if desk in ("research_desk", "research_note"):
         contract = (
             "YOU ARE: the Research Desk of Mastermind Research.\n"
             "THE JOB: single-report commentary. One institutional research note "

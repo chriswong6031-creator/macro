@@ -1369,6 +1369,23 @@ on:
       - "admin/press.py"
       - "tests/test_press_*.py"
       - ".github/workflows/press-publish.yml"
+      # D14 W2R / X Growth XG-W8 (2026-07-28): the research triage layer that
+      # decides WHICH vault report the Research Desk covers, its demote-only LLM
+      # veto pass, the cold-start volume ramp, and the dark Mastermind Research
+      # X lane. engine/press/** + config/press.yml + tests/test_press_*.py above
+      # already reach the engine, the config and the suite; the runner, the
+      # workflow and the runbook are named so a PR that edits ONLY one of them
+      # still reaches the press-lane job that runs the guard. The runbook is
+      # listed because a test asserts it names every arming lever — a runbook
+      # that can drift from the levers it documents is not one.
+      - "scripts/run_research_triage.py"
+      - ".github/workflows/research-triage.yml"
+      - "docs/research_triage.md"
+      # The vault catalog snapshot is the triage layer's INPUT, and the research
+      # desks plan from it. A hourly ingest commit can change what the planner
+      # sees without touching a line of code.
+      - "data/research_vault/catalog.json"
+      - "data/press/research_triage.jsonl"
       # D14 W1.5 press properties (2026-07-27): the per-publication static
       # trees, their templates, and the builder. Same reasoning as above — the
       # cutover pairing guard and the property determinism checks have to be

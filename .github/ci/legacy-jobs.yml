@@ -3407,6 +3407,26 @@ jobs:
       # ledger append direct-pushed to main self-heals on the next publish.)
       - name: property trees match a fresh rebuild (--check)
         run: python -m scripts.build_press_properties --check
+      # W2R research triage + tiering + the dark research X lane (XG-W8,
+      # 2026-07-28). Same lane on purpose: the triage layer is what decides
+      # WHICH vault report the Research Desk covers, so it has to run wherever
+      # the desk's own contract runs. Import closure is stdlib + pyyaml (the
+      # `pytest pyyaml jinja2` line above already covers it): research_triage
+      # keeps every reused module behind LAZY function-level imports, so a heavy
+      # top-level import in story_spine/signal_features/garbage_gate turns this
+      # job red at collection, which is the point.
+      #
+      # NOTHING IN THE SUITE IS importorskip-GATED. The near-dup pass's optional
+      # `datasketch` dependency is exercised through its DOCUMENTED DEGRADED
+      # STATE (`cluster_density` reports `exact-only` and declares the value a
+      # floor) rather than by requiring the wheel — so the suite cannot decay
+      # into a skip-only one, and the production workflow installs datasketch
+      # so the lane itself does not ship the degraded read.
+      #
+      # The veto pass is exercised through its injected `call` seam, so this
+      # step makes no network call and needs no credential.
+      - name: W2R research triage (W-score, demote-only veto, dark research lane)
+        run: python -m pytest tests/test_press_research_triage.py -q
 
   # ── UNRUN-SUITE CENSUS JOBS (2026-07-26) ───────────────────────────────────
   # Nine lanes covering the 130 strictly-dark suites that no workflow ran.  All

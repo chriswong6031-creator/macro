@@ -1,0 +1,1162 @@
+"""tests/test_press_research_triage.py — W2R research triage & tiering (XG-W8).
+
+What this suite is FOR, in the order the acceptance gates state it:
+
+  1. ONE SCORING BRAIN.  The triage layer must CALL the XG-W5 modules
+     (garbage_gate, story_spine, signal_features) and engine/press/validators,
+     not grow a parallel copy of them.  Asserted on the AST of the shipped
+     source, so a future rewrite that reimplements clustering fails here.
+  2. DEMOTE-ONLY, STRUCTURALLY.  The LLM path may lower a score and may not
+     raise one — proven by construction (the veto module performs no arithmetic
+     on a score at all) and by a property sweep over hostile config values.
+  3. NULLS PRINTED.  Every report in the window gets a ledger row every day,
+     including garbage-dropped and skipped ones, each with a named state.
+  4. CONFIG CONTRACT.  Every threshold in config/press.yml matches its module
+     default (the XG-W5 TestConfigContract pattern), and the volume knob ships
+     on the cold-start ramp.
+  5. PRODUCTION WIRING.  The planner really consumes the ranking, the workflow
+     really invokes the CLI, and the CLI really writes the ledger.
+  6. THE RESEARCH LANE IS DARK, on all four locks, and cannot be talked into
+     enqueueing anything.
+
+Every test runs against a synthetic root under tmp_path (MM_DATA_GUARD law) or
+reads committed source text.  No test makes a network call: the veto pass is
+exercised through its injected `call` seam, never through llm_auth.
+"""
+from __future__ import annotations
+
+import ast
+import json
+import sys
+from datetime import date
+from pathlib import Path
+
+import pytest
+import yaml
+
+_REPO = Path(__file__).resolve().parent.parent
+if str(_REPO) not in sys.path:
+    sys.path.insert(0, str(_REPO))
+
+from engine.press import desk_planner as P  # noqa: E402
+from engine.press import research_lane as RL  # noqa: E402
+from engine.press import research_triage as T  # noqa: E402
+from engine.press import research_veto as V  # noqa: E402
+from tests import press_fixtures as F  # noqa: E402
+
+ROOT = _REPO
+
+
+def press_config() -> dict:
+    return yaml.safe_load((ROOT / "config" / "press.yml").read_text(encoding="utf-8"))
+
+
+def marketing_config() -> dict:
+    return yaml.safe_load((ROOT / "config" / "marketing.yml").read_text(encoding="utf-8"))
+
+
+def _item(rid: str, **over) -> dict:
+    """A vault catalog row with the shipped field set."""
+    base = {
+        "id": rid,
+        "title": "Rates into the autumn: what the curve is telling clients",
+        "institution": "Another Desk",
+        "side": "sell",
+        "desk": "",
+        "published_at": "2026-07-25T09:00:00Z",
+        # DELIBERATELY LEXICON-CLEAN. The press planner drops any summary point
+        # that trips the house lexicon (desk_planner._press_safe), so a fixture
+        # written in ordinary rates-desk shorthand ("front-end", "regime") makes
+        # every planner test in this file vacuously green by producing no slots
+        # at all. Checked by test_the_fixture_prose_clears_the_house_lexicon.
+        "summary_points": [
+            "Short-term yields have moved 18 basis points since the June meeting.",
+            "The desk puts the terminal rate at 3.75 percent by the second quarter.",
+            "Its hedge of choice is a levered structure, which prices a jump.",
+            "The stated risk is a labour print above 200 thousand.",
+        ],
+        "tags": [], "tickers": [], "top_pick": False, "pages": 8,
+        "needs_metadata": False,
+    }
+    base.update(over)
+    return base
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# 1. ONE SCORING BRAIN — the XG-W5 modules are called, never re-implemented
+# ═════════════════════════════════════════════════════════════════════════════
+
+
+class TestOneScoringBrain:
+    SOURCE = (ROOT / "engine" / "press" / "research_triage.py").read_text(encoding="utf-8")
+
+    @pytest.mark.parametrize("module,symbol", [
+        ("engine.marketing.garbage_gate", "garbage_gate"),
+        ("engine.marketing.story_spine", "StorySpine"),
+        ("engine.marketing.signal_features", "tokenize"),
+        ("engine.marketing.signal_features", "headline_shape"),
+        ("engine.press.validators", "window_jaccard"),
+    ])
+    def test_the_reused_modules_are_actually_imported(self, module, symbol):
+        """The charter's reconciliation ruling, asserted on the AST.
+
+        Prose saying "we reuse the scoring brain" is not reuse; an import is.
+        """
+        tree = ast.parse(self.SOURCE)
+        package, _, leaf = module.rpartition(".")
+        found = False
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ImportFrom):
+                names = {a.name for a in node.names}
+                # `from engine.marketing.story_spine import StorySpine`
+                if node.module == module and symbol in names:
+                    found = True
+                # `from engine.marketing import garbage_gate` (module-level use)
+                if node.module == package and leaf in names:
+                    found = True
+            elif isinstance(node, ast.Import):
+                if any(a.name == module for a in node.names):
+                    found = True
+        assert found, f"{module}.{symbol} is not imported — reuse claimed, not made"
+
+    def test_no_minhash_or_shingle_reimplementation(self):
+        """story_spine owns clustering.  A second copy is how the two drift."""
+        tree = ast.parse(self.SOURCE)
+        names = {n.name for n in ast.walk(tree)
+                 if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))}
+        for banned in ("shingles", "minhash", "normalize_url", "content_key",
+                       "independence_key", "cosine"):
+            assert banned not in names, (
+                f"research_triage defines {banned}() — story_spine already has it")
+
+    def test_no_llm_call_anywhere_in_the_scorer(self):
+        """The scorer originates every number by arithmetic (DO_NOT_REBUILD)."""
+        for token in ("llm_auth", "messages.create", "anthropic", "build_providers"):
+            assert token not in self.SOURCE, f"{token!r} appears in the deterministic scorer"
+
+    def test_cluster_density_consumes_a_story_spine_view(self):
+        """The density term reads story_spine's own `source_count` field."""
+        view = {"story_id": "st-x", "source_count": 4, "member_count": 6}
+        value, detail = T.cluster_density(view, near_dup_enabled=True,
+                                          cfg={"institutions_full": 4})
+        assert value == pytest.approx(1.0)
+        assert detail["state"] == "observed"
+        assert detail["institutions"] == 4
+
+    def test_a_single_institution_theme_scores_zero(self):
+        value, _ = T.cluster_density({"source_count": 1}, near_dup_enabled=True)
+        assert value == 0.0
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# 2. THE COMPONENTS — each one's honest states
+# ═════════════════════════════════════════════════════════════════════════════
+
+
+class TestInstitutionTier:
+    def test_an_unlisted_institution_is_neutral_not_zero(self):
+        value, detail = T.institution_tier(_item("a"), cfg={"tiers": {}})
+        assert value == 0.5
+        assert detail["state"] == "unranked"
+        assert "NOT a measurement" in detail["note"]
+
+    def test_a_listed_institution_scores_its_tier(self):
+        cfg = {"tiers": {"tier_1": ["Another Desk"]}}
+        value, detail = T.institution_tier(_item("a"), cfg=cfg)
+        assert value == 1.0
+        assert detail["tier"] == "tier_1"
+
+    def test_the_shipped_register_is_empty_an_operator_lever(self):
+        tiers = press_config()["research_triage"]["institution"]["tiers"]
+        assert all(not v for v in tiers.values()), (
+            "the institution register ships EMPTY on purpose — a builder's opinion "
+            "about which houses matter is not evidence")
+
+
+class TestExtractionQuality:
+    def test_no_points_is_a_named_zero(self):
+        value, detail = T.extraction_quality(_item("a", summary_points=[]))
+        assert value == 0.0
+        assert detail["state"] == "no-extraction"
+
+    def test_a_thin_extraction_scores_below_a_deep_one(self):
+        thin, _ = T.extraction_quality(_item("a", summary_points=["Rates rose."]))
+        deep, _ = T.extraction_quality(_item("b"))
+        assert thin < deep
+
+    def test_needs_metadata_multiplies_it_down_and_says_so(self):
+        clean, _ = T.extraction_quality(_item("a"))
+        flagged, detail = T.extraction_quality(_item("a", needs_metadata=True))
+        assert flagged == pytest.approx(clean * 0.5)
+        assert detail["needs_metadata"] is True
+
+
+class TestRelevance:
+    def test_no_context_is_zero_for_everyone_and_says_so(self):
+        value, detail = T.relevance(_item("a"), {"tickers": set(), "topics": set()})
+        assert value == 0.0
+        assert detail["state"] == "no-context"
+        assert "0 contribution for EVERY report" in detail["note"]
+
+    def test_a_ticker_hit_lifts_the_score(self):
+        ctx = {"tickers": {"NVDA"}, "topics": set()}
+        hit, detail = T.relevance(_item("a", tickers=["NVDA"]), ctx)
+        miss, _ = T.relevance(_item("b", tickers=["KO"]), ctx)
+        assert hit > miss == 0.0
+        assert detail["ticker_hits"] == ["NVDA"]
+
+    def test_the_vault_is_excluded_from_its_own_chronicle_context(self, tmp_path):
+        """THE CIRCULARITY FIX.
+
+        The vault ingest writes one `research_vault` chronicle event per report.
+        Without the exclusion, "relevance vs hot chronicle threads" compares the
+        corpus with itself: measured on the live catalog before the fix, all 280
+        candidates sat at the identical saturated value and a 0.22-weight
+        component ordered nothing.
+        """
+        root = tmp_path / "repo"
+        (root / "data" / "chronicle").mkdir(parents=True)
+        rows = [
+            {"date": "2026-07-25", "source": "research_vault", "kind": "report",
+             "title": "Rates into the autumn curve terminal", "tickers": ["ZZZ"],
+             "themes": ["rates"]},
+            {"date": "2026-07-25", "source": "risk_band", "kind": "state_flip",
+             "title": "Risk radar: caution to watch", "tickers": [], "themes": ["risk"]},
+        ]
+        (root / "data" / "chronicle" / "events.jsonl").write_text(
+            "".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
+
+        ctx = T.build_context(root, as_of=date(2026, 7, 26), cfg=None)
+        assert "ZZZ" not in ctx["tickers"], "a vault event leaked into the context"
+        assert "terminal" not in ctx["topics"]
+        assert "risk" in ctx["topics"]
+        assert ctx["states"]["chronicle"]["events"] == 1
+
+    def test_the_exclusion_is_a_config_key_and_ships_set(self):
+        rel = press_config()["research_triage"]["relevance"]
+        assert rel["exclude_chronicle_sources"] == ["research_vault"]
+
+
+class TestAttentionPotential:
+    def test_it_is_declared_ranking_only(self):
+        _value, detail = T.attention_potential(_item("a"))
+        assert "ranking input only" in detail["contract"]
+
+    def test_top_pick_lifts_it(self):
+        plain, _ = T.attention_potential(_item("a"))
+        picked, _ = T.attention_potential(_item("a", top_pick=True))
+        assert picked > plain
+
+    def test_it_carries_the_smallest_weight_in_the_shipped_blend(self):
+        """Design law, not taste: the term most able to pull the brand toward
+        the framing the §5 validators ban must never lead the ranking."""
+        w = T.weights(press_config()["research_triage"])
+        assert w["attention_potential"] == min(w.values())
+
+
+class TestNovelty:
+    def test_an_empty_estate_is_neutral_and_says_so(self):
+        value, detail = T.novelty(_item("a"), [])
+        assert value == 0.5
+        assert detail["state"] == "no-peers"
+        assert "NOT a measurement" in detail["note"]
+
+    def test_a_report_we_already_wrote_up_scores_less_novel(self):
+        text = T.report_text(_item("a"))
+        repeated, _ = T.novelty(_item("a"), [{"slug": "old", "text": text}])
+        fresh, _ = T.novelty(_item("a"), [{"slug": "old", "text": "Entirely other words "
+                                                                 "about entirely other things."}])
+        assert repeated < fresh
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# 3. THE RANKING + NULLS PRINTED
+# ═════════════════════════════════════════════════════════════════════════════
+
+
+class TestRanking:
+    def test_it_is_deterministic(self, tmp_path):
+        root = F.fixture_root(tmp_path)
+        cfg = P.load_config(root)
+        items = [_item("a"), _item("b"), _item("c", top_pick=True)]
+        a = T.rank(items, as_of="2026-07-26", root=root, cfg=cfg)
+        b = T.rank(items, as_of="2026-07-26", root=root, cfg=cfg)
+        assert [r["report_id"] for r in a["rows"]] == [r["report_id"] for r in b["rows"]]
+        assert [r["w_score"] for r in a["rows"]] == [r["w_score"] for r in b["rows"]]
+
+    def test_as_of_is_a_hard_right_edge(self, tmp_path):
+        root = F.fixture_root(tmp_path)
+        cfg = P.load_config(root)
+        res = T.rank([_item("future", published_at="2026-08-05T09:00:00Z"),
+                      _item("now", published_at="2026-07-25T09:00:00Z")],
+                     as_of="2026-07-26", root=root, cfg=cfg)
+        assert [r["report_id"] for r in res["rows"]] == ["now"]
+
+    def test_every_report_gets_a_row_including_the_dropped_ones(self, tmp_path):
+        """NULLS PRINTED.  A day's ledger carries a row for EVERY inflow report.
+
+        The garbage-dropped report is the interesting one: it is excluded from
+        the ranking (so it costs zero LLM tokens) and still carries its six
+        deterministic components, because a dropped row with no numbers on it is
+        the hidden null the house law forbids.
+        """
+        root = F.fixture_root(tmp_path)
+        cfg = P.load_config(root)
+        junk = _item("junk", title="Your daily horoscope for Wednesday",
+                     summary_points=["Mercury is in retrograde. Click here."])
+        res = T.rank([_item("good"), junk], as_of="2026-07-26", root=root, cfg=cfg)
+
+        by_id = {r["report_id"]: r for r in res["rows"]}
+        assert set(by_id) == {"good", "junk"}
+        assert by_id["junk"]["status"] == "garbage_dropped"
+        assert by_id["junk"]["drop_reason"] in ("non_story", "promo_spam")
+        assert by_id["junk"]["rank"] is None
+        assert set(by_id["junk"]["components"]) == set(T.COMPONENT_NAMES)
+        assert by_id["good"]["status"] in ("selected", "skipped")
+
+    def test_every_component_reports_a_named_state_for_every_report(self, tmp_path):
+        root = F.fixture_root(tmp_path)
+        cfg = P.load_config(root)
+        res = T.rank([_item("a"), _item("b", summary_points=[])],
+                     as_of="2026-07-26", root=root, cfg=cfg)
+        for row in res["rows"]:
+            for name in T.COMPONENT_NAMES:
+                assert name in row["components"]
+                assert row["component_detail"][name].get("state"), (
+                    f"{row['report_id']}/{name} has no state — that is a hidden null")
+
+    def test_scores_are_bounded_and_contributions_are_inspectable(self, tmp_path):
+        root = F.fixture_root(tmp_path)
+        cfg = P.load_config(root)
+        res = T.rank([_item("a"), _item("b")], as_of="2026-07-26", root=root, cfg=cfg)
+        for row in res["rows"]:
+            assert 0.0 <= row["w_score"] <= 1.0
+            assert set(row["contributions"]) == set(T.COMPONENT_NAMES)
+
+    def test_a_hostile_row_does_not_crash_the_run(self, tmp_path):
+        root = F.fixture_root(tmp_path)
+        cfg = P.load_config(root)
+        res = T.rank([{"id": "x", "published_at": "2026-07-25", "summary_points": None},
+                      "not a dict", {"no": "id"}, _item("ok")],
+                     as_of="2026-07-26", root=root, cfg=cfg)
+        assert {r["report_id"] for r in res["rows"]} == {"x", "ok"}
+
+    def test_the_degraded_cluster_state_is_named_not_smoothed(self, tmp_path):
+        """Without `datasketch` the density is a FLOOR, and it says so.
+
+        Asserted through the documented state rather than by requiring the
+        wheel, so this suite never becomes importorskip-gated.
+        """
+        root = F.fixture_root(tmp_path)
+        cfg = P.load_config(root)
+        res = T.rank([_item("a")], as_of="2026-07-26", root=root, cfg=cfg)
+        detail = res["rows"][0]["component_detail"]["cluster_density"]
+        assert detail["state"] in ("observed", "exact-only")
+        if detail["state"] == "exact-only":
+            assert "FLOOR" in detail["note"]
+            assert res["near_dup_enabled"] is False
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# 4. TIERING + THE COLD-START VOLUME RAMP
+# ═════════════════════════════════════════════════════════════════════════════
+
+
+class TestVolumeAndTiers:
+    def test_the_shipped_stage_is_cold_start(self):
+        vol = T.volume(press_config()["research_triage"]["volume"])
+        assert vol["stage"] == "cold_start"
+        assert vol["flagship_per_day"] == 1
+        assert vol["desk_notes_per_day"] == 0, (
+            "the desk-note lane must ship dark — a cold domain at note volume is "
+            "the scaled-content-abuse profile the masterplan names")
+
+    def test_the_ramp_is_config_not_code(self):
+        stages = press_config()["research_triage"]["volume"]["stages"]
+        assert set(stages) == {"cold_start", "warm", "target"}
+        assert stages["target"]["flagship_per_day"] == 3
+        assert stages["target"]["desk_notes_per_day"] == 12
+        for name, row in stages.items():
+            assert set(row) == {"flagship_per_day", "desk_notes_per_day"}, name
+
+    def test_an_unknown_stage_falls_back_loudly(self, capsys):
+        vol = T.volume({"stage": "rocket", "stages": {"cold_start":
+                                                      {"flagship_per_day": 1,
+                                                       "desk_notes_per_day": 0}}})
+        assert vol["stage"] == "cold_start"
+        out = capsys.readouterr().out
+        assert any(line.startswith("::warning") for line in out.splitlines())
+
+    def test_tiers_follow_the_volume_knob(self):
+        rows = [{"report_id": str(i), "status": "ranked", "w_score": 1.0 - i / 10}
+                for i in range(6)]
+        T.assign_tiers(rows, cfg={"volume": {"stage": "target"}})
+        assert [r["tier"] for r in rows] == ["flagship"] * 3 + ["desk_note"] * 3
+        assert all(r["status"] == "selected" for r in rows)
+
+    def test_beyond_the_tiers_a_report_is_skipped_with_its_score_intact(self):
+        rows = [{"report_id": str(i), "status": "ranked", "w_score": 1.0 - i / 10}
+                for i in range(4)]
+        T.assign_tiers(rows, cfg={"volume": {"stage": "cold_start"}})
+        assert rows[0]["tier"] == "flagship" and rows[0]["status"] == "selected"
+        assert [r["status"] for r in rows[1:]] == ["skipped"] * 3
+        assert all(r["w_score"] > 0 for r in rows[1:])
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# 5. THE VETO PASS — DEMOTE ONLY, BY CONSTRUCTION
+# ═════════════════════════════════════════════════════════════════════════════
+
+
+class TestVetoIsStructurallyDemoteOnly:
+    VETO_SOURCE = (ROOT / "engine" / "press" / "research_veto.py").read_text(encoding="utf-8")
+
+    def test_the_veto_module_performs_no_arithmetic_at_all(self):
+        """THE STRUCTURAL ARGUMENT.
+
+        The module that talks to the model contains no numeric operator, so
+        there is no expression anywhere in it that could produce a score — never
+        mind a higher one.  Asserted on the AST, so the prose above cannot
+        satisfy the check and a future edit that adds `score * 1.5` fails here
+        rather than in review.
+        """
+        tree = ast.parse(self.VETO_SOURCE)
+        arithmetic = [n for n in ast.walk(tree)
+                      if isinstance(n, ast.BinOp)
+                      and isinstance(n.op, (ast.Mult, ast.Div, ast.Sub, ast.Pow))]
+        assert not arithmetic, (
+            "engine/press/research_veto.py performs arithmetic — the veto path "
+            "must not be able to compute a score in either direction")
+
+    def test_the_veto_module_never_assigns_a_score_or_a_rank(self):
+        """Asserted on ASSIGNMENT TARGETS, so the prose may discuss ranking
+        while the code stays unable to write one."""
+        tree = ast.parse(self.VETO_SOURCE)
+        targets: list[str] = []
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.Assign, ast.AugAssign, ast.AnnAssign)):
+                nodes = node.targets if isinstance(node, ast.Assign) else [node.target]
+                for tgt in nodes:
+                    if isinstance(tgt, ast.Name):
+                        targets.append(tgt.id)
+                    elif isinstance(tgt, ast.Attribute):
+                        targets.append(tgt.attr)
+                    elif isinstance(tgt, ast.Subscript) and isinstance(tgt.slice, ast.Constant):
+                        targets.append(str(tgt.slice.value))
+        for name in targets:
+            low = name.lower()
+            assert "score" not in low and "rank" not in low, (
+                f"the veto module assigns {name!r} — it returns reasons, not numbers")
+
+
+    def test_the_reason_vocabulary_has_no_promotion_word(self):
+        assert T.VETO_REASONS == {"thin", "paywalled", "duplicate"}
+
+    def test_an_unknown_reason_is_discarded(self):
+        parsed = V.parse_verdicts(
+            json.dumps([{"id": "a", "demote": True, "reason": "excellent"},
+                        {"id": "b", "demote": True, "reason": "thin"}]),
+            ["a", "b"])
+        assert parsed == {"b": "thin"}
+
+    def test_a_hallucinated_id_cannot_demote_anything(self):
+        parsed = V.parse_verdicts(
+            json.dumps([{"id": "never-submitted", "demote": True, "reason": "thin"}]),
+            ["a", "b"])
+        assert parsed == {}
+
+    def test_unparsable_output_demotes_nothing(self):
+        for raw in ("", "I think report a is fine.", "{", "null", "[1, 2, 3]"):
+            assert V.parse_verdicts(raw, ["a"]) == {}
+
+    def test_a_promotion_shaped_response_is_simply_not_understood(self):
+        parsed = V.parse_verdicts(
+            json.dumps([{"id": "a", "demote": False, "reason": "thin", "promote": True},
+                        {"id": "a", "score": 0.99}]),
+            ["a"])
+        assert parsed == {}
+
+    @pytest.mark.parametrize("factor", [0.0, 0.35, 1.0, 1.5, 42.0, -1.0, -0.0])
+    def test_apply_vetoes_can_never_raise_a_score(self, factor):
+        """PROPERTY SWEEP over hostile config values, including > 1 and < 0."""
+        rows = [{"report_id": "a", "status": "ranked", "w_score": 0.8,
+                 "published_at": "2026-07-25"},
+                {"report_id": "b", "status": "ranked", "w_score": 0.6,
+                 "published_at": "2026-07-25"}]
+        result = {"rows": rows}
+        out = T.apply_vetoes(result, {"a": {"reason": "thin"}},
+                             cfg={"veto": {"demote_factor": factor}})
+        after = {r["report_id"]: r["w_score"] for r in out["rows"]}
+        assert after["a"] <= 0.8
+        assert after["b"] == 0.6
+
+    def test_a_demotion_moves_a_report_down_the_ranking_never_up(self):
+        rows = [{"report_id": "a", "status": "ranked", "w_score": 0.9,
+                 "published_at": "2026-07-25"},
+                {"report_id": "b", "status": "ranked", "w_score": 0.5,
+                 "published_at": "2026-07-25"}]
+        out = T.apply_vetoes({"rows": rows}, {"a": {"reason": "duplicate"}},
+                             cfg={"veto": {"demote_factor": 0.35}})
+        assert [r["report_id"] for r in out["rows"]] == ["b", "a"]
+        demoted = next(r for r in out["rows"] if r["report_id"] == "a")
+        assert demoted["veto"]["demoted"] is True
+        assert demoted["w_score_pre_veto"] == 0.9
+        assert demoted["w_score"] < 0.9
+
+    def test_an_unknown_reason_reaching_apply_is_still_refused(self):
+        rows = [{"report_id": "a", "status": "ranked", "w_score": 0.9,
+                 "published_at": "2026-07-25"}]
+        out = T.apply_vetoes({"rows": rows}, {"a": {"reason": "promote"}}, cfg={})
+        assert out["rows"][0]["w_score"] == 0.9
+        assert out["rows"][0].get("veto") is None
+
+
+class TestVetoRun:
+    def _result(self):
+        return {"rows": [
+            {"report_id": "a", "status": "ranked", "title": "A", "institution": "X",
+             "w_score": 0.8, "published_at": "2026-07-25"},
+            {"report_id": "b", "status": "ranked", "title": "B", "institution": "Y",
+             "w_score": 0.7, "published_at": "2026-07-25"},
+            {"report_id": "junk", "status": "garbage_dropped", "title": "J",
+             "institution": "Z", "w_score": 0.1, "published_at": "2026-07-25"},
+        ]}
+
+    def test_garbage_never_reaches_the_model(self, monkeypatch):
+        seen = {}
+
+        def _call(system, user):
+            seen["user"] = user
+            return "[]", "anthropic", "claude-haiku-4-5"
+
+        monkeypatch.setattr(V, "_model_id", lambda _k: "claude-haiku-4-5")
+        out = V.run(self._result(), cfg={"veto": {"enabled": True}}, call=_call)
+        assert out["state"] == "ok"
+        assert "junk" not in seen["user"], (
+            "a P0-dropped report was submitted to the veto pass — the gate exists "
+            "so garbage costs zero tokens")
+
+    def test_a_demotion_round_trips(self, monkeypatch):
+        monkeypatch.setattr(V, "_model_id", lambda _k: "claude-haiku-4-5")
+        out = V.run(self._result(), cfg={"veto": {"enabled": True}},
+                    call=lambda s, u: (json.dumps([{"id": "a", "demote": True,
+                                                    "reason": "thin"}]),
+                                       "anthropic", "claude-haiku-4-5"))
+        assert out["vetoes"] == {"a": {"reason": "thin", "model": "claude-haiku-4-5",
+                                       "provider": "anthropic"}}
+
+    def test_no_provider_demotes_nothing(self, monkeypatch):
+        monkeypatch.setattr(V, "_model_id", lambda _k: "")
+        out = V.run(self._result(), cfg={"veto": {"enabled": True}})
+        assert out["state"] == "no_provider"
+        assert out["vetoes"] == {}
+
+    def test_disabled_is_a_clean_no_op(self):
+        out = V.run(self._result(), cfg={"veto": {"enabled": False}})
+        assert out["state"] == "disabled" and out["vetoes"] == {}
+
+    def test_a_raising_provider_does_not_stop_triage(self, monkeypatch):
+        def _boom(system, user):
+            raise RuntimeError("429")
+
+        monkeypatch.setattr(V, "_model_id", lambda _k: "claude-haiku-4-5")
+        out = V.run(self._result(), cfg={"veto": {"enabled": True}}, call=_boom)
+        assert out["vetoes"] == {}
+
+    def test_it_batches(self, monkeypatch):
+        calls = []
+        monkeypatch.setattr(V, "_model_id", lambda _k: "claude-haiku-4-5")
+        rows = {"rows": [{"report_id": str(i), "status": "ranked", "title": "T",
+                          "institution": "I", "w_score": 1.0 - i / 100,
+                          "published_at": "2026-07-25"} for i in range(10)]}
+
+        def _call(system, user):
+            calls.append(user)
+            return "[]", "anthropic", "m"
+
+        V.run(rows, cfg={"veto": {"enabled": True, "head_size": 10, "batch_size": 4}},
+              call=_call)
+        assert len(calls) == 3
+
+    def test_the_prompt_states_the_demote_only_contract(self):
+        system, _user = V.build_prompt([{"report_id": "a", "institution": "X",
+                                         "title": "T", "summary_points": ["p"]}])
+        assert "ONLY POWER IS TO DEMOTE" in system
+        assert "cannot promote" in system
+
+    def test_spend_rides_the_existing_lane_and_ledger(self):
+        """No new spend path: the waterfall and lib.ai_costs, via usage_lane."""
+        src = TestVetoIsStructurallyDemoteOnly.VETO_SOURCE
+        assert "llm_auth.build_providers" in src
+        assert '"usage_lane": "press-research-triage-veto"' in src
+        assert "record_usage" not in src and "record_response_usage" not in src, (
+            "the veto must not write the cost ledger itself — llm_auth.make_call "
+            "already records usage for the lane it was built with")
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# 6. THE LEDGER
+# ═════════════════════════════════════════════════════════════════════════════
+
+
+class TestLedger:
+    def test_rows_carry_the_whole_audit_trail(self, tmp_path):
+        root = F.fixture_root(tmp_path)
+        cfg = P.load_config(root)
+        res = T.rank([_item("a")], as_of="2026-07-26", root=root, cfg=cfg)
+        row = T.ledger_rows(res, cfg=cfg)[0]
+        for key in ("schema", "scoring_version", "as_of", "report_id", "status",
+                    "tier", "rank", "w_score", "w_score_pre_veto", "components",
+                    "contributions", "component_detail", "veto"):
+            assert key in row, key
+        assert row["schema"] == T.SCHEMA
+
+    def test_append_is_idempotent_per_day(self, tmp_path):
+        path = tmp_path / "triage.jsonl"
+        rows = [{"as_of": "2026-07-26", "report_id": "a", "w_score": 0.5}]
+        assert T.append_ledger(path, rows) == 1
+        assert T.append_ledger(path, rows) == 0
+        assert len(path.read_text(encoding="utf-8").strip().splitlines()) == 1
+        assert T.append_ledger(path, [{"as_of": "2026-07-27", "report_id": "a"}]) == 1
+
+    def test_truncation_is_loud(self, tmp_path, capsys):
+        res = {"rows": [{"report_id": str(i)} for i in range(5)]}
+        cfg = {"research_triage": {"ledger": {"max_rows_per_run": 2}}}
+        rows = T.ledger_rows(res, cfg=cfg)
+        assert len(rows) == 2
+        out = capsys.readouterr().out
+        assert any(line.startswith("::warning") for line in out.splitlines())
+
+    def test_recorded_vetoes_reads_only_demotions_in_window(self, tmp_path):
+        root = tmp_path / "repo"
+        (root / "data" / "press").mkdir(parents=True)
+        (root / "data" / "press" / "research_triage.jsonl").write_text(
+            "\n".join(json.dumps(r) for r in [
+                {"as_of": "2026-07-26", "report_id": "a",
+                 "veto": {"demoted": True, "reason": "thin"}},
+                {"as_of": "2026-07-26", "report_id": "b", "veto": None},
+                {"as_of": "2026-01-01", "report_id": "old",
+                 "veto": {"demoted": True, "reason": "thin"}},
+            ]) + "\n", encoding="utf-8")
+        cfg = {"research_triage": {"ledger": {"path": "data/press/research_triage.jsonl"}}}
+        out = T.recorded_vetoes(root, cfg, as_of="2026-07-26", window_days=7)
+        assert set(out) == {"a"}
+
+    def test_an_absent_ledger_is_empty_not_an_error(self, tmp_path):
+        assert T.recorded_vetoes(tmp_path / "nope", {}, as_of="2026-07-26") == {}
+
+    def test_the_ledger_path_is_tracked_not_gitignored(self):
+        """The score ledger is a REPO ledger, written by the nightly lane."""
+        import subprocess
+
+        target = "data/press/research_triage.jsonl"
+        result = subprocess.run(["git", "check-ignore", target],
+                                cwd=ROOT, capture_output=True, text=True)
+        assert result.returncode != 0, f"{target} must be tracked, not gitignored"
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# 7. PLANNER INTAKE — production wiring, not a test-only seam
+# ═════════════════════════════════════════════════════════════════════════════
+
+
+class TestPlannerIntake:
+    def test_the_planner_calls_the_triage_layer(self):
+        src = (ROOT / "engine" / "press" / "desk_planner.py").read_text(encoding="utf-8")
+        assert "from engine.press import research_triage as _rt" in src
+        assert "_rt.rank(" in src
+        assert "_rt.ranked_order(" in src
+        assert "_rt.recorded_vetoes(" in src
+
+    def test_the_research_slot_carries_its_triage_row(self, tmp_path):
+        root = F.fixture_root(tmp_path)
+        slots = P.plan(["research_desk"], as_of="2026-07-26", root=root)
+        assert slots
+        triage = slots[0]["triage"]
+        assert triage["tier"] == "flagship"
+        assert triage["ordered"] is True
+        assert triage["rank"] == 1
+        assert 0.0 <= triage["w_score"] <= 1.0
+        assert set(triage["components"]) == set(T.COMPONENT_NAMES)
+
+    def test_the_ranking_decides_which_report_is_covered(self, tmp_path):
+        """The W1 sort took top_pick then recency.  The W-score now decides.
+
+        The planted report is BOTH `top_pick` and the newest in the window, so
+        under the W1 rule it wins outright — and it is horoscope-class, so the
+        P0 gate drops it before it can be ranked.  If the planner still covered
+        it, the intake seam would be decorative.
+        """
+        root = F.fixture_root(tmp_path)
+        path = root / "data" / "research_vault" / "catalog.json"
+        catalog = json.loads(path.read_text(encoding="utf-8"))
+        catalog["items"].append(_item(
+            "marketdesk-junk-zzz999",
+            title="Your daily horoscope: what the zodiac says about markets",
+            summary_points=["Subscribe now. Click here for the full reading."],
+            top_pick=True, published_at="2026-07-26T09:00:00Z"))
+        path.write_text(json.dumps(catalog), encoding="utf-8")
+
+        slots = P.plan(["research_desk"], as_of="2026-07-26", root=root)
+        assert slots, "the desk must still cover something"
+        assert all("junk" not in ref for s in slots for ref in s["sources"])
+
+    def test_the_note_desk_is_dark_on_the_cold_start_knob(self, tmp_path):
+        root = F.fixture_root(tmp_path)
+        assert P.plan(["research_note"], as_of="2026-07-26", root=root) == []
+
+    def test_a_configured_zero_cadence_is_not_read_as_one(self, tmp_path):
+        """`int(x or 1)` — the W1 idiom — reads a configured 0 as 1.
+
+        That is the exact bug that would have armed the dark note lane the day
+        it was added, so the cap resolver must honour 0 explicitly.
+        """
+        root = F.fixture_root(tmp_path)
+        cfg = P.load_config(root)
+        cfg["desks"]["research_desk"]["cadence_per_day"] = 0
+        assert P.plan(["research_desk"], as_of="2026-07-26", root=root, cfg=cfg) == []
+
+    def test_cap_is_the_stricter_of_desk_cadence_and_volume(self, tmp_path):
+        root = F.fixture_root(tmp_path)
+        cfg = P.load_config(root)
+        cfg["research_triage"]["volume"]["stage"] = "target"   # 3 flagship/day
+        cfg["desks"]["research_desk"]["cadence_per_day"] = 1   # desk says 1
+        assert P._triage_cap(cfg, cfg["desks"]["research_desk"]) == 1
+        cfg["desks"]["research_desk"]["cadence_per_day"] = 9
+        assert P._triage_cap(cfg, cfg["desks"]["research_desk"]) == 3
+
+    def test_the_note_desk_draws_below_the_flagship_pick(self, tmp_path):
+        """ORDER IS LOAD-BEARING: research_desk must claim the head first."""
+        root = F.fixture_root(tmp_path)
+        cfg = P.load_config(root)
+        cfg["research_triage"]["volume"]["stage"] = "warm"     # 2 flagship + 4 notes
+        # The desk ceiling and the volume knob compose as stricter-of, so the
+        # desk's shipped 1/day would bind before the knob's 2 and this test
+        # would silently be about the wrong number.
+        cfg["desks"]["research_desk"]["cadence_per_day"] = 2
+        catalog = json.loads(
+            (root / "data" / "research_vault" / "catalog.json").read_text(encoding="utf-8"))
+        catalog["items"] += [_item(f"extra{i}") for i in range(4)]
+        (root / "data" / "research_vault" / "catalog.json").write_text(
+            json.dumps(catalog), encoding="utf-8")
+
+        slots = P.plan(["research_desk", "research_note"], as_of="2026-07-26",
+                       root=root, cfg=cfg)
+        flagship = [s for s in slots if s["desk"] == "research_desk"]
+        notes = [s for s in slots if s["desk"] == "research_note"]
+        assert len(flagship) == 2 and notes
+        flagship_refs = {r for s in flagship for r in s["sources"]}
+        note_refs = {r for s in notes for r in s["sources"]}
+        assert not (flagship_refs & note_refs), "the two desks covered one report twice"
+
+    def test_the_fixture_prose_clears_the_house_lexicon(self):
+        """This suite's own tripwire.
+
+        desk_planner._press_safe drops any summary point that trips the house
+        lexicon, and a report whose EVERY point is dropped is skipped.  Fixture
+        prose written in ordinary rates-desk shorthand ("front-end yields", "the
+        volatility regime") therefore makes every planner test in this file
+        vacuously green by producing no slots at all — which is exactly what
+        happened while this suite was being written.
+        """
+        from engine.marketing.copywriter import banned_language
+
+        item = _item("fixture")
+        for text in [item["title"], *item["summary_points"]]:
+            assert banned_language(text) == [], text
+
+    def test_desks_config_keeps_research_desk_above_research_note(self):
+        keys = list(press_config()["desks"])
+        assert keys.index("research_desk") < keys.index("research_note")
+
+    def test_triage_failure_falls_back_to_the_w1_sort(self, tmp_path, monkeypatch):
+        root = F.fixture_root(tmp_path)
+
+        def _boom(*_a, **_k):
+            raise RuntimeError("triage exploded")
+
+        monkeypatch.setattr(T, "rank", _boom)
+        slots = P.plan(["research_desk"], as_of="2026-07-26", root=root)
+        assert slots, "a broken triage must cost the ordering, never the day"
+        assert slots[0]["triage"]["ordered"] is False
+        # W1 order: top_pick first -> demo1.
+        assert "demo1" in slots[0]["sources"][0]
+
+    def test_the_note_desk_gets_the_research_writer_contract(self):
+        from engine.press import writer as W
+
+        slot = {"desk": "research_note", "as_of": "2026-07-26", "byline": "b",
+                "min_words": 300, "max_words": 500, "facts": [], "story": {},
+                "primary_source": {"kind": "first_party", "name": "n"}}
+        system, _user = W.build_prompt(slot, press_config())
+        assert "Research Desk of Mastermind Research" in system
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# 8. THE RESEARCH X LANE — DARK, on four locks
+# ═════════════════════════════════════════════════════════════════════════════
+
+
+class TestResearchLaneIsDark:
+    def test_the_account_is_disabled_twice_and_has_no_handle(self):
+        accounts = {a["id"]: a for a in
+                    marketing_config()["desk_network"]["accounts"]}
+        row = accounts["mastermind_research"]
+        assert row["enabled"] is False
+        assert row["disabled"] is True, (
+            "both keys, exactly like mastermind_news — the publish-time lanes "
+            "once filtered on `disabled` alone and made a dark property postable")
+        assert "handle" not in row, "the X account does not exist yet"
+
+    def test_no_buffer_channel_is_bound(self):
+        channels = marketing_config()["publish"]["channels"]
+        assert "mastermind_research" not in channels
+
+    def test_liveness_reads_as_planned(self):
+        state = RL.account_state(marketing_config(), ROOT)
+        assert state["enabled"] is False
+        assert state["status"] == "planned"
+
+    def test_build_items_refuses_even_when_asked_to_enqueue(self, tmp_path):
+        out = RL.build_items([{"report": _item("a"), "triage": {"rank": 1}}],
+                             cfg=marketing_config(), root=tmp_path,
+                             as_of="2026-07-26", enqueue=True)
+        assert out["state"] == "dark"
+        assert out["items"] == []
+        assert out["enqueued"] == 0
+
+    def test_liveness_fails_closed_on_a_broken_config(self, tmp_path):
+        out = RL.build_items([{"report": _item("a"), "triage": {}}],
+                             cfg={"desk_network": "not a mapping"}, root=tmp_path)
+        assert out["state"] == "dark"
+
+    def test_the_persona_spec_exists_and_is_valid(self):
+        from engine.marketing import personas as PZ
+
+        raw = yaml.safe_load(
+            (ROOT / "config" / "personas" / "mastermind_research.yml").read_text(
+                encoding="utf-8"))
+        assert PZ.validate_spec(raw, expect_id="mastermind_research") == []
+        assert raw["persona_kind"] == "branded"
+
+
+class TestResearchLaneShapes:
+    """The composition path, exercised with liveness forced on.
+
+    The account is dark in config; these tests hand `build_items` a config where
+    it is enabled so the SHAPES are covered rather than only the refusal.  That
+    is the opposite of a bypass: the dark test above proves the shipped config
+    cannot reach this code.
+    """
+
+    def _live_cfg(self):
+        cfg = marketing_config()
+        for row in cfg["desk_network"]["accounts"]:
+            if row["id"] == "mastermind_research":
+                row["enabled"] = True
+                row.pop("disabled", None)
+        return cfg
+
+    def test_both_shapes_are_built_through_make_item(self, tmp_path):
+        out = RL.build_items([{"report": _item("a"), "triage": {"rank": 1,
+                                                               "tier": "flagship"}}],
+                             cfg=self._live_cfg(), root=tmp_path, as_of="2026-07-26")
+        assert out["state"] == "ready"
+        formats = {i["source"]["format"] for i in out["items"]}
+        assert formats == {RL.FORMAT_POST, RL.FORMAT_ARTICLE}
+        for item in out["items"]:
+            assert item["schema"] == "marketing.outbox/v1"
+            assert item["kind"] == RL.KIND
+            assert item["provenance"] == "press_research_lane"
+
+    def test_no_hand_rolled_writer(self):
+        src = (ROOT / "engine" / "press" / "research_lane.py").read_text(encoding="utf-8")
+        assert "_ob.make_item(" in src and "_ob.validate_item(" in src
+        assert "items.jsonl" not in src, "the lane must not write the queue itself"
+
+    def test_no_new_outbox_kind(self):
+        from engine.marketing.outbox import KINDS
+
+        assert RL.KIND in KINDS
+
+    def test_the_short_form_is_value_complete_with_the_link_in_a_reply(self, tmp_path):
+        out = RL.build_items([{"report": _item("a"), "triage": {}}],
+                             cfg=self._live_cfg(), root=tmp_path, as_of="2026-07-26",
+                             catalog_items=[_item("a")])
+        post = next(i for i in out["items"] if i["source"]["format"] == RL.FORMAT_POST)
+        assert "http" not in post["text"], (
+            "the link belongs in a REPLY, not the post body (masterplan §6)")
+        assert "18 basis points" in post["text"], "the receipt must be IN the post"
+        assert post["source"]["reply_link"].startswith("https://")
+
+    def test_the_short_form_respects_the_house_char_cap(self, tmp_path):
+        long_point = "The desk argues at length. " * 40
+        out = RL.build_items([{"report": _item("a", summary_points=[long_point,
+                                                                   "Short one here."]),
+                               "triage": {}}],
+                             cfg=self._live_cfg(), root=tmp_path, as_of="2026-07-26")
+        posts = [i for i in out["items"] if i["source"]["format"] == RL.FORMAT_POST]
+        for post in posts:
+            assert len(post["text"]) <= 300
+
+    def test_every_shape_passes_the_shared_banned_vocab_guard(self, tmp_path):
+        from engine.marketing.copywriter import banned_language
+
+        out = RL.build_items([{"report": _item("a"), "triage": {}}],
+                             cfg=self._live_cfg(), root=tmp_path, as_of="2026-07-26")
+        for item in out["items"]:
+            assert banned_language(item["text"]) == []
+
+    def test_banned_content_skips_the_shape_it_does_not_rewrite_it(self, tmp_path):
+        out = RL.build_items([{"report": _item("a", summary_points=[
+            "The volatility regime has flipped and the narrative changed."]),
+            "triage": {}}],
+            cfg=self._live_cfg(), root=tmp_path, as_of="2026-07-26")
+        assert out["items"] == []
+        assert all("banned_language" in s["reason"] for s in out["skipped"])
+
+    def test_a_site_em_dash_is_normalised_not_a_skip(self, tmp_path):
+        """The vault writes for the SITE, where an em dash is normal typography.
+
+        The copy law's own remedy is "a period, a comma, or a new sentence", so
+        the substitution is the prescribed fix — not a content edit.  Without it
+        every article shape was skipped for punctuation the house itself wrote.
+        """
+        out = RL.build_items([{"report": _item("a", summary_points=[
+            "Short-term yields moved 18 basis points — the desk calls it done."]),
+            "triage": {}}],
+            cfg=self._live_cfg(), root=tmp_path, as_of="2026-07-26")
+        assert out["items"], out["skipped"]
+        assert all("—" not in i["text"] for i in out["items"])
+
+    def test_the_article_attributes_the_source_title_rather_than_lifting_it(self, tmp_path):
+        out = RL.build_items([{"report": _item("a"), "triage": {}}],
+                             cfg=self._live_cfg(), root=tmp_path, as_of="2026-07-26")
+        article = next(i for i in out["items"]
+                       if i["source"]["format"] == RL.FORMAT_ARTICLE)
+        head = article["text"].splitlines()[0]
+        assert head.startswith("Another Desk on \"")
+        assert head.endswith("\": our read")
+
+    def test_the_article_carries_the_standing_disclosure(self, tmp_path):
+        out = RL.build_items([{"report": _item("a"), "triage": {}}],
+                             cfg=self._live_cfg(), root=tmp_path, as_of="2026-07-26")
+        article = next(i for i in out["items"]
+                       if i["source"]["format"] == RL.FORMAT_ARTICLE)
+        assert "not investment advice" in article["text"]
+
+    def test_a_report_with_no_extraction_yields_nothing(self, tmp_path):
+        out = RL.build_items([{"report": _item("a", summary_points=[]), "triage": {}}],
+                             cfg=self._live_cfg(), root=tmp_path, as_of="2026-07-26")
+        assert out["items"] == []
+        assert {s["reason"] for s in out["skipped"]} == {"no summary_points"}
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# 9. THE CLI + THE WORKFLOW — production wiring
+# ═════════════════════════════════════════════════════════════════════════════
+
+
+class TestRunnerAndWorkflow:
+    WORKFLOW = (ROOT / ".github" / "workflows" / "research-triage.yml").read_text(
+        encoding="utf-8")
+
+    def test_the_workflow_invokes_the_cli(self):
+        assert "python -m scripts.run_research_triage" in self.WORKFLOW
+
+    def test_the_workflow_is_dark_by_default(self):
+        assert "vars.RESEARCH_TRIAGE_ENABLED == 'true'" in self.WORKFLOW
+        assert "secrets.RESEARCH_TRIAGE_ENABLED" not in self.WORKFLOW, (
+            "no secrets.* fallback — a lingering secret must not keep the lane live")
+
+    def test_the_workflow_commits_only_the_score_ledger(self):
+        adds = [line.strip() for line in self.WORKFLOW.splitlines()
+                if line.strip().startswith("git add ")]
+        assert adds == ["git add data/press/research_triage.jsonl 2>/dev/null || true"]
+        assert "research-triage staged something other than the score ledger" in self.WORKFLOW
+
+    def test_the_workflow_stays_off_the_render_pool(self):
+        runners = [line.strip().split("#", 1)[0].strip()
+                   for line in self.WORKFLOW.splitlines()
+                   if line.strip().startswith("runs-on:")]
+        assert runners == ["runs-on: ubuntu-latest"], (
+            "the triage lane must stay OFF the macstudio render pool, whose "
+            "~67-minute budget is law")
+
+    def test_the_workflow_installs_the_near_dup_backend(self):
+        """cluster_density degrades to a floor without datasketch; the
+        production lane should not ship the degraded read."""
+        assert "datasketch" in self.WORKFLOW
+
+    def test_the_cli_default_writes_nothing(self, tmp_path, monkeypatch):
+        import scripts.run_research_triage as R
+
+        root = F.fixture_root(tmp_path)
+        out = R.run(root, as_of="2026-07-26", write=False, veto=False)
+        assert out["ok"] is True
+        assert out["ledger_rows"] > 0
+        assert out["ledger_written"] == 0
+        assert not (root / "data" / "press" / "research_triage.jsonl").exists()
+
+    def test_the_cli_write_mode_appends_the_ledger(self, tmp_path):
+        import scripts.run_research_triage as R
+
+        root = F.fixture_root(tmp_path)
+        out = R.run(root, as_of="2026-07-26", write=True, veto=False)
+        path = root / "data" / "press" / "research_triage.jsonl"
+        assert path.exists()
+        rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+        assert len(rows) == out["ledger_written"] == out["ledger_rows"]
+        assert {r["as_of"] for r in rows} == {"2026-07-26"}
+        assert all(r["schema"] == T.SCHEMA for r in rows)
+
+    def test_the_cli_writes_nothing_else(self, tmp_path):
+        import scripts.run_research_triage as R
+
+        root = F.fixture_root(tmp_path)
+        before = {p: p.stat().st_mtime_ns for p in root.rglob("*") if p.is_file()}
+        R.run(root, as_of="2026-07-26", write=True, veto=False)
+        after = {p for p in root.rglob("*") if p.is_file()}
+        new = {p for p in after if p not in before}
+        assert new == {root / "data" / "press" / "research_triage.jsonl"}
+        for path, mtime in before.items():
+            assert path.stat().st_mtime_ns == mtime, f"{path} was modified"
+
+    def test_an_empty_catalog_is_loud(self, tmp_path, capsys):
+        import scripts.run_research_triage as R
+
+        root = F.fixture_root(tmp_path)
+        (root / "data" / "research_vault" / "catalog.json").write_text(
+            json.dumps({"items": []}), encoding="utf-8")
+        out = R.run(root, as_of="2026-07-26", write=True, veto=False)
+        assert out["state"] == "no_catalog"
+        assert any(line.startswith("::warning")
+                   for line in capsys.readouterr().out.splitlines())
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# 10. HOUSE LAWS
+# ═════════════════════════════════════════════════════════════════════════════
+
+
+class TestHouseLaws:
+    MODULES = ("engine/press/research_triage.py", "engine/press/research_veto.py",
+               "engine/press/research_lane.py", "scripts/run_research_triage.py")
+
+    @pytest.mark.parametrize("rel", MODULES)
+    def test_annotations_start_the_line_and_never_go_through_a_logger(self, rel):
+        """House law: a '::warning' behind a log formatter is silently dropped."""
+        tree = ast.parse((ROOT / rel).read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call) or not isinstance(node.func, ast.Attribute):
+                continue
+            if node.func.attr not in {"debug", "info", "warning", "error",
+                                      "critical", "exception"}:
+                continue
+            for arg in node.args[:1]:
+                if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                    assert not arg.value.startswith("::"), f"{rel}: {arg.value[:40]}"
+                if isinstance(arg, ast.JoinedStr) and arg.values:
+                    head = arg.values[0]
+                    if isinstance(head, ast.Constant) and isinstance(head.value, str):
+                        assert not head.value.startswith("::"), rel
+
+    @pytest.mark.parametrize("rel", MODULES)
+    def test_no_new_first_party_scraping(self, rel):
+        src = (ROOT / rel).read_text(encoding="utf-8")
+        for token in ("requests.", "urlopen", "httpx", "aiohttp", "BeautifulSoup"):
+            assert token not in src, f"{rel} reaches the network directly"
+
+    def test_the_word_validated_stays_out_of_the_shipped_config(self):
+        text = (ROOT / "config" / "press.yml").read_text(encoding="utf-8")
+        block = text.split("research_triage:", 1)[1].split("\npaths:", 1)[0]
+        assert "validated" not in block.lower()
+
+    def test_the_runbook_names_every_arming_lever(self):
+        text = (ROOT / "docs" / "research_triage.md").read_text(encoding="utf-8")
+        for lever in ("RESEARCH_TRIAGE_ENABLED", "volume.stage", "head_size",
+                      "PRESS_PUBLISH_ENABLED", "buffer-channels"):
+            assert lever in text, lever
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# 11. CONFIG CONTRACT (the XG-W5 pattern)
+# ═════════════════════════════════════════════════════════════════════════════
+
+
+class TestConfigContract:
+    def test_every_weight_is_a_config_key_and_they_sum_to_one(self):
+        w = press_config()["research_triage"]["weights"]
+        assert set(w) == set(T.COMPONENT_NAMES)
+        assert sum(w.values()) == pytest.approx(1.0)
+
+    def test_config_weights_match_the_module_defaults(self):
+        assert press_config()["research_triage"]["weights"] == T.weights(None)
+
+    @pytest.mark.parametrize("block,defaults", [
+        ("institution", T._INSTITUTION_DEFAULTS),
+        ("cluster", T._CLUSTER_DEFAULTS),
+        ("relevance", T._RELEVANCE_DEFAULTS),
+        ("extraction", T._EXTRACTION_DEFAULTS),
+        ("attention", T._ATTENTION_DEFAULTS),
+        ("novelty", T._NOVELTY_DEFAULTS),
+        ("veto", T._VETO_DEFAULTS),
+        ("volume", T._VOLUME_DEFAULTS),
+        ("ledger", T._LEDGER_DEFAULTS),
+    ])
+    def test_config_defaults_match_the_module_defaults(self, block, defaults):
+        """A config drift that silently re-tunes the triage must be visible."""
+        def _norm(value):
+            # YAML has no tuples; the module defaults use them for immutability.
+            if isinstance(value, (list, tuple)):
+                return [_norm(v) for v in value]
+            if isinstance(value, dict):
+                return {str(k): _norm(v) for k, v in value.items()}
+            return value
+
+        cfg = press_config()["research_triage"][block]
+        for key, value in cfg.items():
+            assert key in defaults, f"{block}.{key} has no module default to mirror"
+            assert _norm(defaults[key]) == _norm(value), (
+                f"{block}.{key} drifted from the module default")
+
+    def test_the_story_spine_block_matches_the_spine_defaults(self):
+        from engine.marketing import story_spine as SS
+
+        cfg = press_config()["research_triage"]["story_spine"]
+        for key, value in cfg.items():
+            assert SS._DEFAULTS[key] == value, f"story_spine.{key} drifted"
+
+    def test_every_garbage_detector_is_a_config_key(self):
+        from engine.marketing import garbage_gate as GG
+
+        cfg = press_config()["research_triage"]["garbage_gate"]
+        assert set(cfg["detectors"]) == set(GG.detector_names())
+        assert cfg["enabled"] is True
+        assert cfg["source_blocklist"] == []
+
+    def test_the_attention_headline_shape_keys_are_real_signal_features_knobs(self):
+        from engine.marketing import signal_features as SF
+
+        cfg = press_config()["research_triage"]["attention"]["headline_shape"]
+        for key in cfg:
+            assert key in SF._SHAPE_DEFAULTS, f"{key} is not a headline_shape knob"
+
+    def test_every_triage_block_is_covered_by_a_contract_test(self):
+        """The guard's own guard: a NEW block must not slip in unchecked."""
+        blocks = set(press_config()["research_triage"])
+        known = {"enabled", "weights", "institution", "cluster", "story_spine",
+                 "relevance", "extraction", "attention", "novelty",
+                 "garbage_gate", "veto", "volume", "ledger"}
+        assert blocks == known, (
+            "a research_triage block was added or removed without extending the "
+            "config-contract tests")
+
+    def test_the_model_keys_resolve(self):
+        models = yaml.safe_load(
+            (ROOT / "config.yml").read_text(encoding="utf-8"))["llm_models"]
+        assert models["press_research_veto"]
+        assert models["press_research_note"]
+        veto_key = press_config()["research_triage"]["veto"]["model_key"]
+        assert veto_key in models
+        assert press_config()["desks"]["research_note"]["model_key"] in models

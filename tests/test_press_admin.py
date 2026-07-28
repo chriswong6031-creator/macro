@@ -102,10 +102,17 @@ def test_overview_reports_the_kill_switch_state(tmp_path, monkeypatch):
 def test_overview_exposes_per_desk_cadence_and_thresholds(tmp_path):
     out = A.overview(root=_seed(tmp_path))
     desks = {c["desk"]: c for c in out["cadence"]}
-    assert set(desks) == {"brief", "research_desk"}
+    # `research_note` joined at W2R (XG-W8). It is a REAL desk with a real
+    # cadence ceiling that the panel must show, and it plans zero slots today
+    # because the cold-start volume knob composes stricter-of with it
+    # (config/press.yml research_triage.volume.stage). The panel reports the
+    # desk's own ceiling, not the resolved cap — see the triage ledger and
+    # docs/research_triage.md for what actually runs.
+    assert set(desks) == {"brief", "research_desk", "research_note"}
     assert desks["brief"]["publication"] == "mastermind_news"
     assert desks["brief"]["publication_domain"] == "mastermindx.ai"
     assert desks["research_desk"]["per_day"] == 1
+    assert desks["research_note"]["publication"] == "mastermind_research"
     assert out["thresholds"]["our_value_min"] == 0.40
     assert out["thresholds"]["paraphrase_max_jaccard"] == 0.18
     # The panel must REPORT the shipped cutover state, not a literal that
