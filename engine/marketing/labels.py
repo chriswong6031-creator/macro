@@ -44,6 +44,7 @@ over observed counters. This module imports no model client and must not.
 Public API:
     CONSUMERS / DIMS / LABEL_SCHEMA
     host_dir(root) / repo_dir(root) / labels_path(root) / scorecard_path(root)
+    new_row(**fields) -> dict                      # THE row constructor
     record_observation(row, *, root=None)          -> dict   (HOST write, intraday)
     harvest_post_labels(*, root, cfg=None, now)    -> list[dict]
     harvest_reply_labels(*, store, root, cfg=None, now) -> list[dict]
@@ -364,8 +365,12 @@ def row_id(row: dict) -> str:
     return "lb-" + hashlib.sha1(basis.encode("utf-8", "replace")).hexdigest()[:16]  # noqa: S324
 
 
-def _blank_row(**over: Any) -> dict:
-    """The label row shape.
+def new_row(**over: Any) -> dict:
+    """The label row shape. THE constructor — two modules build rows.
+
+    Public because ``reply_producer`` builds rows too: a second module
+    hand-rolling the dict is how a store grows two schemas that agree until
+    they don't.
 
     Deliberately L2-RETRAIN-SHAPED and nothing more (the retrain job is out of
     scope this wave — there is no labels corpus yet). ``features`` is the
@@ -589,7 +594,7 @@ def harvest_post_labels(
         kind = str(item.get("kind") or item.get("type") or "unknown")
         as_of = _day(item.get("as_of") or posted_day.get(remote) or mrow.get("polled_at"))
         label, reason = _post_label(metrics)
-        rows.append(_blank_row(
+        rows.append(new_row(
             surface="post",
             subject_id=str(item.get("id") or remote),
             as_of=as_of,
@@ -705,7 +710,7 @@ def harvest_reply_labels(
         ctx = feats.get("_context")
         ctx = ctx if isinstance(ctx, dict) else {}
         as_of = _day(item.get("as_of"))
-        rows.append(_blank_row(
+        rows.append(new_row(
             surface="reply",
             subject_id=iid,
             as_of=as_of,
@@ -803,7 +808,8 @@ def _hour_of(value: object) -> float | None:
     return float(dt.hour) if dt is not None else None
 
 
-def active_covariates(rows: Sequence[dict], *, cfg: dict | None = None) -> tuple[list[str], dict]:
+def active_covariates(rows: Sequence[dict], *, cfg: dict | None = None,
+                      announce: bool = True) -> tuple[list[str], dict]:
     """Which covariates the current sample size actually supports.
 
     THE 8-COVARIATE MODEL IS OVER-PARAMETERIZED AT LAUNCH (charter §8). The
@@ -827,7 +833,7 @@ def active_covariates(rows: Sequence[dict], *, cfg: dict | None = None) -> tuple
     # Announce a real truncation only. With ZERO labelled rows there is nothing
     # to over-parameterize, and warning about it every night on an empty store
     # trains the operator to ignore the annotation that matters later.
-    if len(want) > allowed and n > 0:
+    if announce and len(want) > allowed and n > 0:
         print(
             f"::warning title=labels-covariates::parent adjustment requested "
             f"{len(want)} covariates on {n} labelled rows — {allowed} supported at "
@@ -954,7 +960,10 @@ def scorecard(rows: list[dict], *, cfg: dict | None = None, now: datetime) -> di
         out_cells.append(entry)
     out_cells.sort(key=lambda c: (-int(c["n"]), tuple(sorted(c["dims"].items()))))
 
-    _active, cov_meta = active_covariates(in_window, cfg=cfg)
+    # announce=False: `parent_adjust` already warned about any truncation on
+    # this same corpus during the nightly. Two identical annotations per run
+    # reads as two problems.
+    _active, cov_meta = active_covariates(in_window, cfg=cfg, announce=False)
     return {
         "schema": SCORECARD_SCHEMA,
         "produced_by": "engine/marketing/labels.py",
@@ -1161,7 +1170,7 @@ __all__ = [
     "LABEL_SCHEMA", "SCORECARD_SCHEMA", "CONSUMERS", "DIMS", "DEFAULTS",
     "REGISTER_NAMES", "DEFAULT_N_FLOOR", "RETENTION_DAYS",
     "host_dir", "repo_dir", "labels_path", "scorecard_path",
-    "row_id", "validate_row", "record_observation", "register_for",
+    "new_row", "row_id", "validate_row", "record_observation", "register_for",
     "harvest_post_labels", "harvest_reply_labels",
     "active_covariates", "parent_adjust", "scorecard", "bottleneck_table",
     "north_star", "consolidate", "load_labels", "load_scorecard",

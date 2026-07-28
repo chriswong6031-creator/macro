@@ -470,7 +470,7 @@ def _record_enqueued(root: Path | str | None, *, item: dict, target: dict,
     feats = target.get("score_features") or {}
     ctx = feats.get("_context") if isinstance(feats, dict) else {}
     ctx = ctx if isinstance(ctx, dict) else {}
-    row = _labels._blank_row(  # noqa: SLF001 — the row constructor is the store's own shape
+    row = _labels.new_row(
         surface="reply",
         subject_id=str(item.get("id") or ""),
         as_of=str(item.get("as_of") or ""),
@@ -506,7 +506,7 @@ def _record_abstention(root: Path | str | None, *, account: str, as_of: str,
     """
     from engine.marketing import labels as _labels  # noqa: PLC0415
 
-    row = _labels._blank_row(  # noqa: SLF001
+    row = _labels.new_row(
         surface="reply",
         subject_id=f"abstain-{account}-{target.get('status_id') or ''}",
         as_of=as_of,

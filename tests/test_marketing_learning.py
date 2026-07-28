@@ -46,7 +46,7 @@ def cfg() -> dict:
 
 def _row(account="kelly", day="2026-07-28", surface="post", label=0.05,
          subject=None, **over):
-    row = lb._blank_row(
+    row = lb.new_row(
         surface=surface,
         subject_id=subject or f"{account}-{day}-{surface}",
         as_of=day, account=account, format=over.pop("fmt", "signal"),
