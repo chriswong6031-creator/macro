@@ -140,6 +140,28 @@ def _items_path(root: Path | str | None) -> Path:
     return outbox_dir(root) / "items.jsonl"
 
 
+def _host_items_path(root: Path | str | None) -> Path:
+    """The GITIGNORED daemon-local spool: <outbox>/items-host.jsonl.
+
+    WHY IT EXISTS. items.jsonl is git-TRACKED (the nightly emit and the
+    marketing-publish lane both commit it back). The XG-W2 fast lanes now append
+    through the canonical path, and those lanes run inside the VPS daemon — so
+    without this split the daemon would dirty a tracked file in the VPS
+    checkout and collide with its 3-minute `git pull`. The spool keeps every
+    daemon-side write out of git while local readers (the near-dup corpus, the
+    story lock) see the union, so the guards still work.
+
+    WHAT THIS DOES *NOT* SOLVE — say it plainly. Items in the spool are invisible
+    to the Actions-side publisher, which folds items.jsonl in a different
+    checkout. Press and earnings items therefore still do not reach the
+    publisher; they will reach it via the future VPS-direct posting lane
+    (B3/P1), not via this file. The split-brain is unchanged: this only removes
+    the tracked-file dirt hazard the canonical-path move would otherwise have
+    introduced.
+    """
+    return outbox_dir(root) / "items-host.jsonl"
+
+
 def _ledger_path(root: Path | str | None) -> Path:
     return outbox_dir(root) / "status_ledger.jsonl"
 
@@ -439,14 +461,47 @@ def cross_account_threshold(cfg: dict | None) -> float:
         return float(_sentinel_defaults()["near_dup_jaccard"])
 
 
-def _recent_texts_by_account(existing: list[dict], ref_as_of: object) -> dict[str, list[str]]:
-    """account → [normalized text, ...] for every in-window existing item.
+#: Folded statuses that mean an item is DEAD — it will never be posted.
+_DEAD_STATUSES: frozenset[str] = frozenset({"quarantined", "failed"})
+
+
+def dead_item_ids(root: Path | str | None = None) -> set[str]:
+    """Ids whose LAST ledger transition left them quarantined or failed.
+
+    A dead item must not sit in the near-dup corpus. It is not competing for the
+    slot — nothing will ever post it — so letting its text block a live desk's
+    item is a guard punishing the wrong post. This matters most for the
+    CROSS-ACCOUNT radar, where one desk's quarantined copy would otherwise
+    silently veto another desk's coverage of the same event indefinitely.
+
+    Last-row semantics on purpose: ``failed`` is re-armable (failed → approved),
+    so an item that failed and was retried is alive again and the last row says
+    so. The CAP counter deliberately still counts dead items — refilling a bad
+    slot the same day is how retry-spam starts — which is a different question
+    from "may this text go out".
+    """
+    last_to: dict[str, str] = {}
+    for row in read_jsonl(_ledger_path(root)):
+        iid, to = row.get("id"), row.get("to")
+        if iid and to:
+            last_to[str(iid)] = str(to)
+    return {i for i, s in last_to.items() if s in _DEAD_STATUSES}
+
+
+def _recent_texts_by_account(existing: list[dict], ref_as_of: object,
+                             dead: set[str] | frozenset[str] = frozenset(),
+                             ) -> dict[str, list[str]]:
+    """account → [normalized text, ...] for every in-window, LIVE existing item.
 
     Feeds the enqueue-time near-dup guard (near_duplicate): a new item's text is
-    compared against every same-account prior text in the 7-day window."""
+    compared against every same-account prior text in the 7-day window.
+    ``dead`` (see :func:`dead_item_ids`) is excluded — a quarantined or failed
+    item is not going out, so it must not block anything."""
     out: dict[str, list[str]] = {}
     for i in existing:
         if not _within_text_window(i.get("as_of"), ref_as_of):
+            continue
+        if str(i.get("id") or "") in dead:
             continue
         acct = str(i.get("account") or "")
         out.setdefault(acct, []).append(_normalize_text(str(i.get("text") or "")))
@@ -620,8 +675,25 @@ def validate_item(item: dict) -> list[str]:
 # ─────────────────────────────────────────────────────────────────────────────
 
 def read_items(root: Path | str | None = None) -> list[dict]:
-    """Read all item records from items.jsonl.  Returns [] on any error."""
+    """Read all item records from the TRACKED items.jsonl. [] on any error.
+
+    Deliberately NOT the union: this is what fold_state, the publisher and the
+    admin read, and those must keep seeing exactly the queue that is committed
+    and shared. Local guards that need the daemon spool too call
+    :func:`read_items_all`.
+    """
     return read_jsonl(_items_path(root))
+
+
+def read_items_all(root: Path | str | None = None) -> list[dict]:
+    """Tracked items PLUS the gitignored daemon spool (see _host_items_path).
+
+    The corpus for anything that asks "does this content already exist?" — the
+    enqueue dedup/near-dup guards and the one-owner story lock. Those questions
+    must be answered against everything this host has emitted, or a daemon-side
+    emission would be invisible to the very guards that exist to catch it.
+    """
+    return read_jsonl(_items_path(root)) + read_jsonl(_host_items_path(root))
 
 
 def read_ledger(root: Path | str | None = None) -> list[dict]:
@@ -766,16 +838,23 @@ def enqueue(
     *,
     max_per_account_day: int | None = None,
     cfg: dict | None = None,
+    spool: bool = False,
     _ctx: dict | None = None,
 ) -> str:
-    """Append an item to items.jsonl if valid and not duplicate/over-cap.
+    """Append an item to the outbox queue if valid and not duplicate/over-cap.
 
     Returns one of: "queued" | "duplicate" | "cross_account_duplicate" |
     "cap_exceeded" | "invalid:<msg>". Never raises.
 
-    cfg: the marketing config, read ONLY for the cross-account near-dup
-    threshold (sentinel.near_dup_jaccard). None → Sentinel's in-code default,
-    so the guard is on either way; the config can tune it, never disarm it.
+    cfg: the marketing config, read for the daily cap and the cross-account
+    near-dup threshold (sentinel.near_dup_jaccard). None → Sentinel's in-code
+    defaults, so the guard is on either way; the config can tune it, never
+    disarm it.
+
+    spool: True writes to the GITIGNORED daemon-local items-host.jsonl instead
+    of the tracked items.jsonl (see _host_items_path). The VPS daemon sets it;
+    everything else leaves it False. The read side is unaffected — every guard
+    below reads the UNION, so a spooled item still blocks a later duplicate.
 
     _ctx (internal, used by emit_from_content_plan): a preloaded
     {"ids": set, "day_counts": {(account, as_of): int}} snapshot so a batch of
@@ -790,7 +869,13 @@ def enqueue(
         item_id = item["id"]
         account = item["account"]
         as_of = item["as_of"]
-        cap = max_per_account_day if max_per_account_day is not None else effective_cap({})
+        # effective_cap({}) here IGNORED the threaded cfg and landed on the
+        # Sentinel in-code default of 2/account/day — so every caller that
+        # passed cfg but no explicit max_per_account_day (the XG-W2 fast lanes)
+        # was silently capped at 2, contradicting the operator's 2026-07-27
+        # "breaking has no limits" ruling. Read the cfg that was actually given.
+        cap = (max_per_account_day if max_per_account_day is not None
+               else effective_cap(cfg or {}))
 
         def _check_and_append(ctx: dict) -> str:
             if item_id in ctx["ids"]:
@@ -835,7 +920,8 @@ def enqueue(
             # (autonomous cadence) → never blocks on volume.
             if cap >= 0 and ctx["day_counts"].get((account, as_of), 0) >= cap:
                 return "cap_exceeded"
-            if not append_jsonl(_items_path(root), item):
+            target = _host_items_path(root) if spool else _items_path(root)
+            if not append_jsonl(target, item):
                 log.warning("outbox.enqueue: append_jsonl failed for item %r", item_id)
                 return "invalid:append failed"
             ctx["ids"].add(item_id)
@@ -852,7 +938,14 @@ def enqueue(
             return _check_and_append(_ctx)
 
         with _outbox_lock(root):
-            existing = read_items(root)
+            # UNION corpus (tracked + daemon spool): a question of the form "does
+            # this content already exist on this host?" must see every emission,
+            # or a daemon-side item would be invisible to the guards.
+            existing = read_items_all(root)
+            # Quarantined/failed items are excluded from the TEXT corpus only —
+            # a dead item is not competing for the slot, so it must not veto a
+            # live desk. It still counts toward the cap below (see that comment).
+            dead = dead_item_ids(root)
             ctx = {
                 "ids": {i.get("id") for i in existing},
                 "day_counts": {},
@@ -860,8 +953,10 @@ def enqueue(
                     _text_key(i.get("account"), i.get("text"))
                     for i in existing
                     if _within_text_window(i.get("as_of"), as_of)
+                    and str(i.get("id") or "") not in dead
                 },
-                "recent_texts_by_account": _recent_texts_by_account(existing, as_of),
+                "recent_texts_by_account": _recent_texts_by_account(
+                    existing, as_of, dead),
                 "cross_account_threshold": cross_account_threshold(cfg),
             }
             for i in existing:
@@ -1309,7 +1404,9 @@ def emit_from_content_plan(
     cap = effective_cap(cfg or {})
 
     with _outbox_lock(root):
-        existing = read_items(root)
+        # Same union + dead-item exclusion as enqueue()'s own corpus builder.
+        existing = read_items_all(root)
+        dead = dead_item_ids(root)
         ctx: dict[str, Any] = {
             "ids": {i.get("id") for i in existing},
             "day_counts": {},
@@ -1317,8 +1414,10 @@ def emit_from_content_plan(
                 _text_key(i.get("account"), i.get("text"))
                 for i in existing
                 if _within_text_window(i.get("as_of"), as_of)
+                and str(i.get("id") or "") not in dead
             },
-            "recent_texts_by_account": _recent_texts_by_account(existing, as_of),
+            "recent_texts_by_account": _recent_texts_by_account(
+                existing, as_of, dead),
             "cross_account_threshold": cross_account_threshold(cfg),
         }
         for i in existing:

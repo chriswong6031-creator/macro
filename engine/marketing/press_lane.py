@@ -26,7 +26,7 @@ owner story lock refuses a claim another account already took.
 
 Public API:
     run_press_tick(items, *, root, now, cfg, press_cfg, state, dry_run=False,
-                   llm_override=None) -> dict
+                   spool=False, llm_override=None) -> dict
         {emitted:[...], skipped:[...], digest:[...], blocked:[...]}
 
 State (daemon-local, gitignored — data/marketing/press/):
@@ -237,7 +237,7 @@ def _story_lock_check(account: str, key: str, *, root: Path, now: datetime,
         from engine.marketing import outbox as _ob  # noqa: PLC0415
         from engine.marketing import story_lock as _sl  # noqa: PLC0415
 
-        return _sl.check(account, key, _ob.read_items(root), now=now, cfg=cfg)
+        return _sl.check(account, key, _ob.read_items_all(root), now=now, cfg=cfg)
     except Exception as exc:  # noqa: BLE001
         print(f"::warning title=story-lock-unavailable::{key}: {exc}", flush=True)
         return None
@@ -257,6 +257,7 @@ def _emit_outbox_item(
     cta_suppress: bool,
     dry_run: bool,
     cfg: dict | None = None,
+    spool: bool = False,
 ) -> dict[str, Any] | None:
     """Build a CANONICAL outbox item (kind='breaking') and enqueue it.
 
@@ -340,7 +341,7 @@ def _emit_outbox_item(
                 pass
             raise
 
-    result = _ob.enqueue(item, root, cfg=cfg)
+    result = _ob.enqueue(item, root, cfg=cfg, spool=spool)
     if result != "queued":
         print(f"::warning title=press-lane-not-queued::{item_id} refused by the "
               f"outbox: {result}", flush=True)
@@ -573,6 +574,7 @@ def run_press_tick(
     seen_ids: set[str] | None = None,
     dry_run: bool = False,
     prime: bool = False,
+    spool: bool = False,
     llm_override: Any = None,
 ) -> dict[str, list[dict]]:
     """Run one press-lane tick over a batch of FeedItems.
@@ -587,6 +589,12 @@ def run_press_tick(
         seen_ids:   ids already emitted (dedupe). When None, no cross-tick dedupe
                     (the daemon passes its persisted seen-set).
         dry_run:    compute everything, write nothing.
+        spool:      True routes the emission to the GITIGNORED daemon-local
+                    outbox spool (outbox._host_items_path) instead of the
+                    git-TRACKED items.jsonl. The VPS daemon sets it so a press
+                    tick cannot dirty the checkout its 3-minute `git pull`
+                    depends on. Read-side guards are unaffected — they read the
+                    union of both files.
         prime:      COLD-START (m2). On the very first run — no cursor/seen state —
                     the batch is a full history snapshot, not real-time news;
                     emitting it would flood. When True the tick runs the full
@@ -728,6 +736,24 @@ def run_press_tick(
             continue
 
         # 5. Flagship interim lane: top-K/day + salience floor.
+        #
+        # ⚠ THIS COUNTER IS THE END-TO-END VOLUME BOUND ON THE WIRE RAIL.
+        # Trace the composition honestly: press items are emitted with
+        # scheduled_at="immediate", and an immediate item is EXEMPT from the
+        # per-account daily cap, the tier ramp, the global 10-minute floor
+        # (operator 2026-07-27, "breaking has no limits") and — by
+        # cadence_resolver.exempt_immediate, which defaults true for the same
+        # reason — from the XG-W2 cadence resolver as well. Nothing downstream
+        # bounds how many of these go out in a day. So `wire.flagship_top_k_per_day`
+        # here, plus the earnings lane's own per-event key space (one item per
+        # ticker+quarter, deduped by the seen ledger), are the ONLY end-to-end
+        # limits on the immediate rail.
+        #
+        # This is documented, not "fixed": the exemption is a standing operator
+        # ruling, and adding a second competing cap here would quietly overrule
+        # it. If the immediate rail ever needs bounding, the lever that exists is
+        # cadence_resolver.exempt_immediate: false — one config flip, already
+        # tested — not a new knob.
         if s.get("salience", 0.0) < floor:
             skipped.append({"id": iid, "reason": "below_flagship_floor",
                             "salience": s.get("salience")})
@@ -852,17 +878,29 @@ def run_press_tick(
             cta_suppress=bool(s.get("cta_suppress", False)),
             dry_run=dry_run,
             cfg=cfg,
+            spool=spool,
         )
         if out_item is None:
-            # The canonical path refused it (invalid, duplicate, cross-account
-            # near-dup, or over cap). It is NOT recorded as seen — a refusal is
-            # not an emission, and a later tick may legitimately retry it.
+            # RECORDED AS SEEN, deliberately. The canonical path refused it
+            # (invalid, duplicate, cross-account near-dup, or over cap), and the
+            # LLM summarize-with-citation call above has ALREADY been paid for.
+            # The refusal cannot be evaluated any earlier — every guard that
+            # produced it keys on the generated TEXT — so leaving the item
+            # unseen means re-generating and re-refusing the same story on every
+            # tick, forever, burning billed spend on an outcome we already know.
+            # Every refusal reason is a stable property of the copy, so a retry
+            # cannot change the answer. The seen ledger is size-capped and rolls
+            # (daemon _PRESS_SEEN_CAP), so this is a suppression with a horizon,
+            # not a permanent kill.
+            seen.add(_emission_key(s))
             skipped.append({"id": iid, "reason": "outbox_refused",
                             "account": account})
             continue
         counter["count"] = int(counter["count"]) + 1
         # Record the MIRROR-COLLAPSED key so a later tick from EITHER mirror is a
-        # dedupe skip. out_item still carries the raw id for the outbox filename.
+        # dedupe skip. (There is no per-item outbox FILENAME any more — XG-W2
+        # moved this lane onto items.jsonl/the daemon spool — but the feed id
+        # still names the media SVG and rides on the item as source.feed_item_id.)
         seen.add(_emission_key(s))
         emitted.append(out_item)
         # An emitted item is rail-eligible with its FULLY-composed body (opener +

@@ -62,10 +62,18 @@ def default_account(cfg: dict | None) -> str:
     return value or DEFAULT_ACCOUNT
 
 
-def _enabled_accounts(cfg: dict | None, root: Path | str | None) -> set[str]:
-    """Ids of accounts the accounts model considers live. Fail-soft: on any
-    error return an empty set, which makes every route fall back to the default
-    — the pre-XG-W2 behaviour, never a silent widening."""
+def _enabled_accounts(cfg: dict | None, root: Path | str | None) -> set[str] | None:
+    """Ids of accounts the accounts model considers live, or None when liveness
+    is UNKNOWN (the accounts model could not be consulted).
+
+    None and the empty set are different answers and callers must not conflate
+    them — the first version of this function returned an empty set for both,
+    and the callers' ``if live and …`` test then treated "unknown" as "no
+    constraint" and let a configured DARK account through. That is a silent
+    widening in the one failure mode where widening is least defensible, and it
+    is the exact opposite of what this module promises. Unknown liveness now
+    routes to the default, which is the pre-XG-W2 behaviour and always safe.
+    """
     try:
         from engine.marketing.accounts import effective_accounts  # noqa: PLC0415
 
@@ -76,7 +84,39 @@ def _enabled_accounts(cfg: dict | None, root: Path | str | None) -> set[str]:
         }
     except Exception as exc:  # noqa: BLE001
         log.warning("wire_routing: accounts model unavailable (%s) — default only", exc)
-        return set()
+        return None
+
+
+#: Accounts already warned about in THIS process. route() runs once per press
+#: item and the daemon ticks on an interval, so an unarmed route would otherwise
+#: print the same annotation thousands of times a day and bury the Actions
+#: summary it exists to surface. Keyed by account, not by (class, account): the
+#: operator's action is the same one desk_network flip whichever class hit it.
+_WARNED_DARK: set[str] = set()
+
+
+def reset_dark_route_warnings() -> None:
+    """Clear the once-per-process warning set (tests)."""
+    _WARNED_DARK.clear()
+
+
+def _warn_dark_route(event_class: object, acct: str, fallback: str, *,
+                     unknown: bool) -> None:
+    """Print the dark-route annotation at most once per account per process."""
+    if acct in _WARNED_DARK:
+        return
+    _WARNED_DARK.add(acct)
+    why = ("liveness could not be resolved" if unknown
+           else "is not enabled in desk_network")
+    # Start-of-line annotation (house law): a logger prefix would make GitHub
+    # drop this silently, and a dark route is exactly the thing an operator must
+    # see in the Actions summary.
+    print(
+        f"::warning title=wire-routing-dark::event_class {event_class!r} routes "
+        f"to {acct!r}, which {why} — falling back to {fallback!r}. Enable the "
+        f"desk to arm the route.",
+        flush=True,
+    )
 
 
 def routing_table(cfg: dict | None, *, root: Path | str | None = None) -> dict[str, str]:
@@ -96,7 +136,9 @@ def routing_table(cfg: dict | None, *, root: Path | str | None = None) -> dict[s
         acct = str(account or "").strip()
         if not acct:
             continue
-        out[str(klass)] = acct if (not live or acct in live) else fallback
+        # Unknown liveness (live is None) routes to the default, same as a known
+        # dark account. Only a POSITIVE membership check arms a route.
+        out[str(klass)] = acct if (live is not None and acct in live) else fallback
     return out
 
 
@@ -123,16 +165,10 @@ def route(
     if acct == fallback:
         return fallback
 
+    # Only a POSITIVE membership check arms a route: unknown liveness (None)
+    # falls back exactly like a known-dark account.
     live = _enabled_accounts(cfg, root)
-    if live and acct not in live:
-        # Start-of-line annotation (house law): a logger prefix would make GitHub
-        # drop this silently, and a dark route is exactly the thing an operator
-        # must see in the Actions summary.
-        print(
-            f"::warning title=wire-routing-dark::event_class {event_class!r} routes "
-            f"to {acct!r}, which is not enabled in desk_network — falling back to "
-            f"{fallback!r}. Enable the desk to arm the route.",
-            flush=True,
-        )
+    if live is None or acct not in live:
+        _warn_dark_route(event_class, acct, fallback, unknown=live is None)
         return fallback
     return acct

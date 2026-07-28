@@ -323,10 +323,17 @@ def posting_history(state: dict) -> dict[str, list[tuple[datetime, str]]]:
 
     An item counts as SENT when its folded status is ``posted`` or ``posting``
     ("posting" is in-flight — it likely reached the network, so it holds its
-    slot, the same reading ``outbox.posted_today_by_account`` already uses). The
-    timestamp is the last applied ledger row's ``at``, which is when the post
-    actually went out; ``as_of`` is the GENERATION day and would misdate every
-    nightly item by one day.
+    slot, the same reading ``outbox.posted_today_by_account`` already uses).
+
+    The timestamp prefers the receipt's ``booked_at`` — the wall-clock the post
+    was actually BOOKED for — over the ledger row's ``at``, which is only when
+    the row was written. Same reasoning as the publisher's own floor seeding
+    (``_last_global_post_at``): with send-time jitter the two diverge by up to
+    publish.post_jitter_max_min minutes, and measuring spacing from the write
+    time would let the next post land inside the previous one's window. Rows
+    with no ``booked_at`` (anything written before jitter shipped) fall back to
+    ``at``, where the two were equal anyway. ``as_of`` is never used — it is the
+    GENERATION day and would misdate every nightly item by one.
     """
     items = (state or {}).get("items") or {}
     last = (state or {}).get("last") or {}
@@ -335,7 +342,10 @@ def posting_history(state: dict) -> dict[str, list[tuple[datetime, str]]]:
     for iid, item in items.items():
         if status.get(iid, "queued") not in {"posted", "posting"}:
             continue
-        ts = _parse_ts((last.get(iid) or {}).get("at"))
+        row = last.get(iid) or {}
+        receipt = row.get("receipt")
+        booked = (receipt.get("booked_at") if isinstance(receipt, dict) else None)
+        ts = _parse_ts(booked) or _parse_ts(row.get("at"))
         if ts is None:
             continue
         acct = str(item.get("account") or "")
@@ -382,9 +392,18 @@ def daily_budget(profile: CadenceProfile, when: datetime, *,
     Weekdays: ``posts_per_day``. Weekends: shaped by ``weekend_shape``, floored
     at 1 (a shaped weekend thins an account, it never silences one).
     """
+    # NEGATIVE = UNLIMITED, the same dialect ``sentinel.max_posts_per_account_per_day``
+    # already uses (-1 is its "no limit" sentinel). Without this, a spec author
+    # copying that idiom into ``posts_per_day: -1`` would get PERMANENT SILENCE —
+    # `posted_today >= -1` is true before the account has posted anything. Two
+    # config layers in one product must not read the same number in opposite
+    # directions. personas._validate_cadence additionally rejects `0`, which is
+    # neither dialect and is how the confusion would otherwise ship.
+    if int(profile.posts_per_day) < 0:
+        return -1
     local = _local(when, profile.tz)
     if local.weekday() < 5:
-        return max(0, int(profile.posts_per_day))
+        return int(profile.posts_per_day)
     factors = weekend_factors or _DEFAULT_WEEKEND_FACTORS
     factor = factors.get(profile.weekend_shape, 1.0)
     return max(1, int(round(profile.posts_per_day * factor)))
@@ -503,6 +522,8 @@ def resolve(
         d["would_refuse"] = reason
         return Decision(True, REASON_SHADOW, d)
 
+    # budget < 0 is UNLIMITED (see daily_budget) — never blocks on volume, the
+    # same reading outbox.enqueue gives a negative cap.
     if budget >= 0 and posted_today >= budget:
         return _verdict(False, REASON_DAILY_CAP)
 

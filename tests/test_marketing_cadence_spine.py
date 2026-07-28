@@ -41,6 +41,12 @@ _SAT_UTC = datetime(2026, 7, 25, 12, 0, 0, tzinfo=timezone.utc)
 
 _AS_OF = "2026-07-22"
 
+#: The LIVE sentinel posture (autonomous cadence, operator 2026-07-24). The
+#: fixtures thread this rather than passing max_per_account_day, so what they
+#: exercise is the DEFAULT cap path — the one that silently landed on the
+#: Sentinel in-code 2/day when enqueue() ignored its own cfg argument.
+_UNLIMITED_CFG = {"sentinel": {"max_posts_per_account_per_day": -1}}
+
 
 def _profile(**overrides):
     """A CadenceProfile built from a cadence dict, so the tests exercise the
@@ -323,7 +329,7 @@ def _seed_approved(tmp_path: Path, *, account: str, text: str,
     item = make_item(account=account, kind=kind, text=text, as_of=_AS_OF,
                      scheduled_at=scheduled_at, provenance="content_studio",
                      now=_WED_UTC)
-    assert enqueue(item, root=tmp_path, max_per_account_day=99) == "queued"
+    assert enqueue(item, root=tmp_path, cfg=_UNLIMITED_CFG) == "queued"
     assert transition(item["id"], "approved", actor="test", root=tmp_path,
                       now=_WED_UTC)
     return item["id"]
@@ -349,7 +355,7 @@ def _seed_posted_earlier(tmp_path: Path, *, account: str, text: str,
     item = make_item(account=account, kind="event", text=text, as_of=_AS_OF,
                      scheduled_at="immediate", provenance="content_studio",
                      now=when)
-    assert enqueue(item, root=tmp_path, max_per_account_day=99) == "queued"
+    assert enqueue(item, root=tmp_path, cfg=_UNLIMITED_CFG) == "queued"
     assert transition(item["id"], "approved", actor="test", root=tmp_path, now=when)
     assert transition(item["id"], "posted", actor="test", root=tmp_path, now=when)
     return item["id"]
@@ -423,7 +429,7 @@ def _seed_two_breaking(root: Path) -> list[str]:
         item = make_item(account="desk", kind="breaking", text=text, as_of=_AS_OF,
                          scheduled_at="immediate", provenance="press_lane",
                          now=_WED_UTC)
-        assert enqueue(item, root=root, max_per_account_day=99) == "queued"
+        assert enqueue(item, root=root, cfg=_UNLIMITED_CFG) == "queued"
         assert transition(item["id"], "approved", actor="test", root=root,
                           now=_WED_UTC)
         ids.append(item["id"])
@@ -826,6 +832,46 @@ def test_no_hand_rolled_outbox_writer_remains():
         assert "enqueue" in calls, f"{rel}: does not go through the queue"
 
 
+def test_no_lane_opens_a_write_handle_under_the_outbox_dir():
+    """A RENAMED hand-rolled writer must fail too.
+
+    The test above pins today's symbol names; this one pins the CAPABILITY.
+    Both lanes may create exactly one kind of file of their own — the media SVG
+    under `<outbox>/media/` — and everything else must go through enqueue(). Any
+    other write handle rooted at the outbox dir is a bypass wearing a new name.
+    """
+    import ast
+
+    for rel in ("engine/marketing/press_lane.py", "engine/marketing/fastlane.py"):
+        tree = ast.parse((ROOT / rel).read_text(encoding="utf-8"))
+        write_sites = []
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            fn = node.func
+            name = fn.attr if isinstance(fn, ast.Attribute) else (
+                fn.id if isinstance(fn, ast.Name) else "")
+            if name not in ("open", "mkstemp", "NamedTemporaryFile"):
+                continue
+            # `mkstemp(dir=media_path.parent, …)` is the sanctioned media write:
+            # the only path either lane may still author directly.
+            kwargs = {k.arg for k in node.keywords}
+            src = ast.unparse(node)
+            if "media_path" in src or "media_dir" in src.lower():
+                continue
+            # A bare open() in "w"/"a" mode, or any temp-file factory not aimed
+            # at the media dir, is a write site this test must not tolerate.
+            if name == "open":
+                modes = [a.value for a in node.args[1:2]
+                         if isinstance(a, ast.Constant) and isinstance(a.value, str)]
+                if not any(m and m[0] in "wax" for m in modes) and "mode" not in kwargs:
+                    continue
+            write_sites.append(src[:100])
+        assert write_sites == [], (
+            f"{rel}: write handle(s) outside the media dir — a hand-rolled outbox "
+            f"writer may have been renamed: {write_sites}")
+
+
 def test_press_emission_is_a_valid_canonical_item(tmp_path):
     from engine.marketing.outbox import SCHEMA_ID, read_items, validate_item
     from engine.marketing.press_lane import run_press_tick
@@ -961,3 +1007,312 @@ def test_resolver_verdict_is_reproducible():
     b = CR.resolve("desk", "signal", now=_WED_UTC, profile=prof, history=history,
                    seed="ob-1")
     assert a.as_dict() == b.as_dict()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 9. Adversarial-review fixes (#3885 review round)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_daemon_log_helpers_survive_the_canonical_item_shape(caplog):
+    """MAJOR-1. The daemon's log helpers read `provenance` as a dict and `text`
+    as a dict. XG-W2 made both strings, so the FIRST emitting press tick raised
+    AttributeError inside the tick loop's broad except — which then skipped
+    _touch_heartbeat. A log-formatting bug would have presented as a DEAD DAEMON.
+
+    Driven with a real make_item-shaped item, not a hand-built stub: a stub of
+    the shape we think we emit is exactly what let this ship unrun.
+    """
+    import logging
+
+    import scripts.marketing_fastlane_daemon as d
+    from engine.marketing.outbox import make_item
+
+    item = make_item(
+        account="flagship", kind="breaking",
+        text="Head line here.\n\nBody copy here.", as_of=_AS_OF,
+        scheduled_at="immediate", priority=1, provenance="press_lane",
+        source={"lane": "press", "salience": 88.5, "corroboration_gate": "instant",
+                "ticker": "AAPL"},
+        now=_WED_UTC,
+    )
+    item["headline"] = "Head line here."
+    item["body"] = "Body copy here."
+
+    with caplog.at_level(logging.INFO):
+        # Both helpers, both branches — press runs on every emitting tick.
+        d._log_press_tick({"emitted": [item], "_emit_allowed": True},
+                          _WED_UTC, dry_run=False)
+        d._log_tick({"emitted": [item], "skipped": [], "quarantined": []},
+                    _WED_UTC, dry_run=True)
+
+    text = caplog.text
+    assert "Head line here." in text, "the headline never reached the log line"
+    assert "88.5" in text, "salience is read from `source`, not `provenance`"
+    assert "AAPL" in text
+
+
+def test_daemon_log_helpers_tolerate_the_legacy_dict_shape(caplog):
+    """A pre-XG-W2 item still sitting in a queue must not crash the helper."""
+    import logging
+
+    import scripts.marketing_fastlane_daemon as d
+
+    legacy = {"id": "old-1", "provenance": {"salience": 1.0, "ticker": "MSFT"},
+              "text": {"headline": "Legacy head", "body": "b"}}
+    with caplog.at_level(logging.INFO):
+        d._log_press_tick({"emitted": [legacy], "_emit_allowed": True},
+                          _WED_UTC, dry_run=False)
+    assert "1.0" in caplog.text
+
+
+def test_enqueue_reads_the_cap_from_the_cfg_it_was_given(tmp_path):
+    """MAJOR-2. enqueue() called effective_cap({}) — ignoring its own threaded
+    cfg — and so silently capped every fast-lane account at the Sentinel in-code
+    default of 2/day, contradicting the operator's "breaking has no limits"."""
+    from engine.marketing.outbox import enqueue, make_item, read_items
+
+    # Deeply distinct copy so this test isolates the CAP, not the dedup guards.
+    lines = [
+        "Copper hit a record high after a Chilean supply disruption.",
+        "Two-year yields slipped as the dollar gave back yesterday bid.",
+        "Retail sales came in unchanged against a soft consensus print.",
+        "Oil spiked following a reported strike near the Hormuz strait.",
+        "Semiconductor tariffs were ordered by the White House this afternoon.",
+    ]
+    for i, line in enumerate(lines):
+        item = make_item(account="flagship", kind="breaking", text=line,
+                         as_of=_AS_OF, scheduled_at="immediate",
+                         provenance="press_lane", now=_WED_UTC)
+        assert enqueue(item, root=tmp_path, cfg=_UNLIMITED_CFG) == "queued", (
+            f"item {i} refused — the cfg cap was ignored")
+    assert len(read_items(tmp_path)) == 5
+
+    # …and a REAL cap in cfg still binds, so this is not "the cap stopped working".
+    bounded = {"sentinel": {"max_posts_per_account_per_day": 5}}
+    sixth = make_item(account="flagship", kind="breaking",
+                      text="Gold futures eased into the London fixing.",
+                      as_of=_AS_OF, scheduled_at="immediate",
+                      provenance="press_lane", now=_WED_UTC)
+    assert enqueue(sixth, root=tmp_path, cfg=bounded) == "cap_exceeded"
+
+
+def test_a_refused_press_item_is_recorded_as_seen(tmp_path):
+    """MAJOR-2b. The refusal can only be evaluated AFTER the billed LLM call, so
+    an unseen refusal means re-generating and re-refusing the same story every
+    tick, forever. The refusal must consume the seen slot."""
+    from engine.marketing.press_lane import run_press_tick
+
+    cfg = {"wire_routing": {"default": "flagship"}, "story_lock": {"enabled": False}}
+    headline = "Copper hits a record on a supply disruption in Chile"
+    first = run_press_tick([_press_item("tw:r:1", handle="FirstSquawk", headline=headline)],
+                           root=tmp_path, now=_WED_UTC, cfg=cfg,
+                           press_cfg=_PRESS_CFG, state={}, seen_ids=set())
+    assert len(first["emitted"]) == 1
+
+    # A second, differently-ID'd report of the same copy: the outbox refuses it
+    # (identical text). Its emission key must come back in _seen.
+    second = run_press_tick([_press_item("tw:r:2", handle="FirstSquawk", headline=headline)],
+                            root=tmp_path, now=_WED_UTC + timedelta(minutes=1),
+                            cfg=cfg, press_cfg=_PRESS_CFG, state={}, seen_ids=set())
+    assert second["emitted"] == []
+    assert any(s["reason"] == "outbox_refused" for s in second["skipped"])
+    assert "tw:r:2" in second["_seen"], (
+        "a refused item must be recorded as seen or its LLM cost re-burns every tick")
+
+
+def test_routing_falls_back_when_liveness_is_unknown(monkeypatch, capsys):
+    """MAJOR-3. The fail-soft was INVERTED: an unresolvable accounts model
+    returned an empty set, and `if live and …` read that as "no constraint",
+    letting a configured DARK account through — a silent widening in the one
+    failure mode where widening is least defensible."""
+    from engine.marketing import wire_routing as WR
+
+    WR.reset_dark_route_warnings()
+    monkeypatch.setattr(WR, "_enabled_accounts", lambda cfg, root: None)
+    cfg = {"wire_routing": {"default": "flagship",
+                            "classes": {"macro_print": "mastermind_news"}}}
+    assert WR.route("macro_print", cfg=cfg) == "flagship"
+    assert WR.routing_table(cfg) == {"macro_print": "flagship"}
+    out = capsys.readouterr().out
+    assert "wire-routing-dark" in out
+    assert out.splitlines()[0].startswith("::warning")
+
+
+def test_dark_route_warning_prints_once_per_account(capsys):
+    """nit-14. route() runs per press item on an interval-ticking daemon; an
+    un-capped annotation would bury the Actions summary it exists to surface."""
+    from engine.marketing import wire_routing as WR
+
+    WR.reset_dark_route_warnings()
+    cfg = {"wire_routing": {"default": "flagship",
+                            "classes": {"macro_print": "mastermind_news",
+                                        "policy": "mastermind_news"}},
+           "desk_network": {"accounts": [{"id": "mastermind_news", "enabled": False},
+                                         {"id": "flagship", "enabled": True}]}}
+    for _ in range(5):
+        WR.route("macro_print", cfg=cfg)
+        WR.route("policy", cfg=cfg)
+    warnings = [ln for ln in capsys.readouterr().out.splitlines()
+                if "wire-routing-dark" in ln]
+    assert len(warnings) == 1, f"expected one warning per account, got {warnings}"
+
+
+def test_a_dead_item_does_not_block_a_live_desk(tmp_path):
+    """MAJOR-5b. A quarantined item is not competing for the slot — nothing will
+    ever post it — so letting its text veto another desk's coverage is a guard
+    punishing the wrong post. Most acute cross-account, where one desk's dead
+    copy would otherwise silence another indefinitely."""
+    from engine.marketing.outbox import enqueue, make_item, read_items, transition
+
+    text = "The dollar gave back yesterday's bid as two-year yields slipped."
+    dead = make_item(account="deskA", kind="macro", text=text, as_of=_AS_OF,
+                     provenance="content_studio", now=_WED_UTC)
+    assert enqueue(dead, root=tmp_path, cfg=_UNLIMITED_CFG) == "queued"
+    assert transition(dead["id"], "quarantined", actor="test", root=tmp_path,
+                      now=_WED_UTC)
+
+    # deskB may now carry it: the blocker is dead.
+    live = make_item(account="deskB", kind="macro", text=text, as_of=_AS_OF,
+                     provenance="content_studio", now=_WED_UTC)
+    assert enqueue(live, root=tmp_path, cfg=_UNLIMITED_CFG) == "queued"
+    assert len(read_items(tmp_path)) == 2
+
+    # Control: the LIVE counterpart still blocks, so the guard is not just off.
+    third = make_item(account="deskC", kind="macro", text=text, as_of=_AS_OF,
+                      provenance="content_studio", now=_WED_UTC)
+    assert enqueue(third, root=tmp_path, cfg=_UNLIMITED_CFG) == "cross_account_duplicate"
+
+
+def test_daemon_spool_keeps_the_tracked_queue_clean(tmp_path):
+    """MAJOR-6. The daemon runs on the VPS, whose checkout is refreshed by a
+    3-minute `git pull`. Appending to the git-TRACKED items.jsonl there would
+    dirty the tree and conflict that pull, so daemon-side emissions spool to a
+    gitignored sibling — while every read-side guard sees the union."""
+    from engine.marketing.outbox import (
+        _host_items_path, _items_path, enqueue, make_item, read_items,
+        read_items_all,
+    )
+
+    item = make_item(account="flagship", kind="breaking",
+                     text="Spooled breaking copy about the tape today.",
+                     as_of=_AS_OF, scheduled_at="immediate",
+                     provenance="press_lane", now=_WED_UTC)
+    assert enqueue(item, root=tmp_path, cfg=_UNLIMITED_CFG, spool=True) == "queued"
+
+    assert not _items_path(tmp_path).exists(), "the TRACKED queue must stay untouched"
+    assert _host_items_path(tmp_path).exists()
+    assert read_items(tmp_path) == []
+    assert [i["id"] for i in read_items_all(tmp_path)] == [item["id"]]
+
+    # The guards see it: a duplicate is refused even though the tracked file is empty.
+    twin = make_item(account="flagship", kind="breaking",
+                     text="Spooled breaking copy about the tape today.",
+                     as_of=_AS_OF, scheduled_at="immediate",
+                     provenance="press_lane", now=_WED_UTC)
+    assert enqueue(twin, root=tmp_path, cfg=_UNLIMITED_CFG, spool=True) == "duplicate"
+
+
+def test_the_spool_is_gitignored_and_the_tracked_queue_is_not():
+    """The whole hazard is a TRACKED file being dirtied — so the ignore rule
+    must cover the spool and must NOT swallow items.jsonl."""
+    ignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
+    assert "data/marketing/outbox/items-host.jsonl" in ignore
+    lines = [ln.strip() for ln in ignore.splitlines()
+             if ln.strip() and not ln.strip().startswith("#")]
+    assert "data/marketing/outbox/items.jsonl" not in lines, \
+        "the tracked queue must never be ignored — the nightly emit commits it"
+
+
+def test_the_press_lane_spools_when_the_daemon_asks(tmp_path):
+    from engine.marketing.outbox import _items_path, read_items_all
+    from engine.marketing.press_lane import run_press_tick
+
+    cfg = {"wire_routing": {"default": "flagship"}}
+    res = run_press_tick(
+        [_press_item("tw:sp:1", handle="FirstSquawk",
+                     headline="Retail sales unchanged in the latest print")],
+        root=tmp_path, now=_WED_UTC, cfg=cfg, press_cfg=_PRESS_CFG,
+        state={}, seen_ids=set(), spool=True)
+    assert len(res["emitted"]) == 1
+    assert not _items_path(tmp_path).exists()
+    assert len(read_items_all(tmp_path)) == 1
+
+
+def test_negative_posts_per_day_means_unlimited_not_silence():
+    """minor-7. `-1` is the sentinel block's UNLIMITED idiom. Read the other way
+    here it would mean permanent silence (`posted_today >= -1` before anything
+    posts). Two config layers must not read one number in opposite directions."""
+    from engine.marketing import cadence_resolver as CR
+
+    prof = _profile(posts_per_day=-1, min_spacing_min=1)
+    assert CR.daily_budget(prof, _WED_UTC) == -1
+    d = CR.resolve("desk", "signal", now=_WED_UTC, profile=prof,
+                   history=[(_WED_UTC - timedelta(hours=h), "signal")
+                            for h in range(1, 20)])
+    assert d.allow, "a negative budget must never block on volume"
+
+
+def test_a_spec_may_not_state_a_non_positive_posts_per_day(tmp_path):
+    """…and the dialect confusion may not SHIP: a spec must state a real number."""
+    from engine.marketing import personas as P
+
+    for bad in (-1, 0):
+        _write_spec(tmp_path, "baddesk", posts_per_day=bad, min_spacing_min=60)
+        _spec, errors = P.load_spec(tmp_path / "config" / "personas" / "baddesk.yml")
+        joined = " ".join(errors)
+        assert "posts_per_day" in joined and "must be >= 1" in joined, errors
+
+
+def test_posting_history_prefers_booked_at_over_the_ledger_write_time():
+    """minor-8. Same reasoning as the publisher's own floor seeding: with
+    send-time jitter the booked time and the row-write time diverge, and
+    measuring spacing from the write time lets the next post land inside the
+    previous one's window."""
+    from engine.marketing import cadence_resolver as CR
+
+    state = {
+        "items": {"i1": {"account": "desk", "kind": "signal"}},
+        "status": {"i1": "posted"},
+        "last": {"i1": {"at": "2026-07-22T09:00:00Z",
+                        "receipt": {"booked_at": "2026-07-22T09:07:00Z"}}},
+    }
+    assert CR.posting_history(state)["desk"][0][0] == \
+        datetime(2026, 7, 22, 9, 7, tzinfo=timezone.utc)
+
+    # No booked_at (pre-jitter rows) → falls back to `at`, where they were equal.
+    state["last"]["i1"].pop("receipt")
+    assert CR.posting_history(state)["desk"][0][0] == \
+        datetime(2026, 7, 22, 9, 0, tzinfo=timezone.utc)
+
+
+def test_the_shipped_config_lands_the_resolver_dark():
+    """MAJOR-4. The arming decision is the operator's, made after reading one
+    cycle of detail.would_refuse — not a builder's, and not implicit in a merge.
+    Note what arming changes: weekend_shape `light` resolves to 1 post/day on a
+    Saturday or Sunday for flagship and founder."""
+    import yaml
+
+    from engine.marketing import cadence_resolver as CR
+
+    cfg = yaml.safe_load((ROOT / "config" / "marketing.yml").read_text(encoding="utf-8"))
+    assert CR.resolver_config(cfg)["enabled"] is False, \
+        "XG-W2 lands dark; arming is a separate, deliberate config flip"
+    # …but the machinery is fully wired, so arming is one key and nothing else.
+    assert cfg["cadence_resolver"]["exempt_immediate"] is True
+    assert set(cfg["cadence_resolver"]["weekend_factors"]) == {"light", "medium", "full"}
+
+
+def test_shadow_mode_still_computes_the_verdict_it_would_have_returned():
+    """Landing dark is only useful if the dark run tells you what arming does."""
+    from engine.marketing import cadence_resolver as CR
+    from engine.marketing import personas as P
+
+    prof = CR.load_profile("flagship", specs=P.load_all(ROOT))
+    assert prof is not None
+    dark = {"cadence_resolver": {"enabled": False}}
+    history = [(_SAT_UTC - timedelta(hours=6), "signal")]
+    d = CR.resolve("flagship", "signal", now=_SAT_UTC, profile=prof,
+                   history=history, cfg=dark)
+    assert d.allow
+    assert d.detail["would_refuse"] == CR.REASON_DAILY_CAP
+    assert d.detail["daily_budget"] == 1, "flagship weekend_shape light -> 1/day"

@@ -487,7 +487,22 @@ def _validate_cadence(cadence: Any) -> list[str]:
         if not _is_int(value):
             errs.append(f"cadence.{key}: expected an integer, got {value!r}")
         elif value < floor:
-            errs.append(f"cadence.{key}: {value} must be >= {floor}")
+            if key == "posts_per_day":
+                # The dialect trap this floor exists to catch: `-1` means
+                # UNLIMITED in the sentinel block (max_posts_per_account_per_day)
+                # and a spec author copying that idiom here would, without the
+                # resolver's matching negative branch, have silenced the account
+                # permanently. A spec must say a real number: use the sentinel
+                # block for "no per-account limit", not a negative here. `0` is
+                # neither dialect and always means "this spec is wrong".
+                errs.append(
+                    f"cadence.posts_per_day: {value} must be >= 1 — a spec states a "
+                    f"REAL daily number. -1 is the sentinel block's 'unlimited' "
+                    f"idiom and does not belong in a persona spec; 0 is not a "
+                    f"cadence at all."
+                )
+            else:
+                errs.append(f"cadence.{key}: {value} must be >= {floor}")
 
     shape = cadence.get("weekend_shape")
     if shape not in WEEKEND_SHAPES:

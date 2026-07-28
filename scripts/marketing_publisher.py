@@ -874,6 +874,8 @@ def main(argv: list[str] | None = None) -> int:
         log.warning("cadence resolver unavailable (%s) — sentinel cap only", _cr_exc)
         _cadence = None
     skipped_cadence = 0
+    shadow_cadence = 0
+    deferred_xa = 0
 
     for it in approved_due:
         iid = it["id"]
@@ -951,14 +953,21 @@ def main(argv: list[str] | None = None) -> int:
                 break
         if _xa_hit is not None:
             _oacct, _pid, _pas_of, _score = _xa_hit
-            reason = (f"cross-account near-dup (jaccard={_score:.2f}) with {_pid} "
-                      f"posted by {_oacct} {_pas_of or 'recently'}; two of our "
-                      f"accounts must not post the same text")
-            log.warning("item %s (%s) QUARANTINED as a cross-account near-duplicate "
-                        "of %s (%s, jaccard=%.2f)", iid, account, _pid, _oacct, _score)
-            if live:
-                _outbox.transition(iid, "quarantined", actor="publisher", root=root, note=reason)
-            quarantined += 1
+            # DEFER, DO NOT QUARANTINE. Quarantine is TERMINAL, and the item
+            # that loses this race is decided by hash-ordered iteration — an
+            # arbitrary one of the two desks would be permanently killed for a
+            # collision that is a property of the PAIR, not a defect in either
+            # post. The same-account gates above quarantine correctly (a repeat
+            # of your own copy is defective on its own terms); this one is a
+            # scheduling conflict, so the item stays `approved` and retries on a
+            # later sweep, by which time the counterpart has aged out of the
+            # window or an editor has reworded it. The counterpart id is logged
+            # so the deferral is diagnosable rather than mysterious.
+            log.warning(
+                "item %s (%s) DEFERRED — cross-account near-duplicate of %s (%s, "
+                "jaccard=%.2f, posted %s); stays approved and retries next sweep",
+                iid, account, _pid, _oacct, _score, _pas_of or "recently")
+            deferred_xa += 1
             continue
 
         # -- language gate: the queue is not a bypass around the copy bar ----
@@ -1038,6 +1047,16 @@ def main(argv: list[str] | None = None) -> int:
                          iid, account, _decision.reason, _decision.detail)
                 skipped_cadence += 1
                 continue
+            # SHADOW MODE (cadence_resolver.enabled: false — the land-dark
+            # default). The verdict was computed in full and is NOT binding;
+            # log what arming WOULD have refused, because reading one cycle of
+            # this is the precondition for the arming decision. Counted
+            # separately so a shadow run's summary never reads as enforcement.
+            if _decision is not None and _decision.detail.get("would_refuse"):
+                log.info("item %s (%s) cadence SHADOW — would refuse: %s | %s",
+                         iid, account, _decision.detail["would_refuse"],
+                         _decision.detail)
+                shadow_cadence += 1
 
         # -- channel id must exist -------------------------------------------
         channel_id = _channel_id_for(pub_cfg, account)
@@ -1186,11 +1205,13 @@ def main(argv: list[str] | None = None) -> int:
         "%s complete | posted=%d failed=%d quarantined=%d would_post=%d "
         "tape_quarantined=%d tape_skipped=%d skipped_floor=%d "
         "deferred_immediate=%d "
-        "skipped_cap=%d skipped_cadence=%d skipped_no_channel=%d "
+        "skipped_cap=%d skipped_cadence=%d cadence_shadow=%d deferred_xa=%d "
+        "skipped_no_channel=%d "
         "stuck_posting=%d auto_approved=%d",
         mode, posted, failed, quarantined, would_post,
         tape_quarantined, tape_skipped, skipped_floor, deferred_immediate,
-        skipped_cap, skipped_cadence, skipped_channel, len(stuck_posting),
+        skipped_cap, skipped_cadence, shadow_cadence, deferred_xa, skipped_channel,
+        len(stuck_posting),
         len(auto_approved),
     )
     try:
@@ -1209,6 +1230,8 @@ def main(argv: list[str] | None = None) -> int:
             "deferred_immediate": deferred_immediate,
             "skipped_cap": skipped_cap,
             "skipped_cadence": skipped_cadence,
+            "cadence_shadow": shadow_cadence,
+            "deferred_cross_account": deferred_xa,
             "skipped_no_channel": skipped_channel,
             "stuck_posting": len(stuck_posting),
             "auto_approved": len(auto_approved),

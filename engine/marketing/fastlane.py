@@ -380,7 +380,7 @@ def _story_locked(account: str, key: str, *, root: Path, now: datetime,
         from engine.marketing import outbox as _ob  # noqa: PLC0415
         from engine.marketing import story_lock as _sl  # noqa: PLC0415
 
-        verdict = _sl.check(account, key, _ob.read_items(root), now=now, cfg=cfg)
+        verdict = _sl.check(account, key, _ob.read_items_all(root), now=now, cfg=cfg)
         if not verdict.allowed:
             logger.info("[fastlane] story %s already owned by %s — standing down",
                         key, verdict.owner)
@@ -418,6 +418,7 @@ def _emit_outbox(
     story_key: str = "",
     dry_run: bool = False,
     cfg: dict | None = None,
+    spool: bool = False,
 ) -> dict[str, Any] | None:
     """Build a CANONICAL outbox item (kind='earnings') and enqueue it.
 
@@ -496,7 +497,7 @@ def _emit_outbox(
             pass
         raise
 
-    result = _ob.enqueue(item, root, cfg=cfg)
+    result = _ob.enqueue(item, root, cfg=cfg, spool=spool)
     if result != "queued":
         print(f"::warning title=fastlane-not-queued::{event_id} refused by the "
               f"outbox: {result}", flush=True)
@@ -517,6 +518,7 @@ def run_tick(
     dry_run: bool = False,
     cta: bool = True,
     cfg: dict | None = None,
+    spool: bool = False,
 ) -> dict[str, list[dict[str, Any]]]:
     """Process one tick of earnings events through the fast-lane pipeline.
 
@@ -532,6 +534,11 @@ def run_tick(
                   footer without the trial button (URL lockup stays). The caller
                   resolves it from config; the default keeps the legacy card for
                   any caller that has no config in hand.
+        spool:    True routes the emission to the GITIGNORED daemon-local
+                  outbox spool instead of the git-TRACKED items.jsonl. The VPS
+                  daemon sets it so a tick cannot dirty the checkout its
+                  3-minute `git pull` depends on. Read-side guards read the
+                  union of both files, so nothing is weakened.
         cfg:      The full config/marketing.yml dict (XG-W2). Read for wire
                   routing, the one-owner lock window, and the cross-account
                   near-dup threshold. None (the default) keeps every one of
@@ -678,7 +685,7 @@ def run_tick(
         try:
             outbox_item = _emit_outbox(
                 root, event, account, headline, body, svg, now,
-                story_key=story_key, dry_run=dry_run, cfg=cfg,
+                story_key=story_key, dry_run=dry_run, cfg=cfg, spool=spool,
             )
         except Exception as exc:  # noqa: BLE001
             logger.error("[fastlane] outbox write(%s) failed: %s", event_id, exc)

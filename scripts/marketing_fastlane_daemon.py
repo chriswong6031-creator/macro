@@ -187,8 +187,13 @@ def _run_one_tick(*, dry_run: bool, armed: bool = True) -> dict:
     # cfg is threaded through (XG-W2) so the lane can resolve wire routing, the
     # one-owner lock window and the cross-account near-dup threshold from config
     # rather than from in-code fallbacks.
+    # spool=True (XG-W2): the daemon's emissions go to the GITIGNORED
+    # data/marketing/outbox/items-host.jsonl, never the git-TRACKED
+    # items.jsonl. This daemon runs on the VPS, whose checkout is refreshed
+    # by a 3-minute `git pull`; dirtying a tracked file there would conflict
+    # that pull. House law: the poller makes zero git writes.
     result = run_tick(events, root=ROOT, now=now, dry_run=dry_run, cta=_cta,
-                      cfg=_cfg)
+                      cfg=_cfg, spool=True)
     return result
 
 
@@ -270,6 +275,9 @@ def _run_press_tick(*, dry_run: bool) -> dict:
         seen_ids=set(seen.keys()),
         dry_run=effective_dry,
         prime=cold_start,
+        # See the earnings lane above: daemon-side emissions spool to the
+        # gitignored sibling so the VPS checkout stays clean.
+        spool=True,
     )
 
     # NOTE (m5): single-daemon deployment assumption. The seen-ledger + provider
@@ -466,6 +474,22 @@ def _restore_breaking_ledger(snap: dict[str, str | None] | None) -> None:
 # Log line formatter
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _src(item: dict) -> dict:
+    """An outbox item's `source` record, always a dict.
+
+    XG-W2 moved the rich per-item record from `provenance` (now a lane slug
+    string) to `source`. Defensive against BOTH shapes so a log helper can never
+    raise: an exception here is caught by the tick loop's broad except, which
+    then SKIPS _touch_heartbeat — a formatting bug would present as a frozen
+    heartbeat, i.e. as a dead daemon.
+    """
+    src = item.get("source")
+    if isinstance(src, dict):
+        return src
+    legacy = item.get("provenance")
+    return legacy if isinstance(legacy, dict) else {}
+
+
 def _log_tick(result: dict, now: datetime, *, dry_run: bool) -> None:
     dry_tag = " [DRY-RUN]" if dry_run else ""
     emitted_n = len(result.get("emitted", []))
@@ -482,11 +506,17 @@ def _log_tick(result: dict, now: datetime, *, dry_run: bool) -> None:
     )
     if dry_run and emitted_n:
         for item in result["emitted"]:
+            # XG-W2 item shape: `provenance` is a lane SLUG string and the rich
+            # event record moved to `source`; `text` is the flattened post
+            # string with the two halves kept as top-level headline/body.
+            # Reading either as a dict raises AttributeError, and the tick loop's
+            # broad except would swallow it AND skip _touch_heartbeat — a log
+            # helper must never be able to freeze the heartbeat.
             logger.info(
                 "[fastlane] [DRY-RUN] would emit %s | %s | %s",
                 item.get("id", "?"),
-                item.get("provenance", {}).get("ticker", "?"),
-                (item.get("text") or {}).get("headline", "")[:60],
+                _src(item).get("ticker", "?"),
+                str(item.get("headline") or item.get("text") or "")[:60],
             )
 
 
@@ -504,14 +534,20 @@ def _log_press_tick(result: dict, now: datetime, *, dry_run: bool) -> None:
         dry_tag, emitted_n, skipped_n, digest_n, blocked_n, ts,
     )
     for item in result.get("emitted", []):
-        prov = item.get("provenance", {})
+        # XG-W2 item shape — see _src(). This loop runs on EVERY emitting tick
+        # (not just dry-run), so it is the hot path: a dict accessor on the now-
+        # string `provenance`/`text` raised AttributeError, the tick loop's broad
+        # except swallowed it, and _touch_heartbeat never ran. A frozen heartbeat
+        # reads as a dead daemon, which is the worst possible way for a log-line
+        # bug to surface.
+        src = _src(item)
         logger.info(
             "[press] %s emit %s | sal=%s %s | %s",
             "would" if not emit_allowed else "did",
             item.get("id", "?"),
-            prov.get("salience", "?"),
-            prov.get("corroboration_gate", "?"),
-            (item.get("text") or {}).get("headline", "")[:60],
+            src.get("salience", "?"),
+            src.get("corroboration_gate", "?"),
+            str(item.get("headline") or item.get("text") or "")[:60],
         )
     # DEFERRED (m4): digest items are LOGGED-ONLY in B1. There is NO next-morning
     # digest sink yet — a real digest surface (a queued digest ledger + a morning

@@ -20,11 +20,13 @@ in this order:
   3. a normalized-headline hash — the honest fallback, and deliberately last:
      it only catches near-verbatim headlines.
 
-STATE. The lock reads the outbox items the publisher ALREADY maintains
-(``items.jsonl``), matching on ``source.story_key``. There is no new store, no
-new file, and no intraday repo write beyond the outbox append the emission was
-always going to make. That matters: the fastlane daemon runs on the VPS and the
-house law is that pollers make zero repo writes of their own.
+STATE. The lock reads the outbox items this host has already emitted —
+``outbox.read_items_all``, i.e. the tracked ``items.jsonl`` PLUS the gitignored
+daemon spool ``items-host.jsonl`` — matching on ``source.story_key``. There is
+no lock-specific store and no new intraday write beyond the outbox append the
+emission was always going to make. Reading the union is load-bearing: the
+daemon's own emissions land in the spool, so a tracked-file-only read would
+make the lock blind to exactly the lane it most needs to police.
 
 SCOPE. The lock is CROSS-ACCOUNT only. The same account re-drawing its own story
 is a repeat, and repeats are the near-dup guard's job — refusing them here would

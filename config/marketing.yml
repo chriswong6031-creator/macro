@@ -497,10 +497,18 @@ publish:
 # consults an LLM, and the resolver can only refuse, never escalate.
 # ─────────────────────────────────────────────────────────────────────────────
 cadence_resolver:
-  # false = SHADOW MODE: the resolver still computes and logs the verdict it
-  # WOULD return (detail.would_refuse) but allows everything through. Use it to
-  # read what arming would change before arming it.
-  enabled: true
+  # LAND DARK (XG-W2 arming ruling). false = SHADOW MODE: the resolver runs its
+  # full computation and logs the verdict it WOULD return (detail.would_refuse)
+  # but binds nothing. Arm after reading one cycle of would_refuse — flipping
+  # this to true is the operator/session arming decision, not a builder's.
+  #
+  # What arming turns on, concretely: every live account gains its persona
+  # spec's posts_per_day / min_spacing_min / session window as a hard bound. Note
+  # weekend_shape below — flagship and founder are `light`, which resolves to
+  # 1 post on a Saturday or Sunday. That is a real reduction from today's
+  # behaviour and it is the single change most likely to surprise, which is
+  # exactly why this ships off.
+  enabled: false
 
   # IMMEDIATE / breaking items skip the resolver, honouring the standing
   # operator ruling of 2026-07-27 ("breaking has no limits") that already
