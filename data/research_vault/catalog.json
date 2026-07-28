@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-28T20:57:12.384867+00:00",
-  "count": 268,
+  "generated_at": "2026-07-28T21:05:28.636929+00:00",
+  "count": 280,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -27,6 +27,218 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-5ngx8y8vbla-948c3a",
+      "title": "Amid 'Exhausting Confusing' Iran Headlines, Goldman Partner Highlights The Rates Level Where Equities Will Struggle",
+      "institution": "Zero Hedge",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-28T20:56:01Z",
+      "summary_points": [
+        "**Iran-Fed-Earnings Risk**: Iran headlines, 35% FOMC hike probability, and mega-cap earnings (META/MSFT/AAPL/AMZN) drive risk aversion; L/S HFs down 4.5% in July despite 13% YTD gain.",
+        "**AI Financing Ceiling**: $250B NVDA guarantee for OpenAI’s Ohio data center signals peak circular AI financing; $2T+ contingent on unfunded Anthropic/OpenAI commitments amid Chinese open LLMs threatening market share.",
+        "**NDX Valuation Discount**: NDX trades at 21.8x fwd P/E (10% below 10-yr avg of 23.6x), lowest since early 2023 amid AI cycle, offering relative value.",
+        "**Rate Volatility Equity Stress**: Treasury yields surge (real 10-yr highest since 2023, 30-yr near 3% GFC-level); equities underperform when rates rise 2 SD (50bp 10-yr jump)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-fm9mmoabjga-124702",
+      "title": "July Has Been A Long Year Goldman's Top Quant Trader Warns Markets No Longer Ignoring What's Going On Under The Surface",
+      "institution": "Zero Hedge",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-28T20:55:57Z",
+      "summary_points": [
+        "**Hidden Volatility Surfacing**: SPX 3m skew vs ATM implied volatility divergence signals underlying volatility impacting equity indices, with chart showing divergence from avg stock vol highs.",
+        "**Fed Policy Surprise Risk**: 40% hike odds (Friday), potential for largest \"non-cut\" surprise in decades; new chair opposes signaling vs prior chair, market confidence below 80%.",
+        "**AI Capex Sustainability Risk**: Investors pushing back on AI capex; sequence (credit → CDS spreads → hyperscaler implied vols → NDX implied vol) indicates material sustainability risk to AI-driven growth.",
+        "**Nasdaq Volatility Inversion**: Nasdaq 2.2x more volatile than Russell 2000 (last month); implied vol 1.3x next month signals abnormal market behavior and systemic risk."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-xaifd4azpfo-4a083d",
+      "title": "There's Still A Lot Of Stock Longs At Risk Of Getting Shaken Out",
+      "institution": "Zero Hedge",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-28T20:55:55Z",
+      "summary_points": [
+        "**Speculative Positioning at 5-Year Highs**: Speculators' net longs in S&P, Nasdaq, Dow & Midcap futures hit 5-year peaks, signaling extreme speculative exposure amplifying downside risk.",
+        "**Macro Leverage Near Peaks**: HFR Macro Index shows rising stock exposure and hedge fund/leveraged ETF leverage near historical highs, elevating systemic risk.",
+        "**Fed Hike Catalyst**: Wednesday's meeting with 30%-35% rate hike probability is critical; elevated positioning + tight liquidity heightens risk of sharp sell-off."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-y6b7wesirgx-4fe311",
+      "title": "The Dispersion Unwind Arrives What Does Dealer Gamma Say Into MegaCap Earnings",
+      "institution": "Zero Hedge",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-28T20:55:53Z",
+      "summary_points": [
+        "**Dispersion Unwind Confirmed**: COR1M <8 signals extreme index-single stock volatility dispersion; negative gamma amplified swings (Mag7 worst session since April 2025 tariff selloff, SPX -1.2%) - **Concentrated Event Risk**: FOMC (July 29) + 4 Mag7 earnings calls create dense calendar; Forward IV elevated over next week signals concentrated event risk vs.",
+        "at-the-money IV mid-90-day range - **Elevated Implied Volatility**: META 7%, MSFT/AMZN 6%, AAPL 4% IV signals heightened market anxiety vs.",
+        "prior earnings, compressing risk into FOMC/PCE/earnings sessions (July 29-31)"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-qh7stmxkbrk-5b82b4",
+      "title": "NAND Price Drop Is Canary In AI Stock Trade Coalmine",
+      "institution": "Zero Hedge",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-28T20:55:51Z",
+      "summary_points": [
+        "**NAND Price Peak & Correction**: NAND prices peaked June 25, 2026 (SNDK $1000 above current), now declining; Kioxia down 40% from peak signaling cyclical risk in AI semiconductor stocks.",
+        "**AI Component Repricing**: Moderation in NAND price rise (post-AI scarcity) triggers AI component repricing, amplified by competitive capex sprees driving sector volatility.",
+        "**Memory Trade Cooling**: Memory trade wobble (evidenced by NAND decline) directly impacts AI semiconductor valuations, highlighting sector-specific risk factor."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-kx9gghtlv9j-9137f7",
+      "title": "Morgan Stanley Breaks Down The New Paradigm In Asset Allocation And Portfolio Construction",
+      "institution": "Zero Hedge",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-28T20:55:47Z",
+      "summary_points": [
+        "**SAA's Core Flaws**: Resolves rigidity of static portfolios, persistent forecast errors, and risk concentration during market stress—critical for long-horizon investors.",
+        "**Integrated Portfolio Construction**: Treats portfolio as single entity using style factors to reduce cross-asset correlation; leverages alternatives (hedge funds/QIS) for low-correlation returns and evaluates hedging via portfolio contribution.",
+        "**Implementation Tradeoffs**: Requires top-down governance shifts and tolerance for short-term underperformance; enhances long-term diversification despite short-term SAA benchmark lag."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-1azzbm4ftv5-ea27b8",
+      "title": "It's Not An Inflation Issue... Goldman Warns Real Rate Pressure Persists",
+      "institution": "Zero Hedge",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-28T20:55:44Z",
+      "summary_points": [
+        "**Real Rate Dominance**: Market now prices higher real-rate regime (10Y real ~2.40%, breakevens ~2.25%), driven by nominal rate repricing and tightening financial conditions via real yields, not inflation concerns.",
+        "**Discount-Rate Shock**: Higher real rates act as a valuation headwind (not growth signal), pressuring long-duration assets (equities, credit, EM) and increasing equity risk despite resilient macro.",
+        "**Yield/Breakeven Confirmation**: US 10Y yields near highs with stable breakevens (2.25-2.30%), confirming real rate pressure—not inflation expectations—as the primary driver.",
+        "**FOMC Pivot Critical**: Near-term market direction hinges on FOMC stance; \"higher-for-longer\" sustains real-rate pressure, while a pivot would rapidly unwind financial tightening.",
+        "**Asset Class Impact**: Real rates pressure long-duration equities (AI/growth names vulnerable), benefit banks (credit stability), and strain EM rates/EMFX via US real rate headwinds and policy credibility needs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-gblfrqa0fct-86b601",
+      "title": "Hartnett Bonds Finally Bringing The Heat",
+      "institution": "Zero Hedge",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-28T20:55:43Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-vkkptwfknqs-66cca2",
+      "title": "Goldman Warns 'Memory Industry Has A New Problem' As China Chipmaker CXMT Explodes Over 450% In IPO Debut",
+      "institution": "Zero Hedge",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-28T20:55:41Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ubdrgmx6mv7-2bc2f9",
+      "title": "Goldman Trading Desk Tech Is Now Sold On The News ... And The Top Charts Of The Week",
+      "institution": "Zero Hedge",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-28T20:55:40Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-gj3ug5kjsup-0f2542",
+      "title": "BTIG Warns Still A Long Way To Go In AI Correction",
+      "institution": "Zero Hedge",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-28T20:55:38Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-n9x4pnsh6om-cdfb88",
+      "title": "Cross Asset Volatility Is Too Low For The Macro Backdrop",
+      "institution": "Zero Hedge",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-28T20:55:38Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-fnnrvphaobk-4120a7",
       "title": "Don't Go Chasing Waterfalls",
