@@ -16545,6 +16545,8 @@ document.addEventListener('click',function(e){
    Mirrors the CN implementation (china.html.j2 StockTable init block).
    Safe no-op if stocktable data element is absent. */
 (function(){
+function initStockTableView(){
+  if (!window.StockTable) return;
   /* SECZH: keyed on GICS-style names as emitted by us_standouts producer
      (Information Technology / Financials / Consumer Discretionary / Health Care …)
      NOT Yahoo-style names (Technology / Financial Services / Consumer Cyclical / Healthcare).
@@ -16677,6 +16679,12 @@ document.addEventListener('click',function(e){
 
   /* restore persisted view */
   applyView(currentView);
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initStockTableView, { once: true });
+} else {
+  initStockTableView();
+}
 })();
 </script>
 {% endif %}

@@ -2417,6 +2417,7 @@ _rcStripObs.observe(document.documentElement,{attributes:true,attributeFilter:['
    alpha (63d RS z), edge_z, sb_z (southbound accum z), ah_z (A/H value z), washout_2w.
    No mcap/cap_bucket/days_since_signal/tier — not on HK rows. No stage/zone — HK uses group. */
 (function(){
+function initStockTableView(){
   if (!window.StockTable) return;  /* stocktable.js not loaded */
   var b = StockTable._bi, esc = StockTable._esc, fp = StockTable._fmtPct, fn = StockTable._fmtNum;
 
@@ -2566,6 +2567,12 @@ _rcStripObs.observe(document.documentElement,{attributes:true,attributeFilter:['
 
   /* restore persisted view */
   applyView(currentView);
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initStockTableView, { once: true });
+} else {
+  initStockTableView();
+}
 })();
 </script>
 <script>
