@@ -232,6 +232,17 @@ def _words(text: str) -> list[str]:
     return re.findall(r"[A-Za-z0-9']+", str(text))
 
 
+#: Number-like tokens, DECIMAL-AWARE. The plain word tokenizer above splits
+#: "402.30" into "402" and "30", so comparing it against a whitelist entry of
+#: "402.30" could never match — the whitelist check would silently never fire.
+_NUM_TOKEN_RE = re.compile(r"\d[\d,]*(?:\.\d+)?%?")
+
+
+def _num_tokens(text: str) -> set[str]:
+    """Normalised number-like tokens: commas stripped, trailing zeros kept."""
+    return {m.group(0).replace(",", "") for m in _NUM_TOKEN_RE.finditer(str(text))}
+
+
 def _restates(text: str, source_headline: str) -> bool:
     """Is the copy a near-restatement of the headline it came from?
 
@@ -263,16 +274,24 @@ def _proof_tier(
         return "hard"
     if _URL_RE.search(text):
         return "hard"
-    wl = {str(n) for n in (numbers_whitelist or ())}
+    wl = {str(n).replace(",", "").strip() for n in (numbers_whitelist or ())}
+    wl.discard("")
+    has_digit = bool(_DIGIT_RE.search(text))
     if wl:
-        # A number the fact layer vouches for is the strongest textual evidence.
-        for tok in _words(text):
-            if tok in wl:
-                return "hard"
-    if _DIGIT_RE.search(text):
-        # A digit-bearing stat with no whitelist supplied. The whitelist check
-        # in `copywriter.validate_copy` is what proves a number is OURS; this
-        # gate is downstream of it, so a surviving number is already vouched.
+        # A whitelist WAS supplied, so it is authoritative here: a number the
+        # fact layer vouches for is the strongest textual evidence, and a
+        # number it does NOT vouch for must not be laundered into proof by the
+        # fallback below. (An unvouched number should already have been
+        # rejected upstream by `copywriter.validate_copy`; if it reaches us
+        # anyway, failing closed is the only safe reading.)
+        if _num_tokens(text) & wl:
+            return "hard"
+    elif has_digit:
+        # No whitelist supplied — the caller is not asserting provenance either
+        # way. `copywriter.validate_copy` is what proves a number is OURS, and
+        # this gate runs downstream of it, so a surviving number is treated as
+        # vouched. Recorded as `hard` but the absence of a whitelist is visible
+        # in `components`, so a reviewer can tell the two situations apart.
         return "hard"
     if _CASHTAG_RE.search(text) or _has_bare_ticker(text):
         return "instrument"
@@ -386,6 +405,9 @@ def evaluate(
             "surplus": surplus,
             "grip_devices": devices,
             "body_words": body_words,
+            # Whether the caller asserted number provenance at all — the
+            # difference between "this number is vouched" and "nobody said".
+            "numbers_whitelist_supplied": bool(numbers_whitelist),
             "franchise_contract": list(franchise_contract),
         },
     )

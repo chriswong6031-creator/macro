@@ -657,6 +657,41 @@ def test_proof_tier_is_recorded_on_every_pass():
     assert inst.verdict == "pass" and inst.proof_tier == "instrument"
 
 
+def test_a_supplied_whitelist_is_authoritative_for_proof():
+    """A number the fact layer does NOT vouch for must not become proof.
+
+    When the caller supplies a `numbers_whitelist` it is asserting provenance,
+    so an unlisted number may not be laundered into `hard` by the no-whitelist
+    fallback. Without this the gate would stamp "proof: hard" on a fabricated
+    figure the moment a whitelist happened to be threaded through.
+    """
+    from engine.marketing import value_gate
+
+    vouched = value_gate.evaluate(
+        "MSFT | tape check", "$MSFT at 402.30. That's the post.",
+        kind="chart", numbers_whitelist=["402.30"],
+    )
+    assert vouched.verdict == "pass" and vouched.proof_tier == "hard"
+
+    unvouched = value_gate.evaluate(
+        "MSFT | tape check", "$MSFT at 911.11. That's the post.",
+        kind="chart", numbers_whitelist=["402.30"],
+    )
+    assert unvouched.verdict == "abstain", (
+        "an unvouched number was laundered into proof"
+    )
+    assert "proof:below_hard" in unvouched.reasons
+
+    # With no whitelist supplied the caller asserts nothing, and the fallback
+    # applies — but the distinction stays visible in components.
+    silent = value_gate.evaluate(
+        "MSFT | tape check", "$MSFT at 911.11. That's the post.", kind="chart",
+    )
+    assert silent.verdict == "pass"
+    assert silent.components["numbers_whitelist_supplied"] is False
+    assert vouched.components["numbers_whitelist_supplied"] is True
+
+
 def test_bridge_is_a_marker_and_never_blocks():
     """Charter §2: Bridge raises option value; it never blocks (§7.1's own formula)."""
     from engine.marketing import value_gate
