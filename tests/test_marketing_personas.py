@@ -5,15 +5,15 @@ which installs exactly that). No pandas, no numpy — a top-level heavy import i
 engine/marketing/personas.py must turn this suite red at collection.
 
 Test list:
-  1.  All 14 committed specs load; the ``--check`` CLI exits 0 on the real tree.
+  1.  All 18 committed specs load; the ``--check`` CLI exits 0 on the real tree.
   2.  Every loader rejection class is rejected (11 named classes + the extras).
   3.  control_v3.tilt IS content_studio._DEFAULT_TILT — the control arm is pinned.
-  4.  The 7 desk-derived specs agree with config/marketing.yml (drift fails here).
+  4.  The 11 desk-derived specs agree with config/marketing.yml (drift fails here).
   5.  Importing engine.marketing.personas mutates no content_studio/copywriter
       module state, and does not even import content_studio (lazy-import contract).
   6.  _get_copy never falls back for a configured persona's voice key.
   7.  The admin roster renders with specs and is fail-soft with the dir absent.
-  8.  W1 is additive: no generation module reads a persona spec.
+  8.  Exactly ONE generation-side module reads a persona spec (XG-W1 seam).
 """
 from __future__ import annotations
 
@@ -39,14 +39,22 @@ def _worktree_root() -> Path:
 
 ROOT = _worktree_root()
 
-#: The 14 committed specs: the 7 shipped desks derived additively from config
-#: (the 6 W1 desks + the founder's personal account, wired 2026-07-27), plus
-#: the 7 authored personas (trial cohort + publication anchors).
+#: The 18 committed specs, in three groups.
+#:
+#: _DERIVED_IDS — a desk_network entry AND a copywriter.personas block back this
+#: spec, so config drift in either must fail here. The 6 W1 desks + the founder's
+#: personal account (2026-07-27) + the four employee desks (XG-W1, 2026-07-28).
+#: _WIRED_DARK_IDS — a desk_network entry but NO copywriter block: the news
+#: property's register is the house wire voice, not a desk persona, and its
+#: account is disabled until the XG-W2 cadence resolver lands.
+#: _AUTHORED_IDS — spec-only, no account behind them.
 _DERIVED_IDS = ("flagship", "receipts", "theme_desk", "research_a", "research_b",
-                "research_c", "founder")
+                "research_c", "founder", "meagan", "sophia", "kelly", "cici")
+_EMPLOYEE_IDS = ("meagan", "sophia", "kelly", "cici")
+_WIRED_DARK_IDS = ("mastermind_news",)
 _AUTHORED_IDS = ("corp_desk", "chart_gremlin", "zh_navigator", "control_v3",
-                 "news_flash", "mastermind_news", "mastermind_research")
-_ALL_IDS = _DERIVED_IDS + _AUTHORED_IDS
+                 "news_flash", "mastermind_research")
+_ALL_IDS = _DERIVED_IDS + _WIRED_DARK_IDS + _AUTHORED_IDS
 
 
 @pytest.fixture(scope="module")
@@ -73,9 +81,9 @@ def _base_spec() -> dict:
 # 1. The committed specs load
 # ---------------------------------------------------------------------------
 
-def test_all_fourteen_specs_load(specs):
+def test_all_eighteen_specs_load(specs):
     assert set(specs) == set(_ALL_IDS), f"unexpected spec id set: {sorted(specs)}"
-    assert len(specs) == 14
+    assert len(specs) == 18
 
 
 def test_base_spec_fixture_is_valid():
@@ -89,7 +97,7 @@ def test_check_cli_is_green_on_the_committed_tree():
         cwd=str(ROOT), capture_output=True, text=True,
     )
     assert proc.returncode == 0, proc.stdout + proc.stderr
-    assert "14 checked, 0 invalid" in proc.stdout
+    assert "18 checked, 0 invalid" in proc.stdout
     assert P.check(ROOT) == {}
 
 
@@ -333,7 +341,7 @@ def test_tilt_key_set_is_read_from_content_studio_not_copied():
 # 4. The desk-derived specs agree with config/marketing.yml
 # ---------------------------------------------------------------------------
 
-_KIND_MAP = {"branded": "branded", "generic": "specialist"}
+_KIND_MAP = {"branded": "branded", "generic": "specialist", "employee": "employee"}
 
 
 def _desk_accounts(cfg: dict) -> dict:
@@ -364,9 +372,11 @@ def test_derived_spec_matches_config(acct_id, specs, marketing_cfg):
 
 def test_every_desk_network_account_has_a_spec(specs, marketing_cfg):
     """W1 allows an account without a spec; today none exists, and we pin that.
-    (7 desks since 2026-07-27: the W1 six + the founder's personal account.)"""
-    assert set(_desk_accounts(marketing_cfg)) == set(_DERIVED_IDS)
-    assert set(_DERIVED_IDS) <= set(specs)
+    (12 desks since 2026-07-28: the W1 six, the founder's personal account, the
+    four employee desks, and the wired-but-dark news property.)"""
+    wired = set(_DERIVED_IDS) | set(_WIRED_DARK_IDS)
+    assert set(_desk_accounts(marketing_cfg)) == wired
+    assert wired <= set(specs)
 
 
 def test_authored_specs_are_spec_only(specs, marketing_cfg):
@@ -379,6 +389,16 @@ def test_authored_specs_are_spec_only(specs, marketing_cfg):
 _EMOJI_BUDGET_RE = re.compile(r"Emoji\s+budget:\s*(\d)(?:\s*-\s*(\d))?([^.]*)", re.IGNORECASE)
 #: Pictographs only — the parenthetical names the persona's signature glyphs.
 _EMOJI_CHAR_RE = re.compile(r"[\U0001F300-\U0001FAFF☀-➿]")
+#: Variation selectors and ZWJ.  The probe above matches the BASE codepoint only,
+#: so "☕️" (U+2615 U+FE0F) is extracted as "☕" while the codex declares the full
+#: sequence.  Comparing raw would make every signature containing U+FE0F — Meagan's
+#: ☕️ and Sophia's 🖋️ — fail on a difference that is invisible and meaningless.
+#: Both sides are normalised instead; a genuinely different GLYPH still fails.
+_EMOJI_MODIFIERS = "️‍⃣"
+
+
+def _bare_glyphs(glyphs) -> list[str]:
+    return ["".join(c for c in g if c not in _EMOJI_MODIFIERS) for g in glyphs]
 
 
 @pytest.mark.parametrize("acct_id", _DERIVED_IDS)
@@ -412,7 +432,7 @@ def test_derived_codex_emoji_matches_the_copywriter_block(acct_id, specs, market
     if named:
         assert signature is not None, \
             f"{acct_id}: copywriter names {named} but the codex declares no emoji_signature"
-        assert list(signature) == named, \
+        assert _bare_glyphs(signature) == _bare_glyphs(named), \
             f"{acct_id}: codex signature {list(signature)} != copywriter's {named}"
     else:
         assert signature is None, \
@@ -462,9 +482,12 @@ def test_alpha_note_does_not_claim_machinery_w1_lacks(specs):
     assert {s.scorecard["alpha_note"] for s in specs.values()} == {expected}
 
 
-def test_zh_navigator_is_the_only_zh_persona(specs):
+def test_the_zh_personas_are_exactly_zh_navigator_and_cici(specs):
+    """Cici is the one BILINGUAL employee desk (XG-W1); zh_navigator (D13) stays
+    spec-only. Two zh specs is the expected state, not a duplicate — pin it so a
+    third appears deliberately."""
     zh = {i for i, s in specs.items() if s.voice_codex["zh"]}
-    assert zh == {"zh_navigator"}
+    assert zh == {"zh_navigator", "cici"}
 
 
 # ---------------------------------------------------------------------------
@@ -535,6 +558,12 @@ _SPEC_REF_RE = re.compile(
 #: roster panel, and the one route registration that serves it.
 _SPEC_CONSUMERS_ALLOWED = {
     "engine/marketing/personas.py", "admin/personas.py", "admin/server.py",
+    # XG-W1 opened exactly ONE generation-side seam. A spec layer nothing reads
+    # is decorative, and the expression dial has to be enforceable, so this
+    # module (and ONLY this module) resolves voice_codex at copy time. The copy
+    # layer calls expression_dial, never personas — which is why copywriter.py
+    # and content_studio.py must still be absent from this set.
+    "engine/marketing/expression_dial.py",
 }
 
 
@@ -574,10 +603,13 @@ def test_spec_reference_predicate_ignores_the_config_block(snippet):
 
 
 def test_no_generation_module_reads_a_persona_spec():
-    """W1 is an overlay: only the CLI and the admin roster may touch specs.
+    """The spec layer has exactly four readers, and that is a fence, not a policy.
 
-    Anything else appearing here means a spec reached a generation path before
-    W2 said it could.
+    Persona-Network W1 shipped with three (loader, roster panel, its route).
+    XG-W1 added the fourth — engine/marketing/expression_dial.py — because the
+    employee expression dial cannot be enforced from a layer nothing reads.
+    Anything ELSE appearing here means a spec reached a generation path without
+    an adjudication.
     """
     hits = []
     for directory in ("engine", "scripts", "app", "admin", "collectors", "lib"):
@@ -649,12 +681,13 @@ def test_roster_renders_with_the_committed_specs():
 
     d = panel.roster(root=ROOT)
     assert d["ok"] is True
-    assert d["counts"]["total"] == 14
+    assert d["counts"]["total"] == 18
     assert d["counts"]["invalid"] == 0
-    # flagship + founder are the two desks with a real X account (enabled: true).
-    assert d["counts"]["live"] == 2
-    assert d["counts"]["configured"] == 5
-    assert d["counts"]["planned"] == 7
+    # LIVE = flagship + founder + the four employee desks (enabled: true).
+    assert d["counts"]["live"] == 6
+    # CONFIGURED = the five planned W1 desks + the wired-but-dark news property.
+    assert d["counts"]["configured"] == 6
+    assert d["counts"]["planned"] == 6
 
     by_id = {r["id"]: r for r in d["personas"]}
     assert set(by_id) == set(_ALL_IDS)
@@ -664,6 +697,11 @@ def test_roster_renders_with_the_committed_specs():
     assert by_id["flagship"]["status"] == "LIVE"
     assert by_id["founder"]["status"] == "LIVE"
     assert by_id["receipts"]["status"] == "CONFIGURED"
+    for spec_id in _EMPLOYEE_IDS:
+        assert by_id[spec_id]["status"] == "LIVE"
+        assert by_id[spec_id]["persona_kind"] == "employee"
+    # Channel bound, account dark until the XG-W2 cadence resolver.
+    assert by_id["mastermind_news"]["status"] == "CONFIGURED"
 
 
 def test_roster_cadence_and_isolation_labels():

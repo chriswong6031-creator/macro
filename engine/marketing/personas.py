@@ -6,14 +6,31 @@ masterplan (``research/agentic_media/PERSONA_NETWORK_MASTERPLAN_BY_FABLE.md``
 memory ledger path, cadence profile, isolation slots and a pre-registered
 scorecard.
 
-W1 IS AN ADDITIVE OVERLAY — NOTHING GENERATES FROM THESE SPECS
----------------------------------------------------------------
-No generation path reads a spec.  ``config/marketing.yml`` stays canonical for
+W1 WAS AN ADDITIVE OVERLAY — XG-W1 OPENED EXACTLY ONE SEAM
+-----------------------------------------------------------
+Persona-Network W1 shipped this layer with NO generation consumer: the only two
+readers were the ``--check`` CLI (a CI gate) and the read-only admin Persona
+Roster (``admin/personas.py``).  ``config/marketing.yml`` stays canonical for
 ``desk_network`` (beat/voice/tilt/enabled) and ``copywriter.personas`` stays
-canonical for ``voice_notes``/``example_lines``.  The only two consumers at W1
-are the ``--check`` CLI (a CI gate) and the read-only admin Persona Roster
-(``admin/personas.py``).  W2 migrates the copywriter block onto the codex; that
-PR deletes the old block with a no-orphan test.
+canonical for ``voice_notes``/``example_lines``; W2 migrates the copywriter block
+onto the codex and deletes the old block with a no-orphan test.
+
+X-Growth W1 (the four employee desks) opened ONE generation-side seam, because a
+spec layer nothing reads is decorative and the expression dial has to be
+enforceable: ``engine.marketing.expression_dial`` reads ``voice_codex`` for the
+personas that declare a ``dial_profile``, and the copy layer calls THAT module
+(never this one).  The consumer allow-list in ``tests/test_marketing_personas.py``
+is the fence; it is four files, not a policy.
+
+EMPLOYEE SPECS (``persona_kind: employee``)
+-------------------------------------------
+Real named humans on official rails (masterplan §5 / charter §1).  They carry
+four blocks the pseudonymous cohort does not: ``worldview`` (constitution §6.1),
+``franchises`` (§12), ``canon`` (§5.2 — allowed stable texture, and the
+do-not-invent list is why every canon SLOT ships dark), and ``restraint`` (the
+one thing this persona never does).  Their codex additionally carries
+``dial_profile`` + machine-readable ``quirk_markers``, which is what makes the
+pinned quirk PROSE executable.
 
 Public API
 ----------
@@ -70,7 +87,11 @@ _SPEC_DIR_REL = Path("config") / "personas"
 
 _ID_RE = re.compile(r"^[a-z][a-z0-9_]*$")
 
-PERSONA_KINDS = ("branded", "specialist", "character")
+#: ``employee`` (XG-W1): a REAL named human on an official rail — the four
+#: employee desks (Meagan/Sophia/Kelly/Cici).  Not a character and not
+#: pseudonymous, which is exactly why the isolation checklist stays null on them
+#: and why AM-R1 binds hardest there.
+PERSONA_KINDS = ("branded", "specialist", "character", "employee")
 PIPELINES = ("engine", "hybrid", "llm")
 MODEL_TIERS = ("default", "opus")
 EMOJI_POLICIES = ("none", "sparse", "signature-set")
@@ -103,10 +124,22 @@ _TOP_KEYS = (
     "pipeline", "model_tier", "cadence", "isolation", "context_packs", "memory",
     "scorecard",
 )
+#: The cognitive layer the constitution grafts on (charter §2 amendment 2).
+#: Optional for every kind, REQUIRED for ``employee`` — a real named human posts
+#: from a worldview and a franchise register, not from a style guide alone.
+_TOP_OPTIONAL_KEYS = ("worldview", "franchises", "canon", "restraint")
+
 _CODEX_KEYS = ("register", "quirks", "emoji_policy", "banned", "banned_patterns", "zh")
-#: Optional codex key: the exact emoji a persona is allowed to use.  Required to
-#: be non-empty when emoji_policy is ``signature-set``; permitted with ``sparse``.
-_CODEX_OPTIONAL_KEYS = ("emoji_signature",)
+#: Optional codex keys.
+#:   emoji_signature — the exact emoji a persona may use.  Required to be
+#:     non-empty when emoji_policy is ``signature-set``; permitted with ``sparse``.
+#:   dial_profile    — names the expression_dial.PROFILES table this persona's
+#:     per-kind personality budget comes from.  Declaring it is what puts an
+#:     account ON the dial; omitting it leaves the persona spec-only.
+#:   quirk_markers   — the machine-readable encoding of the ``quirks`` prose:
+#:     {marker_id: {enabled, note, max_per_post?, max_per_day?, max_share_7d?}}.
+#:     Both are required for ``employee``.
+_CODEX_OPTIONAL_KEYS = ("emoji_signature", "dial_profile", "quirk_markers")
 _CADENCE_KEYS = ("posts_per_day", "min_spacing_min", "jitter_min", "weekend_shape")
 _ISOLATION_KEYS = ("profile_id", "egress", "registered_at", "warmed_through", "rail")
 _CONTEXT_PACK_KEYS = ("chronicle", "desks")
@@ -143,6 +176,12 @@ class PersonaSpec:
     context_packs: dict[str, Any]
     memory: str
     scorecard: dict[str, Any]
+    #: Cognitive layer (constitution §5.1/§6.1/§12).  Empty for the specs that
+    #: predate XG-W1; required and populated on every ``employee``.
+    worldview: str = ""
+    franchises: tuple[str, ...] = ()
+    canon: tuple[str, ...] = ()
+    restraint: str = ""
     source: str = ""
 
     def as_dict(self) -> dict[str, Any]:
@@ -162,6 +201,10 @@ class PersonaSpec:
             "context_packs": dict(self.context_packs),
             "memory": self.memory,
             "scorecard": dict(self.scorecard),
+            "worldview": self.worldview,
+            "franchises": list(self.franchises),
+            "canon": list(self.canon),
+            "restraint": self.restraint,
             "source": self.source,
         }
 
@@ -305,10 +348,91 @@ def _validate_voice(voice: Any) -> list[str]:
     return []
 
 
+def _validate_quirk_markers(markers: Any) -> list[str]:
+    """``voice_codex.quirk_markers`` — the executable half of the quirk prose.
+
+    Every key must be a marker the house lexicon actually detects.  A typo'd id
+    would otherwise declare a quirk nothing enforces AND leave the real marker
+    un-declared, i.e. the persona would silently lose a signature and gain a
+    permanently-violating one.  The lexicon is imported LAZILY (module docstring:
+    this file stays stdlib + yaml at import).
+    """
+    if not isinstance(markers, dict):
+        return [f"voice_codex.quirk_markers: expected a mapping, "
+                f"got {type(markers).__name__}"]
+
+    from engine.marketing.expression_dial import (  # noqa: PLC0415
+        CANON_MARKERS, MARKER_DECL_KEYS, MARKERS,
+    )
+
+    errs: list[str] = []
+    unknown = sorted(set(markers) - set(MARKERS))
+    if unknown:
+        errs.append(
+            f"voice_codex.quirk_markers: unknown marker id(s) {unknown} "
+            f"(known: {sorted(MARKERS)})"
+        )
+
+    for marker_id, decl in sorted(markers.items()):
+        where = f"voice_codex.quirk_markers.{marker_id}"
+        if not isinstance(decl, dict):
+            errs.append(f"{where}: expected a mapping, got {type(decl).__name__}")
+            continue
+        extra = sorted(set(decl) - set(MARKER_DECL_KEYS))
+        if extra:
+            errs.append(f"{where}: unknown key(s) {extra} "
+                        f"(allowed: {list(MARKER_DECL_KEYS)})")
+        if not isinstance(decl.get("enabled"), bool):
+            errs.append(f"{where}.enabled: expected a boolean")
+        errs += _str_errors(f"{where}.note", decl.get("note"))
+
+        for key in ("max_per_post", "max_per_day", "max_per_7d"):
+            if key in decl and (not _is_int(decl[key]) or decl[key] < 1):
+                errs.append(f"{where}.{key}: expected an integer >= 1, got {decl[key]!r}")
+
+        # An ENABLED marker with no per-post cap is an uncapped quirk: the dial
+        # bounds how many DISTINCT devices a post may carry, never how many times
+        # one device repeats, so "okay so ... okay so ... okay so" would satisfy
+        # the dial and read as a machine. max_per_post is the only cap that needs
+        # no history, so it is the one the loader can and does require.
+        if decl.get("enabled") is True and "max_per_post" not in decl:
+            errs.append(
+                f"{where}.max_per_post: required on an enabled marker — the dial "
+                f"counts distinct devices, so without this a single quirk may "
+                f"repeat without limit inside one post"
+            )
+        share = decl.get("max_share_7d")
+        if share is not None and (not _is_num(share) or not (0.0 < float(share) <= 1.0)):
+            errs.append(f"{where}.max_share_7d: expected a share in (0, 1], got {share!r}")
+
+        # Autobiographical canon describes a REAL person.  Nothing in this repo
+        # verifies it, and "unverified personal texture on a real name" is the
+        # AM-R1 class, so a canon slot may be declared but never switched on
+        # without an employee confirmation recorded in its note.
+        if marker_id in CANON_MARKERS and decl.get("enabled") is True:
+            errs.append(
+                f"{where}.enabled: canon markers ship DARK — {marker_id!r} describes "
+                f"a real person's private life and nothing here verifies it "
+                f"(AM-R1). Flip it only with the employee's confirmation."
+            )
+    return errs
+
+
 def _validate_codex(codex: Any) -> list[str]:
     errs = _key_errors("voice_codex", codex, _CODEX_KEYS, _CODEX_OPTIONAL_KEYS)
     if errs:
         return errs
+
+    if "dial_profile" in codex:
+        from engine.marketing.expression_dial import PROFILES  # noqa: PLC0415
+
+        profile = codex["dial_profile"]
+        if profile not in PROFILES:
+            errs.append(
+                f"voice_codex.dial_profile: {profile!r} not one of {sorted(PROFILES)}"
+            )
+    if "quirk_markers" in codex:
+        errs += _validate_quirk_markers(codex["quirk_markers"])
 
     errs += _str_errors("voice_codex.register", codex.get("register"))
     errs += _str_list_errors("voice_codex.quirks", codex.get("quirks"))
@@ -431,7 +555,7 @@ def validate_spec(raw: Any, *, expect_id: str | None = None) -> list[str]:
     if not isinstance(raw, dict):
         return [f"spec: expected a mapping, got {type(raw).__name__}"]
 
-    errs = _key_errors("spec", raw, _TOP_KEYS)
+    errs = _key_errors("spec", raw, _TOP_KEYS, _TOP_OPTIONAL_KEYS)
     if errs:
         return errs
 
@@ -467,6 +591,53 @@ def validate_spec(raw: Any, *, expect_id: str | None = None) -> list[str]:
         expected = MEMORY_PATH_TEMPLATE.format(id=spec_id)
         if memory != expected:
             errs.append(f"memory: expected {expected!r}, got {memory!r}")
+
+    errs += _validate_cognitive_layer(raw)
+    return errs
+
+
+def _validate_cognitive_layer(raw: dict) -> list[str]:
+    """The constitution's grafted layers.  Optional in general, REQUIRED on employees.
+
+    An employee account is a real person's name on a real X account.  Shipping
+    one without a worldview, a franchise register and a restraint clause is how a
+    "persona" degrades into a voice filter over generic desk copy — the failure
+    state every §5.x section names by hand.
+    """
+    errs: list[str] = []
+
+    if "worldview" in raw:
+        errs += _str_errors("worldview", raw["worldview"])
+    if "restraint" in raw:
+        errs += _str_errors("restraint", raw["restraint"])
+    for key in ("franchises", "canon"):
+        if key in raw:
+            errs += _str_list_errors(key, raw[key])
+
+    if raw.get("persona_kind") != "employee":
+        return errs
+
+    for key in ("worldview", "restraint"):
+        if not str(raw.get(key) or "").strip():
+            errs.append(f"{key}: required on persona_kind 'employee'")
+    for key in ("franchises", "canon"):
+        if not raw.get(key):
+            errs.append(f"{key}: required (non-empty) on persona_kind 'employee'")
+
+    codex = raw.get("voice_codex")
+    if isinstance(codex, dict):
+        if not codex.get("dial_profile"):
+            errs.append(
+                "voice_codex.dial_profile: required on persona_kind 'employee' — "
+                "an employee account that is not on the expression dial is an "
+                "unvalidated personality"
+            )
+        if not codex.get("quirk_markers"):
+            errs.append(
+                "voice_codex.quirk_markers: required (non-empty) on persona_kind "
+                "'employee' — the quirk prose must be machine-readable or the "
+                "whitelist enforces nothing"
+            )
     return errs
 
 
@@ -522,6 +693,10 @@ def load_spec(path: Path | str) -> tuple[PersonaSpec | None, list[str]]:
         context_packs=raw["context_packs"],
         memory=raw["memory"],
         scorecard=raw["scorecard"],
+        worldview=str(raw.get("worldview") or ""),
+        franchises=tuple(str(f) for f in (raw.get("franchises") or ())),
+        canon=tuple(str(c) for c in (raw.get("canon") or ())),
+        restraint=str(raw.get("restraint") or ""),
         source=str(path),
     ), []
 

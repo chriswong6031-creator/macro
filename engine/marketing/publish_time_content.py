@@ -107,6 +107,96 @@ def _sentinel_knob(cfg: dict | None, key: str, default: Any) -> Any:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Per-call lane eligibility — the ONE place both lanes ask "who may post?"
+#
+# Both lanes used to filter on ``acc.get("disabled")`` alone, which reads a
+# LEGACY key. ``desk_network`` has carried an explicit ``enabled`` since the
+# accounts model landed, and ``accounts._config_enabled`` gives ``enabled``
+# precedence over ``disabled`` — so an account with ``enabled: false`` and no
+# ``disabled`` key (mastermind_news, and every employee desk had one been left
+# off) sailed through both filters. Adding a Buffer channel id was then enough to
+# make it a live posting target under an unrestricted auto-approve and a -1 cap.
+# Liveness now resolves through ``accounts.effective_accounts``, the same
+# function the nightly plan builder uses, so the two lanes cannot disagree about
+# which accounts exist — and the operator override file is honoured here too.
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: Accounts the PER-CALL publish-time lanes may draw, when config names none.
+#:
+#: Default-restrictive, and it ENFORCES a decision the charter already recorded
+#: rather than making a new one: the employee desks launch on non-news/tape kinds
+#: (charter §7 sequencing), and their tilts zero ``mover`` and ``event`` to say
+#: so. But these two lanes are per-CALL generators — they pick an account from
+#: desk_network and build an item directly, never consulting tilt — so a zeroed
+#: tilt does not reach them. Without an allowlist an employee desk would launch
+#: on exactly the two kinds its own spec sets to 0.00.
+#:
+#: Employees therefore launch on the NIGHTLY content_studio lane only, which is
+#: tilt-governed and rotates variants within a batch so two desks diverge.
+#: Charter §6 XG-W2 (cadence resolver) and XG-W3 (desk feeds) are the unlock:
+#: when per-account cadence profiles and desk feeds exist, this allowlist is the
+#: knob that widens.
+_PER_CALL_DEFAULT_ACCOUNTS: tuple[str, ...] = ("flagship", "founder")
+
+
+def _lane_accounts(cfg: dict | None, lane_key: str) -> frozenset[str]:
+    """``publish.<lane_key>.accounts`` allowlist for a per-call lane.
+
+    Absent key → :data:`_PER_CALL_DEFAULT_ACCOUNTS`. Present → EXACTLY that list,
+    including an explicit empty list, which means "no account" — default-
+    restrictive both ways, so widening the lane is always a visible config edit.
+    """
+    try:
+        block = ((cfg or {}).get("publish") or {}).get(lane_key) or {}
+        if "accounts" in block:
+            raw = block.get("accounts") or []
+            if isinstance(raw, (list, tuple)):
+                return frozenset(str(a).strip() for a in raw if str(a).strip())
+            log.warning("publish_time_content: publish.%s.accounts is not a list "
+                        "— falling back to the default allowlist", lane_key)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("publish_time_content: bad publish.%s.accounts (%s) — "
+                    "using the default allowlist", lane_key, exc)
+    return frozenset(_PER_CALL_DEFAULT_ACCOUNTS)
+
+
+def _per_call_eligible(
+    cfg: dict | None,
+    *,
+    lane_key: str,
+    root: Path | str | None = None,
+    account_filter: str | None = None,
+) -> list[dict]:
+    """Account dicts a per-call publish-time lane may draw, in config order.
+
+    Four gates, all of which must pass: the account is LIVE (config ``enabled``
+    resolved through the accounts model, operator overrides included), it is on
+    this lane's allowlist, it has a publish channel id (an item that could never
+    post is not worth generating), and it matches any explicit account_filter.
+    """
+    from engine.marketing.accounts import effective_accounts  # noqa: PLC0415
+
+    pub_channels = ((cfg or {}).get("publish") or {}).get("channels") or {}
+    allow = _lane_accounts(cfg, lane_key)
+
+    out: list[dict] = []
+    for acc in effective_accounts(cfg, root):
+        aid = str(acc.get("id", "") or "")
+        if not aid:
+            continue
+        if not acc.get("enabled"):
+            continue
+        if aid not in allow:
+            continue
+        if not str(pub_channels.get(aid, "") or "").strip():
+            continue  # no channel id → the item could never post
+        if account_filter is not None and aid != account_filter:
+            continue
+        out.append(acc)
+    return out
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Slot / gating helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -569,24 +659,15 @@ def generate_slot_items(
             due_accounts.add(it.get("account", ""))
 
         # ── Eligible accounts (deterministic, config order) ─────────────────
+        # LIVE + on this lane's allowlist + has a channel — see _per_call_eligible.
         accounts = (cfg or {}).get("desk_network", {}).get("accounts", []) or []
-        pub_channels = ((cfg or {}).get("publish") or {}).get("channels") or {}
-        eligible: list[str] = []
-        for acc in accounts:
-            aid = str(acc.get("id", "") or "")
-            if not aid:
-                continue
-            if acc.get("disabled"):
-                continue
-            if not str(pub_channels.get(aid, "") or "").strip():
-                continue  # no channel id → the item could never post
-            if account_filter is not None and aid != account_filter:
-                continue
-            eligible.append(aid)
+        eligible = [str(a.get("id", "")) for a in _per_call_eligible(
+            cfg, lane_key="publish_time_movers", root=r,
+            account_filter=account_filter)]
         if not eligible:
             return _empty_report(slot, enabled=True, quote_source=quote_source,
                                  drop=[{"reason": "no_eligible_accounts",
-                                        "detail": "no account has a publish channel id (or filter mismatch)"}])
+                                        "detail": "no live, lane-allowed account has a publish channel id (or filter mismatch)"}])
 
         voice_by_id = {str(a.get("id", "")): a.get("voice", "authoritative desk")
                        for a in accounts}
@@ -1071,29 +1152,21 @@ def generate_read_item(
         today = now.strftime("%Y-%m-%d")
 
         # ── Eligible accounts (deterministic, config order) ─────────────────
-        # Mirror generate_slot_items: config desk_network.accounts, skip disabled,
-        # require a publish.channels[aid] channel, honour account_filter.
-        accounts = (cfg or {}).get("desk_network", {}).get("accounts", []) or []
-        pub_channels = ((cfg or {}).get("publish") or {}).get("channels") or {}
+        # Mirror generate_slot_items EXACTLY by sharing its helper: live accounts
+        # (config `enabled` via the accounts model, overrides honoured), on this
+        # lane's allowlist, holding a publish channel, matching account_filter.
         already_today = _queued_read_today(state, today)
-        eligible: list[dict] = []
-        for acc in accounts:
-            aid = str(acc.get("id", "") or "")
-            if not aid:
-                continue
-            if acc.get("disabled"):
-                continue
-            if not str(pub_channels.get(aid, "") or "").strip():
-                continue  # no channel id → the item could never post
-            if account_filter is not None and aid != account_filter:
-                continue
-            if aid in already_today:
-                continue  # once/day per account (spacing across sweeps)
-            eligible.append(acc)
+        eligible = [
+            acc for acc in _per_call_eligible(
+                cfg, lane_key="publish_time_read", root=r,
+                account_filter=account_filter)
+            # once/day per account (spacing across sweeps)
+            if str(acc.get("id", "")) not in already_today
+        ]
         if not eligible:
             return _empty_read_report(slot, enabled=True,
                                       drop=[{"reason": "no_eligible_accounts",
-                                             "detail": "no account has a publish channel (filter/already-posted)"}])
+                                             "detail": "no live, lane-allowed account has a publish channel (filter/already-posted)"}])
 
         dropped: list[dict] = []
         generated: list[str] = []

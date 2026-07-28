@@ -1122,6 +1122,10 @@ on:
       # auto-approve. engine/marketing/publish_time_content.py is covered by the
       # engine/marketing/** entry below.
       - "tests/test_marketing_publish_time_content.py"
+      # The daily-read half of the same lane. Was named by no job at all until
+      # XG-W1 wired it into marketing-social-publisher; it guards which accounts
+      # the per-call read lane may draw, which is exactly what XG-W1 narrowed.
+      - "tests/test_marketing_publish_time_read.py"
       # Marketing lobe engine unit suite (see the marketing-engine job). Whitelisted
       # 2026-07-23 after it rotted red on main: opportunities.jsonl is a forward
       # ledger the nightly radar fills with live radar-* rows, but the seed round-trip
@@ -1164,6 +1168,12 @@ on:
       - "config/personas/**"
       - "admin/personas.py"
       - "tests/test_marketing_personas.py"
+      # X Growth W1 (XG-W1): the employee expression dial + codex quirk pass.
+      # engine/marketing/expression_dial.py is already matched by
+      # engine/marketing/** above; the suite is listed so a PR that edits ONLY a
+      # codex (config/personas/**, already listed) or only this test still
+      # reaches the lane that runs it.
+      - "tests/test_marketing_expression_dial.py"
       # D02 per-post metrics poller + chart-image (PNG) pipeline. The poller
       # reads back Buffer analytics; media_publish uploads chart PNGs to R2;
       # content_studio renders the PNG at plan-build time. engine/marketing/**

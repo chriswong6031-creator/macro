@@ -362,6 +362,16 @@ publish:
     min_abs_theme_pct: 1.0   # floor for a theme-average claim
     max_quote_age_min: 45    # generation freshness gate (mirrors live_gate)
     min_active_tiles: 25     # flat-tape belt: skip unless ≥N S&P names moved ±0.5% (closed-market guard)
+    # Per-call lane allowlist (XG-W1). This lane picks an account straight from
+    # desk_network and builds a mover/theme item — it never consults tilt, so the
+    # employee desks' zeroed mover/event weights cannot reach it. The charter
+    # already decided employees launch on non-news/tape kinds (§7 sequencing);
+    # this is where that decision is ENFORCED for the per-call lanes.
+    # Employees launch on the NIGHTLY content_studio lane only (tilt-governed,
+    # in-batch variant rotation keeps two desks from twinning).
+    # UNLOCK: charter §6 XG-W2 (cadence resolver) + XG-W3 (desk feeds). Widen
+    # this list then, not before. Omitting the key falls back to this same pair.
+    accounts: [flagship, founder]
 
   # Publish-time DAILY READ ("My read on today's move", kind=event).
   # SAME root problem as publish_time_movers, one family over: the nightly plan
@@ -383,6 +393,11 @@ publish:
   publish_time_read:
     enabled: false           # DARK by default — operator arms after dry-runs (see above)
     slot: "S8"               # after-close ladder slot the daily read fires on (18:00 PT; once/day)
+    # Per-call lane allowlist (XG-W1) — same reasoning as publish_time_movers
+    # above: this lane picks accounts straight from desk_network and never reads
+    # tilt, so the employee desks' zeroed event weight cannot reach it. Enforces
+    # the charter's §7 sequencing decision; unlock is §6 XG-W2 + XG-W3.
+    accounts: [flagship, founder]
 
   # Per-account Buffer channel id. Empty placeholder until a real token exists —
   # discover the X channel id with the buffer-channels workflow (Actions →
@@ -391,6 +406,16 @@ publish:
   channels:
     flagship: "6a61f3d5e2638b94d7bd6c9b"  # @mastermindx001 (twitter)
     founder: "6a67dd714b2d03035f4f9659"   # @w_chris6031 (twitter) — founder's personal account, wired 2026-07-27
+    # Employee desks + the news property, discovered by the buffer-channels
+    # workflow and bound 2026-07-28 (XG-W1). All seven live Buffer channels are
+    # now addressable; a channel id is the POSTING address, not an arming
+    # decision — desk_network.enabled is what decides whether an account
+    # generates at all, and mastermind_news is deliberately disabled there.
+    meagan: "6a681b5e4b2d03035f52d4fc"          # @meagmastermind (twitter)
+    sophia: "6a6810824b2d03035f52ac24"          # @sophmastermind (twitter)
+    kelly: "6a681b4d4b2d03035f52d3ec"           # @mastermindkelly (twitter)
+    cici: "6a6822f94b2d03035f5312a5"            # @mastermindcici (twitter)
+    mastermind_news: "6a6823a74b2d03035f53147b" # @mastermindnews1 (twitter) — channel bound, account DARK until the XG-W2 cadence resolver
 
   # Per-account link policy at POST time. flagship = true: the operator wants
   # links to their own site (mastermind-x.com). This is the publisher-tier gate;
@@ -566,6 +591,154 @@ desk_network:
         macro: 0.08
         watchlist: 0.05
 
+    # ── Employee desks (X Growth W1, XG-W1) ──────────────────────────────────
+    # Four REAL named humans on official rails, wired exactly like the founder
+    # (#3851): desk_network entry + copywriter.personas voice + publish.channels
+    # id + config/personas/<id>.yml spec. The spec layer alone is decorative —
+    # nothing generative reads it — so all three layers land together or the
+    # account is a spec with no account behind it.
+    #
+    # They also post MANUALLY at will. No isolation theater (rev-4 anchor
+    # posture): the near-dup radar and the 7-day text-dedup window are what stop
+    # an engine post from colliding with a human one.
+    #
+    # kind: employee is a NEW desk kind. It maps 1:1 to persona_kind: employee.
+    #
+    # NON-NEWS KINDS ONLY at W1 (charter §7 sequencing): every employee tilt
+    # zeroes event and mover and moves that weight into signal/chart/education/
+    # macro/watchlist/receipt. The wire/news cadence is blocked on the XG-W2
+    # cadence resolver; non-news kinds may start on the ladder immediately, which
+    # is the founder precedent. signal stays strictly the largest weight on every
+    # account (house law), never below 0.28.
+    #
+    # Voices are the PINNED §5 bases and deliberately reuse the live 6-voice
+    # template pool — no new pools day one. Sophia shares "authoritative desk"
+    # with the flagship.
+    #
+    # WHAT DIFFERENTIATES THEM TODAY, precisely — the codex pass is SUBTRACTIVE,
+    # not generative. engine/marketing/expression_dial.apply_pass strips
+    # off-signature emoji and downgrades exclamations a persona was not granted;
+    # violations() then rejects unwhitelisted quirks, over-dial posts, dark canon
+    # and AM-R1 claims. None of that WRITES a quirk into copy. On the nightly
+    # lane the real divergence comes from the LLM voice pass reading these
+    # voice_notes/example_lines, with content_studio's in-batch variant rotation
+    # underneath; on the deterministic floor two accounts sharing a voice can
+    # still land near-identical copy for the same item.
+    # TRUE quirk INJECTION (franchise-shaped generation from persona memory)
+    # lands with XG-W3 desk feeds. Until then, do not widen the per-call
+    # publish-time lanes to these accounts — see publish.publish_time_movers
+    # .accounts and publish.publish_time_read.accounts, which enforce that.
+
+    - id: meagan
+      kind: employee
+      beat: "Crowd translator — market psychology, mood vs positioning, consumer and tech stories with market consequence"
+      voice: "fast, reactive"
+      handle: "meagmastermind"    # Buffer channel wired in publish.channels
+      enabled: true
+      created: "2026-07-28"       # Buffer attach date — drives ramp tier lookup (D02)
+      tilt:
+        signal: 0.30
+        chart: 0.14
+        mover: 0.00
+        theme_list: 0.06
+        receipt: 0.08
+        event: 0.00
+        education: 0.16
+        macro: 0.16
+        watchlist: 0.10
+
+    - id: sophia
+      kind: employee
+      beat: "Narrative architect — the story that organises the market, the incentives holding it together, and the fact that changes its meaning"
+      voice: "authoritative desk"
+      handle: "sophmastermind"
+      enabled: true
+      created: "2026-07-28"
+      tilt:
+        signal: 0.30
+        chart: 0.13
+        mover: 0.00
+        theme_list: 0.07
+        receipt: 0.08
+        event: 0.00
+        education: 0.15
+        macro: 0.18
+        watchlist: 0.09
+
+    - id: kelly
+      kind: employee
+      beat: "Mechanism detective — cross-asset disagreement, what moved first, what is already priced, and the missing denominator"
+      voice: "dry, receipts-forward"
+      handle: "mastermindkelly"
+      enabled: true
+      created: "2026-07-28"
+      tilt:
+        signal: 0.32
+        chart: 0.18
+        mover: 0.00
+        theme_list: 0.05
+        receipt: 0.12
+        event: 0.00
+        education: 0.12
+        macro: 0.14
+        watchlist: 0.07
+
+    - id: cici
+      kind: employee
+      beat: "Cross-border correspondent — Asia/HK session, A/H/ADR/FX/commodity transmission, and what New York inherits at the open"
+      voice: "specialist"
+      handle: "mastermindcici"
+      enabled: true
+      created: "2026-07-28"
+      # zh: the one bilingual employee desk (voice_codex.zh: true in her spec).
+      # Her beat joins the China desks (context_packs.desks: [china, macro]) and
+      # her cadence is weighted to the HK/Asia session — the overnight-US slot no
+      # other account covers. The cadence schema has no session field at W1, so
+      # the weighting is declared here and in the spec for the XG-W2 resolver.
+      zh: true
+      tilt:
+        signal: 0.29
+        chart: 0.15
+        mover: 0.00
+        theme_list: 0.09
+        receipt: 0.07
+        event: 0.00
+        education: 0.12
+        macro: 0.20
+        watchlist: 0.08
+
+    - id: mastermind_news
+      kind: branded
+      beat: "the Mastermind News publication wire (mastermindx.ai)"
+      voice: "fast, reactive"
+      handle: "mastermindnews1"   # Buffer channel wired in publish.channels
+      # WIRED BUT DARK. The account and its Buffer channel exist; the property's
+      # whole job is the wire/news cadence, and that is blocked on the XG-W2
+      # cadence resolver — do not enable before it. Enabling this account before
+      # the resolver lands would put a wire-cadence property on the decorative
+      # -1/unlimited live cap. There is deliberately no copywriter.personas block
+      # for it either: its register is the house wire voice
+      # (engine/marketing/wire_voice.py), not a desk persona.
+      #
+      # BOTH keys, deliberately. `enabled: false` is the account model's intent
+      # key; `disabled: true` is the legacy per-account kill-switch that some
+      # older call sites read directly. The publish-time lanes used to filter on
+      # `disabled` ALONE, so this entry plus its channel id made a dark property
+      # postable — fixed in engine/marketing/publish_time_content.py, and carried
+      # here too so no surviving `disabled`-only reader anywhere can revive it.
+      enabled: false
+      disabled: true
+      tilt:
+        signal: 0.28
+        event: 0.24
+        mover: 0.14
+        macro: 0.10
+        chart: 0.08
+        theme_list: 0.06
+        receipt: 0.04
+        education: 0.03
+        watchlist: 0.03
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Copywriter — personas + copy laws (the anti-bot-voice system)
 # The copywriter (engine/marketing/copywriter.py) reads this block. Personas give
@@ -681,6 +854,86 @@ copywriter:
       example_lines:
         - "Watched this level hold three times since March. Fourth test today. I don't get braver with each test, just more curious."
         - "We flagged the group Monday. I did nothing. This morning's gap is the tuition for that."
+    # ── Employee desks (XG-W1) ────────────────────────────────────────────────
+    # Four real named humans. voice_notes compress the PINNED register from
+    # Intelligence Suite masterplan §5; the machine-readable half of the same
+    # codex lives in config/personas/<id>.yml voice_codex.quirk_markers, and the
+    # expression dial (engine/marketing/expression_dial.py) is what enforces it.
+    #
+    # example_lines carry the pinned §5 dial-1 example plus that persona's
+    # constitution §5.x example. ONE SUBSTITUTION, recorded here rather than made
+    # silently: the pinned Meagan and Cici lines each contain an em dash, which
+    # copy_laws #2 and banned_language() reject at BOTH generation time and post
+    # time. An exemplar in the prompt that cannot legally ship teaches the model
+    # a violation, so those two lines appear below with house-legal punctuation.
+    # The verbatim originals stay unmodified in the masterplan, and the dial
+    # validator's calibration test asserts against the VERBATIM strings.
+    meagan:
+      name: "Meagan"
+      voice_notes: >
+        Growth Manager, the crowd translator. Upbeat, quick, human. Opens on a
+        human reaction, then lands one useful market fact. One playful line
+        followed by one useful line, never the playful one alone. Enthusiastic
+        but not breathless. Her lane is mood versus money: what the room feels
+        against what the positioning, breadth or price actually did. Signature
+        habits, one per post at most: an "okay so" opener, one parenthetical
+        aside, at most one exclamation. She is the only desk allowed an
+        exclamation at all. Never finance-bro irony, never ALL-CAPS outside
+        tickers, never a joke about a tragedy. Emoji budget: 1 (📈 ☕️ ✨)
+      example_lines:
+        - "okay so the Fed did the thing everyone swore they wouldn't, and the 2-year believed it instantly."
+        - "Everyone asked for a soft landing and is now interrogating every good data point like it committed a crime. The awkward part is credit still looks calmer than the equity timeline."
+    sophia:
+      name: "Sophia"
+      voice_notes: >
+        Marketing Lead, the narrative architect. Polished, narrative, measured,
+        with zero exclamations ever. Calm confidence, one elegant image at most,
+        sparing questions. She writes about the story the market currently
+        believes, who needs it to stay true, and the fact that changes its
+        meaning rather than its price. May run slightly longer when the story
+        needs the room. Signature habit: a story-shaped opener ("Three
+        headlines, one story:"), at most one per post and not every day. Never a
+        forced metaphor, never hype verbs, never art or wine references in copy.
+        Emoji budget: 1 (🖋️)
+      example_lines:
+        - "Three headlines, one thread: rates, oil, and the dollar spent the afternoon telling the same story."
+        - "The earnings story still says demand is exceptional. The financing story is beginning to ask how long exceptional spending remains painless."
+    kelly:
+      name: "Kelly"
+      voice_notes: >
+        Growth Lead, the mechanism detective. Terse, analytical, internet-native
+        dry wit; lowercase asides are fine. Crisp and compressed, low ornament,
+        conditional confidence, fragments where they sharpen the rhythm. Pointed
+        questions only when they are answerable. Her job is the variable that
+        confirms or breaks the popular claim: what moved first, what is already
+        priced, which market finances the story, and what would prove it wrong.
+        Signature habits, one per post: a numbered micro-list, or chart-detective
+        framing. Never a number she cannot verify, never a hedging softener
+        ("kinda", "maybe"), never condescension. Emoji budget: 1 (🔍 📊)
+      example_lines:
+        - "three things the close said. 1) breadth narrowed again 2) oil didn't believe the headline 3) vix still isn't paying attention."
+        - "Semis are the reaction. Credit is the test. If hyperscaler spreads widen while capex estimates stay heroic, equities are ignoring the market funding the story."
+      # Kelly's falsification formats ("What Would Prove This Wrong?") are
+      # X-legal per charter §2 amendment 4. The #3821 ruling — no falsifier or
+      # refutation language on SITE cycle surfaces — is untouched and still binds
+      # every template under templates/.
+    cici:
+      name: "Cici"
+      voice_notes: >
+        Asia Markets Lead, the cross-border correspondent. Bright, worldly,
+        precise on Asia hours. Warm and fast, cosmopolitan without performance,
+        polite corrections, enthusiastic without sounding juvenile. She covers
+        the overnight session nobody else does: what Beijing, Hong Kong and Tokyo
+        did while New York slept, how it transmits through A-shares, H-shares,
+        ADRs, FX and commodities, and what the US open inherits. Signature
+        habits, one per post: a session handoff ("While New York slept..."), or a
+        short Chinese phrase that carries its English gloss in the same breath.
+        Untranslated Chinese in an English post is never acceptable. Never "China
+        up / China down" simplifications, never exoticism, never a Western
+        headline treated as sufficient local context. Emoji budget: 1 (🌏 🍵)
+      example_lines:
+        - "While New York slept, Beijing did two things: a firmer yuan fix and a quiet OMO drain. One matters more. 先看这个 (start with this one)."
+        - "The headline says China stimulus. Hong Kong is trading it as targeted support, not a full risk-on turn. If property and private consumption still lag the state-linked complex, New York should keep the champagne closed."
   llm:
     enabled: true            # nightly copy generation; deterministic fallback if unavailable
     model_key: "marketing_copy"   # resolved via config.yml llm_models block; sonnet-class
