@@ -1250,6 +1250,11 @@ on:
       - "docs/blind_identity_eval_prereg.md"
       - "tests/test_marketing_learning.py"
       - "tests/test_marketing_reply_producer.py"
+      # The shared fixture both XG-W6 suites import. Listed by name for the same
+      # reason the suites are: an edit to ONLY this helper changes what both
+      # suites assert, and without the entry it would never reach the lane that
+      # runs them (test-whitelist-rot).
+      - "tests/_xgw6_helpers.py"
       # D02 per-post metrics poller + chart-image (PNG) pipeline. The poller
       # reads back Buffer analytics; media_publish uploads chart PNGs to R2;
       # content_studio renders the PNG at plan-build time. engine/marketing/**
