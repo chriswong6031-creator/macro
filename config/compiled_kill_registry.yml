@@ -522,6 +522,30 @@ entries:
     section: 3
     section_name: estimator_laws
 
+  - topic: 'PSS-RH1 exact SR3 label as an adverse synchronized relief-rally hazard'
+    verdict: 'PROSPECTIVE-ONLY ACCRUAL — lawful use of the SR3 mechanism inversion, but historical SR3 rows count as zero and the 2026-07-24 boundary is absolute. Frozen 799-name membership; one exact configuration; 63-session maturity; no interim effect reads; sole formal read only after ≥500 matured primary paths / ≥250 names / ≥12 action months spanning ≥365d / ≥30 informative strata. No entry, rank, size, gate, alert, user-display, or auto-promotion authority. Even full qualification opens only a separately preregistered intervention review. Do not backfill, retime, tune, expose per-ticker state, or combine historical outcomes with prospective confirmation.'
+    source: '`research/PSS_RH1_RELIEF_HAZARD_PROSPECTIVE_CHARTER.md`; `data/personality_timing/relief_hazard_manifest_v1.json` (family `pss_rh1_relief_hazard_prospective`, frozen 2026-07-27)'
+    section: 4
+    section_name: held_suspended
+
+  - topic: 'PSS-CR1 first real sector-pullback challenge and selective leadership'
+    verdict: 'PROSPECTIVE-ONLY ACCRUAL — future RH1 relief-hazard rows only; first peer pullback completion B+5:B+20 against a q20 threshold frozen at B; same frozen recovery required; top-quartile and +0.50-ATR relative leadership versus a nested challenged control. Historical SR3/RH1-shaped paths count as zero. One exact configuration, one read, 63-session maturity, and no authority. Do not retime the challenge, change the rank/relative floor, import no-challenge paths as controls, or inspect interim outcomes.'
+    source: '`research/PSS_CR1_CHALLENGE_RESILIENCE_PROSPECTIVE_CHARTER.md`; `data/personality_timing/challenge_resilience_manifest_v1.json` (family `pss_cr1_challenge_resilience_prospective`, frozen 2026-07-27)'
+    section: 4
+    section_name: held_suspended
+
+  - topic: 'PSS-CD1 correlation-one / low-dispersion overlay inside RH1 hazards'
+    verdict: 'PROSPECTIVE-ONLY ACCRUAL — future RH1 relief-hazard rows only; ten-session ex-self peer PC1 share and five-session return dispersion compared with strictly prior 126-session q80/q20 thresholds. Joint extremes are the hazard, joint normals the nested control, mixed rows diagnostic. One exact configuration, one read, 63-session maturity, and no authority. Do not convert the AND to OR, reuse mixed rows, change covariance/dispersion windows, or treat this as a validated crowding/sell gate.'
+    source: '`research/PSS_CD1_CORRELATION_DISPERSION_PROSPECTIVE_CHARTER.md`; `data/personality_timing/crowding_hazard_manifest_v1.json` (family `pss_cd1_correlation_dispersion_prospective`, frozen 2026-07-27)'
+    section: 4
+    section_name: held_suspended
+
+  - topic: 'PSS-AF1 FINRA short-marked activity as an absorption witness after CR1'
+    verdict: 'PROSPECTIVE-ONLY ACCRUAL — future CR1 resilient leaders only; exact 20-session own-history baseline and three-session challenge coverage; challenge short ratio versus prior rolling-three-session q75, with treatment and control both requiring at-least-median FINRA activity. FINRA short volume is not short interest, net selling, or institutional buying. Raw short ratio/off-exchange share remains forbidden as a standalone direction signal. One exact configuration, one read, 63-session maturity, and no authority. Do not add Quiver/ATS, relax exact-date coverage, retime the baseline, or call the label confirmed absorption.'
+    source: '`research/PSS_AF1_FINRA_ABSORPTION_PROSPECTIVE_CHARTER.md`; `data/personality_timing/flow_absorption_manifest_v1.json` (family `pss_af1_finra_absorption_witness_prospective`, frozen 2026-07-27)'
+    section: 4
+    section_name: held_suspended
+
   - topic: 'Ontology W4.7 pos_v2 acceptance'
     verdict: 'HOLD — peak gate IQR 48.8 > 25'
     source: 'Open PR #1639 (do not accidentally revive)'

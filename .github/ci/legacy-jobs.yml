@@ -2851,7 +2851,16 @@ jobs:
         # so the thin marketing-engine lane stays pandas-free. That made them SKIP-ONLY
         # (marketing-engine was their only job) — scripts/check_skip_only_suites.py
         # requires a job that actually installs pandas+pyarrow to run them, which is here.
-        run: python -m pytest tests/test_marketing_content.py tests/test_marketing_live_verify.py tests/test_marketing_breaking.py -q -rs
+        #
+        # test_marketing_weekend_levels.py joins 2026-07-28, same class, third time:
+        # it landed named ONLY by marketing-social-publisher (pytest+pyyaml), whose
+        # comment recorded the skip as intentional ("its one pandas test importorskips
+        # here") — the identical sentence test_marketing_live_verify's entry above was
+        # added to fix. An importorskip the thin lane can never satisfy does not make
+        # a test optional, it makes it unrun, and that is what turned main red rather
+        # than the suite's own lane. The thin lane keeps the file for its pandas-free
+        # tests; :105's cited-level round-trip executes here.
+        run: python -m pytest tests/test_marketing_content.py tests/test_marketing_live_verify.py tests/test_marketing_breaking.py tests/test_marketing_weekend_levels.py -q -rs
 
   publish-r2-client:
     if: ${{ false }}
