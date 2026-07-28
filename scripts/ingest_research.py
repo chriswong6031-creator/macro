@@ -67,6 +67,24 @@ def _report_measured(summary: dict) -> None:
                       f"ALL {cov[field]['total']} items — no producer fills it",
                       flush=True)
 
+        if summary.get("summaries_recovered"):
+            # A NOTICE, not a warning: this is the repair working. It is worth
+            # surfacing because the number is also the count of rows that shipped
+            # "Summary pending" to the public site until this run healed them.
+            print(f"::notice title=research_vault::{summary['summaries_recovered']} "
+                  f"late sidecar summary(ies) folded into already-published rows "
+                  f"({summary.get('sidecars_checked', 0)} sidecar(s) re-checked)",
+                  flush=True)
+
+        if summary.get("summaries_resynced"):
+            # Rows whose bullets reached the catalog but not the corpus — the
+            # skew a failed corpus publish leaves behind. Non-zero means a PRIOR
+            # run's publish failed, so it is worth seeing even though it healed.
+            print(f"::warning title=research_vault::"
+                  f"{summary['summaries_resynced']} corpus summary(ies) were out of "
+                  f"sync with the catalog and have been resynced — a previous "
+                  f"corpus publish did not land", flush=True)
+
         if summary.get("no_text_layer"):
             print(f"::warning::research_vault: {summary['no_text_layer']} document(s) "
                   f"ingested with no/thin text layer — body search cannot find them",
@@ -117,6 +135,7 @@ def main() -> int:
                   f"skipped={summary['skipped']} failed={summary['failed']} "
                   f"needs_metadata={summary['needs_metadata']} "
                   f"titles_repaired={summary.get('titles_repaired', 0)} "
+                  f"summaries_recovered={summary.get('summaries_recovered', 0)} "
                   f"(corpus={corpus_path}; nothing published)")
             _report_measured(summary)
             return 0

@@ -13,9 +13,12 @@ For each new PDF in ``research_inbox/`` (one whose receipt
   7. upsert the catalog row + FTS corpus row (title/summary/body/institution/date),
   8. write the receipt ``research_inbox/_processed/<id>.json``.
 
-Each run also re-derives filename-shaped titles for documents ALREADY in the
-catalog (:func:`_repair_titles`) — receipted PDFs are never re-ingested, so that
-pass is the only way an ingest-side title fix ever reaches them.
+Receipted PDFs are never re-ingested, so two passes over the ALREADY-published
+catalog are the only way a later correction ever reaches them:
+:func:`_repair_titles` re-derives filename-shaped titles, and
+:func:`_refresh_sidecars` re-reads the sidecar of any row still missing
+``summary_points``/``tags``/``tickers``/``desk`` — the upstream desk writes those
+asynchronously, well after the PDF itself lands.
 
 Every per-item step is wrapped so ONE bad document can never abort the batch
 (never-raise-per-item); the whole run is idempotent (a re-run ingests 0). A
@@ -33,7 +36,7 @@ import os
 import shutil
 import subprocess
 import tempfile
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from engine.research_vault import catalog as catalog_mod
@@ -143,13 +146,21 @@ def _pdf_stem_filename(pdf_key: str) -> str:
     return Path(pdf_key).stem
 
 
-def _already_processed_pdf_keys(store) -> set[str]:
-    """PDF source keys recorded in any receipt (idempotency across id changes).
+def _processed_index(store) -> tuple[set[str], dict[str, str]]:
+    """Read every receipt once → ``(done_pdf_keys, {doc_id: pdf_key})``.
 
-    A receipt records the source ``pdf_key`` it consumed; we skip re-ingesting
-    the same source object even if the derived id later shifts.
+    ``done_pdf_keys`` drives idempotency: a receipt records the source ``pdf_key``
+    it consumed, so we skip re-ingesting that object even if the derived id later
+    shifts.
+
+    The ``{doc_id: pdf_key}`` map is the ONLY way back from a published catalog
+    row to the inbox object it came from — the public catalog carries no source
+    key — and it is what lets :func:`_refresh_sidecars` re-read a sidecar for a
+    document that is already receipted. It costs nothing extra: this pass was
+    already reading every receipt.
     """
     done: set[str] = set()
+    by_id: dict[str, str] = {}
     for rk in store.list_prefix(PROCESSED_PREFIX):
         if not rk.endswith(".json"):
             continue
@@ -161,9 +172,12 @@ def _already_processed_pdf_keys(store) -> set[str]:
             src = rec.get("pdf_key")
             if src:
                 done.add(src)
+                doc_id = rec.get("id")
+                if doc_id:
+                    by_id[doc_id] = src
         except Exception:  # noqa: BLE001 — unreadable receipt: fall through
             continue
-    return done
+    return done, by_id
 
 
 # ---------------------------------------------------------------------------
@@ -319,6 +333,163 @@ def _repair_titles(cat: dict, conn) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# sidecar refresh over the EXISTING catalog (the upstream is TWO-PHASE)
+# ---------------------------------------------------------------------------
+
+# The enrichment fields a later sidecar write can still supply. Deliberately NOT
+# here: identity (id/title/institution/side/published_at), because a row's title
+# has by now been through title.resolve + _repair_titles and must never regress
+# to the raw sidecar string; and `pages`/`language`, because §5b makes the
+# MEASURED page count authoritative over the sidecar's claim.
+_REFRESH_FIELDS = ("summary_points", "tags", "tickers", "desk")
+
+# Only re-check documents published inside this window. A sidecar still empty
+# after two weeks is a document the upstream never summarized, not one we raced;
+# polling it hourly forever would grow the per-run GET count without bound as the
+# vault does. The cap is the second bound, for a large backfill of empty rows.
+REFRESH_LOOKBACK_DAYS = 14
+REFRESH_MAX = 500
+
+
+def _resync_corpus_summaries(cat: dict, conn) -> int:
+    """Copy catalog ``summary_points`` onto any corpus row whose summary is blank.
+
+    Closes a skew the refresh pass would otherwise make PERMANENT. ``run()``
+    writes the catalog BEFORE it publishes the corpus, so a failed corpus publish
+    leaves the store holding a catalog row with bullets and a corpus row without
+    them. That row is then no longer a refresh candidate (its ``summary_points``
+    is non-empty), so search would rank it on stale text forever.
+
+    Purely local — one query plus an UPDATE per skewed row, no store reads. Runs
+    every pass because it is the cheap direction: normally it finds nothing.
+    Never raises; returns the number of rows resynced.
+    """
+    try:
+        blank = {r[0] for r in conn.execute(
+            "SELECT doc_id FROM documents WHERE summary IS NULL OR summary=''"
+        ).fetchall()}
+    except Exception as e:  # noqa: BLE001 — a resync is never worth failing the job
+        log.warning("research_vault: corpus summary resync query failed: %s", e)
+        return 0
+    if not blank:
+        return 0
+    n = 0
+    for item in cat.get("items") or []:
+        if not isinstance(item, dict):
+            continue
+        doc_id = item.get("id") or ""
+        if doc_id not in blank or not item.get("summary_points"):
+            continue
+        try:
+            conn.execute("UPDATE documents SET summary=? WHERE doc_id=?",
+                         (corpus_mod.summary_text(item), doc_id))
+            n += 1
+        except Exception as e:  # noqa: BLE001 — one bad row never stops the pass
+            log.warning("research_vault: corpus summary resync failed for %s: %s",
+                        doc_id, e)
+    if n:
+        log.info("research_vault: resynced %d corpus summary(ies) from the catalog", n)
+    return n
+
+
+def _refresh_sidecars(store, cat: dict, conn, id_to_pdf_key: dict[str, str],
+                      now: datetime) -> dict:
+    """Fold late-arriving sidecar metadata into rows that are already published.
+
+    WHY this exists: the upstream desk writes a sidecar in TWO phases — identity
+    (title/institution/side/published_at) when the PDF lands, then
+    ``summary_points`` once its summarizer finishes. Our hourly cron frequently
+    reads the object in between. Because ingest is receipt-idempotent the sidecar
+    was then never re-read, so whichever phase we happened to catch was frozen
+    forever: replaying the catalog's own git history over 74 hourly snapshots
+    showed 63 of 236 rows stuck on ``summary_points: []`` (the public
+    "Summary pending") and ZERO rows that ever transitioned ``[] -> filled``.
+
+    Fill-only, never overwrite: a field we already have is left exactly as it is,
+    so this pass can only add information. That is what makes it safe to re-run
+    hourly, and idempotent — a filled row drops out of the candidate set.
+
+    Returns ``{checked, refreshed, summaries, capped, resynced}``; never raises —
+    a late summary is never worth failing the hourly job.
+    """
+    out = {"checked": 0, "refreshed": 0, "summaries": 0, "capped": 0, "resynced": 0}
+    cutoff = (now - timedelta(days=REFRESH_LOOKBACK_DAYS)).strftime("%Y-%m-%d")
+
+    candidates = []
+    for item in cat.get("items") or []:
+        if not isinstance(item, dict):
+            continue
+        doc_id = item.get("id") or ""
+        if not doc_id or doc_id not in id_to_pdf_key:
+            continue
+        if all(item.get(f) for f in _REFRESH_FIELDS):
+            continue
+        # A blank published_at is kept in scope: it means the sidecar had no date
+        # either, which is the same half-written state this pass exists to heal.
+        # str() first: the catalog is JSON we reloaded from the store, so a
+        # non-string here is possible, and slicing an int would raise straight out
+        # of the pass — the one thing a never-raise job must not do.
+        pub = str(item.get("published_at") or "")[:10]
+        if pub and pub < cutoff:
+            continue
+        candidates.append(item)
+
+    # Items are stored newest-first, so a cap drops the OLDEST candidates — the
+    # ones least likely to still be mid-summarization.
+    if len(candidates) > REFRESH_MAX:
+        out["capped"] = len(candidates) - REFRESH_MAX
+        candidates = candidates[:REFRESH_MAX]
+        print(f"::warning title=research_vault::sidecar refresh capped at "
+              f"{REFRESH_MAX} — {out['capped']} older incomplete row(s) not "
+              f"re-checked this run", flush=True)
+
+    touched = False
+    for item in candidates:
+        doc_id = item["id"]
+        try:
+            raw = store.get_bytes(_sidecar_key(id_to_pdf_key[doc_id]))
+            if not raw:
+                continue
+            out["checked"] += 1
+            sc, bad_json = sidecar_mod.parse_json(raw)
+            if bad_json or not sc:
+                continue
+            # Normalize for the COERCION only (bullet clamp, ticker upper-casing,
+            # non-string drops) — every field outside _REFRESH_FIELDS, including
+            # the fallback title/institution this call invents, is discarded.
+            fresh = sidecar_mod.normalize(sc)
+            changed = [f for f in _REFRESH_FIELDS
+                       if not item.get(f) and fresh.get(f)]
+            if not changed:
+                continue
+            for f in changed:
+                item[f] = fresh[f]
+            out["refreshed"] += 1
+            touched = True
+            log.info("research_vault: refreshed %s from its sidecar (%s)",
+                     doc_id, ", ".join(changed))
+
+            if "summary_points" in changed:
+                out["summaries"] += 1
+                # summary is an FTS column (weight 3) — the UPDATE trigger keeps
+                # the postings in sync, so search sees the new bullets too.
+                try:
+                    conn.execute("UPDATE documents SET summary=? WHERE doc_id=?",
+                                 (corpus_mod.summary_text(item), doc_id))
+                except Exception as e:  # noqa: BLE001 — catalog is the public surface
+                    log.warning("research_vault: corpus summary update failed for "
+                                "%s: %s", doc_id, e)
+        except Exception as e:  # noqa: BLE001 — one bad row never stops the pass
+            log.warning("research_vault: sidecar refresh failed for %s: %s", doc_id, e)
+
+    out["resynced"] = _resync_corpus_summaries(cat, conn)
+    touched = touched or bool(out["resynced"])
+    if touched:
+        conn.commit()
+    return out
+
+
+# ---------------------------------------------------------------------------
 # corpus restore (the store copy is the source of truth)
 # ---------------------------------------------------------------------------
 
@@ -388,6 +559,8 @@ def run(store, corpus_path: str | Path, now: datetime | None = None,
 
         {ingested, skipped, failed, needs_metadata, duplicate_bytes, no_text_layer,
          text_unavailable, titles_repaired, titles_recovered, titles_unresolved,
+         sidecars_checked, sidecars_refreshed, summaries_recovered, sidecars_capped,
+         summaries_resynced,
          coverage, catalog_bytes[, corpus_published][, error]}
 
     ``coverage`` is the per-field fill rate over the final catalog
@@ -436,7 +609,17 @@ def run(store, corpus_path: str | Path, now: datetime | None = None,
         summary["titles_recovered"] = rep["recovered"]
         summary["titles_unresolved"] = len(rep["unresolved"])
 
-        done_pdf_keys = _already_processed_pdf_keys(store)
+        done_pdf_keys, id_to_pdf_key = _processed_index(store)
+
+        # Re-read the sidecars of rows that are still missing enrichment fields.
+        # The upstream fills summary_points asynchronously, so the copy we read at
+        # first sight is routinely the half-written one (see _refresh_sidecars).
+        ref = _refresh_sidecars(store, cat, conn, id_to_pdf_key, now)
+        summary["sidecars_checked"] = ref["checked"]
+        summary["sidecars_refreshed"] = ref["refreshed"]
+        summary["summaries_recovered"] = ref["summaries"]
+        summary["sidecars_capped"] = ref["capped"]
+        summary["summaries_resynced"] = ref["resynced"]
 
         # {content_sha256: doc_id} for everything already indexed. Idempotency keys
         # on the SOURCE KEY, so the same report re-dropped under a different

@@ -119,7 +119,7 @@ Field rules (the ingester is defensive — every field except the PDF itself has
 - `institution` — REQUIRED for the facet; falls back to `"Unknown"` (flagged for backfill).
 - `side` — `buy` | `sell` | `independent`; default `sell`.
 - `published_at` — ISO-8601; falls back to the object's R2 upload time.
-- `summary_points` — array of 3–8 short bullets; falls back to `[]` (row shows "Summary pending").
+- `summary_points` — array of 3–8 short bullets; falls back to `[]` (row shows "Summary pending"). **The fallback is provisional, not a verdict — see §5c.**
 - `top_pick` — boolean; also settable via the `top_picks/` subfolder. Editorial highlight of the REPORT (not a trade recommendation) — copy must never imply investment advice.
 - `tags`, `tickers`, `desk`, `pages`, `language`, `source_filename` — optional.
 
@@ -167,6 +167,54 @@ Rules that are load-bearing, not stylistic:
   declared field carried through to the catalog — excluded from the coverage report below
   precisely because it would always read 100%. Measuring the script from the body text is a
   follow-on, not a claim we make today.
+
+### 5c. The sidecar is written in TWO PHASES — re-read it (RV W1-B, added 2026-07-28)
+
+The upstream desk writes the sidecar's **identity** fields (`title`, `institution`, `side`,
+`published_at`) when the PDF lands, then fills `summary_points` once its summarizer finishes.
+The hourly cron routinely reads the object *between* the two writes. Because ingest is
+receipt-idempotent, whichever phase we happened to catch was then frozen **forever**.
+
+Audit that motivated this — replaying the catalog's own git history across 74 hourly snapshots:
+
+| | |
+|---|---|
+| rows stuck on `summary_points: []` | **63 of 236** (the public "Summary pending") |
+| transitions `[] → filled`, ever | **0** |
+| fill rate by batch | 07-24 `50/50` · 07-26 `53/56` · 07-27 06:54 `5/14` · 07-27 17:54 `3/23` |
+
+The last batch was uploaded 00:44–00:48 UTC and ingested at 00:54 — three of twenty-three had
+been summarized by then. Freshness, not document quality, predicted the hole.
+
+`ingest._refresh_sidecars` closes it: each run re-reads the sidecar of any catalog row still
+missing `summary_points` / `tags` / `tickers` / `desk` and folds in what has since arrived.
+
+Rules that are load-bearing, not stylistic:
+
+- **Fill-only, never overwrite.** A field we already hold is left exactly as it is, so the
+  pass can only ADD information. That is what makes it safe hourly and idempotent (a filled
+  row leaves the candidate set).
+- **Identity and measured fields are out of scope.** `title` has by then been through
+  `title.resolve` + `_repair_titles` and must never regress to the raw sidecar string;
+  `pages` is MEASURED (§5b) and outranks the claim; `published_at` must never move under a
+  published row.
+- **`normalize()` is called for its COERCION only** — bullet clamp, ticker upper-casing,
+  non-string drops. Every field it invents outside the four is discarded.
+- **Bounded by age, not just by count.** A sidecar still empty after `REFRESH_LOOKBACK_DAYS`
+  (14) was never summarized upstream rather than raced; polling it hourly forever would grow
+  per-run GETs without bound as the vault does. `REFRESH_MAX` (500) is the second bound, and
+  a cap that bites prints a `::warning` — a silent truncation would read as full coverage.
+- **The `{doc_id → pdf_key}` map comes from the receipts**, which `_processed_index` was
+  already reading in full, so the pass costs no extra listing. The public catalog carries no
+  source key; the receipt is the only way back from a row to its inbox object.
+- **The coverage tripwire (§6b) stays the standing check.** This pass makes `summary_points`
+  recoverable; it does not make `tags`/`tickers` appear if no producer ever writes them.
+- **`_resync_corpus_summaries` closes the skew the refresh would otherwise make permanent.**
+  `run()` writes the catalog BEFORE it publishes the corpus, so a failed publish strands
+  bullets in the catalog with a blank corpus `summary` — and that row is no longer a refresh
+  candidate, so search would rank it on stale text forever. The resync is local-only (one
+  query, no store reads), runs every pass, and warns when it finds anything: a non-zero count
+  means a PREVIOUS run's corpus publish did not land.
 
 ## 6. Catalog schema — `research_vault/catalog.json` (public-safe)
 
