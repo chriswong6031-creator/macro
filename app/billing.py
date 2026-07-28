@@ -503,7 +503,8 @@ def _pg(method: str, path: str, body: Any = None, prefer: str | None = None, tim
     return json.loads(raw) if raw else None
 
 
-def _existing_customer(user_id: str) -> str | None:
+def _stored_customer(user_id: str) -> str | None:
+    """The `cus_…` persisted on the user's row — a raw read, NOT proof it exists in Stripe."""
     try:
         rows = _pg("GET", f"user_entitlements?user_id=eq.{urllib.parse.quote(user_id)}&select=stripe_customer_id")
         if rows and rows[0].get("stripe_customer_id"):
@@ -511,6 +512,68 @@ def _existing_customer(user_id: str) -> str | None:
     except Exception as exc:  # noqa: BLE001
         log.warning("billing: customer lookup failed for %s (%s)", user_id, exc)
     return None
+
+
+def _forget_customer(user_id: str) -> None:
+    """Null out a dead `stripe_customer_id` mapping, leaving tier/status/features alone.
+
+    A PATCH, not the merge-duplicates upsert: `_upsert_entitlement` writes the column only when
+    the value is truthy (so a comp can't drop a real mapping), which makes it structurally unable
+    to clear one. Best-effort — a failure here just means the next call retries the heal.
+    """
+    try:
+        _pg("PATCH", f"user_entitlements?user_id=eq.{urllib.parse.quote(user_id)}",
+            body={"stripe_customer_id": None, "updated_at": datetime.now(timezone.utc).isoformat()},
+            prefer="return=minimal")
+        log.info("billing: cleared dead stripe_customer_id mapping for %s", user_id)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("billing: could not clear customer mapping for %s (%s)", user_id, exc)
+
+
+def _customer_gone(exc: Exception) -> bool:
+    """True only for Stripe's "this customer does not exist here" error.
+
+    Deliberately narrow. Any other failure (timeout, 5xx, rate limit, auth) must NOT be read as
+    absence, or a transient Stripe outage would erase every mapping and mint duplicate customers
+    against live cards.
+    """
+    msg = str(exc)
+    return "No such customer" in msg or "resource_missing" in msg
+
+
+def _existing_customer(user_id: str) -> str | None:
+    """The user's Stripe customer, verified to exist in the CURRENT Stripe mode.
+
+    Customer ids are mode-scoped: a `cus_…` minted in test mode is a 404 once STRIPE_SECRET_KEY
+    is a live key. Returning one unchecked wedges every downstream lane permanently — checkout,
+    portal, subscribe, and upgrade all hand it straight to Stripe and get `resource_missing` back,
+    for that user, forever. So a stored id that Stripe no longer knows is dropped from the row and
+    reported absent, which is exactly what the callers already handle: the two creating lanes
+    (checkout, /subscribe/init) mint a fresh customer, the three acting lanes 404/400.
+
+    Costs one `Customer.retrieve` on a handful of human-initiated billing routes — never a hot
+    path — and only when a mapping actually exists.
+    """
+    customer_id = _stored_customer(user_id)
+    if not customer_id:
+        return None
+    try:
+        customer = _stripe().Customer.retrieve(customer_id)
+    except HTTPException:
+        raise  # billing not configured (503) — not a verdict on the customer
+    except Exception as exc:  # noqa: BLE001
+        if not _customer_gone(exc):
+            log.warning("billing: customer verify inconclusive for %s (%s) — keeping mapping", user_id, exc)
+            return customer_id  # fail SAFE: unproven absence is not absence
+        log.warning("billing: stored customer %s is unknown to Stripe (user %s) — re-minting", customer_id, user_id)
+        _forget_customer(user_id)
+        return None
+    # A customer deleted in the dashboard still retrieves, flagged rather than raising.
+    if (customer.get("deleted") if isinstance(customer, dict) else getattr(customer, "deleted", False)):
+        log.warning("billing: stored customer %s is deleted (user %s) — re-minting", customer_id, user_id)
+        _forget_customer(user_id)
+        return None
+    return customer_id
 
 
 def _user_for_customer(customer_id: str) -> str | None:
@@ -1473,28 +1536,59 @@ async def webhook(request: Request) -> dict:
 # Reconciler — nightly cron + webhook-failure backstop (off the render path)
 # --------------------------------------------------------------------------- #
 def reconcile_entitlements() -> dict:
-    """Re-sync every known customer's entitlement from live Stripe state."""
-    rows = _pg("GET", "user_entitlements?select=user_id,stripe_customer_id&stripe_customer_id=not.is.null") or []
+    """Re-sync every known customer's entitlement from live Stripe state.
+
+    Comp rows are only partially in scope, and the boundary is the honesty contract stated in
+    admin/entitlements.py: a comp over a LIVE Stripe subscription is transient (this reconciler
+    wins, which is why force-comp cancels the subscription first), but a comp over a customer with
+    no live sub is DURABLE. The row-level select can't express that, so the check happens per row
+    after the recompute: Stripe overrides a comp only when it actually has an entitling
+    subscription to override it with. Silence from Stripe — no subs, or no such customer — is not
+    authority to revoke what an operator granted.
+
+    Without that guard the nightly cron quietly deletes operator grants: `_compute_entitlement`
+    returns no `source`, so `_upsert_entitlement` defaults it to 'stripe' and a lifetime comp
+    becomes tier=free/source=stripe the first night after the user's row picks up a customer id.
+    Switching STRIPE_SECRET_KEY from test to live makes it certain rather than incidental, because
+    every test-mode `cus_…` becomes a `resource_missing` the moment the live key is in place.
+    """
+    rows = _pg("GET",
+               "user_entitlements?select=user_id,stripe_customer_id,source&stripe_customer_id=not.is.null") or []
     n = 0
+    preserved = 0
     for r in rows:
         cid, uid = r.get("stripe_customer_id"), r.get("user_id")
+        is_comp = (r.get("source") or "") == "comp"
         if not cid or not uid:
             continue
+        mapping = cid
         try:
             ent = _compute_entitlement(cid)
         except Exception as exc:  # noqa: BLE001
-            # A deleted / invalid Stripe customer can no longer entitle anyone → downgrade to free
-            # rather than leave a stale 'active' row lingering. Any other error: skip this row.
-            if "No such customer" in str(exc) or "resource_missing" in str(exc):
-                ent = {"tier": "free", "status": "canceled", "current_period_end": None, "features": []}
-            else:
+            if not _customer_gone(exc):
                 log.warning("billing: reconcile failed for %s (%s)", uid, exc)
                 continue
-        _upsert_entitlement(uid, cid, ent)
+            # The customer is gone from this Stripe mode. Clear the dead mapping either way so the
+            # billing lanes can mint a fresh customer instead of 502ing on a ghost id — and pass
+            # None below, or the upsert would immediately write the ghost id back.
+            _forget_customer(uid)
+            mapping = None
+            if is_comp:
+                log.info("billing: kept comp for %s (stripe customer %s absent)", uid, cid)
+                preserved += 1
+                continue
+            # A deleted / invalid Stripe customer can no longer entitle anyone → downgrade to free
+            # rather than leave a stale 'active' row lingering.
+            ent = {"tier": "free", "status": "canceled", "current_period_end": None, "features": []}
+        if is_comp and ent.get("status") not in ("active", "trialing"):
+            log.info("billing: kept comp for %s (no entitling stripe subscription)", uid)
+            preserved += 1
+            continue
+        _upsert_entitlement(uid, mapping, ent)
         _invalidate(uid)
         n += 1
-    log.info("billing: reconciled %d/%d rows", n, len(rows))
-    return {"reconciled": n, "total": len(rows)}
+    log.info("billing: reconciled %d/%d rows (%d comps preserved)", n, len(rows), preserved)
+    return {"reconciled": n, "total": len(rows), "comps_preserved": preserved}
 
 
 def _main(argv: list[str] | None = None) -> int:
