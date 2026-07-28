@@ -933,6 +933,17 @@ def _triage_order(cfg: dict, as_of: date, root,
         if vetoes:
             result = _rt.apply_vetoes(result, vetoes, cfg=tcfg)
         meta = {str(r.get("report_id")): r for r in (result.get("rows") or [])}
+        # DIVERGENCE IS DISCLOSED, NOT ASSUMED AWAY.  The planner recomputes the
+        # W-score; the nightly computed its own on a host that may have had the
+        # optional `datasketch` wheel when this one does not (the workflow
+        # installs it, a local checkout usually has not).  cluster_density then
+        # differs between the two, so the planner's score can differ from the
+        # ledger's for the same report on the same day.  Rather than pretend the
+        # two are one number, every slot states which one it is holding and
+        # whether the near-dup pass was available when it was computed.
+        for row in meta.values():
+            row["score_source"] = "planner-recomputed"
+            row["datasketch_present"] = bool(result.get("near_dup_enabled"))
         return _rt.ranked_order(result), meta
     except Exception as exc:  # noqa: BLE001 — triage must never break planning
         log.warning("press.desk_planner: research triage unavailable (%s) — "
@@ -940,12 +951,30 @@ def _triage_order(cfg: dict, as_of: date, root,
         return [], {}
 
 
-def _triage_cap(cfg: dict, desk_cfg: dict) -> int:
-    """STRICTER-OF (desk cadence ceiling, this tier's volume knob).
+#: The W2R tiers a desk may declare, mapped to their volume-knob key.
+_TIER_VOLUME_KEY = {"flagship": "flagship_per_day", "desk_note": "desk_notes_per_day"}
+
+
+def _triage_cap(cfg: dict, desk_cfg: dict, *, name: str = "") -> int:
+    """STRICTER-OF (desk cadence ceiling, this tier's volume knob).  FAILS CLOSED.
 
     Both halves honour an explicit 0.  ``int(x or 1)`` — the W1 idiom — reads a
     configured 0 as 1, which would have armed the dark desk-note lane the moment
     it was added, so neither number is resolved that way here.
+
+    FAIL-CLOSED IS THE WHOLE POINT, and it is a correction of the first version
+    of this function.  A desk that declares ``triage_tier`` is W2R-GOVERNED: its
+    volume comes from ``research_triage.volume``, and its own
+    ``cadence_per_day`` is only ever the second half of a stricter-of.  The
+    first version returned that desk ceiling whenever the triage layer could not
+    be consulted — triage disabled, config block deleted, ``volume()`` raising,
+    a typo'd tier — which made the FEATURE'S OFF SWITCH the ARMING SWITCH for
+    the dark desk-note lane: `research_note` shipped a ceiling of 12, so
+    `enabled: false` would have published twelve notes a day.
+
+    So: a desk with no ``triage_tier`` is not a W2R desk and keeps its own
+    cadence, unchanged.  A desk WITH one resolves through an ENABLED triage
+    layer or gets **0**.  Every closed path logs its reason.
     """
     raw = desk_cfg.get("cadence_per_day")
     try:
@@ -956,23 +985,41 @@ def _triage_cap(cfg: dict, desk_cfg: dict) -> int:
 
     tier = str(desk_cfg.get("triage_tier") or "")
     if not tier:
-        return cap
+        return cap          # not a W2R desk — W1 behaviour, untouched
+
+    label = name or str(desk_cfg.get("byline") or "research")
     tcfg = cfg.get("research_triage")
-    if not isinstance(tcfg, dict) or not bool(tcfg.get("enabled", True)):
-        return cap
+    if not isinstance(tcfg, dict):
+        log.warning("press.desk_planner: desk %s declares triage_tier=%r but "
+                    "config carries no `research_triage` block — capped at 0 "
+                    "(fail-closed: a W2R desk without its governor does not publish)",
+                    label, tier)
+        return 0
+    if not bool(tcfg.get("enabled", True)):
+        log.info("press.desk_planner: desk %s is W2R-governed and research_triage "
+                 "is disabled — capped at 0", label)
+        return 0
     try:
         from engine.press import research_triage as _rt  # noqa: PLC0415
 
         vol = _rt.volume(tcfg.get("volume") if isinstance(tcfg.get("volume"), dict) else None)
     except Exception as exc:  # noqa: BLE001
-        log.warning("press.desk_planner: volume knob unreadable (%s) — desk cadence stands", exc)
-        return cap
-    key = {"flagship": "flagship_per_day", "desk_note": "desk_notes_per_day"}.get(tier)
+        log.warning("press.desk_planner: desk %s — volume knob unreadable (%s) — "
+                    "capped at 0 (fail-closed)", label, exc)
+        return 0
+    key = _TIER_VOLUME_KEY.get(tier)
     if key is None:
-        log.warning("press.desk_planner: desk triage_tier %r is not a W2R tier — "
-                    "desk cadence stands", tier)
-        return cap
-    return min(cap, int(vol.get(key, 0)))
+        log.warning("press.desk_planner: desk %s declares triage_tier=%r, which is "
+                    "not a W2R tier (%s) — capped at 0 (fail-closed: a typo must "
+                    "not publish at the desk ceiling)",
+                    label, tier, sorted(_TIER_VOLUME_KEY))
+        return 0
+    try:
+        return min(cap, max(0, int(vol.get(key, 0))))
+    except (TypeError, ValueError):
+        log.warning("press.desk_planner: desk %s — volume.%s is not an integer — "
+                    "capped at 0 (fail-closed)", label, key)
+        return 0
 
 
 def _plan_research(cfg: dict, desk_cfg: dict, as_of: date, root,
@@ -1029,7 +1076,7 @@ def _plan_research(cfg: dict, desk_cfg: dict, as_of: date, root,
         ))
 
     publication = str(desk_cfg.get("publication") or "flagship")
-    cap = _triage_cap(cfg, desk_cfg)
+    cap = _triage_cap(cfg, desk_cfg, name=name)
     if cap <= 0:
         # A dark tier is a NORMAL outcome, not a failure: the cold-start volume
         # knob holds desk_notes_per_day at 0 until the GSC evidence opens it.
@@ -1140,6 +1187,12 @@ def _plan_research(cfg: dict, desk_cfg: dict, as_of: date, root,
                 "components": triage_row.get("components") or {},
                 "veto": triage_row.get("veto"),
                 "scoring_version": triage_row.get("scoring_version"),
+                # Which number this is, and what it was computed with. The
+                # nightly ledger's score for the same report on the same day can
+                # differ when the two hosts disagree about the optional
+                # near-dup backend — see _triage_order.
+                "score_source": triage_row.get("score_source"),
+                "datasketch_present": triage_row.get("datasketch_present"),
                 # `ordered` is false when the triage layer was unavailable and
                 # the desk fell back to the W1 recency sort — a state the
                 # staging record must show rather than imply.

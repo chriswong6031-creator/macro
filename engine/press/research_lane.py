@@ -10,23 +10,36 @@ triaged research report becomes two X output shapes:
     x_article   X-native long-form.  Title, standfirst, one section per
                 extracted point, standing footer.
 
-FOUR LOCKS KEEP THIS DARK, and they are independent on purpose — the operator
-should have to do FOUR deliberate things, not one:
+WHAT KEEPS THIS DARK — stated precisely, because "four independent locks" was
+the first draft's phrasing and it overstated the independence:
 
-  1. THE X ACCOUNT DOES NOT EXIST.  There is no @handle for Mastermind Research
+TWO EXTERNAL FACTS (not code, and not ours to enforce):
+  A. THE X ACCOUNT DOES NOT EXIST.  There is no @handle for Mastermind Research
      (X Growth charter §1: "*(not created yet)*", operator lever §7.1).
-  2. NO BUFFER CHANNEL.  `publish.channels` carries no `mastermind_research`
+  B. NO BUFFER CHANNEL.  `publish.channels` carries no `mastermind_research`
      entry, so even an enqueued item has no posting address.
-  3. desk_network SAYS NO, TWICE.  `enabled: false` (the account model's intent
+
+TWO CODE LOCKS, and they are NOT independent of each other:
+  1. desk_network SAYS NO, TWICE.  `enabled: false` (the account model's intent
      key) AND `disabled: true` (the legacy per-account kill switch some older
      call sites still read directly).  Both, for exactly the reason
      mastermind_news carries both: the publish-time lanes once filtered on
      `disabled` ALONE, which made a dark property postable.
-  4. THIS MODULE REFUSES TO ENQUEUE.  `build_items` resolves liveness through
-     engine.marketing.accounts (the ONE liveness model) and returns
-     `state="dark"` with an empty item list unless the account is enabled.  A
-     caller cannot opt out: `enqueue=True` on a dark account is a no-op that
-     says so.
+  2. THIS MODULE REFUSES TO ENQUEUE.  `build_items` returns `state="dark"` with
+     an empty item list unless the account is enabled.  `enqueue=True` on a dark
+     account is a no-op that says so.
+
+     BOTH READ THE SAME RESOLVER.  Lock 2 asks engine.marketing.accounts, which
+     is where lock 1's config keys are interpreted — so they are one mechanism
+     read twice, not two mechanisms.  In particular
+     `data/marketing/account_overrides.json` sets `enabled` AFTER config, so a
+     single override entry `{"mastermind_research": {"enabled": true}}` flips
+     BOTH at once.  That file is the documented operator lever and it is the
+     right design; it is named here so nobody reads "two locks" as "two things
+     an operator must edit".  With A and B still true an override cannot
+     actually post anything — but it WOULD start building and queueing items for
+     an account with no channel, so an override on this id is worth seeing in
+     ops.
 
 NO HAND-ROLLED WRITER.  Items are built with `outbox.make_item` and checked with
 `outbox.validate_item` — the canonical path, which is what carries the id-dedup,
@@ -95,6 +108,20 @@ _SENTENCE_END_RE = re.compile(r"(?<=[.!?])\s+")
 _DASH_RE = re.compile(r"\s*[—–―]\s*")
 _COMMA_RUN_RE = re.compile(r",\s*(?=[,.;:])")
 _PUNCT_COMMA_RE = re.compile(r"([.;:!?])\s*,\s*")
+
+# THE ONLY PREFIX compose_post MAY STRIP, and it is anchored to the markdown the
+# vault actually writes: `**Filing Label**: the claim`.
+#
+# THE DEFECT THIS REPLACES: the first version split the CLEANED point on its
+# first bare colon inside the leading 60 characters. Every colon in financial
+# prose is a candidate — the reviewer reproduced "At 10:30 GMT the print showed
+# a 0.3 percent rise." becoming "30 GMT the print showed a 0.3 percent rise."
+# (a FABRICATED number, in a post whose whole job is carrying a receipt) and
+# "Three risks: rates, oil, the labour print." losing its subject. Anchoring on
+# the bold markers means the strip only fires where the source really did put a
+# filing label in front of the sentence, and it runs on the RAW point because
+# `_strip_md` erases exactly the evidence the anchor needs.
+_BOLD_LABEL_RE = re.compile(r"^\s*\*\*(?P<label>[^*\n]{1,60}?)\*\*\s*[:：]\s*")
 
 
 def _get(cfg: dict | None, key: str) -> Any:
@@ -184,45 +211,118 @@ def account_state(cfg: dict | None, root=None, *, account: str = ACCOUNT) -> dic
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+def strip_filing_label(raw_point: object) -> str:
+    """Drop a leading `**Label**:` filing tag from a RAW summary point.
+
+    Runs on the raw markdown, never on cleaned text: the bold markers ARE the
+    anchor, and `_strip_md` erases them.  Anything that is not a bold-label
+    prefix — a clock time, a list-introducing colon, a ratio, a ticker
+    annotation — is returned untouched.
+    """
+    raw = str(raw_point or "")
+    match = _BOLD_LABEL_RE.match(raw)
+    if not match:
+        return raw
+    remainder = raw[match.end():].strip()
+    # A label with nothing after it is the whole point; keep the point.
+    return remainder or raw
+
+
 def compose_post(item: dict, *, cfg: dict | None = None) -> dict:
     """Short-form, value-complete X post for one vault report.
 
     Shape: who published it, then the sharpest extracted point, in our own
     extraction's words.  NO LINK IN THE BODY — the link is returned separately
     and belongs in a reply (masterplan §6).
+
+    Walks the points in order and takes the first one that FITS whole sentences
+    inside the character budget.  A long lead point used to kill the post
+    outright; the second point is a worse lead than the first and a much better
+    one than nothing.
     """
     limit = int(_get(cfg, "short_max_chars"))
     institution = _clean(item.get("institution")) or "An institution"
-    points = [_clean(p) for p in (item.get("summary_points") or [])]
-    points = [p for p in points if p]
-    if not points:
+    raw_points = [p for p in (item.get("summary_points") or []) if str(p or "").strip()]
+    if not raw_points:
         return {"headline": "", "body": "", "reason": "no summary_points"}
 
-    # The vault writes "**Label**: claim" points; the claim is the post, the
-    # label is a filing tag and reads as machine output in a timeline.
-    lead = points[0]
-    if ":" in lead[:60]:
-        lead = lead.split(":", 1)[1].strip() or lead
-
     headline = f"{institution}, in our read:"
-    body = _truncate_sentences(lead, max(0, limit - len(headline) - 2))
-    if not body:
-        return {"headline": "", "body": "", "reason": "lead point does not fit a post"}
-    return {"headline": headline, "body": body, "reason": ""}
+    room = max(0, limit - len(headline) - 2)
+    for index, raw in enumerate(raw_points):
+        candidate = _clean(strip_filing_label(raw))
+        body = _truncate_sentences(candidate, room)
+        if body:
+            return {"headline": headline, "body": body, "reason": "",
+                    "point_index": index}
+    return {"headline": "", "body": "",
+            "reason": "no summary point fits a post at the character budget"}
+
+
+def _topic_hint(item: dict) -> str:
+    """A short subject for the UNQUOTED title form, taken from our own filing.
+
+    Prefers the first summary point's bold label — that label is OUR analyst's
+    filing tag, not the source's prose, so using it outside quotation marks
+    claims nothing about the institution's words.
+    """
+    for raw in (item.get("summary_points") or []):
+        match = _BOLD_LABEL_RE.match(str(raw or ""))
+        if match:
+            label = _clean(match.group("label"))
+            if label:
+                return label[0].lower() + label[1:] if len(label) > 1 else label.lower()
+    return ""
 
 
 def _quoted_title(item: dict, institution: str, limit: int) -> str:
-    """`<Institution> on "<report title>": our read`, cut at a word boundary."""
-    raw = _clean(item.get("title")) or "the latest note"
-    # Straight quotes only: the vault's titles already carry curly apostrophes,
-    # and mixing quote styles in one line reads as a paste.
-    raw = raw.replace('"', "'").strip()
+    """The article's own headline.  A QUOTED span is VERBATIM or there is none.
+
+    THE DEFECT THIS REPLACES (AM-R4, fabricated quotation): the first version
+    put `_clean`ed text inside quotation marks — em dashes swapped for commas,
+    double quotes swapped for single, and a silent mid-title truncation with no
+    ellipsis — and attributed the result to the institution.  Every one of those
+    is an edit; presenting an edited string as the source's own title is
+    manufacturing a quote, which is precisely the line AM-R4 draws.
+
+    The rule now:
+
+      1. Try the VERBATIM title.  No dash normalisation, no quote swapping, no
+         silent cut.  It may be shortened only at a WORD BOUNDARY and only with
+         a visible ellipsis, which is the ordinary journalistic mark for "this
+         is where the quotation stops".
+      2. That candidate must fit the budget AND clear the shared vocabulary
+         guard.  A source title carrying an em dash cannot be quoted on X at
+         all, because normalising it would falsify it.
+      3. Otherwise DROP THE QUOTATION MARKS and say something true in our own
+         words: `<Institution>'s latest note on <topic>`, where <topic> is OUR
+         filing label, not their prose.
+
+    So the quoted span is always a verbatim prefix of the source title (modulo a
+    trailing ellipsis), and when it cannot be, nothing is in quotes.
+    """
+    from engine.marketing.copywriter import banned_language  # noqa: PLC0415
+
+    raw = str(item.get("title") or "").strip()
     prefix, suffix = f'{institution} on "', '": our read'
-    room = max(12, limit - len(prefix) - len(suffix))
-    if len(raw) > room:
-        cut = raw[:room].rsplit(" ", 1)[0].rstrip(",;:")
-        raw = cut or raw[:room]
-    return f"{prefix}{raw}{suffix}"
+    room = limit - len(prefix) - len(suffix)
+
+    if raw and room >= 20:
+        quoted = raw
+        if len(quoted) > room:
+            cut = raw[: room - 1].rsplit(" ", 1)[0].rstrip(" ,;:.")
+            quoted = f"{cut}…" if cut else ""
+        if quoted:
+            candidate = f"{prefix}{quoted}{suffix}"
+            if len(candidate) <= limit and not banned_language(candidate):
+                return candidate
+
+    # Unquoted fallback — our words about their note, claiming no quotation.
+    topic = _topic_hint(item)
+    tail = f" on {topic}" if topic else ""
+    unquoted = f"{institution}'s latest research note{tail}"
+    if len(unquoted) > limit:
+        unquoted = f"{institution}'s latest research note"
+    return unquoted
 
 
 def compose_article(item: dict, *, cfg: dict | None = None) -> dict:
@@ -306,6 +406,7 @@ def build_items(pieces: Iterable[dict], *, cfg: dict | None = None,
         return {"state": "dark", "reason": str(state.get("reason") or ""),
                 "account": account, "items": [], "enqueued": 0, "skipped": []}
 
+    from engine.marketing import expression_dial as _dial  # noqa: PLC0415
     from engine.marketing import outbox as _ob  # noqa: PLC0415
     from engine.marketing.copywriter import banned_language  # noqa: PLC0415
 
@@ -336,10 +437,66 @@ def build_items(pieces: Iterable[dict], *, cfg: dict | None = None,
             # exactly the confidence that put a banned study name in the queue
             # in July — so it is screened like every other lane's.
             violations = banned_language(text)
+            # THE EXPRESSION DIAL IS LAW ON EVERY COPY PATH (XG-W1 / charter §2
+            # amendment 3), not only on the ones with a codex today. `violations`
+            # returns [] for an account with no `voice_codex.dial_profile`, which
+            # mastermind_research does not yet carry — so this call is inert
+            # RIGHT NOW and becomes the gate the moment the codex is filled in.
+            # A lane wired to the dial only after it goes live is a lane that
+            # ships its first week unpoliced.
+            violations += _dial.violations(
+                draft["headline"], draft["body"],
+                account=account, kind=KIND, root=root, as_of=day,
+                # banned_language already ran on this exact text, one line up —
+                # one guard, two callers, reported once (the copywriter idiom).
+                include_house_bans=False,
+            )
             if violations:
                 skipped.append({"id": rid, "format": fmt,
-                                "reason": f"banned_language: {violations[0]}"})
+                                "reason": f"copy_guard: {violations[0]}"})
                 continue
+
+            source = {
+                "lane": "research_triage",
+                "format": fmt,
+                "report_id": rid,
+                "institution": str(report.get("institution") or ""),
+                # The link belongs in a REPLY, never in the post body — the
+                # native-first rule (masterplan §6). It is carried as data so
+                # the publisher can place it correctly.
+                "reply_link": link,
+                "triage_rank": triage.get("rank"),
+                "triage_tier": triage.get("tier"),
+                "w_score": triage.get("w_score"),
+                "scoring_version": triage.get("scoring_version"),
+            }
+            # GIFT-GRIP-PROOF VERDICT ON EVERY EMISSION (charter §0 XG-W3).
+            # RECORD-ONLY here, exactly as press_lane runs it: the verdict is
+            # stamped onto `source` and an abstention is announced, but only
+            # `value_gate.enforce` turns it into a refusal. `source_headline` is
+            # the SOURCE REPORT's title, so the informational-surplus test has
+            # the right thing to compare our line against.
+            would_block = _ob.stamp_value_gate(
+                source,
+                headline=draft["headline"],
+                body=draft["body"],
+                kind=KIND,
+                has_media=False,
+                source_headline=str(report.get("title") or ""),
+                citation=link,
+                cfg=cfg,
+            )
+            if would_block:
+                verdict = source.get("value_gate") or {}
+                print("::notice title=research-lane-value-gate::"
+                      f"{rid}/{fmt}: would abstain "
+                      f"({','.join(verdict.get('reasons') or [])}) — "
+                      f"enforce={verdict.get('enforced')}", flush=True)
+                if _ob._value_gate_enforced(cfg):
+                    skipped.append({"id": rid, "format": fmt,
+                                    "reason": "value_gate: "
+                                              + ",".join(verdict.get("reasons") or [])})
+                    continue
 
             try:
                 item = _ob.make_item(
@@ -353,20 +510,7 @@ def build_items(pieces: Iterable[dict], *, cfg: dict | None = None,
                     # this lane, and any other string is not a legal value.
                     scheduled_at="immediate",
                     provenance="press_research_lane",
-                    source={
-                        "lane": "research_triage",
-                        "format": fmt,
-                        "report_id": rid,
-                        "institution": str(report.get("institution") or ""),
-                        # The link belongs in a REPLY, never in the post body —
-                        # the native-first rule (masterplan §6). It is carried
-                        # as data so the publisher can place it correctly.
-                        "reply_link": link,
-                        "triage_rank": triage.get("rank"),
-                        "triage_tier": triage.get("tier"),
-                        "w_score": triage.get("w_score"),
-                        "scoring_version": triage.get("scoring_version"),
-                    },
+                    source=source,
                     now=ts,
                 )
             except ValueError as exc:
@@ -394,8 +538,14 @@ def build_items(pieces: Iterable[dict], *, cfg: dict | None = None,
                         skipped.append({"id": rid, "format": fmt,
                                         "reason": f"outbox: {result}"})
                 except Exception as exc:  # noqa: BLE001
+                    # A raising enqueue is still an item that did NOT reach the
+                    # queue. Leaving it out of `skipped` made built - enqueued
+                    # unaccountable, which is the one arithmetic a caller uses
+                    # this return value for.
                     log.warning("research_lane: enqueue refused %s (%s): %s",
                                 rid, fmt, exc)
+                    skipped.append({"id": rid, "format": fmt,
+                                    "reason": f"outbox raised: {type(exc).__name__}"})
 
     return {"state": "ready", "reason": "", "account": account, "items": items,
             "enqueued": enqueued, "skipped": skipped}

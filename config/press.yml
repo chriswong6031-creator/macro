@@ -181,7 +181,15 @@ desks:
     publication: "mastermind_research"
     label: "Research Notes"
     byline: "Research Desk — Mastermind Research"
-    cadence_per_day: 12            # CEILING only; the volume knob is what binds
+    # ZERO, NOT THE TARGET CEILING. This shipped at 12 ("the volume knob is what
+    # binds") and that was wrong twice over: `_triage_cap` used to fall back to
+    # this number whenever the triage layer could not be consulted, so
+    # `research_triage.enabled: false` — the feature's OFF switch — would have
+    # published twelve notes a day. The cap resolver now fails CLOSED to 0, and
+    # this number is 0 as well: defence in depth, and an honest statement that
+    # the desk-note lane is not armed. Raising the lane is TWO edits, both
+    # deliberate: this key AND research_triage.volume.stage.
+    cadence_per_day: 0
     cadence_min_per_day: 0
     min_words: 300
     max_words: 500
@@ -516,6 +524,12 @@ research_triage:
     window_days: 30
     shingle_n: 5
     neutral: 0.5            # cold estate -> neutral, and it SAYS so ("no-peers")
+    # COMPARABILITY FLOOR. Below this many peers the component reports its null
+    # instead of a number. Measured before this key existed: with six evergreen
+    # blog posts in the estate, all 280 candidates scored a clean 1.0 with
+    # `state: observed` — a measured-looking maximum that only meant the
+    # comparison corpus was empty.
+    min_peers: 8
     max_peers: 60
 
   # ── P0 garbage gate (reused from engine/marketing/garbage_gate.py) ────────
@@ -552,6 +566,11 @@ research_triage:
     batch_size: 20
     demote_factor: 0.35     # clamped into [0,1] by apply_vetoes
     model_key: "press_research_veto"   # -> config.yml llm_models (haiku tier)
+    # The DeepSeek rung's own model id. An Anthropic model id is not a DeepSeek
+    # one, so the cheapest-tier pin needs both: without this a DeepSeek-only
+    # host ran llm_auth's `deepseek-v4-pro` default, a tier up from what this
+    # lane is priced on.
+    deepseek_model: "deepseek-v4-flash"
     max_tokens: 1200
 
   # ── PUBLISH VOLUME — THE COLD-START RAMP (config, never code) ─────────────
@@ -591,7 +610,12 @@ research_triage:
   ledger:
     path: "data/press/research_triage.jsonl"
     window_days: 21          # matches desks.research_desk.window_days
-    max_rows_per_run: 500    # truncation is a ::warning, never silent
+    # NOT A ROW CAP. One row per report is the law, so above this threshold rows
+    # are still written, just WITHOUT `component_detail`. Sized to the real
+    # inflow: ~150 reports/day over a 21-day window is ~3,150.
+    max_detailed_rows_per_run: 4000
+    # `--compact` (the scheduled run passes it) drops rows older than this.
+    retention_days: 120
 
 # ─────────────────────────────────────────────────────────────────────────────
 # PATHS (relative to repo root)

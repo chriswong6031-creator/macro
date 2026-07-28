@@ -69,8 +69,10 @@ on:
         default: false
       veto:
         description: >-
-          Run the demote-only LLM veto pass. Set false for a purely
-          deterministic run (no LLM call, no spend).
+          Run the demote-only LLM veto pass. On a WRITE run it is on by default
+          (that is the nightly's job); on a DRY RUN it is the only way to spend
+          a token, so leaving it true here opts a manual dry run into the spend.
+          Set false for a purely deterministic run.
         required: false
         type: boolean
         default: true
@@ -134,13 +136,21 @@ jobs:
           # -e matters: without it a Python traceback exits non-zero, the shell
           # sails on, and a CRASHED triage run reports green.
           set -euo pipefail
+          # --write implies the veto pass and, on the scheduled run, applies
+          # ledger retention. A manual dry run spends NOTHING unless --veto is
+          # asked for explicitly (the CLI's own default).
           ARGS=""
           if [ "${{ inputs.write }}" = "true" ] || [ "${{ github.event_name }}" = "schedule" ]; then
-            ARGS="--write"
+            ARGS="--write --compact"
           else
             ARGS="--dry-run"
           fi
-          if [ "${{ inputs.veto }}" = "false" ]; then ARGS="$ARGS --no-veto"; fi
+          if [ "${{ inputs.veto }}" = "false" ]; then
+            ARGS="$ARGS --no-veto"
+          elif [ "${{ inputs.write }}" != "true" ] && [ "${{ github.event_name }}" != "schedule" ]; then
+            # Dry run + veto explicitly requested: opt in to the spend.
+            if [ "${{ inputs.veto }}" = "true" ]; then ARGS="$ARGS --veto"; fi
+          fi
           if [ -n "${TRIAGE_AS_OF:-}" ]; then ARGS="$ARGS --as-of $TRIAGE_AS_OF"; fi
           # shellcheck disable=SC2086
           python -m scripts.run_research_triage $ARGS --top 25 | tee triage_summary.json

@@ -91,12 +91,50 @@ garbage-dropped alike. A garbage-dropped report still carries its six
 components: the gate decides LLM eligibility (a dropped report costs zero
 tokens), not whether we admit to having looked.
 
-Each component reports a named `state` rather than a bare number:
-`observed`, `unranked`, `no-institution`, `exact-only`, `no-story`,
-`no-context`, `no-extraction`, `no-peers`, `no-text`, `error`.
+**Every INPUT gets a row**, not every input that survived a filter. The four
+classes that used to be dropped with a bare `continue` — a non-mapping row, a
+row with no id, an unparseable `published_at`, a row outside the window — are
+written as `skipped_input` with a named `skip_reason`, and the run reconciles
+`inputs` against `rows` with a `::warning` on any mismatch.
 
-Ledger truncation (`ledger.max_rows_per_run`) emits a `::warning`. It is never
-silent — a quietly shortened ledger is "nulls hidden" with extra steps.
+Each component reports a named `state` rather than a bare number:
+`observed`, `unranked`, `no-institution`, `measured-alone`, `exact-only`,
+`outside-cluster-window`, `cluster-truncated`, `no-story`, `no-context`,
+`no-report-tickers`, `no-extraction`, `no-peers`, `peer-corpus-too-thin`,
+`no-text`, `not-scored`, `error`.
+
+**Rows are never dropped.** `ledger.max_detailed_rows_per_run` is not a row cap:
+above it rows are written without `component_detail` and the thinning is
+announced. `ledger.retention_days` is applied by `--compact` on the scheduled
+run.
+
+**A run header** (`schema: press.research_triage.run.v1`) is written once per
+append and carries what every row used to repeat: weights, volume, context
+states, the reconciliation counts, and the effective-contribution summary.
+
+### Effective contributions — read this before trusting a weight
+
+A declared weight is an intent; it is not a description of the run. A component
+that is constant across the corpus orders nothing however large its weight. The
+run summary and the header both carry `effective_contributions`: per-component
+value/contribution standard deviation, correlation with the final score, and the
+list of components that are `inert` this run.
+
+Measured on the committed catalog (283 reports, 2026-07-28):
+
+| component | declared | contribution sd | r with score |
+|---|---|---|---|
+| `extraction_quality` | 0.24 | 0.0910 | **0.967** |
+| `relevance` | 0.22 | 0.0181 | 0.126 |
+| `attention_potential` | 0.08 | 0.0137 | 0.287 |
+| `cluster_density` | 0.18 | 0.0061 | 0.029 |
+| `institution_tier` | 0.16 | 0.0 | *inert* |
+| `novelty` | 0.12 | 0.0 | *inert* |
+
+So today the blend is very nearly `extraction_quality` alone. That is a true
+statement about a cold start, not a defect in the weights — but it is the
+statement a ratification review needs, and printing the weight vector alone
+hides it.
 
 ## The veto pass can only demote
 
@@ -147,7 +185,7 @@ be raised alone into a cadence the other never agreed to.
 | The veto pass | no LLM credential visible | repo secret `ANTHROPIC_API_KEY` (or an OAuth pool key / `DEEPSEEK_API_KEY`) |
 | Ledger writes | `--dry-run` is the CLI default | the scheduled workflow passes `--write`; a manual dispatch needs `write: true` |
 | Press publishing | `vars.PRESS_PUBLISH_ENABLED != 'true'` | unchanged from W1 |
-| `research_note` desk | `volume.stage: cold_start` → 0 notes/day | move `research_triage.volume.stage` |
+| `research_note` desk | **two** locks: `cadence_per_day: 0` AND `volume.stage: cold_start` | raise BOTH — the ceiling and the stage |
 | Mastermind Research X account | **four independent locks** | see below |
 
 The X property is dark on four locks, and all four have to move:
@@ -163,6 +201,19 @@ The X property is dark on four locks, and all four have to move:
    `engine.marketing.accounts` and returns `state="dark"` with an empty item
    list before building anything. `enqueue=True` on a dark account is a no-op.
 
+**Honest note on "four locks":** 1 and 2 are external facts, not code. 3 and 4
+are two code locks that read the SAME resolver, so they are one mechanism read
+twice — and `data/marketing/account_overrides.json` sets `enabled` after config,
+so a single override entry flips both. With the account and channel still
+missing an override cannot post anything, but it would start building and
+queueing items, so an override on this id is worth seeing in ops.
+
+**Chart-law exemption, deliberate.** `education` is not in
+`marketing_publisher._CHART_BEARING_KINDS`, so research posts are exempt from
+the every-ticker-post-carries-a-chart law. That is intended: a research note's
+receipt is the extracted claim, not a price chart, and the reports carry no
+tickers to chart. Revisit if the vault starts populating `tickers`.
+
 Arming order: create the account → discover and bind the channel id → fill
 `handle:` and `created:` and flip both keys **in one PR**. Sentinel resolves the
 ramp tier from `created:`; on an enabled account a missing value fails closed to
@@ -171,18 +222,26 @@ the strictest tier and prints a `::warning`.
 ## Running it
 
 ```bash
-# rank the whole catalog, print the head, write nothing, spend nothing
-python -m scripts.run_research_triage --dry-run --no-veto --top 25
+# rank the whole catalog, print the head, write nothing, SPEND NOTHING
+python -m scripts.run_research_triage --top 25
 
-# with the veto pass (needs a credential; still writes nothing)
-python -m scripts.run_research_triage --dry-run --top 25
+# opt a dry run into the veto pass (needs a credential; still writes nothing)
+python -m scripts.run_research_triage --dry-run --veto --top 25
 
-# what the nightly does
-python -m scripts.run_research_triage --write
+# what the nightly does: write the ledger, run the veto, apply retention
+python -m scripts.run_research_triage --write --compact
+
+# deterministic write, no LLM call
+python -m scripts.run_research_triage --write --no-veto
 
 # reproduce one day's ranking
-python -m scripts.run_research_triage --as-of 2026-07-28 --dry-run
+python -m scripts.run_research_triage --as-of 2026-07-28
 ```
+
+**A dry run costs nothing unless you ask it to.** `--write` implies the veto
+pass (that is the nightly's job); a bare invocation does not. The first version
+ran the veto on every dry run while its own docstring said it did not — the flag
+governed the ledger and nothing else.
 
 `--as-of` is a **dev lever**, not an evidence lever: the vault catalog is a live
 snapshot with no history, so a back-dated run sees today's catalog filtered to

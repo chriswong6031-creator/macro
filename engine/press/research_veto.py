@@ -47,11 +47,18 @@ import logging
 import re
 from typing import Any, Callable, Iterable
 
-from engine.press.research_triage import VETO_REASONS, _VETO_DEFAULTS, _get
+from engine.press.research_triage import (
+    VETO_ELIGIBLE_STATUSES, VETO_REASONS, _VETO_DEFAULTS, _get,
+)
 
 log = logging.getLogger(__name__)
 
 _FENCE_RE = re.compile(r"^\s*```(?:json)?\s*|\s*```\s*$", re.IGNORECASE)
+
+#: The DeepSeek rung's model when config names none.  `deepseek-v4-flash` is the
+#: cheap tier this repo already uses for mechanical work (engine/master_brain.py
+#: translate lane); llm_auth's own default is `deepseek-v4-pro`, a tier up.
+_DEEPSEEK_FALLBACK = "deepseek-v4-flash"
 
 _SYSTEM = """\
 You are a research desk's triage reviewer. You are reviewing candidate
@@ -168,7 +175,7 @@ def _model_id(model_key: str) -> str:
 
 
 def _default_call(system_prompt: str, user_prompt: str, *, model_id: str,
-                  max_tokens: int) -> tuple[str, str, str]:
+                  max_tokens: int, deepseek_model: str = "") -> tuple[str, str, str]:
     """The real model call.  Returns (text, provider_name, model_id).
 
     Usage lands in lib.ai_costs through llm_auth.make_call's own capture, under
@@ -176,8 +183,18 @@ def _default_call(system_prompt: str, user_prompt: str, *, model_id: str,
     """
     from engine import llm_auth  # noqa: PLC0415
 
+    # BOTH MODEL PINS, or the cheapest-tier promise only holds on Anthropic
+    # (review M12).  `build_providers` takes the Anthropic model through
+    # `opus_model` and the DeepSeek rung through `deepseek_model`; passing only
+    # the first meant a host with just DEEPSEEK_API_KEY ran this lane on that
+    # provider's DEFAULT (`deepseek-v4-pro`) — a lane whose whole economic
+    # argument is "the cheapest model that can answer" must not pick a tier by
+    # accident.  The two ids are DIFFERENT strings on purpose: an Anthropic
+    # model id is not a DeepSeek model id, so the pin is per-provider.
     providers = llm_auth.build_providers(
-        {"usage_lane": "press-research-triage-veto"}, opus_model=model_id)
+        {"usage_lane": "press-research-triage-veto"},
+        opus_model=model_id,
+        deepseek_model=deepseek_model or _DEEPSEEK_FALLBACK)
     if not providers:
         # ARMED BUT MUTE.  A bare print: an annotation behind a prefixing log
         # formatter is not a line start and GitHub drops it silently (house law).
@@ -240,8 +257,13 @@ def run(result: dict, *, cfg: dict | None = None,
     max_tokens = max(64, int(_get(vcfg, "max_tokens", _VETO_DEFAULTS)))
     model_key = str(_get(vcfg, "model_key", _VETO_DEFAULTS))
 
+    # ELIGIBILITY IS AN ALLOWLIST, NOT A SINGLE EXCLUSION (review M8).  The
+    # first version excluded only `garbage_dropped`, so a row whose P0 gate
+    # RAISED — and a row that never entered the ranking at all — reached the
+    # model.  `VETO_ELIGIBLE_STATUSES` lives in research_triage so the two
+    # modules cannot drift on what "rankable" means.
     head = [r for r in (result.get("rows") or [])
-            if r.get("status") != "garbage_dropped"][:head_size]
+            if r.get("status") in VETO_ELIGIBLE_STATUSES][:head_size]
     if not head:
         return {**empty, "state": "no_head"}
 
@@ -250,8 +272,10 @@ def run(result: dict, *, cfg: dict | None = None,
         log.warning("research_veto: no model id for llm_models.%s — pass skipped", model_key)
         return {**empty, "state": "no_provider"}
 
-    caller = call or (lambda s, u: _default_call(s, u, model_id=model_id,
-                                                 max_tokens=max_tokens))
+    deepseek_model = str(vcfg.get("deepseek_model") or _DEEPSEEK_FALLBACK)
+    caller = call or (lambda s, u: _default_call(
+        s, u, model_id=model_id, max_tokens=max_tokens,
+        deepseek_model=deepseek_model))
 
     vetoes: dict[str, dict] = {}
     batches = 0
