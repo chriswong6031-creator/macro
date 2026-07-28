@@ -538,9 +538,59 @@ class TestLiveConfigRamp:
         n = caps["max_posts_per_account_per_day"]
         assert n is not None, "flagship fell through to the base unlimited cap"
         assert isinstance(n, int) and n > 0
-        # theme_list and links are the two gates a <5-week account must not have.
-        assert caps["theme_list_allowed"] is False
+        # links stays a shut reputation gate on a young account. theme_list was
+        # operator-granted on 2026-07-28 (live sector lists were 100% dropped on
+        # a rout day) — so the invariant is no longer "shut" but ATTRIBUTABLE:
+        # if it is open, a named override must say so. An open gate with no
+        # recorded override is the merge accident this suite exists to catch.
         assert caps["links_allowed"] is False
+        if caps["theme_list_allowed"]:
+            assert "theme_list_allowed" in (entry.get("overrides") or {}), (
+                "flagship posts theme lists with no recorded override — the "
+                "grant must be traceable to sentinel.ramp.account_overrides"
+            )
+
+    def test_bool_override_is_parsed_strictly_and_scoped(self):
+        """theme_list_allowed / links_allowed overrides: real booleans and the
+        six unambiguous strings parse; junk is IGNORED (tier value stands, never
+        coerced to False — a typo must not silently revoke); and the grant is
+        scoped to the named desk only."""
+        from engine.marketing.sentinel import resolve_ramp
+
+        def cfg(override):
+            return {
+                "sentinel": {"ramp": {
+                    "weeks_1_2": {"max_posts_per_account_per_day": 2,
+                                  "theme_list_allowed": False},
+                    "account_overrides": {"warm": override},
+                }},
+                "desk_network": {"accounts": [
+                    {"id": "warm", "enabled": True, "created": "2026-07-20"},
+                    {"id": "cold", "enabled": True, "created": "2026-07-20"},
+                ]},
+            }
+
+        r = resolve_ramp(cfg({"theme_list_allowed": True}), "2026-07-27",
+                         announce=False)["accounts"]
+        assert r["warm"]["caps"]["theme_list_allowed"] is True
+        assert r["warm"]["overrides"]["theme_list_allowed"] is True
+        assert r["cold"]["caps"]["theme_list_allowed"] is False, \
+            "the grant leaked past the named desk"
+
+        r = resolve_ramp(cfg({"theme_list_allowed": "true"}), "2026-07-27",
+                         announce=False)["accounts"]
+        assert r["warm"]["caps"]["theme_list_allowed"] is True
+
+        # A quoted "false" must not enable (the auto_approve parse contract).
+        r = resolve_ramp(cfg({"theme_list_allowed": "false"}), "2026-07-27",
+                         announce=False)["accounts"]
+        assert r["warm"]["caps"]["theme_list_allowed"] is False
+
+        # Junk is ignored: the tier's own value stands and no override records.
+        r = resolve_ramp(cfg({"theme_list_allowed": "bananas"}), "2026-07-27",
+                         announce=False)["accounts"]
+        assert r["warm"]["caps"]["theme_list_allowed"] is False
+        assert "theme_list_allowed" not in (r["warm"].get("overrides") or {})
 
     def test_a_widened_account_says_so_in_the_ramp_report(self):
         """A cap wider than its own tier row must be traceable to a named
