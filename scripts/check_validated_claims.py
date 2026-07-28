@@ -556,7 +556,7 @@ def scan(list_all: bool = False) -> list[dict]:
 SELFTEST_REPORT_PAGE = """<!DOCTYPE html>
 <html lang="en">
 <head>
-<title>{title} — Goldman Sachs · Jul 24, 2026 | Mastermind Research Vault</title>
+<title>{title} — Goldman Sachs · Jul 24, 2026 | MastermindX Research Vault</title>
 <meta name="description" content="Goldman Sachs institutional research · Jul 24, 2026. {teaser}">
 <meta property="og:title" content="{title} — Goldman Sachs">
 <script type="application/ld+json">{{"headline": "{title}", "author": "Goldman Sachs"}}</script>
@@ -660,7 +660,7 @@ def selftest() -> int:
         ("OUR copy in .rr-gate on the same page STILL FAILS", rp, _page(platform=ours), True),
         ("OUR zh copy on the same page STILL FAILS", rp, _page(platform_zh="该信号是已验证的。"), True),
         ("quoted text WITHOUT the attestation gets no exemption",
-         rp, _page(body=quoted, attest="Mastermind hosts research"), True),
+         rp, _page(body=quoted, attest="MastermindX hosts research"), True),
         ("same page shape in templates/ is never exempt",
          "templates/research_report.html.j2", _page(body=quoted), True),
         ("same page shape outside the research vault is never exempt",
