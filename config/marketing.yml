@@ -362,6 +362,16 @@ publish:
     min_abs_theme_pct: 1.0   # floor for a theme-average claim
     max_quote_age_min: 45    # generation freshness gate (mirrors live_gate)
     min_active_tiles: 25     # flat-tape belt: skip unless ≥N S&P names moved ±0.5% (closed-market guard)
+    # Per-call lane allowlist (XG-W1). This lane picks an account straight from
+    # desk_network and builds a mover/theme item — it never consults tilt, so the
+    # employee desks' zeroed mover/event weights cannot reach it. The charter
+    # already decided employees launch on non-news/tape kinds (§7 sequencing);
+    # this is where that decision is ENFORCED for the per-call lanes.
+    # Employees launch on the NIGHTLY content_studio lane only (tilt-governed,
+    # in-batch variant rotation keeps two desks from twinning).
+    # UNLOCK: charter §6 XG-W2 (cadence resolver) + XG-W3 (desk feeds). Widen
+    # this list then, not before. Omitting the key falls back to this same pair.
+    accounts: [flagship, founder]
 
   # Publish-time DAILY READ ("My read on today's move", kind=event).
   # SAME root problem as publish_time_movers, one family over: the nightly plan
@@ -383,6 +393,11 @@ publish:
   publish_time_read:
     enabled: false           # DARK by default — operator arms after dry-runs (see above)
     slot: "S8"               # after-close ladder slot the daily read fires on (18:00 PT; once/day)
+    # Per-call lane allowlist (XG-W1) — same reasoning as publish_time_movers
+    # above: this lane picks accounts straight from desk_network and never reads
+    # tilt, so the employee desks' zeroed event weight cannot reach it. Enforces
+    # the charter's §7 sequencing decision; unlock is §6 XG-W2 + XG-W3.
+    accounts: [flagship, founder]
 
   # Per-account Buffer channel id. Empty placeholder until a real token exists —
   # discover the X channel id with the buffer-channels workflow (Actions →
@@ -598,9 +613,21 @@ desk_network:
     #
     # Voices are the PINNED §5 bases and deliberately reuse the live 6-voice
     # template pool — no new pools day one. Sophia shares "authoritative desk"
-    # with the flagship; the codex quirk-injection pass
-    # (engine/marketing/expression_dial.py) is what differentiates them, which is
-    # the §5 plumbing law as written.
+    # with the flagship.
+    #
+    # WHAT DIFFERENTIATES THEM TODAY, precisely — the codex pass is SUBTRACTIVE,
+    # not generative. engine/marketing/expression_dial.apply_pass strips
+    # off-signature emoji and downgrades exclamations a persona was not granted;
+    # violations() then rejects unwhitelisted quirks, over-dial posts, dark canon
+    # and AM-R1 claims. None of that WRITES a quirk into copy. On the nightly
+    # lane the real divergence comes from the LLM voice pass reading these
+    # voice_notes/example_lines, with content_studio's in-batch variant rotation
+    # underneath; on the deterministic floor two accounts sharing a voice can
+    # still land near-identical copy for the same item.
+    # TRUE quirk INJECTION (franchise-shaped generation from persona memory)
+    # lands with XG-W3 desk feeds. Until then, do not widen the per-call
+    # publish-time lanes to these accounts — see publish.publish_time_movers
+    # .accounts and publish.publish_time_read.accounts, which enforce that.
 
     - id: meagan
       kind: employee
@@ -692,7 +719,15 @@ desk_network:
       # -1/unlimited live cap. There is deliberately no copywriter.personas block
       # for it either: its register is the house wire voice
       # (engine/marketing/wire_voice.py), not a desk persona.
+      #
+      # BOTH keys, deliberately. `enabled: false` is the account model's intent
+      # key; `disabled: true` is the legacy per-account kill-switch that some
+      # older call sites read directly. The publish-time lanes used to filter on
+      # `disabled` ALONE, so this entry plus its channel id made a dark property
+      # postable — fixed in engine/marketing/publish_time_content.py, and carried
+      # here too so no surviving `disabled`-only reader anywhere can revive it.
       enabled: false
+      disabled: true
       tilt:
         signal: 0.28
         event: 0.24

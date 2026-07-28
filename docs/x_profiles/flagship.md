@@ -11,9 +11,9 @@ lifestyle, provenance always. (Constitution §5.7; `config/personas/flagship.yml
 ## Bio draft
 
 > Market evidence, not market opinions. Charts, state changes and a public
-> scorecard for self-directed investors. Every call graded — wins and losses.
+> scorecard for self-directed investors. Every call graded, wins and losses.
 
-*148 characters.* The second sentence is the whole differentiator and should
+*147 characters.* The second sentence is the whole differentiator and should
 survive any edit: a public scorecard that prints losses is a category of one, and
 it is checkable rather than claimed.
 

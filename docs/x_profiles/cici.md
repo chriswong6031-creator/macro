@@ -38,7 +38,7 @@ report Asia, very few translate it into what a US-hours reader should do about i
 >
 > This account puts the context back. What the policy language actually implies,
 > which part of the region is leading and which is refusing to confirm, and how
-> it transmits — A-shares to H-shares to ADRs, currency, commodities, shipping.
+> it transmits: A-shares to H-shares to ADRs, currency, commodities, shipping.
 >
 > What arrives regularly: **Before New York Wakes** each morning, **Asia Close,
 > Global Read-Through** at the bell, **Lost in Translation** when the local

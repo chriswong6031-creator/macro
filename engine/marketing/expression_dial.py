@@ -202,7 +202,44 @@ def _m(marker_id: str, cls: str, pins: str, *patterns: str,
 #: Cici's pinned law is "occasional zh phrase WITH instant EN gloss", so the
 #: gloss belongs to the zh marker — counting the gloss a second time as a
 #: parenthetical aside would charge her twice for obeying her own codex.
-_ZH_RUN = r"[㐀-䶿一-鿿豈-﫿]+(?:\s*\([^)]*\))?"
+#:
+#: BOTH bracket forms. A bilingual writer on a Chinese IME types full-width
+#: （） without thinking about it, and an ASCII-only gloss pattern would have
+#: read a correctly-glossed post as untranslated — rejecting the exact behaviour
+#: the law asks for.
+_ZH_RUN = r"[㐀-䶿一-鿿豈-﫿]+(?:\s*[(（][^)）]*[)）])?"
+
+_CJK_RE = re.compile(r"[㐀-䶿一-鿿豈-﫿]")
+_LATIN_RE = re.compile(r"[A-Za-z]")
+
+#: Share of a post's letter characters that must be CJK before it counts as a
+#: ZH-LANGUAGE post rather than an English post carrying a Chinese phrase.
+#:
+#: The distinction is load-bearing for Cici alone (``zh: true``). Her codex quirk
+#: is "an occasional zh phrase WITH instant EN gloss" — that is a quirk BECAUSE
+#: the surrounding post is English. When she writes a post IN Chinese, the
+#: Chinese is the language, not a flourish: charging it to ``max_per_post`` would
+#: make every genuine zh post illegal on the count, and demanding a parenthetical
+#: gloss after every run would demand she gloss Chinese into English inside a
+#: Chinese post. Neither is what §5 says.
+#:
+#: 0.30 sits far from both real cases: her pinned dial-1 example is ~4% CJK, a
+#: genuinely Chinese post is 90%+.
+ZH_POST_CJK_SHARE = 0.30
+
+
+def is_zh_post(text: str, *, codex: "CodexRules") -> bool:
+    """True when *text* is a Chinese-language post from a zh-capable desk.
+
+    False for every non-zh persona regardless of content — a Chinese phrase on
+    Meagan's account is a defect, not a language choice, and must keep tripping
+    the whitelist.
+    """
+    if not codex.zh:
+        return False
+    cjk = len(_CJK_RE.findall(text))
+    letters = cjk + len(_LATIN_RE.findall(text))
+    return letters > 0 and (cjk / letters) >= ZH_POST_CJK_SHARE
 
 #: The house quirk lexicon. Every marker fires for EVERY codex account; a hit on
 #: a marker the account does not declare is a violation. That is the "allows only
@@ -234,10 +271,22 @@ MARKERS: dict[str, Marker] = {
            "the house no-em-dash copy law (copy_laws #2, banned_language()) "
            "removes the notation outright. The aside is the quirk; the dash was "
            "only how §5 wrote it down.",
-           # Letters, no digits, long enough to be prose. "(+9.6%)" and "(-3.1%)"
-           # are receipt NUMBERS that every voice's templates already print, not
-           # asides, so a digit anywhere disqualifies the match.
-           r"\((?=[^)]*[A-Za-z])(?![^)]*\d)[^)]{6,}\)"),
+           # An aside is CONVERSATIONAL PROSE in brackets. Three exclusions, each
+           # of which was a real false positive, not a hypothetical:
+           #   * digits anywhere — "(+9.6%)" / "(-3.1%)" are the receipt numbers
+           #     every voice's templates already print;
+           #   * a capitalised first word — "(Industrials)", "(Health Care)" are
+           #     SECTOR LABELS the publish-time mover copy appends to every post.
+           #     This one shipped: it dropped a legitimate founder mover item on
+           #     an unwhitelisted-quirk violation before any of it reached X;
+           #   * fewer than ~7 characters — too short to be prose.
+           # Under-detection is the safe direction here: a missed aside costs one
+           # uncounted flourish, a false positive silently kills a real post.
+           #
+           # (?-i:[a-z]) scopes IGNORECASE OFF for the first-letter test only —
+           # every marker is compiled case-insensitively, which would otherwise
+           # make "[a-z]" match "(Industrials)" and defeat the whole exclusion.
+           r"\((?=[^)]*[A-Za-z])(?![^)]*\d)\s*(?-i:[a-z])[^)]{5,}\)"),
         _m("craft_metaphor", _FLOURISH,
            "Sophia §5: craft/composition metaphors ≤1/week. \"story\" is her BEAT, "
            "not a quirk, and is deliberately absent. This is also the ONLY channel "
@@ -310,12 +359,20 @@ def _p(*patterns: str) -> tuple[re.Pattern[str], ...]:
 #: example_lines are the negative fixture set.
 AM_R1_DETECTORS: dict[str, tuple[re.Pattern[str], ...]] = {
     "first-person trade/position/P&L claims": _p(
-        r"\bI(?:'ve|\s+have)?\s+(?:just\s+)?(?:bought|sold|shorted|longed|"
-        r"scaled\s+(?:in|out)|added\s+to|trimmed|averaged\s+(?:up|down)|"
-        r"took\s+(?:profit|the\s+trade)|got\s+(?:filled|stopped)|entered|exited)\b",
-        r"\bI'?m\s+(?:long|short)\s+\$?[A-Z]",
+        # Transaction verbs, first person singular OR plural. "we" matters as
+        # much as "I" here: "we bought the dip" is a shop position claim, and the
+        # house register legitimately uses "we" for the shop, so the verb list —
+        # never the pronoun — is what has to carry the discrimination.
+        r"\b(?:I|we)(?:'ve|\s+have)?\s+(?:just\s+)?(?:bought|sold|shorted|longed|"
+        r"own|hold|holding|added|added\s+to|trimmed|scaled\s+(?:in|out)|"
+        r"averaged\s+(?:up|down)|took\s+(?:profit|the\s+trade)|"
+        r"got\s+(?:filled|stopped)|entered|exited)\b",
+        r"\b(?:I|we)'?(?:m|re)?\s+(?:am\s+|are\s+)?(?:long|short)\s+\$?[A-Z]",
         r"\bmy\s+(?:position|entry|fill|stop|book|P&L|pnl|cost basis|size)\b",
-        r"\b(?:I|we)\s+(?:made|lost)\s+\$[\d,]",
+        # P&L as a PERCENTAGE or a bare number, not only as dollars. "I'm up 12%"
+        # is the same claim as "I made $4,000" and was previously invisible.
+        r"\b(?:I|we)'?(?:m|re)?\s+(?:am\s+|are\s+)?(?:up|down)\s+[\d.]+\s*%?",
+        r"\b(?:I|we)\s+(?:made|lost)\s+\$?[\d,.]+",
         r"\bmy\s+(?:account|portfolio)\s+is\s+(?:up|down)\b",
     ),
     "fabricated personal experience": _p(
@@ -525,7 +582,10 @@ def marker_hits(text: str, *, codex: CodexRules) -> dict[str, int]:
         for match in reversed(matches):
             span = match.end() - match.start()
             masked = masked[:match.start()] + (" " * span) + masked[match.end():]
-    if zh_count:
+    # Masking always happens (so parentheticals inside Chinese never read as
+    # asides), but a zh-LANGUAGE post records no zh_gloss hit: the Chinese is the
+    # post's language, not a quirk spent against a per-post cap.
+    if zh_count and not is_zh_post(text, codex=codex):
         hits["zh_gloss"] = zh_count
 
     for marker in MARKERS.values():
@@ -696,7 +756,14 @@ def violations(
     #      anti-sameness discipline only up to their declared frequency.
     out.extend(frequency_violations(text, codex=codex, as_of=as_of, recent=recent))
 
-    # (c) the dial itself — frames first, then flourishes
+    # (c) the dial itself — frames first, then flourishes.
+    #     PRECISION markers are absent from both budgets by construction, so a
+    #     glossed zh phrase is currently permitted even at dial 0 (wire/news).
+    #     That is a carve-out, not a ruling: §5 pins the dial for frame and
+    #     flourish only and says nothing about precision, so the conservative
+    #     reading (charge it, and break Cici's own pinned example) was rejected
+    #     in favour of the permissive one. Revisit under a §5 amendment if a
+    #     zero-personality wire post carrying Chinese ever reads wrong.
     granted_hits = {m for m in hits if m in codex.granted}
     frames = sorted(m for m in granted_hits if _class_of(m) == _FRAME)
     flourishes = sorted(m for m in granted_hits if _class_of(m) == _FLOURISH)
@@ -734,15 +801,19 @@ def violations(
         if re.search(pattern, lower):
             out.append(f"codex-banned term {word!r} for {codex.account}")
 
-    # (f) untranslated Chinese in an English post — Cici's pinned hard line, and
-    #     a hard line at EVERY dial including 0.
-    for match in MARKERS["zh_gloss"].patterns[0].finditer(text):
-        if "(" not in match.group(0):
-            out.append(
-                f"untranslated Chinese {match.group(0)[:12]!r} — the codex requires "
-                f"an instant English gloss in parentheses"
-            )
-            break
+    # (f) untranslated Chinese in an ENGLISH post — Cici's pinned hard line, and
+    #     a hard line at EVERY dial including 0. Skipped for a zh-language post
+    #     from a zh-capable desk: demanding an English gloss after every run
+    #     inside a Chinese post is not what §5 asks for, and would make every
+    #     genuine zh post permanently illegal.
+    if not is_zh_post(text, codex=codex):
+        for match in MARKERS["zh_gloss"].patterns[0].finditer(text):
+            if "(" not in match.group(0) and "（" not in match.group(0):
+                out.append(
+                    f"untranslated Chinese {match.group(0)[:12]!r} — the codex requires "
+                    f"an instant English gloss in parentheses"
+                )
+                break
 
     # (g) the HOUSE vocab guard, imported not forked, so a phrase added to
     #     copywriter._BANNED_* is inherited here the same night.

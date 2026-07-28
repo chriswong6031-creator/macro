@@ -37,7 +37,7 @@ right thing to put in a bio: it tells a stranger what she will consistently do.
 > thing on this website.
 >
 > What I do with that: take whatever everyone is talking about, then put one
-> market fact next to it — positioning, breadth, flows, or just the price. Usually
+> market fact next to it. Positioning, breadth, flows, or just the price. Usually
 > the fact is funnier than the panic.
 >
 > What arrives regularly: **Mood vs Money** when sentiment and positioning split,

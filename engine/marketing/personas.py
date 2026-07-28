@@ -389,6 +389,18 @@ def _validate_quirk_markers(markers: Any) -> list[str]:
         for key in ("max_per_post", "max_per_day", "max_per_7d"):
             if key in decl and (not _is_int(decl[key]) or decl[key] < 1):
                 errs.append(f"{where}.{key}: expected an integer >= 1, got {decl[key]!r}")
+
+        # An ENABLED marker with no per-post cap is an uncapped quirk: the dial
+        # bounds how many DISTINCT devices a post may carry, never how many times
+        # one device repeats, so "okay so ... okay so ... okay so" would satisfy
+        # the dial and read as a machine. max_per_post is the only cap that needs
+        # no history, so it is the one the loader can and does require.
+        if decl.get("enabled") is True and "max_per_post" not in decl:
+            errs.append(
+                f"{where}.max_per_post: required on an enabled marker — the dial "
+                f"counts distinct devices, so without this a single quirk may "
+                f"repeat without limit inside one post"
+            )
         share = decl.get("max_share_7d")
         if share is not None and (not _is_num(share) or not (0.0 < float(share) <= 1.0)):
             errs.append(f"{where}.max_share_7d: expected a share in (0, 1], got {share!r}")

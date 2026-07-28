@@ -296,6 +296,48 @@ def test_chinese_from_a_non_zh_desk_is_flagged_not_silently_allowed():
     assert any("zh_gloss" in v for v in out), out
 
 
+def test_a_full_width_gloss_is_accepted():
+    """F6. A bilingual writer on a Chinese IME types （） without thinking. An
+    ASCII-only gloss pattern read a correctly-glossed post as untranslated —
+    rejecting the exact behaviour the codex asks for."""
+    line = "The fix landed firmer. 先看这个（start with this one）."
+    assert _dial_violations("cici", line) == []
+    hits = ED.marker_hits(line, codex=ED.codex_for("cici", root=ROOT))
+    assert hits.get("zh_gloss") == 1
+    assert "parenthetical_aside" not in hits
+
+
+def test_a_genuinely_chinese_post_does_not_self_trip():
+    """F6. When Cici writes IN Chinese the Chinese is the language, not a quirk.
+
+    Charging it to max_per_post would make every genuine zh post illegal on the
+    count, and demanding an English gloss after every run would demand she gloss
+    Chinese into English inside a Chinese post. Neither is what §5 says.
+    """
+    zh_post = "美联储按兵不动，两年期国债立刻反应。香港市场把它当作定向支持，不是全面转向。"
+    codex = ED.codex_for("cici", root=ROOT)
+    assert ED.is_zh_post(zh_post, codex=codex) is True
+    assert "zh_gloss" not in ED.marker_hits(zh_post, codex=codex)
+    for kind in ("macro", "signal", "chart"):
+        assert _dial_violations("cici", zh_post, kind=kind) == [], kind
+
+
+def test_an_english_post_with_a_zh_phrase_is_still_an_english_post():
+    """The classifier must not swallow the quirk it exists to protect: her
+    pinned dial-1 example is ~4% CJK and stays an English post."""
+    codex = ED.codex_for("cici", root=ROOT)
+    assert ED.is_zh_post(PINNED_DIAL_1["cici"], codex=codex) is False
+    assert ED.marker_hits(PINNED_DIAL_1["cici"], codex=codex).get("zh_gloss") == 1
+
+
+def test_a_non_zh_desk_never_gets_the_zh_post_exemption():
+    """Chinese on Meagan's account is a defect, not a language choice."""
+    zh_post = "美联储按兵不动，两年期国债立刻反应。"
+    codex = ED.codex_for("meagan", root=ROOT)
+    assert ED.is_zh_post(zh_post, codex=codex) is False
+    assert _dial_violations("meagan", zh_post) != []
+
+
 def test_a_codex_banned_term_is_rejected():
     out = _dial_violations("cici", "China up on the session, nothing else moved.")
     assert any("codex-banned term" in v for v in out), out
@@ -426,6 +468,34 @@ def test_a_dark_marker_never_consumes_a_frequency_budget():
     assert out == []
 
 
+def test_the_loader_requires_max_per_post_on_an_enabled_marker():
+    """F7. The dial bounds how many DISTINCT devices a post carries, never how
+    many times one repeats — so an enabled marker with no per-post cap lets
+    "okay so ... okay so ... okay so" satisfy the dial and read as a machine.
+    max_per_post needs no history, so the loader can require it."""
+    raw = yaml.safe_load(
+        (ROOT / "config" / "personas" / "meagan.yml").read_text(encoding="utf-8"))
+    del raw["voice_codex"]["quirk_markers"]["okay_so_opener"]["max_per_post"]
+    errors = P.validate_spec(raw, expect_id="meagan")
+    assert any("max_per_post: required on an enabled marker" in e for e in errors), errors
+
+
+def test_a_dark_marker_needs_no_per_post_cap():
+    """The rule is scoped to ENABLED markers — a dark slot is already banned."""
+    raw = yaml.safe_load(
+        (ROOT / "config" / "personas" / "meagan.yml").read_text(encoding="utf-8"))
+    raw["voice_codex"]["quirk_markers"]["lifestyle_matcha_tabs"].pop("max_per_post", None)
+    assert P.validate_spec(raw, expect_id="meagan") == []
+
+
+@pytest.mark.parametrize("account", _DIAL_ACCOUNTS)
+def test_every_enabled_marker_on_the_committed_specs_has_a_per_post_cap(account):
+    codex = ED.codex_for(account, root=ROOT)
+    missing = [m for m in sorted(codex.granted)
+               if codex.declared[m].max_per_post is None]
+    assert missing == [], f"{account}: enabled markers with no max_per_post: {missing}"
+
+
 @pytest.mark.parametrize("account", _EMPLOYEES)
 def test_every_granted_signature_carries_a_frequency_cap(account):
     """A signature with no cap is the anti-sameness discipline turned off."""
@@ -465,6 +535,39 @@ def test_am_r1_fires_on_each_class(text, expected):
     assert expected in ED.am_r1_hits(text), (text, ED.am_r1_hits(text))
 
 
+@pytest.mark.parametrize("text,expected", [
+    # F4 widening. "we" carries the same weight as "I" — the house register uses
+    # "we" for the shop, so the VERB has to do the discrimination, never the
+    # pronoun. And P&L is a claim whether it is quoted in dollars or percent.
+    ("we bought the dip Monday.", "first-person trade/position/P&L claims"),
+    ("I own $AAPL here.", "first-person trade/position/P&L claims"),
+    ("we hold it into the print.", "first-person trade/position/P&L claims"),
+    ("I added to the position.", "first-person trade/position/P&L claims"),
+    ("I trimmed into strength.", "first-person trade/position/P&L claims"),
+    ("I am up 12% on the week.", "first-person trade/position/P&L claims"),
+    ("we're down 4 on this one.", "first-person trade/position/P&L claims"),
+    ("I made 4,000 on that trade.", "first-person trade/position/P&L claims"),
+    ("we lost 2.5% there.", "first-person trade/position/P&L claims"),
+    ("We're long from 118.40.", "first-person trade/position/P&L claims"),
+])
+def test_am_r1_widened_classes_fire(text, expected):
+    assert expected in ED.am_r1_hits(text), (text, ED.am_r1_hits(text))
+
+
+def test_the_widened_detector_caught_a_live_template_and_it_is_fixed():
+    """This is not hypothetical. The 'authoritative desk' signal bank shipped
+    "We're long from {entry}" — a first-person POSITION claim on the FLAGSHIP's
+    live copy, in breach of AM-R1's first hard line. It survived because AM-R1
+    was prose in a spec file nothing read. Pin the fix so it cannot return."""
+    from engine.marketing.copywriter import _TEMPLATES
+
+    for (type_id, voice), variants in _TEMPLATES.items():
+        for variant in variants:
+            for text in variant[:2]:
+                assert "long from" not in text.lower(), (type_id, voice, text)
+                assert ED.am_r1_hits(text) == [], (type_id, voice, text)
+
+
 @pytest.mark.parametrize("text", [
     # The founder's and flagship's committed register: first person everywhere,
     # and not one of these is an AM-R1 claim.
@@ -473,9 +576,46 @@ def test_am_r1_fires_on_each_class(text, expected):
     "Semis led again, breadth sat it out again. Generals without soldiers. I'm watching the soldiers.",
     "I'm watching for a bottom setup, not catching it yet.",
     "We flagged it at 41.20 and it held.",
+    # The no-false-positive property under the WIDENED patterns (F4). Every line
+    # below is legitimate house copy that a lazier regex would have flagged.
+    "we built the screen for exactly this.",
+    "We called it at 118.40, looking for 126.10.",
+    "we said under 42 kills it.",
+    "Breadth is up 4% on the week.",
+    "The index is down 2.1% from the high.",
+    "I don't love chasing this.",
+    "we flagged the group Monday.",
 ])
 def test_am_r1_does_not_fire_on_the_house_first_person_register(text):
     assert ED.am_r1_hits(text) == [], text
+
+
+def test_the_dial_attributes_its_own_llm_fallbacks():
+    """F8. A dial fallback and an invented-number fallback look identical in the
+    plan report. Without attribution a codex that rejects its own account's copy
+    every night is invisible."""
+    from engine.marketing.copywriter import dial_violations_only
+
+    dial = ["unwhitelisted quirk 'okay_so_opener' (x1) for kelly — not in ...",
+            "AM-R1 violation (first-person trade/position/P&L claims)",
+            "expression dial 1 for kind 'macro' allows 0 playful/lifestyle line(s)",
+            "off-signature emoji ['🚀'] for meagan (signature: ...)"]
+    other = ["number '12.5%' not in whitelist", "too long: 300 chars (max 275)",
+             "missing cashtag $NVDA"]
+    assert dial_violations_only(dial) == dial
+    assert dial_violations_only(other) == []
+    assert dial_violations_only(dial + other) == dial
+
+
+def test_the_copywriter_module_has_a_real_logger():
+    """It carried a `log.warning(...)` call with NO logger bound — the name
+    resolved to nothing and raised NameError inside a broad `except`, so the
+    armed-but-mute warning never reached a log in its life."""
+    import logging
+
+    from engine.marketing import copywriter
+
+    assert isinstance(getattr(copywriter, "log", None), logging.Logger)
 
 
 def test_am_r1_reaches_copy_through_the_dial(marketing_cfg):
@@ -650,6 +790,84 @@ def test_the_whole_deterministic_bank_is_dial_clean_for_every_codex_account():
 # ---------------------------------------------------------------------------
 # 9. Anti-vacuous tripwires + the house-guard seam
 # ---------------------------------------------------------------------------
+
+def test_the_publish_time_copy_bank_is_dial_clean_for_every_codex_account():
+    """The SECOND template bank, and the one the first sweep missed.
+
+    engine/marketing/publish_time_content.py carries its own mover/theme copy
+    pools — nothing to do with copywriter._TEMPLATES — and its output runs
+    through validate_copy, so a dial violation there DROPS the candidate. That is
+    exactly what happened: the sector label every mover post appends,
+    "(Industrials)", matched the parenthetical-aside marker and silently killed a
+    legitimate founder item. Sweeping one bank and calling it coverage is what
+    let a marker false-positive reach a live account's lane.
+    """
+    from engine.marketing import movers_source
+    from engine.marketing import publish_time_content as pt
+
+    cfg = yaml.safe_load(
+        (ROOT / "config" / "marketing.yml").read_text(encoding="utf-8"))
+    voices = {a["id"]: a.get("voice", "") for a in cfg["desk_network"]["accounts"]}
+
+    def _mover(ticker: str, pct: float, sector: str) -> dict:
+        mv = {"ticker": ticker, "name": ticker, "pct": pct, "sector": sector,
+              "price": 150.0, "prev_close": 174.0}
+        return {"type": "mover", "ticker": ticker, "cashtag": f"${ticker}",
+                "_mover_data": mv, "_mover_facts": movers_source.mover_facts(mv)}
+
+    def _theme(direction: str) -> dict:
+        sign = 1.0 if direction == "up" else -1.0
+        members = [{"ticker": t, "pct": sign * p}
+                   for t, p in (("NVDA", 4.1), ("AMD", 3.2), ("SMCI", 2.8), ("AVGO", 2.2))]
+        tl = {"theme": "Artificial Intelligence", "direction": direction,
+              "agg_pct": sign * 3.0, "members": members,
+              "question": "Which one leads?"}
+        return {"type": "theme_list", "ticker": "", "cashtag": "",
+                "cashtags": [f"${m['ticker']}" for m in members],
+                "_theme_data": tl, "_theme_facts": movers_source.theme_facts(tl)}
+
+    # Multi-word, single-word and hyphenated sector labels: the aside marker has
+    # to survive every shape the real heatmap emits, not just the one that broke.
+    sectors = ("Industrials", "Health Care", "Consumer Discretionary",
+               "Information Technology", "Energy")
+    checked = 0
+    for account in _DIAL_ACCOUNTS:
+        voice = voices[account]
+        persona = cfg["copywriter"]["personas"].get(account, {})
+        candidates = [_mover(t, p, s)
+                      for t, s in zip(("BA", "ISRG", "NKE", "CRM", "PYPL"), sectors)
+                      for p in (-13.0, 9.4)]
+        candidates += [_theme("up"), _theme("down")]
+        for slot in ("AM", "PM", "EOD"):
+            for cand in candidates:
+                text, headline, _viol = pt._render_copy(
+                    cand, account=account, voice=voice, persona=persona, slot=slot)
+                cleaned_h, cleaned_b = ED.apply_pass(
+                    headline, text, account=account, kind=cand["type"])
+                out = ED.violations(cleaned_h, cleaned_b, account=account,
+                                    kind=cand["type"], include_house_bans=False)
+                assert out == [], f"{account} ({voice}) {slot}: {out} :: {text[:90]}"
+                checked += 1
+    # 5 dial accounts x 3 slots x 12 candidates = 180 renders.
+    assert checked >= 180, f"only {checked} publish-time renders checked"
+
+
+def test_a_sector_label_is_not_a_parenthetical_aside():
+    """The specific false positive, pinned as its own fixture.
+
+    Every publish-time mover post appends its sector in brackets. A label is not
+    an aside, and treating one as a quirk drops the post.
+    """
+    codex = ED.codex_for("meagan", root=ROOT)
+    for label in ("(Industrials)", "(Health Care)", "(Consumer Discretionary)",
+                  "(Energy)", "(Information Technology)"):
+        hits = ED.marker_hits(f"$BA crashed 13% today {label}. Tape check.",
+                              codex=codex)
+        assert "parenthetical_aside" not in hits, label
+    # ...and a real conversational aside still counts, or the fix over-corrected.
+    assert "parenthetical_aside" in ED.marker_hits(
+        "the tape did the thing (honestly obsessed) today.", codex=codex)
+
 
 def test_the_codex_index_on_the_real_tree_is_the_five_real_humans():
     """A refactor that empties this index would turn every assertion above into

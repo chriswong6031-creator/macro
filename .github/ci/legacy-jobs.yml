@@ -2720,7 +2720,15 @@ jobs:
         # run step anywhere (unrun-suite rot) while its lane shipped the $AVGO
         # "POC held" post. Covers the cited-level chart contract + the floor
         # copy's language bar; its one pandas test importorskips here.
-        run: python -m pytest tests/test_marketing_social_publisher.py tests/test_marketing_outbox.py tests/test_marketing_publisher_autoapprove.py tests/test_marketing_live_verify.py tests/test_marketing_publish_time_content.py tests/test_marketing_metrics_poll.py tests/test_marketing_weekend_levels.py -q
+        # test_marketing_publish_time_read joins 2026-07-28 (XG-W1). It was named
+        # by NO job — an unrun suite guarding the daily-read lane's account
+        # eligibility. XG-W1 changed exactly that code path (per-call lanes now
+        # resolve liveness through the accounts model and honour a lane
+        # allowlist), and the suite went red locally on the first run: two of its
+        # multi-account tests were asserting behaviour the fix deliberately
+        # narrows. Unrun, that would have been a silent rot. Same deps as the
+        # rest of this lane (pytest + pyyaml), verified green.
+        run: python -m pytest tests/test_marketing_social_publisher.py tests/test_marketing_outbox.py tests/test_marketing_publisher_autoapprove.py tests/test_marketing_live_verify.py tests/test_marketing_publish_time_content.py tests/test_marketing_publish_time_read.py tests/test_marketing_metrics_poll.py tests/test_marketing_weekend_levels.py -q
 
   marketing-media-pipeline:
     if: ${{ false }}

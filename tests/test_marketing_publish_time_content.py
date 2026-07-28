@@ -90,6 +90,12 @@ def _cfg(*, accounts: list[dict] | None = None, channels: dict | None = None,
                 # Unit fixtures are a handful of tiles — pin the flat-tape belt
                 # to 1 so it only fires in its own dedicated tests.
                 "min_active_tiles": 1,
+                # Per-call lane allowlist (XG-W1). The fixture opts every account
+                # it declares INTO the lane, so these tests keep exercising the
+                # multi-account fan-out they were written for. The production
+                # default is restrictive (flagship + founder only) and is covered
+                # by its own tests below — do not delete this key to "simplify".
+                "accounts": [str(a.get("id", "")) for a in accounts],
             },
             "channels": channels,
         },
@@ -671,3 +677,159 @@ def test_flat_tape_belt_skips_closed_market(tmp_path):
     rep2 = _gen(tmp_path, cfg, live=False)
     assert not any(d["reason"] == "tape_flat" for d in rep2["dropped"])
     assert rep2["would_generate"]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 9. Per-call lane eligibility (XG-W1 fixes F1/F2/F3)
+#
+# Both per-call lanes used to filter on acc.get("disabled") ALONE. desk_network
+# carries an explicit `enabled`, and accounts._config_enabled gives it precedence
+# over `disabled` — so an `enabled: false` account with no `disabled` key passed
+# the filter, and a Buffer channel id was then enough to make a deliberately dark
+# property a live posting target under an unrestricted auto-approve and a -1 cap.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _two_movers(tmp_path):
+    _write_sp500(tmp_path, [
+        _tile("ISRG", 0.1, sector="Health Care"),
+        _tile("BA", 0.1, sector="Industrials"),
+    ])
+    _write_snapshot(tmp_path, {"ISRG": (300.0, 349.0, -14.0),
+                               "BA": (150.0, 174.0, -13.0)})
+
+
+def _real_cfg() -> dict:
+    import yaml
+    root = Path(__file__).resolve().parents[1]
+    return yaml.safe_load((root / "config" / "marketing.yml").read_text(encoding="utf-8"))
+
+
+def test_enabled_false_account_with_a_channel_is_not_eligible(tmp_path):
+    """F1 REGRESSION. `enabled: false` + a channel id must never post.
+
+    The account carries NO `disabled` key on purpose — that is exactly the shape
+    the old `acc.get("disabled")` filter waved through.
+    """
+    _two_movers(tmp_path)
+    accounts = [{"id": "flagship", "voice": "authoritative desk"},
+                {"id": "mastermind_news", "voice": "fast, reactive", "enabled": False}]
+    cfg = _cfg(accounts=accounts,
+               channels={"flagship": "c1", "mastermind_news": "c9"},
+               personas={"flagship": {"name": "The Desk", "voice_notes": "terse. Emoji budget: 0-1"},
+                         "mastermind_news": {"name": "Wire", "voice_notes": "wire. Emoji budget: 0"}},
+               max_per_run=2)
+    _gen(tmp_path, cfg)
+    accts = {i["account"] for i in outbox.read_items(tmp_path)}
+    assert "mastermind_news" not in accts, "an enabled:false account was queued"
+
+
+def test_the_committed_config_never_makes_mastermind_news_eligible(tmp_path):
+    """The real config, not a fixture: the dark news property must be excluded by
+    BOTH the liveness gate and the lane allowlist."""
+    cfg = _real_cfg()
+    for lane in ("publish_time_movers", "publish_time_read"):
+        ids = [str(a.get("id", "")) for a in
+               pt._per_call_eligible(cfg, lane_key=lane, root=tmp_path)]
+        assert "mastermind_news" not in ids, lane
+        assert set(ids) <= {"flagship", "founder"}, (lane, ids)
+
+
+def test_employees_are_not_eligible_for_the_per_call_lanes(tmp_path):
+    """F2 REGRESSION. An ENABLED employee holding a channel id is still excluded
+    from both per-call lanes.
+
+    These lanes never consult tilt, so the employee specs' zeroed mover/event
+    weights cannot reach them — the allowlist is what enforces the charter's
+    "employees launch on non-news/tape kinds" sequencing.
+    """
+    cfg = _real_cfg()
+    live_employees = [a["id"] for a in cfg["desk_network"]["accounts"]
+                      if a.get("kind") == "employee" and a.get("enabled")]
+    assert len(live_employees) == 4, live_employees
+    for lane in ("publish_time_movers", "publish_time_read"):
+        ids = {str(a.get("id", "")) for a in
+               pt._per_call_eligible(cfg, lane_key=lane, root=tmp_path)}
+        assert ids.isdisjoint(live_employees), (lane, ids)
+    # ...and each one IS live with a channel, so the exclusion is the lane's
+    # doing and not an accident of missing wiring (which would pass vacuously).
+    for emp in live_employees:
+        assert cfg["publish"]["channels"].get(emp), emp
+
+
+def test_an_enabled_employee_is_not_selected_by_the_movers_lane(tmp_path):
+    """End-to-end through the real generator, not just the helper."""
+    _two_movers(tmp_path)
+    accounts = [{"id": "flagship", "voice": "authoritative desk", "enabled": True},
+                {"id": "meagan", "voice": "fast, reactive", "enabled": True}]
+    cfg = _cfg(accounts=accounts,
+               channels={"flagship": "c1", "meagan": "c5"},
+               personas={"flagship": {"name": "The Desk", "voice_notes": "terse. Emoji budget: 0-1"},
+                         "meagan": {"name": "Meagan", "voice_notes": "quick. Emoji budget: 1"}},
+               max_per_run=2)
+    # Drop the fixture's opt-in so the PRODUCTION default allowlist governs.
+    del cfg["publish"]["publish_time_movers"]["accounts"]
+    _gen(tmp_path, cfg)
+    accts = {i["account"] for i in outbox.read_items(tmp_path)}
+    assert accts == {"flagship"}, accts
+
+
+def test_the_lane_allowlist_defaults_restrictive_and_an_empty_list_means_nobody():
+    cfg = {"publish": {"channels": {"flagship": "c1", "meagan": "c5"}},
+           "desk_network": {"accounts": [
+               {"id": "flagship", "enabled": True}, {"id": "meagan", "enabled": True}]}}
+    assert pt._lane_accounts(cfg, "publish_time_movers") == frozenset(
+        pt._PER_CALL_DEFAULT_ACCOUNTS)
+
+    cfg["publish"]["publish_time_movers"] = {"accounts": []}
+    assert pt._lane_accounts(cfg, "publish_time_movers") == frozenset()
+    assert pt._per_call_eligible(cfg, lane_key="publish_time_movers", root=".") == []
+
+    cfg["publish"]["publish_time_movers"] = {"accounts": ["meagan"]}
+    ids = [a["id"] for a in pt._per_call_eligible(
+        cfg, lane_key="publish_time_movers", root=".")]
+    assert ids == ["meagan"]
+
+
+def test_a_junk_lane_allowlist_falls_back_to_the_restrictive_default():
+    """Fail-safe, not fail-open: a malformed allowlist must not widen the lane."""
+    cfg = {"publish": {"publish_time_movers": {"accounts": "flagship"}}}
+    assert pt._lane_accounts(cfg, "publish_time_movers") == frozenset(
+        pt._PER_CALL_DEFAULT_ACCOUNTS)
+
+
+def test_the_operator_override_file_can_still_dark_an_account(tmp_path):
+    """Liveness resolves through effective_accounts, so the override file — the
+    operator's no-deploy kill switch — reaches these lanes too."""
+    d = tmp_path / "data" / "marketing"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "account_overrides.json").write_text(
+        json.dumps({"flagship": {"enabled": False}}), encoding="utf-8")
+    cfg = {"publish": {"channels": {"flagship": "c1"}},
+           "desk_network": {"accounts": [{"id": "flagship", "enabled": True}]}}
+    assert pt._per_call_eligible(
+        cfg, lane_key="publish_time_movers", root=tmp_path) == []
+
+
+def test_two_accounts_on_one_per_call_lane_never_emit_identical_text(tmp_path):
+    """F3 REGRESSION. The codex pass is SUBTRACTIVE — it strips off-signature
+    emoji and downgrades ungranted exclamations; it does NOT inject a quirk, so
+    it cannot be relied on to differentiate two accounts.
+
+    On the per-call lane the real fence is the allowlist. This test pins what is
+    left after it: two allowed accounts must still emit different text, and if a
+    future edit makes them identical that is the signal to keep the allowlist
+    narrow rather than to widen it.
+    """
+    _two_movers(tmp_path)
+    accounts = [{"id": "flagship", "voice": "authoritative desk", "enabled": True},
+                {"id": "founder", "voice": "fast, reactive", "enabled": True}]
+    cfg = _cfg(accounts=accounts,
+               channels={"flagship": "c1", "founder": "c2"},
+               personas={"flagship": {"name": "The Desk", "voice_notes": "terse. Emoji budget: 0-1"},
+                         "founder": {"name": "The Founder", "voice_notes": "plain. Emoji budget: 0"}},
+               max_per_run=2)
+    _gen(tmp_path, cfg)
+    movers = [i for i in outbox.read_items(tmp_path) if i["kind"] == "mover"]
+    assert len(movers) == 2
+    assert movers[0]["account"] != movers[1]["account"]
+    assert movers[0]["text"] != movers[1]["text"], "two desks emitted identical copy"

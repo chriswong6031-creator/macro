@@ -77,7 +77,15 @@ def _cfg(*, enabled: bool = True, slot: str = "S19",
         "flagship": {"name": "The Desk", "voice_notes": "terse. Emoji budget: 0-1"}}
     return {
         "publish": {
-            "publish_time_read": {"enabled": enabled, "slot": slot},
+            "publish_time_read": {
+                "enabled": enabled, "slot": slot,
+                # Per-call lane allowlist (XG-W1). The fixture opts every account
+                # it declares INTO the lane, so these tests keep exercising the
+                # multi-account fan-out they were written for. The production
+                # default is restrictive (flagship + founder only) and is covered
+                # by its own tests below — do not delete this key to "simplify".
+                "accounts": [str(a.get("id", "")) for a in accounts],
+            },
             "channels": channels,
         },
         "desk_network": {"accounts": accounts},
