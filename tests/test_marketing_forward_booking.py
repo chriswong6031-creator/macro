@@ -409,6 +409,36 @@ class TestPublishLaneCheckout:
                     "workflows" / name).read_text(encoding="utf-8")
             assert "git fetch --depth" in body, f"{name}: bare fetch on a shallow clone"
 
+    def test_live_quotes_keeps_feeding_the_tape_gate_when_the_vps_is_primary(self):
+        """`live-data` has two consumers: the browser (VPS-primary since
+        2026-07-27T22:50Z) and marketing-publish's tape gate, which fetches it
+        every sweep. Gating the whole workflow on VPS_LIVE_PRIMARY starved the
+        second one — the branch froze at 22:31Z and the gate held the entire
+        queue against a 17h-old snapshot. One tick must survive that variable."""
+        from pathlib import Path
+        import yaml
+
+        wf = yaml.safe_load((Path(__file__).resolve().parent.parent / ".github" /
+                             "workflows" / "live-quotes.yml").read_text(encoding="utf-8"))
+        # PyYAML parses the `on:` key as the boolean True.
+        crons = [c["cron"] for c in (wf.get("on") or wf.get(True))["schedule"]]
+        cond = str(wf["jobs"]["snapshot"]["if"])
+        ungated = [c for c in crons if c in cond]
+        assert ungated, (
+            "no cron is exempt from the VPS_LIVE_PRIMARY gate; with the variable "
+            "true the tape gate has no fresh quote source at all"
+        )
+        # Must be fresh enough for the gate that consumes it.
+        import re
+        every = min(int(m.group(1)) for c in ungated
+                    if (m := re.match(r"\*/(\d+) ", c)))
+        pub = yaml.safe_load((Path(__file__).resolve().parent.parent / "config" /
+                              "marketing.yml").read_text(encoding="utf-8"))["publish"]
+        assert every < int(pub["live_gate"]["max_quote_age_min"]), (
+            f"the ungated tick runs every {every}m but the gate demands quotes "
+            f"younger than {pub['live_gate']['max_quote_age_min']}m"
+        )
+
     def test_outbox_ledgers_carry_union_merge(self):
         """The publish sweep and the nightly commit the same append-only JSONL.
         Without union merge the retry-rebase loop conflicts on every attempt and
