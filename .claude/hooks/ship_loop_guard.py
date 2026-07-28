@@ -3,8 +3,24 @@
 
 SessionStart records a baseline so a shared checkout's pre-existing dirt is never
 mistaken for work from this session. Stop blocks when session-created changes are
-uncommitted, unpushed, unmerged, still rendering, or not yet present on production.
-Repository rules remain the source of truth; this hook makes them executable.
+uncommitted, unpushed, unmerged, awaiting a render that has not started or that
+concluded failed, or not yet present on production.
+
+An IN-FLIGHT covering render no longer blocks: the VPS pulls main every 3 minutes
+independent of Actions, so a merged commit is live in minutes regardless, the lane
+only re-bakes ``.j2`` pages and the ``?v=`` stamp, house law forbids a waiting
+session from cancelling or re-running it, and the nightly ``scope=all`` re-render
+self-heals a failed lane within a day — so ``_stop`` defers to the shared
+coalescing lane rather than holding a session the lane's ~67+ minutes (observed
+sessions sat 3h46m-4h02m for a lane they may not touch).
+
+Every blocker also carries an escape ladder, because the field kept producing
+UNSATISFIABLE gates: one session refused Stop 258 consecutive times on ``unmerged``
+and another 245 times on ``render_failed``, and the guard took 13 patches in 17
+days for such classes. See ``_block`` for the two ladders (external: 2 consecutive
+or 3 cumulative; any code: 10 consecutive or 15 total; always requiring an explicit
+``SHIP LOOP BLOCKED:`` evidence report). Repository rules remain the source of
+truth; this hook makes them executable.
 """
 
 from __future__ import annotations
@@ -1053,8 +1069,27 @@ def _render_status(
     whose checkout contained the merge; a sibling or pre-merge head rendered a
     tree without it. The ``merged_at`` floor is belt-and-braces (ancestry already
     excludes pre-merge heads, but a re-run of pre-merge history must not read as
-    coverage). A candidate still in flight keeps the verdict at ``pending``: a
-    queued or running render may yet deliver the coverage this merge needs.
+    coverage).
+
+    Three non-success verdicts, and only ONE of them blocks Stop:
+
+    - ``deferred`` — a candidate render is IN FLIGHT (queued/running) and covers
+      this merge. ``_stop`` treats this as satisfied and falls through to the live
+      gate rather than holding the session for the lane to finish. The VPS pulls
+      main every 3 minutes independent of Actions, so a merged commit is live in
+      minutes regardless; the render lane only re-bakes ``.j2`` pages and the
+      ``?v=`` content-hash stamp; house law forbids a waiting session from
+      cancelling or re-running the shared lane; and the nightly ``scope=all``
+      re-render self-heals a failed lane within a day. Holding a session the
+      lane's ~67+ minutes — observed sessions sat 3h46m-4h02m — for work that is
+      already live and a lane they may not touch was the single largest by-design
+      cost, so an in-flight covering run now DEFERS to the shared coalescing lane
+      with the nightly re-render as backstop.
+    - ``pending`` — NO run has fired for this merge yet. This is the dead-wire
+      trap (a lane that never triggered) and it must still BLOCK: absence of any
+      run is not deferral, it is a missing gate.
+    - ``failed`` — every candidate has completed, the newest is non-success, and
+      nothing is in flight. Actionable and blocking, exactly as before.
     """
     endpoint = (
         f"https://api.github.com/repos/{owner}/{repo}/actions/workflows/render.yml/runs"
@@ -1106,7 +1141,12 @@ def _render_status(
     in_flight = [run for run in candidates.values() if run.get("status") != "completed"]
     if in_flight:
         run = max(in_flight, key=_created)
-        return "pending", f"Render workflow is {run.get('status') or 'pending'}."
+        status = run.get("status") or "pending"
+        return "deferred", (
+            f"Render run {run.get('id')} is {status} and covers this merge; completion "
+            "is deferred to the shared coalescing lane, with the nightly scope=all "
+            "re-render as backstop."
+        )
 
     newest = max(candidates.values(), key=_created)
     return "failed", (
@@ -1148,32 +1188,62 @@ def _block(
     code: str,
     reason: str,
 ) -> None:
-    """Block Stop, except after a repeated and explicitly reported external blocker."""
+    """Block Stop, except when a reported blocker has ping-ponged past the ceiling.
+
+    Two escape ladders, both requiring an explicit `SHIP LOOP BLOCKED:` report with
+    stop_hook_active set, so a session cannot bail on the first attempt:
+
+    - EXTERNAL codes escape at 2 CONSECUTIVE or 3 CUMULATIVE external blocks. The
+      cumulative arm is what the field forced: a session ping-ponging
+      render_pending -> github_rate_limited -> render_pending resets the
+      consecutive counter every hop, so `blocker_count >= 2` alone never armed and
+      one session refused Stop 245 times on render_failed while genuinely blocked.
+    - ANY code (including the internal ones — unmerged/unpushed/uncommitted/
+      unsafe_branch/guard_error) escapes at 10 CONSECUTIVE or 15 TOTAL blocks.
+      Internal codes had NO escape at all, which produced an observed 258x infinite
+      loop on `unmerged` (a zero-diff stand-down whose chain was unsatisfiable). The
+      internal ceiling is deliberately high — it is a last-resort loop breaker, not
+      a routine exit — and every earlier gate (the stand-down exemption, the
+      deferred-render acceptance below) exists to keep a healthy session from ever
+      reaching it.
+
+    `last_blocker`/`blocker_count` track the CONSECUTIVE same-code run and are left
+    exactly as they were. `total_blocks` and `external_blocks` are cumulative and
+    are NEVER reset within a session, so a ping-pong cannot erase them.
+    """
     previous = state.get("last_blocker")
     count = int(state.get("blocker_count") or 0) + 1 if previous == code else 1
     state["last_blocker"] = code
     state["blocker_count"] = count
+    total_blocks = int(state.get("total_blocks") or 0) + 1
+    state["total_blocks"] = total_blocks
+    external_blocks = int(state.get("external_blocks") or 0)
+    if code in EXTERNAL_BLOCKERS:
+        external_blocks += 1
+        state["external_blocks"] = external_blocks
     _save(path, state)
     final = str(payload.get("last_assistant_message") or "").lstrip()
-    if (
-        code in EXTERNAL_BLOCKERS
-        and payload.get("stop_hook_active")
-        and count >= 2
-        and final.startswith("SHIP LOOP BLOCKED:")
-    ):
+    reported = bool(payload.get("stop_hook_active")) and final.startswith("SHIP LOOP BLOCKED:")
+    external_escape = code in EXTERNAL_BLOCKERS and (count >= 2 or external_blocks >= 3)
+    any_code_escape = count >= 10 or total_blocks >= 15
+    if reported and (external_escape or any_code_escape):
         return
-    _emit(
-        {
-            "decision": "block",
-            "reason": (
-                f"SHIP LOOP {code}: {reason}\n"
-                "Continue the task and complete commit → push → PR → CI → squash-merge → "
-                "render/deploy → live verification. If the same genuine external blocker "
-                "persists after another attempt, finish with `SHIP LOOP BLOCKED:` and the "
-                "specific evidence."
-            ),
-        }
+    # The escape hint is only inviting when an escape is plausibly one attempt away:
+    # an external code (its ceiling is low), or an internal code already near the
+    # any-code ceiling. Offering it to a fresh internal block would invite a bailout
+    # long before the loop breaker is meant to arm.
+    escape_hint = code in EXTERNAL_BLOCKERS or count >= 9 or total_blocks >= 14
+    body = (
+        f"SHIP LOOP {code}: {reason}\n"
+        "Continue the task and complete commit → push → PR → CI → squash-merge → "
+        "render/deploy → live verification."
     )
+    if escape_hint:
+        body += (
+            " If the same genuine blocker persists after another attempt, "
+            "finish with `SHIP LOOP BLOCKED:` and the specific evidence."
+        )
+    _emit({"decision": "block", "reason": body})
 
 
 def _session_start(root: Path, path: Path, payload: dict[str, Any]) -> None:
@@ -1186,6 +1256,8 @@ def _session_start(root: Path, path: Path, payload: dict[str, Any]) -> None:
             "baseline": _fingerprint(root),
             "last_blocker": "",
             "blocker_count": 0,
+            "total_blocks": 0,
+            "external_blocks": 0,
         }
         _save(path, state)
     _emit(
@@ -1435,15 +1507,25 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
             return
         _remember_proof(path, state, "origin_main", merge_sha, True)
 
+    render_note = ""
     needs_render = _needs_render(root, merge_sha, str(state.get("start_head")), head)
     if needs_render:
-        if _proof(state, "render", merge_sha) is None:
+        render_proof = _proof(state, "render", merge_sha)
+        if render_proof is None:
             try:
                 status, detail = _render_status(root, owner, repo, merge_sha, merged_at)
             except Exception as exc:
                 _block(path, state, payload, _github_block_code(exc), str(exc))
                 return
-            if status != "success":
+            if status == "deferred":
+                # An in-flight covering run satisfies the gate: the merge is already
+                # live via the VPS's 3-min pull, and the shared coalescing lane (with
+                # the nightly scope=all re-render as backstop) owns the re-bake. Record
+                # the deferral so a later Stop turn reads it back and so the audit
+                # systemMessage below can name it. Fall through to the live gate.
+                _remember_proof(path, state, "render", merge_sha, {"deferred": detail})
+                render_note = detail
+            elif status != "success":
                 _block(
                     path,
                     state,
@@ -1452,7 +1534,10 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
                     detail,
                 )
                 return
-            _remember_proof(path, state, "render", merge_sha, True)
+            else:
+                _remember_proof(path, state, "render", merge_sha, True)
+        elif isinstance(render_proof, dict) and "deferred" in render_proof:
+            render_note = str(render_proof.get("deferred") or "")
 
     try:
         deployed = _find_commit(_get_json(LIVE_HEALTH_URL))
@@ -1464,14 +1549,24 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
         _block(path, state, payload, "live_stale", f"Production does not yet contain the merge: {exc}")
         return
 
+    audit: list[str] = []
     if ci_reason:
         # A pass that rests on excluded reds is a judgement call; the operator has
-        # to be able to audit which checks were ignored and on what evidence. It is
-        # emitted only here, once every later gate has passed: hook stdout must
-        # stay a single JSON object, and a systemMessage line ahead of a later
-        # block line would make the whole output unparseable — silently defeating
-        # that block, the one direction this guard may never fail.
-        _emit({"systemMessage": f"Ship-loop CI gate: {ci_reason}"})
+        # to be able to audit which checks were ignored and on what evidence.
+        audit.append(f"Ship-loop CI gate: {ci_reason}")
+    if render_note:
+        # Likewise a render this Stop DEFERRED rather than waited for: the operator
+        # must be able to see that the shared lane still owes a re-bake (nightly
+        # scope=all is the backstop) even though the session was released.
+        audit.append(f"Ship-loop render gate: {render_note}")
+    if audit:
+        # Emitted only here, once every later gate has passed, and as ONE combined
+        # object: hook stdout must stay a single JSON value, and a systemMessage
+        # line ahead of a later block line would make the whole output unparseable
+        # — silently defeating that block, the one direction this guard may never
+        # fail. Every path that reaches this point is a clean stop with no block to
+        # follow, so the invariant holds.
+        _emit({"systemMessage": " | ".join(audit)})
 
     try:
         path.unlink()
@@ -1496,14 +1591,27 @@ def main() -> None:
             _stop(root, path, payload)
     except Exception as exc:
         # A broken enforcement hook must be visible, but must not brick Claude.
+        # Route the guard_error through `_block` so the any-code escape ladder can
+        # release a PERSISTENTLY crashing guard — a bug in the hook itself used to
+        # brick a session forever, with no counter and no exit. guard_error stays
+        # OUT of EXTERNAL_BLOCKERS, so it is escapable only via the 10-consecutive /
+        # 15-total any-code ceiling, never the low external one.
         if event == "Stop":
+            reason = (
+                "The completion guard failed unexpectedly: "
+                f"{exc}. Repair `.claude/hooks/ship_loop_guard.py` before stopping."
+            )
+            state = _load(path)
+            if state is not None:
+                try:
+                    _block(path, state, payload, "guard_error", reason)
+                    return
+                except Exception:
+                    pass
             _emit(
                 {
                     "decision": "block",
-                    "reason": (
-                        "SHIP LOOP guard_error: The completion guard failed unexpectedly: "
-                        f"{exc}. Repair `.claude/hooks/ship_loop_guard.py` before stopping."
-                    ),
+                    "reason": f"SHIP LOOP guard_error: {reason}",
                 }
             )
 

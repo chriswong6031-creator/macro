@@ -139,7 +139,7 @@ their own.
 The contract is actively enforced for Claude by the tracked `SessionStart` and
 `Stop` hook in `.claude/hooks/ship_loop_guard.py`. It snapshots pre-existing dirty
 files, then refuses a normal stop while session-created work is uncommitted,
-unpushed, unmerged, waiting on the required render, or absent from production.
+unpushed, unmerged, awaiting a render, or absent from production.
 Codex must follow the same chain directly from this file. A genuine repeated
 external blocker must be reported as `SHIP LOOP BLOCKED:` with concrete evidence;
 ordinary local cleanup, authentication setup, and waiting are not blockers.
@@ -149,3 +149,18 @@ green ci.yml run on a main descendant) is excluded by name rather than pinning t
 session forever; the operator lever for a healed base is
 `gh workflow run ci.yml --ref main` — one green dispatched run clears every pinned
 merge at once. Unknown or lone-sibling evidence stays `ci_failed` (fail-closed).
+
+An IN-FLIGHT covering render DEFERS rather than blocks (operator ruling
+2026-07-27): a queued or running render whose head covers this merge satisfies the
+render gate and the session proceeds to the live check, because the VPS pulls main
+every 3 minutes so the merge is live regardless, the shared lane owns the re-bake,
+house law forbids a waiting session from cancelling or re-running it, and the
+nightly `scope=all` re-render is the backstop. A render lane that NEVER started
+(the dead-wire trap) or that concluded FAILED with no in-flight successor still
+blocks. Every blocker also carries an escape ladder so an unsatisfiable gate can no
+longer trap a session indefinitely: an EXTERNAL blocker escapes at 2 consecutive OR
+3 cumulative external blocks; ANY code (including the internal ones —
+unmerged/unpushed/uncommitted/unsafe_branch/guard_error) escapes at 10 consecutive
+OR 15 total blocks. Every escape still requires an explicit `SHIP LOOP BLOCKED:`
+evidence report with `stop_hook_active` set, so a session cannot bail on the first
+attempt.

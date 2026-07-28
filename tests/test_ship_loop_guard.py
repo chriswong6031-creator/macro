@@ -1278,8 +1278,15 @@ def test_a_superseded_train_member_is_covered_by_a_later_descendant_render(monke
     assert len(urls) == 2, "the descendant scan costs exactly one extra call"
 
 
-def test_an_in_flight_descendant_render_holds_the_verdict_at_pending(monkeypatch, tmp_path):
-    """A running render may still deliver coverage; that is pending, never failed."""
+def test_an_in_flight_descendant_render_defers_rather_than_blocks(monkeypatch, tmp_path):
+    """An in-flight covering run is coverage-in-progress, not a wall.
+
+    The operator ruling of 2026-07-27: the VPS pulls main every 3 minutes so the
+    merge is live regardless, the shared lane owns the re-bake, and house law
+    forbids a waiting session from touching it — so a queued/running covering run
+    now yields ``deferred`` (satisfied by ``_stop``), never ``pending`` (which
+    only means the lane never fired) or ``failed``.
+    """
     repo, _parent, merge, descendant = _merge_train(tmp_path)
     _fake_render_api(
         monkeypatch,
@@ -1289,8 +1296,23 @@ def test_an_in_flight_descendant_render_holds_the_verdict_at_pending(monkeypatch
         ],
     )
     status, detail = GUARD._render_status(repo, "acme", "widgets", merge, _MERGED_AT)
-    assert status == "pending"
+    assert status == "deferred"
     assert "in_progress" in detail
+    assert "2" in detail, "the deferral names the covering run id"
+    assert "coalescing lane" in detail and "nightly scope=all" in detail
+
+
+def test_an_exact_sha_render_still_in_flight_also_defers(monkeypatch, tmp_path):
+    """The deferral is not descendant-only: a queued run at the merge sha covers it too."""
+    repo, _parent, merge, _descendant = _merge_train(tmp_path)
+    _fake_render_api(
+        monkeypatch,
+        exact=[_render_run(77, merge, "push", "2026-07-26T06:11:38Z", "queued")],
+        branch=[],
+    )
+    status, detail = GUARD._render_status(repo, "acme", "widgets", merge, _MERGED_AT)
+    assert status == "deferred"
+    assert "queued" in detail and "77" in detail
 
 
 def test_a_failed_descendant_render_blocks_and_a_pre_merge_success_cannot_rescue_it(
@@ -1521,6 +1543,102 @@ def test_stop_reuses_render_proof_while_production_catches_up(monkeypatch, tmp_p
     assert calls == {"pull": 1, "ci": 1, "render": 1, "health": 2}
     proofs = json.loads(state_path.read_text(encoding="utf-8"))["ship_proofs"]
     assert set(proofs) >= {"merged_pull", "ci", "origin_main", "render"}
+
+
+def test_stop_defers_an_in_flight_render_and_proceeds_to_the_live_gate(
+    monkeypatch, tmp_path, capsys
+):
+    """An in-flight covering render must NOT hold the session at the render gate.
+
+    Operator ruling 2026-07-27: `_render_status` returns ``deferred``, `_stop`
+    remembers the render proof carrying that note, falls through to the (green)
+    live gate, and the clean stop emits a systemMessage naming the deferral — no
+    block line anywhere.
+    """
+    repo, state_path = _session_repo(tmp_path)
+    monkeypatch.setattr(GUARD, "_github_slug", lambda _root: ("acme", "widgets"))
+    monkeypatch.setattr(GUARD, "_latest_merged_pr", lambda *_a: _MERGED_PR)
+    monkeypatch.setattr(GUARD, "_check_ci", lambda *_a, **_k: (True, ""))
+    monkeypatch.setattr(GUARD, "_needs_render", lambda *_a: True)
+    deferral = (
+        "Render run 30193723520 is in_progress and covers this merge; completion is "
+        "deferred to the shared coalescing lane, with the nightly scope=all re-render "
+        "as backstop."
+    )
+    monkeypatch.setattr(GUARD, "_render_status", lambda *_a: ("deferred", deferral))
+    monkeypatch.setattr(
+        GUARD, "_get_json", lambda _url: {"commit": _git(repo, "rev-parse", "HEAD")}
+    )
+    _stub_remote_git(monkeypatch)
+
+    GUARD._stop(repo, state_path, {"hook_event_name": "Stop"})
+
+    lines = [json.loads(line) for line in capsys.readouterr().out.splitlines() if line.strip()]
+    assert not any(line.get("decision") == "block" for line in lines), lines
+    assert any(deferral in str(line.get("systemMessage") or "") for line in lines), lines
+    # The proof persists the deferral so a later Stop reads it back without repolling.
+    assert not state_path.exists() or json.loads(state_path.read_text(encoding="utf-8"))
+
+
+def test_stop_reads_a_persisted_render_deferral_and_still_notes_it(monkeypatch, tmp_path, capsys):
+    """A render deferred on an earlier Stop must not be re-polled — and must still audit.
+
+    The proof value is a dict carrying ``deferred``; `_stop` reads it back, skips
+    `_render_status` entirely, and folds the note into the systemMessage.
+    """
+    repo, state_path = _session_repo(tmp_path)
+    monkeypatch.setattr(GUARD, "_github_slug", lambda _root: ("acme", "widgets"))
+    monkeypatch.setattr(GUARD, "_latest_merged_pr", lambda *_a: _MERGED_PR)
+    monkeypatch.setattr(GUARD, "_check_ci", lambda *_a, **_k: (True, ""))
+    monkeypatch.setattr(GUARD, "_needs_render", lambda *_a: True)
+    monkeypatch.setattr(
+        GUARD, "_render_status", lambda *_a: pytest.fail("a persisted deferral must not repoll")
+    )
+    monkeypatch.setattr(
+        GUARD, "_get_json", lambda _url: {"commit": _git(repo, "rev-parse", "HEAD")}
+    )
+    _stub_remote_git(monkeypatch)
+
+    note = "Render run 42 is queued and covers this merge; deferred to the lane."
+    GUARD._remember_proof(
+        state_path,
+        json.loads(state_path.read_text(encoding="utf-8")),
+        "render",
+        "b" * 40,
+        {"deferred": note},
+    )
+
+    GUARD._stop(repo, state_path, {"hook_event_name": "Stop"})
+
+    lines = [json.loads(line) for line in capsys.readouterr().out.splitlines() if line.strip()]
+    assert not any(line.get("decision") == "block" for line in lines), lines
+    assert any(note in str(line.get("systemMessage") or "") for line in lines), lines
+
+
+def test_stop_folds_ci_and_render_notes_into_one_system_message(monkeypatch, tmp_path, capsys):
+    """A single Stop invocation must emit ONE JSON object even with two audit notes.
+
+    Two separate systemMessage lines would break the single-object stdout contract.
+    """
+    repo, state_path = _session_repo(tmp_path)
+    ci_note = "Ignored base-side CI: ci-pack-1 (failure) — two independent heads."
+    deferral = "Render run 9 is in_progress and covers this merge; deferred to the lane."
+    monkeypatch.setattr(GUARD, "_github_slug", lambda _root: ("acme", "widgets"))
+    monkeypatch.setattr(GUARD, "_latest_merged_pr", lambda *_a: _MERGED_PR)
+    monkeypatch.setattr(GUARD, "_check_ci", lambda *_a, **_k: (True, ci_note))
+    monkeypatch.setattr(GUARD, "_needs_render", lambda *_a: True)
+    monkeypatch.setattr(GUARD, "_render_status", lambda *_a: ("deferred", deferral))
+    monkeypatch.setattr(
+        GUARD, "_get_json", lambda _url: {"commit": _git(repo, "rev-parse", "HEAD")}
+    )
+    _stub_remote_git(monkeypatch)
+
+    GUARD._stop(repo, state_path, {"hook_event_name": "Stop"})
+
+    raw = [line for line in capsys.readouterr().out.splitlines() if line.strip()]
+    assert len(raw) == 1, f"stdout must stay a single JSON object, got {raw}"
+    message = json.loads(raw[0])["systemMessage"]
+    assert ci_note in message and deferral in message
 
 
 def test_a_merged_branch_deleted_on_merge_is_not_reported_as_unpushed(
@@ -1855,6 +1973,232 @@ def test_branch_was_pushed_fails_closed_when_git_cannot_answer(tmp_path):
     assert GUARD._branch_was_pushed(repo, "claude/never-pushed") is False
     assert GUARD._branch_was_pushed(repo, "") is True, "an unknown branch is not a stand-down"
     assert GUARD._branch_was_pushed(tmp_path / "not-a-repo", "claude/x") is True
+
+
+# --- escape ladders (operator ruling 2026-07-27: fix the traps, keep the gate) ---
+
+_REPORTED = "SHIP LOOP BLOCKED: the same external blocker persists with evidence.\n"
+
+
+def _block_state(tmp_path: Path) -> Path:
+    """A fresh guard-state file carrying the four counters _block maintains."""
+    path = tmp_path / "block-state.json"
+    GUARD._save(
+        path,
+        {
+            "root": str(tmp_path),
+            "start_head": "0" * 40,
+            "baseline": {},
+            "last_blocker": "",
+            "blocker_count": 0,
+            "total_blocks": 0,
+            "external_blocks": 0,
+        },
+    )
+    return path
+
+
+def _drive_block(path: Path, capsys, code: str, payload: dict) -> bool:
+    """Run one _block against the CURRENT on-disk state; return True if it ESCAPED.
+
+    State is reloaded each call exactly as `_stop` does, so cumulative counters are
+    read back from disk rather than inherited from a live dict.
+    """
+    state = GUARD._load(path)
+    GUARD._block(path, state, payload, code, f"reason for {code}")
+    return capsys.readouterr().out.strip() == ""
+
+
+def test_external_ping_pong_escapes_on_the_third_cumulative_external_block(tmp_path, capsys):
+    """The new cumulative arm. Alternating external codes reset the CONSECUTIVE
+    counter every hop, so the old `count >= 2` rule never armed — a session
+    ping-ponging render_pending -> github_rate_limited -> render_pending was
+    trapped. `external_blocks >= 3` breaks that loop."""
+    path = _block_state(tmp_path)
+    reported = {"stop_hook_active": True, "last_assistant_message": _REPORTED}
+    codes = ["render_pending", "github_rate_limited", "render_failed"]
+    escapes = [_drive_block(path, capsys, code, reported) for code in codes]
+    assert escapes == [False, False, True], escapes
+    state = GUARD._load(path)
+    assert state["external_blocks"] == 3 and state["blocker_count"] == 1
+
+
+def test_two_consecutive_external_blocks_still_escape(tmp_path, capsys):
+    """The pre-existing consecutive-external arm must keep working unchanged."""
+    path = _block_state(tmp_path)
+    reported = {"stop_hook_active": True, "last_assistant_message": _REPORTED}
+    assert _drive_block(path, capsys, "render_pending", reported) is False
+    assert _drive_block(path, capsys, "render_pending", reported) is True
+    state = GUARD._load(path)
+    assert state["blocker_count"] == 2 and state["external_blocks"] == 2
+
+
+def test_internal_unmerged_is_refused_at_nine_and_escapes_at_ten(tmp_path, capsys):
+    """Internal codes had NO escape — the 258x infinite loop on `unmerged`.
+
+    The any-code loop breaker arms at 10 CONSECUTIVE blocks, never before."""
+    path = _block_state(tmp_path)
+    reported = {"stop_hook_active": True, "last_assistant_message": _REPORTED}
+    for _ in range(9):
+        assert _drive_block(path, capsys, "unmerged", reported) is False
+    assert GUARD._load(path)["blocker_count"] == 9
+    assert _drive_block(path, capsys, "unmerged", reported) is True
+    assert GUARD._load(path)["blocker_count"] == 10
+
+
+def test_total_blocks_ceiling_escapes_a_mixed_internal_loop(tmp_path, capsys):
+    """15 total blocks escape even when no single code reaches its consecutive
+    ceiling — the mixed-code loop that the consecutive counters alone miss."""
+    path = _block_state(tmp_path)
+    reported = {"stop_hook_active": True, "last_assistant_message": _REPORTED}
+    # Alternate two internal codes so neither consecutive run passes ~7, and no
+    # code is external, so only total_blocks can arm the escape.
+    codes = ["unmerged", "unpushed"]
+    escapes = [
+        _drive_block(path, capsys, codes[index % 2], reported) for index in range(15)
+    ]
+    assert escapes[:14] == [False] * 14, escapes
+    assert escapes[14] is True
+    state = GUARD._load(path)
+    assert state["total_blocks"] == 15 and state["external_blocks"] == 0
+
+
+def test_the_escape_never_arms_without_the_reported_phrase(tmp_path, capsys):
+    """No counter releases a session that has not filed `SHIP LOOP BLOCKED:`."""
+    path = _block_state(tmp_path)
+    # stop_hook_active set, but the final message is NOT the report.
+    unreported = {"stop_hook_active": True, "last_assistant_message": "done for now"}
+    for _ in range(30):
+        assert _drive_block(path, capsys, "unmerged", unreported) is False
+    # Well past both the consecutive (10) and total (15) ceilings, still blocking.
+    assert GUARD._load(path)["total_blocks"] == 30
+
+    # And a reported message without stop_hook_active is equally inert.
+    path = _block_state(tmp_path)
+    no_active = {"stop_hook_active": False, "last_assistant_message": _REPORTED}
+    for _ in range(20):
+        assert _drive_block(path, capsys, "render_pending", no_active) is False
+
+
+def test_the_escape_hint_is_gated_by_proximity_to_the_ceiling(tmp_path, capsys):
+    """A fresh internal block must NOT invite `SHIP LOOP BLOCKED:` — that offer is
+    only made when an escape is plausibly one attempt away (external code, or an
+    internal code near its ceiling). External codes always carry the hint."""
+    path = _block_state(tmp_path)
+    payload = {"stop_hook_active": True, "last_assistant_message": "still working"}
+
+    GUARD._block(path, GUARD._load(path), payload, "unmerged", "no merged PR yet")
+    reason = json.loads(capsys.readouterr().out.strip())["reason"]
+    assert "SHIP LOOP BLOCKED:" not in reason, "a low-count internal block must not invite bailout"
+    assert "Continue the task" in reason
+
+    # An external code at count 1 DOES carry the hint (its ceiling is low).
+    path = _block_state(tmp_path)
+    GUARD._block(path, GUARD._load(path), payload, "render_pending", "still rendering")
+    reason = json.loads(capsys.readouterr().out.strip())["reason"]
+    assert "SHIP LOOP BLOCKED:" in reason
+
+
+def test_the_escape_hint_appears_as_an_internal_code_nears_the_ceiling(tmp_path, capsys):
+    """At consecutive count 9 (one below the 10 escape) the hint is offered."""
+    path = _block_state(tmp_path)
+    payload = {"stop_hook_active": True, "last_assistant_message": "still working"}
+    for _ in range(8):
+        GUARD._block(path, GUARD._load(path), payload, "unmerged", "no merged PR yet")
+        capsys.readouterr()
+    # The 9th block: count reaches 9, escape_hint arms, but the escape itself does not.
+    GUARD._block(path, GUARD._load(path), payload, "unmerged", "no merged PR yet")
+    reason = json.loads(capsys.readouterr().out.strip())["reason"]
+    assert "SHIP LOOP BLOCKED:" in reason
+    assert GUARD._load(path)["blocker_count"] == 9
+
+
+def _guard_error_payload(**extra) -> dict:
+    base = {"hook_event_name": "Stop"}
+    base.update(extra)
+    return base
+
+
+def test_guard_error_routes_through_the_counters_and_escapes_at_the_ceiling(
+    monkeypatch, tmp_path, capsys
+):
+    """A persistently crashing guard used to brick a session forever with no exit.
+
+    `main()` now routes the Stop-event exception through `_block("guard_error", …)`,
+    so the any-code ceiling can release it once the session files the report.
+    guard_error is NOT external, so only the 10-consecutive / 15-total ladder frees
+    it — never the low external one.
+    """
+    assert "guard_error" not in GUARD.EXTERNAL_BLOCKERS
+
+    repo = _repo(tmp_path)
+    state_path = GUARD._state_path(repo, {"session_id": "guard-error-test"})
+    GUARD._save(
+        state_path,
+        {
+            "root": str(repo),
+            "start_head": _git(repo, "rev-parse", "HEAD"),
+            "baseline": {},
+            "last_blocker": "",
+            "blocker_count": 0,
+            "total_blocks": 0,
+            "external_blocks": 0,
+        },
+    )
+
+    monkeypatch.setattr(GUARD, "_repo_root", lambda _payload: repo)
+    monkeypatch.setattr(GUARD, "_state_path", lambda _root, _payload: state_path)
+
+    def explode(*_a, **_k):
+        raise RuntimeError("the guard itself crashed")
+
+    monkeypatch.setattr(GUARD, "_stop", explode)
+
+    reported = _REPORTED
+    payload = _guard_error_payload(stop_hook_active=True, last_assistant_message=reported)
+
+    def run_once() -> str:
+        monkeypatch.setattr(
+            GUARD.sys, "stdin", type("S", (), {"read": staticmethod(lambda: json.dumps(payload))})()
+        )
+        monkeypatch.setattr(GUARD.json, "load", lambda _stream: payload)
+        GUARD.main()
+        return capsys.readouterr().out.strip()
+
+    # First nine crashes are refused, and each increments the shared counters.
+    for _ in range(9):
+        out = run_once()
+        emitted = json.loads(out)
+        assert emitted["decision"] == "block"
+        assert "guard_error" in emitted["reason"]
+    assert GUARD._load(state_path)["blocker_count"] == 9
+
+    # The tenth crash, with the report filed, is released by the any-code ceiling.
+    assert run_once() == "", "a persistently crashing guard must be escapable at the ceiling"
+    assert GUARD._load(state_path)["total_blocks"] == 10
+
+
+def test_guard_error_falls_back_to_a_plain_block_when_state_cannot_load(monkeypatch, tmp_path):
+    """If `_load` returns None (no state file), the plain guard_error block still fires."""
+    repo = _repo(tmp_path)
+    missing = tmp_path / "does-not-exist.json"
+    monkeypatch.setattr(GUARD, "_repo_root", lambda _payload: repo)
+    monkeypatch.setattr(GUARD, "_state_path", lambda _root, _payload: missing)
+    monkeypatch.setattr(GUARD, "_stop", lambda *_a: (_ for _ in ()).throw(RuntimeError("boom")))
+
+    payload = {"hook_event_name": "Stop"}
+    monkeypatch.setattr(GUARD.json, "load", lambda _stream: payload)
+    monkeypatch.setattr(GUARD.sys, "stdin", type("S", (), {"read": staticmethod(lambda: "{}")})())
+
+    import io
+    import contextlib
+
+    buffer = io.StringIO()
+    with contextlib.redirect_stdout(buffer):
+        GUARD.main()
+    emitted = json.loads(buffer.getvalue().strip())
+    assert emitted["decision"] == "block"
+    assert "guard_error" in emitted["reason"] and "boom" in emitted["reason"]
 
 
 def test_settings_wire_session_start_and_stop():
