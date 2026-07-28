@@ -3133,6 +3133,20 @@ jobs:
         run: python -m pytest tests/test_free_content.py -q
       - name: committed estate must match a fresh render (template↔site drift law)
         run: python -m scripts.build_free_content --check
+      # SECOND home for this suite, and the only one where all of it RUNS.
+      # tests/test_externalize_css.py also runs in template-site-sync, whose
+      # `pip install pyyaml pytest` deliberately has no jinja2 — so its
+      # cross-module test (externalize_css and build_free_content must share ONE
+      # HAND_AUTHORED frozenset, never a copy) importorskips there and executed
+      # in ZERO jobs: a SKIP-ONLY suite, the #3703 / #3722→#3738→#3760 class that
+      # scripts/check_skip_only_suites.py exists to catch. It caught this one.
+      # This job already installs jinja2 and already owns the estate contract the
+      # shared constant belongs to, so the pairing is free (no new dependency).
+      # Do NOT "de-duplicate" this by deleting it because the suite is named
+      # above in template-site-sync: that lane runs the other 27 tests in a thin
+      # venv and re-darkens the jinja2 one the moment this step goes away.
+      - name: inline-CSS externalization units (incl. the jinja2 cross-module gate)
+        run: python -m pytest tests/test_externalize_css.py -q
 
   press-lane:
     if: ${{ false }}  # executed inside ci-pack; keep the legacy status definition runner-free

@@ -355,3 +355,11 @@ jobs:
         run: python -m pytest tests/test_free_content.py -q
       - name: committed estate must match a fresh render (template↔site drift law)
         run: python -m scripts.build_free_content --check
+      # Mirrors legacy-jobs.yml::free-content-estate — see the long note there.
+      # Short version: this suite's jinja2-gated cross-module test (externalize_css
+      # and build_free_content must share ONE HAND_AUTHORED frozenset) skips in
+      # template-site-sync above, whose venv has no jinja2, so without this step it
+      # executes in no job at all. This job already installs jinja2; the pairing is
+      # free. Deleting it as a duplicate re-creates the SKIP-ONLY class.
+      - name: inline-CSS externalization units (incl. the jinja2 cross-module gate)
+        run: python -m pytest tests/test_externalize_css.py -q
