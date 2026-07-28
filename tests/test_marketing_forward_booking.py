@@ -233,6 +233,31 @@ class TestBackfillSidecarLedger:
                                {key: "https://a.example/aapl.png"})
         assert got == ["https://a.example/aapl.png"]
 
+    def test_r2_key_is_content_addressed_not_the_build_counter(self):
+        """chart_id is a per-BUILD counter, not an identity: rebuild a day and
+        `chart-001` names a different ticker than it did that morning. Keying the
+        upload on chart_id alone (media_publish.chart_key) would PUT the new
+        render over the object an already-stamped item points at, and that older
+        post would silently start attaching someone else's chart. Real collision
+        on 2026-07-28: chart-001 was EQT to the nightly and CBOE to the rebuild.
+        """
+        from engine.marketing import media_publish
+        from scripts.marketing_media_backfill import r2_key_for
+
+        eqt = r2_key_for("2026-07-28", "chart-001", b"<eqt render bytes>")
+        cbo = r2_key_for("2026-07-28", "chart-001", b"<cboe render bytes>")
+        assert eqt != cbo, "same key for different artwork — the clobber is back"
+        assert eqt != media_publish.chart_key("2026-07-28", "chart-001"), (
+            "backfill must not reuse content_studio's key; that IS the clobber"
+        )
+        # Deterministic: re-running the backfill re-derives the same object.
+        assert r2_key_for("2026-07-28", "chart-001", b"<eqt render bytes>") == eqt
+        # Byte-identical cards still share one object (no pointless re-upload).
+        assert r2_key_for("2026-07-28", "chart-009", b"same") == \
+            r2_key_for("2026-07-28", "chart-009", b"same")
+        assert eqt.startswith(f"{media_publish.R2_MARKETING_PREFIX}/2026-07-28/chart-001-")
+        assert eqt.endswith(".png")
+
     def test_only_entries_without_a_public_url_are_selected(self):
         from scripts.marketing_media_backfill import _iter_missing
 

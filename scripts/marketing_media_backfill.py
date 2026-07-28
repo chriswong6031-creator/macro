@@ -85,6 +85,29 @@ def media_key(as_of: str, chart_id: str) -> str:
     return f"{str(as_of or '').strip()}/{str(chart_id or '').strip()}"
 
 
+def r2_key_for(as_of: str, chart_id: str, png_bytes: bytes) -> str:
+    """CONTENT-ADDRESSED R2 key: .../<as_of>/<chart_id>-<sha8>.png.
+
+    NOT media_publish.chart_key(). chart_id is a per-BUILD counter, not an
+    identity: rebuild a day and `chart-001` means a different ticker than it did
+    that morning. content_studio's key would then have this backfill PUT the new
+    render over the object an already-stamped item points at — the older post
+    keeps its URL and silently starts attaching someone else's chart. (Real
+    collision, 2026-07-28: chart-001 was EQT to the nightly and CBOE to the
+    rebuild; chart-002 was ROST and SONO.) Hashing the bytes makes the clobber
+    structurally impossible, keeps re-runs idempotent, and still lets two items
+    with a byte-identical card share one object.
+    """
+    import hashlib
+
+    from engine.marketing import media_publish  # noqa: PLC0415
+
+    digest = hashlib.sha256(png_bytes).hexdigest()[:8]
+    safe_as_of = (str(as_of or "").strip() or "unknown").replace("/", "-")
+    safe_id = (str(chart_id or "").strip() or "chart").replace("/", "-")
+    return f"{media_publish.R2_MARKETING_PREFIX}/{safe_as_of}/{safe_id}-{digest}.png"
+
+
 def _iter_missing(items: list[dict], as_of: str | None) -> list[tuple[dict, dict]]:
     """[(item, media_entry)] for every media entry with no public media_url.
 
@@ -139,9 +162,24 @@ def main() -> int:
         k = media_key(as_of, chart_id)
         if k in already:
             continue          # a previous run already published this one
-        todo.setdefault(k, {"as_of": as_of, "chart_id": chart_id,
-                            "svg_path": str(m.get("path") or ""),
-                            "png_path": str(m.get("media_png_path") or "")})
+        spec = {"as_of": as_of, "chart_id": chart_id,
+                "svg_path": str(m.get("path") or ""),
+                "png_path": str(m.get("media_png_path") or "")}
+        prior = todo.get(k)
+        if prior is not None:
+            # The sidecar is a flat as_of/chart_id map, so two UNSTAMPED items
+            # sharing a chart_id but pointing at different artwork cannot both be
+            # recorded — one would silently inherit the other's chart. Same
+            # per-build-counter root cause as the R2 clobber r2_key_for guards
+            # (chart_id is not an identity). Publish the first, say so, and leave
+            # the second text-only: a missing image beats a wrong one.
+            if prior["svg_path"] != spec["svg_path"]:
+                print(f"::warning title=media-backfill-chart-id-collision::"
+                      f"{k} names two different charts ({prior['svg_path']} and "
+                      f"{spec['svg_path']}); publishing the first, second stays "
+                      f"text-only", flush=True)
+            continue
+        todo[k] = spec
 
     log.info("outbox: %d items, %d media entries lack a public URL, %d already in the "
              "sidecar, %d distinct charts to publish",
@@ -180,7 +218,7 @@ def main() -> int:
                 failed += 1
                 continue
 
-        r2_key = media_publish.chart_key(spec["as_of"], spec["chart_id"])
+        r2_key = r2_key_for(spec["as_of"], spec["chart_id"], png_bytes)
         url = media_publish.publish_chart_png(png_bytes, r2_key)
         if not url:
             log.warning("%s: upload returned no URL — skipping", k)
