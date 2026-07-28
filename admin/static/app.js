@@ -5179,6 +5179,10 @@ function obxReceiptLine(r) {
    controls work off decided state without re-fetching per keystroke. Cleared and
    rebuilt on every render. */
 let OBX_LAST = null;
+/* Last rejection-box payload — module-scoped because obxRenderLive re-renders
+   the live zone (in-place refreshes) without refetching rejections; a reject
+   triggers a full remount, which is where this refreshes. */
+let OBX_REJ = null;
 /* Active client-side filters, kept across in-place refreshes so a decision never
    snaps the operator back to "all desks / all kinds". */
 let OBX_ACTIVE_DESK = "all";
@@ -5230,8 +5234,8 @@ RENDER.marketing_outbox = async () => {
   if (!d || !d.ok) { v.innerHTML = nwEmpty("Outbox unavailable", (d && d.error) || "panel error"); return; }
   OBX_LAST = d;
   /* Fail-soft: the rejection box must never take the Outbox down with it. */
-  let rejBox = null;
-  try { rejBox = await api("/api/marketing/rejections"); } catch (e) { rejBox = null; }
+  OBX_REJ = null;
+  try { OBX_REJ = await api("/api/marketing/rejections"); } catch (e) { OBX_REJ = null; }
 
   const cap = d.cap != null ? d.cap : "—";
   const asOf = d.as_of || null;
@@ -5460,7 +5464,7 @@ function obxRenderLive(d) {
   live.innerHTML = obxSentinelCard(sentinel, cap) + commandBar + tiles
     + obxActivityStrip(activity)
     + filterChips + acctPills + `<div id="obx-review">${sections}</div>`
-    + obxRejectionBox(rejBox) + decisionHtml + historyHtml;
+    + obxRejectionBox(OBX_REJ) + decisionHtml + historyHtml;
   /* Re-apply any active desk/kind filter (persisted across in-place refreshes). */
   obxApplyDeskFilter();
   obxApplyKindFilter();
