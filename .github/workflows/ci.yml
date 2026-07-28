@@ -1255,6 +1255,20 @@ on:
       # suites assert, and without the entry it would never reach the lane that
       # runs them (test-whitelist-rot).
       - "tests/_xgw6_helpers.py"
+      # X Growth W5 (XG-W5 = IS-W2): the scoring brain — L0 story spine, the six
+      # L1 deterministic features, the P0 garbage gate, and the golden-set /
+      # precision@20 harness. The engine modules are matched by
+      # engine/marketing/** and config/marketing.yml above; the two suites and
+      # the CLI are named so a TEST-ONLY or CLI-ONLY edit still reaches the lanes
+      # that run them. The suites are DELIBERATELY SPLIT: the deterministic core
+      # runs in the thin marketing-engine lane (pytest+pyyaml), and the
+      # optional-dependency near-dup pass runs in marketing-scoring-optional,
+      # which installs datasketch — that suite imports it at MODULE level with no
+      # importorskip, so a missing wheel is red there rather than a silent skip.
+      - "tests/test_marketing_scoring_brain.py"
+      - "tests/test_marketing_scoring_optional_deps.py"
+      - "scripts/marketing_golden_set.py"
+      - "docs/scoring_brain.md"
       # D02 per-post metrics poller + chart-image (PNG) pipeline. The poller
       # reads back Buffer analytics; media_publish uploads chart PNGs to R2;
       # content_studio renders the PNG at plan-build time. engine/marketing/**

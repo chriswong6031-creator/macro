@@ -9,8 +9,26 @@ Enforces:
 - cta_suppress is deterministic keyword-list only (tragedy/human-harm items).
 - market_hours_weight computed from US/Eastern clock — deterministic from `now`.
 
+XG-W5 (the scoring brain, IS-W2) EXTENDS this module rather than forking it:
+``score_item`` now also emits ``_components`` — the L0 story reference plus the
+six deterministic L1 features (engine/marketing/signal_features.py) and the
+ordering ``rank_score``. Three invariants hold and are test-pinned:
+
+  1. ``_components`` IS EMITTED FOR EVERY ITEM, with or without a context. A
+     missing input becomes a named state ("cold-start", "neutral-prior",
+     "absent", "no-context"), never a missing key — that is what makes
+     "features for 100% of ingested items" a checkable claim.
+  2. ``salience`` IS UNCHANGED BY THE L1 LAYER unless the operator explicitly
+     arms demotion, and demotion can only ever LOWER it (the multiplier is
+     clamped at 1.0). No feature can lift an item over a publish floor.
+  3. ``rank_score`` IS AN ORDERING NUMBER ONLY. Nothing downstream compares it to
+     a gate; see the "gate ordering" block in press_lane.run_press_tick.
+
+``_salience_components`` keeps its exact historical shape for every existing
+reader; ``_components["salience"]`` carries the same numbers in the new home.
+
 Public API:
-    score_item(item, *, now=None, universe=None, cfg=None) -> dict
+    score_item(item, *, now=None, universe=None, cfg=None, context=None) -> dict
         Decorates item with relevance fields per schema.
     rank_items(items, *, now=None, universe=None, cfg=None) -> list[dict]
         Returns items sorted by salience desc.
@@ -392,6 +410,32 @@ def _market_hours_weight(now: datetime) -> float:
 # Public API
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _scoring_cfg(cfg: dict | None) -> dict:
+    """The XG-W5 scoring block (``breaking.scoring``); {} when absent."""
+    block = (cfg or {}).get("scoring")
+    return block if isinstance(block, dict) else {}
+
+
+def _demotion_factor(values: dict, scoring_cfg: dict) -> tuple[float, dict]:
+    """A multiplier in (0, 1] — DEMOTION ONLY, hard-clamped at 1.0.
+
+    OFF by default (`scoring.demote_enabled: false`). The clamp is the whole
+    point: whatever the weights say, an L1 feature can only ever move an item
+    DOWN relative to its deterministic salience. A score may never lift an item
+    over the flagship floor, and this is where that is enforced arithmetically
+    rather than by convention.
+    """
+    if not bool(scoring_cfg.get("demote_enabled", False)):
+        return 1.0, {"state": "disabled"}
+    floor = float(scoring_cfg.get("demote_floor", 0.75))
+    key = str(scoring_cfg.get("demote_feature", "corroboration_velocity"))
+    raw = float(values.get(key, 0.0) or 0.0)
+    factor = floor + (1.0 - floor) * max(0.0, min(1.0, raw))
+    factor = min(1.0, max(0.0, factor))
+    return factor, {"state": "armed", "feature": key, "floor": floor,
+                    "factor": round(factor, 6)}
+
+
 def score_item(
     item: dict,
     *,
@@ -399,6 +443,7 @@ def score_item(
     universe: frozenset[str] | None = None,
     cfg: dict | None = None,
     root: Path | str | None = None,
+    context: dict | None = None,
 ) -> dict:
     """Decorate a FeedItem with deterministic relevance fields.
 
@@ -409,7 +454,15 @@ def score_item(
         market_hours_weight: float
         cta_suppress: bool
         relevant: bool
-        _salience_components: dict   (transparent breakdown)
+        _salience_components: dict   (transparent breakdown — historical shape)
+        _components: dict            (XG-W5: salience + L0 story + L1 features)
+        rank_score: float            (XG-W5: ordering only, never a gate input)
+
+    `context` (XG-W5, optional) carries the L0/L1 inputs the press lane owns:
+        {"story": <StorySpine.assign view>, "corpus": SignalCorpus,
+         "authority": AuthorityStore, "tone_lookup": dict}
+    Absent context still produces a full `_components` block, with each feature
+    reporting its own "we have no input" state.
     """
     if now is None:
         now = datetime.now(tz=timezone.utc)
@@ -454,27 +507,89 @@ def score_item(
     sectors = _match_sectors(full_lower)
     macro_keys = _match_macro_keys(full_lower)
 
+    matched = {
+        "tickers": tickers,
+        "sectors": sectors,
+        "macro_keys": macro_keys,
+    }
+    salience_components = {
+        "base": base_sal,
+        "tier_bonus": tier_bonus,
+        "kw_bonus": kw_bonus,
+        "ticker_bonus": ticker_bonus,
+        "market_hours_weight": mhw,
+        "raw": raw_salience,
+        "capped": salience,
+    }
+
+    # ── XG-W5 L1 layer ────────────────────────────────────────────────────────
+    # NEVER RAISES. This runs inside the live wire tick; a feature failure must
+    # degrade to "features_error" in the components block, never stop an item
+    # from being scored, gated and emitted.
+    scoring_cfg = _scoring_cfg(cfg)
+    components: dict = {
+        "scoring_version": "xg-w5.1",
+        "salience": salience_components,
+    }
+    rank = 0.0
+    try:
+        from engine.marketing import signal_features as _sf  # noqa: PLC0415
+
+        ctx = context if isinstance(context, dict) else {}
+        features = _sf.compute_features(
+            item,
+            matched=matched,
+            story=ctx.get("story"),
+            corpus=ctx.get("corpus"),
+            authority=ctx.get("authority"),
+            tone_lookup=ctx.get("tone_lookup"),
+            now=now,
+            cfg=scoring_cfg,
+        )
+        rank, rank_detail = _sf.rank_score(salience, features["values"], cfg=scoring_cfg)
+        factor, demote_detail = _demotion_factor(features["values"], scoring_cfg)
+        # Clamp is load-bearing: demotion may only ever LOWER salience.
+        salience = min(salience, round(salience * min(1.0, factor), 3))
+        salience_components["demotion_factor"] = round(factor, 6)
+        salience_components["capped"] = salience
+        story_view = ctx.get("story") if isinstance(ctx.get("story"), dict) else {}
+        components.update({
+            "features": features["values"],
+            "feature_detail": features["detail"],
+            "rank": rank_detail,
+            "rank_score": rank,
+            "demotion": demote_detail,
+            "context": "present" if ctx else "no-context",
+            "story": {
+                "story_id": story_view.get("story_id", ""),
+                "match": story_view.get("match", ""),
+                "first_seen": story_view.get("first_seen", ""),
+                "source_count": story_view.get("source_count", 0),
+                "tier_mix": story_view.get("tier_mix", {}),
+                "observed_engagement": story_view.get("observed_engagement", {}),
+            },
+        })
+    except Exception as exc:  # noqa: BLE001
+        print(f"::warning title=breaking-relevance-features::"
+              f"{item.get('id', '')}: {type(exc).__name__}: {exc}", flush=True)
+        components["features_error"] = f"{type(exc).__name__}: {exc}"
+        components["features"] = {}
+        components["rank_score"] = 0.0
+
     result = dict(item)
     result.update({
         "event_class": event_class,
         "salience": round(salience, 3),
-        "matched": {
-            "tickers": tickers,
-            "sectors": sectors,
-            "macro_keys": macro_keys,
-        },
+        "matched": matched,
         "market_hours_weight": mhw,
         "cta_suppress": cta_suppress,
         "relevant": salience >= threshold,
-        "_salience_components": {
-            "base": base_sal,
-            "tier_bonus": tier_bonus,
-            "kw_bonus": kw_bonus,
-            "ticker_bonus": ticker_bonus,
-            "market_hours_weight": mhw,
-            "raw": raw_salience,
-            "capped": salience,
-        },
+        "_salience_components": salience_components,
+        # XG-W5: the transparent, greppable breakdown the acceptance gate names.
+        # MARKETING-INTERNAL — no reader of this key is user-facing (the news.html
+        # rail builder copies named display fields, never the components).
+        "_components": components,
+        "rank_score": rank,
     })
     return result
 

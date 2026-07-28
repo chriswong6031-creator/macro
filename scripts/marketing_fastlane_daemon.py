@@ -106,6 +106,15 @@ _PRESS_STATE_PATH = ROOT / "data" / "marketing" / "press" / "state.json"
 _PRESS_SEEN_PATH = ROOT / "data" / "marketing" / "press" / "seen.json"
 _PRESS_SEEN_CAP = 8000
 
+# XG-W5: the golden-set / eval corpus. Every item that reached the press lane
+# lands here with its deterministic `_components` — the labeling exporter and the
+# precision@20 harness both read it (engine/marketing/golden_set.py).
+# data/marketing/press/ is GITIGNORED, so this is host state exactly like the
+# cursors and the seen ledger: the poller makes zero git writes, and the nightly
+# stays the sole advancer of every tracked ledger.
+_PRESS_CORPUS_PATH = ROOT / "data" / "marketing" / "press" / "ingest_corpus.jsonl"
+_PRESS_CORPUS_CAP = 20000
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Heartbeat
@@ -160,6 +169,34 @@ def _load_press_seen() -> dict:
         return json.loads(_PRESS_SEEN_PATH.read_text(encoding="utf-8"))
     except Exception:  # noqa: BLE001
         return {}
+
+
+def _append_press_corpus(rows: list) -> int:
+    """Append this tick's scoring-brain corpus rows; roll at the cap.
+
+    Fail-soft: the corpus is a labeling/evaluation convenience, so a write error
+    logs and the tick continues. NEVER runs in a dry-run (the caller gates it) —
+    an inspection run must stay non-consuming.
+    """
+    if not rows:
+        return 0
+    import json  # noqa: PLC0415
+    try:
+        _PRESS_CORPUS_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with _PRESS_CORPUS_PATH.open("a", encoding="utf-8") as fh:
+            for row in rows:
+                fh.write(json.dumps(row, ensure_ascii=False) + "\n")
+        # Roll: keep the newest _PRESS_CORPUS_CAP lines.
+        lines = _PRESS_CORPUS_PATH.read_text(encoding="utf-8").splitlines()
+        if len(lines) > _PRESS_CORPUS_CAP:
+            tmp = _PRESS_CORPUS_PATH.with_suffix(".tmp")
+            tmp.write_text("\n".join(lines[-_PRESS_CORPUS_CAP:]) + "\n",
+                           encoding="utf-8")
+            tmp.replace(_PRESS_CORPUS_PATH)
+        return len(rows)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("[press] corpus append failed (continuing): %s", exc)
+        return 0
 
 
 def _save_press_seen(seen: dict) -> None:
@@ -369,6 +406,13 @@ def _run_press_tick(*, dry_run: bool) -> dict:
         for key in result.get("_seen", []):
             seen.setdefault(str(key), now_iso)
         _save_press_seen(seen)
+
+    # 4b. XG-W5 scoring-brain corpus. Every item the lane saw this tick, with its
+    #     deterministic `_components`, appended to the GITIGNORED host-local
+    #     corpus that feeds the labeling exporter and the precision@20 harness.
+    #     Skipped in dry-run for the same non-consuming reason as everything else.
+    if not dry_run:
+        _append_press_corpus(result.get("corpus", []))
 
     # 5. Persist provider cursors / spend / flagship counter — but NOT in dry-run,
     #    which must leave zero footprint so it is non-consuming. NEVER a git write.

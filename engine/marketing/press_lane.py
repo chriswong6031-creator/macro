@@ -84,15 +84,77 @@ def _day_key(now: datetime) -> str:
 
 
 def _is_satire(item: dict, blocklist_lower: set[str]) -> bool:
-    """True when the item comes from a satire/parody-blocklisted handle."""
-    handle = str(item.get("x_handle", "")).lower()
-    source = str(item.get("source", "")).lower()
-    if handle and handle in blocklist_lower:
-        return True
-    # x_<handle> source key form.
-    if source.startswith("x_") and source[2:] in blocklist_lower:
-        return True
-    return False
+    """True when the item comes from a satire/parody-blocklisted handle.
+
+    XG-W5 folded this rule into engine/marketing/garbage_gate.py so the repo has
+    exactly ONE satire list and ONE satire rule; this wrapper stays because the
+    lane and its tests have always spoken it, and it now delegates rather than
+    duplicating.
+    """
+    from engine.marketing import garbage_gate as _gg  # noqa: PLC0415
+
+    return bool(_gg._satire(item, {s.lower() for s in blocklist_lower}))
+
+
+def _garbage_check(item: dict, *, gate_cfg: dict, blocklist_lower: set[str]) -> dict | None:
+    """XG-W5 P0 garbage gate — runs BEFORE features and before any LLM spend.
+
+    Fail-open by design: a gate that cannot evaluate must not silently delete the
+    wire. Any unexpected failure logs a start-of-line warning and passes the item
+    through to the existing corroboration/floor/sentinel gates, which are the
+    real publication guards.
+    """
+    from engine.marketing import garbage_gate as _gg  # noqa: PLC0415
+
+    try:
+        return _gg.check(item, cfg=gate_cfg, satire_blocklist=blocklist_lower)
+    except Exception as exc:  # noqa: BLE001
+        print(f"::warning title=garbage-gate-failed::{item.get('id', '')}: "
+              f"{type(exc).__name__}: {exc} — item passed through", flush=True)
+        return None
+
+
+def _scoring_provenance(scored: dict) -> dict:
+    """Compact `_components` for the outbox item's provenance block."""
+    components = scored.get("_components") or {}
+    story = components.get("story") or {}
+    return {
+        "version": components.get("scoring_version", ""),
+        "rank_score": scored.get("rank_score"),
+        "features": components.get("features") or {},
+        "story_id": story.get("story_id", ""),
+        "source_count": story.get("source_count", 0),
+    }
+
+
+def _corpus_row(scored: dict, *, outcome: str, now_iso: str) -> dict:
+    """One golden-set corpus row for an ingested item (host-local sink).
+
+    The labeling batch and the eval harness both read this shape. It carries the
+    label-relevant surface (headline/source/url/time), the deterministic score
+    and the full `_components`, and the pipeline OUTCOME so a labeler can see
+    what the engine did with it. Written by the daemon to the GITIGNORED
+    data/marketing/press/ tree — never a repo write.
+    """
+    components = scored.get("_components") or {}
+    return {
+        "schema": "press_corpus.v1",
+        "item_id": str(scored.get("id", "")),
+        "ingested_at": now_iso,
+        "published_at": str(scored.get("published_at", "")),
+        "headline": str(scored.get("headline", "")),
+        "body_snippet": str(scored.get("body_snippet", ""))[:400],
+        "url": str(scored.get("url", "")),
+        "source": str(scored.get("source", "")),
+        "source_name": str(scored.get("source_name", "")),
+        "source_tier": str(scored.get("source_tier", "")),
+        "event_class": str(scored.get("event_class", "none")),
+        "salience": scored.get("salience"),
+        "rank_score": scored.get("rank_score"),
+        "story_id": (components.get("story") or {}).get("story_id", ""),
+        "outcome": outcome,
+        "_components": components,
+    }
 
 
 def _emission_key(item: dict) -> str:
@@ -636,7 +698,14 @@ def run_press_tick(
                     The daemon sets this on true cold-start only.
         llm_override: test seam forwarded to build_breaking_payload.
 
-    Returns {emitted, skipped, digest, blocked}.
+    Returns {emitted, skipped, digest, blocked, rail, corpus, _seen}.
+
+    `corpus` (XG-W5) is one row per item the lane SAW — ingested items with their
+    full `_components`, gate-dropped items with their reason. The lane only
+    RETURNS them; the daemon persists them to the gitignored host-local corpus
+    the golden-set exporter and the precision@20 harness read. A dry run
+    therefore computes the rows and writes nothing, like every other side effect
+    on this path.
     """
     from engine.marketing.breaking_relevance import score_item
     from engine.marketing.breaking_summary import build_breaking_payload
@@ -696,17 +765,76 @@ def run_press_tick(
     rail: list[dict] = []   # B4a: rail-eligible items (lower floor, incl. digest)
     emitted_bodies: dict[str, dict] = {}   # id -> composed text for rail reuse
 
-    # 1. Satire hard-blocklist at ingestion + dedupe.
+    # ── XG-W5 scoring brain (IS-W2) ───────────────────────────────────────────
+    # L0 story spine + L1 feature stores live in the SAME daemon-local state dict
+    # the corroboration window and the flagship counter already use — gitignored
+    # data/marketing/press/state.json on the VPS. Zero repo writes intraday; the
+    # nightly stays the sole advancer of every tracked ledger.
+    scoring_cfg = breaking_cfg.get("scoring", {}) if isinstance(breaking_cfg, dict) else {}
+    if not isinstance(scoring_cfg, dict):
+        scoring_cfg = {}
+    gate_cfg = breaking_cfg.get("garbage_gate", {}) if isinstance(breaking_cfg, dict) else {}
+    if not isinstance(gate_cfg, dict):
+        gate_cfg = {}
+
+    spine = None
+    corpus = None
+    authority = None
+    tone_lookup: dict = {}
+    if bool(scoring_cfg.get("enabled", True)):
+        try:
+            from engine.marketing.signal_features import (  # noqa: PLC0415
+                AuthorityStore, SignalCorpus, load_tone_lookup,
+            )
+            from engine.marketing.story_spine import StorySpine, load_encoder  # noqa: PLC0415
+
+            spine = StorySpine(
+                state.setdefault("story_spine", {}),
+                cfg=scoring_cfg.get("story_spine", {}),
+                # Semantic pass: OFF unless a LOCAL model artifact exists. Never a
+                # runtime download on any render/nightly/daemon path.
+                encoder=load_encoder(scoring_cfg.get("semantic", {}), root=root),
+            )
+            corpus = SignalCorpus(state.setdefault("signal_corpus", {}),
+                                  cfg=scoring_cfg.get("corpus", {}))
+            authority = AuthorityStore(state.setdefault("source_authority", {}),
+                                       cfg=scoring_cfg.get("authority", {}))
+            tone_lookup = load_tone_lookup(root, cfg=scoring_cfg.get("tone", {}))
+        except Exception as exc:  # noqa: BLE001
+            print(f"::warning title=scoring-brain-unavailable::"
+                  f"{type(exc).__name__}: {exc} — falling back to salience-only",
+                  flush=True)
+            spine = corpus = authority = None
+
+    # 1. GARBAGE GATE (XG-W5 P0 drop) + dedupe.
+    # The gate runs FIRST — before the story spine, before any feature, before
+    # any LLM spend — because the cheapest way to rank a horoscope is to never
+    # rank it. It REUSES the existing satire blocklist (one list, one rule) and
+    # adds source blocklist / promo-spam / paywalled-stub / non-story detectors.
+    # Every drop is recorded in `blocked` with its reason, the historical P0
+    # shape, so the daemon's existing logging and the admin ledger are unchanged.
+    #
     # Dedupe on the MIRROR-COLLAPSED emission key (M1): the same Truth post seen
     # via two mirrors shares one truth_status_id, so the second mirror is a
     # dedupe skip, not a second emission. Also collapse within a single tick so a
     # trumpstruth + cnn_truth_backfill pair arriving together emits once.
     ingest: list[dict] = []
     seen_this_tick: set[str] = set()
+    gate_drops: dict[str, int] = {}
+    gate_rows: list[dict] = []
     for it in items:
         iid = str(it.get("id", ""))
-        if _is_satire(it, blocklist_lower):
-            blocked.append({"id": iid, "reason": "satire_blocklist"})
+        drop = _garbage_check(it, gate_cfg=gate_cfg, blocklist_lower=blocklist_lower)
+        if drop is not None:
+            reason = str(drop.get("reason", "garbage"))
+            gate_drops[reason] = gate_drops.get(reason, 0) + 1
+            blocked.append({"id": iid, "reason": reason,
+                            "detail": str(drop.get("detail", "")),
+                            "headline": str(it.get("headline", ""))[:120]})
+            gate_rows.append(_corpus_row(
+                dict(it), outcome=f"blocked:{reason}",
+                now_iso=now.astimezone(timezone.utc).isoformat(),
+            ))
             continue
         ekey = _emission_key(it)
         if ekey and (ekey in seen or ekey in seen_this_tick):
@@ -715,12 +843,63 @@ def run_press_tick(
         if ekey:
             seen_this_tick.add(ekey)
         ingest.append(it)
+    if gate_drops:
+        print("::notice title=press-garbage-gate::" + ", ".join(
+            f"{reason}={count}" for reason, count in sorted(gate_drops.items())
+        ), flush=True)
 
     # 2. Score everything (deterministic relevance) and register corroboration.
-    scored: list[dict] = []
+    #
+    # ORDER MATTERS TWICE HERE:
+    #  (a) the corpus observes EVERY ingested item BEFORE any of them is scored,
+    #      so this tick's own arrivals are visible to the burst detector (a burst
+    #      you can only see next tick is not a burst detector). `novelty` then
+    #      excludes the item's own contribution from its own IDF, which is what
+    #      keeps a 3-item cold-start corpus from calling everything novel.
+    #  (b) the story spine assigns BEFORE scoring, because corroboration_velocity
+    #      is a property of the story, not of the item.
     now_iso = now.astimezone(timezone.utc).isoformat()
+    stories: dict[str, dict] = {}
+    if corpus is not None or spine is not None or authority is not None:
+        for it in ingest:
+            iid = str(it.get("id", ""))
+            if spine is not None:
+                stories[iid] = spine.assign(it, now=now)
+            if authority is not None:
+                authority.observe(it, now=now)
+            if corpus is not None:
+                corpus.observe(it, now=now)
+        # REFRESH the views after the whole batch is absorbed. `assign` returns
+        # the story as it stood at that moment, so the FIRST item of a two-source
+        # burst arriving in one tick would otherwise score source_count=1 while
+        # the second scored 2 — the same story, two different corroboration
+        # velocities, decided by list order. Re-deriving every view once the
+        # batch is in makes the feature a property of the story, as intended.
+        if spine is not None:
+            for iid, view in list(stories.items()):
+                sid = str(view.get("story_id", ""))
+                if not sid:
+                    continue
+                refreshed = spine.view(sid, now=now)
+                refreshed["match"] = view.get("match", "")
+                refreshed["is_new"] = view.get("is_new", False)
+                stories[iid] = refreshed
+
+    scored: list[dict] = []
     for it in ingest:
-        s = score_item(it, now=now, cfg=breaking_cfg, root=root)
+        iid = str(it.get("id", ""))
+        s = score_item(
+            it, now=now, cfg=breaking_cfg, root=root,
+            # L1 CONTEXT — the production call site. Without it score_item still
+            # emits `_components`, with every feature reporting its own null
+            # state; with it the six deterministic features are live.
+            context={
+                "story": stories.get(iid),
+                "corpus": corpus,
+                "authority": authority,
+                "tone_lookup": tone_lookup,
+            },
+        )
         # Register this source against its claim key for corroboration counting.
         ck = _corroboration_key(s)
         entry = corr.setdefault(ck, {"sources": [], "first_ts": now_iso})
@@ -729,8 +908,48 @@ def run_press_tick(
             entry["sources"].append(src)
         scored.append(s)
 
-    # 3. Rank by salience so the flagship top-K takes the strongest items.
-    scored.sort(key=lambda x: x.get("salience", 0.0), reverse=True)
+    # Bound the persisted state (TTL + hard caps) every tick, so a busy news week
+    # cannot grow data/marketing/press/state.json without limit.
+    try:
+        if spine is not None:
+            spine.prune(now)
+        if corpus is not None:
+            corpus.prune(now)
+    except Exception as exc:  # noqa: BLE001
+        print(f"::warning title=scoring-brain-prune::{type(exc).__name__}: {exc}",
+              flush=True)
+
+    # 3. ORDER the queue.
+    #
+    # ══ GATE ORDERING (charter §0 / masterplan IS-W2) ═════════════════════════
+    # A SCORE MAY REORDER AND DEPRIORITIZE. IT MAY NEVER PUBLISH.
+    #
+    # This sort is the ONLY thing rank_score does in this lane. Everything that
+    # decides whether an item may go out runs AFTER it and never reads it:
+    #   step 4  corroboration_decision(...)      -> digest/attributed/instant
+    #   step 5  salience < floor / top-K counter -> salience, never rank_score
+    #   step 5c story_lock.check(...)            -> one-conversation-one-owner
+    #   step 6+ build_breaking_payload -> outbox.stamp_value_gate ->
+    #           outbox.make_item/validate_item -> outbox.enqueue (id-dedup,
+    #           7-day text-dedup, same-account + cross-account near-dup,
+    #           sentinel caps, cadence resolver)
+    # Reordering changes WHICH surviving item takes a scarce slot; it cannot
+    # create a slot, cannot clear a gate, and cannot raise salience (the L1
+    # demotion multiplier in breaking_relevance is clamped at 1.0). No score is
+    # ever written to a user-facing surface — the news.html rail item built below
+    # copies named display fields only, never `_components` or `rank_score`.
+    #
+    # rank_ordering ships DARK (default false). Arming it is one config flip,
+    # and the masterplan gates that flip on the golden set: the scorer's
+    # precision@20 must beat salience-only ordering before it displaces it.
+    # ══════════════════════════════════════════════════════════════════════════
+    rank_ordering = bool(scoring_cfg.get("rank_ordering", False))
+    if rank_ordering:
+        scored.sort(key=lambda x: (float(x.get("rank_score", 0.0) or 0.0),
+                                   float(x.get("salience", 0.0) or 0.0)),
+                    reverse=True)
+    else:
+        scored.sort(key=lambda x: x.get("salience", 0.0), reverse=True)
 
     # COLD-START (m2): on the very first run the batch is a full history snapshot
     # (mirror archives, twitterapi.io last_tweets with no prior cursor), NOT
@@ -748,6 +967,11 @@ def run_press_tick(
             "digest": [],
             "blocked": blocked,
             "rail": [],
+            # A primed batch is a history snapshot — exactly the corpus a first
+            # labeling batch wants, so the rows ship even though nothing emitted.
+            "corpus": list(gate_rows) + [
+                _corpus_row(s, outcome="primed", now_iso=now_iso) for s in scored
+            ],
             "_seen": sorted(seen),
         }
 
@@ -906,6 +1130,12 @@ def run_press_tick(
             "wire_format": wire_format,
             "opener": opener,
             "tape_stamp": tape_stamp,
+            # XG-W5: the scoring brain's breakdown travels with the emission so a
+            # re-weighting is auditable from the outbox alone. COMPACT on purpose
+            # (values + rank + story id, not the verbose per-feature detail) —
+            # items.jsonl is read on every publisher pass. MARKETING-INTERNAL:
+            # provenance never reaches a post body or a user-facing surface.
+            "scoring": _scoring_provenance(s),
         }
 
         out_item = _emit_outbox_item(
@@ -977,12 +1207,35 @@ def run_press_tick(
         if len(rail) >= rail_max:
             break
 
+    # ── XG-W5 golden-set corpus rows ──────────────────────────────────────────
+    # EVERY item that reached this lane gets a row: the ingested ones with their
+    # full `_components`, the garbage-gated ones with their drop reason. The
+    # daemon appends these to the GITIGNORED host-local corpus that the labeling
+    # exporter and the eval harness read (engine/marketing/golden_set.py). Never
+    # a repo write, never user-facing.
+    outcomes: dict[str, str] = {}
+    for row in digest:
+        outcomes[str(row.get("id", ""))] = "digest"
+    for row in skipped:
+        outcomes[str(row.get("id", ""))] = f"skipped:{row.get('reason', '')}"
+    for out_item in emitted:
+        feed_id = str((out_item.get("source") or {}).get("feed_item_id", ""))
+        if feed_id:
+            outcomes[feed_id] = "emitted"
+    corpus_rows = list(gate_rows) + [
+        _corpus_row(s, outcome=outcomes.get(str(s.get("id", "")), "scored"),
+                    now_iso=now_iso)
+        for s in scored
+    ]
+
     return {
         "emitted": emitted,
         "skipped": skipped,
         "digest": digest,
         "blocked": blocked,
         "rail": rail,   # B4a: rail-eligible items for the wires.json sink
+        # XG-W5: labeling/eval corpus for this tick (host-local sink; see daemon).
+        "corpus": corpus_rows,
         # The full seen-set AFTER this tick, including MIRROR-COLLAPSED emission
         # keys (M1). The daemon persists this verbatim so cross-tick dedupe works
         # for mirror pairs — recording out_item["id"] alone would miss the collapse.

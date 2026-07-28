@@ -1282,6 +1282,199 @@ breaking:
     model_key: "marketing_copy"
     max_tokens: 800
 
+  # ═══════════════════════════════════════════════════════════════════════════
+  # GARBAGE GATE (XG-W5 / IS-W2) — engine/marketing/garbage_gate.py
+  #
+  # A P0 drop that runs BEFORE the story spine, before any feature and before
+  # any LLM spend. Five detectors; every drop is recorded in the press tick's
+  # `blocked` list with its reason, and the tick prints one start-of-line
+  # ::notice histogram.
+  #
+  # The satire list is NOT duplicated here — it stays in
+  # config/press_sources.yml `satire_blocklist` and is handed in by press_lane.
+  # One list, one rule.
+  # ═══════════════════════════════════════════════════════════════════════════
+  garbage_gate:
+    enabled: true
+    detectors:
+      satire_blocklist: true
+      source_blocklist: true
+      promo_spam: true
+      paywalled_stub: true
+      non_story: true
+
+    # Source keys ("cnbc_top"), x handles ("SomeHandle") or URL hosts
+    # ("example.com" — suffix-matched, so "eu.example.com" is covered too).
+    # SHIPS EMPTY BY DESIGN: which publications are unusable is an operator/Fable
+    # judgment, not a builder's. Adding one here is a one-line config change.
+    source_blocklist: []
+
+    # promo_spam: ONE strong marker drops; weak markers need `promo_weak_min`.
+    # Finance English is full of near-misses ("discount rate", "free cash flow",
+    # "deal talks"), which is exactly why weak markers alone never drop.
+    # Omitting promo_strong/promo_weak keeps the built-in lists in the module.
+    promo_weak_min: 2
+
+    # paywalled_stub: marker-driven. A short body ALONE never drops — a
+    # twitterapi.io relay body is a 120-char tweet by construction, and a length
+    # rule would delete the fastest lane on the wire. Set require_marker:false to
+    # add the length rule (aggregator tier + truncation ellipsis + < stub_min_chars).
+    require_marker: true
+    stub_min_chars: 80
+
+    # non_story: horoscope-class terms, matched in the HEADLINE only. Omitting
+    # non_story_terms keeps the built-in narrow list.
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # SCORING BRAIN (XG-W5 = IS-W2) — the L0 story spine + L1 deterministic
+  # features. engine/marketing/{story_spine,signal_features}.py; consumed by
+  # breaking_relevance.score_item and wired in press_lane.run_press_tick.
+  #
+  # MARKETING-INTERNAL, DISPLAY-TIER. No score here is a market signal, and none
+  # is ever rendered to a user — the news.html rail copies named display fields
+  # and never `_components` or `rank_score`.
+  #
+  # EVERY NUMBER BELOW IS A HYPOTHESIS, NOT A MEASUREMENT (charter §8: "suggested
+  # weights, cadences, and thresholds are hypotheses to calibrate, never fixed
+  # truth"). Nothing here is load-bearing until the golden set ranks it:
+  #   python scripts/marketing_golden_set.py eval
+  #
+  # THE L2 LEARNED RANKER IS OUT OF SCOPE and deliberately unscaffolded — it
+  # trains only after >=3 weeks of real labels (masterplan §3 / §0 IS-W2).
+  # ═══════════════════════════════════════════════════════════════════════════
+  scoring:
+    # Feature computation + the persisted `_components` breakdown. ON: this is
+    # metadata, and the acceptance gate is "features for 100% of ingested items".
+    enabled: true
+
+    # ── THE ARMING LEVER ──────────────────────────────────────────────────────
+    # false: the queue is ordered by salience exactly as before; rank_score is
+    #        computed and persisted but orders nothing. This is the launch state.
+    # true : the queue is ordered by rank_score (salience as tiebreak).
+    #
+    # DARK ON PURPOSE. The masterplan gates this flip on evidence: the scorer's
+    # precision@20 must BEAT the current salience-only ordering on the 200-item
+    # golden set before it displaces it. Flipping this before the labels exist
+    # would ship past the wave's own acceptance gate.
+    #
+    # Ordering can only ever REORDER: it runs before the corroboration gate, the
+    # salience floor, the top-K counter, the story lock, the value gate and every
+    # outbox guard, and none of them reads rank_score.
+    rank_ordering: false
+
+    # Demotion multiplier (clamped at 1.0 — it can only ever LOWER salience, so
+    # no feature can lift an item over the flagship floor). OFF by default.
+    demote_enabled: false
+    demote_feature: corroboration_velocity
+    demote_floor: 0.75
+
+    # ── Rank weights ──────────────────────────────────────────────────────────
+    # Salience stays dominant by design: L1 is a refinement of the existing
+    # deterministic salience, not a replacement. Weights sum to 1.0.
+    rank_weights:
+      salience: 0.50
+      corroboration_velocity: 0.14
+      keyword_heat: 0.10
+      novelty: 0.08
+      source_authority: 0.08
+      tone_extremity: 0.04
+      headline_shape: 0.06
+
+    # ── L0 story spine ────────────────────────────────────────────────────────
+    # Optional deps DEGRADE, never crash: datasketch absent -> near-dup pass off
+    # (exact/normalized-URL identity only), one start-of-line ::notice, carry on.
+    story_spine:
+      minhash_num_perm: 96
+      near_dup_threshold: 0.62
+      shingle_k: 3
+      semantic_threshold: 0.86
+      story_ttl_h: 72
+      max_stories: 1500
+      max_members_per_story: 40
+      max_text_chars: 600
+
+    # ── Semantic pass (Model2Vec static embeddings) ───────────────────────────
+    # OFF, and it can only turn on when BOTH enabled:true AND a LOCAL model
+    # directory exists at model_path. THERE IS NO RUNTIME DOWNLOAD ON ANY PATH —
+    # the artifact is placed by an explicit operator/R2 step (docs/scoring_brain.md
+    # §3); an absent artifact means "pass disabled", never a fetch.
+    semantic:
+      enabled: false
+      model_path: ""     # e.g. /var/lib/macro-live/models/potion-base-8M
+
+    # ── Trailing corpus: novelty (temporal-IDF) + keyword_heat (Kleinberg-lite) ─
+    corpus:
+      max_tokens_per_item: 12
+      max_tokens_per_bucket: 2000
+      burst_window_h: 72
+      burst_recent_h: 1
+      burst_min_hours: 6
+      burst_min_std: 0.5
+      burst_z_cap: 4.0
+      burst_z_threshold: 2.0
+      novelty_window_d: 30
+      novelty_min_docs: 50      # below this, novelty reports "cold-start"
+      novelty_top_k: 3
+      novelty_neutral: 0.5      # the cold-start value — a stated null, not a measurement
+      min_token_len: 3
+
+    # ── corroboration_velocity ────────────────────────────────────────────────
+    corroboration:
+      sources_15m_full: 3
+      sources_60m_full: 5
+      weight_15m: 0.7
+      weight_60m: 0.3
+
+    # ── source_authority ──────────────────────────────────────────────────────
+    # NEUTRAL PRIOR UNTIL TELEMETRY EXISTS. The only input is observed engagement
+    # on x_follow items, parsed from the twitterapi.io response body the poller
+    # ALREADY pays for — no new request, no new endpoint, no new spend path, and
+    # no first-party X scraping. Sources that never carry counts (RSS wires,
+    # mirrors) stay neutral forever, which is the honest answer for them.
+    authority:
+      min_samples: 25           # below this the prior is neutral and says so
+      neutral_prior: 0.5
+      ewma_alpha: 0.1
+      reference_engagement: 500.0
+      like_weight: 1.0
+      retweet_weight: 2.0
+      reply_weight: 0.5
+      view_weight: 0.01
+      max_sources: 500
+
+    # ── tone_extremity (GDELT V2Tone join) ────────────────────────────────────
+    # There is NO GDELT provider in the marketing lane yet (IS-W1's provider is
+    # unbuilt), so the join is absent and this feature contributes EXACTLY 0 for
+    # every item — deliberately rank-neutral, never renormalizing the others.
+    # When the provider lands it writes the join to a host-local path below.
+    tone:
+      enabled: true
+      tone_cap: 10.0
+      paths:
+        - "data/marketing/press/gdelt_tone.json"
+
+    # ── headline_shape ────────────────────────────────────────────────────────
+    headline_shape:
+      numbers_full: 2
+      entities_full: 3
+      short_max_chars: 50
+      long_min_chars: 110
+      band_short: 0.5
+      band_medium: 1.0
+      band_long: 0.6
+      w_numbers: 0.4
+      w_entities: 0.35
+      w_band: 0.25
+
+    # ── Golden set ────────────────────────────────────────────────────────────
+    # Labels are an operator/Fable lever (charter §7.6). The harness lands now;
+    # the precision@20 comparison becomes binding when labels exist.
+    golden_set:
+      k: 20
+      min_labeled: 40           # below this the eval prints numbers but gates nothing
+      corpus_paths:
+        - "data/marketing/press/ingest_corpus.jsonl"
+
 # ═════════════════════════════════════════════════════════════════════════════
 # REPLY DESK (XG-W4) — borrowed distribution's engine room.
 #
