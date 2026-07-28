@@ -749,6 +749,35 @@ class TestPlannerIntake:
         note_refs = {r for s in notes for r in s["sources"]}
         assert not (flagship_refs & note_refs), "the two desks covered one report twice"
 
+    def test_a_report_outside_the_triage_window_falls_to_the_back_not_off(self, tmp_path):
+        """The desk window and the triage window are INDEPENDENT config keys.
+
+        A desk widened past `research_triage.ledger.window_days` would otherwise
+        lose its extra candidates silently — an intake seam that quietly shrinks
+        the pool is worse than one that does not exist.  The old report must
+        still be reachable when everything ranked ahead of it is blocked.
+        """
+        root = F.fixture_root(tmp_path)
+        cfg = P.load_config(root)
+        cfg["desks"]["research_desk"]["window_days"] = 400
+        cfg["research_triage"]["ledger"]["window_days"] = 3
+        path = root / "data" / "research_vault" / "catalog.json"
+        catalog = json.loads(path.read_text(encoding="utf-8"))
+        catalog["items"].append(_item("marketdesk-ancient-yyy888",
+                                      published_at="2026-01-05T09:00:00Z"))
+        path.write_text(json.dumps(catalog), encoding="utf-8")
+
+        # Block everything inside the triage window; the ancient report is the
+        # only candidate left, and it is only reachable via the appended tail.
+        inside = [f"research_vault:{it['id']}" for it in catalog["items"]
+                  if it["id"] != "marketdesk-ancient-yyy888"]
+        slots = P.plan(["research_desk"], as_of="2026-07-26", root=root, cfg=cfg,
+                       extra_blocked_refs=inside)
+        assert slots, "the unranked tail was dropped instead of appended"
+        assert slots[0]["sources"] == ["research_vault:marketdesk-ancient-yyy888"]
+        assert slots[0]["triage"]["rank"] is None, (
+            "an unranked report must not borrow another report's rank")
+
     def test_the_fixture_prose_clears_the_house_lexicon(self):
         """This suite's own tripwire.
 

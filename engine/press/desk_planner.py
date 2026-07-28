@@ -1007,7 +1007,19 @@ def _plan_research(cfg: dict, desk_cfg: dict, as_of: date, root,
     order, triage_meta = _triage_order(cfg, as_of, root, eligible)
     if order:
         by_id = {str(it.get("id") or ""): it for it in eligible}
-        eligible = [by_id[rid] for rid in order if rid in by_id]
+        ranked = [by_id[rid] for rid in order if rid in by_id]
+        # A report the triage did not rank must fall to the BACK of the queue,
+        # never off it. The two windows are independent config keys
+        # (desks.*.window_days vs research_triage.ledger.window_days), so a desk
+        # widened past the triage window would otherwise lose its extra
+        # candidates silently — an intake seam that quietly shrinks the pool is
+        # worse than one that does not exist.
+        seen = {str(it.get("id") or "") for it in ranked}
+        tail = [it for it in eligible if str(it.get("id") or "") not in seen]
+        if tail:
+            log.info("press.desk_planner: %d eligible report(s) fell outside the "
+                     "triage window and were appended unranked", len(tail))
+        eligible = ranked + tail
     else:
         # W1 fallback: tier first (top_pick), then recency, then id.
         eligible.sort(key=lambda it: (
