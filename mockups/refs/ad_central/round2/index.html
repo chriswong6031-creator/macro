@@ -1,0 +1,138 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>MastermindX ads — round 2 review gallery</title>
+<link rel="stylesheet" href="_ads.css">
+<style>
+  html,body{background:#f7f8fa;overflow:auto;display:block;min-height:0}
+  .wrap{max-width:1480px;margin:0 auto;padding:56px 40px 120px;font-family:'Inter',system-ui,sans-serif;color:#1c2430}
+  .hd h1{font-size:44px;font-weight:800;letter-spacing:-.02em}
+  .hd p{margin-top:10px;color:#5d6b7e;font-size:17px;line-height:1.5;max-width:900px}
+  .hd code{background:#eef2ff;color:#1c47cc;border-radius:6px;padding:2px 8px;font-size:15px}
+  .protocol{margin-top:22px;background:#fff;border:1px solid #eaecf0;border-left:4px solid #285fff;
+    border-radius:12px;padding:18px 22px;font-size:15.5px;color:#34404f;line-height:1.55;max-width:900px}
+  .concept{margin-top:64px;border-top:1px solid #dfe3e9;padding-top:34px}
+  .concept .meta{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap}
+  .concept h2{font-size:26px;font-weight:800}
+  .concept .cls{font-size:13px;font-weight:700;letter-spacing:.06em;color:#7862e0;background:#f1eefb;
+    border-radius:999px;padding:5px 12px;text-transform:uppercase}
+  .concept .hl{font-size:16px;color:#5d6b7e}
+  .row{display:flex;gap:26px;align-items:flex-start;margin-top:22px;flex-wrap:wrap}
+  figure{margin:0}
+  figure img{display:block;border-radius:14px;border:1px solid #dfe3e9;
+    box-shadow:0 14px 34px -14px rgba(20,30,50,.25)}
+  figure.s1350 img{width:400px} figure.s1080 img{width:400px} figure.s628 img{width:560px}
+  figcaption{margin-top:8px;font-size:13px;color:#8a95a4;font-weight:600;letter-spacing:.03em}
+</style>
+
+<div class="wrap">
+  <div class="hd">
+    <h1>Round 2 — 13 concepts · 31 placement-size renders</h1>
+    <p>Contract: <code>research/AD_MASTER_PAPER.md</code> (§0 gates). Sources:
+      <code>ads/*.html</code> → <code>python3 render.py</code> → <code>renders/*.png</code> at exact
+      placement sizes (1080×1080 X/Meta square · 1080×1350 Meta 4:5 mobile · 1200×628 X 1.91:1).
+      Every ad: brand + category, pain-aimed headline, product-true illustration, 7-day free trial,
+      founding 50% off ($149 → $75/mo), scarcity, CTA, domain.</p>
+    <div class="protocol"><b>Review protocol (H-1/H-2):</b> nothing runs without your approval on
+      record. Approve or reject per concept with
+      <code>python3 -c "from engine.marketing import ad_review; ad_review.record('&lt;id&gt;','approved',reviewer='operator',root='.')"</code>
+      once round-2 creatives are enrolled via <code>ad_creative.build</code>; a rejection needs the
+      reason — it becomes law in the master paper's §9 taste corpus.</div>
+  </div>
+
+  <div class="concept"><div class="meta"><h2>desk</h2><span class="cls">category · flagship</span>
+    <span class="hl">"Your personal market intelligence desk."</span></div>
+    <div class="row">
+      <figure class="s1350"><img src="renders/desk--1080x1350.png"><figcaption>1080×1350 · Meta 4:5</figcaption></figure>
+      <figure class="s1080"><img src="renders/desk--1080x1080.png"><figcaption>1080×1080 · X / universal</figcaption></figure>
+      <figure class="s628"><img src="renders/desk--1200x628.png"><figcaption>1200×628 · X website card</figcaption></figure>
+    </div></div>
+
+  <div class="concept"><div class="meta"><h2>signals</h2><span class="cls">category / feature</span>
+    <span class="hl">"Institutional-grade stock signals."</span></div>
+    <div class="row">
+      <figure class="s1350"><img src="renders/signals--1080x1350.png"><figcaption>1080×1350</figcaption></figure>
+      <figure class="s1080"><img src="renders/signals--1080x1080.png"><figcaption>1080×1080</figcaption></figure>
+      <figure class="s628"><img src="renders/signals--1200x628.png"><figcaption>1200×628</figcaption></figure>
+    </div></div>
+
+  <div class="concept"><div class="meta"><h2>price</h2><span class="cls">price anchor</span>
+    <span class="hl">"A $24,000 desk. Yours for $2.50 a day."</span></div>
+    <div class="row">
+      <figure class="s1350"><img src="renders/price--1080x1350.png"><figcaption>1080×1350</figcaption></figure>
+      <figure class="s1080"><img src="renders/price--1080x1080.png"><figcaption>1080×1080</figcaption></figure>
+    </div></div>
+
+  <div class="concept"><div class="meta"><h2>risk</h2><span class="cls">pain flip</span>
+    <span class="hl">"Know when the market has your back."</span></div>
+    <div class="row">
+      <figure class="s1350"><img src="renders/risk--1080x1350.png"><figcaption>1080×1350</figcaption></figure>
+      <figure class="s1080"><img src="renders/risk--1080x1080.png"><figcaption>1080×1080</figcaption></figure>
+    </div></div>
+
+  <div class="concept"><div class="meta"><h2>rotation</h2><span class="cls">pain flip</span>
+    <span class="hl">"See the rotation before your watchlist does."</span></div>
+    <div class="row">
+      <figure class="s1350"><img src="renders/rotation--1080x1350.png"><figcaption>1080×1350</figcaption></figure>
+      <figure class="s1080"><img src="renders/rotation--1080x1080.png"><figcaption>1080×1080</figcaption></figure>
+    </div></div>
+
+  <div class="concept"><div class="meta"><h2>knife</h2><span class="cls">pain flip</span>
+    <span class="hl">"Don't be the one catching the knife."</span></div>
+    <div class="row">
+      <figure class="s1350"><img src="renders/knife--1080x1350.png"><figcaption>1080×1350</figcaption></figure>
+      <figure class="s1080"><img src="renders/knife--1080x1080.png"><figcaption>1080×1080</figcaption></figure>
+    </div></div>
+
+  <div class="concept"><div class="meta"><h2>entry</h2><span class="cls">pain flip · dark</span>
+    <span class="hl">"Time the entry. Keep the stop."</span></div>
+    <div class="row">
+      <figure class="s1350"><img src="renders/entry--1080x1350.png"><figcaption>1080×1350</figcaption></figure>
+      <figure class="s1080"><img src="renders/entry--1080x1080.png"><figcaption>1080×1080</figcaption></figure>
+    </div></div>
+
+  <div class="concept"><div class="meta"><h2>ai-no</h2><span class="cls">honesty signature</span>
+    <span class="hl">"Finally — an AI that says “not yet.”"</span></div>
+    <div class="row">
+      <figure class="s1350"><img src="renders/ai-no--1080x1350.png"><figcaption>1080×1350</figcaption></figure>
+      <figure class="s1080"><img src="renders/ai-no--1080x1080.png"><figcaption>1080×1080</figcaption></figure>
+      <figure class="s628"><img src="renders/ai-no--1200x628.png"><figcaption>1200×628</figcaption></figure>
+    </div></div>
+
+  <div class="concept"><div class="meta"><h2>filings</h2><span class="cls">feature proof</span>
+    <span class="hl">"Follow the filings, not the feed."</span></div>
+    <div class="row">
+      <figure class="s1350"><img src="renders/filings--1080x1350.png"><figcaption>1080×1350</figcaption></figure>
+      <figure class="s1080"><img src="renders/filings--1080x1080.png"><figcaption>1080×1080</figcaption></figure>
+    </div></div>
+
+  <div class="concept"><div class="meta"><h2>flow</h2><span class="cls">feature proof · dark</span>
+    <span class="hl">"See the size hit the tape."</span></div>
+    <div class="row">
+      <figure class="s1350"><img src="renders/flow--1080x1350.png"><figcaption>1080×1350</figcaption></figure>
+      <figure class="s1080"><img src="renders/flow--1080x1080.png"><figcaption>1080×1080</figcaption></figure>
+    </div></div>
+
+  <div class="concept"><div class="meta"><h2>terminal</h2><span class="cls">feature / free · dark</span>
+    <span class="hl">"A real terminal, in your browser. Free."</span></div>
+    <div class="row">
+      <figure class="s1350"><img src="renders/terminal--1080x1350.png"><figcaption>1080×1350</figcaption></figure>
+      <figure class="s1080"><img src="renders/terminal--1080x1080.png"><figcaption>1080×1080</figcaption></figure>
+      <figure class="s628"><img src="renders/terminal--1200x628.png"><figcaption>1200×628</figcaption></figure>
+    </div></div>
+
+  <div class="concept"><div class="meta"><h2>founding</h2><span class="cls">offer</span>
+    <span class="hl">"Founding rate: 50% off, locked in while you stay."</span></div>
+    <div class="row">
+      <figure class="s1350"><img src="renders/founding--1080x1350.png"><figcaption>1080×1350</figcaption></figure>
+      <figure class="s1080"><img src="renders/founding--1080x1080.png"><figcaption>1080×1080</figcaption></figure>
+      <figure class="s628"><img src="renders/founding--1200x628.png"><figcaption>1200×628</figcaption></figure>
+    </div></div>
+
+  <div class="concept"><div class="meta"><h2>read</h2><span class="cls">ritual</span>
+    <span class="hl">"Wake up to a market already read."</span></div>
+    <div class="row">
+      <figure class="s1350"><img src="renders/read--1080x1350.png"><figcaption>1080×1350</figcaption></figure>
+      <figure class="s1080"><img src="renders/read--1080x1080.png"><figcaption>1080×1080</figcaption></figure>
+    </div></div>
+
+</div>
