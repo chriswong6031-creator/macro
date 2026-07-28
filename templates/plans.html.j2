@@ -18,9 +18,6 @@
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
 {%- endmacro %}
-{% macro help(en, zh='') -%}
-<span class="phelp" tabindex="0">?<span class="ptip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
-{%- endmacro %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -29,245 +26,351 @@
 <title>Plans &amp; pricing — MastermindX</title>
 {% set seo_title = "Plans & pricing — MastermindX" %}{% set seo_desc = "One market brain: every dashboard, the research desk, and the Mastermind chat. Start a 7-day trial of Insider or Pro." %}{% set seo_path = "plans.html" %}
 {% include "_seo_head.html.j2" %}
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'light');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
-  * { box-sizing:border-box; }
-  body { background:var(--bg); color:var(--text); font:14px/1.55 var(--font-ui); margin:0; padding-top:18px; }
-  a { text-decoration:none; color:inherit; }
+  /* ══════════════════════════════════════════════════════════════════════
+     PLANS — the landing page's pricing idiom, on theme tokens.
 
-  /* ── per-tier stance accents (drawn from house tokens; violet = the orb/Opus tier) ── */
-  :root { --t-free:var(--muted); --t-insider:var(--info); --t-pro:#8b5cf6;
-    /* Content surfaces use an OPAQUE elevated fill (not the floating-menu --glass-bg,
-       which is translucent and needs backdrop-filter to be legible). backdrop-filter
-       stays on as an enhancement; the fill guarantees contrast without it. */
-    --surface:color-mix(in srgb, var(--panel) 96%, var(--text)); }
-  html[data-theme="light"] { --t-pro:#7c5cff;
-    --surface:color-mix(in srgb, var(--panel) 97%, #000); }
+     index.html (#pricing) is the reference surface: porcelain cards on a
+     hairline grid, display-face figures, a blue pill toggle and one wide
+     feature matrix. That page is light-only with its own landing.css; this
+     one lives in the public chrome and must keep working in dark, so every
+     landing token below is BRIDGED onto theme.css rather than copied as a
+     literal. In light theme the bridge resolves to the landing's exact
+     values (theme.css's light palette already IS the landing palette:
+     #f7f8fa / #ffffff / #5d6b7e / #285fff), so a visitor stepping from the
+     homepage to this page sees one continuous design.
+
+     Light is the default here (see the <head> boot): the public nav and
+     footer are hardcoded porcelain — they deliberately mirror the landing —
+     so a dark body between them read as a broken page. An explicit theme
+     choice made in the app still wins.
+     ══════════════════════════════════════════════════════════════════════ */
+
+  /* ── landing token bridge — dark values are the fallback (mirrors theme.css,
+        whose :root is dark), light overrides below restore the landing's own ── */
+  :root {
+    --display: -apple-system, 'SF Pro Display', Inter, system-ui, 'Segoe UI', Roboto, sans-serif;
+    --fig: var(--display);
+    --r-lg: 16px;
+    --ink: var(--text);
+    --hair: var(--line);
+    --hair-2: color-mix(in srgb, var(--text) 17%, transparent);
+    --faint: color-mix(in srgb, var(--muted) 82%, transparent);
+    --blue: var(--info);
+    --blue-ink: #82b1f6;
+    --blue-wash: color-mix(in srgb, var(--info) 15%, transparent);
+    --q-green: #45b873;  --green-wash: color-mix(in srgb, #45b873 15%, transparent);
+    --q-gold:  #d8a43c;  --gold-wash:  color-mix(in srgb, #d8a43c 15%, transparent);
+    --violet: #9b86f0;   --teal: #3fbfae;
+    --x-red: #c98a8a;   /* non-directional: --down flips green under [data-lang=zh] */
+    --chip-a: color-mix(in srgb, var(--teal) 18%, transparent);
+    --chip-b: color-mix(in srgb, var(--info) 18%, transparent);
+    --chip-ink: #4fc9b8;
+    --surface: var(--panel);
+    --surface-2: var(--panel2);
+    --sh-card: 0 1px 0 rgba(255,255,255,.02);
+    --sh-lift: 0 18px 40px -18px rgba(0,0,0,.62), 0 3px 8px rgba(0,0,0,.3);
+    /* the two card washes — Pro (hot) and the violet→gold cast on the last card */
+    --wash-hot: linear-gradient(150deg, rgba(63,191,174,.10), rgba(91,155,240,.11) 55%, rgba(155,134,240,.10));
+    --wash-last: linear-gradient(150deg, rgba(155,134,240,.12), rgba(216,97,150,.07) 55%, rgba(216,164,60,.10));
+  }
+  html[data-theme="light"] {
+    --hair-2: #dfe3e9;
+    --faint: #8a95a4;
+    --blue-ink: #1c47cc;
+    --blue-wash: #eef2ff;
+    --q-green: #1f8b41;  --green-wash: #e9f5ec;
+    --q-gold:  #b07d05;  --gold-wash:  #faf3e2;
+    --violet: #7862e0;   --teal: #0f9d8f;
+    --x-red: #dc8f8f;
+    --chip-a: #e7f3f1;  --chip-b: #e9eefc;  --chip-ink: #0d7f74;
+    --surface: #ffffff;
+    --surface-2: #fbfcfd;
+    --sh-card: 0 1px 3px rgba(20,30,50,.07), 0 1px 2px rgba(20,30,50,.05);
+    --sh-lift: 0 14px 34px -14px rgba(20,30,50,.25), 0 3px 8px rgba(20,30,50,.07);
+    --wash-hot: linear-gradient(150deg, rgba(15,157,143,.055), rgba(40,95,255,.06) 55%, rgba(120,98,224,.05));
+    --wash-last: linear-gradient(150deg, rgba(120,98,224,.07), rgba(193,47,120,.045) 55%, rgba(176,125,5,.065));
+  }
+
+  /* ── the landing's canvas, pinned ──────────────────────────────────────
+     theme.js injects a site-wide "soft-contrast" palette for EVERY page
+     (light: --bg:#eceef1 / --panel:#f5f5f7 / --text:#2e3950) at
+     html.soft-contrast[data-theme="light"]. The homepage never links theme.js,
+     so it keeps #f7f8fa / #ffffff / #1c2430 — and the public nav above this
+     page is hardcoded to rgba(247,248,250,.85), i.e. the LANDING's background.
+     On the soft-contrast canvas that nav is a visibly different shade from the
+     page it sits on. Re-pinning the landing values here fixes the seam and
+     makes the homepage → pricing handoff continuous. Selector must out-specify
+     html.soft-contrast[data-theme="light"] (0,0,2,1), hence body.page-plans.
+     Contrast holds: #1c2430 on #f7f8fa ≈ 14:1, --muted ≈ 5.4:1 (both > AA), and
+     these are the exact values the homepage already ships to every visitor.
+     Dark keeps the app's soft-contrast canvas — there is no homepage dark to
+     match, and the rest of the product lives on it. */
+  html[data-theme="light"] body.page-plans {
+    --bg:#f7f8fa; --panel:#ffffff; --panel2:#fbfcfd;
+    --text:#1c2430; --muted:#5d6b7e; --line:#eaecf0;
+  }
+  /* the ambient aurora is an app surface, not a marketing one — the homepage's
+     pricing section is flat porcelain, so drop the wash in light and keep it in
+     dark, where it is part of the product's look. */
+  html[data-theme="light"] body.page-plans::before { display:none; }
+
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--ink); font:15px/1.55 var(--font-ui); margin:0; }
+  a { text-decoration:none; color:inherit; }
+  /* ZH keeps the display voice but hands off to a CJK face (landing.css parity) */
+  html[data-lang="zh"] .sec-title, html[data-lang="zh"] .tier h3, html[data-lang="zh"] h1, html[data-lang="zh"] h2 {
+    font-family:var(--display), 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    letter-spacing:-.01em;
+  }
+  /* tabular figures everywhere a number can change under the toggle */
+  .price, .price .was, .fcount, .mx .val { font-variant-numeric:tabular-nums; font-feature-settings:"tnum" 1; }
 
   /* ── page shell ─────────────────────────────────────────────────────── */
-  .wrap { max-width:1120px; margin:0 auto; padding:22px 18px 72px; }
-  @media (min-width:900px){ .wrap{ padding:30px 26px 96px; } }
+  .wrap { width:100%; max-width:1280px; margin-inline:auto; padding-inline:clamp(20px,4.5vw,60px); }
+  .section-pad { padding-block:clamp(52px,7vw,86px); }
+  .pricing-sec { padding-top:clamp(38px,5vw,60px); }
 
-  /* ── hero ───────────────────────────────────────────────────────────── */
-  .hero { position:relative; text-align:center; padding:26px 6px 8px; }
-  .hero .eyebrow { font:600 11px/1 var(--font-ui); letter-spacing:.18em; text-transform:uppercase;
-    color:var(--muted); display:inline-flex; align-items:center; gap:8px; margin-bottom:16px; }
-  .hero .eyebrow::before, .hero .eyebrow::after { content:""; width:26px; height:1px;
-    background:linear-gradient(90deg,transparent,var(--line)); }
-  .hero .eyebrow::after { background:linear-gradient(90deg,var(--line),transparent); }
-  .hero h1 { font:700 clamp(28px,5.4vw,44px)/1.08 var(--font-ui); letter-spacing:-.02em;
-    margin:0 auto; max-width:15ch; }
-  .hero h1 .accent { background:linear-gradient(100deg,var(--t-insider),var(--t-pro));
-    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
-  .hero .sub { font-size:clamp(14.5px,2.2vw,17px); color:var(--muted); max-width:56ch;
-    margin:16px auto 0; line-height:1.5; }
+  /* ── section head (kicker · title · toggle) ─────────────────────────── */
+  .p-head { text-align:center; max-width:640px; margin:0 auto; }
+  .kicker { font-family:var(--display); font-weight:700; font-size:.72rem; letter-spacing:.16em;
+    text-transform:uppercase; color:var(--blue); }
+  .sec-title { font-family:var(--display); font-weight:700; letter-spacing:-.02em; line-height:1.02;
+    font-size:clamp(1.9rem,4vw,3rem); margin:12px 0 14px; color:var(--ink); }
+  .sec-sub { color:var(--muted); font-size:1.02rem; max-width:52ch; margin:0 auto; }
 
-  /* ── billing toggle (the signature interaction) ─────────────────────── */
-  .toggle-wrap { display:flex; justify-content:center; margin:28px 0 6px; }
-  .btoggle { position:relative; display:inline-flex; align-items:center; gap:2px; padding:5px;
-    border-radius:999px; border:1px solid var(--glass-brd); background:var(--glass-bg);
-    -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur);
-    box-shadow:var(--card-shadow); }
-  .btoggle .knob { position:absolute; top:5px; bottom:5px; left:5px; width:calc(50% - 5px);
-    border-radius:999px; background:linear-gradient(180deg,color-mix(in srgb,var(--t-insider) 22%,var(--panel2)),var(--panel2));
-    border:1px solid color-mix(in srgb,var(--t-insider) 40%,var(--line));
-    box-shadow:inset 0 1px 0 var(--gbtn-sheen), 0 4px 14px -6px color-mix(in srgb,var(--t-insider) 55%,transparent);
-    transition:transform .34s cubic-bezier(.34,1.4,.5,1); z-index:0; }
-  .btoggle.annual .knob { transform:translateX(100%); }
-  .btoggle button { position:relative; z-index:1; appearance:none; border:0; background:none; cursor:pointer;
-    font:600 13px/1 var(--font-ui); color:var(--muted); padding:9px 20px; border-radius:999px;
-    display:inline-flex; align-items:center; gap:8px; transition:color .24s ease; white-space:nowrap; }
-  .btoggle button.on { color:var(--text); }
-  .btoggle .save-flag { font:700 10px/1 var(--font-ui); letter-spacing:.02em; color:var(--t-pro);
-    background:color-mix(in srgb,var(--t-pro) 16%,transparent);
-    border:1px solid color-mix(in srgb,var(--t-pro) 34%,transparent);
-    padding:3px 7px; border-radius:999px; }
-  .toggle-note { text-align:center; font-size:12px; color:var(--muted); margin:4px 0 0; min-height:1.2em; }
+  .toggle { display:inline-flex; margin-top:22px; border:1px solid var(--hair-2); border-radius:99px;
+    padding:4px; font-weight:600; font-size:13px; background:var(--surface); box-shadow:var(--sh-card); }
+  .toggle button { appearance:none; border:0; cursor:pointer; font:600 13px/1 var(--font-ui);
+    padding:9px 17px; border-radius:99px; color:var(--muted); background:none;
+    transition:background .18s ease, color .18s ease; }
+  .toggle button[aria-pressed="true"] { background:var(--blue); color:#fff; }
+  .toggle button:focus-visible { outline:2px solid var(--blue); outline-offset:2px; }
+  .toggle .save { font-family:var(--display); font-weight:700; font-size:9.5px; letter-spacing:.05em;
+    margin-left:5px; color:#bff2cf; }
+  .toggle button[aria-pressed="false"] .save { color:var(--q-green); }
+  .toggle-note { text-align:center; font-size:12.5px; color:var(--muted); margin:12px 0 0; min-height:1.2em; }
 
   /* ── tier cards ─────────────────────────────────────────────────────── */
-  .cards { display:grid; gap:16px; margin-top:26px; grid-template-columns:1fr; align-items:stretch; }
-  @media (min-width:760px){ .cards{ grid-template-columns:repeat(3,1fr); gap:14px; } }
+  .tiers { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:40px; }
+  .tier { position:relative; border:1px solid var(--hair-2); border-radius:var(--r-lg);
+    background:var(--surface); box-shadow:var(--sh-card); padding:24px; display:flex; flex-direction:column; }
+  .tiers .tier:last-child { background:var(--wash-last), var(--surface); }
+  .tier.hot { border-color:var(--blue); box-shadow:0 0 0 1px var(--blue), var(--sh-lift);
+    background:var(--wash-hot), var(--surface); }
+  /* the "FOUNDING RATE" tab — a real element (not ::before) so the offer API can
+     retitle it when the allotment runs out; same geometry as landing.css */
+  .hot-tab { position:absolute; top:-11px; left:50%; transform:translateX(-50%); white-space:nowrap;
+    font-family:var(--display); font-weight:700; font-size:9.5px; letter-spacing:.14em; text-transform:uppercase;
+    color:#fff; background:var(--blue); padding:4px 11px; border-radius:99px; }
+  html[data-lang="zh"] .hot-tab { letter-spacing:.08em; }
 
-  .card { --accent:var(--muted); position:relative; display:flex; flex-direction:column;
-    background:var(--surface); -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur);
-    border:1px solid var(--glass-brd); border-radius:18px; padding:22px 20px 20px; overflow:hidden;
-    box-shadow:var(--card-shadow); transition:transform .2s ease, box-shadow .25s ease, border-color .2s ease; }
-  .card::before { content:""; position:absolute; inset:0 0 auto 0; height:3px;
-    background:linear-gradient(90deg,transparent,var(--accent),transparent); opacity:.9; }
-  .card:hover { transform:translateY(-3px); border-color:color-mix(in srgb,var(--accent) 34%,var(--glass-brd));
-    box-shadow:0 20px 50px -24px color-mix(in srgb,var(--accent) 40%,transparent), var(--card-shadow); }
-  .card.free { --accent:var(--t-free); }
-  .card.insider { --accent:var(--t-insider); }
-  .card.pro { --accent:var(--t-pro);
-    border-color:color-mix(in srgb,var(--t-pro) 32%,var(--glass-brd));
-    box-shadow:0 22px 54px -26px color-mix(in srgb,var(--t-pro) 46%,transparent), var(--card-shadow); }
-  .card.pro::after { content:""; position:absolute; inset:-1px; border-radius:18px; pointer-events:none;
-    background:radial-gradient(120% 60% at 50% 0%,color-mix(in srgb,var(--t-pro) 12%,transparent),transparent 60%); }
+  .tier h3 { margin:0; font-family:var(--display); font-weight:800; font-size:19px; color:var(--ink); }
+  .tier .who { color:var(--muted); font-size:13px; margin:4px 0 0; min-height:36px; }
 
-  .ribbon { position:absolute; top:19px; right:-38px; transform:rotate(45deg); z-index:2;
-    background:linear-gradient(180deg,var(--t-pro),color-mix(in srgb,var(--t-pro) 70%,#000));
-    color:#fff; font:700 9.5px/1 var(--font-ui); letter-spacing:.07em; text-transform:uppercase;
-    padding:5px 44px; box-shadow:0 4px 12px -4px rgba(0,0,0,.5); text-align:center; }
+  .price { margin-top:12px; font-family:var(--fig); font-weight:800; font-size:41px; letter-spacing:-.005em;
+    color:var(--ink); line-height:1.05; }
+  .price .amt { transition:opacity .18s ease; }
+  .price .per { font-family:var(--font-ui); font-weight:500; font-size:12.5px; color:var(--muted); letter-spacing:0; }
+  .price .was { font-family:var(--fig); font-weight:600; font-size:16px; letter-spacing:normal;
+    color:var(--faint); text-decoration:line-through; margin-right:7px; }
+  .price .was.hidden { display:none; }
 
-  .card .tname { display:inline-flex; align-items:center; gap:8px; font:700 15px/1 var(--font-ui);
-    letter-spacing:.01em; color:var(--text); }
-  .card .tname .dot { width:9px; height:9px; border-radius:50%; background:var(--accent);
-    box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 18%,transparent); }
-  .card .tfor { font-size:12.5px; color:var(--muted); margin:8px 0 0; min-height:2.4em; line-height:1.4; }
+  .bill { margin:7px 0 0; font-size:12px; line-height:1.45; color:var(--muted); }
+  /* NOT .badge — theme.css carries `html body .badge` and would win on size/padding */
+  .save-badge { display:inline-block; margin-top:6px; font-family:var(--display); font-weight:700;
+    font-size:10px; letter-spacing:.06em; color:var(--q-green); background:var(--green-wash);
+    border-radius:6px; padding:4px 9px; }
+  .save-badge.hidden { visibility:hidden; }  /* reserve the line — no card jump on toggle */
 
-  /* price block — mono numerals (the trading-desk numeric face) */
-  .price { display:flex; align-items:flex-end; gap:4px; margin:18px 0 2px; min-height:44px; }
-  .price .cur { font:600 18px/1 var(--font-mono); color:var(--muted); margin-bottom:5px; }
-  .price .amt { font:600 40px/.9 var(--font-mono); letter-spacing:-.01em; color:var(--text);
-    font-variant-numeric:tabular-nums; transition:opacity .18s ease; }
-  .price .per { font-size:12.5px; color:var(--muted); margin-bottom:5px; }
-  .price.free-price .amt { font-size:28px; }
-  .billed { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted);
-    min-height:1.5em; margin-top:2px; }
-  .badge-save { font:700 10.5px/1 var(--font-ui); color:var(--accent);
-    background:color-mix(in srgb,var(--accent) 15%,transparent);
-    border:1px solid color-mix(in srgb,var(--accent) 32%,transparent);
-    padding:3px 8px; border-radius:999px; white-space:nowrap; }
-  .badge-save.hidden { display:none; }
-  .rack-price { display:flex; align-items:center; gap:7px; min-height:1.5em; margin-top:10px;
-    color:var(--muted); font-size:11.5px; }
-  .rack-price s { color:var(--text); text-decoration-thickness:1.5px; }
-  .rack-price.hidden { display:none; }
+  .founding { margin-top:12px; padding:11px 12px; border-radius:10px;
+    border:1px solid color-mix(in srgb, var(--blue) 24%, transparent);
+    background:linear-gradient(160deg, color-mix(in srgb,var(--blue) 6%,transparent), color-mix(in srgb,var(--violet) 6%,transparent)); }
+  .founding.hidden { display:none; }
+  .founding-line { display:flex; justify-content:space-between; align-items:baseline; gap:10px;
+    font-size:10.5px; color:var(--muted); }
+  .founding-line b { font-family:var(--display); font-weight:750; letter-spacing:.05em; color:var(--ink); }
+  .founding-line .fcount { font-family:var(--fig); font-weight:600; color:var(--ink); text-align:right; }
+  .founding-track { height:6px; margin-top:8px; overflow:hidden; border-radius:999px;
+    background:color-mix(in srgb, var(--blue) 14%, transparent); }
+  .founding-fill { display:block; width:0; height:100%; border-radius:inherit;
+    background:linear-gradient(90deg, var(--blue), var(--violet)); transition:width .6s ease; }
+  .founding-terms { margin:8px 0 0; font-size:10px; line-height:1.4; color:var(--muted); }
 
-  .founding-meter { margin:14px 0 1px; padding:11px 12px; border-radius:11px;
-    border:1px solid color-mix(in srgb,var(--t-pro) 32%,var(--line));
-    background:color-mix(in srgb,var(--t-pro) 8%,transparent); }
-  .founding-meter.hidden { display:none; }
-  .founding-line { display:flex; justify-content:space-between; gap:12px; align-items:baseline;
-    font-size:11.5px; color:var(--muted); }
-  .founding-line b { color:var(--text); font:700 11.5px/1.2 var(--font-ui); }
-  .founding-track { height:6px; margin-top:8px; border-radius:999px; overflow:hidden;
-    background:color-mix(in srgb,var(--t-pro) 16%,var(--panel)); }
-  .founding-fill { width:0; height:100%; border-radius:inherit;
-    background:linear-gradient(90deg,var(--t-pro),color-mix(in srgb,var(--t-pro) 60%,#fff));
-    transition:width .35s ease; }
-  .founding-terms { margin:8px 0 0; color:var(--muted); font-size:10.5px; line-height:1.4; }
+  .tier .tf { list-style:none; margin:15px 0 18px; padding:0; flex:1; display:flex; flex-direction:column; gap:9px; }
+  .tier .tf li { position:relative; padding-left:21px; font-size:13px; line-height:1.5; color:var(--muted); }
+  .tier .tf li::before { content:"✓"; position:absolute; left:1px; top:.05em; font-family:var(--display);
+    font-weight:800; font-size:11px; color:var(--q-green); }
+  .tier .tf li b { color:var(--ink); font-weight:600; }
 
-  .cta { margin:18px 0 4px; }
-  .cta .gbtn { width:100%; }
+  /* CTA — landing .btn geometry. Keeps the [data-act] hooks and the busy spinner. */
+  .tier .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; width:100%;
+    border-radius:10px; padding:11px 20px; font:600 14.5px/1 var(--font-ui); cursor:pointer;
+    border:1px solid var(--hair-2); background:var(--surface); color:var(--ink); box-shadow:var(--sh-card);
+    transition:transform .16s, box-shadow .16s, background .16s; margin-top:auto; }
+  .tier .btn:hover { transform:translateY(-1px); box-shadow:var(--sh-lift); }
+  .tier .btn.primary { background:var(--blue); border-color:var(--blue); color:#fff; }
+  .tier .btn.primary:hover { background:var(--blue-ink); }
+  .tier .btn:focus-visible { outline:2px solid var(--blue); outline-offset:2px; }
+  .tier .btn[aria-busy="true"] { pointer-events:none; opacity:.75; }
+  .btn .spin { width:14px; height:14px; border:2px solid color-mix(in srgb, currentColor 30%, transparent);
+    border-top-color:currentColor; border-radius:50%; animation:pspin .7s linear infinite; }
+  @keyframes pspin { to { transform:rotate(360deg); } }
   .cta-note { font-size:11.5px; color:var(--muted); text-align:center; margin:9px 0 0; min-height:1.3em; }
-  .cta-note.on-plan { color:var(--t-insider); font-weight:600; }
 
-  /* per-card highlight list — glance-tier plain words, one line each */
-  .feats { list-style:none; margin:16px 0 0; padding:16px 0 0; border-top:1px solid var(--line);
-    display:flex; flex-direction:column; gap:9px; }
-  .feats li { display:flex; align-items:flex-start; gap:9px; font-size:12.8px; line-height:1.4; color:var(--text); }
-  .feats li .ic { flex:none; margin-top:1px; width:15px; height:15px; }
-  .feats li .ic svg { width:15px; height:15px; display:block; }
-  .feats li.on .ic { color:var(--accent); }
-  .feats li.off { color:var(--muted); }
-  .feats li.off .ic { color:color-mix(in srgb,var(--muted) 70%,transparent); }
-  .feats li b { font-weight:600; }
+  /* ── feature matrix ─────────────────────────────────────────────────── */
+  .matrix-card { margin-top:28px; background:var(--surface); border:1px solid var(--hair-2);
+    border-radius:var(--r-lg); box-shadow:var(--sh-card); overflow:auto; }
+  .mx-mobile-head { display:none; }
+  table.mx { width:100%; border-collapse:collapse; min-width:760px; }
+  .mx th, .mx td { padding:9px 16px; text-align:center; font-size:13.5px; border-bottom:1px solid var(--hair); }
+  .mx thead th { font-family:var(--display); font-weight:800; font-size:13px; letter-spacing:.02em;
+    position:sticky; top:0; background:var(--surface); z-index:2; border-bottom:1px solid var(--hair-2); color:var(--ink); }
+  .mx thead th small { display:block; font-family:var(--font-ui); font-weight:500; font-size:11px;
+    color:var(--faint); letter-spacing:0; margin-top:2px; }
+  .mx td:first-child, .mx th:first-child { text-align:left; position:sticky; left:0;
+    background:var(--surface); z-index:1; min-width:230px; }
+  .mx .grp td { font-family:var(--display); font-weight:700; font-size:10.5px; letter-spacing:.14em;
+    color:var(--blue); background:var(--surface-2); padding:9px 16px; }
+  .mx .ok { color:var(--q-green); font-weight:800; font-size:14.5px; }
+  .mx .no { color:var(--x-red); font-weight:700; font-size:13px; }
+  .mx .val { font-weight:600; color:var(--ink); }
+  .mx .val small { display:block; font-weight:500; font-size:11px; color:var(--muted); margin-top:1px; }
+  .mx tbody tr:not(.grp):hover td { background:var(--blue-wash); }
+  .mx td:nth-child(3) { background:color-mix(in srgb, var(--blue) 3%, transparent); }
+  .mx tbody tr:last-child td { border-bottom:0; }
 
-  /* ── comparison matrix ──────────────────────────────────────────────── */
-  .matrix-sec { margin-top:56px; }
-  .sec-head { text-align:center; margin-bottom:22px; }
-  .sec-head h2 { font:700 clamp(19px,3vw,25px)/1.15 var(--font-ui); letter-spacing:-.01em; margin:0; }
-  .sec-head p { color:var(--muted); margin:8px auto 0; max-width:52ch; font-size:14px; }
-
-  .mtx-shell { border:1px solid var(--glass-brd); border-radius:16px; overflow:hidden;
-    background:var(--surface); box-shadow:var(--card-shadow); }
-  .mtx { width:100%; border-collapse:collapse; font-size:13px; }
-  .mtx th, .mtx td { padding:12px 14px; text-align:left; border-bottom:1px solid var(--line);
-    vertical-align:middle; }
-  .mtx thead th { position:sticky; top:0; background:var(--surface); z-index:3;
-    box-shadow:0 1px 0 var(--line); }
-  .mtx tbody tr:last-child td { border-bottom:0; }
-  .mtx tbody tr:hover td { background:color-mix(in srgb,var(--text) 3%,transparent); }
-  .mtx .col-feat { width:34%; }
-  .mtx .col-tier { width:22%; text-align:center; }
-  .mtx td.col-tier, .mtx th.col-tier { text-align:center; }
-  .mtx thead .th-tier { display:inline-flex; flex-direction:column; align-items:center; gap:3px; }
-  .mtx thead .th-tier .tn { font:700 13px/1 var(--font-ui); }
-  .mtx thead .th-tier .tp { font:500 11px/1 var(--font-mono); color:var(--muted); }
-  .mtx thead .th-free .tn { color:var(--t-free); }
-  .mtx thead .th-insider .tn { color:var(--t-insider); }
-  .mtx thead .th-pro .tn { color:var(--t-pro); }
-  .mtx .col-pro { background:color-mix(in srgb,var(--t-pro) 5%,transparent); }
-  .mtx .rlabel { font-weight:600; color:var(--text); }
-  .mtx .rsub { display:block; font-weight:400; font-size:11.5px; color:var(--muted); margin-top:2px; }
-  .mtx .val { color:var(--text); font-size:12.6px; }
-  .mtx .val-muted { color:var(--muted); }
-  .mtx .yes { color:var(--up); }
-  .mtx .yes svg { width:17px; height:17px; }
-  .mtx .dash { color:color-mix(in srgb,var(--muted) 60%,transparent); font-size:15px; }
-  .mtx .num { font-family:var(--font-mono); font-variant-numeric:tabular-nums; font-weight:600; }
+  /* feature cell + its Tier-2 hover tip (the mechanics live here, not on the row) */
+  .mx td.feat { position:relative; }
+  .mx td.feat.has-tip { cursor:help; }
+  .mx td.feat.has-tip .ft { border-bottom:1px dotted var(--hair-2); }
+  .mx td.feat:hover, .mx td.feat:focus-within { z-index:30; }
+  .mx .tipbox { position:absolute; left:16px; top:calc(100% - 4px); z-index:80; width:min(280px,64vw);
+    background:var(--ink); color:var(--bg); font-size:11.5px; font-weight:400; line-height:1.5;
+    border-radius:9px; padding:9px 12px; box-shadow:0 12px 30px -12px rgba(18,26,45,.55);
+    opacity:0; visibility:hidden; transform:translateY(3px); pointer-events:none; white-space:normal;
+    transition:opacity .18s, transform .18s, visibility 0s .18s; }
+  .mx .tipbox.up { top:auto; bottom:calc(100% - 4px); transform:translateY(-3px); }
+  .mx td.feat:hover .tipbox, .mx td.feat:focus-within .tipbox {
+    opacity:1; visibility:visible; transform:none; transition:opacity .18s, transform .18s; }
+  .mx .feat .mchip { display:inline-block; font-family:var(--display); font-weight:800; font-size:8px;
+    letter-spacing:.1em; text-transform:uppercase; border-radius:6px; border:1px solid transparent; padding:2px 7px;
+    margin:0 0 0 8px; vertical-align:1px; white-space:nowrap; color:var(--chip-ink);
+    background:linear-gradient(90deg,var(--chip-a),var(--chip-b)) padding-box,
+               linear-gradient(90deg,color-mix(in srgb,var(--teal) 60%,transparent),color-mix(in srgb,var(--blue) 55%,transparent)) border-box; }
 
   /* ── FAQ ────────────────────────────────────────────────────────────── */
-  .faq-sec { margin-top:56px; }
+  .sec-head { text-align:center; margin-bottom:22px; }
+  .sec-head h2 { font-family:var(--display); font-weight:700; letter-spacing:-.015em;
+    font-size:clamp(1.4rem,2.6vw,2rem); margin:0; color:var(--ink); }
+  .sec-head p { color:var(--muted); margin:8px auto 0; max-width:52ch; font-size:14px; }
   .faq { display:grid; gap:10px; max-width:760px; margin:22px auto 0; }
-  .faq details { border:1px solid var(--glass-brd); border-radius:12px; background:var(--surface);
-    overflow:hidden; }
-  .faq summary { list-style:none; cursor:pointer; padding:15px 18px; font:600 14px/1.4 var(--font-ui);
-    display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .faq details { border:1px solid var(--hair-2); border-radius:12px; background:var(--surface);
+    box-shadow:var(--sh-card); overflow:hidden; }
+  .faq summary { list-style:none; cursor:pointer; padding:15px 18px; font:600 14.5px/1.4 var(--font-ui);
+    color:var(--ink); display:flex; align-items:center; justify-content:space-between; gap:12px; }
   .faq summary::-webkit-details-marker { display:none; }
+  .faq summary:focus-visible { outline:2px solid var(--blue); outline-offset:-2px; }
   .faq summary .chev { flex:none; width:16px; height:16px; color:var(--muted); transition:transform .22s ease; }
   .faq details[open] summary .chev { transform:rotate(180deg); }
-  .faq .ans { padding:0 18px 16px; color:var(--muted); font-size:13.4px; line-height:1.6; }
-  /* the FAQ's honest exit: when none of the five answers is yours, there is a
-     person to ask (SEE W2 / masterplan R6 — support entry points ride the funnel,
-     not the nav, which is on hold). */
+  .faq .ans { padding:0 18px 16px; color:var(--muted); font-size:13.6px; line-height:1.6; }
   .faq-more { max-width:760px; margin:14px auto 0; text-align:center; font-size:13.2px;
     color:var(--muted); line-height:1.55; }
-  .faq-more a { color:var(--link); font-weight:600; }
+  .faq-more a { color:var(--blue); font-weight:600; }
+  .faq-more a:hover { color:var(--blue-ink); }
 
   /* ── disclaimer ─────────────────────────────────────────────────────── */
-  .disclaimer { margin-top:44px; padding:16px 18px; border:1px solid var(--line); border-radius:12px;
-    background:color-mix(in srgb,var(--panel) 60%,transparent); color:var(--muted);
-    font-size:11.8px; line-height:1.6; max-width:820px; margin-left:auto; margin-right:auto; }
-  .disclaimer b { color:color-mix(in srgb,var(--text) 80%,var(--muted)); font-weight:600; }
+  .disclaimer { margin:44px auto 0; max-width:820px; padding:16px 18px; border:1px solid var(--hair);
+    border-radius:12px; background:var(--surface-2); color:var(--muted); font-size:11.8px; line-height:1.6; }
+  .disclaimer b { color:var(--ink); font-weight:600; }
 
-  /* ── inline ? help tips (Tier-2 home for the fine mechanics) ─────────── */
-  .phelp { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px;
-    border-radius:50%; border:1px solid var(--muted); color:var(--muted); font:600 10px/1 var(--font-ui);
-    cursor:help; position:relative; vertical-align:middle; margin-left:5px; }
-  .phelp .ptip { display:none; position:absolute; bottom:150%; left:50%; transform:translateX(-50%);
-    width:250px; background:var(--panel); border:1px solid var(--line); padding:9px 11px; border-radius:9px;
-    z-index:70; font:400 12px/1.45 var(--font-ui); color:var(--text); box-shadow:var(--popover-shadow);
-    text-align:left; }
-  .phelp:hover .ptip, .phelp:focus .ptip { display:block; }
-
-  /* ── return-flag banner (?checkout=success | cancel) ────────────────── */
-  .flag-banner { display:none; align-items:center; gap:12px; margin:0 0 20px; padding:13px 16px;
-    border-radius:12px; font-size:13.5px; border:1px solid var(--line); }
+  /* ── return-flag banner (?checkout=success | cancel) ─────────────────── */
+  .flag-banner { display:none; align-items:center; gap:12px; margin:20px 0 0; padding:13px 16px;
+    border-radius:12px; font-size:13.5px; border:1px solid var(--hair-2); background:var(--surface);
+    box-shadow:var(--sh-card); color:var(--ink); }
   .flag-banner.show { display:flex; }
-  .flag-banner.ok { border-color:color-mix(in srgb,var(--up) 42%,var(--line));
-    background:color-mix(in srgb,var(--up) 10%,transparent); color:var(--text); }
-  .flag-banner.cancel { border-color:color-mix(in srgb,var(--warn) 42%,var(--line));
-    background:color-mix(in srgb,var(--warn) 10%,transparent); color:var(--text); }
+  /* --q-green, not --up: theme.css flips --up to red under [data-lang="zh"] (红涨绿跌),
+     and a "you're in" banner must not turn red for a Chinese reader. */
+  .flag-banner.ok { border-color:color-mix(in srgb, var(--q-green) 42%, var(--hair-2)); background:var(--green-wash); }
+  .flag-banner.cancel { border-color:color-mix(in srgb, var(--q-gold) 42%, var(--hair-2)); background:var(--gold-wash); }
   .flag-banner .ficon { flex:none; font-size:17px; }
-  /* the success banner's way OUT of the pricing page — the old copy told the user to
-     "head to the dashboard" and then gave them nothing to click. */
   .flag-banner .fgo { flex:none; margin-left:14px; font-weight:600; white-space:nowrap;
-    color:var(--text); text-decoration:none; border-bottom:1px solid currentColor; }
-  .flag-banner .fgo:hover { opacity:.72; }
+    color:var(--blue); border-bottom:1px solid currentColor; }
   .flag-banner .fx { margin-left:auto; cursor:pointer; color:var(--muted); background:none; border:0;
     font-size:16px; line-height:1; padding:2px 4px; }
 
   /* ── toast (checkout errors — interface voice, no apology) ──────────── */
   #ptoast { position:fixed; left:50%; bottom:26px; transform:translateX(-50%) translateY(20px);
-    max-width:min(92vw,420px); background:var(--panel); border:1px solid var(--line); color:var(--text);
-    padding:12px 16px; border-radius:12px; box-shadow:var(--glass-shadow); font-size:13px; z-index:2147483600;
+    max-width:min(92vw,420px); background:var(--ink); border:1px solid var(--hair-2); color:var(--bg);
+    padding:12px 16px; border-radius:12px; box-shadow:var(--sh-lift); font-size:13px; z-index:2147483600;
     opacity:0; pointer-events:none; transition:opacity .22s ease, transform .22s ease; }
   #ptoast.show { opacity:1; transform:translateX(-50%) translateY(0); }
 
-  .gbtn[aria-busy="true"] { pointer-events:none; opacity:.75; }
-  .gbtn .spin { width:14px; height:14px; border:2px solid color-mix(in srgb,var(--text) 30%,transparent);
-    border-top-color:var(--text); border-radius:50%; animation:pspin .7s linear infinite; }
-  @keyframes pspin { to { transform:rotate(360deg); } }
   @media (prefers-reduced-motion:reduce){
-    .btoggle .knob, .card, .price .amt, .faq summary .chev, #ptoast { transition:none; }
-    .gbtn .spin { animation-duration:1.4s; }
+    .tier .btn, .price .amt, .faq summary .chev, #ptoast, .founding-fill, .toggle button { transition:none; }
+    .btn .spin { animation-duration:1.4s; }
   }
-  @media (max-width:480px){
-    .btoggle .save-flag { display:none; }
-    .btoggle button { padding-left:24px; padding-right:24px; }
+
+  /* ── mobile: one readable plan column + tap-to-expand mechanics ──────── */
+  @media (max-width:760px){
+    .tiers { grid-template-columns:1fr; gap:18px; margin-top:32px; }
+    .tier { padding:22px 20px; border-radius:18px; }
+    .tier .who { min-height:0; margin-bottom:2px; }
+    .tier .tf { margin:13px 0 17px; gap:8px; }
+    .tier .btn { min-height:48px; }
+    .price { font-size:37px; }
+
+    .matrix-card { margin-top:30px; overflow:visible; border-radius:18px; }
+    .mx-mobile-head { display:block; position:sticky; top:62px; z-index:35; padding:12px;
+      background:color-mix(in srgb, var(--surface) 94%, transparent); border-bottom:1px solid var(--hair-2);
+      border-radius:18px 18px 0 0; box-shadow:0 10px 24px -22px rgba(18,26,45,.6);
+      backdrop-filter:blur(14px) saturate(140%); -webkit-backdrop-filter:blur(14px) saturate(140%); }
+    .mx-mobile-label { margin:0 0 8px; font-family:var(--display); font-weight:700; font-size:9.5px;
+      letter-spacing:.12em; color:var(--muted); text-transform:uppercase; }
+    .mx-plan-tabs { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; padding:4px;
+      background:var(--surface-2); border:1px solid var(--hair); border-radius:12px; }
+    .mx-plan-tabs button { min-width:0; min-height:46px; border:1px solid transparent; border-radius:9px;
+      padding:6px 5px; color:var(--muted); background:none; cursor:pointer;
+      transition:background .16s, color .16s, box-shadow .16s, border-color .16s; }
+    .mx-plan-tabs button span { display:block; font-family:var(--display); font-size:12.5px; font-weight:800; line-height:1.15; }
+    .mx-plan-tabs button small { display:block; margin-top:2px; font-size:10px; font-weight:500; line-height:1.2;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .mx-plan-tabs button[aria-pressed="true"] { background:var(--surface); border-color:var(--hair-2);
+      color:var(--blue); box-shadow:var(--sh-card); }
+    .mx-mobile-hint { margin:8px 2px 0; color:var(--faint); font-size:11px; line-height:1.35; }
+
+    table.mx { min-width:0; table-layout:fixed; }
+    .mx th, .mx td { padding:11px 12px; }
+    .mx th:first-child, .mx td:first-child { position:static; left:auto; min-width:0; width:68%; text-align:left; }
+    .mx thead th { position:static; top:auto; font-size:12px; vertical-align:top; }
+    .mx thead th:first-child { color:var(--muted); font-size:11px; font-weight:600; }
+    .mx thead th small { font-size:9.5px; line-height:1.25; }
+    .mx th:nth-child(n+2), .mx td:nth-child(n+2) { display:none; }
+    .matrix-card[data-plan="free"]    .mx th:nth-child(2), .matrix-card[data-plan="free"]    .mx td:nth-child(2),
+    .matrix-card[data-plan="insider"] .mx th:nth-child(3), .matrix-card[data-plan="insider"] .mx td:nth-child(3),
+    .matrix-card[data-plan="pro"]     .mx th:nth-child(4), .matrix-card[data-plan="pro"]     .mx td:nth-child(4) { display:table-cell; width:32%; }
+    .mx .grp td { display:table-cell !important; width:auto !important; padding:10px 12px; }
+    .mx .ok { font-size:16px; }
+    .mx .val { font-size:12px; line-height:1.25; }
+    .mx .feat .mchip { margin-left:6px; padding:2px 5px; font-size:7.5px; }
+    .mx td.feat.has-tip { cursor:pointer; }
+    .mx td.feat.has-tip .ft::after { content:" ⓘ"; color:var(--blue); font-size:10px; }
+    .mx td.feat.has-tip .tipbox { position:static; display:block; width:100%; max-height:0; margin:0; padding:0;
+      background:transparent; color:var(--muted); border:0; border-radius:0; box-shadow:none;
+      font-size:11.5px; line-height:1.45; opacity:0; visibility:hidden; overflow:hidden; transform:none;
+      transition:max-height .22s ease, opacity .16s ease, margin .22s ease, visibility 0s .22s; }
+    .mx td.feat:hover, .mx td.feat:focus-within { z-index:auto; }
+    .mx td.feat:hover .tipbox, .mx td.feat:focus-within .tipbox { opacity:0; visibility:hidden; }
+    .mx td.feat.has-tip.tip-open .tipbox { max-height:120px; margin-top:7px; opacity:1; visibility:visible;
+      transition:max-height .22s ease, opacity .16s ease, margin .22s ease; }
+  }
+  @media (max-width:680px){
+    .pricing-sec { padding-block:44px; }
+    .toggle { display:grid; grid-template-columns:1fr 1fr; width:100%; max-width:360px; }
+    .toggle button { min-height:44px; padding:8px 10px; }
+    .toggle .save { display:block; margin:2px 0 0; font-size:8.5px; }
   }
 </style>
 {% set rel = '' %}
@@ -286,216 +389,202 @@
     <button class="fx" id="flag-x" aria-label="Dismiss">✕</button>
   </div>
 
-  {# ── HERO ─────────────────────────────────────────────────────────── #}
-  <header class="hero">
-    <span class="eyebrow">{{ t('Membership', '会员方案') }}</span>
-    <h1>{{ t('One market brain.', '一个市场大脑，') }} <span class="accent">{{ t('Every desk on it.', '所有桌面尽在其中。') }}</span></h1>
-    <p class="sub">{{ t('Every dashboard, the full research desk, and the Mastermind chat — in one place. Start free, or take a 7-day trial of the paid tiers.',
-                        '所有仪表盘、完整研究桌面，以及操盘大脑对话——尽在一处。免费开始，或试用付费方案 7 天。') }}</p>
-
-    {# ── billing toggle (signature) ── #}
-    <div class="toggle-wrap">
-      <div class="btoggle annual" id="btoggle" role="group" aria-label="Billing interval">
-        <span class="knob" aria-hidden="true"></span>
+  {# ── SECTION HEAD (landing #pricing parity: kicker · title · pill toggle) ── #}
+  <section class="pricing-sec section-pad">
+    <div class="p-head">
+      <span class="kicker">{{ t('Pricing', '定价') }}</span>
+      <h2 class="sec-title">{{ t('Free to explore.', '免费探索。') }}<br>{{ t('Built for deeper decisions.', '为更深的决策而生。') }}</h2>
+      <div class="toggle" role="group" aria-label="Billing interval" id="btoggle">
+        <button type="button" data-interval="annual" aria-pressed="true">{{ t('Annual', '按年') }}
+          <span class="save l-en">FOUNDING PRO AVAILABLE</span><span class="save l-zh">FOUNDING PRO 开放中</span>
+        </button>
         <button type="button" data-interval="monthly" aria-pressed="false">{{ t('Monthly', '按月') }}</button>
-        <button type="button" data-interval="annual" class="on" aria-pressed="true">
-          {{ t('Annual', '按年') }}
-          <span class="save-flag l-en">Founding Pro available</span><span class="save-flag l-zh">Founding Pro 开放中</span>
-        </button>
       </div>
+      <p class="toggle-note" id="toggle-note">
+        <span class="l-en">Founding Pro gives you every Pro feature for the Insider annual price.</span><span class="l-zh">Founding Pro 让你以 Insider 年付价格解锁 Pro 全部功能。</span>
+      </p>
     </div>
-    <p class="toggle-note" id="toggle-note">
-      <span class="l-en">Founding Pro gives you every Pro feature for the Insider annual price.</span><span class="l-zh">Founding Pro 让你以 Insider 年付价格解锁 Pro 全部功能。</span>
-    </p>
-  </header>
 
-  {# ── TIER CARDS ───────────────────────────────────────────────────── #}
-  {%- set ck = '<span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span>' -%}
-  <div class="cards">
+    {# ── TIER CARDS ───────────────────────────────────────────────────── #}
+    <div class="tiers">
 
-    {# ---- FREE ---- #}
-    <section class="card free" aria-label="Free plan">
-      <div class="tname"><span class="dot"></span>{{ t('Free', '免费') }}</div>
-      <p class="tfor">{{ t('A real taste of the desk — sample dashboards and one research report.', '桌面的真实体验——样板仪表盘与一份研究报告。') }}</p>
-      <div class="price free-price">
-        <span class="amt">{{ t('Free', '免费') }}</span>
-      </div>
-      <div class="billed"><span class="l-en">Always free · sign in to save your watchlist.</span><span class="l-zh">永久免费 · 登录即可保存自选。</span></div>
-      <div class="cta">
-        <button class="gbtn gbtn-lg gbtn-pill" data-act="free" type="button">{{ t('Sign in — it’s free', '登录 — 完全免费') }}</button>
-      </div>
-      <p class="cta-note" id="free-note"><span class="l-en">Your current plan.</span><span class="l-zh">你当前的方案。</span></p>
-      <ul class="feats">
-        <li class="on">{{ ck|safe }}<span>{{ t('Sample dashboards', '样板仪表盘') }} — <b>{{ t('macro, news, methodology', '宏观、新闻、方法论') }}</b></span></li>
-        <li class="on">{{ ck|safe }}<span>{{ t('One research report', '一份研究报告') }}</span></li>
-        <li class="on">{{ ck|safe }}<span>{{ t('Special situations', '特殊事件') }} — <b>{{ t('the 3 newest filings', '最新 3 份申报') }}</b></span></li>
-        <li class="on">{{ ck|safe }}<span>{{ t('China special situations', '中国特殊事件') }} — <b>{{ t('the full overhang read + the 3 nearest unlocks', '完整压力概览 + 最近 3 笔解禁') }}</b></span></li>
-        <li class="on">{{ ck|safe }}<span>{{ t('Committee & brief — a teaser', '委员会与简报 — 预览') }}</span></li>
-        <li class="on">{{ ck|safe }}<span>{{ t('Mastermind chat', '操盘大脑对话') }} — <b>{{ t('5 quick questions a week', '每周 5 个快速提问') }}</b></span></li>
-        <li class="on">{{ ck|safe }}<span>{{ t('Charts terminal', '图表终端') }} — <b>{{ t('free for everyone', '所有人免费') }}</b></span></li>
-      </ul>
-    </section>
+      {# ---- FREE ---- #}
+      <section class="tier" aria-label="Free plan">
+        <h3>{{ t('Free', '免费') }}</h3>
+        <p class="who">{{ t('A real taste of the desk — sample dashboards and one research report.', '桌面的真实体验——样板仪表盘与一份研究报告。') }}</p>
+        <div class="price">$0</div>
+        <p class="bill"><span class="l-en">No card. Sign in to save your watchlist.</span><span class="l-zh">无需绑卡。登录即可保存自选。</span></p>
+        <ul class="tf">
+          <li><b>{{ t('Sample dashboards', '样板仪表盘') }}</b> — {{ t('macro, news, methodology', '宏观、新闻、方法论') }}</li>
+          <li>{{ t('One research report', '一份研究报告') }}</li>
+          <li>{{ t('Special situations', '特殊事件') }} — <b>{{ t('the 3 newest filings', '最新 3 份申报') }}</b></li>
+          <li>{{ t('China special situations', '中国特殊事件') }} — <b>{{ t('the full overhang read + the 3 nearest unlocks', '完整压力概览 + 最近 3 笔解禁') }}</b></li>
+          <li>{{ t('Committee & brief — a teaser', '委员会与简报 — 预览') }}</li>
+          <li>{{ t('Mastermind chat', '操盘大脑对话') }} — <b>{{ t('5 quick questions a week', '每周 5 个快速提问') }}</b></li>
+          <li>{{ t('Charts terminal', '图表终端') }} — <b>{{ t('free for everyone', '所有人免费') }}</b></li>
+        </ul>
+        <button class="btn" data-act="free" type="button"><span class="btxt">{{ t('Sign in — it’s free', '登录 — 完全免费') }}</span></button>
+        <p class="cta-note" id="free-note"><span class="l-en">Your current plan.</span><span class="l-zh">你当前的方案。</span></p>
+      </section>
 
-    {# ---- INSIDER ---- #}
-    <section class="card insider" aria-label="Insider plan"
-             data-tier="insider" data-m-cents="{{ insider.monthly_cents }}" data-a-cents="{{ insider.annual_cents }}"
-             data-m-pm="{{ insider.monthly_pm }}" data-a-pm="{{ insider.annual_pm }}"
-             data-a-total="{{ insider.annual_total }}" data-save="{{ insider.save_pct }}">
-      <div class="tname"><span class="dot"></span>{{ insider.name }}</div>
-      <p class="tfor">{{ t('The whole desk — every market, every heatmap, all the research.', '完整桌面——所有市场、所有热力图、全部研究。') }}</p>
-      <div class="price">
-        <span class="cur">$</span><span class="amt" data-price>{{ insider.annual_pm }}</span><span class="per">/{{ t('mo', '月') }}</span>
-      </div>
-      <div class="billed">
-        <span data-billed><span class="l-en">Billed ${{ insider.annual_total }} a year.</span><span class="l-zh">每年结算 ${{ insider.annual_total }}。</span></span>
-        <span class="badge-save" data-badge><span class="l-en">save {{ insider.save_pct }}%</span><span class="l-zh">省 {{ insider.save_pct }}%</span></span>
-      </div>
-      <div class="cta">
-        <button class="gbtn gbtn-lg gbtn-pill gbtn-cta" data-act="subscribe" data-tier="insider" type="button">
-          <span class="btxt">{{ t('Start 7-day trial', '开始 7 天试用') }}</span>
-        </button>
-      </div>
-      <p class="cta-note"><span class="l-en">Card required · cancel anytime before day 7.</span><span class="l-zh">需绑卡 · 第 7 天前可随时取消。</span></p>
-      <ul class="feats">
-        <li class="on">{{ ck|safe }}<span><b>{{ t('All dashboards', '所有仪表盘') }}</b> — {{ t('markets, desks, heatmaps, baskets, sectors, flow', '市场、桌面、热力图、篮子、板块、资金流') }}</span></li>
-        <li class="on">{{ ck|safe }}<span><b>{{ t('Every research report', '全部研究报告') }}</b> + {{ t('the intelligence hub', '情报中心') }}</span></li>
-        <li class="on">{{ ck|safe }}<span><b>{{ t('The special situations desk', '完整特殊事件交易台') }}</b> — {{ t('activist, M&A, spin-offs, take-privates', '维权、并购、分拆、私有化') }}</span></li>
-        <li class="on">{{ ck|safe }}<span><b>{{ t('The China event desk', '完整中国事件交易台') }}</b> — {{ t('every named unlock, inquiry letter, buyback and pledge risk', '全部解禁、问询函、回购与质押风险个股') }}</span></li>
-        <li class="on">{{ ck|safe }}<span>{{ t('Committee, brief & track record', '委员会、简报与业绩记录') }} — {{ t('in full', '完整版') }}</span></li>
-        <li class="on">{{ ck|safe }}<span>{{ t('Mastermind chat', '操盘大脑对话') }} — <b>{{ t('300 a month', '每月 300 次') }}</b></span></li>
-        <li class="on">{{ ck|safe }}<span>{{ t('Terminal live options', '终端实时期权') }} — <b>{{ t('included', '含') }}</b></span></li>
-      </ul>
-    </section>
-
-    {# ---- PRO ---- #}
-    <section class="card pro" aria-label="Pro plan"
-             data-tier="pro" data-m-cents="{{ pro.monthly_cents }}" data-a-cents="{{ pro.annual_cents }}"
-             data-m-pm="{{ pro.monthly_pm }}" data-a-pm="{{ pro.annual_pm }}"
-             data-a-total="{{ pro.annual_total }}" data-save="{{ pro.save_pct }}"
-             data-offer-key="{{ founding.key }}" data-offer-active="true"
-             data-offer-a-pm="{{ founding.annual_pm }}" data-offer-a-total="{{ founding.annual_total }}"
-             data-offer-discount="{{ founding.discount_pct }}" data-offer-savings="{{ founding.discount_amount }}"
-             data-offer-cap="{{ founding.cap }}">
-      <div class="ribbon" data-offer-ribbon><span class="l-en">Founding Pro</span><span class="l-zh">Founding Pro</span></div>
-      <div class="tname"><span class="dot"></span>{{ pro.name }}</div>
-      <p class="tfor">{{ t('Everything in Insider, plus the deep Opus chat lane for real research.', 'Insider 全部内容，另加用于深度研究的 Opus 对话通道。') }}</p>
-      <div class="rack-price" data-offer-rack>
-        <span class="l-en">Regular Pro annual</span><span class="l-zh">Pro 常规年付</span>
-        <s>${{ founding.regular_annual_pm }}/{{ t('mo', '月') }}</s>
-      </div>
-      <div class="price">
-        <span class="cur">$</span><span class="amt" data-price>{{ founding.annual_pm }}</span><span class="per">/{{ t('mo', '月') }}</span>
-      </div>
-      <div class="billed">
-        <span data-billed><span class="l-en">Billed ${{ founding.annual_total }} a year.</span><span class="l-zh">每年结算 ${{ founding.annual_total }}。</span></span>
-        <span class="badge-save" data-badge><span class="l-en">Founding Pro · save ${{ founding.discount_amount }}/year</span><span class="l-zh">Founding Pro · 每年省 ${{ founding.discount_amount }}</span></span>
-      </div>
-      <div class="founding-meter" data-offer-meter>
-        <div class="founding-line"><b>{{ t('Founding memberships', '创始名额') }}</b>
-          <span data-offer-count><span class="l-en">{{ "{:,}".format(founding.cap) }} total — first come, first served</span><span class="l-zh">共 {{ "{:,}".format(founding.cap) }} 个，先到先得</span></span>
+      {# ---- INSIDER ---- #}
+      <section class="tier" aria-label="Insider plan"
+               data-tier="insider" data-m-cents="{{ insider.monthly_cents }}" data-a-cents="{{ insider.annual_cents }}"
+               data-m-pm="{{ insider.monthly_pm }}" data-a-pm="{{ insider.annual_pm }}"
+               data-a-total="{{ insider.annual_total }}" data-save="{{ insider.save_pct }}">
+        <h3>{{ insider.name }}</h3>
+        <p class="who">{{ t('The whole desk — every market, every heatmap, all the research.', '完整桌面——所有市场、所有热力图、全部研究。') }}</p>
+        <div class="price">
+          <span class="cur">$</span><span class="amt" data-price>{{ insider.annual_pm }}</span>
+          <span class="per" data-per><span class="l-en">/mo billed annually</span><span class="l-zh">/月 · 年付</span></span>
         </div>
-        <div class="founding-track" hidden role="progressbar" aria-label="Founding Pro memberships no longer available"
-             aria-valuemin="0" aria-valuemax="{{ founding.cap }}" aria-valuenow="0">
-          <div class="founding-fill" data-offer-fill></div>
+        <p class="bill" data-billed><span class="l-en">Billed ${{ insider.annual_total }} a year.</span><span class="l-zh">每年结算 ${{ insider.annual_total }}。</span></p>
+        <span class="save-badge" data-badge><span class="l-en">SAVE {{ insider.save_pct }}% VS MONTHLY</span><span class="l-zh">比月付省 {{ insider.save_pct }}%</span></span>
+        <ul class="tf">
+          <li><b>{{ t('All dashboards', '所有仪表盘') }}</b> — {{ t('markets, desks, heatmaps, baskets, sectors, flow', '市场、桌面、热力图、篮子、板块、资金流') }}</li>
+          <li><b>{{ t('Every research report', '全部研究报告') }}</b> + {{ t('the intelligence hub', '情报中心') }}</li>
+          <li><b>{{ t('The special situations desk', '完整特殊事件交易台') }}</b> — {{ t('activist, M&A, spin-offs, take-privates', '维权、并购、分拆、私有化') }}</li>
+          <li><b>{{ t('The China event desk', '完整中国事件交易台') }}</b> — {{ t('every named unlock, inquiry letter, buyback and pledge risk', '全部解禁、问询函、回购与质押风险个股') }}</li>
+          <li>{{ t('Committee, brief & track record', '委员会、简报与业绩记录') }} — {{ t('in full', '完整版') }}</li>
+          <li>{{ t('Mastermind chat', '操盘大脑对话') }} — <b>{{ t('300 a month', '每月 300 次') }}</b></li>
+          <li>{{ t('Terminal live options', '终端实时期权') }} — <b>{{ t('included', '含') }}</b></li>
+        </ul>
+        <button class="btn primary" data-act="subscribe" data-tier="insider" type="button"><span class="btxt">{{ t('Start 7-day trial', '开始 7 天试用') }}</span></button>
+        <p class="cta-note"><span class="l-en">Card required · cancel anytime before day 7.</span><span class="l-zh">需绑卡 · 第 7 天前可随时取消。</span></p>
+      </section>
+
+      {# ---- PRO (the hot tier — carries the Founding Pro offer) ---- #}
+      <section class="tier hot" aria-label="Pro plan"
+               data-tier="pro" data-m-cents="{{ pro.monthly_cents }}" data-a-cents="{{ pro.annual_cents }}"
+               data-m-pm="{{ pro.monthly_pm }}" data-a-pm="{{ pro.annual_pm }}"
+               data-a-total="{{ pro.annual_total }}" data-save="{{ pro.save_pct }}"
+               data-offer-key="{{ founding.key }}" data-offer-active="true"
+               data-offer-a-pm="{{ founding.annual_pm }}" data-offer-a-total="{{ founding.annual_total }}"
+               data-offer-discount="{{ founding.discount_pct }}" data-offer-savings="{{ founding.discount_amount }}"
+               data-offer-cap="{{ founding.cap }}">
+        <span class="hot-tab" data-offer-ribbon><span class="l-en">Founding rate</span><span class="l-zh">创始会员价</span></span>
+        <h3>{{ pro.name }}</h3>
+        <p class="who">{{ t('Everything in Insider, plus the deep Opus chat lane for real research.', 'Insider 全部内容，另加用于深度研究的 Opus 对话通道。') }}</p>
+        <div class="price">
+          <span class="was" data-offer-rack>${{ founding.regular_annual_pm }}</span><span class="cur">$</span><span class="amt" data-price>{{ founding.annual_pm }}</span>
+          <span class="per" data-per><span class="l-en">/mo billed annually</span><span class="l-zh">/月 · 年付</span></span>
         </div>
-        <p class="founding-terms">{{ t('The allotment shrinks daily · every Pro feature at the Insider annual price, $900/year locked in for as long as you stay.',
-                                      '名额每日递减 · 以 Insider 年付价格解锁 Pro 全部功能，只要不退订，$900/年 永久锁定。') }}</p>
-      </div>
-      <div class="cta">
-        <button class="gbtn gbtn-lg gbtn-pill gbtn-cta" data-act="subscribe" data-tier="pro" type="button">
-          <span class="btxt">{{ t('Start 7-day trial', '开始 7 天试用') }}</span>
-        </button>
-      </div>
-      <p class="cta-note"><span class="l-en">Card required · cancel anytime before day 7.</span><span class="l-zh">需绑卡 · 第 7 天前可随时取消。</span></p>
-      <ul class="feats">
-        <li class="on">{{ ck|safe }}<span><b>{{ t('Everything in Insider', 'Insider 全部内容') }}</b></span></li>
-        <li class="on">{{ ck|safe }}<span>{{ t('Mastermind chat', '操盘大脑对话') }} — <b>{{ t('1,000 a month', '每月 1,000 次') }}</b></span></li>
-        <li class="on">{{ ck|safe }}<span><b>{{ t('Deep Opus chat', '深度 Opus 对话') }}</b> — {{ t('150 a month', '每月 150 次') }}</span></li>
-        <li class="on">{{ ck|safe }}<span>{{ t('Priority research answers', '优先研究回答') }}</span></li>
-        <li class="on">{{ ck|safe }}<span>{{ t('Terminal live options', '终端实时期权') }} — <b>{{ t('included', '含') }}</b></span></li>
-      </ul>
-    </section>
+        <p class="bill" data-billed><span class="l-en">Billed ${{ founding.annual_total }} a year — the {{ insider.name }} annual price, for the {{ pro.name }} desk.</span><span class="l-zh">每年结算 ${{ founding.annual_total }}——以 {{ insider.name }} 年付价格解锁 {{ pro.name }} 台席。</span></p>
+        <span class="save-badge" data-badge><span class="l-en">SAVE ${{ founding.discount_amount }} A YEAR</span><span class="l-zh">每年省 ${{ founding.discount_amount }}</span></span>
+        <div class="founding" data-offer-meter>
+          <div class="founding-line"><b>{{ t('FOUNDING MEMBERSHIPS', '创始名额') }}</b>
+            <span class="fcount" data-offer-count><span class="l-en">{{ "{:,}".format(founding.cap) }} total — first come, first served</span><span class="l-zh">共 {{ "{:,}".format(founding.cap) }} 个，先到先得</span></span>
+          </div>
+          <div class="founding-track" hidden role="progressbar" aria-label="Founding Pro memberships no longer available"
+               aria-valuemin="0" aria-valuemax="{{ founding.cap }}" aria-valuenow="0">
+            <span class="founding-fill" data-offer-fill></span>
+          </div>
+          <p class="founding-terms">{{ t('The allotment shrinks daily · every Pro feature at the Insider annual price, locked in for as long as you stay.',
+                                        '名额每日递减 · 以 Insider 年付价格解锁 Pro 全部功能，只要不退订即永久锁定。') }}</p>
+        </div>
+        <ul class="tf">
+          <li><b>{{ t('Everything in Insider', 'Insider 全部内容') }}</b></li>
+          <li>{{ t('Mastermind chat', '操盘大脑对话') }} — <b>{{ t('1,000 a month', '每月 1,000 次') }}</b></li>
+          <li><b>{{ t('Deep Opus chat', '深度 Opus 对话') }}</b> — {{ t('150 a month', '每月 150 次') }}</li>
+          <li>{{ t('Priority research answers', '优先研究回答') }}</li>
+          <li>{{ t('Terminal live options', '终端实时期权') }} — <b>{{ t('included', '含') }}</b></li>
+        </ul>
+        <button class="btn primary" data-act="subscribe" data-tier="pro" type="button"><span class="btxt">{{ t('Try Pro free for 7 days', '免费试用 Pro 7 天') }}</span></button>
+        <p class="cta-note"><span class="l-en">Card required · cancel anytime before day 7.</span><span class="l-zh">需绑卡 · 第 7 天前可随时取消。</span></p>
+      </section>
 
-  </div>
-
-  {# ── COMPARISON MATRIX ────────────────────────────────────────────── #}
-  <section class="matrix-sec">
-    <div class="sec-head">
-      <h2>{{ t('Compare every line', '逐项对比') }}</h2>
-      <p>{{ t('What each plan actually unlocks — no asterisks.', '每个方案实际解锁的内容——没有小字陷阱。') }}</p>
     </div>
-    {%- set yes = '<span class="yes"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span>' -%}
-    {%- set dash = '<span class="dash">—</span>' -%}
-    <div class="mtx-shell scroll">
-      <table class="mtx">
+
+    {# ── FEATURE MATRIX ───────────────────────────────────────────────── #}
+    {#- Rows carry THIS page's numbers, which are the ones config/brain.yml actually
+        enforces at the gateway. The landing's matrix quotes a different AI allowance;
+        the checkout surface must state what the account will really get. -#}
+    <div class="matrix-card" data-plan="insider">
+      <div class="mx-mobile-head">
+        <p class="mx-mobile-label">{{ t('Choose a plan to compare every feature', '选择方案查看每项功能') }}</p>
+        <div class="mx-plan-tabs" role="group" aria-label="Plan shown in feature comparison">
+          <button type="button" data-mx-plan="free" aria-pressed="false"><span>{{ t('Free', '免费') }}</span><small>$0</small></button>
+          <button type="button" data-mx-plan="insider" aria-pressed="true"><span>{{ insider.name }}</span><small data-mtx-mobile-price="insider">${{ insider.annual_pm }}/{{ t('mo', '月') }}</small></button>
+          <button type="button" data-mx-plan="pro" aria-pressed="false"><span>{{ pro.name }}</span><small data-mtx-mobile-price="pro">${{ founding.annual_pm }}/{{ t('mo', '月') }}</small></button>
+        </div>
+        <p class="mx-mobile-hint">{{ t('Tap any feature marked ⓘ for a plain-language description.', '点击带 ⓘ 的功能查看说明。') }}</p>
+      </div>
+      <table class="mx" id="pricing-matrix" aria-label="Plan feature comparison">
         <thead>
           <tr>
-            <th class="col-feat">{{ t('What you get', '你能获得') }}</th>
-            <th class="col-tier"><span class="th-tier th-free"><span class="tn">{{ t('Free', '免费') }}</span><span class="tp">$0</span></span></th>
-            <th class="col-tier"><span class="th-tier th-insider"><span class="tn">{{ insider.name }}</span><span class="tp" data-mtx-price="insider">${{ insider.annual_pm }}/mo</span></span></th>
-            <th class="col-tier col-pro"><span class="th-tier th-pro"><span class="tn">{{ pro.name }}</span><span class="tp" data-mtx-price="pro">${{ founding.annual_pm }}/mo</span></span></th>
+            <th>{{ t('Compare every feature', '逐项对比') }}</th>
+            <th>{{ t('Free', '免费') }}<small>$0</small></th>
+            <th>{{ insider.name }}<small data-mtx-price="insider">${{ insider.annual_pm }}/{{ t('mo', '月') }} {{ t('annual', '年付') }}</small></th>
+            <th>{{ pro.name }}<small data-mtx-price="pro">${{ founding.annual_pm }}/{{ t('mo', '月') }} {{ t('annual', '年付') }}</small></th>
           </tr>
         </thead>
         <tbody>
+          <tr class="grp"><td colspan="4">{{ t('DASHBOARDS & DESKS', '仪表盘与交易台') }}</td></tr>
           <tr>
-            <td class="col-feat"><span class="rlabel">{{ t('Dashboards', '仪表盘') }}</span><span class="rsub">{{ t('markets, desks, heatmaps, baskets, sectors, options & flow, smart-money, cycle', '市场、桌面、热力图、篮子、板块、期权与资金流、聪明钱、周期') }}</span></td>
-            <td class="col-tier"><span class="val val-muted">{{ t('Sample only', '仅样板') }}</span></td>
-            <td class="col-tier"><span class="val">{{ t('All markets & desks', '所有市场与桌面') }}</span></td>
-            <td class="col-tier col-pro"><span class="val">{{ t('Everything', '全部') }}</span></td>
+            <td class="feat has-tip"><span class="ft">{{ t('Dashboards', '仪表盘') }}</span><span class="tipbox">{{ t('Markets, desks, heatmaps, baskets, sectors, options &amp; flow, smart-money and cycle — rebuilt nightly.', '市场、桌面、热力图、篮子、板块、期权与资金流、聪明钱与周期——每晚重建。') }}</span></td>
+            <td class="val">{{ t('Sample only', '仅样板') }}</td>
+            <td class="val">{{ t('All markets & desks', '所有市场与桌面') }}</td>
+            <td class="val">{{ t('Everything', '全部') }}</td>
           </tr>
           <tr>
-            <td class="col-feat"><span class="rlabel">{{ t('Research reports', '研究报告') }}</span><span class="rsub">{{ t('state-of-themes + the intelligence hub', '主题态势 + 情报中心') }}</span></td>
-            <td class="col-tier"><span class="val val-muted">{{ t('1 sample', '1 份样板') }}</span></td>
-            <td class="col-tier"><span class="val">{{ t('All reports', '全部报告') }}</span></td>
-            <td class="col-tier col-pro"><span class="val">{{ t('Everything', '全部') }}</span></td>
+            <td class="feat has-tip"><span class="ft">{{ t('Research reports', '研究报告') }}</span><span class="tipbox">{{ t('State-of-themes reports plus the intelligence hub.', '主题态势报告与情报中心。') }}</span></td>
+            <td class="val">{{ t('1 sample', '1 份样板') }}</td>
+            <td class="val">{{ t('All reports', '全部报告') }}</td>
+            <td class="val">{{ t('Everything', '全部') }}</td>
           </tr>
           <tr>
-            <td class="col-feat"><span class="rlabel">{{ t('Special situations desk', '特殊事件交易台') }}</span><span class="rsub">{{ t('activist · M&A · spin-offs · take-privates · tenders', '维权 · 并购 · 分拆 · 私有化 · 要约') }}</span></td>
-            <td class="col-tier"><span class="val val-muted">{{ t('3 newest filings', '最新 3 份申报') }}</span></td>
-            <td class="col-tier"><span class="val">{{ t('Whole board', '完整看板') }}</span></td>
-            <td class="col-tier col-pro"><span class="val">{{ t('Whole board', '完整看板') }}</span></td>
+            <td class="feat has-tip"><span class="ft">{{ t('Special situations desk', '特殊事件交易台') }}</span><span class="tipbox">{{ t('Activist · M&amp;A · spin-offs · take-privates · tenders.', '维权 · 并购 · 分拆 · 私有化 · 要约。') }}</span></td>
+            <td class="val">{{ t('3 newest filings', '最新 3 份申报') }}</td>
+            <td class="val">{{ t('Whole board', '完整看板') }}</td>
+            <td class="val">{{ t('Whole board', '完整看板') }}</td>
           </tr>
           <tr>
-            <td class="col-feat"><span class="rlabel">{{ t('China special situations', '中国特殊事件') }}</span><span class="rsub">{{ t('unlocks · inquiry letters · earnings previews · buybacks · pledge stress · block trades', '解禁 · 问询函 · 业绩预告 · 回购 · 质押压力 · 大宗交易') }}</span></td>
-            <td class="col-tier"><span class="val val-muted">{{ t('All 7 gauges + 3 unlocks', '全部 7 条线 + 3 笔解禁') }}</span></td>
-            <td class="col-tier"><span class="val">{{ t('Every name', '全部个股') }}</span></td>
-            <td class="col-tier col-pro"><span class="val">{{ t('Every name', '全部个股') }}</span></td>
+            <td class="feat has-tip"><span class="ft">{{ t('China special situations', '中国特殊事件') }}</span><span class="tipbox">{{ t('Unlocks · inquiry letters · earnings previews · buybacks · pledge stress · block trades.', '解禁 · 问询函 · 业绩预告 · 回购 · 质押压力 · 大宗交易。') }}</span></td>
+            <td class="val">{{ t('All 7 gauges + 3 unlocks', '全部 7 条线 + 3 笔解禁') }}</td>
+            <td class="val">{{ t('Every name', '全部个股') }}</td>
+            <td class="val">{{ t('Every name', '全部个股') }}</td>
           </tr>
           <tr>
-            <td class="col-feat"><span class="rlabel">{{ t('Committee, brief & track record', '委员会、简报与业绩记录') }}</span></td>
-            <td class="col-tier"><span class="val val-muted">{{ t('Teaser', '预览') }}</span></td>
-            <td class="col-tier">{{ yes|safe }}</td>
-            <td class="col-tier col-pro">{{ yes|safe }}</td>
+            <td class="feat"><span class="ft">{{ t('Committee, brief & track record', '委员会、简报与业绩记录') }}</span></td>
+            <td class="val">{{ t('Teaser', '预览') }}</td>
+            <td class="ok">✓</td>
+            <td class="ok">✓</td>
+          </tr>
+
+          <tr class="grp"><td colspan="4">MASTERMIND AI</td></tr>
+          <tr>
+            <td class="feat has-tip"><span class="ft">{{ t('Mastermind chat', '操盘大脑对话') }}</span><span class="tipbox">{{ t('The fast lane — quick market questions, answered on any page.', '快速通道——在任意页面提出快速市场问题。') }}</span></td>
+            <td class="val">5<small>/ {{ t('week', '周') }}</small></td>
+            <td class="val">300<small>/ {{ t('mo', '月') }}</small></td>
+            <td class="val">1,000<small>/ {{ t('mo', '月') }}</small></td>
           </tr>
           <tr>
-            <td class="col-feat"><span class="rlabel">{{ t('Mastermind chat', '操盘大脑对话') }}</span><span class="rsub">{{ t('fast lane — quick market questions', '快速通道——快速市场提问') }}</span></td>
-            <td class="col-tier"><span class="val"><span class="num">5</span> <span class="val-muted">/ {{ t('week', '周') }}</span></span></td>
-            <td class="col-tier"><span class="val"><span class="num">300</span> <span class="val-muted">/ {{ t('mo', '月') }}</span></span></td>
-            <td class="col-tier col-pro"><span class="val"><span class="num">1,000</span> <span class="val-muted">/ {{ t('mo', '月') }}</span></span></td>
+            <td class="feat has-tip"><span class="ft">{{ t('Deep Opus chat', '深度 Opus 对话') }}</span><span class="mchip">{{ insider.name }}</span><span class="tipbox">{{ t('The heavyweight research lane — long answers with receipts.', '重量级研究通道——附出处的长篇分析。') }}</span></td>
+            <td class="no">✗</td>
+            <td class="val">10<small>/ {{ t('mo', '月') }}</small></td>
+            <td class="val">150<small>/ {{ t('mo', '月') }}</small></td>
+          </tr>
+
+          <tr class="grp"><td colspan="4">TERMINAL</td></tr>
+          <tr>
+            <td class="feat has-tip"><span class="ft">{{ t('Charts terminal', '图表终端') }}</span><span class="tipbox up">{{ t('Live charting in the browser — nothing to install, free for everyone.', '浏览器内实时图表——无需安装，所有人免费。') }}</span></td>
+            <td class="val">{{ t('Free', '免费') }}</td>
+            <td class="ok">✓</td>
+            <td class="ok">✓</td>
           </tr>
           <tr>
-            <td class="col-feat"><span class="rlabel">{{ t('Deep Opus chat', '深度 Opus 对话') }}</span><span class="rsub">{{ t('the heavyweight research lane', '重量级研究通道') }}</span></td>
-            <td class="col-tier">{{ dash|safe }}</td>
-            <td class="col-tier"><span class="val"><span class="num">10</span> <span class="val-muted">/ {{ t('mo', '月') }}</span></span></td>
-            <td class="col-tier col-pro"><span class="val"><span class="num">150</span> <span class="val-muted">/ {{ t('mo', '月') }}</span></span></td>
+            <td class="feat has-tip"><span class="ft">{{ t('Terminal live options', '终端实时期权') }}</span><span class="mchip">{{ insider.name }}</span><span class="tipbox up">{{ t('Live options data inside the terminal — included during the trial too.', '终端内的实时期权数据——试用期同样包含。') }}</span></td>
+            <td class="no">✗</td>
+            <td class="val">{{ t('Included', '含') }}<small>({{ t('trial too', '试用期也含') }})</small></td>
+            <td class="val">{{ t('Included', '含') }}<small>({{ t('trial too', '试用期也含') }})</small></td>
           </tr>
+
+          <tr class="grp"><td colspan="4">{{ t('GETTING STARTED', '开始使用') }}</td></tr>
           <tr>
-            <td class="col-feat"><span class="rlabel">{{ t('Charts terminal', '图表终端') }}</span></td>
-            <td class="col-tier"><span class="val">{{ t('Free', '免费') }}</span></td>
-            <td class="col-tier">{{ yes|safe }}</td>
-            <td class="col-tier col-pro">{{ yes|safe }}</td>
-          </tr>
-          <tr>
-            <td class="col-feat"><span class="rlabel">{{ t('Terminal live options', '终端实时期权') }}</span></td>
-            <td class="col-tier">{{ dash|safe }}</td>
-            <td class="col-tier"><span class="val">{{ t('Included', '含') }} <span class="val-muted">({{ t('trial too', '试用期也含') }})</span></span></td>
-            <td class="col-tier col-pro"><span class="val">{{ t('Included', '含') }} <span class="val-muted">({{ t('trial too', '试用期也含') }})</span></span></td>
-          </tr>
-          <tr>
-            <td class="col-feat"><span class="rlabel">{{ t('Free trial', '免费试用') }}</span></td>
-            <td class="col-tier">{{ dash|safe }}</td>
-            <td class="col-tier"><span class="val"><b>{{ insider.trial_days }}-{{ t('day', '天') }}</b> <span class="val-muted">· {{ t('card required', '需绑卡') }}</span></span></td>
-            <td class="col-tier col-pro"><span class="val"><b>{{ pro.trial_days }}-{{ t('day', '天') }}</b> <span class="val-muted">· {{ t('card required', '需绑卡') }}</span></span></td>
+            <td class="feat"><span class="ft">{{ t('Free trial', '免费试用') }}</span><span class="mchip">{{ insider.name }}</span></td>
+            <td class="no">✗</td>
+            <td class="val">{{ insider.trial_days }}-{{ t('day', '天') }}<small>{{ t('card required', '需绑卡') }}</small></td>
+            <td class="val">{{ pro.trial_days }}-{{ t('day', '天') }}<small>{{ t('card required', '需绑卡') }}</small></td>
           </tr>
         </tbody>
       </table>
@@ -606,7 +695,7 @@
 
   function paintPrices() {
     var annual = interval === 'annual';
-    $$('.card[data-tier]').forEach(function (card) {
+    $$('.tier[data-tier]').forEach(function (card) {
       var mPm = card.getAttribute('data-m-pm'), aPm = card.getAttribute('data-a-pm');
       var aTot = card.getAttribute('data-a-total'), save = card.getAttribute('data-save');
       var offerOn = annual && card.getAttribute('data-offer-active') === 'true';
@@ -615,6 +704,7 @@
         aTot = card.getAttribute('data-offer-a-total') || aTot;
       }
       var priceEl = $('[data-price]', card), billedEl = $('[data-billed]', card), badgeEl = $('[data-badge]', card);
+      var perEl = $('[data-per]', card);
       if (priceEl) {
         priceEl.style.opacity = '0';
         setTimeout(function () { priceEl.textContent = annual ? aPm : mPm; priceEl.style.opacity = '1'; }, 90);
@@ -622,32 +712,40 @@
       if (billedEl) {
         billedEl.innerHTML = annual
           ? '<span class="l-en">Billed $' + aTot + ' a year.</span><span class="l-zh">每年结算 $' + aTot + '。</span>'
-          : '<span class="l-en">Billed monthly.</span><span class="l-zh">按月结算。</span>';
+          : '<span class="l-en">Billed monthly — cancel anytime.</span><span class="l-zh">按月结算——随时取消。</span>';
+      }
+      if (perEl) {
+        perEl.innerHTML = annual
+          ? '<span class="l-en">/mo billed annually</span><span class="l-zh">/月 · 年付</span>'
+          : '<span class="l-en">/mo billed monthly</span><span class="l-zh">/月 · 月付</span>';
       }
       if (badgeEl) {
         badgeEl.classList.toggle('hidden', !annual);
         badgeEl.innerHTML = offerOn
-          ? '<span class="l-en">Founding Pro · save $' + card.getAttribute('data-offer-savings') + '/year</span><span class="l-zh">Founding Pro · 每年省 $' + card.getAttribute('data-offer-savings') + '</span>'
-          : '<span class="l-en">save ' + save + '%</span><span class="l-zh">省 ' + save + '%</span>';
+          ? '<span class="l-en">SAVE $' + card.getAttribute('data-offer-savings') + ' A YEAR</span><span class="l-zh">每年省 $' + card.getAttribute('data-offer-savings') + '</span>'
+          : '<span class="l-en">SAVE ' + save + '% VS MONTHLY</span><span class="l-zh">比月付省 ' + save + '%</span>';
       }
       var rackEl = $('[data-offer-rack]', card), meterEl = $('[data-offer-meter]', card);
       if (rackEl) rackEl.classList.toggle('hidden', !offerOn);
       if (meterEl) meterEl.classList.toggle('hidden', !offerOn);
       var ribbonEl = $('[data-offer-ribbon]', card);
       if (ribbonEl) ribbonEl.innerHTML = offerOn
-        ? '<span class="l-en">Founding Pro</span><span class="l-zh">Founding Pro</span>'
+        ? '<span class="l-en">Founding rate</span><span class="l-zh">创始会员价</span>'
         : '<span class="l-en">Most complete</span><span class="l-zh">最完整</span>';
     });
     /* matrix header prices track the toggle too */
-    $$('[data-mtx-price]').forEach(function (el) {
-      var tier = el.getAttribute('data-mtx-price');
-      var card = $('.card[data-tier="' + tier + '"]');
+    $$('[data-mtx-price],[data-mtx-mobile-price]').forEach(function (el) {
+      var mobile = el.hasAttribute('data-mtx-mobile-price');
+      var tier = el.getAttribute(mobile ? 'data-mtx-mobile-price' : 'data-mtx-price');
+      var card = $('.tier[data-tier="' + tier + '"]');
       if (!card) return;
       var pm = annual ? card.getAttribute('data-a-pm') : card.getAttribute('data-m-pm');
       if (annual && card.getAttribute('data-offer-active') === 'true') {
         pm = card.getAttribute('data-offer-a-pm') || pm;
       }
-      el.textContent = '$' + pm + '/mo';
+      var mo = zh() ? '月' : 'mo';
+      el.textContent = mobile ? '$' + pm + '/' + mo
+        : '$' + pm + '/' + mo + ' ' + (annual ? (zh() ? '年付' : 'annual') : (zh() ? '月付' : 'monthly'));
     });
     if (note) {
       note.innerHTML = annual
@@ -671,10 +769,56 @@
     setInterval_('annual'); /* establish annual-default state on load */
   }
 
+  /* ── mobile matrix: one readable plan column + tap-to-expand mechanics ──
+     Wide tables do not survive a phone. Under 760px the matrix collapses to a
+     single plan column chosen by these tabs, and the hover tipbox (a cursor
+     affordance that does not exist on touch) becomes a tap-to-expand row. */
+  (function () {
+    var card = $('.matrix-card');
+    if (!card) return;
+    var planButtons = $$('[data-mx-plan]', card);
+    var tipCells = $$('td.feat.has-tip', card);
+    var mobile = window.matchMedia('(max-width:760px)');
+
+    planButtons.forEach(function (button) {
+      button.addEventListener('click', function () {
+        card.setAttribute('data-plan', button.getAttribute('data-mx-plan'));
+        planButtons.forEach(function (item) {
+          item.setAttribute('aria-pressed', String(item === button));
+        });
+      });
+    });
+
+    function closeTips(except) {
+      tipCells.forEach(function (cell) { if (cell !== except) cell.classList.remove('tip-open'); });
+    }
+    tipCells.forEach(function (cell) {
+      cell.setAttribute('tabindex', '0');
+      cell.addEventListener('click', function () {
+        if (!mobile.matches) return;
+        var open = cell.classList.contains('tip-open');
+        closeTips(cell);
+        cell.classList.toggle('tip-open', !open);
+      });
+      cell.addEventListener('keydown', function (e) {
+        if (!mobile.matches) return;
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        e.preventDefault();
+        var open = cell.classList.contains('tip-open');
+        closeTips(cell);
+        cell.classList.toggle('tip-open', !open);
+      });
+    });
+    /* leaving the mobile breakpoint must not strand an expanded row open */
+    var onChange = function () { if (!mobile.matches) closeTips(null); };
+    if (mobile.addEventListener) mobile.addEventListener('change', onChange);
+    else if (mobile.addListener) mobile.addListener(onChange);
+  })();
+
   /* The API reports Stripe redemptions plus the operator's enforced daily withdrawal of
      the founding allotment (app/billing.py) — checkout gates on the same numbers, so the
      availability shown here is always a true claim. Never synthesize numbers client-side. */
-  var foundingCard = $('.card[data-offer-key]');
+  var foundingCard = $('.tier[data-offer-key]');
   if (foundingCard) {
     var offerKey = foundingCard.getAttribute('data-offer-key');
     fetch(API + '/api/billing/offers/' + encodeURIComponent(offerKey), { cache: 'no-store' })

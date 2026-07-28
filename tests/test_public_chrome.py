@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import re
 from collections import Counter
+from html import unescape
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
@@ -43,6 +44,15 @@ def _anchors(html: str) -> Counter[tuple[str, str]]:
     ):
         text = re.sub(r"<[^>]+>", "", body)
         text = " ".join(text.split())
+        # Compare what a READER sees, not the escaping. The landing is plain HTML
+        # (so it carries a literal "&amp;"), while the shared partial goes through
+        # Jinja with autoescape ON in the real builder — there, a source "&amp;"
+        # becomes "&amp;amp;" and the footer link literally read "Plans &amp;
+        # pricing" on every public page. _render_partial below renders with
+        # autoescape OFF, so this test could never see that; normalising both
+        # sides keeps it honest about the information architecture it exists to
+        # guard, and stops it pinning one side's escaping.
+        text = unescape(text)
         if href.startswith("#"):
             href = "index.html" + href
         pairs.append((href, text))

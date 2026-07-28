@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -40,13 +39,477 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css?v=370c3de0">
-<link rel="stylesheet" href="assets/css/425a9749.css?v=425a9749">
+<script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'light');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  /* ══════════════════════════════════════════════════════════════════════
+     PLANS — the landing page's pricing idiom, on theme tokens.
+
+     index.html (#pricing) is the reference surface: porcelain cards on a
+     hairline grid, display-face figures, a blue pill toggle and one wide
+     feature matrix. That page is light-only with its own landing.css; this
+     one lives in the public chrome and must keep working in dark, so every
+     landing token below is BRIDGED onto theme.css rather than copied as a
+     literal. In light theme the bridge resolves to the landing's exact
+     values (theme.css's light palette already IS the landing palette:
+     #f7f8fa / #ffffff / #5d6b7e / #285fff), so a visitor stepping from the
+     homepage to this page sees one continuous design.
+
+     Light is the default here (see the <head> boot): the public nav and
+     footer are hardcoded porcelain — they deliberately mirror the landing —
+     so a dark body between them read as a broken page. An explicit theme
+     choice made in the app still wins.
+     ══════════════════════════════════════════════════════════════════════ */
+
+  /* ── landing token bridge — dark values are the fallback (mirrors theme.css,
+        whose :root is dark), light overrides below restore the landing's own ── */
+  :root {
+    --display: -apple-system, 'SF Pro Display', Inter, system-ui, 'Segoe UI', Roboto, sans-serif;
+    --fig: var(--display);
+    --r-lg: 16px;
+    --ink: var(--text);
+    --hair: var(--line);
+    --hair-2: color-mix(in srgb, var(--text) 17%, transparent);
+    --faint: color-mix(in srgb, var(--muted) 82%, transparent);
+    --blue: var(--info);
+    --blue-ink: #82b1f6;
+    --blue-wash: color-mix(in srgb, var(--info) 15%, transparent);
+    --q-green: #45b873;  --green-wash: color-mix(in srgb, #45b873 15%, transparent);
+    --q-gold:  #d8a43c;  --gold-wash:  color-mix(in srgb, #d8a43c 15%, transparent);
+    --violet: #9b86f0;   --teal: #3fbfae;
+    --x-red: #c98a8a;   /* non-directional: --down flips green under [data-lang=zh] */
+    --chip-a: color-mix(in srgb, var(--teal) 18%, transparent);
+    --chip-b: color-mix(in srgb, var(--info) 18%, transparent);
+    --chip-ink: #4fc9b8;
+    --surface: var(--panel);
+    --surface-2: var(--panel2);
+    --sh-card: 0 1px 0 rgba(255,255,255,.02);
+    --sh-lift: 0 18px 40px -18px rgba(0,0,0,.62), 0 3px 8px rgba(0,0,0,.3);
+    /* the two card washes — Pro (hot) and the violet→gold cast on the last card */
+    --wash-hot: linear-gradient(150deg, rgba(63,191,174,.10), rgba(91,155,240,.11) 55%, rgba(155,134,240,.10));
+    --wash-last: linear-gradient(150deg, rgba(155,134,240,.12), rgba(216,97,150,.07) 55%, rgba(216,164,60,.10));
+  }
+  html[data-theme="light"] {
+    --hair-2: #dfe3e9;
+    --faint: #8a95a4;
+    --blue-ink: #1c47cc;
+    --blue-wash: #eef2ff;
+    --q-green: #1f8b41;  --green-wash: #e9f5ec;
+    --q-gold:  #b07d05;  --gold-wash:  #faf3e2;
+    --violet: #7862e0;   --teal: #0f9d8f;
+    --x-red: #dc8f8f;
+    --chip-a: #e7f3f1;  --chip-b: #e9eefc;  --chip-ink: #0d7f74;
+    --surface: #ffffff;
+    --surface-2: #fbfcfd;
+    --sh-card: 0 1px 3px rgba(20,30,50,.07), 0 1px 2px rgba(20,30,50,.05);
+    --sh-lift: 0 14px 34px -14px rgba(20,30,50,.25), 0 3px 8px rgba(20,30,50,.07);
+    --wash-hot: linear-gradient(150deg, rgba(15,157,143,.055), rgba(40,95,255,.06) 55%, rgba(120,98,224,.05));
+    --wash-last: linear-gradient(150deg, rgba(120,98,224,.07), rgba(193,47,120,.045) 55%, rgba(176,125,5,.065));
+  }
+
+  /* ── the landing's canvas, pinned ──────────────────────────────────────
+     theme.js injects a site-wide "soft-contrast" palette for EVERY page
+     (light: --bg:#eceef1 / --panel:#f5f5f7 / --text:#2e3950) at
+     html.soft-contrast[data-theme="light"]. The homepage never links theme.js,
+     so it keeps #f7f8fa / #ffffff / #1c2430 — and the public nav above this
+     page is hardcoded to rgba(247,248,250,.85), i.e. the LANDING's background.
+     On the soft-contrast canvas that nav is a visibly different shade from the
+     page it sits on. Re-pinning the landing values here fixes the seam and
+     makes the homepage → pricing handoff continuous. Selector must out-specify
+     html.soft-contrast[data-theme="light"] (0,0,2,1), hence body.page-plans.
+     Contrast holds: #1c2430 on #f7f8fa ≈ 14:1, --muted ≈ 5.4:1 (both > AA), and
+     these are the exact values the homepage already ships to every visitor.
+     Dark keeps the app's soft-contrast canvas — there is no homepage dark to
+     match, and the rest of the product lives on it. */
+  html[data-theme="light"] body.page-plans {
+    --bg:#f7f8fa; --panel:#ffffff; --panel2:#fbfcfd;
+    --text:#1c2430; --muted:#5d6b7e; --line:#eaecf0;
+  }
+  /* the ambient aurora is an app surface, not a marketing one — the homepage's
+     pricing section is flat porcelain, so drop the wash in light and keep it in
+     dark, where it is part of the product's look. */
+  html[data-theme="light"] body.page-plans::before { display:none; }
+
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--ink); font:15px/1.55 var(--font-ui); margin:0; }
+  a { text-decoration:none; color:inherit; }
+  /* ZH keeps the display voice but hands off to a CJK face (landing.css parity) */
+  html[data-lang="zh"] .sec-title, html[data-lang="zh"] .tier h3, html[data-lang="zh"] h1, html[data-lang="zh"] h2 {
+    font-family:var(--display), 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    letter-spacing:-.01em;
+  }
+  /* tabular figures everywhere a number can change under the toggle */
+  .price, .price .was, .fcount, .mx .val { font-variant-numeric:tabular-nums; font-feature-settings:"tnum" 1; }
+
+  /* ── page shell ─────────────────────────────────────────────────────── */
+  .wrap { width:100%; max-width:1280px; margin-inline:auto; padding-inline:clamp(20px,4.5vw,60px); }
+  .section-pad { padding-block:clamp(52px,7vw,86px); }
+  .pricing-sec { padding-top:clamp(38px,5vw,60px); }
+
+  /* ── section head (kicker · title · toggle) ─────────────────────────── */
+  .p-head { text-align:center; max-width:640px; margin:0 auto; }
+  .kicker { font-family:var(--display); font-weight:700; font-size:.72rem; letter-spacing:.16em;
+    text-transform:uppercase; color:var(--blue); }
+  .sec-title { font-family:var(--display); font-weight:700; letter-spacing:-.02em; line-height:1.02;
+    font-size:clamp(1.9rem,4vw,3rem); margin:12px 0 14px; color:var(--ink); }
+  .sec-sub { color:var(--muted); font-size:1.02rem; max-width:52ch; margin:0 auto; }
+
+  .toggle { display:inline-flex; margin-top:22px; border:1px solid var(--hair-2); border-radius:99px;
+    padding:4px; font-weight:600; font-size:13px; background:var(--surface); box-shadow:var(--sh-card); }
+  .toggle button { appearance:none; border:0; cursor:pointer; font:600 13px/1 var(--font-ui);
+    padding:9px 17px; border-radius:99px; color:var(--muted); background:none;
+    transition:background .18s ease, color .18s ease; }
+  .toggle button[aria-pressed="true"] { background:var(--blue); color:#fff; }
+  .toggle button:focus-visible { outline:2px solid var(--blue); outline-offset:2px; }
+  .toggle .save { font-family:var(--display); font-weight:700; font-size:9.5px; letter-spacing:.05em;
+    margin-left:5px; color:#bff2cf; }
+  .toggle button[aria-pressed="false"] .save { color:var(--q-green); }
+  .toggle-note { text-align:center; font-size:12.5px; color:var(--muted); margin:12px 0 0; min-height:1.2em; }
+
+  /* ── tier cards ─────────────────────────────────────────────────────── */
+  .tiers { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:40px; }
+  .tier { position:relative; border:1px solid var(--hair-2); border-radius:var(--r-lg);
+    background:var(--surface); box-shadow:var(--sh-card); padding:24px; display:flex; flex-direction:column; }
+  .tiers .tier:last-child { background:var(--wash-last), var(--surface); }
+  .tier.hot { border-color:var(--blue); box-shadow:0 0 0 1px var(--blue), var(--sh-lift);
+    background:var(--wash-hot), var(--surface); }
+  /* the "FOUNDING RATE" tab — a real element (not ::before) so the offer API can
+     retitle it when the allotment runs out; same geometry as landing.css */
+  .hot-tab { position:absolute; top:-11px; left:50%; transform:translateX(-50%); white-space:nowrap;
+    font-family:var(--display); font-weight:700; font-size:9.5px; letter-spacing:.14em; text-transform:uppercase;
+    color:#fff; background:var(--blue); padding:4px 11px; border-radius:99px; }
+  html[data-lang="zh"] .hot-tab { letter-spacing:.08em; }
+
+  .tier h3 { margin:0; font-family:var(--display); font-weight:800; font-size:19px; color:var(--ink); }
+  .tier .who { color:var(--muted); font-size:13px; margin:4px 0 0; min-height:36px; }
+
+  .price { margin-top:12px; font-family:var(--fig); font-weight:800; font-size:41px; letter-spacing:-.005em;
+    color:var(--ink); line-height:1.05; }
+  .price .amt { transition:opacity .18s ease; }
+  .price .per { font-family:var(--font-ui); font-weight:500; font-size:12.5px; color:var(--muted); letter-spacing:0; }
+  .price .was { font-family:var(--fig); font-weight:600; font-size:16px; letter-spacing:normal;
+    color:var(--faint); text-decoration:line-through; margin-right:7px; }
+  .price .was.hidden { display:none; }
+
+  .bill { margin:7px 0 0; font-size:12px; line-height:1.45; color:var(--muted); }
+  /* NOT .badge — theme.css carries `html body .badge` and would win on size/padding */
+  .save-badge { display:inline-block; margin-top:6px; font-family:var(--display); font-weight:700;
+    font-size:10px; letter-spacing:.06em; color:var(--q-green); background:var(--green-wash);
+    border-radius:6px; padding:4px 9px; }
+  .save-badge.hidden { visibility:hidden; }  /* reserve the line — no card jump on toggle */
+
+  .founding { margin-top:12px; padding:11px 12px; border-radius:10px;
+    border:1px solid color-mix(in srgb, var(--blue) 24%, transparent);
+    background:linear-gradient(160deg, color-mix(in srgb,var(--blue) 6%,transparent), color-mix(in srgb,var(--violet) 6%,transparent)); }
+  .founding.hidden { display:none; }
+  .founding-line { display:flex; justify-content:space-between; align-items:baseline; gap:10px;
+    font-size:10.5px; color:var(--muted); }
+  .founding-line b { font-family:var(--display); font-weight:750; letter-spacing:.05em; color:var(--ink); }
+  .founding-line .fcount { font-family:var(--fig); font-weight:600; color:var(--ink); text-align:right; }
+  .founding-track { height:6px; margin-top:8px; overflow:hidden; border-radius:999px;
+    background:color-mix(in srgb, var(--blue) 14%, transparent); }
+  .founding-fill { display:block; width:0; height:100%; border-radius:inherit;
+    background:linear-gradient(90deg, var(--blue), var(--violet)); transition:width .6s ease; }
+  .founding-terms { margin:8px 0 0; font-size:10px; line-height:1.4; color:var(--muted); }
+
+  .tier .tf { list-style:none; margin:15px 0 18px; padding:0; flex:1; display:flex; flex-direction:column; gap:9px; }
+  .tier .tf li { position:relative; padding-left:21px; font-size:13px; line-height:1.5; color:var(--muted); }
+  .tier .tf li::before { content:"✓"; position:absolute; left:1px; top:.05em; font-family:var(--display);
+    font-weight:800; font-size:11px; color:var(--q-green); }
+  .tier .tf li b { color:var(--ink); font-weight:600; }
+
+  /* CTA — landing .btn geometry. Keeps the [data-act] hooks and the busy spinner. */
+  .tier .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; width:100%;
+    border-radius:10px; padding:11px 20px; font:600 14.5px/1 var(--font-ui); cursor:pointer;
+    border:1px solid var(--hair-2); background:var(--surface); color:var(--ink); box-shadow:var(--sh-card);
+    transition:transform .16s, box-shadow .16s, background .16s; margin-top:auto; }
+  .tier .btn:hover { transform:translateY(-1px); box-shadow:var(--sh-lift); }
+  .tier .btn.primary { background:var(--blue); border-color:var(--blue); color:#fff; }
+  .tier .btn.primary:hover { background:var(--blue-ink); }
+  .tier .btn:focus-visible { outline:2px solid var(--blue); outline-offset:2px; }
+  .tier .btn[aria-busy="true"] { pointer-events:none; opacity:.75; }
+  .btn .spin { width:14px; height:14px; border:2px solid color-mix(in srgb, currentColor 30%, transparent);
+    border-top-color:currentColor; border-radius:50%; animation:pspin .7s linear infinite; }
+  @keyframes pspin { to { transform:rotate(360deg); } }
+  .cta-note { font-size:11.5px; color:var(--muted); text-align:center; margin:9px 0 0; min-height:1.3em; }
+
+  /* ── feature matrix ─────────────────────────────────────────────────── */
+  .matrix-card { margin-top:28px; background:var(--surface); border:1px solid var(--hair-2);
+    border-radius:var(--r-lg); box-shadow:var(--sh-card); overflow:auto; }
+  .mx-mobile-head { display:none; }
+  table.mx { width:100%; border-collapse:collapse; min-width:760px; }
+  .mx th, .mx td { padding:9px 16px; text-align:center; font-size:13.5px; border-bottom:1px solid var(--hair); }
+  .mx thead th { font-family:var(--display); font-weight:800; font-size:13px; letter-spacing:.02em;
+    position:sticky; top:0; background:var(--surface); z-index:2; border-bottom:1px solid var(--hair-2); color:var(--ink); }
+  .mx thead th small { display:block; font-family:var(--font-ui); font-weight:500; font-size:11px;
+    color:var(--faint); letter-spacing:0; margin-top:2px; }
+  .mx td:first-child, .mx th:first-child { text-align:left; position:sticky; left:0;
+    background:var(--surface); z-index:1; min-width:230px; }
+  .mx .grp td { font-family:var(--display); font-weight:700; font-size:10.5px; letter-spacing:.14em;
+    color:var(--blue); background:var(--surface-2); padding:9px 16px; }
+  .mx .ok { color:var(--q-green); font-weight:800; font-size:14.5px; }
+  .mx .no { color:var(--x-red); font-weight:700; font-size:13px; }
+  .mx .val { font-weight:600; color:var(--ink); }
+  .mx .val small { display:block; font-weight:500; font-size:11px; color:var(--muted); margin-top:1px; }
+  .mx tbody tr:not(.grp):hover td { background:var(--blue-wash); }
+  .mx td:nth-child(3) { background:color-mix(in srgb, var(--blue) 3%, transparent); }
+  .mx tbody tr:last-child td { border-bottom:0; }
+
+  /* feature cell + its Tier-2 hover tip (the mechanics live here, not on the row) */
+  .mx td.feat { position:relative; }
+  .mx td.feat.has-tip { cursor:help; }
+  .mx td.feat.has-tip .ft { border-bottom:1px dotted var(--hair-2); }
+  .mx td.feat:hover, .mx td.feat:focus-within { z-index:30; }
+  .mx .tipbox { position:absolute; left:16px; top:calc(100% - 4px); z-index:80; width:min(280px,64vw);
+    background:var(--ink); color:var(--bg); font-size:11.5px; font-weight:400; line-height:1.5;
+    border-radius:9px; padding:9px 12px; box-shadow:0 12px 30px -12px rgba(18,26,45,.55);
+    opacity:0; visibility:hidden; transform:translateY(3px); pointer-events:none; white-space:normal;
+    transition:opacity .18s, transform .18s, visibility 0s .18s; }
+  .mx .tipbox.up { top:auto; bottom:calc(100% - 4px); transform:translateY(-3px); }
+  .mx td.feat:hover .tipbox, .mx td.feat:focus-within .tipbox {
+    opacity:1; visibility:visible; transform:none; transition:opacity .18s, transform .18s; }
+  .mx .feat .mchip { display:inline-block; font-family:var(--display); font-weight:800; font-size:8px;
+    letter-spacing:.1em; text-transform:uppercase; border-radius:6px; border:1px solid transparent; padding:2px 7px;
+    margin:0 0 0 8px; vertical-align:1px; white-space:nowrap; color:var(--chip-ink);
+    background:linear-gradient(90deg,var(--chip-a),var(--chip-b)) padding-box,
+               linear-gradient(90deg,color-mix(in srgb,var(--teal) 60%,transparent),color-mix(in srgb,var(--blue) 55%,transparent)) border-box; }
+
+  /* ── FAQ ────────────────────────────────────────────────────────────── */
+  .sec-head { text-align:center; margin-bottom:22px; }
+  .sec-head h2 { font-family:var(--display); font-weight:700; letter-spacing:-.015em;
+    font-size:clamp(1.4rem,2.6vw,2rem); margin:0; color:var(--ink); }
+  .sec-head p { color:var(--muted); margin:8px auto 0; max-width:52ch; font-size:14px; }
+  .faq { display:grid; gap:10px; max-width:760px; margin:22px auto 0; }
+  .faq details { border:1px solid var(--hair-2); border-radius:12px; background:var(--surface);
+    box-shadow:var(--sh-card); overflow:hidden; }
+  .faq summary { list-style:none; cursor:pointer; padding:15px 18px; font:600 14.5px/1.4 var(--font-ui);
+    color:var(--ink); display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .faq summary::-webkit-details-marker { display:none; }
+  .faq summary:focus-visible { outline:2px solid var(--blue); outline-offset:-2px; }
+  .faq summary .chev { flex:none; width:16px; height:16px; color:var(--muted); transition:transform .22s ease; }
+  .faq details[open] summary .chev { transform:rotate(180deg); }
+  .faq .ans { padding:0 18px 16px; color:var(--muted); font-size:13.6px; line-height:1.6; }
+  .faq-more { max-width:760px; margin:14px auto 0; text-align:center; font-size:13.2px;
+    color:var(--muted); line-height:1.55; }
+  .faq-more a { color:var(--blue); font-weight:600; }
+  .faq-more a:hover { color:var(--blue-ink); }
+
+  /* ── disclaimer ─────────────────────────────────────────────────────── */
+  .disclaimer { margin:44px auto 0; max-width:820px; padding:16px 18px; border:1px solid var(--hair);
+    border-radius:12px; background:var(--surface-2); color:var(--muted); font-size:11.8px; line-height:1.6; }
+  .disclaimer b { color:var(--ink); font-weight:600; }
+
+  /* ── return-flag banner (?checkout=success | cancel) ─────────────────── */
+  .flag-banner { display:none; align-items:center; gap:12px; margin:20px 0 0; padding:13px 16px;
+    border-radius:12px; font-size:13.5px; border:1px solid var(--hair-2); background:var(--surface);
+    box-shadow:var(--sh-card); color:var(--ink); }
+  .flag-banner.show { display:flex; }
+  /* --q-green, not --up: theme.css flips --up to red under [data-lang="zh"] (红涨绿跌),
+     and a "you're in" banner must not turn red for a Chinese reader. */
+  .flag-banner.ok { border-color:color-mix(in srgb, var(--q-green) 42%, var(--hair-2)); background:var(--green-wash); }
+  .flag-banner.cancel { border-color:color-mix(in srgb, var(--q-gold) 42%, var(--hair-2)); background:var(--gold-wash); }
+  .flag-banner .ficon { flex:none; font-size:17px; }
+  .flag-banner .fgo { flex:none; margin-left:14px; font-weight:600; white-space:nowrap;
+    color:var(--blue); border-bottom:1px solid currentColor; }
+  .flag-banner .fx { margin-left:auto; cursor:pointer; color:var(--muted); background:none; border:0;
+    font-size:16px; line-height:1; padding:2px 4px; }
+
+  /* ── toast (checkout errors — interface voice, no apology) ──────────── */
+  #ptoast { position:fixed; left:50%; bottom:26px; transform:translateX(-50%) translateY(20px);
+    max-width:min(92vw,420px); background:var(--ink); border:1px solid var(--hair-2); color:var(--bg);
+    padding:12px 16px; border-radius:12px; box-shadow:var(--sh-lift); font-size:13px; z-index:2147483600;
+    opacity:0; pointer-events:none; transition:opacity .22s ease, transform .22s ease; }
+  #ptoast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+  @media (prefers-reduced-motion:reduce){
+    .tier .btn, .price .amt, .faq summary .chev, #ptoast, .founding-fill, .toggle button { transition:none; }
+    .btn .spin { animation-duration:1.4s; }
+  }
+
+  /* ── mobile: one readable plan column + tap-to-expand mechanics ──────── */
+  @media (max-width:760px){
+    .tiers { grid-template-columns:1fr; gap:18px; margin-top:32px; }
+    .tier { padding:22px 20px; border-radius:18px; }
+    .tier .who { min-height:0; margin-bottom:2px; }
+    .tier .tf { margin:13px 0 17px; gap:8px; }
+    .tier .btn { min-height:48px; }
+    .price { font-size:37px; }
+
+    .matrix-card { margin-top:30px; overflow:visible; border-radius:18px; }
+    .mx-mobile-head { display:block; position:sticky; top:62px; z-index:35; padding:12px;
+      background:color-mix(in srgb, var(--surface) 94%, transparent); border-bottom:1px solid var(--hair-2);
+      border-radius:18px 18px 0 0; box-shadow:0 10px 24px -22px rgba(18,26,45,.6);
+      backdrop-filter:blur(14px) saturate(140%); -webkit-backdrop-filter:blur(14px) saturate(140%); }
+    .mx-mobile-label { margin:0 0 8px; font-family:var(--display); font-weight:700; font-size:9.5px;
+      letter-spacing:.12em; color:var(--muted); text-transform:uppercase; }
+    .mx-plan-tabs { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; padding:4px;
+      background:var(--surface-2); border:1px solid var(--hair); border-radius:12px; }
+    .mx-plan-tabs button { min-width:0; min-height:46px; border:1px solid transparent; border-radius:9px;
+      padding:6px 5px; color:var(--muted); background:none; cursor:pointer;
+      transition:background .16s, color .16s, box-shadow .16s, border-color .16s; }
+    .mx-plan-tabs button span { display:block; font-family:var(--display); font-size:12.5px; font-weight:800; line-height:1.15; }
+    .mx-plan-tabs button small { display:block; margin-top:2px; font-size:10px; font-weight:500; line-height:1.2;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .mx-plan-tabs button[aria-pressed="true"] { background:var(--surface); border-color:var(--hair-2);
+      color:var(--blue); box-shadow:var(--sh-card); }
+    .mx-mobile-hint { margin:8px 2px 0; color:var(--faint); font-size:11px; line-height:1.35; }
+
+    table.mx { min-width:0; table-layout:fixed; }
+    .mx th, .mx td { padding:11px 12px; }
+    .mx th:first-child, .mx td:first-child { position:static; left:auto; min-width:0; width:68%; text-align:left; }
+    .mx thead th { position:static; top:auto; font-size:12px; vertical-align:top; }
+    .mx thead th:first-child { color:var(--muted); font-size:11px; font-weight:600; }
+    .mx thead th small { font-size:9.5px; line-height:1.25; }
+    .mx th:nth-child(n+2), .mx td:nth-child(n+2) { display:none; }
+    .matrix-card[data-plan="free"]    .mx th:nth-child(2), .matrix-card[data-plan="free"]    .mx td:nth-child(2),
+    .matrix-card[data-plan="insider"] .mx th:nth-child(3), .matrix-card[data-plan="insider"] .mx td:nth-child(3),
+    .matrix-card[data-plan="pro"]     .mx th:nth-child(4), .matrix-card[data-plan="pro"]     .mx td:nth-child(4) { display:table-cell; width:32%; }
+    .mx .grp td { display:table-cell !important; width:auto !important; padding:10px 12px; }
+    .mx .ok { font-size:16px; }
+    .mx .val { font-size:12px; line-height:1.25; }
+    .mx .feat .mchip { margin-left:6px; padding:2px 5px; font-size:7.5px; }
+    .mx td.feat.has-tip { cursor:pointer; }
+    .mx td.feat.has-tip .ft::after { content:" ⓘ"; color:var(--blue); font-size:10px; }
+    .mx td.feat.has-tip .tipbox { position:static; display:block; width:100%; max-height:0; margin:0; padding:0;
+      background:transparent; color:var(--muted); border:0; border-radius:0; box-shadow:none;
+      font-size:11.5px; line-height:1.45; opacity:0; visibility:hidden; overflow:hidden; transform:none;
+      transition:max-height .22s ease, opacity .16s ease, margin .22s ease, visibility 0s .22s; }
+    .mx td.feat:hover, .mx td.feat:focus-within { z-index:auto; }
+    .mx td.feat:hover .tipbox, .mx td.feat:focus-within .tipbox { opacity:0; visibility:hidden; }
+    .mx td.feat.has-tip.tip-open .tipbox { max-height:120px; margin-top:7px; opacity:1; visibility:visible;
+      transition:max-height .22s ease, opacity .16s ease, margin .22s ease; }
+  }
+  @media (max-width:680px){
+    .pricing-sec { padding-block:44px; }
+    .toggle { display:grid; grid-template-columns:1fr 1fr; width:100%; max-width:360px; }
+    .toggle button { min-height:44px; padding:8px 10px; }
+    .toggle .save { display:block; margin:2px 0 0; font-size:8.5px; }
+  }
+</style>
 
 
-<link rel="stylesheet" href="assets/css/c68d2db1.css?v=c68d2db1">
-<link rel="preload" as="style" href="product-nav-icons.css?v=7b0290e9">
+<style data-public-chrome>
+body.public-page{padding-top:0}
+
+/* ── public header — landing-page chrome ───────────────────────────────── */
+.public-nav{position:sticky;top:0;z-index:90;background:rgba(247,248,250,.85);
+  -webkit-backdrop-filter:saturate(140%) blur(14px);backdrop-filter:saturate(140%) blur(14px);
+  border-bottom:1px solid #e2e6ec;transition:box-shadow .25s ease,background .25s ease;
+  color:#1c2430;font-family:-apple-system,"SF Pro Display",Inter,system-ui,"Segoe UI",Roboto,sans-serif}
+.public-nav.sc{background:rgba(247,248,250,.95);box-shadow:0 10px 30px -18px rgba(18,26,45,.25)}
+.public-nav-in{max-width:1280px;margin:0 auto;padding:0 clamp(20px,4.5vw,60px);height:62px;
+  display:flex;align-items:center;gap:26px}
+.public-brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:15px;
+  color:#1c2430;text-decoration:none;white-space:nowrap}
+.public-brand:hover{color:#1c2430;text-decoration:none}
+.public-brand .m{width:27px;height:27px;border-radius:7px;background:#1c2430;display:grid;
+  place-items:center;color:#fff;font-weight:800;font-size:14px}
+.public-nav-links{display:flex;gap:22px;font-size:14px;font-weight:500}
+.public-nav-links a{color:#5d6b7e;text-decoration:none;white-space:nowrap}
+.public-nav-links a:hover{color:#1c2430;text-decoration:none}
+.public-nav-right{margin-left:auto;display:flex;align-items:center;gap:14px;font-size:14px}
+.public-nav-login{color:#5d6b7e;text-decoration:none;white-space:nowrap}
+.public-nav-login:hover{color:#1c2430;text-decoration:none}
+.public-nav-cta{display:inline-flex;align-items:center;justify-content:center;border-radius:10px;
+  padding:8px 15px;font-weight:600;font-size:13.5px;border:1px solid #285fff;
+  background:#285fff;color:#fff;text-decoration:none;box-shadow:0 2px 8px rgba(18,26,45,.08);
+  transition:transform .16s,box-shadow .16s,background .16s;white-space:nowrap}
+.public-nav-cta:hover{transform:translateY(-1px);box-shadow:0 14px 34px -14px rgba(18,26,45,.28);
+  background:#1c47cc;color:#fff;text-decoration:none}
+
+/* settings popover — same controls and account affordance as index.html */
+.public-nav .gear-wrap{position:relative;display:inline-flex}
+.public-nav .gearbtn{width:37px;height:37px;flex:none;border-radius:999px;border:1px solid #d2d8e1;
+  background:#fff;box-shadow:0 2px 8px rgba(18,26,45,.08);display:grid;place-items:center;
+  color:#5d6b7e;transition:transform .16s,box-shadow .16s,color .16s;cursor:pointer;padding:0}
+.public-nav .gearbtn:hover{color:#1c2430;transform:translateY(-1px);
+  box-shadow:0 14px 34px -14px rgba(18,26,45,.28)}
+.public-nav .gearbtn[aria-expanded="true"]{color:#1c2430;border-color:#8a95a4}
+.public-nav .gearbtn svg{width:17px;height:17px}
+.public-nav .gear-pop{position:absolute;right:0;top:calc(100% + 10px);width:236px;background:#fff;
+  border:1px solid #d2d8e1;border-radius:14px;box-shadow:0 14px 34px -14px rgba(18,26,45,.28);
+  padding:8px;z-index:95;opacity:0;visibility:hidden;transform:translateY(6px);
+  transition:opacity .18s ease,transform .18s ease,visibility 0s .18s;color:#1c2430}
+.public-nav .gear-pop.open{opacity:1;visibility:visible;transform:none;
+  transition:opacity .18s ease,transform .18s ease}
+.public-nav .gear-pop p{padding:0;border:0}
+.public-nav .gp-kicker,.public-nav .gp-acct-t{font-weight:700;font-size:9px;letter-spacing:.16em;
+  color:#8a95a4;margin:4px 8px 8px;text-transform:uppercase}
+.public-nav .gp-acct-t{margin:2px 8px 8px}
+.public-nav .gp-lang{display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:4px 8px 8px;min-width:0}
+.public-nav .gp-lbl{font-size:13px;color:#34404f;font-weight:500;min-width:0}
+.public-nav .gp-seg{display:inline-flex;border:1px solid #d2d8e1;border-radius:8px;padding:2px;
+  background:#f1f3f7;flex:none}
+.public-nav .gp-seg-b{border:0;background:transparent;font-family:inherit;font-weight:700;
+  font-size:11px;line-height:1;color:#5d6b7e;
+  border-radius:6px;padding:4px 9px;transition:color .14s,background .14s;cursor:pointer}
+.public-nav .gp-seg-b.on{background:#285fff;color:#fff}
+.public-nav .gp-div{height:1px;background:#e2e6ec;margin:4px 4px 6px}
+.public-nav .gp-link{display:block;font-size:13px;color:#34404f;border-radius:8px;padding:8px;
+  font-weight:500;text-decoration:none;transition:background .14s,color .14s}
+.public-nav .gp-link:hover{background:#f1f3f7;color:#1c2430;text-decoration:none}
+.public-nav .gp-acct-d{font-size:12px;line-height:1.5;color:#5d6b7e;margin:0 8px 10px}
+.public-nav .gp-acct-btns{display:flex;gap:8px;padding:0 4px 4px}
+.public-nav .gp-abtn{flex:1;border-radius:9px;padding:8px 10px;font-size:12.5px;font-weight:600;
+  transition:background .14s,color .14s,border-color .14s;cursor:pointer}
+.public-nav .gp-abtn.ghost{border:1px solid #d2d8e1;background:#fff;color:#34404f}
+.public-nav .gp-abtn.ghost:hover{background:#eef2ff;color:#1c47cc;border-color:#285fff}
+.public-nav .gp-abtn.solid{background:#285fff;border:1px solid #285fff;color:#fff;
+  box-shadow:0 2px 8px rgba(18,26,45,.08)}
+.public-nav .gp-abtn.solid:hover{background:#1c47cc;border-color:#1c47cc}
+.public-nav .gp-acct-card{display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;
+  cursor:pointer;min-width:0;transition:background .14s}
+.public-nav .gp-acct-card:hover{background:#f1f3f7}
+.public-nav .gp-acct-card:focus-visible{outline:2px solid #285fff;outline-offset:2px}
+.public-nav .gp-avatar{flex:none;width:28px;height:28px;border-radius:50%;display:inline-flex;
+  align-items:center;justify-content:center;font-weight:800;font-size:12px;color:#fff;background:#285fff}
+.public-nav .gp-acct-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.public-nav .gp-acct-email{font-size:12.5px;font-weight:600;color:#1c2430;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.public-nav .gp-acct-sub{font-size:11px;color:#5d6b7e}
+.public-nav .gp-signout{display:block;width:calc(100% - 8px);margin:6px 4px 2px;
+  border:1px solid #d2d8e1;border-radius:9px;padding:8px;font-size:12.5px;font-weight:600;
+  color:#34404f;background:#fff;transition:background .14s,color .14s,border-color .14s;cursor:pointer}
+.public-nav .gp-signout:hover{background:#f1f3f7;color:#1c2430}
+
+/* ── public footer — exact landing-page information architecture ───────── */
+.public-footer{background:#04070c;border-top:1px solid #10161f;padding:46px 0 44px;
+  color:#7a8496;font:13px/1.5 -apple-system,"SF Pro Display",Inter,system-ui,"Segoe UI",Roboto,sans-serif}
+.public-footer a{text-decoration:none}
+.public-footer .f-in{max-width:1280px;margin:0 auto;padding:0 clamp(20px,4.5vw,60px)}
+.public-footer .f-grid{display:flex;justify-content:space-between;align-items:flex-start;
+  gap:30px;flex-wrap:wrap}
+.public-footer .f-brand .fb-row{display:flex;align-items:center;gap:9px}
+.public-footer .f-brand .fm{width:26px;height:26px;border-radius:7px;
+  background:linear-gradient(135deg,#3f82f6,#7c5cff);display:grid;place-items:center;
+  font-weight:800;font-size:14px;color:#fff}
+.public-footer .f-brand .fn{font-weight:800;font-size:13px;letter-spacing:.08em;color:#dfe6f2}
+.public-footer .f-brand .ft{margin:10px 0 0;color:#5f6b7e;font-size:12.5px}
+.public-footer .f-cols{display:flex;gap:clamp(30px,6vw,84px)}
+.public-footer .f-col p{margin:0 0 8px;font-weight:700;font-size:9px;letter-spacing:.14em;
+  color:#46536a;text-transform:uppercase}
+.public-footer .f-col a{display:block;color:#8e99ad;padding:4.5px 0;font-size:13px}
+.public-footer .f-col a:hover{color:#dfe6f2;text-decoration:none}
+.public-footer .f-bot{display:flex;justify-content:space-between;align-items:center;gap:12px 18px;
+  flex-wrap:wrap;border-top:1px solid #10161f;margin-top:36px;padding-top:20px;
+  font-size:12px;color:#8e99ad}
+.public-footer .f-bot a{color:#8e99ad}
+.public-footer .f-bot a:hover{color:#dfe6f2}
+
+@media(max-width:680px){
+  .public-nav-links{display:none}
+  .public-nav-login{display:none}
+  .public-nav-right{gap:10px}
+  .public-footer .f-cols{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:28px 36px}
+}
+@media(max-width:420px){
+  .public-nav-in{gap:12px}
+  .public-brand{font-size:13px;gap:8px}
+  .public-nav-cta{padding:8px 11px}
+}
+</style>
 </head>
 <body class="page-plans public-page">
 
@@ -109,208 +572,196 @@
   </div>
 
   
-  <header class="hero">
-    <span class="eyebrow"><span class="l-en">Membership</span><span class="l-zh">会员方案</span></span>
-    <h1><span class="l-en">One market brain.</span><span class="l-zh">一个市场大脑，</span> <span class="accent"><span class="l-en">Every desk on it.</span><span class="l-zh">所有桌面尽在其中。</span></span></h1>
-    <p class="sub"><span class="l-en">Every dashboard, the full research desk, and the Mastermind chat — in one place. Start free, or take a 7-day trial of the paid tiers.</span><span class="l-zh">所有仪表盘、完整研究桌面，以及操盘大脑对话——尽在一处。免费开始，或试用付费方案 7 天。</span></p>
-
-    
-    <div class="toggle-wrap">
-      <div class="btoggle annual" id="btoggle" role="group" aria-label="Billing interval">
-        <span class="knob" aria-hidden="true"></span>
+  <section class="pricing-sec section-pad">
+    <div class="p-head">
+      <span class="kicker"><span class="l-en">Pricing</span><span class="l-zh">定价</span></span>
+      <h2 class="sec-title"><span class="l-en">Free to explore.</span><span class="l-zh">免费探索。</span><br><span class="l-en">Built for deeper decisions.</span><span class="l-zh">为更深的决策而生。</span></h2>
+      <div class="toggle" role="group" aria-label="Billing interval" id="btoggle">
+        <button type="button" data-interval="annual" aria-pressed="true"><span class="l-en">Annual</span><span class="l-zh">按年</span>
+          <span class="save l-en">FOUNDING PRO AVAILABLE</span><span class="save l-zh">FOUNDING PRO 开放中</span>
+        </button>
         <button type="button" data-interval="monthly" aria-pressed="false"><span class="l-en">Monthly</span><span class="l-zh">按月</span></button>
-        <button type="button" data-interval="annual" class="on" aria-pressed="true">
-          <span class="l-en">Annual</span><span class="l-zh">按年</span>
-          <span class="save-flag l-en">Founding Pro available</span><span class="save-flag l-zh">Founding Pro 开放中</span>
-        </button>
       </div>
+      <p class="toggle-note" id="toggle-note">
+        <span class="l-en">Founding Pro gives you every Pro feature for the Insider annual price.</span><span class="l-zh">Founding Pro 让你以 Insider 年付价格解锁 Pro 全部功能。</span>
+      </p>
     </div>
-    <p class="toggle-note" id="toggle-note">
-      <span class="l-en">Founding Pro gives you every Pro feature for the Insider annual price.</span><span class="l-zh">Founding Pro 让你以 Insider 年付价格解锁 Pro 全部功能。</span>
-    </p>
-  </header>
-
-  <div class="cards">
 
     
-    <section class="card free" aria-label="Free plan">
-      <div class="tname"><span class="dot"></span><span class="l-en">Free</span><span class="l-zh">免费</span></div>
-      <p class="tfor"><span class="l-en">A real taste of the desk — sample dashboards and one research report.</span><span class="l-zh">桌面的真实体验——样板仪表盘与一份研究报告。</span></p>
-      <div class="price free-price">
-        <span class="amt"><span class="l-en">Free</span><span class="l-zh">免费</span></span>
-      </div>
-      <div class="billed"><span class="l-en">Always free · sign in to save your watchlist.</span><span class="l-zh">永久免费 · 登录即可保存自选。</span></div>
-      <div class="cta">
-        <button class="gbtn gbtn-lg gbtn-pill" data-act="free" type="button"><span class="l-en">Sign in — it’s free</span><span class="l-zh">登录 — 完全免费</span></button>
-      </div>
-      <p class="cta-note" id="free-note"><span class="l-en">Your current plan.</span><span class="l-zh">你当前的方案。</span></p>
-      <ul class="feats">
-        <li class="on"><span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span><span><span class="l-en">Sample dashboards</span><span class="l-zh">样板仪表盘</span> — <b><span class="l-en">macro, news, methodology</span><span class="l-zh">宏观、新闻、方法论</span></b></span></li>
-        <li class="on"><span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span><span><span class="l-en">One research report</span><span class="l-zh">一份研究报告</span></span></li>
-        <li class="on"><span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span><span><span class="l-en">Special situations</span><span class="l-zh">特殊事件</span> — <b><span class="l-en">the 3 newest filings</span><span class="l-zh">最新 3 份申报</span></b></span></li>
-        <li class="on"><span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span><span><span class="l-en">China special situations</span><span class="l-zh">中国特殊事件</span> — <b><span class="l-en">the full overhang read + the 3 nearest unlocks</span><span class="l-zh">完整压力概览 + 最近 3 笔解禁</span></b></span></li>
-        <li class="on"><span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span><span><span class="l-en">Committee &amp; brief — a teaser</span><span class="l-zh">委员会与简报 — 预览</span></span></li>
-        <li class="on"><span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span><span><span class="l-en">Mastermind chat</span><span class="l-zh">操盘大脑对话</span> — <b><span class="l-en">5 quick questions a week</span><span class="l-zh">每周 5 个快速提问</span></b></span></li>
-        <li class="on"><span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span><span><span class="l-en">Charts terminal</span><span class="l-zh">图表终端</span> — <b><span class="l-en">free for everyone</span><span class="l-zh">所有人免费</span></b></span></li>
-      </ul>
-    </section>
+    <div class="tiers">
 
-    
-    <section class="card insider" aria-label="Insider plan"
-             data-tier="insider" data-m-cents="9900" data-a-cents="90000"
-             data-m-pm="99" data-a-pm="75"
-             data-a-total="900" data-save="24">
-      <div class="tname"><span class="dot"></span>Insider</div>
-      <p class="tfor"><span class="l-en">The whole desk — every market, every heatmap, all the research.</span><span class="l-zh">完整桌面——所有市场、所有热力图、全部研究。</span></p>
-      <div class="price">
-        <span class="cur">$</span><span class="amt" data-price>75</span><span class="per">/<span class="l-en">mo</span><span class="l-zh">月</span></span>
-      </div>
-      <div class="billed">
-        <span data-billed><span class="l-en">Billed $900 a year.</span><span class="l-zh">每年结算 $900。</span></span>
-        <span class="badge-save" data-badge><span class="l-en">save 24%</span><span class="l-zh">省 24%</span></span>
-      </div>
-      <div class="cta">
-        <button class="gbtn gbtn-lg gbtn-pill gbtn-cta" data-act="subscribe" data-tier="insider" type="button">
-          <span class="btxt"><span class="l-en">Start 7-day trial</span><span class="l-zh">开始 7 天试用</span></span>
-        </button>
-      </div>
-      <p class="cta-note"><span class="l-en">Card required · cancel anytime before day 7.</span><span class="l-zh">需绑卡 · 第 7 天前可随时取消。</span></p>
-      <ul class="feats">
-        <li class="on"><span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span><span><b><span class="l-en">All dashboards</span><span class="l-zh">所有仪表盘</span></b> — <span class="l-en">markets, desks, heatmaps, baskets, sectors, flow</span><span class="l-zh">市场、桌面、热力图、篮子、板块、资金流</span></span></li>
-        <li class="on"><span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span><span><b><span class="l-en">Every research report</span><span class="l-zh">全部研究报告</span></b> + <span class="l-en">the intelligence hub</span><span class="l-zh">情报中心</span></span></li>
-        <li class="on"><span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span><span><b><span class="l-en">The special situations desk</span><span class="l-zh">完整特殊事件交易台</span></b> — <span class="l-en">activist, M&amp;A, spin-offs, take-privates</span><span class="l-zh">维权、并购、分拆、私有化</span></span></li>
-        <li class="on"><span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span><span><b><span class="l-en">The China event desk</span><span class="l-zh">完整中国事件交易台</span></b> — <span class="l-en">every named unlock, inquiry letter, buyback and pledge risk</span><span class="l-zh">全部解禁、问询函、回购与质押风险个股</span></span></li>
-        <li class="on"><span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span><span><span class="l-en">Committee, brief &amp; track record</span><span class="l-zh">委员会、简报与业绩记录</span> — <span class="l-en">in full</span><span class="l-zh">完整版</span></span></li>
-        <li class="on"><span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span><span><span class="l-en">Mastermind chat</span><span class="l-zh">操盘大脑对话</span> — <b><span class="l-en">300 a month</span><span class="l-zh">每月 300 次</span></b></span></li>
-        <li class="on"><span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span><span><span class="l-en">Terminal live options</span><span class="l-zh">终端实时期权</span> — <b><span class="l-en">included</span><span class="l-zh">含</span></b></span></li>
-      </ul>
-    </section>
+      
+      <section class="tier" aria-label="Free plan">
+        <h3><span class="l-en">Free</span><span class="l-zh">免费</span></h3>
+        <p class="who"><span class="l-en">A real taste of the desk — sample dashboards and one research report.</span><span class="l-zh">桌面的真实体验——样板仪表盘与一份研究报告。</span></p>
+        <div class="price">$0</div>
+        <p class="bill"><span class="l-en">No card. Sign in to save your watchlist.</span><span class="l-zh">无需绑卡。登录即可保存自选。</span></p>
+        <ul class="tf">
+          <li><b><span class="l-en">Sample dashboards</span><span class="l-zh">样板仪表盘</span></b> — <span class="l-en">macro, news, methodology</span><span class="l-zh">宏观、新闻、方法论</span></li>
+          <li><span class="l-en">One research report</span><span class="l-zh">一份研究报告</span></li>
+          <li><span class="l-en">Special situations</span><span class="l-zh">特殊事件</span> — <b><span class="l-en">the 3 newest filings</span><span class="l-zh">最新 3 份申报</span></b></li>
+          <li><span class="l-en">China special situations</span><span class="l-zh">中国特殊事件</span> — <b><span class="l-en">the full overhang read + the 3 nearest unlocks</span><span class="l-zh">完整压力概览 + 最近 3 笔解禁</span></b></li>
+          <li><span class="l-en">Committee &amp; brief — a teaser</span><span class="l-zh">委员会与简报 — 预览</span></li>
+          <li><span class="l-en">Mastermind chat</span><span class="l-zh">操盘大脑对话</span> — <b><span class="l-en">5 quick questions a week</span><span class="l-zh">每周 5 个快速提问</span></b></li>
+          <li><span class="l-en">Charts terminal</span><span class="l-zh">图表终端</span> — <b><span class="l-en">free for everyone</span><span class="l-zh">所有人免费</span></b></li>
+        </ul>
+        <button class="btn" data-act="free" type="button"><span class="btxt"><span class="l-en">Sign in — it’s free</span><span class="l-zh">登录 — 完全免费</span></span></button>
+        <p class="cta-note" id="free-note"><span class="l-en">Your current plan.</span><span class="l-zh">你当前的方案。</span></p>
+      </section>
 
-    
-    <section class="card pro" aria-label="Pro plan"
-             data-tier="pro" data-m-cents="14900" data-a-cents="130800"
-             data-m-pm="149" data-a-pm="109"
-             data-a-total="1308" data-save="27"
-             data-offer-key="founding_pro" data-offer-active="true"
-             data-offer-a-pm="75" data-offer-a-total="900"
-             data-offer-discount="31" data-offer-savings="408"
-             data-offer-cap="2000">
-      <div class="ribbon" data-offer-ribbon><span class="l-en">Founding Pro</span><span class="l-zh">Founding Pro</span></div>
-      <div class="tname"><span class="dot"></span>Pro</div>
-      <p class="tfor"><span class="l-en">Everything in Insider, plus the deep Opus chat lane for real research.</span><span class="l-zh">Insider 全部内容，另加用于深度研究的 Opus 对话通道。</span></p>
-      <div class="rack-price" data-offer-rack>
-        <span class="l-en">Regular Pro annual</span><span class="l-zh">Pro 常规年付</span>
-        <s>$109/<span class="l-en">mo</span><span class="l-zh">月</span></s>
-      </div>
-      <div class="price">
-        <span class="cur">$</span><span class="amt" data-price>75</span><span class="per">/<span class="l-en">mo</span><span class="l-zh">月</span></span>
-      </div>
-      <div class="billed">
-        <span data-billed><span class="l-en">Billed $900 a year.</span><span class="l-zh">每年结算 $900。</span></span>
-        <span class="badge-save" data-badge><span class="l-en">Founding Pro · save $408/year</span><span class="l-zh">Founding Pro · 每年省 $408</span></span>
-      </div>
-      <div class="founding-meter" data-offer-meter>
-        <div class="founding-line"><b><span class="l-en">Founding memberships</span><span class="l-zh">创始名额</span></b>
-          <span data-offer-count><span class="l-en">2,000 total — first come, first served</span><span class="l-zh">共 2,000 个，先到先得</span></span>
+      
+      <section class="tier" aria-label="Insider plan"
+               data-tier="insider" data-m-cents="9900" data-a-cents="90000"
+               data-m-pm="99" data-a-pm="75"
+               data-a-total="900" data-save="24">
+        <h3>Insider</h3>
+        <p class="who"><span class="l-en">The whole desk — every market, every heatmap, all the research.</span><span class="l-zh">完整桌面——所有市场、所有热力图、全部研究。</span></p>
+        <div class="price">
+          <span class="cur">$</span><span class="amt" data-price>75</span>
+          <span class="per" data-per><span class="l-en">/mo billed annually</span><span class="l-zh">/月 · 年付</span></span>
         </div>
-        <div class="founding-track" hidden role="progressbar" aria-label="Founding Pro memberships no longer available"
-             aria-valuemin="0" aria-valuemax="2000" aria-valuenow="0">
-          <div class="founding-fill" data-offer-fill></div>
+        <p class="bill" data-billed><span class="l-en">Billed $900 a year.</span><span class="l-zh">每年结算 $900。</span></p>
+        <span class="save-badge" data-badge><span class="l-en">SAVE 24% VS MONTHLY</span><span class="l-zh">比月付省 24%</span></span>
+        <ul class="tf">
+          <li><b><span class="l-en">All dashboards</span><span class="l-zh">所有仪表盘</span></b> — <span class="l-en">markets, desks, heatmaps, baskets, sectors, flow</span><span class="l-zh">市场、桌面、热力图、篮子、板块、资金流</span></li>
+          <li><b><span class="l-en">Every research report</span><span class="l-zh">全部研究报告</span></b> + <span class="l-en">the intelligence hub</span><span class="l-zh">情报中心</span></li>
+          <li><b><span class="l-en">The special situations desk</span><span class="l-zh">完整特殊事件交易台</span></b> — <span class="l-en">activist, M&amp;A, spin-offs, take-privates</span><span class="l-zh">维权、并购、分拆、私有化</span></li>
+          <li><b><span class="l-en">The China event desk</span><span class="l-zh">完整中国事件交易台</span></b> — <span class="l-en">every named unlock, inquiry letter, buyback and pledge risk</span><span class="l-zh">全部解禁、问询函、回购与质押风险个股</span></li>
+          <li><span class="l-en">Committee, brief &amp; track record</span><span class="l-zh">委员会、简报与业绩记录</span> — <span class="l-en">in full</span><span class="l-zh">完整版</span></li>
+          <li><span class="l-en">Mastermind chat</span><span class="l-zh">操盘大脑对话</span> — <b><span class="l-en">300 a month</span><span class="l-zh">每月 300 次</span></b></li>
+          <li><span class="l-en">Terminal live options</span><span class="l-zh">终端实时期权</span> — <b><span class="l-en">included</span><span class="l-zh">含</span></b></li>
+        </ul>
+        <button class="btn primary" data-act="subscribe" data-tier="insider" type="button"><span class="btxt"><span class="l-en">Start 7-day trial</span><span class="l-zh">开始 7 天试用</span></span></button>
+        <p class="cta-note"><span class="l-en">Card required · cancel anytime before day 7.</span><span class="l-zh">需绑卡 · 第 7 天前可随时取消。</span></p>
+      </section>
+
+      
+      <section class="tier hot" aria-label="Pro plan"
+               data-tier="pro" data-m-cents="14900" data-a-cents="130800"
+               data-m-pm="149" data-a-pm="109"
+               data-a-total="1308" data-save="27"
+               data-offer-key="founding_pro" data-offer-active="true"
+               data-offer-a-pm="75" data-offer-a-total="900"
+               data-offer-discount="31" data-offer-savings="408"
+               data-offer-cap="2000">
+        <span class="hot-tab" data-offer-ribbon><span class="l-en">Founding rate</span><span class="l-zh">创始会员价</span></span>
+        <h3>Pro</h3>
+        <p class="who"><span class="l-en">Everything in Insider, plus the deep Opus chat lane for real research.</span><span class="l-zh">Insider 全部内容，另加用于深度研究的 Opus 对话通道。</span></p>
+        <div class="price">
+          <span class="was" data-offer-rack>$109</span><span class="cur">$</span><span class="amt" data-price>75</span>
+          <span class="per" data-per><span class="l-en">/mo billed annually</span><span class="l-zh">/月 · 年付</span></span>
         </div>
-        <p class="founding-terms"><span class="l-en">The allotment shrinks daily · every Pro feature at the Insider annual price, $900/year locked in for as long as you stay.</span><span class="l-zh">名额每日递减 · 以 Insider 年付价格解锁 Pro 全部功能，只要不退订，$900/年 永久锁定。</span></p>
-      </div>
-      <div class="cta">
-        <button class="gbtn gbtn-lg gbtn-pill gbtn-cta" data-act="subscribe" data-tier="pro" type="button">
-          <span class="btxt"><span class="l-en">Start 7-day trial</span><span class="l-zh">开始 7 天试用</span></span>
-        </button>
-      </div>
-      <p class="cta-note"><span class="l-en">Card required · cancel anytime before day 7.</span><span class="l-zh">需绑卡 · 第 7 天前可随时取消。</span></p>
-      <ul class="feats">
-        <li class="on"><span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span><span><b><span class="l-en">Everything in Insider</span><span class="l-zh">Insider 全部内容</span></b></span></li>
-        <li class="on"><span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span><span><span class="l-en">Mastermind chat</span><span class="l-zh">操盘大脑对话</span> — <b><span class="l-en">1,000 a month</span><span class="l-zh">每月 1,000 次</span></b></span></li>
-        <li class="on"><span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span><span><b><span class="l-en">Deep Opus chat</span><span class="l-zh">深度 Opus 对话</span></b> — <span class="l-en">150 a month</span><span class="l-zh">每月 150 次</span></span></li>
-        <li class="on"><span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span><span><span class="l-en">Priority research answers</span><span class="l-zh">优先研究回答</span></span></li>
-        <li class="on"><span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span><span><span class="l-en">Terminal live options</span><span class="l-zh">终端实时期权</span> — <b><span class="l-en">included</span><span class="l-zh">含</span></b></span></li>
-      </ul>
-    </section>
+        <p class="bill" data-billed><span class="l-en">Billed $900 a year — the Insider annual price, for the Pro desk.</span><span class="l-zh">每年结算 $900——以 Insider 年付价格解锁 Pro 台席。</span></p>
+        <span class="save-badge" data-badge><span class="l-en">SAVE $408 A YEAR</span><span class="l-zh">每年省 $408</span></span>
+        <div class="founding" data-offer-meter>
+          <div class="founding-line"><b><span class="l-en">FOUNDING MEMBERSHIPS</span><span class="l-zh">创始名额</span></b>
+            <span class="fcount" data-offer-count><span class="l-en">2,000 total — first come, first served</span><span class="l-zh">共 2,000 个，先到先得</span></span>
+          </div>
+          <div class="founding-track" hidden role="progressbar" aria-label="Founding Pro memberships no longer available"
+               aria-valuemin="0" aria-valuemax="2000" aria-valuenow="0">
+            <span class="founding-fill" data-offer-fill></span>
+          </div>
+          <p class="founding-terms"><span class="l-en">The allotment shrinks daily · every Pro feature at the Insider annual price, locked in for as long as you stay.</span><span class="l-zh">名额每日递减 · 以 Insider 年付价格解锁 Pro 全部功能，只要不退订即永久锁定。</span></p>
+        </div>
+        <ul class="tf">
+          <li><b><span class="l-en">Everything in Insider</span><span class="l-zh">Insider 全部内容</span></b></li>
+          <li><span class="l-en">Mastermind chat</span><span class="l-zh">操盘大脑对话</span> — <b><span class="l-en">1,000 a month</span><span class="l-zh">每月 1,000 次</span></b></li>
+          <li><b><span class="l-en">Deep Opus chat</span><span class="l-zh">深度 Opus 对话</span></b> — <span class="l-en">150 a month</span><span class="l-zh">每月 150 次</span></li>
+          <li><span class="l-en">Priority research answers</span><span class="l-zh">优先研究回答</span></li>
+          <li><span class="l-en">Terminal live options</span><span class="l-zh">终端实时期权</span> — <b><span class="l-en">included</span><span class="l-zh">含</span></b></li>
+        </ul>
+        <button class="btn primary" data-act="subscribe" data-tier="pro" type="button"><span class="btxt"><span class="l-en">Try Pro free for 7 days</span><span class="l-zh">免费试用 Pro 7 天</span></span></button>
+        <p class="cta-note"><span class="l-en">Card required · cancel anytime before day 7.</span><span class="l-zh">需绑卡 · 第 7 天前可随时取消。</span></p>
+      </section>
 
-  </div>
+    </div>
 
-  
-  <section class="matrix-sec">
-    <div class="sec-head">
-      <h2><span class="l-en">Compare every line</span><span class="l-zh">逐项对比</span></h2>
-      <p><span class="l-en">What each plan actually unlocks — no asterisks.</span><span class="l-zh">每个方案实际解锁的内容——没有小字陷阱。</span></p>
-    </div><div class="mtx-shell scroll">
-      <table class="mtx">
+    <div class="matrix-card" data-plan="insider">
+      <div class="mx-mobile-head">
+        <p class="mx-mobile-label"><span class="l-en">Choose a plan to compare every feature</span><span class="l-zh">选择方案查看每项功能</span></p>
+        <div class="mx-plan-tabs" role="group" aria-label="Plan shown in feature comparison">
+          <button type="button" data-mx-plan="free" aria-pressed="false"><span><span class="l-en">Free</span><span class="l-zh">免费</span></span><small>$0</small></button>
+          <button type="button" data-mx-plan="insider" aria-pressed="true"><span>Insider</span><small data-mtx-mobile-price="insider">$75/<span class="l-en">mo</span><span class="l-zh">月</span></small></button>
+          <button type="button" data-mx-plan="pro" aria-pressed="false"><span>Pro</span><small data-mtx-mobile-price="pro">$75/<span class="l-en">mo</span><span class="l-zh">月</span></small></button>
+        </div>
+        <p class="mx-mobile-hint"><span class="l-en">Tap any feature marked ⓘ for a plain-language description.</span><span class="l-zh">点击带 ⓘ 的功能查看说明。</span></p>
+      </div>
+      <table class="mx" id="pricing-matrix" aria-label="Plan feature comparison">
         <thead>
           <tr>
-            <th class="col-feat"><span class="l-en">What you get</span><span class="l-zh">你能获得</span></th>
-            <th class="col-tier"><span class="th-tier th-free"><span class="tn"><span class="l-en">Free</span><span class="l-zh">免费</span></span><span class="tp">$0</span></span></th>
-            <th class="col-tier"><span class="th-tier th-insider"><span class="tn">Insider</span><span class="tp" data-mtx-price="insider">$75/mo</span></span></th>
-            <th class="col-tier col-pro"><span class="th-tier th-pro"><span class="tn">Pro</span><span class="tp" data-mtx-price="pro">$75/mo</span></span></th>
+            <th><span class="l-en">Compare every feature</span><span class="l-zh">逐项对比</span></th>
+            <th><span class="l-en">Free</span><span class="l-zh">免费</span><small>$0</small></th>
+            <th>Insider<small data-mtx-price="insider">$75/<span class="l-en">mo</span><span class="l-zh">月</span> <span class="l-en">annual</span><span class="l-zh">年付</span></small></th>
+            <th>Pro<small data-mtx-price="pro">$75/<span class="l-en">mo</span><span class="l-zh">月</span> <span class="l-en">annual</span><span class="l-zh">年付</span></small></th>
           </tr>
         </thead>
         <tbody>
+          <tr class="grp"><td colspan="4"><span class="l-en">DASHBOARDS &amp; DESKS</span><span class="l-zh">仪表盘与交易台</span></td></tr>
           <tr>
-            <td class="col-feat"><span class="rlabel"><span class="l-en">Dashboards</span><span class="l-zh">仪表盘</span></span><span class="rsub"><span class="l-en">markets, desks, heatmaps, baskets, sectors, options &amp; flow, smart-money, cycle</span><span class="l-zh">市场、桌面、热力图、篮子、板块、期权与资金流、聪明钱、周期</span></span></td>
-            <td class="col-tier"><span class="val val-muted"><span class="l-en">Sample only</span><span class="l-zh">仅样板</span></span></td>
-            <td class="col-tier"><span class="val"><span class="l-en">All markets &amp; desks</span><span class="l-zh">所有市场与桌面</span></span></td>
-            <td class="col-tier col-pro"><span class="val"><span class="l-en">Everything</span><span class="l-zh">全部</span></span></td>
+            <td class="feat has-tip"><span class="ft"><span class="l-en">Dashboards</span><span class="l-zh">仪表盘</span></span><span class="tipbox"><span class="l-en">Markets, desks, heatmaps, baskets, sectors, options &amp;amp; flow, smart-money and cycle — rebuilt nightly.</span><span class="l-zh">市场、桌面、热力图、篮子、板块、期权与资金流、聪明钱与周期——每晚重建。</span></span></td>
+            <td class="val"><span class="l-en">Sample only</span><span class="l-zh">仅样板</span></td>
+            <td class="val"><span class="l-en">All markets &amp; desks</span><span class="l-zh">所有市场与桌面</span></td>
+            <td class="val"><span class="l-en">Everything</span><span class="l-zh">全部</span></td>
           </tr>
           <tr>
-            <td class="col-feat"><span class="rlabel"><span class="l-en">Research reports</span><span class="l-zh">研究报告</span></span><span class="rsub"><span class="l-en">state-of-themes + the intelligence hub</span><span class="l-zh">主题态势 + 情报中心</span></span></td>
-            <td class="col-tier"><span class="val val-muted"><span class="l-en">1 sample</span><span class="l-zh">1 份样板</span></span></td>
-            <td class="col-tier"><span class="val"><span class="l-en">All reports</span><span class="l-zh">全部报告</span></span></td>
-            <td class="col-tier col-pro"><span class="val"><span class="l-en">Everything</span><span class="l-zh">全部</span></span></td>
+            <td class="feat has-tip"><span class="ft"><span class="l-en">Research reports</span><span class="l-zh">研究报告</span></span><span class="tipbox"><span class="l-en">State-of-themes reports plus the intelligence hub.</span><span class="l-zh">主题态势报告与情报中心。</span></span></td>
+            <td class="val"><span class="l-en">1 sample</span><span class="l-zh">1 份样板</span></td>
+            <td class="val"><span class="l-en">All reports</span><span class="l-zh">全部报告</span></td>
+            <td class="val"><span class="l-en">Everything</span><span class="l-zh">全部</span></td>
           </tr>
           <tr>
-            <td class="col-feat"><span class="rlabel"><span class="l-en">Special situations desk</span><span class="l-zh">特殊事件交易台</span></span><span class="rsub"><span class="l-en">activist · M&amp;A · spin-offs · take-privates · tenders</span><span class="l-zh">维权 · 并购 · 分拆 · 私有化 · 要约</span></span></td>
-            <td class="col-tier"><span class="val val-muted"><span class="l-en">3 newest filings</span><span class="l-zh">最新 3 份申报</span></span></td>
-            <td class="col-tier"><span class="val"><span class="l-en">Whole board</span><span class="l-zh">完整看板</span></span></td>
-            <td class="col-tier col-pro"><span class="val"><span class="l-en">Whole board</span><span class="l-zh">完整看板</span></span></td>
+            <td class="feat has-tip"><span class="ft"><span class="l-en">Special situations desk</span><span class="l-zh">特殊事件交易台</span></span><span class="tipbox"><span class="l-en">Activist · M&amp;amp;A · spin-offs · take-privates · tenders.</span><span class="l-zh">维权 · 并购 · 分拆 · 私有化 · 要约。</span></span></td>
+            <td class="val"><span class="l-en">3 newest filings</span><span class="l-zh">最新 3 份申报</span></td>
+            <td class="val"><span class="l-en">Whole board</span><span class="l-zh">完整看板</span></td>
+            <td class="val"><span class="l-en">Whole board</span><span class="l-zh">完整看板</span></td>
           </tr>
           <tr>
-            <td class="col-feat"><span class="rlabel"><span class="l-en">China special situations</span><span class="l-zh">中国特殊事件</span></span><span class="rsub"><span class="l-en">unlocks · inquiry letters · earnings previews · buybacks · pledge stress · block trades</span><span class="l-zh">解禁 · 问询函 · 业绩预告 · 回购 · 质押压力 · 大宗交易</span></span></td>
-            <td class="col-tier"><span class="val val-muted"><span class="l-en">All 7 gauges + 3 unlocks</span><span class="l-zh">全部 7 条线 + 3 笔解禁</span></span></td>
-            <td class="col-tier"><span class="val"><span class="l-en">Every name</span><span class="l-zh">全部个股</span></span></td>
-            <td class="col-tier col-pro"><span class="val"><span class="l-en">Every name</span><span class="l-zh">全部个股</span></span></td>
+            <td class="feat has-tip"><span class="ft"><span class="l-en">China special situations</span><span class="l-zh">中国特殊事件</span></span><span class="tipbox"><span class="l-en">Unlocks · inquiry letters · earnings previews · buybacks · pledge stress · block trades.</span><span class="l-zh">解禁 · 问询函 · 业绩预告 · 回购 · 质押压力 · 大宗交易。</span></span></td>
+            <td class="val"><span class="l-en">All 7 gauges + 3 unlocks</span><span class="l-zh">全部 7 条线 + 3 笔解禁</span></td>
+            <td class="val"><span class="l-en">Every name</span><span class="l-zh">全部个股</span></td>
+            <td class="val"><span class="l-en">Every name</span><span class="l-zh">全部个股</span></td>
           </tr>
           <tr>
-            <td class="col-feat"><span class="rlabel"><span class="l-en">Committee, brief &amp; track record</span><span class="l-zh">委员会、简报与业绩记录</span></span></td>
-            <td class="col-tier"><span class="val val-muted"><span class="l-en">Teaser</span><span class="l-zh">预览</span></span></td>
-            <td class="col-tier"><span class="yes"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span></td>
-            <td class="col-tier col-pro"><span class="yes"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span></td>
+            <td class="feat"><span class="ft"><span class="l-en">Committee, brief &amp; track record</span><span class="l-zh">委员会、简报与业绩记录</span></span></td>
+            <td class="val"><span class="l-en">Teaser</span><span class="l-zh">预览</span></td>
+            <td class="ok">✓</td>
+            <td class="ok">✓</td>
+          </tr>
+
+          <tr class="grp"><td colspan="4">MASTERMIND AI</td></tr>
+          <tr>
+            <td class="feat has-tip"><span class="ft"><span class="l-en">Mastermind chat</span><span class="l-zh">操盘大脑对话</span></span><span class="tipbox"><span class="l-en">The fast lane — quick market questions, answered on any page.</span><span class="l-zh">快速通道——在任意页面提出快速市场问题。</span></span></td>
+            <td class="val">5<small>/ <span class="l-en">week</span><span class="l-zh">周</span></small></td>
+            <td class="val">300<small>/ <span class="l-en">mo</span><span class="l-zh">月</span></small></td>
+            <td class="val">1,000<small>/ <span class="l-en">mo</span><span class="l-zh">月</span></small></td>
           </tr>
           <tr>
-            <td class="col-feat"><span class="rlabel"><span class="l-en">Mastermind chat</span><span class="l-zh">操盘大脑对话</span></span><span class="rsub"><span class="l-en">fast lane — quick market questions</span><span class="l-zh">快速通道——快速市场提问</span></span></td>
-            <td class="col-tier"><span class="val"><span class="num">5</span> <span class="val-muted">/ <span class="l-en">week</span><span class="l-zh">周</span></span></span></td>
-            <td class="col-tier"><span class="val"><span class="num">300</span> <span class="val-muted">/ <span class="l-en">mo</span><span class="l-zh">月</span></span></span></td>
-            <td class="col-tier col-pro"><span class="val"><span class="num">1,000</span> <span class="val-muted">/ <span class="l-en">mo</span><span class="l-zh">月</span></span></span></td>
+            <td class="feat has-tip"><span class="ft"><span class="l-en">Deep Opus chat</span><span class="l-zh">深度 Opus 对话</span></span><span class="mchip">Insider</span><span class="tipbox"><span class="l-en">The heavyweight research lane — long answers with receipts.</span><span class="l-zh">重量级研究通道——附出处的长篇分析。</span></span></td>
+            <td class="no">✗</td>
+            <td class="val">10<small>/ <span class="l-en">mo</span><span class="l-zh">月</span></small></td>
+            <td class="val">150<small>/ <span class="l-en">mo</span><span class="l-zh">月</span></small></td>
+          </tr>
+
+          <tr class="grp"><td colspan="4">TERMINAL</td></tr>
+          <tr>
+            <td class="feat has-tip"><span class="ft"><span class="l-en">Charts terminal</span><span class="l-zh">图表终端</span></span><span class="tipbox up"><span class="l-en">Live charting in the browser — nothing to install, free for everyone.</span><span class="l-zh">浏览器内实时图表——无需安装，所有人免费。</span></span></td>
+            <td class="val"><span class="l-en">Free</span><span class="l-zh">免费</span></td>
+            <td class="ok">✓</td>
+            <td class="ok">✓</td>
           </tr>
           <tr>
-            <td class="col-feat"><span class="rlabel"><span class="l-en">Deep Opus chat</span><span class="l-zh">深度 Opus 对话</span></span><span class="rsub"><span class="l-en">the heavyweight research lane</span><span class="l-zh">重量级研究通道</span></span></td>
-            <td class="col-tier"><span class="dash">—</span></td>
-            <td class="col-tier"><span class="val"><span class="num">10</span> <span class="val-muted">/ <span class="l-en">mo</span><span class="l-zh">月</span></span></span></td>
-            <td class="col-tier col-pro"><span class="val"><span class="num">150</span> <span class="val-muted">/ <span class="l-en">mo</span><span class="l-zh">月</span></span></span></td>
+            <td class="feat has-tip"><span class="ft"><span class="l-en">Terminal live options</span><span class="l-zh">终端实时期权</span></span><span class="mchip">Insider</span><span class="tipbox up"><span class="l-en">Live options data inside the terminal — included during the trial too.</span><span class="l-zh">终端内的实时期权数据——试用期同样包含。</span></span></td>
+            <td class="no">✗</td>
+            <td class="val"><span class="l-en">Included</span><span class="l-zh">含</span><small>(<span class="l-en">trial too</span><span class="l-zh">试用期也含</span>)</small></td>
+            <td class="val"><span class="l-en">Included</span><span class="l-zh">含</span><small>(<span class="l-en">trial too</span><span class="l-zh">试用期也含</span>)</small></td>
           </tr>
+
+          <tr class="grp"><td colspan="4"><span class="l-en">GETTING STARTED</span><span class="l-zh">开始使用</span></td></tr>
           <tr>
-            <td class="col-feat"><span class="rlabel"><span class="l-en">Charts terminal</span><span class="l-zh">图表终端</span></span></td>
-            <td class="col-tier"><span class="val"><span class="l-en">Free</span><span class="l-zh">免费</span></span></td>
-            <td class="col-tier"><span class="yes"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span></td>
-            <td class="col-tier col-pro"><span class="yes"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span></td>
-          </tr>
-          <tr>
-            <td class="col-feat"><span class="rlabel"><span class="l-en">Terminal live options</span><span class="l-zh">终端实时期权</span></span></td>
-            <td class="col-tier"><span class="dash">—</span></td>
-            <td class="col-tier"><span class="val"><span class="l-en">Included</span><span class="l-zh">含</span> <span class="val-muted">(<span class="l-en">trial too</span><span class="l-zh">试用期也含</span>)</span></span></td>
-            <td class="col-tier col-pro"><span class="val"><span class="l-en">Included</span><span class="l-zh">含</span> <span class="val-muted">(<span class="l-en">trial too</span><span class="l-zh">试用期也含</span>)</span></span></td>
-          </tr>
-          <tr>
-            <td class="col-feat"><span class="rlabel"><span class="l-en">Free trial</span><span class="l-zh">免费试用</span></span></td>
-            <td class="col-tier"><span class="dash">—</span></td>
-            <td class="col-tier"><span class="val"><b>7-<span class="l-en">day</span><span class="l-zh">天</span></b> <span class="val-muted">· <span class="l-en">card required</span><span class="l-zh">需绑卡</span></span></span></td>
-            <td class="col-tier col-pro"><span class="val"><b>7-<span class="l-en">day</span><span class="l-zh">天</span></b> <span class="val-muted">· <span class="l-en">card required</span><span class="l-zh">需绑卡</span></span></span></td>
+            <td class="feat"><span class="ft"><span class="l-en">Free trial</span><span class="l-zh">免费试用</span></span><span class="mchip">Insider</span></td>
+            <td class="no">✗</td>
+            <td class="val">7-<span class="l-en">day</span><span class="l-zh">天</span><small><span class="l-en">card required</span><span class="l-zh">需绑卡</span></small></td>
+            <td class="val">7-<span class="l-en">day</span><span class="l-zh">天</span><small><span class="l-en">card required</span><span class="l-zh">需绑卡</span></small></td>
           </tr>
         </tbody>
       </table>
@@ -369,7 +820,7 @@
           <a href="products/market-terminal.html"><span class="l-en">Market Terminal</span><span class="l-zh">市场终端</span></a>
           <a href="products/mastermind-ai.html">Mastermind AI</a>
           <a href="products/market-dashboards.html"><span class="l-en">Market dashboards</span><span class="l-zh">市场仪表盘</span></a>
-          <a href="plans.html"><span class="l-en">Plans &amp;amp; pricing</span><span class="l-zh">方案与定价</span></a>
+          <a href="plans.html"><span class="l-en">Plans &amp; pricing</span><span class="l-zh">方案与定价</span></a>
         </div>
         <div class="f-col">
           <p><span class="l-en">Research</span><span class="l-zh">研究</span></p>
@@ -401,7 +852,7 @@
 
 <div id="ptoast" role="alert"></div>
 
-<script src="theme.js?v=c094a665" defer></script>
+<script src="theme.js"></script>
 
 <script>
 (function(){
@@ -446,7 +897,7 @@
   sync();
 })();
 </script>
-<script src="onboard.js?v=8f1b52d1" defer></script>
+<script src="onboard.js" defer></script>
 <script>
 /* plans.js (inline) — billing toggle + Stripe checkout wiring.
 
@@ -499,7 +950,7 @@
 
   function paintPrices() {
     var annual = interval === 'annual';
-    $$('.card[data-tier]').forEach(function (card) {
+    $$('.tier[data-tier]').forEach(function (card) {
       var mPm = card.getAttribute('data-m-pm'), aPm = card.getAttribute('data-a-pm');
       var aTot = card.getAttribute('data-a-total'), save = card.getAttribute('data-save');
       var offerOn = annual && card.getAttribute('data-offer-active') === 'true';
@@ -508,6 +959,7 @@
         aTot = card.getAttribute('data-offer-a-total') || aTot;
       }
       var priceEl = $('[data-price]', card), billedEl = $('[data-billed]', card), badgeEl = $('[data-badge]', card);
+      var perEl = $('[data-per]', card);
       if (priceEl) {
         priceEl.style.opacity = '0';
         setTimeout(function () { priceEl.textContent = annual ? aPm : mPm; priceEl.style.opacity = '1'; }, 90);
@@ -515,32 +967,40 @@
       if (billedEl) {
         billedEl.innerHTML = annual
           ? '<span class="l-en">Billed $' + aTot + ' a year.</span><span class="l-zh">每年结算 $' + aTot + '。</span>'
-          : '<span class="l-en">Billed monthly.</span><span class="l-zh">按月结算。</span>';
+          : '<span class="l-en">Billed monthly — cancel anytime.</span><span class="l-zh">按月结算——随时取消。</span>';
+      }
+      if (perEl) {
+        perEl.innerHTML = annual
+          ? '<span class="l-en">/mo billed annually</span><span class="l-zh">/月 · 年付</span>'
+          : '<span class="l-en">/mo billed monthly</span><span class="l-zh">/月 · 月付</span>';
       }
       if (badgeEl) {
         badgeEl.classList.toggle('hidden', !annual);
         badgeEl.innerHTML = offerOn
-          ? '<span class="l-en">Founding Pro · save $' + card.getAttribute('data-offer-savings') + '/year</span><span class="l-zh">Founding Pro · 每年省 $' + card.getAttribute('data-offer-savings') + '</span>'
-          : '<span class="l-en">save ' + save + '%</span><span class="l-zh">省 ' + save + '%</span>';
+          ? '<span class="l-en">SAVE $' + card.getAttribute('data-offer-savings') + ' A YEAR</span><span class="l-zh">每年省 $' + card.getAttribute('data-offer-savings') + '</span>'
+          : '<span class="l-en">SAVE ' + save + '% VS MONTHLY</span><span class="l-zh">比月付省 ' + save + '%</span>';
       }
       var rackEl = $('[data-offer-rack]', card), meterEl = $('[data-offer-meter]', card);
       if (rackEl) rackEl.classList.toggle('hidden', !offerOn);
       if (meterEl) meterEl.classList.toggle('hidden', !offerOn);
       var ribbonEl = $('[data-offer-ribbon]', card);
       if (ribbonEl) ribbonEl.innerHTML = offerOn
-        ? '<span class="l-en">Founding Pro</span><span class="l-zh">Founding Pro</span>'
+        ? '<span class="l-en">Founding rate</span><span class="l-zh">创始会员价</span>'
         : '<span class="l-en">Most complete</span><span class="l-zh">最完整</span>';
     });
     /* matrix header prices track the toggle too */
-    $$('[data-mtx-price]').forEach(function (el) {
-      var tier = el.getAttribute('data-mtx-price');
-      var card = $('.card[data-tier="' + tier + '"]');
+    $$('[data-mtx-price],[data-mtx-mobile-price]').forEach(function (el) {
+      var mobile = el.hasAttribute('data-mtx-mobile-price');
+      var tier = el.getAttribute(mobile ? 'data-mtx-mobile-price' : 'data-mtx-price');
+      var card = $('.tier[data-tier="' + tier + '"]');
       if (!card) return;
       var pm = annual ? card.getAttribute('data-a-pm') : card.getAttribute('data-m-pm');
       if (annual && card.getAttribute('data-offer-active') === 'true') {
         pm = card.getAttribute('data-offer-a-pm') || pm;
       }
-      el.textContent = '$' + pm + '/mo';
+      var mo = zh() ? '月' : 'mo';
+      el.textContent = mobile ? '$' + pm + '/' + mo
+        : '$' + pm + '/' + mo + ' ' + (annual ? (zh() ? '年付' : 'annual') : (zh() ? '月付' : 'monthly'));
     });
     if (note) {
       note.innerHTML = annual
@@ -564,10 +1024,56 @@
     setInterval_('annual'); /* establish annual-default state on load */
   }
 
+  /* ── mobile matrix: one readable plan column + tap-to-expand mechanics ──
+     Wide tables do not survive a phone. Under 760px the matrix collapses to a
+     single plan column chosen by these tabs, and the hover tipbox (a cursor
+     affordance that does not exist on touch) becomes a tap-to-expand row. */
+  (function () {
+    var card = $('.matrix-card');
+    if (!card) return;
+    var planButtons = $$('[data-mx-plan]', card);
+    var tipCells = $$('td.feat.has-tip', card);
+    var mobile = window.matchMedia('(max-width:760px)');
+
+    planButtons.forEach(function (button) {
+      button.addEventListener('click', function () {
+        card.setAttribute('data-plan', button.getAttribute('data-mx-plan'));
+        planButtons.forEach(function (item) {
+          item.setAttribute('aria-pressed', String(item === button));
+        });
+      });
+    });
+
+    function closeTips(except) {
+      tipCells.forEach(function (cell) { if (cell !== except) cell.classList.remove('tip-open'); });
+    }
+    tipCells.forEach(function (cell) {
+      cell.setAttribute('tabindex', '0');
+      cell.addEventListener('click', function () {
+        if (!mobile.matches) return;
+        var open = cell.classList.contains('tip-open');
+        closeTips(cell);
+        cell.classList.toggle('tip-open', !open);
+      });
+      cell.addEventListener('keydown', function (e) {
+        if (!mobile.matches) return;
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        e.preventDefault();
+        var open = cell.classList.contains('tip-open');
+        closeTips(cell);
+        cell.classList.toggle('tip-open', !open);
+      });
+    });
+    /* leaving the mobile breakpoint must not strand an expanded row open */
+    var onChange = function () { if (!mobile.matches) closeTips(null); };
+    if (mobile.addEventListener) mobile.addEventListener('change', onChange);
+    else if (mobile.addListener) mobile.addListener(onChange);
+  })();
+
   /* The API reports Stripe redemptions plus the operator's enforced daily withdrawal of
      the founding allotment (app/billing.py) — checkout gates on the same numbers, so the
      availability shown here is always a true claim. Never synthesize numbers client-side. */
-  var foundingCard = $('.card[data-offer-key]');
+  var foundingCard = $('.tier[data-offer-key]');
   if (foundingCard) {
     var offerKey = foundingCard.getAttribute('data-offer-key');
     fetch(API + '/api/billing/offers/' + encodeURIComponent(offerKey), { cache: 'no-store' })
