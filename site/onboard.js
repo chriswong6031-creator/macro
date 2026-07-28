@@ -315,7 +315,7 @@
       { l: ["Earnings call transcripts", "财报电话会记录"], v: [0, 1, 1] }
     ] },
     { g: ["MASTERMIND AI", "MASTERMIND AI"], rows: [
-      { l: ["Flash AI", "Flash AI"], v: [0, ["300 / mo", "300 次/月"], ["1,000 / mo", "1,000 次/月"]] },
+      { l: ["Flash AI", "Flash AI"], v: [["5 / wk", "5 次/周"], ["300 / mo", "300 次/月"], ["1,000 / mo", "1,000 次/月"]] },
       { l: ["Pro AI", "Pro AI"],     v: [0, ["10 / mo", "10 次/月"], ["150 / mo", "150 次/月"]] },
       { l: ["Drives Terminal charts", "操控 Terminal 图表"], v: [0, 1, 1] }
     ] },
