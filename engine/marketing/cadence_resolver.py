@@ -13,7 +13,17 @@ them). This module is the per-account law the specs always described:
 
 The two compose — an account is allowed to post only when BOTH agree. Lowering
 the sentinel back to a real number still binds; raising it does not widen a
-persona past its spec.
+persona past its spec. The D08 age ramp narrows the sentinel side per account
+(``outbox.effective_cap_for``, #3884), so the full daily-volume bound is
+stricter-of(base, tier, spec).
+
+NOT YET COMPOSED (#3884 F6). The ramp tier also carries its own
+``min_minutes_between_posts``, and nothing consumes it at post time — this
+module reads SPACING from the persona spec alone. A week-1 desk is therefore
+tier-bounded on volume and spec-bounded on spacing. Composing them is the
+remaining half of the tier-aware cadence contract; it needs the resolver to take
+an account age, which is a design decision rather than a patch, so it is named
+here instead of being half-built.
 
 DOCTRINE (constitution §13.8 "Adaptive cadence" — the requirements spec).
 Cadence should reflect market opportunity, account territory, time zone, recent

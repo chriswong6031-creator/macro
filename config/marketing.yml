@@ -92,14 +92,11 @@ sentinel:
   # cadence). -1 is the "no limit" sentinel decoded by sentinel._cap_unlimited
   # (null does NOT work: _get collapses a present-null back to the default). The
   # code default stays 2 as a safe bounded fallback if this key is ever missing.
-  # NOTE on the ramp: table below — it is NOT a general bound on this key.
-  # sentinel.resolve_ramp() merges a tier row as the stricter-of, but the only
-  # caller is engine/marketing/publish_time_content.py (the publish-time mover
-  # lane). The publisher's own cap path is outbox.effective_cap(), which reads
-  # this key and the outbox: block and never consults the ramp. So a week-1 desk
-  # is bounded at 2/day on the mover lane ONLY; everywhere else the bound is the
-  # cadence resolver below. Stated because the previous comment here read as
-  # though the ramp governed every lane, and it does not.
+  # The ramp: table below narrows this key per account: an enabled desk resolves
+  # an age tier from its `created:` date and is bounded by the STRICTER of (this
+  # value, that tier's row) — at plan tier via sentinel.gate_plan, and at post
+  # time via outbox.effective_cap_for (#3884 F1). So a week-1 desk is at 2/day
+  # everywhere, not just in the plan.
   #
   # WHAT PACES VOLUME (updated XG-W2). The 2026-07-24 decision left this key as a
   # deliberately blunt GLOBAL backstop — one number for every account, which read
@@ -110,10 +107,21 @@ sentinel:
   #      from config/personas/<id>.yml. This is the per-account law; the specs'
   #      cadence blocks were decorative until XG-W2 and are now enforced.
   #   2. the post-time 10-minute global floor (publish.min_minutes_between_any_posts).
-  #   3. this key, as the network-wide ceiling — still honoured, still able to
-  #      LOWER any account below its spec. Setting it back to a real number is a
-  #      valid tightening at any time; the resolver does not replace it.
-  # The 2-week link gate below is unchanged.
+  #   3. this key, narrowed by the ramp tier — the network-wide ceiling. Still
+  #      honoured, still able to LOWER any account below its spec. Setting it
+  #      back to a real number is a valid tightening at any time; the resolver
+  #      does not replace it.
+  # The three compose as stricter-of, in that order. The 2-week link gate below
+  # is unchanged.
+  #
+  # STILL OPEN (#3884 F6). The ramp tier's own min_minutes_between_posts is
+  # never consumed at post time — outbox.sentinel_contract returns base values
+  # only, and the XG-W2 resolver reads SPACING from the persona spec, not from
+  # the tier. So a week-1 desk's daily VOLUME is tier-bounded while its spacing
+  # is spec-bounded. Composing the two (stricter-of, same shape as the cap) is
+  # the remaining half of the tier-aware cadence contract and is deliberately
+  # not built here — it needs the resolver to take an account age, which is a
+  # design decision, not a patch.
   max_posts_per_account_per_day: -1   # unlimited (global backstop; see above)
   max_same_cashtag_per_account_per_day: 1
   max_replies_per_account_per_day: 0
