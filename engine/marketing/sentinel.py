@@ -5,7 +5,8 @@ content. Fully deterministic — no LLM anywhere in this module.
 
 Public API:
     gate_plan(plan, cfg, *, receipts_age_days, graded_window, exceptions)
-        -> (annotated_plan, report)                    # pure, no I/O
+        -> (annotated_plan, report)   # no disk I/O; may PRINT ::warning
+                                      # annotations for ramp config defects
     run_gate(root, *, plan, cfg, ...) -> report        # loads, gates, writes
     resolve_ramp(cfg, as_of, *, root, announce) -> ramp report (tiers + caps)
     resolve_ramp_tier(created, as_of, *, graduate_after_days) -> tier name
@@ -140,8 +141,9 @@ _RAMP_BOOL_KNOBS: tuple[str, ...] = ("links_allowed", "theme_list_allowed")
 # Waits: stricter = the LONGER wait.
 _RAMP_MAX_WINS_KNOBS: tuple[str, ...] = ("min_minutes_between_posts",)
 
-# theme_list has no base-block knob — the format is allowed unless a tier row
-# turns it off, which keeps every pre-ramp config byte-identical in behaviour.
+# theme_list default: allowed. Readable from the base sentinel: block AND from a
+# tier row (the merge is a logical AND, so either can turn the format off). The
+# True default keeps every config that never mentions it byte-identical.
 _DEFAULT_THEME_LIST_ALLOWED = True
 
 # Financial-advice lexicon — defense-in-depth at the plan layer.
@@ -351,6 +353,23 @@ def _parse_iso_date(raw: Any) -> "date | None":
         return None
 
 
+def effective_graduate_after_days(raw: Any) -> int:
+    """``graduate_after_days``, CLAMPED to at least the weeks_3_4 boundary (28).
+
+    Below 28 the knob is inert rather than strict: the ``age < 14`` and
+    ``age < 28`` branches fire first, so a configured 20 would never graduate
+    anyone at 20 — it would only delete the week_5_plus window while accounts
+    kept ramping to 28 anyway. Clamping makes the number mean what it says at
+    every value it can take; the resolved value is printed in the gate report so
+    a clamped config is visible rather than silently reinterpreted.
+    """
+    try:
+        val = int(raw)
+    except (TypeError, ValueError):
+        return _DEFAULT_GRADUATE_AFTER_DAYS
+    return max(_RAMP_WEEKS_3_4_MAX_DAYS, val)
+
+
 def resolve_ramp_tier(
     created: Any,
     as_of: Any,
@@ -369,6 +388,9 @@ def resolve_ramp_tier(
         age <  graduate_after_days   -> week_5_plus
         age >= graduate_after_days   -> graduated  (base caps only)
 
+    ``graduate_after_days`` is clamped to >= 28 (see
+    effective_graduate_after_days) because below that it is inert.
+
     FAILS CLOSED to weeks_1_2 (the strictest tier) when either date is missing or
     unparseable, and when ``created`` is in the future relative to ``as_of``
     (corrupt data must not read as an aged account).
@@ -384,7 +406,7 @@ def resolve_ramp_tier(
         return _TIER_WEEKS_1_2
     if age < _RAMP_WEEKS_3_4_MAX_DAYS:
         return _TIER_WEEKS_3_4
-    if age < max(0, int(graduate_after_days)):
+    if age < effective_graduate_after_days(graduate_after_days):
         return _TIER_WEEK_5_PLUS
     return _TIER_GRADUATED
 
@@ -413,11 +435,38 @@ def _base_caps(sc: dict) -> dict[str, Any]:
         "min_minutes_between_posts": _cap(
             sc, "min_minutes_between_posts", _DEFAULT_MIN_MINUTES_BETWEEN_POSTS),
         "links_allowed": _flag(sc, "links_allowed", _DEFAULT_LINKS_ALLOWED),
-        "theme_list_allowed": _DEFAULT_THEME_LIST_ALLOWED,
+        # Config-readable like every other base knob (the tier rows AND this can
+        # each turn the format off; the merge is a logical AND). Default True, so
+        # a config that never mentions it behaves exactly as before.
+        "theme_list_allowed": _flag(sc, "theme_list_allowed", _DEFAULT_THEME_LIST_ALLOWED),
     }
 
 
-def _stricter_caps(base: dict[str, Any], tier_row: dict) -> dict[str, Any]:
+def _tier_int(tier_row: dict, tier_name: str, key: str,
+              *, announce: bool = True) -> "tuple[bool, int | None]":
+    """Read one numeric knob out of a ramp tier row.
+
+    Returns ``(parsed_ok, value)`` where ``value is None`` means "unlimited"
+    (``-1`` or the string ``"unlimited"``). ``parsed_ok`` False means the value is
+    junk — a typo, or a present-``null`` — and the CALLER MUST IGNORE IT rather
+    than substitute a fallback: substituting is what made a one-word typo either
+    quarantine 100% of a plan or silently loosen a cap, depending on which merge
+    branch happened to read it.
+    """
+    raw = tier_row.get(key)
+    if isinstance(raw, str) and raw.strip().lower() == "unlimited":
+        return True, None
+    try:
+        val = int(raw)
+    except (TypeError, ValueError):
+        if announce:
+            _tier_value_annotation(tier_name, key, raw)
+        return False, None
+    return True, (None if val < 0 else val)
+
+
+def _stricter_caps(base: dict[str, Any], tier_row: dict, *,
+                   tier_name: str = "", announce: bool = True) -> dict[str, Any]:
     """Merge one ramp tier row onto the base caps, KEEPING THE STRICTER of each.
 
     * unlimited-capable numeric caps → minimum, with ``None`` (unlimited) as the
@@ -427,7 +476,10 @@ def _stricter_caps(base: dict[str, Any], tier_row: dict) -> dict[str, Any]:
     * min_minutes_between_posts → maximum (the longer wait wins).
 
     Keys absent from the tier row leave the base value untouched, so a partial
-    tier row is legal and narrows only what it names.
+    tier row is legal and narrows only what it names. An UNPARSEABLE tier value is
+    treated exactly like an absent one — base governs — plus a ``::warning``, so
+    the two failure directions a typo used to pick between are now one visible
+    behaviour.
     """
     out = dict(base)
     if not isinstance(tier_row, dict):
@@ -436,23 +488,27 @@ def _stricter_caps(base: dict[str, Any], tier_row: dict) -> dict[str, Any]:
     for key in _RAMP_UNLIMITED_CAPS:
         if key not in tier_row:
             continue
-        tier_val = _cap_unlimited(tier_row, key, -1)
+        ok, tier_val = _tier_int(tier_row, tier_name, key, announce=announce)
+        if not ok or tier_val is None:
+            continue        # junk, or the tier says unlimited — neither loosens base
         base_val = base.get(key)
-        if tier_val is None:
-            continue                      # tier says unlimited — never loosens base
         out[key] = tier_val if base_val is None else min(base_val, tier_val)
 
     for key in _RAMP_BOUNDED_CAPS:
         if key not in tier_row:
             continue
-        base_val = int(base.get(key, 0))
-        out[key] = min(base_val, _cap(tier_row, key, base_val))
+        ok, tier_val = _tier_int(tier_row, tier_name, key, announce=announce)
+        if not ok or tier_val is None:
+            continue        # a bounded knob written as -1 places no tier bound
+        out[key] = min(int(base.get(key, 0)), tier_val)
 
     for key in _RAMP_MAX_WINS_KNOBS:
         if key not in tier_row:
             continue
-        base_val = int(base.get(key, 0))
-        out[key] = max(base_val, _cap(tier_row, key, base_val))
+        ok, tier_val = _tier_int(tier_row, tier_name, key, announce=announce)
+        if not ok or tier_val is None:
+            continue
+        out[key] = max(int(base.get(key, 0)), tier_val)
 
     for key in _RAMP_BOOL_KNOBS:
         if key not in tier_row:
@@ -462,24 +518,85 @@ def _stricter_caps(base: dict[str, Any], tier_row: dict) -> dict[str, Any]:
     return out
 
 
-def _ramp_annotation(account_id: str) -> None:
-    """Print the missing-`created` annotation so it reaches the Actions summary.
+# Annotations already emitted by THIS process, keyed by what they are about.
+# resolve_ramp is called several times per run (the gate, the per-account cap
+# resolver, the publish-time lane), and a config defect does not become more true
+# by being printed six times — the Actions summary should carry it once.
+_ANNOUNCED: set[str] = set()
+
+
+def reset_ramp_announcements() -> None:
+    """Clear the once-per-process annotation memo. Tests only — a test that
+    asserts on an annotation must not be silenced by an earlier test's call."""
+    _ANNOUNCED.clear()
+
+
+def _announce_once(key: str, message: str, log_msg: str, *log_args: Any) -> bool:
+    """Emit a GitHub annotation at most once per process. True if it printed.
 
     A bare ``print`` at line start is LOAD-BEARING: every builder here logs with a
     prefixing format, so ``log.warning("::warning …")`` emits ``WARNING ::warning …``
     and GitHub silently drops it (tests/test_gh_annotation_line_start.py). ``flush``
-    matters too — stdout is block-buffered when piped in CI.
+    matters too — stdout is block-buffered when piped in CI. The human-readable
+    ``log.*`` line is separate on purpose and carries no ``::`` prefix.
     """
-    print(
+    if key in _ANNOUNCED:
+        return False
+    _ANNOUNCED.add(key)
+    print(message, flush=True)
+    log.warning(log_msg, *log_args)
+    return True
+
+
+def _ramp_annotation(account_id: str) -> None:
+    """An ENABLED account with no usable ``created:`` date — fails closed."""
+    _announce_once(
+        f"created:{account_id}",
         f"::warning title=sentinel-ramp-created-missing::desk_network account "
         f"'{account_id}' is enabled but carries no usable created: date — the D08 "
         f"age ramp fails closed to weeks_1_2 (strictest caps). Set created: "
         f"YYYY-MM-DD in config/marketing.yml to the account's real registration date.",
-        flush=True,
-    )
-    log.warning(
         "sentinel.resolve_ramp: enabled account %r has no usable created: date — "
         "falling back to the %s tier", account_id, _TIER_WEEKS_1_2,
+    )
+
+
+def _as_of_annotation(as_of: str) -> None:
+    """A missing/unparseable plan as_of — the tier of EVERY account fails closed.
+
+    Louder than the per-account case by nature: without a reference date the whole
+    network reads as week-1, so a plan that silently lost its as_of would look
+    like a correctly-throttled cold network instead of a broken one.
+    """
+    _announce_once(
+        "as_of",
+        f"::warning title=sentinel-ramp-as-of-missing::plan as_of {as_of!r} is "
+        f"missing or unparseable — the D08 age ramp cannot compute account age and "
+        f"fails closed to weeks_1_2 for EVERY account (strictest caps, network-wide). "
+        f"Expected YYYY-MM-DD on the plan being gated.",
+        "sentinel.resolve_ramp: as_of %r unusable — every account falls back to "
+        "the %s tier", as_of, _TIER_WEEKS_1_2,
+    )
+
+
+def _tier_value_annotation(tier_name: str, key: str, raw: Any) -> None:
+    """An unparseable value in a ramp tier row — the tier value is IGNORED.
+
+    Both merge branches used to fail silently and in OPPOSITE directions: the
+    unlimited-capable branch stored the -1 fallback as a bounded cap (making
+    ``count >= -1`` always true, i.e. 100% quarantine), while the bounded branch
+    fell back to the looser base. Neither said anything. Now both ignore the
+    unparseable value — the base cap governs, which is the same answer as
+    "this tier row does not mention this knob" — and say so out loud.
+    """
+    _announce_once(
+        f"tier:{tier_name}:{key}",
+        f"::warning title=sentinel-ramp-tier-value-unparseable::sentinel.ramp."
+        f"{tier_name}.{key} is {raw!r}, which is not an integer — the tier value is "
+        f"IGNORED and the base sentinel: block governs this knob. Fix the value in "
+        f"config/marketing.yml (use -1 for unlimited, never null).",
+        "sentinel: ramp.%s.%s=%r unparseable — ignoring the tier value",
+        tier_name, key, raw,
     )
 
 
@@ -505,11 +622,18 @@ def resolve_ramp(
          "fallback": {...caps...},       # caps for an account not in desk_network
          "accounts": {account_id: {"created", "age_days", "tier", "enabled",
                                    "caps": {...}}},
-         "missing_created": [account_id, ...]}   # ENABLED accounts, annotated
+         "missing_created": [account_id, ...],   # ENABLED accounts, annotated
+         "as_of_usable": bool}                   # False ⇒ whole network failed closed
 
     ``enforced`` False (no ramp table) ⇒ every account resolves to the base caps
     and the whole feature is a no-op, which is what keeps configs written before
     2026-07-27 behaving byte-identically.
+
+    NOT PURE: prints ``::warning`` annotations for the three config defects that
+    would otherwise degrade the network silently (missing ``created:``, missing
+    ``as_of``, an unparseable tier value). Each is emitted at most ONCE per
+    process — see _announce_once. ``announce=False`` silences them for callers
+    that only want the numbers (admin reads, repeated cap lookups).
     """
     sc = _cfg_sentinel(cfg)
     base = _base_caps(sc)
@@ -517,11 +641,25 @@ def resolve_ramp(
     tier_rows = {t: ramp_cfg.get(t) for t in _RAMP_TIER_ORDER
                  if isinstance(ramp_cfg.get(t), dict)}
     enforced = bool(tier_rows)
-    graduate_after = _cap(ramp_cfg, "graduate_after_days", _DEFAULT_GRADUATE_AFTER_DAYS)
+    graduate_after = effective_graduate_after_days(
+        _get(ramp_cfg, "graduate_after_days", _DEFAULT_GRADUATE_AFTER_DAYS))
 
     as_of_s = str(as_of or "")
+    as_of_d = _parse_iso_date(as_of_s)
+    as_of_usable = as_of_d is not None
+    # A plan that lost its as_of fails closed for EVERY account, which looks
+    # exactly like a correctly-throttled cold network. Say it out loud.
+    if enforced and not as_of_usable and announce:
+        _as_of_annotation(as_of_s)
+
     out_accounts: dict[str, dict[str, Any]] = {}
     missing_created: list[str] = []
+    # Merge each tier row ONCE (not once per account) so a malformed row cannot
+    # emit N identical warnings, and so N accounts on one tier share a resolution.
+    merged_tiers = {
+        name: _stricter_caps(base, row, tier_name=name, announce=announce)
+        for name, row in tier_rows.items()
+    }
 
     from engine.marketing.accounts import effective_accounts as _eff_accounts  # noqa: PLC0415
     for acc in _eff_accounts(cfg if isinstance(cfg, dict) else {}, root):
@@ -531,7 +669,6 @@ def resolve_ramp(
         enabled = bool(acc.get("enabled"))
         created_raw = acc.get("created")
         created = _parse_iso_date(created_raw)
-        as_of_d = _parse_iso_date(as_of_s)
         age_days = (as_of_d - created).days if (created and as_of_d) else None
 
         if enforced and enabled and created is None:
@@ -542,25 +679,24 @@ def resolve_ramp(
         tier = (resolve_ramp_tier(created_raw, as_of_s,
                                   graduate_after_days=graduate_after)
                 if enforced else _TIER_GRADUATED)
-        caps = (_stricter_caps(base, tier_rows[tier])
-                if tier in tier_rows else dict(base))
+        caps = merged_tiers.get(tier) or dict(base)
         out_accounts[acc_id] = {
             "created": str(created_raw or "") or None,
             "age_days": age_days,
             "tier": tier,
             "enabled": enabled,
-            "caps": caps,
+            "caps": dict(caps),
         }
 
     # An account that appears in a plan but NOT in desk_network is a config bug;
     # fail closed to the strictest tier rather than handing it the warm caps.
-    fallback = (_stricter_caps(base, tier_rows[_TIER_WEEKS_1_2])
-                if _TIER_WEEKS_1_2 in tier_rows else dict(base))
+    fallback = dict(merged_tiers.get(_TIER_WEEKS_1_2) or base)
 
     return {
         "enforced": enforced,
         "graduate_after_days": graduate_after,
         "as_of": as_of_s,
+        "as_of_usable": as_of_usable,
         "base": base,
         "fallback": fallback,
         "accounts": out_accounts,
@@ -717,7 +853,12 @@ def gate_plan(
     exceptions: dict[str, dict] | None = None,
     root: str | None = None,
 ) -> tuple[dict, dict]:
-    """Pure gate: returns (annotated_plan, report).
+    """The gate: returns (annotated_plan, report).
+
+    No disk I/O and no LLM — deterministic from (plan, cfg, the injected receipts
+    context). NOT side-effect-free, though: resolve_ramp may print ``::warning``
+    annotations to stdout for ramp config defects (missing created:, missing
+    as_of, an unparseable tier value), at most once per process each.
 
     Mutation only ever de-escalates:
     - items may be quarantined (status → "quarantined", sentinel_ok → False)
@@ -802,6 +943,12 @@ def gate_plan(
     violations: dict[tuple[int, int], list[str]] = defaultdict(list)
     notes: list[str] = []
 
+    if ramp["enforced"] and not ramp["as_of_usable"]:
+        notes.append(
+            f"ramp: plan as_of {as_of!r} is missing or unparseable — account age "
+            f"is uncomputable, so EVERY account fell closed to the "
+            f"{_TIER_WEEKS_1_2} tier (network-wide, not a cold-account read)"
+        )
     for _no_date in ramp["missing_created"]:
         notes.append(
             f"ramp: enabled account {_no_date} has no created: date — "
@@ -1248,8 +1395,14 @@ def gate_plan(
             },
             "ramp": {
                 "enforced": ramp["enforced"],
+                # The RESOLVED value — clamped to >= 28, which is what actually
+                # governed, not necessarily the number written in config.
                 "graduate_after_days": ramp["graduate_after_days"],
                 "as_of": ramp["as_of"],
+                # False ⇒ account age was uncomputable and EVERY account fell
+                # closed to weeks_1_2. Without this the report is indistinguishable
+                # from a genuinely all-cold network.
+                "as_of_usable": ramp["as_of_usable"],
                 "base": base_caps,
                 "accounts": ramp["accounts"],
                 "missing_created": ramp["missing_created"],

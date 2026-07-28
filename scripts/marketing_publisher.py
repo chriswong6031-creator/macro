@@ -360,6 +360,7 @@ def _auto_approve_pass(
     account: str | None, posted_today: dict, validate_postable, root,
     allowed_kinds: "frozenset[str] | None" = None,
     only_ids: "frozenset[str] | None" = None,
+    cap_for=None,
 ) -> list[str]:
     """Auto-advance queued → approved for items passing ALL publish gates.
 
@@ -449,8 +450,10 @@ def _auto_approve_pass(
         # "post now" (only_ids) or carries no ladder slot (_is_immediate).
         _immediate = (only_ids is not None and iid in only_ids) \
             or _is_immediate(it.get("scheduled_at"))
-        if not _immediate and _at_cap(budget.get(acct, 0), cap):
-            log.info("auto-approve SKIP %s (%s): account at daily cap (%d/day)", iid, acct, cap)
+        _acct_cap = cap_for(acct) if cap_for is not None else cap
+        if not _immediate and _at_cap(budget.get(acct, 0), _acct_cap):
+            log.info("auto-approve SKIP %s (%s): account at daily cap (%d/day)",
+                     iid, acct, _acct_cap)
             continue
 
         if live:
@@ -570,6 +573,26 @@ def main(argv: list[str] | None = None) -> int:
     kill_on = _publish_enabled()
     live = bool(args.live) and kill_on
     cap = _outbox.effective_cap(cfg)
+
+    # ── Per-account daily cap, narrowed by the D08 age ramp ──────────────────
+    # `cap` above is the BASE ceiling (-1/unlimited live), which made every
+    # post-time cap check vacuously false: an approved backlog could drain at ~one
+    # per sweep, ~30/day, past a week-1 account's 2. The plan gate cannot catch
+    # those — they already cleared it, on an earlier day or via the operator.
+    # The reference date here is the RUNTIME POSTING date, not the plan's as_of:
+    # an account can cross a tier boundary between plan build and post time, and
+    # each seam applies the stricter answer for its own moment.
+    _post_date = now.strftime("%Y-%m-%d")
+    try:
+        from engine.marketing.sentinel import resolve_ramp as _resolve_ramp  # noqa: PLC0415
+        _ramp = _resolve_ramp(cfg, _post_date, root=root)
+    except Exception as _ramp_exc:  # noqa: BLE001 — never break a run on a cap lookup
+        log.warning("ramp unavailable (%s) — falling back to the base cap", _ramp_exc)
+        _ramp = None
+
+    def _cap_for(account: str) -> int:
+        return _outbox.effective_cap_for(cfg, account, _post_date,
+                                         root=root, ramp=_ramp)
 
     state = _outbox.fold_state(root)
     items_by_id = state["items"]
@@ -698,7 +721,7 @@ def main(argv: list[str] | None = None) -> int:
             _outbox, state, pub_cfg, cap=cap, now=now, live=live,
             account=args.account, posted_today=posted_today,
             validate_postable=validate_postable, root=root,
-            only_ids=post_now,
+            only_ids=post_now, cap_for=_cap_for,
         )
     elif auto_approve_on or scoped_on:
         # allowed_kinds param: None when the global flag is ON (unrestricted,
@@ -708,7 +731,7 @@ def main(argv: list[str] | None = None) -> int:
             _outbox, state, pub_cfg, cap=cap, now=now, live=live,
             account=args.account, posted_today=posted_today,
             validate_postable=validate_postable, root=root,
-            allowed_kinds=_kinds_param,
+            allowed_kinds=_kinds_param, cap_for=_cap_for,
         )
     if live and auto_approved:
         # Re-fold so the candidate set below sees the freshly-approved items.
@@ -907,9 +930,10 @@ def main(argv: list[str] | None = None) -> int:
             continue
 
         # -- per-account daily cap (immediate/breaking is EXEMPT) ------------
-        if not is_immediate and _at_cap(posted_today.get(account, 0), cap):
-            log.info("item %s (%s) skipped — account at daily cap (%d/day)",
-                     iid, account, cap)
+        _acct_cap = _cap_for(account)
+        if not is_immediate and _at_cap(posted_today.get(account, 0), _acct_cap):
+            log.info("item %s (%s) skipped — account at daily cap (%d/day, "
+                     "ramp-narrowed from base %d)", iid, account, _acct_cap, cap)
             skipped_cap += 1
             continue
 
@@ -1143,6 +1167,21 @@ def dry_run_report(root=None, *, account: str | None = None,
             kill_on = False
 
         cap = _outbox.effective_cap(cfg)
+        # Mirror main(): the cap that governs an account is the base ceiling
+        # narrowed by its D08 ramp tier, resolved against the RUNTIME posting
+        # date. announce=False — the admin preview must not spam the Actions
+        # summary with config warnings the nightly gate already raised.
+        _post_date = now.strftime("%Y-%m-%d")
+        try:
+            from engine.marketing.sentinel import resolve_ramp as _resolve_ramp  # noqa: PLC0415
+            _ramp = _resolve_ramp(cfg, _post_date, root=r, announce=False)
+        except Exception:  # noqa: BLE001
+            _ramp = None
+
+        def _cap_for(acct_id: str) -> int:
+            return _outbox.effective_cap_for(cfg, acct_id, _post_date,
+                                             root=r, ramp=_ramp)
+
         state = _outbox.fold_state(r)
         items_by_id = state["items"]
         statuses = state["status"]
@@ -1169,6 +1208,7 @@ def dry_run_report(root=None, *, account: str | None = None,
                 account=account, posted_today=posted_today,
                 validate_postable=validate_postable, root=r,
                 allowed_kinds=(None if auto_on else allowed_kinds),
+                cap_for=_cap_for,
             )
             for iid in ids:
                 it = items_by_id.get(iid, {})
@@ -1203,7 +1243,7 @@ def dry_run_report(root=None, *, account: str | None = None,
             # EXEMPT — it projects as posting NOW; a ladder item skips at cap and
             # defers inside the floor.
             is_immediate = _is_immediate(it.get("scheduled_at"))
-            if not is_immediate and _at_cap(budget.get(acct, 0), cap):
+            if not is_immediate and _at_cap(budget.get(acct, 0), _cap_for(acct)):
                 skipped_cap += 1
                 continue
             channel_id = _channel_id_for(pub_cfg, acct)

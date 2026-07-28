@@ -757,8 +757,18 @@ def generate_slot_items(
                     continue
                 if aid in due_accounts:
                     continue  # spacing: one post per account per slot run
-                if posted_today.get(aid, 0) >= cap:
-                    continue  # ledger-based daily cap
+                # Ledger-based daily cap, tier-narrowed. TWO bugs lived on this
+                # line. (1) The bare `>= cap` treated the UNLIMITED sentinel as a
+                # cap of -1, so `0 >= -1` was true for every account and this
+                # lane generated NOTHING from 2026-07-24 onward — the negative
+                # cap must be routed through the same guarded shape outbox.enqueue
+                # uses (`cap >= 0 and …`). (2) It read only the base cap, so once
+                # unbounded a week-1 desk had no post-time ceiling at all;
+                # stricter_daily_cap folds in the account's ramp tier.
+                _aid_cap = outbox.stricter_daily_cap(
+                    cap, _acct_caps(aid)["max_posts_per_account_per_day"])
+                if _aid_cap >= 0 and posted_today.get(aid, 0) >= _aid_cap:
+                    continue
                 if cand["type"] == "theme_list" and not _acct_caps(aid)["theme_list_allowed"]:
                     continue  # this desk is still ramping — see the gate above
                 # Per-account same-cashtag day cap: skip an account already
@@ -854,7 +864,12 @@ def generate_slot_items(
                 existing_today.append(item)
                 continue
 
-            result = outbox.enqueue(item, r, max_per_account_day=cap)
+            # Enqueue re-checks the cap against the day ledger; hand it the
+            # CHOSEN account's tier-narrowed value so the two gates agree.
+            result = outbox.enqueue(
+                item, r,
+                max_per_account_day=outbox.stricter_daily_cap(
+                    cap, _acct_caps(chosen)["max_posts_per_account_per_day"]))
             if result == "queued":
                 generated.append(item["id"])
                 posted_today[chosen] = posted_today.get(chosen, 0) + 1

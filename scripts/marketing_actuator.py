@@ -128,6 +128,25 @@ def main(argv: list[str] | None = None) -> int:
     contract = _outbox.sentinel_contract(cfg)
     cap = contract["effective_cap"]
 
+    # The contract's effective_cap is the BASE ceiling (unlimited live). The cap
+    # that actually governs one desk is that ceiling narrowed by its D08 age-ramp
+    # tier, so a week-1 account's would_exceed_cap flag has to be computed
+    # per-account or it reads "fine" at 30 posts a day. Resolved once against the
+    # item's own as_of; announce=False because this is a dry-run reporter, not the
+    # gate that owns the config warnings.
+    _ramp_by_as_of: dict = {}
+
+    def _cap_for(account: str, as_of: str) -> int:
+        if as_of not in _ramp_by_as_of:
+            try:
+                from engine.marketing.sentinel import resolve_ramp  # noqa: PLC0415
+                _ramp_by_as_of[as_of] = resolve_ramp(cfg, as_of, root=root,
+                                                     announce=False)
+            except Exception:  # noqa: BLE001
+                _ramp_by_as_of[as_of] = None
+        return _outbox.effective_cap_for(cfg, account, as_of, root=root,
+                                         ramp=_ramp_by_as_of[as_of])
+
     # 1. Apply operator decisions (batch, one fold) unless --no-apply
     applied = {"approved": [], "rearmed": [], "quarantined": []}
     if not args.no_apply:
@@ -169,7 +188,8 @@ def main(argv: list[str] | None = None) -> int:
         account = item.get("account", "")
         as_of = item.get("as_of", "")
         account_day_counts[(account, as_of)] += 1
-        over_cap = account_day_counts[(account, as_of)] > cap
+        _acct_cap = _cap_for(account, as_of)
+        over_cap = _acct_cap >= 0 and account_day_counts[(account, as_of)] > _acct_cap
 
         entry: dict = {
             "id": item["id"],
