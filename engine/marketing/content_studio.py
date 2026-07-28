@@ -9,6 +9,8 @@ Public API:
     distinctness(items)    -> {max_similarity, flags, note}
     content_plan(cfg, plans, *, closes_loader) -> dict  (frozen §2.3 shape)
     content_mix(items)     -> dict  {type_id: count}
+    strip_scaffolding(plan) -> dict  (copy, minus in-process "_" keys)
+    ARTIFACT_KEEP_KEYS     — the "_" keys allowed to reach the artifact
 
 Spec constraints (§2.1 / §2.2 / §5):
   - Deterministic: NO RNG; stable per run; differs per account via account-hash.
@@ -864,6 +866,84 @@ def raster_plan_media(
         if str(fc.get("id")) in kept_ids
     ]
     return counts
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Artifact boundary — which scaffolding keys may cross it
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: Underscore-prefixed queue-item keys allowed to reach content_plan.json.
+#: Every other "_" key is in-process scaffolding (see strip_scaffolding). Each
+#: entry below has a NAMED reader of the written artifact — add one only with
+#: the same evidence, never just because it looks small:
+#:   _live_gate_fail  → admin/marketing._CONTENT_POST_KEEP ("signal demoted"
+#:                      badge). Also gates outbox.emit_from_content_plan, but
+#:                      that reads the in-memory plan.
+#:   _copy_violations → admin/marketing._CONTENT_POST_KEEP (caution chip).
+#:   _copy_mode       → telemetry._build_post_index, which re-opens
+#:                      content_plan.json from disk for the Lab roll-up.
+ARTIFACT_KEEP_KEYS: frozenset[str] = frozenset({
+    "_live_gate_fail",
+    "_copy_violations",
+    "_copy_mode",
+})
+
+
+def strip_scaffolding(plan: dict) -> dict:
+    """Return a COPY of ``plan`` with in-process scaffolding keys dropped.
+
+    The copywriter pass hangs the whole Prophet plan dict on every queue item
+    (``_plan``), plus its receipt and mover/theme fact blobs, so build_context
+    can read them without a second lookup. Those are locals with a long
+    lifetime, not artifact fields — nothing that re-opens content_plan.json
+    reads them. Left in, ``_plan`` alone was the largest per-item field in the
+    artifact by ~9x over the next one (239 KB of a 1.11 MB, 7-desk, 218-item
+    plan) and grows linearly with the desk count.
+
+    COPY-ON-WRITE IS LOAD-BEARING. The governor keeps using the in-memory plan
+    AFTER the write: links.build_short_link_pages, and critically
+    outbox.emit_from_content_plan, which reads ``_plan`` to stamp
+    source.signal_id / direction / entry / invalidation for the publisher's
+    post-time live gate (engine/marketing/live_verify.py). Stripping in place
+    would silently disarm that gate — every post would lose its structured
+    tape-claim and fall back to regexing cashtags out of the copy. So this
+    never mutates its argument.
+    """
+    if not isinstance(plan, dict):
+        return plan
+
+    def _clean_item(item: Any) -> Any:
+        if not isinstance(item, dict):
+            return item
+        return {
+            k: v for k, v in item.items()
+            if not k.startswith("_") or k in ARTIFACT_KEEP_KEYS
+        }
+
+    out = dict(plan)
+
+    if isinstance(plan.get("accounts"), list):
+        accounts: list[Any] = []
+        for acct in plan["accounts"]:
+            if not isinstance(acct, dict):
+                accounts.append(acct)
+                continue
+            a = dict(acct)
+            if isinstance(acct.get("queue"), list):
+                a["queue"] = [_clean_item(i) for i in acct["queue"]]
+            accounts.append(a)
+        out["accounts"] = accounts
+
+    # featured_charts get NO keep-list: `_defer` is the raster pass's internal
+    # hand-off blob, which the governor already pops on its failure path.
+    if isinstance(plan.get("featured_charts"), list):
+        out["featured_charts"] = [
+            {k: v for k, v in fc.items() if not k.startswith("_")}
+            if isinstance(fc, dict) else fc
+            for fc in plan["featured_charts"]
+        ]
+
+    return out
 
 
 # ─────────────────────────────────────────────────────────────────────────────
