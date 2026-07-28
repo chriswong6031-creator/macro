@@ -129,7 +129,11 @@ def _build_content_plan(r: Path, cfg: dict) -> dict:
         def closes_loader(ticker: str):  # type: ignore[return]
             return load_closes(ticker, r, n=90)
 
-        return _content_plan(cfg=cfg, plans=plans, closes_loader=closes_loader, root=r)
+        # defer_media: render the SVGs now, raster the PNGs after the Sentinel
+        # gate (build_and_write → raster_plan_media) so only cards on posts that
+        # survive cost a Chrome launch.
+        return _content_plan(cfg=cfg, plans=plans, closes_loader=closes_loader,
+                             root=r, defer_media=True)
 
     except Exception as exc:  # noqa: BLE001
         log.warning("marketing_governor: content_plan build failed: %s", exc)
@@ -233,6 +237,26 @@ def build_and_write(root: Path | str | None = None) -> dict[str, Any]:
                     })
                 except Exception as deep_exc:  # noqa: BLE001
                     log.warning("marketing_governor: sentinel error-report write failed: %s", deep_exc)
+
+        # ── Chart PNGs for the posts that survived the gate ───────────────────
+        # _build_content_plan renders the SVGs but defers every raster (each is
+        # one headless-Chrome launch, ~13s). Now that the gate has spoken we know
+        # which items can actually post, so we pay only for those cards. Rastering
+        # at plan time instead spent the whole budget on charts that were then
+        # quarantined — on 2026-07-28 all 8 rastered cards were cadence-capped and
+        # not one reached a post. Fail-soft: a failure here leaves cards SVG-only
+        # and the posts degrade to text, exactly as a missing rasteriser does.
+        try:
+            from engine.marketing.content_studio import raster_plan_media  # noqa: PLC0415
+            _media_counts = raster_plan_media(content_plan_obj, cfg=cfg, root=r)
+            result["chart_media"] = _media_counts
+            log.info("marketing_governor: chart media: %s", _media_counts)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("marketing_governor: chart raster pass failed: %s", exc)
+            # The deferral blob is internal scaffolding — never let it reach the
+            # artifact, even on the failure path.
+            for _fc in (content_plan_obj.get("featured_charts") or []):
+                _fc.pop("_defer", None)
 
         # Write annotated content plan
         content_plan_path = r / _CONTENT_PLAN_PATH
