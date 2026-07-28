@@ -967,3 +967,122 @@ def test_the_fetch_fallback_carries_same_origin_credentials():
     assert json.loads(body)["events"][0]["type"] == "ad_exposure"
     code = _js_code_only(SHIM.read_text(encoding="utf-8"))
     assert "credentials: 'same-origin'" in code
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 10. The human gate (operator ruling 2026-07-27)
+# ═══════════════════════════════════════════════════════════════════════════
+
+from engine.marketing import ad_review  # noqa: E402
+
+
+def test_a_live_arena_cannot_be_built_without_approval():
+    """The failure that actually happened: a hero test went live on un-reviewed
+    copy because nothing structural stopped it."""
+    with pytest.raises(ad_review.UnapprovedCreative) as e:
+        ad_arena.create(arena_id="a1", hypothesis="h", plane="owned", unit="visitor",
+                        primary_metric="signup_rate", creative_ids=["adc-x", "adc-y"],
+                        mode="live")
+    assert "adc-x" in str(e.value) and "reviewed" in str(e.value)
+
+
+def test_a_shadow_arena_needs_no_approval():
+    """Writing down a test you intend to run is not running it."""
+    a = ad_arena.create(arena_id="a1", hypothesis="h", plane="owned", unit="visitor",
+                        primary_metric="signup_rate", creative_ids=["adc-x"], mode="shadow")
+    assert a.mode == "shadow" and a.status == "planned"
+
+
+def test_partial_approval_is_still_refused():
+    """One approved arm does not licence the other."""
+    with pytest.raises(ad_review.UnapprovedCreative) as e:
+        ad_arena.create(arena_id="a1", hypothesis="h", plane="owned", unit="visitor",
+                        primary_metric="m", creative_ids=["adc-x", "adc-y"],
+                        mode="live", approvals={"adc-x"})
+    assert "adc-y" in str(e.value) and "adc-x" not in str(e.value).split(":")[-1]
+
+
+def test_a_fully_approved_live_arena_builds():
+    a = ad_arena.create(arena_id="a1", hypothesis="h", plane="owned", unit="visitor",
+                        primary_metric="m", creative_ids=["adc-x", "adc-y"],
+                        mode="live", approvals={"adc-x", "adc-y"})
+    assert a.mode == "live"
+
+
+def test_arming_is_the_only_way_to_go_live_and_it_is_gated():
+    a = ad_arena.create(arena_id="a1", hypothesis="h", plane="owned", unit="visitor",
+                        primary_metric="m", creative_ids=["adc-x"], mode="shadow")
+    with pytest.raises(ad_review.UnapprovedCreative):
+        ad_arena.arm(a, approvals=set())
+    assert a.status == "planned" and a.mode == "shadow", "a refused arm still went live"
+    ad_arena.arm(a, approvals={"adc-x"})
+    assert a.status == "running" and a.mode == "live"
+
+
+def test_pausing_never_needs_permission():
+    a = ad_arena.create(arena_id="a1", hypothesis="h", plane="owned", unit="visitor",
+                        primary_metric="m", creative_ids=["adc-x"], mode="live",
+                        approvals={"adc-x"})
+    ad_arena.arm(a, approvals={"adc-x"})
+    ad_arena.pause(a)
+    assert a.status == "planned" and a.mode == "shadow"
+
+
+def test_a_rejection_without_a_reason_is_refused(tmp_path):
+    """The reason IS the training signal. A bare 'no' teaches nothing."""
+    with pytest.raises(ad_review.MissingRejectionReason):
+        ad_review.record("adc-x", "rejected", reviewer="operator", root=tmp_path)
+    # An approval needs no essay — saying yes carries no lesson to record.
+    ad_review.record("adc-x", "approved", reviewer="operator", root=tmp_path)
+    assert ad_review.state("adc-x", root=tmp_path) == "approved"
+
+
+def test_an_anonymous_approval_is_not_a_gate(tmp_path):
+    with pytest.raises(ValueError):
+        ad_review.record("adc-x", "approved", reviewer="  ", root=tmp_path)
+
+
+def test_the_latest_decision_stands_and_the_history_is_kept(tmp_path):
+    ad_review.record("adc-x", "rejected", reviewer="operator",
+                     note="too clever, says nothing concrete", root=tmp_path)
+    assert ad_review.state("adc-x", root=tmp_path) == "rejected"
+    assert ad_review.approved_ids(root=tmp_path) == set()
+    ad_review.record("adc-x", "approved", reviewer="operator", note="reworded", root=tmp_path)
+    assert ad_review.state("adc-x", root=tmp_path) == "approved"
+    assert ad_review.approved_ids(root=tmp_path) == {"adc-x"}
+    assert len(ad_review.load_reviews(root=tmp_path)) == 2, "the change of mind was overwritten"
+
+
+def test_the_queue_separates_what_still_needs_a_human(tmp_path):
+    creatives = {"adc-a": {"creative_id": "adc-a"}, "adc-b": {"creative_id": "adc-b"},
+                 "adc-c": {"creative_id": "adc-c"}}
+    ad_review.record("adc-a", "approved", reviewer="operator", root=tmp_path)
+    ad_review.record("adc-b", "rejected", reviewer="operator",
+                     note="feature list reads like a spec sheet", root=tmp_path)
+    q = ad_review.queue(creatives, root=tmp_path)
+    assert [c["creative_id"] for c in q.pending] == ["adc-c"]
+    assert [c["creative_id"] for c in q.approved] == ["adc-a"]
+    assert [c["creative_id"] for c in q.rejected] == ["adc-b"]
+
+
+def test_rejection_reasons_accumulate_as_the_taste_corpus(tmp_path):
+    """The ladder from hand-gated to autonomous runs on these notes."""
+    ad_review.record("adc-a", "rejected", reviewer="operator",
+                     note="too clever, says nothing concrete", root=tmp_path)
+    ad_review.record("adc-b", "rejected", reviewer="operator",
+                     note="feature list reads like a spec sheet", root=tmp_path)
+    ad_review.record("adc-c", "approved", reviewer="operator", root=tmp_path)
+    notes = ad_review.taste_notes(root=tmp_path)
+    assert len(notes) == 2, "approvals leaked into the corpus"
+    assert notes[0]["note"].startswith("feature list")     # newest first
+
+
+def test_no_unapproved_creative_is_live_in_the_shipped_ledger():
+    """A standing guard on the repo itself: nothing runs that a person has not passed."""
+    approved = ad_review.approved_ids(root=ROOT)
+    for a in ad_arena.load_arenas(root=ROOT):
+        if a.status == "running" and a.mode == "live":
+            missing = [c for c in a.arm_creative_ids if c not in approved]
+            assert not missing, (
+                f"arena {a.arena_id} is LIVE with un-reviewed ads: {missing}"
+            )
