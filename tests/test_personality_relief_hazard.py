@@ -126,12 +126,38 @@ def test_exact_detector_primitives_match_frozen_sr3_reference():
     assert live[1] == exact["joint_5"]
 
 
-def test_full_runtime_detector_matches_every_frozen_sr3_historical_path(monkeypatch):
+def test_full_runtime_detector_matches_frozen_sr3_paths_up_to_data_restatement(monkeypatch):
+    """Construction-parity fence, robust to retroactive price restatement.
+
+    The frozen parquet is the registered SR3 study output and is NEVER
+    rewritten. The runtime scanner recomputes those paths from the LIVE
+    ohlcv store — which Yahoo restates retroactively on every dividend
+    (adjusted closes are recomputed series-wide with fresh float rounding;
+    the whole store's bytes churn on a refresh). Exact atol=1e-9 parity
+    therefore re-reddened main on 2026-07-28 after a routine basket refresh
+    (REG's quarterly dividend): history verified intact (row counts up by
+    one session, 2020 closes moved ≤ ±3.5e-7 relative), yet 4325/6294
+    depths drifted past 1e-9.
+
+    Measured restatement noise on that refresh, which sets the teeth below:
+      close_depth_atr  max drift 3.8e-5           -> atol 1e-3 (26x headroom;
+                       a construction change moves depths by band-scale ~0.5)
+      level_min/active_min  discrete 1/33-member breadth quanta; a restated
+                       member price at the threshold flips ONE member on a
+                       handful of rows (13 and 3 rows > 1e-9 respectively)
+                       -> atol 0.035 (one quantum) per row, PLUS an aggregate
+                       cap: a construction change to the breadth definition
+                       flips quanta on THOUSANDS of rows, restatement on a
+                       handful, so widespread drift still fails.
+      vanished events  5/6294 whisker-thin paths no longer form on restated
+                       bars -> ≤ 0.5% missing, keys printed. Construction
+                       drift erases whole classes, not a handful.
+    Structural parity (group; severity/delay/distance bands had 0 mismatches)
+    stays exact. Production keeps the hash-bound 2026-07-24 boundary and
+    cannot execute this monkeypatch.
+    """
     registration = prh.load_registration()
     assert registration is not None
-    # Audit-only: expose the historical construction to the runtime scanner,
-    # then require exact parity. Production keeps the hash-bound 2026-07-24
-    # boundary and cannot execute this monkeypatch.
     monkeypatch.setattr(prh, "NOT_BEFORE_SESSION", "2019-01-01")
     detected, _ = prh._scan_paths(
         registration,
@@ -146,24 +172,41 @@ def test_full_runtime_detector_matches_every_frozen_sr3_historical_path(monkeypa
         "data/research/pss_sr3_participation_recovery_events.parquet"
     )
     assert len(history) == 6294
+    missing = []
+    breadth_drifted = 0
     for row in history.itertuples(index=False):
         key = (
             str(row.sym),
             str(pd.Timestamp(row.anchor_date).date()),
             str(pd.Timestamp(row.date).date()),
         )
-        actual = live[key]
+        actual = live.get(key)
+        if actual is None:
+            missing.append(key)
+            continue
         expected_group = (
             "relief_hazard" if str(row.group) == "sr3" else str(row.group)
         )
         assert actual["group"] == expected_group
-        assert np.isclose(actual["level_min"], float(row.level_min), atol=1e-9)
-        assert np.isclose(actual["active_min"], float(row.active_min), atol=1e-9)
+        assert np.isclose(actual["level_min"], float(row.level_min), atol=0.035)
+        assert np.isclose(actual["active_min"], float(row.active_min), atol=0.035)
+        if (abs(actual["level_min"] - float(row.level_min)) > 1e-6
+                or abs(actual["active_min"] - float(row.active_min)) > 1e-6):
+            breadth_drifted += 1
         assert np.isclose(
             actual["close_depth_atr"],
             float(row.close_depth_atr),
-            atol=1e-9,
+            atol=1e-3,
         )
+    # Aggregate teeth (see docstring): restatement noise is sparse, construction
+    # drift is widespread. 1% / 0.5% are ~4x the measured 2026-07-28 refresh.
+    assert breadth_drifted <= 66, (
+        f"{breadth_drifted} rows drifted breadth minima — widespread, "
+        "not restatement-sparse; suspect a construction change"
+    )
+    assert len(missing) <= 31, (
+        f"{len(missing)} frozen events undetected (>0.5%): {missing[:20]}"
+    )
 
 
 def test_subject_action_is_first_observable_held_recovery_and_prefix_invariant():
