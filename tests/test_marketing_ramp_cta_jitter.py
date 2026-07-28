@@ -113,6 +113,13 @@ def _cfg(*, accounts: list[dict], ramp: dict | None = None,
         "links_allowed": False,
         "max_cashtags_per_post": 3,
         "require_signal_disclosure": False,
+        # The substance floor (an originated post names a ticker AND states a
+        # number) is OFF here and exercised in
+        # tests/test_marketing_copy_substance.py::TestSubstanceFloor. It is
+        # orthogonal to every ramp/tier question this suite asks, and these
+        # fixtures carry no digits, so leaving it armed would quarantine whole
+        # plans on no_substance before the tier merge under test ever ran.
+        "require_ticker_and_number": False,
         "lexicon_phrases": [],
         "lexicon_patterns": [],
     }

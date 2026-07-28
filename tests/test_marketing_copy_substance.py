@@ -422,6 +422,9 @@ def _cfg(**sentinel: Any) -> dict:
         "frame_similarity": 0.60,
         "near_dup_jaccard": 0.50,
         "require_signal_disclosure": False,
+        # Off by default here so the repetition tests below reach the gate they
+        # target. TestSubstanceFloor arms it explicitly.
+        "require_ticker_and_number": False,
     }
     base.update(sentinel)
     return {"sentinel": base}
@@ -580,7 +583,75 @@ class TestCashtagUniqueness:
         assert report["counts"]["quarantined"] == 0, report["quarantined"]
 
 
+class TestSubstanceFloor:
+    """THE BAR: a post names a ticker and states a dated fact with its numbers.
+
+    Armed in config (require_ticker_and_number: true), which is the acceptance
+    test's reading — "every post either carries a ticker+number or is dropped".
+    It drops the no-ticker banks outright; that is the trade, and the knob is
+    the documented way back to the looser bar.
+    """
+
+    def test_a_post_with_no_ticker_is_dropped(self):
+        items = [_item("n1", "kelly", cashtag="", type="macro",
+                       headline="Macro, plainly",
+                       body="Growth data's been roughly steady while inflation is warm. "
+                            "18 groups on the move today.")]
+        _, report = gate_plan(_plan({"kelly": items}),
+                              _cfg(require_ticker_and_number=True), receipts_age_days=1)
+        assert _reasons(report) == {"n1": ["no_substance:missing_ticker"]}
+
+    def test_a_post_with_a_ticker_but_no_number_is_dropped(self):
+        items = [_item("n2", "cici", cashtag="$TEL", type="watchlist",
+                       headline="Watching $TEL",
+                       body="TEL is setting up and I like the shape. No entry yet.")]
+        _, report = gate_plan(_plan({"cici": items}),
+                              _cfg(require_ticker_and_number=True), receipts_age_days=1)
+        assert _reasons(report) == {"n2": ["no_substance:missing_number"]}
+
+    def test_a_ticker_bearing_numeric_post_survives(self):
+        items = [_item("y1", "cici", cashtag="$TEL", type="chart",
+                       headline="$TEL back over its 50-day",
+                       body="TEL reclaimed its 50-day average (205.23), first time since "
+                            "Jul 2026. It has to hold that level on a pullback.")]
+        _, report = gate_plan(_plan({"cici": items}),
+                              _cfg(require_ticker_and_number=True), receipts_age_days=1)
+        assert report["counts"]["quarantined"] == 0, report["quarantined"]
+
+    def test_replies_are_exempt(self):
+        """A reply answers someone else's tweet. Requiring a ticker there is a
+        category error, not a quality bar."""
+        items = [_item("r1", "cici", cashtag="", type="reply",
+                       headline="", body="Agreed, and the follow-through is the part I watch.")]
+        _, report = gate_plan(_plan({"cici": items}),
+                              _cfg(require_ticker_and_number=True,
+                                   max_replies_per_account_per_day=5),
+                              receipts_age_days=1)
+        assert not [r for rs in _reasons(report).values() for r in rs
+                    if r.startswith("no_substance")], _reasons(report)
+
+    def test_the_knob_turns_it_off(self):
+        items = [_item("n3", "kelly", cashtag="", type="macro", headline="Macro, plainly",
+                       body="18 groups on the move today. That count is the breadth check.")]
+        _, report = gate_plan(_plan({"kelly": items}),
+                              _cfg(require_ticker_and_number=False), receipts_age_days=1)
+        assert not [r for rs in _reasons(report).values() for r in rs
+                    if r.startswith("no_substance")]
+
+    def test_report_carries_the_floor_stats(self):
+        _, report = gate_plan(_plan({"kelly": [
+            _item("f1", "kelly", cashtag="", type="macro", headline="Macro", body="No numbers."),
+        ]}), _cfg(require_ticker_and_number=True), receipts_age_days=1)
+        assert report["checks"]["substance_floor"] == {"enforced": True, "hits": 1}
+
+    def test_live_config_arms_the_floor(self):
+        import yaml
+        cfg = yaml.safe_load(open("config/marketing.yml"))["sentinel"]
+        assert cfg["require_ticker_and_number"] is True
+
+
 class TestFillerCap:
+    """The second line of defence, reachable when the substance floor is off."""
 
     def test_a_desk_cannot_run_a_whole_day_of_no_ticker_posts(self):
         """Kelly's ENTIRE 2026-07-28 day was four of these, so she shipped

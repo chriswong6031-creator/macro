@@ -193,6 +193,14 @@ _DEFAULT_FRAME_SIMILARITY = 0.60
 _DEFAULT_MAX_FILLER_PER_ACCOUNT_PER_DAY = 1
 # The types that cap covers: no ticker, no chart, no per-name evidence.
 _FILLER_TYPES: frozenset[str] = frozenset({"macro", "event", "education"})
+# The substance floor: an ORIGINATED post names a ticker and states a number.
+_DEFAULT_REQUIRE_TICKER_AND_NUMBER = True
+_CASHTAG_IN_TEXT_RE = re.compile(r"\$[A-Z]{1,5}\b")
+# Deliberately looser than copywriter._NUMBER_RE, which skips bare 1-2 digit
+# integers so "T1" and "3 weeks" don't read as invented prices. Here ANY digit
+# counts: the question is "does this post state a quantity at all", not "is
+# every quantity whitelisted".
+_SUBSTANCE_NUMBER_RE = re.compile(r"\d")
 _DEFAULT_MAX_REPLIES_PER_ACCOUNT_PER_DAY = 0
 _DEFAULT_MAX_RECEIPT_AGE_DAYS = 7
 _DEFAULT_LINKS_ALLOWED = False                 # forbidden until week 5 (D08 R2)
@@ -1179,6 +1187,46 @@ def gate_plan(
             violations[(ai, qi)].append("link_not_allowed")
             link_hits += 1
 
+    # --- substance floor: a post names a ticker and states a number ----------
+    # The operator's bar, 2026-07-28: "a post must name a ticker, state a dated
+    # fact with its numbers, and then say something that FOLLOWS from that
+    # fact." The copywriter enforces the third clause (consequence_violations);
+    # this enforces the first two, at the gate, over copy from EVERY lane and
+    # every vintage — the same reasoning that put banned_language on the
+    # publisher's post-time gate. A queued item from an older lane cannot walk
+    # around a generation-time check.
+    #
+    # This is the strictest of the two readings the operator offered for the
+    # no-ticker banks ("a concrete number or named referent" vs the acceptance
+    # test's "carries a ticker+number or is dropped"), and it is the acceptance
+    # test that ships. It DOES drop macro/event/education entirely, plus the
+    # planner's ticker-free watchlist slot, because none of them can name a
+    # ticker. That is the intended trade: those 17 posts were the ones the
+    # operator quarantined by hand, and Kelly shipping nothing was the correct
+    # outcome of his review, not a regression.
+    #
+    # Set require_ticker_and_number: false in config to fall back to the looser
+    # bar (the filler cap below then does the constraining) without a code
+    # change, should the no-ticker banks ever be worth reviving.
+    require_tkr_num = bool(_get(sc, "require_ticker_and_number",
+                                _DEFAULT_REQUIRE_TICKER_AND_NUMBER))
+    no_substance_hits = 0
+    if require_tkr_num:
+        for _acc_id, item, ai, qi in all_items:
+            # Replies are a conversation, not a post: the reply desk answers
+            # someone else's tweet and a ticker requirement there is a category
+            # error. Everything the network ORIGINATES is in scope.
+            if is_reply_item(item):
+                continue
+            text = _item_text(item)
+            has_tag = bool(item.get("cashtag") or item.get("ticker")) or bool(
+                _CASHTAG_IN_TEXT_RE.search(text))
+            has_num = bool(_SUBSTANCE_NUMBER_RE.search(text))
+            if not (has_tag and has_num):
+                missing = "ticker" if not has_tag else "number"
+                violations[(ai, qi)].append(f"no_substance:missing_{missing}")
+                no_substance_hits += 1
+
     # --- cashtag breadth (per post) ------------------------------------------
     # Distinct $TICKER tokens in headline+body (case-sensitive: real cashtags are
     # uppercase; "$oil" is prose, "$200" is a price — neither matches).
@@ -1628,6 +1676,11 @@ def gate_plan(
                 "threshold": frame_thresh,
             },
             "cadence": cadence_stats,
+            # Posts dropped for naming no ticker or stating no number.
+            "substance_floor": {
+                "enforced": require_tkr_num,
+                "hits": no_substance_hits,
+            },
             "lexicon": {"hits": lexicon_hits},
             "disclosure": {"hits": disclosure_hits, "required": require_signal_disclosure},
             "cherry_pick": cherry_pick,

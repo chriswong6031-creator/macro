@@ -145,6 +145,7 @@ def _cfg(
     max_receipt_age: int = 7,
     disabled_accounts: list[str] | None = None,
     require_signal_disclosure: bool = True,
+    require_ticker_and_number: bool = False,
 ) -> dict:
     accounts = [
         {"id": "flagship", "kind": "branded", "voice": "authoritative desk"},
@@ -164,6 +165,13 @@ def _cfg(
             "max_replies_per_account_per_day": 0,
             "max_receipt_age_days": max_receipt_age,
             "require_signal_disclosure": require_signal_disclosure,
+            # The substance floor (a post names a ticker AND states a number)
+            # is OFF by default in this helper and exercised explicitly in
+            # tests/test_marketing_copy_substance.py. It is orthogonal to every
+            # gate these fixtures target — near-dup, caps, slot collisions —
+            # and leaving it armed would quarantine most of them on
+            # no_substance before they reached the gate under test.
+            "require_ticker_and_number": require_ticker_and_number,
             "lexicon_phrases": [
                 "you should buy", "guaranteed", "can't lose", "get in now",
                 "to the moon", "all-in", "price target guaranteed",

@@ -148,6 +148,18 @@ sentinel:
   # different way to say "I post my results", so she shipped nothing after
   # review. They are seasoning, not a meal.
   max_filler_per_account_per_day: 1
+  # THE BAR (operator 2026-07-28): "a post must name a ticker, state a dated
+  # fact with its numbers, and then say something that FOLLOWS from that fact."
+  # This gate enforces the first two clauses over every originated post from
+  # every lane and vintage; copywriter.consequence_violations enforces the
+  # third at generation. Replies are exempt (a reply is a conversation).
+  #
+  # This DROPS the no-ticker banks (macro/event/education and the planner's
+  # ticker-free watchlist slot) outright — they are the 17 posts the operator
+  # quarantined by hand. Setting this false falls back to the looser "concrete
+  # number or named referent" reading, with max_filler_per_account_per_day
+  # doing the constraining instead.
+  require_ticker_and_number: true
   max_replies_per_account_per_day: 0
 
   # min_minutes_between_posts is NOT enforced at plan tier (queue slots have no
