@@ -601,6 +601,7 @@ def test_index_json_has_required_keys(tmp_path):
     orig_index = bp.INDEX_PATH
     orig_ledger_path = bp.LEDGER_PATH
     orig_ledger_dir = bp.LEDGER_DIR
+    orig_write_showcase = bp.write_showcase
 
     try:
         bp.STANDOUTS_PATH = standouts_path
@@ -610,6 +611,12 @@ def test_index_json_has_required_keys(tmp_path):
         bp.INDEX_PATH = bp.SITE_PROPHET / "index.json"
         bp.LEDGER_PATH = tmp_path / "data" / "prophet" / "ledger.jsonl"
         bp.LEDGER_DIR = tmp_path / "data" / "prophet"
+        # write_showcase's out_path default is bound to SHOWCASE_PATH at def
+        # time, so reassigning the module constant cannot redirect it — main()'s
+        # no-arg call would write the real site/prophet/showcase.json and trip
+        # MM_DATA_GUARD whenever committed data/ and site/ are out of sync.
+        bp.write_showcase = lambda: orig_write_showcase(
+            out_path=tmp_path / "showcase.json")
 
         # Patch sys.argv
         import sys as _sys  # noqa: PLC0415
@@ -644,6 +651,7 @@ def test_index_json_has_required_keys(tmp_path):
         bp.INDEX_PATH = orig_index
         bp.LEDGER_PATH = orig_ledger_path
         bp.LEDGER_DIR = orig_ledger_dir
+        bp.write_showcase = orig_write_showcase
 
 
 def test_index_note_no_validated_word(tmp_path):
@@ -686,6 +694,7 @@ def test_end_to_end_smoke(tmp_path):
     orig_index = bp.INDEX_PATH
     orig_ledger_path = bp.LEDGER_PATH
     orig_ledger_dir = bp.LEDGER_DIR
+    orig_write_showcase = bp.write_showcase
 
     try:
         bp.STANDOUTS_PATH = standouts_path
@@ -694,6 +703,10 @@ def test_end_to_end_smoke(tmp_path):
         bp.INDEX_PATH = tmp_path / "index.json"
         bp.LEDGER_PATH = tmp_path / "ledger.jsonl"
         bp.LEDGER_DIR = tmp_path
+        # Same def-time-default trap as test_index_json_structure: main()'s
+        # no-arg write_showcase() targets the real site/prophet/showcase.json.
+        bp.write_showcase = lambda: orig_write_showcase(
+            out_path=tmp_path / "showcase.json")
 
         import sys as _sys  # noqa: PLC0415
         with patch.object(_sys, "argv", ["build_prophet", "--date", "2026-07-02"]):
@@ -723,6 +736,7 @@ def test_end_to_end_smoke(tmp_path):
         bp.INDEX_PATH = orig_index
         bp.LEDGER_PATH = orig_ledger_path
         bp.LEDGER_DIR = orig_ledger_dir
+        bp.write_showcase = orig_write_showcase
 
 
 # ---------------------------------------------------------------------------
