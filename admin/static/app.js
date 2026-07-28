@@ -161,6 +161,7 @@ const ICONS = {
   marketing_content:     NAV_ICO('<path d="M4 12a8 8 0 1 1 16 0"/><path d="M4 12a8 8 0 0 0 16 0"/><path d="M12 4v4M12 16v4M4 12H2M22 12h-2"/><circle cx="12" cy="12" r="2" fill="currentColor"/>'),
   marketing_lab:         NAV_ICO('<path d="M9 3h6M10 3v6L5.2 17.4A2 2 0 0 0 7 20.4h10a2 2 0 0 0 1.8-3L14 9V3"/><path d="M7.5 15h9"/><circle cx="10.5" cy="17" r=".9" fill="currentColor"/><circle cx="13.5" cy="16" r=".9" fill="currentColor"/>'),
   marketing_outbox:      NAV_ICO('<path d="M4 13v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/><path d="M4 13l2.2-7.4A2 2 0 0 1 8.1 4h7.8a2 2 0 0 1 1.9 1.6L20 13"/><path d="M4 13h4l1.5 2.2h5L16 13h4"/>'),
+  marketing_reply_queue: NAV_ICO('<path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.9 8.9 0 0 1-4.1-1L3 20l1.2-4.6A8.4 8.4 0 0 1 12 3.1a8.4 8.4 0 0 1 9 8.4Z"/><path d="M9 12h6"/>'),
   marketing_publish:     NAV_ICO('<path d="M21 4L3 11l6 2.5L11 20l3.5-6L21 4Z"/><path d="M9 13.5L21 4"/>'),
   marketing_sentinel:    NAV_ICO('<path d="M12 3l7 3v5c0 4.5-3 7.7-7 9-4-1.3-7-4.5-7-9V6l7-3Z"/><path d="M9 12l2 2 4-4"/>'),
   marketing_allies:      NAV_ICO('<path d="M8.5 13.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M15.5 13.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M4 20a4.5 4.5 0 0 1 9 0M11 20a4.5 4.5 0 0 1 9 0"/>'),
@@ -174,7 +175,7 @@ const ICONS = {
 const NAV_GROUPS = [
   { label: "", items: [["overview", "Overview"]] },
   { label: "Neural Web", items: [["neural_web", "Observatory"], ["orchestrator", "Master Brain"], ["prophet", "Prophet"], ["mastermind_ai", "Mastermind AI"], ["mastermind_logs", "AI Response Logs"], ["alerts", "Alerts"], ["long_hold", "Long-Hold Lobe"], ["context_lobe", "Context Lobe"], ["causal_lab", "Causal Lab"], ["chronicle", "Chronicle"]] },
-  { label: "Marketing", items: [["marketing_overview", "CMO Office"], ["marketing_departments", "Departments"], ["marketing_radar", "Radar"], ["marketing_seo", "SEO"], ["marketing_campaigns", "Campaigns"], ["marketing_channels", "Channels & Desks"], ["personas", "Persona Roster"], ["marketing_content", "Content Studio"], ["marketing_outbox", "Outbox"], ["marketing_publish", "Publisher"], ["marketing_sentinel", "Sentinel"], ["marketing_allies", "Allies"], ["marketing_lab", "Lab"], ["marketing_ads", "Ad Central"], ["marketing_experiments", "Experiments"], ["marketing_lobes", "Engines"]] },
+  { label: "Marketing", items: [["marketing_overview", "CMO Office"], ["marketing_departments", "Departments"], ["marketing_radar", "Radar"], ["marketing_seo", "SEO"], ["marketing_campaigns", "Campaigns"], ["marketing_channels", "Channels & Desks"], ["personas", "Persona Roster"], ["marketing_content", "Content Studio"], ["marketing_outbox", "Outbox"], ["marketing_reply_queue", "Reply Queue"], ["marketing_publish", "Publisher"], ["marketing_sentinel", "Sentinel"], ["marketing_allies", "Allies"], ["marketing_lab", "Lab"], ["marketing_ads", "Ad Central"], ["marketing_experiments", "Experiments"], ["marketing_lobes", "Engines"]] },
   { label: "Growth", items: [["analytics", "Analytics"], ["users", "Users"], ["revenue", "Revenue"], ["experiments", "Experiments"], ["site_gate", "Site Access"]] },
   { label: "Support", items: [["support_tickets", "Support Tickets"], ["email_center", "Email Center"]] },
   { label: "System", items: [["system", "System"], ["health", "Health"], ["deploy", "Build & Deploy"], ["metabolism", "Metabolism"], ["codex", "Codex Research"], ["cost", "AI Cost"], ["content", "Content"]] },
@@ -5321,6 +5322,141 @@ function obxRejectionBox(rej) {
     </div>
     <div class="obx-rej-list">${list}</div>${more}
   </div>`;
+}
+
+/* ── Reply Queue (XG-W4) ───────────────────────────────────────────────────
+   The reply desk's own rail. Two zones per account, same approve/hold/reject
+   discipline as the Outbox, but a SEPARATE store: Buffer cannot post replies,
+   so these items never travel the outbox rail and never reach the publisher.
+
+   Approving here does not post. At M0 nothing leaves the machine at all; at M1
+   the item is handed to the desktop session, which is the only sender. */
+function rqModeChip(mode) {
+  const cls = mode === "M0" ? "pill" : "pill ok";
+  const what = mode === "M0" ? "draft-only, nothing exports"
+                             : "approved items export to the desktop lane";
+  return `<span class="${cls}" title="${esc(what)}">${esc(mode)}</span>`;
+}
+
+function rqCard(it, zone) {
+  const score = it.score == null ? "—" : Number(it.score).toFixed(2);
+  const comps = Object.entries(it.score_components || {})
+    .map(([k, val]) => `${esc(k)} ${Number(val).toFixed(3)}`).join(" · ");
+  const chart = it.chart && (it.chart.local_path || it.chart.public_url)
+    ? `<div class="muted small">chart: ${esc(it.chart.chart_id || "attached")}</div>` : "";
+  const alts = (it.alt_drafts || []).map((a, i) =>
+    `<details class="rq-alt"><summary>alternate ${i + 1}</summary><pre>${esc(a)}</pre></details>`
+  ).join("");
+  const outcome = it.outcome && it.outcome.sent_at
+    ? `<div class="muted small">sent ${esc(it.outcome.sent_at)}</div>` : "";
+  const actions = zone === "awaiting"
+    ? `<div class="row gap">
+         <button class="btn sm" onclick="rqDecide('${esc(it.id)}','approve',this)">Approve</button>
+         <button class="btn sm ghost" onclick="rqDecide('${esc(it.id)}','hold',this)">Hold</button>
+         <button class="btn sm danger" onclick="rqReject('${esc(it.id)}',this)">Reject</button>
+       </div>`
+    : `<div class="row gap">
+         <button class="btn sm danger" onclick="rqReject('${esc(it.id)}',this)">Reject</button>
+       </div>`;
+  return `<div class="card rq-item">
+    <div class="row between">
+      <div class="small muted">
+        <a href="${esc(it.target_url || "#")}" target="_blank" rel="noopener noreferrer">@${esc(it.parent_author || "?")}</a>
+        · ${esc(it.tier || "—")} · ${esc(it.family || "—")} · score ${esc(score)}
+      </div>
+      <div class="small muted">${esc(it.status || "")}${it.attempts ? ` · ${it.attempts} attempt(s)` : ""}</div>
+    </div>
+    <blockquote class="rq-parent">${esc(it.parent_excerpt || "")}</blockquote>
+    <pre class="rq-draft">${esc(it.draft || "")}</pre>
+    ${alts}${chart}${outcome}
+    <div class="muted small">expires ${esc(it.expires_at || "—")}</div>
+    <div class="muted small">${esc(comps)}</div>
+    ${actions}
+  </div>`;
+}
+
+RENDER.marketing_reply_queue = async () => {
+  const v = $("#view");
+  v.innerHTML = `<div class="spin">loading…</div>`;
+  const d = await api("/api/marketing/reply-queue");
+  if (!d || !d.ok) {
+    v.innerHTML = nwEmpty("Reply queue unavailable", (d && d.error) || "panel error");
+    return;
+  }
+  const accounts = d.accounts || [];
+  const summary = d.summary || {};
+  const head = `<div class="head">
+      <h2>Reply Queue</h2>
+      <div class="muted small">${esc(d.note || "")}</div>
+      <div class="muted small">store: <code>${esc(d.store || "")}</code> ·
+        modes shipped: ${esc((d.modes_enabled || []).join(", "))} ·
+        hard ceiling ${esc(String(d.hard_ceiling))}/account/day</div>
+    </div>`;
+
+  if (!accounts.length) {
+    v.innerHTML = head + nwEmpty("Nothing queued",
+      "Discovery has not produced a target that cleared the critics yet.");
+    return;
+  }
+
+  const body = accounts.map(a => {
+    const awaiting = (a.awaiting || []);
+    const approved = (a.approved || []);
+    const done = (a.done || []);
+    return `<section class="card">
+      <div class="row between">
+        <h3>${esc(a.id)} ${rqModeChip(a.mode)}</h3>
+        <div class="muted small">sent today ${esc(String(a.sent_today || 0))}/${esc(String(a.cap))}</div>
+      </div>
+      <div class="obx-zone-label">Awaiting your approval (${awaiting.length})</div>
+      ${awaiting.length ? awaiting.map(it => rqCard(it, "awaiting")).join("")
+                        : `<div class="muted small">nothing waiting.</div>`}
+      ${approved.length ? `<details class="obx-cleared-group" open>
+          <summary>Approved (${approved.length})${a.mode === "M0"
+            ? " — parked: M0 exports nothing" : " — exporting to the desktop lane"}</summary>
+          ${approved.map(it => rqCard(it, "approved")).join("")}
+        </details>` : ""}
+      ${done.length ? `<details class="obx-cleared-group">
+          <summary>Recent (${done.length})</summary>
+          ${done.map(it => rqCard(it, "done")).join("")}
+        </details>` : ""}
+    </section>`;
+  }).join("");
+
+  const counts = Object.entries(summary.by_status || {})
+    .map(([k, n]) => `${esc(k)} ${esc(String(n))}`).join(" · ");
+  v.innerHTML = head + `<div class="muted small">${counts}</div>` + body;
+};
+
+async function rqDecide(id, decision, btn) {
+  btn.disabled = true; const orig = btn.textContent; btn.textContent = "…";
+  const r = await post("/api/marketing/reply-queue/decide", { id, decision });
+  if (r && r.ok) {
+    toast(decision === "approve" ? "Approved." : "Held in the rail.");
+    RENDER.marketing_reply_queue();
+  } else {
+    btn.disabled = false; btn.textContent = orig;
+    toast((r && r.error) || "Could not record that", true);
+  }
+}
+
+async function rqReject(id, btn) {
+  const reason = window.prompt(
+    "Reject this reply. What is wrong with it? (optional — Enter to skip)\n\n" +
+    "Rejections are the taste corpus: name the phrase or the reasoning, not " +
+    "just the feeling. Rejecting also frees the thread for another desk.", "");
+  if (reason === null) return;            /* cancelled — do nothing */
+  btn.disabled = true; const orig = btn.textContent; btn.textContent = "rejecting…";
+  const r = await post("/api/marketing/reply-queue/reject", { id, reason: reason || null });
+  if (r && r.ok) {
+    toast(r.logged === false
+      ? "Rejected, but the feedback row could not be written."
+      : "Rejected — thread released.");
+    RENDER.marketing_reply_queue();
+  } else {
+    btn.disabled = false; btn.textContent = orig;
+    toast((r && r.error) || "Could not reject", true);
+  }
 }
 
 RENDER.marketing_outbox = async () => {

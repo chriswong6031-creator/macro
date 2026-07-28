@@ -559,6 +559,11 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(marketing.department(dept_id=dept_id))
             if path == "/api/marketing/outbox":
                 return self._json(marketing.outbox())
+            # The reply desk's SEPARATE queue (XG-W4). Lives in host state
+            # (~/.mastermind/reply_desk), not the repo — Buffer cannot reply, so
+            # these never travel the outbox rail.
+            if path == "/api/marketing/reply-queue":
+                return self._json(marketing.reply_queue())
             if path == "/api/marketing/publish":
                 return self._json(marketing.publisher())
             # The rejection box — everything rejected since the last export.
@@ -918,6 +923,30 @@ class Handler(BaseHTTPRequestHandler):
                 if not item_id or not isinstance(item_id, str):
                     return self._json({"ok": False, "error": "id required"}, 400)
                 res = marketing.reject_outbox(item_id, reason=reason)
+                return self._json(res, 200 if res.get("ok") else 400)
+
+            # REPLY DESK (XG-W4) — approve/hold one draft. Approving does NOT
+            # post: at M0 nothing leaves at all, and at M1 the item is handed to
+            # the desktop session, which is the only sender.
+            if path == "/api/marketing/reply-queue/decide":
+                item_id = b.get("id")
+                decision = b.get("decision")
+                note = b.get("note") or None
+                if decision not in ("approve", "hold"):
+                    return self._json({"ok": False, "error": "decision must be 'approve' or 'hold'"}, 400)
+                if not item_id or not isinstance(item_id, str):
+                    return self._json({"ok": False, "error": "id required"}, 400)
+                res = marketing.decide_reply(item_id, decision, note=note)
+                return self._json(res, 200 if res.get("ok") else 400)
+
+            # REPLY DESK — terminal kill with a reason. Rejections are the taste
+            # corpus, and a reject also releases the thread's one-owner lock.
+            if path == "/api/marketing/reply-queue/reject":
+                item_id = b.get("id")
+                reason = b.get("reason") or b.get("note") or None
+                if not item_id or not isinstance(item_id, str):
+                    return self._json({"ok": False, "error": "id required"}, 400)
+                res = marketing.reject_reply(item_id, reason=reason)
                 return self._json(res, 200 if res.get("ok") else 400)
 
             # Export the rejection box as an annotatable markdown sheet. Clears

@@ -2877,7 +2877,16 @@ jobs:
         # no-promotion guard) and need no imports at all. Nothing is
         # importorskip-gated, so it can never decay into a skip-only suite —
         # verified in a clean pytest+pyyaml venv.
-        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_marketing_personas.py tests/test_marketing_event_language.py tests/test_marketing_press_feeds.py tests/test_marketing_breaking.py tests/test_marketing_fastlane.py tests/test_marketing_press_copy.py tests/test_marketing_ramp_cta_jitter.py tests/test_marketing_expression_dial.py tests/test_marketing_cadence_spine.py tests/test_marketing_chart_coverage.py tests/test_marketing_desk_feeds.py -q
+        # test_marketing_reply_desk (XG-W4) joins on the same terms: the reply
+        # discovery provider, deterministic scorer, drafter, critic pass, queue,
+        # exporter, and the sentinel reply-counter fix. Stdlib+pyyaml only, and
+        # nothing importorskip-gated.
+        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_marketing_personas.py tests/test_marketing_event_language.py tests/test_marketing_press_feeds.py tests/test_marketing_breaking.py tests/test_marketing_fastlane.py tests/test_marketing_press_copy.py tests/test_marketing_ramp_cta_jitter.py tests/test_marketing_expression_dial.py tests/test_marketing_cadence_spine.py tests/test_marketing_chart_coverage.py tests/test_marketing_desk_feeds.py tests/test_marketing_reply_desk.py -q
+      - name: reply-target register validates (config/reply_targets.yml)
+        # The register is operator-curated, so a bad handle or an unknown tier is
+        # an editing mistake, not a code change. Runs as its own step so a
+        # register-only PR fails on the register, not inside a pytest summary.
+        run: python -c "from engine.marketing import reply_discovery as r; e = r.validate_register(r.load_register()); [print(f'::error title=reply-register::{x}', flush=True) for x in e]; raise SystemExit(1 if e else 0)"
       - name: persona specs validate (config/personas/*.yml)
         # The gate the specs exist for: every committed spec carries the full
         # content-studio tilt key set, a live template-pool voice key, and the

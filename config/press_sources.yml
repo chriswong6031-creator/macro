@@ -159,6 +159,43 @@ spend:
   twitterapiio_monthly_cap_usd: 75.0
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Reply desk discovery (XG-W4) — the SECOND consumer of the twitterapi.io key.
+#
+# ONE BUCKET, TWO LANES. twitterapi.io is a single account with a single $75/mo
+# cap (above). The Trump wire lane owns that bucket; this lane carves a small
+# sub-budget out of it and must never starve the wire. The enforcement is
+# deliberately asymmetric (engine/marketing/reply_discovery.py):
+#   * reply spend increments only the REPLY counter, never the wire's, so the
+#     wire's own cap check literally cannot see this lane — it is structurally
+#     impossible for reply polling to stop the wire;
+#   * reply polling additionally stops when the combined spend it can observe
+#     reaches the shared cap. Reply yields to the wire, never the reverse.
+#
+# Cursors and spend live in HOST state (~/.mastermind/reply_desk/discovery/),
+# never in the repo checkout — the M1 is the nightly render host.
+#
+# This lane needs its own provider class because the wire's provider hardcodes
+# includeReplies=false and counts only the "tweets" response key: both are
+# exactly wrong for a reply desk, where the replies ARE the product and the
+# mentions/thread endpoints return different shapes.
+# ─────────────────────────────────────────────────────────────────────────────
+reply_discovery:
+  enabled: true
+  monthly_usd_cap: 15.0        # sub-budget carved from twitterapiio_monthly_cap_usd
+  base_url: "https://api.twitterapi.io"
+  auth_header: "X-API-Key"
+  key_env: "TWITTERAPI_IO_KEY"   # same read-only key; never mingled with posting creds
+  endpoints:
+    author_posts: "/twitter/user/last_tweets"
+    mentions: "/twitter/user/mentions"
+    post_replies: "/twitter/tweet/replies"
+  # Which target tiers are worth paying to read replies on. Relationship threads
+  # are where conversations start; breakout threads are read top-level only,
+  # because a giant thread's replies are clutter we would not enter anyway.
+  include_replies_for_tiers: [relationship]
+  max_requests_per_tick: 12
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Alpaca — WS wire slot. Disabled until a key exists (BUILD GATE — no key yet).
 # ─────────────────────────────────────────────────────────────────────────────
 alpaca:

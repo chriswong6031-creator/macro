@@ -1254,3 +1254,95 @@ breaking:
     enabled: true
     model_key: "marketing_copy"
     max_tokens: 800
+
+# ═════════════════════════════════════════════════════════════════════════════
+# REPLY DESK (XG-W4) — borrowed distribution's engine room.
+#
+# Zero-follower accounts own no distribution. Replies are the primary engine for
+# borrowing someone else's (charter §3): mid-tier authors over megacaps, 5-15
+# minute windows, and a gift in every reply that nobody else in the thread can
+# produce. This block configures the queue, the scorer, and the critics.
+#
+# THE MODE DIAL IS THE ONLY THING THAT OPENS SENDS. The standing reply cap is 0
+# (D08: "default to 0 indefinitely unless the operator explicitly opens it").
+# The operator's 2026-07-28 directive opened it per the dial and ONLY per the
+# dial — a builder editing daily_caps below cannot cause a single reply to send
+# while mode is M0, because sentinel.reply_send_cap() returns 0 unconditionally
+# at M0 and clamps every other value to a hard code ceiling of 30.
+# ═════════════════════════════════════════════════════════════════════════════
+reply_desk:
+  enabled: true
+
+  # ── Mode dial (per account; the operator flips each escalation) ────────────
+  #   M0  draft-only. The queue fills, critics run, the admin UI shows the
+  #       drafts, and NOTHING is exported to the desktop lane. Launch state.
+  #   M1  assisted. Items an operator APPROVED in the admin UI export to
+  #       ~/.mastermind/reply_desk/queue/ for the desktop session to send.
+  #   M2  auto-approve inbound (replies to comments on OUR OWN posts).
+  #   M3  auto-approve outbound within daily caps.
+  #
+  # M2 and M3 are listed so the escalation path is legible, but they are
+  # CONFIG-GATED OFF: modes_enabled may not contain them, and reply_queue
+  # clamps to M0 with a ::warning if it does. The gate is not squeamishness —
+  # the per-account health monitor and the network tripwire (XG-W6) are a HARD
+  # PRECONDITION for any dial flip above M1, because a failure must be able to
+  # halt ONE account without halting seven. Fleet-linkage suspension is the
+  # risk being managed here (see charter §5 risk register).
+  modes_enabled: [M0, M1]
+  mode:
+    default: M0
+    accounts:
+      flagship: M0
+      founder: M0
+      meagan: M0
+      sophia: M0
+      kelly: M0
+      cici: M0
+
+  # ── Daily send caps (charter §3: 15-20/day quality bar, hard ceiling 30) ───
+  # Inert at M0. sentinel.REPLY_HARD_CEILING_PER_ACCOUNT_PER_DAY (=30) is a code
+  # constant and clamps anything larger, so this key can only ever lower a cap.
+  daily_caps:
+    per_account_target: 18
+    accounts: {}          # per-account overrides, e.g. cici: 12
+
+  # ── Queue lifecycle ───────────────────────────────────────────────────────
+  # A stale reply is dead, not a backlog: past ttl_min the queue auto-kills the
+  # draft rather than presenting a late reply for approval. lease_s is how long
+  # a desktop session may hold a claim before the item returns to `queued`.
+  ttl_min: 45
+  lease_s: 600
+
+  # ── Opportunity scorer (deterministic; the LLM never scores) ──────────────
+  # EVERY WEIGHT BELOW IS A HYPOTHESIS (charter §8). The borrowed-distribution
+  # numbers come from an uncontrolled, survivorship-prone tracked cohort. They
+  # are initial values with a pre-registered evaluation plan, not measured
+  # truth; the parent-adjusted evaluation in XG-W6 grades them once samples
+  # exist. Every score persists its _components so a re-weighting is auditable
+  # without re-polling twitterapi.io.
+  score_weights:
+    author_tier: 0.26
+    age_fit: 0.22
+    velocity: 0.14
+    saturation: 0.14
+    beat_fit: 0.14
+    own_post: 0.06
+    relationship_stage: 0.04
+  score_params:
+    window_open_min: 5.0
+    window_close_min: 15.0
+    pre_window_ramp_min: 5.0
+    post_window_decay_min: 45.0
+    saturation_full: 60.0
+    velocity_hot: 40.0
+    min_score: 0.35
+
+  # ── Critic thresholds ─────────────────────────────────────────────────────
+  # parent_jaccard is the informational-surplus bar: a reply that is more than
+  # this similar to the post it answers has restated it, which the charter's
+  # acceptance gate rejects outright. corpus_jaccard is anti-sameness across our
+  # own replies, checked both within an account and across the portfolio
+  # (text-similarity clustering is a documented fleet-linkage signal).
+  critic_thresholds:
+    parent_jaccard: 0.55
+    corpus_jaccard: 0.50

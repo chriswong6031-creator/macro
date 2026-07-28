@@ -1207,6 +1207,16 @@ on:
       # config/personas/** above; the suite is listed by name so a TEST-ONLY
       # edit still reaches the lane that runs it.
       - "tests/test_marketing_desk_feeds.py"
+      # X Growth W4 (XG-W4): the reply desk — discovery provider, scorer,
+      # drafter, critics, queue, exporter, and the sentinel reply-counter fix.
+      # The engine modules are matched by engine/marketing/** above and
+      # config/marketing.yml + admin/marketing.py are already listed; these three
+      # are named so a PR that edits ONLY the operator-curated author register,
+      # ONLY the twitterapi.io sub-budget, or ONLY the suite still reaches the
+      # marketing-engine lane that runs the register validator and the tests.
+      - "config/reply_targets.yml"
+      - "config/press_sources.yml"
+      - "tests/test_marketing_reply_desk.py"
       # D02 per-post metrics poller + chart-image (PNG) pipeline. The poller
       # reads back Buffer analytics; media_publish uploads chart PNGs to R2;
       # content_studio renders the PNG at plan-build time. engine/marketing/**
