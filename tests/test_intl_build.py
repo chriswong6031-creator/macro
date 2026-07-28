@@ -150,6 +150,16 @@ def test_render_world_risk_v2_broad_strength_fallback():
     assert "no major market breaking down" in html
 
 
+def test_turn_board_cards_size_independently_and_hovers_stay_concise():
+    """One verbose market must not stretch its grid peers or every hover."""
+    template = (ROOT / "templates" / "intl.html.j2").read_text(encoding="utf-8")
+
+    assert ".tb-grid { display:grid;" in template
+    assert "align-items:start;" in template
+    assert "Higher = pricier than its own history" not in template
+    assert "Price state and recovery quality are separate" not in template
+
+
 def test_universe_ticker_conversion():
     assert _clean_local("8306") == "8306"                # JP code
     assert _clean_local("BP.") == "BP"                   # LSE trailing dot

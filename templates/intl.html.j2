@@ -335,7 +335,7 @@
   .twocol { display:grid; grid-template-columns:1fr 1fr; gap:14px; } @media (max-width:860px){ .twocol { grid-template-columns:1fr; } }
 
   /* ===== turn board (ITR) ===== */
-  .tb-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:10px; margin-top:12px; }
+  .tb-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); align-items:start; gap:10px; margin-top:12px; }
   .tb-tile { background:var(--panel2); border:1px solid var(--line); border-radius:12px; padding:12px 14px; position:relative; }
   .tb-tile.tb-hot { border-color:color-mix(in srgb,var(--down) 50%,var(--line)); background:color-mix(in srgb,var(--down) 5%,var(--panel2)); }
   .tb-tile.tb-warm { border-color:color-mix(in srgb,#d4a017 40%,var(--line)); background:color-mix(in srgb,#d4a017 4%,var(--panel2)); }
@@ -416,10 +416,6 @@
     background:color-mix(in srgb,var(--lens-mut,var(--muted,#8b93a1)) 55%,transparent); }
   .tbl-gauge-fill { position:absolute; inset:0 auto 0 0; width:var(--w,50%); border-radius:5px;
     background:linear-gradient(90deg,color-mix(in srgb,var(--lens-accent,#d4a017) 42%,transparent),var(--lens-accent,#d4a017)); }
-  .tbl-gauge-cap { margin-top:6px; font:450 11px/1.45 var(--font-ui,Inter,sans-serif);
-    color:color-mix(in srgb,var(--lens-text,var(--text,#e8ecf2)) 76%,var(--lens-mut,var(--muted,#8b93a1))); }
-  .tbl-note { margin:1px 16px 0; font:450 10px/1.4 var(--font-ui,Inter,sans-serif); font-style:italic;
-    color:color-mix(in srgb,var(--lens-mut,var(--muted,#8b93a1)) 88%,transparent); }
   @media (prefers-reduced-motion:no-preference) {
     .lens-pop.open .tbl-gauge-fill { transform:scaleX(0); transform-origin:0 50%;
       animation:tblGrow .62s cubic-bezier(.22,.9,.26,1.02) .12s both; }
@@ -714,7 +710,6 @@
             <b>{{ _ext_i }}<i>/100</i></b>
           </div>
           <div class="tbl-gauge-track"><span class="tbl-gauge-fill" style="--w:{{ _ext_i }}%"></span></div>
-          <div class="tbl-gauge-cap"><span class="l-en">Higher = pricier than its own history; past the 90 mark is richly extended.</span><span class="l-zh">越高＝相对自身历史越贵；越过 90 即属明显偏高。</span></div>
         </div>
         {% endif %}
         <div class="lens-body">
@@ -747,7 +742,6 @@
           <span class="l-zh">{{ _rc_zh|join(' · ')|safe }}</span>
         </div>
         {% endif %}
-        <div class="tbl-note"><span class="l-en">Price state and recovery quality are separate; unvalidated macro context never changes the signal.</span><span class="l-zh">价格状态与复苏质量分开；未经验证的宏观背景绝不改变信号。</span></div>
       </span>{# end .lens-src #}
       <div class="tb-hd">
         <span class="flg">{{ tile.flag }}</span>
