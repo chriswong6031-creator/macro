@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-28T22:55:27.886310+00:00",
-  "count": 284,
+  "generated_at": "2026-07-28T23:21:28.886337+00:00",
+  "count": 287,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -24,9 +24,55 @@
     "The Punchline",
     "UBS",
     "Weekly Preview",
+    "ZKB",
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-pouiaol0dbw-60895c",
+      "title": "Ersteinschätzung Forbo EN",
+      "institution": "ZKB",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T23:17:41Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-aiv8fhmnjao-c6ee7b",
+      "title": "Ersteinschätzung LEM EN",
+      "institution": "ZKB",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T23:17:39Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-pwpc5odfwbz-e2d922",
+      "title": "Ersteinschätzung Sika EN",
+      "institution": "ZKB",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T23:17:38Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-gwnwpgdgot6-9406cb",
       "title": "GS CAS Views The July FOMC – Goldman’s Take from Traders and Research",
