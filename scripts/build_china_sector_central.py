@@ -81,7 +81,8 @@ def main() -> int:
     # cycles DATA (sector_cycles_china_data.js) is written by build_china_sector_cycles, which
     # runs before this in daily.yml's cl_china; we copy the page assets and warn if data is absent.
     import shutil
-    for asset in ("sector_cycles.css", "sector_cycles.js"):
+    for asset in ("product-nav-icons.css", "dashboard-icons.css", "dashboard-icons.js",
+                  "sector_cycles.css", "sector_cycles.js"):
         src = root / "templates" / asset
         if src.exists():
             shutil.copy2(src, site / asset)
