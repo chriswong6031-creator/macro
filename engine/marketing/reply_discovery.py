@@ -611,25 +611,36 @@ class ReplyDiscoveryProvider:
         rotation_span = 0
         desks_covered = 0
         if accounts is not None:
-            want_accounts = list(accounts)
+            # An explicitly-passed list is still SORTED, so the rotation below
+            # operates on a stable order. A caller-supplied order would make the
+            # cursor index meaningless between ticks.
+            want_accounts = sorted(str(a) for a in accounts)
         else:
             want_accounts = sorted(
                 set((self.register.get("accounts") or {}).keys()) | set(self.our_accounts.keys())
             )
-            # ROTATE. A fixed alphabetical order plus a per-tick request cap
-            # starves the tail of the list forever — with 6 desks and a cap of
-            # 12, `meagan` and `sophia` were never polled on any tick. The
-            # rotation cursor lives in the same state blob as the spend counters.
-            ns = session_state.setdefault(STATE_NS, {})
-            start = int(ns.get("rotation", 0) or 0)
-            if want_accounts:
-                start %= len(want_accounts)
-                want_accounts = want_accounts[start:] + want_accounts[:start]
-                # The cursor is advanced AFTER the loop by the number of desks
-                # actually covered. Advancing by one here would re-poll the same
-                # desks every tick whenever the tick cap covers several, so the
-                # tail would still starve — just more slowly.
-                rotation_base, rotation_span = start, len(want_accounts)
+
+        # ROTATE — for EVERY caller, not only the default one. A fixed
+        # alphabetical order plus a per-tick request cap starves the tail of the
+        # list forever: with 6 desks and a cap of 12, `meagan` and `sophia` were
+        # never polled on any tick.
+        #
+        # This block used to sit inside the `else` above, so a caller passing
+        # `accounts` explicitly silently opted out of the fix. XG-W6's producer
+        # is the first real user of that parameter (it passes the non-halted
+        # desks), which would have reintroduced the exact starvation bug for
+        # every tick after a halt existed. The rotation cursor lives in the same
+        # state blob as the spend counters.
+        ns = session_state.setdefault(STATE_NS, {})
+        start = int(ns.get("rotation", 0) or 0)
+        if want_accounts:
+            start %= len(want_accounts)
+            want_accounts = want_accounts[start:] + want_accounts[:start]
+            # The cursor is advanced AFTER the loop by the number of desks
+            # actually covered. Advancing by one here would re-poll the same
+            # desks every tick whenever the tick cap covers several, so the
+            # tail would still starve — just more slowly.
+            rotation_base, rotation_span = start, len(want_accounts)
 
         truncated = False
         for account in want_accounts:

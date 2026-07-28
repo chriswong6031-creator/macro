@@ -564,6 +564,15 @@ class Handler(BaseHTTPRequestHandler):
             # these never travel the outbox rail.
             if path == "/api/marketing/reply-queue":
                 return self._json(marketing.reply_queue())
+            # XG-W6 learning loop: the weekly hook x format x register x account
+            # scorecard plus the learned-rule version log that ships beside it.
+            # Operator console only — nothing here is user-facing.
+            if path == "/api/marketing/learning":
+                return self._json(marketing.learning_scorecard())
+            # XG-W6 account health + network tripwire + the halt registry.
+            # Read-only: opening this panel can neither trip nor clear a halt.
+            if path == "/api/marketing/health":
+                return self._json(marketing.account_health())
             if path == "/api/marketing/publish":
                 return self._json(marketing.publisher())
             # The rejection box — everything rejected since the last export.
@@ -947,6 +956,32 @@ class Handler(BaseHTTPRequestHandler):
                 if not item_id or not isinstance(item_id, str):
                     return self._json({"ok": False, "error": "id required"}, 400)
                 res = marketing.reject_reply(item_id, reason=reason)
+                return self._json(res, 200 if res.get("ok") else 400)
+
+            # XG-W6 — clear ONE halted account. The health monitor cannot clear
+            # its own trip, so this route is the only way a halt ends. It halts
+            # nothing: there is deliberately no "halt account" route, because a
+            # halt is a consequence of measured telemetry, not a button.
+            if path == "/api/marketing/health/clear-halt":
+                account_id = b.get("account_id") or b.get("account")
+                actor = b.get("actor") or "admin"
+                note = b.get("note") or None
+                if not isinstance(account_id, str) or not account_id.strip():
+                    return self._json({"ok": False, "error": "account_id required"}, 400)
+                if note is not None and not isinstance(note, str):
+                    return self._json({"ok": False, "error": "note must be a string"}, 400)
+                res = marketing.clear_halt(account_id, actor=str(actor), note=note)
+                return self._json(res, 200 if res.get("ok") else 400)
+
+            # XG-W6 — roll back one applied learned rule. Charter §8: a rule
+            # that cannot be reverted may not be learned, so every applied rule
+            # has a live path back through here.
+            if path == "/api/marketing/learning/rollback":
+                version_id = b.get("version_id") or b.get("id")
+                actor = b.get("actor") or "admin"
+                if not isinstance(version_id, str) or not version_id.strip():
+                    return self._json({"ok": False, "error": "version_id required"}, 400)
+                res = marketing.rollback_learned_rule(version_id, actor=str(actor))
                 return self._json(res, 200 if res.get("ok") else 400)
 
             # Export the rejection box as an annotatable markdown sheet. Clears

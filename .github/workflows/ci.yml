@@ -1235,6 +1235,26 @@ on:
       - "config/reply_targets.yml"
       - "config/press_sources.yml"
       - "tests/test_marketing_reply_desk.py"
+      # X Growth W6 (XG-W6): the ONE feedback loop (labels store + weekly
+      # scorecard), parent-adjusted reply labels, the per-account health monitor
+      # + network tripwire + halt registry, the pre-registered blind-identity
+      # eval, the learned-rule version log, and the reply-desk PRODUCER. The
+      # engine modules are matched by engine/marketing/** above and
+      # config/marketing.yml + admin/marketing.py are already listed; these are
+      # named so a PR that edits ONLY the nightly step, ONLY the prereg document,
+      # or ONLY a suite still reaches the marketing-engine lane. The prereg doc
+      # is listed because a test asserts the doc and blind_identity.PREREG agree
+      # on every number — a prereg that can drift from its own doc is not one.
+      - "scripts/marketing_learning_nightly.py"
+      - "scripts/marketing_fastlane_daemon.py"
+      - "docs/blind_identity_eval_prereg.md"
+      - "tests/test_marketing_learning.py"
+      - "tests/test_marketing_reply_producer.py"
+      # The shared fixture both XG-W6 suites import. Listed by name for the same
+      # reason the suites are: an edit to ONLY this helper changes what both
+      # suites assert, and without the entry it would never reach the lane that
+      # runs them (test-whitelist-rot).
+      - "tests/_xgw6_helpers.py"
       # D02 per-post metrics poller + chart-image (PNG) pipeline. The poller
       # reads back Buffer analytics; media_publish uploads chart PNGs to R2;
       # content_studio renders the PNG at plan-build time. engine/marketing/**

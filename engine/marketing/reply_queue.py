@@ -18,13 +18,18 @@ Why a separate store (charter §5, load-bearing facts):
     A reply outside its window is worse than no reply, so ``expires_at`` is
     enforced by the store itself, not by a caller's good intentions.
 
-**Producer status (honest).** The connective tissue that walks discovery output
-through the scorer and drafter and enqueues survivors is NOT in this wave — it
-lands in XG-W6 with the telemetry wiring. Every piece exists and is callable;
-the scheduled loop does not. That is precisely why the critic guarantee is
-enforced HERE rather than in a producer: ``validate_item`` refuses any item
-without a full passing critic stamp, so "everything that reaches the desktop
-cleared the critics" is true of whatever eventually fills this store.
+**Producer status.** XG-W4 shipped every piece and no connective tissue; XG-W6
+built it. ``engine/marketing/reply_producer.py`` walks discovery -> score ->
+draft -> critics -> ``enqueue`` on the wire daemon's host
+(``marketing_fastlane_daemon.py --lane reply``), dark until
+``reply_desk.producer.enabled``. It still sends nothing: output lands in the M0
+queue and only ``reply_export`` at M1+ reaches the desktop lane.
+
+The critic guarantee stays enforced HERE rather than in that producer, and that
+is the whole point of where it lives: ``validate_item`` refuses any item without
+a full passing critic stamp, so "everything that reaches the desktop cleared the
+critics" is a property of the STORE — true of the producer, of an operator's
+one-off script, and of whatever fills this store next.
 
 Three laws this module enforces that live nowhere else:
 

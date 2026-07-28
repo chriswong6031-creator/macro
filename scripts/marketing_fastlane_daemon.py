@@ -1,15 +1,22 @@
 """scripts/marketing_fastlane_daemon.py — Runner for the marketing fast lanes.
 
-Drives two intraday lanes:
+Drives three intraday lanes:
     earnings  the original earnings fast lane (earnings_feed + fastlane.run_tick).
     press     PRESS-FEEDS B1 (D05 Addendum 2) — the Trump/markets wire spine:
               wire RSS (breaking_feed.poll_all) + press providers
               (press_providers.poll_all: trumpstruth mirror, twitterapi.io x_relay,
               CNN backfill) -> relevance -> corroboration -> summarize-with-citation
               -> emit kind="breaking" outbox items with scheduled_at="immediate".
+    reply     XG-W6 reply-desk PRODUCER — reply_producer.run_producer:
+              twitterapi.io discovery (reply sub-budget, since-id cursors) ->
+              deterministic scorer -> per-persona drafter -> the eight critics ->
+              reply_queue.enqueue. NOTHING SENDS: output lands in the M0 queue for
+              operator review, and only reply_export at M1+ hands anything to the
+              desktop lane. This lane runs HERE, on the wire daemon's host, and
+              never on the render path.
 
 Usage:
-    python scripts/marketing_fastlane_daemon.py [--lane earnings|press|all] \
+    python scripts/marketing_fastlane_daemon.py [--lane earnings|press|reply|all] \
         [--once] [--dry-run] [--interval N]
 
 Flags:
@@ -25,6 +32,12 @@ Kill-switches (BOTH gate press emission):
     MARKETING_PUBLISH_ENABLED not set  -> the press lane still runs the pipeline
                                           but emits NOTHING to the outbox (a clean
                                           no-op tick). --dry-run forces this too.
+
+Reply-lane arming (separate from the two above — the producer bills
+twitterapi.io, so it does not inherit the wire lane's switch):
+    reply_desk.producer.enabled: true in config/marketing.yml, AND
+    TWITTERAPI_IO_KEY in the environment. Absent either, the lane is a clean
+    no-op. Sending is a further, independent step (the mode dial).
 
 Heartbeat:
     Each successful tick touches data/marketing/fastlane_heartbeat.txt with the
@@ -195,6 +208,61 @@ def _run_one_tick(*, dry_run: bool, armed: bool = True) -> dict:
     result = run_tick(events, root=ROOT, now=now, dry_run=dry_run, cta=_cta,
                       cfg=_cfg, spool=True)
     return result
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Single reply-producer tick (XG-W6)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _run_reply_tick(*, dry_run: bool) -> dict:
+    """Run one reply-desk producer tick: discover -> score -> draft -> critics -> enqueue.
+
+    NOTHING SENDS. The producer fills the M0 queue; the mode dial and
+    ``reply_export`` decide, separately and later, whether anything ever leaves.
+
+    Zero repo writes: the queue and the discovery cursors live in host state
+    (``~/.mastermind/reply_desk``), and the only in-checkout write is the
+    gitignored labels host spool.
+
+    ``--dry-run`` maps to the producer's ``offline=True``, which is the dry-run
+    law for a BILLED provider: zero network, zero spend, and therefore zero
+    targets. The tick still reports what it would have done with an empty
+    target list rather than simulating one.
+    """
+    from engine.marketing.reply_producer import run_producer
+
+    now = datetime.now(timezone.utc)
+    marketing_cfg = _load_yaml(ROOT / "config" / "marketing.yml")
+    press_cfg = _load_yaml(ROOT / "config" / "press_sources.yml")
+
+    return run_producer(
+        cfg=marketing_cfg,
+        press_cfg=press_cfg,
+        root=ROOT,
+        # store=None resolves to the reply desk's own host-state root
+        # (MASTERMIND_REPLY_DESK_DIR, else ~/.mastermind/reply_desk).
+        store=None,
+        now=now,
+        offline=bool(dry_run),
+    )
+
+
+def _log_reply_tick(result: dict, now: datetime, *, dry_run: bool) -> None:
+    tag = " [DRY-RUN]" if dry_run else ""
+    if not result.get("enabled"):
+        logger.info("[reply]%s tick skipped — %s", tag,
+                    result.get("note") or "producer disabled")
+        return
+    logger.info(
+        "[reply]%s tick | targets=%d eligible=%d drafted=%d critic_rejected=%d "
+        "enqueued=%d abstained=%d halted=%s spend=%s",
+        tag, result.get("targets", 0), result.get("eligible", 0),
+        result.get("drafted", 0), result.get("critic_rejected", 0),
+        result.get("enqueued", 0), result.get("abstained", 0),
+        result.get("halted") or [], result.get("spend") or {},
+    )
+    for refusal in (result.get("refused") or [])[:5]:
+        logger.info("[reply] refused: %s", refusal)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -570,7 +638,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--lane",
-        choices=("earnings", "press", "all"),
+        choices=("earnings", "press", "reply", "all"),
         default="earnings",
         help="Which lane(s) to drive (default: earnings, for back-compat).",
     )
@@ -621,6 +689,13 @@ def main(argv: list[str] | None = None) -> int:
             if args.lane in ("press", "all"):
                 press_result = _run_press_tick(dry_run=args.dry_run)
                 _log_press_tick(press_result, now, dry_run=args.dry_run)
+            if args.lane in ("reply", "all"):
+                # XG-W6 reply-desk producer. Its own config gate
+                # (reply_desk.producer.enabled) keeps it dark by default, so
+                # `--lane all` on an unarmed deployment is a logged no-op rather
+                # than a surprise spend against the twitterapi.io bucket.
+                reply_result = _run_reply_tick(dry_run=args.dry_run)
+                _log_reply_tick(reply_result, now, dry_run=args.dry_run)
             if not args.dry_run:
                 _touch_heartbeat(now)
         except Exception as exc:  # noqa: BLE001
