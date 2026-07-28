@@ -1,0 +1,443 @@
+"""tests/test_marketing_chart_coverage.py — every ticker post carries a chart.
+
+Pins the 2026-07-28 defect the operator reported from the Outbox: four queued
+posts, all naming a ticker, none carrying an illustration —
+
+    "$LKFN chart I keep coming back to  …  mine's on the chart."   (no chart)
+    "Radar check on $CVI — near entry. Nothing's triggered."       (no chart)
+
+Four independent causes, one per section below:
+
+  1. content_plan charted ONLY `type == "signal"`, so the `chart`, `watchlist`
+     and `receipt` types were structurally incapable of carrying an image.
+  2. The live-price gate VETOED the chart instead of choosing its variant, so an
+     item about to be demoted signal→watchlist lost its card on the way.
+  3. chart_render read daily bars from data/stocks/ alone (232 large caps) while
+     Prophet picks its signals from data/baskets/ohlcv/ (2,758 names) — 30 of the
+     43 tickers in the plan, including all four the operator saw, had no bars
+     anywhere marketing could find them.
+  4. The chart_id was deduped GLOBALLY, so the first desk to chart a ticker
+     locked every other desk out of it.
+
+The operator's law: a post that names a ticker gets a chart. Only a post with no
+ticker (education / macro / a company event) may ship text-only.
+"""
+from __future__ import annotations
+
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+import pytest
+
+
+def _worktree_root() -> Path:
+    p = Path(__file__).resolve()
+    for candidate in [p.parent, p.parent.parent, p.parent.parent.parent]:
+        if (candidate / "engine").is_dir():
+            return candidate
+    raise RuntimeError(f"Could not locate repo root from {p}")
+
+
+ROOT = _worktree_root()
+_FRESH = (datetime.now(timezone.utc).date() - timedelta(days=3)).isoformat()
+
+# Ticker-bearing post types. `mover` is charted by its own reach lane.
+_CHARTABLE = ("signal", "chart", "watchlist", "receipt")
+
+
+def _plan(asset: str, *, entry: float, signal_date: str) -> dict:
+    return {
+        "id": f"{asset}-BULL", "asset": asset, "direction": "BULL",
+        "entry": entry, "invalidation": entry * 0.85,
+        "targets": [entry * 1.15, entry * 1.3], "trigger": entry,
+        "_conviction_score": 88, "_signal_date": signal_date,
+        "phase": "triggered_pre_t1", "recommended_action": "hold",
+        "management_confidence": 65.0, "what_to_do_now": [],
+    }
+
+
+def _series(n: int = 140, start: float = 100.0):
+    dates, closes = [], []
+    d = datetime.now(timezone.utc).date() - timedelta(days=n)
+    for i in range(n):
+        dates.append((d + timedelta(days=i)).isoformat())
+        closes.append(start + i * 0.10)
+    return dates, closes
+
+
+# ---------------------------------------------------------------------------
+# 1. Cause one: the type filter
+# ---------------------------------------------------------------------------
+
+def test_every_ticker_bearing_type_can_carry_a_chart():
+    """`chart` / `watchlist` / `receipt` posts must be chartable, not just `signal`.
+
+    This is the operator's headline defect: a post headed "$LKFN chart I keep
+    coming back to" whose body says "mine's on the chart", shipped with no chart.
+    """
+    from engine.marketing.content_studio import content_plan
+
+    dates, closes = _series()
+    plans = [_plan(t, entry=closes[-1], signal_date=_FRESH)
+             for t in ("PLTR", "SBUX", "MSFT", "EQT", "ROST", "GM")]
+    cfg = {"desk_network": {"stage": "A", "accounts": [
+        {"id": "flagship", "kind": "branded", "beat": "b", "voice": "authoritative desk"},
+    ]}}
+    plan = content_plan(cfg, plans, closes_loader=lambda t: (dates, closes), root=ROOT)
+
+    d1 = [q for a in plan["accounts"] for q in a["queue"]
+          if str(q.get("slot", "")).startswith("D1-") and q.get("ticker")]
+    assert d1, "fixture produced no D1 ticker posts — the test would pass vacuously"
+
+    uncharted = [q for q in d1 if q["type"] in _CHARTABLE and not q.get("chart_id")]
+    assert not uncharted, (
+        "ticker-bearing D1 posts shipped with no chart_id: "
+        + ", ".join(f"{q['slot']}/{q['type']}/{q['ticker']}" for q in uncharted)
+    )
+
+    # And the types that were previously excluded are genuinely represented,
+    # so a plan that happened to contain only `signal` cannot fake a pass.
+    seen = {q["type"] for q in d1 if q.get("chart_id")}
+    assert seen - {"signal"}, (
+        f"only `signal` posts got charts ({seen}) — the type filter is still "
+        "signal-only and the defect is not actually pinned"
+    )
+
+
+def test_a_post_with_no_ticker_stays_text_only():
+    """The operator's carve-out: no ticker (education / macro) → no chart needed."""
+    from engine.marketing.content_studio import content_plan
+
+    dates, closes = _series()
+    plans = [_plan("PLTR", entry=closes[-1], signal_date=_FRESH)]
+    cfg = {"desk_network": {"stage": "A", "accounts": [
+        {"id": "flagship", "kind": "branded", "beat": "b", "voice": "authoritative desk"},
+    ]}}
+    plan = content_plan(cfg, plans, closes_loader=lambda t: (dates, closes), root=ROOT)
+
+    for a in plan["accounts"]:
+        for q in a["queue"]:
+            if not q.get("ticker") and q.get("type") not in ("mover", "theme_list"):
+                assert not q.get("chart_id"), (
+                    f"{q['slot']}/{q['type']} has no ticker but was given a chart"
+                )
+
+
+# ---------------------------------------------------------------------------
+# 2. Cause two: the live gate picks the VARIANT, it does not veto the chart
+# ---------------------------------------------------------------------------
+
+def test_stale_signal_still_gets_a_card_but_without_the_setup_marker():
+    """A signal that fails the live gate is demoted to `watchlist` further down
+    content_plan. It must keep a chart — a "watching, not triggered" post needs
+    the tape MORE than a live signal does — but must NOT wear the SETUP pill,
+    which would contradict its own copy."""
+    from engine.marketing.content_studio import content_plan
+
+    dates, closes = _series()
+    # Eligibility (is_postable_signal) and actionability (verify_signal_live) are
+    # DIFFERENT gates. A stale date fails both, so no post would exist at all —
+    # use a fresh signal whose price has run away past the +12% entry band: it is
+    # postable, but no longer an actionable entry, which is exactly the item that
+    # gets demoted signal→watchlist.
+    plans = [_plan(t, entry=closes[-1] / 1.5, signal_date=_FRESH)
+             for t in ("PLTR", "SBUX", "MSFT", "EQT")]
+    cfg = {"desk_network": {"stage": "A", "accounts": [
+        {"id": "flagship", "kind": "branded", "beat": "b", "voice": "authoritative desk"},
+    ]}}
+    plan = content_plan(cfg, plans, closes_loader=lambda t: (dates, closes), root=ROOT)
+
+    charts = {c["id"]: c for c in plan["featured_charts"]}
+    d1 = [q for a in plan["accounts"] for q in a["queue"]
+          if str(q.get("slot", "")).startswith("D1-") and q.get("ticker")
+          and q["type"] in _CHARTABLE]
+    assert d1, "fixture produced no D1 ticker posts"
+
+    charted = [q for q in d1 if q.get("chart_id")]
+    assert charted, (
+        "a stale signal lost its chart entirely — the live gate is still "
+        "vetoing the card instead of downgrading it to the tape variant"
+    )
+    for q in charted:
+        fc = charts[q["chart_id"]]
+        assert fc.get("variant") == "tape", (
+            f"{q['slot']} is a stale/demoted signal but got the "
+            f"{fc.get('variant')!r} card"
+        )
+        assert "SETUP" not in (fc.get("svg") or ""), (
+            f"{q['slot']} carries a SETUP pill on a post that is not an entry claim"
+        )
+
+
+def test_live_signal_keeps_the_setup_marker():
+    """The converse: a genuinely live signal still gets the marked card, so the
+    tape variant cannot silently swallow every chart."""
+    from engine.marketing.content_studio import content_plan
+
+    dates, closes = _series()
+    plans = [_plan(t, entry=closes[-1], signal_date=_FRESH)
+             for t in ("PLTR", "SBUX", "MSFT", "EQT")]
+    cfg = {"desk_network": {"stage": "A", "accounts": [
+        {"id": "flagship", "kind": "branded", "beat": "b", "voice": "authoritative desk"},
+    ]}}
+    plan = content_plan(cfg, plans, closes_loader=lambda t: (dates, closes), root=ROOT)
+
+    charts = {c["id"]: c for c in plan["featured_charts"]}
+    sig = [q for a in plan["accounts"] for q in a["queue"]
+           if str(q.get("slot", "")).startswith("D1-")
+           and q.get("type") == "signal" and q.get("chart_id")]
+    assert sig, "no live signal post got a chart — fixture is not exercising the path"
+    assert any(charts[q["chart_id"]].get("variant") == "signal" for q in sig), (
+        "no live signal received the marked `signal` card variant"
+    )
+
+
+def test_invalidated_plan_is_still_never_charted():
+    """The standing law survives the widened type filter: an invalidated plan
+    must not reach a chart through the new `watchlist`/`chart` doors either."""
+    from engine.marketing.content_studio import content_plan
+
+    dates, closes = _series()
+    bad = _plan("QCOM", entry=closes[-1], signal_date=_FRESH)
+    bad.update({"phase": "invalidated", "recommended_action": "invalidated",
+                "management_confidence": 13.5})
+    plans = [_plan(t, entry=closes[-1], signal_date=_FRESH)
+             for t in ("PLTR", "SBUX", "MSFT")] + [bad]
+    cfg = {"desk_network": {"stage": "A", "accounts": [
+        {"id": "flagship", "kind": "branded", "beat": "b", "voice": "authoritative desk"},
+    ]}}
+    plan = content_plan(cfg, plans, closes_loader=lambda t: (dates, closes), root=ROOT)
+    assert "QCOM" not in {c["ticker"] for c in plan["featured_charts"]}
+
+
+# ---------------------------------------------------------------------------
+# 3. Cause three: the loaders must look where Prophet looks
+# ---------------------------------------------------------------------------
+
+def test_price_search_order_matches_prophet():
+    """chart_render must read the same tree build_prophet reads, in the same
+    order. Marketing looking only at data/stocks/ is what left 30 of the plan's
+    43 tickers with no bars at all."""
+    from engine.marketing.chart_render import _PRICE_SUBDIRS
+
+    assert _PRICE_SUBDIRS[0] == "data/baskets/ohlcv", (
+        "the wide basket tree must be searched FIRST — it is where Prophet "
+        "picks the signals marketing publishes"
+    )
+    assert "data/stocks" in _PRICE_SUBDIRS
+
+    prophet = (ROOT / "scripts" / "build_prophet.py").read_text(encoding="utf-8")
+    assert '["data/baskets/ohlcv", "data/stocks"]' in prophet, (
+        "build_prophet's search order moved — chart_render._PRICE_SUBDIRS must "
+        "move with it or marketing goes blind on the tickers Prophet chooses"
+    )
+
+
+def test_loaders_find_a_baskets_only_ticker():
+    """A ticker present ONLY in data/baskets/ohlcv must load. $CBOE and $LKFN are
+    the operator's own uncharted posts and both are baskets-only names."""
+    from engine.marketing.chart_render import load_closes, load_ohlcv
+
+    baskets = ROOT / "data" / "baskets" / "ohlcv"
+    stocks = ROOT / "data" / "stocks"
+    if not baskets.is_dir():
+        pytest.skip("data/baskets/ohlcv is not present in this checkout")
+
+    candidates = [p.stem for p in sorted(baskets.glob("*.parquet"))[:400]
+                  if not (stocks / f"{p.stem}.parquet").exists()]
+    if not candidates:
+        pytest.skip("no baskets-only ticker available to exercise the fallback")
+    ticker = candidates[0]
+
+    got_closes = load_closes(ticker, ROOT, n=90)
+    assert got_closes is not None, (
+        f"{ticker} exists in data/baskets/ohlcv but load_closes returned None — "
+        "marketing is still reading data/stocks/ alone"
+    )
+    dates, closes = got_closes
+    assert len(closes) > 10 and all(isinstance(c, float) for c in closes)
+
+    bars = load_ohlcv(ticker, ROOT, n=90)
+    assert bars is not None, f"load_ohlcv found no bars for {ticker}"
+    d, o, h, l, c, v = bars
+    assert len({len(d), len(o), len(h), len(l), len(c), len(v)}) == 1
+    # The baskets tree carries REAL opens — they must not all be the prev close.
+    assert any(abs(oo - cc) > 1e-9 for oo, cc in zip(o[1:], c[:-1])), (
+        "every open equals the previous close — the real `open` column is being "
+        "ignored in favour of the prev-close proxy"
+    )
+
+
+# ---------------------------------------------------------------------------
+# 4. Cause four: chart ids are per-account (the shared-media guard)
+# ---------------------------------------------------------------------------
+
+def test_two_desks_never_share_a_chart_id():
+    """sentinel.gate_plan quarantines a second account carrying a chart_id another
+    desk already used (reason shared_media:<id>) — two desks posting the identical
+    image is the coordinated-posting fingerprint. Sharing ids to save a raster
+    silently cost real posts."""
+    from engine.marketing.content_studio import content_plan
+
+    dates, closes = _series()
+    plans = [_plan(t, entry=closes[-1], signal_date=_FRESH)
+             for t in ("PLTR", "SBUX", "MSFT", "EQT")]
+    cfg = {"desk_network": {"stage": "A", "accounts": [
+        {"id": "flagship", "kind": "branded", "beat": "b", "voice": "authoritative desk"},
+        {"id": "founder", "kind": "branded", "beat": "c", "voice": "specialist"},
+    ]}}
+    plan = content_plan(cfg, plans, closes_loader=lambda t: (dates, closes), root=ROOT)
+
+    owner: dict[str, str] = {}
+    for a in plan["accounts"]:
+        for q in a["queue"]:
+            cid = q.get("chart_id")
+            if not cid:
+                continue
+            prev = owner.setdefault(cid, a["id"])
+            assert prev == a["id"], (
+                f"chart_id {cid} is used by both {prev!r} and {a['id']!r} — the "
+                "Sentinel will quarantine the second desk as shared_media"
+            )
+
+
+def test_a_second_desk_is_not_starved_of_a_ticker():
+    """The old global dedupe meant the first desk to chart a ticker locked all
+    others out — the founder desk's own $EQT and $ROST posts got nothing."""
+    from engine.marketing.content_studio import content_plan
+
+    dates, closes = _series()
+    plans = [_plan("PLTR", entry=closes[-1], signal_date=_FRESH)]
+    cfg = {"desk_network": {"stage": "A", "accounts": [
+        {"id": "flagship", "kind": "branded", "beat": "b", "voice": "authoritative desk"},
+        {"id": "founder", "kind": "branded", "beat": "c", "voice": "specialist"},
+    ]}}
+    plan = content_plan(cfg, plans, closes_loader=lambda t: (dates, closes), root=ROOT)
+
+    charted_desks = {
+        a["id"] for a in plan["accounts"]
+        for q in a["queue"]
+        if str(q.get("slot", "")).startswith("D1-") and q.get("chart_id")
+    }
+    assert charted_desks >= {"flagship", "founder"}, (
+        f"only {charted_desks} got charts on the single shared ticker — a "
+        "global ticker dedupe is starving the other desk"
+    )
+
+
+# ---------------------------------------------------------------------------
+# 5. The deferred raster: pay only for cards that actually post
+# ---------------------------------------------------------------------------
+
+def test_raster_plan_media_only_pays_for_survivors_and_prunes_the_rest():
+    """content_plan renders an SVG per candidate (cheap); the PNG raster is one
+    headless-Chrome launch (~13s) and must be spent only on cards attached to a
+    post that survived the gate."""
+    from engine.marketing import content_studio as cs
+
+    calls: list[str] = []
+
+    def _fake_attach(fc, **kw):
+        calls.append(fc["id"])
+        fc["media_png_path"] = f"data/marketing/outbox/media/x/{fc['id']}.png"
+
+    plan = {
+        "as_of": "2026-07-28",
+        "featured_charts": [
+            {"id": "chart-001", "svg": "<svg/>", "_defer": {"closes": [1.0, 2.0],
+                                                            "dates": ["a", "b"],
+                                                            "marker_index": 1,
+                                                            "subtitle": "s"}},
+            {"id": "chart-002", "svg": "<svg/>", "_defer": {"closes": [1.0, 2.0],
+                                                            "dates": ["a", "b"],
+                                                            "marker_index": 1,
+                                                            "subtitle": "s"}},
+            {"id": "chart-003", "svg": "<svg/>", "_defer": {"closes": [1.0, 2.0],
+                                                            "dates": ["a", "b"],
+                                                            "marker_index": 1,
+                                                            "subtitle": "s"}},
+            {"id": "chart-900", "svg": "<svg/>"},  # reach-lane card, no blob
+        ],
+        "accounts": [{"id": "flagship", "queue": [
+            {"slot": "D1-S1", "chart_id": "chart-001", "sentinel_ok": True},
+            {"slot": "D1-S2", "chart_id": "chart-002", "sentinel_ok": False,
+             "status": "quarantined"},
+            {"slot": "D2-S1", "chart_id": "chart-003", "sentinel_ok": True},
+        ]}],
+    }
+
+    orig = cs._attach_chart_media
+    cs._attach_chart_media = _fake_attach
+    try:
+        counts = cs.raster_plan_media(plan, cfg={"publish": {"media_enabled": True}},
+                                      root=None)
+    finally:
+        cs._attach_chart_media = orig
+
+    assert calls == ["chart-001"], (
+        f"rastered {calls} — expected only the surviving D1 card. A quarantined "
+        "post and a D2 post can never carry an image, so neither may cost a "
+        "Chrome launch."
+    )
+    assert counts["rastered"] == 1
+    assert counts["pruned"] == 2
+
+    kept = {c["id"] for c in plan["featured_charts"]}
+    assert kept == {"chart-001", "chart-900"}, (
+        f"kept {kept} — non-shipping cards must be pruned out of the artifact "
+        "(each SVG is ~45KB), and reach-lane cards must be kept"
+    )
+    assert all("_defer" not in c for c in plan["featured_charts"]), (
+        "the internal deferral blob leaked into the written artifact"
+    )
+
+
+def test_defer_media_leaves_no_scaffolding_when_no_raster_pass_runs():
+    """defer_media is internal: a caller that never runs the raster pass must
+    still be able to serialize the plan."""
+    import json
+
+    from engine.marketing.content_studio import content_plan, raster_plan_media
+
+    dates, closes = _series()
+    plans = [_plan("PLTR", entry=closes[-1], signal_date=_FRESH)]
+    cfg = {"desk_network": {"stage": "A", "accounts": [
+        {"id": "flagship", "kind": "branded", "beat": "b", "voice": "authoritative desk"},
+    ]}}
+    plan = content_plan(cfg, plans, closes_loader=lambda t: (dates, closes),
+                        root=ROOT, defer_media=True)
+    raster_plan_media(plan, cfg={"publish": {"media_enabled": False}}, root=None)
+    json.dumps(plan)  # must not raise on a stray non-serializable blob
+    assert all("_defer" not in c for c in plan.get("featured_charts") or [])
+
+
+# ---------------------------------------------------------------------------
+# 6. The Sentinel media cap must not cost a desk its posts
+# ---------------------------------------------------------------------------
+
+def test_ramp_media_cap_never_sits_below_the_post_cap():
+    """A media cap BELOW the post cap does not strip the image — it QUARANTINES
+    the post (reason media_cap_daily). With every ticker post now carrying a
+    chart, a lower media cap would silently halve a cold desk's daily volume.
+    The base block already states the two "must move together"; the ramp tiers
+    have to honour it as well."""
+    import yaml
+
+    cfg = yaml.safe_load((ROOT / "config" / "marketing.yml").read_text(encoding="utf-8"))
+    ramp = (cfg.get("sentinel") or {}).get("ramp") or {}
+    tiers = {k: v for k, v in ramp.items() if isinstance(v, dict)}
+    assert tiers, "no ramp tiers found — the guard would pass vacuously"
+
+    for name, row in tiers.items():
+        posts = row.get("max_posts_per_account_per_day")
+        media = row.get("max_media_posts_per_account_per_day")
+        if posts is None or media is None:
+            continue
+        if media == -1:
+            continue  # unlimited
+        assert media >= posts, (
+            f"ramp tier {name}: max_media_posts_per_account_per_day={media} is "
+            f"below max_posts_per_account_per_day={posts}. Every ticker post "
+            f"carries a chart, so {posts - media} post(s)/day would be "
+            f"quarantined as media_cap_daily rather than shipped."
+        )

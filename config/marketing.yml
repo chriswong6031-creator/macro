@@ -234,7 +234,12 @@ sentinel:
       max_posts_per_account_per_day: 2
       min_minutes_between_posts: 45
       links_allowed: false
-      max_media_posts_per_account_per_day: 1
+      # Tracks max_posts_per_account_per_day ON PURPOSE — see the base block's
+      # note: charts and daily volume "must move together". A media cap BELOW
+      # the post cap does not strip the image, it QUARANTINES the post
+      # (reason media_cap_daily), so every ticker post now carrying a chart
+      # would have cost this desk half its daily volume. (operator 2026-07-28)
+      max_media_posts_per_account_per_day: 2
       max_same_cashtag_per_account_per_day: 1
       max_replies_per_account_per_day: 0
       max_new_follows_per_account_per_day: 0
@@ -251,7 +256,7 @@ sentinel:
       max_posts_per_account_per_day: 3
       min_minutes_between_posts: 45
       links_allowed: false
-      max_media_posts_per_account_per_day: 2
+      max_media_posts_per_account_per_day: 3
       max_same_cashtag_per_account_per_day: 2
       max_replies_per_account_per_day: 0
       max_new_follows_per_account_per_day: 0
@@ -261,7 +266,7 @@ sentinel:
       max_posts_per_account_per_day: 4
       min_minutes_between_posts: 45
       links_allowed: true   # ≤1 link post/day enforced by actuator
-      max_media_posts_per_account_per_day: 3
+      max_media_posts_per_account_per_day: 4
       max_same_cashtag_per_account_per_day: 2
       max_replies_per_account_per_day: 2   # Sentinel-gated
       max_new_follows_per_account_per_day: 5   # manual-only; actuator must NOT script follows
