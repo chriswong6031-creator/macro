@@ -2197,7 +2197,7 @@ class TestAdminReplyQueuePanel:
 
         item = _item()
         rq.enqueue(item, store)
-        payload = adm.reply_queue(root=ROOT, store=store)
+        payload = adm.reply_queue(root=ROOT, store=store, now=NOW)
         assert payload["ok"] is True
         [block] = payload["accounts"]
         assert block["id"] == "kelly"
@@ -2208,7 +2208,7 @@ class TestAdminReplyQueuePanel:
         from admin import marketing as adm
 
         rq.enqueue(_item(), store)
-        payload = adm.reply_queue(root=ROOT, store=store)
+        payload = adm.reply_queue(root=ROOT, store=store, now=NOW)
         block = payload["accounts"][0]
         assert block["mode"] == "M0"
         assert block["cap"] == 0, "M0 must render a zero cap"
@@ -2228,7 +2228,7 @@ class TestAdminReplyQueuePanel:
         from admin import marketing as adm
 
         rq.enqueue(_item(), store)
-        row = adm.reply_queue(root=ROOT, store=store)["accounts"][0]["awaiting"][0]
+        row = adm.reply_queue(root=ROOT, store=store, now=NOW)["accounts"][0]["awaiting"][0]
         assert row["score_components"] == {"author_tier": 0.26}
 
     def test_approve_moves_the_item(self, store):
