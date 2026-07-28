@@ -227,6 +227,12 @@ wire:
   wires_sink_paths:
     - "/var/lib/macro-live/public/live/wires.json"
     - "data/marketing/press/wires.json"
+  # B4c: give each NEW rail item a Chinese twin via the cached news translator
+  # (engine/news_translate.py — hash-cached, so a headline costs one cheap call
+  # for its whole life in the window). Independently disarmable here; it also
+  # stays dark on its own when news_translation is disabled or unkeyed, and an
+  # item without `zh` renders as English plus a plain "英文原文" marker.
+  zh_enabled: true
 
   # ── B2-COPY wire voice ────────────────────────────────────────────────────
   # Rotating opener pool (deterministic hash + per-account no-repeat), key-phrase

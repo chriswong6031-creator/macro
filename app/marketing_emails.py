@@ -483,6 +483,7 @@ def welcome_message(identity: str) -> tuple[str, str, str]:
         why_en="You received this because you created a Mastermind account.",
         why_zh="你收到这封邮件，是因为你注册了 Mastermind 账户。",
         unsubscribe_url=unsub_page_url(identity),
+        follow=True,   # XG-W7: marketing sends only — never a receipt or a support reply
     )
     return "You're in · 欢迎加入", html, text
 
@@ -743,6 +744,7 @@ def campaign_message(campaign: dict, identity: str) -> tuple[str, str, str]:
         why_en="You received this because you hold a Mastermind account.",
         why_zh="你收到这封邮件，是因为你拥有 Mastermind 账户。",
         unsubscribe_url=unsub_page_url(identity),
+        follow=True,   # XG-W7: marketing sends only — never a receipt or a support reply
     )
     return subject, html, text
 

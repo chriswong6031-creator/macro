@@ -478,6 +478,40 @@ def _merge_wires_window(
     return merged
 
 
+def _attach_zh(new_items: list, wire_cfg: dict) -> None:
+    """B4c: give this tick's NEW rail items a Chinese twin, in place (fail-soft).
+
+    The news.html rail is a bilingual surface, but wire copy arrives in English.
+    Only items entering the window this tick are translated — the persisted ones
+    already carry their `zh`, and engine.news_translate caches by text hash — so
+    each headline costs at most one cheap translation for its whole lifetime.
+
+    Fail-soft is the whole contract: translate_to_zh returns None per item when
+    the feature is disabled, unkeyed, rate-limited or malformed, and an item
+    simply ships without `zh`. The client then renders the English text with a
+    plain "英文原文" marker rather than passing English off as translated, so a
+    dead translator degrades to honest disclosure, never to a blank rail.
+    """
+    if not new_items or not wire_cfg.get("zh_enabled", True):
+        return
+    pending = [it for it in new_items
+               if isinstance(it, dict) and it.get("en") and not it.get("zh")]
+    if not pending:
+        return
+    try:
+        from engine.news_translate import translate_to_zh  # noqa: PLC0415
+        out = translate_to_zh([str(it["en"]) for it in pending])
+    except Exception as exc:  # noqa: BLE001 — a translator fault never breaks the sink
+        logger.warning("[press] wires zh translation skipped (%s: %s)", type(exc).__name__, exc)
+        return
+    filled = 0
+    for it, zh in zip(pending, out or [], strict=False):
+        if zh and str(zh).strip() and str(zh).strip() != str(it["en"]).strip():
+            it["zh"] = str(zh).strip()
+            filled += 1
+    logger.info("[press] wires zh: %d/%d new items translated", filled, len(pending))
+
+
 def _write_wires_sink(rail_items: list, press_cfg: dict, now: datetime) -> None:
     """Atomically publish the wires.v1 rolling-window rail payload (M1).
 
@@ -498,6 +532,10 @@ def _write_wires_sink(rail_items: list, press_cfg: dict, now: datetime) -> None:
         rail_max = int(wire_cfg.get("rail_max_items", _DEFAULT_WIRES_RAIL_MAX))
     except (TypeError, ValueError):
         rail_max = _DEFAULT_WIRES_RAIL_MAX
+
+    # B4c: translate before the merge, so a persisted item keeps the `zh` it was
+    # given on the tick it arrived and is never re-translated.
+    _attach_zh(rail_items, wire_cfg)
 
     existing = _read_existing_wires(target)
     merged = _merge_wires_window(existing, rail_items, rail_max)

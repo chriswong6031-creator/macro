@@ -274,6 +274,137 @@
 .nx-diag .rej-reason{ color:var(--warn); font-weight:600; }
 .nx-disc{ margin:22px 0 0; font-size:11px; color:var(--muted); font-style:italic; }
 
+/* ======================= LIVE WIRE (B4b) =======================
+   The page's ONE achromatic instrument. Everything above it is edited and
+   colour-coded (ranked cards, tinted theme chips); the wire is the raw feed,
+   so it is deliberately drained of hue. Colour appears in exactly two places —
+   the state lamp and the newest item's node — and the panel is carried instead
+   by its structure: a time gutter, an arrival spine, and a node whose FORM
+   encodes how well the item is sourced (doctrine §7: non-verbal encodings that
+   need no vocabulary). Hidden until the client has something honest to show. */
+.nxw{ margin:0 0 18px; border-radius:var(--nx-radius); overflow:hidden;
+  /* The page's --nx-hair is mixed off --line, which all but vanishes on the dark
+     panel. The spine IS this panel, so it gets a --text-derived rule that holds
+     its weight in both themes. */
+  --nxw-spine:color-mix(in srgb, var(--text) 17%, transparent);
+  --nxw-rule:color-mix(in srgb, var(--text) 11%, transparent);
+  background:var(--nx-card); border:1px solid var(--nx-brd); box-shadow:var(--nx-shadow);
+  -webkit-backdrop-filter:var(--nx-blur); backdrop-filter:var(--nx-blur); }
+.nxw[hidden]{ display:none; }
+
+/* header */
+.nxw-hd{ display:flex; align-items:flex-start; gap:14px; flex-wrap:wrap; padding:14px 16px 12px;
+  border-bottom:1px solid var(--nxw-rule); }
+.nxw-hd-main{ flex:1 1 240px; min-width:0; }
+.nxw-eyebrow{ display:flex; align-items:center; gap:7px; font-size:10.5px; font-weight:700;
+  letter-spacing:.16em; text-transform:uppercase; color:var(--muted); }
+.nxw-lamp{ flex:0 0 auto; width:7px; height:7px; border-radius:50%;
+  background:color-mix(in srgb,var(--text) 26%,transparent); }
+.nxw[data-state="live"] .nxw-lamp{ background:var(--info);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--info) 20%,transparent); }
+.nxw-title{ font-size:15px; font-weight:800; letter-spacing:-.012em; margin:6px 0 3px; }
+.nxw-sub{ font-size:12px; color:var(--muted); max-width:64ch; }
+.nxw-meta{ margin-top:6px; font-size:10.5px; color:var(--muted); }
+.nxw-meta .num{ color:color-mix(in srgb,var(--text) 74%,transparent); font-weight:600; }
+
+/* class filters — neutral by design; the wire never borrows the feed's hues */
+.nxw-filters{ display:flex; gap:5px; flex-wrap:wrap; align-items:center; padding-top:2px; }
+.nxw-f{ appearance:none; font-family:inherit; font-size:10px; font-weight:700; letter-spacing:.08em;
+  text-transform:uppercase; padding:5px 11px; border-radius:100px; cursor:pointer; white-space:nowrap;
+  color:var(--muted); background:transparent; border:1px solid var(--nxw-rule);
+  transition:color .16s, border-color .16s, background .16s; }
+.nxw-f:hover{ color:var(--text); border-color:var(--nx-brd); }
+.nxw-f.on{ color:var(--nx-card-solid); background:color-mix(in srgb,var(--text) 82%,transparent);
+  border-color:color-mix(in srgb,var(--text) 82%,transparent); }
+.nxw-f:focus-visible{ outline:2px solid var(--info); outline-offset:2px; }
+
+/* list + arrival spine */
+/* The window is capped so the wire never pushes the ranked board off the page.
+   The fade tells you the clip is depth, not a broken row. */
+.nxw-list{ max-height:394px; overflow-y:auto; overscroll-behavior:contain; padding:4px 16px 8px 0;
+  -webkit-mask-image:linear-gradient(to bottom, #000 calc(100% - 34px), transparent 100%);
+  mask-image:linear-gradient(to bottom, #000 calc(100% - 34px), transparent 100%); }
+.nxw-list::-webkit-scrollbar{ width:8px; }
+.nxw-list::-webkit-scrollbar-thumb{ background:var(--nxw-spine); border-radius:100px; }
+.nxw-item{ position:relative; display:flex; align-items:flex-start; padding:9px 0; }
+.nxw-item::before{ content:""; position:absolute; left:62px; top:0; bottom:0; width:1px;
+  background:var(--nxw-spine); }
+.nxw-item:first-child::before{ top:11px; }
+.nxw-item:last-child::before{ bottom:auto; height:11px; }
+.nxw-age{ flex:0 0 52px; text-align:right; padding-right:11px; font-family:var(--num); font-size:10.5px;
+  font-variant-numeric:tabular-nums; letter-spacing:-.02em; color:var(--muted); line-height:1.95;
+  white-space:nowrap; overflow:hidden; }
+.nxw-node{ flex:0 0 21px; align-self:stretch; position:relative; }
+.nxw-node::after{ content:""; position:absolute; left:0; top:6px; width:9px; height:9px; box-sizing:border-box;
+  border-radius:50%; border:1.5px solid color-mix(in srgb,var(--text) 40%,transparent);
+  background:var(--nx-card-solid); z-index:1; }
+/* node FORM = how well sourced: filled = matched to the original;
+   ringed dot = two or more independent sources; dashed = a single report */
+.nxw-node[data-corr="verified"]::after{ background:color-mix(in srgb,var(--text) 60%,transparent);
+  border-color:color-mix(in srgb,var(--text) 60%,transparent); }
+.nxw-node[data-corr="sources"]::before{ content:""; position:absolute; left:3px; top:9px;
+  width:3px; height:3px; border-radius:50%; z-index:2;
+  background:color-mix(in srgb,var(--text) 58%,transparent); }
+.nxw-node[data-corr="reports"]::after{ border-style:dashed;
+  border-color:color-mix(in srgb,var(--text) 32%,transparent); }
+/* the single accent + the single motion: the newest arrival */
+.nxw[data-state="live"] .nxw-item.is-newest .nxw-node::after{ border-color:var(--info);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--info) 15%,transparent); animation:nxwLamp 2.8s ease-in-out infinite; }
+@keyframes nxwLamp{ 0%,100%{ opacity:1; } 50%{ opacity:.5; } }
+
+.nxw-body{ flex:1; min-width:0; padding-left:12px; }
+.nxw-text{ margin:0; font-size:13.5px; line-height:1.5; font-weight:500; color:var(--text);
+  letter-spacing:-.003em; text-wrap:pretty; }
+.nxw-line{ margin-top:5px; display:flex; flex-wrap:wrap; gap:8px; align-items:center;
+  font-size:10.5px; color:var(--muted); }
+.nxw-cls{ font-weight:700; letter-spacing:.09em; text-transform:uppercase;
+  color:color-mix(in srgb,var(--text) 58%,transparent); }
+.nxw-corr{ font-weight:600; }
+.nxw-tapewrap{ display:inline-flex; align-items:baseline; gap:4px; }
+.nxw-tape{ font-family:var(--num); font-variant-numeric:tabular-nums; font-weight:600;
+  color:color-mix(in srgb,var(--text) 66%,transparent); }
+.nxw-tapesfx{ opacity:.75; }
+.nxw-orig{ font-style:italic; opacity:.8; }
+.nxw-item.is-new{ animation:nxwIn .34s cubic-bezier(.22,.9,.3,1) both; }
+@keyframes nxwIn{ from{ opacity:0; transform:translateY(-4px); } to{ opacity:1; transform:none; } }
+
+/* honest non-list states: loading skeleton, quiet desk, signed-out, unreachable */
+.nxw-state{ padding:20px 18px 22px 20px; }
+.nxw-state .h{ font-size:13.5px; font-weight:700; color:var(--text); margin:0 0 4px; }
+.nxw-state .s{ font-size:12px; color:var(--muted); margin:0; max-width:58ch; }
+.nxw-state .cta{ appearance:none; font-family:inherit; margin-top:12px; cursor:pointer;
+  display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700; color:var(--info);
+  background:transparent; border:1px solid color-mix(in srgb,var(--info) 40%,transparent);
+  padding:7px 14px; border-radius:100px; transition:background .16s, border-color .16s; }
+.nxw-state .cta:hover{ background:color-mix(in srgb,var(--info) 10%,transparent);
+  border-color:color-mix(in srgb,var(--info) 65%,transparent); }
+/* footer: one footnote + the quiet X handles */
+.nxw-ft{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:11px 16px;
+  border-top:1px solid var(--nxw-rule); background:color-mix(in srgb,var(--panel2) 40%,transparent); }
+.nxw-note{ flex:1 1 260px; font-size:11px; color:var(--muted); }
+.nxw-social{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.nxw-social>span{ font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--muted); margin-right:1px; }
+.nxw-x{ display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700;
+  font-family:var(--num); color:color-mix(in srgb,var(--text) 80%,transparent); white-space:nowrap;
+  padding:5px 11px; border-radius:100px; border:1px solid var(--nxw-rule);
+  transition:color .16s, border-color .16s, background .16s; }
+.nxw-x:hover{ color:var(--text); border-color:var(--nx-brd);
+  background:color-mix(in srgb,var(--text) 6%,transparent); }
+.nxw-x:focus-visible{ outline:2px solid var(--info); outline-offset:2px; }
+.nxw-x svg{ width:10px; height:10px; flex:0 0 auto; }
+
+@media(max-width:560px){
+  .nxw-item::before{ left:52px; }
+  .nxw-age{ flex-basis:44px; }
+  .nxw-text{ font-size:13px; }
+}
+@media(prefers-reduced-motion:reduce){
+  .nxw-item.is-new{ animation:none; }
+  .nxw .nxw-item.is-newest .nxw-node::after{ animation:none; }
+}
+@media(pointer:coarse){ .nxw .nxw-item.is-newest .nxw-node::after{ animation:none; } }
+
 /* ---- responsive ---- */
 @media(max-width:900px){
   .nx-hero{ grid-template-columns:1fr; }
@@ -365,6 +496,42 @@
   {% endif %}
 </div>
 {% endif %}
+
+{# ==================== LIVE WIRE (B4b) ====================
+   Client-hydrated from /live/wires.json (free_registered — see config/site_access.yml).
+   Ships HIDDEN and stays hidden when the wire is not published at this deployment:
+   a feature that is not live must not advertise its own absence. Every other
+   outcome — signed out, quiet desk, unreachable — gets an honest named state,
+   never a blank list. #}
+<section class="nxw" id="nxWire" data-state="loading" hidden>
+  <div class="nxw-hd">
+    <div class="nxw-hd-main">
+      <div class="nxw-eyebrow"><span class="nxw-lamp"></span>{{ t('Live wire','实时快讯') }}</div>
+      <h2 class="nxw-title">{{ t('What just crossed','刚刚跨过的消息') }}</h2>
+      <p class="nxw-sub">{{ t('Every headline our desk sees, in the order it landed.','我们的编辑台收到的每一条消息，按到达顺序排列。') }}</p>
+      <div class="nxw-meta" id="nxWireMeta"></div>
+    </div>
+    <div class="nxw-filters" id="nxWireFilters" role="group"></div>
+  </div>
+
+  <div class="nxw-list" id="nxWireList" hidden></div>
+  <div class="nxw-state" id="nxWireState" hidden></div>
+
+  <div class="nxw-ft">
+    <div class="nxw-note">{{ t('Context, not a trade signal — the ranked board below is the edited read.','这里是背景信息，不是交易信号——下方排序榜才是经过筛选的解读。') }}</div>
+    <div class="nxw-social">
+      <span>{{ t('On X','X 账号') }}</span>
+      <a class="nxw-x" href="https://x.com/mastermindnews1" target="_blank" rel="noopener"
+         data-tip-en="The wire account. The loudest few items from this feed go out there; everything else only lands here."
+         data-tip-zh="快讯账号。本页快讯中最受关注的少数几条会发到那里，其余的只出现在这里。">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.66l-5.22-6.82-5.97 6.82H1.66l7.73-8.84L1.25 2.25h6.83l4.71 6.23 5.45-6.23Zm-1.16 17.52h1.83L7.08 4.13H5.11l11.97 15.64Z"/></svg>@mastermindnews1</a>
+      <a class="nxw-x" href="https://x.com/mastermindx001" target="_blank" rel="noopener"
+         data-tip-en="The evidence desk. Charts, state changes and receipts from the same engines that build this site."
+         data-tip-zh="证据台账号。图表、状态变化与依据，来自构建本站的同一套引擎。">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.66l-5.22-6.82-5.97 6.82H1.66l7.73-8.84L1.25 2.25h6.83l4.71 6.23 5.45-6.23Zm-1.16 17.52h1.83L7.08 4.13H5.11l11.97 15.64Z"/></svg>@mastermindx001</a>
+    </div>
+  </div>
+</section>
 
 {# ============================ CONTROLS + FEED ============================ #}
 {% if FEED %}
@@ -569,6 +736,252 @@
     window.addEventListener('langchange', apply);
     apply();
   }
+
+  // ---- LIVE WIRE (B4b) ------------------------------------------------------
+  // Hydrates from the wires.v1 payload the fastlane daemon publishes to
+  // /live/wires.json. That asset is free_registered (config/site_access.yml), so
+  // the SERVER is the gate and this client only ever asks — every response,
+  // including a refusal, is reported honestly rather than as an empty list.
+  // Follows the live.js conventions: relative URL, 60s poll, hidden-tab pause,
+  // 10s abort. Item text is third-party wire copy and is written with
+  // textContent only — never innerHTML.
+  (function(){
+    var box = document.getElementById('nxWire');
+    if(!box || !window.fetch) return;
+    var listEl  = document.getElementById('nxWireList');
+    var stateEl = document.getElementById('nxWireState');
+    var metaEl  = document.getElementById('nxWireMeta');
+    var filtEl  = document.getElementById('nxWireFilters');
+    if(!listEl || !stateEl) return;
+
+    var URL_ = 'live/wires.json';
+    var POLL = (window.LIVE_POLL_SEC || 60) * 1000;
+    var STALE_MIN = window.LIVE_STALE_MIN || 20;
+    var TIMEOUT = 10000, CAP = 40;
+    var items = [], pick = 'all', seen = {}, painted = false, updatedAt = null;
+    var mode = null, inflight = false;
+
+    function isZh(){ return document.documentElement.getAttribute('data-lang')==='zh'; }
+
+    // Compact age for the time gutter. The page-wide rel() ("18m ago") wraps in a
+    // fixed column and breaks the tabular alignment the gutter exists for, so the
+    // wire uses a 3-character form instead.
+    function shortAge(iso){
+      if(!iso) return '';
+      var ms = Date.parse(iso); if(isNaN(ms)) return '';
+      var s = Math.max(0, (Date.now() - ms) / 1000), zh = isZh();
+      if(s < 60) return zh ? '刚刚' : 'now';
+      var m = s / 60; if(m < 60) return Math.floor(m) + (zh ? '分钟' : 'm');
+      var h = m / 60; if(h < 24) return Math.floor(h) + (zh ? '小时' : 'h');
+      return Math.floor(h / 24) + (zh ? '天' : 'd');
+    }
+    function el(tag, cls, text){
+      var n = document.createElement(tag);
+      if(cls) n.className = cls;
+      if(text != null) n.textContent = text;   // never innerHTML: wire copy is third-party
+      return n;
+    }
+
+    // The payload's `corroboration` is engine-supplied English display text
+    // ("verified" | "N sources" | "reports"). Map it to a node FORM plus a plain
+    // word in both languages: a user-facing surface never shows a single-source
+    // relay as a confirmed fact.
+    function corrOf(raw){
+      var s = String(raw || '').trim(), m = s.match(/^(\d+)\s+sources?$/i);
+      if(/^verified$/i.test(s)) return { form:'verified', en:'matched to the original', zh:'已比对原文',
+        tEn:'We checked this against the original post itself.',
+        tZh:'我们已与原始帖文本身核对。' };
+      if(m) return { form:'sources', en:m[1]+' sources', zh:m[1]+' 家来源',
+        tEn:'Reported separately by '+m[1]+' independent wires.',
+        tZh:'由 '+m[1]+' 家独立通讯社分别报道。' };
+      if(/^reports$/i.test(s)) return { form:'reports', en:'single report', zh:'仅单一来源',
+        tEn:'One source only, not yet confirmed anywhere else. Read it as a report, not a fact.',
+        tZh:'目前只有一个来源，尚未获其他方证实。请当作报道看待，而非既成事实。' };
+      return s ? { form:'reports', en:s, zh:s, tEn:'', tZh:'' } : null;
+    }
+
+    function renderList(){
+      var zh = isZh(), keep = listEl.scrollTop;
+      var shown = items.filter(function(it){
+        return pick === 'all' || String(it['class'] || '') === pick;
+      }).slice(0, CAP);
+      listEl.textContent = '';
+      shown.forEach(function(it, i){
+        var row = el('div','nxw-item');
+        if(i === 0) row.classList.add('is-newest');
+        if(painted && !seen[it.id]) row.classList.add('is-new');
+        seen[it.id] = 1;
+        var age = el('time','nxw-age num', shortAge(it.ts) || '—');
+        if(it.ts) age.setAttribute('datetime', String(it.ts));
+        row.appendChild(age);
+        var c = corrOf(it.corroboration);
+        var node = el('span','nxw-node');
+        node.setAttribute('data-corr', c ? c.form : 'reports');
+        row.appendChild(node);
+        var body = el('div','nxw-body');
+        body.appendChild(el('p','nxw-text', String((zh && it.zh ? it.zh : it.en) || '')));
+        var line = el('div','nxw-line');
+        var label = zh ? (it.label_zh || it.label_en) : it.label_en;   // never the raw class slug
+        if(label) line.appendChild(el('span','nxw-cls', String(label)));
+        if(c){
+          var cs = el('span','nxw-corr', zh ? c.zh : c.en);
+          if(c.tEn){ cs.setAttribute('data-tip-en', c.tEn); cs.setAttribute('data-tip-zh', c.tZh); }
+          line.appendChild(cs);
+        }
+        // The engine's tape stamp is a bare "LABEL ±X.X%" — on X the surrounding
+        // sentence supplies the window, so here we say it: a number on a glance
+        // surface arrives with its meaning. An item that also posted to X already
+        // carries the stamp inside its composed body, so only print it once.
+        var tape = String(it.tape_stamp || '');
+        if(tape && String(it.en || '').indexOf(tape) < 0){
+          var tw = el('span','nxw-tapewrap');
+          tw.appendChild(el('span','nxw-tape', tape));
+          tw.appendChild(el('span','nxw-tapesfx', zh ? '自该消息出现以来' : 'since this crossed'));
+          line.appendChild(tw);
+        }
+        // Honest ZH disclosure: this item has no Chinese twin yet, so say so
+        // rather than passing English off as translated.
+        if(zh && !it.zh) line.appendChild(el('span','nxw-orig','英文原文'));
+        if(line.childNodes.length) body.appendChild(line);
+        row.appendChild(body);
+        listEl.appendChild(row);
+      });
+      listEl.scrollTop = keep;
+      painted = true;
+    }
+
+    function renderMeta(){
+      if(!metaEl) return;
+      var zh = isZh(), src = {};
+      items.forEach(function(it){ var a = String(it.attribution || '').trim(); if(a) src[a] = 1; });
+      var ns = Object.keys(src).length;
+      metaEl.textContent = '';
+      metaEl.appendChild(document.createTextNode(zh ? '更新于 ' : 'Updated '));
+      metaEl.appendChild(el('span','num', rel(updatedAt) || (zh ? '时间未知' : 'time unknown')));
+      metaEl.appendChild(document.createTextNode(' · '));
+      metaEl.appendChild(el('span','num', String(items.length)));
+      metaEl.appendChild(document.createTextNode(zh ? ' 条' : ' items'));
+      if(ns){
+        metaEl.appendChild(document.createTextNode(zh ? ' · 来自 ' : ' from '));
+        metaEl.appendChild(el('span','num', String(ns)));
+        metaEl.appendChild(document.createTextNode(zh ? ' 家来源' : ' sources'));
+      }
+    }
+
+    function renderFilters(){
+      if(!filtEl) return;
+      var zh = isZh(), order = [], map = {};
+      items.forEach(function(it){
+        var k = String(it['class'] || '');
+        if(!k || map[k]) return;
+        map[k] = { en: it.label_en || '', zh: it.label_zh || it.label_en || '' };
+        order.push(k);
+      });
+      filtEl.textContent = '';
+      filtEl.setAttribute('aria-label', zh ? '按类别筛选快讯' : 'Filter the wire by category');
+      if(order.length < 2) return;                    // one category is not a choice
+      if(pick !== 'all' && !map[pick]) pick = 'all';
+      var defs = [{ k:'all', en:'All', zh:'全部' }];
+      order.slice(0, 5).forEach(function(k){ defs.push({ k:k, en:map[k].en, zh:map[k].zh }); });
+      defs.forEach(function(d){
+        var b = el('button','nxw-f' + (d.k === pick ? ' on' : ''), zh ? d.zh : d.en);
+        b.type = 'button';
+        b.setAttribute('aria-pressed', d.k === pick ? 'true' : 'false');
+        b.addEventListener('click', function(){ pick = d.k; renderFilters(); renderList(); });
+        filtEl.appendChild(b);
+      });
+    }
+
+    var STATE_COPY = {
+      gate: { h:['Sign in to see the live wire','登录后查看实时快讯'],
+              s:['The wire is open to every registered account. Your session has ended — sign back in and it picks up where it left off.',
+                 '实时快讯对所有已注册账户开放。您的登录状态已失效——重新登录即可继续查看。'],
+              cta:['Sign in','登录'] },
+      down: { h:['The live wire is not reachable right now','实时快讯暂时无法连接'],
+              s:['Nothing to do — the ranked board below is built on a separate path and is current. The wire reconnects on its own.',
+                 '无需操作——下方的排序榜由另一条链路生成，数据仍是最新的。快讯会自行重连。'] },
+      quiet:{ h:['The desk is quiet','编辑台暂时安静'],
+              s:['Nothing has crossed in the last few hours. Nothing to act on — the ranked board below is current.',
+                 '最近几小时没有新消息进来。无需操作——下方的排序榜仍是最新的。'] }
+    };
+
+    function showState(kind){
+      var d = STATE_COPY[kind]; if(!d) return;
+      var zh = isZh();
+      box.setAttribute('data-state', kind);
+      listEl.hidden = true;
+      stateEl.textContent = '';
+      stateEl.appendChild(el('p','h', zh ? d.h[1] : d.h[0]));
+      stateEl.appendChild(el('p','s', zh ? d.s[1] : d.s[0]));
+      if(d.cta){
+        var b = el('button','cta', zh ? d.cta[1] : d.cta[0]);
+        b.type = 'button';
+        b.addEventListener('click', function(){
+          if(window.MDXAuth && window.MDXAuth.open) window.MDXAuth.open('signin');
+        });
+        stateEl.appendChild(b);
+      }
+      if(metaEl) metaEl.textContent = '';
+      if(filtEl) filtEl.textContent = '';
+      stateEl.hidden = false;
+      box.hidden = false;
+    }
+
+    function showList(stale){
+      box.setAttribute('data-state', stale ? 'stale' : 'live');
+      stateEl.hidden = true;
+      renderFilters(); renderList(); renderMeta();
+      listEl.hidden = false;
+      box.hidden = false;
+    }
+
+    function repaint(){
+      if(mode === 'ok') { items.length ? showList(box.getAttribute('data-state') === 'stale') : showState('quiet'); }
+      else if(mode === 'gate') showState('gate');
+      else if(mode === 'down') showState('down');
+    }
+
+    function poll(){
+      if(inflight) return;
+      // The FIRST load always runs: a preview pane reports document.hidden from
+      // the start, and a panel stuck on "loading" there is a false negative.
+      if(mode !== null && document.hidden) return;
+      inflight = true;
+      var ctrl = ('AbortController' in window) ? new AbortController() : null;
+      var timer = ctrl ? setTimeout(function(){ try{ ctrl.abort(); }catch(e){} }, TIMEOUT) : 0;
+      fetch(URL_, { credentials:'same-origin', cache:'no-store', signal: ctrl && ctrl.signal })
+        .then(function(r){
+          // 404 = the wire is not published at this deployment. A feature that is
+          // not live must not advertise its own absence, so the panel stays hidden.
+          if(r.status === 404){ mode = 'absent'; box.hidden = true; return null; }
+          if(r.status === 401 || r.status === 403){ mode = 'gate'; showState('gate'); return null; }
+          if(!r.ok) throw new Error('http ' + r.status);
+          return r.json();
+        })
+        .then(function(d){
+          if(!d) return;
+          if(String(d.schema || '') !== 'wires.v1') throw new Error('schema');
+          items = (Array.isArray(d.items) ? d.items : []).filter(function(x){
+            return x && x.id && (x.en || x.zh);
+          });
+          updatedAt = d.updated_at || null;
+          mode = 'ok';
+          if(!items.length){ showState('quiet'); return; }
+          var ageMin = updatedAt ? (Date.now() - Date.parse(updatedAt)) / 60000 : NaN;
+          showList(!(ageMin >= 0 && ageMin <= STALE_MIN));
+        })
+        .catch(function(){
+          if(mode === 'ok') return;      // a transient blip keeps the last good window
+          mode = 'down'; showState('down');
+        })
+        .then(function(){ if(timer) clearTimeout(timer); inflight = false; });
+    }
+
+    window.addEventListener('langchange', repaint);
+    document.addEventListener('visibilitychange', function(){ if(!document.hidden) poll(); });
+    poll();
+    setInterval(poll, POLL);
+  })();
 })();
 </script>
 {% endblock %}
