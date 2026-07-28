@@ -114,6 +114,11 @@ _PRESS_SEEN_CAP = 8000
 # stays the sole advancer of every tracked ledger.
 _PRESS_CORPUS_PATH = ROOT / "data" / "marketing" / "press" / "ingest_corpus.jsonl"
 _PRESS_CORPUS_CAP = 20000
+# Rolling is a whole-file read, so it is SIZE-GATED rather than run every tick:
+# checking "is this over 20k lines?" by reading the file would mean re-reading
+# tens of MB every 120 seconds forever. Past this byte ceiling the daemon reads
+# once and truncates to the newest _PRESS_CORPUS_CAP rows — rare, not hot.
+_PRESS_CORPUS_MAX_BYTES = 64 * 1024 * 1024
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -186,13 +191,14 @@ def _append_press_corpus(rows: list) -> int:
         with _PRESS_CORPUS_PATH.open("a", encoding="utf-8") as fh:
             for row in rows:
                 fh.write(json.dumps(row, ensure_ascii=False) + "\n")
-        # Roll: keep the newest _PRESS_CORPUS_CAP lines.
-        lines = _PRESS_CORPUS_PATH.read_text(encoding="utf-8").splitlines()
-        if len(lines) > _PRESS_CORPUS_CAP:
+        # Roll only past the byte ceiling — see _PRESS_CORPUS_MAX_BYTES.
+        if _PRESS_CORPUS_PATH.stat().st_size > _PRESS_CORPUS_MAX_BYTES:
+            lines = _PRESS_CORPUS_PATH.read_text(encoding="utf-8").splitlines()
             tmp = _PRESS_CORPUS_PATH.with_suffix(".tmp")
             tmp.write_text("\n".join(lines[-_PRESS_CORPUS_CAP:]) + "\n",
                            encoding="utf-8")
             tmp.replace(_PRESS_CORPUS_PATH)
+            logger.info("[press] corpus rolled to newest %d rows", _PRESS_CORPUS_CAP)
         return len(rows)
     except Exception as exc:  # noqa: BLE001
         logger.warning("[press] corpus append failed (continuing): %s", exc)
