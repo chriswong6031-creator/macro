@@ -151,12 +151,22 @@ _STRUCTURAL = [
 # A region is ("span", open, close) — protect from the end of `open` to the start of the next
 # `close`, across lines — or ("line", pat) — protect the whole line. Spans are used where the
 # sink shares a line with our own markup; whole-line where the template emits the tag alone.
+
+# The report-page attestation key. Brand-agnostic ON PURPOSE: #3850's Mastermind→MastermindX
+# rename sweep changed the disclaimer's brand prefix and silently disarmed the previous
+# full-sentence literal — every re-rendered report page lost the third-party exemption and
+# main went red (2026-07-28). The brandless core survives rebrands, and both wordings still
+# ship today (new-brand pages from the scope=all render, a few old-brand pages awaiting their
+# lane's next pass), so builders converge on their own schedule instead of this gate forcing
+# cross-lane synchrony. Forging is unchanged: a page must still carry the disclaimer sentence.
+_ATTEST = "hosts third-party institutional research"
+
 _THIRD_PARTY_PAGES = (
     # 1. Per-report landing pages (templates/research_report.html.j2). Third-party sinks:
     #    n.title (title/h1/og/twitter/JSON-LD headline), n.teaser + meta_desc, the verbatim
     #    first-pages excerpt, and the related-reports list (other notes' titles).
     (re.compile(r"^site/research/(?!index\.html$)[^/]+\.html$"),
-     "Mastermind hosts third-party institutional research",
+     _ATTEST,
      (
          ("span", re.compile(r"<title>"), re.compile(r"</title>")),
          ("span", re.compile(r'<script type="application/ld\+json">'), re.compile(r"</script>")),
@@ -589,11 +599,12 @@ SELFTEST_REPORT_PAGE = """<!DOCTYPE html>
 </body>
 </html>
 """
-_ATTEST = "Mastermind hosts third-party institutional research"
+# Selftest fixture sentence: the current builder wording, carrying the _ATTEST core
+# (defined once above _THIRD_PARTY_PAGES — the gate and this fixture may not drift).
 _NEUTRAL = {"title": "Oil Prices and Upcoming Inflation Prints", "teaser": "Oil rebounded 35%.",
             "body": "Core CPI slowed broadly in June.", "platform": "Pro members get the PDF.",
             "platform_zh": "Pro 会员可读全文。", "related": "Three things in China",
-            "attest": _ATTEST}
+            "attest": "MastermindX " + _ATTEST}
 
 
 def _page(**over) -> str:
