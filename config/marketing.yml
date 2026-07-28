@@ -1372,18 +1372,50 @@ breaking:
     # Salience stays dominant by design: L1 is a refinement of the existing
     # deterministic salience, not a replacement. Weights sum to 1.0.
     rank_weights:
-      salience: 0.50
+      salience: 0.58
       corroboration_velocity: 0.14
       keyword_heat: 0.10
       novelty: 0.08
-      source_authority: 0.08
+      # ZERO, adjudicated (review F-5). The accrual machinery stays; the
+      # ORDERING weight is 0 until two preconditions hold, because today the
+      # feature would rank noise:
+      #   (a) the prior must live on the measured axis — a 0.5 neutral prior
+      #       equals ~21.4 weighted engagement, so a real source crossing
+      #       min_samples with low engagement scores BELOW an unmeasured one;
+      #   (b) engagement must be sampled at a FIXED POST AGE — parse_tweets
+      #       samples once, seconds after the poller sees a post, so the number
+      #       is really poll latency and ranking on it inverts the signal.
+      # The fixed-age refresh is NOT attempted in this wave. The 0.08 released
+      # here went back to the incumbent salience, not to untested features.
+      source_authority: 0.0
       tone_extremity: 0.04
       headline_shape: 0.06
+
+    # Review F-1: one corpus row per ITEM per rolling window, not one per tick.
+    # The lane's `seen` ledger only advances on emit/refusal, so a digest,
+    # below-floor, top-K or story-locked item is re-ingested every 120s forever;
+    # without this window a 6-hour replay of 3 stale items wrote 560 rows.
+    corpus_row_window_h: 24
+
+    # Review F-17: the host-local corpus sink's bounds.
+    corpus_sink:
+      max_rows: 20000
+      max_bytes: 67108864     # 64 MB — the roll is streaming, two passes
 
     # ── L0 story spine ────────────────────────────────────────────────────────
     # Optional deps DEGRADE, never crash: datasketch absent -> near-dup pass off
     # (exact/normalized-URL identity only), one start-of-line ::notice, carry on.
     story_spine:
+      # Review F-6: how much a source counts as CORROBORATION, by how it joined
+      # the story. `exact` is the same artifact re-ingested (a mirror) and is no
+      # new evidence; near_dup/semantic may be an independent write-up OR
+      # verbatim syndication and cannot be told apart without a publisher-group
+      # map (documented residual — that map is future work).
+      match_weights:
+        new: 1.0
+        exact: 0.0
+        near_dup: 0.5
+        semantic: 0.5
       minhash_num_perm: 96
       near_dup_threshold: 0.62
       shingle_k: 3
@@ -1409,12 +1441,23 @@ breaking:
       burst_window_h: 72
       burst_recent_h: 1
       burst_min_hours: 6
-      burst_min_std: 0.5
+      # Review F-3(a): was 0.5, which is nonsense on this scale. Rates here are
+      # per-DOCUMENT-deduped so every rate is in [0,1]; a floor of 0.5 capped z
+      # at 2.0, so keyword_heat could never exceed 0.5 however violent the
+      # burst. Measured baseline std on a real 344-item tick was ~0.066.
+      burst_min_std: 0.05
       burst_z_cap: 4.0
       burst_z_threshold: 2.0
+      # Review F-3(b): the recent bucket is a PARTIAL hour compared against
+      # complete ones — two minutes past the hour, one document scores rate 1.0
+      # and a false maximal burst. No burst may fire below this doc count.
+      burst_recent_min_docs: 8
       novelty_window_d: 30
       novelty_min_docs: 50      # below this, novelty reports "cold-start"
       novelty_top_k: 3
+      # Review F-4(b): "mean of the top 3 rarest" is a different statistic when
+      # the token pool is 2 than when it is 12. Below this, report the null.
+      novelty_min_tokens: 3
       novelty_neutral: 0.5      # the cold-start value — a stated null, not a measurement
       min_token_len: 3
 
@@ -1424,6 +1467,9 @@ breaking:
       sources_60m_full: 5
       weight_15m: 0.7
       weight_60m: 0.3
+      # Review F-6: score the MATCH-DISCOUNTED source count (weights above under
+      # story_spine.match_weights), not the raw one. false = pre-review behaviour.
+      use_weighted_sources: true
 
     # ── source_authority ──────────────────────────────────────────────────────
     # NEUTRAL PRIOR UNTIL TELEMETRY EXISTS. The only input is observed engagement
@@ -1472,6 +1518,23 @@ breaking:
     golden_set:
       k: 20
       min_labeled: 40           # below this the eval prints numbers but gates nothing
+      # Review F-7: `beats_salience` is no longer a bare sign test on two point
+      # estimates. It requires BOTH a pre-registered margin AND a pre-registered
+      # significance level on a PAIRED McNemar test over the discordant pairs,
+      # with a paired-bootstrap CI printed alongside. The raw delta is still
+      # printed as display. House stats law: pre-registered gates, nulls printed.
+      alpha: 0.05
+      min_margin: 0.05
+      bootstrap_draws: 2000
+      bootstrap_seed: 20260728
+      # Review F-12: the stratification band cutoffs (high/mid on a 0-100 scale)
+      # were hardcoded 70/40. Hypotheses, so: config.
+      bands: [70.0, 40.0]
+      # Review F-8(a): "head" mode draws a UNIFORM sample of the top N by the
+      # baseline score, so unweighted precision@k is unbiased for head
+      # precision. "stratified" mode is richer in rare cells but needs the
+      # inverse-inclusion-probability estimate, which the batch's weights carry.
+      head_size: 500
       corpus_paths:
         - "data/marketing/press/ingest_corpus.jsonl"
 

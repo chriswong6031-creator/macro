@@ -49,23 +49,27 @@ _DEFAULT_DETECTORS: dict[str, bool] = {
     "non_story": True,
 }
 
-# Strong promo markers: a single hit is enough. Each is a phrase that has no
-# straight-news reading.
+# Strong promo markers: a single hit DROPS the item, so the bar is "no
+# straight-news reading exists". Review F-9 demoted two that failed that bar:
+# "save up to" ("Airlines save up to $2bn on fuel hedges" is a real story) and
+# "black friday deal" ("Black Friday deal volume rose 8%" is retail coverage).
 _PROMO_STRONG: tuple[str, ...] = (
     "sign up now", "subscribe now", "click here", "shop now", "buy now",
     "promo code", "coupon code", "discount code", "use code",
     "limited time offer", "enter to win", "sponsored content",
     "affiliate link", "this is a paid", "paid partnership",
-    "deal of the day", "prime day deal", "black friday deal",
-    "cyber monday deal", "our top picks", "editor's picks", "editors' picks",
-    "best deals on", "save up to",
+    "deal of the day", "prime day deal", "cyber monday deal",
+    "our top picks", "editor's picks", "editors' picks",
 )
 
 # Weak promo markers: TWO are needed. Individually each has an innocent reading.
+# "% off" is GONE entirely (review F-9): "3% off the highs" is standard markets
+# copy and the phrase carries no promo information a stronger marker misses.
 _PROMO_WEAK: tuple[str, ...] = (
     "giveaway", "free trial", "exclusive offer", "act now", "don't miss out",
-    "hurry", "bestseller", "% off", "lowest price", "flash sale",
+    "hurry", "bestseller", "lowest price", "flash sale",
     "sponsored", "advertisement", "shop the", "on sale now",
+    "save up to", "black friday deal", "best deals on",
 )
 
 # Subscriber-wall boilerplate. Presence of any one is decisive.
@@ -106,12 +110,17 @@ def _lower(value: object) -> str:
     return _WS_RE.sub(" ", str(value or "").lower()).strip()
 
 
-def _phrase_hits(text: str, phrases: Iterable[str]) -> list[str]:
-    return [p for p in phrases if p in text]
-
-
 def _terms_in(text: str, terms: Iterable[str]) -> list[str]:
-    """Word-boundary term match (substring matching is a precision trap)."""
+    """Word-boundary term match. THE ONLY matcher in this module.
+
+    Review F-9: promo and paywall detection used raw ``in`` substring matching
+    while non-story detection used word boundaries, so the two most
+    drop-happy detectors ran on the loosest matcher in the file. Substring
+    matching P0-dropped real finance copy — "3% off the highs" hit "% off",
+    "Airlines save up to $2bn on fuel hedges" hit "save up to". A P0 drop is
+    unrecoverable (the item never reaches a gate that could rescue it), so the
+    matcher for it has to be the strict one, everywhere.
+    """
     hits = []
     for term in terms:
         pattern = r"(?<!\w)" + re.escape(term) + r"(?!\w)"
@@ -239,10 +248,10 @@ def _promo_spam(text: str, cfg: dict) -> str:
     """ONE strong marker, or TWO weak ones. Weak markers alone never drop."""
     if not text:
         return ""
-    strong = _phrase_hits(text, _list_cfg(cfg, "promo_strong", _PROMO_STRONG))
+    strong = _terms_in(text, _list_cfg(cfg, "promo_strong", _PROMO_STRONG))
     if strong:
         return f"strong:{strong[0]}"
-    weak = _phrase_hits(text, _list_cfg(cfg, "promo_weak", _PROMO_WEAK))
+    weak = _terms_in(text, _list_cfg(cfg, "promo_weak", _PROMO_WEAK))
     min_weak = int(cfg.get("promo_weak_min", 2))
     if len(weak) >= max(2, min_weak):
         return "weak:" + ",".join(weak[:3])
@@ -259,7 +268,7 @@ def _paywalled_stub(item: dict, body: str, cfg: dict) -> str:
     aggregator-tier source plus a truncation ellipsis.
     """
     markers = _list_cfg(cfg, "paywall_markers", _PAYWALL_MARKERS)
-    hit = _phrase_hits(body, markers)
+    hit = _terms_in(body, markers)
     if hit:
         return f"marker:{hit[0]}"
     if bool(cfg.get("require_marker", True)):

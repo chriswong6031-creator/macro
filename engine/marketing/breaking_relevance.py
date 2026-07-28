@@ -527,14 +527,15 @@ def score_item(
     # degrade to "features_error" in the components block, never stop an item
     # from being scored, gated and emitted.
     scoring_cfg = _scoring_cfg(cfg)
-    components: dict = {
-        "scoring_version": "xg-w5.1",
-        "salience": salience_components,
-    }
+    components: dict = {"salience": salience_components}
     rank = 0.0
     try:
         from engine.marketing import signal_features as _sf  # noqa: PLC0415
 
+        # Review F-13: the version string is owned by signal_features, not
+        # duplicated here — a bumped SCORING_VERSION that this module did not
+        # follow would stamp every row with a version that never existed.
+        components["scoring_version"] = _sf.SCORING_VERSION
         ctx = context if isinstance(context, dict) else {}
         features = _sf.compute_features(
             item,
@@ -548,18 +549,36 @@ def score_item(
         )
         rank, rank_detail = _sf.rank_score(salience, features["values"], cfg=scoring_cfg)
         factor, demote_detail = _demotion_factor(features["values"], scoring_cfg)
+        # Review F-8(b): keep the PRE-demotion salience. The golden-set harness
+        # compares the new ordering against "the incumbent salience ordering" —
+        # but once demotion arms, `salience` IS partly the new scorer, and the
+        # baseline would quietly become a blend of itself and its challenger.
+        # A comparison whose control is contaminated by the treatment measures
+        # nothing, so the untouched number is persisted separately and the
+        # harness reads THAT as the baseline.
+        salience_components["pre_demotion"] = salience
         # Clamp is load-bearing: demotion may only ever LOWER salience.
         salience = min(salience, round(salience * min(1.0, factor), 3))
         salience_components["demotion_factor"] = round(factor, 6)
         salience_components["capped"] = salience
         story_view = ctx.get("story") if isinstance(ctx.get("story"), dict) else {}
+        # Review F-16: report what the layer ACTUALLY had, not merely whether a
+        # dict was passed. press_lane hands over a context whose every store is
+        # None when `scoring.enabled` is false, and calling that "present" was a
+        # green light for a layer that did nothing.
+        if not ctx:
+            context_state = "no-context"
+        elif any(ctx.get(k) is not None for k in ("story", "corpus", "authority")):
+            context_state = "present"
+        else:
+            context_state = "empty-context"
         components.update({
             "features": features["values"],
             "feature_detail": features["detail"],
             "rank": rank_detail,
             "rank_score": rank,
             "demotion": demote_detail,
-            "context": "present" if ctx else "no-context",
+            "context": context_state,
             "story": {
                 "story_id": story_view.get("story_id", ""),
                 "match": story_view.get("match", ""),
@@ -572,9 +591,11 @@ def score_item(
     except Exception as exc:  # noqa: BLE001
         print(f"::warning title=breaking-relevance-features::"
               f"{item.get('id', '')}: {type(exc).__name__}: {exc}", flush=True)
+        components.setdefault("scoring_version", "unavailable")
         components["features_error"] = f"{type(exc).__name__}: {exc}"
         components["features"] = {}
         components["rank_score"] = 0.0
+        salience_components.setdefault("pre_demotion", salience)
 
     result = dict(item)
     result.update({

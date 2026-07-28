@@ -101,10 +101,14 @@ class TestNearDupClustering:
         assert spine.near_dup_enabled is False
         assert any("unbuildable" in d or "threshold" in d for d in spine.downgrades)
         # And the lane still clusters on exact identity.
-        spine.assign(_item("a", _HEADLINE, url="https://one.example/1"), now=NOW)
+        first = spine.assign(_item("a", _HEADLINE, url="https://one.example/1"),
+                             now=NOW)
         view = spine.assign(_item("b", _HEADLINE, url="https://one.example/1",
                                   source="reuters"), now=NOW)
-        assert view["source_count"] == 2
+        assert view["story_id"] == first["story_id"]
+        assert view["member_count"] == 2
+        # One URL is ONE source however many feed keys carried it (review F-6).
+        assert view["source_count"] == 1
 
     def test_a_signature_from_another_scheme_is_treated_as_absent(self):
         """An upgraded datasketch must never produce a silently wrong similarity."""
@@ -132,6 +136,35 @@ class TestNearDupClustering:
         value, detail = corroboration_velocity(view)
         assert detail["sources_15m"] == 3
         assert value > 0.0
+
+    def test_near_dup_joins_are_DISCOUNTED_not_counted_whole(self):
+        """Review F-6: the MinHash merge is exactly the syndication-amplifier.
+
+        Collapsing five aggregators onto one story is the RIGHT clustering and
+        the WRONG corroboration: they are one wire, not five witnesses. The
+        match weights are what keep the merge from inflating the feature.
+        """
+        spine = ss.StorySpine({}, cfg={"near_dup_threshold": 0.5})
+        spine.assign(_item("a", _HEADLINE, url="https://one.example/1"), now=NOW)
+        view = None
+        for i, host in enumerate(("two", "three", "four", "five")):
+            view = spine.assign(
+                _item(f"s{i}", _REWRITE, url=f"https://{host}.example/{i}",
+                      source=host),
+                now=NOW,
+            )
+        assert view["sources_15m"] == 5, "five hosts, raw"
+        assert view["match_mix_15m"] == {"new": 1, "near_dup": 4}
+        assert view["weighted_15m"] == 3.0, "1.0 + 4 x 0.5 — not 5"
+
+    def test_the_match_weights_are_a_config_lever(self):
+        spine = ss.StorySpine({}, cfg={"near_dup_threshold": 0.5,
+                                       "match_weights": {"near_dup": 0.0}})
+        spine.assign(_item("a", _HEADLINE, url="https://one.example/1"), now=NOW)
+        view = spine.assign(_item("b", _REWRITE, url="https://two.example/9",
+                                  source="reuters"), now=NOW)
+        assert view["sources_15m"] == 2
+        assert view["weighted_15m"] == 1.0
 
 
 class TestPersistenceAcrossRestarts:

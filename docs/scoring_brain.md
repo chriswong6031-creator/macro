@@ -31,13 +31,35 @@ not truths.
 | L1 features + persisted `_components` | **LIVE** for 100% of ingested items | — |
 | `rank_score` **ordering** the queue | **dark** | `breaking.scoring.rank_ordering: true` — **gated on §2** |
 | Salience demotion multiplier | **dark** | `breaking.scoring.demote_enabled: true` |
-| `source_authority` prior | **inert** (neutral for every source — no telemetry yet) | accrues by itself once x_follow engagement flows |
+| `source_authority` prior | **inert — rank weight 0.0** (review F-5) | two preconditions below; the accrual machinery runs meanwhile |
 | `tone_extremity` | **inert** (no GDELT join exists) | lands with the IS-W1 GDELT provider |
 | L2 learned ranker | **out of scope** | needs ≥3 weeks of real labels first |
 
 The two "inert" features are not broken. They report their own state
 (`neutral-prior`, `absent`) in `_components.feature_detail` and contribute a
 constant, so they are rank-neutral until they have something to say.
+
+### `source_authority` — why its ordering weight is 0.0, and what would arm it
+
+The accrual machinery ships and runs; only its **ordering weight** is zero. Two
+things must be true before that weight moves, because today the feature would
+rank noise:
+
+1. **The prior must live on the measured axis.** The neutral prior is 0.5, which
+   on the log scale equals ~21.4 weighted engagement. A real source that crosses
+   `min_samples` with genuinely low engagement therefore scores *below* a source
+   we have never measured at all — measurement demotes it. A prior that is not
+   comparable to the thing it stands in for is not a prior, it is a different
+   number wearing the same units.
+2. **Engagement must be sampled at a fixed post age.** `press_providers.parse_tweets`
+   reads the counts once, seconds after the poller first sees the post. What that
+   measures is *how quickly we polled*, not how the post performed — so handles on
+   the fast tier would score lowest and the ranking would invert. A fixed-age
+   refresh (re-read each post at, say, T+60min) is the fix, and it is deliberately
+   **not** attempted in this wave.
+
+Until both hold, `_components.feature_detail.source_authority` keeps reporting
+`neutral-prior` with its sample count, so the label loop can still accrue.
 
 ### Gate ordering — what a score may and may not do
 
@@ -110,9 +132,37 @@ The label store is hand-authored and committed like `config/reply_targets.yml`.
 No engine path writes it; the nightly does not advance it. It is ground truth,
 not a forward ledger.
 
+### Which sampling mode, and what the eval is entitled to claim
+
+`export --mode` decides which estimator the eval may use:
+
+| mode | what it draws | eval estimator |
+|---|---|---|
+| `stratified` (default) | round-robin across (outcome, source tier, salience band) — rich in rare cells, good for grading the **garbage gate** | **inverse-inclusion-probability**; each row carries `inclusion_weight` = 1/p |
+| `head` | uniform random sample of the top `head_size` by the baseline score | **unweighted** — unbiased for precision on the head the top-K/day counter actually spends |
+
+A stratified sample is *not* a uniform sample of the production head, so an
+unweighted precision@k over it is biased. `evaluate` reads `sample_mode` off the
+labels and names its estimator in the report; a store mixing both designs
+reports `unweighted-mixed-design` and is explicitly indicative only.
+
+### The gate is a paired test, not a sign test
+
+`beats_salience` requires **all** of:
+
+- `delta >= min_margin` (default 0.05), and
+- **McNemar exact p ≤ `alpha`** (default 0.05) over the *discordant* top-k pairs
+  — items one ordering caught and the other missed; concordant items carry no
+  information about which ranker is better, and
+- more positives found by rank than by salience.
+
+A paired bootstrap CI on the delta is printed alongside, and the raw delta is
+always displayed. Comparing two point estimates and declaring the bigger one the
+winner reads "better" on noise about half the time; that is why it is gone.
+
 **Arming rule:** flip `breaking.scoring.rank_ordering: true` only after
-`eval` reports `state: ok` and `beats_salience: true`. Record the report in the
-arming PR.
+`eval` reports `state: ok` and `beats_salience: true`. Record the full report —
+estimator, delta, CI, discordant pairs, p — in the arming PR.
 
 ---
 
@@ -155,7 +205,16 @@ All scoring-brain state lives in the daemon-local, gitignored
 | `signal_corpus` | hourly + daily token/document counts | `burst_window_h` (72h), `novelty_window_d` (30d), `max_tokens_per_bucket` (2000) |
 | `source_authority` | per-source EWMA engagement + sample count | `max_sources` (500), trimmed by sample count |
 
-`data/marketing/press/ingest_corpus.jsonl` rolls at 20 000 lines.
+`data/marketing/press/ingest_corpus.jsonl` rolls past **64 MB** (config
+`breaking.scoring.corpus_sink.max_bytes`) down to its newest
+`corpus_sink.max_rows` rows. The roll is streaming — two passes, one line of
+memory — so even the rare roll never stalls the live tick.
+
+One further bound matters for the labeling sample: an item contributes **at most
+one corpus row per `corpus_row_window_h`** (default 24 h). The lane's `seen`
+ledger only advances on emit/refusal, so without that window a digest or
+below-floor item would be re-rowed every 120 seconds forever and a "200-item"
+batch would come back holding a dozen stories.
 
 Pruning runs every tick. If `state.json` grows unexpectedly, check the tick log
 for `::warning title=scoring-brain-prune`.

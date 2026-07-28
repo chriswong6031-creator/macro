@@ -59,7 +59,12 @@ from pathlib import Path
 from typing import Any, Callable, Iterable
 from urllib.parse import parse_qsl, urlencode, urlsplit
 
-_STATE_VERSION = 1
+# v2 (review F-6/F-14): a story's `sources` map went from {key: iso} to
+# {key: {"first_ts": iso, "match": kind}} so corroboration can tell an
+# independent write-up from re-ingested syndication. v1 state is read
+# tolerantly (an old row is treated as match="new"), so a daemon restart across
+# the upgrade degrades one TTL window rather than crashing.
+_STATE_VERSION = 2
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Defaults — EVERY ONE IS A CONFIG KEY (charter §8: thresholds are hypotheses,
@@ -75,6 +80,9 @@ _DEFAULTS: dict[str, Any] = {
     "max_stories": 1500,
     "max_members_per_story": 40,
     "max_text_chars": 600,
+    # How much a source counts as corroboration, by HOW it joined the story
+    # (review F-6). Every one is a hypothesis to calibrate, not a fact.
+    "match_weights": {"new": 1.0, "exact": 0.0, "near_dup": 0.5, "semantic": 0.5},
 }
 
 # Query parameters that carry no story identity. Stripping them is what makes
@@ -215,9 +223,39 @@ def _item_text(item: dict, max_chars: int) -> str:
     return f"{head} {body}"[:max_chars]
 
 
-def _source_key(item: dict) -> str:
-    """Identity used to count INDEPENDENT sources — same rule as press_lane."""
-    return str(item.get("x_handle") or item.get("source") or "")
+def independence_key(item: dict) -> str:
+    """THE identity used to count independent sources. One implementation.
+
+    Review F-14: this used to exist twice — here and as
+    ``press_lane._independent_source`` — with the same body and no shared
+    contract, which is exactly how the two drift. press_lane now imports this.
+
+    Review F-6: it is also HOST-NORMALIZED, so a feed key (``cnbc_top``) and the
+    same publisher's URL (``cnbc.com/...``) are one source rather than two.
+
+    RESIDUAL, STATED: this cannot separate verbatim syndication from independent
+    reporting. One Reuters wire republished by five aggregators is five distinct
+    hosts and reads as five sources. A true publisher-group map (who syndicates
+    whom) is the only real fix and is future work; until then the discount in
+    ``StorySpine.view`` — which weights a source by HOW it joined the story —
+    is the tunable expression of that uncertainty, not a solution to it.
+    """
+    handle = str(item.get("x_handle") or "").strip()
+    if handle:
+        return f"x:{handle.lower()}"
+    host = _host(item.get("url"))
+    if host:
+        return f"host:{host}"
+    source = str(item.get("source") or "").strip()
+    return f"src:{source.lower()}" if source else ""
+
+
+def _host(url: object) -> str:
+    """Registrable-ish host of a URL ("" when there is none)."""
+    normalized = normalize_url(url)
+    if not normalized:
+        return ""
+    return normalized.split("/", 1)[0].split("?", 1)[0]
 
 
 def _iso(now: datetime) -> str:
@@ -358,6 +396,13 @@ class _MinHashBackend:
 # Optional semantic backend (Model2Vec static embeddings)
 # ─────────────────────────────────────────────────────────────────────────────
 
+# Review F-18: the encoder is loaded ONCE per process, not once per 120-second
+# tick. Keyed by resolved artifact path; the value is the callable, or None for
+# a resolved-and-unavailable path so a missing artifact is not re-probed (and
+# its notice not re-derived) forever.
+_ENCODER_CACHE: dict[str, Callable[[list[str]], list[list[float]]] | None] = {}
+
+
 def load_encoder(cfg: dict | None, *, root: Path | str | None = None) -> Callable[[list[str]], list[list[float]]] | None:
     """Return a text->vectors callable, or None when the semantic pass is off.
 
@@ -368,6 +413,10 @@ def load_encoder(cfg: dict | None, *, root: Path | str | None = None) -> Callabl
     There is no hub id, no fallback name and no download — an absent artifact is
     "pass disabled". The artifact is placed by an explicit operator/R2 step
     (docs/scoring_brain.md §3), never by a render/nightly/daemon path.
+
+    CACHED per process (review F-18): a static-embedding model is tens of MB of
+    matrices, and the press daemon constructs a StorySpine every tick. Loading
+    it 720 times a day to answer the same question was pure waste.
     """
     cfg = cfg or {}
     if not bool(cfg.get("enabled", False)):
@@ -380,28 +429,39 @@ def load_encoder(cfg: dict | None, *, root: Path | str | None = None) -> Callabl
     path = Path(raw_path)
     if not path.is_absolute() and root is not None:
         path = Path(root) / path
+    cache_key = str(path)
+    if cache_key in _ENCODER_CACHE:
+        return _ENCODER_CACHE[cache_key]
+
     if not path.exists():
         _notice("story-spine-no-model-artifact",
                 f"Model2Vec artifact absent at {path} — semantic pass disabled "
                 "(fetch is an operator/R2 step; never a runtime download)")
+        # NOT cached: the operator's whole arming procedure is "drop the artifact
+        # in place and restart", and a cached miss would make a mid-life drop-in
+        # look like it did nothing. A stat() per tick is free; a wrong answer
+        # that survives the fix is not.
         return None
     try:  # noqa: PLC0415 — optional dependency probe, deliberately lazy
         from model2vec import StaticModel
     except Exception as exc:  # noqa: BLE001
         _notice("story-spine-no-model2vec",
                 f"model2vec unavailable ({type(exc).__name__}) — semantic pass disabled")
+        _ENCODER_CACHE[cache_key] = None
         return None
     try:
         model = StaticModel.from_pretrained(str(path))
     except Exception as exc:  # noqa: BLE001
         _notice("story-spine-model-load-failed",
                 f"Model2Vec load failed ({type(exc).__name__}) — semantic pass disabled")
+        _ENCODER_CACHE[cache_key] = None
         return None
 
     def _encode(texts: list[str]) -> list[list[float]]:
         vectors = model.encode(texts)
         return [[float(x) for x in row] for row in vectors]
 
+    _ENCODER_CACHE[cache_key] = _encode
     return _encode
 
 
@@ -451,6 +511,15 @@ class StorySpine:
         self.max_stories = int(_cfg(self.cfg, "max_stories"))
         self.max_members = int(_cfg(self.cfg, "max_members_per_story"))
         self.max_text_chars = int(_cfg(self.cfg, "max_text_chars"))
+        weights = dict(_DEFAULTS["match_weights"])
+        override = self.cfg.get("match_weights")
+        if isinstance(override, dict):
+            for key, value in override.items():
+                try:
+                    weights[str(key)] = float(value)
+                except (TypeError, ValueError):
+                    continue
+        self.match_weights = weights
 
         self.encoder = encoder
         self.downgrades: list[str] = []
@@ -558,7 +627,7 @@ class StorySpine:
 
         rec = self.stories[sid]
         self.keys[key] = sid
-        self._absorb(rec, item, now=now)
+        self._absorb(rec, item, now=now, match=match)
         view = self.view(sid, now=now)
         view["match"] = match
         view["is_new"] = match == "new"
@@ -612,12 +681,18 @@ class StorySpine:
 
         return None, "new"
 
-    def _absorb(self, rec: dict, item: dict, *, now: datetime) -> None:
+    def _absorb(self, rec: dict, item: dict, *, now: datetime,
+                match: str = "new") -> None:
         rec["last_seen"] = _iso(now)
-        src = _source_key(item)
+        src = independence_key(item)
         sources = rec.setdefault("sources", {})
         if src and src not in sources:
-            sources[src] = _iso(now)
+            # HOW a source joined is the corroboration evidence, not just THAT
+            # it joined (review F-6): `exact` is the same artifact re-ingested
+            # (a mirror) and is no new evidence at all; `near_dup`/`semantic`
+            # may be an independent write-up OR verbatim syndication and cannot
+            # be told apart without a publisher-group map.
+            sources[src] = {"first_ts": _iso(now), "match": match}
         tier = str(item.get("source_tier", "") or "unknown")
         mix = rec.setdefault("tier_mix", {})
         mix[tier] = int(mix.get(tier, 0)) + 1
@@ -653,46 +728,80 @@ class StorySpine:
     # -- views ----------------------------------------------------------------
 
     def view(self, story_id: str, *, now: datetime) -> dict:
-        """Derived, JSON-safe view of a story record."""
+        """Derived, JSON-safe view of a story record.
+
+        Carries BOTH the raw source counts and the match-discounted ones. The
+        raw count is what a human wants to read ("3 sources"); the discounted
+        count is what the corroboration-velocity feature consumes, because a
+        mirror re-ingest is not a second witness (review F-6).
+        """
         rec = self.stories.get(story_id) or {}
         sources: dict = rec.get("sources") or {}
+        raw_15, w_15, mix_15 = self._within(sources, now, 15 * 60)
+        raw_60, w_60, _ = self._within(sources, now, 60 * 60)
         return {
             "story_id": story_id,
             "first_seen": rec.get("first_seen", ""),
             "last_seen": rec.get("last_seen", ""),
             "source_count": len(sources),
-            "sources_15m": self._sources_within(sources, now, 15 * 60),
-            "sources_60m": self._sources_within(sources, now, 60 * 60),
+            "sources_15m": raw_15,
+            "sources_60m": raw_60,
+            "weighted_15m": round(w_15, 4),
+            "weighted_60m": round(w_60, 4),
+            "match_mix_15m": mix_15,
             "tier_mix": dict(rec.get("tier_mix") or {}),
             "observed_engagement": dict(rec.get("observed_engagement") or {}),
             "member_count": len(rec.get("members") or []),
         }
 
-    @staticmethod
-    def _sources_within(sources: dict, now: datetime, window_s: int) -> int:
-        """Distinct sources whose FIRST sighting is inside the window.
+    def _within(self, sources: dict, now: datetime,
+                window_s: int) -> tuple[int, float, dict]:
+        """(raw count, discounted count, match histogram) inside the window.
 
-        This is the corroboration-velocity numerator: how many INDEPENDENT
-        surfaces carried the story in the last N minutes, which is the ≥2-source
-        law's own evidence expressed as a rate.
+        The discount is the corroboration-velocity numerator. Weights are config
+        keys (`corroboration.match_weights`), because how much a near-duplicate
+        counts as corroboration is a hypothesis, not a fact:
+
+            new       1.0  opened the story — a first witness
+            exact     0.0  the SAME artifact again (a mirror) — no new evidence
+            near_dup  0.5  similar copy: independent write-up OR syndication
+            semantic  0.5  same, via embeddings
+
+        Tolerates v1 state, where a source was stored as a bare ISO string with
+        no match kind; those read as "new".
         """
         cutoff = now.astimezone(timezone.utc) - timedelta(seconds=window_s)
-        count = 0
-        for ts in sources.values():
+        raw = 0
+        weighted = 0.0
+        mix: dict[str, int] = {}
+        for entry in sources.values():
+            if isinstance(entry, dict):
+                ts, match = entry.get("first_ts"), str(entry.get("match", "new"))
+            else:  # v1 shape
+                ts, match = entry, "new"
             dt = _parse_iso(ts)
-            if dt is not None and dt >= cutoff:
-                count += 1
-        return count
+            if dt is None or dt < cutoff:
+                continue
+            raw += 1
+            mix[match] = int(mix.get(match, 0)) + 1
+            weighted += float(self.match_weights.get(match, 0.5))
+        return raw, weighted, mix
 
     # -- maintenance ----------------------------------------------------------
 
     def prune(self, now: datetime) -> int:
         """Drop stories past the TTL and trim to max_stories. Returns #dropped."""
         cutoff = now.astimezone(timezone.utc) - timedelta(hours=self.ttl_h)
-        dead = [
-            sid for sid, rec in self.stories.items()
-            if (_parse_iso(rec.get("last_seen")) or cutoff) < cutoff
-        ]
+        # Review F-21: an UNPARSEABLE last_seen must expire, not live forever.
+        # The old `or cutoff` made a corrupt timestamp compare EQUAL to the
+        # cutoff, and `cutoff < cutoff` is False — so a single bad row pinned a
+        # story in state permanently, immune to the TTL that exists to bound it.
+        # A row we cannot date is a row we cannot keep.
+        dead = []
+        for sid, rec in self.stories.items():
+            seen_at = _parse_iso(rec.get("last_seen"))
+            if seen_at is None or seen_at < cutoff:
+                dead.append(sid)
         for sid in dead:
             self._drop(sid)
 

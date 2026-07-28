@@ -54,18 +54,40 @@ if str(ROOT) not in sys.path:
 from engine.marketing import golden_set as gs  # noqa: E402
 
 
-def _load_corpus(args) -> tuple[list[dict], list[Path]]:
+def _golden_cfg() -> dict:
+    """`breaking.scoring.golden_set` from config/marketing.yml.
+
+    Review F-11: this block existed in config and NOTHING read it — k,
+    min_labeled and corpus_paths were all hardcoded here, so an operator tuning
+    the committed config changed nothing and had no way to find that out.
+    Fail-soft to the module defaults; a missing pyyaml must not break `stats`.
+    """
+    try:
+        import yaml  # noqa: PLC0415
+
+        cfg = yaml.safe_load((ROOT / "config" / "marketing.yml").read_text(encoding="utf-8"))
+        block = ((cfg or {}).get("breaking") or {}).get("scoring") or {}
+        golden = block.get("golden_set")
+        return golden if isinstance(golden, dict) else {}
+    except Exception as exc:  # noqa: BLE001
+        print(f"::warning title=golden-set-config::config unreadable ({exc}) — "
+              "using module defaults", flush=True)
+        return {}
+
+
+def _load_corpus(args, cfg: dict) -> tuple[list[dict], list[Path]]:
     if args.corpus:
         paths = [Path(args.corpus)]
     else:
-        paths = gs.corpus_paths(ROOT)
+        paths = gs.corpus_paths(ROOT, cfg=cfg)
         if args.allow_outbox_fallback:
             paths.append(ROOT / "data" / "marketing" / "outbox" / "items.jsonl")
     return gs.read_corpus(paths), paths
 
 
 def cmd_export(args) -> int:
-    rows, paths = _load_corpus(args)
+    cfg = _golden_cfg()
+    rows, paths = _load_corpus(args, cfg)
     if not rows:
         print("no corpus rows found. Looked in:", flush=True)
         for path in paths:
@@ -77,6 +99,7 @@ def cmd_export(args) -> int:
 
     labels = gs.load_labels(ROOT, path=args.labels)
     batch = gs.export_batch(rows, n=args.n, labeled=labels.keys(), seed=args.seed,
+                            mode=args.mode, cfg=cfg,
                             now=datetime.now(tz=timezone.utc))
     out = Path(args.out) if args.out else (
         ROOT / "data" / "marketing" / "press" / f"golden_batch_{batch['batch_id']}.jsonl"
@@ -86,10 +109,12 @@ def cmd_export(args) -> int:
         for item in batch["items"]:
             fh.write(json.dumps(item, ensure_ascii=False) + "\n")
 
-    print(f"batch_id       : {batch['batch_id']}", flush=True)
-    print(f"corpus rows    : {batch['corpus_rows']}", flush=True)
+    print(f"batch_id       : {batch['batch_id']}  mode={batch['mode']}", flush=True)
+    print(f"corpus rows    : {batch['corpus_rows']} "
+          f"({batch['distinct_corpus_items']} distinct items)", flush=True)
     print(f"already labeled: {batch['already_labeled']}", flush=True)
-    print(f"returned       : {batch['returned']} / {batch['requested']}", flush=True)
+    print(f"returned       : {batch['returned']} / {batch['requested']} "
+          f"({batch['distinct_items']} distinct)", flush=True)
     print(f"strata         : {batch['strata']}", flush=True)
     print(f"written        : {out}", flush=True)
     return 0
@@ -123,6 +148,10 @@ def cmd_import(args) -> int:
                 row.get("item_id", ""), label, labeler=args.labeler,
                 notes=str(row.get("notes", "")), headline=str(row.get("headline", "")),
                 source=str(row.get("source", "")), batch_id=str(row.get("batch_id", "")),
+                # Carry the sampling design through so the eval knows which
+                # estimator it is entitled to (review F-8a).
+                sample_mode=str(row.get("sample_mode", "")),
+                inclusion_weight=float(row.get("inclusion_weight", 1.0) or 1.0),
             )
             errors = gs.validate_label_row(record)
             if errors:
@@ -142,9 +171,12 @@ def cmd_import(args) -> int:
 
 
 def cmd_eval(args) -> int:
-    rows, paths = _load_corpus(args)
+    cfg = _golden_cfg()
+    rows, paths = _load_corpus(args, cfg)
     labels = gs.load_labels(ROOT, path=args.labels)
-    report = gs.evaluate(rows, labels, k=args.k)
+    # k comes from the flag when given, else the committed config, else 20.
+    k = args.k if args.k is not None else int(cfg.get("k", 20))
+    report = gs.evaluate(rows, labels, k=k, cfg=cfg)
     print(gs.format_report(report), flush=True)
     if not rows:
         print("  corpus paths   : " + ", ".join(str(p) for p in paths), flush=True)
@@ -158,18 +190,22 @@ def cmd_eval(args) -> int:
 
 
 def cmd_stats(args) -> int:
-    rows, paths = _load_corpus(args)
+    cfg = _golden_cfg()
+    rows, paths = _load_corpus(args, cfg)
     labels = gs.load_labels(ROOT, path=args.labels)
     counts = {name: 0 for name in gs.LABELS}
     for row in labels.values():
         name = str(row.get("label", ""))
         if name in counts:
             counts[name] += 1
+    distinct = gs.dedupe_rows(rows)
     with_components = sum(1 for r in rows if r.get("_components"))
     print(f"corpus rows        : {len(rows)}", flush=True)
+    print(f"  distinct items   : {len(distinct)}", flush=True)
     print(f"  with _components : {with_components}", flush=True)
-    print(f"  paths            : " + ", ".join(str(p) for p in paths), flush=True)
+    print("  paths            : " + ", ".join(str(p) for p in paths), flush=True)
     print(f"labels in store    : {len(labels)}  {counts}", flush=True)
+    print(f"config golden_set  : {cfg or '(none — module defaults)'}", flush=True)
     return 0
 
 
@@ -187,6 +223,12 @@ def main(argv: list[str] | None = None) -> int:
     p_export.add_argument("--n", type=int, default=200)
     p_export.add_argument("--seed", default="xg-w5")
     p_export.add_argument("--out")
+    p_export.add_argument("--mode", choices=("stratified", "head"),
+                          default="stratified",
+                          help="stratified: rich in rare cells, eval uses the "
+                               "inverse-inclusion-probability estimate. "
+                               "head: uniform sample of the production head, "
+                               "eval is unweighted and unbiased for head precision.")
     p_export.set_defaults(func=cmd_export)
 
     p_import = sub.add_parser("import", help="fold a labeled batch into the store")
@@ -195,7 +237,8 @@ def main(argv: list[str] | None = None) -> int:
     p_import.set_defaults(func=cmd_import)
 
     p_eval = sub.add_parser("eval", help="precision@k: rank ordering vs salience")
-    p_eval.add_argument("--k", type=int, default=20)
+    p_eval.add_argument("--k", type=int, default=None,
+                        help="default: breaking.scoring.golden_set.k from config")
     p_eval.add_argument("--json", action="store_true")
     p_eval.add_argument("--require-labels", action="store_true",
                         help="exit 1 when the comparison cannot be made")

@@ -113,11 +113,12 @@ _PRESS_SEEN_CAP = 8000
 # cursors and the seen ledger: the poller makes zero git writes, and the nightly
 # stays the sole advancer of every tracked ledger.
 _PRESS_CORPUS_PATH = ROOT / "data" / "marketing" / "press" / "ingest_corpus.jsonl"
+# Review F-17: both caps are CONFIG KEYS (breaking.scoring.corpus_sink), with
+# these as the fallbacks a config-less checkout uses. Rolling is size-gated —
+# checking "over N lines?" by reading the file would re-read tens of MB every
+# 120 seconds — and the roll itself is STREAMING (see _roll_press_corpus), so
+# even the rare roll never materialises the whole file inside the live tick.
 _PRESS_CORPUS_CAP = 20000
-# Rolling is a whole-file read, so it is SIZE-GATED rather than run every tick:
-# checking "is this over 20k lines?" by reading the file would mean re-reading
-# tens of MB every 120 seconds forever. Past this byte ceiling the daemon reads
-# once and truncates to the newest _PRESS_CORPUS_CAP rows — rare, not hot.
 _PRESS_CORPUS_MAX_BYTES = 64 * 1024 * 1024
 
 
@@ -176,8 +177,30 @@ def _load_press_seen() -> dict:
         return {}
 
 
-def _append_press_corpus(rows: list) -> int:
-    """Append this tick's scoring-brain corpus rows; roll at the cap.
+def _roll_press_corpus(keep: int) -> None:
+    """Truncate the corpus to its newest `keep` rows — STREAMING, two passes.
+
+    Review F-17: the first cut did ``read_text().splitlines()`` and then joined
+    the tail, which materialises the entire file PLUS a list of every line PLUS
+    the rebuilt tail — three copies of a 64 MB file inside the live press tick.
+    Pass one counts lines; pass two copies the tail out line by line. Peak
+    memory is one line, whatever the file size.
+    """
+    with _PRESS_CORPUS_PATH.open("r", encoding="utf-8") as fh:
+        total = sum(1 for _ in fh)
+    skip = max(0, total - keep)
+    tmp = _PRESS_CORPUS_PATH.with_suffix(".tmp")
+    with _PRESS_CORPUS_PATH.open("r", encoding="utf-8") as src, \
+            tmp.open("w", encoding="utf-8") as dst:
+        for index, line in enumerate(src):
+            if index >= skip:
+                dst.write(line)
+    tmp.replace(_PRESS_CORPUS_PATH)
+    logger.info("[press] corpus rolled %d -> %d rows", total, min(total, keep))
+
+
+def _append_press_corpus(rows: list, *, cfg: dict | None = None) -> int:
+    """Append this tick's scoring-brain corpus rows; roll past the byte ceiling.
 
     Fail-soft: the corpus is a labeling/evaluation convenience, so a write error
     logs and the tick continues. NEVER runs in a dry-run (the caller gates it) —
@@ -186,19 +209,17 @@ def _append_press_corpus(rows: list) -> int:
     if not rows:
         return 0
     import json  # noqa: PLC0415
+
+    sink = (((cfg or {}).get("breaking") or {}).get("scoring") or {}).get("corpus_sink") or {}
+    keep = int(sink.get("max_rows", _PRESS_CORPUS_CAP))
+    max_bytes = int(sink.get("max_bytes", _PRESS_CORPUS_MAX_BYTES))
     try:
         _PRESS_CORPUS_PATH.parent.mkdir(parents=True, exist_ok=True)
         with _PRESS_CORPUS_PATH.open("a", encoding="utf-8") as fh:
             for row in rows:
                 fh.write(json.dumps(row, ensure_ascii=False) + "\n")
-        # Roll only past the byte ceiling — see _PRESS_CORPUS_MAX_BYTES.
-        if _PRESS_CORPUS_PATH.stat().st_size > _PRESS_CORPUS_MAX_BYTES:
-            lines = _PRESS_CORPUS_PATH.read_text(encoding="utf-8").splitlines()
-            tmp = _PRESS_CORPUS_PATH.with_suffix(".tmp")
-            tmp.write_text("\n".join(lines[-_PRESS_CORPUS_CAP:]) + "\n",
-                           encoding="utf-8")
-            tmp.replace(_PRESS_CORPUS_PATH)
-            logger.info("[press] corpus rolled to newest %d rows", _PRESS_CORPUS_CAP)
+        if _PRESS_CORPUS_PATH.stat().st_size > max_bytes:
+            _roll_press_corpus(keep)
         return len(rows)
     except Exception as exc:  # noqa: BLE001
         logger.warning("[press] corpus append failed (continuing): %s", exc)
@@ -418,7 +439,7 @@ def _run_press_tick(*, dry_run: bool) -> dict:
     #     corpus that feeds the labeling exporter and the precision@20 harness.
     #     Skipped in dry-run for the same non-consuming reason as everything else.
     if not dry_run:
-        _append_press_corpus(result.get("corpus", []))
+        _append_press_corpus(result.get("corpus", []), cfg=marketing_cfg)
 
     # 5. Persist provider cursors / spend / flagship counter — but NOT in dry-run,
     #    which must leave zero footprint so it is non-consuming. NEVER a git write.

@@ -41,7 +41,7 @@ import os
 import re
 import sys
 import tempfile
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -108,6 +108,58 @@ def _garbage_check(item: dict, *, gate_cfg: dict, blocklist_lower: set[str]) -> 
         return None
 
 
+_DEFAULT_CORPUS_ROW_WINDOW_H = 24
+
+
+def _corpus_gate(state: dict, *, now: datetime, window_h: float):
+    """Return `(should_row, note)` — a per-item corpus-row dedupe window.
+
+    REVIEW F-1, the blocker. The lane's `seen` ledger only advances when an item
+    EMITS or is refused by the outbox. Every other outcome — garbage-dropped,
+    digest, below-floor, over top-K, story-locked — leaves the item unseen, so
+    the next tick re-ingests it, re-scores it and writes ANOTHER corpus row. At
+    a 120-second cadence that is 30 rows per item per hour, forever: the
+    reviewer's 6-hour replay of three stale RSS items produced 560 rows over 23
+    distinct ids, and a "200-item" labeling batch came back with 22 distinct
+    items, two of them ninety times over.
+
+    The corpus is a labeling and evaluation sample, so its unit must be the
+    ITEM, not the tick. This gate keys on item id and admits each item once per
+    rolling window. It is deliberately separate from `seen`: `seen` governs
+    EMISSION (and must keep letting a below-floor item be reconsidered when its
+    corroboration grows), while this governs SAMPLING.
+
+    The window is a config key. The state lives in the same daemon-local
+    gitignored dict as everything else here.
+    """
+    ledger: dict = state.setdefault("corpus_rowed", {})
+    cutoff = now.astimezone(timezone.utc) - timedelta(hours=window_h)
+    for key in [k for k, ts in list(ledger.items())
+                if (_parse_ts(ts) or cutoff) < cutoff]:
+        del ledger[key]
+
+    stamp = now.astimezone(timezone.utc).isoformat()
+
+    def _should_row(item_id: str) -> bool:
+        key = str(item_id or "")
+        if not key or key in ledger:
+            return False
+        ledger[key] = stamp
+        return True
+
+    return _should_row
+
+
+def _parse_ts(value: object) -> datetime | None:
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
 def _scoring_provenance(scored: dict) -> dict:
     """Compact `_components` for the outbox item's provenance block."""
     components = scored.get("_components") or {}
@@ -131,6 +183,12 @@ def _corpus_row(scored: dict, *, outcome: str, now_iso: str) -> dict:
     data/marketing/press/ tree — never a repo write.
     """
     components = scored.get("_components") or {}
+    salience_block = components.get("salience") or {}
+    # Review F-8(b): the UNCONTAMINATED baseline. Once demotion arms, `salience`
+    # is partly the new scorer's output, so the harness's "incumbent ordering"
+    # control would be a blend of control and treatment. `salience_base` is the
+    # pre-demotion number and is what the eval ranks the baseline on.
+    salience_base = salience_block.get("pre_demotion", scored.get("salience"))
     return {
         "schema": "press_corpus.v1",
         "item_id": str(scored.get("id", "")),
@@ -144,6 +202,7 @@ def _corpus_row(scored: dict, *, outcome: str, now_iso: str) -> dict:
         "source_tier": str(scored.get("source_tier", "")),
         "event_class": str(scored.get("event_class", "none")),
         "salience": scored.get("salience"),
+        "salience_base": salience_base,
         "rank_score": scored.get("rank_score"),
         "story_id": (components.get("story") or {}).get("story_id", ""),
         "outcome": outcome,
@@ -237,8 +296,22 @@ def _primary_entity(item: dict) -> str:
 
 
 def _independent_source(item: dict) -> str:
-    """Identity used to count INDEPENDENT sources for corroboration."""
-    return str(item.get("x_handle") or item.get("source") or "")
+    """Identity used to count INDEPENDENT sources for corroboration.
+
+    Review F-14: ONE implementation, in engine/marketing/story_spine.py. This
+    lane's corroboration counter and the story spine's source counter were two
+    copies of the same rule, so a fix to either drifted from the other; they now
+    share a key space by construction, which is also what makes the spine's
+    match-weighted count a valid input to the corroboration feature (F-6).
+    Fail-soft to the historical form: a corroboration counter that raises would
+    stop the wire.
+    """
+    try:
+        from engine.marketing.story_spine import independence_key  # noqa: PLC0415
+
+        return independence_key(item)
+    except Exception:  # noqa: BLE001
+        return str(item.get("x_handle") or item.get("source") or "")
 
 
 def _route_account(scored: dict, *, cfg: dict, root: Path) -> str:
@@ -771,6 +844,13 @@ def run_press_tick(
     if not isinstance(gate_cfg, dict):
         gate_cfg = {}
 
+    # Review F-1: one corpus row per ITEM per rolling window, not one per tick.
+    should_row = _corpus_gate(
+        state, now=now,
+        window_h=float(scoring_cfg.get("corpus_row_window_h",
+                                       _DEFAULT_CORPUS_ROW_WINDOW_H)),
+    )
+
     spine = None
     corpus = None
     authority = None
@@ -825,10 +905,11 @@ def run_press_tick(
             blocked.append({"id": iid, "reason": reason,
                             "detail": str(drop.get("detail", "")),
                             "headline": str(it.get("headline", ""))[:120]})
-            gate_rows.append(_corpus_row(
-                dict(it), outcome=f"blocked:{reason}",
-                now_iso=now.astimezone(timezone.utc).isoformat(),
-            ))
+            if should_row(iid):
+                gate_rows.append(_corpus_row(
+                    dict(it), outcome=f"blocked:{reason}",
+                    now_iso=now.astimezone(timezone.utc).isoformat(),
+                ))
             continue
         ekey = _emission_key(it)
         if ekey and (ekey in seen or ekey in seen_this_tick):
@@ -965,6 +1046,7 @@ def run_press_tick(
             # labeling batch wants, so the rows ship even though nothing emitted.
             "corpus": list(gate_rows) + [
                 _corpus_row(s, outcome="primed", now_iso=now_iso) for s in scored
+                if should_row(str(s.get("id", "")))
             ],
             "_seen": sorted(seen),
         }
@@ -1220,6 +1302,7 @@ def run_press_tick(
         _corpus_row(s, outcome=outcomes.get(str(s.get("id", "")), "scored"),
                     now_iso=now_iso)
         for s in scored
+        if should_row(str(s.get("id", "")))
     ]
 
     return {

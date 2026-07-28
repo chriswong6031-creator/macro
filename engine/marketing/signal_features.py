@@ -79,6 +79,13 @@ _CORROBORATION_DEFAULTS: dict[str, Any] = {
     "sources_60m_full": 5,
     "weight_15m": 0.7,
     "weight_60m": 0.3,
+    # Review F-6: count MATCH-DISCOUNTED sources, not raw ones. A mirror
+    # re-ingest of the same artifact is not a second witness, and a near-dup may
+    # be verbatim syndication rather than independent reporting. The weights
+    # live in `story_spine.match_weights`; this switch says which count the
+    # feature reads. Set false to score raw source counts (the pre-review
+    # behaviour) for comparison.
+    "use_weighted_sources": True,
 }
 
 _CORPUS_DEFAULTS: dict[str, Any] = {
@@ -87,11 +94,31 @@ _CORPUS_DEFAULTS: dict[str, Any] = {
     "burst_window_h": 72,
     "burst_recent_h": 1,
     "burst_min_hours": 6,
-    "burst_min_std": 0.5,
+    # Review F-3(a). This was 0.5, which is nonsense on this scale: rates here
+    # are per-DOCUMENT-deduped, so every rate is in [0,1] and a floor of 0.5
+    # capped z at 2.0 — meaning keyword_heat could never exceed 0.5 no matter
+    # how violent the burst, and the ordering weight was silently halved. The
+    # measured baseline std on a real 344-item tick was ~0.066, so the floor now
+    # sits just under measured reality. It exists only to stop a division by a
+    # near-zero variance for a token that has literally never varied.
+    # HYPOTHESIS, NOT A MEASUREMENT (charter §8) — re-grade it on the golden set.
+    "burst_min_std": 0.05,
     "burst_z_cap": 4.0,
+    "burst_z_threshold": 2.0,
+    # Review F-3(b). The recent bucket is a PARTIAL hour compared against
+    # complete baseline hours: one minute past the hour, a single document
+    # containing token X gives rate 1.0 and a false burst, and the same story
+    # scores 15x differently depending on where in the hour it lands. A burst
+    # cannot fire until the recent bucket holds enough documents for a rate to
+    # mean anything.
+    "burst_recent_min_docs": 8,
     "novelty_window_d": 30,
     "novelty_min_docs": 50,
     "novelty_top_k": 3,
+    # Review F-4(b): an item with fewer tokens than novelty_top_k is not
+    # comparable to one with twelve — its "top 3 rarest" is drawn from a smaller
+    # pool. Below this it reports a null state instead of a number.
+    "novelty_min_tokens": 3,
     "novelty_neutral": 0.5,
     "min_token_len": 3,
 }
@@ -131,18 +158,41 @@ _SHAPE_DEFAULTS: dict[str, Any] = {
 # of the existing deterministic salience, not a replacement for it, and no weight
 # here is load-bearing until the golden-set precision@20 ranks it (charter §8).
 _RANK_WEIGHT_DEFAULTS: dict[str, float] = {
-    "salience": 0.50,
+    # Review F-5, adjudicated: source_authority keeps its accrual machinery but
+    # carries ZERO ordering weight until two preconditions are met, because
+    # today it would rank NOISE:
+    #   (a) The prior must live on the measured axis. A 0.5 neutral prior equals
+    #       ~21.4 weighted engagement on the log scale, so a real source
+    #       crossing min_samples with genuinely low engagement scores BELOW an
+    #       entirely unmeasured one — measurement would demote it.
+    #   (b) Engagement must be sampled at a FIXED POST AGE. `parse_tweets`
+    #       samples once, seconds after the poller sees the post, so the number
+    #       is really "how fast did we poll" — handles polled most often would
+    #       score lowest. Ranking on it inverts the intended signal.
+    # The fixed-age refresh is deliberately NOT attempted in this wave.
+    "source_authority": 0.0,
+    # The 0.08 released above returns to the INCUMBENT salience rather than
+    # being spread across untested features — the conservative destination.
+    "salience": 0.58,
     "corroboration_velocity": 0.14,
     "keyword_heat": 0.10,
     "novelty": 0.08,
-    "source_authority": 0.08,
     "tone_extremity": 0.04,
     "headline_shape": 0.06,
 }
 
 _TOKEN_RE = re.compile(r"[a-z0-9$%\.]+")
 _NUMBER_RE = re.compile(r"(?<!\w)[-+$]?\d[\d,\.]*%?")
-_CAPS_RUN_RE = re.compile(r"(?<!^)(?:[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*|[A-Z]{2,})")
+# Review F-20: this used to allow `(?:\s+[A-Z][a-z]+)*`, which greedily glued
+# every run of consecutive capitalised words into ONE match. "Bank Of America
+# Corp Reports Record Quarterly Results" counted as a single entity, so the
+# feature was reading publisher HOUSE STYLE (title case vs sentence case) rather
+# than entity density — and title-case outlets scored 1 while sentence-case
+# outlets covering the same story scored 5. Each capitalised token now counts
+# once, which is a proxy for entity count that at least does not invert with the
+# publisher's stylebook. `(?<!^)` still drops the leading word, which is
+# capitalised in every headline regardless of style.
+_CAPS_RUN_RE = re.compile(r"(?<!^)\b(?:[A-Z][a-z]+|[A-Z]{2,})\b")
 
 _STOPWORDS: frozenset[str] = frozenset("""
 a an and are as at be been but by for from had has have he her his how i if in
@@ -208,8 +258,18 @@ def corroboration_velocity(story: dict | None, *,
     """
     if not isinstance(story, dict):
         return 0.0, {"state": "no-story", "sources_15m": 0, "sources_60m": 0}
-    n15 = int(story.get("sources_15m", 0) or 0)
-    n60 = int(story.get("sources_60m", 0) or 0)
+
+    raw15 = int(story.get("sources_15m", 0) or 0)
+    raw60 = int(story.get("sources_60m", 0) or 0)
+    weighted = bool(_get(cfg, "use_weighted_sources", _CORROBORATION_DEFAULTS))
+    if weighted and "weighted_15m" in story:
+        n15 = float(story.get("weighted_15m", 0.0) or 0.0)
+        n60 = float(story.get("weighted_60m", 0.0) or 0.0)
+        basis = "match-weighted"
+    else:
+        n15, n60 = float(raw15), float(raw60)
+        basis = "raw"
+
     full15 = max(2, int(_get(cfg, "sources_15m_full", _CORROBORATION_DEFAULTS)))
     full60 = max(2, int(_get(cfg, "sources_60m_full", _CORROBORATION_DEFAULTS)))
     w15 = float(_get(cfg, "weight_15m", _CORROBORATION_DEFAULTS))
@@ -220,9 +280,17 @@ def corroboration_velocity(story: dict | None, *,
     value = _clamp01(v15 * w15 + v60 * w60)
     return value, {
         "state": "observed",
-        "sources_15m": n15,
-        "sources_60m": n60,
+        "basis": basis,
+        "sources_15m": raw15,
+        "sources_60m": raw60,
+        "weighted_15m": round(n15, 4),
+        "weighted_60m": round(n60, 4),
+        "match_mix_15m": dict(story.get("match_mix_15m") or {}),
         "source_count": int(story.get("source_count", 0) or 0),
+        # RESIDUAL, STATED (review F-6): verbatim syndication and independent
+        # reporting are not separable without a publisher-group map. The match
+        # weights are the tunable expression of that uncertainty, not a fix.
+        "residual": "syndication vs independent reporting not separable without a publisher map",
     }
 
 
@@ -276,8 +344,34 @@ class SignalCorpus:
     def total_docs(self) -> int:
         return sum(int(b.get("docs", 0)) for b in self.days.values())
 
+    def capped_days(self) -> int:
+        """How many daily buckets have had their token map truncated."""
+        return sum(1 for b in self.days.values() if b.get("capped"))
+
     def document_frequency(self, token: str) -> int:
-        return sum(int(b.get("tokens", {}).get(token, 0)) for b in self.days.values())
+        """Document frequency over the trailing window — EVICTION-AWARE.
+
+        Review F-4(a): `prune` truncates each bucket to its top-N tokens by
+        count, which deletes exactly the RARE ones. A naive sum then reported
+        df=0 for a token seen 400 times last month and handed it maximum IDF —
+        the corpus's memory loss read as novelty, and the feature scored the
+        oldest, most repeated stories as the freshest.
+
+        A token absent from a bucket that WAS truncated is not evidence of
+        absence: it is a token whose count fell below that bucket's cutoff, so
+        its true count is at least 1 and at most the cutoff. We floor it at 1.
+        That is conservative in the right direction — it suppresses fake novelty
+        rather than manufacturing it — and `novelty`'s detail block reports how
+        many buckets were capped so the reader knows the estimate is a floor.
+        """
+        total = 0
+        for bucket in self.days.values():
+            tokens = bucket.get("tokens") or {}
+            count = int(tokens.get(token, 0))
+            if count == 0 and bucket.get("capped"):
+                count = 1
+            total += count
+        return total
 
     def novelty(self, item: dict, *, exclude_self: bool = True) -> tuple[float, dict]:
         """Temporal-IDF novelty against the trailing corpus (arXiv 1401.1456 shape).
@@ -299,17 +393,36 @@ class SignalCorpus:
             }
 
         tokens = self.item_tokens(item)
+        top_k = max(1, int(_get(self.cfg, "novelty_top_k", _CORPUS_DEFAULTS)))
+        min_tokens = max(1, int(_get(self.cfg, "novelty_min_tokens", _CORPUS_DEFAULTS)))
         if not tokens:
             return neutral, {"state": "no-tokens", "corpus_docs": total}
+        if len(tokens) < min_tokens:
+            # Review F-4(b): "mean of the top 3 rarest" is not the same statistic
+            # when the pool is 2 tokens as when it is 12 — averaging over a
+            # shorter list is a different, easier maximum. Report the null rather
+            # than a number that silently means something else.
+            return neutral, {
+                "state": "too-few-tokens",
+                "tokens": len(tokens),
+                "min_tokens": min_tokens,
+                "corpus_docs": total,
+                "note": "token pool below min_tokens — neutral value, NOT a measurement",
+            }
 
         max_idf = math.log((total + 1.0) / 1.0)
+        capped = self.capped_days()
         idfs = []
         for tok in tokens:
-            df = self.document_frequency(tok) - (1 if exclude_self else 0)
-            df = max(0, df)
+            df = self.document_frequency(tok)
+            if exclude_self:
+                df -= 1
+            # The eviction floor has to survive self-exclusion. Subtracting the
+            # item's own occurrence from a floored df of 1 lands back on 0 and
+            # restores exactly the maximum-IDF bug the floor exists to prevent.
+            df = max(df, 1 if capped else 0)
             idfs.append(math.log((total + 1.0) / (df + 1.0)))
         idfs.sort(reverse=True)
-        top_k = max(1, int(_get(self.cfg, "novelty_top_k", _CORPUS_DEFAULTS)))
         top = idfs[:top_k]
         value = _clamp01((sum(top) / len(top)) / max_idf) if max_idf > 0 else neutral
         return value, {
@@ -317,6 +430,12 @@ class SignalCorpus:
             "corpus_docs": total,
             "tokens_scored": len(idfs),
             "top_idf": round(top[0], 4) if top else 0.0,
+            "capped_buckets": capped,
+            # Honest residual: with capped buckets the DF is a FLOOR, so novelty
+            # is an upper bound. Longer headlines also draw their top-k from a
+            # bigger pool and skew rarer — a known length bias, pre-registered
+            # for grading on the golden set rather than papered over here.
+            "df_is_floor": bool(capped),
         }
 
     # -- keyword_heat ---------------------------------------------------------
@@ -339,6 +458,7 @@ class SignalCorpus:
         recent_h = max(1, int(_get(self.cfg, "burst_recent_h", _CORPUS_DEFAULTS)))
         min_hours = int(_get(self.cfg, "burst_min_hours", _CORPUS_DEFAULTS))
         min_std = float(_get(self.cfg, "burst_min_std", _CORPUS_DEFAULTS))
+        recent_min_docs = int(_get(self.cfg, "burst_recent_min_docs", _CORPUS_DEFAULTS))
 
         keys = self._hour_keys_desc()
         if len(keys) < max(2, min_hours):
@@ -350,6 +470,23 @@ class SignalCorpus:
         if not base_keys:
             return 0.0, {"state": "cold-start", "hours": len(keys),
                          "min_hours": min_hours}
+
+        # Review F-3(b): the recent bucket is a PARTIAL hour measured against
+        # COMPLETE baseline hours. Two minutes past the hour it may hold one
+        # document, and one document containing the token is a rate of 1.0 — a
+        # maximal "burst" that is really just the clock. Refuse to score until
+        # the partial bucket holds enough documents for its rate to carry
+        # information; the same story then reads the same at :05 and at :55.
+        recent_docs = sum(int((self.hours.get(k) or {}).get("docs", 0))
+                          for k in recent_keys)
+        if recent_docs < recent_min_docs:
+            return 0.0, {
+                "state": "recent-bucket-thin",
+                "recent_docs": recent_docs,
+                "min_docs": recent_min_docs,
+                "note": ("partial hour too thin to rate — 0 contribution, NOT a "
+                         "measured absence of burst"),
+            }
 
         def _rate(hkey: str) -> float:
             bucket = self.hours.get(hkey) or {}
@@ -367,9 +504,11 @@ class SignalCorpus:
         return z, {
             "state": "observed",
             "recent_rate": round(recent_rate, 5),
+            "recent_docs": recent_docs,
             "baseline_mean": round(mean, 5),
             "baseline_std": round(std, 5),
             "baseline_hours": len(base_keys),
+            "min_std_binding": bool(std < min_std),
         }
 
     def keyword_heat(self, item: dict, *, now: datetime) -> tuple[float, dict]:
@@ -396,7 +535,7 @@ class SignalCorpus:
         if best_z is None:
             return 0.0, last_unobserved
         value = _clamp01(best_z / z_cap) if z_cap > 0 else 0.0
-        threshold = float(self.cfg.get("burst_z_threshold", 2.0))
+        threshold = float(_get(self.cfg, "burst_z_threshold", _CORPUS_DEFAULTS))
         return value, {
             **best_detail,
             "token": best_tok,
@@ -427,6 +566,10 @@ class SignalCorpus:
             if len(tokens) > cap:
                 keep = sorted(tokens.items(), key=lambda kv: kv[1], reverse=True)[:cap]
                 bucket["tokens"] = dict(keep)
+                # Review F-4(a): remember that this bucket LOST tokens, so
+                # `document_frequency` can floor an absent token at 1 instead of
+                # reading eviction as genuine absence.
+                bucket["capped"] = True
         return dropped
 
 
