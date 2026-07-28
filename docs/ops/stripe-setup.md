@@ -155,10 +155,11 @@ the customer pause, cancel, expire, and later resubscribe at $900/year. Cancella
 reconciliation never remove the Customer marker. A returning founder does not consume a second
 PromotionCode redemption.
 
-The **webhook endpoint** (`we_…`) for this account is created via the Stripe **API** (not clicked
-in the dashboard) and its signing secret is auto-installed into `/etc/macro-api.env` by the same
-deploy-api-secrets workflow — so step 4's manual dashboard endpoint is the fallback, not the primary
-path, once the workflow is wired.
+The webhook **signing secret** is delivered to `/etc/macro-api.env` by the deploy-api-secrets
+workflow, from the `STRIPE_WEBHOOK_SECRET` GitHub secret. The **endpoint itself** (`we_…`) is not
+created by any code in this repo — `scripts/stripe_bootstrap.py` does products, prices, offers, and
+the portal config, but never `WebhookEndpoint`. Step 4's dashboard click is the primary path, and
+it must be repeated per mode.
 
 ## 5c. Upgrade lane (Insider → Pro)
 
@@ -232,8 +233,41 @@ then `stripe trigger checkout.session.completed`.
 
 ## Go-live checklist (after W-LEGAL clears)
 
+**Nothing carries over from test mode.** Every Stripe object below is mode-scoped — products,
+prices, coupons, promotion codes, the portal config, webhook endpoints and their signing secrets,
+customers, Tax registrations, and the customer-email toggles. The application code is mode-agnostic
+(prices are addressed by `lookup_key`, every key comes from env), so this is all ops, no deploy.
+
 - [ ] W-LEGAL done (entity, tax registrations, ToS/privacy/disclaimer, vendor redistribution).
 - [ ] Re-run `scripts/stripe_bootstrap.py --allow-live` with the **live** secret key.
-- [ ] Live webhook endpoint + live `whsec_` in `/etc/macro-api.env`.
-- [ ] Swap `STRIPE_SECRET_KEY` to `sk_live_...`; restart.
+- [ ] **Create the webhook endpoint in live mode** (step 4 again, dashboard toggled to live). Same
+      URL; the nine events must match `_RELEVANT` in `app/billing.py` exactly — a missing
+      `customer.subscription.deleted` or `charge.refunded` means cancellations and refunds never
+      revoke access.
+- [ ] Swap all three secrets **together** — `STRIPE_SECRET_KEY` (`sk_live_`),
+      `STRIPE_WEBHOOK_SECRET` (the live endpoint's `whsec_`), `STRIPE_PUBLISHABLE_KEY`
+      (`pk_live_`) — then re-run deploy-api-secrets and restart. Half-swapping is the dangerous
+      failure: live key + test `whsec_` passes checkout, fails every webhook signature, and leaves
+      a paying customer on `free`.
+- [ ] Re-enable the Dashboard-only email toggles in live mode (receipts, trial-ending,
+      card-failed, upcoming-renewal, dunning retries) — they are per-mode and default off.
+- [ ] Stripe Tax: set origin + registrations in live, then `STRIPE_AUTOMATIC_TAX=1`.
 - [ ] **Rotate** any test key that was ever pasted into a chat/log (Dashboard → API keys → roll).
+
+### Stale test-mode customers heal themselves
+
+Every `cus_…` in `user_entitlements.stripe_customer_id` was minted in test mode and is a
+`resource_missing` under a live key. No manual SQL is needed:
+
+- `_existing_customer` verifies the stored id against the current mode before handing it to any
+  lane, and on a proven absence clears the mapping and reports none — so checkout and
+  `/subscribe/init` mint a fresh live customer instead of 502ing forever. A timeout or 5xx is
+  **not** treated as absence (an outage must not erase mappings or double-create customers).
+- The nightly reconciler clears dead mappings as it walks the table.
+
+**Operator comps are preserved.** The reconciler yields to Stripe only when Stripe holds an
+*entitling* subscription; a comp whose customer is absent — or who has no live sub — is left alone
+and counted in the `comps_preserved` field of its summary. This is the same boundary
+`admin/entitlements.py` documents: a comp over a live sub is transient (force-comp cancels the sub
+first to make it durable), a comp without one is permanent. Lifetime passes therefore survive the
+mode switch untouched. Pinned by `tests/test_billing_reconcile.py`.
