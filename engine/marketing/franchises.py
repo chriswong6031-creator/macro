@@ -29,6 +29,18 @@ worth saying ABSTAINS, and `abstain()` records why (§16.5's reason taxonomy) so
 the bottleneck is visible: if every Mood-vs-Money slot dies on
 `no_measured_input`, the fix is a sentiment source (XG-W5), not a looser bar.
 
+CALENDAR SCOPE — A WEEKDAY CLOCK, NOT A TRADING CALENDAR (review F4).
+`sessions_only=True` keeps a session-clocked franchise (Cici's pre-open read,
+Kelly's "Confirmation Check") from opening on a Saturday, because a franchise
+whose whole premise is "what the session did" has nothing to say when there was
+no session. It is a WEEKDAY test and nothing more: it does not know about
+exchange holidays, half-days, Golden Week, Thanksgiving, or an unscheduled
+close. A HOLIDAY CALENDAR IS EXPLICITLY OUT OF SCOPE for XG-W3 — wiring one
+means picking a per-exchange source and a staleness policy, which is its own
+build. Until then a holiday Monday opens a slot the desk should decline, and
+declining it is an editorial abstention (`facts_too_stale` / `no_unique_edge`),
+not a scheduler guarantee.
+
 DISPLAY NAMES ARE METADATA, NOT COPY.  Sophia's "Narrative Shift" contains
 "narrative", which is on the copywriter's `_BANNED_WORD_BOUNDARY` list — a post
 that used the franchise's own name verbatim would be rejected by the house
@@ -102,6 +114,16 @@ _MECHANICAL_REASONS: frozenset[str] = frozenset(
         "franchise_disabled",
         "franchise_cap_reached",
         "no_measured_input",
+        # Review F2 — the account owns no wire_routing class. Silence is the
+        # correct output; the alternative (skip the filter) is the firehose.
+        "no_wire_routing",
+        # Review F3 — the one-owner lock could not be consulted. A lock you
+        # cannot read is a lock that failed, so the candidate is withheld.
+        "cross_account_collision_check_failed",
+        # Review F5 — the account does not run a market-hours lane.
+        "no_market_hours_lane",
+        # Review F4 — the franchise's clock does not cover this weekday.
+        "outside_calendar",
     }
 )
 ABSTAIN_REASONS: frozenset[str] = _EDITORIAL_REASONS | _MECHANICAL_REASONS
@@ -143,6 +165,14 @@ class Franchise:
     windows: tuple[str, ...] = ()
     max_per_day: int = 1
     max_per_week: int = 0  # 0 = unbounded by the weekly rule
+    #: Weekday numbers (Mon=0 … Sun=6) on which this franchise's window opens.
+    #: Empty = every day. A SESSION-CLOCKED franchise ("Before New York Wakes",
+    #: "Confirmation Check") must set `sessions_only=True` rather than listing
+    #: days by hand.
+    days: tuple[int, ...] = ()
+    #: True = weekdays only (Mon-Fri). See the CALENDAR SCOPE note in the module
+    #: docstring: this is a WEEKDAY CLOCK, NOT A TRADING CALENDAR.
+    sessions_only: bool = False
     enabled: bool = True
     #: False when the display name trips the house banned-vocab guard, so the
     #: prompt contract must not ask for it verbatim. Computed at import.
@@ -231,6 +261,7 @@ _RAW_REGISTER: tuple[dict[str, Any], ...] = (
         "kind": "macro",
         "classification": "analysis",
         "cadence": "daily",
+        "sessions_only": True,   # session-premise: "what the session did"
         "tz": _HK,
         # Her HK cash-session window — the pre-open read through the close.
         "windows": ("08:00-17:00",),
@@ -248,6 +279,7 @@ _RAW_REGISTER: tuple[dict[str, Any], ...] = (
         "kind": "macro",
         "classification": "analysis",
         "cadence": "daily",
+        "sessions_only": True,   # session-premise: "what the session did"
         "tz": _HK,
         # The evening leg that lands while New York is still trading.
         "windows": ("20:00-23:00",),
@@ -318,6 +350,7 @@ _RAW_REGISTER: tuple[dict[str, Any], ...] = (
         "kind": "macro",
         "classification": "analysis",
         "cadence": "daily",
+        "sessions_only": True,   # session-premise: "what the session did"
         "tz": _ET,
         "windows": ("09:00-16:30",),
         # Charter §2 amendment 10: the crowd side is the whole point of this
@@ -392,6 +425,7 @@ _RAW_REGISTER: tuple[dict[str, Any], ...] = (
         "kind": "macro",
         "classification": "analysis",
         "cadence": "daily",
+        "sessions_only": True,   # session-premise: "what the session did"
         "tz": _ET,
         "windows": ("08:00-16:30",),
         "contract": (
@@ -461,6 +495,7 @@ _RAW_REGISTER: tuple[dict[str, Any], ...] = (
         "kind": "signal",
         "classification": "analysis",
         "cadence": "daily",
+        "sessions_only": True,   # session-premise: "what the session did"
         "tz": _ET,
         "windows": ("09:30-16:00",),
         "contract": (
@@ -546,6 +581,7 @@ _RAW_REGISTER: tuple[dict[str, Any], ...] = (
         "kind": "signal",
         "classification": "analysis",
         "cadence": "daily",
+        "sessions_only": True,   # session-premise: "what the session did"
         "tz": _ET,
         "windows": ("07:00-09:30",),
         "contract": (
@@ -561,6 +597,7 @@ _RAW_REGISTER: tuple[dict[str, Any], ...] = (
         "kind": "signal",
         "classification": "analysis",
         "cadence": "daily",
+        "sessions_only": True,   # session-premise: "what the session did"
         "tz": _ET,
         "windows": ("09:30-16:00",),
         # Charter §2 amendment 11: display-tier language posture. Plain-word
@@ -648,6 +685,7 @@ _RAW_REGISTER: tuple[dict[str, Any], ...] = (
         "kind": "macro",
         "classification": "analysis",
         "cadence": "daily",
+        "sessions_only": True,   # session-premise: "what the session did"
         "tz": _ET,
         "windows": ("09:30-16:30",),
         "contract": (
@@ -775,7 +813,30 @@ def by_id(franchise_id: str, *, root: Path | str | None = None) -> Franchise | N
 # ─────────────────────────────────────────────────────────────────────────────
 # Scheduling
 # ─────────────────────────────────────────────────────────────────────────────
+def _require_aware(now: datetime) -> datetime:
+    """Reject a naive clock (review F6).
+
+    Every window in this register is declared in a named tz, so a naive `now`
+    silently means "whatever tz this process happens to run in" — the Mac Studio
+    renders in local time and CI runs in UTC, which is an 8-hour swing on Cici's
+    windows. That is not a degradation worth failing soft on: a franchise that
+    opens on the runner but not on the VPS is a bug that only ever reproduces
+    somewhere else. Raise instead.
+    """
+    if not isinstance(now, datetime):
+        raise TypeError(f"now must be a datetime, got {type(now).__name__}")
+    if now.tzinfo is None or now.tzinfo.utcoffset(now) is None:
+        raise ValueError(
+            "now must be timezone-aware — franchise windows are declared in named "
+            "timezones, and a naive clock resolves to the host's local zone "
+            "(UTC in CI, local on the render host). Pass e.g. "
+            "datetime.now(timezone.utc)."
+        )
+    return now
+
+
 def _local(now: datetime, tz: str) -> datetime:
+    _require_aware(now)
     zone = _zone(tz)
     if zone is None:
         return now
@@ -838,8 +899,12 @@ def open_slots(
     in-window franchise is open — correct for a cold start.
 
     The clock is fully injected: `now` is the only time source, so a fixture
-    clock is just a literal datetime.
+    clock is a literal datetime — but it MUST be timezone-aware (review F6).
+    Windows are declared in named timezones, so a naive datetime would resolve
+    against the host zone and open different slots in CI than on the render
+    host; `_require_aware` raises rather than failing soft on that.
     """
+    _require_aware(now)
     slots: list[FranchiseSlot] = []
     for f in for_account(account, root=root):
         if not is_enabled(f, cfg) and not include_disabled:
@@ -847,6 +912,13 @@ def open_slots(
         local = _local(now, f.tz)
         day = local.strftime("%Y-%m-%d")
         minute = local.hour * 60 + local.minute
+
+        # ── calendar check (review F4) — WEEKDAY CLOCK, NOT A TRADING CALENDAR
+        weekday = local.weekday()  # Mon=0 … Sun=6
+        if f.days and weekday not in f.days:
+            continue
+        if f.sessions_only and weekday >= 5:
+            continue
 
         # ── window check ────────────────────────────────────────────────────
         opens_at = closes_at = None
@@ -858,6 +930,16 @@ def open_slots(
                 start, end = parsed
                 inside = (start <= minute < end) if end > start else (minute >= start or minute < end)
                 if inside:
+                    # TODO(xg-w3-review): F21 — a WRAPPED window (end <= start,
+                    # e.g. "22:00-02:00") spans a local-midnight DAY FLIP, but
+                    # `day` above is taken from `now` alone. An emission at
+                    # 00:30 inside such a window is charged to the new local
+                    # day, so a `daily` wrapped franchise could open twice
+                    # across one continuous overnight session. No franchise in
+                    # the register wraps today (every window has end > start),
+                    # so this is latent rather than live — but the first wrapped
+                    # window added here MUST come with a session-anchored day
+                    # key, not the calendar day.
                     opens_at = local.replace(hour=start // 60, minute=start % 60, second=0, microsecond=0)
                     # An end of exactly 24:00 is the end of the local day.
                     end_h, end_m = divmod(min(end, 24 * 60 - 1), 60)

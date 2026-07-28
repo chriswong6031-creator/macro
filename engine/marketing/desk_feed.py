@@ -179,22 +179,42 @@ def _chronicle_context(
 def _persona_context(
     account: str, *, now: datetime, root: Path | str | None
 ) -> dict[str, Any]:
-    """Persona memory: recent posts, open promises, phrase fatigue, relations.
+    """Persona memory: recent posts, open promises, phrase fatigue.
 
     Charter §4: "Every generation call receives ... persona memory (opinion
     ledger, open promises, recent posts, phrase-fatigue counters)".
+
+    RELATIONS ARE DELIBERATELY NOT CARRIED (review F19). The store holds public
+    interaction context per author HANDLE; this context dict is what gets handed
+    to a generation call, so putting handles in it creates a path by which a
+    real person's interaction history could reach a prompt and from there a
+    public post. The feed needs to know only whether relationships exist and at
+    what stage, so it carries STAGE COUNTS — an aggregate with no handle in it.
+    Callers that genuinely need the per-handle record (the XG-W4 reply desk)
+    read `persona_memory.relations()` directly, where the access is visible.
     """
+    empty = {
+        "recent_posts": [],
+        "open_promises": [],
+        "phrase_fatigue": {},
+        "relation_stage_counts": {},
+    }
     try:
         from engine.marketing import persona_memory as pm
 
+        rel = pm.relations(account, root=root)
+        counts: dict[str, int] = {}
+        for record in rel.values():
+            stage = str(record.get("stage") or "") or "unknown"
+            counts[stage] = counts.get(stage, 0) + 1
         return {
             "recent_posts": pm.recent_posts(account, now=now, root=root),
             "open_promises": pm.open_promises(account, now=now, root=root),
             "phrase_fatigue": pm.ngram_fatigue(account, now=now, root=root),
-            "relations": pm.relations(account, root=root),
+            "relation_stage_counts": counts,
         }
     except Exception:
-        return {"recent_posts": [], "open_promises": [], "phrase_fatigue": {}, "relations": {}}
+        return dict(empty)
 
 
 def _codex_context(spec: dict) -> dict[str, Any]:
@@ -377,9 +397,31 @@ def _lane_breaking(
     except Exception:
         pass
 
+    # FAIL CLOSED ON MISSING ROUTING (review F2). An account with NO routed
+    # classes owns no wire beat — the correct output is silence, not the
+    # unfiltered firehose. The first cut read `if routed_classes and cls not in
+    # routed_classes`, so an account absent from `wire_routing` skipped the
+    # filter entirely and every breaking item became one of its candidates. That
+    # is the exact inversion of charter §2 amendment 6: the accounts most likely
+    # to be missing from routing are the ones that should be quietest.
+    if not routed_classes:
+        abstentions.append(
+            fr.abstain(
+                None,
+                "no_wire_routing",
+                now=now,
+                account=account,
+                detail={
+                    "candidates_withheld": len(breaking_items),
+                    "note": "account owns no wire_routing class; add one in config/marketing.yml",
+                },
+            )
+        )
+        return cands, abstentions
+
     for item in breaking_items:
         cls = str(item.get("event_class") or "none")
-        if routed_classes and cls not in routed_classes:
+        if cls not in routed_classes:
             abstentions.append(
                 fr.abstain(
                     None,
@@ -392,6 +434,12 @@ def _lane_breaking(
             continue
 
         # ONE CONVERSATION, ONE OWNER (charter §2 amendment 6) — a hard lock.
+        #
+        # FAIL CLOSED (review F3). A lock you cannot consult is a lock that
+        # FAILED. The first cut swallowed the exception and fell through to
+        # emitting the candidate, which turns "hard lock" into "hard lock unless
+        # it throws" — and the throw is most likely exactly when the outbox is
+        # mid-write, i.e. when another desk is claiming this very story.
         key = ""
         if sl is not None:
             try:
@@ -401,19 +449,33 @@ def _lane_breaking(
                     headline=item.get("headline"),
                 )
                 verdict = sl.check(account, key, outbox_items, now=now, cfg=cfg)
-                if not verdict.allowed:
-                    abstentions.append(
-                        fr.abstain(
-                            None,
-                            "cross_account_collision",
-                            now=now,
-                            account=account,
-                            detail={"story_key": key, "owner": verdict.owner},
-                        )
+                allowed = verdict.allowed
+                owner = verdict.owner
+            except Exception as exc:
+                abstentions.append(
+                    fr.abstain(
+                        None,
+                        "cross_account_collision_check_failed",
+                        now=now,
+                        account=account,
+                        detail={
+                            "headline": str(item.get("headline"))[:120],
+                            "error": f"{type(exc).__name__}: {exc}",
+                        },
                     )
-                    continue
-            except Exception:
-                key = ""
+                )
+                continue
+            if not allowed:
+                abstentions.append(
+                    fr.abstain(
+                        None,
+                        "cross_account_collision",
+                        now=now,
+                        account=account,
+                        detail={"story_key": key, "owner": owner},
+                    )
+                )
+                continue
 
         salience = float(item.get("salience") or 0.0)
         comp = {
@@ -461,7 +523,9 @@ def _lane_market_hours(
     spec: dict,
     root: Path | str | None,
     weights: dict[str, Any],
+    cfg: dict | None,
     movers: Sequence[dict],
+    mover_allowlist: str,
     base_context: dict[str, Any],
 ) -> tuple[list[Candidate], list[Any]]:
     """Live-tape session posts, inside the account's own session.
@@ -475,6 +539,30 @@ def _lane_market_hours(
 
     cands: list[Candidate] = []
     abstentions: list[Any] = []
+
+    # PER-CALL LANE ALLOWLIST (review F5). This lane builds a mover item from the
+    # live tape without consulting tilt — structurally the same thing
+    # `publish.publish_time_movers` does, so it is bound by the SAME allowlist
+    # rather than a second one invented here. config/marketing.yml says of that
+    # list: "UNLOCK: charter §6 XG-W2 + XG-W3. Widen this list then, not before."
+    # XG-W3 is the named unlock, but widening it is an ARMING decision for the
+    # operator — this wave reads the list, it does not edit it.
+    allow = (
+        ((cfg or {}).get("publish") or {}).get("publish_time_movers") or {}
+    ).get("accounts")
+    allow = [str(a) for a in allow] if allow is not None else ["flagship", "founder"]
+    if account not in allow:
+        abstentions.append(
+            fr.abstain(
+                None,
+                "no_market_hours_lane",
+                now=now,
+                account=account,
+                detail={"allowlist": allow, "candidates_withheld": len(movers)},
+            )
+        )
+        return cands, abstentions
+
     if not movers:
         return cands, abstentions
 
@@ -507,7 +595,15 @@ def _lane_market_hours(
             "move": round(min(abs(float(m.get("pct") or m.get("change_pct") or 0.0)), 20.0) / 2.0, 3),
         }
         ctx = dict(base_context)
-        ctx.update({"mover": dict(m), "allowlist": "cashtag_tiers"})
+        # NO UNCONDITIONAL PROVENANCE STAMP (review F5). The first cut wrote
+        # `"allowlist": "cashtag_tiers"` on every candidate regardless of whether
+        # any tier filtering had happened — a claim about the caller's inputs
+        # that this module cannot verify, and exactly the kind of decorative
+        # provenance that reads as a guarantee downstream. The caller states what
+        # it applied, or nothing is stated.
+        ctx.update({"mover": dict(m)})
+        if mover_allowlist:
+            ctx["mover_allowlist"] = str(mover_allowlist)
         cands.append(
             Candidate(
                 account=account,
@@ -571,6 +667,9 @@ def assemble(
     studio_items: Sequence[dict] = (),
     outbox_items: Sequence[dict] = (),
     franchise_history: Sequence[tuple[datetime, str]] = (),
+    #: What the CALLER filtered `movers` by, if anything (e.g. "cashtag_tiers").
+    #: Recorded verbatim; this module never asserts a filter it did not apply.
+    mover_allowlist: str = "",
     spec: dict | None = None,
     token_budget: int = 1200,
 ) -> DeskFeed:
@@ -645,7 +744,8 @@ def assemble(
         ),
         (
             _lane_market_hours,
-            dict(spec=spec, root=root, weights=weights, movers=movers, base_context=base_context),
+            dict(spec=spec, root=root, cfg=cfg, weights=weights, movers=movers,
+                 mover_allowlist=mover_allowlist, base_context=base_context),
         ),
         (
             _lane_analysis,
@@ -660,6 +760,15 @@ def assemble(
             notes.append(f"{fn.__name__}: {type(exc).__name__}: {exc}")
 
     # ── fatigue penalty ─────────────────────────────────────────────────────
+    # TODO(xg-w3-review): F17 — this penalty is VACUOUS for two of the four
+    # lanes. It matches worn-out n-grams against `candidate.title`, but a
+    # scheduled candidate's title is the franchise DISPLAY NAME ("Before New
+    # York Wakes") and a market-hours title is "<TICKER> on the tape" — neither
+    # is generated prose, so neither can ever contain a fatigued phrase. It bites
+    # only on breaking/analysis titles, which are real headlines. Fixing it means
+    # scoring the candidate's CONTEXT (the facts it would be written from) rather
+    # than its label, which needs a defensible notion of "the text this candidate
+    # would become" — deferred, not silently left to look like it works.
     fatigue = (base_context["persona_memory"] or {}).get("phrase_fatigue") or {}
     if fatigue:
         penalised: list[Candidate] = []

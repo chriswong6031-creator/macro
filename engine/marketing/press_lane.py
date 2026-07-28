@@ -285,6 +285,38 @@ def _emit_outbox_item(
         if svg else []
     )
 
+    _source: dict = {
+        "lane": "press",
+        "feed_item_id": item_id,
+        "story_key": story_key,
+        **provenance,
+    }
+    # GIFT-GRIP-PROOF VERDICT (XG-W3, charter §0) — every emission carries it.
+    # `source_headline` is the UPSTREAM wire headline, so the informational-
+    # surplus test (§7.2: "We rewrote the headline is not an answer") actually
+    # has something to compare against on this lane — the one lane where
+    # restating the source is the live failure mode.
+    _would_block = _ob.stamp_value_gate(
+        _source,
+        headline=headline,
+        body=body,
+        kind="breaking",
+        has_media=bool(media),
+        source_headline=str(provenance.get("source_headline") or ""),
+        citation=str(provenance.get("url") or ""),
+        cfg=cfg,
+    )
+    if _would_block:
+        _verdict = _source.get("value_gate") or {}
+        print(
+            "::notice title=press-lane-value-gate::"
+            f"{item_id}: would abstain ({','.join(_verdict.get('reasons') or [])}) "
+            f"— enforce={_verdict.get('enforced')}",
+            flush=True,
+        )
+        if _ob._value_gate_enforced(cfg):
+            return None
+
     try:
         item = _ob.make_item(
             account=account,
@@ -295,12 +327,7 @@ def _emit_outbox_item(
             scheduled_at="immediate",
             priority=_BREAKING_PRIORITY,
             provenance="press_lane",
-            source={
-                "lane": "press",
-                "feed_item_id": item_id,
-                "story_key": story_key,
-                **provenance,
-            },
+            source=_source,
             now=now,
         )
     except ValueError as exc:

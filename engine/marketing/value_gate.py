@@ -34,6 +34,37 @@ are evergreen explainers carrying no number, no cashtag and no chart, and the
 constitution's own surplus list admits "a memorable explanation" as a gift. A
 uniform hard-evidence rule would have deleted them.
 
+CALIBRATION WARNING — THE MARGIN IS ONE WORD (review F8).  The live-desk
+regression passes because the corpus's terse headlines happen to contain a
+device this module recognises: "The honest macro read" passes on the single word
+"honest", "Macro, quick" on "quick". Delete that one adjective and the post
+abstains for `grip:no_hook`. That is a THIN margin, and it means the 212/218
+figure is evidence that the gate does not silence TODAY's templates — not
+evidence that the thresholds are right. Two consequences: (1) a template edit
+upstream can flip posts to abstaining without anyone touching this file, which
+is why the frozen fixture exists; (2) nobody should read the pass rate as
+validation of the bar. Before `value_gate.enforce` is flipped on, the corpus
+must be extended to the kinds and languages the current sample does not cover —
+see the PRE-ARMING TODO below.
+
+TODO(xg-w3-review): PRE-ARMING REQUIREMENT — before `value_gate.enforce: true`,
+extend the regression corpus beyond today's 8 observed kinds to the 7 uncovered
+ones (wire, breaking, earnings, receipt, reply, news, plus any franchise-shaped
+emission), to zh/CJK bodies, and to weekend/holiday posts. The current fixture
+samples ONE nightly plan from ONE market day in ONE language; arming a publish
+gate on that sample would be exactly the "validated on the generator it polices"
+error the charter §8 register warns about.
+
+CJK IS UNBLOCKED, NOT SOLVED (review F7).  `_words()` counts CJK codepoints, and
+the interrogative/compression devices accept full-width punctuation, so a zh post
+is no longer STRUCTURALLY unable to pass — before this it was: a latin-only
+tokenizer scored every Chinese body at 0 words and failed it on length alone. But
+the remaining grip devices (contrast, evaluative, why-now, stance) are still
+English lexicons, so a zh headline can currently only reach grip through a
+number, an instrument, punctuation or a question mark. Closing that properly
+needs zh device lists built against a real zh corpus — part of the pre-arming
+work above, and the reason a zh abstention today is RECORDED and not acted on.
+
 PROOF IS TIERED, AND THE TIER IS RECORDED.  `hard` (chart/media, a whitelisted
 number, or a citation), `instrument` (a named instrument from our own universe —
 for a watchlist post the claim IS list membership, and the ticker plus
@@ -56,6 +87,7 @@ Public API:
 """
 from __future__ import annotations
 
+import copy
 import re
 from dataclasses import dataclass, field
 from typing import Any, Iterable, Sequence
@@ -99,6 +131,13 @@ KIND_PROOF: dict[str, str] = {
     # §8.4 ranks educational evergreen content as legitimate. Its proof is the
     # rule it states, which is falsifiable in the reader's own use.
     "education": "reasoning",
+    # `reply` lands next door in XG-W4. Charter §2 amendment 3 puts replies at
+    # dial 2 with a hard finance-value floor ("one gift, one grip, one doorway"
+    # — constitution §9.3), and the gift in a reply is routinely a mechanism or
+    # a condition rather than a number, so `instrument` is the honest floor.
+    # Registered HERE rather than defaulted so the reply desk inherits a
+    # deliberate tier instead of silently taking `_DEFAULT_PROOF`.
+    "reply": "instrument",
 }
 _DEFAULT_PROOF = "hard"
 
@@ -151,7 +190,11 @@ _WHY_NOW_RE = re.compile(
 )
 #: An interrogative or explanatory lead — a grip device ("answer a precise
 #: question" on the §7.3 social-object list).
-_INTERROGATIVE_RE = re.compile(r"^\s*(how|what|where|why|who|which|when)\b|\?", re.I)
+#: Full-width "？" and the zh interrogative particle 吗/呢 count too — a
+#: latin-only question test makes the device unreachable in zh (review F7).
+_INTERROGATIVE_RE = re.compile(
+    r"^\s*(how|what|where|why|who|which|when)\b|[?？]|[吗呢]\s*$", re.I
+)
 #: First/second person stance — the human response that reduces confusion.
 _PERSON_RE = re.compile(r"\b(i|i'?m|i'?ll|i'?ve|my|we|we'?re|our|you|you'?re|your)\b", re.I)
 #: A bare INSTRUMENT with no cashtag sigil. The live corpus writes headlines
@@ -159,9 +202,17 @@ _PERSON_RE = re.compile(r"\b(i|i'?m|i'?ll|i'?ve|my|we|we'?re|our|you|you'?re|you
 #: even without the "$". An all-caps 2-6 letter run is a ticker in this corpus;
 #: the stoplist keeps common all-caps words from counting as instruments.
 _BARE_TICKER_RE = re.compile(r"\b[A-Z]{2,6}\b")
+#: All-caps tokens that are NOT instruments. A false "instrument" here is a
+#: false PROOF tier for watchlist/reply kinds, so the list matters (review F22):
+#: "HK" and "PBOC" are Cici's everyday vocabulary and would have vouched for an
+#: evidence-free post about Asia.
 _NOT_TICKERS: frozenset[str] = frozenset(
     {"AI", "US", "EU", "UK", "CPI", "PPI", "GDP", "FED", "FOMC", "ETF", "IPO",
-     "CEO", "CFO", "OK", "TL", "DR", "PM", "AM", "ET", "UTC", "Q", "YTD", "EPS"}
+     "CEO", "CFO", "OK", "TL", "DR", "PM", "AM", "ET", "UTC", "Q", "YTD", "EPS",
+     # Review F22 — regions, central banks, exchanges and index shorthand.
+     "HK", "CNY", "CNH", "PBOC", "NYSE", "SPX", "CN", "JP", "KR", "TW", "SG",
+     "ECB", "BOJ", "BOE", "RBA", "PCE", "ISM", "PMI", "NDX", "DJIA", "VIX",
+     "APAC", "EMEA", "OPEC", "IMF", "WTO", "GMT", "EST", "PST", "HKT", "CST"}
 )
 #: An evaluative or compressive device — §11.3 "memorable compression". The
 #: live desks lean on terse judgment headlines ("The honest macro read",
@@ -177,8 +228,10 @@ _EVALUATIVE_RE = re.compile(
 #: the reader can look at, which is the cheapest honest hook there is.
 _DEICTIC_RE = re.compile(r"\b(here'?s?|there'?s?|this|that|these|those)\b", re.I)
 #: A compression construction: "X: Y" or "X, Y" or "X | Y" — the terse
-#: two-beat headline shape both live desks use constantly.
-_COMPRESSION_RE = re.compile(r"[:|,–—-]\s*\S")
+#: two-beat headline shape both live desks use constantly. FULL-WIDTH forms
+#: (：，、｜——) included: zh copy never uses the ASCII ones, so a latin-only
+#: class made this device unreachable in Chinese (review F7).
+_COMPRESSION_RE = re.compile(r"[:|,–—\-：，、｜]\s*\S")
 
 
 def _has_bare_ticker(text: str) -> bool:
@@ -228,8 +281,27 @@ class Verdict:
         return self.verdict == "pass"
 
 
+#: CJK ranges: unified ideographs (+ extension A), plus kana for completeness.
+#: A CJK codepoint IS a word for length purposes — Chinese does not space-
+#: delimit, so a latin-only tokenizer counts zero.
+_CJK_RE = re.compile(r"[぀-ヿ㐀-䶿一-鿿豈-﫿]")
+
+
 def _words(text: str) -> list[str]:
-    return re.findall(r"[A-Za-z0-9']+", str(text))
+    """Word-ish tokens, CJK-AWARE (review F7).
+
+    THE ZH BUG THIS FIXES: `[A-Za-z0-9']+` finds nothing in a Chinese body, so
+    `body_words` came out 0, fell under `_MIN_BODY_WORDS`, and EVERY zh post
+    failed `gift:body_too_thin`. The site is bilingual by law, so a latin-only
+    length test silences one whole language — the exact "silent silencing" the
+    calibration exercise was supposed to prevent, just aimed at zh instead of at
+    the live desks.
+
+    Each CJK codepoint counts as one token. That is the standard approximation,
+    not a segmenter: it is used ONLY for a length floor, never for meaning.
+    """
+    s = str(text)
+    return re.findall(r"[A-Za-z0-9']+", s) + _CJK_RE.findall(s)
 
 
 #: Number-like tokens, DECIMAL-AWARE. The plain word tokenizer above splits
@@ -400,6 +472,12 @@ def evaluate(
         reasons=tuple(reasons),
         components={
             "kind": str(kind),
+            # Was this kind REGISTERED, or did it silently take the default?
+            # (review F7) An unregistered kind gets `_DEFAULT_PROOF`, which is
+            # the strict tier — safe, but indistinguishable in the verdict from
+            # a kind someone deliberately tiered. A new kind landing here should
+            # be a visible decision, not a default nobody noticed.
+            "kind_known": str(kind) in KIND_PROOF,
             "required_proof": required,
             "reached_proof": reached,
             "surplus": surplus,
@@ -433,7 +511,12 @@ def deescalate(
     r = str(reason or "").strip() or "unspecified"
     tag = f"{actor}:{r}"
     reasons = tuple(verdict.reasons) + (tag,)
-    components = dict(verdict.components)
+    # DEEP copy (review F15). `Verdict` is a frozen dataclass, but frozen only
+    # protects the ATTRIBUTE BINDINGS — `components` is a dict holding nested
+    # dicts and lists, so a shallow copy would let a de-escalated verdict mutate
+    # the nested `surplus`/`grip_devices` of the original. Immutability that
+    # stops at the first level is not immutability.
+    components = copy.deepcopy(verdict.components)
     if note:
         components.setdefault("deescalation_notes", []).append(str(note))
     return Verdict(

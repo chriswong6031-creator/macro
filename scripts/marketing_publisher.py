@@ -137,6 +137,51 @@ def _publication_row(it: dict, text: str, receipt, *, published_at: str) -> dict
     }
 
 
+def _record_persona_post(
+    root: Path | str | None,
+    item: dict,
+    account: str,
+    text: str,
+    now: datetime,
+) -> None:
+    """Record a SHIPPED post into persona memory (XG-W3, charter §4).
+
+    Called from the one posting-success branch, which both the ladder and the
+    immediate/fastlane lanes flow through — so a post shipped by either lane
+    spends the same quirk budget.
+
+    DIAL-GOVERNED ACCOUNTS ONLY. The store exists to arm the XG-W1 per-quirk
+    frequency caps, and those live in a persona's `voice_codex`. An account with
+    no codex has no caps to enforce, so recording its posts would grow a tracked
+    ledger nothing ever reads.
+
+    FAIL-SOFT, DELIBERATELY. The post has already gone out by the time we get
+    here; raising would turn a successful publish into a failed run and could
+    re-drive the item. A lost counter costs one unit of cap precision, which is
+    strictly cheaper than a double-post.
+    """
+    try:
+        from engine.marketing import expression_dial as _ed  # noqa: PLC0415
+
+        if _ed.codex_for(account) is None:
+            return
+        from engine.marketing import persona_memory as _pm  # noqa: PLC0415
+
+        _pm.record_post(
+            account,
+            text,
+            now=now,
+            as_of=str(item.get("as_of") or ""),
+            franchise=str((item.get("source") or {}).get("franchise") or ""),
+            kind=str(item.get("kind") or ""),
+            item_id=str(item.get("id") or ""),
+            root=root,
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("persona_memory: could not record post for %s (%s) — "
+                    "frequency caps lose one unit of history", account, exc)
+
+
 def _append_publication(root: Path | str | None, row: dict) -> None:
     """Append a publication receipt to publications.jsonl. Fail-soft — a ledger
     write must never turn a successful post into a crash."""
@@ -1195,6 +1240,22 @@ def main(argv: list[str] | None = None) -> int:
             # NOW for an immediate item, NOW + jitter for a ladder item — so the
             # next post budges from when this one actually goes out.
             last_post_at = floor_advance
+            # PERSONA MEMORY (XG-W3). Record the emitted text so the codex
+            # frequency caps (max_per_day / max_per_7d / max_share_7d) can see
+            # it TOMORROW. Without this call the caps evaluate against an empty
+            # `recent` and `expression_dial.frequency_violations` returns [] —
+            # i.e. a signature opener capped at "≤1/day and ≤30% over 7 days"
+            # would be enforced only within a single nightly batch, and an
+            # account could open with the same line every day forever.
+            #
+            # THIS IS THE ONLY PLACE A POST IS KNOWN TO HAVE ACTUALLY SHIPPED.
+            # Recording at enqueue would charge the budget for items that are
+            # never approved or that expire in the queue.
+            #
+            # Host-spool write (gitignored); the nightly consolidator is the
+            # sole advancer of the tracked ledger. Fail-soft: a memory write
+            # must never turn a SUCCESSFUL post into an error path.
+            _record_persona_post(root, it, account, text, now)
             log.info("item %s POSTED via %s id=%s%s", iid, receipt.backend,
                      receipt.external_id,
                      (f" (scheduled {send_scheduled_at})" if booked_at > now else ""))

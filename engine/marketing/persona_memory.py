@@ -54,11 +54,13 @@ Public API:
 """
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 import os
 import re
 import tempfile
+import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Iterable, Sequence
@@ -235,7 +237,14 @@ def _record_key(store: str, rec: dict) -> str:
     if rid:
         return rid
     if store == "phrases":
-        basis = f"{rec.get('at','')}|{rec.get('text','')}"
+        # (DATE, text) — NOT (at, text) (review F9). The `at` timestamp is
+        # wall-clock at write, so a plan-build re-run that re-emits the same
+        # post a minute later produces a DIFFERENT key and the record survives
+        # dedup twice. Two copies of one post inflate both the numerator and
+        # the denominator of `max_share_7d` and double-count `max_per_day` —
+        # i.e. a retried run would silently TIGHTEN the caps it is supposed to
+        # measure. The business day plus the text is the post's real identity.
+        basis = f"{_day_of(rec)}|{rec.get('text','')}"
     elif store == "relations":
         basis = f"{rec.get('handle','')}|{rec.get('at','')}"
     else:
@@ -262,6 +271,7 @@ def record_post(
     text: str,
     *,
     now: datetime,
+    as_of: str = "",
     franchise: str = "",
     kind: str = "",
     item_id: str = "",
@@ -271,12 +281,23 @@ def record_post(
 
     `text` should be the full emitted copy (`headline + " " + body`), because
     that is what `expression_dial.frequency_violations` re-scans for markers.
+
+    DAY BASIS MUST MATCH THE EVALUATOR (review F18). The caps are evaluated by
+    `frequency_violations(..., as_of=<business date>, recent=[{date: ...}])`,
+    which compares each record's `date` against the item's `as_of` — the
+    CONTENT PLAN's business date, not a wall clock. Storing a UTC-derived date
+    here would put the two on different calendars: Cici's 08:00 Hong Kong post
+    is still the previous UTC day, so her second signature opener of the HK
+    morning would land on a different `date` than the plan's `as_of` and slip
+    the ≤1/day cap entirely. When the caller knows the business date it wins;
+    `now` is only the fallback.
     """
     at = _as_utc(now)
+    day = str(as_of or "").strip()[:10] or at.strftime(_DAY_FMT)
     rec = {
         "account": str(account),
         "at": at.isoformat(),
-        "date": at.strftime(_DAY_FMT),
+        "date": day,
         "text": str(text),
         "franchise": str(franchise or ""),
         "kind": str(kind or ""),
@@ -513,6 +534,68 @@ def relations(account: str, *, root: Path | str | None = None) -> dict[str, dict
 # ─────────────────────────────────────────────────────────────────────────────
 # THE CONSOLIDATOR — the only writer of data/marketing/personas/
 # ─────────────────────────────────────────────────────────────────────────────
+@contextlib.contextmanager
+def _spool_lock(root: Path | str | None, timeout_s: float = 2.0):
+    """Advisory flock over the host spool, mirroring `outbox._outbox_lock`.
+
+    THE READ→TRUNCATE WINDOW IS THE RACE (review F10). `consolidate()` reads a
+    spool, writes the tracked ledger, then unlinks the spool. A daemon
+    appending a post between the read and the unlink loses that post outright —
+    it was never folded in and its file is gone. On the VPS the fastlane daemon
+    appends at press-tick cadence while the nightly runs, so the window is real,
+    not theoretical.
+
+    Yields True when held, False when proceeding unlocked (flock unsupported or
+    busy) — same fail-soft contract as the outbox lock, because a lock failure
+    must not stop the nightly from advancing ledgers.
+    """
+    lock_fh = None
+    acquired = False
+    try:
+        try:
+            import fcntl  # noqa: PLC0415  (POSIX only; fail-soft elsewhere)
+
+            d = _root_path(root) / "data" / "marketing" / "personas_host"
+            d.mkdir(parents=True, exist_ok=True)
+            lock_fh = open(d / ".lock", "a", encoding="utf-8")  # noqa: SIM115
+            deadline = time.monotonic() + timeout_s
+            while True:
+                try:
+                    fcntl.flock(lock_fh.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    acquired = True
+                    break
+                except OSError:
+                    if time.monotonic() >= deadline:
+                        print(
+                            "::warning title=persona_memory::host spool lock busy after "
+                            f"{timeout_s:.1f}s — consolidating unlocked; a concurrent "
+                            "append may be lost",
+                            flush=True,
+                        )
+                        break
+                    time.sleep(0.05)
+        except Exception as exc:  # noqa: BLE001
+            print(
+                f"::warning title=persona_memory::advisory lock unavailable ({exc}) — "
+                "consolidating unlocked",
+                flush=True,
+            )
+        yield acquired
+    finally:
+        if lock_fh is not None:
+            try:
+                if acquired:
+                    import fcntl  # noqa: PLC0415
+
+                    fcntl.flock(lock_fh.fileno(), fcntl.LOCK_UN)
+            except Exception:  # noqa: BLE001
+                pass
+            try:
+                lock_fh.close()
+            except Exception:  # noqa: BLE001
+                pass
+
+
 def _accounts_with_host_state(root: Path | str | None) -> list[str]:
     base = _root_path(root) / "data" / "marketing" / "personas_host"
     try:
@@ -540,8 +623,54 @@ def consolidate(
     write lands, so an interrupted run loses nothing (the records are still in
     the spool and the next run re-folds them).
 
+    TODO(xg-w3-review): F11 — SPOOL STRANDING ACROSS HOSTS. This consolidator
+    only ever sees the spool on the machine it runs on. The nightly runs on the
+    Mac Studio; the fastlane daemon writes its spool on the VPS. Posts the VPS
+    ships therefore accumulate in a spool the nightly never reads, and the caps
+    they should feed stay blind to them — while the Mac Studio's own spool
+    consolidates normally, so the failure is SILENT and partial rather than
+    obvious. Closing it needs a decision this wave does not own: either the VPS
+    ships its spool to R2 for the nightly to drain, or the publisher writes
+    straight to a shared store. Until then the caps are armed for
+    nightly-emitted posts and under-count VPS-emitted ones; the honest reading
+    of a cap today is "at least this many", not "exactly this many".
+
     Returns a per-account, per-store summary of counts for the nightly log.
     """
+    # THE KNOB MUST BE REAL (review F12). daily.yml sets
+    # MARKETING_PERSONA_MEMORY_ENABLED on this step; a step that ignores its own
+    # env gate is a fake knob — an operator who sets it to 0 to stop ledger
+    # growth would see the ledgers advance anyway. Default ON: absent means
+    # "nobody expressed an opinion", which for a nightly consolidation is
+    # correct, and only an explicit off-value disables it.
+    flag = os.environ.get("MARKETING_PERSONA_MEMORY_ENABLED")
+    if flag is not None and flag.strip().lower() in ("0", "false", "no", "off"):
+        print(
+            "::notice title=persona_memory::MARKETING_PERSONA_MEMORY_ENABLED="
+            f"{flag!r} — skipping consolidation; tracked ledgers not advanced",
+            flush=True,
+        )
+        return {"as_of": _as_utc(now).isoformat(), "accounts": {}, "skipped": "disabled"}
+
+    # HOLD THE SPOOL LOCK ACROSS THE WHOLE read→write→truncate SEQUENCE
+    # (review F10) — see `_spool_lock`. Taking it per-store would reopen the
+    # same window between stores.
+    with _spool_lock(root):
+        return _consolidate_locked(
+            now=now, root=root, accounts=accounts,
+            retention_days=retention_days, clear_host=clear_host,
+        )
+
+
+def _consolidate_locked(
+    *,
+    now: datetime,
+    root: Path | str | None,
+    accounts: Sequence[str] | None,
+    retention_days: int,
+    clear_host: bool,
+) -> dict[str, Any]:
+    """The body of `consolidate()`, run under the host-spool lock."""
     ids = list(accounts) if accounts is not None else _accounts_with_host_state(root)
     cutoff_dt = _as_utc(now) - timedelta(days=max(0, int(retention_days)))
     cutoff = cutoff_dt.strftime(_DAY_FMT)

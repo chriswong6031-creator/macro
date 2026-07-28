@@ -2590,6 +2590,46 @@ def _franchise_payload(ctx: dict) -> dict | None:
     return out or None
 
 
+def _codex_payload(
+    ctx: dict,
+    *,
+    codex_by_account: dict[str, dict],
+    memory_by_account: dict[str, dict],
+) -> dict | None:
+    """The per-item codex graft, or None for a dial-0 item (review F13).
+
+    THE DIAL IS THE GATE. `expression_dial.PROFILES` puts wire / news /
+    breaking / event / earnings at dial 0 — no personality budget whatsoever.
+    Handing a persona's worldview, franchises or phrase history to the model for
+    one of those items asks for exactly the voice the deterministic pass is
+    about to strip and reject, which burns a fallback and poisons the
+    `dial_fallbacks` signal.
+
+    Fails CLOSED: if the dial cannot be resolved for any reason, no graft is
+    attached. A missing graft costs voice on one item; a wrongly-attached one
+    puts personality on a wire post.
+    """
+    account = str(ctx.get("account", ""))
+    kind = str(ctx.get("type", ""))
+    if not account:
+        return None
+    try:
+        from engine.marketing import expression_dial as _ed  # noqa: PLC0415
+
+        codex = _ed.codex_for(account)
+        dial = codex.dial(kind) if codex is not None else _ed.dial_for(
+            kind, profile="flagship")
+    except Exception:  # noqa: BLE001
+        return None
+    if dial <= 0:
+        return None
+
+    out: dict[str, Any] = {}
+    out.update(codex_by_account.get(account) or {})
+    out.update(memory_by_account.get(account) or {})
+    return out or None
+
+
 def write_posts_deterministic(
     contexts: list[dict],
     *,
@@ -2754,21 +2794,31 @@ def write_posts_llm(
             }
             for k, v in personas_cfg.items() if k in used_accounts
         }
-        # ── XG-W3 TRUE QUIRK INJECTION ──────────────────────────────────────
-        # Graft the codex COGNITIVE layers (worldview / franchises / restraint)
-        # onto each card. Constitution Law 2: "Perception before prose" —
-        # personality comes from asking a different question, not from adding
-        # matcha to a generic analysis, so what reaches the model is the
-        # persona's WAY OF SEEING, not a list of catchphrases. The canon
-        # (lifestyle texture) is deliberately withheld: it ships dark under
-        # charter §2 amendment 8 until each employee confirms it.
-        for _acct, _codex in _codex_cards(used_accounts).items():
-            persona_cards.setdefault(_acct, {"name": _acct})
-            persona_cards[_acct].update(_codex)
-        # Open promises + phrase fatigue: the model must be able to close its
-        # own loops (constitution §11.6) and must not re-run a phrase the desk
-        # has already worn out this week (§13.7 anti-sameness).
-        persona_memory_cards: dict[str, dict] = {}
+        # ── XG-W3 TRUE QUIRK INJECTION — PER ITEM, DIAL-GATED (review F13) ──
+        # The codex COGNITIVE layers (worldview / franchises / restraint) and
+        # persona memory are grafted PER ITEM in `items_payload` below, and ONLY
+        # for items whose expression dial is above 0.
+        #
+        # WHY NOT IN THIS BATCH-LEVEL SYSTEM PROMPT. `expression_dial.PROFILES`
+        # puts wire / news / breaking / event / earnings at dial 0 — no
+        # personality budget at all. `event` is dial 0 and appears ~20x in every
+        # nightly plan, so a batch-level graft would attach a persona's worldview
+        # to wire-register items on essentially every run. The deterministic pass
+        # would then strip and reject the voice it had just asked for, burning a
+        # fallback AND poisoning the `dial_fallbacks` signal that exists to tell
+        # us "a codex falling back every run is a codex to edit".
+        #
+        # Rejected alternatives: omitting the graft whenever a batch contains a
+        # dial-0 item would disable the feature nearly every night (see above);
+        # splitting into two LLM calls by dial class would restructure this
+        # single-call path in a shared file mid-wave for no correctness gain over
+        # per-item gating. Per-item costs ~90 tokens of input per eligible item
+        # and is exact.
+        #
+        # The canon (lifestyle texture) is withheld at every dial: it ships dark
+        # under charter §2 amendment 8 until each employee confirms it.
+        _codex_by_account = _codex_cards(used_accounts)
+        _memory_by_account: dict[str, dict] = {}
         try:
             from engine.marketing import persona_memory as _pm  # noqa: PLC0415
 
@@ -2780,12 +2830,12 @@ def write_posts_llm(
                 ]
                 _fatigue = sorted(_pm.ngram_fatigue(_acct, now=_now))[:12]
                 if _promises or _fatigue:
-                    persona_memory_cards[_acct] = {
+                    _memory_by_account[_acct] = {
                         "open_promises": _promises,
                         "worn_out_phrases": _fatigue,
                     }
         except Exception:  # noqa: BLE001
-            persona_memory_cards = {}
+            _memory_by_account = {}
 
         system_prompt = (
             "You're a trader posting on X. Not a research desk, not a brand, not a "
@@ -2798,19 +2848,36 @@ def write_posts_llm(
             "punish cheese with the quote-tweet. If a line would sound weird said out "
             "loud to a trading buddy, rewrite it.\n\n"
             "PERSONAS (write each post as that account's human; the example_lines show "
-            "the register, match their rhythm, never copy them. `worldview` is how this "
-            "person SEES a market — the question they ask first; let it shape which fact "
-            "they lead with. `franchises` are the recurring formats readers expect from "
-            "them; when an item names a franchise, write that format. `restraint` is what "
-            "they refuse to do, and it is binding):\n"
+            "the register, match their rhythm, never copy them):\n"
             + json.dumps(persona_cards, indent=1)
             + (
-                "\n\nMEMORY (this desk's own recent record — `open_promises` are loops "
-                "this account promised to close, so close one when the item allows; "
-                "`worn_out_phrases` are n-grams it has already leaned on this week, so "
-                "do not reach for them again):\n"
-                + json.dumps(persona_memory_cards, indent=1)
-                if persona_memory_cards
+                # Per-item, dial-gated (review F13). See the note above the
+                # payload builder for why this is not a batch-level graft.
+                #
+                # NO "CLOSE A LOOP" INSTRUCTION (review F20). Telling a model to
+                # close an open promise invites it to ASSERT an outcome it has
+                # no evidence for — "we said we'd update after the auction" plus
+                # a helpful model equals an invented auction result, which is
+                # AM-R1's exact failure mode. Promises are listed so the desk
+                # does not CONTRADICT or duplicate an open loop; closing one is a
+                # deterministic act with a verification step, never a writing
+                # instruction.
+                # TODO(xg-w3-review): W6 owns close-verification — a promise may
+                # only be closed by `persona_memory.close_promise()` after its
+                # `due_condition` is checked against graded data, never by copy
+                # asserting the loop is closed.
+                "\n\nSOME ITEMS CARRY A `codex` BLOCK. When present: `worldview` is how "
+                "this person SEES a market — the question they ask first; let it shape "
+                "which fact they lead with. `franchises` are the recurring formats "
+                "readers expect; when an item names one, write that format. `restraint` "
+                "is what they refuse to do, and it is binding. `open_promises` are loops "
+                "this account already promised to close — do NOT restate, contradict, or "
+                "claim to resolve them; they are listed so you do not re-open the same "
+                "loop in different words. `worn_out_phrases` are n-grams the desk already "
+                "leaned on this week — do not reach for them again.\n"
+                "AN ITEM WITH NO `codex` BLOCK IS WIRE REGISTER: report it straight, with "
+                "no personality, no signature opener, no aside, no emoji."
+                if (_codex_by_account or _memory_by_account)
                 else ""
             )
             + "\n\nVOICE (this is the bar; match it, don't drift formal):\n"
@@ -2957,6 +3024,13 @@ def write_posts_llm(
                 # the model gets the format without the label and cannot smuggle
                 # the token into copy.
                 "franchise": _franchise_payload(ctx),
+                # DIAL-GATED CODEX GRAFT (review F13). None for dial-0 kinds
+                # (wire/news/breaking/event/earnings) — those are wire register
+                # and get no persona-cognitive material at all.
+                "codex": _codex_payload(
+                    ctx, codex_by_account=_codex_by_account,
+                    memory_by_account=_memory_by_account,
+                ),
             }
             for i, ctx in enumerate(batch)
         ]
