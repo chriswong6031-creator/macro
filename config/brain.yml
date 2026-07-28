@@ -124,7 +124,9 @@ quotas:
 
   pro:
     fast:
-      limit: 1000
+      # -1 = uncapped requests (operator ruling 2026-07-28: Pro Flash is
+      # "Unlimited"); token_ceilings.fast below stays as the fair-use backstop.
+      limit: -1
       period: month
     pro:
       limit: 150

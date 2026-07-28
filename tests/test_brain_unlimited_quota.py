@@ -344,12 +344,103 @@ def test_unlimited_keeps_vision_on_free_tier(monkeypatch, tmp_path):
     assert gw._get_allowance("free", "active", "pro", tmp_path).get("limit", 0) <= 0
 
     # The production gate condition (brain_gateway.py):
-    #   if image_blocks and not _unlimited_allowed(user_email) and pro_limit <= 0: drop
+    #   if image_blocks and not _unlimited_allowed(user_email) and pro_limit == 0: drop
+    # (== 0, not <= 0: a NEGATIVE limit is config-level uncapped, never a lock.)
     def vision_dropped(email: str) -> bool:
         image_blocks = ["<img>"]
         pro_limit = gw._get_allowance("free", "active", "pro", tmp_path).get("limit", 0)
-        return bool(image_blocks and not gw._unlimited_allowed(email) and pro_limit <= 0)
+        return bool(image_blocks and not gw._unlimited_allowed(email) and pro_limit == 0)
 
     monkeypatch.setenv("BRAIN_UNLIMITED_ALLOWLIST", "unl@example.test")
     assert vision_dropped("unl@example.test") is False, "unlimited operator must keep vision"
     assert vision_dropped("normal@example.test") is True, "normal free-tier user still tier-gated"
+
+
+# ---------------------------------------------------------------------------
+# 9. Config-level uncapped lane: a NEGATIVE limit (brain.yml pro.fast: -1,
+#    operator ruling 2026-07-28 "Pro Flash is Unlimited") is uncapped requests —
+#    same sentinel as the allowlist rows — while the token ceiling backstop and
+#    the zero-limit lock keep their meaning.
+# ---------------------------------------------------------------------------
+
+_UNCAPPED_CFG = {
+    "quotas": {"pro": {"fast": {"limit": -1, "period": "month"},
+                       "pro": {"limit": 150, "period": "month"}}},
+    "token_ceilings": {"fast": 5_000_000, "pro": 2_000_000},
+}
+
+
+def test_negative_limit_is_uncapped_and_writes_no_ledger(monkeypatch, tmp_path):
+    """pro.fast limit -1 → every call allowed, uncapped sentinel, no q_ ledger files."""
+    monkeypatch.delenv("BRAIN_UNLIMITED_ALLOWLIST", raising=False)
+    monkeypatch.setattr(gw, "_brain_quota_dir", lambda: tmp_path / "quota")
+    monkeypatch.setattr(gw, "_load_brain_config", lambda root=None: _UNCAPPED_CFG)
+
+    for _ in range(3):
+        allowed, info = gw._check_and_increment_quota(
+            user_id="pro_user", lane="fast", tier="pro", status="active",
+            current_period_end=None, root=None)
+        assert allowed is True
+
+    assert info["remaining"] == -1
+    assert info["limit"] == -1
+    assert info["period"] == "unlimited"
+    quota_dir = tmp_path / "quota"
+    ledgers = [p.name for p in quota_dir.iterdir() if p.name.startswith("q_")] if quota_dir.exists() else []
+    assert ledgers == [], f"uncapped lane wrote request ledgers: {ledgers}"
+
+
+def test_negative_limit_still_honors_token_ceiling(monkeypatch, tmp_path):
+    """The monthly token ceiling is the fair-use backstop — it still blocks an uncapped lane."""
+    monkeypatch.delenv("BRAIN_UNLIMITED_ALLOWLIST", raising=False)
+    qdir = tmp_path / "quota"
+    monkeypatch.setattr(gw, "_brain_quota_dir", lambda: qdir)
+    cfg = {"quotas": {"pro": {"fast": {"limit": -1, "period": "month"}}},
+           "token_ceilings": {"fast": 100}}
+    monkeypatch.setattr(gw, "_load_brain_config", lambda root=None: cfg)
+
+    qdir.mkdir(parents=True, exist_ok=True)
+    gw._token_ceiling_file("pro_user", "fast").write_text(
+        json.dumps({"tokens": 101}), encoding="utf-8")
+
+    allowed, info = gw._check_and_increment_quota(
+        user_id="pro_user", lane="fast", tier="pro", status="active",
+        current_period_end=None, root=None)
+
+    assert allowed is False
+    assert info["remaining"] == 0
+
+
+def test_negative_limit_zero_lock_unchanged(monkeypatch, tmp_path):
+    """limit 0 is still a hard lock — only NEGATIVE means uncapped."""
+    monkeypatch.delenv("BRAIN_UNLIMITED_ALLOWLIST", raising=False)
+    monkeypatch.setattr(gw, "_brain_quota_dir", lambda: tmp_path / "quota")
+    cfg = {"quotas": {"free": {"pro": {"limit": 0, "period": "month"}}},
+           "token_ceilings": {}}
+    monkeypatch.setattr(gw, "_load_brain_config", lambda root=None: cfg)
+
+    allowed, info = gw._check_and_increment_quota(
+        user_id="free_user", lane="pro", tier="free", status="active",
+        current_period_end=None, root=None)
+
+    assert allowed is False
+    assert info["limit"] == 0
+
+
+def test_get_user_quotas_reports_uncapped_lane(monkeypatch, tmp_path):
+    """/api/brain/me shape: a -1 lane reports the uncapped sentinel, capped lanes stay numeric.
+
+    Without the sentinel branch, max(0, limit - count) would report the uncapped
+    lane as exhausted (remaining 0) and the widget would lock a lane the gateway
+    allows."""
+    monkeypatch.delenv("BRAIN_UNLIMITED_ALLOWLIST", raising=False)
+    monkeypatch.setattr(gw, "_brain_quota_dir", lambda: tmp_path / "quota")
+    monkeypatch.setattr(gw, "_load_brain_config", lambda root=None: _UNCAPPED_CFG)
+    monkeypatch.setattr(gw, "_resolve_tier", lambda user_id, root=None: {
+        "tier": "pro", "status": "active", "current_period_end": None})
+
+    out = gw.get_user_quotas("pro_user", root=None, user_email="normal@example.test")
+
+    assert out["quotas"]["fast"] == {"remaining": -1, "limit": -1, "period": "unlimited"}
+    assert out["quotas"]["pro"]["limit"] == 150
+    assert out["quotas"]["pro"]["period"] == "month"

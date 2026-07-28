@@ -3052,6 +3052,8 @@ def _get_allowance(tier: str, status: str, lane: str, root: Path | None = None) 
     """Return {limit, period} for (tier, status, lane).
 
     status='trialing' → trial allowances; 'active' → tier allowances; else → free.
+    A negative configured limit means uncapped requests for that lane (the
+    token-ceiling backstop in _check_and_increment_quota still applies).
 
     GUEST-ACCESS FREE FLIP: when the operator turns guest access ON (_guest_cfg.enabled),
     the FREE tier's FAST lane allowance becomes daily_limit/DAY instead of its config value
@@ -3243,11 +3245,18 @@ def _check_and_increment_quota(
     if limit == 0:
         return False, {"lane": lane, "remaining": 0, "limit": 0, "period": period}
 
-    if count >= limit:
+    # Negative limit = config-level "Unlimited" for this (tier, lane) — operator
+    # ruling 2026-07-28: pro fast. Unlike the allowlist bypass above, the monthly
+    # token ceiling below STILL applies as the fair-use backstop.
+    uncapped = limit < 0
+
+    if not uncapped and count >= limit:
         return False, {"lane": lane, "remaining": 0, "limit": limit, "period": period}
 
-    # Device pooling — only for the FREE tier (paid tiers may legitimately use N devices).
-    pool = tier == "free" and bool(device_key)
+    # Device pooling — only for the FREE tier (paid tiers may legitimately use N
+    # devices). Never pool an uncapped lane: dcount >= negative-limit is always
+    # true, which would turn "Unlimited" into an instant block.
+    pool = tier == "free" and bool(device_key) and not uncapped
     dqf: Path | None = None
     dcount = 0
     if pool:
@@ -3268,6 +3277,12 @@ def _check_and_increment_quota(
             log.info("brain_gateway: token ceiling hit for %s lane=%s (%d >= %d)",
                      user_id, lane, used_tokens, ceiling)
             return False, {"lane": lane, "remaining": 0, "limit": limit, "period": period}
+
+    # Uncapped lane: no request-ledger writes — mirrors the allowlist sentinel
+    # shape exactly (clients already understand remaining=-1/limit=-1), and
+    # ai_costs + the token ledger carry the usage telemetry.
+    if uncapped:
+        return True, {"lane": lane, "remaining": -1, "limit": -1, "period": "unlimited"}
 
     # Increment request counter(s) — user always; device too when pooling.
     qdata["count"] = count + 1
@@ -5360,7 +5375,7 @@ def chat(
     # else the Pro lane's Opus via OAuth), with OAuth-token failover across them.
     image_blocks = _image_blocks(images)
     turn_providers = providers
-    if image_blocks and not _unlimited_allowed(user_email) and _get_allowance(tier, status, "pro", root).get("limit", 0) <= 0:
+    if image_blocks and not _unlimited_allowed(user_email) and _get_allowance(tier, status, "pro", root).get("limit", 0) == 0:
         image_blocks = []  # not Pro-eligible → drop attachments (unlimited operators keep vision)
     if image_blocks:
         vprovs = _vision_providers(lane, providers, root)
@@ -5648,7 +5663,7 @@ def chat_stream(
     # the reported model serves the turn.
     image_blocks = _image_blocks(images)
     turn_providers = providers
-    if image_blocks and not _unlimited_allowed(user_email) and _get_allowance(tier, status, "pro", root).get("limit", 0) <= 0:
+    if image_blocks and not _unlimited_allowed(user_email) and _get_allowance(tier, status, "pro", root).get("limit", 0) == 0:
         image_blocks = []  # not Pro-eligible → drop attachments (unlimited operators keep vision)
     if image_blocks:
         vprovs = _vision_providers(lane, providers, root)
@@ -5938,6 +5953,12 @@ def get_user_quotas(user_id: str, root: Path | None = None, user_email: str = ""
         allowance = _get_allowance(tier, status, lane, root)
         limit = allowance["limit"]
         period = allowance["period"]
+        if limit < 0:
+            # Config-level uncapped lane (e.g. pro fast) — same sentinel as the
+            # allowlist rows above; max(0, limit - count) would misreport it as
+            # exhausted (remaining 0).
+            result["quotas"][lane] = {"remaining": -1, "limit": -1, "period": "unlimited"}
+            continue
         pk = _period_key(period, status, cpe)
         qf = _quota_file(user_id, lane, pk)
         qdata = _read_quota(qf)
