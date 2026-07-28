@@ -1095,6 +1095,25 @@ lanes:
           site/factordata/us_audit_scoreboard.json,
           data/metabolism/fitness/standouts_us.json.
           Non-fatal (exits 0 on error; writes data_gap sentinels).
+      - id: prophet_pick_autopsies
+        module: scripts.run_prophet_pick_autopsies
+        note: >
+          Prophet Trade Memory public-book accrual. Reviews newly matured US
+          Prophet picks through the canonical winner/loser autopsy writer,
+          emitting evidence-timed causal chains and research hypotheses only.
+          The output has no ranking, sizing, gating, suppression, escalation,
+          or alert authority. Non-fatal and idempotent by pick episode ID.
+      - id: prophet_operator_trade_memory
+        module: scripts.run_trade_memory
+        args: [--cap, "8"]
+        note: >
+          Prophet Trade Memory private operator-book review. Reads and writes
+          only the configured owner's RLS-scoped Supabase episode and pattern
+          rows, prints counts rather than personal facts, and commits no private
+          artifact. Public Prophet autopsies are read only as evidence for the
+          same owner's derived pattern view. Research hypotheses stop at
+          ready_for_prereg and must pass the existing Causal Lab/gauntlet before
+          gaining any signal authority. Non-fatal.
       - id: build_track_record_page
         module: scripts.build_track_record_page
         note: >

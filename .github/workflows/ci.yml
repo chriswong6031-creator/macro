@@ -631,7 +631,15 @@ on:
       - "tests/test_mastermind_feedback.py"
       - "tests/test_admin_orchestrator.py"
       - "tests/test_admin_prophet.py"
+      - "tests/test_admin_trade_memory.py"
       - "admin/prophet.py"
+      - "admin/trade_memory.py"
+      - "engine/neuralweb/trade_memory.py"
+      - "engine/neuralweb/trade_memory_store.py"
+      - "scripts/run_trade_memory.py"
+      - "scripts/run_prophet_pick_autopsies.py"
+      - "scripts/deploy/0008_trade_memory.sql"
+      - "tests/test_trade_memory.py"
       # Mastermind AI response log (both surfaces → R2 → admin eval view).
       - "admin/mastermind_logs.py"
       - "tests/test_mastermind_response_log.py"
@@ -792,6 +800,7 @@ on:
       # SA-W3 standout accountability metabolism wiring: charter upgrades, budget caps,
       # roles, rubric W-4, standout_auditor organ, insight_bus audit_due kind, shadow probe.
       - "tests/test_metabolism_sa_w3.py"
+      - "tests/test_pick_autopsy_selection.py"
       - "engine/metabolism/standout_auditor.py"
       - "config/lobe_charters.yml"
       - "config/metabolism_roles.yml"

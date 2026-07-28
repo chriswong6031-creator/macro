@@ -14624,24 +14624,28 @@ artifacts:
     storage: git
     asof_field: asof
     freshness_sla_hours: 9999
-    schema: prophet.pick_autopsy/v1
+    schema: prophet.pick_autopsy/v2
     tier: display
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - admin/prophet.py
     external_consumers: []
     notes: >
       Per-pick postmortem artifacts (PR-R3). One file per selected pick at
-      data/standout_audit/pick_autopsies/<market>/<pick_id>.json. Schema prophet.pick_autopsy/v1:
-      attribution row verbatim (deterministic), LLM prose block (root_cause, mitigation_verdict
-      from closed enum, lesson, engines_credit), model, cycle_id, asof. LLM writes prose and
-      closed-enum verdict ONLY — no numerics in LLM output (NW-ART1). Extremes-first pick
+      data/standout_audit/pick_autopsies/<market>/<pick_id>.json. Schema prophet.pick_autopsy/v2:
+      attribution row verbatim (deterministic), plus a research-only LLM block with summary,
+      closed mitigation verdict, ordered first/second/third-order causal chain, evidence and
+      timing states, counterfactual, missing evidence, lesson, engine credit, and measurable
+      hypotheses. Hypotheses are stamped authority=research_only and direct_authority=false;
+      they cannot rank, size, gate, suppress, or escalate a live signal. Extremes-first pick
       selection (top-K winners, bottom-K losers, all gate_suppressed, all data_fault rows),
-      capped at prophet.autopsy_cap_per_cycle (default 12). AUTONOMY_PAUSED-gated for armed
-      runs. Pattern path — each file has a unique <market>/<pick_id> suffix; <ID> is
-      stable across cycles for the same pick. SA-R14 one-grader law; SA-R15 absent => data_gap;
-      SA-R16 never-raise.
+      capped at prophet.autopsy_cap_per_cycle (default 12). Existing pick IDs are filtered
+      before selection, so the memory accrues instead of re-spending on the same extremes.
+      The daily workflow explicitly arms this observation-only writer. Pattern path — each
+      file has a unique <market>/<pick_id> suffix; <ID> is stable across cycles for the same
+      pick. SA-R14 one-grader law; SA-R15 absent => data_gap; SA-R16 never-raise.
 
   # ---------------------------------------------------------------------------
   # MSP W1 — Market Structure & Systematic Positioning data spine

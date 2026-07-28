@@ -76,6 +76,11 @@ def supabase_project_ref() -> str:
     return _env("SUPABASE_PROJECT_REF") or "fsldfzlxyavsuwqbceod"
 
 
+def supabase_operator_user_id() -> str | None:
+    """Single operator UUID used by privacy-scoped server-side data bridges."""
+    return _env("SUPABASE_OPERATOR_USER_ID") or None
+
+
 def umami_api_key() -> str | None:
     return _env("UMAMI_API_KEY") or None
 

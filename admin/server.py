@@ -46,7 +46,7 @@ from . import (actions, ai_cost, alerts as _alerts_mod, allies_store, analytics_
                revenue,
                services, settings, site_gate,
                support_tickets,
-               system, umami, uptime_board, users, vector_override)
+               system, trade_memory, umami, uptime_board, users, vector_override)
 from .paths import STATIC
 
 _CTYPES = {".html": "text/html; charset=utf-8",
@@ -527,6 +527,8 @@ class Handler(BaseHTTPRequestHandler):
             # W-AI: Prophet NW lobe governor page
             if path == "/api/prophet":
                 return self._json(prophet.panel())
+            if path == "/api/prophet/trade-memory":
+                return self._json(trade_memory.panel())
             # Marketing lobe admin pages
             if path == "/api/marketing/overview":
                 return self._json(marketing.overview())
@@ -900,6 +902,12 @@ class Handler(BaseHTTPRequestHandler):
                 if settings.deployed():
                     return self._json(github_config.set_int(dotted, value, lo, hi))
                 return self._json(config_store.set_int(dotted, value, lo, hi))
+
+            # Owner-private Trade Memory intake. Personal trade facts go to
+            # Supabase only; never through the GitHub config mutation path.
+            if path == "/api/prophet/trade-memory":
+                result = trade_memory.record(b)
+                return self._json(result, 200 if result.get("ok") else 400)
 
             # REJECT — terminal kill WITH a reason, unlike hold (reversible,
             # stays in the rail). Writes data/marketing/rejections.jsonl, which

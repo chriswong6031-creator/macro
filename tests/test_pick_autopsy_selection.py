@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from unittest.mock import patch
 
 import pandas as pd
 import pytest
@@ -371,3 +372,85 @@ class TestMitigationVerdictValidation:
             assert doc["llm"]["mitigation_verdict"] != "external_unforeseeable", (
                 "Invalid LLM verdict must not silently map to external_unforeseeable"
             )
+
+
+def test_armed_autopsy_path_uses_real_provider_waterfall(tmp_path):
+    """model_caller=None is the armed path, not a silent empty-result shortcut."""
+    from engine.metabolism.standout_auditor import _invoke_autopsy_llm
+
+    reply = json.dumps([{
+        "pick_index": 1,
+        "summary": "Sector strength and stock alpha both contributed.",
+        "mitigation_verdict": "not_a_failure",
+        "lesson": "Separate sector and stock residuals.",
+        "engines_credit": "Attribution supplied the deterministic receipt.",
+        "causal_chain": [{
+            "order": 1,
+            "layer": "sector",
+            "factor": "Sector rotation",
+            "mechanism": "The sector outperformed the market.",
+            "evidence_status": "corroborated",
+            "timing_status": "known_at_entry",
+            "counterfactual": "No sector residual would weaken the case.",
+            "evidence_refs": ["excess_sector"],
+        }],
+        "alternate_explanations": [],
+        "missing_evidence": ["Fund flow receipt"],
+        "signal_hypotheses": [{
+            "feature_key": "sector_rotation",
+            "feature": "Sector turn",
+            "measurement": "Sector residual after drawdown",
+            "expected_direction": "positive",
+            "falsifier": "No out-of-cluster lift",
+            "authority": "research_only",
+        }],
+    }])
+    with patch("engine.metabolism.standout_auditor._get_deliberation_model",
+               return_value="claude-fable-5"), \
+         patch("engine.llm_auth.build_providers", return_value=[{"name": "mock"}]), \
+         patch("engine.llm_auth.make_call", return_value=(reply, None, "mock")) as call:
+        rows = _invoke_autopsy_llm(
+            "us", [_row("JNJ", 0.10)], "cycle", model_caller=None, root=tmp_path
+        )
+    assert call.called
+    assert rows[0]["summary"]
+    assert rows[0]["causal_chain"][0]["timing_status"] == "known_at_entry"
+    assert rows[0]["signal_hypotheses"][0]["direct_authority"] is False
+
+
+def test_armed_run_skips_existing_ids_before_selection(tmp_path, monkeypatch):
+    """Previously reviewed extremes must not occupy the cap forever."""
+    from engine.metabolism.standout_auditor import _attribution_path, run_pick_autopsies
+
+    rows = [_row("OLD", 0.30), _row("NEW", 0.20), _row("LOW", -0.20)]
+    attr_path = _attribution_path("us", tmp_path)
+    attr_path.parent.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(rows).to_parquet(attr_path)
+    old_dir = tmp_path / "data" / "standout_audit" / "pick_autopsies" / "us"
+    old_dir.mkdir(parents=True)
+    (old_dir / "OLD-2026-07-01-buy.json").write_text("{}")
+    monkeypatch.setenv("AUTONOMY_PAUSED", "false")
+
+    def caller(prompt):
+        assert "Pick 1: OLD " not in prompt
+        items = []
+        for idx in (1, 2):
+            items.append({
+                "pick_index": idx,
+                "summary": "review",
+                "mitigation_verdict": "not_a_failure",
+                "lesson": "lesson",
+                "engines_credit": "credit",
+                "causal_chain": [],
+                "alternate_explanations": [],
+                "missing_evidence": [],
+                "signal_hypotheses": [],
+            })
+        return json.dumps(items)
+
+    result = run_pick_autopsies(
+        "us", "cycle-new", model_caller=caller, root=tmp_path, dry_run=False
+    )
+    written_names = {Path(p).name for p in result["written"]}
+    assert all(not name.startswith("OLD-") for name in written_names)
+    assert any(name.startswith("NEW-") or name.startswith("LOW-") for name in written_names)
