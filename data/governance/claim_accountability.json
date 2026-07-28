@@ -1,6 +1,6 @@
 {
   "schema": "claim_accountability.v1",
-  "generated_at": "2026-07-28T09:13:37.621761+00:00",
+  "generated_at": "2026-07-28T10:31:14.704785+00:00",
   "global": {
     "n_claims": 29306,
     "n_grades": 32021,
@@ -883,7 +883,7 @@
     }
   },
   "track_record_ref": {
-    "generated_at": "2026-07-28T09:12:52.074438+00:00",
+    "generated_at": "2026-07-28T10:30:30.212526+00:00",
     "grade_horizons": [
       5,
       21,

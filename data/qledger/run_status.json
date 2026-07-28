@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-07-28T09:13:36.438241+00:00",
+  "generated_at": "2026-07-28T10:31:13.710205+00:00",
   "as_of": "2026-07-28",
   "n_open": 29305,
-  "n_graded_today": 238,
+  "n_graded_today": 0,
   "n_blocked_by_coverage": 23530,
   "n_ungradeable": 0,
-  "n_already_graded": 31783,
+  "n_already_graded": 32021,
   "dry_run": false,
   "w6_readiness": {
     "n_families_ready": 1,

@@ -1,6 +1,6 @@
 {
   "schema": "grading_closure.v1",
-  "generated_at": "2026-07-28T09:13:37.186646+00:00",
+  "generated_at": "2026-07-28T10:31:14.291992+00:00",
   "n_ledgers": 34,
   "n_closed": 9,
   "n_grader_starved": 25,
