@@ -2937,7 +2937,22 @@ jobs:
         # branch is exercised here with an INJECTED encoder so the model2vec
         # artifact — an operator/R2 step by design — never becomes a CI
         # dependency.
-        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_marketing_personas.py tests/test_marketing_event_language.py tests/test_marketing_press_feeds.py tests/test_marketing_breaking.py tests/test_marketing_fastlane.py tests/test_wires_rail_b4b.py tests/test_marketing_press_copy.py tests/test_marketing_ramp_cta_jitter.py tests/test_marketing_expression_dial.py tests/test_marketing_cadence_spine.py tests/test_marketing_chart_coverage.py tests/test_marketing_desk_feeds.py tests/test_marketing_reply_desk.py tests/test_marketing_forward_booking.py tests/test_marketing_recall.py tests/test_marketing_learning.py tests/test_marketing_reply_producer.py tests/test_marketing_scoring_brain.py -q
+        # test_marketing_hot_tape_llm (Hot Tape P2, 2026-07-28) joins the same
+        # lane: the LLM wire desk that phrases a fired intraday event from the
+        # radar's FactPacket, behind the numeric-consistency gate (masterplan
+        # gate 0.3 — the engine computes, the model phrases, the LLM never
+        # originates a number) plus the no-calls and no-hedging screens (0.4 and
+        # the wire register). Import closure is stdlib + pyyaml BY
+        # CONSTRUCTION: engine/marketing/hot_tape_llm.py keeps llm_auth,
+        # anthropic, yaml, lib.config, copywriter, social_publisher and
+        # wire_voice behind LAZY function-level imports, so a top-level heavy
+        # import there turns this job red at collection — which is the point,
+        # because this lane has no anthropic package at all. Two of the tests
+        # are AST/source scans over the module that need no imports; every
+        # provider-path test monkeypatches engine.llm_auth, so the suite touches
+        # no network and reads no credential. Nothing is importorskip-gated.
+        # Verified in a clean pytest+pyyaml+jinja2 venv.
+        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_marketing_personas.py tests/test_marketing_event_language.py tests/test_marketing_press_feeds.py tests/test_marketing_breaking.py tests/test_marketing_fastlane.py tests/test_wires_rail_b4b.py tests/test_marketing_press_copy.py tests/test_marketing_ramp_cta_jitter.py tests/test_marketing_expression_dial.py tests/test_marketing_cadence_spine.py tests/test_marketing_chart_coverage.py tests/test_marketing_desk_feeds.py tests/test_marketing_reply_desk.py tests/test_marketing_forward_booking.py tests/test_marketing_recall.py tests/test_marketing_learning.py tests/test_marketing_reply_producer.py tests/test_marketing_scoring_brain.py tests/test_marketing_hot_tape_llm.py -q
       - name: reply-target register validates (config/reply_targets.yml)
         # The register is operator-curated, so a bad handle or an unknown tier is
         # an editing mistake, not a code change. Runs as its own step so a

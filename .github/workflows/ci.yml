@@ -1269,6 +1269,17 @@ on:
       - "tests/test_marketing_scoring_optional_deps.py"
       - "scripts/marketing_golden_set.py"
       - "docs/scoring_brain.md"
+      # Hot Tape P2 (2026-07-28): the LLM wire desk + its golden FactPackets +
+      # the PR-evidence dry run. engine/marketing/hot_tape_llm.py is ALREADY
+      # covered by the engine/marketing/** glob above, so it is deliberately not
+      # repeated here; these three are named because a fixture-only, suite-only
+      # or runner-only edit would otherwise never reach the marketing-engine
+      # lane that runs the suite (test-whitelist-rot). The fixture is the
+      # subject of most of the suite — an edit to a golden packet changes what
+      # every gate is asserted against.
+      - "tests/test_marketing_hot_tape_llm.py"
+      - "tests/fixtures/hot_tape_golden_packets.json"
+      - "scripts/hot_tape_llm_dryrun.py"
       # D02 per-post metrics poller + chart-image (PNG) pipeline. The poller
       # reads back Buffer analytics; media_publish uploads chart PNGs to R2;
       # content_studio renders the PNG at plan-build time. engine/marketing/**
