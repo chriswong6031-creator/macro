@@ -562,6 +562,10 @@ class TestVetoRun:
         monkeypatch.setattr(V, "_model_id", lambda _k: "claude-haiku-4-5")
         out = V.run(self._result(), cfg={"veto": {"enabled": True}}, call=_boom)
         assert out["vetoes"] == {}
+        # DISTINCT from `no_provider`: a 429 reported as a missing credential
+        # sends the operator to the waterfall instead of to rate limits.
+        assert out["state"] == "call_failed"
+        assert out["failed_batches"] == out["batches"] > 0
 
     def test_it_batches(self, monkeypatch):
         calls = []

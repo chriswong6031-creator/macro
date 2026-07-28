@@ -215,16 +215,22 @@ def run(result: dict, *, cfg: dict | None = None,
 
     Returns::
 
-        {"state": "ok" | "disabled" | "no_provider" | "no_head",
+        {"state": "ok" | "disabled" | "no_head" | "no_provider" | "call_failed",
          "vetoes": {report_id: {"reason", "model", "provider"}},
-         "batches": n, "head": n, "model": "..."}
+         "batches": n, "failed_batches": n, "head": n, "model": "..."}
+
+    ``no_provider`` and ``call_failed`` are DISTINCT on purpose: the first sends
+    the operator to the credential waterfall, the second to rate limits and
+    provider health.  Collapsing them (both produce an empty veto map) would
+    misdiagnose a 429 as a missing key.
 
     NEVER RAISES.  Every failure returns a state and an EMPTY veto map, which is
     the safe direction: the deterministic ranking stands.
     """
     vcfg = (cfg or {}).get("veto") if isinstance(cfg, dict) else None
     vcfg = vcfg if isinstance(vcfg, dict) else {}
-    empty = {"state": "disabled", "vetoes": {}, "batches": 0, "head": 0, "model": ""}
+    empty = {"state": "disabled", "vetoes": {}, "batches": 0, "failed_batches": 0,
+             "head": 0, "model": ""}
 
     if not bool(_get(vcfg, "enabled", _VETO_DEFAULTS)):
         return empty
@@ -249,6 +255,7 @@ def run(result: dict, *, cfg: dict | None = None,
 
     vetoes: dict[str, dict] = {}
     batches = 0
+    failed = 0
     saw_provider = False
     for start in range(0, len(head), batch_size):
         chunk = head[start:start + batch_size]
@@ -267,6 +274,7 @@ def run(result: dict, *, cfg: dict | None = None,
         except Exception as exc:  # noqa: BLE001 — a veto failure must not stop triage
             log.warning("research_veto: batch %d call failed: %s", batches, exc)
             batches += 1
+            failed += 1
             continue
         batches += 1
         if provider:
@@ -275,9 +283,17 @@ def run(result: dict, *, cfg: dict | None = None,
             vetoes[rid] = {"reason": reason, "model": str(model or model_id),
                            "provider": str(provider or "")}
 
-    state = "ok" if saw_provider else "no_provider"
+    if saw_provider:
+        state = "ok"
+    elif failed:
+        # A provider WAS built and every call to it raised: rate limits, a
+        # provider outage, a malformed request. Reporting `no_provider` here
+        # would send the operator to the credential waterfall for a 429.
+        state = "call_failed"
+    else:
+        state = "no_provider"
     return {"state": state, "vetoes": vetoes, "batches": batches,
-            "head": len(head), "model": model_id}
+            "failed_batches": failed, "head": len(head), "model": model_id}
 
 
 __all__ = ["build_prompt", "parse_verdicts", "run"]
