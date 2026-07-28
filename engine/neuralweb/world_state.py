@@ -86,6 +86,18 @@ Consumers derive an age from `as_of` + `produced_at`; the precise age stays in
 the log line.  tests/test_world_state.py::test_determinism_under_a_moving_clock
 enforces this by making `datetime.now()` raise while `now` is pinned.
 
+Enforcement is two tests, because a leak's blast radius is the whole call tree
+and not this module.  The narrow guard patches `datetime` in *this* namespace;
+::test_determinism_under_a_moving_clock_everywhere sweeps every loaded module
+plus pandas' `Timestamp`, which is the only guard that catches a clock read in
+a lazily-imported helper (`contradictions`, `envelope`, `synapse` are all
+imported inside the build) or via `pd.Timestamp.now()`.  Re-injecting the
+#3815 leak shows why the plain inputs_hash assertion is not enough on its own:
+it stays GREEN on a normal run and only flakes when a 6-minute boundary falls
+between the two calls.  ::test_build_world_state_does_not_write_into_root
+covers the other way two identical calls can disagree — a first-call write into
+`root` that the second call reads back.
+
 factor_weather lobe (§5.4): composed by _compose_factor_weather() below; panel
 calibration notes and nightly-bounds law live in scripts/build_factor_panel.py.
 """

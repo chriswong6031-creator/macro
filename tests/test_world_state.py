@@ -21,6 +21,9 @@ Tests
 12. rotation_episode_counts   — episode_counts math correct
 13. breadth_last_row          — last-row extraction correct (tiny parquet fixture)
 14. determinism               — two calls with same now give same inputs_hash
+14b determinism_under_a_moving_clock            — clock leak in world_state raises
+14c determinism_under_a_moving_clock_everywhere — clock leak ANYWHERE raises
+14d does_not_write_into_root                    — composing never mutates the tree
 15. qi_block_null             — qi is always null with qi_note present
 16. all_missing               — total failure -> partial payload with all gaps, no raise
 17. liquidity_overlay         — regime block carries liquidity_overlay and sector_rs
@@ -35,8 +38,10 @@ Tests
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
-from datetime import datetime, timezone
+import sys
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -952,7 +957,8 @@ def test_determinism_under_a_moving_clock(tmp_path, monkeypatch):
 
     Scope: this pins world_state's own clock reads — it patches the `datetime`
     name in that module, so a leak inside a lazily-imported helper would slip
-    past.  The inputs_hash assertion is the backstop for that case.
+    past.  test_determinism_under_a_moving_clock_everywhere below closes that
+    hole; keep this one as the narrow, fast, obvious statement of the law.
     """
     _full_tree(tmp_path)
 
@@ -972,6 +978,161 @@ def test_determinism_under_a_moving_clock(tmp_path, monkeypatch):
     p2 = build_world_state(root=tmp_path, now=_NOW)
 
     assert p1["inputs_hash"] == p2["inputs_hash"]
+
+
+def _poison_every_clock(monkeypatch) -> list[str]:
+    """Make every clock surface any LOADED module can reach raise.
+
+    Walks sys.modules and replaces three bindings wherever they still point at
+    the real class: `datetime` (from datetime import datetime), `date`, and
+    pandas' `Timestamp`.  Attribute lookup on a module happens at call time, so
+    patching the module object reaches every function whose globals live there
+    — including helpers world_state imports lazily inside the build.
+
+    Returns the dotted names of the project modules that were patched, so the
+    caller can assert the sweep actually reached the builder rather than
+    silently patching nothing.
+    """
+    class _NoClock(datetime):
+        @classmethod
+        def now(cls, tz=None):  # noqa: ARG003
+            raise _WallClockRead("datetime.now()")
+
+        @classmethod
+        def utcnow(cls):
+            raise _WallClockRead("datetime.utcnow()")
+
+        @classmethod
+        def today(cls):
+            raise _WallClockRead("datetime.today()")
+
+    class _NoDate(date):
+        @classmethod
+        def today(cls):
+            raise _WallClockRead("date.today()")
+
+    class _NoTimestamp(pd.Timestamp):
+        @classmethod
+        def now(cls, tz=None):  # noqa: ARG003
+            raise _WallClockRead("pd.Timestamp.now()")
+
+        @classmethod
+        def today(cls, tz=None):  # noqa: ARG003
+            raise _WallClockRead("pd.Timestamp.today()")
+
+        @classmethod
+        def utcnow(cls):
+            raise _WallClockRead("pd.Timestamp.utcnow()")
+
+    swaps = (("datetime", datetime, _NoClock),
+             ("date", date, _NoDate),
+             ("Timestamp", pd.Timestamp, _NoTimestamp))
+
+    patched: list[str] = []
+    for name, mod in list(sys.modules.items()):
+        if mod is None:
+            continue
+        for attr, real, fake in swaps:
+            try:
+                if getattr(mod, attr, None) is real:
+                    monkeypatch.setattr(mod, attr, fake)
+                    patched.append(name)
+            except Exception:  # noqa: BLE001 — lazy-loader modules may raise on getattr
+                continue
+    return sorted({n for n in patched if n.startswith(("engine.", "scripts."))})
+
+
+def test_determinism_under_a_moving_clock_everywhere(tmp_path, monkeypatch):
+    """The same law as above, enforced across the WHOLE loaded module graph.
+
+    The guard above patches exactly one name, `_ws.datetime`.  That happened to
+    be where the #3815 leak lived, and its own docstring names the hole it
+    leaves: a leak inside a lazily-imported helper slips past.  That hole is not
+    theoretical — build_world_state imports engine.neuralweb.{contradictions,
+    envelope,synapse} and pandas *inside* the build, and pandas' clock
+    (pd.Timestamp.now) is a surface no `datetime` patch can ever reach.
+
+    Injecting the shipped defect's exact shape — a wall-clock age quantised to
+    0.1h, so the two calls disagree only across a 6-minute boundary — into a
+    lazily-imported helper leaves the narrow guard GREEN and the plain
+    inputs_hash assertion red about one run in a thousand.  This sweep turns
+    both cases red on every run:
+
+        defect site                 narrow guard   this guard
+        world_state namespace       RED            RED
+        lazily-imported helper      green (MISS)   RED
+        pd.Timestamp.now()          green (MISS)   RED
+
+    Two things keep it honest.  The warm-up build is load-bearing: the lazy
+    imports must already be in sys.modules or the sweep cannot reach them.  And
+    the baseline comparison is the non-vacuity check — replacing a name that
+    something isinstance()-tests would silently reroute a branch and leave a
+    guard that reviews as a gate while testing a different builder, so the
+    poisoned payload must hash identically to the un-poisoned one.
+    """
+    _full_tree(tmp_path)
+
+    # Warm-up: forces the lazily-imported helpers into sys.modules so the sweep
+    # below can reach them.  Also the un-poisoned baseline for non-vacuity.
+    baseline = build_world_state(root=tmp_path, now=_NOW)
+
+    patched = _poison_every_clock(monkeypatch)
+    assert "engine.neuralweb.world_state" in patched, (
+        f"sweep did not reach the builder — it patched {patched!r}. A guard that "
+        f"patches nothing passes vacuously."
+    )
+
+    p1 = build_world_state(root=tmp_path, now=_NOW)
+    p2 = build_world_state(root=tmp_path, now=_NOW)
+
+    assert p1["inputs_hash"] == p2["inputs_hash"], (
+        "non-deterministic: inputs_hash differs between two calls under a "
+        "pinned `now` even with every clock silenced"
+    )
+    assert p1["inputs_hash"] == baseline["inputs_hash"], (
+        "the clock sweep changed the payload, so this guard is exercising a "
+        "different builder than production: some patched name is being "
+        "isinstance()-tested or otherwise read as a value, not just called"
+    )
+
+
+def test_build_world_state_does_not_write_into_root(tmp_path):
+    """Composing must not touch the tree it reads.
+
+    build_world_state() is documented as composition; build_and_write() is the
+    writer.  If a lobe ever cached an artifact under `root` on first use, call 2
+    would read back what call 1 wrote and inputs_hash would differ between two
+    calls that the caller believes are identical — a determinism failure whose
+    symptom is indistinguishable from a clock leak, and one that reproduces only
+    when the tree starts without the cache.
+
+    Hashing the tree names that cause directly instead of leaving it to be
+    inferred from a hash mismatch, and it holds the line for the nightly too:
+    the builder reads a repo checkout, so a stray write there is a dirty tree.
+    """
+    _full_tree(tmp_path)
+
+    def _tree() -> dict[str, str]:
+        return {
+            str(p.relative_to(tmp_path)): hashlib.sha256(p.read_bytes()).hexdigest()
+            for p in sorted(tmp_path.rglob("*")) if p.is_file()
+        }
+
+    before = _tree()
+    assert before, "fixture tree is empty — this guard would pass vacuously"
+
+    build_world_state(root=tmp_path, now=_NOW)
+    after = _tree()
+
+    added = sorted(set(after) - set(before))
+    removed = sorted(set(before) - set(after))
+    changed = sorted(k for k in set(before) & set(after) if before[k] != after[k])
+
+    assert not (added or removed or changed), (
+        "build_world_state() mutated the tree it read — "
+        f"added={added} removed={removed} changed={changed}. "
+        "Composition is read-only; writing belongs in build_and_write()."
+    )
 
 
 # ---------------------------------------------------------------------------
