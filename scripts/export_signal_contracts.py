@@ -244,11 +244,21 @@ ARTIFACT_MANIFEST = [
      "note": "US Buy Board — sizes the autonomous book's US candidate universe"},
     {"artifact": "site/factordata/china_standouts.json",
      "kind": "board",
-     "schema_version": "1.1.0",
+     "schema_version": "1.2.0",
      "schema_fields": [
          "as_of", "board_track", "buy", "cap_composition", "coverage",
          "dispersion_regime", "eligible", "laggards", "quality_screen", "qvix_regime",
          "ran", "rank_by", "ripening", "ripening_falling", "sleeve_chip", "universe",
+     ],
+     "optional_fields": [
+         # data_outage — W0.7 board-width guard stamp, present only on a collapsed
+         # board (>40% day-over-day buy-count drop); conditional-by-design.
+         # watch — CN board-cap overflow lane (2026-07-28): gate-eligible rows ranked
+         # below BOARD_BUY_CAP (110), same row shape as buy. Always emitted by builds
+         # from this version on; optional (not required) so the committed pre-rebuild
+         # artifact doesn't read as removed-drift on the main heartbeat.
+         # (List order is alphabetical — test_contract_drift asserts optional_fields sorted.)
+         "data_outage", "watch",
      ],
      "schema_item_fields": [
          "ab_tier", "align_tier", "alpha", "alpha_entry", "coiled", "conviction",
