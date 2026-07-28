@@ -423,7 +423,9 @@ def test_governor_writes_content_plan(tmp_path):
     assert isinstance(cp.get("accounts"), list)
     # 6 W1 desks + founder (2026-07-27) + the 4 employee desks and the
     # wired-but-dark news property (XG-W1, 2026-07-28).
-    assert len(cp.get("accounts", [])) == 12
+    # 13 since W2R (XG-W8): the 12 W1/XG-W1 desks plus the dark
+    # mastermind_research publication property.
+    assert len(cp.get("accounts", [])) == 13
     assert isinstance(cp.get("featured_charts"), list)
 
 

@@ -159,6 +159,46 @@ desks:
     min_anchored_receipts: 4
     # Only consider vault reports published within this many days of as_of.
     window_days: 21
+    # W2R (XG-W8). Which triage tier this desk draws. The desk's OWN
+    # cadence_per_day above and the tier's volume knob
+    # (research_triage.volume.stages.<stage>.flagship_per_day) compose as
+    # STRICTER-OF, so neither one can be raised alone into a cadence the other
+    # never agreed to.
+    triage_tier: "flagship"
+
+  # W2R desk-note lane (XG-W8) — the masterplan's "next ~12 -> desk notes,
+  # haiku-tier, 300-500w". SHIPS DARK AND STAYS DARK UNTIL THE VOLUME KNOB MOVES:
+  # research_triage.volume.stage is `cold_start`, whose desk_notes_per_day is 0,
+  # so this desk plans ZERO slots on every run today. The lane is built, not
+  # armed — exactly the posture the scaled-content-abuse risk demands of a cold
+  # domain (masterplan §5b: "never a day-one 1,500/mo").
+  #
+  # ORDER IS LOAD-BEARING: research_desk MUST stay above this entry. desk_planner
+  # walks desks in config order and blocks a report's ref the moment a desk takes
+  # it, so the flagship desk claims the ranked head first and the note desk picks
+  # up below it. tests/test_press_research_triage.py pins that ordering.
+  research_note:
+    publication: "mastermind_research"
+    label: "Research Notes"
+    byline: "Research Desk — Mastermind Research"
+    # ZERO, NOT THE TARGET CEILING. This shipped at 12 ("the volume knob is what
+    # binds") and that was wrong twice over: `_triage_cap` used to fall back to
+    # this number whenever the triage layer could not be consulted, so
+    # `research_triage.enabled: false` — the feature's OFF switch — would have
+    # published twelve notes a day. The cap resolver now fails CLOSED to 0, and
+    # this number is 0 as well: defence in depth, and an honest statement that
+    # the desk-note lane is not armed. Raising the lane is TWO edits, both
+    # deliberate: this key AND research_triage.volume.stage.
+    cadence_per_day: 0
+    cadence_min_per_day: 0
+    min_words: 300
+    max_words: 500
+    model_key: "press_research_note"  # -> config.yml llm_models.press_research_note (haiku tier)
+    cluster: "research-notes"
+    candidate_pool: 24
+    min_anchored_receipts: 3
+    window_days: 21
+    triage_tier: "desk_note"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # PUBLIC LINK ALLOWLIST  (W1 review ruling — the source law, amended)
@@ -341,6 +381,241 @@ llm:
 # ─────────────────────────────────────────────────────────────────────────────
 quarantine:
   max_regenerations: 2
+
+# ─────────────────────────────────────────────────────────────────────────────
+# W2R — RESEARCH TRIAGE & TIERING  (XG-W8, masterplan D14 §5b)
+# engine/press/research_triage.py · engine/press/research_veto.py
+# Runbook + arming levers: docs/research_triage.md
+#
+# ~150 institutional reports enter the vault daily. The W-score ranks ALL of
+# them every day and prints every score to data/press/research_triage.jsonl —
+# skipped and dropped reports carry their scores too (nulls printed, not hidden).
+#
+# EVERY NUMBER BELOW IS A HYPOTHESIS AWAITING MAIN-LOOP RATIFICATION (charter §8;
+# the masterplan's own wave table says "weights ratified in main loop"). They are
+# config precisely so a ratification can re-weight without a code change, and
+# tests/test_press_research_triage.py fails if any value here drifts from the
+# module default it mirrors.
+#
+# ONE SCORING BRAIN: the components REUSE engine/marketing/{garbage_gate,
+# story_spine,signal_features}.py and engine/press/validators.py. Nothing in the
+# XG-W5 scorer is reimplemented on this side.
+# ─────────────────────────────────────────────────────────────────────────────
+research_triage:
+  enabled: true
+
+  # ── the W-score blend ─────────────────────────────────────────────────────
+  # Rationale per component lives beside the module defaults
+  # (engine/press/research_triage.py _WEIGHT_DEFAULTS) so a review argues with a
+  # stated reason rather than a bare number. Summary of the ordering logic:
+  #   extraction  > relevance  > cluster  > institution > novelty > attention
+  #   "can we write it" > "does it matter to us" > "does it matter to the street"
+  #   > "who said it" > "have we said it" > "will anyone look".
+  # attention_potential is deliberately LAST: it is the term most able to drag
+  # the brand toward the framing the §5 validators exist to ban.
+  weights:
+    extraction_quality: 0.24
+    relevance: 0.22
+    cluster_density: 0.18
+    institution_tier: 0.16
+    novelty: 0.12
+    attention_potential: 0.08
+
+  # ── source-institution tier ───────────────────────────────────────────────
+  # An OPERATOR/FABLE LEVER, shipped EMPTY on purpose (same posture as the
+  # garbage gate's source_blocklist): a builder's opinion about which houses
+  # matter is not evidence. An unlisted institution scores `unranked`, which is
+  # the NEUTRAL — being unclassified costs a report nothing.
+  institution:
+    tier_values:
+      tier_1: 1.0
+      tier_2: 0.7
+      tier_3: 0.45
+      unranked: 0.5
+    tiers:
+      tier_1: []
+      tier_2: []
+      tier_3: []
+
+  # ── cross-report cluster density (importance) ─────────────────────────────
+  # How many INDEPENDENT institutions are on one theme inside the window.
+  # Clustering is engine/marketing/story_spine.py, called not copied.
+  cluster:
+    institutions_full: 4     # institutions on a theme for full marks
+    window_days: 7
+    max_items: 600           # cap on one clustering pass
+
+  # StorySpine knobs for the W2R pass. Same values as the marketing lane's
+  # breaking.scoring.story_spine today — a W2R-specific retune (research titles
+  # are not wire headlines) is a config edit here, never a code change.
+  #
+  # HONEST LIMIT: the near-dup pass needs the optional `datasketch` wheel. Where
+  # it is absent, story identity is the exact normalized-headline key only and
+  # cluster_density reports state `exact-only` with the value declared a FLOOR.
+  # That state is printed on every row, never smoothed into a fake neutral.
+  story_spine:
+    minhash_num_perm: 96
+    near_dup_threshold: 0.62
+    shingle_k: 3
+    semantic_threshold: 0.86
+    story_ttl_h: 72
+    max_stories: 1500
+    max_members_per_story: 40
+    max_text_chars: 600
+    match_weights:
+      new: 1.0
+      exact: 0.0
+      near_dup: 0.5
+      semantic: 0.5
+
+  # ── relevance overlap ─────────────────────────────────────────────────────
+  # Report tickers/themes vs THREE first-party context sources, each
+  # independently null-safe: an absent source contributes exactly 0 to every
+  # report and therefore cannot re-order the ranking (the XG-W5 tone rule).
+  relevance:
+    w_ticker: 0.55
+    w_topic: 0.45
+    topic_overlap_full: 3
+    chronicle_window_days: 7
+    watchlist_window_days: 7
+    movers_n: 8
+    movers_min_abs: 3.0
+    # NOT OPTIONAL. The vault ingest writes one `research_vault` chronicle event
+    # per report, so a live 7-day chronicle window is 236 vault events out of
+    # 242 — comparing a report against them is comparing the corpus with itself.
+    # Measured before this line existed: relevance sat at its saturated value
+    # for all 280 candidates, i.e. a 0.22-weight component that could not order
+    # anything. Same desk boundary `desks.brief.exclude_sources` draws.
+    exclude_chronicle_sources:
+      - "research_vault"
+
+  # ── extraction quality ────────────────────────────────────────────────────
+  # Measured on OUR OWN vault summary_points — the material the writer is
+  # actually handed. Largest weight for that reason.
+  extraction:
+    points_full: 4
+    words_full: 30
+    w_points: 0.40
+    w_depth: 0.35
+    w_numeric: 0.25
+    # `needs_metadata: true` = our extraction knows it is incomplete.
+    # Multiplicative, not a drop.
+    needs_metadata_factor: 0.5
+
+  # ── attention potential (RANKING INPUT ONLY) ──────────────────────────────
+  # Reuses engine/marketing/signal_features.headline_shape verbatim. This never
+  # reaches the writer's prompt and never becomes a framing instruction; the §5
+  # validator suite still fails any draft dressed in unearned urgency.
+  attention:
+    w_shape: 0.80
+    w_top_pick: 0.20
+    headline_shape:
+      # Report titles run longer than wire headlines, so the bands differ from
+      # the marketing lane's. Both keys are real signal_features knobs.
+      short_max_chars: 40
+      long_min_chars: 130
+
+  # ── novelty (inverse 30-day self-similarity vs our own estate) ────────────
+  # Reuses engine/press/validators.window_jaccard — the SAME metric the §5
+  # self-similarity radar gates drafts with, so a report that would produce a
+  # near-duplicate piece is demoted before a token is spent instead of
+  # quarantined after.
+  novelty:
+    window_days: 30
+    shingle_n: 5
+    neutral: 0.5            # cold estate -> neutral, and it SAYS so ("no-peers")
+    # COMPARABILITY FLOOR. Below this many peers the component reports its null
+    # instead of a number. Measured before this key existed: with six evergreen
+    # blog posts in the estate, all 280 candidates scored a clean 1.0 with
+    # `state: observed` — a measured-looking maximum that only meant the
+    # comparison corpus was empty.
+    min_peers: 8
+    max_peers: 60
+
+  # ── P0 garbage gate (reused from engine/marketing/garbage_gate.py) ────────
+  # Same five detectors, same reason strings. A gated report is excluded from
+  # the ranking and therefore from the veto head, so it costs zero tokens — but
+  # its deterministic components are still computed and printed.
+  garbage_gate:
+    enabled: true
+    detectors:
+      satire_blocklist: true
+      source_blocklist: true
+      promo_spam: true
+      paywalled_stub: true
+      non_story: true
+    source_blocklist: []
+    promo_weak_min: 2
+    require_marker: true
+    stub_min_chars: 80
+
+  # ── LLM veto pass — DE-ESCALATE ONLY ──────────────────────────────────────
+  # engine/press/research_veto.py performs NO arithmetic on any score; it
+  # returns {id: reason} and nothing else. research_triage.apply_vetoes is the
+  # only code that turns a verdict into a number, and it clamps the factor into
+  # [0,1] and takes min(new, old) — so a hostile config cannot promote anything.
+  #
+  # SPEND: the existing engine.llm_auth waterfall, recorded to the existing
+  # lib.ai_costs ledger under usage_lane `press-research-triage-veto`. No new
+  # spend path. head_size 40 at batch_size 20 is ~2 cheap completions a day;
+  # the masterplan prices FULL 150/day coverage at about $5/mo, which is a
+  # head_size edit, not a code change.
+  veto:
+    enabled: true
+    head_size: 40
+    batch_size: 20
+    demote_factor: 0.35     # clamped into [0,1] by apply_vetoes
+    model_key: "press_research_veto"   # -> config.yml llm_models (haiku tier)
+    # The DeepSeek rung's own model id. An Anthropic model id is not a DeepSeek
+    # one, so the cheapest-tier pin needs both: without this a DeepSeek-only
+    # host ran llm_auth's `deepseek-v4-pro` default, a tier up from what this
+    # lane is priced on.
+    deepseek_model: "deepseek-v4-flash"
+    max_tokens: 1200
+
+  # ── PUBLISH VOLUME — THE COLD-START RAMP (config, never code) ─────────────
+  # Masterplan §5b: "publish volume is a GSC-evidence-gated config knob (W2
+  # scorecards), never a day-one 1,500/mo — a cold domain at that cadence is the
+  # scaled-content-abuse profile Google deindexes."
+  #
+  # `stage` selects a row below. THE ONLY WAY TO RAISE VOLUME IS TO MOVE THIS ONE
+  # KEY, and each row states the evidence that opens it. Moving it is an
+  # operator/main-loop decision with the W2 scorecards in hand, not a build one.
+  volume:
+    stage: "cold_start"
+    stages:
+      # Day one. One flagship analysis, zero desk notes — the same 1/day the
+      # research desk already runs at, so W2R changes WHICH report is covered
+      # before it changes HOW MANY.
+      # Opens: on arrival.
+      cold_start:
+        flagship_per_day: 1
+        desk_notes_per_day: 0
+      # Opens on: Search Console rows flowing per URL (masterplan §0 W2), the
+      # property indexed, and no Beacon score degradation vs the pre-launch
+      # baseline over a trailing month.
+      warm:
+        flagship_per_day: 2
+        desk_notes_per_day: 4
+      # Opens on: W2 per-desk scorecards showing impressions/CTR trending on the
+      # research property AND zero validator overrides for two weeks.
+      target:
+        flagship_per_day: 3
+        desk_notes_per_day: 12
+
+  # ── the score ledger (nulls printed, every report, every day) ─────────────
+  # Append-only, idempotent per (as_of, report_id). Written ONLY by
+  # scripts/run_research_triage.py --write, whose workflow git-adds this one
+  # path. The press --emit lane never touches it.
+  ledger:
+    path: "data/press/research_triage.jsonl"
+    window_days: 21          # matches desks.research_desk.window_days
+    # NOT A ROW CAP. One row per report is the law, so above this threshold rows
+    # are still written, just WITHOUT `component_detail`. Sized to the real
+    # inflow: ~150 reports/day over a 21-day window is ~3,150.
+    max_detailed_rows_per_run: 4000
+    # `--compact` (the scheduled run passes it) drops rows older than this.
+    retention_days: 120
 
 # ─────────────────────────────────────────────────────────────────────────────
 # PATHS (relative to repo root)

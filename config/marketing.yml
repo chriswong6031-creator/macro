@@ -1038,6 +1038,48 @@ desk_network:
         education: 0.03
         watchlist: 0.03
 
+    - id: mastermind_research
+      kind: branded
+      beat: "institutional research + papers, analyzed (blog.mastermind-x.com)"
+      voice: "educational"
+      # NO `handle:` KEY AT ALL, deliberately. The X account DOES NOT EXIST yet
+      # (X Growth charter §1: "*(not created yet)*"; operator lever §7.1 is to
+      # create it). Writing a speculative handle here would make the roster read
+      # as if the account were merely unwired rather than uncreated. There is
+      # likewise NO publish.channels entry — no Buffer channel exists to bind.
+      #
+      # DARK ON FOUR INDEPENDENT LOCKS (engine/press/research_lane.py documents
+      # all four): no account, no channel, both keys below, and the lane's own
+      # refusal to build items for a disabled account.
+      #
+      # BOTH KEYS, for the same reason mastermind_news carries both: `enabled`
+      # is the account model's intent key, and `disabled` is the legacy
+      # per-account kill switch some older call sites still read directly. The
+      # publish-time lanes once filtered on `disabled` ALONE, which made a dark
+      # property postable.
+      #
+      # WHAT ARMING TAKES, in order: (1) operator creates the X account,
+      # (2) buffer-channels workflow discovers its channel id and it is bound in
+      # publish.channels, (3) `handle:` and `created:` are filled in the same PR
+      # that flips these two keys. Sentinel resolves the ramp tier from
+      # `created:`; on an ENABLED account a missing value FAILS CLOSED to the
+      # strictest tier and prints a ::warning.
+      enabled: false
+      disabled: true
+      # Tilt mirrors config/personas/mastermind_research.yml. `education` is the
+      # research property's own register and the outbox kind its X shapes use
+      # (engine/press/research_lane.py — no new outbox kinds).
+      tilt:
+        signal: 0.28
+        education: 0.16
+        macro: 0.14
+        receipt: 0.12
+        event: 0.08
+        chart: 0.08
+        theme_list: 0.08
+        mover: 0.03
+        watchlist: 0.03
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Copywriter — personas + copy laws (the anti-bot-voice system)
 # The copywriter (engine/marketing/copywriter.py) reads this block. Personas give

@@ -2,16 +2,28 @@
 
 NO LLM.  NO NETWORK.  Same inputs => identical slots, every time.
 
-Two desks:
+Three desks:
 
   brief          The Brief.  Ranks the day's candidate stories from the
                  chronicle event store, the S&P/theme heatmaps (movers) and a
                  small set of first-party engine artifacts, then cuts to the
                  desk's cadence ceiling.
-  research_desk  Research Desk.  Picks ONE research-vault report by recency and
-                 tier (top_pick first, then newest), and hands the writer that
-                 report's `summary_points` — our own analyst summary, never the
-                 source PDF.
+  research_desk  Research Desk.  Picks the top research-vault report(s) off the
+                 W2R triage ranking (engine/press/research_triage.py) and hands
+                 the writer that report's `summary_points` — our own analyst
+                 summary, never the source PDF.
+  research_note  W2R desk notes (XG-W8): the same beat at 300–500w on a cheaper
+                 model, drawing BELOW the flagship tier's picks.  DARK until the
+                 cold-start volume knob moves (config/press.yml
+                 `research_triage.volume.stage`), which caps it at 0 slots today.
+
+W2R TRIAGE INTAKE (XG-W8, masterplan D14 §5b).  The research desks no longer
+sort by recency: `_triage_order` recomputes the deterministic W-score over the
+eligible window and walks the reports in ranked order.  The tier only sets the
+CAP, so a top-ranked report the planner cannot legally cover falls through to
+the next one.  The LLM veto pass never runs here — the planner reads the
+demotions the nightly already recorded, because a demotion is the one triage
+input it cannot recompute without a model (and must never try to).
 
 What a planner slot carries is the whole contract the rest of the pipeline
 enforces:
@@ -744,7 +756,7 @@ def chronicle_context(as_of: date, *, tickers=None, topics=None,
 
 
 def _plan_brief(cfg: dict, desk_cfg: dict, as_of: date, root,
-                blocked_refs: set[str]) -> list[dict]:
+                blocked_refs: set[str], *, name: str = "brief") -> list[dict]:
     events = _chronicle_events(root)
     window = int(desk_cfg.get("window_days") or 3)
     excluded = {str(s) for s in (desk_cfg.get("exclude_sources") or [])}
@@ -799,8 +811,8 @@ def _plan_brief(cfg: dict, desk_cfg: dict, as_of: date, root,
         # gated URL from creeping back in through the draft body.
         primary_url = lead.get("url")     # vault-sourced events carry /research/
         slots.append({
-            "id": f"press-brief-{as_of.isoformat()}-{story_key('brief', ref)}",
-            "desk": "brief",
+            "id": f"press-{name}-{as_of.isoformat()}-{story_key(name, ref)}",
+            "desk": name,
             "publication": publication,
             "byline": str(desk_cfg.get("byline") or "The Brief"),
             "cluster": str(desk_cfg.get("cluster") or "market-brief"),
@@ -892,8 +904,126 @@ def vault_slug(item: dict, all_items: list[dict]) -> str:
         return ""
 
 
+def _triage_order(cfg: dict, as_of: date, root,
+                  eligible: list[dict]) -> tuple[list[str], dict]:
+    """W2R ranked order + per-report triage metadata.  ([], {}) when unavailable.
+
+    THE PLANNER'S ONE INTAKE SEAM (XG-W8, masterplan §5b).  The W-score is
+    deterministic, offline and cheap, so it is RECOMPUTED here rather than read
+    from the nightly's ledger — that keeps the planner reproducible from the
+    committed tree alone.  What the planner DOES read from the ledger is the
+    nightly veto pass's demotions, because those are the one input the planner
+    cannot recompute without an LLM (and must never try to).
+
+    Fail-soft by design: any failure returns ([], {}) and the caller falls back
+    to the W1 sort (top_pick, recency, id).  A broken triage costs the desk its
+    ordering, never its day.
+    """
+    tcfg_present = isinstance(cfg.get("research_triage"), dict)
+    if not tcfg_present:
+        return [], {}
+    tcfg = cfg["research_triage"]
+    if not bool(tcfg.get("enabled", True)):
+        return [], {}
+    try:
+        from engine.press import research_triage as _rt  # noqa: PLC0415
+
+        result = _rt.rank(eligible, as_of=as_of, root=root, cfg=cfg)
+        vetoes = _rt.recorded_vetoes(root, cfg, as_of=as_of)
+        if vetoes:
+            result = _rt.apply_vetoes(result, vetoes, cfg=tcfg)
+        meta = {str(r.get("report_id")): r for r in (result.get("rows") or [])}
+        # DIVERGENCE IS DISCLOSED, NOT ASSUMED AWAY.  The planner recomputes the
+        # W-score; the nightly computed its own on a host that may have had the
+        # optional `datasketch` wheel when this one does not (the workflow
+        # installs it, a local checkout usually has not).  cluster_density then
+        # differs between the two, so the planner's score can differ from the
+        # ledger's for the same report on the same day.  Rather than pretend the
+        # two are one number, every slot states which one it is holding and
+        # whether the near-dup pass was available when it was computed.
+        for row in meta.values():
+            row["score_source"] = "planner-recomputed"
+            row["datasketch_present"] = bool(result.get("near_dup_enabled"))
+        return _rt.ranked_order(result), meta
+    except Exception as exc:  # noqa: BLE001 — triage must never break planning
+        log.warning("press.desk_planner: research triage unavailable (%s) — "
+                    "falling back to the W1 recency sort", exc)
+        return [], {}
+
+
+#: The W2R tiers a desk may declare, mapped to their volume-knob key.
+_TIER_VOLUME_KEY = {"flagship": "flagship_per_day", "desk_note": "desk_notes_per_day"}
+
+
+def _triage_cap(cfg: dict, desk_cfg: dict, *, name: str = "") -> int:
+    """STRICTER-OF (desk cadence ceiling, this tier's volume knob).  FAILS CLOSED.
+
+    Both halves honour an explicit 0.  ``int(x or 1)`` — the W1 idiom — reads a
+    configured 0 as 1, which would have armed the dark desk-note lane the moment
+    it was added, so neither number is resolved that way here.
+
+    FAIL-CLOSED IS THE WHOLE POINT, and it is a correction of the first version
+    of this function.  A desk that declares ``triage_tier`` is W2R-GOVERNED: its
+    volume comes from ``research_triage.volume``, and its own
+    ``cadence_per_day`` is only ever the second half of a stricter-of.  The
+    first version returned that desk ceiling whenever the triage layer could not
+    be consulted — triage disabled, config block deleted, ``volume()`` raising,
+    a typo'd tier — which made the FEATURE'S OFF SWITCH the ARMING SWITCH for
+    the dark desk-note lane: `research_note` shipped a ceiling of 12, so
+    `enabled: false` would have published twelve notes a day.
+
+    So: a desk with no ``triage_tier`` is not a W2R desk and keeps its own
+    cadence, unchanged.  A desk WITH one resolves through an ENABLED triage
+    layer or gets **0**.  Every closed path logs its reason.
+    """
+    raw = desk_cfg.get("cadence_per_day")
+    try:
+        cap = int(raw) if raw is not None else 1
+    except (TypeError, ValueError):
+        cap = 1
+    cap = max(0, cap)
+
+    tier = str(desk_cfg.get("triage_tier") or "")
+    if not tier:
+        return cap          # not a W2R desk — W1 behaviour, untouched
+
+    label = name or str(desk_cfg.get("byline") or "research")
+    tcfg = cfg.get("research_triage")
+    if not isinstance(tcfg, dict):
+        log.warning("press.desk_planner: desk %s declares triage_tier=%r but "
+                    "config carries no `research_triage` block — capped at 0 "
+                    "(fail-closed: a W2R desk without its governor does not publish)",
+                    label, tier)
+        return 0
+    if not bool(tcfg.get("enabled", True)):
+        log.info("press.desk_planner: desk %s is W2R-governed and research_triage "
+                 "is disabled — capped at 0", label)
+        return 0
+    try:
+        from engine.press import research_triage as _rt  # noqa: PLC0415
+
+        vol = _rt.volume(tcfg.get("volume") if isinstance(tcfg.get("volume"), dict) else None)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("press.desk_planner: desk %s — volume knob unreadable (%s) — "
+                    "capped at 0 (fail-closed)", label, exc)
+        return 0
+    key = _TIER_VOLUME_KEY.get(tier)
+    if key is None:
+        log.warning("press.desk_planner: desk %s declares triage_tier=%r, which is "
+                    "not a W2R tier (%s) — capped at 0 (fail-closed: a typo must "
+                    "not publish at the desk ceiling)",
+                    label, tier, sorted(_TIER_VOLUME_KEY))
+        return 0
+    try:
+        return min(cap, max(0, int(vol.get(key, 0))))
+    except (TypeError, ValueError):
+        log.warning("press.desk_planner: desk %s — volume.%s is not an integer — "
+                    "capped at 0 (fail-closed)", label, key)
+        return 0
+
+
 def _plan_research(cfg: dict, desk_cfg: dict, as_of: date, root,
-                   blocked_refs: set[str]) -> list[dict]:
+                   blocked_refs: set[str], *, name: str = "research_desk") -> list[dict]:
     catalog = _read_json(repo_root(root) / "data" / "research_vault" / "catalog.json")
     items = (catalog or {}).get("items") or []
     if not isinstance(items, list) or not items:
@@ -915,15 +1045,45 @@ def _plan_research(cfg: dict, desk_cfg: dict, as_of: date, root,
             continue
         eligible.append(it)
 
-    # Rank: tier first (top_pick), then recency, then id for a stable tie-break.
-    eligible.sort(key=lambda it: (
-        0 if it.get("top_pick") else 1,
-        -(_as_date(it.get("published_at")) or date.min).toordinal(),
-        str(it.get("id") or ""),
-    ))
+    # W2R (XG-W8): the ranked shortlist replaces the W1 recency sort when the
+    # triage layer is configured and healthy. The tier only sets the CAP — the
+    # desk walks the WHOLE ranked order, so a top-ranked report the planner
+    # cannot legally cover (already published, already staged, banned vocabulary
+    # in every summary point) falls through to the next one instead of costing
+    # the desk its day.
+    order, triage_meta = _triage_order(cfg, as_of, root, eligible)
+    if order:
+        by_id = {str(it.get("id") or ""): it for it in eligible}
+        ranked = [by_id[rid] for rid in order if rid in by_id]
+        # A report the triage did not rank must fall to the BACK of the queue,
+        # never off it. The two windows are independent config keys
+        # (desks.*.window_days vs research_triage.ledger.window_days), so a desk
+        # widened past the triage window would otherwise lose its extra
+        # candidates silently — an intake seam that quietly shrinks the pool is
+        # worse than one that does not exist.
+        seen = {str(it.get("id") or "") for it in ranked}
+        tail = [it for it in eligible if str(it.get("id") or "") not in seen]
+        if tail:
+            log.info("press.desk_planner: %d eligible report(s) fell outside the "
+                     "triage window and were appended unranked", len(tail))
+        eligible = ranked + tail
+    else:
+        # W1 fallback: tier first (top_pick), then recency, then id.
+        eligible.sort(key=lambda it: (
+            0 if it.get("top_pick") else 1,
+            -(_as_date(it.get("published_at")) or date.min).toordinal(),
+            str(it.get("id") or ""),
+        ))
 
     publication = str(desk_cfg.get("publication") or "flagship")
-    cap = int(desk_cfg.get("cadence_per_day") or 1)
+    cap = _triage_cap(cfg, desk_cfg, name=name)
+    if cap <= 0:
+        # A dark tier is a NORMAL outcome, not a failure: the cold-start volume
+        # knob holds desk_notes_per_day at 0 until the GSC evidence opens it.
+        log.info("press.desk_planner: desk %s is capped at 0 slots "
+                 "(triage_tier=%s) — nothing planned",
+                 desk_cfg.get("byline") or "research", desk_cfg.get("triage_tier"))
+        return []
     stats = engine_stat_facts(root, as_of=as_of)
 
     slots: list[dict] = []
@@ -973,9 +1133,14 @@ def _plan_research(cfg: dict, desk_cfg: dict, as_of: date, root,
         facts.extend(stats)
 
         ctx = chronicle_context(as_of, topics=[inst], root=root)
+        # W2R audit trail. Carried on the slot so the staging record, the
+        # validator report and the published ledger all state WHY this report
+        # was the one covered — including its score, its rank, and any veto the
+        # nightly recorded against it.
+        triage_row = triage_meta.get(str(it.get("id") or "")) or {}
         slots.append({
-            "id": f"press-research-{as_of.isoformat()}-{story_key('research', ref)}",
-            "desk": "research_desk",
+            "id": f"press-{name}-{as_of.isoformat()}-{story_key(name, ref)}",
+            "desk": name,
             "publication": publication,
             "byline": str(desk_cfg.get("byline") or "Research Desk"),
             "cluster": str(desk_cfg.get("cluster") or "research-desk"),
@@ -1014,6 +1179,25 @@ def _plan_research(cfg: dict, desk_cfg: dict, as_of: date, root,
             }],
             "chronicle_context": ctx,
             "slug_hint": slugify(str(it.get("title") or "research note")),
+            "triage": {
+                "tier": str(desk_cfg.get("triage_tier") or ""),
+                "rank": triage_row.get("rank"),
+                "w_score": triage_row.get("w_score"),
+                "w_score_pre_veto": triage_row.get("w_score_pre_veto"),
+                "components": triage_row.get("components") or {},
+                "veto": triage_row.get("veto"),
+                "scoring_version": triage_row.get("scoring_version"),
+                # Which number this is, and what it was computed with. The
+                # nightly ledger's score for the same report on the same day can
+                # differ when the two hosts disagree about the optional
+                # near-dup backend — see _triage_order.
+                "score_source": triage_row.get("score_source"),
+                "datasketch_present": triage_row.get("datasketch_present"),
+                # `ordered` is false when the triage layer was unavailable and
+                # the desk fell back to the W1 recency sort — a state the
+                # staging record must show rather than imply.
+                "ordered": bool(order),
+            },
         })
         blocked_refs.add(ref)
     return slots
@@ -1031,7 +1215,16 @@ def _strip_md(text: str) -> str:
 # Public entry point
 # ─────────────────────────────────────────────────────────────────────────────
 
-_PLANNERS = {"brief": _plan_brief, "research_desk": _plan_research}
+# W2R (XG-W8): `research_note` shares the research planner. The two differ only
+# in their config entry — cadence ceiling, word budget, model tier and
+# `triage_tier` — because the note lane is the SAME beat at a smaller size, not
+# a second beat. Growing a near-copy of _plan_research for it would have given
+# the two desks two dedupe surfaces over one corpus.
+_PLANNERS = {
+    "brief": _plan_brief,
+    "research_desk": _plan_research,
+    "research_note": _plan_research,
+}
 
 
 def plan(desks=None, *, as_of=None, root=None, cfg: dict | None = None,
@@ -1063,7 +1256,7 @@ def plan(desks=None, *, as_of=None, root=None, cfg: dict | None = None,
             log.warning("press.desk_planner: no planner for desk %r — skipped", name)
             continue
         try:
-            slots.extend(fn(cfg, desk_cfg, run_date, root, blocked))
+            slots.extend(fn(cfg, desk_cfg, run_date, root, blocked, name=name))
         except Exception as exc:  # noqa: BLE001
             log.warning("press.desk_planner: desk %s planning failed: %s", name, exc)
     return slots

@@ -292,7 +292,19 @@ fi
 # here, a deploy that changed a halt threshold would leave the admin serving the
 # old module out of sys.modules — and the panel that reports whether a desk is
 # halted is the last one that should be stale.
-if [ "$ADMIN_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(admin/.*|lib/(ai_costs|mastermind_response_log)\.py|engine/(codex_provider|llm_auth)\.py|engine/codex_lane/runner\.py|engine/neuralweb/(key_pool|ask_brain|support_map|orchestrator_log|trade_memory)\.py|engine/metabolism/(throttle|budget_gate)\.py|engine/marketing/(__init__|accounts|ad_allocator|ad_arena|ad_central|ad_stats|authority|charter|claims|cmo|copywriter|departments|economics|events|ledgers|opportunity_bus|outbox|personas|publication|rejections|blind_identity|health_monitor|labels|learned_rules|reply_export|reply_queue|sentinel|state)\.py|scripts/marketing_publisher\.py)$'; then
+#
+# XG-W8 adds engine/press/{__init__,desk_planner}.py. The Press panel's cadence
+# block now reports the RESOLVED cap (0 while the W2R desk-note lane is dark),
+# and it gets that number by calling the planner's own `_triage_cap` rather than
+# re-deriving the stricter-of rule — a panel that computes its own answer is a
+# panel that can disagree with the engine. That call puts both modules in the
+# admin's load-time closure, so without them here a deploy that changed the cap
+# resolver would leave the panel serving the old rule out of sys.modules: the
+# exact class the outbox gap (2026-07-26) and the four XG-W6 panel modules fixed.
+# Only these two — research_triage/research_veto/research_lane are reached solely
+# through desk_planner's function-level imports on the PLANNING path, which the
+# panel never calls.
+if [ "$ADMIN_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(admin/.*|lib/(ai_costs|mastermind_response_log)\.py|engine/(codex_provider|llm_auth)\.py|engine/codex_lane/runner\.py|engine/neuralweb/(key_pool|ask_brain|support_map|orchestrator_log|trade_memory)\.py|engine/metabolism/(throttle|budget_gate)\.py|engine/marketing/(__init__|accounts|ad_allocator|ad_arena|ad_central|ad_stats|authority|charter|claims|cmo|copywriter|departments|economics|events|ledgers|opportunity_bus|outbox|personas|publication|rejections|blind_identity|health_monitor|labels|learned_rules|reply_export|reply_queue|sentinel|state)\.py|engine/press/(__init__|desk_planner)\.py|scripts/marketing_publisher\.py)$'; then
 	systemctl is-enabled admin >/dev/null 2>&1 && systemctl restart admin || true
 fi
 
