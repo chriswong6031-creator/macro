@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-28T15:10:07.472709+00:00",
-  "count": 262,
+  "generated_at": "2026-07-28T15:24:31.785728+00:00",
+  "count": 264,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -26,6 +26,48 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-gtbcr7yiuvg-4ea6af",
+      "title": "The Most Important Iran Oil Chart 1",
+      "institution": "TS Lombard",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-28T15:19:58Z",
+      "summary_points": [
+        "**Iran-China Oil Flow Monitoring**: Daily tanker arrivals indicate resumption of Iranian exports to China post-June, signaling demand recovery and critical for gauging PRC import trends amid geopolitical risks.",
+        "**Structural Import Decline**: China’s oil imports hit 10-year lows due to electrification, state stockpiles, and demand destruction, with minimal economic impact—key for supply chain risk assessment.",
+        "**2026 Import Trend Inflection**: Sustained crude import growth until 2026 followed by sharp decline, with refined inventories 50% above pre-pandemic levels enabling drawdowns without price/economic disruption.",
+        "**Policy-Driven Geopolitical Resilience**: Beijing prioritizes electrification and existing reserves to insulate economy from supply shocks (e.g., Hormuz disruptions), shortening disruption duration vs.",
+        "historical precedents."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-35rkyessfmk-51fb92",
+      "title": "JPM US Market Intelligence Global Thematic Views July 2026",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T15:03:46Z",
+      "summary_points": [
+        "Chinese AI Cost Disparity**: Chinese models (Kimi K3, Qwen) deliver frontier AI at 10-100x lower cost ($0.95 vs $0.86 for GPT-5.5) vs US rivals, signaling structural shift in AI economics and competitive dynamics.",
+        "US Policy Restriction Risk**: White House considering blocking open-source Chinese models, escalating geopolitical control over AI tech and risking disruption to US firms reliant on Chinese models via OpenRouter.",
+        "OpenRouter Adoption Surge**: US firms using Chinese models on OpenRouter reached 60% weekly token share (July 2026), reflecting rapid adoption and competitive pressure on US AI providers.",
+        "Semis Outperform Hyperscalers**: Semis (SOX Index) surged 87.8% Q2 (best quarterly performance), with semis now outpacing hyperscalers in FCF post-2025, shifting AI infrastructure investment focus.",
+        "Software Positioning Risk**: Software (JP2SOF) shows highest net long flows (Z-Score 2.6) but extreme low L/S Ratio %ile (13), indicating significant short interest and reversal risk."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 18,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-46dnpxdhqlg-af940d",
       "title": "JPM Cembalest",
