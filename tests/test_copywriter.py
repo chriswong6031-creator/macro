@@ -1436,3 +1436,215 @@ def test_through_is_not_treated_as_a_level_preposition():
     assert dangling_levels("Watching a close below it")
     assert dangling_levels("A close under that changes my mind")
     assert dangling_levels("It has to get back above that first")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Ticker-free watchlist floor + the headline fragment screen
+#
+# The defect: a planner-scheduled watchlist post is a NON-ticker content type
+# (content_studio gives it breadth + sector facts and ticker ""), but every
+# watchlist template variant was written around {cashtag}. _render_template
+# substituted the empty string and the fragments shipped — "is close",
+# "Circling", "Radar check on", "close to going", "on my radar this week",
+# "watching, not acting" — each queued with _copy_violations: [], because
+# validate_copy's cashtag law is gated on `if ticker:` and nothing else looked
+# at the SHAPE of a headline.
+#
+# Two independent guards, so neither half can rot alone:
+#   - _variant_allowed partitions each bank by ticker-dependency, derived from
+#     the template text (a new variant cannot forget to declare it);
+#   - headline_fragments screens the rendered result, so any OTHER route to a
+#     fragment (an LLM line, a future empty slot) is caught at validate time.
+# ─────────────────────────────────────────────────────────────────────────────
+
+_WATCHLIST_VOICES = (
+    "authoritative desk", "dry, receipts-forward", "specialist",
+    "educational", "fast, reactive", "pattern/history",
+)
+
+# The observed queue damage, verbatim from data/marketing/content_plan.json.
+_SHIPPED_FRAGMENTS = (
+    "is close",
+    "Circling",
+    "Radar check on",
+    "close to going",
+    "on my radar this week",
+    "watching, not acting",
+)
+
+# Per-voice watchlist bank size BEFORE the ticker-free lines were appended.
+# Pinned so that adding a ticker-free variant without teaching _variant_allowed
+# about it fails here instead of silently enlarging the ticker-bearing pool and
+# reshuffling every hash-assigned publish-time post.
+_WATCHLIST_TICKER_POOL_SIZES = {
+    "authoritative desk": 5,
+    "dry, receipts-forward": 4,
+    "specialist": 4,
+    "educational": 4,
+    "fast, reactive": 4,
+    "pattern/history": 4,
+}
+
+
+def _breadth_facts() -> dict:
+    """The fact shape content_studio attaches to a no-ticker watchlist item."""
+    return {
+        "facts": [{
+            "id": "breadth",
+            "text": ("62 of 500 names in the S&P universe are showing bullish "
+                     "momentum setups right now."),
+            "salience": 1,
+            "numbers": ["62", "500"],
+        }],
+        "numbers_whitelist": ["62", "500"],
+    }
+
+
+def _no_ticker_watchlist_ctx(voice: str, as_of: str = "2026-07-28") -> dict:
+    """A planner-scheduled watchlist context: breadth facts, ticker ""."""
+    from engine.marketing.copywriter import build_context
+    item = {"ticker": "", "type": "watchlist", "account": "acct_w", "as_of": as_of}
+    ctx = build_context(
+        item,
+        persona={"name": "The Desk", "voice_notes": "Emoji budget: 0", "example_lines": []},
+        facts=_breadth_facts(),
+    )
+    ctx["type"] = "watchlist"
+    ctx["voice"] = voice
+    ctx["as_of"] = as_of
+    return ctx
+
+
+def _uses_ticker_token(variant: tuple) -> bool:
+    """The exact token rule _variant_allowed applies, re-derived from its data."""
+    from engine.marketing.copywriter import _TICKER_DEPENDENT_TOKENS
+    return any(tok in variant[0] or tok in variant[1]
+               for tok in _TICKER_DEPENDENT_TOKENS)
+
+
+def test_no_ticker_watchlist_renders_a_whole_sentence_in_every_voice():
+    """THE REGRESSION. A watchlist post with no ticker must render complete copy.
+
+    Three consecutive dates per voice so the day-ordinal rotation reaches every
+    ticker-free variant in the bank, not just the one today happens to land on.
+    """
+    from engine.marketing.copywriter import write_posts_deterministic
+
+    seen: set[str] = set()
+    for voice in _WATCHLIST_VOICES:
+        for as_of in ("2026-07-27", "2026-07-28", "2026-07-29"):
+            ctx = _no_ticker_watchlist_ctx(voice, as_of)
+            post = write_posts_deterministic([ctx])[0]
+            hl, body = post["headline"], post["body"]
+            seen.add(hl)
+            assert len(hl.split()) >= 2, f"{voice} {as_of}: fragment headline {hl!r}"
+            assert not ("a" <= hl[:1] <= "z"), (
+                f"{voice} {as_of}: headline opens lowercase (empty leading slot): {hl!r}"
+            )
+            assert "{" not in hl and "{" not in body, (
+                f"{voice} {as_of}: unrendered slot in {hl!r} / {body!r}"
+            )
+            assert post["violations"] == [], (
+                f"{voice} {as_of}: {post['violations']} on {hl!r}"
+            )
+    # 6 voices x 3 ticker-free variants, all distinct — a rotation that collapsed
+    # onto one variant would still satisfy every assertion above.
+    assert len(seen) == 18, f"expected 18 distinct headlines, got {len(seen)}: {sorted(seen)}"
+
+
+def test_headline_fragments_catches_every_shipped_fragment():
+    """Each of the six headlines that actually queued must now be rejected."""
+    from engine.marketing.copywriter import headline_fragments
+    for hl in _SHIPPED_FRAGMENTS:
+        assert headline_fragments(hl), f"fragment not caught: {hl!r}"
+    assert headline_fragments("") and headline_fragments("   ")
+
+
+def test_headline_fragments_clean_on_the_whole_curated_bank():
+    """THE GATE MUST NEVER REJECT THE FLOOR.
+
+    A fragment violation drops the post to the deterministic floor, so a floor
+    headline that trips the screen would leave a rejected post with nowhere to
+    land. Every variant in every bank is rendered with a fully-populated context
+    and must come back clean — this is what pins the tail-word list's exclusions
+    (terminal "this"/"that", stranded "to"/"in") to real house copy.
+    """
+    from engine.marketing.copywriter import (
+        _TEMPLATES, _render_template, headline_fragments,
+    )
+    ctx = {
+        "cashtag": "$AAPL", "ticker": "AAPL", "entry_str": "328.40",
+        "t1_str": "350.00", "t2_str": "365.00", "inv_str": "310.00",
+        "stop_str": "310.00", "gain_pct_str": "+6.2%", "loss_pct_str": "-3.1%",
+        "win_rate_str": "78%", "target_label": "T1", "direction": "BULL",
+        "top_fact_text": "AAPL has held 307.03 for 20 straight sessions",
+        "cashtag_list": "$NVDA $AMD $SMCI $ON",
+        "theme_name": "Artificial Intelligence", "theme_direction": "down",
+        "theme_agg_pct": "-3.4%", "theme_question": "Which one holds?",
+        "mover_pct": "-14.2%", "voice": "authoritative desk", "type": "chart",
+    }
+    checked, bad = 0, []
+    for key, bank in _TEMPLATES.items():
+        for variant in bank:
+            checked += 1
+            rendered = _render_template(variant[0], ctx)
+            for f in headline_fragments(rendered):
+                bad.append(f"{key} {variant[0]!r} -> {rendered!r}: {f}")
+    assert checked > 100, f"only {checked} headlines walked — guard is vacuous"
+    assert not bad, "curated headlines trip the fragment screen:\n" + "\n".join(bad)
+
+
+def test_variant_allowed_partitions_watchlist_banks_by_ticker():
+    """No-ticker contexts get only ticker-free lines; ticker contexts get only
+    the pre-change bank, so no hash-assigned post moves."""
+    from engine.marketing.copywriter import _TEMPLATES, _variant_allowed
+
+    for voice in _WATCHLIST_VOICES:
+        bank = _TEMPLATES[("watchlist", voice)]
+
+        free_pool = [v for v in bank if _variant_allowed(v, _no_ticker_watchlist_ctx(voice))]
+        assert free_pool, f"{voice}: no-ticker pool is empty"
+        assert all(not _uses_ticker_token(v) for v in free_pool), (
+            f"{voice}: ticker-dependent variant offered to a no-ticker context: "
+            f"{[v[0] for v in free_pool if _uses_ticker_token(v)]}"
+        )
+
+        ticker_ctx = {"type": "watchlist", "ticker": "AAPL", "voice": voice}
+        ticker_pool = [v for v in bank if _variant_allowed(v, ticker_ctx)]
+        assert ticker_pool == [v for v in bank if _uses_ticker_token(v)], (
+            f"{voice}: ticker pool is not exactly the pre-change bank"
+        )
+        assert len(ticker_pool) == _WATCHLIST_TICKER_POOL_SIZES[voice], (
+            f"{voice}: ticker pool moved from "
+            f"{_WATCHLIST_TICKER_POOL_SIZES[voice]} to {len(ticker_pool)} — "
+            "every hash-assigned publish-time watchlist post just reshuffled"
+        )
+        # The two pools partition the bank: nothing is orphaned, nothing doubled.
+        assert len(free_pool) + len(ticker_pool) == len(bank)
+
+
+def test_every_no_ticker_planning_type_has_a_ticker_free_floor():
+    """Types the planner schedules WITHOUT a ticker need real lines to fall back
+    on. Three is the floor: fewer and the day-ordinal rotation starts repeating
+    the same headline inside a week."""
+    from engine.marketing.copywriter import _TEMPLATES
+
+    thin = []
+    for (type_id, voice), bank in _TEMPLATES.items():
+        if type_id not in ("watchlist", "education", "macro", "event"):
+            continue
+        free = [v for v in bank if not _uses_ticker_token(v)]
+        if len(free) < 3:
+            thin.append(f"{type_id}/{voice}: only {len(free)} ticker-free of {len(bank)}")
+    assert not thin, "no-ticker planning banks below the floor:\n" + "\n".join(thin)
+
+
+def test_validate_copy_flags_a_fragment_headline():
+    """End to end: the exact shipped pair now comes back with a violation."""
+    from engine.marketing.copywriter import validate_copy
+    violations = validate_copy(
+        "is close",
+        "Near the level I care about.",
+        _no_ticker_watchlist_ctx("authoritative desk"),
+    )
+    assert any("fragment" in v for v in violations), violations

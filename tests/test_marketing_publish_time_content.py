@@ -640,7 +640,11 @@ def test_variant_pool_fallback_never_empty():
     """Over-filtering falls back to the full bank instead of crashing: a ctx
     whose direction/chart flags exclude tagged variants still renders."""
     from engine.marketing.copywriter import _TEMPLATES, _variant_allowed
-    ctx = {"type": "mover", "mover_pct": "+8.2%", "has_chart": False}
+    # "ticker" is not decoration: _variant_allowed also partitions a bank by
+    # ticker-dependency, and a mover ctx ALWAYS carries one (_render_copy sets
+    # it from candidate["ticker"]). Omitting it here described a context this
+    # lane never builds.
+    ctx = {"type": "mover", "ticker": "AAPL", "mover_pct": "+8.2%", "has_chart": False}
     pool = [v for v in _TEMPLATES[("mover", "authoritative desk")]
             if _variant_allowed(v, ctx)]
     # The authoritative up+no-chart pool is exactly the one untagged variant.
@@ -654,7 +658,11 @@ def test_nightly_path_selection_unchanged_by_tags():
     from engine.marketing.copywriter import _TEMPLATES, _variant_allowed
     for key in (("mover", "authoritative desk"), ("theme_list", "fast, reactive")):
         bank = _TEMPLATES[key]
-        ctx = {"type": key[0]}  # no mover_pct / theme_direction / has_chart
+        # No mover_pct / theme_direction / has_chart. "ticker" IS set, because
+        # every real ctx has it (build_context always writes the key) and it now
+        # also drives the ticker-dependency partition; a mover bank is entirely
+        # cashtag-bearing, so a ticker-less ctx would legitimately select none.
+        ctx = {"type": key[0], "ticker": "AAPL"}
         assert [v for v in bank if _variant_allowed(v, ctx)] == list(bank)
 
 
