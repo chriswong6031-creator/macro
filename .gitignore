@@ -462,6 +462,17 @@ data/marketing/fastlane_heartbeat.txt
 # silently no-ops both and the queue evaporates on the next runner clean).
 # Only the transient advisory lock stays local.
 data/marketing/outbox/.lock
+# XG-W2 daemon spool. The fast lanes (press, earnings) now emit through the
+# canonical outbox path, and they run inside scripts/marketing_fastlane_daemon.py
+# on the VPS — whose checkout is refreshed by a 3-minute `git pull`. Appending to
+# the TRACKED items.jsonl there would dirty the tree and conflict that pull, so
+# daemon-side emissions go to this gitignored sibling instead (outbox.enqueue
+# spool=True). Local guards read the UNION of both files, so the dedup and
+# near-dup radars still see every emission this host made.
+# LOUDNESS: this pattern is items-host-SCOPED. It must NOT swallow items.jsonl —
+# verify with `git check-ignore data/marketing/outbox/items-host.jsonl` (ignored)
+# vs `.../items.jsonl` (NOT ignored) after any edit here.
+data/marketing/outbox/items-host.jsonl
 # D02 chart-image pipeline: chart *PNGs* are R2-DELIVERED BY DESIGN. The PNG's sole
 # delivery plane is its public R2 URL (media_url on the item); the local file is a
 # throwaway render input, never a delivery artifact. The recursive `git add

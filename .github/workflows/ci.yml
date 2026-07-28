@@ -1174,6 +1174,13 @@ on:
       # codex (config/personas/**, already listed) or only this test still
       # reaches the lane that runs it.
       - "tests/test_marketing_expression_dial.py"
+      # X Growth W2 (XG-W2): the per-account cadence resolver, the persona
+      # `session` territory clock, the one-owner story lock, the cross-account
+      # near-dup radar, and the outbox KINDS hardening. Its subject modules are
+      # all matched by engine/marketing/** + scripts/marketing_publisher.py +
+      # config/marketing.yml + config/personas/** above; the suite is listed by
+      # name so a TEST-ONLY edit still reaches the lane that runs it.
+      - "tests/test_marketing_cadence_spine.py"
       # D02 per-post metrics poller + chart-image (PNG) pipeline. The poller
       # reads back Buffer analytics; media_publish uploads chart PNGs to R2;
       # content_studio renders the PNG at plan-build time. engine/marketing/**

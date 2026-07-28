@@ -358,34 +358,68 @@ def test_enqueue_deeply_reworded_passes(tmp_path):
     assert len(read_items(root=tmp_path)) == 2
 
 
-def test_enqueue_near_dup_is_per_account_not_cross_account(tmp_path):
-    """A near-identical post on a DIFFERENT account is NOT blocked at enqueue —
-    cross-account near-dup is the sentinel's plan-time job, not this guard."""
-    from engine.marketing.outbox import make_item, enqueue, read_items, token_jaccard
+def test_enqueue_near_dup_blocks_cross_account_too(tmp_path):
+    """XG-W2 INVERTED this contract, deliberately.
+
+    The old law here was "cross-account near-dup is the sentinel's plan-time
+    job, not this guard". That was defensible with one live account and became a
+    hole at seven: sentinel's cross-account pass only sees items inside ONE
+    nightly content plan, so it never sees the queue across nights and never
+    sees the fast lanes (press/earnings), which do not enter a plan at all. Two
+    of OUR accounts posting near-identical text is the text-similarity
+    clustering signal, not a style problem — so the outbox now carries the bar
+    too, at the STRICTER sentinel.near_dup_jaccard threshold.
+    """
+    from engine.marketing.outbox import (
+        cross_account_threshold, enqueue, make_item, read_items, token_jaccard,
+    )
     a_text = "SPY reclaimed the fifty day moving average on strong breadth today"
     b_text = "SPY reclaimed the fifty day moving average on strong breadth again today"
-    assert token_jaccard(a_text, b_text) >= 0.7
+    assert token_jaccard(a_text, b_text) >= cross_account_threshold(None)
     a = make_item(account="deskA", kind="signal", text=a_text, as_of="2026-07-26",
                   provenance="content_studio", now=_FIXED_NOW)
     b = make_item(account="deskB", kind="signal", text=b_text, as_of="2026-07-27",
                   provenance="content_studio", now=_FIXED_NOW)
     assert enqueue(a, root=tmp_path) == "queued"
+    assert enqueue(b, root=tmp_path) == "cross_account_duplicate"
+    assert len(read_items(root=tmp_path)) == 1
+
+
+def test_cross_account_distinct_text_still_queues(tmp_path):
+    """The cross-account bar is SIMILARITY, not account identity.
+
+    Two desks covering the same day in genuinely different words both queue —
+    otherwise the guard would be a one-post-per-network rule. This is the
+    companion to the test above: it proves the bar can be cleared.
+    """
+    from engine.marketing.outbox import (
+        cross_account_threshold, enqueue, make_item, read_items, token_jaccard,
+    )
+
+    a_text = "Breadth improved into the close; new highs outnumbered new lows."
+    b_text = "Credit spreads tightened while the dollar gave back yesterday's bid."
+    assert token_jaccard(a_text, b_text) < cross_account_threshold(None)
+    a = make_item(account="flagship", kind="event", text=a_text, as_of="2026-07-27",
+                  provenance="content_studio", now=_FIXED_NOW)
+    b = make_item(account="specialist", kind="event", text=b_text, as_of="2026-07-27",
+                  provenance="content_studio", now=_FIXED_NOW)
+    assert enqueue(a, root=tmp_path) == "queued"
     assert enqueue(b, root=tmp_path) == "queued"
     assert len(read_items(root=tmp_path)) == 2
 
 
-def test_cross_account_identical_text_both_queue(tmp_path):
-    """The guard is account-scoped: two desks may carry the same line."""
+def test_cross_account_identical_text_is_refused(tmp_path):
+    """Byte-identical copy on two desks is the most obvious fleet tell of all."""
     from engine.marketing.outbox import make_item, enqueue, read_items
 
-    text = "Same wording, different desks — both allowed."
+    text = "Same wording, different desks — no longer allowed (XG-W2)."
     a = make_item(account="flagship", kind="event", text=text, as_of="2026-07-27",
                   provenance="content_studio", now=_FIXED_NOW)
     b = make_item(account="specialist", kind="event", text=text, as_of="2026-07-27",
                   provenance="content_studio", now=_FIXED_NOW)
     assert enqueue(a, root=tmp_path) == "queued"
-    assert enqueue(b, root=tmp_path) == "queued"
-    assert len(read_items(root=tmp_path)) == 2
+    assert enqueue(b, root=tmp_path) == "cross_account_duplicate"
+    assert len(read_items(root=tmp_path)) == 1
 
 
 # ─────────────────────────────────────────────────────────────────────────────
