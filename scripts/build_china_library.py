@@ -52,6 +52,13 @@ log = logging.getLogger("china_library")
 CSI300_ETF = "510300.SS"   # cap-weighted A-share market proxy for the residual-alpha leg
 JUNK_SECTOR = "A-share"    # yfinance fallback bucket → route to the engine's skip sentinel
 
+# Board width for the CN standout buy lane. A page-width cap, NOT a quality filter —
+# overflow rows (rank CAP+1..) ship in the additive `watch` lane of
+# china_standouts.json so a gate-passing name is never silently dropped
+# (156 eligible vs 110 shown on 2026-07-28; US-board parity: build_stock_library
+# W6-US fix 6 routes sector-cap overflow to watch).
+BOARD_BUY_CAP = 110
+
 
 def _name_data_through(ticker: str | None) -> str | None:
     """The ACTUAL last data date for a board name (YYYY-MM-DD) — its china_stocks close store's
@@ -755,6 +762,18 @@ def _detach_board_track_plumbing(bt) -> tuple[dict | None, dict | None]:
     if not isinstance(bt, dict):
         return bt, None
     return bt, bt.pop("fwd_excess_map_21d", None)
+
+
+def _split_board_lanes(eligible_rows: list, cap: int = BOARD_BUY_CAP) -> tuple[list, list]:
+    """Split ranked gate-eligible rows into (buy, watch) lanes at the board cap.
+
+    Order-preserving and loss-free: buy = rows[:cap], watch = rows[cap:] — every
+    gate-eligible row lands in exactly one lane. The watch lane exists so the flat
+    board cap never silently drops a gate-passing name: RIPENING/RAN exclude
+    eligible names by construction, so before this lane existed the overflow
+    appeared nowhere at all.
+    """
+    return list(eligible_rows[:cap]), list(eligible_rows[cap:])
 
 
 # Forced-verdict horizon for the CN Track-record ledger, in sessions. Held equal to
@@ -2341,16 +2360,22 @@ def main(alpha: dict | None = None) -> dict | None:
             cb = coiled_by.get(_t)
             if cb and (cb.get("coiled") or cb.get("washout_ctx")):
                 r["coiled"] = cb
+        # Board cap is page width, not a quality bar: rows past it ship in the additive
+        # `watch` lane so a gate-passing name is never dropped (RIPENING/RAN exclude
+        # eligible rows by construction — the overflow used to appear nowhere at all).
+        _buy_rows, _watch_rows = _split_board_lanes(eligible_rows)
         setups = {"as_of": as_of, "rank_by": "confluence",
-                  "buy": eligible_rows[:110], "laggards": laggards}
+                  "buy": _buy_rows, "laggards": laggards}
         (site / "factordata" / "china_setups.json").write_text(
             json.dumps(setups, separators=(",", ":"), default=str))
         # WIDE "Standout individual stocks" board — same confluence gate; each row carries the
         # unified Conviction profile + entry/risk gauges so the card renders fully. eligible =
         # the confluence-eligible count; universe = the scored candidate count.
         wide = {"as_of": as_of, "rank_by": "confluence",
-                "buy": list(eligible_rows[:110]), "laggards": laggards}
-        for r in wide["buy"] + wide["laggards"]:
+                "buy": list(_buy_rows), "watch": _watch_rows, "laggards": laggards}
+        log.info("CN board lanes: %d eligible → %d buy (cap %d) + %d watch overflow — nothing dropped",
+                 len(eligible_rows), len(wide["buy"]), BOARD_BUY_CAP, len(wide["watch"]))
+        for r in wide["buy"] + wide["watch"] + wide["laggards"]:
             t = r.get("ticker")
             r["conviction"] = profiles.get(t)
             r["signal"] = signal_gate.compact(sig_verdict.get(t))   # confluence T1->T4 tier badge
@@ -2399,7 +2424,7 @@ def main(alpha: dict | None = None) -> dict | None:
             r["ab_tier"] = _narr_ab_tier(_nb_stage, _nb_tag)
         # W2-B order-invariance assertion: buy order must be unchanged by narrative tagging.
         # Narrative is display/ledger only — it must never alter the ranked order.
-        _buy_tickers_pre  = [r.get("ticker") for r in eligible_rows[:110]]
+        _buy_tickers_pre  = [r.get("ticker") for r in _buy_rows]
         _buy_tickers_post = [r.get("ticker") for r in wide["buy"]]
         assert _buy_tickers_pre == _buy_tickers_post, (
             "W2-B invariant FAILED: narrative tags altered the buy row order. "
@@ -2603,9 +2628,10 @@ def main(alpha: dict | None = None) -> dict | None:
             except Exception:
                 return None
 
-        # Enrich all arrays: buy, ran, ripening, ripening_falling
+        # Enrich all arrays: buy, watch (board-cap overflow), ran, ripening, ripening_falling
         _w8e_all_arrays = (
             list(wide["buy"]) +
+            list(wide.get("watch") or []) +
             list(_ran_rows) +
             list(_ripening_rows) +
             list(_ripening_falling)
@@ -2641,6 +2667,9 @@ def main(alpha: dict | None = None) -> dict | None:
         setups["ripening"] = _ripening_rows
         setups["ripening_falling"] = _ripening_falling
         setups["ran"] = _ran_rows
+        # In-memory mirror of the board-cap overflow lane for the template (china_setups.json
+        # on disk is written pre-enrichment above and stays unchanged — no watch key there).
+        setups["watch"] = wide["watch"]
         # W1-B ledger: log ripening set to data/china_standout_track/ripening.parquet
         # (compact append: ticker, reasons, imminence, w2_stoch, zone — W6 conversion grading).
         # Schema-union tolerant: new columns (zone, evidence, sort keys) are written here;
@@ -2664,9 +2693,9 @@ def main(alpha: dict | None = None) -> dict | None:
                       "; ".join(_bad[:20]) or "(none found — non-key TypeError)")
             raise
         _standouts_path.write_text(_standouts_payload)
-        log.info("wrote china_standouts.json (%d buy [%d ENTRY/%d RAN_LATE] / %d RIPENING"
+        log.info("wrote china_standouts.json (%d buy [%d ENTRY/%d RAN_LATE] / %d watch / %d RIPENING"
                  " [%d READY+%d BASING] / %d FALLING / %d RAN / %d eligible / %d universe)",
-                 len(wide["buy"]), _n_entry, _n_ran_late,
+                 len(wide["buy"]), _n_entry, _n_ran_late, len(wide.get("watch") or []),
                  len(_ripening_rows), len(_ready_capped), len(_basing_capped),
                  len(_ripening_falling), len(_ran_rows),
                  len(eligible_rows), len(cand))
