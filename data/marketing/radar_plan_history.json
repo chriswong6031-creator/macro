@@ -2,6 +2,29 @@
   "schema": "marketing.radar_plan_history/v1",
   "plans": [
     {
+      "as_of": "2026-07-28",
+      "tickers": [
+        "ARES",
+        "CBOE",
+        "CUBI",
+        "CVI",
+        "EQT",
+        "FDS",
+        "GPI",
+        "KMT",
+        "LKFN",
+        "LPG",
+        "MOS",
+        "MSFT",
+        "ROST",
+        "SNDK",
+        "SONO",
+        "TEAM",
+        "TEL",
+        "WDAY"
+      ]
+    },
+    {
       "as_of": "2026-07-27",
       "tickers": [
         "CBOE",
@@ -135,36 +158,6 @@
         "STEP",
         "VST",
         "WDC",
-        "WMT",
-        "XEL"
-      ]
-    },
-    {
-      "as_of": "2026-07-21",
-      "tickers": [
-        "ADBE",
-        "ARES",
-        "CRM",
-        "CUBI",
-        "CVI",
-        "CVNA",
-        "EFX",
-        "ENOV",
-        "FBRT",
-        "FDS",
-        "GPI",
-        "GPN",
-        "IBM",
-        "INTU",
-        "LKFN",
-        "MOS",
-        "MSFT",
-        "PI",
-        "PLTR",
-        "REZI",
-        "SONO",
-        "STEP",
-        "VST",
         "WMT",
         "XEL"
       ]
