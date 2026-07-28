@@ -124,10 +124,22 @@ def main(argv: list[str] | None = None) -> int:
     #    source: reply_discovery.poll_outcomes and reply_queue.record_outcome
     #    both shipped in XG-W4 with no caller between them, which left every
     #    reply label permanently null and the parent adjustment inert.
-    outcomes = _reply_producer.poll_reply_outcomes(
-        cfg=cfg, press_cfg=_load_press_cfg(root), root=root, store=args.store,
-        now=now, offline=bool(args.dry_run),
-    )
+    #    NEVER-RAISE at this boundary. The poll is the only step here that
+    #    touches the network, and it runs FIRST — so an unhandled twitterapi.io
+    #    hiccup would take label consolidation and the health report down with
+    #    it. The step would still exit 0 (daily.yml wraps it), which is the bad
+    #    version: a silent night where the ledgers simply did not advance.
+    try:
+        outcomes = _reply_producer.poll_reply_outcomes(
+            cfg=cfg, press_cfg=_load_press_cfg(root), root=root, store=args.store,
+            now=now, offline=bool(args.dry_run),
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("outcome poll failed: %s", exc, exc_info=True)
+        print(f"::warning title=learning::reply outcome poll failed ({exc}) — "
+              "labels and health still advance below; outcomes retry tomorrow",
+              flush=True)
+        outcomes = {"error": str(exc)}
     print(
         f"marketing_learning: reply outcomes sent_in_window={outcomes.get('sent', 0)} "
         f"polled={outcomes.get('polled', 0)} recorded={outcomes.get('recorded', 0)} "

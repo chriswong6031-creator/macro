@@ -898,6 +898,28 @@ class TestNightlyEntryPoint:
         assert nightly.main(["--root", str(tmp_path),
                              "--store", str(tmp_path / "desk")]) == 0
 
+    def test_a_failing_outcome_poll_still_lets_labels_and_health_advance(
+            self, tmp_path, monkeypatch, capsys):
+        """The poll is the only network step and it runs FIRST. An unhandled
+        hiccup would take consolidation down with it — and daily.yml's `exit 0`
+        would turn that into a silent night where nothing advanced."""
+        import scripts.marketing_learning_nightly as nightly
+        from engine.marketing import reply_producer as rp
+
+        def _boom(**kw):
+            raise RuntimeError("twitterapi.io timeout")
+
+        monkeypatch.setattr(rp, "poll_reply_outcomes", _boom)
+        lb.record_observation(_row(), root=tmp_path)
+        rc = nightly.main(["--root", str(tmp_path), "--store", str(tmp_path / "desk"),
+                           "--now", "2026-07-28T23:00:00Z"])
+        assert rc == 0
+        assert lb.labels_path(tmp_path).exists(), "consolidation must still run"
+        assert hm.health_path(tmp_path).exists(), "health must still run"
+        out = capsys.readouterr().out
+        assert any(line.startswith("::warning title=learning")
+                   for line in out.splitlines()), "the failure must be announced"
+
     def test_outcome_polling_runs_before_consolidation(self, tmp_path, capsys):
         import scripts.marketing_learning_nightly as nightly
 
