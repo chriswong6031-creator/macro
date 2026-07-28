@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-27T23:53:53.156066+00:00",
-  "count": 211,
+  "generated_at": "2026-07-28T00:34:24.205709+00:00",
+  "count": 213,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -16,11 +16,48 @@
     "Societe Generale",
     "TS Lombard",
     "The Market Ear",
+    "The Punchline",
     "UBS",
     "Weekly Preview",
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-kf9yzgvctuk-313d55",
+      "title": "TPL July 26 26",
+      "institution": "The Punchline",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T00:32:05Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 20,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-yt3nj0zrsjt-78c267",
+      "title": "JPM JPM US Market Intell",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T00:27:25Z",
+      "summary_points": [
+        "**Geopolitical Calm & Oil Impact**: US/Iran pause on strikes drove oil down 7.5% (WTI to $84), supporting retail (+2.8%) and airlines (+2.5%) while tech lagged; semiconductor weakness (SOX -2.2%) offset gains amid \"friendly negotiations\" tone.",
+        "**Semiconductor Volatility**: ASML -8.5% on Chinese chipmaking reports, NVDA financing concerns ($250B Softbank deal skepticism), and China competition fears triggered sector sell-off; SOX near lows amid weak print reactions.",
+        "**Consumer Confidence Risk**: Expected drop to 90.5 (from 91.2) due to Middle East tensions/gas prices; labor market differential at 2.4% (cycle low) signals rising unemployment pressure conflicting with jobless claims.",
+        "**Tech Flows & Positioning**: Activity levels at 2/10 (very quiet), HT volumes down 27% vs 5D avg; Info Tech leading sell sector amid weak print reactions and high tech positioning without fundamental drivers.",
+        "**Tactical Allocation Shift**: TACTICALLY LONG China H-shares over A-shares due to AI optimism lag and cyclical segments; Core AI (JPAICREV) and De-Escalation Squeeze (JPDSQZZ) as momentum plays amid dovish CPI/rate expectations."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-3e1ijbfxnnk-fa2c9a",
       "title": "All Eyes On SOX",
