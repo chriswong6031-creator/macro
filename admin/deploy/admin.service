@@ -10,6 +10,12 @@ WorkingDirectory=/opt/macro
 # --deployed flag below, and the app refuses to start without ADMIN_PASSWORD
 # (settings.startup_check), so a missing file fails CLOSED, never open.
 EnvironmentFile=-/etc/macro-admin.env
+# Use the same refreshable Codex account state as macro-api so every deployed
+# AI surface sees the same Claude OAuth + Codex subscription pool.
+Environment=CODEX_HOME=/var/lib/macro-codex
+Environment=CODEX_PROVIDER_ENABLED=1
+StateDirectory=macro-codex
+StateDirectoryMode=0700
 # ── Site Access Gate env (optional; admin reads/writes the same store) ────────
 # SITE_GATE_STATE=/var/lib/macro-api/site_gate.json  # blocklist store (must match macro-api.service)
 # Bind loopback only; Caddy reverse-proxies admin.mastermind-x.com → here.

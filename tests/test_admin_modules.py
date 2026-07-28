@@ -4,10 +4,18 @@ import sys
 import unittest.mock as mock
 from pathlib import Path
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from admin import ai_cost, brief, content, ga4, github_api, gitops, health
 from admin import orchestrator_chat
+
+
+@pytest.fixture(autouse=True)
+def _disable_real_codex_account(monkeypatch):
+    """Hermetic admin tests never consume the developer's attached account."""
+    monkeypatch.setenv("CODEX_PROVIDER_ENABLED", "0")
 
 
 def test_health_summary_shape():
@@ -211,6 +219,39 @@ def test_resolve_candidates_pool_waterfall(monkeypatch):
     assert "claude_code_oauth_3" in cap_ids
     # Legacy must NOT appear
     assert all("CLAUDE_CODE_OAUTH_TOKEN" not in c[2] or c[2].endswith("_3") for c in cands if c[2])
+
+
+def test_resolve_candidates_inserts_codex_after_oauth(monkeypatch):
+    from engine import codex_provider
+    from engine.neuralweb import key_pool
+
+    monkeypatch.setenv("CODEX_PROVIDER_ENABLED", "1")
+    monkeypatch.setenv("CLAUDE_CODE_OAUTH_TOKEN_3", "pool-tok-3")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "api-key")
+    monkeypatch.setattr(key_pool, "discover_present_keys", lambda root=None: ["claude_code_oauth_3"])
+    monkeypatch.setattr(
+        key_pool,
+        "get_secret_ref",
+        lambda cap_id, root=None: "CLAUDE_CODE_OAUTH_TOKEN_3",
+    )
+    monkeypatch.setattr(key_pool, "is_cooling", lambda key, root=None: False)
+    monkeypatch.setattr(key_pool, "window_load", lambda key, root=None: 0)
+    monkeypatch.setattr(codex_provider, "is_available", lambda: True)
+
+    cands = orchestrator_chat._resolve_candidates()
+    assert [c[3] for c in cands] == [
+        "claude_code_oauth_3",
+        codex_provider.CODEX_CAPABILITY_ID,
+        "anthropic_api_key",
+    ]
+
+
+def test_build_client_uses_codex_compatibility_adapter(monkeypatch):
+    from engine import codex_provider
+
+    marker = object()
+    monkeypatch.setattr(codex_provider, "CodexClient", lambda timeout_s: marker)
+    assert orchestrator_chat._build_client("codex", "attached") is marker
 
 
 def test_resolve_candidates_includes_cortex_first(monkeypatch):
