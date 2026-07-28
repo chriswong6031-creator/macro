@@ -140,8 +140,10 @@ Accents: blue `#285fff` (CTA, links; ink `#1c47cc`, wash `#eef2ff`), green `#1f8
 (+wash `#e9f5ec`), red `#c12f2f` (+wash `#faeceb`), gold `#b07d05` (+wash `#faf3e2`),
 violet `#7862e0` (founding/pricing only), teal `#0f9d8f` (sparingly).
 Dark plate mode: `#0b1120` ground, panels `#111a2e`-ish derived, same accent hues.
-Gradient allowance: the hero's blue→violet→teal text gradient on **at most one word**
-per ad; the founding card's violet wash; the faded-candle plate (§4.5). Nothing else.
+Gradient allowance: the hero's blue→violet→teal text gradient on **at most one word or
+one short payoff phrase (≤4 words, one per ad)** — e.g. price's "Yours: $2.50 a day."
+(amended 2026-07-28); the founding card's violet wash; the faded-candle plate (§4.5).
+Nothing else.
 
 ### §4.3 Type (Inter only — operator's ruling)
 
@@ -202,6 +204,7 @@ specific-signal widgets keep the site's small `demo` as-of tag.
 | "Founding 50% off — $75/mo" | pricing: `data-annual="$75"` vs `data-monthly="$149"` |
 | "Billed $900 a year" / "locked in for as long as you stay" | pricing founding terms |
 | "2,000 founding memberships · allotment shrinks daily" | pricing founding block (enforced, #3856) |
+| "SAVE $408 A YEAR" | landing founding badge — regular annual $109/mo ×12 = $1,308 vs $900 |
 | "356 tracked funds" (13F) | landing Smart Money section |
 | "34 themes, four lanes" | landing Theme Rotations section |
 | "Terminal free forever / nothing to install" | landing Terminal section |
