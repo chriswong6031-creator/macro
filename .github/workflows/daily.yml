@@ -1322,6 +1322,30 @@ jobs:
         # Additive — the builder catches its own render failures and exits 0, so the
         # last committed options.html stands and the deploy is never broken.
         run: python -m scripts.build_options_command || echo "::warning::build_options_command non-fatal failure"
+      - name: OIP E1 — session digest, the Terminal→EOD bridge (build_session_digest)
+        # OIP E1: digests the intraday options plane's R2 archives
+        # (live_flow/surface/{ROOT}/{DATE}/ per-minute stamps + the dated tide/dte archives)
+        # into one settled per-root session record — data only, ZERO UI.
+        # Writes data/options_session/{DATE}/{ROOT}.json + site/session/{ROOT}.json +
+        # data/options_session/ledger.parquet (one row per date×root). All three ride the
+        # existing `git add data/ site/` in "commit engine outputs" below — no new commit path.
+        # MUST be a serial step AFTER the band `wait` barrier: it reads
+        # site/options_structure/gex_state/{ROOT}.json for the EOD flip/wall levels, and
+        # build_gex_board writes those inside the cl_gex cluster of the parallel band — the
+        # same cross-phase reasoning that puts build_options_command immediately above.
+        # Ledger + all data/ writes are lane-gated on COLLECT_LANE=nightly (job-level env);
+        # dedup on (date, root) keeps FIRST, so a replay adds sessions and never rewrites one.
+        # Cost: ~4 small R2 GETs per stamp-scanned root (the per-stamp spot lives only inside
+        # each stamp's own frame) ≈ 190 GETs / 3 roots. Measured 0.6s wall clock on a local
+        # replay of a full 79-stamp session × 3 roots; R2 round-trips put the nightly estimate
+        # at ~10-25s, well inside the ~1-2 min budgeted for this join (OIP §7).
+        # Non-fatal: absent archives/creds degrade to printed nulls and the builder exits 0.
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python -m scripts.build_session_digest || echo "::warning::build_session_digest non-fatal failure"
       - name: XSR W1 — US fast-sector rotation lens (build_us_sector_rotation)
         # XSR W1 (XSR-R2): display-tier fast rotation score for the 11 SPDR sector ETFs and
         # named US thematic baskets. Ported from China #2634. Reads sector_cycles
