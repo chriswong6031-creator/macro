@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-29T23:39:02.009772+00:00",
-  "count": 351,
+  "generated_at": "2026-07-29T23:52:38.097538+00:00",
+  "count": 352,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -1958,6 +1958,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-u4p5rrehfje-6b8573",
+      "title": "The Brink's Co. (BCO) Updating estimates to reflect Malaysia business deconsolidation",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T01:36:34Z",
+      "summary_points": [
+        "**Malaysia Deconsolidation Impact**: Revenue estimates reduced by ~$100m, EBITDA by $10-15m, EPS by $0.12-$0.16; price target lowered to $141 (15.6% upside).",
+        "**Valuation Rationale**: Price target trimmed to $141 based on 7.0x NTT + 1YR EBITDA estimate of $1,173m, reflecting accounting change impact.",
+        "**Growth & Cash Flow Momentum**: Revenue growth accelerated to 7.1% (12/26E), EBITDA growth at 8.6% (12/26E), with rising operating cash flow ($647.6m) and declining net debt/EBITDA (1.5x).",
+        "**Technical Outperformance**: BCO outperformed S&P 500 by 12.3% over 12 months (Oct-25 to Jul-26), with 30.8% 6m returns.",
+        "**Key Risks**: Macro volatility, competing payment technologies, cash usage decline, acquisition integration, financial leverage, FX risk."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
       "language": "en",
       "needs_metadata": false
     },
