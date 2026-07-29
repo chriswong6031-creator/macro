@@ -1,0 +1,1447 @@
+"""engine.marketing.hot_tape — Hot Tape detectors, FactPacket, intraday state.
+
+Implements research/MARKETING_HOT_TAPE_MASTERPLAN.md §3.2 (attention radar,
+v1 detectors) and §3.3 (FactPacket: typed, all numbers engine-computed).
+
+The radar loop is: live quotes + the nightly context pack (hot_tape_pack.py)
+-> :func:`detect_events` -> :func:`engine.marketing.hot_tape_wire.compose_wire`
+-> outbox item. This module owns the middle step and nothing else: it is PURE
+(no I/O in the detectors), deterministic, and makes zero LLM calls. Masterplan
+gate 0.3 — "the copy layer may phrase, never originate" — starts here: every
+number a post may use is a leaf of ``FactPacket.facts``.
+
+Import discipline (gate 0.6): module-level imports are STDLIB ONLY. yaml is
+imported lazily in :func:`load_config`, the jsonl helpers lazily in the ring /
+fired accessors, and pandas is never imported at all. The radar workflow runs
+on a shallow ubuntu checkout with pyyaml+requests only.
+
+Bridge honesty (masterplan §1, "this stale data issue is so serious"): the
+daily price store can lag the live tape. :func:`bridge_ok` reports whether the
+pack's trade_date is adjacent to today's session; when it is False every
+history-dependent fact (streaks, records, ATH distance, correction/bear
+thresholds, RSI) is SUPPRESSED rather than quietly computed against a stale
+anchor. The bridge is GLOBAL, so a second, per-record gate rides with it: a
+record whose own ``last_date`` lags the pack's tip gets no history facts either
+(26 live-quoted laggards sat in the shipped pack, one carrying a "5-day streak"
+that had ended six sessions earlier).
+
+Round-number crosses need no history and survive both gates. MCAP MILESTONES
+DO NOT: their share count is only trustworthy when the reference's ``asof`` and
+the price store's tip are the same date, so ``shares_est`` is None otherwise
+and the milestone branch simply never fires (a 2026-07-27 market cap divided by
+a 2026-07-02 close inflated JPM's shares 6.5% and manufactured a "$1 trillion"
+cross at an actual $942B).
+
+Public API:
+    FactPacket                         — the typed fact contract
+    load_config(root) / load_pack(root)
+    in_window(now, cfg) / session_phase(now) / quotes_fresh(live, now, cfg)
+    bridge_ok(pack, now)
+    load_ring / append_ring / compact_ring
+    load_fired / append_fired
+    detect_events(...) -> list[FactPacket]
+    severity_account(packet, cfg) -> str
+    packet_to_source(packet, media) -> dict
+
+Never-raise contract: every public function returns None / [] / {} plus one log
+line on internal error. Nothing here raises at a seam.
+"""
+from __future__ import annotations
+
+import copy
+import json
+import logging
+import statistics
+from dataclasses import asdict, dataclass, field
+from datetime import date, datetime, time, timedelta, timezone
+from pathlib import Path
+from typing import Any
+
+log = logging.getLogger(__name__)
+
+# The session clock is US-Eastern, never UTC (reviewer M6). A window pinned in
+# UTC is correct for one half of the year and an hour wrong for the other: the
+# shipped 13:25-20:05Z window is 09:25-16:05 ET in EDT but 08:25-15:05 ET in
+# EST, so from November the radar would wake an hour before the open and go
+# dark for the last hour of every session — the hour that carries the closing
+# print. zoneinfo is stdlib (gate 0.6 holds); the import is guarded exactly the
+# way live_verify guards its own, so a host with no tzdata degrades instead of
+# raising at import time.
+try:
+    from zoneinfo import ZoneInfo  # noqa: PLC0415
+
+    _ET = ZoneInfo("America/New_York")
+except Exception:  # pragma: no cover - tzdata missing
+    _ET = None
+
+#: Fallback UTC offset when tzdata is missing. 4, not 5, ON PURPOSE: it
+#: reproduces the pre-fix UTC math exactly (09:25 ET == 13:25Z), so a host
+#: without tzdata keeps the behaviour we already shipped rather than silently
+#: sliding the whole window an hour. Every runner in this estate has tzdata.
+_ET_FALLBACK_HOURS = 4
+
+SCHEMA_ID = "marketing.hot_tape/v1"
+
+PACK_REL = "data/marketing/hot_tape_pack.json"
+RING_REL = "data/marketing/hot_tape_ring.jsonl"
+FIRED_REL = "data/marketing/hot_tape_fired.jsonl"
+CONFIG_REL = "config/hot_tape.yml"
+
+TRIGGERS: tuple[str, ...] = (
+    "sector_rout", "sector_rip", "mover_pop", "mover_drop",
+    "threshold_cross", "streak_rarity", "signal_fired", "contrarian_breadth",
+)
+
+#: Market-cap milestones that are worth a wire post when crossed (USD).
+MCAP_MILESTONES: tuple[float, ...] = (5e11, 1e12, 2e12, 3e12, 4e12, 5e12)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Config
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: In-code defaults. config/hot_tape.yml (written by the radar builder) is
+#: deep-merged OVER these, so an absent file leaves a working radar.
+DEFAULTS: dict[str, Any] = {
+    # ET, not UTC (see the _ET note above): 09:25-16:05 America/New_York is the
+    # same five-minutes-of-pre-open-through-five-past-the-close window in both
+    # DST regimes, which a UTC pair cannot be.
+    "window_et": {"start": "09:25", "end": "16:05"},
+    # GitHub's cron is best-effort: a */5 tick regularly lands minutes late, and
+    # a tick that arrives at 16:07 ET is still reporting the close. Grace is
+    # applied to the END only — waking early is a different question.
+    "window_grace_min": 10,
+    "max_quote_age_min": 12,
+    "bridge_max_gap_days": 1,
+    "universe": {
+        "min_adv_dollars": 25_000_000,
+        "max_tickers": 3000,
+        # A record this many weekdays behind the pack's own tip is dead weight,
+        # not a laggard: it is dropped from the universe entirely (which is
+        # also what removes Polygon's ZAZZT-class test symbols, one of which
+        # ranked adv_rank 1 on a $615B fake ADV in the shipped pack).
+        "max_lag_weekdays": 10,
+    },
+    "detectors": {
+        "sector": {
+            "median_pct": 2.0,
+            "breadth": 0.70,
+            "min_members": 8,
+            # Amendment 2026-07-28: the semis/memory crash the program exists
+            # for lives at INDUSTRY granularity ("Semiconductors" -8%) while
+            # the parent Finviz sector ("Technology") is masked above -2% by
+            # one green mega-cap. Industry groups are smaller, hence a lower
+            # member floor.
+            "industry_min_members": 5,
+        },
+        "mover": {
+            "min_abs_pct": 4.0,
+            "cooldown_min": 120,
+            "refire_ratio": 2.0,
+            "adv_rank_max": 300,
+        },
+        "threshold": {"min_price": 15.0},
+        "streak": {"min_len": 5, "min_rarity_days": 365},
+        "contrarian": {
+            "index_pct": -1.5,
+            "min_green": 5,
+            # Extensions over the spec so neither the index proxy nor the
+            # defensive set is a magic constant buried in a detector.
+            "index_ticker": "SPY",
+            "defensive_sectors": ["Consumer Defensive", "Utilities", "Healthcare"],
+        },
+    },
+    "emit": {
+        "max_per_run": 3,
+        "max_per_day": 20,
+        "flagship_severity_floor": 85,
+        "account": "mastermind_news",
+        "flagship_account": "flagship",
+    },
+    "demo": {
+        "sector_median_pct": 0.5,
+        "mover_min_abs_pct": 1.5,
+        "contrarian_index_pct": -0.3,
+        "max_quote_age_min": 100000,
+    },
+}
+
+
+def _deep_merge(base: dict, over: dict) -> dict:
+    """Recursive dict merge; `over` wins on scalars, dicts merge key-wise."""
+    out = copy.deepcopy(base)
+    for k, v in (over or {}).items():
+        if isinstance(v, dict) and isinstance(out.get(k), dict):
+            out[k] = _deep_merge(out[k], v)
+        else:
+            out[k] = v
+    return out
+
+
+def load_config(root: Path | str | None = None) -> dict:
+    """config/hot_tape.yml deep-merged over :data:`DEFAULTS`. Never raises."""
+    cfg = copy.deepcopy(DEFAULTS)
+    try:
+        path = Path(root or ".") / CONFIG_REL
+        if not path.exists():
+            return cfg
+        import yaml  # noqa: PLC0415  (lazy — thin lane keeps pyyaml, not pandas)
+
+        loaded = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        if isinstance(loaded, dict):
+            cfg = _deep_merge(cfg, loaded)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("hot_tape: unreadable %s (%s) - using defaults", CONFIG_REL, exc)
+    return cfg
+
+
+def _c(cfg: dict | None, path: str, default: Any) -> Any:
+    """Dotted lookup into cfg with a default. Never raises."""
+    node: Any = cfg if isinstance(cfg, dict) else {}
+    for part in path.split("."):
+        if not isinstance(node, dict) or part not in node:
+            return default
+        node = node[part]
+    return node if node is not None else default
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FactPacket
+# ─────────────────────────────────────────────────────────────────────────────
+
+@dataclass
+class FactPacket:
+    """Everything a Hot Tape post is allowed to say, and nothing else.
+
+    ``facts`` is the numeric authority: the wire layer may only render values
+    that appear here (masterplan gate 0.3), enforced at runtime by
+    :func:`engine.marketing.hot_tape_wire.check_text_numbers`.
+    """
+
+    trigger: str
+    key: str
+    fired_at: str
+    session: str
+    ticker: str | None
+    name: str | None
+    sector: str | None
+    direction: str
+    severity: float
+    facts: dict = field(default_factory=dict)
+    provenance: dict = field(default_factory=dict)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Time / freshness helpers
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _utc(now: datetime | None) -> datetime:
+    if now is None:
+        return datetime.now(timezone.utc)
+    return now if now.tzinfo is not None else now.replace(tzinfo=timezone.utc)
+
+
+def _iso(now: datetime | None) -> str:
+    return _utc(now).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _day(now: datetime | None) -> str:
+    return _utc(now).date().isoformat()
+
+
+def _parse_hhmm(raw: Any, fallback: time) -> time:
+    try:
+        hh, mm = str(raw).split(":")
+        return time(int(hh), int(mm))
+    except Exception:  # noqa: BLE001
+        return fallback
+
+
+def _parse_iso_dt(raw: Any) -> datetime | None:
+    if not raw:
+        return None
+    try:
+        dt = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+        return dt if dt.tzinfo is not None else dt.replace(tzinfo=timezone.utc)
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _parse_iso_date(raw: Any) -> date | None:
+    if not raw:
+        return None
+    try:
+        return date.fromisoformat(str(raw)[:10])
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _et_clock(now: datetime | None) -> datetime:
+    """`now` read on the US-Eastern wall clock (UTC-4 fallback without tzdata)."""
+    t = _utc(now)
+    if _ET is not None:
+        return t.astimezone(_ET)
+    return t - timedelta(hours=_ET_FALLBACK_HOURS)
+
+
+def _minute_of_day(t: datetime | time) -> float:
+    """Wall-clock minutes since midnight, seconds included."""
+    return t.hour * 60.0 + t.minute + t.second / 60.0
+
+
+def in_window(now: datetime | None, cfg: dict | None = None) -> bool:
+    """True on an ET weekday inside cfg window_et [start, end + grace].
+
+    The window is evaluated on the EASTERN clock, so it means the same thing in
+    March and in December. The end carries ``window_grace_min`` because the
+    schedule that drives it is a GitHub cron, which drifts: a 16:03 ET tick that
+    lands at 16:07 is still reporting the close, and dropping it silently is how
+    a lane loses its last pass of the day.
+    """
+    try:
+        t = _et_clock(now)
+        if t.weekday() >= 5:
+            return False
+        start = _parse_hhmm(_c(cfg, "window_et.start", "09:25"), time(9, 25))
+        end = _parse_hhmm(_c(cfg, "window_et.end", "16:05"), time(16, 5))
+        try:
+            grace = float(_c(cfg, "window_grace_min", DEFAULTS["window_grace_min"]))
+        except (TypeError, ValueError):
+            grace = float(DEFAULTS["window_grace_min"])
+        clock = _minute_of_day(t)
+        return _minute_of_day(start) <= clock <= _minute_of_day(end) + max(0.0, grace)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("hot_tape.in_window failed: %s", exc)
+        return False
+
+
+def session_phase(now: datetime | None = None) -> str:
+    """"pre_open" / "rth" / "after_hours" on the ET clock (weekend = after_hours).
+
+    Three phases, not two: the window opens five minutes BEFORE the bell, and a
+    09:27 ET post that says "at the close" is a lie about the tape. The copy
+    layer keys its live marker off this string (hot_tape_wire._LIVE_MARKERS).
+    """
+    try:
+        t = _et_clock(now)
+        if t.weekday() >= 5:
+            return "after_hours"
+        clock = _minute_of_day(t)
+        if clock < _minute_of_day(time(9, 30)):
+            return "pre_open"
+        return "rth" if clock < _minute_of_day(time(16, 0)) else "after_hours"
+    except Exception as exc:  # noqa: BLE001
+        log.warning("hot_tape.session_phase failed: %s", exc)
+        return "after_hours"
+
+
+def quotes_fresh(
+    live: dict | None,
+    now: datetime | None = None,
+    cfg: dict | None = None,
+) -> tuple[bool, float | None]:
+    """(fresh?, freshest quote age in minutes).
+
+    `live` accepts either the :func:`engine.marketing.live_verify.load_live_quotes`
+    wrapper ({"quotes": ..., "asof": ...}) or a bare {SYM: quote} map. The age
+    reported is the FRESHEST quote's, because one stale symbol in a 2k-symbol
+    merge must not stand the whole radar down (the 2026-07-28 tape-gate
+    incident was the opposite failure: a stale artifact displacing fresh ones).
+    """
+    try:
+        if not isinstance(live, dict):
+            return (False, None)
+        quotes = live.get("quotes") if isinstance(live.get("quotes"), dict) else live
+        asof_dt = _parse_iso_dt(live.get("asof")) if "quotes" in live else None
+        t = _utc(now)
+        ages: list[float] = []
+        for q in (quotes or {}).values():
+            if not isinstance(q, dict):
+                continue
+            ts_ms = q.get("ts_ms")
+            if ts_ms:
+                try:
+                    dt = datetime.fromtimestamp(float(ts_ms) / 1000.0, tz=timezone.utc)
+                    ages.append((t - dt).total_seconds() / 60.0)
+                    continue
+                except Exception:  # noqa: BLE001
+                    pass
+        if not ages and asof_dt is not None:
+            ages.append((t - asof_dt).total_seconds() / 60.0)
+        if not ages:
+            return (False, None)
+        age = min(ages)
+        max_age = float(_c(cfg, "max_quote_age_min", DEFAULTS["max_quote_age_min"]))
+        return (age <= max_age, round(age, 2))
+    except Exception as exc:  # noqa: BLE001
+        log.warning("hot_tape.quotes_fresh failed: %s", exc)
+        return (False, None)
+
+
+def _et_date(now: datetime | None) -> date:
+    """Today's US-Eastern calendar date (UTC-4 fallback without tzdata)."""
+    return _et_clock(now).date()
+
+
+def _weekdays_between(older: date, newer: date) -> int:
+    """Count weekdays strictly after `older` up to and including `newer`."""
+    if newer <= older:
+        return 0
+    n, cursor = 0, older + timedelta(days=1)
+    while cursor <= newer:
+        if cursor.weekday() < 5:
+            n += 1
+        cursor += timedelta(days=1)
+        if n > 500:                     # runaway guard on a nonsense trade_date
+            break
+    return n
+
+
+def bridge_ok(
+    pack: dict | None,
+    now: datetime | None = None,
+    *,
+    cfg: dict | None = None,
+) -> bool:
+    """Is the pack's trade_date adjacent to today's session (holiday-naive)?
+
+    True when at most ``bridge_max_gap_days`` (default 1) weekdays separate the
+    pack's last stored session from today in ET — i.e. a Tuesday radar needs
+    Monday's bars, a Monday radar needs Friday's. The store was 18 sessions
+    stale on 2026-07-28; every history fact is suppressed in that state rather
+    than computed against an anchor that is not yesterday.
+    """
+    try:
+        td = _parse_iso_date((pack or {}).get("trade_date"))
+        if td is None:
+            return False
+        today = _et_date(now)
+        if td > today:
+            return False
+        max_gap = int(_c(cfg, "bridge_max_gap_days", DEFAULTS["bridge_max_gap_days"]))
+        return _weekdays_between(td, today) <= max_gap
+    except Exception as exc:  # noqa: BLE001
+        log.warning("hot_tape.bridge_ok failed: %s", exc)
+        return False
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Pack + intraday state (ring, fired)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def load_pack(root: Path | str | None = None) -> dict | None:
+    """Read data/marketing/hot_tape_pack.json. None when absent/unreadable."""
+    try:
+        path = Path(root or ".") / PACK_REL
+        if not path.exists():
+            return None
+        obj = json.loads(path.read_text(encoding="utf-8"))
+        return obj if isinstance(obj, dict) else None
+    except Exception as exc:  # noqa: BLE001
+        log.warning("hot_tape: unreadable pack (%s)", exc)
+        return None
+
+
+def _jsonl():
+    """Lazy import of the jsonl helpers (keeps module-level imports stdlib)."""
+    from engine.marketing.ledgers import append_jsonl, read_jsonl  # noqa: PLC0415
+
+    return read_jsonl, append_jsonl
+
+
+def load_ring(root: Path | str | None = None, n: int = 36) -> list[dict]:
+    """Last `n` intraday snapshot entries (append-only jsonl)."""
+    try:
+        read_jsonl, _ = _jsonl()
+        rows = read_jsonl(Path(root or ".") / RING_REL)
+        return rows[-n:] if n and n > 0 else rows
+    except Exception as exc:  # noqa: BLE001
+        log.warning("hot_tape.load_ring failed: %s", exc)
+        return []
+
+
+def append_ring(root: Path | str | None, entry: dict) -> None:
+    """Append one snapshot entry. Fail-soft."""
+    try:
+        _, append_jsonl = _jsonl()
+        append_jsonl(Path(root or ".") / RING_REL, entry)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("hot_tape.append_ring failed: %s", exc)
+
+
+def compact_ring(root: Path | str | None = None, keep: int = 36) -> None:
+    """Rewrite the ring keeping only the last `keep` entries.
+
+    Call this only when the OLDEST entry is from a previous day: rewriting a
+    same-day ring throws away the intraday history the "$X added in 3 hours"
+    claims (masterplan T6) are built from.
+    """
+    try:
+        path = Path(root or ".") / RING_REL
+        read_jsonl, _ = _jsonl()
+        rows = read_jsonl(path)
+        if len(rows) <= keep:
+            return
+        tail = rows[-keep:] if keep > 0 else []
+        body = "".join(
+            json.dumps(r, ensure_ascii=False, separators=(",", ":")) + "\n" for r in tail
+        )
+        tmp = path.with_suffix(path.suffix + ".tmp")
+        tmp.parent.mkdir(parents=True, exist_ok=True)
+        tmp.write_text(body, encoding="utf-8")
+        tmp.replace(path)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("hot_tape.compact_ring failed: %s", exc)
+
+
+def load_fired(root: Path | str | None = None, day: str | None = None) -> list[dict]:
+    """Fired-event rows for `day` (UTC date iso; default today)."""
+    try:
+        target = day or _day(None)
+        read_jsonl, _ = _jsonl()
+        rows = read_jsonl(Path(root or ".") / FIRED_REL)
+        return [
+            r for r in rows
+            if str(r.get("day") or str(r.get("fired_at") or "")[:10]) == target
+        ]
+    except Exception as exc:  # noqa: BLE001
+        log.warning("hot_tape.load_fired failed: %s", exc)
+        return []
+
+
+def append_fired(root: Path | str | None, entry: dict) -> None:
+    """Append one fired-event row (cooldown/dedupe memory). Fail-soft."""
+    try:
+        row = dict(entry or {})
+        row.setdefault("day", str(row.get("fired_at") or _iso(None))[:10])
+        _, append_jsonl = _jsonl()
+        append_jsonl(Path(root or ".") / FIRED_REL, row)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("hot_tape.append_fired failed: %s", exc)
+
+
+def fired_entry(packet: FactPacket, *, item_id: str | None, account: str) -> dict:
+    """Build the fired-ledger row for a packet that was emitted."""
+    return {
+        "key": packet.key,
+        "trigger": packet.trigger,
+        "ticker": packet.ticker,
+        "sector": packet.sector,
+        "direction": packet.direction,
+        "magnitude": _magnitude(packet),
+        "fired_at": packet.fired_at,
+        "day": str(packet.fired_at)[:10],
+        "item_id": item_id,
+        "account": account,
+        "demo": bool((packet.provenance or {}).get("demo")),
+    }
+
+
+def _magnitude(packet: FactPacket) -> float | None:
+    """The headline % this packet claims (cooldown memory + emit ordering).
+
+    Also copied to ``source.baseline_pct`` for provenance/parity — see
+    :func:`packet_to_source` on what the post-time gate does and does not do
+    with it.
+    """
+    f = packet.facts or {}
+    for k in ("pct", "median_pct", "pct_today", "index_pct"):
+        v = f.get(k)
+        if isinstance(v, (int, float)):
+            return float(v)
+    return None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Detector helpers
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _num(v: Any) -> float | None:
+    if isinstance(v, bool) or v is None:
+        return None
+    if isinstance(v, (int, float)):
+        try:
+            f = float(v)
+        except Exception:  # noqa: BLE001
+            return None
+        return f if f == f and abs(f) != float("inf") else None
+    return None
+
+
+def _r2(v: Any) -> float | None:
+    n = _num(v)
+    return None if n is None else round(n, 2)
+
+
+def _tile_pct(tile: dict, quotes: dict) -> float | None:
+    """Live change_pct for a heatmap tile, falling back to the tile's own 1D."""
+    sym = str(tile.get("t") or "").upper()
+    q = quotes.get(sym) if sym else None
+    if isinstance(q, dict):
+        live = _num(q.get("change_pct"))
+        if live is not None:
+            return live
+    perf = tile.get("perf")
+    return _num(perf.get("1D")) if isinstance(perf, dict) else None
+
+
+def _pack_rec(pack: dict | None, sym: str) -> dict:
+    try:
+        rec = ((pack or {}).get("tickers") or {}).get(sym)
+        return rec if isinstance(rec, dict) else {}
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def _rec_is_current(rec: dict | None, pack: dict | None) -> bool:
+    """Does THIS record's last bar sit on the pack's own tip?
+
+    :func:`bridge_ok` is a GLOBAL verdict about the store; it says nothing about
+    an individual name. The shipped pack carried 26 live-quoted records lagging
+    its tip — one of them a 5-day "streak" that had ended six sessions earlier,
+    which would have posted as "Day 6 of the slide" off a bridge that was
+    perfectly fine. History facts need BOTH gates.
+    """
+    tip = (pack or {}).get("trade_date")
+    return bool(tip) and (rec or {}).get("last_date") == tip
+
+
+def _history_ok(rec: dict | None, pack: dict | None, bridged: bool) -> bool:
+    """The full history gate: global bridge, no split suspicion, record current."""
+    return (bool(bridged)
+            and not bool((rec or {}).get("suspect"))
+            and _rec_is_current(rec, pack))
+
+
+def _attention_boost(rec: dict) -> float:
+    """Shared severity boost: index membership, liquidity rank, size."""
+    boost = 0.0
+    if rec.get("sp500"):
+        boost += 10.0
+    rank = _num(rec.get("adv_rank"))
+    if rank is not None and rank <= 100:
+        boost += 10.0
+    mcap = _num(rec.get("mcap_usd"))
+    if mcap is not None and mcap >= 1e11:
+        boost += 10.0
+    return boost
+
+
+def _clamp(v: float, lo: float = 0.0, hi: float = 100.0) -> float:
+    return round(max(lo, min(hi, v)), 2)
+
+
+def _fired_keys(fired_today: list[dict] | None) -> set[str]:
+    return {str(r.get("key")) for r in (fired_today or []) if r.get("key")}
+
+
+def _provenance(
+    pack: dict | None,
+    quotes_asof: Any,
+    quote: dict | None,
+    bridged: bool,
+    demo: bool,
+) -> dict:
+    return {
+        "pack_asof": (pack or {}).get("built_at"),
+        "store_last_date": (pack or {}).get("trade_date"),
+        "quotes_asof": quotes_asof,
+        "quote_ts_ms": (quote or {}).get("ts_ms"),
+        "quote_source": (quote or {}).get("source"),
+        "bridge_ok": bool(bridged),
+        "demo": bool(demo),
+    }
+
+
+def _rsi_step(rec: dict, delta: float) -> float | None:
+    """One Wilder step from the pack's stored average gain/loss."""
+    ag, al = _num(rec.get("rsi_avg_gain")), _num(rec.get("rsi_avg_loss"))
+    if ag is None or al is None:
+        return None
+    period = 14.0
+    gain = max(delta, 0.0)
+    loss = max(-delta, 0.0)
+    ag2 = (ag * (period - 1) + gain) / period
+    al2 = (al * (period - 1) + loss) / period
+    if al2 <= 0:
+        return 100.0 if ag2 > 0 else 50.0
+    rs = ag2 / al2
+    return round(100.0 - (100.0 / (1.0 + rs)), 2)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Detectors
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _detect_group_moves(
+    quotes: dict,
+    pack: dict | None,
+    heatmap: dict | None,
+    fired: set[str],
+    now: datetime,
+    cfg: dict,
+    demo: bool,
+    bridged: bool,
+    quotes_asof: Any,
+) -> list[FactPacket]:
+    """sector_rout / sector_rip over BOTH heatmap sector and industry groups.
+
+    Amendment 2026-07-28 (verified against that day's closing tape): grouping
+    by Finviz sector alone never fires on the day this program exists for.
+    "Technology" held above -2% while its "Semiconductors" industry printed a
+    -8% median. Both granularities are scanned; when an industry and its parent
+    sector both qualify only the more extreme one is emitted, because two
+    overlapping list posts in one sweep read as spam.
+    """
+    out: list[FactPacket] = []
+    tiles = [t for t in ((heatmap or {}).get("tiles") or []) if isinstance(t, dict)]
+    if not tiles:
+        return out
+
+    thresh = float(
+        _c(cfg, "demo.sector_median_pct", DEFAULTS["demo"]["sector_median_pct"]) if demo
+        else _c(cfg, "detectors.sector.median_pct", 2.0)
+    )
+    breadth_min = float(_c(cfg, "detectors.sector.breadth", 0.70))
+    min_sector = int(_c(cfg, "detectors.sector.min_members", 8))
+    min_industry = int(_c(cfg, "detectors.sector.industry_min_members", 5))
+    index_sym = str(_c(cfg, "detectors.contrarian.index_ticker", "SPY")).upper()
+    index_pct = _r2((quotes.get(index_sym) or {}).get("change_pct"))
+    day = _day(now)
+
+    groups: dict[tuple[str, str], list[dict]] = {}
+    parent_of: dict[str, str] = {}
+    for tile in tiles:
+        sector = str(tile.get("sector") or "").strip()
+        industry = str(tile.get("industry") or "").strip()
+        if sector:
+            groups.setdefault(("sector", sector), []).append(tile)
+        if industry:
+            groups.setdefault(("industry", industry), []).append(tile)
+            if sector:
+                parent_of[industry] = sector
+
+    candidates: dict[tuple[str, str], FactPacket] = {}
+    for (kind, label), members in sorted(groups.items()):
+        floor = min_industry if kind == "industry" else min_sector
+        pcts: list[tuple[str, float]] = []
+        for tile in members:
+            pct = _tile_pct(tile, quotes)
+            sym = str(tile.get("t") or "").upper()
+            if pct is not None and sym:
+                pcts.append((sym, pct))
+        if len(pcts) < floor:
+            continue
+        median = statistics.median([p for _, p in pcts])
+        if median <= -thresh:
+            direction, trigger = "down", "sector_rout"
+        elif median >= thresh:
+            direction, trigger = "up", "sector_rip"
+        else:
+            continue
+        agree = [p for _, p in pcts if (p < 0 if direction == "down" else p > 0)]
+        breadth = len(agree) / float(len(pcts))
+        if breadth < breadth_min:
+            continue
+
+        key = f"sector:{label}:{direction}:{day}"
+        # NOTE: the fired-key filter deliberately does NOT run here. It runs
+        # AFTER the industry/parent overlap suppression below — filtering
+        # during the build removes the fired winner from the overlap contest,
+        # so its already-covered rival (the same names at the other
+        # granularity) would sail out five minutes later as a "new" story.
+        # Build everything, pick winners, THEN drop what already fired.
+
+        ordered = sorted(pcts, key=lambda kv: kv[1], reverse=(direction == "up"))
+        leaders = [[s, round(p, 2)] for s, p in ordered[:5]]
+
+        dollars: float | None = None
+        with_mcap = 0
+        acc = 0.0
+        for sym, pct in pcts:
+            mcap = _num(_pack_rec(pack, sym).get("mcap_usd"))
+            if mcap is not None:
+                with_mcap += 1
+                acc += mcap * pct / 100.0
+        # SIGN GUARD (reviewer M8). The aggregate is a cap-WEIGHTED sum while
+        # the trigger is a MEDIAN, so one green mega-cap can flip the net
+        # positive inside a group the median calls a rout. "$41 billion gone"
+        # rendered off a +$41B aggregate is a lie with a minus sign glued on;
+        # when the sign disagrees with the direction we simply have no dollar
+        # translation and the copy falls back to leaders (or refuses).
+        if (pcts and with_mcap / float(len(pcts)) >= 0.70
+                and (direction == "down") == (acc < 0)):
+            dollars = round(acc)
+
+        facts: dict[str, Any] = {
+            "sector": label,
+            "group_kind": kind,
+            "median_pct": round(median, 2),
+            "breadth_pct": round(breadth * 100.0, 2),
+            "n_members": len(pcts),
+            ("n_down" if direction == "down" else "n_up"): len(agree),
+            "leaders": leaders,
+            "dollar_moved_usd": dollars,
+            "index_pct": index_pct,
+        }
+        packet = FactPacket(
+            trigger=trigger,
+            key=key,
+            fired_at=_iso(now),
+            session=session_phase(now),
+            ticker=None,
+            name=None,
+            sector=label,
+            direction=direction,
+            severity=_clamp(80.0 + min(10.0, abs(median) * 2.0)),
+            facts=facts,
+            provenance=_provenance(pack, quotes_asof, None, bridged, demo),
+        )
+        candidates[(kind, label)] = packet
+
+    # Overlap preference: an industry and its parent sector are one story.
+    suppressed: set[tuple[str, str]] = set()
+    for (kind, label), packet in candidates.items():
+        if kind != "industry":
+            continue
+        parent = parent_of.get(label)
+        rival = candidates.get(("sector", parent)) if parent else None
+        if rival is None:
+            continue
+        mine = abs(_num(packet.facts.get("median_pct")) or 0.0)
+        theirs = abs(_num(rival.facts.get("median_pct")) or 0.0)
+        suppressed.add(("sector", parent) if mine > theirs else (kind, label))
+
+    # Fired-key filter LAST (see the note at the key build above): the overlap
+    # contest must see every candidate, including ones that already fired, or
+    # a fired industry's parent sector re-emits the same names next pass.
+    out.extend(p for k, p in candidates.items()
+               if k not in suppressed and p.key not in fired)
+    return out
+
+
+def _detect_movers(
+    quotes: dict,
+    pack: dict | None,
+    heatmap: dict | None,
+    fired_today: list[dict],
+    now: datetime,
+    cfg: dict,
+    demo: bool,
+    bridged: bool,
+    quotes_asof: Any,
+) -> list[FactPacket]:
+    """mover_pop / mover_drop on the attention universe (§2 T1)."""
+    out: list[FactPacket] = []
+    min_abs = float(
+        _c(cfg, "demo.mover_min_abs_pct", DEFAULTS["demo"]["mover_min_abs_pct"]) if demo
+        else _c(cfg, "detectors.mover.min_abs_pct", 4.0)
+    )
+    cooldown = float(_c(cfg, "detectors.mover.cooldown_min", 120))
+    refire = float(_c(cfg, "detectors.mover.refire_ratio", 2.0))
+    rank_max = float(_c(cfg, "detectors.mover.adv_rank_max", 300))
+    day = _day(now)
+
+    names: dict[str, str] = {}
+    universe: set[str] = set()
+    for tile in ((heatmap or {}).get("tiles") or []):
+        if not isinstance(tile, dict):
+            continue
+        sym = str(tile.get("t") or "").upper()
+        if sym:
+            universe.add(sym)
+            if tile.get("name"):
+                names[sym] = str(tile["name"])
+    for sym, rec in ((pack or {}).get("tickers") or {}).items():
+        rank = _num((rec or {}).get("adv_rank"))
+        if rank is not None and rank <= rank_max:
+            universe.add(str(sym).upper())
+
+    for sym in sorted(universe):
+        quote = quotes.get(sym)
+        if not isinstance(quote, dict):
+            continue
+        pct = _num(quote.get("change_pct"))
+        if pct is None or abs(pct) < min_abs:
+            continue
+        direction = "up" if pct > 0 else "down"
+        trigger = "mover_pop" if direction == "up" else "mover_drop"
+
+        priors = [
+            r for r in fired_today
+            if str(r.get("ticker") or "").upper() == sym
+            and str(r.get("direction")) == direction
+            and str(r.get("trigger") or "").startswith("mover_")
+        ]
+        k = len(priors)
+        if priors:
+            last = max(priors, key=lambda r: str(r.get("fired_at") or ""))
+            when = _parse_iso_dt(last.get("fired_at"))
+            prior_mag = abs(_num(last.get("magnitude")) or 0.0)
+            within = when is not None and (now - when).total_seconds() / 60.0 < cooldown
+            if within and (prior_mag <= 0 or abs(pct) < refire * prior_mag):
+                continue
+
+        rec = _pack_rec(pack, sym)
+        price = _num(quote.get("price"))
+        prev_close = _num(quote.get("prev_close"))
+        history = _history_ok(rec, pack, bridged)
+
+        facts: dict[str, Any] = {
+            "ticker": sym,
+            "name": names.get(sym) or None,
+            "pct": round(pct, 2),
+            "price": _r2(price),
+            "prev_close": _r2(prev_close),
+            "dollar_delta_usd": None,
+            "pct_from_ath_live": None,
+            "ath": None,
+            "ath_date": None,
+            "streak_extends": None,
+            "rsi_live": None,
+            "rsi_band": None,
+            "rsi_since": None,
+            "biggest_1d": None,
+            "sector": rec.get("sector") or None,
+            "earn_next_date": rec.get("earn_next_date") or None,
+            "earn_next_time": rec.get("earn_next_time") or None,
+        }
+
+        mcap = _num(rec.get("mcap_usd"))
+        if mcap is not None:
+            facts["dollar_delta_usd"] = round(mcap * pct / 100.0)
+
+        ath = _num(rec.get("ath"))
+        if history and price is not None and ath is not None and ath > 0:
+            facts["pct_from_ath_live"] = round((price - ath) / ath * 100.0, 2)
+            facts["ath"] = round(ath, 2)
+            facts["ath_date"] = rec.get("ath_date")
+
+        streak = rec.get("streak") if isinstance(rec.get("streak"), dict) else {}
+        s_dir, s_len = streak.get("dir"), _num(streak.get("len"))
+        if history and s_dir == direction and s_len is not None:
+            len_today = int(s_len) + 1
+            since = (streak.get("last_run_ge") or {}).get(str(len_today))
+            facts["streak_extends"] = {
+                "dir": direction,
+                "len_today": len_today,
+                "since": since,
+                "window_start": rec.get("window_start"),
+            }
+
+        anchor = _num(rec.get("last_close"))
+        if history and price is not None and anchor is not None:
+            rsi_live = _rsi_step(rec, price - anchor)
+            if rsi_live is not None:
+                facts["rsi_live"] = rsi_live
+                # A BAND FACT IS A CROSSING THAT HAPPENED TODAY, never a state
+                # (reviewer C2). The old test was "rsi_live is past the band",
+                # which fired on continuation: a name that closed at RSI 75 and
+                # kept climbing got "RSI is back above 70 for the first time
+                # since <date>" — it never left. Worse, the side came from the
+                # DIRECTION, so a name selling off from 78 to 75.3 rendered
+                # "back under 70" at an RSI of 75.3. Both legs are now pinned:
+                # yesterday's stored rsi14 must be on the OTHER side of the
+                # band, and the direction must agree with the crossing.
+                rsi_prev = _num(rec.get("rsi14"))
+                if (direction == "down" and rsi_live <= 30.0
+                        and rsi_prev is not None and rsi_prev > 30.0
+                        and rec.get("last_rsi_le_30")):
+                    facts["rsi_band"] = 30
+                    facts["rsi_since"] = rec.get("last_rsi_le_30")
+                elif (direction == "up" and rsi_live >= 70.0
+                      and rsi_prev is not None and rsi_prev < 70.0
+                      and rec.get("last_rsi_ge_70")):
+                    facts["rsi_band"] = 70
+                    facts["rsi_since"] = rec.get("last_rsi_ge_70")
+
+        if history:
+            extreme = rec.get("max_up_1d") if direction == "up" else rec.get("max_dn_1d")
+            prior_pct = _num((extreme or {}).get("pct")) if isinstance(extreme, dict) else None
+            if prior_pct is not None and abs(pct) > abs(prior_pct):
+                facts["biggest_1d"] = {
+                    "window_start": rec.get("window_start"),
+                    "prior_pct": round(prior_pct, 2),
+                    "prior_date": (extreme or {}).get("date"),
+                }
+
+        severity = min(70.0, 50.0 + 5.0 * max(0.0, abs(pct) - 4.0)) + _attention_boost(rec)
+        out.append(FactPacket(
+            trigger=trigger,
+            key=f"mover:{sym}:{direction}:{day}:{k}",
+            fired_at=_iso(now),
+            session=session_phase(now),
+            ticker=sym,
+            name=names.get(sym) or None,
+            sector=rec.get("sector") or None,
+            direction=direction,
+            severity=_clamp(severity),
+            facts=facts,
+            provenance=_provenance(pack, quotes_asof, quote, bridged, demo),
+        ))
+    return out
+
+
+def _detect_thresholds(
+    quotes: dict,
+    pack: dict | None,
+    heatmap: dict | None,
+    fired: set[str],
+    now: datetime,
+    cfg: dict,
+    demo: bool,
+    bridged: bool,
+    quotes_asof: Any,
+) -> list[FactPacket]:
+    """threshold_cross: correction / bear / new ATH / round number / mcap (§2 T2)."""
+    out: list[FactPacket] = []
+    min_price = float(_c(cfg, "detectors.threshold.min_price", 15.0))
+    day = _day(now)
+    names = {
+        str(t.get("t") or "").upper(): str(t.get("name") or "")
+        for t in ((heatmap or {}).get("tiles") or []) if isinstance(t, dict)
+    }
+
+    for sym, rec in sorted(((pack or {}).get("tickers") or {}).items()):
+        sym = str(sym).upper()
+        quote = quotes.get(sym)
+        if not isinstance(quote, dict) or not isinstance(rec, dict):
+            continue
+        price, prev = _num(quote.get("price")), _num(quote.get("prev_close"))
+        if price is None or prev is None:
+            continue
+        history = _history_ok(rec, pack, bridged)
+        ath, ath_date = _num(rec.get("ath")), rec.get("ath_date")
+        found: list[tuple[str, Any, str, dict]] = []
+
+        if history and ath is not None and ath > 0:
+            for kind, level in (("correction", _num(rec.get("px_correction"))),
+                                ("bear", _num(rec.get("px_bear")))):
+                if level is None or not (prev > level >= price):
+                    continue
+                found.append((kind, round(level, 2), "down", {
+                    "threshold_px": round(level, 2),
+                    "pct_from_ath_live": round((price - ath) / ath * 100.0, 2),
+                    "ath": round(ath, 2),
+                    "ath_date": ath_date,
+                }))
+            if prev < ath <= price:
+                found.append(("ath", round(ath, 2), "up", {
+                    "threshold_px": round(ath, 2),
+                    "pct_from_ath_live": round((price - ath) / ath * 100.0, 2),
+                    "ath": round(ath, 2),
+                    "ath_date": ath_date,
+                }))
+
+        if price >= min_price:
+            levels = {_num(rec.get("round_above")), _num(rec.get("round_below"))}
+            for level in sorted(x for x in levels if x is not None):
+                up = prev < level <= price
+                down = prev > level >= price
+                if not (up or down):
+                    continue
+                found.append(("round", round(level, 2), "up" if up else "down", {
+                    "level": round(level, 2),
+                }))
+
+        shares = _num(rec.get("shares_est"))
+        if shares is not None and shares > 0:
+            live_mc, prev_mc = shares * price, shares * prev
+            for milestone in MCAP_MILESTONES:
+                up = prev_mc < milestone <= live_mc
+                down = prev_mc > milestone >= live_mc
+                if not (up or down):
+                    continue
+                found.append(("mcap", int(milestone), "up" if up else "down", {
+                    "milestone_usd": int(milestone),
+                    "mcap_live_usd": round(live_mc),
+                }))
+
+        for kind, level, direction, extra in found:
+            key = f"threshold:{sym}:{kind}:{level}:{day}"
+            if key in fired:
+                continue
+            facts: dict[str, Any] = {
+                "ticker": sym,
+                "kind": kind,
+                "price": round(price, 2),
+                "prev_close": round(prev, 2),
+                "pct": round((price - prev) / prev * 100.0, 2) if prev else None,
+                "direction": direction,
+                "sector": rec.get("sector") or None,
+            }
+            facts.update(extra)
+            # A ROUND NUMBER IS NOT AN EVENT THE WAY A RECORD IS (reviewer M2).
+            # Correction / bear / new-ATH / mcap crossings are tape; "$LLY
+            # cleared $1,200" is arithmetic about a price that moves through a
+            # multiple of 50 several times a year. At base 70 a mega-cap round
+            # cross scored 90 and OUTRANKED a real rout for the flagship mirror;
+            # base 60 caps the same event at 80, under the 85 flagship floor,
+            # while it still ships on the wire desk.
+            severity = 60.0 if kind == "round" else 70.0
+            if rec.get("sp500"):
+                severity += 10.0
+            mcap = _num(rec.get("mcap_usd"))
+            if mcap is not None and mcap >= 5e11:
+                severity += 10.0
+            out.append(FactPacket(
+                trigger="threshold_cross",
+                key=key,
+                fired_at=_iso(now),
+                session=session_phase(now),
+                ticker=sym,
+                name=names.get(sym) or None,
+                sector=rec.get("sector") or None,
+                direction=direction,
+                severity=_clamp(severity),
+                facts=facts,
+                provenance=_provenance(pack, quotes_asof, quote, bridged, demo),
+            ))
+    return out
+
+
+def _detect_streaks(
+    quotes: dict,
+    pack: dict | None,
+    heatmap: dict | None,
+    fired: set[str],
+    now: datetime,
+    cfg: dict,
+    demo: bool,
+    bridged: bool,
+    quotes_asof: Any,
+) -> list[FactPacket]:
+    """streak_rarity: today extends a run the pack says is multi-year rare (§2 T3)."""
+    out: list[FactPacket] = []
+    if not bridged:
+        return out
+    min_len = int(_c(cfg, "detectors.streak.min_len", 5))
+    min_rarity = float(_c(cfg, "detectors.streak.min_rarity_days", 365))
+    day = _day(now)
+    today = _utc(now).date()
+    names = {
+        str(t.get("t") or "").upper(): str(t.get("name") or "")
+        for t in ((heatmap or {}).get("tiles") or []) if isinstance(t, dict)
+    }
+
+    for sym, rec in sorted(((pack or {}).get("tickers") or {}).items()):
+        sym = str(sym).upper()
+        if not isinstance(rec, dict) or not _history_ok(rec, pack, bridged):
+            # Per-record gate as well as the global one: a run counted off a
+            # record that stopped updating six sessions ago is not a streak,
+            # it is a fossil.
+            continue
+        quote = quotes.get(sym)
+        if not isinstance(quote, dict):
+            continue
+        pct = _num(quote.get("change_pct"))
+        if pct is None or pct == 0:
+            continue
+        streak = rec.get("streak") if isinstance(rec.get("streak"), dict) else {}
+        s_dir, s_len = streak.get("dir"), _num(streak.get("len"))
+        if s_len is None or s_dir not in ("up", "down"):
+            continue
+        direction = "up" if pct > 0 else "down"
+        if direction != s_dir:
+            continue
+        len_today = int(s_len) + 1
+        if len_today < min_len:
+            continue
+        since = (streak.get("last_run_ge") or {}).get(str(len_today))
+        since_date = _parse_iso_date(since)
+        if since_date is not None and (today - since_date).days < min_rarity:
+            continue
+        key = f"streak:{sym}:{day}"
+        if key in fired:
+            continue
+        out.append(FactPacket(
+            trigger="streak_rarity",
+            key=key,
+            fired_at=_iso(now),
+            session=session_phase(now),
+            ticker=sym,
+            name=names.get(sym) or None,
+            sector=rec.get("sector") or None,
+            direction=direction,
+            severity=_clamp(65.0 + _attention_boost(rec)),
+            facts={
+                "ticker": sym,
+                "dir": direction,
+                "len_today": len_today,
+                "since": since,
+                "window_start": rec.get("window_start"),
+                "pct_today": round(pct, 2),
+                "price": _r2(quote.get("price")),
+            },
+            provenance=_provenance(pack, quotes_asof, quote, bridged, demo),
+        ))
+    return out
+
+
+def _detect_signals(
+    quotes: dict,
+    pack: dict | None,
+    heatmap: dict | None,
+    plan_signals: list[dict],
+    fired: set[str],
+    now: datetime,
+    cfg: dict,
+    demo: bool,
+    bridged: bool,
+    quotes_asof: Any,
+) -> list[FactPacket]:
+    """signal_fired: live price crosses a Prophet plan level (§3, proprietary event)."""
+    out: list[FactPacket] = []
+    today = _utc(now).date()
+    names = {
+        str(t.get("t") or "").upper(): str(t.get("name") or "")
+        for t in ((heatmap or {}).get("tiles") or []) if isinstance(t, dict)
+    }
+
+    for sig in (plan_signals or []):
+        if not isinstance(sig, dict):
+            continue
+        sym = str(sig.get("ticker") or "").upper()
+        entry = _num(sig.get("entry"))
+        signal_id = str(sig.get("signal_id") or "").strip()
+        if not sym or entry is None or not signal_id:
+            continue
+        as_of = _parse_iso_date(sig.get("as_of"))
+        if as_of is None or (today - as_of).days > 2:
+            continue
+        # DELIBERATELY UNDATED (unlike every other key here). load_fired is
+        # day-scoped, so this key only suppresses re-fires WITHIN one day: a
+        # level that is crossed again on a later day while the plan is still
+        # armed is a fresh crossing and may post again. That is the intended
+        # cross-day behaviour, not an omission — a plan level reclaimed two
+        # sessions later is news; the same level ping-ponging at 10:05 and
+        # 10:10 is not.
+        key = f"signal:{signal_id}"
+        if key in fired:
+            continue
+        quote = quotes.get(sym)
+        if not isinstance(quote, dict):
+            continue
+        price, prev = _num(quote.get("price")), _num(quote.get("prev_close"))
+        if price is None or prev is None:
+            continue
+        raw = str(sig.get("direction") or "").strip().lower()
+        bear = raw in ("bear", "short", "down", "sell")
+        if bear:
+            if not (prev > entry >= price):
+                continue
+            direction = "down"
+        else:
+            if not (prev < entry <= price):
+                continue
+            direction = "up"
+        rec = _pack_rec(pack, sym)
+        severity = 55.0 + (10.0 if rec.get("sp500") else 0.0)
+        out.append(FactPacket(
+            trigger="signal_fired",
+            key=key,
+            fired_at=_iso(now),
+            session=session_phase(now),
+            ticker=sym,
+            name=names.get(sym) or None,
+            sector=rec.get("sector") or None,
+            direction=direction,
+            severity=_clamp(severity),
+            facts={
+                "ticker": sym,
+                "level": round(entry, 2),
+                "price": round(price, 2),
+                "prev_close": round(prev, 2),
+                "pct": round((price - prev) / prev * 100.0, 2) if prev else None,
+                "direction": direction,
+                "plan_as_of": sig.get("as_of"),
+                "signal_id": signal_id,
+            },
+            provenance=_provenance(pack, quotes_asof, quote, bridged, demo),
+        ))
+    return out
+
+
+def _detect_contrarian(
+    quotes: dict,
+    pack: dict | None,
+    heatmap: dict | None,
+    fired: set[str],
+    now: datetime,
+    cfg: dict,
+    demo: bool,
+    bridged: bool,
+    quotes_asof: Any,
+) -> list[FactPacket]:
+    """contrarian_breadth: index red, defensives green (§2 T9, the corpus flip)."""
+    out: list[FactPacket] = []
+    tiles = [t for t in ((heatmap or {}).get("tiles") or []) if isinstance(t, dict)]
+    if not tiles:
+        return out
+    index_sym = str(_c(cfg, "detectors.contrarian.index_ticker", "SPY")).upper()
+    index_pct = _num((quotes.get(index_sym) or {}).get("change_pct"))
+    limit = float(
+        _c(cfg, "demo.contrarian_index_pct", DEFAULTS["demo"]["contrarian_index_pct"]) if demo
+        else _c(cfg, "detectors.contrarian.index_pct", -1.5)
+    )
+    if index_pct is None or index_pct > limit:
+        return out
+    min_green = int(_c(cfg, "detectors.contrarian.min_green", 5))
+    defensives = [
+        str(s) for s in _c(cfg, "detectors.contrarian.defensive_sectors",
+                           DEFAULTS["detectors"]["contrarian"]["defensive_sectors"])
+    ]
+
+    sectors_green: list[str] = []
+    green: list[list[Any]] = []
+    for sector in defensives:
+        members = [(str(t.get("t") or "").upper(), _tile_pct(t, quotes))
+                   for t in tiles if str(t.get("sector") or "") == sector]
+        pcts = [(s, p) for s, p in members if s and p is not None]
+        if not pcts:
+            continue
+        if statistics.median([p for _, p in pcts]) > 0:
+            sectors_green.append(sector)
+            green.extend([s, round(p, 2)] for s, p in pcts if p > 0)
+    if len(sectors_green) < 2 or len(green) < min_green:
+        return out
+
+    key = f"contrarian:{_day(now)}"
+    if key in fired:
+        return out
+    green.sort(key=lambda kv: kv[1], reverse=True)
+    out.append(FactPacket(
+        trigger="contrarian_breadth",
+        key=key,
+        fired_at=_iso(now),
+        session=session_phase(now),
+        ticker=None,
+        name=None,
+        sector=None,
+        direction="up",
+        severity=_clamp(75.0),
+        facts={
+            "index_pct": round(index_pct, 2),
+            "index_ticker": index_sym,
+            "green": green[:8],
+            "sectors_green": sectors_green,
+            "n_green": len(green),
+        },
+        provenance=_provenance(pack, quotes_asof, None, bridged, demo),
+    ))
+    return out
+
+
+def detect_events(
+    quotes: dict | None,
+    *,
+    pack: dict | None = None,
+    heatmap: dict | None = None,
+    plan_signals: list[dict] | None = None,
+    ring: list[dict] | None = None,
+    fired_today: list[dict] | None = None,
+    now: datetime | None = None,
+    cfg: dict | None = None,
+    demo: bool = False,
+) -> list[FactPacket]:
+    """All firing events, severity-descending. PURE: no I/O, no LLM, no clock.
+
+    `quotes` is {SYM: {price, prev_close, change_pct, ts_ms, source}} — the
+    live_verify merge — or the {"quotes": ..., "asof": ...} wrapper.
+    `ring` is accepted and reserved for the P2 "$X added in 3 hours" claims
+    (masterplan T6); v1 detectors do not read it.
+    """
+    try:
+        t = _utc(now)
+        cfg = cfg if isinstance(cfg, dict) else DEFAULTS
+        quotes_asof = None
+        if isinstance(quotes, dict) and isinstance(quotes.get("quotes"), dict):
+            quotes_asof = quotes.get("asof")
+            quotes = quotes["quotes"]
+        q: dict[str, dict] = {
+            str(k).upper(): v for k, v in (quotes or {}).items() if isinstance(v, dict)
+        }
+        fired_rows = list(fired_today or [])
+        fired = _fired_keys(fired_rows)
+        bridged = bridge_ok(pack, t, cfg=cfg)
+
+        events: list[FactPacket] = []
+        common = (q, pack, heatmap)
+        lanes = (
+            ("group", lambda: _detect_group_moves(*common, fired, t, cfg, demo, bridged, quotes_asof)),
+            ("mover", lambda: _detect_movers(*common, fired_rows, t, cfg, demo, bridged, quotes_asof)),
+            ("threshold", lambda: _detect_thresholds(*common, fired, t, cfg, demo, bridged, quotes_asof)),
+            ("streak", lambda: _detect_streaks(*common, fired, t, cfg, demo, bridged, quotes_asof)),
+            ("signal", lambda: _detect_signals(*common, list(plan_signals or []), fired, t,
+                                               cfg, demo, bridged, quotes_asof)),
+            ("contrarian", lambda: _detect_contrarian(*common, fired, t, cfg, demo, bridged, quotes_asof)),
+        )
+        for label, fn in lanes:
+            try:
+                events.extend(fn())
+            except Exception as exc:  # noqa: BLE001
+                log.warning("hot_tape: %s detector failed: %s", label, exc)
+        # SEVERITY SATURATES, SO IT CANNOT BE THE ONLY KEY (reviewer M2). The
+        # mover formula tops out at 100 well before the tape does: SNDK -14.25,
+        # GLW -12.10 and AMD -8.15 all scored exactly 100 on the 2026-07-28
+        # tape, and an alphabetical tie-break then handed the run cap to AMD and
+        # dropped the biggest move of the day. Magnitude breaks the tie; the key
+        # stays last so the order is still deterministic.
+        events.sort(key=lambda p: (-float(p.severity), -abs(_magnitude(p) or 0.0), p.key))
+        return events
+    except Exception as exc:  # noqa: BLE001
+        log.warning("hot_tape.detect_events failed: %s", exc)
+        return []
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Routing + outbox handoff
+# ─────────────────────────────────────────────────────────────────────────────
+
+def severity_account(packet: FactPacket, cfg: dict | None = None) -> str:
+    """Wire desk by default; flagship mirrors only the biggest events."""
+    try:
+        floor = float(_c(cfg, "emit.flagship_severity_floor", 85))
+        if float(packet.severity) >= floor:
+            return str(_c(cfg, "emit.flagship_account", "flagship"))
+        return str(_c(cfg, "emit.account", "mastermind_news"))
+    except Exception as exc:  # noqa: BLE001
+        log.warning("hot_tape.severity_account failed: %s", exc)
+        return str(_c(cfg, "emit.account", "mastermind_news"))
+
+
+def packet_to_source(packet: FactPacket, media: dict | None = None) -> dict:
+    """The outbox item's `source` dict: provenance the publisher can gate on.
+
+    `baseline_pct` is the headline move the copy claims, carried for PROVENANCE
+    and PARITY with the rest of the outbox (and so a future gate extension has
+    the number already in hand). Be precise about what it does NOT buy today:
+    the post-time tape gate does not evaluate ``kind="breaking"`` items at all,
+    so nothing re-checks this figure against the live quote before sending. The
+    protection that IS live for this lane is upstream — the freshness gate, the
+    bridge/per-record history gates, and the numeric-consistency gate in
+    hot_tape_wire — plus the operator kill switch.
+    """
+    try:
+        prov = packet.provenance or {}
+        source: dict[str, Any] = {
+            "lane": "hot_tape",
+            "trigger": packet.trigger,
+            "ticker": packet.ticker,
+            "sector": packet.sector,
+            "direction": packet.direction,
+            "severity": packet.severity,
+            "baseline_pct": _magnitude(packet),
+            "quote_ts_ms": prov.get("quote_ts_ms"),
+            "quote_source": prov.get("quote_source"),
+            "pack_asof": prov.get("pack_asof"),
+            "bridge_ok": bool(prov.get("bridge_ok")),
+            "demo": bool(prov.get("demo")),
+            "fact_packet": asdict(packet),
+        }
+        for k in ("media_url", "media_png_path", "chart_id"):
+            if isinstance(media, dict) and media.get(k) is not None:
+                source[k] = media[k]
+        return source
+    except Exception as exc:  # noqa: BLE001
+        log.warning("hot_tape.packet_to_source failed: %s", exc)
+        return {"lane": "hot_tape", "trigger": getattr(packet, "trigger", None)}

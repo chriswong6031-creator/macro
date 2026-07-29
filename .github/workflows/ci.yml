@@ -1303,6 +1303,18 @@ on:
       - "tests/test_chart_render_inline.py"
       - "tests/test_chart_render_m2.py"
       - "tests/test_marketing_card_parity.py"
+      # Hot Tape P1 — the intraday attention radar (jobs: marketing-engine for the
+      # two thin suites, marketing-data for the pandas-heavy nightly pack suite).
+      # engine/marketing/** already covers the three engine modules and .github/**
+      # covers the workflow, so these entries are the OTHER half: a PR that edits
+      # ONLY a suite, ONLY the radar script, or ONLY the operator's tuning surface
+      # must still reach the lanes that run them. A suite that ships dark is the
+      # unrun-suite rot class, and this program adds three of them at once.
+      - "tests/test_marketing_hot_tape.py"
+      - "tests/test_marketing_hot_tape_pack.py"
+      - "tests/test_marketing_hot_tape_radar.py"
+      - "scripts/hot_tape_radar.py"
+      - "config/hot_tape.yml"
       # tier-gate serving/revenue boundary (job: tier-gate). Found 2026-07-25
       # shipping #3488: NONE of the boundary's enforcement files were listed, so a
       # PR that changes ONLY the site-access boundary (regwall, Caddy public list,

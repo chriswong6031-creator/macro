@@ -1,0 +1,124 @@
+# Hot Tape — the operator's tuning surface for the intraday attention radar.
+# research/MARKETING_HOT_TAPE_MASTERPLAN.md §3.2 (detectors) + §5 (P1).
+#
+# Every value here MIRRORS the in-code default it overrides
+# (engine/marketing/hot_tape.py DEFAULTS, plus the three sibling-module defaults
+# noted below), so this file is a no-op until an operator edits a number. The
+# code defaults remain the fallback: hot_tape.load_config deep-merges this file
+# OVER them, and an absent or unreadable file leaves a working radar.
+#
+# Charter §8: a cadence/threshold constant is a HYPOTHESIS. Tune these on
+# measured engagement (gate 0.8), not on taste.
+#
+# SHAPE: keys sit at the TOP LEVEL, with no `hot_tape:` wrapper. load_config
+# deep-merges this whole document over DEFAULTS, so a wrapper would nest every
+# knob one level too deep and the entire file would be inert.
+
+# Master switch for scripts/hot_tape_radar.py. false = the radar exits 0
+# having detected, composed and booked nothing. This is the ONE key with no
+# DEFAULTS entry (the radar defaults it true); the workflow keeps running so a
+# disabled lane is visible in the Actions log rather than silently absent.
+enabled: true
+
+# 09:25-16:05 America/New_York on weekdays: five minutes of pre-open and five of
+# post-close, so the opening and closing prints are both inside the loop.
+#
+# EASTERN, NOT UTC, AND THAT IS THE POINT. A UTC pair is correct for one half of
+# the year only: 13:25-20:05Z is 09:25-16:05 ET under EDT but 08:25-15:05 ET
+# under EST, so from the November clock change a UTC window would wake the radar
+# an hour before the open and go dark for the last hour of every session - the
+# hour that carries the closing print. The workflow's crons deliberately cover
+# BOTH regimes and this ET guard trims the off-season edges.
+window_et:
+  start: "09:25"
+  end: "16:05"
+
+# Minutes past `end` that still count as inside the window. GitHub's scheduled
+# runner is best-effort and a */5 tick regularly lands minutes late; a 16:03 ET
+# pass that starts at 16:07 is still reporting the close. Applied to the END
+# only - waking early is a different question and stays strict.
+window_grace_min: 10
+
+# Freshest quote in the merged view must be this new, or the pass stands down:
+# posting a "so far today" move off a stale tape is the failure this program
+# exists to end (masterplan §1).
+max_quote_age_min: 12
+
+# How many weekdays the nightly pack's trade_date may lag today before every
+# history fact (streaks, records, ATH distance, RSI) is SUPPRESSED. 1 = a
+# Tuesday radar needs Monday's bars.
+bridge_max_gap_days: 1
+
+universe:
+  min_adv_dollars: 25000000   # liquidity floor for the nightly pack scan
+  max_tickers: 3000           # cut after the ADV rank (heatmap names are never cut)
+  workers: 4                  # hot_tape_pack.DEFAULT_WORKERS — nightly scan pool
+  budget_s: 240               # hot_tape_pack.DEFAULT_BUDGET_S — partial pack > missed step
+  # How many weekdays a ticker's freshest bar may lag the pack's own tip before
+  # the record is dropped from the universe entirely. A record this far behind
+  # cannot produce an honest history fact, and leaving it in poisons the ADV
+  # rank: Polygon's ZAZZT test symbol held adv_rank 1 in the first shipped pack
+  # on a $615B fake ADV computed off 30 bars that stopped in June 2025.
+  max_lag_weekdays: 10
+
+detectors:
+  sector:
+    median_pct: 2.0           # |median member move| that makes a group a story
+    breadth: 0.70             # share of members that must agree with the median
+    min_members: 8            # Finviz sector floor
+    # Industry groups are smaller than their parent sector, hence the lower
+    # floor. The semis/memory crash this program exists for lives HERE:
+    # "Semiconductors" printed -8% while parent "Technology" held above -2%.
+    industry_min_members: 5
+  mover:
+    min_abs_pct: 4.0          # |move| on an attention-universe name
+    cooldown_min: 120         # one post per ticker per direction per 2h …
+    refire_ratio: 2.0         # … unless the move has DOUBLED since the last one
+    adv_rank_max: 300         # pack names outside the heatmap join the universe to here
+  threshold:
+    min_price: 15.0           # below this a round-number cross is noise
+  streak:
+    min_len: 5                # a run must be at least this long to be a story
+    min_rarity_days: 365      # …and the last run this long must be a year+ ago
+  contrarian:
+    index_pct: -1.5           # index must be at least this red …
+    min_green: 5              # … with at least this many green defensive names
+    index_ticker: "SPY"       # the index proxy (never a magic constant in a detector)
+    defensive_sectors:
+      - "Consumer Defensive"
+      - "Utilities"
+      - "Healthcare"
+
+emit:
+  max_per_run: 3              # per 5-minute pass
+  max_per_day: 20             # counting today's fired rows that carry an item_id
+  # Raised from 75 during the P1 build (2026-07-28, verified on that day's
+  # tape; in-code DEFAULTS moved with it). Group routs start at severity 80,
+  # so a 75 floor sent EVERY routine rout
+  # to the flagship — on that day's tape three industry routs in one sweep
+  # (Computer Hardware -6.91 median, Semiconductor Equipment -6.18,
+  # Semiconductors -3.70) would all have landed there while mastermind_news, the
+  # wire desk's own home, stayed dark. >=85 = a 2.5%+ median rout or a boosted
+  # mega-cap event — "flagship mirrors the biggest events ONLY".
+  flagship_severity_floor: 85
+  # Second half of the same guard: at most this many flagship mirrors PER PASS,
+  # however many events clear the floor. Spent only on a successful enqueue, so
+  # a deduped event does not burn the budget. No DEFAULTS entry — the radar
+  # emit loop defaults it to 1.
+  flagship_max_per_run: 1
+  account: "mastermind_news"  # the wire desk (masterplan §2 voice note)
+  flagship_account: "flagship"
+
+wire:
+  # hot_tape_wire.MAX_CHARS. 279, not 280: a post rendered to the wire's exact
+  # ceiling has no room for a trailing space that a client may add.
+  max_chars: 279
+
+# workflow_dispatch demo_override (and env HOT_TAPE_DEMO=1) relaxes the gates
+# to these values so the lane can be demonstrated on a quiet tape. Items fired
+# in demo carry provenance.demo = true, all the way onto the outbox item.
+demo:
+  sector_median_pct: 0.5
+  mover_min_abs_pct: 1.5
+  contrarian_index_pct: -0.3
+  max_quote_age_min: 100000   # a demo may run against yesterday's close

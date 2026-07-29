@@ -1,0 +1,267 @@
+name: marketing-hot-tape
+# ─────────────────────────────────────────────────────────────────────────────
+# HOT TAPE P1 — the 5-minute intraday attention radar
+# (research/MARKETING_HOT_TAPE_MASTERPLAN.md §3.2/§3.4).
+#
+# Every 5 minutes from 09:25 to 16:05 America/New_York on weekdays it loads the
+# live tape + the nightly context pack, runs the v1 detectors, composes wire
+# copy, draws the house tape card, and books what fires as `immediate` outbox
+# items. When anything books it dispatches marketing-publish.yml with
+# post_now_item=<ids>, so a sector rout crossing at 10:04 ET is at Buffer by
+# ~10:13 (gate 0.1 asks for ≤20 min).
+#
+# THIS RUNS ON ubuntu-latest, NEVER the self-hosted macstudio pool: 81 runs a
+# day on the render pool would eat the nightly's budget, which is law.
+#
+# WHY IT IS SAFE. This workflow only QUEUES posts. Nothing here can publish:
+# sending is marketing-publish.yml's job and that runner self-downgrades to
+# dry-run unless the operator's kill switch (repo variable
+# MARKETING_PUBLISH_ENABLED=1) is on. With the switch off this lane fills the
+# outbox and the queue simply sits there — which is also how you watch what it
+# WOULD have posted before arming anything.
+#
+# LEDGER LAW (masterplan §6): the radar writes ONLY the outbox, its own snapshot
+# ring and its fired ledger. It never advances a forward ledger — the nightly is
+# the sole advancer of those, and this loop runs 81 times a day.
+# ─────────────────────────────────────────────────────────────────────────────
+on:
+  schedule:
+    # GITHUB CRON HAS NO TIMEZONE — it is UTC, always. The session window is
+    # 09:25-16:05 America/New_York, which is 13:25-20:05Z under EDT and
+    # 14:25-21:05Z under EST, so a single UTC pair is wrong for half the year:
+    # the shipped 13:25-20:05Z schedule would, from the November clock change,
+    # have woken the radar an hour before the open and gone dark for the last
+    # hour of every session — the hour that carries the closing print.
+    #
+    # These crons therefore span BOTH regimes, 13:25Z through 21:05Z, and the
+    # ET window guard in engine/marketing/hot_tape.py:in_window trims the
+    # off-season edges (an EST 13:25Z tick is 08:25 ET and stands down; an EDT
+    # 21:00Z tick is 17:00 ET and stands down). The cost of the overlap is a
+    # handful of ~20-second no-op runs a day on ubuntu-latest; the cost of
+    # getting it wrong is a dark hour every session for five months.
+    #
+    # Three crons because GitHub's cron cannot express "every 5 minutes from
+    # :25 of one hour to :05 of another".
+    - cron: "25,30,35,40,45,50,55 13 * * 1-5"
+    - cron: "*/5 14-20 * * 1-5"
+    - cron: "0,5 21 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      demo_override:
+        description: >-
+          DEMO — relax the window, quote-freshness and detector thresholds to the
+          `demo:` block in config/hot_tape.yml so the lane can be shown working on
+          a quiet tape or outside market hours. THIS STILL BOOKS A REAL POST, and
+          with the publisher armed (MARKETING_PUBLISH_ENABLED=1) that post goes
+          out — tick dry_run as well if you want a rehearsal. Blast radius is
+          bounded: a demo pass books AT MOST ONE item and always on the wire desk
+          (mastermind_news), never the flagship. Items are stamped demo
+          (provenance.demo = true) all the way onto the outbox item.
+        required: false
+        type: boolean
+        default: false
+      dry_run:
+        description: >-
+          DRY RUN — detect, compose and SIMULATE the chart, writing nothing: no
+          ring append, no outbox item, no chart upload, no dispatch. The PR
+          receipt mode.
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write     # commit the outbox + ring + fired ledgers back to main
+  actions: write      # dispatch marketing-publish.yml with the booked item ids
+
+concurrency:
+  # Two radar passes must never overlap: they would both read the same fired
+  # ledger, both see the same event unfired, and double-book it. Never cancel a
+  # pass in flight either — it may already have handed a card to R2.
+  group: marketing-hot-tape
+  cancel-in-progress: false
+
+jobs:
+  radar:
+    runs-on: ubuntu-latest      # OFF the render path — never the macstudio pool
+    # A pass is ~1 min. 12 is generous head-room for a Chrome raster (~13s each,
+    # up to 3 cards) plus the push race, and small enough that a wedged run frees
+    # the concurrency group before the next cron.
+    timeout-minutes: 12
+    steps:
+      - name: checkout (shallow + sparse + write token)
+        # SHALLOW ON PURPOSE. marketing-publish.yml ran fetch-depth: 0 and on
+        # 2026-07-28 the clone of this heavy-churn repo grew past that job's 25m
+        # timeout — the 12:58Z sweep spent 12:58:08→13:23:07 inside `checkout`,
+        # was cancelled, and the desks published nothing all day. This lane runs
+        # 81 times a day on a 12m budget, so a full clone is not survivable here
+        # at all. Nothing needs history: the radar reads artifacts at HEAD and
+        # the commit step below puts one commit on top of main. The push loop
+        # deepens to 20 so `pull --rebase` always has a merge base.
+        #
+        # SPARSE + BLOBLESS ON TOP OF THAT. fetch-depth alone still materializes
+        # the whole tree: ~2.8GB across ~48k tracked files, most of it stores
+        # this lane never opens. The cone below is the radar's exact read+write
+        # surface (~6.6k files, ~450MB) and cone mode always includes top-level
+        # files, so lib/config's root config.yml comes along:
+        #   engine, scripts, lib  — the code
+        #   config                — hot_tape.yml + marketing.yml
+        #   data/marketing        — pack, ring, fired ledger, outbox, quote
+        #                           snapshot, logo cache (all three commit paths
+        #                           are inside this one)
+        #   data/earnings         — live_verify's earnings guard reads it
+        #   data/baskets/ohlcv,
+        #   data/stocks           — the card's bars. NOT optional: without them
+        #                           every card would fall back to the R2-hydrated
+        #                           massive store, which is sessions stale, and
+        #                           load_bars would refuse it as "chart-stale".
+        #   site/marketdata,
+        #   site/live             — the heatmap + the display quote artifacts
+        # data/massive_stock_day is gitignored (hydrated at runtime) and needs no
+        # entry. Adding a read path to the radar means adding it HERE too.
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            engine
+            scripts
+            lib
+            config
+            data/marketing
+            data/earnings
+            data/baskets/ohlcv
+            data/stocks
+            site/marketdata
+            site/live
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: install deps
+        # NO PANDAS, deliberately. The detector path is stdlib+json by design
+        # (engine/marketing/hot_tape.py gate 0.6) and pandas is ~40s of install
+        # this lane would pay 81 times a day. pyyaml: config/*.yml. requests: the
+        # on-demand R2 parquet hydrate for a name outside the committed price
+        # trees. pyarrow: the chart card's parquet read — chart_render falls back
+        # to pyarrow when pandas is absent (_parquet_rows_pyarrow).
+        run: pip install --quiet pyyaml requests pyarrow
+
+      - name: fetch full-universe live quotes (radar input)
+        # Copied from marketing-publish.yml. The live-data orphan branch carries
+        # a ~2k-symbol quotes.json refreshed every 5 min in RTH (15-min-delayed
+        # prices) — the SAME merge the post-time tape gate reads, so the radar
+        # fires on exactly the tape the rest of the estate reasons about. Note
+        # what that does NOT mean: `breaking` items are outside the post-time
+        # gate's kind list, so nothing re-verifies this move between booking and
+        # sending. Freshness is enforced HERE, in the radar's own gate.
+        # Fail-soft: without the snapshot the radar falls back to site/live +
+        # the sp500 heatmap, and its own freshness gate stands the pass down if
+        # what is left is stale.
+        run: |
+          if git fetch --depth 1 origin live-data && \
+             git show FETCH_HEAD:quotes.json > data/marketing/live_quotes_snapshot.json 2>/dev/null; then
+            echo "live quotes snapshot: $(wc -c < data/marketing/live_quotes_snapshot.json) bytes"
+          else
+            echo "::warning::live-data quotes unavailable — radar falls back to site/live artifacts"
+            rm -f data/marketing/live_quotes_snapshot.json
+          fi
+
+      - name: run the radar
+        id: radar
+        env:
+          # Empty on every scheduled pass, so the scheduled lane is provably
+          # identical to one with no demo input at all.
+          HOT_TAPE_DEMO: ${{ (github.event_name == 'workflow_dispatch' && inputs.demo_override) && '1' || '' }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+          # Chart PNGs ride the existing public data plane (media_publish). Absent
+          # creds → no public URL → a single-name event is DROPPED rather than
+          # posted bare (operator law: every ticker post carries a chart).
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          if [ "${DRY_RUN:-}" = "true" ]; then
+            python -m scripts.hot_tape_radar --dry-run
+          else
+            python -m scripts.hot_tape_radar
+          fi
+
+      - name: commit radar state (no-op when nothing changed)
+        id: commit
+        # ALWAYS: the ring is appended on every pass, eventless included — it is
+        # the intraday history the "$X added in 3 hours" claims are built from,
+        # and the fired ledger is the cooldown memory that stops a second pass
+        # re-posting the same event. Losing either is worse than a noisy log.
+        if: ${{ always() }}
+        run: |
+          set -uo pipefail
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+
+          # Stage ONLY this lane's paths (ledger law). data/massive_stock_day is
+          # gitignored, so a hydrated parquet can never ride along.
+          git add data/marketing/outbox 2>/dev/null || true
+          git add data/marketing/hot_tape_ring.jsonl 2>/dev/null || true
+          git add data/marketing/hot_tape_fired.jsonl 2>/dev/null || true
+
+          if git diff --cached --quiet; then
+            echo "marketing-hot-tape: no radar state to commit"
+            echo "pushed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git commit -m "hot-tape: radar $(date -u +%FT%H:%MZ) [skip ci]"
+
+          # Retry-rebase push loop, identical in mechanics to marketing-publish's:
+          # this lane races the publish sweeps and the nightly on the same outbox
+          # paths. All three ledgers carry merge=union (.gitattributes) so a
+          # concurrent append resolves instead of conflicting the loop to death.
+          for i in 1 2 3 4 5; do
+            # --depth 20: the checkout is shallow, so a bare fetch would leave
+            # `pull --rebase` without a merge base once main advanced mid-run.
+            git fetch --depth 20 origin main || true
+            # Drop any untracked file that shadows an origin/main path — a mid-run
+            # commit could TRACK a path we wrote as an untracked side-effect,
+            # which would make the rebase checkout refuse.
+            comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
+                     <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
+              | while IFS= read -r f; do rm -f -- "$f" || true; done
+            if git pull --rebase --autostash origin main && git push origin HEAD:main; then
+              echo "marketing-hot-tape: pushed radar state on attempt $i"
+              echo "pushed=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "marketing-hot-tape: push attempt $i lost a race; re-syncing"
+            sleep $((i * 7))
+          done
+
+          echo "::warning::marketing-hot-tape: could not push radar state after 5 attempts (non-fatal)"
+          echo "pushed=false" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: dispatch the publisher for the booked items
+        # ORDER IS LOAD-BEARING: push THEN dispatch. marketing-publish checks out
+        # main and folds items.jsonl from HEAD — dispatched before our push lands
+        # it would find no such item ids and post nothing, so a failed push means
+        # NO dispatch (steps.commit.outputs.pushed) rather than a wasted run.
+        #
+        # ONE API CALL, no polling (GitHub quota is one shared bucket): we fire
+        # and forget. The publisher's own run is the receipt.
+        if: >-
+          ${{ success()
+              && steps.radar.outputs.post_now_ids != ''
+              && steps.commit.outputs.pushed == 'true'
+              && !(github.event_name == 'workflow_dispatch' && inputs.dry_run) }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          POST_NOW_IDS: ${{ steps.radar.outputs.post_now_ids }}
+        run: |
+          echo "marketing-hot-tape: dispatching publisher for $POST_NOW_IDS"
+          gh workflow run marketing-publish.yml \
+            -f post_now_item="$POST_NOW_IDS" \
+            --repo "$GITHUB_REPOSITORY"

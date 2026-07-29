@@ -1,0 +1,1299 @@
+"""Hot Tape thin lane — detectors, wire copy, refusal, ban list, numeric gate.
+
+Pins the acceptance gates of research/MARKETING_HOT_TAPE_MASTERPLAN.md §0:
+
+  0.2  a post with no §2.D device REFUSES (compose_wire -> None)
+  0.3  every number in the copy is a leaf of the FactPacket
+  0.4  no call language, ever (cashtags exempted from the scan)
+  0.5  the existing outbox guards accept and dedupe our items
+
+THIS FILE MUST NOT IMPORT PANDAS — not directly, not through importorskip.
+The radar runs on a shallow ubuntu checkout with pyyaml+requests only, and a
+suite that silently skips is the unrun-suite rot class. Every fixture date is
+derived from today, never written as a literal (the 2026-07-28 date-bomb).
+
+Run: .venv/bin/python -m pytest tests/test_marketing_hot_tape.py -q
+"""
+from __future__ import annotations
+
+import contextlib
+import json
+from datetime import date, datetime, timedelta, timezone
+
+import pytest
+
+from engine.marketing import hot_tape as HT
+from engine.marketing import hot_tape_wire as W
+from engine.marketing.hot_tape import FactPacket
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Relative-date fixture helpers (no literal calendar dates anywhere)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _weekday_now(hour: int = 15, minute: int = 10) -> datetime:
+    """A deterministic weekday timestamp inside RTH, anchored to today."""
+    d = date.today()
+    while d.weekday() >= 5:
+        d -= timedelta(days=1)
+    return datetime(d.year, d.month, d.day, hour, minute, tzinfo=timezone.utc)
+
+
+def _prev_weekday(d: date) -> date:
+    x = d - timedelta(days=1)
+    while x.weekday() >= 5:
+        x -= timedelta(days=1)
+    return x
+
+
+def _ago(now: datetime, days: int) -> str:
+    return (now.date() - timedelta(days=days)).isoformat()
+
+
+NOW = _weekday_now()
+FRESH_TRADE_DATE = _prev_weekday(NOW.date()).isoformat()
+STALE_TRADE_DATE = _prev_weekday(NOW.date() - timedelta(days=25)).isoformat()
+
+
+def _weekday_in(month: int, hour: int, minute: int) -> datetime:
+    """A UTC timestamp on a weekday in `month` of the CURRENT year.
+
+    The month is load-bearing and the year is not: these fixtures exist to put
+    the clock on either side of a US DST boundary (January = EST, July = EDT),
+    so the month is a semantic constant while the year is derived from today —
+    a hard-coded year would rot exactly the way a hard-coded date does.
+    """
+    d = date(date.today().year, month, 10)
+    while d.weekday() >= 5:
+        d += timedelta(days=1)
+    return datetime(d.year, d.month, d.day, hour, minute, tzinfo=timezone.utc)
+
+
+def _pack(records: dict, trade_date: str) -> dict:
+    return {
+        "schema": "marketing.hot_tape_pack/v1",
+        "built_at": NOW.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "trade_date": trade_date,
+        "n_tickers": len(records),
+        "sources": {"store_last_date": trade_date, "mcap_asof": None,
+                    "earnings_asof": None, "heatmap_asof": None},
+        "tickers": records,
+    }
+
+
+def _rec(**over) -> dict:
+    """A pack record with every field the detectors read."""
+    rec = {
+        "last_date": FRESH_TRADE_DATE,
+        "last_close": 100.0,
+        "prev_close": 101.0,
+        "streak": {"dir": "down", "len": 8,
+                   "last_run_ge": {"9": _ago(NOW, 1500), "10": None,
+                                   "11": None, "12": None}},
+        "ath": 140.0,
+        "ath_date": _ago(NOW, 50),
+        "high_52w": 140.0, "high_52w_date": _ago(NOW, 50),
+        "low_52w": 80.0, "low_52w_date": _ago(NOW, 200),
+        "pct_from_ath": -28.57,
+        "ma20": 105.0, "ma50": 110.0, "ma200": 115.0,
+        "rsi14": 34.0, "rsi_avg_gain": 0.5, "rsi_avg_loss": 1.5,
+        "rsi_low_1y": 22.0, "rsi_low_1y_date": _ago(NOW, 300),
+        "rsi_high_1y": 78.0, "rsi_high_1y_date": _ago(NOW, 320),
+        "last_rsi_le_30": _ago(NOW, 500),
+        "last_rsi_ge_70": _ago(NOW, 520),
+        "max_up_1d": {"pct": 6.5, "date": _ago(NOW, 400)},
+        "max_dn_1d": {"pct": -7.4, "date": _ago(NOW, 400)},
+        "max_up_5d": {"pct": 12.0, "date": _ago(NOW, 410)},
+        "max_dn_5d": {"pct": -14.0, "date": _ago(NOW, 410)},
+        "round_above": 110.0, "round_below": 100.0,
+        "px_correction": 126.0, "px_bear": 112.0,
+        "adv20_dollars": 900_000_000.0, "adv_rank": 12,
+        "mcap_usd": 300_000_000_000, "shares_est": 3_000_000_000,
+        "sector": "Technology", "sp500": True,
+        "earn_next_date": _ago(NOW, -8), "earn_next_time": "time-after-hours",
+        "window_start": _ago(NOW, 1800), "suspect": False,
+    }
+    rec.update(over)
+    return rec
+
+
+def _quote(pct: float, price: float = 100.0, prev: float = 101.0) -> dict:
+    return {"price": price, "prev_close": prev, "change_pct": pct,
+            "ts_ms": int(NOW.timestamp() * 1000), "source": "quotes"}
+
+
+def _tile(sym: str, sector: str, pct: float, industry: str = "Widgets",
+          name: str | None = None) -> dict:
+    return {"t": sym, "name": name or sym, "sector": sector,
+            "industry": industry, "size": 0.5, "perf": {"1D": pct}}
+
+
+def _packet(trigger: str, key: str, direction: str, facts: dict, *,
+            session: str = "rth", ticker: str | None = None,
+            sector: str | None = None, severity: float = 80.0) -> FactPacket:
+    return FactPacket(
+        trigger=trigger, key=key, fired_at=NOW.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        session=session, ticker=ticker, name=None, sector=sector,
+        direction=direction, severity=severity, facts=facts,
+        provenance={"pack_asof": None, "store_last_date": FRESH_TRADE_DATE,
+                    "quotes_asof": None, "quote_ts_ms": None,
+                    "quote_source": "quotes", "bridge_ok": True, "demo": False},
+    )
+
+
+@contextlib.contextmanager
+def forced_variant(trigger: str, entry):
+    """Pin the bank to exactly one variant so every template gets exercised."""
+    original = W.WIRE_BANK[trigger]
+    W.WIRE_BANK[trigger] = (entry,)
+    try:
+        yield
+    finally:
+        W.WIRE_BANK[trigger] = original
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Rich per-family fixtures (every device derivable)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def rich_packets() -> dict[str, FactPacket]:
+    return {
+        "mover_drop": _packet(
+            "mover_drop", "mover:AMD:down:x:0", "down", ticker="AMD",
+            sector="Technology", facts={
+                "ticker": "AMD", "name": "AMD", "pct": -8.13, "price": 84.2,
+                "prev_close": 91.65, "dollar_delta_usd": -11_100_000_000,
+                "pct_from_ath_live": -28.42, "ath": 117.66, "ath_date": _ago(NOW, 50),
+                "streak_extends": {"dir": "down", "len_today": 9,
+                                   "since": _ago(NOW, 1500),
+                                   "window_start": _ago(NOW, 1800)},
+                "rsi_live": 27.4, "rsi_band": 30, "rsi_since": _ago(NOW, 500),
+                "biggest_1d": {"window_start": _ago(NOW, 1800), "prior_pct": -7.4,
+                               "prior_date": _ago(NOW, 400)},
+                "sector": "Technology", "earn_next_date": _ago(NOW, -8),
+                "earn_next_time": "time-after-hours"}),
+        "mover_pop": _packet(
+            "mover_pop", "mover:KO:up:x:0", "up", ticker="KO",
+            sector="Consumer Defensive", facts={
+                "ticker": "KO", "name": "KO", "pct": 6.02, "price": 74.5,
+                "prev_close": 70.27, "dollar_delta_usd": 18_400_000_000,
+                "pct_from_ath_live": -2.1, "ath": 76.1, "ath_date": _ago(NOW, 60),
+                "streak_extends": {"dir": "up", "len_today": 6,
+                                   "since": _ago(NOW, 900),
+                                   "window_start": _ago(NOW, 1800)},
+                "rsi_live": 72.6, "rsi_band": 70, "rsi_since": _ago(NOW, 520),
+                "biggest_1d": {"window_start": _ago(NOW, 1800), "prior_pct": 5.1,
+                               "prior_date": _ago(NOW, 380)},
+                "sector": "Consumer Defensive", "earn_next_date": None,
+                "earn_next_time": None}),
+        "sector_rout": _packet(
+            "sector_rout", "sector:Semiconductors:down:x", "down",
+            sector="Semiconductors", facts={
+                "sector": "Semiconductors", "group_kind": "industry",
+                "median_pct": -7.85, "breadth_pct": 92.59, "n_members": 27,
+                "n_down": 25, "leaders": [["SNDK", -14.32], ["MU", -8.94],
+                                          ["STX", -8.51], ["AMD", -8.2], ["ARM", -8.1]],
+                "dollar_moved_usd": -284_000_000_000, "index_pct": -1.62,
+                "index_ticker": "SPY"}),
+        "sector_rip": _packet(
+            "sector_rip", "sector:Utilities:up:x", "up", sector="Utilities", facts={
+                "sector": "Utilities", "group_kind": "sector", "median_pct": 2.64,
+                "breadth_pct": 88.0, "n_members": 25, "n_up": 22,
+                "leaders": [["NEE", 4.4], ["DUK", 3.9], ["SO", 3.5], ["AEP", 3.1],
+                            ["EXC", 2.9]],
+                "dollar_moved_usd": 41_000_000_000, "index_pct": 0.42,
+                "index_ticker": "SPY"}),
+        "threshold_cross": _packet(
+            "threshold_cross", "threshold:QQQ:correction:x", "down", ticker="QQQ",
+            facts={"ticker": "QQQ", "kind": "correction", "price": 615.3,
+                   "prev_close": 620.1, "pct": -0.77, "direction": "down",
+                   "threshold_px": 617.4, "pct_from_ath_live": -10.24,
+                   "ath": 686.0, "ath_date": _ago(NOW, 50), "sector": None}),
+        "streak_rarity": _packet(
+            "streak_rarity", "streak:META:x", "down", ticker="META",
+            facts={"ticker": "META", "dir": "down", "len_today": 9,
+                   "since": _ago(NOW, 1500), "window_start": _ago(NOW, 1800),
+                   "pct_today": -2.14, "price": 548.9}),
+        "signal_fired": _packet(
+            "signal_fired", "signal:abc123", "up", ticker="MSFT",
+            facts={"ticker": "MSFT", "level": 310.5, "price": 311.8,
+                   "prev_close": 308.4, "pct": 1.1, "direction": "up",
+                   "plan_as_of": _prev_weekday(NOW.date()).isoformat(),
+                   "signal_id": "abc123"}),
+        "contrarian_breadth": _packet(
+            "contrarian_breadth", "contrarian:x", "up", facts={
+                "index_pct": -1.82, "index_ticker": "SPY",
+                "green": [["COST", 1.24], ["HD", 0.93], ["MMM", 0.71], ["KO", 0.55]],
+                "sectors_green": ["Consumer Defensive", "Utilities"], "n_green": 11}),
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Gate 0.2 — device-slot refusal
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestDeviceRefusal:
+    def test_mover_without_any_device_refuses(self):
+        """A bare '%-move' post is the corpus's 95-view flop. It must be impossible."""
+        bare = _packet("mover_drop", "mover:XYZ:down:x:0", "down", ticker="XYZ",
+                       facts={"ticker": "XYZ", "pct": -8.4, "price": 42.0,
+                              "prev_close": 45.85, "dollar_delta_usd": None,
+                              "pct_from_ath_live": None, "ath": None,
+                              "ath_date": None, "streak_extends": None,
+                              "rsi_live": None, "rsi_band": None, "rsi_since": None,
+                              "biggest_1d": None})
+        assert W.compose_wire(bare) is None
+
+    def test_mover_with_one_device_composes(self):
+        one = _packet("mover_drop", "mover:XYZ:down:x:0", "down", ticker="XYZ",
+                      facts={"ticker": "XYZ", "pct": -8.4, "price": 42.0,
+                             "dollar_delta_usd": -3_200_000_000})
+        out = W.compose_wire(one)
+        assert out is not None
+        assert "dollar_clause" in out["devices"]
+
+    def test_sector_without_leaders_or_dollars_refuses(self):
+        thin = _packet("sector_rout", "sector:Technology:down:x", "down",
+                       sector="Technology",
+                       facts={"sector": "Technology", "group_kind": "sector",
+                              "median_pct": -3.1, "breadth_pct": 80.0,
+                              "n_members": 20, "n_down": 16, "leaders": [],
+                              "dollar_moved_usd": None, "index_pct": None})
+        assert W.compose_wire(thin) is None
+
+    def test_streak_without_a_day_count_refuses(self):
+        thin = _packet("streak_rarity", "streak:X:x", "down", ticker="X",
+                       facts={"ticker": "X", "dir": "down", "len_today": None,
+                              "since": None, "window_start": None, "pct_today": -2.0})
+        assert W.compose_wire(thin) is None
+
+    def test_streak_falls_back_to_the_window_when_since_is_null(self):
+        """No prior run in our data is stated honestly, never as a longer memory."""
+        p = _packet("streak_rarity", "streak:META:x", "down", ticker="META",
+                    facts={"ticker": "META", "dir": "down", "len_today": 9,
+                           "since": None, "window_start": _ago(NOW, 1800),
+                           "pct_today": -2.1, "price": 548.9})
+        out = W.compose_wire(p)
+        assert out is not None
+        assert "since at least" in out["text"]
+
+    def test_every_composed_post_carries_a_device(self):
+        for trigger, packet in rich_packets().items():
+            out = W.compose_wire(packet)
+            assert out is not None, trigger
+            mandatory, any_of = W.DEVICE_LAW[trigger]
+            assert set(mandatory) <= set(out["devices"]), trigger
+            if any_of:
+                assert set(out["devices"]) & any_of, trigger
+
+
+class TestDeviceClauses:
+    """The §2.D slot builders, pinned one claim at a time."""
+
+    def test_the_record_clause_anchors_on_the_window_not_the_prior_extreme(self):
+        """M9 — our memory starts at window_start; say so, do not imply more.
+
+        prior_date is the last bigger move INSIDE the dense window, so "biggest
+        drop since <prior_date>" quietly claimed a longer memory than the pack
+        has. prior_pct / prior_date stay in the facts as provenance.
+        """
+        packet = rich_packets()["mover_drop"]
+        window = W.fmt_since(packet.facts["biggest_1d"]["window_start"],
+                             packet.fired_at[:10])
+        clause = W._record_rank_clause(packet, packet.facts)
+        assert clause == f"That is its biggest one-day drop since at least {window}"
+        prior = W.fmt_since(packet.facts["biggest_1d"]["prior_date"],
+                            packet.fired_at[:10])
+        assert prior not in clause
+        assert packet.facts["biggest_1d"]["prior_pct"] == -7.4     # provenance kept
+
+    def test_the_record_clause_says_gain_on_the_way_up(self):
+        packet = rich_packets()["mover_pop"]
+        clause = W._record_rank_clause(packet, packet.facts)
+        assert clause.startswith("That is its biggest one-day gain since at least ")
+
+    def test_a_two_day_run_is_not_a_streak_device(self):
+        """m2 — streak_extends carries no rarity floor of its own.
+
+        "Day 2 of the slide, its longest red run since at least March 2021" is a
+        two-day sequence dressed as a differentiating stat.
+        """
+        facts = {"ticker": "X", "dir": "down", "len_today": 2,
+                 "since": _ago(NOW, 1500), "window_start": _ago(NOW, 1800)}
+        packet = _packet("streak_rarity", "streak:X:x", "down", facts, ticker="X")
+        assert W._streak_clause(packet, facts) is None
+        assert W.STREAK_CLAUSE_MIN_LEN == 5
+        assert HT.DEFAULTS["detectors"]["streak"]["min_len"] == W.STREAK_CLAUSE_MIN_LEN
+
+    def test_a_mover_whose_only_device_is_a_two_day_run_refuses(self):
+        thin = _packet("mover_drop", "mover:X:down:x:0", "down", ticker="X",
+                       facts={"ticker": "X", "pct": -8.4, "price": 42.0,
+                              "dollar_delta_usd": None, "biggest_1d": None,
+                              "rsi_band": None, "rsi_since": None,
+                              "streak_extends": {"dir": "down", "len_today": 2,
+                                                 "since": _ago(NOW, 1500),
+                                                 "window_start": _ago(NOW, 1800)}})
+        assert W.compose_wire(thin) is None
+
+    def test_a_five_day_run_still_composes(self):
+        facts = {"ticker": "X", "dir": "down", "len_today": 5,
+                 "since": _ago(NOW, 1500), "window_start": _ago(NOW, 1800)}
+        packet = _packet("streak_rarity", "streak:X:x", "down", facts, ticker="X")
+        assert W._streak_clause(packet, facts) is not None
+
+    def test_the_rsi_side_comes_from_the_band_never_the_direction(self):
+        """C2 (wire half) — the inversion that printed "back under 70" at 75.3."""
+        packet = rich_packets()["mover_drop"]
+        assert W._since_clause(packet, packet.facts).startswith("RSI is back under 30 ")
+
+        inverted = _packet("mover_drop", "mover:X:down:x:0", "down", ticker="X",
+                           facts={"ticker": "X", "pct": -3.1, "price": 42.0,
+                                  "rsi_live": 75.3, "rsi_band": 70,
+                                  "rsi_since": _ago(NOW, 520)})
+        assert W._since_clause(inverted, inverted.facts) is None
+
+    def test_an_up_cross_says_above(self):
+        packet = rich_packets()["mover_pop"]
+        assert W._since_clause(packet, packet.facts).startswith("RSI is back above 70 ")
+
+    def test_a_nonsense_band_refuses(self):
+        packet = _packet("mover_drop", "k", "down", ticker="X",
+                         facts={"ticker": "X", "pct": -3.1, "rsi_band": 50,
+                                "rsi_since": _ago(NOW, 520), "rsi_live": 49.0})
+        assert W._since_clause(packet, packet.facts) is None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Gate 0.4 — call-language ban
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestBanList:
+    def test_static_bank_is_clean(self):
+        for text in W.static_strings():
+            assert W.ban_hits(text) == [], text
+
+    def test_every_variant_of_every_family_is_clean(self):
+        for trigger, packet in rich_packets().items():
+            for entry in W.WIRE_BANK[trigger]:
+                with forced_variant(trigger, entry):
+                    out = W.compose_wire(packet)
+                assert out is not None, (trigger, entry[0])
+                assert W.ban_hits(out["text"]) == [], out["text"]
+
+    @pytest.mark.parametrize("phrase", [
+        "we are buying this dip", "great entry here", "adding to my position",
+        "take profits", "stop loss at 40", "load up", "I'm in", "sell it",
+        "target 500", "watch the calls", "chase it",
+    ])
+    def test_call_language_is_detected(self, phrase):
+        assert W.ban_hits(phrase)
+
+    def test_cashtags_are_exempt_from_the_scan(self):
+        """$LONG is a ticker, not the word 'long'."""
+        assert W.ban_hits("$LONG is down 4.0% right now") == []
+        assert W.ban_hits("$SHORT and $BID and $CALLS held up") == []
+        assert "long" in W.ban_hits("long AMD from here")
+
+    def test_a_banned_ticker_still_composes(self):
+        p = _packet("mover_drop", "mover:LONG:down:x:0", "down", ticker="LONG",
+                    facts={"ticker": "LONG", "pct": -8.4, "price": 42.0,
+                           "dollar_delta_usd": -3_200_000_000})
+        out = W.compose_wire(p)
+        assert out is not None
+        assert "$LONG" in out["text"]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Gate 0.3 — numeric consistency
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestNumericConsistency:
+    def test_every_rendered_number_comes_from_the_packet(self):
+        for trigger, packet in rich_packets().items():
+            for entry in W.WIRE_BANK[trigger]:
+                with forced_variant(trigger, entry):
+                    out = W.compose_wire(packet)
+                assert out is not None, (trigger, entry[0])
+                assert W.check_text_numbers(out["text"], packet) == [], out["text"]
+
+    def test_a_foreign_number_is_reported(self):
+        packet = rich_packets()["mover_drop"]
+        text = "$AMD is down 8.1% right now, headed for 42.7% more."
+        assert "42.7%" in W.check_text_numbers(text, packet)
+
+    def test_tamper_rendering_against_another_packet_fails(self):
+        packets = rich_packets()
+        a, b = packets["mover_drop"], packets["mover_pop"]
+        text = W.compose_wire(a)["text"]
+        assert W.check_text_numbers(text, a) == []
+        assert W.check_text_numbers(text, b) != []
+
+    def test_compose_refuses_a_template_that_invents_a_number(self):
+        """The runtime gate, not just the test suite, is what holds in production."""
+        packet = rich_packets()["mover_drop"]
+        bad = ("{cashtag} {dir_verb} {pct_abs} {live_marker}. {dollar_clause}. "
+               "That is 99.9% of the float.", ("dollar_clause", "live_marker"))
+        with forced_variant("mover_drop", bad):
+            assert W.compose_wire(packet) is None
+
+    def test_compose_refuses_a_template_with_banned_language(self):
+        packet = rich_packets()["mover_drop"]
+        bad = ("{cashtag} {dir_verb} {pct_abs} {live_marker}. {dollar_clause}. "
+               "Great entry.", ("dollar_clause", "live_marker"))
+        with forced_variant("mover_drop", bad):
+            assert W.compose_wire(packet) is None
+
+    def test_dates_do_not_leak_bare_years(self):
+        packet = rich_packets()["mover_drop"]
+        far = W.fmt_date(_ago(NOW, 500), "month_year")
+        assert W.check_text_numbers(f"$AMD is down 8.1% since {far}.", packet) == []
+
+    def test_formatters_are_shared(self):
+        assert W.fmt_pct(-8.13) == "-8.1%"
+        assert W.fmt_pct(-8.13, signed=False) == "8.1%"
+        assert W.fmt_price(84.2) == "$84.20"
+        assert W.fmt_big(1e12) == "$1 trillion"
+        assert W.fmt_big(-284_000_000_000) == "$284 billion"
+        assert W.fmt_big(5_400_000_000) == "$5.4 billion"
+        assert W.fmt_big(430_000_000) == "$430 million"
+        assert W.fmt_count(27) == "27"
+
+    def test_no_em_dashes_anywhere_in_the_bank(self):
+        for text in W.static_strings():
+            assert "—" not in text and "–" not in text, text
+
+    def test_posts_fit_the_wire_limit(self):
+        for trigger, packet in rich_packets().items():
+            for entry in W.WIRE_BANK[trigger]:
+                with forced_variant(trigger, entry):
+                    out = W.compose_wire(packet)
+                assert len(out["text"]) <= W.MAX_CHARS, (trigger, len(out["text"]))
+
+    def test_an_overlong_variant_drops_its_optional_device(self):
+        """The drop-longest-optional retry, not a truncated post."""
+        label = ("Semiconductor Equipment, Materials and Advanced Packaging "
+                 "Names Across The Whole Complex and Related Substrate "
+                 "Suppliers Worldwide")
+        packet = _packet(
+            "sector_rout", "sector:Long:down:x", "down", sector=label,
+            facts={"sector": label,
+                   "group_kind": "industry", "median_pct": -7.85,
+                   "breadth_pct": 92.59, "n_members": 27, "n_down": 25,
+                   "leaders": [["SNDK", -14.32], ["MU", -8.94], ["STX", -8.51]],
+                   "dollar_moved_usd": -284_000_000_000, "index_pct": -1.62,
+                   "index_ticker": "SPY"})
+        long_variant = W.WIRE_BANK["sector_rout"][2]
+        assert len(long_variant[0]) and "leaders_clause" in long_variant[0]
+        with forced_variant("sector_rout", long_variant):
+            out = W.compose_wire(packet)
+        assert out is not None
+        assert len(out["text"]) <= W.MAX_CHARS
+        assert "$SNDK" not in out["text"]          # the optional sentence went
+        assert "That is roughly $284 billion" in out["text"]
+        assert out["text"].endswith(".")
+        assert W.check_text_numbers(out["text"], packet) == []
+
+    def test_an_unknown_trigger_refuses(self):
+        packet = _packet("earnings_beat", "x", "up", {"pct": 12.0})
+        assert W.compose_wire(packet) is None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Session markers (D5)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestSessionMarkers:
+    @pytest.mark.parametrize("phase", ["pre_open", "rth", "after_hours"])
+    def test_every_phase_has_its_own_wording(self, phase):
+        packet = rich_packets()["mover_drop"]
+        packet.session = phase
+        text = W.compose_wire(packet)["text"]
+        assert any(m in text for m in W._LIVE_MARKERS[phase]), (phase, text)
+
+    def test_the_close_marker_is_after_hours_only(self):
+        """The window opens BEFORE the bell — "at the close" at 09:27 is a lie."""
+        assert "at the close" in W._LIVE_MARKERS["after_hours"]
+        for phase in ("pre_open", "rth"):
+            assert "at the close" not in W._LIVE_MARKERS[phase]
+        packet = rich_packets()["mover_drop"]
+        packet.session = "pre_open"
+        text = W.compose_wire(packet)["text"]
+        assert not any(m in text for m in ("at the close", "so far today", "right now"))
+
+
+class TestEasternWindow:
+    """M6 — the window and the session phase live on the ET clock, not UTC.
+
+    A UTC pair is right for one half of the year: 13:25-20:05Z is 09:25-16:05 ET
+    under EDT but 08:25-15:05 ET under EST, which would wake the radar an hour
+    early every winter and go dark for the last hour of every session.
+    """
+
+    def test_january_afternoon_is_inside_the_window(self):
+        """20:30Z in EST is 15:30 ET — the hour a UTC window used to lose."""
+        t = _weekday_in(1, 20, 30)
+        assert HT.in_window(t, HT.DEFAULTS)
+        assert HT.session_phase(t) == "rth"
+
+    def test_january_morning_is_outside_the_window(self):
+        """13:30Z in EST is 08:30 ET — an hour before the radar should wake."""
+        assert not HT.in_window(_weekday_in(1, 13, 30), HT.DEFAULTS)
+
+    def test_july_grace_admits_a_late_cron_tick(self):
+        """20:10Z in EDT is 16:10 ET: five past the end, inside the 10m grace."""
+        assert HT.in_window(_weekday_in(7, 20, 10), HT.DEFAULTS)
+        assert not HT.in_window(_weekday_in(7, 20, 20), HT.DEFAULTS)
+
+    def test_july_open_edge_is_pre_open(self):
+        """13:25Z in EDT is 09:25 ET — in the window, before the bell."""
+        t = _weekday_in(7, 13, 25)
+        assert HT.in_window(t, HT.DEFAULTS)
+        assert HT.session_phase(t) == "pre_open"
+
+    def test_the_close_is_after_hours_in_both_regimes(self):
+        assert HT.session_phase(_weekday_in(7, 20, 5)) == "after_hours"   # 16:05 EDT
+        assert HT.session_phase(_weekday_in(1, 21, 5)) == "after_hours"   # 16:05 EST
+
+    def test_the_weekend_is_never_in_the_window(self):
+        day = NOW.date()
+        sat = day + timedelta(days=(5 - day.weekday()) % 7 or 7)
+        t = datetime(sat.year, sat.month, sat.day, 15, 0, tzinfo=timezone.utc)
+        assert not HT.in_window(t, HT.DEFAULTS)
+        assert HT.session_phase(t) == "after_hours"
+
+    def test_the_grace_is_configurable_and_end_only(self):
+        cfg = HT.load_config(None)
+        cfg["window_grace_min"] = 0
+        assert not HT.in_window(_weekday_in(7, 20, 10), cfg)
+        # Grace never widens the OPEN side.
+        cfg["window_grace_min"] = 60
+        assert not HT.in_window(_weekday_in(7, 13, 20), cfg)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Config, freshness, bridge
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestConfigAndFreshness:
+    def test_defaults_work_without_a_config_file(self, tmp_path):
+        cfg = HT.load_config(tmp_path)
+        assert cfg["detectors"]["mover"]["min_abs_pct"] == 4.0
+        assert cfg["detectors"]["sector"]["industry_min_members"] == 5
+        assert cfg["emit"]["account"] == "mastermind_news"
+
+    def test_config_file_overrides_defaults(self, tmp_path):
+        (tmp_path / "config").mkdir()
+        (tmp_path / "config" / "hot_tape.yml").write_text(
+            "detectors:\n  mover:\n    min_abs_pct: 6.5\n", encoding="utf-8")
+        cfg = HT.load_config(tmp_path)
+        assert cfg["detectors"]["mover"]["min_abs_pct"] == 6.5
+        assert cfg["detectors"]["mover"]["cooldown_min"] == 120
+
+    def test_quotes_fresh(self):
+        live = {"quotes": {"AMD": _quote(-5.0)}, "asof": None}
+        ok, age = HT.quotes_fresh(live, NOW, HT.DEFAULTS)
+        assert ok and age is not None and age < 1
+        stale = {"quotes": {"AMD": {"ts_ms": int((NOW - timedelta(minutes=60))
+                                                 .timestamp() * 1000)}}, "asof": None}
+        ok, age = HT.quotes_fresh(stale, NOW, HT.DEFAULTS)
+        assert not ok and age > 12
+
+    def test_quotes_fresh_accepts_a_bare_map(self):
+        ok, _ = HT.quotes_fresh({"AMD": _quote(-5.0)}, NOW, HT.DEFAULTS)
+        assert ok
+
+    def test_bridge_ok_is_true_for_the_previous_session(self):
+        assert HT.bridge_ok(_pack({}, FRESH_TRADE_DATE), NOW)
+
+    def test_bridge_ok_is_false_for_a_stale_store(self):
+        """The live state on 2026-07-28: the store was 18 sessions behind."""
+        assert not HT.bridge_ok(_pack({}, STALE_TRADE_DATE), NOW)
+        assert not HT.bridge_ok(_pack({}, None), NOW)
+        assert not HT.bridge_ok(None, NOW)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Detectors
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestSectorDetector:
+    @staticmethod
+    def _heatmap(tiles):
+        return {"asof": FRESH_TRADE_DATE, "tiles": tiles}
+
+    def test_sector_rout_fires_once(self):
+        tiles = [_tile(f"S{i}", "Technology", -3.0, industry="Sub") for i in range(10)]
+        events = HT.detect_events({}, pack=_pack({}, FRESH_TRADE_DATE),
+                                  heatmap=self._heatmap(tiles), now=NOW,
+                                  cfg=HT.DEFAULTS)
+        routs = [e for e in events if e.trigger == "sector_rout"]
+        assert len(routs) == 1
+        packet = routs[0]
+        assert packet.facts["n_members"] == 10
+        assert packet.facts["breadth_pct"] == 100.0
+        assert packet.severity == 86.0
+        assert packet.key.endswith(NOW.date().isoformat())
+
+    def test_below_threshold_does_not_fire(self):
+        tiles = [_tile(f"S{i}", "Technology", -1.0) for i in range(10)]
+        assert HT.detect_events({}, heatmap=self._heatmap(tiles), now=NOW,
+                                cfg=HT.DEFAULTS) == []
+
+    def test_breadth_gate_blocks_a_lopsided_group(self):
+        tiles = ([_tile(f"D{i}", "Technology", -6.0) for i in range(5)]
+                 + [_tile(f"U{i}", "Technology", 0.5) for i in range(5)])
+        events = HT.detect_events({}, heatmap=self._heatmap(tiles), now=NOW,
+                                  cfg=HT.DEFAULTS)
+        assert [e for e in events if e.trigger.startswith("sector_")] == []
+
+    def test_min_members_gate(self):
+        tiles = [_tile(f"S{i}", "Technology", -4.0, industry="Tiny") for i in range(4)]
+        events = HT.detect_events({}, heatmap=self._heatmap(tiles), now=NOW,
+                                  cfg=HT.DEFAULTS)
+        assert [e for e in events if e.trigger.startswith("sector_")] == []
+
+    def test_industry_fires_when_the_parent_sector_is_masked(self):
+        """2026-07-28's real tape: Semiconductors -8% inside a green Technology."""
+        tiles = ([_tile(f"SEMI{i}", "Technology", -8.0, industry="Semiconductors")
+                  for i in range(6)]
+                 + [_tile(f"SW{i}", "Technology", 0.5,
+                          industry="Software - Infrastructure") for i in range(8)])
+        events = HT.detect_events({}, heatmap=self._heatmap(tiles), now=NOW,
+                                  cfg=HT.DEFAULTS)
+        groups = [e for e in events if e.trigger.startswith("sector_")]
+        assert len(groups) == 1
+        assert groups[0].facts["group_kind"] == "industry"
+        assert groups[0].sector == "Semiconductors"
+        assert groups[0].facts["n_members"] == 6
+
+    def test_the_more_extreme_of_an_overlapping_pair_wins(self):
+        tiles = ([_tile(f"SEMI{i}", "Technology", -9.0, industry="Semiconductors")
+                  for i in range(6)]
+                 + [_tile(f"SW{i}", "Technology", -2.2,
+                          industry="Software - Infrastructure") for i in range(9)])
+        events = HT.detect_events({}, heatmap=self._heatmap(tiles), now=NOW,
+                                  cfg=HT.DEFAULTS)
+        groups = [e for e in events if e.trigger.startswith("sector_")]
+        # Semiconductors (-9.0) beats its parent Technology (-2.2); the software
+        # industry ties its parent and yields to it, and the parent is gone.
+        assert [g.sector for g in groups] == ["Semiconductors"]
+
+    def test_live_quotes_win_over_stale_tile_percentages(self):
+        tiles = [_tile(f"S{i}", "Technology", 0.1) for i in range(10)]
+        quotes = {f"S{i}": _quote(-3.0) for i in range(10)}
+        events = HT.detect_events(quotes, heatmap=self._heatmap(tiles), now=NOW,
+                                  cfg=HT.DEFAULTS)
+        assert [e for e in events if e.trigger == "sector_rout"]
+
+    def test_once_per_sector_per_direction_per_day(self):
+        tiles = [_tile(f"S{i}", "Technology", -3.0, industry="Sub") for i in range(10)]
+        day = NOW.date().isoformat()
+        fired = [{"key": f"sector:Technology:down:{day}"},
+                 {"key": f"sector:Sub:down:{day}"}]
+        events = HT.detect_events({}, heatmap=self._heatmap(tiles),
+                                  fired_today=fired, now=NOW, cfg=HT.DEFAULTS)
+        assert [e for e in events if e.trigger.startswith("sector_")] == []
+
+    def test_dollar_translation_needs_mcap_coverage(self):
+        tiles = [_tile(f"S{i}", "Technology", -3.0, industry="Sub") for i in range(10)]
+        recs = {f"S{i}": _rec(mcap_usd=100_000_000_000) for i in range(8)}
+        events = HT.detect_events({}, pack=_pack(recs, FRESH_TRADE_DATE),
+                                  heatmap=self._heatmap(tiles), now=NOW,
+                                  cfg=HT.DEFAULTS)
+        rout = [e for e in events if e.trigger == "sector_rout"][0]
+        assert rout.facts["dollar_moved_usd"] == round(8 * 100_000_000_000 * -0.03)
+
+        thin = {f"S{i}": _rec(mcap_usd=100_000_000_000) for i in range(5)}
+        events = HT.detect_events({}, pack=_pack(thin, FRESH_TRADE_DATE),
+                                  heatmap=self._heatmap(tiles), now=NOW,
+                                  cfg=HT.DEFAULTS)
+        rout = [e for e in events if e.trigger == "sector_rout"][0]
+        assert rout.facts["dollar_moved_usd"] is None
+
+    def test_a_dollar_total_whose_sign_fights_the_direction_is_withheld(self):
+        """M8 — the trigger is a MEDIAN, the total is CAP-WEIGHTED.
+
+        One green mega-cap flips the aggregate positive inside a group the
+        median calls a rout, and "$130 billion gone" rendered off a +$130B
+        number is a lie with a minus sign glued on.
+        """
+        # Letters-only tickers: the wire's cashtag regex stops at the first
+        # digit, so a `$S0` would leave a bare "0" for the numeric gate.
+        syms = [f"SM{c}" for c in "ABCDEFGHI"]
+        tiles = ([_tile(s, "Technology", -3.0, industry="Sub") for s in syms]
+                 + [_tile("MEGA", "Technology", 2.0, industry="Sub")])
+        recs = {s: _rec(mcap_usd=100_000_000_000) for s in syms}
+        recs["MEGA"] = _rec(mcap_usd=20_000_000_000_000)
+        events = HT.detect_events({}, pack=_pack(recs, FRESH_TRADE_DATE),
+                                  heatmap=self._heatmap(tiles), now=NOW,
+                                  cfg=HT.DEFAULTS)
+        rout = [e for e in events if e.trigger == "sector_rout"][0]
+        assert rout.facts["median_pct"] == -3.0
+        assert rout.facts["dollar_moved_usd"] is None
+        # The post still ships: the copy falls back to the leaders device.
+        out = W.compose_wire(rout)
+        assert out is not None
+        assert "dollar_clause" not in out["devices"]
+        assert "leaders_clause" in out["devices"]
+
+    def test_a_dollar_total_that_agrees_with_the_direction_survives(self):
+        tiles = [_tile(f"S{i}", "Technology", -3.0, industry="Sub") for i in range(10)]
+        recs = {f"S{i}": _rec(mcap_usd=100_000_000_000) for i in range(10)}
+        events = HT.detect_events({}, pack=_pack(recs, FRESH_TRADE_DATE),
+                                  heatmap=self._heatmap(tiles), now=NOW,
+                                  cfg=HT.DEFAULTS)
+        rout = [e for e in events if e.trigger == "sector_rout"][0]
+        assert rout.facts["dollar_moved_usd"] < 0
+
+    def test_demo_mode_lowers_the_bar_and_is_stamped(self):
+        tiles = [_tile(f"S{i}", "Technology", -0.8, industry="Sub") for i in range(10)]
+        events = HT.detect_events({}, heatmap=self._heatmap(tiles), now=NOW,
+                                  cfg=HT.DEFAULTS, demo=True)
+        routs = [e for e in events if e.trigger == "sector_rout"]
+        assert routs and routs[0].provenance["demo"] is True
+
+
+class TestMoverDetector:
+    @staticmethod
+    def _inputs(pct, rec_over=None, trade_date=FRESH_TRADE_DATE):
+        recs = {"AMD": _rec(**(rec_over or {}))}
+        quotes = {"AMD": _quote(pct, price=84.2, prev=91.65)}
+        return quotes, _pack(recs, trade_date)
+
+    @classmethod
+    def _movers(cls, pct, rec_over=None, trade_date=FRESH_TRADE_DATE, **kw):
+        """Mover packets only — the same fixture legitimately fires streak_rarity."""
+        quotes, pack = cls._inputs(pct, rec_over, trade_date)
+        events = HT.detect_events(quotes, pack=pack, now=NOW, cfg=HT.DEFAULTS, **kw)
+        return [e for e in events if e.trigger.startswith("mover_")]
+
+    def test_fires_above_the_threshold(self):
+        quotes, pack = self._inputs(-8.13)
+        events = HT.detect_events(quotes, pack=pack, now=NOW, cfg=HT.DEFAULTS)
+        movers = [e for e in events if e.trigger == "mover_drop"]
+        assert len(movers) == 1
+        packet = movers[0]
+        assert packet.facts["pct"] == -8.13
+        assert packet.facts["dollar_delta_usd"] == round(300_000_000_000 * -0.0813)
+        assert packet.key.endswith(":0")
+
+    def test_does_not_fire_below_the_threshold(self):
+        assert self._movers(-3.5) == []
+
+    def test_severity_boosts(self):
+        packet = self._movers(-8.0)[0]
+        assert packet.severity == 100.0        # 50 + 20 base, +10 sp500/rank/mcap
+        packet = self._movers(
+            -8.0, {"sp500": False, "adv_rank": 250, "mcap_usd": 2_000_000_000})[0]
+        assert packet.severity == 70.0
+
+    def test_two_hour_cooldown_suppresses_a_repeat(self):
+        fired = [{"key": "mover:AMD:down:x:0", "trigger": "mover_drop",
+                  "ticker": "AMD", "direction": "down", "magnitude": -8.0,
+                  "fired_at": (NOW - timedelta(minutes=30))
+                  .strftime("%Y-%m-%dT%H:%M:%SZ")}]
+        assert self._movers(-8.5, fired_today=fired) == []
+
+    def test_a_doubled_move_re_fires_inside_the_cooldown(self):
+        fired = [{"key": "mover:AMD:down:x:0", "trigger": "mover_drop",
+                  "ticker": "AMD", "direction": "down", "magnitude": -8.0,
+                  "fired_at": (NOW - timedelta(minutes=30))
+                  .strftime("%Y-%m-%dT%H:%M:%SZ")}]
+        events = self._movers(-16.5, fired_today=fired)
+        assert len(events) == 1
+        assert events[0].key.endswith(":1")
+
+    def test_the_cooldown_expires(self):
+        fired = [{"key": "mover:AMD:down:x:0", "trigger": "mover_drop",
+                  "ticker": "AMD", "direction": "down", "magnitude": -8.0,
+                  "fired_at": (NOW - timedelta(minutes=121))
+                  .strftime("%Y-%m-%dT%H:%M:%SZ")}]
+        assert len(self._movers(-8.5, fired_today=fired)) == 1
+
+    def test_the_opposite_direction_is_not_cooled_down(self):
+        quotes, pack = self._inputs(8.5)
+        fired = [{"key": "mover:AMD:down:x:0", "trigger": "mover_drop",
+                  "ticker": "AMD", "direction": "down", "magnitude": -8.0,
+                  "fired_at": NOW.strftime("%Y-%m-%dT%H:%M:%SZ")}]
+        events = HT.detect_events(quotes, pack=pack, fired_today=fired, now=NOW,
+                                  cfg=HT.DEFAULTS)
+        assert [e.trigger for e in events if e.trigger.startswith("mover")] \
+            == ["mover_pop"]
+
+    def test_history_facts_are_suppressed_when_the_bridge_is_down(self):
+        """Live behaviour, not theory: the store really is sessions behind."""
+        quotes, pack = self._inputs(-8.13, trade_date=STALE_TRADE_DATE)
+        packet = [e for e in HT.detect_events(quotes, pack=pack, now=NOW,
+                                              cfg=HT.DEFAULTS)
+                  if e.trigger == "mover_drop"][0]
+        for field in ("streak_extends", "biggest_1d", "ath", "ath_date",
+                      "pct_from_ath_live", "rsi_live", "rsi_since"):
+            assert packet.facts[field] is None, field
+        assert packet.provenance["bridge_ok"] is False
+        # The dollar translation survives: mcap needs no price history.
+        assert packet.facts["dollar_delta_usd"] is not None
+        out = W.compose_wire(packet)
+        assert out is not None and out["devices"] == ["dollar_clause", "live_marker"]
+
+    def test_history_facts_are_suppressed_for_a_split_suspect(self):
+        quotes, pack = self._inputs(-8.13, {"suspect": True})
+        packet = [e for e in HT.detect_events(quotes, pack=pack, now=NOW,
+                                              cfg=HT.DEFAULTS)
+                  if e.trigger == "mover_drop"][0]
+        assert packet.facts["streak_extends"] is None
+        assert packet.facts["biggest_1d"] is None
+        assert packet.facts["ath"] is None
+
+    def test_history_facts_are_present_when_bridged(self):
+        quotes, pack = self._inputs(-8.13)
+        packet = [e for e in HT.detect_events(quotes, pack=pack, now=NOW,
+                                              cfg=HT.DEFAULTS)
+                  if e.trigger == "mover_drop"][0]
+        assert packet.facts["streak_extends"]["len_today"] == 9
+        assert packet.facts["streak_extends"]["since"] == _ago(NOW, 1500)
+        assert packet.facts["biggest_1d"]["prior_pct"] == -7.4
+        assert packet.facts["ath"] == 140.0
+        assert packet.facts["ath_date"] == _ago(NOW, 50)
+        assert packet.facts["pct_from_ath_live"] == round((84.2 - 140.0) / 140.0 * 100, 2)
+        assert packet.facts["rsi_live"] is not None
+
+    def test_rsi_band_facts_appear_only_when_the_band_is_crossed(self):
+        quotes, pack = self._inputs(-8.13, {"rsi_avg_gain": 0.2, "rsi_avg_loss": 3.0})
+        packet = [e for e in HT.detect_events(quotes, pack=pack, now=NOW,
+                                              cfg=HT.DEFAULTS)
+                  if e.trigger == "mover_drop"][0]
+        assert packet.facts["rsi_live"] < 30
+        assert packet.facts["rsi_band"] == 30
+        assert packet.facts["rsi_since"] == _ago(NOW, 500)
+
+    def test_a_down_mover_still_above_70_gets_no_rsi_band(self):
+        """C2, reproduced on the real tape: RSI 78 -> 75.3 on a red day.
+
+        The old test was "rsi_live is past the band", which is a STATE. A name
+        selling off from 78 to 75.3 never left the band, so there is nothing to
+        be "back" on either side of — and the clause took its side from the
+        DIRECTION, so it rendered "RSI is back under 70" at an RSI of 75.3.
+        """
+        packet = self._movers(-8.13, {"rsi14": 78.0, "rsi_avg_gain": 3.705,
+                                      "rsi_avg_loss": 0.0})[0]
+        assert packet.facts["rsi_live"] == 75.3      # the honest live number stays
+        assert packet.facts["rsi_band"] is None
+        assert packet.facts["rsi_since"] is None
+        assert W._since_clause(packet, packet.facts) is None
+
+    def test_an_up_mover_below_70_gets_no_rsi_band(self):
+        """The mirror: rising into 68 has not crossed 70 either."""
+        packet = self._movers(8.13, {"rsi14": 55.0, "rsi_avg_gain": 3.0,
+                                     "rsi_avg_loss": 1.0})[0]
+        assert packet.facts["rsi_live"] is not None
+        if packet.facts["rsi_live"] < 70:
+            assert packet.facts["rsi_band"] is None
+
+    def test_a_band_fact_needs_yesterday_on_the_other_side(self):
+        """Crossing is a two-day claim: today under 30, yesterday above it."""
+        already = self._movers(-8.13, {"rsi14": 22.0, "rsi_avg_gain": 0.2,
+                                       "rsi_avg_loss": 3.0})[0]
+        assert already.facts["rsi_live"] < 30      # today is oversold …
+        assert already.facts["rsi_band"] is None   # … and so was yesterday
+
+    def test_demo_threshold(self):
+        assert self._movers(-2.0) == []
+        assert self._movers(-2.0, demo=True)
+
+    def test_a_record_lagging_the_pack_tip_gets_no_history(self):
+        """M1 — the bridge is GLOBAL; a stale RECORD needs its own gate.
+
+        The shipped pack carried 26 live-quoted records behind its own tip, one
+        of them a "5-day streak" that had ended six sessions earlier. bridge_ok
+        was perfectly True for all of them.
+        """
+        lagging = _prev_weekday(_prev_weekday(_prev_weekday(
+            date.fromisoformat(FRESH_TRADE_DATE)))).isoformat()
+        recs = {"AMD": _rec(), "OLD": _rec(last_date=lagging)}
+        quotes = {"AMD": _quote(-8.13, price=84.2, prev=91.65),
+                  "OLD": _quote(-8.13, price=84.2, prev=91.65)}
+        packets = {e.ticker: e for e in
+                   HT.detect_events(quotes, pack=_pack(recs, FRESH_TRADE_DATE),
+                                    now=NOW, cfg=HT.DEFAULTS)
+                   if e.trigger == "mover_drop"}
+        assert set(packets) == {"AMD", "OLD"}
+        assert packets["AMD"].facts["streak_extends"]["len_today"] == 9
+        assert packets["AMD"].facts["ath"] == 140.0
+        for field in ("streak_extends", "biggest_1d", "ath", "ath_date",
+                      "pct_from_ath_live", "rsi_live", "rsi_band", "rsi_since"):
+            assert packets["OLD"].facts[field] is None, field
+        # The dollar translation survives: mcap needs no price history.
+        assert packets["OLD"].facts["dollar_delta_usd"] is not None
+
+    def test_severity_ties_break_on_magnitude_not_the_alphabet(self):
+        """M2 — the mover formula saturates at 100 well before the tape does.
+
+        SNDK -14.25, GLW -12.10 and AMD -8.15 all scored exactly 100 on the
+        2026-07-28 tape; an alphabetical tie-break then handed the three-item
+        run cap to AMD and dropped the biggest move of the day.
+        """
+        pcts = {"AMD": -8.15, "GLW": -12.10, "SNDK": -14.25}
+        recs = {sym: _rec() for sym in pcts}
+        quotes = {sym: _quote(pct, price=84.2, prev=91.65) for sym, pct in pcts.items()}
+        movers = [e for e in HT.detect_events(quotes, pack=_pack(recs, FRESH_TRADE_DATE),
+                                              now=NOW, cfg=HT.DEFAULTS)
+                  if e.trigger == "mover_drop"]
+        assert {e.severity for e in movers} == {100.0}
+        assert [e.ticker for e in movers] == ["SNDK", "GLW", "AMD"]
+
+    def test_illiquid_names_are_outside_the_universe(self):
+        recs = {"TINY": _rec(adv_rank=4000, sp500=False, sector=None)}
+        quotes = {"TINY": _quote(-9.0)}
+        events = HT.detect_events(quotes, pack=_pack(recs, FRESH_TRADE_DATE),
+                                  now=NOW, cfg=HT.DEFAULTS)
+        assert [e for e in events if e.trigger.startswith("mover")] == []
+
+
+class TestThresholdDetector:
+    @staticmethod
+    def _run(price, prev, rec_over=None, trade_date=FRESH_TRADE_DATE):
+        recs = {"AMD": _rec(**(rec_over or {}))}
+        quotes = {"AMD": {"price": price, "prev_close": prev,
+                          "change_pct": round((price - prev) / prev * 100, 2),
+                          "ts_ms": int(NOW.timestamp() * 1000), "source": "quotes"}}
+        return [e for e in HT.detect_events(quotes, pack=_pack(recs, trade_date),
+                                            now=NOW, cfg=HT.DEFAULTS)
+                if e.trigger == "threshold_cross"]
+
+    def test_correction_cross_fires(self):
+        events = self._run(125.0, 127.0)
+        kinds = {e.facts["kind"] for e in events}
+        assert "correction" in kinds
+        packet = [e for e in events if e.facts["kind"] == "correction"][0]
+        assert packet.facts["threshold_px"] == 126.0
+        assert packet.facts["ath"] == 140.0
+        assert packet.direction == "down"
+
+    def test_correction_requires_the_bridge(self):
+        events = self._run(125.0, 127.0, trade_date=STALE_TRADE_DATE)
+        assert "correction" not in {e.facts["kind"] for e in events}
+
+    def test_bear_cross_fires(self):
+        events = self._run(111.0, 113.0)
+        assert "bear" in {e.facts["kind"] for e in events}
+
+    def test_new_ath_fires_and_needs_the_bridge(self):
+        events = self._run(141.0, 139.0)
+        assert "ath" in {e.facts["kind"] for e in events}
+        stale = self._run(141.0, 139.0, trade_date=STALE_TRADE_DATE)
+        assert "ath" not in {e.facts["kind"] for e in stale}
+
+    def test_round_number_cross_both_ways_without_the_bridge(self):
+        up = self._run(111.0, 109.0, trade_date=STALE_TRADE_DATE)
+        rounds = [e for e in up if e.facts["kind"] == "round"]
+        assert rounds and rounds[0].facts["level"] == 110.0
+        assert rounds[0].direction == "up"
+        down = self._run(99.0, 101.0, trade_date=STALE_TRADE_DATE)
+        rounds = [e for e in down if e.facts["kind"] == "round"]
+        assert rounds and rounds[0].facts["level"] == 100.0
+        assert rounds[0].direction == "down"
+
+    def test_a_round_cross_stays_under_the_flagship_floor(self):
+        """M2 — a round number is arithmetic, not tape.
+
+        At base 70 a mega-cap round cross scored 90 and OUTRANKED a real rout
+        for the single flagship mirror ("$LLY cleared $1,200"). Base 60 caps the
+        same event at 80, below the 85 floor, while it still ships on the wire.
+        """
+        events = self._run(111.0, 109.0, {"sp500": True, "mcap_usd": 800_000_000_000})
+        rounds = [e for e in events if e.facts["kind"] == "round"]
+        assert len(rounds) == 1
+        assert rounds[0].severity == 80.0
+        assert rounds[0].severity < HT.DEFAULTS["emit"]["flagship_severity_floor"]
+        assert HT.severity_account(rounds[0], HT.DEFAULTS) == "mastermind_news"
+
+    def test_a_real_threshold_keeps_its_weight(self):
+        """Only `round` was demoted: correction/bear/ath/mcap stay at base 70."""
+        events = self._run(125.0, 127.0, {"sp500": True,
+                                          "mcap_usd": 800_000_000_000})
+        correction = [e for e in events if e.facts["kind"] == "correction"][0]
+        assert correction.severity == 90.0
+
+    def test_mcap_milestones_die_without_shares_est(self):
+        """C1 — the pack withholds shares_est unless mcap and close agree on a date."""
+        events = self._run(170.0, 160.0, {"shares_est": None, "ath": 500.0,
+                                          "px_correction": 450.0, "px_bear": 400.0,
+                                          "round_above": 200.0, "round_below": 150.0})
+        assert [e for e in events if e.facts["kind"] == "mcap"] == []
+
+    def test_a_lagging_record_gets_no_history_threshold(self):
+        """M1 again, on the threshold lane: correction needs a CURRENT record."""
+        lagging = _prev_weekday(_prev_weekday(_prev_weekday(
+            date.fromisoformat(FRESH_TRADE_DATE)))).isoformat()
+        events = self._run(125.0, 127.0, {"last_date": lagging})
+        assert "correction" not in {e.facts["kind"] for e in events}
+
+    def test_round_number_respects_the_price_floor(self):
+        events = self._run(11.0, 9.0, {"round_above": 10.0, "round_below": 5.0,
+                                       "ath": 140.0})
+        assert [e for e in events if e.facts["kind"] == "round"] == []
+
+    def test_mcap_milestone_crosses(self):
+        events = self._run(170.0, 160.0, {"shares_est": 3_000_000_000,
+                                          "ath": 500.0, "px_correction": 450.0,
+                                          "px_bear": 400.0, "round_above": 200.0,
+                                          "round_below": 150.0})
+        mcaps = [e for e in events if e.facts["kind"] == "mcap"]
+        assert mcaps and mcaps[0].facts["milestone_usd"] == int(5e11)
+        assert mcaps[0].direction == "up"
+
+    def test_once_per_day_per_kind(self):
+        day = NOW.date().isoformat()
+        recs = {"AMD": _rec()}
+        quotes = {"AMD": {"price": 125.0, "prev_close": 127.0, "change_pct": -1.57,
+                          "ts_ms": int(NOW.timestamp() * 1000), "source": "quotes"}}
+        fired = [{"key": f"threshold:AMD:correction:126.0:{day}"}]
+        events = [e for e in HT.detect_events(quotes, pack=_pack(recs, FRESH_TRADE_DATE),
+                                              fired_today=fired, now=NOW,
+                                              cfg=HT.DEFAULTS)
+                  if e.trigger == "threshold_cross"]
+        assert "correction" not in {e.facts["kind"] for e in events}
+
+
+class TestStreakDetector:
+    @staticmethod
+    def _run(pct, rec_over=None, trade_date=FRESH_TRADE_DATE):
+        recs = {"META": _rec(**(rec_over or {}))}
+        quotes = {"META": _quote(pct)}
+        return [e for e in HT.detect_events(quotes, pack=_pack(recs, trade_date),
+                                            now=NOW, cfg=HT.DEFAULTS)
+                if e.trigger == "streak_rarity"]
+
+    def test_fires_when_today_extends_a_rare_run(self):
+        events = self._run(-2.1)
+        assert len(events) == 1
+        assert events[0].facts["len_today"] == 9
+        assert events[0].facts["since"] == _ago(NOW, 1500)
+        assert events[0].severity == 95.0
+
+    def test_requires_the_bridge(self):
+        assert self._run(-2.1, trade_date=STALE_TRADE_DATE) == []
+
+    def test_requires_rarity(self):
+        recent = {"streak": {"dir": "down", "len": 8,
+                             "last_run_ge": {"9": _ago(NOW, 100)}}}
+        assert self._run(-2.1, recent) == []
+
+    def test_a_null_prior_run_is_rare_enough(self):
+        never = {"streak": {"dir": "down", "len": 8, "last_run_ge": {"9": None}}}
+        assert len(self._run(-2.1, never)) == 1
+
+    def test_requires_the_live_sign_to_match(self):
+        assert self._run(2.1) == []
+
+    def test_requires_the_minimum_length(self):
+        short_run = {"streak": {"dir": "down", "len": 2,
+                                "last_run_ge": {"3": None}}}
+        assert self._run(-2.1, short_run) == []
+
+    def test_a_split_suspect_is_skipped(self):
+        assert self._run(-2.1, {"suspect": True}) == []
+
+
+class TestSignalDetector:
+    @staticmethod
+    def _run(price, prev, entry=310.5, direction="BULL", as_of_days=1, fired=None):
+        quotes = {"MSFT": {"price": price, "prev_close": prev,
+                           "change_pct": round((price - prev) / prev * 100, 2),
+                           "ts_ms": int(NOW.timestamp() * 1000), "source": "quotes"}}
+        signals = [{"ticker": "MSFT", "entry": entry, "direction": direction,
+                    "signal_id": "sig-1", "as_of": _ago(NOW, as_of_days)}]
+        return [e for e in HT.detect_events(quotes, pack=_pack({"MSFT": _rec()},
+                                                              FRESH_TRADE_DATE),
+                                            plan_signals=signals,
+                                            fired_today=fired or [], now=NOW,
+                                            cfg=HT.DEFAULTS)
+                if e.trigger == "signal_fired"]
+
+    def test_bull_gap_over_fires(self):
+        events = self._run(315.0, 308.0)
+        assert len(events) == 1
+        assert events[0].facts["level"] == 310.5
+        assert events[0].direction == "up"
+
+    def test_bull_touch_fires(self):
+        assert len(self._run(310.5, 308.0)) == 1
+
+    def test_bull_below_does_not_fire(self):
+        assert self._run(309.0, 308.0) == []
+
+    def test_bear_cross_fires(self):
+        assert len(self._run(305.0, 312.0, direction="BEAR")) == 1
+        assert self._run(311.0, 312.0, direction="BEAR") == []
+
+    def test_stale_plan_signals_are_ignored(self):
+        assert self._run(315.0, 308.0, as_of_days=3) == []
+
+    def test_a_signal_fires_only_once(self):
+        assert self._run(315.0, 308.0, fired=[{"key": "signal:sig-1"}]) == []
+
+
+class TestContrarianDetector:
+    @staticmethod
+    def _tiles(defensive_pct=1.0, n=3):
+        tiles = [_tile(f"T{i}", "Technology", -3.0) for i in range(10)]
+        for sector in ("Consumer Defensive", "Utilities"):
+            tiles += [_tile(f"{sector[:2]}{i}", sector, defensive_pct)
+                      for i in range(n)]
+        return {"asof": FRESH_TRADE_DATE, "tiles": tiles}
+
+    def test_fires_when_the_index_is_red_and_defensives_are_green(self):
+        quotes = {"SPY": _quote(-1.82)}
+        events = [e for e in HT.detect_events(quotes, heatmap=self._tiles(),
+                                              now=NOW, cfg=HT.DEFAULTS)
+                  if e.trigger == "contrarian_breadth"]
+        assert len(events) == 1
+        assert events[0].facts["n_green"] == 6
+        assert set(events[0].facts["sectors_green"]) == {"Consumer Defensive",
+                                                        "Utilities"}
+        assert events[0].severity == 75.0
+
+    def test_does_not_fire_on_a_shallow_index_move(self):
+        quotes = {"SPY": _quote(-0.5)}
+        assert [e for e in HT.detect_events(quotes, heatmap=self._tiles(), now=NOW,
+                                            cfg=HT.DEFAULTS)
+                if e.trigger == "contrarian_breadth"] == []
+
+    def test_does_not_fire_when_defensives_are_red(self):
+        quotes = {"SPY": _quote(-1.82)}
+        assert [e for e in HT.detect_events(quotes,
+                                            heatmap=self._tiles(defensive_pct=-1.0),
+                                            now=NOW, cfg=HT.DEFAULTS)
+                if e.trigger == "contrarian_breadth"] == []
+
+    def test_needs_enough_green_members(self):
+        quotes = {"SPY": _quote(-1.82)}
+        assert [e for e in HT.detect_events(quotes, heatmap=self._tiles(n=2),
+                                            now=NOW, cfg=HT.DEFAULTS)
+                if e.trigger == "contrarian_breadth"] == []
+
+
+class TestDetectEventsContract:
+    def test_output_is_sorted_by_severity(self):
+        tiles = [_tile(f"S{i}", "Technology", -3.0, industry="Sub") for i in range(10)]
+        tiles.append(_tile("AMD", "Technology", -8.0, industry="Semiconductors"))
+        quotes = {"AMD": _quote(-8.0, price=84.2, prev=91.65)}
+        events = HT.detect_events(quotes, pack=_pack({"AMD": _rec()},
+                                                     FRESH_TRADE_DATE),
+                                  heatmap={"asof": None, "tiles": tiles}, now=NOW,
+                                  cfg=HT.DEFAULTS)
+        assert len(events) >= 2
+        assert [e.severity for e in events] == sorted(
+            [e.severity for e in events], reverse=True)
+
+    def test_bad_input_never_raises(self):
+        assert HT.detect_events(None) == []
+        assert HT.detect_events({"AMD": "not-a-dict"}, now=NOW) == []
+        assert HT.detect_events({}, pack={"tickers": "broken"}, now=NOW) == []
+
+    def test_quotes_wrapper_is_accepted(self):
+        recs = {"AMD": _rec()}
+        live = {"quotes": {"AMD": _quote(-8.13, 84.2, 91.65)}, "asof": "2020-01-01"}
+        events = HT.detect_events(live, pack=_pack(recs, FRESH_TRADE_DATE), now=NOW,
+                                  cfg=HT.DEFAULTS)
+        assert events and events[0].provenance["quotes_asof"] == "2020-01-01"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Routing, state, outbox handoff
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestRouting:
+    def test_flagship_floor(self):
+        # Floor is 85 (routing amendment 2026-07-28): ordinary sector routs
+        # (base 80) home to the wire desk; only a 2.5%+ median rout or a
+        # boosted mega-cap event mirrors to flagship.
+        packet = _packet("mover_drop", "k", "down", {"pct": -9.0}, severity=85.0)
+        assert HT.severity_account(packet, HT.DEFAULTS) == "flagship"
+        packet.severity = 84.9
+        assert HT.severity_account(packet, HT.DEFAULTS) == "mastermind_news"
+        packet.severity = 80.0
+        assert HT.severity_account(packet, HT.DEFAULTS) == "mastermind_news"
+
+    def test_routing_reads_the_config(self):
+        cfg = HT.load_config(None)
+        cfg["emit"]["flagship_severity_floor"] = 95
+        packet = _packet("mover_drop", "k", "down", {"pct": -9.0}, severity=90.0)
+        assert HT.severity_account(packet, cfg) == "mastermind_news"
+
+
+class TestRingAndFired:
+    def test_ring_round_trip_and_compaction(self, tmp_path):
+        for i in range(40):
+            HT.append_ring(tmp_path, {"i": i, "asof": NOW.isoformat()})
+        assert len(HT.load_ring(tmp_path, n=36)) == 36
+        HT.compact_ring(tmp_path, keep=36)
+        rows = HT.load_ring(tmp_path, n=100)
+        assert len(rows) == 36
+        assert rows[0]["i"] == 4 and rows[-1]["i"] == 39
+
+    def test_ring_is_empty_when_absent(self, tmp_path):
+        assert HT.load_ring(tmp_path) == []
+
+    def test_fired_is_filtered_to_the_day(self, tmp_path):
+        today = NOW.date().isoformat()
+        HT.append_fired(tmp_path, {"key": "a", "fired_at":
+                                   NOW.strftime("%Y-%m-%dT%H:%M:%SZ")})
+        HT.append_fired(tmp_path, {"key": "b", "fired_at":
+                                   (NOW - timedelta(days=3))
+                                   .strftime("%Y-%m-%dT%H:%M:%SZ")})
+        rows = HT.load_fired(tmp_path, today)
+        assert [r["key"] for r in rows] == ["a"]
+
+    def test_fired_entry_shape(self):
+        packet = rich_packets()["mover_drop"]
+        row = HT.fired_entry(packet, item_id="itm-1", account="mastermind_news")
+        assert row["key"] == packet.key
+        assert row["magnitude"] == -8.13
+        assert row["ticker"] == "AMD"
+        assert row["day"] == packet.fired_at[:10]
+        json.dumps(row)
+
+
+class TestPacketToSource:
+    def test_source_carries_the_full_packet(self):
+        packet = rich_packets()["mover_drop"]
+        source = HT.packet_to_source(packet, {"media_url": "https://r2/x.png",
+                                              "chart_id": "c1"})
+        assert source["lane"] == "hot_tape"
+        assert source["trigger"] == "mover_drop"
+        assert source["baseline_pct"] == -8.13
+        assert source["bridge_ok"] is True
+        assert source["demo"] is False
+        assert source["media_url"].endswith("x.png")
+        assert source["fact_packet"]["facts"]["ath"] == 117.66
+        assert json.loads(json.dumps(source))["fact_packet"]["trigger"] == "mover_drop"
+
+    def test_sector_baseline_is_the_median(self):
+        source = HT.packet_to_source(rich_packets()["sector_rout"])
+        assert source["baseline_pct"] == -7.85
+        assert source["ticker"] is None
+
+
+class TestOutboxHandoff:
+    """Gate 0.5 — our items pass the untouched sentinel/near-dup guards."""
+
+    def test_item_validates_enqueues_and_dedupes(self, tmp_path):
+        from engine.marketing import outbox
+
+        packet = rich_packets()["mover_drop"]
+        composed = W.compose_wire(packet)
+        assert composed is not None
+        item = outbox.make_item(
+            account="mastermind_news", kind="breaking", text=composed["text"],
+            as_of=NOW.date().isoformat(), scheduled_at="immediate", priority=1,
+            provenance="hot_tape", source=HT.packet_to_source(packet), now=NOW,
+        )
+        assert outbox.validate_item(item) == []
+        assert outbox.enqueue(item, root=tmp_path) == "queued"
+        assert outbox.enqueue(item, root=tmp_path) == "duplicate"
+
+    def test_the_kind_is_admitted(self):
+        from engine.marketing import outbox
+
+        assert "breaking" in outbox.KINDS

@@ -32,3 +32,12 @@ data/marketing/outbox/items.jsonl merge=union
 data/marketing/outbox/media_urls.jsonl merge=union
 data/marketing/publications.jsonl merge=union
 data/marketing/post_metrics.jsonl merge=union
+
+# Hot Tape intraday state (masterplan §6). The radar commits both every 5 minutes
+# from 13:25Z, straight into the same push-race the publish sweeps run in.
+# The snapshot ring is the intraday history the "$X added in 3 hours" claims are
+# built from — a dropped row is a hole in a claim we may make.
+data/marketing/hot_tape_ring.jsonl merge=union
+# The fired ledger IS the cooldown/dedupe memory — a dropped row re-arms an event
+# that already posted, which is the one failure this lane must never have.
+data/marketing/hot_tape_fired.jsonl merge=union
