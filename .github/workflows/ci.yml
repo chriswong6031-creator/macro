@@ -1247,6 +1247,7 @@ on:
       # on every number — a prereg that can drift from its own doc is not one.
       - "scripts/marketing_learning_nightly.py"
       - "scripts/marketing_fastlane_daemon.py"
+      - "tests/test_marketing_intelligence_desk.py"
       - "docs/blind_identity_eval_prereg.md"
       - "tests/test_marketing_learning.py"
       - "tests/test_marketing_reply_producer.py"

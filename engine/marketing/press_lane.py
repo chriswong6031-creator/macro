@@ -765,7 +765,7 @@ def run_press_tick(
                     The daemon sets this on true cold-start only.
         llm_override: test seam forwarded to build_breaking_payload.
 
-    Returns {emitted, skipped, digest, blocked, rail, corpus, _seen}.
+    Returns {emitted, skipped, digest, blocked, rail, intelligence, corpus, _seen}.
 
     `corpus` (XG-W5) is one row per item the lane SAW — ingested items with their
     full `_components`, gate-dropped items with their reason. The lane only
@@ -831,6 +831,7 @@ def run_press_tick(
     blocked: list[dict] = []
     rail: list[dict] = []   # B4a: rail-eligible items (lower floor, incl. digest)
     emitted_bodies: dict[str, dict] = {}   # id -> composed text for rail reuse
+    intelligence: list[dict] = []  # evidence-first story packets for the live desk
 
     # ── XG-W5 scoring brain (IS-W2) ───────────────────────────────────────────
     # L0 story spine + L1 feature stores live in the SAME daemon-local state dict
@@ -1042,6 +1043,7 @@ def run_press_tick(
             "digest": [],
             "blocked": blocked,
             "rail": [],
+            "intelligence": [],
             # A primed batch is a history snapshot — exactly the corpus a first
             # labeling batch wants, so the rows ship even though nothing emitted.
             "corpus": list(gate_rows) + [
@@ -1283,6 +1285,63 @@ def run_press_tick(
         if len(rail) >= rail_max:
             break
 
+    # ── Intelligence Desk story packets ─────────────────────────────────────
+    # The wire is an arrival log; the desk is the durable story layer. Every
+    # garbage-cleared item above the lower intelligence floor becomes an
+    # evidence-bearing packet, even when X publishing is disabled, the item is
+    # digest-only, or the daily X slot is already taken. No score or feature
+    # component is copied into the public packet.
+    intelligence_cfg = (
+        wire_cfg.get("intelligence", {}) if isinstance(wire_cfg, dict) else {}
+    )
+    try:
+        intelligence_floor = float(intelligence_cfg.get("salience_floor", 30.0))
+    except (TypeError, ValueError):
+        intelligence_floor = 30.0
+    try:
+        intelligence_max = int(intelligence_cfg.get("max_packets_per_tick", 100))
+    except (TypeError, ValueError):
+        intelligence_max = 100
+    rail_by_id = {
+        str(item.get("id") or ""): item for item in rail if isinstance(item, dict)
+    }
+    try:
+        from engine.marketing.intelligence_desk import (  # noqa: PLC0415
+            build_story_packet,
+        )
+        for s in scored:
+            try:
+                if float(s.get("salience", 0.0) or 0.0) < intelligence_floor:
+                    continue
+            except (TypeError, ValueError):
+                continue
+            iid = str(s.get("id") or "")
+            corr_entry = corr.get(_corroboration_key(s), {})
+            rail_item = rail_by_id.get(iid, {})
+            draft_text = (
+                (emitted_bodies.get(iid) or {}).get("text")
+                or rail_item.get("en")
+                or ""
+            )
+            intelligence.append(build_story_packet(
+                s,
+                story=stories.get(iid),
+                now=now,
+                corr_sources=corr_entry.get("sources") or [],
+                draft_text=draft_text,
+                quotes_store=quotes_store,
+                tape_cfg=tape_cfg,
+            ))
+            if intelligence_max > 0 and len(intelligence) >= intelligence_max:
+                break
+    except Exception as exc:  # noqa: BLE001
+        # A desk export must never stop the speed rail or an eligible post.
+        print(
+            f"::warning title=intelligence-packets-unavailable::"
+            f"{type(exc).__name__}: {exc} — wire tick continued",
+            flush=True,
+        )
+
     # ── XG-W5 golden-set corpus rows ──────────────────────────────────────────
     # EVERY item that reached this lane gets a row: the ingested ones with their
     # full `_components`, the garbage-gated ones with their drop reason. The
@@ -1311,6 +1370,7 @@ def run_press_tick(
         "digest": digest,
         "blocked": blocked,
         "rail": rail,   # B4a: rail-eligible items for the wires.json sink
+        "intelligence": intelligence,
         # XG-W5: labeling/eval corpus for this tick (host-local sink; see daemon).
         "corpus": corpus_rows,
         # The full seen-set AFTER this tick, including MIRROR-COLLAPSED emission

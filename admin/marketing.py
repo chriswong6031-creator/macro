@@ -62,6 +62,8 @@ _ROOT = _HERE.parent
 _STATE_REL    = Path("data/neuralweb/marketing_state.json")
 _GROWTH_EVENTS_REL = Path("data/marketing/growth_events.jsonl")
 _CONTENT_REL  = Path("data/marketing/content_plan.json")
+_INTELLIGENCE_REL = Path("data/marketing/press/intelligence.json")
+_INTELLIGENCE_LIVE = Path("/var/lib/macro-live/public/live/intelligence.json")
 _LAB_REL      = Path("data/marketing/lab_rollup.json")
 _SENTINEL_REL = Path("data/marketing/sentinel_report.json")
 _ALLIES_REL   = Path("data/marketing/allies_targets.jsonl")
@@ -1003,6 +1005,31 @@ def content(root=None) -> dict:
     """
     repo = Path(root) if root is not None else _default_root()
     try:
+        # The intraday Intelligence Desk is independent of the nightly content
+        # plan. On the VPS it lives in the external live plane; tests/dev use the
+        # gitignored repo fallback. Only the already-public story contract is
+        # exposed, capped again for the operator console.
+        intelligence = None
+        _intel_paths = []
+        if root is None:
+            _intel_paths.append(_INTELLIGENCE_LIVE)
+        _intel_paths.append(repo / _INTELLIGENCE_REL)
+        for _intel_path in _intel_paths:
+            _candidate = _read_json(_intel_path)
+            if (
+                isinstance(_candidate, dict)
+                and _candidate.get("schema") == "intelligence.desk/v1"
+            ):
+                intelligence = {
+                    "schema": _candidate.get("schema"),
+                    "updated_at": _candidate.get("updated_at"),
+                    "health": _candidate.get("health") or {},
+                    "stories": [
+                        row for row in (_candidate.get("stories") or [])[:24]
+                        if isinstance(row, dict)
+                    ],
+                }
+                break
         cp = _read_json(repo / _CONTENT_REL)
         if cp is None:
             return {
@@ -1013,6 +1040,7 @@ def content(root=None) -> dict:
                 "featured_charts": [],
                 "distinctness": None,
                 "summary": None,
+                "intelligence": intelligence,
             }
         plan_as_of = cp.get("as_of")
 
@@ -1132,6 +1160,9 @@ def content(root=None) -> dict:
             "featured_charts": cp.get("featured_charts") or [],
             "distinctness": cp.get("distinctness"),
             "summary": cp.get("summary"),
+            # Intraday event → evidence → draft queue. Separate from the nightly
+            # plan and from the publisher; every draft remains review-gated.
+            "intelligence": intelligence,
             # Count of plan posts that were actually posted in the last 7 days —
             # feeds the "posted (7d)" summary tile so an operator can see at a
             # glance that content is being used, not stale.
