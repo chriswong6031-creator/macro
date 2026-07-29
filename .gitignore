@@ -2,6 +2,7 @@
 .review_venv/
 __pycache__/
 *.pyc
+.pytest_cache/
 # Local build caches keyed by tool (e.g. scripts/make_launch_card.py caches the
 # Google Fonts woff2 blobs it inlines). Re-downloadable; never a delivery path.
 .cache/

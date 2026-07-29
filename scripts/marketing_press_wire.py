@@ -133,7 +133,12 @@ DEFAULT_CURSORS_MAX_BYTES = 256 * 1024
 #: State keys that are pure scoring ENRICHMENT. With ``breaking.scoring.rank_ordering``
 #: dark (its default) these change no gate — they feed `_components` provenance
 #: and the ordering that ships off. Persisting them is opt-in for that reason.
-SCORING_KEYS = ("story_spine", "signal_corpus", "source_authority")
+#: `intel_claims` (Intelligence Desk V2 story-identity registry) joins the list
+#: because THIS lane discards `run_press_tick`'s intelligence packets — only the
+#: VPS daemon advances the desk — so persisting desk identity state here would
+#: spend tracked-file bytes on something no reader ever consumes.
+SCORING_KEYS = ("story_spine", "signal_corpus", "source_authority",
+                "intel_claims")
 
 #: Env names.
 ENV_DAEMON_ACTIVE = "PRESS_WIRE_DAEMON_ACTIVE"

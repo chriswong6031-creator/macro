@@ -4918,8 +4918,11 @@ RENDER.marketing_content = async () => {
   const distinctness = d.distinctness || {};
 
   /* Intraday Intelligence Queue. This is the direct event → evidence → draft
-     handoff the old live wire lacked. It is read-only here: copying a draft does
-     not approve it, enqueue it, or publish it. */
+     handoff the old live wire lacked. Copying a draft does nothing at all;
+     "Queue for X" is the one action, and the CLICK IS THE REVIEW GATE — the
+     server re-reads the draft from the desk snapshot (never this page's copy of
+     the text) and runs the full outbox chain before anything is queued. A queued
+     item still waits on the publisher exactly like every other outbox item. */
   const intelHealth = liveIntel.health || {};
   const intelCards = liveIntelStories.slice(0, 12).map(story => {
     const evidence = Array.isArray(story.evidence) ? story.evidence : [];
@@ -4935,7 +4938,7 @@ RENDER.marketing_content = async () => {
         ? `<a href="${esc(url)}" target="_blank" rel="noopener">${name}</a>`
         : `<span>${name}</span>`;
     }).join(" · ");
-    return `<div class="card cs-intel-item" style="margin-bottom:8px;border-left:3px solid ${story.stage === "high_impact" ? "var(--warn)" : "var(--info)"}">
+    return `<div class="card cs-intel-item" data-story-id="${esc(story.id || "")}" data-draft-id="${esc((draft && draft.id) || "")}" style="margin-bottom:8px;border-left:3px solid ${story.stage === "high_impact" ? "var(--warn)" : "var(--info)"}">
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:7px">
         <span class="statpill ${story.stage === "high_impact" ? "s-warn" : story.stage === "confirmed" ? "s-ok" : "s-mut"}">${esc(stage)}</span>
         <span class="statpill s-mut">${esc(String(story.source_count || evidence.length || 1))} sources</span>
@@ -4944,10 +4947,15 @@ RENDER.marketing_content = async () => {
       <div style="font-size:14px;font-weight:700;line-height:1.35;margin-bottom:5px">${esc(story.headline || "Untitled development")}</div>
       <div style="font-size:11px;color:var(--muted);margin-bottom:${draft ? "9px" : "0"}">${sourceLinks || "Source receipt pending"}</div>
       ${draft ? `<div class="cs-intel-copy" style="white-space:pre-wrap;font-size:12px;line-height:1.5;padding:9px;border-radius:8px;background:var(--panel2)">${esc(draft.text)}</div>
-        <div style="display:flex;align-items:center;gap:7px;margin-top:7px">
+        <div style="display:flex;align-items:center;gap:7px;margin-top:7px;flex-wrap:wrap">
           <span class="statpill ${draft.status === "review" ? "s-ok" : "s-warn"}">${draft.status === "review" ? "ready for review" : "needs editing"} · ${esc(String(draft.characters || String(draft.text).length))}/280</span>
           <button class="btn sm" style="margin-left:auto" onclick="csCopyIntel(this)">Copy draft</button>
-        </div>` : `<div class="note muted">Evidence retained; waiting for the next copy pass.</div>`}
+          ${draft.status === "review" && draft.id
+            ? `<button class="btn sm primary cs-intel-queue" onclick="csQueueIntel(this)">Queue for X</button>`
+            : ""}
+        </div>
+        <div class="cs-intel-outcome note muted" style="display:none;margin-top:6px;font-size:11px;line-height:1.45"></div>`
+        : `<div class="note muted">Evidence retained; waiting for the next copy pass.</div>`}
     </div>`;
   }).join("");
   const intelHtml = liveIntelStories.length ? `<div class="section">Live Intelligence Queue
@@ -5164,6 +5172,83 @@ async function csCopyIntel(btn) {
   } catch (e) {
     btn.textContent = "Copy failed";
   }
+}
+
+/* Queue one Intelligence Desk draft into the outbox. THIS CLICK IS THE REVIEW
+   GATE: it is the only thing that moves a desk draft toward publication, and it
+   sends ids only. The server re-reads the draft from the snapshot and runs the
+   language law, the value gate, the one-owner story lock and the outbox dedup
+   guards; any of them can refuse, and the refusal names itself. Feedback lands
+   on the card (never a toast alone) because the operator needs to know which of
+   twelve cards the verdict was about. */
+const CS_INTEL_REFUSAL_LABEL = {
+  banned_language:  "house language law",
+  not_reviewable:   "review status",
+  story_locked:     "one-owner story lock",
+  duplicate:        "outbox duplicate guard",
+  cross_account_duplicate: "cross-account near-duplicate guard",
+  cap_exceeded:     "daily cap",
+  value_gate:       "value gate",
+  item_invalid:     "outbox validation",
+  story_not_found:  "desk snapshot",
+  draft_not_found:  "desk snapshot",
+  no_snapshot:      "desk snapshot",
+  gate_unavailable: "a gate that could not run",
+  routing_unavailable: "account routing",
+  outbox_unavailable:  "the outbox path",
+};
+
+async function csQueueIntel(btn) {
+  const card = btn && btn.closest ? btn.closest(".cs-intel-item") : null;
+  if (!card) return;
+  const out = card.querySelector(".cs-intel-outcome");
+  const say = (msg, tone) => {
+    if (!out) return;
+    out.style.display = "";
+    out.textContent = msg;
+    out.style.color = tone === "ok" ? "var(--ok)"
+      : tone === "err" ? "var(--warn)" : "var(--muted)";
+  };
+  const storyId = card.getAttribute("data-story-id") || "";
+  const draftId = card.getAttribute("data-draft-id") || "";
+  if (!storyId || !draftId) {
+    say("This card carries no draft id, so nothing can be queued from it.", "err");
+    return;
+  }
+  const label = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "Queueing…";
+  say("Running the outbox gates…");
+  let r = null;
+  try {
+    r = await post("/api/marketing/intelligence/approve",
+                   { story_id: storyId, draft_id: draftId });
+  } catch (e) {
+    r = null;
+  }
+  if (r && r.ok) {
+    btn.textContent = "Queued";
+    say(`Queued as ${r.item_id} for ${r.account}. ${r.note || ""}`.trim(), "ok");
+    toast(`Queued for ${r.account}`);
+    return;
+  }
+  btn.disabled = false;
+  btn.textContent = label;
+  if (!r) {
+    say("No answer from the server, so nothing was queued. Try again.", "err");
+    return;
+  }
+  /* An honest refusal names its gate. `reason` is the approve path's contract;
+     `error` is what the shared route guards (bad request, auth, CSRF) return. */
+  const reason = r.reason || null;
+  const detail = r.detail || r.error || "no detail given";
+  /* A slug this build has no label for still gets named, not swallowed — a new
+     server-side gate must be readable here before anyone remembers to map it. */
+  const gate = reason ? CS_INTEL_REFUSAL_LABEL[reason] : null;
+  say(gate ? `Refused by the ${gate}: ${detail}`
+    : reason ? `Refused (${reason}): ${detail}`
+    : `Not queued: ${detail}`, "err");
+  toast("Not queued", true);
 }
 
 /* Content Studio client-side filter helpers */

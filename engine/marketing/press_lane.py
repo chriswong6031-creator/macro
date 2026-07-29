@@ -37,6 +37,7 @@ State (daemon-local, gitignored — data/marketing/press/):
 """
 from __future__ import annotations
 
+import hashlib
 import os
 import re
 import sys
@@ -303,6 +304,172 @@ def _primary_entity(item: dict) -> str:
         if vals:
             return f"{field[:3]}:{sorted(str(v) for v in vals)[0]}"
     return ""
+
+
+# ── Intelligence Desk claim registry (V2 §3) ────────────────────────────────
+# The story spine is the PRIMARY cross-source matcher, but its two matching
+# backends are optional: MinHash near-dup needs `datasketch` and the semantic
+# pass needs a local encoder artifact. On a bare host NEITHER exists, so nothing
+# cross-source ever matched and every arrival opened its own desk story — an
+# arrival log wearing an intelligence UI. This registry is the deterministic
+# FLOOR under that: the lane already computes an entity+event_class claim anchor
+# that matches two differently-worded reports of one claim, so the desk uses it
+# for story identity too. Lives here (post-scoring, where `matched` exists), not
+# in intelligence_desk (stdlib-only) and not in the spine (assigns pre-scoring).
+_INTEL_CLAIM_TTL_H = 24.0
+_INTEL_JACCARD_MIN = 0.15
+_INTEL_TIGHT_WINDOW_MIN = 45.0
+# STATE BUDGET (load-bearing, not a round number). This registry lives in the
+# tick state dict, and the GitHub Actions deployment of this lane
+# (scripts/marketing_press_wire.py) COMMITS that dict to a tracked cursors.json
+# under a 256 KB ceiling — a 24h TTL over ~24 anchors per 30-minute window is
+# ~1k entries/day, so an unbounded registry with a token LIST per entry would
+# have blown that file. Entries are capped, and tokens are stored as ONE
+# space-joined string (indent=2 puts a list item on its own line).
+_INTEL_CLAIM_MAX_ENTRIES = 400
+_INTEL_TOKEN_CAP = 12
+# Words that carry no claim identity. Without them a Jaccard over two unrelated
+# headlines about the same ticker clears 0.15 on "the/and/for" alone, and the
+# registry would merge two genuinely different stories.
+_INTEL_STOPWORDS = frozenset({
+    "the", "and", "for", "with", "from", "that", "this", "into", "over", "after",
+    "says", "said", "will", "has", "have", "its", "his", "her", "their", "are",
+    "was", "were", "but", "not", "you", "who", "how", "why", "new", "amid",
+    "than", "then", "out", "off", "per", "via", "may", "can", "all", "one",
+    "two", "more", "most", "now", "here", "什么", "报道",
+})
+
+
+def _intel_claim_key(scored: dict) -> str:
+    """The registry anchor for a scored item, or "" when it cannot be anchored.
+
+    Deliberately ENTITY-anchored (`claim:{event_class}:{primary_entity}`), the
+    same anchor `_corroboration_key` uses for its M3 pair-matching. The two other
+    shapes `_corroboration_key` can return are excluded on purpose:
+
+      * `truth:<status_id>` is a per-POST identity — after mirror collapse it is
+        unique to one item, so registering it could never merge two sources. A
+        Truth post that matched an entity still participates through the anchor
+        below, which is exactly the Trump-wire ↔ Reuters merge we want.
+      * `head:<normalized headline>` is the no-anchor fallback. An unanchored
+        claim has nothing to alias ON, and registering headline stubs would make
+        the registry a second, weaker near-dup matcher.
+    """
+    entity = _primary_entity(scored)
+    if not entity:
+        return ""
+    return f"claim:{str(scored.get('event_class', 'none'))}:{entity}"
+
+
+def _intel_tokens(headline: object) -> set[str]:
+    """Normalized content tokens of a headline, for the overlap sanity check.
+
+    Truncated to the same alphabetical prefix the registry stores, so the two
+    sides of the Jaccard are always the same shape — a comparison where only one
+    side is capped silently depresses the overlap on long headlines.
+    """
+    words = re.sub(r"[^a-z0-9 ]", " ", str(headline or "").lower()).split()
+    keep = {w for w in words if len(w) >= 3 and w not in _INTEL_STOPWORDS}
+    return set(sorted(keep)[:_INTEL_TOKEN_CAP])
+
+
+def _intel_jaccard(left: set[str], right: set[str]) -> float:
+    if not left or not right:
+        return 0.0
+    union = left | right
+    return len(left & right) / len(union) if union else 0.0
+
+
+def _intel_day_stub_id(scored: dict, *, now: datetime) -> str:
+    """A story id for an item the spine could not place, stable within a UTC day.
+
+    The v1 fallback hashed `truth_status_id|url|headline`, so the SAME story seen
+    at two urls (or re-served with a drifted headline) opened two desk rows and
+    the desk could never merge them. Day-bucketing the normalized headline keeps
+    one id per (day, wording) — a floor, not a matcher.
+    """
+    head = re.sub(r"[^a-z0-9 ]", " ", str(scored.get("headline", "")).lower())
+    head = re.sub(r"\s+", " ", head).strip()[:120]
+    day = now.astimezone(timezone.utc).strftime("%Y%m%d")
+    return "intel_" + hashlib.sha1(f"{day}|{head}".encode("utf-8")).hexdigest()[:20]
+
+
+def _prune_intel_claims(registry: dict, *, now: datetime, ttl_h: float) -> None:
+    """Same TTL discipline as the corroboration ledger; also bounded by count."""
+    cutoff = now.astimezone(timezone.utc) - timedelta(hours=max(1.0, ttl_h))
+    for key in list(registry):
+        entry = registry.get(key)
+        first = _parse_ts(entry.get("first_ts")) if isinstance(entry, dict) else None
+        if first is None or first < cutoff:
+            del registry[key]
+    if len(registry) > _INTEL_CLAIM_MAX_ENTRIES:
+        # Persisted daemon state: keep the newest claims, drop the oldest tail.
+        ordered = sorted(
+            registry.items(),
+            key=lambda kv: str((kv[1] or {}).get("first_ts") or ""),
+            reverse=True,
+        )
+        for key, _ in ordered[_INTEL_CLAIM_MAX_ENTRIES:]:
+            del registry[key]
+
+
+def _resolve_intel_story_id(scored: dict, *, spine_sid: str, registry: dict,
+                            now: datetime, jaccard_min: float,
+                            tight_window_min: float) -> str:
+    """The desk story id this item belongs to (V2 §3 resolution).
+
+        no anchor        -> the spine's id, else a day-bucketed headline stub
+        anchor hit (TTL) -> alias to the registered story WHEN the wording
+                            overlaps (Jaccard >= jaccard_min) or the two arrivals
+                            are inside the tight window; otherwise keep own id,
+                            because two different stories can share a ticker
+        anchor miss      -> register this story under the anchor
+    """
+    own = str(spine_sid or "") or _intel_day_stub_id(scored, now=now)
+    key = _intel_claim_key(scored)
+    if not key:
+        return own
+    tokens = _intel_tokens(scored.get("headline"))
+    entry = registry.get(key)
+    if isinstance(entry, dict) and entry.get("story_id"):
+        # Pruning already dropped anything past the TTL, so a hit is in-window.
+        first = _parse_ts(entry.get("first_ts"))
+        tight = (
+            first is not None
+            and (now.astimezone(timezone.utc) - first)
+            <= timedelta(minutes=max(0.0, tight_window_min))
+        )
+        overlap = _intel_jaccard(tokens, _intel_stored_tokens(entry.get("tokens")))
+        if overlap >= jaccard_min or tight:
+            return str(entry["story_id"])
+        return own
+    registry[key] = {
+        "story_id": own,
+        "first_ts": now.astimezone(timezone.utc).isoformat(),
+        "tokens": " ".join(sorted(tokens)),
+    }
+    return own
+
+
+def _intel_stored_tokens(value: object) -> set[str]:
+    """Read a stored token set. Tolerates the list form an older state file has."""
+    if isinstance(value, str):
+        return set(value.split())
+    if isinstance(value, (list, tuple, set)):
+        return {str(v) for v in value}
+    return set()
+
+
+def _parse_ts(value: object) -> datetime | None:
+    """Parse an ISO stamp to aware UTC, or None. Never raises."""
+    raw = str(value or "").strip()
+    if not raw:
+        return None
+    try:
+        dt = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return dt.astimezone(timezone.utc) if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
 
 
 def _independent_source(item: dict) -> str:
@@ -1400,6 +1567,11 @@ def run_press_tick(
     intelligence_cfg = (
         wire_cfg.get("intelligence", {}) if isinstance(wire_cfg, dict) else {}
     )
+    if not isinstance(intelligence_cfg, dict):
+        # `intelligence:` present with an empty body parses as None, and every
+        # read below would raise AttributeError past the (TypeError, ValueError)
+        # guards — i.e. a blank config key would stop the whole wire tick.
+        intelligence_cfg = {}
     try:
         intelligence_floor = float(intelligence_cfg.get("salience_floor", 30.0))
     except (TypeError, ValueError):
@@ -1411,6 +1583,30 @@ def run_press_tick(
     rail_by_id = {
         str(item.get("id") or ""): item for item in rail if isinstance(item, dict)
     }
+    # V2 §3 claim registry: claim_key -> {story_id, first_ts, tokens}. Persisted
+    # in the SAME daemon-local state dict the corroboration window uses, pruned on
+    # the same TTL discipline. Never a repo write.
+    claims_cfg = (
+        intelligence_cfg.get("claims", {})
+        if isinstance(intelligence_cfg.get("claims"), dict) else {}
+    )
+
+    def _claims_num(key: str, default: float) -> float:
+        try:
+            return float(claims_cfg.get(key, default))
+        except (TypeError, ValueError):
+            return default
+
+    claim_ttl_h = _claims_num("ttl_h", _INTEL_CLAIM_TTL_H)
+    claim_jaccard = _claims_num("jaccard_min", _INTEL_JACCARD_MIN)
+    claim_tight_min = _claims_num("tight_window_min", _INTEL_TIGHT_WINDOW_MIN)
+    intel_claims = state.setdefault("intel_claims", {})
+    if not isinstance(intel_claims, dict):
+        intel_claims = state["intel_claims"] = {}
+    try:
+        _prune_intel_claims(intel_claims, now=now, ttl_h=claim_ttl_h)
+    except Exception:  # noqa: BLE001 — a registry fault never stops the desk
+        intel_claims = state["intel_claims"] = {}
     try:
         from engine.marketing.intelligence_desk import (  # noqa: PLC0415
             build_story_packet,
@@ -1429,9 +1625,24 @@ def run_press_tick(
                 or rail_item.get("en")
                 or ""
             )
+            # Story identity: the spine's view when it has one, then the claim
+            # registry's alias. The packet's `id` IS the resolved story id, so
+            # IntelligenceStore.upsert merges evidence across sources by
+            # construction — no second merge layer inside the desk.
+            spine_view = stories.get(iid)
+            resolved_sid = _resolve_intel_story_id(
+                s,
+                spine_sid=str((spine_view or {}).get("story_id") or ""),
+                registry=intel_claims,
+                now=now,
+                jaccard_min=claim_jaccard,
+                tight_window_min=claim_tight_min,
+            )
+            story_view = dict(spine_view or {})
+            story_view["story_id"] = resolved_sid
             intelligence.append(build_story_packet(
                 s,
-                story=stories.get(iid),
+                story=story_view,
                 now=now,
                 corr_sources=corr_entry.get("sources") or [],
                 draft_text=draft_text,
