@@ -33,6 +33,14 @@ DEFAULT_MAX_AGE_TD = 2       # trading days: warn when as_of older than this
 # near-empty sweep (the documented bug wrote 4 rows from a ~1363-name universe).
 # 50 is intentionally conservative — any real sweep will far exceed it.
 MIN_TICKER_PLAUSIBILITY = 50
+# COVERAGE floor (per-row).  The age check below reads the store's MAX as_of, which is a
+# presence test, not a coverage test: on 2026-07-29 three demo rows (AAPL/NVDA/JPM) dated
+# 07-28 made a 1364-row store whose other 1361 rows were frozen at 2026-06-19 report
+# `sla_ok: true, warnings: []` for six straight weeks.  A healthy full-universe sweep
+# re-stamps ~90% of rows nightly, so requiring half of them to sit inside the SLA fires on
+# that failure shape (0.2%) without alarming on names that genuinely have no upcoming
+# report.  Do NOT raise the SLA to silence this — the ceiling is the honesty mechanism.
+MIN_FRESH_ROW_FRACTION = 0.50
 
 
 def _bdate_range_age(from_date: date, to_date: date) -> int | None:
@@ -68,6 +76,8 @@ def audit(max_age_td: int = DEFAULT_MAX_AGE_TD) -> dict:
         "ticker_count": None,
         "with_next_date": None,
         "max_age_td": max_age_td,
+        "rows_within_sla": None,
+        "fresh_row_fraction": None,
     }
 
     if not store_path.exists():
@@ -129,6 +139,27 @@ def audit(max_age_td: int = DEFAULT_MAX_AGE_TD) -> dict:
     detail["as_of_str"] = str(most_recent_str)
     age_td = _bdate_range_age(as_of_date, today_utc)
     detail["as_of_age_td"] = age_td
+
+    # ── Per-row COVERAGE guard ────────────────────────────────────────────────────────
+    # The max()-based age check above cannot see a store where a handful of rows are fresh
+    # and the rest are frozen.  Count how many rows carry an as_of inside the SLA window.
+    try:
+        cutoff = pd.bdate_range(end=today_utc, periods=max_age_td + 1)[0].date()
+        row_dates = pd.to_datetime(as_of_col, errors="coerce", utc=True)
+        within = int((row_dates.dt.date >= cutoff).sum())
+        detail["rows_within_sla"] = within
+        frac = (within / len(df)) if len(df) else 0.0
+        detail["fresh_row_fraction"] = round(frac, 4)
+        if frac < MIN_FRESH_ROW_FRACTION:
+            warn.append(
+                f"earnings store COVERAGE stale: only {within} of {len(df)} rows "
+                f"({frac:.1%}) carry an as_of within the {max_age_td} td SLA "
+                f"(floor={MIN_FRESH_ROW_FRACTION:.0%}) — the store-level as_of looks fresh "
+                f"because a few rows were refreshed while the rest are frozen; check that "
+                f"the collector is sweeping the whole universe, not a named-ticker subset"
+            )
+    except Exception as exc:  # noqa: BLE001
+        warn.append(f"could not compute per-row freshness coverage: {exc}")
 
     if age_td is None:
         warn.append(f"could not compute trading-day age for as_of={as_of_date}")
