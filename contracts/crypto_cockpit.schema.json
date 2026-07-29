@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/crypto_cockpit.schema.json",
+  "title": "Crypto Cockpit display contract",
+  "description": "Shared, display-only BTC read emitted by scripts/build_vector.py. It does not originate scores or sizing.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "contract_phase",
+    "display_only",
+    "as_of",
+    "generated_at",
+    "hero",
+    "axes",
+    "authority",
+    "future_consumers"
+  ],
+  "properties": {
+    "schema": {"const": "crypto.cockpit/v1"},
+    "contract_phase": {"const": "w0"},
+    "display_only": {"const": true},
+    "as_of": {"type": "string", "format": "date"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "hero": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "asset",
+        "price",
+        "change_24h_pct",
+        "stance_en",
+        "stance_zh",
+        "summary_en",
+        "summary_zh",
+        "master_score",
+        "exposure_pct",
+        "gate_active"
+      ],
+      "properties": {
+        "asset": {"const": "BTC-USD"},
+        "price": {"type": "number"},
+        "change_24h_pct": {"type": "number"},
+        "stance_en": {"type": "string"},
+        "stance_zh": {"type": "string"},
+        "summary_en": {"type": "string"},
+        "summary_zh": {"type": "string"},
+        "master_score": {"type": ["integer", "null"], "minimum": -100, "maximum": 100},
+        "exposure_pct": {"type": ["integer", "null"], "minimum": 0, "maximum": 100},
+        "gate_active": {"type": "boolean"}
+      }
+    },
+    "axes": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "label_en",
+          "label_zh",
+          "primary",
+          "spark_source",
+          "receipt_members"
+        ]
+      }
+    },
+    "authority": {
+      "type": "object",
+      "required": [
+        "sizing_source",
+        "stance_source",
+        "axis_contract",
+        "no_new_arithmetic"
+      ],
+      "properties": {
+        "no_new_arithmetic": {"const": true}
+      }
+    },
+    "future_consumers": {
+      "type": "array",
+      "items": {"type": "string"}
+    }
+  }
+}

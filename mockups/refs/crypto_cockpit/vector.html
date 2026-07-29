@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Bitcoin Vector — Crypto Cockpit reference</title>
+  <script src="../../../site/illus.js"></script>
+  <script>
+    (() => {
+      const p = new URLSearchParams(location.search);
+      document.documentElement.dataset.theme = p.get("theme") === "light" ? "light" : "dark";
+      document.documentElement.dataset.lang = p.get("lang") === "zh" ? "zh" : "en";
+      document.documentElement.lang = document.documentElement.dataset.lang === "zh" ? "zh-CN" : "en";
+    })();
+  </script>
+  <link rel="stylesheet" href="../../../site/theme.css">
+  <link rel="stylesheet" href="../../../site/illus.css">
+  <link rel="stylesheet" href="cockpit.css">
+</head>
+<body class="cockpit">
+  <nav class="mock-nav" aria-label="Primary">
+    <div class="mock-nav__in">
+      <a class="mock-brand" href="#">Mastermind</a>
+      <div class="mock-links"><span>Macro</span><span>Markets</span><span class="active">Crypto</span><span>Research</span></div>
+      <div class="mock-controls">
+        <button class="mock-control" data-action="lang"><span class="l-en">中文</span><span class="l-zh">EN</span></button>
+        <button class="mock-control" data-action="theme"><span class="l-en">Theme</span><span class="l-zh">主题</span></button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="cockpit-rail">
+    <section class="shelf" data-shelf="S1">
+      <div class="hero-grid">
+        <div>
+          <p class="shelf-kicker"><span class="l-en">Bitcoin intelligence</span><span class="l-zh">比特币情报</span></p>
+          <h1 class="hero-wordmark"><span class="btc">₿</span> Vector</h1>
+          <div class="hero-stats">
+            <span class="hero-price">$63,940</span>
+            <span class="hero-change down">▼ 0.2%</span>
+          </div>
+          <div class="hero-stance"><span class="l-en">Stand aside</span><span class="l-zh">暂时观望</span></div>
+          <p class="lede">
+            <span class="l-en">The timing model is holding cash while trend and cycle evidence reset.</span>
+            <span class="l-zh">趋势与周期证据重置期间，择时模型保持现金。</span>
+          </p>
+          <div class="hero-meta">
+            <span class="dtp-chip dtp-chip--live"><i></i><span class="l-en">Daily tape live</span><span class="l-zh">日线数据正常</span></span>
+            <span class="num">As of 2026-07-29</span>
+          </div>
+        </div>
+        <div class="hero-tape">
+          <div class="hero-tape__head">
+            <span class="hero-tape__label"><span class="l-en">Regime Tape</span><span class="l-zh">周期轨迹</span></span>
+            <span class="master-meter"><span>OFF</span><i></i><span>ON</span></span>
+          </div>
+          <!-- REGIME_TAPE:START -->
+          <figure class="ilx ilx-regime-tape" style="color:var(--btc, #F7931A);--ilx-len:1353.6;--ilx-h:252px" role="img" aria-label="Bitcoin price, market regimes, model exposure, halving and projected cycle window"><svg viewBox="0 0 560 252" preserveAspectRatio="none" aria-hidden="true"><defs><pattern id="ilxhat-184d0878" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><line class="ilx-projection-hatch" x1="0" y1="0" x2="0" y2="8"/></pattern></defs><rect class="ilx-regime-span ilx-regime-neutral" x="0.0" y="8.0" width="1.31" height="182.0" style="fill:var(--muted)"/><rect class="ilx-regime-span ilx-regime-bear" x="1.31" y="8.0" width="10.88" height="182.0" style="fill:var(--down)"/><rect class="ilx-regime-span ilx-regime-neutral" x="12.19" y="8.0" width="0.44" height="182.0" style="fill:var(--muted)"/><rect class="ilx-regime-span ilx-regime-bear" x="12.63" y="8.0" width="2.18" height="182.0" style="fill:var(--down)"/><rect class="ilx-regime-span ilx-regime-neutral" x="14.81" y="8.0" width="0.87" height="182.0" style="fill:var(--muted)"/><rect class="ilx-regime-span ilx-regime-bear" x="15.68" y="8.0" width="6.09" height="182.0" style="fill:var(--down)"/><rect class="ilx-regime-span ilx-regime-neutral" x="21.77" y="8.0" width="4.36" height="182.0" style="fill:var(--muted)"/><rect class="ilx-regime-span ilx-regime-bear" x="26.13" y="8.0" width="1.3" height="182.0" style="fill:var(--down)"/><rect class="ilx-regime-span ilx-regime-neutral" x="27.43" y="8.0" width="10.45" height="182.0" style="fill:var(--muted)"/><rect class="ilx-regime-span ilx-regime-bull" x="37.88" y="8.0" width="30.05" height="182.0" style="fill:var(--up)"/><rect class="ilx-regime-span ilx-regime-neutral" x="67.93" y="8.0" width="5.23" height="182.0" style="fill:var(--muted)"/><rect class="ilx-regime-span ilx-regime-bull" x="73.16" y="8.0" width="0.43" height="182.0" style="fill:var(--up)"/><rect class="ilx-regime-span ilx-regime-neutral" x="73.59" y="8.0" width="9.15" height="182.0" style="fill:var(--muted)"/><rect class="ilx-regime-span ilx-regime-bear" x="82.74" y="8.0" width="3.92" height="182.0" style="fill:var(--down)"/><rect class="ilx-regime-span ilx-regime-neutral" x="86.66" y="8.0" width="6.09" height="182.0" style="fill:var(--muted)"/><rect class="ilx-regime-span ilx-regime-bull" x="92.75" y="8.0" width="3.05" height="182.0" style="fill:var(--up)"/><rect class="ilx-regime-span ilx-regime-neutral" x="95.8" y="8.0" width="11.76" height="182.0" style="fill:var(--muted)"/><rect class="ilx-regime-span ilx-regime-bull" x="107.56" y="8.0" width="1.74" height="182.0" style="fill:var(--up)"/><rect class="ilx-regime-span ilx-regime-neutral" x="109.3" y="8.0" width="10.89" height="182.0" style="fill:var(--muted)"/><rect class="ilx-regime-span ilx-regime-bear" x="120.19" y="8.0" width="12.19" height="182.0" style="fill:var(--down)"/><rect class="ilx-regime-span ilx-regime-neutral" x="132.38" y="8.0" width="0.87" height="182.0" style="fill:var(--muted)"/><rect class="ilx-regime-span ilx-regime-bull" x="133.25" y="8.0" width="0.44" height="182.0" style="fill:var(--up)"/><rect class="ilx-regime-span ilx-regime-bear" x="133.69" y="8.0" width="3.04" height="182.0" style="fill:var(--down)"/><rect class="ilx-regime-span ilx-regime-neutral" x="136.73" y="8.0" width="3.05" height="182.0" style="fill:var(--muted)"/><rect class="ilx-regime-span ilx-regime-bear" x="139.78" y="8.0" width="1.74" height="182.0" style="fill:var(--down)"/><rect class="ilx-regime-span ilx-regime-neutral" x="141.52" y="8.0" width="3.92" height="182.0" style="fill:var(--muted)"/><rect class="ilx-regime-span ilx-regime-bear" x="145.44" y="8.0" width="0.44" height="182.0" style="fill:var(--down)"/><rect class="ilx-regime-span ilx-regime-neutral" x="145.88" y="8.0" width="1.31" height="182.0" style="fill:var(--muted)"/><rect class="ilx-regime-span ilx-regime-bear" x="147.19" y="8.0" width="0.43" height="182.0" style="fill:var(--down)"/><rect class="ilx-regime-span ilx-regime-neutral" x="147.62" y="8.0" width="1.74" height="182.0" style="fill:var(--muted)"/><rect class="ilx-regime-span ilx-regime-bear" x="149.36" y="8.0" width="4.79" height="182.0" style="fill:var(--down)"/><rect class="ilx-regime-span ilx-regime-neutral" x="154.15" y="8.0" width="1.31" height="182.0" style="fill:var(--muted)"/><rect class="ilx-regime-span ilx-regime-bear" x="155.46" y="8.0" width="1.31" height="182.0" style="fill:var(--down)"/><rect class="ilx-regime-span ilx-regime-neutral" x="156.77" y="8.0" width="5.66" height="182.0" style="fill:var(--muted)"/><rect class="ilx-regime-span ilx-regime-bear" x="162.43" y="8.0" width="5.66" height="182.0" style="fill:var(--down)"/><rect class="ilx-regime-span ilx-regime-neutral" x="168.09" y="8.0" width="4.35" height="182.0" style="fill:var(--muted)"/><rect class="ilx-regime-span ilx-regime-bull" x="172.44" y="8.0" width="0.87" height="182.0" style="fill:var(--up)"/><rect class="ilx-regime-span ilx-regime-neutral" x="173.31" y="8.0" width="3.92" height="182.0" style="fill:var(--muted)"/><rect class="ilx-regime-span ilx-regime-bear" x="177.23" y="8.0" width="1.74" height="182.0" style="fill:var(--down)"/><rect class="ilx-regime-span ilx-regime-neutral" x="178.97" y="8.0" width="3.49" height="182.0" style="fill:var(--muted)"/><rect class="ilx-regime-span ilx-regime-bull" x="182.46" y="8.0" width="6.09" height="182.0" style="fill:var(--up)"/><rect class="ilx-regime-span ilx-regime-neutral" x="188.55" y="8.0" width="1.31" height="182.0" style="fill:var(--muted)"/><rect class="ilx-regime-span ilx-regime-bull" x="189.86" y="8.0" width="2.18" height="182.0" style="fill:var(--up)"/><rect class="ilx-regime-span ilx-regime-neutral" x="192.04" y="8.0" width="0.87" height="182.0" style="fill:var(--muted)"/><rect class="ilx-regime-span ilx-regime-bull" x="192.91" y="8.0" width="30.92" height="182.0" style="fill:var(--up)"/><rect class="ilx-regime-span ilx-regime-neutral" x="223.83" y="8.0" width="21.33" height="182.0" style="fill:var(--muted)"/><rect class="ilx-regime-span ilx-regime-bear" x="245.16" y="8.0" width="27.87" height="182.0" style="fill:var(--down)"/><rect class="ilx-regime-span ilx-regime-neutral" x="273.03" y="8.0" width="11.76" height="182.0" style="fill:var(--muted)"/><rect class="ilx-regime-span ilx-regime-bull" x="284.79" y="8.0" width="12.19" height="182.0" style="fill:var(--up)"/><rect class="ilx-regime-span ilx-regime-neutral" x="296.98" y="8.0" width="0.87" height="182.0" style="fill:var(--muted)"/><rect class="ilx-regime-span ilx-regime-bull" x="297.85" y="8.0" width="1.31" height="182.0" style="fill:var(--up)"/><rect class="ilx-regime-span ilx-regime-neutral" x="299.16" y="8.0" width="1.74" height="182.0" style="fill:var(--muted)"/><rect class="ilx-regime-span ilx-regime-bull" x="300.9" y="8.0" width="0.44" height="182.0" style="fill:var(--up)"/><rect class="ilx-regime-span ilx-regime-neutral" x="301.34" y="8.0" width="10.01" height="182.0" style="fill:var(--muted)"/><rect class="ilx-regime-span ilx-regime-bull" x="311.35" y="8.0" width="9.58" height="182.0" style="fill:var(--up)"/><rect class="ilx-regime-span ilx-regime-neutral" x="320.93" y="8.0" width="5.23" height="182.0" style="fill:var(--muted)"/><rect class="ilx-regime-span ilx-regime-bull" x="326.16" y="8.0" width="0.43" height="182.0" style="fill:var(--up)"/><rect class="ilx-regime-span ilx-regime-neutral" x="326.59" y="8.0" width="4.79" height="182.0" style="fill:var(--muted)"/><rect class="ilx-regime-span ilx-regime-bear" x="331.38" y="8.0" width="17.42" height="182.0" style="fill:var(--down)"/><rect class="ilx-regime-span ilx-regime-bull" x="348.8" y="8.0" width="2.62" height="182.0" style="fill:var(--up)"/><rect class="ilx-regime-span ilx-regime-neutral" x="351.42" y="8.0" width="1.74" height="182.0" style="fill:var(--muted)"/><rect class="ilx-regime-span ilx-regime-bear" x="353.16" y="8.0" width="3.92" height="182.0" style="fill:var(--down)"/><rect class="ilx-regime-span ilx-regime-neutral" x="357.08" y="8.0" width="1.74" height="182.0" style="fill:var(--muted)"/><rect class="ilx-regime-span ilx-regime-bear" x="358.82" y="8.0" width="26.56" height="182.0" style="fill:var(--down)"/><rect class="ilx-regime-span ilx-regime-bull" x="385.38" y="8.0" width="2.61" height="182.0" style="fill:var(--up)"/><rect class="ilx-regime-span ilx-regime-neutral" x="387.99" y="8.0" width="11.76" height="182.0" style="fill:var(--muted)"/><rect class="ilx-regime-span ilx-regime-bear" x="399.75" y="8.0" width="28.31" height="182.0" style="fill:var(--down)"/><rect class="ilx-regime-span ilx-regime-neutral" x="428.06" y="8.0" width="1.74" height="182.0" style="fill:var(--muted)"/><rect class="ilx-regime-span ilx-regime-bull" x="429.8" y="8.0" width="21.34" height="182.0" style="fill:var(--up)"/><rect class="ilx-regime-span ilx-regime-neutral" x="451.14" y="8.0" width="3.04" height="182.0" style="fill:var(--muted)"/><rect class="ilx-regime-span ilx-regime-bear" x="454.18" y="8.0" width="5.66" height="182.0" style="fill:var(--down)"/><rect class="ilx-regime-span ilx-regime-neutral" x="459.84" y="8.0" width="0.44" height="182.0" style="fill:var(--muted)"/><rect class="ilx-regime-span ilx-regime-bear" x="460.28" y="8.0" width="12.19" height="182.0" style="fill:var(--down)"/><rect class="ilx-regime-span ilx-regime-neutral" x="472.47" y="8.0" width="0.44" height="182.0" style="fill:var(--muted)"/><rect class="ilx-regime-span ilx-regime-bear" x="472.91" y="8.0" width="0.87" height="182.0" style="fill:var(--down)"/><rect class="ilx-regime-span ilx-regime-neutral" x="473.78" y="8.0" width="0.43" height="182.0" style="fill:var(--muted)"/><rect class="ilx-regime-span ilx-regime-bear" x="474.21" y="8.0" width="1.31" height="182.0" style="fill:var(--down)"/><rect class="ilx-regime-span ilx-regime-neutral" x="475.52" y="8.0" width="0.44" height="182.0" style="fill:var(--muted)"/><rect class="ilx-regime-span ilx-regime-bear" x="475.96" y="8.0" width="2.61" height="182.0" style="fill:var(--down)"/><rect class="ilx-projection" x="506.44" y="8.0" width="53.56" height="182.0" fill="url(#ilxhat-184d0878)"/><path class="ilx-path ilx-tape-price" d="M0.0 162.31 L2.61 161.17 L3.92 163.24 L4.79 163.36 L5.66 160.93 L8.71 162.93 L11.76 174.04 L14.81 167.93 L16.11 174.97 L18.72 173.16 L20.47 177.45 L23.08 172.22 L23.95 169.72 L27.0 173.42 L29.18 166.95 L31.79 167.02 L33.97 171.41 L34.84 171.04 L38.76 150.58 L40.5 148.18 L42.67 143.85 L43.55 145.83 L46.59 138.77 L48.34 143.53 L48.77 137.31 L54.0 138.99 L56.17 133.27 L56.61 132.02 L58.79 122.22 L62.71 128.73 L64.88 122.62 L67.93 127.06 L69.24 122.16 L70.11 125.21 L72.29 116.19 L75.77 124.6 L76.64 128.87 L78.38 133.16 L81.43 124.2 L84.04 125.89 L86.66 114.6 L87.09 113.48 L91.01 105.75 L92.32 108.67 L94.49 88.22 L95.8 88.97 L99.72 74.24 L100.59 72.86 L103.2 89.19 L104.51 86.21 L108.43 75.36 L109.3 83.71 L111.91 74.9 L113.22 77.12 L115.83 90.19 L118.01 81.65 L121.49 91.24 L121.93 95.13 L123.67 85.89 L126.28 90.93 L130.2 75.16 L130.64 76.95 L134.12 80.61 L134.99 80.75 L137.17 75.59 L139.35 77.85 L143.27 84.5 L143.7 84.65 L145.44 91.83 L148.49 87.74 L151.1 99.27 L152.85 96.7 L156.33 81.87 L158.51 83.86 L160.25 79.64 L161.12 82.66 L163.73 102.53 L165.91 90.74 L168.09 96.35 L170.26 93.87 L172.44 85.55 L174.18 93.3 L177.67 102.67 L178.54 100.99 L180.72 91.37 L182.89 89.41 L186.81 83.23 L187.25 83.12 L188.99 91.23 L192.47 91.8 L195.09 80.56 L196.83 78.54 L199.0 82.08 L203.36 80.27 L204.23 69.55 L204.67 69.19 L208.15 51.38 L209.02 52.65 L211.2 43.16 L213.81 46.54 L217.29 42.3 L219.04 45.53 L221.65 36.4 L222.08 36.36 L224.7 47.47 L227.74 49.71 L230.36 43.83 L230.79 39.99 L232.1 49.79 L235.15 42.22 L237.33 36.34 L241.24 37.66 L242.55 44.5 L246.47 46.43 L246.91 44.31 L250.39 43.83 L252.13 50.89 L253.0 59.15 L254.74 47.99 L256.92 56.12 L258.23 65.86 L261.71 60.81 L264.32 55.26 L265.63 55.6 L266.94 61.19 L270.86 68.77 L272.6 57.81 L274.34 59.25 L278.26 47.52 L279.13 48.49 L281.31 45.25 L283.05 45.35 L284.79 37.58 L287.84 39.15 L290.02 31.34 L291.76 33.34 L293.5 38.32 L296.11 40.67 L297.85 32.59 L300.9 35.7 L303.51 41.23 L307.43 36.75 L308.3 33.19 L309.18 34.43 L313.09 24.44 L315.71 26.55 L316.58 24.31 L318.76 24.77 L321.37 30.62 L322.67 29.26 L326.16 21.62 L326.59 25.66 L329.64 30.67 L330.95 29.81 L334.0 34.43 L336.61 32.67 L339.22 27.56 L341.84 26.71 L343.58 30.45 L344.88 33.72 L347.93 23.83 L349.67 20.55 L351.85 32.18 L352.72 28.27 L354.46 36.06 L358.38 28.89 L360.12 34.38 L361.43 32.38 L363.17 40.94 L365.79 40.6 L369.7 58.04 L370.14 58.49 L372.32 51.1 L374.93 48.83 L376.24 53.32 L378.85 52.22 L381.46 57.59 L383.2 54.11 L386.25 55.72 L387.56 53.91 L389.3 48.4 L393.22 45.23 L395.83 54.38 L397.14 53.1 L400.19 59.15 L401.49 65.71 L402.8 87.8 L405.85 82.61 L406.72 77.45 L411.07 85.83 L411.51 80.0 L414.56 73.46 L416.3 82.96 L419.78 70.54 L421.96 78.68 L423.7 75.34 L425.44 82.98 L427.19 81.6 L430.67 73.04 L431.54 76.1 L433.72 67.68 L437.64 65.7 L438.94 69.41 L439.81 66.25 L443.73 61.41 L444.17 61.97 L447.65 68.11 L448.52 67.11 L452.01 72.55 L452.88 72.27 L455.49 90.88 L457.23 89.92 L459.41 82.5 L461.59 85.59 L465.07 93.12 L465.94 94.7 L468.55 85.93 L471.6 88.62 L472.04 84.43 L475.09 82.15 L477.7 86.4 L478.57 86.02"/><circle class="ilx-dot ilx-tape-dot" cx="478.57" cy="86.02" r="3.2"/><line class="ilx-alloc-base" x1="0" y1="234.0" x2="560" y2="234.0"/><path class="ilx-alloc-fill" d="M0.0 234.0 L0.0 200.0 H0.87 V234.0 H6.1 V200.0 H14.81 V234.0 H16.11 V200.0 H16.98 V234.0 H18.29 V200.0 H18.72 V234.0 H20.03 V200.0 H20.9 V234.0 H29.18 V200.0 H34.84 V234.0 H36.58 V200.0 H122.8 V234.0 H124.11 V200.0 H146.75 V234.0 H147.19 V200.0 H148.06 V234.0 H149.36 V200.0 H151.98 V234.0 H155.02 V200.0 H165.04 V234.0 H172.01 V200.0 H174.18 V234.0 H177.23 V200.0 H178.97 V234.0 H183.33 V200.0 H192.47 V234.0 H193.78 V200.0 H249.95 V234.0 H250.82 V200.0 H254.74 V234.0 H255.18 V200.0 H255.61 V234.0 H257.36 V200.0 H258.66 V234.0 H259.1 V200.0 H259.97 V234.0 H270.86 V200.0 H271.29 V234.0 H277.39 V200.0 H334.43 V234.0 H337.48 V200.0 H345.32 V234.0 H347.06 V200.0 H355.77 V234.0 H356.64 V200.0 H357.08 V234.0 H359.25 V200.0 H360.12 V234.0 H361.87 V200.0 H363.61 V234.0 H364.04 V200.0 H364.48 V234.0 H365.79 V200.0 H372.75 V234.0 H373.19 V200.0 H373.62 V234.0 H374.06 V200.0 H374.49 V234.0 H380.16 V200.0 H380.59 V234.0 H381.03 V200.0 H381.9 V234.0 H478.57 V234.0 L478.57 234.0 Z"/><path class="ilx-alloc-step" d="M0.0 200.0 H0.87 V234.0 H6.1 V200.0 H14.81 V234.0 H16.11 V200.0 H16.98 V234.0 H18.29 V200.0 H18.72 V234.0 H20.03 V200.0 H20.9 V234.0 H29.18 V200.0 H34.84 V234.0 H36.58 V200.0 H122.8 V234.0 H124.11 V200.0 H146.75 V234.0 H147.19 V200.0 H148.06 V234.0 H149.36 V200.0 H151.98 V234.0 H155.02 V200.0 H165.04 V234.0 H172.01 V200.0 H174.18 V234.0 H177.23 V200.0 H178.97 V234.0 H183.33 V200.0 H192.47 V234.0 H193.78 V200.0 H249.95 V234.0 H250.82 V200.0 H254.74 V234.0 H255.18 V200.0 H255.61 V234.0 H257.36 V200.0 H258.66 V234.0 H259.1 V200.0 H259.97 V234.0 H270.86 V200.0 H271.29 V234.0 H277.39 V200.0 H334.43 V234.0 H337.48 V200.0 H345.32 V234.0 H347.06 V200.0 H355.77 V234.0 H356.64 V200.0 H357.08 V234.0 H359.25 V200.0 H360.12 V234.0 H361.87 V200.0 H363.61 V234.0 H364.04 V200.0 H364.48 V234.0 H365.79 V200.0 H372.75 V234.0 H373.19 V200.0 H373.62 V234.0 H374.06 V200.0 H374.49 V234.0 H380.16 V200.0 H380.59 V234.0 H381.03 V200.0 H381.9 V234.0 H478.57 V234.0"/><line class="ilx-event-tick" x1="117.14" y1="190.0" x2="117.14" y2="234.0"/></svg><span class="ilx-tag">$63,940</span><span class="ilx-alloc-label"><span class="l-en">Model exposure</span><span class="l-zh">模型仓位</span> · 0%</span><span class="ilx-event" style="--x:20.92%" tabindex="0" role="note" data-tip-en="Fourth Bitcoin halving" data-tip-zh="第四次比特币减半" aria-label="Fourth Bitcoin halving"><i></i></span><span class="ilx-projection-label" style="--x:90.44%"><span class="l-en">Projected cycle window</span><span class="l-zh">预测周期窗口</span></span><span class="ilx-d ilx-d0">2023-07-26</span><span class="ilx-d ilx-d1">2027-02-01</span></figure>
+          <!-- REGIME_TAPE:END -->
+        </div>
+      </div>
+    </section>
+
+    <section class="shelf" data-shelf="S2" data-verdict>
+      <p class="shelf-kicker"><span class="l-en">What to do</span><span class="l-zh">现在怎么做</span></p>
+      <div class="action-grid">
+        <div class="action-cell">
+          <div class="cell-label"><span class="l-en">One action</span><span class="l-zh">唯一动作</span></div>
+          <div class="action-word"><span class="l-en">Stand aside</span><span class="l-zh">暂时观望</span></div>
+          <div class="cell-note"><span class="l-en">Wait for the model to re-enter.</span><span class="l-zh">等待模型重新入场。</span></div>
+        </div>
+        <div class="action-cell">
+          <div class="cell-label"><span class="l-en">Model exposure</span><span class="l-zh">模型仓位</span></div>
+          <div class="cell-value">0%</div>
+          <div class="cell-note"><span class="l-en">Final gated allocation</span><span class="l-zh">最终门控仓位</span></div>
+        </div>
+        <div class="action-cell">
+          <div class="cell-label"><span class="l-en">Risk level</span><span class="l-zh">风险水平</span></div>
+          <div class="cell-value">25<span class="muted">/100</span></div>
+          <div class="cell-note"><span class="l-en">Calm tape, gate still active</span><span class="l-zh">市场平静，门控仍生效</span></div>
+        </div>
+        <div class="action-cell">
+          <div class="cell-label"><span class="l-en">Re-entry</span><span class="l-zh">重新入场</span></div>
+          <div class="cell-value">—</div>
+          <div class="cell-note"><span class="l-en">No model trigger yet</span><span class="l-zh">模型尚未触发</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="shelf" data-shelf="S3">
+      <p class="shelf-kicker"><span class="l-en">Why the model says that</span><span class="l-zh">模型为何这样判断</span></p>
+      <div class="axis-board">
+        <div class="axis-row tone-bear">
+          <span class="axis-name"><span class="l-en">Trend &amp; Momentum</span><span class="l-zh">趋势与动量</span></span>
+          <span class="axis-state"><span class="l-en">Bearish</span><span class="l-zh">看空</span></span>
+          <span class="spark"><i style="--h:72%"></i><i style="--h:64%"></i><i style="--h:58%"></i><i style="--h:42%"></i><i style="--h:31%"></i><i style="--h:26%"></i><i style="--h:20%"></i><i style="--h:17%"></i></span>
+          <span class="micro">−0.41</span><button class="receipt" aria-label="Trend receipt">?</button>
+        </div>
+        <div class="axis-row tone-neutral">
+          <span class="axis-name"><span class="l-en">Cycle &amp; Valuation</span><span class="l-zh">周期与估值</span></span>
+          <span class="axis-state"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
+          <span class="spark"><i style="--h:21%"></i><i style="--h:28%"></i><i style="--h:35%"></i><i style="--h:39%"></i><i style="--h:44%"></i><i style="--h:41%"></i><i style="--h:46%"></i><i style="--h:49%"></i></span>
+          <span class="micro">1.62z</span><button class="receipt" aria-label="Cycle receipt">?</button>
+        </div>
+        <div class="axis-row tone-bear">
+          <span class="axis-name"><span class="l-en">Liquidity &amp; Flows</span><span class="l-zh">流动性与资金流</span></span>
+          <span class="axis-state"><span class="l-en">Distribution</span><span class="l-zh">派发</span></span>
+          <span class="spark"><i style="--h:60%"></i><i style="--h:52%"></i><i style="--h:63%"></i><i style="--h:38%"></i><i style="--h:33%"></i><i style="--h:22%"></i><i style="--h:28%"></i><i style="--h:16%"></i></span>
+          <span class="micro">−0.8z</span><button class="receipt" aria-label="Flows receipt">?</button>
+        </div>
+        <div class="axis-row tone-bull">
+          <span class="axis-name"><span class="l-en">Leverage &amp; Derivatives</span><span class="l-zh">杠杆与衍生品</span></span>
+          <span class="axis-state"><span class="l-en">Low</span><span class="l-zh">低</span></span>
+          <span class="spark"><i style="--h:44%"></i><i style="--h:38%"></i><i style="--h:31%"></i><i style="--h:26%"></i><i style="--h:22%"></i><i style="--h:18%"></i><i style="--h:23%"></i><i style="--h:20%"></i></span>
+          <span class="micro">0.02%</span><button class="receipt" aria-label="Leverage receipt">?</button>
+        </div>
+        <div class="axis-row tone-neutral">
+          <span class="axis-name"><span class="l-en">Network &amp; Miners</span><span class="l-zh">网络与矿工</span></span>
+          <span class="axis-state"><span class="l-en">Balanced</span><span class="l-zh">均衡</span></span>
+          <span class="spark"><i style="--h:38%"></i><i style="--h:44%"></i><i style="--h:48%"></i><i style="--h:43%"></i><i style="--h:51%"></i><i style="--h:47%"></i><i style="--h:53%"></i><i style="--h:50%"></i></span>
+          <span class="micro">51</span><button class="receipt" aria-label="Network receipt">?</button>
+        </div>
+        <div class="axis-row tone-bear">
+          <span class="axis-name"><span class="l-en">Macro Backdrop</span><span class="l-zh">宏观背景</span></span>
+          <span class="axis-state"><span class="l-en">Headwind</span><span class="l-zh">逆风</span></span>
+          <span class="spark"><i style="--h:64%"></i><i style="--h:58%"></i><i style="--h:52%"></i><i style="--h:43%"></i><i style="--h:37%"></i><i style="--h:33%"></i><i style="--h:28%"></i><i style="--h:25%"></i></span>
+          <span class="micro">−0.3</span><button class="receipt" aria-label="Macro receipt">?</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="shelf" data-shelf="S4">
+      <p class="shelf-kicker"><span class="l-en">What we are watching</span><span class="l-zh">我们正在关注</span></p>
+      <div class="watch-grid">
+        <article class="tile">
+          <div class="cell-label"><span class="l-en">Re-entry condition</span><span class="l-zh">重新入场条件</span></div>
+          <div class="watch-rule"><span class="l-en">Trend turns up with improving flows</span><span class="l-zh">趋势转强且资金流改善</span></div>
+          <div class="tile-copy"><span class="l-en">Would reopen the allocation path.</span><span class="l-zh">满足后将重新开启仓位路径。</span></div>
+        </article>
+        <article class="tile">
+          <div class="cell-label"><span class="l-en">Risk condition</span><span class="l-zh">风险条件</span></div>
+          <div class="watch-rule"><span class="l-en">Leverage crowds while price weakens</span><span class="l-zh">价格走弱且杠杆变拥挤</span></div>
+          <div class="tile-copy"><span class="l-en">Would reinforce the cash stance.</span><span class="l-zh">将强化现金立场。</span></div>
+        </article>
+        <article class="tile">
+          <div class="cell-label"><span class="l-en">Cycle window</span><span class="l-zh">周期窗口</span></div>
+          <div class="watch-rule"><span class="l-en">Projected window opens in Q4</span><span class="l-zh">预测窗口于第四季度开启</span></div>
+          <div class="tile-copy"><span class="l-en">A window is context, not a buy signal.</span><span class="l-zh">窗口仅是背景，不是买入信号。</span></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="shelf" data-shelf="S5">
+      <p class="shelf-kicker"><span class="l-en">The crypto complex</span><span class="l-zh">加密市场全景</span></p>
+      <div class="complex-grid">
+        <article class="tile"><div class="tile-top"><span class="tile-symbol">BTC</span><span class="tile-state down">▼ 0.2%</span></div><div class="tile-big">$63,940</div><div class="tile-copy"><span class="l-en">Trend weak</span><span class="l-zh">趋势偏弱</span></div></article>
+        <article class="tile"><div class="tile-top"><span class="tile-symbol">ETH</span><span class="tile-state up">▲ 0.8%</span></div><div class="tile-big">$3,420</div><div class="tile-copy"><span class="l-en">Relative strength</span><span class="l-zh">相对强势</span></div></article>
+        <article class="tile"><div class="tile-top"><span class="tile-symbol">SOL</span><span class="tile-state up">▲ 1.4%</span></div><div class="tile-big">$154</div><div class="tile-copy"><span class="l-en">High-beta bid</span><span class="l-zh">高贝塔走强</span></div></article>
+        <article class="tile"><div class="tile-top"><span class="tile-symbol">BTC.D</span><span class="tile-state muted">30D</span></div><div class="tile-big">54.1%</div><div class="tile-copy"><span class="l-en">BTC share rising</span><span class="l-zh">比特币占比上升</span></div></article>
+        <article class="tile"><div class="tile-top"><span class="tile-symbol">TOTAL</span><span class="tile-state down">▼ 1.1%</span></div><div class="tile-big">$2.39T</div><div class="tile-copy"><span class="l-en">Market cooling</span><span class="l-zh">市场降温</span></div></article>
+      </div>
+    </section>
+
+    <section class="shelf" data-shelf="S6">
+      <p class="shelf-kicker"><span class="l-en">Study shelf</span><span class="l-zh">研究资料架</span></p>
+      <div class="folds">
+        <details class="fold"><summary><span class="fold-index">01</span><span><span class="l-en">Strategy &amp; Track Record</span><span class="l-zh">策略与历史记录</span></span><span class="fold-meta"><span class="l-en">Rules · outcomes</span><span class="l-zh">规则 · 结果</span></span></summary></details>
+        <details class="fold"><summary><span class="fold-index">02</span><span><span class="l-en">Cycle &amp; Valuation</span><span class="l-zh">周期与估值</span></span><span class="fold-meta"><span class="l-en">Deep study</span><span class="l-zh">深度研究</span></span></summary></details>
+        <details class="fold"><summary><span class="fold-index">03</span><span><span class="l-en">Flows &amp; Positioning</span><span class="l-zh">资金流与持仓</span></span><span class="fold-meta"><span class="l-en">Receipts</span><span class="l-zh">数据凭证</span></span></summary></details>
+        <details class="fold"><summary><span class="fold-index">04</span><span><span class="l-en">Time Machine</span><span class="l-zh">历史回看</span></span><span class="fold-meta"><span class="l-en">Dated replay</span><span class="l-zh">按日回放</span></span></summary></details>
+        <details class="fold"><summary><span class="fold-index">05</span><span><span class="l-en">Methods &amp; Sources</span><span class="l-zh">方法与来源</span></span><span class="fold-meta"><span class="l-en">Definitions</span><span class="l-zh">定义</span></span></summary></details>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    document.querySelector('[data-action="theme"]').onclick = () => {
+      const next = document.documentElement.dataset.theme === "light" ? "dark" : "light";
+      const p = new URLSearchParams(location.search); p.set("theme", next); location.search = p;
+    };
+    document.querySelector('[data-action="lang"]').onclick = () => {
+      const next = document.documentElement.dataset.lang === "zh" ? "en" : "zh";
+      const p = new URLSearchParams(location.search); p.set("lang", next); location.search = p;
+    };
+  </script>
+</body>
+</html>
