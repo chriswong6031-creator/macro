@@ -6,7 +6,8 @@ Drives three intraday lanes:
               wire RSS (breaking_feed.poll_all) + press providers
               (press_providers.poll_all: trumpstruth mirror, twitterapi.io x_relay,
               CNN backfill) -> relevance -> corroboration -> summarize-with-citation
-              -> emit kind="breaking" outbox items with scheduled_at="immediate".
+              -> persist the Intelligence Desk + live rail; optionally emit
+              kind="breaking" outbox items with scheduled_at="immediate".
     reply     XG-W6 reply-desk PRODUCER — reply_producer.run_producer:
               twitterapi.io discovery (reply sub-budget, since-id cursors) ->
               deterministic scorer -> per-persona drafter -> the eight critics ->
@@ -29,9 +30,10 @@ Flags:
 Kill-switches (BOTH gate press emission):
     MARKETING_FASTLANE_ENABLED != "1"  -> the whole daemon prints a note and exits
                                           0 immediately (no work at all).
-    MARKETING_PUBLISH_ENABLED not set  -> the press lane still runs the pipeline
-                                          but emits NOTHING to the outbox (a clean
-                                          no-op tick). --dry-run forces this too.
+    MARKETING_PUBLISH_ENABLED not set  -> the press lane still reads, scores, and
+                                          advances the live Intelligence Desk, but
+                                          emits NOTHING to the social outbox.
+                                          --dry-run forces outbound off too.
 
 Reply-lane arming (separate from the two above — the producer bills
 twitterapi.io, so it does not inherit the wire lane's switch):
@@ -98,10 +100,9 @@ _HEARTBEAT_PATH = ROOT / "data" / "marketing" / "fastlane_heartbeat.txt"
 _KILL_SWITCH_ENV = "MARKETING_FASTLANE_ENABLED"
 _DEFAULT_INTERVAL_S = 120
 
-# Press-lane local-only state. The poller writes ONLY under data/marketing/press/,
-# which .gitignore covers as a whole directory: state.json, seen.json and the B4c
-# zh translation cache (_WIRES_ZH_CACHE). Anything this lane needs to persist goes
-# HERE — not into a git-tracked cache and not into a nightly-owned forward ledger.
+# Press-lane state/cursors live under this gitignored directory. Runtime-facing
+# desk/rail snapshots use /var/lib/macro-live on the VPS (with this same directory
+# as the development fallback); neither location is a tracked forward ledger.
 _PRESS_STATE_PATH = ROOT / "data" / "marketing" / "press" / "state.json"
 _PRESS_SEEN_PATH = ROOT / "data" / "marketing" / "press" / "seen.json"
 _PRESS_SEEN_CAP = 8000
@@ -364,11 +365,11 @@ def _run_press_tick(*, dry_run: bool) -> dict:
     seen = _load_press_seen()
 
     # M2: emission is only allowed when the outbox kill-switch is on AND not
-    # dry-run. Compute this BEFORE polling so a dry-run/disarmed tick can run the
-    # BILLED twitterapi.io lane OFFLINE — poll_all(offline=True) returns [] for it
-    # without any network read (its spend is never persisted in dry-run, so a real
-    # read would bill money the monthly cap counter never sees). Free RSS/JSON
-    # mirror + wire lanes still fetch so the pipeline stays inspectable.
+    # dry-run. This controls WRITES to the social outbox, not intelligence reads.
+    # Explicit --dry-run is the only mode that takes the billed twitterapi.io lane
+    # offline, because a non-consuming inspection cannot persist its spend. A
+    # normal outbound-dark tick still polls within the configured hard budget and
+    # advances the Intelligence Desk.
     emit_allowed = publish_enabled() and not dry_run
     effective_dry = not emit_allowed
 
@@ -388,13 +389,14 @@ def _run_press_tick(*, dry_run: bool) -> dict:
 
     # 2. Poll the press providers (mirror + x_relay). session_state carried inside
     #    the same press state dict, mutated in place, persisted below. offline=
-    #    effective_dry keeps the BILLED twitterapi.io lane off the network in a
-    #    dry-run/disarmed tick (M2); the free mirror providers still fetch.
+    #    --dry-run keeps the BILLED twitterapi.io lane off the network. Publishing
+    #    being disabled does NOT disable intelligence collection: the live desk
+    #    and its capped read budget are separate from outbound X authorization.
     provider_state = state.setdefault("providers", {})
     press_items: list = []
     try:
         press_items = press_providers.poll_all(
-            ROOT, press_cfg, provider_state, offline=effective_dry
+            ROOT, press_cfg, provider_state, offline=dry_run
         )
     except Exception as exc:  # noqa: BLE001
         logger.error("[press] provider poll_all error (continuing): %s", exc)
@@ -448,7 +450,28 @@ def _run_press_tick(*, dry_run: bool) -> dict:
     else:
         _restore_breaking_ledger(_wire_ledger_snapshot)
 
-    # 6. B4a wires.json sink — write the news.html live-wire rail payload from
+    # 6. Intelligence Desk — merge this tick's story packets into the host-local
+    #    SQLite store and atomically publish live/intelligence.json. This advances
+    #    while outbound X is dark; only explicit --dry-run is non-consuming.
+    if not dry_run:
+        try:
+            from engine.marketing.intelligence_desk import (  # noqa: PLC0415
+                update_intelligence_desk,
+            )
+            intelligence_cfg = (
+                ((press_cfg or {}).get("wire") or {}).get("intelligence") or {}
+            )
+            snapshot = update_intelligence_desk(
+                result.get("intelligence", []),
+                root=ROOT,
+                now=now,
+                cfg=intelligence_cfg,
+            )
+            result["_intelligence_health"] = snapshot.get("health", {})
+        except Exception as exc:  # noqa: BLE001
+            logger.error("[press] intelligence desk sink error (continuing): %s", exc)
+
+    # 7. B4a wires.json sink — write the news.html live-wire rail payload from
     #    the tick's rail-eligible items. Written to the VPS public live dir (or a
     #    dev data dir), NEVER the repo/git tree. Skipped in dry-run (non-consuming).
     if not dry_run:
