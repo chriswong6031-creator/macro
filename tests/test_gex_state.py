@@ -853,3 +853,126 @@ class TestPassportPropagationFromBuildModel:
         assert passport.get("basis") == "assumption", (
             f"Expected basis='assumption' (from gex_engine), got {passport.get('basis')!r}"
         )
+
+
+# ===========================================================================
+# 13. OIP E3 back-compat + additive positioning fields.
+#     The crypto-cockpit program reads COIN/MSTR gex_state payloads (H7) and the
+#     terminal reads the gex tab off this schema, so the E3 wave may only ADD.
+# ===========================================================================
+
+# The exact top-level key set the schema carried BEFORE the OIP E3 wave. Pinned as a
+# literal so a rename or a drop fails here instead of downstream: any of these keys
+# disappearing (or changing type) is a breaking change for options_structure consumers.
+_PRE_E3_KEYS: dict[str, type | tuple] = {
+    "schema": str,
+    "asof": str,
+    "root": str,
+    "spot": (float, type(None)),
+    "net_gex_bn": (float, type(None)),
+    "gamma_regime": str,
+    "stability_pct": (float, type(None)),
+    "gamma_flip": (float, type(None)),
+    "dist_to_flip_pct": (float, type(None)),
+    "call_wall": (float, type(None)),
+    "put_wall": (float, type(None)),
+    "magnet": (float, type(None)),
+    "max_pain": (float, type(None)),
+    "pin_probability": (float, type(None)),
+    "gravity_direction": (str, type(None)),
+    "gravity_up_pct": (float, type(None)),
+    "cascade_trigger": (float, type(None)),
+    "upside_trigger": (float, type(None)),
+    "oi_delta_clusters": dict,
+    "regime_passport": dict,
+    "authority_tier": str,
+    "reliability": dict,
+}
+
+
+class TestE3BackCompat:
+    def test_every_pre_e3_key_survives_with_its_type(self):
+        state = compute_gex_state(_make_model(), "SPY", asof=ASOF)
+        assert state is not None
+        for key, typ in _PRE_E3_KEYS.items():
+            assert key in state, f"pre-E3 key {key!r} was dropped from the payload"
+            assert isinstance(state[key], typ), (
+                f"{key!r} changed type: {type(state[key]).__name__}")
+
+    def test_oi_delta_cluster_lists_keep_their_names_and_shape(self):
+        state = compute_gex_state(_make_model(), "SPY", asof=ASOF)
+        clusters = state["oi_delta_clusters"]
+        assert isinstance(clusters["new_oi"], list)
+        assert isinstance(clusters["exit_oi"], list)
+        for row in clusters["new_oi"] + clusters["exit_oi"]:
+            assert isinstance(row, dict)
+            assert {"K", "right", "oi_prior", "oi_now", "oi_delta"} <= set(row)
+
+    def test_cluster_block_carries_vintage_stamps_and_a_bilingual_note(self):
+        state = compute_gex_state(_make_model(), "SPY", asof=ASOF)
+        clusters = state["oi_delta_clusters"]
+        for key in ("prior_snapshot", "latest_snapshot", "matched_contracts",
+                    "same_vintage", "note_en", "note_zh"):
+            assert key in clusters, f"additive cluster key {key!r} missing"
+        assert isinstance(clusters["same_vintage"], bool)
+        assert clusters["note_en"] and clusters["note_zh"]
+
+    def test_reliability_marks_oi_delta_as_the_signing_free_read(self):
+        state = compute_gex_state(_make_model(), "SPY", asof=ASOF)
+        rel = state["reliability"]
+        assert "reliable" in rel["oi_delta"]
+        # the pre-existing flags are untouched
+        assert rel["levels"] == "display-only-until-gate"
+        assert rel["regime"] == "assumption-signed"
+
+    def test_additive_blocks_are_omitted_not_null_filled(self, monkeypatch):
+        """An absent source must leave the key OUT of the payload. A null-filled block
+        reads as 'measured and empty' to a consumer; absence reads as 'not covered'."""
+        from engine import positioning_persistence as pp
+
+        pp.reset_cache()
+        monkeypatch.setattr(pp, "default_chain_dates", lambda: [])
+        monkeypatch.setattr(pp, "default_read_chain", lambda d: None)
+        try:
+            state = compute_gex_state(_make_model(), "ZZZZ", asof=ASOF)
+            assert "wall_persistence" not in state
+            assert "deep_history" not in state          # not an index root
+            assert "net_gex_pctile" not in state        # _make_model has no history
+        finally:
+            pp.reset_cache()
+
+    def test_percentile_block_appears_when_history_is_present(self, monkeypatch):
+        from engine import positioning_persistence as pp
+
+        pp.reset_cache()
+        monkeypatch.setattr(pp, "default_chain_dates", lambda: [])
+        monkeypatch.setattr(pp, "default_read_chain", lambda d: None)
+        model = _make_model(net_gex_bn=1.5)
+        model["history"] = [
+            {"date": "2026-07-20", "net_gex_bn": -1.0},
+            {"date": "2026-07-21", "net_gex_bn": -2.0},
+            {"date": "2026-07-22", "net_gex_bn": -3.0},
+            {"date": "2026-07-23", "net_gex_bn": -4.0},
+            {"date": "2026-07-24", "net_gex_bn": -5.0},
+            {"date": "2026-07-25", "net_gex_bn": -5.0},   # Saturday — must be dropped
+        ]
+        try:
+            state = compute_gex_state(model, "SPY", asof=ASOF)
+            blk = state["net_gex_pctile"]
+            assert blk["n_sessions"] == 5, "weekend row leaked into the denominator"
+            assert blk["pctile"] == 100          # +1.5 is above every stored reading
+            assert blk["low_confidence"] is True
+            assert blk["note_en"] and blk["note_zh"]
+        finally:
+            pp.reset_cache()
+
+    def test_payload_stays_json_safe_with_the_new_blocks(self):
+        """build_gex_board serialises with allow_nan=False — one NaN aborts the write."""
+        import json
+
+        state = compute_gex_state(_make_model(), "SPY", asof=ASOF)
+        json.dumps(state, default=float, allow_nan=False)
+
+    def test_validator_still_passes_with_the_additive_blocks(self):
+        state = compute_gex_state(_make_model(), "SPY", asof=ASOF)
+        assert validate_gex_state(state) == []

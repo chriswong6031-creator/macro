@@ -1,0 +1,683 @@
+"""tests/test_positioning_persistence.py — OIP E3 positioning persistence.
+
+Pins the things that would otherwise ship a fabricated number:
+
+  1. Cluster truth table — matched contracts only, build/unwind split, top-N bound.
+  2. Mixed-vintage REFUSAL — two snapshots with identical open interest for a name
+     yield empty lists + same_vintage=True + a plain-word note, never "no change".
+  3. Session filtering — weekend / holiday snapshot files are dropped before any
+     delta or percentile is computed (#3721 weekend-row class; the real store holds
+     11 non-session files out of 39).
+  4. Unit seams — a fixture-shaped frame (int64 oi, object underlying, "C"/"P"
+     rights) and a production-shaped one (float32 oi, category underlying, bool
+     rights) produce IDENTICAL output; a normalised/fractional oi column is refused;
+     oi_delta_pct is a PERCENT (1000 -> 1500 is 50.0, never 0.5).
+  5. Wall persistence counting — consecutive-from-newest, padded for a root that
+     entered mid-window, "whole window" phrasing when it never moved.
+  6. Own-history percentile — session-filtered, low_confidence flagged, iv_rank idiom.
+  7. Deep-history context — index roots only, calm staleness disclosure, and NO
+     cross-source percentile of today's value.
+  8. Degraded paths — no store dir, one snapshot, unreadable snapshot: honest empty
+     with a note, never an exception into the caller.
+  9. Payload strings are plain-word EN/ZH pairs with no internal slugs.
+"""
+from __future__ import annotations
+
+import datetime as dt
+
+import pandas as pd
+import pytest
+
+from engine import positioning_persistence as pp
+
+# ── fixtures ─────────────────────────────────────────────────────────────────
+
+D_THU = dt.date(2026, 7, 23)   # session
+D_FRI = dt.date(2026, 7, 24)   # session
+D_SAT = dt.date(2026, 7, 25)   # NOT a session
+D_SUN = dt.date(2026, 7, 26)   # NOT a session
+D_MON = dt.date(2026, 7, 27)   # session
+D_JUNETEENTH = dt.date(2026, 6, 19)  # Friday, NYSE closed
+
+
+def _chain(rows: list[dict], *, prod_shape: bool = False) -> pd.DataFrame:
+    """Build a chain frame. prod_shape mirrors the real parquet dtypes exactly
+    (category underlying, float32 numerics, bool is_call); otherwise plain fixture
+    dtypes (object underlying, int64 oi, "C"/"P" rights)."""
+    df = pd.DataFrame(rows)
+    if prod_shape:
+        df["underlying"] = df["underlying"].astype("category")
+        for c in ("K", "oi", "spot"):
+            df[c] = df[c].astype("float32")
+        df["is_call"] = df["is_call"].map(
+            lambda v: v is True or str(v).upper() in ("C", "CALL", "TRUE", "1"))
+        df["is_call"] = df["is_call"].astype(bool)
+    else:
+        df["oi"] = df["oi"].astype("int64")
+        df["is_call"] = df["is_call"].map(
+            lambda v: "C" if (v is True or str(v).upper() in ("C", "CALL", "TRUE", "1"))
+            else "P")
+    return df
+
+
+def _row(u: str, tkr: str, k: float, call: bool, oi: float, spot: float) -> dict:
+    return {"underlying": u, "strike_ticker": tkr, "K": k,
+            "is_call": call, "oi": oi, "spot": spot}
+
+
+def _two_day_store(prod_shape: bool = False):
+    """AAA: a call strike builds, a put strike unwinds, one contract is new-only and
+    one is expired-only (both unmatched -> excluded). BBB: identical both days."""
+    prior = _chain([
+        _row("AAA", "O:AAA260821C00110000", 110.0, True, 1000, 100.0),
+        _row("AAA", "O:AAA260918C00110000", 110.0, True, 500, 100.0),
+        _row("AAA", "O:AAA260821P00090000", 90.0, False, 4000, 100.0),
+        _row("AAA", "O:AAA260731P00095000", 95.0, False, 7777, 100.0),   # expires -> unmatched
+        _row("BBB", "O:BBB260821C00055000", 55.0, True, 2000, 50.0),
+        _row("BBB", "O:BBB260821P00045000", 45.0, False, 3000, 50.0),
+    ], prod_shape=prod_shape)
+    latest = _chain([
+        _row("AAA", "O:AAA260821C00110000", 110.0, True, 1500, 101.0),
+        _row("AAA", "O:AAA260918C00110000", 110.0, True, 900, 101.0),
+        _row("AAA", "O:AAA260821P00090000", 90.0, False, 1000, 101.0),
+        _row("AAA", "O:AAA261016C00130000", 130.0, True, 9999, 101.0),   # new -> unmatched
+        _row("BBB", "O:BBB260821C00055000", 55.0, True, 2000, 50.0),
+        _row("BBB", "O:BBB260821P00045000", 45.0, False, 3000, 50.0),
+    ], prod_shape=prod_shape)
+    frames = {D_FRI: prior, D_MON: latest}
+    return (lambda: sorted(frames), lambda d: frames.get(d))
+
+
+@pytest.fixture(autouse=True)
+def _clean_cache():
+    pp.reset_cache()
+    yield
+    pp.reset_cache()
+
+
+# ── 1. cluster truth table ───────────────────────────────────────────────────
+
+class TestClusterTruthTable:
+    def test_build_and_unwind_split_on_matched_contracts_only(self):
+        dates, read = _two_day_store()
+        st = pp.load(chain_dates=dates, read_chain=read, use_cache=False)
+        c = st.clusters("AAA")
+
+        assert c["same_vintage"] is False
+        assert c["prior_snapshot"] == D_FRI.isoformat()
+        assert c["latest_snapshot"] == D_MON.isoformat()
+        # 110 calls: (1000->1500) + (500->900) = +900 across 2 matched contracts
+        assert len(c["new_oi"]) == 1
+        build = c["new_oi"][0]
+        assert build["K"] == 110.0 and build["right"] == "call"
+        assert build["oi_prior"] == 1500 and build["oi_now"] == 2400
+        assert build["oi_delta"] == 900
+        assert build["contracts"] == 2
+        # 90 puts: 4000 -> 1000 = -3000
+        assert len(c["exit_oi"]) == 1
+        unwind = c["exit_oi"][0]
+        assert unwind["K"] == 90.0 and unwind["right"] == "put"
+        assert unwind["oi_delta"] == -3000
+
+    def test_unmatched_contracts_never_contribute(self):
+        """A contract present on ONE side only (new listing / expired) is not a
+        change in open interest — counting it would fabricate a build or an unwind."""
+        dates, read = _two_day_store()
+        st = pp.load(chain_dates=dates, read_chain=read, use_cache=False)
+        c = st.clusters("AAA")
+        strikes = {r["K"] for r in c["new_oi"] + c["exit_oi"]}
+        assert 130.0 not in strikes, "new-only contract leaked into the clusters"
+        assert 95.0 not in strikes, "expired-only contract leaked into the clusters"
+
+    def test_top_n_is_bounded(self):
+        rows_prior, rows_latest = [], []
+        for i in range(12):
+            k = 100.0 + i
+            rows_prior.append(_row("CCC", f"O:CCC260821C{i:08d}", k, True, 1000, 100.0))
+            rows_latest.append(_row("CCC", f"O:CCC260821C{i:08d}", k, True, 1000 + 100 * i, 100.0))
+        frames = {D_FRI: _chain(rows_prior), D_MON: _chain(rows_latest)}
+        st = pp.load(chain_dates=lambda: sorted(frames), read_chain=frames.get,
+                     top_n=3, use_cache=False)
+        c = st.clusters("CCC")
+        assert len(c["new_oi"]) == 3
+        # ranked by absolute change, biggest first
+        assert [r["oi_delta"] for r in c["new_oi"]] == [1100, 1000, 900]
+
+    def test_dist_pct_is_signed_distance_from_the_latest_price(self):
+        dates, read = _two_day_store()
+        st = pp.load(chain_dates=dates, read_chain=read, use_cache=False)
+        c = st.clusters("AAA")
+        # spot on the LATEST side is 101.0; the 110 strike is ~8.9% above it
+        assert c["new_oi"][0]["dist_pct"] == pytest.approx(8.9, abs=0.05)
+        assert c["exit_oi"][0]["dist_pct"] == pytest.approx(-10.9, abs=0.05)
+
+
+# ── 2. mixed-vintage refusal ─────────────────────────────────────────────────
+
+class TestMixedVintageRefusal:
+    def test_identical_vintage_refuses_per_name(self):
+        """BBB is byte-identical across the two snapshots while AAA advanced. The
+        refusal is PER NAME: one repeating root must not silence the rest, and an
+        all-zero delta must never be published as 'no change'."""
+        dates, read = _two_day_store()
+        st = pp.load(chain_dates=dates, read_chain=read, use_cache=False)
+        bbb = st.clusters("BBB")
+        assert bbb["same_vintage"] is True
+        assert bbb["new_oi"] == [] and bbb["exit_oi"] == []
+        assert bbb["matched_contracts"] == 0
+        assert "identical open interest" in bbb["note_en"]
+        assert "完全相同" in bbb["note_zh"]
+        # the other name in the same file is unaffected
+        assert st.clusters("AAA")["same_vintage"] is False
+
+    def test_same_vintage_mask_is_content_not_filename(self):
+        a = _chain([_row("X", "t1", 10.0, True, 100, 10.0)])
+        b = _chain([_row("X", "t1", 10.0, True, 100, 10.0)])
+        mask = pp.same_vintage_mask(
+            pp.vintage_fingerprints(pp._normalise_chain(a)),
+            pp.vintage_fingerprints(pp._normalise_chain(b)))
+        assert bool(mask["X"]) is True
+        c = _chain([_row("X", "t1", 10.0, True, 101, 10.0)])
+        mask2 = pp.same_vintage_mask(
+            pp.vintage_fingerprints(pp._normalise_chain(a)),
+            pp.vintage_fingerprints(pp._normalise_chain(c)))
+        assert bool(mask2["X"]) is False
+
+
+# ── 3. session filtering ─────────────────────────────────────────────────────
+
+class TestSessionFiltering:
+    def test_weekend_and_holiday_snapshots_are_dropped(self):
+        """The weekend files re-fetch Friday's reading. Comparing Sat vs Sun would
+        produce a silent all-zero delta stamped with weekend dates."""
+        base = _chain([_row("AAA", "t1", 110.0, True, 1000, 100.0)])
+        moved = _chain([_row("AAA", "t1", 110.0, True, 1400, 101.0)])
+        frames = {D_FRI: base, D_SAT: base, D_SUN: base, D_MON: moved}
+        st = pp.load(chain_dates=lambda: sorted(frames), read_chain=frames.get,
+                     use_cache=False)
+        assert st.meta["prior_snapshot"] == D_FRI
+        assert st.meta["latest_snapshot"] == D_MON
+        c = st.clusters("AAA")
+        assert c["new_oi"][0]["oi_delta"] == 400
+
+    def test_default_chain_dates_filters_the_real_store(self):
+        """Against the committed store: every date returned is an NYSE session, and
+        the known non-session files (Saturdays, Sundays, Juneteenth) are gone."""
+        from lib import nyse_calendar
+        dates = pp.default_chain_dates()
+        assert dates, "the committed chain store should not be empty"
+        assert all(nyse_calendar.is_session(d) for d in dates)
+        assert D_SAT not in dates and D_SUN not in dates
+        assert D_JUNETEENTH not in dates
+
+
+# ── 4. unit seams ────────────────────────────────────────────────────────────
+
+class TestUnitSeams:
+    def test_fixture_and_production_dtypes_agree(self):
+        """The x100 / dtype class: the same numbers in fixture shape (int64 oi,
+        object underlying, 'C'/'P') and production shape (float32 oi, category
+        underlying, bool) must produce byte-identical cluster rows."""
+        d_fix, r_fix = _two_day_store(prod_shape=False)
+        d_prod, r_prod = _two_day_store(prod_shape=True)
+        fix = pp.load(chain_dates=d_fix, read_chain=r_fix, use_cache=False).clusters("AAA")
+        prod = pp.load(chain_dates=d_prod, read_chain=r_prod, use_cache=False).clusters("AAA")
+        assert fix["new_oi"] == prod["new_oi"]
+        assert fix["exit_oi"] == prod["exit_oi"]
+        assert fix["matched_contracts"] == prod["matched_contracts"]
+
+    def test_oi_delta_pct_is_a_percent_not_a_fraction(self):
+        prior = _chain([_row("AAA", "t1", 100.0, True, 1000, 100.0)])
+        latest = _chain([_row("AAA", "t1", 100.0, True, 1500, 100.0)])
+        frames = {D_FRI: prior, D_MON: latest}
+        st = pp.load(chain_dates=lambda: sorted(frames), read_chain=frames.get,
+                     use_cache=False)
+        row = st.clusters("AAA")["new_oi"][0]
+        assert row["oi_delta_pct"] == 50.0, "must be a percent (50.0), never 0.5"
+
+    def test_normalised_open_interest_is_refused(self, capsys):
+        """An oi column of shares/fractions is a rescaled feed, not a contract count:
+        every delta downstream would be a fabricated number. Refuse the snapshot."""
+        frac = pd.DataFrame([
+            {"underlying": "AAA", "strike_ticker": "t1", "K": 100.0,
+             "is_call": True, "oi": 0.42, "spot": 100.0},
+        ])
+        with pytest.raises(pp.ChainShapeError, match="normalised"):
+            pp._normalise_chain(frac)
+        # and through the loader it is DROPPED with a GitHub annotation at line start
+        good = _chain([_row("AAA", "t1", 100.0, True, 1000, 100.0)])
+        frames = {D_FRI: good, D_MON: frac}
+        st = pp.load(chain_dates=lambda: sorted(frames), read_chain=frames.get,
+                     use_cache=False)
+        out = capsys.readouterr().out
+        line = next((ln for ln in out.splitlines() if "oi-chain-shape" in ln), "")
+        assert line.startswith("::warning"), f"annotation must start the line: {out!r}"
+        assert st.meta["sessions_covered"] == 1
+
+    def test_non_integral_open_interest_is_refused(self):
+        odd = pd.DataFrame([
+            {"underlying": "AAA", "strike_ticker": "t1", "K": 100.0,
+             "is_call": True, "oi": 1200.5, "spot": 100.0},
+        ])
+        with pytest.raises(pp.ChainShapeError, match="integral"):
+            pp._normalise_chain(odd)
+
+    def test_negative_open_interest_is_refused(self):
+        bad = pd.DataFrame([
+            {"underlying": "AAA", "strike_ticker": "t1", "K": 100.0,
+             "is_call": True, "oi": -5.0, "spot": 100.0},
+        ])
+        with pytest.raises(pp.ChainShapeError, match="negative"):
+            pp._normalise_chain(bad)
+
+    def test_missing_columns_are_refused(self):
+        with pytest.raises(pp.ChainShapeError, match="missing columns"):
+            pp._normalise_chain(pd.DataFrame({"underlying": ["AAA"]}))
+
+
+# ── 5. wall persistence counting ─────────────────────────────────────────────
+
+class TestWallPersistence:
+    def test_sessions_at_level_counts_back_from_the_newest(self):
+        assert pp.sessions_at_level([100.0, 105.0, 110.0, 110.0, 110.0]) == 3
+        assert pp.sessions_at_level([110.0, 110.0, 110.0]) == 3
+        assert pp.sessions_at_level([110.0, 110.0, 105.0]) == 1
+        assert pp.sessions_at_level([110.0, None, 110.0]) == 1
+        assert pp.sessions_at_level([110.0, 110.0, None]) == 0
+        assert pp.sessions_at_level([]) == 0
+
+    def test_wall_level_and_count_over_a_window(self):
+        """Heaviest call open interest ABOVE the price and heaviest put BELOW it.
+        The call wall moves on the newest snapshot; the put wall never does."""
+        def day(call_heavy_k, oi_heavy):
+            return _chain([
+                _row("AAA", "c1", 110.0, True, oi_heavy if call_heavy_k == 110 else 10, 100.0),
+                _row("AAA", "c2", 120.0, True, oi_heavy if call_heavy_k == 120 else 10, 100.0),
+                _row("AAA", "p1", 90.0, False, 5000, 100.0),
+                _row("AAA", "p2", 80.0, False, 100, 100.0),
+            ])
+        frames = {
+            dt.date(2026, 7, 20): day(110, 900),
+            dt.date(2026, 7, 21): day(110, 900),
+            dt.date(2026, 7, 22): day(110, 900),
+            D_THU: day(120, 900),
+        }
+        st = pp.load(chain_dates=lambda: sorted(frames), read_chain=frames.get,
+                     window_sessions=4, use_cache=False)
+        w = st.wall_persistence("AAA")
+        assert w["sessions_covered"] == 4
+        assert w["window_start"] == "2026-07-20"
+        assert w["window_end"] == D_THU.isoformat()
+        assert w["call_side"]["level"] == 120.0
+        assert w["call_side"]["sessions_at_level"] == 1
+        assert w["put_side"]["level"] == 90.0
+        assert w["put_side"]["sessions_at_level"] == 4
+        # never-moved side gets the "whole window" phrasing, not a bare count
+        assert "every one of the 4" in w["put_side"]["note_en"]
+        assert "may have held longer" in w["put_side"]["note_en"]
+
+    def test_root_entering_mid_window_cannot_inflate_its_count(self):
+        """A name first seen on the newest snapshot must report 1, not the window
+        length — the series is padded so it cannot borrow another root's history."""
+        old = _chain([_row("AAA", "c1", 110.0, True, 900, 100.0),
+                      _row("AAA", "p1", 90.0, False, 900, 100.0)])
+        both = _chain([_row("AAA", "c1", 110.0, True, 900, 100.0),
+                       _row("AAA", "p1", 90.0, False, 900, 100.0),
+                       _row("NEW", "c9", 55.0, True, 700, 50.0),
+                       _row("NEW", "p9", 45.0, False, 700, 50.0)])
+        frames = {dt.date(2026, 7, 21): old, dt.date(2026, 7, 22): old, D_THU: both}
+        st = pp.load(chain_dates=lambda: sorted(frames), read_chain=frames.get,
+                     window_sessions=3, use_cache=False)
+        assert st.wall_persistence("AAA")["call_side"]["sessions_at_level"] == 3
+        new = st.wall_persistence("NEW")
+        assert new["sessions_covered"] == 3
+        assert new["call_side"]["sessions_at_level"] == 1
+
+    def test_uncovered_name_gets_no_wall_block_at_all(self):
+        dates, read = _two_day_store()
+        st = pp.load(chain_dates=dates, read_chain=read, use_cache=False)
+        assert st.wall_persistence("SPX") is None
+
+    def test_oi_walls_ignores_wrong_side_strikes(self):
+        df = pp._normalise_chain(_chain([
+            _row("AAA", "c1", 90.0, True, 9999, 100.0),    # call BELOW spot — ignored
+            _row("AAA", "c2", 110.0, True, 50, 100.0),
+            _row("AAA", "p1", 120.0, False, 9999, 100.0),  # put ABOVE spot — ignored
+            _row("AAA", "p2", 80.0, False, 50, 100.0),
+        ]))
+        w = pp.oi_walls(df).set_index("underlying").loc["AAA"]
+        assert w["call_K"] == 110.0 and w["put_K"] == 80.0
+
+
+# ── 6. own-history percentile ────────────────────────────────────────────────
+
+class TestOwnHistoryPercentile:
+    def _hist(self):
+        # 2026-07-25 / 26 are weekend rows that REPEAT the Friday reading — the real
+        # cboe store carries 13 of these in 36 rows for SPY.
+        return [
+            {"date": "2026-07-20", "net_gex_bn": -1.0},
+            {"date": "2026-07-21", "net_gex_bn": -2.0},
+            {"date": "2026-07-22", "net_gex_bn": -3.0},
+            {"date": "2026-07-23", "net_gex_bn": -4.0},
+            {"date": "2026-07-24", "net_gex_bn": -5.0},
+            {"date": "2026-07-25", "net_gex_bn": -5.0},
+            {"date": "2026-07-26", "net_gex_bn": -5.0},
+        ]
+
+    def test_weekend_rows_are_excluded_from_the_denominator(self):
+        got = pp.net_gex_percentile(self._hist(), -2.5)
+        assert got["n_sessions"] == 5, "weekend rows double-counted the distribution"
+        assert got["window_start"] == "2026-07-20"
+        assert got["window_end"] == "2026-07-24"
+        # strictly-below share (iv_rank idiom): -3, -4, -5 are below -2.5 -> 3/5
+        assert got["pctile"] == 60
+
+    def test_short_record_is_flagged_and_said_in_plain_words(self):
+        got = pp.net_gex_percentile(self._hist(), -2.5)
+        assert got["low_confidence"] is True
+        assert "record is short" in got["note_en"]
+        assert "记录较短" in got["note_zh"]
+
+    def test_too_few_sessions_returns_none(self):
+        assert pp.net_gex_percentile(
+            [{"date": "2026-07-20", "net_gex_bn": -1.0}], -1.0) is None
+        assert pp.net_gex_percentile(None, -1.0) is None
+        assert pp.net_gex_percentile(self._hist(), None) is None
+
+    def test_long_record_is_not_flagged(self):
+        hist = [{"date": d.isoformat(), "net_gex_bn": float(i)}
+                for i, d in enumerate(_sessions(80))]
+        got = pp.net_gex_percentile(hist, 1000.0)
+        assert got["n_sessions"] == 80
+        assert got["low_confidence"] is False
+        assert got["pctile"] == 100
+        assert "record is short" not in got["note_en"]
+
+
+def _sessions(n: int) -> list[dt.date]:
+    from lib import nyse_calendar
+    out, d = [], dt.date(2026, 1, 2)
+    while len(out) < n:
+        if nyse_calendar.is_session(d):
+            out.append(d)
+        d += dt.timedelta(days=1)
+    return out
+
+
+# ── 7. deep-history context ──────────────────────────────────────────────────
+
+class TestDeepHistory:
+    def _hist(self, last="2026-07-02"):
+        idx = pd.to_datetime(["2017-01-03", "2020-06-15", "2024-03-11", last])
+        return pd.DataFrame({"net_gex_bn": [10.0, -5.0, 0.0, -2.0],
+                             "gamma_regime": ["long", "short", "long", "short"]},
+                            index=idx)
+
+    def test_only_index_roots_get_a_block(self):
+        r = lambda g, n: self._hist()  # noqa: E731
+        assert pp.deep_history_context("SPY", reader=r) is not None
+        assert pp.deep_history_context("NVDA", reader=r) is None
+        assert pp.deep_history_context("SPX", reader=r) is None
+
+    def test_stale_window_is_disclosed_calmly(self):
+        now = dt.datetime(2026, 7, 29, 23, 0, tzinfo=dt.timezone.utc)
+        got = pp.deep_history_context("SPY", reader=lambda g, n: self._hist(), now=now)
+        assert got["window_start"] == "2017-01-03"
+        assert got["window_end"] == "2026-07-02"
+        assert got["sessions_behind"] > pp.DEEP_HISTORY_STALE_SESSIONS
+        assert got["stale"] is True
+        assert "behind the latest close" in got["note_en"]
+        assert "落后" in got["note_zh"]
+        # calm, not an alarm
+        low = got["note_en"].lower()
+        for banned in ("error", "failed", "broken", "alert", "stale", "warning"):
+            assert banned not in low, f"alarm word {banned!r} in a Tier-1 disclosure"
+
+    def test_fresh_window_says_current(self):
+        now = dt.datetime(2026, 7, 29, 23, 0, tzinfo=dt.timezone.utc)
+        got = pp.deep_history_context("SPY", now=now,
+                                      reader=lambda g, n: self._hist("2026-07-28"))
+        assert got["stale"] is False
+        assert "is current" in got["note_en"]
+
+    def test_no_cross_source_percentile_is_emitted(self):
+        """The rebuild is a ThetaData reconstruction; today's payload value comes from
+        the Cboe chain. Placing one inside the other is the mixed-source class, so the
+        block reports the WINDOW and SPREAD and says today's value is not placed."""
+        got = pp.deep_history_context("SPY", reader=lambda g, n: self._hist())
+        assert "pctile" not in got and "percentile" not in got
+        assert "not placed inside that window" in got["note_en"]
+        assert got["net_gex_bn_min"] == -5.0 and got["net_gex_bn_max"] == 10.0
+
+    def test_absent_or_empty_store_returns_none(self):
+        assert pp.deep_history_context("SPY", reader=lambda g, n: None) is None
+        assert pp.deep_history_context("SPY", reader=lambda g, n: pd.DataFrame()) is None
+        assert pp.deep_history_context(
+            "SPY", reader=lambda g, n: pd.DataFrame({"other": [1]},
+                                                    index=pd.to_datetime(["2020-01-02"]))) is None
+
+    def test_reader_exception_degrades_to_none(self):
+        def boom(g, n):
+            raise OSError("store unreadable")
+        assert pp.deep_history_context("SPY", reader=boom) is None
+
+
+# ── 8. degraded paths ────────────────────────────────────────────────────────
+
+class TestDegradedPaths:
+    def test_no_snapshots_at_all(self):
+        st = pp.load(chain_dates=lambda: [], read_chain=lambda d: None, use_cache=False)
+        c = st.clusters("SPY")
+        assert c["new_oi"] == [] and c["exit_oi"] == []
+        assert c["prior_snapshot"] is None and c["latest_snapshot"] is None
+        assert "No per-strike chain snapshots are stored" in c["note_en"]
+        assert st.wall_persistence("SPY") is None
+
+    def test_single_snapshot_says_so(self):
+        one = _chain([_row("AAA", "t1", 110.0, True, 1000, 100.0)])
+        st = pp.load(chain_dates=lambda: [D_MON], read_chain=lambda d: one,
+                     use_cache=False)
+        c = st.clusters("AAA")
+        assert c["new_oi"] == [] and c["exit_oi"] == []
+        assert "Only one stored chain snapshot" in c["note_en"]
+        # the wall read still works off the one snapshot it has
+        assert st.wall_persistence("AAA")["call_side"]["sessions_at_level"] == 1
+
+    def test_unreadable_snapshot_is_skipped_not_fatal(self):
+        good = _chain([_row("AAA", "t1", 110.0, True, 1000, 100.0)])
+        moved = _chain([_row("AAA", "t1", 110.0, True, 1200, 100.0)])
+        frames = {D_THU: good, D_FRI: None, D_MON: moved}
+        st = pp.load(chain_dates=lambda: sorted(frames), read_chain=frames.get,
+                     use_cache=False)
+        assert st.meta["prior_snapshot"] == D_THU
+        assert st.meta["latest_snapshot"] == D_MON
+        assert st.clusters("AAA")["new_oi"][0]["oi_delta"] == 200
+
+    def test_listing_exception_degrades_to_empty(self):
+        def boom():
+            raise OSError("no store dir")
+        st = pp.load(chain_dates=boom, read_chain=lambda d: None, use_cache=False)
+        assert st.meta["sessions_available"] == 0
+        assert st.clusters("SPY")["new_oi"] == []
+
+
+# ── 9. payload strings are plain-word EN/ZH pairs ────────────────────────────
+
+_BANNED_IN_COPY = (
+    "polygon_gex", "oi_delta", "gex_state", "same_vintage", "strike_ticker",
+    "n=", "validated", "None", "null", "nan", "display-only", "authority_tier",
+    "falsifier", "refuted", "证伪",
+)
+
+
+def _all_notes(obj, out=None):
+    out = [] if out is None else out
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            if isinstance(k, str) and k.startswith("note_") and isinstance(v, str):
+                out.append(v)
+            else:
+                _all_notes(v, out)
+    elif isinstance(obj, list):
+        for v in obj:
+            _all_notes(v, out)
+    return out
+
+
+class TestPlainWordCopy:
+    def test_every_note_is_slug_free_and_paired(self):
+        dates, read = _two_day_store()
+        st = pp.load(chain_dates=dates, read_chain=read, use_cache=False)
+        blocks = [st.clusters("AAA"), st.clusters("BBB"), st.clusters("SPX"),
+                  st.wall_persistence("AAA"),
+                  pp.deep_history_context("SPY", reader=lambda g, n: pd.DataFrame(
+                      {"net_gex_bn": [1.0, 2.0]},
+                      index=pd.to_datetime(["2020-01-02", "2026-07-02"])))]
+        for b in blocks:
+            assert b is not None
+            notes = _all_notes(b)
+            assert notes, f"block carries no note strings: {sorted(b)}"
+            # EN/ZH always come in pairs
+            for parent in _note_parents(b):
+                assert parent.get("note_en") and parent.get("note_zh"), \
+                    f"unpaired note in {sorted(parent)}"
+            for n in notes:
+                for bad in _BANNED_IN_COPY:
+                    assert bad not in n, f"{bad!r} leaked into user-facing copy: {n!r}"
+
+    def test_zh_notes_carry_no_english_state_names(self):
+        """ZH must be independently plain — no English state names or words inside it.
+        Ticker roots are the one allowed ASCII token (the site shows SPY as SPY in
+        both languages), so they are stripped before the check rather than excusing
+        the whole block from it."""
+        dates, read = _two_day_store()
+        st = pp.load(chain_dates=dates, read_chain=read, use_cache=False)
+        deep = pp.deep_history_context("SPY", reader=lambda g, n: pd.DataFrame(
+            {"net_gex_bn": [1.0, 2.0]},
+            index=pd.to_datetime(["2020-01-02", "2026-07-02"])))
+        roots = ("SPY", "QQQ", "IWM", "DIA", "AAA", "BBB")
+        for b in (st.clusters("AAA"), st.clusters("BBB"), st.wall_persistence("AAA"), deep):
+            zh = [v for k, v in _flat(b) if k == "note_zh"]
+            assert zh
+            for s in zh:
+                probe = s
+                for r in roots:
+                    probe = probe.replace(r, "")
+                # "Gamma" is the term the ZH surfaces already use untranslated; every
+                # other English word is a leak.
+                probe = probe.replace("Gamma", "")
+                letters = [ch for ch in probe if ch.isascii() and ch.isalpha()]
+                assert not letters, f"English letters inside a ZH note: {s!r}"
+
+
+def _note_parents(obj, out=None):
+    out = [] if out is None else out
+    if isinstance(obj, dict):
+        if any(isinstance(k, str) and k.startswith("note_") for k in obj):
+            out.append(obj)
+        for v in obj.values():
+            _note_parents(v, out)
+    elif isinstance(obj, list):
+        for v in obj:
+            _note_parents(v, out)
+    return out
+
+
+def _flat(obj, out=None):
+    out = [] if out is None else out
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            if isinstance(v, str):
+                out.append((k, v))
+            else:
+                _flat(v, out)
+    elif isinstance(obj, list):
+        for v in obj:
+            _flat(v, out)
+    return out
+
+
+# ── 10. process cache is shared and resettable ───────────────────────────────
+
+def test_cache_is_reused_across_calls():
+    calls = {"n": 0}
+
+    def dates():
+        calls["n"] += 1
+        return []
+
+    pp.reset_cache()
+    a = pp.load(chain_dates=dates, read_chain=lambda d: None)
+    b = pp.load(chain_dates=dates, read_chain=lambda d: None)
+    assert a is b
+    assert calls["n"] == 1, "the store must be built exactly once per process"
+    pp.reset_cache()
+    c = pp.load(chain_dates=dates, read_chain=lambda d: None)
+    assert c is not a and calls["n"] == 2
+
+
+# ── 11. end-to-end against the REAL committed store ──────────────────────────
+
+def test_real_store_lights_the_clusters():
+    """Gate 1 (fresh-eyes, production data): the committed chain store must actually
+    light the field this wave exists to light — for a long time it returned [] by
+    construction, so a shape-only assertion would pass on a dead read."""
+    st = pp.load(use_cache=False)
+    if st.meta["sessions_available"] < 2:
+        pytest.skip("chain store has fewer than 2 session snapshots in this checkout")
+    assert st.meta["roots_with_clusters"] > 100, st.meta
+    c = st.clusters("SPY")
+    assert c["same_vintage"] is False
+    assert c["matched_contracts"] > 0
+    assert c["new_oi"] and c["exit_oi"], "SPY clusters are still empty on real data"
+    assert all(r["oi_delta"] > 0 for r in c["new_oi"])
+    assert all(r["oi_delta"] < 0 for r in c["exit_oi"])
+    w = st.wall_persistence("SPY")
+    assert w["call_side"]["level"] and w["put_side"]["level"]
+    assert 1 <= w["call_side"]["sessions_at_level"] <= w["sessions_covered"]
+
+
+# ── 12. matches_board_wall is stamped in the payload layer, not faked here ───
+
+class TestMatchesBoardWall:
+    """The open-interest wall must never silently stand in for the payload's
+    dollar-gamma call_wall / put_wall. gex_state stamps an explicit comparison."""
+
+    def _block(self, call_wall, put_wall, root="AAA"):
+        """Prime the PROCESS cache with a fixture store (use_cache=True is the
+        mechanism gex_state reads through), then ask the payload layer."""
+        from engine import gex_state as gs
+
+        pp.reset_cache()
+        day = _chain([
+            _row("AAA", "c1", 110.0, True, 900, 100.0),
+            _row("AAA", "p1", 90.0, False, 900, 100.0),
+        ])
+        frames = {D_FRI: day, D_MON: day}
+        primed = pp.load(chain_dates=lambda: sorted(frames), read_chain=frames.get)
+        assert primed.wall_persistence("AAA") is not None, "fixture store did not prime"
+        try:
+            return gs._wall_persistence(root, call_wall, put_wall)
+        finally:
+            pp.reset_cache()
+
+    def test_true_when_the_levels_coincide(self):
+        b = self._block(110.0, 90.0)
+        assert b["call_side"]["matches_board_wall"] is True
+        assert b["put_side"]["matches_board_wall"] is True
+
+    def test_false_when_they_disagree(self):
+        b = self._block(115.0, 85.0)
+        assert b["call_side"]["matches_board_wall"] is False
+        assert b["put_side"]["matches_board_wall"] is False
+
+    def test_null_when_the_board_wall_is_absent(self):
+        b = self._block(None, None)
+        assert b["call_side"]["matches_board_wall"] is None
+        assert b["put_side"]["matches_board_wall"] is None
+
+    def test_uncovered_name_stays_absent_even_with_a_board_wall(self):
+        """A name the chain store does not cover gets NO block — the payload must not
+        grow a wall_persistence key whose only content is the board wall echoed back."""
+        assert self._block(5000.0, 4000.0, root="SPX") is None

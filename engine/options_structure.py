@@ -82,9 +82,23 @@ class GexState:
     gravity_up_pct: float | None = None
     cascade_trigger: float | None = None
     upside_trigger: float | None = None
-    oi_delta_clusters: dict[str, list[dict]] = field(default_factory=lambda: {
+    # new_oi / exit_oi: matched-contract day-over-day open-interest build / unwind
+    # strikes (OIP E3, engine/positioning_persistence.py). Signing-free counts of
+    # contracts — the reliable read in this schema. The sibling keys are ADDITIVE
+    # vintage stamps + a plain-word EN/ZH pair; consumers reading only the two lists
+    # are unaffected (back-compat law).
+    oi_delta_clusters: dict[str, Any] = field(default_factory=lambda: {
         "new_oi": [], "exit_oi": []
     })
+    # OIP E3 additive blocks. Each is OMITTED (not null-filled) when its source does
+    # not cover the root, so absence is never mistaken for a measured zero:
+    #   wall_persistence — how long the heaviest open-interest strike either side of
+    #                      the price has held, over a bounded snapshot window
+    #   net_gex_pctile   — today's net dealer gamma inside the name's OWN daily record
+    #   deep_history     — window/spread of the multi-year index rebuild (index ETFs)
+    wall_persistence: dict | None = None
+    net_gex_pctile: dict | None = None
+    deep_history: dict | None = None
     regime_passport: dict = field(default_factory=lambda: {
         "basis": "dealer-short-assumption",
         "structurally_constant": False,

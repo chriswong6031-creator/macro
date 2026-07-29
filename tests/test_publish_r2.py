@@ -308,3 +308,38 @@ def test_client_retry_config(monkeypatch):
     # fail-fast connect bounds the hard-down worst case (serial dir lists inside
     # daily.yml's 150-min engine job) — 10 retries must not mean 10 x 60s hangs
     assert cfg.connect_timeout == 15 and cfg.read_timeout == 60
+
+
+# ── index_gex_history offsite mirror (OIP E3c) ────────────────────────────────
+
+def test_index_gex_history_in_data_dirs_not_default():
+    """The reconstructed index dealer-gamma history is a data-dir store, and NOT a
+    nightly default: its only producer is a weekly M1/launchd job on the host that
+    holds the ThetaData store, which publishes it explicitly. The nightly render must
+    never sync it (it holds the git-committed copy, which is the delivery path)."""
+    from scripts.publish_r2 import DEFAULT_DIRS, _DATA_DIRS
+    assert "index_gex_history" in _DATA_DIRS
+    assert "index_gex_history" not in DEFAULT_DIRS
+
+
+def test_index_gex_history_uses_a_store_sized_min_files_floor():
+    """The 100-file default would refuse this store forever — it is exactly 4 root
+    parquets plus a manifest. The override floor is still a real guard: a tree with
+    fewer than all four roots is refused."""
+    from scripts.publish_r2 import _DATA_DIR_MIN_FILES, _DATA_DIR_MIN_FILES_OVERRIDE
+    assert _DATA_DIR_MIN_FILES_OVERRIDE["index_gex_history"] == 4
+    assert _DATA_DIR_MIN_FILES_OVERRIDE["index_gex_history"] < _DATA_DIR_MIN_FILES
+    # a real store (4 roots + manifest) syncs
+    assert _data_dir_syncable("index_gex_history", 5)[0]
+    assert _data_dir_syncable("index_gex_history", 4)[0]
+    # a partial rebuild (one root) or a manifest-only tree does not
+    ok, why = _data_dir_syncable("index_gex_history", 2)
+    assert not ok and "partial checkout" in why
+
+
+def test_min_files_override_does_not_loosen_the_other_data_dirs():
+    """The override is per-dir: the big per-ticker stores keep the 100-file floor."""
+    from scripts.publish_r2 import _DATA_DIR_MIN_FILES_OVERRIDE
+    assert set(_DATA_DIR_MIN_FILES_OVERRIDE) == {"index_gex_history"}
+    assert not _data_dir_syncable("massive_stock_day", 5)[0]
+    assert not _data_dir_syncable("thetadata_eod", 5)[0]
