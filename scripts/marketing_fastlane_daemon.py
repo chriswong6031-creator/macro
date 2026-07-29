@@ -446,8 +446,12 @@ def _run_press_tick(*, dry_run: bool) -> dict:
     provider_state = state.setdefault("providers", {})
     press_items: list = []
     try:
+        # offline keys on the EXPLICIT dry-run only. `effective_dry` folds the
+        # outbox arm in, and routing it here made the publish switch disable
+        # intelligence COLLECTION — the exact defect the intelligence-desk
+        # session fixed on main (its scan test pins the literal below).
         press_items = press_providers.poll_all(
-            ROOT, press_cfg, provider_state, offline=effective_dry, now=now
+            ROOT, press_cfg, provider_state, offline=dry_run, now=now
         )
     except Exception as exc:  # noqa: BLE001
         logger.error("[press] provider poll_all error (continuing): %s", exc)
