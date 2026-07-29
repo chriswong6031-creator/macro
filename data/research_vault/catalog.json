@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-29T00:24:01.357956+00:00",
-  "count": 287,
+  "generated_at": "2026-07-29T00:40:05.503134+00:00",
+  "count": 288,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -28,6 +28,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-u3t0g2qtxp3-c19509",
+      "title": "GS Challenging Hedge Fund Performance amid Momentum; AI sell off",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T00:37:09Z",
+      "summary_points": [
+        "**GSPRHIMO Drawdown Severity**: Unconstrained Momentum (GSPRHIMO) faces worst drawdown since GFC (excluding Covid), at -40.98%, signaling severe risk for momentum-driven strategies.",
+        "**AI-Momentum Correlation Risk**: Extreme correlation (0.9778) between AI and Momentum indices directly links AI's record drawdown (GSPUARTI down 38%) to momentum performance decline.",
+        "**Memory Name Selling Surge**: Memory names recorded largest 2-day net selling since trade inception, with sustained long selling pressure on July 27, indicating heightened sector outflows.",
+        "**Volatility Disparity**: GSPRHIMO volatility at 89.46 (highest since Covid) vs.",
+        "subdued SPX (11.16) signals divergent market dynamics—AI/tech momentum vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-pouiaol0dbw-60895c",
       "title": "Ersteinschätzung Forbo EN",
