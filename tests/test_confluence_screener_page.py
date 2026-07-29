@@ -4,10 +4,12 @@ Headless-safe: no network, no site/ writes (tmp_path for any output),
 does not depend on real artifact files.
 
 The DOM-leak acceptance test verifies that gated tickers NEVER appear in the
-rendered HTML — this is the critical security property of the screener page.
+public rendered HTML. They may appear only in the separate server-protected
+/premiumdata/ payload returned to entitled sessions.
 """
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -17,7 +19,12 @@ _HERE = Path(__file__).resolve().parent.parent
 if str(_HERE) not in sys.path:
     sys.path.insert(0, str(_HERE))
 
-from scripts.build_confluence_screener import build_context, render_html
+from scripts.build_confluence_screener import (
+    PAYLOAD_URL,
+    build_context,
+    build_premium_payload,
+    render_html,
+)
 
 # ── Synthetic artifact ───────────────────────────────────────────────────────
 
@@ -232,6 +239,35 @@ def test_build_context_active_count_for_gated():
     assert ctx["combos"][2]["active_count"] == 2
 
 
+# ── protected payload tests ─────────────────────────────────────────────────
+
+def test_premium_payload_contains_only_gated_top_three_tickers():
+    raw = _make_raw()
+    payload = build_premium_payload(raw, {"GATEDBB": "Gated B"})
+
+    assert payload["schema"] == "tier_payload.v1"
+    assert payload["page"] == "confluence_screener"
+    assert payload["gated"] is True
+    assert payload["required_tier"] == "insider"
+    assert payload["built"] == "2026-07-19T04:00:00Z"
+    assert [combo["combo_id"] for combo in payload["combos"]] == ["L0002", "L0003"]
+
+    payload_text = repr(payload)
+    assert "GATEDBB" in payload_text
+    assert "GATEDCC" in payload_text
+    assert "Gated B" in payload_text
+    assert "FREEAA" not in payload_text
+    assert "RANKFOUR" not in payload_text
+
+
+def test_premium_payload_none_raw_overwrites_with_empty_fail_soft_payload():
+    payload = build_premium_payload(None, {})
+    assert payload["schema"] == "tier_payload.v1"
+    assert payload["gated"] is True
+    assert payload["combos"] == []
+    assert payload["built"] == ""
+
+
 # ── render_html DOM-leak tests ───────────────────────────────────────────────
 
 def _rendered_html():
@@ -250,6 +286,18 @@ def test_render_html_gated_tickers_absent():
     html = _rendered_html()
     assert "GATEDBB" not in html, "GATED ticker leaked into rendered HTML!"
     assert "GATEDCC" not in html, "GATED ticker leaked into rendered HTML!"
+
+
+def test_render_html_has_protected_payload_hydration_contract():
+    html = _rendered_html()
+    assert PAYLOAD_URL in html
+    assert 'data-confluence-combo="L0002"' in html
+    assert 'data-confluence-combo="L0003"' in html
+    assert "credentials: 'same-origin'" in html
+    assert "freshSession" in html
+    assert "mdx-auth" in html
+    assert "tier_payload.v1" in html
+    assert 'id="confluence-paid-cta"' in html
 
 
 def test_render_html_og_meta_present():
@@ -274,3 +322,21 @@ def test_render_html_no_validated_word():
 def test_render_html_is_html():
     html = _rendered_html()
     assert "<!DOCTYPE html>" in html or "<!doctype html>" in html.lower()
+
+
+def test_shipped_shell_and_protected_payload_are_paired():
+    """The committed artifact pair must stay deployable between nightly runs."""
+    html = (_ROOT / "site" / "confluence_screener.html").read_text(encoding="utf-8")
+    payload = json.loads(
+        (_ROOT / "site" / "premiumdata" / "confluence_screener.json")
+        .read_text(encoding="utf-8")
+    )
+
+    assert payload["schema"] == "tier_payload.v1"
+    assert payload["page"] == "confluence_screener"
+    assert payload["gated"] is True
+    assert payload["required_tier"] == "insider"
+    assert PAYLOAD_URL in html
+    for combo in payload["combos"]:
+        assert combo["active_count"] == len(combo["active_tickers"])
+        assert f'data-confluence-combo="{combo["combo_id"]}"' in html

@@ -1,7 +1,10 @@
-"""scripts.build_confluence_screener — render the free signal-stack screener page + og:image card.
+"""scripts.build_confluence_screener — render the signal-stack screener + paid payload + card.
 
 Reads site/factordata/tech_confluence.json.
-Writes site/confluence_screener.html and site/og/confluence_screener.png.
+Writes:
+  - site/confluence_screener.html (public preview shell)
+  - site/premiumdata/confluence_screener.json (server-protected paid rows)
+  - site/og/confluence_screener.png
 
 Usage:
     python -m scripts.build_confluence_screener
@@ -24,6 +27,11 @@ if str(_ROOT) not in sys.path:
 # CTA URL
 # ─────────────────────────────────────────────────────────────────────────────
 
+PAYLOAD_DIR = "premiumdata"
+PAYLOAD_NAME = "confluence_screener.json"
+PAYLOAD_URL = f"/{PAYLOAD_DIR}/{PAYLOAD_NAME}"
+
+
 def _cta_url() -> str:
     # Tagged trial CTA via the D07 Funnel link builder (#3052); untagged fallback
     # keeps the page fail-soft if links.py is ever absent.
@@ -41,6 +49,32 @@ def _cta_url() -> str:
 # ─────────────────────────────────────────────────────────────────────────────
 # build_context — pure function, testable
 # ─────────────────────────────────────────────────────────────────────────────
+
+def _eligible_long_combos(raw: dict | None) -> list[dict]:
+    """Return eligible long combos in rank order.
+
+    Keeping this selection in one helper ensures the public shell and protected
+    payload always agree about which rows are ranks 1–3.
+    """
+    if raw is None:
+        return []
+
+    longs = (raw.get("combos") or {}).get("long") or []
+    eligible: list[dict] = []
+    for combo in longs:
+        if not combo.get("active_now"):
+            continue
+        h21 = combo.get("h21") or {}
+        if h21.get("wr_mc_test") is None or h21.get("wr_mc_train") is None:
+            continue
+        eligible.append(combo)
+
+    return sorted(
+        eligible,
+        key=lambda combo: combo.get("rank_score", 0),
+        reverse=True,
+    )
+
 
 def build_context(raw: dict | None, name_map: dict) -> dict:
     """Build the Jinja context dict from the tech_confluence artifact.
@@ -60,6 +94,7 @@ def build_context(raw: dict | None, name_map: dict) -> dict:
             "n_active_total": 0,
             "combos": [],
             "cta_url": _cta_url(),
+            "premium_payload_url": PAYLOAD_URL,
         }
 
     # Derive asof from generated_utc field in artifact
@@ -74,24 +109,13 @@ def build_context(raw: dict | None, name_map: dict) -> dict:
     universe_n = raw.get("universe_n", 0) or 0
     split_date = raw.get("split_date") or "2018-01-01"
 
-    # Filter long combos: non-empty active_now AND non-null h21.wr_mc_test and h21.wr_mc_train
-    longs = (raw.get("combos") or {}).get("long") or []
     legs_list = raw.get("legs") or []
-
-    eligible: list[dict] = []
-    for c in longs:
-        if not c.get("active_now"):
-            continue
-        h21 = c.get("h21") or {}
-        if h21.get("wr_mc_test") is None or h21.get("wr_mc_train") is None:
-            continue
-        eligible.append(c)
+    eligible = _eligible_long_combos(raw)
 
     n_active_total = len(eligible)
 
-    # Sort by rank_score descending, take top 3
-    eligible_sorted = sorted(eligible, key=lambda x: x.get("rank_score", 0), reverse=True)
-    top3 = eligible_sorted[:3]
+    # Take top 3 after the shared rank ordering.
+    top3 = eligible[:3]
 
     combos: list[dict] = []
     for rank_idx, c in enumerate(top3):
@@ -156,6 +180,36 @@ def build_context(raw: dict | None, name_map: dict) -> dict:
         "n_active_total": n_active_total,
         "combos": combos,
         "cta_url": _cta_url(),
+        "premium_payload_url": PAYLOAD_URL,
+    }
+
+
+def build_premium_payload(raw: dict | None, name_map: dict) -> dict:
+    """Build the server-protected rank-2/3 ticker payload.
+
+    This data must never be embedded in the public page. Caddy protects the
+    /premiumdata/ prefix with the authoritative registration + paywall checks.
+    """
+    artifact_utc = raw.get("generated_utc") if raw else None
+    combos: list[dict] = []
+    for combo in _eligible_long_combos(raw)[1:3]:
+        active_now = combo.get("active_now") or []
+        combos.append({
+            "combo_id": combo.get("id", ""),
+            "active_count": len(active_now),
+            "active_tickers": [
+                {"ticker": ticker, "name": name_map.get(ticker, "")}
+                for ticker in active_now
+            ],
+        })
+
+    return {
+        "schema": "tier_payload.v1",
+        "page": "confluence_screener",
+        "gated": True,
+        "required_tier": "insider",
+        "built": artifact_utc or "",
+        "combos": combos,
     }
 
 
@@ -182,7 +236,7 @@ def render_html(root: Path, ctx: dict) -> str:
 # ─────────────────────────────────────────────────────────────────────────────
 
 def render(root: Path) -> None:
-    """Load artifact, build context, write page and share card."""
+    """Load artifact, write the public shell, protected payload, and card."""
     t0 = time.perf_counter()
 
     # Load artifact (fail-soft)
@@ -222,6 +276,17 @@ def render(root: Path) -> None:
     from lib.pages import write_page  # noqa: PLC0415
     write_page(root / "site" / "confluence_screener.html", html)
 
+    # Paid ticker names live only in this protected asset. Always overwrite it,
+    # including with an empty fail-soft payload, so a broken/missing source
+    # artifact cannot leave yesterday's entitled rows stale on disk.
+    premium_payload = build_premium_payload(raw, name_map)
+    payload_out = root / "site" / PAYLOAD_DIR / PAYLOAD_NAME
+    payload_out.parent.mkdir(parents=True, exist_ok=True)
+    payload_out.write_text(
+        json.dumps(premium_payload, ensure_ascii=False, separators=(",", ":")) + "\n",
+        encoding="utf-8",
+    )
+
     # Share card (only when combos present)
     combos = ctx.get("combos") or []
     if combos:
@@ -246,7 +311,10 @@ def render(root: Path) -> None:
             pass  # card failure is non-fatal; page was already written
 
     elapsed = time.perf_counter() - t0
-    print(f"[confluence_screener] page+card in {elapsed:.1f}s (combos={len(combos)})")
+    print(
+        "[confluence_screener] page+premium-payload+card "
+        f"in {elapsed:.1f}s (combos={len(combos)})"
+    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
