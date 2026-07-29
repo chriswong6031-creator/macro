@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-29T04:57:29.979883+00:00",
-  "count": 296,
+  "generated_at": "2026-07-29T07:39:20.376283+00:00",
+  "count": 304,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -13,7 +13,9 @@
     "Mizuho",
     "Morgan Stanley",
     "Natixis",
+    "Nuveen",
     "Other",
+    "Prime",
     "RBC",
     "Rabobank",
     "S&T",
@@ -215,6 +217,26 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-bpedmxshodi-858f92",
+      "title": "Weekly CIO commentary",
+      "institution": "Nuveen",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T23:30:00Z",
+      "summary_points": [
+        "**Fed Policy Shift & Rate Hikes**: Fed prioritizes price stability, eliminates forward guidance; 90% odds of 2026 rate hikes; markets recalibrate amid policy uncertainty.",
+        "**AI Infrastructure Scarcity**: Utilities face durable scarcity from AI energy demands (e.g., Meta’s $50B Louisiana project); capex up 17% with 6% earnings growth, positioning listed infrastructure as structural diversifier.",
+        "**Negative Correlation & Valuation Discount**: Nasdaq 100 and S&P Global Infrastructure Index show negative correlation (-0.05); infrastructure trades at valuations below U.S.",
+        "tech despite upgraded earnings growth tied to AI expansion."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-pouiaol0dbw-60895c",
       "title": "Ersteinschätzung Forbo EN",
       "institution": "ZKB",
@@ -270,6 +292,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-knqk9vgxgi5-1852f6",
+      "title": "JPM Market Intel Global Thematic Views July 2026",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T23:06:39Z",
+      "summary_points": [
+        "**China AI Cost Dominance**: Chinese models (e.g., DeepSeek V4 Flash at $0.02 vs.",
+        "GPT-5.5 at $0.86) deliver frontier performance at 1/3–1/2 U.S.",
+        "cost, undercutting rivals by 10x (Kimi K3 vs.",
+        "Claude Fable 5: 2c vs.",
+        "$2.75), pressuring U.S."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 17,
       "language": "en",
       "needs_metadata": false
     },
@@ -1245,6 +1288,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-zoifp9xr3dx-bf6d07",
+      "title": "Tracking the Gigawatts RBC Datacenter Expansion",
+      "institution": "RBC",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T01:17:41Z",
+      "summary_points": [
+        "**Hyperscaler Pipeline Scale**: Top 4 hyperscalers (Meta, Microsoft, Amazon, Google) have 16.8 GW under construction and 39.6 GW planned/potential as of Jun-2026, signaling massive infrastructure demand and supply chain strain.",
+        "**Regulatory Cost-Shifting Risk**: NY Executive Order 62 (July 2026) imposes 50MW+ permitting freeze and shifts grid upgrade costs to developers (vs.",
+        "ratepayer model), with US-wide project withdrawals surging due to community opposition and court rulings.",
+        "**BTM Energy Dependency**: Gas/BTM undisclosed (84 projects) and gas dominance (10% NA projects) account for 81% of BTM tech projects, reflecting structural energy dependency risks and investment flows into co-located solutions.",
+        "**70% Public Opposition**: Gallup survey shows 70% US opposition to local datacenters, with contagion risk from NY’s cost-shift model to Virginia/Texas markets, threatening queued capacity and project viability."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-olmfbjuoozh-1b4c25",
       "title": "1784950162513",
       "institution": "Other",
@@ -1697,6 +1761,48 @@
       "tickers": [],
       "top_pick": false,
       "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-6gqcnryehgx-e3779b",
+      "title": "Equities Tactical Top Picks 1",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T00:41:27Z",
+      "summary_points": [
+        "**Asia-Pacific Drag on Performance**: Regional underperformance (avg.",
+        "absolute -8.7%, relative -5.1%) dominates negative alpha (-8.8%), contrasting with Europe’s marginal positive absolute return (1.6%).",
+        "**Resilient Core Business Fundamentals**: 90% hearing aid sales insulated from macro pressures; AI-driven software upgrades to boost recurring revenue, supported by UBS earnings above consensus.",
+        "**Roche’s Growth Catalysts**: Leading oncology/immunology franchises (Vabysmo, Ocrevus) and diagnostics pipeline with AI/digital diagnostics, mid-high single-digit growth, and robust R&D across key therapeutic areas.",
+        "**Valuation Upside vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 28,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ff5yvngghw1-06c20d",
+      "title": "JPM Positioning Intelligence HFs Fade Mag7 While Covering Shorts Elsewhere",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T00:37:32Z",
+      "summary_points": [
+        "**TPM Signal & Equity Support**: US TPM 4wk change triggered -1.5z threshold (US 19th %-tile, Europe 18th, China 33rd), historically supportive for equities.",
+        "**HF Flows & Breadth Improvement**: Global HF performance improved (US rebound, Europe/Asia gains); short covering in Software/Consumer/Fins signals broadening market participation.",
+        "**Regional Rotation & Crowding Risks**: APAC rotation (China onshore, Japan highs); EMEA defensive tilt (sell EU Semis/China Revenue, buy EU Autos/AI).",
+        "Global Semis L/S at 98th %-tile, Tech HW at 86th percentile.",
+        "**Geopolitical & Earnings Uncertainty**: Persistent crowding risks and geopolitical factors driving choppy markets until AI capex clarity from earnings."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
       "language": "en",
       "needs_metadata": false
     },
@@ -2376,6 +2482,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-pei7pauyfde-b4525a",
+      "title": "US Equities Weekly Rundown 7 24 26",
+      "institution": "Prime",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-27T10:06:02Z",
+      "summary_points": [
+        "**Leverage at Extreme Risk Levels**: US L/S Gross leverage at 204.2% (6th percentile), Net leverage at 51.7% (22nd percentile), signaling elevated systemic risk exposure and long bias.",
+        "**Energy Sector Overexposure Risk**: Prime Book’s Energy weighting vs Russell 3000 shows a pronounced 2025 spike, indicating fundamental overexposure relative to benchmark.",
+        "**Critical Upcoming Data Calendar**: FOMC (Wed), US PCE June (Thurs), US GDP Q2 (Thurs), China NBS PMIs (Thurs night), BOJ decision (Thurs night), Eurozone CPI Jul (Fri) – clustered high-impact events.",
+        "**Leveraged ETFs at 2-Year Peak**: Top 50 levered equity ETFs at $416.77B notional (2-year high), signaling extreme leverage risk and potential drawdown vulnerability.",
+        "**Tech Sector Under Pressure Despite Earnings**: Semis/memory/AI selling persists (ASML, TSM, GOOGL lower on beats/raises), with tech pockets not defended amid macro tightening."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 20,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-xeu2rnattul-6bdafc",
       "title": "A NEW FISCAL-MONETARY ACCORD",
       "institution": "TS Lombard",
@@ -2412,6 +2539,48 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-7pg69mncdpb-62f45b",
+      "title": "JPM Europe Equity Research | Today’s Morning Meeting",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-27T08:04:35Z",
+      "summary_points": [
+        "**Wolters Kluwer Tax Valuation**: Tax business undervalued by 68% of EV; AI-driven re-rating potential to 13x (40% discount to US peers) if guidance confirmed.",
+        "**EU Price Fixing Investigations**: EU probes Sika and Saint-Gobain for price fixing, posing acute regulatory risk to sector valuations.",
+        "**Cybersecurity Over Credit Risk**: Cybersecurity now top concern for global banks, outweighing credit risk in valuation models.",
+        "**EU Competitiveness Agenda**: Drives shareholder activism and M&A (20% UK, 15% France vs global 10%), targeting Banks/Asset Managers/Telecoms.",
+        "**European Utilities Gas Storage**: Low gas storage fuels earnings momentum for generators/integrated utilities amid geopolitical energy volatility."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 17,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-bms7cauktyp-277d6e",
+      "title": "Japan Portfolio Strategy Trigger warnings Lessons from the July August 2024 sell off",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-27T07:34:35Z",
+      "summary_points": [
+        "**Extreme Positioning Vulnerability**: Japanese equity positioning at 98th percentile (gross/net), with HF allocations near 99th percentile, heightening correction risk amid current TOPIX +37% (vs 2024) and AI-driven crowding.",
+        "**AI Sector Valuation & Liquidity Risk**: AI stocks valued ~2x non-AI (Exhibit 14), while margin buy transactions at 5-year highs (Exhibit 15) signal retail vulnerability to liquidation during corrections.",
+        "**USDJPY Forecast Revisions**: GS G10 FX revised 3M/6M/12M USDJPY forecasts to 162/163/165 (vs 160/158/155), driven by divergent macro (Fed rates, fiscal sustainability) and structural JPY depreciation.",
+        "**Sector Divergence in Corrections**: During 2024 sell-off, Exporters/Financials underperformed Defensive/Domestics by ~15ppts; current positioning amplifies this risk amid yen weakness.",
+        "**Net Foreign Flow Reversal**: Net foreign flows reversed from +¥8T (2023–July 2024) to -¥13T (July–Aug 2024), bottoming April 2025, then rebounding to +¥15T—sudden shifts could trigger rapid de-risking."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": true,
+      "pages": 27,
       "language": "en",
       "needs_metadata": false
     },

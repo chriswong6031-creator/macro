@@ -8,7 +8,7 @@ Design mirrors test_ask_brain.py:
 
 Coverage (per contract):
   1.  Config load + fallback defaults when file missing
-  2.  Lane → model routing: fast→deepseek-chat; deepseek-missing→haiku; pro→opus
+  2.  Lane → model routing: fast→DeepSeek V4 Pro; pro→GPT-5.6 Sol→Opus 5
   3.  Quota ledger increment + week/month rollover + 402 shape at exhaustion
   4.  Tier resolution fallback to 'free' on table-missing
   5.  status='trialing' → trial allowances
@@ -175,11 +175,14 @@ def test_fast_lane_fallback_model_is_haiku():
     assert "haiku" in fallback.lower()
 
 
-def test_pro_lane_opus_model():
-    """pro lane primary model is claude-opus-5 (newest Opus)."""
+def test_pro_lane_sol_primary_opus_backup():
+    """Pro ships GPT-5.6 Sol High first with Opus 5 High as its backup."""
     root = _make_temp_root()
     cfg = gw._load_brain_config(root)
     pro = cfg["lanes"]["pro"]
+    assert pro.get("provider_order") == ["codex", "oauth", "anthropic"]
+    assert pro.get("codex_source_model") == "gpt-5.6-sol"
+    assert pro.get("codex_reasoning_effort") == "high"
     assert pro.get("opus_model") == "claude-opus-5"
 
 
@@ -192,23 +195,13 @@ def test_pro_lane_high_intensity_config():
     assert pro.get("thinking") == "adaptive"
 
 
-def test_pro_lane_fallback_is_sonnet():
-    """pro lane fallback model is claude-sonnet-4-6."""
+def test_pro_lane_has_no_lower_quality_fallbacks():
+    """The shipped Pro waterfall ends at Opus 5 rather than Sonnet/DS/Haiku."""
     root = _make_temp_root()
     cfg = gw._load_brain_config(root)
     pro = cfg["lanes"]["pro"]
-    assert "sonnet" in (pro.get("fallback_model") or "").lower()
-
-
-def test_pro_lane_degraded_models_config():
-    """pro lane carries degraded-capacity fallbacks (DeepSeek + Haiku) so a fully
-    rate-capped OAuth pool still yields a real answer, plus the 95% weekly ceiling."""
-    root = _make_temp_root()
-    cfg = gw._load_brain_config(root)
-    pro = cfg["lanes"]["pro"]
-    dm = pro.get("degraded_models") or []
-    assert any("deepseek" in str(m).lower() for m in dm), dm
-    assert any("haiku" in str(m).lower() for m in dm), dm
+    assert "fallback_model" not in pro
+    assert not pro.get("degraded_models")
     assert pro.get("weekly_ceiling_pct") == 95
 
 
@@ -727,6 +720,86 @@ def test_get_quote_symbol_sanitization(tmp_path):
     assert gw._safe_symbol("AA BB") == "AABB"
     # Legitimate dotted ticker preserved
     assert gw._safe_symbol("BRK.B") == "BRK.B"
+    assert gw._safe_symbol("600036.SH") == "600036.SS"
+    assert gw._safe_symbol("SSE:600036") == "600036.SS"
+    assert gw._safe_symbol("HKEX:700") == "0700.HK"
+
+
+def test_explicit_international_symbol_beats_stale_context():
+    assert gw._turn_symbol("600036.SH 现在可以买了吗？", {"symbol": "NVDA"}) == "600036.SS"
+    assert gw._turn_symbol("What about SHOP.TO?", {"symbol": "AAPL"}) == "SHOP.TO"
+
+
+def test_symbol_context_combines_fresh_technicals_act_now_and_dated_stage(tmp_path, monkeypatch):
+    basket_path = tmp_path / "site" / "chinabasketdata" / "baskets.json"
+    basket_path.parent.mkdir(parents=True)
+    basket_path.write_text(json.dumps({
+        "as_of": "2026-07-28",
+        "benchmark_label": "CSI 300",
+        "baskets": [{
+            "id": "cn_banks",
+            "name": "Banks",
+            "score": 75,
+            "members": [{
+                "symbol": "600036.SS",
+                "name": "China Merchants Bank",
+                "ret_5d": 0.0421,
+                "ret_20d": 0.1458,
+            }],
+        }],
+        "theme_intel": {
+            "as_of": "2026-07-28",
+            "bench_label": "CSI 300",
+            "themes": [{
+                "id": "cn_banks",
+                "name": "Banks",
+                "score": 75,
+                "label": "dominant",
+                "reco_en": "ACCUMULATE",
+                "perf": {
+                    "5d": {"rel": 0.0673, "ret": 0.0339},
+                    "20d": {"rel": 0.1936, "ret": 0.1154},
+                },
+                "mtf": {"confluence": {"headline": "Aligned uptrend across timeframes"}},
+            }],
+            "act_now": {
+                "buy": [{
+                    "id": "cn_banks",
+                    "clean_entry": True,
+                }],
+            },
+        },
+    }), encoding="utf-8")
+    monkeypatch.setattr(gw, "_technical_snapshot", lambda symbol, root: {
+        "as_of": "2026-07-28",
+        "last": 39.59,
+        "returns_pct": {"5d": 4.21, "20d": 14.58, "60d": 2.83},
+        "technicals": {
+            "trend": "above tracked moving averages",
+            "sma20": 37.51,
+            "sma50": 37.32,
+            "sma200": 39.29,
+            "rsi14": 72.3,
+            "macd_state": "bullish",
+        },
+    })
+    monkeypatch.setattr(gw, "_compact_stage_context", lambda symbol, root: {
+        "as_of": "2026-07-17",
+        "stage": "Stage 4 — declining",
+        "weeks_in_stage": 5,
+        "mansfield_rs": -23.29,
+        "industry_percentile": 98.6,
+    })
+
+    packet = gw._tool_get_symbol_context({"symbol": "600036.SH"}, tmp_path)
+    assert packet["symbol"] == "600036.SS"
+    assert packet["price"]["technicals"]["macd_state"] == "bullish"
+    assert packet["themes"][0]["what_to_act_on_now"] == "buy"
+    assert packet["themes"][0]["relative_returns_pct"]["20d"] == 19.36
+    assert packet["stage_snapshot"]["as_of"] == "2026-07-17"
+    digest = gw._symbol_grounding_digest("600036.SS", tmp_path)
+    assert "WHAT TO ACT ON NOW=BUY" in digest
+    assert "older than the current price/theme evidence" in digest
 
 
 # ---------------------------------------------------------------------------
@@ -4009,19 +4082,18 @@ def test_deepseek_thinking_rides_per_candidate_kwargs(tmp_path):
     assert claude.create_kwargs[0]["output_config"] == {"effort": "high"}
 
 
-def test_fast_lane_config_disables_deepseek_thinking_end_to_end(tmp_path):
-    """chat() reads deepseek_thinking off the lane config and it reaches the create call
-    (config-not-literals: flipping the yaml key is the whole switch)."""
+def test_fast_lane_config_keeps_deepseek_thinking_end_to_end(tmp_path):
+    """The shipped Fast config leaves V4 Pro's native thinking enabled."""
     root = pathlib.Path(__file__).resolve().parent.parent  # the SHIPPED config/brain.yml
     client = _CaptureClient()
     with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
         with patch.object(gw, "_build_lane_providers",
-                          return_value=[{"client": client, "model": "deepseek-v4-flash"}]):
+                          return_value=[{"client": client, "model": "deepseek-v4-pro"}]):
             with patch.object(gw, "_resolve_tier", return_value={"tier": "pro", "status": "active", "current_period_end": None}):
                 with patch.object(gw, "_ensure_thread", return_value=None):
                     with patch("lib.ai_costs.record_usage", return_value=True):
                         gw.chat("hello", "user-dst", lane="fast", root=root)
-    assert client.create_kwargs[0]["thinking"] == {"type": "disabled"}
+    assert "thinking" not in client.create_kwargs[0]
 
 
 def test_pro_lane_keeps_deepseek_thinking_on_its_degraded_rung(tmp_path):
@@ -4099,22 +4171,26 @@ def test_skip_ahead_is_fail_open_on_key_pool_error(monkeypatch):
 
 # ── B1/B2: client latency guards, config → build_providers ───────────────────
 
-def test_brain_yml_fast_lane_is_the_speed_tier():
-    """The SHIPPED config (not the loader fallback): Fast runs v4-flash with thinking off
-    and no SDK-level retry (the failover chain is the retry)."""
+def test_brain_yml_fast_lane_uses_v4_pro_with_native_thinking():
+    """The shipped Fast lane restores V4 Pro and does not disable its reasoning."""
     root = pathlib.Path(__file__).resolve().parent.parent
     fast = gw._load_brain_config(root)["lanes"]["fast"]
-    assert fast["deepseek_model"] == "deepseek-v4-flash"
-    assert fast["deepseek_thinking"] == "disabled"
+    assert fast["deepseek_model"] == "deepseek-v4-pro"
+    assert "deepseek_thinking" not in fast
     assert fast["client_max_retries"] == 0
     assert fast["client_timeout_s"] == 120
 
 
 def test_brain_yml_pro_lane_latency_guards():
-    """Pro carries the same retry guard with a longer ceiling, and deliberately does NOT
-    disable thinking (its degraded DeepSeek rung is the quality backstop)."""
+    """Shipped Pro is Sol High first, then high-effort Opus, with a long timeout."""
     root = pathlib.Path(__file__).resolve().parent.parent
     pro = gw._load_brain_config(root)["lanes"]["pro"]
+    assert pro["provider_order"] == ["codex", "oauth", "anthropic"]
+    assert pro["codex_source_model"] == "gpt-5.6-sol"
+    assert pro["codex_reasoning_effort"] == "high"
+    assert pro["opus_model"] == "claude-opus-5"
+    assert "fallback_model" not in pro
+    assert not pro.get("degraded_models")
     assert pro["client_max_retries"] == 0
     assert pro["client_timeout_s"] == 600  # covers a full 8k-token NO-TOOL answer (review MAJOR-1)
     assert "deepseek_thinking" not in pro
@@ -4146,22 +4222,21 @@ def test_build_lane_providers_forwards_client_tuning_to_llm_auth():
     assert seen and all(c["client_max_retries"] == 0 and c["client_timeout_s"] == 600 for c in seen)
 
 
-def test_deepseek_thinking_reaches_the_synthesis_stream(tmp_path):
-    """The Phase-2 stream takes the SAME per-candidate kwargs as the Phase-1 creates —
-    otherwise synthesis (the longest call of the turn) would still think."""
+def test_fast_v4_pro_keeps_native_thinking_in_synthesis_stream(tmp_path):
+    """No thinking-disable parameter is sent in either phase of the shipped Fast lane."""
     root = pathlib.Path(__file__).resolve().parent.parent  # the SHIPPED config/brain.yml
     client = _two_round_client()
     with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
         with patch.object(gw, "_build_lane_providers",
-                          return_value=[{"client": client, "model": "deepseek-v4-flash"}]):
+                          return_value=[{"client": client, "model": "deepseek-v4-pro"}]):
             with patch.object(gw, "_resolve_tier", return_value={"tier": "pro", "status": "active", "current_period_end": None}):
                 with patch.object(gw, "_ensure_thread", return_value=None):
                     with patch.object(gw, "_dispatch_brain_tool", return_value={"symbol": "AAPL"}):
                         with patch("lib.ai_costs.record_usage", return_value=True):
                             list(gw.chat_stream("How is AAPL doing?", "user-ds-stream",
                                                 lane="fast", root=root))
-    assert client.stream_kwargs[0]["thinking"] == {"type": "disabled"}
-    assert all(k["thinking"] == {"type": "disabled"} for k in client.create_kwargs)
+    assert "thinking" not in client.stream_kwargs[0]
+    assert all("thinking" not in k for k in client.create_kwargs)
 
 
 # ── #3586 review fix-forward: param-rejection 400s fail over; beats never regress ──

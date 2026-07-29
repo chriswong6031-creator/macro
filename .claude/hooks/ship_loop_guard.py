@@ -14,6 +14,14 @@ self-heals a failed lane within a day — so ``_stop`` defers to the shared
 coalescing lane rather than holding a session the lane's ~67+ minutes (observed
 sessions sat 3h46m-4h02m for a lane they may not touch).
 
+Rendering is TWO lanes, and the gate asks whichever one owns the merge. #3834 split
+the data-free public surfaces out of the heavy self-hosted ``render.yml`` into the
+GitHub-hosted ``public-render.yml``, so for a public-only change a push-triggered
+``render.yml`` run cannot exist and demanding one blocked forever (#3897, live and
+green on the other lane). Ownership is parsed from both workflows at Stop time — see
+``_render_lane_filters`` — never transcribed here, so the guard cannot drift from
+the split.
+
 An open pull request armed with the ``merge-on-green`` label likewise releases the
 session (see ``_stop``). The merge-on-CONCLUDED-checks law is correct and stays —
 a pending check is not a pass, and an ``--admin`` merge mid-flight destroyed the
@@ -1025,13 +1033,175 @@ _RENDER_INPUT_PATHS = {
 # nothing in the lane and a render for it would be an unsatisfiable demand.
 _RENDER_BUILDER = re.compile(r"^scripts/build_[^/]*\.py$")
 
+# The two render lanes. `render.yml` is the heavy self-hosted market renderer;
+# #3834 split the data-free public surfaces out of it into `public-render.yml`,
+# a GitHub-hosted fast lane that renders the Jinja public pages, re-stamps the
+# immutable assets, and pushes the site/ + templates/ delta straight to main.
+# `_stop` walks them in this order, and each satisfies its own half of the gate.
+_HEAVY_RENDER_WORKFLOW = "render.yml"
+_PUBLIC_RENDER_WORKFLOW = "public-render.yml"
+_RENDER_LANE_HEAVY = "render"
+_RENDER_LANE_PUBLIC = "public-render"
+_WORKFLOW_DIR = Path(".github") / "workflows"
+
+_YAML_LIST_ITEM = re.compile(
+    r"""^-[ \t]+(?:"(?P<dq>[^"]*)"|'(?P<sq>[^']*)'|(?P<bare>[^#\s].*?))[ \t]*(?:\#.*)?$"""
+)
+
+
+def _workflow_push_paths(workflow: Path) -> list[str]:
+    """A workflow's ordered ``on.push.paths`` filter, read without PyYAML.
+
+    A line scanner rather than a parser, on purpose. This hook runs under
+    whatever ``python3`` the Stop event hands it, so every third-party import is
+    one more way for a completion gate to die outright — and PyYAML would be the
+    wrong parser anyway: its YAML 1.1 resolver turns a workflow's ``on:`` key
+    into the boolean ``True``, a footgun that has no place in a gate whose only
+    unforgivable failure mode is releasing a session it should have held.
+
+    Both lanes write the block as plain quoted scalars, one per line, which the
+    scanner below reads exactly. Anything it does not recognise — a flow list, a
+    nested mapping, a missing trigger, an unreadable file — yields ``[]``, and
+    every caller reads that as ignorance rather than permission.
+    """
+    try:
+        lines = workflow.read_text(encoding="utf-8").splitlines()
+    except Exception:
+        return []
+
+    on_indent = push_indent = paths_indent = -1
+    stage = "on"
+    found: list[str] = []
+    for line in lines:
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        indent = len(line) - len(line.lstrip(" "))
+        if stage == "on":
+            if indent == 0 and stripped == "on:":
+                on_indent, stage = indent, "push"
+            continue
+        if stage == "push":
+            if indent <= on_indent:
+                return []  # left the trigger block without a push filter
+            if stripped == "push:":
+                push_indent, stage = indent, "paths"
+            continue
+        if stage == "paths":
+            if indent <= push_indent:
+                return []  # a push trigger with no `paths:` filter at all
+            if stripped == "paths:":
+                paths_indent, stage = indent, "items"
+            continue
+        if indent <= paths_indent:
+            break
+        match = _YAML_LIST_ITEM.match(stripped)
+        if match is None:
+            return []
+        value = match.group("dq")
+        if value is None:
+            value = match.group("sq")
+        if value is None:
+            value = (match.group("bare") or "").strip()
+        if not value:
+            return []
+        found.append(value)
+    return found
+
+
+_GLOB_CACHE: dict[str, re.Pattern[str]] = {}
+
+
+def _github_glob(pattern: str) -> re.Pattern[str]:
+    """Compile one GitHub path-filter glob. ``*``/``?`` never cross ``/``; ``**`` does.
+
+    The metacharacters neither lane uses (``+``, character classes) are escaped to
+    literals rather than modelled. That under-matches if one ever appears, which
+    reads as "public-render does not claim this" and leaves the heavy lane's
+    demand standing — the fail-closed direction.
+    """
+    compiled = _GLOB_CACHE.get(pattern)
+    if compiled is None:
+        parts: list[str] = []
+        index = 0
+        while index < len(pattern):
+            char = pattern[index]
+            if char == "*":
+                if pattern[index + 1 : index + 2] == "*":
+                    parts.append(".*")
+                    index += 2
+                    continue
+                parts.append("[^/]*")
+            elif char == "?":
+                parts.append("[^/]")
+            else:
+                parts.append(re.escape(char))
+            index += 1
+        compiled = re.compile("^" + "".join(parts) + "$")
+        _GLOB_CACHE[pattern] = compiled
+    return compiled
+
+
+def _path_filter_includes(item: str, patterns: list[str]) -> bool:
+    """Whether a push filter fires for ``item``. LAST matching pattern wins.
+
+    GitHub evaluates the list in order and lets a later entry overturn an
+    earlier one, which is the whole mechanism render.yml uses: ``templates/**``
+    then thirteen ``!templates/...`` negations then ``scripts/build_*.py`` then
+    ``!scripts/build_public_pages.py``. Reading it as "any negation excludes"
+    would happen to agree today, but only by the accident that no positive
+    pattern currently follows a negation of the same path — exactly the kind of
+    accident that rots the next time someone reorders the block.
+    """
+    verdict = False
+    for pattern in patterns:
+        negated = pattern.startswith("!")
+        if _github_glob(pattern[1:] if negated else pattern).match(item):
+            verdict = not negated
+    return verdict
+
+
+def _render_lane_filters(root: Path) -> tuple[list[str], list[str]]:
+    """Both lanes' push filters, parsed from the workflows themselves.
+
+    Never hardcoded here. The #3834 split lives in exactly two files, and the
+    guard's job is to agree with them rather than to carry a third copy that
+    drifts — the drift is precisely what produced the false gate this function
+    exists to close. ``tests/test_public_render_fastlane.py`` pins both halves of
+    the split; this reads the same two lists at runtime.
+
+    Either list coming back empty disables the ownership test entirely (see
+    ``_public_render_owns``), which restores the pre-split behaviour of
+    demanding a render.yml run for every templates/ path — the fail-CLOSED
+    direction, and the same stance ``_plain_copy_pairs`` takes on an unreadable
+    pair list.
+    """
+    heavy = _workflow_push_paths(root / _WORKFLOW_DIR / _HEAVY_RENDER_WORKFLOW)
+    public = _workflow_push_paths(root / _WORKFLOW_DIR / _PUBLIC_RENDER_WORKFLOW)
+    return heavy, public
+
+
+def _public_render_owns(item: str, filters: tuple[list[str], list[str]]) -> bool:
+    """Whether ``public-render.yml`` — and NOT ``render.yml`` — renders ``item``.
+
+    Both halves are required. A path public-render claims but render.yml also
+    still matches is not a lane split, it is a double-fire, and the heavy lane's
+    demand stands. A path render.yml excludes but public-render never claims is
+    a dead wire: nothing renders it, and this function must not pretend a lane
+    exists to satisfy.
+    """
+    heavy, public = filters
+    if not heavy or not public:
+        return False
+    return _path_filter_includes(item, public) and not _path_filter_includes(item, heavy)
+
 
 def _plain_copy_pairs(root: Path) -> set[str]:
     """Names under ``templates/`` that also ship as a committed ``site/`` copy.
 
     Loaded from ``scripts/check_template_site_sync.find_pairs`` — the very
     enumeration CI's ui.template_site_sync gate walks — rather than re-deriving
-    the rule here, so the exemption in ``_render_triggering_paths`` and the sync
+    the rule here, so the exemption in ``_render_lanes_for_paths`` and the sync
     law can never drift apart as pairs are added or retired (56 today).
 
     Every failure path returns the empty set, which REQUIRES a render rather
@@ -1055,16 +1225,21 @@ def _plain_copy_pairs(root: Path) -> set[str]:
         sys.path[:] = saved_path
 
 
-def _render_triggering_paths(changed: list[str], pairs: set[str]) -> bool:
-    """True when ``changed`` touches something the render lane actually produces.
+def _render_lanes_for_paths(
+    changed: list[str], pairs: set[str], filters: tuple[list[str], list[str]]
+) -> set[str]:
+    """Which render lanes ``changed`` actually needs — possibly neither.
 
-    render.yml's push filter is `templates/**`, so ANY templates/ path used to
-    demand a render. But the lane only produces two things: re-baked `.j2` pages
-    and the `?v=` content-hash re-stamp. A paired PLAIN-COPY asset — a non-.j2
-    file under templates/ that also ships as `site/<name>` — is neither. Its
-    site/ copy is committed straight to main, and the VPS `macro-update` cron
-    pulls main every 3 minutes, so those bytes are live within minutes whether
-    render ever runs or not.
+    render.yml's push filter USED to be a bare `templates/**`, so ANY templates/
+    path demanded a render from the heavy self-hosted lane. Two things have since
+    made that read wrong, and each one produced its own unsatisfiable gate.
+
+    First, the lane only produces two things: re-baked `.j2` pages and the `?v=`
+    content-hash re-stamp. A paired PLAIN-COPY asset — a non-.j2 file under
+    templates/ that also ships as `site/<name>` — is neither. Its site/ copy is
+    committed straight to main, and the VPS `macro-update` cron pulls main every
+    3 minutes, so those bytes are live within minutes whether render ever runs or
+    not.
 
     Demanding a render for them was a real, recurring false gate. Observed
     2026-07-26 on PR #3671 (templates/mm_brain.js + site/mm_brain.js, no .j2):
@@ -1091,32 +1266,71 @@ def _render_triggering_paths(changed: list[str], pairs: set[str]) -> bool:
     an unsatisfiable gate is the operator's call, taken deliberately.
 
     A `.j2` page, a builder, a sweep script, or anything else under templates/
-    (`templates/fonts/`, a subdirectory, an unpaired asset) still requires the
+    (`templates/fonts/`, a subdirectory, an unpaired asset) still requires a
     render. So does a paired asset whose `site/` twin is NOT in the same commit:
     that is a one-sided edit the sync gate rejects anyway, and it means the live
     bytes have not moved. Fail-closed on everything the pair list cannot vouch for.
+
+    Second — and this is the same class of false gate, one lane over — #3834
+    stopped `templates/**` being one lane at all. The public/marketing surfaces
+    were split into `public-render.yml`, and render.yml's push filter now carries
+    thirteen explicit negations plus `!scripts/build_public_pages.py` so the
+    scarce self-hosted market renderer is never occupied merely to bake the three
+    data-free public pages. For those paths a push-triggered render.yml run
+    CANNOT EXIST, so demanding one blocked forever. Observed 2026-07-28 on
+    PR #3897 (templates/plans.html.j2 + site/plans.html): merged as 7fe17018,
+    public-render.yml run 30349907107 concluded `success` on that exact sha and
+    pushed d4ac971df7a, https://www.mastermind-x.com/plans.html was browser-
+    verified live in production — and the guard returned `render_pending`
+    regardless, with no run it could ever have been waiting for.
+
+    So the question is not one bool but which LANE owes the work. A path
+    public-render.yml claims and render.yml excludes belongs to
+    ``_RENDER_LANE_PUBLIC``, and ``_stop`` satisfies it from that workflow's own
+    runs under the same coalescing rule. Ownership is parsed out of both
+    workflows at runtime (``_render_lane_filters``) rather than transcribed here,
+    so the guard and the split cannot drift; when the parse cannot vouch for a
+    path the ownership test goes silent and the heavy lane's demand stands,
+    exactly as before the split.
+
+    The pair exemption is applied FIRST and still wins, including for the public
+    surfaces it covers. Those bytes are live on the VPS pull with or without any
+    lane, the only thing forfeited is the `?v=` re-stamp, and that trade is the
+    operator's standing call from #3671 — re-imposing a wait on them through the
+    new lane would quietly undo it.
     """
     touched = set(changed)
+    lanes: set[str] = set()
     for item in changed:
-        if item in _RENDER_INPUT_PATHS or _RENDER_BUILDER.match(item):
-            return True
-        if not item.startswith("templates/"):
+        if item.startswith("templates/"):
+            name = item[len("templates/") :]
+            if name in pairs and f"site/{name}" in touched:
+                continue
+        if _public_render_owns(item, filters):
+            lanes.add(_RENDER_LANE_PUBLIC)
             continue
-        name = item[len("templates/") :]
-        if name in pairs and f"site/{name}" in touched:
-            continue
-        return True
-    return False
+        if (
+            item in _RENDER_INPUT_PATHS
+            or _RENDER_BUILDER.match(item)
+            or item.startswith("templates/")
+        ):
+            lanes.add(_RENDER_LANE_HEAVY)
+    return lanes
 
 
-def _needs_render(root: Path, merge_sha: str, start_head: str, head: str) -> bool:
-    """Whether a push-triggered render must exist for ``merge_sha``.
+_RENDER_LANE_CACHE: dict[tuple[str, str, str, str], frozenset[str]] = {}
 
-    Scoped to THIS merge's own diff, not the whole session range. render.yml's
-    push trigger is path-filtered, so a push render attributable to this merge
+
+def _required_render_lanes(
+    root: Path, merge_sha: str, start_head: str, head: str
+) -> set[str]:
+    """Which render lanes must have a run for ``merge_sha``.
+
+    Scoped to THIS merge's own diff, not the whole session range. Both lanes'
+    push triggers are path-filtered, so a push render attributable to this merge
     can exist if and only if merge_sha ITSELF touched those paths. (What
     SATISFIES the requirement is a separate question: ``_render_status`` accepts
-    either the push render at merge_sha or a later successful render on a main
+    either the push render at merge_sha or a later successful run on a main
     descendant, per the shared-lane coalescing law. That widens coverage, not
     this requirement, which stays scoped as below.)
 
@@ -1128,15 +1342,25 @@ def _needs_render(root: Path, merge_sha: str, start_head: str, head: str) -> boo
     2026-07-25: PR #3481 changed only .github/workflows/ci.yml, yet five
     template/builder files from concurrent merges set needs_render.)
 
-    Within that scope, ``_render_triggering_paths`` asks the narrower question
-    the gate actually cares about: not "would render.yml fire?" but "does this
-    merge contain anything render PRODUCES?" — see its docstring for why a
-    paired plain-copy asset is live without one.
+    Within that scope, ``_render_lanes_for_paths`` asks the narrower question the
+    gate actually cares about: not "would render.yml fire?" but "does this merge
+    contain anything a render lane PRODUCES, and which lane?" — see its docstring
+    for why a paired plain-copy asset needs neither.
 
-    The pair list is read from the worktree, which carries this merge's files
-    (the session's branch is what was merged). A worktree that cannot answer
-    yields no pairs and therefore requires the render.
+    The pair list and both push filters are read from the worktree, which carries
+    this merge's files (the session's branch is what was merged). A worktree that
+    cannot answer yields no pairs and no ownership, which requires the heavy
+    render — ignorance, not permission.
+
+    Memoised because ``_stop`` asks once per lane and the answer is a pure
+    function of a merge that cannot change under it: one git diff, one walk of
+    templates/, two workflow reads, not two of each. Only successes are cached,
+    so a transient git failure still re-raises on the next ask.
     """
+    memo_key = (str(root), merge_sha, start_head, head)
+    cached = _RENDER_LANE_CACHE.get(memo_key)
+    if cached is not None:
+        return set(cached)
     try:
         changed = _run(
             root, "git", "diff", "--name-only", f"{merge_sha}^", merge_sha
@@ -1145,7 +1369,21 @@ def _needs_render(root: Path, merge_sha: str, start_head: str, head: str) -> boo
         # Root/orphan merge or unavailable parent — fall back to the session
         # range, which over-requires rather than under-requires a render.
         changed = _run(root, "git", "diff", "--name-only", start_head, head).splitlines()
-    return _render_triggering_paths(changed, _plain_copy_pairs(root))
+    lanes = _render_lanes_for_paths(
+        changed, _plain_copy_pairs(root), _render_lane_filters(root)
+    )
+    _RENDER_LANE_CACHE[memo_key] = frozenset(lanes)
+    return lanes
+
+
+def _needs_render(root: Path, merge_sha: str, start_head: str, head: str) -> bool:
+    """Whether a push-triggered ``render.yml`` run must exist for ``merge_sha``."""
+    return _RENDER_LANE_HEAVY in _required_render_lanes(root, merge_sha, start_head, head)
+
+
+def _needs_public_render(root: Path, merge_sha: str, start_head: str, head: str) -> bool:
+    """Whether a push-triggered ``public-render.yml`` run must exist for ``merge_sha``."""
+    return _RENDER_LANE_PUBLIC in _required_render_lanes(root, merge_sha, start_head, head)
 
 
 def _is_ancestor(root: Path, ancestor: str, descendant: str) -> bool:
@@ -1164,7 +1402,12 @@ def _is_ancestor(root: Path, ancestor: str, descendant: str) -> bool:
 
 
 def _render_status(
-    root: Path, owner: str, repo: str, merge_sha: str, merged_at: str
+    root: Path,
+    owner: str,
+    repo: str,
+    merge_sha: str,
+    merged_at: str,
+    workflow: str = _HEAVY_RENDER_WORKFLOW,
 ) -> tuple[str, str]:
     """Judge render COVERAGE for ``merge_sha``, not a dedicated run at that sha.
 
@@ -1212,9 +1455,19 @@ def _render_status(
       run is not deferral, it is a missing gate.
     - ``failed`` — every candidate has completed, the newest is non-success, and
       nothing is in flight. Actionable and blocking, exactly as before.
+
+    ``workflow`` selects the lane. All of the above holds for the public fast lane
+    too, for a different reason that lands in the same place: `public-render.yml`
+    runs `cancel-in-progress: TRUE`, so a newer push kills an older run outright —
+    but every run checks out `ref: main` and rebuilds the public surfaces from
+    scratch, so the survivor's tree already contains every merge it superseded.
+    Coalescing by supersession rather than by scope-union, identical coverage
+    algebra. Only the remediation wording differs.
     """
+    label = workflow[: -len(".yml")] if workflow.endswith(".yml") else workflow
+    public = workflow == _PUBLIC_RENDER_WORKFLOW
     endpoint = (
-        f"https://api.github.com/repos/{owner}/{repo}/actions/workflows/render.yml/runs"
+        f"https://api.github.com/repos/{owner}/{repo}/actions/workflows/{workflow}/runs"
     )
 
     exact_query = urllib.parse.urlencode(
@@ -1255,7 +1508,7 @@ def _render_status(
     # the verdict below weighs it once.
     candidates = {run.get("id"): run for run in (*exact, *covering)}
     if not candidates:
-        return "pending", "The required render workflow has not started yet."
+        return "pending", f"The required {label} workflow has not started yet."
 
     def _created(run: dict[str, Any]) -> str:
         return str(run.get("created_at") or "")
@@ -1264,21 +1517,34 @@ def _render_status(
     if in_flight:
         run = max(in_flight, key=_created)
         status = run.get("status") or "pending"
+        backstop = (
+            "the public fast lane, which rebuilds every public surface from current "
+            "main, so the newest run supersedes this one and still covers the merge"
+            if public
+            else "the shared coalescing lane, with the nightly scope=all re-render as "
+            "backstop"
+        )
         return "deferred", (
-            f"Render run {run.get('id')} is {status} and covers this merge; completion "
-            "is deferred to the shared coalescing lane, with the nightly scope=all "
-            "re-render as backstop."
+            f"{label.capitalize()} run {run.get('id')} is {status} and covers this "
+            f"merge; completion is deferred to {backstop}."
         )
 
     newest = max(candidates.values(), key=_created)
+    coalescing = (
+        "Every run of the lane checks out main and rebuilds the public surfaces from "
+        "scratch, so one success at any later main commit covers this merge — a "
+        "dedicated run at this exact sha is not required."
+        if public
+        else "The lane unions every dirty scope since its last covering watermark, so "
+        "one success at any later main commit covers this merge — a dedicated run at "
+        "this exact sha is not required."
+    )
     return "failed", (
-        f"Render workflow concluded {newest.get('conclusion') or 'unknown'} "
-        f"(run {newest.get('id')}), and no later successful render on a main "
+        f"{label.capitalize()} workflow concluded {newest.get('conclusion') or 'unknown'} "
+        f"(run {newest.get('id')}), and no later successful {label} run on a main "
         "descendant of this merge exists yet: re-run that run "
         f"(`gh run rerun {newest.get('id')}`) once the cause is fixed, or dispatch "
-        "render.yml on main. The lane unions every dirty scope since its last "
-        "covering watermark, so one success at any later main commit covers this "
-        "merge — a dedicated run at this exact sha is not required."
+        f"{workflow} on main. {coalescing}"
     )
 
 
@@ -1687,13 +1953,26 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
             return
         _remember_proof(path, state, "origin_main", merge_sha, True)
 
-    render_note = ""
-    needs_render = _needs_render(root, merge_sha, str(state.get("start_head")), head)
-    if needs_render:
-        render_proof = _proof(state, "render", merge_sha)
+    render_notes: list[str] = []
+    start_head = str(state.get("start_head"))
+    # Two lanes since #3834, each satisfied from its OWN workflow's runs: the heavy
+    # self-hosted market renderer, and the GitHub-hosted public fast lane that
+    # render.yml's negations handed the public surfaces to. A merge usually owes
+    # one or neither — asking both cost a session an unsatisfiable `render_pending`
+    # for every public-only change (#3897). Heavy first, so a mixed merge reports
+    # the slow lane's verdict rather than the fast one's.
+    lanes: list[tuple[str, str]] = []
+    if _needs_render(root, merge_sha, start_head, head):
+        lanes.append((_HEAVY_RENDER_WORKFLOW, "render"))
+    if _needs_public_render(root, merge_sha, start_head, head):
+        lanes.append((_PUBLIC_RENDER_WORKFLOW, "public_render"))
+    for workflow, gate in lanes:
+        render_proof = _proof(state, gate, merge_sha)
         if render_proof is None:
             try:
-                status, detail = _render_status(root, owner, repo, merge_sha, merged_at)
+                status, detail = _render_status(
+                    root, owner, repo, merge_sha, merged_at, workflow
+                )
             except Exception as exc:
                 _block(path, state, payload, _github_block_code(exc), str(exc))
                 return
@@ -1703,8 +1982,8 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
                 # the nightly scope=all re-render as backstop) owns the re-bake. Record
                 # the deferral so a later Stop turn reads it back and so the audit
                 # systemMessage below can name it. Fall through to the live gate.
-                _remember_proof(path, state, "render", merge_sha, {"deferred": detail})
-                render_note = detail
+                _remember_proof(path, state, gate, merge_sha, {"deferred": detail})
+                render_notes.append(detail)
             elif status != "success":
                 _block(
                     path,
@@ -1715,9 +1994,9 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
                 )
                 return
             else:
-                _remember_proof(path, state, "render", merge_sha, True)
+                _remember_proof(path, state, gate, merge_sha, True)
         elif isinstance(render_proof, dict) and "deferred" in render_proof:
-            render_note = str(render_proof.get("deferred") or "")
+            render_notes.append(str(render_proof.get("deferred") or ""))
 
     try:
         deployed = _find_commit(_get_json(LIVE_HEALTH_URL))
@@ -1734,10 +2013,11 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
         # A pass that rests on excluded reds is a judgement call; the operator has
         # to be able to audit which checks were ignored and on what evidence.
         audit.append(f"Ship-loop CI gate: {ci_reason}")
-    if render_note:
-        # Likewise a render this Stop DEFERRED rather than waited for: the operator
-        # must be able to see that the shared lane still owes a re-bake (nightly
-        # scope=all is the backstop) even though the session was released.
+    for render_note in render_notes:
+        # Likewise a render this Stop DEFERRED rather than waited for, once per lane
+        # that deferred: the operator must be able to see that a lane still owes a
+        # re-bake — with the nightly scope=all as the heavy lane's backstop and the
+        # next push as the fast lane's — even though the session was released.
         audit.append(f"Ship-loop render gate: {render_note}")
     if audit:
         # Emitted only here, once every later gate has passed, and as ONE combined
