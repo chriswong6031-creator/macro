@@ -109,6 +109,7 @@ Collisions checked: no DO_NOT_REBUILD kill touched (CC-News/newsapi.org/Feedly/G
 
 ## §5 Operator notes
 
-1. **VPS daemon restart** required after merge for daemon-side code (`systemctl restart marketing-press-feeds`); the 3-min pull updates the checkout, not the running process. Snapshot/admin/template changes go live without it.
+1. ~~VPS daemon restart required after merge~~ — CORRECTED during build: `app/deploy/update.sh`'s press-feeds block already restarts the daemon when `engine/marketing/*` / the daemon script / `engine/news_translate.py` change on main. Code pickup is automatic; no manual step.
 2. **DEEPSEEK_API_KEY** still absent in `/etc/macro-live.env` — desk zh (and the existing rail zh) stay in labeled-EN fallback until provisioned. One-line operator step, pre-existing.
-3. Alpaca keys: poller arms itself only when both env vars are present on the host.
+3. Alpaca keys: poller arms itself only when both env vars are present — `/etc/macro-live.env` for the daemon, GitHub repo secrets for the Actions wire lane (workflow env already forwards them, inert until set).
+4. **Deployed-admin delivery** (discovered during build, B2→B3): the VPS admin checkout has no authenticated git tree AND is reset `--hard` to origin every ~3 min, so approve-flow delivery to main rides the GitHub Contents API (`accounts_toggle` precedent) with sha-retry over the union-merged `items.jsonl`; the gitops rebase-push path serves authenticated local trees only.

@@ -476,6 +476,41 @@ and the seen-ledger. Production desk/rail snapshots live under
    `MARKETING_PUBLISH_ENABLED` leaves intelligence ingestion, the story desk, and
    the wire running but stops outbound posts.
 
+**Intelligence Desk V2 (2026-07-29) operator notes:**
+- The same `DEEPSEEK_API_KEY` from step 2 also powers the desk's story-level
+  Chinese twins (`headline_zh`/`brief_zh`, and the phrased why-line when the LLM
+  pass produced one). Absent key → labeled-English fallback on every surface,
+  same as the rail.
+- **Alpaca/Benzinga news lane**: armed purely by env presence — add
+  `ALPACA_API_KEY_ID=…` and `ALPACA_API_SECRET_KEY=…` to `/etc/macro-live.env`
+  for the daemon; add the same two as GitHub repo secrets to arm the Actions
+  wire lane (`marketing-press-wire.yml` already forwards them; unset secrets
+  resolve to empty and the poller no-ops with one preflight notice). Free REST
+  endpoint, one page per tick, cursor-primed so the first poll never floods.
+- **Desk LLM drafts/why-phrasing** resolve `marketing_copy` through the same
+  llm_models waterfall as the breaking summarizer — no new credentials, and the
+  same two-key arming: config `wire.intelligence.llm.enabled` AND
+  `MARKETING_LLM_ENABLED=1` in the daemon env (absent → the pass ships dark
+  with one log notice, exactly like the press summarizer). Keyless hosts keep
+  the deterministic drafts; every model output passes numeric / call-language /
+  hedge / banned-language / AI-tell gates or is discarded, and gate-rejected
+  phrasings are cached so the 75s tick never re-buys a known rejection.
+- **Story-store self-heal**: a corrupted SQLite desk store is quarantined aside
+  as `intelligence.db.corrupt-<utcstamp>` and rebuilt automatically (the desk
+  re-accrues from live ticks; the wire is unaffected). Stray `.corrupt-*` files
+  under `/var/lib/macro-live/state/intelligence/` are safe to delete after a
+  look.
+- **Content Studio "Queue for X"**: the operator click on a review draft runs
+  the full outbox gate chain server-side and — on the deployed admin — delivers
+  the queued row to `main` through the GitHub Contents API (the
+  `accounts_toggle` precedent), so the Actions publisher sees it on its next
+  sweep. `delivered: false` in the response means the item did NOT reach main
+  (the note names why); nothing posts until a later approve lands it. Posting
+  itself remains governed by the sentinel/publisher arm state, unchanged.
+- **Code pickup**: `macro-update` already restarts the daemon when
+  `engine/marketing/*` or the daemon script changes on main — no manual
+  `systemctl restart` is needed after a merge.
+
 The live-plane venv includes `datasketch`; without it the daemon still runs but
 the scoring brain reports `story-spine-no-datasketch` and falls back to exact
 story identity. Existing hosts provisioned before this dependency landed need

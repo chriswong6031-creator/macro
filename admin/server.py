@@ -1043,6 +1043,27 @@ class Handler(BaseHTTPRequestHandler):
                 res = marketing.sentinel_allow(item_id, reason)
                 return self._json(res, 200 if res.get("ok") else 400)
 
+            # Intelligence Desk: queue ONE reviewed draft into the outbox. The
+            # operator's click IS the approval, but not the evidence — the handler
+            # re-reads the story and the draft from the desk snapshot server-side
+            # and runs the canonical press-lane gate chain against the desk's own
+            # text, so a tampered or merely stale browser payload cannot post copy
+            # no gate saw. This route therefore validates SHAPE only.
+            #
+            # Refusals come back as {ok:false, reason, detail}: `reason` names the
+            # gate that fired and the panel keys its message off it, so pass the
+            # handler's dict through untouched rather than flattening it into the
+            # `error` shape the guards above use.
+            if path == "/api/marketing/intelligence/approve":
+                story_id = b.get("story_id")
+                draft_id = b.get("draft_id")
+                if not isinstance(story_id, str) or not story_id.strip():
+                    return self._json({"ok": False, "error": "story_id required"}, 400)
+                if not isinstance(draft_id, str) or not draft_id.strip():
+                    return self._json({"ok": False, "error": "draft_id required"}, 400)
+                res = marketing.intelligence_approve(story_id, draft_id)
+                return self._json(res, 200 if res.get("ok") else 400)
+
             # Desk on/off: merge-write data/marketing/account_overrides.json. Local
             # checkout commits+pushes it; the deployed VPS admin (no git auth) commits
             # it to main via the GitHub Contents API — handled in marketing.accounts_
