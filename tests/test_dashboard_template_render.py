@@ -240,18 +240,17 @@ def test_stocks_mode_renders_standout_card_body():
     assert "ZEUS" in html  # ungrouped lane=None card renders too
 
 
-def test_stocks_mode_has_decision_first_shell_and_collapsed_expert_board():
-    """The stocks landing page leads with the small Prophet decision queue,
-    while the full evidence-heavy board remains available on deliberate
-    expansion instead of competing in the default scan path."""
+def test_stocks_mode_keeps_existing_action_board_and_prophet_scorecards():
+    """The declutter pass must preserve the two established decision surfaces.
+    They stay in the default document flow; only lower-priority research boards
+    are hidden from the landing scan."""
     html = _render("stocks")
-    assert 'id="stocks-command"' in html
-    assert "Daily decision queue" in html
-    assert 'id="stocks-context"' in html
-    assert '<details class="stk-expert span12" id="all-prophet-signals">' in html
+    assert 'id="action-board"' in html
     assert 'class="panel span12 notable" id="us-standouts"' in html
-    assert "body.page-stocks #action-board," in html
-    assert "body.page-stocks .stocks-breadth-detail," in html
+    assert 'id="stocks-command"' not in html
+    assert 'id="all-prophet-signals"' not in html
+    assert "body.page-stocks #equity-scoreboard," in html
+    assert "body.page-stocks #holdings{display:none!important}" in html
 
 
 def test_stocks_mode_dossier_block_intentionally_absent():

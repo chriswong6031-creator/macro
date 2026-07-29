@@ -1791,12 +1791,6 @@
   {% if mode == 'stocks' %}
   <!-- ===================== US STOCK DASHBOARD HEADER ===================== -->
   <style id="stocks-home-css">
-  body.page-stocks{
-    --stk-buy:var(--up);
-    --stk-watch:#69a7ff;
-    --stk-protect:var(--warn);
-    --stk-exit:var(--down);
-  }
   body.page-stocks #stocks-header{
     padding:18px 20px;
     background:
@@ -1818,116 +1812,21 @@
   body.page-stocks .stk-header-links a{color:var(--muted);text-decoration:none}
   body.page-stocks .stk-header-links a:hover{color:var(--link)}
 
-  body.page-stocks #stocks-command{padding:0;overflow:hidden;border-color:color-mix(in srgb,var(--link) 20%,var(--line))}
-  body.page-stocks .stk-command-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:18px 20px 14px;border-bottom:1px solid var(--line)}
-  body.page-stocks .stk-eyebrow{font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--link)}
-  body.page-stocks .stk-command-head h2{margin:3px 0 0;font-size:19px;letter-spacing:-.02em}
-  body.page-stocks .stk-command-sub{margin:4px 0 0;color:var(--muted);font-size:12.5px;line-height:1.4}
-  body.page-stocks .stk-counts{display:flex;align-items:center;gap:7px;flex-wrap:wrap;justify-content:flex-end}
-  body.page-stocks .stk-count{
-    display:inline-flex;align-items:center;min-height:29px;padding:4px 9px;border:1px solid var(--line);
-    border-radius:999px;background:var(--panel2);font-size:11px;color:var(--muted);white-space:nowrap;
-  }
-  body.page-stocks .stk-count b{color:var(--text);margin-right:4px;font-variant-numeric:tabular-nums}
-  body.page-stocks .stk-research-note{
-    min-height:29px;padding:4px 9px;border:1px solid color-mix(in srgb,var(--warn) 30%,var(--line));
-    border-radius:999px;background:color-mix(in srgb,var(--warn) 8%,var(--panel2));color:var(--warn);
-    font:650 11px/1.2 var(--font-ui);cursor:help;
-  }
-  body.page-stocks .stk-delta{
-    display:flex;align-items:center;gap:8px 18px;flex-wrap:wrap;padding:10px 20px;
-    background:color-mix(in srgb,var(--link) 4%,var(--panel2));border-bottom:1px solid var(--line);
-  }
-  body.page-stocks .stk-delta-label{font-size:10px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:var(--muted)}
-  body.page-stocks .stk-delta-item{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:color-mix(in srgb,var(--text) 76%,transparent)}
-  body.page-stocks .stk-delta-item b{color:var(--text);font-variant-numeric:tabular-nums}
-  body.page-stocks .stk-delta-mark{width:7px;height:7px;border-radius:50%;background:var(--link)}
-  body.page-stocks .stk-delta-item.protect .stk-delta-mark{background:var(--warn)}
-  body.page-stocks .stk-delta-item.change .stk-delta-mark{background:var(--stk-watch)}
-  body.page-stocks .stk-decision-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0}
-  body.page-stocks .stk-decision-col{min-width:0;padding:16px 20px 18px}
-  body.page-stocks .stk-decision-col + .stk-decision-col{border-left:1px solid var(--line)}
-  body.page-stocks .stk-col-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:9px}
-  body.page-stocks .stk-col-head h3{margin:0;font-size:14px;letter-spacing:-.01em}
-  body.page-stocks .stk-col-head span{font-size:11px;color:var(--muted)}
-  body.page-stocks .stk-signal-list{display:grid;gap:7px}
-  body.page-stocks .stk-signal-row{
-    display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px 12px;min-height:88px;
-    padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);
-    color:var(--text);text-decoration:none;transition:border-color .14s ease,background .14s ease,transform .14s ease;
-  }
-  body.page-stocks .stk-signal-row:hover{border-color:color-mix(in srgb,var(--link) 46%,var(--line));background:color-mix(in srgb,var(--link) 5%,var(--panel2));transform:translateY(-1px)}
-  body.page-stocks .stk-stock-id{display:flex;align-items:baseline;gap:8px;min-width:0}
-  body.page-stocks .stk-ticker{font-size:15px;font-weight:820;letter-spacing:.01em}
-  body.page-stocks .stk-company{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:12px}
-  body.page-stocks .stk-verb{align-self:start;min-width:57px;padding:4px 8px;border-radius:999px;text-align:center;font-size:10px;font-weight:850;letter-spacing:.06em;text-transform:uppercase;border:1px solid currentColor}
-  body.page-stocks .stk-verb.buy{color:var(--stk-buy);background:color-mix(in srgb,var(--stk-buy) 10%,transparent)}
-  body.page-stocks .stk-verb.wait{color:var(--stk-watch);background:color-mix(in srgb,var(--stk-watch) 10%,transparent)}
-  body.page-stocks .stk-verb.trim{color:var(--stk-protect);background:color-mix(in srgb,var(--stk-protect) 10%,transparent)}
-  body.page-stocks .stk-verb.exit{color:var(--stk-exit);background:color-mix(in srgb,var(--stk-exit) 9%,transparent)}
-  body.page-stocks .stk-row-meta{grid-column:1/-1;display:flex;gap:5px 12px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
-  body.page-stocks .stk-row-meta b{color:color-mix(in srgb,var(--text) 86%,transparent);font-weight:650}
-  body.page-stocks .stk-row-why{grid-column:1/-1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:color-mix(in srgb,var(--text) 78%,transparent)}
-  body.page-stocks .stk-row-foot{grid-column:1/-1;display:flex;align-items:center;gap:8px;font-size:10.5px;color:var(--muted)}
-  body.page-stocks .stk-new{color:var(--link);font-weight:750}
-  body.page-stocks .stk-empty{display:flex;align-items:center;min-height:88px;padding:12px;border:1px dashed var(--line);border-radius:10px;color:var(--muted);font-size:12px}
-
-  body.page-stocks #stocks-context{padding:16px 20px}
-  body.page-stocks .stk-section-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:11px}
-  body.page-stocks .stk-section-head h2{margin:0;font-size:16px}
-  body.page-stocks .stk-section-head p{margin:0;color:var(--muted);font-size:11.5px}
-  body.page-stocks .stk-context-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
-  body.page-stocks .stk-context-group{min-width:0;padding:11px;border:1px solid var(--line);border-radius:10px;background:var(--panel2)}
-  body.page-stocks .stk-context-title{display:flex;justify-content:space-between;gap:8px;margin-bottom:7px;font-size:10px;font-weight:820;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
-  body.page-stocks .stk-context-title b{font-variant-numeric:tabular-nums}
-  body.page-stocks .stk-context-group.favour .stk-context-title{color:var(--stk-buy)}
-  body.page-stocks .stk-context-group.chase .stk-context-title{color:var(--stk-watch)}
-  body.page-stocks .stk-context-group.protect .stk-context-title{color:var(--stk-protect)}
-  body.page-stocks .stk-context-group.avoid .stk-context-title{color:var(--stk-exit)}
-  body.page-stocks .stk-context-links{display:grid;gap:2px}
-  body.page-stocks .stk-context-links a{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:4px 0;color:var(--text);font-size:12px;text-decoration:none}
-  body.page-stocks .stk-context-links a:hover{color:var(--link)}
-  body.page-stocks .stk-context-none{padding:4px 0;color:var(--muted);font-size:12px}
-
-  body.page-stocks #stocks-explore{padding:16px 20px}
-  body.page-stocks .stk-explore-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
-  body.page-stocks .stk-explore-link{display:flex;flex-direction:column;justify-content:space-between;gap:10px;min-height:76px;padding:11px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);text-decoration:none}
-  body.page-stocks .stk-explore-link:hover{border-color:color-mix(in srgb,var(--link) 46%,var(--line));background:color-mix(in srgb,var(--link) 5%,var(--panel2))}
-  body.page-stocks .stk-explore-link b{color:var(--text);font-size:12px}
-  body.page-stocks .stk-explore-link span{color:var(--muted);font-size:10.5px;line-height:1.3}
-
-  body.page-stocks #action-board,
+  /* Keep the two strongest existing surfaces exactly as designed:
+     #action-board first, then the Prophet #us-standouts scorecards. Remove only
+     the duplicated research boards that pushed both below the fold. */
   body.page-stocks #sector-heat,
   body.page-stocks #sentiment-regime,
   body.page-stocks #cross-asset-macro,
   body.page-stocks #dash-tape-band,
-  body.page-stocks .stocks-breadth-detail,
+  body.page-stocks #equity-scoreboard,
   body.page-stocks #sectors,
   body.page-stocks #dash-mtf-section,
   body.page-stocks #accumulation,
   body.page-stocks #holdings{display:none!important}
-  body.page-stocks .stk-expert{
-    border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow:hidden;
-  }
-  body.page-stocks .stk-expert>summary{
-    display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:52px;padding:12px 16px;
-    cursor:pointer;list-style:none;font-size:13px;font-weight:750;color:var(--text);
-  }
-  body.page-stocks .stk-expert>summary::-webkit-details-marker{display:none}
-  body.page-stocks .stk-expert>summary span{color:var(--muted);font-size:11px;font-weight:550}
-  body.page-stocks .stk-expert>summary:after{content:'+';color:var(--link);font-size:19px;font-weight:500}
-  body.page-stocks .stk-expert[open]>summary:after{content:'−'}
-  body.page-stocks .stk-expert[open]>summary{border-bottom:1px solid var(--line)}
-  body.page-stocks .stk-expert>#us-standouts{margin:0;border:0;border-radius:0}
 
   @media(max-width:900px){
     body.page-stocks .stk-head-meta{margin-left:0;width:100%}
-    body.page-stocks .stk-command-head{display:block}
-    body.page-stocks .stk-counts{justify-content:flex-start;margin-top:10px}
-    body.page-stocks .stk-decision-grid{grid-template-columns:1fr}
-    body.page-stocks .stk-decision-col + .stk-decision-col{border-left:0;border-top:1px solid var(--line)}
-    body.page-stocks .stk-context-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-    body.page-stocks .stk-explore-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
   }
   @media(max-width:560px){
     body.page-stocks #stocks-header{padding:15px 14px}
@@ -1935,22 +1834,6 @@
     body.page-stocks .stk-head-meta{gap:6px}
     body.page-stocks .stk-status{font-size:11px}
     body.page-stocks .stk-header-links{gap:12px;overflow-x:auto;white-space:nowrap;padding-bottom:2px}
-    body.page-stocks .stk-command-head{padding:15px 14px 12px}
-    body.page-stocks .stk-delta{padding:10px 14px;gap:7px 13px}
-    body.page-stocks .stk-decision-col{padding:14px}
-    body.page-stocks .stk-signal-row{min-height:98px;padding:12px}
-    body.page-stocks .stk-company{max-width:180px}
-    body.page-stocks .stk-row-why{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-    body.page-stocks #stocks-context,body.page-stocks #stocks-explore{padding:14px}
-    body.page-stocks .stk-section-head{display:block}
-    body.page-stocks .stk-section-head p{margin-top:4px}
-    body.page-stocks .stk-context-grid{grid-template-columns:1fr 1fr}
-    body.page-stocks .stk-explore-grid{grid-template-columns:1fr 1fr}
-    body.page-stocks .stk-explore-link{min-height:70px}
-    body.page-stocks .stk-expert>summary{min-height:56px;padding:12px 14px}
-  }
-  @media(prefers-reduced-motion:reduce){
-    body.page-stocks .stk-signal-row{transition:none}
   }
   </style>
   <div class="panel span12" id="stocks-header">
@@ -14550,185 +14433,6 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     <a class="scx-more" href="macro.html#sx-risk-v2"><span class="l-en">Risk radar →</span><span class="l-zh">风险雷达 →</span></a>
   </div>
   {% endif %}{# /market_state B4 #}
-
-  {# ===================== STOCKS HOME — DAILY DECISION QUEUE =====================
-     A glance-tier front door over the existing US standout artifact. No ranking,
-     gate, state, or signal is changed here: this is a smaller presentation slice.
-     The complete board remains available in #all-prophet-signals below. #}
-  {% set _stk_su = us_standouts if (us_standouts and us_standouts.buy) else none %}
-  {% set _stk_open = namespace(items=[]) %}
-  {% set _stk_attention = namespace(items=[]) %}
-  {% set _stk_new = namespace(tickers=[]) %}
-  {% set _stk_delta = namespace(buy_opened=0, protect=0, changed=0, removed=0) %}
-  {% if _stk_su %}
-    {% set _stk_d = _stk_su.get('delta') or {} %}
-    {% for _e in (_stk_d.get('entries') or []) %}
-      {% if _e.get('entered_board') and _e.get('ticker') %}{% set _stk_new.tickers = _stk_new.tickers + [_e.ticker] %}{% endif %}
-      {% if _e.get('cur_verb') == 'BUY' and _e.get('prev_verb') != 'BUY' %}{% set _stk_delta.buy_opened = _stk_delta.buy_opened + 1 %}{% endif %}
-      {% if _e.get('cur_verb') in ['TRIM ONLY','EXIT','AVOID'] %}{% set _stk_delta.protect = _stk_delta.protect + 1 %}{% endif %}
-      {% if _e.get('prev_verb') and _e.get('prev_verb') != _e.get('cur_verb') %}{% set _stk_delta.changed = _stk_delta.changed + 1 %}{% endif %}
-      {% if _e.get('left_board') %}{% set _stk_delta.removed = _stk_delta.removed + 1 %}{% endif %}
-    {% endfor %}
-    {# Entry windows first: the user came here for actual picks, not all candidates. #}
-    {% for _n in _stk_su.buy %}
-      {% set _st = (_n.get('entry_signal') or {}).get('status') %}
-      {% set _size_bucket = (((_n.get('conviction') or {}).get('size') or {}).get('bucket') or '') %}
-      {% if _st in ['buy_now','partial'] and _size_bucket != 'avoid' and _stk_open.items|length < 5 %}
-        {% set _stk_open.items = _stk_open.items + [_n] %}
-      {% endif %}
-    {% endfor %}
-    {# Attention queue is severity-first, then near/extended setups. #}
-    {% for _n in _stk_su.buy %}
-      {% set _st = (_n.get('entry_signal') or {}).get('status') %}
-      {% if _st in ['exit','avoid','blocked','topping'] and _stk_attention.items|length < 5 %}
-        {% set _stk_attention.items = _stk_attention.items + [_n] %}
-      {% endif %}
-    {% endfor %}
-    {% for _n in _stk_su.buy %}
-      {% set _size_bucket = (((_n.get('conviction') or {}).get('size') or {}).get('bucket') or '') %}
-      {% if _size_bucket == 'avoid' and _stk_attention.items|length < 5 %}
-        {% set _stk_attention.items = _stk_attention.items + [_n] %}
-      {% endif %}
-    {% endfor %}
-    {% for _n in _stk_su.buy %}
-      {% set _st = (_n.get('entry_signal') or {}).get('status') %}
-      {% if _st in ['extended','bounce_wait','buy_soon','await_confluence'] and _stk_attention.items|length < 5 %}
-        {% set _stk_attention.items = _stk_attention.items + [_n] %}
-      {% endif %}
-    {% endfor %}
-  {% endif %}
-
-  {% macro stk_signal_row(n) -%}
-    {% set _es = n.get('entry_signal') or {} %}
-    {% set _cv = n.get('conviction') or {} %}
-    {% set _st = _es.get('status') or 'wait' %}
-    {% set _size_bucket = ((_cv.get('size') or {}).get('bucket') or '') %}
-    {% set _size_blocked = _size_bucket == 'avoid' and _st in ['buy_now','partial'] %}
-    {% set _verb_en = 'Wait' if _size_blocked else ('Buy' if _st in ['buy_now','partial'] else ('Trim' if _st == 'topping' else ('Exit' if _st == 'exit' else ('Avoid' if _st in ['avoid','blocked'] else 'Wait')))) %}
-    {% set _verb_zh = '等待' if _size_blocked else ('买入' if _st in ['buy_now','partial'] else ('止盈' if _st == 'topping' else ('退出' if _st == 'exit' else ('回避' if _st in ['avoid','blocked'] else '等待')))) %}
-    {% set _tone = 'wait' if _size_blocked else ('buy' if _st in ['buy_now','partial'] else ('trim' if _st == 'topping' else ('exit' if _st in ['exit','avoid','blocked'] else 'wait'))) %}
-    {% set _bz = _es.get('buy_zone') or {} %}
-    {% set _entry_open = _st in ['buy_now','partial'] and not _size_blocked %}
-    {% set _verdict_en = (_es.get('headline') if _entry_open else _cv.get('verdict')) or _es.get('headline') or 'Open the stock for the full decision.' %}
-    {% set _verdict_zh = (_es.get('headline_zh') if _entry_open else _cv.get('verdict_zh')) or _es.get('headline_zh') or _verdict_en %}
-    <a class="stk-signal-row" href="stock.html#{{ n.ticker }}"
-       data-tip-en="{{ (_es.get('action') or _verdict_en)|e }}"
-       data-tip-zh="{{ (_es.get('action_zh') or _verdict_zh)|e }}">
-      <span class="stk-stock-id">
-        <b class="stk-ticker">{{ n.ticker }}</b>
-        <span class="stk-company">{{ n.name }}</span>
-      </span>
-      <span class="stk-verb {{ _tone }}"><span class="l-en">{{ _verb_en }}</span><span class="l-zh">{{ _verb_zh }}</span></span>
-      <span class="stk-row-meta">
-        {% if n.get('price') is not none %}<span><span class="l-en">Now</span><span class="l-zh">现价</span> <b>${{ '%.2f'|format(n.price) }}</b></span>{% endif %}
-        {% if _bz.get('low') is not none and _bz.get('high') is not none %}<span><span class="l-en">Zone</span><span class="l-zh">区间</span> <b>${{ '%.2f'|format(_bz.low) }}–${{ '%.2f'|format(_bz.high) }}</b></span>{% endif %}
-        {% if _es.get('stop') is not none %}<span><span class="l-en">Risk below</span><span class="l-zh">风险线</span> <b>${{ '%.2f'|format(_es.stop) }}</b></span>{% endif %}
-      </span>
-      <span class="stk-row-why"><span class="l-en">{{ _verdict_en }}</span><span class="l-zh">{{ _verdict_zh }}</span></span>
-      <span class="stk-row-foot">
-        {% if n.ticker in _stk_new.tickers %}<span class="stk-new"><span class="l-en">New today</span><span class="l-zh">今日新增</span></span>{% endif %}
-        {% if (n.get('signal') or {}).get('asof') %}<span><span class="l-en">Signal</span><span class="l-zh">信号</span> {{ n.signal.asof }}</span>{% endif %}
-        {% if n.get('sector') %}<span>{{ td(n.sector) }}</span>{% endif %}
-      </span>
-    </a>
-  {%- endmacro %}
-
-  <section class="panel span12" id="stocks-command" aria-labelledby="stocks-command-title">
-    <div class="stk-command-head">
-      <div>
-        <div class="stk-eyebrow">Prophet</div>
-        <h2 id="stocks-command-title">{{ t('Daily decision queue', '每日决策队列') }}</h2>
-        <p class="stk-command-sub">{{ t('The few stock decisions that deserve attention now.', '当前真正值得关注的少数个股决策。') }}</p>
-      </div>
-      <div class="stk-counts">
-        {% if _stk_su %}
-        <span class="stk-count"><b>{{ _stk_open.items|length + _stk_attention.items|length }}</b> {{ t('visible', '当前显示') }}</span>
-        <span class="stk-count"><b>{{ _stk_su.buy|length }}</b> {{ t('qualifying', '符合条件') }}</span>
-        <span class="stk-count"><b>{{ _stk_su.eligible }}</b> {{ t('scanned setups', '扫描形态') }}</span>
-        {% endif %}
-        <button class="stk-research-note" type="button"
-          data-tip-en="Prophet is a nightly decision-support system, not personalized advice. The complete evidence and methodology remain available in the expert board and Pick Lab."
-          data-tip-zh="先知系统为每夜更新的决策支持工具，并非个性化建议。完整证据与方法仍可在专家看板和选股实验室中查看。">
-          <span class="l-en">Research signals</span><span class="l-zh">研究信号</span>
-        </button>
-      </div>
-    </div>
-    <div class="stk-delta" aria-label="What changed">
-      <span class="stk-delta-label"><span class="l-en">What changed</span><span class="l-zh">今日变化</span></span>
-      {% if _stk_su and (_stk_su.get('delta') or {}).get('entries') %}
-      <span class="stk-delta-item"><span class="stk-delta-mark" aria-hidden="true"></span><span><b>{{ _stk_delta.buy_opened }}</b> <span class="l-en">entry windows opened</span><span class="l-zh">个入场窗口开启</span></span></span>
-      <span class="stk-delta-item protect"><span class="stk-delta-mark" aria-hidden="true"></span><span><b>{{ _stk_delta.protect }}</b> <span class="l-en">protect-gains calls</span><span class="l-zh">个保护利润提示</span></span></span>
-      <span class="stk-delta-item change"><span class="stk-delta-mark" aria-hidden="true"></span><span><b>{{ _stk_delta.changed }}</b> <span class="l-en">actions changed</span><span class="l-zh">个操作发生变化</span></span></span>
-      {% else %}
-      <span class="stk-delta-item"><span class="stk-delta-mark" aria-hidden="true"></span>{{ t('No material queue changes in the latest build.', '最新构建中队列无重大变化。') }}</span>
-      {% endif %}
-    </div>
-    <div class="stk-decision-grid">
-      <div class="stk-decision-col">
-        <div class="stk-col-head">
-          <h3>{{ t('Entry open', '入场开放') }}</h3>
-          <span>{{ t('Best current windows', '当前最佳窗口') }}</span>
-        </div>
-        <div class="stk-signal-list">
-          {% for _n in _stk_open.items %}{{ stk_signal_row(_n) }}{% else %}
-          <div class="stk-empty">{{ t("No entry windows are open — don't force a trade.", '当前无入场窗口——不要勉强交易。') }}</div>
-          {% endfor %}
-        </div>
-      </div>
-      <div class="stk-decision-col">
-        <div class="stk-col-head">
-          <h3>{{ t('Needs attention', '需要关注') }}</h3>
-          <span>{{ t('Protect or wait', '保护利润或等待') }}</span>
-        </div>
-        <div class="stk-signal-list">
-          {% for _n in _stk_attention.items %}{{ stk_signal_row(_n) }}{% else %}
-          <div class="stk-empty">{{ t('No urgent risk or wait instructions.', '当前无紧急风险或等待提示。') }}</div>
-          {% endfor %}
-        </div>
-      </div>
-    </div>
-  </section>
-
-  {% macro stk_context_group(label_en, label_zh, tone, items) -%}
-    <div class="stk-context-group {{ tone }}">
-      <div class="stk-context-title"><span class="l-en">{{ label_en }}</span><span class="l-zh">{{ label_zh }}</span><b>{{ items|length }}</b></div>
-      <div class="stk-context-links">
-        {% for _x in items[:3] %}
-        <a href="{{ _x.href }}"><span class="l-en">{{ dispshort(_x.name) }}</span><span class="l-zh">{{ _x.get('name_zh') or tr(_x.name) }}</span></a>
-        {% else %}<span class="stk-context-none">{{ t('None today', '今日无') }}</span>{% endfor %}
-      </div>
-    </div>
-  {%- endmacro %}
-  {% if action_board %}
-  <section class="panel span12" id="stocks-context" aria-labelledby="stocks-context-title">
-    <div class="stk-section-head">
-      <h2 id="stocks-context-title">{{ t('Portfolio context', '组合背景') }}</h2>
-      <p>{{ t('Themes guide where to focus; Prophet decides the stock action.', '主题指引关注方向；先知系统决定个股操作。') }}</p>
-    </div>
-    <div class="stk-context-grid">
-      {{ stk_context_group('Favour','看好','favour',action_board.get('buy_now', [])) }}
-      {{ stk_context_group("Don't chase",'勿追高','chase',action_board.get('on_the_run', [])) }}
-      {{ stk_context_group('Protect gains','保护利润','protect',action_board.get('take_profits', [])) }}
-      {{ stk_context_group('Avoid','回避','avoid',action_board.get('avoid', [])) }}
-    </div>
-  </section>
-  {% endif %}
-
-  <nav class="panel span12" id="stocks-explore" aria-label="Explore US stocks research">
-    <div class="stk-section-head">
-      <h2>{{ t('Explore', '深入研究') }}</h2>
-      <p>{{ t('Open depth only when you need it.', '仅在需要时打开深度内容。') }}</p>
-    </div>
-    <div class="stk-explore-grid">
-      <a class="stk-explore-link" href="#all-prophet-signals"><b>{{ t('All Prophet signals', '全部先知信号') }}</b><span>{% if _stk_su %}{{ _stk_su.buy|length }} {{ t('qualifying names', '个符合条件标的') }}{% else %}{{ t('Full board', '完整看板') }}{% endif %}</span></a>
-      <a class="stk-explore-link" href="us_stocks_lab.html"><b>{{ t('Pick Lab', '选股实验室') }}</b><span>{{ t('Filters and diagnostics', '筛选与诊断') }}</span></a>
-      <a class="stk-explore-link" href="sector_central.html"><b>{{ t('Sector Central', '行业中枢') }}</b><span>{{ t('Rotation detail', '轮动详情') }}</span></a>
-      <a class="stk-explore-link" href="macro.html#sx-markets-v2"><b>{{ t('Market breadth', '市场广度') }}</b><span>{{ t('Participation and risk', '参与度与风险') }}</span></a>
-      <a class="stk-explore-link" href="etfs.html"><b>{{ t('Fund moves', '基金动作') }}</b><span>{{ t('Flow confirmation', '资金流确认') }}</span></a>
-      <a class="stk-explore-link" href="alerts.html"><b>{{ t('Alerts', '提醒') }}</b><span>{{ t('Action changes', '操作变化') }}</span></a>
-    </div>
-  </nav>
-
   {% if action_board %}
   <div class="panel span12" id="action-board">
     <h2>{{ t('What to act on now', '当前可操作') }}
@@ -15088,11 +14792,6 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     {% set _su = us_standouts if (us_standouts and us_standouts.buy) else None %}
     {{ pv.pv_css() }}
     {% if _su or action_board.notable %}
-    <details class="stk-expert span12" id="all-prophet-signals">
-      <summary>
-        <span><b>{{ t('All Prophet signals', '全部先知信号') }}</b>{% if _su %} · {{ _su.buy|length }} {{ t('qualifying names', '个符合条件标的') }}{% endif %}</span>
-        <span>{{ t('Expert view · cards, evidence and track record', '专家视图 · 卡片、证据与历史记录') }}</span>
-      </summary>
     <div class="panel span12 notable" id="us-standouts">
       <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
         <h2 style="margin:0">{{ t('Prophet Stock Signals', '先知选股') }}</h2>
@@ -15515,7 +15214,6 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       </div>
       {% endif %}
     </div>{# /panel span12 notable — standout stocks #}
-    </details>{# /all-prophet-signals expert view #}
     {% endif %}
     {# TS-U3: Two-speed tape band (mode=stocks only; client-side from live/basket_pulse.json).
        Self-labeling .dtp idiom; relocated BELOW the standout stocks panel
@@ -15538,7 +15236,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
 
   {% if mode != 'macro' %}
   <!-- ===================== US EQUITY SCOREBOARD (size + breadth + internals) ===================== -->
-  <div class="panel span12 stocks-breadth-detail" id="equity-scoreboard">
+  <div class="panel span12" id="equity-scoreboard">
     <span id="size-style"></span><span id="breadth"></span><span id="advanced-breadth"></span>
     <h2>{{ t('Market breadth — S&P 1500', '市场广度 — 标普1500') }}
       {{ help("How broad is the tape. Advancers vs decliners, % of the S&P 1500 above their 50- and 200-day lines, and net new 52-week highs — refreshed intraday from a ~15-min-delayed feed when US markets are open, falling back to the last close otherwise (the stamp always says which you are seeing). The % above the 50-day also feeds the regime model's growth axis. The Momentum tile and the Full board (per-tier tables, McClellan internals, history) update nightly. Internals are display-only, second-derivative reads: they explain the tape, they do not forecast it.", "盘面广度一览：上涨/下跌家数、标普1500中高于50日与200日均线的占比、净新高 — 美股开盘时按约15分钟延迟数据刷新，否则回退至上一收盘（时间戳始终注明当前口径）。高于50日线的占比同时输入周期模型的增长轴。动量与完整看板（分层级表格、麦克莱伦内部结构、历史）每夜更新。内部结构仅作展示：解释盘面，不预测盘面。") }}
