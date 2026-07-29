@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.causal_lab_state.v1",
-  "asof": "2026-07-28T03:25:47Z",
+  "asof": "2026-07-29T03:34:07Z",
   "heartbeat": {
     "program": "CHF",
     "wave": "W3",
@@ -42,14 +42,14 @@
     "value_heuristic_formula": "score = UNEXPLORED_BONUS(10 if unexplored) + DATA_PRESENT_BONUS(5 if present) + ERA_BREADTH_BONUS(min(era_coverage_len, 4) * 1.0) - NULL_BASIN_PENALTY(20 if null_basin) - KILLED_PENALTY(100 if killed)"
   },
   "surprise_queue": {
-    "size": 38,
+    "size": 43,
     "stalest_source": "data/release_forecast/forward_ledger.jsonl",
-    "stalest_source_asof": "2026-07-27"
+    "stalest_source_asof": "2026-07-28"
   },
   "drift_events": [],
   "llm_lane": {
     "status": "armed",
-    "asof": "2026-07-27T03:58:45+00:00",
+    "asof": "2026-07-28T03:25:47+00:00",
     "description": "auto_loop armed (operator ruling 2026-07-09); scheduled OAuth LLM run fires on the Tuesday nightly"
   },
   "data_absent_notes": [
