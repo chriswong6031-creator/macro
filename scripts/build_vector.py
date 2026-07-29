@@ -1947,8 +1947,11 @@ html.soft-contrast[data-theme="dark"]{--bg:#0d1018;--panel:#151820;--panel2:#1b1
 .gd-leg .l-zh{display:none} html[data-lang="zh"] .gd-leg .l-en{display:none} html[data-lang="zh"] .gd-leg .l-zh{display:inline}
 
 /* ===== tooltip ===== */
-.gd-tip{position:fixed;z-index:50;width:264px;padding:13px 14px;border-radius:14px;pointer-events:none;
- box-shadow:var(--popover-shadow);transition:opacity .12s ease}
+.gd-tip{position:absolute;z-index:50;width:264px;padding:13px 14px;border-radius:14px;pointer-events:none;
+ opacity:0;visibility:visible;transform:translate3d(0,12px,0) scale(.94);transform-origin:50% calc(100% + 8px);
+ filter:blur(5px) saturate(.86);box-shadow:0 4px 16px -10px rgba(0,0,0,.42);
+ will-change:transform,opacity,filter;transition:opacity .24s cubic-bezier(.2,.7,.25,1),transform .42s cubic-bezier(.16,1,.3,1),filter .3s ease,box-shadow .42s ease}
+.gd-tip.is-visible{opacity:1;transform:translate3d(0,0,0) scale(1);filter:blur(0) saturate(1);box-shadow:var(--popover-shadow)}
 .gd-tip.pinned{pointer-events:auto}   /* a clicked (pinned) tooltip is interactive so its "Open dashboard" link works */
 .gd-tip[hidden]{display:none}
 .gd-tip-h{display:flex;align-items:center;gap:8px;margin-bottom:10px}
@@ -1985,6 +1988,7 @@ html.soft-contrast[data-theme="dark"]{--bg:#0d1018;--panel:#151820;--panel2:#1b1
 .gd-tip.mini .gd-chip{flex:none}
 .gd-mini-name{font-weight:800;font-size:12.5px;color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis}
 .gd-mini-risk{font-size:11.5px;font-weight:600;color:var(--muted);flex:none}
+@media (prefers-reduced-motion: reduce){.gd-tip{transition:none}}
 
 /* ===== sidebar clock ===== */
 .gd-clock{display:flex;flex-direction:column;padding:14px 14px 12px;min-width:0;max-width:100%}

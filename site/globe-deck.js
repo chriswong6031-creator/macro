@@ -15,6 +15,7 @@
   var poster = stage.querySelector(".gd-poster");
   var tip = stage.querySelector(".gd-tip");
   var live = stage.querySelector("#gd-live");
+  var _tipHideTimer = 0, _tipRevealRAF = 0, _tipCC = null;
   var ctx = canvas.getContext("2d");
   var DATA, byCC = {};
   try { DATA = JSON.parse(document.getElementById("globe-data").textContent); }
@@ -989,7 +990,7 @@
     _parked = true;
     if (raf) cancelAnimationFrame(raf);
     raf = null; _lastFrameT = 0;
-    if (_tour.phase === "show" && !selected) { tip.hidden = true; tip.style.pointerEvents = ""; }
+    if (_tour.phase === "show" && !selected) { concealTip(); tip.style.pointerEvents = ""; }
     _tour.phase = "wait"; _tour.hold = false;
     if (!_parkCss) {
       _parkCss = document.createElement("style");
@@ -1076,7 +1077,7 @@
   // for the tour (a bare deselect must not let the tour resume with no grace period).
   function toggleSelect(m, cx, cy) { _tourPause(); if (selected === m.cc) deselect(); else selectMarket(m, cx, cy); }
   function deselect() {
-    selected = null; hovered = null; tip.classList.remove("pinned"); tip.hidden = true;
+    selected = null; hovered = null; tip.classList.remove("pinned"); concealTip();
     tip.removeAttribute("role"); tip.tabIndex = -1;
     syncRows(); if (live) live.textContent = "";
     if (_tipTrigger) { try { _tipTrigger.focus(); } catch (e) {} _tipTrigger = null; }
@@ -1102,6 +1103,35 @@
     var side = pos >= 0 ? "left:50%;width:" + pct + "%" : "right:50%;width:" + pct + "%";
     return '<span class="gd-bar"><i style="' + side + ';background:' + color + '"></i></span>';
   }
+  // Keep the tooltip in the layout long enough for its exit transition to finish.
+  // Repeated pointermove events over the same country do not restart the entrance;
+  // moving directly to another country does, which makes the content change legible.
+  function revealTip(cc) {
+    if (_tipHideTimer) { clearTimeout(_tipHideTimer); _tipHideTimer = 0; }
+    if (_tipRevealRAF) { cancelAnimationFrame(_tipRevealRAF); _tipRevealRAF = 0; }
+    var shouldEnter = tip.hidden || _tipCC !== cc || !tip.classList.contains("is-visible");
+    tip.hidden = false;
+    _tipCC = cc;
+    if (!shouldEnter) return;
+    tip.classList.remove("is-visible");
+    if (!motionOK) { tip.classList.add("is-visible"); return; }
+    void tip.offsetWidth;
+    _tipRevealRAF = requestAnimationFrame(function () {
+      tip.classList.add("is-visible");
+      _tipRevealRAF = 0;
+    });
+  }
+  function concealTip(immediate) {
+    if (_tipRevealRAF) { cancelAnimationFrame(_tipRevealRAF); _tipRevealRAF = 0; }
+    if (_tipHideTimer) { clearTimeout(_tipHideTimer); _tipHideTimer = 0; }
+    tip.classList.remove("is-visible");
+    _tipCC = null;
+    if (immediate || !motionOK) { tip.hidden = true; return; }
+    _tipHideTimer = setTimeout(function () {
+      if (!tip.classList.contains("is-visible")) tip.hidden = true;
+      _tipHideTimer = 0;
+    }, 420);
+  }
   // Auto-tour popup: a compact one-line pill — flag, name, regime chip, market risk —
   // anchored bottom-centre of the stage so the cycling tour never covers the globe
   // (the full 264px card blocked most of the viewport on mobile).
@@ -1120,13 +1150,13 @@
     tip.tabIndex = -1;
     tip.style.pointerEvents = "none";
     tip.style.right = ""; tip.style.bottom = ""; tip.style.width = "";  // clear any prior bottom-sheet
-    tip.hidden = false;
-    var sr = stage.getBoundingClientRect(), pad = 10;
+    revealTip(m.cc);
+    var pad = 10;
     var tw = tip.offsetWidth, th = tip.offsetHeight;
-    var x = sr.left + W / 2 - tw / 2;
-    var y = sr.top + H - th - 6;
-    x = Math.max(pad, Math.min(x, window.innerWidth - tw - pad));
-    y = Math.max(pad, Math.min(y, window.innerHeight - th - pad));
+    var x = W / 2 - tw / 2;
+    var y = H - th - 6;
+    x = Math.max(pad, Math.min(x, W - tw - pad));
+    y = Math.max(pad, Math.min(y, H - th - pad));
     tip.style.left = x + "px"; tip.style.top = y + "px";
   }
   // showTip(m, cx, cy, pinned, isTour)
@@ -1160,7 +1190,7 @@
         (m.macro_asof ? ' · ' + bilingual("as of " + m.macro_asof, "截至 " + m.macro_asof) : '') + '</div>' +
       '<a class="gd-tip-go" href="' + m.href + '">' + bilingual("Open dashboard →", "打开看板 →") + '</a>';
     tip.classList.remove("mini");   // hover/pinned always use the full card layout
-    tip.hidden = false;
+    revealTip(m.cc);
     tip.classList.toggle("pinned", !isTour && !!pinned);
     // Tour tooltips: non-interactive (pointer-events:none), role=tooltip, no focus
     // User-pinned tooltips: role=dialog, interactive, receive focus
@@ -1178,8 +1208,8 @@
       tip.tabIndex = -1;
       tip.style.pointerEvents = "";
     }
-    // mobile: a pinned tooltip becomes a BOTTOM SHEET — always fully on-screen even
-    // when the tap came from the sidebar far below the globe (no more half-off-screen).
+    // Mobile: a pinned tooltip becomes a bottom sheet inside the globe stage.
+    // It therefore scrolls away with the globe instead of following the viewport.
     if (!isTour && pinned && window.innerWidth <= 560) {
       tip.style.left = "10px"; tip.style.right = "10px"; tip.style.width = "auto";
       tip.style.top = "auto"; tip.style.bottom = "calc(12px + env(safe-area-inset-bottom))";
@@ -1188,27 +1218,30 @@
     }
     tip.style.right = ""; tip.style.bottom = ""; tip.style.width = "";  // clear any prior bottom-sheet
     var tw = tip.offsetWidth, th = tip.offsetHeight, pad = 10, x, y;
+    var sr = stage.getBoundingClientRect();
     if (!isTour && pinned) {
       // a clicked country flies to the globe centre, so anchor the tooltip BESIDE
       // the centre (whichever side has room) rather than at the click point — which
-      // may sit at the viewport edge and push the tooltip off-screen.
-      var sr = stage.getBoundingClientRect(), gx = sr.left + W / 2, gy = sr.top + H / 2;
+      // may sit at the stage edge and push the tooltip off the globe.
+      var gx = W / 2, gy = H / 2;
       x = gx + R * 0.55 + 14;
-      if (x + tw > window.innerWidth - pad) x = gx - R * 0.55 - tw - 14;
+      if (x + tw > W - pad) x = gx - R * 0.55 - tw - 14;
       y = gy - th / 2;
     } else {
-      x = cx + 14; y = cy + 14;
-      if (x + tw > window.innerWidth - pad) x = cx - tw - 14;
-      if (y + th > window.innerHeight - pad) y = cy - th - 14;
+      var localX = cx - sr.left, localY = cy - sr.top;
+      x = localX + 14; y = localY + 14;
+      if (x + tw > W - pad) x = localX - tw - 14;
+      if (y + th > H - pad) y = localY - th - 14;
     }
-    // hard clamp: the tooltip is ALWAYS fully on-screen (every edge, any size)
-    x = Math.max(pad, Math.min(x, window.innerWidth - tw - pad));
-    y = Math.max(pad, Math.min(y, window.innerHeight - th - pad));
+    // Hard clamp inside the stage: the card stays attached to the globe and
+    // naturally leaves the viewport when the user scrolls to the content below.
+    x = Math.max(pad, Math.min(x, W - tw - pad));
+    y = Math.max(pad, Math.min(y, H - th - pad));
     tip.style.left = x + "px"; tip.style.top = y + "px";
     tip.classList.toggle("pinned", !isTour && !!pinned);
     if (!isTour && pinned) { try { tip.focus({ preventScroll: true }); } catch (e) {} }
   }
-  function hideTip() { if (selected) return; tip.hidden = true; }
+  function hideTip() { if (selected) return; concealTip(); }
   function fmt(v) { return v == null ? "—" : (v >= 0 ? "+" : "") + v.toFixed(2); }
   // ---- sidebar market clock ------------------------------------------------
   // formatter cache: constructing Intl.DateTimeFormat 9x/second is a jank spike
@@ -1536,7 +1569,7 @@
     _tour.hold = false;   // hand rotation back to the user immediately
     // Hide any current tour tooltip (but not a user-pinned one)
     if (_tour.phase === "show" && !selected) {
-      tip.hidden = true;
+      concealTip();
       tip.style.pointerEvents = "";
     }
     _tour.phase = "wait";
@@ -1614,7 +1647,7 @@
       if (_parked) { _tour.hold = false; return; }
       if (selected) { _tour.hold = false; return; }
       if (_tour.pauseUntil > performance.now()) { _tour.hold = false; return; }
-      tip.hidden = true;
+      concealTip();
       tip.style.pointerEvents = "";
       flying = {
         t0: performance.now(), dur: 600,
