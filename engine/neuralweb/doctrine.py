@@ -17,6 +17,10 @@ DESIGN
   keyed on the sorted tuple of (path, mtime) of every *.md file in the dir.
 * Routing picks at most _MAX_ROUTED lenses/playbooks for a message (plus the
   always-on protocol), under a _CHAR_BUDGET cap.
+* The parse/route/budget/assemble core lives in `_Library` so a SECOND library
+  can reuse it verbatim with its own directory, budget, header and cache slot
+  (see analyst_doctrine.py — the Market Analyst doctrine).  The module-level API
+  below is the technician library: a thin delegation to the default instance.
 """
 from __future__ import annotations
 
@@ -54,12 +58,8 @@ _PROMPT_HEADER = (
 
 
 # ---------------------------------------------------------------------------
-# Frontmatter parsing + mtime-invalidated cache
+# Frontmatter parsing + cache keying (shared by every library)
 # ---------------------------------------------------------------------------
-
-_CACHE: list[dict] | None = None
-_CACHE_KEY: tuple[tuple[str, float], ...] | None = None
-
 
 def _cache_key(dir_path: Path) -> tuple[tuple[str, float], ...]:
     """Sorted (path, mtime) tuple over every *.md file in the dir. Never raises."""
@@ -141,39 +141,8 @@ def _parse_frontmatter(text: str, stem: str) -> dict | None:
     }
 
 
-def _load(dir_path: Path | None = None) -> list[dict]:
-    """Load + cache all doctrine modules. mtime-invalidated. Never raises."""
-    global _CACHE, _CACHE_KEY  # noqa: PLW0603
-    d = dir_path or _DOCTRINE_DIR
-    key = _cache_key(d)
-    if _CACHE is not None and key == _CACHE_KEY and dir_path is None:
-        return _CACHE
-
-    modules: list[dict] = []
-    try:
-        for p in sorted(d.glob("*.md")):
-            try:
-                text = p.read_text(encoding="utf-8")
-            except OSError as exc:
-                log.warning("doctrine: cannot read %s (%s) — skipped", p.name, exc)
-                continue
-            mod = _parse_frontmatter(text, p.stem)
-            if mod is None:
-                log.warning("doctrine: malformed module %s — skipped", p.name)
-                continue
-            modules.append(mod)
-    except Exception as exc:  # noqa: BLE001
-        log.warning("doctrine: load failed (%s) — empty library", exc)
-        modules = []
-
-    if dir_path is None:
-        _CACHE = modules
-        _CACHE_KEY = key
-    return modules
-
-
 # ---------------------------------------------------------------------------
-# Routing
+# Trigger matching (shared by every library)
 # ---------------------------------------------------------------------------
 
 _ASCII_RE = re.compile(r"^[\x00-\x7f]+$")
@@ -198,117 +167,218 @@ def _always_modules(modules: list[dict]) -> list[dict]:
     )
 
 
+# ---------------------------------------------------------------------------
+# The library core — one instance per doctrine directory
+# ---------------------------------------------------------------------------
+
+class _Library:
+    """Parse / route / budget / assemble for ONE doctrine directory.
+
+    Each library owns its directory, char budget, routed cap, prompt header and
+    mtime-invalidated cache slot; the mechanics above are shared.  Same failure
+    contract as the module API: never raises to callers.
+    """
+
+    def __init__(
+        self,
+        dir_path: Path,
+        *,
+        char_budget: int,
+        max_routed: int,
+        prompt_header: str,
+        version: int = 1,
+        name: str = "doctrine",
+    ) -> None:
+        self.dir_path = dir_path
+        self.char_budget = char_budget
+        self.max_routed = max_routed
+        self.prompt_header = prompt_header
+        self.version = version
+        self.name = name  # log tag only
+        self._cache: list[dict] | None = None
+        self._cache_sig: tuple[tuple[str, float], ...] | None = None
+
+    # -- load ---------------------------------------------------------------
+
+    def load(self, dir_path: Path | None = None) -> list[dict]:
+        """Load + cache all doctrine modules. mtime-invalidated. Never raises.
+        An explicit dir_path reads that dir and bypasses the cache entirely."""
+        d = dir_path or self.dir_path
+        key = _cache_key(d)
+        if self._cache is not None and key == self._cache_sig and dir_path is None:
+            return self._cache
+
+        modules: list[dict] = []
+        try:
+            for p in sorted(d.glob("*.md")):
+                try:
+                    text = p.read_text(encoding="utf-8")
+                except OSError as exc:
+                    log.warning("%s: cannot read %s (%s) — skipped", self.name, p.name, exc)
+                    continue
+                mod = _parse_frontmatter(text, p.stem)
+                if mod is None:
+                    log.warning("%s: malformed module %s — skipped", self.name, p.name)
+                    continue
+                modules.append(mod)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("%s: load failed (%s) — empty library", self.name, exc)
+            modules = []
+
+        if dir_path is None:
+            self._cache = modules
+            self._cache_sig = key
+        return modules
+
+    # -- routing ------------------------------------------------------------
+
+    def route(self, message: str | None) -> list[dict]:
+        """Route a user message to the modules that should shape the answer.
+
+        Always-modules (the protocol) come first, priority desc.  Then each
+        non-always module is scored by the count of DISTINCT triggers matched in
+        the message; modules scoring >= 1 are sorted (score desc, priority desc,
+        id asc) and at most max_routed are taken.  If nothing scored and the
+        message is non-empty, fall back to the default modules.  Empty/None
+        message → always only.  Finally, drop routed modules from the lowest
+        rank up until the summed body length is under char_budget
+        (always-modules are never dropped)."""
+        modules = self.load()
+        always = _always_modules(modules)
+
+        msg = (message or "").strip()
+        if not msg:
+            return self.apply_budget(always, [])
+
+        message_lc = msg.lower()
+        non_always = [m for m in modules if not m.get("always")]
+
+        scored: list[tuple[int, dict]] = []
+        for m in non_always:
+            score = sum(1 for t in m["triggers"] if _trigger_matches(t, message_lc))
+            if score >= 1:
+                scored.append((score, m))
+
+        if scored:
+            scored.sort(key=lambda sm: (-sm[0], -sm[1]["priority"], sm[1]["id"]))
+            routed = [m for _, m in scored[:self.max_routed]]
+        else:
+            defaults = sorted(
+                (m for m in non_always if m.get("default")),
+                key=lambda m: (-m["priority"], m["id"]),
+            )
+            routed = defaults[:self.max_routed]
+
+        return self.apply_budget(always, routed)
+
+    def apply_budget(self, always: list[dict], routed: list[dict]) -> list[dict]:
+        """always + routed, dropping routed from the lowest rank up until the summed
+        body chars are under char_budget.  always-modules are never dropped."""
+        kept = list(routed)
+        while kept:
+            total = sum(len(m["body"]) for m in always) + sum(len(m["body"]) for m in kept)
+            if total <= self.char_budget:
+                break
+            kept.pop()  # drop the lowest-ranked routed module
+        return always + kept
+
+    # -- prompt assembly ----------------------------------------------------
+
+    def prompt_block(self, modules: list[dict]) -> str:
+        """Assemble the doctrine system-prompt block from routed modules.  Empty list
+        → "".  The always/protocol body follows the header directly; every other
+        module gets a titled '--- TITLE ---' separator."""
+        if not modules:
+            return ""
+
+        protocol_bodies = [m["body"] for m in modules if m.get("kind") == "protocol"]
+        others = [m for m in modules if m.get("kind") != "protocol"]
+
+        out = self.prompt_header
+        out += "\n\n".join(protocol_bodies)
+        for m in others:
+            out += "\n\n--- " + m["title"].upper() + " ---\n\n" + m["body"]
+        return out
+
+    # -- fingerprint + manifest ---------------------------------------------
+
+    def fingerprint(self) -> str:
+        """Deterministic 12-hex-char sha256 over sorted (filename + content) pairs."""
+        h = hashlib.sha256()
+        try:
+            for p in sorted(self.dir_path.glob("*.md"), key=lambda q: q.name):
+                try:
+                    content = p.read_text(encoding="utf-8")
+                except OSError:
+                    continue
+                h.update(p.name.encode("utf-8"))
+                h.update(content.encode("utf-8"))
+        except Exception:  # noqa: BLE001
+            pass
+        return h.hexdigest()[:12]
+
+    def manifest(self) -> dict:
+        """Summary manifest of the loaded library (for admin/health surfaces)."""
+        modules = self.load()
+        mods = [
+            {
+                "id": m["id"],
+                "kind": m["kind"],
+                "version": m["version"],
+                "title": m["title"],
+                "chars": len(m["body"]),
+                "always": m["always"],
+                "default": m["default"],
+                "n_triggers": len(m["triggers"]),
+            }
+            for m in sorted(modules, key=lambda m: m["id"])
+        ]
+        return {
+            "version": self.version,
+            "fingerprint": self.fingerprint(),
+            "modules": mods,
+        }
+
+
+# ---------------------------------------------------------------------------
+# The technician library — module-level API (unchanged surface)
+# ---------------------------------------------------------------------------
+
+_DEFAULT = _Library(
+    _DOCTRINE_DIR,
+    char_budget=_CHAR_BUDGET,
+    max_routed=_MAX_ROUTED,
+    prompt_header=_PROMPT_HEADER,
+    version=DOCTRINE_VERSION,
+    name="doctrine",
+)
+
+
+def _load(dir_path: Path | None = None) -> list[dict]:
+    """Load + cache all technician doctrine modules. Never raises."""
+    return _DEFAULT.load(dir_path)
+
+
 def route(message: str | None) -> list[dict]:
-    """Route a user message to the doctrine modules that should shape the read.
-
-    Always-modules (the protocol) come first, priority desc.  Then each
-    non-always module is scored by the count of DISTINCT triggers matched in the
-    message; modules scoring >= 1 are sorted (score desc, priority desc, id asc)
-    and at most _MAX_ROUTED are taken.  If nothing scored and the message is
-    non-empty, fall back to the default modules.  Empty/None message → always
-    only.  Finally, drop routed modules from the lowest rank up until the summed
-    body length is under _CHAR_BUDGET (always-modules are never dropped)."""
-    modules = _load()
-    always = _always_modules(modules)
-
-    msg = (message or "").strip()
-    if not msg:
-        return _apply_budget(always, [])
-
-    message_lc = msg.lower()
-    non_always = [m for m in modules if not m.get("always")]
-
-    scored: list[tuple[int, dict]] = []
-    for m in non_always:
-        score = sum(1 for t in m["triggers"] if _trigger_matches(t, message_lc))
-        if score >= 1:
-            scored.append((score, m))
-
-    if scored:
-        scored.sort(key=lambda sm: (-sm[0], -sm[1]["priority"], sm[1]["id"]))
-        routed = [m for _, m in scored[:_MAX_ROUTED]]
-    else:
-        defaults = sorted(
-            (m for m in non_always if m.get("default")),
-            key=lambda m: (-m["priority"], m["id"]),
-        )
-        routed = defaults[:_MAX_ROUTED]
-
-    return _apply_budget(always, routed)
+    """Route a user message to the technician doctrine modules for the read."""
+    return _DEFAULT.route(message)
 
 
 def _apply_budget(always: list[dict], routed: list[dict]) -> list[dict]:
-    """always + routed, dropping routed from the lowest rank up until the summed
-    body chars are under _CHAR_BUDGET.  always-modules are never dropped."""
-    kept = list(routed)
-    while kept:
-        total = sum(len(m["body"]) for m in always) + sum(len(m["body"]) for m in kept)
-        if total <= _CHAR_BUDGET:
-            break
-        kept.pop()  # drop the lowest-ranked routed module
-    return always + kept
+    """always + routed under _CHAR_BUDGET (lowest-ranked routed dropped first)."""
+    return _DEFAULT.apply_budget(always, routed)
 
-
-# ---------------------------------------------------------------------------
-# Prompt assembly
-# ---------------------------------------------------------------------------
 
 def prompt_block(modules: list[dict]) -> str:
-    """Assemble the doctrine system-prompt block from routed modules.  Empty list
-    → "".  The always/protocol body follows the header directly; every other
-    module gets a titled '--- TITLE ---' separator."""
-    if not modules:
-        return ""
+    """Assemble the technician doctrine system-prompt block. Empty list → ""."""
+    return _DEFAULT.prompt_block(modules)
 
-    protocol_bodies = [m["body"] for m in modules if m.get("kind") == "protocol"]
-    others = [m for m in modules if m.get("kind") != "protocol"]
-
-    out = _PROMPT_HEADER
-    out += "\n\n".join(protocol_bodies)
-    for m in others:
-        out += "\n\n--- " + m["title"].upper() + " ---\n\n" + m["body"]
-    return out
-
-
-# ---------------------------------------------------------------------------
-# Fingerprint + manifest
-# ---------------------------------------------------------------------------
 
 def fingerprint() -> str:
-    """Deterministic 12-hex-char sha256 over sorted (filename + content) pairs."""
-    d = _DOCTRINE_DIR
-    h = hashlib.sha256()
-    try:
-        for p in sorted(d.glob("*.md"), key=lambda q: q.name):
-            try:
-                content = p.read_text(encoding="utf-8")
-            except OSError:
-                continue
-            h.update(p.name.encode("utf-8"))
-            h.update(content.encode("utf-8"))
-    except Exception:  # noqa: BLE001
-        pass
-    return h.hexdigest()[:12]
+    """Deterministic 12-hex-char sha256 over the technician doctrine dir."""
+    return _DEFAULT.fingerprint()
 
 
 def manifest() -> dict:
-    """Summary manifest of the loaded library (for admin/health surfaces)."""
-    modules = _load()
-    mods = [
-        {
-            "id": m["id"],
-            "kind": m["kind"],
-            "version": m["version"],
-            "title": m["title"],
-            "chars": len(m["body"]),
-            "always": m["always"],
-            "default": m["default"],
-            "n_triggers": len(m["triggers"]),
-        }
-        for m in sorted(modules, key=lambda m: m["id"])
-    ]
-    return {
-        "version": DOCTRINE_VERSION,
-        "fingerprint": fingerprint(),
-        "modules": mods,
-    }
+    """Summary manifest of the technician library (for admin/health surfaces)."""
+    return _DEFAULT.manifest()
