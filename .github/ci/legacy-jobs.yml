@@ -3138,7 +3138,16 @@ jobs:
         # parquets in a ProcessPoolExecutor), so its suite could never run in the
         # thin marketing-engine lane where its two siblings live. Named here, and
         # only here, so the split is explicit instead of a silent skip.
-        run: python -m pytest tests/test_marketing_content.py tests/test_marketing_live_verify.py tests/test_marketing_breaking.py tests/test_marketing_weekend_levels.py tests/test_marketing_chart_coverage.py tests/test_marketing_hot_tape_pack.py -q -rs
+        #
+        # test_marketing_filing_lanes.py joins 2026-07-29 (E2 review), same class
+        # as the first four, fifth time: its congress/insider/house-pick tests
+        # build quiver parquet fixtures behind importorskip("pandas")/("pyarrow"),
+        # and the thin marketing-engine lane that names the file installs neither
+        # — so the tests that pin the filing lanes' no-score / no-BUY-chart /
+        # display-rounding guards were SKIP-ONLY. The thin lane keeps the file
+        # for its pandas-free config and gating tests; the parquet-backed tests
+        # execute here.
+        run: python -m pytest tests/test_marketing_content.py tests/test_marketing_live_verify.py tests/test_marketing_breaking.py tests/test_marketing_weekend_levels.py tests/test_marketing_chart_coverage.py tests/test_marketing_hot_tape_pack.py tests/test_marketing_filing_lanes.py -q -rs
 
   publish-r2-client:
     if: ${{ false }}
