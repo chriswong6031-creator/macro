@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-29T16:38:38.055040+00:00",
-  "count": 333,
+  "generated_at": "2026-07-29T16:53:24.592291+00:00",
+  "count": 334,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -1693,6 +1693,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ifcjsn3rhid-51851d",
+      "title": "NextEra Energy Inc. (NEE) Updating estimates for 2Q results with focus on data center growth, regulatory items",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T01:36:31Z",
+      "summary_points": [
+        "**Backlog Surge**: 35.1 GW backlog (up 900% from 3.6 GW) driven by Dominion merger filings, enabling 10.5% CAGR EPS growth vs.",
+        "8%+ company guidance through 2032.",
+        "**Nuclear Expansion Catalyst**: Duane Arnold plant online by 2029 (post-approval); FPL’s 8 GW large load forecast by 2032 with 12 GW in advanced discussions (tariff approval expected 2024, potential 2028 online).",
+        "**Profitability Acceleration**: EBIT margin expanding to 41.0% (12/28E), EBITDA growth accelerating to 28.4% (12/27E), and FCF/share rising to $2.00 (12/28E) confirming operational efficiency.",
+        "**Regulatory Merger Momentum**: Dominion merger filings underway (VA, NC, SC), closing H2 2027; post-merger 11% regulatory capex growth and 9%+ EPS growth through 2032."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
