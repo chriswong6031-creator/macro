@@ -684,7 +684,7 @@ def render_signal_chart_png(
     dates: list[str],
     closes: list[float],
     *,
-    marker_index: int,
+    marker_index: int | None,
     width: int = 1200,
     height: int = 675,
     subtitle: str | None = None,
@@ -696,6 +696,18 @@ def render_signal_chart_png(
     last price labels, ticker, first/last date, MASTERMIND brand mark. Landscape
     ~1200x675 (16:9) for the X card. NO technical-indicator words anywhere (no
     MACD/RSI/EMA) — neither drawn nor in PNG metadata (bare save, no pnginfo).
+
+    marker_index=None renders the SAME card with NO BUY guide/triangle/dot/label,
+    exactly as ``render_signal_chart`` (the SVG) does. THE TWO MUST AGREE. This
+    function is ``media_publish.publish_card``'s ``legacy_png`` fallback: whenever
+    ``rasterize_svg`` returns b"" (no Chrome on the host, a raster timeout) the
+    PNG *this* renderer produces is what gets uploaded and posted. Before the
+    markerless branch existed, a filing card or a "watching, not buying yet" tape
+    card whose SVG was correctly markerless still went to the timeline as a
+    BUY-labelled v1 card the moment Chrome was missing — a fabricated
+    recommendation attached to a named politician's trade, which is precisely
+    what the filing lane's own docstring forbids. The SVG branch alone could
+    never enforce that, because the SVG is not the image X receives.
 
     Deterministic: pure function of the inputs (no clock, no randomness), so two
     calls with the same args return byte-identical PNGs. PIL fonts resolve via
@@ -738,7 +750,9 @@ def render_signal_chart_png(
         img.save(buf, format="PNG", optimize=True)
         return buf.getvalue()
 
-    marker_index = max(0, min(marker_index, n - 1))
+    # Clamp marker_index (None = markerless card, no BUY geometry at all).
+    if marker_index is not None:
+        marker_index = max(0, min(marker_index, n - 1))
 
     # Layout — scaled from the SVG pads, roomier for the large canvas.
     PAD_LEFT, PAD_RIGHT, PAD_TOP, PAD_BOT = 96, 44, 96, 96
@@ -784,16 +798,19 @@ def render_signal_chart_png(
     _png_text_anchor(draw, last_x - 10, last_y - 16, _fmt_price(closes[-1]),
                      grid_font, LINE, anchor="rb")
 
-    # BUY vertical guide (dashed) + triangle + dot + label.
-    bx, by = px(marker_index), py(closes[marker_index])
-    _png_dashed_vline(draw, bx, PAD_TOP, PAD_TOP + chart_h, BUY, dash=6, gap=6)
-    tri = 16
-    draw.polygon(
-        [(bx, by - tri), (bx - tri * 0.7, by + tri * 0.3), (bx + tri * 0.7, by + tri * 0.3)],
-        fill=BUY)
-    _png_dot(draw, bx, by, 6, BUY, outline=BG, outline_w=2)
-    buy_font = load_font(24, bold=True)
-    _png_text_anchor(draw, bx, by - tri - 20, "BUY", buy_font, BUY, anchor="mm")
+    # BUY vertical guide (dashed) + triangle + dot + label. Skipped entirely on
+    # the markerless card — no green pixel, no "BUY" glyph, nothing to read as a
+    # call (see the marker_index=None note in the docstring).
+    if marker_index is not None:
+        bx, by = px(marker_index), py(closes[marker_index])
+        _png_dashed_vline(draw, bx, PAD_TOP, PAD_TOP + chart_h, BUY, dash=6, gap=6)
+        tri = 16
+        draw.polygon(
+            [(bx, by - tri), (bx - tri * 0.7, by + tri * 0.3), (bx + tri * 0.7, by + tri * 0.3)],
+            fill=BUY)
+        _png_dot(draw, bx, by, 6, BUY, outline=BG, outline_w=2)
+        buy_font = load_font(24, bold=True)
+        _png_text_anchor(draw, bx, by - tri - 20, "BUY", buy_font, BUY, anchor="mm")
 
     # Min / max labels at their price points.
     min_idx = closes.index(price_min)

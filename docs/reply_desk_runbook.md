@@ -374,16 +374,46 @@ rejection with no reason teaches nothing. Hold is reversible and keeps the item
 in the rail; reject is terminal and releases the thread so a sibling desk may
 legitimately take it.
 
-Every draft you see has already cleared eight critics (near-dup vs the parent,
+Every draft you see has already cleared nine critics (near-dup vs the parent,
 near-dup vs our own corpus, satire/sensitivity blocklists + zero-cross-account
-engagement, position consistency, the persona-label test, fact discipline, the
-shared vocab guard, and the dignity rubric). What reaches you is a *taste*
-decision, not a safety decision.
+engagement, position consistency, the persona-label test, the reply-value
+doctrine bar, fact discipline, the shared vocab guard, and the dignity rubric).
+What reaches you is a *taste* decision, not a safety decision.
 
 That is a **structural** guarantee, not a description of a pipeline: the queue
 itself refuses any item whose critic stamp is missing, not a `pass`, or produced
 by a partial run (`reply_queue.validate_critic_stamp`). It holds no matter which
 producer built the item, including one written after this document.
+
+### The bar you are approving against (E4 reply doctrine)
+
+**Read `research/MARKETING_REPLY_DOCTRINE_BY_FABLE.md` once before your first
+approval session.** It is the same doctrine the machine is held to — the drafter
+phrases from it (`engine/marketing/reply_voice.py`), the `reply_value` critic
+kills its anti-patterns, and it is distilled from a harvested corpus of 180 top
+replies under 12 large finance posts
+(`research/marketing_dockets/reply_corpus_2026_07_29/`), not from taste alone.
+
+The short version, for the rail:
+
+- **A reply is rent paid for someone else's audience.** The rent is a gift the
+  thread did not already have.
+- **It must carry one of five things**: a data drop, a sharp read, dry wit, a
+  useful reframe, or a missing-number correction. None of the five → reject.
+- **Length**: the corpus median winning reply is **11 words**; two-thirds are
+  under 16. If a draft needs 40 words to land one thought, it is not finished.
+- **Questions**: a question aimed at *the room* is fine. A question aimed at the
+  *poster* ("what do you think of X?") is the shape that reliably scores zero —
+  reject it unless the draft also carries a fact that stands without it.
+- **Never approve the moral-outrage pattern.** It has the highest ceiling in the
+  corpus and it is a standing brand exclusion: no information, borrowed anger,
+  and one screenshot next to our profile costs more than the likes.
+- **A good line is necessary, not sufficient.** The corpus contains a genuinely
+  sharp reply that earned zero because it arrived late from a small account.
+  Judge the draft, not the outcome you imagine for it.
+
+Reject reasons that name which of the five was missing are worth several that
+say "meh" — the rejection corpus is what teaches this desk your taste.
 
 ---
 

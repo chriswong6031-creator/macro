@@ -1941,6 +1941,72 @@ def validate_copy_v2(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Filing fact lock — every number in a disclosure post traces to the filing
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: Kinds whose numbers are FILING numbers: the XG-E2 disclosure lanes. A number
+#: in one of these posts is a claim about a document somebody signed, so the bar
+#: is the wire desk's bar (gate 0.3), not the general copy bar.
+FACT_LOCKED_KINDS: frozenset[str] = frozenset({"congress", "insider"})
+
+#: The payload keys that carry FACTS. Persona cards, codex blocks, franchise
+#: prose and the shape contract are STYLE and are deliberately excluded: their
+#: incidental digits ("at most 1 in 4 posts", "90 chars") would otherwise license
+#: a number in the copy that no filing contains.
+_FACT_PAYLOAD_KEYS: tuple[str, ...] = (
+    "facts", "numbers_whitelist", "entry", "t1", "t2", "invalidation",
+    "win_rate", "pack", "cashtag", "cashtags", "angle",
+)
+
+
+def filing_fact_lock_violations(text: str, payload: dict, kind: str) -> list[str]:
+    """Gate 0.3 for the filing lanes: every number in `text` traces to the packet.
+
+    WHY THIS EXISTS ON TOP OF ``validate_copy_v2``. The general numeric gate
+    (``validate_copy`` -> numbers whitelist) SKIPS bare one- and two-digit
+    integers, and it has to: ordinary copy counts things ("3 names", "2 weeks")
+    and the whitelist cannot carry every small integer the language needs. But
+    the reporting lag IS a bare one- or two-digit integer, always. So on these
+    two lanes the one number the disclosure law exists to protect was the one
+    number the model was free to write: "disclosed 6 days later" on a 47-day lag
+    passed every gate, read as compliant, and was false.
+
+    The check is ``hot_tape_llm.numeric_violations`` IMPORTED, never forked, so
+    the filing lanes inherit its tolerances (sign-insensitive, trailing-zero
+    tolerant, truncation-aware) and any future fix to them.
+
+    THE PACKET IS WHAT THE PROMPT HANDED OUT. The gate judges against the same
+    fact-bearing payload keys the writer was shown, for the reason the reply desk
+    learned the hard way: a gate given LESS than the prompt rejects a model for
+    obeying it, and a gate given MORE (persona/codex prose) licenses numbers no
+    filing contains.
+
+    FAILS CLOSED. If the gate itself cannot run, the item is refused rather than
+    passed: dropping a disclosure post costs one post, and shipping an unchecked
+    one costs a claim about a filing. Empty list = clean.
+    """
+    if str(kind or "") not in FACT_LOCKED_KINDS:
+        return []
+    try:
+        from engine.marketing.hot_tape_llm import numeric_violations  # noqa: PLC0415
+    except Exception as exc:  # noqa: BLE001
+        log.warning("copywriter: filing fact lock unavailable (%s: %s)",
+                    type(exc).__name__, exc)
+        return [f"filing fact lock unavailable ({type(exc).__name__})"]
+
+    packet = {k: (payload or {}).get(k) for k in _FACT_PAYLOAD_KEYS
+              if (payload or {}).get(k) is not None}
+    try:
+        hits = numeric_violations(str(text or ""), packet)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("copywriter: filing fact lock raised (%s: %s)",
+                    type(exc).__name__, exc)
+        return [f"filing fact lock raised ({type(exc).__name__})"]
+    return [f"filing fact lock: {h} (a filing number must come from the filing)"
+            for h in hits]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Deterministic variant templates (the anti-bot-voice library)
 #
 # Key rules for every template (see research/MARKETING_VOICE_DOCTRINE_V2_BY_FABLE.md):
@@ -3473,7 +3539,10 @@ _PRICE_TOKENS = (
 _TICKER_DEPENDENT_TOKENS = _CASHTAG_TOKENS + _PRICE_TOKENS
 
 # Types whose posts validate_copy rule 1 requires to carry the cashtag.
-_CASHTAG_REQUIRED_TYPES = ("signal", "chart", "receipt", "watchlist", "mover")
+# congress/insider joined 2026-07-29 (E2): the codex filing template leads
+# with the cashtag; a filing post with no ticker is unanchored.
+_CASHTAG_REQUIRED_TYPES = ("signal", "chart", "receipt", "watchlist", "mover",
+                           "congress", "insider")
 
 
 def _variant_allowed(variant: tuple, ctx: dict) -> bool:
@@ -3924,14 +3993,14 @@ def write_posts_llm(
                 # `due_condition` is checked against graded data, never by copy
                 # asserting the loop is closed.
                 "\n\nSOME ITEMS CARRY A `codex` BLOCK. When present: `worldview` is how "
-                "this person SEES a market — the question they ask first; let it shape "
+                "this person SEES a market, the question they ask first; let it shape "
                 "which fact they lead with. `franchises` are the recurring formats "
                 "readers expect; when an item names one, write that format. `restraint` "
                 "is what they refuse to do, and it is binding. `open_promises` are loops "
-                "this account already promised to close — do NOT restate, contradict, or "
+                "this account already promised to close. Do NOT restate, contradict, or "
                 "claim to resolve them; they are listed so you do not re-open the same "
                 "loop in different words. `worn_out_phrases` are n-grams the desk already "
-                "leaned on this week — do not reach for them again.\n"
+                "leaned on this week. Do not reach for them again.\n"
                 "AN ITEM WITH NO `codex` BLOCK IS WIRE REGISTER: report it straight, with "
                 "no personality, no signature opener, no aside, no emoji."
                 if (_codex_by_account or _memory_by_account)
@@ -4469,16 +4538,80 @@ _V2_SYSTEM_PROMPT_BASE = (
 )
 
 
-def _v2_system_prompt(cfg: dict) -> str:
-    """The system prompt plus this deployment's configured copy_laws."""
+#: How many ratified store exemplars reach the writer prompt. Six is the same
+#: default ``exemplar_store.active_exemplars`` documents; the hand-curated
+#: CORPUS_EXEMPLARS block above stays whole either way.
+_STORE_EXEMPLAR_K = 6
+
+
+def store_exemplar_block(cfg: dict | None, *, root: Any = None,
+                         register: str | None = None,
+                         k: int = _STORE_EXEMPLAR_K) -> str:
+    """The §10 E3 writer hook: exemplars from the CONFIG-PINNED store version.
+
+    Masterplan §10 E3: "writer/critic prompts load exemplars from the store
+    (config-pinned version, never auto-flipped)". ``exemplar_store`` deliberately
+    does not import this module, so THIS is the production seam — without it the
+    whole ratification chain (harvest -> pending -> operator promotion -> config
+    pin) ended at a function only tests called.
+
+    TWO LAWS BOUND THIS BLOCK.
+
+    * **The pin is the only input.** ``active_exemplars`` reads
+      ``intel.exemplar_store.active_version`` and nothing else — never
+      ``latest_version``, never "the newest version that exists". An unpinned
+      deployment gets ``[]`` here and the prompt is byte-identical to the
+      pre-hook prompt, which is the dark default the store ships in.
+    * **Their numbers are theirs.** These are OTHER PEOPLE'S posts, carried as a
+      register reference. Nothing here touches the item payload's
+      ``numbers_whitelist``, so a model that lifts a figure out of an exemplar is
+      still rejected by ``validate_copy_v2``'s numeric gate exactly as if it had
+      invented one. The block says so in the prompt as well, because the cheapest
+      way to lose that argument is to leave it implicit.
+
+    Never raises: an unreadable store, a missing config block or a bad pin all
+    degrade to "" (no exemplars), never to another version's voice.
+    """
+    try:
+        from engine.marketing import exemplar_store  # noqa: PLC0415
+
+        shots = exemplar_store.active_exemplars(register, k=k, root=root, cfg=cfg)
+    except Exception as exc:  # noqa: BLE001 — enrichment, never a gate
+        log.warning("copywriter v2: exemplar store unreadable (%s: %s) — no "
+                    "ratified exemplars in this prompt", type(exc).__name__, exc)
+        return ""
+    if not shots:
+        return ""
+
+    version = shots[0].get("exemplar_version")
+    lines = [
+        f"RATIFIED EXEMPLARS (exemplar store version {version}). Real posts from "
+        "OTHER accounts, ratified by the operator for their REGISTER. Read them "
+        "for rhythm, length and stance. Their numbers are theirs, not ours: every "
+        "figure you write must still come from this item's whitelist, and a number "
+        "borrowed from an exemplar is rejected exactly like an invented one.",
+    ]
+    for shot in shots:
+        text = " ".join(str(shot.get("text") or "").split())
+        if not text:
+            continue
+        reg = str(shot.get("register") or "unknown")
+        lines.append(f'- [{reg}] "{text}"')
+    # Header only, no bodies: say nothing rather than announce an empty block.
+    return "\n".join(lines) if len(lines) > 1 else ""
+
+
+def _v2_system_prompt(cfg: dict, *, root: Any = None) -> str:
+    """The system prompt, this deployment's copy_laws, and the pinned exemplars."""
+    out = _V2_SYSTEM_PROMPT_BASE
     laws = (cfg or {}).get("copy_laws") or []
-    if not laws:
-        return _V2_SYSTEM_PROMPT_BASE
-    return (
-        _V2_SYSTEM_PROMPT_BASE
-        + "\n\nOTHER LAWS (from config, obey exactly):\n"
-        + "\n".join(f"- {law}" for law in laws)
-    )
+    if laws:
+        out += ("\n\nOTHER LAWS (from config, obey exactly):\n"
+                + "\n".join(f"- {law}" for law in laws))
+    block = store_exemplar_block(cfg, root=root)
+    if block:
+        out += "\n\n" + block
+    return out
 
 
 # ── Module counters (the dry run's fallback-rate report reads these) ──────────
@@ -4685,8 +4818,12 @@ def _v2_user_message(payload: dict, *, violations: list[str] | None = None,
     return out
 
 
-def write_posts_llm_v2(contexts: list[dict], cfg: dict) -> list[dict]:
+def write_posts_llm_v2(contexts: list[dict], cfg: dict, *, root: Any = None) -> list[dict]:
     """Write one model post per context. Same order as input. NEVER raises.
+
+    `root` locates the exemplar store for the §10 E3 writer hook (see
+    ``store_exemplar_block``); None means this checkout. With no version pinned
+    in ``intel.exemplar_store.active_version`` the store is never even opened.
 
     Contract §Writer API. Each result is either
 
@@ -4769,7 +4906,7 @@ def write_posts_llm_v2(contexts: list[dict], cfg: dict) -> list[dict]:
         _bump("dropped_provider", len(contexts))
         return results
 
-    system_prompt = _v2_system_prompt(cfg)
+    system_prompt = _v2_system_prompt(cfg, root=root)
     try:
         max_tokens = int(llm_cfg.get("per_post_max_tokens", 400))
     except (TypeError, ValueError):
@@ -5006,11 +5143,19 @@ def _v2_write_one(
         hl, bd = split_shaped_text(text, shape)
         hl, bd = _expression_dial.apply_pass(hl, bd, account=account_id, kind=kind)
         shaped = f"{hl}\n\n{bd}" if hl else bd
-        return shaped, hl, bd, validate_copy_v2(
+        checks = validate_copy_v2(
             shaped, ctx, headline=hl,
             sibling_texts=list(ctx.get("sibling_texts") or []),
             recent=list(recent or []),
         )
+        # B4: the filing lanes lock EVERY number, including the bare small
+        # integers validate_copy_v2 lets through. That exemption is what made the
+        # reporting lag model-writable, and the lag is the one number these lanes
+        # exist to state honestly. A hit lands in the same violation list, so it
+        # rides the normal repair-then-drop path: one repair turn naming the
+        # number, then the post is dropped rather than posted unverified.
+        checks.extend(filing_fact_lock_violations(shaped, payload, kind))
+        return shaped, hl, bd, checks
 
     text = _call(_v2_user_message(payload))
     if not text:

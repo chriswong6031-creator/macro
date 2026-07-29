@@ -398,7 +398,7 @@ def _llm_summarize(item: dict, cfg: dict, wire: dict | None = None) -> str | Non
             "interpretation, stance, or numbers not verbatim in the source.\n"
             "- No stance words: bullish, bearish, buy, sell, rally, plunge, etc.\n"
             "- No advice phrasing: 'investors should', 'consider buying', etc.\n"
-            "- Do NOT end with a source line — we append that automatically.\n"
+            "- Do NOT end with a source line; we append that automatically.\n"
             "- Output ONLY the summary text, no JSON, no preamble."
         )
         # B2-COPY wire voice: append the §3 key-phrase selection law + (for the
@@ -445,10 +445,17 @@ def _llm_summarize(item: dict, cfg: dict, wire: dict | None = None) -> str | Non
 
 
 def _deterministic_summary(item: dict) -> str:
-    """Fallback summary: '{headline} — {source_name}'."""
+    """Fallback summary: '{headline} -- {source_name}'.
+
+    B1: the source clause joins on a DOUBLE HYPHEN. This string is the body that
+    ships whenever the LLM is disarmed or fails, so an em dash here is not a style
+    slip: the publisher's last-gate language screen quarantines U+2014, which made
+    the fallback path unpostable. The double hyphen is also the corpus wire form
+    ("...ENVIRONMENTAL REVIEWS -- WSJ").
+    """
     headline = item.get("headline", "")
     source_name = item.get("source_name", item.get("source", ""))
-    return f"{headline} — {source_name}"
+    return f"{headline} -- {source_name}"
 
 
 _TICKER_STRIP_CAP = 4

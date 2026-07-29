@@ -353,6 +353,11 @@ def run_producer(
                 "parent_author": target.get("author"),
                 "thread_authors": target.get("thread_authors") or [],
                 "numbers_whitelist": drafted.get("numbers_whitelist") or [],
+                # reply_value's long-form exemption keys on the drafting family
+                # (micro_framework may run long; everything else may not). A ctx
+                # without the family fails CLOSED — every >60-word draft would
+                # be rejected regardless of family (E4 review flag, 2026-07-29).
+                "family": drafted.get("family"),
                 "corpus": corpus,
                 "our_handles": our_handles,
                 "satire_blocklist": satire,

@@ -80,6 +80,20 @@ detectors:
   streak:
     min_len: 5                # a run must be at least this long to be a story
     min_rarity_days: 365      # …and the last run this long must be a year+ ago
+  earnings:
+    # T4, the reaction post. Two shapes, one detector, because we have no
+    # extended-hours quotes yet (masterplan §4): a BMO reporter's gap AT the
+    # open, and an AH reporter's move on the NEXT open.
+    min_abs_pct: 4.0          # same bar as the mover — a smaller gap is not the story
+    cooldown_min: 120         # shared with the mover: one post per name per direction per 2h
+    refire_ratio: 2.0         # …unless the move has doubled since the last one
+    # How stale data/earnings/earnings.parquet may be before a row is refused.
+    # The calendar is FORWARD-looking (it names the NEXT report), and companies
+    # move their dates: a months-old row still reading "reports today,
+    # pre-market" would manufacture a reaction post about a company that did
+    # not report. When the whole file is older than this the detector goes dark
+    # and says so in one ::warning — degraded must not ship confident.
+    max_calendar_age_days: 21
   contrarian:
     index_pct: -1.5           # index must be at least this red …
     min_green: 5              # … with at least this many green defensive names
@@ -114,11 +128,32 @@ wire:
   # ceiling has no room for a trailing space that a client may add.
   max_chars: 279
 
+# TWO-STEP PUBLISH — the codex law (research/marketing_dockets/
+# CODEX_CONTENT_CASE_STUDIES_2026_07_28.md §Strongest controlled comparisons A).
+# On the SAME story and the SAME account, the one-line flash won ~8% more views
+# while the contextual version won ~9% better interaction efficiency and a ~49%
+# higher repost/view ratio. So both ship: the alert wins speed, the brief wins
+# reposts. A brief is filed on a LATER tick than its alert, never the same pass.
+#
+# NOTE: the phrasing lane for BOTH is config.yml's `hot_tape.llm` block, not
+# this file — the `enabled` key at the top of this document is the RADAR's
+# master switch and arming the model desk is a separate decision (it also needs
+# MARKETING_LLM_ENABLED=1 in the workflow env).
+two_step:
+  enabled: true
+  min_severity: 90            # above the flagship mirror floor (85) on purpose
+  delay_min: 5                # the NEXT tick at the earliest — never the alert's own pass
+  max_age_min: 60             # past this, "context" is a history lesson
+  max_per_run: 1              # briefs have their OWN budget so an alert never loses a slot
+  min_peers: 4                # fewer live peers than this and the mechanism REFUSES
+  group_median_pct: 1.0       # |peer median| that makes a move group-wide, not name-specific
+
 # workflow_dispatch demo_override (and env HOT_TAPE_DEMO=1) relaxes the gates
 # to these values so the lane can be demonstrated on a quiet tape. Items fired
 # in demo carry provenance.demo = true, all the way onto the outbox item.
 demo:
   sector_median_pct: 0.5
   mover_min_abs_pct: 1.5
+  earnings_min_abs_pct: 1.5
   contrarian_index_pct: -0.3
   max_quote_age_min: 100000   # a demo may run against yesterday's close

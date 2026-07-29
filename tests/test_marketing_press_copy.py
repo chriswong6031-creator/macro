@@ -342,7 +342,10 @@ class TestModelTier:
         out = summarize_item(item, {"breaking": {"llm": {"enabled": True}}},
                              wire={"llm_tier_salience_floor": 80.0})
         assert out["mode"] == "deterministic"
-        assert out["summary"] == "Retail sales unchanged — MarketWatch"
+        # B1: the source clause joins on a DOUBLE HYPHEN. An em dash here is what
+        # the publisher's language gate quarantines, and the deterministic summary
+        # is exactly the body a keyless run ships.
+        assert out["summary"] == "Retail sales unchanged -- MarketWatch"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -658,3 +661,201 @@ def test_full_tick_emits_keyless_with_voice():
     assert prov["wire_format"] in ("flash", "wire_deep")
     # The composed post is within the flash budget.
     assert wf.validate_length(body, prov["wire_format"]) == []
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 10. B1 — press copy meets the house language law, and the lane seals it
+#
+# The publisher runs copywriter.banned_language() on every due item and
+# QUARANTINES a hit (scripts/marketing_publisher.py). Every join in this lane
+# used an em dash, so the whole press estate was building copy that could not
+# survive its own last gate: the lane looked healthy (items queued, tick green)
+# and nothing ever posted. These tests pin the two halves of the fix — the copy
+# no longer contains the token, and the lane refuses to enqueue it if a future
+# vintage ever reintroduces one.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _banned():
+    from engine.marketing.copywriter import banned_language
+    return banned_language
+
+
+class TestB1LanguageLaw:
+    def test_every_opener_in_every_pool_is_clean(self):
+        banned_language = _banned()
+        pools = dict(wv._REGISTER_POOLS)
+        assert pools, "the register pools must not be empty"
+        for register, pool in pools.items():
+            for opener in pool:
+                assert banned_language(opener) == [], (
+                    f"opener {opener!r} in the {register} pool would quarantine "
+                    f"every post that draws it")
+
+    def test_compose_post_attribution_join_is_double_hyphen(self):
+        banned_language = _banned()
+        post = wv.compose_post(
+            opener="Now crossing.", summary="Retail sales unchanged",
+            attribution="Reuters reporting", tape_stamp="WTI -2.3%")
+        assert "-- Reuters reporting" in post
+        assert banned_language(post) == []
+
+    def test_compose_post_does_not_double_append_a_legacy_join(self):
+        # An older-vintage body that already carries the clause (in any dash form)
+        # must not get a second one appended.
+        post = wv.compose_post(
+            opener="", summary="Retail sales unchanged -- Reuters reporting",
+            attribution="Reuters reporting")
+        assert post.count("Reuters reporting") == 1
+
+    def test_full_tick_copy_survives_the_publisher_language_gate(self):
+        """The end-to-end proof: every string this lane emits — X body, composed
+        text, and the rail item — passes the same screen the publisher applies."""
+        banned_language = _banned()
+        now = datetime(2026, 7, 27, 14, 0, tzinfo=timezone.utc)
+        press_cfg = yaml.safe_load((ROOT / "config" / "press_sources.yml").read_text())
+        marketing_cfg = yaml.safe_load((ROOT / "config" / "marketing.yml").read_text())
+        result = run_press_tick(_emitting_items(), root=str(ROOT), now=now,
+                                cfg=marketing_cfg, press_cfg=press_cfg, state={},
+                                seen_ids=set(), dry_run=True)
+        assert result["emitted"], "the strong direct-quote item must emit"
+        for emit in result["emitted"]:
+            assert banned_language(emit["text"]) == [], emit["text"]
+            assert banned_language(emit["body"]) == [], emit["body"]
+            assert banned_language(emit["headline"]) == [], emit["headline"]
+        rail = result.get("rail") or []
+        assert rail, "the rail must carry the tick's items"
+        for item in rail:
+            # The rail-ONLY path builds its own text (headline + attribution +
+            # tape); it must join the same way the post path does.
+            assert banned_language(item["en"]) == [], item["en"]
+
+    def test_source_headline_with_an_em_dash_is_refused_at_the_choke_point(self):
+        """The seal. A source wire arrives with an em dash IN THE HEADLINE, which
+        is copied verbatim into the post text. Nothing upstream can catch it, so
+        the last gate must: no item enters the queue, and the skip census names
+        the gate instead of a generic refusal."""
+        now = datetime(2026, 7, 27, 14, 0, tzinfo=timezone.utc)
+        press_cfg = yaml.safe_load((ROOT / "config" / "press_sources.yml").read_text())
+        marketing_cfg = yaml.safe_load((ROOT / "config" / "marketing.yml").read_text())
+        items = _emitting_items()
+        items[0]["headline"] = (
+            "Trump orders new tariff — and export controls on $AAPL and $NVDA")
+        result = run_press_tick(items, root=str(ROOT), now=now,
+                                cfg=marketing_cfg, press_cfg=press_cfg, state={},
+                                seen_ids=set(), dry_run=True)
+        assert not result["emitted"], (
+            "an em dash in the source headline reaches the post text verbatim; "
+            "the lane must refuse it rather than queue an unpostable item")
+        reasons = [s.get("reason") for s in result["skipped"]]
+        assert "banned_language" in reasons, reasons
+        row = next(s for s in result["skipped"] if s.get("reason") == "banned_language")
+        assert any("em dash" in v for v in row.get("violations", []))
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 11. M1 — the post that ships fits the platform
+#
+# The outbox text is headline + blank line + body, X's cap is 280, and
+# wire_deep's budget is 400-700. Every deep item therefore composed to ~480
+# characters, cleared its own validator, entered the queue, and was quarantined
+# by validate_postable. The format the lane researched hardest had never once
+# reached the timeline. The clamp decides what X gets; the rail keeps the item
+# whole, because news.html has no character cap.
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestPlatformClamp:
+    def test_a_post_that_fits_is_untouched(self):
+        out = wf.clamp_for_x("Headline here", "Body here -- Reuters reporting")
+        assert out["text"] == "Headline here\n\nBody here -- Reuters reporting"
+        assert out["clamped"] is False
+
+    def test_the_duplicated_headline_is_the_first_thing_dropped(self):
+        body = "A. " * 60  # 180 chars of body
+        body = body.strip()
+        headline = "H" * 150
+        out = wf.clamp_for_x(headline, body)
+        assert out["text"] == body, "the body alone fits; the prefix must go first"
+        assert out["clamped"] is True
+        assert "headline prefix dropped" in out["reason"]
+
+    def test_an_over_cap_body_is_trimmed_on_a_SENTENCE_boundary_with_its_tail(self):
+        s1 = ("Multiple wires report a missile strike and a blockade near the "
+              "strait, and tankers carrying crude are already rerouting away.")
+        s2 = ("Insurers are reassessing war risk premiums on the route while "
+              "shippers pause transits through the channel entirely this week.")
+        s3 = ("Traders brace for a supply squeeze if the disruption holds into "
+              "next week and the reroute becomes the standing arrangement.")
+        body = f"{s1} {s2} {s3} -- Reuters reporting · WTI -2.3%"
+        assert len(body) > wf.X_POST_MAX_CHARS, "fixture is degenerate"
+        out = wf.clamp_for_x("A headline", body,
+                             attribution="Reuters reporting", tape_stamp="WTI -2.3%")
+        text = out["text"]
+        assert len(text) <= wf.X_POST_MAX_CHARS
+        assert out["clamped"] is True and "trimmed to" in out["reason"]
+        # The tail is the source line and the tape number: losing either would
+        # turn an attributed wire post into an unattributed claim.
+        assert text.endswith(" -- Reuters reporting · WTI -2.3%")
+        # Whole sentences only. Every sentence is either present entire or gone
+        # entirely: no post ever ends mid-claim.
+        head = text[: -len(" -- Reuters reporting · WTI -2.3%")]
+        assert head.startswith(s1)
+        for sentence in (s1, s2, s3):
+            assert sentence in head or sentence[:30] not in head, (
+                f"a sentence was cut mid-claim: {head!r}")
+
+    def test_a_post_that_cannot_fit_at_all_returns_nothing(self):
+        # One 400-character sentence: no whole-sentence prefix fits, and a
+        # mid-sentence cut is not on the ladder.
+        out = wf.clamp_for_x("H", "word " * 79 + "end")
+        assert out["text"] == ""
+        assert "not one sentence fits" in out["reason"]
+
+    def test_the_deep_tick_now_produces_a_POSTABLE_item(self):
+        """End to end, against the publisher's own validator."""
+        from engine.marketing.social_publisher import validate_postable
+        import tempfile as _tempfile
+
+        now = datetime(2026, 7, 27, 14, 0, tzinfo=timezone.utc)
+        now_ms = int(now.timestamp() * 1000)
+        press_cfg = yaml.safe_load((ROOT / "config" / "press_sources.yml").read_text())
+        marketing_cfg = yaml.safe_load((ROOT / "config" / "marketing.yml").read_text())
+        press_cfg["wire"]["flagship_top_k_per_day"] = 10
+        press_cfg["wire"]["flagship_salience_floor"] = 40.0
+        with _tempfile.TemporaryDirectory() as td:
+            qpath = Path(td) / "quotes.json"
+            qpath.write_text(json.dumps({"ts": now_ms, "quotes": {
+                "CL=F": {"changePct": -2.3, "ts": now_ms}}}))
+            press_cfg["wire"]["tape"]["quote_store_paths"] = [str(qpath)]
+
+            def llm(item, cfg):
+                return _DEEP_BODY if "Hormuz" in item.get("headline", "") else None
+
+            result = run_press_tick(_geo_pair(), root=str(ROOT), now=now,
+                                    cfg=marketing_cfg, press_cfg=press_cfg,
+                                    state={}, seen_ids=set(), dry_run=True,
+                                    llm_override=llm)
+        assert result["emitted"], "the corroborated deep pair must still emit"
+        emit = result["emitted"][0]
+        assert emit["source"]["wire_format"] == "wire_deep"
+        assert validate_postable(emit["text"], None, False) == [], emit["text"]
+        # The clamp is recorded, not silent.
+        assert emit["source"].get("x_clamp")
+        # ...and the RAIL still carries the full-length item.
+        rail = {r["id"]: r for r in result["rail"]}
+        assert len(rail[emit["source"]["feed_item_id"]]["en"]) > wf.X_POST_MAX_CHARS
+
+    def test_every_emitted_press_item_is_postable(self):
+        """The general form: no tick may queue an item the publisher will
+        quarantine for length. This is the regression that would have caught the
+        defect on the day wire_deep landed."""
+        from engine.marketing.social_publisher import validate_postable
+
+        now = datetime(2026, 7, 27, 14, 0, tzinfo=timezone.utc)
+        press_cfg = yaml.safe_load((ROOT / "config" / "press_sources.yml").read_text())
+        marketing_cfg = yaml.safe_load((ROOT / "config" / "marketing.yml").read_text())
+        result = run_press_tick(_emitting_items(), root=str(ROOT), now=now,
+                                cfg=marketing_cfg, press_cfg=press_cfg, state={},
+                                seen_ids=set(), dry_run=True)
+        assert result["emitted"]
+        for emit in result["emitted"]:
+            assert validate_postable(emit["text"], None, False) == [], emit["text"]

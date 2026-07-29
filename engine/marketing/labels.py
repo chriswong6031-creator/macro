@@ -42,13 +42,15 @@ artifact. Nothing in ``site/`` reads this store and nothing may.
 over observed counters. This module imports no model client and must not.
 
 Public API:
-    CONSUMERS / DIMS / LABEL_SCHEMA
+    CONSUMERS / DIMS / PROVENANCE_DIMS / LABEL_SCHEMA
     host_dir(root) / repo_dir(root) / labels_path(root) / scorecard_path(root)
     new_row(**fields) -> dict                      # THE row constructor
     record_observation(row, *, root=None)          -> dict   (HOST write, intraday)
     harvest_post_labels(*, root, cfg=None, now)    -> list[dict]
     harvest_reply_labels(*, store, root, cfg=None, now) -> list[dict]
     parent_adjust(rows, *, cfg=None)               -> list[dict]
+    provenance_for(item) -> {shape, angle, trigger}          (E6)
+    provenance_tables(rows, *, cfg=None) -> dict            (E6 marginals)
     scorecard(rows, *, cfg=None, now)              -> dict
     bottleneck_table(rows, *, cfg=None, now)       -> dict
     north_star(rows, *, cfg=None, now)             -> dict
@@ -85,9 +87,29 @@ CONSUMERS: tuple[str, ...] = (
     "media_w2_scorecard",       # Media W2 — property scorecards
 )
 
-#: The scorecard's cell key. Charter/IS-W5 wording: "hook family x format x
-#: register x account".
+#: The scorecard's JOINT cell key. Charter/IS-W5 wording: "hook family x format
+#: x register x account".
 DIMS: tuple[str, ...] = ("account", "format", "register", "hook_family")
+
+#: E6 LEARNING SPINE (masterplan §10 E6) — the DECISION provenance a post
+#: carries: the mixer's shape, the allocator's angle, and (for intraday items)
+#: the detector trigger that fired. ``outbox.py`` already stamps the first two
+#: onto ``item["source"]`` for exactly this purpose ("so the learning lane can
+#: join engagement back onto the decisions that produced the post") and
+#: ``hot_tape.packet_to_source`` stamps the third.
+#:
+#: THESE ARE MARGINAL TABLES, NOT EXTRA JOINT-KEY DIMENSIONS, and that is a
+#: deliberate call. Folding them into ``DIMS`` would multiply the cell space by
+#: |shape| x |angle| x |trigger| ~= 5 x 8 x 9 = ~360. At real volume (~59
+#: posts/day, a 7-day window => ~410 labelled rows) every joint cell would hold
+#: about one row against an n-floor of 20, so every cell would read "seeding"
+#: and E6's stated purpose — "quota/weight moves happen as CONFIG EDITS citing
+#: the table" — would have no citable row in it. One dimension at a time keeps
+#: each bucket at ~80 rows, which is a number an operator can act on.
+#:
+#: If the joint key is ever wanted anyway it is one line: ``DIMS = DIMS +
+#: PROVENANCE_DIMS``. The rows already carry the fields.
+PROVENANCE_DIMS: tuple[str, ...] = ("shape", "angle", "trigger")
 
 #: Rows below this per cell never carry a verdict. Mirrors telemetry.py's
 #: _N_FLOOR so the two surfaces cannot disagree about what "enough" means.
@@ -389,6 +411,13 @@ def new_row(**over: Any) -> dict:
         "format": "",           # outbox kind, or "reply"
         "register": "",         # expression-dial level name
         "hook_family": "",      # franchise id, or the reply family
+        # E6 decision provenance. "unknown" rather than "" so an absent reading
+        # is a NAMED bucket in the scorecard instead of an empty-string cell —
+        # and so a pre-E6 row and a row whose item genuinely carried no shape
+        # read the same way, which they should: we do not know either.
+        "shape": "unknown",     # content_studio mixer shape (source.shape)
+        "angle": "unknown",     # allocator angle (source.angle)
+        "trigger": "unknown",   # intraday detector trigger (source.trigger)
         "observed": {},         # raw counters, exactly as polled
         "features": {},         # deterministic inputs (no LLM, ever)
         "label": None,          # supervised target in [0, 1] or None
@@ -494,6 +523,33 @@ def _hook_family_for(item: dict) -> str:
     if fam:
         return fam
     return str(item.get("provenance") or "unattributed").strip() or "unattributed"
+
+
+def provenance_for(item: dict) -> dict[str, str]:
+    """E6: the shape/angle/trigger an outbox item was BUILT with.
+
+    ``outbox.py`` stamps ``source.shape`` and ``source.angle`` from the mixer
+    and the allocator (and omits them rather than stubbing them, so a pre-W1
+    item reads as one); ``hot_tape.packet_to_source`` stamps ``source.trigger``
+    with the detector that fired. This reads all three off the SAME dict, and
+    falls back to the item's own top-level keys because the queue item carries
+    ``shape``/``angle`` before the outbox flattens them onto ``source``.
+
+    ABSENT IS "unknown", NEVER A DROP. A post with no shape is still a post
+    whose engagement we measured; dropping it would make the shape table's
+    denominator "posts the mixer happened to stamp" rather than "posts we ran",
+    which is the exact denominator defect that deletes losers from a rate.
+    """
+    src = item.get("source")
+    src = src if isinstance(src, dict) else {}
+    out: dict[str, str] = {}
+    for key in PROVENANCE_DIMS:
+        val = src.get(key)
+        if val in (None, ""):
+            val = item.get(key)
+        text = str(val or "").strip()
+        out[key] = text or "unknown"
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -637,6 +693,10 @@ def harvest_post_labels(
             format=kind,
             register=register_for(kind, account=account, root=root),
             hook_family=_hook_family_for(item),
+            # E6: the decision provenance travels with the outcome. An ORPHAN
+            # (no outbox item) yields three "unknown"s, which is the honest
+            # read — we cannot attribute a shape to a post we cannot attribute.
+            **provenance_for(item),
             observed={
                 "impressions": _int(metrics.get("impressions")),
                 "likes": _int(metrics.get("likes")),
@@ -753,6 +813,10 @@ def harvest_reply_labels(
             format="reply",
             register=register_for("reply", account=account, root=root),
             hook_family=str(item.get("family") or "unassigned"),
+            # E6: a reply has no mixer shape or allocator angle (it is not a
+            # planned post), but it MAY carry the trigger of the thread that
+            # prompted it. Whatever is absent reads "unknown" like anywhere else.
+            **provenance_for(item),
             observed={
                 "author_replied": outcome.get("author_replied"),
                 "likes": outcome.get("likes"),
@@ -1005,6 +1069,7 @@ def scorecard(rows: list[dict], *, cfg: dict | None = None, now: datetime) -> di
             )
         out_cells.append(entry)
     out_cells.sort(key=lambda c: (-int(c["n"]), tuple(sorted(c["dims"].items()))))
+    prov = provenance_tables(in_window, cfg=cfg)
 
     # announce=False: `parent_adjust` already warned about any truncation on
     # this same corpus during the nightly. Two identical annotations per run
@@ -1018,9 +1083,11 @@ def scorecard(rows: list[dict], *, cfg: dict | None = None, now: datetime) -> di
         "n_floor": floor,
         "consumers": list(CONSUMERS),
         "dims": list(DIMS),
+        "provenance_dims": list(PROVENANCE_DIMS),
         "n_rows": len(in_window),
         "n_rows_all_time": len(rows),
         "cells": out_cells,
+        "provenance": prov,
         "covariates": cov_meta,
         "bottleneck": bottleneck_table(in_window, cfg=cfg, now=now),
         "north_star": north_star(in_window, cfg=cfg, now=now),
@@ -1029,6 +1096,71 @@ def scorecard(rows: list[dict], *, cfg: dict | None = None, now: datetime) -> di
             "user-facing, and nothing in site/ reads this file."
         ),
     }
+
+
+def provenance_tables(rows: list[dict], *, cfg: dict | None = None) -> dict:
+    """E6: one MARGINAL table per provenance dim (shape / angle / trigger).
+
+    Masterplan §10 E6: "weekly scorecard gains per-shape/per-angle/per-trigger
+    tables; quota/weight moves happen as CONFIG EDITS citing the table". These
+    are the tables that get cited, so they carry the same n-floor law as the
+    joint cells: a bucket under the floor is PRINTED with ``verdict="seeding"``
+    and supports no quota move. A table nobody may cite is not a smaller claim,
+    it is no claim.
+
+    See ``PROVENANCE_DIMS`` for why these are marginal rather than folded into
+    the joint cell key.
+    """
+    conf = _cfg(cfg)
+    floor = max(1, _int(conf.get("n_floor"), DEFAULT_N_FLOOR))
+    out: dict[str, list[dict]] = {}
+    for dim in PROVENANCE_DIMS:
+        buckets: dict[str, dict] = {}
+        for row in rows:
+            key = str(row.get(dim) or "unknown")
+            b = buckets.setdefault(key, {
+                dim: key, "n": 0, "n_labelled": 0, "n_null": 0,
+                "_labels": [], "_adjusted": [], "_impressions": [],
+            })
+            b["n"] += 1
+            if row.get("label") is None:
+                b["n_null"] += 1
+            else:
+                b["n_labelled"] += 1
+                b["_labels"].append(float(row["label"]))
+            if row.get("adjusted") is not None:
+                b["_adjusted"].append(float(row["adjusted"]))
+            imp = (row.get("observed") or {}).get("impressions")
+            if isinstance(imp, int) and imp > 0:
+                b["_impressions"].append(float(imp))
+
+        table: list[dict] = []
+        for b in buckets.values():
+            entry = {
+                dim: b[dim],
+                "n": b["n"],
+                "n_labelled": b["n_labelled"],
+                "n_null": b["n_null"],
+                "med_label": _median(b["_labels"]),
+                "med_adjusted": _median(b["_adjusted"]),
+                "med_impressions": _median(b["_impressions"]),
+            }
+            if b["n_labelled"] < floor:
+                entry["verdict"] = "seeding"
+                entry["verdict_note"] = (
+                    f"{b['n_labelled']} labelled rows against an n-floor of {floor} "
+                    "— this row may not be cited for a quota or weight move"
+                )
+            table.append(entry)
+        table.sort(key=lambda e: (-int(e["n"]), str(e[dim])))
+        out[dim] = table
+    out["note"] = (  # type: ignore[assignment]
+        "Marginal tables, one dimension at a time — NOT extra joint-cell "
+        "dimensions. See labels.PROVENANCE_DIMS for the cardinality arithmetic. "
+        "'unknown' is a real bucket: an item that carried no shape/angle/trigger "
+        "is counted, never dropped."
+    )
+    return out
 
 
 def bottleneck_table(rows: list[dict], *, cfg: dict | None = None, now: datetime) -> dict:
@@ -1258,10 +1390,12 @@ def _consolidate_locked(
 
 
 __all__ = [
-    "LABEL_SCHEMA", "SCORECARD_SCHEMA", "CONSUMERS", "DIMS", "DEFAULTS",
+    "LABEL_SCHEMA", "SCORECARD_SCHEMA", "CONSUMERS", "DIMS", "PROVENANCE_DIMS",
+    "DEFAULTS",
     "REGISTER_NAMES", "DEFAULT_N_FLOOR", "RETENTION_DAYS",
     "host_dir", "repo_dir", "labels_path", "scorecard_path",
     "new_row", "row_id", "validate_row", "record_observation", "register_for",
+    "provenance_for", "provenance_tables",
     "harvest_post_labels", "harvest_reply_labels",
     "active_covariates", "parent_adjust", "scorecard", "bottleneck_table",
     "north_star", "consolidate", "load_labels", "load_scorecard",

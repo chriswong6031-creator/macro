@@ -142,7 +142,16 @@ PROFILES: dict[str, dict[str, int]] = {
         # template with no take in it — a numbers wire, not analysis. The
         # UNLISTED_KIND_DIAL fallback of 1 would have granted it a personality
         # budget it has no use for.
+        # XG-E2 admitted "congress" + "insider" (the fact-locked filing lanes).
+        # ADJUDICATED to 0, not defaulted. A filing post is a public record read
+        # back — a named politician, a named executive, a share count, a filing
+        # date — and its entire value is that the reader trusts the record. The
+        # UNLISTED_KIND_DIAL fallback of 1 would have granted a personality
+        # budget to a sentence whose job is to carry a reporting lag intact, and
+        # the codex's measured failure of this exact format is editorial voice
+        # ("I'm paying attention", "never random") crowding out the arithmetic.
         "wire": 0, "news": 0, "breaking": 0, "event": 0, "earnings": 0,
+        "congress": 0, "insider": 0,
         # 1 — analysis. Vocabulary tilt plus at most one framing device.
         # Cici's "Before New York Wakes" is an ANALYSIS franchise, not a wire:
         # it is her overnight read, so it lands on macro/signal and dials to 1.
@@ -157,7 +166,16 @@ PROFILES: dict[str, dict[str, int]] = {
         # template with no take in it — a numbers wire, not analysis. The
         # UNLISTED_KIND_DIAL fallback of 1 would have granted it a personality
         # budget it has no use for.
+        # XG-E2 admitted "congress" + "insider" (the fact-locked filing lanes).
+        # ADJUDICATED to 0, not defaulted. A filing post is a public record read
+        # back — a named politician, a named executive, a share count, a filing
+        # date — and its entire value is that the reader trusts the record. The
+        # UNLISTED_KIND_DIAL fallback of 1 would have granted a personality
+        # budget to a sentence whose job is to carry a reporting lag intact, and
+        # the codex's measured failure of this exact format is editorial voice
+        # ("I'm paying attention", "never random") crowding out the arithmetic.
         "wire": 0, "news": 0, "breaking": 0, "event": 0, "earnings": 0,
+        "congress": 0, "insider": 0,
         "signal": 1, "macro": 1, "education": 1, "mover": 1, "theme_list": 1,
         "chart": 2, "watchlist": 2, "receipt": 2,
         # charter §2 amendment 3: the flagship stays an evidence desk in replies.

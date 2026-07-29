@@ -159,6 +159,91 @@ spend:
   twitterapiio_monthly_cap_usd: 75.0
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Actions press wire (E7) — the GitHub Actions deployment of this lane, run by
+# .github/workflows/marketing-press-wire.yml every 5 minutes via
+# scripts/marketing_press_wire.py.
+#
+# WHY IT EXISTS. The VPS daemon emits press items to the GITIGNORED outbox spool
+# (outbox._host_items_path), which the Actions publisher — a different checkout —
+# has never been able to fold. Press and Trump-wire posts have therefore never
+# reached X. The Actions lane emits through the git-TRACKED items.jsonl the
+# publisher actually reads.
+#
+# ONE LANE AT A TIME. Set the repo variable PRESS_WIRE_DAEMON_ACTIVE=true and the
+# Actions lane stands down before polling anything, so the daemon can be armed
+# later (it reaches ≤90 s latency; Actions' cron floor is 5 minutes) without two
+# pollers spending the same cap out of two different state stores.
+# ─────────────────────────────────────────────────────────────────────────────
+actions_wire:
+  # This lane's twitterapi.io sub-cap, carved from the $75 account cap above and
+  # clamped to it in code (a typo here can only lower the ceiling).
+  #
+  # THE THREE SUB-CAPS MUST LEAVE A RESERVE, and nothing in code sums them — each
+  # lane clamps only against the $75 account cap, so three lanes each "within
+  # budget" can still bill $75 together. They were exactly $75: this wire 55.0,
+  # reply_discovery.monthly_usd_cap 15.0, and config/marketing.yml
+  # intel.monthly_usd_cap 5.0 — zero reserve, so any lane's minimum-charge
+  # rounding, a retry, or a manual backfill overdraws the real account and the
+  # first lane to notice is whichever one gets its request refused.
+  # 50 + 15 + 5 = 70 leaves a $5 reserve, pinned by
+  # tests/test_marketing_press_wire.py::TestSpendCapReserve, so a future cap edit
+  # that erases the reserve is red.
+  #
+  # THE CAP MUST SIT ABOVE THE PLAN, not below it. A cap under the projected spend
+  # is not conservative — it just goes dark around day 26 of every month, which is
+  # a silent outage rather than a budget. The projection below is ~$46.6/mo, so
+  # $50 still leaves ~7% head-room over the plan; the tier intervals, not this
+  # number, are the lever if that margin ever needs to grow.
+  monthly_usd_cap: 50.0
+
+  # PER-TIER POLL INTERVALS, SECONDS — these OVERRIDE x_follow.poll_tiers when
+  # the lane runs in Actions, and only there (the daemon reads x_follow.poll_tiers
+  # unchanged). They are intervals rather than "every Nth run" because GitHub's
+  # scheduler fires late and drops ticks; the provider's own persisted last_poll
+  # clock enforces them, so drift costs seconds instead of a whole cycle.
+  #
+  # THE BUDGET MATH (scripts/marketing_press_wire.projected_monthly_usd computes
+  # it every run and tests/test_marketing_press_wire.py asserts it against the cap,
+  # so a config edit that overruns turns the suite red rather than the invoice):
+  #
+  #   $/request = max($0.00015 min charge, 20-tweet page / 1000 * $0.15) = $0.003
+  #     fast   5 handles * 86400/1140  = 379 req/day
+  #     mid   10 handles * 86400/6900  = 125 req/day
+  #     slow   3 handles * 86400/42600 =   6 req/day
+  #     total                          = 510 req/day
+  #   510 * $0.003 * 30.44 days        = ~$46.6/mo   (cap $55)
+  #
+  # WHY FAST IS 19 MINUTES AND NOT 5. Polling all 18 handles on every */5 run is
+  # 5,184 requests/day = ~$466/mo — six times the whole estate cap. The sub-5-minute
+  # path is carried by the FREE tiers: the wire RSS lane and the trumpstruth mirror
+  # poll every run at zero marginal cost, and those are the lanes a Trump post
+  # actually breaks on first. twitterapi.io buys corroboration breadth and the
+  # handles no RSS feed covers — worth $47/mo, not worth $466.
+  #
+  # WHERE THE HEAD-ROOM CAME FROM. The mid tier, not the fast one. Mid handles are
+  # aggregators and sector accounts; the five fast handles (DeItaone, FirstSquawk,
+  # financialjuice, zerohedge, WHPressPool) are the ones a market-moving headline
+  # crosses first, so their 20-minute effective cadence is the number to protect.
+  poll_tiers:
+    fast: 1140      # 19 min  (a run 40 s early still fires it on the 20-min tick)
+    mid:  6900      # 115 min (-> a 2 h effective cadence)
+    slow: 42600     # 11 h 50 min
+
+  # Billed page size used by the projection above. The endpoint has no page-size
+  # parameter; this is the documented default and the number the invoice keys on.
+  tweets_per_request: 20
+
+  # Persist the scoring brain's story spine / signal corpus / source authority in
+  # the COMMITTED cursors.json? Default false. That file is rewritten whole 288
+  # times a day, and those three stores are the only parts of it that grow — at
+  # 500 KB that is ~144 MB/day of poorly-deltable git objects. With
+  # breaking.scoring.rank_ordering dark (its default) they change no gate: they
+  # feed `_components` provenance and an ordering that ships off. Flip this ON in
+  # the same edit that arms rank_ordering; the byte ceiling below still guards.
+  persist_scoring: false
+  cursors_max_bytes: 262144      # 256 KB — over this the scoring stores are dropped
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Reply desk discovery (XG-W4) — the SECOND consumer of the twitterapi.io key.
 #
 # ONE BUCKET, TWO LANES. twitterapi.io is a single account with a single $75/mo
@@ -181,7 +266,10 @@ spend:
 # ─────────────────────────────────────────────────────────────────────────────
 reply_discovery:
   enabled: true
-  monthly_usd_cap: 15.0        # sub-budget carved from twitterapiio_monthly_cap_usd
+  # Sub-budget carved from twitterapiio_monthly_cap_usd. One of the three lanes
+  # summed by test_marketing_press_wire.py::TestSpendCapReserve (wire 50 + this 15 + intel 5 =
+  # 70, $5 reserve under the $75 account cap) — raising it needs the same test.
+  monthly_usd_cap: 15.0
   base_url: "https://api.twitterapi.io"
   auth_header: "X-API-Key"
   key_env: "TWITTERAPI_IO_KEY"   # same read-only key; never mingled with posting creds

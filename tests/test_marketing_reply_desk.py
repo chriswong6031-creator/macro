@@ -1,7 +1,7 @@
 """Reply desk (XG-W4) — acceptance-gate suite.
 
 Every test here maps to a line in the charter's §0 XG-W4 gate. The critic tests
-are MUTATION-style on purpose: a clean draft must clear all eight critics, and
+are MUTATION-style on purpose: a clean draft must clear every critic, and
 each critic must be shown killing its own target defect on a draft that differs
 only in that defect. A critic suite that only ever asserts "clean copy passes"
 proves nothing about whether the gate is wired.
@@ -1031,8 +1031,8 @@ class TestCriticMutations:
         # the output against the constant that drove it, so deleting a critic
         # from the register would keep the test green.
         "informational_surplus", "corpus_near_dup", "blocklist",
-        "position_consistency", "persona_label", "fact_discipline",
-        "vocab", "dignity",
+        "position_consistency", "persona_label", "reply_value",
+        "fact_discipline", "vocab", "dignity",
     ])
     def test_every_critic_is_wired_into_the_pass(self, critic, critic_ctx):
         verdict = rc.run_critics(CLEAN_DRAFT, critic_ctx)
@@ -1040,7 +1040,8 @@ class TestCriticMutations:
         assert critic in rc.CRITICS and critic in rc._CRITIC_FUNCS
 
     def test_the_critic_register_has_not_silently_shrunk(self):
-        assert len(rc.CRITICS) == 8
+        # 8 at XG-W4; `reply_value` (E4 reply doctrine) is the ninth.
+        assert len(rc.CRITICS) == 9
         assert set(rc.CRITICS) == set(rc._CRITIC_FUNCS)
 
     def test_a_crashing_critic_rejects_rather_than_passes(self, monkeypatch, critic_ctx):
@@ -1134,7 +1135,7 @@ class TestReplyQueueStore:
 
 
 class TestCriticStampIsStructural:
-    """M1 — the runbook tells the operator every draft cleared eight critics.
+    """M1 — the runbook tells the operator every draft cleared the full roster.
 
     That was a claim about a PRODUCER, and the producer (discovery -> score ->
     draft -> critics -> enqueue) is not built in this wave. Enforcing the stamp

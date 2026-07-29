@@ -79,6 +79,8 @@ if str(ROOT) not in sys.path:
 #: publish-time lane and are not this writer's business.
 PLANNED_KINDS: tuple[str, ...] = (
     "signal", "chart", "education", "macro", "receipt", "watchlist", "event",
+    # E2 filing lanes (2026-07-29) — planned kinds, same no-fallback law.
+    "congress", "insider",
 )
 
 #: Contract §Context. Rotated deterministically so one run shows several.

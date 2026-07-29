@@ -53,7 +53,7 @@ from typing import Any
 # Default / markets-macro register.
 _OPENERS_DEFAULT: tuple[str, ...] = (
     "🚨 TRUMP:",
-    "Now crossing —",
+    "Now crossing.",
     "White House, minutes ago:",
     "On the tape:",
     "New this hour:",
@@ -66,18 +66,18 @@ _OPENERS_DEFAULT: tuple[str, ...] = (
 # Geopolitical register — graver, no emoji siren, no CTA energy (tragedy tone law
 # is enforced separately via cta_suppress; these are just sober hooks).
 _OPENERS_GEOPOLITICAL: tuple[str, ...] = (
-    "Now crossing —",
+    "Now crossing.",
     "Developing:",
     "On the wires:",
     "New this hour:",
-    "Reports crossing —",
+    "Reports crossing.",
     "",
 )
 
 # Company / earnings register.
 _OPENERS_COMPANY: tuple[str, ...] = (
     "On the tape:",
-    "Now crossing —",
+    "Now crossing.",
     "Just out:",
     "New this hour:",
     "Company wire:",
@@ -87,7 +87,7 @@ _OPENERS_COMPANY: tuple[str, ...] = (
 # Crypto register.
 _OPENERS_CRYPTO: tuple[str, ...] = (
     "On the tape:",
-    "Crossing now —",
+    "Crossing now.",
     "New this hour:",
     "Heads up:",
     "",
@@ -96,7 +96,7 @@ _OPENERS_CRYPTO: tuple[str, ...] = (
 # Exec-voice / claims register (Dimon-class, bank calls).
 _OPENERS_CLAIMS: tuple[str, ...] = (
     "On the wires:",
-    "Now crossing —",
+    "Now crossing.",
     "New this hour:",
     "Street desk:",
     "",
@@ -247,14 +247,14 @@ def key_phrase_prompt_law() -> str:
     relaxes a gate.
     """
     return (
-        "WIRE VOICE — key-phrase law:\n"
+        "WIRE VOICE key-phrase law:\n"
         "- Quote the source's single strongest SHORT phrase verbatim, inside "
         "double quotes (e.g. \"very friendly talks\", \"running afoul\"). Pick the "
         "most vivid 2-6 word span the source actually used; paraphrase everything "
         "else.\n"
         "- At most ONE such verbatim quote. Never quote a whole sentence.\n"
         "- Keep it to <=2 sentences for a flash. Restate only facts present in the "
-        "source — add no interpretation, no stance, no number not in the source.\n"
+        "source. Add no interpretation, no stance, no number not in the source.\n"
         "- Do NOT open with a hook or a source line; both are added automatically."
     )
 
@@ -262,7 +262,7 @@ def key_phrase_prompt_law() -> str:
 def wire_deep_prompt_law() -> str:
     """The two-short-paragraph instruction for the wire_deep format."""
     return (
-        "WIRE VOICE — deep format:\n"
+        "WIRE VOICE deep format:\n"
         "- Write TWO short paragraphs (a lead paragraph, then one paragraph of "
         "plain-word context) totalling 400-700 characters.\n"
         "- Quote the source's single strongest short phrase verbatim in double "
@@ -377,24 +377,35 @@ def compose_post(
     attribution: str = "",
     tape_stamp: str = "",
 ) -> str:
-    """Assemble the final post text: [opener] body [— attribution] [· tape].
+    """Assemble the final post text: [opener] body [-- attribution] [· tape].
 
     Deterministic string assembly (no LLM). The attribution is the corroboration
     decision's inline credit ("on Truth Social" / "Reuters reporting"); the tape
     stamp, when present, trails after a mid-dot so the tape number reads as a
     separate clause. Whitespace is normalised so an empty opener/stamp leaves no
     stray separators.
+
+    The attribution joins on a DOUBLE HYPHEN, never an em dash (B1). Two reasons,
+    and only one of them is house style: the publisher's last-gate language screen
+    (copywriter.banned_language) quarantines any queued item containing U+2014, so
+    an em-dash join silently killed every press emission at post time; and the
+    corpus form the wire accounts actually use is the double hyphen
+    ("...ENVIRONMENTAL REVIEWS -- WSJ", case-study pack item 1).
     """
     opener = str(opener or "").strip()
     body = str(summary or "").strip()
     # An opener joins the body with a single space ("🚨 TRUMP: <body>",
-    # "Now crossing — <body>"); the pool phrases already carry their own trailing
-    # colon/dash punctuation. An empty opener leaves the body to lead on its own.
+    # "Now crossing. <body>"); the pool phrases already carry their own trailing
+    # colon/period punctuation. An empty opener leaves the body to lead on its own.
     text = f"{opener} {body}".strip() if opener else body
 
     attribution = str(attribution or "").strip()
-    if attribution and f"— {attribution}" not in text:
-        text = f"{text} — {attribution}"
+    # Both join forms are checked for presence (an older vintage body may still
+    # carry the em-dash clause) but only the double hyphen is ever EMITTED.
+    if attribution and not any(
+        f"{d} {attribution}" in text for d in ("--", "—", "–")
+    ):
+        text = f"{text} -- {attribution}"
 
     tape_stamp = str(tape_stamp or "").strip()
     if tape_stamp:

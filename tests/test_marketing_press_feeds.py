@@ -651,14 +651,14 @@ class TestM2DryRunNoBilledReads:
 
         class _Billed:
             billed = True
-            def fetch(self, *, root, session_state, offline=False):
+            def fetch(self, *, root, session_state, offline=False, now=None):
                 if offline:
                     return []
                 billed_calls["n"] += 1
                 return [{"id": "billed"}]
 
         class _Free:
-            def fetch(self, *, root, session_state, offline=False):
+            def fetch(self, *, root, session_state, offline=False, now=None):
                 free_calls["n"] += 1
                 return [{"id": "free"}]
 
@@ -684,7 +684,7 @@ class TestM2DryRunNoBilledReads:
         # provider would be reached. offline=True must be threaded through.
         seen_offline = {"val": None}
         real_poll = pp.poll_all
-        def _spy(root, cfg, state, *, offline=False):
+        def _spy(root, cfg, state, *, offline=False, now=None):
             seen_offline["val"] = offline
             return []
         monkeypatch.setattr(pp, "poll_all", _spy)

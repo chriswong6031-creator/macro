@@ -213,6 +213,34 @@ def test_merge_window_prunes_by_age_as_well_as_count():
     assert len(both) == 2
 
 
+def test_merge_window_ages_against_the_caller_clock_not_the_wall_clock():
+    """MAJOR 4: `now` is the tick's clock, and it must decide the age cutoff.
+
+    `_write_wires_sink` already holds the tick's `now` and stamps it into the
+    payload, but the merge re-read `datetime.now`, so the sink aged items
+    against a different instant than the one it published. Anything pinned to a
+    past date — a fixture, a replay, a backfill — then lost its whole window the
+    moment wall-clock drifted past `rail_max_age_h`. That is what turned this
+    suite red on 2026-07-29 against 2026-07-27 fixtures at a 48h horizon, on a
+    head that had changed nothing about the wire.
+    """
+    from datetime import datetime, timedelta, timezone
+    d = _daemon()
+    # A window that is ancient by the wall clock and current by the caller's.
+    pinned = datetime(2020, 5, 17, 12, 0, tzinfo=timezone.utc)
+    items = [{"id": f"i{n}",
+              "ts": (pinned - timedelta(hours=n)).strftime("%Y-%m-%dT%H:%M:%SZ")}
+             for n in (1, 2, 3)]
+
+    kept = d._merge_wires_window([], items, 50, {"rail_max_age_h": 48}, now=pinned)
+    assert [it["id"] for it in kept] == ["i1", "i2", "i3"], (
+        "an explicit `now` was ignored and the wall clock aged the window out")
+
+    # The same call WITHOUT `now` keeps the wall-clock behaviour for the ad-hoc
+    # callers that have no tick — these items really are years old.
+    assert d._merge_wires_window([], items, 50, {"rail_max_age_h": 48}) == []
+
+
 # --------------------------------------------------------------------------- #
 # B4b — the news.html live-wire rail
 # --------------------------------------------------------------------------- #

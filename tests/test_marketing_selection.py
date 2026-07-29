@@ -725,7 +725,7 @@ def _arm_stub_writer(monkeypatch, *, drop_ticker: str | None = None):
     """Inject a fake per-post writer. NO anthropic import, no network."""
     from engine.marketing import copywriter as cw
 
-    def _stub(contexts, cfg):
+    def _stub(contexts, cfg, **_kw):   # **_kw: the writer now also takes root=
         out = []
         for ctx in contexts:
             if drop_ticker and str(ctx.get("ticker") or "") == drop_ticker:
@@ -799,7 +799,7 @@ def test_sibling_texts_reach_later_desks(monkeypatch, tmp_path):
 
     seen: list[list[str]] = []
 
-    def _stub(contexts, cfg):
+    def _stub(contexts, cfg, **_kw):   # **_kw: the writer now also takes root=
         out = []
         for ctx in contexts:
             if str(ctx.get("ticker") or "") == "PLTR":

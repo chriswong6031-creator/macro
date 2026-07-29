@@ -1,0 +1,268 @@
+name: marketing-press-wire
+# ─────────────────────────────────────────────────────────────────────────────
+# PRESS ESTATE CLOSURE (masterplan §10 E7) — the 5-minute press/Trump wire.
+#
+# WHAT THIS FIXES. The press wire has never once reached X. The VPS daemon
+# (scripts/marketing_fastlane_daemon.py) emits press items with spool=True, which
+# routes them to the GITIGNORED data/marketing/outbox/items-host.jsonl; the
+# publisher checks out main and folds the git-TRACKED items.jsonl and nothing
+# else. outbox._host_items_path says so in its own docstring ("The split-brain is
+# unchanged"). And the daemon's systemd unit ships disabled and was never armed,
+# so even the spool is empty. Two independent reasons the lane is dark.
+#
+# This workflow is the same shape that unblocked the Hot Tape radar (#3941): poll
+# in Actions, emit through the CANONICAL outbox path, commit state with
+# merge=union, push, and only THEN dispatch marketing-publish.yml post_now_item.
+#
+# NO MARKET-HOURS WINDOW, deliberately. The hot-tape radar guards an ET session
+# window because a tape event outside RTH is not an event. News is 24/7 — a
+# tariff announcement at 22:00 ET is the most valuable item this lane will ever
+# carry — so this one runs around the clock.
+#
+# THIS RUNS ON ubuntu-latest, NEVER the self-hosted macstudio pool: 288 runs a day
+# on the render pool would eat the nightly's budget, which is law. The repo is
+# PUBLIC, so GitHub-hosted minutes are free and 288 runs/day costs nothing —
+# unlike the twitterapi.io polling underneath it, which is budgeted in
+# config/press_sources.yml `actions_wire` and re-derived on every run.
+#
+# WHY IT IS SAFE. This workflow only QUEUES posts. Nothing here can publish:
+# sending is marketing-publish.yml's job and that runner self-downgrades to
+# dry-run unless the operator's kill switch (repo variable
+# MARKETING_PUBLISH_ENABLED=1) is on. With the switch off this lane fills the
+# outbox and the queue sits there — which is also how you watch what it WOULD
+# have posted before arming anything.
+#
+# LEDGER LAW: this lane writes ONLY data/marketing/outbox/* and its own three
+# state files under data/marketing/press_wire/. It never advances a forward
+# ledger — the nightly is the sole advancer of those, and this loop runs 288
+# times a day.
+# ─────────────────────────────────────────────────────────────────────────────
+on:
+  schedule:
+    # Five minutes is GitHub's cron floor. The FREE tiers (wire RSS + the
+    # trumpstruth mirror) poll on every one of these; the BILLED twitterapi.io
+    # handles are rationed to their own per-tier intervals inside the tick
+    # (config/press_sources.yml actions_wire.poll_tiers — 19 min / 85 min /
+    # 11h50m), which is what keeps the lane at ~$50/mo instead of ~$466.
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: >-
+          DRY RUN — poll the FREE tiers, score, corroborate and compose, writing
+          nothing: no outbox item, no cursor/spend/seen write, no dispatch. The
+          BILLED twitterapi.io lane is skipped entirely (its spend is never
+          persisted in a dry run, so a network read there would bill money the
+          monthly cap counter could never see). The PR receipt mode.
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write     # commit the outbox + press-wire state back to main
+  actions: write      # dispatch marketing-publish.yml with the booked item ids
+
+concurrency:
+  # Its own group, queued rather than cancelled. Two press passes must never
+  # overlap: they would read the same seen ring, both find the same story
+  # unseen, and double-book it — and they would double-charge the twitterapi.io
+  # cap out of a spend counter neither had committed yet. Never cancel a pass in
+  # flight either; it may already have paid for a page of tweets.
+  group: marketing-press-wire
+  cancel-in-progress: false
+
+jobs:
+  wire:
+    runs-on: ubuntu-latest      # OFF the render path — never the macstudio pool
+    # A pass is ~1 min. 10 is head-room for a slow mirror fetch (the CNN archive
+    # is ~19 MB on its 6-hourly conditional GET), the LLM summarize call and the
+    # push race, and small enough that a wedged run frees the concurrency group
+    # before the next cron.
+    timeout-minutes: 10
+    steps:
+      - name: checkout (shallow + sparse + write token)
+        # SHALLOW + SPARSE + BLOBLESS, same reasoning as marketing-hot-tape.yml:
+        # a full clone of this heavy-churn repo has blown a 25-minute job budget
+        # before (#marketing-publish, 2026-07-28), and this lane runs 288 times a
+        # day on a 10-minute budget. Nothing needs history — the tick reads
+        # artifacts at HEAD and puts one commit on top of main; the push loop
+        # deepens to 20 so `pull --rebase` always has a merge base.
+        #
+        # The cone is this lane's exact read+write surface:
+        #   engine, scripts, lib  — the code
+        #   config                — press_sources.yml + marketing.yml
+        #   data/marketing        — the outbox (items.jsonl + media/), the
+        #                           press_wire state, the logo cache the breaking
+        #                           card draws from. Both commit paths are inside
+        #                           this one.
+        #   site/live             — quotes.json, the tape-stamp source (press
+        #                           wire.tape.quote_store_paths). Absent → no
+        #                           stamps, which is a quieter post, not a broken
+        #                           one.
+        # DELIBERATELY ABSENT: data/earnings. breaking_relevance widens its
+        # ticker universe from earnings.parquet only when the file AND pandas are
+        # both present, and pandas is a ~40 s install this lane would pay 288
+        # times a day. Without the file it falls back to its static universe, no
+        # pandas import, no cost. Adding a read path to this lane means adding it
+        # HERE too.
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            engine
+            scripts
+            lib
+            config
+            data/marketing
+            site/live
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: install deps
+        # NO PANDAS (see the cone comment above). pyyaml: config/*.yml. requests +
+        # anthropic: the llm_auth provider waterfall behind breaking_summary.
+        # pyarrow: chart_render falls back to it when pandas is absent, so the
+        # breaking card renders instead of silently degrading to card_svg="".
+        run: pip install --quiet pyyaml requests anthropic pyarrow
+
+      - name: run the press wire
+        id: wire
+        env:
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+
+          # ── ONE LANE AT A TIME ──────────────────────────────────────────────
+          # Set this repo variable to true when the VPS daemon is armed and the
+          # Actions lane stands down before polling anything. Two pollers against
+          # one twitterapi.io account, each with its own spend store, would each
+          # believe it had the whole cap.
+          PRESS_WIRE_DAEMON_ACTIVE: ${{ vars.PRESS_WIRE_DAEMON_ACTIVE }}
+
+          # ── THE QUEUE SWITCH ────────────────────────────────────────────────
+          # Distinct from the SEND switch. MARKETING_OUTBOX_ENABLED lets this lane
+          # write the outbox; MARKETING_PUBLISH_ENABLED (deliberately NOT set
+          # here) is what lets marketing-publish.yml actually post. With the send
+          # switch off this lane fills the queue and the operator can read exactly
+          # what it would have said.
+          MARKETING_OUTBOX_ENABLED: "1"
+
+          # ── THE BILLED READ LANE ────────────────────────────────────────────
+          # Absent key → TwitterApiIoProvider skips cleanly (no account is created
+          # for it) and the lane runs on the free RSS + mirror tiers alone.
+          TWITTERAPI_IO_KEY: ${{ secrets.TWITTERAPI_IO_KEY }}
+
+          # ── THE LLM WATERFALL ───────────────────────────────────────────────
+          # breaking_summary is double-gated (config breaking.llm.enabled AND this
+          # env flag) and THE FLAG ALONE IS A LIE WITHOUT THE CREDENTIALS UNDER
+          # IT: lib.config.secret() reads env only, so llm_auth.build_providers()
+          # returns [] and every summarize-with-citation call falls back to the
+          # deterministic template. That exact omission is what made the flagship
+          # account read machine-written for months (2026-07-26 incident). Same
+          # waterfall the nightly uses: OAuth pool → Anthropic key → DeepSeek.
+          MARKETING_LLM_ENABLED: "1"
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          CLAUDE_CODE_OAUTH_TOKEN_1: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_1 }}
+          CLAUDE_CODE_OAUTH_TOKEN_2: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_2 }}
+          CLAUDE_CODE_OAUTH_TOKEN_3: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_3 }}
+          CLAUDE_CODE_OAUTH_TOKEN_4: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_4 }}
+          CLAUDE_CODE_OAUTH_TOKEN_5: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_5 }}
+          CLAUDE_CODE_OAUTH_TOKEN_6: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_6 }}
+          CLAUDE_CODE_OAUTH_TOKEN_7: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_7 }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          METAB_KEYS_ENABLED: ${{ vars.METAB_KEYS_ENABLED }}
+        run: |
+          if [ "${DRY_RUN:-}" = "true" ]; then
+            python -m scripts.marketing_press_wire --dry-run
+          else
+            python -m scripts.marketing_press_wire
+          fi
+
+      - name: commit press-wire state (no-op when nothing changed)
+        id: commit
+        # ALWAYS: the spend ledger and the seen ring are the two files whose loss
+        # is expensive — a lost spend row under-counts the monthly cap, and a lost
+        # seen row re-posts a story that already went out. Committing them even
+        # after a failed tick is strictly safer than losing them.
+        if: ${{ always() && !(github.event_name == 'workflow_dispatch' && inputs.dry_run) }}
+        run: |
+          set -uo pipefail
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+
+          # Stage ONLY this lane's paths (ledger law).
+          git add data/marketing/outbox 2>/dev/null || true
+          git add data/marketing/press_wire 2>/dev/null || true
+
+          if git diff --cached --quiet; then
+            echo "marketing-press-wire: no state to commit"
+            echo "pushed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git commit -m "press-wire: tick $(date -u +%FT%H:%MZ) [skip ci]"
+
+          # Retry-rebase push loop, identical in mechanics to the hot-tape lane's:
+          # this races the publish sweeps, the radar and the nightly on the same
+          # outbox paths. items.jsonl, spend.jsonl and seen_ring.jsonl all carry
+          # merge=union (.gitattributes) so a concurrent append resolves instead
+          # of conflicting the loop to death.
+          for i in 1 2 3 4 5; do
+            # --depth 20: the checkout is shallow, so a bare fetch would leave
+            # `pull --rebase` without a merge base once main advanced mid-run.
+            git fetch --depth 20 origin main || true
+            # Drop any untracked file that shadows an origin/main path — a mid-run
+            # commit could TRACK a path we wrote as an untracked side-effect,
+            # which would make the rebase checkout refuse.
+            comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
+                     <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
+              | while IFS= read -r f; do rm -f -- "$f" || true; done
+            if git pull --rebase --autostash origin main && git push origin HEAD:main; then
+              echo "marketing-press-wire: pushed state on attempt $i"
+              echo "pushed=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "marketing-press-wire: push attempt $i lost a race; re-syncing"
+            sleep $((i * 7))
+          done
+
+          # TERMINAL PUSH FAILURE IS A RED RUN, NOT A WARNING. Exiting 0 here made
+          # a persistent push outage invisible: every */5 run went green while
+          # losing cursors.json (the per-handle last_poll throttle) AND the
+          # spend.jsonl deltas (the cap guard's seed), so the next run re-polled
+          # all 18 handles believing $0.00 had been spent — ~$466/mo of real money
+          # against a $75 account, green-looping forever. The retries above are
+          # kept (a lost race is normal); what changes is that running out of them
+          # surfaces. The billed tier also fails CLOSED on the python side
+          # (marketing_press_wire.push_access_ok), so the next run stands the paid
+          # lane down instead of spending into a counter it cannot commit.
+          echo "::error title=press-wire-push::marketing-press-wire: could not push state after 5 attempts — cursors (poll throttle) and spend deltas (cap counter) are LOST for this tick"
+          echo "pushed=false" >> "$GITHUB_OUTPUT"
+          exit 1
+
+      - name: dispatch the publisher for the booked items
+        # ORDER IS LOAD-BEARING: push THEN dispatch. marketing-publish checks out
+        # main and folds items.jsonl from HEAD — dispatched before our push lands
+        # it would find no such item ids and post nothing, so a failed push means
+        # NO dispatch (steps.commit.outputs.pushed) rather than a wasted run.
+        #
+        # ONE API CALL, no polling (GitHub quota is one shared bucket): fire and
+        # forget. The publisher's own run is the receipt.
+        if: >-
+          ${{ success()
+              && steps.wire.outputs.post_now_ids != ''
+              && steps.commit.outputs.pushed == 'true'
+              && !(github.event_name == 'workflow_dispatch' && inputs.dry_run) }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          POST_NOW_IDS: ${{ steps.wire.outputs.post_now_ids }}
+        run: |
+          echo "marketing-press-wire: dispatching publisher for $POST_NOW_IDS"
+          gh workflow run marketing-publish.yml \
+            -f post_now_item="$POST_NOW_IDS" \
+            --repo "$GITHUB_REPOSITORY"

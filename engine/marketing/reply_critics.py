@@ -26,6 +26,9 @@ The critics:
     persona_label          a draft interesting only because of who says it
                            rejects — deterministic proxy: it must carry at
                            least one concrete market referent
+    reply_value            the E4 doctrine bar: OP-directed questions with no
+                           gift, advice-column boilerplate, unclosed length and
+                           one-word reactions all reject
     fact_discipline        numbers only from whitelisted own-feed values
     vocab                  the shared banned-vocab guard + the expression dial
     dignity                screenshot rubric; the LLM hook lives here
@@ -60,6 +63,7 @@ CRITICS: tuple[str, ...] = (
     "blocklist",
     "position_consistency",
     "persona_label",
+    "reply_value",
     "fact_discipline",
     "vocab",
     "dignity",
@@ -108,6 +112,54 @@ _MECHANISM_TOKENS: tuple[str, ...] = (
     "freight", "tonnage", "imports", "exports", "tariff", "quota", "subsidy",
     "inflation", "deflation", "payrolls", "claims", "pmi", "cpi", "ppi", "gdp",
 )
+
+#: E4 doctrine §3 (research/MARKETING_REPLY_DOCTRINE_BY_FABLE.md). The corpus's
+#: median winning reply is 11 words and 2/3 of high-engagement replies are under
+#: 16; only 2 of the top 60 are mini-essays, and the one that worked closed on a
+#: single crisp line while the zero-like essay of the same length carried three
+#: disconnected claims. Length is not the defect — UNCLOSED length is — so the
+#: bar sits far above the median and kills only the rambles.
+MAX_REPLY_WORDS = 60
+#: The one family whose structure IS the payload, so it may run long. Named here
+#: rather than in ``reply_voice`` because THIS module is what enforces it; the
+#: prompt reads the constant from here.
+LONG_FORM_FAMILIES: frozenset[str] = frozenset({"micro_framework"})
+#: Below this many content units (words + numbers + cashtags) a reply is the
+#: corpus's "one-word / near-one-word low-effort reaction" — the shape that
+#: scored zero because it is too generic to be dry wit.
+#: CALIBRATED AGAINST THE WINNERS, not against intuition: a floor of 4 would
+#: reject "$NVDA -18.5% today" (3 units), which is the data-drop pattern the
+#: doctrine is built on, and "Support at 900-925" (4) sits one unit above it.
+#: 3 kills "Oh wonderful." (2) and "This." (1) and nothing that pays the room.
+MIN_CONTENT_UNITS = 3
+
+#: E4 doctrine §8 anti-pattern 1: text that could be pasted under any headline.
+#: Phrases, not single words, because "risk management" is a legitimate subject
+#: and "risk management matters" is a fortune cookie.
+_ADVICE_BOILERPLATE: tuple[str, ...] = (
+    "risk management matters", "risk management is key", "manage your risk",
+    "stay informed", "avoid emotional decisions", "before jumping to conclusions",
+    "watch for official statements", "do your own research", "not financial advice",
+    "always remember", "it's important to remember", "it is important to remember",
+    "this is a reminder", "let this be a reminder", "let this be a lesson",
+    "serves as a reminder", "reminds us why", "reminds us that",
+    "stick to your plan", "stay disciplined", "stay patient", "trust the process",
+    "keep calm and", "diversification is key", "time in the market beats",
+    "at the end of the day, ", "as always, ",
+)
+
+#: A second person in a question sentence points the question at the POSTER.
+#: Doctrine §4: genuine OP-directed questions clustered in the zero-like pool
+#: ("What do you think of TIPS in this environment?"), while questions that work
+#: are rhetorical and aimed at everyone reading.
+_SECOND_PERSON_RE = re.compile(r"\b(you|your|yours|you're|youre|u|ur)\b", re.IGNORECASE)
+#: Direct asks that address the poster without needing a pronoun.
+_OP_ASK_RE = re.compile(
+    r"\b(thoughts|your take|any take|what do you think|how do you see|"
+    r"do you think|any read|what's your|whats your)\b", re.IGNORECASE)
+_SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+|\n+")
+_URL_RE = re.compile(r"https?://\S+|\bwww\.\S+", re.IGNORECASE)
+_MENTION_RE = re.compile(r"(?<![\w.])@[A-Za-z0-9_]{2,}")
 
 _CASHTAG_RE = re.compile(r"\$[A-Za-z][A-Za-z0-9.\-]{0,9}\b")
 #: Word tokenizer. Hyphens SPLIT (so "capex-heavy" yields "capex" and a draft is
@@ -400,7 +452,105 @@ def persona_label(draft: str, ctx: dict) -> dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
-# 6. Fact discipline — numbers whitelist
+# 6. Reply value — the E4 doctrine bar
+# ---------------------------------------------------------------------------
+def _sentences(text: str) -> list[str]:
+    """Sentence-ish spans. Newlines split too: the drafter's grip and doorway
+    are separate paragraphs, and a paragraph break ends a thought."""
+    return [s.strip() for s in _SENTENCE_SPLIT_RE.split(str(text or "")) if s.strip()]
+
+
+def _content_units(text: str) -> int:
+    """What a reader actually receives: words + figures + tickers.
+
+    Cashtags and numbers count as units so a genuine data drop ("$NVDA -18.5%
+    today") is never mistaken for a one-word reaction, while "Oh wonderful."
+    still is. Handles and URLs count for nothing — they are addressing, not
+    content.
+    """
+    masked = _MENTION_RE.sub(" ", _URL_RE.sub(" ", str(text or "")))
+    tags = _CASHTAG_RE.findall(masked)
+    body = _CASHTAG_RE.sub(" ", masked)
+    nums = number_tokens(body)
+    for token in nums:
+        body = body.replace(token, " ")
+    words = [w for w in _TOKEN_RE.findall(body.lower()) if any(c.isalpha() for c in w)]
+    return len(tags) + len(nums) + len(words)
+
+
+def reply_value(draft: str, ctx: dict) -> dict[str, Any]:
+    """The reply doctrine's four deterministic kills (E4).
+
+    ``research/MARKETING_REPLY_DOCTRINE_BY_FABLE.md`` §8, from the 2026-07-29
+    corpus of 180 top replies plus a matched zero-like pool:
+
+    1. **A genuine question aimed at the OP.** "What do you think of TIPS in
+       this environment?" got 0 likes: it reads as a DM, asks the account to do
+       work for one person, and gives bystanders nothing.
+       **Narrower than "ends with a question mark" on purpose.** Rhetorical
+       questions aimed at the ROOM are a WINNING pattern (30 likes in the same
+       corpus), and our ``author_question`` family exists because charter §3
+       makes an author reply-back the highest-value reply outcome — the corpus
+       measures likes, which is not our objective function. So the kill fires
+       only when the question is second-person addressed AND the draft carries
+       no concrete referent outside the question: an ask with a gift attached
+       still pays the room, an ask on its own does not.
+    2. **Advice-column boilerplate** that would fit under any headline.
+    3. **Unclosed length.** Over ``MAX_REPLY_WORDS`` rejects unless the family
+       is one whose structure is the payload (``LONG_FORM_FAMILIES``). The
+       family arrives in ``ctx``; an absent family is treated as short-form,
+       which fails CLOSED (a rambling draft is held, never shipped, when the
+       caller forgot to say which family it came from).
+    4. **One-word / near-one-word reactions**, which are too generic to be the
+       dry one-liner they imitate.
+    """
+    reasons: list[str] = []
+    text = str(draft or "").strip()
+    if not text:
+        return _verdict("reply_value", reasons)
+
+    low = text.lower()
+
+    # 1. OP-directed question with nothing for the room.
+    sentences = _sentences(text)
+    questions = [s for s in sentences if s.endswith("?")]
+    op_directed = [s for s in questions
+                   if _SECOND_PERSON_RE.search(s) or _OP_ASK_RE.search(s)]
+    if op_directed:
+        remainder = " ".join(s for s in sentences if not s.endswith("?"))
+        if not _referents(remainder):
+            reasons.append(
+                "question addressed to the poster with no gift for the room "
+                f"({op_directed[0][:60]!r}) — the zero-like shape in the corpus"
+            )
+
+    # 2. Advice-column boilerplate.
+    for phrase in _ADVICE_BOILERPLATE:
+        if phrase in low:
+            reasons.append(f"advice-column boilerplate: {phrase!r}")
+            break
+
+    # 3. Unclosed length.
+    family = str(ctx.get("family") or "").strip()
+    words = len(_TOKEN_RE.findall(low))
+    if words > MAX_REPLY_WORDS and family not in LONG_FORM_FAMILIES:
+        reasons.append(
+            f"{words} words (bar {MAX_REPLY_WORDS}) and family {family or 'unset'!r} "
+            "is not a long-form family — the corpus median winner is 11 words"
+        )
+
+    # 4. One-word reaction.
+    units = _content_units(text)
+    if units < MIN_CONTENT_UNITS:
+        reasons.append(
+            f"low-effort reaction: {units} content unit(s), floor {MIN_CONTENT_UNITS}"
+        )
+
+    return _verdict("reply_value", reasons)
+
+
+# ---------------------------------------------------------------------------
+# 7. Fact discipline — numbers whitelist
 # ---------------------------------------------------------------------------
 def number_tokens(text: str) -> list[str]:
     """Every number-like token, shared tokenizer PLUS the reply-desk additions.
@@ -467,7 +617,7 @@ def _norm_number(token: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# 7. Vocab — the SHARED guard, called not forked
+# 8. Vocab — the SHARED guard, called not forked
 # ---------------------------------------------------------------------------
 def vocab(draft: str, ctx: dict) -> dict[str, Any]:
     """Charter §2 amendment 12: one vocab guard, every drafter.
@@ -496,7 +646,7 @@ def vocab(draft: str, ctx: dict) -> dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
-# 8. Dignity / screenshot rubric — the ONE place an LLM may speak
+# 9. Dignity / screenshot rubric — the ONE place an LLM may speak
 # ---------------------------------------------------------------------------
 def dignity(draft: str, ctx: dict) -> dict[str, Any]:
     """Would this read as a serious desk if screenshotted next to our profile?
@@ -537,6 +687,7 @@ _CRITIC_FUNCS: dict[str, Callable[[str, dict], dict]] = {
     "blocklist": blocklist,
     "position_consistency": position_consistency,
     "persona_label": persona_label,
+    "reply_value": reply_value,
     "fact_discipline": fact_discipline,
     "vocab": vocab,
     "dignity": dignity,
@@ -651,7 +802,9 @@ def our_handles(cfg: dict | None) -> list[str]:
 
 __all__ = [
     "CRITICS", "DEFAULT_THRESHOLDS", "DEFAULT_SENSITIVE_TERMS", "STAMP_SCHEMA",
+    "MAX_REPLY_WORDS", "LONG_FORM_FAMILIES", "MIN_CONTENT_UNITS",
     "run_critics", "screen", "stamp", "our_handles", "load_theses", "number_tokens",
     "informational_surplus", "corpus_near_dup", "blocklist",
-    "position_consistency", "persona_label", "fact_discipline", "vocab", "dignity",
+    "position_consistency", "persona_label", "reply_value", "fact_discipline",
+    "vocab", "dignity",
 ]

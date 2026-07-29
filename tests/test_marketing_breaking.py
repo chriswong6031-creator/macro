@@ -388,8 +388,9 @@ class TestAdversarialValidation:
         # LLM override provided invented numbers -> should fall back
         assert result["mode"] == "llm_fallback"
         assert len(result["violations_seen"]) > 0
-        # Fallback text must be deterministic "{headline} — {source_name}"
-        expected_fallback = f"{item['headline']} — {item['source_name']}"
+        # Fallback text must be deterministic "{headline} -- {source_name}"
+        # (B1: double hyphen, never an em dash -- the publisher quarantines U+2014)
+        expected_fallback = f"{item['headline']} -- {item['source_name']}"
         assert result["summary"] == expected_fallback
 
     def test_summarize_item_llm_fallback_on_stance(self):
@@ -423,17 +424,17 @@ class TestDeterministicFallback:
         cfg = {"breaking": {"llm": {"enabled": True, "model_key": "marketing_copy"}}}
         result = summarize_item(cpi, cfg)
         assert result["mode"] == "deterministic"
-        expected = f"{cpi['headline']} — {cpi['source_name']}"
+        expected = f"{cpi['headline']} -- {cpi['source_name']}"
         assert result["summary"] == expected
 
     def test_deterministic_summary_format(self):
-        """Deterministic summary == '{headline} — {source_name}'."""
+        """Deterministic summary == '{headline} -- {source_name}' (B1)."""
         xml = _load_fixture("rss_mixed.xml")
         items = parse_feed(xml, BLS_SOURCE_CFG)
         for item in items:
             cfg = {"breaking": {"llm": {"enabled": False}}}
             result = summarize_item(item, cfg)
-            expected = f"{item['headline']} — {item['source_name']}"
+            expected = f"{item['headline']} -- {item['source_name']}"
             assert result["summary"] == expected
             assert result["mode"] == "deterministic"
 

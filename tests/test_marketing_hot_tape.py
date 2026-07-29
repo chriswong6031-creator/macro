@@ -7,6 +7,11 @@ Pins the acceptance gates of research/MARKETING_HOT_TAPE_MASTERPLAN.md §0:
   0.4  no call language, ever (cashtags exempted from the scan)
   0.5  the existing outbox guards accept and dedupe our items
 
+Plus the E1 detectors (masterplan §10): the earnings REACTION (BMO gap at the
+open / AH reporter's next open, refusing on a stale calendar and refusing
+without a device slot) and the two-step context BRIEF, whose mechanism is
+computed from the live peer group and whose absence is a refusal.
+
 THIS FILE MUST NOT IMPORT PANDAS — not directly, not through importorskip.
 The radar runs on a shallow ubuntu checkout with pyyaml+requests only, and a
 suite that silently skips is the unrun-suite rot class. Every fixture date is
@@ -225,6 +230,36 @@ def rich_packets() -> dict[str, FactPacket]:
                 "index_pct": -1.82, "index_ticker": "SPY",
                 "green": [["COST", 1.24], ["HD", 0.93], ["MMM", 0.71], ["KO", 0.55]],
                 "sectors_green": ["Consumer Defensive", "Utilities"], "n_green": 11}),
+        "earnings_reaction": _packet(
+            "earnings_reaction", "earnings:AAPL:up:x:0", "up", ticker="AAPL",
+            sector="Technology", severity=95.0, facts={
+                "ticker": "AAPL", "name": "Apple", "pct": 6.67, "price": 224.0,
+                "prev_close": 210.0, "report_when": "ah",
+                "report_date": _prev_weekday(NOW.date()).isoformat(),
+                "earn_next_time": "time-after-hours",
+                "eps": {"actual": 2.11, "consensus": 1.88, "surprise_pct": 12.23,
+                        "reported": _prev_weekday(NOW.date()).isoformat(),
+                        "beat": True},
+                "dollar_delta_usd": 213_000_000_000,
+                "pct_from_ath_live": -13.85, "ath": 260.0, "ath_date": _ago(NOW, 50),
+                "biggest_1d": {"window_start": _ago(NOW, 1800), "prior_pct": 5.0,
+                               "prior_date": _ago(NOW, 300)},
+                "sector": "Technology"}),
+        # BOTH a cashtag and a subject_label on purpose: production packets
+        # carry one or the other (the label is what selects the group-brief
+        # templates), and the rich fixture must render EVERY variant so the ban
+        # scan and the numeric gate see all four.
+        "context_brief": _packet(
+            "context_brief", "brief:mover:MU:down:x:0", "down", ticker="MU",
+            sector="Semiconductors", severity=95.0, facts={
+                "subject": "MU", "subject_label": "Semiconductors", "ticker": "MU",
+                "sector": "Semiconductors", "alert_key": "mover:MU:down:x:0",
+                "alert_trigger": "mover_drop", "pct": -8.2, "price": 84.2,
+                "mechanism": {"kind": "single_name", "group": "Semiconductors",
+                              "group_kind": "industry", "peer_median_pct": -0.31,
+                              "n_peers": 26, "n_agree": 14},
+                "peers": [["SNDK", -14.32], ["STX", -8.51], ["AMD", -8.2]],
+                "watch": {"kind": "level", "price": 84.2}}),
     }
 
 
@@ -276,6 +311,28 @@ class TestDeviceRefusal:
         out = W.compose_wire(p)
         assert out is not None
         assert "since at least" in out["text"]
+
+    def test_every_earnings_variant_states_the_beat_or_the_miss(self):
+        """M3. An earnings reaction post that never prints the EPS line tells
+        the reader a report landed and a stock moved, and withholds the one
+        number it exists to deliver. Two of the four variants closed on a dollar
+        translation or a record rank instead, and `eps_clause` was merely one of
+        five acceptable devices, so the shape shipped."""
+        mandatory, _any_of = W.DEVICE_LAW["earnings_reaction"]
+        assert "eps_clause" in mandatory, mandatory
+        for template, required in W.WIRE_BANK["earnings_reaction"]:
+            assert "{eps_clause}" in template, template
+            assert "eps_clause" in required, template
+
+    def test_an_earnings_packet_with_no_eps_refuses_rather_than_padding(self):
+        packet = rich_packets()["earnings_reaction"]
+        assert W.compose_wire(packet) is not None, "fixture is degenerate"
+        stripped = _packet(
+            "earnings_reaction", packet.key, packet.direction,
+            ticker=packet.ticker,
+            facts={k: v for k, v in packet.facts.items() if k != "eps"})
+        assert W.compose_wire(stripped) is None, (
+            "an earnings post rendered without the earnings")
 
     def test_every_composed_post_carries_a_device(self):
         for trigger, packet in rich_packets().items():
@@ -1171,6 +1228,370 @@ class TestContrarianDetector:
         assert [e for e in HT.detect_events(quotes, heatmap=self._tiles(n=2),
                                             now=NOW, cfg=HT.DEFAULTS)
                 if e.trigger == "contrarian_breadth"] == []
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# T4 — the earnings-reaction detector (masterplan §10 E1)
+# ─────────────────────────────────────────────────────────────────────────────
+
+TODAY_ET = HT._et_date(NOW)
+YESTERDAY_ET = HT._prev_weekday(TODAY_ET)
+
+
+def _earn_row(*, next_date, next_time, surprises=None, as_of=None,
+              eps_forecast=1.88) -> dict:
+    return {"next_date": next_date, "next_time": next_time,
+            "eps_forecast": eps_forecast, "surprises": surprises or [],
+            "as_of": as_of or TODAY_ET.isoformat()}
+
+
+def _surprise(reported, *, eps=2.11, consensus=1.88, pct=12.23) -> dict:
+    return {"qtr": "Jun", "reported": reported, "eps": eps,
+            "consensus": consensus, "surprise_pct": pct}
+
+
+def _earn_events(rows: dict, quotes: dict, *, recs: dict | None = None,
+                 tiles: list | None = None, fired: list | None = None,
+                 cfg: dict | None = None, demo: bool = False) -> list:
+    return HT.detect_events(
+        quotes,
+        pack=_pack(recs if recs is not None else {"AAPL": _rec(mcap_usd=3_200_000_000_000)},
+                   FRESH_TRADE_DATE),
+        heatmap={"asof": None, "tiles": tiles if tiles is not None
+                 else [_tile("AAPL", "Technology", 6.67, industry="Consumer Electronics")]},
+        earnings={"asof": TODAY_ET.isoformat(), "tickers": rows},
+        fired_today=fired or [], now=NOW, cfg=cfg or HT.DEFAULTS, demo=demo)
+
+
+class TestEarningsDetector:
+    def test_an_after_hours_reporter_fires_on_the_next_open(self):
+        rows = {"AAPL": _earn_row(next_date=YESTERDAY_ET.isoformat(),
+                                  next_time="time-after-hours",
+                                  surprises=[_surprise(YESTERDAY_ET.isoformat())])}
+        events = [e for e in _earn_events(rows, {"AAPL": _quote(6.67, 224.0, 210.0)})
+                  if e.trigger == "earnings_reaction"]
+        assert len(events) == 1
+        packet = events[0]
+        assert packet.ticker == "AAPL" and packet.direction == "up"
+        assert packet.facts["report_when"] == "ah"
+        assert packet.facts["report_date"] == YESTERDAY_ET.isoformat()
+        assert packet.facts["eps"]["actual"] == 2.11
+        assert packet.facts["eps"]["beat"] is True
+        assert packet.facts["dollar_delta_usd"] is not None
+
+    def test_a_pre_market_reporter_fires_on_todays_gap(self):
+        rows = {"AAPL": _earn_row(next_date=TODAY_ET.isoformat(),
+                                  next_time="time-pre-market")}
+        events = [e for e in _earn_events(rows, {"AAPL": _quote(-6.1, 197.0, 210.0)})
+                  if e.trigger == "earnings_reaction"]
+        assert len(events) == 1
+        assert events[0].facts["report_when"] == "bmo"
+        assert events[0].direction == "down"
+        # No filing yet at the open — the post still ships on its other devices.
+        assert events[0].facts["eps"] is None
+
+    def test_the_us_date_form_in_surprises_json_is_read(self):
+        """The vendor writes 4/30/2026; the rest of the estate writes ISO."""
+        us = f"{YESTERDAY_ET.month}/{YESTERDAY_ET.day}/{YESTERDAY_ET.year}"
+        rows = {"AAPL": _earn_row(next_date=YESTERDAY_ET.isoformat(),
+                                  next_time="time-after-hours",
+                                  surprises=[_surprise(us)])}
+        events = [e for e in _earn_events(rows, {"AAPL": _quote(6.67, 224.0, 210.0)})
+                  if e.trigger == "earnings_reaction"]
+        assert events and events[0].facts["eps"]["consensus"] == 1.88
+
+    def test_a_stale_surprise_row_is_not_todays_beat(self):
+        """Last quarter's beat presented as today's is the one lie here."""
+        rows = {"AAPL": _earn_row(next_date=YESTERDAY_ET.isoformat(),
+                                  next_time="time-after-hours",
+                                  surprises=[_surprise(_ago(NOW, 90))])}
+        events = [e for e in _earn_events(rows, {"AAPL": _quote(6.67, 224.0, 210.0)})
+                  if e.trigger == "earnings_reaction"]
+        assert events and events[0].facts["eps"] is None
+
+    def test_a_stale_calendar_never_fires(self):
+        """A months-old row still reading 'reports today' is not evidence."""
+        rows = {"AAPL": _earn_row(next_date=TODAY_ET.isoformat(),
+                                  next_time="time-pre-market",
+                                  as_of=_ago(NOW, 90))}
+        events = [e for e in _earn_events(rows, {"AAPL": _quote(-6.1, 197.0, 210.0)})
+                  if e.trigger == "earnings_reaction"]
+        assert events == []
+
+    def test_a_reporter_on_another_day_is_not_a_reaction(self):
+        rows = {"AAPL": _earn_row(next_date=_ago(NOW, -6),
+                                  next_time="time-after-hours")}
+        assert [e for e in _earn_events(rows, {"AAPL": _quote(6.67, 224.0, 210.0)})
+                if e.trigger == "earnings_reaction"] == []
+
+    def test_time_not_supplied_is_not_a_reaction(self):
+        """1,249 of the 1,364 shipped rows say time-not-supplied."""
+        rows = {"AAPL": _earn_row(next_date=TODAY_ET.isoformat(),
+                                  next_time="time-not-supplied")}
+        assert [e for e in _earn_events(rows, {"AAPL": _quote(6.67, 224.0, 210.0)})
+                if e.trigger == "earnings_reaction"] == []
+
+    def test_a_small_move_on_a_report_day_is_not_the_story(self):
+        rows = {"AAPL": _earn_row(next_date=TODAY_ET.isoformat(),
+                                  next_time="time-pre-market")}
+        assert [e for e in _earn_events(rows, {"AAPL": _quote(1.2, 212.5, 210.0)})
+                if e.trigger == "earnings_reaction"] == []
+
+    def test_a_packet_with_no_device_slot_is_refused(self):
+        """Gate 0.2 in the DETECTOR: no stat, no packet, no chart raster."""
+        rows = {"ZZZ": _earn_row(next_date=TODAY_ET.isoformat(),
+                                 next_time="time-pre-market")}
+        bare = _rec(mcap_usd=None, ath=None, max_up_1d=None, max_dn_1d=None,
+                    last_date=_ago(NOW, 30))       # no mcap, no history
+        events = _earn_events(rows, {"ZZZ": _quote(-6.1, 40.0, 42.6)},
+                              recs={"ZZZ": bare},
+                              tiles=[_tile("ZZZ", "Technology", -6.1)])
+        assert [e for e in events if e.trigger == "earnings_reaction"] == []
+
+    def test_severity_scales_with_the_move_and_the_size(self):
+        rows = {"AAPL": _earn_row(next_date=TODAY_ET.isoformat(),
+                                  next_time="time-pre-market")}
+
+        def _sev(quote, **kw) -> float:
+            # By TRIGGER, never by rank: the same fixture also trips the streak
+            # detector, and indexing [0] would silently compare the wrong packet.
+            events = [e for e in _earn_events(rows, {"AAPL": quote}, **kw)
+                      if e.trigger == "earnings_reaction"]
+            assert events, "no earnings packet in this fixture"
+            return events[0].severity
+
+        small = _sev(_quote(-4.1, 201.0, 210.0))
+        big = _sev(_quote(-11.0, 187.0, 210.0))
+        assert big > small
+        # A mega-cap gap clears the flagship floor AND the two-step floor.
+        assert big >= HT.DEFAULTS["two_step"]["min_severity"]
+
+        tiny = _sev(_quote(-4.1, 201.0, 210.0),
+                    recs={"AAPL": _rec(mcap_usd=2_000_000_000, sp500=False,
+                                       adv_rank=900)})
+        assert tiny < small                        # size is half the ranking
+
+    def test_the_earnings_packet_suppresses_its_own_mover_twin(self):
+        """One story, one post: the same |>=4%| trips both detectors."""
+        rows = {"AAPL": _earn_row(next_date=TODAY_ET.isoformat(),
+                                  next_time="time-pre-market",
+                                  surprises=[_surprise(TODAY_ET.isoformat())])}
+        events = _earn_events(rows, {"AAPL": _quote(-6.1, 197.0, 210.0)})
+        triggers = {e.trigger for e in events if e.ticker == "AAPL"}
+        assert "earnings_reaction" in triggers
+        assert not any(t.startswith("mover_") for t in triggers), triggers
+
+    def test_an_earnings_packet_with_NO_fresh_eps_leaves_the_mover_alive(self):
+        """M3. The suppression's own justification is that the earnings packet
+        "names the cause AND carries the EPS device". A BMO reporter is
+        routinely unfiled at 09:30, so that second half is false, and the wire
+        now REFUSES an earnings post with no beat/miss to state. Suppressing the
+        mover twin as well would delete the name from the tape on the one
+        morning it is most worth reading."""
+        rows = {"AAPL": _earn_row(next_date=TODAY_ET.isoformat(),
+                                  next_time="time-pre-market")}   # no surprises
+        events = _earn_events(rows, {"AAPL": _quote(-6.1, 197.0, 210.0)})
+        earnings = [e for e in events
+                    if e.trigger == "earnings_reaction" and e.ticker == "AAPL"]
+        assert earnings and earnings[0].facts.get("eps") is None
+        assert any(e.trigger.startswith("mover_") for e in events
+                   if e.ticker == "AAPL"), [e.trigger for e in events]
+
+        # ...and the earnings packet itself renders NOTHING, which is what makes
+        # the surviving mover the post rather than a second post.
+        from engine.marketing.hot_tape_wire import compose_wire
+        assert compose_wire(earnings[0]) is None
+
+    def test_a_fired_mover_holds_the_earnings_cooldown(self):
+        """The two detectors share ONE cooldown memory per name+direction."""
+        rows = {"AAPL": _earn_row(next_date=TODAY_ET.isoformat(),
+                                  next_time="time-pre-market")}
+        prior = {"key": "mover:AAPL:down:x:0", "trigger": "mover_drop",
+                 "ticker": "AAPL", "direction": "down", "magnitude": -6.1,
+                 "fired_at": NOW.strftime("%Y-%m-%dT%H:%M:%SZ")}
+        events = _earn_events(rows, {"AAPL": _quote(-6.2, 197.0, 210.0)},
+                              fired=[prior])
+        assert [e for e in events if e.trigger == "earnings_reaction"] == []
+
+    def test_demo_relaxes_only_the_threshold(self):
+        rows = {"AAPL": _earn_row(next_date=TODAY_ET.isoformat(),
+                                  next_time="time-pre-market")}
+        quotes = {"AAPL": _quote(-2.0, 205.8, 210.0)}
+        assert [e for e in _earn_events(rows, quotes)
+                if e.trigger == "earnings_reaction"] == []
+        assert [e for e in _earn_events(rows, quotes, demo=True)
+                if e.trigger == "earnings_reaction"]
+
+    def test_the_calendar_view_accepts_a_bare_map(self):
+        rows = {"AAPL": _earn_row(next_date=TODAY_ET.isoformat(),
+                                  next_time="time-pre-market")}
+        events = HT.detect_events(
+            {"AAPL": _quote(-6.1, 197.0, 210.0)},
+            pack=_pack({"AAPL": _rec(mcap_usd=3_200_000_000_000)}, FRESH_TRADE_DATE),
+            earnings=rows, now=NOW, cfg=HT.DEFAULTS)
+        assert [e for e in events if e.trigger == "earnings_reaction"]
+
+    def test_a_broken_calendar_never_raises(self):
+        assert HT.detect_events({"AAPL": _quote(-6.1)}, earnings="nonsense",
+                                now=NOW, cfg=HT.DEFAULTS) is not None
+        assert HT.detect_events({"AAPL": _quote(-6.1)},
+                                earnings={"tickers": {"AAPL": "not-a-dict"}},
+                                now=NOW, cfg=HT.DEFAULTS) is not None
+
+    def test_the_composed_post_names_the_report_and_a_stat(self):
+        rows = {"AAPL": _earn_row(next_date=YESTERDAY_ET.isoformat(),
+                                  next_time="time-after-hours",
+                                  surprises=[_surprise(YESTERDAY_ET.isoformat())])}
+        packet = [e for e in _earn_events(rows, {"AAPL": _quote(6.67, 224.0, 210.0)})
+                  if e.trigger == "earnings_reaction"][0]
+        out = W.compose_wire(packet)
+        assert out is not None
+        assert "reported after yesterday's close" in out["text"]
+        assert "earnings_clause" in out["devices"]
+        assert W.ban_hits(out["text"]) == []
+        assert W.check_text_numbers(out["text"], packet) == []
+
+
+class TestEarningsClauses:
+    def test_the_eps_clause_needs_both_numbers(self):
+        packet = rich_packets()["earnings_reaction"]
+        clause = W._eps_clause(packet, packet.facts)
+        assert clause.startswith("EPS came in at $2.11, ahead of the $1.88 consensus")
+        assert "12.2% surprise" in clause
+        assert W._eps_clause(packet, {"eps": {"actual": 2.11}}) is None
+        assert W._eps_clause(packet, {}) is None
+
+    def test_a_miss_reads_as_a_miss(self):
+        facts = {"eps": {"actual": 1.10, "consensus": 1.40, "surprise_pct": -21.4,
+                         "beat": False}}
+        packet = _packet("earnings_reaction", "k", "down", facts, ticker="X")
+        assert W._eps_clause(packet, facts).startswith(
+            "EPS came in at $1.10, under the $1.40 consensus")
+
+    def test_the_report_clause_refuses_an_unknown_window(self):
+        packet = rich_packets()["earnings_reaction"]
+        assert W._earnings_clause(packet, {"report_when": "sometime"}) is None
+        assert W._earnings_clause(packet, {}) is None
+
+    def test_the_family_needs_a_real_device_on_top_of_the_report(self):
+        """"Reported and moved 6%" is the flop shape with a calendar on it."""
+        bare = _packet("earnings_reaction", "earnings:X:up:x:0", "up", ticker="X",
+                       facts={"ticker": "X", "pct": 6.1, "price": 40.0,
+                              "report_when": "bmo", "eps": None,
+                              "dollar_delta_usd": None, "biggest_1d": None,
+                              "pct_from_ath_live": None})
+        assert W.compose_wire(bare) is None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Two-step publish — the context brief (codex law, masterplan §10 E1)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _peer_tiles(pcts: dict, *, industry: str = "Semiconductors") -> list[dict]:
+    return [_tile(sym, "Technology", pct, industry=industry)
+            for sym, pct in pcts.items()]
+
+
+def _alert_row(**over) -> dict:
+    row = {"key": "mover:MU:down:x:0", "trigger": "mover_drop", "ticker": "MU",
+           "sector": "Technology", "direction": "down", "severity": 95.0,
+           "magnitude": -8.2, "account": "flagship",
+           "fired_at": NOW.strftime("%Y-%m-%dT%H:%M:%SZ"), "item_id": "abc123"}
+    row.update(over)
+    return row
+
+
+class TestBriefPacket:
+    def test_a_group_wide_move_is_named_as_one(self):
+        pcts = {"MU": -8.2, "SNDK": -9.1, "STX": -8.4, "NVDA": -7.9, "AMD": -8.8}
+        quotes = {s: _quote(p, 50.0, 55.0) for s, p in pcts.items()}
+        packet = HT.build_brief_packet(_alert_row(), quotes=quotes,
+                                       heatmap={"tiles": _peer_tiles(pcts)},
+                                       now=NOW, cfg=HT.DEFAULTS)
+        assert packet is not None
+        assert packet.trigger == HT.BRIEF_TRIGGER == "context_brief"
+        assert packet.key == HT.brief_key("mover:MU:down:x:0")
+        mech = packet.facts["mechanism"]
+        assert mech["kind"] == "group"
+        assert mech["group"] == "Semiconductors" and mech["group_kind"] == "industry"
+        assert mech["n_peers"] == 4          # the subject is not its own peer
+        out = W.compose_wire(packet)
+        assert out is not None and "mechanism_clause" in out["devices"]
+        assert "This is a group move" in out["text"]
+        assert W.check_text_numbers(out["text"], packet) == []
+
+    def test_a_lone_mover_is_named_as_one_name(self):
+        pcts = {"MU": -8.2, "SNDK": -0.2, "STX": 0.1, "NVDA": -0.4, "AMD": 0.3}
+        quotes = {s: _quote(p, 50.0, 55.0) for s, p in pcts.items()}
+        packet = HT.build_brief_packet(_alert_row(), quotes=quotes,
+                                       heatmap={"tiles": _peer_tiles(pcts)},
+                                       now=NOW, cfg=HT.DEFAULTS)
+        assert packet.facts["mechanism"]["kind"] == "single_name"
+        text = W.compose_wire(packet)["text"]
+        assert "so this is one name and not the group" in text
+
+    def test_too_few_peers_refuses(self):
+        """No group, no mechanism, no brief — gate 0.2 applies to the brief too."""
+        pcts = {"MU": -8.2, "SNDK": -9.1}
+        quotes = {s: _quote(p, 50.0, 55.0) for s, p in pcts.items()}
+        assert HT.build_brief_packet(_alert_row(), quotes=quotes,
+                                     heatmap={"tiles": _peer_tiles(pcts)},
+                                     now=NOW, cfg=HT.DEFAULTS) is None
+
+    def test_no_live_quote_for_the_subject_refuses(self):
+        pcts = {"MU": -8.2, "SNDK": -9.1, "STX": -8.4, "NVDA": -7.9, "AMD": -8.8}
+        quotes = {s: _quote(p, 50.0, 55.0) for s, p in pcts.items() if s != "MU"}
+        assert HT.build_brief_packet(_alert_row(), quotes=quotes,
+                                     heatmap={"tiles": _peer_tiles(pcts)},
+                                     now=NOW, cfg=HT.DEFAULTS) is None
+
+    def test_a_group_alert_briefs_without_a_cashtag(self):
+        pcts = {"MU": -8.2, "SNDK": -9.1, "STX": -8.4, "NVDA": -7.9, "AMD": -8.8}
+        quotes = {s: _quote(p, 50.0, 55.0) for s, p in pcts.items()}
+        row = _alert_row(key="sector:Semiconductors:down:x", trigger="sector_rout",
+                         ticker=None, sector="Semiconductors",
+                         account="mastermind_news")
+        packet = HT.build_brief_packet(row, quotes=quotes,
+                                       heatmap={"tiles": _peer_tiles(pcts)},
+                                       now=NOW, cfg=HT.DEFAULTS)
+        assert packet is not None and packet.ticker is None
+        assert packet.facts["subject_label"] == "Semiconductors"
+        assert packet.facts["watch"]["kind"] == "breadth"
+        text = W.compose_wire(packet)["text"]
+        assert text.startswith("Semiconductors:")
+
+    def test_the_quotes_wrapper_is_accepted(self):
+        pcts = {"MU": -8.2, "SNDK": -9.1, "STX": -8.4, "NVDA": -7.9, "AMD": -8.8}
+        live = {"asof": "2020-01-01",
+                "quotes": {s: _quote(p, 50.0, 55.0) for s, p in pcts.items()}}
+        packet = HT.build_brief_packet(_alert_row(), quotes=live,
+                                       heatmap={"tiles": _peer_tiles(pcts)},
+                                       now=NOW, cfg=HT.DEFAULTS)
+        assert packet is not None
+        assert packet.provenance["quotes_asof"] == "2020-01-01"
+
+    def test_bad_input_never_raises(self):
+        assert HT.build_brief_packet({}, now=NOW) is None
+        assert HT.build_brief_packet({"key": "k", "direction": "sideways"},
+                                     now=NOW) is None
+        assert HT.build_brief_packet(_alert_row(), quotes="broken", now=NOW) is None
+
+    def test_the_watch_clause_is_a_window_never_a_call(self):
+        """Operator 2026-07-27: projection windows, never verdicts or calls."""
+        packet = rich_packets()["context_brief"]
+        clause = W._watch_clause(packet, packet.facts)
+        assert clause.startswith("What we are watching:")
+        assert W.ban_hits(clause) == []
+        for banned in ("falsif", "refuted", "证伪", "thesis"):
+            assert banned not in clause.lower()
+
+    def test_the_mechanism_clause_is_mandatory(self):
+        no_mech = _packet("context_brief", "brief:x", "down", ticker="MU",
+                          facts={"ticker": "MU", "pct": -8.2, "price": 84.2,
+                                 "peers": [["SNDK", -14.3], ["STX", -8.5]],
+                                 "watch": {"kind": "level", "price": 84.2}})
+        assert W._mechanism_clause(no_mech, no_mech.facts) is None
+        assert W.compose_wire(no_mech) is None
 
 
 class TestDetectEventsContract:
