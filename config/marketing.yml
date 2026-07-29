@@ -1300,7 +1300,9 @@ breaking:
 
     - key: bls_news
       kind: rss
-      url: "https://www.bls.gov/feed/news_release.rss"
+      # BLS retired the former all-release news_release.rss endpoint (now 404).
+      # This is the agency's official Principal Federal Economic Indicators feed.
+      url: "https://www.bls.gov/feed/bls_latest.rss"
       source_name: "Bureau of Labor Statistics"
       tier: official
 
