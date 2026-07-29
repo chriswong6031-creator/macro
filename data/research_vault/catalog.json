@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-29T12:54:16.045102+00:00",
-  "count": 317,
+  "generated_at": "2026-07-29T14:08:00.781278+00:00",
+  "count": 319,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -31,6 +31,48 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-tsseepkd2yv-59aabc",
+      "title": "JPM JPM US Market Intell",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T12:47:50Z",
+      "summary_points": [
+        "**Fed Decision & Hawkish Risk**: 32% hike probability today (2x hawkish dissents), Fed hold scenarios (50% probability) drive SPX volatility; market pricing split vs.",
+        "33% break evens, with FED 50BP hike as tail risk.",
+        "**Middle East Geopolitics**: Kinetic hostilities easing fuels tactical bullish stance (Energy lagging, WTI down 15%); Middle East conflict poses ad growth risk (mid-high 20% 2H) for META, while tensions drive Energy/Metals bid.",
+        "**AI Sector Rebound & Flows**: AI sector rebound (+39% 6m, 40% AUM inflows); critical valuation driver for META (2026 capex $125B-$145B vs.",
+        "$134.683B consensus) and MSFT (Q4 needs tangible AI progress)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": true,
+      "pages": 15,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-kjiaumouiiu-af6784",
+      "title": "JPM Europe Equity Research Today’s Morning Meeting",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T11:17:19Z",
+      "summary_points": [
+        "**Sika Upgrade to OW**: Strong Q2 execution with EBITDA ~CHF2.24bn (4% above consensus), pricing power amid deflation, revised PT to CHF215 (up from CHF165) – fundamental catalyst for portfolio rebalancing.",
+        "**Saipem Management Confidence**: Near-term noise (9% drop on 2026 guidance cut) outweighed by maintained FY26 revenue/cash flow outlook; 50% upside to PT despite Middle East risks – critical entry point.",
+        "**GSK Margin Target**: Core EBIT margin target implies ~1% upside to 2030 consensus; £40bn 2031 sales target and £1.9bn restructuring savings by 2029 – key fundamental catalyst.",
+        "**Cybersecurity Risk Factor**: Cybersecurity now a bigger concern than credit risk for global banks – critical risk factor requiring immediate portfolio adjustment.",
+        "**Sector-Specific Catalysts**: Infineon (AI leadership, premium multiple) and Deutsche Telekom (valuation pressure) – key for sector positioning and flow allocation."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": true,
+      "pages": 16,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-awjus4eqrkq-11eb52",
       "title": "GS Privorotsky De Grossing; Tech, Momentum Interesting. Fed",
