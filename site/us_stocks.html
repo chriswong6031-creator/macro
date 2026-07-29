@@ -67,9 +67,10 @@
 <link rel="stylesheet" href="dashboard-icons.css?v=be32e541">
 <script defer src="dashboard-icons.js?v=e096076e"></script>
 
-<link rel="stylesheet" href="assets/css/24b87d73.css?v=24b87d73">
+<link rel="stylesheet" href="assets/css/21f5c251.css?v=21f5c251">
 <link rel="preload" as="style" href="product-nav-icons.css?v=7b0290e9">
 <link rel="preload" as="style" href="navigation-refresh.css?v=6607344b">
+<link rel="preload" as="style" href="assets/css/39307d7a.css?v=39307d7a">
 <link rel="preload" as="style" href="assets/css/3cf3974a.css?v=3cf3974a">
 <link rel="preload" as="style" href="assets/css/93de4274.css?v=93de4274">
 <link rel="preload" as="style" href="assets/css/b0c0c009.css?v=b0c0c009">
@@ -310,29 +311,27 @@
 
   
   <!-- ===================== US STOCK DASHBOARD HEADER ===================== -->
+  <link rel="stylesheet" href="assets/css/39307d7a.css?v=39307d7a">
   <div class="panel span12" id="stocks-header">
-    <div class="topline">
-      <h1>🇺🇸 <span class="l-en">US Stock Dashboard</span><span class="l-zh">美国个股看板</span></h1>
-      <span style="display:inline-flex;align-items:center">
-        <span class="badge quad-Q1"><span class="l-en">Regime</span><span class="l-zh">周期</span>: <span class="l-en">Goldilocks</span><span class="l-zh">理想增长</span></span><span class="help">?<span class="tip"><span class="l-en">The macro / economic regime (growth × inflation quadrant) the whole page is filtered by — it describes the ECONOMY, not today&#39;s tape, so it shifts slowly. Use it for which sectors &amp; factors are favoured, not for market timing. For whether the market itself is turning over, use the Macro dashboard&#39;s Risk Radar.</span><span class="l-zh">整页据以过滤的宏观／经济周期（增长×通胀象限）— 它描述的是经济，而非今日盘面，因此变化缓慢。用于判断哪些板块与因子占优，而非择时。市场本身是否转向，请看宏观看板中的风险雷达。</span></span></span>
-      </span>
-      <span style="display:inline-flex;align-items:center">
-        <span class="badge" style="background:var(--panel2);color:var(--text)"><span class="l-en">Posture</span><span class="l-zh">姿态</span>: <span class="l-en">CAREFUL</span><span class="l-zh">谨慎</span></span><span class="help">?<span class="tip"><span class="l-en">How to TRADE the current regime — a defensive → aggressive stance dial (Defensive · Careful · Neutral · Constructive · Aggressive) set by the playbook. “Careful” means lean cautious: favour quality and good entries, keep gross moderate. It sizes risk; it is not a buy/sell or stock-selection call. The full dial with its reasoning lives on the Macro dashboard.</span><span class="l-zh">如何“交易”当前周期 — 一个防御→进取的姿态刻度（防御·谨慎·中性·建设性·进取），由策略手册设定。“谨慎”意为偏审慎：偏好质量与好的入场点，总仓位保持适中。它用于调整风险敞口，并非买卖或选股建议。完整刻度及其推理见宏观看板。</span></span></span>
-      </span>
+    
+    
+    <div class="stk-headline">
+      <h1><span class="l-en">US Stocks</span><span class="l-zh">美国股票</span></h1>
+      <div class="stk-head-meta">
+        <span class="stk-status">
+          <span class="stk-fresh-dot" aria-hidden="true"></span>
+          <span class="l-en">Fresh</span><span class="l-zh">新鲜</span>
+          <strong>2026-07-28</strong>
+        </span>
+        <span class="stk-status"><span class="l-en">Regime</span><span class="l-zh">周期</span> <strong><span class="l-en">Goldilocks</span><span class="l-zh">理想增长</span></strong></span>
+        <span class="stk-status"><span class="l-en">Posture</span><span class="l-zh">姿态</span> <strong><span class="l-en">CAREFUL</span><span class="l-zh">谨慎</span></strong></span>
+      </div>
     </div>
-    <p class="muted" style="margin:6px 0 0"><span class="l-en">Where to look for stocks — Prophet signals, sector rotation, factor tilts and real fund flows, filtered by the current macro regime.</span><span class="l-zh">在哪里找股票 — 先知选股、板块轮动、因子倾斜与基金真实资金流，按当前宏观周期过滤。</span>
-      <a href="macro.html" style="color:var(--link);font-weight:600">← <span class="l-en">Macro regime dashboard</span><span class="l-zh">宏观周期看板</span></a>
-      &nbsp;·&nbsp;
-      <a href="us_stocks_lab.html" style="color:var(--link);font-weight:600">🧪 <span class="l-en">Pick Lab</span><span class="l-zh">选股实验室</span></a></p>
-    
-    
-    <div style="margin:7px 0 0">
-      <span class="chip"
-        style="border-color:color-mix(in srgb,var(--warn) 55%,var(--line));color:var(--warn);cursor:help"
-        data-tip-en="July is usually a rough month for the market&#39;s recent winners — the momentum style fell in 7 of the last 10 Julys, including the last 5 straight, while the market itself was up in 100% of them. Watch — don&#39;t chase this month&#39;s hottest stocks."
-        data-tip-zh="7月通常是市场近期赢家的困难月份——动量风格在过去 10 个7月中下跌了 7 次（含连续 5 年），而大盘在其中 100% 的时间上涨。 观望——本月不要追逐最热门的股票。"><span class="l-en">Jul: usually a rough month for hot stocks (fell in 7/10) · context only</span><span class="l-zh">7月：热门股历来偏弱（近10年7次下跌）· 仅供参考</span></span>
+    <div class="stk-header-links">
+      <a href="macro.html"><span class="l-en">Market posture</span><span class="l-zh">市场姿态</span> →</a>
+      <a href="us_stocks_lab.html">🧪 <span class="l-en">Pick Lab</span><span class="l-zh">选股实验室</span> →</a>
+      <a href="alerts.html"><span class="l-en">Alerts</span><span class="l-zh">提醒</span> →</a>
     </div>
-    
   </div>
   
   
@@ -5752,7 +5751,7 @@
     <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><line x1="144.0" y1="26.3" x2="240" y2="26.3" stroke="var(--warn)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><line x1="144.0" y1="28.0" x2="240" y2="28.0" stroke="var(--warn)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><polyline points="0,42 0.0,36.9 3.8,37.3 7.6,38.2 11.4,39.0 15.2,40.0 19.0,42.0 22.9,41.0 26.7,38.5 30.5,38.5 34.3,37.8 38.1,39.1 41.9,38.7 45.7,30.4 49.5,25.6 53.3,31.3 57.1,33.2 61.0,33.1 64.8,32.2 68.6,29.9 72.4,23.3 76.2,21.2 80.0,18.3 83.8,14.2 87.6,10.1 91.4,14.3 95.2,16.8 99.0,19.2 102.9,21.1 106.7,23.4 110.5,22.9 114.3,23.1 118.1,26.6 121.9,24.4 125.7,23.7 129.5,24.1 133.3,26.0 137.1,28.3 141.0,27.8 144.8,27.6 148.6,28.1 152.4,29.0 156.2,27.6 160.0,27.4 163.8,28.0 167.6,28.7 171.4,30.0 175.2,31.5 179.0,29.0 182.9,30.4 186.7,30.8 190.5,30.2 194.3,28.1 198.1,28.9 201.9,28.4 205.7,27.2 209.5,27.1 213.3,26.9 217.1,28.2 221.0,26.7 224.8,25.9 228.6,27.3 232.4,26.2 236.2,24.6 240.0,23.1 240,42" fill="var(--warn)" opacity="0.12" stroke="none"/><polyline points="0.0,36.9 3.8,37.3 7.6,38.2 11.4,39.0 15.2,40.0 19.0,42.0 22.9,41.0 26.7,38.5 30.5,38.5 34.3,37.8 38.1,39.1 41.9,38.7 45.7,30.4 49.5,25.6 53.3,31.3 57.1,33.2 61.0,33.1 64.8,32.2 68.6,29.9 72.4,23.3 76.2,21.2 80.0,18.3 83.8,14.2 87.6,10.1 91.4,14.3 95.2,16.8 99.0,19.2 102.9,21.1 106.7,23.4 110.5,22.9 114.3,23.1 118.1,26.6 121.9,24.4 125.7,23.7 129.5,24.1 133.3,26.0 137.1,28.3 141.0,27.8 144.8,27.6 148.6,28.1 152.4,29.0 156.2,27.6 160.0,27.4 163.8,28.0 167.6,28.7 171.4,30.0 175.2,31.5 179.0,29.0 182.9,30.4 186.7,30.8 190.5,30.2 194.3,28.1 198.1,28.9 201.9,28.4 205.7,27.2 209.5,27.1 213.3,26.9 217.1,28.2 221.0,26.7 224.8,25.9 228.6,27.3 232.4,26.2 236.2,24.6 240.0,23.1" fill="none" stroke="var(--warn)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="23.1" r="2.6" fill="var(--warn)"/></svg>
     <span class="pv-ov pv-ovl">
       <span class="pv-chip" data-tip-en="Neutral — no clear edge · Bounce — turn not confirmed; wait" data-tip-zh="中性 — 无明显优势 · 反弹 — 转向未确认，先观望"><span class="l-en">Wait</span><span class="l-zh">等待</span></span>
-      <span class="pv-cau"><button class="pv-cau-btn" type="button" aria-label="Caution notes (2)" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ 2</button><span class="pv-cau-pop" role="tooltip"><span class="pv-cau-row"><span class="l-en">earnings imminent — binary event, size down</span><span class="l-zh">财报临近 — 二元事件，减仓</span></span><span class="pv-cau-row"><span class="l-en">Options ceiling 0.3% above (as of 2026-07-29) — price tends to stall where dealer hedging is heaviest</span><span class="l-zh">上方0.3%有期权天花板（截至2026-07-29） — 价格倾向在做市商对冲最重处停滞</span></span></span></span>
+      <span class="pv-cau"><button class="pv-cau-btn" type="button" aria-label="Caution notes (1)" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ 1</button><span class="pv-cau-pop" role="tooltip"><span class="pv-cau-row"><span class="l-en">earnings imminent — binary event, size down</span><span class="l-zh">财报临近 — 二元事件，减仓</span></span></span></span>
     </span>
     <span class="pv-ov pv-ovr"><span class="nb-px pv-px" data-sym="F" data-mkt="us">$14.96</span></span>
   </div>

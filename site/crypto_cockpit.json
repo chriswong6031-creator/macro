@@ -1,0 +1,232 @@
+{
+  "schema": "crypto.cockpit/v1",
+  "contract_phase": "w0",
+  "display_only": true,
+  "as_of": "2026-07-29",
+  "generated_at": "2026-07-29T16:11:10+00:00",
+  "hero": {
+    "asset": "BTC-USD",
+    "price": 63940.25,
+    "change_24h_pct": 0.15,
+    "stance_en": "RISK-OFF",
+    "stance_zh": "偏空",
+    "summary_en": "The big picture reads risk-off. Support comes from the trend and miners; the drag comes from momentum and fundamentals. Day-to-day direction is a coin flip — watch the dip-risk read below.",
+    "summary_zh": "大方向偏空。支撑来自趋势与矿工；拖累来自动量与基本面。未来几天的涨跌仍近乎抛硬币——先看下方的回撤风险读数。",
+    "master_score": -13,
+    "exposure_pct": 0,
+    "gate_active": true
+  },
+  "axes": [
+    {
+      "id": "trend_momentum",
+      "label_en": "Trend & Momentum",
+      "label_zh": "趋势与动量",
+      "primary": {
+        "key": "momentum",
+        "source": "master.board.momentum",
+        "state_en": "Bearish",
+        "state_zh": "看空",
+        "tone": "bear",
+        "grade": "DIRECTIONAL"
+      },
+      "spark_source": "signals.momentum",
+      "receipt_members": [
+        {
+          "key": "structure",
+          "source": "master.board.structure",
+          "state_en": "Constructive",
+          "state_zh": "偏多",
+          "tone": "bull",
+          "grade": "DIRECTIONAL"
+        },
+        {
+          "key": "impulse",
+          "source": "master.board.impulse",
+          "state_en": "Neutral",
+          "state_zh": "中性",
+          "tone": "neutral",
+          "grade": "DIRECTIONAL"
+        }
+      ]
+    },
+    {
+      "id": "cycle_valuation",
+      "label_en": "Cycle & Valuation",
+      "label_zh": "周期与估值",
+      "primary": {
+        "key": "valuation",
+        "source": "master.board.valuation",
+        "state_en": "Neutral",
+        "state_zh": "中性",
+        "tone": "neutral",
+        "grade": "EXTREMES"
+      },
+      "spark_source": "signals.mvrv_z",
+      "receipt_members": [
+        {
+          "key": "cycle",
+          "source": "master.board.cycle",
+          "state_en": "Markdown",
+          "state_zh": "下行",
+          "tone": "bear",
+          "grade": "DIRECTIONAL"
+        },
+        {
+          "key": "reserve_risk",
+          "source": "master.board.reserve_risk",
+          "state_en": "Unavailable",
+          "state_zh": "暂无",
+          "tone": "neutral",
+          "grade": null
+        },
+        {
+          "key": "extreme",
+          "source": "master.board.extreme",
+          "state_en": "Neutral",
+          "state_zh": "中性",
+          "tone": "neutral",
+          "grade": "EXTREMES"
+        }
+      ]
+    },
+    {
+      "id": "liquidity_flows",
+      "label_en": "Liquidity & Flows",
+      "label_zh": "流动性与资金流",
+      "primary": {
+        "key": "etf",
+        "source": "master.board.etf",
+        "state_en": "Unavailable",
+        "state_zh": "暂无",
+        "tone": "neutral",
+        "grade": null
+      },
+      "spark_source": "signals.etf_flow_z",
+      "receipt_members": [
+        {
+          "key": "stbl",
+          "source": "master.board.stbl",
+          "state_en": "Contracting",
+          "state_zh": "收缩",
+          "tone": "bear",
+          "grade": "DIRECTIONAL"
+        },
+        {
+          "key": "premium",
+          "source": "master.board.premium",
+          "state_en": "Healthy demand",
+          "state_zh": "健康需求",
+          "tone": "bull",
+          "grade": "EXTREMES"
+        }
+      ]
+    },
+    {
+      "id": "leverage_derivatives",
+      "label_en": "Leverage & Derivatives",
+      "label_zh": "杠杆与衍生品",
+      "primary": {
+        "key": "leverage_cascade",
+        "source": "regime.context_legs.leverage.cascade_risk",
+        "state_en": "Low",
+        "state_zh": "低",
+        "tone": "bull",
+        "as_of": "2026-07-29"
+      },
+      "spark_source": "signals.oi_mcap_ratio",
+      "receipt_members": [
+        {
+          "key": "funding",
+          "source": "master.board.funding",
+          "state_en": "Unavailable",
+          "state_zh": "暂无",
+          "tone": "neutral",
+          "grade": null
+        },
+        {
+          "key": "cot",
+          "source": "master.board.cot",
+          "state_en": "Crowded long",
+          "state_zh": "多头拥挤",
+          "tone": "bear",
+          "grade": "EXTREMES"
+        }
+      ]
+    },
+    {
+      "id": "network_miners",
+      "label_en": "Network & Miners",
+      "label_zh": "网络与矿工",
+      "primary": {
+        "key": "bfi",
+        "source": "master.board.bfi",
+        "state_en": "Negative",
+        "state_zh": "负向",
+        "tone": "bear",
+        "grade": "DIRECTIONAL"
+      },
+      "spark_source": "signals.bfi",
+      "receipt_members": [
+        {
+          "key": "miner",
+          "source": "master.board.miner",
+          "state_en": "Capitulation (bottoming)",
+          "state_zh": "投降（筑底）",
+          "tone": "bull",
+          "grade": "NEW"
+        },
+        {
+          "key": "holders",
+          "source": "master.board.holders",
+          "state_en": "Distribution",
+          "state_zh": "派发",
+          "tone": "bear",
+          "grade": "NEW"
+        },
+        {
+          "key": "attention",
+          "source": "master.board.attention",
+          "state_en": "Apathy (bottoming)",
+          "state_zh": "冷清（筑底）",
+          "tone": "bull",
+          "grade": "NEW"
+        }
+      ]
+    },
+    {
+      "id": "macro_backdrop",
+      "label_en": "Macro Backdrop",
+      "label_zh": "宏观背景",
+      "primary": {
+        "key": "macro",
+        "source": "master.board.macro",
+        "state_en": "Neutral",
+        "state_zh": "中性",
+        "tone": "neutral",
+        "grade": "CONFIRMED"
+      },
+      "spark_source": "signals.macro_score",
+      "receipt_members": [
+        {
+          "key": "beta",
+          "source": "master.board.beta",
+          "state_en": "Limited downside",
+          "state_zh": "下行受限",
+          "tone": "bull",
+          "grade": "CONFIRMED"
+        }
+      ]
+    }
+  ],
+  "authority": {
+    "sizing_source": "signals.alloc_optimal",
+    "stance_source": "btc_master.synthesize",
+    "axis_contract": "COCKPIT_AXIS_PRESENTATION",
+    "no_new_arithmetic": true
+  },
+  "future_consumers": [
+    "crypto.html:H6",
+    "index.html:crypto-product-card",
+    "neural-web:crypto-lens"
+  ]
+}

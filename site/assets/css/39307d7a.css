@@ -1,0 +1,46 @@
+
+  body.page-stocks #stocks-header{
+    padding:18px 20px;
+    background:
+      radial-gradient(900px 180px at 12% -40%,color-mix(in srgb,var(--link) 16%,transparent),transparent 60%),
+      var(--panel);
+  }
+  body.page-stocks .stk-headline{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  body.page-stocks .stk-headline h1{margin:0;font-size:26px;letter-spacing:-.035em;line-height:1.1}
+  body.page-stocks .stk-head-meta{margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  body.page-stocks .stk-status{
+    display:inline-flex;align-items:center;gap:7px;min-height:30px;padding:4px 10px;
+    border:1px solid var(--line);border-radius:999px;background:var(--panel2);
+    color:color-mix(in srgb,var(--text) 76%,transparent);font-size:12px;font-weight:650;
+  }
+  body.page-stocks .stk-status strong{color:var(--text);font-weight:750}
+  body.page-stocks .stk-fresh-dot{width:7px;height:7px;border-radius:50%;background:var(--up);box-shadow:0 0 0 3px color-mix(in srgb,var(--up) 18%,transparent)}
+  body.page-stocks .stk-status.is-delayed .stk-fresh-dot{background:var(--warn);box-shadow:0 0 0 3px color-mix(in srgb,var(--warn) 18%,transparent)}
+  body.page-stocks .stk-header-links{display:flex;gap:16px;margin-top:11px;font-size:12px;font-weight:650}
+  body.page-stocks .stk-header-links a{color:var(--muted);text-decoration:none}
+  body.page-stocks .stk-header-links a:hover{color:var(--link)}
+
+  /* Keep the two strongest existing surfaces exactly as designed:
+     #action-board first, then the Prophet #us-standouts scorecards. Remove only
+     the duplicated research boards that pushed both below the fold. */
+  body.page-stocks #sector-heat,
+  body.page-stocks #sentiment-regime,
+  body.page-stocks #cross-asset-macro,
+  body.page-stocks #dash-tape-band,
+  body.page-stocks #equity-scoreboard,
+  body.page-stocks #sectors,
+  body.page-stocks #dash-mtf-section,
+  body.page-stocks #accumulation,
+  body.page-stocks #holdings{display:none!important}
+
+  @media(max-width:900px){
+    body.page-stocks .stk-head-meta{margin-left:0;width:100%}
+  }
+  @media(max-width:560px){
+    body.page-stocks #stocks-header{padding:15px 14px}
+    body.page-stocks .stk-headline h1{font-size:22px}
+    body.page-stocks .stk-head-meta{gap:6px}
+    body.page-stocks .stk-status{font-size:11px}
+    body.page-stocks .stk-header-links{gap:12px;overflow-x:auto;white-space:nowrap;padding-bottom:2px}
+  }
+  
