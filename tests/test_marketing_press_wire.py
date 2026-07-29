@@ -622,13 +622,16 @@ class TestCanonicalEmission:
 class TestFloorDiagnostic:
     """Closing the split-brain was necessary and is not sufficient.
 
-    Verified end to end against the SHIPPED config: a Truth-Social tariff post
-    scores salience 45 (event class `policy` bases at 45; the mirror/x_relay tiers
-    earn no tier bonus because breaking_relevance._TIER_BONUS knows only
-    official/wire/aggregator) against wire.flagship_salience_floor = 70. The floor
-    check runs BEFORE account routing, so such an item emits to no account at all.
-    Retuning a relevance gate is a content-calibration call rather than plumbing,
-    so this lane REPORTS the condition instead of silently posting nothing.
+    The floor check runs BEFORE account routing, so an item under
+    wire.flagship_salience_floor emits to no account at all. Retuning a relevance
+    gate is a content-calibration call rather than plumbing, so this lane REPORTS
+    the condition instead of silently posting nothing.
+
+    The diagnostic's own text is under test here as well. Its first cut recited
+    the calibration as it stood that morning ("the mirror/x_relay tiers earn no
+    tier bonus"), the E7 calibration landed on the same branch hours later, and
+    the line went on printing a state of the world that no longer existed. Every
+    number it prints is now read from the taxonomy at call time.
     """
 
     def test_fires_when_the_floor_blocked_the_whole_tick(self):
@@ -655,6 +658,34 @@ class TestFloorDiagnostic:
         cfg["wire"]["flagship_salience_floor"] = 40.0
         assert PW.floor_diagnostic(
             cfg, [{"reason": "below_flagship_floor", "salience": 30.0}], []) is None
+
+    def test_the_message_recites_no_remembered_constant(self):
+        """MINOR (stale text). Every figure in the line must agree with the live
+        tables, and the line must not claim the press tiers earn nothing — they
+        have earned a bonus since the E7 calibration."""
+        from engine.marketing.breaking_relevance import _CLASS_TAXONOMY, _TIER_BONUS
+
+        cfg = _live_press_cfg()
+        line = PW.floor_diagnostic(
+            cfg, [{"reason": "below_flagship_floor", "salience": 62.0}], [])
+        assert line is not None, "fixture no longer trips the diagnostic"
+        max_base = max(float(row[1]) for row in _CLASS_TAXONOMY)
+        press_bonus = max(float(_TIER_BONUS.get(t, 0.0))
+                          for t in ("mirror", "x_relay"))
+        assert f"base is {max_base:g}" in line, line
+        assert f"+{press_bonus:g}" in line, line
+        assert "earn no tier bonus" not in line
+        assert press_bonus > 0, (
+            "the press tiers lost their bonus — update the diagnostic's premise")
+
+    def test_it_disarms_when_the_press_tiers_can_reach_the_floor(self):
+        """The reachability test counts the TIER BONUS this lane's items carry,
+        not the base alone: a floor a mirror item clears on base+tier is not a
+        floor worth annotating."""
+        cfg = _live_press_cfg()
+        cfg["wire"]["flagship_salience_floor"] = 60.0     # 55 base + 12 mirror
+        assert PW.floor_diagnostic(
+            cfg, [{"reason": "below_flagship_floor", "salience": 55.0}], []) is None
 
     def test_the_calibration_gap_is_closed_and_the_arithmetic_is_pinned(self):
         """The E7 calibration ruling (2026-07-29), pinned so it cannot silently
@@ -1045,3 +1076,148 @@ class TestSpendMonthIsSingleSourced:
         monkeypatch.setattr(press_providers, "poll_all", _spy)
         PW.run(root, now=NOW)
         assert seen["now"] == NOW
+
+
+# ---------------------------------------------------------------------------
+# 12. M11 — the two mechanisms the money depends on, pinned END TO END
+#
+# Both of these were UNPINNED: the suite exercised save_cursors directly and
+# exercised the provider's parse, so deleting the lane's ONE call to
+# save_cursors, or the per-handle interval check inside fetch(), left the whole
+# file green. They are the same defect class as the B2 finding they follow from
+# (cursors.json IS the budget): losing either turns a $46.60/mo lane into one
+# that re-polls every handle on every five-minute run.
+#
+# Each test below is written so that removing the mechanism it names makes THIS
+# test fail, not merely some assertion somewhere.
+# ---------------------------------------------------------------------------
+
+class TestM11StatePersistsEndToEnd:
+    def _armed(self, monkeypatch):
+        monkeypatch.setenv(PW.ENV_OUTBOX_ENABLED, "1")
+        monkeypatch.delenv(PW.ENV_DAEMON_ACTIVE, raising=False)
+        monkeypatch.delenv("MARKETING_LLM_ENABLED", raising=False)
+
+    def test_provider_state_survives_the_run_boundary(self, tmp_path, monkeypatch):
+        """DELETE `save_cursors(...)` FROM `run()` AND THIS FAILS.
+
+        Every run is a separate process on a fresh Actions checkout, so the only
+        thing that carries the per-handle throttle and the spend counter from one
+        run to the next is cursors.json. A run that polls and does not write it
+        has spent money and remembered nothing.
+        """
+        root = _stage_repo(tmp_path)
+        self._armed(monkeypatch)
+        monkeypatch.setattr(breaking_feed, "poll_all", lambda r, c: [])
+        handed: list[dict] = []
+
+        def _poll(root_, cfg, state, *, offline=False, now=None):
+            # What the real provider does to the state it is handed.
+            handed.append(json.loads(json.dumps(state)))
+            tw = state.setdefault("twitterapiio", {})
+            tw.setdefault("last_poll", {})["realDonaldTrump"] = 1_800_000_000.0
+            tw.setdefault("cursors", {})["realDonaldTrump"] = "1949"
+            return []
+
+        monkeypatch.setattr(press_providers, "poll_all", _poll)
+
+        assert PW.run(root, now=NOW) == 0
+        cursors_path = root / PW.CURSORS_REL
+        assert cursors_path.exists(), "the run wrote no cursors.json at all"
+        on_disk = json.loads(cursors_path.read_text(encoding="utf-8"))
+        assert on_disk["providers"]["twitterapiio"]["cursors"] == {
+            "realDonaldTrump": "1949"}
+        assert on_disk["providers"]["twitterapiio"]["last_poll"] == {
+            "realDonaldTrump": 1_800_000_000.0}
+
+        # The round trip is the point: the NEXT run must be handed what the last
+        # one learned, or the throttle it consults is empty every time.
+        assert PW.run(root, now=NOW + timedelta(minutes=5)) == 0
+        assert len(handed) == 2
+        # `poll_all` is handed cursors["providers"], so the provider block is at
+        # the top level of what the spy captured.
+        second = handed[1].get("twitterapiio", {})
+        assert second.get("last_poll") == {"realDonaldTrump": 1_800_000_000.0}, (
+            "the second run started from an empty throttle — cursors.json did "
+            "not survive the run boundary")
+        assert second.get("cursors") == {"realDonaldTrump": "1949"}
+
+
+class TestM11PerHandleCadenceGate:
+    def _provider(self, monkeypatch, calls):
+        prov = press_providers.TwitterApiIoProvider(
+            {"handles": [{"handle": "realDonaldTrump", "tier": "fast"},
+                         {"handle": "DeItaone", "tier": "fast"}],
+             "poll_tiers": {"fast": 75}},
+            spend_cap_usd=50.0)
+        monkeypatch.setattr(
+            press_providers.TwitterApiIoProvider, "_request",
+            lambda self, key, handle: calls.append(handle) or {"tweets": []})
+        return prov
+
+    def test_a_second_poll_inside_the_interval_makes_no_request(
+            self, monkeypatch):
+        """DELETE THE `last_poll` INTERVAL CHECK IN `fetch()` AND THIS FAILS.
+
+        The lane runs every five minutes and the tier interval is 75 seconds per
+        handle, so without this gate a handle is re-requested on every run and
+        the projected bill multiplies by the number of runs per interval. The
+        gate is the reason the budget test in section 1 is arithmetic and not a
+        wish.
+        """
+        monkeypatch.setenv("TWITTERAPI_IO_KEY", "fake-key")
+        calls: list[str] = []
+        prov = self._provider(monkeypatch, calls)
+        state: dict = {}
+
+        prov.fetch(root=ROOT, session_state=state, offline=False, now=NOW)
+        assert sorted(calls) == ["DeItaone", "realDonaldTrump"], calls
+
+        # Same tick's state, 30 seconds later: inside the 75s tier interval.
+        calls.clear()
+        prov.fetch(root=ROOT, session_state=state, offline=False,
+                   now=NOW + timedelta(seconds=30))
+        assert calls == [], (
+            f"the per-handle interval gate did not hold: {calls} were re-polled "
+            "inside their tier interval")
+
+        # ...and the gate is a THROTTLE, not a mute: past the interval it polls.
+        import time as _time
+        monkeypatch.setattr(_time, "time",
+                            lambda: state["twitterapiio"]["last_poll"][
+                                "realDonaldTrump"] + 100.0)
+        prov.fetch(root=ROOT, session_state=state, offline=False,
+                   now=NOW + timedelta(seconds=100))
+        assert sorted(calls) == ["DeItaone", "realDonaldTrump"], calls
+
+    def test_the_throttle_it_consults_is_the_one_that_was_persisted(
+            self, tmp_path, monkeypatch):
+        """The two halves together, which is what the invoice actually depends
+        on: run twice through `PW.run` with only the HTTP call stubbed, and the
+        billed provider must make its requests once, not once per run."""
+        monkeypatch.setenv("TWITTERAPI_IO_KEY", "fake-key")
+        root = _stage_repo(tmp_path, press_cfg={
+            "satire_blocklist": [],
+            "wire": {"flagship_top_k_per_day": 3, "flagship_salience_floor": 40.0},
+            "x_follow": {"handles": [{"handle": "DeItaone", "tier": "fast"}],
+                         "poll_tiers": {"fast": 75}},
+            "spend": {"twitterapiio_monthly_cap_usd": 75.0},
+            "actions_wire": {"monthly_usd_cap": 50.0},
+        })
+        monkeypatch.setenv(PW.ENV_OUTBOX_ENABLED, "1")
+        monkeypatch.delenv(PW.ENV_DAEMON_ACTIVE, raising=False)
+        monkeypatch.delenv("MARKETING_LLM_ENABLED", raising=False)
+        monkeypatch.setattr(breaking_feed, "poll_all", lambda r, c: [])
+        # tmp_path is not a git checkout, so the B2 push preflight would stand
+        # the billed tier down before it ever consults the throttle under test.
+        monkeypatch.setattr(PW, "push_access_ok", lambda root_, **kw: (True, "test"))
+        calls: list[str] = []
+        monkeypatch.setattr(
+            press_providers.TwitterApiIoProvider, "_request",
+            lambda self, key, handle: calls.append(handle) or {"tweets": []})
+
+        assert PW.run(root, now=NOW) == 0
+        assert calls == ["DeItaone"], calls
+        assert PW.run(root, now=NOW + timedelta(seconds=30)) == 0
+        assert calls == ["DeItaone"], (
+            f"the second run re-polled the handle inside its interval: {calls}")

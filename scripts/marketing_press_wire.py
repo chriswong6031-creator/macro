@@ -94,7 +94,13 @@ BREAKING_SUBDIR = "data/marketing/breaking"
 #: anything upstream (the mirrors' archives roll, the RSS feeds roll) and keeping
 #: it forever would grow a file this lane commits 288 times a day.
 SEEN_KEEP = 8000
-SEEN_MAX_AGE_H = 168.0          # 7 days
+#: 21 days (M9), and the SAME horizon the daemon copy keeps
+#: (``_PRESS_SEEN_RETENTION_DAYS``) — two lanes writing one dedupe memory must
+#: agree about how long it remembers. Seven days was too short to be a horizon:
+#: mirror archives and RSS backfills re-deliver items older than a week, and a
+#: key that ages out is not "stale", it is ELIGIBLE AGAIN — re-summarized on a
+#: billed call and posted a second time as new.
+SEEN_MAX_AGE_H = 504.0          # 21 days
 
 #: Spend ledger retention. Only the CURRENT month is ever read; older rows are
 #: audit trail. Six months keeps the file a few hundred rows.
@@ -754,31 +760,25 @@ def dispatch_ids(root: Path | str, booked: list[str], *, now: datetime) -> list[
 def floor_diagnostic(press_cfg: dict, skipped: list[dict], emitted: list[dict]) -> str | None:
     """One line naming the salience floor when it is what blocked the whole tick.
 
-    THE OPEN CALIBRATION QUESTION THIS SURFACES (found while verifying E7 end to
-    end against the shipped config, and NOT fixed here — retuning a relevance
-    gate is a content-calibration call, not plumbing):
+    WHAT THIS REPORTS. ``wire.flagship_salience_floor`` is checked BEFORE account
+    routing (press_lane step 5 precedes step 5b), so an item under it emits to NO
+    account — not the flagship, not the wire desk. It survives only on the
+    news.html rail, whose floor is 40. When a tick emits nothing and the floor is
+    the reason, that is worth one line in the run log.
 
-      * ``breaking_relevance._CLASS_TAXONOMY`` tops out at base salience 55.0
-        (macro_print); a tariff/policy post — the flagship Trump-wire case — bases
-        at 45.0.
-      * ``breaking_relevance._TIER_BONUS`` has keys for official (+15) and wire
-        (+8) only. The press providers report ``source_tier`` of "mirror"
-        (trumpstruth, CNN archive) and "x_relay" (twitterapi.io), NEITHER of which
-        is in that table, so every Trump-wire item scores a tier bonus of 0.0
-        while an RSS source gets up to +15.
-      * ``press_sources.yml wire.flagship_salience_floor`` is 70.0, and the check
-        runs BEFORE account routing (press_lane step 5 precedes step 5b), so an
-        item under the floor emits to NO account — not the flagship, not the wire
-        desk. It survives only on the news.html rail, whose floor is 40.
+    EVERY NUMBER IN THE MESSAGE IS COMPUTED, none is asserted. The first cut of
+    this function narrated the calibration as it stood that morning ("the
+    mirror/x_relay tiers earn no tier bonus", "policy bases at 45") and the E7
+    calibration landed on the same branch hours later: `mirror` (+12) and
+    `x_relay` (+8) joined ``_TIER_BONUS`` and policy went 45 -> 50. The prose
+    stayed. A diagnostic that recites remembered constants is a diagnostic that
+    lies the moment somebody fixes the thing it describes, so the message now
+    reads the taxonomy and the tier table at call time.
 
-    Net: a Truth-Social tariff post scores 45 against a floor of 70 and cannot
-    post, on this lane or on the daemon's. Closing the split-brain was necessary
-    and is not sufficient. The two levers are a `mirror`/`x_relay` entry in
-    _TIER_BONUS, or a lower wire.flagship_salience_floor.
-
-    Returns None unless the floor was the binding constraint on THIS tick, so the
-    annotation fires only when it is true and disarms itself once the calibration
-    moves — rather than shouting on all 288 daily runs.
+    Returns None unless the floor was the binding constraint on THIS tick AND the
+    best score this lane's own tiers can reach without keyword/ticker help is
+    still under it — so the line fires only when it is true and disarms itself
+    once the calibration moves, rather than shouting on all 288 daily runs.
     """
     if emitted:
         return None
@@ -787,18 +787,25 @@ def floor_diagnostic(press_cfg: dict, skipped: list[dict], emitted: list[dict]) 
         return None
     floor = float(((press_cfg or {}).get("wire") or {}).get("flagship_salience_floor", 70.0))
     try:
-        from engine.marketing.breaking_relevance import _CLASS_TAXONOMY  # noqa: PLC0415
+        from engine.marketing.breaking_relevance import (  # noqa: PLC0415
+            _CLASS_TAXONOMY, _TIER_BONUS,
+        )
 
         max_base = max(float(row[1]) for row in _CLASS_TAXONOMY)
+        # The tiers THIS lane's items actually carry. An RSS "official" bonus is
+        # irrelevant to a diagnosis about press items.
+        press_bonus = max(float(_TIER_BONUS.get(t, 0.0))
+                          for t in ("mirror", "x_relay"))
     except Exception:  # noqa: BLE001
         return None                      # internals moved — say nothing rather than lie
-    if max_base >= floor:
-        return None                      # the floor is reachable on base alone; fine
+    if max_base + press_bonus >= floor:
+        return None            # reachable without keyword/ticker help; nothing to say
     best = max((float(s.get("salience") or 0.0) for s in blocked), default=0.0)
     return (f"::notice title=press-wire-floor::{len(blocked)} item(s) blocked by "
-            f"wire.flagship_salience_floor={floor:g}; best was {best:g}. No event class "
-            f"bases above {max_base:g} and the mirror/x_relay tiers earn no tier bonus, "
-            f"so press items clear this floor only via keyword/ticker bonuses")
+            f"wire.flagship_salience_floor={floor:g}; best was {best:g}. The highest "
+            f"event-class base is {max_base:g} and the best press tier bonus is "
+            f"+{press_bonus:g}, so a press item clears this floor only on "
+            f"keyword/ticker strength")
 
 
 def _write_github_output(key: str, value: str) -> None:
@@ -995,14 +1002,21 @@ def run(root: Path | str, *, now: datetime | None = None, dry_run: bool = False)
     if append_spend(root, delta, month=month, now=ts):
         roll_spend(root, now=ts)
 
-    if emit_allowed or cold_start:
-        new_press = [k for k in (result.get("_seen") or []) if k not in seen_press]
-        new_wire = [k for k in seen_wire_after if k not in seen_wire]
-        written = append_seen(
-            root, {SEEN_SPACE_PRESS: new_press, SEEN_SPACE_WIRE: new_wire}, now=ts
-        )
-        if written:
-            roll_seen(root, now=ts)
+    # THE SEEN RING ADVANCES ON EVERY REAL RUN, armed or not (M8 — the same fix
+    # the daemon copy carries). This was gated on `emit_allowed`, i.e. on
+    # MARKETING_OUTBOX_ENABLED, which is DARK by default: a disarmed run still
+    # polls, still scores and still pays the summarizer for every item, so the
+    # gate meant the lane re-did that work on the same items every five minutes
+    # and never remembered any of it. The switch decides whether we PUBLISH; it
+    # says nothing about whether we already looked. `--dry-run` returned above,
+    # so it stays non-consuming.
+    new_press = [k for k in (result.get("_seen") or []) if k not in seen_press]
+    new_wire = [k for k in seen_wire_after if k not in seen_wire]
+    written = append_seen(
+        root, {SEEN_SPACE_PRESS: new_press, SEEN_SPACE_WIRE: new_wire}, now=ts
+    )
+    if written:
+        roll_seen(root, now=ts)
 
     save_cursors(root, cursors, now=ts, press_cfg=press_cfg)
 

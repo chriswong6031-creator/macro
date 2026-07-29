@@ -226,10 +226,10 @@ WHAT EARNS A REPLY (the five things a reply may carry)
 - USEFUL REFRAME: grant the frame, change what the move is about.
 - MISSING-NUMBER CORRECTION: fix or sharpen the record with one figure, without naming anyone.
 
-EXEMPLARS — real replies under real finance posts, with the likes they earned. This is the REGISTER, not a phrasebook; our own laws above still decide what may ship.
+EXEMPLARS. Real replies under real finance posts, with the likes they earned. This is the REGISTER, not a phrasebook; our own laws above still decide what may ship.
 {_exemplar_block()}
 
-NEVER THESE SHAPES — all scored zero likes in the same threads, in the same hour:
+NEVER THESE SHAPES. All scored zero likes in the same threads, in the same hour:
 {_anti_block()}
 
 One honest note so you do not over-fit: a genuinely sharp, specific reply in the same corpus also scored zero, because it arrived hours late from a small account. A good line is necessary, not sufficient. Write the good line anyway.
@@ -269,8 +269,8 @@ def system_prompt(cfg: dict | None = None, root: Path | str | None = None) -> st
         return SYSTEM_PROMPT
 
     lines = [
-        f"ALSO RATIFIED (exemplar store version {shots[0].get('exemplar_version')}) "
-        "— posts from other accounts the operator approved for their register. "
+        f"ALSO RATIFIED (exemplar store version {shots[0].get('exemplar_version')}). "
+        "Posts from other accounts the operator approved for their register. "
         "They are TIMELINE posts, not replies: take the register, never the shape, "
         "and never their numbers. Every figure you write must still be in ALLOWED "
         "NUMBERS.",
@@ -387,7 +387,8 @@ def persona_card(account: str, cfg: dict | None) -> str:
     personas = ((cfg or {}).get("copywriter") or {}).get("personas") or {}
     card = personas.get(str(account)) or {}
     if not card:
-        return f"DESK: {account or 'the desk'} (no persona card on file — stay plain and factual)."
+        return (f"DESK: {account or 'the desk'} (no persona card on file; "
+                "stay plain and factual).")
 
     lines = [f"DESK: {card.get('name') or account}"]
     notes = str(card.get("voice_notes") or "").strip()
@@ -433,7 +434,7 @@ def build_user_message(
         f"OUR DETERMINISTIC DRAFT (true, legal, and what ships unchanged if you do "
         f"not beat it):\n{str(draft or '').strip()}\n\n"
         f"REPLY FAMILY: {family}"
-        + (f" — {intent}\n" if intent else "\n")
+        + (f": {intent}\n" if intent else "\n")
         + (
             "This family may run long: its structure IS the payload. Still one "
             "thought.\n" if long_ok else
@@ -442,7 +443,7 @@ def build_user_message(
         + f"\n{persona_card(account, cfg)}\n\n"
         "ALLOWED NUMBERS (every number in your reply must be one of these, written "
         "exactly as shown; using none of them is fine):\n"
-        + ("\n".join(f"  {n}" for n in allowed) if allowed else "  (none — write no numbers)")
+        + ("\n".join(f"  {n}" for n in allowed) if allowed else "  (none; write no numbers)")
     )
 
 

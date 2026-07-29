@@ -45,6 +45,14 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+# The house language law is CALLED, never forked: copywriter.banned_language is the
+# one function validate_copy runs at generation time and the publisher runs at post
+# time, and it is what this lane's last gate (see _emit_outbox_item) runs before an
+# item can enter the queue. Imported at module level exactly as
+# scripts/marketing_publisher.py imports it — copywriter's own import closure is
+# stdlib + pyyaml, so the thin marketing-engine CI lane stays green.
+from engine.marketing.copywriter import banned_language as _banned_language
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Constants
 # ─────────────────────────────────────────────────────────────────────────────
@@ -228,18 +236,20 @@ def _emission_key(item: dict) -> str:
 
 
 def _strip_trailing_source_clause(summary: str, source_name: str) -> str:
-    """Remove a trailing '— {source_name}' clause from a summary (m3).
+    """Remove a trailing '-- {source_name}' clause from a summary (m3).
 
-    The deterministic fallback builds '{headline} — {source_name}'; when the body
+    The deterministic fallback builds '{headline} -- {source_name}'; when the body
     attribution is supplied by the corroboration decision we must not leave the
-    mirror name in the body. Only strips the EXACT trailing '— {source_name}'
-    clause (any dash variant) so a legitimate em-dash inside the headline is kept.
+    mirror name in the body. Only strips the EXACT trailing source clause (any
+    dash variant, longest first) so a dash inside the headline itself is kept.
+    The em/en-dash variants stay in the list because a summary of an OLDER vintage
+    (or an LLM that ignored its prompt) can still arrive carrying one.
     """
     text = str(summary).rstrip()
     src = str(source_name).strip()
     if not src:
         return text
-    for dash in (" — ", " – ", " - ", "—", "–", "-"):
+    for dash in (" -- ", " — ", " – ", " - ", "--", "—", "–", "-"):
         suffix = f"{dash}{src}"
         if text.endswith(suffix):
             return text[: -len(suffix)].rstrip()
@@ -372,6 +382,21 @@ def _story_lock_check(account: str, key: str, *, root: Path, now: datetime,
         return None
 
 
+def _clamp_for_x(headline: str, body: str, *, attribution: str = "",
+                 tape_stamp: str = "") -> dict:
+    """The platform clamp (M1), IMPORTED from the module that owns the budgets.
+
+    ``wire_format`` is a stdlib-only sibling, so this is the same lazy-import
+    idiom ``_emit_outbox_item`` uses for ``outbox``: a checkout where it cannot
+    be imported is broken, and hiding that behind a fallback would let an
+    over-cap post reach the queue.
+    """
+    from engine.marketing.wire_format import clamp_for_x  # noqa: PLC0415
+
+    return clamp_for_x(headline, body, attribution=attribution,
+                       tape_stamp=tape_stamp)
+
+
 def _emit_outbox_item(
     root: Path,
     item_id: str,
@@ -387,6 +412,8 @@ def _emit_outbox_item(
     dry_run: bool,
     cfg: dict | None = None,
     spool: bool = False,
+    refusal: dict | None = None,
+    text_override: str | None = None,
 ) -> dict[str, Any] | None:
     """Build a CANONICAL outbox item (kind='breaking') and enqueue it.
 
@@ -397,9 +424,16 @@ def _emit_outbox_item(
     near-dup and cross-account near-dup guards that live in ``enqueue``. The lane
     now goes through the front door.
 
-    Returns the item dict, or None when validation or the queue refused it (the
-    caller records a skip). ``dry_run`` builds and validates but writes nothing —
-    the media SVG included.
+    Returns the item dict, or None when validation, the language gate, or the
+    queue refused it (the caller records a skip). ``dry_run`` builds and validates
+    but writes nothing — the media SVG included. ``refusal``, when supplied, is
+    filled with {"reason": ...} so the caller's skip census names the gate that
+    fired instead of a generic refusal.
+
+    ``text_override`` is the PLATFORM-CLAMPED post text (M1). The item still
+    carries the full headline/body fields for the rail and the admin preview, but
+    ``text`` — the string the publisher validates and posts — is the clamped one.
+    Absent, the text is composed from the pair exactly as before.
     """
     from engine.marketing import outbox as _ob  # noqa: PLC0415
 
@@ -450,7 +484,8 @@ def _emit_outbox_item(
         item = _ob.make_item(
             account=account,
             kind="breaking",
-            text=_ob.compose_text(headline, body),
+            text=(text_override if text_override is not None
+                  else _ob.compose_text(headline, body)),
             as_of=as_of,
             media=media,
             scheduled_at="immediate",
@@ -477,6 +512,34 @@ def _emit_outbox_item(
     if errors:
         print(f"::warning title=press-lane-item-invalid::{item_id}: {errors[0]}",
               flush=True)
+        if refusal is not None:
+            refusal["reason"] = "item_invalid"
+        return None
+
+    # ── LAST GATE: house language law (doctrine v3 §9a) ───────────────────────
+    # The SAME screen the publisher runs on every due item, run here at the lane's
+    # single enqueue choke point. Two things this catches that nothing upstream
+    # can: a source headline that arrives carrying an em dash (the headline is
+    # copied verbatim into the post text), and any FUTURE vintage of this lane
+    # that composes a body some new way. Without it the item enqueues, sits in the
+    # queue, and is quarantined at post time — a burnt LLM call, a burnt queue
+    # slot, and a verdict nobody reads until the publisher log. Screening BEFORE
+    # the dry_run return is deliberate: a dry run must report the same verdict a
+    # live run would, and a doomed item must not write its media SVG.
+    # BOTH the posted text and the full pair: the M1 clamp can trim a sentence
+    # out of `text`, and headline/body still ship to the rail and the admin
+    # preview. A token that survives on either surface is a token that shipped.
+    _lang = _banned_language(item.get("text", ""))
+    _full = _ob.compose_text(headline, body)
+    if not _lang and _full != item.get("text", ""):
+        _lang = _banned_language(_full)
+    if _lang:
+        print("::warning title=press-lane-banned-language::"
+              f"{item_id}: refused by the house language law: "
+              f"{', '.join(_lang[:4])}", flush=True)
+        if refusal is not None:
+            refusal["reason"] = "banned_language"
+            refusal["violations"] = list(_lang)
         return None
 
     if dry_run:
@@ -610,7 +673,11 @@ def _build_rail_item(
                 tape_stamp = ""
         text_en = headline
         if attribution:
-            text_en = f"{text_en} — {attribution}"
+            # B1: double hyphen, never an em dash. The rail text and the X post
+            # text are ONE string on the emitted path (the rail reuses the
+            # composed body), so the two joins must agree or the rail would
+            # display a form the publisher's language gate rejects.
+            text_en = f"{text_en} -- {attribution}"
         if tape_stamp:
             text_en = f"{text_en} · {tape_stamp}"
 
@@ -1187,9 +1254,11 @@ def run_press_tick(
                 voice_applied = False
 
         if not voice_applied:
-            # Plain B1 body (attribution appended, no opener/tape).
+            # Plain B1 body (attribution appended, no opener/tape). Double hyphen:
+            # same join as compose_post, same reason (the publisher quarantines
+            # U+2014, and this is the path a disarmed voice pass lands on).
             if attribution:
-                body = f"{base_summary} — {attribution}"
+                body = f"{base_summary} -- {attribution}"
             else:
                 body = base_summary
 
@@ -1216,6 +1285,37 @@ def run_press_tick(
             "scoring": _scoring_provenance(s),
         }
 
+        # ── M1 platform clamp ─────────────────────────────────────────────────
+        # The post text is headline + blank line + body, and the X cap is 280.
+        # wire_deep's budget is 400-700, so every deep item was composed, queued,
+        # and then quarantined by validate_postable — the format never posted
+        # once. The clamp decides what X gets; `body` (full length) is what the
+        # rail keeps, which is why this is computed here and not inside the
+        # voice pass.
+        _clamp = _clamp_for_x(headline, body, attribution=attribution,
+                              tape_stamp=tape_stamp)
+        if not _clamp["text"]:
+            print("::warning title=press-lane-over-x-budget::"
+                  f"{iid}: {_clamp['reason']}; rail keeps the full item",
+                  flush=True)
+            seen.add(_emission_key(s))
+            skipped.append({"id": iid, "reason": "over_x_budget",
+                            "account": account, "detail": _clamp["reason"]})
+            # RAIL-ONLY, AT FULL LENGTH. The item did not post, but it was
+            # composed, and news.html is the retention surface with no character
+            # cap. Recording the composed body here is what "the rail keeps the
+            # full item" means; without it the rail would fall back to the bare
+            # headline line and the work would be thrown away twice.
+            emitted_bodies[iid] = {"text": body, "register": register,
+                                   "tape_stamp": tape_stamp,
+                                   "attribution": attribution}
+            continue
+        if _clamp["clamped"]:
+            print("::notice title=press-lane-x-clamp::"
+                  f"{iid}: {_clamp['reason']}", flush=True)
+            provenance["x_clamp"] = _clamp["reason"]
+
+        _refusal: dict = {}
         out_item = _emit_outbox_item(
             root, iid, account, headline, body, payload.get("card_svg", ""),
             provenance, now,
@@ -1224,6 +1324,8 @@ def run_press_tick(
             dry_run=dry_run,
             cfg=cfg,
             spool=spool,
+            refusal=_refusal,
+            text_override=_clamp["text"],
         )
         if out_item is None:
             # RECORDED AS SEEN, deliberately. The canonical path refused it
@@ -1238,8 +1340,12 @@ def run_press_tick(
             # (daemon _PRESS_SEEN_CAP), so this is a suppression with a horizon,
             # not a permanent kill.
             seen.add(_emission_key(s))
-            skipped.append({"id": iid, "reason": "outbox_refused",
-                            "account": account})
+            _skip_row = {"id": iid,
+                         "reason": str(_refusal.get("reason") or "outbox_refused"),
+                         "account": account}
+            if _refusal.get("violations"):
+                _skip_row["violations"] = list(_refusal["violations"])[:4]
+            skipped.append(_skip_row)
             continue
         counter["count"] = int(counter["count"]) + 1
         # Record the MIRROR-COLLAPSED key so a later tick from EITHER mirror is a

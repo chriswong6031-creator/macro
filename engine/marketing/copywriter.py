@@ -1941,6 +1941,72 @@ def validate_copy_v2(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Filing fact lock — every number in a disclosure post traces to the filing
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: Kinds whose numbers are FILING numbers: the XG-E2 disclosure lanes. A number
+#: in one of these posts is a claim about a document somebody signed, so the bar
+#: is the wire desk's bar (gate 0.3), not the general copy bar.
+FACT_LOCKED_KINDS: frozenset[str] = frozenset({"congress", "insider"})
+
+#: The payload keys that carry FACTS. Persona cards, codex blocks, franchise
+#: prose and the shape contract are STYLE and are deliberately excluded: their
+#: incidental digits ("at most 1 in 4 posts", "90 chars") would otherwise license
+#: a number in the copy that no filing contains.
+_FACT_PAYLOAD_KEYS: tuple[str, ...] = (
+    "facts", "numbers_whitelist", "entry", "t1", "t2", "invalidation",
+    "win_rate", "pack", "cashtag", "cashtags", "angle",
+)
+
+
+def filing_fact_lock_violations(text: str, payload: dict, kind: str) -> list[str]:
+    """Gate 0.3 for the filing lanes: every number in `text` traces to the packet.
+
+    WHY THIS EXISTS ON TOP OF ``validate_copy_v2``. The general numeric gate
+    (``validate_copy`` -> numbers whitelist) SKIPS bare one- and two-digit
+    integers, and it has to: ordinary copy counts things ("3 names", "2 weeks")
+    and the whitelist cannot carry every small integer the language needs. But
+    the reporting lag IS a bare one- or two-digit integer, always. So on these
+    two lanes the one number the disclosure law exists to protect was the one
+    number the model was free to write: "disclosed 6 days later" on a 47-day lag
+    passed every gate, read as compliant, and was false.
+
+    The check is ``hot_tape_llm.numeric_violations`` IMPORTED, never forked, so
+    the filing lanes inherit its tolerances (sign-insensitive, trailing-zero
+    tolerant, truncation-aware) and any future fix to them.
+
+    THE PACKET IS WHAT THE PROMPT HANDED OUT. The gate judges against the same
+    fact-bearing payload keys the writer was shown, for the reason the reply desk
+    learned the hard way: a gate given LESS than the prompt rejects a model for
+    obeying it, and a gate given MORE (persona/codex prose) licenses numbers no
+    filing contains.
+
+    FAILS CLOSED. If the gate itself cannot run, the item is refused rather than
+    passed: dropping a disclosure post costs one post, and shipping an unchecked
+    one costs a claim about a filing. Empty list = clean.
+    """
+    if str(kind or "") not in FACT_LOCKED_KINDS:
+        return []
+    try:
+        from engine.marketing.hot_tape_llm import numeric_violations  # noqa: PLC0415
+    except Exception as exc:  # noqa: BLE001
+        log.warning("copywriter: filing fact lock unavailable (%s: %s)",
+                    type(exc).__name__, exc)
+        return [f"filing fact lock unavailable ({type(exc).__name__})"]
+
+    packet = {k: (payload or {}).get(k) for k in _FACT_PAYLOAD_KEYS
+              if (payload or {}).get(k) is not None}
+    try:
+        hits = numeric_violations(str(text or ""), packet)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("copywriter: filing fact lock raised (%s: %s)",
+                    type(exc).__name__, exc)
+        return [f"filing fact lock raised ({type(exc).__name__})"]
+    return [f"filing fact lock: {h} (a filing number must come from the filing)"
+            for h in hits]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Deterministic variant templates (the anti-bot-voice library)
 #
 # Key rules for every template (see research/MARKETING_VOICE_DOCTRINE_V2_BY_FABLE.md):
@@ -3927,14 +3993,14 @@ def write_posts_llm(
                 # `due_condition` is checked against graded data, never by copy
                 # asserting the loop is closed.
                 "\n\nSOME ITEMS CARRY A `codex` BLOCK. When present: `worldview` is how "
-                "this person SEES a market — the question they ask first; let it shape "
+                "this person SEES a market, the question they ask first; let it shape "
                 "which fact they lead with. `franchises` are the recurring formats "
                 "readers expect; when an item names one, write that format. `restraint` "
                 "is what they refuse to do, and it is binding. `open_promises` are loops "
-                "this account already promised to close — do NOT restate, contradict, or "
+                "this account already promised to close. Do NOT restate, contradict, or "
                 "claim to resolve them; they are listed so you do not re-open the same "
                 "loop in different words. `worn_out_phrases` are n-grams the desk already "
-                "leaned on this week — do not reach for them again.\n"
+                "leaned on this week. Do not reach for them again.\n"
                 "AN ITEM WITH NO `codex` BLOCK IS WIRE REGISTER: report it straight, with "
                 "no personality, no signature opener, no aside, no emoji."
                 if (_codex_by_account or _memory_by_account)
@@ -4519,7 +4585,7 @@ def store_exemplar_block(cfg: dict | None, *, root: Any = None,
 
     version = shots[0].get("exemplar_version")
     lines = [
-        f"RATIFIED EXEMPLARS (exemplar store version {version}) — real posts from "
+        f"RATIFIED EXEMPLARS (exemplar store version {version}). Real posts from "
         "OTHER accounts, ratified by the operator for their REGISTER. Read them "
         "for rhythm, length and stance. Their numbers are theirs, not ours: every "
         "figure you write must still come from this item's whitelist, and a number "
@@ -5077,11 +5143,19 @@ def _v2_write_one(
         hl, bd = split_shaped_text(text, shape)
         hl, bd = _expression_dial.apply_pass(hl, bd, account=account_id, kind=kind)
         shaped = f"{hl}\n\n{bd}" if hl else bd
-        return shaped, hl, bd, validate_copy_v2(
+        checks = validate_copy_v2(
             shaped, ctx, headline=hl,
             sibling_texts=list(ctx.get("sibling_texts") or []),
             recent=list(recent or []),
         )
+        # B4: the filing lanes lock EVERY number, including the bare small
+        # integers validate_copy_v2 lets through. That exemption is what made the
+        # reporting lag model-writable, and the lag is the one number these lanes
+        # exist to state honestly. A hit lands in the same violation list, so it
+        # rides the normal repair-then-drop path: one repair turn naming the
+        # number, then the post is dropped rather than posted unverified.
+        checks.extend(filing_fact_lock_violations(shaped, payload, kind))
+        return shaped, hl, bd, checks
 
     text = _call(_v2_user_message(payload))
     if not text:

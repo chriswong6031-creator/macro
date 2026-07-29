@@ -1663,9 +1663,19 @@ def _suppress_mover_overlap(events: list[FactPacket]) -> list[FactPacket]:
     strictly the better story — it names the cause and carries the EPS device —
     so the mover packet for that ticker is dropped. Mirrors the industry/parent
     overlap rule in :func:`_detect_group_moves`.
+
+    "AND CARRIES THE EPS DEVICE" IS A CONDITION, NOT A DESCRIPTION (M3). A BMO
+    reporter is routinely not filed by 09:30, so `_fresh_surprise` returns None
+    and the packet has no beat/miss to state. Since the wire now REQUIRES the
+    eps line on this family, such a packet renders nothing — and suppressing its
+    mover twin as well would delete the name from the tape entirely on the one
+    morning it is most worth reading. Without the EPS numbers the earnings
+    packet is not the better story; it is the same story with a calendar entry,
+    so the mover survives and posts as what it is.
     """
     covered = {p.ticker for p in events
-               if p.trigger == "earnings_reaction" and p.ticker}
+               if p.trigger == "earnings_reaction" and p.ticker
+               and (p.facts or {}).get("eps")}
     if not covered:
         return events
     return [p for p in events

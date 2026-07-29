@@ -44,6 +44,7 @@ Public API::
     open_market_purchases(df, *, today, cfg, cooled) -> list[dict]
     insider_facts(cand)                          -> dict     (FactPacket)
     assert_lag_disclosed(packet)                 -> None     (raises)
+    assert_disclosure_visible(packet)            -> None     (raises)
     candidates(root, *, today, cfg, cooled, power) -> list[dict]
 """
 from __future__ import annotations
@@ -77,6 +78,7 @@ from engine.marketing.congress_feed import (
 
 __all__ = [
     "DEFAULTS",
+    "DISCLOSURE_FACT_ID",
     "LAG_FACT_ID",
     "MECHANISMS",
     "lane_cfg",
@@ -87,14 +89,20 @@ __all__ = [
     "open_market_purchases",
     "insider_facts",
     "assert_lag_disclosed",
+    "assert_disclosure_visible",
     "candidates",
 ]
 
 #: Repo-relative source. Read-only — this lane never writes to `data/`.
 _INSIDERS_REL = Path("data") / "quiver" / "insiders.parquet"
 
-#: The fact id every packet must carry inside the writer-visible top three.
+#: The fact ids every packet must carry inside the writer-visible top three.
 LAG_FACT_ID = "insider_report_lag"
+
+#: "A Form 4 proves the transaction, never the reason behind it." A filing post
+#: that omits this reads as a recommendation, and the writer can only include a
+#: sentence it was shown (M4).
+DISCLOSURE_FACT_ID = "insider_disclosure_note"
 
 #: The codex's mechanism vocabulary, in the order it lists them.
 MECHANISMS: tuple[str, ...] = (
@@ -598,6 +606,24 @@ def assert_lag_disclosed(packet: dict) -> None:
             f"{TOP_FACTS_VISIBLE} facts by salience; visible ids were {visible}")
 
 
+def assert_disclosure_visible(packet: dict) -> None:
+    """Raise :class:`LagDisclosureError` unless "this is a filing, not a call"
+    is WRITER-VISIBLE (M4).
+
+    The identical rank test the lag fact gets, for the identical reason. This
+    sentence is what stops a Form 4 post from reading as a recommendation, and
+    it was ranked ninth of nine facts: present in the packet, absent from the
+    prompt, absent from the post. Presence was never the property that mattered.
+    """
+    facts = list((packet or {}).get("facts") or [])
+    ordered = sorted(facts, key=lambda f: (-int(f.get("salience") or 0), str(f.get("id") or "")))
+    visible = [str(f.get("id") or "") for f in ordered[:TOP_FACTS_VISIBLE]]
+    if DISCLOSURE_FACT_ID not in visible:
+        raise LagDisclosureError(
+            f"insider packet must carry {DISCLOSURE_FACT_ID!r} inside the top "
+            f"{TOP_FACTS_VISIBLE} facts by salience; visible ids were {visible}")
+
+
 def _shares_phrase(n: float) -> str:
     """A share count in the corpus register: "25,000 shares", "1.3M shares"."""
     if n >= 1_000_000:
@@ -608,10 +634,13 @@ def _shares_phrase(n: float) -> str:
 def insider_facts(cand: dict) -> dict:
     """FactPacket for one Form-4 purchase: ``{facts, numbers_whitelist}``.
 
-    The three WRITER-VISIBLE facts are, in order: the transaction, the filing
-    lag, and the mechanism — which is the codex's recommended template minus the
-    portrait and the hashtag pile. Verification, ownership type and the rounded-
-    holdings caveat ride below as licensed context.
+    The three WRITER-VISIBLE facts are, in order: the transaction (carrying the
+    mechanism sentence), the filing lag, and the "this is a filing, not a call"
+    disclosure — the codex's recommended template minus the portrait and the
+    hashtag pile. Verification, ownership type and the rounded-holdings caveat
+    ride below as licensed context. Both rank guards run before the packet is
+    returned, so a future fact that outranks either one REFUSES rather than
+    shipping a post that quietly lost its lag or its disclosure.
     """
     ticker = str(cand.get("ticker") or "")
     name = str(cand.get("insider_name") or "")
@@ -633,8 +662,21 @@ def insider_facts(cand: dict) -> dict:
         bought += f", roughly {value_s}"
 
     lag = int(cand.get("lag_days") or 0)
+    # M4: the transaction and WHY IT MATTERS are one fact now. Three slots reach
+    # the writer (build_context hands `all_facts[:3]`) and this lane has four
+    # things to say: what happened, the filing lag, the mechanism, and "this is
+    # a filing, not a call". The disclosure was ranked ninth of nine, so the one
+    # sentence that keeps a Form 4 post from reading as a recommendation was the
+    # one sentence the writer never saw. Promoting it alone would have cost the
+    # mechanism its slot — and the mechanism is the lane's whole thesis (the
+    # codex's RBKB case: a $299K buy that multiplied a stake outranks a $6.92M
+    # one). Merging the mechanism into the transaction fact fits all four.
+    mechanism = str(cand.get("why_it_matters") or "").strip()
+    purchase_text = bought + "."
+    if mechanism:
+        purchase_text = f"{purchase_text} {mechanism}"
     facts: list[dict] = [
-        {"id": "insider_purchase", "text": bought + ".", "salience": 10},
+        {"id": "insider_purchase", "text": purchase_text, "salience": 10},
         {
             # THE LAG FACT — mandatory, ranked to survive the top-three cut.
             "id": LAG_FACT_ID,
@@ -644,11 +686,6 @@ def insider_facts(cand: dict) -> dict:
                 f"{lag} {'day' if lag == 1 else 'days'} later."
             ),
             "salience": 9,
-        },
-        {
-            "id": "insider_mechanism",
-            "text": str(cand.get("why_it_matters") or "").strip(),
-            "salience": 8,
         },
     ]
 
@@ -695,14 +732,18 @@ def insider_facts(cand: dict) -> dict:
         })
 
     facts.append({
-        "id": "insider_disclosure_note",
+        # M4: WRITER-VISIBLE, not merely present. Ranked at the old mechanism's
+        # salience so it takes the third slot; `assert_disclosure_visible` below
+        # refuses the packet if a future fact ever outranks it back out.
+        "id": DISCLOSURE_FACT_ID,
         "text": ("A Form 4 proves the transaction, never the reason behind it. "
                  "This is a filing, not a call."),
-        "salience": 1,
+        "salience": 8,
     })
 
     packet = fold_numbers(facts)
     assert_lag_disclosed(packet)
+    assert_disclosure_visible(packet)
     return packet
 
 

@@ -107,6 +107,14 @@ _PRESS_STATE_PATH = ROOT / "data" / "marketing" / "press" / "state.json"
 _PRESS_SEEN_PATH = ROOT / "data" / "marketing" / "press" / "seen.json"
 _PRESS_SEEN_CAP = 8000
 
+#: How long an item stays "already seen" (M9). The size cap is not a horizon —
+#: 8,000 entries on a busy wire day can span 48 hours, and an item that falls
+#: out of the ring is eligible again: re-summarized on a billed call and posted
+#: a second time as if it were new. Three weeks comfortably outlives every
+#: corroboration and story-lock window this lane uses, and 8,000 entries of that
+#: age is a file measured in hundreds of kilobytes.
+_PRESS_SEEN_RETENTION_DAYS = 21
+
 # XG-W5: the golden-set / eval corpus. Every item that reached the press lane
 # lands here with its deterministic `_components` — the labeling exporter and the
 # precision@20 harness both read it (engine/marketing/golden_set.py).
@@ -227,14 +235,57 @@ def _append_press_corpus(rows: list, *, cfg: dict | None = None) -> int:
         return 0
 
 
-def _save_press_seen(seen: dict) -> None:
+def _seen_age_days(stamp: object, now: datetime) -> float:
+    """Age of a seen-ledger entry in days. An unreadable stamp reads as AGE 0.
+
+    Deliberately the safe direction: an entry we cannot date is an entry we
+    cannot prove is expired, and keeping it costs a line of JSON while dropping
+    it costs a duplicate post and a second billed summarizer call.
+    """
+    try:
+        when = datetime.strptime(str(stamp)[:19], "%Y-%m-%dT%H:%M:%S").replace(
+            tzinfo=timezone.utc)
+    except Exception:  # noqa: BLE001
+        return 0.0
+    return max((now - when).total_seconds() / 86400.0, 0.0)
+
+
+def _save_press_seen(seen: dict, *, now: datetime | None = None) -> None:
+    """Persist the seen ledger: age-bounded first, size-capped second (M9).
+
+    THE CAP ALONE WAS NOT A HORIZON. Keeping the newest 8,000 entries says
+    nothing about how far back they reach: on a busy wire day the ring can span
+    two days, and an item that scrolls off is not "old", it is ELIGIBLE AGAIN —
+    re-summarized (billed) and re-posted as new. The dedupe window a wire lane
+    needs is a TIME window, so entries are kept until they are
+    `_PRESS_SEEN_RETENTION_DAYS` old and only then dropped.
+
+    When the size cap would evict something younger than that window the cap is
+    too small for this feed's volume, and that is a configuration fact somebody
+    has to see: the eviction still happens (the file stays bounded) but it
+    annotates at LINE START with the count and the youngest age it dropped.
+    """
     import json  # noqa: PLC0415
-    if len(seen) > _PRESS_SEEN_CAP:
-        pairs = sorted(seen.items(), key=lambda kv: kv[1], reverse=True)[:_PRESS_SEEN_CAP]
-        seen = dict(pairs)
+
+    now = now or datetime.now(timezone.utc)
+    kept = {k: v for k, v in seen.items()
+            if _seen_age_days(v, now) <= _PRESS_SEEN_RETENTION_DAYS}
+    if len(kept) > _PRESS_SEEN_CAP:
+        pairs = sorted(kept.items(), key=lambda kv: str(kv[1]), reverse=True)
+        evicted = pairs[_PRESS_SEEN_CAP:]
+        young = [kv for kv in evicted
+                 if _seen_age_days(kv[1], now) < _PRESS_SEEN_RETENTION_DAYS]
+        kept = dict(pairs[:_PRESS_SEEN_CAP])
+        if young:
+            youngest = min(_seen_age_days(v, now) for _, v in young)
+            print(f"::warning title=press-seen-cap-under-retention::"
+                  f"{len(young)} seen entries evicted before the "
+                  f"{_PRESS_SEEN_RETENTION_DAYS}d dedupe window (youngest "
+                  f"{youngest:.1f}d); raise _PRESS_SEEN_CAP or those items can "
+                  f"re-post as new", flush=True)
     _PRESS_SEEN_PATH.parent.mkdir(parents=True, exist_ok=True)
     tmp = _PRESS_SEEN_PATH.with_suffix(".tmp")
-    tmp.write_text(json.dumps(seen, indent=2), encoding="utf-8")
+    tmp.write_text(json.dumps(kept, indent=2), encoding="utf-8")
     tmp.replace(_PRESS_SEEN_PATH)
 
 
@@ -427,14 +478,24 @@ def _run_press_tick(*, dry_run: bool) -> dict:
 
     # 4. Advance the seen-ledger. Use run_press_tick's returned _seen (the full
     #    set AFTER the tick, including MIRROR-COLLAPSED emission keys — M1), not
-    #    out_item["id"], so cross-tick mirror dedupe persists. Written on a live
-    #    emit OR a cold-start prime (priming must persist the seeded seen-set, else
-    #    the next tick re-floods). NEVER in a dry-run — it must stay non-consuming.
-    if (emit_allowed or cold_start) and not dry_run:
+    #    out_item["id"], so cross-tick mirror dedupe persists.
+    #
+    #    PERSISTED ON EVERY REAL TICK, armed or not (M8). This used to require
+    #    `emit_allowed`, i.e. the publish kill switch — which is DARK by default.
+    #    A disarmed tick still polls, still scores, and still pays the billed
+    #    summarizer for every item, so gating the ledger on the switch meant the
+    #    lane re-summarized the same wire items every two minutes, forever,
+    #    while nothing posted. The switch decides whether we PUBLISH; it has
+    #    never had anything to say about whether we already did the work.
+    #
+    #    The one exception stays: an explicit `--dry-run` is an inspection and
+    #    must be non-consuming, or it would dedupe items away from the next live
+    #    run. A cold-start prime writes for the same reason it always did.
+    if not dry_run:
         now_iso = now.strftime("%Y-%m-%dT%H:%M:%SZ")
         for key in result.get("_seen", []):
             seen.setdefault(str(key), now_iso)
-        _save_press_seen(seen)
+        _save_press_seen(seen, now=now)
 
     # 4b. XG-W5 scoring-brain corpus. Every item the lane saw this tick, with its
     #     deterministic `_components`, appended to the GITIGNORED host-local

@@ -893,7 +893,12 @@ def book_packet(
             media=media,
             scheduled_at="immediate",
             slot=f"HOT-{now.strftime('%H%M')}Z",
-            priority=1,
+            # M2: an alert outranks a brief. The publisher considers items by
+            # (priority, scheduled_at, id), so a brief at the same priority as a
+            # fresh alert could take the pass ahead of live news purely on its
+            # older timestamp. A brief is context for something already posted;
+            # it can always wait one pass.
+            priority=(2 if packet.trigger == HT.BRIEF_TRIGGER else 1),
             provenance="hot_tape",
             source=HT.packet_to_source(packet, media=published),
             now=now,
@@ -1143,7 +1148,16 @@ def pending_briefs(
 
         out: list[tuple] = []
         for row in sorted(candidates, key=lambda r: str(r.get("fired_at") or "")):
-            if statuses.get(str(row["item_id"])) not in ("queued", "approved", "posted"):
+            # THE ALERT MUST HAVE POSTED, not merely reached the queue (M2). A
+            # context brief is the SECOND half of a two-step publish: it says
+            # why the thing you just saw matters. Accepting "queued"/"approved"
+            # meant the brief could go out while the alert was still waiting on
+            # the publisher's gates, and if the alert was then quarantined (its
+            # copy, its cap, its tape check) the brief was already live,
+            # explaining a post nobody ever saw. The delay window makes this
+            # cheap to require: by the time a brief is eligible the alert has
+            # had a full publisher pass to reach "posted".
+            if statuses.get(str(row["item_id"])) != "posted":
                 continue
             packet = HT.build_brief_packet(
                 row, quotes=live, pack=pack, heatmap=heatmap, now=now, cfg=cfg,

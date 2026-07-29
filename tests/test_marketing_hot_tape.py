@@ -312,6 +312,28 @@ class TestDeviceRefusal:
         assert out is not None
         assert "since at least" in out["text"]
 
+    def test_every_earnings_variant_states_the_beat_or_the_miss(self):
+        """M3. An earnings reaction post that never prints the EPS line tells
+        the reader a report landed and a stock moved, and withholds the one
+        number it exists to deliver. Two of the four variants closed on a dollar
+        translation or a record rank instead, and `eps_clause` was merely one of
+        five acceptable devices, so the shape shipped."""
+        mandatory, _any_of = W.DEVICE_LAW["earnings_reaction"]
+        assert "eps_clause" in mandatory, mandatory
+        for template, required in W.WIRE_BANK["earnings_reaction"]:
+            assert "{eps_clause}" in template, template
+            assert "eps_clause" in required, template
+
+    def test_an_earnings_packet_with_no_eps_refuses_rather_than_padding(self):
+        packet = rich_packets()["earnings_reaction"]
+        assert W.compose_wire(packet) is not None, "fixture is degenerate"
+        stripped = _packet(
+            "earnings_reaction", packet.key, packet.direction,
+            ticker=packet.ticker,
+            facts={k: v for k, v in packet.facts.items() if k != "eps"})
+        assert W.compose_wire(stripped) is None, (
+            "an earnings post rendered without the earnings")
+
     def test_every_composed_post_carries_a_device(self):
         for trigger, packet in rich_packets().items():
             out = W.compose_wire(packet)
@@ -1352,11 +1374,33 @@ class TestEarningsDetector:
     def test_the_earnings_packet_suppresses_its_own_mover_twin(self):
         """One story, one post: the same |>=4%| trips both detectors."""
         rows = {"AAPL": _earn_row(next_date=TODAY_ET.isoformat(),
-                                  next_time="time-pre-market")}
+                                  next_time="time-pre-market",
+                                  surprises=[_surprise(TODAY_ET.isoformat())])}
         events = _earn_events(rows, {"AAPL": _quote(-6.1, 197.0, 210.0)})
         triggers = {e.trigger for e in events if e.ticker == "AAPL"}
         assert "earnings_reaction" in triggers
         assert not any(t.startswith("mover_") for t in triggers), triggers
+
+    def test_an_earnings_packet_with_NO_fresh_eps_leaves_the_mover_alive(self):
+        """M3. The suppression's own justification is that the earnings packet
+        "names the cause AND carries the EPS device". A BMO reporter is
+        routinely unfiled at 09:30, so that second half is false, and the wire
+        now REFUSES an earnings post with no beat/miss to state. Suppressing the
+        mover twin as well would delete the name from the tape on the one
+        morning it is most worth reading."""
+        rows = {"AAPL": _earn_row(next_date=TODAY_ET.isoformat(),
+                                  next_time="time-pre-market")}   # no surprises
+        events = _earn_events(rows, {"AAPL": _quote(-6.1, 197.0, 210.0)})
+        earnings = [e for e in events
+                    if e.trigger == "earnings_reaction" and e.ticker == "AAPL"]
+        assert earnings and earnings[0].facts.get("eps") is None
+        assert any(e.trigger.startswith("mover_") for e in events
+                   if e.ticker == "AAPL"), [e.trigger for e in events]
+
+        # ...and the earnings packet itself renders NOTHING, which is what makes
+        # the surviving mover the post rather than a second post.
+        from engine.marketing.hot_tape_wire import compose_wire
+        assert compose_wire(earnings[0]) is None
 
     def test_a_fired_mover_holds_the_earnings_cooldown(self):
         """The two detectors share ONE cooldown memory per name+direction."""

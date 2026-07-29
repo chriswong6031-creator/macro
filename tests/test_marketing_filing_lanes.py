@@ -348,6 +348,87 @@ def test_a_packet_without_a_visible_lag_fact_refuses():
                                   {"id": "c", "text": "c", "salience": 5}]})
 
 
+def test_the_disclosure_note_is_writer_visible_on_both_lanes():
+    """M4. "This is a filing, not a call" was ranked ninth of nine on the
+    insider lane and below the member record on the congress lane, so on a
+    typical packet the one sentence that stops a filing post from reading as a
+    recommendation was in the packet and absent from the prompt. Presence was
+    never the property that mattered — the lag guard learned that first."""
+    from engine.marketing.congress_feed import (
+        DISCLOSURE_FACT_ID as C_NOTE, TOP_FACTS_VISIBLE, congress_facts)
+    from engine.marketing.insider_feed import (
+        DISCLOSURE_FACT_ID as I_NOTE, insider_facts)
+
+    congress = congress_facts({
+        "ticker": "NVDA", "representative": "Jane Q. Public", "title": "Rep.",
+        "side": "purchase", "transaction_date": "2026-06-12",
+        "report_date": "2026-07-29", "lag_days": 47,
+        "amount_low": 50_001, "amount_high": 100_000,
+        "member_context": "has a long list of disclosed trades on file",
+    })
+    insider = insider_facts({
+        "ticker": "RBKB", "insider_name": "Nancy Koskey Patzwahl",
+        "role": "Chief Financial Officer", "shares": 25_000, "price": 11.94,
+        "shares_following": 27_270, "prior_shares": 2_270,
+        "purchase_value": 298_500.0, "trade_date": "2026-07-27",
+        "file_date": "2026-07-28", "lag_days": 1, "ownership": "direct",
+        "cluster_n": 4, "mechanism": "MATERIAL_ADDITION",
+        "why_it_matters": "The relative change is what matters.",
+        "power_context": "the wider insider tape at this company has leaned toward buying",
+    })
+    for packet, note_id in ((congress, C_NOTE), (insider, I_NOTE)):
+        visible = [f["id"] for f in packet["facts"][:TOP_FACTS_VISIBLE]]
+        assert note_id in visible, f"{note_id} ranked outside {visible}"
+        blob = " ".join(f["text"] for f in packet["facts"][:TOP_FACTS_VISIBLE])
+        assert "not a call" in blob
+
+
+def test_promoting_the_disclosure_did_not_cost_the_mechanism_its_slot():
+    """The insider lane's thesis is the MECHANISM (the codex's RBKB case: a
+    $299K buy that multiplied a stake outranks a $6.92M one). Three slots, four
+    things to say, so the mechanism rides on the transaction fact rather than
+    being dropped for the disclosure."""
+    from engine.marketing.congress_feed import TOP_FACTS_VISIBLE
+    from engine.marketing.insider_feed import insider_facts
+
+    packet = insider_facts({
+        "ticker": "RBKB", "insider_name": "Nancy Koskey Patzwahl",
+        "role": "Chief Financial Officer", "shares": 25_000, "price": 11.94,
+        "shares_following": 27_270, "prior_shares": 2_270,
+        "purchase_value": 298_500.0, "trade_date": "2026-07-27",
+        "file_date": "2026-07-28", "lag_days": 1, "ownership": "direct",
+        "mechanism": "MATERIAL_ADDITION",
+        "why_it_matters": "The relative change is what matters.",
+    })
+    blob = " ".join(f["text"] for f in packet["facts"][:TOP_FACTS_VISIBLE])
+    assert "The relative change is what matters." in blob
+    assert "bought 25,000 shares" in blob
+    assert "day later" in blob            # the lag
+    assert "not a call" in blob           # the disclosure
+
+
+def test_a_packet_whose_disclosure_is_outranked_refuses():
+    """The guard raises rather than shipping quietly, exactly as the lag guard
+    does. This is the failure a future fact addition produces by accident."""
+    from engine.marketing.congress_feed import (
+        DISCLOSURE_FACT_ID, LagDisclosureError, assert_disclosure_visible)
+    from engine.marketing.insider_feed import (
+        assert_disclosure_visible as insider_assert)
+
+    demoted = {"facts": [
+        {"id": DISCLOSURE_FACT_ID, "text": "note", "salience": 1},
+        {"id": "a", "text": "a", "salience": 9},
+        {"id": "b", "text": "b", "salience": 9},
+        {"id": "c", "text": "c", "salience": 9},
+    ]}
+    with pytest.raises(LagDisclosureError):
+        assert_disclosure_visible(demoted)
+    with pytest.raises(LagDisclosureError):
+        insider_assert({"facts": [{"id": "x", "text": "x", "salience": 9},
+                                  {"id": "y", "text": "y", "salience": 9},
+                                  {"id": "z", "text": "z", "salience": 9}]})
+
+
 class _Frame:
     """A minimal records-yielding stand-in for a DataFrame.
 
@@ -602,14 +683,45 @@ def test_member_context_is_plain_words_and_never_a_score():
     contains one."""
     from engine.marketing.congress_feed import member_context
 
-    for tier in ("proven", "watch", "limited"):
-        phrase = member_context({"tier": tier, "chamber": "House"})
+    for n_eff in (0, 1, 5, 12, 40):
+        phrase = member_context({"n_eff_valid": n_eff, "chamber": "House"})
+        if n_eff == 0:
+            assert phrase == "", "no disclosures is no sentence, not a verdict"
+            continue
         assert phrase and not any(ch.isdigit() for ch in phrase)
         # Internal slugs are banned vocabulary on user-facing surfaces.
         for slug in ("proven", "watch", "limited", "tier", "shrunk", "hit rate"):
             assert slug not in phrase.lower(), f"{slug!r} leaked into {phrase!r}"
     assert member_context(None) == ""
-    assert member_context({"tier": "unknown_future_tier"}) == ""
+    assert member_context({}) == ""
+
+
+def test_member_context_describes_ACTIVITY_never_performance():
+    """M5. The phrase used to be derived from the member TIER, and the tier is
+    not an activity fact: "proven" means n_eff_valid >= 8 AND a shrunk hit rate
+    above the pooled prior. So the copy beside a politician's name carried an
+    internal, horizon-inconsistent performance claim in plain words — and it was
+    wrong on its own terms, because a member with a long history and a
+    below-pooled rate is "watch" and was described as having a SHORT one."""
+    from engine.marketing.congress_feed import member_context
+
+    long_history_poor_rate = {"n_eff_valid": 25, "tier": "watch",
+                              "shrunk_hit_rate": 0.21}
+    short_history_good_rate = {"n_eff_valid": 3, "tier": "proven",
+                               "shrunk_hit_rate": 0.88}
+    long_phrase = member_context(long_history_poor_rate)
+    short_phrase = member_context(short_history_good_rate)
+
+    assert "long" in long_phrase, long_phrase
+    assert "short" in short_phrase, short_phrase
+    # The judgment vocabulary is gone in both directions: no praise, no verdict.
+    for phrase in (long_phrase, short_phrase):
+        for word in ("better", "best", "well", "poor", "reliable", "accurate",
+                     "judge", "record of", "track record", "successful"):
+            assert word not in phrase.lower(), f"{word!r} in {phrase!r}"
+
+    # A tier with no count says nothing at all rather than guessing.
+    assert member_context({"tier": "proven"}) == ""
 
 
 def test_insider_power_contributes_words_not_its_score():
@@ -1131,3 +1243,189 @@ def test_the_feeds_merge_exclude_into_their_blocklist(monkeypatch, module_name,
                    cooled={"AAA"}, exclude={"BBB"})
 
     assert calls["cooled"] == frozenset({"AAA", "BBB"}), calls
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 8. B4 — the reporting lag is not model-writable
+#
+# `validate_copy` licenses bare one- and two-digit integers by design (ordinary
+# copy counts things and the whitelist cannot carry every small integer the
+# language needs). Every reporting lag is a bare one- or two-digit integer. So
+# on the two lanes whose whole disclosure law is "state the gap honestly", the
+# gap was the one number the model could write freely: "disclosed 6 days later"
+# on a 47-day lag cleared every gate. `filing_fact_lock_violations` closes it by
+# running the wire desk's gate 0.3 (`hot_tape_llm.numeric_violations`, imported,
+# never forked) over the fact-bearing half of the writer payload.
+# ─────────────────────────────────────────────────────────────────────────────
+
+_CONGRESS_CAND = {
+    "ticker": "NVDA", "representative": "Jane Q. Public", "title": "Rep.",
+    "side": "purchase", "transaction_date": "2026-06-12",
+    "report_date": "2026-07-29", "lag_days": 47,
+    "amount_low": 50_001, "amount_high": 100_000, "amount_mid": 75_000,
+}
+_INSIDER_CAND = {
+    "ticker": "RBKB", "insider_name": "Nancy Koskey Patzwahl",
+    "role": "Chief Financial Officer", "shares": 25_000, "price": 11.94,
+    "shares_following": 27_270, "prior_shares": 2_270,
+    "purchase_value": 298_500.0, "trade_date": "2026-07-27",
+    "file_date": "2026-07-28", "lag_days": 1, "ownership": "direct",
+    "mechanism": "MATERIAL_ADDITION", "why_it_matters": "The stake multiplied.",
+}
+
+
+def _filing_payload(kind: str):
+    """(payload, packet) for one filing item, built the production way.
+
+    congress_facts -> build_context -> _v2_item_payload is exactly the chain
+    content_studio runs before it calls the writer, so the packet this gate
+    judges is the packet the model was shown.
+    """
+    from engine.marketing import copywriter as cw
+    if kind == "congress":
+        from engine.marketing.congress_feed import congress_facts
+        packet = congress_facts(dict(_CONGRESS_CAND))
+        item = {"type": "congress", "ticker": "NVDA", "account": "flagship"}
+    else:
+        from engine.marketing.insider_feed import insider_facts
+        packet = insider_facts(dict(_INSIDER_CAND))
+        item = {"type": "insider", "ticker": "RBKB", "account": "flagship"}
+    ctx = cw.build_context(item, persona=None, facts=packet, extra=None)
+    ctx["type"] = kind
+    payload = cw._v2_item_payload(ctx, persona_card=None, codex_by_account={},
+                                  memory_by_account={})
+    return payload, packet
+
+
+@pytest.mark.parametrize("kind, true_lag, fake_lag", [
+    ("congress", "47", "6"),
+    ("insider", "1", "9"),
+])
+def test_a_fabricated_reporting_lag_is_rejected(kind, true_lag, fake_lag):
+    """The defect, stated as the test: swap the lag, keep everything else."""
+    from engine.marketing import copywriter as cw
+
+    payload, _packet = _filing_payload(kind)
+    honest = (f"A filing, not a call.\n\nThe trade was disclosed {true_lag} "
+              f"days after it happened.")
+    faked = (f"A filing, not a call.\n\nThe trade was disclosed {fake_lag} "
+             f"days after it happened.")
+
+    assert cw.filing_fact_lock_violations(honest, payload, kind) == [], (
+        "the TRUE lag must pass: a gate that rejects the packet's own number "
+        "would drop every filing post and teach the next reader to widen it")
+    hits = cw.filing_fact_lock_violations(faked, payload, kind)
+    assert hits, f"a fabricated {kind} lag cleared the fact lock"
+    assert any(fake_lag in h for h in hits), hits
+
+
+@pytest.mark.parametrize("kind", ["congress", "insider"])
+def test_validate_copy_v2_alone_does_not_catch_it(kind):
+    """PINS THE REASON THIS GATE EXISTS. If a future edit makes the general
+    numeric gate demand a licence for small bare integers, this test fails and
+    the fact lock can be reconsidered. Until then it is load-bearing."""
+    from engine.marketing import copywriter as cw
+
+    payload, packet = _filing_payload(kind)
+    ctx = {"type": kind, "account": "flagship", "shape": "two_part",
+           "ticker": payload.get("cashtag", "").lstrip("$"),
+           "numbers_whitelist": list(packet["numbers_whitelist"]),
+           "top_facts": list(packet["facts"])[:3]}
+    faked = "A filing, not a call.\n\nDisclosed 6 days after the trade."
+    assert not [v for v in cw.validate_copy_v2(faked, ctx, headline="A filing, not a call.")
+                if "6" in v], (
+        "validate_copy_v2 now catches the bare lag integer on its own")
+
+
+def test_the_fact_lock_is_scoped_to_the_filing_lanes():
+    """Every OTHER kind keeps the bare-integer exemption. Applying gate 0.3 to
+    the whole estate would reject ordinary counting language ("3 names", "2
+    weeks") that no whitelist carries."""
+    from engine.marketing import copywriter as cw
+
+    payload, _ = _filing_payload("congress")
+    text = "Watching 3 names into the close.\n\nTwo weeks of this pattern now."
+    assert cw.filing_fact_lock_violations(text, payload, "signal") == []
+    assert cw.filing_fact_lock_violations(text, payload, "chart") == []
+    assert cw.FACT_LOCKED_KINDS == frozenset({"congress", "insider"})
+
+
+def test_style_prose_never_licenses_a_filing_number():
+    """The packet is the FACT half of the payload. A persona card that happens
+    to say "1 in 4 posts" must not license a 4-day lag."""
+    from engine.marketing import copywriter as cw
+
+    payload, _ = _filing_payload("congress")
+    payload["persona"] = {"voice": "at most 1 promise in 4 posts, 88 chars max"}
+    payload["shape_contract"] = "headline 90 chars, body 275 chars"
+    hits = cw.filing_fact_lock_violations(
+        "A filing, not a call.\n\nDisclosed 88 days after the trade.",
+        payload, "congress")
+    assert hits, "a number from the STYLE block licensed a filing claim"
+
+
+def test_the_fact_lock_fails_closed_when_it_cannot_run(monkeypatch):
+    """A gate that cannot run must refuse the post, not pass it. Dropping a
+    disclosure post costs one post; shipping an unchecked one costs a claim
+    about a document somebody signed."""
+    import builtins
+
+    from engine.marketing import copywriter as cw
+
+    payload, _ = _filing_payload("congress")
+    real_import = builtins.__import__
+
+    def _boom(name, *a, **k):
+        if name == "engine.marketing.hot_tape_llm":
+            raise ImportError("simulated thin-lane failure")
+        return real_import(name, *a, **k)
+
+    monkeypatch.setattr(builtins, "__import__", _boom)
+    hits = cw.filing_fact_lock_violations(
+        "A filing, not a call.\n\nDisclosed 47 days after the trade.",
+        payload, "congress")
+    assert hits and "unavailable" in hits[0], hits
+
+
+def test_the_writer_drops_a_post_whose_lag_it_invented(monkeypatch):
+    """END TO END through `write_posts_llm_v2`, the real production writer: a
+    model that returns a fabricated lag twice (draft + repair) yields a DROP at
+    the validate stage, not a post."""
+    from engine import llm_auth
+    from engine.marketing import copywriter as cw
+
+    payload, packet = _filing_payload("congress")
+    calls = {"n": 0}
+
+    class _Client:
+        class messages:
+            @staticmethod
+            def create(**kw):
+                calls["n"] += 1
+                raise AssertionError("unreachable: make_call is stubbed")
+
+    monkeypatch.setenv("MARKETING_LLM_ENABLED", "1")
+    monkeypatch.setattr(llm_auth, "build_providers",
+                        lambda *a, **k: [{"name": "oauth", "client": _Client(),
+                                          "model": "m", "env_var": "X", "cred": "x"}])
+
+    def _make_call(providers, fn, context=""):
+        calls["n"] += 1
+        return ('{"text": "A filing, not a call.\\n\\nRep. Jane Q. Public bought '
+                'NVDA. Disclosed 6 days after the trade."}'), None, "oauth"
+
+    monkeypatch.setattr(llm_auth, "make_call", _make_call)
+
+    from engine.marketing.congress_feed import congress_facts
+    ctx = cw.build_context({"type": "congress", "ticker": "NVDA",
+                            "account": "flagship"},
+                           persona=None, facts=congress_facts(dict(_CONGRESS_CAND)),
+                           extra=None)
+    ctx["type"] = "congress"
+    ctx["shape"] = "two_part"
+    out = cw.write_posts_llm_v2([ctx], {"llm": {"enabled": True}})
+
+    assert out and out[0].get("mode") == "dropped", out
+    assert out[0].get("stage") == "validate", out[0]
+    assert any("fact lock" in r for r in out[0].get("reasons") or []), out[0]
+    assert calls["n"] >= 2, "the writer must have spent its one repair round first"

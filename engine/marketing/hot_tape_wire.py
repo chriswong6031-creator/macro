@@ -756,16 +756,23 @@ _CONTRARIAN_VARIANTS: tuple[tuple[str, tuple[str, ...]], ...] = (
 #: T4 — the earnings reaction. The report is the FRAME and always leads or
 #: closes the first sentence; the differentiating stat is a separate clause,
 #: because "reported and moved 6%" is the flop shape with a calendar attached.
+#:
+#: EVERY VARIANT CARRIES {eps_clause} (M3). Two of these used to close on
+#: {dollar_clause} / {record_rank_clause} instead, which produced a post that
+#: announced an earnings reaction and never said what the company earned: the
+#: reader is told a report landed, told the stock moved, and left to look up the
+#: only number the post exists to deliver. The move-leading skeleton is KEPT (it
+#: is the one shape that does not open on the report) with the beat/miss added,
+#: so the family still rotates across two opening frames rather than collapsing
+#: to one; the old dollar_clause variant is dropped outright because with the
+#: eps line required it is the last variant here with extra words.
 _EARNINGS_VARIANTS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("{cashtag} {earnings_clause} and {dir_verb} {pct_abs} at {price} {live_marker}. "
      "{eps_clause}.",
      ("earnings_clause", "eps_clause", "live_marker")),
-    ("{cashtag} {earnings_clause} and {dir_verb} {pct_abs} {live_marker}. "
-     "{dollar_clause}.",
-     ("earnings_clause", "dollar_clause", "live_marker")),
     ("{cashtag} {dir_verb} {pct_abs} at {price} {live_marker}, and it {earnings_clause}. "
-     "{record_rank_clause}.",
-     ("earnings_clause", "record_rank_clause", "live_marker")),
+     "{eps_clause}.",
+     ("earnings_clause", "eps_clause", "live_marker")),
     ("{cashtag} {earnings_clause} and {dir_verb} {pct_abs} {live_marker}. "
      "{eps_clause}. {dollar_clause}.",
      ("earnings_clause", "eps_clause", "live_marker")),
@@ -817,11 +824,21 @@ DEVICE_LAW: dict[str, tuple[tuple[str, ...], frozenset[str]]] = {
     "streak_rarity": (("streak_clause", "live_marker"), frozenset()),
     "signal_fired": (("flagged_clause", "live_marker"), frozenset()),
     "contrarian_breadth": (("green_list", "live_marker"), frozenset()),
-    # The report is context, not a stat: the earnings family must ALSO carry a
-    # real §2.D device or it is the 95-view flop with a calendar entry on it.
-    "earnings_reaction": (("earnings_clause", "live_marker"), frozenset({
-        "eps_clause", "dollar_clause", "record_rank_clause",
-        "since_clause", "streak_clause"})),
+    # The report is context, not a stat, and on THIS family the stat is not
+    # interchangeable (M3): an earnings reaction states the beat or the miss.
+    # `eps_clause` was one of five acceptable devices, so a post could satisfy
+    # gate 0.2 with a dollar translation and never print the EPS line. It is
+    # mandatory now, which also empties the any-of set: eps_clause IS a §2.D
+    # device (D6), so demanding a second one on top would reject the shortest
+    # honest shape and leave the family with a single template.
+    #
+    # A packet with no FRESH surprise therefore cannot render an earnings post
+    # at all, and that is the correct refusal rather than a coverage loss:
+    # `_suppress_mover_overlap` now leaves such a name's mover twin alive, so a
+    # BMO reporter whose filing has not landed by 09:30 posts as the mover story
+    # it actually is. See engine/marketing/hot_tape.py.
+    "earnings_reaction": (("earnings_clause", "eps_clause", "live_marker"),
+                          frozenset()),
     # The brief's whole job is the mechanism (codex: "a mechanism makes context
     # worth reposting"), so it is mandatory and refusal is the alternative.
     "context_brief": (("mechanism_clause",),
@@ -874,19 +891,55 @@ def _row_symbols(f: dict, key: str) -> list[str]:
     return out
 
 
+#: The ONLY fact keys forwarded to the LLM desk (M6). An ALLOWLIST, because the
+#: fact dict is written by nine detectors and read by one gate that treats every
+#: number it can reach as admissible: `severity` and `provenance` were kept out
+#: by name, and everything a detector added afterwards walked straight in.
+#:
+#: The live example is the two-step brief. Its facts carry `alert_key`
+#: ("mover:MU:down:2026-07-29T14:05:00Z:0"), so 2026, 29, 14 and 05 were all
+#: licensed figures — a model could write "up 14" on a stock that moved 8% and
+#: clear gate 0.3 against an internal id. Counters and stamps that no clause
+#: renders (`prev_close`, `threshold_px`, `report_date`, `signal_id`,
+#: `refire_ratio`, `quote_ts_ms`, the `earn_next_*` pair) are out for the same
+#: reason: the model's job is to PHRASE the facts the template renders, and a
+#: number it cannot show is a number it cannot invent.
+#:
+#: The list is the union of every key the slot builders in this module read.
+#: `test_the_llm_packet_forwards_every_key_a_clause_renders` recomputes that
+#: union from the source and fails when a new device outgrows this constant.
+LLM_FACT_KEYS: frozenset[str] = frozenset({
+    # identity + labels
+    "ticker", "name", "sector", "subject_label", "kind", "dir", "direction",
+    "mechanism", "report_when", "index_ticker", "rsi_band", "plan_as_of",
+    # the tape
+    "pct", "pct_today", "price", "level", "median_pct", "index_pct",
+    "pct_from_ath_live", "ath", "ath_date", "biggest_1d",
+    # translations + devices
+    "dollar_delta_usd", "dollar_moved_usd", "milestone_usd", "eps",
+    "streak_extends", "len_today", "since", "window_start",
+    "rsi_live", "rsi_since",
+    # groups
+    "n_up", "n_down", "n_members", "n_green", "sectors_green",
+    "leaders", "green", "peers", "watch",
+})
+
+
 def llm_packet(packet: Any) -> dict:
     """The FactPacket dict handed to the LLM wire desk (P2 phrasing).
 
     ``engine.marketing.hot_tape_llm`` treats every number it can reach as
     engine-computed and admissible, so what this function does NOT include is
     the load-bearing half: ``severity`` (an internal ranking score, not a fact
-    about the tape) and the whole ``provenance`` block (build stamps and quote
-    epochs) stay out, or a model could write "87" and pass gate 0.3 with a
-    number no reader could ever check.
+    about the tape), the whole ``provenance`` block (build stamps and quote
+    epochs), and every fact key outside :data:`LLM_FACT_KEYS` — or a model could
+    write "87" and pass gate 0.3 with a number no reader could ever check.
 
     ``cashtags`` must list every ticker the copy may name — the LLM gate rejects
     any cashtag outside it as a smuggled comparison — so leaders, green names,
-    brief peers and the index proxy are all collected here.
+    brief peers and the index proxy are all collected here. That collection runs
+    over the FULL fact dict (a peer list is a cashtag source even though the
+    model may not quote its numbers); only the forwarded facts are filtered.
     """
     f = dict(getattr(packet, "facts", {}) or {})
     ticker = getattr(packet, "ticker", None) or f.get("ticker")
@@ -915,7 +968,7 @@ def llm_packet(packet: Any) -> dict:
         # instead of inventing one that contradicts the session (a 09:27 ET
         # "at the close" is the failure this table exists to prevent).
         "live_marker": _live_marker(packet),
-        "facts": f,
+        "facts": {k: v for k, v in f.items() if k in LLM_FACT_KEYS},
     }
     return out
 

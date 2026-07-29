@@ -81,6 +81,7 @@ __all__ = [
     "sentence_case",
     # congress lane
     "DEFAULTS",
+    "DISCLOSURE_FACT_ID",
     "LAG_FACT_ID",
     "lane_cfg",
     "load_congress",
@@ -89,6 +90,7 @@ __all__ = [
     "new_disclosures",
     "congress_facts",
     "assert_lag_disclosed",
+    "assert_disclosure_visible",
     "assert_no_score",
     "candidates",
 ]
@@ -401,6 +403,10 @@ _CONGRESS_REL = Path("data") / "quiver" / "congress.parquet"
 #: The fact id every packet must carry inside the writer-visible top three.
 LAG_FACT_ID = "congress_report_lag"
 
+#: "A disclosure names the trade, never the reason for it." Writer-visible by
+#: rank, not merely present in the packet (M4).
+DISCLOSURE_FACT_ID = "congress_disclosure_note"
+
 #: Config defaults (`config/marketing.yml` → `congress_lane:`). In-code floor so
 #: a caller shipping no config still gets the safe lane, not a firehose.
 DEFAULTS: dict[str, Any] = {
@@ -442,14 +448,26 @@ _DIGIT_RE = re.compile(r"\d")
 #: Money tokens inside a Range string ("$1,001 - $15,000").
 _MONEY_RE = re.compile(r"\$?\s*([\d,]+(?:\.\d+)?)")
 
-#: Internal tier slugs from `engine.congress_members` mapped to plain words.
-#: This mapping is their ONLY exit: the doctrine bans internal state names and
-#: raw slugs from user-facing copy, and "proven"/"watch"/"limited" are both.
-_TIER_WORDS: dict[str, str] = {
-    "proven": "has one of the chamber's better-documented disclosure records",
-    "watch": "has only a short disclosure history to read from",
-    "limited": "has too little disclosed history to judge by",
-}
+#: HOW MUCH THEY HAVE DISCLOSED, and nothing else (M5).
+#:
+#: This used to map the `congress_members` TIER to a phrase, and the tier is not
+#: an activity fact: "proven" means n_eff_valid >= 8 AND a shrunk hit rate above
+#: the pooled prior. So "has one of the chamber's better-documented disclosure
+#: records" was a PERFORMANCE claim wearing documentation clothes — an internal,
+#: horizon-inconsistent hit rate promoted to authority in copy printed beside a
+#: named politician, which is exactly what the epistemics law reserves for a
+#: gauntleted key. The tier mapping was also plainly wrong on its own terms: a
+#: member with twenty disclosures and a below-pooled rate is "watch", and
+#: "has only a short disclosure history" was false about them.
+#:
+#: The phrases now key on the COUNT alone. They say how much history we can see
+#: and pass no judgment on it: no "better", no "too little to judge by", nothing
+#: a reader could take as a rating of the member.
+_ACTIVITY_WORDS: tuple[tuple[int, str], ...] = (
+    (8, "has a long list of disclosed trades on file"),
+    (3, "has a short list of disclosed trades on file"),
+    (1, "has only a handful of disclosed trades on file"),
+)
 
 
 def lane_cfg(cfg: dict | None) -> dict[str, Any]:
@@ -531,17 +549,33 @@ def assert_no_score(text: str) -> None:
 
 
 def member_context(member: Any) -> str:
-    """Plain-word record context completing "<Name> …", or "" when we have none.
+    """Plain-word ACTIVITY context completing "<Name> …", or "" when we have none.
 
     *member* is a `congress_members.MemberStats` (or any dict/object carrying
-    ``tier``). Never a rate, never a tier slug, never the word "validated"
+    ``n_eff_valid``). Never a rate, never a tier slug, never the word "validated"
     (CI-guarded house law), never a claim the horizon problem cannot support.
+
+    M5: the phrase is derived from the DISCLOSURE COUNT, never from the tier.
+    The tier folds a hit rate into its definition, so tier-derived prose said
+    something about how well the member trades — a claim this data cannot carry
+    (see `engine/congress_members.py` on horizon inconsistency) and one no
+    reader asked for beside a politician's name. A packet with no count gets no
+    phrase at all: silence is the honest output, and this lane never blocks on
+    an enrichment source.
     """
     if member is None:
         return ""
     get = member.get if isinstance(member, dict) else (
         lambda k, d=None: getattr(member, k, d))
-    phrase = _TIER_WORDS.get(str(get("tier", "") or "").strip().lower())
+    try:
+        n_eff = int(get("n_eff_valid", None))
+    except (TypeError, ValueError):
+        return ""
+    phrase = ""
+    for floor, words in _ACTIVITY_WORDS:
+        if n_eff >= floor:
+            phrase = words
+            break
     if not phrase:
         return ""
     assert_no_score(phrase)
@@ -682,6 +716,24 @@ def assert_lag_disclosed(packet: dict) -> None:
             f"{TOP_FACTS_VISIBLE} facts by salience; visible ids were {visible}")
 
 
+def assert_disclosure_visible(packet: dict) -> None:
+    """Raise :class:`LagDisclosureError` unless "this is a filing, not a call"
+    is WRITER-VISIBLE (M4).
+
+    The same rank test the lag fact gets. The note was ranked below the member
+    record, so on every disclosure that carried activity context the sentence
+    keeping the post from reading as a recommendation was in the packet and
+    absent from the prompt.
+    """
+    facts = list((packet or {}).get("facts") or [])
+    ordered = sorted(facts, key=lambda f: (-int(f.get("salience") or 0), str(f.get("id") or "")))
+    visible = [str(f.get("id") or "") for f in ordered[:TOP_FACTS_VISIBLE]]
+    if DISCLOSURE_FACT_ID not in visible:
+        raise LagDisclosureError(
+            f"congress packet must carry {DISCLOSURE_FACT_ID!r} inside the top "
+            f"{TOP_FACTS_VISIBLE} facts by salience; visible ids were {visible}")
+
+
 def congress_facts(cand: dict) -> dict:
     """FactPacket for one disclosure: ``{facts, numbers_whitelist}``.
 
@@ -733,24 +785,30 @@ def congress_facts(cand: dict) -> dict:
         },
     ]
 
+    # M4 (applied to BOTH filing lanes, since the defect is identical): the
+    # activity context rides ON the trade fact rather than taking the third
+    # visible slot. Only three facts reach the writer, and the slot this used to
+    # occupy belongs to the disclosure note below — a member's disclosure volume
+    # is colour, and "this is a filing, not a call" is the sentence that keeps
+    # the post from reading as a recommendation.
     phrase = str(cand.get("member_context") or "").strip()
     if phrase:
         assert_no_score(phrase)
-        facts.append({
-            "id": "congress_member_record",
-            "text": f"{name} {phrase}.",
-            "salience": 8,
-        })
+        facts[0]["text"] = f"{facts[0]['text']} {name} {phrase}."
 
     facts.append({
-        "id": "congress_disclosure_note",
+        # WRITER-VISIBLE (M4), not merely present: ranked so the third slot is
+        # this, and `assert_disclosure_visible` refuses the packet if a future
+        # fact ever outranks it back out.
+        "id": DISCLOSURE_FACT_ID,
         "text": ("A disclosure names the trade, never the reason for it. "
                  "This is a filing, not a call."),
-        "salience": 2,
+        "salience": 8,
     })
 
     packet = fold_numbers(facts)
     assert_lag_disclosed(packet)
+    assert_disclosure_visible(packet)
     return packet
 
 

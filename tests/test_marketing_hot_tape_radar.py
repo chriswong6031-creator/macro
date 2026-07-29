@@ -872,20 +872,49 @@ class TestSafetyStack:
         assert OB.transition(item_id, "approved", actor="test", root=root) is False
         assert OB.current_statuses(root)[item_id] == "recalled"
 
+    #: The ONE sanctioned reference from a safety module into this program, and
+    #: it points the safe way: ``copywriter`` CALLS the wire desk's numeric gate
+    #: to make the filing lanes STRICTER (B4 — the reporting lag is a bare 1-2
+    #: digit integer, which is exactly the class validate_copy exempts, so the
+    #: one number a disclosure post exists to state honestly was the one number
+    #: the model could write freely). Nothing about Hot Tape's own posting path
+    #: changes, and `numeric_violations` can only ADD violations: there is no
+    #: argument to it that lets a post through that would otherwise be refused.
+    #: Scoped to that ONE symbol: any other hot_tape name in a safety module —
+    #: the radar, the emit path, a config knob — still fails this test.
+    _SANCTIONED_HOT_TAPE_REFS: dict[str, tuple[str, ...]] = {
+        "engine/marketing/copywriter.py": ("hot_tape_llm", "numeric_violations"),
+    }
+
     def test_safety_modules_are_not_edited_by_this_program(self):
         """The stack Hot Tape rides on is READ-ONLY to it (gate 0.5).
 
         A radar that "fixes" a sentinel rule to get its own post out has removed
         the guard, not passed it. These files are named so an edit shows up as a
-        failing test rather than as a quiet diff in an unrelated PR.
+        failing test rather than as a quiet diff in an unrelated PR — which is
+        what the allowance above is: a reviewed exception, recorded by name,
+        rather than a loosened rule.
         """
         for rel in ("engine/marketing/sentinel.py", "engine/marketing/live_verify.py",
                     "engine/marketing/outbox.py", "engine/marketing/copywriter.py",
                     "scripts/marketing_publisher.py", "config/marketing.yml"):
             path = REPO_ROOT / rel
             assert path.exists(), rel
-            assert "hot_tape" not in path.read_text(encoding="utf-8"), (
-                f"{rel} mentions hot_tape — the safety stack must stay untouched")
+            required = self._SANCTIONED_HOT_TAPE_REFS.get(rel)
+            hits = [ln for ln in path.read_text(encoding="utf-8").splitlines()
+                    if "hot_tape" in ln]
+            if required is None:
+                assert not hits, (
+                    f"{rel} mentions hot_tape — the safety stack must stay "
+                    f"untouched: {hits[:3]}")
+                continue
+            assert hits, (
+                f"{rel} no longer references hot_tape at all; delete its "
+                "allowance rather than leaving it as cover for the next edit")
+            for line in hits:
+                assert all(tok in line for tok in required), (
+                    f"{rel} reaches into hot_tape for something other than "
+                    f"{'/'.join(required)}: {line.strip()!r}")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1060,6 +1089,54 @@ class TestLLMPhrasing:
         out = HW.llm_packet(packet)
         assert out["cashtag"] == "$MU"
         assert out["cashtags"] == ["$MU", "$SNDK", "$STX"]
+
+    def test_the_llm_packet_excludes_the_alert_key_and_the_counters(self):
+        """M6. `severity` and `provenance` were kept out BY NAME, so every fact
+        key a later detector added walked straight into the admissible set. The
+        two-step brief's `alert_key` is the live example: an internal id whose
+        digits ("...:2026-07-29T14:05:00Z:0") licensed 2026, 29, 14 and 05 as
+        figures the model could write about a stock that moved 8%."""
+        from engine.marketing.hot_tape_llm import numeric_violations
+
+        packet = FactPacket(
+            trigger="context_brief", key="brief:mover:MU:down:x:0",
+            fired_at=NOW.strftime("%Y-%m-%dT%H:%M:%SZ"), session="rth",
+            ticker="MU", name="Micron", sector="Technology", direction="down",
+            severity=91.0,
+            facts={"ticker": "MU", "pct": -8.2, "price": 92.0,
+                   "alert_key": "mover:MU:down:2026-07-29T14:05:00Z:0",
+                   "alert_trigger": "mover_drop", "subject": "MU",
+                   "mechanism": "single_name",
+                   "peers": [["SNDK", -0.3], ["STX", -0.4]]},
+            provenance={})
+        out = HW.llm_packet(packet)
+
+        for key in ("alert_key", "alert_trigger", "subject"):
+            assert key not in out["facts"], key
+        assert "2026-07-29T14:05:00Z" not in json.dumps(out)
+        # ...and the gate that reads this packet now REJECTS those digits.
+        assert numeric_violations("$MU is down 14% right now.", out)
+        assert numeric_violations("$MU has fallen 05 sessions running.", out)
+        # The real number still passes, so this is a narrowing, not a muzzle.
+        assert numeric_violations("$MU is down 8.2% at $92.", out) == []
+        # Peers stay a cashtag source even though their numbers are not quotable.
+        assert out["cashtags"] == ["$MU", "$SNDK", "$STX"]
+
+    def test_the_llm_packet_forwards_every_key_a_clause_renders(self):
+        """The allowlist's staleness guard: a new device that reads a new fact
+        key must be added to LLM_FACT_KEYS, or the model would be told to phrase
+        a fact whose number it is then rejected for using."""
+        import re
+
+        src = (REPO_ROOT / "engine" / "marketing" / "hot_tape_wire.py").read_text(
+            encoding="utf-8")
+        read = set(re.findall(r'(?:f|facts|src)(?:\.get\(|\[)"([a-z_0-9]+)"', src))
+        read |= set(re.findall(r'_row_symbols\(f, "([a-z_0-9]+)"\)', src))
+        assert read, "the scan found nothing — the regex has rotted"
+        missing = sorted(read - HW.LLM_FACT_KEYS)
+        assert not missing, (
+            f"these fact keys are rendered by a clause but withheld from the "
+            f"model that must phrase them: {missing}")
 
     def test_the_llm_block_comes_from_config_yml_not_the_radar_switch(self, tmp_path):
         """config/hot_tape.yml's top-level `enabled` is the RADAR's switch.
@@ -1238,6 +1315,24 @@ def _brief_items(root: Path) -> list[dict]:
             if (i.get("source") or {}).get("trigger") == HT.BRIEF_TRIGGER]
 
 
+def _post_alert(root: Path, *, now=NOW) -> str:
+    """Walk the pass's alert to `posted` the way the publisher would.
+
+    M2: a brief requires its alert to have POSTED, not merely to be sitting in
+    the queue. A brief is the second half of a two-step publish ("here is why
+    the thing you just saw matters"), so an alert still waiting on the
+    publisher's gates has no first half yet, and one that is quarantined there
+    never will. Every fixture below that expects a brief therefore has to post
+    its alert first, and the ones that expect NO brief post it too, so the
+    reason under test (floor, age, mechanism, demo) is the reason that fires.
+    """
+    item = next(i for i in OB.read_items(root)
+                if (i.get("source") or {}).get("trigger") != HT.BRIEF_TRIGGER)
+    OB.transition(item["id"], "approved", actor="test", root=root, now=now)
+    OB.transition(item["id"], "posted", actor="test", root=root, now=now)
+    return item["id"]
+
+
 class TestTwoStepBrief:
     def test_the_brief_follows_on_a_LATER_tick_never_the_alert_pass(
             self, tmp_path, monkeypatch, capsys):
@@ -1249,6 +1344,7 @@ class TestTwoStepBrief:
         assert len(alerts) == 1
         assert alerts[0]["source"]["severity"] >= 90
         assert _brief_items(root) == []            # not in the alert's own pass
+        _post_alert(root)
         capsys.readouterr()
 
         RADAR.run(root, now=NOW + timedelta(minutes=5), fetcher=_no_fetch)
@@ -1273,6 +1369,7 @@ class TestTwoStepBrief:
         root = _brief_root(tmp_path)
         _stub_chart(monkeypatch)
         RADAR.run(root, now=NOW, fetcher=_no_fetch)
+        _post_alert(root)
         RADAR.run(root, now=NOW + timedelta(minutes=5), fetcher=_no_fetch)
         assert len(_brief_items(root)) == 1
 
@@ -1287,6 +1384,7 @@ class TestTwoStepBrief:
                            hot_tape_cfg="two_step:\n  min_severity: 101\n")
         _stub_chart(monkeypatch)
         RADAR.run(root, now=NOW, fetcher=_no_fetch)
+        _post_alert(root)
         RADAR.run(root, now=NOW + timedelta(minutes=5), fetcher=_no_fetch)
         assert _brief_items(root) == []
 
@@ -1294,6 +1392,7 @@ class TestTwoStepBrief:
         root = _brief_root(tmp_path)
         _stub_chart(monkeypatch)
         RADAR.run(root, now=NOW, fetcher=_no_fetch)
+        _post_alert(root)
 
         RADAR.run(root, now=NOW + timedelta(minutes=90), fetcher=_no_fetch)
 
@@ -1305,6 +1404,7 @@ class TestTwoStepBrief:
         RADAR.run(root, now=NOW, fetcher=_no_fetch)
         alert = OB.read_items(root)[0]
         assert alert["account"] == "flagship"       # severity >= 85 mirrors
+        _post_alert(root)
 
         RADAR.run(root, now=NOW + timedelta(minutes=5), fetcher=_no_fetch)
 
@@ -1316,6 +1416,7 @@ class TestTwoStepBrief:
         root = _brief_root(tmp_path, peer_pct=-7.5)
         _stub_chart(monkeypatch)
         RADAR.run(root, now=NOW, fetcher=_no_fetch)
+        _post_alert(root)
         RADAR.run(root, now=NOW + timedelta(minutes=5), fetcher=_no_fetch)
         briefs = _brief_items(root)
         assert briefs, "no brief filed"
@@ -1326,6 +1427,7 @@ class TestTwoStepBrief:
         root = _brief_root(tmp_path, peers=False)
         _stub_chart(monkeypatch)
         RADAR.run(root, now=NOW, fetcher=_no_fetch)
+        _post_alert(root)
         capsys.readouterr()
 
         RADAR.run(root, now=NOW + timedelta(minutes=5), fetcher=_no_fetch)
@@ -1338,6 +1440,7 @@ class TestTwoStepBrief:
         root = _brief_root(tmp_path)
         _stub_chart(monkeypatch)
         RADAR.run(root, now=NOW, fetcher=_no_fetch)
+        _post_alert(root)
         assert RADAR.pending_briefs(
             root, fired_today=HT.load_fired(root, DAY),
             live={"quotes": {}}, pack=None, heatmap=None,
@@ -1361,12 +1464,67 @@ class TestTwoStepBrief:
         root = _brief_root(tmp_path)
         _stub_chart(monkeypatch)
         RADAR.run(root, now=NOW, fetcher=_no_fetch)
+        _post_alert(root)
         calls = _fake_phraser(monkeypatch)
 
         RADAR.run(root, now=NOW + timedelta(minutes=5), fetcher=_no_fetch)
 
         triggers = [c["trigger"] for c in calls]
         assert HT.BRIEF_TRIGGER in triggers, triggers
+
+    def test_an_alert_that_never_POSTED_earns_no_brief(self, tmp_path, monkeypatch):
+        """M2. `queued` is not `posted`: the publisher has not run yet, and its
+        gates (copy, cap, tape, kill switch) can still quarantine the alert. A
+        brief filed against a queued alert is a "why this matters" for a post
+        that may never exist."""
+        root = _brief_root(tmp_path)
+        _stub_chart(monkeypatch)
+        RADAR.run(root, now=NOW, fetcher=_no_fetch)
+        alert = OB.read_items(root)[0]
+        assert alert["status"] == "queued" if "status" in alert else True
+
+        # No walk to `posted` this time: the alert sits in the queue.
+        RADAR.run(root, now=NOW + timedelta(minutes=5), fetcher=_no_fetch)
+        assert _brief_items(root) == []
+
+        # ...and the moment it posts, the same pass produces the brief, so this
+        # is a WAIT, not a kill.
+        _post_alert(root)
+        RADAR.run(root, now=NOW + timedelta(minutes=10), fetcher=_no_fetch)
+        assert len(_brief_items(root)) == 1
+
+    def test_an_approved_but_unposted_alert_earns_no_brief(self, tmp_path,
+                                                           monkeypatch):
+        """The near-miss spelling: `approved` reads like a green light and is
+        not one. The item is cleared to post and has not posted."""
+        root = _brief_root(tmp_path)
+        _stub_chart(monkeypatch)
+        RADAR.run(root, now=NOW, fetcher=_no_fetch)
+        alert = OB.read_items(root)[0]
+        OB.transition(alert["id"], "approved", actor="test", root=root, now=NOW)
+
+        RADAR.run(root, now=NOW + timedelta(minutes=5), fetcher=_no_fetch)
+
+        assert _brief_items(root) == []
+
+    def test_an_alert_outranks_a_brief_in_the_queue(self, tmp_path, monkeypatch):
+        """M2, second half. The publisher considers items by (priority,
+        scheduled_at, id). At equal priority an older brief would be picked up
+        ahead of a fresh alert purely on its timestamp, which inverts the whole
+        point of an intraday wire."""
+        root = _brief_root(tmp_path)
+        _stub_chart(monkeypatch)
+        RADAR.run(root, now=NOW, fetcher=_no_fetch)
+        _post_alert(root)
+        RADAR.run(root, now=NOW + timedelta(minutes=5), fetcher=_no_fetch)
+
+        alerts = [i for i in OB.read_items(root)
+                  if (i.get("source") or {}).get("trigger") != HT.BRIEF_TRIGGER]
+        briefs = _brief_items(root)
+        assert alerts and briefs
+        assert all(i["priority"] == 1 for i in alerts), [i["priority"] for i in alerts]
+        assert all(i["priority"] == 2 for i in briefs), [i["priority"] for i in briefs]
+        assert briefs[0]["priority"] > alerts[0]["priority"]
 
     def test_briefs_have_their_own_budget_and_never_steal_an_alert_slot(self):
         """An alert is time-critical; a brief must not cost it a slot."""

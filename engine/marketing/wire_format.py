@@ -152,3 +152,96 @@ def validate_length(text: str, fmt: str, *, cfg: dict | None = None) -> list[str
             violations.append(f"flash {sc} sentences > max {max_sentences}")
 
     return violations
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Platform clamp — what actually fits in ONE post
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: X's hard cap. ``social_publisher.validate_postable`` returns "over_280:<n>"
+#: above it and the publisher QUARANTINES the item, so this is not a style
+#: budget: a post over it does not exist.
+X_POST_MAX_CHARS = 280
+
+#: Sentence boundary for the clamp: terminal punctuation followed by whitespace.
+#: Abbreviations are masked first (same list ``_count_sentences`` uses), so
+#: "Rep. Public bought" is never treated as two sentences.
+_SENT_SPLIT_RE = re.compile(r"(?<=[.!?])\s+")
+
+
+def clamp_for_x(
+    headline: str,
+    body: str,
+    *,
+    attribution: str = "",
+    tape_stamp: str = "",
+    cap: int = X_POST_MAX_CHARS,
+) -> dict:
+    """The TEXT to post to X for a (headline, body) press item.
+
+    THE DEFECT THIS CLOSES. The outbox text is ``headline + blank line + body``
+    (``outbox.compose_text``) but the wire budgets only ever measured the BODY,
+    and ``wire_deep``'s budget is 400-700 characters. So every deep item composed
+    to ~480 characters, cleared its own validator, entered the queue, and was
+    quarantined at post time by the platform cap. The lane looked productive and
+    its best-researched format had never once reached the timeline.
+
+    THE LADDER, in order, stopping at the first rung that fits:
+
+      1. ``headline + body`` unchanged (what a flash almost always is);
+      2. ``body`` alone. The deterministic summary RESTATES the headline, so on
+         that path the prefix is pure duplication; on the LLM path the body is a
+         restatement of the same source. Dropping it costs no fact and no
+         attribution, both of which live in the body;
+      3. the longest WHOLE-SENTENCE prefix of the body, with the attribution and
+         tape clauses re-attached, so the post never ends mid-claim and never
+         loses its source line;
+      4. nothing. "" means this item cannot be posted honestly at this length;
+         the caller skips the X emission and the rail still carries it in full.
+
+    Truncating mid-sentence is deliberately absent from the ladder: a wire post
+    cut at "officials weigh a military resp" is worse than no post.
+
+    Returns ``{"text", "clamped", "reason"}``; ``text == ""`` is rung 4.
+    """
+    headline = str(headline or "").strip()
+    body = str(body or "").strip()
+    joined = "\n\n".join(p for p in (headline, body) if p)
+    if len(joined) <= cap:
+        return {"text": joined, "clamped": False, "reason": ""}
+
+    if body and len(body) <= cap:
+        return {"text": body, "clamped": True,
+                "reason": f"headline prefix dropped ({len(joined)} > {cap})"}
+
+    # Rung 3: peel the tail clauses off, trim the prose to whole sentences, then
+    # put the tail back. The separators are the ones compose_post writes, and the
+    # caller passes the exact strings, so this is a parse of our own output, not
+    # a guess at the model's.
+    head = body
+    tail = ""
+    stamp = str(tape_stamp or "").strip()
+    if stamp and head.endswith(f" · {stamp}"):
+        head = head[: -len(f" · {stamp}")].rstrip()
+        tail = f" · {stamp}"
+    attrib = str(attribution or "").strip()
+    if attrib and head.endswith(f" -- {attrib}"):
+        head = head[: -len(f" -- {attrib}")].rstrip()
+        tail = f" -- {attrib}{tail}"
+
+    budget = cap - len(tail)
+    kept: list[str] = []
+    for sentence in _SENT_SPLIT_RE.split(_ABBREV_RE.sub(
+            lambda m: m.group(0).replace(".", "\x00"), head)):
+        sentence = sentence.replace("\x00", ".").strip()
+        if not sentence:
+            continue
+        candidate = " ".join(kept + [sentence])
+        if len(candidate) > budget:
+            break
+        kept.append(sentence)
+    if not kept:
+        return {"text": "", "clamped": True,
+                "reason": f"not one sentence fits {cap} chars"}
+    return {"text": " ".join(kept) + tail, "clamped": True,
+            "reason": f"trimmed to {len(kept)} sentence(s) ({len(body)} > {cap})"}
