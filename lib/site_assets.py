@@ -56,6 +56,15 @@ def bake_theme_js(text: str) -> str:
     return text.replace(SUPABASE_TOKEN, supabase_cfg_json())
 
 
+def emit_theme_js(src: Path) -> str:
+    """Build the exact ``theme.js`` bytes served by production."""
+    text = bake_theme_js(src.read_text())
+    overlay_src = src.with_name("terminal_overlay.js")
+    if overlay_src.exists():
+        text = f"{text.rstrip()}\n\n{overlay_src.read_text().lstrip()}"
+    return text
+
+
 def copy_asset(asset: str, src: Path, dst_dir: Path) -> None:
     """Copy one template asset into a site dir, baking the production theme.
 
@@ -65,10 +74,5 @@ def copy_asset(asset: str, src: Path, dst_dir: Path) -> None:
     src.read_text())`` the builders used before. The emitted ``theme.js`` gets
     its Supabase config plus the separately maintained Terminal overlay source.
     """
-    text = src.read_text()
-    if asset == "theme.js":
-        text = bake_theme_js(text)
-        overlay_src = src.with_name("terminal_overlay.js")
-        if overlay_src.exists():
-            text = f"{text.rstrip()}\n\n{overlay_src.read_text().lstrip()}"
+    text = emit_theme_js(src) if asset == "theme.js" else src.read_text()
     (dst_dir / asset).write_text(text)
