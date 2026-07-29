@@ -2954,6 +2954,9 @@ jobs:
           if [ -f site/confluence_screener.html ]; then
             git add site/confluence_screener.html
           fi
+          if [ -f site/premiumdata/confluence_screener.json ]; then
+            git add site/premiumdata/confluence_screener.json
+          fi
           if [ -f site/og/confluence_screener.png ]; then
             git add site/og/confluence_screener.png
           fi
