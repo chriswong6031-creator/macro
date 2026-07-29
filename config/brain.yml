@@ -18,14 +18,10 @@ lanes:
       - anthropic        # haiku fallback only — model overridden below
     # DeepSeek renamed its models: "deepseek-chat" was retired and now 400s
     # ("supported API model names are deepseek-v4-pro or deepseek-v4-flash").
-    # Fast is the SPEED tier: v4-flash answers a one-liner in ~1.45s TTFT vs v4-pro's
-    # 3.68s. v4-pro stays as Pro's degraded rung (quality backstop). Verified live
-    # on the VPS key 2026-07-26.
-    deepseek_model: deepseek-v4-flash
-    # v4 models THINK by default (content[0] is a ThinkingBlock) — the compat endpoint
-    # accepts thinking={"type":"disabled"} (probed: 2.55s → 1.15s, ~4× fewer output
-    # tokens). Fast answers directly; only the pro lane pays for thinking.
-    deepseek_thinking: disabled
+    # Fast prioritises answer quality over the lower-latency Flash variant.  Keep
+    # V4 Pro's native thinking enabled; the former Flash + thinking-disabled route
+    # materially degraded ticker synthesis.
+    deepseek_model: deepseek-v4-pro
     # The failover chain IS the retry: the SDK's default max_retries=2 re-tries the
     # SAME dead key with backoff before the next candidate is ever tried.
     client_max_retries: 0
@@ -40,20 +36,22 @@ lanes:
     usage_lane: brain-fast
 
   pro:
-    # Primary: claude-opus-5 (newest Opus; same $5/$25 pricing as 4.8, 1M context,
-    #          adaptive thinking + effort). Fallback: claude-sonnet-4-6 when Opus unavailable.
+    # Primary: the attached ChatGPT account through Codex, GPT-5.6 Sol at high
+    # reasoning effort.  Opus 5 High is the only backup and is tried when the
+    # Codex account is cooling, rate-limited, or unavailable.
     provider_order:
+      - codex
       - oauth
       - anthropic
+    codex_source_model: gpt-5.6-sol
+    codex_reasoning_effort: high
     opus_model: claude-opus-5
-    fallback_model: claude-sonnet-4-6
     # Headroom for high-effort adaptive thinking (thinking tokens count against max_tokens).
     max_tokens: 8000
     tool_budget: 10
     usage_lane: brain-pro
-    # "High intensity" (operator 2026-07-25): adaptive thinking + high effort, applied ONLY on
-    # the Claude Pro path (opus/sonnet/fable). NEVER sent to DeepSeek (Anthropic-compat 400s on
-    # output_config/thinking) or Haiku 4.5 (effort + adaptive thinking unsupported → error).
+    # "High intensity" on the Opus backup. GPT-5.6 Sol receives the corresponding
+    # high setting through codex_reasoning_effort above.
     # See _model_supports_effort_thinking() in brain_gateway.py for the gate.
     effort: high        # low | medium | high | xhigh | max
     thinking: adaptive  # adaptive | off
@@ -69,27 +67,11 @@ lanes:
     # 240 timed out slow-but-healthy answers and then re-paid the wall per rung
     # (review MAJOR-1 on #3586).
     client_timeout_s: 600
-    # NOTE: pro's degraded deepseek-v4-pro rung keeps thinking ENABLED (quality backstop
-    # for a capped pool) — deliberately no `deepseek_thinking` key on this lane.
-    # Degraded-capacity fallbacks (operator 2026-07-25): when the OAuth pool is fully
-    # rate-capped on Opus/Sonnet (every subscription token 429s on the higher tiers —
-    # observed live), serve a REAL answer from these instead of a blank/"unavailable"
-    # turn. Tried in order AFTER opus/sonnet, so a healthy Opus quota always wins.
-    #   deepseek-v4-pro  — metered, strong, INDEPENDENT of the capped subscriptions
-    #   claude-haiku-4-5 — rides the same OAuth pool (works when a subscription's
-    #                      Opus/Sonnet weekly cap is hit but Haiku still has headroom)
-    # effort/thinking are auto-omitted for these (see _model_supports_effort_thinking).
-    degraded_models:
-      - deepseek-v4-pro
-      - claude-haiku-4-5
-    deepseek_key_env: DEEPSEEK_API_KEY
-    deepseek_base_url: https://api.deepseek.com/anthropic
     # OAuth-pool weekly ceiling for Mastermind (operator 2026-07-25): the metabolism
     # BUILD loop backs a key off at 85% weekly (budget_gate weekly_key_stop_pct); the
     # user-facing Mastermind chat may lean on a key up to this weekly-% before it is
     # de-prioritised, leaving a subscription reserve. Soft ordering only — never excludes
-    # a key (fail-open: a fully-capped pool still gets tried, then falls to the degraded
-    # models). Wired via build_providers → _oauth_pool_candidates; env override
+    # a key. Wired via build_providers → _oauth_pool_candidates; env override
     # MASTERMIND_WEEKLY_CEILING_PCT.
     weekly_ceiling_pct: 95
 

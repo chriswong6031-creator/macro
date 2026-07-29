@@ -4,9 +4,9 @@ Contract: MNZ masterplan §3.5 + Amendment 2.
 
 DESIGN PRINCIPLES
 -----------------
-* TWO LANES — 'fast' (DeepSeek deepseek-v4-pro → haiku fallback) and
-  'pro' (claude-opus-5 → sonnet fallback, high-effort adaptive thinking).  Lane
-  config in config/brain.yml (MNZ-R12: config-not-literals).
+* TWO LANES — 'fast' (DeepSeek V4 Pro → haiku fallback) and
+  'pro' (GPT-5.6 Sol High → Opus 5 High fallback).  Lane config in
+  config/brain.yml (MNZ-R12: config-not-literals).
 * GOVERNANCE (MNZ-R5): system prompt = read/explain over calibrated artifacts.
   NEVER originate signals/scores/escalations.  NEVER numeric probabilities.
   Direct buy/sell/hold recommendations ARE allowed (operator directive 2026-07-26),
@@ -104,17 +104,15 @@ def _load_brain_config(root: Path | None = None) -> dict:
                 "usage_lane": "brain-fast",
             },
             "pro": {
-                "provider_order": ["oauth", "anthropic"],
+                "provider_order": ["codex", "oauth", "anthropic"],
+                "codex_source_model": "gpt-5.6-sol",
+                "codex_reasoning_effort": "high",
                 "opus_model": "claude-opus-5",
-                "fallback_model": "claude-sonnet-4-6",
                 "max_tokens": 8000,
                 "tool_budget": 10,
                 "usage_lane": "brain-pro",
                 "effort": "high",
                 "thinking": "adaptive",
-                "degraded_models": ["deepseek-v4-pro", "claude-haiku-4-5"],
-                "deepseek_key_env": "DEEPSEEK_API_KEY",
-                "deepseek_base_url": "https://api.deepseek.com/anthropic",
                 "weekly_ceiling_pct": 95,
             },
         },
@@ -249,6 +247,7 @@ _BRAIN_TOOLS = frozenset({
     "read_special_situations",
     # Brain-gateway-specific tools (W6a)
     "get_quote",
+    "get_symbol_context",
     "get_symbol_intel",
     "get_symbol_backtest",
     "screen_universe",
@@ -290,6 +289,7 @@ _BRAIN_INTERNALS_TOOLS = frozenset({"context_search", "context_open"})
 # Brain-gateway-only tool names (not in ask_brain) — includes chart-command tools
 _BRAIN_ONLY_TOOLS = frozenset({
     "get_quote",
+    "get_symbol_context",
     "get_symbol_intel",
     "get_symbol_backtest",
     "screen_universe",
@@ -756,7 +756,7 @@ def _chart_command_tool_schemas() -> list[dict]:
 
 
 def _brain_tool_schemas() -> list[dict]:
-    """Return the 5 brain-gateway-only tool schemas (W6a; excludes chart-command tools added separately)."""
+    """Return brain-gateway-only schemas (excluding separately gated chart tools)."""
     return [
         {
             "name": "get_quote",
@@ -769,6 +769,28 @@ def _brain_tool_schemas() -> list[dict]:
                 "type": "object",
                 "properties": {
                     "symbol": {"type": "string", "description": "Ticker symbol (e.g. 'NVDA')"},
+                },
+                "required": ["symbol"],
+            },
+        },
+        {
+            "name": "get_symbol_context",
+            "description": (
+                "Read one current, cross-region ticker packet covering US, China A-shares, "
+                "Hong Kong, Canada, and international symbols. It includes current price "
+                "technicals (returns, moving averages, RSI, MACD), regional basket/sector "
+                "leadership, the What To Act On Now action and score, and any older dated "
+                "Weinstein-stage evidence. Call this first for ticker analysis, especially "
+                "for exchange-qualified symbols such as 600036.SH/.SS, 0700.HK, SHOP.TO, "
+                "or 7203.T."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "symbol": {
+                        "type": "string",
+                        "description": "Exchange-qualified or US ticker symbol",
+                    },
                 },
                 "required": ["symbol"],
             },
@@ -1018,17 +1040,439 @@ def _brain_tool_schemas() -> list[dict]:
 # ---------------------------------------------------------------------------
 
 def _safe_symbol(symbol: str) -> str:
-    """Sanitize a symbol: uppercase, alphanumeric + dot/dash, max 10 chars.
+    """Sanitize and canonicalize a symbol for local artifact lookup.
 
-    Dots are allowed for tickers like BRK.B but consecutive dots (path traversal)
-    are collapsed to a single dot and leading/trailing dots are stripped.
+    Accepts common vendor aliases (``600036.SH`` / ``SSE:600036``) and maps
+    them to the Yahoo/artifact convention (``600036.SS``). Dots remain valid
+    for tickers such as BRK.B; traversal-like repeated dots are collapsed.
     """
-    clean = re.sub(r"[^A-Z0-9.\-]", "", symbol.upper())
+    raw = str(symbol or "").strip().upper()
+    prefixed = re.fullmatch(r"(SSE|SHSE|SZSE|HKEX|TSX|TSXV):([A-Z0-9.\-]+)", raw)
+    if prefixed:
+        exchange, ticker = prefixed.groups()
+        suffix = {
+            "SSE": "SS",
+            "SHSE": "SS",
+            "SZSE": "SZ",
+            "HKEX": "HK",
+            "TSX": "TO",
+            "TSXV": "V",
+        }[exchange]
+        raw = f"{ticker}.{suffix}"
+
+    clean = re.sub(r"[^A-Z0-9.\-]", "", raw)
     # Collapse repeated dots (prevent path traversal artifacts like '..')
     clean = re.sub(r"\.{2,}", ".", clean)
     # Strip leading/trailing dots
     clean = clean.strip(".")
-    return clean[:10]
+    if clean.endswith(".SH"):
+        clean = clean[:-3] + ".SS"
+    if clean.endswith(".HK"):
+        stem = clean[:-3]
+        if stem.isdigit():
+            clean = f"{stem.zfill(4)}.HK"
+    return clean[:24]
+
+
+_QUALIFIED_SYMBOL_RE = re.compile(
+    r"(?<![A-Z0-9])([A-Z0-9][A-Z0-9\-]{0,15}\."
+    r"(?:SH|SS|SZ|HK|TO|V|T|NS|BO|L|PA|DE|F|MI|MC|AS|BR|SW|ST|CO|HE|OL|IR|"
+    r"KS|KQ|TW|AX|SI|JK|KL))(?![A-Z0-9])",
+    re.IGNORECASE,
+)
+_PREFIXED_SYMBOL_RE = re.compile(
+    r"(?<![A-Z0-9])(SSE|SHSE|SZSE|HKEX|TSX|TSXV):([A-Z0-9.\-]{1,18})(?![A-Z0-9])",
+    re.IGNORECASE,
+)
+
+
+def _explicit_symbol_from_message(message: str) -> str:
+    """Return an exchange-qualified ticker explicitly named in a user turn."""
+    text = str(message or "")
+    m = _PREFIXED_SYMBOL_RE.search(text)
+    if m:
+        return _safe_symbol(f"{m.group(1)}:{m.group(2)}")
+    m = _QUALIFIED_SYMBOL_RE.search(text)
+    if m:
+        return _safe_symbol(m.group(1))
+    # A-share users often type only the six-digit code. Restrict this inference
+    # to valid leading digits so dates and ordinary numbers do not become tickers.
+    m = re.search(r"(?<!\d)([036]\d{5})(?!\d)", text)
+    if m:
+        code = m.group(1)
+        return f"{code}.SS" if code[0] in {"5", "6", "9"} else f"{code}.SZ"
+    return ""
+
+
+def _turn_symbol(message: str, context: dict | None) -> str:
+    """Explicit ticker text wins over a potentially stale page-context chip."""
+    return _explicit_symbol_from_message(message) or _safe_symbol(
+        str((context or {}).get("symbol") or "")
+    )
+
+
+def _round_metric(value: Any, digits: int = 2) -> float | None:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number != number:
+        return None
+    return round(number, digits)
+
+
+def _load_symbol_closes(symbol: str, root: Path) -> tuple[list[str], list[float]] | None:
+    """Read current daily closes across US, China, HK, Canada, and intl stores."""
+    try:
+        import pandas as pd  # noqa: PLC0415
+    except Exception:  # noqa: BLE001
+        return None
+
+    direct = (
+        root / "data" / "baskets" / "ohlcv" / f"{symbol}.parquet",
+        root / "data" / "stocks" / f"{symbol}.parquet",
+        root / "data" / "china_stocks" / f"{symbol}.parquet",
+        root / "data" / "hk_stocks" / f"{symbol}.parquet",
+    )
+    for path in direct:
+        if not path.exists():
+            continue
+        try:
+            frame = pd.read_parquet(path, columns=["close"])
+            series = frame["close"].sort_index().dropna()
+            if len(series) >= 2:
+                return [str(x)[:10] for x in series.index], [float(x) for x in series]
+        except Exception:  # noqa: BLE001
+            continue
+
+    suffix = symbol.rsplit(".", 1)[-1] if "." in symbol else ""
+    if suffix in {"SS", "SZ"}:
+        wide = root / "data" / "china_search" / "closes.parquet"
+    elif suffix == "HK":
+        wide = root / "data" / "hk_search" / "closes_deep.parquet"
+    elif suffix in {"TO", "V"}:
+        wide = root / "data" / "canada_search" / "closes.parquet"
+    elif suffix:
+        wide = root / "data" / "intl_search" / "closes.parquet"
+    else:
+        return None
+    if not wide.exists():
+        return None
+    try:
+        frame = pd.read_parquet(wide, columns=[symbol])
+        series = frame[symbol].sort_index().dropna()
+        if len(series) >= 2:
+            return [str(x)[:10] for x in series.index], [float(x) for x in series]
+    except Exception:  # noqa: BLE001
+        pass
+    return None
+
+
+def _ema_series(values: list[float], period: int) -> list[float]:
+    if not values:
+        return []
+    alpha = 2.0 / (period + 1.0)
+    out = [float(values[0])]
+    for value in values[1:]:
+        out.append(alpha * float(value) + (1.0 - alpha) * out[-1])
+    return out
+
+
+def _technical_snapshot(symbol: str, root: Path) -> dict:
+    loaded = _load_symbol_closes(symbol, root)
+    if not loaded:
+        return {}
+    dates, closes = loaded
+    last = closes[-1]
+
+    def _ret(sessions: int) -> float | None:
+        if len(closes) <= sessions or closes[-sessions - 1] == 0:
+            return None
+        return 100.0 * (last / closes[-sessions - 1] - 1.0)
+
+    def _sma(period: int) -> float | None:
+        if len(closes) < period:
+            return None
+        return sum(closes[-period:]) / period
+
+    rsi14 = None
+    if len(closes) >= 15:
+        changes = [closes[i] - closes[i - 1] for i in range(len(closes) - 14, len(closes))]
+        avg_gain = sum(max(x, 0.0) for x in changes) / 14.0
+        avg_loss = sum(max(-x, 0.0) for x in changes) / 14.0
+        if avg_loss == 0:
+            rsi14 = 100.0
+        else:
+            rsi14 = 100.0 - 100.0 / (1.0 + avg_gain / avg_loss)
+
+    macd_state = None
+    if len(closes) >= 35:
+        ema12 = _ema_series(closes, 12)
+        ema26 = _ema_series(closes, 26)
+        macd = [a - b for a, b in zip(ema12, ema26)]
+        signal = _ema_series(macd, 9)
+        macd_state = "bullish" if macd[-1] >= signal[-1] else "bearish"
+
+    sma20, sma50, sma200 = _sma(20), _sma(50), _sma(200)
+    above = {
+        "sma20": bool(sma20 is not None and last >= sma20),
+        "sma50": bool(sma50 is not None and last >= sma50),
+        "sma200": bool(sma200 is not None and last >= sma200),
+    }
+    known = [above[k] for k, v in (("sma20", sma20), ("sma50", sma50), ("sma200", sma200)) if v is not None]
+    if known and all(known):
+        trend = "above tracked moving averages"
+    elif len(known) >= 2 and not any(known):
+        trend = "below tracked moving averages"
+    else:
+        trend = "mixed / transition"
+
+    return {
+        "as_of": dates[-1],
+        "last": _round_metric(last, 4),
+        "returns_pct": {
+            "1d": _round_metric(_ret(1)),
+            "5d": _round_metric(_ret(5)),
+            "20d": _round_metric(_ret(20)),
+            "60d": _round_metric(_ret(60)),
+        },
+        "technicals": {
+            "sma20": _round_metric(sma20, 4),
+            "sma50": _round_metric(sma50, 4),
+            "sma200": _round_metric(sma200, 4),
+            "above": above,
+            "rsi14": _round_metric(rsi14, 1),
+            "macd_state": macd_state,
+            "trend": trend,
+        },
+    }
+
+
+def _basket_file_for_symbol(symbol: str, root: Path) -> Path | None:
+    suffix = symbol.rsplit(".", 1)[-1] if "." in symbol else ""
+    rel = {
+        "SS": "chinabasketdata/baskets.json",
+        "SZ": "chinabasketdata/baskets.json",
+        "HK": "hkbasketdata/baskets.json",
+        "TO": "canadabasketdata/baskets.json",
+        "V": "canadabasketdata/baskets.json",
+    }.get(suffix)
+    if rel is None and suffix:
+        rel = "intlbasketdata/baskets.json"
+    return root / "site" / rel if rel else None
+
+
+def _symbol_theme_context(symbol: str, root: Path) -> tuple[str | None, list[dict]]:
+    """Return the symbol's current regional basket and Act-Now context."""
+    path = _basket_file_for_symbol(symbol, root)
+    if path is None or not path.exists():
+        return None, []
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:  # noqa: BLE001
+        return None, []
+    intel = data.get("theme_intel") or {}
+    themes = {str(x.get("id") or ""): x for x in (intel.get("themes") or [])}
+    act_bucket: dict[str, str] = {}
+    for bucket, rows in (intel.get("act_now") or {}).items():
+        if not isinstance(rows, list):
+            continue
+        for row in rows:
+            if isinstance(row, dict) and row.get("id"):
+                act_bucket[str(row["id"])] = str(bucket)
+
+    found: list[dict] = []
+    for basket in data.get("baskets") or []:
+        member = next(
+            (
+                row for row in (basket.get("members") or [])
+                if _safe_symbol(str(row.get("symbol") or row.get("ticker") or "")) == symbol
+            ),
+            None,
+        )
+        if member is None:
+            continue
+        basket_id = str(basket.get("id") or "")
+        theme = themes.get(basket_id) or {}
+        perf = theme.get("perf") or basket.get("perf") or {}
+        mtf = theme.get("mtf") or {}
+        confluence = mtf.get("confluence") or {}
+        tf = mtf.get("tf") or {}
+        found.append({
+            "basket_id": basket_id,
+            "theme": theme.get("name") or basket.get("name"),
+            "theme_zh": theme.get("name_zh") or basket.get("name_zh"),
+            "benchmark": intel.get("bench_label") or data.get("benchmark_label"),
+            "score": theme.get("score", basket.get("score")),
+            "state": theme.get("label") or basket.get("label"),
+            "action": theme.get("reco_en") or str(theme.get("reco") or basket.get("reco") or "").upper(),
+            "what_to_act_on_now": act_bucket.get(basket_id),
+            "clean_entry": (
+                next(
+                    (
+                        row.get("clean_entry")
+                        for rows in (intel.get("act_now") or {}).values()
+                        if isinstance(rows, list)
+                        for row in rows
+                        if isinstance(row, dict) and str(row.get("id") or "") == basket_id
+                    ),
+                    None,
+                )
+            ),
+            "relative_returns_pct": {
+                horizon: _round_metric(100.0 * float((perf.get(horizon) or {}).get("rel")))
+                if (perf.get(horizon) or {}).get("rel") is not None else None
+                for horizon in ("5d", "20d", "60d")
+            },
+            "absolute_returns_pct": {
+                horizon: _round_metric(100.0 * float((perf.get(horizon) or {}).get("ret")))
+                if (perf.get(horizon) or {}).get("ret") is not None else None
+                for horizon in ("5d", "20d", "60d")
+            },
+            "stock_returns_pct": {
+                "5d": _round_metric(
+                    100.0 * float(member.get("ret_5d"))
+                    if member.get("ret_5d") is not None else None
+                ),
+                "20d": _round_metric(
+                    100.0 * float(member.get("ret_20d"))
+                    if member.get("ret_20d") is not None else None
+                ),
+            },
+            "multi_timeframe": {
+                "headline": confluence.get("headline"),
+                "grade": confluence.get("grade"),
+                "daily_rsi14": (tf.get("D") or {}).get("rsi14"),
+                "weekly_rsi14": (tf.get("W") or {}).get("rsi14"),
+            },
+            "reasons": (theme.get("reasons") or [])[:5],
+            "member_name": member.get("name"),
+            "as_of": intel.get("as_of") or data.get("as_of"),
+        })
+    found.sort(
+        key=lambda row: (
+            row.get("what_to_act_on_now") == "buy",
+            float(row.get("score") or 0),
+        ),
+        reverse=True,
+    )
+    return intel.get("as_of") or data.get("as_of"), found[:6]
+
+
+def _compact_stage_context(symbol: str, root: Path) -> dict:
+    """Read only the dated stage row needed to reconcile stale-vs-fresh evidence."""
+    path = root / "data" / "stage_analysis" / "backfill" / "equitydesk_overview.parquet"
+    if not path.exists():
+        return {}
+    try:
+        import pandas as pd  # noqa: PLC0415
+        cols = [
+            "ticker", "stage_flag", "stage_detailed", "weeks_in_stage",
+            "mansfield_rs", "industry_percentile", "as_of_date",
+        ]
+        frame = pd.read_parquet(path, columns=cols)
+        rows = frame[frame["ticker"].astype(str).str.upper() == symbol]
+        if rows.empty:
+            return {}
+        row = rows.iloc[0]
+        flag = int(row["stage_flag"]) if not pd.isna(row["stage_flag"]) else None
+        return {
+            "as_of": str(row.get("as_of_date"))[:10],
+            "stage": {
+                1: "Stage 1 — basing",
+                2: "Stage 2 — advancing",
+                3: "Stage 3 — topping",
+                4: "Stage 4 — declining",
+            }.get(flag),
+            "detail": row.get("stage_detailed"),
+            "weeks_in_stage": _round_metric(row.get("weeks_in_stage"), 0),
+            "mansfield_rs": _round_metric(row.get("mansfield_rs")),
+            "industry_percentile": _round_metric(row.get("industry_percentile"), 1),
+        }
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def _tool_get_symbol_context(params: dict, root: Path) -> dict:
+    """Current cross-region ticker, technical, theme, and dated-stage context."""
+    symbol = _safe_symbol(params.get("symbol") or "")
+    if not symbol:
+        return {"error": "symbol required"}
+    price = _technical_snapshot(symbol, root)
+    try:
+        theme_as_of, themes = _symbol_theme_context(symbol, root)
+    except Exception as exc:  # noqa: BLE001 — one malformed regional artifact must fail soft
+        log.warning("brain_gateway: regional symbol context failed for %s (%s)", symbol, exc)
+        theme_as_of, themes = None, []
+    stage = _compact_stage_context(symbol, root)
+    as_of = price.get("as_of") or theme_as_of or stage.get("as_of")
+    return {
+        "symbol": symbol,
+        "available": bool(price or themes or stage),
+        "as_of": as_of,
+        "price": price,
+        "themes": themes,
+        "stage_snapshot": stage,
+        "freshness_note": (
+            "Near-term conclusions must prefer the newest price/theme date and reconcile "
+            "older stage evidence explicitly instead of presenting it as current."
+        ),
+    }
+
+
+def _symbol_grounding_digest(symbol: str, root: Path) -> str:
+    """Compact deterministic per-ticker context injected into both chat surfaces."""
+    if not symbol:
+        return ""
+    snapshot = _tool_get_symbol_context({"symbol": symbol}, root)
+    if not snapshot.get("available"):
+        return ""
+    lines = [f"Ticker: {symbol}."]
+    price = snapshot.get("price") or {}
+    if price:
+        returns = price.get("returns_pct") or {}
+        tech = price.get("technicals") or {}
+        lines.append(
+            f"Price as of {price.get('as_of')}: {price.get('last')}; "
+            f"stock returns 5d {returns.get('5d')}%, 20d {returns.get('20d')}%, "
+            f"60d {returns.get('60d')}%."
+        )
+        lines.append(
+            f"Technicals: {tech.get('trend')}; SMA20 {tech.get('sma20')}, "
+            f"SMA50 {tech.get('sma50')}, SMA200 {tech.get('sma200')}; "
+            f"RSI14 {tech.get('rsi14')}; MACD {tech.get('macd_state')}."
+        )
+    for theme in (snapshot.get("themes") or [])[:3]:
+        rel = theme.get("relative_returns_pct") or {}
+        stock = theme.get("stock_returns_pct") or {}
+        mtf = theme.get("multi_timeframe") or {}
+        bucket = theme.get("what_to_act_on_now")
+        board = f"WHAT TO ACT ON NOW={bucket.upper()}" if bucket else "not on Act-Now board"
+        lines.append(
+            f"Theme {theme.get('theme')} ({theme.get('benchmark')}), as of {theme.get('as_of')}: "
+            f"{board}; score {theme.get('score')}; action {theme.get('action')}; "
+            f"theme relative 5d {rel.get('5d')}%, 20d {rel.get('20d')}%; "
+            f"this stock 5d {stock.get('5d')}%, 20d {stock.get('20d')}%; "
+            f"MTF {mtf.get('headline') or mtf.get('grade')}."
+        )
+    stage = snapshot.get("stage_snapshot") or {}
+    if stage:
+        lines.append(
+            f"Dated stage snapshot as of {stage.get('as_of')}: {stage.get('stage')}, "
+            f"{stage.get('weeks_in_stage')} weeks, Mansfield RS {stage.get('mansfield_rs')}, "
+            f"industry percentile {stage.get('industry_percentile')}."
+        )
+        if price.get("as_of") and stage.get("as_of") and price["as_of"] > stage["as_of"]:
+            lines.append(
+                "Freshness rule: the stage snapshot is older than the current price/theme "
+                "evidence. Reconcile the conflict; do not let the older stage label erase "
+                "the newer technical turn or sector leadership."
+            )
+    return (
+        "[CURRENT TICKER STATE — current local market data for BOTH dashboard and Terminal. "
+        "Ground the ticker call in this and distinguish stock returns from sector-relative returns. "
+        "Never name internal files/fields in the reply.]\n" + "\n".join(lines)
+    )
 
 
 def _tool_get_quote(params: dict, terminal_data_dir: Path, terminal_hub_url: str, root: Path) -> dict:
@@ -2766,6 +3210,8 @@ def _dispatch_brain_tool(
     if tool_name in _BRAIN_ONLY_TOOLS:
         if tool_name == "get_quote":
             return _tool_get_quote(tool_params, terminal_data_dir, terminal_hub_url, root)
+        if tool_name == "get_symbol_context":
+            return _tool_get_symbol_context(tool_params, root)
         if tool_name == "get_symbol_intel":
             return _tool_get_symbol_intel(tool_params, terminal_data_dir)
         if tool_name == "get_symbol_backtest":
@@ -3613,7 +4059,7 @@ def _build_lane_providers(lane: str, root: Path | None = None) -> list[dict]:
         fallback_model = lane_cfg.get("fallback_model") or "claude-haiku-4-5"
 
         ds_cfg = {
-            "provider_order": ["deepseek", "anthropic"],
+            "provider_order": lane_cfg.get("provider_order") or ["deepseek", "anthropic"],
             "deepseek_key_env": lane_cfg.get("deepseek_key_env") or "DEEPSEEK_API_KEY",
             "deepseek_base_url": lane_cfg.get("deepseek_base_url") or "https://api.deepseek.com/anthropic",
             "deepseek_model": deepseek_model,
@@ -3629,37 +4075,40 @@ def _build_lane_providers(lane: str, root: Path | None = None) -> list[dict]:
 
     if lane == "pro":
         opus_model = lane_cfg.get("opus_model") or "claude-opus-5"
-        fallback_model = lane_cfg.get("fallback_model") or "claude-sonnet-4-6"
 
         pro_cfg = {
-            "provider_order": ["oauth", "anthropic"],
+            "provider_order": lane_cfg.get("provider_order") or ["codex", "oauth", "anthropic"],
             "oauth_pool_lane": "brain-pro",
             # Mastermind weekly ceiling (config, not literal): pool keys past this
             # weekly-% sort last but still get tried (fail-open). None → lane default (95).
             "oauth_weekly_ceiling_pct": lane_cfg.get("weekly_ceiling_pct"),
             "opus_model": opus_model,
+            "codex_source_model": lane_cfg.get("codex_source_model") or "gpt-5.6-sol",
+            "codex_reasoning_effort": lane_cfg.get("codex_reasoning_effort") or "high",
             "usage_lane": usage_lane,
             **tuning,
         }
         providers = llm_auth.build_providers(pro_cfg, opus_model=opus_model)
 
-        # Append sonnet fallback via the anthropic key if opus is sole provider
-        # (make_call will try each in order; haiku/sonnet serves as a backstop)
-        if not any(p.get("model") == fallback_model for p in providers):
-            sonnet_cfg = {
+        # An explicitly configured same-family fallback remains supported for
+        # deployments that opt into one. The shipped Pro lane deliberately omits
+        # it: GPT-5.6 Sol High → Opus 5 High is the complete waterfall.
+        fallback_model = lane_cfg.get("fallback_model")
+        if fallback_model and fallback_model != opus_model and not any(
+            p.get("model") == fallback_model for p in providers
+        ):
+            fallback_cfg = {
                 "provider_order": ["anthropic"],
                 "opus_model": fallback_model,
+                "codex_provider": False,
                 "usage_lane": usage_lane,
                 **tuning,
             }
-            fallback_providers = llm_auth.build_providers(sonnet_cfg, opus_model=fallback_model)
+            fallback_providers = llm_auth.build_providers(fallback_cfg, opus_model=fallback_model)
             providers = providers + fallback_providers
 
-        # Degraded-capacity fallbacks: when the whole OAuth pool is rate-capped on
-        # Opus/Sonnet (every subscription token 429s on the higher tiers) AND no
-        # ANTHROPIC_API_KEY exists, the chain above is opus-only and blacks out. These
-        # rungs guarantee a REAL answer instead of a blank/"unavailable" turn. Tried
-        # LAST, so a healthy Opus quota always serves first.
+        # Optional legacy degraded rungs remain config-driven, but none are shipped
+        # for Pro: the operator selected Opus 5 High as the only Sol fallback.
         providers = providers + _pro_degraded_providers(lane_cfg, providers, usage_lane, root)
 
         # Cooled-key skip-ahead: a fully capped pool otherwise pays one 429 per opus key
@@ -4172,9 +4621,10 @@ def _run_brain_loop(
     internals_ok = _internals_allowed(user_email)
 
     # Fix #5: sanitize context fields before interpolation
-    raw_sym = (context or {}).get("symbol") or ""
     raw_page = (context or {}).get("page") or ""
-    safe_sym = _safe_symbol(raw_sym) if raw_sym else ""
+    # A symbol explicitly typed by the user wins over the page chip. The chip can
+    # be stale when a chart changes after widget boot.
+    safe_sym = _turn_symbol(message, context)
     # page: allow alnum, space, hyphen only; cap at 64 chars
     safe_page = re.sub(r"[^A-Za-z0-9 \-]", "", raw_page).strip()[:64]
     # panel: the on-page sub-view (e.g. a specific board/dialog); lowercase slug, cap 40
@@ -4205,9 +4655,15 @@ def _run_brain_loop(
         user_content = f"[Context: {', '.join(hints)}]\n\n{message}"
     # Prepend the current calibrated-state digest so the model always answers from real
     # data even if it doesn't call a read tool (robustness for the weaker Fast lane).
-    _digest = _grounding_digest(root)
-    if _digest:
-        user_content = f"{_digest}\n\n[USER QUESTION]\n{user_content}"
+    _digests = [
+        digest for digest in (
+            _grounding_digest(root),
+            _symbol_grounding_digest(safe_sym, root),
+        ) if digest
+    ]
+    if _digests:
+        _combined_digest = "\n\n".join(_digests)
+        user_content = f"{_combined_digest}\n\n[USER QUESTION]\n{user_content}"
 
     # Fix #4: filter client history — only role in {user,assistant} with non-empty str content
     def _filter_history(h: list[dict]) -> list[dict]:
@@ -4380,6 +4836,7 @@ _STAGE_LABELS: dict[str, tuple[str, str]] = {
 _TOOL_LABELS: dict[str, tuple[str, str]] = {
     # brain-gateway tools (market data, portfolio, charts)
     "get_quote":              ("Fetching the latest quote",     "获取最新行情"),
+    "get_symbol_context":     ("Reading the ticker setup",      "读取标的走势"),
     "get_symbol_intel":       ("Checking the current read",     "查看最新解读"),
     "get_symbol_backtest":    ("Reviewing the track record",    "回顾历史表现"),
     "screen_universe":        ("Screening the market",          "筛选市场"),
@@ -4459,7 +4916,7 @@ def _status_event(phase: str, t0: float, label: tuple[str, str] | None = None,
     if label is not None:
         ev["label_en"], ev["label_zh"] = label
     if detail:
-        detail = _safe_symbol(str(detail))
+        detail = _safe_symbol(str(detail))[:10]
         if detail:
             ev["detail"] = detail
     if n is not None:
@@ -4484,7 +4941,9 @@ def _tool_event(tool_name: str, tool_params: dict) -> str:
     label = _TOOL_LABELS.get(tool_name) or _TOOL_LABEL_FALLBACK
     ev: dict = {"type": "tool", "name": tool_name,
                 "label_en": label[0], "label_zh": label[1]}
-    detail = _safe_symbol(str(tool_params.get("symbol") or tool_params.get("ticker") or ""))
+    detail = _safe_symbol(
+        str(tool_params.get("symbol") or tool_params.get("ticker") or "")
+    )[:10]
     if detail:
         ev["detail"] = detail
     return f"data: {json.dumps(ev)}\n\n"
@@ -4593,9 +5052,9 @@ def _run_brain_loop_stream(
     internals_ok = _internals_allowed(user_email)
 
     # Fix #5: sanitize context fields before interpolation
-    raw_sym = (context or {}).get("symbol") or ""
     raw_page = (context or {}).get("page") or ""
-    safe_sym = _safe_symbol(raw_sym) if raw_sym else ""
+    # Explicit message ticker beats stale launch-time context on both surfaces.
+    safe_sym = _turn_symbol(message, context)
     safe_page = re.sub(r"[^A-Za-z0-9 \-]", "", raw_page).strip()[:64]
     # panel: the on-page sub-view (e.g. a specific board/dialog); lowercase slug, cap 40
     safe_panel = re.sub(r"[^a-z0-9\-]", "", str((context or {}).get("panel") or "").lower())[:40]
@@ -4624,9 +5083,15 @@ def _run_brain_loop_stream(
         user_content = f"[Context: {', '.join(hints)}]\n\n{message}"
     # Prepend the current calibrated-state digest so the model always answers from real
     # data even if it doesn't call a read tool (robustness for the weaker Fast lane).
-    _digest = _grounding_digest(root)
-    if _digest:
-        user_content = f"{_digest}\n\n[USER QUESTION]\n{user_content}"
+    _digests = [
+        digest for digest in (
+            _grounding_digest(root),
+            _symbol_grounding_digest(safe_sym, root),
+        ) if digest
+    ]
+    if _digests:
+        _combined_digest = "\n\n".join(_digests)
+        user_content = f"{_combined_digest}\n\n[USER QUESTION]\n{user_content}"
         # Digest text itself NEVER goes on the wire — only that we loaded it.
         yield _status_event("grounding", _t0, _STAGE_LABELS["grounding"])
 
