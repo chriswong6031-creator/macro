@@ -2238,6 +2238,22 @@ def content_plan(
                         marker_index=marker_index,
                         subtitle=subtitle,
                     )
+                elif svg is None:
+                    # Tape fallback (W1 CI fix 2026-07-29): when the v2 OHLCV
+                    # candlestick cannot load (name outside the parquet tree, or
+                    # a pyarrow-less env), a "watching, not buying yet" post used
+                    # to lose its chart here and then DEFER FOREVER at publish
+                    # under the ticker-post-carries-a-chart law. The markerless
+                    # v1 card is an honest line chart with no claim attached —
+                    # the BUY-labelled form stays signal-only, exactly as the
+                    # comment above rules.
+                    svg = render_signal_chart(
+                        ticker=ticker,
+                        dates=dates,
+                        closes=closes,
+                        marker_index=None,
+                        subtitle=f"{cashtag} · tape",
+                    )
                 if svg is None:
                     continue
 
