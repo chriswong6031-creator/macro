@@ -99,6 +99,39 @@ def test_product_family_is_public_in_every_caddy_html_path():
         )
 
 
+def test_confluence_lead_magnet_is_public_in_every_caddy_html_path():
+    """The free screener must never regress behind the account wall.
+
+    Its paid ticker rows are omitted server-side by the builder; the static page
+    is the intentionally public acquisition shell.
+    """
+    page = "/confluence_screener.html"
+    assert page in POLICY["public"]["exact"]
+    for matcher in (
+        "reg_html",
+        "reg_asset",
+        "gate_html",
+        "reg_html_err",
+        "reg_asset_err",
+        "gate_html_err",
+    ):
+        match = re.search(rf"@{matcher}\s*\{{(.*?)^\s*\}}", CADDY, flags=re.S | re.M)
+        assert match, f"Caddy matcher @{matcher} missing"
+        matcher_paths = {
+            token
+            for path_line in re.findall(
+                r"^\s*(?:not\s+)?path\s+([^\n]+)",
+                match.group(1),
+                flags=re.M,
+            )
+            for token in shlex.split(path_line)
+        }
+        assert page in matcher_paths, (
+            f"@{matcher} does not expose {page}; the free screener would be "
+            "registration-gated on this serving path"
+        )
+
+
 def test_public_policy_targets_exist():
     for path in POLICY["public"]["exact"]:
         if path == "/" or path.startswith(RUNTIME_ARTIFACT_PREFIXES):
