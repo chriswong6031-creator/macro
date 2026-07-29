@@ -666,7 +666,12 @@
     return _pdfLoad;
   }
 
-  /* Supabase Bearer — the exact helper site/mm_brain.js uses. */
+  /* Supabase Bearer — the exact helper site/mm_brain.js uses.
+     When theme.js has not executed yet this resolves with NO Authorization header,
+     so the caller silently gets the anonymous response. That is fine for the first
+     paint only: wire()'s MDXAuth-onChange registration (with its 'load' fallback)
+     owns re-issuing the gated reads once a Bearer is obtainable. Do not "fix" this
+     with a polling loop — the load-event fallback is the mechanism. */
   function withAuth(h) {
     h = h || {};
     if (!(window.MDXAuth && window.MDXAuth.client)) return Promise.resolve(h);
@@ -1265,9 +1270,27 @@
     var mo = new MutationObserver(function () { onLangChange(); });
     mo.observe(doc.documentElement, { attributes: true, attributeFilter: ['data-lang'] });
     // re-render feed on auth resolve so the teaser + quota/gate reflect the real session
-    if (window.MDXAuth && window.MDXAuth.onChange) window.MDXAuth.onChange(function () {
+    function onAuthResolved() {
       resolveTier();   // sets USER_TIER → re-renders the feed (teaser for non-Pro)
       if ($('overlay').classList.contains('open')) { refreshQuota(); if (!V.pdf) loadDocument(V.item); }
+    }
+    // window.MDXAuth is defined by theme.js. Since USER_TIER fails CLOSED ('anon'),
+    // missing this registration pins EVERY viewer — Pro included — on the public
+    // 3-summary preview forever, because nothing else ever calls resolveTier().
+    // Both scripts ship deferred (lib.pages.optimize_assets_text adds `defer`), so
+    // whichever tag comes first in the document wins; if theme.js has not executed
+    // yet, register on 'load' instead — the same fallback shape site/mm_brain.js
+    // boot() uses. MDXAuth.onChange replays the settled session, so a listener
+    // registered late still receives it.
+    if (window.MDXAuth && window.MDXAuth.onChange) window.MDXAuth.onChange(onAuthResolved);
+    else window.addEventListener('load', function () {
+      if (window.MDXAuth && window.MDXAuth.onChange) window.MDXAuth.onChange(onAuthResolved);
+      // boot()'s refreshFromApi() went out with no Authorization header (withAuth()
+      // resolves empty while MDXAuth is absent), so redo the gated reads now that a
+      // Bearer is obtainable. Anon stays on the preview: resolveTier() → 'anon' is a
+      // no-op re-render, and the unauthenticated catalog response is the same 3 items.
+      resolveTier();
+      refreshFromApi();
     });
   }
 
