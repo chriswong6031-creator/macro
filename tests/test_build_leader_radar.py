@@ -897,6 +897,23 @@ class TestLoadInsiderCluster:
         assert result.get("CCC") is None
 
 
+def _nyse_sessions(n: int, start: str) -> list[pd.Timestamp]:
+    """n consecutive NYSE SESSION timestamps from `start` (inclusive if it is one).
+
+    Neither calendar days nor pandas' freq="B" give sessions: "B" keeps exchange
+    holidays. Fixtures that need "N observations" must generate N real sessions or the
+    count they assert is not the count the session-filtered loader will see.
+    """
+    from lib import nyse_calendar
+    out: list[pd.Timestamp] = []
+    d = pd.Timestamp(start)
+    while len(out) < n:
+        if nyse_calendar.is_session(d.date()):
+            out.append(d)
+        d += pd.Timedelta(days=1)
+    return out
+
+
 class TestLoadOptionsSkew:
     """LRV-R1(c): _load_options_skew sign convention and young-data null."""
 
@@ -910,8 +927,12 @@ class TestLoadOptionsSkew:
     def test_calls_rich_positive_rr(self, tmp_path):
         """atm_call_iv > otm_put_iv → rr = positive (calls rich); above 80th pctile → True."""
         from scripts.build_leader_radar import _load_options_skew
-        # Create 25 dates so we exceed the 21-obs threshold
-        dates = pd.date_range("2026-01-02", periods=25, freq="B")
+        # 25 dates so we exceed the 21-obs threshold. SESSIONS, not freq="B":
+        # _load_options_skew session-filters its store (the #3721 weekend-row class —
+        # a non-session snapshot recomputes both IVs off a stale spot), and business
+        # days include exchange HOLIDAYS. 25 bdays from 2026-01-02 spans MLK Day, so
+        # this fixture used to describe 25 rows but only 24 observations.
+        dates = _nyse_sessions(25, "2026-01-02")
         rows = []
         for i, d in enumerate(dates):
             # calls rich: atm_call_iv > otm_put_iv → rr = 0.02 + small variation
@@ -935,7 +956,8 @@ class TestLoadOptionsSkew:
     def test_young_data_below_threshold_returns_null(self, tmp_path):
         """< 21 observations → rr_25d and rr_80th_pctile are None (young data)."""
         from scripts.build_leader_radar import _load_options_skew
-        dates = pd.date_range("2026-06-21", periods=16, freq="B")
+        # 16 SESSIONS (16 bdays from here span the July-3 holiday — see above)
+        dates = _nyse_sessions(16, "2026-06-22")
         rows = [
             {"date": d.date(), "underlying": "BBB", "asof": d.date(),
              "spot": 100.0, "tenor_days": 30, "atm_call_iv": 0.24,

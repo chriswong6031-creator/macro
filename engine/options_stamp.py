@@ -53,7 +53,7 @@ from typing import Callable
 import numpy as np
 import pandas as pd
 
-from lib import config
+from lib import config, nyse_calendar
 
 # ── nullable stamp schema (ruling A6/A9; W-C additions 2026-07-05; W-OVC 2026-07-17) ─
 # Order is the canonical column order for the ledger schema-union.
@@ -729,6 +729,26 @@ def stamp_options_state(
     if ivspread_df is None:
         loader = _ivspread_loader or _default_read_ivspread_snapshots
         ivspread_df = loader()
+
+    # ── SESSION GUARD (#3721 class, OIP E8 2026-07-29) ───────────────────────
+    # Every dated store this stamp reads accrues non-session rows, and those rows
+    # RECOMPUTE iv30 / spot / walls / skew off a stale carried-forward price — they are
+    # fabricated observations, not genuine closes.  Measured 2026-07-29:
+    # polygon_gex/summary_* ~11 of 39 dates, options_skew 8 of 28, options_ivspread
+    # 6 of 21, polygon_gex/chains 11 of 39 snapshot files.  Unfiltered they corrupt this
+    # module three ways: the PIT `date <= as_of` + `.iloc[-1]` pick can land on a
+    # Saturday recompute; `_vanna_hedge_5d_from_summary`'s positional `.iloc[-6]` and
+    # `_DOI_WINDOW`'s "today + 5 prior TRADING snapshots" stop meaning sessions; and a
+    # weekend chain snapshot enters the ΔOI slope as a duplicate day.
+    # Filtered HERE, at the single funnel, so both the disk defaults AND any injected
+    # reader/frame inherit one session-true view (the build_market_structure
+    # ._read_gex_spx / build_options_screener._load_gex_summary idiom).  Fail-open.
+    _raw_read_summary = read_summary
+    read_summary = lambda tk: nyse_calendar.session_rows(_raw_read_summary(tk))  # noqa: E731
+    skew_df = nyse_calendar.session_rows(skew_df, "date") if skew_df is not None else None
+    ivspread_df = (nyse_calendar.session_rows(ivspread_df, "date")
+                   if ivspread_df is not None else None)
+    chain_dates = nyse_calendar.session_dates(chain_dates) if chain_dates else chain_dates
 
     stamp = dict(_NULL_STAMP)
     # W1.3 fields from GEX summary

@@ -20,6 +20,7 @@ estimated and can move; data is community/Nasdaq-sourced, not official guidance.
 """
 from __future__ import annotations
 
+import argparse
 import json
 import logging
 import time
@@ -183,15 +184,74 @@ def fetch_earnings(force: bool = False, max_new: int = 120,
     return out
 
 
-if __name__ == "__main__":
+DEFAULT_MAX_NEW = 120     # surprise-history drip cap per run (~30s at 0.25s/call)
+
+
+def main(argv: list[str] | None = None) -> int:
+    """CLI entry point.  BARE `python -m collectors.equity_earnings` IS THE NIGHTLY.
+
+    Root-cause fix (E8/E5 sweep, 2026-07-29): this block used to read
+        ts = sys.argv[1:] or ["AAPL", "NVDA", "JPM"]
+        fetch_earnings(force=True, max_new=len(ts), tickers=ts)
+    i.e. a bare invocation ran a THREE-TICKER smoke test — and daily.yml's
+    collect_tail step invokes it bare.  So the "~66 weekday, whole-universe"
+    sweep the step comment promises had never run in production: the store held
+    1361 rows stamped 2026-06-19 and exactly 3 (AAPL/NVDA/JPM — the hardcoded
+    smoke list) stamped 2026-07-28.  Nasdaq was never the problem (probed live
+    the same day: 305/61/132 calendar rows for 07-30/07-31/08-03, HTTP 200).
+
+    A bare run now sweeps the real `_universe()`; a smoke test must name its
+    tickers explicitly (`python -m collectors.equity_earnings AAPL NVDA JPM`).
+    `--tickers` is the same thing with an explicit flag.
+    """
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+    ap = argparse.ArgumentParser(description="US earnings calendar + surprise-history sweep")
+    ap.add_argument("tickers", nargs="*", default=None,
+                    help="explicit tickers = SMOKE TEST (default: sweep the full universe)")
+    ap.add_argument("--tickers", dest="tickers_flag", default=None,
+                    help="comma-separated tickers (same as positional)")
+    ap.add_argument("--max-new", type=int, default=DEFAULT_MAX_NEW,
+                    help=f"surprise-history drip cap (default {DEFAULT_MAX_NEW})")
+    ap.add_argument("--force", action="store_true",
+                    help="refresh surprise history regardless of REFRESH_DAYS age")
+    args = ap.parse_args(argv)
+
+    ts: list[str] | None = None
+    if args.tickers_flag:
+        ts = [t.strip().upper() for t in args.tickers_flag.split(",") if t.strip()]
+    elif args.tickers:
+        ts = [t.strip().upper() for t in args.tickers if t.strip()]
+
+    if ts:
+        # Smoke path: force + a cap that matches the named list, as before.
+        df = fetch_earnings(force=True, max_new=len(ts), tickers=ts)
+        for t in ts:
+            if t in df.index:
+                r = df.loc[t]
+                surp = json.loads(r.get("surprises_json") or "[]")
+                print(f"\n{t}: next={r.get('next_date')} ({r.get('next_time')}) "
+                      f"est={r.get('eps_forecast')}")
+                for s in surp:
+                    print(f"   {s['qtr']}: actual {s['eps']} vs est {s['consensus']} "
+                          f"→ {s['surprise_pct']}%")
+        return 0
+
+    # Production path: whole universe, capped surprise drip.
+    df = fetch_earnings(force=args.force, max_new=args.max_new)
+    n = len(df)
+    if n == 0:
+        # Line-start annotation, never through a logger (tests/test_gh_annotation_line_start.py).
+        print("::warning title=earnings-sweep-empty::earnings sweep produced zero rows "
+              "(bot-wall or empty universe) — the previous cache stands", flush=True)
+        return 0
+    fresh = 0
+    if "as_of" in df.columns:
+        today = datetime.now(timezone.utc).date().isoformat()
+        fresh = int(df["as_of"].astype(str).str.startswith(today).sum())
+    print(f"equity_earnings: swept {n} tickers, {fresh} stamped today", flush=True)
+    return 0
+
+
+if __name__ == "__main__":
     import sys
-    ts = sys.argv[1:] or ["AAPL", "NVDA", "JPM"]
-    df = fetch_earnings(force=True, max_new=len(ts), tickers=ts)
-    for t in ts:
-        if t in df.index:
-            r = df.loc[t]
-            surp = json.loads(r.get("surprises_json") or "[]")
-            print(f"\n{t}: next={r.get('next_date')} ({r.get('next_time')}) est={r.get('eps_forecast')}")
-            for s in surp:
-                print(f"   {s['qtr']}: actual {s['eps']} vs est {s['consensus']} → {s['surprise_pct']}%")
+    sys.exit(main())

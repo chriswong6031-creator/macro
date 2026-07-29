@@ -51,7 +51,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from lib import config
+from lib import config, nyse_calendar
 
 log = logging.getLogger(__name__)
 
@@ -459,6 +459,10 @@ def _news_bull_display(closes: pd.DataFrame) -> tuple:
 def _skew_display() -> tuple:
     try:
         df = pd.read_parquet(config.data_dir() / "options_skew" / "snapshots.parquet")
+        # SESSION GUARD (#3721 class, OIP E8 2026-07-29): this store carried 8
+        # non-session dates of 28, and a weekend row recomputes IV off a stale spot.
+        # `date.max()` below would pick that Saturday as "the latest index put-skew".
+        df = nyse_calendar.session_rows(df, "date")
         idx = df[df["underlying"].isin(["SPX", "SPY", "QQQ"])]
         if idx.empty:
             return None, "accruing", "积累中"

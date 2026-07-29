@@ -32,7 +32,7 @@ from jinja2 import Environment, FileSystemLoader
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from lib import config  # noqa: E402
+from lib import config, options_coverage  # noqa: E402
 from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -360,6 +360,24 @@ def main() -> int:
         covered[m["grp"]] = covered.get(m["grp"], 0) + 1
     coverage = {g: {"covered": covered.get(g, 0), "total": t} for g, t in attempted.items()}
     coverage["__all__"] = {"covered": len(manifest), "total": len(rows)}
+    # OIP R8 — the shared options coverage object, ADDITIVE. Every per-group key and
+    # "__all__" above is untouched, and site/gex.js reads coverage by explicit key
+    # (COV["__all__"], COV[grp]) and never iterates, so nothing new renders. One
+    # comparable shape across the four options-family builders (lib/options_coverage.py);
+    # surfaces adopt it in a later OIP wave.
+    coverage["coverage_v1"] = options_coverage.coverage_object(
+        universe_name_en="Symbols with liquid options",
+        universe_name_zh="有活跃期权的标的",
+        universe_n=len(rows),
+        covered_n=len(manifest),
+        asof=str(date.today()),
+        sources=[
+            options_coverage.source(
+                "cboe_chains", "Option chains", "期权链",
+                asof=str(date.today()), n=len(manifest),
+            ),
+        ],
+    )
 
     (out_dir / "index.json").write_text(json.dumps(manifest, default=float, separators=(",", ":")))
     _write_archive_snapshot(manifest, config.data_dir())

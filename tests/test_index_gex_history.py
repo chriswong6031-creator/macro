@@ -184,11 +184,17 @@ def test_snapshot_attaches_context_when_history_present(monkeypatch):
     standing-regime persistence WITHOUT changing the current-day regime source."""
     from engine import market_gamma
 
+    # SIX SESSIONS. This fixture used to end on 2026-06-13, a SATURDAY, so
+    # _history_context saw 6 rows where the exchange calendar has 5 — and market_gamma
+    # now session-filters the history (the #3721 weekend-row class: `.iloc[-1]` is the
+    # standing reading and the percentile below is an own-history distribution, so both
+    # must be session-true). Mon 06-08 → Mon 06-15 gives six real sessions and keeps the
+    # last three 'short' (persistence 3) the assertions below depend on.
     hist = pd.DataFrame(
         {"net_gex_bn": [50.0, 40.0, 30.0, -5.0, -8.0, -8.5],
          "gamma_regime": ["long", "long", "long", "short", "short", "short"]},
         index=pd.to_datetime(["2026-06-08", "2026-06-09", "2026-06-10",
-                              "2026-06-11", "2026-06-12", "2026-06-13"]))
+                              "2026-06-11", "2026-06-12", "2026-06-15"]))
 
     def fake_read(group, name):
         if group == "cboe":

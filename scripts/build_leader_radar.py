@@ -52,7 +52,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config
-from lib.nyse_calendar import sessions_behind
+from lib.nyse_calendar import session_rows as nyse_calendar_session_rows, sessions_behind
 from lib.pages import write_page
 
 log = logging.getLogger(__name__)
@@ -804,6 +804,22 @@ def _load_options_skew(
     # Per-name: use latest observation only; compute 80th pctile over full history
     result: dict[str, dict] = {}
     date_col = "date" if "date" in df.columns else "asof"
+
+    # ── SESSION GUARD (#3721 class, OIP E8 2026-07-29) ────────────────────────
+    # data/options_skew/snapshots.parquet accrues rows on non-session days — 8 of 28
+    # dates as of this writing — and a weekend row recomputes both IVs off a stale
+    # carried-forward spot, so it is a fabricated observation. Here that corrupts all
+    # THREE outputs at once:
+    #   * rr_25d           — `daily.iloc[-1]` can be a Saturday recompute;
+    #   * rr_80th_pctile   — fabricated points sit inside the own-history distribution
+    #                        the chip's >= 80th-percentile test is measured against;
+    #   * skew_n_obs       — the ACTIVATION GATE (min_obs=21). Unfiltered, the store's
+    #                        28 dates read as 28 observations while only 20 are real
+    #                        sessions, so call_skew_rich would switch on ~a week early
+    #                        on a count padded with non-trading days (the n-gate-vacuous
+    #                        class). Filtering makes the 21 mean 21 sessions.
+    # Fail-open: session_rows returns the frame unchanged if filtering would empty it.
+    df = nyse_calendar_session_rows(df, date_col)
 
     for underlying, grp in df.groupby("underlying"):
         ticker = str(underlying)
