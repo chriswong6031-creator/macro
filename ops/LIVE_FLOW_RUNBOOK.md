@@ -18,9 +18,45 @@ the Terminal UI with a 30s TTL cache.
 | `live_flow/tide_current.json` | `live_flow.tide/v1` | Market tide (NCP/NPP minutes + sectors) |
 | `live_flow/dte_tide_current.json` | `live_flow.dte_tide/v1` | DTE-bucket tide |
 | `live_flow/tickers/{ROOT}.json` | `live_flow.ticker/v1` | Per-root drill (top ~40 roots) |
+| `live_flow/tide/{DATE}.json` | `live_flow.tide/v1` | Dated archive of tide_current (same bytes) |
+| `live_flow/dte_tide/{DATE}.json` | `live_flow.dte_tide/v1` | Dated archive of dte_tide_current |
+| `live_flow/tide/dates.json` | `live_flow.archive_dates/v1` | Sessions index for the tide archive |
+| `live_flow/dte_tide/dates.json` | `live_flow.archive_dates/v1` | Sessions index for the dte archive |
 
 Local copies land in `data/live_flow_out/` (gitignored).
 Day state is persisted at `data/live_flow_state/day_state_{date}.json`.
+
+### Dated tide/dte archives (OIP W0 T-lane)
+
+`tide_current.json` / `dte_tide_current.json` are OVERWRITTEN every cycle, so the session's
+story used to die at the close. Each cycle now also uploads the SAME two local files under a
+date-keyed name (`live_flow/{tide,dte_tide}/{YYYY-MM-DD}.json`) plus a per-family
+`dates.json` sessions index — one write, two keys, so the live copy and the archive can never
+disagree byte-for-byte. **The day's final write is the settled record**, which is what the
+nightly Session Digest (OIP E1) reads. Both payloads already carry the full-session
+cumulative series (390 minutes for a full RTH session), so no payload changed and the current
+keys are byte-identical to before.
+
+- Writer: `scripts/build_flow_archive.py` (pure functions), wired in `live_flow_poller.main`.
+- Retention: newest **30** sessions per family; override with `live_flow.archive_retain_sessions`
+  in `config.yml`. Swept once per session (two cheap R2 listings), never per-cycle. The prune
+  rebuilds every delete target from `dated_archive_key`, so it can only ever delete a key this
+  lane wrote — never `dates.json`, never `live_flow/tide_current.json`.
+  Flow-Surface retention stays at 10 sessions (`surface_retain_sessions`) — unchanged.
+- Added cost: +4 R2 PUTs/cycle (~262 KB — `tide` 179 KB + `dte_tide` 82.5 KB, measured live
+  2026-07-29 + two ~250-byte indexes). Stored footprint is only the last write per key:
+  ~8 MB per 30-session retention window. R2 ingress is free; ~800 extra class-A writes per
+  session.
+- Fully fail-soft: a staging or PUT failure logs and degrades to current-keys-only; it can
+  never cost the poller a cycle or blank a key the live Terminal reads.
+- Verify after a deploy:
+  ```bash
+  R2_BASE=$(python -c "import yaml; c=yaml.safe_load(open('config.yml')); \
+    print(c['r2_data_plane']['public_base'])")
+  curl -s "$R2_BASE/live_flow/tide/dates.json" | python -m json.tool
+  curl -s -o /dev/null -w '%{http_code} %{size_download}\n' \
+    "$R2_BASE/live_flow/tide/$(date +%F).json"
+  ```
 
 ## launchd autostart
 
