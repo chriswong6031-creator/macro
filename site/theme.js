@@ -600,106 +600,373 @@
      that set data-lib is just relabelled, since it now searches the whole world).
      Path-depth aware so it works from /sectors/ too. No-ops without a .nav-search. */
   var STOCK_MARKETS = [
-    { lib: 'stockdata/index.json',       target: 'stock.html',        flag: '🇺🇸', mkt: 'US' },
-    { lib: 'chinastockdata/index.json',  target: 'china_lookup.html', flag: '🇨🇳', mkt: 'China' },
-    { lib: 'hkstockdata/index.json',     target: 'hk_lookup.html',    flag: '🇭🇰', mkt: 'HK' },
-    { lib: 'canadastockdata/index.json', target: 'canada_stock.html', flag: '🇨🇦', mkt: 'Canada' },
-    { lib: 'intlstockdata/index.json',   target: 'intl_stock.html',   flag: '🌐', mkt: 'Intl' }
+    { key: 'us',   lib: 'stockdata/index.json',       target: 'stock.html',        flag: '🇺🇸', mkt: 'US',     examples: ['NVDA', 'AAPL', 'MSFT'] },
+    { key: 'cn',   lib: 'chinastockdata/index.json',  target: 'china_lookup.html', flag: '🇨🇳', mkt: 'China',  examples: ['600519.SS', '000858.SZ'] },
+    { key: 'hk',   lib: 'hkstockdata/index.json',     target: 'hk_lookup.html',    flag: '🇭🇰', mkt: 'HK',     examples: ['0700.HK', '9988.HK'] },
+    { key: 'ca',   lib: 'canadastockdata/index.json', target: 'canada_stock.html', flag: '🇨🇦', mkt: 'Canada', examples: ['SHOP.TO', 'SU.TO'] },
+    { key: 'intl', lib: 'intlstockdata/index.json',   target: 'intl_stock.html',   flag: '🌐', mkt: 'Intl',   examples: ['7203.T', 'ASML.AS'] }
   ];
+
+  function initNavDrills() {
+    document.addEventListener('click', function (e) {
+      var open = e.target && e.target.closest ? e.target.closest('[data-nav-drill-open]') : null;
+      var back = e.target && e.target.closest ? e.target.closest('[data-nav-drill-back]') : null;
+      if (!open && !back) return;
+      var drill = (open || back).closest('[data-nav-drill], .nav-drill');
+      if (!drill) return;
+      e.preventDefault();
+      e.stopPropagation();
+      var panel = drill.querySelector(':scope > [data-nav-drill-panel], :scope > .nav-drill-panel');
+      var isOpen = !!open;
+      drill.classList.toggle('is-open', isOpen);
+      var returnTrigger = drill.querySelector(':scope > [data-nav-drill-open]');
+      if (open) open.setAttribute('aria-expanded', 'true');
+      else {
+        if (returnTrigger) returnTrigger.setAttribute('aria-expanded', 'false');
+      }
+      if (panel) panel.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+      if (isOpen && panel) {
+        var first = panel.querySelector('[data-nav-drill-back], a, button');
+        if (first) window.setTimeout(function () { first.focus(); }, 80);
+      } else if (returnTrigger) {
+        window.setTimeout(function () { returnTrigger.focus(); }, 40);
+      }
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape') return;
+      var openPanel = document.querySelector('.nav-drill.is-open');
+      if (!openPanel) return;
+      var trigger = openPanel.querySelector(':scope > [data-nav-drill-open]');
+      openPanel.classList.remove('is-open');
+      if (trigger) { trigger.setAttribute('aria-expanded', 'false'); trigger.focus(); }
+      var panel = openPanel.querySelector(':scope > [data-nav-drill-panel]');
+      if (panel) panel.setAttribute('aria-hidden', 'true');
+    });
+  }
+
   function initNavSearch() {
     var box = document.querySelector('.nav-search');
     if (!box) return;
-    var input = box.querySelector('input'), sugg = box.querySelector('.nav-sugg');
-    if (!input || !sugg) return;
-    // lang-aware placeholder: English lives in the attribute, Chinese in data-ph-zh,
-    // swapped on langchange (never put a dual-language <span> inside an attribute —
-    // the class="" quote breaks it). A page that used to scope the box to one market
-    // (data-lib set) now searches the whole world, so relabel it.
-    var phEn = input.placeholder, phZh = input.getAttribute('data-ph-zh') || phEn;
-    if (box.getAttribute('data-lib')) {
-      phEn = 'Search any stock — US, China, HK, Canada & more…';
-      phZh = '搜索任意股票 — 美股、A 股、港股、加股等…';
-    }
-    function setPh() { input.placeholder = document.documentElement.getAttribute('data-lang') === 'zh' ? phZh : phEn; }
-    setPh();
-    document.addEventListener('langchange', setPh);
+    var phEn = 'Ticker or company';
+    var phZh = '股票代码或公司';
     var pfx = location.pathname.indexOf('/sectors/') > -1 ? '../' : '';
-    // merge every market's nightly library into one universe; tag each row with the
-    // analyzer it routes to and a market flag (Intl rows carry their own per-country
-    // flag + market name, so prefer those when present)
-    var lib = [], rows = [], sel = -1, libsLoaded = false;
-    // Lazy-load the (heavy) per-market search indexes only once the user engages
-    // the search box, not on every page load — 'focus' fires before the first
-    // keystroke, so the universe is usually ready by the time they finish typing.
+    var icon = '<svg class="search-glyph" viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.7" cy="8.7" r="5.6"></circle><path d="m12.9 12.9 4 4"></path></svg>';
+    box.className = 'nav-search ticker-search';
+    box.innerHTML =
+      '<button class="search-trigger" type="button" aria-label="Search tickers" aria-expanded="false" aria-controls="ticker-search-dropdown">' +
+        icon + '<span class="idle-ticker" aria-hidden="true"></span>' +
+      '</button>' +
+      '<div class="search-expanded">' + icon +
+        '<input class="ticker-input" type="text" inputmode="search" maxlength="10" autocomplete="off" spellcheck="false" aria-label="Search stocks" aria-autocomplete="list" aria-controls="ticker-search-dropdown">' +
+        '<button class="search-esc" type="button" aria-label="Close ticker search">Esc</button>' +
+      '</div>' +
+      '<div class="ticker-dropdown" id="ticker-search-dropdown" role="listbox" aria-label="Ticker search results"></div>';
+
+    var trigger = box.querySelector('.search-trigger');
+    var input = box.querySelector('.ticker-input');
+    var closeButton = box.querySelector('.search-esc');
+    var dropdown = box.querySelector('.ticker-dropdown');
+    var idleTicker = box.querySelector('.idle-ticker');
+    var lib = [], libsStarted = false, pending = 0, page = 0, selected = -1;
+    var pageRows = [], idleTimer = 0, idleIndex = 0, idleChars = 0, deleting = false;
+
+    function esc(value) {
+      return String(value == null ? '' : value).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+
+    function marketPreference() {
+      var p = window.MMXMarkets && window.MMXMarkets.current ? window.MMXMarkets.current() : null;
+      var allowed = { us: 1, cn: 1, hk: 1, ca: 1, intl: 1 };
+      var enabled = p && p.enabled && p.enabled.length
+        ? p.enabled.filter(function (key) { return !!allowed[key]; })
+        : [];
+      if (!enabled.length) enabled = ['us', 'cn', 'hk', 'ca', 'intl'];
+      return { home: p && p.home ? p.home : enabled[0], enabled: enabled };
+    }
+
+    function marketMeta(key) {
+      for (var i = 0; i < STOCK_MARKETS.length; i++) if (STOCK_MARKETS[i].key === key) return STOCK_MARKETS[i];
+      return STOCK_MARKETS[0];
+    }
+
+    function examplesForProfile() {
+      var out = [], pref = marketPreference();
+      for (var i = 0; i < pref.enabled.length; i++) {
+        var m = marketMeta(pref.enabled[i]);
+        if (m.examples && m.examples[0]) out.push(m.examples[0]);
+      }
+      return out.length ? out : ['NVDA'];
+    }
+
+    function profileLabel() {
+      var names = marketPreference().enabled.map(function (key) { return marketMeta(key).mkt; });
+      return names.join(' · ') || 'All markets';
+    }
+
+    function setPlaceholder() {
+      input.placeholder = document.documentElement.getAttribute('data-lang') === 'zh' ? phZh : phEn;
+    }
+    setPlaceholder();
+    document.addEventListener('langchange', setPlaceholder);
+
     function loadLibs() {
-      if (libsLoaded) return; libsLoaded = true;
+      if (libsStarted) return;
+      libsStarted = true;
+      pending = STOCK_MARKETS.length;
       STOCK_MARKETS.forEach(function (m) {
-        fetch(pfx + m.lib).then(function (r) { return r.json(); }).then(function (d) {
-          (d || []).forEach(function (x) {
+        fetch(pfx + m.lib).then(function (r) { return r.ok ? r.json() : []; }).then(function (data) {
+          (data || []).forEach(function (x, index) {
             x._tgt = m.target;
             x._fl = x.fl || m.flag;
             x._mk = x.mk || m.mkt;
+            x._key = m.key;
+            x._order = index;
           });
-          lib = lib.concat(d || []);
-          if (input.value.trim()) search();   // repaint if they've already typed
-        }).catch(function () {});
+          lib = lib.concat(data || []);
+        }).catch(function () {}).then(function () {
+          pending -= 1;
+          if (box.classList.contains('open')) render();
+        });
       });
     }
-    input.addEventListener('focus', loadLibs);
+
     function go(x) {
       if (!x) return;
-      // analytics: log the committed search-select (ticker + market) before navigating away
-      try { if (window.mmTrack) window.mmTrack('search', { ticker: x.t, meta: { market: x._mk, source: 'nav_search', to_terminal: !!(mmTerminalOn() && TERMINAL_PAGES[x._tgt]) } }); } catch (e) {}
-      // US, China, HK, Canada, and Intl picks all open the Terminal
+      try {
+        if (window.mmTrack) window.mmTrack('search', {
+          ticker: x.t,
+          meta: { market: x._mk, source: 'animated_nav_search', to_terminal: !!(mmTerminalOn() && TERMINAL_PAGES[x._tgt]) }
+        });
+      } catch (e) {}
       if (mmTerminalOn() && TERMINAL_PAGES[x._tgt]) { openTerminal(x.t, box); return; }
       location.href = pfx + (x._tgt || 'stock.html') + '#' + encodeURIComponent(x.t);
     }
-    function close() { sugg.classList.remove('show'); sugg.innerHTML = ''; rows = []; sel = -1; }
-    function paint() {
-      [].forEach.call(sugg.querySelectorAll('.row'), function (r, i) { r.classList.toggle('sel', i === sel); });
-    }
-    // rank exact ticker > ticker-prefix > name-prefix > loose substring — matters now
-    // that one query sweeps thousands of names across five markets
-    function rank(x, v) {
-      var t = x.t.toUpperCase(), n = (x.n || '').toUpperCase();
-      if (t === v) return 0;
-      if (t.indexOf(v) === 0) return 1;
-      if (n.indexOf(v) === 0) return 2;
-      if (t.indexOf(v) > -1) return 3;
-      if (n.indexOf(v) > -1) return 4;
+
+    function rank(x, value) {
+      var ticker = String(x.t || '').toUpperCase(), name = String(x.n || '').toUpperCase();
+      if (ticker === value) return 0;
+      if (ticker.indexOf(value) === 0) return 1;
+      if (name.indexOf(value) === 0) return 2;
+      if (ticker.indexOf(value) > -1) return 3;
+      if (name.indexOf(value) > -1) return 4;
       return 9;
     }
-    function search() {
-      var v = input.value.trim().toUpperCase();
-      if (!v) { close(); return; }
-      rows = lib.map(function (x) { return { x: x, r: rank(x, v) }; })
-        .filter(function (o) { return o.r < 9; })
-        .sort(function (a, b) { return a.r - b.r; })
-        .slice(0, 10).map(function (o) { return o.x; });
-      sel = -1;
-      if (!rows.length) { sugg.innerHTML = '<div class="empty">No match across the global library.</div>'; sugg.classList.add('show'); return; }
-      sugg.innerHTML = rows.map(function (x, i) {
-        var st = (x.st || '').replace(/ /g, '_');
-        return '<div class="row" data-i="' + i + '">'
-             + (x._fl ? '<span class="mkt" title="' + (x._mk || '') + '">' + x._fl + '</span>' : '')
-             + '<b>' + x.t + '</b><small>' + (x.n || '') + '</small>'
-             + (x.st ? '<span class="stt st-' + st + '">' + x.st + '</span>' : '') + '</div>';
-      }).join('');
-      sugg.classList.add('show');
+
+    function popularRows() {
+      var pref = marketPreference(), groups = {}, result = [];
+      pref.enabled.forEach(function (key) { groups[key] = []; });
+      lib.forEach(function (x) {
+        if (groups[x._key]) groups[x._key].push(x);
+      });
+      Object.keys(groups).forEach(function (key) {
+        groups[key].sort(function (a, b) {
+          var av = Number(a.v || a.vol || 0), bv = Number(b.v || b.vol || 0);
+          return (bv - av) || (a._order - b._order);
+        });
+      });
+      for (var depth = 0; result.length < 10 && depth < 20; depth++) {
+        pref.enabled.forEach(function (key) {
+          if (groups[key] && groups[key][depth] && result.length < 10) result.push(groups[key][depth]);
+        });
+      }
+      if (!result.length) result = lib.slice(0, 10);
+      return result;
     }
-    input.addEventListener('input', search);
-    input.addEventListener('focus', function () { if (input.value.trim()) search(); });
+
+    function statusClass(status) {
+      var s = String(status || '').toUpperCase();
+      if (s === 'TURN SIGNALED') return 'status-turn';
+      if (s === 'TOP WATCH') return 'status-watch';
+      if (s === 'COUNTERTREND BOUNCE') return 'status-bounce';
+      return 'status-neutral';
+    }
+
+    function logoMarkup(x) {
+      return '<span data-stock-logo data-ticker="' + esc(x.t) + '" data-company="' + esc(x.n || '') +
+        '" data-market="' + esc(x._mk || '') + '" data-flag="' + esc(x._fl || '') + '" data-logo-size="38"></span>';
+    }
+
+    function resultMarkup(x, index, popular) {
+      var status = String(x.st || '').trim();
+      var klass = popular ? 'fan-card' : 'result-row';
+      return '<button class="' + klass + '" type="button" role="option" data-result-index="' + index +
+        '" style="--i:' + index + '" aria-label="Open ' + esc(x.t) + ' in Terminal">' +
+          logoMarkup(x) +
+          '<span><span class="ticker-symbol">' + esc(x.t) + '</span><span class="ticker-name">' +
+            esc(x.n || 'Company') + (popular ? '' : ' · ' + esc(x._mk || '')) + '</span></span>' +
+          (popular
+            ? '<span class="market-code">' + esc(x._mk || '') + '</span>'
+            : '<span class="signal-status ' + statusClass(status) + '">' + esc(status || 'IN LIBRARY') + '</span>') +
+        '</button>';
+    }
+
+    function attribution() {
+      return window.MMX_LOGO_DEV_TOKEN
+        ? '<div class="logo-dev-attribution"><a href="https://logo.dev" target="_blank" rel="noopener">Logos by Logo.dev</a></div>'
+        : '';
+    }
+
+    function enhanceLogos() {
+      if (window.MMXStockLogo && window.MMXStockLogo.enhance) window.MMXStockLogo.enhance(dropdown);
+    }
+
+    function render() {
+      var query = input.value.trim().toUpperCase();
+      selected = -1;
+      if (!query) {
+        pageRows = popularRows();
+        if (!pageRows.length) {
+          dropdown.innerHTML =
+            '<div class="search-drop-head"><div><div class="search-drop-title">Loading your market universe</div>' +
+            '<div class="search-drop-sub">Preparing popular tickers and company matches…</div></div>' +
+            '<span class="market-profile">' + esc(profileLabel()) + '</span></div>' +
+            '<div class="empty-search">The latest ticker libraries are loading.</div>';
+          return;
+        }
+        dropdown.innerHTML =
+          '<div class="search-drop-head"><div><div class="search-drop-title">Popular tickers</div>' +
+          '<div class="search-drop-sub">Latest active names in your markets</div></div>' +
+          '<span class="market-profile">' + esc(profileLabel()) + '</span></div>' +
+          '<div class="fan-grid">' + pageRows.map(function (x, i) { return resultMarkup(x, i, true); }).join('') + '</div>' +
+          attribution();
+        enhanceLogos();
+        return;
+      }
+      var matches = lib.map(function (x) { return { x: x, r: rank(x, query) }; })
+        .filter(function (o) { return o.r < 9; })
+        .sort(function (a, b) {
+          return (a.r - b.r) || (Number(b.x.v || b.x.vol || 0) - Number(a.x.v || a.x.vol || 0)) ||
+            String(a.x.t || '').localeCompare(String(b.x.t || ''));
+        }).map(function (o) { return o.x; });
+      var pageSize = 8, pageCount = Math.max(1, Math.ceil(matches.length / pageSize));
+      page = Math.min(page, pageCount - 1);
+      pageRows = matches.slice(page * pageSize, (page + 1) * pageSize);
+      var pagination = '';
+      if (pageCount > 1) {
+        var start = Math.max(0, Math.min(page - 2, pageCount - 5));
+        var end = Math.min(pageCount, start + 5);
+        var buttons = [];
+        for (var i = start; i < end; i++) {
+          buttons.push('<button type="button" data-search-page="' + i + '" class="' + (i === page ? 'active' : '') +
+            '" aria-label="Results page ' + (i + 1) + '">' + (i + 1) + '</button>');
+        }
+        pagination = '<div class="search-pagination">' + buttons.join('') + '</div>';
+      }
+      dropdown.innerHTML =
+        '<div class="search-drop-head"><div><div class="search-drop-title">' + matches.length + ' match' +
+        (matches.length === 1 ? '' : 'es') + ' for “' + esc(query) + '”</div>' +
+        '<div class="search-drop-sub">Select a ticker to open Terminal</div></div>' +
+        '<span class="market-profile">All markets</span></div>' +
+        (pageRows.length
+          ? '<div class="results-list">' + pageRows.map(function (x, i) { return resultMarkup(x, i, false); }).join('') + '</div>' + pagination
+          : '<div class="empty-search">' + (pending > 0 ? 'Still loading matching markets…' : 'No ticker or company matches this search.') + '</div>') +
+        attribution();
+      enhanceLogos();
+    }
+
+    function paintSelection() {
+      dropdown.querySelectorAll('[data-result-index]').forEach(function (row, index) {
+        row.classList.toggle('sel', index === selected);
+        row.setAttribute('aria-selected', index === selected ? 'true' : 'false');
+      });
+    }
+
+    function openSearch() {
+      box.classList.add('open');
+      trigger.setAttribute('aria-expanded', 'true');
+      loadLibs();
+      page = 0;
+      render();
+      window.requestAnimationFrame(function () { input.focus(); });
+    }
+
+    function closeSearch() {
+      box.classList.remove('open');
+      trigger.setAttribute('aria-expanded', 'false');
+      input.blur();
+      selected = -1;
+    }
+
+    function idleTick() {
+      var examples = examplesForProfile();
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        idleTicker.textContent = examples[0] || 'Ticker';
+        return;
+      }
+      if (box.classList.contains('open')) {
+        idleTimer = window.setTimeout(idleTick, 420);
+        return;
+      }
+      var target = examples[idleIndex % examples.length] || 'Ticker';
+      if (!deleting) {
+        idleChars += 1;
+        idleTicker.textContent = target.slice(0, idleChars);
+        if (idleChars >= target.length) {
+          deleting = true;
+          idleTimer = window.setTimeout(idleTick, 1150);
+          return;
+        }
+        idleTimer = window.setTimeout(idleTick, 110);
+      } else {
+        idleChars -= 1;
+        idleTicker.textContent = target.slice(0, Math.max(0, idleChars));
+        if (idleChars <= 0) {
+          deleting = false;
+          idleIndex = (idleIndex + 1) % examples.length;
+          idleTimer = window.setTimeout(idleTick, 250);
+          return;
+        }
+        idleTimer = window.setTimeout(idleTick, 52);
+      }
+    }
+
+    trigger.addEventListener('click', openSearch);
+    closeButton.addEventListener('click', closeSearch);
+    input.addEventListener('input', function () {
+      input.value = input.value.toUpperCase().replace(/[^A-Z0-9.^-]/g, '').slice(0, 10);
+      page = 0;
+      render();
+    });
     input.addEventListener('keydown', function (e) {
-      if (!sugg.classList.contains('show')) return;
-      if (e.key === 'ArrowDown') { e.preventDefault(); sel = Math.min(sel + 1, rows.length - 1); paint(); }
-      else if (e.key === 'ArrowUp') { e.preventDefault(); sel = Math.max(sel - 1, 0); paint(); }
-      else if (e.key === 'Enter') { e.preventDefault(); go(rows[sel] || rows[0]); }
-      else if (e.key === 'Escape') { close(); input.blur(); }
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        selected = Math.min(selected + 1, pageRows.length - 1);
+        paintSelection();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        selected = Math.max(selected - 1, 0);
+        paintSelection();
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        go(pageRows[selected >= 0 ? selected : 0]);
+      } else if (e.key === 'Escape') {
+        closeSearch();
+      }
     });
-    sugg.addEventListener('mousedown', function (e) {
-      var r = e.target.closest('.row'); if (!r) return; e.preventDefault(); go(rows[+r.dataset.i]);
+    dropdown.addEventListener('mousedown', function (e) {
+      var pageButton = e.target.closest('[data-search-page]');
+      if (pageButton) {
+        e.preventDefault();
+        page = Number(pageButton.getAttribute('data-search-page')) || 0;
+        render();
+        return;
+      }
+      var row = e.target.closest('[data-result-index]');
+      if (!row) return;
+      e.preventDefault();
+      go(pageRows[Number(row.getAttribute('data-result-index'))]);
     });
-    document.addEventListener('click', function (e) { if (!box.contains(e.target)) close(); });
+    document.addEventListener('click', function (e) {
+      if (box.classList.contains('open') && !box.contains(e.target)) closeSearch();
+    });
+    document.addEventListener('mmx-markets-change', function () {
+      idleIndex = idleChars = 0;
+      deleting = false;
+      if (box.classList.contains('open')) render();
+    });
+    idleTick();
   }
 
   /* ---- responsive mobile nav ----------------------------------------------
@@ -4157,6 +4424,7 @@
     });
     initSettings();   // fallback if the early call above could not run
     _authBoot();      // restore a prior cookie session / consume an OAuth return
+    initNavDrills();
     initNavSearch();
     initActiveNav();
     initMobileNav();
