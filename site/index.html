@@ -67,7 +67,7 @@
      the body face and the display fallback, so there is nothing left to preload —
      Inter's own weights are already discovered by that stylesheet. -->
 <link rel="stylesheet" href="onboard.css?v=5c897a72">
-<link rel="stylesheet" href="landing.css?v=387a386a">
+<link rel="stylesheet" href="landing.css?v=7928950b">
 </head>
 <body>
 
@@ -598,7 +598,7 @@
     <div class="feat-copy rv">
       <span class="kicker mk" data-zh="不止股票">Beyond equities</span>
       <h2 class="feat-title" data-zh="比特币。黄金。美元。">Bitcoin. Gold. The dollar.</h2>
-      <p class="feat-sub" data-zh="股票只是一个市场。台席还跑<b>比特币、大宗商品与美元</b>——同一套引擎，同样的大白话。">Stocks are one market. The desk also runs <b>Bitcoin, commodities and the dollar</b> — same engines, same plain words.</p>
+      <p class="feat-sub" data-zh="台席也跑<b>比特币、大宗商品与美元</b>——同一套引擎，同样的大白话。">The desk also runs <b>Bitcoin, commodities and the dollar</b> — same engines, same plain words.</p>
       <ul class="fx">
         <li data-zh="<b>比特币，看周期。</b>这轮走到哪、以往意味着什么。"><b>Bitcoin, cycle-timed.</b> Where this cycle sits, and what that has meant.</li>
         <li data-zh="<b>大宗商品格局。</b>黄金、原油、铜，用同样诚实的方式解读。"><b>Commodity regimes.</b> Gold, oil and copper read the same honest way.</li>
@@ -649,7 +649,8 @@
 </section>
 
 <!-- ══════════════ MASTERMIND AI ══════════════ -->
-<section class="section-pad hair-top" id="ai">
+<section class="section-pad" id="ai">
+  <span class="bandrule rv" aria-hidden="true"></span>
   <div class="wrap">
     <div class="ai-wrap">
       <div class="ai-copy rv">
@@ -691,7 +692,8 @@
 </section>
 
 <!-- ══════════════ PRICING ══════════════ -->
-<section class="section-pad hair-top" id="pricing">
+<section class="section-pad" id="pricing">
+  <span class="bandrule rv" aria-hidden="true"></span>
   <div class="wrap">
     <div class="p-head rv">
       <span class="kicker mk" style="color:var(--blue)" data-zh="定价">Pricing</span>
@@ -1625,7 +1627,7 @@ const STILL = document.documentElement.classList.contains('still');
 /* — Mastermind AI: product-true scripted chat loop, three turns long —
    Types the question at a readable pace, streams answers word by word, draws a
    full-width NVDA chart from real candles, then keeps the conversation going:
-   falsifier checklist, then a cross-desk energy-vs-tech read with a compare
+   tripwire checklist, then a cross-desk energy-vs-tech read with a compare
    card. Skipped under CALM / .still → renders the final conversation statically.
    All timers live in one array so a LANG change or reset clears them cleanly. */
 (function(){
@@ -1647,7 +1649,7 @@ const STILL = document.documentElement.classList.contains('still');
     stopChip: { en:'STOP 191', zh:'STOP 191' },
     act:   { en:'→ TERMINAL · NVDA 1D OPENED', zh:'→ TERMINAL · 已打开 NVDA 日线' },
     q2:    { en:'What would prove this wrong?', zh:'什么情况会证明这个判断错了？' },
-    tool3: { en:'checking falsifiers — risk desk · calendar', zh:'正在核对反证——风险台 · 日历' },
+    tool3: { en:'checking tripwires — risk desk · calendar', zh:'正在核对警戒线——风险台 · 日历' },
     a2:    { en:'Three tripwires. A daily close back under the 20-day shuts the setup; losing 191 kills it; and earnings in 35 days is the binary — whatever you do, size for that.', zh:'三条警戒线。日线收回20日线下方，形态作废；跌破191，直接出局；35天后的财报是硬事件——无论怎么做，仓位都要按它来定。' },
     trips: [ {en:'GATE · close < 20-day',zh:'闸口 · 收盘跌破20日线'}, {en:'STOP · 191.00',zh:'止损 · 191.00'}, {en:'EARNINGS · 35 DAYS',zh:'财报 · 35天后'} ],
     q3:    { en:'Energy vs tech this week — where does the desk lean?', zh:'本周能源对科技——台席更看好哪边？' },
