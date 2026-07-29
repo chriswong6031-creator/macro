@@ -240,6 +240,20 @@ def test_stocks_mode_renders_standout_card_body():
     assert "ZEUS" in html  # ungrouped lane=None card renders too
 
 
+def test_stocks_mode_has_decision_first_shell_and_collapsed_expert_board():
+    """The stocks landing page leads with the small Prophet decision queue,
+    while the full evidence-heavy board remains available on deliberate
+    expansion instead of competing in the default scan path."""
+    html = _render("stocks")
+    assert 'id="stocks-command"' in html
+    assert "Daily decision queue" in html
+    assert 'id="stocks-context"' in html
+    assert '<details class="stk-expert span12" id="all-prophet-signals">' in html
+    assert 'class="panel span12 notable" id="us-standouts"' in html
+    assert "body.page-stocks #action-board," in html
+    assert "body.page-stocks .stocks-breadth-detail," in html
+
+
 def test_stocks_mode_dossier_block_intentionally_absent():
     """Supersedes test_stocks_mode_renders_dossier_block (the presence form)
     after PR #3012 — the removal its docstring warned about happened ON PURPOSE.
