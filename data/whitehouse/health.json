@@ -1,17 +1,10 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-07-29T17:38:19.345001+00:00",
+  "as_of": "2026-07-29T19:42:12.001502+00:00",
   "posts_seen": 7,
   "seen_total": 67,
-  "evaluated": 1,
+  "evaluated": 0,
   "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
-  "gate_scores": [
-    {
-      "id": "wh-2026-07-29-crime-plummets-another-historic-low-under-president-trump",
-      "importance": 25,
-      "activated": false,
-      "degraded_reason": "served_by:codex"
-    }
-  ]
+  "gate_scores": []
 }
