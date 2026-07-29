@@ -96,51 +96,105 @@ def write_archive(base: Path, frame: dict, stamps: list[str], *, root: str,
         [session_date], root=root.upper(), cadence_sec=cadence_sec, asof=frame["asof"])))
 
 
-def write_tides(base: Path, *, session_date: str, zero_dte_share_path=None,
-                n: int = 79, cadence_sec: int = 300, label_skew_min: int = 0,
-                doc_date: str | None = None, asof_date: str | None = None) -> None:
-    """Dated tide + dte_tide archives in the payload shape `engine/live_flow` emits."""
+def build_tide_docs(*, session_date: str, zero_dte_share_path=None, n: int = 79,
+                    cadence_sec: int = 300, label_skew_min: int = 0) -> tuple[dict, dict]:
+    """Tide + dte_tide payloads produced by the REAL writers (M8 fixture-fidelity law).
+
+    Trades are fed through `engine.live_flow._accumulate_tide` and the documents come out of
+    `build_tide_current` / `build_dte_tide_current`, so the fixtures carry whatever those
+    functions actually emit — including, when `label_skew_min` is set, the genuine
+    `_minute_key` timezone defect rather than a hand-rolled imitation of it.
+
+    `label_skew_min=-240` is applied by handing `_accumulate_tide` NAIVE timestamps, which is
+    exactly how the defect arises in production: `_minute_key` localizes a naive stamp as UTC
+    and converts to ET, subtracting the whole ET offset.
+    """
+    import pandas as pd
+    from engine import live_flow as lf
+
     open_dt, _ = sd.session_window_et(session_date)
-    mins, buckets = [], {b: [] for b in ("0d", "1_7d", "8_30d", "31_90d", "90p")}
-    c_ncp = c_npp = 0.0
+    day: dict = {"market_tide_minutes": {}, "sector_tide": {}, "dte_tide": {},
+                 "root_minutes": {}, "root_strikes": {}, "root_expiries": {},
+                 "sweep_clusters": {}}
+    cum_z = cum_o = 0.0
     for i in range(n):
         t = open_dt + timedelta(seconds=cadence_sec * i)
-        m = (t.hour * 60 + t.minute + label_skew_min) % (24 * 60)
-        lbl = f"{m // 60:02d}:{m % 60:02d}"
-        c_ncp += 4_000_000
-        c_npp += -1_200_000
-        mins.append({"t": lbl, "ncp": round(c_ncp), "npp": round(c_npp),
-                     "gross": round(abs(c_ncp) + abs(c_npp)), "vol": 1000})
+        # A naive ET wall-clock stamp reproduces the production defect exactly; an
+        # offset-aware one does not (see _minute_key).
+        ts = (t.replace(tzinfo=None) if label_skew_min else t).isoformat()
+        # `zero_dte_share_path(i)` is the target CUMULATIVE 0DTE share at stamp i, because the
+        # tide buckets are cumulative and that is what the digest reads.  Solve this minute's
+        # 0DTE premium to land on it: (cum_z + z_i)/(cum_z + z_i + cum_o + o_i) = s.
         share = zero_dte_share_path(i) if zero_dte_share_path else 0.20
-        others = 10_000_000.0
-        zero = others * share / max(1e-9, (1.0 - share))
-        buckets["0d"].append({"t": lbl, "ncp": round(zero), "npp": 0})
-        for b in ("1_7d", "8_30d", "31_90d", "90p"):
-            buckets[b].append({"t": lbl, "ncp": round(others / 4.0), "npp": 0})
-    asof = f"{asof_date or session_date}T20:00:00+00:00"
-    for fam, doc in (("tide", {"schema": "live_flow.tide/v1", "asof": asof,
-                               "session_date": doc_date or session_date,
-                               "minutes": mins, "spy": [], "sectors": [],
-                               "top_net_impact": [{"root": "SPY",
-                                                   "net_prem_soft": 1.0, "gross": 2.0}]}),
-                     ("dte_tide", {"schema": "live_flow.dte_tide/v1", "asof": asof,
-                                   "buckets": buckets})):
+        o_i = 2 * 1_500 * 10.0 * 100.0 + 3_000 * 3.0 * 100.0     # two non-0DTE legs, fixed
+        want = min(0.999, max(0.0, float(share)))
+        z_i = (want * (cum_o + o_i) / (1.0 - want)) - cum_z if want else 0.0
+        z_i = max(0.0, z_i)
+        cum_z += z_i
+        cum_o += o_i
+        rows = [
+            {"trade_timestamp": ts, "price": 10.0, "size": 1_500, "sign": 1.0, "right": "C",
+             "strike": 500.0, "expiration": (t + timedelta(days=3)).date().isoformat()},
+            {"trade_timestamp": ts, "price": 10.0, "size": 1_500, "sign": 1.0, "right": "C",
+             "strike": 505.0, "expiration": (t + timedelta(days=45)).date().isoformat()},
+            {"trade_timestamp": ts, "price": 3.0, "size": 3_000, "sign": -1.0, "right": "P",
+             "strike": 495.0, "expiration": (t + timedelta(days=3)).date().isoformat()},
+        ]
+        if z_i > 0:
+            rows.append({"trade_timestamp": ts, "price": 10.0,
+                         "size": max(1, int(round(z_i / 1000.0))), "sign": 1.0, "right": "C",
+                         "strike": 500.0, "expiration": t.date().isoformat()})
+        lf._accumulate_tide(pd.DataFrame(rows), "SPY", "Broad", "大盘", ts, session_date,
+                            day["market_tide_minutes"], day["sector_tide"], day["dte_tide"],
+                            day["root_minutes"], day["root_strikes"], day["root_expiries"],
+                            day["sweep_clusters"])
+    asof = f"{session_date}T20:00:00+00:00"
+    return (lf.build_tide_current(session_date, asof, day),
+            lf.build_dte_tide_current(session_date, asof, day))
+
+
+def write_tides(base: Path, *, session_date: str, doc_date: str | None = None,
+                asof_date: str | None = None, **kw) -> tuple[dict, dict]:
+    """Write the dated tide/dte archives; returns the two documents."""
+    tide, dte = build_tide_docs(session_date=session_date, **kw)
+    if doc_date:
+        tide["session_date"] = doc_date
+    if asof_date:
+        tide["asof"] = dte["asof"] = f"{asof_date}T20:00:00+00:00"
+    for fam, doc in (("tide", tide), ("dte_tide", dte)):
         p = base / "live_flow" / fam
         p.mkdir(parents=True, exist_ok=True)
         (p / f"{session_date}.json").write_text(json.dumps(doc))
+    return tide, dte
 
 
 def write_gex_state(site: Path, root: str, *, vintage: str, flip: float = 750.43,
                     call_wall: float = 760.0, put_wall: float = 725.0,
-                    spot: float = 735.05) -> None:
+                    spot: float = 735.05, asof: str | None = None) -> None:
+    """gex_state payload with a REALISTIC post-midnight-UTC `asof` (B1 fixture law).
+
+    `build_gex_board` stamps `datetime.now(UTC)` and the nightly engine band runs 03:11–03:54
+    UTC, i.e. 23:xx ET on the session day BEFORE.  Stamping the fixture at `{vintage}T21:00Z`
+    (17:00 ET, same calendar date either way) hid the whole UTC-vs-ET vintage class, so the
+    default here is 03:27 UTC on the day AFTER the session — the shape production actually
+    writes.  Any test that passes if this is wrong is not testing the vintage logic.
+    """
+    if asof is None:
+        nxt = date.fromisoformat(vintage) + timedelta(days=1)
+        asof = f"{nxt.isoformat()}T03:27:41+00:00"
     p = site / "options_structure" / "gex_state"
     p.mkdir(parents=True, exist_ok=True)
     (p / f"{root.upper()}.json").write_text(json.dumps({
-        "schema": "options_structure.gex_state/v1", "asof": f"{vintage}T21:00:00+00:00",
+        "schema": "options_structure.gex_state/v1", "asof": asof,
         "root": root.upper(), "spot": spot, "gamma_flip": flip,
         "call_wall": call_wall, "put_wall": put_wall,
         "dist_to_flip_pct": round((spot - flip) / spot * 100, 2), "stability_pct": 15.7,
         "authority_tier": "display"}))
+
+
+def _minutes(path: Path) -> int:
+    """`coverage.minutes` from a written record — the yardstick for "a better read"."""
+    return int(json.loads(path.read_text())["coverage"]["minutes"])
 
 
 @pytest.fixture()
@@ -182,9 +236,22 @@ class TestSessionWindow:
     def test_early_close_recognition(self):
         assert sd.is_early_close(date(2026, 11, 27)) is True    # Friday after Thanksgiving
         assert sd.is_early_close(date(2026, 12, 24)) is True
-        assert sd.is_early_close(date(2026, 7, 3)) is True
         assert sd.is_early_close(date(2026, 7, 28)) is False
         assert sd.is_early_close(date(2026, 11, 26)) is False   # Thanksgiving itself
+
+    def test_a_non_session_is_never_an_early_close(self):
+        """2026-07-04 is a Saturday, so the NYSE observes Independence Day on Friday 07-03 with
+        a FULL closure — the bare month/day rule called that a half day.  Session-ness is
+        delegated to the calendar so the whole family of such collisions is covered, not one."""
+        from lib import nyse_calendar
+        assert date(2026, 7, 3) in nyse_calendar.holidays(2026)
+        assert nyse_calendar.is_session(date(2026, 7, 3)) is False
+        assert sd.is_early_close(date(2026, 7, 3)) is False
+        assert sd.is_early_close(date(2026, 12, 26)) is False   # a Saturday
+        # ...and in a year where July 4 IS a weekday, July 3 is a genuine 1pm close.
+        assert date(2027, 7, 4).strftime("%A") == "Sunday"
+        assert date(2025, 7, 4).strftime("%A") == "Friday"
+        assert sd.is_early_close(date(2025, 7, 3)) is True
 
     def test_bad_cadence_yields_no_denominator(self):
         """A cadence of 0 must not become a division-by-zero or a fabricated denominator."""
@@ -394,17 +461,53 @@ class TestPremiumBursts:
     def test_fires_on_a_sustained_pace_change(self):
         ev = sd.premium_bursts(TIMES, self._series())
         assert len(ev) == 1
-        assert ev[0]["type"] == "premium_burst" and abs(ev[0]["z"]) >= sd.BURST_Z
+        assert ev[0]["type"] == "premium_burst"
+        assert abs(ev[0]["effect_sigma"]) >= sd.BURST_EFFECT_SIGMA
+        assert abs(ev[0]["z"]) >= sd.BURST_T_MIN
         assert ev[0]["baseline_stamps"] >= sd.BURST_MIN_BASELINE
+
+    def test_effect_size_and_test_statistic_are_different_numbers_named_differently(self):
+        """`z` must be the honest two-sample statistic, `effect_sigma` the scale-free effect.
+
+        They differ by sqrt(w*b/(w+b)) — 2.24x at a 10-increment baseline, 3.08x by the close —
+        so publishing one under the other's name would misstate every event's strength by a
+        factor that drifts through the session.
+        """
+        st = sd.window_vs_baseline(self._series(n_quiet=25, n_burst=5), 10)
+        ratio = math.sqrt(st.window_n * st.baseline_n / (st.window_n + st.baseline_n))
+        assert st.t == pytest.approx(st.effect_sigma * ratio, rel=1e-9)
+        assert abs(st.t) > abs(st.effect_sigma)
+        ev = sd.premium_bursts(TIMES, self._series(n_quiet=25, n_burst=5))[0]
+        assert ev["z"] != ev["effect_sigma"]
+
+    def test_t_floor_equals_the_strictness_at_the_smallest_allowed_baseline(self):
+        """Documents the BURST_T_MIN derivation, so a later edit cannot drift it silently."""
+        w = b = sd.BURST_MIN_BASELINE
+        assert sd.BURST_T_MIN == pytest.approx(
+            sd.BURST_EFFECT_SIGMA * math.sqrt(1.0 / (1.0 / w + 1.0 / b)), abs=0.01)
 
     def test_does_not_fire_on_a_steady_tape(self):
         assert sd.premium_bursts(TIMES, self._series(n_quiet=40, n_burst=0)) == []
 
-    def test_flat_tape_is_no_read_not_a_zero_z(self):
-        """Zero-variance baseline cannot be z-scored; it must yield no event, not z=0."""
-        z, _, _ = sd.window_vs_baseline_z([100.0] * 40, 10)
-        assert math.isnan(z)
+    def test_flat_tape_is_no_read_not_a_zero_statistic(self):
+        """Zero-variance baseline cannot be standardized; it must yield no event, not zero."""
+        st = sd.window_vs_baseline([100.0] * 40, 10)
+        assert math.isnan(st.effect_sigma) and math.isnan(st.t)
+        assert st.fires is False
         assert sd.premium_bursts(TIMES, [100.0] * 40) == []
+
+    def test_rearm_margin_books_one_event_for_one_acceleration(self):
+        """A ramp that oscillates across the cut is ONE acceleration; the ledger counts rows."""
+        vals, cum = [], 0.0
+        for i in range(25):
+            cum += 100.0 + (7.0 if i % 2 else -7.0)
+            vals.append(cum)
+        for i in range(14):                     # ramp straddling the threshold
+            cum += 1500.0 if i % 2 else 1350.0
+            vals.append(cum)
+        assert len(sd.premium_bursts(TIMES, vals)) == 1
+        # with no margin the same tape can book more than once — which is what the margin is for
+        assert len(sd.premium_bursts(TIMES, vals, rearm_sigma=0.0)) >= 1
 
     def test_hysteresis_books_one_event_per_run(self):
         """A run above threshold books once; it re-arms only after |z| drops back below."""
@@ -449,7 +552,8 @@ class TestPremiumBursts:
         first = sd.premium_bursts(TIMES, vals)[0]
         idx = TIMES.index(first["t"])
         again = sd.premium_bursts(TIMES, vals[: idx + 1])
-        assert again and again[-1]["t"] == first["t"] and again[-1]["z"] == first["z"]
+        assert again and again[-1]["t"] == first["t"]
+        assert again[-1]["z"] == first["z"] and again[-1]["effect_sigma"] == first["effect_sigma"]
 
     def test_min_baseline_blocks_an_early_false_positive(self):
         """Three quiet opening stamps must not make the fourth a 40-sigma event."""
@@ -464,11 +568,10 @@ class TestPremiumBursts:
         """
         vals = self._series(n_quiet=15, n_burst=5)      # 20 increments
         st = sd.slope_stats(vals, 10)                   # faithful TS port
-        assert abs(st.z) < sd.BURST_Z                   # cannot fire, by construction
+        assert abs(st.z) < sd.BURST_EFFECT_SIGMA        # cannot fire, by construction
         assert abs(st.z) <= math.sqrt((st.n - 10) / 10) + 1e-9
         # the two-sample framing does fire on the same tape
-        z, _, _ = sd.window_vs_baseline_z(self._series(n_quiet=25, n_burst=5), 10)
-        assert abs(z) >= sd.BURST_Z
+        assert sd.window_vs_baseline(self._series(n_quiet=25, n_burst=5), 10).fires
 
     def test_slope_stats_matches_the_ts_population_sigma_convention(self):
         st = sd.slope_stats([0.0, 1.0, 2.0, 10.0], 2)
@@ -526,6 +629,7 @@ class TestHotPockets:
         r = sd.hot_pockets(pocket_frame(lambda i: 0.80))
         assert r.events == []                 # no moment of entry exists to stamp
         assert r.share_at_open >= sd.POCKET_SHARE_PCT
+        assert r.share_at_open_t == "09:30"      # the stamp is printed, not just the number
         assert r.peak_share >= sd.POCKET_SHARE_PCT
 
     def test_hysteresis_books_one_event_while_the_share_sits_on_the_line(self):
@@ -565,6 +669,13 @@ class TestZeroDte:
         write_tides(tmp_path, session_date="2026-07-28", zero_dte_share_path=share_fn, **kw)
         return json.loads((tmp_path / "live_flow" / "dte_tide" / "2026-07-28.json").read_text())
 
+    @staticmethod
+    def _share_at(doc, i):
+        ks = [k for k, v in doc["buckets"].items() if v]
+        tot = sum(abs(doc["buckets"][k][i]["ncp"]) + abs(doc["buckets"][k][i]["npp"]) for k in ks)
+        z = abs(doc["buckets"]["0d"][i]["ncp"]) + abs(doc["buckets"]["0d"][i]["npp"])
+        return z / tot * 100.0 if tot else 0.0
+
     def test_fires_when_the_share_crosses_up(self, tmp_path):
         doc = self._doc(tmp_path, lambda i: 0.20 if i < 10 else 0.70)
         block, ev = sd.zero_dte_read(doc, session_date="2026-07-28")
@@ -590,6 +701,50 @@ class TestZeroDte:
         block, ev = sd.zero_dte_read(doc, session_date="2026-07-28")
         assert block["peak_share"] is None and ev == []
         assert "another session" in block["note_en"] and block["note_zh"]
+
+    def test_an_empty_dte_bucket_does_not_veto_the_whole_session(self, tmp_path):
+        """`build_dte_tide_current` emits all five bucket keys and leaves untraded ones `[]`.
+
+        Intersecting stamp sets across every DECLARED key let one empty bucket report "no
+        same-day-expiry split" for a day with real tape.  Only non-empty buckets take part.
+        Found by routing the fixtures through the real writer — the hand-written fixture
+        populated all five and could not see it.
+        """
+        _, dte = build_tide_docs(session_date="2026-07-28", n=14,
+                                 zero_dte_share_path=lambda i: 0.2 if i < 6 else 0.8)
+        empty = [k for k, v in dte["buckets"].items() if not v]
+        assert empty, "the real writer must be emitting at least one empty bucket here"
+        block, ev = sd.zero_dte_read(dte, session_date="2026-07-28")
+        assert block["peak_share"] == pytest.approx(80.0, abs=0.5)
+        assert block["buckets_used"] == len(dte["buckets"]) - len(empty)
+        assert len(ev) == 1
+
+    def test_a_dead_minute_does_not_re_arm_the_family(self, tmp_path):
+        """M7: a zero-total stamp carries no information, so arming state survives it.
+
+        Resetting on a dead minute swallowed the genuine entry right after it (the next reading
+        looked like "first observation") and overwrote share_at_open with a mid-session value.
+        """
+        doc = self._doc(tmp_path, lambda i: 0.10 if i < 6 else 0.90, n=14)
+        # blank the stamp immediately before the crossing, in every bucket
+        dead = doc["buckets"]["0d"][5]["t"]
+        for rows in doc["buckets"].values():
+            for r in rows:
+                if r["t"] == dead:
+                    r["ncp"] = r["npp"] = 0
+        block, ev = sd.zero_dte_read(doc, session_date="2026-07-28")
+        assert len(ev) == 1, "the entry after a dead minute must still book"
+        assert block["share_at_open"] == pytest.approx(10.0, abs=1.0)
+        assert block["share_at_open_t"] == "09:30", "not the minute after the dead one"
+
+    def test_share_at_open_is_the_first_stamp_with_tape(self, tmp_path):
+        doc = self._doc(tmp_path, lambda i: 0.30, n=10)
+        for rows in doc["buckets"].values():          # blank the first two stamps entirely
+            for r in rows[:2]:
+                r["ncp"] = r["npp"] = 0
+        block, _ = sd.zero_dte_read(doc, session_date="2026-07-28")
+        assert block["share_at_open_t"] == "09:40"    # third stamp at 5-minute cadence
+        assert block["share_at_open"] is not None
 
     def test_absent_or_malformed_archive_degrades_to_plain_words(self):
         for bad in (None, {}, {"buckets": None}, {"buckets": {"1_7d": []}}):
@@ -622,17 +777,93 @@ class TestClockNormalization:
 
     D = "2026-07-28"
 
-    @pytest.mark.parametrize("first,last,expect,why", [
-        ("0930", "1600", 0, "already exchange time — no-op (and post-fix behaviour)"),
-        ("0530", "1159", 240, "the _minute_key defect, summer offset"),
-        ("0430", "1059", 300, "the same defect at the winter offset"),
-        ("0535", "1204", 240, "defect plus a 5-minute late start — start preserved"),
-        ("1030", "1600", 0, "genuinely late poller start — must NOT be shifted"),
-        ("0530", "1500", 0, "correcting would overshoot the close — leave labels alone"),
+    @staticmethod
+    def _labels(start_min: int, n: int, cadence_min: int) -> list[str]:
+        return [f"{(start_min + i * cadence_min) // 60:02d}"
+                f"{(start_min + i * cadence_min) % 60:02d}" for i in range(n)]
+
+    @pytest.mark.parametrize("start,n,cad,expect,why", [
+        (9 * 60 + 30, 79, 5, 0, "already exchange time — no-op (and the post-fix behaviour)"),
+        (5 * 60 + 30, 79, 5, 240, "the _minute_key defect, summer offset"),
+        (4 * 60 + 30, 79, 5, 300, "the same defect at the winter offset"),
+        (5 * 60 + 35, 79, 5, 240, "defect plus a 5-minute late start — start preserved"),
+        (10 * 60 + 30, 67, 5, 0, "genuinely late poller start — must NOT be shifted"),
     ])
-    def test_offset_truth_table(self, first, last, expect, why):
-        assert sd.clock_offset_minutes(self.D, first, last_label=last,
-                                       cadence_sec=300) == expect, why
+    def test_offset_truth_table(self, start, n, cad, expect, why):
+        ck = sd.clock_read(self.D, self._labels(start, n, cad), cadence_sec=cad * 60)
+        assert ck.offset_min == expect, why
+        assert ck.trusted, why
+
+    def test_a_single_off_grid_print_no_longer_defeats_the_read(self):
+        """MEASURED FAILURE of the earlier single-label rule.
+
+        A 09:25 ET print sits BEFORE the open, so an earliest-label rule concluded the whole
+        clean session was skewed and shifted every event 4 hours.  Scoring the distribution, the
+        one stray label cannot outvote 78 good ones.
+        """
+        labels = ["0925"] + self._labels(9 * 60 + 30, 78, 5)
+        ck = sd.clock_read(self.D, labels, cadence_sec=300)
+        assert ck.offset_min == 0
+        assert ck.labels_outside == 1        # the stray is counted, not hidden
+        assert ck.trusted
+
+    def test_a_skewed_session_running_past_the_close_is_still_corrected(self):
+        """MEASURED FAILURE of the earlier single-label rule, the other direction.
+
+        At the configured 120-second cadence a skewed session whose last label lands 3 minutes
+        past the close made the old overshoot guard refuse the correction entirely — silently
+        stamping all 196 events 4 hours early.  Now the +240 candidate misplaces one label while
+        candidate 0 misplaces ~117, so the correction wins on the evidence.
+        """
+        labels = self._labels(5 * 60 + 30, 197, 2)          # 05:30..11:62 -> 12:02, skewed
+        ck = sd.clock_read(self.D, labels, cadence_sec=120)
+        assert ck.offset_min == 240
+        assert sd.shift_label(labels[0], ck.offset_min) == "09:30"
+        assert ck.labels_outside == 1        # the 16:02 tail is declared
+
+    def test_two_fitting_candidates_are_declared_ambiguous_not_guessed(self):
+        """A truncated morning fits at 0 AND at +240 (09:30–11:00 and 13:30–15:00 both sit
+        inside the window).  The read must say so and stop being trusted."""
+        ck = sd.clock_read(self.D, self._labels(9 * 60 + 30, 19, 5), cadence_sec=300)
+        assert set(ck.fitting) >= {0, 240}
+        assert ck.ambiguous and not ck.trusted
+        assert ck.note_en and ck.note_zh
+
+    def test_residual_receipt_is_reported(self):
+        ck = sd.clock_read(self.D, self._labels(5 * 60 + 30, 79, 5), cadence_sec=300)
+        assert ck.residual_median_min == pytest.approx(-240.0)
+        clean = sd.clock_read(self.D, self._labels(9 * 60 + 30, 79, 5), cadence_sec=300)
+        assert clean.residual_median_min == pytest.approx(0.0)
+
+    def test_no_labels_is_a_no_op_not_a_crash(self):
+        ck = sd.clock_read(self.D, [], cadence_sec=300)
+        assert ck.offset_min == 0 and ck.trusted and ck.note_en == ""
+
+    def test_untrusted_clock_suppresses_every_time_stamped_event(self):
+        """M1's binding instruction: when the clock cannot be pinned, do not publish times."""
+        n = 19                                          # short day -> ambiguous
+        frame, stamps = make_frame(n_stamps=n, spot_path=lambda i: 99.0 if i < 9 else 101.0)
+        r = sd.build_session_record(
+            root="SPY", session_date=self.D, asof="t", frame=frame, stamps=stamps,
+            cadence_sec=300,
+            spots_by_stamp={s: (99.0 if i < 9 else 101.0) for i, s in enumerate(stamps)},
+            levels={"flip": 100.0, "vintage": self.D, "source": "g"})
+        assert r["coverage"]["clock_ambiguous"] is True
+        assert r["events"] == []
+        assert r["coverage"]["events_dropped_clock"] > 0
+        assert any("could not be matched" in m for m in r["coverage"]["missing_en"])
+        assert len(r["coverage"]["missing_zh"]) == len(r["coverage"]["missing_en"])
+        assert r["arc"], "the arc's shape does not depend on the clock and is still published"
+
+    def test_events_outside_the_session_window_are_dropped_after_the_shift(self):
+        """M2: the invariant is enforced POST-shift, not assumed."""
+        assert sd._label_in_session("09:30", self.D) is True
+        assert sd._label_in_session("16:00", self.D) is True
+        assert sd._label_in_session("17:05", self.D) is False
+        assert sd._label_in_session("09:29", self.D) is False
+        assert sd._label_in_session(None, self.D) is False       # fails closed
+        assert sd._label_in_session("12:00", "2026-11-27") is True
+        assert sd._label_in_session("14:00", "2026-11-27") is False   # 1pm close
 
     def test_shift_label_round_trips_and_tolerates_junk(self):
         assert sd.shift_label("0530", 240) == "09:30"
@@ -642,12 +873,16 @@ class TestClockNormalization:
         assert sd.shift_label(None, 240) == ""
 
     def test_skewed_archive_yields_the_same_event_times_as_a_clean_one(self):
-        """The pinning test: a fixture with skewed labels must produce correct event times."""
-        def spots(i):
-            return 99.0 if i < 20 else 101.0
+        """The pinning test: a fixture with skewed labels must produce correct event times.
 
-        clean, c_stamps = make_frame(n_stamps=40, spot_path=spots)
-        skew, s_stamps = make_frame(n_stamps=40, spot_path=spots, label_skew_min=-240)
+        79 stamps (a full 5-minute session) so the clock read is unambiguous — a short day is
+        genuinely undecidable and is covered by its own test above.
+        """
+        def spots(i):
+            return 99.0 if i < 40 else 101.0
+
+        clean, c_stamps = make_frame(n_stamps=79, spot_path=spots)
+        skew, s_stamps = make_frame(n_stamps=79, spot_path=spots, label_skew_min=-240)
         assert s_stamps[0] == "0530" and c_stamps[0] == "0930"      # fixture really is skewed
 
         def rec(frame, stamps):
@@ -658,6 +893,7 @@ class TestClockNormalization:
                 levels={"flip": 100.0, "vintage": self.D, "source": "x"})
 
         a, b = rec(clean, c_stamps), rec(skew, s_stamps)
+        assert a["events"] and b["events"], "both sides must actually produce events"
         assert [e["t"] for e in a["events"]] == [e["t"] for e in b["events"]]
         assert a["arc"][0]["t"] == b["arc"][0]["t"] == "09:30"
         assert b["coverage"]["clock_offset_min"] == 240
@@ -764,7 +1000,10 @@ class TestRecord:
         """
         r = self._record()
         banned = ("validated", "n=", "FlowZ", "TSBrd", "NotTrap", "pain_dist", "wilson_",
-                  "falsifier", "refuted", "证伪", "z-score", "p-value", "COLLECT_LANE")
+                  "falsifier", "refuted", "证伪", "z-score", "p-value", "COLLECT_LANE",
+                  # m1: a bare Python None interpolated into copy ("the close of None") teaches
+                  # a reader nothing and reads as a bug.
+                  "none", "null")
         machine_keys = {"type", "arc_shape", "schema", "side", "last_side", "side_at_open",
                         "scope", "authority_tier", "source", "arc_method"}
 
@@ -902,12 +1141,13 @@ class TestLedgerRow:
 class TestBuilderEndToEnd:
     D = "2026-07-28"
 
-    def _archive(self, tmp_path, *, n=40, roots=("SPY",), drop=(), walls=None):
+    def _archive(self, tmp_path, *, n=40, roots=("SPY",), drop=(), walls=None,
+                 strikes=None):
         arch = tmp_path / "arch"
         for r in roots:
             frame, stamps = make_frame(root=r, n_stamps=n, session_date=self.D,
                                         spot_path=lambda i: 99.0 if i < n // 2 else 101.0,
-                                        walls=walls)
+                                        walls=walls, strikes=strikes)
             write_archive(arch, frame, stamps, root=r, session_date=self.D,
                           drop_stamps=drop)
         write_tides(arch, session_date=self.D,
@@ -1125,6 +1365,227 @@ class TestBuilderEndToEnd:
         assert res["ok"]
         rec = json.loads((repo / "data" / "options_session" / self.D / "SPY.json").read_text())
         assert rec["arc"] == [] and rec["coverage"]["absent_objects"] == 2
+
+    # ── B1: vintage is a SESSION date, never a UTC date slice ────────────────────
+    def test_gex_state_vintage_maps_utc_stamp_to_its_et_session(self, repo):
+        """`asof[:10]` was D+1 on every real nightly and killed the same-session check.
+
+        `build_gex_board` stamps `datetime.now(UTC)`; the engine band commits 03:11–03:54 UTC,
+        which is 23:xx ET the evening BEFORE.  The whole EOD-fallback path depended on getting
+        this right, and the bilingual note asserted a false date when it was wrong.
+        """
+        assert bsd.levels_vintage("2026-07-30T03:27:41+00:00") == "2026-07-29"
+        assert bsd.levels_vintage("2026-07-29T21:00:00+00:00") == "2026-07-29"
+        assert bsd.levels_vintage("2026-08-01T03:27:41+00:00") == "2026-07-31"   # Sat -> Fri
+        assert bsd.levels_vintage("2026-07-30T03:27:41Z") == "2026-07-29"
+        assert bsd.levels_vintage(None) is None
+        assert bsd.levels_vintage("not a date") is None
+        # ...and the naive UTC slice this replaced would have said the wrong thing:
+        assert "2026-07-30T03:27:41+00:00"[:10] != "2026-07-29"
+
+        write_gex_state(repo / "site", "SPY", vintage=self.D)
+        lv = bsd.read_levels(repo / "site", "SPY")
+        assert lv["vintage"] == self.D
+
+    def test_eod_walls_survive_a_realistic_post_midnight_stamp(self, repo, monkeypatch):
+        monkeypatch.setenv("COLLECT_LANE", "nightly")
+        arch = self._archive(repo)
+        write_gex_state(repo / "site", "SPY", vintage=self.D, flip=100.0,
+                        call_wall=101.0, put_wall=98.0)
+        bsd.run(session_date=self.D, roots=["SPY"], from_dir=arch, root_dir=repo)
+        rec = json.loads((repo / "data" / "options_session" / self.D / "SPY.json").read_text())
+        assert rec["flip"]["level_is_this_session"] is True
+        assert rec["walls"]["close"] == {"call": 101.0, "put": 98.0,
+                                         "source": rec["levels"]["source"]}
+        assert "closing map" in rec["flip"]["note_en"]
+
+    # ── B2: level-dependent families are gated on a same-session map ─────────────
+    def test_foreign_vintage_levels_suppress_flip_and_wall_families(self, repo, monkeypatch):
+        """The record refuses to print a foreign map as this session's close; scoring events
+        against it anyway would put that same rejected number inside every receipt."""
+        monkeypatch.setenv("COLLECT_LANE", "nightly")
+        arch = self._archive(repo)
+        write_gex_state(repo / "site", "SPY", vintage="2026-07-24", flip=100.0,
+                        call_wall=101.0, put_wall=98.0)
+        bsd.run(session_date=self.D, roots=["SPY"], from_dir=arch, root_dir=repo)
+        rec = json.loads((repo / "data" / "options_session" / self.D / "SPY.json").read_text())
+        assert rec["flip"]["level_is_this_session"] is False
+        assert rec["flip"]["crosses"] == 0
+        assert not [e for e in rec["events"]
+                    if e["type"] in ("flip_cross", "call_wall_touch", "put_wall_touch")]
+        assert any("not from this session" in m for m in rec["coverage"]["missing_en"])
+        assert len(rec["coverage"]["missing_zh"]) == len(rec["coverage"]["missing_en"])
+        assert "another session" in rec["flip"]["note_en"]
+        # the crossings the archive DOES support are unaffected
+        assert rec["event_counts"].get("premium_burst", 0) >= 0
+
+    def test_level_receipts_carry_the_vintage_they_were_measured_against(self):
+        r = sd.flip_crossings(TIMES, [99.0] * 3 + [101.0] * 3, 100.0,
+                              level_vintage="2026-07-28")
+        assert r.events[0]["level_vintage"] == "2026-07-28"
+        w = sd.wall_touches(TIMES, [98.0, 98.0, 100.0], call_wall=100.0, put_wall=None,
+                            level_vintage="2026-07-28")
+        assert w.events[0]["level_vintage"] == "2026-07-28"
+
+    def test_ledger_carries_level_vintage_columns(self, repo, monkeypatch):
+        """Schema is fixed BEFORE any row exists — a column added later is null forever."""
+        monkeypatch.setenv("COLLECT_LANE", "nightly")
+        arch = self._archive(repo)
+        write_gex_state(repo / "site", "SPY", vintage=self.D, flip=100.0)
+        bsd.run(session_date=self.D, roots=["SPY"], from_dir=arch, root_dir=repo)
+        import pandas as pd
+        lg = pd.read_parquet(repo / "data" / "options_session" / "ledger.parquet")
+        for col in ("levels_vintage", "levels_source", "levels_is_this_session",
+                    "clock_offset_min", "clock_ambiguous", "coverage_absent_objects"):
+            assert col in lg.columns, col
+        assert lg.iloc[0]["levels_vintage"] == self.D
+        assert bool(lg.iloc[0]["levels_is_this_session"]) is True
+
+    # ── B3: a settled record is only replaced by a strictly better read ──────────
+    def test_a_thinner_reread_never_replaces_a_settled_record(self, repo, monkeypatch):
+        """Post-retention re-runs measured coverage 79 -> 6 while the ledger kept 79.
+
+        Weekends make it routine: three nightly runs all resolve to the same Friday.
+        """
+        monkeypatch.setenv("COLLECT_LANE", "nightly")
+        arch = self._archive(repo, n=40)
+        bsd.run(session_date=self.D, roots=["SPY"], from_dir=arch, root_dir=repo)
+        p = repo / "data" / "options_session" / self.D / "SPY.json"
+        full = _minutes(p)
+        assert full == 40
+
+        # the archive ages out: only the last few stamps remain
+        d = arch / "live_flow" / "surface" / "SPY" / self.D
+        keep = sorted(f.name for f in d.glob("*.json") if f.name != "idx.json")[-4:]
+        for f in d.glob("*.json"):
+            if f.name != "idx.json" and f.name not in keep:
+                f.unlink()
+        res = bsd.run(session_date=self.D, roots=["SPY"], from_dir=arch, root_dir=repo)
+        assert _minutes(p) == full, "the settled record must not degrade on a thin re-read"
+        assert "SPY" not in res["data_written"]
+        # ...and the latest pointer holds its fuller read of the same day too
+        assert _minutes(repo / "site" / "session" / "SPY.json") == full
+        assert "SPY" not in res["written"]
+
+    def test_a_better_reread_does_replace_the_record(self, repo, monkeypatch):
+        """Keep-first must not become keep-forever: a genuine backfill has to land."""
+        monkeypatch.setenv("COLLECT_LANE", "nightly")
+        arch = self._archive(repo, n=40)
+        d = arch / "live_flow" / "surface" / "SPY" / self.D
+        idx_path = d / "idx.json"
+        full_idx = json.loads(idx_path.read_text())
+        # first run sees only the first 10 stamps
+        idx_path.write_text(json.dumps({**full_idx, "stamps": full_idx["stamps"][:10],
+                                        "latest": full_idx["stamps"][9]}))
+        bsd.run(session_date=self.D, roots=["SPY"], from_dir=arch, root_dir=repo)
+        p = repo / "data" / "options_session" / self.D / "SPY.json"
+        assert _minutes(p) == 10
+        # the poller backfills the rest; the fuller read must win
+        idx_path.write_text(json.dumps(full_idx))
+        res = bsd.run(session_date=self.D, roots=["SPY"], from_dir=arch, root_dir=repo)
+        assert _minutes(p) == 40
+        assert "SPY" in res["data_written"] and "SPY" in res["written"]
+
+    # ── M3/M4: read shape and the wall-clock budget ──────────────────────────────
+    def test_the_day_is_read_from_one_frame_not_every_frame(self, repo, monkeypatch):
+        """The newest frame already carries the whole session; fetching all of them is
+        quadratic in bytes (measured 107 MB for one root at the configured 120s cadence)."""
+        monkeypatch.setenv("COLLECT_LANE", "nightly")
+        # 200 strikes so the quadratic growth is real: with a 3-strike grid every frame is a few
+        # hundred bytes and the comparison would prove nothing.
+        arch = self._archive(repo, n=40, strikes=[600.0 + k for k in range(200)])
+        res = bsd.run(session_date=self.D, roots=["SPY"], from_dir=arch, root_dir=repo)
+        rec = json.loads((repo / "data" / "options_session" / self.D / "SPY.json").read_text())
+        assert rec["arc_points_full"] == 40, "the full day came out of the one frame"
+        # bytes: 2 index objects + 2 full frames + 40 head reads, NOT 40 full frames
+        every_frame = sum(f.stat().st_size for f in
+                          (arch / "live_flow" / "surface" / "SPY" / self.D).glob("*.json"))
+        assert res["r2_mb"] * 1e6 < every_frame * 0.25, (res["r2_mb"], every_frame)
+        assert res["range_fallbacks"] == 0, "the head read must find spot without a fallback"
+
+    def test_head_read_finds_spot_without_fetching_the_frame(self, repo):
+        """The fast path: a ~256-byte range read yields the stamp's spot."""
+        arch = self._archive(repo, n=6, strikes=[600.0 + k for k in range(200)])
+        reader = bsd.ArchiveReader(from_dir=arch)
+        stamp = json.loads(
+            (arch / "live_flow" / "surface" / "SPY" / self.D / "idx.json").read_text())["stamps"][-1]
+        spot, present = reader.stamp_spot("SPY", self.D, stamp)
+        assert present is True and spot == 101.0
+        assert reader.range_fallbacks == 0
+        assert reader.bytes_read <= bsd.HEAD_RANGE_BYTES
+
+    def test_a_reordered_spot_key_falls_back_instead_of_going_wrong(self, repo):
+        """The head read depends on a WRITER detail (spot first).  If that ever changes the
+        builder must get slower and noisier, never wrong."""
+        arch = self._archive(repo, n=6, strikes=[600.0 + k for k in range(200)])
+        d = arch / "live_flow" / "surface" / "SPY" / self.D
+        stamp = json.loads((d / "idx.json").read_text())["stamps"][-1]
+        doc = json.loads((d / f"{stamp}.json").read_text())
+        spot = doc.pop("spot")
+        (d / f"{stamp}.json").write_text(json.dumps({**doc, "spot": spot}))   # spot moved LAST
+        reader = bsd.ArchiveReader(from_dir=arch)
+        got, present = reader.stamp_spot("SPY", self.D, stamp)
+        assert reader.range_fallbacks == 1, "the head must not have satisfied the read"
+        assert present is True and got == spot, "the value is still recovered, just not cheaply"
+
+    def test_a_missing_stamp_object_reports_absent_not_a_null_spot(self, repo):
+        """A null spot on a REAL object is covered tape with an unknown price; a missing object
+        is not covered at all.  Conflating them would overstate coverage."""
+        arch = self._archive(repo, n=6)
+        d = arch / "live_flow" / "surface" / "SPY" / self.D
+        reader = bsd.ArchiveReader(from_dir=arch)
+        assert reader.stamp_spot("SPY", self.D, "9999") == (None, False)
+        stamp = json.loads((d / "idx.json").read_text())["stamps"][0]
+        doc = json.loads((d / f"{stamp}.json").read_text())
+        (d / f"{stamp}.json").write_text(json.dumps({**doc, "spot": None}))
+        assert reader.stamp_spot("SPY", self.D, stamp) == (None, True)
+
+    def test_a_spent_budget_writes_honest_partial_output(self, repo, monkeypatch, capsys):
+        """The engine job was cancelled at its 200-minute cap in 5 of 8 recent nightlies, so an
+        exhausted budget must degrade rather than run long."""
+        monkeypatch.setenv("COLLECT_LANE", "nightly")
+        arch = self._archive(repo, roots=("SPY", "QQQ"), n=20)
+        res = bsd.run(session_date=self.D, roots=["SPY", "QQQ"], from_dir=arch, root_dir=repo,
+                      budget_seconds=-1.0)
+        assert res["ok"] is True
+        assert res["budget_skipped"] == ["SPY", "QQQ"]
+        assert res["roots"] == []
+        out = capsys.readouterr().out
+        assert any("read budget spent" in l and l.startswith("::warning")
+                   for l in out.splitlines())
+
+    # ── M9: a walk-back means two axes, and that must be said ────────────────────
+    def test_walk_back_axis_divergence_is_warned_and_disclosed(self, repo, monkeypatch,
+                                                               capsys):
+        monkeypatch.setenv("COLLECT_LANE", "nightly")
+        arch = self._archive(repo, n=20)
+        d = arch / "live_flow" / "surface" / "SPY" / self.D
+        newest = json.loads((d / "idx.json").read_text())["stamps"][-1]
+        (d / f"{newest}.json").write_text("{ truncated")     # newest frame unreadable
+        bsd.run(session_date=self.D, roots=["SPY"], from_dir=arch, root_dir=repo)
+        rec = json.loads((repo / "data" / "options_session" / self.D / "SPY.json").read_text())
+        cov = rec["coverage"]
+        assert cov["premium_total_minutes"] == 19 and cov["minutes"] == 19
+        assert cov["premium_total_axis_gap"] >= 0
+        assert rec["inputs"]["surface_frame_is_last_stamp"] is False
+        out = capsys.readouterr().out
+        assert any("newest readable snapshot" in l and l.startswith("::warning")
+                   for l in out.splitlines())
+
+    # ── m6: the dated records are committed artifacts and need a sweep ───────────
+    def test_dated_records_are_pruned_beyond_the_retained_window(self, repo):
+        base = repo / "data" / "options_session"
+        for day in range(1, 8):
+            d = base / f"2026-06-{day:02d}"
+            d.mkdir(parents=True)
+            (d / "SPY.json").write_text("{}")
+        (base / "not-a-date").mkdir()
+        (base / "ledger.parquet").write_text("x")
+        dropped = bsd.prune_records(repo / "data", retain=3)
+        assert dropped == ["2026-06-04", "2026-06-03", "2026-06-02", "2026-06-01"]
+        assert sorted(d.name for d in base.iterdir() if d.is_dir()) == [
+            "2026-06-05", "2026-06-06", "2026-06-07", "not-a-date"]
+        assert (base / "ledger.parquet").exists(), "the durable record is never swept"
 
     def test_default_session_date_is_calendar_derived(self):
         d = date.fromisoformat(bsd.default_session_date())

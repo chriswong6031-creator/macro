@@ -5825,7 +5825,12 @@ artifacts:
       stamp's scalar spot but DROPS spot_path, and emits that stamp's own walls rather
       than walls_path, so the price path and the opening wall map cost one GET per stamp.
       Stamps are correct exchange time (an aware UTC datetime through astimezone(ET)) —
-      unlike the tide families below. Intraday store: consumers check staleness before
+      unlike the tide families below. COST WARNING for any future consumer: each per-stamp
+      file is the session TRUNCATED to that stamp, so fetching a whole session is QUADRATIC
+      in bytes (measured 124.8 MB for one root at the configured 120s cadence). Read the
+      newest frame for the full day and range-read the head of each stamp for its `spot`;
+      `_full.json` carries spot_path/walls_path but is staged locally by the poller and never
+      uploaded, so it cannot be fetched. Intraday store: consumers check staleness before
       display and NEVER couple it to a forward ledger outside the nightly lane.
 
   live-flow-tide-dated:
@@ -5916,7 +5921,12 @@ artifacts:
       archived per-root series is gross call-minus-put premium, NOT the tide's signed net
       call/put premium, and labelling it as such would fabricate a number. Written only
       in the nightly lane (COLLECT_LANE=nightly); no surface consumes it yet (W2 S2 is
-      the first planned reader).
+      the first planned reader). RETENTION: the newest 40 sessions
+      (build_session_digest.RECORD_RETAIN_SESSIONS) — these are committed git artifacts and
+      would otherwise grow without bound; the ledger parquet below is the durable record and
+      is never swept. A dated record is replaced only by a read covering MORE minutes, so a
+      re-run after the 10-session surface retention has aged out cannot degrade a settled
+      session.
 
   options-session-latest:
     path: site/session/
@@ -5970,8 +5980,11 @@ artifacts:
       (date, root) keeps FIRST, so replays and backfills add sessions and never rewrite a
       row already on the record. Read back by the builder itself: a prior session's close
       walls are this session's open walls while the intraday greek tap is dark.
-      DISPLAY-ONLY — a descriptive record, not a graded forecast; nothing here is scored
-      or promoted, and no gate reads it.
+      Carries the vintage/source of the level map each row's flip and wall figures were
+      measured against, plus the clock offset applied and whether that clock read was
+      ambiguous — so a genuine zero-crossing day is distinguishable from a day whose level
+      map was unusable. DISPLAY-ONLY — a descriptive record, not a graded forecast; nothing
+      here is scored or promoted, and no gate reads it.
 
   # --- W3 Event Intelligence priors (Signal Commons, 2026-07-05) ---
   event-priors-clinicaltrials:

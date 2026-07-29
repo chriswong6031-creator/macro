@@ -76,17 +76,37 @@ WALL_WITHIN_PCT = 0.25
 #: pretending otherwise would put a wrong number in a receipt.
 BURST_WINDOW_STAMPS = 10
 
-#: |z| at which the premium-pace check books a burst.  Threshold value mirrors
-#: `optionsAlerts.evalPremiumBurst` (`cond.z`, default 2); the DENOMINATOR deliberately does
-#: not — see `premium_bursts` for the named divergence and why parity here would have shipped
-#: a family that can never fire before mid-afternoon.  Display-tier: a burst is "this moved
-#: faster than the earlier tape", never a forecast and never a direction.
-BURST_Z = 2.0
+#: EFFECT SIZE, in per-observation baseline sigmas, at which the premium-pace check books a
+#: burst.  This is the quantity `optionsAlerts.evalPremiumBurst` actually thresholds at 2 —
+#: `(window mean − baseline mean) / baseline sigma` — so keeping the cut at 2.0 preserves the
+#: Terminal's intent AND the operating point this lane validated on a replay (the designed
+#: mid-day burst measures 3.86 sigma).  It is deliberately NOT called a z: an effect size is a
+#: scale-free difference in means, not a standardized test statistic, and the receipt names
+#: both separately so neither can be misread as the other.
+BURST_EFFECT_SIGMA = 2.0
 
-#: Minimum baseline increments before a burst can be booked.  The two-sample z divides by the
+#: Significance floor on the honest TWO-SAMPLE statistic (the #217 idiom: the difference in
+#: means over `baseline_sigma · sqrt(1/w + 1/baseline_n)`).  Derivation: the effect gate above
+#: is the interpretable cut, and this floor exists so a THIN baseline cannot manufacture one.
+#: At the smallest baseline the family will accept (BURST_MIN_BASELINE = 10, window 10) a
+#: 2.0-sigma effect yields t = 2·sqrt(1/(1/10+1/10)) = 4.47.  Setting the floor there means the
+#: test is never LOOSER than it is at the earliest bookable moment, while later in the session
+#: — where t for the same effect climbs toward 6.2 — the interpretable effect gate is what
+#: binds.  A single fixed t with no effect gate would have drifted the other way: the same
+#: t would mean a 0.9-sigma effect by the close.
+BURST_T_MIN = 4.47
+
+#: Minimum baseline increments before a burst can be booked.  The statistic divides by the
 #: BASELINE's sigma, which is unbounded from below — three quiet opening stamps would make any
 #: fourth stamp a 40-sigma event.  10 keeps the earliest bookable burst honest.
 BURST_MIN_BASELINE = 10
+
+#: Re-arm margin for the burst family, in effect sigmas below BURST_EFFECT_SIGMA.  A single
+#: sustained pace change ramps the effect across the cut and books twice without it (measured),
+#: and the session ledger counts both — one acceleration must be one row's worth of event.  The
+#: mirrored-semantics argument does not protect this family: its denominator already diverges
+#: from the Terminal's by design, so matching its re-arm behaviour buys nothing.
+BURST_REARM_SIGMA = 0.5
 
 #: 0DTE share of tracked net premium, in PERCENT, at which a spike is booked.  Mirrors
 #: `optionsAlerts.eval0dteShare` (`cond.share_pct`, default 55).  Market-wide only — the
@@ -113,9 +133,19 @@ POCKET_REARM_PCT = 3.0
 #: concentration and over-fire on a wide, thin grid.
 POCKET_BAND_STRIKES = 1
 
-#: Floor on a stamp's total gross magnitude before a pocket can be booked.  The first
-#: stamps of a session carry a handful of trades, where one contract is trivially 100% of
-#: the column; without a floor the digest would book a pocket every morning.
+#: Floor on a stamp's RUNNING total gross magnitude before a pocket can be booked, in dollars
+#: of premium.  The first stamps of a session carry a handful of trades, where one contract is
+#: trivially 100% of the column; without a floor the digest would book a pocket every morning.
+#:
+#: DOCUMENTED CHOICE, and it is deliberately near-vacuous on the index roots the archive covers
+#: today: SPY clears $250k of traded premium within the first minute or two, so on SPY/QQQ/IWM
+#: this floor only ever suppresses the very first stamp or two.  That is the intent.  The
+#: alternative — a floor scaled to be "meaningful" for an index — would silently disable the
+#: family on the smaller roots `surface_top_n` can add, which is the failure that matters: a
+#: threshold tuned for SPY is a threshold that never fires for anything else.  A per-root
+#: scaled floor needs a per-root premium baseline this lane does not accrue, so the honest
+#: version is an absolute floor whose only job is rejecting a literally-empty column, plus the
+#: share and level printed on every event so a reader can judge scale themselves.
 POCKET_MIN_TOTAL = 250_000.0
 
 #: Arc downsample ceiling (Appendix B: "↓sampled").  The arc is a shape for a surface to
@@ -157,11 +187,20 @@ SHAPE_LATE_FRAC = 0.60
 def is_early_close(d: date) -> bool:
     """True for the three recurring NYSE 1pm ET closes.
 
-    Friday after Thanksgiving (4th Thursday of November + 1), 24 December when it is a
-    weekday, and 3 July when it is a weekday.  Coverage-denominator only (see
-    EARLY_CLOSE_ET) — this function never gates, filters or labels a datum.
+    Friday after Thanksgiving (4th Thursday of November + 1), 24 December, and 3 July.
+
+    A NON-SESSION date is never an early close, and that guard is load-bearing rather than
+    defensive: when 4 July falls on a Saturday the NYSE observes the holiday on Friday 3 July
+    with a FULL closure, so the bare month/day rule called it a half day when it is not a
+    trading day at all (2026 is exactly that year — `nyse_calendar.holidays(2026)` carries
+    2026-07-03).  Delegating session-ness to the calendar fixes the whole family of such
+    collisions instead of special-casing one.
+
+    Coverage-denominator only (see EARLY_CLOSE_ET) — this never gates, filters or labels a
+    datum, so an error here costs a ratio, never a number.
     """
-    if d.weekday() >= 5:
+    from lib import nyse_calendar          # local import: keeps the module import graph flat
+    if not nyse_calendar.is_session(d):
         return False
     if d.month == 12 and d.day == 24:
         return True
@@ -223,52 +262,130 @@ def session_window_label(session_date: str | date) -> str:
 
 # ── clock-label normalization (the archived labels cannot be taken on trust) ──────
 
-def clock_offset_minutes(
+#: The only clock offsets the known defect can produce, in minutes.  `_minute_key` localizes a
+#: naive ET timestamp as UTC, so the error is exactly the ET↔UTC offset: 4 hours under EDT and
+#: 5 hours under EST.  0 means the labels are already exchange time (the post-fix state, and
+#: the surface archive's state today).  Nothing else is a candidate — an offset outside this
+#: set is not this defect, and the digest will not invent a correction for it.
+CLOCK_CANDIDATE_OFFSETS = (0, 240, 300)
+
+#: Residual deficit (minutes) below which no timezone correction is even considered.  A late
+#: poller start produces a POSITIVE residual and must never be "corrected".
+CLOCK_RESIDUAL_MIN_DEFICIT = 30
+
+
+@dataclass(frozen=True)
+class ClockRead:
+    offset_min: int
+    ambiguous: bool
+    labels_outside: int
+    fitting: tuple[int, ...]
+    residual_median_min: float | None
+    note_en: str
+    note_zh: str
+
+    @property
+    def trusted(self) -> bool:
+        """False → the clock could not be pinned, so nothing time-stamped may be emitted."""
+        return not self.ambiguous
+
+
+def clock_read(
     session_date: str | date,
-    first_label: str | None,
+    labels: Sequence[str],
     *,
-    last_label: str | None = None,
     cadence_sec: int | None = None,
-) -> int:
-    """Whole-HOUR correction, in minutes, that maps an archive's clock labels onto ET.
+) -> ClockRead:
+    """Pin the archive's clock onto exchange time using EVERY label, not just the earliest.
 
-    WHY THIS EXISTS: `engine/live_flow._minute_key` localizes NAIVE exchange timestamps as
-    UTC before converting to ET, so the tide/dte minute labels run a whole timezone offset
-    early — a real 09:30–16:00 session is labelled 05:30–11:59.  The series itself is correct
-    and monotone; only the labels lie.  (Surface stamps are NOT affected: they come from an
-    aware UTC datetime through `stamp_hhmm`'s `astimezone(ET)`.  The correction is applied to
-    both anyway, and is a no-op wherever the labels are already right.)
+    WHY THIS EXISTS: `engine/live_flow._minute_key` localizes NAIVE exchange timestamps as UTC
+    before converting to ET, so the tide/dte minute labels run a whole timezone offset early —
+    a real 09:30–16:00 session is labelled 05:30–11:59.  The series itself is correct and
+    monotone; only the labels lie.  (Surface stamps are NOT affected: they come from an aware
+    UTC datetime through `stamp_hhmm`'s `astimezone(ET)`.  The correction runs over both anyway
+    and is a no-op wherever the labels are already right.)
 
-    THE DISCRIMINATOR: a correct ET label can never precede the session open — the tape does
-    not trade before 09:30.  So a correction is warranted only when the first label lands
-    BEFORE the open, and its size is the whole number of hours needed to bring it to at-or-
-    after the open.  That distinguishes the timezone defect (labels before the open) from a
-    genuinely late poller start (labels after the open, which must be preserved — a session
-    that began at 10:30 did begin at 10:30).  Rounding by whole hours preserves a late start
-    inside the skewed day: 05:35 becomes 09:35, not 09:30.
+    HOW: score each candidate in CLOCK_CANDIDATE_OFFSETS by how many labels it would place
+    OUTSIDE the session window, and take the candidate that fits.  Using the distribution
+    rather than one label is what makes it robust — an earliest-label rule breaks on a single
+    off-grid print.  Two measured failures of that earlier rule, both now covered:
+      * a 09:25 ET print (before the open) made the rule "correct" a clean session;
+      * a skewed session whose last label sat 3 minutes past the close at the configured
+        cadence made the rule refuse a correction the whole session needed, silently stamping
+        every event 4 hours early.
 
-    SELF-DISARMING: once `_minute_key` is repaired the first label is 09:30, the offset is 0,
-    and this function stops touching anything.  It never needs to be removed.
+    AMBIGUITY IS DECLARED, NOT GUESSED AWAY: when two candidates both fit — a truncated
+    morning session fits at 0 AND at +240, because 09:30–11:00 and 13:30–15:00 are both inside
+    the window — the read is marked ambiguous and `trusted` goes False.  The caller must then
+    suppress time-stamped output rather than pick a story.  The anchor-closest-to-the-open
+    candidate is still reported so the arc (whose shape does not depend on the offset) can be
+    drawn.
 
-    Returns 0 when no correction is warranted, or when correcting would push the last label
-    past the session close by more than one cadence (something other than the known defect is
-    wrong, and a guess would be worse than the raw labels).
+    THE RESIDUAL RECEIPT: `residual_median_min` is the median of
+    `label − (open + i·cadence)` across the labels — a diagnostic, reported so a reader can
+    see what the clock looked like, and used for one assertion: a deficit beyond
+    CLOCK_RESIDUAL_MIN_DEFICIT must round to a whole hour in the candidate set, or the read is
+    ambiguous.  It is NOT the selection mechanism, because gaps in the tape shift index
+    positions and would bias it.
+
+    KNOWN CONFLATION, stated rather than papered over: a genuinely late poller start UNDER the
+    bug adds to the deficit.  A start late enough to push the shifted labels past the close
+    (roughly 13:30 or later under a 4-hour skew) is indistinguishable from a different offset,
+    and the read reports itself ambiguous instead of choosing.
+
+    SELF-DISARMING: once `_minute_key` is repaired every label is exchange time, candidate 0 is
+    the unique fit, and this function stops touching anything.
     """
-    first = _stamp_minutes(first_label) if first_label else None
-    if first is None:
-        return 0
+    mins = [m for m in (_stamp_minutes(x) for x in labels) if m is not None]
+    if not mins:
+        return ClockRead(0, False, 0, (0,), None, "", "")
+
     open_dt, close_dt = session_window_et(session_date)
     open_min = open_dt.hour * 60 + open_dt.minute
     close_min = close_dt.hour * 60 + close_dt.minute
-    if first >= open_min:
-        return 0                      # at or after the open: nothing to correct
-    offset = int(math.ceil((open_min - first) / 60.0)) * 60
-    last = _stamp_minutes(last_label) if last_label else None
-    if last is not None:
-        slack = int(cadence_sec // 60) if cadence_sec else 0
-        if last + offset > close_min + max(slack, 1):
-            return 0                  # not the known defect — leave the labels alone
-    return offset
+
+    outside = {c: sum(1 for m in mins if not (open_min <= m + c <= close_min))
+               for c in CLOCK_CANDIDATE_OFFSETS}
+    fitting = tuple(c for c in CLOCK_CANDIDATE_OFFSETS if outside[c] == 0)
+
+    cad_min = max(1, int((cadence_sec or 0) // 60)) if cadence_sec else None
+    residual: float | None = None
+    if cad_min:
+        res = sorted(m - (open_min + i * cad_min) for i, m in enumerate(mins))
+        mid = len(res) // 2
+        residual = float(res[mid] if len(res) % 2 else (res[mid - 1] + res[mid]) / 2.0)
+
+    def anchor_pick(cands: Sequence[int]) -> int:
+        return min(cands, key=lambda c: (abs((mins[0] + c) - open_min), c))
+
+    if len(fitting) == 1:
+        offset, ambiguous, n_out = fitting[0], False, 0
+    elif len(fitting) > 1:
+        offset, ambiguous, n_out = anchor_pick(fitting), True, 0
+    else:
+        best = min(CLOCK_CANDIDATE_OFFSETS, key=lambda c: (outside[c], c))
+        runner = sorted(CLOCK_CANDIDATE_OFFSETS, key=lambda c: (outside[c], c))[1]
+        offset, n_out = best, outside[best]
+        ambiguous = outside[runner] == outside[best]
+
+    # Whole-hour assertion on the residual deficit (diagnostic → ambiguity, never selection).
+    if residual is not None and residual <= -CLOCK_RESIDUAL_MIN_DEFICIT:
+        implied = int(round(-residual / 60.0)) * 60
+        if implied not in CLOCK_CANDIDATE_OFFSETS:
+            ambiguous = True
+
+    if ambiguous:
+        en = ("the archived clock could not be matched to exchange time with confidence, so "
+              "nothing in this record is stamped with a time")
+        zh = "存档时间无法可靠对应交易所时间，因此本记录不标注具体时点"
+    elif offset:
+        en = ("the archived clock labels ran early by a whole timezone offset and were "
+              "corrected onto exchange time before anything was stamped")
+        zh = "存档的时间标签整体偏早一个时区，已校正为交易所时间后再标注"
+    else:
+        en = zh = ""
+    return ClockRead(offset, ambiguous, n_out, fitting,
+                     round(residual, 1) if residual is not None else None, en, zh)
 
 
 def shift_label(label: str | None, offset_min: int) -> str:
@@ -557,10 +674,10 @@ EVENT_WORDS: dict[str, tuple[str, str]] = {
                        "价格触及看跌墙价位"),
     "premium_burst": ("premium changed hands faster than the rest of the day",
                       "权利金成交节奏明显快于当天其余时段"),
-    "hot_pocket": ("premium bunched up at one strike area",
-                   "权利金集中在某一行权价区域"),
-    "zero_dte_spike": ("same-day expiries carried most of the tape",
-                       "当日到期合约占据了大部分成交"),
+    "hot_pocket": ("the day's premium so far was concentrated in one strike area",
+                   "当日累计权利金集中在某一行权价区域"),
+    "zero_dte_spike": ("most of the day's premium so far was in same-day expiries",
+                       "当日累计权利金大部分集中在当日到期合约"),
 }
 
 
@@ -587,6 +704,7 @@ def flip_crossings(
     flip: float | None,
     *,
     band_pct: float = FLIP_BAND_PCT,
+    level_vintage: str | None = None,
 ) -> FlipRead:
     """Gamma-flip crossings for spot over the archived stamps.
 
@@ -618,7 +736,7 @@ def flip_crossings(
         if raw != confirmed and beyond:
             t = times[i] if i < len(times) else ""
             events.append(_event(t, "flip_cross", level=round(flip_f, 2), side=raw,
-                                 spot=round(spot, 2)))
+                                 spot=round(spot, 2), level_vintage=level_vintage))
             confirmed = raw
     return FlipRead(events, len(events), confirmed, armed)
 
@@ -637,6 +755,7 @@ def wall_touches(
     call_wall: float | None,
     put_wall: float | None,
     within_pct: float = WALL_WITHIN_PCT,
+    level_vintage: str | None = None,
 ) -> WallRead:
     """Wall-proximity ENTER events for the call and put wall.
 
@@ -670,8 +789,8 @@ def wall_touches(
             elif inside and prior_inside is False:
                 t = times[i] if i < len(times) else ""
                 events.append(_event(t, etype, level=round(w, 2), side=side,
-                                     spot=round(spot, 2),
-                                     dist_pct=round(dist_pct, 3)))
+                                     spot=round(spot, 2), dist_pct=round(dist_pct, 3),
+                                     level_vintage=level_vintage))
             prior_inside = inside
     events.sort(key=lambda e: (e["t"], e["type"]))
     return WallRead(events, inside_at_open, closest)
@@ -709,39 +828,62 @@ def slope_stats(cumulative: Sequence[float], window: int) -> SlopeStats:
     return SlopeStats(recent_mean, mean, std, z, n)
 
 
-def window_vs_baseline_z(
+@dataclass(frozen=True)
+class BurstStat:
+    effect_sigma: float      # (window mean − baseline mean) / baseline sigma — scale-free
+    t: float                 # honest two-sample statistic (the #217 idiom)
+    window_n: int
+    baseline_n: int
+
+    @property
+    def fires(self) -> bool:
+        return (math.isfinite(self.effect_sigma) and math.isfinite(self.t)
+                and abs(self.effect_sigma) >= BURST_EFFECT_SIGMA and abs(self.t) >= BURST_T_MIN)
+
+
+def window_vs_baseline(
     cumulative: Sequence[float],
     window: int,
     *,
     min_baseline: int = BURST_MIN_BASELINE,
-) -> tuple[float, int, int]:
-    """(z, window size, baseline size) for the trailing increments vs the increments BEFORE them.
+) -> BurstStat:
+    """Trailing increments vs the increments BEFORE them — effect size AND a real test statistic.
+
+    TWO NUMBERS, BOTH NAMED HONESTLY.  `effect_sigma` is the difference in means over the
+    baseline's per-observation sigma: scale-free, interpretable, and the quantity the Terminal's
+    evaluator actually thresholds at 2.  `t` is the two-sample statistic for that same
+    difference — same numerator, but divided by the standard error of a difference of means,
+    `baseline_sigma · sqrt(1/w + 1/baseline_n)`.  They differ by `sqrt(w·b/(w+b))`, which runs
+    2.24x at a 10-increment baseline and 3.08x by the close, so publishing one under the other's
+    name would misstate the strength of every event by a factor that drifts through the session.
+    Nothing here is called `z` unless it is standardized.
 
     NAMED DIVERGENCE from `optionsAlerts.sessionSlopeStats`, which scores the trailing window
     against a distribution that INCLUDES that window.  A sample inside its own reference caps
-    the attainable z: with a window of w in n increments the ceiling is sqrt((n-w)/w), so a
-    10-stamp window cannot reach |z| = 2 until n >= 50 increments — at the archive's 5-minute
-    cadence, no burst of any violence could be booked before roughly 13:40 ET, and the family
-    would be structurally dead for two thirds of every session.  Measured, not assumed: a
-    replay with a 6x mid-day burst booked zero events under the ported formula.
+    the attainable ratio at sqrt((n-w)/w), so a 10-stamp window cannot reach 2 until n >= 50
+    increments — at the archive's 5-minute cadence no burst of any violence could be booked
+    before roughly 13:40 ET, and the family would be structurally dead for two thirds of every
+    session.  Measured, not assumed: a replay with a 6x mid-day burst booked zero events under
+    the ported formula.  `slope_stats` keeps that formula for the parity pin.
 
-    So the digest uses the two-sample framing the charter asks for — trailing window against
-    the PRIOR tape only.  Population sigma is kept (the TS convention) and a zero-variance
-    baseline yields a non-finite z, which the caller must read as "no read", never as zero.
+    Population sigma is retained (the TS convention).  A zero-variance baseline yields non-finite
+    values, which the caller must read as "no read", never as zero.
     """
     vals = [float(v) for v in cumulative]
     deltas = [vals[i] - vals[i - 1] for i in range(1, len(vals))]
     w = max(1, int(window))
     if len(deltas) < w + max(1, int(min_baseline)):
-        return math.nan, w, max(0, len(deltas) - w)
+        return BurstStat(math.nan, math.nan, w, max(0, len(deltas) - w))
     base, win = deltas[: len(deltas) - w], deltas[len(deltas) - w:]
-    b_mean = sum(base) / len(base)
-    b_var = sum((d - b_mean) ** 2 for d in base) / len(base)
-    b_std = math.sqrt(b_var)
+    b_n = len(base)
+    b_mean = sum(base) / b_n
+    b_std = math.sqrt(sum((d - b_mean) ** 2 for d in base) / b_n)
     if b_std == 0:
-        return math.nan, w, len(base)
-    w_mean = sum(win) / len(win)
-    return (w_mean - b_mean) / b_std, w, len(base)
+        return BurstStat(math.nan, math.nan, w, b_n)
+    diff = (sum(win) / len(win)) - b_mean
+    effect = diff / b_std
+    t = diff / (b_std * math.sqrt(1.0 / len(win) + 1.0 / b_n))
+    return BurstStat(effect, t, len(win), b_n)
 
 
 def premium_bursts(
@@ -749,36 +891,43 @@ def premium_bursts(
     cumulative: Sequence[float],
     *,
     window: int = BURST_WINDOW_STAMPS,
-    z_thresh: float = BURST_Z,
+    effect_thresh: float = BURST_EFFECT_SIGMA,
     min_baseline: int = BURST_MIN_BASELINE,
+    rearm_sigma: float = BURST_REARM_SIGMA,
 ) -> list[dict]:
     """Premium-pace events: trailing increments against the earlier tape.
 
     Replayed forward — at each stamp the stats see only the tape realized SO FAR, never the
-    whole day.  That is not an optimisation: letting the close inform a 10:15 event would
-    make the record unreplayable against what was knowable at 10:15.
+    whole day.  That is not an optimisation: letting the close inform a 10:15 event would make
+    the record unreplayable against what was knowable at 10:15.
 
-    One event books per contiguous run above the threshold; the run re-arms only once |z|
-    falls back below it, the same fire-once discipline `evalPremiumBurst` gets from
-    `lastFiredT`.  A stretch with no read (flat baseline, too little tape) re-arms, so the
-    next genuine run is not swallowed by an earlier one.
+    Fires when BOTH gates clear: the interpretable effect size reaches `effect_thresh` sigmas
+    AND the honest two-sample statistic clears BURST_T_MIN (so a thin baseline cannot mint an
+    event).  One event books per contiguous run, and the run re-arms only once the effect drops
+    `rearm_sigma` BELOW the cut — a ramp that oscillates across the line is one acceleration,
+    not several.  A stretch with no read (flat baseline, too little tape) re-arms, so a later
+    genuine run is never swallowed by an earlier one.
+
+    The receipt carries `effect_sigma` and `z` (the two-sample statistic) as separate fields
+    because they differ by a session-drifting factor — see `window_vs_baseline`.
     """
     vals = [float(v) for v in cumulative]
     events: list[dict] = []
-    armed = True
+    fired = False
     for i in range(len(vals)):
-        z, w, n_base = window_vs_baseline_z(vals[: i + 1], window, min_baseline=min_baseline)
-        if not math.isfinite(z):
-            armed = True
+        st = window_vs_baseline(vals[: i + 1], window, min_baseline=min_baseline)
+        if not math.isfinite(st.effect_sigma):
+            fired = False                     # no read: re-arm
             continue
-        if abs(z) >= z_thresh:
-            if armed:
-                t = times[i] if i < len(times) else ""
-                events.append(_event(t, "premium_burst", z=round(z, 2),
-                                     window_stamps=w, baseline_stamps=n_base))
-                armed = False
-        else:
-            armed = True
+        if fired and abs(st.effect_sigma) < effect_thresh - rearm_sigma:
+            fired = False                     # dropped clear of the line: re-arm
+        if not fired and abs(st.effect_sigma) >= effect_thresh and abs(st.t) >= BURST_T_MIN:
+            events.append(_event(times[i] if i < len(times) else "", "premium_burst",
+                                 effect_sigma=round(st.effect_sigma, 2),
+                                 z=round(st.t, 2),
+                                 window_stamps=st.window_n,
+                                 baseline_stamps=st.baseline_n))
+            fired = True
     return events
 
 
@@ -789,6 +938,7 @@ class PocketRead:
     peak_at: str | None
     peak_level: float | None
     share_at_open: float | None
+    share_at_open_t: str | None
 
 
 def hot_pockets(
@@ -823,7 +973,7 @@ def hot_pockets(
              else [str(t) for t in ((frame or {}).get("time_steps") or [])])
     grid = ((frame or {}).get("grids") or {}).get("netprem") or []
     if not levels or not grid:
-        return PocketRead([], None, None, None, None)
+        return PocketRead([], None, None, None, None, None)
     n_cols = len(times) or max((len(r) for r in grid if isinstance(r, list)), default=0)
     totals = column_gross(frame)
     events: list[dict] = []
@@ -834,6 +984,7 @@ def hot_pockets(
     peak_at: str | None = None
     peak_level: float | None = None
     open_share: float | None = None
+    open_at: str | None = None
     for j in range(n_cols):
         total = totals[j] if j < len(totals) else 0.0
         if total < min_total:
@@ -863,6 +1014,7 @@ def hot_pockets(
             # is reported instead.
             seen_any = True
             open_share = round(share, 1)
+            open_at = times[j] if j < len(times) else ""
             fired = inside
             continue
         if fired and share < share_pct - rearm_pct:
@@ -873,7 +1025,7 @@ def hot_pockets(
             fired = True
     return PocketRead(events,
                       round(peak_share, 1) if peak_share is not None else None,
-                      peak_at, peak_level, open_share)
+                      peak_at, peak_level, open_share, open_at)
 
 
 def zero_dte_read(
@@ -912,7 +1064,14 @@ def zero_dte_read(
                            "so it is not used here",
                 "note_zh": "在档的当日到期记录来自其他交易日，因此未采用"}, []
 
-    keys = [k for k, v in buckets.items() if isinstance(v, list)]
+    # Only NON-EMPTY buckets take part in the cross-section.  `build_dte_tide_current` emits a
+    # key for all five DTE buckets and leaves the untraded ones as `[]`, so intersecting stamp
+    # sets across every declared key made ONE empty bucket veto the entire session — a day with
+    # real tape reported "no same-day-expiry split" because, say, nothing traded 8-30 days out.
+    # An empty bucket contributes zero magnitude, which is right; it must not also contribute a
+    # veto.  Found by routing the fixtures through the real writer (the hand-written fixture had
+    # populated all five and could not see this).
+    keys = [k for k, v in buckets.items() if isinstance(v, list) and v]
     if "0d" not in keys:
         return null, []
     stamp_sets = [{str(r.get("t")) for r in buckets[k] if isinstance(r, dict)} for k in keys]
@@ -939,16 +1098,21 @@ def zero_dte_read(
     # this block emits is corrected onto ET.  The cross-bucket alignment above uses the RAW
     # labels (they are internally consistent) — only what leaves the block is corrected.
     ordered = sorted(common)
-    offset = clock_offset_minutes(session_date, ordered[0], last_label=ordered[-1],
-                                  cadence_sec=cadence_sec)
+    ck = clock_read(session_date, ordered, cadence_sec=cadence_sec)
+    offset = ck.offset_min
 
-    peak_share, peak_at, open_share = None, None, None
+    peak_share, peak_at = None, None
+    open_share, open_at = None, None
     events: list[dict] = []
     prior_inside: bool | None = None
     for stamp in ordered:
         total = sum(mag_at(buckets[k], stamp) for k in keys)
         if total <= 0:
-            prior_inside = None
+            # A stamp with no tape carries NO information about the share, so the arming state
+            # is PRESERVED across it.  Resetting here (as this did) made a mid-session dead
+            # minute re-arm the family, so a genuine 10% -> 90% entry immediately after it was
+            # swallowed as "first observation", and share_at_open was overwritten with a
+            # mid-session value.  Skip the stamp; do not forget what came before it.
             continue
         share = require_pct((mag_at(buckets["0d"], stamp) / total) * 100.0,
                             field="zero_dte_share_pct", hard_max=100.0)
@@ -958,7 +1122,9 @@ def zero_dte_read(
             peak_share, peak_at = share, stamp
         inside = share >= share_pct
         if prior_inside is None:
-            open_share = round(share, 1)       # arm; never fires
+            # First stamp with ACTUAL tape (zero-total stamps above never reach here), so the
+            # reported opening share is a real reading rather than an empty minute.
+            open_share, open_at = round(share, 1), stamp
         elif inside and prior_inside is False:
             events.append(_event(shift_label(stamp, offset), "zero_dte_spike",
                                  share=round(share, 1)))
@@ -968,14 +1134,17 @@ def zero_dte_read(
         "peak_share": round(peak_share, 1) if peak_share is not None else None,
         "at": shift_label(peak_at, offset) if peak_at else None,
         "clock_offset_min": offset,
-        # Standing state at the first archived stamp: a day that was ALREADY over the
-        # threshold when the tape starts books no ENTER event, and without this the peak and
-        # the empty event list together read as a contradiction.
+        # Standing state at the first stamp that carried tape: a day already over the threshold
+        # when the tape starts books no ENTER event, and without this the peak and the empty
+        # event list together read as a contradiction.  The stamp is printed so a reader can see
+        # WHEN "the open" actually was — it is the first non-empty minute, not necessarily 09:30.
         "share_at_open": open_share,
+        "share_at_open_t": shift_label(open_at, offset) if open_at else None,
         "threshold_pct": share_pct,
+        "buckets_used": len(keys),
         "scope": "market",
-        "note_en": "share of the whole market's tracked premium, not this one name",
-        "note_zh": "为全市场统计口径，并非该单一标的",
+        "note_en": "share of the whole market's running premium total, not this one name",
+        "note_zh": "为全市场累计口径，并非该单一标的",
     }
     return block, events
 
@@ -1040,7 +1209,11 @@ def coverage_block(
     cadence_sec: int,
     stamps: Sequence[str],
     read_stamps: Sequence[str] | None = None,
-    clock_offset_min: int = 0,
+    clock: "ClockRead | None" = None,
+    arc_minutes: int | None = None,
+    axis_gap: int = 0,
+    events_dropped_clock: int = 0,
+    events_dropped_window: int = 0,
     missing_en: Sequence[str] = (),
     missing_zh: Sequence[str] = (),
 ) -> dict:
@@ -1058,7 +1231,9 @@ def coverage_block(
     offset cancels in a difference, so the arithmetic is unaffected by the label defect, while
     the `first`/`last` labels reported are corrected.
     """
-    promised = [str(s) for s in stamps if str(s)]
+    ck = clock or ClockRead(0, False, 0, (0,), None, "", "")
+    clock_offset_min = ck.offset_min
+    promised = sorted(str(s) for s in stamps if str(s))
     seen = ([str(s) for s in read_stamps if str(s)] if read_stamps is not None else promised)
     seen = sorted(seen)
     minutes = len(seen)
@@ -1094,22 +1269,44 @@ def coverage_block(
         "cadence_sec": int(cadence_sec) if cadence_sec else None,
         "session_window_et": session_window_label(session_date),
         "clock_offset_min": int(clock_offset_min),
+        "clock_ambiguous": bool(ck.ambiguous),
+        "clock_residual_median_min": ck.residual_median_min,
+        "clock_labels_outside_window": int(ck.labels_outside),
+        # M9: which axis each figure was measured on.  The premium totals come from the newest
+        # READABLE snapshot; the events and the counts above come from the stamp index.  When a
+        # walk-back makes those differ, both numbers are printed rather than one standing in for
+        # the other.
+        "premium_total_minutes": int(arc_minutes) if arc_minutes is not None else None,
+        "premium_total_axis_gap": int(axis_gap),
+        "events_dropped_clock": int(events_dropped_clock),
+        "events_dropped_window": int(events_dropped_window),
         "quality_en": en,
         "quality_zh": zh,
         "missing_en": list(missing_en),
         "missing_zh": list(missing_zh),
     }
+    if ck.note_en:
+        out["clock_note_en"], out["clock_note_zh"] = ck.note_en, ck.note_zh
     if absent:
         out["absent_note_en"] = (
             f"{absent} minute stamp(s) the record lists could not be read back, so they are "
             "not counted as covered")
         out["absent_note_zh"] = f"记录中列出的 {absent} 个分钟档无法读回，因此未计入覆盖"
-    if clock_offset_min:
-        out["clock_note_en"] = (
-            "the archived clock labels ran early by a whole timezone offset and were corrected "
-            "onto exchange time before anything was stamped")
-        out["clock_note_zh"] = "存档的时间标签整体偏早一个时区，已校正为交易所时间后再标注"
     return out
+
+
+def _label_in_session(label: object, session_date: str | date) -> bool:
+    """True when a corrected 'HH:MM' label lies inside the session window.
+
+    The digest's own invariant, enforced AFTER the clock shift rather than assumed: a label the
+    correction pushed to 17:05 is not a session event, however plausible it looked before.
+    Unparseable labels fail closed (dropped) — an event with no readable time has no receipt.
+    """
+    m = _stamp_minutes(label) if label else None
+    if m is None:
+        return False
+    open_dt, close_dt = session_window_et(session_date)
+    return (open_dt.hour * 60 + open_dt.minute) <= m <= (close_dt.hour * 60 + close_dt.minute)
 
 
 def _stamp_minutes(stamp: str) -> int | None:
@@ -1158,15 +1355,15 @@ def build_session_record(
     root = str(root).upper()
     frame = frame or {}
     raw_times = [str(t) for t in (frame.get("time_steps") or [])]
-    stamp_list = [str(s) for s in stamps]
+    # m3: derive from SORTED stamps so a re-ordered index cannot scramble the spot path or the
+    # event axis (coverage_block already sorts; these did not).
+    stamp_list = sorted(str(s) for s in stamps)
 
-    # One clock correction for this root's archive, derived from the stamp index (the surface
-    # frame's time_steps and the index's stamps are the same clock).  A no-op when the labels
-    # are already exchange time — see clock_offset_minutes.
-    offset = clock_offset_minutes(
-        session_date, stamp_list[0] if stamp_list else (raw_times[0] if raw_times else None),
-        last_label=stamp_list[-1] if stamp_list else (raw_times[-1] if raw_times else None),
-        cadence_sec=cadence_sec)
+    # One clock read for this root's archive, over EVERY label (the surface frame's time_steps
+    # and the index's stamps are the same clock).  A no-op when the labels are already exchange
+    # time — see clock_read.
+    ck = clock_read(session_date, stamp_list or raw_times, cadence_sec=cadence_sec)
+    offset = ck.offset_min
     times = [shift_label(t, offset) for t in raw_times]
 
     arc, nets = build_arc(frame, max_points=arc_max_points, times=times)
@@ -1177,7 +1374,16 @@ def build_session_record(
     flip_level = _num(lv.get("flip"))
     call_wall = _num(lv.get("call_wall"))
     put_wall = _num(lv.get("put_wall"))
-    levels_same_session = str(lv.get("vintage") or "")[:10] == str(session_date)[:10]
+    vintage = str(lv.get("vintage") or "")[:10] or None
+    levels_same_session = bool(vintage) and vintage == str(session_date)[:10]
+
+    # B2: a level map from ANOTHER session must not silently become the yardstick for THIS
+    # session's crossings.  The record already refuses to print a foreign map as this session's
+    # close; scoring events against it anyway would put that same rejected number inside every
+    # receipt.  So the two level-dependent families are evaluated ONLY on a same-session map,
+    # and their absence is disclosed in plain words like every other gap.
+    level_ok = levels_same_session and (flip_level is not None or call_wall is not None
+                                        or put_wall is not None)
 
     # Spot path: one entry per archived stamp, in stamp order.  An absent stamp stays None
     # and the evaluators skip it — a gap in the tape is a gap, never an interpolation.
@@ -1185,8 +1391,13 @@ def build_session_record(
     spots: list[float | None] = [_num(spots_map.get(s)) for s in stamp_list]
     ev_times = [shift_label(s, offset) for s in stamp_list]
 
-    fr = flip_crossings(ev_times, spots, flip_level)
-    wr = wall_touches(ev_times, spots, call_wall=call_wall, put_wall=put_wall)
+    if level_ok:
+        fr = flip_crossings(ev_times, spots, flip_level, level_vintage=vintage)
+        wr = wall_touches(ev_times, spots, call_wall=call_wall, put_wall=put_wall,
+                          level_vintage=vintage)
+    else:
+        fr = FlipRead([], 0, None, None)
+        wr = WallRead([], {"call": None, "put": None}, {"call": None, "put": None})
     burst_events = premium_bursts(times, nets)
     pk = hot_pockets(frame, times=times)
     zero_dte, dte_events = zero_dte_read(dte_doc, session_date=session_date,
@@ -1194,6 +1405,19 @@ def build_session_record(
 
     events = sorted(fr.events + wr.events + burst_events + pk.events + dte_events,
                     key=lambda e: (str(e.get("t") or ""), str(e.get("type"))))
+
+    # M1/M2: nothing time-stamped may ship when the clock could not be pinned, and any event
+    # whose corrected label lands outside the session window is dropped rather than published
+    # at an impossible time.  Both are counted so the drop is visible, never silent.
+    events_dropped_clock = 0
+    events_dropped_window = 0
+    if not ck.trusted:
+        events_dropped_clock, events = len(events), []
+    else:
+        kept = [e for e in events if _label_in_session(e.get("t"), session_date)]
+        events_dropped_window = len(events) - len(kept)
+        events = kept
+
     counts: dict[str, int] = {}
     for e in events:
         counts[e["type"]] = counts.get(e["type"], 0) + 1
@@ -1206,6 +1430,13 @@ def build_session_record(
     if not any(v is not None for v in spots):
         missing_en.append("price path through the session (level crossings not derivable)")
         missing_zh.append("盘中价格轨迹（无法推导价位穿越）")
+    elif not level_ok:
+        # B2: the families were switched off deliberately, and that is a different fact from
+        # "nothing happened" — say which one it is.
+        missing_en.append(
+            "gamma-flip crossings and wall touches, because the only level map on file is not "
+            "from this session")
+        missing_zh.append("gamma 翻转穿越与墙位触及：在档价位结构图并非本交易日")
     if _walls_from_frame(open_frame_walls) is None and _walls_from_frame(close_frame_walls) is None:
         missing_en.append("intraday wall levels (option greeks are not in the archive yet)")
         missing_zh.append("盘中墙位（存档尚未包含期权希腊值）")
@@ -1217,6 +1448,24 @@ def build_session_record(
     if market is None:
         missing_en.append("market-wide tape record for this session")
         missing_zh.append("本交易日的全市场成交记录")
+    if events_dropped_clock:
+        missing_en.append(
+            f"the timing of {events_dropped_clock} noted moment(s), because the archived clock "
+            "could not be matched to exchange time")
+        missing_zh.append(f"{events_dropped_clock} 个时点的时间信息：存档时间无法对应交易所时间")
+    if events_dropped_window:
+        missing_en.append(
+            f"{events_dropped_window} noted moment(s) that fell outside trading hours once the "
+            "clock was corrected")
+        missing_zh.append(f"{events_dropped_window} 个校正后落在交易时段之外的时点")
+    # M9: the arc/pace/pocket figures come from the frame that loaded, which after a walk-back
+    # covers fewer minutes than the stamp index the events and coverage were measured on.
+    axis_gap = max(0, len(stamp_list) - len(raw_times)) if raw_times else 0
+    if axis_gap:
+        missing_en.append(
+            f"the last {axis_gap} minute(s) from the premium totals: the newest readable "
+            "snapshot stops short of the last minute on record")
+        missing_zh.append(f"权利金合计缺少最后 {axis_gap} 分钟：最新可读快照未覆盖记录中的最后一分钟")
 
     # Close walls: the intraday archive first; the EOD map only when its vintage IS this
     # session (a map from another date is not this session's close, and saying so would be
@@ -1241,22 +1490,30 @@ def build_session_record(
         _num(((frame.get("coverage") or {}) if isinstance(frame, dict) else {}).get("greeks")),
         field="surface_frame.coverage.greeks")
 
+    # m1: never interpolate a bare `None` into copy — a reader seeing "the close of None" learns
+    # nothing and it reads as a bug.  Each branch below states the actual situation instead.
     if flip_level is None:
         flip_note_en = "no gamma flip level on file for this session"
         flip_note_zh = "本交易日没有在档的 gamma 翻转价位"
+    elif not vintage:
+        flip_note_en = ("the gamma flip level on file carries no date, so crossings are not "
+                        "read against it")
+        flip_note_zh = "在档的 gamma 翻转价位没有日期，因此不用于判断穿越"
     elif levels_same_session:
         flip_note_en = ("the gamma flip level is this session's own closing map, so "
                         "crossings are read against where the day finished")
         flip_note_zh = "gamma 翻转价位取自本交易日收盘结构图，穿越以收盘价位为参照"
     else:
-        flip_note_en = f"the gamma flip level on file is from the close of {lv.get('vintage')}"
-        flip_note_zh = f"在档的 gamma 翻转价位取自 {lv.get('vintage')} 收盘"
+        flip_note_en = (f"the gamma flip level on file is from the close of {vintage}, another "
+                        "session, so crossings are not read against it")
+        flip_note_zh = f"在档的 gamma 翻转价位取自 {vintage}（其他交易日），因此不用于判断穿越"
     flip_block = {
         "crosses": int(fr.crosses),
         "last_side": fr.last_side,
         "side_at_open": fr.side_at_open,
         "level": flip_level,
-        "level_vintage": lv.get("vintage"),
+        "level_vintage": vintage,
+        "level_is_this_session": levels_same_session,
         "band_pct": FLIP_BAND_PCT,
         "note_en": flip_note_en,
         "note_zh": flip_note_zh,
@@ -1283,10 +1540,12 @@ def build_session_record(
             "at": pk.peak_at,
             "level": pk.peak_level,
             "share_at_open": pk.share_at_open,
+            "share_at_open_t": pk.share_at_open_t,
             "threshold_pct": POCKET_SHARE_PCT,
             "band_strikes": 2 * POCKET_BAND_STRIKES + 1,
-            "note_en": "how much of the premium traded sat in the busiest few strikes",
-            "note_zh": "成交权利金中集中在最热几个行权价上的比重",
+            "note_en": "the largest share of the day's running premium total that sat in "
+                       "any three neighbouring strikes",
+            "note_zh": "当日累计权利金中，相邻三个行权价所占的最高比重",
         },
         "walls": walls,
         "flip": flip_block,
@@ -1304,7 +1563,10 @@ def build_session_record(
         "market": market,
         "coverage": coverage_block(
             session_date=session_date, cadence_sec=cadence_sec, stamps=stamps,
-            read_stamps=read_stamps, clock_offset_min=offset,
+            read_stamps=read_stamps, clock=ck,
+            arc_minutes=len(raw_times), axis_gap=axis_gap,
+            events_dropped_clock=events_dropped_clock,
+            events_dropped_window=events_dropped_window,
             missing_en=missing_en, missing_zh=missing_zh),
         "inputs": inputs or {},
         "authority_tier": "display",
@@ -1354,8 +1616,7 @@ def _market_block(tide_doc: dict | None, *, root: str, session_date: str,
     if isinstance(minutes, list) and minutes:
         labels = [str(m.get("t") or "") for m in minutes if isinstance(m, dict)]
         if labels:
-            offset = clock_offset_minutes(session_date, labels[0], last_label=labels[-1],
-                                          cadence_sec=cadence_sec)
+            offset = clock_read(session_date, labels, cadence_sec=cadence_sec).offset_min
         last = minutes[-1] if isinstance(minutes[-1], dict) else {}
         close = {"t": shift_label(last.get("t"), offset),
                  "ncp": _num(last.get("ncp")),
@@ -1390,7 +1651,14 @@ LEDGER_COLUMNS = [
     "zero_dte_peak_share", "zero_dte_peak_at",
     "wall_call_open", "wall_put_open", "wall_call_close", "wall_put_close",
     "wall_migrated", "flip_crosses", "flip_last_side", "flip_level",
+    # B2: the vintage and source of the level map every flip/wall figure in this row was
+    # measured against, and whether it belonged to this session at all.  Without these a reader
+    # cannot tell a genuine zero-crossing day from a day whose levels were unusable — and the
+    # schema is being fixed BEFORE any row exists, because a ledger column added after rows
+    # accrue leaves every historical row permanently null.
+    "levels_vintage", "levels_source", "levels_is_this_session",
     "coverage_minutes", "coverage_expected", "coverage_gaps",
+    "coverage_absent_objects", "clock_offset_min", "clock_ambiguous",
     "schema", "asof",
 ]
 
@@ -1433,9 +1701,15 @@ def ledger_row(record: dict) -> dict:
         "flip_crosses": flip.get("crosses"),
         "flip_last_side": flip.get("last_side"),
         "flip_level": flip.get("level"),
+        "levels_vintage": (record.get("levels") or {}).get("vintage"),
+        "levels_source": (record.get("levels") or {}).get("source"),
+        "levels_is_this_session": flip.get("level_is_this_session"),
         "coverage_minutes": cov.get("minutes"),
         "coverage_expected": cov.get("expected"),
         "coverage_gaps": cov.get("gaps"),
+        "coverage_absent_objects": cov.get("absent_objects"),
+        "clock_offset_min": cov.get("clock_offset_min"),
+        "clock_ambiguous": cov.get("clock_ambiguous"),
         "schema": record.get("schema"),
         "asof": record.get("asof"),
     }

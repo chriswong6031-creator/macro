@@ -1334,12 +1334,25 @@ jobs:
         # build_gex_board writes those inside the cl_gex cluster of the parallel band — the
         # same cross-phase reasoning that puts build_options_command immediately above.
         # Ledger + all data/ writes are lane-gated on COLLECT_LANE=nightly (job-level env);
-        # dedup on (date, root) keeps FIRST, so a replay adds sessions and never rewrites one.
-        # Cost: ~4 small R2 GETs per stamp-scanned root (the per-stamp spot lives only inside
-        # each stamp's own frame) ≈ 190 GETs / 3 roots. Measured 0.6s wall clock on a local
-        # replay of a full 79-stamp session × 3 roots; R2 round-trips put the nightly estimate
-        # at ~10-25s, well inside the ~1-2 min budgeted for this join (OIP §7).
+        # dedup on (date, root) keeps FIRST, so a replay adds sessions and never rewrites one,
+        # and a dated record is only replaced by a read covering MORE minutes.
+        #
+        # COST, measured at the CONFIGURED 120s cadence (196 stamps x ~600 strikes x 3 roots):
+        #   602 reads, 4.06 MB, 1.13-1.20s wall clock on a local replay (3 runs).
+        # Each per-stamp file is the session TRUNCATED to that stamp, so fetching them all is
+        # quadratic in bytes — 124.8 MB per root, 374 MB a night. The day is therefore read from
+        # the NEWEST frame alone (it already carries the full session), and only the per-stamp
+        # `spot` needs a request each, taken as a ~256-byte Range read of the frame head. That
+        # is the 92x difference between 4.06 MB and 374 MB. R2 round-trips put the nightly
+        # estimate at ~15-40s, inside the ~1-2 min budgeted for this join (OIP §7).
+        #
+        # TAIL RISK IS BOUNDED BOTH WAYS: the engine job was CANCELLED at its 200-minute cap in
+        # 5 of 8 recent nightlies, so this step may not run long. `timeout-minutes: 8` is the
+        # hard stop; the builder's own BUDGET_SECONDS=180 wall-clock budget fires first and
+        # writes honest partial records (the shortfall printed in each record's coverage block)
+        # plus a ::warning, which a killed step could not do.
         # Non-fatal: absent archives/creds degrade to printed nulls and the builder exits 0.
+        timeout-minutes: 8
         env:
           R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}

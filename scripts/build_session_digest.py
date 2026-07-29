@@ -34,11 +34,21 @@ the FIRST row, so a replay can add sessions but never rewrites one already on th
 CLOCK LABELS ARE NOT TRUSTED: `engine/live_flow._minute_key` localizes naive exchange
 timestamps as UTC before converting to ET, so the tide/dte minute labels run a whole timezone
 offset early (a 09:30–16:00 session labelled 05:30–11:59).  Every label the digest emits goes
-through `session_digest.clock_offset_minutes`, which corrects a whole-hour skew when the first
-label precedes the session open and is a no-op otherwise — so it fixes the defect, preserves a
-genuinely late poller start, and disarms itself once `_minute_key` is repaired.  Fixing
-`_minute_key` is out of this builder's scope (it changes live payload bytes and the Terminal's
-axis) and is filed separately.
+through `session_digest.clock_read`, which scores the whole label DISTRIBUTION against the
+session window, declares itself ambiguous rather than guessing, and disarms itself once
+`_minute_key` is repaired.  Fixing `_minute_key` is out of this builder's scope (it changes live
+payload bytes and the Terminal's axis) and is filed separately.
+
+DATE ARITHMETIC IS SESSION-DATE ARITHMETIC: gex_state stamps `datetime.now(UTC)` and the nightly
+band runs after UTC midnight, so `asof[:10]` is D+1 for every real nightly run.  Vintages go
+through `levels_vintage` → `lib.nyse_calendar.session_date`, never a UTC date slice.
+
+READ SHAPE: the newest per-stamp frame already carries the FULL session (each file is the day
+truncated to that stamp), so the arc/pace/pocket figures cost ONE object.  Only the price path
+needs a request per stamp, and it is fetched as a ~256-byte RANGE read of each frame's head
+rather than the whole file — fetching all frames in full is quadratic in bytes (measured 124.8 MB
+for ONE root at the configured 120s cadence; the whole run costs 4.06 MB instead of 374 MB).
+See `scan_session`.
 
 PLACEMENT: serial step in daily.yml's `engine` job immediately after OEU M-CMD.  It must sit
 AFTER the parallel band's barrier because it reads site/options_structure/gex_state/*.json,
@@ -73,6 +83,7 @@ import argparse
 import json
 import logging
 import os
+import re
 import sys
 import tempfile
 import time as _time
@@ -98,10 +109,24 @@ R2_DTE_TIDE_PREFIX = "live_flow/dte_tide/"
 # scripts/build_flow_surface.DEFAULT_SURFACE_ROOTS; config live_flow.surface_roots wins.
 DEFAULT_ROOTS = ["SPY", "QQQ", "IWM"]
 
-# Parallel GETs for the per-stamp spot scan.  A session is ~78 stamps at 5-minute cadence,
-# and the per-stamp spot lives ONLY inside each stamp's own frame (build_flow_surface's
-# frame_for_stamp drops spot_path), so the scan is one small GET per stamp.  8 keeps the
-# wall clock in single-digit seconds without becoming a burst against R2.
+# Bytes fetched per stamp when scanning the price path.  `frame_for_stamp` writes `spot` as the
+# FIRST key, so 256 bytes covers it with room for a long price_levels prefix to start.
+HEAD_RANGE_BYTES = 256
+
+# `"spot": <number|null>` inside the head bytes.  Byte-level so no decode is needed on a range
+# read that may end mid-character.
+_SPOT_HEAD_RE = re.compile(rb'"spot"\s*:\s*(null|-?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)')
+
+# Exactly a YYYY-MM-DD directory name.  The record prune only ever considers these, so a stray
+# file under data/options_session/ can never be deleted by it.
+_SESSION_DIR_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+# Parallel range reads for the per-stamp spot scan.  A session is 196 stamps at the configured
+# 120-second cadence, and the per-stamp spot lives ONLY inside each stamp's own frame
+# (build_flow_surface's frame_for_stamp drops spot_path, and _full.json is staged locally but
+# never uploaded), so the scan is one ~256-byte range read per stamp.  8 keeps the wall clock
+# near a second without becoming a burst against R2 (measured: 602 reads / 4.06 MB / 1.2s for
+# three roots).
 SPOT_SCAN_WORKERS = 8
 
 # Bounded walk-back when the newest stamp's frame will not load: the full-day arc lives in
@@ -110,6 +135,20 @@ SPOT_SCAN_WORKERS = 8
 FRAME_FALLBACK_TRIES = 3
 
 LEDGER_REL = "options_session/ledger.parquet"
+
+# Internal wall-clock budget, seconds.  The engine job was CANCELLED at its 200-minute cap in 5
+# of 8 recent nightlies, so a new step may not add unbounded tail risk: when R2 is slow the
+# builder stops reading, writes what it has WITH the shortfall printed in the coverage block,
+# and annotates.  Partial output that declares itself partial is worth more than a step that
+# takes the whole deploy down with it.  daily.yml carries a `timeout-minutes` belt as well —
+# this is the braces, and it is the one that still produces a record.
+BUDGET_SECONDS = 180.0
+
+# How many dated session directories to keep under data/options_session/.  These are committed
+# git artifacts, so they accumulate forever without a sweep; the ledger parquet is the durable
+# record and the dated JSONs are the working detail behind it.  40 sessions ~ two months, which
+# covers any surface's "recent sessions" need with room to spare.
+RECORD_RETAIN_SESSIONS = 40
 
 
 # ── annotations (bare print — never through the logger) ───────────────────────────
@@ -169,6 +208,8 @@ class ArchiveReader:
         self.from_dir = Path(from_dir) if from_dir else None
         self.gets = 0
         self.misses = 0
+        self.bytes_read = 0
+        self.range_fallbacks = 0
 
     @property
     def live(self) -> bool:
@@ -180,6 +221,7 @@ class ArchiveReader:
         if self.from_dir is not None:
             p = self.from_dir / key
             try:
+                self.bytes_read += p.stat().st_size
                 return json.loads(p.read_text())
             except Exception:  # noqa: BLE001 — absence and corruption are the same answer
                 self.misses += 1
@@ -189,10 +231,47 @@ class ArchiveReader:
             return None
         try:
             resp = self.s3.get_object(Bucket=self.bucket, Key=key)
-            return json.loads(resp["Body"].read())
+            body = resp["Body"].read()
+            self.bytes_read += len(body)
+            return json.loads(body)
         except Exception as e:  # noqa: BLE001
             self.misses += 1
             log.debug("session_digest: get %s failed: %s", key, e)
+            return None
+
+    def get_head_bytes(self, key: str, n: int = HEAD_RANGE_BYTES) -> bytes | None:
+        """First `n` bytes of an object, via an HTTP Range request.  None on any failure.
+
+        Why ranges exist in this builder: a per-stamp surface frame is the session TRUNCATED to
+        that stamp, so the files grow through the day and fetching all of them is quadratic in
+        bytes — measured at 107 MB for one root at the configured 120-second cadence (196 stamps
+        x ~600 strikes), i.e. ~321 MB a night for three roots. The only field the scan needs is
+        `spot`, which `frame_for_stamp` writes FIRST, so a few hundred bytes per stamp replaces
+        the whole file and the same scan costs ~50 KB per root.
+        """
+        self.gets += 1
+        if self.from_dir is not None:
+            p = self.from_dir / key
+            try:
+                with open(p, "rb") as f:
+                    b = f.read(n)
+                self.bytes_read += len(b)
+                return b
+            except Exception:  # noqa: BLE001
+                self.misses += 1
+                return None
+        if not (self.s3 and self.bucket):
+            self.misses += 1
+            return None
+        try:
+            resp = self.s3.get_object(Bucket=self.bucket, Key=key,
+                                      Range=f"bytes=0-{max(1, int(n)) - 1}")
+            b = resp["Body"].read()
+            self.bytes_read += len(b)
+            return b
+        except Exception as e:  # noqa: BLE001
+            self.misses += 1
+            log.debug("session_digest: range get %s failed: %s", key, e)
             return None
 
     # ── keyed helpers (key shapes mirror the writers) ────────────────────────────
@@ -206,6 +285,31 @@ class ArchiveReader:
         return self.get_json(
             f"{R2_SURFACE_PREFIX}{root.upper()}/{session_date}/{stamp}.json")
 
+    def stamp_spot(self, root: str, session_date: str,
+                   stamp: str) -> tuple[float | None, bool]:
+        """That stamp's `spot`, read from the head of its frame instead of the whole file.
+
+        `spot` is the first key `frame_for_stamp` emits and `json.dump` preserves insertion
+        order, so it lands within the first few dozen bytes.  That ordering is a WRITER detail
+        rather than a contract, so a head that yields no parseable `spot` falls back to a full
+        fetch for that one stamp and increments `range_fallbacks` — if the writer ever reorders
+        its keys the builder gets slower and noisier, never wrong.
+        """
+        key = f"{R2_SURFACE_PREFIX}{root.upper()}/{session_date}/{stamp}.json"
+        head = self.get_head_bytes(key)
+        if head:
+            m = _SPOT_HEAD_RE.search(head)
+            if m:
+                raw = m.group(1)
+                # Present, even when the poller could not resolve a spot: a null spot on a real
+                # object is covered tape with an unknown price, not a missing minute.
+                return (None if raw == b"null" else sd.as_float(raw.decode())), True
+        self.range_fallbacks += 1
+        fr = self.get_json(key)
+        if isinstance(fr, dict):
+            return sd.as_float(fr.get("spot")), True
+        return None, False
+
     def tide(self, session_date: str) -> dict | None:
         return self.get_json(f"{R2_TIDE_PREFIX}{session_date}.json")
 
@@ -215,11 +319,35 @@ class ArchiveReader:
 
 # ── local store reads ────────────────────────────────────────────────────────────
 
-def read_levels(site: Path, root: str) -> dict | None:
-    """EOD flip/wall map for a root from the gex_state payload, with its vintage.
+def levels_vintage(asof: str | None) -> str | None:
+    """The ET SESSION DATE a gex_state `asof` timestamp belongs to.
 
-    `asof` is an ISO timestamp; its DATE is the vintage a surface must print beside any
-    level.  A payload that will not parse yields None rather than a partial map.
+    NOT `asof[:10]`.  `build_gex_board` stamps `datetime.now(UTC)`, and the nightly engine band
+    commits between roughly 03:11 and 03:54 UTC — which is 23:11–23:54 ET on the session day
+    BEFORE.  Slicing the UTC date therefore reported the vintage as D+1 for every real nightly
+    run, which made the same-session check fail every single night: `walls.close` was
+    permanently null, the EOD fallback was dead on arrival, and the bilingual note asserted the
+    level came "from the close of D+1" — a dated statement that was simply false.
+
+    `nyse_calendar.session_date` is the house function for exactly this mapping (it keys off the
+    ET calendar date, so 2026-07-30T03:27Z → 2026-07-29) and also folds a weekend/holiday
+    timestamp back to the prior session.
+    """
+    if not asof:
+        return None
+    try:
+        dt = datetime.fromisoformat(str(asof).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return nyse_calendar.session_date(dt).isoformat()
+
+
+def read_levels(site: Path, root: str) -> dict | None:
+    """EOD flip/wall map for a root from the gex_state payload, with its SESSION-date vintage.
+
+    A payload that will not parse yields None rather than a partial map.
     """
     p = site / "options_structure" / "gex_state" / f"{root.upper()}.json"
     try:
@@ -228,12 +356,14 @@ def read_levels(site: Path, root: str) -> dict | None:
         return None
     if not isinstance(doc, dict):
         return None
+    asof = doc.get("asof")
     return {
         "flip": doc.get("gamma_flip"),
         "call_wall": doc.get("call_wall"),
         "put_wall": doc.get("put_wall"),
         "spot": doc.get("spot"),
-        "vintage": str(doc.get("asof") or "")[:10] or None,
+        "vintage": levels_vintage(asof),
+        "asof": asof,
         "source": f"site/options_structure/gex_state/{root.upper()}.json",
     }
 
@@ -316,53 +446,78 @@ def scan_session(
     stamps: list[str],
     workers: int,
     spot_scan: bool,
+    deadline: float | None = None,
 ) -> tuple[dict | None, str | None, dict[str, float | None], dict | None, list[str] | None]:
-    """One pass over the archived stamps → (frame, its stamp, spots, open walls, stamps read).
+    """Read one root's session → (frame, its stamp, spots, open walls, stamps read).
 
-    Two facts force a per-stamp read: `frame_for_stamp` (scripts/build_flow_surface.py)
-    writes each stamp's scalar `spot` but DROPS `spot_path`, and it emits that stamp's own
-    `walls` rather than the whole `walls_path` — so the price path and the opening wall map
-    exist only spread across the per-stamp files.  The day's ARC needs just one file: every
-    stamp file is the session truncated to that stamp, so the newest is the full day.
+    READ SHAPE, and why it is not "fetch every stamp".  Each per-stamp file is the session
+    TRUNCATED to that stamp, so the newest one already carries the FULL day's time axis and
+    net-premium grid — the arc, the pace series and the pockets all come from that single
+    object.  Fetching every stamp in full is quadratic in bytes: measured 124.8 MB for ONE root
+    at the configured 120-second cadence (196 stamps x ~600 strikes), 374 MB a night at three
+    roots.  So the reads are:
 
-    With `spot_scan` off, only the tail window plus the first stamp are fetched (4 GETs);
-    level-crossing events are then simply absent, and the record says so.  A stamp that will
-    not load maps to None — a gap in the tape stays a gap.
+        dates.json + idx.json                    2 small objects
+        newest readable frame                    1 object, ~1.3 MB at cadence 120 — the whole day
+        first stamp's frame                      1 small object, for the OPENING wall map
+        per-stamp `spot`                         1 RANGE read each (~256 B), not the whole file
 
-    The fifth return value is the list of stamps whose object actually came back, or None when
-    the scan was skipped (nothing was verified, so nothing may be claimed).  The dated indexes
-    are best-effort — a stamp can be listed while its PUT failed — and coverage must count what
-    was read, not what was promised.
+    Measured for three roots at the configured cadence: 602 reads, 4.06 MB, 1.2s — against
+    374 MB if every frame were fetched in full.
+
+    `frame_for_stamp` drops `spot_path` and emits only that stamp's own `walls`, and `_full.json`
+    is staged locally by the poller but NEVER uploaded (`build_and_stage_surfaces` queues only
+    idx/stamp/dates keys), so the price path genuinely exists nowhere but spread across the
+    per-stamp objects — hence a request per stamp, but only a few hundred bytes of it.
+
+    With `spot_scan` off, only the tail window plus the first stamp are fetched; level-crossing
+    events are then simply absent and the record says so.  A stamp that will not load maps to
+    None — a gap in the tape stays a gap.
+
+    The fifth return value is the list of stamps whose object actually answered, or None when the
+    scan was skipped (nothing was verified, so nothing may be claimed).  The dated indexes are
+    best-effort — a stamp can be listed while its PUT failed — and coverage must count what was
+    read, not what was promised.
+
+    `deadline` is a monotonic wall-clock budget: once passed, the scan stops and returns what it
+    has.  Partial output that says it is partial beats a job the engine band cancels at its cap.
     """
+    stamps = sorted(stamps)
     tail = stamps[-FRAME_FALLBACK_TRIES:] if stamps else []
-    wanted = list(stamps) if spot_scan else sorted(set(tail) | ({stamps[0]} if stamps else set()))
 
-    def one(stamp: str) -> tuple[str, dict | None]:
-        return stamp, reader.stamp_frame(root, session_date, stamp)
-
-    frames: dict[str, dict | None] = {}
-    if wanted:
-        with ThreadPoolExecutor(max_workers=max(1, int(workers))) as ex:
-            for stamp, fr in ex.map(one, wanted):
-                frames[stamp] = fr if isinstance(fr, dict) else None
-
-    # Full-day frame: newest readable stamp, walking back at most FRAME_FALLBACK_TRIES so a
-    # single corrupt tail object cannot cost the whole session.
+    # 1. The day itself: newest readable frame, walking back at most FRAME_FALLBACK_TRIES so a
+    #    single corrupt tail object cannot cost the whole session.
     frame, frame_stamp = None, None
     for stamp in reversed(tail):
-        fr = frames.get(stamp)
+        fr = reader.stamp_frame(root, session_date, stamp)
         if isinstance(fr, dict) and fr.get("grids"):
             frame, frame_stamp = fr, stamp
             break
 
+    # 2. The opening wall map (absent until the greek tap is armed).
+    open_walls = None
+    if stamps:
+        open_frame = reader.stamp_frame(root, session_date, stamps[0])
+        if isinstance(open_frame, dict):
+            open_walls = open_frame.get("walls")
+
+    # 3. The price path: one range read per stamp.
     spots: dict[str, float | None] = {}
     read: list[str] | None = None
-    if spot_scan:
-        spots = {s: sd.as_float((frames.get(s) or {}).get("spot")) for s in stamps}
-        read = [s for s in stamps if isinstance(frames.get(s), dict)]
+    if spot_scan and stamps:
+        def one(stamp: str) -> tuple[str, float | None, bool]:
+            if deadline is not None and _time.monotonic() > deadline:
+                return stamp, None, False      # budget spent: unverified, never "read"
+            return (stamp, *reader.stamp_spot(root, session_date, stamp))
 
-    open_frame = frames.get(stamps[0]) if stamps else None
-    open_walls = (open_frame or {}).get("walls")
+        answered: list[str] = []
+        with ThreadPoolExecutor(max_workers=max(1, int(workers))) as ex:
+            for stamp, spot, present in ex.map(one, stamps):
+                spots[stamp] = spot
+                if present:
+                    answered.append(stamp)
+        read = sorted(answered)
+
     return frame, frame_stamp, spots, open_walls, read
 
 
@@ -378,6 +533,7 @@ def digest_root(
     scan_spots: bool = True,
     workers: int = SPOT_SCAN_WORKERS,
     listed: bool = False,
+    deadline: float | None = None,
 ) -> dict | None:
     """The `options_session.v1` record for one root, or None when the archive has no session."""
     root = root.upper()
@@ -406,11 +562,20 @@ def digest_root(
 
     frame, frame_stamp, spots, first_walls, read_stamps = scan_session(
         reader, root=root, session_date=session_date, stamps=stamps,
-        workers=workers, spot_scan=bool(scan_spots))
+        workers=workers, spot_scan=bool(scan_spots), deadline=deadline)
     if frame is None:
         _warn("session_digest",
               f"{root} {session_date}: no readable stamp frame ({len(stamps)} stamp(s) "
               "promised by the index) — record written with an empty arc")
+    elif stamps and frame_stamp != stamps[-1]:
+        # M9: the arc/pace/pocket figures now stop short of the last minute the index lists,
+        # while events and coverage still span the full stamp list.  Two different axes in one
+        # record is exactly the kind of thing that reads as agreement, so it is annotated here
+        # and disclosed in the payload's own coverage words.
+        _warn("session_digest",
+              f"{root} {session_date}: newest readable snapshot is {frame_stamp}, not "
+              f"{stamps[-1]} — premium totals cover fewer minutes than the event timeline "
+              "(both counts printed in the record's coverage)")
     if read_stamps is not None and len(read_stamps) < len(stamps):
         # The dated indexes are best-effort: a listed stamp whose PUT failed is a hole, and it
         # is named here rather than absorbed into a coverage ratio nobody can decompose.
@@ -450,6 +615,7 @@ def digest_root(
             "surface_stamps": len(stamps),
             "surface_frame_stamp": frame_stamp,
             "surface_stamps_read": len(read_stamps) if read_stamps is not None else None,
+            "surface_frame_is_last_stamp": bool(stamps and frame_stamp == stamps[-1]),
             "spot_scan": bool(spots),
             "levels_source": (levels or {}).get("source"),
             "levels_vintage": (levels or {}).get("vintage"),
@@ -479,11 +645,52 @@ def _write_json_atomic(path: Path, obj: dict) -> Path:
     return path
 
 
-def write_latest(site: Path, record: dict) -> Path | None:
-    """Write `site/session/{ROOT}.json` unless it already holds a NEWER session.
+def _minutes_of(doc: object) -> int:
+    """`coverage.minutes` from a record, or -1 when it cannot be read."""
+    if not isinstance(doc, dict):
+        return -1
+    m = ((doc.get("coverage") or {}) if isinstance(doc.get("coverage"), dict) else {}).get("minutes")
+    try:
+        return int(m)
+    except (TypeError, ValueError):
+        return -1
 
-    "Latest" must only ever move forward: replaying an older date to backfill the ledger
-    must not roll a live surface back to that older day.
+
+def write_record(data: Path, session_date: str, record: dict) -> Path | None:
+    """Write the dated record unless one already on disk is a BETTER read of the same session.
+
+    A settled record is a record.  Re-running the digest after the surface archive has aged past
+    its 10-session retention re-reads a session that is mostly gone — measured: a re-run dropped
+    `coverage.minutes` from 79 to 6 while the ledger (keep-first) still said 79, so the two
+    artifacts disagreed about the same day and the JSON was the one that had degraded.  Weekends
+    made it routine: three nightly runs all resolve to the same Friday.
+
+    So a re-read replaces an existing record only when it is STRICTLY BETTER by covered minutes;
+    ties and regressions keep what is already there.  That is the same keep-first spirit as the
+    ledger, with an explicit exception for genuine improvement (a re-run after a poller backfill).
+    """
+    p = data / "options_session" / session_date / f"{record['root']}.json"
+    if p.exists():
+        try:
+            have = _minutes_of(json.loads(p.read_text()))
+        except Exception:  # noqa: BLE001 — an unreadable record is worse than any real read
+            have = -1
+        new = _minutes_of(record)
+        if new <= have:
+            log.info("session_digest: %s %s record kept (%d covered minute(s) on disk vs %d "
+                     "in this read)", record["root"], session_date, have, new)
+            return None
+    return _write_json_atomic(p, record)
+
+
+def write_latest(site: Path, record: dict) -> Path | None:
+    """Write `site/session/{ROOT}.json` unless what is there is newer, or better for the same day.
+
+    Two rules, both one-directional:
+      * "Latest" only moves FORWARD — replaying an older date to backfill the ledger must not
+        roll a live surface back to that older day.
+      * For the SAME day it only improves — a thinner re-read of today (post-retention, or a
+        budget-truncated run) must not replace a fuller one a surface is already serving.
     """
     p = site / "session" / f"{record['root']}.json"
     try:
@@ -491,13 +698,47 @@ def write_latest(site: Path, record: dict) -> Path | None:
             cur = json.loads(p.read_text())
             if isinstance(cur, dict):
                 have = str(cur.get("session_date") or "")[:10]
-                if have and have > str(record["session_date"])[:10]:
+                want = str(record["session_date"])[:10]
+                if have and have > want:
                     log.info("session_digest: %s latest keeps %s (newer than %s)",
-                             record["root"], have, record["session_date"])
+                             record["root"], have, want)
+                    return None
+                if have and have == want and _minutes_of(cur) >= _minutes_of(record):
+                    log.info("session_digest: %s latest keeps its %s read (%d covered "
+                             "minute(s) vs %d)", record["root"], have,
+                             _minutes_of(cur), _minutes_of(record))
                     return None
     except Exception as e:  # noqa: BLE001
         log.debug("session_digest: latest read failed for %s: %s", record["root"], e)
     return _write_json_atomic(p, record)
+
+
+def prune_records(data: Path, *, retain: int = RECORD_RETAIN_SESSIONS) -> list[str]:
+    """Drop dated record directories beyond the newest `retain` sessions; return what went.
+
+    The dated JSONs are committed git artifacts, so with no sweep they grow without bound while
+    the ledger parquet — the durable record — stays small.  Only exact YYYY-MM-DD directories are
+    ever considered, so a stray file under data/options_session/ can never be deleted by this.
+    """
+    base = data / "options_session"
+    if not base.is_dir():
+        return []
+    dated = sorted((d for d in base.iterdir()
+                    if d.is_dir() and _SESSION_DIR_RE.match(d.name)),
+                   key=lambda d: d.name, reverse=True)
+    dropped: list[str] = []
+    for d in dated[max(0, int(retain)):]:
+        try:
+            for f in d.iterdir():
+                f.unlink()
+            d.rmdir()
+            dropped.append(d.name)
+        except OSError as e:
+            log.debug("session_digest: prune of %s failed: %s", d, e)
+    if dropped:
+        log.info("session_digest: pruned %d dated record dir(s) beyond %d retained: %s",
+                 len(dropped), retain, ", ".join(dropped))
+    return dropped
 
 
 def append_ledger(data: Path, rows: list[dict]) -> int:
@@ -571,9 +812,14 @@ def run(
     scan_spots: bool = True,
     workers: int = SPOT_SCAN_WORKERS,
     root_dir: Path | None = None,
+    budget_seconds: float = BUDGET_SECONDS,
 ) -> dict:
     """Digest one session for every covered root.  Returns a run summary; never raises."""
     t0 = _time.monotonic()
+    # A non-positive budget means "read nothing new" — a legitimate operator lever for a night
+    # where the engine band is already at its cap, and the shape the tests exercise.  It is not
+    # a silent kill: every skipped root emits its own ::warning.
+    deadline = t0 + float(budget_seconds)
     repo = Path(root_dir) if root_dir else config.ROOT
     cfg = config.load()["storage"]
     site = repo / cfg["site_dir"]
@@ -612,12 +858,18 @@ def run(
     covered, promised = discover_roots(reader, candidates, sess)
 
     records: list[dict] = []
+    budget_skipped: list[str] = []
     for r in covered:
+        if _time.monotonic() > deadline:
+            # Do not START a root there is no time to finish: a half-read root would publish a
+            # coverage number that understates the archive rather than the tape.
+            budget_skipped.append(r)
+            continue
         try:
             rec = digest_root(reader, root=r, session_date=sess, site=site, data=data,
                               tide_doc=tide_doc, dte_doc=dte_doc,
                               scan_spots=scan_spots, workers=workers,
-                              listed=(r in promised))
+                              listed=(r in promised), deadline=deadline)
         except Exception as e:  # noqa: BLE001 — one bad root never costs the others
             _warn("session_digest", f"{r} {sess}: digest failed ({e})")
             continue
@@ -626,12 +878,18 @@ def run(
             continue
         records.append(rec)
 
+    if budget_skipped:
+        _warn("session_digest",
+              f"{sess}: read budget spent before {', '.join(budget_skipped)} could be read — "
+              "no record written for those roots this run")
     if not records:
         _warn("session_digest",
               f"{sess}: no root had a readable intraday archive (tried "
               f"{', '.join(candidates) or 'none'}) — nothing written")
         return {"ok": True, "session_date": sess, "roots": [],
                 "reason": "no_archived_roots", "r2_gets": reader.gets,
+                "r2_mb": round(reader.bytes_read / 1e6, 3),
+                "budget_skipped": budget_skipped,
                 "seconds": round(_time.monotonic() - t0, 2)}
 
     # Lane law (§0.9): `data/` belongs to the nightly lane ALONE — both the dated records and
@@ -641,10 +899,10 @@ def run(
     nightly = nightly_advance_enabled()
     written: list[str] = []
     data_written: list[str] = []
+    pruned: list[str] = []
     if not dry_run:
         for rec in records:
-            if nightly:
-                _write_json_atomic(data / "options_session" / sess / f"{rec['root']}.json", rec)
+            if nightly and write_record(data, sess, rec) is not None:
                 data_written.append(rec["root"])
             if write_latest(site, rec) is not None:
                 written.append(rec["root"])
@@ -653,19 +911,34 @@ def run(
                      "(COLLECT_LANE != nightly) — site/session latest still refreshed",
                      len(records))
     ledger_rows = append_ledger(data, [sd.ledger_row(r) for r in records]) if not dry_run else -1
+    if nightly and not dry_run:
+        pruned = prune_records(data)
 
     secs = round(_time.monotonic() - t0, 2)
-    log.info("session_digest: %s — %d root(s) %s, %d R2 get(s), %.2fs",
-             sess, len(records), ",".join(r["root"] for r in records), reader.gets, secs)
+    over_budget = secs > BUDGET_SECONDS
+    if over_budget:
+        _warn("session_digest",
+              f"{sess}: read budget of {BUDGET_SECONDS:.0f}s was spent ({secs:.0f}s) — records "
+              "written from the tape that had arrived, with the shortfall printed in their "
+              "coverage")
+    log.info("session_digest: %s — %d root(s) %s, %d read(s) / %.2f MB, %.2fs",
+             sess, len(records), ",".join(r["root"] for r in records), reader.gets,
+             reader.bytes_read / 1e6, secs)
     return {
         "ok": True,
         "session_date": sess,
         "roots": [r["root"] for r in records],
         "written": written,
+        "data_written": data_written,
+        "pruned_sessions": pruned,
         "ledger_rows": ledger_rows,
         "r2_gets": reader.gets,
         "r2_misses": reader.misses,
+        "r2_mb": round(reader.bytes_read / 1e6, 3),
+        "range_fallbacks": reader.range_fallbacks,
         "seconds": secs,
+        "over_budget": over_budget,
+        "budget_skipped": budget_skipped,
         "coverage": {r["root"]: r["coverage"]["quality_en"] for r in records},
     }
 
@@ -707,6 +980,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--no-spot-scan", action="store_true",
                     help="skip the per-stamp spot scan (no level-crossing events)")
     ap.add_argument("--workers", type=int, default=SPOT_SCAN_WORKERS)
+    ap.add_argument("--budget-seconds", type=float, default=BUDGET_SECONDS,
+                    help="wall-clock read budget; past it the run writes what it has")
     ap.add_argument("--selftest", action="store_true")
     a = ap.parse_args(argv)
 
@@ -720,6 +995,7 @@ def main(argv: list[str] | None = None) -> int:
             dry_run=bool(a.dry_run),
             scan_spots=not a.no_spot_scan,
             workers=a.workers,
+            budget_seconds=a.budget_seconds,
         )
         print(json.dumps(res, ensure_ascii=False, indent=1), flush=True)
     except Exception as e:  # noqa: BLE001 — a builder never breaks the nightly
