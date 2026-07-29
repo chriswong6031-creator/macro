@@ -3053,7 +3053,7 @@ notify:
 orchestrator:
   review_every_n_runs: 5      # every N pipeline runs, write a roll-up review + progress assessment
   site_rows: 60               # run-log entries kept in the published site artifact
-  ingest_bot_feedback: false   # read site/mastermind/nw_feedback.json (v3 dialogue) in the build
+  ingest_bot_feedback: true   # read site/mastermind/nw_feedback.json (v3 dialogue) in the build
   brief_attention_nudges: false  # surface pending bot nudges/directives in daily_brief operator_attention
 
 # Neural Web W6a — Push spine (engine/alert_triage.py:push_priority_alerts).

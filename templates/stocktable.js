@@ -672,7 +672,11 @@
               // to the browser / theme.js Terminal intercept naturally.
               if (e.target.closest('a')) return;
               var T = window.MDXTerminal;
-              window.location.href = (T && T.on && T.on()) ? T.url(row.ticker || '') : link;
+              if (T && T.on && T.on() && T.open) {
+                T.open(row.ticker || '', tr);
+              } else {
+                window.location.href = (T && T.on && T.on()) ? T.url(row.ticker || '') : link;
+              }
             });
           }
           tr.appendChild(td);

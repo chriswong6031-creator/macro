@@ -274,6 +274,108 @@
 .nx-diag .rej-reason{ color:var(--warn); font-weight:600; }
 .nx-disc{ margin:22px 0 0; font-size:11px; color:var(--muted); font-style:italic; }
 
+/* ======================= INTELLIGENCE DESK =======================
+   The durable story layer above the arrival wire: clustered developments,
+   evidence receipts, market context, and review-only X drafts. */
+.nxi{ --nxi-accent:var(--info); margin:0 0 18px; border-radius:20px; overflow:hidden;
+  background:linear-gradient(145deg,color-mix(in srgb,var(--panel) 93%,transparent),
+    color-mix(in srgb,var(--panel2) 82%,transparent));
+  border:1px solid color-mix(in srgb,var(--nxi-accent) 24%,var(--nx-brd));
+  box-shadow:0 18px 48px -30px color-mix(in srgb,var(--nxi-accent) 46%,transparent),
+    var(--nx-shadow); -webkit-backdrop-filter:var(--nx-blur); backdrop-filter:var(--nx-blur); }
+.nxi[hidden]{ display:none; }
+.nxi-head{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:18px; padding:20px;
+  border-bottom:1px solid var(--nx-hair); }
+.nxi-kicker{ display:flex; align-items:center; gap:8px; color:var(--nxi-accent); font-size:10.5px;
+  font-weight:800; letter-spacing:.16em; text-transform:uppercase; }
+.nxi-pulse{ width:8px; height:8px; border-radius:50%; background:var(--nxi-accent);
+  box-shadow:0 0 0 4px color-mix(in srgb,var(--nxi-accent) 15%,transparent); }
+.nxi[data-state="quiet"] .nxi-pulse{ background:transparent; border:1.5px solid var(--muted); box-shadow:none; }
+.nxi-title{ margin:6px 0 4px; font-size:21px; line-height:1.16; font-weight:850; letter-spacing:-.02em; }
+.nxi-sub{ margin:0; max-width:72ch; color:var(--muted); font-size:12.5px; line-height:1.5; }
+.nxi-health{ align-self:center; min-width:152px; padding:10px 12px; border-radius:12px;
+  background:color-mix(in srgb,var(--nxi-accent) 7%,transparent);
+  border:1px solid color-mix(in srgb,var(--nxi-accent) 18%,transparent); }
+.nxi-health strong{ display:block; font-size:12px; }
+.nxi-health span{ display:block; margin-top:3px; color:var(--muted); font-size:10.5px; }
+.nxi-metrics{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); border-bottom:1px solid var(--nx-hair); }
+.nxi-metric{ padding:12px 16px; border-right:1px solid var(--nx-hair); }
+.nxi-metric:last-child{ border-right:0; }
+.nxi-metric b{ display:block; font-family:var(--num); font-size:19px; letter-spacing:-.02em; }
+.nxi-metric span{ display:block; margin-top:2px; color:var(--muted); font-size:10px; letter-spacing:.08em; text-transform:uppercase; }
+.nxi-toolbar{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; padding:12px 16px 4px; }
+.nxi-filter{ appearance:none; border:1px solid var(--nx-hair); background:transparent; color:var(--muted);
+  border-radius:100px; padding:5px 10px; font:600 11px/1.2 inherit; cursor:pointer; }
+.nxi-filter:hover{ color:var(--text); border-color:var(--nx-brd); }
+.nxi-filter.on{ color:var(--text); background:color-mix(in srgb,var(--nxi-accent) 12%,transparent);
+  border-color:color-mix(in srgb,var(--nxi-accent) 36%,transparent); }
+.nxi-toolbar-note{ margin-left:auto; color:var(--muted); font-size:10.5px; }
+.nxi-list{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; padding:10px 16px 16px; }
+.nxi-story{ min-width:0; border:1px solid var(--nx-hair); border-radius:14px; overflow:hidden;
+  background:color-mix(in srgb,var(--panel) 78%,transparent); }
+.nxi-story[data-stage="high_impact"]{ border-color:color-mix(in srgb,var(--act) 42%,var(--nx-hair)); }
+.nxi-story[data-hidden="true"]{ display:none; }
+.nxi-main{ padding:14px; }
+.nxi-topline{ display:flex; gap:7px; align-items:center; flex-wrap:wrap; margin-bottom:8px; }
+.nxi-stage,.nxi-lane,.nxi-sourcecount{ display:inline-flex; align-items:center; gap:4px; border-radius:100px;
+  padding:2px 7px; font-size:9.5px; font-weight:750; letter-spacing:.05em; }
+.nxi-stage{ color:var(--text); background:color-mix(in srgb,var(--muted) 13%,transparent);
+  border:1px solid color-mix(in srgb,var(--muted) 24%,transparent); }
+.nxi-stage.high_impact{ background:color-mix(in srgb,var(--act) 13%,transparent);
+  border-color:color-mix(in srgb,var(--act) 32%,transparent); color:var(--act); }
+.nxi-stage.confirmed{ background:color-mix(in srgb,var(--info) 11%,transparent);
+  border-color:color-mix(in srgb,var(--info) 28%,transparent); color:var(--info); }
+.nxi-lane,.nxi-sourcecount{ color:var(--muted); border:1px solid var(--nx-hair); }
+.nxi-time{ margin-left:auto; color:var(--muted); font:10px/1.2 var(--num); }
+.nxi-headline{ margin:0; font-size:15px; line-height:1.32; letter-spacing:-.008em; text-wrap:balance; }
+.nxi-brief{ margin:7px 0 0; color:color-mix(in srgb,var(--text) 82%,var(--muted));
+  font-size:12px; line-height:1.5; }
+.nxi-why{ margin:9px 0 0; padding-left:9px; border-left:2px solid color-mix(in srgb,var(--nxi-accent) 38%,transparent);
+  color:var(--muted); font-size:11.5px; line-height:1.45; }
+.nxi-chips{ display:flex; flex-wrap:wrap; gap:5px; margin-top:10px; }
+.nxi-chip{ border-radius:6px; padding:2px 6px; color:var(--muted); background:var(--nx-card2);
+  border:1px solid var(--nx-hair); font-size:9.5px; }
+.nxi-chip.market{ color:var(--text); font-family:var(--num); }
+.nxi-chip.ticker{ color:var(--link); font-family:var(--num); font-weight:750; }
+.nxi-more{ border-top:1px solid var(--nx-hair); }
+.nxi-more>summary{ list-style:none; cursor:pointer; padding:9px 14px; display:flex; gap:8px;
+  align-items:center; color:var(--muted); font-size:11px; font-weight:650; }
+.nxi-more>summary::-webkit-details-marker{ display:none; }
+.nxi-more>summary::after{ content:"+"; margin-left:auto; font-family:var(--num); }
+.nxi-more[open]>summary::after{ content:"−"; }
+.nxi-detail{ display:grid; gap:12px; padding:0 14px 14px; }
+.nxi-detail h4{ margin:0 0 6px; color:var(--muted); font-size:9.5px; letter-spacing:.12em; text-transform:uppercase; }
+.nxi-evidence{ display:flex; flex-direction:column; gap:5px; }
+.nxi-source{ display:flex; gap:8px; align-items:flex-start; padding:7px 8px; border-radius:8px;
+  background:var(--nx-card2); font-size:10.5px; }
+.nxi-source a{ color:var(--link); font-weight:650; }
+.nxi-source span{ color:var(--muted); }
+.nxi-draft{ padding:10px; border-radius:10px; background:color-mix(in srgb,var(--nxi-accent) 6%,var(--nx-card2));
+  border:1px solid color-mix(in srgb,var(--nxi-accent) 18%,var(--nx-hair)); }
+.nxi-draft p{ margin:0; white-space:pre-wrap; font-size:11.5px; line-height:1.48; }
+.nxi-draftbar{ display:flex; gap:7px; align-items:center; margin-top:8px; color:var(--muted); font-size:9.5px; }
+.nxi-copy{ appearance:none; margin-left:auto; cursor:pointer; border:1px solid color-mix(in srgb,var(--nxi-accent) 32%,transparent);
+  background:transparent; color:var(--nxi-accent); border-radius:100px; padding:4px 9px; font:700 10px/1 inherit; }
+.nxi-empty{ padding:24px 18px; color:var(--muted); font-size:12px; text-align:center; }
+.nxi-state{ padding:20px; }
+.nxi-state strong{ display:block; font-size:13px; }
+.nxi-state p{ max-width:62ch; margin:5px 0 0; color:var(--muted); font-size:12px; line-height:1.5; }
+.nxi-footer{ display:flex; justify-content:space-between; gap:12px; align-items:center; padding:10px 16px;
+  border-top:1px solid var(--nx-hair); color:var(--muted); font-size:10.5px; }
+.nxi-showmore{ appearance:none; border:0; background:transparent; color:var(--nxi-accent);
+  font:700 11px/1 inherit; cursor:pointer; }
+@media(max-width:760px){
+  .nxi-head{ grid-template-columns:1fr; } .nxi-health{ min-width:0; }
+  .nxi-list{ grid-template-columns:1fr; }
+}
+@media(max-width:560px){
+  .nxi-head{ padding:16px; } .nxi-title{ font-size:19px; }
+  .nxi-metrics{ grid-template-columns:repeat(2,1fr); }
+  .nxi-metric:nth-child(2){ border-right:0; }
+  .nxi-metric:nth-child(-n+2){ border-bottom:1px solid var(--nx-hair); }
+  .nxi-toolbar-note{ width:100%; margin-left:0; }
+}
+
 /* ======================= LIVE WIRE (B4b) =======================
    The page's ONE achromatic instrument. Everything above it is edited and
    colour-coded (ranked cards, tinted theme chips); the wire is the raw feed,
@@ -520,6 +622,42 @@
 </div>
 {% endif %}
 
+{# ==================== INTELLIGENCE DESK ====================
+   Client-hydrated from the host-local story store. Hidden on a true 404 so a
+   deployment with no daemon artifact does not advertise a dead feature. #}
+<section class="nxi" id="nxIntel" data-state="loading" hidden>
+  <div class="nxi-head">
+    <div>
+      <div class="nxi-kicker"><span class="nxi-pulse"></span>{{ t('Live story graph','实时事件图谱') }}</div>
+      <h2 class="nxi-title">{{ t('Intelligence Desk','情报工作台') }}</h2>
+      <p class="nxi-sub">{{ t('One developing story per card — repeated reports merged, source receipts attached, market context checked, and X drafts held for review.','每张卡片对应一个持续发展的事件——合并重复报道、附上来源依据、核对市场背景，并将 X 草稿留待审核。') }}</p>
+    </div>
+    <div class="nxi-health">
+      <strong id="nxIntelHealth">{{ t('Connecting to the desk','正在连接工作台') }}</strong>
+      <span id="nxIntelUpdated"></span>
+    </div>
+  </div>
+  <div class="nxi-metrics" id="nxIntelMetrics" hidden>
+    <div class="nxi-metric"><b id="nxiActive">—</b><span>{{ t('Active stories','活跃事件') }}</span></div>
+    <div class="nxi-metric"><b id="nxiConfirmed">—</b><span>{{ t('Confirmed','已确认') }}</span></div>
+    <div class="nxi-metric"><b id="nxiDrafts">—</b><span>{{ t('Draft-ready','草稿就绪') }}</span></div>
+    <div class="nxi-metric"><b id="nxiSources">—</b><span>{{ t('Sources in view','当前来源') }}</span></div>
+  </div>
+  <div class="nxi-toolbar" id="nxIntelToolbar" hidden>
+    <button class="nxi-filter on" data-intel-filter="all">{{ t('All stories','全部事件') }}</button>
+    <button class="nxi-filter" data-intel-filter="high_impact">{{ t('High impact','高影响') }}</button>
+    <button class="nxi-filter" data-intel-filter="confirmed">{{ t('Confirmed','已确认') }}</button>
+    <button class="nxi-filter" data-intel-filter="draft">{{ t('Draft ready','草稿就绪') }}</button>
+    <span class="nxi-toolbar-note">{{ t('Outbound posting is separate and remains review-gated.','对外发布为独立流程，仍需人工审核。') }}</span>
+  </div>
+  <div class="nxi-list" id="nxIntelList" hidden></div>
+  <div class="nxi-state" id="nxIntelState" hidden></div>
+  <div class="nxi-footer" id="nxIntelFooter" hidden>
+    <span>{{ t('Context, not a trade signal. Open a card for evidence and draft provenance.','这里是背景信息，不是交易信号。展开卡片可查看证据与草稿来源。') }}</span>
+    <button class="nxi-showmore" id="nxIntelMore" hidden>{{ t('Show more stories','显示更多事件') }}</button>
+  </div>
+</section>
+
 {# ==================== LIVE WIRE (B4b) ====================
    Client-hydrated from /live/wires.json (free_registered — see config/site_access.yml).
    Ships HIDDEN and stays hidden when the wire is not published at this deployment:
@@ -738,6 +876,266 @@
     window.addEventListener('langchange', apply);
     apply();
   }
+
+  // ---- INTELLIGENCE DESK -----------------------------------------------------
+  // The daemon merges fast arrivals into durable story packets at
+  // /live/intelligence.json. Every visible string derived from a source or draft
+  // is assigned through textContent; nothing from the live payload becomes HTML.
+  (function(){
+    var box=document.getElementById('nxIntel');
+    if(!box || !window.fetch) return;
+    var listEl=document.getElementById('nxIntelList');
+    var stateEl=document.getElementById('nxIntelState');
+    var metricsEl=document.getElementById('nxIntelMetrics');
+    var toolbarEl=document.getElementById('nxIntelToolbar');
+    var footerEl=document.getElementById('nxIntelFooter');
+    var moreEl=document.getElementById('nxIntelMore');
+    var healthEl=document.getElementById('nxIntelHealth');
+    var updatedEl=document.getElementById('nxIntelUpdated');
+    if(!listEl || !stateEl) return;
+
+    var URL_='live/intelligence.json', POLL=(window.LIVE_POLL_SEC||60)*1000;
+    var TIMEOUT=10000, CAP=8, stories=[], health={}, updatedAt='', filter='all';
+    var expanded=false, mode='loading', inflight=false, timerId=null;
+
+    function zh(){ return document.documentElement.getAttribute('data-lang')==='zh'; }
+    function tx(en,zv){ return zh() ? zv : en; }
+    function text(node,value){ node.textContent=String(value==null?'':value); return node; }
+    function el(tag,cls,value){
+      var node=document.createElement(tag); if(cls) node.className=cls;
+      if(value!=null) text(node,value); return node;
+    }
+    function age(value){
+      var ms=Date.parse(String(value||'')); if(!isFinite(ms)) return tx('recent','刚刚');
+      var mins=Math.max(0,Math.floor((Date.now()-ms)/60000));
+      if(mins<1) return tx('now','刚刚');
+      if(mins<60) return mins+tx('m','分钟');
+      var hrs=Math.floor(mins/60); if(hrs<24) return hrs+tx('h','小时');
+      return Math.floor(hrs/24)+tx('d','天');
+    }
+    function stageLabel(stage){
+      return ({
+        high_impact:tx('High impact','高影响'),
+        confirmed:tx('Confirmed','已确认'),
+        developing:tx('Developing','发展中')
+      })[stage] || tx('Developing','发展中');
+    }
+    function knownContext(value){
+      var map={
+        'Primary source':tx('Primary source','第一手来源'),
+        'Multiple reports':tx('Multiple reports','多方报道'),
+        'Single report':tx('Single report','单一报道'),
+        'Rising':tx('Attention rising','关注升温'),
+        'New':tx('New arrival','新近出现'),
+        'Active':tx('Still active','持续跟踪'),
+        'Primary / top-tier':tx('Primary / top-tier','一手／顶级来源'),
+        'Established press':tx('Established press','主流媒体'),
+        'Aggregator':tx('Aggregator','聚合来源'),
+        'Unrated source':tx('Source not yet rated','来源尚未评级')
+      };
+      return map[String(value||'')] || String(value||'');
+    }
+    function draftReady(story){
+      return (story.drafts||[]).some(function(d){ return d && d.status==='review'; });
+    }
+    function matches(story){
+      if(filter==='all') return true;
+      if(filter==='high_impact') return story.stage==='high_impact';
+      if(filter==='confirmed') return story.stage==='confirmed'||story.stage==='high_impact';
+      if(filter==='draft') return draftReady(story);
+      return true;
+    }
+    function safeUrl(value){
+      var raw=String(value||''); return /^https?:\/\//i.test(raw) ? raw : '';
+    }
+    function copyButton(draft){
+      var b=el('button','nxi-copy',tx('Copy draft','复制草稿'));
+      b.type='button';
+      b.addEventListener('click',function(){
+        var value=String(draft.text||'');
+        if(!navigator.clipboard || !navigator.clipboard.writeText){
+          text(b,tx('Copy unavailable','无法复制')); return;
+        }
+        navigator.clipboard.writeText(value).then(function(){
+          text(b,tx('Copied','已复制'));
+          setTimeout(function(){ text(b,tx('Copy draft','复制草稿')); },1400);
+        }).catch(function(){ text(b,tx('Copy failed','复制失败')); });
+      });
+      return b;
+    }
+    function storyCard(story){
+      var card=el('article','nxi-story'); card.setAttribute('data-stage',String(story.stage||'developing'));
+      var main=el('div','nxi-main'), top=el('div','nxi-topline');
+      top.appendChild(el('span','nxi-stage '+String(story.stage||'developing'),stageLabel(story.stage)));
+      var lane=zh()?(story.lane_label_zh||story.lane_label_en):(story.lane_label_en||story.lane);
+      top.appendChild(el('span','nxi-lane',lane||tx('Markets','市场')));
+      var n=Math.max(1,Number(story.source_count||1));
+      top.appendChild(el('span','nxi-sourcecount',n+' '+tx(n===1?'source':'sources','个来源')));
+      top.appendChild(el('span','nxi-time',age(story.updated_at)));
+      main.appendChild(top);
+      main.appendChild(el('h3','nxi-headline',story.headline||tx('Untitled development','未命名事件')));
+      if(story.brief && story.brief!==story.headline){
+        main.appendChild(el('p','nxi-brief',story.brief));
+      }
+      var why=zh()?(story.why_it_matters_zh||story.why_it_matters_en):story.why_it_matters_en;
+      if(why) main.appendChild(el('p','nxi-why',why));
+      var chips=el('div','nxi-chips'), ctx=story.context||{};
+      ['evidence','pace','source_quality'].forEach(function(k){
+        if(ctx[k]) chips.appendChild(el('span','nxi-chip',knownContext(ctx[k])));
+      });
+      if(story.market && story.market.label){
+        chips.appendChild(el('span','nxi-chip market',
+          story.market.label+' · '+tx('session move','本交易日变动')));
+      }
+      (story.tickers||[]).slice(0,5).forEach(function(t){
+        chips.appendChild(el('span','nxi-chip ticker','$'+String(t).replace(/^\$/,'')));
+      });
+      if(chips.childNodes.length) main.appendChild(chips);
+      card.appendChild(main);
+
+      var evidence=(story.evidence||[]).filter(function(x){ return x&&typeof x==='object'; });
+      var drafts=(story.drafts||[]).filter(function(x){ return x&&x.text; });
+      var details=document.createElement('details'); details.className='nxi-more';
+      details.appendChild(el('summary','',
+        tx('Evidence & content','证据与内容')+' · '+evidence.length+' / '+drafts.length));
+      var detail=el('div','nxi-detail');
+      var routes=(story.content_routes||[]).filter(function(x){return x;});
+      if(routes.length){
+        var routeWrap=el('div',''), routeChips=el('div','nxi-chips');
+        routeWrap.appendChild(el('h4','',tx('Content routes','内容路径')));
+        routes.forEach(function(route){
+          var names={wire:tx('Wire','快讯'),analysis:tx('Analysis','分析'),thread:tx('Thread','长帖')};
+          routeChips.appendChild(el('span','nxi-chip',names[route]||String(route)));
+        });
+        routeWrap.appendChild(routeChips); detail.appendChild(routeWrap);
+      }
+      if(evidence.length){
+        var evWrap=el('div',''), evList=el('div','nxi-evidence');
+        evWrap.appendChild(el('h4','',tx('Source receipts','来源依据')));
+        evidence.slice(0,8).forEach(function(source){
+          var row=el('div','nxi-source'), lead=el('div','');
+          var href=safeUrl(source.url);
+          if(href){
+            var a=el('a','',source.name||tx('Open source','打开来源'));
+            a.href=href; a.target='_blank'; a.rel='noopener'; lead.appendChild(a);
+          }else lead.appendChild(el('strong','',source.name||tx('Source','来源')));
+          lead.appendChild(el('span','',
+            ' · '+age(source.published_at)+(zh()?tx(' · English source',' · 英文原文'):'')));
+          row.appendChild(lead); evList.appendChild(row);
+        });
+        evWrap.appendChild(evList); detail.appendChild(evWrap);
+      }
+      if(drafts.length){
+        var drWrap=el('div',''); drWrap.appendChild(el('h4','',tx('Review queue','审核队列')));
+        drafts.slice().reverse().slice(0,2).forEach(function(draft){
+          var dr=el('div','nxi-draft');
+          dr.appendChild(el('p','',draft.text));
+          var bar=el('div','nxi-draftbar');
+          var status=draft.status==='review'?tx('Ready for review','可供审核'):tx('Needs editing','需要编辑');
+          bar.appendChild(el('span','',status+' · '+Number(draft.characters||String(draft.text).length)+'/280'));
+          bar.appendChild(copyButton(draft)); dr.appendChild(bar); drWrap.appendChild(dr);
+        });
+        detail.appendChild(drWrap);
+      }else{
+        detail.appendChild(el('p','nxi-brief',
+          tx('No draft yet. The evidence is retained for the next Content Studio pass.','尚无草稿。证据已保留，等待下一次内容工作台处理。')));
+      }
+      details.appendChild(detail); card.appendChild(details);
+      return card;
+    }
+    function render(){
+      listEl.textContent='';
+      var filtered=stories.filter(matches), shown=expanded?filtered:filtered.slice(0,CAP);
+      shown.forEach(function(story){ listEl.appendChild(storyCard(story)); });
+      listEl.hidden=!shown.length; stateEl.hidden=!!shown.length;
+      if(!shown.length){
+        stateEl.textContent='';
+        stateEl.appendChild(el('strong','',tx('No stories in this view','此视图暂无事件')));
+        stateEl.appendChild(el('p','',
+          tx('Nothing to act on — choose another filter or wait for the next confirmed development.','无需操作——请选择其他筛选条件，或等待下一条已确认进展。')));
+      }
+      if(moreEl){
+        moreEl.hidden=expanded||filtered.length<=CAP;
+        text(moreEl,tx('Show '+(filtered.length-CAP)+' more','再显示 '+(filtered.length-CAP)+' 条'));
+      }
+      if(footerEl) footerEl.hidden=false;
+    }
+    function setMetric(id,value){ var node=document.getElementById(id); if(node) text(node,Number(value||0)); }
+    function showDesk(payload){
+      health=payload.health||{}; stories=Array.isArray(payload.stories)?payload.stories.filter(function(s){
+        return s && s.id && s.headline;
+      }):[];
+      updatedAt=payload.updated_at||'';
+      mode='ok'; box.hidden=false; box.setAttribute('data-state',health.state||'quiet');
+      if(metricsEl) metricsEl.hidden=false; if(toolbarEl) toolbarEl.hidden=false;
+      setMetric('nxiActive',health.active_stories);
+      setMetric('nxiConfirmed',health.confirmed);
+      setMetric('nxiDrafts',health.draft_ready);
+      setMetric('nxiSources',health.sources_online);
+      if(healthEl) text(healthEl,health.state==='live'?tx('Desk is ingesting','工作台正在接收数据'):tx('Desk is quiet','工作台当前平静'));
+      if(updatedEl) text(updatedEl,tx('Updated ','更新于 ')+age(updatedAt));
+      expanded=false; render();
+    }
+    function stateCopy(kind){
+      return ({
+        gate:[tx('Sign in to open the Intelligence Desk','登录后查看情报工作台'),
+          tx('The story graph, source receipts, and review drafts are available to registered accounts.','事件图谱、来源依据与审核草稿仅向注册账户开放。')],
+        down:[tx('The Intelligence Desk is reconnecting','情报工作台正在重新连接'),
+          tx('Nothing to do — the live wire and ranked board use separate paths and remain available.','无需操作——实时快讯与排序新闻使用独立路径，仍可继续查看。')],
+        quiet:[tx('The desk is quiet','工作台当前平静'),
+          tx('No active stories cleared the evidence floor. Nothing to act on; ingestion continues.','目前没有事件达到证据门槛。无需操作，系统仍在持续接收数据。')]
+      })[kind] || null;
+    }
+    function showState(kind){
+      var copy=stateCopy(kind)||stateCopy('down'); mode=kind; box.hidden=false;
+      box.setAttribute('data-state','quiet'); listEl.hidden=true;
+      if(metricsEl) metricsEl.hidden=true; if(toolbarEl) toolbarEl.hidden=true;
+      if(footerEl) footerEl.hidden=true;
+      stateEl.textContent=''; stateEl.hidden=false;
+      stateEl.appendChild(el('strong','',copy[0])); stateEl.appendChild(el('p','',copy[1]));
+      if(healthEl) text(healthEl,copy[0]); if(updatedEl) text(updatedEl,'');
+    }
+    function absent(){ mode='absent'; box.hidden=true; if(timerId){clearInterval(timerId);timerId=null;} }
+    function poll(){
+      if(inflight || mode==='absent' || document.hidden) return;
+      inflight=true;
+      var ctrl=('AbortController' in window)?new AbortController():null;
+      var timeout=ctrl?setTimeout(function(){try{ctrl.abort();}catch(e){}},TIMEOUT):0;
+      fetch(URL_,{credentials:'same-origin',cache:'no-store',signal:ctrl&&ctrl.signal})
+        .then(function(r){
+          if(r.status===404){absent();return null;}
+          if(r.status===401||r.status===403){showState('gate');return null;}
+          if(r.status===503){
+            return r.text().then(function(body){
+              if(body&&body.indexOf('site_access_temporarily_unavailable')>=0){absent();return null;}
+              throw new Error('http 503');
+            });
+          }
+          if(!r.ok) throw new Error('http '+r.status);
+          return r.json();
+        })
+        .then(function(payload){
+          if(!payload) return;
+          if(String(payload.schema||'')!=='intelligence.desk/v1') throw new Error('schema');
+          if(!Array.isArray(payload.stories)||!payload.stories.length){showState('quiet');return;}
+          showDesk(payload);
+        })
+        .catch(function(){ if(mode!=='ok'&&mode!=='absent') showState('down'); })
+        .then(function(){ if(timeout)clearTimeout(timeout); inflight=false; });
+    }
+    if(toolbarEl) toolbarEl.addEventListener('click',function(e){
+      var b=e.target.closest&&e.target.closest('.nxi-filter'); if(!b)return;
+      toolbarEl.querySelectorAll('.nxi-filter').forEach(function(x){x.classList.remove('on');});
+      b.classList.add('on'); filter=b.getAttribute('data-intel-filter')||'all'; expanded=false; render();
+    });
+    if(moreEl) moreEl.addEventListener('click',function(){expanded=true;render();});
+    window.addEventListener('langchange',function(){
+      if(mode==='ok') showDesk({health:health,stories:stories,updated_at:updatedAt});
+      else if(stateCopy(mode)) showState(mode);
+    });
+    document.addEventListener('visibilitychange',function(){if(!document.hidden)poll();});
+    poll(); timerId=setInterval(poll,POLL);
+  })();
 
   // ---- LIVE WIRE (B4b) ------------------------------------------------------
   // Hydrates from the wires.v1 payload the fastlane daemon publishes to

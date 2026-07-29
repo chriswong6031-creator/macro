@@ -153,9 +153,11 @@
 	# Keep PUBLIC-BOUNDARY below byte-aligned with config/site_access.yml. The
 	# hermetic boundary test rejects drift.
 
-	# Internal previews/QA are not customer content, even for entitled accounts.
+	# Internal previews/QA and proprietary research tools are not customer
+	# content, even for entitled accounts. The seven research tools are available
+	# only through admin.mastermind-x.com's authenticated /research-tools/ route.
 	@never_site {
-		path /_mockup_ccw_credit_desk.html /_mockup_research_vault.html /qa_bottom_sensors.html /status.html
+		path /_mockup_ccw_credit_desk.html /_mockup_research_vault.html /qa_bottom_sensors.html /status.html /committee.html /measurement.html /crossasset.html /signal_lab.html /tech_lab.html /macro_signals.html /factors.html
 	}
 	handle @never_site {
 		header Cache-Control "private, no-store"
@@ -166,7 +168,7 @@
 	# Protected HTML navigations: IP gate -> registration -> paid feature gate.
 	@reg_html {
 		path *.html
-		not path /api/* /ws/tape /index.html /plans.html /macro.html /start.html /us_stocks.html /research_vault.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /stocks/* /products/* /tools/* /learn/* /blog/* /research/* /_mockup_ccw_credit_desk.html /_mockup_research_vault.html /qa_bottom_sensors.html /status.html
+		not path /api/* /ws/tape /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /stocks/* /products/* /tools/* /learn/* /blog/* /research/* /_mockup_ccw_credit_desk.html /_mockup_research_vault.html /qa_bottom_sensors.html /status.html
 	}
 
 	handle @reg_html {
@@ -213,7 +215,7 @@
 	# original leak: direct JSON/JS/model-output URLs no longer bypass auth.
 	# PUBLIC-BOUNDARY-START
 	@reg_asset {
-		not path /api/* /ws/tape / /index.html /plans.html /macro.html /start.html /us_stocks.html /research_vault.html /research_vault_app.js /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /tier_preview.css /tier_preview.js /landing.css /chat.css /chat_nav.css /theme.css /product-nav-icons.css /theme.js /dashboard-icons.css /dashboard-icons.js /chart_i18n.js /timemachine.js /tablesort.js /charts.js /risk_state_live.js /release_publications_live.js /heatmap.js /stocktable.js /globe-deck.js /sky.js /hub-welcome.js /vendor/d3-array.min.js /vendor/d3-geo.min.js /vendor/topojson-client.min.js /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /live/quotes.json /live/breadth.json /prophet/showcase.json /factordata/tech_lab.json /assets/css/* /assets/landing/* /factordata/tech_events/* /stocks/* /products/* /tools/* /learn/* /blog/* /research/* /fonts/* *.html
+		not path /api/* /ws/tape / /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /research_vault_app.js /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /tier_preview.css /tier_preview.js /landing.css /chat.css /chat_nav.css /theme.css /navigation-refresh.css /product-nav-icons.css /logo_config.js /stock-logos.js /theme.js /dashboard-icons.css /dashboard-icons.js /chart_i18n.js /timemachine.js /tablesort.js /charts.js /risk_state_live.js /release_publications_live.js /heatmap.js /stocktable.js /globe-deck.js /sky.js /hub-welcome.js /vendor/d3-array.min.js /vendor/d3-geo.min.js /vendor/topojson-client.min.js /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /live/quotes.json /live/breadth.json /prophet/showcase.json /factordata/tech_lab.json /assets/css/* /assets/landing/* /factordata/tech_events/* /stocks/* /products/* /tools/* /learn/* /blog/* /research/* /fonts/* *.html
 	}
 	# PUBLIC-BOUNDARY-END
 	handle @reg_asset {
@@ -251,7 +253,7 @@
 
 	@gate_html {
 		# Public funnel only — IP gate retains its fail-open availability contract.
-		path / /index.html /plans.html /macro.html /start.html /us_stocks.html /research_vault.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /stocks/* /products/* /tools/* /learn/* /blog/* /research/*
+		path / /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /stocks/* /products/* /tools/* /learn/* /blog/* /research/*
 	}
 
 	handle @gate_html {
@@ -285,7 +287,7 @@
 		# Protected documents fail CLOSED on gate-upstream failure.
 		@reg_html_err {
 			path *.html
-			not path /api/* /ws/tape /index.html /plans.html /macro.html /start.html /us_stocks.html /research_vault.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /stocks/* /products/* /tools/* /learn/* /blog/* /research/* /_mockup_ccw_credit_desk.html /_mockup_research_vault.html /qa_bottom_sensors.html /status.html
+			not path /api/* /ws/tape /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /stocks/* /products/* /tools/* /learn/* /blog/* /research/* /_mockup_ccw_credit_desk.html /_mockup_research_vault.html /qa_bottom_sensors.html /status.html
 		}
 		handle @reg_html_err {
 			header Cache-Control "no-store"
@@ -296,18 +298,19 @@
 		# Protected assets fail CLOSED too. The JSON response is intentionally
 		# small and non-cacheable; never substitute the requested static file.
 		#
-		# /live/wires.json is listed below for a DIFFERENT reason than the public
-		# entries beside it: it stays registration-gated in @reg_asset above (it is
-		# free_registered, not public), but a MISSING file must reach the client as
-		# a real 404. Without the exclusion, file_server's 404 enters handle_errors
-		# and is rewritten to the 503 "temporarily unavailable" body — so while the
-		# press daemon ships dark, every registered visitor would be told the wire
-		# is broken instead of the rail simply staying hidden. Excluding it here
-		# cannot leak the file: the error path has no file_server (asserted by
+		# /live/wires.json and /live/intelligence.json are listed below for a
+		# DIFFERENT reason than the public entries beside them: they stay
+		# registration-gated in @reg_asset above, but a MISSING file must reach the
+		# client as a real 404. Without the exclusion, file_server's 404 enters
+		# handle_errors and is rewritten to the 503 "temporarily unavailable" body
+		# — so before either daemon artifact exists, every registered visitor would
+		# be told the desk is broken instead of the module simply staying hidden.
+		# Excluding them here cannot leak a file: the error path has no file_server
+		# (asserted by
 		# tests/test_regwall_json_gate.py), so content is still only ever served
 		# from inside `handle @reg_asset` after the gate returns 2xx.
 		@reg_asset_err {
-			not path /api/* /ws/tape / /index.html /plans.html /macro.html /start.html /us_stocks.html /research_vault.html /research_vault_app.js /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /tier_preview.css /tier_preview.js /landing.css /chat.css /chat_nav.css /theme.css /product-nav-icons.css /theme.js /dashboard-icons.css /dashboard-icons.js /chart_i18n.js /timemachine.js /tablesort.js /charts.js /risk_state_live.js /release_publications_live.js /heatmap.js /stocktable.js /globe-deck.js /sky.js /hub-welcome.js /vendor/d3-array.min.js /vendor/d3-geo.min.js /vendor/topojson-client.min.js /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /live/quotes.json /live/breadth.json /live/wires.json /prophet/showcase.json /factordata/tech_lab.json /assets/css/* /assets/landing/* /factordata/tech_events/* /stocks/* /products/* /tools/* /learn/* /blog/* /research/* /fonts/* *.html
+			not path /api/* /ws/tape / /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /research_vault_app.js /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /tier_preview.css /tier_preview.js /landing.css /chat.css /chat_nav.css /theme.css /navigation-refresh.css /product-nav-icons.css /logo_config.js /stock-logos.js /theme.js /dashboard-icons.css /dashboard-icons.js /chart_i18n.js /timemachine.js /tablesort.js /charts.js /risk_state_live.js /release_publications_live.js /heatmap.js /stocktable.js /globe-deck.js /sky.js /hub-welcome.js /vendor/d3-array.min.js /vendor/d3-geo.min.js /vendor/topojson-client.min.js /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /live/quotes.json /live/breadth.json /live/wires.json /live/intelligence.json /prophet/showcase.json /factordata/tech_lab.json /assets/css/* /assets/landing/* /factordata/tech_events/* /stocks/* /products/* /tools/* /learn/* /blog/* /research/* /fonts/* *.html
 		}
 		handle @reg_asset_err {
 			header Cache-Control "private, no-store"
@@ -318,7 +321,7 @@
 
 		# Public funnel only: retain fail-open availability if the IP gate is down.
 		@gate_html_err {
-			path / /index.html /plans.html /macro.html /start.html /us_stocks.html /research_vault.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /stocks/* /products/* /tools/* /learn/* /blog/* /research/*
+			path / /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /stocks/* /products/* /tools/* /learn/* /blog/* /research/*
 		}
 		handle @gate_html_err {
 			header Cache-Control "no-store"
@@ -533,14 +536,28 @@ http://admin.mastermind-x.com {
 
 admin.mastermind-x.com {
 	encode zstd gzip
-	reverse_proxy 127.0.0.1:8787 {
-		# admin.* is grey-cloud / direct-to-origin (no CDN), so the TCP peer IS the real
-		# client. Inject it as a trusted header the app reads for its per-client login
-		# lockout; header_up REPLACES any client-supplied X-Admin-Client-IP, so it can't
-		# be spoofed to rotate lockout buckets and defeat the throttle (admin/server.py
-		# _client_id). Without this the app falls back to the last X-Forwarded-For hop,
-		# which Caddy also sets to the real peer — belt and suspenders.
-		header_up X-Admin-Client-IP {remote_host}
+
+	# Reuse the generated research pages, but only behind the admin session. The
+	# prefix is stripped before file lookup so every existing relative CSS, JS,
+	# and data dependency continues to resolve without a second page build.
+	handle_path /research-tools/* {
+		forward_auth 127.0.0.1:8787 {
+			uri /api/auth-check
+			header_up X-Admin-Client-IP {remote_host}
+		}
+		root * /opt/macro/site.served
+		header Cache-Control "private, no-store"
+		file_server
+	}
+
+	handle {
+		reverse_proxy 127.0.0.1:8787 {
+			# admin.* is grey-cloud / direct-to-origin (no CDN), so the TCP peer IS
+			# the real client. Inject it as a trusted header the app reads for its
+			# per-client login lockout; replacing a caller-supplied value prevents
+			# brute-force clients from rotating lockout buckets.
+			header_up X-Admin-Client-IP {remote_host}
+		}
 	}
 	header {
 		X-Robots-Tag "noindex, nofollow, noarchive"

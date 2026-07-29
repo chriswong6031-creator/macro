@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://www.mastermind-x.com/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
+  <url><loc>https://www.mastermind-x.com/confluence_screener.html</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/disclaimer.html</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
-  <url><loc>https://www.mastermind-x.com/macro.html</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/macro.html</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
   <url><loc>https://www.mastermind-x.com/plans.html</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/privacy.html</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/research_vault.html</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
-  <url><loc>https://www.mastermind-x.com/support.html</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/start.html</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/support.html</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/terms.html</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
-  <url><loc>https://www.mastermind-x.com/us_stocks.html</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/us_stocks.html</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
   <url><loc>https://www.mastermind-x.com/products/index.html</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
   <url><loc>https://www.mastermind-x.com/products/market-dashboards.html</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/products/market-terminal.html</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
@@ -1620,6 +1621,7 @@
   <url><loc>https://www.mastermind-x.com/stocks/HUN.html</loc><lastmod>2026-07-29</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/stocks/PPTA.html</loc><lastmod>2026-07-29</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/research/index.html</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/gs-privorotsky-de-grossing-tech-momentum-interesting-fed-11eb52.html</loc><lastmod>2026-07-29</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/united-parcel-service-inc-386f9b.html</loc><lastmod>2026-07-29</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/seagate-technology-stx-first-take-strong-quarter-with-significant-upsi-d7b937.html</loc><lastmod>2026-07-29</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/chile-mpc-keeps-policy-rate-at-4-5-and-returns-to-more-cautious-guidan-11890e.html</loc><lastmod>2026-07-29</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
@@ -1629,9 +1631,13 @@
   <url><loc>https://www.mastermind-x.com/research/liberty-energy-inc-lbrt-management-meeting-takeaways-see-potential-for-c4dfe1.html</loc><lastmod>2026-07-29</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/kla-corp-klac-first-take-modest-upside-to-quarter-and-guidance-relativ-245098.html</loc><lastmod>2026-07-29</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/gs-challenging-hedge-fund-performance-amid-momentum-ai-sell-off-c19509.html</loc><lastmod>2026-07-29</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/weekly-cio-commentary-858f92.html</loc><lastmod>2026-07-28</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/mrb-theme-what-cant-be-sustained-wont-be-five-charts-highlighting-unsu-1131e3.html</loc><lastmod>2026-07-28</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/bmf26-56-3fb487.html</loc><lastmod>2026-07-28</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/ersteinsch-tzung-forbo-en-60895c.html</loc><lastmod>2026-07-28</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/ersteinsch-tzung-lem-en-c6ee7b.html</loc><lastmod>2026-07-28</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/ersteinsch-tzung-sika-en-e2d922.html</loc><lastmod>2026-07-28</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/jpm-market-intel-global-thematic-views-july-2026-1852f6.html</loc><lastmod>2026-07-28</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/gs-cas-views-the-july-fomc-goldman-s-take-from-traders-and-research-9406cb.html</loc><lastmod>2026-07-28</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/ms-july-fomc-a-question-of-patience-d1c39e.html</loc><lastmod>2026-07-28</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/us-economics-analyst-july-fomc-preview-better-inflation-data-worse-geo-439e5f.html</loc><lastmod>2026-07-28</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
@@ -1648,6 +1654,7 @@
   <url><loc>https://www.mastermind-x.com/research/goldman-trading-desk-tech-is-now-sold-on-the-news-and-the-top-charts-o-2bc2f9.html</loc><lastmod>2026-07-28</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/btig-warns-still-a-long-way-to-go-in-ai-correction-0f2542.html</loc><lastmod>2026-07-28</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/cross-asset-volatility-is-too-low-for-the-macro-backdrop-cdfb88.html</loc><lastmod>2026-07-28</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/jpm-us-market-intelligence-trading-the-fed-80d131.html</loc><lastmod>2026-07-28</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/don-t-go-chasing-waterfalls-4120a7.html</loc><lastmod>2026-07-28</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/gs-morning-1-oil-tracker-2-usdjpy-topside-3-korea-update-4-just-the-ch-da53e9.html</loc><lastmod>2026-07-28</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/gs-eq-positioning-and-key-cta-levels-6124c0.html</loc><lastmod>2026-07-28</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
@@ -1680,6 +1687,10 @@
   <url><loc>https://www.mastermind-x.com/research/gs-morning-1-oil-tracker-2-usdjpy-topside-3-korea-update-4-just-the-ch-ed5dfb.html</loc><lastmod>2026-07-28</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/db-early-morning-reid-macro-strategy-2-1-8d1b1f.html</loc><lastmod>2026-07-28</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/jpm-jpm-international-ma-0d7683.html</loc><lastmod>2026-07-28</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/us-equities-color-mo-pressure-dc5ac6.html</loc><lastmod>2026-07-28</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/us-consumer-dashboard-july-2026-resilient-spending-weak-cashflow-ae61d2.html</loc><lastmod>2026-07-28</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/tracking-the-gigawatts-rbc-datacenter-expansion-bf6d07.html</loc><lastmod>2026-07-28</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/weekly-investment-commentary-en-us-20260727-cheaper-ai-new-earnings-qu-e96897.html</loc><lastmod>2026-07-28</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/1784950162513-1b4c25.html</loc><lastmod>2026-07-28</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/syz-feature-weekin7charts-521fe3.html</loc><lastmod>2026-07-28</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/equity-weekly-26-june-3-july-2026-76f79c.html</loc><lastmod>2026-07-28</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
@@ -1703,6 +1714,13 @@
   <url><loc>https://www.mastermind-x.com/research/pnc-economics-research-economic-roundup-27-july-2026-86d385.html</loc><lastmod>2026-07-28</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/pnc-economics-research-tariff-update-24-july-2026-c0384b.html</loc><lastmod>2026-07-28</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/mfse-fly-6e4e0c.html</loc><lastmod>2026-07-28</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/equities-tactical-top-picks-1-e3779b.html</loc><lastmod>2026-07-28</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/usdsgd-62f1fb.html</loc><lastmod>2026-07-28</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/high-yield-bonds-0de95e.html</loc><lastmod>2026-07-28</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/emerging-markets-bond-list-ba1c71.html</loc><lastmod>2026-07-28</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/global-financial-markets-ea528a.html</loc><lastmod>2026-07-28</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/daily-asia-734ea5.html</loc><lastmod>2026-07-28</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/jpm-positioning-intelligence-hfs-fade-mag7-while-covering-shorts-elsew-06c20d.html</loc><lastmod>2026-07-28</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/tpl-july-26-26-313d55.html</loc><lastmod>2026-07-28</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/jpm-jpm-us-market-intell-78c267.html</loc><lastmod>2026-07-28</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/all-eyes-on-sox-fa2c9a.html</loc><lastmod>2026-07-27</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
@@ -1736,8 +1754,11 @@
   <url><loc>https://www.mastermind-x.com/research/jpm-jpm-international-ma-5622c2.html</loc><lastmod>2026-07-27</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/jpm-jpm-chips-for-break-d97332.html</loc><lastmod>2026-07-27</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/jpm-jpm-us-market-intell-78c876.html</loc><lastmod>2026-07-27</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/us-equities-weekly-rundown-7-24-26-b4525a.html</loc><lastmod>2026-07-27</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/a-new-fiscal-monetary-accord-6bdafc.html</loc><lastmod>2026-07-27</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/fomo-fear-of-momentum-how-much-more-pain-is-the-billion-dollar-questio-b37e1d.html</loc><lastmod>2026-07-27</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/jpm-europe-equity-research-today-s-morning-meeting-62f45b.html</loc><lastmod>2026-07-27</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/japan-portfolio-strategy-trigger-warnings-lessons-from-the-july-august-277d6e.html</loc><lastmod>2026-07-27</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/short-and-strong-sliding-shorter-1ffd42.html</loc><lastmod>2026-07-27</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/nasdaq-pressure-brings-broader-cta-equity-unwind-risk-into-focus-0a0311.html</loc><lastmod>2026-07-27</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/asia-equity-strategy-korea-the-ai-trade-matures-3c3b15.html</loc><lastmod>2026-07-27</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>

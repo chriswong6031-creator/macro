@@ -4321,13 +4321,13 @@ def main() -> int:
     # (theme.js signInWithOAuth redirectTo), not a fixed host — the allowed
     # origins live in the Supabase dashboard (see ACCOUNTS_SETUP.md).
     # copy shared static assets (theme + visual widgets) into the site
-    for asset in ("theme.css", "product-nav-icons.css", "dashboard-icons.css", "dashboard-icons.js",
-                  "theme.js", "mtf.js", "chart_i18n.js", "timemachine.js",
+    for asset in ("theme.css", "navigation-refresh.css", "product-nav-icons.css", "dashboard-icons.css", "dashboard-icons.js",
+                  "theme.js", "terminal_overlay.js", "mtf.js", "chart_i18n.js", "timemachine.js",
                   "illus.css", "illus.js",
                   "account.js",
                   # landing onboarding sheet (paired templates/ -> site/ byte copy)
                   "onboard.js", "onboard.css",
-                  "stockdata.js", "watchlist.js", "factor_exposure.js", "auth.js",
+                  "stockdata.js", "logo_config.js", "stock-logos.js", "watchlist.js", "factor_exposure.js", "auth.js",
                   # WRI W3: watchlist book-structure math + render layer (paired)
                   "risk_core.js", "watchlist_risk.js",
                   "tablesort.js", "charts.js",
@@ -5815,6 +5815,18 @@ def main() -> int:
         log.info("wrote %s", site / "committee.html")
     except Exception as _nwe:  # noqa: BLE001 — additive; never break main build
         log.warning("committee.html render failed (%s); page skipped", _nwe)
+
+    # Public, data-free explanation of the Neural Web. Keep this outside the
+    # deep committee build so a missing internal artifact can never remove the
+    # customer-facing trust page.
+    try:
+        neural_web_html = env.get_template("neural_web.html.j2").render(
+            generated_utc=generated,
+        )
+        write_page(site / "neural_web.html", neural_web_html)
+        log.info("wrote %s", site / "neural_web.html")
+    except Exception as _nw_public_e:  # noqa: BLE001 — additive; never break main build
+        log.warning("neural_web.html render failed (%s); page skipped", _nw_public_e)
 
     # W4: TIL State of Themes terminal — cross-theme matrix with asymmetry legs,
     # falsifier health, filter chips, and weekly-delta strip. Reads the four

@@ -131,6 +131,7 @@ const ICONS = {
   deploy:      NAV_ICO('<path d="M12 2.5s4.5 2.8 4.5 8.5c0 2.8-1.8 4.5-1.8 4.5H9.3S7.5 13.8 7.5 11C7.5 5.3 12 2.5 12 2.5Z"/><circle cx="12" cy="9.5" r="1.5"/><path d="M8.5 17l-2 4M15.5 17l2 4"/>'),
   cost:        NAV_ICO('<circle cx="12" cy="12" r="9"/><path d="M12 6.5v11M14.6 9a2.6 2 0 0 0-2.6-1.5c-1.6 0-2.7.9-2.7 2.1 0 2.6 5.4 1.3 5.4 4 0 1.3-1.2 2.2-2.7 2.2A2.7 2 0 0 1 9.2 16"/>'),
   content:     NAV_ICO('<path d="M6 3h8l5 5v13H6z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>'),
+  research_tools: NAV_ICO('<path d="M3.5 6.5h6l2 2h9v11h-17z"/><path d="M3.5 6.5V4h6l2 2.5M8 13h8M8 16h5"/><circle cx="17.5" cy="15.5" r="2.5"/>'),
   features:    NAV_ICO('<circle cx="8" cy="8" r="3"/><circle cx="16" cy="16" r="3"/><path d="M11 8h9M4 16h9"/>'),
   brief:       NAV_ICO('<path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/><path d="M18.5 14.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/>'),
   vector:      NAV_ICO('<circle cx="12" cy="12" r="9"/><path d="M9.5 7.5h4.2a2.2 2 0 0 1 0 4H9.5m0 0h4.6a2.2 2 0 0 1 0 4.4H9.5m0-8.4V5.5m0 13v-2m2.4-11v2m0 7.4v2"/>'),
@@ -177,6 +178,7 @@ const ICONS = {
 const NAV_GROUPS = [
   { label: "", items: [["overview", "Overview"]] },
   { label: "Neural Web", items: [["neural_web", "Observatory"], ["orchestrator", "Master Brain"], ["prophet", "Prophet"], ["mastermind_ai", "Mastermind AI"], ["mastermind_logs", "AI Response Logs"], ["alerts", "Alerts"], ["long_hold", "Long-Hold Lobe"], ["context_lobe", "Context Lobe"], ["causal_lab", "Causal Lab"], ["chronicle", "Chronicle"]] },
+  { label: "Research", items: [["research_tools", "Research Tools"]] },
   { label: "Marketing", items: [["marketing_overview", "CMO Office"], ["marketing_departments", "Departments"], ["marketing_radar", "Radar"], ["marketing_seo", "SEO"], ["marketing_campaigns", "Campaigns"], ["marketing_channels", "Channels & Desks"], ["personas", "Persona Roster"], ["marketing_content", "Content Studio"], ["marketing_outbox", "Outbox"], ["marketing_reply_queue", "Reply Queue"], ["marketing_health", "Desk Health"], ["marketing_learning", "Learning"], ["marketing_publish", "Publisher"], ["marketing_sentinel", "Sentinel"], ["marketing_allies", "Allies"], ["marketing_lab", "Lab"], ["marketing_ads", "Ad Central"], ["marketing_experiments", "Experiments"], ["marketing_lobes", "Engines"]] },
   { label: "Growth", items: [["analytics", "Analytics"], ["users", "Users"], ["revenue", "Revenue"], ["experiments", "Experiments"], ["site_gate", "Site Access"]] },
   { label: "Support", items: [["support_tickets", "Support Tickets"], ["email_center", "Email Center"]] },
@@ -572,6 +574,91 @@ RENDER.overview = async () => {
   const probe = h(`<button class="btn" style="margin-left:8px">◎ Check all sites are up</button>`);
   probe.onclick = () => go("system"); qa.appendChild(probe);
   if (!m.has_token) qa.appendChild(h(`<div class="sub" style="margin-top:8px">The rebuild/deploy buttons need a GitHub access token (<code>GH_TOKEN</code>, with Actions-write permission) set on the server.</div>`));
+};
+
+/* ---- RESEARCH TOOLS ----------------------------------------------------- */
+RENDER.research_tools = () => {
+  const v = $("#view");
+  v.innerHTML = `
+    <div class="rt-page">
+      <header class="rt-hero">
+        <div>
+          <div class="rt-kicker">Authenticated workspace</div>
+          <h1>Research Tools</h1>
+          <p>Internal diagnostics and proprietary methods, available only inside the admin console.</p>
+        </div>
+        <span class="rt-count">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v2"/></svg>
+          7 internal tools
+        </span>
+      </header>
+
+      <section class="rt-section" aria-labelledby="rt-diagnostics-heading">
+        <h2 id="rt-diagnostics-heading">Diagnostic systems</h2>
+        <div class="rt-grid">
+          <a class="rt-card rt-card-neural" href="https://admin.mastermind-x.com/research-tools/committee.html" target="_blank" rel="noopener">
+            <span class="rt-icon">
+              <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="3"/><circle cx="6" cy="7" r="2"/><circle cx="26" cy="7" r="2"/><circle cx="6" cy="25" r="2"/><circle cx="26" cy="25" r="2"/><path d="m14 14-6-6m10 6 6-6m-10 10-6 6m10-6 6 6M8 7h16M8 25h16"/></svg>
+            </span>
+            <span class="rt-card-copy"><strong>Neural Web Deep View</strong><span>Internal diagnostics for model votes and neural-system output.</span></span>
+            <svg class="rt-open" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 13 13 7M8 7h5v5"/></svg>
+          </a>
+          <a class="rt-card rt-card-calibration" href="https://admin.mastermind-x.com/research-tools/measurement.html" target="_blank" rel="noopener">
+            <span class="rt-icon">
+              <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M5 25h22M8 25V9M8 21l5-7 4 3 7-10"/><circle cx="13" cy="14" r="2"/><circle cx="17" cy="17" r="2"/><circle cx="24" cy="7" r="2"/></svg>
+            </span>
+            <span class="rt-card-copy"><strong>Calibration Lab</strong><span>Internal diagnostics for calibration and graded outcomes.</span></span>
+            <svg class="rt-open" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 13 13 7M8 7h5v5"/></svg>
+          </a>
+          <a class="rt-card rt-card-crossasset" href="https://admin.mastermind-x.com/research-tools/crossasset.html" target="_blank" rel="noopener">
+            <span class="rt-icon">
+              <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M5 6v20h22"/><path d="M8 20c5-8 8 2 12-6 2-4 4-5 7-6"/><path d="M8 12c4 1 6 6 10 7 3 1 5 0 9 4"/></svg>
+            </span>
+            <span class="rt-card-copy"><strong>Cross-Asset Diagnostics</strong><span>Proprietary cross-market, liquidity, and risk diagnostics.</span></span>
+            <svg class="rt-open" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 13 13 7M8 7h5v5"/></svg>
+          </a>
+        </div>
+      </section>
+
+      <section class="rt-section" aria-labelledby="rt-methods-heading">
+        <h2 id="rt-methods-heading">Proprietary methods</h2>
+        <div class="rt-grid">
+          <a class="rt-card rt-card-signal" href="https://admin.mastermind-x.com/research-tools/signal_lab.html" target="_blank" rel="noopener">
+            <span class="rt-icon">
+              <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 17h5l3-8 5 15 4-11 3 4h4"/><path d="M5 27h22M5 5h22"/></svg>
+            </span>
+            <span class="rt-card-copy"><strong>Signal Lab</strong><span>Internal signal-quality diagnostics and method scorecards.</span></span>
+            <svg class="rt-open" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 13 13 7M8 7h5v5"/></svg>
+          </a>
+          <a class="rt-card rt-card-technical" href="https://admin.mastermind-x.com/research-tools/tech_lab.html" target="_blank" rel="noopener">
+            <span class="rt-icon">
+              <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="4" y="5" width="24" height="20" rx="3"/><path d="M8 21h4l3-8 3 11 3-6h3M12 29h8M16 25v4"/></svg>
+            </span>
+            <span class="rt-card-copy"><strong>Technical Lab</strong><span>Proprietary technical methods, screeners, and test profiles.</span></span>
+            <svg class="rt-open" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 13 13 7M8 7h5v5"/></svg>
+          </a>
+          <a class="rt-card rt-card-macro" href="https://admin.mastermind-x.com/research-tools/macro_signals.html" target="_blank" rel="noopener">
+            <span class="rt-icon">
+              <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="11"/><path d="M5 16h22M16 5c3 3 5 7 5 11s-2 8-5 11c-3-3-5-7-5-11s2-8 5-11Z"/><path d="M10 9h12M10 23h12"/></svg>
+            </span>
+            <span class="rt-card-copy"><strong>Macro Signals</strong><span>Internal macro diagnostics and proprietary model inputs.</span></span>
+            <svg class="rt-open" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 13 13 7M8 7h5v5"/></svg>
+          </a>
+          <a class="rt-card rt-card-factors" href="https://admin.mastermind-x.com/research-tools/factors.html" target="_blank" rel="noopener">
+            <span class="rt-icon">
+              <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M5 26h22M8 26V16M14 26V8M20 26V13M26 26V5"/><path d="m6 11 6-5 5 4 8-6"/></svg>
+            </span>
+            <span class="rt-card-copy"><strong>Factors &amp; Seasonality</strong><span>Proprietary factor and seasonality methods for research review.</span></span>
+            <svg class="rt-open" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 13 13 7M8 7h5v5"/></svg>
+          </a>
+        </div>
+      </section>
+
+      <footer class="rt-footnote">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></svg>
+        Hidden from public navigation and available only after admin authentication.
+      </footer>
+    </div>`;
 };
 
 /* ---- EXPERIMENTS & DATA COLLECTION -------------------------------------- */
@@ -4813,7 +4900,9 @@ RENDER.marketing_content = async () => {
   const d = await api("/api/marketing/content");
   if (!d || !d.ok) { v.innerHTML = nwEmpty("Content Studio unavailable", (d && d.error) || "panel error"); return; }
 
-  if (d.note && !d.accounts.length) {
+  const liveIntel = d.intelligence || {};
+  const liveIntelStories = Array.isArray(liveIntel.stories) ? liveIntel.stories : [];
+  if (d.note && !d.accounts.length && !liveIntelStories.length) {
     v.innerHTML = `<div class="section">Content Studio</div>
       <div class="card">
         <div class="note muted" style="margin-bottom:8px">${esc(d.note)}</div>
@@ -4827,6 +4916,49 @@ RENDER.marketing_content = async () => {
   const featuredCharts = d.featured_charts || [];
   const summary = d.summary || {};
   const distinctness = d.distinctness || {};
+
+  /* Intraday Intelligence Queue. This is the direct event → evidence → draft
+     handoff the old live wire lacked. It is read-only here: copying a draft does
+     not approve it, enqueue it, or publish it. */
+  const intelHealth = liveIntel.health || {};
+  const intelCards = liveIntelStories.slice(0, 12).map(story => {
+    const evidence = Array.isArray(story.evidence) ? story.evidence : [];
+    const drafts = (Array.isArray(story.drafts) ? story.drafts : []).filter(x => x && x.text);
+    const draft = drafts.slice().reverse()[0] || null;
+    const routes = Array.isArray(story.content_routes) ? story.content_routes : [];
+    const stage = story.stage === "high_impact" ? "high impact"
+      : story.stage === "confirmed" ? "confirmed" : "developing";
+    const sourceLinks = evidence.slice(0, 4).map(src => {
+      const name = esc(src.name || "source");
+      const url = String(src.url || "");
+      return /^https?:\/\//i.test(url)
+        ? `<a href="${esc(url)}" target="_blank" rel="noopener">${name}</a>`
+        : `<span>${name}</span>`;
+    }).join(" · ");
+    return `<div class="card cs-intel-item" style="margin-bottom:8px;border-left:3px solid ${story.stage === "high_impact" ? "var(--warn)" : "var(--info)"}">
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:7px">
+        <span class="statpill ${story.stage === "high_impact" ? "s-warn" : story.stage === "confirmed" ? "s-ok" : "s-mut"}">${esc(stage)}</span>
+        <span class="statpill s-mut">${esc(String(story.source_count || evidence.length || 1))} sources</span>
+        ${routes.map(route => `<span class="statpill s-mut">${esc(route)}</span>`).join("")}
+      </div>
+      <div style="font-size:14px;font-weight:700;line-height:1.35;margin-bottom:5px">${esc(story.headline || "Untitled development")}</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:${draft ? "9px" : "0"}">${sourceLinks || "Source receipt pending"}</div>
+      ${draft ? `<div class="cs-intel-copy" style="white-space:pre-wrap;font-size:12px;line-height:1.5;padding:9px;border-radius:8px;background:var(--panel2)">${esc(draft.text)}</div>
+        <div style="display:flex;align-items:center;gap:7px;margin-top:7px">
+          <span class="statpill ${draft.status === "review" ? "s-ok" : "s-warn"}">${draft.status === "review" ? "ready for review" : "needs editing"} · ${esc(String(draft.characters || String(draft.text).length))}/280</span>
+          <button class="btn sm" style="margin-left:auto" onclick="csCopyIntel(this)">Copy draft</button>
+        </div>` : `<div class="note muted">Evidence retained; waiting for the next copy pass.</div>`}
+    </div>`;
+  }).join("");
+  const intelHtml = liveIntelStories.length ? `<div class="section">Live Intelligence Queue
+      <span class="cnt">intraday · review-gated</span>
+      <span class="statpill s-mut">${esc(String(intelHealth.active_stories || liveIntelStories.length))} active</span>
+      <span class="statpill s-ok">${esc(String(intelHealth.draft_ready || 0))} draft-ready</span>
+    </div>
+    <div class="card" style="margin-bottom:10px;font-size:12px;color:var(--muted);line-height:1.5">
+      Repeated reports are merged into one story. Every candidate keeps its source receipts and remains separate from approval and publishing.
+    </div>
+    <div style="margin-bottom:20px">${intelCards}</div>` : "";
 
   /* Split desks that are generating (have a queue) from planned/off desks (empty
      queue). Non-enabled desks collapse into a muted strip instead of full,
@@ -4979,7 +5111,7 @@ RENDER.marketing_content = async () => {
       </div>`
     : "";
 
-  v.innerHTML = headerHtml + filterHtml + acctPills + plannedHtml + `<div id="mkt-post-gallery">${acctSections}</div>`;
+  v.innerHTML = intelHtml + headerHtml + filterHtml + acctPills + plannedHtml + `<div id="mkt-post-gallery">${acctSections}</div>`;
 };
 
 /* Is the content plan stale? Prefer the engine's own flag; else compare as_of to
@@ -5016,6 +5148,22 @@ function csUsageBadge(post) {
     return `<span class="statpill s-warn" style="font-size:10px">recalled</span>`;
   }
   return `<span class="statpill s-mut" style="font-size:10px">${esc((post && post.status) || "drafted")}</span>`;
+}
+
+async function csCopyIntel(btn) {
+  const card = btn && btn.closest ? btn.closest(".cs-intel-item") : null;
+  const copy = card ? card.querySelector(".cs-intel-copy") : null;
+  if (!copy || !navigator.clipboard || !navigator.clipboard.writeText) {
+    if (btn) btn.textContent = "Copy unavailable";
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(copy.textContent || "");
+    btn.textContent = "Copied";
+    setTimeout(() => { btn.textContent = "Copy draft"; }, 1400);
+  } catch (e) {
+    btn.textContent = "Copy failed";
+  }
 }
 
 /* Content Studio client-side filter helpers */

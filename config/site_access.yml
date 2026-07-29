@@ -14,6 +14,10 @@ public:
     - /
     - /index.html
     - /plans.html
+    # Free signal-stack lead magnet. Rank 1 exposes its matching tickers; paid
+    # rows are omitted server-side and render only counts + the trial CTA, so
+    # the public shell contains no premium ticker payload.
+    - /confluence_screener.html
     # Public acquisition dashboards. macro/start expose the broad market read;
     # macro drill-downs still require registration. us_stocks applies the
     # anonymous=1 / Free=3 / paid=full summary preview in tier_preview.js.
@@ -67,9 +71,18 @@ public:
     - /chat.css
     - /chat_nav.css
     - /theme.css
+    # Shared navigation layout + animated ticker search. Presentation only; the
+    # protected stock libraries it reads remain behind the registration wall.
+    - /navigation-refresh.css
     # Public visual dependency imported by theme.css. Contains only the shared
     # navigation icon masks; no customer data or application logic.
     - /product-nav-icons.css
+    # Empty in the repository and atomically generated from the VPS environment
+    # after each publish. It exposes only Logo.dev's browser-safe image token.
+    - /logo_config.js
+    # Lazy company-logo adapter. Contains no token and no market data; without a
+    # runtime publishable token it renders deterministic local monograms.
+    - /stock-logos.js
     - /theme.js
     # Presentation/runtime code required by the three public dashboard shells.
     # The signal-bearing JSON endpoints these scripts request remain outside
@@ -160,6 +173,10 @@ free_registered:
     # /live/quotes.json's public breadth. No Caddyfile change — an un-allowlisted
     # /live/wires.json already flows through the @reg_asset default-deny route.
     - /live/wires.json
+    # Durable companion to the speed wire: merged stories, source receipts,
+    # session-market context, and review-only X drafts. Same registered-news
+    # product tier as news.html and wires.json; never public/anonymous.
+    - /live/intelligence.json
     # Tier-preview shells (paid content lives in /premiumdata/, enforced below).
     - /special_situations.html
     - /china_special_situations.html

@@ -60,6 +60,31 @@ if [ "$OLD" != "$NEW" ]; then
 	fi
 fi
 
+# Runtime-only company-logo configuration. The committed file is deliberately
+# empty; the browser-safe Logo.dev publishable token lives in the root-readable
+# VPS env and is materialized only into the served tree after every rsync. The
+# server-side secret key is neither required nor accepted here.
+LOGO_DEV_TOKEN=""
+if [ -r /etc/macro-api.env ]; then
+	LOGO_DEV_TOKEN=$(sed -n 's/^LOGO_DEV_PUBLISHABLE_KEY=//p' /etc/macro-api.env | tail -n 1)
+fi
+case "$LOGO_DEV_TOKEN" in
+	pk_*) ;;
+	*) LOGO_DEV_TOKEN="" ;;
+esac
+case "$LOGO_DEV_TOKEN" in
+	*[!A-Za-z0-9_-]*) LOGO_DEV_TOKEN="" ;;
+esac
+mkdir -p "$APP_DIR/site.served"
+LOGO_CONFIG_TMP=$(mktemp "$APP_DIR/site.served/.logo_config.XXXXXX")
+printf 'window.MMX_LOGO_DEV_TOKEN = window.MMX_LOGO_DEV_TOKEN || "%s";\n' "$LOGO_DEV_TOKEN" > "$LOGO_CONFIG_TMP"
+chmod 0644 "$LOGO_CONFIG_TMP"
+if ! cmp -s "$LOGO_CONFIG_TMP" "$APP_DIR/site.served/logo_config.js"; then
+	mv -f "$LOGO_CONFIG_TMP" "$APP_DIR/site.served/logo_config.js"
+else
+	rm -f "$LOGO_CONFIG_TMP"
+fi
+
 # Do not exit just because Git is current. A prior run may have self-updated
 # this script while continuing to execute its old inode, or an operator may
 # have drifted an installed unit/config. Reconciliation below is deliberately
@@ -204,6 +229,37 @@ if systemctl is-enabled macro-live-fast.timer >/dev/null 2>&1 && \
 		systemctl restart macro-live-fast.timer macro-live-snapshot.timer macro-live-bars.timer
 	else
 		echo "macro-update: refusing live-plane unit update — systemd-analyze verify failed" >&2
+	fi
+fi
+
+# PRESS-FEEDS is a long-running daemon, unlike the oneshot live-plane timers
+# above. Arming remains an explicit operator choice: this block neither installs
+# an absent unit nor enables/starts an inactive one. Once the operator has
+# installed it, however, the reviewed unit must track main and an ACTIVE daemon
+# must restart when import-cached code changes; otherwise a merged press-lane fix
+# lands on disk while the old Python process runs forever.
+PRESS_UNIT_UPDATED=0
+if [ -f /etc/systemd/system/marketing-press-feeds.service ] && \
+   ! cmp -s "$APP_DIR/app/deploy/marketing-press-feeds.service" /etc/systemd/system/marketing-press-feeds.service; then
+	if systemd-analyze verify "$APP_DIR/app/deploy/marketing-press-feeds.service"; then
+		install -m 0644 "$APP_DIR/app/deploy/marketing-press-feeds.service" /etc/systemd/system/marketing-press-feeds.service
+		systemctl daemon-reload
+		PRESS_UNIT_UPDATED=1
+		RECONCILED=1
+		echo "macro-update: marketing-press-feeds systemd sandbox updated"
+	else
+		echo "macro-update: refusing marketing-press-feeds unit update — systemd-analyze verify failed" >&2
+	fi
+fi
+
+# The daemon imports these modules into one persistent interpreter. Config YAML
+# is deliberately absent: it is re-read on every 75-second tick and needs no
+# restart. Keep the engine/marketing pattern broad because every submodule import
+# executes that package's non-inert __init__ first, and the press pipeline reaches
+# multiple modules lazily according to the source/item path.
+if [ "$PRESS_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(app/deploy/marketing-press-feeds\.service|scripts/marketing_fastlane_daemon\.py|engine/news_translate\.py|engine/marketing/.*\.py|engine/(codex_provider|llm_auth)\.py|engine/codex_lane/runner\.py|lib/(ai_costs|config)\.py)$'; then
+	if systemctl is-active --quiet marketing-press-feeds; then
+		systemctl restart marketing-press-feeds
 	fi
 fi
 

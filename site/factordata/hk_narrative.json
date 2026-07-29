@@ -2,23 +2,23 @@
   "display_only": true,
   "organ": "hk_narrative",
   "as_of": "2026-07-29",
-  "generated_utc": "2026-07-29T06:24:26+00:00",
-  "freshness": "stale",
+  "generated_utc": "2026-07-29T11:45:36+00:00",
+  "freshness": "degraded",
   "entities": [
     {
       "slug": "alibaba",
       "ticker": "9988.HK",
       "name_en": "Alibaba",
       "name_zh": "\u963f\u91cc\u5df4\u5df4",
-      "attention_shock_z": 2.125,
+      "attention_shock_z": null,
       "tone_pctile": null,
-      "narrative_state": "attention_spike",
-      "young": false,
-      "n_obs": 86,
-      "as_of_date": "2026-07-28",
-      "no_data_reason": null,
-      "state_en": "in the news",
-      "state_zh": "\u65b0\u95fb\u70ed\u5ea6"
+      "narrative_state": null,
+      "young": true,
+      "n_obs": 0,
+      "as_of_date": null,
+      "no_data_reason": "young series: 0 < 20 obs",
+      "state_en": null,
+      "state_zh": null
     },
     {
       "slug": "tencent",
@@ -131,21 +131,6 @@
   "caveat_zh": "\u8206\u60c5/\u5173\u6ce8\u5ea6\u53c2\u8003 \u2014 \u6700\u5f31\u8bc1\u636e\u5c42\uff0c\u975e\u4ea4\u6613\u4fe1\u53f7\u3002GDELT \u4ec5\u7edf\u8ba1\u82f1\u6587\u5a92\u4f53\u62a5\u9053\u91cf\uff0c\u5b9e\u4f53\u8bc6\u522b\u7cbe\u5ea6\u6709\u9650\u3002\u4ec5\u4f9b\u53c2\u8003\uff0c\u6301\u7eed\u79ef\u7d2f\u3002",
   "live_entities": [
     {
-      "slug": "alibaba",
-      "ticker": "9988.HK",
-      "name_en": "Alibaba",
-      "name_zh": "\u963f\u91cc\u5df4\u5df4",
-      "attention_shock_z": 2.125,
-      "tone_pctile": null,
-      "narrative_state": "attention_spike",
-      "young": false,
-      "n_obs": 86,
-      "as_of_date": "2026-07-28",
-      "no_data_reason": null,
-      "state_en": "in the news",
-      "state_zh": "\u65b0\u95fb\u70ed\u5ea6"
-    },
-    {
       "slug": "xiaomi",
       "ticker": "1810.HK",
       "name_en": "Xiaomi",
@@ -177,7 +162,7 @@
     }
   ],
   "n_watched": 8,
-  "n_live": 3,
+  "n_live": 2,
   "warming_up": false,
   "is_stale": true
 }
