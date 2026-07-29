@@ -673,20 +673,31 @@ prophet_live:
   # intraday move, so nothing reachable is excluded by the band itself.
   band_pct: 15.0
   # Structure grid across the probed span (endpoints included) then bisection per
-  # edge. 13 points = 1.25% cells on the up-only span; 8 halvings refine an edge to
-  # ~0.5 bp. RESOLUTION IS A BOUND, NOT A PROOF: a measured 294-name sweep found the
-  # buyable region single-contiguous in 59 of 59 armable cases, but it sampled at this
-  # same 1.25% grid, so neither the sweep nor the probe can see an island or a notch
-  # NARROWER than one cell — the pack would report the range as continuous through it.
-  # Raising grid_points narrows that blind spot at a linear cost in gate calls.
-  grid_points: 13
+  # edge. 9 points = 1.875% cells on the up-only span; 8 halvings refine an edge to
+  # ~0.7 bp, inside the ~1 bp the published thresholds claim. RESOLUTION IS A BOUND,
+  # NOT A PROOF: a measured 294-name sweep found the buyable region single-contiguous
+  # in 59 of 59 armable cases, but it sampled at a 1.25% grid, so neither that sweep
+  # nor this probe can see an island or a notch NARROWER than one cell — the pack
+  # reports the range as continuous through it. Raising grid_points narrows the blind
+  # spot at a linear cost in gate calls, which comes straight out of max_probe below.
+  grid_points: 9
   bisect_iters: 8
-  # BUDGET IS LAW. One gate call is ~250 ms over this universe, so a full grid on
-  # every name is 15-20 min and does not fit the render budget. Every name still gets
-  # its centre verdict (cheap); the probe phase runs under BOTH of these and whatever
-  # they cut is counted in meta.skipped (probe_cap / deadline) — never silently
-  # dropped and never re-labelled "dormant".
-  max_probe: 500
+  # BUDGET IS LAW, and it is what caps coverage — not the other way round. Sized from
+  # a MEASURED 4-worker pass (the nightly pins STOCK_LIB_WORKERS=4, the box being
+  # 4-core-bound): the centre census over ~1,730 names is ~108s and cannot be skipped,
+  # which leaves ~310s of the 420s budget for probing plus the edge-verification phase
+  # at ~1.7s per name. 500 did NOT fit — a 4-worker run with that cap produced
+  # probed_n=3 and armed_n=0, i.e. an empty pack, because the probe deadline cut 389
+  # names and verification then withheld the rest. 180 fits with margin.
+  #
+  # This is a real coverage ceiling, not a formality: ~350 of the universe have a
+  # trigger inside the band, so 180 arms about half of them, and the priority order
+  # (buyable -> eligible -> nearest-to-cross) spends the first ~138 on names already on
+  # tonight's board. Whatever the caps cut is counted in meta.skipped (probe_cap /
+  # deadline / unverified) — never silently dropped, never re-labelled "dormant".
+  # Raising max_seconds is the lever with the least downside if coverage matters more
+  # than the 7-minute step; it trades directly against the nightly render budget.
+  max_probe: 180
   max_seconds: 420
   # A name whose own last bar trails the store tip by more than this is probed
   # against a stale close — the mixed-asof fabrication trap. It ships its centre

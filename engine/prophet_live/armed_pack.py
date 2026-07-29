@@ -45,11 +45,12 @@ and a wall-clock ``max_seconds``. Whatever the budget cuts is named in
 
 CONTIGUITY IS A RESOLUTION BOUND, NOT A PROOF. The same 294-name sweep found the
 buyable region to be a single contiguous run in 59 of 59 armable cases — but it
-sampled at the SAME 1.25% grid the probe uses, so it can only say there is no island
-or notch WIDER than one cell. A sub-1.25% notch inside the range, or an island
-between two grid points, is invisible to both the sweep and the probe, and the pack
-would describe the range as continuous through it. That is the honest limit of two
-thresholds, and it is why every state here is display-tier until the §6 gauntlet.
+sampled a 1.25% grid, so it can only say there is no island or notch WIDER than one
+cell, and the shipped grid is coarser still (1.875%). A narrower notch inside the
+range, or an island between two grid points, is invisible to both the sweep and the
+probe, and the pack would describe the range as continuous through it. That is the
+honest limit of two thresholds, and it is why every state here is display-tier until
+the §6 gauntlet.
 Where structure IS visible — more than one run of buyable prices on the grid —
 nothing is smoothed: the name ships ``state:"irregular"`` with no numbers,
 :func:`interval_contains` answers ``None``, and the evaluator darks it.
@@ -93,19 +94,21 @@ _DEFAULTS: dict[str, Any] = {
     # is far past any plausible intraday move for a liquid name — the band is a
     # bound on the SEARCH, not a claim about the tape.
     "band_pct": 15.0,
-    # Structure grid across the probed span, endpoints included. 13 gives 1.25%
-    # cells on the up-only span — the resolution at which the measured sweep found
-    # every armable name's interval single-contiguous. 8 halvings of a 1.25% cell
-    # refine an edge to ~0.5 bp.
-    "grid_points": 13,
+    # Structure grid across the probed span, endpoints included. 9 gives 1.875%
+    # cells on the up-only span, which 8 halvings refine to ~0.7 bp — inside the
+    # ~1 bp the published thresholds claim. Every extra grid point comes straight
+    # out of max_probe, so resolution and coverage trade against each other.
+    "grid_points": 9,
     "bisect_iters": 8,
-    # Ceiling on names given a full grid, ordered by probe_priority. Whatever it
-    # cuts is counted in meta.skipped.probe_cap and ships probed=False, so the
-    # evaluator excludes it from coverage instead of calling it dormant.
-    "max_probe": 500,
-    # Wall-clock ceiling on the probe phase, seconds. The render budget is law and
-    # gate cost per name varies ~10x with history depth, so a name count alone
-    # cannot bound the step. Whichever binds first is disclosed.
+    # Ceiling on names given a full grid, ordered by probe_priority. SIZED FROM A
+    # MEASURED 4-WORKER PASS, not chosen: 500 produced probed_n=3 / armed_n=0
+    # because the probe deadline cut 389 names and verification withheld the rest.
+    # Whatever it cuts is counted in meta.skipped.probe_cap and ships probed=False,
+    # so the evaluator excludes it from coverage instead of calling it dormant.
+    "max_probe": 180,
+    # Wall-clock ceiling on the WHOLE pass (census + probe + verification), seconds.
+    # The render budget is law and gate cost per name varies ~10x with history depth,
+    # so a name count alone cannot bound the step. Whichever binds first is disclosed.
     "max_seconds": 420,
     # A name whose own last bar is this many sessions behind the store tip is
     # probed against a stale close, which is the mixed-asof fabrication trap
