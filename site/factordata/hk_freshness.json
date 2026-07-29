@@ -1,15 +1,15 @@
 {
-  "checked_at": "2026-07-29T10:05:21+00:00",
+  "checked_at": "2026-07-29T09:50:06+00:00",
   "expected_session": "2026-07-29",
   "stores": {
     "cache": {
-      "asof": "2026-07-29",
-      "lag_days": 0,
+      "asof": "2026-07-28",
+      "lag_days": 1,
       "state": "fresh"
     },
     "bellwether": {
-      "asof": "2026-07-29",
-      "lag_days": 0,
+      "asof": "2026-07-28",
+      "lag_days": 1,
       "state": "fresh"
     },
     "standouts": {
@@ -18,13 +18,13 @@
       "state": "fresh"
     },
     "regime": {
-      "asof": "2026-07-29",
-      "lag_days": 0,
+      "asof": "2026-07-28",
+      "lag_days": 1,
       "state": "fresh"
     },
     "southbound": {
-      "asof": "2026-07-28",
-      "lag_days": 1,
+      "asof": "2026-07-27",
+      "lag_days": 2,
       "state": "fresh"
     }
   },
