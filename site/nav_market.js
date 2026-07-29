@@ -69,6 +69,32 @@
   // `intl` bucket, and it must leave the rail alone rather than fold anything.
   var LEGACY = { us: 'us', cn: 'cn', china: 'cn', hk: 'hk', ca: 'ca', canada: 'ca',
                  intl: 'intl', international: 'intl', global: 'all' };
+  var currentPreference = { home: null, enabled: [] };
+
+  function preferenceOf(user) {
+    var meta = (user && user.user_metadata) || null;
+    if (!meta) return { home: null, enabled: [] };
+    var m = meta.markets;
+    var raw = [], home = null;
+    if (m && typeof m === 'object') {
+      home = typeof m.home === 'string' ? (LEGACY[m.home.toLowerCase()] || m.home.toLowerCase()) : null;
+      raw = Object.prototype.toString.call(m.enabled) === '[object Array]' ? m.enabled : (home ? [home] : []);
+    } else if (Object.prototype.toString.call(meta.market_focus) === '[object Array]') {
+      raw = meta.market_focus;
+    }
+    var enabled = [], seen = {};
+    for (var i = 0; i < raw.length; i++) {
+      var hit = typeof raw[i] === 'string' ? (LEGACY[raw[i].toLowerCase()] || raw[i].toLowerCase()) : null;
+      if (hit === 'all') {
+        enabled = ['us', 'cn', 'hk', 'ca', 'intl'];
+        seen = { us: 1, cn: 1, hk: 1, ca: 1, intl: 1 };
+        break;
+      }
+      if (hit && !seen[hit]) { seen[hit] = 1; enabled.push(hit); }
+    }
+    if (!home || home === 'all') home = enabled[0] || null;
+    return { home: home, enabled: enabled };
+  }
 
   // The country markets to KEEP on the rail, or null when we must not touch the
   // nav. One pick keeps one and folds the other three; two or three picks keep
@@ -142,7 +168,7 @@
   function toSubmenu(dd) {
     var trig = dd.querySelector(':scope > a');
     if (!trig) return dd;
-    dd.classList.add('nav-sub');
+    dd.classList.add('nav-sub', 'nav-drill', 'nav-market-drill');
 
     var text = document.createElement('span');
     text.className = 'nav-sub-text';
@@ -154,12 +180,27 @@
       text.appendChild(k);
     }
     trig.className = 'nav-sub-trig';
+    trig.setAttribute('data-nav-drill-open', '');
+    trig.setAttribute('aria-expanded', 'false');
     trig.appendChild(text);
 
     var caret = document.createElement('span');
     caret.className = 'caret-r';
-    caret.textContent = '▸';
+    caret.textContent = '›';
     trig.appendChild(caret);
+
+    var panel = dd.querySelector(':scope > .nav-dd-menu');
+    if (panel) {
+      panel.classList.add('nav-drill-panel', 'nav-market-drill-panel');
+      panel.setAttribute('data-nav-drill-panel', '');
+      panel.setAttribute('aria-hidden', 'true');
+      var back = document.createElement('button');
+      back.className = 'nav-drill-back';
+      back.type = 'button';
+      back.setAttribute('data-nav-drill-back', '');
+      back.innerHTML = '‹ <span class="l-en">International</span><span class="l-zh">国际</span>';
+      panel.insertBefore(back, panel.firstChild);
+    }
     return dd;
   }
 
@@ -292,9 +333,20 @@
   function boot() {
     if (!window.MDXAuth || !window.MDXAuth.onChange) return;
     window.MDXAuth.onChange(function (user) {
-      try { apply(keptMarketsOf(user)); } catch (e) { /* nav must never break a page */ }
+      try {
+        currentPreference = preferenceOf(user);
+        apply(keptMarketsOf(user));
+        document.dispatchEvent(new CustomEvent('mmx-markets-change', {
+          detail: { home: currentPreference.home, enabled: currentPreference.enabled.slice() }
+        }));
+      } catch (e) { /* nav must never break a page */ }
     });
   }
+
+  window.MMXMarkets = window.MMXMarkets || {};
+  window.MMXMarkets.current = function () {
+    return { home: currentPreference.home, enabled: currentPreference.enabled.slice() };
+  };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
