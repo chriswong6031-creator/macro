@@ -534,7 +534,8 @@ def _wire_sort_key(item: dict) -> str:
 
 
 def _merge_wires_window(
-    existing: list[dict], new_items: list, rail_max: int, wire_cfg: dict | None = None
+    existing: list[dict], new_items: list, rail_max: int, wire_cfg: dict | None = None,
+    now: datetime | None = None,
 ) -> list[dict]:
     """Merge this tick's rail items into the persisted window (M1).
 
@@ -568,7 +569,12 @@ def _merge_wires_window(
     except (TypeError, ValueError):
         max_age_h = _DEFAULT_WIRES_MAX_AGE_H
     if max_age_h > 0:
-        cutoff = datetime.now(timezone.utc) - timedelta(hours=max_age_h)
+        # `now` is threaded from the tick clock (tests freeze it) — computing it
+        # here from the wall clock made every frozen-fixture suite a date bomb:
+        # tests/test_marketing_press_copy.py went red at 2026-07-29T12:00Z when
+        # its 2026-07-27T12:0x fixtures crossed the 48h window (the documented
+        # fixture-date-plus-wall-clock-gate class; detonated on ci-pack-3).
+        cutoff = (now or datetime.now(timezone.utc)) - timedelta(hours=max_age_h)
 
         def _fresh(it: dict) -> bool:
             raw = str(it.get("ts") or "")
@@ -752,7 +758,7 @@ def _write_wires_sink(rail_items: list, press_cfg: dict, now: datetime) -> None:
     _zh_preflight(wire_cfg)
     zh_filled, zh_tried = _attach_zh(rail_items, wire_cfg, have_zh)
 
-    merged = _merge_wires_window(existing, rail_items, rail_max, wire_cfg)
+    merged = _merge_wires_window(existing, rail_items, rail_max, wire_cfg, now=now)
 
     payload = {
         "schema": "wires.v1",
