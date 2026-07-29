@@ -92,19 +92,31 @@
 
   /* ── catalog state ── */
   var ITEMS = [];            // normalized catalog items (see normItem)
+  var TOTAL_COUNT = 0;       // full inventory count; the public bake carries only 3 items
   var LANE = 'latest';
   var FILT = { inst: '', side: '', theme: '', q: '' };
   var SEARCH_HITS = null;    // set of ids from the live search API, or null (no server search)
-  // Teaser gate: reading the full PDFs is Pro-only; non-Pro see the latest few
-  // summaries and an upgrade wall over the rest. Summaries are public (the catalog
-  // API is unauth), so this is a MARKETING wall, not security — it fails OPEN to
-  // the full list while the tier is unresolved (null). PDF viewing is server-gated.
-  var USER_TIER = null;      // 'anon' | 'free' | 'insider' | 'pro' | null (unresolved)
-  function feedUnlocked() { return USER_TIER === null || USER_TIER === 'pro'; }
-  // Non-Pro summary allowance: Insider reads the latest 3, Free/anon the latest 1.
-  function teaseCount() { return USER_TIER === 'insider' ? 3 : 1; }
-  // Top Picks is a Pro-only lane; a resolved non-Pro tier is sent to the upgrade panel.
-  function picksLocked() { return USER_TIER !== null && USER_TIER !== 'pro'; }
+  // Teaser gate: reading full PDFs is Pro-only. Every non-Pro visitor sees the
+  // same fixed latest-three preview, and the app starts locked while auth resolves
+  // so there is never a flash of the full catalog.
+  var USER_TIER = 'anon';    // 'anon' | 'free' | 'insider' | 'pro'
+  function feedUnlocked() { return USER_TIER === 'pro'; }
+  function teaseCount() { return 3; }
+  function previewItems() {
+    var ready = ITEMS.filter(function (x) { return x.points.some(function (p) { return String(p || '').trim(); }); });
+    var preview = ready.slice(0, teaseCount());
+    var selected = {};
+    preview.forEach(function (x) { selected[x.id] = 1; });
+    if (preview.length < teaseCount()) {
+      ITEMS.some(function (x) {
+        if (!selected[x.id]) { preview.push(x); selected[x.id] = 1; }
+        return preview.length >= teaseCount();
+      });
+    }
+    return preview;
+  }
+  // Top Picks is a Pro-only lane.
+  function picksLocked() { return USER_TIER !== 'pro'; }
   // Pager: reveal the (already-loaded) feed a page at a time. shownN resets
   // whenever the result set — lane + filters + search — changes (see renderFeed).
   var PAGE_SIZE = 18, shownN = 18, _feedSig = '';
@@ -195,7 +207,7 @@
     $('fig-new').textContent = newN;
     $('fig-desks').textContent = deskN;
     $('fig-theme').textContent = topTheme || T('—', '—');
-    $('fig-total').textContent = ITEMS.length;
+    $('fig-total').textContent = TOTAL_COUNT;
     buildWeb();
 
     // verdict lead line
@@ -461,6 +473,10 @@
   }
   function renderFeed() {
     var rows = ITEMS.filter(matchItem);
+    // The public preview is anchored to the latest three catalog entries before
+    // filters/search are applied. Otherwise a visitor could search for a locked
+    // title and promote it into the visible allowance.
+    var previewRows = feedUnlocked() ? [] : previewItems().filter(matchItem);
     var feed = $('feed');
     var picksGate = LANE === 'picks' && picksLocked();
     var pt = doc.querySelector('.rv-lane[data-lane="picks"]');
@@ -481,20 +497,20 @@
         savedLane ? T('Tap the bookmark on any report to keep it here for later.', '点击任意报告上的书签，即可收藏到此处。')
           : T('Try clearing a filter or widening your search.', '试试清除筛选或放宽搜索条件。'));
     } else if (feedUnlocked()) {
-      // Pro/unresolved: paged — show the first shownN, then a "Show more" button
+      // Pro: paged — show the first shownN, then a "Show more" button
       var pg = rows.slice(0, shownN).map(cardHTML).join('');
       if (rows.length > shownN) pg += moreButton(rows.length - shownN);
       feed.innerHTML = pg;
     } else {
-      // non-Pro: the latest N summaries readable (Insider 3 / Free 1), then a wall
-      var n = teaseCount();
-      var html = rows.slice(0, n).map(cardHTML).join('');
-      var locked = rows.slice(n);
-      if (locked.length) html += lockedTeaser(locked);
-      feed.innerHTML = html;
+      // Non-Pro: only the fixed latest three summaries can render. Locked cards
+      // use generic skeleton copy so later report titles/summaries are not exposed.
+      var html = previewRows.map(cardHTML).join('');
+      var lockedN = Math.max(0, TOTAL_COUNT - teaseCount());
+      if (lockedN) html += lockedTeaser(lockedN);
+      feed.innerHTML = html || picksUpgradePanel();
     }
-    $('cnt-n').textContent = picksGate ? 0 : (feedUnlocked() ? Math.min(shownN, rows.length) : Math.min(teaseCount(), rows.length));
-    $('cnt-t').textContent = rows.length;   // filtered total, so "showing X of Y" tracks the pager
+    $('cnt-n').textContent = picksGate ? 0 : (feedUnlocked() ? Math.min(shownN, rows.length) : previewRows.length);
+    $('cnt-t').textContent = feedUnlocked() ? rows.length : TOTAL_COUNT;
     renderActiveChips();
   }
   function emptyState(h, p) {
@@ -503,22 +519,17 @@
   // The non-Pro upgrade wall: a few blurred ghost cards behind a glass upgrade
   // card. Ghosts are decorative (aria-hidden, no data-id) so the feed click
   // handler can never open them, and pointer-events are killed in CSS.
-  function lockedTeaser(locked) {
-    var ghosts = locked.slice(0, 3).map(function (x) {
-      var pts = (x.points || []).slice(0, 2).map(function (p) { return '<li>' + esc(p) + '</li>'; }).join('');
+  function lockedTeaser(n) {
+    var ghosts = [0, 1, 2].map(function () {
       return '<article class="rep glass" aria-hidden="true">'
-        + '<div class="rep-top"><span class="rep-logo">' + esc(x.logo) + '</span>'
-        + '<span class="rep-inst">' + esc(x.inst) + '</span>'
-        + (x.desk ? '<span class="rep-sep">·</span><span class="rep-desk">' + esc(x.desk) + '</span>' : '')
-        + '</div><h3>' + esc(x.title) + '</h3><ul class="rep-points">' + pts + '</ul></article>';
+        + '<div class="rep-top"><span class="rep-logo">PRO</span>'
+        + '<span class="rep-inst">' + T('Institutional desk', '机构研究台') + '</span>'
+        + '</div><h3>' + T('Pro research report', 'Pro 研报') + '</h3>'
+        + '<ul class="rep-points"><li>' + T('Full summary available with Pro.', '完整摘要为 Pro 专享。') + '</li></ul></article>';
     }).join('');
-    var n = locked.length;
     var head = zh() ? ('还有 ' + n + ' 篇机构研报') : (n + ' more institutional report' + (n === 1 ? '' : 's'));
-    var body = USER_TIER === 'insider'
-      ? T('You’re reading the latest three. Upgrade to Pro to open every desk and read the full PDFs.',
-          '你正在阅读最新三篇。升级 Pro 即可查看全部机构研报并阅读 PDF 全文。')
-      : T('You’re reading the latest report. Upgrade to Pro to open every desk and read the full PDFs.',
-          '你正在阅读最新一篇。升级 Pro 即可查看全部机构研报并阅读 PDF 全文。');
+    var body = T('You’re previewing the latest three summaries. Upgrade to Pro to open every desk and read the full PDFs.',
+                 '你正在预览最新三篇摘要。升级 Pro 即可查看全部机构研报并阅读 PDF 全文。');
     return '<div class="rv-lockwrap">'
       + '<div class="rv-lockghosts">' + ghosts + '</div>'
       + '<div class="rv-lockover glass">' + LOCK_SVG
@@ -570,7 +581,7 @@
         + '<span class="stamp ' + stampClass(x.side) + '"><span class="dt"></span>' + stampLabel(x.side) + '</span>' + pinBadge
         + '<button class="rep-savebtn' + (saved ? ' on' : '') + '" aria-pressed="' + (saved ? 'true' : 'false') + '" aria-label="' + T('Save report', '收藏报告') + '" data-act="save">' + BOOK_SVG + '</button>'
       + '</div>'
-      + '<h3>' + (x.slug
+      + '<h3>' + (x.slug && feedUnlocked()
           ? '<a class="rep-titlelink" href="research/' + esc(x.slug) + '.html" data-act="view">' + esc(x.title) + '</a>'
           : esc(x.title)) + '</h3>'
       + ptsHtml + moreBtn
@@ -611,7 +622,7 @@
     _searchTimer = setTimeout(function () {
       var url = API + '/api/research/search?q=' + encodeURIComponent(q)
         + (FILT.inst ? '&institution=' + encodeURIComponent(FILT.inst) : '');
-      fetch(url, { credentials: 'include' })
+      withAuth().then(function (h) { return fetch(url, { headers: h, credentials: 'include' }); })
         .then(function (r) { return r.ok ? r.json() : null; })
         .then(function (j) {
           if (!j || FILT.q !== q) return;      // stale response
@@ -666,9 +677,14 @@
   function isSignedIn() { return !!(window.MDXAuth && window.MDXAuth.user && window.MDXAuth.user()); }
 
   // Resolve the viewer's tier (drives the feed teaser). Called when the session
-  // resolves/changes via MDXAuth.onChange, so it never races auth-not-ready. Fails
-  // OPEN to the full list on any error (summaries are public regardless).
-  function setUserTier(t) { t = (t || 'free'); if (t === USER_TIER) return; USER_TIER = t; renderFeed(); }
+  // resolves/changes via MDXAuth.onChange. Any error stays on the public preview.
+  function setUserTier(t) {
+    t = (t || 'free');
+    if (t === USER_TIER) return;
+    USER_TIER = t;
+    if (USER_TIER === 'pro') refreshFromApi();
+    else renderFeed();
+  }
   function resolveTier() {
     if (!isSignedIn()) { setUserTier('anon'); return; }
     withAuth().then(function (h) { return fetch(API + '/api/research/quota', { headers: h, credentials: 'include' }); })
@@ -1102,7 +1118,7 @@
   function updateUnread() {
     var n = ITEMS.filter(function (x) { return !DocState.isRead(x.id); }).length;
     $('unread-n').textContent = n;
-    $('badge-latest').textContent = ITEMS.length;
+    $('badge-latest').textContent = TOTAL_COUNT;
     $('badge-picks').textContent = ITEMS.filter(function (x) { return x.top; }).length;
     $('badge-saved').textContent = ITEMS.filter(function (x) { return DocState.isSaved(x.id); }).length;
   }
@@ -1111,6 +1127,7 @@
   function ingest(catalog) {
     var items = (catalog && Array.isArray(catalog.items)) ? catalog.items : [];
     ITEMS = items.map(normItem);
+    TOTAL_COUNT = Math.max(ITEMS.length, Number(catalog && catalog.count) || 0);
     buildInstFacets(); buildThemeFacets();
     buildTree(); updateHero(); updateUnread(); renderFeed();
   }
@@ -1119,7 +1136,9 @@
     try { ingest(JSON.parse(el.textContent || '{}')); } catch (e) { ingest({ items: [] }); }
   }
   function refreshFromApi() {
-    fetch(API + '/api/research/catalog', { credentials: 'include' })
+    withAuth().then(function (h) {
+      return fetch(API + '/api/research/catalog', { headers: h, credentials: 'include' });
+    })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (j) { if (j && Array.isArray(j.items)) ingest(j); })
       .catch(function () { /* keep the baked snapshot */ });
