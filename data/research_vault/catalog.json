@@ -1,6 +1,6 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-28T23:53:12.758629+00:00",
+  "generated_at": "2026-07-29T00:24:01.357956+00:00",
   "count": 287,
   "institutions": [
     "BTIG",
@@ -35,7 +35,12 @@
       "side": "sell",
       "desk": "",
       "published_at": "2026-07-28T23:17:41Z",
-      "summary_points": [],
+      "summary_points": [
+        "**H1 2026 Margins & Performance**: Movement Systems margin recovery (7.2% vs 5.1% H1 2025) offsets Flooring Systems cost pressures; net profit 4.0% below consensus despite slight revenue/EBIT beat.",
+        "**Attractive Valuation Metrics**: 2026 EV/EBITDA at 7.6x and P/E at 14x suggest potential undervaluation, with management strategic plan (21 Oct 2026) as key near-term catalyst.",
+        "**Critical Geopolitical Risk**: Exchange rate volatility and regulatory shifts directly impact ratings and portfolio risk exposure, requiring active monitoring.",
+        "**Fundamental Risk Drivers**: Balance sheet strength and cash flow fundamentals are primary rating determinants, with technicals (valuation methods) subject to revision."
+      ],
       "tags": [],
       "tickers": [],
       "top_pick": false,
@@ -50,7 +55,11 @@
       "side": "sell",
       "desk": "",
       "published_at": "2026-07-28T23:17:39Z",
-      "summary_points": [],
+      "summary_points": [
+        "**Q1 Performance & Data Center Tailwinds**: Beat consensus on orders (CHF 104.6m, +30% YoY) and EBIT (CHF 12.4m, +520 bps margin), driven by 30% q/q order growth in Automation/Energy Distribution and 14.5% YoY China export demand.",
+        "**Outlook & Targets**: Confirms 5% revenue CAGR and 10–15% EBIT margin targets amid macro caution; maintains \"Market Perform\" rating due to execution strength and data center momentum.",
+        "**Rating Shifts & Flows**: Active institutional positioning: CHF 473M shifted from Underperform to Market Perform (05.06.2026), creating near-term flow-driven opportunities."
+      ],
       "tags": [],
       "tickers": [],
       "top_pick": false,
@@ -65,7 +74,12 @@
       "side": "sell",
       "desk": "",
       "published_at": "2026-07-28T23:17:38Z",
-      "summary_points": [],
+      "summary_points": [
+        "**Revised Growth & Margin Upside**: Outperform rating with 3–6% revenue growth (vs 1–4%) and 19.0–19.5% EBITDA margin (vs consensus 19.3%), signaling stronger fundamentals than consensus.",
+        "**Attractive Valuation with EBITDA Confidence**: CHF 197 fair value (DCF) with confidence in meeting consensus EBITDA despite modest organic growth (3.9% vs prior 2.7%), highlighting valuation efficiency.",
+        "**Market Sentiment & Allocation Signal**: Swiss Research Universe shows 36.61% Outperform rating (67 companies), with IB clients exhibiting higher Outperform/Market Perform ratios, critical for sector allocation.",
+        "**Rating System Benchmarking**: Ratings benchmarked against SPI (Outperform > SPI, Market Perform ~SPI), incorporating fundamentals/FX/regulation, essential for evaluating analytical rigor and risk factors."
+      ],
       "tags": [],
       "tickers": [],
       "top_pick": false,
