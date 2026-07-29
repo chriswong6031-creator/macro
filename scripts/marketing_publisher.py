@@ -59,6 +59,7 @@ _CODE_ROOT = str(Path(__file__).resolve().parent.parent)
 if _CODE_ROOT not in sys.path:
     sys.path.insert(0, _CODE_ROOT)
 from engine.marketing.copywriter import banned_language as _banned_language  # noqa: E402
+from engine.marketing.copywriter import headline_fragments as _headline_fragments  # noqa: E402
 
 log = logging.getLogger("marketing_publisher")
 
@@ -100,6 +101,41 @@ def _publish_cfg(cfg: dict) -> dict:
 
 def _channel_id_for(pub_cfg: dict, account: str) -> str:
     return str((pub_cfg.get("channels") or {}).get(account, "") or "").strip()
+
+
+# Kinds whose producers compose item text as headline + "\n\n" + body
+# (outbox.compose_text): the content-plan desks (signal/chart/education/
+# macro/receipt/watchlist/event/mover/theme_list) and the earnings fastlane.
+# wire/breaking are EXCLUDED on purpose — a press/wire summary is ONE text
+# block with no headline, and validate_copy 4f skips headline="" callers for
+# the same reason. A kind not listed here is simply not screened: post-time
+# quarantine is terminal, so unknown shapes fail SAFE (unscreened), never
+# fail dead.
+_HEADLINE_KINDS = frozenset({
+    "signal", "chart", "education", "macro", "receipt",
+    "watchlist", "event", "mover", "theme_list", "earnings",
+})
+
+
+def _queued_headline(kind: str | None, text: str) -> str | None:
+    """The headline of a queued item, or None when the shape is ambiguous.
+
+    Outbox items carry ONE string (`text`); the headline exists only as the
+    first block of the headline-bearing kinds' composition. Recover it ONLY
+    when unambiguous: the kind is a headline-bearing kind, the text has the
+    two-block shape, the first block is a single non-empty line, and a
+    non-empty body follows. Anything else returns None and is left to the
+    generation-time bar — a terminal gate must never guess.
+    """
+    if kind not in _HEADLINE_KINDS:
+        return None
+    head, sep, rest = text.partition("\n\n")
+    if not sep or not rest.strip():
+        return None
+    head = head.strip()
+    if not head or "\n" in head:
+        return None
+    return head
 
 
 _PUBLICATIONS_REL = Path("data/marketing/publications.jsonl")
@@ -1233,6 +1269,26 @@ def main(argv: list[str] | None = None) -> int:
                 _outbox.transition(iid, "quarantined", actor="publisher", root=root, note=reason)
             quarantined += 1
             continue
+
+        # -- headline-shape gate: fragment headlines are vintage-proof too ---
+        # validate_copy 4f (#3907) rejects fragment headlines ("Circling",
+        # "is close", "Radar check on") at GENERATION time, but the queue is
+        # a bypass around any generation-time law — the same $AVGO lesson the
+        # language gate above exists for. Screen the queued headline here so
+        # a queue-vintage fragment never posts. Fires only when the headline
+        # is UNAMBIGUOUS (see _queued_headline): quarantine is terminal, so
+        # ambiguity means skip, never guess.
+        _qh = _queued_headline(it.get("kind"), text)
+        if _qh is not None:
+            _frags = _headline_fragments(_qh)
+            if _frags:
+                reason = "fragment headline (queue vintage): " + "; ".join(_frags[:2])
+                log.warning("item %s (%s) QUARANTINED by headline-shape gate: %s",
+                            iid, account, reason)
+                if live:
+                    _outbox.transition(iid, "quarantined", actor="publisher", root=root, note=reason)
+                quarantined += 1
+                continue
 
         # -- live tape gate: never post yesterday's read against today's tape --
         if _live_verify is not None:

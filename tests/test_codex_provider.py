@@ -96,6 +96,28 @@ def test_create_runs_locked_text_only_codex_turn(monkeypatch):
     assert "agents.enabled=false" in joined_args
 
 
+def test_create_applies_configured_reasoning_effort(monkeypatch):
+    captured = {}
+
+    def fake_run(prompt, **kwargs):
+        captured.update(kwargs)
+        return {
+            "ok": True,
+            "final_message": "high-effort answer",
+            "token_usage": {},
+            "rate_limits": None,
+            "error_kind": None,
+        }
+
+    monkeypatch.setattr(cp, "run_codex", fake_run)
+    cp.CodexClient(reasoning_effort="high").messages.create(
+        model=cp.SOL_MODEL,
+        messages=[{"role": "user", "content": "Question"}],
+    )
+    joined_args = " ".join(captured["extra_args"])
+    assert 'model_reasoning_effort="high"' in joined_args
+
+
 def test_tool_envelope_becomes_anthropic_tool_use(monkeypatch):
     monkeypatch.setattr(
         cp,

@@ -2,12 +2,59 @@
 <nav class="public-nav" aria-label="Main">
   <div class="public-nav-in">
     <a class="public-brand" href="{{ rel }}index.html" aria-label="MastermindX home"><span class="m">M</span> MASTERMINDX</a>
-    <div class="public-nav-links">
-      <a href="{{ rel }}products/index.html">{{ t('Platform', '平台') }}</a>
-      <a href="{{ rel }}research/index.html">{{ t('Research', '研究') }}</a>
-      <a href="{{ rel }}tools/index.html">{{ t('Resources', '资源') }}</a>
-      <a href="{{ rel }}plans.html">{{ t('Pricing', '定价') }}</a>
-    </div>
+    <button class="public-nav-toggle" id="public-nav-toggle" type="button" aria-expanded="false"
+            aria-controls="public-primary-navigation" aria-label="Open navigation">
+      <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+    </button>
+    <ul class="public-nav-links" id="public-primary-navigation">
+      <li class="public-nav-group">
+        <button class="public-nav-trigger" id="public-platform-trigger" type="button" aria-expanded="false" aria-controls="public-platform-panel">
+          {{ t('Platform', '平台') }} <svg viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5 6 6.5l5-5"/></svg>
+        </button>
+        <div class="public-nav-panel" id="public-platform-panel" aria-labelledby="public-platform-trigger" hidden>
+          <div class="public-nav-panel-head">
+            <div><span>{{ t('CONNECTED RESEARCH DESK', '互联研究工作台') }}</span><strong>{{ t('Move from market state to the underlying evidence', '从市场状态一路深入到底层证据') }}</strong></div>
+            <a href="{{ rel }}products/index.html">{{ t('Platform overview →', '平台概览 →') }}</a>
+          </div>
+          <div class="public-nav-card-grid">
+            <a class="public-nav-card" href="{{ rel }}products/market-terminal.html"><i>01</i><span><strong>{{ t('Market Terminal', '市场终端') }}</strong><small>{{ t('Browser charting, watchlists and stock research context.', '浏览器图表、观察列表与股票研究背景。') }}</small></span></a>
+            <a class="public-nav-card" href="{{ rel }}products/mastermind-ai.html"><i>02</i><span><strong>Mastermind AI</strong><small>{{ t('A market research assistant grounded in the page and its sources.', '结合当前页面与来源的市场研究助手。') }}</small></span></a>
+            <a class="public-nav-card" href="{{ rel }}products/market-dashboards.html"><i>03</i><span><strong>{{ t('Market Dashboards', '市场仪表盘') }}</strong><small>{{ t('Macro, cycle, sector rotation and cross-asset context.', '宏观、周期、行业轮动与跨资产背景。') }}</small></span></a>
+          </div>
+        </div>
+      </li>
+      <li class="public-nav-group">
+        <button class="public-nav-trigger" id="public-research-trigger" type="button" aria-expanded="false" aria-controls="public-research-panel">
+          {{ t('Research', '研究') }} <svg viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5 6 6.5l5-5"/></svg>
+        </button>
+        <div class="public-nav-panel public-nav-panel-research" id="public-research-panel" aria-labelledby="public-research-trigger" hidden>
+          <div class="public-nav-panel-head">
+            <div><span>{{ t('PUBLIC RESEARCH SURFACES', '公开研究界面') }}</span><strong>{{ t('From report excerpts to ticker-level dossiers', '从报告节选到逐股档案') }}</strong></div>
+          </div>
+          <div class="public-nav-card-grid two">
+            <a class="public-nav-card" href="https://www.mastermind-x.com/research_vault.html"><i>R</i><span><strong>{{ t('Institutional Research', '机构研报') }}</strong><small>{{ t('Preview the latest three report summaries; full research and PDFs are available with Pro.', '预览最新三篇研报摘要；完整研报与 PDF 为 Pro 专享。') }}</small></span></a>
+            <a class="public-nav-card" href="{{ rel }}stocks/index.html"><i>S</i><span><strong>{{ t('Stock Dossiers', '股票档案') }}</strong><small>{{ t('Ticker pages for technical, fundamental, ownership and options context.', '按股票整理的技术面、基本面、持仓与期权背景。') }}</small></span></a>
+          </div>
+        </div>
+      </li>
+      <li class="public-nav-group">
+        <button class="public-nav-trigger" id="public-resources-trigger" type="button" aria-expanded="false" aria-controls="public-resources-panel">
+          {{ t('Resources', '资源') }} <svg viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5 6 6.5l5-5"/></svg>
+        </button>
+        <div class="public-nav-panel public-nav-panel-resources" id="public-resources-panel" aria-labelledby="public-resources-trigger" hidden>
+          <div class="public-nav-panel-head">
+            <div><span>{{ t('USEFUL BEFORE SIGNUP', '无需账户即可使用') }}</span><strong>{{ t('Start by solving one real problem', '先解决一个真实问题') }}</strong></div>
+          </div>
+          <div class="public-nav-card-grid two">
+            <a class="public-nav-card" href="{{ rel }}tools/index.html"><i>T</i><span><strong>{{ t('Free Tools', '免费工具') }}</strong><small>{{ t('Calculators for sizing, risk, returns and portfolios.', '仓位、风险、回报与投资组合计算器。') }}</small></span></a>
+            <a class="public-nav-card" href="{{ rel }}learn/index.html"><i>L</i><span><strong>{{ t('Learning Center', '学习中心') }}</strong><small>{{ t('Lessons on technicals, risk, options and filings.', '技术分析、风险、期权与申报文件课程。') }}</small></span></a>
+            <a class="public-nav-card" href="{{ rel }}blog/index.html"><i>B</i><span><strong>{{ t('Blog', '博客') }}</strong><small>{{ t('Plain-English articles on trading math and market mechanics.', '关于交易数学与市场机制的朴素文章。') }}</small></span></a>
+            <a class="public-nav-card" href="{{ rel }}support.html"><i>?</i><span><strong>{{ t('Support', '支持') }}</strong><small>{{ t('Help with account, product and access questions.', '账户、产品与访问问题的帮助入口。') }}</small></span></a>
+          </div>
+        </div>
+      </li>
+      <li class="public-nav-direct"><a href="{{ rel }}plans.html">{{ t('Pricing', '定价') }}</a></li>
+    </ul>
     <div class="public-nav-right">
       <a id="nav-login" class="public-nav-login" href="https://app.mastermind-x.com/terminal?signin=1">{{ t('Log in', '登录') }}</a>
       <a id="nav-cta" class="public-nav-cta" href="https://app.mastermind-x.com/terminal?signup=1">{{ t('Start free', '免费开始') }}</a>

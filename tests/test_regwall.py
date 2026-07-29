@@ -25,7 +25,7 @@ def _wall_on(monkeypatch):
     monkeypatch.delenv("REGWALL_ENABLED", raising=False)
 
 
-def _check(cookies=None, orig="/macro.html"):
+def _check(cookies=None, orig="/bonds.html"):
     return client.get("/api/regwall/check", cookies=cookies or {},
                       headers={"X-Original-Uri": orig})
 
@@ -33,7 +33,7 @@ def _check(cookies=None, orig="/macro.html"):
 def test_no_cookie_denies_with_ret():
     r = _check()
     assert r.status_code == 302
-    assert r.headers["location"] == "/?signin=1&ret=/macro.html"
+    assert r.headers["location"] == "/?signin=1&ret=/bonds.html"
     assert r.headers["cache-control"] == "no-store"
     assert r.headers["x-regwall"] == "deny"
 
@@ -90,6 +90,13 @@ def test_confluence_screener_lead_magnet_allows_without_session():
     assert r.headers["x-regwall"] == "public"
 
 
+@pytest.mark.parametrize("path", ["/macro.html", "/start.html", "/us_stocks.html"])
+def test_public_dashboard_previews_allow_without_session(path):
+    r = _check(orig=path)
+    assert r.status_code == 204
+    assert r.headers["x-regwall"] == "public"
+
+
 @pytest.mark.parametrize(
     "path",
     [
@@ -119,6 +126,7 @@ def test_gated_dashboard_still_denies_with_ret():
 def test_deny_skips_public_ret():
     # _deny never bounces back to a public page (pointless); gated pages ARE echoed
     assert regwall._deny("/index.html").headers["Location"] == "/?signin=1"
+    assert regwall._deny("/macro.html").headers["Location"] == "/?signin=1"
     assert regwall._deny("/stocks/NVDA.html").headers["Location"] == "/?signin=1"
     assert regwall._deny("/bonds.html").headers["Location"] == "/?signin=1&ret=/bonds.html"
 

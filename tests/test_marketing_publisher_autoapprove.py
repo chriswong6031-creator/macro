@@ -1144,3 +1144,109 @@ def test_language_gate_passes_plain_copy(monkeypatch, tmp_path):
     assert rc == 0
     assert len(fake.calls) == 1
     assert current_statuses(tmp_path)[ok_item] == "posted"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Post-time headline-shape gate — fragment headlines are vintage-proof too
+# ─────────────────────────────────────────────────────────────────────────────
+# validate_copy 4f (#3907) screens headline shape at generation time, but items
+# enqueued before that law existed (or via a lane that bypasses validate_copy)
+# fire later unscreened — the $AVGO lesson applied to headline SHAPE. The
+# publisher recovers the headline only from an unambiguous two-block text of a
+# headline-bearing kind; quarantine is terminal, so ambiguity means skip.
+
+_FRAGMENT_TEXT = ("Radar check on\n\nThree names set up for the week. "
+                  "Watching, no position.")
+
+
+def test_headline_gate_quarantines_fragment_live(monkeypatch, tmp_path):
+    from engine.marketing.outbox import current_statuses, read_ledger, transition
+
+    _write_publish_cfg(tmp_path, auto_approve=False, cap=-1, floor_min=0)
+    bad = _seed_item_bypassing_enqueue_guard(tmp_path, text=_FRAGMENT_TEXT,
+                                             as_of="2026-07-19", kind="watchlist")
+    assert transition(bad, "approved", actor="test", root=tmp_path, now=_FIXED_NOW)
+
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake,
+                        kill_switch=True)
+
+    assert rc == 0
+    assert fake.calls == []                       # the fragment never reached Buffer
+    assert current_statuses(tmp_path)[bad] == "quarantined"
+    note = next(r for r in read_ledger(tmp_path)
+                if r.get("id") == bad and r["to"] == "quarantined")["note"]
+    # Only the headline-shape gate writes this note — proof the gate fired, not
+    # the language/repeat/tape gates sitting on either side of it.
+    assert "fragment headline" in note
+
+
+def test_headline_gate_dry_run_reports_only(monkeypatch, tmp_path):
+    from engine.marketing.outbox import current_statuses, transition
+
+    _write_publish_cfg(tmp_path, auto_approve=False, cap=-1, floor_min=0)
+    bad = _seed_item_bypassing_enqueue_guard(tmp_path, text=_FRAGMENT_TEXT,
+                                             as_of="2026-07-19", kind="watchlist")
+    assert transition(bad, "approved", actor="test", root=tmp_path, now=_FIXED_NOW)
+
+    rc = _run_publisher(monkeypatch, tmp_path, [], kill_switch=False)
+    assert rc == 0
+    assert current_statuses(tmp_path)[bad] == "approved"   # untouched
+
+
+def test_headline_gate_skips_one_block_kinds(monkeypatch, tmp_path):
+    """A wire/breaking summary is ONE block. Its text may still contain a blank
+    line, and the first block may look fragment-shaped ("Markets are on") — that
+    is prose, not a headline. Screening it would kill a legitimate post
+    permanently, so one-block kinds are never screened."""
+    from engine.marketing.outbox import current_statuses, transition
+
+    _write_publish_cfg(tmp_path, auto_approve=False, cap=-1, floor_min=0)
+    wire = _seed_item_bypassing_enqueue_guard(
+        tmp_path,
+        text=("Markets are on\n\nedge after the Fed statement. "
+              "Watching the close."),
+        as_of="2026-07-19", kind="breaking")
+    assert transition(wire, "approved", actor="test", root=tmp_path, now=_FIXED_NOW)
+
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake,
+                        kill_switch=True)
+    assert rc == 0
+    assert len(fake.calls) == 1
+    assert current_statuses(tmp_path)[wire] == "posted"
+
+
+def test_queued_headline_shape_matrix():
+    """The recovery helper is the whole false-positive defense: it returns a
+    headline ONLY for an unambiguous two-block text of a headline-bearing kind."""
+    from scripts.marketing_publisher import _queued_headline
+
+    assert _queued_headline("watchlist", "Radar check on\n\nbody here") == "Radar check on"
+    assert _queued_headline("earnings", "🧾 $AVGO Q2 earnings: beat.\n\nGuide raised.") == "🧾 $AVGO Q2 earnings: beat."
+    assert _queued_headline("breaking", "Radar check on\n\nbody here") is None
+    assert _queued_headline("wire", "Radar check on\n\nbody here") is None
+    assert _queued_headline(None, "Radar check on\n\nbody here") is None
+    assert _queued_headline("watchlist", "one block only, no separator") is None
+    assert _queued_headline("watchlist", "Line1\nLine2\n\nbody") is None
+    assert _queued_headline("watchlist", "\n\nbody") is None
+    assert _queued_headline("watchlist", "Head\n\n   ") is None
+
+
+def test_headline_gate_passes_clean_two_block(monkeypatch, tmp_path):
+    from engine.marketing.outbox import current_statuses, transition
+
+    _write_publish_cfg(tmp_path, auto_approve=False, cap=-1, floor_min=0)
+    ok_item = _seed_item_bypassing_enqueue_guard(
+        tmp_path,
+        text=("$AVGO is holding the line\n\n$AVGO held 379.32, the price where "
+              "the most shares changed hands lately. Watching, no position."),
+        as_of="2026-07-19", kind="watchlist")
+    assert transition(ok_item, "approved", actor="test", root=tmp_path, now=_FIXED_NOW)
+
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake,
+                        kill_switch=True)
+    assert rc == 0
+    assert len(fake.calls) == 1
+    assert current_statuses(tmp_path)[ok_item] == "posted"

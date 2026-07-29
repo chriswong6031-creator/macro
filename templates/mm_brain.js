@@ -1191,6 +1191,10 @@
     text = (text || ta.value).trim();
     var imgs = pendingImages.slice();
     if ((!text && !imgs.length) || streaming) return;
+    /* The active chart/ticker can change long after the widget booted. Resolve it
+       at the moment of every send so Terminal and dashboard never keep a stale
+       launch-time chip (the NVDA → 600036.SS incident). */
+    refreshCtx();
     /* Guests may send (Fast lane) without the sign-in modal; only fully-gated (non-guest,
        signed-out) sessions are bounced to sign-in. */
     if (!authed && !guestMode && window.MDXAuth && window.MDXAuth.enabled && window.MDXAuth.enabled()) { window.MDXAuth.open('signin'); return; }
@@ -1211,6 +1215,7 @@
   /* Replay the last user turn on the same thread/lane (client resend, no backend change). */
   function regenerate() {
     if (streaming || !lastTurn) return;
+    refreshCtx();
     runStream({ text: lastTurn.text, imgs: (lastTurn.imgs || []).slice(), lane: lastTurn.lane, mode: lastTurn.mode,
                 ctx: (function () { var c = { page: (ANCHOR === 'top' ? 'terminal' : 'dashboard'), lang: (zh() ? 'zh' : 'en') }; if (ctxSymbol) c.symbol = ctxSymbol; return c; })() }, false);
   }
@@ -2244,8 +2249,8 @@
   /* ── context (active ticker) ── */
   function refreshCtx() {
     var s = ''; try { s = (CFG.symbol && CFG.symbol()) || window.MDXActiveSymbol || window.MMBrainSymbol || window.ACTIVE_SYMBOL || ''; } catch (e) {}
-    var m = /[?&]symbol=([A-Za-z0-9.\-]+)/i.exec(location.search); if (!s && m) s = m[1];
-    ctxSymbol = (s || '').toString().toUpperCase().slice(0, 10);
+    var m = /[?&]symbol=([A-Za-z0-9.\-:]+)/i.exec(location.search); if (!s && m) s = m[1];
+    ctxSymbol = (s || '').toString().toUpperCase().slice(0, 24);
     if (ctxSymbol) { ctxEl.className = 'mmb-ctx on'; ctxEl.innerHTML = '<span class="chip" title="Active symbol"><svg class="cx" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="1.7" fill="currentColor" stroke="none"/></svg><b>' + esc(ctxSymbol) + '</b></span>'; }
     else ctxEl.className = 'mmb-ctx';
   }
