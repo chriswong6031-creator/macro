@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-29T15:53:14.446236+00:00",
-  "count": 331,
+  "generated_at": "2026-07-29T16:08:45.222038+00:00",
+  "count": 332,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -32,6 +32,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-2bytr8xzx3g-afa905",
+      "title": "JPM JPM TECH SKETCH GOO",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T15:55:54Z",
+      "summary_points": [
+        "**GOOGL Q226 Cloud & TPU Momentum**: Cloud revenue +82% Y/Y driven by TPU hardware sales; Google Cloud margins at 35.6% (fantastic), signaling TPU as next growth leg; JPMorgan reiterates Overweight ($420 PT), \"buy pullback\".",
+        "**NOW Q226 Subscription Acceleration**: cRPO +21.5% Y/Y FXN (+200 bps above guide), Subscription Revenues +23% Y/Y FXN; US Federal demand accelerating net new ACV; Q36 guidance implies sustained momentum.",
+        "**TSLA Robotaxi Safety Risk**: Prioritizes 99.999999% reliability; regulatory clampdown risk from single injury (30k-40k annual US auto deaths); scaling constrained by safety/reputation, not growth speed.",
+        "**AI Cyberattack Efficiency Surge**: AI models (GPT-5.5-Cyber) complete network attacks ~6.7x faster than prior models (M7 in ~10M tokens vs.",
+        "5M); systemic risk for tech/financial sectors."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 16,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-q4lqixahtnn-65ce00",
       "title": "RUPEE STABILITY FOR NOW BUT STRAINS AHEAD",
