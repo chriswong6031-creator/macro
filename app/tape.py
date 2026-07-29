@@ -10,8 +10,9 @@ keys are involved anywhere in this lane.
 
 Fallback ladder (masterplan §0.2 / honesty rails §6):
   1. upstream trade tick  -> basis "quote"  (honest last price from the feed)
-  2. upstream silent >~60s during expected trading hours -> REST poll of
-     engine.live_quotes every <=15s -> basis "poll" (honestly downgraded)
+  2. a subscribed symbol silent >~60s during expected trading hours -> REST
+     poll of that symbol via engine.live_quotes every <=15s -> basis "poll"
+     (honestly downgraded)
   3. the socket being down entirely -> the browser's existing live.js polling
      (worker/snapshot) covers the page; and if THAT is down, the baked numbers
      stand. Each tier keeps its own freshness stamping.
@@ -89,7 +90,11 @@ class TapeHub:
         # ip -> live /ws/tape connection count (per-IP cap; see _MAX_CONNS_PER_IP).
         # Touched only from coroutines on the one event loop, so no lock is needed.
         self._ip_counts: dict[str, int] = {}
-        self._last_upstream_ms: float = 0.0  # wall-clock (ms) of last decoded frame
+        # sym -> wall-clock (ms) when the upstream last produced that symbol.
+        # Per-symbol freshness matters: Yahoo can stream DXY continuously while
+        # staying silent for one or more futures. A single global timestamp lets
+        # that busy symbol suppress the REST fallback for every missing tile.
+        self._last_upstream_ms: dict[str, float] = {}
         self._task: asyncio.Task | None = None
         self._poll_task: asyncio.Task | None = None
         self._stopping = False
@@ -243,7 +248,7 @@ class TapeHub:
             # ignore any symbol we didn't subscribe (defensive)
             return
         now_ms = time.time() * 1000.0
-        self._last_upstream_ms = now_ms
+        self._last_upstream_ms[sym] = now_ms
         chg = q.get("chgPct")
         prev = q.get("prevClose")
         if chg is None and prev not in (None, 0):
@@ -261,28 +266,44 @@ class TapeHub:
     # -- REST poll fallback ------------------------------------------------
 
     async def _run_poll_fallback(self) -> None:
-        """When the upstream has been silent past the budget, poll
-        engine.live_quotes and broadcast with basis 'poll' (honestly
-        downgraded). Runs on its own cadence; it never fires while fresh quotes
-        are flowing, so a healthy feed pays nothing."""
+        """Poll only symbols whose upstream has been silent past the budget.
+
+        Freshness is intentionally per-symbol. A busy DXY stream must not hide
+        a silent YM/RTY subscription; only symbols with a recent upstream frame
+        are exempt from the REST fallback.
+        """
         while not self._stopping:
             try:
                 await asyncio.sleep(_POLL_INTERVAL_S)
                 now_ms = time.time() * 1000.0
-                silent_for = (now_ms - self._last_upstream_ms) / 1000.0
-                if self._last_upstream_ms and silent_for < _UPSTREAM_SILENCE_S:
-                    continue  # upstream is healthy — no poll needed
-                await self._poll_once()
+                stale = self._symbols_needing_poll(now_ms)
+                if stale:
+                    await self._poll_once(stale)
             except asyncio.CancelledError:
                 raise
             except Exception as e:  # noqa: BLE001 — a poll failure must never kill the loop
                 log.debug("tape: poll fallback tick failed (%s)", e)
 
-    async def _poll_once(self) -> None:
-        """One REST snapshot of the tape symbols -> basis 'poll' broadcasts.
+    def _symbols_needing_poll(self, now_ms: float) -> list[str]:
+        """Tape symbols with no upstream frame or one older than the budget."""
+        return [
+            sym for sym in self.symbols
+            if (last := self._last_upstream_ms.get(sym)) is None
+            or (now_ms - last) / 1000.0 >= _UPSTREAM_SILENCE_S
+        ]
+
+    async def _poll_once(self, symbols: list[str] | tuple[str, ...] | None = None) -> None:
+        """One REST snapshot of selected tape symbols -> ``basis='poll'``.
+
+        ``symbols=None`` preserves the full-tape manual/test helper. The
+        background fallback passes only the per-symbol stale subset.
+
         engine.live_quotes is a blocking requests-based call, so it runs in a
         thread to avoid stalling the event loop."""
-        quotes = await asyncio.to_thread(self._fetch_rest_quotes)
+        selected = list(symbols) if symbols is not None else list(self.symbols)
+        if not selected:
+            return
+        quotes = await asyncio.to_thread(self._fetch_rest_quotes, selected)
         if not quotes:
             return
         now_ms = time.time() * 1000.0
@@ -304,12 +325,12 @@ class TapeHub:
             }
             self._publish(payload)
 
-    def _fetch_rest_quotes(self) -> dict[str, dict]:
+    def _fetch_rest_quotes(self, symbols: list[str]) -> dict[str, dict]:
         """Blocking REST fetch (runs in a worker thread). Late import so the
         module imports with no engine dependency + startup never blocks on it."""
         try:
             from engine import live_quotes  # noqa: PLC0415
-            return live_quotes.fetch_quotes(list(self.symbols)) or {}
+            return live_quotes.fetch_quotes(symbols) or {}
         except Exception as e:  # noqa: BLE001
             log.debug("tape: REST fetch_quotes failed (%s)", e)
             return {}

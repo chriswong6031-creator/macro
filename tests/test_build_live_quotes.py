@@ -26,6 +26,17 @@ def test_core_index_and_futures_symbols_always_in_universe(tmp_path):
         assert sym in uni, sym
 
 
+def test_display_snapshot_covers_every_live_tape_symbol():
+    """Every macro tape tile needs the same-origin polling fallback.
+
+    The websocket is an enhancement and may stay silent for individual futures;
+    omitting a tile from DISPLAY_SYMBOLS leaves its baked value blank forever.
+    """
+    from app.tape import TAPE_SYMBOLS
+
+    assert set(TAPE_SYMBOLS) <= set(blq.DISPLAY_SYMBOLS)
+
+
 def test_btc_is_in_core_and_routes_to_yahoo(tmp_path):
     # BTC trades 24/7, so it's kept in CORE (always fetched) and the Bitcoin Vector
     # header links data-sym="BTC-USD". A crypto pair must route to Yahoo, never Polygon
