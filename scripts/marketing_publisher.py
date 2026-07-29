@@ -42,6 +42,7 @@ import argparse
 import hashlib
 import logging
 import os
+import re
 import sys
 import zlib
 from datetime import date, datetime, timedelta, timezone
@@ -208,7 +209,7 @@ def _media_enabled_cfg(pub_cfg: dict) -> bool:
     return str(v).strip().lower() in {"1", "true", "yes"}
 
 
-def _media_paths_for(it: dict, pub_cfg: dict) -> list[str]:
+def _media_paths_for(it: dict, pub_cfg: dict, sidecar: dict | None = None) -> list[str]:
     """Public media URLs to attach to a post (PNG on X; Buffer needs a hosted URL).
 
     Prefers the chart's public https media_url (stamped at plan-build time when
@@ -216,6 +217,13 @@ def _media_paths_for(it: dict, pub_cfg: dict) -> list[str]:
     repo file Buffer cannot fetch — _build_assets() skips non-http paths anyway —
     so we never pass it. Returns [] (text-only) when the gate is off or no post
     carries a public URL: the graceful, always-correct fallback.
+
+    `sidecar` is the media-backfill map (scripts/marketing_media_backfill.py),
+    consulted ONLY for an entry the plan build left unstamped. That stamp happens
+    once, inside the nightly, and only if R2 creds were live in that process —
+    so without this fallback a single R2 hiccup makes a whole day's posts
+    text-only forever, with the charts rendered and committed but unreachable.
+    An item that already carries its own media_url never looks here.
     """
     if not _media_enabled_cfg(pub_cfg):
         return []
@@ -224,9 +232,105 @@ def _media_paths_for(it: dict, pub_cfg: dict) -> list[str]:
         if not isinstance(m, dict):
             continue
         u = str(m.get("media_url") or "").strip()
+        if not u and sidecar:
+            key = f"{str(it.get('as_of') or '').strip()}/{str(m.get('chart_id') or '').strip()}"
+            u = str(sidecar.get(key) or "").strip()
         if u.lower().startswith(("http://", "https://")):
             urls.append(u)
     return urls
+
+
+# Kinds whose post is ABOUT a specific name. The operator's standing rule is
+# that these always carry their chart ("we should always have illustrations for
+# charting tickers ... we're doing entry timing so charting should be used").
+# Every other member of outbox.KINDS — macro, education, event, theme_list,
+# wire, breaking, earnings, mover — is a method, breadth or news post that
+# legitimately goes out as text and must keep flowing.
+_CHART_BEARING_KINDS: frozenset[str] = frozenset({
+    "signal", "chart", "watchlist", "receipt",
+})
+
+# A ticker post whose chart never resolves may not defer forever. Past this age
+# the publisher gives up and QUARANTINES it instead of shipping it bare: an
+# entry-timing read this stale is not worth posting even if the picture finally
+# lands, and posting it text-only is exactly the violation this gate exists to
+# prevent. Set to match the no-channel expiry below (deliberately a separate
+# number: one is an upload race, the other a misconfiguration).
+_MEDIA_DEFER_MAX_AGE_DAYS = 3
+
+_CASHTAG_RE = re.compile(r"\$[A-Z]{1,5}\b")
+
+
+def _item_age_days(it: dict, now: datetime) -> int:
+    """Whole days since the item's as_of (else created_at) stamp.
+
+    Unparseable → 0, i.e. "brand new, don't expire": a malformed stamp must
+    never be the reason a post is dropped.
+    """
+    stamp = str(it.get("as_of") or it.get("created_at") or "")[:10]
+    try:
+        return (now.date() - date.fromisoformat(stamp)).days
+    except (ValueError, TypeError):
+        return 0
+
+
+def _item_ticker(it: dict) -> str:
+    """The name this post is about, or "" for a method/macro/breadth post.
+
+    Emitted items carry NO top-level `ticker`: the outbox writes it to
+    `source.ticker` (every signal/chart/watchlist row has one) and mirrors it
+    onto each `media[]` entry. Top-level `ticker`/`cashtag` are still read first
+    so an emitter that later promotes the field is picked up for free.
+
+    The copy's own cashtag is the last resort. By the time we look there `kind`
+    has already narrowed us to the chart-bearing four, so a `$SPY` mentioned in
+    passing by a macro or education post can never reach this line.
+    """
+    src = it.get("source") if isinstance(it.get("source"), dict) else {}
+    for v in (it.get("ticker"), it.get("cashtag"),
+              src.get("ticker"), src.get("cashtag")):
+        if isinstance(v, str) and v.strip():
+            return v.strip().lstrip("$")
+    for m in it.get("media") or []:
+        if isinstance(m, dict) and str(m.get("ticker") or "").strip():
+            return str(m["ticker"]).strip().lstrip("$")
+    hit = _CASHTAG_RE.search(str(it.get("text") or ""))
+    return hit.group(0).lstrip("$") if hit else ""
+
+
+def _missing_required_media(it: dict, pub_cfg: dict, media_paths: list[str]) -> bool:
+    """True when this is a ticker post that HAS a chart and cannot reach it.
+
+    The gap: media_url is stamped once, inside the nightly's content_studio, and
+    only if R2 creds were live in that process. Any publish sweep that fires
+    between a failed upload and scripts/marketing_media_backfill.py resolves
+    nothing and ships the read BARE to all seven desks — a silent violation of
+    the illustrate-every-ticker rule, and a live race rather than a rare one.
+
+    All four conditions are load-bearing:
+      * media_enabled ON — with the global gate off NOTHING resolves a URL, so
+        deferring on that would wedge the entire ticker queue instead of one item;
+      * no resolved URL — neither the plan-build stamp nor the backfill sidecar;
+      * chart-bearing kind — a macro/education/breadth post has no chart to miss;
+      * a non-empty media[] — the chart was BUILT, so the URL is recoverable and
+        deferring is honest. An item that never had a media entry is a different
+        gap (nothing was rendered) and is out of scope here.
+    """
+    if not _media_enabled_cfg(pub_cfg) or media_paths:
+        return False
+    if str(it.get("kind") or "").strip().lower() not in _CHART_BEARING_KINDS:
+        return False
+    if not any(isinstance(m, dict) for m in (it.get("media") or [])):
+        return False
+    return bool(_item_ticker(it))
+
+
+def _chart_ids_for(it: dict) -> str:
+    """The item's chart ids, for the operator log line — so a deferral names
+    exactly which chart failed to upload rather than just the item id."""
+    ids = [str(m.get("chart_id") or "").strip()
+           for m in (it.get("media") or []) if isinstance(m, dict)]
+    return ",".join(i for i in ids if i) or "?"
 
 
 def _auto_approve_cfg(pub_cfg: dict) -> bool:
@@ -302,6 +406,40 @@ def _jitter_max_cfg(pub_cfg: dict) -> int:
     → 0 = disabled, which reproduces the exact pre-jitter booking behaviour.
     """
     raw = pub_cfg.get("post_jitter_max_min", 0)
+    try:
+        v = int(raw)
+    except (TypeError, ValueError):
+        return 0
+    return v if v > 0 else 0
+
+
+def _forward_book_horizon_cfg(pub_cfg: dict) -> int:
+    """publish.max_forward_book_min — how far AHEAD of now one sweep may book a
+    ladder item that is inside the global spacing floor. 0 / absent → 0, which
+    reproduces the pre-2026-07-28 behaviour exactly (the item defers to the next
+    sweep instead of being booked).
+
+    WHY THIS EXISTS. The floor guarantees "no two posts closer than
+    min_minutes_between_any_posts". The original enforcement deferred any item
+    inside the floor to the next cron sweep, which silently made the SWEEP the
+    unit of throughput: 30 sweeps/day → at most 30 posts/day network-wide, no
+    matter how many the desks generated or what the per-account caps allowed.
+    With the desks generating ~59/day that quietly strands more than half the
+    queue every day, and it degrades further whenever a sweep is dropped.
+
+    Booking forward enforces the SAME spacing without that coupling: the item is
+    handed to Buffer as a customScheduled post at (floor + spacing), so the send
+    times are identical to what the defer path would eventually have produced —
+    they are simply reserved now instead of re-derived one sweep at a time.
+
+    The horizon is the safety bound, and it is a TAPE-FRESHNESS bound, not a
+    performance knob: every item is verified against live quotes at BOOK time
+    (live_verify), so booking N minutes ahead ships a read that is up to N
+    minutes stale. Keep it near the live gate's own max_quote_age_min rather
+    than raising it to drain the queue faster — a whole day booked at 09:00 is
+    a whole day of reads written against the 09:00 tape.
+    """
+    raw = pub_cfg.get("max_forward_book_min", 0)
     try:
         v = int(raw)
     except (TypeError, ValueError):
@@ -406,10 +544,14 @@ def _auto_approve_pass(
     allowed_kinds: "frozenset[str] | None" = None,
     only_ids: "frozenset[str] | None" = None,
     cap_for=None,
+    halted: "set[str] | frozenset[str] | None" = None,
 ) -> list[str]:
     """Auto-advance queued → approved for items passing ALL publish gates.
 
     Gates (an item must clear every one to be auto-approved):
+      * the account is NOT halted (XG-W6 health monitor / network tripwire).
+        Auto-approving for a halted desk would build a pile of approved items
+        the post loop then refuses one by one — noise that hides the halt.
       * NOT held (a queued item whose latest operator decision is 'hold' stays put)
       * kind scope: when ``allowed_kinds`` is not None (global publish.auto_approve
         is OFF but publish.auto_approve_kinds is set), an item is a candidate ONLY
@@ -482,6 +624,10 @@ def _auto_approve_pass(
         text = it.get("text", "") or ""
         link = it.get("link")
         links_allowed = _links_allowed_for(pub_cfg, acct)
+
+        if halted and acct in halted:
+            log.info("auto-approve SKIP %s (%s): account HALTED", iid, acct)
+            continue
 
         problems = validate_postable(text, link, links_allowed)
         if problems:
@@ -753,6 +899,27 @@ def main(argv: list[str] | None = None) -> int:
     # ids: the operator clicking "Post now" IS the approval, so the run must not
     # depend on publish.auto_approve being on — but only for those ids, and only
     # through the same gates.
+    # ── PER-ACCOUNT HALT (XG-W6) ─────────────────────────────────────────────
+    # The post half of the health monitor's guarantee: a tripped account halts
+    # THAT ACCOUNT ONLY (charter §5 — "a failure must be able to halt one
+    # account without halting seven"). The registry is read ONCE per run and the
+    # table threaded through both the auto-approve pass and the post loop; a
+    # per-item read would re-parse the file once per post. Fail-soft by design:
+    # an unreadable registry yields {} and announces itself loudly rather than
+    # silencing all seven desks, which is the fleet-wide outage the per-account
+    # design exists to prevent.
+    try:
+        from engine.marketing import health_monitor as _health  # noqa: PLC0415
+
+        _halts = _health.load_halts(root)
+    except Exception as _hm_exc:  # noqa: BLE001
+        log.warning("health monitor unavailable (%s) — no halts enforced", _hm_exc)
+        _health, _halts = None, {}
+    if _halts:
+        log.warning("halted account(s): %s — their posts are blocked; every other "
+                    "desk posts normally", sorted(_halts))
+    skipped_halt = 0
+
     auto_approve_on = bool(args.auto_approve) or _auto_approve_cfg(pub_cfg)
     allowed_kinds = _auto_approve_kinds_cfg(pub_cfg)
     scoped_on = (not auto_approve_on) and bool(allowed_kinds)
@@ -766,7 +933,7 @@ def main(argv: list[str] | None = None) -> int:
             _outbox, state, pub_cfg, cap=cap, now=now, live=live,
             account=args.account, posted_today=posted_today,
             validate_postable=validate_postable, root=root,
-            only_ids=post_now, cap_for=_cap_for,
+            only_ids=post_now, cap_for=_cap_for, halted=set(_halts),
         )
     elif auto_approve_on or scoped_on:
         # allowed_kinds param: None when the global flag is ON (unrestricted,
@@ -776,7 +943,7 @@ def main(argv: list[str] | None = None) -> int:
             _outbox, state, pub_cfg, cap=cap, now=now, live=live,
             account=args.account, posted_today=posted_today,
             validate_postable=validate_postable, root=root,
-            allowed_kinds=_kinds_param, cap_for=_cap_for,
+            allowed_kinds=_kinds_param, cap_for=_cap_for, halted=set(_halts),
         )
     if live and auto_approved:
         # Re-fold so the candidate set below sees the freshly-approved items.
@@ -820,6 +987,7 @@ def main(argv: list[str] | None = None) -> int:
 
     posted = failed = quarantined = skipped_cap = skipped_channel = would_post = 0
     tape_quarantined = tape_skipped = skipped_floor = deferred_immediate = 0
+    forward_booked = deferred_no_media = 0
 
     # ── Global min-spacing floor (publish.min_minutes_between_any_posts) ──────
     # Post-time anti-spam guard: at most one post per floor-minute window across
@@ -836,6 +1004,29 @@ def main(argv: list[str] | None = None) -> int:
     # ladder item still defers when inside the floor, unchanged.
     floor_min = _floor_minutes_cfg(pub_cfg)
     last_post_at = _last_global_post_at(root) if floor_min else None
+
+    # ── Media backfill sidecar (fail-soft) ───────────────────────────────────
+    # Public chart URLs recovered by scripts/marketing_media_backfill.py for
+    # items whose plan build could not reach R2. Loaded ONCE per run; an empty
+    # map (no sidecar, unreadable file) reproduces the pre-sidecar behaviour
+    # exactly, so a broken ledger costs an image and never a post.
+    _media_sidecar: dict = {}
+    try:
+        from scripts.marketing_media_backfill import load_sidecar as _load_sidecar  # noqa: PLC0415
+        _media_sidecar = _load_sidecar(root)
+        if _media_sidecar:
+            log.info("media backfill sidecar: %d recovered chart URLs", len(_media_sidecar))
+    except Exception as _sc_exc:  # noqa: BLE001
+        log.warning("media backfill sidecar unavailable (%s) — items keep their own "
+                    "media_url only", _sc_exc)
+
+    # ── Forward-booking horizon (publish.max_forward_book_min) ───────────────
+    # Decouples network throughput from the cron grid: an item inside the floor
+    # is booked at the moment the floor clears (Buffer customScheduled) instead
+    # of deferring a whole sweep. Spacing is unchanged; only the reservation
+    # moves earlier. 0 = off = the pre-2026-07-28 defer path. See
+    # _forward_book_horizon_cfg for why the bound is about tape freshness.
+    forward_horizon_min = _forward_book_horizon_cfg(pub_cfg)
 
     # ── Send-time jitter (publish.post_jitter_max_min) ───────────────────────
     # A ladder item books at (floor-cleared time + a per-item offset) instead of
@@ -926,6 +1117,18 @@ def main(argv: list[str] | None = None) -> int:
         iid = it["id"]
         account = it.get("account", "")
         text = it.get("text", "") or ""
+
+        # -- halt gate: BEFORE validation, the cap, and the channel lookup ----
+        # A halted desk must cost nothing and touch nothing, so this is the
+        # first thing the loop asks. It is deliberately not a quarantine: the
+        # item is fine, the desk is halted, and quarantining would bury a good
+        # post under a reason that has nothing to do with it.
+        if _health is not None and _health.is_halted(account, halts=_halts):
+            log.warning("item %s (%s) SKIPPED — account HALTED (%s)", iid, account,
+                        (_halts.get(account) or {}).get("reason"))
+            skipped_halt += 1
+            continue
+
         links_allowed = _links_allowed_for(pub_cfg, account)
         # Items carry no separate link field today; the link (if any) is inline
         # in the post text. Pass link=None so validate_postable checks the body
@@ -1119,15 +1322,46 @@ def main(argv: list[str] | None = None) -> int:
             # forever (re-skipped every run, never expiring). After 3 days,
             # quarantine so the queue drains honestly. Only in --live (dry-run
             # never mutates the ledger).
-            if live:
-                _stamp = str(it.get("as_of") or it.get("created_at") or "")[:10]
-                try:
-                    _age_days = (now.date() - date.fromisoformat(_stamp)).days
-                except (ValueError, TypeError):
-                    _age_days = 0  # unparseable stamp → don't expire (fail-soft)
-                if _age_days > 3:
+            if live and _item_age_days(it, now) > 3:
+                _outbox.transition(iid, "quarantined", actor="publisher",
+                                   root=root, note="expired_no_channel")
+            continue
+
+        # -- a ticker post must carry its chart -------------------------------
+        # Public chart-image URLs (PNG on X) from the plan-build stamp or, when
+        # that R2 upload failed, the backfill sidecar. Resolved HERE — ahead of
+        # the floor gate — so an item held for a missing chart never consumes
+        # the spacing window or a forward-book slot, the same reason the tape,
+        # cap and channel gates run first.
+        media_paths = _media_paths_for(it, pub_cfg, _media_sidecar)
+        # An operator "post now" click is explicit intent and outranks the hold:
+        # they asked for this item, on this tape, now. Everything else waits for
+        # its picture.
+        if iid not in post_now and _missing_required_media(it, pub_cfg, media_paths):
+            _charts = _chart_ids_for(it)
+            _age_days = _item_age_days(it, now)
+            if _age_days > _MEDIA_DEFER_MAX_AGE_DAYS:
+                # Bounded escape: the chart is not coming. Quarantine rather
+                # than post bare — see _MEDIA_DEFER_MAX_AGE_DAYS. Annotation is
+                # a BARE print (a logger prefix would make GitHub drop it).
+                print(f"::warning title=marketing-chart-missing::item {iid} "
+                      f"({account}/{it.get('kind')}, ${_item_ticker(it)}) "
+                      f"quarantined after {_age_days}d — chart {_charts} never "
+                      f"got a public URL; run scripts/marketing_media_backfill.py",
+                      flush=True)
+                log.warning("item %s (%s, %s) quarantined — chart %s still has no "
+                            "public URL after %dd", iid, account, it.get("kind"),
+                            _charts, _age_days)
+                if live:
                     _outbox.transition(iid, "quarantined", actor="publisher",
-                                       root=root, note="expired_no_channel")
+                                       root=root, note="expired_no_media")
+                quarantined += 1
+            else:
+                log.info("item %s (%s, %s) deferred — chart %s has no public URL "
+                         "yet (age %dd); stays approved and retries once the "
+                         "media backfill lands", iid, account, it.get("kind"),
+                         _charts, _age_days)
+                deferred_no_media += 1
             continue
 
         # -- global min-spacing floor: at most one post per window (any acct) --
@@ -1137,30 +1371,41 @@ def main(argv: list[str] | None = None) -> int:
         # it posts at NOW unconditionally — never floor-booked, never deferred,
         # never dropped. It STILL advances the in-memory floor so the next ladder
         # post budges by the spacing (and a burst of immediates all fire at now).
+        # The earliest wall-clock this item may go out without breaking the
+        # floor. `now` once the floor is clear; otherwise the moment it clears.
+        floor_clear_at = now
         if not is_immediate and _within_floor(last_post_at, now, floor_min):
-            _ago = int((now - last_post_at).total_seconds() // 60)
-            log.info("item %s (%s) deferred — a post went out %dm ago (< %dm "
-                     "global floor); retries next slot", iid, account, _ago, floor_min)
-            skipped_floor += 1
-            continue
+            floor_clear_at = last_post_at + timedelta(minutes=floor_min)
+            _ahead = int((floor_clear_at - now).total_seconds() // 60)
+            # Forward-booking (publish.max_forward_book_min) hands the item to
+            # Buffer scheduled at floor_clear_at instead of dropping it back in
+            # the queue for the next sweep. Same spacing, same send time — the
+            # slot is just reserved now. Bounded by the horizon so a booked read
+            # is never verified against a tape much older than it claims.
+            if forward_horizon_min <= 0 or _ahead > forward_horizon_min:
+                _ago = int((now - last_post_at).total_seconds() // 60)
+                log.info("item %s (%s) deferred — a post went out %dm ago (< %dm "
+                         "global floor); retries next slot", iid, account, _ago, floor_min)
+                skipped_floor += 1
+                continue
+            log.info("item %s (%s) forward-booked +%dm (global floor %dm, horizon %dm)",
+                     iid, account, _ahead, floor_min, forward_horizon_min)
+            forward_booked += 1
 
         # The wall-clock this post is booked for. An immediate item books at NOW.
-        # A ladder item books at NOW + its deterministic jitter offset; with
-        # jitter off (0) that is NOW, and send_scheduled_at stays the item's own
-        # ladder slot exactly as before. Also the value the in-memory floor
-        # advances to after a post — the floor must count from the time a post
-        # actually goes out, not from the sweep that queued it.
+        # A ladder item books at floor_clear_at + its deterministic jitter offset;
+        # with the floor clear and jitter off (0) that is NOW, and
+        # send_scheduled_at stays the item's own ladder slot exactly as before.
+        # Also the value the in-memory floor advances to after a post — the floor
+        # must count from the time a post actually goes out, not from the sweep
+        # that queued it.
         jitter_minutes = 0 if is_immediate else _post_jitter_minutes(iid, jitter_max)
-        booked_at = now + timedelta(minutes=jitter_minutes)
-        if is_immediate or jitter_max > 0:
+        booked_at = floor_clear_at + timedelta(minutes=jitter_minutes)
+        if is_immediate or jitter_max > 0 or booked_at > now:
             send_scheduled_at = booked_at.strftime(_TS_FMT)
         else:
             send_scheduled_at = it.get("scheduled_at")
         floor_advance = booked_at
-
-        # Public chart-image URLs (PNG on X) when publish.media_enabled + a plan-
-        # build-time R2 upload produced one; else [] → text-only (graceful).
-        media_paths = _media_paths_for(it, pub_cfg)
 
         # -- DRY-RUN: print, never touch the network or the ledger -----------
         if not live:
@@ -1268,16 +1513,39 @@ def main(argv: list[str] | None = None) -> int:
             log.warning("item %s FAILED: %s", iid, receipt.error)
 
     # ── Summary + activity row ──────────────────────────────────────────────
+    # A held post is invisible unless we say so. marketing-media-backfill is a
+    # workflow_dispatch lane — nothing schedules it — so the recovery this hold
+    # waits on only happens if a human starts it. Warn on the FIRST sweep that
+    # holds anything, not at quarantine time three days later.
+    if deferred_no_media:
+        print(f"::warning title=marketing-charts-missing::{deferred_no_media} ticker "
+              f"post(s) held: chart built but no public URL. Recover with the "
+              f"marketing-media-backfill workflow (gh workflow run "
+              f"marketing-media-backfill.yml) — held items quarantine after "
+              f"{_MEDIA_DEFER_MAX_AGE_DAYS}d.", flush=True)
+
+    if skipped_halt:
+        # Bare print at line start — a logger prefixes the annotation and GitHub
+        # silently drops it (house law).
+        print(
+            f"::warning title=publisher-account-halted::{skipped_halt} post(s) held "
+            f"back — account(s) {sorted(_halts)} are HALTED (health monitor / network "
+            "tripwire). Every other desk posted normally. Clear the halt in the admin "
+            "health panel once the cause is understood.",
+            flush=True,
+        )
     log.info(
         "%s complete | posted=%d failed=%d quarantined=%d would_post=%d "
         "tape_quarantined=%d tape_skipped=%d skipped_floor=%d "
-        "deferred_immediate=%d "
+        "forward_booked=%d deferred_immediate=%d deferred_no_media=%d "
         "skipped_cap=%d skipped_cadence=%d cadence_shadow=%d deferred_xa=%d "
-        "skipped_no_channel=%d "
+        "skipped_no_channel=%d skipped_halt=%d "
         "stuck_posting=%d auto_approved=%d",
         mode, posted, failed, quarantined, would_post,
-        tape_quarantined, tape_skipped, skipped_floor, deferred_immediate,
+        tape_quarantined, tape_skipped, skipped_floor,
+        forward_booked, deferred_immediate, deferred_no_media,
         skipped_cap, skipped_cadence, shadow_cadence, deferred_xa, skipped_channel,
+        skipped_halt,
         len(stuck_posting),
         len(auto_approved),
     )
@@ -1294,12 +1562,16 @@ def main(argv: list[str] | None = None) -> int:
             "tape_quarantined": tape_quarantined,
             "tape_skipped": tape_skipped,
             "skipped_floor": skipped_floor,
+            "forward_booked": forward_booked,
             "deferred_immediate": deferred_immediate,
+            "deferred_no_media": deferred_no_media,
             "skipped_cap": skipped_cap,
             "skipped_cadence": skipped_cadence,
             "cadence_shadow": shadow_cadence,
             "deferred_cross_account": deferred_xa,
             "skipped_no_channel": skipped_channel,
+            "skipped_halt": skipped_halt,
+            "halted_accounts": sorted(_halts),
             "stuck_posting": len(stuck_posting),
             "auto_approved": len(auto_approved),
             "pt_generated": pt_generated,
@@ -1391,6 +1663,17 @@ def dry_run_report(root=None, *, account: str | None = None,
         items_by_id = state["items"]
         statuses = state["status"]
 
+        # The halt gate main() applies at post time. The admin preview MUST
+        # apply it too: a halted desk showing up under "would post" tells the
+        # operator the exact opposite of the truth, and the preview's whole job
+        # is to say what a live run would do.
+        try:
+            from engine.marketing import health_monitor as _health  # noqa: PLC0415
+
+            _halts = _health.load_halts(r)
+        except Exception:  # noqa: BLE001
+            _halts = {}
+
         def _acct_ok(it: dict) -> bool:
             return account is None or it.get("account") == account
 
@@ -1413,7 +1696,7 @@ def dry_run_report(root=None, *, account: str | None = None,
                 account=account, posted_today=posted_today,
                 validate_postable=validate_postable, root=r,
                 allowed_kinds=(None if auto_on else allowed_kinds),
-                cap_for=_cap_for,
+                cap_for=_cap_for, halted=set(_halts),
             )
             for iid in ids:
                 it = items_by_id.get(iid, {})
@@ -1431,6 +1714,7 @@ def dry_run_report(root=None, *, account: str | None = None,
         would_post: list[dict] = []
         quarantine: list[dict] = []
         skipped_cap = skipped_channel = skipped_floor = deferred_immediate = 0
+        skipped_halt = 0
         budget = dict(posted_today)
         floor_min = _floor_minutes_cfg(pub_cfg)
         jitter_max = _jitter_max_cfg(pub_cfg)
@@ -1440,6 +1724,10 @@ def dry_run_report(root=None, *, account: str | None = None,
             acct = it.get("account", "")
             text = it.get("text", "") or ""
             link = it.get("link")
+            # Halt first, exactly as main() orders it.
+            if acct in _halts:
+                skipped_halt += 1
+                continue
             problems = validate_postable(text, link, _links_allowed_for(pub_cfg, acct))
             if problems:
                 quarantine.append({"id": iid, "account": acct, "reasons": problems})
@@ -1493,6 +1781,7 @@ def dry_run_report(root=None, *, account: str | None = None,
                 "skipped_no_channel": skipped_channel,
                 "skipped_floor": skipped_floor,
                 "deferred_immediate": deferred_immediate,
+                "skipped_halt": skipped_halt,
                 "stuck_posting": len(stuck),
                 "would_auto_approve": len(would_auto),
             },
@@ -1500,6 +1789,7 @@ def dry_run_report(root=None, *, account: str | None = None,
             "quarantine": quarantine,
             "would_auto_approve": would_auto,
             "stuck_posting": stuck,
+            "halted_accounts": sorted(_halts),
         }
     except Exception as exc:  # noqa: BLE001
         log.warning("dry_run_report failed: %s", exc)

@@ -191,7 +191,7 @@
     plusIns1:     ["<b>300 Flash AI answers</b>, 10 Pro AI dives a month", "<b>每月 300 次 Flash AI</b>、10 次 Pro AI 深度分析"],
     plusIns2:     ["<b>Intraday options flow</b> — sweeps and blocks as they print", "<b>日内期权流</b>——扫单与大宗成交实时打印"],
     plusIns3:     ["Insider/Congress & 13F desks, transcripts, daily briefs", "内部人/国会与 13F 台席、电话会记录、每日简报"],
-    plusPro1:     ["<b>150 Pro AI dives + 1,000 Flash AI a month</b>", "<b>每月 150 次 Pro AI 深度分析 + 1,000 次 Flash AI</b>"],
+    plusPro1:     ["<b>150 Pro AI dives a month + unlimited Flash AI</b>", "<b>每月 150 次 Pro AI 深度分析 + 无限量 Flash AI</b>"],
     plusPro2:     ["Mastermind + institutional research reports", "Mastermind + 机构研究报告"],
     plusPro3:     ["Mastermind Bot Portfolios", "Mastermind 机器人组合"],
     proFine:      ["Institutional research library: JPM · Citi · Morgan Stanley · UBS · Goldman Sachs · BofA.", "机构研究库：摩根大通 · 花旗 · 摩根士丹利 · 瑞银 · 高盛 · 美银。"],
@@ -315,7 +315,7 @@
       { l: ["Earnings call transcripts", "财报电话会记录"], v: [0, 1, 1] }
     ] },
     { g: ["MASTERMIND AI", "MASTERMIND AI"], rows: [
-      { l: ["Flash AI", "Flash AI"], v: [0, ["300 / mo", "300 次/月"], ["1,000 / mo", "1,000 次/月"]] },
+      { l: ["Flash AI", "Flash AI"], v: [["5 / wk", "5 次/周"], ["300 / mo", "300 次/月"], ["Unlimited", "无限量"]] },
       { l: ["Pro AI", "Pro AI"],     v: [0, ["10 / mo", "10 次/月"], ["150 / mo", "150 次/月"]] },
       { l: ["Drives Terminal charts", "操控 Terminal 图表"], v: [0, 1, 1] }
     ] },

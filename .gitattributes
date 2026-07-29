@@ -15,3 +15,20 @@ data/neuralweb/causal_edges.jsonl merge=union
 data/neuralweb/causal_nulls.jsonl merge=union
 data/neuralweb/causal_surprise_queue.jsonl merge=union
 data/neuralweb/causal_mechanisms.jsonl merge=union
+
+# Marketing outbox ledgers are append-only and folded id-first on read
+# (engine/marketing/outbox.fold_state keeps the FIRST row per item id and skips
+# any ledger row whose transition is illegal from the folded state), so a
+# duplicated row is inert and a DROPPED row loses a post's status forever.
+# Two writers race here every day: marketing-publish.yml sweeps every 30 min and
+# the ~22:30Z nightly commits the same paths. Without union merge the sweep's
+# retry-rebase loop hit "CONFLICT (content): data/marketing/outbox/activity.jsonl"
+# on all 5 attempts and gave up ("could not push ledger after 5 attempts"),
+# stranding posted/approved transitions off main — which re-arms an already-sent
+# item on the next sweep. Union is the only correct resolution for these files.
+data/marketing/outbox/activity.jsonl merge=union
+data/marketing/outbox/status_ledger.jsonl merge=union
+data/marketing/outbox/items.jsonl merge=union
+data/marketing/outbox/media_urls.jsonl merge=union
+data/marketing/publications.jsonl merge=union
+data/marketing/post_metrics.jsonl merge=union

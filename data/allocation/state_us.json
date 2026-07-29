@@ -18,7 +18,6 @@
     "memory_storage",
     "non_ai_tech",
     "obesity_glp1",
-    "power_grid",
     "regional_banks",
     "reshoring",
     "retail",
@@ -38,8 +37,8 @@
   ],
   "held": [
     "memory_storage",
-    "cybersecurity",
     "us_sector_financials",
+    "cybersecurity",
     "managed_care"
   ],
   "leader": "memory_storage",

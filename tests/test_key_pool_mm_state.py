@@ -400,7 +400,8 @@ class TestAdditiveOnly:
         rows = usage_snapshot(root=tmp_path)
         assert rows
         expected_fields = {
-            "key_id", "present", "enabled", "cooling", "cool_kind", "reset_hint",
+            "key_id", "provider", "model_translation",
+            "present", "enabled", "cooling", "cool_kind", "reset_hint",
             "window_5h_est_tokens", "weekly_est_tokens",
             "window_5h_sessions", "weekly_sessions",
             "last_outcome", "last_ts",

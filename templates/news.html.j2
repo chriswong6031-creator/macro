@@ -274,6 +274,142 @@
 .nx-diag .rej-reason{ color:var(--warn); font-weight:600; }
 .nx-disc{ margin:22px 0 0; font-size:11px; color:var(--muted); font-style:italic; }
 
+/* ======================= LIVE WIRE (B4b) =======================
+   The page's ONE achromatic instrument. Everything above it is edited and
+   colour-coded (ranked cards, tinted theme chips); the wire is the raw feed,
+   so it is deliberately drained of hue. Colour appears in exactly two places —
+   the state lamp and the newest item's node — and the panel is carried instead
+   by its structure: a time gutter, an arrival spine, and a node whose FORM
+   encodes how well the item is sourced (doctrine §7: non-verbal encodings that
+   need no vocabulary). Hidden until the client has something honest to show. */
+.nxw{ margin:0 0 18px; border-radius:var(--nx-radius); overflow:hidden;
+  /* The page's --nx-hair is mixed off --line, which all but vanishes on the dark
+     panel. The spine IS this panel, so it gets a --text-derived rule that holds
+     its weight in both themes. */
+  --nxw-spine:color-mix(in srgb, var(--text) 17%, transparent);
+  --nxw-rule:color-mix(in srgb, var(--text) 11%, transparent);
+  background:var(--nx-card); border:1px solid var(--nx-brd); box-shadow:var(--nx-shadow);
+  -webkit-backdrop-filter:var(--nx-blur); backdrop-filter:var(--nx-blur); }
+.nxw[hidden]{ display:none; }
+
+/* header */
+.nxw-hd{ padding:14px 16px 12px; border-bottom:1px solid var(--nxw-rule); }
+.nxw-hd-main{ min-width:0; }
+.nxw-eyebrow{ display:flex; align-items:center; gap:7px; font-size:10.5px; font-weight:700;
+  letter-spacing:.16em; text-transform:uppercase; color:var(--muted); }
+.nxw-lamp{ flex:0 0 auto; width:7px; height:7px; border-radius:50%;
+  background:color-mix(in srgb,var(--text) 26%,transparent); }
+.nxw[data-state="live"] .nxw-lamp{ background:var(--info);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--info) 20%,transparent); }
+/* stale = the WIRE has gone quiet (newest item older than the stale window), not
+   the daemon. The lamp hollows out, the newest-node accent is withdrawn, and the
+   header says so in words — nothing here may keep signalling "live". */
+.nxw[data-state="stale"] .nxw-lamp{ background:transparent;
+  border:1.5px solid color-mix(in srgb,var(--text) 34%,transparent); }
+.nxw-stale{ font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+  color:color-mix(in srgb,var(--text) 52%,transparent); }
+.nxw-title{ font-size:15px; font-weight:800; letter-spacing:-.012em; margin:6px 0 3px; }
+.nxw-sub{ font-size:12px; color:var(--muted); max-width:64ch; }
+.nxw-meta{ margin-top:6px; font-size:10.5px; color:var(--muted); }
+.nxw-meta .num{ color:color-mix(in srgb,var(--text) 74%,transparent); font-weight:600; }
+
+/* The wire has NO filter row of its own: the page's All/Markets/Macro/Fed/
+   Companies segment sits directly above and drives both lists. A second,
+   near-duplicate pill row six inches from the first is two controls for one job. */
+/* an empty LANE is the reader's filter, not a dead wire — it reads as a sentence,
+   not as a blank box, and names the way back */
+.nxw-lanenone{ margin:0; padding:18px 16px 16px 74px; font-size:12.5px; color:var(--muted); }
+@media(max-width:560px){ .nxw-lanenone{ padding-left:20px; } }
+
+/* list + arrival spine */
+/* The window is capped so the wire never pushes the ranked board off the page.
+   The fade tells you the clip is depth, not a broken row. */
+.nxw-list{ max-height:394px; overflow-y:auto; overscroll-behavior:contain; padding:4px 16px 8px 0;
+  -webkit-mask-image:linear-gradient(to bottom, #000 calc(100% - 34px), transparent 100%);
+  mask-image:linear-gradient(to bottom, #000 calc(100% - 34px), transparent 100%); }
+.nxw-list::-webkit-scrollbar{ width:8px; }
+.nxw-list::-webkit-scrollbar-thumb{ background:var(--nxw-spine); border-radius:100px; }
+.nxw-item{ position:relative; display:flex; align-items:flex-start; padding:9px 0; }
+.nxw-item::before{ content:""; position:absolute; left:62px; top:0; bottom:0; width:1px;
+  background:var(--nxw-spine); }
+.nxw-item:first-child::before{ top:11px; }
+.nxw-item:last-child::before{ bottom:auto; height:11px; }
+.nxw-age{ flex:0 0 52px; text-align:right; padding-right:11px; font-family:var(--num); font-size:10.5px;
+  font-variant-numeric:tabular-nums; letter-spacing:-.02em; color:var(--muted); line-height:1.95;
+  white-space:nowrap; overflow:hidden; }
+.nxw-node{ flex:0 0 21px; align-self:stretch; position:relative; }
+.nxw-node::after{ content:""; position:absolute; left:0; top:6px; width:9px; height:9px; box-sizing:border-box;
+  border-radius:50%; border:1.5px solid color-mix(in srgb,var(--text) 40%,transparent);
+  background:var(--nx-card-solid); z-index:1; }
+/* node FORM = how well sourced: filled = matched to the original;
+   ringed dot = two or more independent sources; dashed = a single report */
+.nxw-node[data-corr="verified"]::after{ background:color-mix(in srgb,var(--text) 60%,transparent);
+  border-color:color-mix(in srgb,var(--text) 60%,transparent); }
+.nxw-node[data-corr="sources"]::before{ content:""; position:absolute; left:3px; top:9px;
+  width:3px; height:3px; border-radius:50%; z-index:2;
+  background:color-mix(in srgb,var(--text) 58%,transparent); }
+.nxw-node[data-corr="reports"]::after{ border-style:dashed;
+  border-color:color-mix(in srgb,var(--text) 32%,transparent); }
+/* wording the client does not recognise: plain ring, neither filled nor dashed */
+.nxw-node[data-corr="neutral"]::after{ border-style:solid; }
+/* the single accent + the single motion: the newest arrival */
+.nxw[data-state="live"] .nxw-item.is-newest .nxw-node::after{ border-color:var(--info);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--info) 15%,transparent); animation:nxwLamp 2.8s ease-in-out infinite; }
+@keyframes nxwLamp{ 0%,100%{ opacity:1; } 50%{ opacity:.5; } }
+
+.nxw-body{ flex:1; min-width:0; padding-left:12px; }
+.nxw-text{ margin:0; font-size:13.5px; line-height:1.5; font-weight:500; color:var(--text);
+  letter-spacing:-.003em; text-wrap:pretty; }
+.nxw-line{ margin-top:5px; display:flex; flex-wrap:wrap; gap:8px; align-items:center;
+  font-size:10.5px; color:var(--muted); }
+.nxw-cls{ font-weight:700; letter-spacing:.09em; text-transform:uppercase;
+  color:color-mix(in srgb,var(--text) 58%,transparent); }
+.nxw-corr{ font-weight:600; }
+.nxw-tapewrap{ display:inline-flex; align-items:baseline; gap:4px; }
+.nxw-tape{ font-family:var(--num); font-variant-numeric:tabular-nums; font-weight:600;
+  color:color-mix(in srgb,var(--text) 66%,transparent); }
+.nxw-tapesfx{ opacity:.75; }
+.nxw-orig{ font-style:italic; opacity:.8; }
+.nxw-item.is-new{ animation:nxwIn .34s cubic-bezier(.22,.9,.3,1) both; }
+@keyframes nxwIn{ from{ opacity:0; transform:translateY(-4px); } to{ opacity:1; transform:none; } }
+
+/* honest non-list states: loading skeleton, quiet desk, signed-out, unreachable */
+.nxw-state{ padding:20px 18px 22px 20px; }
+.nxw-state .h{ font-size:13.5px; font-weight:700; color:var(--text); margin:0 0 4px; }
+.nxw-state .s{ font-size:12px; color:var(--muted); margin:0; max-width:58ch; }
+.nxw-state .cta{ appearance:none; font-family:inherit; margin-top:12px; cursor:pointer;
+  display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700; color:var(--info);
+  background:transparent; border:1px solid color-mix(in srgb,var(--info) 40%,transparent);
+  padding:7px 14px; border-radius:100px; transition:background .16s, border-color .16s; }
+.nxw-state .cta:hover{ background:color-mix(in srgb,var(--info) 10%,transparent);
+  border-color:color-mix(in srgb,var(--info) 65%,transparent); }
+/* footer: one footnote + the quiet X handles */
+.nxw-ft{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:11px 16px;
+  border-top:1px solid var(--nxw-rule); background:color-mix(in srgb,var(--panel2) 40%,transparent); }
+.nxw-note{ flex:1 1 260px; font-size:11px; color:var(--muted); }
+.nxw-social{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.nxw-social>span{ font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--muted); margin-right:1px; }
+.nxw-x{ display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700;
+  font-family:var(--num); color:color-mix(in srgb,var(--text) 80%,transparent); white-space:nowrap;
+  padding:5px 11px; border-radius:100px; border:1px solid var(--nxw-rule);
+  transition:color .16s, border-color .16s, background .16s; }
+.nxw-x:hover{ color:var(--text); border-color:var(--nx-brd);
+  background:color-mix(in srgb,var(--text) 6%,transparent); }
+.nxw-x:focus-visible{ outline:2px solid var(--info); outline-offset:2px; }
+.nxw-x svg{ width:10px; height:10px; flex:0 0 auto; }
+
+@media(max-width:560px){
+  .nxw-item::before{ left:52px; }
+  .nxw-age{ flex-basis:44px; }
+  .nxw-text{ font-size:13px; }
+}
+@media(prefers-reduced-motion:reduce){
+  .nxw-item.is-new{ animation:none; }
+  .nxw .nxw-item.is-newest .nxw-node::after{ animation:none; }
+}
+@media(pointer:coarse){ .nxw .nxw-item.is-newest .nxw-node::after{ animation:none; } }
+
 /* ---- responsive ---- */
 @media(max-width:900px){
   .nx-hero{ grid-template-columns:1fr; }
@@ -382,7 +518,40 @@
   </div>
   <span class="nx-count" id="nxCount"></span>
 </div>
+{% endif %}
 
+{# ==================== LIVE WIRE (B4b) ====================
+   Client-hydrated from /live/wires.json (free_registered — see config/site_access.yml).
+   Ships HIDDEN and stays hidden when the wire is not published at this deployment:
+   a feature that is not live must not advertise its own absence. Every other
+   outcome — signed out, quiet desk, unreachable — gets an honest named state,
+   never a blank list. #}
+<section class="nxw" id="nxWire" data-state="loading" hidden>
+  <div class="nxw-hd">
+    <div class="nxw-hd-main">
+      <div class="nxw-eyebrow"><span class="nxw-lamp"></span>{{ t('Live wire','实时快讯') }}</div>
+      <h2 class="nxw-title">{{ t('What just crossed','最新快讯') }}</h2>
+      <p class="nxw-sub">{{ t('Every headline our desk sees, in the order it landed.','我们的编辑台收到的每一条消息，按到达顺序排列。') }}</p>
+      <div class="nxw-meta" id="nxWireMeta"></div>
+    </div>
+  </div>
+
+  <div class="nxw-list" id="nxWireList" hidden></div>
+  <div class="nxw-state" id="nxWireState" hidden></div>
+
+  <div class="nxw-ft">
+    <div class="nxw-note">{{ t('Context, not a trade signal — the ranked board below is the edited read.','这里是背景信息，不是交易信号——下方排序榜才是经过筛选的解读。') }}</div>
+    <div class="nxw-social">
+      <span>{{ t('On X','X 账号') }}</span>
+      <a class="nxw-x" href="https://x.com/mastermindx001" target="_blank" rel="noopener"
+         data-tip-en="The evidence desk. Charts, state changes and receipts from the same engines that build this page."
+         data-tip-zh="证据台账号。图表、状态变化与依据，来自构建本页的同一套引擎。">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.66l-5.22-6.82-5.97 6.82H1.66l7.73-8.84L1.25 2.25h6.83l4.71 6.23 5.45-6.23Zm-1.16 17.52h1.83L7.08 4.13H5.11l11.97 15.64Z"/></svg>@mastermindx001</a>
+    </div>
+  </div>
+</section>
+
+{% if FEED %}
 <section class="nx-feed" id="nxFeed">
   {% for h in FEED %}
   {% set acc = 'var(--up)' if (h.event and h.event.direction=='bullish') or h.ai_sentiment=='pos' or h.sentiment=='pos' else ('var(--down)' if (h.event and h.event.direction=='bearish') or h.ai_sentiment=='neg' or h.sentiment=='neg' else 'var(--link)') %}
@@ -569,6 +738,347 @@
     window.addEventListener('langchange', apply);
     apply();
   }
+
+  // ---- LIVE WIRE (B4b) ------------------------------------------------------
+  // Hydrates from the wires.v1 payload the fastlane daemon publishes to
+  // /live/wires.json. That asset is free_registered (config/site_access.yml), so
+  // the SERVER is the gate and this client only ever asks — every response,
+  // including a refusal, is reported honestly rather than as an empty list.
+  // Follows the live.js conventions: relative URL, 60s poll, hidden-tab pause,
+  // 10s abort. Item text is third-party wire copy and is written with
+  // textContent only — never innerHTML.
+  (function(){
+    var box = document.getElementById('nxWire');
+    if(!box || !window.fetch) return;
+    var listEl  = document.getElementById('nxWireList');
+    var stateEl = document.getElementById('nxWireState');
+    var metaEl  = document.getElementById('nxWireMeta');
+    var segEl   = document.getElementById('nxSeg');
+    if(!listEl || !stateEl) return;
+
+    var URL_ = 'live/wires.json';
+    var POLL = (window.LIVE_POLL_SEC || 60) * 1000;
+    var STALE_MIN = window.LIVE_STALE_MIN || 20;
+    var TIMEOUT = 10000, CAP = 40;
+    var items = [], seen = {}, painted = false, updatedAt = null;
+
+    // The page's lane taxonomy and the wire's event classes are different
+    // vocabularies, so the mapping is stated once, here, rather than guessed per
+    // render. macro_print answers to BOTH Macro and Fed — a CPI or claims print is
+    // exactly what the Fed lane's reader came for, and leaving Fed permanently
+    // empty would read as a broken panel rather than an honest filter.
+    var LANES = {
+      macro_print:  ['macro', 'fed'],
+      policy:       ['macro'],
+      geopolitical: ['macro'],
+      company_news: ['companies'],
+      earnings:     ['companies']
+    };
+    function lanesFor(cls){ return LANES[String(cls || '')] || ['markets']; }
+    function currentLane(){
+      if(!segEl) return 'all';
+      var on = segEl.querySelector('.seg-btn.on');
+      return (on && on.getAttribute('data-lane')) || 'all';
+    }
+    function inLane(it, lane){
+      return lane === 'all' || lanesFor(it['class']).indexOf(lane) >= 0;
+    }
+    var mode = null, inflight = false, pollTimer = 0;
+
+    // Freshness is a property of the NEWS, not of the daemon. `updated_at` is
+    // re-stamped every tick whether or not anything crossed, so trusting it would
+    // pulse "live" over a three-day-old window on a quiet feed. Age the panel off
+    // the newest item instead, and say "stale" when the wire has gone silent.
+    function isStale(){
+      var newest = 0;
+      for(var i = 0; i < items.length; i++){
+        var t = Date.parse(items[i].ts || '');
+        if(!isNaN(t) && t > newest) newest = t;
+      }
+      if(!newest) return true;                       // no parseable time => don't claim live
+      return (Date.now() - newest) / 60000 > STALE_MIN;
+    }
+
+    function isZh(){ return document.documentElement.getAttribute('data-lang')==='zh'; }
+
+    // Compact age for the time gutter. The page-wide rel() ("18m ago") wraps in a
+    // fixed column and breaks the tabular alignment the gutter exists for, so the
+    // wire uses a 3-character form instead.
+    function shortAge(iso){
+      if(!iso) return '';
+      var ms = Date.parse(iso); if(isNaN(ms)) return '';
+      var s = Math.max(0, (Date.now() - ms) / 1000), zh = isZh();
+      if(s < 60) return zh ? '刚刚' : 'now';
+      var m = s / 60; if(m < 60) return Math.floor(m) + (zh ? '分钟' : 'm');
+      var h = m / 60; if(h < 24) return Math.floor(h) + (zh ? '小时' : 'h');
+      return Math.floor(h / 24) + (zh ? '天' : 'd');
+    }
+    function el(tag, cls, text){
+      var n = document.createElement(tag);
+      if(cls) n.className = cls;
+      if(text != null) n.textContent = text;   // never innerHTML: wire copy is third-party
+      return n;
+    }
+
+    // The payload's `corroboration` is engine-supplied English display text
+    // ("verified" | "N sources" | "reports"). Map it to a node FORM plus a plain
+    // word in both languages: a user-facing surface never shows a single-source
+    // relay as a confirmed fact.
+    function corrOf(raw){
+      var s = String(raw || '').trim(), m = s.match(/^(\d+)\s+sources?$/i);
+      if(/^verified$/i.test(s)) return { form:'verified', en:'matched to the original', zh:'已比对原文',
+        tEn:'We checked this against the original post itself.',
+        tZh:'我们已与原始帖文本身核对。' };
+      if(m) return { form:'sources', en:m[1]+' sources', zh:m[1]+' 家来源',
+        tEn:'Carried by '+m[1]+' distinct feeds or accounts we watch. A count, '
+            +'not a check on independence — some may be syndicating one original.',
+        tZh:'我们监看的 '+m[1]+' 个不同信源或账号都发布了这条消息。这只是数量，'
+            +'并非独立性核实——其中一些可能转载自同一原始来源。' };
+      if(/^reports$/i.test(s)) return { form:'reports', en:'single report', zh:'仅单一来源',
+        tEn:'One feed only, not yet carried anywhere else. Read it as a report, not a fact.',
+        tZh:'目前只有一个信源，尚未见其他方跟进。请当作报道看待，而非既成事实。' };
+      // Unknown wording from a future engine revision: show it verbatim in EN, fall
+      // back to the plain word in ZH (never leak raw English into the ZH surface),
+      // and use the NEUTRAL node form — an unrecognised label is not evidence of
+      // weak sourcing, so it must not be drawn as the single-report form.
+      return s ? { form:'neutral', en:s, zh:'来源信息', tEn:'', tZh:'' } : null;
+    }
+
+    function renderList(){
+      var zh = isZh(), keep = listEl.scrollTop;
+      // Mark EVERY item in the payload as seen, not just the slice currently on
+      // screen: `seen` answers "did this arrive while the reader was here", and
+      // scoping it to the filtered view made a filter switch animate months-old
+      // items as fresh arrivals.
+      var fresh = {};
+      items.forEach(function(it){ if(!seen[it.id]) fresh[it.id] = 1; });
+      var lane = currentLane();
+      var shown = items.filter(function(it){ return inLane(it, lane); }).slice(0, CAP);
+      items.forEach(function(it){ seen[it.id] = 1; });
+      listEl.textContent = '';
+      shown.forEach(function(it, i){
+        var row = el('div','nxw-item');
+        if(i === 0) row.classList.add('is-newest');
+        if(painted && fresh[it.id]) row.classList.add('is-new');
+        var age = el('time','nxw-age num', shortAge(it.ts) || '—');
+        if(it.ts) age.setAttribute('datetime', String(it.ts));
+        row.appendChild(age);
+        var c = corrOf(it.corroboration);
+        var node = el('span','nxw-node');
+        node.setAttribute('data-corr', c ? c.form : 'reports');
+        row.appendChild(node);
+        // press_lane composes BOTH rail paths as "<body> · <tape_stamp>", so the
+        // stamp is always already inside `en`. Lift it back out and re-render it
+        // from the structured field, which is the only way it can carry its window
+        // in words ("since this crossed") and be translated at all.
+        var tape = String(it.tape_stamp || '');
+        var text = String((zh && it.zh ? it.zh : it.en) || '');
+        if(tape && !(zh && it.zh)){
+          var tail = ' · ' + tape;
+          if(text.slice(-tail.length) === tail) text = text.slice(0, -tail.length);
+        }
+        var body = el('div','nxw-body');
+        body.appendChild(el('p','nxw-text', text));
+        var line = el('div','nxw-line');
+        var label = zh ? (it.label_zh || it.label_en) : it.label_en;   // never the raw class slug
+        if(label) line.appendChild(el('span','nxw-cls', String(label)));
+        if(c){
+          // .lens-term is the house affordance for an explained inline term:
+          // dotted underline + the shared hover/focus accent. tabindex makes the
+          // panel's whole epistemic payload reachable without a mouse.
+          var cs = el('span', c.tEn ? 'nxw-corr lens-term' : 'nxw-corr', zh ? c.zh : c.en);
+          if(c.tEn){
+            cs.setAttribute('data-tip-en', c.tEn);
+            cs.setAttribute('data-tip-zh', c.tZh);
+            cs.setAttribute('tabindex', '0');
+          }
+          line.appendChild(cs);
+        }
+        // The engine's tape stamp is a bare "LABEL ±X.X%"; on X the surrounding
+        // sentence supplies the window, so here we say it — a number on a glance
+        // surface arrives with its meaning.
+        if(tape){
+          var tw = el('span','nxw-tapewrap');
+          tw.appendChild(el('span','nxw-tape', tape));
+          tw.appendChild(el('span','nxw-tapesfx', zh ? '自该消息出现以来' : 'since this crossed'));
+          line.appendChild(tw);
+        }
+        // Honest ZH disclosure: this item has no Chinese twin yet, so say so
+        // rather than passing English off as translated.
+        if(zh && !it.zh) line.appendChild(el('span','nxw-orig','英文原文'));
+        if(line.childNodes.length) body.appendChild(line);
+        row.appendChild(body);
+        listEl.appendChild(row);
+      });
+      if(!shown.length){
+        // The reader filtered, not the wire failed. Say which of the two it is.
+        var lbl = segEl && segEl.querySelector('.seg-btn.on');
+        var name = lbl ? lbl.textContent.trim() : '';
+        listEl.appendChild(el('p','nxw-lanenone', isZh()
+          ? ('「' + name + '」暂无快讯——切换到「全部」可查看完整快讯。')
+          : ('Nothing on the wire under ' + name + ' — switch to All for the full wire.')));
+      }
+      listEl.scrollTop = keep;
+      painted = true;
+    }
+
+    function renderMeta(stale){
+      if(!metaEl) return;
+      var zh = isZh(), src = {}, lane = currentLane(), n = 0, newestTs = null;
+      items.forEach(function(it){
+        if(!inLane(it, lane)) return;
+        n++;
+        if(newestTs === null) newestTs = it.ts;   // items arrive newest-first
+        var a = String(it.attribution || '').trim(); if(a) src[a] = 1;
+      });
+      var ns = Object.keys(src).length;
+      metaEl.textContent = '';
+      if(stale){
+        // Say it in words as well as in the lamp: a quiet wire is a fact about
+        // the news, and a reader must not have to decode a grey dot to learn it.
+        metaEl.appendChild(el('span','nxw-stale', zh ? '暂无新消息' : 'Nothing new for a while'));
+        metaEl.appendChild(document.createTextNode(' · '));
+      }
+      // Lane-scoped, like the counts beside it: with a filter on, "latest" must
+      // mean the latest thing the reader can actually see.
+      metaEl.appendChild(document.createTextNode(zh ? '最新一条 ' : 'Latest '));
+      metaEl.appendChild(el('span','num', rel(newestTs || updatedAt)
+                            || (zh ? '时间未知' : 'time unknown')));
+      metaEl.appendChild(document.createTextNode(' · '));
+      metaEl.appendChild(el('span','num', String(n)));
+      metaEl.appendChild(document.createTextNode(zh ? ' 条' : ' items'));
+      if(ns){
+        metaEl.appendChild(document.createTextNode(zh ? ' · 来自 ' : ' from '));
+        metaEl.appendChild(el('span','num', String(ns)));
+        metaEl.appendChild(document.createTextNode(zh ? ' 家来源' : ' sources'));
+      }
+    }
+
+    var STATE_COPY = {
+      gate: { h:['Sign in to see the live wire','登录后查看实时快讯'],
+              s:['The wire is open to every registered account. Your session has ended — sign back in and it picks up where it left off.',
+                 '实时快讯对所有已注册账户开放。您的登录状态已失效——重新登录即可继续查看。'],
+              cta:['Sign in','登录'] },
+      down: { h:['The live wire is not reachable right now','实时快讯暂时无法连接'],
+              s:['Nothing to do — the ranked board below is built on a separate path and is current. The wire reconnects on its own.',
+                 '无需操作——下方的排序榜由另一条链路生成，数据仍是最新的。快讯会自行重连。'] },
+      quiet:{ h:['The desk is quiet','编辑台暂时安静'],
+              s:['Nothing has crossed in the last few hours. Nothing to act on — the ranked board below is current.',
+                 '最近几小时没有新消息进来。无需操作——下方的排序榜仍是最新的。'] }
+    };
+
+    function showState(kind){
+      var d = STATE_COPY[kind]; if(!d) return;
+      var zh = isZh();
+      box.setAttribute('data-state', kind);
+      listEl.hidden = true;
+      stateEl.textContent = '';
+      stateEl.appendChild(el('p','h', zh ? d.h[1] : d.h[0]));
+      stateEl.appendChild(el('p','s', zh ? d.s[1] : d.s[0]));
+      if(d.cta){
+        var b = el('button','cta', zh ? d.cta[1] : d.cta[0]);
+        b.type = 'button';
+        b.addEventListener('click', function(){
+          // theme.js owns the modal; if it failed to load, the landing's own
+          // ?signin=1 entry point is the house fallback (the same place the
+          // Caddy regwall redirects a signed-out HTML request to).
+          if(window.MDXAuth && window.MDXAuth.open) window.MDXAuth.open('signin');
+          else window.location.href = 'index.html?signin=1';
+        });
+        stateEl.appendChild(b);
+      }
+      if(metaEl) metaEl.textContent = '';
+      stateEl.hidden = false;
+      box.hidden = false;
+    }
+
+    function showList(stale){
+      box.setAttribute('data-state', stale ? 'stale' : 'live');
+      stateEl.hidden = true;
+      renderList(); renderMeta(stale);
+      listEl.hidden = false;
+      box.hidden = false;
+    }
+
+    function repaint(){
+      if(mode === 'absent'){ box.hidden = true; return; }
+      if(mode === 'ok') { items.length ? showList(box.getAttribute('data-state') === 'stale') : showState('quiet'); }
+      else if(mode === 'gate') showState('gate');
+      else if(mode === 'down') showState('down');
+    }
+
+    // A settled negative is settled: hiding the panel or parking it on "not
+    // reachable" while a no-store fetch keeps firing every 60s in every open tab
+    // is pure background load for an answer that will not change without a
+    // deploy. Both terminal states stop the timer; a revisit re-polls.
+    function stop(){ if(pollTimer){ clearInterval(pollTimer); pollTimer = 0; } }
+
+    function absent(){ mode = 'absent'; box.hidden = true; stop(); }
+
+    function poll(){
+      if(inflight) return;
+      // The FIRST load always runs: a preview pane reports document.hidden from
+      // the start, and a panel stuck on "loading" there is a false negative.
+      if(mode !== null && document.hidden) return;
+      inflight = true;
+      var ctrl = ('AbortController' in window) ? new AbortController() : null;
+      var timer = ctrl ? setTimeout(function(){ try{ ctrl.abort(); }catch(e){} }, TIMEOUT) : 0;
+      fetch(URL_, { credentials:'same-origin', cache:'no-store', signal: ctrl && ctrl.signal })
+        .then(function(r){
+          // 404 = the wire is not published at this deployment. A feature that is
+          // not live must not advertise its own absence, so the panel stays hidden.
+          if(r.status === 404){ absent(); return null; }
+          if(r.status === 401 || r.status === 403){ mode = 'gate'; showState('gate'); return null; }
+          // Defence in depth for the edge: until the Caddyfile exclusion for
+          // /live/wires.json is deployed, a MISSING file is rewritten by the
+          // @reg_asset_err handler into this exact 503 body. That is the
+          // not-published case wearing a server-error costume — read it as
+          // absent, not as a broken wire. Any OTHER 503 stays a real fault.
+          if(r.status === 503){
+            return r.text().then(function(t){
+              if(t && t.indexOf('site_access_temporarily_unavailable') >= 0){ absent(); return null; }
+              throw new Error('http 503');
+            });
+          }
+          if(!r.ok) throw new Error('http ' + r.status);
+          return r.json();
+        })
+        .then(function(d){
+          if(!d) return;
+          if(String(d.schema || '') !== 'wires.v1') throw new Error('schema');
+          items = (Array.isArray(d.items) ? d.items : []).filter(function(x){
+            return x && x.id && (x.en || x.zh);
+          });
+          updatedAt = d.updated_at || null;
+          mode = 'ok';
+          if(!items.length){ showState('quiet'); return; }
+          showList(isStale());
+        })
+        .catch(function(){
+          if(mode === 'ok' || mode === 'absent') return;   // a blip keeps the last good window
+          mode = 'down'; showState('down'); stop();
+        })
+        .then(function(){ if(timer) clearTimeout(timer); inflight = false; });
+    }
+
+    // The shared segment owns the lane; the wire just listens. A separate
+    // listener on the same element is order-independent — it reads the button that
+    // was clicked rather than the class the feed's handler is mid-way through
+    // setting.
+    if(segEl) segEl.addEventListener('click', function(e){
+      var b = e.target.closest && e.target.closest('.seg-btn');
+      if(b && mode === 'ok' && items.length) { renderList(); renderMeta(isStale()); }
+    });
+    window.addEventListener('langchange', repaint);
+    document.addEventListener('visibilitychange', function(){
+      if(document.hidden) return;
+      if(mode === 'absent') return;                        // settled: nothing to re-ask
+      if(!pollTimer) pollTimer = setInterval(poll, POLL);   // a 'down' tab retries on return
+      poll();
+    });
+    poll();
+    pollTimer = setInterval(poll, POLL);
+  })();
 })();
 </script>
 {% endblock %}

@@ -2797,7 +2797,13 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install pytest pyyaml
+        # jinja2 joins 2026-07-28 for test_wires_rail_b4b: two of its tests RENDER
+        # news.html.j2, which is the only way to prove the live-wire rail reaches
+        # shipped HTML (every other test in the file reads the template as text, so
+        # `{% if false %}` around the section would keep them all green). Without
+        # jinja2 here those two importorskip away and the suite is skip-only —
+        # scripts/check_skip_only_suites.py fails the build on exactly that.
+        run: pip install pytest pyyaml jinja2
       - name: marketing engine unit tests
         # test_marketing_sentinel is co-run (2026-07-23): the Sentinel W1 gate suite
         # was never whitelisted and rotted red on main via a local-vs-UTC clock
@@ -2881,7 +2887,72 @@ jobs:
         # discovery provider, deterministic scorer, drafter, critic pass, queue,
         # exporter, and the sentinel reply-counter fix. Stdlib+pyyaml only, and
         # nothing importorskip-gated.
-        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_marketing_personas.py tests/test_marketing_event_language.py tests/test_marketing_press_feeds.py tests/test_marketing_breaking.py tests/test_marketing_fastlane.py tests/test_marketing_press_copy.py tests/test_marketing_ramp_cta_jitter.py tests/test_marketing_expression_dial.py tests/test_marketing_cadence_spine.py tests/test_marketing_chart_coverage.py tests/test_marketing_desk_feeds.py tests/test_marketing_reply_desk.py -q
+        # test_marketing_forward_booking (2026-07-28) joins the same lane: the
+        # publish-lane throughput fix (an item inside the global floor books
+        # forward instead of deferring a whole cron sweep, bounded by a
+        # tape-freshness horizon) and the media-URL recovery sidecar. It also
+        # pins the two workflow regressions that made the lane publish nothing
+        # that day — a full-history checkout that outran the job timeout, and
+        # outbox ledgers with no union merge, so every retry-rebase conflicted.
+        # Those three guards read committed YAML/gitattributes and need no
+        # imports; the rest are stdlib + pyyaml. Nothing importorskip-gated.
+        # test_marketing_recall (2026-07-28) joins the same lane: the other half
+        # of the operator kill switch. max_forward_book_min (the suite above)
+        # made a sweep book posts into Buffer's queue up to an hour ahead, and
+        # MARKETING_PUBLISH_ENABLED=0 has no reach into those — five booked posts
+        # outlived the disarm by 41 minutes the day it shipped. The suite pins
+        # the Buffer deletePost adapter, the posted→recalled edge and its
+        # terminality, the already-sent-is-untouchable rule, the zero-network
+        # dry-run, and the workflow/admin wiring that makes DISARM mean stop.
+        # Import closure is stdlib + pyyaml — the same two deps the publisher
+        # half runs on in marketing-social-publisher, with every Buffer call
+        # behind the _transport()/fake-publisher seam, so a heavy top-level
+        # import in social_publisher or marketing_recall turns this job red at
+        # collection. Its one yaml-reading helper importorskips, which is moot
+        # here (pyyaml is installed above) and keeps the file honest elsewhere.
+        # test_marketing_learning + test_marketing_reply_producer (XG-W6) join
+        # the same lane (2026-07-28): the labels store and its nightly
+        # consolidator, parent-adjusted reply labels, the per-account health
+        # monitor + network tripwire + halt registry, the pre-registered
+        # blind-identity harness, the learned-rule reversibility gate, and the
+        # producer that finally walks discovery -> score -> draft -> critics ->
+        # enqueue. Import closure is stdlib+pyyaml by construction: labels,
+        # health_monitor, learned_rules, blind_identity and reply_producer keep
+        # outbox, reply_queue, expression_dial and market_facts behind LAZY
+        # function-level imports, so a heavy top-level import in any of them
+        # turns this job red at collection, which is the point. Three guards in
+        # the suite are AST walks over committed source (the consolidator-only-
+        # writer guard, the no-LLM-in-the-monitor guard, and the
+        # blind-identity-gates-nothing grep) and need no imports at all. Nothing
+        # is importorskip-gated, so neither suite can decay into a skip-only one.
+        # test_marketing_scoring_brain (XG-W5 = IS-W2) joins the same lane
+        # (2026-07-28): the L0 story spine, the six L1 deterministic features,
+        # the P0 garbage gate, and the golden-set / precision@20 harness. Import
+        # closure is stdlib + pyyaml — story_spine keeps datasketch/model2vec
+        # behind LAZY, guarded probes and signal_features/garbage_gate/golden_set
+        # are stdlib-only — so a heavy top-level import in any of them turns this
+        # job red at collection, which is the point. NOTHING here is
+        # importorskip-gated: the near-dup pass's optional dependency lives in
+        # the SEPARATE suite below (marketing-scoring-optional), and the semantic
+        # branch is exercised here with an INJECTED encoder so the model2vec
+        # artifact — an operator/R2 step by design — never becomes a CI
+        # dependency.
+        # test_marketing_hot_tape_llm (Hot Tape P2, 2026-07-28) joins the same
+        # lane: the LLM wire desk that phrases a fired intraday event from the
+        # radar's FactPacket, behind the numeric-consistency gate (masterplan
+        # gate 0.3 — the engine computes, the model phrases, the LLM never
+        # originates a number) plus the no-calls and no-hedging screens (0.4 and
+        # the wire register). Import closure is stdlib + pyyaml BY
+        # CONSTRUCTION: engine/marketing/hot_tape_llm.py keeps llm_auth,
+        # anthropic, yaml, lib.config, copywriter, social_publisher and
+        # wire_voice behind LAZY function-level imports, so a top-level heavy
+        # import there turns this job red at collection — which is the point,
+        # because this lane has no anthropic package at all. Two of the tests
+        # are AST/source scans over the module that need no imports; every
+        # provider-path test monkeypatches engine.llm_auth, so the suite touches
+        # no network and reads no credential. Nothing is importorskip-gated.
+        # Verified in a clean pytest+pyyaml+jinja2 venv.
+        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_marketing_personas.py tests/test_marketing_event_language.py tests/test_marketing_press_feeds.py tests/test_marketing_breaking.py tests/test_marketing_fastlane.py tests/test_wires_rail_b4b.py tests/test_marketing_press_copy.py tests/test_marketing_ramp_cta_jitter.py tests/test_marketing_expression_dial.py tests/test_marketing_cadence_spine.py tests/test_marketing_chart_coverage.py tests/test_marketing_desk_feeds.py tests/test_marketing_reply_desk.py tests/test_marketing_forward_booking.py tests/test_marketing_recall.py tests/test_marketing_learning.py tests/test_marketing_reply_producer.py tests/test_marketing_scoring_brain.py tests/test_marketing_hot_tape_llm.py -q
       - name: reply-target register validates (config/reply_targets.yml)
         # The register is operator-curated, so a bad handle or an unknown tier is
         # an editing mistake, not a code change. Runs as its own step so a
@@ -2893,6 +2964,45 @@ jobs:
         # AM-R1 banned patterns. Runs as its own step so a spec-only PR fails on
         # the spec, not inside a pytest summary.
         run: python -m engine.marketing.personas --check
+
+  marketing-scoring-optional:
+    if: ${{ false }}
+    # XG-W5 (= IS-W2) optional-dependency lane: the MinHash-LSH near-dup pass in
+    # engine/marketing/story_spine.py.
+    #
+    # WHY THIS LANE EXISTS. The scoring brain's deterministic core is stdlib +
+    # pyyaml and runs in marketing-engine, whose minimal env IS its contract. The
+    # near-dup pass needs `datasketch` (which pulls numpy + scipy), so it cannot
+    # run there. The wrong fix — the one this repo has shipped twice (#3703,
+    # #3760) — is `pytest.importorskip("datasketch")` inside the thin lane: main
+    # goes green and weaker in the same commit, every census reports the pass as
+    # covered, and it executes in zero jobs.
+    #
+    # So tests/test_marketing_scoring_optional_deps.py imports datasketch at
+    # MODULE level with NO importorskip, and this job is the only one that names
+    # it. A missing wheel here is a COLLECTION ERROR — red, loud, immediate. The
+    # probe step below makes a dropped install line red for the same reason, and
+    # -rs surfaces any NEW skip that appears in the suite.
+    #
+    # model2vec is deliberately absent: the embedding artifact is an
+    # operator/R2 step (docs/scoring_brain.md §3) and must never become a CI
+    # dependency. The semantic clustering BRANCH is ours and is tested with an
+    # injected encoder in the thin lane; model2vec's own inference is theirs.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pyyaml datasketch
+      # The lane's own tripwire: if a future edit drops datasketch from the line
+      # above, the suite would error at collection anyway — but this step names
+      # the cause in one line instead of burying it in a pytest traceback.
+      - name: prove the optional dependency is present
+        run: python -c "import datasketch, numpy; print(datasketch.__version__)"
+      - name: scoring-brain optional-dependency paths
+        run: python -m pytest tests/test_marketing_scoring_optional_deps.py -q -rs
 
   marketing-data:
     if: ${{ false }}
@@ -3312,6 +3422,26 @@ jobs:
       # ledger append direct-pushed to main self-heals on the next publish.)
       - name: property trees match a fresh rebuild (--check)
         run: python -m scripts.build_press_properties --check
+      # W2R research triage + tiering + the dark research X lane (XG-W8,
+      # 2026-07-28). Same lane on purpose: the triage layer is what decides
+      # WHICH vault report the Research Desk covers, so it has to run wherever
+      # the desk's own contract runs. Import closure is stdlib + pyyaml (the
+      # `pytest pyyaml jinja2` line above already covers it): research_triage
+      # keeps every reused module behind LAZY function-level imports, so a heavy
+      # top-level import in story_spine/signal_features/garbage_gate turns this
+      # job red at collection, which is the point.
+      #
+      # NOTHING IN THE SUITE IS importorskip-GATED. The near-dup pass's optional
+      # `datasketch` dependency is exercised through its DOCUMENTED DEGRADED
+      # STATE (`cluster_density` reports `exact-only` and declares the value a
+      # floor) rather than by requiring the wheel — so the suite cannot decay
+      # into a skip-only one, and the production workflow installs datasketch
+      # so the lane itself does not ship the degraded read.
+      #
+      # The veto pass is exercised through its injected `call` seam, so this
+      # step makes no network call and needs no credential.
+      - name: W2R research triage (W-score, demote-only veto, dark research lane)
+        run: python -m pytest tests/test_press_research_triage.py -q
 
   # ── UNRUN-SUITE CENSUS JOBS (2026-07-26) ───────────────────────────────────
   # Nine lanes covering the 130 strictly-dark suites that no workflow ran.  All

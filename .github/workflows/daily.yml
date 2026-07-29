@@ -3166,6 +3166,62 @@ jobs:
             echo "::warning title=persona_memory::rc=$rc (persona ledgers may not have advanced)"
           fi
           exit 0
+      # XG-W6 learning loop. TWO ordered actions in one step, and the order is
+      # load-bearing: labels.consolidate advances the tracked label ledger +
+      # scorecard from the LIVE metrics poll (data/marketing/post_metrics.jsonl,
+      # written by marketing-publish.yml), the reply desk's host store, and the
+      # gitignored intraday spool; health_monitor.run then READS that store to
+      # grade every account and run the network tripwire. Evaluating first would
+      # grade yesterday's corpus and call it today's health.
+      #
+      # Nightly is the SOLE advancer of data/marketing/learning/ (charter §2
+      # amendment 13). The host spool (data/marketing/learning_host/) is
+      # gitignored and must never appear in a git add.
+      #
+      # A tripwire trip writes ONE HALT ROW PER IMPLICATED ACCOUNT — a halted
+      # desk stops on both rails (publisher + reply export) while the other six
+      # keep running. Only an operator clears a halt, from the admin health
+      # panel. With no telemetry this is a clean no-op that exits 0.
+      - name: marketing — labels + account health (XG-W6)
+        env:
+          MARKETING_LEARNING_ENABLED: "1"
+        run: |
+          set +e
+          python -m scripts.marketing_learning_nightly; rc=$?
+          if [ "$rc" -ne 0 ]; then
+            echo "::warning title=marketing_learning::rc=$rc (label ledger / health report may not have advanced)"
+          fi
+          exit 0
+      # XG-W6 learning artifacts get their OWN commit, not a ride on the
+      # standout-audit subject line. These are marketing-desk safety and
+      # measurement records — labels.jsonl, scorecard.json, health.json,
+      # halts.json and the learned-rule version log — and a HALT landing under
+      # "standout-audit-us: nightly US attribution" is a commit message that
+      # actively misleads whoever goes looking for when a desk went dark.
+      #
+      # halts.json is also written by the operator's admin clear, which commits
+      # it separately; last writer wins and both are recorded in the registry's
+      # own log. The host spool (data/marketing/learning_host/) is gitignored
+      # and must never appear here.
+      - name: commit marketing learning artifacts (XG-W6)
+        run: |
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/marketing/learning 2>/dev/null || true
+          if git diff --cached --quiet; then echo "no marketing learning changes"; exit 0; fi
+          HALTED=$(python3 -c "import json,pathlib;p=pathlib.Path('data/marketing/learning/halts.json');d=json.loads(p.read_text()) if p.exists() else {};print(','.join(sorted(a for a,r in (d.get('accounts') or {}).items() if isinstance(r,dict) and r.get('state')=='halted')) or 'none')" 2>/dev/null || echo "unknown")
+          git commit -m "marketing-learning: labels + scorecard + desk health $(date -u +%F) (halted: ${HALTED})"
+          PUSH_ALARM=420
+          push_retry_init "marketing learning artifacts"
+          while push_attempt; do
+            perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main; then
+              if push_do; then echo "pushed marketing learning artifacts on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
+            fi
+          done
+          echo "::warning title=marketing_learning::could not push learning artifacts (they advance again tomorrow)"
+          exit 0
       - name: commit standout audit US artifacts
         run: |
           . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"

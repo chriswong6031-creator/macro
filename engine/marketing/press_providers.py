@@ -400,6 +400,14 @@ class TwitterApiIoProvider:
                 "corroboration_class": corr_class,
                 "strict_corroboration": strict,
                 "route": route,
+                # XG-W5: observed engagement, carried from the response body we
+                # ALREADY paid for. This is a parse of bytes already on the wire —
+                # no extra request, no new endpoint, no new spend path, and no
+                # first-party X scraping (twitterapi.io stays the only X read
+                # path). It is the free virality ground truth the scoring brain's
+                # source_authority prior accrues from; absent keys yield 0s, and
+                # a source that never carries counts stays on the neutral prior.
+                "x_engagement": _engagement(tw),
             })
 
         new_since = str(max_id_int) if max_id_int is not None else since_id
@@ -515,6 +523,36 @@ class TwitterApiIoProvider:
 # ─────────────────────────────────────────────────────────────────────────────
 # Small pure helpers
 # ─────────────────────────────────────────────────────────────────────────────
+
+def _engagement(tweet: dict) -> dict[str, int]:
+    """Like/retweet/reply/view counts from a twitterapi.io tweet object.
+
+    Key-name tolerant (the endpoint has shipped both camelCase and snake_case
+    shapes); any absent or unparseable field reads 0. Never raises — a shape
+    change must degrade the scoring brain's authority prior, never break the
+    wire parse that feeds the whole press lane.
+    """
+    aliases: dict[str, tuple[str, ...]] = {
+        "likes": ("likeCount", "like_count", "favorite_count", "favoriteCount"),
+        "retweets": ("retweetCount", "retweet_count"),
+        "replies": ("replyCount", "reply_count"),
+        "views": ("viewCount", "view_count", "impressionCount"),
+    }
+    out: dict[str, int] = {}
+    for field, keys in aliases.items():
+        value = 0
+        for key in keys:
+            raw = tweet.get(key)
+            if raw is None:
+                continue
+            try:
+                value = int(float(raw))
+            except (TypeError, ValueError):
+                continue
+            break
+        out[field] = max(0, value)
+    return out
+
 
 def _as_int(s: str | None) -> int | None:
     try:

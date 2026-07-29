@@ -1,9 +1,29 @@
 ## Persona spec v1 — Fable-authored. Persona Network W1 (docket D13).
-## SPEC ONLY: no desk_network entry, no account, no X handle, nothing generates
-## from this file. The roster shows it PLANNED.
+## W2R amendment (XG-W8, 2026-07-28): this property now has a BUILD behind it.
+##
+## STATUS: DARK, on four independent locks.
+##   1. The X account DOES NOT EXIST (X Growth charter §1 "*(not created yet)*";
+##      operator lever §7.1 is to create it).
+##   2. No Buffer channel — `publish.channels` carries no mastermind_research
+##      entry, so an item would have no posting address even if one existed.
+##   3. config/marketing.yml desk_network carries this id with BOTH
+##      `enabled: false` and `disabled: true`, and NO `handle:` key.
+##   4. engine/press/research_lane.py resolves liveness through
+##      engine.marketing.accounts and returns state="dark" with an empty item
+##      list before building anything. `enqueue=True` on a dark account is a
+##      no-op that says so.
+##
+## WHAT IS BUILT BEHIND IT: the W2R triage lane (engine/press/research_triage.py)
+## ranks the vault daily and feeds the Research Desk / Research Notes press
+## desks; engine/press/research_lane.py composes the two X output shapes below
+## through the canonical outbox path. Nothing posts until the operator creates
+## the account and a channel id is bound.
 ##
 ## voice: "educational" — the live template pool's analyst/explainer register,
-## an exact match for the intended voice (no substitution needed).
+## an exact match for the intended voice (no substitution needed). It is also
+## the outbox KIND both X shapes use: the house rule is no new outbox kinds, and
+## `education` is expression-dial level 1 (analysis), which is what a research
+## property posts.
 id: mastermind_research
 persona_kind: branded
 archetype: "Mastermind Research — publication anchor, analyst brief voice"
@@ -17,6 +37,21 @@ voice_codex:
     - "always names the counter-case or limitation"
     - "links the vault landing page in the reply"
     - "quantifies or declines to claim"
+  ## OUTPUT SHAPES (W2R / XG-W8). Declared here as prose because the spec schema
+  ## is closed at the top level (engine/marketing/personas._TOP_KEYS) and the
+  ## shapes are BUILD contracts, not voice settings — they live in code and
+  ## config, at engine/press/research_lane.py + config/press.yml research_triage:
+  ##
+  ##   x_post     short-form, VALUE-COMPLETE: the claim and its receipt are IN
+  ##              the post, composed deterministically from the vault's own
+  ##              summary_points. The link goes in a REPLY, never in the body
+  ##              (masterplan D14 §6 native-first).
+  ##   x_article  X-native long-form: title, standfirst, one section per
+  ##              extracted point, standing not-investment-advice footer.
+  ##
+  ## Both are outbox kind `education` (no new outbox kinds) and both are built
+  ## through outbox.make_item/validate_item — never a hand-rolled writer — and
+  ## screened by the shared copywriter banned-vocabulary guard.
   emoji_policy: none
   banned: ["moon", "rocket", "guaranteed", "trust me", "huge", "insane", "printing", "free money", "game-changing", "groundbreaking", "must-read"]
   banned_patterns:

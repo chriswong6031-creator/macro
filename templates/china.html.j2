@@ -3574,6 +3574,24 @@
     </div>{# /stgf-ran2 #}
     {% endif %}
 
+    {# ── Watch overflow strip (2026-07-28): gate-eligible names ranked below the
+       board's buy slots. The cap is page width, not a quality bar — these cleared the
+       same screen today and are listed so nothing is silently dropped (US watch-lane
+       parity). Compact chips on purpose: full cards stay reserved for the top board.
+       No data-stf tag → visible on every facet; absent `watch` key (pre-rebuild
+       artifact fallback) renders nothing. #}
+    {% if setups.get('watch') %}
+    <p class="note" style="margin:13px 0 5px;text-transform:none;font-weight:700"
+       data-tip-en="The board shows the top {{ setups.buy|length }} by buy-readiness rank — a page-width cap, not a quality bar. These names cleared the same screen today and ranked just below the cut; nothing is dropped. Click a name to open the analyzer."
+       data-tip-zh="榜单按买入就绪度排序展示前{{ setups.buy|length }}名——这是版面宽度上限，并非质量门槛。以下名单今日通过了同一筛选，仅排名略低；不会有任何遗漏。点击名称可打开个股分析。">
+      ▸ {{ t('Also cleared today\'s screen — beyond the board\'s ' ~ (setups.buy|length|string) ~ ' slots:', '同样通过今日筛选 — 超出榜单' ~ (setups.buy|length|string) ~ '个名额：') }}
+      <span style="font-weight:400">{{ setups.get('watch')|length }}{{ t(' names, ranked below the cut', ' 只，排名居后') }}</span>
+    </p>
+    <p style="margin:0;display:flex;flex-wrap:wrap;gap:4px 0;align-items:center">
+      {% for r in setups.get('watch') %}<a href="china_lookup.html#{{ r.ticker }}" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>{{ r.ticker }}</b> <span class="note">{{ nm(r.name) }}</span>{% if r.get('conviction') and r.conviction.score is not none %} <span class="note">{{ r.conviction.score }}</span>{% endif %}</a>{% endfor %}
+    </p>
+    {% endif %}
+
     {% if setups.laggards %}
     <p class="note" style="margin:13px 0 5px;text-transform:none;color:var(--down);font-weight:700">⚠ {{ t('Weakest relative momentum (laggards) — distribution risk:', '相对动量最弱（落后股）— 派发风险：') }}</p>
     <p style="margin:0;display:flex;flex-wrap:wrap;gap:4px 0;align-items:center">
@@ -4196,6 +4214,8 @@ window.__CHART_SWAP__ = {
 /* W8-E: StockTable init — standout board table view (CN market).
    Wired only on the stocks mode page (setups.buy exists); safe no-op if element absent. */
 (function(){
+function initStockTableView(){
+  if (!window.StockTable) return;
   var SECZH = {"Technology":"科技","Industrials":"工业","Basic Materials":"原材料","Financial Services":"金融","Consumer Cyclical":"可选消费","Healthcare":"医疗保健","Utilities":"公用事业","Consumer Defensive":"必需消费","Energy":"能源","Communication Services":"通信服务","Real Estate":"房地产"};
   var STAGE_LABELS = {"ENTRY":["ENTRY","入场"],"RAN_LATE":["RAN/LATE","信号已过"],"RIPENING":["RIPENING","蓄势中"]};
   var ZONE_LABELS = {"READY":["READY","就绪"],"BASING":["BASING","筑底"],"FALLING":["FALLING","下跌"]};
@@ -4384,6 +4404,12 @@ window.__CHART_SWAP__ = {
 
   /* restore persisted view */
   applyView(currentView);
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initStockTableView, { once: true });
+} else {
+  initStockTableView();
+}
 })();
 </script>
 <script>

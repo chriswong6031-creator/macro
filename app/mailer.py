@@ -483,6 +483,12 @@ _FOOTER_BRAND = "Mastermind"
 _SITE_URL = "https://www.mastermind-x.com"
 _SITE_LABEL = "mastermind-x.com"
 _SUPPORT_ADDR = "support@mastermind-x.com"
+# XG-W7. FLAGSHIP ONLY, and that is a live-account rule rather than a taste
+# call: @mastermindnews1 is configured DARK (config/marketing.yml — wired
+# Buffer channel, account disabled pending the XG-W2 cadence resolver) and
+# receives no emissions, so pointing readers at it advertises an empty feed.
+# Adding it back is a one-line change HERE once that account is enabled.
+_X_HANDLES = ("mastermindx001",)
 _WHY_EN = "You received this because you contacted Mastermind support or hold an account with us."
 _WHY_ZH = "你收到这封邮件，是因为你联系了 Mastermind 客服，或拥有我们的账户。"
 
@@ -695,7 +701,7 @@ def _lang_section_html(title: str, blocks: list[dict], lang: str) -> str:
 def render_email(title_en: str, title_zh: str, blocks: list[dict], *,
                  eyebrow: str = "", preheader: str = "",
                  why_en: str | None = None, why_zh: str | None = None,
-                 unsubscribe_url: str = "") -> tuple[str, str]:
+                 unsubscribe_url: str = "", follow: bool = False) -> tuple[str, str]:
     """Render one dual-language message in the pinned shell. Returns ``(html, text)``.
 
     ``blocks`` is a list of dicts, each carrying an ``en`` and a ``zh`` value plus an
@@ -723,6 +729,11 @@ def render_email(title_en: str, title_zh: str, blocks: list[dict], *,
         unsubscribe_url  MARKETING ONLY. Passing it renders the unsubscribe slot; leaving
                          it empty deletes the whole block, which is what every
                          transactional send must do (PIN §6.7).
+        follow           MARKETING ONLY (XG-W7). Renders one quiet line of X handles above
+                         the support line. Off by default and deliberately so: a receipt or
+                         a support reply is a service message, and a "follow us" line does
+                         not belong in one. Marketing mail is the send the reader opted
+                         into, so it is the only send that may ask for anything.
 
     Both languages ship in EVERY message, English first, then a labelled 中文 rule, then
     the Chinese half — we do not guess which one the reader wants from a stored preference
@@ -747,6 +758,25 @@ def render_email(title_en: str, title_zh: str, blocks: list[dict], *,
         f' letter-spacing:1.6px; color:{_C_DIM}; white-space:nowrap;">{_esc(eyebrow)}</td>'
         if eyebrow else ""
     )
+
+    # XG-W7 handle line. Plain <a> text, no images: an email client that blocks
+    # remote content must still render it, and the handle IS the call to action.
+    social = ""
+    if follow:
+        links = " · ".join(
+            f'<a class="mx-link" href="https://x.com/{h}"'
+            f' style="color:{_C_MUTED}; text-decoration:underline;">@{h}</a>'
+            for h in _X_HANDLES
+        )
+        # EN half only. x.com is unreachable behind the GFW, and the Chinese half
+        # of the message is read by exactly the people it is unreachable for — a
+        # dead link there is worse than no link. Same reasoning that keeps the
+        # handle off the anonymous public estate (tests/test_support_page.py).
+        social = (
+            f'<p class="mx-foot" style="margin:0 0 8px; font-family:{_F_UI}; font-size:12px;'
+            f' line-height:1.6; color:{_C_FOOT};">'
+            f'Follow the desk on X: {links}</p>'
+        )
 
     unsub = ""
     if unsubscribe_url:
@@ -835,6 +865,7 @@ def render_email(title_en: str, title_zh: str, blocks: list[dict], *,
         <p class="mx-foot" style="margin:0 0 8px; font-family:{_F_UI}; font-size:12px; line-height:1.6; color:{_C_FOOT};">
           {_esc(why_en)}<br />{_esc(why_zh)}
         </p>
+        {social}
         {unsub}
         <p class="mx-foot" style="margin:0; font-family:{_F_UI}; font-size:12px; line-height:1.6; color:{_C_FOOT};">
           Questions? Reply to this email, or write to
@@ -868,6 +899,10 @@ def render_email(title_en: str, title_zh: str, blocks: list[dict], *,
         label = " · ".join(x for x in (b.get("label_en") or "", b.get("label_zh") or "") if x)
         shared_text += (f"{label}\n" if label else "") + body + "\n\n"
     unsub_text = f"\nUnsubscribe / 退订: {unsubscribe_url}\n" if unsubscribe_url else ""
+    social_text = (
+        "\nOn X: " + " · ".join(f"@{h} (https://x.com/{h})" for h in _X_HANDLES) + "\n"
+        if follow else ""
+    )
     text = (
         f"{_BRAND}{(' · ' + eyebrow) if eyebrow else ''}\n\n"
         f"{title_en}\n\n{en_text}\n\n"
@@ -875,7 +910,7 @@ def render_email(title_en: str, title_zh: str, blocks: list[dict], *,
         f"{title_zh}\n\n{zh_text}\n\n"
         f"{shared_text}"
         f"{'-' * 46}\n"
-        f"{_FOOTER_BRAND} · {_SITE_LABEL}\n{why_en}\n{why_zh}\n{unsub_text}"
+        f"{_FOOTER_BRAND} · {_SITE_LABEL}\n{why_en}\n{why_zh}\n{social_text}{unsub_text}"
     )
     return html, text
 

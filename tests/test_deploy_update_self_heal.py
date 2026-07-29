@@ -17,6 +17,32 @@ def test_update_script_has_valid_shell_syntax():
     subprocess.run(["bash", "-n", str(SCRIPT_PATH)], check=True)
 
 
+def test_codex_runtime_setup_has_valid_shell_syntax():
+    runtime_setup = ROOT / "app" / "deploy" / "codex-runtime-setup.sh"
+    subprocess.run(["bash", "-n", str(runtime_setup)], check=True)
+    text = runtime_setup.read_text(encoding="utf-8")
+    assert '@openai/codex@$CODEX_CLI_VERSION' in text
+    assert "CODEX_STATE_DIR/auth.json" in text
+
+
+def test_deployed_services_share_root_only_codex_state():
+    for relative in (
+        "app/deploy/macro-api.service",
+        "admin/deploy/admin.service",
+    ):
+        unit = (ROOT / relative).read_text(encoding="utf-8")
+        assert "Environment=CODEX_HOME=/var/lib/macro-codex" in unit
+        assert "Environment=CODEX_PROVIDER_ENABLED=1" in unit
+        assert "StateDirectory=macro-codex" in unit
+        assert "StateDirectoryMode=0700" in unit
+
+
+def test_update_reconciles_codex_runtime_and_admin_unit():
+    assert 'bash "$APP_DIR/app/deploy/codex-runtime-setup.sh" --quiet' in SCRIPT
+    assert 'cmp -s "$APP_DIR/admin/deploy/admin.service"' in SCRIPT
+    assert "ADMIN_UNIT_UPDATED=1" in SCRIPT
+
+
 def test_repository_noop_does_not_skip_reconciliation():
     assert '[ "$OLD" = "$NEW" ] && exit 0' not in SCRIPT
     assert 'if [ "$OLD" != "$NEW" ]; then' in SCRIPT
@@ -122,6 +148,7 @@ MUST_RESTART = [
     "engine/neuralweb/envelope.py",
     "engine/neuralweb/synapse.py",
     "engine/neuralweb/key_pool.py",
+    "engine/codex_lane/runner.py",
     "engine/llm_auth.py",
     "engine/portfolio_brief.py",
     "engine/tushare_freshness.py",
@@ -248,6 +275,8 @@ ADMIN_MUST_RESTART = [
     # publish dry-run report (admin/marketing.py)
     "scripts/marketing_publisher.py",
     # deliberation-spend panel (admin/prophet.py)
+    "engine/codex_provider.py",
+    "engine/codex_lane/runner.py",
     "engine/llm_auth.py",
     # private episode validator imported by admin/trade_memory.py
     "engine/neuralweb/trade_memory.py",

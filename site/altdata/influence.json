@@ -1,7 +1,7 @@
 {
   "schema": "influence.graph.v1",
   "as_of": "2026-06-19",
-  "generated_utc": "2026-07-28T12:54:34.962067+00:00",
+  "generated_utc": "2026-07-29T02:05:57.012351+00:00",
   "note": "Curated multi-actor influence graph: important people and the investable names/themes they are affiliated with (control, holdings, public advocacy, partnerships). Public-record only. provenance = FACT (filing/widely-reported structural fact) | DISCLOSED (self-reported trade/holding) | INFERRED (analytical link). The LLM extractor grows candidate edges; a human promotes them here.",
   "n_actors": 22,
   "n_entities": 19,
@@ -749,15 +749,14 @@
       ],
       "n_actors": 6,
       "alt_corroborated": true,
-      "alt_score": 9,
-      "alt_weighted": 3.2,
+      "alt_score": 8,
+      "alt_weighted": 2.85,
       "alt_channels": [
         "13f_add",
         "affiliation",
         "analyst_upgrade_cluster",
         "darkpool_accum",
         "github_momentum",
-        "hf_model_momentum",
         "patent_cluster",
         "retail_buzz",
         "special_situation"
@@ -802,10 +801,11 @@
       ],
       "n_actors": 4,
       "alt_corroborated": true,
-      "alt_score": 5,
-      "alt_weighted": 1.65,
+      "alt_score": 6,
+      "alt_weighted": 1.9,
       "alt_channels": [
         "affiliation",
+        "cnbc_pick",
         "lobbying",
         "special_situation",
         "stocktwits_bull",
@@ -851,11 +851,10 @@
       ],
       "n_actors": 4,
       "alt_corroborated": true,
-      "alt_score": 4,
-      "alt_weighted": 1.4,
+      "alt_score": 3,
+      "alt_weighted": 1.15,
       "alt_channels": [
         "affiliation",
-        "cnbc_pick",
         "hf_model_momentum",
         "lobbying"
       ],
@@ -1065,13 +1064,11 @@
       ],
       "n_actors": 2,
       "alt_corroborated": true,
-      "alt_score": 6,
-      "alt_weighted": 2.1,
+      "alt_score": 4,
+      "alt_weighted": 1.55,
       "alt_channels": [
         "affiliation",
         "app_demand",
-        "cnbc_pick",
-        "github_momentum",
         "hf_model_momentum",
         "lobbying"
       ],
@@ -1311,11 +1308,12 @@
       ],
       "n_actors": 1,
       "alt_corroborated": true,
-      "alt_score": 2,
-      "alt_weighted": 0.7,
+      "alt_score": 3,
+      "alt_weighted": 1.35,
       "alt_channels": [
         "affiliation",
-        "special_situation"
+        "special_situation",
+        "unusual_options"
       ],
       "top_holder": null
     },
@@ -1389,7 +1387,11 @@
         "affiliation",
         "stocktwits_bull"
       ],
-      "top_holder": null
+      "top_holder": {
+        "owner": "LINDEN ADVISORS LP",
+        "title": "Institution",
+        "shares": 384176000
+      }
     },
     {
       "ticker": "LULU",
@@ -1404,12 +1406,11 @@
       ],
       "n_actors": 1,
       "alt_corroborated": true,
-      "alt_score": 3,
-      "alt_weighted": 1.2,
+      "alt_score": 2,
+      "alt_weighted": 0.7,
       "alt_channels": [
         "activist_13d",
-        "affiliation",
-        "trump"
+        "affiliation"
       ],
       "top_holder": null
     },
@@ -1678,6 +1679,14 @@
   "n_candidates": 0,
   "filings": [
     {
+      "date": "2026-07-28",
+      "form": "424B4",
+      "company": "Ionic Digital Inc.",
+      "ticker": null,
+      "items": "",
+      "url": "https://www.sec.gov/Archives/edgar/data/2007691/000118518526003152/ionicdigi424b4072026.htm"
+    },
+    {
       "date": "2026-07-24",
       "form": "S-1/A",
       "company": "Cryptex Digital Market Cap ETF",
@@ -1755,23 +1764,15 @@
       "company": "American Bitcoin Corp.",
       "ticker": "ABTC",
       "items": "3.03,5.03,8.01,9.01",
-      "url": "https://www.sec.gov/Archives/edgar/data/1755953/000119312526296396/abtc-ex3_1.htm"
-    },
-    {
-      "date": "2026-07-06",
-      "form": "8-K",
-      "company": "American Bitcoin Corp.",
-      "ticker": "ABTC",
-      "items": "3.03,5.03,8.01,9.01",
-      "url": "https://www.sec.gov/Archives/edgar/data/1755953/000119312526296396/abtc-ex99_1.htm"
-    },
-    {
-      "date": "2026-07-06",
-      "form": "8-K",
-      "company": "American Bitcoin Corp.",
-      "ticker": "ABTC",
-      "items": "3.03,5.03,8.01,9.01",
       "url": "https://www.sec.gov/Archives/edgar/data/1755953/000119312526296396/abtc-20260702.htm"
+    },
+    {
+      "date": "2026-07-06",
+      "form": "8-K",
+      "company": "American Bitcoin Corp.",
+      "ticker": "ABTC",
+      "items": "3.03,5.03,8.01,9.01",
+      "url": "https://www.sec.gov/Archives/edgar/data/1755953/000119312526296396/abtc-ex3_1.htm"
     }
   ]
 }

@@ -1,0 +1,352 @@
+{
+  "accounts": [
+    {
+      "account": "cici",
+      "metrics": {
+        "approval_rate": {
+          "metric": "approval_rate",
+          "n": 0,
+          "reason": "n=0 below min_observations=5",
+          "value": null,
+          "verdict": "null"
+        },
+        "engagement_trend": {
+          "metric": "engagement_trend",
+          "n_baseline": 0,
+          "n_recent": 4,
+          "reason": "recent n=4, baseline n=0 — need 5 of each",
+          "value": null,
+          "verdict": "null"
+        },
+        "last_nine": {
+          "metric": "last_nine",
+          "n": 4,
+          "problems": [
+            "2 near-repeat(s) in the visible grid"
+          ],
+          "repeats": 2,
+          "thresholds": {
+            "receipt_floor": 3,
+            "unmeasured_ceiling": 6
+          },
+          "unmeasured": 4,
+          "value": 4,
+          "verdict": "warn",
+          "with_receipt": 4
+        },
+        "rejection_reason_mix": {
+          "metric": "rejection_reason_mix",
+          "mix": {},
+          "n": 0,
+          "reason": "n=0 below min_observations=5",
+          "value": null,
+          "verdict": "null"
+        }
+      },
+      "n_rows": 4,
+      "nulls": [
+        "approval_rate",
+        "rejection_reason_mix",
+        "engagement_trend"
+      ],
+      "verdict": "warn",
+      "warns": [
+        "last_nine"
+      ]
+    },
+    {
+      "account": "flagship",
+      "metrics": {
+        "approval_rate": {
+          "metric": "approval_rate",
+          "n": 0,
+          "reason": "n=0 below min_observations=5",
+          "value": null,
+          "verdict": "null"
+        },
+        "engagement_trend": {
+          "metric": "engagement_trend",
+          "n_baseline": 0,
+          "n_recent": 26,
+          "reason": "recent n=26, baseline n=0 — need 5 of each",
+          "value": null,
+          "verdict": "null"
+        },
+        "last_nine": {
+          "metric": "last_nine",
+          "n": 9,
+          "problems": [
+            "9/9 posts have no measurement yet (ceiling 6)",
+            "5 near-repeat(s) in the visible grid"
+          ],
+          "repeats": 5,
+          "thresholds": {
+            "receipt_floor": 3,
+            "unmeasured_ceiling": 6
+          },
+          "unmeasured": 9,
+          "value": 9,
+          "verdict": "warn",
+          "with_receipt": 7
+        },
+        "rejection_reason_mix": {
+          "metric": "rejection_reason_mix",
+          "mix": {},
+          "n": 0,
+          "reason": "n=0 below min_observations=5",
+          "value": null,
+          "verdict": "null"
+        }
+      },
+      "n_rows": 26,
+      "nulls": [
+        "approval_rate",
+        "rejection_reason_mix",
+        "engagement_trend"
+      ],
+      "verdict": "warn",
+      "warns": [
+        "last_nine"
+      ]
+    },
+    {
+      "account": "founder",
+      "metrics": {
+        "approval_rate": {
+          "metric": "approval_rate",
+          "n": 0,
+          "reason": "n=0 below min_observations=5",
+          "value": null,
+          "verdict": "null"
+        },
+        "engagement_trend": {
+          "metric": "engagement_trend",
+          "n_baseline": 0,
+          "n_recent": 6,
+          "reason": "recent n=6, baseline n=0 — need 5 of each",
+          "value": null,
+          "verdict": "null"
+        },
+        "last_nine": {
+          "metric": "last_nine",
+          "n": 6,
+          "problems": [
+            "3 near-repeat(s) in the visible grid"
+          ],
+          "repeats": 3,
+          "thresholds": {
+            "receipt_floor": 3,
+            "unmeasured_ceiling": 6
+          },
+          "unmeasured": 2,
+          "value": 6,
+          "verdict": "warn",
+          "with_receipt": 6
+        },
+        "rejection_reason_mix": {
+          "metric": "rejection_reason_mix",
+          "mix": {},
+          "n": 0,
+          "reason": "n=0 below min_observations=5",
+          "value": null,
+          "verdict": "null"
+        }
+      },
+      "n_rows": 6,
+      "nulls": [
+        "approval_rate",
+        "rejection_reason_mix",
+        "engagement_trend"
+      ],
+      "verdict": "warn",
+      "warns": [
+        "last_nine"
+      ]
+    },
+    {
+      "account": "kelly",
+      "metrics": {
+        "approval_rate": {
+          "metric": "approval_rate",
+          "n": 0,
+          "reason": "n=0 below min_observations=5",
+          "value": null,
+          "verdict": "null"
+        },
+        "engagement_trend": {
+          "metric": "engagement_trend",
+          "n_baseline": 0,
+          "n_recent": 0,
+          "reason": "recent n=0, baseline n=0 — need 5 of each",
+          "value": null,
+          "verdict": "null"
+        },
+        "last_nine": {
+          "metric": "last_nine",
+          "n": 0,
+          "reason": "no posts observed in the labels store",
+          "value": null,
+          "verdict": "null"
+        },
+        "rejection_reason_mix": {
+          "metric": "rejection_reason_mix",
+          "mix": {},
+          "n": 0,
+          "reason": "n=0 below min_observations=5",
+          "value": null,
+          "verdict": "null"
+        }
+      },
+      "n_rows": 0,
+      "nulls": [
+        "approval_rate",
+        "rejection_reason_mix",
+        "engagement_trend",
+        "last_nine"
+      ],
+      "verdict": "unmeasured",
+      "warns": []
+    },
+    {
+      "account": "meagan",
+      "metrics": {
+        "approval_rate": {
+          "metric": "approval_rate",
+          "n": 0,
+          "reason": "n=0 below min_observations=5",
+          "value": null,
+          "verdict": "null"
+        },
+        "engagement_trend": {
+          "metric": "engagement_trend",
+          "n_baseline": 0,
+          "n_recent": 3,
+          "reason": "recent n=3, baseline n=0 — need 5 of each",
+          "value": null,
+          "verdict": "null"
+        },
+        "last_nine": {
+          "metric": "last_nine",
+          "n": 3,
+          "problems": [],
+          "repeats": 0,
+          "thresholds": {
+            "receipt_floor": 3,
+            "unmeasured_ceiling": 6
+          },
+          "unmeasured": 3,
+          "value": 3,
+          "verdict": "ok",
+          "with_receipt": 3
+        },
+        "rejection_reason_mix": {
+          "metric": "rejection_reason_mix",
+          "mix": {},
+          "n": 0,
+          "reason": "n=0 below min_observations=5",
+          "value": null,
+          "verdict": "null"
+        }
+      },
+      "n_rows": 3,
+      "nulls": [
+        "approval_rate",
+        "rejection_reason_mix",
+        "engagement_trend"
+      ],
+      "verdict": "ok",
+      "warns": []
+    },
+    {
+      "account": "sophia",
+      "metrics": {
+        "approval_rate": {
+          "metric": "approval_rate",
+          "n": 0,
+          "reason": "n=0 below min_observations=5",
+          "value": null,
+          "verdict": "null"
+        },
+        "engagement_trend": {
+          "metric": "engagement_trend",
+          "n_baseline": 0,
+          "n_recent": 4,
+          "reason": "recent n=4, baseline n=0 — need 5 of each",
+          "value": null,
+          "verdict": "null"
+        },
+        "last_nine": {
+          "metric": "last_nine",
+          "n": 4,
+          "problems": [
+            "2 near-repeat(s) in the visible grid"
+          ],
+          "repeats": 2,
+          "thresholds": {
+            "receipt_floor": 3,
+            "unmeasured_ceiling": 6
+          },
+          "unmeasured": 4,
+          "value": 4,
+          "verdict": "warn",
+          "with_receipt": 3
+        },
+        "rejection_reason_mix": {
+          "metric": "rejection_reason_mix",
+          "mix": {},
+          "n": 0,
+          "reason": "n=0 below min_observations=5",
+          "value": null,
+          "verdict": "null"
+        }
+      },
+      "n_rows": 4,
+      "nulls": [
+        "approval_rate",
+        "rejection_reason_mix",
+        "engagement_trend"
+      ],
+      "verdict": "warn",
+      "warns": [
+        "last_nine"
+      ]
+    }
+  ],
+  "apply_halts": true,
+  "as_of": "2026-07-29T03:48:05Z",
+  "halted": [],
+  "metrics": [
+    "approval_rate",
+    "rejection_reason_mix",
+    "engagement_trend",
+    "last_nine"
+  ],
+  "network_tripwire": {
+    "action": "warn",
+    "implicated": [],
+    "note": "At the launch default (action=warn) a trip is SURFACED, not enforced — there is no correlation baseline yet. Under action=halt_implicated a trip halts each IMPLICATED account individually; there is no global halt switch in this module by design (charter §5: a failure must be able to halt one account without halting seven).",
+    "signals": {
+      "cross_account_corr": {
+        "fired": false,
+        "min_days": 10,
+        "min_pairs": 3,
+        "pairs": [],
+        "threshold_rho": 0.9
+      },
+      "simultaneous_collapse": {
+        "accounts": [],
+        "fired": false,
+        "threshold_accounts": 3
+      }
+    },
+    "tripped": false
+  },
+  "note": "Operator console artifact. Every input is deterministic telemetry — no model scores anything here (charter §2 amendment 9). Nothing on this surface is user-facing.",
+  "produced_by": "engine/marketing/health_monitor.py",
+  "schema": "marketing.account_health/v1",
+  "tripped_this_run": [],
+  "tripwires": [
+    "simultaneous_collapse",
+    "cross_account_corr"
+  ]
+}

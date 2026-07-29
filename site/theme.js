@@ -1811,7 +1811,7 @@
   var SD_PLAN_FEATURES = {
     free:    [['Every macro dashboard', '全部宏观看板'], ['The Terminal — 3 indicators', 'Terminal — 3 个指标'], ['6 signals a day', '每日 6 条信号'], ['5 Mastermind questions a week', '每周 5 次 Mastermind 提问']],
     insider: [['Every dashboard & all research', '全部看板与研究'], ['Full Terminal + live options', '完整 Terminal + 实时期权'], ['300 Mastermind questions a month', '每月 300 次 Mastermind 提问'], ['10 deep research questions a month', '每月 10 次深度研究提问']],
-    pro:     [['Everything in Insider', 'Insider 全部功能'], ['1,000 Mastermind questions a month', '每月 1,000 次 Mastermind 提问'], ['150 deep research questions a month', '每月 150 次深度研究提问'], ['Priority research answers', '研究问题优先解答']]
+    pro:     [['Everything in Insider', 'Insider 全部功能'], ['Unlimited Mastermind questions', '无限量 Mastermind 提问'], ['150 deep research questions a month', '每月 150 次深度研究提问'], ['Priority research answers', '研究问题优先解答']]
   };
   // provider mini-icon markup (Google keeps its brand colours; X/email use currentColor)
   function _sdProviderIcon(kind) {

@@ -11,7 +11,8 @@ daily.yml). It NEVER gives trading advice.
 Implementation mirrors engine/neuralweb/ask_brain.py:
   * anthropic tool-use loop, READ-ONLY tools (no write tool is in the schema list)
   * model 'claude-opus-4-8', fallback 'claude-sonnet-4-6' on a failed call
-  * key waterfall CORTEX_ANTHROPIC_API_KEY → CLAUDE_CODE_OAUTH_TOKEN → ANTHROPIC_API_KEY
+  * provider waterfall CORTEX_ANTHROPIC_API_KEY → Claude OAuth pool →
+    attached Codex account → ANTHROPIC_API_KEY
   * MANDATORY keyless degraded mode: a deterministic answer composed from the latest
     run-log entry + latest review + top operator_attention items
   * advice post-filter (reuses ask_brain's when importable, else a light regex guard)
@@ -159,8 +160,9 @@ def _discover_pool_candidates() -> list[tuple[str, str, str]]:
 def _resolve_candidates() -> list[tuple[str, str, str, str]]:
     """Return [(kind, credential, ref_name, cap_id)] for all usable keys, in order.
 
-    Waterfall: CORTEX_ANTHROPIC_API_KEY → pool keys (enabled+present, cooling-aware)
-    → ANTHROPIC_API_KEY.  Legacy CLAUDE_CODE_OAUTH_TOKEN is removed.
+    Waterfall: CORTEX_ANTHROPIC_API_KEY → pool keys (enabled+present,
+    cooling-aware) → attached Codex account → ANTHROPIC_API_KEY. Legacy
+    CLAUDE_CODE_OAUTH_TOKEN is removed.
     """
     out: list[tuple[str, str, str, str]] = []
     k = os.environ.get("CORTEX_ANTHROPIC_API_KEY", "").strip()
@@ -168,6 +170,20 @@ def _resolve_candidates() -> list[tuple[str, str, str, str]]:
         out.append(("api_key", k, "CORTEX_ANTHROPIC_API_KEY", "cortex_api_key"))
     for cap_id, val, ref in _discover_pool_candidates():
         out.append(("oauth", val, ref, cap_id))
+    try:
+        from engine import codex_provider as _codex  # noqa: PLC0415
+
+        if _codex.is_available():
+            # ``credential`` is a non-secret presence marker. Codex reads its
+            # own protected login cache; no token value enters this process.
+            out.append((
+                "codex",
+                "attached",
+                _codex.CODEX_ENV_ID,
+                _codex.CODEX_CAPABILITY_ID,
+            ))
+    except Exception as exc:  # noqa: BLE001
+        log.debug("orchestrator_chat: Codex provider unavailable (%s)", exc)
     k = os.environ.get("ANTHROPIC_API_KEY", "").strip()
     if k:
         out.append(("api_key", k, "ANTHROPIC_API_KEY", "anthropic_api_key"))
@@ -188,6 +204,10 @@ def _resolve_key() -> tuple[str | None, str | None, str | None]:
 def _build_client(kind: str, cred: str):
     """Anthropic client for the resolved credential; None if the SDK is absent."""
     try:
+        if kind == "codex":
+            from engine.codex_provider import CodexClient  # noqa: PLC0415
+
+            return CodexClient(timeout_s=180)
         import anthropic  # noqa: PLC0415
         if kind == "oauth":
             return anthropic.Anthropic(api_key=None, auth_token=cred,
@@ -634,8 +654,15 @@ def chat(message: str, history=None, root=None) -> dict:
     input_tok = usage.get("input_tokens", 0)
     output_tok = usage.get("output_tokens", 0)
     est_cost = _estimate_chat_cost(model, input_tok, output_tok, repo)
-    provider = "claude_oauth" if kind == "oauth" else "claude_api"
-    cost_basis = "subscription" if kind == "oauth" else "metered"
+    if kind == "codex":
+        from engine.codex_provider import translate_model  # noqa: PLC0415
+
+        model = translate_model(model)
+        provider = "codex"
+        cost_basis = "subscription"
+    else:
+        provider = "claude_oauth" if kind == "oauth" else "claude_api"
+        cost_basis = "subscription" if kind == "oauth" else "metered"
     # key_source = capability id (never the token value)
     key_source = cap_id
 

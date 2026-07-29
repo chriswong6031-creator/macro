@@ -5,7 +5,7 @@ WHAT THIS IS
 ------------
 `site/factordata/us_standouts.json` is committed daily (~90 revisions back to
 2026-06-16). This script reconstructs every past board from git history, grades
-every row (buy / watch / laggard lanes) at matured horizons (5d, 10d, 21d, 63d)
+every row (buy / watch / leaders / laggard lanes) at matured horizons (5d, 10d, 21d, 63d)
 versus SPY and versus the name's sector ETF, and writes:
 
   * data/us_board_ledger/retro_grades.parquet  — one row per (as_of, lane, ticker, horizon)
@@ -157,7 +157,11 @@ OUTCOMES_LOOKBACK_BOARDS = 21
 OUTCOMES_DISPLAY_CAP = 60
 
 HORIZONS = [5, 10, 21, 63]  # W0.1 B-b: 63d lane added per §5.1 sub-task 2
-LANES = ["buy", "watch", "laggards", "laggard"]
+# "leaders" added 2026-07-28 (gate-width order) so the leaders strip accrues its own
+# forward cohort from tonight. Purely additive: both call sites read the lane with
+# `d.get(lane)` / `if lane in d`, so a snapshot or git revision without the key grades
+# exactly as before.
+LANES = ["buy", "watch", "leaders", "laggards", "laggard"]
 K_LIST = [1, 3, 5, 10]
 
 # GICS sector -> SPDR sector ETF (mirrors engine/ai_desk.py _GICS_ETF, plus the

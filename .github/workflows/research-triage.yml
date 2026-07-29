@@ -1,0 +1,212 @@
+name: research-triage
+# ─────────────────────────────────────────────────────────────────────────────
+# W2R — research triage & tiering (XG-W8; masterplan D14 §5b). DARK BY DEFAULT.
+#
+# Ranks EVERY institutional report in the vault window with the deterministic
+# W-score (engine/press/research_triage.py), runs the DEMOTE-ONLY LLM veto pass
+# over the ranked head, and appends one score row per report — selected, skipped
+# and garbage-dropped alike — to data/press/research_triage.jsonl.
+#
+# WHY IT IS SAFE / DARK: the job is gated on the repo VARIABLE
+# `RESEARCH_TRIAGE_ENABLED == 'true'`, which is NOT created by the change that
+# added this file. Absent or non-'true' == the job is SKIPPED: no LLM call, no
+# ledger write, no commit. Set it to anything but 'true' (or delete it) to
+# revert instantly — that is the kill switch and the rollback.
+#
+# WHY A SEPARATE LANE FROM press-publish.yml (the tempting alternative):
+#   * The masterplan requires triage to rank ALL inflow DAILY "regardless of
+#     armed slots". Folding it in would gate the day's scores on
+#     PRESS_PUBLISH_ENABLED — the ledger would go dark exactly while the
+#     operator was deciding whether to arm publishing.
+#   * scripts/run_press.py --staging has a TESTED invariant that it writes
+#     nothing outside data/press/staging/. The score ledger is a tracked repo
+#     file and cannot be written from there without breaking it.
+#   * press-publish runs weekdays; research arrives seven days a week.
+#
+# WHY ubuntu-latest AND NOT THE MAC POOL: the same reason press-publish.yml
+# gives — this must stay OFF the nightly render path, whose ~67-minute budget is
+# law. research-ingest.yml is on macstudio-light because it needs the poppler
+# `pdftotext` binary; triage needs no binary, only pyyaml + the anthropic client,
+# so it has no claim on the self-hosted pool. Repo-write posture is the
+# nightly's either way (a scheduled Actions job with contents: write), not the
+# press daemon's zero-repo-write rule.
+#
+# HOW TO ARM IT (operator, in this order — each step independently reversible):
+#   1. Repo secret ANTHROPIC_API_KEY (or CLAUDE_CODE_OAUTH_TOKEN / a pool key /
+#      DEEPSEEK_API_KEY). With none visible the veto pass prints
+#      `research_veto_mute` and demotes NOTHING — the deterministic ranking
+#      stands, which is the safe direction because the veto can only ever lower
+#      a rank.
+#   2. Repo VARIABLE RESEARCH_TRIAGE_ENABLED = true      (the kill switch)
+#   3. Watch the first `workflow_dispatch` with write=false: it ranks the whole
+#      catalog and prints the head WITHOUT touching the ledger.
+#
+# WHAT IT WRITES WHEN ARMED: data/press/research_triage.jsonl and NOTHING ELSE.
+# The commit step names that one path explicitly. It never touches
+# content/, site/, data/press/published.jsonl or site/sitemap.xml.
+#
+# SPEND: one cheap completion per `research_triage.veto.batch_size` reports over
+# the top `head_size` (default 40/20 = two calls a day). Usage is recorded to
+# the EXISTING lib.ai_costs ledger by llm_auth under the usage lane
+# `press-research-triage-veto` — no new spend path is created here.
+# ─────────────────────────────────────────────────────────────────────────────
+on:
+  schedule:
+    # 12:40 UTC daily — after the hourly research-ingest has settled the morning
+    # catalog and BEFORE press-publish.yml's 13:20 staging run, so the press
+    # planner sees today's veto verdicts rather than yesterday's. Well clear of
+    # the ~22:30 UTC nightly render.
+    - cron: "40 12 * * *"
+  workflow_dispatch:
+    inputs:
+      write:
+        description: >-
+          Append the score rows to data/press/research_triage.jsonl and commit.
+          FALSE (the default) ranks the whole catalog, runs the veto pass and
+          prints the head without writing anything.
+        required: false
+        type: boolean
+        default: false
+      veto:
+        description: >-
+          Run the demote-only LLM veto pass. On a WRITE run it is on by default
+          (that is the nightly's job); on a DRY RUN it is the only way to spend
+          a token, so leaving it true here opts a manual dry run into the spend.
+          Set false for a purely deterministic run.
+        required: false
+        type: boolean
+        default: true
+      as_of:
+        description: >-
+          DEV ONLY — run date YYYY-MM-DD (blank = today). Reproduces one day's
+          ranking. The vault catalog is a live snapshot with no history, so a
+          back-dated run sees TODAY's catalog filtered to that date's window,
+          not that date's catalog.
+        required: false
+        default: ""
+
+permissions:
+  contents: write             # commit the score ledger back to main
+
+concurrency:
+  # Two triage runs must never overlap: both would append rows for the same
+  # (as_of, report_id) pairs and race the ledger's own idempotence check.
+  group: research-triage
+  cancel-in-progress: false
+
+jobs:
+  triage:
+    # DARK BY DEFAULT. `vars.RESEARCH_TRIAGE_ENABLED` is absent until an operator
+    # creates it, and an absent variable is the empty string, so this job simply
+    # does not run.
+    if: ${{ vars.RESEARCH_TRIAGE_ENABLED == 'true' }}
+    runs-on: ubuntu-latest    # OFF the render path — never the macstudio pool
+    timeout-minutes: 20
+    env:
+      # Credential waterfall — engine/llm_auth.py probes these in order. Any one
+      # arms the veto pass; none leaves it mute (and loud about it).
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: install deps
+        # pyyaml: config/press.yml + config.yml. anthropic: the llm_auth
+        # waterfall's client. datasketch: the story-spine near-dup pass that
+        # cluster_density depends on — WITHOUT it the component degrades to an
+        # exact-key FLOOR and every row says so, which is honest but weaker, so
+        # the production lane installs it rather than shipping the degraded read.
+        run: pip install --quiet pyyaml anthropic datasketch
+
+      - name: rank the vault (W-score + demote-only veto pass)
+        id: triage
+        env:
+          TRIAGE_AS_OF: ${{ inputs.as_of }}
+        run: |
+          # -e matters: without it a Python traceback exits non-zero, the shell
+          # sails on, and a CRASHED triage run reports green.
+          set -euo pipefail
+          # --write implies the veto pass and, on the scheduled run, applies
+          # ledger retention. A manual dry run spends NOTHING unless --veto is
+          # asked for explicitly (the CLI's own default).
+          ARGS=""
+          if [ "${{ inputs.write }}" = "true" ] || [ "${{ github.event_name }}" = "schedule" ]; then
+            ARGS="--write --compact"
+          else
+            ARGS="--dry-run"
+          fi
+          if [ "${{ inputs.veto }}" = "false" ]; then
+            ARGS="$ARGS --no-veto"
+          elif [ "${{ inputs.write }}" != "true" ] && [ "${{ github.event_name }}" != "schedule" ]; then
+            # Dry run + veto explicitly requested: opt in to the spend.
+            if [ "${{ inputs.veto }}" = "true" ]; then ARGS="$ARGS --veto"; fi
+          fi
+          if [ -n "${TRIAGE_AS_OF:-}" ]; then ARGS="$ARGS --as-of $TRIAGE_AS_OF"; fi
+          # shellcheck disable=SC2086
+          python -m scripts.run_research_triage $ARGS --top 25 | tee triage_summary.json
+
+      - name: upload the ranking summary
+        # ALWAYS uploaded, including on a run that wrote nothing — the summary is
+        # how the operator reads which reports scored what and why.
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: research-triage-${{ github.run_id }}
+          path: triage_summary.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: commit the score ledger (no-op when nothing changed)
+        # NO `if: always()`. A failed ranking must not commit a half-written
+        # ledger for the next PR to inherit.
+        run: |
+          set -uo pipefail
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+
+          # EXPLICIT scoping: this ONE path and nothing else. The triage lane
+          # does not own content/, site/, the published press ledger, or the
+          # sitemap, and a wider `git add` here is how a lane starts committing
+          # somebody else's half-finished work.
+          git add data/press/research_triage.jsonl 2>/dev/null || true
+
+          STAGED=$(git diff --cached --name-only)
+          if [ -z "$STAGED" ]; then
+            echo "::notice title=research_triage::research-triage: nothing to commit"
+            exit 0
+          fi
+          if [ "$STAGED" != "data/press/research_triage.jsonl" ]; then
+            echo "::error title=research_triage_scope::research-triage staged something other than the score ledger: $STAGED. Refusing to commit."
+            exit 1
+          fi
+
+          git commit -m "research triage: scores $(date -u +%FT%H:%MZ) [skip ci]"
+
+          # Retry-rebase push loop to tolerate races with the nightly and the
+          # other committing lanes (mirrors press-publish.yml mechanics).
+          for i in 1 2 3 4 5; do
+            git fetch origin main || true
+            comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
+                     <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
+              | while IFS= read -r f; do rm -f -- "$f" || true; done
+            if git pull --rebase --autostash origin main && git push origin HEAD:main; then
+              echo "::notice title=research_triage::research-triage: pushed on attempt $i"
+              exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "research-triage: push attempt $i lost a race; re-syncing"
+            sleep $((i * 7))
+          done
+
+          echo "::warning title=research_triage_push::research-triage: could not push after 5 attempts (non-fatal)"
+          exit 0

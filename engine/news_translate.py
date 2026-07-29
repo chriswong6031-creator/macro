@@ -82,9 +82,77 @@ def _api_fill_allowed(cfg: dict) -> bool:
 
 
 def _cache_dir(cfg: dict) -> Path:
-    cdir = config.ROOT / cfg.get("cache_dir", "data/news_translation/cache")
+    """The translation cache directory.
+
+    A relative ``cache_dir`` resolves under the repo root (the nightly/render
+    lanes, whose cache IS committed). An ABSOLUTE one is taken verbatim, which is
+    how a long-running poller keeps its cache off the deployed checkout — that
+    tree is hard-reset every few minutes and its ``data/news_translation/cache``
+    is git-tracked, so a poller writing there both loses its cache and dirties
+    the work-tree (D05 W0 zero-repo-writes law).
+    """
+    raw = str(cfg.get("cache_dir") or "data/news_translation/cache")
+    cdir = Path(raw) if Path(raw).is_absolute() else config.ROOT / raw
     cdir.mkdir(parents=True, exist_ok=True)
     return cdir
+
+
+def _payload_text(text: str, cfg: dict) -> str:
+    """The EXACT string sent to the model for ``text``.
+
+    The batch call truncates to ``max_chars``; the cache must be keyed on THIS,
+    not on the caller's original. Keying on the original stored a translation of
+    the first N characters under the full text, so every later consumer of the
+    SHARED cache — macro_news, china_news — read back a silently truncated
+    Chinese string as if it were the whole item. One definition, used by the
+    reader, the writer and the sender so they cannot drift apart.
+    """
+    try:
+        max_chars = int(cfg.get("max_chars", 360))
+    except (TypeError, ValueError):
+        max_chars = 360
+    return text[:max_chars] if max_chars > 0 else text
+
+
+def _create_kwargs(cfg: dict, system: str, user: str) -> dict:
+    """Arguments for one messages.create call.
+
+    ``timeout``/``max_retries`` are opt-in per lane: the SDK default is minutes
+    plus retries, which is fine inside a nightly build and fatal inside a
+    75-second poller tick whose heartbeat only touches after the tick returns —
+    one hung endpoint reads to the monitor as a dead daemon.
+    """
+    kwargs: dict = {
+        "model": cfg.get("model", "deepseek-chat"),
+        "max_tokens": int(cfg.get("max_tokens", 3000)),
+        "system": system,
+        "messages": [{"role": "user", "content": user}],
+    }
+    if cfg.get("timeout_s"):
+        kwargs["timeout"] = float(cfg["timeout_s"])
+    return kwargs
+
+
+def _record_usage(cfg: dict, resp) -> None:
+    """Record spend, unless the caller owns a sink outside the repo.
+
+    ``usage_sink`` set to "none" suppresses the lib.ai_costs write entirely. That
+    ledger lives at data/ai_costs/usage.jsonl, which the nightly is the sole
+    advancer of; an intraday poller appending to it both violates that law and
+    writes inside a checkout that gets hard-reset. Such a caller reports its own
+    spend through its own gitignored host state.
+    """
+    if str(cfg.get("usage_sink", "")).lower() == "none":
+        return
+    try:
+        from lib import ai_costs as _ac  # noqa: PLC0415
+        _prov, _basis = _ac.infer_provider(cfg.get("base_url"))
+        _ac.record_response_usage(lane=str(cfg.get("usage_lane", "news-translate")),
+                                  response=resp,
+                                  model=cfg.get("model", "deepseek-chat"),
+                                  provider=_prov, cost_basis=_basis)
+    except Exception:  # noqa: BLE001
+        pass
 
 
 def _key(text: str, target: str = "zh") -> str:
@@ -99,7 +167,7 @@ def _read_cache(texts: list[str], cfg: dict) -> tuple[list[str | None], list[int
         if not text or _has_cjk(text):
             out.append(text if text else None)
             continue
-        path = cdir / f"{_key(text)}.json"
+        path = cdir / f"{_key(_payload_text(text, cfg))}.json"
         try:
             if path.exists():
                 val = json.loads(path.read_text()).get("text_zh")
@@ -119,8 +187,9 @@ def _write_cache(pairs: list[tuple[str, str | None]], cfg: dict) -> None:
         if not src or not zh or not _has_cjk(zh):
             continue
         try:
-            (cdir / f"{_key(src)}.json").write_text(json.dumps(
-                {"text": src, "text_zh": zh}, ensure_ascii=False))
+            sent = _payload_text(src, cfg)
+            (cdir / f"{_key(sent)}.json").write_text(json.dumps(
+                {"text": sent, "text_zh": zh}, ensure_ascii=False))
         except Exception:  # noqa: BLE001
             pass
 
@@ -135,8 +204,15 @@ def _client(cfg: dict):
         log.warning("anthropic SDK not installed; news translation skipped")
         return None
     try:
-        base = cfg.get("base_url")
-        return anthropic.Anthropic(api_key=key, base_url=base) if base else anthropic.Anthropic(api_key=key)
+        kw: dict = {"api_key": key}
+        if cfg.get("base_url"):
+            kw["base_url"] = cfg["base_url"]
+        # A poller lane sets max_retries=0: the SDK's default retry ladder turns
+        # one slow endpoint into several multiples of the timeout, inside a tick
+        # that has a heartbeat waiting on it.
+        if cfg.get("max_retries") is not None:
+            kw["max_retries"] = int(cfg["max_retries"])
+        return anthropic.Anthropic(**kw)
     except Exception as e:  # noqa: BLE001
         log.warning("news translation client init failed: %s", e)
         return None
@@ -163,21 +239,11 @@ def _extract_array(text: str) -> list | None:
 
 def _translate_batch(client, texts: list[str], cfg: dict) -> list[str | None]:
     none = [None] * len(texts)
-    max_chars = int(cfg.get("max_chars", 360))
-    payload = [t[:max_chars] for t in texts]
+    payload = [_payload_text(t, cfg) for t in texts]
     user = "Translate this JSON array to Simplified Chinese:\n" + json.dumps(payload, ensure_ascii=False)
     try:
-        resp = client.messages.create(
-            model=cfg.get("model", "deepseek-chat"),
-            max_tokens=int(cfg.get("max_tokens", 3000)),
-            system=SYSTEM_ZH,
-            messages=[{"role": "user", "content": user}],
-        )
-        from lib import ai_costs as _ac  # noqa: PLC0415
-        _prov, _basis = _ac.infer_provider(cfg.get("base_url"))
-        _ac.record_response_usage(lane="news-translate", response=resp,
-                                  model=cfg.get("model", "deepseek-chat"),
-                                  provider=_prov, cost_basis=_basis)
+        resp = client.messages.create(**_create_kwargs(cfg, SYSTEM_ZH, user))
+        _record_usage(cfg, resp)
         text = "".join(getattr(b, "text", "") for b in resp.content if getattr(b, "type", "") == "text")
     except Exception as e:  # noqa: BLE001
         log.warning("news translation batch failed: %s", e)
@@ -235,7 +301,7 @@ def _read_cache_en(texts: list[str], cfg: dict) -> tuple[list[str | None], list[
         if not text or not _has_cjk(text):
             out.append(text if text else None)     # already English -> passthrough
             continue
-        path = cdir / f"{_key(text, 'en')}.json"
+        path = cdir / f"{_key(_payload_text(text, cfg), 'en')}.json"
         try:
             if path.exists():
                 val = json.loads(path.read_text()).get("text_en")
@@ -255,29 +321,20 @@ def _write_cache_en(pairs: list[tuple[str, str | None]], cfg: dict) -> None:
         if not src or not en or not _looks_english(en):
             continue
         try:
-            (cdir / f"{_key(src, 'en')}.json").write_text(json.dumps(
-                {"text": src, "text_en": en}, ensure_ascii=False))
+            sent = _payload_text(src, cfg)
+            (cdir / f"{_key(sent, 'en')}.json").write_text(json.dumps(
+                {"text": sent, "text_en": en}, ensure_ascii=False))
         except Exception:  # noqa: BLE001
             pass
 
 
 def _translate_batch_en(client, texts: list[str], cfg: dict) -> list[str | None]:
     none = [None] * len(texts)
-    max_chars = int(cfg.get("max_chars", 360))
-    payload = [t[:max_chars] for t in texts]
+    payload = [_payload_text(t, cfg) for t in texts]
     user = "Translate this JSON array to English:\n" + json.dumps(payload, ensure_ascii=False)
     try:
-        resp = client.messages.create(
-            model=cfg.get("model", "deepseek-chat"),
-            max_tokens=int(cfg.get("max_tokens", 3000)),
-            system=SYSTEM_EN,
-            messages=[{"role": "user", "content": user}],
-        )
-        from lib import ai_costs as _ac  # noqa: PLC0415
-        _prov, _basis = _ac.infer_provider(cfg.get("base_url"))
-        _ac.record_response_usage(lane="news-translate", response=resp,
-                                  model=cfg.get("model", "deepseek-chat"),
-                                  provider=_prov, cost_basis=_basis)
+        resp = client.messages.create(**_create_kwargs(cfg, SYSTEM_EN, user))
+        _record_usage(cfg, resp)
         text = "".join(getattr(b, "text", "") for b in resp.content if getattr(b, "type", "") == "text")
     except Exception as e:  # noqa: BLE001
         log.warning("news EN-translation batch failed: %s", e)

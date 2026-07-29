@@ -2,29 +2,109 @@
 
 # Active Build Map
 
-Generated: 2026-07-28T01:01:11.674093+00:00  |  Open PRs: 2  |  Merged (window): 500  |  base: `bc75c17b6b01cbe6930fab9fc9b7af56a71ded4e`
+Generated: 2026-07-29T01:13:39.570576+00:00  |  Open PRs: 6  |  Merged (window): 500  |  base: `2a58a07e12dc3986d228d8760ccd3de97fee3976`
 
 ## Open PRs
 
 | PR | Title | Branch | Updated | Flags |
 |----|-------|--------|---------|-------|
-| #3858 | test(neuralweb): close the determinism guard's lazily-imported-helper hole | `claude/world-state-determinism-guard` | 2026-07-28 | ⚠ protected:1 |
-| #3853 | fix(marketing): retail plain-speak — post-time language gate, chart draws the cited level, weekend copy dumb-down | `claude/avgo-poc-language-gate` | 2026-07-28 | ⚠ protected:1 |
+| #3940 | Fix Research Vault dark-mode canvas | `codex/research-vault-dark-theme-v2-20260728` | 2026-07-29 | — |
+| #3928 | fix(marketing): the generated wrapper now says something that follows from the fact | `claude/distracted-cartwright-c78b21` | 2026-07-28 | ⚠ CONFLICTING / ⚠ protected:1 |
+| #3927 | fix(marketing): the persona cadence specs were a 20-post/day cap on a 70-post network | `claude/gracious-heyrovsky-581a08` | 2026-07-28 | ⚠ CONFLICTING / ⚠ protected:1 |
+| #3918 | fix(marketing): post-time headline-shape gate — queue-vintage fragments never post | `claude/hopeful-meninsky-a88053` | 2026-07-28 | — |
+| #3912 | fix(ship-guard): accept public-render.yml as a satisfying render lane | `claude/intelligent-lamarr-d39c96` | 2026-07-28 | — |
+| #3879 | ci: guard admin/static/*.js against out-of-scope references (eslint no-undef) | `claude/priceless-robinson-0eb29a` | 2026-07-28 | ⚠ protected:2 |
 
 > ⚠ CONFLICTING means mergeStateStatus=DIRTY — pull_request CI is suppressed on conflicting PRs (known repo failure mode).
 
 ## File Collisions
 
-_No file collisions detected among open PRs._
+| PR A | PR B | Shared files | Files |
+|------|------|-------------|-------|
+| #3928 | #3927 | 3 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml`, `config/marketing.yml` |
+| #3928 | #3879 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #3927 | #3879 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
 
 ## Recently Merged (last 14 days) (showing most recent 500; window truncated)
 
 | PR | Title | Merged |
 |----|-------|--------|
+| #3939 | Public Research Vault preview with Pro gating | 2026-07-29 |
+| #3937 | feat(marketing): Hot Tape P2 — LLM wire desk behind the numeric-consistency gate | 2026-07-29 |
+| #3936 | fix(tests): defuse confluence content-plan date bomb (base-side red since 07-26) | 2026-07-28 |
+| #3935 | feat(x-growth): XG-W8 research triage — W-score, veto pass, tiering, dark research lane | 2026-07-28 |
+| #3934 | research(marketing): Hot Tape masterplan — attention-driven intraday content | 2026-07-28 |
+| #3933 | fix(ci): heal contract-drift — us_standouts 'leaders' joins the contract (1.3.0) | 2026-07-28 |
+| #3932 | fix(marketing): sector lists were generated all day from live quotes — and 100% dropped at the theme ramp | 2026-07-28 |
+| #3931 | Fix stock dashboard Grid/Table toggles | 2026-07-28 |
+| #3930 | fix(china-board): route the 110-cap overflow into a visible watch lane — nothing silently dropped | 2026-07-28 |
+| #3929 | feat(us-board): widen the gate's throat — sector cap re-tune, leaders strip, prophet intake ×2 | 2026-07-28 |
+| #3926 | Use names for user identities | 2026-07-28 |
+| #3925 | fix(marketing): the kill switch could not stop a booked post — add recall | 2026-07-28 |
+| #3924 | perf(marketing): the 10-min global floor was throttling seven desks as if they were one | 2026-07-28 |
+| #3923 | fix(marketing): feed the Lab from the live analytics ledger — telemetry was test-fed only | 2026-07-28 |
+| #3922 | fix(marketing): review, rewrite and approve today's queue — 31 posts that actually say something | 2026-07-28 |
+| #3921 | fix(marketing): a ticker post may no longer go out without its chart | 2026-07-28 |
+| #3920 | feat(ai): provision Codex in VPS provider pool | 2026-07-28 |
+| #3919 | feat(pricing): true up the Flash AI row — Free advertises the 5/wk trickle, Pro goes Unlimited (config+gateway+copy) | 2026-07-28 |
+| #3917 | fix(tests): defuse reply-desk panel clock bomb (base-side red since 15:45Z) | 2026-07-28 |
+| #3916 | feat(x-growth): XG-W6 telemetry + learning — labels loop, health monitor, network tripwire, reply producer | 2026-07-28 |
+| #3915 | feat(x-growth): XG-W7 surfaces + seeding — news.html live rail, zh/tier gate, follow-CTA sweep | 2026-07-28 |
+| #3914 | feat(x-growth): XG-W5 scoring brain — L0 story spine, L1 features, garbage gate, golden-set harness | 2026-07-28 |
+| #3913 | fix(marketing): the publish lane was dead — 5 faults, plus today's 60-post queue | 2026-07-28 |
+| #3911 | docs(china): W3 first production night verified — §8 record | 2026-07-28 |
+| #3910 | ads(round2): 13 masterpiece ad concepts × 31 placement renders + the Ad Master Paper | 2026-07-28 |
+| #3909 | Replace stock dashboard emoji with semantic icons | 2026-07-28 |
+| #3908 | feat(x-growth): XG-W4 reply desk phase 1 — discovery, scorer, drafter, critics, queue, M1 handoff | 2026-07-28 |
+| #3907 | fix(marketing): watchlist variants require a ticker to render; fragment screen in validate_copy | 2026-07-28 |
+| #3906 | feat(x-growth): XG-W3 desk feeds + franchises + persona memory + Gift-Grip-Proof gate | 2026-07-28 |
+| #3905 | feat(prophet): add private trade memory | 2026-07-28 |
+| #3904 | feat(marketing): 59 posts/day from 1 — unlock stale names as watches, 30-min ladder, per-desk voices | 2026-07-28 |
+| #3901 | fix(landing): correct stale marketing figures — theme count, AI quotas, filings tally | 2026-07-28 |
+| #3900 | perf(marketing): stop writing the Prophet plan into every queue item (-34% content_plan.json) | 2026-07-28 |
+| #3899 | Add Codex subscription to shared AI provider waterfall | 2026-07-28 |
+| #3898 | feat(ci): merge-on-green label + sweeper — arm the merge and stop; no more CI-hostage sessions | 2026-07-28 |
+| #3897 | feat(plans): rebuild the pricing page in the homepage's pricing idiom | 2026-07-28 |
+| #3896 | fix(ci): wire test_marketing_chart_coverage into a lane — it shipped unrun | 2026-07-28 |
+| #3895 | fix(marketing): give every ticker post a chart — four causes, one bare Outbox | 2026-07-28 |
+| #3894 | marketing: add mobile X hero and carousel campaign | 2026-07-28 |
+| #3893 | products: redesign the three flagship product pages (landing-native, illustrated) | 2026-07-28 |
+| #3892 | ads(round2): master paper, ad design system, desk exemplar, review gallery | 2026-07-28 |
+| #3891 | docs: auto-merge is not a wait — main has no branch protection, --auto merges instantly | 2026-07-28 |
+| #3890 | fix(research_vault): re-read sidecars so late summaries reach published rows | 2026-07-28 |
+| #3889 | fix(ci): wire tests/test_billing_offers.py into a pack lane (unrun-suite rot) | 2026-07-28 |
+| #3888 | fix(deploy): admin restart regex learns engine/marketing/sentinel.py (#3884 follow-up) | 2026-07-28 |
+| #3887 | fix(ci): heal stale founding-copy pin in public fastlane suite, wire it into a pack lane | 2026-07-28 |
+| #3886 | ci: split the legacy packs 2 → 4 — halve time-to-green | 2026-07-28 |
+| #3885 | feat(x-growth): XG-W2 cadence + collision spine — per-account resolver, one-owner lock, canonical outbox path | 2026-07-28 |
+| #3884 | fix(marketing): post-time ramp caps, revive the dead publish-time lane, symmetric tier-typo handling (post-merge review of #3874) | 2026-07-28 |
+| #3883 | Marketing: replace X ads with mobile Category campaign | 2026-07-28 |
+| #3881 | fix(ci): a merged close must not cancel the PR's own proof run | 2026-07-28 |
+| #3880 | fix(billing): survive the test→live Stripe switch — mode-scoped customer verification + comp-safe reconciler | 2026-07-28 |
+| #3878 | Fix World Markets card height stretching | 2026-07-28 |
+| #3877 | Marketing: 20 production-ready X ad experiments | 2026-07-28 |
+| #3876 | fix(tests): prophet bridge main() smoke tests leak site/prophet/showcase.json | 2026-07-28 |
+| #3875 | feat(x-growth): XG-W1 employee desks — 4 codex specs, expression dial, three-layer wiring | 2026-07-28 |
+| #3874 | feat(marketing): enforce the D08 age ramp, cold-account cashtag/theme gates, CTA-free chart footer, send-time jitter | 2026-07-28 |
+| #3873 | research(media): X Growth charter rev 6.1 — adversarial cross-check corrections | 2026-07-28 |
+| #3872 | research(media): X Growth unified operation — constitution adopted, reply desk chartered, waves reconciled (rev 6) | 2026-07-28 |
+| #3871 | fix(admin): blank Outbox — rejBox referenced out of scope in obxRenderLive | 2026-07-28 |
+| #3870 | fix(ci): heal main — uncompiled kill-registry rows + a third skip-only marketing suite | 2026-07-28 |
+| #3869 | fix(terminal-refresh): add the crypto OHLC pass so crypto rows actually chart | 2026-07-28 |
+| #3868 | feat(ad-central): the human gate, round 1 rejected, and a handoff | 2026-07-28 |
+| #3867 | fix(hooks): ship-loop guard — escape ladders for every blocker, in-flight render defers | 2026-07-28 |
+| #3866 | fix(tests): PSS-RH1 historical parity audit tolerates total-return adjustment drift | 2026-07-28 |
+| #3864 | research(media): umbrella rev-5 pointer to the Intelligence Suite masterplan | 2026-07-28 |
+| #3863 | research(media): Intelligence Suite masterplan — sources, scoring brain, pathway router, employee desks | 2026-07-28 |
+| #3862 | fix(guards): finish the MastermindX brand sweep in the validated-claims selftest fixture | 2026-07-28 |
+| #3861 | feat(press-feeds): B2-COPY wire voice + dual-format law + tape stamps + B4a wires.json sink | 2026-07-28 |
+| #3860 | fix(ci): heal main red from #3850 entity migration — checker literal + stale renders | 2026-07-28 |
+| #3858 | test(neuralweb): close the determinism guard's lazily-imported-helper hole | 2026-07-28 |
 | #3857 | fix(registry): heal SIGNAL_BUS drift (#3844 added site-china-calendar without the pin bump) | 2026-07-27 |
 | #3856 | feat(pricing): founding-allotment meter (enforced daily withdrawal) + tier-card revamp | 2026-07-27 |
 | #3855 | marketing: 45-min ladder, unlimited breaking, near-dup dedup law, Content Studio usage fold | 2026-07-27 |
 | #3854 | feat: accrue prospective PSS follow-on gates | 2026-07-27 |
+| #3853 | fix(marketing): retail plain-speak — post-time language gate, chart draws the cited level, weekend copy dumb-down | 2026-07-28 |
 | #3852 | research(media): Alpaca build gate passed — probe evidence, keys on VPS, B1.5 unblocked | 2026-07-27 |
 | #3851 | feat(marketing): wire the founder's account (w_chris6031) as the 7th desk | 2026-07-27 |
 | #3850 | feat(seo): add MastermindX product discovery architecture | 2026-07-27 |
@@ -449,78 +529,6 @@ _No file collisions detected among open PRs._
 | #3395 | feat(us_stocks): Prophet × Top-setups presentation merge — ⚡ trigger chip + residual-only sub-board | 2026-07-24 |
 | #3394 | feat(wri): W1 — stress-conditioned factor covariance in factor_betas.json | 2026-07-24 |
 | #3393 | feat(regwall): gate paid JSON payloads (/factordata + /labdata) at the edge | 2026-07-24 |
-| #3392 | feat(research-vault): programmatic SEO — one indexable landing page per report | 2026-07-24 |
-| #3391 | feat(landing): Prophet teaser → 2-week-delayed winners, never the live board | 2026-07-24 |
-| #3390 | fix(landing): prophet belt keeps drifting on hover (0.7x), no full stop | 2026-07-24 |
-| #3389 | research(wri): charter Watchlist Risk Intelligence — risk-detecting watchlist revamp (W0) | 2026-07-24 |
-| #3388 | feat(mag7): washout re-entry gate — prereg + background engine + phase-0 census (MWR-W0) | 2026-07-24 |
-| #3387 | feat(regwall): open the SEO estate to crawlers + faster/smarter login | 2026-07-24 |
-| #3386 | feat(research-vault): static filter bar + show-more pagination | 2026-07-24 |
-| #3385 | fix(ci): heal contract-drift — canada_standouts conditional fields reclassified as optional_fields | 2026-07-24 |
-| #3384 | feat(research-vault): lock glyph on the Pro-only Top Picks tab | 2026-07-24 |
-| #3383 | Hub welcome: a refresh isn't a visit (gap-based counting + clearer recall) | 2026-07-24 |
-| #3382 | Regime dynamics: never emit a regime label without its trajectory | 2026-07-24 |
-| #3381 | Hub welcome: market-aware conversation + slower dissolve (fix dropped greeting) | 2026-07-24 |
-| #3380 | feat(research-vault): desk constellation, macro fonts, publish times, full-page reader, Pro tiering | 2026-07-24 |
-| #3379 | feat(mastermind): log all Mastermind AI responses to an admin eval corpus | 2026-07-24 |
-| #3378 | Personal dashboard: fix stuck "Loading your plan…" + tier/expiry + upgrade CTA | 2026-07-24 |
-| #3377 | Landing login persistence (CORS fix) + start.html personal welcome & home globe | 2026-07-24 |
-| #3376 | feat(marketing): autonomous cadence Phase 1 — lift daily post/media cap to unlimited | 2026-07-24 |
-| #3375 | fix(admin): Outbox — approved posts leave the review list into a collapsed "awaiting publish" shelf | 2026-07-24 |
-| #3374 | ci(render-lanes): heal template↔site pairs BEFORE the first commit in all 6 externalizing lanes | 2026-07-24 |
-| #3373 | ops(daily): engine timeout 150→200m — nightly engine cancelled at the cap 5 of last 8 nights | 2026-07-24 |
-| #3372 | perf(cycles): split cycle payloads + parallel preloaded loader + immutable-cacheable URLs + skeleton | 2026-07-24 |
-| #3371 | fix(fonts): "SF Mono"-first --num stacks render numerals as serif in Chrome — lead with ui-monospace sitewide | 2026-07-24 |
-| #3370 | fix(leader-radar): LRV-O9 — entry-read stance layer, parabolic sign guard, Tonight's Focus stance shelves | 2026-07-24 |
-| #3369 | China track record: log ticker names + fix vs-CSI300 nulls-last sort | 2026-07-24 |
-| #3367 | onboard: materializing desk pane replaces the assembly-card rail | 2026-07-24 |
-| #3366 | authfe: post-login redirect, upgrade sheet, landing auth chrome + gear parity | 2026-07-24 |
-| #3365 | feat(landing): Prophet showcase section — real card belt below the Terminal | 2026-07-24 |
-| #3364 | feat(billing): generalize upgrade matrix + expose plan interval | 2026-07-24 |
-| #3363 | docs(marketing): masterplan go-live reflects the panel toggle (#3361) | 2026-07-24 |
-| #3362 | fix(tests): heal test_seo_meta_rollout (12 reds) + wire it into the ci.yml whitelist | 2026-07-24 |
-| #3361 | feat(admin): publisher Arm/Disarm toggle + token paste-box — kill-switch moves to repo variable | 2026-07-24 |
-| #3360 | feat(admin): revenue analytics + projections — live Stripe MRR/ARR/cash/forecast | 2026-07-24 |
-| #3359 | fix(us_stocks/macro): remove forced Mag-7 'Big Seven' board + demote Ignition Radar to background-only | 2026-07-24 |
-| #3358 | fix(sync): re-sync site/index.html + site/chat.html from templates/ — heal template-site-sync red on main | 2026-07-24 |
-| #3357 | fix(tests): anchor W-OVC fixture expiries to the frozen chain date — front7 keying test was vacuous | 2026-07-24 |
-| #3356 | chore(admin): drop token-rotation prompts from go-live checklist | 2026-07-24 |
-| #3355 | feat(billing): prorated Insider→Pro upgrade + plan/expiry in the personal dashboard | 2026-07-24 |
-| #3354 | feat(admin): users/subscribers suite — per-tier roster, comps, trials, passes | 2026-07-24 |
-| #3353 | feat(regwall): registration lockdown — all dashboard pages require an account | 2026-07-24 |
-| #3352 | fix(tests): UTC-midnight fixture-bomb audit — pin test_symbol_directory to the engine's UTC clock | 2026-07-24 |
-| #3351 | fix(auth): the onboarding sheet is SITE-WIDE on www — no auth entry navigates to app.* | 2026-07-24 |
-| #3350 | fix(ci): parquet-reader guard on PLTR load_closes test (heals marketing-engine lane) | 2026-07-24 |
-| #3349 | docs(marketing): suite audit masterplan + forward roadmap | 2026-07-24 |
-| #3348 | feat(admin): marketing operator console — pipeline hero, controls, go-live checklist | 2026-07-24 |
-| #3347 | fix(marketing): engine correctness — per-day caps, account liveness, receipts, slot times (1/3) | 2026-07-24 |
-| #3346 | feat(marketing): per-post metrics poller + chart-image pipeline (Buffer) | 2026-07-24 |
-| #3345 | fix(tests): de-flake marketing sentinel UTC-midnight fixture bomb + whitelist suite in CI | 2026-07-24 |
-| #3344 | feat(landing): the onboarding sheet — landing-native signup/trial flow (§0 primary surface) | 2026-07-24 |
-| #3343 | fix(marketing): publisher daily-cap counts ledger-based, not as_of-based | 2026-07-24 |
-| #3342 | docs(onboarding): §0 surface ruling — sheet belongs to the landing, not the terminal app | 2026-07-24 |
-| #3341 | fix(gex): Options Desk remaster — repair shipped UI bugs, rebuild layout & levels map | 2026-07-24 |
-| #3340 | fix(flow_desk): nav dropdown painted behind the hero | 2026-07-24 |
-| #3339 | feat(auth): every login/signup entry routes to the Terminal onboarding sheet | 2026-07-23 |
-| #3338 | docs(claude): Spawn-handoff law — binding context for commissioned build sessions | 2026-07-23 |
-| #3337 | fix(nav): remove '✨ Plans' from the site-wide dashboard menu | 2026-07-23 |
-| #3336 | fix(research-vault): batch receipts behind the publish barrier (heals #3334 red test) + W6 charter | 2026-07-23 |
-| #3335 | fix(landing+settings): operator 12-item pass — LIVE pill, brand marks, clear closing copy, Live-prices toggle removed | 2026-07-23 |
-| #3334 | feat(research-vault): backfill hardening — checkpoints, body cap, non-blocking corpus refresh (+W6 charter) | 2026-07-23 |
-| #3333 | feat(marketing): publish-time mover/theme generation + scoped auto-approve | 2026-07-23 |
-| #3331 | feat(landing): closing-band bookend + real footer + hero gradient signature | 2026-07-23 |
-| #3330 | fix(billing): SetupIntent card-family only (allow_redirects=never) | 2026-07-23 |
-| #3329 | fix(research-vault): call the research API same-origin (not app.*) | 2026-07-23 |
-| #3328 | feat(billing): Stripe Elements subscription lane — in-sheet card-up-front trials (W2) | 2026-07-23 |
-| #3327 | feat(landing): MOST POPULAR badge + primary CTA move Insider -> Pro (operator ruling) | 2026-07-23 |
-| #3326 | feat(marketing): fintwit voice v3 + post-time tape gate + outbox persistence heal | 2026-07-23 |
-| #3325 | feat(landing): pricing-tier CTAs deep-link into the Terminal onboarding sheet (?plan= params) | 2026-07-23 |
-| #3324 | fix(gex): restore body top padding — heal repo-wide nav-gap red | 2026-07-23 |
-| #3323 | feat(portfolio): W1 — brief composer + GET /api/portfolio/brief + Brain get_portfolio_brief tool | 2026-07-24 |
-| #3322 | feat(china-altdata): trading-intensity waterline in the tape hero | 2026-07-23 |
-| #3321 | feat(research-vault): separate-account R2 credentials (R2_RESEARCH_*) | 2026-07-23 |
-| #3320 | feat(flow-velocity): rotation/momentum/confluence dashboard + glance engine | 2026-07-23 |
-| #3319 | feat(heatmap): mx5 dashboard revamp — pulse, breadth & movers on all 5 heatmaps | 2026-07-23 |
 
 ---
 

@@ -1191,14 +1191,16 @@ class TestCriticStampIsStructural:
         for item in rq.read_items(store):
             assert rq.validate_critic_stamp(item) == []
 
-    def test_the_producer_chain_is_documented_as_absent(self):
-        """Pins the honesty claim. No production module calls `enqueue`, so the
-        queue does not fill on its own in this wave — the runbook and the module
-        docstring both say so, and the store-side stamp is what makes the safety
-        claim true anyway.
+    def test_exactly_one_production_module_enqueues(self):
+        """XG-W4 shipped with NO caller and asserted `callers == []`, so that the
+        wave wiring a producer would be forced to touch the docs in the same
+        change. XG-W6 wired it, updated `docs/reply_desk_runbook.md` §9-§11 and
+        `reply_queue`'s docstring, and this assertion moved to its post-producer
+        form: exactly ONE module may enqueue, and it is the producer.
 
-        When XG-W6 wires the producer this test FAILS, which is the point: the
-        docs saying "not built yet" must be updated in the same change.
+        The bar is unchanged in substance — a second, un-reviewed path into the
+        queue is still a defect, and the store-side critic stamp is still what
+        makes the safety claim true regardless of who fills the store.
         """
         import ast
 
@@ -1233,16 +1235,25 @@ class TestCriticStampIsStructural:
                             and getattr(node.func, "attr", None) == "enqueue"
                             and getattr(node.func.value, "id", None) in aliases):
                         callers.append(f"{path.relative_to(ROOT)}:{node.lineno}")
-        assert callers == [], (
-            f"a producer now calls enqueue ({callers}) — update the 'not built "
-            "yet' notes in docs/reply_desk_runbook.md §9 and reply_queue's docstring")
+        modules = sorted({c.split(":")[0] for c in callers})
+        assert modules == ["engine/marketing/reply_producer.py"], (
+            f"exactly one production module may fill the reply queue; found {modules}. "
+            "A second path in is a second place the critic contract has to hold.")
 
-    def test_the_docs_name_the_wave_that_builds_the_producer(self):
+    def test_the_docs_describe_the_producer_that_exists(self):
         runbook = (ROOT / "docs" / "reply_desk_runbook.md").read_text(encoding="utf-8")
-        assert "producer chain" in runbook.lower()
-        assert "XG-W6" in runbook
+        low = runbook.lower()
+        assert "the producer (xg-w6)" in low, "the runbook must document the built producer"
+        assert "--lane reply" in runbook, "operators need the command that runs it"
+        assert "reply_desk.producer.enabled" in runbook, "and the arming lever"
         src = (ROOT / "engine" / "marketing" / "reply_queue.py").read_text(encoding="utf-8")
         assert "XG-W6" in src
+
+    def test_the_runbook_no_longer_claims_the_producer_is_unbuilt(self):
+        """The stale-doc trap this pair exists to catch, in its live form."""
+        runbook = (ROOT / "docs" / "reply_desk_runbook.md").read_text(encoding="utf-8")
+        assert "the queue\n  does not fill on its own yet" not in runbook
+        assert "does not fill on its own yet" not in runbook
 
 
 class TestZeroCrossAccountEngagement:
@@ -2197,7 +2208,11 @@ class TestAdminReplyQueuePanel:
 
         item = _item()
         rq.enqueue(item, store)
-        payload = adm.reply_queue(root=ROOT, store=store)
+        # now=NOW is NOT optional. The fixture item is built at NOW with a
+        # 45-minute TTL, so a panel read on the WALL CLOCK expires it the moment
+        # real time passes 2026-07-28T15:45Z — a clock fixture bomb that turns
+        # this suite red on a date rather than on a defect.
+        payload = adm.reply_queue(root=ROOT, store=store, now=NOW)
         assert payload["ok"] is True
         [block] = payload["accounts"]
         assert block["id"] == "kelly"
@@ -2208,7 +2223,7 @@ class TestAdminReplyQueuePanel:
         from admin import marketing as adm
 
         rq.enqueue(_item(), store)
-        payload = adm.reply_queue(root=ROOT, store=store)
+        payload = adm.reply_queue(root=ROOT, store=store, now=NOW)
         block = payload["accounts"][0]
         assert block["mode"] == "M0"
         assert block["cap"] == 0, "M0 must render a zero cap"
@@ -2228,7 +2243,7 @@ class TestAdminReplyQueuePanel:
         from admin import marketing as adm
 
         rq.enqueue(_item(), store)
-        row = adm.reply_queue(root=ROOT, store=store)["accounts"][0]["awaiting"][0]
+        row = adm.reply_queue(root=ROOT, store=store, now=NOW)["accounts"][0]["awaiting"][0]
         assert row["score_components"] == {"author_tier": 0.26}
 
     def test_approve_moves_the_item(self, store):
@@ -2346,7 +2361,7 @@ class TestAdminReplyQueuePanel:
 
         monkeypatch.setattr(rq, "expire_due",
                             lambda **kw: (_ for _ in ()).throw(RuntimeError("boom")))
-        payload = adm.reply_queue(root=ROOT, store="/nonexistent")
+        payload = adm.reply_queue(root=ROOT, store="/nonexistent", now=NOW)
         assert payload["ok"] is False
         assert payload["accounts"] == []
 
@@ -2374,3 +2389,31 @@ class TestAdminRoutesAreWired:
         assert "marketing_reply_queue:" in src, "nav icon missing"
         for fn in ("rqDecide", "rqReject"):
             assert f"function {fn}(" in src
+
+    def test_no_panel_read_in_this_suite_relies_on_the_wall_clock(self):
+        """NOW is a fixed 2026-07-28T15:00Z and _item() defaults to ttl_min=45,
+        so an item built here expires at 15:45Z. adm.reply_queue() runs
+        expire_due() before every read and falls back to datetime.now() when no
+        clock is injected — which meant these panel tests passed on the morning
+        they were written and went PERMANENTLY red at 15:45Z that same day, on a
+        suite that gates the marketing-engine lane. Not a flake: a time bomb with
+        a known detonation time. Every panel read must pin the clock.
+        """
+        import ast
+
+        src = Path(__file__).read_text(encoding="utf-8")
+        tree = ast.parse(src)
+        unpinned = []
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            fn = node.func
+            if not (isinstance(fn, ast.Attribute) and fn.attr == "reply_queue"):
+                continue
+            if not any(kw.arg == "now" for kw in node.keywords):
+                unpinned.append(node.lineno)
+        assert not unpinned, (
+            f"adm.reply_queue() called without now= at line(s) {unpinned}; "
+            "expire_due() will kill the fixture item once the wall clock passes "
+            "its TTL and this suite goes red for good"
+        )

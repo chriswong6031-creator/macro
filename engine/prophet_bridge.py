@@ -25,7 +25,8 @@ OURS: selection rule documented here; all levels are display-only.
    Reason: gate_go=False is a macro-caution flag; tighten score threshold, but
    don't eliminate imminent-entry (act_level>=2) setups entirely.
 3. Sort: descending by conviction.score; ties broken by act_level descending.
-4. Take up to N_CANDIDATES (default 6).
+4. Take up to N_CANDIDATES (default 12; raised from 6, operator gate-width order
+   2026-07-28 — the 6-cap plus a wider board was starving nightly plan intake).
 5. Exclude entries where entry_signal is null.
 6. Exclude entries where dir != "up" (only BULL universe currently).
 
@@ -75,7 +76,7 @@ log = logging.getLogger(__name__)
 # Constants
 # ---------------------------------------------------------------------------
 
-N_CANDIDATES = 6          # max picks per run
+N_CANDIDATES = 12         # max picks per run (6 -> 12, gate-width order 2026-07-28)
 HORIZON_DAYS_DEFAULT = 45  # BASE_HORIZON_DAYS in PSQ-TILT design; already a named constant
 MIN_HOLD_DAYS_DEFAULT = 10
 T1_MULTIPLIER = 1.5
@@ -224,6 +225,8 @@ def select_candidates(
       gate_go=False → (act_level >= 2 OR score >= 60) AND band != 'low'
     """
     gate_go: bool = standouts.get("gate_go", False)
+    # buy[] ONLY. standouts["leaders"] (2026-07-28 leaders strip) is deliberately
+    # excluded: those rows have no fresh entry signal, hence no plan geometry.
     buys: list[dict] = standouts.get("buy", [])
 
     selected: list[dict] = []

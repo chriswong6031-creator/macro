@@ -183,24 +183,73 @@ def _quotes_from_heatmap(obj: dict) -> dict[str, dict]:
     return out
 
 
+def _artifact_ms(obj: dict | None) -> float | None:
+    """Epoch-ms of an artifact's `asof`, or None when absent/unparseable."""
+    raw = str((obj or {}).get("asof") or "").strip()
+    if not raw:
+        return None
+    try:
+        return datetime.fromisoformat(raw.replace("Z", "+00:00")).timestamp() * 1000.0
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _merge_quotes(dest: dict[str, dict], incoming: dict[str, dict],
+                  incoming_ms: float | None) -> None:
+    """Merge `incoming` into `dest`, keeping the FRESHER quote per ticker.
+
+    NOT dict.update(). Source order used to decide the winner on the assumption
+    that the fuller artifact is also the fresher one. On 2026-07-28 it was not:
+    the VPS became the primary live-quote publisher (VPS_LIVE_PRIMARY=true), the
+    GitHub live-quotes lane correctly stood down, and nothing repointed the
+    `live-data` branch — so the tape gate kept loading a 2105-symbol snapshot
+    that was SEVENTEEN HOURS old and let it overwrite the genuinely current
+    heatmap and display quotes. Every signal then failed the 45-minute quote-age
+    check ("quote for ROST is 452m old") and the desk network held everything it
+    had. A stale source must never displace a fresh one, however complete it is.
+
+    Freshness is the quote's own ts_ms when it carries one, else its artifact's
+    asof. Unknown-vs-unknown keeps the incoming value, preserving the old
+    source-order precedence exactly where no timestamp can decide it.
+    """
+    for tkr, q in incoming.items():
+        prior = dest.get(tkr)
+        if prior is None:
+            dest[tkr] = q
+            continue
+        new_ms = q.get("ts_ms") or incoming_ms
+        old_ms = prior.get("ts_ms") or prior.get("_artifact_ms")
+        if new_ms is not None and old_ms is not None and float(new_ms) < float(old_ms):
+            continue          # incoming is older — keep what we have
+        dest[tkr] = q
+    # Remember each entry's artifact time so a later merge can compare against a
+    # quote that carries no ts_ms of its own (the heatmap tiles are pct-only).
+    if incoming_ms is not None:
+        for tkr in incoming:
+            if dest.get(tkr) is not None and dest[tkr].get("ts_ms") is None:
+                dest[tkr]["_artifact_ms"] = incoming_ms
+
+
 def load_live_quotes(root: Path | str | None = None) -> dict[str, Any]:
     """Load the freshest available quote view.
 
     Returns {"quotes": {ticker: {price, prev_close, change_pct, ts_ms, source}},
              "asof": iso-str | None, "source": str}.
-    Precedence per ticker: full snapshot > display quotes > heatmap pct.
+    Per ticker the FRESHEST quote wins (see _merge_quotes); among equally-timed
+    or untimed ones the old precedence holds: full snapshot > display > heatmap.
     Never raises; empty quotes dict when nothing is readable.
     """
     r = Path(root) if root is not None else Path(".")
     quotes: dict[str, dict] = {}
     asof: str | None = None
+    asof_ms: float | None = None
     src_used: list[str] = []
 
     heat = _read_json(r / _HEATMAP_REL)
     if heat:
         hq = _quotes_from_heatmap(heat)
         if hq:
-            quotes.update(hq)
+            _merge_quotes(quotes, hq, _artifact_ms(heat))
             src_used.append("heatmap")
 
     for rel, label in ((_DISPLAY_REL, "display"), (_SNAPSHOT_REL, "snapshot")):
@@ -208,9 +257,17 @@ def load_live_quotes(root: Path | str | None = None) -> dict[str, Any]:
         if obj:
             q = _quotes_from_snapshot(obj)
             if q:
-                quotes.update(q)  # later (fuller/fresher) sources win
+                obj_ms = _artifact_ms(obj)
+                _merge_quotes(quotes, q, obj_ms)
                 src_used.append(label)
-                asof = obj.get("asof") or asof
+                # The reported `asof` is the NEWEST artifact seen, not the last
+                # one read: it is the fallback age for every quote with no ts_ms
+                # of its own, so taking a stale artifact's asof here would age
+                # out fresh heatmap entries wholesale.
+                if obj_ms is not None and (asof_ms is None or obj_ms > asof_ms):
+                    asof, asof_ms = obj.get("asof"), obj_ms
+                elif asof is None:
+                    asof = obj.get("asof") or asof
 
     return {"quotes": quotes, "asof": asof, "source": "+".join(src_used) or "none"}
 

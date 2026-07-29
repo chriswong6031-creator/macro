@@ -1,17 +1,94 @@
 {
   "schema": "active_builds.v1",
-  "generated_at": "2026-07-28T01:01:11.674093+00:00",
+  "generated_at": "2026-07-29T01:13:39.570576+00:00",
   "base": {
-    "sha": "bc75c17b6b01cbe6930fab9fc9b7af56a71ded4e"
+    "sha": "2a58a07e12dc3986d228d8760ccd3de97fee3976"
   },
   "merged_days": 14,
   "merged_truncated": true,
   "open_prs": [
     {
-      "number": 3858,
-      "title": "test(neuralweb): close the determinism guard's lazily-imported-helper hole",
-      "head_ref": "claude/world-state-determinism-guard",
-      "updated_at": "2026-07-28T00:51:07Z",
+      "number": 3940,
+      "title": "Fix Research Vault dark-mode canvas",
+      "head_ref": "codex/research-vault-dark-theme-v2-20260728",
+      "updated_at": "2026-07-29T01:07:54Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 4,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "site/assets/css/cb4bde93.css",
+        "site/research_vault.html",
+        "templates/research_vault.html.j2",
+        "tests/test_research_vault_page.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 3928,
+      "title": "fix(marketing): the generated wrapper now says something that follows from the fact",
+      "head_ref": "claude/distracted-cartwright-c78b21",
+      "updated_at": "2026-07-28T19:18:36Z",
+      "is_draft": false,
+      "merge_state": "DIRTY",
+      "merge_state_raw": "DIRTY",
+      "files_count": 10,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/ci.yml",
+        "config/marketing.yml",
+        "engine/marketing/consequence.py",
+        "engine/marketing/copywriter.py",
+        "engine/marketing/sentinel.py",
+        "tests/test_marketing_copy_substance.py",
+        "tests/test_marketing_publish_time_content.py",
+        "tests/test_marketing_ramp_cta_jitter.py",
+        "tests/test_marketing_sentinel.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/ci.yml"
+      ]
+    },
+    {
+      "number": 3927,
+      "title": "fix(marketing): the persona cadence specs were a 20-post/day cap on a 70-post network",
+      "head_ref": "claude/gracious-heyrovsky-581a08",
+      "updated_at": "2026-07-28T20:46:26Z",
+      "is_draft": false,
+      "merge_state": "DIRTY",
+      "merge_state_raw": "DIRTY",
+      "files_count": 14,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/ci.yml",
+        "config/marketing.yml",
+        "config/personas/cici.yml",
+        "config/personas/flagship.yml",
+        "config/personas/founder.yml",
+        "config/personas/kelly.yml",
+        "config/personas/meagan.yml",
+        "config/personas/sophia.yml",
+        "engine/marketing/cadence_resolver.py",
+        "engine/marketing/franchises.py",
+        "tests/test_marketing_cadence_ramp_coherence.py",
+        "tests/test_marketing_cadence_spine.py",
+        "tests/test_marketing_desk_feeds.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/ci.yml"
+      ]
+    },
+    {
+      "number": 3918,
+      "title": "fix(marketing): post-time headline-shape gate \u2014 queue-vintage fragments never post",
+      "head_ref": "claude/hopeful-meninsky-a88053",
+      "updated_at": "2026-07-28T20:46:28Z",
       "is_draft": false,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
@@ -19,46 +96,442 @@
       "files_truncated": false,
       "files_error": false,
       "files": [
-        "engine/neuralweb/world_state.py",
-        "tests/test_world_state.py"
+        "scripts/marketing_publisher.py",
+        "tests/test_marketing_publisher_autoapprove.py"
       ],
-      "protected_paths_touched": [
-        "engine/neuralweb/world_state.py"
-      ]
+      "protected_paths_touched": []
     },
     {
-      "number": 3853,
-      "title": "fix(marketing): retail plain-speak \u2014 post-time language gate, chart draws the cited level, weekend copy dumb-down",
-      "head_ref": "claude/avgo-poc-language-gate",
-      "updated_at": "2026-07-28T00:56:07Z",
+      "number": 3912,
+      "title": "fix(ship-guard): accept public-render.yml as a satisfying render lane",
+      "head_ref": "claude/intelligent-lamarr-d39c96",
+      "updated_at": "2026-07-28T17:53:38Z",
       "is_draft": false,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
-      "files_count": 13,
+      "files_count": 2,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".claude/hooks/ship_loop_guard.py",
+        "tests/test_ship_loop_guard.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 3879,
+      "title": "ci: guard admin/static/*.js against out-of-scope references (eslint no-undef)",
+      "head_ref": "claude/priceless-robinson-0eb29a",
+      "updated_at": "2026-07-28T05:08:24Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 6,
       "files_truncated": false,
       "files_error": false,
       "files": [
         ".github/ci/legacy-jobs.yml",
         ".github/workflows/ci.yml",
-        "app/deploy/update.sh",
-        "engine/marketing/chart_render.py",
-        "engine/marketing/copywriter.py",
-        "engine/marketing/publish_time_content.py",
-        "engine/marketing/weekend_levels.py",
-        "research/MARKETING_VOICE_DOCTRINE_V3_FINTWIT_REGISTER_BY_FABLE.md",
-        "scripts/marketing_publisher.py",
-        "tests/test_marketing_event_language.py",
-        "tests/test_marketing_publish_time_read.py",
-        "tests/test_marketing_publisher_autoapprove.py",
-        "tests/test_marketing_weekend_levels.py"
+        "config/house_law_checks.yml",
+        "docs/HOUSE_LAW_CI_GUARD_SUITE.md",
+        "scripts/check_admin_js.py",
+        "tests/test_admin_js_no_undef.py"
       ],
       "protected_paths_touched": [
-        ".github/workflows/ci.yml"
+        ".github/workflows/ci.yml",
+        "scripts/check_admin_js.py"
       ]
     }
   ],
-  "collisions": [],
+  "collisions": [
+    {
+      "pr_a": 3928,
+      "pr_b": 3927,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/ci.yml",
+        "config/marketing.yml"
+      ],
+      "shared_count": 3,
+      "any_protected": true
+    },
+    {
+      "pr_a": 3928,
+      "pr_b": 3879,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 3927,
+      "pr_b": 3879,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    }
+  ],
   "recent_merged": [
+    {
+      "number": 3939,
+      "title": "Public Research Vault preview with Pro gating",
+      "merged_at": "2026-07-29T00:52:24Z"
+    },
+    {
+      "number": 3937,
+      "title": "feat(marketing): Hot Tape P2 \u2014 LLM wire desk behind the numeric-consistency gate",
+      "merged_at": "2026-07-29T00:59:07Z"
+    },
+    {
+      "number": 3936,
+      "title": "fix(tests): defuse confluence content-plan date bomb (base-side red since 07-26)",
+      "merged_at": "2026-07-28T22:12:25Z"
+    },
+    {
+      "number": 3935,
+      "title": "feat(x-growth): XG-W8 research triage \u2014 W-score, veto pass, tiering, dark research lane",
+      "merged_at": "2026-07-28T23:55:57Z"
+    },
+    {
+      "number": 3934,
+      "title": "research(marketing): Hot Tape masterplan \u2014 attention-driven intraday content",
+      "merged_at": "2026-07-28T21:57:09Z"
+    },
+    {
+      "number": 3933,
+      "title": "fix(ci): heal contract-drift \u2014 us_standouts 'leaders' joins the contract (1.3.0)",
+      "merged_at": "2026-07-28T21:56:03Z"
+    },
+    {
+      "number": 3932,
+      "title": "fix(marketing): sector lists were generated all day from live quotes \u2014 and 100% dropped at the theme ramp",
+      "merged_at": "2026-07-28T21:48:15Z"
+    },
+    {
+      "number": 3931,
+      "title": "Fix stock dashboard Grid/Table toggles",
+      "merged_at": "2026-07-28T21:40:07Z"
+    },
+    {
+      "number": 3930,
+      "title": "fix(china-board): route the 110-cap overflow into a visible watch lane \u2014 nothing silently dropped",
+      "merged_at": "2026-07-28T21:46:30Z"
+    },
+    {
+      "number": 3929,
+      "title": "feat(us-board): widen the gate's throat \u2014 sector cap re-tune, leaders strip, prophet intake \u00d72",
+      "merged_at": "2026-07-28T19:18:34Z"
+    },
+    {
+      "number": 3926,
+      "title": "Use names for user identities",
+      "merged_at": "2026-07-28T17:50:45Z"
+    },
+    {
+      "number": 3925,
+      "title": "fix(marketing): the kill switch could not stop a booked post \u2014 add recall",
+      "merged_at": "2026-07-28T19:18:39Z"
+    },
+    {
+      "number": 3924,
+      "title": "perf(marketing): the 10-min global floor was throttling seven desks as if they were one",
+      "merged_at": "2026-07-28T17:05:14Z"
+    },
+    {
+      "number": 3923,
+      "title": "fix(marketing): feed the Lab from the live analytics ledger \u2014 telemetry was test-fed only",
+      "merged_at": "2026-07-28T19:18:43Z"
+    },
+    {
+      "number": 3922,
+      "title": "fix(marketing): review, rewrite and approve today's queue \u2014 31 posts that actually say something",
+      "merged_at": "2026-07-28T16:39:22Z"
+    },
+    {
+      "number": 3921,
+      "title": "fix(marketing): a ticker post may no longer go out without its chart",
+      "merged_at": "2026-07-28T17:53:33Z"
+    },
+    {
+      "number": 3920,
+      "title": "feat(ai): provision Codex in VPS provider pool",
+      "merged_at": "2026-07-28T19:14:36Z"
+    },
+    {
+      "number": 3919,
+      "title": "feat(pricing): true up the Flash AI row \u2014 Free advertises the 5/wk trickle, Pro goes Unlimited (config+gateway+copy)",
+      "merged_at": "2026-07-28T19:18:46Z"
+    },
+    {
+      "number": 3917,
+      "title": "fix(tests): defuse reply-desk panel clock bomb (base-side red since 15:45Z)",
+      "merged_at": "2026-07-28T16:16:29Z"
+    },
+    {
+      "number": 3916,
+      "title": "feat(x-growth): XG-W6 telemetry + learning \u2014 labels loop, health monitor, network tripwire, reply producer",
+      "merged_at": "2026-07-28T19:43:07Z"
+    },
+    {
+      "number": 3915,
+      "title": "feat(x-growth): XG-W7 surfaces + seeding \u2014 news.html live rail, zh/tier gate, follow-CTA sweep",
+      "merged_at": "2026-07-28T21:09:46Z"
+    },
+    {
+      "number": 3914,
+      "title": "feat(x-growth): XG-W5 scoring brain \u2014 L0 story spine, L1 features, garbage gate, golden-set harness",
+      "merged_at": "2026-07-28T21:17:45Z"
+    },
+    {
+      "number": 3913,
+      "title": "fix(marketing): the publish lane was dead \u2014 5 faults, plus today's 60-post queue",
+      "merged_at": "2026-07-28T16:18:39Z"
+    },
+    {
+      "number": 3911,
+      "title": "docs(china): W3 first production night verified \u2014 \u00a78 record",
+      "merged_at": "2026-07-28T12:21:46Z"
+    },
+    {
+      "number": 3910,
+      "title": "ads(round2): 13 masterpiece ad concepts \u00d7 31 placement renders + the Ad Master Paper",
+      "merged_at": "2026-07-28T12:23:58Z"
+    },
+    {
+      "number": 3909,
+      "title": "Replace stock dashboard emoji with semantic icons",
+      "merged_at": "2026-07-28T11:04:20Z"
+    },
+    {
+      "number": 3908,
+      "title": "feat(x-growth): XG-W4 reply desk phase 1 \u2014 discovery, scorer, drafter, critics, queue, M1 handoff",
+      "merged_at": "2026-07-28T13:25:31Z"
+    },
+    {
+      "number": 3907,
+      "title": "fix(marketing): watchlist variants require a ticker to render; fragment screen in validate_copy",
+      "merged_at": "2026-07-28T10:46:56Z"
+    },
+    {
+      "number": 3906,
+      "title": "feat(x-growth): XG-W3 desk feeds + franchises + persona memory + Gift-Grip-Proof gate",
+      "merged_at": "2026-07-28T11:52:26Z"
+    },
+    {
+      "number": 3905,
+      "title": "feat(prophet): add private trade memory",
+      "merged_at": "2026-07-28T11:06:19Z"
+    },
+    {
+      "number": 3904,
+      "title": "feat(marketing): 59 posts/day from 1 \u2014 unlock stale names as watches, 30-min ladder, per-desk voices",
+      "merged_at": "2026-07-28T11:10:23Z"
+    },
+    {
+      "number": 3901,
+      "title": "fix(landing): correct stale marketing figures \u2014 theme count, AI quotas, filings tally",
+      "merged_at": "2026-07-28T10:56:38Z"
+    },
+    {
+      "number": 3900,
+      "title": "perf(marketing): stop writing the Prophet plan into every queue item (-34% content_plan.json)",
+      "merged_at": "2026-07-28T09:54:32Z"
+    },
+    {
+      "number": 3899,
+      "title": "Add Codex subscription to shared AI provider waterfall",
+      "merged_at": "2026-07-28T09:56:00Z"
+    },
+    {
+      "number": 3898,
+      "title": "feat(ci): merge-on-green label + sweeper \u2014 arm the merge and stop; no more CI-hostage sessions",
+      "merged_at": "2026-07-28T09:58:32Z"
+    },
+    {
+      "number": 3897,
+      "title": "feat(plans): rebuild the pricing page in the homepage's pricing idiom",
+      "merged_at": "2026-07-28T10:13:35Z"
+    },
+    {
+      "number": 3896,
+      "title": "fix(ci): wire test_marketing_chart_coverage into a lane \u2014 it shipped unrun",
+      "merged_at": "2026-07-28T10:14:47Z"
+    },
+    {
+      "number": 3895,
+      "title": "fix(marketing): give every ticker post a chart \u2014 four causes, one bare Outbox",
+      "merged_at": "2026-07-28T09:03:13Z"
+    },
+    {
+      "number": 3894,
+      "title": "marketing: add mobile X hero and carousel campaign",
+      "merged_at": "2026-07-28T08:32:14Z"
+    },
+    {
+      "number": 3893,
+      "title": "products: redesign the three flagship product pages (landing-native, illustrated)",
+      "merged_at": "2026-07-28T12:03:58Z"
+    },
+    {
+      "number": 3892,
+      "title": "ads(round2): master paper, ad design system, desk exemplar, review gallery",
+      "merged_at": "2026-07-28T07:28:34Z"
+    },
+    {
+      "number": 3891,
+      "title": "docs: auto-merge is not a wait \u2014 main has no branch protection, --auto merges instantly",
+      "merged_at": "2026-07-28T07:36:49Z"
+    },
+    {
+      "number": 3890,
+      "title": "fix(research_vault): re-read sidecars so late summaries reach published rows",
+      "merged_at": "2026-07-28T08:58:53Z"
+    },
+    {
+      "number": 3889,
+      "title": "fix(ci): wire tests/test_billing_offers.py into a pack lane (unrun-suite rot)",
+      "merged_at": "2026-07-28T07:19:29Z"
+    },
+    {
+      "number": 3888,
+      "title": "fix(deploy): admin restart regex learns engine/marketing/sentinel.py (#3884 follow-up)",
+      "merged_at": "2026-07-28T07:18:37Z"
+    },
+    {
+      "number": 3887,
+      "title": "fix(ci): heal stale founding-copy pin in public fastlane suite, wire it into a pack lane",
+      "merged_at": "2026-07-28T07:05:13Z"
+    },
+    {
+      "number": 3886,
+      "title": "ci: split the legacy packs 2 \u2192 4 \u2014 halve time-to-green",
+      "merged_at": "2026-07-28T08:57:14Z"
+    },
+    {
+      "number": 3885,
+      "title": "feat(x-growth): XG-W2 cadence + collision spine \u2014 per-account resolver, one-owner lock, canonical outbox path",
+      "merged_at": "2026-07-28T09:26:14Z"
+    },
+    {
+      "number": 3884,
+      "title": "fix(marketing): post-time ramp caps, revive the dead publish-time lane, symmetric tier-typo handling (post-merge review of #3874)",
+      "merged_at": "2026-07-28T06:25:12Z"
+    },
+    {
+      "number": 3883,
+      "title": "Marketing: replace X ads with mobile Category campaign",
+      "merged_at": "2026-07-28T06:48:00Z"
+    },
+    {
+      "number": 3881,
+      "title": "fix(ci): a merged close must not cancel the PR's own proof run",
+      "merged_at": "2026-07-28T06:21:50Z"
+    },
+    {
+      "number": 3880,
+      "title": "fix(billing): survive the test\u2192live Stripe switch \u2014 mode-scoped customer verification + comp-safe reconciler",
+      "merged_at": "2026-07-28T06:16:11Z"
+    },
+    {
+      "number": 3878,
+      "title": "Fix World Markets card height stretching",
+      "merged_at": "2026-07-28T05:06:30Z"
+    },
+    {
+      "number": 3877,
+      "title": "Marketing: 20 production-ready X ad experiments",
+      "merged_at": "2026-07-28T05:06:37Z"
+    },
+    {
+      "number": 3876,
+      "title": "fix(tests): prophet bridge main() smoke tests leak site/prophet/showcase.json",
+      "merged_at": "2026-07-28T04:55:45Z"
+    },
+    {
+      "number": 3875,
+      "title": "feat(x-growth): XG-W1 employee desks \u2014 4 codex specs, expression dial, three-layer wiring",
+      "merged_at": "2026-07-28T05:50:51Z"
+    },
+    {
+      "number": 3874,
+      "title": "feat(marketing): enforce the D08 age ramp, cold-account cashtag/theme gates, CTA-free chart footer, send-time jitter",
+      "merged_at": "2026-07-28T04:55:40Z"
+    },
+    {
+      "number": 3873,
+      "title": "research(media): X Growth charter rev 6.1 \u2014 adversarial cross-check corrections",
+      "merged_at": "2026-07-28T04:23:05Z"
+    },
+    {
+      "number": 3872,
+      "title": "research(media): X Growth unified operation \u2014 constitution adopted, reply desk chartered, waves reconciled (rev 6)",
+      "merged_at": "2026-07-28T04:08:46Z"
+    },
+    {
+      "number": 3871,
+      "title": "fix(admin): blank Outbox \u2014 rejBox referenced out of scope in obxRenderLive",
+      "merged_at": "2026-07-28T04:02:49Z"
+    },
+    {
+      "number": 3870,
+      "title": "fix(ci): heal main \u2014 uncompiled kill-registry rows + a third skip-only marketing suite",
+      "merged_at": "2026-07-28T04:14:58Z"
+    },
+    {
+      "number": 3869,
+      "title": "fix(terminal-refresh): add the crypto OHLC pass so crypto rows actually chart",
+      "merged_at": "2026-07-28T03:40:04Z"
+    },
+    {
+      "number": 3868,
+      "title": "feat(ad-central): the human gate, round 1 rejected, and a handoff",
+      "merged_at": "2026-07-28T03:19:20Z"
+    },
+    {
+      "number": 3867,
+      "title": "fix(hooks): ship-loop guard \u2014 escape ladders for every blocker, in-flight render defers",
+      "merged_at": "2026-07-28T03:11:26Z"
+    },
+    {
+      "number": 3866,
+      "title": "fix(tests): PSS-RH1 historical parity audit tolerates total-return adjustment drift",
+      "merged_at": "2026-07-28T02:03:45Z"
+    },
+    {
+      "number": 3864,
+      "title": "research(media): umbrella rev-5 pointer to the Intelligence Suite masterplan",
+      "merged_at": "2026-07-28T01:44:30Z"
+    },
+    {
+      "number": 3863,
+      "title": "research(media): Intelligence Suite masterplan \u2014 sources, scoring brain, pathway router, employee desks",
+      "merged_at": "2026-07-28T01:26:24Z"
+    },
+    {
+      "number": 3862,
+      "title": "fix(guards): finish the MastermindX brand sweep in the validated-claims selftest fixture",
+      "merged_at": "2026-07-28T02:14:21Z"
+    },
+    {
+      "number": 3861,
+      "title": "feat(press-feeds): B2-COPY wire voice + dual-format law + tape stamps + B4a wires.json sink",
+      "merged_at": "2026-07-28T02:32:09Z"
+    },
+    {
+      "number": 3860,
+      "title": "fix(ci): heal main red from #3850 entity migration \u2014 checker literal + stale renders",
+      "merged_at": "2026-07-28T01:21:00Z"
+    },
+    {
+      "number": 3858,
+      "title": "test(neuralweb): close the determinism guard's lazily-imported-helper hole",
+      "merged_at": "2026-07-28T02:36:21Z"
+    },
     {
       "number": 3857,
       "title": "fix(registry): heal SIGNAL_BUS drift (#3844 added site-china-calendar without the pin bump)",
@@ -78,6 +551,11 @@
       "number": 3854,
       "title": "feat: accrue prospective PSS follow-on gates",
       "merged_at": "2026-07-27T23:36:36Z"
+    },
+    {
+      "number": 3853,
+      "title": "fix(marketing): retail plain-speak \u2014 post-time language gate, chart draws the cited level, weekend copy dumb-down",
+      "merged_at": "2026-07-28T02:36:15Z"
     },
     {
       "number": 3852,
@@ -2198,366 +2676,6 @@
       "number": 3393,
       "title": "feat(regwall): gate paid JSON payloads (/factordata + /labdata) at the edge",
       "merged_at": "2026-07-24T19:24:28Z"
-    },
-    {
-      "number": 3392,
-      "title": "feat(research-vault): programmatic SEO \u2014 one indexable landing page per report",
-      "merged_at": "2026-07-24T18:51:20Z"
-    },
-    {
-      "number": 3391,
-      "title": "feat(landing): Prophet teaser \u2192 2-week-delayed winners, never the live board",
-      "merged_at": "2026-07-24T19:07:47Z"
-    },
-    {
-      "number": 3390,
-      "title": "fix(landing): prophet belt keeps drifting on hover (0.7x), no full stop",
-      "merged_at": "2026-07-24T18:06:55Z"
-    },
-    {
-      "number": 3389,
-      "title": "research(wri): charter Watchlist Risk Intelligence \u2014 risk-detecting watchlist revamp (W0)",
-      "merged_at": "2026-07-24T18:03:29Z"
-    },
-    {
-      "number": 3388,
-      "title": "feat(mag7): washout re-entry gate \u2014 prereg + background engine + phase-0 census (MWR-W0)",
-      "merged_at": "2026-07-24T19:27:08Z"
-    },
-    {
-      "number": 3387,
-      "title": "feat(regwall): open the SEO estate to crawlers + faster/smarter login",
-      "merged_at": "2026-07-24T19:22:08Z"
-    },
-    {
-      "number": 3386,
-      "title": "feat(research-vault): static filter bar + show-more pagination",
-      "merged_at": "2026-07-24T17:59:38Z"
-    },
-    {
-      "number": 3385,
-      "title": "fix(ci): heal contract-drift \u2014 canada_standouts conditional fields reclassified as optional_fields",
-      "merged_at": "2026-07-24T16:52:13Z"
-    },
-    {
-      "number": 3384,
-      "title": "feat(research-vault): lock glyph on the Pro-only Top Picks tab",
-      "merged_at": "2026-07-24T16:38:22Z"
-    },
-    {
-      "number": 3383,
-      "title": "Hub welcome: a refresh isn't a visit (gap-based counting + clearer recall)",
-      "merged_at": "2026-07-24T15:52:51Z"
-    },
-    {
-      "number": 3382,
-      "title": "Regime dynamics: never emit a regime label without its trajectory",
-      "merged_at": "2026-07-24T15:41:28Z"
-    },
-    {
-      "number": 3381,
-      "title": "Hub welcome: market-aware conversation + slower dissolve (fix dropped greeting)",
-      "merged_at": "2026-07-24T15:00:32Z"
-    },
-    {
-      "number": 3380,
-      "title": "feat(research-vault): desk constellation, macro fonts, publish times, full-page reader, Pro tiering",
-      "merged_at": "2026-07-24T14:56:52Z"
-    },
-    {
-      "number": 3379,
-      "title": "feat(mastermind): log all Mastermind AI responses to an admin eval corpus",
-      "merged_at": "2026-07-24T16:37:25Z"
-    },
-    {
-      "number": 3378,
-      "title": "Personal dashboard: fix stuck \"Loading your plan\u2026\" + tier/expiry + upgrade CTA",
-      "merged_at": "2026-07-24T14:24:13Z"
-    },
-    {
-      "number": 3377,
-      "title": "Landing login persistence (CORS fix) + start.html personal welcome & home globe",
-      "merged_at": "2026-07-24T13:58:12Z"
-    },
-    {
-      "number": 3376,
-      "title": "feat(marketing): autonomous cadence Phase 1 \u2014 lift daily post/media cap to unlimited",
-      "merged_at": "2026-07-24T20:57:43Z"
-    },
-    {
-      "number": 3375,
-      "title": "fix(admin): Outbox \u2014 approved posts leave the review list into a collapsed \"awaiting publish\" shelf",
-      "merged_at": "2026-07-24T12:33:38Z"
-    },
-    {
-      "number": 3374,
-      "title": "ci(render-lanes): heal template\u2194site pairs BEFORE the first commit in all 6 externalizing lanes",
-      "merged_at": "2026-07-24T12:07:40Z"
-    },
-    {
-      "number": 3373,
-      "title": "ops(daily): engine timeout 150\u2192200m \u2014 nightly engine cancelled at the cap 5 of last 8 nights",
-      "merged_at": "2026-07-24T12:06:42Z"
-    },
-    {
-      "number": 3372,
-      "title": "perf(cycles): split cycle payloads + parallel preloaded loader + immutable-cacheable URLs + skeleton",
-      "merged_at": "2026-07-24T11:58:43Z"
-    },
-    {
-      "number": 3371,
-      "title": "fix(fonts): \"SF Mono\"-first --num stacks render numerals as serif in Chrome \u2014 lead with ui-monospace sitewide",
-      "merged_at": "2026-07-24T11:38:35Z"
-    },
-    {
-      "number": 3370,
-      "title": "fix(leader-radar): LRV-O9 \u2014 entry-read stance layer, parabolic sign guard, Tonight's Focus stance shelves",
-      "merged_at": "2026-07-24T11:19:44Z"
-    },
-    {
-      "number": 3369,
-      "title": "China track record: log ticker names + fix vs-CSI300 nulls-last sort",
-      "merged_at": "2026-07-24T11:20:15Z"
-    },
-    {
-      "number": 3367,
-      "title": "onboard: materializing desk pane replaces the assembly-card rail",
-      "merged_at": "2026-07-24T04:52:44Z"
-    },
-    {
-      "number": 3366,
-      "title": "authfe: post-login redirect, upgrade sheet, landing auth chrome + gear parity",
-      "merged_at": "2026-07-24T04:30:12Z"
-    },
-    {
-      "number": 3365,
-      "title": "feat(landing): Prophet showcase section \u2014 real card belt below the Terminal",
-      "merged_at": "2026-07-24T11:19:52Z"
-    },
-    {
-      "number": 3364,
-      "title": "feat(billing): generalize upgrade matrix + expose plan interval",
-      "merged_at": "2026-07-24T04:30:05Z"
-    },
-    {
-      "number": 3363,
-      "title": "docs(marketing): masterplan go-live reflects the panel toggle (#3361)",
-      "merged_at": "2026-07-24T04:01:00Z"
-    },
-    {
-      "number": 3362,
-      "title": "fix(tests): heal test_seo_meta_rollout (12 reds) + wire it into the ci.yml whitelist",
-      "merged_at": "2026-07-24T03:57:22Z"
-    },
-    {
-      "number": 3361,
-      "title": "feat(admin): publisher Arm/Disarm toggle + token paste-box \u2014 kill-switch moves to repo variable",
-      "merged_at": "2026-07-24T03:52:53Z"
-    },
-    {
-      "number": 3360,
-      "title": "feat(admin): revenue analytics + projections \u2014 live Stripe MRR/ARR/cash/forecast",
-      "merged_at": "2026-07-24T03:28:31Z"
-    },
-    {
-      "number": 3359,
-      "title": "fix(us_stocks/macro): remove forced Mag-7 'Big Seven' board + demote Ignition Radar to background-only",
-      "merged_at": "2026-07-24T03:50:18Z"
-    },
-    {
-      "number": 3358,
-      "title": "fix(sync): re-sync site/index.html + site/chat.html from templates/ \u2014 heal template-site-sync red on main",
-      "merged_at": "2026-07-24T03:30:41Z"
-    },
-    {
-      "number": 3357,
-      "title": "fix(tests): anchor W-OVC fixture expiries to the frozen chain date \u2014 front7 keying test was vacuous",
-      "merged_at": "2026-07-24T03:45:29Z"
-    },
-    {
-      "number": 3356,
-      "title": "chore(admin): drop token-rotation prompts from go-live checklist",
-      "merged_at": "2026-07-24T03:25:14Z"
-    },
-    {
-      "number": 3355,
-      "title": "feat(billing): prorated Insider\u2192Pro upgrade + plan/expiry in the personal dashboard",
-      "merged_at": "2026-07-24T03:16:31Z"
-    },
-    {
-      "number": 3354,
-      "title": "feat(admin): users/subscribers suite \u2014 per-tier roster, comps, trials, passes",
-      "merged_at": "2026-07-24T03:14:07Z"
-    },
-    {
-      "number": 3353,
-      "title": "feat(regwall): registration lockdown \u2014 all dashboard pages require an account",
-      "merged_at": "2026-07-24T03:03:36Z"
-    },
-    {
-      "number": 3352,
-      "title": "fix(tests): UTC-midnight fixture-bomb audit \u2014 pin test_symbol_directory to the engine's UTC clock",
-      "merged_at": "2026-07-24T03:12:07Z"
-    },
-    {
-      "number": 3351,
-      "title": "fix(auth): the onboarding sheet is SITE-WIDE on www \u2014 no auth entry navigates to app.*",
-      "merged_at": "2026-07-24T02:51:48Z"
-    },
-    {
-      "number": 3350,
-      "title": "fix(ci): parquet-reader guard on PLTR load_closes test (heals marketing-engine lane)",
-      "merged_at": "2026-07-24T02:21:18Z"
-    },
-    {
-      "number": 3349,
-      "title": "docs(marketing): suite audit masterplan + forward roadmap",
-      "merged_at": "2026-07-24T02:33:18Z"
-    },
-    {
-      "number": 3348,
-      "title": "feat(admin): marketing operator console \u2014 pipeline hero, controls, go-live checklist",
-      "merged_at": "2026-07-24T02:33:10Z"
-    },
-    {
-      "number": 3347,
-      "title": "fix(marketing): engine correctness \u2014 per-day caps, account liveness, receipts, slot times (1/3)",
-      "merged_at": "2026-07-24T01:55:55Z"
-    },
-    {
-      "number": 3346,
-      "title": "feat(marketing): per-post metrics poller + chart-image pipeline (Buffer)",
-      "merged_at": "2026-07-24T03:06:49Z"
-    },
-    {
-      "number": 3345,
-      "title": "fix(tests): de-flake marketing sentinel UTC-midnight fixture bomb + whitelist suite in CI",
-      "merged_at": "2026-07-24T01:31:30Z"
-    },
-    {
-      "number": 3344,
-      "title": "feat(landing): the onboarding sheet \u2014 landing-native signup/trial flow (\u00a70 primary surface)",
-      "merged_at": "2026-07-24T02:41:46Z"
-    },
-    {
-      "number": 3343,
-      "title": "fix(marketing): publisher daily-cap counts ledger-based, not as_of-based",
-      "merged_at": "2026-07-24T00:44:56Z"
-    },
-    {
-      "number": 3342,
-      "title": "docs(onboarding): \u00a70 surface ruling \u2014 sheet belongs to the landing, not the terminal app",
-      "merged_at": "2026-07-24T00:18:21Z"
-    },
-    {
-      "number": 3341,
-      "title": "fix(gex): Options Desk remaster \u2014 repair shipped UI bugs, rebuild layout & levels map",
-      "merged_at": "2026-07-24T11:19:59Z"
-    },
-    {
-      "number": 3340,
-      "title": "fix(flow_desk): nav dropdown painted behind the hero",
-      "merged_at": "2026-07-24T00:24:36Z"
-    },
-    {
-      "number": 3339,
-      "title": "feat(auth): every login/signup entry routes to the Terminal onboarding sheet",
-      "merged_at": "2026-07-23T23:54:18Z"
-    },
-    {
-      "number": 3338,
-      "title": "docs(claude): Spawn-handoff law \u2014 binding context for commissioned build sessions",
-      "merged_at": "2026-07-23T23:50:39Z"
-    },
-    {
-      "number": 3337,
-      "title": "fix(nav): remove '\u2728 Plans' from the site-wide dashboard menu",
-      "merged_at": "2026-07-23T23:28:32Z"
-    },
-    {
-      "number": 3336,
-      "title": "fix(research-vault): batch receipts behind the publish barrier (heals #3334 red test) + W6 charter",
-      "merged_at": "2026-07-23T23:37:07Z"
-    },
-    {
-      "number": 3335,
-      "title": "fix(landing+settings): operator 12-item pass \u2014 LIVE pill, brand marks, clear closing copy, Live-prices toggle removed",
-      "merged_at": "2026-07-23T23:24:43Z"
-    },
-    {
-      "number": 3334,
-      "title": "feat(research-vault): backfill hardening \u2014 checkpoints, body cap, non-blocking corpus refresh (+W6 charter)",
-      "merged_at": "2026-07-23T23:23:06Z"
-    },
-    {
-      "number": 3333,
-      "title": "feat(marketing): publish-time mover/theme generation + scoped auto-approve",
-      "merged_at": "2026-07-23T21:23:07Z"
-    },
-    {
-      "number": 3331,
-      "title": "feat(landing): closing-band bookend + real footer + hero gradient signature",
-      "merged_at": "2026-07-23T20:55:30Z"
-    },
-    {
-      "number": 3330,
-      "title": "fix(billing): SetupIntent card-family only (allow_redirects=never)",
-      "merged_at": "2026-07-23T20:39:12Z"
-    },
-    {
-      "number": 3329,
-      "title": "fix(research-vault): call the research API same-origin (not app.*)",
-      "merged_at": "2026-07-23T20:29:15Z"
-    },
-    {
-      "number": 3328,
-      "title": "feat(billing): Stripe Elements subscription lane \u2014 in-sheet card-up-front trials (W2)",
-      "merged_at": "2026-07-23T20:26:29Z"
-    },
-    {
-      "number": 3327,
-      "title": "feat(landing): MOST POPULAR badge + primary CTA move Insider -> Pro (operator ruling)",
-      "merged_at": "2026-07-23T20:23:39Z"
-    },
-    {
-      "number": 3326,
-      "title": "feat(marketing): fintwit voice v3 + post-time tape gate + outbox persistence heal",
-      "merged_at": "2026-07-23T20:57:28Z"
-    },
-    {
-      "number": 3325,
-      "title": "feat(landing): pricing-tier CTAs deep-link into the Terminal onboarding sheet (?plan= params)",
-      "merged_at": "2026-07-23T19:09:13Z"
-    },
-    {
-      "number": 3324,
-      "title": "fix(gex): restore body top padding \u2014 heal repo-wide nav-gap red",
-      "merged_at": "2026-07-23T18:40:28Z"
-    },
-    {
-      "number": 3323,
-      "title": "feat(portfolio): W1 \u2014 brief composer + GET /api/portfolio/brief + Brain get_portfolio_brief tool",
-      "merged_at": "2026-07-24T11:20:05Z"
-    },
-    {
-      "number": 3322,
-      "title": "feat(china-altdata): trading-intensity waterline in the tape hero",
-      "merged_at": "2026-07-23T18:11:28Z"
-    },
-    {
-      "number": 3321,
-      "title": "feat(research-vault): separate-account R2 credentials (R2_RESEARCH_*)",
-      "merged_at": "2026-07-23T18:07:48Z"
-    },
-    {
-      "number": 3320,
-      "title": "feat(flow-velocity): rotation/momentum/confluence dashboard + glance engine",
-      "merged_at": "2026-07-23T18:01:28Z"
-    },
-    {
-      "number": 3319,
-      "title": "feat(heatmap): mx5 dashboard revamp \u2014 pulse, breadth & movers on all 5 heatmaps",
-      "merged_at": "2026-07-23T18:06:16Z"
     }
   ]
 }

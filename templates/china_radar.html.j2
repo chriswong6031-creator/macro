@@ -1,4 +1,8 @@
 {% extends "report_base.html.j2" %}
+
+{# XG-W7: no X follow line on the China desks — x.com is unreachable behind
+   the GFW, so the CTA would be a dead link for this page's core audience. #}
+{% block foot_social %}{% endblock %}
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
 {%- endmacro %}

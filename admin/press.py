@@ -122,6 +122,27 @@ def _check_summary(report: Any) -> list[dict]:
     ]
 
 
+def _resolved_cap(cfg: dict, desk_cfg: dict, name: str):
+    """How many slots this desk may actually plan today.
+
+    The desk's own `cadence_per_day` is only half of a W2R desk's volume; the
+    other half is `research_triage.volume`, and the two compose as stricter-of
+    with a fail-closed 0.  Delegates to the planner's own resolver rather than
+    re-deriving the rule — a panel that computes its own answer is a panel that
+    can disagree with the engine.
+
+    Returns None when the resolver is unavailable, which reads as "unknown" in
+    the panel rather than as a number nobody computed.
+    """
+    try:
+        from engine.press.desk_planner import _triage_cap  # noqa: PLC0415
+
+        return _triage_cap(cfg, desk_cfg, name=name)
+    except Exception as exc:  # noqa: BLE001 — the panel must render regardless
+        log.warning("admin.press: resolved cap unavailable for %s: %s", name, exc)
+        return None
+
+
 def overview(root=None) -> dict:
     """Kill-switch + cadence + thresholds + staged/quarantine + ledger tail."""
     repo = Path(root) if root is not None else _default_root()
@@ -137,7 +158,14 @@ def overview(root=None) -> dict:
                 "publication": d.get("publication"),
                 "publication_domain": (pubs.get(d.get("publication")) or {}).get("domain"),
                 "byline": d.get("byline"),
+                # THE CEILING AND THE RESOLVED CAP ARE DIFFERENT NUMBERS, and
+                # the panel now shows both (review M11). A W2R desk's real
+                # volume is the STRICTER of its own ceiling and the triage
+                # volume knob, so a panel printing only `cadence_per_day` told
+                # the operator a dark lane was running at its target rate.
                 "per_day": d.get("cadence_per_day"),
+                "resolved_per_day": _resolved_cap(cfg, d, name),
+                "triage_tier": d.get("triage_tier"),
                 "min_per_day": d.get("cadence_min_per_day"),
                 "words": f"{d.get('min_words')}–{d.get('max_words')}",
                 "model_key": d.get("model_key"),

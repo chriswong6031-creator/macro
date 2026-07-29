@@ -30,22 +30,28 @@ name: marketing-publish
 # ─────────────────────────────────────────────────────────────────────────────
 on:
   schedule:
-    # 45-minute Pacific signal ladder (cadence masterplan §5, operator re-spec
-    # 2026-07-27). Sweep every 30 min across the 00:00–23:30 UTC window that covers
-    # the 4:00 AM–5:30 PM PT 45-min ladder grid in BOTH PDT and PST — 30 sweeps/day,
-    # EVERY day. The window spans 00:00,00:30 and 01:00..23:30 because the last slot
-    # (S19 = 17:30 PT) lands at 00:30Z in PDT and 01:30Z in PST. Each sweep posts at
-    # most ONE ladder item that is DUE (scheduled_at ≤ now): the 10-min global floor
-    # advances in-memory per run, so per-sweep throughput is capped at one and the
-    # net rate tracks the 19-slot 45-min ladder, not the 30-min cron grid. The
-    # humanizing jitter scatters off the round minute. Breaking/news fire via
-    # event-driven dispatch (workflow_dispatch below), unlimited and off the cron.
-    # The ~22:30 UTC nightly (daily.yml) also commits the outbox ledger; the sweeps
-    # overlapping it use a retry-rebase push loop that tolerates the overlap. Cost
-    # note: each sweep does a full-history checkout (~7m) for a race-safe ledger
-    # push — reducing that (shallow + unshallow-on-commit) is the lever if runner
-    # minutes matter, but it is NOT done here because a failed post-commit push
-    # double-posts.
+    # 30-minute Pacific signal ladder — 28 rungs, S1=4:00 AM … S28=5:30 PM PT
+    # (cadence masterplan §5; operator re-spec 2026-07-27, widened from 19 rungs
+    # at 45 min on 2026-07-28, #3904). Sweep every 30 min across the 00:00–23:30
+    # UTC window that covers that grid in BOTH PDT and PST — 30 sweeps/day, EVERY
+    # day. The window spans 00:00,00:30 and 01:00..23:30 because the last rung
+    # lands at 00:30Z in PDT and 01:30Z in PST.
+    #
+    # A sweep is NO LONGER capped at one post (#3913). It used to be: an item
+    # inside the 10-min global floor deferred to the next sweep, which made the
+    # CRON GRID the unit of volume — 30 sweeps/day meant 30 posts/day
+    # network-wide however many the desks generated, and every dropped sweep cut
+    # into that. publish.max_forward_book_min now books such an item at the
+    # moment the floor clears (Buffer customScheduled) instead of deferring, so
+    # the spacing is unchanged and the floor is the real governor: ~6 posts/hr,
+    # bounded by a tape-freshness horizon. The humanizing jitter still scatters
+    # off the round minute. Breaking/news fire via event-driven dispatch
+    # (workflow_dispatch below), unlimited and off the cron.
+    #
+    # The ~22:30 UTC nightly (daily.yml) also commits the outbox ledger; the
+    # sweeps overlapping it use a retry-rebase push loop, and the ledgers carry
+    # merge=union (.gitattributes) so a concurrent append resolves instead of
+    # conflicting the loop to death. The checkout is SHALLOW — see the step.
     - cron: "0,30 0,1,11-23 * * *"
   workflow_dispatch:          # manual runs (still dark unless the secret is set)
     inputs:
@@ -65,6 +71,20 @@ on:
         required: false
         type: boolean
         default: false
+      recall_pending:
+        description: >-
+          KILL-SWITCH RECALL — cancel every post already booked at Buffer that
+          has not sent yet, instead of publishing. This is the other half of
+          MARKETING_PUBLISH_ENABLED=0: the variable stops NEW sends, but
+          publish.max_forward_book_min hands posts to Buffer up to an hour
+          ahead and those fire on Buffer's schedule regardless (2026-07-28:
+          five booked posts survived the disarm by 41 minutes). The admin
+          Publisher panel's DISARM toggle sets this automatically. Runs
+          scripts.marketing_recall, which is deliberately NOT gated on the arm
+          variable — recall must work while the publisher is off.
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write             # commit changed outbox ledgers back to main
@@ -78,11 +98,12 @@ concurrency:
 jobs:
   publish:
     runs-on: ubuntu-latest    # OFF the render path — never the macstudio pool
-    # 25m, not 15m: the full-history checkout (fetch-depth:0) of this
-    # heavy-churn repo alone runs ~7m and grows nightly; + deps install (~2m)
-    # + humanizing jitter (≤5m) + publish/poll left NO margin under a 15m cap,
-    # so high-jitter draws blew the wall and the whole run was CANCELLED before
-    # the publisher step ever ran (2026-07-24 regression: 4 consecutive kills).
+    # 25m is plenty NOW THAT THE CHECKOUT IS SHALLOW (see fetch-depth below).
+    # It was not before: on 2026-07-28 the full-history checkout ran the entire
+    # 25m and was CANCELLED mid-clone, so `run publisher` never executed and the
+    # desk network published nothing all day. Raising the cap is the wrong lever
+    # — the clone grows nightly, so any fixed wall is a future outage. Keep the
+    # checkout shallow and this budget stays generous.
     timeout-minutes: 25
     env:
       BUFFER_TOKEN: ${{ secrets.BUFFER_TOKEN }}
@@ -92,10 +113,18 @@ jobs:
       # of this name must NOT keep the publisher live after the toggle is off.
       MARKETING_PUBLISH_ENABLED: ${{ vars.MARKETING_PUBLISH_ENABLED }}
     steps:
-      - name: checkout (full history + write token)
+      - name: checkout (shallow + write token)
+        # SHALLOW ON PURPOSE (2026-07-28). This was fetch-depth: 0 and the clone
+        # of this heavy-churn repo grew past the 25m job timeout — the 12:58Z
+        # sweep spent 12:58:08→13:23:07 inside `checkout` and was cancelled with
+        # every later step skipped, so the publisher never ran and NOTHING went
+        # out that day. Nothing here needs history: the runner reads the outbox
+        # ledgers at HEAD, and the commit step below commits one row on top of
+        # main and pushes it. The push loop deepens to 20 so `pull --rebase`
+        # always has a merge base even when main advanced mid-run.
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: setup python
@@ -126,9 +155,16 @@ jobs:
         # bare form also works), this makes the scheduled lane provably identical
         # to before this input existed. The scheduled lane is not a place to be
         # clever about expression semantics we cannot run locally.
+        #
+        # Also SKIPPED on a recall dispatch, for the same reason and then some:
+        # a recall is racing posts that are already scheduled — the 2026-07-28
+        # incident had the first booked post firing 5 minutes after the operator
+        # disarmed — so sleeping up to 2 minutes before cancelling them would
+        # spend a quarter of the entire window on a de-sync nobody needs.
         if: >-
           ${{ !(github.event_name == 'workflow_dispatch'
-                && (inputs.skip_jitter || inputs.post_now_item != '')) }}
+                && (inputs.skip_jitter || inputs.recall_pending
+                    || inputs.post_now_item != '')) }}
         run: sleep $((RANDOM % 120))
 
       - name: fetch full-universe live quotes (tape gate input)
@@ -149,7 +185,29 @@ jobs:
             rm -f data/marketing/live_quotes_snapshot.json
           fi
 
+      - name: recall booked-but-unsent posts (kill-switch recall)
+        # THE OTHER HALF OF THE KILL SWITCH. Runs INSTEAD of the publisher when
+        # dispatched with recall_pending — see the input's description and
+        # scripts/marketing_recall.py's module docstring for the incident.
+        #
+        # Not gated on MARKETING_PUBLISH_ENABLED on purpose: the operator has
+        # just set that variable to 0, and a recall that only worked while the
+        # publisher was armed would be inoperable exactly when it is needed. The
+        # runner's own safety is the candidate rule — it will only cancel a post
+        # whose booked send time is still in the FUTURE, and only moves the
+        # ledger on a confirmed backend delete.
+        #
+        # Exits 1 if any delete failed, which turns this job red on purpose:
+        # a failed recall means posts the operator asked to stop are still going
+        # out, and that must not go green.
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.recall_pending }}
+        run: python -m scripts.marketing_recall --recall-pending --live
+
       - name: run publisher (dark until the kill-switch secret is set)
+        # Skipped on a recall dispatch — that run is here to STOP posts, not to
+        # send more. (With the variable already 0 the runner would dry-run
+        # anyway; this makes the intent explicit rather than incidental.)
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.recall_pending) }}
         env:
           # Breaking dispatch: empty on every scheduled sweep, so the normal
           # ladder run is byte-identical to before this input existed.
@@ -180,7 +238,19 @@ jobs:
         # VARIABLE whose disarmed value is the literal "0" (non-empty), so this
         # guard tests `== '1'` (armed), NOT `!= ''` — otherwise a disarmed "0"
         # would wrongly commit the dry-run's audit row.
-        if: always() && env.MARKETING_PUBLISH_ENABLED == '1'
+        #
+        # A RECALL DISPATCH IS THE EXCEPTION, and it has to be. The operator
+        # flips the variable to 0 and the recall runs moments later, so the
+        # armed test is false by construction — yet that run writes REAL ledger
+        # state (posted→recalled transitions plus the publications retraction
+        # rows). Without this second clause every recall would cancel the posts
+        # at Buffer and then throw away the record of having done so: main would
+        # still show them `posted`, the next fold would disagree with reality,
+        # and the audit trail for a kill-switch event would be empty.
+        if: >-
+          ${{ always()
+              && (env.MARKETING_PUBLISH_ENABLED == '1'
+                  || (github.event_name == 'workflow_dispatch' && inputs.recall_pending)) }}
         run: |
           set -uo pipefail
           git config user.name "dashboard-bot"
@@ -208,7 +278,12 @@ jobs:
           # (mirrors seo-director.yml push mechanics). --autostash parks nothing
           # here since everything is already committed above.
           for i in 1 2 3 4 5; do
-            git fetch origin main || true
+            # --depth 20: the checkout is shallow, so a bare fetch would leave
+            # `pull --rebase` without a merge base once main advances. 20 covers
+            # any realistic mid-run drift; the ledgers themselves carry
+            # merge=union (.gitattributes) so a concurrent nightly commit to the
+            # same JSONL resolves instead of conflicting.
+            git fetch --depth 20 origin main || true
             # Drop any untracked file that shadows an origin/main path (a mid-run
             # commit could TRACK a path we wrote as an untracked side-effect,
             # which would make the rebase checkout refuse). Everything we publish

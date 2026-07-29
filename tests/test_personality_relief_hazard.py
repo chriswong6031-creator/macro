@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import shutil
 from pathlib import Path
@@ -11,6 +12,11 @@ import pandas as pd
 
 from engine import personality_relief_hazard as prh
 from scripts.research import pss_sr3_participation_feasibility as sr3
+
+AUDIT_GRID = Path("data/personality_timing/relief_hazard_audit_grid_v1.parquet")
+AUDIT_GRID_SHA256 = (
+    "fa2e1c0f6127f9747627075ba534d604b8a042df49ff6c55584c2af885fa8608"
+)
 
 
 def _copy_registration(root: Path) -> None:
@@ -126,31 +132,51 @@ def test_exact_detector_primitives_match_frozen_sr3_reference():
     assert live[1] == exact["joint_5"]
 
 
-def test_full_runtime_detector_matches_every_frozen_sr3_historical_path(monkeypatch):
+def test_full_runtime_detector_matches_every_frozen_sr3_historical_path(
+    tmp_path,
+    monkeypatch,
+):
     registration = prh.load_registration()
     assert registration is not None
     # Audit-only: expose the historical construction to the runtime scanner,
-    # then require parity. Production keeps the hash-bound 2026-07-24 boundary
-    # and cannot execute this monkeypatch.
+    # then require bit-exact parity with the frozen SR3 events tape.
+    # Production keeps the hash-bound 2026-07-24 boundary and cannot execute
+    # this monkeypatch.
     #
-    # Parity is ADJUSTMENT-TOLERANT, not bit-exact: the live price panels are
-    # total-return adjusted, so every dividend retroactively re-scales the full
-    # close/low/ATR history (first observed 2026-07-28: the nightly collection
-    # moved 238/6294 frozen values by ~1e-5 relative, flipped 5 threshold-
-    # marginal events out of the scan, and flipped one peer in/out of 13 count
-    # ratios, e.g. VTOL level_min 24/33 -> 25/33 — dividend payers throughout).
-    # The frozen parquet stays frozen; bit-exact CODE equivalence with the SR3
-    # construction is enforced by the synthetic-input primitive tests above,
-    # which no data vintage can perturb. Detector-code drift still fails here:
-    # group labels must match on every surviving key, and missing keys plus
-    # beyond-tolerance values share one small drift budget — mass key loss,
-    # any mislabel, or systematic value movement blows it immediately.
+    # The replay runs on the FROZEN input grid, never the live store. Live
+    # panels are total-return adjusted: every dividend retroactively
+    # re-scales (and re-rounds) the full close/low/ATR history, and group
+    # labels are peer-count ratios thresholded at exactly 0.50, with 525 of
+    # the 6294 frozen rows within 0.04 of a floor. A live-store replay
+    # therefore flips labels on dividend nights with zero code drift — the
+    # 2026-07-28 collection moved 238 values and 13 one-peer count ratios
+    # (#3866), and the 2026-07-29 collection re-rounded ASH's 2023-11-08
+    # close by ~2e-7 relative across a ~1e-5-dollar threshold margin,
+    # pushing IOSP (2023-10-12 -> 2023-11-08) active_min from 20/42 onto
+    # the 0.50 floor: level_control -> relief_hazard. No value tolerance
+    # separates that from real drift (the ratio steps 1/42 while the input
+    # moves 2e-7), so the inputs are pinned instead: the ohlcv vintage at
+    # the registration's freeze SOURCE_COMMIT (71ac1df412a9, ohlcv tree
+    # identical to the last pre-break daily collection), hash-bound below
+    # and rebuilt only by scripts/research/freeze_pss_rh1_audit_grid.py.
+    # With the grid frozen, any missing key, any label change, or any value
+    # beyond float-reproduction scale is detector-code drift and fails
+    # hard — there is no drift budget.
+    assert hashlib.sha256(AUDIT_GRID.read_bytes()).hexdigest() == AUDIT_GRID_SHA256
+    grid = pd.read_parquet(AUDIT_GRID)
+    ohlcv_dir = tmp_path / "baskets" / "ohlcv"
+    ohlcv_dir.mkdir(parents=True)
+    for sym, frame in grid.groupby("sym", sort=False):
+        frame.drop(columns="sym").set_index("date").to_parquet(
+            ohlcv_dir / f"{sym}.parquet"
+        )
     monkeypatch.setattr(prh, "NOT_BEFORE_SESSION", "2019-01-01")
     detected, _ = prh._scan_paths(
         registration,
-        None,
+        tmp_path,
         pd.Timestamp("2026-07-27"),
     )
+    assert len(detected) == 6427
     live = {
         (row["sym"], row["anchor_date"], row["action_date"]): row
         for row in detected
@@ -159,7 +185,6 @@ def test_full_runtime_detector_matches_every_frozen_sr3_historical_path(monkeypa
         "data/research/pss_sr3_participation_recovery_events.parquet"
     )
     assert len(history) == 6294
-    drifted = []
     for row in history.itertuples(index=False):
         key = (
             str(row.sym),
@@ -167,9 +192,7 @@ def test_full_runtime_detector_matches_every_frozen_sr3_historical_path(monkeypa
             str(pd.Timestamp(row.date).date()),
         )
         actual = live.get(key)
-        if actual is None:
-            drifted.append(("missing", key))
-            continue
+        assert actual is not None, ("missing", key)
         expected_group = (
             "relief_hazard" if str(row.group) == "sr3" else str(row.group)
         )
@@ -179,15 +202,9 @@ def test_full_runtime_detector_matches_every_frozen_sr3_historical_path(monkeypa
             ("active_min", row.active_min),
             ("close_depth_atr", row.close_depth_atr),
         ):
-            if not np.isclose(
-                actual[field], float(frozen_value), rtol=2e-3, atol=1e-6
-            ):
-                drifted.append((field, key, float(frozen_value), actual[field]))
-                break
-    assert len(drifted) <= len(history) * 0.005, (
-        f"{len(drifted)} frozen paths drifted beyond adjustment scale "
-        f"(budget {int(len(history) * 0.005)}); first: {drifted[:5]}"
-    )
+            assert np.isclose(
+                actual[field], float(frozen_value), atol=1e-9
+            ), (field, key, float(frozen_value), actual[field])
 
 
 def test_subject_action_is_first_observable_held_recovery_and_prefix_invariant():
