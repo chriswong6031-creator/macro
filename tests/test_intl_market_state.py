@@ -477,8 +477,9 @@ class TestHSIRepairReplay:
         self.frame = frame
 
     def test_latest_state_has_repaired(self):
-        """The latest bar may progress from recovery once it reclaims MA200."""
+        """The rebound may progress from recovery into a healthy uptrend."""
         assert self.result["state"] in {"recovery", "uptrend"}
+        assert self.states.loc["2026-07-20"] == "recovery"
         if self.result["state"] == "recovery":
             assert self.result["since"] == "2026-07-20"
         else:
