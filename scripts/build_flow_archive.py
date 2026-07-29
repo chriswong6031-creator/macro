@@ -193,22 +193,38 @@ def _retain_or_default(retain: object) -> int:
     return n
 
 
+def _clean_sessions(dates) -> list[str]:
+    """Deduped, NEWEST-FIRST list of entries that are real NYSE trading sessions.
+
+    Defense in depth for the PUBLISHED index. The write path already refuses to archive a
+    non-session, but the heal deliberately merges R2 TRUTH back in — so a holiday object that
+    ever reached the store (an older build, a manual upload, a hand-run script) would be
+    merged straight into `dates.json` and become its `latest`, which is exactly the poisoned
+    session-discovery this lane exists to prevent. Filtering here means such an object can
+    never be PUBLISHED, whatever put it in the store.
+
+    Note the deliberate asymmetry with `dated_archive_key`, which stays format-only: the
+    prune must still be able to address and DELETE such an object once it ages out.
+    """
+    return sorted({d for d in (dates or []) if is_market_session(d)}, reverse=True)
+
+
 def build_archive_dates_index(family: str, dates, *, cadence_sec: int, asof: str,
                               retain: int = ARCHIVE_RETAIN_SESSIONS,
                               source: str = "poller") -> dict:
     """Build a family's sessions index — retained sessions NEWEST FIRST.
 
     The digest lane reads this to discover which sessions it can settle; `latest` is
-    dates[0] (null when empty). Non-date entries are dropped and duplicates collapsed, so a
-    corrupt ledger can never publish a bogus session, and the list is trimmed to `retain` —
-    dates.json never promises a session the retention prune has already deleted.
+    dates[0] (null when empty). Duplicates are collapsed and anything that is not a real
+    trading session is dropped (`_clean_sessions`), so neither a corrupt ledger nor a stray
+    holiday object in the store can publish a bogus session; the list is trimmed to `retain`,
+    so dates.json never promises a session the retention prune has already deleted.
 
     Cadence is carried verbatim from the true write interval (the honesty law shared with
     build_flow_surface.build_index): the index never claims a cadence the poller lacks.
     """
     keep_n = _retain_or_default(retain)
-    clean = sorted({d for d in (dates or []) if is_session_date(d)}, reverse=True)
-    clean = clean[:keep_n]
+    clean = _clean_sessions(dates)[:keep_n]
     return {
         "schema":     "live_flow.archive_dates/v1",
         "family":     _check_family(family),
@@ -284,11 +300,14 @@ def merge_archive_dates(family: str, dates, *, cadence_sec: int, asof: str,
     the once-per-session retention prune merges back R2 truth (self-healing after a staging
     wipe). Never raises — a ledger failure must not cost the caller its archive upload; on
     failure the previously-recorded list is returned unchanged.
+
+    Non-sessions are filtered out of BOTH the written index and the returned list, so the
+    caller's log line and the published file can never disagree (`_clean_sessions`).
     """
     try:
         merged = set(load_dates_ledger(family)) | {d for d in (dates or []) if is_session_date(d)}
         stage_dates_index(family, merged, cadence_sec=cadence_sec, asof=asof, retain=retain)
-        return sorted(merged, reverse=True)[: _retain_or_default(retain)]
+        return _clean_sessions(merged)[: _retain_or_default(retain)]
     except Exception as e:  # noqa: BLE001
         log.warning("archive: dates ledger merge failed for %s: %s", family, e)
         return load_dates_ledger(family)

@@ -232,6 +232,49 @@ def test_dates_index_newest_first_deduped_trimmed_junk_dropped():
     assert is_archive_dates(doc)
 
 
+def test_index_never_publishes_a_holiday_even_from_r2_truth():
+    """Defense in depth: the heal merges R2 TRUTH, so a stray holiday object must not surface.
+
+    The write path already refuses to archive a non-session, but a holiday object that reached
+    the store some other way (older build, manual upload) would otherwise be merged straight
+    into dates.json and become its `latest` — the exact poisoned session-discovery this lane
+    exists to prevent.
+    """
+    real = _prior_sessions(4)                       # 4 genuine sessions
+    holiday = "2026-11-26"                          # Thanksgiving — sorts NEWEST of the set
+    doc = build_archive_dates_index(TIDE_FAMILY, [*real, holiday],
+                                    cadence_sec=120, asof="a")
+    assert holiday not in doc["dates"]
+    assert doc["dates"] == sorted(real, reverse=True)
+    assert doc["latest"] == sorted(real, reverse=True)[0]    # a REAL session, not the holiday
+    assert is_market_session(doc["latest"])
+    assert doc["count"] == 4
+    assert is_archive_dates(doc)
+
+
+def test_holiday_in_r2_is_neither_published_nor_immortal(staged):
+    """End to end: prune finds the holiday object, the index refuses to publish it."""
+    holiday = "2026-11-26"
+    real = _prior_sessions(4)
+    s3 = _FakeS3([f"live_flow/tide/{d}.json" for d in [*real, holiday]])
+
+    res = prune_archive_dates(s3, "b", TIDE_FAMILY, keep=30)
+    assert holiday in res["retained"]               # the LISTING is format-only, by design
+    kept = merge_archive_dates(TIDE_FAMILY, res["retained"], cadence_sec=120, asof="a")
+    # …but neither the returned list nor the published file carries it.
+    assert holiday not in kept
+    doc = json.loads((archive_out_dir(TIDE_FAMILY) / ARCHIVE_DATES_NAME).read_text())
+    assert holiday not in doc["dates"] and doc["latest"] != holiday
+    # And a holiday object is still deletable once it ages out of the retain window —
+    # filtered from the index, not made immortal. (2026-11-26 sorts NEWEST of this store, so
+    # age-out is shown with an older holiday; that asymmetry is the point of keeping
+    # dated_archive_key format-only.)
+    stale_holiday = "2025-11-27"                    # Thanksgiving 2025
+    aged = _FakeS3([f"live_flow/tide/{d}.json" for d in [*_prior_sessions(30), stale_holiday]])
+    prune_archive_dates(aged, "b", TIDE_FAMILY, keep=30)
+    assert aged.deleted == [f"live_flow/tide/{stale_holiday}.json"]
+
+
 def test_dates_index_empty_latest_is_null():
     doc = build_archive_dates_index(TIDE_FAMILY, [], cadence_sec=120, asof="")
     assert doc["dates"] == [] and doc["latest"] is None and doc["count"] == 0
@@ -333,7 +376,13 @@ class _FakeS3:
 
 
 def _store(n_sessions, family=TIDE_FAMILY):
-    days = [f"2026-06-{d:02d}" for d in range(1, n_sessions + 1)]
+    """A store holding `n_sessions` REAL prior NYSE sessions (oldest first) + decoys.
+
+    Real sessions, not `2026-06-{01..35}`: the index builder now filters on the trading
+    calendar, so synthetic weekend/impossible dates would silently shrink every index this
+    helper feeds.
+    """
+    days = _prior_sessions(n_sessions)
     keys = [f"live_flow/{family}/{d}.json" for d in days]
     keys += [
         f"live_flow/{family}/dates.json",
@@ -341,7 +390,7 @@ def _store(n_sessions, family=TIDE_FAMILY):
         "live_flow/dte_tide_current.json",
         "live_flow/feed_current.json",
         f"live_flow/{family}/junk.json",        # not a session date
-        f"live_flow/surface/SPY/2026-06-01/idx.json",
+        "live_flow/surface/SPY/2026-06-01/idx.json",
     ]
     return _FakeS3(keys), days
 

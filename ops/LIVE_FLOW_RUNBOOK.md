@@ -193,15 +193,24 @@ Never echo these values — they persist in shell history and logs.
 
 ## Manual single-cycle smoke
 
-> **`--date` disables the dated archive lane — by design.** This recipe polls a handful of
-> roots, so its tide payload is a valid-looking *partial* of that past session, and the
-> archive key is derived from `session_date`. An ungated smoke would therefore overwrite the
-> settled `live_flow/tide/<that date>.json` with a fragment, undetectably (schema valid, date
-> correct — `roots_polled` lives only in `meta.json`, which the archive does not carry). So
-> whenever `--date` is passed, dated archive **writes and the retention sweep are both off**
-> and the poller logs it at WARNING. A backdated run can never rewrite settled history.
-> The lane is also dark on any non-session (market holidays — launchd fires anyway).
-> To smoke the archive lane itself, run the unit suite: `pytest tests/test_flow_archive.py`.
+> **`--date` disables the dated tide/dte ARCHIVE lane — by design.** This recipe polls a
+> handful of roots, so its tide payload is a valid-looking *partial* of that past session, and
+> the archive key is derived from `session_date`. An ungated smoke would therefore overwrite
+> the settled `live_flow/tide/<that date>.json` with a fragment, undetectably (schema valid,
+> date correct — `roots_polled` lives only in `meta.json`, which the archive does not carry).
+> So whenever `--date` is passed, dated **tide/dte_tide** archive writes and their retention
+> sweep are both off and the poller logs it at WARNING. That lane is also dark on any
+> non-session (market holidays — launchd fires anyway). To exercise it, run the unit suite:
+> `pytest tests/test_flow_archive.py`.
+>
+> **⚠️ The dated FLOW-SURFACE store has no such gate — a backdated smoke DOES overwrite it.**
+> `session_date` flows unconditionally into `build_and_stage_surfaces`
+> (`live_flow_poller.py:1717`), so a `--date` run rewrites
+> `live_flow/surface/{ROOT}/<that date>/idx.json` + `{HHMM}.json` with a partial few-root,
+> single-stamp frame, and its retention sweep still runs. Pre-existing M-XP behavior, not
+> changed here. **Do not run a backdated smoke against a session whose surface replay you
+> still care about** — pick a date outside the 10-session surface retention window, or accept
+> that that session's replay is clobbered until the next live session ages it out.
 
 ```bash
 # Wipe stale state first
