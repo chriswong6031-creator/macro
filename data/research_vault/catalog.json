@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-29T10:37:47.336974+00:00",
-  "count": 316,
+  "generated_at": "2026-07-29T11:07:50.660481+00:00",
+  "count": 317,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -373,6 +373,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 17,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-9bvtho5qg7r-accccb",
+      "title": "JPM Market Intel Trading the Fed July 2026",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T23:06:35Z",
+      "summary_points": [
+        "**Fed Decision & Dissent Dynamics**: 2 hawkish dissents (Hammack/Logan) expected; market prices 30% hike chance vs Fed's hold view amid GDP near trend and stable inflation.",
+        "**10Y T-Notes Duration Risk**: Strong negative correlation with small Fed moves (<2bp: -8.6% avg return) vs positive correlation with large moves (>2bp: +6.7% avg return.",
+        "**Tech Sector Sensitivity**: SPX-TECH shows +0.9% avg return on small Fed moves (<2bp) vs -0.2% on large moves (>2bp), highlighting acute policy shift sensitivity."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
