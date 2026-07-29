@@ -16,6 +16,7 @@ Pure render — jinja2 only (already a dep); no R2, no network.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 
@@ -77,6 +78,27 @@ def test_builds_empty_and_seeded(page_empty, page_seeded):
         assert "<!DOCTYPE html>" in html
         assert "research_vault_app.js" in html          # the client app is wired
         assert 'id="rv-catalog"' in html                 # the SSR catalog island
+
+
+def test_page_canvas_tracks_shared_theme_tokens(page_seeded):
+    body_rule = re.search(r"body\s*\{([^}]*)\}", page_seeded)
+    assert body_rule, "Research Vault must define its page canvas"
+    declarations = body_rule.group(1)
+    assert "background:var(--bg)" in declarations
+    assert "color:var(--text)" in declarations
+    assert "min-height:100vh" in declarations
+
+
+def test_committed_page_uses_hashed_themed_canvas_asset():
+    html = (bld.ROOT / "site" / "research_vault.html").read_text(encoding="utf-8")
+    match = re.search(r'href="(assets/css/([0-9a-f]{8})\.css)\?v=\2"', html)
+    assert match, "Research Vault must load a content-hashed page stylesheet"
+    css_path = bld.ROOT / "site" / match.group(1)
+    css = css_path.read_bytes()
+    assert hashlib.sha256(css).hexdigest()[:8] == match.group(2)
+    text = css.decode("utf-8")
+    assert "background:var(--bg)" in text
+    assert "color:var(--text)" in text
 
 
 def test_title_has_no_i18n(page_seeded):
