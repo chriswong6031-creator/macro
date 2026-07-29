@@ -21,6 +21,30 @@ translate metrics into plain observable words. NO regime labels ("Goldilocks"), 
 internal scores (growth score / inflation score), NO "(read: ...)" asides, NO em
 dashes. Say what the data plainly shows, e.g. "growth data keeps coming in soft while
 inflation readings are still warm". If the facts are thin, say less.
+
+DENOMINATOR LAW (Content Studio W1, 2026-07-29)
+-----------------------------------------------
+`research/MARKETING_CONTENT_STUDIO_LLM_FIRST_MASTERPLAN_BY_FABLE.md` §0 gate 3(f)
+and §4 ("Jargon at the source"). **A count in a fact string carries its
+denominator or it does not ship.** "18 groups on the move today" was generated
+here, shipped on the flagship account, and is meaningless: 18 of how many? The
+same fact class also carried a MISLABEL — `daily_brief.thematic_line.n_themes`
+is the TOTAL number of themes the line tracks, not a count of movers, so
+"on the move" was never true of it either.
+
+Two structural rules now:
+  1. Every count fact carries a machine-readable ``count`` block
+     ``{"n_moving": int|None, "n_tracked": int|None, "noun": str}`` alongside
+     its text. The writer translates FIELDS; it never has to parse a number
+     back out of prose (masterplan §4).
+  2. A count whose denominator is unknown is DROPPED, not phrased around. The
+     supply-honest rule applies to facts as much as to volume: a numerator with
+     no universe is not a fact, and no digit is better than a false one.
+
+The module also stays clear of desk-machinery vocabulary in fact TEXT: no
+screen, board, graded, plan, model, system, or "universe" (a word for our
+ticker list, not for anything the reader can see). `tests/test_market_facts.py`
+scans this module's string literals to keep it that way.
 """
 from __future__ import annotations
 
@@ -183,6 +207,28 @@ def _fmt_pct(v: float, decimals: int = 1) -> str:
     return f"{sign}{v:.{decimals}f}%"
 
 
+def _count_block(n_moving: object, n_tracked: object, noun: str) -> dict:
+    """The structured denominator a count fact carries (masterplan §4).
+
+    ``n_moving`` is the numerator, ``n_tracked`` its universe, ``noun`` the
+    plain word for what is being counted ("sectors", not "tiles"; "industry
+    groups", not "themes"). Either number may be None — a caller with no
+    denominator is expected to DROP the fact, and this block is what makes that
+    decision inspectable rather than a comment.
+    """
+    def _int_or_none(v: object) -> int | None:
+        try:
+            return int(v)  # type: ignore[arg-type]
+        except (TypeError, ValueError):
+            return None
+
+    return {
+        "n_moving": _int_or_none(n_moving),
+        "n_tracked": _int_or_none(n_tracked),
+        "noun": noun,
+    }
+
+
 def _build(facts: list[dict]) -> dict:
     """Build the return shape from a list of fact dicts."""
     seen_ids: set[str] = set()
@@ -230,19 +276,45 @@ def macro_facts(root: PathLike) -> dict:
 
     facts: list[dict] = []
 
-    # Observable count of groups on the move today (a real, honest number we can
-    # fold into the headline read so a macro post carries a concrete digit).
-    n_groups_str: str | None = None
-    _count_folded = False  # True once the group count is folded into the top fact
-    if isinstance(brief, dict):
-        _tl = brief.get("thematic_line") or {}
-        if isinstance(_tl, dict) and _tl.get("available"):
-            _nt = _tl.get("n_themes")
-            if _nt is not None:
-                try:
-                    n_groups_str = str(int(_nt))
-                except (TypeError, ValueError):
-                    n_groups_str = None
+    # ── The concrete digit a macro read carries (Content Studio W1) ───────────
+    # WHAT USED TO BE HERE. `brief.thematic_line.n_themes` was folded into the
+    # growth/inflation read as "{n} groups on the move today", for the stated
+    # reason that "a macro post carries a concrete digit". It was two defects at
+    # once:
+    #   * NO DENOMINATOR. "18 groups on the move" is a numerator with no
+    #     universe; the reader cannot tell whether that is broad or narrow.
+    #     Masterplan §0 gate 3(f) names this exact string.
+    #   * WRONG NOUN AND WRONG VERB. n_themes is the TOTAL count of themes the
+    #     thematic line tracks (its own stage_counts sum to it), not a count of
+    #     movers, and the themes are not "groups". The sentence was false, not
+    #     merely thin.
+    # WHAT REPLACES IT. The same fold-in mechanic over a fact that is actually
+    # true: the sector board's green count over its universe. A real numerator,
+    # a real denominator, a plain noun, and a reader can picture all three.
+    # THE FOLD IS GATED ON THE COUNT BEING A READ, NOT A DEFINITION. The clause
+    # asserts "closed green", so it may only be built from a numerator that
+    # actually counts green sectors AND that says something: 0 of 11 and 11 of 11
+    # are both true sentences and neither is a fact a reader learns anything
+    # from, and reading a saturated block as "closed green" is how an all-red day
+    # shipped as "11 of 11 sectors closed green today." A macro read with no
+    # digit is the honest degradation; the module's own denominator law already
+    # says a count that cannot be stated properly does not ship.
+    _breadth_clause = ""
+    _breadth_numbers: list[str] = []
+    _breadth_count: dict | None = None
+    for _sf in (sector_facts(root).get("facts") or []):
+        if _sf.get("id") != "sector_leader":
+            continue
+        _cb = _sf.get("count") or {}
+        _nm, _nt = _cb.get("n_moving"), _cb.get("n_tracked")
+        if not isinstance(_nm, int) or not isinstance(_nt, int):
+            break
+        if not 0 < _nm < _nt:
+            break  # saturated either way: a definition, not a breadth read
+        _breadth_clause = f"{_nm} of {_nt} sectors closed green today."
+        _breadth_numbers = [str(_nm), str(_nt)]
+        _breadth_count = dict(_cb)
+        break
 
     # ── Growth + inflation, translated to plain observable words ──────────────
     # NO regime label, NO scores in the text. We read the underlying growth/
@@ -262,18 +334,18 @@ def macro_facts(root: PathLike) -> dict:
                 uncomfortable = (g < -0.05 and infl > 0.05) or (g > 0.05 and infl < -0.05)
                 tail = " Not a comfortable mix." if uncomfortable else ""
                 text = f"{gw[0].upper()}{gw[1:]} while {iw}.{tail}"
-                nums: list[str] = []
-                # Fold in the observable group count as a natural, checkable digit.
-                if n_groups_str:
-                    text += f" {n_groups_str} groups on the move today."
-                    nums = [n_groups_str]
-                    _count_folded = True
-                facts.append({
+                _gi: dict = {
                     "id": "growth_inflation",
                     "text": text,
                     "salience": 10,
-                    "numbers": nums,
-                })
+                    "numbers": [],
+                }
+                if _breadth_clause:
+                    _gi["text"] = f"{text} {_breadth_clause}"
+                    _gi["numbers"] = list(_breadth_numbers)
+                    _gi["count"] = dict(_breadth_count or {})
+                    _breadth_clause = ""  # folded; do not also ship it standalone
+                facts.append(_gi)
             except (TypeError, ValueError):
                 pass
 
@@ -323,15 +395,21 @@ def macro_facts(root: PathLike) -> dict:
                     "numbers": [],
                 })
 
-        # Thematic line breadth number — only as a STANDALONE fact when it wasn't
-        # already folded into the growth/inflation read (i.e. no regime data).
-        if n_groups_str and not _count_folded:
-            facts.append({
-                "id": "theme_count",
-                "text": f"{n_groups_str} different groups are on the move today.",
-                "salience": 4,
-                "numbers": [n_groups_str],
-            })
+        # The standalone `theme_count` fact ("{n} different groups are on the
+        # move today") is deleted for the same two reasons as the fold-in above:
+        # no denominator, and n_themes is a total rather than a count of movers.
+
+    # The breadth pair ships STANDALONE only when it was not folded into the
+    # growth/inflation read above (i.e. no regime data). Never both: one fact
+    # list must not say the same sentence twice.
+    if _breadth_clause:
+        facts.append({
+            "id": "sector_breadth",
+            "text": _breadth_clause[0].upper() + _breadth_clause[1:],
+            "salience": 7,
+            "numbers": list(_breadth_numbers),
+            "count": dict(_breadth_count or {}),
+        })
 
     # Sort salience-DESC, id-ASC for determinism
     facts.sort(key=lambda x: (-x["salience"], x["id"]))
@@ -426,9 +504,21 @@ def sector_facts(root: PathLike) -> dict:
                 "text": text,
                 "salience": 8,
                 "numbers": [best_pct_str, n_green_str, n_total_str],
+                "count": _count_block(n_green, n_total, "sectors"),
             })
         else:
-            # Broad red day
+            # Broad red day. "All N" is its own denominator: numerator and
+            # universe are the same number and the sentence says so.
+            #
+            # THE COUNT BLOCK STILL MEANS "HOW MANY CLOSED GREEN". This branch
+            # used to publish `_count_block(n_total, n_total)` because the TEXT
+            # says "all N", and macro_facts reads the block (not the text) to
+            # build its breadth clause: the result was
+            # "11 of 11 sectors closed green today." on a day when every sector
+            # closed lower. One number, three defects (fabricated, inverted,
+            # degenerate). The numerator is n_green, which on this branch is 0 by
+            # construction (best_pct <= 0 means no sector's mean was positive),
+            # and every consumer reads one meaning off the block.
             text = (
                 f"All {n_total_str} sectors closed lower today; "
                 f"{best_name} held up best at {best_pct_str}."
@@ -438,6 +528,7 @@ def sector_facts(root: PathLike) -> dict:
                 "text": text,
                 "salience": 8,
                 "numbers": [n_total_str, best_pct_str],
+                "count": _count_block(n_green, n_total, "sectors"),
             })
 
         if worst_name != best_name:
@@ -493,44 +584,42 @@ def breadth_facts(root: PathLike) -> dict:
     now = tc.get("now") or {}
     universe_n = tc.get("universe_n")
 
+    # DENOMINATOR OR NOTHING (Content Studio W1, gate 3f). The two branches that
+    # used to emit a bare "{n} names are showing bullish momentum setups" when
+    # `universe_n` was missing or unparseable are deleted: that is a numerator
+    # with no universe, which is the exact defect this wave closes. "S&P
+    # universe" is gone too — "universe" is our word for our ticker list, not
+    # something the reader can see.
     if isinstance(now, dict):
         n_active = len([t for t, v in now.items() if isinstance(v, list) and len(v) > 0])
-        if n_active > 0:
+        try:
+            universe_int = int(universe_n) if universe_n else 0
+        except (TypeError, ValueError):
+            universe_int = 0
+        # A DENOMINATOR THE NUMERATOR CANNOT MOVE AGAINST IS NOT A DENOMINATOR.
+        # `now` is keyed by every tracked name and `universe_n` is the size of
+        # that same list, so on a broad tape n_active == universe_n and the fact
+        # reads "231 of 231 names we track are showing bullish momentum setups" —
+        # denominated in form, vacuous in content, and the sentence a reader is
+        # least able to argue with because it is a definition of the screen
+        # rather than an observation about the market. Saturation drops the fact
+        # here, at the producer, so it can never be the digit a macro or
+        # watchlist post is built around; the configurable degenerate band in
+        # content_studio.drop_degenerate_facts is the second net, not the first.
+        if 0 < n_active < universe_int:
             n_str = str(n_active)
-            if universe_n:
-                try:
-                    u_str = str(int(universe_n))
-                    text = (
-                        f"{n_str} of {u_str} names in the S&P universe are showing "
-                        f"bullish momentum setups right now."
-                    )
-                    facts.append({
-                        "id": "breadth_active",
-                        "text": text,
-                        "salience": 8,
-                        "numbers": [n_str, u_str],
-                    })
-                except (TypeError, ValueError):
-                    text = (
-                        f"{n_str} names in the index are showing "
-                        f"bullish momentum setups right now."
-                    )
-                    facts.append({
-                        "id": "breadth_active",
-                        "text": text,
-                        "salience": 8,
-                        "numbers": [n_str],
-                    })
-            else:
-                text = (
-                    f"{n_str} names are showing bullish momentum setups right now."
-                )
-                facts.append({
-                    "id": "breadth_active",
-                    "text": text,
-                    "salience": 8,
-                    "numbers": [n_str],
-                })
+            u_str = str(universe_int)
+            text = (
+                f"{n_str} of {u_str} names we track are showing bullish momentum "
+                f"setups right now."
+            )
+            facts.append({
+                "id": "breadth_active",
+                "text": text,
+                "salience": 8,
+                "numbers": [n_str, u_str],
+                "count": _count_block(n_active, universe_int, "names"),
+            })
 
     # ── Most common setup — plain language, no indicator vocab ───────────────
     combos_block = tc.get("combos") or {}
@@ -550,18 +639,26 @@ def breadth_facts(root: PathLike) -> dict:
                     if isinstance(i, int) and i < len(long_combos):
                         combo_fires[i] += 1
 
-        if combo_fires:
-            top_idx, top_count = combo_fires.most_common(1)[0]
+        _top_count_peek = combo_fires.most_common(1)[0][1] if combo_fires else 0
+        if combo_fires and 0 < _top_count_peek < universe_int:
+            # Same law as breadth_active: the count ships with its universe or it
+            # does not ship ("firing on 62 names" alone tells the reader nothing
+            # about whether that is a lot), AND it does not ship saturated — a
+            # setup firing on every name we track describes the screen, not the
+            # tape.
+            _top_idx, top_count = combo_fires.most_common(1)[0]
             top_count_str = str(top_count)
-            # Plain description — no indicator vocab
-            # We use a generic momentum/trend description
+            u_str = str(universe_int)
+            # Plain description — no indicator vocab, no combo id, no setup name.
             facts.append({
                 "id": "top_setup_breadth",
                 "text": (
-                    f"The most active bullish setup is firing on {top_count_str} names today."
+                    f"The most active bullish setup is firing on {top_count_str} "
+                    f"of the {u_str} names we track today."
                 ),
                 "salience": 6,
-                "numbers": [top_count_str],
+                "numbers": [top_count_str, u_str],
+                "count": _count_block(top_count, universe_int, "names"),
             })
 
     facts.sort(key=lambda x: (-x["salience"], x["id"]))

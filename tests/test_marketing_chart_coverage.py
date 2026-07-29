@@ -582,3 +582,24 @@ def test_every_enabled_desk_has_its_own_template_bank():
         f"desks sharing a voice (and therefore a template bank): {shared}. "
         f"The later desk will be near-dup quarantined into near-silence."
     )
+
+
+def test_tape_chart_posts_survive_without_ohlcv_via_the_markerless_card():
+    """W1 CI fix (2026-07-29): in a pyarrow-less env (the marketing-engine CI
+    lane) or for a ticker outside the OHLCV parquet tree, the v2 candlestick
+    cannot load. Tape-variant chart posts used to lose their chart entirely at
+    that point and then defer forever at publish under the
+    ticker-post-carries-a-chart law. The markerless v1 line card is the honest
+    fallback: same chart, NO BUY geometry (a BUY label on a "watching, not
+    buying yet" post is the lie the variant split exists to prevent)."""
+    from engine.marketing.chart_render import render_signal_chart
+
+    dates = [f"2026-07-{d:02d}" for d in range(1, 29)]
+    closes = [100.0 + i * 0.5 for i in range(28)]
+    marked = render_signal_chart("PLTR", dates, closes, marker_index=5,
+                                 subtitle="$PLTR · signal")
+    markerless = render_signal_chart("PLTR", dates, closes, marker_index=None,
+                                     subtitle="$PLTR · tape")
+    assert "BUY" in marked
+    assert "BUY" not in markerless
+    assert markerless.startswith("<svg") and "polyline" in markerless

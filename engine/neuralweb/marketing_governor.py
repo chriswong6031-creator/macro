@@ -132,8 +132,12 @@ def _build_content_plan(r: Path, cfg: dict) -> dict:
         # defer_media: render the SVGs now, raster the PNGs after the Sentinel
         # gate (build_and_write → raster_plan_media) so only cards on posts that
         # survive cost a Chrome launch.
+        # write_shape_ledger: THE nightly is the only advancer of
+        # data/marketing/shape_ledger.json (W1 contract §House laws). No other
+        # content_plan caller passes it, so an admin preview or a test that hands
+        # in a real root can never roll the 14-day shape window forward.
         return _content_plan(cfg=cfg, plans=plans, closes_loader=closes_loader,
-                             root=r, defer_media=True)
+                             root=r, defer_media=True, write_shape_ledger=True)
 
     except Exception as exc:  # noqa: BLE001
         log.warning("marketing_governor: content_plan build failed: %s", exc)

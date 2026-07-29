@@ -1,0 +1,77 @@
+name: marketing-copy-dryrun
+# ─────────────────────────────────────────────────────────────────────────────
+# Content Studio copy dry-run — dispatch-only, WRITES NOTHING.
+#
+# Runs the per-post LLM writer (copywriter.write_posts_llm_v2 via
+# scripts/marketing_copy_dryrun.py) against the CURRENT
+# data/marketing/content_plan.json and prints, per item: the old template text,
+# the new model text, the mode, the critic verdict and any violations — plus a
+# fallback-rate summary. Nothing touches the outbox, no ledger row is written,
+# no artifact is uploaded, nothing is committed.
+#
+# WHY IT EXISTS (LLM-first masterplan §0 gate 8, operator directive 2026-07-29).
+# The persona LLM lane was armed and credentialed from the 2026-07-26 incident
+# fix onward and STILL never wrote a live post: the batched v1 call truncated
+# every night, returned None, and every post silently fell back to templates.
+# Nothing in CI could have caught that, because the marketing-engine test lane
+# is deliberately LLM-free and the nightly's own logs said "mode: llm". This is
+# the lane where an operator can see real model copy next to the template copy
+# it replaces, on demand, before trusting a nightly.
+#
+# ubuntu-latest, never the macstudio pool: this is off the render path and the
+# render budget is law. Its own concurrency group so a dry-run can never queue
+# behind (or cancel) daily/render.
+# ─────────────────────────────────────────────────────────────────────────────
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: marketing-copy-dryrun
+  cancel-in-progress: false
+
+jobs:
+  dryrun:
+    runs-on: ubuntu-latest    # OFF the render path — never the macstudio pool
+    timeout-minutes: 20
+    env:
+      # Arms the writer lane. Mirrors the daily.yml "Marketing — NW lobe
+      # governor" step's env block: the flag alone is a LIE without the
+      # credentials under it (lib.config.secret() reads env only, so
+      # llm_auth.build_providers() returns [] and every item drops at stage
+      # `provider`). Same waterfall the nightly uses: OAuth pool -> Anthropic
+      # key -> DeepSeek.
+      MARKETING_LLM_ENABLED: "1"
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+      CLAUDE_CODE_OAUTH_TOKEN_1: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_1 }}
+      CLAUDE_CODE_OAUTH_TOKEN_2: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_2 }}
+      CLAUDE_CODE_OAUTH_TOKEN_3: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_3 }}
+      CLAUDE_CODE_OAUTH_TOKEN_4: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_4 }}
+      CLAUDE_CODE_OAUTH_TOKEN_5: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_5 }}
+      CLAUDE_CODE_OAUTH_TOKEN_6: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_6 }}
+      CLAUDE_CODE_OAUTH_TOKEN_7: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_7 }}
+      DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+      METAB_KEYS_ENABLED: ${{ vars.METAB_KEYS_ENABLED }}
+      # DELIBERATELY ABSENT: MARKETING_OUTBOX_ENABLED and
+      # MARKETING_PUBLISH_ENABLED. This lane reads a plan and prints copy; it
+      # must never be one env var away from queueing or posting.
+    steps:
+      - name: checkout (shallow — read-only lane, nothing is committed)
+        uses: actions/checkout@v4
+
+      - name: setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: install deps
+        # Minimal closure: pyyaml for the config load, requests + anthropic for
+        # the llm_auth provider waterfall. No pandas/pyarrow — the dry-run reads
+        # the committed content_plan.json, it does not rebuild a plan from bars.
+        run: pip install --quiet pyyaml requests anthropic
+
+      - name: writer dry-run (10 items, no writes)
+        run: python -m scripts.marketing_copy_dryrun --limit 10

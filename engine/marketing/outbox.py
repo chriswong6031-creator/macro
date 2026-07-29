@@ -1471,6 +1471,130 @@ def _scheduled_at_for_slot(slot: str, as_of: str) -> str:
     return slot_datetime(as_of, slot) or "immediate"
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# W1 no-fallback lane + stale-queued expiry
+# (research/MARKETING_CONTENT_STUDIO_LLM_FIRST_MASTERPLAN_BY_FABLE.md §0 gate 1,
+#  research/marketing_dockets/CONTENT_STUDIO_W1_BUILD_CONTRACT.md §Emit)
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: The kinds the nightly Content Studio plans and writes. Mirrors
+#: content_studio.PLANNED_KINDS and is resolved through it at call time so the
+#: two lists cannot drift; this literal is only the import-failure floor.
+_PLANNED_KINDS_FALLBACK: frozenset[str] = frozenset({
+    "signal", "chart", "education", "macro", "receipt", "watchlist", "event",
+})
+
+#: Modes that mean "a language model wrote this sentence" (contract §Writer API).
+_LLM_MODES: frozenset[str] = frozenset({"llm", "llm_repair"})
+
+#: How far past its slot a planned item may sit before tonight's plan retires it.
+_STALE_QUEUED_HOURS = 36
+
+
+def planned_kinds() -> frozenset[str]:
+    """The planned-kind set, from content_studio when importable."""
+    try:
+        from engine.marketing.content_studio import PLANNED_KINDS  # noqa: PLC0415
+        return frozenset(PLANNED_KINDS)
+    except Exception:  # noqa: BLE001
+        return _PLANNED_KINDS_FALLBACK
+
+
+def llm_required(cfg: dict | None) -> bool:
+    """Is the no-fallback law armed? (`copywriter.llm.required`)
+
+    Resolved through content_studio.llm_required so ONE function decides it for
+    the plan side and the emit side — a gate honoured at one seam and not the
+    other is how template prose reached readers in the first place. The inline
+    fallback repeats its rule exactly: default TRUE when a `copywriter.llm` block
+    exists (deleting the key cannot disarm the gate), FALSE when a caller ships
+    no copywriter config at all (it is not running the writer lane).
+    """
+    try:
+        from engine.marketing.content_studio import llm_required as _req  # noqa: PLC0415
+        return _req(cfg)
+    except Exception:  # noqa: BLE001
+        cw = (cfg or {}).get("copywriter") if isinstance(cfg, dict) else None
+        llm = (cw or {}).get("llm") if isinstance(cw, dict) else None
+        if not isinstance(llm, dict):
+            return False
+        v = llm.get("required", True)
+        return v if isinstance(v, bool) else str(v).strip().lower() in {"1", "true", "yes"}
+
+
+def _item_copy_mode(qi: dict) -> str:
+    """The writer mode stamped on a plan queue item ("" when unstamped)."""
+    return str(qi.get("_copy_mode") or qi.get("copy_mode") or "").strip().lower()
+
+
+def expire_stale_planned(
+    root: Path | str | None = None,
+    *,
+    now: datetime | None = None,
+    max_age_hours: int = _STALE_QUEUED_HOURS,
+    actor: str = "nightly_expiry",
+) -> dict[str, Any]:
+    """Retire planned-kind items that sat unposted long past their slot.
+
+    Contract §Emit. A `queued`/`approved` item whose `scheduled_at` is more than
+    ``max_age_hours`` in the past is a post about a tape that no longer exists —
+    it was written against a close two nights ago and the plan that replaces it
+    is being emitted RIGHT NOW. Left alone it either ships stale (the publisher
+    happily posts anything approved and due) or clogs the admin queue with
+    yesterday's rejects, and its text keeps vetoing tonight's copy through the
+    7-day near-dup corpus.
+
+    `expired` is deliberately NOT a new ledger status: TRANSITIONS is a safety
+    contract and widening it for a housekeeping case would cost more than it
+    buys. The item goes to `quarantined` (terminal, already reachable from both
+    live statuses) with the note "expired: superseded by tonight's plan", so the
+    admin's quarantine view carries the reason verbatim.
+
+    SCOPED TO `content_studio` PROVENANCE. The wire lanes (press/fastlane) and
+    weekend_levels manage their own retirement, and quarantining another lane's
+    items from the nightly emit path would be this lane reaching into theirs.
+
+    Uses the canonical writer (`transition`) on a single pre-folded snapshot, the
+    same batch pattern supersede_lane uses — never a hand-appended ledger row.
+    Never raises: expiry failing must not stop tonight's emission.
+    """
+    out: dict[str, Any] = {"expired": 0, "ids": []}
+    try:
+        ts_now = now if now is not None else datetime.now(timezone.utc)
+        cutoff = ts_now - timedelta(hours=max(int(max_age_hours), 0))
+        kinds = planned_kinds()
+        state = fold_state(root)
+        for iid, it in (state.get("items") or {}).items():
+            if str(state["status"].get(iid) or "") not in ("queued", "approved"):
+                continue
+            if str(it.get("kind") or "") not in kinds:
+                continue
+            if str(it.get("provenance") or "") != "content_studio":
+                continue
+            raw = str(it.get("scheduled_at") or "").strip()
+            if not raw or raw == "immediate":
+                continue  # no slot to be late for
+            try:
+                sched = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+            except (ValueError, TypeError):
+                continue
+            if sched.tzinfo is None:
+                sched = sched.replace(tzinfo=timezone.utc)
+            if sched >= cutoff:
+                continue
+            if transition(iid, "quarantined", actor=actor, root=root,
+                          note="expired: superseded by tonight's plan",
+                          now=ts_now, _state=state):
+                out["expired"] += 1
+                out["ids"].append(iid)
+        if out["expired"]:
+            log.info("outbox.expire_stale_planned: retired %d stale planned item(s)",
+                     out["expired"])
+    except Exception as exc:  # noqa: BLE001
+        log.warning("outbox.expire_stale_planned failed: %s", exc)
+    return out
+
+
 def emit_from_content_plan(
     plan: dict,
     root: Path | str | None = None,
@@ -1491,12 +1615,24 @@ def emit_from_content_plan(
     gate's crash path stamps this) are skipped too: quarantined items surface
     on the admin Sentinel/Outbox views with reasons, never as queueable posts.
 
+    THE NO-FALLBACK LAW (masterplan §0 gate 1, operator directive 2026-07-29).
+    While `copywriter.llm.required` is on, a PLANNED-kind item (signal chart
+    education macro receipt watchlist event) may only queue when a language model
+    wrote it — item `_copy_mode` ∈ {llm, llm_repair}. The 2026-07-29 batch was
+    65/65 deterministic-template output and the operator aborted review at post
+    15; every patch before this one added another banned word to a list the
+    generator cannot see its own output against. Refusals are counted
+    (`skipped_not_llm`) and announced ONCE per emit as a start-of-line ::error,
+    with different wording for "the lane is mute" and "the lane ran and these
+    items still are not model copy" — the operator needs to know which.
+
     Reads items.jsonl ONCE for the whole batch (enqueue _ctx snapshot) and
     appends a summary row to activity.jsonl so the admin Outbox page can show
     what the last emit did and why items were skipped.
 
     Returns a summary dict: {emitted, skipped_dupe, skipped_cap, skipped_gate,
-    skipped_sentinel, skipped_invalid, media_written, by_account}.
+    skipped_sentinel, skipped_invalid, skipped_not_llm, expired, media_written,
+    by_account}.
     """
     ts_now = now if now is not None else datetime.now(timezone.utc)
     as_of: str = plan.get("as_of") or ts_now.strftime("%Y-%m-%d")
@@ -1514,11 +1650,34 @@ def emit_from_content_plan(
         "skipped_gate": 0,
         "skipped_sentinel": 0,
         "skipped_invalid": 0,
+        "skipped_not_llm": 0,
+        "expired": 0,
         "media_written": 0,
         "by_account": {},
     }
 
     cap = effective_cap(cfg or {})
+
+    # ── Stale-queued expiry (contract §Emit) ─────────────────────────────────
+    # BEFORE the emit lock, and before anything new is queued: tonight's plan is
+    # what supersedes them, and an item retired here frees its text from the
+    # near-dup corpus so tonight's copy for the same name is not vetoed by a post
+    # that never went out. expire_stale_planned takes its own fold and writes
+    # through transition(); running it inside the lock below would re-enter the
+    # same advisory flock.
+    _expiry = expire_stale_planned(root, now=ts_now)
+    counts["expired"] = _expiry.get("expired", 0)
+
+    # The no-fallback law and whether the writer lane spoke at all tonight. The
+    # plan's own copy report is the honest witness for the second question: it
+    # records the mode the copywriter pass resolved to.
+    _require_llm = llm_required(cfg)
+    _planned = planned_kinds()
+    _plan_copy_mode = str(
+        (((plan.get("content") or {}).get("copy") or {}).get("mode") or "")
+    ).strip().lower()
+    _lane_mute = not _plan_copy_mode.startswith("llm")
+    _not_llm_modes: dict[str, int] = {}
 
     with _outbox_lock(root):
         # Same union + dead-item exclusion as enqueue()'s own corpus builder.
@@ -1572,6 +1731,19 @@ def emit_from_content_plan(
                     if qi.get("status") == "quarantined" or qi.get("sentinel_ok") is False:
                         counts["skipped_sentinel"] += 1
                         continue
+
+                    # NO TEMPLATE PROSE ON A PLANNED KIND (§0 gate 1). The wire
+                    # lanes are untouched — a wire one-liner survives templating,
+                    # a persona's diary voice does not, which is the whole reason
+                    # the fallback dies here and not everywhere.
+                    _kind = str(qi.get("type") or "signal")
+                    if _require_llm and _kind in _planned:
+                        _mode = _item_copy_mode(qi)
+                        if _mode not in _LLM_MODES:
+                            counts["skipped_not_llm"] += 1
+                            _label = _mode or "unwritten"
+                            _not_llm_modes[_label] = _not_llm_modes.get(_label, 0) + 1
+                            continue
 
                     parts = [
                         (qi.get("headline") or "").strip(),
@@ -1651,6 +1823,24 @@ def emit_from_content_plan(
                             source["media_url"] = _fc.get("media_url")
                         if _fc.get("media_png_path"):
                             source["media_png_path"] = _fc.get("media_png_path")
+                    # W1 telemetry provenance (contract §Emit): the mixer's
+                    # shape, the allocator's angle and the writer's mode travel
+                    # with the item so the learning lane (W1.5 per-shape
+                    # engagement table) and the metrics poll can join engagement
+                    # back onto the decisions that produced the post. Absent keys
+                    # are omitted, never stubbed — an item with no shape is a
+                    # pre-W1 item and must read as one.
+                    for _pk, _sk in (("shape", "shape"), ("angle", "angle")):
+                        _pv = qi.get(_pk)
+                        if _pv:
+                            source[_sk] = _pv
+                    _cm = _item_copy_mode(qi)
+                    if _cm:
+                        source["copy_mode"] = _cm
+                    _cc = qi.get("_copy_critic")
+                    if _cc:
+                        source["critic_verdict"] = _cc
+
                     # Structured tape-claim stamp for the publisher's post-time
                     # live gate (engine/marketing/live_verify.py): the ticker the
                     # copy is about, the thesis direction and levels, and any
@@ -1732,11 +1922,44 @@ def emit_from_content_plan(
                     log.warning("outbox.emit_from_content_plan: per-item error: %s", exc)
                     counts["skipped_invalid"] += 1
 
+    # ONE annotation per emit, whatever the refusal count (contract §Emit).
+    #
+    # BARE PRINT, "::" FIRST ON THE LINE, flush=True. This module's logger
+    # prefixes every record ("WARNING ::error …"), and GitHub silently drops a
+    # workflow command that does not start the line — the failure mode that
+    # shipped dead five times before #3587 swept 69 sites. stdout is block-
+    # buffered when piped in CI, so an unflushed annotation can be lost with the
+    # step's tail. tests/test_gh_annotation_line_start.py pins both.
+    if counts["skipped_not_llm"] > 0:
+        _breakdown = ", ".join(
+            f"{k}={v}" for k, v in sorted(_not_llm_modes.items()))
+        if _lane_mute:
+            print(
+                f"::error title=marketing_copy_lane_mute::"
+                f"{counts['skipped_not_llm']} planned-kind post(s) NOT emitted for "
+                f"{as_of}: the model copy lane never ran (plan copy mode="
+                f"{_plan_copy_mode or 'none'}) and copywriter.llm.required is on, so "
+                f"template prose was refused instead of posted. Check "
+                f"MARKETING_LLM_ENABLED + the LLM credentials on the governor step. "
+                f"[{_breakdown}]",
+                flush=True,
+            )
+        else:
+            print(
+                f"::error title=marketing_copy_not_llm::"
+                f"{counts['skipped_not_llm']} planned-kind post(s) NOT emitted for "
+                f"{as_of}: the writer lane ran but these items carry no model copy "
+                f"(copywriter.llm.required). [{_breakdown}]",
+                flush=True,
+            )
+
     _append_activity(root, {
         "at": ts_now.strftime("%Y-%m-%dT%H:%M:%SZ"),
         "lane": "emit",
         "as_of": as_of,
         "cap": cap,
+        "llm_required": _require_llm,
+        "not_llm_modes": _not_llm_modes,
         **{k: v for k, v in counts.items() if k != "by_account"},
         "by_account": counts["by_account"],
     })
