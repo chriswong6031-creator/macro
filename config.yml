@@ -21,6 +21,7 @@ llm_models:
   classify:     "claude-haiku-4-5"               # news_llm batch summaries + tag labels
   deliberation: "claude-fable-5"                 # PR-R8: Prophet/standout auditor deliberation (fallback=claude-opus-4-8)
   marketing_copy: "claude-sonnet-4-6"            # Marketing Content Studio nightly copywriter (persona posts; deterministic fallback)
+  hot_tape_wire: "claude-sonnet-4-6"             # Hot Tape P2 wire phrasing (engine/marketing/hot_tape_llm.py); falls back to the deterministic wire template on any gate hit
   press_brief: "claude-haiku-4-5"                # D14 W1 press: The Brief (300–600w daily market brief). Cheapest tier that clears the validator suite; a failure here drops the slot, it does NOT fall back to a template.
   press_research: "claude-sonnet-4-6"            # D14 W1 press: Research Desk (500–900w institutional coverage). Mid tier — the paraphrase/our-value gates need real rewriting, not summarization.
   press_research_note: "claude-haiku-4-5"        # D14 W2R (XG-W8): Research desk NOTES (300–500w). Haiku tier per masterplan §5b (~$0.01/note). DARK until research_triage.volume.stage moves off cold_start.
@@ -3994,6 +3995,29 @@ financial_news:
   top_mag7: 6
   top_basket: 8
   top_ticker: 6
+
+# =============================================================================
+# Hot Tape — attention-driven intraday wire desk
+# (research/MARKETING_HOT_TAPE_MASTERPLAN.md §3.3, gates 0.2–0.4).
+#
+# `llm` is PHASE 2: the optional phrasing pass over the radar's FactPacket
+# (engine/marketing/hot_tape_llm.py). The engine computes every number; the
+# model only phrases them, behind a numeric-consistency gate. Any gate hit, any
+# provider failure, any timeout → the deterministic wire template posts instead,
+# so this block can never cost the lane a post. Armed by TWO keys: `enabled`
+# here AND MARKETING_LLM_ENABLED=1 in the radar workflow env.
+# =============================================================================
+hot_tape:
+  llm:
+    enabled: true            # armed only with MARKETING_LLM_ENABLED=1 in the radar workflow env
+    provider_order: [oauth, anthropic, deepseek]
+    oauth_token_env: CLAUDE_CODE_OAUTH_TOKEN
+    deepseek_key_env: DEEPSEEK_API_KEY
+    deepseek_model: deepseek-chat
+    max_tokens: 300
+    client_timeout_s: 5.0    # hard per-provider latency budget; waterfall walks on timeout
+    client_max_retries: 0    # SDK retries defeat the failover walk — the CHAIN is the retry
+    max_calls_per_run: 25    # runaway guard, not a budget: each radar tick is a fresh process
 
 # =============================================================================
 # News LLM processor (engine/news_llm.py) — OPTIONAL cheap batch summaries + an

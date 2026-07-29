@@ -1,0 +1,115 @@
+{
+  "schema": "hot_tape.golden_packets/v1",
+  "note": "Golden FactPackets for the Hot Tape P2 wire desk (engine/marketing/hot_tape_llm.py). Each entry carries the packet, a plausible DETERMINISTIC wire-template rendering (fallback_text, what Phase 1's radar would post on its own), and a human-written wire post whose every number is packet-derived (good_phrasing). P1-P3 use the operator's 2026-07-28 corpus exemplars verbatim. Shapes only — no live tape data.",
+  "packets": [
+    {
+      "id": "P1",
+      "shape": "SNDK-shape mover_drop: number stacking that zooms out (D1) + dollar translation (D2) + since-date (D3)",
+      "trigger": "mover_drop",
+      "link": null,
+      "links_allowed": true,
+      "packet": {
+        "cashtag": "$SNDK",
+        "cashtags": ["$SNDK"],
+        "name": "SanDisk",
+        "trigger": "mover_drop",
+        "as_of": "2026-07-28T18:05:00Z",
+        "direction": "down",
+        "pct_day": -17.0,
+        "pct_5d": -30.0,
+        "window_days": 5,
+        "pct_from_high": -55.0,
+        "dollar_change_abs": 200000000000.0,
+        "since_date": "2026-06-22",
+        "high_date": "2026-06-22"
+      },
+      "fallback_text": "$SNDK -17% today, -30% over 5 days, -55% from its high. About $200 billion of market cap gone since 2026-06-22.",
+      "good_phrasing": "BREAKING: SanDisk stock, $SNDK, falls over -17% on the day, now down -30% in 5 days and -55% from its record high. That's officially over -$200 billion in lost market cap since June 22nd."
+    },
+    {
+      "id": "P2",
+      "shape": "META streak_rarity: streak count (D4) + rarity window",
+      "trigger": "streak_rarity",
+      "link": null,
+      "links_allowed": true,
+      "packet": {
+        "cashtag": "$META",
+        "cashtags": ["$META"],
+        "name": "Meta",
+        "trigger": "streak_rarity",
+        "as_of": "2026-07-28T18:05:00Z",
+        "direction": "down",
+        "streak_days": 9,
+        "streak_rarity_years": 5,
+        "pct_day": -1.4
+      },
+      "fallback_text": "$META has closed red 9 sessions in a row. The last run like this was over 5 years ago.",
+      "good_phrasing": "Meta $META has not seen a double digit streak of red daily candles in over 5 years. Today is Day #9."
+    },
+    {
+      "id": "P3",
+      "shape": "NVDA threshold_cross: dollar translation at trillion scale + distance from the record high",
+      "trigger": "threshold_cross",
+      "link": null,
+      "links_allowed": true,
+      "packet": {
+        "cashtag": "$NVDA",
+        "cashtags": ["$NVDA"],
+        "name": "Nvidia",
+        "trigger": "threshold_cross",
+        "as_of": "2026-07-28T18:05:00Z",
+        "direction": "down",
+        "dollar_change_abs": 1000000000000.0,
+        "pct_from_high": -18.5,
+        "high_date": "2026-06-30"
+      },
+      "fallback_text": "$NVDA is -18.5% from its record high set on 2026-06-30. That is $1 trillion of market cap gone.",
+      "good_phrasing": "$1 TRILLION has been wiped out from $NVDA marketcap as it crashes -18.50% from its ALL TIME HIGH."
+    },
+    {
+      "id": "P4",
+      "shape": "sector_rout: median + breadth + the three worst names. No primary cashtag - the sector is the subject.",
+      "trigger": "sector_rout",
+      "link": null,
+      "links_allowed": true,
+      "packet": {
+        "cashtags": ["$NVDA", "$AMD", "$AVGO"],
+        "sector": "Semiconductors",
+        "trigger": "sector_rout",
+        "as_of": "2026-07-28T18:05:00Z",
+        "direction": "down",
+        "median_pct": -4.8,
+        "breadth_down": 24,
+        "breadth_total": 26,
+        "movers": [
+          {"cashtag": "$NVDA", "pct": -6.1},
+          {"cashtag": "$AMD", "pct": -5.4},
+          {"cashtag": "$AVGO", "pct": -4.9}
+        ]
+      },
+      "fallback_text": "Semiconductors on the tape today: median -4.8%, 24 of 26 names red. $NVDA -6.1%, $AMD -5.4%, $AVGO -4.9%.",
+      "good_phrasing": "Semiconductors are getting wrecked today. The median chip name is -4.8% and 24 of 26 are red. $NVDA -6.1%, $AMD -5.4%, $AVGO -4.9%."
+    },
+    {
+      "id": "P5",
+      "shape": "signal_fired: our own proprietary event - a live price crossing a Prophet plan level. Carries a site link.",
+      "trigger": "signal_fired",
+      "link": "https://www.mastermind-x.com/us_stocks.html",
+      "links_allowed": true,
+      "packet": {
+        "cashtag": "$COHR",
+        "cashtags": ["$COHR"],
+        "name": "Coherent",
+        "trigger": "signal_fired",
+        "as_of": "2026-07-28T15:12:00Z",
+        "direction": "up",
+        "level": 112.4,
+        "price": 112.55,
+        "pct_day": 2.1,
+        "link": "https://www.mastermind-x.com/us_stocks.html"
+      },
+      "fallback_text": "$COHR just crossed our 112.40 plan level, trading 112.55 and +2.1% today.",
+      "good_phrasing": "$COHR just took out the 112.40 level from our plan. It is trading 112.55 right now, +2.1% on the day."
+    }
+  ]
+}
