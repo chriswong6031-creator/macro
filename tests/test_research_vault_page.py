@@ -205,6 +205,57 @@ def test_client_preview_is_fixed_to_three_and_fails_closed():
     assert "fetch(API + '/api/research/catalog', { headers: h" in js
 
 
+# --- Pro unlock path (the MDXAuth boot race) --------------------------------
+# USER_TIER fails CLOSED at 'anon' (#3939), and NOTHING but the MDXAuth auth-change
+# listener ever calls resolveTier(). So the listener registering is the whole Pro
+# unlock: if window.MDXAuth (defined by theme.js) has not been created by the time
+# research_vault_app.js runs wire(), every visitor — Pro included — is pinned on the
+# public 3-summary preview forever. Both tags ship `defer` (lib.pages
+# .optimize_assets_text stamps it), so document order IS execution order.
+
+def _script_order(html: str) -> list[str]:
+    return re.findall(r'<script[^>]*\bsrc="([^"?]+)', html)
+
+
+def test_theme_js_loads_before_the_vault_app(page_seeded):
+    order = _script_order(page_seeded)
+    assert "theme.js" in order, "theme.js must be loaded (it defines window.MDXAuth)"
+    assert "research_vault_app.js" in order
+    assert order.index("theme.js") < order.index("research_vault_app.js"), (
+        "theme.js must execute before research_vault_app.js — otherwise wire() finds "
+        "no window.MDXAuth, never registers the auth listener, and Pro accounts stay "
+        "locked on the anonymous preview"
+    )
+
+
+# NOTE: no committed-page assertions here. site/research_vault.html is
+# LANE-COMMITTED (render lanes re-bake it from the template with fresh ?v=
+# stamps), so tests pinning its bytes turn every render into a red and every
+# vault-JS edit into a hand-stamp chore — and a PR carrying the page conflicts
+# with main within the hour (busy-main merge race, 2026-07-29). The rendered-
+# output test above pins the order at the SOURCE (template); the render
+# pipeline owns propagating it (with stamps) to the committed page.
+
+
+def test_auth_listener_registration_has_a_load_fallback():
+    js = (bld.ROOT / "site" / "research_vault_app.js").read_text(encoding="utf-8")
+    # the callback is a named function so both registration paths share it
+    assert "function onAuthResolved()" in js
+    assert "window.MDXAuth.onChange(onAuthResolved)" in js
+    # ...and the fallback: register on 'load' when theme.js has not run yet
+    # (same shape as site/mm_brain.js boot()), then redo the reads that went out
+    # unauthenticated at boot.
+    fallback = re.search(
+        r"else window\.addEventListener\('load', function \(\) \{(.*?)\n    \}\);",
+        js, re.S,
+    )
+    assert fallback, "missing the window 'load' fallback registration"
+    body = fallback.group(1)
+    assert "window.MDXAuth.onChange(onAuthResolved)" in body
+    assert "resolveTier();" in body
+    assert "refreshFromApi();" in body
+
+
 def test_empty_state_has_no_fake_cards(page_empty):
     assert 'class="rep glass' not in page_empty          # no baked cards at all
     # the client renders the honest bilingual empty state; the island is empty:
