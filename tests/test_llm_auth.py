@@ -968,6 +968,28 @@ def test_deepseek_flash_gets_terra_codex_fallback_and_shared_cap_id(monkeypatch)
     assert providers[1]["model"] == "gpt-5.6-terra"
 
 
+def test_build_providers_forwards_codex_reasoning_effort(monkeypatch):
+    from engine import codex_provider, llm_auth
+
+    captured = {}
+    monkeypatch.setattr(codex_provider, "is_available", lambda: True)
+
+    def _client(**kwargs):
+        captured.update(kwargs)
+        return _make_fake_client("codex")
+
+    monkeypatch.setattr(codex_provider, "CodexClient", _client)
+    providers = llm_auth.build_providers({
+        "provider_order": ["codex"],
+        "codex_source_model": "gpt-5.6-sol",
+        "codex_reasoning_effort": "high",
+    })
+
+    assert [p["name"] for p in providers] == ["codex"]
+    assert providers[0]["model"] == "gpt-5.6-sol"
+    assert captured["reasoning_effort"] == "high"
+
+
 def test_cross_process_cooling_moves_codex_behind_other_fallbacks(monkeypatch):
     import sys
     from unittest.mock import patch
