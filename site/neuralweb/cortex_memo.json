@@ -1,11 +1,29 @@
 {
   "schema": "neuralweb.cortex_memo.v1",
-  "as_of": "2026-07-28T20:42:53+00:00",
-  "summary": "Budget exhausted after 0 tool-call batches (0 individual calls). Partial deliberation only.",
-  "what_fired": [],
-  "contradictions_review": "Incomplete \u2014 budget exhausted before contradictions review.",
-  "decaying_families": [],
-  "deserves_operator": [],
+  "as_of": "2026-07-29T03:33:50+00:00",
+  "summary": "Context-only committee read: the world state is MIXED with a low-confidence transitioning Q1 label, broad equity breadth and calm credit/vol on one side, versus a 64.8 growth-scare caution reading, restrictive rising real yields, strengthening dollar, hollow liquidity composition, broken AI leadership, and bonds/FX divergence on the other. This supports uncertainty and selective de-escalation, not a new signal. Factor intelligence is not mature: only 11 panel dates, no scorecard survivors, composite IC is negative, and Pair G remains dormant. Kernel estimates leave every reviewed engine unarmed; recent board outcomes cannot be treated as proof because pooled-versus-equal gates were held or vacuous. The spine query was capped and dominated by repeated Canada-board context rows, limiting family-level decay inference.",
+  "what_fired": [
+    "Growth-scare radar at caution (64.8), but only one unconfirmed, non-era-robust leg and no broad-tape context gate.",
+    "Cross-asset contradiction: bonds/FX versus equity regime, with 50% agreement.",
+    "Briefing demand-versus-supply divergences and seven buy-lane names with rising put skew; both remain display-only de-escalation context.",
+    "Master-brain thesis conflicts requiring review: China overweight versus Q3/contracting/forced-deleveraging context; long Treasuries near a stated real-yield falsifier."
+  ],
+  "contradictions_review": "Three current contradiction records were reviewed. The strongest macro tension is healthy equity breadth/Q1 framing against bonds-FX divergence, restrictive real yields, dollar strength, and neutral-hollow liquidity. The briefing divergence record confirms internal directional opposition but does not identify a validated aggregate edge. Rising put skew on seven buy-lane names is de-escalation-only because the bullish skew-deceleration prior is unsupported. No factor Pair G contradictions exist because the panel has not reached the required 60 dates. Open master-brain theses are internally inconsistent on China: both overweight and underweight theses remain open, with several check-by dates already passed; these require ledger hygiene rather than directional adjudication.",
+  "decaying_families": [
+    "Factor composite: negative IC, no surviving legs, only 11 live panel dates; non-tradeable.",
+    "Altdata at 21 days: negative shrunken IC; pooled gate held and engine remains unarmed.",
+    "Radar at 5 and 21 days: shrunken IC is negative despite large n; allocation test is vacuous and engine remains unarmed.",
+    "Policy and thematic/stock desks: negative outcomes with thin or vacuous held-out evidence; all remain unarmed.",
+    "Cortex attention: one effective graded event, negative mean outcome, far below authority threshold.",
+    "Master-brain ledger hygiene: multiple open theses have passed check-by dates without scoring, including older semiconductor, Bitcoin, China, and Treasury entries."
+  ],
+  "deserves_operator": [
+    "Review cross-asset/equity divergence under the pre-committed 70%-agreement clearing criterion; do not convert it into a position.",
+    "Review China overweight thesis mb-2026-07-09-1 against current Q3, contracting liquidity, forced deleveraging/fire-sale participation, and weak-side HK peg.",
+    "Review long-Treasury thesis mb-2026-07-01-1 before its 2026-07-29 check-by: real 10-year yield is 2.44%, close to its 2.50% falsifier, while the curve is bear-steepening.",
+    "Reconcile mutually opposed open China theses and score or retire theses whose check-by dates have passed.",
+    "Keep cortex attention in shadow probation: current evidence is insufficient for A2 authority."
+  ],
   "probation": {
     "schema": "neuralweb.cortex_probation.v1",
     "as_of": "2026-07-28",
@@ -23,99 +41,61 @@
     },
     "is_context_only": true
   },
-  "tool_call_census": {},
+  "tool_call_census": {
+    "read_world_state": 1,
+    "read_factor_state": 1,
+    "query_spine": 1,
+    "read_contradictions": 1,
+    "list_factor_contradictions": 1,
+    "read_kernel": 1,
+    "read_master_brain_theses": 1,
+    "flag_attention": 1,
+    "write_memo": 1
+  },
   "is_context_only": true,
   "run_status": {
-    "status": "degraded",
-    "degraded": true,
-    "degradation_reason": "model_unavailable",
-    "model_used": "claude-sonnet-4-6",
+    "status": "ok",
+    "degraded": false,
+    "degradation_reason": null,
+    "model_used": "claude-opus-4-8",
     "provider_attempts": [
       {
-        "provider": "oauth",
-        "model": "claude-opus-4-8",
+        "provider": "codex",
+        "model": "gpt-5.6-sol",
         "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdV762b8BrSzmPzrUgX7M'}"
-      },
-      {
-        "provider": "oauth",
-        "model": "claude-opus-4-8",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdV77L584mi7v1s2PLcWe'}"
-      },
-      {
-        "provider": "oauth",
-        "model": "claude-opus-4-8",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdV7BxpaLzWZzjAvS13ff'}"
-      },
-      {
-        "provider": "oauth",
-        "model": "claude-opus-4-8",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdV7RT6JJAqBCcNgiJ12J'}"
+        "ok": true,
+        "error_type": null,
+        "error_message": null
       },
       {
         "provider": "codex",
         "model": "gpt-5.6-sol",
         "attempted": true,
-        "ok": false,
-        "error_type": "transient",
-        "error_message": "Codex provider error (error)"
+        "ok": true,
+        "error_type": null,
+        "error_message": null
       },
       {
         "provider": "codex",
         "model": "gpt-5.6-sol",
         "attempted": true,
-        "ok": false,
-        "error_type": "transient",
-        "error_message": "Codex provider error (error)"
+        "ok": true,
+        "error_type": null,
+        "error_message": null
       },
       {
-        "provider": "oauth",
-        "model": "claude-sonnet-4-6",
+        "provider": "codex",
+        "model": "gpt-5.6-sol",
         "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdV7RgGZG9AVbC7WpSuRg'}"
-      },
-      {
-        "provider": "oauth",
-        "model": "claude-sonnet-4-6",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdV7SyerNR6GhZztZmLaf'}"
-      },
-      {
-        "provider": "oauth",
-        "model": "claude-sonnet-4-6",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdV7VNQNqi9z6mFjwhbW4'}"
-      },
-      {
-        "provider": "oauth",
-        "model": "claude-sonnet-4-6",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdV7VjojiKjkbmvffJj9i'}"
+        "ok": true,
+        "error_type": null,
+        "error_message": null
       }
     ],
-    "tool_call_batches": 0,
-    "individual_tool_calls": 0,
+    "tool_call_batches": 3,
+    "individual_tool_calls": 9,
     "expected_min_tool_calls": 1,
     "context_stale": false,
-    "context_as_of": "2026-07-28T03:04:22Z"
+    "context_as_of": "2026-07-29T03:19:06Z"
   }
 }

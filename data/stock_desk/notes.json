@@ -1,51 +1,109 @@
 {
   "schema": "stock_desk.v1",
-  "as_of": "2026-07-27",
-  "generated_at": "2026-07-28T03:20:27.323032+00:00",
+  "as_of": "2026-07-28",
+  "generated_at": "2026-07-29T03:34:03.499879+00:00",
   "degraded": null,
   "notes": [
     {
-      "id": "2026-07-27-ROST-1",
+      "id": "2026-07-28-ROST-1",
       "ticker": "ROST",
+      "name": null,
+      "lean": "cautious",
+      "conviction": "low",
+      "horizon_d": 25,
+      "thesis": "Cycle-blocked near a high and entry axis stalled; extension and 'needing a pullback' flags suggest relative underperformance near-term.",
+      "evidence": [
+        "cycle_blocked: true, 'NEARING A HIGH'",
+        "entry axis blocked (z -0.63, pct 40)",
+        "verdict: Extended \u2014 don't chase; wait for a pullback",
+        "stressed tape caution"
+      ],
+      "dissent": "Insider buying and fresh earnings surprise (SUE z 1.9) could propel a breakout through the cycle high, extending the rally.",
+      "falsifier": {
+        "text": "Closes above 260 on above-average volume, invalidating the pullback thesis.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "ROST",
+          "vs": "SPY",
+          "op": ">",
+          "threshold": 0.05,
+          "horizon_d": 25
+        }
+      },
+      "check_by": "2026-09-01",
+      "engine_verdict": "Extended \u2014 don't chase; wait for a pullback"
+    },
+    {
+      "id": "2026-07-28-TMP-2",
+      "ticker": "TMP",
       "name": null,
       "lean": "neutral",
       "conviction": "low",
-      "horizon_d": 10,
-      "thesis": "ROST is a high-confluence leader at all-time highs, but the consumer discretionary basket is deteriorating; risk controls advise no chase, so remain neutral relative to the S&P 500.",
+      "horizon_d": 20,
+      "thesis": "No consistent edge: stale SUE, weak quality and accounting watch offset positive momentum; neutral stance warranted.",
       "evidence": [
-        "verdict: High-confluence leader (context)",
-        "SUE z=1.9, fresh 26 days",
-        "off_high 0% (extended)",
-        "Consumer Discretionary basket deteriorating (risk gate)"
+        "verdict: 'Neutral \u2014 no clear edge'",
+        "quality axis weak (z -1.8, accounting watch)",
+        "SUE stale (z -0.08, 59 days old)",
+        "entry axis shows extension, vol-squeeze but not blocked"
       ],
-      "dissent": "Strong momentum and insider buying could overpower macro headwinds, breaking to new highs.",
+      "dissent": "Strong residual momentum (alpha z 1.56) and spot-light tailwind could produce a short-lived push higher.",
       "falsifier": {
-        "text": "If ROST sustains a close above $250 within 10 trading days, the neutral lean was too cautious.",
+        "text": "A close above 110 with expanding volume would indicate a breakout not predicted by the neutral view.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
         }
       },
-      "check_by": "2026-08-10",
-      "engine_verdict": "High-confluence leader (context)"
+      "check_by": "2026-08-25",
+      "engine_verdict": "Neutral \u2014 no clear edge"
     },
     {
-      "id": "2026-07-27-VALE-2",
+      "id": "2026-07-28-YETI-3",
+      "ticker": "YETI",
+      "name": null,
+      "lean": "constructive",
+      "conviction": "low",
+      "horizon_d": 30,
+      "thesis": "Turn-signaled base-building with clean quality and supportive entry metrics; the risk reshape favors an emerging uptrend.",
+      "evidence": [
+        "verdict: 'Constructive \u2014 building a base'",
+        "entry axis positive (z 0.59, pct 59, RSI/off-high support)",
+        "quality axis strong (z 2.03, clean accounting)",
+        "board state TURN SIGNALED"
+      ],
+      "dissent": "Stale SUE (z -0.89, 55 days) and no imminent catalyst could keep the stock range-bound or cause the base to fail.",
+      "falsifier": {
+        "text": "A daily close below 48.50 would break the recent base structure and negate the constructive lean.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "YETI",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 30
+        }
+      },
+      "check_by": "2026-09-08",
+      "engine_verdict": "Constructive \u2014 building a base"
+    },
+    {
+      "id": "2026-07-28-VALE-4",
       "ticker": "VALE",
       "name": null,
       "lean": "constructive",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "VALE is building a base with residual momentum and a favorable entry at a meaningful pullback; the constructive lean reflects the base-building setup.",
+      "thesis": "Pullback into a base with residual momentum and constructive entry readings; the off-high discount may support a bounce.",
       "evidence": [
-        "verdict: Constructive \u2014 building a base",
-        "off_high -17.1%",
-        "board state RALLY ON",
-        "entry z=0.4, not blocked"
+        "verdict: 'Constructive \u2014 building a base'",
+        "entry axis positive (z 0.40, off -17.5% high, pullback/extended)",
+        "residual momentum (alpha z 1.2)",
+        "no cycle block or quality flags"
       ],
-      "dissent": "Lack of fundamental catalysts and a null quality score; a commodity downturn could erode the nascent momentum.",
+      "dissent": "Missing quality data and lack of earnings-catalyst could indicate a value trap; residual momentum may fade.",
       "falsifier": {
-        "text": "If VALE closes below $13.00 within 20 trading days, the base-building thesis is invalidated.",
+        "text": "A daily close below 13.50 would undercut the pullback base and turn the posture neutral/cautious.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "VALE",
@@ -55,118 +113,62 @@
           "horizon_d": 20
         }
       },
-      "check_by": "2026-08-24",
+      "check_by": "2026-08-25",
       "engine_verdict": "Constructive \u2014 building a base"
     },
     {
-      "id": "2026-07-27-WBS-3",
-      "ticker": "WBS",
+      "id": "2026-07-28-KSS-5",
+      "ticker": "KSS",
+      "name": null,
+      "lean": "neutral",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Mixed signals: low-quality selection (SUE negative, revisions negative) even with modest momentum and clean accounting; no clear edge.",
+      "evidence": [
+        "verdict: 'Neutral \u2014 no clear edge'",
+        "SUE z -0.33, revisions z -0.28",
+        "tailwind axis negative",
+        "rally-on state but off -20.9% high"
+      ],
+      "dissent": "Deep discount and 'RALLY ON' urgency could drive a mean-reversion catch-up, especially if the broad tape turns supportive.",
+      "falsifier": {
+        "text": "Closes above 21.50 on strong volume would surpass key resistance and show momentum not captured by the neutral lean.",
+        "check": {
+          "kind": "soft",
+          "reason": "neutral lean \u2014 not scored"
+        }
+      },
+      "check_by": "2026-08-25",
+      "engine_verdict": "Neutral \u2014 no clear edge"
+    },
+    {
+      "id": "2026-07-28-LLY-6",
+      "ticker": "LLY",
       "name": null,
       "lean": "cautious",
-      "conviction": "medium",
-      "horizon_d": 15,
-      "thesis": "WBS is extended, cycle-blocked near a high, entry blocked, with accounting red flags and a deteriorating regional banks basket; the risk constellation supports a cautious lean relative to the market.",
+      "conviction": "low",
+      "horizon_d": 30,
+      "thesis": "Leader status with strong earnings-surprise-driven selections and positive entry indicators; price momentum likely persists despite weak quality flags.",
       "evidence": [
-        "cycle_blocked true (NEARING A HIGH)",
-        "entry blocked",
-        "accounting warn",
-        "Regional Banks basket deteriorating",
-        "board state TOP WATCH caution"
+        "verdict: 'Leader \u00b7 weak fundamentals \u2014 higher-risk'",
+        "selection axis positive (z 1.13, SUE 1.89, revision 0.86)",
+        "entry axis supportive (z 0.59, RSI, off-high)",
+        "board state TURN SIGNALED"
       ],
-      "dissent": "Residual momentum could keep the stock elevated longer than expected, and a sudden macro tailwind could lift bank stocks broadly.",
+      "dissent": "Weak fundamentals (quality z -0.80, accounting watch) and a crowded Health Care basket could trigger a sharp de-rating if sentiment shifts. (clamped: engine flags this name extended/avoid/blocked)",
       "falsifier": {
-        "text": "If WBS closes above $80 within 15 trading days, the cautious lean is proved wrong.",
+        "text": "A weekly close below the 50-day moving average (~1150) would break the leader pattern and invalidate the constructive lean.",
         "check": {
           "kind": "rel_return",
-          "subject_ticker": "WBS",
+          "subject_ticker": "LLY",
           "vs": "SPY",
           "op": ">",
           "threshold": 0.05,
-          "horizon_d": 15
+          "horizon_d": 30
         }
       },
-      "check_by": "2026-08-17",
-      "engine_verdict": "Extended \u2014 don't chase; wait for a pullback"
-    },
-    {
-      "id": "2026-07-27-TPR-4",
-      "ticker": "TPR",
-      "name": null,
-      "lean": "constructive",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "TPR is building a base with earnings/insider/revisions edge, though the deteriorating consumer discretionary basket lowers conviction; the constructive lean aligns with the base-building verdict.",
-      "evidence": [
-        "verdict: Constructive \u2014 building a base",
-        "SUE z=1.22",
-        "off_high -7.6%",
-        "entry not blocked"
-      ],
-      "dissent": "The countertrend bounce could fail, and the basket headwind may drag the stock lower despite the stock-specific profile.",
-      "falsifier": {
-        "text": "If TPR breaks below $140 within 20 trading days, the constructive lean is invalidated.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "TPR",
-          "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 20
-        }
-      },
-      "check_by": "2026-08-24",
-      "engine_verdict": "Constructive \u2014 building a base"
-    },
-    {
-      "id": "2026-07-27-CB-5",
-      "ticker": "CB",
-      "name": null,
-      "lean": "neutral",
-      "conviction": "low",
-      "horizon_d": 5,
-      "thesis": "CB's edge is illegible with a stale SUE signal, negative revisions, and an imminent earnings binary; the neutral lean avoids committing ahead of the event.",
-      "evidence": [
-        "verdict: Neutral \u2014 no clear edge",
-        "SUE z=0.97, 90-day old (stale)",
-        "revisions z=-0.55",
-        "earnings in 1 day (binary event)"
-      ],
-      "dissent": "A strong earnings beat could produce a sharp relative gain, making the neutral stance a missed opportunity.",
-      "falsifier": {
-        "text": "If CB outperforms the S&P 500 by more than 2% in the 3 days around earnings, the neutral lean was underconfident.",
-        "check": {
-          "kind": "soft",
-          "reason": "neutral lean \u2014 not scored"
-        }
-      },
-      "check_by": "2026-08-03",
-      "engine_verdict": "Neutral \u2014 no clear edge"
-    },
-    {
-      "id": "2026-07-27-F-6",
-      "ticker": "F",
-      "name": null,
-      "lean": "neutral",
-      "conviction": "low",
-      "horizon_d": 5,
-      "thesis": "F lacks a clear edge with accounting concerns, a countertrend bounce, and binary earnings in two days; staying neutral respects the illegible signal and event risk.",
-      "evidence": [
-        "verdict: Neutral \u2014 no clear edge",
-        "accounting watch flag",
-        "earnings in 2 days (binary event)",
-        "Consumer Discretionary basket deteriorating",
-        "board state COUNTERTREND BOUNCE"
-      ],
-      "dissent": "An earnings beat could ignite a sharp reversal and sustained rally, leaving neutral leans behind.",
-      "falsifier": {
-        "text": "If F gaps up more than 3% post-earnings and holds for two consecutive days, the neutral lean was too cautious.",
-        "check": {
-          "kind": "soft",
-          "reason": "neutral lean \u2014 not scored"
-        }
-      },
-      "check_by": "2026-08-03",
-      "engine_verdict": "Neutral \u2014 no clear edge"
+      "check_by": "2026-09-08",
+      "engine_verdict": "Leader \u00b7 weak fundamentals \u2014 higher-risk"
     }
   ],
   "disclaimer": "Accountable AI judgment on the deterministic top picks. The cross-sectional rank has no validated forward edge; these leans are fallible, falsifiable conditionals graded against reality \u2014 never position sizes. See the track record."

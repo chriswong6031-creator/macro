@@ -1,7 +1,7 @@
 {
   "schema": "stage_context.v1",
-  "asof": "2026-07-28",
-  "built": "2026-07-28T01:57:01Z",
+  "asof": "2026-07-29",
+  "built": "2026-07-29T02:08:05Z",
   "is_context_only": true,
   "display_only": true,
   "disclaimer": "Context only — stage classification display, never a signal or sizing input.",
@@ -23,49 +23,6 @@
     "spy_weeks": 13
   },
   "top_stage2": [
-    {
-      "ticker": "CIX",
-      "company": "Compx International Inc",
-      "sector": "Industrials",
-      "stage": 2,
-      "weeks_in_stage": 9,
-      "fresh": true,
-      "sga_score": 81,
-      "ma30_slope_pct5w": 3.283,
-      "pct_vs_ma30": 11.75,
-      "mansfield_rs": 5.87,
-      "vol_ratio": 1.38,
-      "event": "pullback_resume",
-      "gate_tier": "T2",
-      "blackout": false,
-      "arc_pos": 0.3625,
-      "earnings": {
-        "present": false,
-        "sentiment": null,
-        "performance": null,
-        "tone_word": null,
-        "tags": [],
-        "quarter": null,
-        "summary": null
-      },
-      "why": [
-        "Early in its climb — 9 weeks up so far",
-        "Trading above its 30-week line — the trend is with it",
-        "Also shows a strong confirmation from our other checks"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 9 周",
-        "位于 30 周均线之上 — 趋势向好",
-        "其他多项验证同样给出强确认"
-      ],
-      "atr_14w": 1.8938,
-      "atr_ext": 1.482,
-      "atr_pct_price": 0.07093,
-      "sata_score": 7,
-      "sata_change_1w": 2,
-      "stage_detailed": "2X_fallback_bullish",
-      "industry_percentile": null
-    },
     {
       "ticker": "OUST",
       "company": "Ouster Inc",
@@ -151,21 +108,107 @@
       "industry_percentile": null
     },
     {
-      "ticker": "PGEN",
-      "company": "Precigen Inc",
-      "sector": "Healthcare",
+      "ticker": "PLMR",
+      "company": "Palomar Holdings, Inc.",
+      "sector": "Financials",
       "stage": 2,
-      "weeks_in_stage": 5,
+      "weeks_in_stage": 1,
       "fresh": true,
-      "sga_score": 66,
-      "ma30_slope_pct5w": 6.122,
-      "pct_vs_ma30": 23.46,
-      "mansfield_rs": 23.01,
-      "vol_ratio": 0.91,
+      "sga_score": 67,
+      "ma30_slope_pct5w": 1.048,
+      "pct_vs_ma30": 11.36,
+      "mansfield_rs": 3.69,
+      "vol_ratio": 1.21,
       "event": "pullback_resume",
-      "gate_tier": "T1",
+      "gate_tier": "T2",
       "blackout": false,
-      "arc_pos": 0.3125,
+      "arc_pos": 0.2625,
+      "earnings": {
+        "present": true,
+        "sentiment": 0.6111111111111112,
+        "performance": 4.583333333333334,
+        "tone_word": "confident",
+        "tags": [],
+        "quarter": "Q1",
+        "summary": "Company increased full-year 2026 adjusted net income guidance to a range of $262 million to $278 million, from a prior $260 million to $275 million."
+      },
+      "why": [
+        "Early in its climb — 1 weeks up so far",
+        "Trading above its 30-week line — the trend is with it",
+        "Also shows a strong confirmation from our other checks"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 1 周",
+        "位于 30 周均线之上 — 趋势向好",
+        "其他多项验证同样给出强确认"
+      ],
+      "atr_14w": 11.2134,
+      "atr_ext": 1.252,
+      "atr_pct_price": 0.08152,
+      "sata_score": 6,
+      "sata_change_1w": 2,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": null
+    },
+    {
+      "ticker": "LRN",
+      "company": "Stride, Inc.",
+      "sector": "Consumer Discretionary",
+      "stage": 2,
+      "weeks_in_stage": 6,
+      "fresh": true,
+      "sga_score": 65,
+      "ma30_slope_pct5w": 4.84,
+      "pct_vs_ma30": 0.48,
+      "mansfield_rs": -19.36,
+      "vol_ratio": 0.69,
+      "event": null,
+      "gate_tier": "T2",
+      "blackout": false,
+      "arc_pos": 0.325,
+      "earnings": {
+        "present": true,
+        "sentiment": 0.05555555555555555,
+        "performance": 2.0833333333333335,
+        "tone_word": "steady",
+        "tags": [],
+        "quarter": "Q3",
+        "summary": "For the full year, we are narrowing our revenue, AOI and CapEx guidance ranges and affirming our effective tax rate guidance."
+      },
+      "why": [
+        "Early in its climb — 6 weeks up so far",
+        "Trading above its 30-week line — the trend is with it",
+        "Also shows a strong confirmation from our other checks"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 6 周",
+        "位于 30 周均线之上 — 趋势向好",
+        "其他多项验证同样给出强确认"
+      ],
+      "atr_14w": 8.5243,
+      "atr_ext": 0.049,
+      "atr_pct_price": 0.09812,
+      "sata_score": 4,
+      "sata_change_1w": 0,
+      "stage_detailed": "2X_catch_price_above_ma",
+      "industry_percentile": null
+    },
+    {
+      "ticker": "MSEX",
+      "company": "Middlesex Water Company",
+      "sector": "Utilities",
+      "stage": 2,
+      "weeks_in_stage": 4,
+      "fresh": true,
+      "sga_score": 65,
+      "ma30_slope_pct5w": 1.648,
+      "pct_vs_ma30": 6.22,
+      "mansfield_rs": -1.49,
+      "vol_ratio": 1.42,
+      "event": null,
+      "gate_tier": "T2",
+      "blackout": false,
+      "arc_pos": 0.3,
       "earnings": {
         "present": false,
         "sentiment": null,
@@ -176,19 +219,62 @@
         "summary": null
       },
       "why": [
-        "Early in its climb — 5 weeks up so far",
-        "Already stretched well above its 30-week line — may need a rest",
+        "Early in its climb — 4 weeks up so far",
+        "Trading above its 30-week line — the trend is with it",
         "Also shows a strong confirmation from our other checks"
       ],
       "why_zh": [
-        "上升初期 — 已上行 5 周",
-        "已明显高于 30 周均线 — 可能需要回踩",
+        "上升初期 — 已上行 4 周",
+        "位于 30 周均线之上 — 趋势向好",
         "其他多项验证同样给出强确认"
       ],
-      "atr_14w": 0.6764,
-      "atr_ext": 1.517,
-      "atr_pct_price": 0.12526,
-      "sata_score": 7,
+      "atr_14w": 2.9238,
+      "atr_ext": 1.126,
+      "atr_pct_price": 0.05203,
+      "sata_score": 6,
+      "sata_change_1w": -1,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": null
+    },
+    {
+      "ticker": "CCS",
+      "company": "Century Communities, Inc.",
+      "sector": "Consumer Discretionary",
+      "stage": 2,
+      "weeks_in_stage": 4,
+      "fresh": true,
+      "sga_score": 64,
+      "ma30_slope_pct5w": 1.966,
+      "pct_vs_ma30": 12.52,
+      "mansfield_rs": 4.18,
+      "vol_ratio": 0.97,
+      "event": "pullback_resume",
+      "gate_tier": "T2",
+      "blackout": false,
+      "arc_pos": 0.3,
+      "earnings": {
+        "present": true,
+        "sentiment": -0.05555555555555555,
+        "performance": 3.3333333333333335,
+        "tone_word": "steady",
+        "tags": [],
+        "quarter": "Q1",
+        "summary": "The company reduced its full-year 2026 guidance due to geopolitical conflict, lower consumer confidence, and higher interest rates. It now expects home deliveries of 9,500-10,500 homes and revenues of $3.5B-$3.8B."
+      },
+      "why": [
+        "Early in its climb — 4 weeks up so far",
+        "Trading above its 30-week line — the trend is with it",
+        "Also shows a strong confirmation from our other checks"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 4 周",
+        "位于 30 周均线之上 — 趋势向好",
+        "其他多项验证同样给出强确认"
+      ],
+      "atr_14w": 6.3491,
+      "atr_ext": 1.216,
+      "atr_pct_price": 0.09151,
+      "sata_score": 6,
       "sata_change_1w": 1,
       "stage_detailed": "2X_fallback_bullish",
       "industry_percentile": null
@@ -247,7 +333,7 @@
       "mansfield_rs": 0.94,
       "vol_ratio": 0.7,
       "event": "pullback_resume",
-      "gate_tier": "T1",
+      "gate_tier": "T2",
       "blackout": false,
       "arc_pos": 0.3625,
       "earnings": {
@@ -444,6 +530,49 @@
       "industry_percentile": null
     },
     {
+      "ticker": "PAMT",
+      "company": "PAMT Corp",
+      "sector": "Industrials",
+      "stage": 2,
+      "weeks_in_stage": 8,
+      "fresh": true,
+      "sga_score": 58,
+      "ma30_slope_pct5w": 6.578,
+      "pct_vs_ma30": 39.69,
+      "mansfield_rs": 31.64,
+      "vol_ratio": 0.98,
+      "event": "pullback_resume",
+      "gate_tier": "T2",
+      "blackout": false,
+      "arc_pos": 0.35,
+      "earnings": {
+        "present": false,
+        "sentiment": null,
+        "performance": null,
+        "tone_word": null,
+        "tags": [],
+        "quarter": null,
+        "summary": null
+      },
+      "why": [
+        "Early in its climb — 8 weeks up so far",
+        "Already stretched well above its 30-week line — may need a rest",
+        "Also shows a strong confirmation from our other checks"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 8 周",
+        "已明显高于 30 周均线 — 可能需要回踩",
+        "其他多项验证同样给出强确认"
+      ],
+      "atr_14w": 2.405,
+      "atr_ext": 1.916,
+      "atr_pct_price": 0.14827,
+      "sata_score": 8,
+      "sata_change_1w": 1,
+      "stage_detailed": "2A_strong_breakout",
+      "industry_percentile": null
+    },
+    {
       "ticker": "ADV",
       "company": "Advantage Solutions Inc",
       "sector": "Communication Services",
@@ -481,6 +610,90 @@
       "atr_pct_price": 0.21169,
       "sata_score": 6,
       "sata_change_1w": -1,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": null
+    },
+    {
+      "ticker": "CIX",
+      "company": "Compx International Inc",
+      "sector": "Industrials",
+      "stage": 2,
+      "weeks_in_stage": 9,
+      "fresh": true,
+      "sga_score": 56,
+      "ma30_slope_pct5w": 3.283,
+      "pct_vs_ma30": 11.75,
+      "mansfield_rs": 5.87,
+      "vol_ratio": 1.38,
+      "event": "pullback_resume",
+      "gate_tier": null,
+      "blackout": false,
+      "arc_pos": 0.3625,
+      "earnings": {
+        "present": false,
+        "sentiment": null,
+        "performance": null,
+        "tone_word": null,
+        "tags": [],
+        "quarter": null,
+        "summary": null
+      },
+      "why": [
+        "Early in its climb — 9 weeks up so far",
+        "Trading above its 30-week line — the trend is with it"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 9 周",
+        "位于 30 周均线之上 — 趋势向好"
+      ],
+      "atr_14w": 1.8938,
+      "atr_ext": 1.482,
+      "atr_pct_price": 0.07093,
+      "sata_score": 7,
+      "sata_change_1w": 2,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": null
+    },
+    {
+      "ticker": "EXR",
+      "company": "Extra Space Storage",
+      "sector": "Real Estate",
+      "stage": 2,
+      "weeks_in_stage": 7,
+      "fresh": true,
+      "sga_score": 56,
+      "ma30_slope_pct5w": 2.409,
+      "pct_vs_ma30": 4.73,
+      "mansfield_rs": -0.62,
+      "vol_ratio": 0.82,
+      "event": null,
+      "gate_tier": "T2",
+      "blackout": false,
+      "arc_pos": 0.3375,
+      "earnings": {
+        "present": true,
+        "sentiment": 0.4444444444444444,
+        "performance": 7.5,
+        "tone_word": "confident",
+        "tags": [],
+        "quarter": "Q1",
+        "summary": "The company maintained its full-year 2026 core FFO guidance of $8.05-$8.35/share and same-store performance outlook. Despite Q1 exceeding expectations and encouraging trends, management cited macroeconomic uncertainties and wants to wait until after the busy leasing season to …"
+      },
+      "why": [
+        "Early in its climb — 7 weeks up so far",
+        "Trading above its 30-week line — the trend is with it",
+        "Also shows a strong confirmation from our other checks"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 7 周",
+        "位于 30 周均线之上 — 趋势向好",
+        "其他多项验证同样给出强确认"
+      ],
+      "atr_14w": 6.7503,
+      "atr_ext": 0.989,
+      "atr_pct_price": 0.0457,
+      "sata_score": 6,
+      "sata_change_1w": 0,
       "stage_detailed": "2X_fallback_bullish",
       "industry_percentile": null
     },
@@ -735,47 +948,6 @@
       "industry_percentile": null
     },
     {
-      "ticker": "CCS",
-      "company": "Century Communities, Inc.",
-      "sector": "Consumer Discretionary",
-      "stage": 2,
-      "weeks_in_stage": 4,
-      "fresh": true,
-      "sga_score": 54,
-      "ma30_slope_pct5w": 1.966,
-      "pct_vs_ma30": 12.52,
-      "mansfield_rs": 4.18,
-      "vol_ratio": 0.97,
-      "event": "pullback_resume",
-      "gate_tier": "T3",
-      "blackout": false,
-      "arc_pos": 0.3,
-      "earnings": {
-        "present": true,
-        "sentiment": -0.05555555555555555,
-        "performance": 3.3333333333333335,
-        "tone_word": "steady",
-        "tags": [],
-        "quarter": "Q1",
-        "summary": "The company reduced its full-year 2026 guidance due to geopolitical conflict, lower consumer confidence, and higher interest rates. It now expects home deliveries of 9,500-10,500 homes and revenues of $3.5B-$3.8B."
-      },
-      "why": [
-        "Early in its climb — 4 weeks up so far",
-        "Trading above its 30-week line — the trend is with it"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 4 周",
-        "位于 30 周均线之上 — 趋势向好"
-      ],
-      "atr_14w": 6.3491,
-      "atr_ext": 1.216,
-      "atr_pct_price": 0.09151,
-      "sata_score": 6,
-      "sata_change_1w": 1,
-      "stage_detailed": "2X_fallback_bullish",
-      "industry_percentile": null
-    },
-    {
       "ticker": "ITIC",
       "company": "Investors Title Co",
       "sector": "Financial",
@@ -854,6 +1026,49 @@
       "atr_pct_price": 0.11005,
       "sata_score": 6,
       "sata_change_1w": -2,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": null
+    },
+    {
+      "ticker": "SO",
+      "company": "Southern Company",
+      "sector": "Utilities",
+      "stage": 2,
+      "weeks_in_stage": 5,
+      "fresh": true,
+      "sga_score": 54,
+      "ma30_slope_pct5w": 2.043,
+      "pct_vs_ma30": 4.41,
+      "mansfield_rs": -1.87,
+      "vol_ratio": 0.8,
+      "event": "pullback_resume",
+      "gate_tier": "T2",
+      "blackout": false,
+      "arc_pos": 0.3125,
+      "earnings": {
+        "present": true,
+        "sentiment": 0.7222222222222222,
+        "performance": 6.25,
+        "tone_word": "confident",
+        "tags": [],
+        "quarter": "Q1",
+        "summary": "The company provided a Q2 adjusted EPS estimate of $1.00/share. Management expressed confidence in executing its long-term goals, citing strong momentum and large load growth which adds durability and length to its growth plan."
+      },
+      "why": [
+        "Early in its climb — 5 weeks up so far",
+        "Trading above its 30-week line — the trend is with it",
+        "Also shows a strong confirmation from our other checks"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 5 周",
+        "位于 30 周均线之上 — 趋势向好",
+        "其他多项验证同样给出强确认"
+      ],
+      "atr_14w": 3.8183,
+      "atr_ext": 1.077,
+      "atr_pct_price": 0.03926,
+      "sata_score": 6,
+      "sata_change_1w": 1,
       "stage_detailed": "2X_fallback_bullish",
       "industry_percentile": null
     },
@@ -977,49 +1192,6 @@
       "atr_pct_price": 0.09965,
       "sata_score": 6,
       "sata_change_1w": -2,
-      "stage_detailed": "2X_fallback_bullish",
-      "industry_percentile": null
-    },
-    {
-      "ticker": "DUK",
-      "company": "Duke Energy",
-      "sector": "Utilities",
-      "stage": 2,
-      "weeks_in_stage": 4,
-      "fresh": true,
-      "sga_score": 53,
-      "ma30_slope_pct5w": 1.639,
-      "pct_vs_ma30": 4.43,
-      "mansfield_rs": -1.41,
-      "vol_ratio": 0.94,
-      "event": "pullback_resume",
-      "gate_tier": "T2",
-      "blackout": false,
-      "arc_pos": 0.3,
-      "earnings": {
-        "present": true,
-        "sentiment": 0.7222222222222222,
-        "performance": 6.25,
-        "tone_word": "confident",
-        "tags": [],
-        "quarter": "Q1",
-        "summary": "Reaffirmed FY26 EPS guidance of $6.55-$6.80 and 5-7% long-term EPS growth through 2030, with confidence of being in the top half starting in 2028."
-      },
-      "why": [
-        "Early in its climb — 4 weeks up so far",
-        "Trading above its 30-week line — the trend is with it",
-        "Also shows a strong confirmation from our other checks"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 4 周",
-        "位于 30 周均线之上 — 趋势向好",
-        "其他多项验证同样给出强确认"
-      ],
-      "atr_14w": 4.8676,
-      "atr_ext": 1.138,
-      "atr_pct_price": 0.03729,
-      "sata_score": 6,
-      "sata_change_1w": 2,
       "stage_detailed": "2X_fallback_bullish",
       "industry_percentile": null
     },
@@ -1229,49 +1401,6 @@
       "industry_percentile": null
     },
     {
-      "ticker": "AMCR",
-      "company": "Amcor",
-      "sector": "Materials",
-      "stage": 2,
-      "weeks_in_stage": 2,
-      "fresh": true,
-      "sga_score": 52,
-      "ma30_slope_pct5w": 1.42,
-      "pct_vs_ma30": 7.19,
-      "mansfield_rs": -0.07,
-      "vol_ratio": 0.66,
-      "event": "pullback_resume",
-      "gate_tier": "T2",
-      "blackout": false,
-      "arc_pos": 0.275,
-      "earnings": {
-        "present": true,
-        "sentiment": 0.2777777777777778,
-        "performance": 5.0,
-        "tone_word": "steady",
-        "tags": [],
-        "quarter": "Q3",
-        "summary": "Company expects full-year adjusted EPS to be $3.98-$4.03, representing ~12% growth driven by synergies, but lowered free cash flow guidance to $1.5-$1.6B due to inventory build."
-      },
-      "why": [
-        "Early in its climb — 2 weeks up so far",
-        "Trading above its 30-week line — the trend is with it",
-        "Also shows a strong confirmation from our other checks"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 2 周",
-        "位于 30 周均线之上 — 趋势向好",
-        "其他多项验证同样给出强确认"
-      ],
-      "atr_14w": 2.9143,
-      "atr_ext": 1.025,
-      "atr_pct_price": 0.06543,
-      "sata_score": 6,
-      "sata_change_1w": 0,
-      "stage_detailed": "2X_fallback_bullish",
-      "industry_percentile": null
-    },
-    {
       "ticker": "COOK",
       "company": "COOK",
       "sector": "Unknown",
@@ -1353,6 +1482,49 @@
       "sata_score": 8,
       "sata_change_1w": 0,
       "stage_detailed": "2A_strong_breakout",
+      "industry_percentile": null
+    },
+    {
+      "ticker": "RCL",
+      "company": "Royal Caribbean Group",
+      "sector": "Consumer Discretionary",
+      "stage": 2,
+      "weeks_in_stage": 6,
+      "fresh": true,
+      "sga_score": 52,
+      "ma30_slope_pct5w": 1.369,
+      "pct_vs_ma30": 2.22,
+      "mansfield_rs": -6.96,
+      "vol_ratio": 0.89,
+      "event": null,
+      "gate_tier": "T2",
+      "blackout": false,
+      "arc_pos": 0.325,
+      "earnings": {
+        "present": true,
+        "sentiment": 0.3333333333333333,
+        "performance": 5.0,
+        "tone_word": "confident",
+        "tags": [],
+        "quarter": "Q1",
+        "summary": "Company projects full-year adjusted EPS of $17.10-$17.50, absorbing $0.86 in headwinds from fuel and JVs. Net yield guidance for the year was lowered to 1.5%-2.5% due to geopolitical impacts moderating demand for Mediterranean and Mexico itineraries."
+      },
+      "why": [
+        "Early in its climb — 6 weeks up so far",
+        "Trading above its 30-week line — the trend is with it",
+        "Also shows a strong confirmation from our other checks"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 6 周",
+        "位于 30 周均线之上 — 趋势向好",
+        "其他多项验证同样给出强确认"
+      ],
+      "atr_14w": 28.4492,
+      "atr_ext": 0.224,
+      "atr_pct_price": 0.09692,
+      "sata_score": 5,
+      "sata_change_1w": 1,
+      "stage_detailed": "2X_catch_price_above_ma",
       "industry_percentile": null
     },
     {
@@ -1725,6 +1897,49 @@
       "industry_percentile": null
     },
     {
+      "ticker": "INFU",
+      "company": "InfuSystem Holdings Inc",
+      "sector": "Healthcare",
+      "stage": 2,
+      "weeks_in_stage": 3,
+      "fresh": true,
+      "sga_score": 50,
+      "ma30_slope_pct5w": 0.87,
+      "pct_vs_ma30": 0.01,
+      "mansfield_rs": -8.87,
+      "vol_ratio": 0.85,
+      "event": "trendline_recapture",
+      "gate_tier": "T2",
+      "blackout": false,
+      "arc_pos": 0.2875,
+      "earnings": {
+        "present": false,
+        "sentiment": null,
+        "performance": null,
+        "tone_word": null,
+        "tags": [],
+        "quarter": null,
+        "summary": null
+      },
+      "why": [
+        "Early in its climb — 3 weeks up so far",
+        "Trading above its 30-week line — the trend is with it",
+        "Also shows a strong confirmation from our other checks"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 3 周",
+        "位于 30 周均线之上 — 趋势向好",
+        "其他多项验证同样给出强确认"
+      ],
+      "atr_14w": 1.05,
+      "atr_ext": 0.001,
+      "atr_pct_price": 0.11513,
+      "sata_score": 4,
+      "sata_change_1w": 0,
+      "stage_detailed": "2X_catch_price_above_ma",
+      "industry_percentile": null
+    },
+    {
       "ticker": "NUAI",
       "company": "New Era Energy & Digital Inc",
       "sector": "Technology",
@@ -1804,6 +2019,49 @@
       "sata_score": 7,
       "sata_change_1w": 0,
       "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": null
+    },
+    {
+      "ticker": "PHM",
+      "company": "PulteGroup",
+      "sector": "Consumer Discretionary",
+      "stage": 2,
+      "weeks_in_stage": 4,
+      "fresh": true,
+      "sga_score": 50,
+      "ma30_slope_pct5w": 0.935,
+      "pct_vs_ma30": 3.11,
+      "mansfield_rs": -4.63,
+      "vol_ratio": 0.97,
+      "event": "pullback_resume",
+      "gate_tier": "T1",
+      "blackout": false,
+      "arc_pos": 0.3,
+      "earnings": {
+        "present": true,
+        "sentiment": 0.2222222222222222,
+        "performance": 2.5,
+        "tone_word": "steady",
+        "tags": [],
+        "quarter": "Q1",
+        "summary": "Reaffirmed full-year guidance for closings (28.5k-29k homes) and ASP ($550k-$560k). Expects Q2 gross margin (24.1-24.4%) to be a low point before recovering in 2H, maintaining full-year guide of 24.5-25% (at lower end of range)."
+      },
+      "why": [
+        "Early in its climb — 4 weeks up so far",
+        "Trading above its 30-week line — the trend is with it",
+        "Also shows a strong confirmation from our other checks"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 4 周",
+        "位于 30 周均线之上 — 趋势向好",
+        "其他多项验证同样给出强确认"
+      ],
+      "atr_14w": 8.5541,
+      "atr_ext": 0.454,
+      "atr_pct_price": 0.06644,
+      "sata_score": 5,
+      "sata_change_1w": 0,
+      "stage_detailed": "2X_catch_price_above_ma",
       "industry_percentile": null
     },
     {
@@ -2258,268 +2516,26 @@
       "sata_change_1w": 0,
       "stage_detailed": "2A_strong_breakout",
       "industry_percentile": null
-    },
-    {
-      "ticker": "GBCI",
-      "company": "Glacier Bancorp",
-      "sector": "Financials",
-      "stage": 2,
-      "weeks_in_stage": 10,
-      "fresh": true,
-      "sga_score": 49,
-      "ma30_slope_pct5w": 3.042,
-      "pct_vs_ma30": 5.13,
-      "mansfield_rs": 0.69,
-      "vol_ratio": 1.2,
-      "event": null,
-      "gate_tier": null,
-      "blackout": false,
-      "arc_pos": 0.375,
-      "earnings": {
-        "present": true,
-        "sentiment": 0.6666666666666666,
-        "performance": 10.0,
-        "tone_word": "confident",
-        "tags": [
-          "margin_expansion"
-        ],
-        "quarter": "Q1",
-        "summary": "Company expects to hit its 4% net interest margin target in the second half of 2026, driven by asset repricing. Full-year loan growth is anticipated in the low-to-mid single digits, with full-year operating expenses guided to $750-766M and a Q4 core efficiency ratio target of …"
-      },
-      "why": [
-        "Early in its climb — 10 weeks up so far",
-        "Trading above its 30-week line — the trend is with it"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 10 周",
-        "位于 30 周均线之上 — 趋势向好"
-      ],
-      "atr_14w": 2.8456,
-      "atr_ext": 0.862,
-      "atr_pct_price": 0.05661,
-      "sata_score": 6,
-      "sata_change_1w": -2,
-      "stage_detailed": "2X_catch_price_above_ma",
-      "industry_percentile": null
-    },
-    {
-      "ticker": "LYTS",
-      "company": "LSI Industries Inc",
-      "sector": "Technology",
-      "stage": 2,
-      "weeks_in_stage": 9,
-      "fresh": true,
-      "sga_score": 49,
-      "ma30_slope_pct5w": 4.791,
-      "pct_vs_ma30": 4.92,
-      "mansfield_rs": 0.33,
-      "vol_ratio": 0.74,
-      "event": null,
-      "gate_tier": null,
-      "blackout": false,
-      "arc_pos": 0.3625,
-      "earnings": {
-        "present": true,
-        "sentiment": 0.7222222222222222,
-        "performance": 7.5,
-        "tone_word": "confident",
-        "tags": [],
-        "quarter": "Q3",
-        "summary": "on a consolidated basis, we expect net sales growth in the low to mid-single-digit percent range in the quarter versus prior year."
-      },
-      "why": [
-        "Early in its climb — 9 weeks up so far",
-        "Trading above its 30-week line — the trend is with it"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 9 周",
-        "位于 30 周均线之上 — 趋势向好"
-      ],
-      "atr_14w": 2.212,
-      "atr_ext": 0.493,
-      "atr_pct_price": 0.09522,
-      "sata_score": 5,
-      "sata_change_1w": -1,
-      "stage_detailed": "2X_catch_price_above_ma",
-      "industry_percentile": null
-    },
-    {
-      "ticker": "MRDN",
-      "company": "MRDN",
-      "sector": "Unknown",
-      "stage": 2,
-      "weeks_in_stage": 4,
-      "fresh": true,
-      "sga_score": 49,
-      "ma30_slope_pct5w": 7.367,
-      "pct_vs_ma30": 45.52,
-      "mansfield_rs": 12.35,
-      "vol_ratio": 1.8,
-      "event": "pullback_resume",
-      "gate_tier": null,
-      "blackout": false,
-      "arc_pos": 0.3,
-      "earnings": {
-        "present": false,
-        "sentiment": null,
-        "performance": null,
-        "tone_word": null,
-        "tags": [],
-        "quarter": null,
-        "summary": null
-      },
-      "why": [
-        "Early in its climb — 4 weeks up so far",
-        "Already stretched well above its 30-week line — may need a rest"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 4 周",
-        "已明显高于 30 周均线 — 可能需要回踩"
-      ],
-      "atr_14w": 2.4106,
-      "atr_ext": 1.827,
-      "atr_pct_price": 0.17121,
-      "sata_score": 8,
-      "sata_change_1w": 1,
-      "stage_detailed": "2X_fallback_bullish",
-      "industry_percentile": null
-    },
-    {
-      "ticker": "ZVRA",
-      "company": "Zevra Therapeutics Inc",
-      "sector": "Healthcare",
-      "stage": 2,
-      "weeks_in_stage": 8,
-      "fresh": true,
-      "sga_score": 49,
-      "ma30_slope_pct5w": 7.112,
-      "pct_vs_ma30": -7.42,
-      "mansfield_rs": -10.59,
-      "vol_ratio": 1.16,
-      "event": null,
-      "gate_tier": null,
-      "blackout": false,
-      "arc_pos": 0.35,
-      "earnings": {
-        "present": true,
-        "sentiment": 0.7222222222222222,
-        "performance": 6.25,
-        "tone_word": "confident",
-        "tags": [],
-        "quarter": "Q1",
-        "summary": "As we advance through 2026, we are anchored by a clinically meaningful commercial product with multiple opportunities for global growth, a late-stage pipeline and a strong financial position."
-      },
-      "why": [
-        "Early in its climb — 8 weeks up so far",
-        "Still near its 30-week line — not clear of it yet"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 8 周",
-        "仍接近 30 周均线 — 尚未站稳"
-      ],
-      "atr_14w": 1.6485,
-      "atr_ext": -0.463,
-      "atr_pct_price": 0.17307,
-      "sata_score": 4,
-      "sata_change_1w": -4,
-      "stage_detailed": "2X_catch_price_above_ma",
-      "industry_percentile": null
-    },
-    {
-      "ticker": "CNK",
-      "company": "Cinemark Holdings, Inc.",
-      "sector": "Communication Services",
-      "stage": 2,
-      "weeks_in_stage": 7,
-      "fresh": true,
-      "sga_score": 48,
-      "ma30_slope_pct5w": 4.858,
-      "pct_vs_ma30": 17.17,
-      "mansfield_rs": 11.85,
-      "vol_ratio": 1.04,
-      "event": "pullback_resume",
-      "gate_tier": null,
-      "blackout": false,
-      "arc_pos": 0.3375,
-      "earnings": {
-        "present": true,
-        "sentiment": 0.6666666666666666,
-        "performance": 6.25,
-        "tone_word": "confident",
-        "tags": [],
-        "quarter": "Q1",
-        "summary": "Management is confident in long-term growth, encouraged by positive industry momentum, a promising film slate, and constructive progress on extending theatrical windows. They expect to increase marketing spend and anticipate continued cost pressures from labor inflation and ut…"
-      },
-      "why": [
-        "Early in its climb — 7 weeks up so far",
-        "Already stretched well above its 30-week line — may need a rest"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 7 周",
-        "已明显高于 30 周均线 — 可能需要回踩"
-      ],
-      "atr_14w": 2.4359,
-      "atr_ext": 1.968,
-      "atr_pct_price": 0.07447,
-      "sata_score": 8,
-      "sata_change_1w": 2,
-      "stage_detailed": "2A_strong_breakout",
-      "industry_percentile": null
-    },
-    {
-      "ticker": "DRS",
-      "company": "Leonardo DRS, Inc.",
-      "sector": "Industrials",
-      "stage": 2,
-      "weeks_in_stage": 9,
-      "fresh": true,
-      "sga_score": 48,
-      "ma30_slope_pct5w": 4.25,
-      "pct_vs_ma30": 11.37,
-      "mansfield_rs": 8.18,
-      "vol_ratio": 1.02,
-      "event": "pullback_resume",
-      "gate_tier": null,
-      "blackout": false,
-      "arc_pos": 0.3625,
-      "earnings": {
-        "present": true,
-        "sentiment": 0.7777777777777778,
-        "performance": 10.0,
-        "tone_word": "confident",
-        "tags": [],
-        "quarter": "Q1",
-        "summary": "The strength delivered in the first quarter gives us confidence to raise our expected growth and profitability for the full year."
-      },
-      "why": [
-        "Early in its climb — 9 weeks up so far",
-        "Trading above its 30-week line — the trend is with it"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 9 周",
-        "位于 30 周均线之上 — 趋势向好"
-      ],
-      "atr_14w": 3.7064,
-      "atr_ext": 1.325,
-      "atr_pct_price": 0.07706,
-      "sata_score": 7,
-      "sata_change_1w": 2,
-      "stage_detailed": "2X_fallback_bullish",
-      "industry_percentile": null
     }
   ],
   "warnings_stage3": [
+    {
+      "ticker": "FIZZ",
+      "company": "National Beverage Corp.",
+      "weeks_in_stage": 3,
+      "sga_score": 40
+    },
+    {
+      "ticker": "FCNCA",
+      "company": "First Citizens BancShares, Inc.",
+      "weeks_in_stage": 1,
+      "sga_score": 35
+    },
     {
       "ticker": "PEP",
       "company": "PepsiCo",
       "weeks_in_stage": 9,
       "sga_score": 31
-    },
-    {
-      "ticker": "HRI",
-      "company": "Herc Holdings Inc",
-      "weeks_in_stage": 1,
-      "sga_score": 30
     },
     {
       "ticker": "CBOE",
@@ -2528,15 +2544,27 @@
       "sga_score": 28
     },
     {
-      "ticker": "CMRE",
-      "company": "Costamare Inc",
-      "weeks_in_stage": 4,
-      "sga_score": 25
+      "ticker": "CMC",
+      "company": "Commercial Metals",
+      "weeks_in_stage": 2,
+      "sga_score": 28
     },
     {
-      "ticker": "EPM",
-      "company": "Evolution Petroleum Corp",
-      "weeks_in_stage": 7,
+      "ticker": "JOE",
+      "company": "St. Joe Company",
+      "weeks_in_stage": 2,
+      "sga_score": 28
+    },
+    {
+      "ticker": "BYD",
+      "company": "Boyd Gaming",
+      "weeks_in_stage": 1,
+      "sga_score": 26
+    },
+    {
+      "ticker": "FPI",
+      "company": "Farmland Partners Inc",
+      "weeks_in_stage": 3,
       "sga_score": 25
     },
     {
@@ -2552,15 +2580,33 @@
       "sga_score": 25
     },
     {
-      "ticker": "NEM",
-      "company": "Newmont",
-      "weeks_in_stage": 2,
+      "ticker": "MWA",
+      "company": "Mueller Water Products",
+      "weeks_in_stage": 9,
       "sga_score": 25
     },
     {
       "ticker": "SD",
       "company": "Sandridge Energy Inc",
       "weeks_in_stage": 4,
+      "sga_score": 25
+    },
+    {
+      "ticker": "TJX",
+      "company": "TJX Companies",
+      "weeks_in_stage": 2,
+      "sga_score": 25
+    },
+    {
+      "ticker": "WMT",
+      "company": "Walmart",
+      "weeks_in_stage": 2,
+      "sga_score": 25
+    },
+    {
+      "ticker": "WS",
+      "company": "Worthington Steel",
+      "weeks_in_stage": 2,
       "sga_score": 25
     },
     {
@@ -2574,12 +2620,6 @@
       "company": "Damora Therapeutics Inc",
       "weeks_in_stage": 1,
       "sga_score": 22
-    },
-    {
-      "ticker": "NXE",
-      "company": "NXE",
-      "weeks_in_stage": 1,
-      "sga_score": 20
     },
     {
       "ticker": "BBIO",
@@ -2598,36 +2638,6 @@
       "company": "Madrigal Pharmaceuticals, Inc.",
       "weeks_in_stage": 4,
       "sga_score": 18
-    },
-    {
-      "ticker": "PTCT",
-      "company": "PTC Therapeutics, Inc.",
-      "weeks_in_stage": 7,
-      "sga_score": 18
-    },
-    {
-      "ticker": "BRSP",
-      "company": "BrightSpire Capital Inc",
-      "weeks_in_stage": 3,
-      "sga_score": 15
-    },
-    {
-      "ticker": "ESPR",
-      "company": "ESPR",
-      "weeks_in_stage": 3,
-      "sga_score": 15
-    },
-    {
-      "ticker": "FIZZ",
-      "company": "National Beverage Corp.",
-      "weeks_in_stage": 3,
-      "sga_score": 15
-    },
-    {
-      "ticker": "NHI",
-      "company": "National Health Investors, Inc.",
-      "weeks_in_stage": 11,
-      "sga_score": 15
     }
   ],
   "sectors": [
@@ -13589,7 +13599,7 @@
     "n": 0
   },
   "prev_state": {
-    "asof": "2026-07-27",
+    "asof": "2026-07-28",
     "by_key": {
       "A": {
         "stage": 4,

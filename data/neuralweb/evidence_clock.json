@@ -1,20 +1,20 @@
 {
   "schema": "neuralweb.evidence_clock.v1",
-  "as_of": "2026-07-28",
-  "generated_utc": "2026-07-28T03:11:38Z",
+  "as_of": "2026-07-29",
+  "generated_utc": "2026-07-29T03:27:04Z",
   "authority": "display_only",
   "summary": {
     "n_rows": 311,
     "by_state": {
       "overdue": 25,
-      "due": 7,
+      "due": 8,
       "human_review": 0,
       "missing": 1,
       "stale": 1,
       "blocked": 2,
       "not_ready": 0,
       "promotion_eligible": 0,
-      "accruing": 275
+      "accruing": 274
     },
     "n_acknowledged": 0,
     "top_due": {
@@ -22,7 +22,7 @@
       "due_at": "2026-06-22",
       "owner_program": "qualitative-intelligence"
     },
-    "morning_line": "32 due/overdue, 1 missing, 275 accruing, 1 stale, 2 blocked. Top due: qledger:placebo."
+    "morning_line": "33 due/overdue, 1 missing, 274 accruing, 1 stale, 2 blocked. Top due: qledger:placebo."
   },
   "rows": [
     {
@@ -38,7 +38,7 @@
       "date_state": "overdue",
       "readiness": {
         "n_open": 342,
-        "n_past_check_by": 311
+        "n_past_check_by": 327
       },
       "allowed_actions": [
         "inspect",
@@ -86,7 +86,7 @@
       "date_state": "overdue",
       "readiness": {
         "n_open": 812,
-        "n_past_check_by": 659
+        "n_past_check_by": 738
       },
       "allowed_actions": [
         "inspect",
@@ -133,8 +133,8 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 1556,
-        "n_past_check_by": 909
+        "n_open": 1598,
+        "n_past_check_by": 1026
       },
       "allowed_actions": [
         "inspect",
@@ -181,8 +181,8 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 1556,
-        "n_past_check_by": 909
+        "n_open": 1598,
+        "n_past_check_by": 1026
       },
       "allowed_actions": [
         "inspect",
@@ -229,8 +229,8 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 7336,
-        "n_past_check_by": 3225
+        "n_open": 7684,
+        "n_past_check_by": 3429
       },
       "allowed_actions": [
         "inspect",
@@ -277,8 +277,8 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 7336,
-        "n_past_check_by": 3225
+        "n_open": 7684,
+        "n_past_check_by": 3429
       },
       "allowed_actions": [
         "inspect",
@@ -742,7 +742,7 @@
       "date_state": "overdue",
       "readiness": {
         "n_open": 31,
-        "n_past_check_by": 17
+        "n_past_check_by": 27
       },
       "allowed_actions": [
         "inspect",
@@ -806,8 +806,8 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 1336,
-        "n_past_check_by": 375
+        "n_open": 1408,
+        "n_past_check_by": 418
       },
       "allowed_actions": [
         "inspect",
@@ -1084,13 +1084,46 @@
       "packet": null
     },
     {
+      "clock_id": "experiments:index-leadership",
+      "source_system": "experiments",
+      "subject_id": "index-leadership",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-07-29",
+      "as_of": "2026-06-30",
+      "state": "due",
+      "date_state": "due",
+      "readiness": {
+        "maturation": "n_matured>=40 at a horizon AND Newey-West HAC-t>=2.0 (running or coiling) AND mean_ic>0; per-date IC needs >=8 calls/date and >=6 IC-eligible dates; verdict accruing->measuring(any_matured)->validated(proven).",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/index_leadership/track_record.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
       "clock_id": "rule_experiments:disp_gate_1",
       "source_system": "rule_experiments",
       "subject_id": "disp_gate_1",
       "subject_type": "experiment",
       "owner_program": "engine-fix",
       "clock_type": "awaiting_execution",
-      "due_at": "2026-07-28",
+      "due_at": "2026-07-29",
       "as_of": "2026-07-06",
       "state": "due",
       "date_state": "due",
@@ -1122,7 +1155,7 @@
       "subject_type": "experiment",
       "owner_program": "engine-fix",
       "clock_type": "awaiting_execution",
-      "due_at": "2026-07-28",
+      "due_at": "2026-07-29",
       "as_of": "2026-07-06",
       "state": "due",
       "date_state": "due",
@@ -1154,7 +1187,7 @@
       "subject_type": "experiment",
       "owner_program": "engine-fix",
       "clock_type": "awaiting_execution",
-      "due_at": "2026-07-28",
+      "due_at": "2026-07-29",
       "as_of": "2026-07-06",
       "state": "due",
       "date_state": "due",
@@ -1186,7 +1219,7 @@
       "subject_type": "experiment",
       "owner_program": "engine-fix",
       "clock_type": "awaiting_execution",
-      "due_at": "2026-07-28",
+      "due_at": "2026-07-29",
       "as_of": "2026-07-06",
       "state": "due",
       "date_state": "due",
@@ -1251,11 +1284,11 @@
       "owner_program": "nw-mastermind-bridge",
       "clock_type": "freshness_sla",
       "due_at": null,
-      "as_of": "2026-07-27",
+      "as_of": "2026-07-28",
       "state": "stale",
       "date_state": "stale",
       "readiness": {
-        "as_of": "2026-07-27",
+        "as_of": "2026-07-28",
         "stale_chips": [
           "reliability",
           "contradictions"
@@ -1334,7 +1367,7 @@
       "state": "blocked",
       "date_state": "accruing",
       "readiness": {
-        "n_claims": 28514,
+        "n_claims": 29366,
         "n_with_falsifier": 403,
         "falsifier_coverage": "1.4%",
         "blocking_reason": "falsifier coverage 1.4%; not a promotion-grade substrate"
@@ -1350,39 +1383,6 @@
       ],
       "evidence_refs": [
         "data/qledger/claims.jsonl"
-      ],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:index-leadership",
-      "source_system": "experiments",
-      "subject_id": "index-leadership",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-07-29",
-      "as_of": "2026-06-30",
-      "state": "accruing",
-      "date_state": "accruing",
-      "readiness": {
-        "maturation": "n_matured>=40 at a horizon AND Newey-West HAC-t>=2.0 (running or coiling) AND mean_ic>0; per-date IC needs >=8 calls/date and >=6 IC-eligible dates; verdict accruing->measuring(any_matured)->validated(proven).",
-        "cadence": "daily",
-        "status": "accruing"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [
-        "data/index_leadership/track_record.json"
       ],
       "regenerate_cmd": null,
       "acknowledged": false,

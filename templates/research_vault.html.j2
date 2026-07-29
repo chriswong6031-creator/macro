@@ -6,7 +6,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Research Vault — institutional desk research</title>
+<title>Research Vault — Institutional Desk Research | MastermindX</title>
 {% set seo_title = "Research Vault — Institutional Desk Research | MastermindX" %}{% set seo_desc = "A gated vault of third-party institutional research — buy-side and sell-side desk reports, indexed and readable in one place. Reference only, not investment advice." %}{% set seo_path = "research_vault.html" %}
 {% include "_seo_head.html.j2" %}
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
@@ -70,8 +70,10 @@ html[data-theme="light"]{
 html[data-lang="zh"]{ --buy:#e06464; }
 html[data-theme="light"][data-lang="zh"]{ --buy:#cf4040; }
 
-/* ── page shell (body top padding satisfies check_nav_gap ≥14px) ── */
-body{ padding-top:22px; }
+/* ── page shell (body top padding satisfies check_nav_gap ≥14px) ──
+   Keep the canvas on the shared theme tokens: without an explicit background,
+   dark-mode cards are painted over the browser-default white body. */
+body{ min-height:100vh; padding-top:22px; background:var(--bg); color:var(--text); }
 .rv-wrap{ max-width:1240px; margin:0 auto; padding:0 22px 96px; }
 .rv-scope :focus-visible{ outline:2px solid var(--rv); outline-offset:2px; border-radius:6px; }
 
