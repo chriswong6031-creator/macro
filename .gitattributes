@@ -41,3 +41,37 @@ data/marketing/hot_tape_ring.jsonl merge=union
 # The fired ledger IS the cooldown/dedupe memory — a dropped row re-arms an event
 # that already posted, which is the one failure this lane must never have.
 data/marketing/hot_tape_fired.jsonl merge=union
+
+# Actions press wire state (masterplan §10 E7, scripts/marketing_press_wire.py).
+# Committed BECAUSE the lane runs in Actions: every run is a fresh checkout, so
+# state left in the daemon's gitignored data/marketing/press/ evaporates — and an
+# evaporating spend counter means the $75/mo twitterapi.io cap is never enforced,
+# because every run starts the month at $0.00.
+#
+# spend.jsonl carries DELTAS, not running totals, exactly so union is the correct
+# resolution: two runs that appended in the same push race keep both rows and the
+# month sums right. A running total would have one row win and the loser's spend
+# would vanish — under-counting money is the one direction a cap must not fail in.
+data/marketing/press_wire/spend.jsonl merge=union
+# The seen ring is the dedupe memory for BOTH key spaces (the press lane's
+# mirror-collapsed emission keys and breaking_feed's feed ids). A dropped row
+# re-posts a story that already went out; it also lets the same headline register
+# 288 arrivals a day into the burst detector. Union is the only safe resolution.
+data/marketing/press_wire/seen_ring.jsonl merge=union
+# NOTE: cursors.json is deliberately NOT union-merged — it is a whole-file JSON
+# document with a single writer (this workflow's own concurrency group), and
+# last-wins is correct there. Losing a cursors write costs one re-poll, which the
+# seen ring above makes harmless.
+
+# X competitive-intelligence corpus (masterplan §10 E3,
+# engine/marketing/x_intel.py). Strictly APPEND-ONLY on disk and folded
+# newest-per-tweet-id on read (x_intel.load_corpus), so a duplicated line is
+# inert and a DROPPED line loses a post — and with it a week's engagement
+# reading for that post — permanently. The weekly marketing-x-intel.yml run
+# races the publish sweeps and the nightly on the same push, so union is the
+# only correct resolution.
+data/marketing/x_intel/corpus.jsonl merge=union
+# NOTE: state.json, report.json, WEEKLY_REPORT.md and exemplar_store.json are
+# deliberately NOT union-merged. They are whole-file documents with a single
+# writer (this lane's own concurrency group) where last-wins is correct; a
+# union-merged JSON document is a syntax error, not a merge.

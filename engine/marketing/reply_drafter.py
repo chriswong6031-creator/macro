@@ -22,6 +22,14 @@ dial belong to ``copywriter``/``expression_dial``; this module calls them with
 ``kind="reply"`` (dial 2 for employees, 1 for flagship, charter §2 amendment 3)
 and owns no word list of its own.
 
+**The LLM phrases, it never drafts.** ``draft_reply`` composes deterministically
+and then hands the PRIMARY draft to ``reply_voice.voice_or_fallback`` (E4;
+``research/MARKETING_REPLY_DOCTRINE_BY_FABLE.md``), which re-phrases it in the
+register the reply corpus says earns a reply. That pass is two-key armed, never
+raises, and returns THIS draft on any gate hit — so the deterministic path below
+is the product, and the model is an upgrade on top of it. Alternates are never
+voiced: they exist to differ in reasoning MOVE, not in wording.
+
 **Charts are EOD-only.** ``chart_render`` reads nightly parquet, so a reply that
 attaches one must carry an as-of stamp; presenting yesterday's bar as live is
 the failure the charter names by hand. ``attach_chart`` stamps every reference,
@@ -412,26 +420,42 @@ def draft_reply(
     # Voice pass: the SHARED dial, kind="reply". apply_pass is deterministic
     # clean-up only (off-signature emoji, exclamation downgrade); everything
     # else the dial dislikes is reported, never silently rewritten.
-    # The dial's own findings on the PRIMARY draft, reported not swallowed: the
-    # critics re-run this independently, but a drafter that returns an empty
-    # violation list it never populated is a permanent all-clear to any caller
-    # that trusts the field.
-    dial_violations: list[str] = []
     polished: list[tuple[str, str]] = []
     for fam, text in drafts:
         try:
             from engine.marketing import expression_dial as _dial  # noqa: PLC0415
 
             _, body = _dial.apply_pass("", text, account=account, kind="reply", root=root)
-            if not polished:  # primary only; alternates are graded if promoted
-                dial_violations = list(_dial.violations(
-                    "", body, account=account, kind="reply", root=root,
-                    include_house_bans=False,
-                ))
         except Exception as exc:  # noqa: BLE001
             log.warning("reply_drafter: dial pass unavailable for %r: %s", account, exc)
             body = text
         polished.append((fam, _clean(body)))
+
+    # E4 phrasing pass — OPTIONAL, and DOWNSTREAM of everything above. The
+    # deterministic draft is the argument and the fallback, so this line can
+    # only change words, never whether a reply exists.
+    voice = _voice_pass(
+        polished[0][1], family=polished[0][0], account=account, target=target,
+        whitelist=whitelist, cfg=cfg, root=root,
+    )
+    polished[0] = (polished[0][0], voice["text"])
+
+    # The dial's own findings on the SHIPPING primary text, reported not
+    # swallowed: the critics re-run this independently, but a drafter that
+    # returns an empty violation list it never populated is a permanent
+    # all-clear to any caller that trusts the field. Graded AFTER the voice
+    # pass, because grading the pre-voice text would describe copy that is not
+    # the copy being returned.
+    dial_violations: list[str] = []
+    try:
+        from engine.marketing import expression_dial as _dial  # noqa: PLC0415
+
+        dial_violations = list(_dial.violations(
+            "", polished[0][1], account=account, kind="reply", root=root,
+            include_house_bans=False,
+        ))
+    except Exception as exc:  # noqa: BLE001
+        log.warning("reply_drafter: dial grading unavailable for %r: %s", account, exc)
 
     return {
         "draft": polished[0][1],
@@ -444,8 +468,60 @@ def draft_reply(
             "family_move": FAMILIES[polished[0][0]]["move"],
             "trigger": FAMILIES[polished[0][0]]["trigger"],
             "chart": bool(chart),
+            "voice_mode": voice["mode"],
         },
         "dial_violations": dial_violations,
+        "voice": voice,
+    }
+
+
+def _voice_pass(
+    draft: str,
+    *,
+    family: str,
+    account: str,
+    target: dict,
+    whitelist: list[str],
+    cfg: dict | None,
+    root: Path | str | None,
+) -> dict[str, Any]:
+    """The E4 LLM phrasing hook. Returns {text, mode, provider, violations}.
+
+    ``reply_voice.voice_or_fallback`` is two-key armed (config
+    ``reply_desk.voice.enabled`` + ``MARKETING_LLM_ENABLED``), never raises, and
+    hands back THIS draft on any gate hit, provider failure or disarmed key. The
+    try/except here is therefore about the IMPORT — if the module is absent or
+    broken, the deterministic draft is still what ships, and the alternates are
+    never voiced at all (they exist to differ in reasoning MOVE, and one call
+    per drafted reply is what keeps the runaway guard meaningful).
+
+    The output is re-``_clean``ed: no dash tell may leave this module, whoever
+    wrote the sentence.
+    """
+    fallback = {"text": draft, "mode": "off", "provider": None, "violations": []}
+    try:
+        from engine.marketing import reply_voice as _voice  # noqa: PLC0415
+
+        out = _voice.voice_or_fallback(
+            draft,
+            family=family,
+            account=account,
+            parent_text=str((target or {}).get("text") or ""),
+            parent_author=str((target or {}).get("author") or ""),
+            numbers_whitelist=list(whitelist or []),
+            family_spec=FAMILIES.get(family),
+            cfg=cfg,
+            root=root,
+        )
+    except Exception as exc:  # noqa: BLE001 — a drafted reply must still exist
+        log.warning("reply_drafter: voice pass unavailable for %r: %s", account, exc)
+        return fallback
+    text = _clean(str(out.get("text") or "")) or draft
+    return {
+        "text": text,
+        "mode": str(out.get("mode") or "off"),
+        "provider": out.get("provider"),
+        "violations": list(out.get("violations") or []),
     }
 
 

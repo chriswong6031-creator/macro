@@ -2987,6 +2987,14 @@ jobs:
         # waterfall and the real request builder run, only the transport is
         # fake. No network, no credential, nothing importorskip-gated.
         #
+        # E-wave suites join 2026-07-29 (ecosystem completion, masterplan §10):
+        # test_marketing_press_wire (E7 Actions press bridge — committed
+        # cursor/spend state, tier cadence, daemon-active no-op),
+        # test_marketing_x_intel (E3 harvester/exemplar store/budget caps),
+        # test_marketing_reply_voice (E4 reply LLM pass + reply_value critic),
+        # test_marketing_filing_lanes (E2 congress/insider/house-picks). All
+        # keep the lane minimal-env law: providers monkeypatched, no network,
+        # lazy heavy imports pinned by source scans.
         # test_marketing_selection.py joins alongside it (Content Studio W1,
         # Builder B side): the cross-day cooldowns, the fact-reuse budget, the
         # degenerate-stat gate, the shape mixer, the emit-time no-fallback
@@ -2997,7 +3005,7 @@ jobs:
         # LIVE config/marketing.yml arming keys (copywriter.llm.required,
         # publish.auto_approve_scope) — a code default cannot be the whole story
         # when the config file is the operator surface.
-        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_marketing_personas.py tests/test_marketing_event_language.py tests/test_marketing_press_feeds.py tests/test_marketing_breaking.py tests/test_marketing_fastlane.py tests/test_wires_rail_b4b.py tests/test_marketing_press_copy.py tests/test_marketing_intelligence_desk.py tests/test_marketing_ramp_cta_jitter.py tests/test_marketing_expression_dial.py tests/test_marketing_cadence_spine.py tests/test_marketing_chart_coverage.py tests/test_marketing_desk_feeds.py tests/test_marketing_reply_desk.py tests/test_marketing_forward_booking.py tests/test_marketing_recall.py tests/test_marketing_learning.py tests/test_marketing_reply_producer.py tests/test_marketing_scoring_brain.py tests/test_marketing_hot_tape_llm.py tests/test_marketing_hot_tape.py tests/test_marketing_hot_tape_radar.py tests/test_marketing_copy_v2.py tests/test_marketing_selection.py -q
+        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_marketing_personas.py tests/test_marketing_event_language.py tests/test_marketing_press_feeds.py tests/test_marketing_breaking.py tests/test_marketing_fastlane.py tests/test_wires_rail_b4b.py tests/test_marketing_press_copy.py tests/test_marketing_intelligence_desk.py tests/test_marketing_ramp_cta_jitter.py tests/test_marketing_expression_dial.py tests/test_marketing_cadence_spine.py tests/test_marketing_chart_coverage.py tests/test_marketing_desk_feeds.py tests/test_marketing_reply_desk.py tests/test_marketing_forward_booking.py tests/test_marketing_recall.py tests/test_marketing_learning.py tests/test_marketing_reply_producer.py tests/test_marketing_scoring_brain.py tests/test_marketing_hot_tape_llm.py tests/test_marketing_hot_tape.py tests/test_marketing_hot_tape_radar.py tests/test_marketing_copy_v2.py tests/test_marketing_selection.py tests/test_marketing_press_wire.py tests/test_marketing_x_intel.py tests/test_marketing_reply_voice.py tests/test_marketing_filing_lanes.py -q
       - name: reply-target register validates (config/reply_targets.yml)
         # The register is operator-curated, so a bad handle or an unknown tier is
         # an editing mistake, not a code change. Runs as its own step so a

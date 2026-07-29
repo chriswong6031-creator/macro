@@ -52,6 +52,9 @@ DEVICE_SLOTS: frozenset[str] = frozenset({
     "since_clause", "streak_clause", "dollar_clause", "record_rank_clause",
     "breadth_clause", "leaders_clause", "milestone_clause", "live_marker",
     "flagged_clause", "green_list",
+    # T4 (earnings reaction) + the codex two-step context brief.
+    "earnings_clause", "eps_clause",
+    "mechanism_clause", "affected_clause", "watch_clause",
 })
 
 _MONTHS_ABBR = ("Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -273,6 +276,11 @@ _LEADERS_LABEL = {"up": "Best", "down": "Worst"}
 _ONE_DAY_MOVE = {"up": "gain", "down": "drop"}
 _MILESTONE_VERB = {"up": "just cleared", "down": "just broke below"}
 _MCAP_VERB = {"up": "just crossed", "down": "just slipped back under"}
+#: When the report landed. A fragment, always following the cashtag, so the
+#: sentence reads "$AAPL reported after yesterday's close and is up 6.0%".
+_REPORT_WHEN = {"bmo": "reported before the bell",
+                "ah": "reported after yesterday's close"}
+_EPS_VERDICT = {True: "ahead of", False: "under"}
 
 
 def static_strings() -> list[str]:
@@ -285,7 +293,8 @@ def static_strings() -> list[str]:
     for bank in WIRE_BANK.values():
         out.extend(tpl for tpl, _ in bank)
     for table in (_DIR_VERB, _DIR_WORD, _RUN_WORD, _RUN_COLOR, _LEADERS_LABEL,
-                  _ONE_DAY_MOVE, _MILESTONE_VERB, _MCAP_VERB):
+                  _ONE_DAY_MOVE, _MILESTONE_VERB, _MCAP_VERB, _REPORT_WHEN,
+                  _EPS_VERDICT):
         out.extend(table.values())
     for markers in _LIVE_MARKERS.values():
         out.extend(markers)
@@ -310,6 +319,14 @@ _STATIC_CLAUSE_FRAGMENTS: tuple[str, ...] = (
     "the level our engine flagged in our", "plan", "Watching how it holds.",
     "Still green:", "are green", "Green across", "Median", "median", "Last",
     "crossed", "just traded through", "through", "again", "is up", "is down",
+    # T4 earnings reaction
+    "EPS came in at", "consensus", "surprise",
+    # Two-step context brief (codex): mechanism, affected names, what to watch
+    "This is a group move:", "names are trading together",
+    "The rest of", "is not following:", "names, median",
+    "so this is one name and not the group",
+    "Also moving:", "What we are watching:", "whether the breadth holds",
+    "names so far", "holds through the session",
 )
 
 
@@ -516,6 +533,98 @@ def _green_list(packet: Any, f: dict) -> str | None:
     return ", ".join(parts) if len(parts) >= 3 else None
 
 
+def _earnings_clause(packet: Any, f: dict) -> str | None:
+    """T4 — WHEN the report landed, which is what makes the gap readable.
+
+    Not a §2.D device on its own (it carries no number), which is why the
+    earnings family's DEVICE_LAW requires it AND one of the real stats: a post
+    that only says "reported and moved" is the bare %-move flop with a calendar
+    entry stapled to it.
+    """
+    return _REPORT_WHEN.get(str(f.get("report_when") or ""))
+
+
+def _eps_clause(packet: Any, f: dict) -> str | None:
+    """D6 — the beat/miss, immediately backed by both numbers.
+
+    Renders ONLY from :func:`engine.marketing.hot_tape._fresh_surprise`, i.e.
+    a filing whose reported date is the report we detected. Last quarter's beat
+    presented as today's is the one lie this clause could tell, so the freshness
+    test lives upstream and this builder simply has nothing to say without it.
+    """
+    eps = f.get("eps") if isinstance(f.get("eps"), dict) else None
+    if not eps:
+        return None
+    actual, consensus = fmt_price(eps.get("actual")), fmt_price(eps.get("consensus"))
+    if not actual or not consensus:
+        return None
+    beat = bool(eps.get("beat"))
+    verdict = _EPS_VERDICT[beat]
+    surprise = fmt_pct(eps.get("surprise_pct"), signed=False)
+    tail = f", a {surprise} surprise" if surprise else ""
+    return f"EPS came in at {actual}, {verdict} the {consensus} consensus{tail}"
+
+
+def _mechanism_clause(packet: Any, f: dict) -> str | None:
+    """The two-step brief's why-it-matters sentence (codex: mechanism reposts).
+
+    REQUIRED — the brief family refuses without it. It states the one causal
+    thing we can compute honestly from our own data: whether the peer group
+    moved WITH the subject or did not. Everything it says is a leaf of the
+    packet, so "why it matters" never becomes "what we assume".
+    """
+    mech = f.get("mechanism") if isinstance(f.get("mechanism"), dict) else None
+    if not mech:
+        return None
+    group = str(mech.get("group") or "").strip()
+    median = fmt_pct(mech.get("peer_median_pct"))
+    n = fmt_count(mech.get("n_peers"))
+    if not group or not median or not n:
+        return None
+    if str(mech.get("kind")) == "group":
+        return f"This is a group move: {n} names are trading together, median {median}"
+    return (f"The rest of {group} is not following: {n} names, median {median}, "
+            "so this is one name and not the group")
+
+
+def _affected_clause(packet: Any, f: dict) -> str | None:
+    """The brief's affected-names line: who else the same tape is moving."""
+    rows = f.get("peers") if isinstance(f.get("peers"), list) else []
+    parts: list[str] = []
+    for row in rows[:3]:
+        if not isinstance(row, (list, tuple)) or len(row) < 2:
+            continue
+        pct = fmt_pct(row[1])
+        if pct:
+            parts.append(f"${str(row[0]).upper()} {pct}")
+    return "Also moving: " + ", ".join(parts) if len(parts) >= 2 else None
+
+
+def _watch_clause(packet: Any, f: dict) -> str | None:
+    """The brief's forward line — a WINDOW, never a call (operator 2026-07-27).
+
+    "What we are watching" is the compliant shape: a condition that will be
+    visible on the tape, not a prediction and not a falsifier verdict. The
+    Calibration Lab owns verdicts; a wire post owns the condition.
+    """
+    watch = f.get("watch") if isinstance(f.get("watch"), dict) else None
+    if not watch:
+        return None
+    kind = str(watch.get("kind") or "")
+    if kind == "breadth":
+        agree, total = fmt_count(watch.get("n_agree")), fmt_count(watch.get("n_members"))
+        if not agree or not total:
+            return None
+        return (f"What we are watching: whether the breadth holds, {agree} of "
+                f"{total} names so far")
+    if kind == "level":
+        price = fmt_price(watch.get("price"))
+        if not price:
+            return None
+        return f"What we are watching: whether {price} holds through the session"
+    return None
+
+
 def _sectors_clause(f: dict) -> str | None:
     names = [str(s) for s in (f.get("sectors_green") or []) if s]
     if len(names) < 2:
@@ -553,6 +662,13 @@ def build_slots(packet: Any) -> dict[str, str | None]:
         "leaders_label": _LEADERS_LABEL.get(direction),
         "milestone_clause": _milestone_clause(packet, f),
         "flagged_clause": _flagged_clause(packet, f),
+        "earnings_clause": _earnings_clause(packet, f),
+        "eps_clause": _eps_clause(packet, f),
+        "mechanism_clause": _mechanism_clause(packet, f),
+        "affected_clause": _affected_clause(packet, f),
+        "watch_clause": _watch_clause(packet, f),
+        "subject_label": (str(f.get("subject_label")) if f.get("subject_label")
+                          else None),
         "green_list": _green_list(packet, f),
         "sectors_clause": _sectors_clause(f),
         "index_clause": _index_clause(f),
@@ -637,6 +753,42 @@ _CONTRARIAN_VARIANTS: tuple[tuple[str, tuple[str, ...]], ...] = (
      ("green_list", "live_marker")),
 )
 
+#: T4 — the earnings reaction. The report is the FRAME and always leads or
+#: closes the first sentence; the differentiating stat is a separate clause,
+#: because "reported and moved 6%" is the flop shape with a calendar attached.
+_EARNINGS_VARIANTS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("{cashtag} {earnings_clause} and {dir_verb} {pct_abs} at {price} {live_marker}. "
+     "{eps_clause}.",
+     ("earnings_clause", "eps_clause", "live_marker")),
+    ("{cashtag} {earnings_clause} and {dir_verb} {pct_abs} {live_marker}. "
+     "{dollar_clause}.",
+     ("earnings_clause", "dollar_clause", "live_marker")),
+    ("{cashtag} {dir_verb} {pct_abs} at {price} {live_marker}, and it {earnings_clause}. "
+     "{record_rank_clause}.",
+     ("earnings_clause", "record_rank_clause", "live_marker")),
+    ("{cashtag} {earnings_clause} and {dir_verb} {pct_abs} {live_marker}. "
+     "{eps_clause}. {dollar_clause}.",
+     ("earnings_clause", "eps_clause", "live_marker")),
+)
+
+#: The two-step follow-up (codex §Strongest controlled comparisons A). Three
+#: sentences at most: what moved, WHY it matters (the mechanism), and either who
+#: else it is moving or what we are watching next. The {subject_label} shapes
+#: exist for a GROUP brief, which has no cashtag to lead with — and the label
+#: being None on a single-name brief is what stops the two shapes swapping.
+_BRIEF_VARIANTS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("{cashtag} {dir_verb} {pct_abs} at {price} {live_marker}. {mechanism_clause}. "
+     "{affected_clause}.",
+     ("mechanism_clause", "affected_clause")),
+    ("{cashtag} {dir_verb} {pct_abs} {live_marker}. {mechanism_clause}. "
+     "{watch_clause}.",
+     ("mechanism_clause", "watch_clause")),
+    ("{subject_label}: {mechanism_clause}. {affected_clause}.",
+     ("mechanism_clause", "affected_clause")),
+    ("{subject_label}: {mechanism_clause}. {watch_clause}.",
+     ("mechanism_clause", "watch_clause")),
+)
+
 #: trigger -> ((template, required device slots), ...)
 WIRE_BANK: dict[str, tuple[tuple[str, tuple[str, ...]], ...]] = {
     "mover_pop": _MOVER_VARIANTS,
@@ -647,6 +799,8 @@ WIRE_BANK: dict[str, tuple[tuple[str, tuple[str, ...]], ...]] = {
     "streak_rarity": _STREAK_VARIANTS,
     "signal_fired": _SIGNAL_VARIANTS,
     "contrarian_breadth": _CONTRARIAN_VARIANTS,
+    "earnings_reaction": _EARNINGS_VARIANTS,
+    "context_brief": _BRIEF_VARIANTS,
 }
 
 #: trigger -> (slots that must ALL be present, set of which at least one must be)
@@ -663,6 +817,15 @@ DEVICE_LAW: dict[str, tuple[tuple[str, ...], frozenset[str]]] = {
     "streak_rarity": (("streak_clause", "live_marker"), frozenset()),
     "signal_fired": (("flagged_clause", "live_marker"), frozenset()),
     "contrarian_breadth": (("green_list", "live_marker"), frozenset()),
+    # The report is context, not a stat: the earnings family must ALSO carry a
+    # real §2.D device or it is the 95-view flop with a calendar entry on it.
+    "earnings_reaction": (("earnings_clause", "live_marker"), frozenset({
+        "eps_clause", "dollar_clause", "record_rank_clause",
+        "since_clause", "streak_clause"})),
+    # The brief's whole job is the mechanism (codex: "a mechanism makes context
+    # worth reposting"), so it is mandatory and refusal is the alternative.
+    "context_brief": (("mechanism_clause",),
+                      frozenset({"affected_clause", "watch_clause"})),
 }
 
 
@@ -698,6 +861,63 @@ def _shorten_once(template: str, slots: dict, droppable: set[str]) -> str | None
         return None
     out = ". ".join(keep).strip()
     return out if out.endswith(".") else out + "."
+
+
+def _row_symbols(f: dict, key: str) -> list[str]:
+    """Uppercased symbols out of a [[SYM, pct], ...] fact list."""
+    out: list[str] = []
+    for row in (f.get(key) if isinstance(f.get(key), list) else []):
+        if isinstance(row, (list, tuple)) and row:
+            sym = str(row[0]).strip().upper()
+            if sym:
+                out.append(sym)
+    return out
+
+
+def llm_packet(packet: Any) -> dict:
+    """The FactPacket dict handed to the LLM wire desk (P2 phrasing).
+
+    ``engine.marketing.hot_tape_llm`` treats every number it can reach as
+    engine-computed and admissible, so what this function does NOT include is
+    the load-bearing half: ``severity`` (an internal ranking score, not a fact
+    about the tape) and the whole ``provenance`` block (build stamps and quote
+    epochs) stay out, or a model could write "87" and pass gate 0.3 with a
+    number no reader could ever check.
+
+    ``cashtags`` must list every ticker the copy may name — the LLM gate rejects
+    any cashtag outside it as a smuggled comparison — so leaders, green names,
+    brief peers and the index proxy are all collected here.
+    """
+    f = dict(getattr(packet, "facts", {}) or {})
+    ticker = getattr(packet, "ticker", None) or f.get("ticker")
+    primary = f"${str(ticker).upper()}" if ticker else None
+
+    tags: list[str] = []
+    seen: set[str] = set()
+    for sym in ([str(ticker).upper()] if ticker else []) + \
+            _row_symbols(f, "leaders") + _row_symbols(f, "green") + \
+            _row_symbols(f, "peers") + \
+            ([str(f["index_ticker"]).upper()] if f.get("index_ticker") else []):
+        tag = f"${sym}"
+        if tag not in seen:
+            seen.add(tag)
+            tags.append(tag)
+
+    out: dict[str, Any] = {
+        "trigger": str(getattr(packet, "trigger", "")),
+        "direction": str(getattr(packet, "direction", "")),
+        "as_of": str(getattr(packet, "fired_at", "")),
+        "cashtag": primary,
+        "cashtags": tags,
+        "name": getattr(packet, "name", None) or f.get("name"),
+        "sector": getattr(packet, "sector", None) or f.get("sector"),
+        # The house live marker, so the model reaches for OUR wording of "now"
+        # instead of inventing one that contradicts the session (a 09:27 ET
+        # "at the close" is the failure this table exists to prevent).
+        "live_marker": _live_marker(packet),
+        "facts": f,
+    }
+    return out
 
 
 def compose_wire(

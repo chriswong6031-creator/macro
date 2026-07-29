@@ -1,0 +1,185 @@
+name: marketing-x-intel
+# ─────────────────────────────────────────────────────────────────────────────
+# E3 — the weekly X competitive-intelligence harvest
+# (research/MARKETING_CONTENT_STUDIO_LLM_FIRST_MASTERPLAN_BY_FABLE.md §10 E3).
+#
+# Once a week it reads the last ~20 originals from each account in
+# config/marketing.yml `intel.roster` via twitterapi.io, appends them to
+# data/marketing/x_intel/corpus.jsonl, recomputes the per-shape / per-register /
+# per-account engagement tables, regenerates WEEKLY_REPORT.md, and proposes
+# exemplar CANDIDATES into a pending pool. It commits all of that back to main.
+#
+# THIS RUNS ON ubuntu-latest, NEVER the self-hosted macstudio pool: nothing here
+# may touch the nightly render budget, which is law.
+#
+# WHY IT IS SAFE.
+#   * DARK WITHOUT THE SECRET. With TWITTERAPI_IO_KEY unset the harvest makes
+#     zero network calls and spends nothing. The run is green and, in steady
+#     state, the diff is EMPTY: the runner writes the spend counter only when it
+#     actually spent, and rebuilds report.json/WEEKLY_REPORT.md only when new
+#     corpus rows landed — so a dark week cannot put a pure-timestamp commit on
+#     main. (A first run against an existing corpus does write the report once.)
+#   * IT CANNOT CHANGE HOW WE SOUND. The harvest can only fill a PENDING pool.
+#     Minting an exemplar version is an operator call
+#     (exemplar_store.promote_pending) and ACTIVATING one is a second operator
+#     act — editing intel.exemplar_store.active_version in config/marketing.yml.
+#     Neither is reachable from this workflow.
+#   * IT CANNOT OVERSPEND. twitterapi.io is one shared $75/mo bucket already
+#     carrying the Trump wire and the reply desk. This lane has its own COMMITTED
+#     counter (data/marketing/x_intel/state.json) and refuses past
+#     intel.monthly_call_cap (600 calls ~= $1.80/mo) or intel.monthly_usd_cap.
+#     A refusal is a ::warning, not a failure, and never touches the other two
+#     lanes' counters.
+#
+# LEDGER LAW: this lane writes ONLY data/marketing/x_intel/. It never advances a
+# forward ledger — the nightly is the sole advancer of those.
+# ─────────────────────────────────────────────────────────────────────────────
+on:
+  schedule:
+    # Sunday 22:00 UTC — after the week's tape is closed everywhere and well
+    # clear of the ~22:30Z nightly's own commit window on weekdays. GitHub cron
+    # has NO timezone; this is UTC and stays correct across both DST regimes
+    # because nothing about a weekly style corpus is clock-sensitive.
+    - cron: "0 22 * * 0"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: >-
+          DRY RUN — analyse the committed corpus and print what a harvest WOULD
+          do. Zero network calls, zero spend, zero writes. The PR receipt mode.
+        required: false
+        type: boolean
+        default: false
+      handles:
+        description: >-
+          Comma-separated subset of intel.roster to poll (e.g.
+          "DeItaone,unusual_whales"). Blank = the whole roster.
+        required: false
+        default: ""
+      analyze_only:
+        description: >-
+          Skip the harvest entirely and only rebuild report.json +
+          WEEKLY_REPORT.md from the corpus already on disk.
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write     # commit the corpus + report + state back to main
+
+concurrency:
+  # Two harvests must never overlap: both would read the same monthly counter,
+  # both would think they had budget, and the cap would bind at 2x. Never cancel
+  # one in flight either — it may already have spent.
+  group: marketing-x-intel
+  cancel-in-progress: false
+
+jobs:
+  harvest:
+    runs-on: ubuntu-latest      # OFF the render path — never the macstudio pool
+    # A full 17-account pass is ~20 requests at a 15s timeout each, plus the
+    # analysis (pure arithmetic over a few thousand rows). 15m is generous.
+    timeout-minutes: 15
+    steps:
+      - name: checkout (shallow + sparse + write token)
+        # SHALLOW + SPARSE for the same reason marketing-hot-tape.yml is: a full
+        # clone of this repo is ~2.8GB across ~48k files and has timed a job out
+        # before. The cone below is this lane's entire read+write surface, and
+        # cone mode always includes top-level files:
+        #   engine, scripts        — the code
+        #   config                 — marketing.yml (roster, caps, the pin)
+        #   data/marketing/x_intel — the corpus, state, report, exemplar store
+        # The push loop deepens to 20 so `pull --rebase` always has a base.
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            engine
+            scripts
+            config
+            data/marketing/x_intel
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: install deps
+        # pyyaml only. The harvester is stdlib (urllib) by design and the
+        # analysis is stdlib `statistics` — no pandas, no requests, ~3s of
+        # install instead of ~40s.
+        run: pip install --quiet pyyaml
+
+      - name: harvest + analyse
+        id: harvest
+        env:
+          # THE ONLY SECRET. Absent => the run is dark: zero calls, zero spend,
+          # and the analysis still refreshes from the committed corpus.
+          TWITTERAPI_IO_KEY: ${{ secrets.TWITTERAPI_IO_KEY }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+          ANALYZE_ONLY: ${{ github.event_name == 'workflow_dispatch' && inputs.analyze_only }}
+          HANDLES: ${{ github.event_name == 'workflow_dispatch' && inputs.handles || '' }}
+        run: |
+          set -uo pipefail
+          ARGS=""
+          if [ "${DRY_RUN:-}" = "true" ]; then ARGS="$ARGS --dry-run"; fi
+          if [ "${ANALYZE_ONLY:-}" = "true" ]; then ARGS="$ARGS --analyze-only"; fi
+          if [ -n "${HANDLES:-}" ]; then ARGS="$ARGS --handles $HANDLES"; fi
+          echo "marketing-x-intel: python -m scripts.x_intel_harvest$ARGS"
+          # shellcheck disable=SC2086
+          python -m scripts.x_intel_harvest $ARGS | tee /tmp/x_intel_run.json
+
+      - name: summarise the run
+        if: ${{ always() }}
+        run: |
+          set -uo pipefail
+          {
+            echo "### marketing-x-intel"
+            echo ""
+            echo '```json'
+            tail -c 4000 /tmp/x_intel_run.json 2>/dev/null || echo "{}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: commit corpus + report + state (no-op when nothing changed)
+        # NEVER on a dry run: a dry run writes nothing, so there is nothing to
+        # commit and staging would only risk picking up an unrelated stray file.
+        if: >-
+          ${{ success()
+              && !(github.event_name == 'workflow_dispatch' && inputs.dry_run) }}
+        run: |
+          set -uo pipefail
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+
+          # Stage ONLY this lane's paths (ledger law).
+          git add data/marketing/x_intel 2>/dev/null || true
+
+          if git diff --cached --quiet; then
+            echo "marketing-x-intel: nothing to commit (dark run or no new posts)"
+            exit 0
+          fi
+
+          git commit -m "x-intel: weekly corpus + report $(date -u +%FT%H:%MZ) [skip ci]"
+
+          # Retry-rebase push loop. corpus.jsonl carries merge=union
+          # (.gitattributes) so a concurrent append from any other lane resolves
+          # instead of conflicting this loop to death; the JSON documents beside
+          # it have a single writer (this concurrency group) and last-wins.
+          for i in 1 2 3 4 5; do
+            # --depth 20: the checkout is shallow, so a bare fetch would leave
+            # `pull --rebase` without a merge base once main advanced mid-run.
+            git fetch --depth 20 origin main || true
+            if git pull --rebase --autostash origin main && git push origin HEAD:main; then
+              echo "marketing-x-intel: pushed on attempt $i"
+              exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "marketing-x-intel: push attempt $i lost a race; re-syncing"
+            sleep $((i * 7))
+          done
+
+          echo "::warning::marketing-x-intel: could not push the corpus after 5 attempts (non-fatal; next week's run re-harvests)"
+          exit 0

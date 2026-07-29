@@ -1401,6 +1401,77 @@ shapes:
     two_part_max: 0.30
 
 # ─────────────────────────────────────────────────────────────────────────────
+# FACT-LOCKED FILING LANES (XG-E2) — masterplan §10 lanes 6 and 7
+#
+# engine/marketing/congress_feed.py  reads `congress_lane`
+# engine/marketing/insider_feed.py   reads `insider_lane`
+# engine/marketing/house_picks.py    reads `house_picks`
+#
+# Editorial law: research/marketing_dockets/CODEX_CONTENT_CASE_STUDIES_2026_07_28.md
+# §Insider-signal post family. Both lanes are OBSERVATION register, display-tier,
+# no calls, dial 0, and PLANNED kinds — a language model writes every one of
+# them from a fact-locked packet or it does not ship (the no-fallback law).
+#
+# ENABLED means SUPPLIED, not PUBLISHED. These flags let the lanes contribute
+# candidates to the nightly plan; `publish.require_approval` is what still
+# stands between a candidate and a timeline, and neither kind is listed in
+# `publish.auto_approve_kinds`.
+# ─────────────────────────────────────────────────────────────────────────────
+congress_lane:
+  enabled: true
+  # Fleet-wide, per day. Two is a lane; five is a congressional newsletter.
+  max_per_day: 2
+  # Materiality floor on the disclosed RANGE MIDPOINT. 73,206 of the parquet's
+  # 99,585 rows sit in the $1,001–$15,000 bucket — that bucket IS the noise.
+  min_amount_usd: 50000
+  # Sales stay eligible but always rank below purchases: a sale has a dozen
+  # innocent explanations, a purchase spends money.
+  include_sales: true
+  # 0 = strictly rows first seen today; 1 also admits yesterday's crawl, for the
+  # nights the collector lands the far side of the UTC boundary.
+  first_seen_lookback_days: 1
+  # A trade disclosed later than this is a filing-compliance story, not a market
+  # one. The STOCK Act window is 45 days; 90 keeps late filers in scope.
+  max_report_lag_days: 90
+
+insider_lane:
+  enabled: true
+  max_per_day: 2
+  # Absolute-size floor. Below this the relative arithmetic is noise too — a
+  # 400% increase on a 50-share stake is not a fact about a company.
+  min_value_usd: 100000
+  first_seen_lookback_days: 1
+  # A Form 4 is due within two business days.
+  max_file_lag_days: 10
+  # relative_stake_increase_pct at or above this ⇒ MATERIAL_ADDITION; below
+  # small_pct with a large cheque ⇒ SMALL_ADDITION_TO_LARGE_STAKE. These two
+  # numbers are what stop the codex's measured defect — a $6.92M purchase
+  # reading as bigger news than a $299K one that multiplied its stake 12x.
+  material_pct: 25.0
+  small_pct: 5.0
+  large_value_usd: 250000
+  # Mirrors engine/insider_power.py (CLUSTER_MIN_SELLERS=3, CLUSTER_WINDOW_DAYS=45)
+  # so the house has ONE definition of "a cluster".
+  cluster_min_insiders: 3
+  cluster_window_days: 45
+  repeat_min_purchases: 2
+  repeat_window_days: 180
+
+# Our own pick engines as fact supply (operator ruling 2026-07-29). These ride
+# the EXISTING watchlist kind — no new kind, no writer change, no gate of their
+# own — and every pick names its desk in plain words plus that desk's own
+# disclosure. The congress desk is deliberately absent: its picks are the
+# congress_lane above, with the reporting-lag honesty that page requires.
+house_picks:
+  enabled: true
+  max_impulse: 3
+  max_tech_lab: 2
+  max_special: 2
+  special_max_age_days: 3
+  min_impulse_score: 80
+  us_only: true
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Breaking news ingestion (D05 W0)
 # engine/marketing/breaking_feed.py reads `breaking.sources`
 # engine/marketing/breaking_relevance.py reads `breaking.salience_threshold`
@@ -1802,6 +1873,51 @@ reply_desk:
     parent_jaccard: 0.55
     corpus_jaccard: 0.50
 
+  # ── Reply voice (E4) — the LLM PHRASING pass, not a drafter ───────────────
+  # research/MARKETING_REPLY_DOCTRINE_BY_FABLE.md, distilled from the
+  # 2026-07-29 corpus of 180 top replies under 12 large finance posts
+  # (research/marketing_dockets/reply_corpus_2026_07_29/).
+  #
+  # engine/marketing/reply_voice.py sits DOWNSTREAM of reply_drafter.compose():
+  # the deterministic draft is passed in as the argument AND as the fallback, so
+  # this block can only change how a reply is worded, never whether one exists.
+  # Any gate hit (an invented number, advice language, over 240 chars, a
+  # question aimed at the poster, a dial violation) ships the deterministic
+  # draft instead, and the eight-critic pass still runs on whatever ships.
+  #
+  # TWO-KEY ARMED, like every other emitting LLM lane here: this flag AND
+  # MARKETING_LLM_ENABLED=1 in the process environment. The reply producer is
+  # itself dark by default (producer.enabled below), so `enabled: true` here
+  # costs nothing until the operator arms the lane that calls it — at which
+  # point the phrasing is armed with it rather than needing a second edit.
+  voice:
+    enabled: true
+    # Runaway guard, not a budget: one call per DRAFTED reply (alternates are
+    # never voiced), and the producer's own per-tick caps sit under this.
+    #
+    # A ROLLING WINDOW, not a process lifetime. The caller is
+    # `marketing_fastlane_daemon.py --lane reply`, a `while True` loop that
+    # ticks every 120s inside ONE process — a lifetime counter would mute the
+    # phrasing pass after the 40th reply of the daemon's life and never say so.
+    max_calls_per_run: 40
+    call_window_s: 3600
+    # Resolved via config.yml `llm_models`; sonnet-class, the same tier the
+    # nightly copywriter uses. A missing key falls back to marketing_copy.
+    model_key: marketing_copy
+    # The corpus median winning reply is 11 words. 220 output tokens is roughly
+    # four times the ceiling — enough headroom that a truncation is a real
+    # failure, not a budget artifact.
+    max_tokens: 220
+    # Hard per-provider latency budget; the waterfall walks on timeout and the
+    # deterministic draft wins any race this loses. SDK retries are 0 on
+    # purpose — the CHAIN is the retry.
+    client_timeout_s: 5.0
+    client_max_retries: 0
+    provider_order: [oauth, anthropic, deepseek]
+    oauth_token_env: CLAUDE_CODE_OAUTH_TOKEN
+    deepseek_key_env: DEEPSEEK_API_KEY
+    deepseek_model: deepseek-chat
+
   # ── Producer (XG-W6) ──────────────────────────────────────────────────────
   # The scheduled pipeline XG-W4 deliberately did not build: discovery -> score
   # -> draft -> critics -> enqueue. It runs on the wire daemon's host
@@ -1819,7 +1935,7 @@ reply_desk:
     # 15-20 replies a DAY and the daemon ticks many times an hour.
     max_drafts_per_account_per_tick: 3
     # How many scored targets to attempt before giving up on a tick. Drafting is
-    # cheap; the eight critics are not, and a pathological target list must not
+    # cheap; the nine critics are not, and a pathological target list must not
     # spin the tick.
     max_draft_attempts_per_account: 12
     # How many recent items feed the least-recently-used family rotation.
@@ -1939,3 +2055,121 @@ learning:
     # ...and may not cite a cell the scorecard marked "seeding" — a cell that
     # makes no ranking claim cannot support one.
     require_cell_verdict_not_seeding: true
+
+# ─────────────────────────────────────────────────────────────────────────────
+# X COMPETITIVE INTELLIGENCE (masterplan §10 E3)
+# engine/marketing/x_intel.py + engine/marketing/exemplar_store.py read `intel:`
+# scripts/x_intel_harvest.py is the run; .github/workflows/marketing-x-intel.yml
+# is the weekly schedule.
+#
+# This lane AUTOMATES a docket that already exists by hand:
+# research/marketing_dockets/x_corpus_2026_07_29/{stats.md,exemplars.md} — 286
+# original posts across the 17 accounts seeded below, same source, same
+# methodology. The roster IS that account list.
+# ─────────────────────────────────────────────────────────────────────────────
+intel:
+  enabled: true
+
+  # ── Transport (twitterapi.io, the same account as the Trump wire and the
+  # reply desk — one API key, one shared $75/mo bucket, three INDEPENDENT
+  # counters). This lane's counter is committed (data/marketing/x_intel/
+  # state.json) because it runs weekly on a GitHub-hosted runner that commits
+  # its own artifacts; it never touches the render host.
+  base_url: "https://api.twitterapi.io"
+  endpoint: "/twitter/user/last_tweets"
+  auth_header: "X-API-Key"
+  key_env: "TWITTERAPI_IO_KEY"
+  user_agent: "MastermindX-Intel/1.0 (+https://mastermind-x.com)"
+
+  # ── THE BUDGET, WITH THE ARITHMETIC SHOWN ────────────────────────────────
+  # twitterapi.io bills per TWEET RETURNED: $0.15/1,000 tweets, $0.00015
+  # minimum per request. One roster call returns ~20 tweets:
+  #       20 x $0.15/1000 = $0.003 per call
+  # 600 calls/month is therefore ~$1.80/month of the shared $75 bucket, sized as
+  #       17 accounts x 1 weekly pass x 4.4 weeks  =  ~75 calls
+  #     + a daily light pass on 5 fast desks       =   150 calls
+  #     + re-runs / backfills / a doubled week     =  headroom
+  # The USD cap is the second, independent stop in case a page ever returns far
+  # more than ~20 tweets. Either one binding REFUSES the call with a ::warning.
+  monthly_call_cap: 600
+  monthly_usd_cap: 5.0
+  price_per_1k_tweets_usd: 0.15
+  min_charge_per_request_usd: 0.00015
+  # One run may not eat the month. 20 covers a full 17-account roster pass.
+  max_calls_per_run: 20
+
+  # ── Analysis ─────────────────────────────────────────────────────────────
+  # Posts created inside this window feed the tables. Older corpus rows stay on
+  # disk (append-only) but do not skew a "what works now" read.
+  analysis_window_days: 90
+  # A table row below this n is PRINTED with verdict="seeding" and makes no
+  # ranking claim. Lower than learning.n_floor (20) on purpose: these are other
+  # people's posts, ~340/week, not ours.
+  n_floor: 12
+
+  exemplar_store:
+    # THE PIN — the ONLY thing the writer reads. null = the writer sees NO
+    # exemplars (dark default). promote_pending() mints a version; ACTIVATING it
+    # is this line, edited by hand, in a reviewable diff. A promotion can never
+    # flip house voice on its own.
+    active_version: null
+    # Candidate pool size, and the per-register slice of it.
+    max_pending: 40
+    per_register: 8
+    # A candidate needs a real denominator behind its interaction rate.
+    min_views: 5000
+
+  # ── The roster — the 17 accounts of the manual docket, with the register
+  # each one writes in (the docket's "By register" grouping). Registers:
+  # wire | aggregator | commentary | trader | macro_color.
+  roster:
+    # wire / breaking — terse, fact-first, ALL-CAPS or `BREAKING:` leads,
+    # almost no cashtags, almost no emoji.
+    - handle: DeItaone
+      register: wire
+      note: "asterisk-prefix + SOURCE: attribution shorthand; 85% ALL-CAPS lead"
+    - handle: FirstSquawk
+      register: wire
+      note: "sentence case, 100% single-line, one-decimal precision"
+    - handle: unusual_whales
+      register: wire
+      note: "BREAKING: prefix + `per <source>` suffix; corpus engagement leader"
+    # news / numbers aggregator — cashtag-heavy, URL-heavy, long stacks.
+    - handle: KobeissiLetter
+      register: aggregator
+      note: "longest posts in the corpus (p50 580 chars), 100% carry digits"
+    - handle: Barchart
+      register: aggregator
+      note: "95% emoji, 95% URL — the chart-relay template"
+    - handle: StockMKTNewz
+      register: aggregator
+    - handle: wallstengine
+      register: aggregator
+      note: "95% open with a cashtag; 100% multi-line"
+    # data-driven commentary — numbers as the whole post, chart links.
+    - handle: charliebilello
+      register: commentary
+      note: "100% digits, highest strict-decimal rate in the corpus"
+    - handle: RyanDetrick
+      register: commentary
+    - handle: bespokeinvest
+      register: commentary
+      note: "100% digits, 65% cashtag, zero emoji"
+    # trader / setup — levels, charts, the widest shape range.
+    - handle: markminervini
+      register: trader
+      note: "longest tail (p90 1,307 chars)"
+    - handle: PeterLBrandt
+      register: trader
+    - handle: alphatrends
+      register: trader
+    - handle: traderstewie
+      register: trader
+    - handle: Mr_Derivatives
+      register: trader
+    # macro color — prose, links, near-zero cashtags.
+    - handle: jam_croissant
+      register: macro_color
+    - handle: LizAnnSonders
+      register: macro_color
+      note: "94% single-line, zero cashtags, 89% URL"

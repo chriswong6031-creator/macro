@@ -59,10 +59,16 @@ SCHEMA_ID = "marketing.outbox/v1"
 #   wire      — a wire-lane emission routed by wire_routing (press_lane)
 #   breaking  — a corroborated press/breaking post (press_lane)
 #   earnings  — an earnings fast-lane post (fastlane)
+#   congress  — a congressional-disclosure post (content_studio, XG-E2)
+#   insider   — a Form-4 open-market-purchase post (content_studio, XG-E2)
+# Both are PLANNED kinds (see `planned_kinds`): they are written by the W1 v2
+# writer from a fact-locked packet, so the no-fallback law covers them and
+# template prose can never reach a timeline under a politician's name.
 KINDS: frozenset[str] = frozenset({
     "signal", "chart", "education", "macro", "receipt",
     "watchlist", "event", "mover", "theme_list",
     "wire", "breaking", "earnings",
+    "congress", "insider",
 })
 
 # Status machine — only these transitions are legal.
@@ -1482,6 +1488,7 @@ def _scheduled_at_for_slot(slot: str, as_of: str) -> str:
 #: two lists cannot drift; this literal is only the import-failure floor.
 _PLANNED_KINDS_FALLBACK: frozenset[str] = frozenset({
     "signal", "chart", "education", "macro", "receipt", "watchlist", "event",
+    "congress", "insider",
 })
 
 #: Modes that mean "a language model wrote this sentence" (contract §Writer API).

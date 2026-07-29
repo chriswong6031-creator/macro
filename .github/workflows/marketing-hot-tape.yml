@@ -4,11 +4,17 @@ name: marketing-hot-tape
 # (research/MARKETING_HOT_TAPE_MASTERPLAN.md §3.2/§3.4).
 #
 # Every 5 minutes from 09:25 to 16:05 America/New_York on weekdays it loads the
-# live tape + the nightly context pack, runs the v1 detectors, composes wire
-# copy, draws the house tape card, and books what fires as `immediate` outbox
-# items. When anything books it dispatches marketing-publish.yml with
-# post_now_item=<ids>, so a sector rout crossing at 10:04 ET is at Buffer by
-# ~10:13 (gate 0.1 asks for ≤20 min).
+# live tape + the nightly context pack, runs the detectors, composes wire copy
+# (deterministic templates, LLM-phrased when the P2 desk is armed below), draws
+# the house tape card, and books what fires as `immediate` outbox items. When
+# anything books it dispatches marketing-publish.yml with post_now_item=<ids>,
+# so a sector rout crossing at 10:04 ET is at Buffer by ~10:13 (gate 0.1 asks
+# for ≤20 min).
+#
+# TWO-STEP PUBLISH (codex law, §10 E1): an alert at severity ≥90 earns ONE
+# follow-up "context brief" — mechanism, affected names, what we are watching —
+# filed on a LATER tick out of its own budget. The alert wins speed; the brief
+# wins reposts.
 #
 # THIS RUNS ON ubuntu-latest, NEVER the self-hosted macstudio pool: 81 runs a
 # day on the render pool would eat the nightly's budget, which is law.
@@ -146,8 +152,18 @@ jobs:
         # this lane would pay 81 times a day. pyyaml: config/*.yml. requests: the
         # on-demand R2 parquet hydrate for a name outside the committed price
         # trees. pyarrow: the chart card's parquet read — chart_render falls back
-        # to pyarrow when pandas is absent (_parquet_rows_pyarrow).
-        run: pip install --quiet pyyaml requests pyarrow
+        # to pyarrow when pandas is absent (_parquet_rows_pyarrow) — and the
+        # earnings calendar read in scripts/hot_tape_radar.load_earnings.
+        #
+        # anthropic joins for the P2 wire desk (§10 E1). It is NOT optional for
+        # that lane: engine/llm_auth builds EVERY provider on anthropic.Anthropic,
+        # DeepSeek included (its base URL is api.deepseek.com/anthropic), so
+        # without the package an armed lane would print the "armed but mute"
+        # ::warning and fall back to the deterministic template on every event —
+        # the 2026-07-26 silent-mute shape. The install is seconds, not the ~40s
+        # pandas costs, and the module keeps its import LAZY so the thin CI lane
+        # (pytest+pyyaml+jinja2, no anthropic) still collects.
+        run: pip install --quiet pyyaml requests pyarrow anthropic
 
       - name: fetch full-universe live quotes (radar input)
         # Copied from marketing-publish.yml. The live-data orphan branch carries
@@ -183,6 +199,30 @@ jobs:
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          # ── P2 LLM WIRE DESK (masterplan §3.3, §10 E1) ────────────────────
+          # TWO KEYS ARM IT, exactly like the nightly copywriter lane: this env
+          # flag AND config.yml's `hot_tape.llm.enabled`. Either one off and
+          # engine/marketing/hot_tape_llm.phrase_or_fallback constructs no
+          # provider, reads no credential and returns the deterministic wire
+          # template — which is also what happens on any gate failure, so the
+          # post always exists either way.
+          MARKETING_LLM_ENABLED: "1"
+          # The credential block is COPIED FROM daily.yml's governor step, not
+          # invented here: hot_tape_llm walks the same engine.llm_auth waterfall
+          # (oauth pool → anthropic → deepseek) as every other marketing lane,
+          # and a lane that is armed with no visible credential is the 2026-07-26
+          # silent-mute incident — it prints a ::warning and falls back on every
+          # event. Pass the whole pool; llm_auth picks the least-loaded key.
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          CLAUDE_CODE_OAUTH_TOKEN_1: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_1 }}
+          CLAUDE_CODE_OAUTH_TOKEN_2: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_2 }}
+          CLAUDE_CODE_OAUTH_TOKEN_3: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_3 }}
+          CLAUDE_CODE_OAUTH_TOKEN_4: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_4 }}
+          CLAUDE_CODE_OAUTH_TOKEN_5: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_5 }}
+          CLAUDE_CODE_OAUTH_TOKEN_6: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_6 }}
+          CLAUDE_CODE_OAUTH_TOKEN_7: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_7 }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: |
           if [ "${DRY_RUN:-}" = "true" ]; then
             python -m scripts.hot_tape_radar --dry-run

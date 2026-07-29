@@ -462,8 +462,13 @@ def postable_signals(plans: list[dict], *, today: str | None = None) -> list[dic
 #: the wire lanes (`mover`/`theme_list` publish-time, `wire`/`breaking`/`earnings`
 #: fast lanes) which keep their deterministic register and their own gates.
 #: §0 gate 1: template prose may not reach the outbox on THESE kinds.
+#: XG-E2 added `congress` + `insider` — the fact-locked filing lanes. They are
+#: PLANNED, not wire: a filing packet reaches the reader through the v2 writer,
+#: so the no-fallback law applies and a template sentence can never appear under
+#: a named politician or a named executive.
 PLANNED_KINDS: frozenset[str] = frozenset({
     "signal", "chart", "education", "macro", "receipt", "watchlist", "event",
+    "congress", "insider",
 })
 
 #: Post shapes (contract §Shapes). `two_part` is the ONLY shape carrying a
@@ -490,6 +495,13 @@ _ANGLE_BY_KIND: dict[str, tuple[str, ...]] = {
     "education":  ("process", "precedent"),
     "mover":      ("group_read", "level_watch"),
     "theme_list": ("group_read", "macro_read"),
+    # XG-E2 filing lanes. NOT level_watch (the `angle_for` default): a
+    # disclosure names no level, and a filing post that opens on one is
+    # inventing the part of the story the filing cannot supply. The job is
+    # "here is what the record says" (process), then how it sits against the
+    # wider tape (group_read) or against what came before (precedent).
+    "congress":   ("process", "group_read"),
+    "insider":    ("process", "precedent"),
 }
 
 # Selection defaults — the config block (config/marketing.yml `selection:`) is
@@ -2830,6 +2842,267 @@ def content_plan(
             )
         ]
 
+    # ── Fact-locked filing lanes + house picks (XG-E2) ───────────────────────
+    # Masterplan §10 lanes 6 and 7 (insider Form 4, politician trades), plus the
+    # operator's 2026-07-29 ruling that our OWN pick engines are post sources.
+    #
+    # PLACED HERE ON PURPOSE — after every other producer, before the budget.
+    # These are PLANNED kinds, so they must sit inside `apply_reuse_budget`,
+    # `assign_shapes` and the v2 writer exactly as a Prophet item does. Putting
+    # them after the budget would hand two lanes a private exemption from the
+    # ×5-ARES fix; putting them before the mover strip would let the stub filter
+    # walk over them.
+    #
+    # COOLDOWN IS APPLIED AT SOURCE (`cooled=_cooled_watch`), not downstream.
+    # These lanes get two slots a day between them: a lane that spends both on
+    # names a desk posted on Monday is a lane that publishes nothing, so the
+    # LKFN-class deferral happens while there are still other candidates to pick.
+    #
+    # Fail-soft as one unit: an unreadable parquet or an absent site artifact
+    # costs these lanes and leaves the rest of the plan untouched.
+    _filing_summary: dict = {"congress": 0, "insider": 0, "house_picks": 0}
+    try:
+        from engine.marketing.congress_feed import candidates as _congress_candidates
+        from engine.marketing.insider_feed import candidates as _insider_candidates
+        from engine.marketing.house_picks import house_picks as _house_picks
+
+        _filing_root = root if root is not None else "."
+        _filing_items: list[dict] = []
+        _filing_counter = 1
+
+        def _filing_chart(_tkr: str) -> tuple[str, list, list] | None:
+            """A TAPE card for a filing/pick ticker — (svg, dates, closes) or None.
+
+            TAPE, NOT SIGNAL, and the two differences below are the whole point:
+
+            * **No marker, no highlight, no % callout.** A filing post makes no
+              entry claim — "Rep. Public bought NVDA six weeks ago" and "our
+              momentum screen has this name" are descriptions, not calls. The
+              Prophet path draws those only for `variant == "signal"` for
+              exactly this reason ("marking a 'not buying yet' post with a SETUP
+              pill is the lie this split exists to prevent"), and a filing post
+              has even less claim behind it than a watchlist one.
+            * **No `render_signal_chart` fallback.** The v1 card hard-draws a
+              green BUY label at the marker. On a congressional-disclosure post
+              that is a fabricated recommendation attached to a named
+              politician's trade — so a ticker with no v2 render gets NO chart,
+              and the caller decides whether the post can live without one.
+            """
+            if closes_loader is None:
+                return None
+            try:
+                _cl = closes_loader(_tkr)
+                if _cl is None:
+                    return None
+                _d, _c = _cl
+                if len(_c) < 10:
+                    return None
+                from engine.marketing.chart_render import (  # noqa: PLC0415
+                    load_ohlcv_windowed, render_chart_v2,
+                )
+                _w = load_ohlcv_windowed(_tkr, str(_filing_root))
+                _ohlcv, _warm = _w if _w else (None, 0)
+                if _ohlcv is None:
+                    return None
+                _od, _oo, _oh, _ol, _oc, _ov = _ohlcv
+                _svg = render_chart_v2(
+                    ticker=_tkr, dates=_od, o=_oo, h=_oh, l=_ol, c=_oc,
+                    volume=_ov, timeframe="DAILY",
+                    marker_index=None, highlight_index=None, pct_from_index=None,
+                    show_indicators=True, indicators=("volume", "macd"),
+                    warmup=_warm, volume_overlay=True, subpanel_h=190,
+                    height=880, company_name=_tkr,
+                    logo_root=str(_filing_root), cta=_card_cta,
+                )
+                return (_svg, _d, _c) if _svg else None
+            except Exception:  # noqa: BLE001
+                return None
+
+        # Tickers the plan has already claimed tonight — house picks are EXTRA
+        # supply and must never displace a name a producer already put up.
+        _claimed: set[str] = {
+            str(_it.get("ticker") or "").upper()
+            for _row in account_rows for _it in (_row.get("queue") or [])
+            if _it.get("ticker")
+        }
+
+        for _kind, _fetch in (
+            ("congress", _congress_candidates),
+            ("insider", _insider_candidates),
+        ):
+            for _cand in (_fetch(_filing_root, today=today, cfg=cfg,
+                                 cooled=_cooled_watch) or []):
+                _tkr = str(_cand.get("ticker") or "").upper()
+                if not _tkr:
+                    continue
+                _filing_items.append({
+                    "id": f"post-{_kind}-{_filing_counter:03d}",
+                    "type": _kind,
+                    "account": enabled_rows[0]["id"] if enabled_rows else "flagship",
+                    "cashtag": f"${_tkr}",
+                    "ticker": _tkr,
+                    # Placeholder copy only. The v2 writer replaces both from the
+                    # fact packet, and under the no-fallback law an item that
+                    # never reaches the writer is DROPPED at emit rather than
+                    # shipping these strings.
+                    "headline": f"${_tkr} filing",
+                    "body": (_cand.get("facts", {}).get("facts") or [{}])[0].get("text", ""),
+                    "provenance": f"{_kind}_desk",
+                    "chart_id": None,
+                    # Assigned at distribution below — it MUST be a real D1
+                    # ladder slot. `emit_from_content_plan` only processes
+                    # `D1-`-prefixed items, so a "CONG-01"-style label (the
+                    # confluence/mover convention, correct for publish-time
+                    # lanes) would build the item, plan it, cost a model call
+                    # and then silently never reach the outbox.
+                    "slot": "",
+                    "status": "drafted",
+                    "source": _kind,
+                    #: Which LANE produced this, for the census. Distinct from
+                    #: `source`, which a house pick sets to its engine name.
+                    "_lane": _kind,
+                    # Read back in the context loop below — the filing packet IS
+                    # the post, so it must win over the generic chart facts.
+                    "_filing_facts": _cand.get("facts") or {},
+                    "_filing_data": {k: v for k, v in _cand.items() if k != "facts"},
+                    # OPPORTUNISTIC, never gating. `congress`/`insider` are not
+                    # in the publisher's `_CHART_BEARING_KINDS`, so a bare filing
+                    # post ships as text rather than deferring — a chart makes it
+                    # better, its absence must not silence the lane.
+                    "_filing_chart": _filing_chart(_tkr),
+                })
+                _claimed.add(_tkr)
+                _filing_summary[_kind] += 1
+                _filing_counter += 1
+
+        # House picks ride the EXISTING watchlist kind — additional fact supply,
+        # no new kind, no writer change, no gate of their own.
+        _pick_counter = 1
+        for _pick in (_house_picks(_filing_root, today=today, cfg=cfg,
+                                   cooled=_cooled_watch, exclude=frozenset(_claimed)) or []):
+            _tkr = str(_pick.get("ticker") or "").upper()
+            if not _tkr:
+                continue
+            # CHART REQUIRED, and this is the difference that matters. A house
+            # pick rides the `watchlist` kind, which IS in the publisher's
+            # `_CHART_BEARING_KINDS` — a chartless one does not ship, it DEFERS
+            # for three days and then quarantines as `expired_no_media`, every
+            # night, forever. The charting loop that would have served it runs
+            # far above this splice, so the chart is rendered here and a pick
+            # that cannot get one is never created (§5.5: an empty rung stays
+            # empty; it does not fill with a post that cannot publish).
+            _pick_chart = _filing_chart(_tkr)
+            if _pick_chart is None:
+                continue
+            _filing_items.append({
+                "id": f"post-housepick-{_pick_counter:03d}",
+                "type": "watchlist",
+                "account": enabled_rows[0]["id"] if enabled_rows else "flagship",
+                "cashtag": f"${_tkr}",
+                "ticker": _tkr,
+                "headline": f"${_tkr} on the board",
+                "body": (_pick.get("facts", {}).get("facts") or [{}])[0].get("text", ""),
+                "provenance": "house_picks",
+                "chart_id": None,
+                "slot": "",   # a real D1 ladder slot is assigned at distribution
+                "status": "drafted",
+                "source": _pick.get("engine", "house_picks"),
+                "_lane": "house_picks",
+                "_filing_facts": _pick.get("facts") or {},
+                "_filing_data": {k: v for k, v in _pick.items() if k != "facts"},
+                "_filing_chart": _pick_chart,
+            })
+            _claimed.add(_tkr)
+            _filing_summary["house_picks"] += 1
+            _pick_counter += 1
+
+        # Round-robin across ENABLED desks (a planned desk must never receive
+        # this content — F3d), same distribution the reach lanes use, but with a
+        # REAL D1 ladder slot taken from what each desk has not already booked.
+        # A desk whose D1 ladder is full drops the item rather than double-books
+        # a time: supply-honest volume means an empty rung stays empty (§5.5).
+        if enabled_rows and _filing_items:
+            _free: dict[str, list[str]] = {}
+            for _row in enabled_rows:
+                _used = {
+                    str(_it.get("slot") or "").split("-", 1)[1]
+                    for _it in (_row.get("queue") or [])
+                    if str(_it.get("slot") or "").startswith("D1-")
+                }
+                _free[str(_row.get("id") or "")] = [
+                    _s for _s in _LADDER_SLOTS if _s not in _used]
+            for _idx, _item in enumerate(_filing_items):
+                _acct = enabled_rows[_idx % len(enabled_rows)]
+                _acct_id = str(_acct.get("id") or "")
+                _pool = _free.get(_acct_id) or []
+                if not _pool:
+                    # Keyed on `_lane`, NOT `source`: a house pick's `source` is
+                    # its engine name ("impulse"), so decrementing by `source`
+                    # invented a counter key and left the census overstating a
+                    # lane that had just dropped an item.
+                    _lane_key = str(_item.get("_lane") or "")
+                    if _lane_key in _filing_summary:
+                        _filing_summary[_lane_key] = max(_filing_summary[_lane_key] - 1, 0)
+                    continue
+                _item["account"] = _acct.get("id", "flagship")
+                _item["slot"] = f"D1-{_pool.pop(0)}"
+
+                # The chart joins `featured_charts` only now, because the entry
+                # carries the owning account and a chart rendered for an item
+                # that never made it onto a queue is render budget spent on
+                # nothing.
+                _chart = _item.pop("_filing_chart", None)
+                if _chart is not None:
+                    _svg, _cdates, _ccloses = _chart
+                    _chart_id = f"chart-{chart_id_counter:03d}"
+                    _item["chart_id"] = _chart_id
+                    _fc_filing = {
+                        "id": _chart_id,
+                        "ticker": _item["ticker"],
+                        "account": _item["account"],
+                        "cashtag": _item.get("cashtag", ""),
+                        # TAPE, declared. `variant` is what the chart-coverage
+                        # guard reads to prove a no-claim post did not ship a
+                        # setup card, and `marker_source: "none"` is the Prophet
+                        # tape path's own spelling of "no claim, no anchor —
+                        # these are the last N sessions as they are".
+                        "variant": "tape",
+                        "marker_source": "none",
+                        "marker_date": _cdates[-1] if _cdates else "",
+                        "marker_price": round(_ccloses[-1], 4) if _ccloses else 0.0,
+                        "svg": _svg,
+                        "headline": _item.get("headline", ""),
+                        "body": _item.get("body", ""),
+                        "source": str(_item.get("source") or "house_picks"),
+                    }
+                    _attach_chart_media(
+                        _fc_filing, closes=_ccloses, dates=_cdates,
+                        marker_index=len(_ccloses) - 1, as_of=today,
+                        root=root, cfg=cfg,
+                        subtitle=f"${_item['ticker']} · {_item.get('source', '')}")
+                    featured_charts.append(_fc_filing)
+                    chart_id_counter += 1
+
+                _acct["queue"].append(_item)
+
+        # Any item the ladder could not seat still holds a rendered chart; drop
+        # the reference so the plan JSON does not carry an orphan SVG.
+        for _item in _filing_items:
+            _item.pop("_filing_chart", None)
+
+        _sel_report["filing_lanes"] = dict(_filing_summary)
+        if any(_filing_summary.values()):
+            # Bare print, start-of-line, flushed: a logger prefixes the line and
+            # GitHub drops the annotation silently (tests/test_gh_annotation_line_start.py).
+            print(
+                f"::notice title=marketing_filing_lanes::congress="
+                f"{_filing_summary['congress']} insider={_filing_summary['insider']} "
+                f"house_picks={_filing_summary['house_picks']} planned for {today}",
+                flush=True,
+            )
+    except Exception:  # noqa: BLE001
+        pass  # fail-soft — filing sources unavailable; the rest of the plan stands
+
     # ── Fact-reuse budget + shape mixer (W1 selection layer) ──────────────────
     # Runs AFTER every producer has contributed (Prophet + confluence + movers)
     # and BEFORE any copy is written: the writer must receive the FINAL angle and
@@ -3013,7 +3286,16 @@ def content_plan(
                 ticker = item_dict.get("ticker", "")
                 type_id = item_dict.get("type", "")
                 facts_data: dict = {}
-                if ticker and closes_loader is not None:
+                # XG-E2: a filing/house-pick item carries its OWN packet, and it
+                # WINS over the chart facts. The packet is the post — a Form 4's
+                # share arithmetic, a disclosure's reporting lag, a desk's
+                # attribution — and the generic 90-bar chart facts would both
+                # bury it (build_context shows the writer three facts) and hand
+                # the model price levels the filing never mentioned.
+                _filing_packet = item_dict.get("_filing_facts") or {}
+                if _filing_packet.get("facts"):
+                    facts_data = _filing_packet
+                elif ticker and closes_loader is not None:
                     try:
                         from engine.marketing.chart_facts import compute_facts
                         from engine.marketing.chart_render import load_ohlcv

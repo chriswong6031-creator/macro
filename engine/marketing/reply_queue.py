@@ -425,7 +425,7 @@ def validate_critic_stamp(item: dict) -> list[str]:
     """Errors in an item's critic stamp; [] means it cleared the full pass.
 
     THE STRUCTURAL GUARANTEE. The runbook tells the operator that every draft
-    they see has already cleared eight critics. That was a claim about the
+    they see has already cleared nine critics. That was a claim about the
     producer, and the producer is not built yet (XG-W6 wires
     discovery -> score -> draft -> critics -> enqueue), so it was a claim about
     nothing. Enforcing it at the STORE makes it true for anything that ever

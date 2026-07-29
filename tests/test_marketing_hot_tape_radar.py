@@ -11,6 +11,18 @@ Pins the integration half of research/MARKETING_HOT_TAPE_MASTERPLAN.md §0:
        ci.yml trigger paths for every new file — a suite that ships dark is the
        unrun-suite rot class, so this suite PINS ITS OWN WIRING (below)
 
+…and the E1 completion wave (research/MARKETING_CONTENT_STUDIO_LLM_FIRST_
+MASTERPLAN_BY_FABLE.md §10):
+
+  * **P2 phrasing is WIRED** — engine/marketing/hot_tape_llm shipped in #3937
+    with zero production callers; an AST scan pins the call site, and the
+    behaviour tests pin that model copy replaces the template, is stamped for
+    telemetry, and falls back on a house-ban hit or an exception.
+  * **the earnings calendar read** — pyarrow, never pandas, degrading to an
+    empty view rather than an exception.
+  * **two-step publish** — a severity>=90 alert earns ONE context brief on a
+    LATER tick, on its own desk, with a mechanism or not at all.
+
 THIS FILE MUST NOT IMPORT PANDAS — not directly, not through importorskip. The
 radar runs on a shallow ubuntu checkout with pyyaml+requests+pyarrow and this
 lane's minimal env IS that contract. Every fixture date is derived from today,
@@ -877,6 +889,494 @@ class TestSafetyStack:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# 6a — P2 phrasing: the LLM wire desk is WIRED, not merely built (§10 E1)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _fake_phraser(monkeypatch, **result):
+    """Stand in for engine.marketing.hot_tape_llm.phrase_or_fallback.
+
+    Returns the CALL LOG. The real module is never armed in this suite: no env
+    flag, no credential, no provider is constructed anywhere.
+    """
+    calls: list[dict] = []
+
+    def _fake(packet, trigger, fallback_text, *, link=None, links_allowed=True, cfg=None):
+        calls.append({"packet": packet, "trigger": trigger,
+                      "fallback": fallback_text, "link": link,
+                      "links_allowed": links_allowed, "cfg": cfg})
+        out = {"text": fallback_text, "mode": "off", "provider": None,
+               "violations": [], "latency_ms": 3}
+        out.update(result)
+        if out.get("text") is None:
+            out["text"] = fallback_text
+        return out
+
+    monkeypatch.setattr(RADAR.HL, "phrase_or_fallback", _fake)
+    return calls
+
+
+class TestLLMPhrasing:
+    def test_the_emit_path_actually_calls_phrase_or_fallback(self):
+        """#3937 built the module and left it with ZERO production callers.
+
+        An AST scan, not a grep: a call inside a docstring or a comment is not a
+        caller, and this is exactly the defect E1 exists to close.
+        """
+        import ast
+
+        tree = ast.parse((REPO_ROOT / "scripts/hot_tape_radar.py").read_text(
+            encoding="utf-8"))
+        funcs = {n.name: n for n in ast.walk(tree)
+                 if isinstance(n, ast.FunctionDef)}
+        assert "phrase" in funcs and "book_packet" in funcs
+
+        def _called(node) -> set[str]:
+            out = set()
+            for sub in ast.walk(node):
+                if not isinstance(sub, ast.Call):
+                    continue
+                fn = sub.func
+                if isinstance(fn, ast.Attribute):
+                    out.add(fn.attr)
+                elif isinstance(fn, ast.Name):
+                    out.add(fn.id)
+            return out
+
+        assert "phrase_or_fallback" in _called(funcs["phrase"])
+        # …and the booking path is what calls it, so every composed post goes
+        # through the desk rather than only a helper nothing invokes.
+        assert "phrase" in _called(funcs["book_packet"])
+        assert "compose_wire" in _called(funcs["book_packet"])
+
+    def test_model_copy_replaces_the_template_and_is_stamped(self, tmp_path,
+                                                             monkeypatch):
+        root = _mover_root(tmp_path)
+        _stub_chart(monkeypatch)
+        model_text = "$MU is down 8.2% at $92.00 right now, a $8.2 billion move."
+        calls = _fake_phraser(monkeypatch, text=model_text, mode="llm",
+                              provider="oauth", latency_ms=812)
+
+        RADAR.run(root, now=NOW, fetcher=_no_fetch)
+
+        item = OB.read_items(root)[0]
+        assert item["text"] == model_text
+        stamp = item["source"]["llm"]
+        assert stamp == {"mode": "llm", "provider": "oauth",
+                         "latency_ms": 812, "violations": 0}
+        assert len(calls) == 1
+        # The deterministic template is what the desk falls back TO, so it must
+        # arrive as the fallback argument rather than being thrown away.
+        assert calls[0]["fallback"].startswith("$MU")
+        assert calls[0]["trigger"] == "mover_drop"
+        # Hot Tape posts carry no link (the wire voice bans them).
+        assert calls[0]["link"] is None and calls[0]["links_allowed"] is False
+
+    def test_a_disarmed_desk_posts_the_deterministic_template(self, tmp_path,
+                                                              monkeypatch):
+        """No env flag and no credential: the template is the post, unchanged."""
+        root = _mover_root(tmp_path)
+        _stub_chart(monkeypatch)
+        monkeypatch.delenv("MARKETING_LLM_ENABLED", raising=False)
+
+        RADAR.run(root, now=NOW, fetcher=_no_fetch)
+
+        item = OB.read_items(root)[0]
+        assert item["source"]["llm"]["mode"] == "off"
+        assert item["source"]["llm"]["provider"] is None
+        assert item["text"].startswith("$MU")
+        assert HW.check_text_numbers(item["text"],
+                                     HT.FactPacket(**item["source"]["fact_packet"])) == []
+
+    def test_house_banned_language_in_model_copy_falls_back(self, tmp_path,
+                                                            monkeypatch, capsys):
+        """hot_tape_llm's call list is NARROWER than this desk's own ban list.
+
+        "accumulate" / "load up" / "calls" / "puts" / "bid" are house-banned
+        (gate 0.4) and absent from the LLM module's _CALL_WORDS, so the radar
+        re-checks model copy against hot_tape_wire.WIRE_BANNED.
+        """
+        root = _mover_root(tmp_path)
+        _stub_chart(monkeypatch)
+        _fake_phraser(monkeypatch, mode="llm", provider="anthropic",
+                      text="$MU is down 8.2% right now. Time to accumulate.")
+
+        RADAR.run(root, now=NOW, fetcher=_no_fetch)
+
+        item = OB.read_items(root)[0]
+        assert "accumulate" not in item["text"]
+        assert item["text"].startswith("$MU")             # the template posted
+        assert item["source"]["llm"]["mode"] == "fallback_validation"
+        assert item["source"]["llm"]["violations"] >= 1
+        out = capsys.readouterr().out
+        assert any(l.startswith("::warning title=hot-tape-llm-banned::")
+                   for l in out.splitlines()), out
+
+    def test_a_raising_phraser_still_posts_the_template(self, tmp_path, monkeypatch):
+        def _boom(*a, **kw):
+            raise RuntimeError("provider exploded")
+        monkeypatch.setattr(RADAR.HL, "phrase_or_fallback", _boom)
+        root = _mover_root(tmp_path)
+        _stub_chart(monkeypatch)
+
+        assert RADAR.run(root, now=NOW, fetcher=_no_fetch) == 0
+
+        item = OB.read_items(root)[0]
+        assert item["text"].startswith("$MU")
+        assert item["source"]["llm"]["mode"] == "fallback_provider"
+
+    def test_the_llm_packet_carries_the_facts_and_not_the_score(self):
+        """Severity is a ranking score, not a claim about the tape.
+
+        Anything reachable in the packet is admissible under gate 0.3, so a
+        severity of 87 in there would license the model to write "87".
+        """
+        packet = FactPacket(
+            trigger="sector_rout", key="sector:Semis:down:x",
+            fired_at=NOW.strftime("%Y-%m-%dT%H:%M:%SZ"), session="rth",
+            ticker=None, name=None, sector="Semiconductors", direction="down",
+            severity=87.0,
+            facts={"sector": "Semiconductors", "median_pct": -7.85,
+                   "leaders": [["SNDK", -14.32], ["MU", -8.94]],
+                   "index_ticker": "SPY"},
+            provenance={"quote_ts_ms": 1799999999999, "bridge_ok": True})
+        out = HW.llm_packet(packet)
+        assert out["trigger"] == "sector_rout"
+        assert out["facts"]["median_pct"] == -7.85
+        assert out["cashtags"] == ["$SNDK", "$MU", "$SPY"]
+        assert out["cashtag"] is None                  # breadth post, no primary
+        assert "severity" not in json.dumps(out)
+        assert "1799999999999" not in json.dumps(out)
+        assert out["live_marker"] in ("so far today", "right now")
+
+    def test_the_llm_packet_lists_every_cashtag_the_copy_may_name(self):
+        packet = FactPacket(
+            trigger="mover_drop", key="mover:MU:down:x:0",
+            fired_at=NOW.strftime("%Y-%m-%dT%H:%M:%SZ"), session="rth",
+            ticker="MU", name="Micron", sector="Technology", direction="down",
+            severity=90.0,
+            facts={"ticker": "MU", "pct": -8.2,
+                   "peers": [["SNDK", -9.1], ["STX", -8.4]]},
+            provenance={})
+        out = HW.llm_packet(packet)
+        assert out["cashtag"] == "$MU"
+        assert out["cashtags"] == ["$MU", "$SNDK", "$STX"]
+
+    def test_the_llm_block_comes_from_config_yml_not_the_radar_switch(self, tmp_path):
+        """config/hot_tape.yml's top-level `enabled` is the RADAR's switch.
+
+        hot_tape_llm._llm_cfg accepts a bare block and would read that key as
+        its OWN arming flag, so handing it the radar config would arm the model
+        lane the moment the radar was on. The wrapper resolves unambiguously.
+        """
+        (tmp_path / "config").mkdir(parents=True, exist_ok=True)
+        (tmp_path / "config" / "hot_tape.yml").write_text(
+            "enabled: true\n", encoding="utf-8")
+        (tmp_path / "config.yml").write_text(
+            "hot_tape:\n  llm:\n    enabled: true\n    max_tokens: 222\n",
+            encoding="utf-8")
+
+        block = RADAR.llm_config(tmp_path)
+
+        assert block == {"llm": {"enabled": True, "max_tokens": 222}}
+        # And the resolver hot_tape_llm actually uses agrees.
+        from engine.marketing import hot_tape_llm as HTL
+        assert HTL._llm_cfg(block) == {"enabled": True, "max_tokens": 222}
+        # The radar's own config must NEVER resolve to an armed block.
+        assert HTL._llm_cfg({"llm": {}}) == {}
+
+    def test_an_absent_config_yml_leaves_the_desk_disarmed(self, tmp_path):
+        assert RADAR.llm_config(tmp_path) == {"llm": {}}
+        (tmp_path / "config.yml").write_text("hot_tape: not-a-dict\n", encoding="utf-8")
+        assert RADAR.llm_config(tmp_path) == {"llm": {}}
+
+    def test_the_live_config_ships_the_block_the_workflow_arms(self):
+        import yaml as _yaml
+
+        cfg = _yaml.safe_load((REPO_ROOT / "config.yml").read_text(encoding="utf-8"))
+        block = (cfg.get("hot_tape") or {}).get("llm") or {}
+        assert block.get("enabled") is True
+        assert block.get("provider_order") == ["oauth", "anthropic", "deepseek"]
+        assert RADAR.llm_config(REPO_ROOT)["llm"] == block
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 6b — the earnings calendar read (pyarrow, never pandas)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class _FakeTable:
+    def __init__(self, columns: dict):
+        self._columns = columns
+
+    @property
+    def column_names(self) -> list[str]:
+        return list(self._columns)
+
+    def to_pydict(self) -> dict:
+        return dict(self._columns)
+
+
+def _fake_pyarrow(monkeypatch, columns: dict):
+    """Inject a pyarrow.parquet stand-in so the REAL parsing path runs.
+
+    The thin CI lane has no pyarrow (pytest+pyyaml+jinja2), and an
+    importorskip here would let this test go dark — the unrun-suite rot class.
+    Everything below the read is our code, and it is what runs.
+    """
+    import sys
+    import types
+
+    module = types.ModuleType("pyarrow.parquet")
+    module.read_table = lambda path: _FakeTable(columns)   # noqa: ARG005
+    parent = types.ModuleType("pyarrow")
+    parent.parquet = module
+    monkeypatch.setitem(sys.modules, "pyarrow", parent)
+    monkeypatch.setitem(sys.modules, "pyarrow.parquet", module)
+
+
+class TestEarningsLoader:
+    def _root(self, tmp_path: Path) -> Path:
+        (tmp_path / "data" / "earnings").mkdir(parents=True, exist_ok=True)
+        (tmp_path / "data" / "earnings" / "earnings.parquet").write_bytes(b"stub")
+        return tmp_path
+
+    def test_an_absent_calendar_is_an_empty_view(self, tmp_path):
+        assert RADAR.load_earnings(tmp_path) == {"asof": None, "tickers": {}}
+
+    def test_rows_are_parsed_with_their_surprise_history(self, tmp_path, monkeypatch):
+        root = self._root(tmp_path)
+        _fake_pyarrow(monkeypatch, {
+            "ticker": ["aapl", "NVDA", ""],
+            "next_date": ["2026-07-30", "nan", "2026-08-01"],
+            "next_time": ["time-after-hours", "time-not-supplied", None],
+            "eps_forecast": [1.88, None, 3.0],
+            "surprises_json": ['[{"reported": "4/30/2026", "eps": 2.01}]', "", None],
+            "as_of": ["2026-07-28T03:00:00+00:00", "2026-06-19T02:00:00+00:00", None],
+        })
+
+        view = RADAR.load_earnings(root)
+
+        assert set(view["tickers"]) == {"AAPL", "NVDA"}     # blank symbol dropped
+        aapl = view["tickers"]["AAPL"]
+        assert aapl["next_date"] == "2026-07-30"
+        assert aapl["next_time"] == "time-after-hours"
+        assert aapl["eps_forecast"] == 1.88
+        assert aapl["surprises"] == [{"reported": "4/30/2026", "eps": 2.01}]
+        assert view["tickers"]["NVDA"]["next_date"] is None   # "nan" is not a date
+        assert view["tickers"]["NVDA"]["surprises"] == []
+        assert view["asof"] == "2026-07-28T03:00:00+00:00"    # the MAX as_of
+
+    def test_a_broken_calendar_is_an_empty_view(self, tmp_path, monkeypatch):
+        root = self._root(tmp_path)
+        _fake_pyarrow(monkeypatch, {"nope": [1]})
+        assert RADAR.load_earnings(root) == {"asof": None, "tickers": {}}
+
+    def test_a_stale_calendar_says_so_at_the_start_of_the_line(self, capsys):
+        """Degraded must not ship confident: a dark detector is visible."""
+        old = (NOW - timedelta(days=120)).date().isoformat()
+        RADAR._warn_stale_earnings(
+            {"asof": old, "tickers": {"AAPL": {"as_of": old}}},
+            now=NOW, cfg=HT.DEFAULTS)
+        lines = capsys.readouterr().out.splitlines()
+        assert any(l.startswith("::warning title=hot-tape-earnings::") for l in lines), lines
+
+    def test_the_check_is_per_row_not_per_file(self, capsys):
+        """The shipped parquet on 2026-07-29: 3 fresh rows, 1,361 forty days old.
+
+        A whole-file max(as_of) called that calendar healthy while the detector
+        could see 0.2% of it — the vacuous-green presence-vs-coverage class.
+        """
+        fresh = NOW.date().isoformat()
+        old = (NOW - timedelta(days=40)).date().isoformat()
+        rows = {f"T{i}": {"as_of": old} for i in range(20)}
+        rows["AAPL"] = {"as_of": fresh}
+        RADAR._warn_stale_earnings({"asof": fresh, "tickers": rows},
+                                   now=NOW, cfg=HT.DEFAULTS)
+        out = capsys.readouterr().out
+        assert "only 1/21 earnings calendar rows" in out, out
+
+    def test_a_fresh_calendar_is_silent(self, capsys):
+        fresh = NOW.date().isoformat()
+        RADAR._warn_stale_earnings(
+            {"asof": fresh, "tickers": {"AAPL": {"as_of": fresh}}},
+            now=NOW, cfg=HT.DEFAULTS)
+        assert capsys.readouterr().out == ""
+
+    def test_rows_inherit_the_view_asof_when_they_carry_none(self, capsys):
+        RADAR._warn_stale_earnings(
+            {"asof": NOW.date().isoformat(), "tickers": {"AAPL": {}}},
+            now=NOW, cfg=HT.DEFAULTS)
+        assert capsys.readouterr().out == ""
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 6c — two-step publish: the context brief (codex law, §10 E1)
+# ─────────────────────────────────────────────────────────────────────────────
+
+_BRIEF_SYMS = ("MU", "SNDK", "STX", "NVDA", "AMD")
+
+#: An S&P mega-cap: the attention boost is what lifts a -8.2% mover over the
+#: two-step floor (90). Without it the same tape scores 70 and earns no brief,
+#: which is the intended behaviour, not a fixture accident.
+_BIG_NAME = {"sp500": True, "adv_rank": 50, "mcap_usd": 200_000_000_000}
+
+
+def _brief_root(tmp_path: Path, *, peer_pct: float = -0.3, peers: bool = True,
+                **kw) -> Path:
+    """One brief-eligible mover plus four live peers, so a mechanism exists."""
+    quotes = {"MU": _quote(-8.2, 92.0, 100.2)}
+    tiles = [_tile("MU", "Technology", "Semiconductors", -8.2)]
+    if peers:
+        for sym in _BRIEF_SYMS[1:]:
+            quotes[sym] = _quote(peer_pct, 50.0, 50.15)
+            tiles.append(_tile(sym, "Technology", "Semiconductors", peer_pct))
+    return _write_root(tmp_path, quotes=quotes, tiles=tiles,
+                       pack_tickers={"MU": _pack_rec(**_BIG_NAME)}, **kw)
+
+
+def _brief_items(root: Path) -> list[dict]:
+    return [i for i in OB.read_items(root)
+            if (i.get("source") or {}).get("trigger") == HT.BRIEF_TRIGGER]
+
+
+class TestTwoStepBrief:
+    def test_the_brief_follows_on_a_LATER_tick_never_the_alert_pass(
+            self, tmp_path, monkeypatch, capsys):
+        root = _brief_root(tmp_path)
+        _stub_chart(monkeypatch)
+
+        RADAR.run(root, now=NOW, fetcher=_no_fetch)
+        alerts = OB.read_items(root)
+        assert len(alerts) == 1
+        assert alerts[0]["source"]["severity"] >= 90
+        assert _brief_items(root) == []            # not in the alert's own pass
+        capsys.readouterr()
+
+        RADAR.run(root, now=NOW + timedelta(minutes=5), fetcher=_no_fetch)
+
+        briefs = _brief_items(root)
+        assert len(briefs) == 1, [i["text"] for i in OB.read_items(root)]
+        brief = briefs[0]
+        assert brief["kind"] == "breaking"
+        assert brief["scheduled_at"] == "immediate"
+        assert brief["provenance"] == "hot_tape"
+        assert brief["source"]["fact_packet"]["facts"]["alert_key"] == \
+            alerts[0]["source"]["fact_packet"]["key"]
+        # The mechanism is the whole reason a brief exists (codex).
+        assert "not following" in brief["text"] or "group move" in brief["text"]
+        assert "mechanism_clause" in brief["source"]["devices"]
+        # A ticker post carries a chart, brief or not (operator law).
+        assert brief["media"] and brief["media"][0]["media_url"].startswith("https://")
+        out = capsys.readouterr().out
+        assert any(l.startswith("hot-tape BRIEF ") for l in out.splitlines()), out
+
+    def test_one_brief_per_event_forever(self, tmp_path, monkeypatch):
+        root = _brief_root(tmp_path)
+        _stub_chart(monkeypatch)
+        RADAR.run(root, now=NOW, fetcher=_no_fetch)
+        RADAR.run(root, now=NOW + timedelta(minutes=5), fetcher=_no_fetch)
+        assert len(_brief_items(root)) == 1
+
+        RADAR.run(root, now=NOW + timedelta(minutes=10), fetcher=_no_fetch)
+        RADAR.run(root, now=NOW + timedelta(minutes=15), fetcher=_no_fetch)
+
+        assert len(_brief_items(root)) == 1
+
+    def test_an_event_under_the_floor_never_earns_a_brief(self, tmp_path,
+                                                          monkeypatch):
+        root = _brief_root(tmp_path,
+                           hot_tape_cfg="two_step:\n  min_severity: 101\n")
+        _stub_chart(monkeypatch)
+        RADAR.run(root, now=NOW, fetcher=_no_fetch)
+        RADAR.run(root, now=NOW + timedelta(minutes=5), fetcher=_no_fetch)
+        assert _brief_items(root) == []
+
+    def test_a_brief_ages_out_of_its_window(self, tmp_path, monkeypatch):
+        root = _brief_root(tmp_path)
+        _stub_chart(monkeypatch)
+        RADAR.run(root, now=NOW, fetcher=_no_fetch)
+
+        RADAR.run(root, now=NOW + timedelta(minutes=90), fetcher=_no_fetch)
+
+        assert _brief_items(root) == []
+
+    def test_the_brief_lands_on_the_alerts_own_desk(self, tmp_path, monkeypatch):
+        root = _brief_root(tmp_path)
+        _stub_chart(monkeypatch)
+        RADAR.run(root, now=NOW, fetcher=_no_fetch)
+        alert = OB.read_items(root)[0]
+        assert alert["account"] == "flagship"       # severity >= 85 mirrors
+
+        RADAR.run(root, now=NOW + timedelta(minutes=5), fetcher=_no_fetch)
+
+        # A brief on a different desk than its alert is an orphan, and the
+        # flagship per-run mirror budget is about NEW stories, not follow-ups.
+        assert _brief_items(root)[0]["account"] == "flagship"
+
+    def test_a_group_wide_tape_says_group_move(self, tmp_path, monkeypatch):
+        root = _brief_root(tmp_path, peer_pct=-7.5)
+        _stub_chart(monkeypatch)
+        RADAR.run(root, now=NOW, fetcher=_no_fetch)
+        RADAR.run(root, now=NOW + timedelta(minutes=5), fetcher=_no_fetch)
+        briefs = _brief_items(root)
+        assert briefs, "no brief filed"
+        assert "This is a group move" in briefs[0]["text"]
+
+    def test_no_peers_no_brief(self, tmp_path, monkeypatch, capsys):
+        """Gate 0.2 for the brief: no mechanism, no post."""
+        root = _brief_root(tmp_path, peers=False)
+        _stub_chart(monkeypatch)
+        RADAR.run(root, now=NOW, fetcher=_no_fetch)
+        capsys.readouterr()
+
+        RADAR.run(root, now=NOW + timedelta(minutes=5), fetcher=_no_fetch)
+
+        assert _brief_items(root) == []
+        assert "BRIEF-REFUSE" in capsys.readouterr().out
+
+    def test_a_demo_pass_files_no_brief(self, tmp_path, monkeypatch):
+        """A demo is bounded to ONE post (reviewer M5)."""
+        root = _brief_root(tmp_path)
+        _stub_chart(monkeypatch)
+        RADAR.run(root, now=NOW, fetcher=_no_fetch)
+        assert RADAR.pending_briefs(
+            root, fired_today=HT.load_fired(root, DAY),
+            live={"quotes": {}}, pack=None, heatmap=None,
+            now=NOW + timedelta(minutes=5), cfg=HT.load_config(root),
+            demo=True) == []
+
+    def test_a_dead_alert_gets_no_brief(self, tmp_path, monkeypatch):
+        """A brief explaining a quarantined post is an orphan."""
+        root = _brief_root(tmp_path)
+        _stub_chart(monkeypatch)
+        RADAR.run(root, now=NOW, fetcher=_no_fetch)
+        item_id = OB.read_items(root)[0]["id"]
+        assert OB.transition(item_id, "quarantined", actor="test", root=root,
+                             note="fixture", now=NOW)
+
+        RADAR.run(root, now=NOW + timedelta(minutes=5), fetcher=_no_fetch)
+
+        assert _brief_items(root) == []
+
+    def test_the_brief_is_phrased_through_the_same_desk(self, tmp_path, monkeypatch):
+        root = _brief_root(tmp_path)
+        _stub_chart(monkeypatch)
+        RADAR.run(root, now=NOW, fetcher=_no_fetch)
+        calls = _fake_phraser(monkeypatch)
+
+        RADAR.run(root, now=NOW + timedelta(minutes=5), fetcher=_no_fetch)
+
+        triggers = [c["trigger"] for c in calls]
+        assert HT.BRIEF_TRIGGER in triggers, triggers
+
+    def test_briefs_have_their_own_budget_and_never_steal_an_alert_slot(self):
+        """An alert is time-critical; a brief must not cost it a slot."""
+        cfg = HT.load_config(REPO_ROOT)
+        assert cfg["two_step"]["max_per_run"] == 1
+        assert cfg["emit"]["max_per_run"] >= 1
+        assert cfg["two_step"]["delay_min"] > 0     # never the alert's own pass
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # 7 — the suite pins its own CI wiring (unrun-suite rot dies here)
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -933,8 +1433,46 @@ class TestCIWiring:
         assert "cancel-in-progress: false" in text
         assert "python -m scripts.hot_tape_radar" in text
         # NO pandas on the intraday path — the install line IS the contract.
+        # anthropic joined for the P2 wire desk (§10 E1): engine/llm_auth builds
+        # every provider on anthropic.Anthropic, DeepSeek included, so an armed
+        # lane without it is mute by construction. pandas is still barred.
         installs = [l for l in text.splitlines() if l.strip().startswith("run: pip install")]
-        assert installs == ["        run: pip install --quiet pyyaml requests pyarrow"], installs
+        assert installs == [
+            "        run: pip install --quiet pyyaml requests pyarrow anthropic"], installs
+
+    def test_the_radar_step_carries_the_llm_arming_and_credential_block(self):
+        """An armed lane with no visible credential is MUTE, not off (§10 E1).
+
+        hot_tape_llm only builds a provider when BOTH the config block and
+        MARKETING_LLM_ENABLED say so, and engine/llm_auth walks oauth pool ->
+        anthropic -> deepseek. Missing any of those env names would make the
+        lane print its "armed but mute" ::warning and post the deterministic
+        template on every single event — the 2026-07-26 silent-mute shape,
+        which is invisible unless someone reads the Actions log.
+        """
+        import yaml as _yaml
+
+        wf = _yaml.safe_load(
+            (REPO_ROOT / ".github/workflows/marketing-hot-tape.yml").read_text(
+                encoding="utf-8"))
+        step = [s for s in wf["jobs"]["radar"]["steps"]
+                if s.get("id") == "radar"]
+        assert len(step) == 1
+        env = step[0]["env"]
+        assert env["MARKETING_LLM_ENABLED"] == "1"
+
+        expected = ["ANTHROPIC_API_KEY", "DEEPSEEK_API_KEY", "CLAUDE_CODE_OAUTH_TOKEN"]
+        expected += [f"CLAUDE_CODE_OAUTH_TOKEN_{i}" for i in range(1, 8)]
+        for name in expected:
+            assert name in env, name
+            # Every one is a SECRET reference, never a literal.
+            assert f"secrets.{name}" in str(env[name]), (name, env[name])
+
+        # The same block daily.yml's governor step passes — one waterfall, one
+        # credential surface. A drift here is a lane quietly on fewer keys.
+        daily = (REPO_ROOT / ".github/workflows/daily.yml").read_text(encoding="utf-8")
+        for name in expected:
+            assert f"{name}: ${{{{ secrets.{name} }}}}" in daily, name
 
     def test_the_checkout_cone_covers_every_path_the_radar_reads(self):
         """M11 — 81 runs a day on a 12m budget cannot pay for a 2.8GB tree.
@@ -1015,6 +1553,23 @@ class TestShippedConfig:
         # in-code default must not drift apart on this one.
         assert cfg["emit"]["flagship_severity_floor"] == 85
         assert HT.DEFAULTS["emit"]["flagship_severity_floor"] == 85
+
+    def test_the_earnings_and_two_step_knobs_ship_and_mirror_the_defaults(self):
+        cfg = HT.load_config(REPO_ROOT)
+        earnings = cfg["detectors"]["earnings"]
+        assert earnings == HT.DEFAULTS["detectors"]["earnings"]
+        assert earnings["min_abs_pct"] == cfg["detectors"]["mover"]["min_abs_pct"]
+        assert earnings["cooldown_min"] == cfg["detectors"]["mover"]["cooldown_min"]
+
+        two_step = cfg["two_step"]
+        assert two_step == HT.DEFAULTS["two_step"]
+        # A brief is a bigger commitment than a flagship mirror, so its floor
+        # sits ABOVE the mirror floor, and it never files on the alert's own
+        # pass (delay_min > 0 is the "NEXT tick" rule).
+        assert two_step["min_severity"] > cfg["emit"]["flagship_severity_floor"]
+        assert two_step["delay_min"] > 0
+        assert two_step["max_age_min"] > two_step["delay_min"]
+        assert cfg["demo"]["earnings_min_abs_pct"] < earnings["min_abs_pct"]
 
     def test_config_only_overrides_keys_the_engine_knows(self):
         """A typo in the tuning surface is a dead knob — catch it here."""

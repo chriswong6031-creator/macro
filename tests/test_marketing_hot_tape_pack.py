@@ -553,6 +553,45 @@ class TestJoins:
         assert pack["tickers"]["STRK"]["mcap_usd"] is None
         assert pack["tickers"]["STRK"]["earn_next_date"] is None
 
+    def test_the_radars_pyarrow_read_round_trips_the_real_file_shape(self, store):
+        """The other half of the earnings join, in the lane that HAS pyarrow.
+
+        scripts/hot_tape_radar.load_earnings reads this same parquet WITHOUT
+        pandas (the intraday lane installs pyyaml+requests+pyarrow+anthropic and
+        nothing else), so the two readers have to agree on one file. The thin
+        lane exercises the parsing with an injected fake table; this is the only
+        place a real parquet meets the real reader.
+        """
+        from scripts import hot_tape_radar as RADAR
+
+        root = store["root"]
+        when = (TIP + timedelta(days=9)).isoformat()
+        surprises = ('[{"qtr": "Jun 2026", "reported": "6/30/2026", "eps": 2.01, '
+                     '"consensus": 1.92, "surprise_pct": 4.69}]')
+        self._earnings(root, [
+            {"ticker": "STRK", "next_date": when, "next_time": "time-pre-market",
+             "eps_forecast": 1.2, "surprises_json": surprises,
+             "as_of": TIP.isoformat()},
+            {"ticker": "OSC", "next_date": when, "next_time": "time-not-supplied",
+             "eps_forecast": 0.4, "surprises_json": "[]",
+             "as_of": TIP.isoformat()},
+        ])
+
+        view = RADAR.load_earnings(root)
+
+        assert view["asof"] == TIP.isoformat()
+        assert set(view["tickers"]) == {"STRK", "OSC"}
+        strk = view["tickers"]["STRK"]
+        assert strk["next_date"] == when
+        assert strk["next_time"] == "time-pre-market"
+        assert strk["eps_forecast"] == pytest.approx(1.2)
+        assert strk["surprises"][0]["consensus"] == 1.92
+        assert view["tickers"]["OSC"]["surprises"] == []
+        # And the pack's pandas reader agrees on the same two fields.
+        pack = _build(root)
+        assert pack["tickers"]["STRK"]["earn_next_date"] == strk["next_date"]
+        assert pack["tickers"]["STRK"]["earn_next_time"] == strk["next_time"]
+
 
 class TestRadarHandoff:
     """The pack must satisfy the detectors that consume it."""

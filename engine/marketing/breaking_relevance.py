@@ -122,7 +122,13 @@ _COMPANY_KEYWORDS: tuple[str, ...] = (
 # (class_name, base_salience, keywords_tuple)
 _CLASS_TAXONOMY: list[tuple[str, float, tuple[str, ...]]] = [
     ("macro_print", 55.0, _MACRO_PRINT_KEYWORDS),
-    ("policy", 45.0, _POLICY_KEYWORDS),
+    # policy 45→50 (E7 calibration 2026-07-29): the codex case-study corpus's
+    # highest-reach class is exactly the Trump-policy wire flash (165K views on
+    # the robot-ban flash); at 45 a bare policy post from the president's own
+    # mirror (45+12) sat under the 60 emit threshold and never posted. At 50 a
+    # mirror policy post clears the wire desk (62) while flagship's 70 floor
+    # still demands keyword/ticker strength on top.
+    ("policy", 50.0, _POLICY_KEYWORDS),
     ("geopolitical", 40.0, _GEOPOLITICAL_KEYWORDS),
     ("company_news", 30.0, _COMPANY_KEYWORDS),
 ]
@@ -152,6 +158,15 @@ _TIER_BONUS: dict[str, float] = {
     "official": 15.0,
     "wire": 8.0,
     "aggregator": 0.0,
+    # E7 calibration (2026-07-29): the press providers report two tiers this
+    # table never knew, so every Trump-wire item earned +0 while an RSS source
+    # earned up to +15 — a policy post scored 45 against the 60 emit threshold
+    # and the whole lane emitted nothing. "mirror" is trumpstruth: the
+    # president's own posts, mirrored — official-adjacent but not the primary
+    # feed, so one notch under "official". "x_relay" is the curated
+    # twitterapi.io wire-account relay (DeItaone class) — same trust as "wire".
+    "mirror": 12.0,
+    "x_relay": 8.0,
 }
 
 # ─────────────────────────────────────────────────────────────────────────────

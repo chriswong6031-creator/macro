@@ -10,7 +10,7 @@ Drives three intraday lanes:
               kind="breaking" outbox items with scheduled_at="immediate".
     reply     XG-W6 reply-desk PRODUCER — reply_producer.run_producer:
               twitterapi.io discovery (reply sub-budget, since-id cursors) ->
-              deterministic scorer -> per-persona drafter -> the eight critics ->
+              deterministic scorer -> per-persona drafter -> the nine critics ->
               reply_queue.enqueue. NOTHING SENDS: output lands in the M0 queue for
               operator review, and only reply_export at M1+ hands anything to the
               desktop lane. This lane runs HERE, on the wire daemon's host, and

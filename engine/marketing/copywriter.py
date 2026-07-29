@@ -3473,7 +3473,10 @@ _PRICE_TOKENS = (
 _TICKER_DEPENDENT_TOKENS = _CASHTAG_TOKENS + _PRICE_TOKENS
 
 # Types whose posts validate_copy rule 1 requires to carry the cashtag.
-_CASHTAG_REQUIRED_TYPES = ("signal", "chart", "receipt", "watchlist", "mover")
+# congress/insider joined 2026-07-29 (E2): the codex filing template leads
+# with the cashtag; a filing post with no ticker is unanchored.
+_CASHTAG_REQUIRED_TYPES = ("signal", "chart", "receipt", "watchlist", "mover",
+                           "congress", "insider")
 
 
 def _variant_allowed(variant: tuple, ctx: dict) -> bool:

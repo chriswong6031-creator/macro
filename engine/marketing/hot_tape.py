@@ -40,6 +40,7 @@ Public API:
     load_ring / append_ring / compact_ring
     load_fired / append_fired
     detect_events(...) -> list[FactPacket]
+    brief_key(alert_key) / build_brief_packet(alert_row, ...) -> FactPacket | None
     severity_account(packet, cfg) -> str
     packet_to_source(packet, media) -> dict
 
@@ -86,10 +87,27 @@ PACK_REL = "data/marketing/hot_tape_pack.json"
 RING_REL = "data/marketing/hot_tape_ring.jsonl"
 FIRED_REL = "data/marketing/hot_tape_fired.jsonl"
 CONFIG_REL = "config/hot_tape.yml"
+#: The earnings calendar the reaction detector keys off. READ BY THE RADAR
+#: (scripts/hot_tape_radar.load_earnings, pyarrow) and handed in — this module
+#: never opens a parquet, so the detectors stay pure and pandas-free.
+EARNINGS_REL = "data/earnings/earnings.parquet"
 
 TRIGGERS: tuple[str, ...] = (
     "sector_rout", "sector_rip", "mover_pop", "mover_drop",
     "threshold_cross", "streak_rarity", "signal_fired", "contrarian_breadth",
+    "earnings_reaction", "context_brief",
+)
+
+#: The follow-up trigger (codex two-step publish, §Strongest controlled
+#: comparisons): the alert wins speed, the brief wins reposts. Filed by the
+#: radar on a LATER tick than the alert it explains, never in the same pass.
+BRIEF_TRIGGER = "context_brief"
+
+#: Triggers that describe ONE name's move today, so they share one cooldown
+#: memory: an earnings gap is also a |>=4%| move, and the two detectors must
+#: not each get a post out of the same tape (one story, one post).
+SINGLE_NAME_MOVE_TRIGGERS: tuple[str, ...] = (
+    "mover_pop", "mover_drop", "earnings_reaction",
 )
 
 #: Market-cap milestones that are worth a wire post when crossed (USD).
@@ -141,6 +159,20 @@ DEFAULTS: dict[str, Any] = {
         },
         "threshold": {"min_price": 15.0},
         "streak": {"min_len": 5, "min_rarity_days": 365},
+        "earnings": {
+            # The gap AT the open on a BMO reporter, or the next open after an
+            # AH reporter. Same |>=4%| bar as the mover — an earnings day that
+            # moves a name less than that is not the reaction anyone is reading.
+            "min_abs_pct": 4.0,
+            "cooldown_min": 120,
+            "refire_ratio": 2.0,
+            # How stale the CALENDAR may be. data/earnings/earnings.parquet is
+            # forward-looking (it names the NEXT report), so a row only fires
+            # when its own as_of is recent: companies move their dates, and a
+            # months-old row that still says "reports today, pre-market" would
+            # manufacture a reaction post about a company that did not report.
+            "max_calendar_age_days": 21,
+        },
         "contrarian": {
             "index_pct": -1.5,
             "min_green": 5,
@@ -157,9 +189,37 @@ DEFAULTS: dict[str, Any] = {
         "account": "mastermind_news",
         "flagship_account": "flagship",
     },
+    # TWO-STEP PUBLISH (codex case study 2026-07-28, §Strongest controlled
+    # comparisons A): the one-line flash won ~8% more views; the contextual
+    # version won ~9% better interaction efficiency and a ~49% higher
+    # repost/view ratio on the SAME story and the SAME account. So both ship:
+    # the alert wins speed, the brief wins reposts.
+    "two_step": {
+        "enabled": True,
+        # Only the biggest events earn a second post. 90 is above the flagship
+        # mirror floor (85) on purpose — a brief is a bigger commitment than a
+        # mirror, not a smaller one.
+        "min_severity": 90,
+        # The NEXT tick, not this one: the alert must already be out. Raise to
+        # 20 to sit inside the masterplan's 20-40 minute band (§10 E1) once the
+        # per-trigger engagement table (gate 0.8) says which spacing reposts.
+        "delay_min": 5,
+        # Past this the moment has passed and a "context brief" is a history
+        # lesson. The alert's own carryover window is 20 minutes.
+        "max_age_min": 60,
+        "max_per_run": 1,
+        # The mechanism needs a group to talk about. Fewer live peers than this
+        # and we cannot say whether the move is one name or the whole group, so
+        # the brief REFUSES rather than guessing.
+        "min_peers": 4,
+        # |median| of the peer group that makes the move group-wide rather than
+        # name-specific. A hypothesis (charter §8), not a constant of nature.
+        "group_median_pct": 1.0,
+    },
     "demo": {
         "sector_median_pct": 0.5,
         "mover_min_abs_pct": 1.5,
+        "earnings_min_abs_pct": 1.5,
         "contrarian_index_pct": -0.3,
         "max_quote_age_min": 100000,
     },
@@ -382,6 +442,19 @@ def _et_date(now: datetime | None) -> date:
     return _et_clock(now).date()
 
 
+def _prev_weekday(d: date) -> date:
+    """The weekday before `d` (holiday-naive, exactly like :func:`bridge_ok`).
+
+    Used by the earnings detector to name "yesterday's session": an AH reporter
+    on Friday is read on Monday's open, so a bare ``d - 1 day`` would look at a
+    Sunday and the reaction would never be detected.
+    """
+    x = d - timedelta(days=1)
+    while x.weekday() >= 5:
+        x -= timedelta(days=1)
+    return x
+
+
 def _weekdays_between(older: date, newer: date) -> int:
     """Count weekdays strictly after `older` up to and including `newer`."""
     if newer <= older:
@@ -520,7 +593,13 @@ def append_fired(root: Path | str | None, entry: dict) -> None:
 
 
 def fired_entry(packet: FactPacket, *, item_id: str | None, account: str) -> dict:
-    """Build the fired-ledger row for a packet that was emitted."""
+    """Build the fired-ledger row for a packet that was emitted.
+
+    ``severity`` rides along so the two-step publish loop can decide whether an
+    alert earned a follow-up brief WITHOUT re-reading the outbox: the fired
+    ledger is already this lane's dedupe memory, and one read per pass is the
+    budget an 81-runs-a-day loop has.
+    """
     return {
         "key": packet.key,
         "trigger": packet.trigger,
@@ -528,6 +607,7 @@ def fired_entry(packet: FactPacket, *, item_id: str | None, account: str) -> dic
         "sector": packet.sector,
         "direction": packet.direction,
         "magnitude": _magnitude(packet),
+        "severity": float(packet.severity),
         "fired_at": packet.fired_at,
         "day": str(packet.fired_at)[:10],
         "item_id": item_id,
@@ -650,6 +730,20 @@ def _provenance(
         "bridge_ok": bool(bridged),
         "demo": bool(demo),
     }
+
+
+def _move_priors(fired_today: list[dict] | None, sym: str, direction: str) -> list[dict]:
+    """Today's already-fired single-name MOVE rows for `sym` in `direction`.
+
+    Shared by the mover and earnings detectors so the two cannot each hand out
+    a post for the same tape (:data:`SINGLE_NAME_MOVE_TRIGGERS`).
+    """
+    return [
+        r for r in (fired_today or [])
+        if str(r.get("ticker") or "").upper() == sym
+        and str(r.get("direction")) == direction
+        and str(r.get("trigger") or "") in SINGLE_NAME_MOVE_TRIGGERS
+    ]
 
 
 def _rsi_step(rec: dict, delta: float) -> float | None:
@@ -866,12 +960,11 @@ def _detect_movers(
         direction = "up" if pct > 0 else "down"
         trigger = "mover_pop" if direction == "up" else "mover_drop"
 
-        priors = [
-            r for r in fired_today
-            if str(r.get("ticker") or "").upper() == sym
-            and str(r.get("direction")) == direction
-            and str(r.get("trigger") or "").startswith("mover_")
-        ]
+        # ONE COOLDOWN MEMORY PER NAME PER DIRECTION, shared with the earnings
+        # detector: an earnings gap IS a |>=4%| move, so a name that already got
+        # its earnings-reaction post must not get a second one as a "mover"
+        # five minutes later.
+        priors = _move_priors(fired_today, sym, direction)
         k = len(priors)
         if priors:
             last = max(priors, key=lambda r: str(r.get("fired_at") or ""))
@@ -968,6 +1061,219 @@ def _detect_movers(
         out.append(FactPacket(
             trigger=trigger,
             key=f"mover:{sym}:{direction}:{day}:{k}",
+            fired_at=_iso(now),
+            session=session_phase(now),
+            ticker=sym,
+            name=names.get(sym) or None,
+            sector=rec.get("sector") or None,
+            direction=direction,
+            severity=_clamp(severity),
+            facts=facts,
+            provenance=_provenance(pack, quotes_asof, quote, bridged, demo),
+        ))
+    return out
+
+
+def _parse_report_date(raw: Any) -> date | None:
+    """A surprises_json ``reported`` stamp -> date. ISO first, then US M/D/YYYY.
+
+    The vendor writes "4/30/2026"; the rest of this estate writes ISO. Both are
+    accepted and anything else is None, because a report date we cannot read is
+    a report we cannot claim happened.
+    """
+    iso = _parse_iso_date(raw)
+    if iso is not None:
+        return iso
+    try:
+        month, day, year = str(raw).strip().split("/")
+        return date(int(year), int(month), int(day))
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _fresh_surprise(rows: Any, report_date: date) -> dict | None:
+    """The EPS beat/miss device, but ONLY when it is about THIS report.
+
+    ``surprises_json`` is a history, newest first. Its head is the fresh row
+    only when the vendor has already filed the quarter we just detected — a BMO
+    reporter usually has not been filed by 09:30, so that post ships with its
+    other devices and no EPS line rather than with LAST quarter's numbers
+    presented as today's.
+    """
+    if not isinstance(rows, list) or not rows:
+        return None
+    head = rows[0] if isinstance(rows[0], dict) else None
+    if not head:
+        return None
+    when = _parse_report_date(head.get("reported"))
+    if when is None or when != report_date:
+        return None
+    actual, consensus = _num(head.get("eps")), _num(head.get("consensus"))
+    if actual is None or consensus is None:
+        return None
+    return {
+        "actual": round(actual, 2),
+        "consensus": round(consensus, 2),
+        "surprise_pct": _r2(head.get("surprise_pct")),
+        "reported": when.isoformat(),
+        "beat": bool(actual >= consensus),
+    }
+
+
+def _detect_earnings(
+    quotes: dict,
+    pack: dict | None,
+    heatmap: dict | None,
+    earnings: dict | None,
+    fired_today: list[dict],
+    now: datetime,
+    cfg: dict,
+    demo: bool,
+    bridged: bool,
+    quotes_asof: Any,
+) -> list[FactPacket]:
+    """earnings_reaction: the gap a report opened (§2 T4, masterplan §10 E1).
+
+    TWO SHAPES, ONE DETECTOR, because we have no extended-hours quotes yet
+    (masterplan §4, "PHASE 2"):
+
+      * **BMO** — the calendar says this name reports TODAY, pre-market, so the
+        move we can see at the open IS the reaction.
+      * **AH** — the calendar says it reported after the PREVIOUS session's
+        close, so today's open is the reaction.
+
+    The calendar is forward-looking, so a row is only trusted while its own
+    ``as_of`` is fresh (``detectors.earnings.max_calendar_age_days``): companies
+    move their dates, and a months-old "reports today" row would manufacture a
+    reaction post about a company that did not report.
+
+    GATE 0.2 IS ENFORCED IN THE DETECTOR, not only in the copy layer: a packet
+    with no EPS surprise, no dollar translation and no history fact carries no
+    differentiating stat, so it is never built — which also saves the Chrome
+    raster and the R2 upload its card would have cost.
+    """
+    out: list[FactPacket] = []
+    rows = (earnings or {}).get("tickers")
+    if not isinstance(rows, dict) or not rows:
+        return out
+
+    prod_min = float(_c(cfg, "detectors.earnings.min_abs_pct", 4.0))
+    min_abs = float(
+        _c(cfg, "demo.earnings_min_abs_pct", DEFAULTS["demo"]["earnings_min_abs_pct"])
+        if demo else prod_min
+    )
+    cooldown = float(_c(cfg, "detectors.earnings.cooldown_min", 120))
+    refire = float(_c(cfg, "detectors.earnings.refire_ratio", 2.0))
+    max_cal_age = int(_c(cfg, "detectors.earnings.max_calendar_age_days", 21))
+    day = _day(now)
+    today = _et_date(now)
+    yesterday = _prev_weekday(today)
+    view_asof = (earnings or {}).get("asof")
+    names = {
+        str(t.get("t") or "").upper(): str(t.get("name") or "")
+        for t in ((heatmap or {}).get("tiles") or []) if isinstance(t, dict)
+    }
+
+    for raw_sym in sorted(rows):
+        row = rows.get(raw_sym)
+        if not isinstance(row, dict):
+            continue
+        sym = str(raw_sym).upper()
+        next_date = _parse_iso_date(row.get("next_date"))
+        next_time = str(row.get("next_time") or "").strip().lower()
+        if next_date == today and "pre-market" in next_time:
+            when, report_date = "bmo", today
+        elif next_date == yesterday and "after-hours" in next_time:
+            when, report_date = "ah", yesterday
+        else:
+            continue
+
+        cal_asof = _parse_iso_date(row.get("as_of") or view_asof)
+        if cal_asof is None or (today - cal_asof).days > max_cal_age:
+            continue
+
+        quote = quotes.get(sym)
+        if not isinstance(quote, dict):
+            continue
+        pct = _num(quote.get("change_pct"))
+        if pct is None or abs(pct) < min_abs:
+            continue
+        direction = "up" if pct > 0 else "down"
+
+        priors = _move_priors(fired_today, sym, direction)
+        k = len(priors)
+        if priors:
+            last = max(priors, key=lambda r: str(r.get("fired_at") or ""))
+            fired_at = _parse_iso_dt(last.get("fired_at"))
+            prior_mag = abs(_num(last.get("magnitude")) or 0.0)
+            within = (fired_at is not None
+                      and (now - fired_at).total_seconds() / 60.0 < cooldown)
+            if within and (prior_mag <= 0 or abs(pct) < refire * prior_mag):
+                continue
+
+        rec = _pack_rec(pack, sym)
+        price = _num(quote.get("price"))
+        prev_close = _num(quote.get("prev_close"))
+        history = _history_ok(rec, pack, bridged)
+
+        facts: dict[str, Any] = {
+            "ticker": sym,
+            "name": names.get(sym) or None,
+            "pct": round(pct, 2),
+            "price": _r2(price),
+            "prev_close": _r2(prev_close),
+            "report_when": when,
+            "report_date": report_date.isoformat(),
+            "earn_next_time": row.get("next_time") or None,
+            "eps": _fresh_surprise(row.get("surprises"), report_date),
+            "dollar_delta_usd": None,
+            "pct_from_ath_live": None,
+            "ath": None,
+            "ath_date": None,
+            "biggest_1d": None,
+            "sector": rec.get("sector") or None,
+        }
+
+        mcap = _num(rec.get("mcap_usd"))
+        if mcap is not None:
+            facts["dollar_delta_usd"] = round(mcap * pct / 100.0)
+
+        ath = _num(rec.get("ath"))
+        if history and price is not None and ath is not None and ath > 0:
+            facts["pct_from_ath_live"] = round((price - ath) / ath * 100.0, 2)
+            facts["ath"] = round(ath, 2)
+            facts["ath_date"] = rec.get("ath_date")
+
+        if history:
+            extreme = rec.get("max_up_1d") if direction == "up" else rec.get("max_dn_1d")
+            prior_pct = (_num((extreme or {}).get("pct"))
+                         if isinstance(extreme, dict) else None)
+            if prior_pct is not None and abs(pct) > abs(prior_pct):
+                facts["biggest_1d"] = {
+                    "window_start": rec.get("window_start"),
+                    "prior_pct": round(prior_pct, 2),
+                    "prior_date": (extreme or {}).get("date"),
+                }
+
+        # GATE 0.2 IN THE DETECTOR, and it must match what the WIRE can actually
+        # render — not merely "some history exists". The mover twin has already
+        # been suppressed by the time compose_wire runs, so a packet that passes
+        # a loose gate here and then refuses downstream costs BOTH posts. The
+        # conditions below are _eps_clause / _dollar_clause / _record_rank_clause
+        # read back exactly (the -5% floor included).
+        from_ath = facts["pct_from_ath_live"]
+        has_record = bool(facts["biggest_1d"]) or (
+            from_ath is not None and from_ath <= -5.0
+            and facts["ath"] is not None and facts["ath_date"])
+        if not (facts["eps"] or facts["dollar_delta_usd"] is not None or has_record):
+            log.info("hot_tape: earnings reaction for %s has no device slot - refused", sym)
+            continue
+
+        severity = (min(80.0, 60.0 + 4.0 * max(0.0, abs(pct) - prod_min))
+                    + _attention_boost(rec))
+        out.append(FactPacket(
+            trigger="earnings_reaction",
+            key=f"earnings:{sym}:{direction}:{day}:{k}",
             fired_at=_iso(now),
             session=session_phase(now),
             ticker=sym,
@@ -1331,12 +1637,48 @@ def _detect_contrarian(
     return out
 
 
+def _normalize_earnings(earnings: dict | None) -> dict:
+    """Accept {"asof": ..., "tickers": {...}} or a bare {SYM: row} map.
+
+    Same tolerance :func:`quotes_fresh` applies to the live-quote view, for the
+    same reason: the caller should not have to remember which shape it holds.
+    """
+    if not isinstance(earnings, dict):
+        return {"asof": None, "tickers": {}}
+    rows = earnings.get("tickers")
+    if isinstance(rows, dict):
+        return {"asof": earnings.get("asof"),
+                "tickers": {str(k).upper(): v for k, v in rows.items()
+                            if isinstance(v, dict)}}
+    return {"asof": None,
+            "tickers": {str(k).upper(): v for k, v in earnings.items()
+                        if isinstance(v, dict)}}
+
+
+def _suppress_mover_overlap(events: list[FactPacket]) -> list[FactPacket]:
+    """One story, one post: an earnings gap outranks its own mover twin.
+
+    A name that gapped on a report trips BOTH detectors on the same tape (the
+    mover bar and the earnings bar are the same |>=4%|). The earnings packet is
+    strictly the better story — it names the cause and carries the EPS device —
+    so the mover packet for that ticker is dropped. Mirrors the industry/parent
+    overlap rule in :func:`_detect_group_moves`.
+    """
+    covered = {p.ticker for p in events
+               if p.trigger == "earnings_reaction" and p.ticker}
+    if not covered:
+        return events
+    return [p for p in events
+            if not (p.trigger.startswith("mover_") and p.ticker in covered)]
+
+
 def detect_events(
     quotes: dict | None,
     *,
     pack: dict | None = None,
     heatmap: dict | None = None,
     plan_signals: list[dict] | None = None,
+    earnings: dict | None = None,
     ring: list[dict] | None = None,
     fired_today: list[dict] | None = None,
     now: datetime | None = None,
@@ -1347,6 +1689,9 @@ def detect_events(
 
     `quotes` is {SYM: {price, prev_close, change_pct, ts_ms, source}} — the
     live_verify merge — or the {"quotes": ..., "asof": ...} wrapper.
+    `earnings` is the calendar view the RADAR read from
+    data/earnings/earnings.parquet ({"asof", "tickers": {SYM: {next_date,
+    next_time, eps_forecast, surprises}}}) — this module never opens a parquet.
     `ring` is accepted and reserved for the P2 "$X added in 3 hours" claims
     (masterplan T6); v1 detectors do not read it.
     """
@@ -1363,11 +1708,14 @@ def detect_events(
         fired_rows = list(fired_today or [])
         fired = _fired_keys(fired_rows)
         bridged = bridge_ok(pack, t, cfg=cfg)
+        earn = _normalize_earnings(earnings)
 
         events: list[FactPacket] = []
         common = (q, pack, heatmap)
         lanes = (
             ("group", lambda: _detect_group_moves(*common, fired, t, cfg, demo, bridged, quotes_asof)),
+            ("earnings", lambda: _detect_earnings(*common, earn, fired_rows, t, cfg,
+                                                  demo, bridged, quotes_asof)),
             ("mover", lambda: _detect_movers(*common, fired_rows, t, cfg, demo, bridged, quotes_asof)),
             ("threshold", lambda: _detect_thresholds(*common, fired, t, cfg, demo, bridged, quotes_asof)),
             ("streak", lambda: _detect_streaks(*common, fired, t, cfg, demo, bridged, quotes_asof)),
@@ -1380,6 +1728,7 @@ def detect_events(
                 events.extend(fn())
             except Exception as exc:  # noqa: BLE001
                 log.warning("hot_tape: %s detector failed: %s", label, exc)
+        events = _suppress_mover_overlap(events)
         # SEVERITY SATURATES, SO IT CANNOT BE THE ONLY KEY (reviewer M2). The
         # mover formula tops out at 100 well before the tape does: SNDK -14.25,
         # GLW -12.10 and AMD -8.15 all scored exactly 100 on the 2026-07-28
@@ -1391,6 +1740,170 @@ def detect_events(
     except Exception as exc:  # noqa: BLE001
         log.warning("hot_tape.detect_events failed: %s", exc)
         return []
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Two-step publish — the context brief (codex case study, 2026-07-28)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def brief_key(alert_key: Any) -> str:
+    """The fired-ledger key of the brief that follows `alert_key`.
+
+    One brief per alert, forever: the row lands in the SAME append-only fired
+    ledger the cooldowns use, so a later pass sees it and never files a second.
+    """
+    return f"brief:{alert_key}"
+
+
+def _group_members(tiles: list[dict], kind: str, label: str) -> list[dict]:
+    return [t for t in tiles if str(t.get(kind) or "").strip() == label]
+
+
+def build_brief_packet(
+    alert: dict,
+    *,
+    quotes: dict | None = None,
+    pack: dict | None = None,
+    heatmap: dict | None = None,
+    now: datetime | None = None,
+    cfg: dict | None = None,
+    demo: bool = False,
+    quotes_asof: Any = None,
+) -> FactPacket | None:
+    """The follow-up context packet for one already-posted alert, or None.
+
+    `alert` is the alert's FIRED-LEDGER ROW (key / trigger / ticker / sector /
+    direction / severity), not its FactPacket: the row is what the radar has in
+    hand on the next tick, and everything the brief claims is recomputed from
+    THIS pass's tape anyway. PURE — no I/O, no LLM, no clock.
+
+    The mechanism is the whole point (codex: "a mechanism makes context worth
+    reposting"), and it is engine-computed, never asserted: we compare the
+    subject against its own peer group on the live tape and say which of two
+    true things this is —
+
+      * **group** — the peers moved with it, so this is a sector story;
+      * **single_name** — the peers did not, so this is one name.
+
+    Returns None when that comparison cannot be made honestly: no live quote, no
+    identifiable group, or fewer than ``two_step.min_peers`` live peers. A brief
+    with no mechanism is the "why it matters" sentence we have no receipt for,
+    and gate 0.2's refusal applies to it exactly as it does to an alert.
+    """
+    try:
+        t = _utc(now)
+        if isinstance(quotes, dict) and isinstance(quotes.get("quotes"), dict):
+            quotes_asof = quotes_asof if quotes_asof is not None else quotes.get("asof")
+            quotes = quotes["quotes"]
+        q: dict[str, dict] = {
+            str(k).upper(): v for k, v in (quotes or {}).items() if isinstance(v, dict)
+        }
+        tiles = [x for x in ((heatmap or {}).get("tiles") or []) if isinstance(x, dict)]
+        min_peers = int(_c(cfg, "two_step.min_peers", DEFAULTS["two_step"]["min_peers"]))
+        group_min = float(_c(cfg, "two_step.group_median_pct",
+                             DEFAULTS["two_step"]["group_median_pct"]))
+
+        alert_key = str(alert.get("key") or "")
+        alert_trigger = str(alert.get("trigger") or "")
+        direction = str(alert.get("direction") or "")
+        if not alert_key or direction not in ("up", "down"):
+            return None
+        sym = str(alert.get("ticker") or "").strip().upper() or None
+
+        # ── Which group are we talking about, and who is in it? ──────────────
+        if sym:
+            tile = next((x for x in tiles
+                         if str(x.get("t") or "").upper() == sym), None)
+            if tile and str(tile.get("industry") or "").strip():
+                group_kind, group = "industry", str(tile["industry"]).strip()
+            elif tile and str(tile.get("sector") or "").strip():
+                group_kind, group = "sector", str(tile["sector"]).strip()
+            elif str(alert.get("sector") or "").strip():
+                group_kind, group = "sector", str(alert["sector"]).strip()
+            else:
+                return None
+        else:
+            group = str(alert.get("sector") or "").strip()
+            if not group:
+                return None
+            group_kind = ("industry"
+                          if _group_members(tiles, "industry", group)
+                          else "sector")
+
+        members = _group_members(tiles, group_kind, group)
+        peers: list[tuple[str, float]] = []
+        for tile in members:
+            psym = str(tile.get("t") or "").upper()
+            pct = _tile_pct(tile, q)
+            if psym and psym != sym and pct is not None:
+                peers.append((psym, pct))
+        if len(peers) < min_peers:
+            return None
+
+        peer_pcts = [p for _, p in peers]
+        peer_median = statistics.median(peer_pcts)
+        n_agree = len([p for p in peer_pcts
+                       if (p < 0 if direction == "down" else p > 0)])
+        with_it = ((peer_median < 0) if direction == "down" else (peer_median > 0))
+        kind = ("group" if (with_it and abs(peer_median) >= group_min)
+                else "single_name")
+
+        ordered = sorted(peers, key=lambda kv: kv[1], reverse=(direction == "up"))
+        top = [[s, round(p, 2)] for s, p in ordered[:3]]
+
+        # ── The subject's own live read ─────────────────────────────────────
+        pct = price = None
+        quote = q.get(sym) if sym else None
+        if sym:
+            if not isinstance(quote, dict):
+                return None
+            pct = _num(quote.get("change_pct"))
+            price = _num(quote.get("price"))
+            if pct is None:
+                return None
+
+        facts: dict[str, Any] = {
+            "subject": sym or group,
+            # Only a GROUP brief leads with a label; a single-name brief leads
+            # with its cashtag, and the label slot staying None is what keeps
+            # the two template shapes from renting each other's copy.
+            "subject_label": None if sym else group,
+            "ticker": sym,
+            "sector": group,
+            "alert_key": alert_key,
+            "alert_trigger": alert_trigger,
+            "pct": round(pct, 2) if pct is not None else None,
+            "price": _r2(price),
+            "mechanism": {
+                "kind": kind,
+                "group": group,
+                "group_kind": group_kind,
+                "peer_median_pct": round(peer_median, 2),
+                "n_peers": len(peers),
+                "n_agree": n_agree,
+            },
+            "peers": top,
+            "watch": ({"kind": "level", "price": _r2(price)} if sym and price is not None
+                      else {"kind": "breadth", "n_agree": n_agree,
+                            "n_members": len(peers)}),
+        }
+        return FactPacket(
+            trigger=BRIEF_TRIGGER,
+            key=brief_key(alert_key),
+            fired_at=_iso(t),
+            session=session_phase(t),
+            ticker=sym,
+            name=None,
+            sector=group,
+            direction=direction,
+            severity=_clamp(_num(alert.get("severity")) or 0.0),
+            facts=facts,
+            provenance=_provenance(pack, quotes_asof, quote, bridge_ok(pack, t, cfg=cfg),
+                                   demo),
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("hot_tape.build_brief_packet failed: %s", exc)
+        return None
 
 
 # ─────────────────────────────────────────────────────────────────────────────

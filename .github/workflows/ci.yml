@@ -1150,6 +1150,21 @@ on:
       - "engine/marketing/**"
       - "tests/test_marketing_engine.py"
       - "tests/test_marketing_sentinel.py"
+      # Content Studio W1 + E-waves (2026-07-29): writer/critic/selection +
+      # press-wire bridge + intel loop + reply voice + filing lanes. Scripts
+      # and workflows listed so a script-only edit still reaches the lane.
+      - "tests/test_marketing_copy_v2.py"
+      - "tests/test_marketing_selection.py"
+      - "tests/test_marketing_press_wire.py"
+      - "tests/test_marketing_x_intel.py"
+      - "tests/test_marketing_reply_voice.py"
+      - "tests/test_marketing_filing_lanes.py"
+      - "tests/test_copywriter.py"
+      - "tests/test_marketing_copy_review.py"
+      - "scripts/marketing_copy_dryrun.py"
+      - "scripts/marketing_press_wire.py"
+      - "scripts/x_intel_harvest.py"
+
       # D08 age ramp + chart-CTA + send-time jitter (2026-07-27). Listed by name
       # so a TEST-ONLY edit reaches its own guard: the subject code is already
       # covered by engine/marketing/** + scripts/marketing_publisher.py above,
