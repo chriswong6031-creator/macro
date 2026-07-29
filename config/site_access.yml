@@ -14,6 +14,10 @@ public:
     - /
     - /index.html
     - /plans.html
+    # Free signal-stack lead magnet. Rank 1 exposes its matching tickers; paid
+    # rows are omitted server-side and render only counts + the trial CTA, so
+    # the public shell contains no premium ticker payload.
+    - /confluence_screener.html
     # Research Vault preview. Anonymous visitors see the latest three summaries
     # and a Pro upgrade wall; the original PDFs remain private behind the
     # authenticated /api/research/view and /api/research/download routes.

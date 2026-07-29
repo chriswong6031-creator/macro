@@ -57,6 +57,7 @@ PUBLIC_PATHS = {
     "/",
     "/index.html",
     "/plans.html",
+    "/confluence_screener.html",
     "/research_vault.html",
     "/support.html",
     "/unsubscribe.html",

@@ -84,6 +84,12 @@ def test_research_vault_preview_allows_without_session():
     assert r.headers["x-regwall"] == "public"
 
 
+def test_confluence_screener_lead_magnet_allows_without_session():
+    r = _check(orig="/confluence_screener.html")
+    assert r.status_code == 204
+    assert r.headers["x-regwall"] == "public"
+
+
 @pytest.mark.parametrize(
     "path",
     [
