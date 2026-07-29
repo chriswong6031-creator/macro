@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-29T20:06:57.791621+00:00",
-  "count": 336,
+  "generated_at": "2026-07-29T21:08:34.758087+00:00",
+  "count": 346,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -20,6 +20,7 @@
     "Prime",
     "RBC",
     "Rabobank",
+    "Royal London on Private Credit",
     "S&T",
     "Scotiabank",
     "Societe Generale",
@@ -32,6 +33,26 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-vfq5jj5jkwa-0dc21b",
+      "title": "GS Challenging Hedge Fund Performance amid Momentum",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T17:25:13Z",
+      "summary_points": [
+        "**Recent Underperformance Context**: All three hedge fund strategies down >1% today—the first such daily decline since March 2020, driven by momentum sell-offs across US/Asia (Fundamental L/S), global regions (Systematic L/S), and Asian exposure (Multi-Strats).",
+        "**AI-Momentum Correlation Risk**: Extreme correlation (0.9778) between AI and Momentum indices directly links AI’s record drawdown (GSPUARTI down 38%) to momentum strategy performance, signaling critical sector risk.",
+        "**GSPRHIMO Drawdown Severity**: Unconstrained Momentum (GSPRHIMO) faces worst drawdown since GFC (-40.9795%), erasing all YTD gains after 41% decline, indicating severe momentum-driven strategy risk.",
+        "**SPXXAI Momentum Surge**: SPX ex AI (SPXXAI) hits ATH (3262.49), signaling AI-driven sector outperformance and potential market rotation toward AI/tech amid broader market stagnation."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-2bytr8xzx3g-afa905",
       "title": "JPM JPM TECH SKETCH GOO",
@@ -316,6 +337,40 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-uzbssjzsyvd-8621e7",
+      "title": "Americas Energy Oil Modestly Raising SU and CNQ Targets",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T08:04:26Z",
+      "summary_points": [
+        "Missing Document**: No source material provided for extraction **Critical Input Gap**: Absence of actual document content prevents identification of fundamentals/data/technical points **Action Required**: Provide document text to proceed with analysis per specified criteria"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-xzoaptkuaua-c86ac1",
+      "title": "KLA Corp. (KLAC) Solid quarter and guidance against accelerating industry trends, but mix continues to lag peers",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T08:04:16Z",
+      "summary_points": [
+        "Missing Document**: No source material provided for extraction **Critical Input Gap**: Absence of actual document content prevents identification of fundamentals/data/technical points **Action Required**: Provide document text to proceed with analysis per specified criteria"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-awjus4eqrkq-11eb52",
       "title": "GS Privorotsky De Grossing; Tech, Momentum Interesting. Fed",
       "institution": "S&T",
@@ -519,6 +574,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-iitklszglpn-9fb902",
+      "title": "Private credit beyond direct lending the role of asset based finance for insurers 1",
+      "institution": "Royal London on Private Credit",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T23:30:35Z",
+      "summary_points": [
+        "**Solvency II Capital Efficiency**: ABF treated as corporate bonds under Solvency II, avoiding higher capital charges of securitisations; five-year returns show superior capital efficiency vs fixed income due to high-quality cashflows.",
+        "**Risk-Adjusted Return Dominance**: ABF (BBB-rated) delivers highest expected return (60-70% of SCR), outperforming Short Duration Gilt, UK Equities, and Commodities (10-20% of SCR) per RLAM 2026 assumptions.",
+        "**Collateralized Cashflow Advantage**: Predictable income tied to underlying asset performance (e.g., receivables, auto loans) minimizes volatility vs corporate lending; reduces market sentiment reliance.",
+        "**Self-Amortising Structure**: Progressive capital repayment (1-5 years) eliminates refinancing risk and interest rate sensitivity vs direct lending’s bullet maturity.",
+        "**Exclusive Deal Flow Access**: 70% of ABF transactions from established relationships (Exclusive Origination Network), mitigating private credit deal scarcity and remote underwriting risks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-bpedmxshodi-858f92",
       "title": "Weekly CIO commentary",
       "institution": "Nuveen",
@@ -530,6 +606,27 @@
         "**AI Infrastructure Scarcity**: Utilities face durable scarcity from AI energy demands (e.g., Meta’s $50B Louisiana project); capex up 17% with 6% earnings growth, positioning listed infrastructure as structural diversifier.",
         "**Negative Correlation & Valuation Discount**: Nasdaq 100 and S&P Global Infrastructure Index show negative correlation (-0.05); infrastructure trades at valuations below U.S.",
         "tech despite upgraded earnings growth tied to AI expansion."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ync28z4inua-21a7da",
+      "title": "Focus 260728 AIcomputingPower",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-28T23:27:43Z",
+      "summary_points": [
+        "**Futures Market Validation**: CME launched GPU futures (B200) in May 2026, treating compute as a commodity; market speed confirms hedging demand amid scarcity, with volatility across models (GPT-5, Claude 4.7) embedding multi-year scarcity bets.",
+        "**BlackRock Capital Deployment**: $40B+ AI/data center acquisitions (Aligned Data Centers, AES Corp) signal institutional validation of structural compute shortage, targeting supply constraints in capacity/chips/memory to capture demand-driven growth.",
+        "**Structural Demand Imbalance**: Top 5% enterprise users consume 3x median tokens; inference now dominates volume, stretching capex 3-5 years and supporting \"attractive\" valuations across supply chain per investor research.",
+        "**Scarcity vs.",
+        "Efficiency Tension**: Engineering levers (quantization, ASICs) target 2x cost reduction ($700B hyperscaler capex 2026), but futures markets bet on scarcity persisting; China’s efficiency gains complicate US shortage narrative as key risk factor."
       ],
       "tags": [],
       "tickers": [],
@@ -1731,6 +1828,48 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-e8maxzvpgck-3faac4",
+      "title": "USA GS Economic Indicators Update",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T01:36:49Z",
+      "summary_points": [
+        "**GS FCI Tightening**: Nominal FCI tightened 9.0bp to 98.58, real FCI tightened 8.5bp to 98.42, driven by higher 10-year Treasury yields, signaling tightening financial conditions.",
+        "**Real GDP Growth Impulse Negative**: Real (inflation-adjusted) US GDP growth impulse negative, indicating real growth is being squeezed by tightening financial conditions.",
+        "**Wage Tracker Discrepancy**: Divergence between GS Wage Tracker and Monthly Wage Surveys (2021–2024) signals data gaps and inflationary risk, critical for Fed policy expectations.",
+        "**CAI Acceleration**: July Current Activity Indicator at +4.2% (vs.",
+        "+2.9% June), driven by manufacturing, signaling expanding economic activity."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-rqk2nrhrnnp-a621cb",
+      "title": "UDR Inc. (UDR) 2Q26 First Take FFO beats, but blends miss slightly",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T01:36:39Z",
+      "summary_points": [
+        "**Operating Results & Guidance**: Q2 core FFO beat consensus ($0.64 vs.",
+        "$0.63), full-year core FFO guidance raised to $2.49-$2.57 (midpoint $2.53), signaling stronger fundamentals and revised upward outlook.",
+        "**Q2 2026 Results**: Blended rental rate growth (2.1% vs.",
+        "2% est) and same-store revenue growth (1.8% vs.",
+        "0% est) missed, indicating near-term sunbelt demand headwinds for UDR."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-ifcjsn3rhid-51851d",
       "title": "NextEra Energy Inc. (NEE) Updating estimates for 2Q results with focus on data center growth, regulatory items",
       "institution": "Goldman Sachs",
@@ -1743,6 +1882,27 @@
         "**Nuclear Expansion Catalyst**: Duane Arnold plant online by 2029 (post-approval); FPL’s 8 GW large load forecast by 2032 with 12 GW in advanced discussions (tariff approval expected 2024, potential 2028 online).",
         "**Profitability Acceleration**: EBIT margin expanding to 41.0% (12/28E), EBITDA growth accelerating to 28.4% (12/27E), and FCF/share rising to $2.00 (12/28E) confirming operational efficiency.",
         "**Regulatory Merger Momentum**: Dominion merger filings underway (VA, NC, SC), closing H2 2027; post-merger 11% regulatory capex growth and 9%+ EPS growth through 2032."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-eo2blrajwqw-c0d1f9",
+      "title": "Amkor Technology Inc. (AMKR) Solid guidance with significant margin uplift driven by improving mix and 2.5D packaging ramp",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T01:36:09Z",
+      "summary_points": [
+        "**Q2 Beat & Nvidia Deal**: Revenue $1.90bn (beat $1.82bn), gross margin 16.8% (beat 15.1%), driven by 2.5D packaging ramp; $1.5bn Nvidia prepayment for capacity expansion.",
+        "**Margin Acceleration**: 3Q gross margin guided to 19% (vs.",
+        "Street 15.1%), with 220bps expansion driven by higher utilization in Computing/Auto/Industrial segments (>10% above Street estimates).",
+        "**Critical Risk**: Execution risk in 2.5D packaging volumes and gross margin leverage from new facilities; neutral rating pending operating leverage.",
+        "**Bull Case Upside**: Bull case price target $94.00 (54.8% upside), based on normalized EPS ($3.12 vs."
       ],
       "tags": [],
       "tickers": [],
@@ -2308,6 +2468,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-8h0bnh0zc24-28fcfa",
+      "title": "Investment grade bonds",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T00:40:28Z",
+      "summary_points": [
+        "**SBI Rebalancing Deadline**: August 2026 rebalancing mandates tactical adjustments to Swiss bond allocations, requiring portfolio managers to prepare for structural shifts in index composition.",
+        "**Duration Sensitivity Shift**: SBI Total AAA-BBB duration lengthened by 0.04y (BBB segment +0.11), signaling heightened interest rate risk in lower-rated credits amid foreign exposure rising 0.10 vs.",
+        "domestic’s 0.02.",
+        "**2022 Volatility Benchmark**: Domestic AAA-BBB segment suffered largest drawdown (-10%+) during 2022 volatility, driven by geopolitical shocks (Russia-Ukraine) and CHF volatility, highlighting acute risk exposure.",
+        "**BBB Segment Resilience**: SBI Total BBB maintained positive returns (2023–2025) while higher-rated indices lagged, indicating tactical opportunity in lower credit quality amid persistent rate uncertainty."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 22,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-z7qhimcfali-0de95e",
       "title": "High yield bonds",
       "institution": "UBS",
@@ -2387,6 +2568,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-dkitxvs8hzk-a84e2f",
+      "title": "New home sales basically flat in june trends flat too 2026 07 24",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-28T00:39:28Z",
+      "summary_points": [
+        "**Structural Inventory Glut**: Unsold new-home inventories remain at 9 months' supply (vs.",
+        "pre-Covid 4-6 months), reflecting persistent excess supply from post-pandemic construction surges without sustained demand growth.",
+        "**Mortgage Rates as Primary Demand Constraint**: Elevated mortgage rates suppress affordability despite new-home prices returning to pre-2020 real terms, preventing meaningful sales rebounds without rate cuts or policy intervention.",
+        "**Builders' Production Reluctance**: Builders resist reducing production amid stagnant demand and high inventories, creating a self-reinforcing structural imbalance in the market."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
       "language": "en",
       "needs_metadata": false
     },
