@@ -1,8 +1,8 @@
 {
   "schema": "altdata.by_ticker.v2",
   "as_of": "2026-07-29",
-  "generated_utc": "2026-07-29T03:11:28.277814+00:00",
-  "n_tickers": 2585,
+  "generated_utc": "2026-07-29T05:04:09.897067+00:00",
+  "n_tickers": 2578,
   "note": "Per-ticker weighted alt-data rollup. convergence_score = distinct independent channels (count); weighted_score ranks by channel quality. Donors / position-size recorded as context, never a voting channel.",
   "tickers": {
     "HUBB": {
@@ -5859,16 +5859,6 @@
       "ticker": "ZNWD",
       "channels": [
         "special_situation"
-      ],
-      "weighted_score": 0.2,
-      "convergence_score": 1,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "ASH": {
-      "ticker": "ASH",
-      "channels": [
-        "activist_13d"
       ],
       "weighted_score": 0.2,
       "convergence_score": 1,

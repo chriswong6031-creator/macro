@@ -342,7 +342,7 @@
      them synchronous), so the app would run before the deferred engine data and abort on
      `if (!ENGINE) return`. The two inline consumer scripts below read that data, so they
      run on DOMContentLoaded (fires after every defer script). -->
-<script src="regimedata/regime_prior.js?v=bc994240" defer></script>
+<script src="regimedata/regime_prior.js?v=6f78a340" defer></script>
 <script src="cycle_data.js?v=443f0a05" defer></script>
 <script src="cycledata/cycle_engine.js?v=bb299295" defer></script>
 <script src="mm_charts.js?v=244eb769" defer></script>
@@ -351,6 +351,5 @@
 <script>document.addEventListener('DOMContentLoaded',function(){try{document.getElementById('cyc-asof').textContent=(window.CYCLE_ENGINE||window.CYCLE_META||{}).as_of||(window.CYCLE_META||{}).asOf||'';}catch(e){}});</script>
 
 <script src="theme.js?v=08b92c24" defer></script>
-<script defer data-whb data-root="" src="wh_banner.js?v=37bf40aa"></script>
 </body>
 </html>
