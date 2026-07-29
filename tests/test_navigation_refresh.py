@@ -1,0 +1,106 @@
+from __future__ import annotations
+
+import re
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parents[1]
+NAV = (ROOT / "templates" / "_navlinks.html.j2").read_text(encoding="utf-8")
+THEME_JS = (ROOT / "templates" / "theme.js").read_text(encoding="utf-8")
+MARKET_JS = (ROOT / "templates" / "nav_market.js").read_text(encoding="utf-8")
+REFRESH_CSS = (ROOT / "templates" / "navigation-refresh.css").read_text(encoding="utf-8")
+
+
+def test_public_research_menu_is_product_focused() -> None:
+    for internal_page in (
+        "measurement.html",
+        "crossasset.html",
+        "signal_lab.html",
+        "tech_lab.html",
+        "macro_signals.html",
+        "factors.html",
+        "committee.html",
+    ):
+        assert f'href="{{{{ NP }}}}{internal_page}"' not in NAV
+
+    for public_page in (
+        "intelligence_hub.html",
+        "reports.html",
+        "research_vault.html",
+        "neural_web.html",
+        "foresight.html",
+        "state_of_themes.html",
+        "radar.html",
+        "confluence_screener.html",
+    ):
+        assert f'href="{{{{ NP }}}}{public_page}"' in NAV
+
+
+def test_global_cycles_uses_accessible_in_panel_drill() -> None:
+    assert "data-nav-drill-open" in NAV
+    assert "data-nav-drill-panel" in NAV
+    assert "data-nav-drill-back" in NAV
+    assert 'aria-expanded="false"' in NAV
+    assert "initNavDrills()" in THEME_JS
+
+
+def test_market_folding_reuses_canonical_menu_dom() -> None:
+    assert "intlMenu.appendChild(toSubmenu(countries[k]))" in MARKET_JS
+    assert "MMXMarkets.current" in MARKET_JS
+    assert "mmx-markets-change" in MARKET_JS
+    assert "currentPreference.enabled.slice()" in MARKET_JS
+    assert "data-nav-drill-open" in MARKET_JS
+
+
+def test_search_is_profile_aware_animated_and_status_rich() -> None:
+    for marker in (
+        "MMXMarkets.current",
+        "mmx-markets-change",
+        "popularRows",
+        "TURN SIGNALED",
+        "TOP WATCH",
+        "COUNTERTREND BOUNCE",
+        "data-stock-logo",
+        "data-search-page",
+        "animated_nav_search",
+    ):
+        assert marker in THEME_JS
+
+    assert ".nav-search.ticker-search.open { width: 340px; }" in REFRESH_CSS
+    assert "@keyframes nrFanIn" in REFRESH_CSS
+    assert "html:not([data-theme=\"light\"])" in REFRESH_CSS
+    assert "@media (prefers-reduced-motion: reduce)" in REFRESH_CSS
+
+
+def test_neural_web_public_view_exists_and_hides_proprietary_details() -> None:
+    page = (ROOT / "templates" / "neural_web.html.j2").read_text(encoding="utf-8")
+    assert "Signals do not arrive" in page
+    assert "Evidence becomes a decision through three gates" in page
+    assert "without exposing the proprietary scoring methods" in page
+    assert "committee" not in page.lower()
+
+
+def test_navigation_assets_remain_paired() -> None:
+    # theme.js is intentionally baked with public Supabase config on the site
+    # side; its specialized sync contract lives in tests/test_site_assets.py.
+    for name in ("navigation-refresh.css", "logo_config.js", "stock-logos.js", "nav_market.js"):
+        assert (ROOT / "templates" / name).read_bytes() == (ROOT / "site" / name).read_bytes()
+
+
+def test_logo_token_is_runtime_only() -> None:
+    source_config = (ROOT / "templates" / "logo_config.js").read_text(encoding="utf-8")
+    update = (ROOT / "app" / "deploy" / "update.sh").read_text(encoding="utf-8")
+    workflow = (ROOT / ".github" / "workflows" / "deploy-api-secrets.yml").read_text(encoding="utf-8")
+
+    assert "pk_" not in source_config
+    owned_runtime = "\n".join(
+        (ROOT / path).read_text(encoding="utf-8")
+        for path in (
+            "templates/stock-logos.js",
+            "templates/logo_config.js",
+            "app/deploy/update.sh",
+        )
+    )
+    assert not re.search(r"\bsk_[A-Za-z0-9_-]{16,}\b", owned_runtime)
+    assert "LOGO_DEV_PUBLISHABLE_KEY" in update
+    assert "secrets.LOGO_DEV_PUBLISHABLE_KEY" in workflow
