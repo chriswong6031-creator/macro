@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-29T15:08:03.415781+00:00",
-  "count": 329,
+  "generated_at": "2026-07-29T15:38:07.271705+00:00",
+  "count": 330,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -9,6 +9,7 @@
     "Citi",
     "Deutsche Bank",
     "Goldman Sachs",
+    "ING",
     "J.P. Morgan",
     "MUFG",
     "Mizuho",
@@ -2291,6 +2292,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-phja867gaew-e0ddd9",
+      "title": "ING Think the commodities feed oil slumps as the us and iran pause strikes270726",
+      "institution": "ING",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T00:38:40Z",
+      "summary_points": [
+        "**Geopolitical Contradictions**: US-Iran de-escalation triggered 7% Brent drop, but Houthi attacks on Saudi infrastructure and Strait of Hormuz disruptions create new supply risks, negating de-escalation gains.",
+        "**Russian Export Disruption**: Ukrainian drone attacks halted Russian oil loadings (Shekharis, CTPC), tightening supply; speculators added 192k crude net longs amid diesel export drop.",
+        "**Speculative Positioning**: Net long positions surged (crude: 192k lots; gasoil: 84k lots) reflecting tightness from Russian export constraints and geopolitical supply risk.",
+        "**Wheat Supply Dynamics**: CBOT wheat dipped 2.6% on profit-taking, but France’s strong crop data (65% good/excellent) and reduced CFTC shorts (19k lots) underpin prices despite Black Sea tensions."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
       "language": "en",
       "needs_metadata": false
     },
