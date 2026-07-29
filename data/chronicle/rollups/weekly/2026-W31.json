@@ -1,9 +1,9 @@
 {
-  "as_of": "2026-07-28",
+  "as_of": "2026-07-29",
   "coverage": {
-    "end": "2026-07-28",
+    "end": "2026-07-29",
     "note": "weekly rollup spans up to 13 ISO weeks ending 2026-W31; 8 week(s) have events so far; chronicle event store begins 2025-07-22; trimmed lowest-salience events to fit the display budget",
-    "start": "2026-04-28"
+    "start": "2026-04-29"
   },
   "iso_week": "2026-W31",
   "schema": "chronicle.rollup.weekly/v1",
@@ -11,10 +11,30 @@
     {
       "clusters": [
         {
-          "n_events": 70,
+          "n_events": 130,
           "source": "research_vault",
           "theme": null,
           "top_events": [
+            {
+              "date": "2026-07-28",
+              "id": "cev-research_vault-f1ecc4f598a6",
+              "kind": "report",
+              "source": "research_vault",
+              "source_ref": "marketdesk-cwta10ecnvl-186d33",
+              "tickers": [],
+              "title": "J.P. Morgan: JPM US Market Intell | Morning Briefing",
+              "weight_hint": 3
+            },
+            {
+              "date": "2026-07-28",
+              "id": "cev-research_vault-02288a4ac0fa",
+              "kind": "report",
+              "source": "research_vault",
+              "source_ref": "marketdesk-lemohkuezgc-4056e1",
+              "tickers": [],
+              "title": "J.P. Morgan: JPM Silver Sunset",
+              "weight_hint": 2
+            },
             {
               "date": "2026-07-28",
               "id": "cev-research_vault-039e4bcf4727",
@@ -26,6 +46,16 @@
               "weight_hint": 2
             },
             {
+              "date": "2026-07-28",
+              "id": "cev-research_vault-03d7f6ace633",
+              "kind": "report",
+              "source": "research_vault",
+              "source_ref": "marketdesk-35rkyessfmk-51fb92",
+              "tickers": [],
+              "title": "J.P. Morgan: JPM US Market Intelligence Global Thematic Views July 2026",
+              "weight_hint": 2
+            },
+            {
               "date": "2026-07-27",
               "id": "cev-research_vault-05ca4d62e1fd",
               "kind": "report",
@@ -34,41 +64,11 @@
               "tickers": [],
               "title": "Deutsche Bank: Early Morning Reid Macro Strategy",
               "weight_hint": 2
-            },
-            {
-              "date": "2026-07-27",
-              "id": "cev-research_vault-074afa5583d2",
-              "kind": "report",
-              "source": "research_vault",
-              "source_ref": "marketdesk-g44owjwoom1-a4e240",
-              "tickers": [],
-              "title": "Deutsche Bank: Tesla July 27",
-              "weight_hint": 2
-            },
-            {
-              "date": "2026-07-27",
-              "id": "cev-research_vault-0c3e4f029439",
-              "kind": "report",
-              "source": "research_vault",
-              "source_ref": "marketdesk-9a8of85bqed-671826",
-              "tickers": [],
-              "title": "J.P. Morgan: JPM US FOMC preview 1",
-              "weight_hint": 2
-            },
-            {
-              "date": "2026-07-28",
-              "id": "cev-research_vault-0c6b5ae3c578",
-              "kind": "report",
-              "source": "research_vault",
-              "source_ref": "marketdesk-vmwyiteqz8x-6ae5de",
-              "tickers": [],
-              "title": "Other: Economics Economics Daily Alert 27 07 2026",
-              "weight_hint": 2
             }
           ]
         },
         {
-          "n_events": 1,
+          "n_events": 2,
           "source": "risk_band",
           "theme": "risk",
           "top_events": [
@@ -81,6 +81,33 @@
               "tickers": [],
               "title": "Risk radar: caution → watch",
               "weight_hint": 2
+            },
+            {
+              "date": "2026-07-28",
+              "id": "cev-risk_band-c0c1fbc1d50d",
+              "kind": "state_flip",
+              "source": "risk_band",
+              "source_ref": "risk_radar_forward_log#2026-07-28",
+              "tickers": [],
+              "title": "Risk radar: watch → caution",
+              "weight_hint": 2
+            }
+          ]
+        },
+        {
+          "n_events": 1,
+          "source": "regime_flip",
+          "theme": "regime",
+          "top_events": [
+            {
+              "date": "2026-07-28",
+              "id": "cev-regime_flip-2c5d90609138",
+              "kind": "state_flip",
+              "source": "regime_flip",
+              "source_ref": "state_log#2026-07-28#regime_hk",
+              "tickers": [],
+              "title": "HK regime: Q3 Stagflation → Q1 Goldilocks",
+              "weight_hint": 3
             }
           ]
         }
@@ -147,7 +174,7 @@
           ]
         },
         {
-          "n_events": 4,
+          "n_events": 5,
           "source": "prophet_ledger",
           "theme": null,
           "top_events": [
@@ -228,6 +255,37 @@
       "clusters": [
         {
           "n_events": 3,
+          "source": "prophet_ledger",
+          "theme": null,
+          "top_events": [
+            {
+              "date": "2026-07-16",
+              "id": "cev-prophet_ledger-095ee3b88468",
+              "kind": "signal_close",
+              "source": "prophet_ledger",
+              "source_ref": "QCOM-BULL-20260709",
+              "tickers": [
+                "QCOM"
+              ],
+              "title": "Prophet close: QCOM BULL → INVALIDATED (-10.7% in 7d)",
+              "weight_hint": 2
+            },
+            {
+              "date": "2026-07-16",
+              "id": "cev-prophet_ledger-0d4cbc63fe3d",
+              "kind": "signal_close",
+              "source": "prophet_ledger",
+              "source_ref": "QCOM-BULL-20260710",
+              "tickers": [
+                "QCOM"
+              ],
+              "title": "Prophet close: QCOM BULL → INVALIDATED (-9.8% in 6d)",
+              "weight_hint": 2
+            }
+          ]
+        },
+        {
+          "n_events": 3,
           "source": "risk_band",
           "theme": "risk",
           "top_events": [
@@ -264,37 +322,6 @@
           ]
         },
         {
-          "n_events": 2,
-          "source": "prophet_ledger",
-          "theme": null,
-          "top_events": [
-            {
-              "date": "2026-07-16",
-              "id": "cev-prophet_ledger-095ee3b88468",
-              "kind": "signal_close",
-              "source": "prophet_ledger",
-              "source_ref": "QCOM-BULL-20260709",
-              "tickers": [
-                "QCOM"
-              ],
-              "title": "Prophet close: QCOM BULL → INVALIDATED (-10.7% in 7d)",
-              "weight_hint": 2
-            },
-            {
-              "date": "2026-07-16",
-              "id": "cev-prophet_ledger-0d4cbc63fe3d",
-              "kind": "signal_close",
-              "source": "prophet_ledger",
-              "source_ref": "QCOM-BULL-20260710",
-              "tickers": [
-                "QCOM"
-              ],
-              "title": "Prophet close: QCOM BULL → INVALIDATED (-9.8% in 6d)",
-              "weight_hint": 2
-            }
-          ]
-        },
-        {
           "n_events": 1,
           "source": "earnings",
           "theme": "earnings",
@@ -304,18 +331,7 @@
           "n_events": 1,
           "source": "macro_release",
           "theme": "cpi_headline",
-          "top_events": [
-            {
-              "date": "2026-07-14",
-              "id": "cev-macro_release-721da5e43466",
-              "kind": "print",
-              "source": "macro_release",
-              "source_ref": "cpi_headline#2026-07-14",
-              "tickers": [],
-              "title": "Macro print: cpi_headline = -0.4225 (2026-07-14)",
-              "weight_hint": 1
-            }
-          ]
+          "top_events": []
         },
         {
           "n_events": 1,
@@ -487,7 +503,7 @@
     {
       "clusters": [
         {
-          "n_events": 2,
+          "n_events": 1,
           "source": "earnings",
           "theme": "earnings",
           "top_events": [
@@ -501,18 +517,6 @@
                 "AAPL"
               ],
               "title": "Earnings: AAPL actual vs est",
-              "weight_hint": 1
-            },
-            {
-              "date": "2026-04-28",
-              "id": "cev-earnings-87c26d6f4dfd",
-              "kind": "earnings",
-              "source": "earnings",
-              "source_ref": "KO#2026-04-28",
-              "tickers": [
-                "KO"
-              ],
-              "title": "Earnings: KO actual vs est",
               "weight_hint": 1
             }
           ]

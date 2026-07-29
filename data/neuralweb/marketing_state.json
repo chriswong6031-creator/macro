@@ -1,6 +1,6 @@
 {
   "schema": "marketing.state/v1",
-  "as_of": "2026-07-28",
+  "as_of": "2026-07-29",
   "lobe": {
     "id": "marketing",
     "name": "Marketing",
@@ -82,12 +82,12 @@
       ],
       "total_envelope_usd": 0
     },
-    "opportunity_queue_depth": 38,
+    "opportunity_queue_depth": 49,
     "self_improvement": {
       "loop_state": "observing",
       "open_hypotheses": [],
       "last_review": null,
-      "next_review": "2026-08-03"
+      "next_review": "2026-08-04"
     },
     "guardrails": {
       "self_deception_checks": [
@@ -206,7 +206,7 @@
       "clock": {
         "cadence": "weekly",
         "last_review": null,
-        "next_review": "2026-08-03"
+        "next_review": "2026-08-04"
       },
       "retirement_test": "Retire if a simpler governance mechanism achieves equivalent attribution accuracy with lower inference cost over 90 days.",
       "scorecard": {
@@ -301,7 +301,7 @@
       "clock": {
         "cadence": "daily",
         "last_review": null,
-        "next_review": "2026-07-28"
+        "next_review": "2026-07-29"
       },
       "retirement_test": "Retire if a managed external execution platform provides equivalent reliability, auditability, and cost transparency.",
       "scorecard": {
@@ -397,7 +397,7 @@
       "clock": {
         "cadence": "weekly",
         "last_review": null,
-        "next_review": "2026-08-03"
+        "next_review": "2026-08-04"
       },
       "retirement_test": "Retire if opportunity detection recall falls below 60% on major events for two consecutive quarters.",
       "scorecard": {
@@ -503,7 +503,7 @@
       "clock": {
         "cadence": "weekly",
         "last_review": null,
-        "next_review": "2026-08-03"
+        "next_review": "2026-08-04"
       },
       "retirement_test": "Retire a specific product when it generates fewer than 10 qualified acquisition events per month for 60 days.",
       "scorecard": {
@@ -609,7 +609,7 @@
       "clock": {
         "cadence": "weekly",
         "last_review": null,
-        "next_review": "2026-08-03"
+        "next_review": "2026-08-04"
       },
       "retirement_test": "Retire if creative output fails distinctness checks or produces zero qualified-reach events for 30 consecutive days.",
       "scorecard": {
@@ -730,7 +730,7 @@
       "clock": {
         "cadence": "weekly",
         "last_review": null,
-        "next_review": "2026-08-03"
+        "next_review": "2026-08-04"
       },
       "retirement_test": "Retire a channel adapter if it produces warnings, policy flags, or zero qualified-reach events for 60 days.",
       "scorecard": {
@@ -831,7 +831,7 @@
       "clock": {
         "cadence": "weekly",
         "last_review": null,
-        "next_review": "2026-08-03"
+        "next_review": "2026-08-04"
       },
       "retirement_test": "Redesign if day-30 retained-contribution forecast is negative for two consecutive cohort reviews.",
       "scorecard": {
@@ -931,7 +931,7 @@
       "clock": {
         "cadence": "weekly",
         "last_review": null,
-        "next_review": "2026-08-03"
+        "next_review": "2026-08-04"
       },
       "retirement_test": "Retire a partner if they produce zero incremental retained contributions after two payout cycles.",
       "scorecard": {
@@ -1047,7 +1047,7 @@
       "clock": {
         "cadence": "weekly",
         "last_review": null,
-        "next_review": "2026-08-03"
+        "next_review": "2026-08-04"
       },
       "retirement_test": "Redesign if attribution methodology fails holdout validation on two consecutive quarter reviews.",
       "scorecard": {
@@ -1153,7 +1153,7 @@
       "clock": {
         "cadence": "weekly",
         "last_review": null,
-        "next_review": "2026-08-03"
+        "next_review": "2026-08-04"
       },
       "retirement_test": "The auditor is never retired; it may be redesigned if it generates more than 5% false-positive quarantines per month.",
       "scorecard": {
@@ -1250,7 +1250,7 @@
       "clock": {
         "cadence": "weekly",
         "last_review": null,
-        "next_review": "2026-08-03"
+        "next_review": "2026-08-04"
       },
       "retirement_test": "Retire if indexed dossier pages produce fewer than 10 qualified organic acquisition events per month for 60 consecutive days.",
       "scorecard": {
@@ -1318,7 +1318,7 @@
       "control_loop": "drafted"
     },
     "distinctness": {
-      "max_similarity": 0.1111,
+      "max_similarity": 0.1538,
       "flags": 0
     },
     "accounts": [
@@ -1517,35 +1517,203 @@
           "followers": null,
           "engagement": null
         }
+      },
+      {
+        "id": "meagan",
+        "handle": "meagmastermind",
+        "kind": "employee",
+        "beat": "Crowd translator — market psychology, mood vs positioning, consumer and tech stories with market consequence",
+        "voice": "educational",
+        "corpus": "full",
+        "tilt": {
+          "signal": 0.3,
+          "chart": 0.14,
+          "mover": 0.0,
+          "theme_list": 0.06,
+          "receipt": 0.08,
+          "event": 0.0,
+          "education": 0.16,
+          "macro": 0.16,
+          "watchlist": 0.1
+        },
+        "mix_observed": {},
+        "stage": "A",
+        "status": "live",
+        "authority": "G1",
+        "health": {
+          "warnings": 0,
+          "followers": null,
+          "engagement": null
+        }
+      },
+      {
+        "id": "sophia",
+        "handle": "sophmastermind",
+        "kind": "employee",
+        "beat": "Narrative architect — the story that organises the market, the incentives holding it together, and the fact that changes its meaning",
+        "voice": "pattern/history",
+        "corpus": "full",
+        "tilt": {
+          "signal": 0.3,
+          "chart": 0.13,
+          "mover": 0.0,
+          "theme_list": 0.07,
+          "receipt": 0.08,
+          "event": 0.0,
+          "education": 0.15,
+          "macro": 0.18,
+          "watchlist": 0.09
+        },
+        "mix_observed": {},
+        "stage": "A",
+        "status": "live",
+        "authority": "G1",
+        "health": {
+          "warnings": 0,
+          "followers": null,
+          "engagement": null
+        }
+      },
+      {
+        "id": "kelly",
+        "handle": "mastermindkelly",
+        "kind": "employee",
+        "beat": "Mechanism detective — cross-asset disagreement, what moved first, what is already priced, and the missing denominator",
+        "voice": "dry, receipts-forward",
+        "corpus": "full",
+        "tilt": {
+          "signal": 0.32,
+          "chart": 0.18,
+          "mover": 0.0,
+          "theme_list": 0.05,
+          "receipt": 0.12,
+          "event": 0.0,
+          "education": 0.12,
+          "macro": 0.14,
+          "watchlist": 0.07
+        },
+        "mix_observed": {},
+        "stage": "A",
+        "status": "live",
+        "authority": "G1",
+        "health": {
+          "warnings": 0,
+          "followers": null,
+          "engagement": null
+        }
+      },
+      {
+        "id": "cici",
+        "handle": "mastermindcici",
+        "kind": "employee",
+        "beat": "Cross-border correspondent — Asia/HK session, A/H/ADR/FX/commodity transmission, and what New York inherits at the open",
+        "voice": "specialist",
+        "corpus": "full",
+        "tilt": {
+          "signal": 0.29,
+          "chart": 0.15,
+          "mover": 0.0,
+          "theme_list": 0.09,
+          "receipt": 0.07,
+          "event": 0.0,
+          "education": 0.12,
+          "macro": 0.2,
+          "watchlist": 0.08
+        },
+        "mix_observed": {},
+        "stage": "A",
+        "status": "live",
+        "authority": "G1",
+        "health": {
+          "warnings": 0,
+          "followers": null,
+          "engagement": null
+        }
+      },
+      {
+        "id": "mastermind_news",
+        "handle": "mastermindnews1",
+        "kind": "branded",
+        "beat": "the Mastermind News publication wire (mastermindx.ai)",
+        "voice": "fast, reactive",
+        "corpus": "full",
+        "tilt": {
+          "signal": 0.28,
+          "event": 0.24,
+          "mover": 0.14,
+          "macro": 0.1,
+          "chart": 0.08,
+          "theme_list": 0.06,
+          "receipt": 0.04,
+          "education": 0.03,
+          "watchlist": 0.03
+        },
+        "mix_observed": {},
+        "stage": "A",
+        "status": "planned",
+        "authority": "G1",
+        "health": {
+          "warnings": 0,
+          "followers": null,
+          "engagement": null
+        }
+      },
+      {
+        "id": "mastermind_research",
+        "handle": null,
+        "kind": "branded",
+        "beat": "institutional research + papers, analyzed (blog.mastermind-x.com)",
+        "voice": "educational",
+        "corpus": "full",
+        "tilt": {
+          "signal": 0.28,
+          "education": 0.16,
+          "macro": 0.14,
+          "receipt": 0.12,
+          "event": 0.08,
+          "chart": 0.08,
+          "theme_list": 0.08,
+          "mover": 0.03,
+          "watchlist": 0.03
+        },
+        "mix_observed": {},
+        "stage": "A",
+        "status": "planned",
+        "authority": "G1",
+        "health": {
+          "warnings": 0,
+          "followers": null,
+          "engagement": null
+        }
       }
     ]
   },
   "pipeline": {
     "opportunities": {
-      "open": 38,
-      "scored": 92,
+      "open": 49,
+      "scored": 103,
       "newest": [
         {
-          "id": "radar-earnings-AAMI-2026-07-27",
+          "id": "radar-earnings-AAMI-2026-07-28",
           "problem_or_desire": "$AAMI: earnings 2026-07-30",
           "expected_value": 0.5,
-          "score": 0.226605,
+          "score": 0.224011,
           "half_life_class": "earnings_follow_up",
           "status": "open"
         },
         {
-          "id": "radar-earnings-AAPL-2026-07-27",
+          "id": "radar-earnings-AAPL-2026-07-28",
           "problem_or_desire": "$AAPL: earnings 2026-07-30 after hours",
           "expected_value": 0.5,
-          "score": 0.226605,
+          "score": 0.224011,
           "half_life_class": "earnings_follow_up",
           "status": "open"
         },
         {
-          "id": "radar-earnings-ABBV-2026-07-27",
+          "id": "radar-earnings-ABBV-2026-07-28",
           "problem_or_desire": "$ABBV: earnings 2026-07-30",
           "expected_value": 0.5,
-          "score": 0.226605,
+          "score": 0.224011,
           "half_life_class": "earnings_follow_up",
           "status": "open"
         }
@@ -1570,30 +1738,30 @@
       ]
     },
     "publications": {
-      "total": 18,
-      "receipts": 18,
+      "total": 44,
+      "receipts": 44,
       "corrections": 0,
       "newest": [
         {
-          "id": "pub-ob-2026-07-26-d4fbdb0b4b",
+          "id": "pub-ob-2026-07-28-99dd7c5e7f",
           "channel": "x",
-          "account": "flagship",
+          "account": "cici",
           "status": "clean",
-          "published_at": "2026-07-27T18:42:53Z"
+          "published_at": "2026-07-28T20:24:37Z"
         },
         {
-          "id": "pub-ob-2026-07-26-63346749b3",
+          "id": "pub-ob-2026-07-28-ae8a44dd25",
           "channel": "x",
-          "account": "flagship",
+          "account": "meagan",
           "status": "clean",
-          "published_at": "2026-07-27T17:03:01Z"
+          "published_at": "2026-07-28T20:24:37Z"
         },
         {
-          "id": "pub-ob-2026-07-26-cabd87432b",
+          "id": "pub-ob-2026-07-28-d996c3bc7a",
           "channel": "x",
           "account": "flagship",
           "status": "clean",
-          "published_at": "2026-07-27T13:45:16Z"
+          "published_at": "2026-07-28T20:24:37Z"
         }
       ]
     },
@@ -1817,12 +1985,12 @@
     }
   ],
   "content": {
-    "total_posts": 266,
-    "signal_posts": 98,
-    "charts": 7,
-    "accounts": 7,
+    "total_posts": 1184,
+    "signal_posts": 358,
+    "charts": 97,
+    "accounts": 13,
     "state": "present",
-    "as_of": "2026-07-28"
+    "as_of": "2026-07-29"
   },
   "notes": [
     "deterministic v1 substrate; agent actuation staged",
@@ -1832,7 +2000,7 @@
   ],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/marketing_governor.py",
-  "produced_at": "2026-07-28T03:24:07Z",
-  "inputs_hash": "sha256:698fc49cdfe84f5f7790d487abdee83c8b9950f7ce5d1e94860b4e44843b6856",
+  "produced_at": "2026-07-29T03:48:02Z",
+  "inputs_hash": "sha256:b41ae80458d75c023148b9279be39896ce542466a39190a4fb6657b6c3729e1e",
   "tier": "display"
 }

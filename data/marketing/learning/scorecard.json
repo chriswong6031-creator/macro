@@ -1,0 +1,377 @@
+{
+  "as_of": "2026-07-29",
+  "bottleneck": {
+    "accounts": [
+      {
+        "account": "cici",
+        "author_replies": 0,
+        "contributions": 4,
+        "engagements": 0,
+        "impressions": 0,
+        "measured": 0,
+        "replies_abstained": 0,
+        "replies_enqueued": 0,
+        "replies_sent": 0,
+        "unmeasured": 4
+      },
+      {
+        "account": "flagship",
+        "author_replies": 0,
+        "contributions": 26,
+        "engagements": 5,
+        "impressions": 141,
+        "measured": 9,
+        "replies_abstained": 0,
+        "replies_enqueued": 0,
+        "replies_sent": 0,
+        "unmeasured": 17
+      },
+      {
+        "account": "founder",
+        "author_replies": 0,
+        "contributions": 6,
+        "engagements": 0,
+        "impressions": 140,
+        "measured": 4,
+        "replies_abstained": 0,
+        "replies_enqueued": 0,
+        "replies_sent": 0,
+        "unmeasured": 2
+      },
+      {
+        "account": "meagan",
+        "author_replies": 0,
+        "contributions": 3,
+        "engagements": 0,
+        "impressions": 0,
+        "measured": 0,
+        "replies_abstained": 0,
+        "replies_enqueued": 0,
+        "replies_sent": 0,
+        "unmeasured": 3
+      },
+      {
+        "account": "sophia",
+        "author_replies": 0,
+        "contributions": 4,
+        "engagements": 0,
+        "impressions": 0,
+        "measured": 0,
+        "replies_abstained": 0,
+        "replies_enqueued": 0,
+        "replies_sent": 0,
+        "unmeasured": 4
+      }
+    ],
+    "basis": "raw_counts",
+    "counter_note": "replies_sent counts replies that actually LEFT (send-state rows only). replies_enqueued are drafts awaiting approval and replies_abstained are critic kills — neither is public. At M0 replies_sent is 0 by construction; contributions counts published items only.",
+    "why": "north-star (qualified retained followers per 100 contributions) is undefined at zero followers — charter §8"
+  },
+  "cells": [
+    {
+      "dims": {
+        "account": "flagship",
+        "format": "watchlist",
+        "hook_family": "weekend_levels",
+        "register": "unknown"
+      },
+      "med_adjusted": 0.029849,
+      "med_impressions": 15.0,
+      "med_label": 0.052632,
+      "n": 15,
+      "n_labelled": 9,
+      "n_null": 6,
+      "verdict": "seeding",
+      "verdict_note": "9 labelled rows against an n-floor of 20 — no ranking claim is made from this cell"
+    },
+    {
+      "dims": {
+        "account": "flagship",
+        "format": "watchlist",
+        "hook_family": "content_studio",
+        "register": "unknown"
+      },
+      "med_adjusted": null,
+      "med_impressions": null,
+      "med_label": null,
+      "n": 5,
+      "n_labelled": 0,
+      "n_null": 5,
+      "verdict": "seeding",
+      "verdict_note": "0 labelled rows against an n-floor of 20 — no ranking claim is made from this cell"
+    },
+    {
+      "dims": {
+        "account": "founder",
+        "format": "watchlist",
+        "hook_family": "content_studio",
+        "register": "persona"
+      },
+      "med_adjusted": -0.022783,
+      "med_impressions": 42.0,
+      "med_label": 0.0,
+      "n": 3,
+      "n_labelled": 1,
+      "n_null": 2,
+      "verdict": "seeding",
+      "verdict_note": "1 labelled rows against an n-floor of 20 — no ranking claim is made from this cell"
+    },
+    {
+      "dims": {
+        "account": "sophia",
+        "format": "watchlist",
+        "hook_family": "content_studio",
+        "register": "persona"
+      },
+      "med_adjusted": null,
+      "med_impressions": null,
+      "med_label": null,
+      "n": 3,
+      "n_labelled": 0,
+      "n_null": 3,
+      "verdict": "seeding",
+      "verdict_note": "0 labelled rows against an n-floor of 20 — no ranking claim is made from this cell"
+    },
+    {
+      "dims": {
+        "account": "cici",
+        "format": "chart",
+        "hook_family": "claude_rewrite",
+        "register": "persona"
+      },
+      "med_adjusted": null,
+      "med_impressions": null,
+      "med_label": null,
+      "n": 2,
+      "n_labelled": 0,
+      "n_null": 2,
+      "verdict": "seeding",
+      "verdict_note": "0 labelled rows against an n-floor of 20 — no ranking claim is made from this cell"
+    },
+    {
+      "dims": {
+        "account": "cici",
+        "format": "watchlist",
+        "hook_family": "content_studio",
+        "register": "persona"
+      },
+      "med_adjusted": null,
+      "med_impressions": null,
+      "med_label": null,
+      "n": 2,
+      "n_labelled": 0,
+      "n_null": 2,
+      "verdict": "seeding",
+      "verdict_note": "0 labelled rows against an n-floor of 20 — no ranking claim is made from this cell"
+    },
+    {
+      "dims": {
+        "account": "flagship",
+        "format": "chart",
+        "hook_family": "content_studio",
+        "register": "unknown"
+      },
+      "med_adjusted": null,
+      "med_impressions": null,
+      "med_label": null,
+      "n": 2,
+      "n_labelled": 0,
+      "n_null": 2,
+      "verdict": "seeding",
+      "verdict_note": "0 labelled rows against an n-floor of 20 — no ranking claim is made from this cell"
+    },
+    {
+      "dims": {
+        "account": "flagship",
+        "format": "signal",
+        "hook_family": "content_studio",
+        "register": "unknown"
+      },
+      "med_adjusted": null,
+      "med_impressions": null,
+      "med_label": null,
+      "n": 2,
+      "n_labelled": 0,
+      "n_null": 2,
+      "verdict": "seeding",
+      "verdict_note": "0 labelled rows against an n-floor of 20 — no ranking claim is made from this cell"
+    },
+    {
+      "dims": {
+        "account": "founder",
+        "format": "watchlist",
+        "hook_family": "claude_rewrite",
+        "register": "persona"
+      },
+      "med_adjusted": -0.022783,
+      "med_impressions": 46.5,
+      "med_label": 0.0,
+      "n": 2,
+      "n_labelled": 2,
+      "n_null": 0,
+      "verdict": "seeding",
+      "verdict_note": "2 labelled rows against an n-floor of 20 — no ranking claim is made from this cell"
+    },
+    {
+      "dims": {
+        "account": "flagship",
+        "format": "event",
+        "hook_family": "content_studio",
+        "register": "unknown"
+      },
+      "med_adjusted": null,
+      "med_impressions": null,
+      "med_label": null,
+      "n": 1,
+      "n_labelled": 0,
+      "n_null": 1,
+      "verdict": "seeding",
+      "verdict_note": "0 labelled rows against an n-floor of 20 — no ranking claim is made from this cell"
+    },
+    {
+      "dims": {
+        "account": "flagship",
+        "format": "macro",
+        "hook_family": "content_studio",
+        "register": "unknown"
+      },
+      "med_adjusted": null,
+      "med_impressions": null,
+      "med_label": null,
+      "n": 1,
+      "n_labelled": 0,
+      "n_null": 1,
+      "verdict": "seeding",
+      "verdict_note": "0 labelled rows against an n-floor of 20 — no ranking claim is made from this cell"
+    },
+    {
+      "dims": {
+        "account": "founder",
+        "format": "chart",
+        "hook_family": "claude_rewrite",
+        "register": "persona"
+      },
+      "med_adjusted": -0.022783,
+      "med_impressions": 5.0,
+      "med_label": 0.0,
+      "n": 1,
+      "n_labelled": 1,
+      "n_null": 0,
+      "verdict": "seeding",
+      "verdict_note": "1 labelled rows against an n-floor of 20 — no ranking claim is made from this cell"
+    },
+    {
+      "dims": {
+        "account": "meagan",
+        "format": "chart",
+        "hook_family": "claude_rewrite",
+        "register": "persona"
+      },
+      "med_adjusted": null,
+      "med_impressions": null,
+      "med_label": null,
+      "n": 1,
+      "n_labelled": 0,
+      "n_null": 1,
+      "verdict": "seeding",
+      "verdict_note": "0 labelled rows against an n-floor of 20 — no ranking claim is made from this cell"
+    },
+    {
+      "dims": {
+        "account": "meagan",
+        "format": "signal",
+        "hook_family": "content_studio",
+        "register": "analysis"
+      },
+      "med_adjusted": null,
+      "med_impressions": null,
+      "med_label": null,
+      "n": 1,
+      "n_labelled": 0,
+      "n_null": 1,
+      "verdict": "seeding",
+      "verdict_note": "0 labelled rows against an n-floor of 20 — no ranking claim is made from this cell"
+    },
+    {
+      "dims": {
+        "account": "meagan",
+        "format": "watchlist",
+        "hook_family": "content_studio",
+        "register": "persona"
+      },
+      "med_adjusted": null,
+      "med_impressions": null,
+      "med_label": null,
+      "n": 1,
+      "n_labelled": 0,
+      "n_null": 1,
+      "verdict": "seeding",
+      "verdict_note": "0 labelled rows against an n-floor of 20 — no ranking claim is made from this cell"
+    },
+    {
+      "dims": {
+        "account": "sophia",
+        "format": "education",
+        "hook_family": "content_studio",
+        "register": "analysis"
+      },
+      "med_adjusted": null,
+      "med_impressions": null,
+      "med_label": null,
+      "n": 1,
+      "n_labelled": 0,
+      "n_null": 1,
+      "verdict": "seeding",
+      "verdict_note": "0 labelled rows against an n-floor of 20 — no ranking claim is made from this cell"
+    }
+  ],
+  "consumers": [
+    "d05_wire_loop",
+    "is_w5_ranker",
+    "persona_w4_report_card",
+    "media_w2_scorecard"
+  ],
+  "covariates": {
+    "active": [
+      "parent_size"
+    ],
+    "expansion_pool": [
+      "author_tier",
+      "beat_fit",
+      "time_of_day",
+      "reply_family",
+      "thread_saturation"
+    ],
+    "max_supported": 1,
+    "n_labelled": 13,
+    "requested": [
+      "parent_size",
+      "post_age",
+      "market_intensity"
+    ],
+    "samples_per_covariate": 40
+  },
+  "dims": [
+    "account",
+    "format",
+    "register",
+    "hook_family"
+  ],
+  "n_floor": 20,
+  "n_rows": 43,
+  "n_rows_all_time": 43,
+  "north_star": {
+    "active": false,
+    "follower_floor": 250,
+    "needs": [
+      "a follower series on observed['followers_at_post'] — Buffer's per-post analytics do not return one",
+      "a definition of 'qualified' and 'retained' that a follower total cannot supply"
+    ],
+    "observed_followers": {},
+    "reason": "not computed: no production path writes a follower count, so both the denominator base and the numerator are missing. Read the bottleneck table on raw counts instead (charter §8)."
+  },
+  "note": "Operator console artifact. No score or label on this surface is user-facing, and nothing in site/ reads this file.",
+  "produced_by": "engine/marketing/labels.py",
+  "schema": "marketing.learning_scorecard/v1",
+  "window_days": 7
+}

@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-07-28",
+  "as_of": "2026-07-29",
   "authority": {
     "may_alert": false,
     "may_auto_promote": false,
@@ -38,7 +38,7 @@
   },
   "family": "pss_cr1_challenge_resilience_prospective",
   "gate_open": true,
-  "generated_utc": "2026-07-28T01:08:49.895872+00:00",
+  "generated_utc": "2026-07-29T01:21:26.492597+00:00",
   "ledger": {
     "advanced_today": 0,
     "appended_today": 0,

@@ -1,10 +1,10 @@
 {
   "schema": "subsector_rotation.track_record.v1",
-  "as_of": "2026-07-28",
-  "generated_at": "2026-07-28T01:25:59.014287+00:00",
+  "as_of": "2026-07-29",
+  "generated_at": "2026-07-29T01:36:53.021286+00:00",
   "is_context_only": true,
-  "n_snapshots": 5908,
-  "n_days": 22,
+  "n_snapshots": 6177,
+  "n_days": 23,
   "horizons": {
     "5": {
       "n_matured": 4319,
@@ -40,68 +40,68 @@
       }
     },
     "10": {
-      "n_matured": 3114,
-      "score_ic": 0.2112,
-      "score_ic_t_hac": 4.014,
+      "n_matured": 3355,
+      "score_ic": 0.2259,
+      "score_ic_t_hac": 4.299,
       "score_ic_detail": {
-        "mean_ic": 0.2112,
-        "ic_vol": 0.3166,
-        "ic_ir": 0.667,
-        "ic_ir_ann": 2.984,
-        "t_hac": 4.014,
-        "p_hac": 0.0001,
-        "hit": 0.769,
-        "n": 13,
+        "mean_ic": 0.2259,
+        "ic_vol": 0.3091,
+        "ic_ir": 0.731,
+        "ic_ir_ann": 3.269,
+        "t_hac": 4.299,
+        "p_hac": 0.0,
+        "hit": 0.786,
+        "n": 14,
         "hac_lags": 10
       },
       "by_stage": {
         "emerging": {
-          "n": 122,
-          "mean_fwd_rel": 0.0013,
-          "hit_rate": 0.525
+          "n": 129,
+          "mean_fwd_rel": 0.0016,
+          "hit_rate": 0.527
         },
         "neutral": {
-          "n": 2849,
-          "mean_fwd_rel": -0.0077,
+          "n": 3072,
+          "mean_fwd_rel": -0.0069,
           "hit_rate": null
         },
         "fading": {
-          "n": 143,
-          "mean_fwd_rel": -0.033,
-          "hit_rate": 0.741
+          "n": 154,
+          "mean_fwd_rel": -0.0316,
+          "hit_rate": 0.734
         }
       }
     },
     "21": {
-      "n_matured": 1434,
-      "score_ic": 0.2057,
+      "n_matured": 1673,
+      "score_ic": 0.2091,
       "score_ic_t_hac": null,
       "score_ic_detail": {
-        "mean_ic": 0.2057,
-        "ic_vol": 0.3539,
-        "ic_ir": 0.581,
-        "ic_ir_ann": 3.767,
+        "mean_ic": 0.2091,
+        "ic_vol": 0.3232,
+        "ic_ir": 0.647,
+        "ic_ir_ann": 4.193,
         "t_hac": null,
         "p_hac": null,
-        "hit": 0.5,
-        "n": 6,
+        "hit": 0.571,
+        "n": 7,
         "hac_lags": 21
       },
       "by_stage": {
         "emerging": {
-          "n": 53,
-          "mean_fwd_rel": -0.0134,
-          "hit_rate": 0.396
+          "n": 63,
+          "mean_fwd_rel": -0.0111,
+          "hit_rate": 0.429
         },
         "neutral": {
-          "n": 1315,
-          "mean_fwd_rel": -0.0147,
+          "n": 1533,
+          "mean_fwd_rel": -0.0133,
           "hit_rate": null
         },
         "fading": {
-          "n": 66,
-          "mean_fwd_rel": -0.0542,
-          "hit_rate": 0.818
+          "n": 77,
+          "mean_fwd_rel": -0.0588,
+          "hit_rate": 0.844
         }
       }
     },
@@ -116,7 +116,7 @@
     }
   },
   "lead_time_d": 10,
-  "peak_score_ic": 0.2112,
+  "peak_score_ic": 0.2259,
   "proven": {
     "5": false,
     "10": true,
@@ -128,6 +128,42 @@
   "note": "Emerging-score IC is significant at the 10d horizon (measured). Context-only \u2014 informs the read, never sizes.",
   "note_zh": "\u5347\u6e29\u8bc4\u5206\u7684\u4fe1\u606f\u7cfb\u6570\u5728 10 \u5929\u5468\u671f\u4e0a\u663e\u8457\uff08\u5df2\u6d4b\u5f97\uff09\u3002\u4ec5\u4f9b\u53c2\u8003\u2014\u2014\u8f85\u52a9\u7814\u5224\uff0c\u4ece\u4e0d\u7528\u4e8e\u4ed3\u4f4d\u3002",
   "recent_misses": [
+    {
+      "date": "2026-07-07",
+      "key": "evscharging",
+      "name": "Charging",
+      "theme": "Electric Vehicles",
+      "stage": "emerging",
+      "fwd_rel": -0.0747,
+      "horizon_d": 21
+    },
+    {
+      "date": "2026-07-07",
+      "key": "socialadvertising",
+      "name": "Advertising",
+      "theme": "Social Media",
+      "stage": "emerging",
+      "fwd_rel": -0.0521,
+      "horizon_d": 21
+    },
+    {
+      "date": "2026-07-07",
+      "key": "cybersecuritycloud",
+      "name": "Cloud",
+      "theme": "Cybersecurity",
+      "stage": "emerging",
+      "fwd_rel": -0.0479,
+      "horizon_d": 21
+    },
+    {
+      "date": "2026-07-07",
+      "key": "cybersecurityappsecurity",
+      "name": "App Security",
+      "theme": "Cybersecurity",
+      "stage": "emerging",
+      "fwd_rel": -0.0406,
+      "horizon_d": 21
+    },
     {
       "date": "2026-07-05",
       "key": "healthcarenextgen",
@@ -162,42 +198,6 @@
       "theme": "Space Tech",
       "stage": "emerging",
       "fwd_rel": -0.043,
-      "horizon_d": 21
-    },
-    {
-      "date": "2026-07-05",
-      "key": "autonomousdefense",
-      "name": "Defense",
-      "theme": "Autonomous Systems",
-      "stage": "emerging",
-      "fwd_rel": -0.0341,
-      "horizon_d": 21
-    },
-    {
-      "date": "2026-07-05",
-      "key": "softwarevsaas",
-      "name": "V-SaaS",
-      "theme": "Software",
-      "stage": "emerging",
-      "fwd_rel": -0.0254,
-      "horizon_d": 21
-    },
-    {
-      "date": "2026-07-05",
-      "key": "varealityapplications",
-      "name": "Applications",
-      "theme": "Virtual & Augmented Reality",
-      "stage": "emerging",
-      "fwd_rel": -0.0205,
-      "horizon_d": 21
-    },
-    {
-      "date": "2026-07-05",
-      "key": "cloudhardware",
-      "name": "Hardware",
-      "theme": "Cloud Computing",
-      "stage": "fading",
-      "fwd_rel": 0.0199,
       "horizon_d": 21
     }
   ],

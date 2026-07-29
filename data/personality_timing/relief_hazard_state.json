@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-07-28",
+  "as_of": "2026-07-29",
   "authority": {
     "may_alert": false,
     "may_auto_promote": false,
@@ -38,7 +38,7 @@
   },
   "family": "pss_rh1_relief_hazard_prospective",
   "gate_open": true,
-  "generated_utc": "2026-07-28T01:08:49.888756+00:00",
+  "generated_utc": "2026-07-29T01:21:26.485763+00:00",
   "ledger": {
     "advanced_today": 0,
     "appended_today": 0,
@@ -60,13 +60,14 @@
   "program_id": "PSS-RH1",
   "registration_ok": true,
   "scan_census": {
-    "anchors": 9231,
+    "anchors": 9250,
     "detected_post_cutoff_paths": 0,
     "frozen_members": 799,
     "loaded_members": 799,
     "missing_members": 0,
     "prospective_candidate_anchors": 28,
     "reasons": {
+      "incomplete_formation": 19,
       "missing_ohlcv": 0,
       "no_subject_recovery": 8,
       "pre_cutoff_action": 20

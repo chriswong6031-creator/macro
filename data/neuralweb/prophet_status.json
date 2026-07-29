@@ -1,6 +1,6 @@
 {
   "schema": "prophet.status/v1",
-  "as_of": "2026-07-28T03:17:55+00:00",
+  "as_of": "2026-07-29T03:33:57+00:00",
   "built_by": "engine.neuralweb.prophet_governor",
   "markets": {
     "us": {
@@ -16,13 +16,13 @@
       ],
       "maturity_state": "accruing",
       "retro_grades": {
-        "total_rows": 1919,
-        "matured_rows": 1919,
+        "total_rows": 1999,
+        "matured_rows": 1999,
         "graded_col_counts": {
-          "excess_spy": 1919,
-          "mae_close_excess_spy": 1919,
-          "excess_sector": 1917,
-          "mae_close_excess_sector": 1917
+          "excess_spy": 1999,
+          "mae_close_excess_spy": 1999,
+          "excess_sector": 1997,
+          "mae_close_excess_sector": 1997
         },
         "note": "one-grader law (SA-R14); win_rate from committed scoreboard only"
       },
@@ -33,24 +33,24 @@
         "horizons_available": []
       },
       "board_outcomes": {
-        "as_of": "2026-07-27",
+        "as_of": "2026-07-28",
         "n_picks": null,
         "status": null
       },
       "audit_scoreboard": {
-        "as_of": "2026-07-28",
+        "as_of": "2026-07-29",
         "status": null,
         "n_matured": null,
         "win_rate": null
       },
       "fitness_card": {
-        "as_of": "2026-07-28",
+        "as_of": "2026-07-29",
         "hit_quality": null,
         "coverage_health": null,
         "process_integrity": null
       },
       "track_history": {
-        "as_of": "2026-07-27",
+        "as_of": "2026-07-28",
         "n_cohorts": null,
         "status": null
       },
@@ -65,17 +65,17 @@
       "data_gaps": [],
       "maturity_state": "accruing",
       "cn_board": {
-        "total_rows": 962,
+        "total_rows": 1022,
         "matured_rows": 0,
         "fill_basis_note": "t1_hl2 \u2014 accruing"
       },
       "fitness_card": {
-        "as_of": "2026-07-27",
+        "as_of": "2026-07-28",
         "hit_quality": null,
         "process_integrity": null
       },
       "audit_scoreboard": {
-        "as_of": "2026-07-28",
+        "as_of": "2026-07-29",
         "status": null,
         "n_matured": null
       },
@@ -177,21 +177,21 @@
           "artifact": "us-audit-scoreboard",
           "path": "site/factordata/us_audit_scoreboard.json",
           "status": "ok",
-          "age_hours": 3.3,
+          "age_hours": 3.6,
           "sla_hours": 48.0
         },
         {
           "artifact": "us-track-history",
           "path": "site/factordata/us_track_history.json",
           "status": "ok",
-          "age_hours": 27.3,
+          "age_hours": 27.6,
           "sla_hours": 48.0
         },
         {
           "artifact": "us-board-outcomes",
           "path": "site/factordata/us_board_outcomes.json",
           "status": "ok",
-          "age_hours": 27.3,
+          "age_hours": 27.6,
           "sla_hours": 48
         }
       ],
@@ -205,7 +205,7 @@
           "artifact": "site-china-standouts",
           "path": "data/metabolism/fitness/standouts_cn.json",
           "status": "ok",
-          "age_hours": 27.3,
+          "age_hours": 27.6,
           "sla_hours": 30.0
         }
       ],
@@ -219,7 +219,7 @@
           "artifact": "hk-board-ledger",
           "path": "data/board_ledger/hk_board.parquet",
           "status": "ok",
-          "age_hours": 15.6,
+          "age_hours": 16.1,
           "sla_hours": 48
         }
       ],
@@ -260,31 +260,31 @@
     "note": "Cross-connected Mastermind-Charts lane. Prophet manages US buy-lane \u2192 trade-plan envelopes. Display-only crosslink; Prophet reads, never writes these stores (PR-R2).",
     "data_gaps": [],
     "ledger": {
-      "total_rows_sampled": 10,
+      "total_rows_sampled": 12,
       "open_count": 0,
-      "closed_count": 10,
+      "closed_count": 12,
       "outcome_mix": {
-        "EXPIRED": 5,
+        "EXPIRED": 7,
         "INVALIDATED": 4,
         "T1_HIT": 1
       }
     },
     "index": {
       "as_of": null,
-      "plan_count": 47
+      "plan_count": 55
     }
   },
   "pick_lab": {
     "block_id": "pick_lab",
     "data_gaps": [],
     "us_lab": {
-      "as_of": "2026-07-27",
+      "as_of": "2026-07-28",
       "book_count": null,
       "fire_count": 0,
       "status": null
     },
     "cn_lab": {
-      "as_of": "2026-07-27",
+      "as_of": "2026-07-28",
       "book_count": null,
       "fire_count": 0,
       "status": null

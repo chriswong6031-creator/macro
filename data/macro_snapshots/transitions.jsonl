@@ -70,3 +70,13 @@
 {"asof": "2026-07-28", "domain": "market", "field": "market_state_verdict", "from_value": "MIXED", "to_value": "RISK_ON", "macro_context_id": "a7723f06d9ad332d"}
 {"asof": "2026-07-28", "domain": "fx", "field": "fx_eurusd_action", "from_value": "SHORT", "to_value": "FLAT", "macro_context_id": "a7723f06d9ad332d"}
 {"asof": "2026-07-28", "domain": "fx", "field": "fx_usdchf_action", "from_value": "FLAT", "to_value": "LONG", "macro_context_id": "a7723f06d9ad332d"}
+{"asof": "2026-07-29", "domain": "us", "field": "us_fused_risk", "from_value": "caution", "to_value": "elevated", "macro_context_id": "4ae225574b2d46ac"}
+{"asof": "2026-07-29", "domain": "us", "field": "us_risk_radar", "from_value": "watch", "to_value": "caution", "macro_context_id": "4ae225574b2d46ac"}
+{"asof": "2026-07-29", "domain": "us", "field": "us_liquidity_quality", "from_value": "stress-expansion", "to_value": "neutral-hollow", "macro_context_id": "4ae225574b2d46ac"}
+{"asof": "2026-07-29", "domain": "us", "field": "us_liquidity_overlay", "from_value": "expanding", "to_value": "neutral", "macro_context_id": "4ae225574b2d46ac"}
+{"asof": "2026-07-29", "domain": "us", "field": "us_repricing_state", "from_value": "QUIET", "to_value": "ELEVATED", "macro_context_id": "4ae225574b2d46ac"}
+{"asof": "2026-07-29", "domain": "us", "field": "us_vrp_state", "from_value": "normal", "to_value": "rich (vol overpriced \u2014 constructive)", "macro_context_id": "4ae225574b2d46ac"}
+{"asof": "2026-07-29", "domain": "us", "field": "cross_asset_verdict", "from_value": "mixed", "to_value": "diverge", "macro_context_id": "4ae225574b2d46ac"}
+{"asof": "2026-07-29", "domain": "market", "field": "market_state_verdict", "from_value": "RISK_ON", "to_value": "MIXED", "macro_context_id": "4ae225574b2d46ac"}
+{"asof": "2026-07-29", "domain": "commodity", "field": "silver_action", "from_value": "HOLD", "to_value": "SELL", "macro_context_id": "4ae225574b2d46ac"}
+{"asof": "2026-07-29", "domain": "hk", "field": "hk_quad", "from_value": "Q3", "to_value": "Q1", "macro_context_id": "4ae225574b2d46ac"}
