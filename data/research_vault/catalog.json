@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-29T21:45:41.182054+00:00",
-  "count": 347,
+  "generated_at": "2026-07-29T22:08:46.520036+00:00",
+  "count": 348,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -337,6 +337,23 @@
       "tickers": [],
       "top_pick": false,
       "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-0sbicmrpyjs-a01424",
+      "title": "S&P Global Inc. (SPGI) Strong 2Q with Ratings and Indices offset by ongoing MI and Energy uncertainty",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T08:04:46Z",
+      "summary_points": [
+        "Missing Document**: No source material provided for extraction **Critical Input Gap**: Absence of actual document content prevents identification of fundamentals/data/technical points **Action Required**: Provide document text to proceed with analysis per specified criteria"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 17,
       "language": "en",
       "needs_metadata": false
     },
