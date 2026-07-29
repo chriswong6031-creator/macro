@@ -1,21 +1,28 @@
 {
   "schema": "neuralweb.daily_brief.v1",
-  "produced_at": "2026-07-29T03:27:02.650543+00:00",
+  "produced_at": "2026-07-29T03:35:07.688267+00:00",
   "as_of": "2026-07-28",
   "status": "warn",
-  "phase": "engine",
+  "phase": "final",
   "did_the_brain_run": {
-    "cortex_status": "degraded",
-    "tool_call_batches": 0,
-    "individual_tool_calls": 0,
+    "cortex_status": "fresh",
+    "tool_call_batches": 3,
+    "individual_tool_calls": 9,
     "context_stale": false,
-    "summary": "cortex degraded — model_unavailable"
+    "summary": "cortex ran (9 tool calls); memo as_of 2026-07-29T03:33:50+00:00"
   },
   "what_changed": [
     {
       "kind": "as_of_advanced",
       "id": "system",
       "summary": "as_of advanced from 2026-07-24 to 2026-07-28",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "cortex_status_changed",
+      "id": "cortex",
+      "summary": "cortex status changed: degraded → fresh",
       "severity": "info",
       "evidence_path": "data/neuralweb/health.json"
     },
@@ -303,12 +310,6 @@
   },
   "operator_attention": [
     {
-      "priority": 1,
-      "area": "cortex",
-      "summary": "cortex degraded — inspect data/neuralweb/cortex/memo.json and run_status",
-      "action_type": "ops_fix"
-    },
-    {
       "priority": 2,
       "area": "cortex-attention-firings",
       "summary": "lobe cortex-attention-firings is warn — age 85.37h vs SLA 30h",
@@ -494,24 +495,24 @@
   },
   "evidence_clock": {
     "available": true,
-    "as_of": "2026-07-28",
+    "as_of": "2026-07-29",
     "counts": {
       "overdue": 25,
-      "due": 7,
+      "due": 8,
       "human_review": 0,
       "missing": 1,
       "stale": 1,
       "blocked": 2,
       "not_ready": 0,
       "promotion_eligible": 0,
-      "accruing": 275,
+      "accruing": 274,
       "n_acknowledged": 0
     },
     "top_due": {
       "clock_id": "qledger:placebo",
       "due_at": "2026-06-22"
     },
-    "morning_line": "25 overdue, 7 due, 1 missing, 1 stale, 2 blocked, 275 accruing. Top due: qledger:placebo."
+    "morning_line": "25 overdue, 8 due, 1 missing, 1 stale, 2 blocked, 274 accruing. Top due: qledger:placebo."
   },
   "china_market_state": {
     "available": true,
