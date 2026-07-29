@@ -655,6 +655,55 @@ live:
   china_risk_state:
     debounce_ticks: 2
 
+# ── PROPHET LIVE (research/PROPHET_LIVE_INTRADAY_SIGNALS_MASTERPLAN_BY_FABLE.md) ──
+# Two speeds, one engine. The nightly arming pass (scripts/build_prophet_live_pack.py)
+# probes the SAME close-only admission gate (engine/signal_gate.py) with candidate
+# provisional closes and records the price interval over which is_buyable() is true;
+# the */5 lane (scripts/prophet_live_evaluator.py, .github/workflows/prophet-live.yml)
+# compares a 15-min-delayed live price to those levels. NO second signal engine, and
+# the nightly build stays the sole confirmer, grader and ledger advancer.
+#
+# P0 IS MEASURE-DARK: no user surface reads any of this yet. States are display-tier
+# until the §6 promotion gauntlet is pre-registered on the forward ledger the nightly
+# reconciler accrues (data/prophet_live/forward.parquet).
+prophet_live:
+  # ── arming pass ──
+  # Half-width of the probed provisional-close band, percent of the as-of close. A
+  # bound on the SEARCH, not a claim about the tape: 15% is far past any plausible
+  # intraday move, so nothing reachable is excluded by the band itself.
+  band_pct: 15.0
+  # Structure grid across the probed span (endpoints included) then bisection per
+  # edge. 13 points = 1.25% cells on the up-only span, the resolution at which a
+  # measured 294-name sweep found every armable name's buyable region to be a single
+  # contiguous interval; 8 halvings refine an edge to ~0.5 bp.
+  grid_points: 13
+  bisect_iters: 8
+  # BUDGET IS LAW. One gate call is ~250 ms over this universe, so a full grid on
+  # every name is 15-20 min and does not fit the render budget. Every name still gets
+  # its centre verdict (cheap); the probe phase runs under BOTH of these and whatever
+  # they cut is counted in meta.skipped (probe_cap / deadline) — never silently
+  # dropped and never re-labelled "dormant".
+  max_probe: 500
+  max_seconds: 420
+  # A name whose own last bar trails the store tip by more than this is probed
+  # against a stale close — the mixed-asof fabrication trap. It ships its centre
+  # state unprobed, marked stale.
+  max_lag_sessions: 3
+  # ── intraday evaluator ──
+  # ET, never UTC (a UTC-pinned window is an hour wrong for half the year). 09:25
+  # catches the pre-open pass; the 16:15 tail pass records the close-side state.
+  window_et:
+    start: "09:25"
+    end: "16:15"
+  window_grace_min: 10          # GitHub cron drifts; grace on the END only
+  # A cross needs this many CONSECUTIVE passes above the trigger before it is a
+  # public state (CSP-R2: a 1-tick state flip is a killed class). One pass is an
+  # internal crossing marker, spooled for measurement, never surfaced.
+  debounce_passes: 2
+  fade_buffer_pct: 0.5          # hysteresis below the trigger before a forming name FADES
+  confirm_window_start: "15:30"  # from here on, conditions still met => confirming_into_close
+  quote_max_age_min: 12         # hot-tape convention; older => that NAME is dark, not guessed
+
 fedboard:
   # Excess Bond Premium (Gilchrist-Zakrajšek): the component of corporate credit
   # spreads NOT explained by default risk = a clean credit-risk-appetite / early-
