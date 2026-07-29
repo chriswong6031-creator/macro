@@ -32,7 +32,8 @@
     --num: var(--font-mono, ui-monospace, "SF Mono", SFMono-Regular, "Cascadia Mono", "JetBrains Mono", "Roboto Mono", Menlo, Consolas, monospace);
     --bg:#0a0c11; --panel:#14171e; --panel2:#1b1f28;
     --hair: color-mix(in srgb, var(--line) 74%, transparent);
-    --ink-2: color-mix(in srgb, var(--text) 66%, transparent);
+    --ink-1: var(--text);
+    --ink-2: color-mix(in srgb, var(--text) 64%, transparent);
     --ink-3: var(--muted);
     --ms: inset 0 1px 0 0 color-mix(in srgb, var(--text) 8%, transparent), 0 1px 1px rgba(0,0,0,.28), 0 14px 30px -18px rgba(0,0,0,.55);
     background: var(--bg); color: var(--text);
@@ -41,16 +42,31 @@
   }
   html[data-theme="light"] body { --bg:#f6f7fa; --panel:#ffffff; --panel2:#eef1f6; --ms: 0 1px 3px rgba(20,30,50,.07), 0 18px 40px -26px rgba(20,30,50,.20); }
   @media (min-width: 1100px) { body { padding: 26px max(40px, calc((100vw - 1500px) / 2)); } }
-  html[data-lang="zh"] body { font-family: "PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",-apple-system,sans-serif; }
+  /* NO zh body-font override here — macro.html has none either. theme.css's --font-ui
+     already chains PingFang SC / Hiragino / YaHei after Inter, so ZH gets native CJK
+     glyphs while latin text and numerals stay on Inter (the house face). Overriding to
+     a CJK-first stack is what made ZH numerals render in a different face than EN. */
   a { text-decoration: none; color: var(--link); }
   h1 { font-size: 21px; margin: 0 0 2px; } h3 { font-size: 13px; margin: 0 0 8px; }
-  /* section title: macro.html 3px left rail + real title weight (no more all-caps muted) */
-  h2 { display:flex; align-items:center; gap:10px; font-size: 16.5px; margin: 0; color: var(--text); font-weight: 700; letter-spacing: -.01em; text-transform: none; line-height: 1.3; }
+  /* section title: macro.html --fs-h2 (17px) + its 3px regime rail */
+  h2 { display:flex; align-items:center; gap:10px; font-size: 17px; margin: 0; color: var(--ink-1); font-weight: 700; letter-spacing: -.01em; text-transform: none; line-height: 1.3; }
   h2::before { content:""; flex:none; align-self:center; width:3px; height:17px; border-radius:2px; background:linear-gradient(180deg, var(--link), color-mix(in srgb,var(--link) 30%,transparent)); }
   html[data-lang="zh"] h2 { letter-spacing: 0; }
-  /* numerals in the terminal mono, tabular — the macro.html signature */
-  .num,.lb-vals,.lb-vals .big,.rcard .rv,.rb .v,.dc-num,.sc-val,.inv-num,.ur-num,.tb-metrics .tm-v,.wc-vital .vv,
-  table.cmp td:not(.l):not(.eco),table.sb td:not(.l) { font-family: var(--num); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+  /* ── numeral face policy (macro.html parity) ───────────────────────────────
+     The terminal mono is for FIGURES ONLY — never for words. macro.html applies
+     var(--num) to `.num` and to `td:not(:first-child):not(.l)` (i.e. the numeric
+     columns) and explicitly re-inherits prose inside tooltips, so its label and
+     sentence slots stay on Inter. This page used to hand the mono face to slots
+     that carry sentences ("growth down, inflation up", "held back — breaking
+     down", "2/7 ex-US markets ahead"), which is what made it read as a different
+     product from macro.html. Figures below; everything with a word in it inherits
+     --font-ui. */
+  .num,.lb-vals .big,.rcard .rv,.rb .v,.dc-num,.sc-val,.inv-num,.ur-num,.tb-metrics .tm-v,
+  table.cmp td:not(.l):not(.eco),table.sb td:not(.l) { font-family: var(--num); font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1; letter-spacing: -.01em; }
+  /* prose slots that sit next to figures — keep them on the house face */
+  .wc-vital .vv,.lb-vals small,.help .tip,.caveat { font-family: var(--font-ui); letter-spacing: normal;
+    font-variant-numeric: tabular-nums; }
   .panel { position:relative; background: var(--panel); border: 1px solid var(--hair, var(--line)); border-radius: 14px; padding: 18px 20px; margin-bottom: 16px; box-shadow: var(--ms); }
   .muted { color: var(--muted); } .small { font-size: 12px; } .stale { color: var(--muted); font-size: 10px; }
   .row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
@@ -177,8 +193,9 @@
   .wc-gauge-fill { stroke: var(--gc, var(--up)); stroke-linecap:round; filter: drop-shadow(0 0 6px color-mix(in srgb,var(--gc,var(--up)) 55%,transparent)); }
   @media (prefers-reduced-motion: no-preference) { .wc-gauge-fill { animation: gaugeSweep 1.15s cubic-bezier(.22,.9,.26,1) .2s both; } }
   @keyframes gaugeSweep { from { stroke-dashoffset: var(--circ); } }
-  .wc-gnum { fill: var(--gc, var(--up)); font-family: var(--num); font-size:34px; font-weight:800; letter-spacing:-.03em; filter: drop-shadow(0 0 8px color-mix(in srgb,var(--gc,var(--up)) 45%,transparent)); }
-  .wc-gnum-sub { fill: var(--ink-3); font-family: var(--num); font-size:12px; font-weight:700; }
+  /* hero score: macro.html's big-board treatment — house face, 800, tight tracking */
+  .wc-gnum { fill: var(--gc, var(--up)); font-family: var(--font-ui); font-size:36px; font-weight:800; letter-spacing:-.03em; font-variant-numeric: tabular-nums; filter: drop-shadow(0 0 8px color-mix(in srgb,var(--gc,var(--up)) 45%,transparent)); }
+  .wc-gnum-sub { fill: var(--ink-3); font-family: var(--font-ui); font-size:12px; font-weight:700; }
   .wc-gauge-cap { font:700 9.5px/1.3 var(--font-ui,Inter,sans-serif); letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); margin-top:5px; }
   .wc-gside { display:flex; flex-direction:column; justify-content:center; gap:3px; min-width:0; }
   .wc-verdict { font:800 22px/1.08 var(--font-ui,Inter,sans-serif); letter-spacing:-.02em; }
@@ -195,7 +212,7 @@
   .tug { margin-top:2px; }
   .tug-head { display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin-bottom:9px; }
   .tug-head .th-lbl { font:700 10px/1 var(--font-ui,Inter,sans-serif); letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); }
-  .tug-head .th-count { font:700 12px/1 var(--num); color:var(--ink-2); }
+  .tug-head .th-count { font:700 12px/1 var(--font-ui); font-variant-numeric:tabular-nums; color:var(--ink-2); }
   .tug-beam { position:relative; height:34px; border-radius:10px; background:var(--panel2);
     border:1px solid var(--hair); overflow:hidden;
     background-image:linear-gradient(90deg, color-mix(in srgb,var(--info) 16%,transparent), transparent 42%, transparent 58%, color-mix(in srgb,var(--up) 16%,transparent)); }
@@ -219,7 +236,10 @@
   .wc-vital:last-child { border-right:none; }
   @media (max-width:760px){ .wc-vital:nth-child(2n){border-right:none;} .wc-vital:nth-child(-n+2){border-bottom:1px solid color-mix(in srgb,var(--text) 7%,transparent);} }
   .wc-vital .vk { font:700 9.5px/1.2 var(--font-ui,Inter,sans-serif); letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); }
-  .wc-vital .vv { font-size:16px; font-weight:800; color:var(--text); margin:4px 0 1px; line-height:1.15; }
+  .wc-vital .vv { font-size:16px; font-weight:800; color:var(--ink-1); margin:4px 0 1px; line-height:1.15; }
+  /* a vital whose value is a phrase, not a figure — one size down so it sits on one or
+     two lines beside the numeric vitals (was three inline style="font-size:13px" patches) */
+  .wc-vital .vv.word { font-size:13px; line-height:1.25; }
   .wc-vital .vv.up { color:var(--up); } .wc-vital .vv.down { color:var(--down); } .wc-vital .vv.warn { color:var(--warn); }
   .wc-vital .vs { font-size:11px; color:var(--ink-3); line-height:1.35; }
 
@@ -266,11 +286,23 @@
 
   /* ===== USD performance leaderboard ===== */
   .lb { display:flex; flex-direction:column; gap:3px; margin-top:12px; }
-  .lb-row { display:grid; grid-template-columns:168px 132px 1fr 152px; align-items:center; gap:14px;
-    padding:9px 8px; border-radius:10px; transition:background .15s; }
+  /* Column geometry. Before: 168px of name (which wrapped "United Kingdom", "South Korea"
+     and "STOXX Europe 600" onto three lines and pushed every row to ~90px tall) against a
+     bare 1fr bar column (which at desktop width parked the bars in ~800px of track with a
+     ~500px gulf beside them). Now the name column is wide enough that nothing wraps, the
+     bar track is a FIXED width so the zero axis lands at the same x on every row — the
+     whole point of a diverging bar chart — and the row's remaining slack goes to the
+     sparkline, the one cell that actually gets better with width. */
+  .lb-row { display:grid; grid-template-columns:272px minmax(150px,1fr) 344px 196px; align-items:center; gap:16px;
+    padding:8px 8px; border-radius:10px; transition:background .15s; }
   .lb-row:hover { background:var(--panel2); }
   .lb-row .eco { display:flex; align-items:center; gap:8px; font-weight:700; min-width:0; }
-  .lb-row .eco .flg { font-size:17px; } .lb-row .eco small { color:var(--muted); font-weight:500; font-size:11px; display:block; }
+  .lb-row .eco > span { min-width:0; }
+  .lb-row .eco .flg { font-size:17px; flex:none; } .lb-row .eco small { color:var(--muted); font-weight:500; font-size:11px; display:block; }
+  .lb-row .eco .ts-chip { flex:none; }
+  /* the sparkline svg is viewBox 200×40 / preserveAspectRatio:none / width:100%, so it
+     fills whatever cell it is given — which is why the flexible column is this one */
+  .lb-spark { display:flex; align-items:center; min-width:0; }
   .lb-row .nch { display:block; opacity:.9; }
   .lb-bar { position:relative; height:24px; }
   .lb-bar .axis { position:absolute; top:0; bottom:0; left:50%; width:1px; background:var(--line); }
@@ -279,11 +311,11 @@
   .lb-seg.fx-pos { background:color-mix(in srgb,var(--up) 80%,transparent); border-radius:3px; }
   .lb-seg.fx-neg { background:color-mix(in srgb,var(--down) 80%,transparent); border-radius:3px; }
   .lb-usd { position:absolute; top:-1px; width:3px; height:26px; background:var(--text); border-radius:2px; }
-  .lb-vals { text-align:right; font-variant-numeric:tabular-nums; font-size:12px; }
+  .lb-vals { text-align:right; font-variant-numeric:tabular-nums; font-size:12px; line-height:1.3; }
   .lb-vals .big { font-size:16px; font-weight:800; } .lb-vals small { color:var(--muted); display:block; font-size:10.5px; }
   .lb-legend { display:flex; gap:16px; flex-wrap:wrap; font-size:11.5px; color:var(--muted); margin-top:11px; align-items:center; }
   .lb-legend i { display:inline-block; width:11px; height:11px; border-radius:3px; vertical-align:middle; margin-right:5px; }
-  .lb-spark { min-width:0; }
+  @media (max-width:1180px){ .lb-row { grid-template-columns:236px minmax(110px,1fr) minmax(200px,340px) 168px; gap:12px; } }
   @media (max-width:760px){ .lb-row { grid-template-columns:108px 1fr 92px; gap:9px; } .lb-spark { display:none; } }
 
   /* ===== RRG rotation scatter ===== */
@@ -331,14 +363,23 @@
   table.heat td.diag { opacity:.45; }
   table.heat th.l { text-align:right; }
 
-  /* ===== generic panel-accent + index spark cell ===== */
+  /* ===== index spark cell ===== */
   .gridwrap .nch { display:block; width:74px; height:24px; }
-  .panel.accent { background:linear-gradient(var(--panel),var(--panel)) padding-box, var(--acc-grad) border-box; border:1.5px solid transparent; }
+  /* NOTE: the second `.panel.accent` that used to live here painted a 1.5px blue→green
+     gradient border. Being later in the sheet it silently beat the frosted-glass rule
+     above (line ~151) whose own comment says "not rainbow borders" — so the two flagship
+     panels shipped with an outline no other surface on the site has, and macro.html has
+     none. Removed: .panel.accent is now the frosted-glass treatment it was written to be. */
   .twocol { display:grid; grid-template-columns:1fr 1fr; gap:14px; } @media (max-width:860px){ .twocol { grid-template-columns:1fr; } }
 
   /* ===== turn board (ITR) ===== */
-  .tb-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); align-items:start; gap:10px; margin-top:12px; }
-  .tb-tile { background:var(--panel2); border:1px solid var(--line); border-radius:12px; padding:12px 14px; position:relative; }
+  /* Tiles STRETCH to their row (they used to be align-items:start, so one long tile —
+     whichever market happened to carry a breadth line and a backdrop paragraph — set the
+     row band and every other tile in that row left a void under it; on a 7-across grid
+     that was ~180px of dead canvas per row). Now each tile is a flex column, the pullback
+     strip is pinned to the floor with margin-top:auto, and the row reads as one block. */
+  .tb-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(212px,1fr)); align-items:stretch; gap:10px; margin-top:12px; }
+  .tb-tile { display:flex; flex-direction:column; background:var(--panel2); border:1px solid var(--line); border-radius:12px; padding:12px 14px; position:relative; }
   .tb-tile.tb-hot { border-color:color-mix(in srgb,var(--down) 50%,var(--line)); background:color-mix(in srgb,var(--down) 5%,var(--panel2)); }
   .tb-tile.tb-warm { border-color:color-mix(in srgb,#d4a017 40%,var(--line)); background:color-mix(in srgb,#d4a017 4%,var(--panel2)); }
   .tb-tile.tb-cool { border-color:var(--line); }
@@ -362,18 +403,18 @@
   .tb-state.ts-downtrend { background:color-mix(in srgb,var(--down) 10%,transparent); color:var(--down); border:1px solid color-mix(in srgb,var(--down) 28%,transparent); }
   .tb-state.ts-calm { background:var(--panel2); color:var(--muted); border:1px solid var(--line); }
   .tb-stance { font-size:11.5px; color:var(--text); line-height:1.35; margin-bottom:6px; font-weight:500; }
-  .tb-confirm { font-size:10.5px; color:var(--muted); line-height:1.35; margin:-1px 0 6px; }
-  .tb-confirm b { color:var(--text); }
-  .tb-context { font-size:10.5px; color:var(--muted); line-height:1.35; margin:1px 0 7px; padding-top:6px; border-top:1px dashed var(--line); }
-  .tb-context b { color:var(--text); }
   .tb-metrics { display:flex; gap:10px; flex-wrap:wrap; font-size:11px; color:var(--muted); }
   .tb-metrics .tm-v { font-weight:700; }
   .tb-metrics .tm-v.pos { color:var(--up); }
   .tb-metrics .tm-v.neg { color:var(--down); }
-  /* events strip */
-  .te-strip { display:flex; flex-direction:column; gap:4px; margin-top:10px; }
-  .te-row { display:flex; align-items:baseline; gap:7px; font-size:12px; padding:4px 0; border-bottom:1px solid var(--line); }
+  /* Events strip. One event is ~6 words, so a full-width row was ~90% empty and six of
+     them stacked into a tall, hollow panel. Two columns on desktop: same content, half
+     the height, and the panel now reads as a block instead of a ladder. */
+  .te-strip { display:grid; grid-template-columns:repeat(auto-fit,minmax(340px,1fr)); gap:0 32px; margin-top:10px; }
+  .te-row { display:flex; align-items:baseline; gap:8px; font-size:12px; padding:7px 0; border-bottom:1px solid var(--line); }
   .te-row:last-child { border-bottom:none; }
+  /* in the 2-up layout the second-to-last row shares the final band — drop its rule too */
+  @media (min-width:760px) { .te-strip > .te-row:nth-last-child(2):nth-child(odd) { border-bottom:none; } }
   .te-date { font-size:10.5px; color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap; flex-shrink:0; }
   .te-flag { font-size:14px; flex-shrink:0; }
   .te-txt { color:var(--text); flex:1; }
@@ -390,7 +431,7 @@
   .ts-chip.ts-downtrend { background:color-mix(in srgb,var(--down) 8%,transparent); color:var(--down); border-color:color-mix(in srgb,var(--down) 24%,transparent); }
   .ts-chip.ts-calm { background:var(--panel2); color:var(--muted); }
   /* pullback-risk radar strip inside turn tiles (#2684 risk_radar_intl.v1, display-only) */
-  .tb-rd { margin-top:9px; padding-top:8px; border-top:1px dashed var(--line); }
+  .tb-rd { margin-top:auto; padding-top:8px; border-top:1px dashed var(--line); }
   .tb-rd-hd { display:flex; align-items:center; gap:6px; }
   .tb-rd-lb { font-size:10.5px; font-weight:600; color:var(--muted); letter-spacing:.02em; }
   .tb-rd-chip { display:inline-block; padding:1px 7px; border-radius:7px; font-size:10px; font-weight:700; white-space:nowrap; border:1px solid transparent; margin-left:auto; }
@@ -400,8 +441,7 @@
   .tb-rd-chip.rd-elevated { background:color-mix(in srgb,var(--down) 12%,transparent); color:var(--down); border-color:color-mix(in srgb,var(--down) 30%,transparent); }
   .tb-rd-chip.rd-risk-off { background:color-mix(in srgb,var(--down) 18%,transparent); color:var(--down); border-color:color-mix(in srgb,var(--down) 40%,transparent); }
   .tb-rd-line { font-size:11px; color:var(--text); line-height:1.35; margin-top:5px; }
-  .tb-rd-odds { font-size:10.5px; color:var(--muted); margin-top:3px; font-variant-numeric:tabular-nums; }
-  .tb-rd-foot { margin:10px 2px 0; line-height:1.5; }
+  .tb-rd-foot { margin:12px 2px 0; line-height:1.5; }
   /* turn-tile rich-lens popover: "stretch" gauge (cloned by theme.js into .lens-pop,
      so it inherits the engine's --lens-* token chain — light mode + vector-safe) */
   .tbl-gauge { margin:9px 16px 2px; }
@@ -564,16 +604,16 @@
   <div class="wc-vitals">
     <div class="wc-vital">
       <div class="vk">{{ t('Dominant regime', '主导周期') }}</div>
-      <div class="vv" style="font-size:13px"><span class="l-en">{{ QUAD_PLAIN_EN.get(S.dominant_quad, S.dominant_quad) }}</span><span class="l-zh">{{ QUAD_PLAIN_ZH.get(S.dominant_quad, S.dominant_quad) }}</span></div>
+      <div class="vv word"><span class="l-en">{{ QUAD_PLAIN_EN.get(S.dominant_quad, S.dominant_quad) }}</span><span class="l-zh">{{ QUAD_PLAIN_ZH.get(S.dominant_quad, S.dominant_quad) }}</span></div>
       <div class="vs">{{ S.n }} {{ t('economies', '经济体') }}</div>
     </div>
     {% set bestr = LB[0] if LB else None %}
     {% set bh = (bestr.returns.get('12m') or bestr.returns.get('6m') or bestr.returns.get('3m') or bestr.returns.get('ytd')) if bestr else None %}
     <div class="wc-vital">
       <div class="vk">{{ t('USD leader', '美元领涨') }}</div>
-      {% if bestr and bh %}<div class="vv" style="font-size:13px">{{ bestr.flag }} {{ bestr.cc }}</div>
+      {% if bestr and bh %}<div class="vv word">{{ bestr.flag }} {{ bestr.cc }}</div>
       <div class="vs">{{ '%+.0f'|format(bh.usd) }}% {{ t('in USD', '美元计') }}</div>
-      {% else %}<div class="vv" style="font-size:13px">—</div><div class="vs">{{ t('building', '构建中') }}</div>{% endif %}
+      {% else %}<div class="vv word">—</div><div class="vs">{{ t('building', '构建中') }}</div>{% endif %}
     </div>
     <div class="wc-vital">
       <div class="vk">{{ t('Recession-watch', '衰退观察') }}</div>
@@ -602,7 +642,6 @@
 {% set RD_STATE_ZH = {'calm': '平静', 'watch': '留意', 'caution': '谨慎', 'elevated': '偏高', 'risk-off': '避险'} %}
 {% set RD_STANCE_EN = {'watch': "watch, don't chase", 'caution': 'get ready to protect gains', 'elevated': 'protect gains', 'risk-off': 'protect gains, stand aside'} %}
 {% set RD_STANCE_ZH = {'watch': '观察，勿追高', 'caution': '准备保护收益', 'elevated': '保护收益', 'risk-off': '保护收益，观望'} %}
-{% set _rdns = namespace(present=false, lifted=false) %}
 {# ---- turn-tile rich-lens popover copy (plain-word reads + accent/glyph maps) ---- #}
 {% set TB_READ_EN = {
   'crash':     'A fast, deep selloff still dominates the 20-day tape. Treat the trend as broken until repair signals confirm otherwise.',
@@ -678,9 +717,6 @@
     {% set _rd_h21 = _rd_prob.get('h21') %}
     {% set _rd_b21 = _rd_prob.get('base_h21') %}
     {% set _rd_lift = _rd_prob.get('lift_h21') %}
-    {% if _rd %}{% set _rdns.present = true %}
-      {% if _rd_lift is not none and _rd_lift != 1.0 %}{% set _rdns.lifted = true %}{% endif %}
-    {% endif %}
     {# ---- per-tile popover helpers (dates trimmed to MM-DD; stretch pctile → int) ---- #}
     {% set _since_s = tile.since[5:] if tile.since else none %}
     {% set _peak_s = tile.peak_date[5:] if tile.peak_date else none %}
@@ -738,6 +774,11 @@
         {% if tile.mom20_pct is not none %}{% set _ = _rc_en.append('<b>20-day</b> ' ~ '%+.1f'|format(tile.mom20_pct) ~ '%') %}{% set _ = _rc_zh.append('<b>20日</b> ' ~ '%+.1f'|format(tile.mom20_pct) ~ '%') %}{% endif %}
         {% if tile.dd_pct is not none %}{% set _ = _rc_en.append('<b>Off high</b> ' ~ '%.1f'|format(tile.dd_pct) ~ '%') %}{% set _ = _rc_zh.append('<b>距高</b> ' ~ '%.1f'|format(tile.dd_pct) ~ '%') %}{% endif %}
         {% if tile.macd_state %}{% set _ = _rc_en.append('<b>Momentum</b> ' ~ ('improving' if tile.macd_state == 'bull' else 'fading')) %}{% set _ = _rc_zh.append('<b>动能</b> ' ~ ('转强' if tile.macd_state == 'bull' else '转弱')) %}{% endif %}
+        {# pullback odds, demoted off the tile face (they were printed on every tile at rest) #}
+        {% if _rd_h21 is not none %}{% set _ = _rc_en.append('<b>≥5% dip in a month</b> ~' ~ (_rd_h21*100)|round|int ~ '%' ~ (' vs ~' ~ (_rd_b21*100)|round|int ~ '% base' if _rd_b21 is not none else '')) %}{% set _ = _rc_zh.append('<b>一个月内≥5%回撤</b> 约' ~ (_rd_h21*100)|round|int ~ '%' ~ ('（基准约' ~ (_rd_b21*100)|round|int ~ '%）' if _rd_b21 is not none else '')) %}
+        {# honest provenance travels WITH the number it qualifies (it used to be a Tier-1
+           footer sentence describing a figure the user could no longer see at rest) #}
+        {% set _ = _rc_en.append('<b>Odds from</b> ' ~ ('own history + this radar&#39;s live record' if (_rd_lift is not none and _rd_lift != 1.0) else 'own history only — radar record still building')) %}{% set _ = _rc_zh.append('<b>概率来源</b> ' ~ ('自身历史 + 该雷达实时记录' if (_rd_lift is not none and _rd_lift != 1.0) else '仅自身历史——雷达记录仍在累积')) %}{% endif %}
         {% if _rc_en %}
         <div class="lens-receipt">
           <span class="l-en">{{ _rc_en|join(' · ')|safe }}</span>
@@ -760,18 +801,12 @@
       <div class="tb-stance">
         <span class="l-en">{{ _stance_en }}</span><span class="l-zh">{{ _stance_zh }}</span>
       </div>
-      {% if _cf and _cf20.get('available') %}
-      <div class="tb-confirm">
-        <span class="l-en"><b>Tech breadth</b> · 20d {{ _cf20.get('positive') }}/{{ _cf20.get('available') }} up · 5d {{ _cf5.get('positive') }}/{{ _cf5.get('available') }} up</span>
-        <span class="l-zh"><b>科技广度</b> · 20日 {{ _cf20.get('positive') }}/{{ _cf20.get('available') }} 上涨 · 5日 {{ _cf5.get('positive') }}/{{ _cf5.get('available') }} 上涨</span>
-      </div>
-      {% endif %}
-      {% if _mb.get('summary_en') %}
-      <div class="tb-context">
-        <span class="l-en"><b>Backdrop</b> · {{ _mb.get('summary_en') }}</span>
-        <span class="l-zh"><b>背景</b> · {{ _mb.get('summary_zh') }}</span>
-      </div>
-      {% endif %}
+      {# The "Tech breadth · 20d 4/4 up · 5d 1/4 up" line and the "Backdrop · …" paragraph
+         used to sit here, on the glance tier. Both are Tier-2 material (raw fractions and
+         a 20-word macro paragraph), both appeared on only one or two markets — so they set
+         the row height for the whole grid and left every other tile with a void under it —
+         and both were ALREADY carried, in fuller plain-word form, by the hover lens above
+         (`_cf.read_en` / `_mb.read_en`). Removed from the face; nothing is lost. #}
       <div class="tb-metrics">
         <span>{{ t('20d', '20日') }} <span class="tm-v {{ 'pos' if tile.mom20_pct is not none and tile.mom20_pct >= 0 else 'neg' if tile.mom20_pct is not none }}">{% if tile.mom20_pct is not none %}{{ '%+.1f'|format(tile.mom20_pct) }}%{% else %}—{% endif %}</span></span>
         <span>{{ t('off-high', '距高') }} <span class="tm-v {{ 'neg' if tile.dd_pct is not none and tile.dd_pct < -2 }}">{% if tile.dd_pct is not none %}{{ '%.1f'|format(tile.dd_pct) }}%{% else %}—{% endif %}</span></span>
@@ -784,30 +819,26 @@
         </div>
         <div class="tb-rd-line">
           {% if _rd_state == 'calm' %}
-          {{ t('no driver elevated — no action needed', '无驱动升高——无需操作') }}
+          {{ t('nothing to do', '无需操作') }}
           {% else %}
           <span class="l-en">{{ _rd.get('dominant_label_en') or 'driver elevated' }} — {{ RD_STANCE_EN.get(_rd_state, RD_STANCE_EN['watch']) }}</span><span class="l-zh">{{ _rd.get('dominant_label_zh') or _rd.get('dominant_label_en') or '驱动升高' }}——{{ RD_STANCE_ZH.get(_rd_state, RD_STANCE_ZH['watch']) }}</span>
           {% endif %}
         </div>
-        {% if _rd_h21 is not none %}
-        <div class="tb-rd-odds">
-          <span class="l-en">≥5% dip within a month: ~{{ (_rd_h21*100)|round|int }}%{% if _rd_b21 is not none %} vs ~{{ (_rd_b21*100)|round|int }}% base{% endif %}</span><span class="l-zh">一个月内≥5%回撤：约{{ (_rd_h21*100)|round|int }}%{% if _rd_b21 is not none %}（基准约{{ (_rd_b21*100)|round|int }}%）{% endif %}</span>
-        </div>
-        {% endif %}
+        {# The "≥5% dip within a month: ~29% vs ~29% base" line used to print here on EVERY
+           tile. It is a bare statistic with no stance attached, and on most tiles the two
+           figures are equal — i.e. it says "no lift", at the cost of a line on ten tiles.
+           Moved to the hover receipt, where the precision belongs. #}
       </div>
       {% endif %}
     </div>
   {% endfor %}
   </div>
-  {% if _rdns.present %}
+  {# One line, one job: say what the chips are not, and point at the hover. The provenance
+     of the odds (own-history vs live-track-record lift) moved into the ? tip on the h2 —
+     it is a receipt, and it was printing two long sentences under every grid. #}
   <p class="muted small tb-rd-foot">
-    {% if _rdns.lifted %}
-    {{ t("Pullback odds come from each market's own history plus this radar's live track record. Risk chips are context only — they never rank or exclude markets.", '回撤概率来自各市场自身历史及该雷达的实时跟踪记录。风险标签仅供参考——不参与排名或筛选。') }}
-    {% else %}
-    {{ t("Pullback odds are each market's own long-run odds — this radar's live track record is still building, so no extra lift is added yet. Risk chips are context only — they never rank or exclude markets.", '回撤概率为各市场自身的长期基础概率——该雷达的实时跟踪记录仍在累积，暂未叠加额外调整。风险标签仅供参考——不参与排名或筛选。') }}
-    {% endif %}
+    {{ t('Risk tags are context, never a ranking. Hover any market for the full read.', '风险标签仅供参考，不参与排名。将鼠标悬停在任一市场上可查看完整解读。') }}
   </p>
-  {% endif %}
 </div>
 
 <!-- ===== What changed strip ===== -->
@@ -1222,9 +1253,8 @@
   .ird-tx-rank{width:18px;font-size:11px;color:var(--muted);font-weight:700;}
   .ird-tx-flag{font-size:16px;}
   .ird-tx-name{flex:1;font-weight:600;}
-  .ird-tx-bar-wrap{width:80px;height:6px;background:var(--panel);border-radius:3px;overflow:hidden;}
+  .ird-tx-bar-wrap{width:132px;height:6px;background:var(--panel);border-radius:3px;overflow:hidden;}
   .ird-tx-bar{height:100%;border-radius:3px;background:var(--warn);}
-  .ird-tx-val{font-size:11px;color:var(--muted);width:44px;text-align:right;}
   .ird-us-recv{display:flex;align-items:center;gap:10px;margin:10px 0 12px;padding:8px 12px;
     background:var(--panel2);border-radius:9px;border:1px solid var(--line);}
   .ird-us-recv .ur-num{font-size:20px;font-weight:800;color:var(--info);}
@@ -1398,14 +1428,19 @@
         </div>
         {%- for tx in TXDISP[:3] %}
         {%- set bar_pct = (tx.to_others_pct / tx_max.v * 100) | round | int if tx_max.v > 0 else 0 %}
-        <div class="ird-tx-row">
+        {# The bar already says "how much more than the others". The raw "134 pts" it used
+           to print beside it is an internal spillover unit — it exceeds 100, has no stated
+           scale, and there is nothing a reader does differently at 134 vs 125. Demoted to
+           the hover; the rank and the bar carry the read. #}
+        <div class="ird-tx-row"
+             data-tip-en="{{ tx.ticker }} · sends {{ '%.1f' | format(tx.to_others_pct) }} points of stress to the other tracked markets (150-day rolling window; own-market moves excluded)."
+             data-tip-zh="{{ tx.ticker }} · 向其他受监测市场输出 {{ '%.1f' | format(tx.to_others_pct) }} 点压力（150日滚动窗口，已剔除自身市场波动）。">
           <span class="ird-tx-rank">#{{ loop.index }}</span>
           <span class="ird-tx-flag">{{ tx.flag }}</span>
           <span class="ird-tx-name">{{ t(tx.name_en, tx.name_zh) }}</span>
-          <div class="ird-tx-bar-wrap" title="{{ tx.ticker }} · {{ '%.1f' | format(tx.to_others_pct) }} pts to others">
+          <div class="ird-tx-bar-wrap">
             <div class="ird-tx-bar" style="width:{{ bar_pct }}%"></div>
           </div>
-          <span class="ird-tx-val">{{ '%.0f' | format(tx.to_others_pct) }} pts</span>
         </div>
         {%- endfor %}
       </div>

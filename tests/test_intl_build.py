@@ -151,11 +151,27 @@ def test_render_world_risk_v2_broad_strength_fallback():
 
 
 def test_turn_board_cards_size_independently_and_hovers_stay_concise():
-    """One verbose market must not stretch its grid peers or every hover."""
+    """One verbose market must not stretch its grid peers or every hover.
+
+    This used to be enforced with `align-items:start`, which stops a short tile from
+    painting to the bottom of the row but does NOT stop the row band itself from being
+    sized by the tallest tile — so the verbose market (the only one carrying a tech-breadth
+    line and a macro-backdrop paragraph) left a ~180px void under every one of its peers.
+    The fix moved those two blocks off the tile face entirely (they were already carried,
+    in fuller plain-word form, by the hover lens), so the face is uniform by construction
+    and the grid can safely stretch. Pin the cause, not the old symptom-patch.
+    """
     template = (ROOT / "templates" / "intl.html.j2").read_text(encoding="utf-8")
 
     assert ".tb-grid { display:grid;" in template
-    assert "align-items:start;" in template
+    # tiles fill their row — no ragged void under the short ones
+    assert "align-items:stretch;" in template
+    assert ".tb-tile { display:flex; flex-direction:column;" in template
+    # the pullback strip is pinned to the tile floor so the faces line up
+    assert ".tb-rd { margin-top:auto;" in template
+    # the two verbose face blocks must NOT come back — they belong to the hover lens
+    assert '<div class="tb-confirm">' not in template
+    assert '<div class="tb-context">' not in template
     assert "Higher = pricier than its own history" not in template
     assert "Price state and recovery quality are separate" not in template
 
