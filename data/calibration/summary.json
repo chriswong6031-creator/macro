@@ -1,20 +1,20 @@
 {
   "schema": "calibration_hub.v1",
-  "as_of": "2026-07-27",
+  "as_of": "2026-07-28",
   "desks": [
     {
       "name": "AI Desk",
       "slug": "ai_desk",
-      "scored": 21,
-      "open": 27,
-      "hit_rate": 0.905,
-      "dir_accuracy": 0.857,
-      "null_hit_rate": 0.8729,
-      "null_dir_rate": 0.4889,
-      "p_hit": 0.47767,
-      "p_hit_holm": 0.95534,
-      "p_dir": 0.00052,
-      "p_dir_holm": 0.00104,
+      "scored": 23,
+      "open": 25,
+      "hit_rate": 0.913,
+      "dir_accuracy": 0.826,
+      "null_hit_rate": 0.8807,
+      "null_dir_rate": 0.4887,
+      "p_hit": 0.45064,
+      "p_hit_holm": 0.90128,
+      "p_dir": 0.0009,
+      "p_dir_holm": 0.0018,
       "independent_blocks": 2,
       "placebo_coverage": 1.0,
       "placebo_available": true,
@@ -27,23 +27,23 @@
           "null_dir_rate": 0.5339
         },
         "rel_return": {
-          "n": 19,
-          "null_hit_rate": 0.9471,
-          "null_dir_rate": 0.4842
+          "n": 21,
+          "null_hit_rate": 0.9485,
+          "null_dir_rate": 0.4844
         }
       },
       "conviction_monotone": null,
-      "conviction_note": "conviction ordering untested \u2014 all 21 calls are single-tier (low 21)",
+      "conviction_note": "conviction ordering untested \u2014 all 23 calls are single-tier (low 23)",
       "conviction_tiers": {
         "high": 0,
         "medium": 0,
-        "low": 21
+        "low": 23
       },
       "regimes": [
         "Goldilocks"
       ],
       "health": "unproven",
-      "health_note": "not-falsified 90% vs 87% of these same falsifiers go untriggered by chance (19 rel-return, 2 level; 21 graded, 2 independent windows); direction called right 86% vs 49% by chance \u2014 no separation from its own null (gap +3pp); needs 5pp. conviction ordering untested \u2014 all 21 calls are single-tier (low 21). Direction, not the not-falsified rate, is where this desk's signal would be (p 0.001, though on windows this overlapping that is a lead to follow, not a result)."
+      "health_note": "not-falsified 91% vs 88% of these same falsifiers go untriggered by chance (21 rel-return, 2 level; 23 graded, 2 independent windows); direction called right 83% vs 49% by chance \u2014 no separation from its own null (gap +3pp); needs 5pp. conviction ordering untested \u2014 all 23 calls are single-tier (low 23). Direction, not the not-falsified rate, is where this desk's signal would be (p 0.002, though on windows this overlapping that is a lead to follow, not a result)."
     },
     {
       "name": "Policy Intent",
@@ -79,7 +79,7 @@
       "name": "Alt-Data Brain",
       "slug": "altdata",
       "scored": 0,
-      "open": 380,
+      "open": 392,
       "hit_rate": null,
       "dir_accuracy": null,
       "null_hit_rate": null,
@@ -109,7 +109,7 @@
       "name": "Divergence Radar",
       "slug": "radar",
       "scored": 0,
-      "open": 122,
+      "open": 124,
       "hit_rate": null,
       "dir_accuracy": null,
       "null_hit_rate": null,
@@ -138,38 +138,38 @@
     {
       "name": "Stock Desk",
       "slug": "stock_desk",
-      "scored": 45,
-      "open": 91,
-      "hit_rate": 0.644,
-      "dir_accuracy": 0.333,
-      "null_hit_rate": 0.8396,
-      "null_dir_rate": 0.5386,
+      "scored": 49,
+      "open": 86,
+      "hit_rate": 0.653,
+      "dir_accuracy": 0.347,
+      "null_hit_rate": 0.8395,
+      "null_dir_rate": 0.5384,
       "p_hit": null,
       "p_hit_holm": null,
       "p_dir": null,
       "p_dir_holm": null,
       "independent_blocks": 2,
-      "placebo_coverage": 0.3556,
+      "placebo_coverage": 0.3265,
       "placebo_available": false,
-      "placebo_note": "reconstructed 16 graded predicates but the track record has 45 \u2014 cannot pair observed outcomes to their nulls",
+      "placebo_note": "reconstructed 16 graded predicates but the track record has 49 \u2014 cannot pair observed outcomes to their nulls",
       "placebo_mix_source": "scored",
       "placebo_by_kind": {
         "rel_return": {
           "n": 16,
-          "null_hit_rate": 0.8396,
-          "null_dir_rate": 0.5386
+          "null_hit_rate": 0.8395,
+          "null_dir_rate": 0.5384
         }
       },
       "conviction_monotone": null,
-      "conviction_note": "conviction ordering untested \u2014 only 1 of 3 tiers has 5+ calls (medium 3, low 42)",
+      "conviction_note": "conviction ordering untested \u2014 only 1 of 3 tiers has 5+ calls (medium 4, low 45)",
       "conviction_tiers": {
         "high": 0,
-        "medium": 3,
-        "low": 42
+        "medium": 4,
+        "low": 45
       },
       "regimes": [],
       "health": "inverted",
-      "health_note": "not-falsified 64% vs 84% of these same falsifiers go untriggered by chance (the 16 of 45 graded we could price, 2 independent windows); direction called right 33% vs 54% by chance \u2014 the leans point the WRONG WAY; a lenient not-falsified rate cannot rescue that. conviction ordering untested \u2014 only 1 of 3 tiers has 5+ calls (medium 3, low 42)."
+      "health_note": "not-falsified 65% vs 84% of these same falsifiers go untriggered by chance (the 16 of 49 graded we could price, 2 independent windows); direction called right 35% vs 54% by chance \u2014 the leans point the WRONG WAY; a lenient not-falsified rate cannot rescue that. conviction ordering untested \u2014 only 1 of 3 tiers has 5+ calls (medium 4, low 45)."
     },
     {
       "name": "Demand Chain",
@@ -204,16 +204,16 @@
     {
       "name": "Thematic Desk",
       "slug": "thematic_desk",
-      "scored": 37,
-      "open": 94,
-      "hit_rate": 0.649,
-      "dir_accuracy": 0.459,
-      "null_hit_rate": 0.8541,
-      "null_dir_rate": 0.5132,
-      "p_hit": 0.99974,
-      "p_hit_holm": 0.99974,
-      "p_dir": 0.79375,
-      "p_dir_holm": 0.79375,
+      "scored": 42,
+      "open": 98,
+      "hit_rate": 0.619,
+      "dir_accuracy": 0.429,
+      "null_hit_rate": 0.8554,
+      "null_dir_rate": 0.5142,
+      "p_hit": 0.99998,
+      "p_hit_holm": 0.99998,
+      "p_dir": 0.89737,
+      "p_dir_holm": 0.89737,
       "independent_blocks": 1,
       "placebo_coverage": 1.0,
       "placebo_available": true,
@@ -221,21 +221,21 @@
       "placebo_mix_source": "scored",
       "placebo_by_kind": {
         "theme_rel_return": {
-          "n": 37,
-          "null_hit_rate": 0.8541,
-          "null_dir_rate": 0.5132
+          "n": 42,
+          "null_hit_rate": 0.8554,
+          "null_dir_rate": 0.5142
         }
       },
       "conviction_monotone": null,
-      "conviction_note": "conviction ordering untested \u2014 all 37 calls are single-tier (low 37)",
+      "conviction_note": "conviction ordering untested \u2014 all 42 calls are single-tier (low 42)",
       "conviction_tiers": {
         "high": 0,
         "medium": 0,
-        "low": 37
+        "low": 42
       },
       "regimes": [],
       "health": "inverted",
-      "health_note": "not-falsified 65% vs 85% of these same falsifiers go untriggered by chance (37 graded, 1 independent window); direction called right 46% vs 51% by chance \u2014 the leans point the WRONG WAY; a lenient not-falsified rate cannot rescue that. conviction ordering untested \u2014 all 37 calls are single-tier (low 37)."
+      "health_note": "not-falsified 62% vs 86% of these same falsifiers go untriggered by chance (42 graded, 1 independent window); direction called right 43% vs 51% by chance \u2014 the leans point the WRONG WAY; a lenient not-falsified rate cannot rescue that. conviction ordering untested \u2014 all 42 calls are single-tier (low 42)."
     },
     {
       "name": "Narrative Brain",
@@ -276,9 +276,9 @@
       "dir_accuracy": 0.667,
       "null_hit_rate": 0.8122,
       "null_dir_rate": 0.4968,
-      "p_hit": 0.91555,
+      "p_hit": 0.91553,
       "p_hit_holm": null,
-      "p_dir": 0.49521,
+      "p_dir": 0.49512,
       "p_dir_holm": null,
       "independent_blocks": 1,
       "placebo_coverage": 1.0,
@@ -1167,8 +1167,8 @@
       "name": "Prophet US \u2014 board track",
       "region": "US",
       "rel_path": "site/factordata/us_board_track.json",
-      "board_dates": 13,
-      "graded_rows": 1919,
+      "board_dates": 14,
+      "graded_rows": 1999,
       "h21_hit_rate": null,
       "h21_n": 0,
       "health": "cold",
@@ -1178,12 +1178,12 @@
       "name": "Prophet China \u2014 board track",
       "region": "CN",
       "rel_path": "data/china_standout_track/board.parquet",
-      "board_dates": 16,
+      "board_dates": 17,
       "graded_rows": 0,
       "h21_hit_rate": null,
       "h21_n": 0,
       "health": "cold",
-      "health_note": "962 board rows, 0 graded (fwd_mfe_21 non-null) \u2014 ACCRUING; hit-rate requires excess_21d column (not yet wired)"
+      "health_note": "1022 board rows, 0 graded (fwd_mfe_21 non-null) \u2014 ACCRUING; hit-rate requires excess_21d column (not yet wired)"
     }
   ]
 }

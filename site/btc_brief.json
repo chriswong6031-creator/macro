@@ -2,37 +2,36 @@
   "schema": "master_brief.v2",
   "lens": "btc",
   "is_context_only": true,
-  "generated_at": "2026-07-26T02:41:51.833458+00:00",
+  "generated_at": "2026-07-29T02:58:08.108456+00:00",
   "model": "deepseek-v4-pro",
-  "state_asof": "2026-07-26",
+  "state_asof": "2026-07-29",
   "tldr": [
-    "Allocation zero: System in distribution, high risk \u2014 stand aside.",
-    "Cheap but quiet: price-to-cost-basis gauge near bottom fifth, but momentum and structure neutral.",
-    "Inflows & leverage: Spot buying steady, but open interest high \u2014 froth.",
-    "Macro transition: Goldilocks fading, growth slowing \u2014 bond market healthy but late.",
-    "What to do: Stand aside."
+    "Distribution rules: Bitcoin in markdown-froth, system says 0% \u2014 stand aside.",
+    "Cycle clock: 68 days left in markdown, although on-chain shows cheap.",
+    "Liquidity expands: Global money growing 7%, but Bitcoin not yet lifted.",
+    "Conflicts: Cheap asset against crowded leverage and a still-falling structure.",
+    "What to do: Stand aside"
   ],
-  "summary": "Bitcoin is in high-risk distribution despite cheap valuation; macro Goldilocks fading \u2014 stand aside.",
-  "regime_read": "We're in a distribution regime \u2014 the system calls it high-risk, frothy. Price sits at $63,481, well off cycle highs, and the cycle clock says markdown with about 71 days left in this phase. Valuation is cheap by on-chain yardsticks (price-to-cost-basis gauge in the bottom fifth historically), but momentum and structure are neutral \u2014 no sign of a turn.\n\nThe dominant driver is the collision between still-accumulating ETF flows and crowded leverage. Open interest is in the upper third of its range, yet funding rates are low, so the positioning is a powder keg, not an active fire. Meanwhile the macro map (Goldilocks) is drifting; growth has softened and the bond market is late-cycle healthy, but the liquidity plumbing remains a tailwind \u2014 so the macro is supportive but losing urgency.",
+  "summary": "Bitcoin is cheap but stuck in a distribution downtrend with high leverage; stand aside.",
+  "regime_read": "We are deep in a markdown cycle, sitting in the DISTRIBUTE zone labeled froth. Sellers still control despite on-chain metrics that look historically cheap. The cycle clock points about two months to the next pivot, but the weight today is the combination of high real yields and elevated leveraged bets that keep pressure on price, even with global liquidity expanding.",
   "conflicts": [
-    "Value vs momentum: On-chain price-to-cost-basis gauge is cheap, but momentum is flat \u2014 no rush to buy.",
-    "Flows vs leverage: ETF buying steady, but open interest crowded \u2014 as soon as spot slows, leverage can unwind.",
-    "Liquidity split: Global M2 expanding, but stablecoins contracting \u2014 fiat side loose, crypto-specific liquidity tight."
+    "Cheap signal: On-chain metrics near bottom of range, but distribution and crowded borrow prevent buyers.",
+    "Flowing money: Global liquidity expanding at 7%, yet Bitcoin's cycle still marking down and futures are backwardated."
   ],
-  "rotation_check": "Global liquidity expanding, yet bitcoin remains in markdown \u2014 the liquidity-lead transmission has broken, testing the playbook.",
+  "rotation_check": "The liquidity tailwind grows, but Bitcoin's distribution and backwardation say the correlation has broken for now; we wait.",
   "transmission": [
-    "If ETF inflows keep steady but leverage stays crowded \u2192 any spot slowdown triggers a sharp liquidation.",
-    "If Goldilocks tips into a slower-growth regime \u2192 the liquidity tailwind could weaken, delaying any bitcoin turnaround."
+    "If liquidity expansion keeps up and bond yields drop \u2192 Bitcoin likely shifts to accumulation near the October cycle turn.",
+    "If credit stress appears or funding rates stay high \u2192 the markdown drags on longer."
   ],
   "watch_items": [
-    "Override released: System green light \u2014 re-enter only when risk regime improves.",
-    "Momentum turns positive: First hint of trend change, but high risk remains.",
-    "Goldilocks ends: Macro shift to Reflation would weaken liquidity support for BTC.",
-    "Open interest falls 15%: Leverage reset reduces froth, making a base more likely."
+    "Break above $65k with ETF inflow revival \u2014 distribution ends.",
+    "Funding annual rate drops below 5% \u2014 leverage cleans out.",
+    "Cycle pivot on Oct 5 \u2014 a possible structure turn.",
+    "High-yield spread above 3% \u2014 risk-off likely kicks in."
   ],
   "confidence": "medium",
   "theses": [],
-  "raw_text": "{\n  \"tldr\": [\n    \"Allocation zero: System in distribution, high risk \u2014 stand aside.\",\n    \"Cheap but quiet: MVRV-Z near bottom fifth, but momentum and structure neutral.\",\n    \"Inflows & leverage: Spot buying steady, but open interest high \u2014 froth.\",\n    \"Macro transition: Goldilocks fading, growth slowing \u2014 bond market healthy but late.\",\n    \"What to do: Stand aside.\"\n  ],\n  \"summary\": \"Bitcoin is in high-risk distribution despite cheap valuation; macro Goldilocks fading \u2014 stand aside.\",\n  \"regime_read\": \"We're in a distribution regime \u2014 the system calls it high-risk, frothy. Price sits at $63,481, well off cycle highs, and the cycle clock says markdown with about 71 days left in this phase. Valuation is cheap by on-chain yardsticks (MVRV-Z in the bottom fifth historically), but momentum and structure are neutral \u2014 no sign of a turn.\\n\\nThe dominant driver is the collision between still-accumulating ETF flows and crowded leverage. Open interest is in the upper third of its range, yet funding rates are low, so the positioning is a powder keg, not an active fire. Meanwhile the macro map (Goldilocks) is drifting; growth has softened and the bond market is late-cycle healthy, but the liquidity plumbing remains a tailwind \u2014 so the macro is supportive but losing urgency.\",\n  \"conflicts\": [\n    \"Value vs momentum: On-chain MVRV-Z is cheap, but momentum is flat \u2014 no rush to buy.\",\n    \"Flows vs leverage: ETF buying steady, but open interest crowded \u2014 as soon as spot slows, leverage can unwind.\",\n    \"Liquidity split: Global M2 expanding, but stablecoins contracting \u2014 fiat side loose, crypto-specific liquidity tight.\"\n  ],\n  \"transmission\": [\n    \"If ETF inflows keep steady but leverage stays crowded \u2192 any spot slowdown triggers a sharp liquidation.\",\n    \"If Goldilocks tips into a slower-growth regime \u2192 the liquidity tailwind could weaken, delaying any bitcoin turnaround.\"\n  ],\n  \"rotation_check\": \"Global liquidity expanding, yet bitcoin remains in markdown \u2014 the liquidity-lead transmission has broken, testing the playbook.\",\n  \"watch_items\": [\n    \"Override released: System green light \u2014 re-enter only when risk regime improves.\",\n    \"Momentum turns positive: First hint of trend change, but high risk remains.\",\n    \"Goldilocks ends: Macro shift to Reflation would weaken liquidity support for BTC.\",\n    \"Open interest falls 15%: Leverage reset reduces froth, making a base more likely.\"\n  ],\n  \"confidence\": \"medium\"\n}",
+  "raw_text": "{\n  \"tldr\": [\n    \"Distribution rules: Bitcoin in markdown-froth, system says 0% \u2014 stand aside.\",\n    \"Cycle clock: 68 days left in markdown, although on-chain shows cheap.\",\n    \"Liquidity expands: Global money growing 7%, but Bitcoin not yet lifted.\",\n    \"Conflicts: Cheap asset against crowded leverage and a still-falling structure.\",\n    \"What to do: Stand aside\"\n  ],\n  \"summary\": \"Bitcoin is cheap but stuck in a distribution downtrend with high leverage; stand aside.\",\n  \"regime_read\": \"We are deep in a markdown cycle, sitting in the DISTRIBUTE zone labeled froth. Sellers still control despite on-chain metrics that look historically cheap. The cycle clock points about two months to the next pivot, but the weight today is the combination of high real yields and elevated leveraged bets that keep pressure on price, even with global liquidity expanding.\",\n  \"conflicts\": [\n    \"Cheap signal: On-chain metrics near bottom of range, but distribution and crowded borrow prevent buyers.\",\n    \"Flowing money: Global liquidity expanding at 7%, yet Bitcoin's cycle still marking down and futures are backwardated.\"\n  ],\n  \"transmission\": [\n    \"If liquidity expansion keeps up and bond yields drop \u2192 Bitcoin likely shifts to accumulation near the October cycle turn.\",\n    \"If credit stress appears or funding rates stay high \u2192 the markdown drags on longer.\"\n  ],\n  \"rotation_check\": \"The liquidity tailwind grows, but Bitcoin's distribution and backwardation say the correlation has broken for now; we wait.\",\n  \"watch_items\": [\n    \"Break above $65k with ETF inflow revival \u2014 distribution ends.\",\n    \"Funding annual rate drops below 5% \u2014 leverage cleans out.\",\n    \"Cycle pivot on Oct 5 \u2014 a possible structure turn.\",\n    \"High-yield spread above 3% \u2014 risk-off likely kicks in.\"\n  ],\n  \"confidence\": \"medium\"\n}",
   "degraded_reason": null,
   "disclaimer": "Context only \u2014 not a signal. This is an AI-generated SYNTHESIS of the dashboards' own deterministic outputs. It does not feed any score, signal or allocation, and it can be wrong or overconfident. Use it as a research read; verify every claim against the underlying dashboard it cites. Effective sample sizes on macro regimes are small \u2014 treat cross-asset 'reads' as odds, not forecasts.",
   "style_flags": [],
@@ -52,8 +51,8 @@
       "key": "cycle",
       "label_en": "Cycle clock",
       "label_zh": "\u5468\u671f\u65f6\u949f",
-      "value_en": "Late decline \u00b7 ~80% through",
-      "value_zh": "\u4e0b\u884c\u540e\u6bb5 \u00b7 \u7ea680%\u8fdb\u5ea6",
+      "value_en": "Late decline \u00b7 ~81% through",
+      "value_zh": "\u4e0b\u884c\u540e\u6bb5 \u00b7 \u7ea681%\u8fdb\u5ea6",
       "tone": "warn"
     },
     {
@@ -76,9 +75,9 @@
       "key": "etf",
       "label_en": "ETF flows",
       "label_zh": "ETF\u8d44\u91d1",
-      "value_en": "Money coming in",
-      "value_zh": "\u8d44\u91d1\u6d41\u5165",
-      "tone": "good"
+      "value_en": "Flat",
+      "value_zh": "\u6301\u5e73",
+      "tone": "neutral"
     },
     {
       "key": "liquidity",
@@ -90,30 +89,29 @@
     }
   ],
   "zh": {
-    "summary": "\u5c3d\u7ba1\u4f30\u503c\u4fbf\u5b9c\uff0c\u6bd4\u7279\u5e01\u4ecd\u5904\u4e8e\u9ad8\u98ce\u9669\u6d3e\u53d1\u9636\u6bb5\uff1b\u5b8f\u89c2\u91d1\u53d1\u59d1\u5a18\u6548\u5e94\u6d88\u9000 \u2014 \u6682\u4e14\u89c2\u671b\u3002",
-    "regime_read": "\u6211\u4eec\u6b63\u5904\u4e8e\u6d3e\u53d1\u9636\u6bb5 \u2014 \u7cfb\u7edf\u5c06\u5176\u79f0\u4e3a\u9ad8\u98ce\u9669\u3001\u6ce1\u6cab\u5316\u3002\u4ef7\u683c\u572863,481\u7f8e\u5143\uff0c\u8fdc\u4f4e\u4e8e\u5468\u671f\u9ad8\u70b9\uff0c\u5468\u671f\u65f6\u949f\u663e\u793a\u964d\u4ef7\u9636\u6bb5\uff0c\u6b64\u9636\u6bb5\u8fd8\u5269\u7ea671\u5929\u3002\u6309\u94fe\u4e0a\u6307\u6807\u8861\u91cf\u4f30\u503c\u4fbf\u5b9c\uff08\u4ef7\u683c\u4e0e\u6210\u672c\u57fa\u7840\u6bd4\u5904\u4e8e\u5386\u53f2\u5e95\u90e8\u4e94\u5206\u4e4b\u4e00\uff09\uff0c\u4f46\u52a8\u91cf\u548c\u7ed3\u6784\u4e2d\u6027 \u2014 \u6ca1\u6709\u53cd\u8f6c\u8ff9\u8c61\u3002\n\n\u4e3b\u5bfc\u56e0\u7d20\u4ecd\u662f\u6301\u7eed\u6d41\u5165\u7684ETF\u8d44\u91d1\u4e0e\u62e5\u6324\u7684\u6760\u6746\u4e4b\u95f4\u7684\u78b0\u649e\u3002\u672a\u5e73\u4ed3\u5408\u7ea6\u4f4d\u4e8e\u5176\u533a\u95f4\u4e0a\u4e09\u5206\u4e4b\u4e00\uff0c\u4f46\u8d44\u91d1\u8d39\u7387\u8f83\u4f4e\uff0c\u56e0\u6b64\u6301\u4ed3\u662f\u706b\u836f\u6876\u800c\u975e\u660e\u706b\u3002\u540c\u65f6\u5b8f\u89c2\u56fe\u666f\uff08\u91d1\u53d1\u59d1\u5a18\uff09\u6b63\u5728\u6f02\u79fb\uff1b\u589e\u957f\u653e\u7f13\uff0c\u503a\u5238\u5e02\u573a\u5904\u4e8e\u5468\u671f\u540e\u671f\u7684\u5065\u5eb7\u72b6\u6001\uff0c\u4f46\u6d41\u52a8\u6027\u7ba1\u9053\u4ecd\u662f\u987a\u98ce \u2014 \u56e0\u6b64\u5b8f\u89c2\u9762\u652f\u6301\u4f46\u7d27\u8feb\u6027\u51cf\u5f31\u3002",
-    "rotation_check": "\u5168\u7403\u6d41\u52a8\u6027\u6269\u5f20\uff0c\u4f46\u6bd4\u7279\u5e01\u4ecd\u5904\u4e8e\u964d\u4ef7\u9636\u6bb5 \u2014 \u6d41\u52a8\u6027\u4f20\u5bfc\u673a\u5236\u5df2\u65ad\u88c2\uff0c\u8003\u9a8c\u73b0\u6709\u64cd\u4f5c\u6846\u67b6\u3002",
+    "summary": "\u6bd4\u7279\u5e01\u4ef7\u683c\u4f4e\u5ec9\uff0c\u4f46\u9677\u5165\u9ad8\u6760\u6746\u7684\u6d3e\u53d1\u4e0b\u8dcc\u8d8b\u52bf\uff1b\u5efa\u8bae\u89c2\u671b\u3002",
+    "regime_read": "\u6211\u4eec\u6b63\u5904\u4e8e\u6df1\u5ea6\u964d\u4ef7\u5468\u671f\uff0c\u5904\u4e8e\u6807\u6709\u201c\u6ce1\u6cab\u201d\u7684\u6d3e\u53d1\u533a\u57df\u3002\u5c3d\u7ba1\u94fe\u4e0a\u6307\u6807\u663e\u793a\u5386\u53f2\u4f4e\u4ef7\uff0c\u4f46\u5356\u5bb6\u4ecd\u5360\u4e3b\u5bfc\u3002\u5468\u671f\u65f6\u949f\u663e\u793a\u8ddd\u79bb\u4e0b\u4e00\u4e2a\u8f6c\u6298\u70b9\u7ea6\u4e24\u4e2a\u6708\uff0c\u4f46\u5f53\u524d\u7684\u538b\u529b\u6765\u6e90\u4e8e\u9ad8\u5b9e\u9645\u6536\u76ca\u7387\u548c\u589e\u52a0\u7684\u6760\u6746\u62bc\u6ce8\u7684\u7ec4\u5408\uff0c\u5373\u4f7f\u5168\u7403\u6d41\u52a8\u6027\u5728\u6269\u5f20\uff0c\u8fd9\u4e9b\u56e0\u7d20\u4ecd\u5bf9\u4ef7\u683c\u65bd\u52a0\u538b\u529b\u3002",
+    "rotation_check": "\u6d41\u52a8\u6027\u987a\u98ce\u589e\u5f3a\uff0c\u4f46\u6bd4\u7279\u5e01\u7684\u6d3e\u53d1\u548c\u73b0\u8d27\u6ea2\u4ef7\u8868\u660e\u76f8\u5173\u6027\u6682\u65f6\u88ab\u6253\u7834\uff1b\u6211\u4eec\u7b49\u5f85\u3002",
     "tldr": [
-      "\u5206\u914d\u4e3a\u96f6\uff1a\u7cfb\u7edf\u5904\u4e8e\u5206\u914d\u9636\u6bb5\uff0c\u9ad8\u98ce\u9669\u2014\u2014\u65c1\u89c2\u3002",
-      "\u4fbf\u5b9c\u4f46\u5e73\u6de1\uff1a\u4ef7\u683c\u6210\u672c\u6bd4\u6307\u6807\u63a5\u8fd1\u5e95\u90e8\u4e94\u5206\u4e4b\u4e00\u533a\u95f4\uff0c\u4f46\u52a8\u80fd\u548c\u7ed3\u6784\u5448\u4e2d\u6027\u3002",
-      "\u8d44\u91d1\u6d41\u5165\u4e0e\u6760\u6746\uff1a\u73b0\u8d27\u4e70\u76d8\u7a33\u5b9a\uff0c\u4f46\u6301\u4ed3\u91cf\u9ad8\u2014\u2014\u6ce1\u6cab\u3002",
-      "\u5b8f\u89c2\u8f6c\u6362\uff1a\u91d1\u53d1\u59d1\u5a18\u6548\u5e94\u6d88\u9000\uff0c\u589e\u957f\u653e\u7f13\u2014\u2014\u503a\u5238\u5e02\u573a\u5065\u5eb7\u4f46\u5904\u4e8e\u540e\u671f\u3002",
-      "\u64cd\u4f5c\u5efa\u8bae\uff1a\u65c1\u89c2\u3002"
+      "\u6d3e\u53d1\u89c4\u5219\uff1a\u6bd4\u7279\u5e01\u5904\u4e8e\u6298\u4ef7\u6ce1\u6cab\u4e2d\uff0c\u7cfb\u7edf\u663e\u793a0%\u2014\u2014\u6309\u5175\u4e0d\u52a8\u3002",
+      "\u5468\u671f\u65f6\u949f\uff1a\u8dcc\u4ef7\u9636\u6bb5\u8fd8\u526968\u5929\uff0c\u5c3d\u7ba1\u94fe\u4e0a\u663e\u793a\u5ec9\u4ef7\u3002",
+      "\u6d41\u52a8\u6027\u6269\u5f20\uff1a\u5168\u7403\u8d44\u91d1\u589e\u957f7%\uff0c\u4f46\u6bd4\u7279\u5e01\u5c1a\u672a\u63d0\u632f\u3002",
+      "\u51b2\u7a81\uff1a\u5ec9\u4ef7\u8d44\u4ea7\u4e0e\u62e5\u6324\u7684\u6760\u6746\u53ca\u4ecd\u5728\u4e0b\u8dcc\u7684\u7ed3\u6784\u5bf9\u5cd9\u3002",
+      "\u5e94\u5bf9\uff1a\u89c2\u671b\u3002"
     ],
     "conflicts": [
-      "\u4ef7\u503c vs \u52a8\u91cf\uff1a\u94fe\u4e0a\u4ef7\u683c\u4e0e\u6210\u672c\u57fa\u7840\u6307\u6807\u663e\u793a\u4fbf\u5b9c\uff0c\u4f46\u52a8\u91cf\u5e73\u6de1 \u2014 \u65e0\u9700\u6025\u4e8e\u4e70\u5165\u3002",
-      "\u8d44\u91d1\u6d41 vs \u6760\u6746\uff1aETF\u4e70\u5165\u7a33\u5b9a\uff0c\u4f46\u672a\u5e73\u4ed3\u5408\u7ea6\u62e5\u6324 \u2014 \u4e00\u65e6\u73b0\u8d27\u653e\u7f13\uff0c\u6760\u6746\u53ef\u80fd\u89e3\u9664\u3002",
-      "\u6d41\u52a8\u6027\u5206\u5316\uff1a\u5168\u7403M2\u6269\u5f20\uff0c\u4f46\u7a33\u5b9a\u5e01\u6536\u7f29 \u2014 \u6cd5\u5e01\u7aef\u5bbd\u677e\uff0c\u52a0\u5bc6\u7aef\u6d41\u52a8\u6027\u7d27\u5f20\u3002"
+      "\u5ec9\u4ef7\u4fe1\u53f7\uff1a\u94fe\u4e0a\u6307\u6807\u63a5\u8fd1\u533a\u95f4\u5e95\u90e8\uff0c\u4f46\u6d3e\u53d1\u548c\u62e5\u6324\u7684\u501f\u8d37\u963b\u788d\u4e70\u5bb6\u5165\u573a\u3002",
+      "\u8d44\u91d1\u6d41\u52a8\uff1a\u5168\u7403\u6d41\u52a8\u6027\u4ee57%\u7684\u901f\u5ea6\u6269\u5f20\uff0c\u4f46\u6bd4\u7279\u5e01\u7684\u5468\u671f\u4ecd\u5728\u964d\u4ef7\uff0c\u671f\u8d27\u5904\u4e8e\u73b0\u8d27\u6ea2\u4ef7\u72b6\u6001\u3002"
     ],
     "transmission": [
-      "\u5982\u679cETF\u6d41\u5165\u4fdd\u6301\u7a33\u5b9a\u4f46\u6760\u6746\u4ecd\u62e5\u6324 \u2192 \u4efb\u4f55\u73b0\u8d27\u653e\u7f13\u90fd\u4f1a\u5f15\u53d1\u5267\u70c8\u6e05\u7b97\u3002",
-      "\u5982\u679c\u91d1\u53d1\u5973\u5b69\u7ecf\u6d4e\u8f6c\u5411\u589e\u957f\u653e\u7f13\u6a21\u5f0f \u2192 \u6d41\u52a8\u6027\u987a\u98ce\u53ef\u80fd\u51cf\u5f31\uff0c\u63a8\u8fdf\u6bd4\u7279\u5e01\u7684\u4efb\u4f55\u53cd\u8f6c\u3002"
+      "\u5982\u679c\u6d41\u52a8\u6027\u6269\u5f20\u6301\u7eed\u4e14\u503a\u5238\u6536\u76ca\u7387\u4e0b\u964d\u2192\u6bd4\u7279\u5e01\u53ef\u80fd\u5728\u5341\u6708\u7684\u5468\u671f\u8f6c\u6298\u70b9\u9644\u8fd1\u8f6c\u4e3a\u5438\u7b79\u3002",
+      "\u5982\u679c\u51fa\u73b0\u4fe1\u8d37\u538b\u529b\u6216\u878d\u8d44\u5229\u7387\u5c45\u9ad8\u4e0d\u4e0b\uff0c\u5219\u6298\u4ef7\u5c06\u6301\u7eed\u66f4\u4e45\u3002"
     ],
     "watch_items": [
-      "\u8986\u76d6\u6307\u4ee4\u5df2\u91ca\u653e\uff1a\u7cfb\u7edf\u7eff\u706f \u2014 \u4ec5\u5728\u98ce\u9669\u72b6\u51b5\u6539\u5584\u65f6\u91cd\u65b0\u5165\u573a\u3002",
-      "\u52a8\u80fd\u8f6c\u4e3a\u6b63\u503c\uff1a\u8d8b\u52bf\u53d8\u5316\u7684\u521d\u6b65\u8ff9\u8c61\uff0c\u4f46\u9ad8\u98ce\u9669\u4f9d\u65e7\u3002",
-      "\u91d1\u53d1\u5973\u5b69\u7ecf\u6d4e\u7ed3\u675f\uff1a\u5b8f\u89c2\u8f6c\u5411\u518d\u901a\u80c0\u5c06\u524a\u5f31\u5bf9BTC\u7684\u6d41\u52a8\u6027\u652f\u6301\u3002",
-      "\u672a\u5e73\u4ed3\u5408\u7ea6\u4e0b\u964d15%\uff1a\u6760\u6746\u91cd\u7f6e\u51cf\u5c11\u6ce1\u6cab\uff0c\u4f7f\u7b51\u5e95\u66f4\u6709\u53ef\u80fd\u3002"
+      "\u7a81\u78346.5\u4e07\u7f8e\u5143\u4e14ETF\u8d44\u91d1\u6d41\u5165\u590d\u82cf\u2014\u2014\u6d3e\u53d1\u7ed3\u675f\u3002",
+      "\u878d\u8d44\u5e74\u5229\u7387\u964d\u81f35%\u4ee5\u4e0b\u2014\u2014\u6760\u6746\u51fa\u6e05\u3002",
+      "10\u67085\u65e5\u7684\u5468\u671f\u8f6c\u6298\u70b9\u2014\u2014\u53ef\u80fd\u51fa\u73b0\u7ed3\u6784\u53d8\u5316\u3002",
+      "\u9ad8\u6536\u76ca\u5229\u5dee\u8d85\u8fc73%\u2014\u2014\u907f\u9669\u60c5\u7eea\u53ef\u80fd\u5360\u636e\u4e3b\u5bfc\u3002"
     ]
   }
 }

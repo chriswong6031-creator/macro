@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.confluence_sequence.v1",
   "artifact_id": "confluence-sequence",
-  "asof": "2026-07-28",
+  "asof": "2026-07-29",
   "tier": "display",
   "is_context_only": true,
   "display_only": true,
@@ -1079,10 +1079,10 @@
       "direction": 1,
       "horizon": "21.0",
       "persistence_streak": 0,
-      "strength_slope": null,
+      "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-06-30",
-      "n_sessions_in_tape": 1,
+      "last_as_of": "2026-07-06",
+      "n_sessions_in_tape": 2,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -1218,9 +1218,31 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "DASH",
+      "direction": 1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-04",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "PANW",
       "direction": 1,
       "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-04",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "PANW",
+      "direction": 1,
+      "horizon": "21.0",
       "persistence_streak": 0,
       "strength_slope": null,
       "state": "gone",
@@ -1287,6 +1309,17 @@
       "subject": "APD",
       "direction": 1,
       "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-10",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "APD",
+      "direction": 1,
+      "horizon": "10.0",
       "persistence_streak": 0,
       "strength_slope": null,
       "state": "gone",
@@ -1845,6 +1878,28 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "CVX",
+      "direction": 1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-07-20",
+      "n_sessions_in_tape": 2,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "GDDY",
+      "direction": -1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-17",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "MU",
       "direction": -1,
       "horizon": "5.0",
@@ -1944,17 +1999,6 @@
       "n_independent_confirming_latest": 2.0
     },
     {
-      "subject": "CVX",
-      "direction": 1,
-      "horizon": "5.0",
-      "persistence_streak": 0,
-      "strength_slope": null,
-      "state": "gone",
-      "last_as_of": "2026-07-20",
-      "n_sessions_in_tape": 1,
-      "n_independent_confirming_latest": 2.0
-    },
-    {
       "subject": "KEY",
       "direction": 1,
       "horizon": "63.0",
@@ -2001,6 +2045,17 @@
     {
       "subject": "ACN",
       "direction": -1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-21",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "CVS",
+      "direction": 1,
       "horizon": "5.0",
       "persistence_streak": 0,
       "strength_slope": null,
@@ -2148,16 +2203,16 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-21",
-      "n_sessions_in_tape": 5
+      "last_as_of": "2026-07-28",
+      "n_sessions_in_tape": 6
     },
     {
       "pair_id": "briefing-divergences",
-      "persistence_streak": 4,
+      "persistence_streak": 5,
       "strength_slope": 0.0,
       "state": "stable",
-      "last_as_of": "2026-07-28",
-      "n_sessions_in_tape": 14
+      "last_as_of": "2026-07-29",
+      "n_sessions_in_tape": 15
     },
     {
       "pair_id": "regime_vector-vs-risk_radar",
@@ -2168,9 +2223,9 @@
       "n_sessions_in_tape": 4
     }
   ],
-  "n_tape_rows": 373,
+  "n_tape_rows": 382,
   "gaps": [],
   "produced_by": "engine/neuralweb/confluence_sequence.py",
-  "produced_at": "2026-07-28T02:48:58Z",
+  "produced_at": "2026-07-29T03:03:23Z",
   "authority_check": []
 }
