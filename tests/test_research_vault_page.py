@@ -16,6 +16,8 @@ Pure render — jinja2 only (already a dep); no R2, no network.
 """
 from __future__ import annotations
 
+import hashlib
+import json
 import re
 
 import pytest
@@ -78,6 +80,27 @@ def test_builds_empty_and_seeded(page_empty, page_seeded):
         assert 'id="rv-catalog"' in html                 # the SSR catalog island
 
 
+def test_page_canvas_tracks_shared_theme_tokens(page_seeded):
+    body_rule = re.search(r"body\s*\{([^}]*)\}", page_seeded)
+    assert body_rule, "Research Vault must define its page canvas"
+    declarations = body_rule.group(1)
+    assert "background:var(--bg)" in declarations
+    assert "color:var(--text)" in declarations
+    assert "min-height:100vh" in declarations
+
+
+def test_committed_page_uses_hashed_themed_canvas_asset():
+    html = (bld.ROOT / "site" / "research_vault.html").read_text(encoding="utf-8")
+    match = re.search(r'href="(assets/css/([0-9a-f]{8})\.css)\?v=\2"', html)
+    assert match, "Research Vault must load a content-hashed page stylesheet"
+    css_path = bld.ROOT / "site" / match.group(1)
+    css = css_path.read_bytes()
+    assert hashlib.sha256(css).hexdigest()[:8] == match.group(2)
+    text = css.decode("utf-8")
+    assert "background:var(--bg)" in text
+    assert "color:var(--text)" in text
+
+
 def test_title_has_no_i18n(page_seeded):
     m = re.search(r"<title>(.*?)</title>", page_seeded, re.S)
     assert m, "no <title>"
@@ -137,6 +160,40 @@ def test_ssr_cards_baked_when_seeded(page_seeded):
     assert "rep glass pick" in page_seeded               # highlighted card
     assert "rep glass needs" in page_seeded              # needs-metadata card
     assert "Summary pending" in page_seeded              # empty-summary fallback
+    assert 'class="rep-titlelink"' not in page_seeded
+
+
+def test_public_ssr_preview_stops_at_three_and_shows_pro_gate(monkeypatch):
+    catalog = dict(_SEED)
+    catalog["items"] = [
+        {
+            **_SEED["items"][i % 2],
+            "id": f"report-{i}",
+            "title": f"Report {i}",
+            "published_at": f"2026-07-{22 - i:02d}T14:00:00Z",
+        }
+        for i in range(5)
+    ]
+    catalog["count"] = 5
+    html = _render(monkeypatch, catalog)
+    assert html.count('class="rep glass') == 4  # three real cards + one generic ghost
+    assert "Report 0" in html and "Report 2" in html and "Report 4" in html
+    assert "Report 1" not in html and "Report 3" not in html
+    island = re.search(r'<script id="rv-catalog" type="application/json">(.*?)</script>',
+                       html, re.S)
+    assert island and len(json.loads(island.group(1))["items"]) == 3
+    assert "2 more institutional reports" in html
+    assert "Upgrade to Pro" in html
+
+
+def test_client_preview_is_fixed_to_three_and_fails_closed():
+    js = (bld.ROOT / "site" / "research_vault_app.js").read_text(encoding="utf-8")
+    assert "var USER_TIER = 'anon'" in js
+    assert "function feedUnlocked() { return USER_TIER === 'pro'; }" in js
+    assert "function teaseCount() { return 3; }" in js
+    assert "previewItems().filter(matchItem)" in js
+    assert "x.slug && feedUnlocked()" in js
+    assert "fetch(API + '/api/research/catalog', { headers: h" in js
 
 
 def test_empty_state_has_no_fake_cards(page_empty):

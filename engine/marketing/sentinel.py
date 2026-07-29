@@ -803,6 +803,30 @@ def resolve_ramp(
             for cap_key in _ov:
                 if cap_key not in caps:
                     continue  # unknown knob: ignore rather than invent a cap
+                if cap_key in _RAMP_BOOL_KNOBS:
+                    # Boolean permission (links_allowed / theme_list_allowed).
+                    # These used to fall through _tier_int, where `true` only
+                    # worked because int(True) == 1 and a quoted "true" was
+                    # discarded as a NUMERIC typo — so the one override the
+                    # operator actually reached for on 2026-07-28 (flagship past
+                    # the theme_list ramp, 18 sector lists dropped per sweep on
+                    # a day semis were routing) was unexpressible. Parsed
+                    # strictly; junk is ignored + announced like any tier typo,
+                    # never coerced to False (a typo must not silently REVOKE).
+                    raw = _ov.get(cap_key)
+                    if isinstance(raw, bool):
+                        val_b = raw
+                    elif isinstance(raw, str) and raw.strip().lower() in (
+                            "true", "false", "1", "0", "yes", "no"):
+                        val_b = raw.strip().lower() in ("true", "1", "yes")
+                    else:
+                        if announce:
+                            _tier_value_annotation(
+                                f"account_overrides.{acc_id}", cap_key, raw)
+                        continue
+                    caps[cap_key] = val_b
+                    applied_overrides[cap_key] = val_b
+                    continue
                 # Same parse contract as a tier row (-1/"unlimited" → None, junk
                 # → ignored + ::warning), so an override typo behaves like a tier
                 # typo instead of inventing a third failure mode.

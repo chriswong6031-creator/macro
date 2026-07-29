@@ -162,6 +162,8 @@ const ICONS = {
   marketing_lab:         NAV_ICO('<path d="M9 3h6M10 3v6L5.2 17.4A2 2 0 0 0 7 20.4h10a2 2 0 0 0 1.8-3L14 9V3"/><path d="M7.5 15h9"/><circle cx="10.5" cy="17" r=".9" fill="currentColor"/><circle cx="13.5" cy="16" r=".9" fill="currentColor"/>'),
   marketing_outbox:      NAV_ICO('<path d="M4 13v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/><path d="M4 13l2.2-7.4A2 2 0 0 1 8.1 4h7.8a2 2 0 0 1 1.9 1.6L20 13"/><path d="M4 13h4l1.5 2.2h5L16 13h4"/>'),
   marketing_reply_queue: NAV_ICO('<path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.9 8.9 0 0 1-4.1-1L3 20l1.2-4.6A8.4 8.4 0 0 1 12 3.1a8.4 8.4 0 0 1 9 8.4Z"/><path d="M9 12h6"/>'),
+  marketing_health:      NAV_ICO('<path d="M3 12h4l2.5-6 4 12 2.5-6h5"/>'),
+  marketing_learning:    NAV_ICO('<path d="M4 19V5"/><path d="M4 19h16"/><rect x="7" y="12" width="3" height="5" rx=".6"/><rect x="12" y="9" width="3" height="8" rx=".6"/><rect x="17" y="6" width="3" height="11" rx=".6"/>'),
   marketing_publish:     NAV_ICO('<path d="M21 4L3 11l6 2.5L11 20l3.5-6L21 4Z"/><path d="M9 13.5L21 4"/>'),
   marketing_sentinel:    NAV_ICO('<path d="M12 3l7 3v5c0 4.5-3 7.7-7 9-4-1.3-7-4.5-7-9V6l7-3Z"/><path d="M9 12l2 2 4-4"/>'),
   marketing_allies:      NAV_ICO('<path d="M8.5 13.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M15.5 13.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M4 20a4.5 4.5 0 0 1 9 0M11 20a4.5 4.5 0 0 1 9 0"/>'),
@@ -175,7 +177,7 @@ const ICONS = {
 const NAV_GROUPS = [
   { label: "", items: [["overview", "Overview"]] },
   { label: "Neural Web", items: [["neural_web", "Observatory"], ["orchestrator", "Master Brain"], ["prophet", "Prophet"], ["mastermind_ai", "Mastermind AI"], ["mastermind_logs", "AI Response Logs"], ["alerts", "Alerts"], ["long_hold", "Long-Hold Lobe"], ["context_lobe", "Context Lobe"], ["causal_lab", "Causal Lab"], ["chronicle", "Chronicle"]] },
-  { label: "Marketing", items: [["marketing_overview", "CMO Office"], ["marketing_departments", "Departments"], ["marketing_radar", "Radar"], ["marketing_seo", "SEO"], ["marketing_campaigns", "Campaigns"], ["marketing_channels", "Channels & Desks"], ["personas", "Persona Roster"], ["marketing_content", "Content Studio"], ["marketing_outbox", "Outbox"], ["marketing_reply_queue", "Reply Queue"], ["marketing_publish", "Publisher"], ["marketing_sentinel", "Sentinel"], ["marketing_allies", "Allies"], ["marketing_lab", "Lab"], ["marketing_ads", "Ad Central"], ["marketing_experiments", "Experiments"], ["marketing_lobes", "Engines"]] },
+  { label: "Marketing", items: [["marketing_overview", "CMO Office"], ["marketing_departments", "Departments"], ["marketing_radar", "Radar"], ["marketing_seo", "SEO"], ["marketing_campaigns", "Campaigns"], ["marketing_channels", "Channels & Desks"], ["personas", "Persona Roster"], ["marketing_content", "Content Studio"], ["marketing_outbox", "Outbox"], ["marketing_reply_queue", "Reply Queue"], ["marketing_health", "Desk Health"], ["marketing_learning", "Learning"], ["marketing_publish", "Publisher"], ["marketing_sentinel", "Sentinel"], ["marketing_allies", "Allies"], ["marketing_lab", "Lab"], ["marketing_ads", "Ad Central"], ["marketing_experiments", "Experiments"], ["marketing_lobes", "Engines"]] },
   { label: "Growth", items: [["analytics", "Analytics"], ["users", "Users"], ["revenue", "Revenue"], ["experiments", "Experiments"], ["site_gate", "Site Access"]] },
   { label: "Support", items: [["support_tickets", "Support Tickets"], ["email_center", "Email Center"]] },
   { label: "System", items: [["system", "System"], ["health", "Health"], ["deploy", "Build & Deploy"], ["metabolism", "Metabolism"], ["codex", "Codex Research"], ["cost", "AI Cost"], ["content", "Content"]] },
@@ -1232,7 +1234,7 @@ const AN_ROWS_OPTS = [100, 250, 500, 1000, 2000];
 function anTableBar(kind) {
   const st = AN.tbl[kind];
   const opts = AN_ROWS_OPTS.map(n => `<option value="${n}"${st.rows === n ? " selected" : ""}>${fmtNum(n)} rows</option>`).join("");
-  const ph = kind === "visitors" ? "filter email / id / IP / city / country…" : "filter id / IP / site / city / country…";
+  const ph = kind === "visitors" ? "filter name / email / id / IP / location…" : "filter name / email / id / IP / site…";
   return `<div class="an-tbar">
     <input id="anQ" class="an-q" type="search" placeholder="${ph}" value="${esc(st.q)}" autocomplete="off" spellcheck="false">
     <select id="anRows" class="an-rows" title="max rows loaded">${opts}</select>
@@ -1265,18 +1267,25 @@ const AN_BOT_PILL = '<span class="statpill s-mut" title="detected crawler/automa
 /* Soft-identity pill: an anonymous cookie's LIKELY registered owner, guessed from a shared
    device fingerprint or IP — a suggestion, not a confirmed login (the "~"), so it reads
    distinctly from the solid "registered" pill a real login-stitch earns. */
-function anCandPill(email, basis) {
-  if (!email) return "";
+function anCandPill(name, email, basis) {
+  const label = name || email;
+  if (!label) return "";
   const via = basis === "device" ? "shared device" : "shared IP";
-  return ` <span class="statpill s-warn" title="likely — not a confirmed login (${via} as this account)">~ ${esc(email)}</span>`;
+  const emailHint = name && email ? ` · ${email}` : "";
+  return ` <span class="statpill s-warn" title="${esc(`likely — not a confirmed login (${via} as ${label}${emailHint})`)}">~ ${esc(label)}</span>`;
+}
+function anRegisteredIdentity(name, email, visitorId) {
+  const label = name || email || "registered user";
+  const emailLine = name && email ? `<div class="mono sub">${esc(email)}</div>` : "";
+  return `<a href="#/visitor/${encodeURIComponent(visitorId || "")}"><b>${esc(label)}</b></a> <span class="statpill s-ok">registered</span>${emailLine}`;
 }
 function anSessionsTable(rows, q) {
   const empty = q ? "no sessions match this filter" : "no sessions yet";
   return `<table><thead><tr><th>Started</th><th>Visitor</th><th>IP</th><th>Location</th><th>Site</th><th class="r">Pages</th><th class="r">Events</th><th class="r">Duration</th><th></th></tr></thead><tbody>
     ${rows.map(s => `<tr><td class="mono sub">${esc(s.started || "")}</td>
-      <td>${s.email
-        ? `<a href="#/visitor/${encodeURIComponent(s.visitor_id || "")}"><b>${esc(s.email)}</b></a> <span class="statpill s-ok">registered</span>`
-        : `<a class="mono" href="#/visitor/${encodeURIComponent(s.visitor_id || "")}">${esc((s.visitor_id || "—").slice(0, 8))}…</a>${anCandPill(s.candidate_email, s.candidate_basis)}`
+      <td>${s.email || s.name || s.user_id
+        ? anRegisteredIdentity(s.name, s.email, s.user_id || s.visitor_id)
+        : `<a class="mono" href="#/visitor/${encodeURIComponent(s.visitor_id || "")}">${esc((s.visitor_id || "—").slice(0, 8))}…</a>${anCandPill(s.candidate_name, s.candidate_email, s.candidate_basis)}`
       }${s.is_bot ? " " + AN_BOT_PILL : ""}</td>
       <td class="mono">${esc(s.ip || "—")}</td>
       <td class="sub">${esc(s.city || "—")}${s.region ? ", " + esc(s.region) : ""}${s.country_code ? " · " + esc(s.country_code) : ""}</td>
@@ -1291,8 +1300,8 @@ function anVisitorsTable(rows, q) {
   return `<table><thead><tr><th>Visitor</th><th>Last IP</th><th>Location</th><th>Net</th><th class="r">Sessions</th><th class="r">Events</th><th class="r">IPs</th><th>First seen</th><th>Last seen</th></tr></thead><tbody>
     ${rows.map(v => `<tr>
       <td>${v.is_user
-        ? `<a href="#/visitor/${encodeURIComponent(v.visitor_id || "")}"><b>${esc(v.email || "registered user")}</b></a> <span class="statpill s-ok">registered</span>`
-        : `<a class="mono" href="#/visitor/${encodeURIComponent(v.visitor_id || "")}">${esc((v.visitor_id || "—").slice(0, 10))}…</a>${anCandPill(v.candidate_email, v.candidate_basis)}`
+        ? anRegisteredIdentity(v.name, v.email, v.visitor_id)
+        : `<a class="mono" href="#/visitor/${encodeURIComponent(v.visitor_id || "")}">${esc((v.visitor_id || "—").slice(0, 10))}…</a>${anCandPill(v.candidate_name, v.candidate_email, v.candidate_basis)}`
       }${(v.identities > 1) ? ` <span class="statpill s-mut">${fmtNum(v.identities)} devices</span>` : ""}${v.is_bot ? " " + AN_BOT_PILL : ""}</td>
       <td class="mono">${esc(v.last_ip || "—")}</td>
       <td>${esc(v.city || "—")}${v.region ? ", " + esc(v.region) : ""}${v.country_code ? " · " + esc(v.country_code) : ""}</td>
@@ -1311,7 +1320,7 @@ AN_RENDER.sessions = async () => {
 };
 AN_RENDER.visitors = async () => {
   const b = $("#anBody");
-  b.innerHTML = `<div class="section">Frequent visitors <span class="sub">— one profile per person. Signed-in users are shown by email with every device/cookie merged into one; anonymous visitors keep their cookie id. Most sessions first — click to open full history + tickers searched.</span></div>
+  b.innerHTML = `<div class="section">Frequent visitors <span class="sub">— one profile per person. Signed-in users are shown by name when available (otherwise email), with every device/cookie merged into one; anonymous visitors keep their cookie id. Most sessions first — click to open full history + tickers searched.</span></div>
     ${anTableBar("visitors")}
     <div id="anTbl"><div class="spin">loading…</div></div>`;
   anWireTableBar("visitors");
@@ -1379,9 +1388,11 @@ async function renderSessionDetail(id) {
   const det = $("#anDet");
   if (!d.ok) { det.innerHTML = card("Session", `<div class="sub">${esc(d.reason || d.error || "not found")}</div>`); return; }
   const head = d.head || {}, path = d.path || [];
+  const headLabel = head.name || head.email;
+  const headTarget = head.user_id || head.visitor_id || "";
   det.innerHTML = `
     <div class="grid">
-      ${card("Visitor", `<div class="big" style="font-size:15px"><a class="mono" href="#/visitor/${encodeURIComponent(head.visitor_id || "")}">${esc((head.visitor_id || "—").slice(0, 12))}…</a></div><div class="sub">${head.user_id ? "user " + esc(String(head.user_id).slice(0, 8)) : "anonymous"}</div>`)}
+      ${card("Visitor", `<div class="big" style="font-size:15px"><a href="#/visitor/${encodeURIComponent(headTarget)}">${esc(headLabel || ((head.visitor_id || "—").slice(0, 12) + "…"))}</a></div><div class="sub">${head.name && head.email ? esc(head.email) + " · " : ""}${head.user_id ? "registered" : "anonymous"}</div>`)}
       ${card("Origin", `<div class="big" style="font-size:15px">${esc(head.site || "—")}</div><div class="sub mono">${esc(head.ip || "")}</div>`)}
       ${card("Events", `<div class="big">${fmtNum(path.length)}</div><div class="sub">ordered path below</div>`)}
     </div>
@@ -1398,9 +1409,13 @@ async function renderVisitorDetail(id) {
   const det = $("#anDet");
   if (!d.ok) { det.innerHTML = card("Visitor", `<div class="sub">${esc(d.reason || d.error || "not found")}</div>`); return; }
   const p = d.profile || {}, ips = d.ips || [], linked = d.linked || [], recent = d.recent || [], searches = d.searches || [], viewed = d.tickers_viewed || [];
+  const registeredLabel = d.name || d.email;
+  const candidateLabel = d.candidate && (d.candidate.name || d.candidate.email);
+  const identityLabel = registeredLabel || (candidateLabel ? "~ " + candidateLabel : (p.user_id ? "user " + String(p.user_id).slice(0, 8) : "anonymous"));
+  const identityEmail = d.name && d.email ? `${esc(d.email)} · ` : (d.candidate && d.candidate.name && d.candidate.email ? `${esc(d.candidate.email)} · ` : "");
   det.innerHTML = `
     <div class="grid">
-      ${card("Identity", `<div class="big" style="font-size:15px">${d.email ? esc(d.email) : (d.candidate && d.candidate.email ? "~ " + esc(d.candidate.email) : (p.user_id ? "user " + esc(String(p.user_id).slice(0, 8)) : "anonymous"))}</div><div class="sub">${d.email ? '<span class="statpill s-ok">registered</span> ' : (d.candidate && d.candidate.email ? `<span class="statpill s-warn" title="likely — not a confirmed login (shared ${d.candidate.via_fp ? "device" : "IP"} as this account)">likely account</span> ` : "")}${(p.identities > 1) ? fmtNum(p.identities) + " cookies merged · " : ""}first ${esc(String(p.first_seen || "").slice(0, 16))}</div>`)}
+      ${card("Identity", `<div class="big" style="font-size:15px">${esc(identityLabel)}</div><div class="sub">${identityEmail}${registeredLabel ? '<span class="statpill s-ok">registered</span> ' : (candidateLabel ? `<span class="statpill s-warn" title="likely — not a confirmed login (shared ${d.candidate.via_fp ? "device" : "IP"} as this account)">likely account</span> ` : "")}${(p.identities > 1) ? fmtNum(p.identities) + " cookies merged · " : ""}first ${esc(String(p.first_seen || "").slice(0, 16))}</div>`)}
       ${card("Activity", `<div class="big">${fmtNum(p.events)}</div><div class="sub">${fmtNum(p.sessions)} sessions</div>`)}
       ${card("Devices / IPs", `<div class="big">${fmtNum(p.ips)}<span class="sub"> IPs</span></div><div class="sub">${fmtNum(p.fingerprints)} fingerprints</div>`)}
       ${card("Linked identities", `<div class="big" style="color:${linked.length ? "var(--warn)" : "var(--text)"}">${fmtNum(linked.length)}</div><div class="sub">same device/IP, other cookie</div>`)}
@@ -1409,9 +1424,9 @@ async function renderVisitorDetail(id) {
     <table><thead><tr><th>IP</th><th>City</th><th>Country</th><th>Network</th><th>Flags</th><th class="r">Events</th></tr></thead><tbody>
     ${ips.map(r => `<tr><td class="mono">${esc(r.ip || "")}</td><td>${esc(r.city || "—")}${r.region ? ", " + esc(r.region) : ""}</td><td>${esc(r.country_code || "—")}</td><td class="sub">${esc(r.org || r.asn || "—")}</td><td>${anFlags(r)}</td><td class="r">${fmtNum(r.events)}</td></tr>`).join("") || "<tr><td colspan='6' class='muted'>no IPs</td></tr>"}
     </tbody></table>
-    ${linked.length ? `<div class="section">Linked visitors <span class="cnt">${linked.length}</span> <span class="sub">— same fingerprint or IP, different cookie (likely one person). A registered email here means that shared device/IP also signed into an account.</span></div>
+    ${linked.length ? `<div class="section">Linked visitors <span class="cnt">${linked.length}</span> <span class="sub">— same fingerprint or IP, different cookie (likely one person). A registered name or email here means that shared device/IP also signed into an account.</span></div>
     <table><thead><tr><th>Visitor</th><th>Matched by</th><th class="r">Shared events</th></tr></thead><tbody>
-    ${linked.map(l => `<tr><td>${l.email ? `<a href="#/visitor/${encodeURIComponent(l.visitor_id)}"><b>${esc(l.email)}</b></a> <span class="statpill s-ok">registered</span>` : `<a class="mono" href="#/visitor/${encodeURIComponent(l.visitor_id)}">${esc((l.visitor_id || "").slice(0, 12))}…</a>`}</td><td>${l.via_fp ? '<span class="statpill s-warn">device</span> ' : ""}${l.via_ip ? '<span class="statpill s-mut">IP</span>' : ""}</td><td class="r">${fmtNum(l.shared_events)}</td></tr>`).join("")}
+    ${linked.map(l => `<tr><td>${l.email || l.name || l.user_id ? anRegisteredIdentity(l.name, l.email, l.user_id || l.visitor_id) : `<a class="mono" href="#/visitor/${encodeURIComponent(l.visitor_id)}">${esc((l.visitor_id || "").slice(0, 12))}…</a>`}</td><td>${l.via_fp ? '<span class="statpill s-warn">device</span> ' : ""}${l.via_ip ? '<span class="statpill s-mut">IP</span>' : ""}</td><td class="r">${fmtNum(l.shared_events)}</td></tr>`).join("")}
     </tbody></table>` : ""}
     <div class="grid" style="margin-top:4px">
       <div class="card"><h3>Tickers searched <span class="cnt">${searches.length}</span></h3>${searches.length ? anBars(searches, r => `<b class="mono">${esc(r.ticker || "")}</b>`, "n", { sub: r => r.last ? esc(String(r.last).slice(0, 10)) : "" }) : "<span class='muted sub'>none yet</span>"}</div>
@@ -1458,8 +1473,8 @@ RENDER.users = async () => {
   const rec = await api("/api/users/recent?limit=50");
   if (rec.ok) {
     $("#uCnt").textContent = rec.users.length;
-    $("#uTbl").innerHTML = `<table><thead><tr><th>Email</th><th>Provider</th><th>Joined</th><th>Last sign-in</th><th>Confirmed</th></tr></thead><tbody>
-      ${rec.users.map(u => `<tr><td class="mono">${esc(u.email)}</td><td>${esc(u.provider)}</td><td class="mono sub">${esc(u.created_at || "—")}</td>
+    $("#uTbl").innerHTML = `<table><thead><tr><th>User</th><th>Provider</th><th>Joined</th><th>Last sign-in</th><th>Confirmed</th></tr></thead><tbody>
+      ${rec.users.map(u => `<tr><td><b>${esc(u.name || u.email || "—")}</b>${u.name && u.email ? `<div class="mono sub">${esc(u.email)}</div>` : ""}</td><td>${esc(u.provider)}</td><td class="mono sub">${esc(u.created_at || "—")}</td>
         <td class="mono sub">${esc(u.last_sign_in_at || "—")}</td><td>${u.confirmed ? "<span class='statpill s-ok'>yes</span>" : "<span class='statpill s-mut'>no</span>"}</td></tr>`).join("")}
     </tbody></table>`;
   } else { $("#uTbl").innerHTML = `<div class="card sub">${esc(rec.error || "could not load")}</div>`; }
@@ -1478,6 +1493,8 @@ RENDER.users = async () => {
 const ENT = { filter: { tier: null, status: null, search: "" }, page: 1, rows: [] };
 const ENT_TIERS = ["free", "insider", "pro"];
 const ENT_STATUSES = ["active", "trialing", "past_due", "canceled", "none"];
+
+function entIdentity(u) { return u.name || u.email || u.user_id; }
 
 function entChip(label, active, on) {
   return `<button class="ent-chip${active ? " on" : ""}" onclick="${on}">${esc(label)}</button>`;
@@ -1615,7 +1632,7 @@ function entChangeTier(i) {
 async function entChangeTierGo(i) {
   const u = ENT.rows[i];
   const tier = $("#entTier").value;
-  if (!confirm(`Write a comp entitlement setting ${u.email || u.user_id} to tier "${tier}"?`)) return;
+  if (!confirm(`Write a comp entitlement setting ${entIdentity(u)} to tier "${tier}"?`)) return;
   await _entPost({ user_id: u.user_id, action: "change_tier", params: { tier, ..._entForceParams() } },
     `tier → ${tier}`);
 }
@@ -1623,7 +1640,7 @@ async function entChangeTierGo(i) {
 function entTrial(i, mode) {
   const u = ENT.rows[i];
   if (mode === "reset") {
-    if (!confirm(`Reset ${u.email || u.user_id}'s trial to 7 days from now?`)) return;
+    if (!confirm(`Reset ${entIdentity(u)}'s trial to 7 days from now?`)) return;
     _entPost({ user_id: u.user_id, action: "reset_trial", params: {} }, "trial reset to 7d");
     return;
   }
@@ -1642,7 +1659,7 @@ async function entExtendGo(i) {
   const u = ENT.rows[i];
   const days = parseInt($("#entDays").value, 10);
   if (!(days >= 1 && days <= 365)) { toast("days must be 1..365", true); return; }
-  if (!confirm(`Extend ${u.email || u.user_id}'s trial by ${days} day(s)?`)) return;
+  if (!confirm(`Extend ${entIdentity(u)}'s trial by ${days} day(s)?`)) return;
   await _entPost({ user_id: u.user_id, action: "extend_trial", params: { days } }, `trial +${days}d`);
 }
 
@@ -1663,7 +1680,7 @@ function entPass(i, kind) {
 async function entPassGo(i, kind) {
   const u = ENT.rows[i];
   const tier = $("#entPassTier").value;
-  if (!confirm(`Grant a ${kind} ${tier} comp pass to ${u.email || u.user_id}?`)) return;
+  if (!confirm(`Grant a ${kind} ${tier} comp pass to ${entIdentity(u)}?`)) return;
   await _entPost({ user_id: u.user_id, action: "grant_pass", params: { kind, tier, ..._entForceParams() } },
     `${kind} ${tier} pass granted`);
 }
@@ -1683,7 +1700,7 @@ function entRemove(i) {
 }
 async function entRemoveGo(i) {
   const u = ENT.rows[i];
-  if (!confirm(`Revert ${u.email || u.user_id} to Free?`)) return;
+  if (!confirm(`Revert ${entIdentity(u)} to Free?`)) return;
   await _entPost({ user_id: u.user_id, action: "remove_comp", params: { ..._entForceParams() } }, "reverted to free");
 }
 
@@ -4993,6 +5010,11 @@ function csUsageBadge(post) {
   if (usage === "quarantined") {
     return `<span class="statpill s-warn" style="font-size:10px">quarantined</span>`;
   }
+  /* Booked at the backend, then cancelled before it sent — it never reached
+     anyone, so it must not read as "posted". */
+  if (usage === "recalled") {
+    return `<span class="statpill s-warn" style="font-size:10px">recalled</span>`;
+  }
   return `<span class="statpill s-mut" style="font-size:10px">${esc((post && post.status) || "drafted")}</span>`;
 }
 
@@ -5459,6 +5481,253 @@ async function rqReject(id, btn) {
   }
 }
 
+/* ── Desk Health (XG-W6) ───────────────────────────────────────────────────
+   Per-account health, the network tripwire, and the halt registry. A halted
+   desk is stopped on BOTH rails while every other desk runs; clearing a halt
+   is an operator action and the ONLY way one ends. This panel never trips or
+   clears anything on its own — opening it must not be able to silence a desk.
+   Nothing here is user-facing: no score or verdict appears in site/. */
+function mhMetricRow(name, m) {
+  if (!m) return "";
+  const v = m.value;
+  /* A null is not a pass and not a fail. Say "not measured yet" rather than
+     rendering a substituted zero, which reads as a real reading. */
+  const shown = (v === null || v === undefined)
+    ? `<span class="muted">not measured yet</span>`
+    : esc(String(v));
+  const cls = m.verdict === "warn" ? "tag miss" : (m.verdict === "null" ? "muted" : "tag");
+  const why = m.reason || (m.problems || []).join("; ") || "";
+  return `<div class="row between">
+      <span>${esc(name.replace(/_/g, " "))}</span>
+      <span class="${cls}">${shown}${m.threshold != null
+        ? ` <span class="muted small">(bar ${esc(String(m.threshold))})</span>` : ""}</span>
+    </div>${why ? `<div class="muted small">${esc(why)}</div>` : ""}`;
+}
+
+RENDER.marketing_health = async () => {
+  const v = $("#view");
+  v.innerHTML = `<div class="spin">loading…</div>`;
+  const d = await api("/api/marketing/health");
+  if (!d || !d.ok) {
+    v.innerHTML = nwEmpty("Desk health unavailable", (d && d.error) || "panel error");
+    return;
+  }
+  const health = d.health || {};
+  const wire = health.network_tripwire || {};
+  const cards = health.accounts || [];
+  const halted = d.halted || [];
+  const bie = d.blind_identity || {};
+
+  const head = `<div class="head">
+      <h2>Desk Health</h2>
+      <div class="muted small">${esc(d.note || "")}</div>
+      <div class="muted small">as of ${esc(health.as_of || "never run")} ·
+        every input is deterministic telemetry — no model scores anything here</div>
+    </div>`;
+
+  const haltBlock = halted.length ? `<section class="card">
+      <h3>Halted <span class="tag miss">${halted.length}</span></h3>
+      ${halted.map(h => `<div class="row between">
+        <div>
+          <strong>${esc(h.account)}</strong>
+          <div class="muted small">${esc(h.reason || "")} · since ${esc(h.since || "?")}</div>
+        </div>
+        <button class="btn" data-clear-halt="${esc(h.account)}">Clear halt</button>
+      </div>`).join("")}
+      <div class="muted small">Clearing writes to the tracked registry and commits it.
+        Until that reaches main, the VPS's next pull restores the halt.</div>
+    </section>` : `<section class="card"><h3>No desk is halted</h3></section>`;
+
+  const wireBlock = `<section class="card">
+      <div class="row between">
+        <h3>Network tripwire</h3>
+        <span class="${wire.tripped ? "tag miss" : "tag"}">${wire.tripped ? "TRIPPED" : "clear"}</span>
+      </div>
+      <div class="muted small">A fleet signal halts each IMPLICATED account
+        individually — there is no global halt switch by design.</div>
+      ${Object.entries(wire.signals || {}).map(([k, s]) => `<div class="row between">
+        <span>${esc(k.replace(/_/g, " "))}</span>
+        <span class="${s.fired ? "tag miss" : "muted"}">${s.fired ? "fired" : "quiet"}</span>
+      </div>`).join("")}
+      ${(wire.implicated || []).length
+        ? `<div class="muted small">implicated: ${esc((wire.implicated || []).join(", "))}</div>` : ""}
+    </section>`;
+
+  const accountBlock = cards.length ? cards.map(c => `<section class="card">
+      <div class="row between">
+        <h3>${esc(c.account)}</h3>
+        <span class="${c.verdict === "warn" ? "tag miss" : (c.verdict === "ok" ? "tag" : "muted")}">${esc(c.verdict)}</span>
+      </div>
+      ${Object.entries(c.metrics || {}).map(([k, m]) => mhMetricRow(k, m)).join("")}
+      <div class="muted small">${esc(String(c.n_rows || 0))} label row(s)</div>
+    </section>`).join("")
+    : nwEmpty("No accounts graded yet",
+        "The nightly grades each desk from the labels store. With no telemetry " +
+        "there is nothing to grade — that is the honest cold-start state.");
+
+  /* Pre-registered, NOT run, gating nothing. Rendered so the panel can never
+     imply the >=80% figure is enforcing something. */
+  const bieBlock = `<section class="card">
+      <h3>Blind-identity eval</h3>
+      <div class="row between"><span>status</span><span class="muted">${esc(bie.status || "?")}</span></div>
+      <div class="row between"><span>chance baseline</span><span>${esc(String(bie.chance_baseline))}</span></div>
+      <div class="row between"><span>charter target</span><span>${esc(String(bie.charter_target))}</span></div>
+      <div class="muted small">Pre-registered in <code>${esc(bie.doc || "")}</code>.
+        This number gates nothing until the pre-registered eval runs on real samples.</div>
+    </section>`;
+
+  v.innerHTML = head + haltBlock + wireBlock + accountBlock + bieBlock;
+
+  // data- attribute + listener, not inline onclick: esc() is an HTML escaper
+  // and an onclick body is a JS-STRING context, so an account id containing a
+  // quote or backslash would break out of the argument. In an attribute value
+  // esc() is the right escaper, and dataset gives the value back verbatim.
+  v.querySelectorAll("[data-clear-halt]").forEach(btn => {
+    btn.addEventListener("click", () => mhClearHalt(btn.dataset.clearHalt, btn));
+  });
+};
+
+async function mhClearHalt(account, btn) {
+  const note = window.prompt(
+    `Clear the halt on ${account}?\n\n` +
+    "The monitor cannot clear its own trip, so this is the only way one ends. " +
+    "Say what you found — the reason is logged with your name.", "");
+  if (note === null) return;                 /* cancelled */
+  btn.disabled = true; const orig = btn.textContent; btn.textContent = "clearing…";
+  const r = await post("/api/marketing/health/clear-halt",
+                       { account_id: account, actor: "admin", note: note || null });
+  if (r && r.ok) {
+    toast(r.pushed === false
+      ? "Cleared LOCALLY — push data/marketing/learning/ or the next pull restores it."
+      : `Halt on ${account} cleared.`);
+    RENDER.marketing_health();
+  } else {
+    btn.disabled = false; btn.textContent = orig;
+    toast((r && r.error) || "Could not clear the halt", true);
+  }
+}
+
+/* ── Learning (XG-W6) ──────────────────────────────────────────────────────
+   The ONE feedback loop's scorecard (hook family x format x register x
+   account) plus the learned-rule version log that ships beside it. Cells below
+   the n-floor read "seeding" and make no ranking claim — they are shown, not
+   hidden, because hiding thin cells is how a surface starts looking more
+   certain than it is. */
+RENDER.marketing_learning = async () => {
+  const v = $("#view");
+  v.innerHTML = `<div class="spin">loading…</div>`;
+  const d = await api("/api/marketing/learning");
+  if (!d || !d.ok) {
+    v.innerHTML = nwEmpty("Learning unavailable", (d && d.error) || "panel error");
+    return;
+  }
+  const card = d.scorecard || {};
+  const cells = card.cells || [];
+  const rules = d.rules || {};
+  const bott = (card.bottleneck || {}).accounts || [];
+  const ns = card.north_star || {};
+
+  const head = `<div class="head">
+      <h2>Learning</h2>
+      <div class="muted small">${esc(d.note || "")}</div>
+      <div class="muted small">one loop, four consumers:
+        ${esc((d.consumers || []).join(", "))}</div>
+    </div>`;
+
+  if (!cells.length) {
+    v.innerHTML = head + nwEmpty("No scorecard yet",
+      "The nightly consolidates the labels store from the metrics poll and the " +
+      "reply desk. Empty is the honest cold-start state, not a failure.");
+    return;
+  }
+
+  const counts = `<div class="muted small">${esc(String(d.n_labels))} label row(s) ·
+    ${esc(String(d.n_labelled))} measured · ${esc(String(d.n_null))} not measured yet ·
+    window ${esc(String(card.window_days))}d · n-floor ${esc(String(card.n_floor))}</div>`;
+
+  /* Cold start reads RAW COUNTS: the north-star ratio is undefined at zero
+     followers, so the bottleneck table is the instrument. */
+  const bottBlock = `<section class="card">
+      <h3>Bottleneck (raw counts)</h3>
+      <div class="muted small">${esc(ns.active ? "north-star active" : (ns.reason || ""))}</div>
+      <table><thead><tr><th>account</th><th>published</th>
+        <th>measured</th><th>impressions</th><th>engagements</th>
+        <th>replies sent</th><th>drafts queued</th><th>drafts killed</th>
+        <th>author replies</th></tr></thead><tbody>
+      ${bott.map(b => `<tr><td>${esc(b.account)}</td><td>${esc(String(b.contributions))}</td>
+        <td>${esc(String(b.measured))}</td><td>${esc(String(b.impressions))}</td>
+        <td>${esc(String(b.engagements))}</td><td>${esc(String(b.replies_sent))}</td>
+        <td class="muted">${esc(String(b.replies_enqueued || 0))}</td>
+        <td class="muted">${esc(String(b.replies_abstained || 0))}</td>
+        <td>${esc(String(b.author_replies))}</td></tr>`).join("")}
+      </tbody></table>
+      <div class="muted small">${esc((card.bottleneck || {}).counter_note || "")}</div>
+    </section>`;
+
+  const grid = `<section class="card">
+      <h3>Scorecard</h3>
+      <table><thead><tr><th>account</th><th>format</th><th>register</th>
+        <th>hook family</th><th>n</th><th>median</th><th>parent-adjusted</th>
+        <th>verdict</th></tr></thead><tbody>
+      ${cells.map(c => `<tr>
+        <td>${esc(c.dims.account)}</td><td>${esc(c.dims.format)}</td>
+        <td>${esc(c.dims.register)}</td><td>${esc(c.dims.hook_family)}</td>
+        <td>${esc(String(c.n_labelled))}/${esc(String(c.n))}</td>
+        <td>${c.med_label == null ? '<span class="muted">—</span>' : esc(String(c.med_label))}</td>
+        <td>${c.med_adjusted == null ? '<span class="muted">—</span>' : esc(String(c.med_adjusted))}</td>
+        <td class="${c.verdict === "seeding" ? "muted" : ""}">${esc(c.verdict || "—")}</td>
+      </tr>`).join("")}
+      </tbody></table>
+      <div class="muted small">A "seeding" cell is below the n-floor and makes no
+        ranking claim. Covariates in use:
+        ${esc(((card.covariates || {}).active || []).join(", ") || "none")}.</div>
+    </section>`;
+
+  const log = rules.log || [];
+  const rulesBlock = `<section class="card">
+      <div class="row between">
+        <h3>Learned rules</h3>
+        <span class="${rules.enabled ? "tag" : "muted"}">${rules.enabled ? "armed" : "dark"}</span>
+      </div>
+      <div class="muted small">Applying a learned rule is a promotion, so
+        consumption is off by default. A rule that cannot be reverted is refused
+        at the store — every row below has a live rollback.</div>
+      ${log.length ? log.map(r => `<div class="row between">
+        <div>
+          <code>${esc(r.version_id || "")}</code> ${esc(r.action || "")}
+          <div class="muted small">${esc(r.path || "")} · ${esc(r.at || "")} · ${esc(r.actor || "")}</div>
+        </div>
+        ${r.action === "apply"
+          ? `<button class="btn" data-rollback="${esc(r.version_id)}">Roll back</button>`
+          : ""}
+      </div>`).join("") : `<div class="muted small">no rules learned yet.</div>`}
+    </section>`;
+
+  v.innerHTML = head + counts + bottBlock + grid + rulesBlock;
+
+  // See the note in marketing_health: attribute + listener, never an inline
+  // onclick built by an HTML escaper.
+  v.querySelectorAll("[data-rollback]").forEach(btn => {
+    btn.addEventListener("click", () => mlRollback(btn.dataset.rollback, btn));
+  });
+};
+
+async function mlRollback(versionId, btn) {
+  if (!window.confirm(`Roll back ${versionId}?\n\n` +
+      "This restores the exact prior state the rule recorded (or deletes the key " +
+      "if it did not exist before).")) return;
+  btn.disabled = true; const orig = btn.textContent; btn.textContent = "…";
+  const r = await post("/api/marketing/learning/rollback",
+                       { version_id: versionId, actor: "admin" });
+  if (r && r.ok) {
+    toast("Rolled back. Commit data/marketing/learning/ so the nightly does not re-apply it.");
+    RENDER.marketing_learning();
+  } else {
+    btn.disabled = false; btn.textContent = orig;
+    toast((r && r.error) || "Could not roll back", true);
+  }
+}
+
 RENDER.marketing_outbox = async () => {
   const v = $("#view");
   v.innerHTML = `<div class="spin">loading…</div>`;
@@ -5569,6 +5838,7 @@ function obxRenderLive(d) {
     ["posted",      "Posted",      "var(--muted)"],
     ["failed",      "Failed",      "var(--bad)"],
     ["quarantined", "Quarantined", "var(--bad)"],
+    ["recalled",    "Recalled",    "var(--warn)"],
   ];
   const tiles = `<div class="metric-tiles-row">
     ${tileDefs.map(([k, lbl, color]) => {
@@ -6084,6 +6354,7 @@ RENDER.marketing_publish = async () => {
     ["posted", "Posted", "var(--muted)"],
     ["failed", "Failed", "var(--bad)"],
     ["quarantined", "Quarantined", "var(--bad)"],
+    ["recalled", "Recalled", "var(--warn)"],
   ];
   /* Each tile is a LINK to the Outbox, not a dead number. "17 queued" with no
      way to see the seventeen is a count the operator cannot act on or verify

@@ -27,6 +27,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from admin import mastermind_proxy, neural_web, orchestrator_chat, server
 
 
+@pytest.fixture(autouse=True)
+def _disable_real_codex_account(monkeypatch):
+    """Hermetic admin tests never consume the developer's attached account."""
+    monkeypatch.setenv("CODEX_PROVIDER_ENABLED", "0")
+
+
 # ---------------------------------------------------------------------------
 # Fixture repo
 # ---------------------------------------------------------------------------

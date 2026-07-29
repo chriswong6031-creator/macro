@@ -25,6 +25,14 @@ upstream in ``reply_queue.resolve_mode`` (XG-W6's per-account health monitor and
 network tripwire are a hard precondition, because a failure must be able to halt
 one account without halting seven).
 
+**Per-account halt (XG-W6).** ``health_monitor.is_halted`` is consulted per
+account here and in ``claim_for_desktop``, ahead of the mode and cap gates. A
+halted desk exports nothing and can claim nothing while every other desk runs
+untouched — this is the reply half of the "halt one without halting seven"
+guarantee; ``scripts/marketing_publisher.py`` is the post half. The registry is
+read ONCE per sweep and the table is threaded through, so a per-item gate never
+re-reads it per item.
+
 Credentials never appear here. They live only in the browser profiles; nothing
 in this repo reads them (see ``docs/reply_desk_runbook.md``).
 
@@ -153,13 +161,18 @@ def export_approved(
     *,
     cfg: dict | None,
     root: Path | str | None = None,
+    repo_root: Path | str | None = None,
     now: datetime | None = None,
 ) -> dict[str, Any]:
     """Mirror APPROVED items into the desktop lane's queue directory.
 
-    Three gates, in this order:
+    Four gates, in this order:
 
-    1. **Expiry runs FIRST, always.** A draft whose window closed must never
+    0. **The per-account halt (XG-W6).** A halted desk exports nothing. Checked
+       FIRST because it outranks the dial: an account the tripwire silenced must
+       not ship even items an operator approved before the trip, and the other
+       six desks must be entirely unaffected.
+    1. **Expiry runs next, always.** A draft whose window closed must never
        reach the desktop session: by the time a human reads it the reply is
        late, and a late reply under a cold thread is the automation tell we are
        trying not to leave.
@@ -170,19 +183,29 @@ def export_approved(
        Headroom counts sends already made today PLUS mirrors still in flight, so
        a queue of ten approved items against a cap of one exports one.
 
-    Returns {exported, count, skipped_mode, skipped_cap, skipped_expired,
-             expired_ids, swept_mirrors, modes, headroom}.
+    ``root`` is the reply desk's HOST state dir; ``repo_root`` is the checkout
+    the halt registry is read from. They are different directories.
+
+    Returns {exported, count, skipped_mode, skipped_cap, skipped_halt,
+             halted_accounts, skipped_expired, expired_ids, swept_mirrors,
+             modes, headroom}.
     """
+    from engine.marketing import health_monitor as _health  # noqa: PLC0415
+
     ts = now or datetime.now(timezone.utc)
     expired = _rq.expire_due(now=ts, root=root)
 
     state = _rq.fold_state(root)
     swept = sweep_mirrors(root, _state=state)
     already = exported_ids(root)
+    # ONE registry read for the whole sweep — a per-item read would re-parse the
+    # file once per approved draft.
+    halts = _health.load_halts(repo_root)
 
     exported: list[str] = []
     skipped_mode: list[str] = []
     skipped_cap: list[str] = []
+    skipped_halt: list[str] = []
     modes: dict[str, str] = {}
     headroom: dict[str, int] = {}
     caps_seen: dict[str, int] = {}
@@ -197,6 +220,12 @@ def export_approved(
     for iid in candidates:
         item = state["items"][iid]
         account = str(item.get("account") or "")
+
+        # HALT GATE — outranks the dial and the cap. Per account, by
+        # construction: there is no code path here that can stop a second desk.
+        if _health.is_halted(account, halts=halts):
+            skipped_halt.append(iid)
+            continue
 
         if account not in modes:
             modes[account] = _rq.resolve_mode(cfg, account)
@@ -230,6 +259,18 @@ def export_approved(
             exported.append(iid)
             headroom[account] -= 1
 
+    if skipped_halt:
+        halted_here = sorted({
+            str((state["items"].get(i) or {}).get("account") or "") for i in skipped_halt
+        })
+        print(
+            f"::warning title=reply-export-halted::{len(skipped_halt)} approved repl"
+            f"{'ies' if len(skipped_halt) != 1 else 'y'} held back — account(s) "
+            f"{halted_here} are HALTED (health monitor / network tripwire). Every "
+            "other desk exported normally. Clear the halt in the admin health panel.",
+            flush=True,
+        )
+
     if skipped_cap:
         # Report the caps that BOUND, not the post-loop headroom (which is 0 for
         # every account by construction and tells the operator nothing).
@@ -248,6 +289,8 @@ def export_approved(
         "count": len(exported),
         "skipped_mode": skipped_mode,
         "skipped_cap": skipped_cap,
+        "skipped_halt": skipped_halt,
+        "halted_accounts": sorted(halts),
         "skipped_expired": len(expired),
         "expired_ids": expired,
         "swept_mirrors": swept,
@@ -263,6 +306,7 @@ def claim_for_desktop(
     lease_s: int | None = None,
     cfg: dict | None = None,
     root: Path | str | None = None,
+    repo_root: Path | str | None = None,
     now: datetime | None = None,
 ) -> dict | None:
     """Take a lease AND write the claim file the handoff contract publishes.
@@ -277,11 +321,22 @@ def claim_for_desktop(
         # desktop claim path, which is step 3 of the runbook.
         lease_s = _rq.lease_s_for(cfg)
 
+    from engine.marketing import health_monitor as _health  # noqa: PLC0415
+
     # The dial gates EVERY host-dir write, not just the export. This was the one
     # path that wrote into ~/.mastermind while an account sat at M0, which made
-    # "M0 exports NOTHING" false by a file.
+    # "M0 exports NOTHING" false by a file. The halt gate rides the same path
+    # for the same reason: an export-only halt would still let a session claim
+    # (and therefore send) an item mirrored before the trip.
     state = _rq.fold_state(root)
     account = str((state["items"].get(item_id) or {}).get("account") or "")
+    if account and _health.is_halted(account, root=repo_root):
+        print(
+            f"::warning title=reply-claim-halted::{account!r} is HALTED — refusing "
+            f"the claim on {item_id}; other desks are unaffected",
+            flush=True,
+        )
+        return None
     if account and _rq.resolve_mode(cfg, account) == "M0":
         log.warning("reply_export.claim_for_desktop: %r is at M0 — nothing may be claimed",
                     account)
@@ -416,6 +471,7 @@ def sweep(
     *,
     cfg: dict | None,
     root: Path | str | None = None,
+    repo_root: Path | str | None = None,
     now: datetime | None = None,
 ) -> dict[str, Any]:
     """One full desk tick: ingest, reclaim, expire, sweep, export.
@@ -440,7 +496,7 @@ def sweep(
     # and the cap is sized against that count, so the loss buys back a slot.
     released = _rq.release_expired_claims(now=ts, root=root,
                                           skip_ids=pending_receipt_ids(root))
-    result = export_approved(cfg=cfg, root=root, now=ts)
+    result = export_approved(cfg=cfg, root=root, repo_root=repo_root, now=ts)
     return {
         "ingest": ingested,
         "released_claims": released,

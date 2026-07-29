@@ -227,6 +227,30 @@ wire:
   wires_sink_paths:
     - "/var/lib/macro-live/public/live/wires.json"
     - "data/marketing/press/wires.json"
+  # Age bound on the rolling window. The item cap alone lets a quiet feed keep
+  # serving days-old items as though they were the live wire.
+  rail_max_age_h: 48
+
+  # B4c: give each NEW rail item a Chinese twin via the cached news translator
+  # (engine/news_translate.py). The key is the exact text sent, so a headline
+  # costs one cheap call for its whole life in the window. The lane writes its
+  # cache under the gitignored data/marketing/press/ and suppresses the
+  # lib.ai_costs append (nightly is the sole ledger advancer) — see
+  # scripts/marketing_fastlane_daemon.py::_zh_cfg.
+  #
+  # DEFAULT IS OFF IN CODE: deleting this key disarms the spend. It also stays
+  # dark on its own when news_translation is disabled or DEEPSEEK_API_KEY is
+  # absent on the host, and an item without `zh` renders as English plus a plain
+  # "英文原文" marker — never a blank or a faked translation.
+  zh_enabled: true
+  # Per-tick budget. The tick has ~75s and its heartbeat only touches afterwards,
+  # so the zh pass may never be what makes a healthy daemon look dead. Items past
+  # the cap keep English + the marker and roll into the next tick.
+  zh_per_tick: 16
+  zh_timeout_s: 20
+  # Wire bodies run to the wire_deep budget; the shared 360 default would cut them
+  # off mid-sentence.
+  zh_max_chars: 700
 
   # ── B2-COPY wire voice ────────────────────────────────────────────────────
   # Rotating opener pool (deterministic hash + per-account no-repeat), key-phrase

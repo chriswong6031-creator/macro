@@ -73,12 +73,34 @@ KINDS: frozenset[str] = frozenset({
 # is REPORTED and never auto-reposted (no-double-post guarantee). approved may
 # still go straight to posted/failed so the W0 dry-run actuator and its tests
 # keep working — the extra target is purely additive.
+#
+# "posted" IS OVERLOADED, and naming that is the whole reason `recalled` exists.
+# It means "the backend accepted this post", NOT "this post is live on X". Since
+# publish.max_forward_book_min (#3913) a single sweep books items as Buffer
+# customScheduled sends up to an hour out, so a `posted` item may be nothing more
+# than a reservation in Buffer's queue. On 2026-07-28 five such reservations
+# survived the operator's kill switch by 41 minutes.
+#
+# "recalled" is where such a booking goes once it has been CANCELLED at the
+# backend before it ever sent (scripts/marketing_recall.py). Design constraints,
+# each load-bearing:
+#   * posted → recalled is the ONLY new edge. `posted` stays otherwise terminal:
+#     a sent post can never walk back to approved/queued and re-send.
+#   * recalled is TERMINAL. Recall is not a re-queue — the operator recalls
+#     because the copy was wrong, and the fix is new copy under a new id, not a
+#     second attempt at the same text. Nothing may re-arm a recalled item.
+#   * NOTHING may transition to recalled without a CONFIRMED backend delete. The
+#     runner's rule is: booked send time still in the future AND
+#     DeleteResult.ok. A post that already went out stays `posted` forever, so
+#     posted_today_by_account keeps counting it and the no-double-post
+#     guarantee is untouched.
 TRANSITIONS: dict[str, frozenset[str]] = {
     "queued":      frozenset({"approved", "quarantined"}),
     "approved":    frozenset({"posting", "posted", "failed", "quarantined"}),
     "posting":     frozenset({"posted", "failed", "quarantined"}),
     "failed":      frozenset({"approved", "quarantined"}),
-    "posted":      frozenset(),   # terminal
+    "posted":      frozenset({"recalled"}),   # cancelled-before-send ONLY
+    "recalled":    frozenset(),   # terminal
     "quarantined": frozenset(),   # terminal
 }
 
@@ -462,7 +484,10 @@ def cross_account_threshold(cfg: dict | None) -> float:
 
 
 #: Folded statuses that mean an item is DEAD — it will never be posted.
-_DEAD_STATUSES: frozenset[str] = frozenset({"quarantined", "failed"})
+#: `recalled` belongs here for a concrete reason: the operator recalls in order
+#: to REPLACE the copy, and a recalled item left in the near-dup corpus would
+#: veto its own replacement as a near-duplicate of a post nobody ever saw.
+_DEAD_STATUSES: frozenset[str] = frozenset({"quarantined", "failed", "recalled"})
 
 
 def dead_item_ids(root: Path | str | None = None) -> set[str]:
@@ -517,6 +542,10 @@ def recent_posted_text_keys(state: dict, ref_as_of: str) -> set:
     on today's move" pair) sits queued under a fresh id and fires a night
     later. This is the post-time half: the publisher checks a due item's text
     against this set and quarantines a repeat instead of sending it.
+
+    A `recalled` item is excluded on purpose (see TRANSITIONS): its text never
+    reached anyone, so it is not a prior post and must not veto the rewrite the
+    operator recalled it to make room for.
     """
     keys: set = set()
     items = state.get("items") or {}
@@ -871,6 +900,15 @@ def posted_today_by_account(state: dict, today: str) -> dict[str, int]:
     date: an item whose folded status is posted/posting AND whose last
     transition happened today consumed a posting slot today ("posting" is
     in-flight — it likely reached the network, so it holds its slot).
+
+    `recalled` is DELIBERATELY not in that set, and it must stay out: a recalled
+    item was cancelled at the backend before it ever sent, so it consumed no
+    posting slot. Counting it would silently shrink the day's real volume by
+    exactly the number of posts the operator pulled — the opposite of what a
+    recall is for, which is to make room for the corrected copy. The safety this
+    set DOES carry is unchanged: a genuinely-sent post stays `posted` forever
+    (the runner only recalls a booking whose send time is still in the future),
+    so it keeps counting here.
 
     `state` is a fold_state() dict; `today` is "YYYY-MM-DD".
     """

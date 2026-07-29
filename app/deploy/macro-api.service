@@ -8,6 +8,13 @@ WorkingDirectory=/opt/macro
 # Optional env: SUPABASE_JWT_SECRET (activates auth), SUPABASE_PROJECT_REF, etc.
 # The leading '-' makes the file optional so the service starts without it.
 EnvironmentFile=-/etc/macro-api.env
+# Shared subscription-provider pool. The Claude OAuth values remain in the
+# environment file; Codex keeps its independent refreshable login in this
+# root-only state directory so ProtectHome never blocks it.
+Environment=CODEX_HOME=/var/lib/macro-codex
+Environment=CODEX_PROVIDER_ENABLED=1
+StateDirectory=macro-codex
+StateDirectoryMode=0700
 # ── Site Access Gate env (all optional; safe defaults apply when absent) ─────
 # SITE_GATE_STATE=/var/lib/macro-api/site_gate.json  # blocklist store (NOT in git)
 # SITE_GATE_COUNTRY_HEADER=EO-Client-IPCountry        # CDN country header name

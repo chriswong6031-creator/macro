@@ -55,7 +55,8 @@ def main() -> int:
                 f"marketing_telemetry: ok — "
                 f"posts={s.get('n_posts', 0)} "
                 f"rows={s.get('n_rows', 0)} "
-                f"orphans={s.get('n_orphans', 0)}"
+                f"orphans={s.get('n_orphans', 0)} "
+                f"unmeasured={s.get('n_unmeasured', 0)}"
             )
     except Exception as exc:  # noqa: BLE001
         log.warning("build_marketing: telemetry write_rollup failed: %s", exc)

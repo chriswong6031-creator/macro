@@ -1183,6 +1183,31 @@ lanes:
           cap those counters bound. A host with no spool is a no-op that exits 0
           and prints a ::notice — most runners never emit anything. Never-raise
           (set +e, exit 0); a non-zero rc only prints a ::warning.
+      - id: marketing_learning
+        module: scripts.marketing_learning_nightly
+        note: >
+          XG-W6 learning loop — the ONE feedback loop four charters described
+          (D05 §7 ≡ IS-W5 ≡ Persona W4 report card ≡ Media W2 scorecards). Four
+          ordered actions in one step, and BOTH orderings are load-bearing:
+          (0) poll twitterapi.io for outcomes on replies we SENT, inside the
+          existing reply sub-budget — before consolidation, or every reply label
+          lags a night behind its own evidence; (1) labels.consolidate advances
+          data/marketing/learning/{labels.jsonl,scorecard.json} from the LIVE
+          metrics poll (data/marketing/post_metrics.jsonl, written by
+          marketing-publish.yml), the reply desk's host store and the gitignored
+          intraday spool; (2) health_monitor.run grades every desk on the CONFIG
+          roster and runs the network tripwire, writing health.json and (only
+          when armed) halts.json; (3) report.
+          Nightly is the SOLE advancer of data/marketing/learning/ — an AST
+          guard pins consolidate() as its only writer. Idempotent: rows dedup on
+          a stable (surface, subject, day) key, so a retried nightly cannot
+          double the n the n-floor gates on.
+          Runs AFTER persona_memory and is independent of it. At M0 nothing has
+          sent, so the outcome poll bills nothing; with no telemetry the whole
+          step is a no-op that writes a valid empty scorecard. Both halt actions
+          default to `warn`, so this step silences no desk until an operator
+          arms it. Never-raise (set +e, exit 0); a non-zero rc only prints a
+          ::warning. Display-only; originates no market signal.
 
   # ── daily.yml / oracle_offrender ────────────────────────────────────────
   # Oracle off-render job: panel rebuild + episodes + Time Machine + Ratio Lens.

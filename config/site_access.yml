@@ -14,6 +14,11 @@ public:
     - /
     - /index.html
     - /plans.html
+    # Research Vault preview. Anonymous visitors see the latest three summaries
+    # and a Pro upgrade wall; the original PDFs remain private behind the
+    # authenticated /api/research/view and /api/research/download routes.
+    - /research_vault.html
+    - /research_vault_app.js
     # Support desk (SEE W2). Public by construction: the people who most need it
     # are the ones who cannot sign in, and a contact form behind a registration
     # wall is a contact form that never receives the account/billing tickets it

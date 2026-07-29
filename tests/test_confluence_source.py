@@ -462,10 +462,27 @@ def _sample_plans() -> list[dict]:
 
 def test_content_plan_builds_with_confluence_posts(tmp_path):
     """content_plan must succeed and include confluence posts when conf file present."""
-    # Write a fake confluence file
+    # Write a fake confluence file. The shared fixture pins its dates around
+    # today="2026-07-18" for the direct fired_combo_signals tests; content_plan
+    # has no today= seam and reads the WALL CLOCK, so the fixture's fresh combos
+    # aged past max_age_days on 2026-07-26 and this test went red by date, not
+    # defect. Re-date the intended-fresh combos relative to the real today
+    # (leaving the deliberately-stale 2026-06-01 combo stale) so freshness is a
+    # property of the fixture, not of when the suite happens to run.
     conf_dir = tmp_path / "site" / "factordata"
     conf_dir.mkdir(parents=True)
     fake_conf = _make_fake_conf()
+    from datetime import date, datetime, timedelta
+    _fixture_today = date(2026, 7, 18)
+    _fresh = (date.today() - timedelta(days=3)).isoformat()
+    for _side in fake_conf["combos"].values():
+        for _combo in _side:
+            _lf = _combo.get("last_fire")
+            if not _lf:
+                continue
+            _age_at_pin = (_fixture_today - datetime.strptime(_lf, "%Y-%m-%d").date()).days
+            if 0 <= _age_at_pin <= 10:
+                _combo["last_fire"] = _fresh
     (conf_dir / "tech_confluence.json").write_text(json.dumps(fake_conf))
 
     from engine.marketing.content_studio import content_plan

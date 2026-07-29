@@ -647,7 +647,8 @@ def test_unsubscribe_is_public_in_the_regwalls_own_mirror():
 # adding a line here is the review checkpoint, which is the whole point of pinning
 # the set rather than diffing against a moving branch.
 PUBLIC_EXACT = frozenset({
-    "/", "/index.html", "/plans.html", "/support.html", "/unsubscribe.html",
+    "/", "/index.html", "/plans.html", "/research_vault.html",
+    "/research_vault_app.js", "/support.html", "/unsubscribe.html",
     "/privacy.html", "/terms.html", "/disclaimer.html",
     "/favicon.svg", "/favicon.ico", "/apple-touch-icon.png",
     "/robots.txt", "/sitemap.xml", "/llms.txt", "/brand-facts.json",

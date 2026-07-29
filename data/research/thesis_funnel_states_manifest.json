@@ -1,13 +1,13 @@
 {
   "schema": "thesis_funnel_states.v1",
-  "as_of": "2026-07-27",
+  "as_of": "2026-07-28",
   "n_tickers": 1508,
   "state_counts": {
     "not_eligible": 1009,
     "watch_for_thesis": 250,
     "thesis_candidate_shadow": 249
   },
-  "elapsed_seconds": 15.26,
+  "elapsed_seconds": 15.07,
   "_display_only": true,
   "_horizon_role": "hold_thesis",
   "_version": "v1",

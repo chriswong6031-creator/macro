@@ -13,9 +13,9 @@ repository rules are ignored; and the working directory is the system temp
 directory.  The credential is never read by Python and never logged.
 
 The provider auto-discovers either a trusted-automation environment credential
-(``CODEX_ACCESS_TOKEN`` / ``CODEX_API_KEY``) or the runner's existing
-``~/.codex/auth.json`` login.  Hosts without Codex and an attached login simply
-omit this provider from the waterfall.
+(``CODEX_ACCESS_TOKEN`` / ``CODEX_API_KEY``) or the attached login under
+``CODEX_HOME`` (default ``~/.codex``).  Hosts without Codex and an attached
+login simply omit this provider from the waterfall.
 """
 from __future__ import annotations
 
@@ -46,6 +46,13 @@ def provider_enabled() -> bool:
     return os.environ.get("CODEX_PROVIDER_ENABLED", "auto").strip().lower() not in _FALSE_VALUES
 
 
+def auth_file_path() -> Path:
+    """Return the active Codex credential-cache path without opening it."""
+    configured_home = os.environ.get("CODEX_HOME", "").strip()
+    codex_home = Path(configured_home).expanduser() if configured_home else Path("~/.codex").expanduser()
+    return codex_home / "auth.json"
+
+
 def is_available() -> bool:
     """Return whether this host can safely execute the attached Codex account.
 
@@ -67,7 +74,7 @@ def is_available() -> bool:
         bool(os.environ.get(name))
         for name in ("CODEX_ACCESS_TOKEN", "CODEX_API_KEY")
     )
-    file_auth_present = Path("~/.codex/auth.json").expanduser().is_file()
+    file_auth_present = auth_file_path().is_file()
 
     # An explicit enable still requires a real credential source; it must not
     # turn a missing login into a provider that fails every request.

@@ -549,3 +549,135 @@ def test_sbx_fail_soft_without_breadth_panel():
     assert 'id="equity-scoreboard"' in html
     assert "Breadth data unavailable" in html
     assert 'id="sbx-adv"' not in html
+
+
+# --------------------------------------------------------------------------- #
+# 🏃 Leaders strip (2026-07-28 gate-width order).
+# Contract under test: us_standouts.leaders renders a SEPARATE coverage strip
+# below the trigger sub-board; the entry column is always watch-don't-chase; and
+# a pre-migration artifact (no `leaders` key) renders the page unchanged.
+# Absence assertions target ELEMENT markup, not bare class tokens.
+# --------------------------------------------------------------------------- #
+
+_LEADERS_WRAPPER = '<div class="topsetups leaders-strip">'
+# Chip markup, not bare phrases: "wait for pullback" also appears as prose inside an
+# unrelated card-legend help popover, so a substring assertion would be vacuous.
+_WAIT_CHIP = '<span class="ent-warn"><span class="l-en">wait for pullback</span>'
+_ZONE_CHIP = '<span class="ent-good"><span class="l-en">pullback zone</span>'
+
+
+def _leader_row(**overrides) -> dict:
+    """One us_standouts.leaders row — field census from the strip's table body.
+    alpha must be numeric ('%+.2f'|format crashes on Undefined); off_high / ext_z /
+    entry_signal are tested with `is not none` after a `.get`, so they are set
+    EXPLICITLY (a missing key yields Undefined, and the guards behave differently)."""
+    row = {
+        "ticker": "RUNR",
+        "name": "Runner Industries",
+        "sector": "Information Technology",
+        "lane": "leader",
+        "alpha": 2.31,
+        "off_high": -1.4,
+        "label": "advancing",
+        "ext_z": None,
+        "entry_signal": None,
+    }
+    row.update(overrides)
+    return row
+
+
+def _vm_with_leaders(leader_rows) -> dict:
+    """leader_rows=None drops the key entirely (the pre-migration artifact shape)."""
+    vm = _base_vm()
+    if leader_rows is None:
+        vm["us_standouts"].pop("leaders", None)
+    else:
+        vm["us_standouts"]["leaders"] = leader_rows
+    return vm
+
+
+def test_leaders_strip_renders_with_watch_dont_chase_stance():
+    """One leaders row -> the strip renders, headed by 🏃, and the entry column
+    reads 'wait for pullback' (no fresh trigger exists for any leader)."""
+    vm = _vm_with_leaders([_leader_row()])
+    html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
+    assert _LEADERS_WRAPPER in html
+    # 🏃 anchored to the strip header — the emoji also appears on an unrelated
+    # act-now header, so a bare `'🏃' in html` would be vacuous.
+    assert '🏃 <span class="l-en">Market leaders</span>' in html
+    assert ">市场领跑股<" in html                                  # ZH header (bilingual law)
+    assert _WAIT_CHIP in html and ">等待回调<" in html
+    assert "onclick=\"location.href='stock.html#RUNR'\"" in html   # row is clickable
+    assert "+2.31" in html                                         # α column formatted
+
+
+def test_leaders_strip_absent_when_key_missing():
+    """Pre-migration artifact (no `leaders` key): no strip, no exception, page
+    otherwise unchanged."""
+    vm = _vm_with_leaders(None)
+    html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
+    assert len(html) > 50_000
+    assert "ACME" in html            # board still rendered — absence is not vacuous
+    assert _LEADERS_WRAPPER not in html
+    assert _WAIT_CHIP not in html
+
+
+def test_leaders_strip_absent_when_empty_list():
+    """`leaders: []` (gate admitted nobody tonight) is the same honest no-op."""
+    vm = _vm_with_leaders([])
+    html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
+    assert "ACME" in html
+    assert _LEADERS_WRAPPER not in html
+
+
+def test_leaders_strip_buy_zone_dict_access():
+    """buy_zone arrives as a PLAIN DICT in the artifact; the strip uses the same
+    `_bz.low` attribute-access idiom as the card body above it (Jinja falls back
+    to __getitem__). This pins that the zone renders rather than silently
+    degrading to the wait state."""
+    vm = _vm_with_leaders([_leader_row(
+        entry_signal={"buy_zone": {"low": 98.5, "high": 104.25}})])
+    html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
+    assert _ZONE_CHIP in html and ">回调买区<" in html
+    assert "$98.50–$104.25" in html
+    assert _WAIT_CHIP not in html
+
+
+def test_leaders_strip_partial_buy_zone_falls_back_to_wait():
+    """A half-populated zone (high=None) is not a zone — fall back to the honest
+    wait stance rather than printing '$98.50–None'."""
+    vm = _vm_with_leaders([_leader_row(
+        entry_signal={"buy_zone": {"low": 98.5, "high": None}})])
+    html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
+    assert _WAIT_CHIP in html
+    assert _ZONE_CHIP not in html
+
+
+def test_leaders_strip_extended_chip_over_threshold():
+    """ext_z > 2.0 adds the chase-risk 'extended' chip; at/below it stays off."""
+    env = _env()
+    hot = env.get_template("dashboard.html.j2").render(
+        **_vm_with_leaders([_leader_row(ext_z=2.6)]), mode="stocks")
+    assert "2.6 standard deviations above trend" in hot
+    cool = env.get_template("dashboard.html.j2").render(
+        **_vm_with_leaders([_leader_row(ext_z=1.1)]), mode="stocks")
+    assert "standard deviations above trend" not in cool
+
+
+def test_leaders_strip_display_cap_is_fifteen():
+    """The strip renders at most 15 rows even if the artifact carries more."""
+    rows = [_leader_row(ticker=f"L{i:02d}", name=f"Leader {i}") for i in range(20)]
+    html = _env().get_template("dashboard.html.j2").render(
+        **_vm_with_leaders(rows), mode="stocks")
+    assert "stock.html#L14" in html
+    assert "stock.html#L15" not in html
+
+
+def test_leaders_strip_renders_without_top_setups():
+    """The strip is a sibling of the trigger sub-board, not nested inside it:
+    top_setups absent must NOT suppress it."""
+    vm = _vm_with_leaders([_leader_row()])
+    vm["top_setups"] = None
+    html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
+    assert _LEADERS_WRAPPER in html
+    assert '<div class="topsetups">' not in html   # the trigger sub-board is gone

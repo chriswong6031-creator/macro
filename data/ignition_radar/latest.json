@@ -1,7 +1,7 @@
 {
-  "as_of": "2026-07-27",
+  "as_of": "2026-07-28",
   "state": "warming",
-  "k_count": 1,
+  "k_count": 2,
   "chips": [
     {
       "key": "thrust_confluence",
@@ -51,11 +51,11 @@
       "key": "pct50_recover",
       "label_en": "Breadth >50dma recovery",
       "label_zh": "50\u65e5\u7ebf\u5e7f\u5ea6\u56de\u5347",
-      "lit": false,
-      "fresh": false,
-      "since": null,
-      "detail_en": "pct_above_50=69.2% (was 66.2% 10d ago)",
-      "detail_zh": "50\u65e5\u7ebf\u4e0a\u6bd4\u4f8b=69.2%\uff0810\u65e5\u524d66.2%\uff09",
+      "lit": true,
+      "fresh": true,
+      "since": "2026-07-14",
+      "detail_en": "pct_above_50=72.6% (was 63.8% 10d ago)",
+      "detail_zh": "50\u65e5\u7ebf\u4e0a\u6bd4\u4f8b=72.6%\uff0810\u65e5\u524d63.8%\uff09",
       "source": "breadth"
     },
     {
@@ -65,8 +65,8 @@
       "lit": false,
       "fresh": false,
       "since": null,
-      "detail_en": "10d mean(nh-nl)=19.0 (was 27.4 10d ago)",
-      "detail_zh": "10\u65e5\u5747(\u65b0\u9ad8-\u65b0\u4f4e)=19.0\uff0810\u65e5\u524d27.4\uff09",
+      "detail_en": "10d mean(nh-nl)=22.9 (was 25.5 10d ago)",
+      "detail_zh": "10\u65e5\u5747(\u65b0\u9ad8-\u65b0\u4f4e)=22.9\uff0810\u65e5\u524d25.5\uff09",
       "source": "breadth"
     },
     {
@@ -76,8 +76,8 @@
       "lit": true,
       "fresh": true,
       "since": "2026-07-23",
-      "detail_en": "20d log-RS slope=0.0091 (positive); turned positive 2bd ago",
-      "detail_zh": "20\u65e5\u5bf9\u6570RS\u659c\u7387=0.0091\uff08\u6b63\u5411\uff09\uff1b2\u65e5\u524d\u8f6c\u6b63",
+      "detail_en": "20d log-RS slope=0.0217 (positive); turned positive 3bd ago",
+      "detail_zh": "20\u65e5\u5bf9\u6570RS\u659c\u7387=0.0217\uff08\u6b63\u5411\uff09\uff1b3\u65e5\u524d\u8f6c\u6b63",
       "source": "yahoo/RSP,SPY"
     },
     {
@@ -87,8 +87,8 @@
       "lit": false,
       "fresh": false,
       "since": null,
-      "detail_en": "6/11 ETFs above rising 50dma (need 8)",
-      "detail_zh": "6/11\u4e2aETF\u9ad8\u4e8e\u4e0a\u5347\u4e2d50\u65e5\u7ebf\uff08\u97008\u4e2a\uff09",
+      "detail_en": "7/11 ETFs above rising 50dma (need 8)",
+      "detail_zh": "7/11\u4e2aETF\u9ad8\u4e8e\u4e0a\u5347\u4e2d50\u65e5\u7ebf\uff08\u97008\u4e2a\uff09",
       "source": "yahoo/sector_etfs"
     }
   ],
@@ -103,7 +103,7 @@
     "items": [
       {
         "id": "XLC",
-        "ignition_score": 0.944,
+        "ignition_score": 0.9553,
         "state": "igniting",
         "components": {
           "breadth_thrust": null,
@@ -111,8 +111,8 @@
             0,
             0
           ],
-          "rs_slope_change": 0.916,
-          "rs_slope_raw": 0.05974,
+          "rs_slope_change": 0.933,
+          "rs_slope_raw": 0.06584,
           "mtf_confirm": 1.0,
           "mtf_ok": true,
           "commodity_flip": false
@@ -125,8 +125,31 @@
         "above_200d_rising": false
       },
       {
+        "id": "XLB",
+        "ignition_score": 0.7967,
+        "state": "igniting",
+        "components": {
+          "breadth_thrust": null,
+          "breadth_n": [
+            0,
+            0
+          ],
+          "rs_slope_change": 0.6951,
+          "rs_slope_raw": 0.0206,
+          "mtf_confirm": 1.0,
+          "mtf_ok": true,
+          "commodity_flip": false
+        },
+        "name": "XLB",
+        "name_zh": "XLB",
+        "category": "Sector ETF",
+        "type": "etf",
+        "rs_new_high": false,
+        "above_200d_rising": true
+      },
+      {
         "id": "defense",
-        "ignition_score": 0.7681,
+        "ignition_score": 0.785,
         "state": "igniting",
         "components": {
           "breadth_thrust": 0.4762,
@@ -134,8 +157,8 @@
             10,
             21
           ],
-          "rs_slope_change": 0.9441,
-          "rs_slope_raw": 0.07068,
+          "rs_slope_change": 0.9864,
+          "rs_slope_raw": 0.10707,
           "mtf_confirm": 1.0,
           "mtf_ok": true,
           "commodity_flip": false
@@ -148,54 +171,8 @@
         "above_200d_rising": false
       },
       {
-        "id": "crypto",
-        "ignition_score": 0.6571,
-        "state": "igniting",
-        "components": {
-          "breadth_thrust": 0.1429,
-          "breadth_n": [
-            1,
-            7
-          ],
-          "rs_slope_change": 1.0,
-          "rs_slope_raw": 0.71241,
-          "mtf_confirm": 1.0,
-          "mtf_ok": true,
-          "commodity_flip": false
-        },
-        "name": "Crypto & Digital Assets",
-        "name_zh": "\u52a0\u5bc6\u4e0e\u6570\u5b57\u8d44\u4ea7",
-        "category": "Crypto & Digital Assets",
-        "type": "basket",
-        "rs_new_high": false,
-        "above_200d_rising": false
-      },
-      {
-        "id": "space_economy",
-        "ignition_score": 0.6533,
-        "state": "igniting",
-        "components": {
-          "breadth_thrust": 0.1333,
-          "breadth_n": [
-            2,
-            15
-          ],
-          "rs_slope_change": 1.0,
-          "rs_slope_raw": 0.25937,
-          "mtf_confirm": 1.0,
-          "mtf_ok": true,
-          "commodity_flip": false
-        },
-        "name": "Space Economy",
-        "name_zh": "\u592a\u7a7a\u7ecf\u6d4e",
-        "category": "Industrials & Defense",
-        "type": "basket",
-        "rs_new_high": false,
-        "above_200d_rising": false
-      },
-      {
-        "id": "XLE",
-        "ignition_score": 0.6442,
+        "id": "XLF",
+        "ignition_score": 0.7174,
         "state": "igniting",
         "components": {
           "breadth_thrust": null,
@@ -203,77 +180,31 @@
             0,
             0
           ],
-          "rs_slope_change": 0.9663,
-          "rs_slope_raw": 0.08387,
-          "mtf_confirm": 0.0,
-          "mtf_ok": false,
+          "rs_slope_change": 0.5762,
+          "rs_slope_raw": 0.00768,
+          "mtf_confirm": 1.0,
+          "mtf_ok": true,
           "commodity_flip": false
         },
-        "name": "XLE",
-        "name_zh": "XLE",
+        "name": "XLF",
+        "name_zh": "XLF",
         "category": "Sector ETF",
         "type": "etf",
         "rs_new_high": false,
         "above_200d_rising": true
       },
       {
-        "id": "crypto_rails",
-        "ignition_score": 0.6,
-        "state": "igniting",
-        "components": {
-          "breadth_thrust": 0.0,
-          "breadth_n": [
-            0,
-            7
-          ],
-          "rs_slope_change": 1.0,
-          "rs_slope_raw": 0.44939,
-          "mtf_confirm": 1.0,
-          "mtf_ok": true,
-          "commodity_flip": false
-        },
-        "name": "Crypto & Digital Rails",
-        "name_zh": "\u52a0\u5bc6\u4e0e\u6570\u5b57\u8f68\u9053",
-        "category": "Crypto & Digital Assets",
-        "type": "basket",
-        "rs_new_high": false,
-        "above_200d_rising": false
-      },
-      {
-        "id": "non_ai_software",
-        "ignition_score": 0.5997,
-        "state": "igniting",
-        "components": {
-          "breadth_thrust": 0.0,
-          "breadth_n": [
-            0,
-            14
-          ],
-          "rs_slope_change": 0.9993,
-          "rs_slope_raw": 0.18296,
-          "mtf_confirm": 1.0,
-          "mtf_ok": true,
-          "commodity_flip": false
-        },
-        "name": "Non-AI Software",
-        "name_zh": "\u975eAI\u8f6f\u4ef6",
-        "category": "Software",
-        "type": "basket",
-        "rs_new_high": false,
-        "above_200d_rising": false
-      },
-      {
         "id": "ai_agents",
-        "ignition_score": 0.598,
+        "ignition_score": 0.7,
         "state": "igniting",
         "components": {
-          "breadth_thrust": 0.0,
+          "breadth_thrust": 0.25,
           "breadth_n": [
-            0,
+            2,
             8
           ],
-          "rs_slope_change": 0.9949,
-          "rs_slope_raw": 0.13172,
+          "rs_slope_change": 1.0,
+          "rs_slope_raw": 0.30378,
           "mtf_confirm": 1.0,
           "mtf_ok": true,
           "commodity_flip": false
@@ -284,21 +215,90 @@
         "type": "basket",
         "rs_new_high": false,
         "above_200d_rising": false
+      },
+      {
+        "id": "retail",
+        "ignition_score": 0.6836,
+        "state": "igniting",
+        "components": {
+          "breadth_thrust": 0.381,
+          "breadth_n": [
+            8,
+            21
+          ],
+          "rs_slope_change": 0.8279,
+          "rs_slope_raw": 0.03927,
+          "mtf_confirm": 1.0,
+          "mtf_ok": true,
+          "commodity_flip": false
+        },
+        "name": "Retail",
+        "name_zh": "\u96f6\u552e",
+        "category": "Consumer Cyclical",
+        "type": "basket",
+        "rs_new_high": false,
+        "above_200d_rising": true
+      },
+      {
+        "id": "us_sector_materials",
+        "ignition_score": 0.6804,
+        "state": "igniting",
+        "components": {
+          "breadth_thrust": 0.3462,
+          "breadth_n": [
+            9,
+            26
+          ],
+          "rs_slope_change": 0.8547,
+          "rs_slope_raw": 0.04431,
+          "mtf_confirm": 1.0,
+          "mtf_ok": true,
+          "commodity_flip": false
+        },
+        "name": "Materials (Equal-Weight)",
+        "name_zh": "\u6750\u6599\uff08\u7b49\u6743\uff09",
+        "category": "US Sectors (EW)",
+        "type": "basket",
+        "rs_new_high": false,
+        "above_200d_rising": true
+      },
+      {
+        "id": "crypto_rails",
+        "ignition_score": 0.6571,
+        "state": "igniting",
+        "components": {
+          "breadth_thrust": 0.1429,
+          "breadth_n": [
+            1,
+            7
+          ],
+          "rs_slope_change": 1.0,
+          "rs_slope_raw": 0.4148,
+          "mtf_confirm": 1.0,
+          "mtf_ok": true,
+          "commodity_flip": false
+        },
+        "name": "Crypto & Digital Rails",
+        "name_zh": "\u52a0\u5bc6\u4e0e\u6570\u5b57\u8f68\u9053",
+        "category": "Crypto & Digital Assets",
+        "type": "basket",
+        "rs_new_high": false,
+        "above_200d_rising": false
       }
     ],
-    "as_of": "2026-07-27"
+    "as_of": "2026-07-28"
   },
   "narrow_top": {
     "basket_id": "XLC",
     "name": "XLC",
     "name_zh": "XLC",
-    "score": 0.944,
-    "streak_sessions": 1
+    "score": 0.9553,
+    "streak_sessions": 2
   },
   "radar_xref": {
-    "state": "watch",
+    "state": "caution",
     "phase": null
   },
   "accruing": "accruing \u2014 display-only until >=30 broad-state grades + operator ruling. Forward-graded by engine/ignition_audit.py (US arm).",
-  "_timing_s": 2.38
+  "_timing_s": 2.07
 }

@@ -27,6 +27,29 @@ _ACTIVE = ("deleted_at is null "
            "and (banned_until is null or banned_until < now())")
 
 
+def display_name_sql(alias: str = "u") -> str:
+    """SQL expression for the best non-empty name in a Supabase auth user row.
+
+    OAuth providers and email sign-up flows do not all use the same metadata
+    key. Keep the precedence shared by every admin surface so Analytics, Users,
+    and Subscribers identify the same person consistently.
+    """
+    meta = f"{alias}.raw_user_meta_data"
+    first_last = (
+        f"nullif(trim(coalesce(nullif(trim({meta}->>'first_name'), ''), "
+        f"nullif(trim({meta}->>'given_name'), ''), '') || ' ' || "
+        f"coalesce(nullif(trim({meta}->>'last_name'), ''), "
+        f"nullif(trim({meta}->>'family_name'), ''), '')), '')"
+    )
+    return (
+        "coalesce("
+        f"nullif(trim({meta}->>'display_name'), ''), "
+        f"nullif(trim({meta}->>'name'), ''), "
+        f"nullif(trim({meta}->>'full_name'), ''), "
+        f"{first_last})"
+    )
+
+
 def status() -> dict:
     pat = settings.supabase_pat()
     configured = bool(pat and requests)
@@ -107,11 +130,12 @@ def recent(limit: int = 30) -> dict:
         n = max(1, min(200, int(limit)))   # int-clamped → safe to interpolate
         rows = _query(
             "select email, "
+            f"{display_name_sql('u')} as name, "
             "coalesce(raw_app_meta_data->>'provider','email') as provider, "
             "to_char(created_at,'YYYY-MM-DD HH24:MI') as created_at, "
             "to_char(last_sign_in_at,'YYYY-MM-DD HH24:MI') as last_sign_in_at, "
             "(email_confirmed_at is not null) as confirmed "
-            f"from auth.users where {_ACTIVE} order by created_at desc limit {n}")
+            f"from auth.users u where {_ACTIVE} order by created_at desc limit {n}")
         return {"ok": True, "users": rows or []}
     except Exception as e:  # noqa: BLE001
         return {"ok": False, "error": str(e)}
@@ -133,6 +157,7 @@ def subscribers(limit: int = 200) -> dict:
             "from public.user_entitlements group by 1,2 order by 1,2")
         rows = _query(
             "select coalesce(u.email, e.user_id::text) as email, "
+            f"{display_name_sql('u')} as name, "
             "e.tier, e.status, e.source, "
             "to_char(e.current_period_end,'YYYY-MM-DD') as renews, "
             "e.stripe_customer_id, "

@@ -6,7 +6,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Research Vault — institutional desk research</title>
+<title>Research Vault — Institutional Desk Research | MastermindX</title>
 {% set seo_title = "Research Vault — Institutional Desk Research | MastermindX" %}{% set seo_desc = "A gated vault of third-party institutional research — buy-side and sell-side desk reports, indexed and readable in one place. Reference only, not investment advice." %}{% set seo_path = "research_vault.html" %}
 {% include "_seo_head.html.j2" %}
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
@@ -70,8 +70,10 @@ html[data-theme="light"]{
 html[data-lang="zh"]{ --buy:#e06464; }
 html[data-theme="light"][data-lang="zh"]{ --buy:#cf4040; }
 
-/* ── page shell (body top padding satisfies check_nav_gap ≥14px) ── */
-body{ padding-top:22px; }
+/* ── page shell (body top padding satisfies check_nav_gap ≥14px) ──
+   Keep the canvas on the shared theme tokens: without an explicit background,
+   dark-mode cards are painted over the browser-default white body. */
+body{ min-height:100vh; padding-top:22px; background:var(--bg); color:var(--text); }
 .rv-wrap{ max-width:1240px; margin:0 auto; padding:0 22px 96px; }
 .rv-scope :focus-visible{ outline:2px solid var(--rv); outline-offset:2px; border-radius:6px; }
 
@@ -364,9 +366,8 @@ html[data-theme="light"] .rv-empty.rv-gate svg{ color:var(--rv); }
   font-size:12px; line-height:1.6; color:var(--muted); max-width:78ch; }
 .rv-foot b{ color:color-mix(in srgb,var(--text) 80%,var(--muted)); font-weight:700; }
 
-/* ── teaser: non-Pro sees the latest 3 summaries; the rest sit blurred under an
-      upgrade card. Summaries are already public via the catalog API — this is a
-      marketing wall, not a security boundary (PDF viewing is server-gated). ── */
+/* ── teaser: non-Pro sees the latest 3 summaries; the rest sit under an upgrade
+      card. Original PDF viewing and downloads are server-gated for Pro. ── */
 .rv-lockwrap{ position:relative; margin-top:14px; }
 .rv-lockghosts{ display:flex; flex-direction:column; gap:14px; filter:blur(6px) saturate(.85);
   opacity:.5; pointer-events:none; user-select:none; -webkit-user-select:none; max-height:440px; overflow:hidden;
@@ -725,7 +726,7 @@ html[data-theme="light"] .btn.upgrade{ color:#fff; }
     <span class="l-zh"><b>非投资建议。</b>研报库仅收录第三方机构研究，供参考与学习之用。精选报告因其论证质量入选，并非买卖建议。文档由作者提供，其中评级与观点均属作者本人，与本平台无关。访问受配额限制，下载均加水印 —— <b>不得转发。</b></span>
   </p>
   <p class="rv-foot" style="margin-top:14px">
-    <a href="research/index.html" style="color:var(--rv-ink);text-decoration:none;font-weight:700">{{ t('Browse the full research archive', '浏览完整研报存档') }} →</a>
+    <a href="plans.html" style="color:var(--rv-ink);text-decoration:none;font-weight:700">{{ t('Unlock the full research archive with Pro', '升级 Pro 解锁完整研报库') }} →</a>
   </p>
 
 </div>

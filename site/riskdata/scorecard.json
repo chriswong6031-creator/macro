@@ -1,14 +1,14 @@
 {
   "schema": "risk_radar_scorecard.v1",
-  "generated_at": "2026-07-28T13:36:43+00:00",
+  "generated_at": "2026-07-29T03:42:53+00:00",
   "markets": {
     "us": {
-      "asof_last_row": "2026-07-27",
+      "asof_last_row": "2026-07-28",
       "monitoring": {
         "log_fresh": true,
-        "last_logged_days_ago": 1,
-        "ungraded_backlog": 15,
-        "graded_n": 3
+        "last_logged_days_ago": 0,
+        "ungraded_backlog": 14,
+        "graded_n": 4
       },
       "windows": {
         "full": {
@@ -19,9 +19,9 @@
             "hit_rate": null
           },
           "watch_caution": {
-            "n": 3,
+            "n": 4,
             "tp": 0,
-            "tn": 3,
+            "tn": 4,
             "precursor_rate": null
           },
           "calm": {
@@ -41,9 +41,9 @@
             "hit_rate": null
           },
           "watch_caution": {
-            "n": 3,
+            "n": 4,
             "tp": 0,
-            "tn": 3,
+            "tn": 4,
             "precursor_rate": null
           },
           "calm": {
@@ -168,12 +168,12 @@
       }
     },
     "ca": {
-      "asof_last_row": "2026-07-27",
+      "asof_last_row": "2026-07-28",
       "monitoring": {
         "log_fresh": true,
-        "last_logged_days_ago": 1,
-        "ungraded_backlog": 11,
-        "graded_n": 0
+        "last_logged_days_ago": 0,
+        "ungraded_backlog": 10,
+        "graded_n": 1
       },
       "windows": {
         "full": {
@@ -184,9 +184,9 @@
             "hit_rate": null
           },
           "watch_caution": {
-            "n": 0,
+            "n": 1,
             "tp": 0,
-            "tn": 0,
+            "tn": 1,
             "precursor_rate": null
           },
           "calm": {
@@ -206,9 +206,9 @@
             "hit_rate": null
           },
           "watch_caution": {
-            "n": 0,
+            "n": 1,
             "tp": 0,
-            "tn": 0,
+            "tn": 1,
             "precursor_rate": null
           },
           "calm": {

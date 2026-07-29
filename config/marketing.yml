@@ -288,6 +288,15 @@ sentinel:
         max_posts_per_account_per_day: 20
         max_media_posts_per_account_per_day: 20
         min_minutes_between_posts: 30
+        # Operator 2026-07-28 ("when semiconductors are all down big we should
+        # already be posting lists"): flagship is the warmed desk, and the
+        # sector/theme lists the publish-time lane generates every 30 minutes
+        # from live quotes were 100% dropped — 18 per sweep on a day semis were
+        # routing — because no account was past the theme_list ramp. The ramp's
+        # cold-account piggybacking concern (≥4 cashtags, no history to read
+        # against) does not describe flagship; it stays in force for every
+        # other desk.
+        theme_list_allowed: true
     weeks_1_2:
       # Operator re-spec 2026-07-28: 10 posts/account/day (was 2). The desks were
       # publishing ~5 posts across the WHOLE network because 2/day is a launch
@@ -366,11 +375,38 @@ publish:
   # Global post-time anti-spam floor (cadence masterplan Phase 2): no two posts
   # go out within this many minutes of each other, across ALL accounts — enforced
   # in scripts/marketing_publisher.py (_within_floor), seeded from the last posted
-  # ledger row so it holds across cron runs. A single run emits at most one post
-  # per window; the rest defer to the next slot, so an accumulated backlog drains
+  # ledger row so it holds across cron runs, so an accumulated backlog drains
   # gradually instead of bursting. Distinct from the sentinel's per-account
   # PLAN-time min_minutes_between_posts. 0 = disabled.
-  min_minutes_between_any_posts: 10
+  # 10 -> 4 (2026-07-28). Ten minutes GLOBAL is one post per desk per hour
+  # across seven accounts, and it was the binding constraint the moment the
+  # cron-grid coupling was removed: a sweep with 24 due items posted 2 and
+  # logged skipped_floor=18. Bursting is a PER-ACCOUNT risk — one desk firing
+  # six posts in a minute is the spam signature; six desks posting once each
+  # across four minutes is not — and the per-account bound already exists in
+  # cadence_resolver (running in shadow, cadence_shadow=14 that same sweep).
+  # 4m keeps a hard anti-burst floor while letting the desks pace themselves:
+  # 15/hr network, 2.5/hr per desk. Send-time jitter still scatters each post
+  # off the round minute so two desks never land on the same second.
+  min_minutes_between_any_posts: 4
+
+  # How far ahead of `now` one sweep may book an item that is inside the floor
+  # above (scripts/marketing_publisher.py: _forward_book_horizon_cfg). 0 = off,
+  # which restores the old behaviour: the item defers to the NEXT cron sweep.
+  #
+  # Why it is on (2026-07-28). Deferring made the CRON GRID the throughput unit —
+  # one post per sweep, 30 sweeps/day, so 30 posts/day network-wide however many
+  # the desks generated. With seven desks producing ~59/day that stranded most of
+  # the queue nightly, and any dropped sweep made it worse. Booking forward keeps
+  # the spacing identical (the item goes to Buffer customScheduled at the moment
+  # the floor clears) and lets the 10-min floor be the real governor: ~6 posts/hr,
+  # ~81 across the 4:00 AM–5:30 PM PT window, paced exactly as before.
+  #
+  # 60, not higher: every item is tape-verified at BOOK time, so this is how
+  # stale a booked read may be when it actually sends. Keep it near the live
+  # gate's max_quote_age_min (45) — booking the whole day at 09:00 would ship
+  # 5 PM posts written against the 09:00 tape.
+  max_forward_book_min: 60
 
   # Send-time jitter, in minutes (scripts/marketing_publisher.py). A LADDER item
   # no longer books at the exact sweep minute: it books at (floor-cleared time +
@@ -1002,6 +1038,48 @@ desk_network:
         education: 0.03
         watchlist: 0.03
 
+    - id: mastermind_research
+      kind: branded
+      beat: "institutional research + papers, analyzed (blog.mastermind-x.com)"
+      voice: "educational"
+      # NO `handle:` KEY AT ALL, deliberately. The X account DOES NOT EXIST yet
+      # (X Growth charter §1: "*(not created yet)*"; operator lever §7.1 is to
+      # create it). Writing a speculative handle here would make the roster read
+      # as if the account were merely unwired rather than uncreated. There is
+      # likewise NO publish.channels entry — no Buffer channel exists to bind.
+      #
+      # DARK ON FOUR INDEPENDENT LOCKS (engine/press/research_lane.py documents
+      # all four): no account, no channel, both keys below, and the lane's own
+      # refusal to build items for a disabled account.
+      #
+      # BOTH KEYS, for the same reason mastermind_news carries both: `enabled`
+      # is the account model's intent key, and `disabled` is the legacy
+      # per-account kill switch some older call sites still read directly. The
+      # publish-time lanes once filtered on `disabled` ALONE, which made a dark
+      # property postable.
+      #
+      # WHAT ARMING TAKES, in order: (1) operator creates the X account,
+      # (2) buffer-channels workflow discovers its channel id and it is bound in
+      # publish.channels, (3) `handle:` and `created:` are filled in the same PR
+      # that flips these two keys. Sentinel resolves the ramp tier from
+      # `created:`; on an ENABLED account a missing value FAILS CLOSED to the
+      # strictest tier and prints a ::warning.
+      enabled: false
+      disabled: true
+      # Tilt mirrors config/personas/mastermind_research.yml. `education` is the
+      # research property's own register and the outbox kind its X shapes use
+      # (engine/press/research_lane.py — no new outbox kinds).
+      tilt:
+        signal: 0.28
+        education: 0.16
+        macro: 0.14
+        receipt: 0.12
+        event: 0.08
+        chart: 0.08
+        theme_list: 0.08
+        mover: 0.03
+        watchlist: 0.03
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Copywriter — personas + copy laws (the anti-bot-voice system)
 # The copywriter (engine/marketing/copywriter.py) reads this block. Personas give
@@ -1255,6 +1333,262 @@ breaking:
     model_key: "marketing_copy"
     max_tokens: 800
 
+  # ═══════════════════════════════════════════════════════════════════════════
+  # GARBAGE GATE (XG-W5 / IS-W2) — engine/marketing/garbage_gate.py
+  #
+  # A P0 drop that runs BEFORE the story spine, before any feature and before
+  # any LLM spend. Five detectors; every drop is recorded in the press tick's
+  # `blocked` list with its reason, and the tick prints one start-of-line
+  # ::notice histogram.
+  #
+  # The satire list is NOT duplicated here — it stays in
+  # config/press_sources.yml `satire_blocklist` and is handed in by press_lane.
+  # One list, one rule.
+  # ═══════════════════════════════════════════════════════════════════════════
+  garbage_gate:
+    enabled: true
+    detectors:
+      satire_blocklist: true
+      source_blocklist: true
+      promo_spam: true
+      paywalled_stub: true
+      non_story: true
+
+    # Source keys ("cnbc_top"), x handles ("SomeHandle") or URL hosts
+    # ("example.com" — suffix-matched, so "eu.example.com" is covered too).
+    # SHIPS EMPTY BY DESIGN: which publications are unusable is an operator/Fable
+    # judgment, not a builder's. Adding one here is a one-line config change.
+    source_blocklist: []
+
+    # promo_spam: ONE strong marker drops; weak markers need `promo_weak_min`.
+    # Finance English is full of near-misses ("discount rate", "free cash flow",
+    # "deal talks"), which is exactly why weak markers alone never drop.
+    # Omitting promo_strong/promo_weak keeps the built-in lists in the module.
+    promo_weak_min: 2
+
+    # paywalled_stub: marker-driven. A short body ALONE never drops — a
+    # twitterapi.io relay body is a 120-char tweet by construction, and a length
+    # rule would delete the fastest lane on the wire. Set require_marker:false to
+    # add the length rule (aggregator tier + truncation ellipsis + < stub_min_chars).
+    require_marker: true
+    stub_min_chars: 80
+
+    # non_story: horoscope-class terms, matched in the HEADLINE only. Omitting
+    # non_story_terms keeps the built-in narrow list.
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # SCORING BRAIN (XG-W5 = IS-W2) — the L0 story spine + L1 deterministic
+  # features. engine/marketing/{story_spine,signal_features}.py; consumed by
+  # breaking_relevance.score_item and wired in press_lane.run_press_tick.
+  #
+  # MARKETING-INTERNAL, DISPLAY-TIER. No score here is a market signal, and none
+  # is ever rendered to a user — the news.html rail copies named display fields
+  # and never `_components` or `rank_score`.
+  #
+  # EVERY NUMBER BELOW IS A HYPOTHESIS, NOT A MEASUREMENT (charter §8: "suggested
+  # weights, cadences, and thresholds are hypotheses to calibrate, never fixed
+  # truth"). Nothing here is load-bearing until the golden set ranks it:
+  #   python scripts/marketing_golden_set.py eval
+  #
+  # THE L2 LEARNED RANKER IS OUT OF SCOPE and deliberately unscaffolded — it
+  # trains only after >=3 weeks of real labels (masterplan §3 / §0 IS-W2).
+  # ═══════════════════════════════════════════════════════════════════════════
+  scoring:
+    # Feature computation + the persisted `_components` breakdown. ON: this is
+    # metadata, and the acceptance gate is "features for 100% of ingested items".
+    enabled: true
+
+    # ── THE ARMING LEVER ──────────────────────────────────────────────────────
+    # false: the queue is ordered by salience exactly as before; rank_score is
+    #        computed and persisted but orders nothing. This is the launch state.
+    # true : the queue is ordered by rank_score (salience as tiebreak).
+    #
+    # DARK ON PURPOSE. The masterplan gates this flip on evidence: the scorer's
+    # precision@20 must BEAT the current salience-only ordering on the 200-item
+    # golden set before it displaces it. Flipping this before the labels exist
+    # would ship past the wave's own acceptance gate.
+    #
+    # Ordering can only ever REORDER: it runs before the corroboration gate, the
+    # salience floor, the top-K counter, the story lock, the value gate and every
+    # outbox guard, and none of them reads rank_score.
+    rank_ordering: false
+
+    # Demotion multiplier (clamped at 1.0 — it can only ever LOWER salience, so
+    # no feature can lift an item over the flagship floor). OFF by default.
+    demote_enabled: false
+    demote_feature: corroboration_velocity
+    demote_floor: 0.75
+
+    # ── Rank weights ──────────────────────────────────────────────────────────
+    # Salience stays dominant by design: L1 is a refinement of the existing
+    # deterministic salience, not a replacement. Weights sum to 1.0.
+    rank_weights:
+      salience: 0.58
+      corroboration_velocity: 0.14
+      keyword_heat: 0.10
+      novelty: 0.08
+      # ZERO, adjudicated (review F-5). The accrual machinery stays; the
+      # ORDERING weight is 0 until two preconditions hold, because today the
+      # feature would rank noise:
+      #   (a) the prior must live on the measured axis — a 0.5 neutral prior
+      #       equals ~21.4 weighted engagement, so a real source crossing
+      #       min_samples with low engagement scores BELOW an unmeasured one;
+      #   (b) engagement must be sampled at a FIXED POST AGE — parse_tweets
+      #       samples once, seconds after the poller sees a post, so the number
+      #       is really poll latency and ranking on it inverts the signal.
+      # The fixed-age refresh is NOT attempted in this wave. The 0.08 released
+      # here went back to the incumbent salience, not to untested features.
+      source_authority: 0.0
+      tone_extremity: 0.04
+      headline_shape: 0.06
+
+    # Review F-1: one corpus row per ITEM per rolling window, not one per tick.
+    # The lane's `seen` ledger only advances on emit/refusal, so a digest,
+    # below-floor, top-K or story-locked item is re-ingested every 120s forever;
+    # without this window a 6-hour replay of 3 stale items wrote 560 rows.
+    corpus_row_window_h: 24
+
+    # Review F-17: the host-local corpus sink's bounds.
+    corpus_sink:
+      max_rows: 20000
+      max_bytes: 67108864     # 64 MB — the roll is streaming, two passes
+
+    # ── L0 story spine ────────────────────────────────────────────────────────
+    # Optional deps DEGRADE, never crash: datasketch absent -> near-dup pass off
+    # (exact/normalized-URL identity only), one start-of-line ::notice, carry on.
+    story_spine:
+      # Review F-6: how much a source counts as CORROBORATION, by how it joined
+      # the story. `exact` is the same artifact re-ingested (a mirror) and is no
+      # new evidence; near_dup/semantic may be an independent write-up OR
+      # verbatim syndication and cannot be told apart without a publisher-group
+      # map (documented residual — that map is future work).
+      match_weights:
+        new: 1.0
+        exact: 0.0
+        near_dup: 0.5
+        semantic: 0.5
+      minhash_num_perm: 96
+      near_dup_threshold: 0.62
+      shingle_k: 3
+      semantic_threshold: 0.86
+      story_ttl_h: 72
+      max_stories: 1500
+      max_members_per_story: 40
+      max_text_chars: 600
+
+    # ── Semantic pass (Model2Vec static embeddings) ───────────────────────────
+    # OFF, and it can only turn on when BOTH enabled:true AND a LOCAL model
+    # directory exists at model_path. THERE IS NO RUNTIME DOWNLOAD ON ANY PATH —
+    # the artifact is placed by an explicit operator/R2 step (docs/scoring_brain.md
+    # §3); an absent artifact means "pass disabled", never a fetch.
+    semantic:
+      enabled: false
+      model_path: ""     # e.g. /var/lib/macro-live/models/potion-base-8M
+
+    # ── Trailing corpus: novelty (temporal-IDF) + keyword_heat (Kleinberg-lite) ─
+    corpus:
+      max_tokens_per_item: 12
+      max_tokens_per_bucket: 2000
+      burst_window_h: 72
+      burst_recent_h: 1
+      burst_min_hours: 6
+      # Review F-3(a): was 0.5, which is nonsense on this scale. Rates here are
+      # per-DOCUMENT-deduped so every rate is in [0,1]; a floor of 0.5 capped z
+      # at 2.0, so keyword_heat could never exceed 0.5 however violent the
+      # burst. Measured baseline std on a real 344-item tick was ~0.066.
+      burst_min_std: 0.05
+      burst_z_cap: 4.0
+      burst_z_threshold: 2.0
+      # Review F-3(b): the recent bucket is a PARTIAL hour compared against
+      # complete ones — two minutes past the hour, one document scores rate 1.0
+      # and a false maximal burst. No burst may fire below this doc count.
+      burst_recent_min_docs: 8
+      novelty_window_d: 30
+      novelty_min_docs: 50      # below this, novelty reports "cold-start"
+      novelty_top_k: 3
+      # Review F-4(b): "mean of the top 3 rarest" is a different statistic when
+      # the token pool is 2 than when it is 12. Below this, report the null.
+      novelty_min_tokens: 3
+      novelty_neutral: 0.5      # the cold-start value — a stated null, not a measurement
+      min_token_len: 3
+
+    # ── corroboration_velocity ────────────────────────────────────────────────
+    corroboration:
+      sources_15m_full: 3
+      sources_60m_full: 5
+      weight_15m: 0.7
+      weight_60m: 0.3
+      # Review F-6: score the MATCH-DISCOUNTED source count (weights above under
+      # story_spine.match_weights), not the raw one. false = pre-review behaviour.
+      use_weighted_sources: true
+
+    # ── source_authority ──────────────────────────────────────────────────────
+    # NEUTRAL PRIOR UNTIL TELEMETRY EXISTS. The only input is observed engagement
+    # on x_follow items, parsed from the twitterapi.io response body the poller
+    # ALREADY pays for — no new request, no new endpoint, no new spend path, and
+    # no first-party X scraping. Sources that never carry counts (RSS wires,
+    # mirrors) stay neutral forever, which is the honest answer for them.
+    authority:
+      min_samples: 25           # below this the prior is neutral and says so
+      neutral_prior: 0.5
+      ewma_alpha: 0.1
+      reference_engagement: 500.0
+      like_weight: 1.0
+      retweet_weight: 2.0
+      reply_weight: 0.5
+      view_weight: 0.01
+      max_sources: 500
+
+    # ── tone_extremity (GDELT V2Tone join) ────────────────────────────────────
+    # There is NO GDELT provider in the marketing lane yet (IS-W1's provider is
+    # unbuilt), so the join is absent and this feature contributes EXACTLY 0 for
+    # every item — deliberately rank-neutral, never renormalizing the others.
+    # When the provider lands it writes the join to a host-local path below.
+    tone:
+      enabled: true
+      tone_cap: 10.0
+      paths:
+        - "data/marketing/press/gdelt_tone.json"
+
+    # ── headline_shape ────────────────────────────────────────────────────────
+    headline_shape:
+      numbers_full: 2
+      entities_full: 3
+      short_max_chars: 50
+      long_min_chars: 110
+      band_short: 0.5
+      band_medium: 1.0
+      band_long: 0.6
+      w_numbers: 0.4
+      w_entities: 0.35
+      w_band: 0.25
+
+    # ── Golden set ────────────────────────────────────────────────────────────
+    # Labels are an operator/Fable lever (charter §7.6). The harness lands now;
+    # the precision@20 comparison becomes binding when labels exist.
+    golden_set:
+      k: 20
+      min_labeled: 40           # below this the eval prints numbers but gates nothing
+      # Review F-7: `beats_salience` is no longer a bare sign test on two point
+      # estimates. It requires BOTH a pre-registered margin AND a pre-registered
+      # significance level on a PAIRED McNemar test over the discordant pairs,
+      # with a paired-bootstrap CI printed alongside. The raw delta is still
+      # printed as display. House stats law: pre-registered gates, nulls printed.
+      alpha: 0.05
+      min_margin: 0.05
+      bootstrap_draws: 2000
+      bootstrap_seed: 20260728
+      # Review F-12: the stratification band cutoffs (high/mid on a 0-100 scale)
+      # were hardcoded 70/40. Hypotheses, so: config.
+      bands: [70.0, 40.0]
+      # Review F-8(a): "head" mode draws a UNIFORM sample of the top N by the
+      # baseline score, so unweighted precision@k is unbiased for head
+      # precision. "stratified" mode is richer in rare cells but needs the
+      # inverse-inclusion-probability estimate, which the batch's weights carry.
+      head_size: 500
+      corpus_paths:
+        - "data/marketing/press/ingest_corpus.jsonl"
+
 # ═════════════════════════════════════════════════════════════════════════════
 # REPLY DESK (XG-W4) — borrowed distribution's engine room.
 #
@@ -1346,3 +1680,141 @@ reply_desk:
   critic_thresholds:
     parent_jaccard: 0.55
     corpus_jaccard: 0.50
+
+  # ── Producer (XG-W6) ──────────────────────────────────────────────────────
+  # The scheduled pipeline XG-W4 deliberately did not build: discovery -> score
+  # -> draft -> critics -> enqueue. It runs on the wire daemon's host
+  # (`marketing_fastlane_daemon.py --lane reply`), never on the render path, and
+  # NOTHING IT PRODUCES SENDS — output lands in the M0 queue for operator review.
+  #
+  # DARK BY DEFAULT. This lane bills twitterapi.io, so it does not inherit the
+  # wire lane's MARKETING_FASTLANE_ENABLED switch; arming is a deliberate,
+  # separate act. Spend rides XG-W4's accounting unchanged (the reply sub-budget
+  # in config/press_sources.yml plus the shared-bucket stop that makes reply
+  # polling yield to the Trump wire and never the reverse).
+  producer:
+    enabled: false
+    # Per tick, per account. Small on purpose: the charter's quality bar is
+    # 15-20 replies a DAY and the daemon ticks many times an hour.
+    max_drafts_per_account_per_tick: 3
+    # How many scored targets to attempt before giving up on a tick. Drafting is
+    # cheap; the eight critics are not, and a pathological target list must not
+    # spin the tick.
+    max_draft_attempts_per_account: 12
+    # How many recent items feed the least-recently-used family rotation.
+    family_history: 20
+    # Alternates per draft. The drafter composes them from DIFFERENT families
+    # (constitution §9.4: three paraphrases of one thought is the failure mode).
+    n_alts: 2
+    # Outcome polling — the reply half of the labels loop, run by the nightly
+    # (scripts/marketing_learning_nightly.py step 0). Charter §3: author
+    # reply-back is the highest-value outcome, so that is what gets read. Bills
+    # against the SAME reply sub-budget as discovery; no second counter. At M0
+    # nothing has sent, so the poll is a no-op that bills nothing.
+    outcome_lookback_days: 7
+    max_outcome_polls_per_night: 40
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LEARNING (XG-W6) — the ONE feedback loop, four consumers
+# ═══════════════════════════════════════════════════════════════════════════════
+# Four charters described the same machine (D05 §7, IS-W5, Persona W4, Media W2);
+# charter §6 reconciles them into one loop. engine/marketing/labels.py is that
+# loop, engine/marketing/health_monitor.py grades the accounts, and
+# engine/marketing/learned_rules.py holds anything the loop concludes.
+#
+# EVERY VALUE BELOW IS A HYPOTHESIS, NOT A MEASUREMENT (charter §8). They are
+# initial config values with a pre-registered evaluation plan. Nothing here is
+# user-facing: no score, no label and no health verdict appears in site/.
+learning:
+  # Cell n-floor for the scorecard. Matches engine/marketing/telemetry.py's own
+  # floor so the two surfaces cannot disagree about what "enough" means. A cell
+  # below it is PRINTED with verdict="seeding" and makes no ranking claim.
+  n_floor: 20
+  # How long the tracked labels ledger keeps rows.
+  retention_days: 180
+  # The scorecard window.
+  scorecard_window_days: 7
+  # THE NORTH STAR IS UNDEFINED AT ZERO (charter §8). "Qualified retained
+  # followers per 100 contributions" divides by a follower base that does not
+  # exist yet, so it activates only once an account clears this floor. Below it
+  # the bottleneck table on RAW COUNTS is the honest instrument, and that is
+  # what the admin renders.
+  north_star_follower_floor: 250
+
+  parent_adjust:
+    # START AT 2-3 COVARIATES (charter §8 ruling): the constitution's
+    # 8-covariate parent-adjusted evaluation is over-parameterized at launch
+    # volume. The expansion is ENCODED HERE rather than left to a later
+    # judgement call — labels.active_covariates truncates this list to
+    # (labelled rows / samples_per_covariate) and announces the truncation.
+    covariates: [parent_size, post_age, market_intensity]
+    expansion_pool: [author_tier, beat_fit, time_of_day, reply_family, thread_saturation]
+    samples_per_covariate: 40
+    # A stratum thinner than this yields adjusted=null WITH THE REASON PRINTED.
+    stratum_n_floor: 5
+    buckets:
+      parent_size: [50, 500]        # engagement on the parent at draft time
+      post_age: [5, 15]             # minutes — the charter §3 reply window
+      market_intensity: [3, 12]     # breaking+wire emissions that day
+
+  health:
+    # Windows.
+    recent_days: 7
+    baseline_days: 28
+    # Below this many observations a metric reports NULL, never a verdict. A
+    # thin window is not a healthy window and it is not an unhealthy one.
+    min_observations: 5
+    # Operator approval rate on the reply desk below this is a WARN.
+    approval_rate_warn: 0.40
+    # One rejection reason holding this share is a CONCENTRATED (fixable)
+    # defect rather than a diffuse taste gap — same rate, opposite response.
+    reason_concentration_warn: 0.60
+    # Recent median engagement below this multiple of the trailing baseline is
+    # a collapse. 0.35 = "lost two thirds", not "a slow week".
+    engagement_collapse_ratio: 0.35
+    # The profile-conversion floor's last-nine-post diagnostic (charter §3.6):
+    # what a profile visitor actually sees, measured on the window they see.
+    last_nine_window: 9
+    last_nine_receipt_floor: 3
+    last_nine_unmeasured_ceiling: 6
+    # What an account-level WARN does. NOT "halt" by default: one soft metric
+    # should surface to the operator, not silence a desk.
+    account_action: warn
+    network_tripwire:
+      # One account falling is weather; this many falling together is the
+      # fleet-linkage signal the charter's risk register names.
+      min_accounts: 3
+      # Independently-run desks should not move in lockstep. Lockstep is the
+      # shape a shared limiter leaves behind.
+      #
+      # Correlation is measured on engagement PER POST, not summed daily
+      # engagement: all seven desks are fed by ONE nightly content plan, so
+      # their post COUNTS move together by construction and summed engagement
+      # would correlate because of our own scheduler. Per-post divides that out.
+      corr_threshold: 0.90
+      corr_min_days: 10
+      corr_min_pairs: 3
+      # "warn" AT LAUNCH — same reasoning as account_action above: surface it,
+      # do not silence seven desks. `implicated` is every account in any
+      # correlated pair, and 3 of 21 possible pairs is enough to fire, so one
+      # confounded reading would cost seven manual clears. There is NO
+      # correlation baseline yet (zero nights of real telemetry), so the wire
+      # gets measured before it gets armed.
+      #
+      # ARMING STEP, once the baseline exists: action: halt_implicated. The
+      # mechanism is identical either way — a trip writes ONE HALT ROW PER
+      # IMPLICATED ACCOUNT, never a global switch (charter §5).
+      action: warn
+
+  learned_rules:
+    # DARK BY DEFAULT. Applying a learned rule is a PROMOTION (it changes what
+    # gets ranked or emitted) and promotions run the gauntlet. The store, the
+    # version log, the shape enforcement and the admin surface ship armed; only
+    # CONSUMPTION waits on this flag.
+    enabled: false
+    # "No learning promotes from one viral accident" (charter §8 experiment law)
+    # with teeth: a proposal must cite at least this many labelled observations.
+    min_evidence_n: 30
+    # ...and may not cite a cell the scorecard marked "seeding" — a cell that
+    # makes no ranking claim cannot support one.
+    require_cell_verdict_not_seeding: true

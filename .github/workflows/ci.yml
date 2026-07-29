@@ -1177,6 +1177,24 @@ on:
       # config/marketing.yml already reach its subjects — this entry is so a
       # test-only edit reaches its own guard.
       - "tests/test_marketing_chart_coverage.py"
+      # Publish-lane throughput + media recovery (2026-07-28). Its subjects are
+      # scripts/marketing_publisher.py, scripts/marketing_media_backfill.py, the
+      # two marketing workflow files and .gitattributes — none of which the
+      # engine/marketing/** globs above reach, so without these entries a change
+      # to any of them (or to the suite itself) would never meet its own guard.
+      - "tests/test_marketing_forward_booking.py"
+      - "scripts/marketing_media_backfill.py"
+      - ".github/workflows/marketing-publish.yml"
+      - ".github/workflows/marketing-media-backfill.yml"
+      - ".gitattributes"
+      # Kill-switch recall (2026-07-28) — the other half of forward booking
+      # above. Same reasoning for listing the runner by name: scripts/ is not
+      # reached by the engine/marketing/** globs, so without this entry an edit
+      # to the recall runner would never meet its own guard. The suite also
+      # asserts on .github/workflows/marketing-publish.yml (already listed
+      # above) and admin/marketing.py (listed further down).
+      - "scripts/marketing_recall.py"
+      - "tests/test_marketing_recall.py"
       # Persona Network W1 (docket D13): the persona spec layer + its roster panel,
       # co-run in the marketing-engine job (same stdlib+pyyaml closure). The SPECS
       # are listed, not only the code — a PR that edits ONLY config/personas/*.yml
@@ -1217,6 +1235,51 @@ on:
       - "config/reply_targets.yml"
       - "config/press_sources.yml"
       - "tests/test_marketing_reply_desk.py"
+      # X Growth W6 (XG-W6): the ONE feedback loop (labels store + weekly
+      # scorecard), parent-adjusted reply labels, the per-account health monitor
+      # + network tripwire + halt registry, the pre-registered blind-identity
+      # eval, the learned-rule version log, and the reply-desk PRODUCER. The
+      # engine modules are matched by engine/marketing/** above and
+      # config/marketing.yml + admin/marketing.py are already listed; these are
+      # named so a PR that edits ONLY the nightly step, ONLY the prereg document,
+      # or ONLY a suite still reaches the marketing-engine lane. The prereg doc
+      # is listed because a test asserts the doc and blind_identity.PREREG agree
+      # on every number — a prereg that can drift from its own doc is not one.
+      - "scripts/marketing_learning_nightly.py"
+      - "scripts/marketing_fastlane_daemon.py"
+      - "docs/blind_identity_eval_prereg.md"
+      - "tests/test_marketing_learning.py"
+      - "tests/test_marketing_reply_producer.py"
+      # The shared fixture both XG-W6 suites import. Listed by name for the same
+      # reason the suites are: an edit to ONLY this helper changes what both
+      # suites assert, and without the entry it would never reach the lane that
+      # runs them (test-whitelist-rot).
+      - "tests/_xgw6_helpers.py"
+      # X Growth W5 (XG-W5 = IS-W2): the scoring brain — L0 story spine, the six
+      # L1 deterministic features, the P0 garbage gate, and the golden-set /
+      # precision@20 harness. The engine modules are matched by
+      # engine/marketing/** and config/marketing.yml above; the two suites and
+      # the CLI are named so a TEST-ONLY or CLI-ONLY edit still reaches the lanes
+      # that run them. The suites are DELIBERATELY SPLIT: the deterministic core
+      # runs in the thin marketing-engine lane (pytest+pyyaml), and the
+      # optional-dependency near-dup pass runs in marketing-scoring-optional,
+      # which installs datasketch — that suite imports it at MODULE level with no
+      # importorskip, so a missing wheel is red there rather than a silent skip.
+      - "tests/test_marketing_scoring_brain.py"
+      - "tests/test_marketing_scoring_optional_deps.py"
+      - "scripts/marketing_golden_set.py"
+      - "docs/scoring_brain.md"
+      # Hot Tape P2 (2026-07-28): the LLM wire desk + its golden FactPackets +
+      # the PR-evidence dry run. engine/marketing/hot_tape_llm.py is ALREADY
+      # covered by the engine/marketing/** glob above, so it is deliberately not
+      # repeated here; these three are named because a fixture-only, suite-only
+      # or runner-only edit would otherwise never reach the marketing-engine
+      # lane that runs the suite (test-whitelist-rot). The fixture is the
+      # subject of most of the suite — an edit to a golden packet changes what
+      # every gate is asserted against.
+      - "tests/test_marketing_hot_tape_llm.py"
+      - "tests/fixtures/hot_tape_golden_packets.json"
+      - "scripts/hot_tape_llm_dryrun.py"
       # D02 per-post metrics poller + chart-image (PNG) pipeline. The poller
       # reads back Buffer analytics; media_publish uploads chart PNGs to R2;
       # content_studio renders the PNG at plan-build time. engine/marketing/**
@@ -1317,6 +1380,23 @@ on:
       - "admin/press.py"
       - "tests/test_press_*.py"
       - ".github/workflows/press-publish.yml"
+      # D14 W2R / X Growth XG-W8 (2026-07-28): the research triage layer that
+      # decides WHICH vault report the Research Desk covers, its demote-only LLM
+      # veto pass, the cold-start volume ramp, and the dark Mastermind Research
+      # X lane. engine/press/** + config/press.yml + tests/test_press_*.py above
+      # already reach the engine, the config and the suite; the runner, the
+      # workflow and the runbook are named so a PR that edits ONLY one of them
+      # still reaches the press-lane job that runs the guard. The runbook is
+      # listed because a test asserts it names every arming lever — a runbook
+      # that can drift from the levers it documents is not one.
+      - "scripts/run_research_triage.py"
+      - ".github/workflows/research-triage.yml"
+      - "docs/research_triage.md"
+      # The vault catalog snapshot is the triage layer's INPUT, and the research
+      # desks plan from it. A hourly ingest commit can change what the planner
+      # sees without touching a line of code.
+      - "data/research_vault/catalog.json"
+      - "data/press/research_triage.jsonl"
       # D14 W1.5 press properties (2026-07-27): the per-publication static
       # trees, their templates, and the builder. Same reasoning as above — the
       # cutover pairing guard and the property determinism checks have to be

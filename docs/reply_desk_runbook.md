@@ -134,7 +134,22 @@ M2 and M3 exist as keys so the escalation path is legible, but `modes_enabled`
 may not contain them: `reply_queue.resolve_mode()` clamps to M0 and prints a
 warning if a config asks. **The XG-W6 per-account health monitor and network
 tripwire are a hard precondition for any flip above M1** — a failure must be able
-to halt one account without halting seven, and today it cannot.
+to halt one account without halting seven.
+
+**That precondition is now BUILT (XG-W6).** `engine/marketing/health_monitor.py`
+grades every account nightly on four deterministic monitors, runs the fleet
+tripwire, and writes per-account halt rows that both rails enforce (see §10).
+The dial itself is unchanged: `SHIPPABLE_MODES` still admits only M0/M1, and
+widening it is a separate, explicit decision with its own record — the
+precondition being met is not the same as the flip being made.
+
+**A SECOND precondition, still open: halts trip NIGHTLY ONLY.** Every monitor
+input is daily-cadence telemetry (the Buffer metrics poll refreshes about once a
+day), so an incident starting at 10:00 is caught that night, not that hour. At
+M0/M1 you approve every send, so a nightly halt is proportionate. **At M2/M3 it
+is not** — auto-approval means an account can keep sending for a full day after
+the signal that should have stopped it. **Intraday halt evaluation is a
+precondition for any flip above M1**, alongside the monitor itself (charter §5).
 
 M3 additionally requires, per account: ≥100 M1/M2 sends with zero incidents,
 passing blind-identity and anti-sameness evals, and an explicit operator flip.
@@ -390,26 +405,146 @@ a browser acting on an item a human approved.
 
 ---
 
-## 9. What is deliberately not built yet
+## 9. The producer (XG-W6) — how the queue fills
 
-- **The producer chain.** Nothing in this wave calls
-  discovery → scorer → drafter → critics → `enqueue` in sequence, so **the queue
-  does not fill on its own yet**. Every piece is built, tested and callable; the
-  connective tissue (the scheduled tick that walks discovery output through the
-  scorer and drafter and enqueues what survives the critics) lands with the rest
-  of the reply pipeline in **XG-W6**, alongside telemetry wiring. Until then the
-  desk is a library plus an operator surface, not a running loop.
+`engine/marketing/reply_producer.py` is the connective tissue XG-W4 deliberately
+left out: discovery → score → draft → critics → `enqueue`, in one tick.
 
-  This is why the critic guarantee is enforced at the STORE rather than in the
-  producer: an item can only enter the queue with a full passing critic stamp,
-  so the safety claim above is true for whatever eventually fills it.
-- **Auto-approval (M2/M3)** — gated on XG-W6's per-account health monitor and
-  network tripwire.
-- **Parent-adjusted outcome labels** — the queue records `sent_at`,
-  `author_replied`, `likes`, and `follower_delta`, and `poll_outcomes()` reads
-  the replies under our sent posts. Turning those into a learning signal is
-  XG-W6.
+**It sends nothing.** Output lands in the M0 queue for you to review in §7. The
+dial is untouched by the producer; `reply_export` at M1+ is still the only thing
+that hands an item to the desktop lane.
+
+### Where it runs
+
+The same daemon and the same host as the wire lane — never the render path:
+
+```bash
+# one inspection tick: zero network, zero spend, zero writes
+python -m scripts.marketing_fastlane_daemon --lane reply --once --dry-run
+
+# live loop (needs the arming below)
+python -m scripts.marketing_fastlane_daemon --lane reply --interval 300
+```
+
+To run it beside the wire lane on the VPS, change the `marketing-press-feeds`
+unit's `ExecStart` from `--lane press` to `--lane all`. The producer's own config
+gate keeps it dark until you arm it, so `--lane all` on an unarmed deployment is
+a logged no-op rather than a surprise spend.
+
+### Arming it (two switches, both required)
+
+| Switch | Where | Default |
+|---|---|---|
+| `reply_desk.producer.enabled: true` | `config/marketing.yml` | `false` |
+| `TWITTERAPI_IO_KEY` | `/etc/macro-live.env` | already set for the wire |
+
+The producer does **not** inherit `MARKETING_FASTLANE_ENABLED`, deliberately: it
+bills twitterapi.io, so arming it is a separate act from arming the wire.
+
+### Spend
+
+Unchanged from §2. The producer calls `reply_discovery.run_tick`, which owns the
+cursors, the monthly counter, the reply sub-cap and the shared-bucket stop that
+makes reply polling yield to the Trump wire and never the reverse. The producer
+adds no second budget and no second counter.
+
+### Per-tick knobs
+
+| Key | Default | Meaning |
+|---|---|---|
+| `max_drafts_per_account_per_tick` | 3 | the daily bar is 15–20; the daemon ticks often |
+| `max_draft_attempts_per_account` | 12 | stop drafting after this many scored targets |
+| `family_history` | 20 | how far back the LRU family rotation looks |
+| `n_alts` | 2 | alternates, composed from **different** families |
+
+### What it does when it has nothing to say
+
+Abstains, and counts the abstention. An empty own-feed fact list produces an
+empty draft and no queue item — Law 1, value before activity. A tick reporting
+`drafted=0 abstained=7` is the system working, not failing.
+
+---
+
+## 10. Per-account halt (XG-W6)
+
+A halted account is blocked on **both** rails while every other desk runs
+untouched. There is no global halt switch anywhere in the module — a halt is
+always a row keyed by one account id, so "halt one, not seven" is the only shape
+the registry can hold.
+
+| Rail | Enforcement site |
+|---|---|
+| Posts | `scripts/marketing_publisher.py` — auto-approve pass **and** the post loop |
+| Replies | `engine/marketing/reply_export.py` — `export_approved` **and** `claim_for_desktop` |
+| Producer | `engine/marketing/reply_producer.py` — before any billed request for that desk |
+
+**What trips one.** The nightly (`scripts/marketing_learning_nightly.py`) grades
+each account on four deterministic monitors — operator approval rate, rejection
+reason mix, engagement trend, and the last-nine-post profile diagnostic — and
+runs the fleet tripwire (simultaneous engagement collapse; cross-account
+**per-post** engagement correlation).
+
+**Both actions default to `warn` at launch, so nothing halts automatically yet:**
+
+| Config key | Default | Arming step |
+|---|---|---|
+| `learning.health.account_action` | `warn` | `halt` |
+| `learning.health.network_tripwire.action` | `warn` | `halt_implicated` |
+
+The tripwire is deliberately unarmed because there is **no correlation baseline
+yet**. `implicated` is every account in any correlated pair, and 3 of 21 pairs
+is enough to fire — one confounded reading would halt the fleet and cost you
+seven manual clears. Measure the wire for a few weeks, then arm it. (Correlation
+runs on engagement *per post*, not summed: one nightly plan drives all seven
+desks, so their post counts move together by construction and summed engagement
+would correlate on our own scheduler.)
+
+Every input is deterministic telemetry. No model scores anything here.
+
+**Cadence:** nightly. See §3 — intraday evaluation is a precondition for M2/M3.
+
+**What clears one.** You do, from the admin health panel
+(`POST /api/marketing/health/clear-halt`), or:
+
+```bash
+python -c "from engine.marketing import health_monitor as h; \
+from datetime import datetime,timezone; \
+print(h.clear('cici', actor='chris', now=datetime.now(timezone.utc)))"
+```
+
+The monitor **cannot** clear its own trip. An intermittent condition would
+otherwise let a desk flap between halted and live with nobody ever seeing it,
+which is indistinguishable from the monitor not working.
+
+`data/marketing/learning/halts.json` is a tracked file because both rails run on
+different machines and both must see it. A clear made in a local checkout must be
+**pushed** — until it reaches main, the VPS's next pull restores the halt. The
+admin says so in its return rather than reporting a success it did not achieve.
+
+**Reading a halt:** `data/marketing/learning/health.json` carries the evidence
+that tripped it, and the registry's `log` carries every halt/clear with an actor.
+
+---
+
+## 11. What is deliberately not built yet
+
+- **Auto-approval (M2/M3)** — the health monitor and tripwire precondition is now
+  met, but widening `SHIPPABLE_MODES` is a separate, explicit decision.
+- **The L2 ranker retrain** — there is no labels corpus yet. The label store is
+  *shaped* for it (`features` / `label` / `weight` / `label_version`) and nothing
+  more; building the retrain against an empty corpus would be fitting noise.
+- **Learned-rule consumption** — the store, the version log, the reversibility
+  gate and the admin surface ship armed; applying a rule is a promotion, so
+  `learning.learned_rules.enabled` is `false` and the one wired reader (reply
+  family restriction in the producer) reads nothing until you flip it.
+- **The blind-identity eval** — pre-registered
+  (`docs/blind_identity_eval_prereg.md`), harness built, **not run**. The ≥80%
+  figure gates nothing.
 - **Chart pre-render sweep** — `reply_drafter.prerender_artillery()` exists and
   reuses the nightly render machinery, but nothing schedules it yet. Until it is
   scheduled, `attach_chart()` only references charts the nightly lane already
   produced.
+- **Follower-cohort retention** — the north-star metric needs a follower series
+  the Buffer poller does not return. The denominator is live; the numerator is
+  not, so the metric stays inactive and the bottleneck table on raw counts is
+  what the admin renders.

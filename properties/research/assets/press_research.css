@@ -559,6 +559,7 @@ a.rh-pub:hover { color: var(--prussian); }
 }
 .foot-meta a { color: var(--ink-mid); text-decoration: none; }
 .foot-meta a:hover { color: var(--prussian); }
+.foot-meta a.foot-x { font-variant-numeric: tabular-nums; }
 
 /* ---------------------------------------------------------------------------
    Narrow — the margin column folds above the block it annotates

@@ -1,4 +1,8 @@
 {% extends "report_base.html.j2" %}
+
+{# XG-W7: no X follow line on the China desks — x.com is unreachable behind
+   the GFW, so the CTA would be a dead link for this page's core audience. #}
+{% block foot_social %}{% endblock %}
 {#- ===========================================================================
    China Alternative-Data Desk — mx5 editorial revamp.
    Design: macro.html "mx5" visual language (aurora glass, SSR arc gauge, glass
