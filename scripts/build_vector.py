@@ -54,6 +54,61 @@ PLOT = dict(
     yaxis={"gridcolor": C["grid"], "zeroline": False},
 )
 
+# Crypto Cockpit E0 presentation contract. These are display placements, not a
+# new score: every primary and receipt key points at an existing BTC engine
+# state. W1 renders these six rows verbatim; adding a new factor must displace
+# or join a receipt, never create a seventh Tier-1 row.
+COCKPIT_AXIS_PRESENTATION = (
+    {
+        "id": "trend_momentum",
+        "label_en": "Trend & Momentum",
+        "label_zh": "趋势与动量",
+        "primary": "momentum",
+        "spark_source": "signals.momentum",
+        "receipt_members": ("structure", "impulse"),
+    },
+    {
+        "id": "cycle_valuation",
+        "label_en": "Cycle & Valuation",
+        "label_zh": "周期与估值",
+        "primary": "valuation",
+        "spark_source": "signals.mvrv_z",
+        "receipt_members": ("cycle", "reserve_risk", "extreme"),
+    },
+    {
+        "id": "liquidity_flows",
+        "label_en": "Liquidity & Flows",
+        "label_zh": "流动性与资金流",
+        "primary": "etf",
+        "spark_source": "signals.etf_flow_z",
+        "receipt_members": ("stbl", "premium"),
+    },
+    {
+        "id": "leverage_derivatives",
+        "label_en": "Leverage & Derivatives",
+        "label_zh": "杠杆与衍生品",
+        "primary": "leverage_cascade",
+        "spark_source": "signals.oi_mcap_ratio",
+        "receipt_members": ("funding", "cot"),
+    },
+    {
+        "id": "network_miners",
+        "label_en": "Network & Miners",
+        "label_zh": "网络与矿工",
+        "primary": "bfi",
+        "spark_source": "signals.bfi",
+        "receipt_members": ("miner", "holders", "attention"),
+    },
+    {
+        "id": "macro_backdrop",
+        "label_en": "Macro Backdrop",
+        "label_zh": "宏观背景",
+        "primary": "macro",
+        "spark_source": "signals.macro_score",
+        "receipt_members": ("beta",),
+    },
+)
+
 
 def _html(fig: go.Figure) -> str:
     return fig.to_html(full_html=False, include_plotlyjs=False,
@@ -153,6 +208,132 @@ def emit_risk_strategy_json(site: Path, sig: pd.DataFrame) -> None:
     }
     (site / "vector_risk_strategy.json").write_text(json.dumps(payload, separators=(",", ":")))
     log.info("wrote %s/vector_risk_strategy.json (%d days x %d variants)", site, len(dates), len(variants))
+
+
+def _cockpit_axis_rows(master: dict, regime: dict) -> list[dict]:
+    """Materialize E0's six display rows from existing named engine states."""
+    board_rows = {
+        row.get("key"): row
+        for group in (master.get("board") or [])
+        for row in (group.get("rows") or [])
+        if row.get("key")
+    }
+    leverage = (
+        ((regime.get("context_legs") or {}).get("leverage") or {})
+        if isinstance(regime, dict)
+        else {}
+    )
+    leverage_state = leverage.get("cascade_risk") if leverage.get("ok") else None
+    leverage_words = {
+        "low": ("Low", "低", "bull"),
+        "elevated": ("Elevated", "偏高", "neutral"),
+        "high": ("High", "高", "bear"),
+    }
+
+    axes = []
+    for spec in COCKPIT_AXIS_PRESENTATION:
+        primary_key = spec["primary"]
+        if primary_key == "leverage_cascade":
+            state_en, state_zh, tone = leverage_words.get(
+                leverage_state, ("Unavailable", "暂无", "neutral")
+            )
+            primary = {
+                "key": primary_key,
+                "source": "regime.context_legs.leverage.cascade_risk",
+                "state_en": state_en,
+                "state_zh": state_zh,
+                "tone": tone,
+                "as_of": leverage.get("asof"),
+            }
+        else:
+            row = board_rows.get(primary_key) or {}
+            primary = {
+                "key": primary_key,
+                "source": f"master.board.{primary_key}",
+                "state_en": row.get("state_en", "Unavailable"),
+                "state_zh": row.get("state_zh", "暂无"),
+                "tone": row.get("tone", "neutral"),
+                "grade": row.get("grade") or None,
+            }
+
+        receipts = []
+        for key in spec["receipt_members"]:
+            row = board_rows.get(key) or {}
+            receipts.append({
+                "key": key,
+                "source": f"master.board.{key}",
+                "state_en": row.get("state_en", "Unavailable"),
+                "state_zh": row.get("state_zh", "暂无"),
+                "tone": row.get("tone", "neutral"),
+                "grade": row.get("grade") or None,
+            })
+        axes.append({
+            "id": spec["id"],
+            "label_en": spec["label_en"],
+            "label_zh": spec["label_zh"],
+            "primary": primary,
+            "spark_source": spec["spark_source"],
+            "receipt_members": receipts,
+        })
+    return axes
+
+
+def emit_crypto_cockpit_json(
+    site: Path,
+    sig: pd.DataFrame,
+    master: dict,
+    regime: dict,
+    gate: dict,
+    *,
+    price: float,
+    change_24h_pct: float,
+) -> None:
+    """Emit the display-only E0 read shared by future crypto surfaces.
+
+    This contract never re-scores BTC. It publishes the same final gated
+    allocation, Master Signal, and named axis states used by vector.html.
+    """
+    last = sig.iloc[-1]
+    allocation = last.get("alloc_optimal")
+    payload = {
+        "schema": "crypto.cockpit/v1",
+        "contract_phase": "w0",
+        "display_only": True,
+        "as_of": sig.index[-1].strftime("%Y-%m-%d"),
+        "generated_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
+        "hero": {
+            "asset": "BTC-USD",
+            "price": round(float(price), 2),
+            "change_24h_pct": round(float(change_24h_pct), 2),
+            "stance_en": master.get("band", "Unavailable"),
+            "stance_zh": master.get("band_zh", "暂无"),
+            "summary_en": master.get("headline_en", ""),
+            "summary_zh": master.get("headline_zh", ""),
+            "master_score": master.get("score"),
+            "exposure_pct": (
+                round(100 * float(allocation))
+                if allocation is not None and pd.notna(allocation)
+                else None
+            ),
+            "gate_active": bool(gate.get("active")),
+        },
+        "axes": _cockpit_axis_rows(master, regime),
+        "authority": {
+            "sizing_source": "signals.alloc_optimal",
+            "stance_source": "btc_master.synthesize",
+            "axis_contract": "COCKPIT_AXIS_PRESENTATION",
+            "no_new_arithmetic": True,
+        },
+        "future_consumers": [
+            "crypto.html:H6",
+            "index.html:crypto-product-card",
+            "neural-web:crypto-lens",
+        ],
+    }
+    (site / "crypto_cockpit.json").write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False, default=str) + "\n"
+    )
+    log.info("wrote %s/crypto_cockpit.json (E0, %d axes)", site, len(payload["axes"]))
 
 
 # --------------------------------------------------------------------------- #
@@ -3860,6 +4041,13 @@ def main() -> int:
         emit_risk_strategy_json(site, sig)
     except Exception as e:  # noqa: BLE001
         log.error("risk/strategy chart json failed (%s)", e)
+    try:  # E0 shared display contract — same process and as-of as vector.html
+        emit_crypto_cockpit_json(
+            site, sig, master, regime, gate, price=close.iloc[-1],
+            change_24h_pct=chg24,
+        )
+    except Exception as e:  # noqa: BLE001
+        log.error("crypto cockpit contract failed (%s)", e)
     # the AI brief panel fetches aibrief.js at runtime — ship it alongside the page
     # (build_site copies it too; done here so a standalone vector rebuild is complete).
     _ab = config.ROOT / "templates" / "aibrief.js"

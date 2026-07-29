@@ -31,9 +31,11 @@ Public API — keep the signature stable; HK / Canada lanes build against it:
 from __future__ import annotations
 
 import hashlib
+import math
+from datetime import date, datetime
 from html import escape
 
-__all__ = ["illus"]
+__all__ = ["illus", "regime_tape"]
 
 # viewBox is fixed; the container stretches it horizontally (preserveAspectRatio=none).
 _VBW = 560.0
@@ -166,6 +168,54 @@ def _d_area(xy, y0):
     return (f"M{xy[0][0]} {y0} L"
             + " L".join(f"{x} {y}" for x, y in xy)
             + f" L{xy[-1][0]} {y0} Z")
+
+
+def _date_number(value):
+    """ISO-ish date/datetime -> ordinal float, or None when it cannot be parsed.
+
+    Regime Tape x geometry is calendar-based, never kept-point-position based.
+    Keeping this helper stdlib-only preserves ilx's dependency-free contract.
+    """
+    if isinstance(value, datetime):
+        seconds = (
+            value.hour * 3600
+            + value.minute * 60
+            + value.second
+            + value.microsecond / 1_000_000
+        )
+        return float(value.date().toordinal()) + seconds / 86400.0
+    if isinstance(value, date):
+        return float(value.toordinal())
+    raw = str(value or "").strip()
+    if not raw:
+        return None
+    if len(raw) >= 10:
+        try:
+            return float(date.fromisoformat(raw[:10]).toordinal())
+        except ValueError:
+            pass
+    try:
+        return datetime.fromisoformat(raw.replace("Z", "+00:00")).timestamp() / 86400.0
+    except (TypeError, ValueError, OSError):
+        return None
+
+
+def _date_x(value, start, end):
+    """Map a date to the fixed ilx viewBox using elapsed calendar time."""
+    dv, d0, d1 = _date_number(value), _date_number(start), _date_number(end)
+    if dv is None or d0 is None or d1 is None or d1 <= d0:
+        return None
+    return round(max(0.0, min(1.0, (dv - d0) / (d1 - d0))) * _VBW, 2)
+
+
+def _d_step(xy):
+    """Horizontal-then-vertical step path for allocation ribbons."""
+    if not xy:
+        return ""
+    out = [f"M{xy[0][0]} {xy[0][1]}"]
+    for x, y in xy[1:]:
+        out.append(f"H{x} V{y}")
+    return " ".join(out)
 
 
 def _corner_labels(pairs):
@@ -379,6 +429,194 @@ def _render_multi(series_list, *, height, value_fmt, max_points, aria_en, aria_z
         f'<figure class="ilx ilx-multi" style="--ilx-h:{int(height)}px" '
         f'role="img" aria-label="{aria}">{svg}'
         f'<span class="ilx-chips">{"".join(chips)}</span>{corners}</figure>'
+    )
+
+
+# --------------------------------------------------------------------------- #
+# Regime Tape — Bitcoin/Crypto cockpit signature
+# --------------------------------------------------------------------------- #
+def regime_tape(price, *, allocation=None, regimes=None, events=None, projection=None,
+                height=250, max_points=220, accent="var(--btc, #F7931A)",
+                value_fmt="${:,.0f}", aria_en="Bitcoin price, regime and allocation",
+                aria_zh=None) -> str:
+    """Render the cockpit's signature price/regime/allocation tape.
+
+    The four additive forms are deliberately one cohesive API:
+      * calendar-true regime spans behind the price path;
+      * a final-series allocation step ribbon (``alloc_optimal`` at call sites);
+      * baseline event ticks with bilingual HTML receipts; and
+      * an optional hatched projection window.
+
+    ``price`` / ``allocation`` follow the ordinary ``{"dates", "vals"}`` shape.
+    ``regimes`` is a list of ``{start, end, tone}`` dictionaries, where tone is one
+    of bull/bear/neutral/watch. ``events`` carries ``date`` plus label_en/label_zh.
+    ``projection`` carries start/end plus optional label_en/label_zh.
+
+    X coordinates are elapsed calendar time across the complete domain, including
+    the forward window when present. They never use kept-point index, so the ilx
+    extreme-preserving downsampler cannot move a halving/event marker by several
+    days on a multi-year tape.
+    """
+    height = int(height)
+    pairs_all = _clean((price or {}).get("dates"), (price or {}).get("vals"))
+    if len(pairs_all) < 4:
+        return _null_fragment(accent, height, aria_en)
+
+    pairs = _downsample(pairs_all, max_points)
+    domain_start = pairs_all[0][0]
+    domain_end = pairs_all[-1][0]
+    if projection and _date_number(projection.get("end")) is not None:
+        if _date_number(projection.get("end")) > _date_number(domain_end):
+            domain_end = projection.get("end")
+
+    chart_top = _PAD_T
+    ribbon_top = max(chart_top + 48.0, height - 52.0)
+    chart_bot = ribbon_top - 10.0
+    ribbon_bot = height - 18.0
+
+    # Price uses a log scale when values are strictly positive. Crypto spans are
+    # multiplicative; log geometry keeps early years visible without changing labels.
+    raw_vals = [v for _d, v in pairs]
+    use_log = all(v > 0 for v in raw_vals)
+    scaled_vals = [(math.log(v) if use_log else v) for v in raw_vals]
+    vmin, vmax = min(scaled_vals), max(scaled_vals)
+    if vmax == vmin:
+        vmax = vmin + 1.0
+    pad = (vmax - vmin) * 0.08
+    lo, hi = vmin - pad, vmax + pad
+
+    def py(v):
+        sv = math.log(v) if use_log else v
+        return round(chart_bot - (sv - lo) / (hi - lo) * (chart_bot - chart_top), 2)
+
+    xy = []
+    for d, v in pairs:
+        x = _date_x(d, domain_start, domain_end)
+        if x is not None:
+            xy.append((x, py(v)))
+    if len(xy) < 4:
+        return _null_fragment(accent, height, aria_en)
+
+    uid = _hash_id("regime-tape", pairs, extra=f"{domain_end}{height}")
+    price_d = _d_line(xy)
+    plen = _path_len(xy)
+
+    tone_color = {
+        "bull": "var(--up)", "bear": "var(--down)",
+        "neutral": "var(--muted)", "watch": "var(--warn)",
+    }
+    span_svg = []
+    for rg in regimes or []:
+        x0 = _date_x(rg.get("start"), domain_start, domain_end)
+        x1 = _date_x(rg.get("end"), domain_start, domain_end)
+        if x0 is None or x1 is None or x1 <= x0:
+            continue
+        tone = str(rg.get("tone") or "neutral").lower()
+        color = tone_color.get(tone, "var(--muted)")
+        span_svg.append(
+            f'<rect class="ilx-regime-span ilx-regime-{escape(tone)}" '
+            f'x="{x0}" y="{chart_top}" width="{round(x1 - x0, 2)}" '
+            f'height="{round(chart_bot - chart_top, 2)}" style="fill:{color}"/>'
+        )
+
+    projection_defs = ""
+    projection_rect = ""
+    projection_html = ""
+    if projection:
+        x0 = _date_x(projection.get("start"), domain_start, domain_end)
+        x1 = _date_x(projection.get("end"), domain_start, domain_end)
+        if x0 is not None and x1 is not None and x1 > x0:
+            projection_defs = (
+                f'<pattern id="ilxhat-{uid}" width="8" height="8" '
+                f'patternUnits="userSpaceOnUse" patternTransform="rotate(35)">'
+                f'<line class="ilx-projection-hatch" x1="0" y1="0" x2="0" y2="8"/>'
+                f'</pattern>'
+            )
+            projection_rect = (
+                f'<rect class="ilx-projection" x="{x0}" y="{chart_top}" '
+                f'width="{round(x1 - x0, 2)}" height="{round(chart_bot - chart_top, 2)}" '
+                f'fill="url(#ilxhat-{uid})"/>'
+            )
+            le = escape(projection.get("label_en") or "Projection window")
+            lz = escape(projection.get("label_zh") or "观察窗口")
+            projection_html = (
+                f'<span class="ilx-projection-label" style="--x:{round(x0 / _VBW * 100, 2)}%">'
+                f'<span class="l-en">{le}</span><span class="l-zh">{lz}</span></span>'
+            )
+
+    alloc_svg = ""
+    alloc_html = ""
+    alloc_pairs = _clean((allocation or {}).get("dates"), (allocation or {}).get("vals"))
+    if alloc_pairs:
+        # Allocation is already bounded by its engine contract; clamp only for drawing.
+        alloc_xy = []
+        last_val = None
+        for d, v in alloc_pairs:
+            x = _date_x(d, domain_start, domain_end)
+            if x is None:
+                continue
+            cv = max(0.0, min(1.0, v))
+            if last_val is None or cv != last_val or d == alloc_pairs[-1][0]:
+                y = round(ribbon_bot - cv * (ribbon_bot - ribbon_top), 2)
+                alloc_xy.append((x, y))
+                last_val = cv
+        if len(alloc_xy) >= 2:
+            step_d = _d_step(alloc_xy)
+            fill_d = (f'M{alloc_xy[0][0]} {ribbon_bot} '
+                      f'L{alloc_xy[0][0]} {alloc_xy[0][1]} '
+                      + " ".join(
+                          f"H{x} V{y}" for x, y in alloc_xy[1:]
+                      )
+                      + f' L{alloc_xy[-1][0]} {ribbon_bot} Z')
+            alloc_svg = (
+                f'<line class="ilx-alloc-base" x1="0" y1="{ribbon_bot}" '
+                f'x2="{int(_VBW)}" y2="{ribbon_bot}"/>'
+                f'<path class="ilx-alloc-fill" d="{fill_d}"/>'
+                f'<path class="ilx-alloc-step" d="{step_d}"/>'
+            )
+            latest = round(max(0.0, min(1.0, alloc_pairs[-1][1])) * 100)
+            alloc_html = (
+                f'<span class="ilx-alloc-label"><span class="l-en">Model exposure</span>'
+                f'<span class="l-zh">模型仓位</span> · {latest}%</span>'
+            )
+
+    event_svg = []
+    event_html = []
+    for ev in events or []:
+        x = _date_x(ev.get("date"), domain_start, domain_end)
+        if x is None:
+            continue
+        le = escape(ev.get("label_en") or str(ev.get("date") or "Event"))
+        lz = escape(ev.get("label_zh") or ev.get("label_en") or str(ev.get("date") or "事件"))
+        pct = round(x / _VBW * 100, 2)
+        event_svg.append(
+            f'<line class="ilx-event-tick" x1="{x}" y1="{chart_bot}" '
+            f'x2="{x}" y2="{ribbon_bot}"/>'
+        )
+        event_html.append(
+            f'<span class="ilx-event" style="--x:{pct}%" tabindex="0" role="note" '
+            f'data-tip-en="{le}" data-tip-zh="{lz}" aria-label="{le}"><i></i></span>'
+        )
+
+    end_tag = _end_tag(pairs_all[-1][1], value_fmt, "", "")
+    corners = (
+        f'<span class="ilx-d ilx-d0">{escape(str(pairs_all[0][0]))}</span>'
+        f'<span class="ilx-d ilx-d1">{escape(str(domain_end))}</span>'
+    )
+    aria = escape(aria_en or "Regime tape")
+    svg = (
+        f'<svg viewBox="0 0 {int(_VBW)} {height}" preserveAspectRatio="none" '
+        f'aria-hidden="true"><defs>{projection_defs}</defs>'
+        f'{"".join(span_svg)}{projection_rect}'
+        f'<path class="ilx-path ilx-tape-price" d="{price_d}"/>'
+        f'<circle class="ilx-dot ilx-tape-dot" cx="{xy[-1][0]}" cy="{xy[-1][1]}" r="3.2"/>'
+        f'{alloc_svg}{"".join(event_svg)}</svg>'
+    )
+    return (
+        f'<figure class="ilx ilx-regime-tape" '
+        f'style="color:{escape(accent)};--ilx-len:{plen};--ilx-h:{height}px" '
+        f'role="img" aria-label="{aria}">{svg}{end_tag}{alloc_html}'
+        f'{"".join(event_html)}{projection_html}{corners}</figure>'
     )
 
 

@@ -155,6 +155,92 @@
   background: var(--dot, var(--info));
 }
 
+/* ── Regime Tape — cockpit signature ────────────────────────────────────── */
+.ilx-regime-tape { min-height: 190px; }
+.ilx-regime-span { opacity: .075; }
+.ilx-regime-bull { opacity: .09; }
+.ilx-regime-bear { opacity: .085; }
+.ilx-tape-price {
+  stroke-width: 2;
+  filter: drop-shadow(0 0 5px color-mix(in srgb, currentColor 18%, transparent));
+}
+.ilx-tape-dot { r: 3.6; }
+.ilx-projection { opacity: .42; }
+.ilx-projection-hatch {
+  stroke: var(--muted);
+  stroke-width: 1;
+  opacity: .36;
+  vector-effect: non-scaling-stroke;
+}
+.ilx-alloc-base {
+  stroke: var(--line);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.ilx-alloc-fill {
+  fill: color-mix(in srgb, currentColor 15%, transparent);
+  stroke: none;
+}
+.ilx-alloc-step {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.35;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+  opacity: .78;
+  vector-effect: non-scaling-stroke;
+}
+.ilx-event-tick {
+  stroke: var(--text);
+  stroke-width: 1;
+  stroke-dasharray: 2 3;
+  opacity: .34;
+  vector-effect: non-scaling-stroke;
+}
+.ilx-event {
+  --x: 50%;
+  position: absolute;
+  left: var(--x);
+  bottom: 10px;
+  width: 12px;
+  height: 12px;
+  transform: translateX(-50%);
+  display: grid;
+  place-items: center;
+  cursor: help;
+}
+.ilx-event i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--text);
+  border: 1px solid var(--panel);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--text) 18%, transparent);
+}
+.ilx-alloc-label,
+.ilx-projection-label {
+  position: absolute;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 9.5px;
+  line-height: 1;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--panel) 86%, transparent);
+  pointer-events: none;
+}
+.ilx-alloc-label { left: 3px; bottom: 22px; padding: 2px 4px 2px 0; }
+.ilx-projection-label {
+  --x: 75%;
+  left: var(--x);
+  top: 23px; /* clears the right-anchored current-value tag on narrow tapes */
+  padding: 2px 5px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+.ilx-regime-tape .ilx-d { bottom: 0; }
+
 /* ── honest null ─────────────────────────────────────────────────────────── */
 .ilx-null { display: flex; align-items: center; justify-content: center; }
 .ilx-null svg { position: absolute; inset: 0; opacity: .5; }
@@ -174,7 +260,9 @@
     stroke-dashoffset: var(--ilx-len, 600);
   }
   .ilx-area, .ilx-water, .ilx-ref, .ilx-band, .ilx-tag, .ilx-d,
-  .ilx-reflab, .ilx-bandlab, .ilx-chips { opacity: 0; }
+  .ilx-reflab, .ilx-bandlab, .ilx-chips, .ilx-regime-span,
+  .ilx-projection, .ilx-alloc-fill, .ilx-alloc-step, .ilx-event-tick,
+  .ilx-event, .ilx-alloc-label, .ilx-projection-label { opacity: 0; }
   .ilx-dot { transform: scale(0); transform-box: fill-box; transform-origin: center; }
   /* bars scale up from the baseline edge of their own box (fill-box makes the origin
      local to the rect): above-baseline bars grow from their bottom edge, below-baseline
@@ -202,6 +290,21 @@
   .ilx-in .ilx-water, .ilx-in .ilx-ref, .ilx-in .ilx-band {
     animation: ilx-fade 500ms ease 300ms forwards;
   }
+  .ilx-in .ilx-regime-span,
+  .ilx-in .ilx-projection,
+  .ilx-in .ilx-alloc-fill,
+  .ilx-in .ilx-alloc-step,
+  .ilx-in .ilx-event-tick {
+    animation: ilx-fade 500ms ease 260ms forwards;
+  }
+  .ilx-in .ilx-regime-span { animation-name: ilx-fade-regime; }
+  .ilx-in .ilx-projection { animation-name: ilx-fade-projection; }
+  .ilx-in .ilx-event-tick { animation-name: ilx-fade-event; }
+  .ilx-in .ilx-alloc-step { animation-name: ilx-fade-alloc-step; }
+  @keyframes ilx-fade-regime { to { opacity: .085; } }
+  @keyframes ilx-fade-projection { to { opacity: .42; } }
+  @keyframes ilx-fade-event { to { opacity: .34; } }
+  @keyframes ilx-fade-alloc-step { to { opacity: .78; } }
   @keyframes ilx-fade { to { opacity: 1; } }
   /* bands + waterline hold their intrinsic opacity (set on the element) via to:1 →
      override the element's non-1 opacity by re-declaring in the final state */
@@ -229,7 +332,8 @@
 
   /* labels fade in after the draw */
   .ilx-in .ilx-tag, .ilx-in .ilx-d, .ilx-in .ilx-reflab,
-  .ilx-in .ilx-bandlab, .ilx-in .ilx-chips {
+  .ilx-in .ilx-bandlab, .ilx-in .ilx-chips, .ilx-in .ilx-event,
+  .ilx-in .ilx-alloc-label, .ilx-in .ilx-projection-label {
     animation: ilx-fade 400ms ease 780ms forwards;
   }
 }

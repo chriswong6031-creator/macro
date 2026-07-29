@@ -40,6 +40,31 @@ meta:
 # ============================================================
 artifacts:
 
+  crypto-cockpit:
+    path: site/crypto_cockpit.json
+    format: json
+    producer: scripts/build_vector.py
+    known_extra_writers: []
+    owner_program: btc-vector
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: crypto.cockpit/v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    qual_ladder_ref: null
+    notes: >
+      W0 display contract emitted in the same process and with the same as-of as
+      vector.html. It republishes the final gated allocation, Master Signal, and
+      six named primary/receipt placements without new arithmetic. W2 consumers
+      will be the crypto hub H6 tile and landing product card; later brain lenses
+      must quote this artifact rather than re-derive the BTC read.
+
   # --- 27 consumers ---
   regime-latest:
     path: data/regime/latest.json
