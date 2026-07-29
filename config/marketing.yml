@@ -372,6 +372,29 @@ publish:
   # false to return to fully-manual approval in the admin Outbox.
   auto_approve: true       # was false; flagship posts autonomously (tape-gated)
 
+  # HOW WIDE THAT FLAG REACHES (Content Studio W1, masterplan §7, 2026-07-29).
+  #   kinds — the flag turns the pass ON, but only `auto_approve_kinds` items
+  #           from the publish-time lane (provenance publisher_live_movers) may
+  #           clear it. The nightly PLANNED kinds (signal, chart, education,
+  #           macro, receipt, watchlist, event) go back to the operator's Outbox
+  #           and wait for a decision.
+  #   all   — the pre-W1 blanket: every kind, every provenance, no human.
+  #
+  # WHY IT DEFAULTS TO `kinds`. On 2026-07-29 the blanket auto-approved 61
+  # persona posts the operator then aborted reviewing at post 15. The
+  # descriptive publish-time tape posts (mover / theme_list) are generated
+  # seconds before posting from live quotes and re-verified by the live tape
+  # gate — those stay automatic. Diary-register copy is a judgment call and
+  # earns autonomy per (account, kind) on measured approve rates (XG approve
+  # ladder), not by default. Breaking / wire keep their own immediate paths and
+  # are unaffected either way.
+  #
+  # This is the ONE line to flip back to full autonomy. It governs the
+  # `--auto-approve` CLI flag too (the flag documents itself as equivalent to
+  # `auto_approve`); an unknown value falls back to `kinds` with a warning,
+  # because the failure mode of a typo here is publishing unreviewed copy.
+  auto_approve_scope: kinds   # kinds | all
+
   # Global post-time anti-spam floor (cadence masterplan Phase 2): no two posts
   # go out within this many minutes of each other, across ALL accounts — enforced
   # in scripts/marketing_publisher.py (_within_floor), seeded from the last posted
@@ -1280,6 +1303,102 @@ copywriter:
     model_key: "marketing_copy"   # resolved via config.yml llm_models block; sonnet-class
     max_posts_per_run: 60
     daily_token_cap: 300000
+
+    # ── THE NO-FALLBACK LAW (Content Studio LLM-first W1, 2026-07-29) ────────
+    # research/MARKETING_CONTENT_STUDIO_LLM_FIRST_MASTERPLAN_BY_FABLE.md §0
+    # gate 1. Operator directive after reading the 2026-07-29 outbox batch
+    # ("anything remotely requiring intelligence needs LLM"): on the PLANNED
+    # kinds — signal, chart, education, macro, receipt, watchlist, event — a
+    # post whose model copy fails validation + one repair + the cold-read critic
+    # is DROPPED and counted, never replaced by template prose. When the whole
+    # lane is mute the nightly emits NOTHING for those kinds and prints one
+    # ::error. Read by content_studio.llm_required (plan side, drops the item)
+    # and outbox.emit_from_content_plan (emit side, refuses any planned item
+    # whose mode is not llm/llm_repair).
+    #
+    # The WIRE lanes are untouched by this key: hot tape, press/breaking and the
+    # publish-time mover/theme lists keep their deterministic fallback, because
+    # wire register survives templating and a persona's diary voice does not.
+    #
+    # EMERGENCY ESCAPE HATCH ONLY. Setting this false brings back the exact
+    # generator the operator aborted review on — the whole 2026-07-29 batch was
+    # template output. If the lane is down, the honest posture is to post
+    # nothing until it is back.
+    required: true
+
+    # Per-post budget. v1 asked for SIXTY posts in ONE 6000-token call (~100
+    # tokens/post for ~10k tokens of required JSON): it truncated, the JSON
+    # parse failed, the function returned None, and every post silently fell
+    # back to templates — the persona lane had been armed and credentialed since
+    # the 2026-07-26 incident fix and had never once produced a live post
+    # (masterplan §1). v2 makes ONE call per post, so a truncation or a provider
+    # error costs one item instead of the night.
+    per_post_max_tokens: 400
+    max_workers: 4           # bounded parallelism; the governor step is not the render path
+
+    # Cold-read critic (masterplan §0 gate 5) — a SECOND model pass on fresh
+    # context (the text, its kind and shape, the whitelist; no persona card, no
+    # fact packet) asking the only question the deterministic validators cannot:
+    # would a reader with zero context understand this, and does it sound like a
+    # person typing? De-escalation only — the critic may never add a fact or
+    # rewrite a number. Its own failure is NOT fatal to an item (the validators
+    # still ran); the WRITER failing is.
+    critic:
+      enabled: true
+      max_tokens: 200
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Selection layer — what the Content Studio is ALLOWED to plan tonight
+# (engine/marketing/content_studio.py: selection_cfg is the single reader).
+#
+# LLM-first masterplan §5, operator directive 2026-07-29. On 2026-07-29 the
+# planner put ARES on five desks with the same entry, planned LKFN/GPI/CBOE the
+# day after they posted, and shipped "231 of 231 names bullish" as a fact —
+# because nothing had ever asked "did we already post this name?" before
+# allocating. These four knobs are that question, made explicit.
+#
+# Cooldowns are TRADING days, not calendar days: a Friday post is still one
+# session old on Monday, and a calendar cooldown hands every weekend a free pass.
+# A cooled ticker comes back early ONLY on a genuinely new fact class (earnings
+# day, |move| >= 4%, level break, streak-rarity record), and the post must then
+# lead with that fact.
+# ─────────────────────────────────────────────────────────────────────────────
+selection:
+  # Sessions a name is off the board for coverage kinds (watchlist/chart/receipt).
+  ticker_cooldown_days: 3
+  # Longer for a directional call: a repeat inside a week reads as the same
+  # trade re-issued, which is what the LKFN two-day repeat looked like.
+  signal_cooldown_days: 5
+  # Accounts that may carry one (ticker, day). Survivors get DISJOINT angles —
+  # two desks on one fact is coverage, five is a coordinated network (the exact
+  # text-similarity fingerprint X has clustered on since 2026-03).
+  max_accounts_per_ticker_day: 2
+  # A signal post carries entry/stop numbers. One desk's call, or nobody's.
+  max_signal_accounts_per_day: 1
+  # Information-content gate on count facts: hit-rate at or outside this band
+  # saturates its universe and carries nothing ("231 of 231 names bullish").
+  degenerate_stat_band: [0.05, 0.95]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Shape mixer — the corpus-grounded post-shape quotas (masterplan §0 gate 4)
+#
+# The 2026-07-29 batch was 65/65 headline + 2-4 clipped sentences. Measured on a
+# 286-post fintwit corpus (17 large accounts, 2026-07-29) that exact shape is the
+# RAREST real shape at 2.8%: ~49% of real posts are one dense line, ~17%
+# headline+blank+body, ~34% multi-line stacks. Shape is therefore ENFORCED by a
+# deterministic date-seeded mixer (content_studio.shape_plan — no RNG), not
+# requested politely in a prompt, because a model asked to "vary the shape"
+# converges on one skeleton inside a single batch every time.
+#
+# one_liner_min is a FLOOR, two_part_max is a CEILING; the rest goes to
+# stacks/lists, biased toward whatever the desk has leaned on least over the
+# 14-day window in data/marketing/shape_ledger.json (written by the nightly
+# governor step only).
+# ─────────────────────────────────────────────────────────────────────────────
+shapes:
+  quotas:
+    one_liner_min: 0.25
+    two_part_max: 0.30
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Breaking news ingestion (D05 W0)

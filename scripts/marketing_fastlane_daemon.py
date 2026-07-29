@@ -596,6 +596,11 @@ def _merge_wires_window(
     except (TypeError, ValueError):
         max_age_h = _DEFAULT_WIRES_MAX_AGE_H
     if max_age_h > 0:
+        # `now` is threaded from the tick clock (tests freeze it) — computing it
+        # here from the wall clock made every frozen-fixture suite a date bomb:
+        # tests/test_marketing_press_copy.py went red at 2026-07-29T12:00Z when
+        # its 2026-07-27T12:0x fixtures crossed the 48h window (the documented
+        # fixture-date-plus-wall-clock-gate class; detonated on ci-pack-3).
         reference_now = now or datetime.now(timezone.utc)
         if reference_now.tzinfo is None:
             reference_now = reference_now.replace(tzinfo=timezone.utc)

@@ -519,7 +519,7 @@ def render_signal_chart(
     dates: list[str],
     closes: list[float],
     *,
-    marker_index: int,
+    marker_index: int | None,
     width: int = 560,
     height: int = 300,
     subtitle: str | None = None,
@@ -530,6 +530,15 @@ def render_signal_chart(
     Contains: price polyline, BUY marker at marker_index, gridlines,
     min/max/last labels, date labels, brand mark.
 
+    marker_index=None renders the SAME card with NO BUY guide/triangle/label —
+    the tape fallback (Content Studio W1 CI fix, 2026-07-29): when the v2
+    OHLCV candlestick cannot load (name outside the parquet tree, or a
+    pyarrow-less env), a "watching, not buying yet" post used to lose its
+    chart entirely and then defer forever at publish under the
+    ticker-post-carries-a-chart law. A markerless line chart is an honest
+    chart with no claim attached; a BUY label on that post would be a lie,
+    which is why the marked form was never a legal fallback for it.
+
     No MACD, RSI, EMA, or indicator text anywhere in output.
     No <script> tags. Transparent background.
     """
@@ -537,8 +546,9 @@ def render_signal_chart(
     if n < 2:
         return _empty_svg(width, height, ticker)
 
-    # Clamp marker_index
-    marker_index = max(0, min(marker_index, n - 1))
+    # Clamp marker_index (None = markerless tape card, no BUY geometry)
+    if marker_index is not None:
+        marker_index = max(0, min(marker_index, n - 1))
 
     # Layout constants
     PAD_LEFT = 52
@@ -588,15 +598,27 @@ def render_signal_chart(
         + f" {PAD_LEFT + chart_w:.1f},{area_bottom:.1f}"
     )
 
-    # BUY marker geometry
-    bx = px(marker_index)
-    by = py(closes[marker_index])
-    tri_size = 8
-    tri_pts = (
-        f"{bx:.1f},{by - tri_size:.1f} "
-        f"{bx - tri_size * 0.7:.1f},{by + tri_size * 0.3:.1f} "
-        f"{bx + tri_size * 0.7:.1f},{by + tri_size * 0.3:.1f}"
-    )
+    # BUY marker geometry (empty when markerless)
+    buy_svg = ""
+    if marker_index is not None:
+        bx = px(marker_index)
+        by = py(closes[marker_index])
+        tri_size = 8
+        tri_pts = (
+            f"{bx:.1f},{by - tri_size:.1f} "
+            f"{bx - tri_size * 0.7:.1f},{by + tri_size * 0.3:.1f} "
+            f"{bx + tri_size * 0.7:.1f},{by + tri_size * 0.3:.1f}"
+        )
+        buy_svg = (
+            f'<line x1="{bx:.1f}" y1="{PAD_TOP}" x2="{bx:.1f}" '
+            f'y2="{PAD_TOP + chart_h}" stroke="#3ddc84" stroke-width="1" '
+            f'stroke-dasharray="3,3" opacity="0.6"/>\n  '
+            f'<polygon points="{tri_pts}" fill="#3ddc84" opacity="0.95"/>\n  '
+            f'<circle cx="{bx:.1f}" cy="{by:.1f}" r="3.5" fill="#3ddc84" '
+            f'stroke="#0d1117" stroke-width="1"/>\n  '
+            f'<text x="{bx:.1f}" y="{by - tri_size - 4:.1f}" fill="#3ddc84" '
+            f'font-size="10" font-weight="bold" text-anchor="middle">BUY</text>'
+        )
 
     # Min/Max/Last labels
     min_idx = closes.index(price_min)
@@ -638,14 +660,8 @@ def render_signal_chart(
   <polyline points="{pts}" fill="none" stroke="#38e0d4" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
   <!-- last price dot -->
   {last_dot}
-  <!-- BUY vertical guide -->
-  <line x1="{bx:.1f}" y1="{PAD_TOP}" x2="{bx:.1f}" y2="{PAD_TOP + chart_h}" stroke="#3ddc84" stroke-width="1" stroke-dasharray="3,3" opacity="0.6"/>
-  <!-- BUY triangle -->
-  <polygon points="{tri_pts}" fill="#3ddc84" opacity="0.95"/>
-  <!-- BUY price dot -->
-  <circle cx="{bx:.1f}" cy="{by:.1f}" r="3.5" fill="#3ddc84" stroke="#0d1117" stroke-width="1"/>
-  <!-- BUY label -->
-  <text x="{bx:.1f}" y="{by - tri_size - 4:.1f}" fill="#3ddc84" font-size="10" font-weight="bold" text-anchor="middle">BUY</text>
+  <!-- marker geometry (empty on the markerless tape card) -->
+  {buy_svg}
   <!-- min/max/last labels -->
   <text x="{min_x:.1f}" y="{py(price_min) + 14:.1f}" fill="#93a0b4" font-size="9" text-anchor="middle">{_fmt_price(price_min)}</text>
   <text x="{max_x:.1f}" y="{py(price_max) - 5:.1f}" fill="#93a0b4" font-size="9" text-anchor="middle">{_fmt_price(price_max)}</text>

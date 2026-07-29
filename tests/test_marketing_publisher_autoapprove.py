@@ -52,12 +52,23 @@ def _seed_queued_item(tmp_path: Path, *, text: str = "$PLTR reclaimed the 50-day
 def _write_publish_cfg(tmp_path: Path, *, channel: str = "buf-chan-123",
                        links_allowed: bool = True, auto_approve: bool = False,
                        cap: int = 2, auto_approve_kinds: str | None = None,
-                       floor_min: int = 0) -> None:
+                       floor_min: int = 0,
+                       auto_approve_scope: str = "all") -> None:
     """Write a minimal config/marketing.yml with publish + sentinel blocks.
 
     auto_approve_kinds: when given (e.g. "[mover, theme_list]"), adds the scoped
     exception key so publish-time-lane items of those kinds auto-approve even
     while require_approval stays true and auto_approve stays false.
+
+    auto_approve_scope: "all" HERE ON PURPOSE, and it is not the product default.
+    The live default is "kinds" (Content Studio W1, masterplan §7: the global
+    flag no longer clears nightly planned kinds — they wait for an operator
+    decision). Every test in this file predates that split and exercises the
+    auto-approve MACHINERY — gates, caps, floor, jitter, immediates — on a plain
+    content_studio signal, so they pin the unrestricted blanket explicitly and
+    keep testing what they were written to test. The scope's own semantics
+    (planned kind NOT auto-approved, mover still auto-approved) are pinned in
+    tests/test_marketing_selection.py.
     """
     cfg_dir = tmp_path / "config"
     cfg_dir.mkdir(parents=True, exist_ok=True)
@@ -69,6 +80,7 @@ def _write_publish_cfg(tmp_path: Path, *, channel: str = "buf-chan-123",
         "  backend: buffer\n"
         "  require_approval: true\n"
         f"  auto_approve: {'true' if auto_approve else 'false'}\n"
+        f"  auto_approve_scope: {auto_approve_scope}\n"
         f"  min_minutes_between_any_posts: {floor_min}\n"
         + scoped +
         "  channels:\n"
@@ -555,12 +567,17 @@ def test_scoped_does_not_approve_signal_of_wrong_kind(monkeypatch, tmp_path):
 
 
 def test_global_auto_approve_true_still_approves_everything(monkeypatch, tmp_path):
-    """Global auto_approve: true is unchanged by the scoping — any kind /
-    provenance auto-approves (the scoped list is a superset here, not a filter)."""
+    """Global auto_approve: true UNDER SCOPE "all" approves any kind/provenance.
+
+    `auto_approve_scope: all` is the operator's one-line reversal of the W1
+    kind scoping (masterplan §7) — this test is what pins that the reversal
+    really restores the pre-W1 blanket. The DEFAULT scope ("kinds") refusing this
+    same content_studio signal is pinned in tests/test_marketing_selection.py.
+    """
     from engine.marketing.outbox import current_statuses
     # Global ON; the scoped list is present but must be ignored (global wins).
     _write_publish_cfg(tmp_path, auto_approve=True,
-                       auto_approve_kinds="[mover]")
+                       auto_approve_kinds="[mover]", auto_approve_scope="all")
     qid = _seed_queued_item(tmp_path)   # a plain content_studio signal
 
     fake = _FakePublisher(ok=True)

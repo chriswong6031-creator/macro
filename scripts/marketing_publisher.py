@@ -377,6 +377,45 @@ def _auto_approve_cfg(pub_cfg: dict) -> bool:
     return str(v).strip().lower() in {"1", "true", "yes"}
 
 
+#: publish.auto_approve_scope values. "kinds" is the W1 default.
+_AUTO_APPROVE_SCOPES: frozenset[str] = frozenset({"kinds", "all"})
+
+
+def _auto_approve_scope_cfg(pub_cfg: dict) -> str:
+    """publish.auto_approve_scope → "kinds" (default) | "all".
+
+    WHAT THIS NARROWS (masterplan §7, operator directive 2026-07-29). Until now
+    `publish.auto_approve: true` meant EVERY kind: the nightly's own persona
+    posts cleared themselves and went to X with no human in the loop. On
+    2026-07-29 that auto-approved 61 posts the operator then aborted reviewing in
+    disgust — one lever, no way to keep the descriptive publish-time tape posts
+    automatic while the diary-register posts wait for a decision.
+
+    "kinds" splits the lever: the global flag still turns the pass ON, but only
+    `publish.auto_approve_kinds` items from the publish-time lane may clear it
+    (mover/theme_list today; breaking and the wire lanes keep their own
+    immediate paths). Planned kinds — signal, chart, education, macro, receipt,
+    watchlist, event — wait for an operator decision, which is where the
+    approve-ladder gets its label stream from (masterplan §7).
+
+    "all" restores the pre-W1 behaviour exactly, and is the ONE config line the
+    operator flips to get full autonomy back.
+
+    Parsed strictly and fail-CLOSED: an unknown value falls back to "kinds" with
+    a warning, because the failure mode of a typo here is publishing unreviewed
+    copy. The scope governs `--auto-approve` too — the flag's help calls itself
+    equivalent to the config key, and two lanes with different scopes would be a
+    trap rather than a convenience.
+    """
+    raw = pub_cfg.get("auto_approve_scope", "kinds")
+    v = str(raw).strip().lower() if raw is not None else "kinds"
+    if v not in _AUTO_APPROVE_SCOPES:
+        log.warning("publish.auto_approve_scope: unknown value %r — using 'kinds' "
+                    "(valid: %s)", raw, ", ".join(sorted(_AUTO_APPROVE_SCOPES)))
+        return "kinds"
+    return v
+
+
 def _auto_approve_kinds_cfg(pub_cfg: dict) -> frozenset[str]:
     """publish.auto_approve_kinds → the set of kinds that may auto-approve even
     while publish.require_approval is true, but ONLY for publish-time-lane items
@@ -744,7 +783,11 @@ def main(argv: list[str] | None = None) -> int:
                         help="Auto-advance queued→approved for items that pass ALL gates "
                              "(validate_postable clean, under the daily cap, channel id set) "
                              "before selecting approved items. OFF by default; also enabled by "
-                             "config publish.auto_approve. In DRY-RUN this only REPORTS what it "
+                             "config publish.auto_approve. HONORS publish.auto_approve_scope: "
+                             "under the default 'kinds' only publish.auto_approve_kinds items "
+                             "from the publish-time lane clear, and planned nightly kinds wait "
+                             "for an operator decision; 'all' is the unrestricted blanket. "
+                             "In DRY-RUN this only REPORTS what it "
                              "would approve — it never mutates the ledger.")
     parser.add_argument("--account", default=None,
                         help="Only process this account id (default: all accounts)")
@@ -958,7 +1001,13 @@ def main(argv: list[str] | None = None) -> int:
 
     auto_approve_on = bool(args.auto_approve) or _auto_approve_cfg(pub_cfg)
     allowed_kinds = _auto_approve_kinds_cfg(pub_cfg)
-    scoped_on = (not auto_approve_on) and bool(allowed_kinds)
+    # W1: the global flag is no longer a blanket. Under the default
+    # auto_approve_scope "kinds" it turns the pass ON but the kind scope still
+    # binds, so nightly planned-kind posts wait for an operator decision;
+    # "all" restores the pre-W1 blanket (see _auto_approve_scope_cfg).
+    auto_approve_scope = _auto_approve_scope_cfg(pub_cfg)
+    auto_approve_unscoped = auto_approve_on and auto_approve_scope == "all"
+    scoped_on = (not auto_approve_unscoped) and bool(allowed_kinds)
     auto_approved: list[str] = []
     if post_now:
         missing = sorted(i for i in post_now if i not in items_by_id)
@@ -972,9 +1021,11 @@ def main(argv: list[str] | None = None) -> int:
             only_ids=post_now, cap_for=_cap_for, halted=set(_halts),
         )
     elif auto_approve_on or scoped_on:
-        # allowed_kinds param: None when the global flag is ON (unrestricted,
-        # legacy), the configured set when only the scoped exception is active.
-        _kinds_param = None if auto_approve_on else allowed_kinds
+        # allowed_kinds param: None ONLY when the operator asked for the
+        # unrestricted blanket (auto_approve on AND scope "all"); otherwise the
+        # configured kind set binds, whether the pass was turned on by the global
+        # flag or by the scoped exception alone.
+        _kinds_param = None if auto_approve_unscoped else allowed_kinds
         auto_approved = _auto_approve_pass(
             _outbox, state, pub_cfg, cap=cap, now=now, live=live,
             account=args.account, posted_today=posted_today,
@@ -1001,7 +1052,9 @@ def main(argv: list[str] | None = None) -> int:
         "pt_generated=%d pt_dropped=%d",
         mode, backend, cap, "ON" if kill_on else "off", bool(args.live),
         ("post-now" if post_now
-         else "on" if auto_approve_on else ("scoped" if scoped_on else "off")),
+         else "on(all)" if auto_approve_unscoped
+         else "on(kinds)" if auto_approve_on
+         else ("scoped" if scoped_on else "off")),
         (f" post_now={','.join(sorted(post_now))}" if post_now else ""),
         len(approved_due), len(stuck_posting), len(auto_approved),
         pt_generated, pt_dropped,
@@ -1744,14 +1797,18 @@ def dry_run_report(root=None, *, account: str | None = None,
         # admin dry-run mirrors what a live run would auto-approve.
         auto_on = _auto_approve_cfg(pub_cfg)
         allowed_kinds = _auto_approve_kinds_cfg(pub_cfg)
-        scoped_on = (not auto_on) and bool(allowed_kinds)
+        # Same scope resolution as main() — the admin preview must mirror what a
+        # live run would do, or the operator reviews a queue the runner will not
+        # produce (the whole point of a dry-run report).
+        auto_unscoped = auto_on and _auto_approve_scope_cfg(pub_cfg) == "all"
+        scoped_on = (not auto_unscoped) and bool(allowed_kinds)
         would_auto: list[dict] = []
         if auto_on or scoped_on:
             ids = _auto_approve_pass(
                 _outbox, state, pub_cfg, cap=cap, now=now, live=False,
                 account=account, posted_today=posted_today,
                 validate_postable=validate_postable, root=r,
-                allowed_kinds=(None if auto_on else allowed_kinds),
+                allowed_kinds=(None if auto_unscoped else allowed_kinds),
                 cap_for=_cap_for, halted=set(_halts),
             )
             for iid in ids:
