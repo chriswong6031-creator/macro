@@ -247,12 +247,12 @@
   .mx td.feat.has-tip { cursor:help; }
   .mx td.feat.has-tip .ft { border-bottom:1px dotted var(--hair-2); }
   .mx td.feat:hover, .mx td.feat:focus-within { z-index:30; }
-  .mx .tipbox { position:absolute; left:16px; top:calc(100% - 4px); z-index:80; width:min(280px,64vw);
+  .mx .tipbox { position:fixed; left:-9999px; top:-9999px; z-index:80; width:min(280px,64vw);
     background:var(--ink); color:var(--bg); font-size:11.5px; font-weight:400; line-height:1.5;
     border-radius:9px; padding:9px 12px; box-shadow:0 12px 30px -12px rgba(18,26,45,.55);
     opacity:0; visibility:hidden; transform:translateY(3px); pointer-events:none; white-space:normal;
     transition:opacity .18s, transform .18s, visibility 0s .18s; }
-  .mx .tipbox.up { top:auto; bottom:calc(100% - 4px); transform:translateY(-3px); }
+  .mx .tipbox.up { transform:translateY(-3px); }
   .mx td.feat:hover .tipbox, .mx td.feat:focus-within .tipbox {
     opacity:1; visibility:visible; transform:none; transition:opacity .18s, transform .18s; }
   .mx .feat .mchip { display:inline-block; font-family:var(--display); font-weight:800; font-size:8px;
@@ -282,7 +282,7 @@
   .faq-more a:hover { color:var(--blue-ink); }
 
   /* ── disclaimer ─────────────────────────────────────────────────────── */
-  .disclaimer { margin:44px auto 0; max-width:820px; padding:16px 18px; border:1px solid var(--hair);
+  .disclaimer { margin:44px auto 40px; max-width:820px; padding:16px 18px; border:1px solid var(--hair);
     border-radius:12px; background:var(--surface-2); color:var(--muted); font-size:11.8px; line-height:1.6; }
   .disclaimer b { color:var(--ink); font-weight:600; }
 
@@ -411,14 +411,14 @@
       {# ---- FREE ---- #}
       <section class="tier" aria-label="Free plan">
         <h3>{{ t('Free', '免费') }}</h3>
-        <p class="who">{{ t('A real taste of the desk — sample dashboards and one research report.', '桌面的真实体验——样板仪表盘与一份研究报告。') }}</p>
+        <p class="who">{{ t('Start with the live macro read and three signals in every daily list.', '从实时宏观研判与每个每日列表中的三条信号开始。') }}</p>
         <div class="price">$0</div>
         <p class="bill"><span class="l-en">No card. Sign in to save your watchlist.</span><span class="l-zh">无需绑卡。登录即可保存自选。</span></p>
         <ul class="tf">
-          <li><b>{{ t('Sample dashboards', '样板仪表盘') }}</b> — {{ t('macro, news, methodology', '宏观、新闻、方法论') }}</li>
+          <li><b>{{ t('US macro dashboard', '美国宏观仪表盘') }}</b> — {{ t('the full read; drill-downs unlock after signup', '完整研判；注册后解锁下钻详情') }}</li>
+          <li><b>{{ t('3 signals per daily list', '每个每日列表 3 条信号') }}</b> — {{ t('visitors preview 1 before signup', '访客注册前可预览 1 条') }}</li>
           <li>{{ t('One research report', '一份研究报告') }}</li>
           <li>{{ t('Special situations', '特殊事件') }} — <b>{{ t('the 3 newest filings', '最新 3 份申报') }}</b></li>
-          <li>{{ t('China special situations', '中国特殊事件') }} — <b>{{ t('the full overhang read + the 3 nearest unlocks', '完整压力概览 + 最近 3 笔解禁') }}</b></li>
           <li>{{ t('Committee &amp; brief — a teaser', '委员会与简报 — 预览') }}</li>
           <li>{{ t('Mastermind chat', '操盘大脑对话') }} — <b>{{ t('5 quick questions a week', '每周 5 个快速提问') }}</b></li>
           <li>{{ t('Charts terminal', '图表终端') }} — <b>{{ t('free for everyone', '所有人免费') }}</b></li>
@@ -444,7 +444,6 @@
           <li><b>{{ t('All dashboards', '所有仪表盘') }}</b> — {{ t('markets, desks, heatmaps, baskets, sectors, flow', '市场、桌面、热力图、篮子、板块、资金流') }}</li>
           <li><b>{{ t('Every research report', '全部研究报告') }}</b> + {{ t('the intelligence hub', '情报中心') }}</li>
           <li><b>{{ t('The special situations desk', '完整特殊事件交易台') }}</b> — {{ t('activist, M&amp;A, spin-offs, take-privates', '维权、并购、分拆、私有化') }}</li>
-          <li><b>{{ t('The China event desk', '完整中国事件交易台') }}</b> — {{ t('every named unlock, inquiry letter, buyback and pledge risk', '全部解禁、问询函、回购与质押风险个股') }}</li>
           <li>{{ t('Committee, brief &amp; track record', '委员会、简报与业绩记录') }} — {{ t('in full', '完整版') }}</li>
           <li>{{ t('Mastermind chat', '操盘大脑对话') }} — <b>{{ t('300 a month', '每月 300 次') }}</b></li>
           <li>{{ t('Terminal live options', '终端实时期权') }} — <b>{{ t('included', '含') }}</b></li>
@@ -522,7 +521,7 @@
           <tr class="grp"><td colspan="4">{{ t('DASHBOARDS &amp; DESKS', '仪表盘与交易台') }}</td></tr>
           <tr>
             <td class="feat has-tip"><span class="ft">{{ t('Dashboards', '仪表盘') }}</span><span class="tipbox">{{ t('Markets, desks, heatmaps, baskets, sectors, options &amp; flow, smart-money and cycle — rebuilt nightly.', '市场、桌面、热力图、篮子、板块、期权与资金流、聪明钱与周期——每晚重建。') }}</span></td>
-            <td class="val">{{ t('Sample only', '仅样板') }}</td>
+            <td class="val">{{ t('US macro read', '美国宏观研判') }}<small>{{ t('details after signup', '注册后查看详情') }}</small></td>
             <td class="val">{{ t('All markets &amp; desks', '所有市场与桌面') }}</td>
             <td class="val">{{ t('Everything', '全部') }}</td>
           </tr>
@@ -539,10 +538,10 @@
             <td class="val">{{ t('Whole board', '完整看板') }}</td>
           </tr>
           <tr>
-            <td class="feat has-tip"><span class="ft">{{ t('China special situations', '中国特殊事件') }}</span><span class="tipbox">{{ t('Unlocks · inquiry letters · earnings previews · buybacks · pledge stress · block trades.', '解禁 · 问询函 · 业绩预告 · 回购 · 质押压力 · 大宗交易。') }}</span></td>
-            <td class="val">{{ t('All 7 gauges + 3 unlocks', '全部 7 条线 + 3 笔解禁') }}</td>
-            <td class="val">{{ t('Every name', '全部个股') }}</td>
-            <td class="val">{{ t('Every name', '全部个股') }}</td>
+            <td class="feat has-tip"><span class="ft">{{ t('Daily stock signals', '每日个股信号') }}</span><span class="tipbox">{{ t('Anonymous visitors preview one item in every list; Free accounts see three; paid plans open the full book.', '未注册访客每个列表可预览 1 条；免费账户可查看 3 条；付费方案开放完整名单。') }}</span></td>
+            <td class="val">{{ t('3 / list / day', '每列表每天 3 条') }}<small>{{ t('1 before signup', '注册前 1 条') }}</small></td>
+            <td class="val">{{ t('Full book', '完整名单') }}</td>
+            <td class="val">{{ t('Full book', '完整名单') }}</td>
           </tr>
           <tr>
             <td class="feat"><span class="ft">{{ t('Committee, brief &amp; track record', '委员会、简报与业绩记录') }}</span></td>
@@ -779,6 +778,27 @@
     var planButtons = $$('[data-mx-plan]', card);
     var tipCells = $$('td.feat.has-tip', card);
     var mobile = window.matchMedia('(max-width:760px)');
+    var activeDesktopTip = null;
+
+    function placeDesktopTip(cell) {
+      if (mobile.matches || !cell) return;
+      var tip = $('.tipbox', cell);
+      if (!tip) return;
+      activeDesktopTip = cell;
+      var cellRect = cell.getBoundingClientRect();
+      var width = Math.min(280, Math.max(210, window.innerWidth - 24));
+      tip.style.width = width + 'px';
+      /* Put the explanation beside the feature-name column instead of below it.
+         That keeps it out of neighbouring feature rows and escapes the matrix's
+         horizontal overflow clipping. */
+      var left = cellRect.right + 10;
+      if (left + width > window.innerWidth - 12) left = Math.max(12, cellRect.left - width - 10);
+      var height = tip.offsetHeight || 90;
+      var top = Math.max(12, Math.min(cellRect.top + (cellRect.height - height) / 2, window.innerHeight - height - 12));
+      tip.style.left = Math.round(left) + 'px';
+      tip.style.top = Math.round(top) + 'px';
+      tip.style.bottom = 'auto';
+    }
 
     planButtons.forEach(function (button) {
       button.addEventListener('click', function () {
@@ -794,6 +814,12 @@
     }
     tipCells.forEach(function (cell) {
       cell.setAttribute('tabindex', '0');
+      cell.addEventListener('pointerenter', function () { placeDesktopTip(cell); });
+      cell.addEventListener('focusin', function () { placeDesktopTip(cell); });
+      cell.addEventListener('pointerleave', function () { if (activeDesktopTip === cell) activeDesktopTip = null; });
+      cell.addEventListener('focusout', function (e) {
+        if (!cell.contains(e.relatedTarget) && activeDesktopTip === cell) activeDesktopTip = null;
+      });
       cell.addEventListener('click', function () {
         if (!mobile.matches) return;
         var open = cell.classList.contains('tip-open');
@@ -810,9 +836,18 @@
       });
     });
     /* leaving the mobile breakpoint must not strand an expanded row open */
-    var onChange = function () { if (!mobile.matches) closeTips(null); };
+    var onChange = function () {
+      if (!mobile.matches) closeTips(null);
+      activeDesktopTip = null;
+    };
     if (mobile.addEventListener) mobile.addEventListener('change', onChange);
     else if (mobile.addListener) mobile.addListener(onChange);
+    window.addEventListener('scroll', function () {
+      if (activeDesktopTip) placeDesktopTip(activeDesktopTip);
+    }, { passive:true });
+    window.addEventListener('resize', function () {
+      if (activeDesktopTip) placeDesktopTip(activeDesktopTip);
+    });
   })();
 
   /* The API reports Stripe redemptions plus the operator's enforced daily withdrawal of

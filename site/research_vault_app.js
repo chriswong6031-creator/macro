@@ -740,6 +740,17 @@
   }
 
   /* gate/message panel (shown in place of the canvas) */
+  function openLatestSignin() {
+    if (window.MMOnboard && typeof window.MMOnboard.open === 'function') {
+      window.MMOnboard.open('signin', {});
+      return;
+    }
+    if (window.MDXAuth && typeof window.MDXAuth.open === 'function') {
+      window.MDXAuth.open('signin');
+      return;
+    }
+    location.href = '/?signin=1&ret=/research_vault.html';
+  }
   function showGate(kind) {
     var stage = $('vstage');
     var icon, h, p, cta = '';
@@ -763,7 +774,7 @@
     }
     stage.innerHTML = '<div class="vgate">' + icon + '<h4>' + esc(h) + '</h4><p>' + esc(p) + '</p>' + cta + '</div>';
     var sb = stage.querySelector('[data-gate="signin"]');
-    if (sb) sb.addEventListener('click', function () { if (window.MDXAuth && window.MDXAuth.signIn) window.MDXAuth.signIn(); else if (window.MDXAuth && window.MDXAuth.open) window.MDXAuth.open(); });
+    if (sb) sb.addEventListener('click', openLatestSignin);
     // pager off
     V.pages = 0; updatePager();
     $('vthumbs').innerHTML = '';
@@ -1227,7 +1238,7 @@
     $('zoom-out').addEventListener('click', function () { zoomBy(-1); });
     $('fit-w').addEventListener('click', fitWidth);
     $('dl-btn-ok').addEventListener('click', doDownload);
-    $('dl-btn-anon').addEventListener('click', function () { if (window.MDXAuth && window.MDXAuth.signIn) window.MDXAuth.signIn(); else if (window.MDXAuth && window.MDXAuth.open) window.MDXAuth.open(); });
+    $('dl-btn-anon').addEventListener('click', openLatestSignin);
     $('vrelated').addEventListener('click', function (e) { var b = e.target.closest('[data-open]'); if (b) openViewer(b.getAttribute('data-open')); });
     // in-document find: live search as you type, Enter/Shift+Enter to step matches
     var _findTimer = null;

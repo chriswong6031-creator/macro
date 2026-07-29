@@ -183,7 +183,7 @@
     sumPlusInsider:["Everything in Free, plus", "免费版全部功能，另加"],
     sumPlusPro:   ["Everything in Insider, plus", "Insider 全部功能，另加"],
     getFree1:     ["The daily read + <b>every macro dashboard</b>", "每日研判 + <b>全部宏观看板</b>"],
-    getFree2:     ["<b>6 buy signals a day</b> with a public track record", "<b>每天 6 条买入信号</b>，战绩公开可查"],
+    getFree2:     ["<b>3 signals per daily list</b> with a public track record", "<b>每个每日列表 3 条信号</b>，战绩公开可查"],
     getFree3:     ["The full Terminal — live charts, no install", "完整 Terminal——实时图表，无需安装"],
     missIns1:     ["300 Flash AI answers + 10 Pro AI dives a month", "每月 300 次 Flash AI + 10 次 Pro AI 深度分析"],
     missIns2:     ["Intraday options flow, Insider & Congress desks", "日内期权流、内部人与国会台席"],
@@ -305,7 +305,7 @@
       { l: ["13F institutional flows", "13F 机构资金流"],  v: [0, 1, 1] }
     ] },
     { g: ["SIGNALS", "信号"], rows: [
-      { l: ["Daily buy signals", "每日买入信号"], v: [["6 / day", "6 条/天"], ["Full book", "完整名册"], ["Full book", "完整名册"]] },
+      { l: ["Daily buy signals", "每日买入信号"], v: [["3 / list", "每列表 3 条"], ["Full book", "完整名册"], ["Full book", "完整名册"]] },
       { l: ["Track record & autopsies", "公开战绩 & 复盘"], v: [1, 1, 1] },
       { l: ["Daily AI morning brief", "每日 AI 晨间简报"],  v: [0, 1, 1] }
     ] },
@@ -2217,8 +2217,10 @@
     stashSave();
   }
   // Post-login landing: the ?ret= share/deep-link target if the registration
-  // wall (app/regwall.py) set one, else the signed-in HOME hub (prefix-aware
-  // start.html; pages under /sectors/ need "../"). Now that the SEO estate
+  // wall (app/regwall.py) set one, else the signed-in HOME hub at the site root.
+  // Keep the fallback root-relative: a relative "start.html" from a product page
+  // resolves to /products/start.html and strands the customer after checkout.
+  // Now that the SEO estate
   // (/stocks/, /tools/, /learn/, /blog/) is public, the wall only fires on
   // genuinely gated pages — so returning a visitor to the exact page they were
   // sent or shared is the right call. A generic sign-in (no ret) lands on the
@@ -2231,7 +2233,7 @@
     } catch (e) { /* ignore */ }
     return "";
   }
-  function loginDest() { return retTarget() || (_pfx() + "start.html"); }
+  function loginDest() { return retTarget() || "/start.html"; }
   // ── Silent wall-resume (sticky login) ───────────────────────────────────────
   // The registration wall (app/regwall.py) verifies the ~1-hour ACCESS token
   // server-side, but the ~390-day session cookie also carries a REFRESH token the
@@ -2402,7 +2404,7 @@
     var tier = me.tier || "free";
     var interval = me.interval || null;
     var best = (tier === "unlimited") || (tier === "pro" && interval === "annual");
-    var start = _pfx() + "start.html";
+    var start = "/start.html";
 
     // 1) hide the nav "Log in"
     var login = _byId("nav-login"); if (login) { login.hidden = true; login.style.display = "none"; }

@@ -127,13 +127,14 @@ refresh and rewrite the cookie — the same fix as the onboarding wall (PR #3454
 `theme.js` is deferred, so `MDXAuth` does not exist while an inline page script
 runs: wait for its `mdx-auth` event with a timeout fallback.
 
-## What Free actually sees today
+## What each preview tier actually sees today
 
-| Surface | Free | Insider | Pro |
-|---|---|---|---|
-| Special Situations | 3 newest filings, all totals, coverage note | whole board, top setups, search/filter/sort | same as Insider |
-| China Special Situations | the whole overhang read (7 plane states, glance lines, every count) + the 3 nearest unlocks and 3 newest letters | every named row on all 7 planes | same as Insider |
-| Research Vault | newest 1 summary | newest 3 summaries | every desk, PDFs, Top Picks |
+| Surface | Anonymous | Free | Insider | Pro |
+|---|---|---|---|---|
+| US Stocks | 1 item per list | 3 items per list per daily build | full book | full book |
+| Special Situations | sign in | 3 newest filings, all totals, coverage note | whole board, top setups, search/filter/sort | same as Insider |
+| China Special Situations | sign in | the whole overhang read + the 3 nearest unlocks and 3 newest letters | every named row on all 7 planes | same as Insider |
+| Research Vault | newest 3 summaries | newest 3 summaries | newest 3 summaries | every desk, PDFs, Top Picks |
 
 (The Vault draws its line at Pro, these desks at Insider — the pattern is the
 mechanism, not the price point. The Vault's wall is also explicitly a *marketing*
@@ -162,9 +163,9 @@ Two traps that fall out of gating a multi-panel page:
   `planes` list naming only the planes that actually have withheld rows in this
   build, and let the honest empty state stand everywhere else.
 
-Note both pages sit **behind the registration wall** — "Free" here means a signed-in
-free account. Anonymous visitors are redirected to sign in by the regwall; the
-public estate is the landing/plans funnel plus `/stocks/ /tools/ /learn/ /blog/`.
+The two Special Situations pages sit **behind the registration wall** — "Free"
+there means a signed-in free account. The US Stocks and Research Vault shells are
+public acquisition surfaces; their full/detail data remains separately gated.
 
 ## Reference implementation
 
