@@ -30,10 +30,11 @@ equal the committed template at every commit on main. Enforcement points:
   * publish (pages.yml): backstop — refuse to deploy a diverged tree.
 
 theme.js legitimately differs from its template by the baked-in public Supabase
-config (lib.site_assets.bake_theme_js, deterministic from committed config.yml).
-Where PyYAML is available the comparison is exact against the baked output;
-in stdlib-only contexts (pages.yml publish) it degrades to a token-split check
-(prefix/suffix around the placeholder must match byte-for-byte).
+config and bundled Terminal overlay (lib.site_assets.emit_theme_js, deterministic
+from committed sources/config.yml). Where PyYAML is available the comparison is
+exact against the emitted output; in stdlib-only contexts (pages.yml publish) it
+degrades to a token-split check (the prefix/suffix around the placeholder plus
+the overlay suffix must match byte-for-byte).
 
 Usage:
     python -m scripts.check_template_site_sync             # report + exit 1 on divergence
@@ -71,12 +72,12 @@ _THEME_TOKEN = "/*__SUPABASE_CFG__*/null"
 _STAMP_RE = re.compile(r"""(?:href|src)=["']([^"'?#>]+)\?v=([0-9a-f]{8})["']""")
 
 
-def _bake_theme(tpl_text: str) -> str | None:
-    """Baked theme.js content, or None when the bake is unavailable (no PyYAML)."""
+def _bake_theme(tpl: Path) -> str | None:
+    """Emitted theme.js content, or None when the bake is unavailable (no PyYAML)."""
     try:
         from lib import site_assets
         assert site_assets.SUPABASE_TOKEN == _THEME_TOKEN, "SUPABASE_TOKEN drifted"
-        return site_assets.bake_theme_js(tpl_text)
+        return site_assets.emit_theme_js(tpl)
     except AssertionError:
         raise
     except Exception as e:  # noqa: BLE001 — stdlib-only context (pages.yml publish)
@@ -170,7 +171,7 @@ def check(root: Path, fix: bool = False) -> list[str]:
         expected: bytes | None = tpl_bytes  # what --fix would write
         if name == "theme.js":
             tpl_text = tpl_bytes.decode("utf-8")
-            baked = _bake_theme(tpl_text)
+            baked = _bake_theme(tpl)
             if baked is not None:
                 expected = baked.encode("utf-8")
                 ok = site_bytes == expected
@@ -179,6 +180,9 @@ def check(root: Path, fix: bool = False) -> list[str]:
                 expected = None  # cannot reproduce the bake here — report-only
                 site_text = site_bytes.decode("utf-8", errors="replace")
                 head, sep, tail = tpl_text.partition(_THEME_TOKEN)
+                overlay = tpl.with_name("terminal_overlay.js")
+                if overlay.is_file():
+                    tail = f"{tail.rstrip()}\n\n{overlay.read_text().lstrip()}"
                 ok = (site_text == tpl_text) if not sep else (
                     site_text.startswith(head) and site_text.endswith(tail)
                     and len(site_text) >= len(head) + len(tail))
