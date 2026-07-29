@@ -1,8 +1,8 @@
 {
   "schema": "altdata.by_ticker.v2",
   "as_of": "2026-07-29",
-  "generated_utc": "2026-07-29T03:03:48.159296+00:00",
-  "n_tickers": 2578,
+  "generated_utc": "2026-07-29T02:05:54.362581+00:00",
+  "n_tickers": 2585,
   "note": "Per-ticker weighted alt-data rollup. convergence_score = distinct independent channels (count); weighted_score ranks by channel quality. Donors / position-size recorded as context, never a voting channel.",
   "tickers": {
     "HUBB": {
@@ -4926,33 +4926,6 @@
       "trump_linked": false,
       "affiliated": false
     },
-    "PM": {
-      "ticker": "PM",
-      "channels": [],
-      "weighted_score": 0,
-      "congress_position_usd": 32356500.0,
-      "convergence_score": 0,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "RTX": {
-      "ticker": "RTX",
-      "channels": [],
-      "weighted_score": 0,
-      "congress_position_usd": 31993500.0,
-      "convergence_score": 0,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "CB": {
-      "ticker": "CB",
-      "channels": [],
-      "weighted_score": 0,
-      "congress_position_usd": 31878000.0,
-      "convergence_score": 0,
-      "trump_linked": false,
-      "affiliated": false
-    },
     "IHRT": {
       "ticker": "IHRT",
       "channels": [],
@@ -4970,18 +4943,6 @@
       "convergence_score": 0,
       "trump_linked": false,
       "affiliated": false
-    },
-    "KO": {
-      "ticker": "KO",
-      "channels": [
-        "affiliation",
-        "special_situation"
-      ],
-      "weighted_score": 0.7,
-      "congress_position_usd": 28512000.0,
-      "convergence_score": 2,
-      "trump_linked": false,
-      "affiliated": true
     },
     "BIDU": {
       "ticker": "BIDU",
@@ -5053,15 +5014,6 @@
       "channels": [],
       "weighted_score": 0,
       "congress_position_usd": 26333000.0,
-      "convergence_score": 0,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "PEGA": {
-      "ticker": "PEGA",
-      "channels": [],
-      "weighted_score": 0,
-      "congress_position_usd": 25558500.0,
       "convergence_score": 0,
       "trump_linked": false,
       "affiliated": false
@@ -5320,15 +5272,6 @@
       "channels": [],
       "weighted_score": 0,
       "congress_position_usd": 18700000.0,
-      "convergence_score": 0,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "PNR": {
-      "ticker": "PNR",
-      "channels": [],
-      "weighted_score": 0,
-      "congress_position_usd": 18150000.0,
       "convergence_score": 0,
       "trump_linked": false,
       "affiliated": false
@@ -5916,6 +5859,16 @@
       "ticker": "ZNWD",
       "channels": [
         "special_situation"
+      ],
+      "weighted_score": 0.2,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "ASH": {
+      "ticker": "ASH",
+      "channels": [
+        "activist_13d"
       ],
       "weighted_score": 0.2,
       "convergence_score": 1,

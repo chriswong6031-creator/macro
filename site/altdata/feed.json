@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-07-29T03:03:40.771686+00:00",
+  "generated_utc": "2026-07-29T02:05:44.423350+00:00",
   "as_of": "2026-07-29",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -6471,7 +6471,7 @@
     "material_8k": [
       {
         "ticker": "NWS",
-        "count": 19,
+        "count": 20,
         "items": "8.01"
       },
       {
