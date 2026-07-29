@@ -220,6 +220,108 @@
 .nx-diag .rej-reason{ color:var(--warn); font-weight:600; }
 .nx-disc{ margin:22px 0 0; font-size:11px; color:var(--muted); font-style:italic; }
 
+/* ======================= INTELLIGENCE DESK =======================
+   The durable story layer above the arrival wire: clustered developments,
+   evidence receipts, market context, and review-only X drafts. */
+.nxi{ --nxi-accent:var(--info); margin:0 0 18px; border-radius:20px; overflow:hidden;
+  background:linear-gradient(145deg,color-mix(in srgb,var(--panel) 93%,transparent),
+    color-mix(in srgb,var(--panel2) 82%,transparent));
+  border:1px solid color-mix(in srgb,var(--nxi-accent) 24%,var(--nx-brd));
+  box-shadow:0 18px 48px -30px color-mix(in srgb,var(--nxi-accent) 46%,transparent),
+    var(--nx-shadow); -webkit-backdrop-filter:var(--nx-blur); backdrop-filter:var(--nx-blur); }
+.nxi[hidden]{ display:none; }
+.nxi-head{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:18px; padding:20px;
+  border-bottom:1px solid var(--nx-hair); }
+.nxi-kicker{ display:flex; align-items:center; gap:8px; color:var(--nxi-accent); font-size:10.5px;
+  font-weight:800; letter-spacing:.16em; text-transform:uppercase; }
+.nxi-pulse{ width:8px; height:8px; border-radius:50%; background:var(--nxi-accent);
+  box-shadow:0 0 0 4px color-mix(in srgb,var(--nxi-accent) 15%,transparent); }
+.nxi[data-state="quiet"] .nxi-pulse{ background:transparent; border:1.5px solid var(--muted); box-shadow:none; }
+.nxi-title{ margin:6px 0 4px; font-size:21px; line-height:1.16; font-weight:850; letter-spacing:-.02em; }
+.nxi-sub{ margin:0; max-width:72ch; color:var(--muted); font-size:12.5px; line-height:1.5; }
+.nxi-health{ align-self:center; min-width:152px; padding:10px 12px; border-radius:12px;
+  background:color-mix(in srgb,var(--nxi-accent) 7%,transparent);
+  border:1px solid color-mix(in srgb,var(--nxi-accent) 18%,transparent); }
+.nxi-health strong{ display:block; font-size:12px; }
+.nxi-health span{ display:block; margin-top:3px; color:var(--muted); font-size:10.5px; }
+.nxi-metrics{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); border-bottom:1px solid var(--nx-hair); }
+.nxi-metric{ padding:12px 16px; border-right:1px solid var(--nx-hair); }
+.nxi-metric:last-child{ border-right:0; }
+.nxi-metric b{ display:block; font-family:var(--num); font-size:19px; letter-spacing:-.02em; }
+.nxi-metric span{ display:block; margin-top:2px; color:var(--muted); font-size:10px; letter-spacing:.08em; text-transform:uppercase; }
+.nxi-toolbar{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; padding:12px 16px 4px; }
+.nxi-filter{ appearance:none; border:1px solid var(--nx-hair); background:transparent; color:var(--muted);
+  border-radius:100px; padding:5px 10px; font:600 11px/1.2 inherit; cursor:pointer; }
+.nxi-filter:hover{ color:var(--text); border-color:var(--nx-brd); }
+.nxi-filter.on{ color:var(--text); background:color-mix(in srgb,var(--nxi-accent) 12%,transparent);
+  border-color:color-mix(in srgb,var(--nxi-accent) 36%,transparent); }
+.nxi-toolbar-note{ margin-left:auto; color:var(--muted); font-size:10.5px; }
+.nxi-list{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; padding:10px 16px 16px; }
+.nxi-story{ min-width:0; border:1px solid var(--nx-hair); border-radius:14px; overflow:hidden;
+  background:color-mix(in srgb,var(--panel) 78%,transparent); }
+.nxi-story[data-stage="high_impact"]{ border-color:color-mix(in srgb,var(--act) 42%,var(--nx-hair)); }
+.nxi-story[data-hidden="true"]{ display:none; }
+.nxi-main{ padding:14px; }
+.nxi-topline{ display:flex; gap:7px; align-items:center; flex-wrap:wrap; margin-bottom:8px; }
+.nxi-stage,.nxi-lane,.nxi-sourcecount{ display:inline-flex; align-items:center; gap:4px; border-radius:100px;
+  padding:2px 7px; font-size:9.5px; font-weight:750; letter-spacing:.05em; }
+.nxi-stage{ color:var(--text); background:color-mix(in srgb,var(--muted) 13%,transparent);
+  border:1px solid color-mix(in srgb,var(--muted) 24%,transparent); }
+.nxi-stage.high_impact{ background:color-mix(in srgb,var(--act) 13%,transparent);
+  border-color:color-mix(in srgb,var(--act) 32%,transparent); color:var(--act); }
+.nxi-stage.confirmed{ background:color-mix(in srgb,var(--info) 11%,transparent);
+  border-color:color-mix(in srgb,var(--info) 28%,transparent); color:var(--info); }
+.nxi-lane,.nxi-sourcecount{ color:var(--muted); border:1px solid var(--nx-hair); }
+.nxi-time{ margin-left:auto; color:var(--muted); font:10px/1.2 var(--num); }
+.nxi-headline{ margin:0; font-size:15px; line-height:1.32; letter-spacing:-.008em; text-wrap:balance; }
+.nxi-brief{ margin:7px 0 0; color:color-mix(in srgb,var(--text) 82%,var(--muted));
+  font-size:12px; line-height:1.5; }
+.nxi-why{ margin:9px 0 0; padding-left:9px; border-left:2px solid color-mix(in srgb,var(--nxi-accent) 38%,transparent);
+  color:var(--muted); font-size:11.5px; line-height:1.45; }
+.nxi-chips{ display:flex; flex-wrap:wrap; gap:5px; margin-top:10px; }
+.nxi-chip{ border-radius:6px; padding:2px 6px; color:var(--muted); background:var(--nx-card2);
+  border:1px solid var(--nx-hair); font-size:9.5px; }
+.nxi-chip.market{ color:var(--text); font-family:var(--num); }
+.nxi-chip.ticker{ color:var(--link); font-family:var(--num); font-weight:750; }
+.nxi-more{ border-top:1px solid var(--nx-hair); }
+.nxi-more>summary{ list-style:none; cursor:pointer; padding:9px 14px; display:flex; gap:8px;
+  align-items:center; color:var(--muted); font-size:11px; font-weight:650; }
+.nxi-more>summary::-webkit-details-marker{ display:none; }
+.nxi-more>summary::after{ content:"+"; margin-left:auto; font-family:var(--num); }
+.nxi-more[open]>summary::after{ content:"−"; }
+.nxi-detail{ display:grid; gap:12px; padding:0 14px 14px; }
+.nxi-detail h4{ margin:0 0 6px; color:var(--muted); font-size:9.5px; letter-spacing:.12em; text-transform:uppercase; }
+.nxi-evidence{ display:flex; flex-direction:column; gap:5px; }
+.nxi-source{ display:flex; gap:8px; align-items:flex-start; padding:7px 8px; border-radius:8px;
+  background:var(--nx-card2); font-size:10.5px; }
+.nxi-source a{ color:var(--link); font-weight:650; }
+.nxi-source span{ color:var(--muted); }
+.nxi-draft{ padding:10px; border-radius:10px; background:color-mix(in srgb,var(--nxi-accent) 6%,var(--nx-card2));
+  border:1px solid color-mix(in srgb,var(--nxi-accent) 18%,var(--nx-hair)); }
+.nxi-draft p{ margin:0; white-space:pre-wrap; font-size:11.5px; line-height:1.48; }
+.nxi-draftbar{ display:flex; gap:7px; align-items:center; margin-top:8px; color:var(--muted); font-size:9.5px; }
+.nxi-copy{ appearance:none; margin-left:auto; cursor:pointer; border:1px solid color-mix(in srgb,var(--nxi-accent) 32%,transparent);
+  background:transparent; color:var(--nxi-accent); border-radius:100px; padding:4px 9px; font:700 10px/1 inherit; }
+.nxi-empty{ padding:24px 18px; color:var(--muted); font-size:12px; text-align:center; }
+.nxi-state{ padding:20px; }
+.nxi-state strong{ display:block; font-size:13px; }
+.nxi-state p{ max-width:62ch; margin:5px 0 0; color:var(--muted); font-size:12px; line-height:1.5; }
+.nxi-footer{ display:flex; justify-content:space-between; gap:12px; align-items:center; padding:10px 16px;
+  border-top:1px solid var(--nx-hair); color:var(--muted); font-size:10.5px; }
+.nxi-showmore{ appearance:none; border:0; background:transparent; color:var(--nxi-accent);
+  font:700 11px/1 inherit; cursor:pointer; }
+@media(max-width:760px){
+  .nxi-head{ grid-template-columns:1fr; } .nxi-health{ min-width:0; }
+  .nxi-list{ grid-template-columns:1fr; }
+}
+@media(max-width:560px){
+  .nxi-head{ padding:16px; } .nxi-title{ font-size:19px; }
+  .nxi-metrics{ grid-template-columns:repeat(2,1fr); }
+  .nxi-metric:nth-child(2){ border-right:0; }
+  .nxi-metric:nth-child(-n+2){ border-bottom:1px solid var(--nx-hair); }
+  .nxi-toolbar-note{ width:100%; margin-left:0; }
+}
+
 /* ======================= LIVE WIRE (B4b) =======================
    The page's ONE achromatic instrument. Everything above it is edited and
    colour-coded (ranked cards, tinted theme chips); the wire is the raw feed,
