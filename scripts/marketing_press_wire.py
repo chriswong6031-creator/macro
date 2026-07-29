@@ -112,7 +112,10 @@ CARRYOVER_MAX_AGE_MIN = 45.0
 DEFAULT_TWEETS_PER_REQUEST = 20
 
 #: Fallbacks when config/press_sources.yml carries no ``actions_wire`` block.
-DEFAULT_ACTIONS_CAP_USD = 55.0
+#: Tracks the config's own value (the reserve invariant in
+#: tests/test_marketing_press_wire.py::TestSpendCapReserve) so an absent block
+#: cannot silently RAISE the cap.
+DEFAULT_ACTIONS_CAP_USD = 50.0
 DEFAULT_TIER_INTERVALS_S = {"fast": 1140, "mid": 6900, "slow": 42600}
 #: cursors.json ceiling. The optional scoring-brain sub-stores (story spine,
 #: signal corpus, source authority) are the only things here that can grow, and
@@ -148,6 +151,54 @@ def daemon_active() -> bool:
     the whole budget.
     """
     return _env_flag(ENV_DAEMON_ACTIVE)
+
+
+def push_access_ok(root: Path | str, *, timeout_s: float = 45.0) -> tuple[bool, str]:
+    """Can this run push its state back? Probed BEFORE a single billed request.
+
+    THE STATE WRITE IS THE BUDGET. cursors.json carries ``last_poll``, which is
+    what ``press_providers.TwitterApiIoProvider.fetch`` throttles each handle
+    against; spend.jsonl carries the deltas ``fold_spend`` sums into the cap
+    guard's seed. A run whose push never lands loses BOTH at once — so the next
+    */5 tick re-polls all 18 handles (no ``last_poll``) AND reads $0.00 spent (no
+    deltas), and the cap can never fire. A persistent push failure therefore does
+    not cost "one re-poll": it converts the $46.6/mo plan into ~$466/mo of real
+    money on the shared $75 account, green-looping every five minutes.
+
+    So the billed tier is FAIL-CLOSED on remote write. A cheap
+    ``git push --dry-run`` (no objects transferred, one ref negotiation) answers
+    "would a push be accepted right now" before any money is spent. Free work —
+    the RSS wire, the mirrors, composing, and the state files themselves — still
+    runs: it costs nothing and a landing push makes it all count.
+
+    THE PROBE REF IS A THROWAWAY, NOT ``main``. ``--dry-run`` transfers nothing
+    and creates nothing, but pushing HEAD at ``main`` would also fail whenever
+    main merely advanced since the checkout — a non-fast-forward the commit
+    step's rebase loop resolves in seconds. That is not a push OUTAGE and must
+    not stand the lane down. Probing a ref that cannot exist yet asks the one
+    question that matters: does this remote accept a write from this token.
+
+    Returns (ok, detail). NEVER raises: git missing, no remote, or a hung probe
+    all read as "cannot push", which is the conservative direction.
+    """
+    import subprocess  # noqa: PLC0415
+
+    try:
+        proc = subprocess.run(  # noqa: S603
+            ["git", "push", "--dry-run", "--porcelain", "origin",
+             "HEAD:refs/heads/press-wire-push-probe"],
+            cwd=str(root), capture_output=True, text=True, timeout=timeout_s,
+        )
+    except FileNotFoundError:
+        return False, "git executable not found"
+    except subprocess.TimeoutExpired:
+        return False, f"probe timed out after {timeout_s:.0f}s"
+    except Exception as exc:  # noqa: BLE001
+        return False, f"{type(exc).__name__}: {exc}"
+    if proc.returncode == 0:
+        return True, "ok"
+    detail = (proc.stderr or proc.stdout or "").strip().splitlines()
+    return False, (detail[-1][:200] if detail else f"git exit {proc.returncode}")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -821,6 +872,29 @@ def run(root: Path | str, *, now: datetime | None = None, dry_run: bool = False)
     emit_allowed = _env_flag(ENV_OUTBOX_ENABLED) and not dry_run
     effective_dry = not emit_allowed
 
+    # BILLED-LANE PREFLIGHT, before any money moves. A run that cannot push its
+    # state back loses BOTH the per-handle `last_poll` throttle and the spend
+    # deltas, and those two together ARE the budget — see push_access_ok. A real
+    # dry run already skips the billed lane, and with no API key on the host the
+    # provider skips itself, so the probe is only worth its ~1s when this run
+    # could actually spend.
+    _key_env = str(((press_cfg.get("x_follow") or {}).get("key_env"))
+                   or "TWITTERAPI_IO_KEY")
+    billed_offline = effective_dry
+    if not effective_dry and os.environ.get(_key_env, "").strip():
+        _push_ok, _push_why = push_access_ok(root)
+        if not _push_ok:
+            billed_offline = True
+            print(
+                "::warning title=press-wire-push-preflight::remote write is "
+                f"unavailable ({_push_why}) — the BILLED twitterapi.io tier stands "
+                "down for this run. Its state (last_poll + spend deltas) could not "
+                "be committed, and a lane that re-polls all handles with a $0.00 "
+                "spend counter every 5 minutes is ~$466/mo against a $75 account. "
+                "Free wire RSS + mirrors continue.",
+                flush=True,
+            )
+
     # 1. Wire RSS (FREE, every run). Hydrate breaking_feed's gitignored state dir
     #    from the committed ring first so its dedupe works in a fresh checkout.
     hydrate_breaking(root, cursors, seen_wire)
@@ -835,9 +909,10 @@ def run(root: Path | str, *, now: datetime | None = None, dry_run: bool = False)
     seen_wire_after = harvest_breaking(root, cursors)
 
     # 2. Press providers (trumpstruth + CNN mirrors FREE; twitterapi.io BILLED).
-    #    offline=effective_dry keeps the billed lane off the network in a dry run,
-    #    whose spend is never persisted (M2) — a network read there would bill
-    #    money the cap counter could never see.
+    #    offline=billed_offline keeps the billed lane off the network in a dry run
+    #    (whose spend is never persisted — M2) and on a run that failed the push
+    #    preflight (whose spend + throttle would be lost — see above). Free
+    #    providers ignore the flag and still poll in both cases.
     provider_state = cursors.setdefault("providers", {})
     tw_state = provider_state.setdefault("twitterapiio", {})
     # Seed the provider's month counter from the COMMITTED ledger. Without this
@@ -852,7 +927,8 @@ def run(root: Path | str, *, now: datetime | None = None, dry_run: bool = False)
         from engine.marketing import press_providers  # noqa: PLC0415
 
         press_items = press_providers.poll_all(
-            root, actions_press_cfg(press_cfg), provider_state, offline=effective_dry
+            root, actions_press_cfg(press_cfg), provider_state,
+            offline=billed_offline, now=ts,
         )
     except Exception as exc:  # noqa: BLE001
         print(f"::warning title=press-wire-providers::provider poll failed "

@@ -2786,7 +2786,7 @@ jobs:
       - name: install deps
         run: pip install pytest pyyaml pillow
       - name: chart PNG + media publish + share cards unit tests
-        run: python -m pytest tests/test_marketing_chart_png.py tests/test_marketing_media_publish.py tests/test_share_cards.py -q
+        run: python -m pytest tests/test_marketing_chart_png.py tests/test_marketing_media_publish.py tests/test_share_cards.py tests/test_marketing_media_fallback_seal.py -q
 
   marketing-engine:
     if: ${{ false }}

@@ -177,11 +177,12 @@ class TrumpstruthProvider:
 
     def fetch(
         self, *, root: Path | str, session_state: dict[str, Any],
-        offline: bool = False,
+        offline: bool = False, now: datetime | None = None,
     ) -> list[FeedItem]:
-        # FREE mirror RSS (no key, no per-request charge): `offline` is accepted
-        # for a uniform poll_all signature but ignored — a dry-run may still read
-        # this free feed to preview the pipeline (M2).
+        # FREE mirror RSS (no key, no per-request charge): `offline` and `now` are
+        # accepted for a uniform poll_all signature but ignored — a dry-run may
+        # still read this free feed to preview the pipeline (M2), and this lane
+        # books no spend, so it has no month bucket to agree about.
         text = _conditional_get(
             self.url, self.key, session_state,
             user_agent=self.user_agent, interval_s=self.poll_interval_s,
@@ -270,10 +271,10 @@ class CnnTruthBackfillProvider:
 
     def fetch(
         self, *, root: Path | str, session_state: dict[str, Any],
-        offline: bool = False,
+        offline: bool = False, now: datetime | None = None,
     ) -> list[FeedItem]:
-        # FREE mirror JSON archive (no key, no per-request charge): `offline` is
-        # accepted for a uniform poll_all signature but ignored (M2).
+        # FREE mirror JSON archive (no key, no per-request charge): `offline` and
+        # `now` are accepted for a uniform poll_all signature but ignored (M2).
         text = _conditional_get(
             self.url, self.key, session_state,
             user_agent=self.user_agent, interval_s=self.poll_interval_s,
@@ -417,7 +418,7 @@ class TwitterApiIoProvider:
 
     def fetch(
         self, *, root: Path | str, session_state: dict[str, Any],
-        offline: bool = False,
+        offline: bool = False, now: datetime | None = None,
     ) -> list[FeedItem]:
         """Poll every handle whose per-tier interval has elapsed.
 
@@ -430,6 +431,12 @@ class TwitterApiIoProvider:
         offline=True (dry-run / disarmed): return [] before ANY network request
         (M2). This lane is billed and dry-run does not persist spend, so a network
         read here would bill money the cap counter never records.
+
+        `now` is THE RUN'S CLOCK and picks the spend month bucket. The Actions
+        wire seeds and folds that bucket from its own `ts`; re-reading the wall
+        clock here meant a tick at 23:59:30 on the last of the month could book
+        its delta into the NEXT month, which the caller's fold never reads — a
+        request billed for real against a counter nothing increments.
         """
         import os  # noqa: PLC0415
 
@@ -448,7 +455,10 @@ class TwitterApiIoProvider:
         last_poll: dict[str, float] = st.setdefault("last_poll", {})
 
         now_ts = time.time()
-        month_key = datetime.now(tz=timezone.utc).strftime("%Y-%m")
+        _month_at = now or datetime.now(tz=timezone.utc)
+        if _month_at.tzinfo is None:
+            _month_at = _month_at.replace(tzinfo=timezone.utc)
+        month_key = _month_at.astimezone(timezone.utc).strftime("%Y-%m")
         month_spend = spend.setdefault(month_key, {"requests": 0, "tweets": 0, "usd": 0.0})
 
         # Spend-cap guard — STOP the lane at cap (checked before spending more).
@@ -692,7 +702,7 @@ def build_providers(press_cfg: dict) -> list:
 
 
 def poll_all(root: Path | str, press_cfg: dict, session_state: dict[str, Any],
-             *, offline: bool = False) -> list[FeedItem]:
+             *, offline: bool = False, now: datetime | None = None) -> list[FeedItem]:
     """Poll every configured press provider once; return all fetched FeedItems.
 
     NOT deduplicated here (the daemon owns the shared seen-ledger across the wire
@@ -702,12 +712,19 @@ def poll_all(root: Path | str, press_cfg: dict, session_state: dict[str, Any],
     offline=True (dry-run / disarmed): BILLED providers (provider.billed truthy —
     the twitterapi.io lane) return [] without touching the network so a dry-run
     bills nothing (M2). Free RSS/JSON mirror providers still fetch.
+
+    `now` IS THE RUN'S CLOCK and decides the spend month bucket. The caller
+    (``marketing_press_wire.run``) already picked a month from its own `ts` when
+    it seeded the counter and again when it books the delta; the provider used to
+    re-read ``datetime.now`` for the same decision, so a tick that straddles a
+    month boundary booked its spend into one month and folded the other — money
+    spent into a bucket nothing ever reads. One clock, one month.
     """
     items: list[FeedItem] = []
     for prov in build_providers(press_cfg):
         try:
             items.extend(prov.fetch(root=root, session_state=session_state,
-                                    offline=offline))
+                                    offline=offline, now=now))
         except Exception as exc:  # noqa: BLE001
             print(f"[press_providers] provider {type(prov).__name__} error: {exc}",
                   file=sys.stderr)

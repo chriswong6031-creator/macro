@@ -1573,7 +1573,7 @@ def _attach_chart_media(
     *,
     closes: list[float],
     dates: list[str],
-    marker_index: int,
+    marker_index: int | None,
     as_of: str,
     root: str | Path | None,
     cfg: dict | None,
@@ -1599,6 +1599,15 @@ def _attach_chart_media(
     render_signal_chart_png remains ONLY as the fallback for hosts with no Chrome
     (CI, the ubuntu publish runner) so a missing rasteriser can never turn a post
     text-only. It is a degraded image, and media_render records when it was used.
+
+    marker_index=None IS THE NO-CLAIM CONTRACT, and it must be passed by every
+    caller whose SVG is markerless (the tape fallback, the filing/house-pick
+    lanes). The fallback PNG is the image X actually receives when Chrome is
+    missing, so a caller that renders a markerless SVG and then hands this a real
+    index posts a BUY-labelled card under copy that makes no call at all. Pass
+    the SAME series the SVG was drawn from, too: the SVG and this raster are two
+    renderers, and feeding them different windows makes the fallback a chart of a
+    different stretch of tape than the one the preview promised.
 
     Fully fail-soft: any render/write/upload error leaves `fc` SVG-only (no
     media_* keys) and never raises — the post degrades to text-or-SVG. No-op
@@ -1711,11 +1720,16 @@ def raster_plan_media(
         if cid not in wanted:
             counts["pruned"] += 1
             continue
+        # NONE MUST SURVIVE THE ROUND TRIP. `int(x or 0)` turned the tape card's
+        # markerless None into index 0, which put a green BUY triangle + label on
+        # the fallback PNG of a "watching, not buying yet" post — on the
+        # PRODUCTION path, because defer_media is how the nightly rasters.
+        _mi = deferred.get("marker_index")
         _attach_chart_media(
             fc,
             closes=deferred.get("closes") or [],
             dates=deferred.get("dates") or [],
-            marker_index=int(deferred.get("marker_index") or 0),
+            marker_index=(int(_mi) if _mi is not None else None),
             as_of=str(plan.get("as_of") or ""),
             root=root,
             cfg=cfg,
@@ -2293,16 +2307,23 @@ def content_plan(
                 # With defer_media the raster is postponed until after the Sentinel
                 # gate so only cards on posts that SURVIVE cost a Chrome launch —
                 # see raster_plan_media().
+                # THE FALLBACK PNG FOLLOWS THE CARD, NOT THE PROPHET ROW. A tape
+                # card is markerless in every renderer: its SVG draws no marker
+                # (v2 with both indices None, or the v1 markerless fallback
+                # above), so the Chrome-less legacy raster must draw none either
+                # — otherwise the post that says "watching, not buying yet"
+                # arrives on the timeline stamped BUY.
+                _png_marker = marker_index if variant == "signal" else None
                 if not defer_media:
                     _attach_chart_media(
-                        _fc, closes=closes, dates=dates, marker_index=marker_index,
+                        _fc, closes=closes, dates=dates, marker_index=_png_marker,
                         as_of=today, root=root, cfg=cfg,
                         subtitle=f"{cashtag} · {'signal' if variant == 'signal' else 'tape'}")
                 else:
                     # Everything raster_plan_media needs to finish the job later.
                     _fc["_defer"] = {
                         "closes": closes, "dates": dates,
-                        "marker_index": marker_index,
+                        "marker_index": _png_marker,
                         "subtitle": f"{cashtag} · {'signal' if variant == 'signal' else 'tape'}",
                     }
                 featured_charts.append(_fc)
@@ -2861,6 +2882,11 @@ def content_plan(
     # Fail-soft as one unit: an unreadable parquet or an absent site artifact
     # costs these lanes and leaves the rest of the plan untouched.
     _filing_summary: dict = {"congress": 0, "insider": 0, "house_picks": 0}
+    #: Exception TYPE name when the block below crashed, "" when it ran clean.
+    #: The census needs the two apart: `{"congress": 0, "insider": 0}` reads as
+    #: "no candidates tonight" whether the feeds were empty or the lane died on
+    #: line one, so two live lanes could go dark for weeks behind a green nightly.
+    _filing_error: str = ""
     try:
         from engine.marketing.congress_feed import candidates as _congress_candidates
         from engine.marketing.insider_feed import candidates as _insider_candidates
@@ -2887,6 +2913,14 @@ def content_plan(
               that is a fabricated recommendation attached to a named
               politician's trade — so a ticker with no v2 render gets NO chart,
               and the caller decides whether the post can live without one.
+
+            RETURNS THE OHLCV WINDOW, not closes_loader's series. `_d`/`_c` are
+            used only as the length gate (a name with under ten sessions is not
+            worth a card); the bars the SVG is actually drawn from are `_od`/`_oc`
+            and those are what the caller must stamp and what the Chrome-less
+            legacy raster must redraw. Returning the other series made the marker
+            date/price describe a different window than the card and gave the
+            fallback PNG a different stretch of tape than the preview showed.
             """
             if closes_loader is None:
                 return None
@@ -2914,7 +2948,7 @@ def content_plan(
                     height=880, company_name=_tkr,
                     logo_root=str(_filing_root), cta=_card_cta,
                 )
-                return (_svg, _d, _c) if _svg else None
+                return (_svg, list(_od), list(_oc)) if _svg else None
             except Exception:  # noqa: BLE001
                 return None
 
@@ -2930,10 +2964,20 @@ def content_plan(
             ("congress", _congress_candidates),
             ("insider", _insider_candidates),
         ):
+            # `exclude=_claimed` is re-read on EACH fetch, so the insider lane
+            # also sees the names congress just took. Without it a desk could
+            # post a Prophet signal, a congressional disclosure and a Form 4 on
+            # the same ticker in one evening — one name, three posts, from one
+            # account. House picks have had this guard since day one (`exclude=`
+            # at the `_house_picks` call below); these two lanes did not.
             for _cand in (_fetch(_filing_root, today=today, cfg=cfg,
-                                 cooled=_cooled_watch) or []):
+                                 cooled=_cooled_watch,
+                                 exclude=frozenset(_claimed)) or []):
                 _tkr = str(_cand.get("ticker") or "").upper()
-                if not _tkr:
+                if not _tkr or _tkr in _claimed:
+                    # Second belt: two candidates for one ticker inside a single
+                    # fetch batch are filtered here, since `exclude` was frozen
+                    # before the batch was walked.
                     continue
                 _filing_items.append({
                     "id": f"post-{_kind}-{_filing_counter:03d}",
@@ -3066,6 +3110,13 @@ def content_plan(
                         # setup card, and `marker_source: "none"` is the Prophet
                         # tape path's own spelling of "no claim, no anchor —
                         # these are the last N sessions as they are".
+                        #
+                        # marker_date/marker_price are the LAST BAR OF THE CARD.
+                        # `_filing_chart` returns the OHLCV window it drew from,
+                        # so this stamp, the drawn candles and the fallback
+                        # raster all describe the same session; they used to be
+                        # taken from closes_loader's separate series, which could
+                        # end on a different date than the card showed.
                         "variant": "tape",
                         "marker_source": "none",
                         "marker_date": _cdates[-1] if _cdates else "",
@@ -3075,9 +3126,17 @@ def content_plan(
                         "body": _item.get("body", ""),
                         "source": str(_item.get("source") or "house_picks"),
                     }
+                    # marker_index=None, and it is the whole point. This card is
+                    # declared `tape`/`marker_source: none`; the SVG above draws
+                    # no marker. Handing the legacy raster `len(_ccloses) - 1`
+                    # meant that on any Chrome-less host (CI, the ubuntu publish
+                    # runner, a raster timeout) media_publish fell back to a
+                    # BUY-labelled v1 card and THAT is the PNG X received —
+                    # exactly the fabricated recommendation this lane's docstring
+                    # forbids, enforced until now only on the SVG branch.
                     _attach_chart_media(
                         _fc_filing, closes=_ccloses, dates=_cdates,
-                        marker_index=len(_ccloses) - 1, as_of=today,
+                        marker_index=None, as_of=today,
                         root=root, cfg=cfg,
                         subtitle=f"${_item['ticker']} · {_item.get('source', '')}")
                     featured_charts.append(_fc_filing)
@@ -3090,7 +3149,6 @@ def content_plan(
         for _item in _filing_items:
             _item.pop("_filing_chart", None)
 
-        _sel_report["filing_lanes"] = dict(_filing_summary)
         if any(_filing_summary.values()):
             # Bare print, start-of-line, flushed: a logger prefixes the line and
             # GitHub drops the annotation silently (tests/test_gh_annotation_line_start.py).
@@ -3100,8 +3158,24 @@ def content_plan(
                 f"house_picks={_filing_summary['house_picks']} planned for {today}",
                 flush=True,
             )
-    except Exception:  # noqa: BLE001
-        pass  # fail-soft — filing sources unavailable; the rest of the plan stands
+    except Exception as _filing_exc:  # noqa: BLE001
+        # STILL FAIL-SOFT — the rest of the plan stands — but never SILENT. This
+        # runs in the nightly Actions job, so a bare print at line start is the
+        # only form GitHub surfaces (a logger prefixes it and the annotation is
+        # dropped; tests/test_gh_annotation_line_start.py).
+        _filing_error = type(_filing_exc).__name__
+        print(
+            f"::warning title=marketing-filing-lanes::{_filing_error}: "
+            f"{str(_filing_exc)[:200]} — congress/insider/house-pick supply is "
+            f"DARK for {today}; the rest of the plan is unaffected",
+            flush=True,
+        )
+    finally:
+        # Written from `finally` so the census reports the lane even when the
+        # block crashed before reaching its own summary line.
+        _sel_report["filing_lanes"] = dict(_filing_summary)
+        if _filing_error:
+            _sel_report["filing_lanes"]["error"] = _filing_error
 
     # ── Fact-reuse budget + shape mixer (W1 selection layer) ──────────────────
     # Runs AFTER every producer has contributed (Prophet + confluence + movers)
@@ -3397,7 +3471,15 @@ def content_plan(
             # at outbox.emit, which will not queue a planned-kind item whose mode
             # is not llm* while copywriter.llm.required is on. Calling v2 on a
             # mute lane would also charge the plan 196 pointless "drops" per desk.
-            _cw_cfg = (cfg or {}).get("copywriter", {}) or {}
+            _cw_cfg = dict((cfg or {}).get("copywriter", {}) or {})
+            # §10 E3 writer hook. The exemplar-store PIN lives under `intel:` and
+            # the writer is handed only the `copywriter:` block, so the pin has to
+            # ride along or `copywriter.store_exemplar_block` can never see it and
+            # the whole ratification chain dead-ends at the config line. Copied
+            # (not aliased into the caller's dict) and read-only downstream.
+            # Absent `intel:` -> no pin -> no exemplars, which is the dark default.
+            if isinstance((cfg or {}).get("intel"), dict):
+                _cw_cfg.setdefault("intel", cfg["intel"])
             _lane_armed = bool((_cw_cfg.get("llm") or {}).get("enabled", False)) and (
                 os.environ.get("MARKETING_LLM_ENABLED", "").strip().lower()
                 in ("1", "true", "yes")
@@ -3407,7 +3489,7 @@ def content_plan(
             if _lane_armed:
                 try:
                     from engine.marketing.copywriter import write_posts_llm_v2  # noqa: PLC0415
-                    posts = list(write_posts_llm_v2(contexts, _cw_cfg) or [])
+                    posts = list(write_posts_llm_v2(contexts, _cw_cfg, root=root) or [])
                 except Exception:  # noqa: BLE001
                     posts = []
             if not posts:
@@ -3666,6 +3748,12 @@ def content_plan(
                 "dropped_ticker_budget": _sel_report.get("dropped_ticker_budget", 0),
                 "dropped_signal_budget": _sel_report.get("dropped_signal_budget", 0),
                 "degenerate_stats_dropped": _degenerate_dropped,
+                # Filing/house-pick supply, and — when the block crashed — the
+                # exception type under `error`. Surfaced here because a census
+                # that only ever sees zeros cannot tell "no candidates tonight"
+                # from "the lane died", and two live lanes can then stay dark for
+                # weeks behind a green nightly.
+                "filing_lanes": _sel_report.get("filing_lanes", {}),
                 "note": (
                     f"{_sel_report.get('cooled_tickers', 0)} ticker(s) inside the "
                     f"cross-day cooldown, {_sel_report.get('cooldown_overrides', 0)} "

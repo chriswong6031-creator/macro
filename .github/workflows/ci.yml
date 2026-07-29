@@ -1327,6 +1327,12 @@ on:
       - "tests/test_marketing_chart_png.py"
       - "tests/test_marketing_media_publish.py"
       - "tests/test_share_cards.py"
+      # The BUY-marker seal across the same pipeline (E-wave review, 2026-07-29):
+      # a markerless card must stay markerless through the Chrome-less legacy
+      # raster, which is the PNG X actually receives. Named here for the same
+      # test-whitelist-rot reason as its three siblings above; import closure is
+      # pytest + pyyaml + pillow (verified with pandas/numpy/pyarrow blocked).
+      - "tests/test_marketing_media_fallback_seal.py"
       # chart_render SVG suites (jobs: chart-render, chart-render-data). Added
       # 2026-07-26; never whitelisted anywhere → test-whitelist-rot. Found via
       # test_chart_render_inline sitting RED on main since #3088, which moved the

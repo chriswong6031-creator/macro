@@ -1042,3 +1042,233 @@ class TestLearningSpineProvenance:
                        root=tmp_path)
         card = json.loads(lb.scorecard_path(tmp_path).read_text(encoding="utf-8"))
         assert card["provenance"]["shape"][0]["shape"] == "one_liner"
+
+
+# ===========================================================================
+# E-wave adversarial review — the store's own failure modes and THE WRITER HOOK
+# ===========================================================================
+
+class TestProposalSortKeyIsScalar:
+    """MAJOR 8. The candidate sort key was
+    ``(-rate, -views, str(id), row, rate)`` — a raw dict inside a tuple Python
+    sorts. Two rows tying on the first THREE elements (the corpus carries rows
+    with no ``id``, so ``str(id or "")`` is ``""`` for both) make it compare
+    dict to dict and raise TypeError.
+
+    That raise landed in step 3 of the harvest, AFTER step 1 had already spent
+    money and written state.json — and the workflow's ``success()``-gated commit
+    then threw that state away, re-opening the whole monthly budget on the next
+    run.
+    """
+
+    def test_two_id_less_rows_with_identical_engagement_do_not_raise(self):
+        a = _corpus_row("", "BREAKING: one wire line that says a thing.")
+        b = _corpus_row("", "BREAKING: a different wire line entirely.")
+        a["id"] = b["id"] = ""          # both rows carry no post id
+        out = xs.propose_candidates([a, b], cfg={}, now=NOW)
+        assert len(out) == 2, out
+
+    def test_the_proposal_stays_deterministic_across_two_runs(self):
+        rows = _fixture_corpus()
+        first = xs.propose_candidates(rows, cfg={}, now=NOW)
+        second = xs.propose_candidates(rows, cfg={}, now=NOW)
+        assert [c["text_key"] for c in first] == [c["text_key"] for c in second]
+
+
+class TestStoreSchemaIsValidatedOnRead:
+    """m3. ``load_store`` adopted any dict wholesale and ``save_store`` re-stamps
+    ``STORE_SCHEMA`` unconditionally — so a store written under a different
+    schema was silently relabelled current on the next write, with its entry
+    shape assumed rather than verified. Those entries feed the WRITER PROMPT.
+    """
+
+    @staticmethod
+    def _write(tmp_path, blob) -> Path:
+        d = tmp_path / "data" / "marketing" / "x_intel"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "exemplar_store.json").write_text(json.dumps(blob), encoding="utf-8")
+        return tmp_path
+
+    def test_a_foreign_schema_reads_as_empty_and_says_so(self, tmp_path, capsys):
+        root = self._write(tmp_path, {
+            "schema": "marketing.x_exemplar_store/v0",
+            "latest_version": 9,
+            "versions": [{"version": 9, "entries": [{"register": "wire",
+                                                     "text": "FROM THE OLD SHAPE"}]}],
+            "pending": [],
+        })
+        store = xs.load_store(root)
+        assert store["versions"] == [], "a foreign-schema store was adopted wholesale"
+        assert store["latest_version"] == 0
+
+        lines = capsys.readouterr().out.splitlines()
+        assert [ln for ln in lines
+                if ln.startswith("::warning") and "x-intel-exemplars" in ln], (
+            "the schema mismatch was silent — a start-of-line ::warning is the "
+            "only form GitHub surfaces")
+
+    def test_the_current_schema_still_round_trips(self, tmp_path):
+        root = self._write(tmp_path, {
+            "schema": xs.STORE_SCHEMA, "latest_version": 2,
+            "versions": [{"version": 2, "entries": []}], "pending": [],
+        })
+        assert xs.load_store(root)["latest_version"] == 2
+
+    def test_a_saved_store_reloads(self, tmp_path):
+        """The mirror: save_store's own output must not trip its reader."""
+        (tmp_path / "data" / "marketing" / "x_intel").mkdir(parents=True)
+        assert xs.save_store({"latest_version": 1, "versions": [], "pending": []},
+                             tmp_path, now=NOW)
+        assert xs.load_store(tmp_path)["latest_version"] == 1
+
+
+class TestCopywriterExemplarHook:
+    """BLOCKER 3, writer half. §10 E3 requires "writer/critic prompts load
+    exemplars from the store (config-pinned version, never auto-flipped)".
+    ``active_exemplars`` shipped with NO production caller: copywriter imported
+    neither exemplar_store nor x_intel, so the whole harvest -> pending ->
+    operator promotion -> config pin chain ended at a function only tests ran.
+    """
+
+    @staticmethod
+    def _store(tmp_path) -> Path:
+        d = tmp_path / "data" / "marketing" / "x_intel"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "exemplar_store.json").write_text(json.dumps({
+            "schema": xs.STORE_SCHEMA, "latest_version": 4,
+            "versions": [
+                {"version": 3, "ratified_by": "chris", "n_entries": 1, "entries": [
+                    {"register": "wire", "text": "KOSPI plunges 41.7% on the session.",
+                     "post_id": "1", "engagement": {"interaction_rate": 0.3}}]},
+                {"version": 4, "ratified_by": "chris", "n_entries": 1, "entries": [
+                    {"register": "wire", "text": "NEWER UNPINNED SHOT",
+                     "post_id": "2", "engagement": {"interaction_rate": 0.9}}]},
+            ],
+            "pending": [{"register": "wire", "text": "PENDING SHOT", "post_id": "3",
+                         "engagement": {"interaction_rate": 0.99}}],
+        }), encoding="utf-8")
+        return tmp_path
+
+    def test_unpinned_prompts_are_byte_identical_to_the_baseline(self, tmp_path):
+        """DARK-SAFE. `active_version: null` is the shipped state, so today's
+        prompt may not move by one byte — and the store is never opened."""
+        from engine.marketing import copywriter as cw
+
+        root = self._store(tmp_path)
+        base = cw._v2_system_prompt({})
+        assert cw._v2_system_prompt({}, root=root) == base
+        assert cw._v2_system_prompt(
+            {"intel": {"exemplar_store": {"active_version": None}}}, root=root) == base
+        assert cw.store_exemplar_block(
+            {"intel": {"exemplar_store": {"active_version": None}}}, root=root) == ""
+
+    def test_a_pinned_version_reaches_the_prompt_the_provider_receives(
+            self, monkeypatch, tmp_path):
+        """Through `write_posts_llm_v2` itself — the real production writer —
+        capturing what is handed to `client.messages.create` as `system`."""
+        from engine import llm_auth
+        from engine.marketing import copywriter as cw
+
+        root = self._store(tmp_path)
+        seen: dict = {}
+
+        class _Client:
+            class messages:
+                @staticmethod
+                def create(**kw):
+                    seen.update(kw)
+                    raise RuntimeError("stop — the prompt is the assertion")
+
+        monkeypatch.setenv("MARKETING_LLM_ENABLED", "1")
+        monkeypatch.setattr(llm_auth, "build_providers",
+                            lambda *a, **k: [{"name": "oauth", "client": _Client(),
+                                              "model": "m", "env_var": "X",
+                                              "cred": "x"}])
+
+        def _make_call(providers, fn, context=""):
+            try:
+                fn(providers[0]["client"], providers[0]["model"])
+            except RuntimeError:
+                pass
+            return None, "captured", "oauth"
+
+        monkeypatch.setattr(llm_auth, "make_call", _make_call)
+        cfg = {"llm": {"enabled": True},
+               "intel": {"exemplar_store": {"active_version": 3}}}
+        cw.write_posts_llm_v2([{"account": "flagship", "type": "signal",
+                                "ticker": "NVDA", "top_facts": []}], cfg, root=root)
+
+        system = seen.get("system") or ""
+        assert "KOSPI plunges 41.7% on the session." in system, (
+            "the pinned exemplar never reached the writer's system prompt")
+        assert "NEWER UNPINNED SHOT" not in system, "the store auto-flipped forward"
+        assert "PENDING SHOT" not in system, "an unratified candidate reached the writer"
+
+    def test_the_pin_comes_only_from_config_never_from_latest_version(self, tmp_path):
+        from engine.marketing import copywriter as cw
+
+        root = self._store(tmp_path)
+        # A store with versions but NO pin still yields nothing.
+        assert cw.store_exemplar_block({}, root=root) == ""
+        # A pin at a version the store does not have yields nothing — never a
+        # neighbouring version.
+        assert cw.store_exemplar_block(
+            {"intel": {"exemplar_store": {"active_version": 99}}}, root=root) == ""
+
+    def test_exemplar_numbers_do_not_widen_the_writers_numeric_gate(self, tmp_path):
+        """EPISTEMICS: the engine computes, the model phrases, and an exemplar's
+        figures are somebody else's. A model that lifts one must be rejected
+        exactly as if it had invented it."""
+        from engine.marketing import copywriter as cw
+
+        root = self._store(tmp_path)
+        block = cw.store_exemplar_block(
+            {"intel": {"exemplar_store": {"active_version": 3}}}, root=root)
+        assert "41.7%" in block, "fixture is degenerate — no number in the exemplar"
+
+        ctx = {"account": "flagship", "type": "macro", "ticker": "",
+               "shape": "two_part", "numbers_whitelist": ["2.1%"],
+               "top_facts": [{"text": "Breadth held at 2.1% on the session."}]}
+        hits = cw.validate_copy_v2(
+            "Breadth held at 2.1%.\n\nKOSPI plunges 41.7% on the session.", ctx)
+        assert [h for h in hits if "41.7" in h], (
+            f"a figure that exists only in an exemplar cleared the numeric gate: {hits}")
+
+
+class TestWorkflowCommitsSpentStateEvenOnFailure:
+    """MAJOR 8. state.json holds the monthly call/USD counter and is written in
+    step 1, immediately AFTER the money is spent — while steps 2 and 3 can still
+    raise. Under ``success()`` any such crash discarded the counter and the next
+    run read $0.00, re-opening a budget the account had already been billed for.
+    """
+
+    def test_the_commit_step_runs_on_always(self, wf):
+        steps = wf["jobs"]["harvest"]["steps"]
+        commit = next(s for s in steps
+                      if "git add data/marketing/x_intel" in str(s.get("run", "")))
+        assert "always()" in commit["if"], commit["if"]
+        assert "success()" not in commit["if"], (
+            "a crash after the spend still discards the spend counter")
+        # Never on a dry run: it writes nothing.
+        assert "dry_run" in commit["if"]
+
+    def test_the_summary_reads_pure_json_not_a_tee_of_mixed_stdout(self, wf_path):
+        """`| tee /tmp/x_intel_run.json` captured ::warning/::notice lines into a
+        file the summary block fences as ```json."""
+        body = wf_path.read_text(encoding="utf-8")
+        assert "tee /tmp/x_intel_run.json" not in body
+        assert "--json-out /tmp/x_intel_run.json" in body
+
+    def test_json_out_writes_only_the_report(self, tmp_path, capsys):
+        """And the annotations still reach stdout, where GitHub parses them."""
+        import scripts.x_intel_harvest as harvest
+
+        (tmp_path / "config").mkdir(parents=True, exist_ok=True)
+        (tmp_path / "config" / "marketing.yml").write_text(
+            yaml.safe_dump({"intel": {"enabled": True, "roster": []}}), encoding="utf-8")
+        out = tmp_path / "run.json"
+        assert harvest.main(["--root", str(tmp_path), "--dry-run",
+                             "--json-out", str(out)]) == 0
+        payload = json.loads(out.read_text(encoding="utf-8"))
+        assert payload["dry_run"] is True
+        assert "budget" in payload

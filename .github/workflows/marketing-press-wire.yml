@@ -231,9 +231,19 @@ jobs:
             sleep $((i * 7))
           done
 
-          echo "::warning title=press-wire-push::marketing-press-wire: could not push state after 5 attempts (non-fatal)"
+          # TERMINAL PUSH FAILURE IS A RED RUN, NOT A WARNING. Exiting 0 here made
+          # a persistent push outage invisible: every */5 run went green while
+          # losing cursors.json (the per-handle last_poll throttle) AND the
+          # spend.jsonl deltas (the cap guard's seed), so the next run re-polled
+          # all 18 handles believing $0.00 had been spent — ~$466/mo of real money
+          # against a $75 account, green-looping forever. The retries above are
+          # kept (a lost race is normal); what changes is that running out of them
+          # surfaces. The billed tier also fails CLOSED on the python side
+          # (marketing_press_wire.push_access_ok), so the next run stands the paid
+          # lane down instead of spending into a counter it cannot commit.
+          echo "::error title=press-wire-push::marketing-press-wire: could not push state after 5 attempts — cursors (poll throttle) and spend deltas (cap counter) are LOST for this tick"
           echo "pushed=false" >> "$GITHUB_OUTPUT"
-          exit 0
+          exit 1
 
       - name: dispatch the publisher for the booked items
         # ORDER IS LOAD-BEARING: push THEN dispatch. marketing-publish checks out

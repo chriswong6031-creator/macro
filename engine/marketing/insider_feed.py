@@ -713,19 +713,27 @@ def candidates(
     cfg: dict | None = None,
     cooled: frozenset[str] | set[str] | None = None,
     power: dict | None = None,
+    exclude: frozenset[str] | set[str] | None = None,
 ) -> list[dict]:
     """Load → validate → derive → classify → pack.
 
     `power` is `insider_power.compute()` output keyed by ticker; absent,
     candidates carry no posture context. The lane never blocks on enrichment.
+
+    `exclude` is the set of tickers the plan has ALREADY claimed tonight (same
+    contract as `house_picks.house_picks` and `congress_feed.candidates`) —
+    including the names the congress lane just took, since the two run back to
+    back off one `_claimed` set. Merged into `cooled`: at this layer both mean
+    "a ticker this lane may not use tonight".
     """
     if today is None:
         today = date.today().isoformat()
     df = load_insiders(root)
     if df is None:
         return []
+    blocked = frozenset(cooled or ()) | frozenset(exclude or ())
     out: list[dict] = []
-    for cand in open_market_purchases(df, today=today, cfg=cfg, cooled=cooled):
+    for cand in open_market_purchases(df, today=today, cfg=cfg, cooled=blocked):
         try:
             cand["power_context"] = power_context((power or {}).get(cand["ticker"]))
         except ScoreLeakError:

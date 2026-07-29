@@ -128,8 +128,14 @@ jobs:
           if [ "${ANALYZE_ONLY:-}" = "true" ]; then ARGS="$ARGS --analyze-only"; fi
           if [ -n "${HANDLES:-}" ]; then ARGS="$ARGS --handles $HANDLES"; fi
           echo "marketing-x-intel: python -m scripts.x_intel_harvest$ARGS"
+          # --json-out, NOT `| tee`. The run prints ::warning/::notice annotations
+          # on the same stdout as the report, so tee'ing the stream produced a
+          # file that is not JSON — and the summary step below fences it as
+          # ```json. --json-out writes the report and only the report; the
+          # annotations still reach the Actions log on stdout, where GitHub parses
+          # them.
           # shellcheck disable=SC2086
-          python -m scripts.x_intel_harvest $ARGS | tee /tmp/x_intel_run.json
+          python -m scripts.x_intel_harvest $ARGS --json-out /tmp/x_intel_run.json
 
       - name: summarise the run
         if: ${{ always() }}
@@ -144,10 +150,17 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: commit corpus + report + state (no-op when nothing changed)
-        # NEVER on a dry run: a dry run writes nothing, so there is nothing to
-        # commit and staging would only risk picking up an unrelated stray file.
+        # ALWAYS, not success(). state.json carries the monthly call/USD counter
+        # and is written in step 1, immediately AFTER the money is spent — while
+        # steps 2 and 3 (analyse, propose) can still raise. Under success() any
+        # such crash discarded the counter, so the next run read $0.00 and the
+        # 600-call / $5 budget re-opened on an account that had already been
+        # billed. The same argument the press wire makes for its ledgers: a
+        # counter for money already spent is committed even after a failed run.
+        # Still NEVER on a dry run: it writes nothing, so staging could only pick
+        # up an unrelated stray file.
         if: >-
-          ${{ success()
+          ${{ always()
               && !(github.event_name == 'workflow_dispatch' && inputs.dry_run) }}
         run: |
           set -uo pipefail

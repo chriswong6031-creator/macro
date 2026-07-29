@@ -396,7 +396,7 @@ def _run_press_tick(*, dry_run: bool) -> dict:
     press_items: list = []
     try:
         press_items = press_providers.poll_all(
-            ROOT, press_cfg, provider_state, offline=dry_run
+            ROOT, press_cfg, provider_state, offline=effective_dry, now=now
         )
     except Exception as exc:  # noqa: BLE001
         logger.error("[press] provider poll_all error (continuing): %s", exc)
@@ -565,6 +565,16 @@ def _merge_wires_window(
     now: datetime | None = None,
 ) -> list[dict]:
     """Merge this tick's rail items into the persisted window (M1).
+
+    `now` IS THE TICK'S CLOCK, passed in by the caller. This function used to
+    re-read ``datetime.now`` for the age cutoff even though ``_write_wires_sink``
+    already holds the tick's `now` and stamps it into the payload — so the sink
+    aged items against a different instant than the one it published, and a test
+    or fixture pinned to a past date silently lost every item once wall-clock
+    drifted past ``rail_max_age_h``. (That is the class of scheduled red the
+    house calls a fixture-date + wall-clock bomb; it detonated here on
+    2026-07-29 against 2026-07-27 fixtures at a 48h horizon.) None falls back to
+    the wall clock for the ad-hoc callers that have no tick.
 
     - Merge by item id; a NEW item wins field-by-field, but a field the new copy
       LACKS keeps the persisted value. The one that matters is `zh`: an item that
@@ -788,6 +798,8 @@ def _write_wires_sink(rail_items: list, press_cfg: dict, now: datetime) -> None:
     _zh_preflight(wire_cfg)
     zh_filled, zh_tried = _attach_zh(rail_items, wire_cfg, have_zh)
 
+    # ONE CLOCK PER TICK: the same `now` that stamps `updated_at` below ages the
+    # window, so the payload can never claim a freshness it did not apply.
     merged = _merge_wires_window(
         existing, rail_items, rail_max, wire_cfg, now=now
     )

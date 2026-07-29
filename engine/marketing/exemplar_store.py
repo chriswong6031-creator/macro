@@ -89,11 +89,19 @@ def _empty_store() -> dict:
 
 
 def load_store(root: Path | str | None = None) -> dict:
-    """The store, fail-soft. A missing/torn file reads as an EMPTY store.
+    """The store, fail-soft. A missing/torn/foreign-schema file reads as EMPTY.
 
     Empty is the safe read: an empty store has no versions, so ``pinned_version``
     resolves to nothing and the writer gets zero exemplars. A corrupt store
     therefore degrades to "no exemplars", never to "some other version's voice".
+
+    SCHEMA IS CHECKED ON READ, and it has to be, because ``save_store`` stamps
+    ``STORE_SCHEMA`` unconditionally on whatever dict it is handed. Adopting a
+    blob wholesale and then re-stamping it relabels a store written under a
+    different (older, or another tool's) schema as current — silently, on the
+    next write, with the entry shape assumed rather than verified. Since the
+    entries feed the WRITER PROMPT, a mislabelled store is a voice change nobody
+    approved. A schema mismatch is announced at line start and treated as empty.
     """
     import json  # noqa: PLC0415
 
@@ -111,6 +119,16 @@ def load_store(root: Path | str | None = None) -> dict:
         )
         return _empty_store()
     if not isinstance(blob, dict):
+        return _empty_store()
+    schema = str(blob.get("schema") or "")
+    if schema != STORE_SCHEMA:
+        print(
+            f"::warning title=x-intel-exemplars::exemplar store at {path} declares "
+            f"schema {schema or '(none)'!r}, not {STORE_SCHEMA!r} — treating it as "
+            f"EMPTY (the writer gets no exemplars this run) rather than adopting "
+            f"entries of an unknown shape and re-stamping them as current",
+            flush=True,
+        )
         return _empty_store()
     base = _empty_store()
     base.update(blob)
@@ -172,6 +190,18 @@ def propose_candidates(rows: Sequence[dict], *, cfg: dict | None = None,
     stamped = iso_stamp(now)
 
     by_register: dict[str, list[tuple]] = {}
+    #: THE TIE-BREAKER THAT KEEPS `sorted` OFF THE DICT. Every element of the key
+    #: before `row` must be scalar AND the run of them must be unique, or Python
+    #: falls through to comparing two dicts and raises
+    #: `TypeError: '<' not supported between instances of 'dict' and 'dict'`.
+    #: Two corpus rows with no `id` (the field is absent on some providers) and
+    #: the same rate and views tie on all three of the earlier elements, so the
+    #: harvest died on step 3 — and the workflow's `success()`-gated commit then
+    #: threw away the state.json written back in step 1, AFTER the money was
+    #: spent, re-opening the whole monthly budget on the next run. Corpus order is
+    #: deterministic (the file is append-only), so the enumerate index keeps the
+    #: proposal deterministic as well.
+    seq = 0
     for row in rows:
         text = str(row.get("text") or "").strip()
         if not text:
@@ -186,13 +216,15 @@ def propose_candidates(rows: Sequence[dict], *, cfg: dict | None = None,
         # Sort key is fully determined by observed numbers plus the tweet id, so
         # two runs over the same corpus propose the SAME list in the SAME order.
         by_register.setdefault(reg, []).append(
-            (-rate, -int(views), str(row.get("id") or ""), row, rate)
+            (-rate, -int(views), str(row.get("id") or ""), seq, row, rate)
         )
+        seq += 1
 
     picked: list[dict] = []
     seen: set[str] = set()
     for reg in sorted(by_register):
-        for neg_rate, neg_views, _tid, row, rate in sorted(by_register[reg])[: per_register * 3]:
+        for neg_rate, neg_views, _tid, _seq, row, rate in sorted(
+                by_register[reg])[: per_register * 3]:
             key = _text_key(row.get("text"))
             if key in seen:
                 continue
@@ -424,13 +456,24 @@ def active_exemplars(register: str | None = None, k: int = 6, *,
                      cfg: dict | None = None) -> list[dict]:
     """THE WRITER HOOK. Exemplars from the PINNED version only.
 
-    Integration (owned by the commissioning session, NOT this module — this
-    module deliberately does not import or patch ``copywriter``)::
+    WIRED IN PRODUCTION (E-wave review, BLOCKER 3 — this shipped with no caller
+    at all, so the whole harvest -> pending -> promotion -> pin chain ended at a
+    function only tests ran). The two callers, both of which pass ``cfg`` and
+    ``root`` down and add nothing to any numeric whitelist:
+
+        engine/marketing/copywriter.py   store_exemplar_block()
+                                         -> _v2_system_prompt -> write_posts_llm_v2
+        engine/marketing/reply_voice.py  system_prompt()
+                                         -> voice_or_fallback
+
+    The dependency still points ONE WAY: this module imports neither of them.
 
         from engine.marketing import exemplar_store
         shots = exemplar_store.active_exemplars(register, k=4, cfg=cfg)
         # each: {register, text, author, url, shape, engagement, ...}
         # -> render into the writer prompt as verbatim style references.
+        # STYLE ONLY: the figures inside an exemplar are somebody else's, and
+        # must never widen the item's own numbers_whitelist.
 
     Guarantees the caller can rely on:
       * an UNPINNED store returns ``[]`` (dark default) — never "the latest";

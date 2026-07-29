@@ -75,6 +75,7 @@ import logging
 import os
 import re
 import time
+from collections import deque
 from pathlib import Path
 from typing import Any, Sequence
 
@@ -234,6 +235,54 @@ NEVER THESE SHAPES — all scored zero likes in the same threads, in the same ho
 One honest note so you do not over-fit: a genuinely sharp, specific reply in the same corpus also scored zero, because it arrived hours late from a small account. A good line is necessary, not sufficient. Write the good line anyway.
 """
 
+#: How many ratified store exemplars may join the reply prompt.
+_STORE_EXEMPLAR_K = 4
+
+
+def system_prompt(cfg: dict | None = None, root: Path | str | None = None) -> str:
+    """``SYSTEM_PROMPT``, plus the CONFIG-PINNED exemplar-store block (§10 E3).
+
+    ``PLAYBOOK_EXEMPLARS`` above stays the baseline and is never replaced: those
+    ten are reply-corpus winners with their like counts, i.e. evidence for THIS
+    register, and the store's entries are timeline posts. The store appends a
+    second, operator-ratified section when — and only when —
+    ``intel.exemplar_store.active_version`` pins a version.
+
+    DARK-SAFE BY CONSTRUCTION: with no pin (the shipped default) this returns
+    ``SYSTEM_PROMPT`` itself, byte for byte, and the store file is never opened.
+
+    ``cfg`` must be the FULL marketing config for the pin to be visible — the
+    pin lives under ``intel:`` and ``voice_or_fallback`` also accepts the
+    narrower ``reply_desk``/``voice`` blocks, which simply carry no pin and so
+    read as dark. Their numbers never widen the reply's ALLOWED NUMBERS list.
+    """
+    try:
+        from engine.marketing import exemplar_store  # noqa: PLC0415
+
+        shots = exemplar_store.active_exemplars(
+            None, k=_STORE_EXEMPLAR_K, root=root, cfg=cfg)
+    except Exception as exc:  # noqa: BLE001 — a reply must exist regardless
+        log.warning("reply_voice: exemplar store unreadable (%s: %s) — playbook "
+                    "exemplars only", type(exc).__name__, exc)
+        return SYSTEM_PROMPT
+    if not shots:
+        return SYSTEM_PROMPT
+
+    lines = [
+        f"ALSO RATIFIED (exemplar store version {shots[0].get('exemplar_version')}) "
+        "— posts from other accounts the operator approved for their register. "
+        "They are TIMELINE posts, not replies: take the register, never the shape, "
+        "and never their numbers. Every figure you write must still be in ALLOWED "
+        "NUMBERS.",
+    ]
+    for shot in shots:
+        text = " ".join(str(shot.get("text") or "").split())
+        if text:
+            lines.append(f"- [{shot.get('register') or 'unknown'}] {text}")
+    if len(lines) == 1:
+        return SYSTEM_PROMPT
+    return SYSTEM_PROMPT + "\n" + "\n".join(lines) + "\n"
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Module counters (the producer's fallback-rate report reads these)
@@ -242,10 +291,9 @@ One honest note so you do not over-fit: a genuinely sharp, specific reply in the
 _STAT_KEYS = ("calls", "llm", "fallback_validation", "fallback_provider", "off",
               "cap_hits")
 _STATS: dict[str, int] = {k: 0 for k in _STAT_KEYS}
-#: Provider calls ATTEMPTED in the current window (the max_calls_per_run guard).
-_CALLS_IN_WINDOW = 0
-#: ``time.monotonic()`` at the first call of the current window; 0.0 = unopened.
-_WINDOW_STARTED = 0.0
+#: ``time.monotonic()`` of every provider call still inside the rolling window,
+#: oldest first. A TIMESTAMP LOG, not a counter: see ``_take_call_slot``.
+_CALL_TIMES: "deque[float]" = deque()
 
 
 def fallback_stats() -> dict:
@@ -266,28 +314,34 @@ def fallback_stats() -> dict:
 
 def reset_stats() -> None:
     """Zero the counters AND the call-cap window. For tests and the dry run."""
-    global _CALLS_IN_WINDOW, _WINDOW_STARTED
     for k in _STAT_KEYS:
         _STATS[k] = 0
-    _CALLS_IN_WINDOW = 0
-    _WINDOW_STARTED = 0.0
+    _CALL_TIMES.clear()
 
 
 def _take_call_slot(max_calls: int, window_s: float) -> bool:
-    """Claim one provider call against the rolling runaway guard.
+    """Claim one provider call against the ROLLING runaway guard.
 
-    Returns False when the window's budget is spent. The window rolls on its
-    own (see ``DEFAULT_CALL_WINDOW_S``): the caller here is a long-lived
-    daemon, and a guard that never resets is an off switch with a delay.
+    Returns False when the last ``window_s`` seconds already hold ``max_calls``
+    calls. The window rolls continuously (see ``DEFAULT_CALL_WINDOW_S``): the
+    caller here is a long-lived daemon, and a guard that never resets is an off
+    switch with a delay.
+
+    A TIMESTAMP DEQUE, NOT A TUMBLING COUNTER. The counter-plus-window-start form
+    this replaced reset the count wholesale the moment the window elapsed, so a
+    cap of 40/hour actually permitted 80 calls in two seconds across the
+    boundary — 40 at t=3599 and 40 more at t=3601 — which is the exact burst a
+    runaway guard exists to stop, and it read as compliant in the counters. The
+    deque holds at most ``max_calls`` entries, so the memory is bounded by the
+    cap, not by traffic.
     """
-    global _CALLS_IN_WINDOW, _WINDOW_STARTED
     now = time.monotonic()
-    if _WINDOW_STARTED <= 0.0 or (now - _WINDOW_STARTED) >= max(1.0, window_s):
-        _WINDOW_STARTED = now
-        _CALLS_IN_WINDOW = 0
-    if _CALLS_IN_WINDOW >= max_calls:
+    cutoff = now - max(1.0, window_s)
+    while _CALL_TIMES and _CALL_TIMES[0] <= cutoff:
+        _CALL_TIMES.popleft()
+    if len(_CALL_TIMES) >= max_calls:
         return False
-    _CALLS_IN_WINDOW += 1
+    _CALL_TIMES.append(now)
     return True
 
 
@@ -472,7 +526,21 @@ def validate_reply_copy(
     from engine.marketing import reply_critics as _rc  # noqa: PLC0415
 
     violations.extend(numeric_violations(body, _packet(draft, numbers_whitelist)))
-    fact = _rc.fact_discipline(body, {"numbers_whitelist": list(numbers_whitelist or [])})
+    # THE GATE MUST JUDGE THE LIST THE PROMPT HANDED OUT. `allowed_numbers` is
+    # what the model is shown (own-feed whitelist UNION the deterministic draft's
+    # own figures — the draft is about to ship verbatim, so its numbers are
+    # admissible by construction), and this gate used to be given the whitelist
+    # alone. A model that obeyed the prompt and reused a figure from our own
+    # draft was therefore rejected for it, every time, inflating the fallback
+    # rate with compliance. A number in NEITHER set is still a violation.
+    # (The union is built raw here, not via `allowed_numbers`, whose 32-entry
+    # truncation is a PROMPT budget: a gate that inherited it would reject the
+    # 33rd legitimate figure.)
+    fact = _rc.fact_discipline(
+        body,
+        {"numbers_whitelist": [str(n) for n in (numbers_whitelist or [])]
+                              + _draft_numbers(draft)},
+    )
     violations.extend(f"fact_discipline: {r}" for r in fact.get("reasons") or [])
 
     # (b) House bans are IMPORTED — one list, every lane. `call_violations` is
@@ -715,9 +783,13 @@ def voice_or_fallback(
             numbers_whitelist=numbers_whitelist, cfg=cfg, family_spec=family_spec,
         )
 
+        # §10 E3: SYSTEM_PROMPT plus whatever the config pins, which is nothing
+        # until an operator edits intel.exemplar_store.active_version.
+        _system = system_prompt(cfg, root)
+
         def _do_call(client, model):
             resp = client.messages.create(
-                model=model, max_tokens=max_tokens, system=SYSTEM_PROMPT,
+                model=model, max_tokens=max_tokens, system=_system,
                 messages=[{"role": "user", "content": user_msg}],
             )
             if getattr(resp, "stop_reason", None) == "refusal":
@@ -742,10 +814,26 @@ def voice_or_fallback(
         return _done("fallback_provider", fallback_text)
 
     text = _tidy(raw_text)
-    violations = validate_reply_copy(
-        text, draft=fallback_text, numbers_whitelist=numbers_whitelist,
-        parent_text=parent_text, account=account, family=family, root=root,
-    )
+    try:
+        violations = validate_reply_copy(
+            text, draft=fallback_text, numbers_whitelist=numbers_whitelist,
+            parent_text=parent_text, account=account, family=family, root=root,
+        )
+    except Exception as exc:  # noqa: BLE001 — "Never raises" is the contract
+        # THE GATE IS NOT ALLOWED TO BE THE CRASH. `validate_reply_copy` does
+        # four LAZY imports (hot_tape_llm, reply_critics, copywriter,
+        # expression_dial) and any of them can ImportError in a thin runtime —
+        # exactly the CI/minimal-deps lane this package is built to survive. That
+        # exception used to escape a function documented "Never raises", which is
+        # the guarantee §0 gate 1 of the reply doctrine rests on: the caller
+        # treats a reply as always-postable. UNVALIDATED MODEL COPY NEVER SHIPS
+        # here — the deterministic draft does, and the reason is recorded in the
+        # same `violations` field the gate hits use, so the producer's
+        # fallback-rate report shows it instead of hiding it.
+        log.warning("reply_voice: validation unavailable for account=%s (%s: %s) — "
+                    "deterministic draft ships", account, type(exc).__name__, exc)
+        return _done("fallback_validation", fallback_text,
+                     violations=[f"validation unavailable ({type(exc).__name__}: {exc})"])
     if violations:
         log.warning("reply_voice: model copy rejected for account=%s: %s",
                     account, "; ".join(violations[:6]))
@@ -756,6 +844,7 @@ def voice_or_fallback(
 
 __all__ = [
     "SYSTEM_PROMPT", "PLAYBOOK_EXEMPLARS", "ANTI_EXEMPLARS", "MAX_REPLY_CHARS",
-    "voice_or_fallback", "validate_reply_copy", "build_user_message",
-    "persona_card", "allowed_numbers", "fallback_stats", "reset_stats",
+    "system_prompt", "voice_or_fallback", "validate_reply_copy",
+    "build_user_message", "persona_card", "allowed_numbers", "fallback_stats",
+    "reset_stats",
 ]

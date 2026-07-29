@@ -988,3 +988,146 @@ def test_config_defaults_ship_the_lanes_enabled():
     assert cfg["house_picks"]["enabled"] is True
     assert cf.lane_cfg(cfg)["max_per_day"] == cfg["congress_lane"]["max_per_day"]
     assert inf.lane_cfg(cfg)["max_per_day"] == cfg["insider_lane"]["max_per_day"]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 11. The lane may fail soft, but never SILENTLY (E-wave review, MAJOR 5)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _lane_cfg() -> dict:
+    return {"desk_network": {"stage": "A", "accounts": [
+        {"id": "flagship", "kind": "branded", "beat": "US equities",
+         "voice": "authoritative desk"},
+    ]}}
+
+
+def test_a_crashed_filing_lane_annotates_and_names_itself_in_the_census(
+        monkeypatch, tmp_path, capsys):
+    """`except Exception: pass` made two live lanes indistinguishable from empty.
+
+    The census wrote `{"congress": 0, "insider": 0, "house_picks": 0}` from
+    INSIDE the try, so a block that died on its first line produced the same row
+    as a quiet night — and the lanes could stay dark for weeks behind a green
+    nightly. Fail-soft stays (the rest of the plan must still build); silence
+    does not.
+    """
+    from engine.marketing import congress_feed
+    from engine.marketing.content_studio import content_plan
+
+    def _boom(*a, **k):
+        raise RuntimeError("parquet is unreadable")
+
+    monkeypatch.setattr(congress_feed, "candidates", _boom, raising=False)
+    plan = content_plan(_lane_cfg(), [], closes_loader=None, root=tmp_path)
+
+    lanes = plan["content"]["selection"]["filing_lanes"]
+    assert lanes.get("error") == "RuntimeError", (
+        f"the census cannot tell a crash from an empty night: {lanes}")
+
+    lines = capsys.readouterr().out.splitlines()
+    hits = [ln for ln in lines
+            if ln.startswith("::warning") and "marketing-filing-lanes" in ln]
+    assert hits, (
+        "no start-of-line ::warning for the crashed lane — a logger prefixes the "
+        "line and GitHub drops the annotation silently "
+        "(tests/test_gh_annotation_line_start.py)")
+    assert "RuntimeError" in hits[0]
+
+    # FAIL-SOFT IS STILL THE CONTRACT: the rest of the plan is unaffected.
+    assert plan["accounts"], "a crashed filing lane took the whole plan down"
+
+
+def test_a_healthy_filing_lane_carries_no_error_key(monkeypatch, tmp_path):
+    """The mirror: a quiet night must not look like a crash either."""
+    from engine.marketing import congress_feed, house_picks, insider_feed
+    from engine.marketing.content_studio import content_plan
+
+    for mod, name in ((congress_feed, "candidates"), (insider_feed, "candidates"),
+                      (house_picks, "house_picks")):
+        monkeypatch.setattr(mod, name, lambda *a, **k: [], raising=False)
+    plan = content_plan(_lane_cfg(), [], closes_loader=None, root=tmp_path)
+
+    lanes = plan["content"]["selection"]["filing_lanes"]
+    assert "error" not in lanes, lanes
+    assert lanes == {"congress": 0, "insider": 0, "house_picks": 0}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 12. One name, one post a night (E-wave review, m5)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_the_filing_lanes_receive_the_tickers_the_plan_already_claimed(
+        monkeypatch, tmp_path):
+    """House picks got `exclude=` from day one; congress and insider did not.
+
+    Without it a desk could carry a Prophet signal on NVDA, a congressional
+    disclosure on NVDA and a Form 4 on NVDA in one evening — one name, three
+    posts, from one account, which reads as a campaign rather than as three
+    independent facts. The insider lane must also see what congress just took,
+    since the two run back to back off one `_claimed` set.
+    """
+    from engine.marketing import congress_feed, house_picks, insider_feed
+    from engine.marketing.content_studio import content_plan
+
+    seen: dict[str, frozenset] = {}
+
+    def _spy(kind, out):
+        def _fn(*a, exclude=None, **k):
+            seen[kind] = frozenset(exclude or ())
+            return list(out)
+        return _fn
+
+    cand = {"ticker": "PLTR",
+            "facts": {"facts": [{"text": "A member disclosed a PLTR purchase."}]}}
+    monkeypatch.setattr(congress_feed, "candidates", _spy("congress", [dict(cand)]),
+                        raising=False)
+    monkeypatch.setattr(insider_feed, "candidates", _spy("insider", []), raising=False)
+    monkeypatch.setattr(house_picks, "house_picks", lambda *a, **k: [], raising=False)
+
+    plans = [{"id": "PLTR-BULL", "asset": "PLTR", "direction": "BULL",
+              "entry": 120.0, "invalidation": 100.0, "targets": [150.0],
+              "trigger": 125.0, "phase": "triggered_pre_t1",
+              "recommended_action": "hold", "management_confidence": 66.0,
+              "_signal_date": "2026-07-28"}]
+    plan = content_plan(_lane_cfg(), plans, closes_loader=None, root=tmp_path)
+
+    assert "congress" in seen and "insider" in seen, (
+        "a filing feed was never called — the guard would be vacuous")
+    assert "PLTR" in seen["congress"], (
+        "the congress lane was not told which tickers the plan already claimed")
+    assert "PLTR" in seen["insider"], (
+        "the insider lane did not inherit the congress lane's claim")
+
+    # And the belt: a claimed ticker never reaches a queue twice from this lane.
+    filing = [q for a in plan["accounts"] for q in a["queue"]
+              if q.get("provenance") in ("congress_desk", "insider_desk")]
+    assert not [q for q in filing if q.get("ticker") == "PLTR"], (
+        "a claimed ticker was posted a second time by a filing lane")
+
+
+@pytest.mark.parametrize("module_name, loader, inner", [
+    ("congress_feed", "load_congress", "new_disclosures"),
+    ("insider_feed", "load_insiders", "open_market_purchases"),
+])
+def test_the_feeds_merge_exclude_into_their_blocklist(monkeypatch, module_name,
+                                                      loader, inner):
+    """Unit-level: `exclude` must actually FILTER, not merely be accepted.
+
+    No pandas here on purpose — the inner selector is stubbed, so the loader may
+    hand back any non-None sentinel and this runs on the thin CI lane.
+    """
+    import importlib
+
+    mod = importlib.import_module(f"engine.marketing.{module_name}")
+    calls: dict = {}
+
+    def _spy(df, *, today, cfg, cooled):
+        calls["cooled"] = frozenset(cooled or ())
+        return []
+
+    monkeypatch.setattr(mod, loader, lambda root: object(), raising=True)
+    monkeypatch.setattr(mod, inner, _spy, raising=True)
+    mod.candidates(None, today="2026-07-29", cfg={},
+                   cooled={"AAA"}, exclude={"BBB"})
+
+    assert calls["cooled"] == frozenset({"AAA", "BBB"}), calls

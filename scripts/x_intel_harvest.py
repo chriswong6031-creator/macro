@@ -93,6 +93,12 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
                     help="comma-separated subset of the roster to poll")
     ap.add_argument("--no-candidates", action="store_true",
                     help="skip the exemplar-candidate proposal step")
+    ap.add_argument("--json-out", default="", dest="json_out",
+                    help="also write the run report to this path as PURE JSON. "
+                         "stdout carries ::warning/::notice annotations mixed with "
+                         "the report, so a consumer that parses the report (the "
+                         "workflow's job summary) must read this file, never a "
+                         "tee of the stream.")
     ap.add_argument("--promote", default="",
                     help="OPERATOR ONLY — mint an exemplar version from the "
                          "pending pool with this note. Requires --ratified-by.")
@@ -217,7 +223,14 @@ def main(argv: list[str] | None = None) -> int:
     report_out["budget"]["call_cap"] = conf.get("monthly_call_cap")
     report_out["budget"]["usd_cap"] = conf.get("monthly_usd_cap")
 
-    print(json.dumps(report_out, indent=2, ensure_ascii=False, default=str))
+    blob = json.dumps(report_out, indent=2, ensure_ascii=False, default=str)
+    if args.json_out:
+        try:
+            Path(args.json_out).write_text(blob + "\n", encoding="utf-8")
+        except Exception as exc:  # noqa: BLE001 — a receipt file never fails a run
+            print(f"::warning title=x-intel::--json-out write to {args.json_out} "
+                  f"failed ({exc}) — the report is still on stdout", flush=True)
+    print(blob)
     return 0
 
 

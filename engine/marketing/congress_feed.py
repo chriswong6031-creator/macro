@@ -761,20 +761,29 @@ def candidates(
     cfg: dict | None = None,
     cooled: frozenset[str] | set[str] | None = None,
     member_stats: dict | None = None,
+    exclude: frozenset[str] | set[str] | None = None,
 ) -> list[dict]:
     """Load → filter → enrich → pack. Candidates come back with `facts` attached.
 
     `member_stats` is `congress_members.compute(df)` output keyed by BioGuideID;
     absent, candidates simply carry no record context — the lane never blocks on
     an enrichment source.
+
+    `exclude` is the set of tickers the plan has ALREADY claimed tonight (same
+    contract as `house_picks.house_picks`). Without it a desk could carry a
+    Prophet signal on NVDA and a congressional disclosure on NVDA in the same
+    evening — two posts, one name, from one account, which reads as a campaign
+    rather than as two independent facts. Merged into `cooled` because both are
+    the same predicate at this layer: a ticker this lane may not use tonight.
     """
     if today is None:
         today = date.today().isoformat()
     df = load_congress(root)
     if df is None:
         return []
+    blocked = frozenset(cooled or ()) | frozenset(exclude or ())
     out: list[dict] = []
-    for cand in new_disclosures(df, today=today, cfg=cfg, cooled=cooled):
+    for cand in new_disclosures(df, today=today, cfg=cfg, cooled=blocked):
         try:
             cand["member_context"] = member_context(
                 (member_stats or {}).get(cand.get("bio_guide_id")))

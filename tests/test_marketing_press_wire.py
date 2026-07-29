@@ -93,8 +93,9 @@ def _no_network(monkeypatch, *, wire_items=None, press_items=None):
     """Replace BOTH pollers. Anything reaching the network fails the test."""
     monkeypatch.setattr(breaking_feed, "poll_all",
                         lambda root, cfg: list(wire_items or []))
-    monkeypatch.setattr(press_providers, "poll_all",
-                        lambda root, cfg, state, offline=False: list(press_items or []))
+    monkeypatch.setattr(
+        press_providers, "poll_all",
+        lambda root, cfg, state, offline=False, now=None: list(press_items or []))
 
 
 # ---------------------------------------------------------------------------
@@ -413,7 +414,7 @@ class TestSpendCapFromCommittedState:
         PW.append_spend(root, {"requests": 10, "tweets": 200, "usd": 0.60},
                         month=month, now=NOW)
 
-        def _spender(root_, cfg, state, offline=False):   # noqa: ANN001
+        def _spender(root_, cfg, state, offline=False, now=None):   # noqa: ANN001
             bucket = state.setdefault("twitterapiio", {}).setdefault("spend", {})[month]
             bucket["requests"] += 2
             bucket["tweets"] += 40
@@ -812,3 +813,235 @@ class TestGitattributes:
             if entry.startswith("#") or not entry:
                 continue
             assert not entry.rstrip("/").endswith("data/marketing/press_wire"), entry
+
+
+# ---------------------------------------------------------------------------
+# 9. BLOCKER 2 — the billed tier fails CLOSED on remote write
+# ---------------------------------------------------------------------------
+
+class TestBilledLaneFailsClosedOnPush:
+    """A run that cannot push must not spend.
+
+    THE STATE WRITE IS THE BUDGET, and it is two things at once: cursors.json
+    holds the per-handle ``last_poll`` the provider throttles against, and
+    spend.jsonl holds the deltas ``fold_spend`` sums into the cap guard's seed.
+    A push that never lands loses BOTH, so the next */5 run re-polls all 18
+    handles believing $0.00 has been spent. The workflow's commit step used to
+    exit 0 after five failed attempts, which made that a GREEN loop: ~$466/mo of
+    real money against a $75 account, forever, with nothing red anywhere.
+    """
+
+    @staticmethod
+    def _cfg() -> dict:
+        return {
+            "x_follow": {
+                "handles": [{"handle": "DeItaone", "tier": "fast"}],
+                "poll_tiers": {"fast": 60},
+            },
+            "spend": {"twitterapiio_monthly_cap_usd": 75.0},
+            "actions_wire": {"monthly_usd_cap": 50.0, "poll_tiers": {"fast": 60}},
+        }
+
+    def _run_with_probe(self, tmp_path, monkeypatch, *, probe_ok: bool):
+        root = _stage_repo(tmp_path, press_cfg=self._cfg())
+        monkeypatch.setenv("TWITTERAPI_IO_KEY", "test-key")
+        monkeypatch.setenv(PW.ENV_OUTBOX_ENABLED, "1")
+        monkeypatch.delenv(PW.ENV_DAEMON_ACTIVE, raising=False)
+        monkeypatch.setattr(breaking_feed, "poll_all", lambda r, c: [])
+        monkeypatch.setattr(
+            PW, "push_access_ok",
+            lambda *a, **k: (probe_ok, "ok" if probe_ok else "remote rejected the probe"))
+        # The REAL provider runs; its transport fails the test if it is reached.
+        reached: list[str] = []
+        monkeypatch.setattr(
+            press_providers.TwitterApiIoProvider, "_request",
+            lambda self, key, handle: reached.append(handle) or {"tweets": []})
+        assert PW.run(root, now=NOW) == 0
+        return reached
+
+    def test_a_failed_push_probe_stands_the_billed_lane_down(self, tmp_path,
+                                                             monkeypatch, capsys):
+        reached = self._run_with_probe(tmp_path, monkeypatch, probe_ok=False)
+        assert reached == [], (
+            "the billed twitterapi.io lane made a request on a run whose state "
+            "could not be committed")
+        lines = capsys.readouterr().out.splitlines()
+        hits = [ln for ln in lines
+                if ln.startswith("::warning") and "push-preflight" in ln]
+        assert hits, (
+            "the stand-down must annotate at LINE START — a logger prefixes the "
+            "line and GitHub drops it silently "
+            "(tests/test_gh_annotation_line_start.py)")
+
+    def test_a_healthy_push_probe_leaves_the_billed_lane_running(self, tmp_path,
+                                                                 monkeypatch):
+        """The mirror: fail-closed must not become a permanent outage."""
+        reached = self._run_with_probe(tmp_path, monkeypatch, probe_ok=True)
+        assert reached == ["DeItaone"]
+
+    def test_the_probe_never_raises_on_a_non_repo(self, tmp_path):
+        """git missing, no remote, not a checkout — all read as "cannot push"."""
+        ok, why = PW.push_access_ok(tmp_path)
+        assert ok is False and why
+
+    def test_the_probe_does_not_push_at_main(self, tmp_path, monkeypatch):
+        """A busy main advancing under a fresh checkout is a non-fast-forward the
+        commit step's rebase loop resolves in seconds. Probing ``HEAD:main``
+        would read that as a push outage and stand the lane down for nothing."""
+        seen: dict = {}
+
+        class _Proc:
+            returncode = 0
+            stdout = ""
+            stderr = ""
+
+        def _fake_run(argv, **kw):
+            seen["argv"] = list(argv)
+            return _Proc()
+
+        import subprocess as _sp
+        monkeypatch.setattr(_sp, "run", _fake_run)
+        assert PW.push_access_ok(tmp_path)[0] is True
+        assert seen["argv"][-1].startswith("HEAD:refs/heads/")
+        assert seen["argv"][-1] != "HEAD:main"
+
+
+class TestWorkflowPushFailureIsRed:
+    def test_the_commit_step_no_longer_swallows_a_terminal_push_failure(self, wf_text):
+        """`exit 0` after the retry loop is what made the overspend green.
+
+        The retries stay (a lost race is normal and self-heals); running OUT of
+        them must surface as a failed run.
+        """
+        tail = wf_text.split("could not push state after 5 attempts")[-1]
+        assert "exit 1" in tail.split("\n\n")[0], (
+            "terminal push failure still exits 0 — a persistent push outage would "
+            "loop green every 5 minutes while the spend counter reads $0.00")
+        assert "::error title=press-wire-push" in wf_text
+
+
+# ---------------------------------------------------------------------------
+# 10. MAJOR 7 — the three sub-caps must leave a reserve
+# ---------------------------------------------------------------------------
+
+class TestSpendCapReserve:
+    """Nothing in code sums the lanes; each clamps only against the account cap.
+
+    So three lanes each "within budget" can still bill the whole $75 together —
+    and they were EXACTLY $75 (wire 55 + reply 15 + intel 5), zero reserve. This
+    is the arithmetic no module owns, pinned here so a cap edit that erases the
+    reserve is red.
+    """
+
+    RESERVE_USD = 5.0
+
+    @staticmethod
+    def _yaml(rel: str) -> dict:
+        import yaml
+        return yaml.safe_load((ROOT / rel).read_text(encoding="utf-8")) or {}
+
+    def _caps(self) -> dict:
+        press = self._yaml("config/press_sources.yml")
+        marketing = self._yaml("config/marketing.yml")
+        return {
+            "account": float(press["spend"]["twitterapiio_monthly_cap_usd"]),
+            "wire": float(press["actions_wire"]["monthly_usd_cap"]),
+            "reply": float(press["reply_discovery"]["monthly_usd_cap"]),
+            "intel": float((marketing.get("intel") or {})["monthly_usd_cap"]),
+        }
+
+    def test_every_carve_is_a_config_key_not_a_comment(self):
+        """A budget that exists only in prose cannot be enforced or summed."""
+        caps = self._caps()
+        for lane in ("wire", "reply", "intel"):
+            assert caps[lane] > 0, f"{lane} carve is missing from config"
+
+    def test_the_lanes_sum_under_the_account_cap_with_a_reserve(self):
+        caps = self._caps()
+        total = caps["wire"] + caps["reply"] + caps["intel"]
+        assert total <= caps["account"] - self.RESERVE_USD, (
+            f"press {caps['wire']} + reply {caps['reply']} + intel {caps['intel']} "
+            f"= {total} against a {caps['account']} account cap: the ${self.RESERVE_USD} "
+            "reserve is gone. Minimum-charge rounding, a retry or a manual backfill "
+            "in ANY lane now overdraws the real account.")
+
+    def test_the_wire_cap_still_clears_its_own_projection(self):
+        """A cap under the plan is not conservative — it is a silent outage
+        around day 26 of every month. Lowering the cap must not create one."""
+        import yaml
+        press = yaml.safe_load(
+            (ROOT / "config/press_sources.yml").read_text(encoding="utf-8"))
+        projected = PW.projected_monthly_usd(press)["usd_per_month"]
+        assert projected <= PW.actions_monthly_cap(press), (
+            f"projected ${projected}/mo exceeds the lane cap "
+            f"${PW.actions_monthly_cap(press)}")
+
+    def test_the_code_default_tracks_the_config(self):
+        """DEFAULT_ACTIONS_CAP_USD is used when the config block is absent; a
+        stale default would silently RAISE the cap in that case."""
+        import yaml
+        press = yaml.safe_load(
+            (ROOT / "config/press_sources.yml").read_text(encoding="utf-8"))
+        assert PW.DEFAULT_ACTIONS_CAP_USD == float(
+            press["actions_wire"]["monthly_usd_cap"])
+
+
+# ---------------------------------------------------------------------------
+# 11. m4 — one clock decides the spend month
+# ---------------------------------------------------------------------------
+
+class TestSpendMonthIsSingleSourced:
+    def test_a_month_end_tick_books_into_the_run_ts_month(self, monkeypatch):
+        """The wire derives the month from its run `ts` (seeding the counter and
+        folding the delta); the provider used to re-read `datetime.now` for the
+        same decision. A tick that straddles midnight on the last of the month
+        therefore booked spend into a bucket the fold never reads — money spent,
+        counter untouched.
+
+        THE MODULE CLOCK IS FORCED INTO A DIFFERENT MONTH than the run `ts`, so
+        the assertion discriminates on any calendar day. Pinning only a
+        month-end fixture would pass under the defect for eleven months of the
+        year (memory: fixture-date-plus-wall-clock-gate-bomb).
+        """
+        ts = datetime(2026, 7, 31, 23, 59, 30, tzinfo=timezone.utc)
+        wall = datetime(2026, 8, 1, 0, 0, 30, tzinfo=timezone.utc)
+
+        class _FrozenDT(datetime):
+            @classmethod
+            def now(cls, tz=None):
+                return wall if tz is None else wall.astimezone(tz)
+
+        monkeypatch.setattr(press_providers, "datetime", _FrozenDT)
+        monkeypatch.setenv("TWITTERAPI_IO_KEY", "test-key")
+        prov = press_providers.TwitterApiIoProvider(
+            {"handles": [{"handle": "DeItaone", "tier": "fast"}],
+             "poll_tiers": {"fast": 1}},
+            spend_cap_usd=50.0)
+        monkeypatch.setattr(press_providers.TwitterApiIoProvider, "_request",
+                            lambda self, key, handle: {"tweets": []})
+
+        state: dict = {}
+        prov.fetch(root=ROOT, session_state=state, offline=False, now=ts)
+
+        spend = state["twitterapiio"]["spend"]
+        assert PW.month_key(ts) != PW.month_key(wall), "fixture is degenerate"
+        assert PW.month_key(ts) in spend, (
+            f"the tick booked into {sorted(spend)} instead of {PW.month_key(ts)} "
+            "— the provider re-read its own clock instead of the run's")
+        assert PW.month_key(wall) not in spend
+        assert float(spend[PW.month_key(ts)]["requests"]) == 1
+
+    def test_the_wire_hands_the_provider_its_own_clock(self, tmp_path, monkeypatch):
+        seen: dict = {}
+        root = _stage_repo(tmp_path)
+        monkeypatch.setenv(PW.ENV_OUTBOX_ENABLED, "1")
+        monkeypatch.delenv(PW.ENV_DAEMON_ACTIVE, raising=False)
+        monkeypatch.setattr(breaking_feed, "poll_all", lambda r, c: [])
+
+        def _spy(root_, cfg, state, *, offline=False, now=None):
+            seen["now"] = now
+            return []
+
+        monkeypatch.setattr(press_providers, "poll_all", _spy)
+        PW.run(root, now=NOW)
+        assert seen["now"] == NOW

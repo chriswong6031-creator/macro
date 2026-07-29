@@ -382,8 +382,10 @@ class TestProviderPath:
         assert rv.voice_or_fallback(DRAFT, account="kelly", parent_text=PARENT,
                                     numbers_whitelist=WHITELIST,
                                     cfg=cfg)["mode"] == "fallback_provider"
-        # Age the window rather than sleeping through it.
-        monkeypatch.setattr(rv, "_WINDOW_STARTED", rv._WINDOW_STARTED - 10.0)
+        # Age the recorded calls rather than sleeping through the window.
+        _aged = [t - 10.0 for t in rv._CALL_TIMES]
+        rv._CALL_TIMES.clear()
+        rv._CALL_TIMES.extend(_aged)
         assert rv.voice_or_fallback(DRAFT, account="kelly", parent_text=PARENT,
                                     numbers_whitelist=WHITELIST, cfg=cfg)["mode"] == "llm"
 
@@ -682,3 +684,202 @@ class TestShippedConfig:
         """Arming the phrasing must not arm the lane that calls it."""
         assert cfg["reply_desk"]["producer"]["enabled"] is False
         assert set(cfg["reply_desk"]["modes_enabled"]) == {"M0", "M1"}
+
+
+# ===========================================================================
+# 11. E-wave adversarial review — the never-raise contract, the gate's own
+#     whitelist, the rolling window, and the §10 E3 exemplar hook
+# ===========================================================================
+
+class TestNeverRaisesIncludesTheGate:
+    """MAJOR 9. `voice_or_fallback` is documented "Never raises" and doctrine
+    §0 gate 1 rests on it: the caller treats a reply as always-postable.
+
+    `validate_reply_copy` sat OUTSIDE the try that guards the provider walk, and
+    it performs four LAZY imports (hot_tape_llm, reply_critics, copywriter,
+    expression_dial) — any of which can ImportError in a thin runtime, which is
+    exactly the environment this package is built to survive. The exception
+    escaped the function that promised not to raise.
+    """
+
+    def test_a_raising_validator_falls_back_instead_of_escaping(self, monkeypatch):
+        _arm(monkeypatch)
+        monkeypatch.setattr(llm_auth, "make_call", _returns(VOICED))
+
+        def _boom(*a, **k):
+            raise ImportError("No module named 'expression_dial'")
+
+        monkeypatch.setattr(rv, "validate_reply_copy", _boom)
+        out = rv.voice_or_fallback(DRAFT, account="kelly", parent_text=PARENT,
+                                   numbers_whitelist=WHITELIST, cfg=ARMED_CFG)
+
+        assert out["text"] == DRAFT, "unvalidated model copy shipped"
+        assert out["mode"] == "fallback_validation"
+        assert any("ImportError" in v for v in out["violations"]), out["violations"]
+        assert rv.fallback_stats()["fallback_validation"] == 1
+
+
+class TestGateJudgesTheListThePromptHandedOut:
+    """m1. The prompt's ALLOWED NUMBERS is the own-feed whitelist UNION the
+    deterministic draft's own figures (`allowed_numbers`) — the draft is about
+    to ship verbatim, so its numbers are admissible by construction. The
+    fact_discipline gate was given the whitelist ALONE, so a model that obeyed
+    the prompt and reused a draft figure was rejected for compliance, inflating
+    the fallback telemetry with correct copy.
+    """
+
+    def test_a_draft_only_number_is_not_a_violation(self):
+        draft = "Front-end yields sat at 4.25% while the curve held."
+        # 4.25% is in the DRAFT and NOT in the own-feed whitelist.
+        assert "4.25%" in rv.allowed_numbers(draft, ["12.5%"])
+        hits = _gates("The curve held while front-end yields sat at 4.25%.",
+                      draft=draft, numbers_whitelist=["12.5%"])
+        assert not [h for h in hits if "fact_discipline" in h], hits
+
+    def test_a_number_in_neither_set_still_rejects(self):
+        draft = "Front-end yields sat at 4.25% while the curve held."
+        hits = _gates("The curve held while front-end yields sat at 9.87%.",
+                      draft=draft, numbers_whitelist=["12.5%"])
+        assert [h for h in hits if "fact_discipline" in h or "number" in h.lower()], (
+            "a figure in neither the whitelist nor the draft cleared the gate")
+
+
+class TestRunawayGuardIsTrulyRolling:
+    """m2. A tumbling counter (count + window-start, reset wholesale when the
+    window elapses) permits 2x the cap across the boundary: 40 calls at t=3599
+    and 40 more at t=3601 is 80 calls in two seconds, and the counters read
+    compliant the whole time.
+    """
+
+    def test_a_burst_straddling_the_boundary_is_capped(self, monkeypatch):
+        cap, window = 3, 3600.0
+        ticks = {"t": 0.0}
+        monkeypatch.setattr(rv.time, "monotonic", lambda: ticks["t"])
+        rv.reset_stats()
+
+        # One call opens the hour...
+        assert rv._take_call_slot(cap, window) is True
+        # ...and the rest of the budget is spent at the very END of it.
+        ticks["t"] = 3599.0
+        assert rv._take_call_slot(cap, window) is True
+        assert rv._take_call_slot(cap, window) is True
+        assert rv._take_call_slot(cap, window) is False
+
+        # Two seconds later a TUMBLING window has elapsed (3601 - 0 >= 3600) and
+        # hands back the WHOLE budget, so `cap` more calls fire in the next
+        # instant: 2x the cap inside three seconds, with the counters reading
+        # compliant throughout. A rolling window returns exactly the one slot
+        # that aged out — the t=0 call — and not one more.
+        ticks["t"] = 3601.0
+        assert rv._take_call_slot(cap, window) is True
+        assert rv._take_call_slot(cap, window) is False, (
+            f"the guard handed back the whole budget at the boundary — a cap of "
+            f"{cap} per {window:.0f}s allowed {cap * 2} calls in three seconds")
+
+        # The budget returns only as the calls themselves age out.
+        ticks["t"] = 3599.0 + window + 1.0
+        assert rv._take_call_slot(cap, window) is True
+
+    def test_the_window_still_rolls_for_a_long_lived_daemon(self, monkeypatch):
+        """The mirror: a guard that never resets is an off switch with a delay."""
+        ticks = {"t": 0.0}
+        monkeypatch.setattr(rv.time, "monotonic", lambda: ticks["t"])
+        rv.reset_stats()
+        assert rv._take_call_slot(1, 60.0) is True
+        assert rv._take_call_slot(1, 60.0) is False
+        ticks["t"] += 61.0
+        assert rv._take_call_slot(1, 60.0) is True
+
+
+class TestReplyExemplarHook:
+    """BLOCKER 3, reply half. §10 E3: "writer/critic prompts load exemplars from
+    the store (config-pinned version, never auto-flipped)". `active_exemplars`
+    had NO production caller — reply_voice imported neither exemplar_store nor
+    x_intel.
+    """
+
+    @staticmethod
+    def _store(tmp_path, *, version: int = 3) -> Path:
+        import json
+
+        from engine.marketing import exemplar_store
+
+        d = tmp_path / "data" / "marketing" / "x_intel"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "exemplar_store.json").write_text(json.dumps({
+            "schema": exemplar_store.STORE_SCHEMA,
+            "latest_version": version + 1,
+            "versions": [
+                {"version": version, "ratified_by": "chris", "n_entries": 1,
+                 "entries": [{"register": "trader", "text": "RATIFIED SHOT 41.7",
+                              "post_id": "1", "engagement": {"interaction_rate": 0.2}}]},
+                {"version": version + 1, "ratified_by": "chris", "n_entries": 1,
+                 "entries": [{"register": "trader", "text": "NEWER UNPINNED SHOT",
+                              "post_id": "2", "engagement": {"interaction_rate": 0.9}}]},
+            ],
+            "pending": [{"register": "trader", "text": "PENDING SHOT",
+                         "post_id": "3", "engagement": {"interaction_rate": 0.99}}],
+        }), encoding="utf-8")
+        return tmp_path
+
+    def test_unpinned_is_byte_identical_to_the_baseline_prompt(self, tmp_path):
+        """DARK-SAFE. The shipped config pins nothing, so today's prompt must not
+        move by a single byte — and the store must not even be opened."""
+        root = self._store(tmp_path)
+        assert rv.system_prompt({"intel": {"exemplar_store": {"active_version": None}}},
+                                root) == rv.SYSTEM_PROMPT
+        assert rv.system_prompt(None, root) == rv.SYSTEM_PROMPT
+        assert rv.system_prompt({}, root) == rv.SYSTEM_PROMPT
+
+    def test_a_pinned_version_reaches_the_prompt_the_provider_receives(
+            self, monkeypatch, tmp_path):
+        """Through the REAL production entry point, not a shim: whatever
+        `voice_or_fallback` hands `client.messages.create` as `system`."""
+        root = self._store(tmp_path)
+        seen: dict = {}
+
+        def _capture(providers, fn, context=""):
+            class _C:
+                class messages:
+                    @staticmethod
+                    def create(**kw):
+                        seen.update(kw)
+                        raise RuntimeError("stop here — the prompt is the assertion")
+            try:
+                fn(_C(), "m")
+            except RuntimeError:
+                pass
+            return None, "captured", "oauth"
+
+        _arm(monkeypatch)
+        monkeypatch.setattr(llm_auth, "make_call", _capture)
+        cfg = dict(ARMED_CFG)
+        cfg["intel"] = {"exemplar_store": {"active_version": 3}}
+        rv.voice_or_fallback(DRAFT, account="kelly", parent_text=PARENT,
+                             numbers_whitelist=WHITELIST, cfg=cfg, root=root)
+
+        system = seen.get("system") or ""
+        assert "RATIFIED SHOT 41.7" in system, (
+            "the pinned exemplar never reached the prompt the provider sees")
+        # The playbook baseline is kept, never replaced.
+        assert rv.PLAYBOOK_EXEMPLARS[0][2][:30] in system
+
+    def test_the_pin_is_the_only_input_never_the_latest_or_the_pending_pool(
+            self, tmp_path):
+        root = self._store(tmp_path)
+        prompt = rv.system_prompt({"intel": {"exemplar_store": {"active_version": 3}}},
+                                  root)
+        assert "NEWER UNPINNED SHOT" not in prompt, "the store auto-flipped forward"
+        assert "PENDING SHOT" not in prompt, "an unratified candidate reached the writer"
+
+    def test_an_exemplar_number_does_not_widen_the_numeric_gate(self, tmp_path):
+        """EPISTEMICS. Exemplar TEXT is a style reference; the figures inside it
+        are other people's. A model that lifts one is rejected exactly as if it
+        had invented it."""
+        root = self._store(tmp_path)
+        prompt = rv.system_prompt({"intel": {"exemplar_store": {"active_version": 3}}},
+                                  root)
+        assert "41.7" in prompt, "fixture is degenerate — no number in the exemplar"
+        assert "41.7" not in rv.allowed_numbers(DRAFT, WHITELIST)
+        hits = _gates("Credit is the test, not the tape. Spreads at 41.7 say so.")
+        assert hits, "a number that exists only in an exemplar cleared the gate"

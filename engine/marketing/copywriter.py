@@ -4472,16 +4472,80 @@ _V2_SYSTEM_PROMPT_BASE = (
 )
 
 
-def _v2_system_prompt(cfg: dict) -> str:
-    """The system prompt plus this deployment's configured copy_laws."""
+#: How many ratified store exemplars reach the writer prompt. Six is the same
+#: default ``exemplar_store.active_exemplars`` documents; the hand-curated
+#: CORPUS_EXEMPLARS block above stays whole either way.
+_STORE_EXEMPLAR_K = 6
+
+
+def store_exemplar_block(cfg: dict | None, *, root: Any = None,
+                         register: str | None = None,
+                         k: int = _STORE_EXEMPLAR_K) -> str:
+    """The §10 E3 writer hook: exemplars from the CONFIG-PINNED store version.
+
+    Masterplan §10 E3: "writer/critic prompts load exemplars from the store
+    (config-pinned version, never auto-flipped)". ``exemplar_store`` deliberately
+    does not import this module, so THIS is the production seam — without it the
+    whole ratification chain (harvest -> pending -> operator promotion -> config
+    pin) ended at a function only tests called.
+
+    TWO LAWS BOUND THIS BLOCK.
+
+    * **The pin is the only input.** ``active_exemplars`` reads
+      ``intel.exemplar_store.active_version`` and nothing else — never
+      ``latest_version``, never "the newest version that exists". An unpinned
+      deployment gets ``[]`` here and the prompt is byte-identical to the
+      pre-hook prompt, which is the dark default the store ships in.
+    * **Their numbers are theirs.** These are OTHER PEOPLE'S posts, carried as a
+      register reference. Nothing here touches the item payload's
+      ``numbers_whitelist``, so a model that lifts a figure out of an exemplar is
+      still rejected by ``validate_copy_v2``'s numeric gate exactly as if it had
+      invented one. The block says so in the prompt as well, because the cheapest
+      way to lose that argument is to leave it implicit.
+
+    Never raises: an unreadable store, a missing config block or a bad pin all
+    degrade to "" (no exemplars), never to another version's voice.
+    """
+    try:
+        from engine.marketing import exemplar_store  # noqa: PLC0415
+
+        shots = exemplar_store.active_exemplars(register, k=k, root=root, cfg=cfg)
+    except Exception as exc:  # noqa: BLE001 — enrichment, never a gate
+        log.warning("copywriter v2: exemplar store unreadable (%s: %s) — no "
+                    "ratified exemplars in this prompt", type(exc).__name__, exc)
+        return ""
+    if not shots:
+        return ""
+
+    version = shots[0].get("exemplar_version")
+    lines = [
+        f"RATIFIED EXEMPLARS (exemplar store version {version}) — real posts from "
+        "OTHER accounts, ratified by the operator for their REGISTER. Read them "
+        "for rhythm, length and stance. Their numbers are theirs, not ours: every "
+        "figure you write must still come from this item's whitelist, and a number "
+        "borrowed from an exemplar is rejected exactly like an invented one.",
+    ]
+    for shot in shots:
+        text = " ".join(str(shot.get("text") or "").split())
+        if not text:
+            continue
+        reg = str(shot.get("register") or "unknown")
+        lines.append(f'- [{reg}] "{text}"')
+    # Header only, no bodies: say nothing rather than announce an empty block.
+    return "\n".join(lines) if len(lines) > 1 else ""
+
+
+def _v2_system_prompt(cfg: dict, *, root: Any = None) -> str:
+    """The system prompt, this deployment's copy_laws, and the pinned exemplars."""
+    out = _V2_SYSTEM_PROMPT_BASE
     laws = (cfg or {}).get("copy_laws") or []
-    if not laws:
-        return _V2_SYSTEM_PROMPT_BASE
-    return (
-        _V2_SYSTEM_PROMPT_BASE
-        + "\n\nOTHER LAWS (from config, obey exactly):\n"
-        + "\n".join(f"- {law}" for law in laws)
-    )
+    if laws:
+        out += ("\n\nOTHER LAWS (from config, obey exactly):\n"
+                + "\n".join(f"- {law}" for law in laws))
+    block = store_exemplar_block(cfg, root=root)
+    if block:
+        out += "\n\n" + block
+    return out
 
 
 # ── Module counters (the dry run's fallback-rate report reads these) ──────────
@@ -4688,8 +4752,12 @@ def _v2_user_message(payload: dict, *, violations: list[str] | None = None,
     return out
 
 
-def write_posts_llm_v2(contexts: list[dict], cfg: dict) -> list[dict]:
+def write_posts_llm_v2(contexts: list[dict], cfg: dict, *, root: Any = None) -> list[dict]:
     """Write one model post per context. Same order as input. NEVER raises.
+
+    `root` locates the exemplar store for the §10 E3 writer hook (see
+    ``store_exemplar_block``); None means this checkout. With no version pinned
+    in ``intel.exemplar_store.active_version`` the store is never even opened.
 
     Contract §Writer API. Each result is either
 
@@ -4772,7 +4840,7 @@ def write_posts_llm_v2(contexts: list[dict], cfg: dict) -> list[dict]:
         _bump("dropped_provider", len(contexts))
         return results
 
-    system_prompt = _v2_system_prompt(cfg)
+    system_prompt = _v2_system_prompt(cfg, root=root)
     try:
         max_tokens = int(llm_cfg.get("per_post_max_tokens", 400))
     except (TypeError, ValueError):
