@@ -47,7 +47,7 @@ and falsifier language is never front-facing.
 from __future__ import annotations
 
 import logging
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import datetime, time, timedelta, timezone
 from typing import Any
 
 from engine.prophet_live.interval import in_probed_band, interval_contains, lower_edge
