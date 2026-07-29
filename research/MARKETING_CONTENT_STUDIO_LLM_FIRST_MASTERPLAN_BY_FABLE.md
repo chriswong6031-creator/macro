@@ -298,3 +298,85 @@ sarcasm aim points). v4 adds what the corpus measured:
   media present at emit.
 - **Board/quota**: twitterapi.io corpus refresh uses the existing $75 bucket,
   ~17 calls/month.
+
+## §10 ECOSYSTEM COMPLETION — operator escalation 2026-07-29
+
+Operator directive (verbatim intent): *"complete the entirety of our X Growth
+system to perfection … breaking news, earnings releases, politician trades,
+Trump's tweets, occasional analysis … each account has its distinct personality
+… continually self improving and learning … the automated reply system on the
+M1 studio … THIS ENTIRE INFRASTRUCTURE AND BUILD OUT MUST BE COMPLETED AT THE
+HIGHEST QUALITY."* Codex case-study evidence pack ratified as editorial input:
+23-post breaking/insider analysis (operator-supplied 2026-07-28) — its findings
+(consequence+specificity wins; two-step publish alert→context; attribution in
+sentence one; mechanism makes context repostable; insider posts need the
+RELATIVE stake math, not the dollar headline) are adopted as law for the wire
+and insider lanes below.
+
+### The complete lane matrix (target end-state)
+
+| # | Lane | Trigger/data | Writer | Speed | State 2026-07-29 | Completing wave |
+|---|---|---|---|---|---|---|
+| 1 | Nightly persona desks | plans + stat kit | LLM v2 (no fallback) | overnight | **W1 this PR** | done |
+| 2 | Intraday tape (movers/routs/streaks/thresholds) | 5-min radar | wire templates → LLM phrasing | ≤9 min | radar LIVE (#3941); LLM phrasing built (#3937) UNWIRED | E1 |
+| 3 | Breaking/press/geopolitics | RSS + corroboration (VPS daemon) | breaking_summary LLM | minutes | built; split-brain to publisher + arming to verify | E7 |
+| 4 | Trump/White-House wire | press providers (Truth Social/WH feeds per addendum) | wire voice | minutes | providers exist; verify + arm | E7 |
+| 5 | Earnings reactions | earnings.parquet calendar + gap/AH detection | wire + LLM | ≤20 min | card builder exists, daemon never ticked | E1 |
+| 6 | Insider buys (Form 4) | EDGAR/Form-4 feed | fact-locked LLM (codex §insider workflow) | daily batch | NOT BUILT (recon in flight) | E2 |
+| 7 | Politician trades | congressional disclosures | fact-locked LLM | daily batch | NOT BUILT (source recon in flight) | E2 |
+| 8 | Occasional analysis / research property | W8 triage | research_lane | daily | built DARK (operator arming steps) | operator |
+| 9 | Movers/theme lists | live quotes at publish slots | v3 templates (numbers ARE content) | ≤30 min | LIVE (#3932) | done |
+| 10 | Replies (growth engine) | reply producer + M1 seat | reply_drafter LLM | daily ops | M0 draft-only; producer dark; targets placeholder | E4 + operator |
+| 11 | Receipts/track record | graded ledgers | LLM v2 receipt kind | overnight | rides W1 | done |
+
+### E-waves (build order after W1 merges; each = builders + adversarial review)
+
+- **E1 — intraday completeness**: wire `hot_tape_llm.phrase_or_fallback` into
+  the radar emit path (template fallback stays, wire register); earnings
+  detector into the radar detector registry (calendar join: BMO gap-at-open /
+  AH next-open reaction until extended-hours quotes exist); adopt the codex
+  **two-step publish**: severity ≥90 events auto-file a follow-up "context
+  brief" item (mechanism + transmission + what-to-watch, LLM-written, numeric-
+  gated) 20–40 min after the alert.
+- **E2 — fact-locked filing lanes**: insider Form 4 lane exactly per the codex
+  workflow (validate transaction code/ownership/10b5-1 → compute value, prior
+  shares, RELATIVE stake change → mechanism classification NEW_POSITION /
+  MATERIAL_ADDITION / REPEAT_BUY / CLUSTER_BUY / SMALL_ADDITION_TO_LARGE_STAKE
+  → fact-locked writer → validators). Politician-trades lane same skeleton if
+  recon finds a clean primary source (no scraping revival where kills stand).
+  Both OBSERVATION register, display-tier, no calls.
+- **E3 — competitive-intelligence loop (self-improving)**: recurring harvester
+  (weekly deep + daily light) over a config roster of top accounts via
+  twitterapi.io → `data/marketing/x_intel/` corpus + per-format/per-trigger
+  engagement tables (codex measurement schema: capture timestamps, normalize
+  by views; repost/view for distribution) → auto-distilled exemplar candidates
+  → **operator-ratified** exemplar store versions → writer/critic prompts load
+  exemplars from the store (config-pinned version, never auto-flipped) →
+  monthly doctrine drift report. LLM distills style; engagement math stays
+  deterministic (LLM-never-scores law).
+- **E4 — reply-craft intelligence**: harvest reply corpora under top fintwit
+  posts (rank replies by engagement); write REPLY doctrine (value taxonomy:
+  data-drop, sharp read, dry wit, useful question; length/tone laws; never
+  argue, never hedge-spam); upgrade reply_drafter prompt with doctrine +
+  exemplars + per-persona register; reply critic gets the cold-read bar; eval
+  fixtures from real (anonymized) reply threads. M1 seat consumes the same
+  doctrine via the runbook.
+- **E5 — persona depth**: per-account rolling self-exemplars from OPERATOR-
+  APPROVED posts only (voice compounds from ratified wins); cross-account
+  stylometry in the weekly scorecard (shape/opener/length distributions per
+  desk — sameness regression visible before followers see it).
+- **E6 — learning spine**: shape/angle/trigger provenance joined to the W6
+  labels store; weekly scorecard gains per-shape/per-angle/per-trigger tables;
+  quota/weight moves happen as CONFIG EDITS citing the table (deterministic,
+  auditable); critic calibration vs the operator approve/reject stream.
+- **E7 — press estate closure**: fix the press split-brain (VPS items → the
+  publisher's checkout), verify Trump-wire providers live, arm the daemon
+  service, wire two-step context briefs on corroborated majors.
+
+### Standing operator levers (cannot be coded around; restated honestly)
+
+employee texture confirmations (AM-R1); golden-set labeling (scoring brain
+ordering); research X account + Buffer channel; press-property DNS + NewsAPI.ai
+call; M1 desktop seat + browser profiles; X Communities joins; Buffer channels
+for any new account; `datasketch` on the press host; DEEPSEEK_API_KEY on the
+VPS (zh twins).
