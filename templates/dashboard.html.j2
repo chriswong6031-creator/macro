@@ -5102,26 +5102,26 @@ body.page-macro .mx5-pop-intl-link:hover{text-decoration:underline;}
    exactly why the strip used to render as a bare blue hyperlink. It now lives in a
    stocks-emitted scx-css style block beside the banner markup below. */
 
-/* ── WHAT TO DO (action-list inside sx-evidence face) — Wave E ────────── */
+/* ── WHAT TO DO (three-priority glance inside sx-evidence face) ───────── */
+body.page-macro.mx4-grid #sx-evidence .mx5-card-title{margin-bottom:13px;}
 body.page-macro.mx4-grid .mx5-action-list{display:flex;flex-direction:column;}
 body.page-macro.mx4-grid .mx5-action-item{
-  display:flex;align-items:flex-start;gap:13px;
-  padding:13px 12px;margin:0 -12px;border-radius:11px;
+  display:flex;align-items:center;gap:11px;
+  padding:10px 0;margin:0;border-radius:0;
   border-bottom:1px solid rgba(255,255,255,.06);
   transition:transform .16s ease,background .2s ease;
 }
 body.page-macro.mx4-grid .mx5-action-item:last-child{border-bottom:none;}
 [data-theme="light"] body.page-macro.mx4-grid .mx5-action-item{border-bottom-color:rgba(0,0,0,.06);}
 body.page-macro.mx4-grid .mx5-action-item:hover{
-  transform:translateY(-1px);background:rgba(255,255,255,.03);
+  transform:translateX(2px);background:transparent;
 }
-[data-theme="light"] body.page-macro.mx4-grid .mx5-action-item:hover{background:rgba(0,0,0,.02);}
 body.page-macro.mx4-grid .mx5-action-icon{
-  flex-shrink:0;width:36px;height:36px;border-radius:10px;
+  flex-shrink:0;width:30px;height:30px;border-radius:9px;
   display:flex;align-items:center;justify-content:center;
   border:1px solid rgba(255,255,255,.08);
 }
-body.page-macro.mx4-grid .mx5-action-icon svg{width:16px;height:16px;}
+body.page-macro.mx4-grid .mx5-action-icon svg{width:14px;height:14px;}
 /* state-tinted glass icon containers (border tints to the state colour) */
 body.page-macro.mx4-grid .mx5-ai-green{background:rgba(34,217,122,.10);border-color:rgba(34,217,122,.24);color:var(--up,#22d97a);}
 /* zh 红涨绿跌: the icon TEXT flips via --up; the glass tint is literal — mirror it */
@@ -5137,10 +5137,25 @@ body.page-macro.mx4-grid .mx5-ai-gray{background:rgba(255,255,255,.06);color:var
 body.page-macro.mx4-grid .mx5-action-text{flex:1;}
 body.page-macro.mx4-grid .mx5-action-label{
   font-size:13px;color:var(--ink-1,rgba(255,255,255,.92));
-  line-height:1.45;font-weight:500;
+  line-height:1.35;font-weight:560;
 }
 body.page-macro.mx4-grid .mx5-action-sub{
-  font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:3px;
+  font-size:11px;color:var(--ink-3,rgba(255,255,255,.42));margin-top:2px;
+}
+body.page-macro.mx4-grid .mx5-action-primary{
+  align-items:center;padding:2px 0 13px;
+}
+body.page-macro.mx4-grid .mx5-action-primary .mx5-action-icon{
+  width:36px;height:36px;border-radius:10px;
+}
+body.page-macro.mx4-grid .mx5-action-primary .mx5-action-icon svg{width:16px;height:16px;}
+body.page-macro.mx4-grid .mx5-action-primary .mx5-action-label{
+  font-size:15px;line-height:1.3;font-weight:720;letter-spacing:-.01em;
+}
+body.page-macro.mx4-grid .mx5-action-verb{
+  display:inline-block;margin-right:5px;
+  font-size:10px;font-weight:760;letter-spacing:.05em;text-transform:uppercase;
+  color:var(--ink-3,rgba(255,255,255,.42));
 }
 
 /* ── UPCOMING EVENTS (mini week timeline inside sx-events-v2 face) — Wave E ─────────
@@ -7315,21 +7330,16 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
   {# 1. EVIDENCE row + tray #}
   {% set _weakest = MS2.components | sort(attribute='score') | first if (MS2 and MS2.components) else none %}
   <div class="sx" id="sx-evidence" style="--isle-color:var(--isle-evidence)">
-    {# v5 face — WHAT TO DO (grid view; sx-evidence face is now the WTD card)
-       Keeps v4 derivation rows verbatim (MS2.components + radar + events) — reskinned to v5 icon tiles.
-       Clicking opens the full Evidence island. #}
-    {# MS, not MS2 — MS2 is defined later in the ledger flow (same bug class as the
-       scorecard button count) #}
-    {% set _ev_n_good = (MS.components | selectattr('tone','equalto','good') | list | length) if (market_state and MS.components) else 0 %}
-    {% set _ev_total = (MS.components | length) if (market_state and MS.components) else 0 %}
+    {# Three-priority glance. Details stay in the Evidence dialog opened by the card.
+       Priority order: stance, nearest event/weakest leg, active policy/risk radar. #}
     <div class="sxg-face mx5-card-face" role="button" tabindex="0" aria-haspopup="dialog" onclick="mx5OpenDlg('dlg-evidence')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx5OpenDlg('dlg-evidence');}">
-      <div class="mx5-card-title"><span class="l-en">What To Do</span><span class="l-zh">操作建议</span></div>
+      <div class="mx5-card-title"><span class="l-en">What To Do Now</span><span class="l-zh">现在怎么做</span></div>
       <div class="mx5-action-list">
-        {# Row 1: regime primary action from MS.radar / MS.label_en #}
+        {# 1. Current stance — deliberately short; the live poller patches this row. #}
         {% if market_state %}
         {% set _wtd_icon_col = 'mx5-ai-green' if market_state.color == 'green' else ('mx5-ai-yellow' if market_state.color == 'yellow' else 'mx5-ai-gray') %}
         {% set _wtd_stroke = '#22d97a' if market_state.color == 'green' else ('#f59e0b' if market_state.color == 'yellow' else 'rgba(255,255,255,.38)') %}
-        <div class="mx5-action-item">
+        <div class="mx5-action-item mx5-action-primary" data-wtd-primary>
           <div class="mx5-action-icon {{ _wtd_icon_col }}">
             <svg viewBox="0 0 24 24" fill="none" stroke="{{ _wtd_stroke }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               {% if market_state.color == 'green' %}
@@ -7346,47 +7356,19 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             </svg>
           </div>
           <div class="mx5-action-text">
-            {# Row 1 is ALWAYS the ratified action vocab keyed to the verdict color
-               (the radar driver note is row 4 — it must not usurp the action line) #}
             <div class="mx5-action-label">
-              <span class="l-en">{{ MS.label_en }} &mdash; {{ {'green':'Trend-follow, add on strength.','yellow':'Trade with caution. Size small.','red':'Defend capital first. Reduce risk.'}.get(MS.color,'') }}</span>
-              <span class="l-zh">{{ MS.label_zh or MS.label_en }} &mdash; {{ {'green':'顺势而为，强势中加仓。','yellow':'谨慎操作，仓位缩小。','red':'优先保住本金，降低风险。'}.get(MS.color,'') }}</span>
+              <span class="l-en">{{ {'green':'Follow the trend. Add on strength.','yellow':'Trade small. Stay selective.','red':'Reduce risk. Protect capital.'}.get(MS.color,'Stay selective.') }}</span>
+              <span class="l-zh">{{ {'green':'顺势而为，强势中加仓。','yellow':'缩小仓位，精选标的。','red':'降低风险，保护本金。'}.get(MS.color,'精选标的。') }}</span>
             </div>
             <div class="mx5-action-sub">
-              {# When the Risk Radar ceiling bites (score < raw_score), say so — otherwise
-                 "N of N signals aligned" beside a capped score reads as a contradiction.
-                 No digits in the note: risk_state_live.js live-patches \d+(?=/100) only. #}
-              {% set _ev_capped = MS.raw_score is defined and MS.raw_score is not none and MS.raw_score > MS.score %}
-              <span class="l-en">Composite {{ MS.score }}/100{% if _ev_total %} &middot; {{ _ev_n_good }} of {{ _ev_total }} signals aligned{% endif %}{% if _ev_capped %} &middot; capped by the Risk Radar{% endif %}</span>
-              <span class="l-zh">综合评分 {{ MS.score }}/100{% if _ev_total %} &middot; {{ _ev_n_good }}/{{ _ev_total }} 项信号一致{% endif %}{% if _ev_capped %} &middot; 风险雷达封顶{% endif %}</span>
+              <span class="l-en">{{ MS.label_en }} &middot; {{ MS.score }}/100</span>
+              <span class="l-zh">{{ MS.label_zh or MS.label_en }} &middot; {{ MS.score }}/100</span>
             </div>
           </div>
         </div>
         {% endif %}
 
-        {# Row 2: weakest leg watch (from MS2.components — v4 derivation, keep verbatim) #}
-        {% if _weakest %}
-        <div class="mx5-action-item">
-          <div class="mx5-action-icon mx5-ai-yellow">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-              <circle cx="12" cy="12" r="3"/>
-            </svg>
-          </div>
-          <div class="mx5-action-text">
-            <div class="mx5-action-label">
-              <span class="l-en">Watch {{ _weakest.label_en }} &mdash; the weakest leg ({{ _weakest.score }}/100).</span>
-              <span class="l-zh">关注{{ _weakest.label_zh or _weakest.label_en }} &mdash; 最弱分项（{{ _weakest.score }}/100）。</span>
-            </div>
-            <div class="mx5-action-sub">
-              <span class="l-en">Flip trigger if this rolls further</span>
-              <span class="l-zh">若继续下滑则触发翻转</span>
-            </div>
-          </div>
-        </div>
-        {% endif %}
-
-        {# Row 3: nearest high-impact event — calendar context (v4 derivation: macro_catalysts) #}
+        {# 2. Nearest high-impact event; otherwise show the weakest leg. #}
         {% if macro_catalysts %}
         {% set _wtd_ev = macro_catalysts | selectattr('impact','equalto','high') | list | first if (macro_catalysts | selectattr('impact','equalto','high') | list) else macro_catalysts[0] %}
         {% set _wtd_ev_zh = _wtd_ev.get('label_zh') or _wtd_ev.label %}
@@ -7400,23 +7382,34 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           </div>
           <div class="mx5-action-text">
             <div class="mx5-action-label">
-              <span class="l-en">Expect noise around {{ _wtd_ev.label }} &mdash; don&rsquo;t read the first move as trend.</span>
-              <span class="l-zh">{{ _wtd_ev_zh }}前后噪音加大 &mdash; 勿将初动解读为趋势。</span>
+              <span class="l-en"><span class="mx5-action-verb">Event</span>{{ _wtd_ev.label }}: expect noise; ignore the first move.</span>
+              <span class="l-zh"><span class="mx5-action-verb">事件</span>{{ _wtd_ev_zh }}：波动会放大，忽略初动。</span>
             </div>
-            <div class="mx5-action-sub">
-              <span class="l-en">{{ _wtd_ev.label }} {{ _wtd_ev.date[5:10] }} &middot; {{ _wtd_ev.impact | upper }} impact</span>
-              <span class="l-zh">{{ _wtd_ev_zh }} {{ _wtd_ev.date[5:10] }} &middot; {{ {'high':'高','med':'中','low':'低'}.get(_wtd_ev.impact, _wtd_ev.impact) }}影响</span>
+          </div>
+        </div>
+        {% elif _weakest %}
+        <div class="mx5-action-item">
+          <div class="mx5-action-icon mx5-ai-yellow">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </div>
+          <div class="mx5-action-text">
+            <div class="mx5-action-label">
+              <span class="l-en"><span class="mx5-action-verb">Watch</span>{{ _weakest.label_en }} ({{ _weakest.score }}/100).</span>
+              <span class="l-zh"><span class="mx5-action-verb">关注</span>{{ _weakest.label_zh or _weakest.label_en }}（{{ _weakest.score }}/100）。</span>
             </div>
           </div>
         </div>
         {% endif %}
 
-        {# Row 4: risk radar (from MS.radar — v4 derivation: risk level) #}
-        {% if market_state and MS.radar and MS.radar.state %}
-        {% set _wtd_rdr_elevated = _mx5_risk_elevated %}
+        {# 3. Active policy supersedes the radar; quiet/non-actionable policy is omitted. #}
+        {% set _wtd_pl_active = PL and PL.get('state') in ('ARMED','ELEVATED') %}
+        {% if _wtd_pl_active %}
         <div class="mx5-action-item">
-          <div class="mx5-action-icon {{ 'mx5-ai-yellow' if _wtd_rdr_elevated else 'mx5-ai-gray' }}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="{{ '#f59e0b' if _wtd_rdr_elevated else 'rgba(255,255,255,.38)' }}" stroke-width="2" stroke-linecap="round">
+          <div class="mx5-action-icon mx5-ai-yellow">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round">
               <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
               <line x1="12" y1="9" x2="12" y2="13"/>
               <line x1="12" y1="17" x2="12.01" y2="17"/>
@@ -7424,63 +7417,48 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           </div>
           <div class="mx5-action-text">
             <div class="mx5-action-label">
-              {% if _wtd_rdr_elevated and MS.radar.do_en %}
-              {# engine guidance verbatim (no free-authored advice) #}
-              <span class="l-en">{{ MS.radar.do_en }}</span>
-              <span class="l-zh">{{ MS.radar.do_zh or MS.radar.do_en }}</span>
-              {% elif _wtd_rdr_elevated %}
-              <span class="l-en">A risk is building &mdash; stay normal, just watch it.</span>
-              <span class="l-zh">风险正在积聚 &mdash; 维持正常仓位，密切关注。</span>
+              <span class="l-en"><span class="mx5-action-verb">Policy</span>Watch for repricing.</span>
+              <span class="l-zh"><span class="mx5-action-verb">政策</span>留意重定价。</span>
+            </div>
+          </div>
+        </div>
+        {% elif market_state and MS.radar and MS.radar.state and _mx5_risk_elevated %}
+        <div class="mx5-action-item">
+          <div class="mx5-action-icon mx5-ai-yellow">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round">
+              <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+          </div>
+          <div class="mx5-action-text">
+            <div class="mx5-action-label">
+              {% if MS.radar.do_en %}
+              <span class="l-en"><span class="mx5-action-verb">Risk</span>{{ MS.radar.do_en }}</span>
+              <span class="l-zh"><span class="mx5-action-verb">风险</span>{{ MS.radar.do_zh or MS.radar.do_en }}</span>
               {% else %}
-              <span class="l-en">Risk radar is quiet &mdash; nothing structural to act on.</span>
-              <span class="l-zh">风险雷达平静 &mdash; 无结构性行动需要。</span>
+              <span class="l-en"><span class="mx5-action-verb">Risk</span>Stay alert; conditions are weakening.</span>
+              <span class="l-zh"><span class="mx5-action-verb">风险</span>保持警觉，环境正在走弱。</span>
               {% endif %}
             </div>
-            <div class="mx5-action-sub">
-              <span class="l-en">{{ MS.radar.label_en }}{% if _mx5_radar_top %} at {{ _mx5_radar_top }}{% endif %}</span>
-              <span class="l-zh">{{ MS.radar.label_zh or MS.radar.label_en }}{% if _mx5_radar_top %} {{ _mx5_radar_top }}{% endif %}</span>
+          </div>
+        </div>
+        {% elif macro_catalysts and _weakest %}
+        <div class="mx5-action-item">
+          <div class="mx5-action-icon mx5-ai-yellow">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </div>
+          <div class="mx5-action-text">
+            <div class="mx5-action-label">
+              <span class="l-en"><span class="mx5-action-verb">Watch</span>{{ _weakest.label_en }} ({{ _weakest.score }}/100).</span>
+              <span class="l-zh"><span class="mx5-action-verb">关注</span>{{ _weakest.label_zh or _weakest.label_en }}（{{ _weakest.score }}/100）。</span>
             </div>
           </div>
         </div>
         {% endif %}
-
-        {# Row 5: policy — from flip_confirmation + policy_lever (v4 derivation) #}
-        {% set _wtd_pl_quiet = (not (PL and PL.get('state') in ('ARMED','ELEVATED'))) %}
-        <div class="mx5-action-item">
-          <div class="mx5-action-icon mx5-ai-gray">
-            <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.38)" stroke-width="2" stroke-linecap="round">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="12" y1="8" x2="12" y2="12"/>
-              <line x1="12" y1="16" x2="12.01" y2="16"/>
-            </svg>
-          </div>
-          <div class="mx5-action-text">
-            {% if _wtd_pl_quiet %}
-            <div class="mx5-action-label">
-              <span class="l-en">Policy is quiet &mdash; nothing to position for.</span>
-              <span class="l-zh">政策平静 &mdash; 暂无需提前布局。</span>
-            </div>
-            <div class="mx5-action-sub">
-              {% if flip_confirmation and flip_confirmation.last_event %}
-              <span class="l-en">No active jawboning &middot; last flip {{ flip_confirmation.last_event.event_date }}</span>
-              <span class="l-zh">无积极发声 &middot; 最近翻转 {{ flip_confirmation.last_event.event_date }}</span>
-              {% else %}
-              <span class="l-en">No active jawboning</span>
-              <span class="l-zh">无积极发声</span>
-              {% endif %}
-            </div>
-            {% else %}
-            <div class="mx5-action-label">
-              <span class="l-en">Policy lever is {{ PL.get('state','') }} &mdash; watch for repricing.</span>
-              <span class="l-zh">政策杠杆{{ {'ARMED':'已触发','ELEVATED':'警戒'}.get(PL.get('state',''), PL.get('state','')) }} &mdash; 留意重定价。</span>
-            </div>
-            <div class="mx5-action-sub">
-              <span class="l-en">{{ _plrepr_count }}/4 repricing channels active</span>
-              <span class="l-zh">{{ _plrepr_count }}/4 重定价渠道活跃</span>
-            </div>
-            {% endif %}
-          </div>
-        </div>
 
       </div>{# /mx5-action-list #}
     </div>{# /sxg-face WTD #}
