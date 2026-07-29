@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-29T16:08:45.222038+00:00",
-  "count": 332,
+  "generated_at": "2026-07-29T16:38:38.055040+00:00",
+  "count": 333,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -1653,6 +1653,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-hymvptyiv20-b06dac",
+      "title": "USA Core Durable Goods Orders Increase Roughly in Line with Expectations",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T01:36:55Z",
+      "summary_points": [
+        "**Core Capital Goods Strength**: Core capital goods orders (+0.9% MoM) and shipments (+1.9% MoM, largest since 2021) exceeded forecasts, signaling robust underlying manufacturing demand despite durable goods orders miss.",
+        "**Manufacturing Inventory Alignment**: Durable goods orders ex-transportation (+0.6% MoM) and core capital goods orders (+0.9% MoM) met expectations, confirming sustained manufacturing momentum beyond headline volatility.",
+        "**Q2 Domestic Sales Estimate**: Revised to +2.7% QoQ annualized, providing a concrete near-term economic growth indicator for portfolio positioning."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
