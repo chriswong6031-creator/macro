@@ -470,6 +470,12 @@ class TestConfigAndGitignore:
         assert "satire_blocklist" in cfg and "HalfwayPost" in cfg["satire_blocklist"]
         assert cfg["spend"]["twitterapiio_monthly_cap_usd"] == 75.0
         assert cfg["alpaca"]["enabled"] is False
+        marketing_cfg = yaml.safe_load((ROOT / "config" / "marketing.yml").read_text())
+        bls = next(
+            s for s in marketing_cfg["breaking"]["sources"]
+            if s["key"] == "bls_news"
+        )
+        assert bls["url"] == "https://www.bls.gov/feed/bls_latest.rss"
         # x_follow register: the exact v1 handle set + tiers.
         handles = {h["handle"]: h["tier"] for h in cfg["x_follow"]["handles"]}
         for h in ("DeItaone", "FirstSquawk", "financialjuice", "zerohedge", "WHPressPool"):

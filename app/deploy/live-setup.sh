@@ -64,7 +64,7 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get install -y python3-venv rsync >/dev/null 2>&1 || true
 test -d "$VENV" || python3 -m venv "$VENV"
 "$VENV/bin/pip" install -q --upgrade pip
-"$VENV/bin/pip" install -q pandas pyarrow numpy requests pyyaml jinja2
+"$VENV/bin/pip" install -q pandas pyarrow numpy requests pyyaml jinja2 datasketch
 install -d -m 0755 \
   "$PUBLIC_DIR" "$LIVE_DIR" "$PUBLIC_DIR/marketdata" \
   "$BASE_DIR/state" "$BASE_DIR/data" "$APP_DIR/site/live"
