@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-29T21:08:34.758087+00:00",
-  "count": 346,
+  "generated_at": "2026-07-29T21:38:39.387273+00:00",
+  "count": 347,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -91,6 +91,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ecqppw0pihk-cfae01",
+      "title": "Ford Motor July 29",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T14:15:04Z",
+      "summary_points": [
+        "**<u>Execution risk on EV/energy transition</u>**: Universal EV platform and Energy ecosystem deployment critical for 2027 EBIT expansion; complex capital allocation poses key risk amid strong market conditions despite pricing/mix tailwinds.",
+        "**<u>2027E EBIT net drivers</u>**: Projected $11.535bn EBIT (up $800m YoY) driven by volume/mix (+$900m), pricing (+$500m), aluminum reversal (+$1.5bn), and warranty improvements (+$1bn), offset by UEV/energy investments (-$800m).",
+        "**<u>IEEPA tariff reversal tailwind</u>**: $1.3bn IEEPA tariff refund reversal in FY27 provides significant EBIT boost, counterbalancing commodities/DRAM inflation (-$1.2bn vs.",
+        "$2.2bn) and Super Duty capacity expansion.",
+        "**<u>Conflict of interest in Buy rating</u>**: 42% of DB’s covered companies with \"Buy\" ratings linked to DB’s Investment Banking relationships, indicating material conflict risk in current Hold recommendation."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
       "language": "en",
       "needs_metadata": false
     },
