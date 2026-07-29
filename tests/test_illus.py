@@ -1,6 +1,7 @@
 """Unit tests for lib.illus (the ilx / Signal-Ink SSR renderer)."""
 from __future__ import annotations
 
+from datetime import date, datetime, timedelta
 import re
 
 from lib import illus as I
@@ -225,3 +226,67 @@ def test_html_escaped_in_labels():
     out = I.illus(s, kind="multi")
     assert "<b>" not in out
     assert "&lt;b&gt;" in out or "a&lt;b&gt;&amp;" in out
+
+
+def test_regime_tape_renders_all_four_cockpit_forms():
+    d0 = date(2024, 1, 1)
+    dates = [(d0 + timedelta(days=i)).isoformat() for i in range(731)]
+    prices = [40_000 + i * 55 + (i % 31) * 120 for i in range(len(dates))]
+    alloc = [0.25 if i < 180 else 0.65 if i < 520 else 0.0 for i in range(len(dates))]
+    out = I.regime_tape(
+        {"dates": dates, "vals": prices},
+        allocation={"dates": dates, "vals": alloc},
+        regimes=[
+            {"start": "2024-01-01", "end": "2024-08-01", "tone": "bull"},
+            {"start": "2024-08-01", "end": "2025-03-01", "tone": "neutral"},
+            {"start": "2025-03-01", "end": "2026-01-01", "tone": "bear"},
+        ],
+        events=[{"date": "2024-04-20", "label_en": "Fourth halving",
+                 "label_zh": "第四次减半"}],
+        projection={"start": "2025-12-01", "end": "2026-03-01",
+                    "label_en": "Watch window", "label_zh": "观察窗口"},
+        max_points=24,
+    )
+    assert out.startswith('<figure class="ilx ilx-regime-tape"')
+    assert "ilx-regime-span" in out            # regime spans
+    assert "ilx-alloc-step" in out             # step ribbon
+    assert "ilx-event-tick" in out             # baseline event tick
+    assert "ilx-projection-hatch" in out        # hatched forward span
+    assert 'data-tip-en="Fourth halving"' in out
+    assert '<span class="l-zh">观察窗口</span>' in out
+    assert "<text" not in out                   # SVG remains path-only
+    assert "<script" not in out.lower()
+
+
+def test_regime_tape_event_x_uses_calendar_not_downsample_position():
+    """Halving alignment cannot drift when a 2y daily tape is cut to 20 points."""
+    d0 = date(2024, 1, 1)
+    dates = [(d0 + timedelta(days=i)).isoformat() for i in range(731)]
+    vals = [50_000 + i + (10_000 if i == 417 else 0) for i in range(len(dates))]
+    out = I.regime_tape(
+        {"dates": dates, "vals": vals},
+        events=[{"date": "2024-04-20", "label_en": "Halving"}],
+        max_points=20,
+    )
+    expected = I._date_x("2024-04-20", "2024-01-01", "2025-12-31")
+    match = re.search(r'class="ilx-event-tick" x1="([0-9.]+)"', out)
+    assert match, "event tick missing"
+    assert abs(float(match.group(1)) - expected) < 0.01
+    expected_pct = round(expected / I._VBW * 100, 2)
+    assert f'--x:{expected_pct}%' in out
+
+
+def test_regime_tape_mixes_datetime_history_with_iso_projection_dates():
+    d0 = datetime(2024, 1, 1)
+    dates = [d0 + timedelta(days=i) for i in range(731)]
+    out = I.regime_tape(
+        {"dates": dates, "vals": [50_000 + i for i in range(len(dates))]},
+        projection={"start": "2026-01-01", "end": "2026-04-01"},
+        max_points=20,
+    )
+    path = re.search(r'class="ilx-path ilx-tape-price" d="([^"]+)"', out)
+    assert path is not None
+    xs = [float(x) for x in re.findall(r"(?:M|L)([0-9.]+) ", path.group(1))]
+    # Two years of history followed by a three-month projection should occupy
+    # most of the canvas, not collapse under a mixed epoch/ordinal scale.
+    assert xs[-1] > 480

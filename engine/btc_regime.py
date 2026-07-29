@@ -1,10 +1,11 @@
 """Bitcoin Vector — the five-tier macro-regime composite (DISPLAY-ONLY).
 
 A transparent, transmission-ranked re-presentation of the macro backdrop, built
-verbatim from the framework in research/BTC_REGIME_FRAMEWORK.md (the paper). Each
-factor is scored to an integer {-2..+2} from a-priori economics ONLY (no fitting
-to forward returns), weighted by the paper's fixed tier weights, summed and
-renormalized over the factors that are live, mapped to a 0-100 index.
+from the surviving framework records in research/BTC_VECTOR_FIX_MASTERPLAN.md and
+research/PROBLEM_AUDIT.md. Each factor is scored to an integer {-2..+2} from
+a-priori economics ONLY (no fitting to forward returns), weighted by the fixed
+tier weights, summed and renormalized over the factors that are live, mapped to a
+0-100 index.
 
 HONESTY (load-bearing — do not quietly upgrade):
   * This is NOT a live-sizing engine. The P0 kill-test (scripts/btc_regime_killtest)
