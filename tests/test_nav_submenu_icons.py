@@ -41,36 +41,23 @@ LEGACY_SUBMENU_MARKS = (
 )
 EXPECTED_RESEARCH_ICON_FAMILIES = {
     "alt-data",
-    "anticipation",
     "confluence",
-    "congress",
     "country-cycles",
-    "cross-asset",
     "cycle-intelligence",
-    "demand",
     "divergence",
-    "factors-seasonality",
     "fed-policy",
     "foresight",
     "fund-flows",
     "global-cycles",
-    "impulse",
     "intelligence-hub",
-    "ipo",
-    "macro-signals",
     "macro-weather",
-    "measurement",
     "neural-web",
     "reports",
     "sector-cycles",
-    "signal-lab",
     "smart-money",
     "special-situations",
-    "technical-lab",
     "themes",
-    "transmission",
     "vault",
-    "white-house",
 }
 def _requested_menu(html: str) -> str:
     start = html.index('menu-icon-us')
@@ -107,7 +94,10 @@ def test_template_and_site_share_the_same_submenu_icon_markup() -> None:
 
 
 def test_research_mega_menu_uses_complete_semantic_icon_set() -> None:
-    html = (ROOT / "site" / "macro.html").read_text(encoding="utf-8")
+    # The Jinja partial is the sole source of truth. Rendered site pages are
+    # refreshed by the post-merge render workflow and can intentionally lag in a
+    # source PR, so this contract should not pin the previous generated menu.
+    html = (ROOT / "templates" / "_navlinks.html.j2").read_text(encoding="utf-8")
     research = _research_menu(html)
     families = {
         name.removeprefix("research-icon-")
@@ -119,7 +109,7 @@ def test_research_mega_menu_uses_complete_semantic_icon_set() -> None:
 
     assert "submenu-icon" not in research
     assert families == EXPECTED_RESEARCH_ICON_FAMILIES
-    assert research.count('class="nm-ic research-icon ') == 31
+    assert research.count('class="nm-ic research-icon ') == 22
     assert '<span class="nm-ic">' not in research
 
 
@@ -134,7 +124,7 @@ def test_jinja_nav_partial_preserves_research_icon_markup_on_rerender() -> None:
     }
 
     assert families == EXPECTED_RESEARCH_ICON_FAMILIES
-    assert partial.count('class="nm-ic research-icon ') == 31
+    assert partial.count('class="nm-ic research-icon ') == 22
     assert '<span class="nm-ic">' not in partial
 
 

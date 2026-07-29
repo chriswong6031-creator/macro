@@ -71,9 +71,18 @@ public:
     - /chat.css
     - /chat_nav.css
     - /theme.css
+    # Shared navigation layout + animated ticker search. Presentation only; the
+    # protected stock libraries it reads remain behind the registration wall.
+    - /navigation-refresh.css
     # Public visual dependency imported by theme.css. Contains only the shared
     # navigation icon masks; no customer data or application logic.
     - /product-nav-icons.css
+    # Empty in the repository and atomically generated from the VPS environment
+    # after each publish. It exposes only Logo.dev's browser-safe image token.
+    - /logo_config.js
+    # Lazy company-logo adapter. Contains no token and no market data; without a
+    # runtime publishable token it renders deterministic local monograms.
+    - /stock-logos.js
     - /theme.js
     # Presentation/runtime code required by the three public dashboard shells.
     # The signal-bearing JSON endpoints these scripts request remain outside
