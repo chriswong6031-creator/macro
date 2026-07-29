@@ -30,18 +30,24 @@ import json
 
 import pytest
 
+# The FORMAT-only predicate the archive shares with the surface lane — imported here to pin
+# the contrast with the trading-calendar gate (is_market_session).
+from scripts.build_flow_surface import is_session_date
 from scripts.build_flow_archive import (
     ARCHIVE_DATES_NAME,
     ARCHIVE_FAMILIES,
     ARCHIVE_RETAIN_SESSIONS,
     DTE_TIDE_FAMILY,
     TIDE_FAMILY,
+    _list_session_dates,
+    _retain_or_default,
     archive_out_dir,
     build_archive_dates_index,
     dated_archive_key,
     dates_index_key,
     family_prefix,
     is_archive_dates,
+    is_market_session,
     list_archive_session_dates,
     load_dates_ledger,
     merge_archive_dates,
@@ -102,6 +108,59 @@ def test_malformed_date_or_family_raises():
             dated_archive_key(bad_fam, SESSION)
         with pytest.raises(ValueError):
             family_prefix(bad_fam)
+
+
+# ── (a2) NYSE-calendar gate on the WRITE path ───────────────────────────────────────
+
+def test_is_market_session_gates_holidays_not_just_weekends():
+    # Real sessions pass — one in EDT and one in EST, so the gate is not DST-sensitive.
+    assert is_market_session("2026-07-29")      # Wed, EDT
+    assert is_market_session("2026-01-06")      # Tue, EST
+    # Market holidays are NOT sessions even though they are weekdays: `is_session_date` is
+    # only a format regex and the poller's _within_rth only checks weekday + clock.
+    for holiday in ("2026-11-26",               # Thanksgiving (Thu)
+                    "2026-12-25",               # Christmas (Fri)
+                    "2026-04-03"):              # Good Friday
+        assert is_session_date(holiday)         # passes the FORMAT regex…
+        assert not is_market_session(holiday)   # …but not the trading calendar
+    # Weekends and junk too.
+    for bad in ("2026-08-01", "2026-07-04", "2026-06-31", "not-a-date", "", None):
+        assert not is_market_session(bad)
+
+
+def test_holiday_stages_nothing(staged):
+    tide_p, dte_p = _mk_payloads(staged)
+    pairs = stage_dated_archives(
+        paths_by_family={TIDE_FAMILY: tide_p, DTE_TIDE_FAMILY: dte_p},
+        session_date="2026-11-26", asof="a", cadence_sec=120,   # Thanksgiving
+    )
+    assert pairs == []
+    # Not even a local index — a holiday must not enter the ledger and become `latest`.
+    for fam in ARCHIVE_FAMILIES:
+        assert not (staged / "live_flow_out" / fam / ARCHIVE_DATES_NAME).exists()
+
+
+def test_dst_and_non_dst_sessions_both_stage(staged):
+    tide_p, dte_p = _mk_payloads(staged)
+    for d in ("2026-01-06", "2026-07-29"):      # EST session, EDT session
+        pairs = stage_dated_archives(
+            paths_by_family={TIDE_FAMILY: tide_p, DTE_TIDE_FAMILY: dte_p},
+            session_date=d, asof="a", cadence_sec=120,
+        )
+        assert f"live_flow/tide/{d}.json" in {k for _, k in pairs}
+
+
+def test_dated_archive_key_stays_format_only():
+    """The KEY builder must not be calendar-gated, or prune could never delete a bad object."""
+    # A holiday object written by an older build still has to be addressable for deletion.
+    assert dated_archive_key(TIDE_FAMILY, "2026-11-26") == "live_flow/tide/2026-11-26.json"
+    stale_holiday = "2025-11-27"          # Thanksgiving 2025 — older than the retain window
+    assert not is_market_session(stale_holiday)
+    s3 = _FakeS3([f"live_flow/tide/{stale_holiday}.json",
+                  *[f"live_flow/tide/{d}.json" for d in _prior_sessions(30)]])
+    res = prune_archive_dates(s3, "b", TIDE_FAMILY, keep=30)
+    assert res["ok"] is True
+    assert s3.deleted == [f"live_flow/tide/{stale_holiday}.json"]   # junk holiday cleaned up
 
 
 # ── (b) one write, two keys ─────────────────────────────────────────────────────────
@@ -334,6 +393,85 @@ def test_prune_is_fail_soft_on_r2_error():
     assert res == {"ok": False, "retained": [], "deleted_dates": [], "deleted_objects": 0}
 
 
+def test_prune_honors_per_key_delete_errors():
+    """R2 reports a refused delete in the response BODY, never as an exception.
+
+    Counting the batch length regardless fabricated the deleted count and left retention
+    BELIEVED-enforced while the objects survived.
+    """
+    s3, days = _store(35)
+    oldest = sorted(days)[:5]
+    refused = f"live_flow/tide/{oldest[0]}.json"
+    real_delete = s3.delete_objects
+
+    def partial(**kw):
+        kept = [o for o in kw["Delete"]["Objects"] if o["Key"] != refused]
+        real_delete(Bucket=kw["Bucket"], Delete={"Objects": kept})
+        return {"Deleted": [{"Key": o["Key"]} for o in kept],
+                "Errors": [{"Key": refused, "Code": "AccessDenied", "Message": "nope"}]}
+
+    s3.delete_objects = partial
+    res = prune_archive_dates(s3, "b", TIDE_FAMILY, keep=30)
+    assert res["ok"] is False                       # retention is NOT verified
+    assert res["deleted_objects"] == 4               # honest count, not 5
+    assert oldest[0] not in res["deleted_dates"]     # the survivor is not claimed as deleted
+    assert refused in s3.keys                        # and it really did survive
+    assert sorted(res["deleted_dates"]) == sorted(oldest[1:])
+
+
+def test_prune_reports_empty_store_as_success_not_failure():
+    """Empty is a normal first-session state — ok=True, so the sweep is not retried per-cycle."""
+    empty = _FakeS3([])
+    res = prune_archive_dates(empty, "b", TIDE_FAMILY, keep=30)
+    assert res == {"ok": True, "retained": [], "deleted_dates": [], "deleted_objects": 0}
+    # A genuine listing FAILURE stays ok=False — the two must not look alike.
+    ok, dates = _list_session_dates(empty, "b", TIDE_FAMILY)
+    assert (ok, dates) == (True, [])
+
+
+def test_listing_truncated_without_token_terminates():
+    """IsTruncated with no NextContinuationToken must stop, not spin forever.
+
+    This loop runs inside the per-minute poller cycle, where a hang is unrecoverable — an
+    `except` cannot catch it. Reported as an INCOMPLETE listing so retention is not believed
+    enforced off a partial page.
+    """
+    class Truncated:
+        def __init__(self):
+            self.calls = 0
+
+        def list_objects_v2(self, **kw):        # noqa: ARG002
+            self.calls += 1
+            assert self.calls < 5, "listing looped on a missing continuation token"
+            return {"Contents": [{"Key": "live_flow/tide/2026-07-28.json"}],
+                    "IsTruncated": True}        # …and no NextContinuationToken
+
+    s3 = Truncated()
+    ok, dates = _list_session_dates(s3, "b", TIDE_FAMILY)
+    assert ok is False and dates == ["2026-07-28"]
+    assert s3.calls == 1
+    # …and prune refuses to act on an incomplete listing.
+    assert prune_archive_dates(s3, "b", TIDE_FAMILY, keep=30)["ok"] is False
+
+
+def test_nonpositive_retain_falls_back_to_the_default():
+    """A stray `archive_retain_sessions: -1` would otherwise delete EVERY dated object."""
+    for bad in (0, -1, -30, None, "", "abc", [], 0.4):
+        assert _retain_or_default(bad) == ARCHIVE_RETAIN_SESSIONS, f"{bad!r} not refused"
+    for good, want in ((5, 5), (1, 1), (30, 30), ("7", 7), (1.5, 1)):
+        assert _retain_or_default(good) == want   # a real positive count is honored
+    # The prune must keep today rather than wipe the archive.
+    s3, days = _store(35)
+    res = prune_archive_dates(s3, "b", TIDE_FAMILY, keep=-1)
+    assert len(res["retained"]) == ARCHIVE_RETAIN_SESSIONS
+    assert res["deleted_objects"] == 5           # 35 - 30, not 35
+    newest = sorted(days, reverse=True)[0]
+    assert f"live_flow/tide/{newest}.json" in s3.keys
+    # …and the index cannot promise a nonsense retain either.
+    doc = build_archive_dates_index(TIDE_FAMILY, days, cadence_sec=120, asof="a", retain=0)
+    assert doc["retain"] == ARCHIVE_RETAIN_SESSIONS and len(doc["dates"]) == 30
+
+
 def test_prune_is_fail_soft_on_delete_error():
     s3, _ = _store(35)
 
@@ -440,36 +578,59 @@ def test_session_date_is_the_pollers_et_session_not_a_utc_pin():
         assert banned not in src, f"archive module reads a clock ({banned})"
 
 
-class _RecordingS3:
-    """Records upload_file keys; list/delete behave like an empty store."""
+class _RecordingS3(_FakeS3):
+    """A real seeded store: records every PUT's key AND bytes, and serves list/delete.
 
-    def __init__(self):
+    Seeding matters. With an EMPTY store the prune early-returns and the poller's heal block
+    never runs, so the block could be deleted with every test still green (the reviewer proved
+    exactly that). Pre-seeding stale sessions forces the `--once` cycle through prune's delete
+    AND the heal's merge+re-PUT end-to-end.
+    """
+
+    def __init__(self, keys=()):
+        super().__init__(keys)
         self.puts: list[str] = []
+        self.put_bodies: list[tuple[str, str]] = []
 
     def upload_file(self, local, bucket, key, **kw):      # noqa: ARG002
-        assert __import__("pathlib").Path(local).exists(), f"PUT of missing file {local}"
+        from pathlib import Path as _P
+
+        p = _P(local)
+        assert p.exists(), f"PUT of missing file {local}"
+        # The poller's _upload_r2 must keep tagging JSON so R2 serves it correctly.
+        assert kw.get("ExtraArgs", {}).get("ContentType") == "application/json", \
+            f"PUT of {key} lost its ContentType"
         self.puts.append(key)
+        self.put_bodies.append((key, p.read_text()))
+        self.keys.add(key)                # an uploaded object is now IN the store
+        return None
 
-    def list_objects_v2(self, **kw):                      # noqa: ARG002
-        return {"Contents": [], "IsTruncated": False}
-
-    def delete_objects(self, **kw):                       # noqa: ARG002
-        return {}
+    def bodies_for(self, key: str) -> list[str]:
+        return [b for k, b in self.put_bodies if k == key]
 
 
-def test_once_cycle_uploads_the_dated_keys_and_stays_out_of_data(staged, monkeypatch):
-    """A real `--once` main() cycle: dated keys are PUT, and no data/ artifact is created.
+def _prior_sessions(n: int, before: str = SESSION) -> list[str]:
+    """The `n` NYSE sessions immediately before `before`, oldest first."""
+    from datetime import date, timedelta
 
-    Drives the poller loop with a synthetic run_cycle (no ThetaData, no network) and a
-    recording S3 double, so this pins the WIRING — that the loop stages the archives, uploads
-    what it staged, and sweeps retention once — not just the pure functions.
-    """
+    from lib.nyse_calendar import is_session
+
+    out: list[str] = []
+    d = date.fromisoformat(before) - timedelta(days=1)
+    while len(out) < n:
+        if is_session(d):
+            out.append(d.isoformat())
+        d -= timedelta(days=1)
+    return sorted(out)
+
+
+def _drive_once_cycle(staged, monkeypatch, *, s3, argv, session_date=SESSION):
+    """Run one real `main()` cycle against a synthetic run_cycle + the given S3 double."""
     import scripts.live_flow_poller as poller
     from collectors import thetadata as td
     from lib import store as store_mod
 
-    s3 = _RecordingS3()
-    asof = "2026-07-29T20:01:00Z"
+    asof = f"{session_date}T20:01:00Z"
     monkeypatch.setattr(td, "reachable", lambda **kw: True)
     # run_status registration (pre-existing, unrelated to this lane) resolves through
     # config.ROOT rather than data_dir(), so stub it to keep the smoke hermetic.
@@ -478,6 +639,10 @@ def test_once_cycle_uploads_the_dated_keys_and_stays_out_of_data(staged, monkeyp
     monkeypatch.setattr(poller, "_r2_client", lambda: s3)
     monkeypatch.setattr(poller, "_load_baselines", lambda: {})
     monkeypatch.setattr(poller, "_load_unusual_baseline", lambda: {})
+    # Pin the session WITHOUT --date: passing --date is itself the manual-run gate, so a
+    # live-path smoke must not use it. _probe_delta_mode would hit ThetaData, so stub it.
+    monkeypatch.setattr(poller, "_session_date", lambda override=None: override or session_date)
+    monkeypatch.setattr(poller, "_probe_delta_mode", lambda sd: "full_day")
     monkeypatch.setenv("R2_BUCKET", "test-bucket")
 
     tide_state = {
@@ -496,15 +661,36 @@ def test_once_cycle_uploads_the_dated_keys_and_stays_out_of_data(staged, monkeyp
     monkeypatch.setattr(poller, "run_cycle", lambda **kw: (
         {"asof": asof, "events": [], "unusual_names": []},
         {"groups": []}, meta, {}, tide_state))
+    return poller.main(argv)
 
-    rc = poller.main(["--once", "--date", SESSION, "--roots", "SPY"])
+
+def _seeded_store(n_stale=33):
+    """An R2 double already holding `n_stale` prior sessions per family + a stale index."""
+    prior = _prior_sessions(n_stale)
+    keys = ["live_flow/tide_current.json", "live_flow/dte_tide_current.json",
+            "live_flow/feed_current.json"]
+    for fam in ARCHIVE_FAMILIES:
+        keys += [f"live_flow/{fam}/{d}.json" for d in prior]
+        keys.append(f"live_flow/{fam}/{ARCHIVE_DATES_NAME}")
+    return _RecordingS3(keys), prior
+
+
+def test_once_cycle_uploads_the_dated_keys_and_stays_out_of_data(staged, monkeypatch):
+    """A real `--once` main() cycle: dated keys are PUT, and no data/ artifact is created.
+
+    Drives the poller loop with a synthetic run_cycle (no ThetaData, no network) and a
+    recording S3 double, so this pins the WIRING — that the loop stages the archives, uploads
+    what it staged, and sweeps retention once — not just the pure functions.
+    """
+    s3, _ = _seeded_store()
+    rc = _drive_once_cycle(staged, monkeypatch, s3=s3, argv=["--once", "--roots", "SPY"])
     assert rc == 0
 
     # The current keys are still PUT, unchanged…
     assert "live_flow/tide_current.json" in s3.puts
     assert "live_flow/dte_tide_current.json" in s3.puts
     # …and the dated archives + both sessions indexes went up in the SAME cycle.
-    for key in ("live_flow/tide/2026-07-29.json", "live_flow/dte_tide/2026-07-29.json",
+    for key in (f"live_flow/tide/{SESSION}.json", f"live_flow/dte_tide/{SESSION}.json",
                 "live_flow/tide/dates.json", "live_flow/dte_tide/dates.json"):
         assert key in s3.puts, f"{key} not uploaded by a --once cycle"
 
@@ -524,6 +710,109 @@ def test_once_cycle_uploads_the_dated_keys_and_stays_out_of_data(staged, monkeyp
     # Every file the archive lane itself created is inside the staging dir.
     for fam in ARCHIVE_FAMILIES:
         assert (out / fam / ARCHIVE_DATES_NAME).exists()
+
+
+def test_once_cycle_drives_the_prune_delete_over_the_poller_path(staged, monkeypatch):
+    """The sweep's DELETE must be exercised through main(), not only in unit tests.
+
+    33 seeded prior sessions + today = 34 > the 30-session retain, so a working sweep deletes
+    the oldest 4 per family. An empty store would early-return and prove nothing.
+    """
+    s3, prior = _seeded_store(33)
+    assert _drive_once_cycle(staged, monkeypatch, s3=s3,
+                             argv=["--once", "--roots", "SPY"]) == 0
+
+    for fam in ARCHIVE_FAMILIES:
+        deleted = [k for k in s3.deleted if k.startswith(f"live_flow/{fam}/")]
+        assert len(deleted) == 4, f"{fam}: expected 4 pruned sessions, got {deleted}"
+        # The four OLDEST went, the newest 30 (incl. today) stayed.
+        assert sorted(deleted) == sorted(f"live_flow/{fam}/{d}.json" for d in prior[:4])
+        assert f"live_flow/{fam}/{SESSION}.json" in s3.keys
+        assert f"live_flow/{fam}/{ARCHIVE_DATES_NAME}" in s3.keys   # index never deleted
+    # And never a current key.
+    for live in ("live_flow/tide_current.json", "live_flow/dte_tide_current.json",
+                 "live_flow/feed_current.json"):
+        assert live in s3.keys
+
+
+def test_once_cycle_heals_the_index_from_r2_truth_and_reuploads_it(staged, monkeypatch):
+    """The heal block must actually run: deleting it has to fail this test.
+
+    Pre-corrupt the LOCAL index so the per-cycle staging PUT can only carry today's date.
+    The heal (prune → merge R2 truth → re-PUT in the same cycle) is then the ONLY way a
+    dates.json body containing the 30 retained sessions can reach R2.
+    """
+    s3, prior = _seeded_store(33)
+    for fam in ARCHIVE_FAMILIES:
+        (archive_out_dir(fam) / ARCHIVE_DATES_NAME).write_text("{corrupt")
+
+    assert _drive_once_cycle(staged, monkeypatch, s3=s3,
+                             argv=["--once", "--roots", "SPY"]) == 0
+
+    for fam in ARCHIVE_FAMILIES:
+        bodies = [json.loads(b) for b in s3.bodies_for(f"live_flow/{fam}/{ARCHIVE_DATES_NAME}")]
+        assert len(bodies) >= 2, f"{fam}: expected a staging PUT and a healed PUT, got {bodies}"
+        # The pre-heal staging PUT knows only today (the local ledger was corrupt).
+        assert bodies[0]["dates"] == [SESSION]
+        # The healed PUT carries R2 truth merged in — 30 retained sessions, newest first.
+        healed = bodies[-1]
+        assert is_archive_dates(healed)
+        assert len(healed["dates"]) == ARCHIVE_RETAIN_SESSIONS == 30
+        assert healed["latest"] == SESSION
+        assert healed["dates"] == sorted([SESSION] + prior, reverse=True)[:30]
+        # …and the healed file is what sits on disk for the next cycle.
+        on_disk = json.loads((archive_out_dir(fam) / ARCHIVE_DATES_NAME).read_text())
+        assert on_disk["dates"] == healed["dates"]
+
+
+def test_backdated_manual_run_writes_no_dated_keys(staged, monkeypatch):
+    """`--date` (the runbook's smoke recipe) must never rewrite settled archive history.
+
+    That run polls a handful of roots, so its tide payload is a valid-looking PARTIAL of a
+    past session — and the archive key is derived from session_date, so an ungated smoke would
+    silently overwrite the settled record with a fragment (schema valid, date correct;
+    roots_polled lives only in meta.json, which the archive does not carry).
+    """
+    past = "2026-07-02"                      # a Thursday session, and the runbook's example
+    s3, _ = _seeded_store()
+    s3.keys.add(f"live_flow/tide/{past}.json")
+    before = set(s3.keys)
+
+    assert _drive_once_cycle(staged, monkeypatch, s3=s3, session_date=past,
+                             argv=["--once", "--date", past, "--roots", "SPY"]) == 0
+
+    # The current keys still publish (a smoke is still allowed to exercise the live path)…
+    assert "live_flow/tide_current.json" in s3.puts
+    # …but NOTHING dated was written, and NOTHING was pruned.
+    dated = [k for k in s3.puts if "/tide/" in k or "/dte_tide/" in k]
+    assert dated == [], f"a --date run wrote dated archive keys: {dated}"
+    assert s3.deleted == [], f"a --date run pruned the archive: {s3.deleted}"
+    # Every pre-existing archive object survived byte-untouched (nothing was overwritten).
+    assert before <= set(s3.keys)
+    assert f"live_flow/tide/{past}.json" not in {k for k, _ in s3.put_bodies}
+    # No local staging index either — the lane is fully dark on a backdated run.
+    for fam in ARCHIVE_FAMILIES:
+        assert not (staged / "live_flow_out" / fam / ARCHIVE_DATES_NAME).exists()
+
+
+def test_holiday_run_leaves_the_archive_lane_fully_dark(staged, monkeypatch):
+    """launchd fires on market holidays; an empty holiday payload must not become `latest`.
+
+    Fully dark means no dated payload, no index PUT and no retention mutation — the poller
+    has nothing to archive on a day the market never opened, so it touches nothing.
+    """
+    thanksgiving = "2026-11-26"
+    s3, _ = _seeded_store()
+    before = set(s3.keys)
+    assert _drive_once_cycle(staged, monkeypatch, s3=s3, session_date=thanksgiving,
+                             argv=["--once", "--roots", "SPY"]) == 0
+
+    dated = [k for k in s3.puts if "/tide/" in k or "/dte_tide/" in k]
+    assert dated == [], f"a holiday cycle wrote dated archive keys: {dated}"
+    assert s3.deleted == [], f"a holiday cycle mutated retention: {s3.deleted}"
+    assert before <= set(s3.keys)
+    # The current keys still publish — only the archive lane is dark.
+    assert "live_flow/tide_current.json" in s3.puts
 
 
 def test_archive_lane_writes_zero_data_artifacts(staged):

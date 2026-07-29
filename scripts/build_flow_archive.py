@@ -106,10 +106,42 @@ def dated_archive_key(family: str, session_date: str) -> str:
     Raises ValueError on a malformed family or session_date, so a bad date can never create
     a junk key that the retention prune would then refuse to recognize (and never clean up)
     — the same guard as `build_flow_surface.dated_surface_keys`.
+
+    FORMAT ONLY — deliberately NOT calendar-gated. The retention prune has to be able to
+    rebuild a key for any date it finds in the store, including a junk/holiday object written
+    by an older build, or it could never delete it. The trading-calendar gate belongs on the
+    WRITE path (`is_market_session`, enforced in `stage_dated_archives`).
     """
     if not is_session_date(session_date):
         raise ValueError(f"session_date {session_date!r} is not YYYY-MM-DD")
     return f"{family_prefix(family)}{session_date}.json"
+
+
+def is_market_session(session_date: object) -> bool:
+    """True when `session_date` is a well-formed date AND a real NYSE trading session.
+
+    `is_session_date` is only a FORMAT regex (build_flow_surface:564), and the poller's
+    `_within_rth` only checks weekday + clock — neither knows about market holidays, and
+    launchd fires on Thanksgiving and Good Friday just the same. An empty holiday payload
+    archived under a dated key would become `dates.json`'s `latest`, poisoning the digest's
+    session discovery and burning one of ~30 retention slots (~9 holidays/yr).
+
+    FAILS CLOSED: if the calendar cannot be consulted we do not know whether today trades,
+    so we skip the write and log loudly (once per cycle — deliberately hard to miss) rather
+    than risk poisoning the store. `lib.nyse_calendar` is pure stdlib and already imported
+    elsewhere in the poller, so this path is close to unreachable in practice.
+    """
+    if not is_session_date(session_date):
+        return False
+    try:
+        from datetime import date
+
+        from lib.nyse_calendar import is_session
+        return bool(is_session(date.fromisoformat(str(session_date))))
+    except Exception as e:  # noqa: BLE001 — fail closed, loudly
+        log.warning("archive: NYSE calendar unavailable for %s (%s) — archive write SKIPPED",
+                    session_date, e)
+        return False
 
 
 def dates_index_key(family: str) -> str:
@@ -120,7 +152,10 @@ def dates_index_key(family: str) -> str:
 def archive_out_dir(family: str) -> Path:
     """`data/live_flow_out/{family}/` (gitignored staging; created on demand).
 
-    Mirrors the R2 layout one-for-one, so the staged relative path IS the R2 key suffix.
+    Holds only this lane's own staged file — `dates.json`, whose staged path mirrors its R2
+    key suffix (`{family}/dates.json`). The dated PAYLOAD is never re-staged here: it is the
+    poller's existing `live_flow_out/{tide,dte_tide}_current.json` file uploaded under a
+    second key, so no staged path corresponds to `{family}/{DATE}.json`.
     """
     from lib import config  # local import — keeps the pure helpers importable without config
 
@@ -139,6 +174,25 @@ def _write_json_atomic(path: Path, obj: dict) -> Path:
 
 # ── sessions index (dates.json) ─────────────────────────────────────────────────────
 
+def _retain_or_default(retain: object) -> int:
+    """Coerce a retention count to a SAFE positive int, falling back loudly to the default.
+
+    A misconfigured `live_flow.archive_retain_sessions` of 0 or -1 must never reach the
+    prune: `dates[keep_n:]` with keep_n <= 0 selects EVERY dated object — including today's
+    — so a stray minus sign would erase the whole archive on the next sweep. Non-numeric or
+    non-positive values are refused with a warning and the module default is used instead.
+    """
+    try:
+        n = int(retain)
+    except (TypeError, ValueError):
+        n = 0
+    if n <= 0:
+        log.warning("archive: retain=%r is not a positive session count — using %d",
+                    retain, ARCHIVE_RETAIN_SESSIONS)
+        return ARCHIVE_RETAIN_SESSIONS
+    return n
+
+
 def build_archive_dates_index(family: str, dates, *, cadence_sec: int, asof: str,
                               retain: int = ARCHIVE_RETAIN_SESSIONS,
                               source: str = "poller") -> dict:
@@ -152,15 +206,16 @@ def build_archive_dates_index(family: str, dates, *, cadence_sec: int, asof: str
     Cadence is carried verbatim from the true write interval (the honesty law shared with
     build_flow_surface.build_index): the index never claims a cadence the poller lacks.
     """
+    keep_n = _retain_or_default(retain)
     clean = sorted({d for d in (dates or []) if is_session_date(d)}, reverse=True)
-    clean = clean[: max(0, int(retain))]
+    clean = clean[:keep_n]
     return {
         "schema":     "live_flow.archive_dates/v1",
         "family":     _check_family(family),
         "dates":      clean,
         "latest":     clean[0] if clean else None,
         "count":      len(clean),
-        "retain":     int(retain),
+        "retain":     keep_n,
         "cadenceSec": int(cadence_sec),
         "cadence":    cadence_label(cadence_sec),
         "asof":       asof,
@@ -233,7 +288,7 @@ def merge_archive_dates(family: str, dates, *, cadence_sec: int, asof: str,
     try:
         merged = set(load_dates_ledger(family)) | {d for d in (dates or []) if is_session_date(d)}
         stage_dates_index(family, merged, cadence_sec=cadence_sec, asof=asof, retain=retain)
-        return sorted(merged, reverse=True)[: max(0, int(retain))]
+        return sorted(merged, reverse=True)[: _retain_or_default(retain)]
     except Exception as e:  # noqa: BLE001
         log.warning("archive: dates ledger merge failed for %s: %s", family, e)
         return load_dates_ledger(family)
@@ -263,12 +318,24 @@ def stage_dated_archives(
       2. (dates.json, `live_flow/{family}/dates.json`) — re-staged every cycle, so the index
          heals in-cycle.
 
+    Returns [] — writing NOTHING — unless `session_date` is a real NYSE trading session
+    (`is_market_session`): launchd fires on market holidays too, and an empty holiday payload
+    would become `dates.json`'s `latest` and poison the digest's session discovery.
+
     Fenced PER FAMILY: a failure for one family (bad date, unwritable staging dir) is logged
     and skipped, never raised, and never costs the other family its keys. The caller's
-    current-key uploads are already queued before this runs, so nothing here can blank them.
+    current-key writes and uploads are entirely independent of this function — they are
+    already on disk before it runs and are uploaded unconditionally afterwards regardless of
+    what (or whether) it returns — so nothing here can blank or delay them.
     """
     out: list[tuple[Path, str]] = []
     paths_by_family = paths_by_family or {}
+    if not is_market_session(session_date):
+        # Not a trading session (holiday, malformed date, or calendar unavailable) — the
+        # current keys still publish; only the dated archive is withheld.
+        log.info("archive: %s is not an NYSE trading session — no dated archive staged",
+                 session_date)
+        return out
     for family in ARCHIVE_FAMILIES:            # deterministic order, closed set
         local = paths_by_family.get(family)
         if local is None:
@@ -295,12 +362,12 @@ def stage_dated_archives(
 
 # ── retention (once per session) ────────────────────────────────────────────────────
 
-def list_archive_session_dates(s3, bucket: str, family: str) -> list[str]:
-    """Session dates present in R2 for a family, newest first. [] on any failure.
+def _list_session_dates(s3, bucket: str, family: str) -> tuple[bool, list[str]]:
+    """(listing_ok, session dates newest-first). Distinguishes EMPTY from FAILED.
 
-    One cheap listing per family per session (~30 small objects). Only `{YYYY-MM-DD}.json`
-    object names count — `dates.json` is not a session and is never returned, so it can
-    never be selected for deletion.
+    An empty store and a failed listing both look like `[]`, but they must not be treated
+    alike: empty is a normal first-session state (nothing to prune, sweep is done), while a
+    failure means retention is unverified. Only the failure sets ok=False.
     """
     out: list[str] = []
     try:
@@ -310,7 +377,7 @@ def list_archive_session_dates(s3, bucket: str, family: str) -> list[str]:
             kw: dict = {"Bucket": bucket, "Prefix": prefix, "Delimiter": "/"}
             if tok:
                 kw["ContinuationToken"] = tok
-            r = s3.list_objects_v2(**kw)
+            r = s3.list_objects_v2(**kw) or {}
             for o in r.get("Contents", []) or []:
                 name = (o.get("Key") or "")[len(prefix):]
                 if name.endswith(".json") and is_session_date(name[: -len(".json")]):
@@ -318,10 +385,29 @@ def list_archive_session_dates(s3, bucket: str, family: str) -> list[str]:
             if not r.get("IsTruncated"):
                 break
             tok = r.get("NextContinuationToken")
+            if not tok:
+                # Truncated with no continuation token: re-issuing the same request would
+                # repeat this page forever, and a hang inside the per-minute poller loop is
+                # not something an `except` can rescue. Stop and report the listing as
+                # incomplete so retention is not believed-enforced on a partial page.
+                log.warning("archive: %s listing truncated with no continuation token — "
+                            "treating as incomplete", family)
+                return False, sorted(set(out), reverse=True)
     except Exception as e:  # noqa: BLE001
         log.warning("archive: list session dates failed for %s: %s", family, e)
-        return []
-    return sorted(set(out), reverse=True)
+        return False, []
+    return True, sorted(set(out), reverse=True)
+
+
+def list_archive_session_dates(s3, bucket: str, family: str) -> list[str]:
+    """Session dates present in R2 for a family, newest first. [] on any failure.
+
+    One cheap listing per family per session (~30 small objects). Only `{YYYY-MM-DD}.json`
+    object names count — `dates.json` is not a session and is never returned, so it can
+    never be selected for deletion. Callers that must tell empty from failed use
+    `_list_session_dates`.
+    """
+    return _list_session_dates(s3, bucket, family)[1]
 
 
 def prune_archive_dates(s3, bucket: str, family: str,
@@ -331,29 +417,53 @@ def prune_archive_dates(s3, bucket: str, family: str,
     Returns {ok, retained, deleted_dates, deleted_objects}. NEVER raises. Every deletion
     target is REBUILT from `dated_archive_key`, so this can only ever delete a key this
     module itself would write — never `dates.json`, and never a current key such as
-    `live_flow/tide_current.json` (see `family_prefix` on the trailing slash). `ok` is False
-    when the listing or a delete failed, so the caller can retry next session.
+    `live_flow/tide_current.json` (see `family_prefix` on the trailing slash).
+
+    `ok` is the honest "retention is enforced as of now" flag:
+      • empty store           → ok=True  (nothing to prune is a success, not a failure)
+      • listing failed        → ok=False
+      • any per-key delete error (R2 reports these in the response's `Errors` array, NOT as
+        an exception) → ok=False, and those keys are excluded from the deleted counts
+    The caller treats ok=False as "retry NEXT SESSION" — never as a per-cycle retry, which
+    would re-issue this listing ~200×/session while the failure persists.
     """
     res: dict = {"ok": False, "retained": [], "deleted_dates": [], "deleted_objects": 0}
     try:
-        keep_n = max(0, int(keep))
-        dates = list_archive_session_dates(s3, bucket, family)
+        keep_n = _retain_or_default(keep)
+        listed_ok, dates = _list_session_dates(s3, bucket, family)
+        if not listed_ok:
+            return res                      # already logged; retention unverified
         if not dates:
-            # Nothing dated in the store yet (or listing failed) — nothing to prune.
+            res["ok"] = True                # empty store — nothing to prune
             return res
         res["retained"] = dates[:keep_n]
         stale = dates[keep_n:]
+        deletes_ok = True
         if stale:
             keys = [dated_archive_key(family, d) for d in stale]
+            failed: set[str] = set()
             for i in range(0, len(keys), 1000):   # S3/R2 delete_objects caps at 1000
                 batch = keys[i:i + 1000]
-                s3.delete_objects(Bucket=bucket,
-                                  Delete={"Objects": [{"Key": k} for k in batch]})
-                res["deleted_objects"] += len(batch)
-            res["deleted_dates"] = list(stale)
-            log.info("archive: pruned %d stale session(s) for %s (%d objects); retained %s",
-                     len(stale), family, res["deleted_objects"], res["retained"])
-        res["ok"] = True
+                resp = s3.delete_objects(
+                    Bucket=bucket,
+                    Delete={"Objects": [{"Key": k} for k in batch]}) or {}
+                # A per-key failure is reported in the response body, not raised. Counting
+                # the batch length regardless would fabricate the deleted count and leave
+                # retention BELIEVED-enforced while objects survive.
+                errors = resp.get("Errors") or []
+                if errors:
+                    deletes_ok = False
+                    failed.update(str(e.get("Key")) for e in errors)
+                    for e in errors[:5]:
+                        log.warning("archive: delete refused for %s: %s %s",
+                                    e.get("Key"), e.get("Code"), e.get("Message"))
+                res["deleted_objects"] += len(batch) - len([k for k in batch if k in failed])
+            res["deleted_dates"] = [d for d in stale
+                                    if dated_archive_key(family, d) not in failed]
+            log.info("archive: pruned %d/%d stale session(s) for %s (%d objects); retained %s",
+                     len(res["deleted_dates"]), len(stale), family,
+                     res["deleted_objects"], res["retained"])
+        res["ok"] = deletes_ok
     except Exception as e:  # noqa: BLE001
         log.warning("archive: retention prune failed for %s: %s", family, e)
     return res

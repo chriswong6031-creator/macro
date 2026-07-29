@@ -894,18 +894,32 @@ def prune_surface_dates(s3, bucket: str, root: str,
             return res
         res["retained"] = dates[:keep_n]
         stale = dates[keep_n:]
+        deletes_ok = True
         for d in stale:
             prefix = f"{R2_SURFACE_PREFIX}{root.upper()}/{d}/"
             keys = _list_keys_under(s3, bucket, prefix)
             # Belt-and-braces: only ever delete keys that really sit under the dated prefix.
             keys = [k for k in keys if k.startswith(prefix)]
+            date_ok = True
             for i in range(0, len(keys), 1000):   # S3/R2 delete_objects caps at 1000
                 batch = keys[i:i + 1000]
-                s3.delete_objects(Bucket=bucket,
-                                  Delete={"Objects": [{"Key": k} for k in batch]})
-                res["deleted_objects"] += len(batch)
-            res["deleted_dates"].append(d)
-        res["ok"] = True
+                resp = s3.delete_objects(
+                    Bucket=bucket,
+                    Delete={"Objects": [{"Key": k} for k in batch]}) or {}
+                # R2/S3 report a per-key refusal in the response body, NOT as an exception:
+                # counting the batch length regardless fabricated the deleted count and left
+                # retention BELIEVED-enforced while the objects survived.
+                errors = resp.get("Errors") or []
+                if errors:
+                    deletes_ok = date_ok = False
+                    for e in errors[:5]:
+                        log.warning("surface: delete refused for %s: %s %s",
+                                    e.get("Key"), e.get("Code"), e.get("Message"))
+                failed = {str(e.get("Key")) for e in errors}
+                res["deleted_objects"] += len([k for k in batch if k not in failed])
+            if date_ok:
+                res["deleted_dates"].append(d)
+        res["ok"] = deletes_ok
         if stale:
             log.info("surface: pruned %d stale session(s) for %s (%d objects); retained %s",
                      len(res["deleted_dates"]), root.upper(), res["deleted_objects"],

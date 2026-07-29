@@ -1490,8 +1490,39 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
     last_surface_prune_date: str | None = None
     # OIP W0 T-lane: same once-per-session contract for the dated tide/dte_tide archives.
     # Tracked separately from the surface sweep so a surface-staging failure (which empties
-    # surf_roots) can never starve the tide families of their retention sweep.
+    # surf_roots) can never starve the tide families of their retention sweep. Unlike the
+    # surface sentinel this is set even when the sweep FAILS — a failed sweep retries NEXT
+    # SESSION, not next cycle, so a persistent R2 fault cannot re-issue the listing ~200×.
     last_archive_prune_date: str | None = None
+
+    # T-lane write gate: a MANUAL/BACKDATED run must never rewrite settled history.
+    # `--date` is the runbook's documented smoke recipe (§Manual single-cycle smoke: --once
+    # --date <past session> --roots SPY QQQ KRE NVDA XLF), which polls a HANDFUL of roots.
+    # Its tide payload is a valid-looking partial of that past session, and the archive key is
+    # derived from session_date — so an ungated smoke would overwrite the settled
+    # live_flow/tide/<that date>.json with a 5-root fragment, undetectably (schema valid,
+    # date correct; roots_polled lives only in meta.json, which the archive does not carry).
+    # Live sessions never pass --date: session_date comes from the ET clock.
+    archive_writes_enabled = not args.date
+    if not archive_writes_enabled:
+        log.warning("poller: --date=%s given — dated tide/dte archive writes AND retention "
+                    "sweep are DISABLED for this run (a manual/backdated run must never "
+                    "rewrite settled archive history)", args.date)
+    else:
+        # Second gate, resolved ONCE per run (session_date is fixed): launchd fires on market
+        # holidays too, and the lane goes fully dark on a non-session — no dated payload, no
+        # ledger entry, and no retention mutation on a day the market never opened.
+        # stage_dated_archives re-checks this itself, so a future caller cannot bypass it.
+        try:
+            from scripts.build_flow_archive import is_market_session as _is_mkt_session
+            if not _is_mkt_session(session_date):
+                archive_writes_enabled = False
+                log.info("poller: %s is not an NYSE trading session — dated tide/dte archive "
+                         "lane is dark for this run", session_date)
+        except Exception as _cal_err:  # noqa: BLE001 — fail closed, loudly
+            archive_writes_enabled = False
+            log.warning("poller: trading-calendar gate unavailable (%s) — dated tide/dte "
+                        "archive lane DISABLED for this run", _cal_err)
     cadence   = int(cfg.get("cadence_sec", 120))
 
     # FC-R6: log two-tier + max_concurrent configuration at startup
@@ -1585,23 +1616,26 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
         # needed and the current keys' bytes are untouched. Fully fenced: the current-key
         # uploads are queued below regardless, so a staging failure here degrades to
         # current-keys-only (today's behavior) and can never cost the live Terminal a cycle.
+        # Gated OFF for a --date run (see archive_writes_enabled above) and, inside
+        # stage_dated_archives, for any date that is not a real NYSE trading session.
         archive_paths: list[tuple[Path, str]] = []
-        try:
-            from scripts.build_flow_archive import (
-                ARCHIVE_RETAIN_SESSIONS, DTE_TIDE_FAMILY, TIDE_FAMILY,
-                stage_dated_archives,
-            )
-            archive_paths = stage_dated_archives(
-                paths_by_family={TIDE_FAMILY: tide_path, DTE_TIDE_FAMILY: dte_tide_path},
-                session_date=session_date,
-                asof=meta.get("asof", feed.get("asof", "")),
-                cadence_sec=cadence,
-                retain_sessions=int(cfg.get("archive_retain_sessions",
-                                            ARCHIVE_RETAIN_SESSIONS) or
-                                    ARCHIVE_RETAIN_SESSIONS),
-            )
-        except Exception as arch_err:  # noqa: BLE001
-            log.warning("poller: dated tide archive staging failed: %s", arch_err)
+        if archive_writes_enabled:
+            try:
+                from scripts.build_flow_archive import (
+                    ARCHIVE_RETAIN_SESSIONS, DTE_TIDE_FAMILY, TIDE_FAMILY,
+                    stage_dated_archives,
+                )
+                archive_paths = stage_dated_archives(
+                    paths_by_family={TIDE_FAMILY: tide_path, DTE_TIDE_FAMILY: dte_tide_path},
+                    session_date=session_date,
+                    asof=meta.get("asof", feed.get("asof", "")),
+                    cadence_sec=cadence,
+                    retain_sessions=int(cfg.get("archive_retain_sessions",
+                                                ARCHIVE_RETAIN_SESSIONS) or
+                                        ARCHIVE_RETAIN_SESSIONS),
+                )
+            except Exception as arch_err:  # noqa: BLE001
+                log.warning("poller: dated tide archive staging failed: %s", arch_err)
 
         # Build ticker JSONs for top ~40 roots by gross premium + pinned roots (Task 3).
         ns_map  = _load_names_sectors()
@@ -1843,7 +1877,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
             # file is PUT right here in THIS cycle (#F3-04): deferring it to "the next
             # cycle's upload" left a --once / --rth-only run exiting with the pre-heal index
             # still live in R2.
-            if last_archive_prune_date != session_date:
+            if archive_writes_enabled and last_archive_prune_date != session_date:
                 try:
                     from scripts.build_flow_archive import (
                         ARCHIVE_DATES_NAME as _ARCH_DATES_NAME,
@@ -1873,9 +1907,18 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
                             except Exception as heal_err:  # noqa: BLE001
                                 log.warning("poller: healed dates.json upload failed for "
                                             "%s: %s", _fam, heal_err)
-                    if all_ok:
-                        last_archive_prune_date = session_date
+                    # ONE attempt per session, pass or fail: prune_archive_dates already
+                    # returns ok=True for an empty store, so a False here is a genuine R2
+                    # fault. Retrying it every 120s would re-issue the listing ~200×/session
+                    # for a fault that will not clear; retention is 30 sessions deep, so
+                    # skipping one sweep costs nothing — the next session's sweep prunes
+                    # everything that went stale meanwhile.
+                    last_archive_prune_date = session_date
+                    if not all_ok:
+                        log.warning("poller: archive retention sweep incomplete — retention "
+                                    "NOT verified this session; retrying next session")
                 except Exception as prune_err:  # noqa: BLE001
+                    last_archive_prune_date = session_date
                     log.warning("poller: archive retention sweep failed: %s", prune_err)
 
             # FC-R8: upload daily summary to R2 WITHOUT the live_flow/ TTL prefix.

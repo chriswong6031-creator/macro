@@ -39,10 +39,17 @@ keys are byte-identical to before.
 
 - Writer: `scripts/build_flow_archive.py` (pure functions), wired in `live_flow_poller.main`.
 - Retention: newest **30** sessions per family; override with `live_flow.archive_retain_sessions`
-  in `config.yml`. Swept once per session (two cheap R2 listings), never per-cycle. The prune
-  rebuilds every delete target from `dated_archive_key`, so it can only ever delete a key this
-  lane wrote — never `dates.json`, never `live_flow/tide_current.json`.
+  in `config.yml` (a non-positive value is refused and the default is used — a stray `-1`
+  would otherwise select every dated object, today's included). Swept once per session (two
+  cheap R2 listings), never per-cycle; a failed sweep retries **next session**, not next
+  cycle. The prune rebuilds every delete target from `dated_archive_key`, so it can only ever
+  delete a key this lane wrote — never `dates.json`, never `live_flow/tide_current.json` — and
+  it honors R2's per-key `Errors` array, so a refused delete is reported, not counted.
   Flow-Surface retention stays at 10 sessions (`surface_retain_sessions`) — unchanged.
+- **Write gates.** The lane is dark unless the run is a live one on a real trading day: any
+  `--date` run (see the smoke warning below) and any non-NYSE-session date
+  (`lib/nyse_calendar.is_session` — holidays, not just weekends) skip the dated write, the
+  ledger entry and the retention sweep. The current keys publish either way.
 - Added cost: +4 R2 PUTs/cycle (~262 KB — `tide` 179 KB + `dte_tide` 82.5 KB, measured live
   2026-07-29 + two ~250-byte indexes). Stored footprint is only the last write per key:
   ~8 MB per 30-session retention window. R2 ingress is free; ~800 extra class-A writes per
@@ -185,6 +192,16 @@ set -a; source /path/to/.env; set +a
 Never echo these values — they persist in shell history and logs.
 
 ## Manual single-cycle smoke
+
+> **`--date` disables the dated archive lane — by design.** This recipe polls a handful of
+> roots, so its tide payload is a valid-looking *partial* of that past session, and the
+> archive key is derived from `session_date`. An ungated smoke would therefore overwrite the
+> settled `live_flow/tide/<that date>.json` with a fragment, undetectably (schema valid, date
+> correct — `roots_polled` lives only in `meta.json`, which the archive does not carry). So
+> whenever `--date` is passed, dated archive **writes and the retention sweep are both off**
+> and the poller logs it at WARNING. A backdated run can never rewrite settled history.
+> The lane is also dark on any non-session (market holidays — launchd fires anyway).
+> To smoke the archive lane itself, run the unit suite: `pytest tests/test_flow_archive.py`.
 
 ```bash
 # Wipe stale state first
