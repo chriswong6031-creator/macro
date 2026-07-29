@@ -173,6 +173,10 @@ free_registered:
     # /live/quotes.json's public breadth. No Caddyfile change — an un-allowlisted
     # /live/wires.json already flows through the @reg_asset default-deny route.
     - /live/wires.json
+    # Durable companion to the speed wire: merged stories, source receipts,
+    # session-market context, and review-only X drafts. Same registered-news
+    # product tier as news.html and wires.json; never public/anonymous.
+    - /live/intelligence.json
     # Tier-preview shells (paid content lives in /premiumdata/, enforced below).
     - /special_situations.html
     - /china_special_situations.html
