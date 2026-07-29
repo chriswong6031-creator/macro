@@ -88,9 +88,11 @@ leave both systems live.
 
 ## §3 Type devices
 
-- **Two-tone headline** (replaces ALL gradient text): emphasis words in `--ink`,
-  continuation in `--hl-muted`. Markup: `<span class="hd-mut">…</span>` inside the
-  existing h2/h1. The hero's "Institutional-grade." gradient line DIES; see §6.1.
+- **⚠ OPERATOR RULING 2026-07-29 (supersedes the two-tone plan):** the hero's
+  three-line headline WITH the gradient "Institutional-grade." line and the dark
+  `LIVE · MARKET READ` pill are HOUSE IDENTITY — they stay, byte-faithful, through
+  any redesign. `.hd-mut` is a **reserved** utility (registered in CSS, unused).
+  Section h2s stay plain `--ink` — do NOT apply two-tone or gradients to them.
 - **Display scale**: hero h1 `clamp(44px,6vw,76px)`, weight 800, tracking `-.022em`,
   line-height 1.0. Section h2 `clamp(34px,3.6vw,52px)`, weight 800, tracking `-.018em`,
   line-height 1.04. Sub/lede 17–18px, `--muted`, max-width 56ch.
@@ -142,18 +144,14 @@ badges stay where tests/copy pin them; visual home just gets consistent.
 ## §6 Section-by-section
 
 ### 6.1 Hero (`header.cover`)
-- Pill: restyle to white — `#fff`, `1px var(--hair-2)`, `--sh-1`, green live dot keeps
-  `ping`; text `.mk` in `--ink-soft`. (Current black pill is too heavy for the field.)
-- H1 (`data-adtest-slot="hero_headline"` — attribute + node MUST survive; only inner
-  text/markup may change): kill the gradient `Institutional-grade.` line. New composition,
-  two lines: `Your personal market intelligence desk.` with `market intelligence desk.`
-  emphasized `--ink` and lead-in words in `--hl-muted`… **decided exact copy**:
-  line 1 muted: "Your personal" · line 2 ink: "market intelligence desk." — and the
-  third line is REMOVED from the h1; "Institutional-grade." moves into the sub as a bold
-  ink lead: `<b>Institutional-grade.</b> Macro context, stock signals, options flow and
-  deep research in one clear view — see what's moving and why.` (2 lines max at 1440.)
-  ZH twins mirror the same emphasis split (「你的个人」muted /「市场情报台。」ink; sub
-  lead 「机构级。」). adtest arm copy (config JSON) is UNTOUCHED — it swaps text only.
+- **⚠ SUPERSEDED BY OPERATOR RULING 2026-07-29 — the copy block is FROZEN:** the
+  original three-line h1 (`Your personal<br>market intelligence desk.<br><span
+  class="dim">Institutional-grade.</span>`, ZH `你的专属/市场情报台。/机构级标准。`),
+  the gradient `.dim` treatment, the ORIGINAL sub sentence, and the DARK live-pill
+  are restored verbatim and stay. No wave touches the hero copy block again.
+  (History: W1 briefly shipped a two-tone/white-pill hero per the original §6.1;
+  the operator vetoed it on sight — "I loved our gradient header, and the live
+  market read — restore those." Identity wins over benchmark mimicry.)
 - CTAs unchanged (blue primary, quiet secondary) but secondary gets `1px var(--hair-2)`
   + `--sh-1` + hover lift; primary gets `--sh-2` + hover brightness.
 - Collage re-choreography (the 5 `.pcard`s keep ids/classes/JS hooks):
@@ -190,9 +188,10 @@ badges stay where tests/copy pin them; visual home just gets consistent.
   `1px var(--hair)` full-bleed rule (the §7 draw-in element).
 - Vignettes get §5 anatomy + receipt bar; internal rows get `--hair-weak` dividers,
   hover states where rows already animate (JS loops unchanged).
-- Copy column: eyebrow `.mk` blue; h2 two-tone; lede ≤2 lines; the 3 dash-bullets →
-  3px round-tick bullets (blue), lead-in bold ink, rest muted; arrow link keeps hover
-  nudge. PREVIEW badges keep position (top-right of vignette) restyled as §5 receipts.
+- Copy column: eyebrow `.mk` blue; h2 plain `--ink` (operator ruling — no two-tone);
+  lede ≤2 lines; the 3 dash-bullets → 3px round-tick bullets (blue), lead-in bold ink,
+  rest muted; arrow link keeps hover nudge. PREVIEW badges keep position (top-right of
+  vignette) restyled as §5 receipts.
 - Copy budget sweep within existing meaning — NO new claims, `data-zh` twins updated.
 
 ### 6.5 Beyond band (`#f-beyond`) — same §6.4 treatment; the three asset cards align to

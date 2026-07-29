@@ -67,7 +67,7 @@
      the body face and the display fallback, so there is nothing left to preload —
      Inter's own weights are already discovered by that stylesheet. -->
 <link rel="stylesheet" href="onboard.css?v=5c897a72">
-<link rel="stylesheet" href="landing.css?v=abf00766">
+<link rel="stylesheet" href="landing.css?v=aeb206a9">
 </head>
 <body>
 
@@ -171,6 +171,9 @@
 </nav>
 
 <header class="cover">
+  <!-- the field: a bottom-anchored wash under a fine hairline curtain. Its tint is
+       the §8 signature — it follows body[data-regime], which the gauge cycle sets. -->
+  <div class="tx-curtain" aria-hidden="true"></div>
   <div class="cover-in">
 
     <!-- copy column -->
@@ -199,7 +202,7 @@
 
       <!-- heatmap -->
       <div class="pcard pp1">
-        <p class="kicker" data-zh="科技股 — 今日 <span class='asof'>实时</span>">TECHNOLOGY — TODAY <span class="asof">live</span></p>
+        <p class="kicker mk" data-zh="科技股 — 今日 <span class='asof'>实时</span>">TECHNOLOGY — TODAY <span class="asof">live</span></p>
         <div class="heat" id="heat">
           <div class="hm u" data-v="2.0"><div class="tk">NVDA</div><div class="pc tnum">+2.0%</div></div>
           <div class="hm d" data-v="-1.1"><div class="tk">MSFT</div><div class="pc tnum">−1.1%</div></div>
@@ -215,7 +218,7 @@
 
       <!-- prophet -->
       <div class="pcard pp2">
-        <p class="kicker"><span data-zh="Prophet · 今日">PROPHET · TODAY</span><span class="asof" data-zh="免费">free</span></p>
+        <p class="kicker mk"><span data-zh="Prophet · 今日">PROPHET · TODAY</span><span class="asof" data-zh="免费">free</span></p>
         <div class="psc-top">
           <span class="psc-pill" data-zh="接近">NEAR</span>
           <span class="psc-px tnum">$58.50</span>
@@ -238,7 +241,7 @@
 
       <!-- today's read — front card, drives the cycle -->
       <div class="pcard pp3" id="pp-read">
-        <p class="kicker" data-zh="今日研判 · 美国 <span class='asof'>演示</span>">TODAY'S READ · US <span class="asof">demo</span></p>
+        <p class="kicker mk" data-zh="今日研判 · 美国 <span class='asof'>演示</span>">TODAY'S READ · US <span class="asof">demo</span></p>
         <span class="chip-reg" id="reg-chip" tabindex="0" role="button" aria-describedby="quad-pop">
           <span class="dotg"></span><span class="lbl" data-zh="温和增长 · 转变中">Goldilocks · shifting</span>
           <span class="quad-pop" id="quad-pop" role="tooltip">
@@ -271,7 +274,7 @@
 
       <!-- what to act on now -->
       <div class="pcard pp4">
-        <p class="kicker" data-zh="现在该做什么 <span class='asof'>演示</span>">WHAT TO ACT ON NOW <span class="asof">demo</span></p>
+        <p class="kicker mk" data-zh="现在该做什么 <span class='asof'>演示</span>">WHAT TO ACT ON NOW <span class="asof">demo</span></p>
         <div class="pl-lane">
           <p class="pl-h" data-zh="<i></i>立即买入"><i></i>BUY NOW</p>
           <div id="act-chips"></div>
@@ -280,7 +283,7 @@
 
       <!-- insider & congress -->
       <div class="pcard pp5">
-        <p class="kicker" data-zh="内部人 & 国会 <span class='asof'>演示</span>">INSIDER &amp; CONGRESS <span class="asof">demo</span></p>
+        <p class="kicker mk" data-zh="内部人 & 国会 <span class='asof'>演示</span>">INSIDER &amp; CONGRESS <span class="asof">demo</span></p>
         <div class="pi-feed" id="pi-feed"></div>
       </div>
 
@@ -1249,6 +1252,7 @@ const STILL = document.documentElement.classList.contains('still');
     needle.style.transform='rotate('+((s-50)*1.8).toFixed(1)+'deg)';
     arcf.setAttribute('stroke-dasharray',(s/100*175.93).toFixed(1)+' 200'); }
   function setStateWord(risk){ card.classList.toggle('risk',risk);
+    document.body.dataset.regime = risk ? 'reflation' : 'goldilocks';  // §8 field tint follows the gauge
     word.textContent=WORD[risk?'risk':'mixed'][zh()?1:0];
     stance.innerHTML=STANCE[risk?'risk':'mixed'][zh()?1:0]; }
   function statics(){ setScore(curScore); setStateWord(isRisk); renderChips();

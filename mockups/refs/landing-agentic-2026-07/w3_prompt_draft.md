@@ -18,3 +18,6 @@ CONTRACTS: same list; plus do not touch hero/terminal/belt/rotations/filings bey
 WORKFLOW: as W2; shots to shots/w3/; commit "landing W3: story bands — sits/funds/beyond, AI stage, pricing polish, closing"; NO push/PR.
 
 REPORT: same format.
+
+
+OPERATOR RULING 2026-07-29 (binding): hero copy block (3-line gradient h1 + dark LIVE pill + original sub) is FROZEN — do not touch. Section headlines stay plain ink; no two-tone, no gradients beyond the existing hero identity. .hd-mut is reserved/unused.
