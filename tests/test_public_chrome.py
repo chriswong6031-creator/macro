@@ -70,15 +70,20 @@ def test_shared_public_nav_matches_landing_core_information_architecture():
     }
     core = {
         "products/index.html",
-        "https://www.mastermind-x.com/research_vault.html",
         "tools/index.html",
         "plans.html",
     }
     assert core <= landing_hrefs
     assert core <= shared_hrefs
+    # The homepage's primary Research menu is the conversion funnel into the
+    # three-summary Vault preview. Shared SEO-estate chrome keeps its crawlable
+    # research index link so a one-page navigation change does not rewrite every
+    # rendered public article.
+    assert "https://www.mastermind-x.com/research_vault.html" in landing_hrefs
+    assert "research/index.html" in shared_hrefs
     # The homepage expands those destinations into useful mega-menu links;
     # interior public pages keep a compact, server-rendered subset.
-    assert shared_hrefs <= landing_hrefs
+    assert shared_hrefs - {"research/index.html"} <= landing_hrefs
     assert not any("#" in href for href in shared_hrefs)
 
 
