@@ -4,7 +4,7 @@
  "index": "Nasdaq-100",
  "benchmark": "QQQ",
  "benchmark_label": "Nasdaq-100 (QQQ)",
- "as_of": "2026-07-28",
+ "as_of": "2026-07-29",
  "source": "finviz idx_ndx + QQQ holdings; curated tech subsectors + amalgamations",
  "subsectors": {
   "semiconductors": {
@@ -214,11 +214,11 @@
    "sector": "Internet & Platforms",
    "members": [
     {
-     "ticker": "GOOG",
+     "ticker": "GOOGL",
      "name": "Alphabet Inc"
     },
     {
-     "ticker": "GOOGL",
+     "ticker": "GOOG",
      "name": "Alphabet Inc"
     },
     {
@@ -290,12 +290,12 @@
    "sector": "Semis & Silicon",
    "members": [
     {
-     "ticker": "SNDK",
-     "name": "Sandisk Corp"
-    },
-    {
      "ticker": "STX",
      "name": "Seagate Technology Holdings Plc"
+    },
+    {
+     "ticker": "SNDK",
+     "name": "Sandisk Corp"
     },
     {
      "ticker": "WDC",
@@ -462,12 +462,12 @@
      "name": "AAOI"
     },
     {
-     "ticker": "SNDK",
-     "name": "Sandisk Corp"
-    },
-    {
      "ticker": "STX",
      "name": "Seagate Technology Holdings Plc"
+    },
+    {
+     "ticker": "SNDK",
+     "name": "Sandisk Corp"
     },
     {
      "ticker": "WDC",
@@ -610,11 +610,11 @@
    "name_zh": "互联网与平台",
    "members": [
     {
-     "ticker": "GOOG",
+     "ticker": "GOOGL",
      "name": "Alphabet Inc"
     },
     {
-     "ticker": "GOOGL",
+     "ticker": "GOOG",
      "name": "Alphabet Inc"
     },
     {
