@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-29T14:08:00.781278+00:00",
-  "count": 319,
+  "generated_at": "2026-07-29T14:23:01.908249+00:00",
+  "count": 322,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -32,6 +32,47 @@
   ],
   "items": [
     {
+      "id": "marketdesk-p8utyhtfa1f-3cb485",
+      "title": "JPM Equity Thematic Strategy",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T13:49:33Z",
+      "summary_points": [
+        "**Healthcare Sector Rebound**: Earnings growth accelerating to +22% in 2027 (vs.",
+        "1% in 2026), valuations at 26%ile vs.",
+        "market, policy risks (DOGE, tariffs, ACA) moderated.",
+        "**Valuation & Growth Discrepancy**: S&P 500 Healthcare NTM P/E at 18.5x (cheap vs.",
+        "index), durable growth (10.8% long-term vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 52,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-llcnf4qdjf0-618421",
+      "title": "JPM JPM Chips for Break",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T12:49:41Z",
+      "summary_points": [
+        "**Korea de-leveraging near end**: KOSPI down ~40% from peak, hedge funds at ~90% de-leveraging, retail leverage risk low, foreign outflows slowing—signaling reduced systemic risk in Asian equities.",
+        "**Semiconductor positioning & Fed outlook**: US Semis basket at 90th %-tile (down from 98th), net sold theme (-1.8z); Fed decision pricing 32% hike chance—tech trade floor established post-hyperscaler earnings.",
+        "**US-China AI policy tensions**: 1,100+ AI workers petition to \"pace\" growth, Trump bans Chinese humanoid robots, Zuckerberg opposes US bans—regulatory fragmentation threatens $190B TAM for AI hardware (e.g., NXP).",
+        "**NXP's structural growth drivers**: Automotive content gains (55% of sales, +12% YoY) and AI/edge pipeline ($1.5B Kinara funnel) drive Q3 revenue $3.5b (+19% YoY), raising CY26 estimates."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": true,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-tsseepkd2yv-59aabc",
       "title": "JPM JPM US Market Intell",
       "institution": "J.P. Morgan",
@@ -49,6 +90,27 @@
       "tickers": [],
       "top_pick": true,
       "pages": 15,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-lb0qrlibyoo-62ec16",
+      "title": "RBC UK & EUROPEAN RESEARCH AT A GLANCE",
+      "institution": "RBC",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T11:19:39Z",
+      "summary_points": [
+        "**SBM Offshore NV Initiation**: $30bn+ deepwater pipeline driven by offshore energy demand, 18%/12% CFC yields (FY27/28), Outperform rating, €45 PT.",
+        "**Galderma Group AG**: Strong 1H results with upgraded guidance; M&A and Nelmuvio P2 data (1Q27) as key catalysts, price target raised to €175.",
+        "**VAT Group AG Risk**: Near-doubling FY2027 earnings offset by 30% probability of AI cycle cooling (2030-2033) causing revenue drop and margin pressure.",
+        "**Red Sea Conflict**: Oil prices fall as Houthi strikes pause Strait of Hormuz transits (50% w/w drop), skepticism on diplomatic resolution impacting commodity exposure.",
+        "**Essentra PLC H1 Beat**: Outperforms despite geopolitical uncertainty; EBITA forecasts up 1%/1%/6% (26/27/28), DCF target nudged to 140p."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
       "language": "en",
       "needs_metadata": false
     },
