@@ -2952,7 +2952,18 @@ jobs:
         # provider-path test monkeypatches engine.llm_auth, so the suite touches
         # no network and reads no credential. Nothing is importorskip-gated.
         # Verified in a clean pytest+pyyaml+jinja2 venv.
-        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_marketing_personas.py tests/test_marketing_event_language.py tests/test_marketing_press_feeds.py tests/test_marketing_breaking.py tests/test_marketing_fastlane.py tests/test_wires_rail_b4b.py tests/test_marketing_press_copy.py tests/test_marketing_ramp_cta_jitter.py tests/test_marketing_expression_dial.py tests/test_marketing_cadence_spine.py tests/test_marketing_chart_coverage.py tests/test_marketing_desk_feeds.py tests/test_marketing_reply_desk.py tests/test_marketing_forward_booking.py tests/test_marketing_recall.py tests/test_marketing_learning.py tests/test_marketing_reply_producer.py tests/test_marketing_scoring_brain.py tests/test_marketing_hot_tape_llm.py -q
+        # test_marketing_hot_tape + test_marketing_hot_tape_radar (Hot Tape P1)
+        # join the same lane 2026-07-28. This lane's minimal env IS their
+        # contract: the radar runs on a shallow ubuntu checkout that installs
+        # pyyaml+requests+pyarrow and NO pandas, so hot_tape/hot_tape_wire keep
+        # module-level imports stdlib-only, and scripts/hot_tape_radar.py keeps
+        # requests, chart_render and media_publish behind LAZY function-level
+        # imports. A heavy top-level import in any of them turns this job red at
+        # collection, which is the point. Neither suite is importorskip-gated —
+        # the pandas half of the program (the nightly context pack) is a separate
+        # file that runs in marketing-data below, so nothing here can decay into
+        # a skip-only suite.
+        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_marketing_personas.py tests/test_marketing_event_language.py tests/test_marketing_press_feeds.py tests/test_marketing_breaking.py tests/test_marketing_fastlane.py tests/test_wires_rail_b4b.py tests/test_marketing_press_copy.py tests/test_marketing_ramp_cta_jitter.py tests/test_marketing_expression_dial.py tests/test_marketing_cadence_spine.py tests/test_marketing_chart_coverage.py tests/test_marketing_desk_feeds.py tests/test_marketing_reply_desk.py tests/test_marketing_forward_booking.py tests/test_marketing_recall.py tests/test_marketing_learning.py tests/test_marketing_reply_producer.py tests/test_marketing_scoring_brain.py tests/test_marketing_hot_tape_llm.py tests/test_marketing_hot_tape.py tests/test_marketing_hot_tape_radar.py -q
       - name: reply-target register validates (config/reply_targets.yml)
         # The register is operator-curated, so a bad handle or an unknown tier is
         # an editing mistake, not a code change. Runs as its own step so a
@@ -3077,7 +3088,15 @@ jobs:
         # that made 30 of the plan's 43 tickers unchartable. Named in the thin lane
         # only, they would have skipped everywhere and the fix would have shipped
         # unguarded.
-        run: python -m pytest tests/test_marketing_content.py tests/test_marketing_live_verify.py tests/test_marketing_breaking.py tests/test_marketing_weekend_levels.py tests/test_marketing_chart_coverage.py -q -rs
+        #
+        # test_marketing_hot_tape_pack.py joins 2026-07-28 (Hot Tape P1) — but as
+        # the OPPOSITE case to the four above, and it belongs here from birth
+        # rather than by repair. The nightly context pack is the one half of the
+        # program that is deliberately pandas/numpy-heavy (it scans ~20k daily
+        # parquets in a ProcessPoolExecutor), so its suite could never run in the
+        # thin marketing-engine lane where its two siblings live. Named here, and
+        # only here, so the split is explicit instead of a silent skip.
+        run: python -m pytest tests/test_marketing_content.py tests/test_marketing_live_verify.py tests/test_marketing_breaking.py tests/test_marketing_weekend_levels.py tests/test_marketing_chart_coverage.py tests/test_marketing_hot_tape_pack.py -q -rs
 
   publish-r2-client:
     if: ${{ false }}

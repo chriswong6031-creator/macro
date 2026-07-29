@@ -252,33 +252,148 @@ def rasterize_svg(
 # does not — those candles no longer need the prev-close proxy.
 _PRICE_SUBDIRS = ("data/baskets/ohlcv", "data/stocks")
 
+# data/massive_stock_day/ is OPT-IN, for the Hot Tape radar ONLY (2026-07-28,
+# masterplan §3.5). The intraday radar posts on whatever the tape hands it, so
+# ANY liquid name must render the v2 tape card, not just the 2,990 in the two
+# curated trees; that store is a nightly-host artifact (gitignored, ~20k
+# parquets, never committed) and scripts/hot_tape_radar.py hydrates the ONE file
+# it needs from R2 on demand.
+#
+# It is NOT in the default order, and that is the whole point: the store is
+# neither split-adjusted nor kept current (it was 18 sessions stale on
+# 2026-07-28), so silently adding it to _PRICE_SUBDIRS changed the bars under
+# every existing caller — the nightly cards, the brain chart, the watchlist
+# grid — to answer a question only the radar was asking. Callers who want the
+# wide tail pass ``subdirs=HOT_TAPE_PRICE_SUBDIRS`` and own that choice.
+HOT_TAPE_PRICE_SUBDIRS = (*_PRICE_SUBDIRS, "data/massive_stock_day")
 
-def _price_parquet(ticker: str, root: Path | str) -> Path | None:
+
+def _price_parquet(
+    ticker: str,
+    root: Path | str,
+    subdirs: "tuple[str, ...] | None" = None,
+) -> Path | None:
     """First existing daily-bar parquet for *ticker*, in Prophet's search order."""
-    for sub in _PRICE_SUBDIRS:
+    for sub in (subdirs or _PRICE_SUBDIRS):
         p = Path(root) / sub / f"{ticker}.parquet"
         if p.exists():
             return p
     return None
 
 
+def _parquet_rows_pyarrow(path: Path) -> tuple[list[str], dict[str, list]] | None:
+    """(dates, {column: values}) read with pyarrow alone — the no-pandas path.
+
+    The Hot Tape radar runs on a shallow ubuntu checkout with pyyaml+requests+
+    pyarrow and NO pandas (its detector path is stdlib+json by design), so the
+    two loaders below fall back here rather than losing their card. Every price
+    parquet in this repo is pandas-written with its DatetimeIndex stored as a
+    column ("Date" in the curated trees, "date" in data/massive_stock_day) and
+    named in the schema's pandas metadata, which is what we read to find it.
+    Rows come back sorted by date, mirroring the ``df.sort_index()`` both
+    loaders do.
+    """
+    import json  # noqa: PLC0415  (only on the no-pandas path)
+    import pyarrow.parquet as pq  # noqa: PLC0415  (only when pandas is absent)
+
+    table = pq.read_table(path)
+    names = list(table.column_names)
+    index_col: str | None = None
+    meta = (table.schema.metadata or {}).get(b"pandas")
+    if meta:
+        try:
+            cols = json.loads(meta.decode("utf-8")).get("index_columns") or []
+            index_col = next((c for c in cols if isinstance(c, str) and c in names), None)
+        except Exception:  # noqa: BLE001
+            index_col = None
+    if index_col is None:
+        index_col = next((c for c in ("date", "Date", "index", "timestamp") if c in names), None)
+    if index_col is None:
+        return None
+    data = {n: table.column(n).to_pylist() for n in names}
+    dates = [str(d)[:10] for d in data.pop(index_col)]
+    order = sorted(range(len(dates)), key=lambda i: dates[i])
+    return [dates[i] for i in order], {k: [v[i] for i in order] for k, v in data.items()}
+
+
+def _load_closes_pyarrow(path: Path, n: int) -> tuple[list[str], list[float]] | None:
+    """``load_closes``' body without pandas — same filters, same order."""
+    rows = _parquet_rows_pyarrow(path)
+    if rows is None:
+        return None
+    dates, cols = rows
+    if "close" not in cols:
+        return None
+    kept = [(d, c) for d, c in zip(dates, cols["close"]) if c is not None and c == c]
+    if not kept:
+        return None
+    kept = kept[-n:]
+    return [d for d, _ in kept], [float(c) for _, c in kept]
+
+
+def _load_ohlcv_pyarrow(
+    path: Path,
+    n: int,
+) -> tuple[list[str], list[float], list[float], list[float], list[float], list[float]] | None:
+    """``load_ohlcv``' body without pandas — including the prev-close open proxy."""
+    rows = _parquet_rows_pyarrow(path)
+    if rows is None:
+        return None
+    dates, cols = rows
+    if not {"close", "volume"}.issubset(set(cols)):
+        return None
+    has_hl = {"high", "low"}.issubset(set(cols))
+    keep = [
+        i for i in range(len(dates))
+        if cols["close"][i] is not None and cols["close"][i] == cols["close"][i]
+        and (not has_hl or (cols["high"][i] is not None and cols["high"][i] == cols["high"][i]
+                            and cols["low"][i] is not None and cols["low"][i] == cols["low"][i]))
+    ]
+    if len(keep) < 2:
+        return None
+    keep = keep[-(n + 1):]
+    dates_raw = [dates[i] for i in keep]
+    closes_raw = [float(cols["close"][i]) for i in keep]
+    vols_raw = [float(cols["volume"][i]) if cols["volume"][i] is not None
+                and cols["volume"][i] == cols["volume"][i] else 0.0 for i in keep]
+    opens = [cols["open"][i] for i in keep] if "open" in cols else []
+    if opens and all(o is not None and o == o for o in opens):
+        opens_raw = [float(o) for o in opens]
+    else:
+        opens_raw = [closes_raw[0]] + closes_raw[:-1]
+    if has_hl:
+        highs_raw = [float(cols["high"][i]) for i in keep]
+        lows_raw = [float(cols["low"][i]) for i in keep]
+    else:
+        highs_raw = [max(o, c) for o, c in zip(opens_raw, closes_raw)]
+        lows_raw = [min(o, c) for o, c in zip(opens_raw, closes_raw)]
+    return (dates_raw[-n:], opens_raw[-n:], highs_raw[-n:], lows_raw[-n:],
+            closes_raw[-n:], vols_raw[-n:])
+
+
 def load_closes(
     ticker: str,
     root: Path | str,
     n: int = 90,
+    subdirs: "tuple[str, ...] | None" = None,
 ) -> tuple[list[str], list[float]] | None:
     """Load last *n* closing prices for *ticker* from its daily-bar parquet.
 
-    Source order is _PRICE_SUBDIRS (data/baskets/ohlcv, then data/stocks).
+    Source order is _PRICE_SUBDIRS (data/baskets/ohlcv, then data/stocks), or
+    *subdirs* when a caller opts into a wider set (see HOT_TAPE_PRICE_SUBDIRS).
 
     Returns (dates, closes) where dates are ISO strings and closes are floats.
     Returns None on any error (missing file, bad data).
     """
     try:
-        path = _price_parquet(ticker, root)
+        path = _price_parquet(ticker, root, subdirs)
         if path is None:
             return None
-        import pandas as pd  # only import when needed
+        try:
+            import pandas as pd  # only import when needed
+        except ImportError:
+            # Hot Tape radar host: pyarrow, no pandas (see _parquet_rows_pyarrow).
+            return _load_closes_pyarrow(path, n)
         df = pd.read_parquet(path)
         if "close" not in df.columns:
             return None
@@ -756,6 +871,7 @@ def load_ohlcv(
     ticker: str,
     root: Path | str,
     n: int = 90,
+    subdirs: "tuple[str, ...] | None" = None,
 ) -> tuple[list[str], list[float], list[float], list[float], list[float], list[float]] | None:
     """Load last *n* bars of OHLCV for *ticker*.
 
@@ -771,18 +887,25 @@ def load_ohlcv(
     proxy open_t = close_{t-1} (standard prev-close proxy for candlestick
     rendering; the first bar's open = its close).
 
+    *subdirs* overrides the default store order for a caller that opts into a
+    wider set (see HOT_TAPE_PRICE_SUBDIRS).
+
     Returns (dates, opens, highs, lows, closes, volumes) — all lists of length ≤ n.
     Returns None on any error (missing file, bad data, insufficient rows).
     """
     try:
-        path = _price_parquet(ticker, root)
+        path = _price_parquet(ticker, root, subdirs)
         if path is None:
             # Crypto convention in data/yahoo/: <SYMBOL>-USD.parquet (BTC-USD, …).
             crypto_path = Path(root) / "data" / "yahoo" / f"{ticker}-USD.parquet"
             if not crypto_path.exists():
                 return None
             path = crypto_path
-        import pandas as pd  # only import when needed
+        try:
+            import pandas as pd  # only import when needed
+        except ImportError:
+            # Hot Tape radar host: pyarrow, no pandas (see _parquet_rows_pyarrow).
+            return _load_ohlcv_pyarrow(path, n)
         df = pd.read_parquet(path)
         # close + volume are the hard requirement; high/low are optional and
         # synthesized below when the source is a close-only crypto feed.
@@ -839,6 +962,7 @@ def load_ohlcv_windowed(
     *,
     vis: int = MKT_VIS,
     warm: int = MKT_WARM,
+    subdirs: "tuple[str, ...] | None" = None,
 ) -> tuple[tuple[list[str], list[float], list[float], list[float], list[float], list[float]], int] | None:
     """``load_ohlcv`` with a warm-up lead-in, for feeding ``render_chart_v2``.
 
@@ -853,7 +977,11 @@ def load_ohlcv_windowed(
     squashed-MACD, cut-off card). Routing every caller through here keeps them
     from drifting apart again.
     """
-    bars = load_ohlcv(ticker, root, n=vis + warm)
+    # subdirs is threaded ONLY when a caller opted in: the default call shape
+    # stays exactly load_ohlcv(ticker, root, n=…), which is what every existing
+    # monkeypatched stub of this seam is written against.
+    bars = (load_ohlcv(ticker, root, n=vis + warm, subdirs=subdirs) if subdirs
+            else load_ohlcv(ticker, root, n=vis + warm))
     if not bars or not bars[0]:
         return None
     warmup = max(0, len(bars[0]) - vis)

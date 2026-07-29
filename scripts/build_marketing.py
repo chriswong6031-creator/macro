@@ -62,6 +62,32 @@ def main() -> int:
         log.warning("build_marketing: telemetry write_rollup failed: %s", exc)
         print(f"marketing_telemetry: WARN (never-raise) — {exc}", file=sys.stderr)
 
+    # Hot Tape nightly context pack (never-raise; masterplan §3.1 — heavy compute
+    # nightly so the 5-minute intraday radar stays a light json join).
+    # root is EXPLICIT here, unlike the two blocks above: hot_tape_pack.build_pack
+    # does Path(root) with no default, so a None would fail-soft into an empty
+    # pack every night. cfg makes config/hot_tape.yml's universe block operative.
+    try:
+        from pathlib import Path
+        from engine.marketing.hot_tape import load_config
+        from engine.marketing.hot_tape_pack import write_pack
+        _root = Path(__file__).resolve().parent.parent
+        s = write_pack(_root, cfg=load_config(_root))
+        if s.get("error"):
+            print(
+                f"hot_tape_pack: WARN (never-raise) — {s['error']}",
+                file=sys.stderr,
+            )
+        else:
+            print(
+                f"hot_tape_pack: ok — "
+                f"n={s.get('n_tickers', 0)} "
+                f"path={s.get('path')}"
+            )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("build_marketing: hot_tape_pack write_pack failed: %s", exc)
+        print(f"hot_tape_pack: WARN (never-raise) — {exc}", file=sys.stderr)
+
     return 0
 
 
