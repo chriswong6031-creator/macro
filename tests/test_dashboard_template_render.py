@@ -240,6 +240,19 @@ def test_stocks_mode_renders_standout_card_body():
     assert "ZEUS" in html  # ungrouped lane=None card renders too
 
 
+def test_stocks_mode_keeps_existing_action_board_and_prophet_scorecards():
+    """The declutter pass must preserve the two established decision surfaces.
+    They stay in the default document flow; only lower-priority research boards
+    are hidden from the landing scan."""
+    html = _render("stocks")
+    assert 'id="action-board"' in html
+    assert 'class="panel span12 notable" id="us-standouts"' in html
+    assert 'id="stocks-command"' not in html
+    assert 'id="all-prophet-signals"' not in html
+    assert "body.page-stocks #equity-scoreboard," in html
+    assert "body.page-stocks #holdings{display:none!important}" in html
+
+
 def test_stocks_mode_dossier_block_intentionally_absent():
     """Supersedes test_stocks_mode_renders_dossier_block (the presence form)
     after PR #3012 — the removal its docstring warned about happened ON PURPOSE.

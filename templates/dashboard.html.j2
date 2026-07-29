@@ -1790,30 +1790,72 @@
 
   {% if mode == 'stocks' %}
   <!-- ===================== US STOCK DASHBOARD HEADER ===================== -->
+  <style id="stocks-home-css">
+  body.page-stocks #stocks-header{
+    padding:18px 20px;
+    background:
+      radial-gradient(900px 180px at 12% -40%,color-mix(in srgb,var(--link) 16%,transparent),transparent 60%),
+      var(--panel);
+  }
+  body.page-stocks .stk-headline{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  body.page-stocks .stk-headline h1{margin:0;font-size:26px;letter-spacing:-.035em;line-height:1.1}
+  body.page-stocks .stk-head-meta{margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  body.page-stocks .stk-status{
+    display:inline-flex;align-items:center;gap:7px;min-height:30px;padding:4px 10px;
+    border:1px solid var(--line);border-radius:999px;background:var(--panel2);
+    color:color-mix(in srgb,var(--text) 76%,transparent);font-size:12px;font-weight:650;
+  }
+  body.page-stocks .stk-status strong{color:var(--text);font-weight:750}
+  body.page-stocks .stk-fresh-dot{width:7px;height:7px;border-radius:50%;background:var(--up);box-shadow:0 0 0 3px color-mix(in srgb,var(--up) 18%,transparent)}
+  body.page-stocks .stk-status.is-delayed .stk-fresh-dot{background:var(--warn);box-shadow:0 0 0 3px color-mix(in srgb,var(--warn) 18%,transparent)}
+  body.page-stocks .stk-header-links{display:flex;gap:16px;margin-top:11px;font-size:12px;font-weight:650}
+  body.page-stocks .stk-header-links a{color:var(--muted);text-decoration:none}
+  body.page-stocks .stk-header-links a:hover{color:var(--link)}
+
+  /* Keep the two strongest existing surfaces exactly as designed:
+     #action-board first, then the Prophet #us-standouts scorecards. Remove only
+     the duplicated research boards that pushed both below the fold. */
+  body.page-stocks #sector-heat,
+  body.page-stocks #sentiment-regime,
+  body.page-stocks #cross-asset-macro,
+  body.page-stocks #dash-tape-band,
+  body.page-stocks #equity-scoreboard,
+  body.page-stocks #sectors,
+  body.page-stocks #dash-mtf-section,
+  body.page-stocks #accumulation,
+  body.page-stocks #holdings{display:none!important}
+
+  @media(max-width:900px){
+    body.page-stocks .stk-head-meta{margin-left:0;width:100%}
+  }
+  @media(max-width:560px){
+    body.page-stocks #stocks-header{padding:15px 14px}
+    body.page-stocks .stk-headline h1{font-size:22px}
+    body.page-stocks .stk-head-meta{gap:6px}
+    body.page-stocks .stk-status{font-size:11px}
+    body.page-stocks .stk-header-links{gap:12px;overflow-x:auto;white-space:nowrap;padding-bottom:2px}
+  }
+  </style>
   <div class="panel span12" id="stocks-header">
-    <div class="topline">
-      <h1>🇺🇸 {{ t('US Stock Dashboard', '美国个股看板') }}</h1>
-      <span style="display:inline-flex;align-items:center">
-        <span class="badge quad-{{ latest.quad }}">{{ t('Regime', '周期') }}: {{ td(latest.quad_name) }}</span>{{ help("The macro / economic regime (growth × inflation quadrant) the whole page is filtered by — it describes the ECONOMY, not today's tape, so it shifts slowly. Use it for which sectors & factors are favoured, not for market timing. For whether the market itself is turning over, use the Macro dashboard's Risk Radar.", "整页据以过滤的宏观／经济周期（增长×通胀象限）— 它描述的是经济，而非今日盘面，因此变化缓慢。用于判断哪些板块与因子占优，而非择时。市场本身是否转向，请看宏观看板中的风险雷达。") }}
-      </span>
-      {% if pb and pb.dial %}<span style="display:inline-flex;align-items:center">
-        <span class="badge" style="background:var(--panel2);color:var(--text)">{{ t('Posture', '姿态') }}: {{ td(pb.dial.posture) }}</span>{{ help("How to TRADE the current regime — a defensive → aggressive stance dial (Defensive · Careful · Neutral · Constructive · Aggressive) set by the playbook. “Careful” means lean cautious: favour quality and good entries, keep gross moderate. It sizes risk; it is not a buy/sell or stock-selection call. The full dial with its reasoning lives on the Macro dashboard.", "如何“交易”当前周期 — 一个防御→进取的姿态刻度（防御·谨慎·中性·建设性·进取），由策略手册设定。“谨慎”意为偏审慎：偏好质量与好的入场点，总仓位保持适中。它用于调整风险敞口，并非买卖或选股建议。完整刻度及其推理见宏观看板。") }}
-      </span>{% endif %}
+    {% set _stk_hdr_su = us_standouts if (us_standouts is defined and us_standouts) else none %}
+    {% set _stk_hdr_delayed = (_stk_hdr_su.get('staleness') or {}).get('delayed') if _stk_hdr_su else false %}
+    <div class="stk-headline">
+      <h1>{{ t('US Stocks', '美国股票') }}</h1>
+      <div class="stk-head-meta">
+        <span class="stk-status{{ ' is-delayed' if _stk_hdr_delayed else '' }}">
+          <span class="stk-fresh-dot" aria-hidden="true"></span>
+          <span class="l-en">{{ 'Delayed' if _stk_hdr_delayed else 'Fresh' }}</span><span class="l-zh">{{ '延迟' if _stk_hdr_delayed else '新鲜' }}</span>
+          {% if _stk_hdr_su and _stk_hdr_su.get('as_of') %}<strong>{{ _stk_hdr_su.as_of }}</strong>{% endif %}
+        </span>
+        <span class="stk-status"><span class="l-en">Regime</span><span class="l-zh">周期</span> <strong>{{ td(latest.quad_name) }}</strong></span>
+        {% if pb and pb.dial %}<span class="stk-status"><span class="l-en">Posture</span><span class="l-zh">姿态</span> <strong>{{ td(pb.dial.posture) }}</strong></span>{% endif %}
+      </div>
     </div>
-    <p class="muted" style="margin:6px 0 0">{{ t('Where to look for stocks — Prophet signals, sector rotation, factor tilts and real fund flows, filtered by the current macro regime.', '在哪里找股票 — 先知选股、板块轮动、因子倾斜与基金真实资金流，按当前宏观周期过滤。') }}
-      <a href="macro.html" style="color:var(--link);font-weight:600">← {{ t('Macro regime dashboard', '宏观周期看板') }}</a>
-      &nbsp;·&nbsp;
-      <a href="us_stocks_lab.html" style="color:var(--link);font-weight:600">🧪 <span class="l-en">Pick Lab</span><span class="l-zh">选股实验室</span></a></p>
-    {# B4: seasonal-climate chip — display-only context, page furniture.
-       Tone: headwind → warn-border; tailwind → up-border. Absent when neutral or data missing. #}
-    {% if factor_season is defined and factor_season is not none %}
-    <div style="margin:7px 0 0">
-      <span class="chip"
-        style="{% if factor_season.tone == 'headwind' %}border-color:color-mix(in srgb,var(--warn) 55%,var(--line));color:var(--warn);{% elif factor_season.tone == 'tailwind' %}border-color:color-mix(in srgb,var(--up) 45%,var(--line));color:var(--up);{% endif %}cursor:help"
-        data-tip-en="{{ factor_season.tip_en | e }}"
-        data-tip-zh="{{ factor_season.tip_zh | e }}"><span class="l-en">{{ factor_season.chip_en | e }}</span><span class="l-zh">{{ factor_season.chip_zh | e }}</span></span>
+    <div class="stk-header-links">
+      <a href="macro.html"><span class="l-en">Market posture</span><span class="l-zh">市场姿态</span> →</a>
+      <a href="us_stocks_lab.html">🧪 <span class="l-en">Pick Lab</span><span class="l-zh">选股实验室</span> →</a>
+      <a href="alerts.html"><span class="l-en">Alerts</span><span class="l-zh">提醒</span> →</a>
     </div>
-    {% endif %}
   </div>
   {# Ignition Radar strip + "Big Seven" leadership board REMOVED 2026-07-23 (operator ruling — forced Mag-7 call failed; see research/DO_NOT_REBUILD.md §2/§4 and research/POSTMORTEM_20260723_MAG7_FORCED_CALL_BY_FABLE.md). Engine lanes (mag7_regime, ignition_radar) keep accruing in the background. #}
   {% endif %}
