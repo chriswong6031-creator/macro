@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-29T15:03:20.767927+00:00",
-  "count": 322,
+  "generated_at": "2026-07-29T15:08:03.415781+00:00",
+  "count": 329,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -32,6 +32,89 @@
   ],
   "items": [
     {
+      "id": "marketdesk-q4lqixahtnn-65ce00",
+      "title": "RUPEE STABILITY FOR NOW BUT STRAINS AHEAD",
+      "institution": "TS Lombard",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-29T14:16:49Z",
+      "summary_points": [
+        "**RBI Intervention & Oil Risk**: RBI's FX interventions offer short-term rupee stability, but India's >85% crude import dependency and oil price volatility (fueled by Iran-US tensions) threaten sustained stability, with limited cushion from overseas bank deposits/debt flows.",
+        "**Structural Weaknesses**: Persistent foreign equity outflows, tepid FDI inflows, and the rupee's prolonged undervaluation (REER below 100 for >1 decade) create underlying strains despite RBI support.",
+        "**Geopolitical & Climate Impact**: Rupee ranks among worst oil-sensitive Asian currencies due to high oil prices + drought-like monsoon (June-Sept rainfall 16% below normal), exacerbating inflation and economic stress (confirmed by manufacturing PMI contraction).",
+        "**Structural Depreciation Risks**: Trade and capital flow weaknesses signal long-term rupee depreciation; reforms needed to boost private investment and stabilize capital inflows amid current account deficit widening to 2% of GDP in FY27."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-h6t5reexjth-b366cd",
+      "title": "Internet July 29",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T14:15:00Z",
+      "summary_points": [
+        "**Spotify Subscriber Gap**: 2026 premium net additions modeled at 6mn (vs.",
+        "buy-side’s 7mn), implying 14% upside risk from execution.",
+        "**Margin Guidance vs.",
+        "Street**: 33.1% consolidated gross margin guide (Q2Q6) below buy-side 33.3-33.4%, signaling 20-30bps upside potential.",
+        "**WMG Competitive Erosion**: Spotify Top 200 share fell to 18.2% (Q2 2026) vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 24,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-e5fzjhpolo0-446706",
+      "title": "DB Research Europe",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T14:04:31Z",
+      "summary_points": [
+        "**Diageo Downgrade & Consensus Risk**: Downgraded to HOLD after +22% outperformance vs S&P500; FY27+ consensus EPS 10% above DB estimates, signaling material optimism risk.",
+        "**Safran FY26 Catalysts & Geopolitical Risk**: Buy rating driven by traffic recovery post-Middle East tensions; key risk: CFM56 shop visits (2300-2400/yr) and material availability constraints.",
+        "**Unite Group Valuation Risk**: H126 occupancy progress (88-90%) offset by 8% EPS decline; 10% valuation decline risk in FY26 due to higher cost of capital.",
+        "**Air Liquide Solid Fundamentals**: Record backlog, +3.5% sales vs consensus, H1 margin +110bps, strong IM pricing (+5%) supporting growth trajectory.",
+        "**MEDIOS Profit Warning**: EBITDA guidance lowered to €688–92m (vs €94–102m) due to pricing pressures and healthcare reform, not top-line demand."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-p65paxw1bjp-6ca35c",
+      "title": "JPM North America Research | US Internet Q2 preview",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T13:57:21Z",
+      "summary_points": [
+        "**SpaceX ROIC Risk**: SpaceX's projected 2025 ROIC of -137% signals severe operational vulnerability, contrasting sharply with Google/Amazon's 29-40% ROIC and Meta's 51% (2024), highlighting critical sector-specific risk.",
+        "**AI Capex Surge**: $20B debt + $85B equity raised in Q2 for AI capex, driving structural growth; Cloud/Search segments show 70%+ revenue growth with cost discipline offsetting depreciation.",
+        "**AWS Growth Acceleration**: JPM expects AWS growth to accelerate to low-mid 30% (2Q26E guide 31.5%, JPM 32.0%), critical for cloud leadership, margin expansion, and enterprise infrastructure momentum.",
+        "**Ad Tech Regulatory Catalyst**: Judge’s AdTech Trial Remedy Decision (Nov 30-Dec 4) poses significant risk to Google’s ad business, compounded by FIFA World Cup (June-July) driving ad spend—dual opportunity/risk for ad tech and travel stocks.",
+        "**SPCEX Overweight Thesis**: JPM initiates Overweight with $225 PT, driven by Starship launch leadership, AI compute upside (Grok 5), and margin inflection; 2026E: 6% revenue growth, 636bps margin expansion, 33% EPS growth."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 35,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-p8utyhtfa1f-3cb485",
       "title": "JPM Equity Thematic Strategy",
       "institution": "J.P. Morgan",
@@ -49,6 +132,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 52,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-fe1mekpi9ch-91b20e",
+      "title": "JPM GLOBAL MARKET INTELLIGENCE | Data Assets & Alpha Group",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T13:49:02Z",
+      "summary_points": [
+        "**Chinese AI Cost Dominance**: Chinese models (DeepSeek V4 Flash, Kimi K3) deliver frontier AI at 1/100th the cost of US rivals (e.g., $0.02 vs.",
+        "$2.75 for Claude Fable 5), creating structural margin pressure on US tech firms and accelerating cost-driven adoption.",
+        "**US-China Policy Risk**: White House considering restrictions on open-source Chinese models after US firms use 60% of Chinese tokens via OpenRouter, exposing US tech firms to regulatory disruption.",
+        "**AI ETF Flow Resilience**: AI/Robotics ETFs show 40% of total thematic flows (6m) despite -12% 1m performance, signaling persistent investor appetite and potential recovery amid volatility.",
+        "**Semis Positioning Extremes**: Global Semis at 98th %-tile L/S positioning and Tech Hardware at 86th %-tile, indicating stretched exposure and heightened risk from deleveraging (retail/ETFs + end-of-quarter rebalances)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 17,
       "language": "en",
       "needs_metadata": false
     },
@@ -132,6 +236,26 @@
       "tickers": [],
       "top_pick": true,
       "pages": 16,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-w4psffjqgv8-d3be8a",
+      "title": "Citi The Point for Europe Wednesday, 29 July 2026",
+      "institution": "Citi",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T11:16:06Z",
+      "summary_points": [
+        "**GSK Pipeline Execution Risk**: £1.9bn cost savings by 2029, 7 assets in 18 indications, >£40bn 2031 sales target; HIV patent cliffs require flawless execution to offset revenue decline.",
+        "**Safran EBIT Guidance & Pricing**: FY26 EBIT raised to €6.6bn (9% CAGR FY26-31 vs prior 8%), but Neutral rating due to 13% medium-term CAGR vs historical 8-10%.",
+        "**AB-InBev Q2 Volumes & Risk/Reward**: Q2 volumes +0.6% (China headwinds offset by US gains), positive risk/reward skew into CMD, Buy rating.",
+        "**US Rate Cut Timeline**: Market pricing 30% Fed hike chance; pause tomorrow, 2 cuts end-of-year, 1 in 2027 (fundamentals/macro event)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
       "language": "en",
       "needs_metadata": false
     },
@@ -2047,6 +2171,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 28,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-zsliugiwuwk-c730f3",
+      "title": "What is next for commodities",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T00:41:13Z",
+      "summary_points": [
+        "**Geopolitical Catalysts**: Houthi attacks on Red Sea shipping (Brent crude +33% in July) directly drive short-term oil volatility and supply chain disruption risks.",
+        "**Climate Data Impact**: 81% probability of strong/super El Niño by year-end (97% persistence) elevates agricultural/commodity demand forecasts and inflation risks.",
+        "**Structural Demand Shifts**: AI/electrification fuels industrial metals demand; central bank gold purchases provide persistent safe-haven support amid macro uncertainty.",
+        "**Active Management Necessity**: Selective commodity tilts required amid volatility, leveraging low equity/bond correlations and structural trends for inflation hedging."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
       "language": "en",
       "needs_metadata": false
     },
