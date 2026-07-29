@@ -31,9 +31,9 @@
     RISK_OFF: ["RED — Defend capital first", "优先保住本金"]
   };
   var ACTION = {
-    RISK_ON: ["Trend-follow, add on strength.", "顺势而为，强势中加仓。"],
-    MIXED: ["Trade with caution. Size small.", "谨慎操作，仓位缩小。"],
-    RISK_OFF: ["Defend capital first. Reduce risk.", "优先保住本金，降低风险。"]
+    RISK_ON: ["Follow the trend. Add on strength.", "顺势而为，强势中加仓。"],
+    MIXED: ["Trade small. Stay selective.", "缩小仓位，精选标的。"],
+    RISK_OFF: ["Reduce risk. Protect capital.", "降低风险，保护本金。"]
   };
   /* zh 红涨绿跌 (operator ruling 2026-07-21): the state colours are DIRECTION reads
      (risk-on=bullish), so they route through the zh-swapping --up/--warn/--down tokens
@@ -281,23 +281,15 @@
           ncs[3].style.filter = "drop-shadow(0 0 4px " + HEX[col] + ")";
         }
       }
-      /* What To Do row 1 — regime action line + "Composite NN/100" sub.
-         Sanity-check the EN span still opens with a verdict word so we never
-         clobber a page where row 1 is not the regime row. */
-      var wl = document.querySelector(".mx5-action-list .mx5-action-item .mx5-action-label");
-      if (wl) {
-        var wlEn = wl.querySelector(".l-en");
-        if (wlEn && /^(Risk-on|Mixed|Risk-off)/.test(wlEn.textContent.trim()))
-          setBL(wl, (disp.label_en || disp.verdict) + " — " + ACTION[disp.verdict][0],
-                    (disp.label_zh || disp.label_en || disp.verdict) + " — " + ACTION[disp.verdict][1]);
-      }
-      var ws = document.querySelector(".mx5-action-list .mx5-action-item .mx5-action-sub");
-      if (ws && disp.score != null) {
-        var wspans = ws.querySelectorAll("span");
-        for (var wi = 0; wi < wspans.length; wi++)
-          wspans[wi].textContent = wspans[wi].textContent.replace(/\d+(?=\/100)/, disp.score);
-      }
-      var wicon = document.querySelector(".mx5-action-list .mx5-action-item .mx5-action-icon");
+      /* What To Do primary row — concise action plus verdict/score context. */
+      var wl = document.querySelector("[data-wtd-primary] .mx5-action-label");
+      if (wl && ACTION[disp.verdict])
+        setBL(wl, ACTION[disp.verdict][0], ACTION[disp.verdict][1]);
+      var ws = document.querySelector("[data-wtd-primary] .mx5-action-sub");
+      if (ws && disp.score != null)
+        setBL(ws, (disp.label_en || disp.verdict) + " · " + disp.score + "/100",
+                  (disp.label_zh || disp.label_en || disp.verdict) + " · " + disp.score + "/100");
+      var wicon = document.querySelector("[data-wtd-primary] .mx5-action-icon");
       if (wicon) {
         wicon.classList.remove("mx5-ai-green", "mx5-ai-yellow", "mx5-ai-gray");
         wicon.classList.add(WTD_ICON[col]);
