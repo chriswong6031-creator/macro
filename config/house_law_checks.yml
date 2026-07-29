@@ -1,5 +1,5 @@
 schema: house_law_checks.v1
-updated: "2026-07-24"
+updated: "2026-07-29"
 
 # Canonical registry of every house law and its enforcement status.
 # Maintained by scripts/check_house_law_registry.py (meta-guard).
@@ -11,6 +11,33 @@ updated: "2026-07-24"
 checks:
 
   # ── UI / rendering guards ──────────────────────────────────────────────────
+
+  - law_id: ui.crypto_shelf_governor
+    summary: >
+      The Bitcoin Vector and Crypto Cockpit Tier-1 spines are closed sets.
+      Once a surface carries its first data-shelf marker, vector must expose
+      exactly S1-S6 plus one data-verdict marker and crypto must expose exactly
+      H1-H8. W0 deliberately leaves legacy templates unarmed; W1 and W2 arm
+      their respective surface by shipping the complete marker set.
+    source_ref:
+      - scripts/check_crypto_shelves.py
+      - mockups/refs/crypto_cockpit/README.md
+    severity: hard
+    check_script: scripts/check_crypto_shelves.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: crypto-shelves
+        lane: pr_ci
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Source-level marker counting cannot prove that CSS or client code leaves every shelf visible.
+      - Content nested inside the final details shelf is intentionally outside the Tier-1 count.
+    owner_program: crypto-cockpit-masterplan
+    notes: >
+      The unmarked legacy templates pass with a notice during W0. Partial migration
+      is fail-closed: the first marker arms the exact-set and one-verdict checks.
 
   - law_id: ui.hub_a11y
     summary: >

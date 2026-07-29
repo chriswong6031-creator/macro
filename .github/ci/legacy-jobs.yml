@@ -51,6 +51,18 @@ jobs:
       - name: shared-nav pages must carry the Research mega-menu
         run: python3 scripts/check_nav_mega.py site
 
+  crypto-shelves:
+    if: ${{ false }}
+    # W0 lands the governor unarmed against the legacy templates. The first
+    # data-shelf marker on each surface arms exact-set enforcement for that page.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: governor selftest (partial, duplicate and extra shelves must fail)
+        run: python3 scripts/check_crypto_shelves.py --selftest
+      - name: vector and crypto Tier-1 shelf governor
+        run: python3 scripts/check_crypto_shelves.py
+
   board-contradictions:
     if: ${{ false }}
     # W2 board invariant guard: validates site/factordata/us_standouts.json for four

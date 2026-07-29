@@ -112,8 +112,11 @@ class TestBasketsW3Markers:
         assert "querySelectorAll('.dtp-colmore')" in src
         # the flat interleaving container must not come back
         assert "ftr-dtp-full" not in src
-        # expander law (#2206 double-toggle lesson): own class + [hidden] re-assert
-        assert ".dtp-colmore[hidden], .dtp-more[hidden] { display:none; }" in src
+        # expander law (#2206 double-toggle lesson): own class + [hidden] re-assert.
+        # W0 of the Crypto Cockpit moved the shared .dtp vocabulary into theme.css;
+        # keep this guard on the canonical owner instead of requiring a page-local copy.
+        theme = _src("theme.css")
+        assert ".dtp-colmore[hidden], .dtp-more[hidden] { display:none; }" in theme
         assert ".lst-more" not in src
 
     def test_no_raw_rank_idiom(self):

@@ -13,7 +13,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | XSR | 1 |
 | active-build-map | 1 |
 | agentic_media | 3 |
-| btc-vector | 5 |
+| btc-vector | 6 |
 | causal-hypothesis-factory | 9 |
 | cbf | 2 |
 | ccw | 10 |
@@ -100,7 +100,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 334 |
+| display | 335 |
 | infrastructure | 95 |
 | scored | 4 |
 | shadow | 79 |
@@ -109,7 +109,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 490 |
+| git | 491 |
 | gitignored-local | 15 |
 | r2 | 7 |
 
@@ -144,6 +144,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | btc-override-ledger | `data/vector/override_ledger.jsonl` | jsonl | daily-engine | shadow | 2 | 0 |
 | btc-regime-ledger | `data/vector/regime_ledger.jsonl` | jsonl | daily-engine | shadow | 2 | 0 |
 | btc-impulse-ledger | `data/vector/impulse_ledger.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
+| crypto-cockpit | `site/crypto_cockpit.json` | json | daily-engine | display | 0 | 0 |
 
 ### causal-hypothesis-factory
 
