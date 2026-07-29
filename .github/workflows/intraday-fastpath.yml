@@ -183,11 +183,12 @@ jobs:
             echo "::warning::basket_pulse hk build failed (non-fatal)"
       - name: display live snapshot (all ticks — same-origin site/live/quotes.json)
         # The browser's ONLY keyless feed for the glance-tier tiles (macro index strip,
-        # ES/NQ futures, china live strip, commodities/forex, BTC) is the same-origin
-        # site/live/quotes.json (window.LIVE_SNAPSHOT_URL; no Worker deployed). Producers:
+        # six-instrument macro tape, china live strip, commodities/forex, BTC) is the
+        # same-origin site/live/quotes.json (window.LIVE_SNAPSHOT_URL; no Worker deployed).
+        # Producers:
         # THIS step on every fastpath tick (30-min, US + HKEX windows — so the china
         # tiles are fresh during CHINA hours, not just US RTH) and the hourly 24/7
-        # btc-live Action (nights/weekends/Sunday Globex reopen). ~25 symbols, seconds.
+        # btc-live Action (nights/weekends/Sunday Globex reopen). ~30 symbols, seconds.
         # Fresh direct fetch (same code path as btc-live) rather than filtering the
         # live-data branch snapshot: identical contract, no branch dependency.
         run: |

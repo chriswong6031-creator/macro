@@ -36,6 +36,7 @@ import re
 from datetime import datetime, timezone
 from pathlib import Path
 
+from app.tape_symbols import TAPE_SYMBOLS
 from engine import live_quotes
 from lib import config
 
@@ -86,17 +87,17 @@ CORE_SYMBOLS = (US_INDEXES + US_FUTURES + INTL_INDEXES + CORE_ETFS
 # tiles (macro market strip, china live strip, commodities/forex strips, BTC header).
 # This is the SAME-ORIGIN snapshot universe (site/live/quotes.json): the browser's
 # only keyless feed for these symbols when no Worker is deployed (the full-universe
-# snapshot lives on the live-data BRANCH, which pages never fetch). Kept tiny (~25
+# snapshot lives on the live-data BRANCH, which pages never fetch). Kept tiny (~30
 # symbols, seconds to fetch) so BOTH producers stay cheap: the hourly 24/7 btc-live
 # Action (nights/weekends/Sunday Globex reopen) and the 30-min intraday-fastpath
 # tick (US RTH + HKEX windows). Keep in sync with the data-sym tiles the templates
 # emit — a symbol displayed but absent here keeps its baked value forever.
 DISPLAY_SYMBOLS = [
     "SPY", "QQQ", "^DJI", "^RUT",            # macro market strip (DJI/RUT tiles carry data-sym ^DJI/^RUT)
-    "ES=F", "NQ=F",                          # macro futures tiles (~23h Globex tape)
+    *TAPE_SYMBOLS,                            # six-instrument macro tape
     "000001.SS", "510300.SS", "^HSI",        # china page live strip
     "BTC-USD",                               # Bitcoin Vector header (24/7)
-    "GC=F", "SI=F", "HG=F", "CL=F", "BZ=F", "DX-Y.NYB",   # commodities strip
+    "GC=F", "SI=F", "HG=F", "CL=F", "BZ=F",  # commodities strip (DXY is in the tape above)
     "EURUSD=X", "USDJPY=X", "GBPUSD=X", "USDCAD=X",       # forex strip
     "USDCNH=X", "USDCHF=X", "USDMXN=X", "USDBRL=X",
     "^N225", "^KS11", "^TWII",                        # macro overnight/Asia strip

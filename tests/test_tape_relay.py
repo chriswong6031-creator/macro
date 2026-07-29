@@ -210,7 +210,8 @@ def test_unsubscribed_symbol_ignored():
 def test_poll_once_broadcasts_poll_basis(monkeypatch):
     hub = TapeHub()
 
-    def fake_fetch():
+    def fake_fetch(symbols):
+        assert symbols == list(TAPE_SYMBOLS)
         return {
             "ES=F": {"price": 5100.0, "prev_close": 5049.5, "quote_ts": "2026-07-24T18:00:00+00:00"},
             "^TNX": {"price": 42.5, "prev_close": 42.25, "quote_ts": None},
@@ -226,9 +227,41 @@ def test_poll_once_broadcasts_poll_basis(monkeypatch):
 
 def test_poll_empty_is_noop(monkeypatch):
     hub = TapeHub()
-    monkeypatch.setattr(hub, "_fetch_rest_quotes", lambda: {})
+    monkeypatch.setattr(hub, "_fetch_rest_quotes", lambda symbols: {})
     asyncio.run(hub._poll_once())
     assert hub.snapshot() == []
+
+
+def test_busy_symbol_does_not_suppress_missing_symbol_fallback():
+    """A streaming DXY must not prevent a missing YM quote from being polled."""
+    hub = TapeHub(symbols=("YM=F", "DX-Y.NYB"))
+    now_ms = 1_000_000.0
+    hub._last_upstream_ms["DX-Y.NYB"] = now_ms
+
+    assert hub._symbols_needing_poll(now_ms) == ["YM=F"]
+
+
+def test_poll_once_fetches_only_requested_stale_symbols(monkeypatch):
+    hub = TapeHub(symbols=("YM=F", "DX-Y.NYB"))
+    fetched = []
+
+    def fake_fetch(symbols):
+        fetched.extend(symbols)
+        return {
+            "YM=F": {
+                "price": 52_778.0,
+                "prev_close": 52_944.0,
+                "quote_ts": "2026-07-29T11:48:07+00:00",
+            }
+        }
+
+    monkeypatch.setattr(hub, "_fetch_rest_quotes", fake_fetch)
+    asyncio.run(hub._poll_once(["YM=F"]))
+
+    assert fetched == ["YM=F"]
+    by_sym = {p["sym"]: p for p in hub.snapshot()}
+    assert by_sym["YM=F"]["basis"] == "poll"
+    assert "DX-Y.NYB" not in by_sym
 
 
 # --------------------------------------------------------------------------- #
