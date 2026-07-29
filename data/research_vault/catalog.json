@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-29T15:38:07.271705+00:00",
-  "count": 330,
+  "generated_at": "2026-07-29T15:53:14.446236+00:00",
+  "count": 331,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -2292,6 +2292,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-tgoingoxzzf-136e2c",
+      "title": "ING Think rates spark either way the fed will surprise",
+      "institution": "ING",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T00:38:54Z",
+      "summary_points": [
+        "**Oil Dominates Policy Narrative**: Brent oil below $100 and Middle East fragility outweigh Fed rate decisions; ING expects 2Y USD swap rates to fall if oil eases, overriding Fed's lack of forward guidance.",
+        "**Fed Guidance Gap**: Markets split on Fed timing (30% hike probability priced in), but dovish turn hardens as oil dynamics dominate; lack of Fed forward guidance limits market learning.",
+        "**BoE Hold Conditional on Inflation**: Policy rate likely held at 3.75% unless inflation forecasts exceed 4%; political uncertainty pressures 10Y gilt yields amid oil-driven sterling curve dynamics.",
+        "**Key Data Events Drive Near-Term Flows**: Friday Eurozone inflation print (core 2.4%) and Monday Germany’s Ifo survey (84.7), US durable goods orders, and bond auctions (€2.8bn/€139bn) will dictate flows amid Middle East escalation."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
       "language": "en",
       "needs_metadata": false
     },
