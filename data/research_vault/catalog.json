@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-29T00:40:05.503134+00:00",
-  "count": 288,
+  "generated_at": "2026-07-29T00:56:33.069207+00:00",
+  "count": 296,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -28,6 +28,171 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-hocvcw5pgva-386f9b",
+      "title": "United Parcel Service Inc",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T00:43:24Z",
+      "summary_points": [
+        "**Q2 EPS Beat & Domestic Margin Improvement**: UPS reported $1.76 EPS (vs.",
+        "$1.64 consensus), with domestic margin at 8% (exceeding 7.5%-8.5% guide), driving EPS guide raise to $7.22/share.",
+        "**Valuation & Upside Catalyst**: Goldman Sachs reiterates Buy with $132 target (16.9% upside from $112.95), citing 13.5x NTM valuation, domestic margin runway, and declining P/E (14.6→12.6 by 2028).",
+        "**Revised Guidance & Domestic Strength**: 2026 EPS raised to $7.22 (from $7.05), driven by domestic revenue +4% above guidance (margins 8% vs.",
+        "6% guided) and improved B2B/SMB mix (43.8%/34.5%)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-exq6pnk9q3a-d7b937",
+      "title": "Seagate Technology (STX) First Take Strong quarter with significant upside to guidance relative to elevated expectations",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T00:43:22Z",
+      "summary_points": [
+        "**Strong Q1 results & guidance beat**: Actual revenue ($3.63bn) and gross margin (52.7%) exceeded Goldman Sachs ($3.58bn, 50.7%) and Street ($3.50bn, 50.6%); 1Q revenue guidance ($4.1bn) and EPS ($7.30) surpassed GS ($3.87bn, $6.11) and Street ($3.77bn, $5.89).",
+        "**EPS growth trajectory**: GS forecasts EPS rising from $3.86 (3/26) to $6.64 (12/26E), signaling robust multi-year growth potential.",
+        "**Guidance outperformance**: QoQ revenue growth guidance (13.0% vs Street’s 4.0%) and YoY revenue (67.8% vs Street’s 43.5%) highlight superior execution and demand strength."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-9ccqhi2hy77-11890e",
+      "title": "Chile MPC Keeps Policy Rate at 4.5 and Returns to More Cautious Guidance Amid Renewed Uncertainty",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T00:43:20Z",
+      "summary_points": [
+        "**MPC Rate Hold & Cautious Stance**: Unanimous 4.5% rate hold with shifted cautious tone post-Middle East war, citing higher uncertainty, weaker labor market, and supply-driven oil shocks as key risks.",
+        "**Middle East Conflict & Oil Volatility**: Oil price swings (spike to $100/bbl, then decline) driven by Middle East tensions, creating persistent uncertainty over inflation expectations and policy rate adjustments.",
+        "**Domestic Weakness vs.",
+        "Inflation**: MPC held rates amid weaker-than-expected domestic activity (natural resources, investment) and higher-than-expected inflation, emphasizing ongoing assessment of Middle East risks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-gfki5aykpyq-bd6410",
+      "title": "Americas Energy Oil & Gas E&P Balancing Near Term Gas Macro Softness with Robust Long Term Demand Potential",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T00:43:19Z",
+      "summary_points": [
+        "**EQT Production & LNG Growth**: 2026 production 6.97 Bcfe/d (above consensus), raised FY2026 guidance by 0.25 Bcf/d, driven by low-cost Appalachian supply, compression projects, and 5-year LNG offtake (0.5 MTPA, 2028 start) and 10-year supply deal (325k Dth/d, 2021 start), supporting $62 target (19% upside).",
+        "**RRC Macro Headwinds & Cash Flow**: Faces 14% Henry Hub pricing decline (near-term cash flow pressure), neutral rating at $3.50 MMBtu; NGL guidance raised but offset by macro risks, with M&A valuation mix ($36/$45) highlighting execution risk.",
+        "**FCF Yield Differentiation**: EQT offers 8.0% avg FCF yield (vs.",
+        "RRC’s 9.5%), critical for portfolio allocation; EQT’s productivity gains from compression program and RRC’s deferral of 2H26 capex to 2027 signal divergent capital efficiency.",
+        "**Key Risk Factor**: RRC’s near-term cash flow pressure amid Henry Hub decline and EQT’s reliance on LNG agreement execution (2028 start) represent material execution risks for near-term valuation."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-jjgay2mf87z-549cbe",
+      "title": "NXP Semiconductors NV (NXPI) First Take In line quarter and guidance, relative to more bullish peer results",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T00:43:17Z",
+      "summary_points": [
+        "**Guidance Gap vs.",
+        "Peers**: 3Q guidance (rev $3.75B, EPS $4.11) slightly above Street but below bullish peers (GS: $3.68B/$4.05), with key risks: automotive demand weakness and pricing uncertainty.",
+        "**Revenue/EPS Underperformance vs.",
+        "GS**: Actual QoQ rev growth (4.8%) and EPS ($3.61) underperformed Goldman Sachs’ estimates (10.0% rev, $3.66 EPS), signaling potential GS over-optimism despite beating Street consensus.",
+        "**Price Target Discrepancy**: $325 target (18x P/E) implies 21.4% upside from current price, yet consensus price targets cluster at $250–$275, creating a significant valuation gap amid critical risks (automotive demand, pricing)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-pp3ap4cds4s-2bf4f6",
+      "title": "Mirion Technologies Inc. (MIR) 2Q26 First Take 2Q inline, 2026 guide maintained, order strength persists",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T00:43:14Z",
+      "summary_points": [
+        "**Q2 Performance & Guidance**: Actual adj.",
+        "EBITDA $65m slightly beat estimates but organic growth +1.2% lagged consensus (+2.6%) due to delayed hardware demand; 2026 guidance maintained ($285-$300m EBITDA) with persistent order strength (+10% organic, backlog +2%).",
+        "**Valuation & Key Risks**: 12-month PT $25 (22x Q5-Q8 EBITDA); critical risks include weaker organic growth, prolonged margin pressure, and dilutive M&A impacting near-term execution.",
+        "**EPS Beat & Segment Drivers**: Q2 actual EPS $0.12 exceeded GS estimate ($0.11), driven by Nuclear & Safety segment revenue +31.4% and EBITDA margin expansion +27.4% (vs.",
+        "estimates)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-hs2oube04ne-c4dfe1",
+      "title": "Liberty Energy Inc. (LBRT) Management Meeting Takeaways See Potential for 500 MWs of ESAs by Year End, With Raised Capex G...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T00:43:12Z",
+      "summary_points": [
+        "**ESA Growth Engine**: Targeting >500 MW ESAs by year-end with 15-20 year contracts, driving long-term scale and capital recycling via project financing (70-80% funding).",
+        "**Valuation Mismatch**: Elevated P/E (51.0x) amid decelerating EBITDA growth (33.6% vs 7.2% next year), despite strong cash flow ($609.6M) and low leverage (0.3x net debt/EBITDA).",
+        "**Sector Policy Risk**: Oil price volatility and US energy policy shifts threaten energy stocks; LBRT’s low leverage mitigates but doesn’t eliminate exposure.",
+        "**Target Price Alignment**: $31 target (65% surge from $19) closely matches closing price ($31.06), signaling strong analyst consensus and fair valuation.",
+        "**Capital Efficiency**: Project financing (70-80%) for capex, $1.7m/MW spend, 5-6 year payback, and high-teens unlevered returns sustain growth without equity dilution."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-prvolq1p2yv-245098",
+      "title": "KLA Corp. (KLAC) First Take Modest upside to quarter and guidance relative to elevated expectations",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T00:43:10Z",
+      "summary_points": [
+        "**Q3 Guidance Below Elevated Expectations**: Revenue ($4.00bn) and EPS ($1.16) guidance slightly above Street but below investor sentiment; key risks: export restrictions, Foundry/Logic spending volatility.",
+        "**Critical Risks & Valuation**: 12-month target $230 (35x P/E); critical risks include sharp Foundry/Logic spending shifts, export restrictions, Memory WFE rebound, and US export policy changes.",
+        "**Strong Buy Consensus & Upside**: 50% Global Buy rating; Goldman Sachs target $230 (13.1% upside from $203.36), with recent target below current price ($235.55).",
+        "**Margin Beat Highlights Fundamentals**: Q2 gross margin (62.4%) beat Street by 44 bps (vs.",
+        "9%), reinforcing operational strength despite modest revenue beat."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-u3t0g2qtxp3-c19509",
       "title": "GS Challenging Hedge Fund Performance amid Momentum; AI sell off",
