@@ -39,7 +39,7 @@ _ASSETS_RE = re.compile(
 # ---------------------------------------------------------------------------
 
 def test_copy_asset_bakes_theme_js(tmp_path: Path) -> None:
-    """copy_asset('theme.js', ...) must replace the placeholder with live config."""
+    """copy_asset('theme.js', ...) must bake config and the Terminal controller."""
     src = TEMPLATES / "theme.js"
     assert src.exists(), "templates/theme.js must exist"
 
@@ -61,6 +61,11 @@ def test_copy_asset_bakes_theme_js(tmp_path: Path) -> None:
         assert "anonKey" in out, (
             "Expected baked theme.js to contain 'anonKey' JSON key."
         )
+
+    overlay = (TEMPLATES / "terminal_overlay.js").read_text()
+    assert "window.MDXTerminalOverlay" in out
+    assert out.endswith(overlay)
+    assert out.count("/* Mastermind Terminal overlay") == 1
 
 
 # ---------------------------------------------------------------------------
