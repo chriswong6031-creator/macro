@@ -25,6 +25,12 @@ def test_codex_runtime_setup_has_valid_shell_syntax():
     assert "CODEX_STATE_DIR/auth.json" in text
 
 
+def test_live_setup_installs_press_scoring_backend():
+    live_setup = ROOT / "app" / "deploy" / "live-setup.sh"
+    subprocess.run(["bash", "-n", str(live_setup)], check=True)
+    assert "datasketch" in live_setup.read_text(encoding="utf-8")
+
+
 def test_deployed_services_share_root_only_codex_state():
     for relative in (
         "app/deploy/macro-api.service",
@@ -103,6 +109,15 @@ def _admin_restart_regex() -> str:
     return _ere_on_line(lines[guard])
 
 
+def _press_restart_regex() -> str:
+    """The ERE guarding the long-running PRESS-FEEDS daemon restart."""
+    lines = SCRIPT.splitlines()
+    restart = next(i for i, ln in enumerate(lines)
+                   if "systemctl restart marketing-press-feeds" in ln)
+    guard = next(i for i in range(restart - 1, -1, -1) if _GREP in lines[i])
+    return _ere_on_line(lines[guard])
+
+
 def _matches(regex: str, path: str) -> bool:
     """Run the real grep so the test sees POSIX ERE semantics, not Python's."""
     return subprocess.run(
@@ -116,6 +131,10 @@ def _triggers_restart(path: str) -> bool:
 
 def _triggers_admin_restart(path: str) -> bool:
     return _matches(_admin_restart_regex(), path)
+
+
+def _triggers_press_restart(path: str) -> bool:
+    return _matches(_press_restart_regex(), path)
 
 
 # Import-cached by the macro-api process -> a change here MUST restart it.
@@ -343,6 +362,67 @@ def test_api_and_admin_regexes_are_distinct():
     """Guard the extractor: both helpers must not resolve to the same line."""
     assert _api_restart_regex() != _admin_restart_regex()
     assert _admin_restart_regex().startswith("^(admin/")
+
+
+# --------------------------------------------------------------------------
+# PRESS-FEEDS deployment lifecycle. The service is intentionally operator-armed,
+# but once active it is a long-running Python process and must not keep stale
+# import-cached code after the checkout advances.
+# --------------------------------------------------------------------------
+
+PRESS_MUST_RESTART = [
+    "app/deploy/marketing-press-feeds.service",
+    "scripts/marketing_fastlane_daemon.py",
+    "engine/news_translate.py",
+    "engine/marketing/breaking_feed.py",
+    "engine/marketing/press_providers.py",
+    "engine/marketing/press_lane.py",
+    "engine/marketing/story_spine.py",
+    "engine/marketing/sentinel.py",
+    "engine/marketing/__init__.py",
+    "engine/codex_provider.py",
+    "engine/llm_auth.py",
+    "engine/codex_lane/runner.py",
+    "lib/ai_costs.py",
+    "lib/config.py",
+]
+
+PRESS_MUST_NOT_RESTART = [
+    # Re-read on every tick.
+    "config/marketing.yml",
+    "config/press_sources.yml",
+    # Artifacts/templates never enter the daemon interpreter.
+    "site/news.html",
+    "templates/news.html.j2",
+    "data/qbus/items.parquet",
+    "scripts/build_site.py",
+    "admin/server.py",
+]
+
+
+def test_update_reconciles_only_an_installed_press_unit():
+    assert '[ -f /etc/systemd/system/marketing-press-feeds.service ]' in SCRIPT
+    assert 'systemd-analyze verify "$APP_DIR/app/deploy/marketing-press-feeds.service"' in SCRIPT
+    assert "systemctl enable marketing-press-feeds" not in SCRIPT
+    assert "systemctl start marketing-press-feeds" not in SCRIPT
+    assert "systemctl is-active --quiet marketing-press-feeds" in SCRIPT
+
+
+@pytest.mark.parametrize("path", PRESS_MUST_RESTART)
+def test_press_import_cached_path_triggers_daemon_restart(path):
+    assert (ROOT / path).exists(), f"stale test fixture: {path} no longer exists"
+    assert _triggers_press_restart(path), (
+        f"{path} is import-cached by marketing-press-feeds but does not match "
+        "the restart regex in app/deploy/update.sh"
+    )
+
+
+@pytest.mark.parametrize("path", PRESS_MUST_NOT_RESTART)
+def test_non_press_path_does_not_restart_daemon(path):
+    assert not _triggers_press_restart(path), (
+        f"{path} is re-read or unused by marketing-press-feeds; restarting on it "
+        "would defeat the narrow lifecycle contract"
+    )
 
 
 # --------------------------------------------------------------------------

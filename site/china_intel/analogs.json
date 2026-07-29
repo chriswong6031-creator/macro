@@ -1,20 +1,20 @@
 {
   "schema": "china_intel.analogs.v1",
   "is_context_only": true,
-  "generated_utc": "2026-07-28T11:26:43Z",
-  "as_of": "2026-07-28",
+  "generated_utc": "2026-07-29T10:17:48Z",
+  "as_of": "2026-07-29",
   "coverage": {
     "start": "2006-03-30",
-    "end": "2026-07-28",
-    "n_candidate_days": 5304
+    "end": "2026-07-29",
+    "n_candidate_days": 5305
   },
   "query": {
-    "date": "2026-07-28",
+    "date": "2026-07-29",
     "quad": "Q3",
     "quad_name": "Stagflation",
     "liquidity": "contracting",
     "cycle": "mid",
-    "growth_z": -0.7335,
+    "growth_z": -0.7334,
     "inflation_z": 0.3125
   },
   "analogs": [
@@ -38,7 +38,7 @@
     },
     {
       "date": "2023-10-31",
-      "distance": 0.092,
+      "distance": 0.0921,
       "quad": "Q3",
       "quad_name": "Stagflation",
       "liquidity": "contracting",
@@ -55,16 +55,16 @@
       }
     },
     {
-      "date": "2008-07-14",
+      "date": "2008-07-21",
       "distance": 0.1124,
       "quad": "Q3",
       "quad_name": "Stagflation",
       "liquidity": "contracting",
       "cycle": "mid",
       "fwd_shcomp": {
-        "h20": -0.123231,
-        "h60": -0.331775,
-        "h120": -0.377843
+        "h20": -0.193897,
+        "h60": -0.406303,
+        "h120": -0.375853
       },
       "fwd_csi300": null
     },
@@ -142,7 +142,7 @@
     },
     {
       "date": "2024-08-07",
-      "distance": 0.5933,
+      "distance": 0.5934,
       "quad": "Q3",
       "quad_name": "Stagflation",
       "liquidity": "contracting",
@@ -195,21 +195,21 @@
       }
     },
     {
-      "date": "2016-05-27",
+      "date": "2016-05-30",
       "distance": 1.008,
       "quad": "Q2",
       "quad_name": "Reflation",
       "liquidity": "contracting",
       "cycle": "mid",
       "fwd_shcomp": {
-        "h20": 0.03794,
-        "h60": 0.089231,
-        "h120": 0.144716
+        "h20": 0.004444,
+        "h60": 0.050709,
+        "h120": 0.116504
       },
       "fwd_csi300": {
-        "h20": 0.030237,
-        "h60": 0.09999,
-        "h120": 0.157969
+        "h20": -0.002528,
+        "h60": 0.060309,
+        "h120": 0.128073
       }
     },
     {
@@ -234,20 +234,20 @@
   "fan": {
     "h20": {
       "p25": -0.027595,
-      "median": 0.00899,
-      "p75": 0.035254,
+      "median": 0.004952,
+      "p75": 0.023209,
       "n": 12
     },
     "h60": {
       "p25": -0.060915,
       "median": 0.022193,
-      "p75": 0.065431,
+      "p75": 0.052406,
       "n": 12
     },
     "h120": {
       "p25": -0.01332,
       "median": 0.045317,
-      "p75": 0.116079,
+      "p75": 0.113688,
       "n": 12
     }
   },

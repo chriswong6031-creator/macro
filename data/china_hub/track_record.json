@@ -1,26 +1,26 @@
 {
   "schema": "intel_hub.track_record.v1",
-  "as_of": "2026-07-28",
-  "generated_at": "2026-07-28T11:26:51.398001+00:00",
+  "as_of": "2026-07-29",
+  "generated_at": "2026-07-29T10:17:59.055200+00:00",
   "is_context_only": true,
-  "n_snapshots": 1856,
+  "n_snapshots": 1942,
   "horizons": {
     "5": {
-      "n_matured": 187,
-      "opportunity_ic_pooled": 0.227,
+      "n_matured": 202,
+      "opportunity_ic_pooled": 0.2228,
       "opportunity_ic_daily": {
-        "mean_ic": 0.071,
-        "ic_vol": 0.4844,
-        "ic_ir": 0.146,
-        "ic_ir_ann": 0.463,
-        "t_hac": 0.594,
-        "p_hac": 0.5526,
-        "hit": 0.455,
-        "n": 11,
+        "mean_ic": 0.039,
+        "ic_vol": 0.475,
+        "ic_ir": 0.082,
+        "ic_ir_ann": 0.26,
+        "t_hac": 0.326,
+        "p_hac": 0.7445,
+        "hit": 0.417,
+        "n": 12,
         "hac_lags": 5
       },
-      "opportunity_ic": 0.071,
-      "edge_ic_pooled": 0.2163,
+      "opportunity_ic": 0.039,
+      "edge_ic_pooled": 0.2154,
       "by_stage": {
         "consensus": {
           "n": 5,
@@ -28,28 +28,28 @@
           "hit_rate": null
         },
         "distribution": {
-          "n": 63,
-          "mean_fwd_rel": -0.0141,
-          "hit_rate": 0.635
+          "n": 70,
+          "mean_fwd_rel": -0.0127,
+          "hit_rate": 0.614
         },
         "exhausted": {
-          "n": 15,
-          "mean_fwd_rel": -0.0311,
+          "n": 18,
+          "mean_fwd_rel": -0.0346,
           "hit_rate": 0.667
         },
         "faltering": {
-          "n": 16,
-          "mean_fwd_rel": 0.0003,
+          "n": 17,
+          "mean_fwd_rel": -0.0052,
           "hit_rate": null
         },
         "early": {
-          "n": 85,
-          "mean_fwd_rel": 0.0102,
-          "hit_rate": 0.588
+          "n": 87,
+          "mean_fwd_rel": 0.0107,
+          "hit_rate": 0.598
         },
         "quiet": {
-          "n": 3,
-          "mean_fwd_rel": 0.0408,
+          "n": 5,
+          "mean_fwd_rel": 0.0291,
           "hit_rate": null
         }
       },
@@ -57,21 +57,21 @@
       "by_regime": {}
     },
     "10": {
-      "n_matured": 121,
-      "opportunity_ic_pooled": 0.4724,
+      "n_matured": 136,
+      "opportunity_ic_pooled": 0.48,
       "opportunity_ic_daily": {
-        "mean_ic": 0.4758,
-        "ic_vol": 0.3382,
-        "ic_ir": 1.407,
-        "ic_ir_ann": 6.292,
-        "t_hac": null,
-        "p_hac": null,
-        "hit": 0.857,
-        "n": 7,
+        "mean_ic": 0.489,
+        "ic_vol": 0.3153,
+        "ic_ir": 1.551,
+        "ic_ir_ann": 6.935,
+        "t_hac": 9.659,
+        "p_hac": 0.0,
+        "hit": 0.875,
+        "n": 8,
         "hac_lags": 10
       },
-      "opportunity_ic": 0.4758,
-      "edge_ic_pooled": 0.443,
+      "opportunity_ic": 0.489,
+      "edge_ic_pooled": 0.4215,
       "by_stage": {
         "consensus": {
           "n": 3,
@@ -79,13 +79,13 @@
           "hit_rate": null
         },
         "distribution": {
-          "n": 41,
-          "mean_fwd_rel": -0.0355,
-          "hit_rate": 0.756
+          "n": 49,
+          "mean_fwd_rel": -0.0296,
+          "hit_rate": 0.673
         },
         "exhausted": {
-          "n": 8,
-          "mean_fwd_rel": -0.104,
+          "n": 10,
+          "mean_fwd_rel": -0.1099,
           "hit_rate": 1.0
         },
         "faltering": {
@@ -94,42 +94,47 @@
           "hit_rate": null
         },
         "early": {
-          "n": 58,
-          "mean_fwd_rel": 0.0158,
-          "hit_rate": 0.724
+          "n": 63,
+          "mean_fwd_rel": 0.0159,
+          "hit_rate": 0.714
         }
       },
       "by_source": {},
       "by_regime": {}
     },
     "21": {
-      "n_matured": 10,
-      "opportunity_ic_pooled": -0.3865,
+      "n_matured": 18,
+      "opportunity_ic_pooled": 0.0062,
       "opportunity_ic_daily": {
         "n_days": 1
       },
       "opportunity_ic": null,
-      "edge_ic_pooled": 0.2025,
+      "edge_ic_pooled": 0.4205,
       "by_stage": {
         "consensus": {
-          "n": 2,
-          "mean_fwd_rel": -0.2788,
+          "n": 3,
+          "mean_fwd_rel": -0.2487,
           "hit_rate": null
         },
         "distribution": {
-          "n": 4,
-          "mean_fwd_rel": -0.108,
-          "hit_rate": 0.75
+          "n": 6,
+          "mean_fwd_rel": -0.1421,
+          "hit_rate": 0.833
         },
         "exhausted": {
-          "n": 1,
-          "mean_fwd_rel": -0.3247,
+          "n": 2,
+          "mean_fwd_rel": -0.3085,
           "hit_rate": 1.0
         },
         "faltering": {
-          "n": 3,
-          "mean_fwd_rel": 0.1079,
+          "n": 5,
+          "mean_fwd_rel": 0.0985,
           "hit_rate": null
+        },
+        "early": {
+          "n": 2,
+          "mean_fwd_rel": 0.0183,
+          "hit_rate": 0.5
         }
       },
       "by_source": {},
@@ -148,16 +153,16 @@
       "by_regime": {}
     }
   },
-  "lead_time_d": null,
-  "peak_opportunity_ic": null,
+  "lead_time_d": 10,
+  "peak_opportunity_ic": 0.489,
   "proven": {
     "5": false,
-    "10": false,
+    "10": true,
     "21": false,
     "63": false
   },
   "any_matured": true,
-  "note": "Measuring \u2014 accruing forward observations; the hub's edge is not yet statistically proven. Early numbers are provisional, context-only.",
+  "note": "Opportunity IC peaks at the 10d horizon (measured). Context-only.",
   "benchmark": "CSI300",
   "disclaimer": "A falsifiable scorecard of the hub's own claims \u2014 opportunity rank and lifecycle stage graded against realized CSI300-relative forward returns. Until a signal matures and clears a Newey-West significance bar it is 'measuring', never trusted. Nothing here sizes a position."
 }
