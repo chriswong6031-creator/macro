@@ -1,15 +1,15 @@
 {
   "date": "2026-07-28",
-  "generated_utc": "2026-07-29 14:41",
+  "generated_utc": "2026-07-29 14:40",
   "business_cycle": {
     "available": true,
     "asof": "2026-07-31",
     "tiers": {
       "leading": {
         "asof": "2026-07-31",
-        "index": 94.96171584207238,
+        "index": 94.96171584207237,
         "mom6": 0.5210412269237281,
-        "trend": 0.674700693261741,
+        "trend": 0.6747006932617428,
         "diffusion": 100.0,
         "n_legs": 4,
         "direction": "rising",
@@ -1138,7 +1138,7 @@
       },
       "coincident": {
         "asof": "2026-06-30",
-        "index": 35.54997927837485,
+        "index": 35.54997927837482,
         "mom6": -0.19521292979656835,
         "trend": -0.3761025914334855,
         "diffusion": 100.0,
@@ -2269,9 +2269,9 @@
       },
       "lagging": {
         "asof": "2026-06-30",
-        "index": 93.08858904928299,
+        "index": 93.08858904928302,
         "mom6": 0.68950527159231,
-        "trend": 0.014829474145930343,
+        "trend": 0.014829474145929906,
         "diffusion": 50.0,
         "n_legs": 4,
         "direction": "rising",
@@ -3399,7 +3399,7 @@
         ]
       }
     },
-    "cl_ratio_mom6": -0.7078680369326733,
+    "cl_ratio_mom6": -0.7078680369326662,
     "recession_signal": {
       "available": true,
       "state": "off",
@@ -3612,7 +3612,7 @@
       "reason": "version-matched + fresh",
       "calibration_version": "w2.7-loro-v1",
       "calibration_generated_at": "2026-07-02T12:32:51Z",
-      "calibration_age_days": 27
+      "calibration_age_days": 26
     },
     "lag_passport": {
       "basis": "per_leg_schedule",
@@ -4085,7 +4085,7 @@
       "initial_claims_4wk": 207500.0,
       "continued_claims": 1796000.0,
       "claims_yoy_pct": -6.108597285067874,
-      "claims_z": -1.4221657998669162,
+      "claims_z": -1.4221657998670802,
       "claims_trend": "falling",
       "indeed_postings": 102.09,
       "indeed_chg_3m_pct": -0.3027343750000022,
@@ -4103,22 +4103,22 @@
       "read": "transitory (flexible-led)"
     },
     "risk_appetite": {
-      "vrp": 8.752841750848024,
+      "vrp": 8.752841750848026,
       "vrp_pctile": 0.8174603174603174,
       "vrp_state": "rich (vol overpriced)",
-      "realized_vol": 9.457157333624632,
+      "realized_vol": 9.45715733362463,
       "vix_term": 0.9169183547245773,
       "vix_term_state": "contango (calm)",
       "vix_term_lead_lag": "coincident",
       "skew": 146.6,
       "skew_pctile": 0.4851190476190476,
-      "stock_bond_corr": 0.5370751259333911,
+      "stock_bond_corr": 0.5370751259333919,
       "stock_bond_regime": "breakdown (bonds not hedging)",
-      "roro": 0.5014737523933268,
+      "roro": 0.5014737523932592,
       "roro_state": "risk-on",
-      "vol_target_scalar": 1.26888023289349,
+      "vol_target_scalar": 1.2688802328934903,
       "news_sentiment": 0.015339049510657787,
-      "news_sentiment_z": 0.6480517396159793,
+      "news_sentiment_z": 0.6480517396159781,
       "news_sentiment_state": "optimistic"
     },
     "drawdown_risk": {
@@ -4225,7 +4225,7 @@
   "fear_euphoria": {
     "fe_score": 86,
     "band": "Greed",
-    "roro": 0.5014737523933268,
+    "roro": 0.5014737523932592,
     "roro_state": "risk-on",
     "legs": [
       {

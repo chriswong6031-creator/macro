@@ -429,7 +429,7 @@
             <div class="ms-alerts-wrap">
               <label class="ms-alerts" for="ms-alerts-toggle" tabindex="0" aria-haspopup="dialog" aria-controls="ms-alerts-pop">
                 <span class="dot"></span><span class="l-en">Fired alerts</span><span class="l-zh">已触发警报</span>
-                <span class="ct">2</span>
+                <span class="ct">4</span>
               </label>
               <div class="ms-alerts-pop" id="ms-alerts-pop" role="dialog" aria-label="Fired alerts · 已触发警报">
                 <div class="ms-pop-head">
@@ -445,11 +445,29 @@
                   
                   
                   
-                  <a class="ms-sig sev-warn" data-ms-jump href="#health">
-                    <div class="ms-sig-head"><span class="ms-sig-ico">🔌</span><span class="ms-sig-title"><span class="l-en">A data source went dark</span><span class="l-zh">某数据源中断</span></span><span class="ms-sig-jump"><span class="l-en">View ↓</span><span class="l-zh">查看 ↓</span></span></div>
-                    <div class="ms-sig-detail"><span class="l-en">Source &#39;china_einteraction&#39; marked dead after 3 consecutive failures — collector skipped until it recovers; affected signals degrade</span><span class="l-zh">数据源 &#39;china_einteraction&#39; 连续 3 次失败后被标记为中断 —采集器暂停直至恢复；相关信号置信度下降</span></div>
-                    <div class="ms-sig-what"><span class="l-en">A feed this dashboard relies on failed several runs in a row, so it’s paused until it recovers. Any signals that depend on it automatically lose confidence until it’s back. This is a plumbing notice, not a market signal.</span><span class="l-zh">本仪表盘依赖的某个数据源连续多次失败，已暂停直至恢复。依赖它的信号会自动降低置信度，直到其恢复。这是系统管线提示，并非市场信号。</span></div>
-                    <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Plumbing — data health, not a market signal.</span><span class="l-zh">管线 — 数据健康度，而非市场信号。</span></div>
+                  <a class="ms-sig sev-warn" data-ms-dlg="dlg-risk" href="#dlg-risk">
+                    <div class="ms-sig-head"><span class="ms-sig-ico">🫧</span><span class="ms-sig-title"><span class="l-en">Calm surface, fragile internals — complacency watch</span><span class="l-zh">表象平静、内部脆弱 — 自满预警</span></span><span class="ms-sig-jump"><span class="l-en">View →</span><span class="l-zh">查看 →</span></span></div>
+                    <div class="ms-sig-detail"><span class="l-en">Complacency watch: calm tape starting to mask weakening internals</span><span class="l-zh">自满预警：平静走势开始掩盖走弱的内部结构</span></div>
+                    <div class="ms-sig-what"><span class="l-en">A cheap-VIX / steep-contango calm sitting over weakening internals (thinning breadth, HY credit quietly widening). The classic complacent pre-drawdown setup. Context, not a timer — size down, don&#39;t chase.</span><span class="l-zh">低VIX、陡峭contango的平静，叠加走弱的内部结构（宽度变薄、HY信用悄然走阔）。典型的自满型回撤前夜。属背景而非择时 — 缩小仓位，不要追高。</span></div>
+                    <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Medium — a calm-over-weak CONTEXT (the conjunction matters, not low VIX alone). Size down, don&#39;t chase.</span><span class="l-zh">中 — 平静掩盖走弱的背景（关键是组合而非单看低VIX）。缩小仓位，不要追高。</span></div>
+                  </a>
+                  
+                  
+                  
+                  <a class="ms-sig sev-info" data-ms-dlg="dlg-sector" href="#dlg-sector">
+                    <div class="ms-sig-head"><span class="ms-sig-ico">📈</span><span class="ms-sig-title"><span class="l-en">A sector broke into leadership</span><span class="l-zh">某板块跃升为领先</span></span><span class="ms-sig-jump"><span class="l-en">View →</span><span class="l-zh">查看 →</span></span></div>
+                    <div class="ms-sig-detail"><span class="l-en">XLV RS vs SPY crossed above 90th pctile of 90d (now 97)</span><span class="l-zh">XLV RS 相对 SPY 上穿 90 天第 90 百分位（现为 97）</span></div>
+                    <div class="ms-sig-what"><span class="l-en">One sector’s strength versus the market just pushed into the top of its recent range — it’s starting to lead. This describes where money is rotating, not an instant buy. Check the sector’s heat and trigger column before acting.</span><span class="l-zh">某板块相对市场的强度刚冲入其近期区间的顶部 — 开始领先。这描述的是资金轮动的方向，并非立即买入。行动前请查看该板块的热度与触发列。</span></div>
+                    <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Context — descriptive rotation, not a timing signal.</span><span class="l-zh">背景 — 描述性的轮动，而非择时信号。</span></div>
+                  </a>
+                  
+                  
+                  
+                  <a class="ms-sig sev-info" href="us_stocks.html#holdings">
+                    <div class="ms-sig-head"><span class="ms-sig-ico">🐳</span><span class="ms-sig-title"><span class="l-en">A star fund manager made a notable move</span><span class="l-zh">明星基金经理出现显著动作</span></span><span class="ms-sig-jump"><span class="l-en">View →</span><span class="l-zh">查看 →</span></span></div>
+                    <div class="ms-sig-detail"><span class="l-en">ARKK: manager cut FIG by -97% of position (2026-07-21..2026-07-28, flow-normalized)</span><span class="l-zh">ARKK：经理 cut FIG 仓位 -97%（2026-07-21..2026-07-28，已按资金流标准化）</span></div>
+                    <div class="ms-sig-what"><span class="l-en">One of the tracked funds (ARK, etc.) meaningfully added to or cut a position, after stripping out mechanical fund-flow effects — so it reflects genuine conviction. It’s information about what active managers are doing, not a recommendation to copy it.</span><span class="l-zh">在剔除机械性资金流影响后，某只跟踪基金（如 ARK）显著加仓或减仓 —因此反映了真实的信念。这是关于主动经理动作的信息，并非照搬的建议。</span></div>
+                    <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Context — what an active manager did, not a recommendation.</span><span class="l-zh">背景 — 主动经理的动作，并非建议。</span></div>
                   </a>
                   
                   
@@ -4142,8 +4160,8 @@
         <div class="mx5-card-title"><span class="l-en">Alerts Centre</span><span class="l-zh">警报中心</span></div>
         
         <div class="mx5-card-badge" style="color:var(--mx5-warn-ink);background:var(--mx5-warn-dim);border:1px solid rgba(245,158,11,.20);">
-          <span class="l-en">1 FIRED</span>
-          <span class="l-zh">1 条触发</span>
+          <span class="l-en">2 FIRED</span>
+          <span class="l-zh">2 条触发</span>
         </div>
         
       </div>
@@ -4152,6 +4170,24 @@
       
       
       <div class="mx5-alerts-list">
+        
+        
+        
+        
+        <div class="mx5-alert-item warn">
+          <div class="mx5-alert-dot warn"></div>
+          <div class="mx5-alert-content">
+            <div class="mx5-alert-title warn">
+              <span style="font-size:12px;margin-right:3px">🫧</span>
+              <span class="l-en">Calm surface, fragile internals — complacency watch</span>
+              <span class="l-zh">表象平静、内部脆弱 — 自满预警</span>
+            </div>
+            <div class="mx5-alert-detail">
+              <span class="l-en">Complacency watch: calm tape starting to mask weakening internals</span>
+              <span class="l-zh">自满预警：平静走势开始掩盖走弱的内部结构</span>
+            </div>
+          </div>
+        </div>
         
         
         
@@ -4181,7 +4217,7 @@
             <div class="mx5-alert-title">
               <span style="font-size:12px;margin-right:3px">📰</span>
               <span class="l-en">Tim Cook’s last earnings call comes at momentous time for Apple with stock at re…</span>
-              <span class="l-zh">蒂姆·库克最后一次财报电话会恰逢苹果股价创纪录的关键时刻</span>
+              <span class="l-zh">Tim Cook’s last earnings call comes at momentous time for Ap…</span>
             </div>
             <div class="mx5-alert-detail">
               <span>CNBC - Tech</span> · 
@@ -4197,8 +4233,8 @@
       </div>
       <div class="mx5-alert-footer">
         <span>
-          <span class="l-en">Showing 1 of 2 in feed</span>
-          <span class="l-zh">显示 1 / 2 条</span>
+          <span class="l-en">Showing 2 of 4 in feed</span>
+          <span class="l-zh">显示 2 / 4 条</span>
         </span>
         <button type="button" class="gbtn gbtn-sm gbtn-quiet" onclick="event.stopPropagation();mx5OpenDlg('dlg-news')">
           <span class="l-en">View all &#8594;</span>
@@ -7303,6 +7339,25 @@
             <div style="flex:1;min-width:0">
               <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:4px">
                 <div style="font-size:13px;font-weight:600;color:var(--mx5-warn)">
+                  <span style="font-size:12px;margin-right:3px">🫧</span>
+                  <span class="l-en">Calm surface, fragile internals — complacency watch</span><span class="l-zh">表象平静、内部脆弱 — 自满预警</span>
+                </div>
+                
+                
+                <span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;background:rgba(245,158,11,.12);color:var(--mx5-warn-ink,#9c6212);border:1px solid rgba(245,158,11,.22);white-space:nowrap"><span class="l-en">Watch</span><span class="l-zh">关注</span></span>
+                
+              </div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.5"><span class="l-en">Complacency watch: calm tape starting to mask weakening internals</span><span class="l-zh">自满预警：平静走势开始掩盖走弱的内部结构</span></div>
+            </div>
+          </div>
+          
+          
+          
+          <div style="display:flex;gap:10px;padding:12px;background:rgba(245,158,11,.06);border-radius:10px;border:1px solid rgba(245,158,11,.18)">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--mx5-warn);flex-shrink:0;margin-top:5px"></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+                <div style="font-size:13px;font-weight:600;color:var(--mx5-warn)">
                   <span style="font-size:12px;margin-right:3px">📅</span>
                   <span class="l-en">Major event on deck — expect bigger swings either way</span><span class="l-zh">重大事件临近 — 双向波动或加大</span>
                 </div>
@@ -7327,12 +7382,26 @@
             <div style="flex:1;min-width:0">
               <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:3px">
                 <div style="font-size:12.5px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.7))">
-                  <span style="font-size:11px;margin-right:3px">🔌</span>
-                  <span class="l-en">A data source went dark</span><span class="l-zh">某数据源中断</span>
+                  <span style="font-size:11px;margin-right:3px">📈</span>
+                  <span class="l-en">A sector broke into leadership</span><span class="l-zh">某板块跃升为领先</span>
                 </div>
                 <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.36));border:1px solid rgba(255,255,255,.09);white-space:nowrap"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
               </div>
-              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">Source &#39;china_einteraction&#39; marked dead after 3 consecutive failures — collector skipped until it recovers; affected signals degrade</span><span class="l-zh">数据源 &#39;china_einteraction&#39; 连续 3 次失败后被标记为中断 —采集器暂停直至恢复；相关信号置信度下降</span></div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">XLV RS vs SPY crossed above 90th pctile of 90d (now 97)</span><span class="l-zh">XLV RS 相对 SPY 上穿 90 天第 90 百分位（现为 97）</span></div>
+            </div>
+          </div>
+          
+          <div style="display:flex;gap:10px;padding:10px 12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid rgba(255,255,255,.05)">
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.30));flex-shrink:0;margin-top:5px"></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:3px">
+                <div style="font-size:12.5px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.7))">
+                  <span style="font-size:11px;margin-right:3px">🐳</span>
+                  <span class="l-en">A star fund manager made a notable move</span><span class="l-zh">明星基金经理出现显著动作</span>
+                </div>
+                <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.36));border:1px solid rgba(255,255,255,.09);white-space:nowrap"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
+              </div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">ARKK: manager cut FIG by -97% of position (2026-07-21..2026-07-28, flow-normalized)</span><span class="l-zh">ARKK：经理 cut FIG 仓位 -97%（2026-07-21..2026-07-28，已按资金流标准化）</span></div>
             </div>
           </div>
           
@@ -7352,7 +7421,7 @@
           <a class="nbx-item" href="https://www.cnbc.com/2026/07/29/tim-cooks-last-earnings-call-comes-at-momentous-time-for-apple-.html" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Tim Cook’s last earnings call comes at momentous time for Apple with stock at record</span><span class="l-zh">蒂姆·库克最后一次财报电话会恰逢苹果股价创纪录的关键时刻</span></span>
+              <span class="nbx-title"><span class="l-en">Tim Cook’s last earnings call comes at momentous time for Apple with stock at record</span><span class="l-zh">Tim Cook’s last earnings call comes at momentous time for Apple with stock at record</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7370,7 +7439,7 @@
           <a class="nbx-item" href="https://seekingalpha.com/news/4620467-oge-reaffirms-2026-eps-guidance-of-2_38-to-2_48-as-large-load-tariff-targets-25m-to-30m?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Fiscal</span><span class="l-zh">财政</span></span>
-              <span class="nbx-title"><span class="l-en">OGE reaffirms 2026 EPS guidance of $2.38 to $2.48 as large-load tariff targets $25M to $30M annual residential benefit</span><span class="l-zh">OGE重申2026年每股收益指引2.38至2.48美元，大负荷电价目标为每年住宅用户带来2500万至3000万美元收益</span></span>
+              <span class="nbx-title"><span class="l-en">OGE reaffirms 2026 EPS guidance of $2.38 to $2.48 as large-load tariff targets $25M to $30M annual residential benefit</span><span class="l-zh">OGE reaffirms 2026 EPS guidance of $2.38 to $2.48 as large-load tariff targets $25M to $30M annual residential benefit</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7388,7 +7457,7 @@
           <a class="nbx-item" href="https://www.npr.org/2026/07/29/nx-s1-5910558/federal-reserve-interest-rates-inflation" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span>
-              <span class="nbx-title"><span class="l-en">The Federal Reserve faces a critical decision on interest rates</span><span class="l-zh">美联储面临利率关键决策</span></span>
+              <span class="nbx-title"><span class="l-en">The Federal Reserve faces a critical decision on interest rates</span><span class="l-zh">The Federal Reserve faces a critical decision on interest rates</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7406,7 +7475,7 @@
           <a class="nbx-item" href="https://www.investors.com/news/ford-earnings-auto-industry-electric-vehicles-detroit-stock-market-sp-500/?src=A00220&amp;yptr=yahoo" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Ford Stock Jumps On Upgrade, Earnings Beat; Are Its EV Woes In The Rear View Mirror?</span><span class="l-zh">福特股价因评级上调及盈利超预期大涨，电动车困境已成过去？</span></span>
+              <span class="nbx-title"><span class="l-en">Ford Stock Jumps On Upgrade, Earnings Beat; Are Its EV Woes In The Rear View Mirror?</span><span class="l-zh">Ford Stock Jumps On Upgrade, Earnings Beat; Are Its EV Woes In The Rear View Mirror?</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7424,7 +7493,7 @@
           <a class="nbx-item" href="https://www.cnbc.com/2026/07/28/meta-q2-earnings-call-mentions-kalshi-market-odds-.html" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Meta likely to highlight smart glasses, avoid social media policy on upcoming earnings call, Kalshi traders say</span><span class="l-zh">Kalshi交易员：Meta财报电话会可能聚焦智能眼镜，回避社交媒体政策</span></span>
+              <span class="nbx-title"><span class="l-en">Meta likely to highlight smart glasses, avoid social media policy on upcoming earnings call, Kalshi traders say</span><span class="l-zh">Meta likely to highlight smart glasses, avoid social media policy on upcoming earnings call, Kalshi traders say</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7442,7 +7511,7 @@
           <a class="nbx-item" href="https://www.cnbc.com/2026/07/29/sk-hynix-earnings-profit-revenue-hbm-memory.html" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">SK Hynix shares tank as exponential earnings growth fails to satisfy AI-charged expectations</span><span class="l-zh">SK海力士股价暴跌，指数级盈利增长仍难满足AI驱动的期望</span></span>
+              <span class="nbx-title"><span class="l-en">SK Hynix shares tank as exponential earnings growth fails to satisfy AI-charged expectations</span><span class="l-zh">SK Hynix shares tank as exponential earnings growth fails to satisfy AI-charged expectations</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7460,7 +7529,7 @@
           <a class="nbx-item" href="https://www.cnbc.com/2026/07/29/humana-hum-earnings-q2-2026.html" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Humana tops quarterly estimates, maintains profit outlook as medical costs stay in line</span><span class="l-zh">Humana季度业绩超预期，医疗成本符合预期，维持盈利展望</span></span>
+              <span class="nbx-title"><span class="l-en">Humana tops quarterly estimates, maintains profit outlook as medical costs stay in line</span><span class="l-zh">Humana tops quarterly estimates, maintains profit outlook as medical costs stay in line</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7478,7 +7547,7 @@
           <a class="nbx-item" href="https://finance.yahoo.com/markets/live/stock-market-today-wednesday-july-29-dow-sp-500-nasdaq-082009165.html" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Stock market today: Dow, S&amp;P 500, Nasdaq slide in countdown to Fed decision, AI earnings test</span><span class="l-zh">今日股市：道指、标普500、纳指在美联储决策倒计时及AI盈利考验中下滑</span></span>
+              <span class="nbx-title"><span class="l-en">Stock market today: Dow, S&amp;P 500, Nasdaq slide in countdown to Fed decision, AI earnings test</span><span class="l-zh">Stock market today: Dow, S&amp;P 500, Nasdaq slide in countdown to Fed decision, AI earnings test</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7496,7 +7565,7 @@
           <a class="nbx-item" href="https://www.marketwatch.com/story/forget-oil-a-surging-el-nino-could-kill-fed-rate-cuts-and-these-stocks-stand-to-win-41f8e67f?mod=mw_rss_topstories" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span>
-              <span class="nbx-title"><span class="l-en">Forget oil. A surging El Niño could kill Fed rate cuts — and these stocks stand to win.</span><span class="l-zh">别管石油了，厄尔尼诺大爆发可能扼杀美联储降息，这些股票将受益</span></span>
+              <span class="nbx-title"><span class="l-en">Forget oil. A surging El Niño could kill Fed rate cuts — and these stocks stand to win.</span><span class="l-zh">Forget oil. A surging El Niño could kill Fed rate cuts — and these stocks stand to win.</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7514,7 +7583,7 @@
           <a class="nbx-item" href="https://www.marketwatch.com/story/a-profit-squeeze-is-coming-for-tech-this-manager-is-betting-on-these-unglamorous-stocks-instead-ea19a2ab?mod=mw_rss_topstories" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">A profit squeeze is coming for tech. This manager is betting on these unglamorous stocks instead.</span><span class="l-zh">科技股利润挤压将至，这位经理押注这些不起眼的股票</span></span>
+              <span class="nbx-title"><span class="l-en">A profit squeeze is coming for tech. This manager is betting on these unglamorous stocks instead.</span><span class="l-zh">A profit squeeze is coming for tech. This manager is betting on these unglamorous stocks instead.</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -11284,9 +11353,9 @@
       
     </table>
     <p class="muted"><span class="l-en">A failed source never crashes the dashboard — affected signals just lose confidence until it heals.
-       Generated 2026-07-29 14:41 UTC · <a href="aibrief.html">AI daily brief</a> ·
+       Generated 2026-07-29 14:40 UTC · <a href="aibrief.html">AI daily brief</a> ·
        <a href="history.html">history & charts</a></span><span class="l-zh">数据源失败绝不会让仪表盘崩溃 — 受影响的信号只是降低置信度，直到其恢复。
-       生成于 2026-07-29 14:41 UTC · <a href="aibrief.html">AI每日简报</a> ·
+       生成于 2026-07-29 14:40 UTC · <a href="aibrief.html">AI每日简报</a> ·
        <a href="history.html">历史与图表</a></span></p>
   </details>
   
