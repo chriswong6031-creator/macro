@@ -14,6 +14,16 @@ public:
     - /
     - /index.html
     - /plans.html
+    # Free signal-stack lead magnet. Rank 1 exposes its matching tickers; paid
+    # rows are omitted server-side and render only counts + the trial CTA, so
+    # the public shell contains no premium ticker payload.
+    - /confluence_screener.html
+    # Public acquisition dashboards. macro/start expose the broad market read;
+    # macro drill-downs still require registration. us_stocks applies the
+    # anonymous=1 / Free=3 / paid=full summary preview in tier_preview.js.
+    - /macro.html
+    - /start.html
+    - /us_stocks.html
     # Research Vault preview. Anonymous visitors see the latest three summaries
     # and a Pro upgrade wall; the original PDFs remain private behind the
     # authenticated /api/research/view and /api/research/download routes.
@@ -48,6 +58,8 @@ public:
     - /brand-facts.json
     - /onboard.css
     - /onboard.js
+    - /tier_preview.css
+    - /tier_preview.js
     # Page stylesheets for the two hand-edited plain-copy pages (#3676). They
     # carry the styling that used to ride inline inside index.html / chat.html,
     # so they are exactly as public as the pages themselves — and must be, or
@@ -59,10 +71,38 @@ public:
     - /chat.css
     - /chat_nav.css
     - /theme.css
+    # Shared navigation layout + animated ticker search. Presentation only; the
+    # protected stock libraries it reads remain behind the registration wall.
+    - /navigation-refresh.css
     # Public visual dependency imported by theme.css. Contains only the shared
     # navigation icon masks; no customer data or application logic.
     - /product-nav-icons.css
+    # Empty in the repository and atomically generated from the VPS environment
+    # after each publish. It exposes only Logo.dev's browser-safe image token.
+    - /logo_config.js
+    # Lazy company-logo adapter. Contains no token and no market data; without a
+    # runtime publishable token it renders deterministic local monograms.
+    - /stock-logos.js
     - /theme.js
+    # Presentation/runtime code required by the three public dashboard shells.
+    # The signal-bearing JSON endpoints these scripts request remain outside
+    # this allowlist and therefore keep their existing account/tier gates.
+    - /dashboard-icons.css
+    - /dashboard-icons.js
+    - /chart_i18n.js
+    - /timemachine.js
+    - /tablesort.js
+    - /charts.js
+    - /risk_state_live.js
+    - /release_publications_live.js
+    - /heatmap.js
+    - /stocktable.js
+    - /globe-deck.js
+    - /sky.js
+    - /hub-welcome.js
+    - /vendor/d3-array.min.js
+    - /vendor/d3-geo.min.js
+    - /vendor/topojson-client.min.js
     # Ad Central Plane O split-test shim (research/AD_CENTRAL_MASTERPLAN.md §2).
     # Must be public for the same reason theme.js is: it runs before auth resolves,
     # on anonymous visitors — who are precisely the population a landing-page test
@@ -118,7 +158,6 @@ public:
 # see the preview instead of the lock interstitial once the paywall is armed.
 free_registered:
   exact:
-    - /macro.html
     - /news.html
     - /china_news.html
     - /methodology.html
@@ -134,6 +173,10 @@ free_registered:
     # /live/quotes.json's public breadth. No Caddyfile change — an un-allowlisted
     # /live/wires.json already flows through the @reg_asset default-deny route.
     - /live/wires.json
+    # Durable companion to the speed wire: merged stories, source receipts,
+    # session-market context, and review-only X drafts. Same registered-news
+    # product tier as news.html and wires.json; never public/anonymous.
+    - /live/intelligence.json
     # Tier-preview shells (paid content lives in /premiumdata/, enforced below).
     - /special_situations.html
     - /china_special_situations.html

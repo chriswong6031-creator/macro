@@ -428,14 +428,16 @@ class TestCommitteePageRenderSmoke:
         )
         assert "test.supabase.co" in html
 
-    def test_committee_nav_link_in_navlinks(self):
-        """committee.html must be linked from _navlinks via _site_nav."""
+    def test_public_neural_web_link_in_navlinks(self):
+        """The public trust view replaces the internal committee in site nav."""
         env, _ = _jinja_env()
         html = env.get_template("committee.html.j2").render(
             generated_utc="2026-07-04T12:00:00Z",
             supabase_cfg_json="null",
         )
-        assert "committee.html" in html
+        assert "neural_web.html" in html
+        nav = (Path(__file__).resolve().parents[1] / "templates" / "_navlinks.html.j2").read_text(encoding="utf-8")
+        assert 'href="{{ NP }}committee.html"' not in nav
 
     def test_generated_utc_injected(self):
         env, _ = _jinja_env()

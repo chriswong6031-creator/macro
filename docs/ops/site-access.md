@@ -3,8 +3,12 @@
 ## What is protected
 
 The origin is default-deny for static content. Only the public funnel, the
-reviewed free SEO estate (`stocks/`, `tools/`, `learn/`, `blog/`), and explicit
-bootstrap assets in `config/site_access.yml` bypass authentication.
+public acquisition dashboards (`macro.html`, `start.html`, `us_stocks.html`),
+the reviewed free SEO estate (`stocks/`, `tools/`, `learn/`, `blog/`), and
+explicit bootstrap assets in `config/site_access.yml` bypass authentication.
+The stock dashboard's delivered summaries are presentation-gated to one item
+per list for anonymous visitors and three for Free accounts; detailed pages and
+signal-bearing payloads keep their server-side gates.
 The existing Terminal ingest carve-outs (`factordata/tech_lab.json` and
 `factordata/tech_events/`) also remain public until that separate session moves
 them behind authenticated transport.
@@ -101,8 +105,9 @@ curl -i 'https://www.mastermind-x.com/committee.html?probe=UNIQUE'
 curl -i 'http://www.mastermind-x.com/neuralwebdata/ruling_graph.json?probe=UNIQUE'
 ```
 
-Anonymous assets must return 401 JSON from the registration wall; anonymous
-documents redirect to sign-in. With the paid switch armed, a signed-in free user
+Anonymous protected assets return 401 JSON from the registration wall;
+anonymous protected documents redirect to sign-in. The three public acquisition
+dashboards return 200. With the paid switch armed, a signed-in free user
 gets 403 lock JSON/HTML, while an active/trialing `site_full` user gets 200.
 Every protected response must contain `Cache-Control: private, no-store`.
 

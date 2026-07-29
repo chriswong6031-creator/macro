@@ -175,11 +175,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{% if mode == 'stocks' %}US Stock Dashboard{% else %}Macro Regime Dashboard{% endif %} — {{ latest.date }}</title>
+<title>{% if mode == 'stocks' %}US Stock Dashboard{% else %}Macro Regime Dashboard{% endif %} — {{ latest.date }} | MastermindX</title>
 {% if mode == 'stocks' %}{% set seo_title = 'US Stock Dashboard — Signals, Sectors and Regime | Mastermind' %}{% set seo_desc = 'US single-stock and sector signals in one board — momentum, breadth, confluence and regime context, updated daily.' %}{% set seo_path = 'us_stocks.html' %}{% else %}{% set seo_title = 'US Macro Regime Dashboard — Risk Radar and Market State | Mastermind' %}{% set seo_desc = 'Track the US market regime in real time — risk radar, market state, sector rotation, cross-asset confirmation and factor signals, updated daily.' %}{% set seo_path = 'macro.html' %}{% endif %}
 {% include "_seo_head.html.j2" %}
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="onboard.css">
+<link rel="stylesheet" href="tier_preview.css">
 {% if mode == 'stocks' %}<link rel="stylesheet" href="dashboard-icons.css">{% endif %}
 {% if mode == 'stocks' %}<script defer src="dashboard-icons.js"></script>{% endif %}
 {# Plotly deliberately NOT loaded: neither macro.html nor us_stocks.html renders a
@@ -13369,6 +13371,16 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     }
 
     window.mx5OpenDlg = function(id){
+      /* macro.html is publicly readable, but the detailed card dialogs are the
+         registration benefit. The shared preview controller resolves signed-in
+         tiers; until it does, fail toward the non-destructive sign-in sheet. */
+      if(document.body && document.body.classList.contains('page-macro') &&
+         (!window.MMXAccessPreview || window.MMXAccessPreview.isAnon())){
+        if(window.MMXAccessPreview) window.MMXAccessPreview.openSignin();
+        else if(window.MMOnboard && window.MMOnboard.open) window.MMOnboard.open('signin', {});
+        else location.href='/?signin=1&ret=/macro.html';
+        return;
+      }
       /* Close any open scorecard popovers first */
       if(window.mx5CloseAllPopovers) window.mx5CloseAllPopovers();
       /* Switching dialogs: tear the previous one down instantly (no lingering animation). */
@@ -15753,6 +15765,8 @@ window.__CHART_SWAP__ = {
 };
 </script>
 <script src="theme.js"></script>
+<script src="onboard.js"></script>
+<script src="tier_preview.js"></script>
 <script src="chart_i18n.js"></script>
 <script src="timemachine.js"></script>
 <script src="tablesort.js"></script>

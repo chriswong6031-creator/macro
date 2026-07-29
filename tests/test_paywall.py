@@ -51,8 +51,16 @@ def test_internal_preview_is_404_even_while_switch_off():
 def test_free_registered_path_does_not_require_paid_feature(monkeypatch):
     _arm(monkeypatch)
     monkeypatch.setattr(paywall, "_fresh_uid", lambda token: (_ for _ in ()).throw(AssertionError))
-    assert _check("/macro.html", "document").status_code == 204
+    assert _check("/news.html", "document").status_code == 204
     assert _check("/news/latest.json", "asset").status_code == 204
+
+
+@pytest.mark.parametrize("path", ["/macro.html", "/start.html", "/us_stocks.html"])
+def test_public_dashboard_shells_never_require_paid_feature(monkeypatch, path):
+    _arm(monkeypatch)
+    monkeypatch.setattr(paywall, "_fresh_uid", lambda token: (_ for _ in ()).throw(AssertionError))
+    assert paywall.classify_path(path) == "public"
+    assert _check(path, "document").status_code == 204
 
 
 def test_active_site_full_allows(monkeypatch):

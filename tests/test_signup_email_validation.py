@@ -46,3 +46,11 @@ def test_signup_checks_email_before_calling_supabase() -> None:
     assert submit.index("if (!validEmail(S.email))") < submit.index("sb.auth.signUp(")
     assert 'emailInput.setAttribute("aria-invalid", "true")' in submit
     assert 'showErr(tx("emailInvalid"))' in submit
+
+
+def test_onboarding_dashboard_destination_is_root_relative() -> None:
+    """Nested product pages must never resolve the hub under /products/."""
+    source = ONBOARD.read_text(encoding="utf-8")
+    assert 'function loginDest() { return retTarget() || "/start.html"; }' in source
+    assert 'var start = "/start.html";' in source
+    assert '_pfx() + "start.html"' not in source

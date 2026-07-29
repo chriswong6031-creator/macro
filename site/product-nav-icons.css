@@ -1,7 +1,7 @@
 /* Primary navigation icon system.
-   Geography uses flat, literal flag marks. Product and category destinations
-   use a single restrained outline language. No emoji, tiles, gradients,
-   shadows, or decorative motion. */
+   Geography stays literal and compact. Product destinations use the approved
+   research-drawing language: precise linework, a faint drafting grid, and one
+   calm blue/cyan/violet accent. No emoji or app-tile containers. */
 .nav-links > .nav-dd > a.nav-link{
   display:inline-flex;
   align-items:center;
@@ -10,22 +10,22 @@
 .nav-links .menu-icon,
 .nav-ctrls .menu-icon{
   position:relative;
-  width:18px;
-  height:18px;
+  width:20px;
+  height:20px;
   display:inline-grid;
   place-items:center;
   flex:none;
   margin-right:6px;
   color:currentColor;
-  opacity:.72;
-  transition:opacity .14s ease;
+  opacity:.76;
+  transition:opacity .16s ease,transform .16s ease;
 }
 
 .nav-links .menu-icon::before,
 .nav-ctrls .menu-icon::before{
   content:"";
-  width:16px;
-  height:16px;
+  width:18px;
+  height:18px;
   background:currentColor;
   -webkit-mask:var(--menu-icon-mask) center / contain no-repeat;
   mask:var(--menu-icon-mask) center / contain no-repeat;
@@ -35,6 +35,8 @@
    with a neutral keyline instead of decorative app-icon containers. */
 .nav-links .menu-icon-flag,
 .nav-ctrls .menu-icon-flag{
+  /* Flag dimensions are intentionally frozen; the destination drawings below
+     grow, national marks do not. */
   width:19px;
   height:13px;
   overflow:hidden;
@@ -88,39 +90,82 @@
 .nav-links > .nav-dd > a.nav-link.active .menu-icon{
   opacity:1;
 }
+.nav-links > .nav-dd > a.nav-link:hover .menu-icon:not(.menu-icon-flag),
+.nav-links > .nav-dd > a.nav-link.active .menu-icon:not(.menu-icon-flag){
+  transform:translateY(-1px);
+}
 .nav-links > .nav-dd > a.nav-link:hover .menu-icon-flag,
 .nav-links > .nav-dd > a.nav-link.active .menu-icon-flag{
   box-shadow:0 0 0 1px color-mix(in srgb,var(--text,var(--ink,#d7deea)) 40%,transparent);
 }
 
-/* Regional and asset dropdown destinations use one compact semantic mark per
-   product family. Sister desks intentionally share the same icon across
-   geographies, so the menu reads as a coherent product system rather than a
-   collection of decorative emoji. */
+/* Regional and asset destinations share a 48px drafting cell. The SVG mask is
+   drawn twice: a quiet structural pass plus a clipped accent pass, which keeps
+   the existing one-element markup while giving every family the approved
+   technical-illustration finish. */
 .nav-dd-menu .submenu-icon{
+  --nav-icon-accent:#5877e9;
+  --nav-icon-ink:color-mix(in srgb,var(--text,var(--ink,#29364d)) 76%,#66748d);
+  --nav-icon-grid:color-mix(in srgb,var(--text,var(--ink,#29364d)) 13%,transparent);
+  --nav-icon-surface:color-mix(in srgb,var(--nav-icon-accent) 4%,transparent);
+  --nav-accent-clip:inset(53% 0 0 47%);
   position:relative;
-  width:18px;
-  height:18px;
+  width:48px;
+  height:48px;
   display:inline-grid;
   place-items:center;
   flex:none;
-  margin-right:7px;
-  vertical-align:-4px;
+  float:left;
+  margin:-1px 11px 0 0;
+  border-radius:7px;
+  vertical-align:middle;
   color:currentColor;
-  opacity:.72;
-  transition:opacity .14s ease;
+  opacity:.96;
+  background:
+    linear-gradient(var(--nav-icon-grid),var(--nav-icon-grid)) 50% 0 / 1px 7px no-repeat,
+    linear-gradient(var(--nav-icon-grid),var(--nav-icon-grid)) 50% 100% / 1px 7px no-repeat,
+    linear-gradient(90deg,var(--nav-icon-grid),var(--nav-icon-grid)) 0 50% / 7px 1px no-repeat,
+    linear-gradient(90deg,var(--nav-icon-grid),var(--nav-icon-grid)) 100% 50% / 7px 1px no-repeat,
+    linear-gradient(90deg,transparent calc(50% - .5px),var(--nav-icon-grid) calc(50% - .5px),var(--nav-icon-grid) calc(50% + .5px),transparent calc(50% + .5px)),
+    linear-gradient(transparent calc(50% - .5px),var(--nav-icon-grid) calc(50% - .5px),var(--nav-icon-grid) calc(50% + .5px),transparent calc(50% + .5px)),
+    var(--nav-icon-surface);
+  box-shadow:inset 0 0 0 1px var(--nav-icon-grid);
+  transition:opacity .16s ease,transform .16s ease,background-color .16s ease,box-shadow .16s ease;
 }
 .nav-dd-menu .submenu-icon::before{
   content:"";
-  width:18px;
-  height:18px;
-  background:currentColor;
+  width:44px;
+  height:44px;
+  background:var(--nav-icon-ink);
   -webkit-mask:var(--submenu-icon-mask) center / contain no-repeat;
   mask:var(--submenu-icon-mask) center / contain no-repeat;
 }
+.nav-dd-menu .submenu-icon::after{
+  content:"";
+  position:absolute;
+  width:44px;
+  height:44px;
+  background:var(--nav-icon-accent);
+  -webkit-mask:var(--submenu-icon-mask) center / contain no-repeat;
+  mask:var(--submenu-icon-mask) center / contain no-repeat;
+  clip-path:var(--nav-accent-clip);
+}
+.nav-dd-menu a:has(> .submenu-icon){
+  min-height:60px;
+  display:flow-root;
+}
+.nav-dd-menu .nav-sub > a.nav-sub-trig:has(.submenu-icon){
+  min-height:60px;
+}
+.nav-dd-menu .nav-sub-text:has(> .submenu-icon){
+  display:flow-root;
+}
 .nav-dd-menu a:hover .submenu-icon,
 .nav-dd-menu a.active .submenu-icon{
-  opacity:.94;
+  opacity:1;
+  transform:translateY(-1px);
+  --nav-icon-grid:color-mix(in srgb,var(--nav-icon-accent) 24%,transparent);
+  --nav-icon-surface:color-mix(in srgb,var(--nav-icon-accent) 7%,transparent);
 }
 
 .submenu-icon-dashboard{
@@ -205,42 +250,71 @@
   --submenu-icon-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='black' stroke-width='1.65' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 8h15M16 5l3 3-3 3M20 16H5m3 3-3-3 3-3'/%3E%3C/g%3E%3C/svg%3E");
 }
 
-/* Research is the higher-information tier of the same icon system. Each mark
-   names the product's decision function, not merely a nearby object: demand
-   curves, outcome fans, phase clocks, signal validation, and transmission
-   paths replace the old decorative emoji. Featured destinations get a little
-   more optical scale, but remain monochrome, unboxed, and structurally quiet. */
+/* Research uses the same drafting grammar at mega-menu scale. Existing masks
+   remain the semantic source of truth; the cell, clipped accent and optical
+   sizing are shared by normal and featured entries. */
 .nav-mega .nm-ic.research-icon{
+  --nav-icon-accent:#5877e9;
+  --nav-icon-ink:color-mix(in srgb,var(--text,var(--ink,#29364d)) 76%,#66748d);
+  --nav-icon-grid:color-mix(in srgb,var(--text,var(--ink,#29364d)) 13%,transparent);
+  --nav-icon-surface:color-mix(in srgb,var(--nav-icon-accent) 4%,transparent);
+  --nav-accent-clip:inset(53% 0 0 47%);
   position:relative;
-  width:19px;
-  height:19px;
+  width:52px;
+  height:52px;
   display:inline-grid;
   place-items:center;
   flex:none;
+  border-radius:7px;
   color:currentColor;
-  opacity:.78;
-  transition:opacity .14s ease,transform .14s ease;
+  opacity:.96;
+  background:
+    linear-gradient(var(--nav-icon-grid),var(--nav-icon-grid)) 50% 0 / 1px 7px no-repeat,
+    linear-gradient(var(--nav-icon-grid),var(--nav-icon-grid)) 50% 100% / 1px 7px no-repeat,
+    linear-gradient(90deg,var(--nav-icon-grid),var(--nav-icon-grid)) 0 50% / 7px 1px no-repeat,
+    linear-gradient(90deg,var(--nav-icon-grid),var(--nav-icon-grid)) 100% 50% / 7px 1px no-repeat,
+    linear-gradient(90deg,transparent calc(50% - .5px),var(--nav-icon-grid) calc(50% - .5px),var(--nav-icon-grid) calc(50% + .5px),transparent calc(50% + .5px)),
+    linear-gradient(transparent calc(50% - .5px),var(--nav-icon-grid) calc(50% - .5px),var(--nav-icon-grid) calc(50% + .5px),transparent calc(50% + .5px)),
+    var(--nav-icon-surface);
+  box-shadow:inset 0 0 0 1px var(--nav-icon-grid);
+  transition:opacity .16s ease,transform .16s ease,background-color .16s ease,box-shadow .16s ease;
 }
 .nav-mega .nm-feat .nm-ic.research-icon{
-  width:22px;
-  height:22px;
+  width:58px;
+  height:58px;
 }
 .nav-mega .research-icon::before{
   content:"";
-  width:19px;
-  height:19px;
-  background:currentColor;
+  width:44px;
+  height:44px;
+  background:var(--nav-icon-ink);
   -webkit-mask:var(--research-icon-mask) center / contain no-repeat;
   mask:var(--research-icon-mask) center / contain no-repeat;
 }
+.nav-mega .research-icon::after{
+  content:"";
+  position:absolute;
+  width:44px;
+  height:44px;
+  background:var(--nav-icon-accent);
+  -webkit-mask:var(--research-icon-mask) center / contain no-repeat;
+  mask:var(--research-icon-mask) center / contain no-repeat;
+  clip-path:var(--nav-accent-clip);
+}
 .nav-mega .nm-feat .research-icon::before{
-  width:22px;
-  height:22px;
+  width:48px;
+  height:48px;
+}
+.nav-mega .nm-feat .research-icon::after{
+  width:48px;
+  height:48px;
 }
 .nav-mega a:hover .research-icon,
 .nav-mega a.active .research-icon{
   opacity:1;
   transform:translateY(-1px);
+  --nav-icon-grid:color-mix(in srgb,var(--nav-icon-accent) 24%,transparent);
+  --nav-icon-surface:color-mix(in srgb,var(--nav-icon-accent) 7%,transparent);
 }
 
 .research-icon-intelligence-hub{
@@ -337,24 +411,99 @@
   --research-icon-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='black' stroke-width='1.45' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3.5' y='4' width='13' height='16' rx='1.5'/%3E%3Cpath d='M3.5 8h13M7 2.8v2.5m6-2.5v2.5M7 11h2m2 0h2m-6 3h2m2 0h2m-6 3h2'/%3E%3Cpath d='M20 10.5a5.2 5.2 0 0 1-.2 8.2'/%3E%3Cpath d='m18 17.5 1.8 1.2 1.2-1.8'/%3E%3C/g%3E%3C/svg%3E");
 }
 
+/* Accent is semantic, not random decoration: cyan marks live flow/measurement,
+   violet marks synthesis/cycles, and blue is the default navigation action. */
+.nav-dd-menu :is(
+  .submenu-icon-stocks,
+  .submenu-icon-flow,
+  .submenu-icon-leader,
+  .submenu-icon-darkpool,
+  .submenu-icon-radar,
+  .submenu-icon-heatmap,
+  .submenu-icon-commodities,
+  .submenu-icon-forex
+){
+  --nav-icon-accent:#42a9b7;
+  --nav-accent-clip:inset(0 48% 52% 0);
+}
+.nav-dd-menu :is(
+  .submenu-icon-intelligence,
+  .submenu-icon-baskets,
+  .submenu-icon-rotation,
+  .submenu-icon-confluence,
+  .submenu-icon-strategy,
+  .submenu-icon-options,
+  .submenu-icon-structure,
+  .submenu-icon-research,
+  .submenu-icon-altdata,
+  .submenu-icon-narrative,
+  .submenu-icon-rebalance,
+  .submenu-icon-allocation
+){
+  --nav-icon-accent:#8671d8;
+  --nav-accent-clip:inset(48% 0 0 50%);
+}
+.nav-mega :is(
+  .research-icon-demand,
+  .research-icon-divergence,
+  .research-icon-fund-flows,
+  .research-icon-cross-asset,
+  .research-icon-transmission,
+  .research-icon-macro-weather,
+  .research-icon-measurement,
+  .research-icon-global-cycles
+){
+  --nav-icon-accent:#42a9b7;
+  --nav-accent-clip:inset(0 48% 52% 0);
+}
+.nav-mega :is(
+  .research-icon-vault,
+  .research-icon-themes,
+  .research-icon-anticipation,
+  .research-icon-smart-money,
+  .research-icon-alt-data,
+  .research-icon-special-situations,
+  .research-icon-cycle-intelligence,
+  .research-icon-sector-cycles,
+  .research-icon-country-cycles,
+  .research-icon-neural-web,
+  .research-icon-confluence,
+  .research-icon-factors-seasonality
+){
+  --nav-icon-accent:#8671d8;
+  --nav-accent-clip:inset(48% 0 0 50%);
+}
+
+/* The base variables already follow each page's tokens. Explicit theme tuning
+   keeps guide lines legible at both extremes without turning them into boxes. */
+html[data-theme="light"] :is(.nav-dd-menu .submenu-icon,.nav-mega .research-icon){
+  --nav-icon-ink:#5d697d;
+  --nav-icon-grid:rgba(105,118,141,.18);
+}
+html[data-theme="dark"] :is(.nav-dd-menu .submenu-icon,.nav-mega .research-icon){
+  --nav-icon-ink:#aeb9ca;
+  --nav-icon-grid:rgba(190,202,222,.16);
+  --nav-icon-surface:color-mix(in srgb,var(--nav-icon-accent) 8%,transparent);
+}
+
 /* Product destinations use the same quiet, unboxed outline treatment. */
 .nav-ctrls .ai-brief-link{
   gap:6px;
 }
 .nav-ctrls .product-icon{
-  width:17px;
-  height:17px;
+  width:20px;
+  height:20px;
   display:inline-grid;
   place-items:center;
   flex:none;
   color:currentColor;
   opacity:.78;
-  transition:opacity .14s ease;
+  transition:opacity .16s ease,transform .16s ease;
 }
 .nav-ctrls .product-icon::before{
   content:"";
-  width:17px;
-  height:17px;
+  width:19px;
+  height:19px;
   background:currentColor;
   -webkit-mask:var(--product-icon-mask) center / contain no-repeat;
   mask:var(--product-icon-mask) center / contain no-repeat;
@@ -368,6 +517,7 @@
 .nav-ctrls .ai-brief-link:hover .product-icon,
 .nav-ctrls .ai-brief-link.active .product-icon{
   opacity:1;
+  transform:translateY(-1px);
 }
 
 @media (prefers-reduced-motion:reduce){
@@ -376,5 +526,15 @@
   .nav-mega .research-icon,
   .nav-ctrls .product-icon{
     transition:none;
+  }
+  .nav-links > .nav-dd > a.nav-link:hover .menu-icon:not(.menu-icon-flag),
+  .nav-links > .nav-dd > a.nav-link.active .menu-icon:not(.menu-icon-flag),
+  .nav-dd-menu a:hover .submenu-icon,
+  .nav-dd-menu a.active .submenu-icon,
+  .nav-mega a:hover .research-icon,
+  .nav-mega a.active .research-icon,
+  .nav-ctrls .ai-brief-link:hover .product-icon,
+  .nav-ctrls .ai-brief-link.active .product-icon{
+    transform:none;
   }
 }

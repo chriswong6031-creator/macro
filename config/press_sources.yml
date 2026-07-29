@@ -231,6 +231,26 @@ wire:
   # serving days-old items as though they were the live wire.
   rail_max_age_h: 48
 
+  # ── Real-time Intelligence Desk ──────────────────────────────────────────
+  # The wire is the speed layer; this is the durable story layer. It clusters
+  # repeated reports across ticks, retains the source receipts, adds honest
+  # session-market context, and prepares evidence-bound X review drafts. It
+  # advances whenever the fastlane is running, independently of outbound X
+  # publishing. All state is host-local / gitignored.
+  intelligence:
+    salience_floor: 30.0
+    max_packets_per_tick: 100
+    retention_h: 72
+    active_h: 48
+    max_stories: 1500
+    snapshot_max_items: 80
+    db_paths:
+      - "/var/lib/macro-live/state/intelligence/intelligence.db"
+      - "data/marketing/press/intelligence.db"
+    snapshot_paths:
+      - "/var/lib/macro-live/public/live/intelligence.json"
+      - "data/marketing/press/intelligence.json"
+
   # B4c: give each NEW rail item a Chinese twin via the cached news translator
   # (engine/news_translate.py). The key is the exact text sent, so a headline
   # costs one cheap call for its whole life in the window. The lane writes its

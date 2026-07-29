@@ -340,9 +340,19 @@ class _Stream:
 
 
 class _Messages:
-    def __init__(self, *, timeout_s: int, cwd: str | None) -> None:
+    def __init__(
+        self,
+        *,
+        timeout_s: int,
+        cwd: str | None,
+        reasoning_effort: str | None,
+    ) -> None:
         self.timeout_s = timeout_s
         self.cwd = cwd
+        effort = str(reasoning_effort or "").strip().lower()
+        self.reasoning_effort = effort if effort in {
+            "none", "minimal", "low", "medium", "high", "xhigh", "max",
+        } else ""
 
     def create(self, **kwargs: Any) -> _Message:
         requested_model = str(kwargs.get("model") or "")
@@ -352,6 +362,21 @@ class _Messages:
             kwargs.get("messages") or [],
             kwargs.get("tools"),
         )
+        extra_args = [
+            "--ephemeral",
+            "--ignore-user-config",
+            "--ignore-rules",
+            "-c", 'approval_policy="never"',
+            "-c", 'web_search="disabled"',
+            "-c", "agents.enabled=false",
+            "-c", "features.shell_tool=false",
+            "-c", "tools.view_image=false",
+        ]
+        if self.reasoning_effort:
+            extra_args.extend([
+                "-c",
+                f'model_reasoning_effort="{self.reasoning_effort}"',
+            ])
         result = run_codex(
             prompt,
             cwd=self.cwd or tempfile.gettempdir(),
@@ -359,16 +384,7 @@ class _Messages:
             model=model,
             sandbox="read-only",
             network=False,
-            extra_args=[
-                "--ephemeral",
-                "--ignore-user-config",
-                "--ignore-rules",
-                "-c", 'approval_policy="never"',
-                "-c", 'web_search="disabled"',
-                "-c", "agents.enabled=false",
-                "-c", "features.shell_tool=false",
-                "-c", "tools.view_image=false",
-            ],
+            extra_args=extra_args,
         )
         return _message_from_result(result, kwargs.get("tools"))
 
@@ -379,5 +395,15 @@ class _Messages:
 class CodexClient:
     """Small Anthropic SDK compatibility surface used by existing callers."""
 
-    def __init__(self, *, timeout_s: int = 180, cwd: str | None = None) -> None:
-        self.messages = _Messages(timeout_s=max(1, int(timeout_s)), cwd=cwd)
+    def __init__(
+        self,
+        *,
+        timeout_s: int = 180,
+        cwd: str | None = None,
+        reasoning_effort: str | None = None,
+    ) -> None:
+        self.messages = _Messages(
+            timeout_s=max(1, int(timeout_s)),
+            cwd=cwd,
+            reasoning_effort=reasoning_effort,
+        )

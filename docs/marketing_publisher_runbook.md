@@ -408,8 +408,8 @@ never the repo.
 - `MARKETING_FASTLANE_ENABLED=1` — drives the daemon loop at all. Unset → the daemon
   prints a note and exits 0 (no work).
 - `MARKETING_PUBLISH_ENABLED=1` — allows the press lane to WRITE outbox items. Unset
-  → the pipeline still runs (scores, corroborates, would-summarize) but emits nothing:
-  a clean no-op tick.
+  → the pipeline still reads, scores, corroborates, and advances the Intelligence
+  Desk/live rail, but emits nothing to the social outbox.
 
 **Dry-run (no spend, no state writes, no billed reads — safe with switches off):**
 ```
@@ -435,12 +435,23 @@ A dry-run is **non-consuming but not fully offline** (M2 clarification). Precise
 
 **Local-only state** lives under `data/marketing/press/` (gitignored): provider
 cursors, conditional-GET ETags, twitterapi.io spend accounting, the flagship
-counter, the corroboration window, and the seen-ledger. The poller makes **zero**
-git/repo writes (D05 W0 law); the nightly is the sole advancer of any forward ledger.
+counter, the corroboration window, the development Intelligence Desk database,
+and the seen-ledger. Production desk/rail snapshots live under
+`/var/lib/macro-live/`, also outside Git. The poller makes **zero** git/repo writes
+(D05 W0 law); the nightly is the sole advancer of any tracked forward ledger.
 
-**Arming (operator, on the VPS — NOT part of the build):**
-1. Add to `/etc/macro-live.env`: `MARKETING_FASTLANE_ENABLED=1`,
-   `MARKETING_PUBLISH_ENABLED=1`, and (optionally) `TWITTERAPI_IO_KEY=…`.
+**Arming (operator, on the VPS):**
+1. For the registered-user `news.html` Intelligence Desk + wire, add
+   `MARKETING_FASTLANE_ENABLED=1` to `/etc/macro-live.env` and leave
+   `MARKETING_PUBLISH_ENABLED` unset. The daemon polls the free sources plus the
+   budget-capped twitterapi.io relay when its key is present, merges arrivals
+   into a host-local SQLite story graph, and atomically publishes both
+   `intelligence.json` and `wires.json`. It cannot write an outbound post.
+   Add `MARKETING_PUBLISH_ENABLED=1` only when the outbound social-post lane is
+   separately approved. `TWITTERAPI_IO_KEY=…` expands live intelligence coverage
+   independently of that outbound switch; the configured monthly cap still
+   fails closed. Explicit `--dry-run` is the non-consuming mode and therefore
+   keeps the billed relay offline.
 2. **For Chinese wire items on the news.html rail (B4c), also add `DEEPSEEK_API_KEY=…`.**
    It is NOT provisioned on the VPS today. Without it the lane still runs: items
    ship English-only and the rail marks them 「英文原文」 rather than faking a
@@ -454,9 +465,21 @@ git/repo writes (D05 W0 law); the nightly is the sole advancer of any forward le
    in the `zh` block of the published `wires.json`.
 3. Install the unit: `cp app/deploy/marketing-press-feeds.service /etc/systemd/system/`
    then `systemctl daemon-reload && systemctl enable --now marketing-press-feeds`.
+   Once installed, `macro-update` keeps the reviewed unit aligned with `main` and
+   restarts an active daemon when its import-cached press-lane code changes. It
+   never installs, enables, or starts the service by itself, so the arming choice
+   remains explicit.
 4. Watch: `journalctl -u marketing-press-feeds -f` — one `[press] tick …` line per
    tick; emitted items appear in the outbox and ride section 13's dispatch.
-5. Disarm: unset either env var (or `systemctl disable --now marketing-press-feeds`).
+5. Disarm the daemon/desk by unsetting `MARKETING_FASTLANE_ENABLED` (or with
+   `systemctl disable --now marketing-press-feeds`). Unsetting only
+   `MARKETING_PUBLISH_ENABLED` leaves intelligence ingestion, the story desk, and
+   the wire running but stops outbound posts.
+
+The live-plane venv includes `datasketch`; without it the daemon still runs but
+the scoring brain reports `story-spine-no-datasketch` and falls back to exact
+story identity. Existing hosts provisioned before this dependency landed need
+one `pip install datasketch` in `/opt/macro/.venv`.
 
 **Twitterapi.io spend cap.** A `::warning title=twitterapiio-spend-cap::…` line in the
 log means the monthly cap was hit and the X relay stopped for the month; the mirror

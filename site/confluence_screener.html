@@ -464,7 +464,7 @@
 
       
       
-        <div class="locked">
+        <div class="locked" data-confluence-combo="L0035">
           <span class="ic" aria-hidden="true">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
           </span>
@@ -542,7 +542,7 @@
 
       
       
-        <div class="locked">
+        <div class="locked" data-confluence-combo="L0042">
           <span class="ic" aria-hidden="true">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
           </span>
@@ -580,7 +580,7 @@
     </ul>
   </div>
 
-  <div class="cta-band">
+  <div class="cta-band" id="confluence-paid-cta">
     <div>
       <div class="cb-tx"><span class="l-en">See every line-up's matching stocks</span><span class="l-zh">查看每组共振匹配的股票</span></div>
       <div class="cb-sub"><span class="l-en">The full screener updates daily. Build your own combos and screen all 231 names.</span><span class="l-zh">完整筛选器每日更新。自建组合并筛选全部 231 只标的。</span></div>
@@ -596,6 +596,170 @@
   </div>
 </div>
 
-<script src="theme.js?v=08b92c24" defer></script>
+<script src="theme.js?v=6d327a02" defer></script>
+<script>
+(function(){
+  'use strict';
+
+  /* The public document contains only the free ticker row. The server-protected
+     /premiumdata/ response is authoritative: a 200 hydrates rank 2/3, while
+     401/403/offline leaves the rendered trial wall unchanged. */
+  var PREMIUM_PAYLOAD = "/premiumdata/confluence_screener.json";
+  var hydrated = false;
+  var inFlight = false;
+
+  function freshSession(){
+    try{
+      if(window.MDXAuth && window.MDXAuth.client &&
+         window.MDXAuth.hasSession && window.MDXAuth.hasSession()){
+        return window.MDXAuth.client()
+          .then(function(sb){ return sb.auth.getSession(); })
+          .catch(function(){});
+      }
+    }catch(e){}
+    return Promise.resolve();
+  }
+
+  /* theme.js is deferred, so wait briefly for its first auth broadcast before
+     refreshing the shared session cookie and requesting the protected asset. */
+  function whenAuthSettled(){
+    return new Promise(function(resolve){
+      var done = false;
+      function go(){ if(done) return; done = true; resolve(); }
+      if(window.MDXAuth){ go(); return; }
+      window.addEventListener('mdx-auth', go, {once:true});
+      setTimeout(go, 3000);
+    });
+  }
+
+  function bilingual(en, zh){
+    var frag = document.createDocumentFragment();
+    var enNode = document.createElement('span');
+    var zhNode = document.createElement('span');
+    enNode.className = 'l-en';
+    zhNode.className = 'l-zh';
+    enNode.textContent = en;
+    zhNode.textContent = zh || en;
+    frag.appendChild(enNode);
+    frag.appendChild(zhNode);
+    return frag;
+  }
+
+  function tickerLink(item){
+    var ticker = typeof item.ticker === 'string' ? item.ticker.trim() : '';
+    if(!/^[A-Za-z0-9._^=-]{1,20}$/.test(ticker)) return null;
+
+    var link = document.createElement('a');
+    link.className = 'tkr';
+    link.href = 'stocks/' + encodeURIComponent(ticker) + '.html';
+    link.appendChild(document.createTextNode(ticker));
+    if(item.name){
+      var name = document.createElement('span');
+      name.className = 'nm';
+      name.textContent = String(item.name);
+      link.appendChild(name);
+    }
+    return link;
+  }
+
+  function replaceLockedRow(combo){
+    var walls = document.querySelectorAll('[data-confluence-combo]');
+    var wall = null;
+    for(var i=0;i<walls.length;i++){
+      if(walls[i].getAttribute('data-confluence-combo') === combo.combo_id){
+        wall = walls[i];
+        break;
+      }
+    }
+    if(!wall) return;
+
+    var foot = document.createElement('div');
+    foot.className = 'lc-foot';
+    foot.style.borderTop = '0';
+    foot.style.paddingTop = '6px';
+    foot.style.marginTop = '8px';
+
+    var label = document.createElement('span');
+    label.className = 'chip ok';
+    label.style.color = 'var(--text)';
+    label.appendChild(bilingual('Matching now \u00a0→', '当前匹配 \u00a0→'));
+    foot.appendChild(label);
+
+    var tickers = document.createElement('div');
+    tickers.className = 'tickers';
+    var items = Array.isArray(combo.active_tickers) ? combo.active_tickers : [];
+    items.forEach(function(item){
+      var link = tickerLink(item || {});
+      if(link) tickers.appendChild(link);
+    });
+    if(!tickers.children.length){
+      tickers.appendChild(bilingual(
+        'No stock matches this one today.',
+        '今日无股票匹配此组合。'
+      ));
+    }
+    foot.appendChild(tickers);
+    wall.replaceWith(foot);
+  }
+
+  function showUnlockedCta(){
+    var band = document.getElementById('confluence-paid-cta');
+    if(!band) return;
+    var title = band.querySelector('.cb-tx');
+    var sub = band.querySelector('.cb-sub');
+    var button = band.querySelector('.btn');
+    if(title){
+      title.textContent = '';
+      title.appendChild(bilingual('Paid view unlocked', '付费视图已解锁'));
+    }
+    if(sub){
+      sub.textContent = '';
+      sub.appendChild(bilingual(
+        'All matching stocks available to your plan are visible above.',
+        '您方案内可用的全部匹配股票已显示在上方。'
+      ));
+    }
+    if(button){
+      button.textContent = '';
+      button.appendChild(bilingual('Open Mastermind →', '打开操盘大脑 →'));
+    }
+  }
+
+  function hydrate(payload){
+    if(!payload || payload.schema !== 'tier_payload.v1' ||
+       payload.page !== 'confluence_screener' ||
+       !Array.isArray(payload.combos)){
+      throw new Error('invalid payload');
+    }
+    payload.combos.forEach(replaceLockedRow);
+    showUnlockedCta();
+    hydrated = true;
+  }
+
+  function attemptHydrate(){
+    if(hydrated || inFlight || !PREMIUM_PAYLOAD) return Promise.resolve();
+    inFlight = true;
+    return freshSession()
+      .then(function(){
+        return fetch(PREMIUM_PAYLOAD, {
+          credentials: 'same-origin',
+          cache: 'no-store'
+        });
+      })
+      .then(function(response){
+        if(!response || !response.ok) throw new Error('locked');
+        return response.json();
+      })
+      .then(hydrate)
+      .catch(function(){
+        /* Locked (or offline): keep the honest server-rendered wall. */
+      })
+      .then(function(){ inFlight = false; });
+  }
+
+  whenAuthSettled().then(attemptHydrate);
+  window.addEventListener('mdx-auth', attemptHydrate);
+})();
+</script>
 </body>
 </html>

@@ -578,6 +578,8 @@ def build_providers(
           deepseek_base_url (str)        — DeepSeek API base URL
           opus_model        (str)        — model id for oauth/anthropic providers
           deepseek_model    (str)        — model id for deepseek provider
+          codex_source_model (str)       — model id for attached Codex provider
+          codex_reasoning_effort (str)   — Codex reasoning effort (e.g. high)
           client_max_retries (int|None)  — SDK max_retries for every client built
                                            here; absent → SDK default (2)
           client_timeout_s  (float|None) — per-request timeout in seconds;
@@ -812,7 +814,14 @@ def build_providers(
                     "codex_timeout_s",
                     cfg.get("client_timeout_s", 180),
                 )
-                client = _codex.CodexClient(timeout_s=int(float(codex_timeout)))
+                codex_effort = str(cfg.get("codex_reasoning_effort") or "").strip()
+                if codex_effort:
+                    client = _codex.CodexClient(
+                        timeout_s=int(float(codex_timeout)),
+                        reasoning_effort=codex_effort,
+                    )
+                else:
+                    client = _codex.CodexClient(timeout_s=int(float(codex_timeout)))
                 out.append({
                     "name": "codex",
                     "env_var": _codex.CODEX_ENV_ID,

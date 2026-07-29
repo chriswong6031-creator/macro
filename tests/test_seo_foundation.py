@@ -129,12 +129,15 @@ def test_discover_excludes_all_in_exclude_names(tmp_path):
     assert "plans" in names
 
 
-def test_discover_excludes_registered_dashboard(tmp_path):
-    """A real page is not sitemap-eligible merely because the file exists."""
-    site = _make_site(tmp_path, ["plans.html", "macro.html", "bonds.html"])
+def test_discover_includes_public_previews_and_excludes_gated_dashboard(tmp_path):
+    """Public previews are discoverable while registered-only pages stay gated."""
+    site = _make_site(
+        tmp_path,
+        ["plans.html", "macro.html", "start.html", "us_stocks.html", "bonds.html"],
+    )
     names = {name for name, _, _ in discover_core_pages(site)}
     assert "plans" in names
-    assert "macro" not in names
+    assert {"macro", "start", "us_stocks"} <= names
     assert "bonds" not in names
 
 
@@ -232,11 +235,16 @@ def test_build_core_sitemap_homepage_entry(tmp_path):
     assert "<loc>https://www.mastermind-x.com/</loc>" in result
 
 
-def test_build_core_sitemap_drops_gated_root_pages(tmp_path):
-    site = _make_site(tmp_path, ["plans.html", "macro.html", "bonds.html"])
+def test_build_core_sitemap_keeps_public_previews_and_drops_gated_pages(tmp_path):
+    site = _make_site(
+        tmp_path,
+        ["plans.html", "macro.html", "start.html", "us_stocks.html", "bonds.html"],
+    )
     result = build_core_sitemap(_minimal_sitemap(), site)
     assert "https://www.mastermind-x.com/plans.html" in result
-    assert "/macro.html" not in result
+    assert "https://www.mastermind-x.com/macro.html" in result
+    assert "https://www.mastermind-x.com/start.html" in result
+    assert "https://www.mastermind-x.com/us_stocks.html" in result
     assert "/bonds.html" not in result
 
 
@@ -276,7 +284,10 @@ def _stocks_entries(locs: list[str]) -> list[dict]:
 
 def test_round_trip_core_then_ticker(tmp_path):
     """core sitemap → ticker sitemap → core sitemap: stocks and core entries survive."""
-    site = _make_site(tmp_path, ["plans.html", "macro.html", "bonds.html"])
+    site = _make_site(
+        tmp_path,
+        ["plans.html", "macro.html", "start.html", "us_stocks.html", "bonds.html"],
+    )
 
     # Step 1: build core sitemap from empty seed
     empty = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n</urlset>\n'
@@ -290,7 +301,9 @@ def test_round_trip_core_then_ticker(tmp_path):
     # Core entries must still be present
     assert "https://www.mastermind-x.com/" in after_ticker
     assert "https://www.mastermind-x.com/plans.html" in after_ticker
-    assert "https://www.mastermind-x.com/macro.html" not in after_ticker
+    assert "https://www.mastermind-x.com/macro.html" in after_ticker
+    assert "https://www.mastermind-x.com/start.html" in after_ticker
+    assert "https://www.mastermind-x.com/us_stocks.html" in after_ticker
     assert "https://www.mastermind-x.com/bonds.html" not in after_ticker
     # Stocks entries must be present
     for loc in stock_locs:
@@ -299,7 +312,10 @@ def test_round_trip_core_then_ticker(tmp_path):
 
 def test_round_trip_ticker_then_core(tmp_path):
     """ticker sitemap → core sitemap: core entries replaced, stocks preserved."""
-    site = _make_site(tmp_path, ["plans.html", "macro.html", "bonds.html"])
+    site = _make_site(
+        tmp_path,
+        ["plans.html", "macro.html", "start.html", "us_stocks.html", "bonds.html"],
+    )
 
     # Step 1: start with a ticker-only sitemap (has stocks, stale core)
     stock_locs = ["https://mastermind-x.com/stocks/AAPL.html",
@@ -315,7 +331,9 @@ def test_round_trip_ticker_then_core(tmp_path):
     # Public core entries must be present; gated root pages must be gone.
     assert "https://www.mastermind-x.com/" in after_core
     assert "https://www.mastermind-x.com/plans.html" in after_core
-    assert "https://www.mastermind-x.com/macro.html" not in after_core
+    assert "https://www.mastermind-x.com/macro.html" in after_core
+    assert "https://www.mastermind-x.com/start.html" in after_core
+    assert "https://www.mastermind-x.com/us_stocks.html" in after_core
     assert "https://www.mastermind-x.com/bonds.html" not in after_core
     # Stocks entries preserved with www (healed)
     assert "https://www.mastermind-x.com/stocks/AAPL.html" in after_core
