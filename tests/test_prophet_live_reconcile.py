@@ -297,6 +297,37 @@ def test_a_null_verdict_can_still_be_filled_in_later(tmp_path):
     assert bool(out.iloc[0]["confirmed"]) is True
 
 
+def test_an_already_confirmed_session_costs_no_verdict_work(monkeypatch, tmp_path):
+    """The replay is the step's only unbounded cost, and FIRST_WINS discards its answer.
+
+    The default window re-processes yesterday's session every night; without this a busy
+    day's tickers would run the gate hundreds of times against a 3-minute step cap for a
+    value that cannot land.
+    """
+    path = tmp_path / R.LEDGER_REL
+    path.parent.mkdir(parents=True, exist_ok=True)
+    rows = R.build_rows([_event("AAA")], verdicts_for=_verdicts({"AAA": True}),
+                        closes={"AAA": _series()}, now=NOW)
+    R.merge_ledger(path, rows).to_parquet(path, index=False)
+    assert R.confirmed_pairs(path) == {(D0, "AAA")}
+
+    calls: list[str] = []
+    monkeypatch.setattr(R, "session_verdicts",
+                        lambda *a, **kw: calls.append(a[0]) or ({}, "replay"))
+    monkeypatch.setattr(R.r2io, "client", lambda: object())
+    monkeypatch.setattr(R.r2io, "list_keys",
+                        lambda prefix, **kw: [f"{r2io.EVENTS_PREFIX}/{D0}/140505.json"])
+    monkeypatch.setattr(R.r2io, "get_json", lambda key, **kw:
+                        {"session_et": D0, "events": [_event("AAA")]} if D0 in key
+                        else {"as_of": D1, "names": {}})
+    monkeypatch.setattr(R, "load_closes", lambda t: {"AAA": _series()})
+
+    assert R.run(tmp_path, now=NOW, sessions=[D0]) == 0
+    assert calls == [], "re-derived a verdict that FIRST_WINS would discard"
+    # ... and the stored verdict is untouched.
+    assert bool(pd.read_parquet(path).iloc[0]["confirmed"]) is True
+
+
 def test_confirmed_is_in_the_first_wins_set():
     assert "confirmed" in R.FIRST_WINS and "confirmed_basis" in R.FIRST_WINS
     assert "first_ts" in R.FIRST_WINS and "first_px" in R.FIRST_WINS

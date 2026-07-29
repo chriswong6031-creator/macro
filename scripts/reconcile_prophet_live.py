@@ -344,6 +344,28 @@ def merge_ledger(path: Path, rows: list[dict[str, Any]]):
     return out.sort_values(KEY, kind="stable").reset_index(drop=True)
 
 
+def confirmed_pairs(path: Path) -> set[tuple[str, str]]:
+    """``(date, ticker)`` pairs that already carry a verdict of their own vintage.
+
+    Re-deriving one is pure waste: :data:`FIRST_WINS` discards the second answer. It is
+    also the reconciler's only unbounded cost — the default window re-processes
+    yesterday's session every night, and a replay over a busy day's tickers would run
+    the gate hundreds of times against a 3-minute step cap for a value that cannot
+    land.
+    """
+    import pandas as pd  # noqa: PLC0415
+    if not path.exists():
+        return set()
+    try:
+        df = pd.read_parquet(path)
+    except Exception:  # noqa: BLE001
+        return set()
+    if df.empty or "confirmed" not in df.columns:
+        return set()
+    have = df[df["confirmed"].notna()]
+    return {(str(r.date), str(r.ticker)) for r in have.itertuples()}
+
+
 def open_rows(path: Path) -> list[tuple[str, str]]:
     """``(date, ticker)`` pairs whose fill has not matured yet — the re-visit list."""
     import pandas as pd  # noqa: PLC0415
@@ -495,11 +517,20 @@ def run(root: Path, *, now: datetime | None = None, pack_path: Path | None = Non
               f"close series ({', '.join(missing[:8])}) — their fills and verdicts "
               "stay null", flush=True)
 
+    done = confirmed_pairs(path)
+
     def _verdicts_for(session: str, tickers: set[str]):
-        got, basis = session_verdicts(session, tickers, closes=closes,
+        # Anything already confirmed of its own vintage is skipped: FIRST_WINS would
+        # throw the new answer away, and the replay is this step's only unbounded cost.
+        need = {t for t in tickers if (session, t) not in done}
+        if not need:
+            print(f"prophet-live reconcile: session {session} already confirmed "
+                  f"({len(tickers)} names) — no verdict work", flush=True)
+            return {}, "already"
+        got, basis = session_verdicts(session, need, closes=closes,
                                       pack_as_of=pack_as_of, pack_verdicts=verdicts)
         print(f"prophet-live reconcile: session {session} verdicts={len(got)}/"
-              f"{len(tickers)} basis={basis}", flush=True)
+              f"{len(need)} needed of {len(tickers)} basis={basis}", flush=True)
         return got, basis
 
     rows = build_rows(events, verdicts_for=_verdicts_for, closes=closes, now=ts)
