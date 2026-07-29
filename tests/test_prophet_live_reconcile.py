@@ -39,21 +39,32 @@ import scripts.reconcile_prophet_live as R  # noqa: E402
 from engine.grading import fill_index  # noqa: E402
 from engine.prophet_live import r2io  # noqa: E402
 
-NOW = datetime(2026, 7, 29, 22, 30, tzinfo=timezone.utc)
-#: A pinned session grid: Mon 2026-07-27 .. Fri 2026-07-31, then the following week.
-IDX = pd.bdate_range("2026-07-20", periods=15)
-D0 = "2026-07-28"        # the event session
-D1 = "2026-07-29"        # the next session — the official fill bar
+#: Every session in this file is at or after R.LEDGER_FLOOR_SESSION — rows before the
+#: floor are never accrued (B4), so pre-floor fixture dates would silently test nothing.
+NOW = datetime(2026, 8, 4, 22, 30, tzinfo=timezone.utc)
+#: A pinned session grid: weekdays from Mon 2026-07-27 onward.
+IDX = pd.bdate_range("2026-07-27", periods=15)
+D0 = "2026-08-03"        # the event session (a Monday)
+D1 = "2026-08-04"        # the next session — the official fill bar
+DPREV = "2026-07-31"     # the session before D0
 
 
 def _series(start: float = 100.0) -> pd.Series:
     return pd.Series([start + i for i in range(len(IDX))], index=IDX, dtype=float)
 
 
-def _event(ticker="AAA", kind="forming", price=105.0, session=D0, passes=2, frm="near"):
-    return {"ticker": ticker, "kind": kind, "ts": f"{session}T14:05:00Z", "price": price,
-            "quote_age_min": 3.0, "passes": passes, "from": frm,
-            "session_et": session, "pack_as_of": "2026-07-27"}
+def _event(ticker="AAA", kind="forming", price=105.0, session=D0, passes=2, frm="near",
+           ts=None, entered="cross"):
+    return {"ticker": ticker, "kind": kind, "ts": ts or f"{session}T14:05:00Z",
+            "price": price, "quote_age_min": 3.0, "passes": passes, "from": frm,
+            "entered": entered, "session_phase": "rth",
+            "session_et": session, "pack_as_of": DPREV}
+
+
+def _verdicts(mapping: dict[str, bool], basis: str = "pack"):
+    """A ``verdicts_for(session, tickers)`` stub with a fixed answer."""
+    return lambda session, tickers: ({t: v for t, v in mapping.items() if t in tickers},
+                                     basis)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -106,27 +117,28 @@ def test_pct_needs_both_legs():
 # The event -> confirmed join
 # ─────────────────────────────────────────────────────────────────────────────
 
-def test_confirmed_comes_from_tonights_real_verdict():
+def test_confirmed_comes_from_a_verdict_of_the_rows_own_session():
     closes = {"AAA": _series(), "BBB": _series(50.0)}
     rows = R.build_rows([_event("AAA"), _event("BBB")],
-                        verdicts={"AAA": True, "BBB": False}, closes=closes, now=NOW)
+                        verdicts_for=_verdicts({"AAA": True, "BBB": False}),
+                        closes=closes, now=NOW)
     by = {r["ticker"]: r for r in rows}
-    assert by["AAA"]["confirmed"] is True
+    assert by["AAA"]["confirmed"] is True and by["AAA"]["confirmed_basis"] == "pack"
     assert by["BBB"]["confirmed"] is False
 
 
-def test_confirmed_is_none_when_the_pack_did_not_carry_the_name():
-    """None, not False: "not in tonight's pack" is not "the gate rejected it"."""
-    rows = R.build_rows([_event("ZZZ")], verdicts={"AAA": True},
+def test_confirmed_is_none_when_no_verdict_of_that_vintage_exists():
+    """None, not False: "no verdict of this session" is not "the gate rejected it"."""
+    rows = R.build_rows([_event("ZZZ")], verdicts_for=_verdicts({"AAA": True}),
                         closes={"ZZZ": _series()}, now=NOW)
-    assert rows[0]["confirmed"] is None
+    assert rows[0]["confirmed"] is None and rows[0]["confirmed_basis"] is None
 
 
 def test_row_carries_the_measurement_the_program_exists_for():
     closes = {"AAA": _series()}
     s = closes["AAA"]
-    rows = R.build_rows([_event("AAA", price=105.0)], verdicts={"AAA": True},
-                        closes=closes, now=NOW)
+    rows = R.build_rows([_event("AAA", price=105.0)],
+                        verdicts_for=_verdicts({"AAA": True}), closes=closes, now=NOW)
     r = rows[0]
     assert r["date"] == D0 and r["ticker"] == "AAA" and r["kind"] == "forming"
     assert r["cross_px"] == 105.0
@@ -139,24 +151,51 @@ def test_row_carries_the_measurement_the_program_exists_for():
     assert r["close_vs_cross_pct"] == pytest.approx(
         (r["close_same_day"] / 105.0 - 1.0) * 100.0)
     assert r["passes"] == 2 and r["from_state"] == "near" and r["quote_age_min"] == 3.0
+    assert r["entered"] == "cross" and r["session_phase"] == "rth"
 
 
-def test_the_last_occurrence_of_a_kind_wins_within_a_session():
-    """A name that forms twice in a day contributes one `forming` row, the later one."""
-    rows = R.build_rows([_event(price=101.0), _event(price=109.0)],
-                        verdicts={"AAA": True}, closes={"AAA": _series()}, now=NOW)
-    assert len(rows) == 1 and rows[0]["cross_px"] == 109.0
+def test_the_first_cross_is_the_actionable_one_and_the_last_is_also_kept():
+    """M6: keeping only the LAST occurrence recorded a 100 entry as a 108 entry.
+
+    A name that forms at 10:00 and re-forms at 15:30 gave the ledger the 15:30 price,
+    which is not what a user could have acted on — and the entry-advantage measurement
+    is exactly a comparison against that price.
+    """
+    rows = R.build_rows([_event(price=100.0, ts=f"{D0}T14:00:00Z"),
+                         _event(price=104.0, ts=f"{D0}T17:00:00Z"),
+                         _event(price=108.0, ts=f"{D0}T19:30:00Z")],
+                        verdicts_for=_verdicts({"AAA": True}),
+                        closes={"AAA": _series()}, now=NOW)
+    assert len(rows) == 1
+    r = rows[0]
+    assert r["first_px"] == 100.0 and r["first_ts"] == f"{D0}T14:00:00Z"
+    assert r["last_px"] == 108.0 and r["last_ts"] == f"{D0}T19:30:00Z"
+    assert r["occurrences"] == 3
+    # The derived percentages key off the ACTIONABLE price.
+    assert r["cross_px"] == 100.0
+    assert r["fill_vs_cross_pct"] == pytest.approx(
+        (r["next_close_fill"] / 100.0 - 1.0) * 100.0)
+
+
+def test_out_of_order_spool_objects_still_yield_the_earliest_cross():
+    rows = R.build_rows([_event(price=108.0, ts=f"{D0}T19:30:00Z"),
+                         _event(price=100.0, ts=f"{D0}T14:00:00Z")],
+                        verdicts_for=_verdicts({"AAA": True}),
+                        closes={"AAA": _series()}, now=NOW)
+    assert rows[0]["first_px"] == 100.0 and rows[0]["last_px"] == 108.0
 
 
 def test_distinct_kinds_are_distinct_rows():
     rows = R.build_rows([_event(kind="forming"), _event(kind="faded"),
                          _event(kind="crossing_unconfirmed", passes=1)],
-                        verdicts={"AAA": True}, closes={"AAA": _series()}, now=NOW)
+                        verdicts_for=_verdicts({"AAA": True}),
+                        closes={"AAA": _series()}, now=NOW)
     assert sorted(r["kind"] for r in rows) == ["crossing_unconfirmed", "faded", "forming"]
 
 
 def test_a_missing_close_series_leaves_the_fill_null_not_zero():
-    rows = R.build_rows([_event("NOPRICE")], verdicts={}, closes={}, now=NOW)
+    rows = R.build_rows([_event("NOPRICE")], verdicts_for=_verdicts({}),
+                        closes={}, now=NOW)
     r = rows[0]
     assert r["close_same_day"] is None and r["next_close_fill"] is None
     assert r["fill_vs_cross_pct"] is None
@@ -166,7 +205,104 @@ def test_a_missing_close_series_leaves_the_fill_null_not_zero():
 def test_events_without_a_session_are_dropped_not_dated_from_the_clock():
     bad = _event()
     bad["session_et"] = None
-    assert R.build_rows([bad], verdicts={}, closes={}, now=NOW) == []
+    assert R.build_rows([bad], verdicts_for=_verdicts({}), closes={}, now=NOW) == []
+
+
+def test_sessions_before_the_ledger_floor_are_never_accrued():
+    """B4: any pre-merge spool object may be a receipt fabrication, not a market pass.
+
+    A fabricated row joined to real closes is indistinguishable from a genuine one
+    forever, so the floor is a hard date rather than a judgement call.
+    """
+    old = _event(session="2026-07-29")
+    assert R.LEDGER_FLOOR_SESSION == "2026-07-30"
+    assert old["session_et"] < R.LEDGER_FLOOR_SESSION
+    assert R.build_rows([old], verdicts_for=_verdicts({"AAA": True}),
+                        closes={"AAA": _series()}, now=NOW) == []
+    # A session at the floor accrues normally.
+    ok = _event(session="2026-07-30")
+    assert len(R.build_rows([ok], verdicts_for=_verdicts({"AAA": True}),
+                            closes={"AAA": _series()}, now=NOW)) == 1
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# B3 / M1 — confirmed-vintage discipline. Two REPRODUCED corruptions.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_a_pack_from_the_wrong_session_never_supplies_confirmed():
+    """M1: `load_verdicts` had no as_of check, so a pack-build-failure night graded
+    today's events off YESTERDAY's pack via the R2 fallback."""
+    closes = {"AAA": _series()}
+    # Pack as_of is D1 but the row's session is D0 — the pack route must be refused
+    # and the verdict recomputed on the session's own basis instead.
+    got, basis = R.session_verdicts(D0, {"AAA"}, closes=closes, pack_as_of=D1,
+                                    pack_verdicts={"AAA": True})
+    assert basis == "replay"
+    # Matching vintage takes the pack directly.
+    got2, basis2 = R.session_verdicts(D0, {"AAA"}, closes=closes, pack_as_of=D0,
+                                      pack_verdicts={"AAA": True})
+    assert basis2 == "pack" and got2 == {"AAA": True}
+
+
+def test_the_replay_basis_truncates_the_series_through_the_event_session(monkeypatch):
+    """The replay must not see bars the session could not have seen."""
+    from engine import signal_gate
+    seen: dict[str, pd.Series] = {}
+
+    def _gate(tkr, s):
+        seen[tkr] = s
+        return {"eligible": True, "tier_cascade": "T2"}
+
+    monkeypatch.setattr(signal_gate, "gate", _gate)
+    got, basis = R.session_verdicts(D0, {"AAA"}, closes={"AAA": _series()},
+                                    pack_as_of=D1, pack_verdicts={})
+    assert basis == "replay" and got == {"AAA": True}
+    used = seen["AAA"]
+    assert str(pd.Timestamp(used.index[-1]).date()) == D0
+    assert pd.Timestamp(D1) not in pd.DatetimeIndex(used.index)
+    assert len(used) < len(_series())
+
+
+def test_a_verdict_is_never_restated_by_a_later_night(tmp_path):
+    """B3: the default [yesterday, today] window re-processes session D on night D+1.
+
+    Before the fix that second pass re-stamped `confirmed` from the D+1 pack, so every
+    re-processed row carried a verdict one session too late — silently, and for every
+    row the ledger ever wrote.
+    """
+    path = tmp_path / "forward.parquet"
+    night1 = R.build_rows([_event("AAA")], verdicts_for=_verdicts({"AAA": True}),
+                          closes={"AAA": _series()}, now=NOW)
+    R.merge_ledger(path, night1).to_parquet(path, index=False)
+    assert bool(pd.read_parquet(path).iloc[0]["confirmed"]) is True
+
+    # Night D+1 re-reads the same spool and would answer False for the WRONG session.
+    night2 = R.build_rows([_event("AAA")], verdicts_for=_verdicts({"AAA": False}),
+                          closes={"AAA": _series()}, now=NOW)
+    out = R.merge_ledger(path, night2)
+    assert len(out) == 1
+    assert bool(out.iloc[0]["confirmed"]) is True, "a later night restated the verdict"
+
+
+def test_a_null_verdict_can_still_be_filled_in_later(tmp_path):
+    """First-wins must not freeze a NULL: an unknown verdict is not an answer."""
+    path = tmp_path / "forward.parquet"
+    unknown = R.build_rows([_event("AAA")], verdicts_for=_verdicts({}),
+                           closes={"AAA": _series()}, now=NOW)
+    assert unknown[0]["confirmed"] is None
+    R.merge_ledger(path, unknown).to_parquet(path, index=False)
+    later = R.build_rows([_event("AAA")], verdicts_for=_verdicts({"AAA": True}),
+                         closes={"AAA": _series()}, now=NOW)
+    out = R.merge_ledger(path, later)
+    assert bool(out.iloc[0]["confirmed"]) is True
+
+
+def test_confirmed_is_in_the_first_wins_set():
+    assert "confirmed" in R.FIRST_WINS and "confirmed_basis" in R.FIRST_WINS
+    assert "first_ts" in R.FIRST_WINS and "first_px" in R.FIRST_WINS
+    # The maturing fields must NOT be first-wins or a fill could never land.
+    for col in ("next_close_fill", "next_close_date", "close_same_day"):
+        assert col not in R.FIRST_WINS
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -177,7 +313,7 @@ def test_union_merge_is_idempotent(tmp_path):
     """Running the reconciler twice must not duplicate or move a single row."""
     path = tmp_path / "forward.parquet"
     rows = R.build_rows([_event("AAA"), _event("BBB", kind="faded")],
-                        verdicts={"AAA": True, "BBB": False},
+                        verdicts_for=_verdicts({"AAA": True, "BBB": False}),
                         closes={"AAA": _series(), "BBB": _series(50.0)}, now=NOW)
     first = R.merge_ledger(path, rows)
     first.to_parquet(path, index=False)
@@ -287,6 +423,31 @@ def test_spool_sessions_groups_pass_objects_by_et_date(monkeypatch):
     assert list(only) == [D1]
 
 
+def test_spool_listing_asks_only_for_the_target_session_prefixes(monkeypatch):
+    """m7: the spool grows ~80 objects a session forever.
+
+    Paginating the whole history to pick out two days would list thousands of keys a
+    night for nothing.
+    """
+    asked: list[str] = []
+    monkeypatch.setattr(R.r2io, "list_keys",
+                        lambda prefix, **kw: asked.append(prefix) or [])
+    R.spool_sessions(s3=object(), sessions=[D0, D1])
+    assert asked == [f"{r2io.EVENTS_PREFIX}/{D0}/", f"{r2io.EVENTS_PREFIX}/{D1}/"]
+    asked.clear()
+    R.spool_sessions(s3=object())            # no sessions => the whole prefix, once
+    assert asked == [f"{r2io.EVENTS_PREFIX}/"]
+
+
+def test_pre_floor_sessions_are_dropped_even_if_the_spool_has_them(monkeypatch):
+    old = "2026-07-15"
+    monkeypatch.setattr(R.r2io, "list_keys", lambda prefix, **kw: [
+        f"{r2io.EVENTS_PREFIX}/{old}/100005.json",
+        f"{r2io.EVENTS_PREFIX}/{D0}/100005.json"])
+    got = R.spool_sessions(s3=object())
+    assert list(got) == [D0]
+
+
 def test_load_events_skips_malformed_rows(monkeypatch):
     obj = {"session_et": D0, "pack_as_of": "2026-07-27",
            "events": [_event(), {"kind": "forming"}, {"ticker": "X"}, "not a dict", None]}
@@ -296,15 +457,18 @@ def test_load_events_skips_malformed_rows(monkeypatch):
     assert rows[0]["session_et"] == D0 and rows[0]["_spool_key"] == "k1"
 
 
-def test_load_verdicts_reads_center_buyable_from_the_pack(tmp_path, monkeypatch):
+def test_load_verdicts_returns_the_as_of_with_the_verdicts(tmp_path, monkeypatch):
+    """M1: the as_of MUST come back, or a caller cannot know which session it describes."""
     import json
     p = tmp_path / "pack.json"
-    p.write_text(json.dumps({"names": {"AAA": {"center_buyable": True},
+    p.write_text(json.dumps({"as_of": D0,
+                             "names": {"AAA": {"center_buyable": True},
                                        "bbb": {"center_buyable": False}}}))
     monkeypatch.setattr(R.r2io, "get_json", lambda key, **kw: None)
-    got = R.load_verdicts(p)
+    got, as_of = R.load_verdicts(p)
     assert got == {"AAA": True, "BBB": False}      # upper-cased for the join
-    assert R.load_verdicts(None) == {}
+    assert as_of == D0
+    assert R.load_verdicts(None) == ({}, None)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -346,13 +510,14 @@ def test_no_r2_credentials_accrues_nothing_and_says_so(monkeypatch, tmp_path, ca
 
 
 def test_run_writes_the_ledger_end_to_end(monkeypatch, tmp_path):
-    obj = {"session_et": D0, "pack_as_of": "2026-07-27", "events": [_event("AAA")]}
+    obj = {"session_et": D0, "pack_as_of": DPREV, "events": [_event("AAA")]}
     monkeypatch.setattr(R.r2io, "client", lambda: object())
     monkeypatch.setattr(R.r2io, "list_keys",
                         lambda prefix, **kw: [f"{r2io.EVENTS_PREFIX}/{D0}/140505.json"])
+    # The pack's as_of IS the event session, so `confirmed` comes from it directly.
     monkeypatch.setattr(R.r2io, "get_json", lambda key, **kw:
                         obj if key.endswith(".json") and D0 in key
-                        else {"names": {"AAA": {"center_buyable": True}}})
+                        else {"as_of": D0, "names": {"AAA": {"center_buyable": True}}})
     monkeypatch.setattr(R, "load_closes", lambda t: {"AAA": _series()})
 
     assert R.run(tmp_path, now=NOW, sessions=[D0]) == 0
@@ -360,10 +525,13 @@ def test_run_writes_the_ledger_end_to_end(monkeypatch, tmp_path):
     assert len(df) == 1
     row = df.iloc[0]
     assert row["ticker"] == "AAA" and row["kind"] == "forming"
-    assert bool(row["confirmed"]) is True
+    assert bool(row["confirmed"]) is True and row["confirmed_basis"] == "pack"
     assert row["next_close_fill"] == float(_series().loc[pd.Timestamp(D1)])
+    assert row["first_px"] == 105.0 and row["occurrences"] == 1
 
-    # A second identical run changes nothing (frozen-replay discipline).
+    # A second identical run changes nothing. The clock is PINNED (now=NOW) — the only
+    # per-run field is reconciled_at, so byte-identity is a real claim here rather
+    # than an accident of running the two passes inside the same second.
     before = pd.read_parquet(tmp_path / R.LEDGER_REL)
     assert R.run(tmp_path, now=NOW, sessions=[D0]) == 0
     pd.testing.assert_frame_equal(before, pd.read_parquet(tmp_path / R.LEDGER_REL))
@@ -386,9 +554,20 @@ def test_the_default_window_covers_yesterday_and_today_in_et(monkeypatch, tmp_pa
     monkeypatch.setattr(R.r2io, "client", lambda: object())
     monkeypatch.setattr(R, "spool_sessions",
                         lambda **kw: asked.append(kw.get("sessions")) or {})
-    monkeypatch.setattr(R, "load_verdicts", lambda *a, **kw: {})
-    R.run(tmp_path, now=datetime(2026, 7, 30, 2, 30, tzinfo=timezone.utc))
-    assert asked[0] == ["2026-07-28", "2026-07-29"]      # ET date is still the 29th
+    monkeypatch.setattr(R, "load_verdicts", lambda *a, **kw: ({}, None))
+    # 02:30Z on 2026-08-05 is still 22:30 ET on the 4th.
+    R.run(tmp_path, now=datetime(2026, 8, 5, 2, 30, tzinfo=timezone.utc))
+    assert asked[0] == [D0, D1]                          # ET date is still the 4th
+
+
+def test_the_default_window_is_clipped_to_the_ledger_floor(monkeypatch, tmp_path, capsys):
+    """A run whose whole window predates the floor accrues nothing and says so."""
+    monkeypatch.setattr(R.r2io, "client", lambda: object())
+    called: list[int] = []
+    monkeypatch.setattr(R, "spool_sessions", lambda **kw: called.append(1) or {})
+    assert R.run(tmp_path, now=datetime(2026, 7, 29, 22, 30, tzinfo=timezone.utc)) == 0
+    assert called == [], "listed the spool for sessions it may never accrue"
+    assert "before the ledger floor" in capsys.readouterr().out
 
 
 def test_an_unmatured_fill_round_trips_as_null_not_zero(tmp_path):

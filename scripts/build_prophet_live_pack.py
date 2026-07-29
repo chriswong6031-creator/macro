@@ -22,10 +22,17 @@ paid; the probe phase then runs under both ``max_probe`` and a wall-clock
 ``max_seconds``, and everything the budget cuts is counted in ``meta.skipped``.
 Measured timings are printed on every run so a regression shows up in the log.
 
-FAIL-CLOSED ON PARITY (G0.1). After assembly, every probed name's published
-interval is checked against tonight's real verdict. One mismatch and NOTHING is
-published: a missing pack makes the evaluator go dark, which is honest, while a
-wrong pack tells a user a level that does not exist.
+FAIL-CLOSED ON PARITY (G0.1). Before anything is published, the REAL gate is re-run
+at every PUBLISHED price: at each edge (must be buyable) and at the false-side bound
+the bisection actually measured (must not be). One mismatch and NOTHING is published —
+a missing pack makes the evaluator go dark, which is honest, while a wrong pack tells
+a user a level that does not exist. A pack with armed levels and zero re-verified
+prices is also refused: unproven is not clean.
+
+The cheap membership check (``self_check``) still runs, but it is NOT the gate and is
+no longer described as one. It reads the same numbers the assembly wrote, and nothing
+in the assembly path can violate it — fuzzing 400 synthetic gates produced zero
+failures. It catches a representation bug; only the edge check catches a wrong price.
 """
 from __future__ import annotations
 
@@ -48,6 +55,12 @@ from engine.prophet_live import armed_pack as AP  # noqa: E402
 from engine.prophet_live import r2io  # noqa: E402
 
 log = logging.getLogger("build_prophet_live_pack")
+
+#: Share of the wall-clock budget the probe phase may spend. The remainder is
+#: RESERVED for edge verification, because an unverified level is withheld rather
+#: than published — so letting the probe consume everything would silently shrink the
+#: armed set instead of trading a little coverage for proof.
+PROBE_SHARE = 0.75
 
 #: Worker-local universe: {ticker: close series}. Populated once per process.
 _CLOSES: dict[str, Any] = {}
@@ -82,6 +95,35 @@ def _probe(args: tuple[str, dict[str, Any]]) -> tuple[str, dict[str, Any]]:  # p
     """Phase 2 task: grid + bisection over the name's span."""
     tkr, rec = args
     return tkr, AP.probe_name(tkr, _CLOSES[tkr], rec, cfg=_CFG)
+
+
+def _verify(args: tuple[str, list]) -> tuple[str, list[str], int]:  # pragma: no cover
+    """Phase 3 task: re-run the real gate at this name's published edges."""
+    tkr, checks = args
+    lines, n = AP.verify_edges(tkr, _CLOSES[tkr], checks)
+    return tkr, lines, n
+
+
+def _drain(futs: dict, timeout: float, label: str):
+    """Yield ``(result, False)`` per completed future, then ``(None, True)`` on timeout.
+
+    One drain for all three phases so the budget is enforced identically. A phase that
+    runs out of time is DISCLOSED (the caller records a skipped reason) — never
+    allowed to overrun, because the engine job's own cap is what silently skips the
+    nightly commit.
+    """
+    if not futs:
+        return
+    try:
+        for fut in as_completed(futs, timeout=max(1.0, timeout)):
+            yield fut.result(), False
+    except TimeoutError:
+        print(f"::warning title=prophet-live-pack::{label} hit the {timeout:.0f}s "
+              "remaining budget — unfinished names are disclosed in meta.skipped",
+              flush=True)
+        yield None, True
+    except Exception as exc:  # noqa: BLE001
+        print(f"::warning title=prophet-live-pack::{label} error: {exc}", flush=True)
 
 
 def _workers(explicit: int | None) -> int:
@@ -131,13 +173,32 @@ def build(*, cfg: dict[str, Any] | None = None, now: datetime | None = None,
 
     nw = _workers(workers)
     gate_calls = 0
-    t_centre = t_probe = time.time()
-    centre_s = probe_s = 0.0
+    t_centre = t_probe = t_verify = time.time()
+    centre_s = probe_s = verify_s = 0.0
     wanted = 0
     probes: dict[str, dict[str, Any]] = {}
+    edges = 0
+    bad: list[str] = []
+    checks: dict[str, list] = {}
+    verified: set[str] = set()
+    # ONE budget for all three phases. Sizing each separately is how a step creeps:
+    # the engine job's cap is what silently skips the nightly commit, so what matters
+    # is the total, and every phase reports how much of it is left.
+    deadline = float(c["max_seconds"])
     ex = ProcessPoolExecutor(max_workers=nw, initializer=_winit, initargs=(c,))
     try:
-        for rec in ex.map(_centre, fresh, chunksize=16):
+        # The centre census is bounded too. It was a bare ex.map, which cannot be
+        # interrupted: a slow store or a pathological name would have run past the
+        # whole budget before the probe phase's deadline ever applied.
+        cfuts = {ex.submit(_centre, t): t for t in fresh}
+        for rec, timed_out in _drain(cfuts, deadline, "centre census"):
+            if timed_out:
+                missed = [t for t in fresh if t not in recs]
+                for t in missed:
+                    recs[t] = AP.stale_record(t, series[t], 0)
+                    recs[t]["skip"] = "census_deadline"
+                skipped["census_deadline"] = len(missed)
+                break
             recs[rec["ticker"]] = rec
             gate_calls += rec["gate_calls"]
             if rec.get("skip"):
@@ -152,42 +213,73 @@ def build(*, cfg: dict[str, Any] | None = None, now: datetime | None = None,
         # DEADLINE, not just a count. Gate cost swings ~10x with history depth, so a
         # name cap alone cannot bound the step; whatever does not finish in time is
         # cancelled and disclosed rather than allowed to eat the render budget.
-        deadline = float(c["max_seconds"])
         t_probe = time.time()
         payloads = [(t, {"span": recs[t]["span"], "known": recs[t].get("known") or {}})
                     for t in order]
         futs = {ex.submit(_probe, p): p[0] for p in payloads}
-        timed_out = False
-        try:
-            for fut in as_completed(futs, timeout=max(1.0, deadline)):
-                tkr, res = fut.result()
-                probes[tkr] = res
-                gate_calls += res["gate_calls"]
-                if res.get("irregular"):
-                    skipped["irregular"] = skipped.get("irregular", 0) + 1
-        except TimeoutError:
-            timed_out = True
-        except Exception as exc:  # noqa: BLE001
-            print(f"::warning title=prophet-live-pack::probe phase error: {exc}", flush=True)
-        if timed_out:
-            unfinished = len(futs) - len(probes)
-            skipped["deadline"] = skipped.get("deadline", 0) + unfinished
-            print(f"::warning title=prophet-live-pack::probe phase hit the "
-                  f"{deadline:.0f}s budget with {unfinished} names unprobed "
-                  "(disclosed as meta.skipped.deadline)", flush=True)
+        # RESERVE budget for verification instead of handing it the leftovers. An
+        # unverified level must not ship, so letting the probe phase eat the whole
+        # budget would mean either refusing the pack or publishing prices nothing
+        # checked — the probe phase gets PROBE_SHARE and verification keeps the rest.
+        left = deadline * PROBE_SHARE - (time.time() - t_centre)
+        for res, timed_out in _drain(futs, left, "probe phase"):
+            if timed_out:
+                unfinished = len(futs) - len(probes)
+                skipped["deadline"] = skipped.get("deadline", 0) + unfinished
+                break
+            tkr, r = res
+            probes[tkr] = r
+            gate_calls += r["gate_calls"]
+            if r.get("irregular"):
+                skipped["irregular"] = skipped.get("irregular", 0) + 1
+        probe_s = time.time() - t_probe
+
+        # PHASE 3 — the independent parity gate (G0.1). Re-runs the REAL gate at every
+        # PUBLISHED edge and at the false-side bound the bisection measured. This is
+        # the check that can actually fail; the membership self_check below cannot.
+        t_verify = time.time()
+        names = {t: AP.name_entry(r, probes.get(t)) for t, r in recs.items()}
+        checks = {t: AP.edge_checks(e, probes.get(t)) for t, e in names.items()}
+        checks = {t: v for t, v in checks.items() if v}
+        vfuts = {ex.submit(_verify, (t, v)): t for t, v in checks.items()}
+        left = deadline - (time.time() - t_centre)
+        for res, timed_out in _drain(vfuts, left, "edge verification"):
+            if timed_out:
+                break
+            tkr, lines, n = res
+            bad.extend(lines)
+            verified.add(tkr)
+            edges += n
+            gate_calls += n
+        verify_s = time.time() - t_verify
+        unverified = sorted(set(checks) - verified)
+        if unverified:
+            # A level nothing checked does not ship. The name keeps its honest centre
+            # state and loses its thresholds, so the evaluator drops it from coverage
+            # instead of acting on an unproven price. Refusing the WHOLE pack over a
+            # budget overrun would be worse: it darks the names that did verify.
+            skipped["unverified"] = len(unverified)
+            print(f"::warning title=prophet-live-pack::{len(unverified)} names could "
+                  "not have their published prices re-verified in budget — their "
+                  "thresholds are withheld (meta.skipped.unverified)", flush=True)
     finally:
         # cancel_futures so a deadline does not then wait out the whole queue.
         ex.shutdown(wait=False, cancel_futures=True)
-    probe_s = time.time() - t_probe
 
+    for tkr in set(checks) - verified:
+        probes.pop(tkr, None)
+        recs[tkr]["skip"] = "unverified"
+        recs[tkr]["wants_probe"] = False
     names = {t: AP.name_entry(r, probes.get(t)) for t, r in recs.items()}
     payload = AP.assemble(names, as_of=tip or "", cfg=c, universe_n=len(uni),
-                          wanted_n=wanted, gate_calls=gate_calls,
+                          wanted_n=wanted, gate_calls=gate_calls, edges_checked=edges,
                           build_seconds=time.time() - t0, skipped=skipped, now=now)
     payload["meta"]["phase_seconds"] = {"load": round(t_centre - t0, 1),
                                         "centre": round(centre_s, 1),
-                                        "probe": round(probe_s, 1)}
+                                        "probe": round(probe_s, 1),
+                                        "verify": round(verify_s, 1)}
     payload["meta"]["workers"] = nw
+    payload["meta"]["edge_mismatches"] = bad
     return payload
 
 
@@ -244,16 +336,28 @@ def main(argv: list[str] | None = None) -> int:
               "no dated bar; refusing to publish an undatable pack", flush=True)
         return 1
 
-    bad = AP.self_check(payload["names"])
+    # TWO checks, and only one of them can fail. The membership check is a cheap
+    # structural invariant over the assembled payload; the EDGE check re-runs the real
+    # gate at every published price and is the independent evidence G0.1 asks for.
+    bad = list(m.get("edge_mismatches") or []) + AP.self_check(payload["names"])
     if bad:
         for line in bad[:20]:
             print(f"prophet-live parity mismatch: {line}", flush=True)
         print(f"::error title=prophet-live-pack-parity::{len(bad)} mismatches between "
-              "the published interval and tonight's gate verdict — pack NOT published",
+              "the published prices and the live gate — pack NOT published", flush=True)
+        return 1
+
+    armed = int(m["armed_n"])
+    if armed and not m.get("edges_checked"):
+        # Unproven is not clean: a pack with armed levels whose verification phase
+        # never ran must not be published on the strength of the tautological check.
+        print(f"::error title=prophet-live-pack-parity::{armed} armed names but 0 "
+              "published prices were re-verified against the gate — pack NOT published",
               flush=True)
         return 1
-    print(f"prophet-live pack: parity clean over {m['probed_n']} probed names",
-          flush=True)
+    print(f"prophet-live pack: {m['edges_checked']} published prices re-verified "
+          f"against the live gate across {armed} armed names, 0 mismatches; "
+          f"membership check clean over {m['probed_n']} probed names", flush=True)
 
     if args.out:
         p = Path(args.out)

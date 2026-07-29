@@ -102,7 +102,18 @@ def get_json(key: str, *, s3=None, allow_public: bool = True) -> dict | None:
 
 
 def put_json(key: str, payload: Any, *, s3=None) -> bool:
-    """Write one JSON object. False (never a raise) when credentials are absent."""
+    """Write one JSON object. False (never a raise) when credentials are absent.
+
+    ``PROPHET_LIVE_NO_PUBLISH=1`` refuses every write with a line-start warning. Set it
+    in any receipt, rehearsal or demo that runs the real lane end to end: the event
+    spool is the ledger's raw input, and a fabricated row joined to real closes is
+    indistinguishable from a genuine one forever. The reconciler's
+    ``LEDGER_FLOOR_SESSION`` is the second layer of the same protection.
+    """
+    if os.environ.get("PROPHET_LIVE_NO_PUBLISH", "").strip() not in ("", "0", "false"):
+        print(f"::warning title=prophet-live::PROPHET_LIVE_NO_PUBLISH is set — "
+              f"refusing to write {key}", flush=True)
+        return False
     cl = s3 if s3 is not None else client()
     if cl is None:
         log.warning("r2io: no R2 credentials — %s not published", key)

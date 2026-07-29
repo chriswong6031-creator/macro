@@ -9,15 +9,24 @@ hypothesis, and it accrues from week one with no user surface attached.
     python -m scripts.reconcile_prophet_live --nightly [--pack PATH] [--now ISO]
 
 WHAT IT JOINS, per event row:
-  * ``confirmed`` — did tonight's REAL gate verdict put the name in a buyable tier?
-    Tonight's freshly built armed pack IS that verdict set (``center_buyable``), so
-    the reconciler runs immediately after the pack build and needs no second gate
-    pass.
+  * ``confirmed`` — did the gate, run on the series through the EVENT'S OWN session,
+    put the name in a buyable tier? Vintage is load-bearing and was wrong twice:
+    the default [yesterday, today] window re-processes session D on night D+1, and
+    the pack read on night D+1 carries as_of D+1 — so every re-processed row was
+    stamped with a verdict one session too late, and on a pack-build-failure night
+    the R2 fallback graded today's events off yesterday's pack. Now ``confirmed`` is
+    written ONLY from a verdict whose basis IS the row's session (tonight's pack when
+    its as_of matches, else the gate re-run on the series truncated through that
+    session), and once non-null it is never overwritten.
   * ``close_same_day`` — the actual close of the session the event fired in.
   * ``next_close_fill`` — the official fill: the close of the bar STRICTLY AFTER the
     event's session, mirroring :func:`engine.grading.fill_index` (grade_us_board's
     next-bar convention). Filled on a LATER night, when that bar exists — the row is
     written the night of the event with a null fill and matured in place.
+  * ``first_ts``/``first_px`` and ``last_ts``/``last_px`` + ``occurrences`` — the
+    FIRST cross is the user-actionable one. Keeping only the last occurrence recorded
+    a name that formed at 100 and re-formed at 108 as a 108 entry, which would have
+    biased the entry-advantage measurement the program exists to make.
 
 SOLE WRITER (G0.2/RUL-P10). This nightly step is the only writer of
 ``data/prophet_live/``. The intraday lane writes R2 only. Rows are merged
@@ -49,16 +58,23 @@ log = logging.getLogger("reconcile_prophet_live")
 SCHEMA = "prophet_live.forward/v1"
 LEDGER_REL = Path("data") / "prophet_live" / "forward.parquet"
 
-#: The merge identity. One row per (session, name, transition kind): a name that
-#: forms, fades and re-forms in a day contributes one row per kind, and the LAST
-#: occurrence of that kind wins its price/time fields.
+#: The merge identity. One row per (session, name, transition kind); a name that
+#: forms, fades and re-forms in a day contributes one row per kind, carrying both the
+#: first and the last occurrence of it.
 KEY = ["date", "ticker", "kind"]
 
-#: Columns that mature later. groupby-last keeps the newest NON-NULL value per
-#: column, which is what makes "write the row tonight, fill it in on a later
-#: night" idempotent instead of destructive.
-_MATURING = ("confirmed", "close_same_day", "next_close_fill", "next_close_date",
-             "fill_vs_cross_pct", "close_vs_cross_pct")
+#: Columns where the FIRST non-null value wins and later runs may never revise it.
+#: ``confirmed`` because a verdict is a claim about one session's close and a later
+#: night has no standing to restate it; the first-cross fields because they are the
+#: user-actionable print and a re-read over an expired spool must not lose them.
+FIRST_WINS = ("confirmed", "confirmed_basis", "first_ts", "first_px")
+
+#: Sessions strictly before this are NEVER accrued. Belt-and-braces for B4: any
+#: pre-merge spool object may have been written by a receipt or a rehearsal rather
+#: than a real market pass, and a fabricated row joined to real closes is
+#: indistinguishable from a genuine one forever. Raising this floor is safe; lowering
+#: it re-opens the window and needs a deliberate audit of what is under the prefix.
+LEDGER_FLOOR_SESSION = "2026-07-30"
 
 
 def _iso(now: datetime) -> str:
@@ -72,16 +88,26 @@ def _iso(now: datetime) -> str:
 
 def spool_sessions(*, s3=None, prefix: str = r2io.EVENTS_PREFIX,
                    sessions: list[str] | None = None) -> dict[str, list[str]]:
-    """``{session_date: [object keys]}`` under the events prefix."""
+    """``{session_date: [object keys]}`` for the requested sessions.
+
+    Lists the per-session prefixes, not the whole history: the spool grows by ~80
+    objects a session forever, and paginating all of it to pick out two days would
+    turn into thousands of listed keys a night for no gain.
+    """
+    prefixes = ([f"{prefix}/{s}/" for s in sessions] if sessions is not None
+                else [f"{prefix}/"])
     out: dict[str, list[str]] = {}
-    for key in r2io.list_keys(prefix + "/", s3=s3):
-        parts = key[len(prefix):].strip("/").split("/")
-        if len(parts) != 2 or not parts[1].endswith(".json"):
-            continue
-        sess = parts[0]
-        if sessions is not None and sess not in sessions:
-            continue
-        out.setdefault(sess, []).append(key)
+    for pfx in prefixes:
+        for key in r2io.list_keys(pfx, s3=s3):
+            parts = key[len(prefix):].strip("/").split("/")
+            if len(parts) != 2 or not parts[1].endswith(".json"):
+                continue
+            sess = parts[0]
+            if sessions is not None and sess not in sessions:
+                continue
+            if sess < LEDGER_FLOOR_SESSION:
+                continue
+            out.setdefault(sess, []).append(key)
     return {k: sorted(v) for k, v in sorted(out.items())}
 
 
@@ -155,6 +181,13 @@ def next_close(series: Any, day: str) -> tuple[float | None, str | None]:
         return None, None
 
 
+def _f(v: Any) -> float | None:
+    try:
+        return float(v)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return None
+
+
 def _pct(a: float | None, b: float | None) -> float | None:
     """``a`` relative to ``b``, in percent. None unless both are usable."""
     try:
@@ -165,44 +198,109 @@ def _pct(a: float | None, b: float | None) -> float | None:
         return None
 
 
-def build_rows(events: list[dict[str, Any]], *, verdicts: dict[str, bool],
-               closes: dict[str, Any], now: datetime) -> list[dict[str, Any]]:
-    """One ledger row per (session, ticker, kind) — last occurrence of the kind wins."""
-    rows: dict[tuple[str, str, str], dict[str, Any]] = {}
-    for ev in events:
-        tkr = str(ev["ticker"]).upper()
-        day = str(ev.get("session_et") or "")[:10]
-        kind = str(ev["kind"])
-        if not day:
+def session_verdicts(session: str, tickers: set[str], *, closes: dict[str, Any],
+                     pack_as_of: str | None,
+                     pack_verdicts: dict[str, bool]) -> tuple[dict[str, bool], str]:
+    """``({ticker: is_buyable}, basis)`` for ONE session — same gate, same basis.
+
+    When tonight's pack was built on this very session, its ``center_buyable`` IS the
+    verdict and no gate re-run is needed. Otherwise the gate is re-run on each name's
+    close series TRUNCATED THROUGH the session, which reproduces the basis the pack
+    would have had that night: same function, same close-only inputs, no second
+    definition of "buyable" anywhere.
+
+    Caveat worth knowing when reading old rows: a truncated replay sees the store as
+    it stands TODAY. If a name's history has since been restated (dividend
+    re-rounding moves adjusted closes), a replayed verdict can differ from what that
+    night's pack computed. ``confirmed_basis`` records which route produced the value
+    so a later audit can tell the two apart.
+    """
+    if pack_as_of and str(pack_as_of)[:10] == session:
+        return ({t: pack_verdicts[t] for t in tickers if t in pack_verdicts}, "pack")
+    import pandas as pd  # noqa: PLC0415
+    from engine import signal_gate  # noqa: PLC0415
+    cut = pd.Timestamp(session)
+    out: dict[str, bool] = {}
+    for tkr in sorted(tickers):
+        s = closes.get(tkr)
+        if s is None:
             continue
+        trunc = s[pd.DatetimeIndex(s.index).normalize() <= cut]
+        if not len(trunc):
+            continue
+        try:
+            out[tkr] = bool(signal_gate.is_buyable(signal_gate.gate(tkr, trunc)))
+        except Exception as exc:  # noqa: BLE001
+            log.warning("reconcile_prophet_live: replay gate failed for %s @ %s: %s",
+                        tkr, session, exc)
+    return out, "replay"
+
+
+def build_rows(events: list[dict[str, Any]], *, verdicts_for: Any,
+               closes: dict[str, Any], now: datetime) -> list[dict[str, Any]]:
+    """One ledger row per (session, ticker, kind), carrying FIRST and LAST occurrence.
+
+    ``verdicts_for(session, tickers)`` returns ``({ticker: bool}, basis)`` for that
+    session — see :func:`session_verdicts`. Events are grouped before any verdict is
+    resolved so the gate is re-run at most once per session, not once per row.
+    """
+    groups: dict[tuple[str, str, str], list[dict[str, Any]]] = {}
+    for ev in events:
+        day = str(ev.get("session_et") or "")[:10]
+        if not day or day < LEDGER_FLOOR_SESSION:
+            continue
+        groups.setdefault((day, str(ev["ticker"]).upper(), str(ev["kind"])), []).append(ev)
+
+    by_session: dict[str, set[str]] = {}
+    for (day, tkr, _kind) in groups:
+        by_session.setdefault(day, set()).add(tkr)
+    resolved = {day: verdicts_for(day, tkrs) for day, tkrs in by_session.items()}
+
+    rows: list[dict[str, Any]] = []
+    for (day, tkr, kind), evs in sorted(groups.items()):
+        # Spool keys are HHMMSS per pass, and load_events reads them in key order, so
+        # list order is pass order; ts breaks any tie defensively.
+        evs = sorted(evs, key=lambda e: str(e.get("ts") or ""))
+        first, last = evs[0], evs[-1]
         series = closes.get(tkr)
         same = close_on(series, day) if series is not None else None
         nxt, nxt_day = next_close(series, day) if series is not None else (None, None)
-        cross = ev.get("price")
-        rows[(day, tkr, kind)] = {
+        first_px = _f(first.get("price"))
+        verdict_map, basis = resolved.get(day, ({}, "none"))
+        rows.append({
             "date": day,
             "ticker": tkr,
             "kind": kind,
-            "ts": ev.get("ts"),
-            "cross_px": float(cross) if cross is not None else None,
-            "quote_age_min": ev.get("quote_age_min"),
-            "passes": ev.get("passes"),
-            "from_state": ev.get("from"),
-            "pack_as_of": ev.get("pack_as_of"),
-            # None, not False: "tonight's pack did not carry this name" is not the
-            # same claim as "tonight's gate rejected it".
-            "confirmed": verdicts.get(tkr),
+            # The FIRST occurrence is the actionable one — what a user could have
+            # traded — so it owns cross_px and the derived percentages.
+            "first_ts": first.get("ts"),
+            "first_px": first_px,
+            "cross_px": first_px,
+            "last_ts": last.get("ts"),
+            "last_px": _f(last.get("price")),
+            "occurrences": len(evs),
+            "quote_age_min": first.get("quote_age_min"),
+            "passes": first.get("passes"),
+            "from_state": first.get("from"),
+            "entered": first.get("entered"),
+            "via": first.get("via"),
+            "session_phase": first.get("session_phase"),
+            "pack_as_of": first.get("pack_as_of"),
+            # None, not False: "no verdict of this session's vintage" is not the same
+            # claim as "the gate rejected it".
+            "confirmed": verdict_map.get(tkr),
+            "confirmed_basis": basis if tkr in verdict_map else None,
             "close_same_day": same,
             "next_close_fill": nxt,
             "next_close_date": nxt_day,
-            "close_vs_cross_pct": _pct(same, cross),
+            "close_vs_cross_pct": _pct(same, first_px),
             # The measurement the whole program exists to make: the official graded
             # fill is the NEXT close, so this is what a same-session entry gave up
             # or gained against the convention the track record uses.
-            "fill_vs_cross_pct": _pct(nxt, cross),
+            "fill_vs_cross_pct": _pct(nxt, first_px),
             "reconciled_at": _iso(now),
-        }
-    return list(rows.values())
+        })
+    return rows
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -210,11 +308,17 @@ def build_rows(events: list[dict[str, Any]], *, verdicts: dict[str, bool],
 # ─────────────────────────────────────────────────────────────────────────────
 
 def merge_ledger(path: Path, rows: list[dict[str, Any]]):
-    """Union-merge ``rows`` into the parquet on :data:`KEY`, field-wise newest-wins.
+    """Union-merge ``rows`` into the parquet on :data:`KEY`, field-wise.
 
     ``groupby(KEY).last()`` keeps the last NON-NULL value per column, so a maturing
     fill lands without erasing anything the earlier write already knew, and running
-    the reconciler twice produces a byte-identical frame.
+    the reconciler twice on a pinned clock produces a byte-identical frame.
+
+    :data:`FIRST_WINS` columns take ``.first()`` instead: a verdict is a claim about
+    one session's close, and a later night — which sees a later pack and a possibly
+    restated store — has no standing to revise it. That is the second half of the
+    vintage fix; without it the [yesterday, today] window would still overwrite
+    night D's ``confirmed`` on night D+1 even though the value it wrote was correct.
     """
     import pandas as pd  # noqa: PLC0415
     new = pd.DataFrame(rows)
@@ -231,7 +335,12 @@ def merge_ledger(path: Path, rows: list[dict[str, Any]]):
     combined = pd.concat([hist, new], ignore_index=True) if len(hist) else new
     for col in KEY:
         combined[col] = combined[col].astype(str)
-    out = combined.groupby(KEY, as_index=False, sort=True).last()
+    grouped = combined.groupby(KEY, as_index=False, sort=True)
+    out = grouped.last()
+    firsts = grouped.first()
+    for col in FIRST_WINS:
+        if col in out.columns and col in firsts.columns:
+            out[col] = firsts[col]
     return out.sort_values(KEY, kind="stable").reset_index(drop=True)
 
 
@@ -251,13 +360,26 @@ def open_rows(path: Path) -> list[tuple[str, str]]:
 
 
 def maturing_rows(path: Path, *, closes: dict[str, Any], now: datetime) -> list[dict[str, Any]]:
-    """Fill-only updates for rows whose next-session close now exists."""
+    """Fill updates for rows whose next-session close now exists.
+
+    Both derived percentages are recomputed here, not just the raw closes: rewriting
+    ``close_same_day`` while leaving a ``close_vs_cross_pct`` derived from an earlier
+    value of it is exactly the mixed-basis fabrication the house law forbids. The
+    cross price comes from the stored row so the ratio's two legs stay same-row.
+    """
+    import pandas as pd  # noqa: PLC0415
+    if not path.exists():
+        return []
+    try:
+        df = pd.read_parquet(path)
+    except Exception:  # noqa: BLE001
+        return []
+    cross_by_pair: dict[tuple[str, str], float | None] = {}
+    for r in df.itertuples():
+        cross_by_pair.setdefault((str(r.date), str(r.ticker)),
+                                 _f(getattr(r, "cross_px", None)))
     out: list[dict[str, Any]] = []
-    seen: set[tuple[str, str]] = set()
     for day, tkr in open_rows(path):
-        if (day, tkr) in seen:
-            continue
-        seen.add((day, tkr))
         series = closes.get(tkr)
         if series is None:
             continue
@@ -265,8 +387,11 @@ def maturing_rows(path: Path, *, closes: dict[str, Any], now: datetime) -> list[
         if nxt is None:
             continue
         same = close_on(series, day)
+        cross = cross_by_pair.get((day, tkr))
         out.append({"date": day, "ticker": tkr, "next_close_fill": nxt,
                     "next_close_date": nxt_day, "close_same_day": same,
+                    "close_vs_cross_pct": _pct(same, cross),
+                    "fill_vs_cross_pct": _pct(nxt, cross),
                     "reconciled_at": _iso(now)})
     return out
 
@@ -294,12 +419,14 @@ def _expand_maturing(path: Path, updates: list[dict[str, Any]]) -> list[dict[str
 # Driver
 # ─────────────────────────────────────────────────────────────────────────────
 
-def load_verdicts(pack_path: Path | None, *, s3=None) -> dict[str, bool]:
-    """``{ticker: center_buyable}`` from tonight's freshly built armed pack.
+def load_verdicts(pack_path: Path | None, *, s3=None) -> tuple[dict[str, bool], str | None]:
+    """``({ticker: center_buyable}, pack_as_of)`` from an armed pack.
 
-    That IS tonight's real gate verdict set: the pack's ``center_buyable`` is
-    ``signal_gate.is_buyable`` at the actual close, so no second gate pass is needed
-    to know which of the day's crosses the nightly build kept.
+    THE as_of COMES BACK WITH THE VERDICTS, deliberately. The earlier version returned
+    the map alone, so a caller had no way to know which session it described — and on
+    a night when the pack build failed, the R2 fallback silently supplied YESTERDAY's
+    pack to grade today's events. Callers must compare ``pack_as_of`` to the row's
+    session before writing ``confirmed`` (see :func:`session_verdicts`).
     """
     pack: dict[str, Any] | None = None
     if pack_path and pack_path.exists():
@@ -312,9 +439,10 @@ def load_verdicts(pack_path: Path | None, *, s3=None) -> dict[str, bool]:
     if pack is None:
         pack = r2io.get_json(r2io.PACK_KEY, s3=s3)
     if not isinstance(pack, dict):
-        return {}
-    return {str(t).upper(): bool((e or {}).get("center_buyable"))
-            for t, e in (pack.get("names") or {}).items()}
+        return {}, None
+    verdicts = {str(t).upper(): bool((e or {}).get("center_buyable"))
+                for t, e in (pack.get("names") or {}).items()}
+    return verdicts, (str(pack.get("as_of"))[:10] if pack.get("as_of") else None)
 
 
 def run(root: Path, *, now: datetime | None = None, pack_path: Path | None = None,
@@ -337,6 +465,11 @@ def run(root: Path, *, now: datetime | None = None, pack_path: Path | None = Non
         from engine.prophet_live.live_states import et_clock  # noqa: PLC0415
         et = et_clock(ts).date()
         sessions = [(et - timedelta(days=1)).isoformat(), et.isoformat()]
+    sessions = [s for s in sessions if s >= LEDGER_FLOOR_SESSION]
+    if not sessions:
+        print(f"prophet-live reconcile: every requested session is before the ledger "
+              f"floor {LEDGER_FLOOR_SESSION} — nothing accrued", flush=True)
+        return 0
 
     spool = spool_sessions(s3=s3, sessions=sessions)
     events: list[dict[str, Any]] = []
@@ -346,10 +479,12 @@ def run(root: Path, *, now: datetime | None = None, pack_path: Path | None = Non
               flush=True)
         events.extend(got)
 
-    verdicts = load_verdicts(pack_path, s3=s3)
+    verdicts, pack_as_of = load_verdicts(pack_path, s3=s3)
     if not verdicts:
-        print("::warning title=prophet-live-reconcile::no armed pack readable — rows "
-              "accrue with confirmed=null rather than a guessed verdict", flush=True)
+        print("::warning title=prophet-live-reconcile::no armed pack readable — "
+              "verdicts come from a truncated gate replay per session", flush=True)
+    print(f"prophet-live reconcile: pack as_of={pack_as_of} verdicts={len(verdicts)}",
+          flush=True)
 
     want = {str(e["ticker"]).upper() for e in events}
     want |= {t for _d, t in open_rows(path)}
@@ -357,9 +492,17 @@ def run(root: Path, *, now: datetime | None = None, pack_path: Path | None = Non
     missing = sorted(want - set(closes))
     if missing:
         print(f"::warning title=prophet-live-reconcile::{len(missing)} tickers have no "
-              f"close series ({', '.join(missing[:8])}) — their fills stay null", flush=True)
+              f"close series ({', '.join(missing[:8])}) — their fills and verdicts "
+              "stay null", flush=True)
 
-    rows = build_rows(events, verdicts=verdicts, closes=closes, now=ts)
+    def _verdicts_for(session: str, tickers: set[str]):
+        got, basis = session_verdicts(session, tickers, closes=closes,
+                                      pack_as_of=pack_as_of, pack_verdicts=verdicts)
+        print(f"prophet-live reconcile: session {session} verdicts={len(got)}/"
+              f"{len(tickers)} basis={basis}", flush=True)
+        return got, basis
+
+    rows = build_rows(events, verdicts_for=_verdicts_for, closes=closes, now=ts)
     rows.extend(_expand_maturing(path, maturing_rows(path, closes=closes, now=ts)))
     if not rows:
         print("prophet-live reconcile: nothing to accrue tonight", flush=True)

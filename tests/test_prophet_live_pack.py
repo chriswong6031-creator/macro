@@ -114,8 +114,131 @@ def test_parity_at_as_of_close(pack, series):
 
 
 def test_self_check_agrees_with_the_real_gate(pack):
-    """The build-time fail-closed check must be clean on a correctly built pack."""
+    """The membership invariant holds — but see the tautology test below: it is NOT
+    the fail-closed gate and must not be described as one."""
     assert AP.self_check(pack["names"]) == []
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# B1 — the INDEPENDENT edge check, and why the membership check is not enough
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_the_membership_check_cannot_fail_on_an_assembled_pack():
+    """Names the defect: ``self_check`` reads the numbers the assembly just wrote.
+
+    Fuzzing synthetic gates never produces a membership mismatch, because nothing in
+    the assembly path can create one. That is exactly why it was wrong to advertise it
+    as fail-closed parity — the real gate is :func:`AP.edge_checks` /
+    :func:`AP.verify_edges`, which re-run the ENGINE at the published prices.
+    """
+    import random
+    rng = random.Random(4)
+    for _ in range(60):
+        lo, hi = sorted(rng.uniform(50.0, 150.0) for _ in range(2))
+        last = rng.uniform(lo - 20.0, hi + 20.0)
+        p = AP.build_pack([("F", _flat(last))], now=NOW, gate_fn=_synth_gate(lo, hi))
+        assert AP.self_check(p["names"]) == []
+
+
+def test_the_edge_check_runs_and_is_not_vacuous(pack):
+    m = pack["meta"]
+    assert m["armed_n"] >= 4
+    # Two prices per located edge: the edge itself and the bisection's measured
+    # false-side bound.
+    assert m["edges_checked"] >= 2 * m["armed_n"]
+    assert m["edge_mismatches"] == []
+    assert m["gate_calls"] > m["edges_checked"]
+
+
+def test_the_edge_check_catches_a_price_the_gate_rejects(series):
+    """It must be able to FAIL — the whole point of replacing the tautology."""
+    tkr = "S09"
+    s = series[tkr]
+    rec = AP.centre_record(tkr, s, cfg=AP.pack_cfg(None))
+    probe = AP.probe_name(tkr, s, rec, cfg=AP.pack_cfg(None))
+    entry = AP.name_entry(rec, probe)
+    assert entry.get("trigger_px")
+
+    clean, n = AP.verify_edges(tkr, s, AP.edge_checks(entry, probe))
+    assert clean == [] and n >= 2
+
+    # Move the published trigger a full percent below the real boundary: the gate now
+    # disagrees with the pack at a price the pack tells the evaluator to act on.
+    doctored = dict(entry)
+    doctored["trigger_px"] = float(entry["trigger_px"]) * 0.99
+    bad, _ = AP.verify_edges(tkr, s, AP.edge_checks(doctored, probe))
+    assert bad and "buyable=False" in bad[0] and tkr in bad[0]
+
+
+def test_the_false_side_price_comes_from_the_bisection_not_a_guess():
+    """A "one tick below" guess lands INSIDE the final bracket, where the verdict is
+    unknown by construction, and the check would be flaky instead of strict."""
+    s = _flat(95.0)
+    rec = AP.centre_record("G", s, cfg=AP.pack_cfg(None), gate_fn=_synth_gate(100.0, 105.0))
+    probe = AP.probe_name("G", s, rec, cfg=AP.pack_cfg(None),
+                          gate_fn=_synth_gate(100.0, 105.0))
+    assert probe["lower_false"] is not None and probe["lower_edge"] is not None
+    assert probe["lower_false"] < probe["lower_edge"]
+    assert probe["upper_false"] > probe["upper_edge"]
+    checks = AP.edge_checks(AP.name_entry(rec, probe), probe)
+    assert sorted(exp for _px, exp in checks) == [False, False, True, True]
+
+
+def test_an_unverified_armed_pack_is_refused(monkeypatch, capsys, series):
+    """Unproven is not clean: armed levels with zero re-verified prices must not ship."""
+    import scripts.build_prophet_live_pack as B
+    p = AP.build_pack([("S09", series["S09"])], now=NOW)
+    assert p["meta"]["armed_n"] >= 1
+    p["meta"]["edges_checked"] = 0
+    p["meta"]["edge_mismatches"] = []
+    published: list[str] = []
+    monkeypatch.setattr(B, "build", lambda **kw: p)
+    monkeypatch.setattr(B.r2io, "put_json", lambda k, v, **kw: published.append(k))
+    assert B.main(["--publish"]) == 1
+    assert published == []
+    err = [ln for ln in capsys.readouterr().out.splitlines() if "::error" in ln]
+    assert err and err[0].startswith("::error title=prophet-live-pack-parity::")
+    assert "re-verified" in err[0]
+
+
+def test_an_edge_mismatch_refuses_to_publish(monkeypatch, capsys, series):
+    import scripts.build_prophet_live_pack as B
+    p = AP.build_pack([("S09", series["S09"])], now=NOW)
+    p["meta"]["edge_mismatches"] = ["S09: gate says buyable=False at published price 1.0"]
+    published: list[str] = []
+    monkeypatch.setattr(B, "build", lambda **kw: p)
+    monkeypatch.setattr(B.r2io, "put_json", lambda k, v, **kw: published.append(k))
+    assert B.main(["--publish"]) == 1
+    assert published == []
+
+
+def test_rounding_never_crosses_the_as_of_close():
+    """The clamp that guaranteed self_check passing is gone; this replaces it.
+
+    The rule is one comparison: the published edge sits on the same side of the close
+    as the bisected value. When a 1/100-cent rounding step would move it across, the
+    full-precision value ships instead — the boundary really is that near the print,
+    and that is information rather than noise.
+    """
+    close = 100.00005
+    # A lower edge just BELOW the close: rounding up would carry it above.
+    px, unrounded = AP._side_safe_round(100.00003, close, up=True)
+    assert unrounded is True and px == 100.00003
+    # An upper edge just ABOVE the close: rounding down would carry it below.
+    px, unrounded = AP._side_safe_round(100.00007, close, up=False)
+    assert unrounded is True and px == 100.00007
+    # A comfortable edge rounds normally, on both sides.
+    px, unrounded = AP._side_safe_round(95.123456, close, up=True)
+    assert unrounded is False and px == 95.1235
+    px, unrounded = AP._side_safe_round(105.987654, close, up=False)
+    assert unrounded is False and px == 105.9876
+    assert AP._side_safe_round(None, close, up=True) == (None, False)
+
+
+def test_an_unrounded_edge_is_disclosed_in_meta(pack):
+    """Whatever the rounding rule declines to do must be visible, not silent."""
+    assert "unrounded_edges" in pack["meta"]
+    assert isinstance(pack["meta"]["unrounded_edges"], int)
 
 
 def test_parity_over_the_probe_grid(pack, series, cfg):
@@ -299,7 +422,12 @@ def test_probe_cap_is_disclosed_not_silent():
 
 
 def test_stale_series_is_not_probed_against_a_stale_close():
-    """Mixed-asof law: a name whose bar trails the tip ships unprobed and marked."""
+    """Mixed-asof law: a name whose bar trails the tip ships unprobed and marked.
+
+    Its state is ``stale``, NOT ``dormant`` (m1): no gate ran for it, so counting it as
+    an affirmative "nothing forming here" in meta.states was a quiet honesty bug with a
+    1,500-name denominator.
+    """
     fresh = _flat(95.0)
     stale = pd.Series(np.linspace(90.0, 95.0, 300), index=IDX[:300] - pd.Timedelta(days=30))
     p = AP.build_pack([("FRESH", fresh), ("STALE", stale)], now=NOW,
@@ -307,9 +435,55 @@ def test_stale_series_is_not_probed_against_a_stale_close():
     assert p["as_of"] == str(fresh.index[-1].date())
     e = p["names"]["STALE"]
     assert e["probed"] is False and e["skip"] == "stale_series"
+    assert e["state"] == "stale" and "stale" in AP.STATES
     assert e["stale_sessions"] >= 4
     assert p["meta"]["skipped"]["stale_series"] == 1
+    assert p["meta"]["states"].get("dormant", 0) == 0     # never a verdict
     assert p["names"]["FRESH"]["probed"] is True
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# B2 — the probed band is published so the evaluator never extrapolates
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_every_probed_entry_publishes_the_band_it_actually_swept(pack, cfg):
+    for tkr, e in pack["names"].items():
+        if not e.get("probed"):
+            continue
+        assert e["band_hi_px"] >= e["as_of_close"], tkr
+        if e["center_buyable"]:
+            # Two-sided sweep: the floor is the real span low, so a deep gap darks.
+            assert 0.0 < e["band_lo_px"] <= e["as_of_close"], tkr
+            expect = e["as_of_close"] * (1 - cfg["band_pct"] / 100.0)
+            assert e["band_lo_px"] == pytest.approx(expect, abs=1e-3), tkr
+        else:
+            # Up-only sweep: below the close the centre verdict already answers.
+            assert e["band_lo_px"] == 0.0, tkr
+        expect_hi = e["as_of_close"] * (1 + cfg["band_pct"] / 100.0)
+        assert e["band_hi_px"] == pytest.approx(expect_hi, abs=1e-3), tkr
+
+
+def test_the_band_is_rounded_outward_so_a_probed_price_is_never_darked(pack, cfg):
+    """Inward rounding would dark prices the probe genuinely evaluated."""
+    for tkr, e in pack["names"].items():
+        if not e.get("probed"):
+            continue
+        span = AP.probe_span(e["as_of_close"], e["center_buyable"], cfg["band_pct"])
+        for px in AP.probe_grid(span, cfg["grid_points"]):
+            assert AP.in_probed_band(e, px), f"{tkr} darks its own grid point {px}"
+
+
+def test_in_probed_band_rejects_prices_the_pack_never_saw():
+    buy = {"probed": True, "center_buyable": True, "band_lo_px": 85.0, "band_hi_px": 115.0}
+    assert AP.in_probed_band(buy, 85.0) and AP.in_probed_band(buy, 115.0)
+    assert not AP.in_probed_band(buy, 84.99)
+    assert not AP.in_probed_band(buy, 115.01)
+    up_only = {"probed": True, "center_buyable": False, "band_lo_px": 0.0,
+               "band_hi_px": 109.25}
+    assert AP.in_probed_band(up_only, 1.0)      # downward is knowledge, not guesswork
+    assert not AP.in_probed_band(up_only, 109.26)
+    # A pack predating the fields must not dark a whole universe.
+    assert AP.in_probed_band({"probed": True}, 1e9)
 
 
 def test_as_of_is_the_store_tip_not_the_wall_clock(series):

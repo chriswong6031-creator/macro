@@ -15,9 +15,15 @@ ledger advancer. No second signal engine is ever built.
 ## §0 ACCEPTANCE GATES — binding on every build spawn (inline them in prompts)
 
 - **G0.1 Parity or nothing (P0):** the evaluator, fed yesterday's actual close as the
-  "live" price, must reproduce the nightly gate verdict for EVERY universe name
-  (`signal_gate.is_buyable` + tier, bit-for-bit). A parity test is in the PR and in CI.
-  Any divergence is a build blocker, not a tolerance.
+  "live" price, must reproduce the nightly gate verdict for every ARMED name.
+  **What is gated is `signal_gate.is_buyable`** — that boolean is the whole admission
+  question and the only thing the intraday states turn on. `tier` / `tier_cascade`
+  ride along as as-of-close CONTEXT for display and are not part of the parity
+  assertion (the earlier "is_buyable + tier, bit-for-bit" wording promised more than
+  the evaluator consumes or the pack can check). Parity is proven by re-running the
+  REAL gate at the published prices, not by re-reading the pack's own numbers. A
+  parity test is in the PR and in CI; any divergence is a build blocker, not a
+  tolerance, and an unverified level is withheld rather than published.
 - **G0.2 Ledger law (P0):** the intraday lane writes NO `data/` paths. Events go to the
   runtime spool (R2) + live artifacts only; the nightly reconciler is the only writer of
   `data/prophet_live/`. Test-pinned (grep-level: evaluator module imports no `data/`

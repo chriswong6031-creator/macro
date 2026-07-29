@@ -10,9 +10,15 @@ to compare a delayed live price to those two numbers — it never re-derives a s
 THE CANDIDATE REPLACES THE AS-OF BAR — it is never appended as an extra bar. A
 probe series is ``close[:-1] + [candidate]`` on the same DatetimeIndex, so feeding
 the actual as-of close back in reproduces the nightly series EXACTLY and therefore
-the nightly verdict bit-for-bit. That identity is gate G0.1 and it is asserted at
-build time by :func:`self_check`: any mismatch refuses to publish, because a
-missing pack makes the evaluator go dark (honest) while a wrong pack lies.
+the nightly ``is_buyable`` verdict. That boolean is what the gate decides and all the
+intraday states turn on; ``tier``/``tier_cascade`` ride along as as-of-close context
+for display and are not part of the parity assertion.
+
+Parity is proven by :func:`edge_checks` + :func:`verify_edges`, which re-run the REAL
+gate at every PUBLISHED price before anything ships — see the block comment above
+them for why :func:`self_check` alone was not evidence. Any mismatch refuses to
+publish, because a missing pack makes the evaluator go dark (honest) while a wrong
+pack lies, and a level that could not be verified is withheld rather than shipped.
 
 PROBE SCOPE (disclosed in ``meta.probe_scope``, not silently assumed). The band is
 swept only where a product state exists:
@@ -37,12 +43,20 @@ ordered by :func:`probe_priority`, and the probe phase runs under BOTH ``max_pro
 and a wall-clock ``max_seconds``. Whatever the budget cuts is named in
 ``meta.skipped`` — never silently dropped, and never presented as "dormant".
 
-The same 294-name sweep found the buyable region is a SINGLE contiguous interval in
-59 of 59 armable cases, which is why a grid plus two bisections is a faithful
-representation and not a convenient assumption. Where it is not — more than one run
-of buyable prices on the grid — nothing is smoothed into a threshold: the name ships
-``state:"irregular"`` with no numbers, :func:`interval_contains` answers ``None``,
-and the evaluator darks it.
+CONTIGUITY IS A RESOLUTION BOUND, NOT A PROOF. The same 294-name sweep found the
+buyable region to be a single contiguous run in 59 of 59 armable cases — but it
+sampled at the SAME 1.25% grid the probe uses, so it can only say there is no island
+or notch WIDER than one cell. A sub-1.25% notch inside the range, or an island
+between two grid points, is invisible to both the sweep and the probe, and the pack
+would describe the range as continuous through it. That is the honest limit of two
+thresholds, and it is why every state here is display-tier until the §6 gauntlet.
+Where structure IS visible — more than one run of buyable prices on the grid —
+nothing is smoothed: the name ships ``state:"irregular"`` with no numbers,
+:func:`interval_contains` answers ``None``, and the evaluator darks it.
+
+Outside the probed span the pack knows nothing at all, so it publishes the span
+(``band_lo_px``/``band_hi_px``) and the evaluator darks any price beyond it rather
+than extrapolating a membership answer.
 """
 from __future__ import annotations
 
@@ -57,7 +71,7 @@ from engine import signal_gate
 # The interval contract lives in a stdlib-only sibling so the pandas-free */5 lane
 # can read it too; re-exported here because this is where callers expect it.
 from engine.prophet_live.interval import (  # noqa: F401
-    STATES, interval_contains, lower_edge, self_check,
+    STATES, in_probed_band, interval_contains, lower_edge, self_check,
 )
 
 log = logging.getLogger(__name__)
@@ -155,13 +169,39 @@ def _round_edge(px: float, *, up: bool) -> float:
     return (math.ceil(px * scale) if up else math.floor(px * scale)) / scale
 
 
-def _bisect_edge(ticker: str, close: pd.Series, *, false_px: float, true_px: float,
-                 iters: int, gate_fn: Callable[[str, Any], dict]) -> tuple[float, int]:
-    """Refine one verdict boundary; returns (the known-TRUE bound, gate calls).
+def _side_safe_round(edge: float | None, as_of_close: float,
+                     *, up: bool) -> tuple[float | None, bool]:
+    """Round an edge, unless the rounding would move it ACROSS the as-of close.
 
-    Invariant on entry: the gate is false at ``false_px`` and true at ``true_px``.
-    Returned price is always on the TRUE side, so a reported threshold never names
-    a price the gate would reject.
+    Returns ``(price, was_left_unrounded)``. One comparison covers every case: the
+    published edge must sit on the same side of today's close as the bisected value
+    does. A 1/100-cent rounding step can only cross that line when the boundary
+    really is that near today's print — real information, not noise to smooth.
+
+    The earlier version CLAMPED the edge onto the close instead, which made the
+    membership self-check pass by construction: a tautology dressed as a parity gate.
+    Publishing the full-precision value keeps the number a price the gate genuinely
+    accepted, which is what :func:`edge_checks` then re-verifies against the engine.
+    """
+    if edge is None:
+        return None, False
+    e = float(edge)
+    r = _round_edge(e, up=up)
+    if (e <= as_of_close) != (r <= as_of_close):
+        return e, True
+    return r, False
+
+
+def _bisect_edge(ticker: str, close: pd.Series, *, false_px: float, true_px: float,
+                 iters: int, gate_fn: Callable[[str, Any], dict]) -> tuple[float, float, int]:
+    """Refine one verdict boundary; returns (known-FALSE bound, known-TRUE bound, calls).
+
+    Invariant on entry and on exit: the gate is false at the first return value and
+    true at the second. The published threshold is always the TRUE side, so it never
+    names a price the gate would reject — and the FALSE side is kept because the
+    independent edge check needs a price the probe genuinely measured as rejected.
+    Guessing "one tick below the edge" instead would land INSIDE the final bracket,
+    where the verdict is by definition unknown, and the check would be flaky.
     """
     calls = 0
     lo, hi = float(false_px), float(true_px)
@@ -172,7 +212,7 @@ def _bisect_edge(ticker: str, close: pd.Series, *, false_px: float, true_px: flo
             hi = mid
         else:
             lo = mid
-    return hi, calls
+    return lo, hi, calls
 
 
 def probe_span(as_of_close: float, center_buyable: bool, band_pct: float) -> tuple[float, float]:
@@ -276,6 +316,7 @@ def probe_name(ticker: str, close: pd.Series, rec: dict[str, Any], *,
         calls += 1
 
     out: dict[str, Any] = {"lower_edge": None, "upper_edge": None,
+                           "lower_false": None, "upper_false": None,
                            "irregular": False, "buyable_in_band": any(flags),
                            "gate_calls": calls}
     runs = _true_runs(flags)
@@ -289,14 +330,14 @@ def probe_name(ticker: str, close: pd.Series, rec: dict[str, Any], *,
     start, end = runs[0]
     iters = int(cfg["bisect_iters"])
     if start > 0:
-        edge, c = _bisect_edge(ticker, close, false_px=grid[start - 1],
-                               true_px=grid[start], iters=iters, gate_fn=g)
-        out["lower_edge"] = edge
+        false_px, edge, c = _bisect_edge(ticker, close, false_px=grid[start - 1],
+                                         true_px=grid[start], iters=iters, gate_fn=g)
+        out["lower_edge"], out["lower_false"] = edge, false_px
         out["gate_calls"] += c
     if end < len(grid) - 1:
-        edge, c = _bisect_edge(ticker, close, false_px=grid[end + 1],
-                               true_px=grid[end], iters=iters, gate_fn=g)
-        out["upper_edge"] = edge
+        false_px, edge, c = _bisect_edge(ticker, close, false_px=grid[end + 1],
+                                         true_px=grid[end], iters=iters, gate_fn=g)
+        out["upper_edge"], out["upper_false"] = edge, false_px
         out["gate_calls"] += c
     return out
 
@@ -313,6 +354,12 @@ def name_entry(rec: dict[str, Any], probe: dict[str, Any] | None) -> dict[str, A
                          it tonight's verdict flips false.
       ``fade_hi_px``     upper edge of the buyable interval; null = unbounded in band.
       ``buyable_in_band`` False = no probed price in the band is buyable.
+      ``band_lo_px`` /   the price range actually SWEPT. Outside it the pack knows
+      ``band_hi_px``     nothing and the evaluator darks the name — publishing these
+                         means the evaluator needs no band arithmetic of its own.
+                         Rounded OUTWARD so the evaluable region is never smaller
+                         than what was probed. ``band_lo_px`` is 0 for a name that
+                         was not buyable at the close (see interval.in_probed_band).
       ``probed``         True when the band was actually swept. False means the
                          budget or the data stopped us: the entry still carries
                          tonight's honest state but NO threshold, and the evaluator
@@ -333,7 +380,12 @@ def name_entry(rec: dict[str, Any], probe: dict[str, Any] | None) -> dict[str, A
     if rec.get("stale_sessions"):
         entry["stale_sessions"] = int(rec["stale_sessions"])
 
-    if entry["center_buyable"]:
+    if rec.get("skip") in ("stale_series", "census_deadline"):
+        # No gate ran for this name at all, so it has no verdict to report. Saying
+        # "dormant" here would count a never-evaluated name as an affirmative
+        # "nothing forming", which is the honesty bug m1 names.
+        entry["state"] = "stale"
+    elif entry["center_buyable"]:
         entry["state"] = "buyable"
     elif rec.get("eligible"):
         entry["state"] = "eligible_t4"
@@ -341,36 +393,106 @@ def name_entry(rec: dict[str, Any], probe: dict[str, Any] | None) -> dict[str, A
     if probe is None:
         return entry
 
+    lo_span, hi_span = float(rec["span"][0]), float(rec["span"][1])
+    # Outward, and outward of BOTH readings of the span. The probe swept the band
+    # around the raw close; a consumer recomputing it from the published (4-dp)
+    # close lands up to ~1e-4 away, and either one falling outside the published band
+    # would dark a price that was genuinely evaluated. So the band covers the union.
+    raw = float(rec["as_of_close"])
+    band = (hi_span / raw - 1.0) if raw else 0.0
+    entry["band_hi_px"] = _round_edge(max(hi_span, as_of_close * (1.0 + band)), up=True)
+    # Non-buyable names get a floor of 0 — their span starts at the as-of close and
+    # runs up, and below that close the centre verdict already answers the question
+    # for a cross-up gate (see interval.in_probed_band).
+    entry["band_lo_px"] = (
+        _round_edge(min(lo_span, as_of_close * (1.0 - band)), up=False)
+        if entry["center_buyable"] else 0.0)
+
     if probe.get("irregular"):
         entry["state"] = "irregular"
         entry["buyable_in_band"] = None
         return entry
 
     entry["buyable_in_band"] = bool(probe.get("buyable_in_band"))
-    lower, upper = probe.get("lower_edge"), probe.get("upper_edge")
-    if lower is not None:
-        lower = _round_edge(float(lower), up=True)
-    if upper is not None:
-        upper = _round_edge(float(upper), up=False)
+    # ROUND, BUT NEVER ACROSS THE AS-OF CLOSE. The earlier version clamped the edge
+    # ONTO the close in that case, which silently guaranteed the membership check
+    # passed — a tautology dressed as a parity gate. Now a rounding step that would
+    # cross the close is simply not taken: the full-precision bisected value is
+    # published (it is a price the gate really accepted) and the event is counted in
+    # meta.unrounded_edges, where a reviewer can see it.
+    lower, unrounded_lo = _side_safe_round(probe.get("lower_edge"), as_of_close, up=True)
+    upper, unrounded_hi = _side_safe_round(probe.get("upper_edge"), as_of_close, up=False)
+    if unrounded_lo or unrounded_hi:
+        entry["unrounded_edge"] = True
+    if lower is not None and upper is not None and upper < lower:
+        # A degenerate interval cannot be described by two thresholds. Report it as
+        # structure we could not resolve rather than publishing an empty range.
+        entry["state"] = "irregular"
+        entry["buyable_in_band"] = None
+        return entry
 
     if entry["center_buyable"]:
-        # Rounding must never push an edge across the as-of close: that would make
-        # the published interval exclude the very price the gate accepted tonight
-        # and fail the parity self-check on a 1/100 cent.
-        if lower is not None and lower > as_of_close:
-            lower = as_of_close
-        if upper is not None and upper < as_of_close:
-            upper = as_of_close
         entry["fade_px"] = lower
         entry["fade_hi_px"] = upper
     else:
-        if lower is not None and lower <= as_of_close:
-            lower = _round_edge(as_of_close + 10 ** -_PX_DP, up=True)
         entry["trigger_px"] = lower
         entry["fade_hi_px"] = upper
         if entry["buyable_in_band"] and entry["state"] == "dormant":
             entry["state"] = "near"
     return entry
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# The INDEPENDENT parity gate (G0.1). This is the one that can actually fail.
+#
+# :func:`self_check` asks whether the published interval contains the as-of close.
+# That is worth asserting — it catches a representation bug — but it is NOT
+# independent evidence: it reads the same numbers the assembly just wrote, and
+# fuzzing 400 synthetic gates produced zero failures because nothing in the
+# assembly path can violate it. The step, the docstrings and the PR body all
+# advertised "fail-closed parity" on the back of a check that could not fire.
+#
+# So the real gate re-runs the REAL gate at the PUBLISHED prices: at each edge
+# (must be buyable) and at the false-side bound the bisection actually measured
+# (must not be). Rounding, side-safety and derivation are all downstream of the
+# probe, so a bug in any of them shows up here as a live engine disagreement.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def edge_checks(entry: dict[str, Any], probe: dict[str, Any] | None) -> list[tuple[float, bool]]:
+    """``[(price, expected_buyable), ...]`` re-verifying one name's published edges.
+
+    The false-side prices come from the bisection's own measured bound, never from
+    "one tick below the edge": a tick lands inside the final bracket, where the
+    verdict is unknown by construction, and the check would be flaky rather than
+    strict.
+    """
+    if not probe or probe.get("irregular") or entry.get("state") == "irregular":
+        return []
+    out: list[tuple[float, bool]] = []
+    lo = lower_edge(entry)
+    if lo is not None:
+        out.append((lo, True))
+        if probe.get("lower_false") is not None:
+            out.append((float(probe["lower_false"]), False))
+    hi = entry.get("fade_hi_px")
+    if hi is not None:
+        out.append((float(hi), True))
+        if probe.get("upper_false") is not None:
+            out.append((float(probe["upper_false"]), False))
+    return out
+
+
+def verify_edges(ticker: str, close: pd.Series, checks: list[tuple[float, bool]],
+                 gate_fn: Callable[[str, Any], dict] | None = None) -> tuple[list[str], int]:
+    """Re-run the real gate at each checked price; returns (mismatch lines, gate calls)."""
+    g = gate_fn or signal_gate.gate
+    bad: list[str] = []
+    for px, expected in checks:
+        got = _buyable_at(ticker, close, float(px), g)
+        if got != expected:
+            bad.append(f"{ticker}: gate says buyable={got} at published price {px!r} "
+                       f"but the pack's interval requires {expected}")
+    return bad, len(checks)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -409,6 +531,7 @@ def probe_priority(rec: dict[str, Any]) -> tuple[int, int, float, str]:
 def assemble(names: dict[str, dict[str, Any]], *, as_of: str, cfg: dict[str, Any],
              universe_n: int, wanted_n: int, gate_calls: int,
              build_seconds: float, skipped: dict[str, int],
+             edges_checked: int = 0,
              now: datetime | None = None) -> dict[str, Any]:
     """The published ``prophet_live.armed/v1`` payload."""
     ts = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
@@ -435,8 +558,13 @@ def assemble(names: dict[str, dict[str, Any]], *, as_of: str, cfg: dict[str, Any
             "armed_n": int(armed_n),
             "wanted_probe_n": int(wanted_n),
             "gate_calls": int(gate_calls),
+            # Published prices re-verified against the real gate before publishing
+            # (G0.1's fail-closed gate). 0 here on a pack with armed names means the
+            # check did not run — treat that as unproven, not as clean.
+            "edges_checked": int(edges_checked),
             "build_seconds": round(float(build_seconds), 1),
             "states": states,
+            "unrounded_edges": sum(1 for e in names.values() if e.get("unrounded_edge")),
             # The band is swept UP ONLY for names that are not buyable tonight; a
             # cross down into buyable is not an intraday state, so it is not paid
             # for. Said out loud because a consumer must not read the interval as
@@ -559,6 +687,25 @@ def build_pack(entries: Sequence[tuple[str, Any]], *, cfg: dict[str, Any] | None
             skipped["irregular"] = skipped.get("irregular", 0) + 1
 
     names = {t: name_entry(r, probes.get(t)) for t, r in recs.items()}
-    return assemble(names, as_of=tip or "", cfg=c, universe_n=len(entries),
-                    wanted_n=wanted, gate_calls=gate_calls,
+
+    # The independent gate, inline in the serial path.
+    edges = 0
+    bad: list[str] = []
+    for tkr, entry in names.items():
+        checks = edge_checks(entry, probes.get(tkr))
+        if not checks:
+            continue
+        lines, n = verify_edges(tkr, series[tkr], checks, gate_fn=gate_fn)
+        bad.extend(lines)
+        edges += n
+        gate_calls += n
+    if bad:
+        # build_pack is the reference/serial path used by tests; the CLI owns the
+        # refuse-to-publish decision, so surface the finding rather than raising.
+        skipped["edge_mismatch"] = len(bad)
+
+    pack = assemble(names, as_of=tip or "", cfg=c, universe_n=len(entries),
+                    wanted_n=wanted, gate_calls=gate_calls, edges_checked=edges,
                     build_seconds=_time.time() - t0, skipped=skipped, now=now)
+    pack["meta"]["edge_mismatches"] = bad
+    return pack

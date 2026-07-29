@@ -53,20 +53,25 @@ def _at(hh: int, mm: int) -> datetime:
 
 
 def near(trigger: float = 100.0, hi: float | None = None) -> dict:
+    # band_lo_px 0 / band_hi_px +15% mirror what the pack publishes for a name that
+    # was NOT buyable at the close (interval.in_probed_band explains the asymmetry).
     return {"state": "near", "center_buyable": False, "as_of_close": 95.0,
             "bar_date": LAST_SESSION, "probed": True, "buyable_in_band": True,
-            "trigger_px": trigger, "fade_hi_px": hi}
+            "trigger_px": trigger, "fade_hi_px": hi,
+            "band_lo_px": 0.0, "band_hi_px": 109.25}
 
 
 def buyable(fade: float | None = 90.0, hi: float | None = 110.0) -> dict:
     return {"state": "buyable", "center_buyable": True, "as_of_close": 100.0,
             "bar_date": LAST_SESSION, "probed": True, "buyable_in_band": True,
-            "fade_px": fade, "fade_hi_px": hi}
+            "fade_px": fade, "fade_hi_px": hi,
+            "band_lo_px": 85.0, "band_hi_px": 115.0}
 
 
 def dormant() -> dict:
     return {"state": "dormant", "center_buyable": False, "as_of_close": 50.0,
-            "bar_date": LAST_SESSION, "probed": True, "buyable_in_band": False}
+            "bar_date": LAST_SESSION, "probed": True, "buyable_in_band": False,
+            "band_lo_px": 0.0, "band_hi_px": 57.5}
 
 
 def pack(names: dict, as_of: str | None = None) -> dict:
@@ -151,26 +156,153 @@ def test_a_new_session_does_not_inherit_yesterdays_debounce():
 
 def test_above_the_upper_edge_is_not_forming():
     """The don't-chase case: past fade_hi the gate tops out, so nothing is forming."""
-    a = _run(pack({"AAA": near(100.0, hi=105.0)}), quotes(AAA=120.0))
-    b = _run(pack({"AAA": near(100.0, hi=105.0)}), quotes(AAA=120.0), a)
-    assert b["states"]["AAA"]["state"] == "faded" or b["states"]["AAA"]["state"] == "near"
+    a = _run(pack({"AAA": near(100.0, hi=105.0)}), quotes(AAA=106.0))
+    b = _run(pack({"AAA": near(100.0, hi=105.0)}), quotes(AAA=106.0), a)
     assert b["states"]["AAA"]["state"] != "forming"
+
+
+def test_a_formed_name_that_runs_away_fades_via_overrun_not_drop():
+    """M3: `faded` alone claimed "fell through the buffer" for a name that ran UP.
+
+    Same public state, but the reason axis matters: P1 display reads a drop as "it
+    came back to you" and an overrun as "don't chase", and the ledger cannot separate
+    the two populations without it.
+    """
+    a = _run(pack({"AAA": near(100.0, hi=105.0)}), quotes(AAA=101.0))
+    b = _run(pack({"AAA": near(100.0, hi=105.0)}), quotes(AAA=101.0), a)
+    assert b["states"]["AAA"]["state"] == "forming"
+    up = _run(pack({"AAA": near(100.0, hi=105.0)}), quotes(AAA=105.5), b)
+    assert up["states"]["AAA"]["state"] == "faded" and up["states"]["AAA"]["via"] == "overrun"
+    assert up["events"][0]["via"] == "overrun"
+    down = _run(pack({"AAA": near(100.0, hi=105.0)}), quotes(AAA=98.0), b)
+    assert down["states"]["AAA"]["state"] == "faded" and down["states"]["AAA"]["via"] == "drop"
+    assert down["events"][0]["via"] == "drop"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# B2 — outside the probed band the pack knows nothing
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_a_board_name_gapping_below_its_band_goes_dark_not_forming():
+    """The reproduced fabrication: -30% satisfied "no breach recorded" and read forming."""
+    art = _run(pack({"BBB": buyable()}), quotes(BBB=70.0))     # band_lo_px 85.0
+    assert art["states"]["BBB"] == {"state": "dark", "reason": "out_of_band",
+                                    "price": 70.0, "quote_age_min": 1.0}
+    assert art["meta"]["dark_counts"] == {"out_of_band": 1}
+
+
+def test_a_name_with_no_fade_edge_can_still_leave_its_band():
+    """fade_px None used to make at_risk unreachable at ANY price, forever."""
+    entry = buyable(fade=None, hi=None)
+    inside = _run(pack({"BBB": entry}), quotes(BBB=90.0))
+    assert inside["states"]["BBB"]["state"] == "forming"
+    outside = _run(pack({"BBB": entry}), quotes(BBB=84.0))     # below band_lo_px 85.0
+    assert outside["states"]["BBB"]["state"] == "dark"
+    assert outside["states"]["BBB"]["reason"] == "out_of_band"
+
+
+def test_a_runaway_past_the_band_top_goes_dark_rather_than_extrapolating():
+    """+25% with fade_hi None read forming, where the real gate says False at +25%."""
+    entry = near(100.0, hi=None)                              # band_hi_px 109.25
+    ok = _run(pack({"AAA": entry}), quotes(AAA=108.0))
+    assert ok["states"]["AAA"]["state"] == "near"              # 1 pass, in band
+    past = _run(pack({"AAA": entry}), quotes(AAA=118.75))      # +25% on a 95 close
+    assert past["states"]["AAA"]["state"] == "dark"
+    assert past["states"]["AAA"]["reason"] == "out_of_band"
+
+
+def test_a_non_buyable_name_stays_evaluable_below_its_close():
+    """band_lo_px is 0 for those names: the centre verdict already answers downward."""
+    art = _run(pack({"AAA": near(100.0)}), quotes(AAA=40.0))
+    assert art["states"]["AAA"]["state"] == "near"
+    assert art["meta"]["dark_counts"] == {}
+
+
+def test_a_pack_without_band_fields_still_evaluates():
+    """Schema skew must not dark a whole universe."""
+    entry = {k: v for k, v in near(100.0).items()
+             if k not in ("band_lo_px", "band_hi_px")}
+    art = _run(pack({"AAA": entry}), quotes(AAA=101.0))
+    assert art["states"]["AAA"]["state"] == "near"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Board members
 # ─────────────────────────────────────────────────────────────────────────────
 
-def test_a_board_name_reads_forming_and_needs_no_debounce():
+def test_a_board_name_holding_reads_forming_on_its_first_pass():
+    """Pinned change: `passes` is now a COUNT on the board path too, not None.
+
+    The board path used to carry `passes: None` because it had no debounce at all —
+    which is precisely the M2 defect. It now counts consecutive holds so recovery from
+    at_risk can be debounced symmetrically.
+    """
     art = _run(pack({"BBB": buyable()}), quotes(BBB=100.0))
     st = art["states"]["BBB"]
-    assert st["state"] == "forming" and st["entered"] == "board" and st["passes"] is None
+    assert st["state"] == "forming" and st["entered"] == "board"
+    assert st["passes"] == 1 and st["fails"] == 0
 
 
-def test_a_board_name_at_its_fade_level_is_at_risk():
-    art = _run(pack({"BBB": buyable(fade=90.0)}), quotes(BBB=89.5))
-    assert art["states"]["BBB"]["state"] == "at_risk"
-    assert [e["kind"] for e in art["events"]] == ["at_risk"]
+def test_a_decisive_breach_of_the_fade_level_is_at_risk_immediately():
+    """Past the hysteresis buffer there is nothing marginal to debounce."""
+    art = _run(pack({"BBB": buyable(fade=90.0)}), quotes(BBB=85.5))
+    st = art["states"]["BBB"]
+    assert st["state"] == "at_risk" and st["via"] == "drop" and st["fails"] == 1
+    ev = art["events"][0]
+    assert ev["kind"] == "at_risk" and ev["via"] == "drop" and ev["entered"] == "board"
+
+
+def test_a_board_name_does_not_flap_on_a_four_cent_straddle():
+    """M2 / CSP-R2: 90.02 vs 89.98 on a 90.00 fade level must not flip the state.
+
+    This is the reviewer's reproduction. Before the board-path debounce every pass
+    published the opposite state, on a name that is already on a live board.
+    """
+    prev = None
+    states: list[str] = []
+    kinds: list[str] = []
+    for n in range(6):
+        px = 90.02 if n % 2 == 0 else 89.98
+        art = _run(pack({"BBB": buyable(fade=90.0)}), quotes(BBB=px), prev)
+        states.append(art["states"]["BBB"]["state"])
+        kinds.extend(e["kind"] for e in art["events"])
+        prev = art
+    # The PUBLIC state never moves, however many times the price crosses the level.
+    assert set(states) == {"forming"}, states
+    # And the spool gets one row for the board reading plus ONE internal marker for
+    # the whole oscillation — a row per tick would drown the debounce measurement.
+    assert kinds == ["forming", LS.AT_RISK_UNCONFIRMED], kinds
+
+
+def test_two_consecutive_marginal_failing_passes_do_publish_at_risk():
+    """Debounce delays a marginal breach; it must not swallow a persistent one."""
+    a = _run(pack({"BBB": buyable(fade=90.0)}), quotes(BBB=100.0))
+    b = _run(pack({"BBB": buyable(fade=90.0)}), quotes(BBB=89.98), a)
+    assert b["states"]["BBB"]["state"] == "forming"          # 1 failing pass
+    assert b["states"]["BBB"]["internal"] == LS.AT_RISK_UNCONFIRMED
+    c = _run(pack({"BBB": buyable(fade=90.0)}), quotes(BBB=89.97), b)
+    assert c["states"]["BBB"]["state"] == "at_risk"          # 2 failing passes
+    assert c["states"]["BBB"]["fails"] == 2
+
+
+def test_recovery_from_at_risk_is_debounced_symmetrically():
+    a = _run(pack({"BBB": buyable(fade=90.0)}), quotes(BBB=85.0))
+    assert a["states"]["BBB"]["state"] == "at_risk"
+    b = _run(pack({"BBB": buyable(fade=90.0)}), quotes(BBB=90.05), a)   # marginal
+    assert b["states"]["BBB"]["state"] == "at_risk"
+    assert b["states"]["BBB"]["internal"] == LS.RECOVERY_UNCONFIRMED
+    c = _run(pack({"BBB": buyable(fade=90.0)}), quotes(BBB=90.06), b)
+    assert c["states"]["BBB"]["state"] == "forming"
+    # A decisive move back inside resolves in one pass.
+    d = _run(pack({"BBB": buyable(fade=90.0)}), quotes(BBB=100.0), a)
+    assert d["states"]["BBB"]["state"] == "forming"
+
+
+def test_a_board_name_running_past_the_top_is_at_risk_via_overrun():
+    """The not-topped veto bites on the way up too — at_risk, not forming."""
+    art = _run(pack({"BBB": buyable(hi=110.0)}), quotes(BBB=112.0))
+    st = art["states"]["BBB"]
+    assert st["state"] == "at_risk" and st["via"] == "overrun"
 
 
 def test_dormant_names_produce_no_events():
@@ -190,8 +322,38 @@ def test_confirming_into_close_only_from_the_cutoff_and_only_while_conditions_ho
     assert late["states"]["BBB"]["confirming_into_close"] is True
     assert "confirming_into_close" in [e["kind"] for e in late["events"]]
     # Conditions no longer met => no flag, however late it is.
-    broken = _run(pack({"BBB": buyable(fade=90.0)}), quotes(BBB=80.0), now=_at(15, 45))
+    broken = _run(pack({"BBB": buyable(fade=90.0)}), quotes(BBB=86.0), now=_at(15, 45))
     assert "confirming_into_close" not in broken["states"]["BBB"]
+
+
+def test_confirming_into_close_never_fires_on_an_unconfirmed_cross():
+    """M4: the flag used to key off `holds` alone, so a single 15:31 print produced a
+    confirming-into-close event for a cross the lane had not published yet."""
+    one = _run(pack({"AAA": near(100.0)}), quotes(AAA=101.0), now=_at(15, 45))
+    st = one["states"]["AAA"]
+    assert st["state"] == "near" and st["internal"] == LS.CROSSING_UNCONFIRMED
+    assert "confirming_into_close" not in st
+    assert "confirming_into_close" not in [e["kind"] for e in one["events"]]
+    two = _run(pack({"AAA": near(100.0)}), quotes(AAA=101.0), one, now=_at(15, 50))
+    assert two["states"]["AAA"]["state"] == "forming"
+    assert two["states"]["AAA"]["confirming_into_close"] is True
+
+
+def test_every_event_row_says_whether_it_was_a_cross_or_a_board_name():
+    """M5: without `entered` the ledger's headline population is non-crosses.
+
+    The P0 receipt was ~108 board first-pass rows against 2 real intraday crosses.
+    """
+    a = _run(pack({"AAA": near(100.0), "BBB": buyable(fade=90.0)}),
+             quotes(AAA=101.0, BBB=85.0))
+    b = _run(pack({"AAA": near(100.0), "BBB": buyable(fade=90.0)}),
+             quotes(AAA=101.0, BBB=85.0), a)
+    by_kind = {e["kind"]: e for e in a["events"] + b["events"]}
+    assert by_kind["at_risk"]["entered"] == "board"
+    assert by_kind["crossing_unconfirmed"]["entered"] == "cross"
+    assert by_kind["forming"]["entered"] == "cross"
+    for ev in a["events"] + b["events"]:
+        assert ev["entered"] in ("cross", "board"), ev
 
 
 def test_the_flag_fires_once_not_on_every_later_pass():
@@ -350,9 +512,11 @@ def test_public_states_are_the_agreed_six():
 
 
 def test_no_forbidden_vocabulary_in_a_payload():
+    # BBB holds so a PUBLIC forming exists and the confirming flag can fire (M4 means
+    # a 1-pass cross no longer produces one, so the fixture has to earn it).
     p = pack({"AAA": near(100.0), "BBB": buyable(), "CCC": dormant()})
-    a = _run(p, quotes(AAA=101.0, BBB=89.0, CCC=50.0), now=_at(15, 45))
-    b = _run(p, quotes(AAA=101.0, BBB=89.0, CCC=50.0), a, now=_at(15, 50))
+    a = _run(p, quotes(AAA=101.0, BBB=100.0, CCC=50.0), now=_at(15, 45))
+    b = _run(p, quotes(AAA=101.0, BBB=86.0, CCC=50.0), a, now=_at(15, 50))
     blob = (json.dumps(a) + json.dumps(b)).lower()
     for word in FORBIDDEN_WORDS:
         assert not re.search(rf"\b{word}\b", blob), word
@@ -476,7 +640,8 @@ def test_the_evaluator_module_imports_no_data_writer():
     # live_states reads the interval contract from the stdlib-only sibling, NOT from
     # armed_pack — the latter imports pandas, which this lane does not install.
     src = (ROOT / "engine" / "prophet_live" / "live_states.py").read_text(encoding="utf-8")
-    assert "from engine.prophet_live.interval import interval_contains, lower_edge" in src
+    assert ("from engine.prophet_live.interval import "
+            "in_probed_band, interval_contains, lower_edge") in src
 
 
 def test_the_evaluator_imports_with_pandas_blocked():
@@ -514,6 +679,33 @@ def test_the_evaluator_publishes_only_the_two_runtime_keys(monkeypatch, tmp_path
     assert puts[1].endswith(".json")
     # Nothing was created under the repo root it was handed.
     assert not (tmp_path / "data").exists()
+
+
+def test_no_publish_env_refuses_every_write(monkeypatch, capsys):
+    """B4 belt: a receipt or rehearsal must not be able to write the real spool.
+
+    The event spool is the ledger's raw input; a fabricated row joined to real closes
+    cannot be told from a genuine one afterwards. The reconciler's LEDGER_FLOOR_SESSION
+    is the braces.
+    """
+    from engine.prophet_live import r2io
+
+    wrote: list[str] = []
+
+    class _S3:
+        def put_object(self, **kw):      # noqa: ANN003
+            wrote.append(kw["Key"])
+
+    monkeypatch.setenv("PROPHET_LIVE_NO_PUBLISH", "1")
+    assert r2io.put_json("live_flow/whatever.json", {"a": 1}, s3=_S3()) is False
+    assert wrote == [], "wrote to R2 with the kill switch set"
+    out = [ln for ln in capsys.readouterr().out.splitlines() if "::warning" in ln]
+    assert out and out[0].startswith("::warning title=prophet-live::")
+    # Unset (and the falsy spellings) leave the real publish path alone.
+    for value in ("0", "false", ""):
+        monkeypatch.setenv("PROPHET_LIVE_NO_PUBLISH", value)
+        assert r2io.put_json("live_flow/whatever.json", {"a": 1}, s3=_S3()) is True
+    assert len(wrote) == 3
 
 
 def test_the_events_spool_is_one_object_per_pass_never_read_modify_write():
@@ -582,8 +774,80 @@ def test_coverage_is_disclosed_every_pass(monkeypatch, tmp_path):
     monkeypatch.setattr(E, "quote_ager", lambda live, now: (lambda q: 1.0))
     E.run(tmp_path, now=NOW, cfg={"prophet_live": {}})
     cov = published[0]["meta"]["coverage"]
-    assert cov["pack_universe_n"] == 1742 and cov["unprobed_n"] == 1741
+    # ONE definition of unprobed (m10): it comes from live_states' own walk of the
+    # pack, not a second universe_n - probed_n subtraction in the script.
+    assert cov["pack_universe_n"] == 1742 and cov["pack_probed_n"] == 1
+    assert cov["unprobed_n"] == published[0]["meta"]["unprobed_n"] == 0
     assert cov["pack_skipped"] == {"probe_cap": 1176}
+
+
+def test_a_dark_pass_does_not_wipe_the_sessions_debounce(monkeypatch, tmp_path):
+    """m4: one stale-quote artifact used to cost the session every banked pass.
+
+    The dark PUT replaced `states` with {}, so the next pass found no predecessor and
+    every name that had already banked a confirming pass restarted from zero.
+    """
+    import scripts.prophet_live_evaluator as E
+    from engine.prophet_live import r2io
+
+    store: dict[str, dict] = {}
+    packs = {"good": pack({"AAA": near(100.0)}),
+             "stale": pack({"AAA": near(100.0)}, as_of="2026-01-02")}
+    which = {"k": "good"}
+    monkeypatch.setattr(E.r2io, "client", lambda: object())
+    monkeypatch.setattr(E.r2io, "get_json", lambda key, **kw:
+                        packs[which["k"]] if key == r2io.PACK_KEY else store.get(key))
+    monkeypatch.setattr(E.r2io, "put_json",
+                        lambda key, payload, **kw: store.__setitem__(key, payload) or True)
+    monkeypatch.setattr(E.LV, "load_live_quotes",
+                        lambda root: {"quotes": quotes(AAA=101.0), "asof": "x",
+                                      "source": "t"})
+    monkeypatch.setattr(E, "quote_ager", lambda live, now: (lambda q: 1.0))
+
+    E.run(tmp_path, now=_at(10, 0), cfg={"prophet_live": {}})
+    assert store[r2io.LIVE_KEY]["states"]["AAA"]["passes"] == 1
+
+    which["k"] = "stale"                       # a dark pass lands in the middle
+    E.run(tmp_path, now=_at(10, 5), cfg={"prophet_live": {}})
+    dark = store[r2io.LIVE_KEY]
+    assert dark["status"] == "dark" and dark["states"] == {}
+    assert dark["prev_states"]["AAA"]["passes"] == 1        # history, explicitly labelled
+    assert dark["meta"]["quote_asof"] == "x"               # freshness rides even on dark
+
+    which["k"] = "good"
+    E.run(tmp_path, now=_at(10, 10), cfg={"prophet_live": {}})
+    st = store[r2io.LIVE_KEY]["states"]["AAA"]
+    assert st["passes"] == 2 and st["state"] == "forming"
+
+
+def test_a_dark_artifact_carries_its_freshness_stamps():
+    """m3: a consumer must see HOW stale the tape was when we declined to speak."""
+    art = LS.dark_artifact("no_pack", now=NOW, cfg=CFG, quote_asof="2026-07-29T13:58:00Z",
+                           delay_min=15)
+    assert art["meta"]["quote_asof"] == "2026-07-29T13:58:00Z"
+    assert art["meta"]["delay_min"] == 15
+    assert art["meta"]["session_phase"] == "rth"
+    assert art["states"] == {} and "prev_states" not in art
+
+
+def test_the_lane_stands_down_on_a_market_holiday():
+    """m8: a weekday check alone published ~80 passes against a tape that never opened."""
+    from lib.nyse_calendar import is_session
+    thanksgiving = datetime(2026, 11, 26, 15, 0, tzinfo=timezone.utc)   # 10:00 ET Thu
+    assert LS.et_clock(thanksgiving).weekday() < 5
+    assert not is_session(LS.et_clock(thanksgiving).date())
+    assert LS.in_window(thanksgiving, CFG) is False
+    # The next real session is fine.
+    assert LS.in_window(datetime(2026, 11, 27, 15, 0, tzinfo=timezone.utc), CFG) is True
+
+
+def test_session_phase_separates_preopen_prints_from_rth():
+    """m8: a state formed at 09:27 is a different claim from one formed at 11:00."""
+    assert LS.session_phase(_at(9, 27)) == "preopen"
+    assert LS.session_phase(_at(9, 30)) == "rth"
+    assert LS.session_phase(_at(11, 0)) == "rth"
+    art = _run(pack({"AAA": near(100.0)}), quotes(AAA=101.0), now=_at(9, 27))
+    assert art["meta"]["session_phase"] == "preopen"
 
 
 def test_config_block_defaults_resolve_from_config_yml():

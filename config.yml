@@ -673,9 +673,12 @@ prophet_live:
   # intraday move, so nothing reachable is excluded by the band itself.
   band_pct: 15.0
   # Structure grid across the probed span (endpoints included) then bisection per
-  # edge. 13 points = 1.25% cells on the up-only span, the resolution at which a
-  # measured 294-name sweep found every armable name's buyable region to be a single
-  # contiguous interval; 8 halvings refine an edge to ~0.5 bp.
+  # edge. 13 points = 1.25% cells on the up-only span; 8 halvings refine an edge to
+  # ~0.5 bp. RESOLUTION IS A BOUND, NOT A PROOF: a measured 294-name sweep found the
+  # buyable region single-contiguous in 59 of 59 armable cases, but it sampled at this
+  # same 1.25% grid, so neither the sweep nor the probe can see an island or a notch
+  # NARROWER than one cell — the pack would report the range as continuous through it.
+  # Raising grid_points narrows that blind spot at a linear cost in gate calls.
   grid_points: 13
   bisect_iters: 8
   # BUDGET IS LAW. One gate call is ~250 ms over this universe, so a full grid on

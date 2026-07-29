@@ -114,12 +114,15 @@ def run(root: Path, *, now: datetime | None = None, dry_run: bool = False,
               f"{m.get('detail') or 'no evaluable pack'}", flush=True)
     else:
         # Coverage, stated every pass: what the pack could not arm is not "dormant".
+        # ONE definition of "unprobed" — live_states counts pack entries with
+        # probed=False while walking them, so recomputing universe_n - probed_n here
+        # would put two numbers with different edge cases in the same payload.
         pm = (pack or {}).get("meta") or {}
-        unprobed = int(pm.get("universe_n") or 0) - int(pm.get("probed_n") or 0)
         m["coverage"] = {"pack_universe_n": pm.get("universe_n"),
                          "pack_probed_n": pm.get("probed_n"),
                          "pack_armed_n": pm.get("armed_n"),
-                         "unprobed_n": max(0, unprobed),
+                         "pack_edges_checked": pm.get("edges_checked"),
+                         "unprobed_n": m.get("unprobed_n"),
                          "pack_skipped": pm.get("skipped")}
         print(f"prophet-live pass={m['pass_ts']} pack_as_of={m['pack_as_of']} "
               f"quotes={m['quotes_n']}@{m['quote_asof']} src={live.get('source')} "

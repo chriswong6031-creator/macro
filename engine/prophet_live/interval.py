@@ -19,7 +19,12 @@ from typing import Any
 #: The probe states, in the order the pack reports them. ``eligible_t4`` means
 #: "eligible tonight but NOT in signal_gate.BUYABLE_TIERS" — the T4 tier plus the
 #: anticipation-early leg, which is exactly the set the buy boards exclude.
-STATES: tuple[str, ...] = ("buyable", "eligible_t4", "near", "dormant", "irregular")
+#: ``stale`` is NOT a verdict: it marks a name for which no gate ran at all (its
+#: bars trail the store tip, or the census budget ran out). Those used to report
+#: ``dormant``, which made ``meta.states`` count never-evaluated names as an
+#: affirmative "nothing here".
+STATES: tuple[str, ...] = ("buyable", "eligible_t4", "near", "dormant", "irregular",
+                           "stale")
 
 
 def lower_edge(entry: dict[str, Any]) -> float | None:
@@ -34,6 +39,35 @@ def lower_edge(entry: dict[str, Any]) -> float | None:
     if entry.get("trigger_px") is not None:
         return float(entry["trigger_px"])
     return None
+
+
+def in_probed_band(entry: dict[str, Any], px: float) -> bool:
+    """Is ``px`` inside the price range the probe actually swept for this name?
+
+    OUTSIDE THE BAND THE PACK KNOWS NOTHING, and :func:`interval_contains` would
+    happily extrapolate: a board name gapping -30% still satisfies "above fade_px is
+    absent, below fade_hi_px is absent, therefore buyable", and a runaway 25% past
+    the band top reads the same way even though the real gate rejects it there (the
+    not-topped veto). Both were reproduced on a real pack entry. The evaluator asks
+    this FIRST and darks the name when the answer is no.
+
+    ``band_lo_px`` is 0 for a name that was not buyable at the as-of close: its span
+    starts at that close and runs up, and below the close the centre verdict already
+    says "not buyable" for a gate whose product structure is a cross UP — so reading
+    "near"/"dormant" down there is knowledge, not extrapolation, and it keeps those
+    names evaluable on a down day. For a name that IS on the board the floor is the
+    real span low, so a -16% board name goes dark instead of reading forming.
+    """
+    lo, hi = entry.get("band_lo_px"), entry.get("band_hi_px")
+    if lo is None and hi is None:
+        # A pack built before the band fields existed: fall back to the old
+        # behaviour rather than darking a whole universe on a schema skew.
+        return True
+    if lo is not None and px < float(lo):
+        return False
+    if hi is not None and px > float(hi):
+        return False
+    return True
 
 
 def interval_contains(entry: dict[str, Any], px: float) -> bool | None:
