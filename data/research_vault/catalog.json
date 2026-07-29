@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-29T22:08:46.520036+00:00",
-  "count": 348,
+  "generated_at": "2026-07-29T22:38:52.446078+00:00",
+  "count": 349,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -405,6 +405,23 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-mzg6tcv2qeg-25f3e4",
+      "title": "Visa Inc. (V) Key Takeaways Solid top line beat and raise with solid momentum into 2027",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T08:04:12Z",
+      "summary_points": [
+        "Missing Document**: No source material provided for extraction **Critical Input Gap**: Absence of actual document content prevents identification of fundamentals/data/technical points **Action Required**: Provide document text to proceed with analysis per specified criteria"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
       "language": "en",
       "needs_metadata": false
     },
