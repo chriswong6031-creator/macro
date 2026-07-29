@@ -54,3 +54,12 @@ def test_overlay_keeps_one_warm_iframe_for_fast_reentry():
     assert "state.frame.src = config.url" in code
     assert "terminal:set-symbol" in code
     assert ".removeChild(state.frame)" not in code
+
+
+def test_loader_has_a_deliberate_minimum_display_time():
+    code = _read("templates/terminal_overlay.js")
+    assert "var MIN_LOADER_MS = 1800;" in code
+    assert "state.loadingStartedAt = Date.now()" in code
+    assert "Math.max(0, MIN_LOADER_MS - elapsed)" in code
+    assert "beginLoading(root)" in code
+    assert "finishReady(data)" in code
