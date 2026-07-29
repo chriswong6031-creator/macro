@@ -39,7 +39,7 @@ _ASSETS_RE = re.compile(
 # ---------------------------------------------------------------------------
 
 def test_copy_asset_bakes_theme_js(tmp_path: Path) -> None:
-    """copy_asset('theme.js', ...) must replace the placeholder with live config."""
+    """copy_asset('theme.js', ...) must bake config and the Terminal controller."""
     src = TEMPLATES / "theme.js"
     assert src.exists(), "templates/theme.js must exist"
 
@@ -61,6 +61,11 @@ def test_copy_asset_bakes_theme_js(tmp_path: Path) -> None:
         assert "anonKey" in out, (
             "Expected baked theme.js to contain 'anonKey' JSON key."
         )
+
+    overlay = (TEMPLATES / "terminal_overlay.js").read_text()
+    assert "window.MDXTerminalOverlay" in out
+    assert out.endswith(overlay)
+    assert out.count("/* Mastermind Terminal overlay") == 1
 
 
 # ---------------------------------------------------------------------------
@@ -93,7 +98,18 @@ def test_bake_theme_js_idempotent_on_already_baked_text() -> None:
 
 
 # ---------------------------------------------------------------------------
-# 4. Sole-carrier guard: only theme.js carries the raw token in templates/
+# 4. emit_theme_js is the exact committed production artifact
+# ---------------------------------------------------------------------------
+
+def test_emit_theme_js_matches_committed_site_asset() -> None:
+    """The sync guard and every builder must agree on the full emitted theme."""
+    assert site_assets.emit_theme_js(TEMPLATES / "theme.js") == (
+        WORKTREE / "site" / "theme.js"
+    ).read_text()
+
+
+# ---------------------------------------------------------------------------
+# 5. Sole-carrier guard: only theme.js carries the raw token in templates/
 # ---------------------------------------------------------------------------
 
 def test_sole_token_carrier_is_theme_js() -> None:
@@ -116,7 +132,7 @@ def test_sole_token_carrier_is_theme_js() -> None:
 
 
 # ---------------------------------------------------------------------------
-# 5. Anti-recurrence guard: no build_*.py writes theme.js raw
+# 6. Anti-recurrence guard: no build_*.py writes theme.js raw
 # ---------------------------------------------------------------------------
 
 def test_no_builder_writes_theme_js_raw() -> None:

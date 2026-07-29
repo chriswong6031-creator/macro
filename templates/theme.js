@@ -272,8 +272,10 @@
     return u.href;
   }
 
-  // The portal controller is split out of theme.js so it adds zero parse/execute
-  // cost to first paint. Load it during idle time or immediately on pointer intent.
+  // The portal controller is maintained as a separate source file, then bundled
+  // onto production theme.js by lib/site_assets.py so the access wall treats it
+  // like every other public UI asset. This loader remains as a resilient fallback
+  // for local/custom builds that serve the sources without the production bake.
   var _mmOverlayScript = null, _mmOverlayWaiters = [];
   var _mmThemeScript = document.currentScript;
   var _mmOverlaySrc = (function () {
