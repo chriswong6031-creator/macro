@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-29T23:08:57.214705+00:00",
-  "count": 350,
+  "generated_at": "2026-07-29T23:39:02.009772+00:00",
+  "count": 351,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -805,6 +805,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-t2qrmbrw6dc-a398fe",
+      "title": "Global daily good things could happen",
+      "institution": "Rabobank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T23:16:52Z",
+      "summary_points": [
+        "**Iran Geopolitical Tensions & Military Risk**: Intercepted drones by Jordan/Israel/Saudi confirm active conflict, pressuring markets despite sideways oil; Trump’s \"good things could happen\" rhetoric with military escalation as fallback.",
+        "**Fed Policy & Yield Curve Signals**: 2-year breakeven yields spike to 2.16% (up 21bp), US yield curve flattening, and Fed’s hawk-dove split (5-5) with Chair’s influence raising September hike expectations.",
+        "**EU Sanctions Stalemate**: Greece’s refusal to sign EU sanctions package (without LNG transport carve-out) creates policy uncertainty, with markets pricing the gap between potential outcomes amid EU internal discord.",
+        "**US Inflation & Rate Hike Risk**: Strait of Hormuz/Bab el-Mandeb disruptions could reignite inflation despite energy price declines, prompting potential rate hikes if inflation expectations unanchor (per Marey’s analysis)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
