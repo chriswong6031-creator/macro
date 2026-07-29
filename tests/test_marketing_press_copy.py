@@ -528,8 +528,8 @@ class TestWiresRollingWindow:
         d = self._daemon()
         with tempfile.TemporaryDirectory() as td:
             sink = Path(td) / "live" / "wires.json"
-            # This test isolates the count cap. Disable the independent age
-            # filter so fixed fixture timestamps cannot expire as wall time moves.
+            # This test isolates the count cap. Disable age pruning so the fixed
+            # fixture timestamps do not become stale as wall-clock time advances.
             cfg = {"wire": {"wires_sink_paths": [str(sink)], "rail_max_items": 3,
                             "rail_max_age_h": 0}}
             # Seed 3, then add 2 newer -> window capped to the 3 newest.

@@ -4900,7 +4900,9 @@ RENDER.marketing_content = async () => {
   const d = await api("/api/marketing/content");
   if (!d || !d.ok) { v.innerHTML = nwEmpty("Content Studio unavailable", (d && d.error) || "panel error"); return; }
 
-  if (d.note && !d.accounts.length) {
+  const liveIntel = d.intelligence || {};
+  const liveIntelStories = Array.isArray(liveIntel.stories) ? liveIntel.stories : [];
+  if (d.note && !d.accounts.length && !liveIntelStories.length) {
     v.innerHTML = `<div class="section">Content Studio</div>
       <div class="card">
         <div class="note muted" style="margin-bottom:8px">${esc(d.note)}</div>
@@ -4914,6 +4916,49 @@ RENDER.marketing_content = async () => {
   const featuredCharts = d.featured_charts || [];
   const summary = d.summary || {};
   const distinctness = d.distinctness || {};
+
+  /* Intraday Intelligence Queue. This is the direct event → evidence → draft
+     handoff the old live wire lacked. It is read-only here: copying a draft does
+     not approve it, enqueue it, or publish it. */
+  const intelHealth = liveIntel.health || {};
+  const intelCards = liveIntelStories.slice(0, 12).map(story => {
+    const evidence = Array.isArray(story.evidence) ? story.evidence : [];
+    const drafts = (Array.isArray(story.drafts) ? story.drafts : []).filter(x => x && x.text);
+    const draft = drafts.slice().reverse()[0] || null;
+    const routes = Array.isArray(story.content_routes) ? story.content_routes : [];
+    const stage = story.stage === "high_impact" ? "high impact"
+      : story.stage === "confirmed" ? "confirmed" : "developing";
+    const sourceLinks = evidence.slice(0, 4).map(src => {
+      const name = esc(src.name || "source");
+      const url = String(src.url || "");
+      return /^https?:\/\//i.test(url)
+        ? `<a href="${esc(url)}" target="_blank" rel="noopener">${name}</a>`
+        : `<span>${name}</span>`;
+    }).join(" · ");
+    return `<div class="card cs-intel-item" style="margin-bottom:8px;border-left:3px solid ${story.stage === "high_impact" ? "var(--warn)" : "var(--info)"}">
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:7px">
+        <span class="statpill ${story.stage === "high_impact" ? "s-warn" : story.stage === "confirmed" ? "s-ok" : "s-mut"}">${esc(stage)}</span>
+        <span class="statpill s-mut">${esc(String(story.source_count || evidence.length || 1))} sources</span>
+        ${routes.map(route => `<span class="statpill s-mut">${esc(route)}</span>`).join("")}
+      </div>
+      <div style="font-size:14px;font-weight:700;line-height:1.35;margin-bottom:5px">${esc(story.headline || "Untitled development")}</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:${draft ? "9px" : "0"}">${sourceLinks || "Source receipt pending"}</div>
+      ${draft ? `<div class="cs-intel-copy" style="white-space:pre-wrap;font-size:12px;line-height:1.5;padding:9px;border-radius:8px;background:var(--panel2)">${esc(draft.text)}</div>
+        <div style="display:flex;align-items:center;gap:7px;margin-top:7px">
+          <span class="statpill ${draft.status === "review" ? "s-ok" : "s-warn"}">${draft.status === "review" ? "ready for review" : "needs editing"} · ${esc(String(draft.characters || String(draft.text).length))}/280</span>
+          <button class="btn sm" style="margin-left:auto" onclick="csCopyIntel(this)">Copy draft</button>
+        </div>` : `<div class="note muted">Evidence retained; waiting for the next copy pass.</div>`}
+    </div>`;
+  }).join("");
+  const intelHtml = liveIntelStories.length ? `<div class="section">Live Intelligence Queue
+      <span class="cnt">intraday · review-gated</span>
+      <span class="statpill s-mut">${esc(String(intelHealth.active_stories || liveIntelStories.length))} active</span>
+      <span class="statpill s-ok">${esc(String(intelHealth.draft_ready || 0))} draft-ready</span>
+    </div>
+    <div class="card" style="margin-bottom:10px;font-size:12px;color:var(--muted);line-height:1.5">
+      Repeated reports are merged into one story. Every candidate keeps its source receipts and remains separate from approval and publishing.
+    </div>
+    <div style="margin-bottom:20px">${intelCards}</div>` : "";
 
   /* Split desks that are generating (have a queue) from planned/off desks (empty
      queue). Non-enabled desks collapse into a muted strip instead of full,
@@ -5066,7 +5111,7 @@ RENDER.marketing_content = async () => {
       </div>`
     : "";
 
-  v.innerHTML = headerHtml + filterHtml + acctPills + plannedHtml + `<div id="mkt-post-gallery">${acctSections}</div>`;
+  v.innerHTML = intelHtml + headerHtml + filterHtml + acctPills + plannedHtml + `<div id="mkt-post-gallery">${acctSections}</div>`;
 };
 
 /* Is the content plan stale? Prefer the engine's own flag; else compare as_of to
@@ -5103,6 +5148,22 @@ function csUsageBadge(post) {
     return `<span class="statpill s-warn" style="font-size:10px">recalled</span>`;
   }
   return `<span class="statpill s-mut" style="font-size:10px">${esc((post && post.status) || "drafted")}</span>`;
+}
+
+async function csCopyIntel(btn) {
+  const card = btn && btn.closest ? btn.closest(".cs-intel-item") : null;
+  const copy = card ? card.querySelector(".cs-intel-copy") : null;
+  if (!copy || !navigator.clipboard || !navigator.clipboard.writeText) {
+    if (btn) btn.textContent = "Copy unavailable";
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(copy.textContent || "");
+    btn.textContent = "Copied";
+    setTimeout(() => { btn.textContent = "Copy draft"; }, 1400);
+  } catch (e) {
+    btn.textContent = "Copy failed";
+  }
 }
 
 /* Content Studio client-side filter helpers */

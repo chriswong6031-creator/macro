@@ -1,7 +1,8 @@
 /* Mastermind Terminal overlay — first-party full-screen bridge.
-   Loaded on idle/intent by theme.js so the dashboard's critical path stays lean.
-   The Terminal app remains isolated at app.mastermind-x.com; this file owns only
-   the dashboard-side portal, loading state, animation, history and accessibility. */
+   Maintained separately and bundled onto the emitted theme.js by site_assets.py;
+   it can still load standalone in local/custom builds. The Terminal app remains
+   isolated at app.mastermind-x.com; this code owns only the dashboard-side portal,
+   loading state, animation, history and accessibility. */
 (function () {
   'use strict';
 
