@@ -478,8 +478,12 @@ class TestHSIRepairReplay:
 
     def test_latest_state_has_repaired(self):
         """The rebound may progress from recovery into a healthy uptrend."""
-        assert self.result["state"] in ("recovery", "uptrend")
+        assert self.result["state"] in {"recovery", "uptrend"}
         assert self.states.loc["2026-07-20"] == "recovery"
+        if self.result["state"] == "recovery":
+            assert self.result["since"] == "2026-07-20"
+        else:
+            assert self.result["above_ma200"] is True
 
     def test_recovery_survives_off_high_boundary_wobble(self):
         """Jul-23 dd=-9.86% and Jul-24 dd=-10.74% carry the same repair evidence."""

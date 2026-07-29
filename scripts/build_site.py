@@ -4322,7 +4322,7 @@ def main() -> int:
     # origins live in the Supabase dashboard (see ACCOUNTS_SETUP.md).
     # copy shared static assets (theme + visual widgets) into the site
     for asset in ("theme.css", "product-nav-icons.css", "dashboard-icons.css", "dashboard-icons.js",
-                  "theme.js", "mtf.js", "chart_i18n.js", "timemachine.js",
+                  "theme.js", "terminal_overlay.js", "mtf.js", "chart_i18n.js", "timemachine.js",
                   "illus.css", "illus.js",
                   "account.js",
                   # landing onboarding sheet (paired templates/ -> site/ byte copy)

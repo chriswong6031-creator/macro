@@ -228,16 +228,24 @@
     } catch (e) { /* analytics must never break the page */ }
   })();
 
-  /* ---- Mastermind Terminal jump -------------------------------------------
-     Single-stock analysis now opens in the Terminal web app. US (stock.html),
+  /* ---- Mastermind Terminal workspace --------------------------------------
+     Single-stock analysis opens in a native-feeling full-screen Terminal layer
+     while Macro Dashboard remains mounted underneath. US (stock.html),
      China (china_lookup.html), HK (hk_lookup.html), Canada (canada_stock.html),
-     and International (intl_stock.html) stock links all route to
-     app.mastermind-x.com/terminal?sym=TICKER — their ticker formats (e.g.
+     and International (intl_stock.html) stock links all open
+     app.mastermind-x.com/terminal?sym=TICKER inside the layer — their formats (e.g.
      600519.SS, 0002.HK, AAV.TO, 8035.T) already match the Terminal manifest
-     exactly so no transformation is needed. The origin is pre-warmed (DNS + TLS)
-     so the first navigation is instant.
+     exactly so no transformation is needed. The origin is pre-warmed (DNS + TLS);
+     the overlay controller loads on idle/intent, and the iframe stays warm after
+     close so subsequent ticker switches avoid a full Next.js reload.
      Flip window.MM_TERMINAL = false anywhere to restore in-page analyzers. */
-  var MM_TERMINAL_BASE = 'https://app.mastermind-x.com/terminal';
+  var _mmLocalHost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  var MM_TERMINAL_BASE = window.MM_TERMINAL_BASE
+    || (_mmLocalHost ? 'http://127.0.0.1:3100/terminal' : 'https://app.mastermind-x.com/terminal');
+  var MM_TERMINAL_ORIGIN = (function () {
+    try { return new URL(MM_TERMINAL_BASE, location.href).origin; }
+    catch (e) { return 'https://app.mastermind-x.com'; }
+  })();
   function mmTerminalOn() { return window.MM_TERMINAL !== false; }
   // from=macro lets the Terminal show its prominent "back to Dashboard" button reliably even when the
   // referrer is stripped (the Terminal also falls back to document.referrer when this param is absent).
@@ -245,13 +253,84 @@
   // to the EXACT page they came from: the macro→terminal hop is cross-origin, so document.referrer is
   // stripped to the bare origin and the precise path/anchor is otherwise unrecoverable Terminal-side.
   function terminalUrl(t) {
-    return MM_TERMINAL_BASE + '?sym=' + encodeURIComponent(t) + '&from=macro'
+    return MM_TERMINAL_BASE + (t ? '?sym=' + encodeURIComponent(t) + '&' : '?') + 'from=macro'
       + '&ret=' + encodeURIComponent(location.href);
   }
-  // Public handle so modules that navigate programmatically (stocktable.js row clicks —
-  // window.location, not an <a>, so the capture-phase intercept below never sees them)
-  // route through the SAME rewrite; the URL scheme + kill-switch live in one place.
-  window.MDXTerminal = { url: terminalUrl, on: mmTerminalOn };
+  function terminalEmbedUrl(t) {
+    return terminalUrl(t) + '&embed=dashboard';
+  }
+  // Existing Terminal CTAs may carry meaningful state such as `signin=1`,
+  // `signup=1`, a plan, or a Tech Lab indicator set. Preserve every one of
+  // those parameters when the destination is moved into the portal.
+  function terminalExistingUrl(href, embedded) {
+    var u = new URL(href, location.href);
+    if (u.pathname === '/') u.pathname = new URL(MM_TERMINAL_BASE, location.href).pathname;
+    u.searchParams.set('from', 'macro');
+    u.searchParams.set('ret', location.href);
+    if (embedded) u.searchParams.set('embed', 'dashboard');
+    else u.searchParams.delete('embed');
+    return u.href;
+  }
+
+  // The portal controller is split out of theme.js so it adds zero parse/execute
+  // cost to first paint. Load it during idle time or immediately on pointer intent.
+  var _mmOverlayScript = null, _mmOverlayWaiters = [];
+  var _mmThemeScript = document.currentScript;
+  var _mmOverlaySrc = (function () {
+    try {
+      return new URL('terminal_overlay.js', _mmThemeScript && _mmThemeScript.src
+        ? _mmThemeScript.src : location.href).href;
+    } catch (e) { return 'terminal_overlay.js'; }
+  })();
+  function loadTerminalOverlay(done) {
+    if (window.MDXTerminalOverlay) { if (done) done(); return; }
+    if (done) _mmOverlayWaiters.push(done);
+    if (_mmOverlayScript) return;
+    _mmOverlayScript = document.createElement('script');
+    _mmOverlayScript.src = _mmOverlaySrc;
+    _mmOverlayScript.async = true;
+    _mmOverlayScript.onload = function () {
+      var q = _mmOverlayWaiters.slice(); _mmOverlayWaiters.length = 0;
+      q.forEach(function (fn) { try { fn(); } catch (e) {} });
+    };
+    _mmOverlayScript.onerror = function () {
+      _mmOverlayScript = null;
+      var q = _mmOverlayWaiters.slice(); _mmOverlayWaiters.length = 0;
+      q.forEach(function (fn) { try { fn(false); } catch (e) {} });
+    };
+    document.head.appendChild(_mmOverlayScript);
+  }
+  function openTerminal(t, trigger, requestedUrl) {
+    if (!mmTerminalOn()) return false;
+    var directUrl = requestedUrl ? terminalExistingUrl(requestedUrl, false) : terminalUrl(t);
+    var embedUrl = requestedUrl ? terminalExistingUrl(requestedUrl, true) : terminalEmbedUrl(t);
+    loadTerminalOverlay(function (loaded) {
+      if (loaded === false || !window.MDXTerminalOverlay) {
+        location.href = directUrl;
+        return;
+      }
+      window.MDXTerminalOverlay.open({
+        symbol: t || '',
+        url: embedUrl,
+        directUrl: directUrl,
+        targetOrigin: MM_TERMINAL_ORIGIN,
+        trigger: trigger || null
+      });
+    });
+    return true;
+  }
+  function closeTerminal() {
+    if (window.MDXTerminalOverlay) window.MDXTerminalOverlay.close();
+  }
+  // Public handle for programmatic rows (stocktable.js) and feature-specific
+  // Terminal CTAs. url() remains the resilient no-JS/new-tab destination.
+  window.MDXTerminal = {
+    url: terminalUrl,
+    embedUrl: terminalEmbedUrl,
+    on: mmTerminalOn,
+    open: openTerminal,
+    close: closeTerminal
+  };
   (function prewarmTerminal() {
     if (!mmTerminalOn() || !document.head) return;
     ['preconnect', 'dns-prefetch'].forEach(function (rel) {
@@ -260,6 +339,8 @@
       if (rel === 'preconnect') l.crossOrigin = '';
       document.head.appendChild(l);
     });
+    var idle = window.requestIdleCallback || function (fn) { return setTimeout(fn, 1200); };
+    idle(function () { if (mmTerminalOn()) loadTerminalOverlay(); }, { timeout: 2400 });
   })();
   // Re-route Terminal-covered analyzer links anywhere on the site → Terminal
   // (capture phase so it runs before the browser follows the <a>). Leaves
@@ -268,40 +349,61 @@
   var TERMINAL_PAGES = Object.assign(Object.create(null), { 'stock.html': 1, 'china_lookup.html': 1, 'hk_lookup.html': 1, 'canada_stock.html': 1, 'intl_stock.html': 1 });
   // The ticker a Terminal-covered analyzer link points at (else null). Shared by the
   // hover-prefetch and the click-reroute below so the two can never drift.
-  function terminalTicker(a) {
-    if (!a || a.target === '_blank') return null;
+  function terminalTarget(a) {
+    if (!a || a.hasAttribute('download')) return null;
     var href = a.getAttribute('href') || '', h = href.indexOf('#');
-    if (h < 0) return null;
-    var page = href.slice(0, h).replace(/[?].*$/, '').replace(/.*\//, '');
-    if (!TERMINAL_PAGES[page]) return null;       // only Terminal-covered analyzers
-    var t = href.slice(h + 1);
-    return t ? decodeURIComponent(t) : null;
+    if (h >= 0) {
+      var page = href.slice(0, h).replace(/[?].*$/, '').replace(/.*\//, '');
+      if (TERMINAL_PAGES[page]) {
+        var t = href.slice(h + 1);
+        try { return t ? { ticker: decodeURIComponent(t), url: '' } : null; }
+        catch (e) { return null; }
+      }
+    }
+    // Product-door / feature CTAs already point at the live Terminal host. A
+    // normal click stays inside the dashboard layer; modified clicks retain the
+    // browser's native new-tab behavior.
+    try {
+      var u = new URL(href, location.href);
+      if (u.origin !== MM_TERMINAL_ORIGIN) return null;
+      if (u.pathname !== '/' && u.pathname !== '/terminal') return null;
+      return {
+        ticker: u.searchParams.get('symbol') || u.searchParams.get('sym') || '',
+        url: u.href
+      };
+    } catch (e) { return null; }
   }
   // Warm the SPECIFIC destination on hover / touch intent so the click navigation lands
   // on an already-fetched document (the origin is pre-connected above; this adds the
   // ?sym= page itself). Deduped per ticker; a failed/uncacheable prefetch is a silent no-op.
   var _mmPrefetched = Object.create(null);
-  function prefetchTerminal(t) {
-    if (!t || _mmPrefetched[t] || !document.head) return;
-    _mmPrefetched[t] = 1;
+  function prefetchTerminal(t, requestedUrl) {
+    if ((!t && !requestedUrl) || !document.head) return;
+    var href = requestedUrl ? terminalExistingUrl(requestedUrl, false) : terminalUrl(t);
+    if (_mmPrefetched[href]) return;
+    _mmPrefetched[href] = 1;
     var l = document.createElement('link');
-    l.rel = 'prefetch'; l.as = 'document'; l.href = terminalUrl(t);
+    l.rel = 'prefetch'; l.as = 'document'; l.href = href;
     document.head.appendChild(l);
   }
   ['pointerover', 'touchstart'].forEach(function (evt) {
     document.addEventListener(evt, function (e) {
       if (!mmTerminalOn()) return;
       var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
-      prefetchTerminal(terminalTicker(a));
+      var target = terminalTarget(a);
+      if (target) {
+        loadTerminalOverlay();
+        prefetchTerminal(target.ticker, target.url);
+      }
     }, { capture: true, passive: true });
   });
   document.addEventListener('click', function (e) {
     if (!mmTerminalOn() || e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
-    var t = terminalTicker(a);
-    if (!t) return;
-    e.preventDefault();
-    location.href = terminalUrl(t);
+    var target = terminalTarget(a);
+    if (!target) return;
+    e.preventDefault(); e.stopPropagation();
+    openTerminal(target.ticker, a, target.url);
   }, true);
 
   /* ---- nb-spot data-href handler -------------------------------------------
@@ -547,7 +649,7 @@
       // analytics: log the committed search-select (ticker + market) before navigating away
       try { if (window.mmTrack) window.mmTrack('search', { ticker: x.t, meta: { market: x._mk, source: 'nav_search', to_terminal: !!(mmTerminalOn() && TERMINAL_PAGES[x._tgt]) } }); } catch (e) {}
       // US, China, HK, Canada, and Intl picks all open the Terminal
-      if (mmTerminalOn() && TERMINAL_PAGES[x._tgt]) { location.href = terminalUrl(x.t); return; }
+      if (mmTerminalOn() && TERMINAL_PAGES[x._tgt]) { openTerminal(x.t, box); return; }
       location.href = pfx + (x._tgt || 'stock.html') + '#' + encodeURIComponent(x.t);
     }
     function close() { sugg.classList.remove('show'); sugg.innerHTML = ''; rows = []; sel = -1; }
