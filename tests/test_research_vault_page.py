@@ -150,6 +150,15 @@ def test_pdf_viewer_modal(page_seeded):
         assert f'id="dl-btn-{st}"' in page_seeded
 
 
+def test_pdf_gate_uses_latest_onboarding_sheet(page_seeded):
+    assert 'href="onboard.css"' in page_seeded
+    assert 'src="onboard.js"' in page_seeded
+    js = (bld.ROOT / "site" / "research_vault_app.js").read_text(encoding="utf-8")
+    assert "function openLatestSignin()" in js
+    assert "window.MMOnboard.open('signin', {})" in js
+    assert "MDXAuth.signIn" not in js
+
+
 # --- SSR feed (SEO) ---------------------------------------------------------
 
 def test_ssr_cards_baked_when_seeded(page_seeded):

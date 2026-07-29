@@ -11,6 +11,7 @@
 {% include "_seo_head.html.j2" %}
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="onboard.css">
 <style>
 /* ═══════════════════════════════════════════════════════════════════════════
    RESEARCH VAULT — flagship page, ported from site/_mockup_research_vault.html.
@@ -822,7 +823,8 @@ html[data-theme="light"] .btn.upgrade{ color:#fff; }
 <!-- SSR-baked catalog snapshot: the app hydrates from this instantly, then refreshes
      from GET /api/research/catalog. Empty {items:[]} → honest empty state (no fake data). -->
 <script id="rv-catalog" type="application/json">{{ catalog_json | safe }}</script>
+<script src="theme.js" defer></script>
+<script src="onboard.js" defer></script>
 <script src="research_vault_app.js" defer></script>
-<script src="theme.js"></script>
 </body>
 </html>

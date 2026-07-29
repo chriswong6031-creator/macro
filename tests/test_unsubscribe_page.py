@@ -647,13 +647,19 @@ def test_unsubscribe_is_public_in_the_regwalls_own_mirror():
 # adding a line here is the review checkpoint, which is the whole point of pinning
 # the set rather than diffing against a moving branch.
 PUBLIC_EXACT = frozenset({
-    "/", "/index.html", "/plans.html", "/research_vault.html",
+    "/", "/index.html", "/plans.html", "/macro.html", "/start.html",
+    "/us_stocks.html", "/research_vault.html",
     "/research_vault_app.js", "/support.html", "/unsubscribe.html",
     "/privacy.html", "/terms.html", "/disclaimer.html",
     "/favicon.svg", "/favicon.ico", "/apple-touch-icon.png",
     "/robots.txt", "/sitemap.xml", "/llms.txt", "/brand-facts.json",
-    "/onboard.css", "/onboard.js", "/landing.css", "/chat.css", "/chat_nav.css",
-    "/theme.css", "/product-nav-icons.css", "/theme.js", "/account.js",
+    "/onboard.css", "/onboard.js", "/tier_preview.css", "/tier_preview.js", "/landing.css", "/chat.css", "/chat_nav.css",
+    "/theme.css", "/product-nav-icons.css", "/theme.js", "/dashboard-icons.css",
+    "/dashboard-icons.js", "/chart_i18n.js", "/timemachine.js", "/tablesort.js",
+    "/charts.js", "/risk_state_live.js", "/release_publications_live.js",
+    "/heatmap.js", "/stocktable.js", "/globe-deck.js", "/sky.js",
+    "/hub-welcome.js", "/vendor/d3-array.min.js", "/vendor/d3-geo.min.js",
+    "/vendor/topojson-client.min.js", "/account.js",
     # Ad Central Plane O split-test shim — public for the same reason theme.js is:
     # it runs on anonymous visitors before auth resolves (AD_CENTRAL_MASTERPLAN §2).
     "/adtest.js",
