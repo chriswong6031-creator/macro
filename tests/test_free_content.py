@@ -1506,8 +1506,8 @@ class TestGracefulEmpty:
         results = discover_free_pages(site)
         assert results == []
 
-    def test_build_core_sitemap_no_free_pages(self, tmp_path):
-        """build_core_sitemap doesn't fail when no free-estate pages exist."""
+    def test_build_core_sitemap_with_public_dashboard(self, tmp_path):
+        """Public dashboard previews remain eligible without free-estate pages."""
         site = tmp_path / "site"
         site.mkdir()
         (site / "index.html").write_text("<html></html>")
@@ -1520,4 +1520,4 @@ class TestGracefulEmpty:
         result = build_core_sitemap(empty, site)
         ET.fromstring(result)  # valid XML
         assert "<loc>https://www.mastermind-x.com/</loc>" in result
-        assert "https://www.mastermind-x.com/macro.html" not in result
+        assert "https://www.mastermind-x.com/macro.html" in result

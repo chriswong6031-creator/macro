@@ -14,6 +14,12 @@ public:
     - /
     - /index.html
     - /plans.html
+    # Public acquisition dashboards. macro/start expose the broad market read;
+    # macro drill-downs still require registration. us_stocks applies the
+    # anonymous=1 / Free=3 / paid=full summary preview in tier_preview.js.
+    - /macro.html
+    - /start.html
+    - /us_stocks.html
     # Research Vault preview. Anonymous visitors see the latest three summaries
     # and a Pro upgrade wall; the original PDFs remain private behind the
     # authenticated /api/research/view and /api/research/download routes.
@@ -48,6 +54,8 @@ public:
     - /brand-facts.json
     - /onboard.css
     - /onboard.js
+    - /tier_preview.css
+    - /tier_preview.js
     # Page stylesheets for the two hand-edited plain-copy pages (#3676). They
     # carry the styling that used to ride inline inside index.html / chat.html,
     # so they are exactly as public as the pages themselves — and must be, or
@@ -63,6 +71,25 @@ public:
     # navigation icon masks; no customer data or application logic.
     - /product-nav-icons.css
     - /theme.js
+    # Presentation/runtime code required by the three public dashboard shells.
+    # The signal-bearing JSON endpoints these scripts request remain outside
+    # this allowlist and therefore keep their existing account/tier gates.
+    - /dashboard-icons.css
+    - /dashboard-icons.js
+    - /chart_i18n.js
+    - /timemachine.js
+    - /tablesort.js
+    - /charts.js
+    - /risk_state_live.js
+    - /release_publications_live.js
+    - /heatmap.js
+    - /stocktable.js
+    - /globe-deck.js
+    - /sky.js
+    - /hub-welcome.js
+    - /vendor/d3-array.min.js
+    - /vendor/d3-geo.min.js
+    - /vendor/topojson-client.min.js
     # Ad Central Plane O split-test shim (research/AD_CENTRAL_MASTERPLAN.md §2).
     # Must be public for the same reason theme.js is: it runs before auth resolves,
     # on anonymous visitors — who are precisely the population a landing-page test
@@ -118,7 +145,6 @@ public:
 # see the preview instead of the lock interstitial once the paywall is armed.
 free_registered:
   exact:
-    - /macro.html
     - /news.html
     - /china_news.html
     - /methodology.html

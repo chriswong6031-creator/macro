@@ -1728,7 +1728,7 @@
     billedMonthly:['billed monthly', '按月结算'],
     perMo:       ['/mo', '/月'],
     freePlanName:['Free', '免费版'],
-    freePitch:   ['Every dashboard, the Terminal and 6 signals a day. Upgrade to add the analyst and the full research desk.', '全部看板、Terminal 与每日 6 条信号。升级即可加上分析师与完整研究桌面。'],
+    freePitch:   ['The US macro read, the Terminal and 3 signals per daily list. Visitors can preview 1 before signup.', '美国宏观研判、Terminal 与每个每日列表 3 条信号。访客注册前可预览 1 条。'],
     manageBilling:['Payment & invoices', '付款与发票'],
     manageBillingNote:['Update your card, download invoices, or cancel.', '更新银行卡、下载发票或取消订阅。'],
     openPortal:  ['Open', '打开'],
@@ -1809,7 +1809,7 @@
   // Plain-word plan highlights for the Billing "what's included" summary. Kept in step
   // with plans.html.j2 / config/plans.yml; decorative only (never a gate).
   var SD_PLAN_FEATURES = {
-    free:    [['Every macro dashboard', '全部宏观看板'], ['The Terminal — 3 indicators', 'Terminal — 3 个指标'], ['6 signals a day', '每日 6 条信号'], ['5 Mastermind questions a week', '每周 5 次 Mastermind 提问']],
+    free:    [['US macro dashboard', '美国宏观仪表盘'], ['The Terminal — 3 indicators', 'Terminal — 3 个指标'], ['3 signals per daily list', '每个每日列表 3 条信号'], ['5 Mastermind questions a week', '每周 5 次 Mastermind 提问']],
     insider: [['Every dashboard & all research', '全部看板与研究'], ['Full Terminal + live options', '完整 Terminal + 实时期权'], ['300 Mastermind questions a month', '每月 300 次 Mastermind 提问'], ['10 deep research questions a month', '每月 10 次深度研究提问']],
     pro:     [['Everything in Insider', 'Insider 全部功能'], ['Unlimited Mastermind questions', '无限量 Mastermind 提问'], ['150 deep research questions a month', '每月 150 次深度研究提问'], ['Priority research answers', '研究问题优先解答']]
   };
