@@ -3100,6 +3100,11 @@ live_flow:
   # Terminal surface pane, materialized in the poller loop (cadence = cadence_sec above).
   # surface_roots: [SPY, QQQ, IWM]   # base roots to materialize (defaults to these 3)
   # surface_top_n: 0                 # +N extra roots by day gross premium (cheap; reuses cycle rollup)
+  # surface_retain_sessions: 10      # dated surface prefixes kept per root
+  # Dated tide/dte archives (scripts/build_flow_archive.py, OIP W0 T-lane) — a date-keyed
+  # copy of tide_current/dte_tide_current each cycle so the day's FINAL write is the settled
+  # record the nightly Session Digest reads. Retention is per family, >= 30 sessions (§7).
+  # archive_retain_sessions: 30      # dated tide/dte_tide sessions kept per family
 
 # Live intraday breadth poller (scripts/live_breadth_poller.py) — Phase 2 of the
 # Live Tape program (research/LIVE_TAPE_SCOREBOARD_MASTERPLAN.md §4, D6/D7). ONE
