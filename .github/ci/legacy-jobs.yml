@@ -2963,7 +2963,29 @@ jobs:
         # the pandas half of the program (the nightly context pack) is a separate
         # file that runs in marketing-data below, so nothing here can decay into
         # a skip-only suite.
-        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_marketing_personas.py tests/test_marketing_event_language.py tests/test_marketing_press_feeds.py tests/test_marketing_breaking.py tests/test_marketing_fastlane.py tests/test_wires_rail_b4b.py tests/test_marketing_press_copy.py tests/test_marketing_ramp_cta_jitter.py tests/test_marketing_expression_dial.py tests/test_marketing_cadence_spine.py tests/test_marketing_chart_coverage.py tests/test_marketing_desk_feeds.py tests/test_marketing_reply_desk.py tests/test_marketing_forward_booking.py tests/test_marketing_recall.py tests/test_marketing_learning.py tests/test_marketing_reply_producer.py tests/test_marketing_scoring_brain.py tests/test_marketing_hot_tape_llm.py tests/test_marketing_hot_tape.py tests/test_marketing_hot_tape_radar.py -q
+        #
+        # test_marketing_copy_v2.py joins 2026-07-29 (Content Studio W1): the
+        # per-post writer, the cold-read critic and the six defect-class gates
+        # whose negative fixtures are real strings from the rejected batch.
+        # Same construction as the hot-tape suite above — copywriter.py and
+        # copy_critic.py keep llm_auth/anthropic/lib.config behind lazy
+        # function-level imports and the suite scans the source to pin it, so a
+        # top-level heavy import reddens this lane at collection ON PURPOSE.
+        # Provider-path tests hand build_providers a fake local client: the real
+        # waterfall and the real request builder run, only the transport is
+        # fake. No network, no credential, nothing importorskip-gated.
+        #
+        # test_marketing_selection.py joins alongside it (Content Studio W1,
+        # Builder B side): the cross-day cooldowns, the fact-reuse budget, the
+        # degenerate-stat gate, the shape mixer, the emit-time no-fallback
+        # refusal, stale-queued expiry and the kind-scoped auto-approve. Its
+        # writer is a STUB injected by monkeypatching copywriter.
+        # write_posts_llm_v2 and every ledger read/write is under tmp_path, so
+        # the suite is stdlib+pyyaml like the rest of this lane. It also pins the
+        # LIVE config/marketing.yml arming keys (copywriter.llm.required,
+        # publish.auto_approve_scope) — a code default cannot be the whole story
+        # when the config file is the operator surface.
+        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_marketing_personas.py tests/test_marketing_event_language.py tests/test_marketing_press_feeds.py tests/test_marketing_breaking.py tests/test_marketing_fastlane.py tests/test_wires_rail_b4b.py tests/test_marketing_press_copy.py tests/test_marketing_ramp_cta_jitter.py tests/test_marketing_expression_dial.py tests/test_marketing_cadence_spine.py tests/test_marketing_chart_coverage.py tests/test_marketing_desk_feeds.py tests/test_marketing_reply_desk.py tests/test_marketing_forward_booking.py tests/test_marketing_recall.py tests/test_marketing_learning.py tests/test_marketing_reply_producer.py tests/test_marketing_scoring_brain.py tests/test_marketing_hot_tape_llm.py tests/test_marketing_hot_tape.py tests/test_marketing_hot_tape_radar.py tests/test_marketing_copy_v2.py tests/test_marketing_selection.py -q
       - name: reply-target register validates (config/reply_targets.yml)
         # The register is operator-curated, so a bad handle or an unknown tier is
         # an editing mistake, not a code change. Runs as its own step so a

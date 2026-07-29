@@ -158,14 +158,27 @@ def test_build_context_includes_top_fact():
 
 
 def test_build_context_whitelist_includes_plan_numbers():
+    """Plan numbers reach the whitelist in DISPLAY form (Content Studio W1).
+
+    This test asserted "380.00" until 2026-07-29. The two-decimal form is the
+    defect the rounding law closes: the whitelist is the only thing copy may
+    quote, so an over-precise whitelist forces an over-precise post ("Entry
+    285.10, target 375.91" on a $285 name). Contract §Rounding + masterplan §0
+    gate 6 — full precision now lives on `*_exact`, out of the whitelist.
+    """
     from engine.marketing.copywriter import build_context
     item = {"ticker": "MSFT", "type": "signal", "account": "receipts",
             "entry": 380.0, "targets": [420.0, 450.0], "invalidation": 360.0}
     ctx = build_context(item, persona=None, facts=None)
     whitelist = ctx["numbers_whitelist"]
-    assert "380.00" in whitelist, f"entry not in whitelist: {whitelist}"
-    assert "420.00" in whitelist, f"t1 not in whitelist: {whitelist}"
-    assert "360.00" in whitelist, f"inv not in whitelist: {whitelist}"
+    assert "380" in whitelist, f"entry not in whitelist: {whitelist}"
+    assert "420" in whitelist, f"t1 not in whitelist: {whitelist}"
+    assert "360" in whitelist, f"inv not in whitelist: {whitelist}"
+    assert not [w for w in whitelist if w.endswith(".00")], (
+        f"full-precision tokens must not reach the whitelist: {whitelist}"
+    )
+    # ...but they are still available for provenance/grading.
+    assert ctx["entry_exact"] == "380.00"
 
 
 # ─────────────────────────────────────────────────────────────────────────────

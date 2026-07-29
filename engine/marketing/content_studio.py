@@ -12,6 +12,16 @@ Public API:
     strip_scaffolding(plan) -> dict  (copy, minus in-process "_" keys)
     ARTIFACT_KEEP_KEYS     — the "_" keys allowed to reach the artifact
 
+Selection layer (W1, LLM-first masterplan §5 — all pure, all deterministic):
+    ticker_exposure(root, *, as_of)        -> {ticker: last exposure day}
+    cooled_tickers(exposure, *, as_of, kind, cfg) -> frozenset[str]
+    cooldown_override_reason(ticker, ...)  -> str | None  (new fact class)
+    apply_reuse_budget(account_rows, *, cfg) -> counters (mutates queues)
+    drop_degenerate_facts(facts, *, band)  -> (facts, n_dropped)
+    shape_plan / assign_shapes             -> the corpus-grounded shape mixer
+    record_shape_ledger(root, ...)         -> 14-day ledger (NIGHTLY ONLY)
+    llm_required(cfg)                      -> the no-fallback law's switch
+
 Spec constraints (§2.1 / §2.2 / §5):
   - Deterministic: NO RNG; stable per run; differs per account via account-hash.
   - Public copy carries NO technical-indicator vocabulary.
@@ -22,9 +32,11 @@ Spec constraints (§2.1 / §2.2 / §5):
 from __future__ import annotations
 
 import hashlib
+import math
+import os
 import re
 from dataclasses import dataclass, field
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable
 
@@ -428,6 +440,793 @@ def postable_signals(plans: list[dict], *, today: str | None = None) -> list[dic
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# SELECTION LAYER (W1) — cooldowns, reuse budgets, degeneracy, shapes
+#
+# CONTENT STUDIO LLM-FIRST masterplan §5 (research/
+# MARKETING_CONTENT_STUDIO_LLM_FIRST_MASTERPLAN_BY_FABLE.md, operator directive
+# 2026-07-29) + the W1 build contract (research/marketing_dockets/
+# CONTENT_STUDIO_W1_BUILD_CONTRACT.md §Selection).
+#
+# WHAT THIS FIXES. The 2026-07-29 batch put ARES on five desks with the same
+# entry, LKFN/GPI/CBOE two days running, and shipped "231 of 231 names bullish"
+# as a fact — because NOTHING in this module had ever asked "did we already post
+# this name?". Allocation was a pure function of (tilt, account hash, plan pool);
+# the outbox ledger, which is repo-truth about what already went out, was never
+# read on the way IN. Every helper below is a PURE function of (plan inputs,
+# ledger snapshot) — no RNG, no wall clock — so re-planning the same night twice
+# yields the same verdicts, which is the only property that makes a selection
+# gate auditable.
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: The kinds the nightly Content Studio plans and writes copy for. Distinct from
+#: the wire lanes (`mover`/`theme_list` publish-time, `wire`/`breaking`/`earnings`
+#: fast lanes) which keep their deterministic register and their own gates.
+#: §0 gate 1: template prose may not reach the outbox on THESE kinds.
+PLANNED_KINDS: frozenset[str] = frozenset({
+    "signal", "chart", "education", "macro", "receipt", "watchlist", "event",
+})
+
+#: Post shapes (contract §Shapes). `two_part` is the ONLY shape carrying a
+#: headline; `caption` REQUIRES media at emit (the chart does the talking).
+SHAPES: tuple[str, ...] = ("one_liner", "two_part", "stack", "list", "caption")
+
+#: Angle vocabulary (contract §Context contract). The angle is the post's JOB —
+#: when one fact legitimately reaches two desks they must draw DISJOINT angles,
+#: which is what stops "one fact wearing five outfits" (§1 defect census).
+ANGLES: tuple[str, ...] = (
+    "level_watch", "risk_frame", "group_read", "precedent", "process",
+    "receipt_frame", "macro_read", "event_read",
+)
+
+#: Angle preference per kind, in assignment order. The Nth account to keep a
+#: ticker on a day takes the Nth angle, so two desks on one fact never share one.
+_ANGLE_BY_KIND: dict[str, tuple[str, ...]] = {
+    "signal":     ("level_watch", "risk_frame"),
+    "watchlist":  ("level_watch", "risk_frame"),
+    "chart":      ("level_watch", "precedent"),
+    "receipt":    ("receipt_frame", "process"),
+    "macro":      ("macro_read", "group_read"),
+    "event":      ("event_read", "macro_read"),
+    "education":  ("process", "precedent"),
+    "mover":      ("group_read", "level_watch"),
+    "theme_list": ("group_read", "macro_read"),
+}
+
+# Selection defaults — the config block (config/marketing.yml `selection:`) is
+# the operator surface; these are the safe in-code fallbacks when a key is
+# absent. Cooldowns are in TRADING days, not calendar days: a Friday post is
+# still one session old on Monday, and a calendar cooldown would silently give
+# every weekend a free pass.
+_DEFAULT_TICKER_COOLDOWN_DAYS = 3      # watchlist / chart / caption exposure
+_DEFAULT_SIGNAL_COOLDOWN_DAYS = 5      # a directional call with entry/stop
+_DEFAULT_MAX_ACCOUNTS_PER_TICKER_DAY = 2
+_DEFAULT_MAX_SIGNAL_ACCOUNTS_PER_DAY = 1
+_DEFAULT_DEGENERATE_BAND: tuple[float, float] = (0.05, 0.95)
+
+#: Folded outbox statuses that count as EXPOSURE — the name reached, or is about
+#: to reach, a timeline. `quarantined`/`failed`/`recalled` deliberately do NOT:
+#: a post nobody saw must not lock a ticker out of tonight's plan (same reasoning
+#: as outbox.dead_item_ids for the near-dup corpus).
+_EXPOSURE_STATUSES: frozenset[str] = frozenset({
+    "queued", "approved", "posting", "posted",
+})
+
+#: |day move| that re-opens a cooled ticker (masterplan §5.1 new-fact classes).
+_NEW_FACT_MOVE_PCT = 4.0
+
+_CASHTAG_RE = re.compile(r"\$([A-Z]{1,5})\b")
+
+
+def selection_cfg(cfg: dict | None) -> dict[str, Any]:
+    """The resolved `selection:` block — every key with its in-code fallback.
+
+    ONE reader of the config block, so a knob can never be honoured at one seam
+    and ignored at another. Junk values fall back rather than raising: a typo in
+    a cadence knob must not take the nightly down.
+    """
+    raw = ((cfg or {}).get("selection") or {}) if isinstance(cfg, dict) else {}
+
+    def _int(key: str, default: int) -> int:
+        try:
+            return int(raw.get(key, default))
+        except (TypeError, ValueError):
+            return default
+
+    band = raw.get("degenerate_stat_band")
+    lo, hi = _DEFAULT_DEGENERATE_BAND
+    if isinstance(band, (list, tuple)) and len(band) == 2:
+        try:
+            lo, hi = float(band[0]), float(band[1])
+        except (TypeError, ValueError):
+            lo, hi = _DEFAULT_DEGENERATE_BAND
+    if lo > hi:
+        lo, hi = hi, lo
+
+    return {
+        "ticker_cooldown_days": _int("ticker_cooldown_days", _DEFAULT_TICKER_COOLDOWN_DAYS),
+        "signal_cooldown_days": _int("signal_cooldown_days", _DEFAULT_SIGNAL_COOLDOWN_DAYS),
+        "max_accounts_per_ticker_day": _int(
+            "max_accounts_per_ticker_day", _DEFAULT_MAX_ACCOUNTS_PER_TICKER_DAY),
+        "max_signal_accounts_per_day": _int(
+            "max_signal_accounts_per_day", _DEFAULT_MAX_SIGNAL_ACCOUNTS_PER_DAY),
+        "degenerate_stat_band": (lo, hi),
+    }
+
+
+def _iso_date(value: object) -> date | None:
+    """Parse a YYYY-MM-DD prefix to a date. None on anything unparseable."""
+    try:
+        y, m, d = (int(x) for x in str(value)[:10].split("-"))
+        return date(y, m, d)
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def trading_days_since(earlier: object, later: object) -> int | None:
+    """Mon–Fri sessions in ``(earlier, later]`` — sessions elapsed since exposure.
+
+    Posted yesterday (Tue) and planning today (Wed) → 1. Posted Friday and
+    planning Monday → 1, which is the whole reason this is not a calendar diff:
+    a 3-CALENDAR-day cooldown lets every Friday name come back on Monday.
+
+    No market-holiday calendar is consulted on purpose — this module has no
+    dependency on one, and treating a holiday as a session only ever makes the
+    cooldown SHORTER by one, in the direction the operator already tolerates.
+    Returns None when either side is unparseable (caller fails closed), 0 when
+    ``later`` is not after ``earlier``, and a large sentinel past 60 days so the
+    walk can never become a hot loop on a corrupt row.
+    """
+    d0, d1 = _iso_date(earlier), _iso_date(later)
+    if d0 is None or d1 is None:
+        return None
+    if d1 <= d0:
+        return 0
+    if (d1 - d0).days > 60:
+        return 999
+    n = 0
+    cur = d0
+    while cur < d1:
+        cur += timedelta(days=1)
+        if cur.weekday() < 5:
+            n += 1
+    return n
+
+
+def _item_tickers(item: dict) -> set[str]:
+    """The ticker(s) an outbox item put in front of readers.
+
+    `source.ticker` is the structured stamp emit_from_content_plan writes and is
+    always preferred. The cashtag fallback is deliberately narrowed to posts
+    naming EXACTLY ONE ticker: a theme_list carrying eight member cashtags is
+    coverage of a GROUP, and letting it cool eight names for three sessions
+    would starve the plan pool for a post nobody reads as "$X coverage".
+    """
+    src = item.get("source") or {}
+    if isinstance(src, dict):
+        t = str(src.get("ticker") or "").strip().upper()
+        if t:
+            return {t}
+    tags = set(_CASHTAG_RE.findall(str(item.get("text") or "")))
+    return tags if len(tags) == 1 else set()
+
+
+def ticker_exposure(
+    root: str | Path | None = None,
+    *,
+    as_of: str,
+    state: dict | None = None,
+) -> dict[str, str]:
+    """ticker → the LATEST prior day on which any account had exposure to it.
+
+    Reads the outbox ledger (items.jsonl folded through status_ledger.jsonl —
+    outbox.fold_state), which is repo-truth about what the network has shown
+    readers. `state` lets a caller (or a test) hand in a pre-folded snapshot.
+
+    STRICTLY EARLIER DAYS ONLY. Tonight's own emission is same-day exposure and
+    is governed by the reuse BUDGET, not the cross-day cooldown — counting it
+    here would mean a governor re-run for the same date found every ticker
+    cooled by its own first pass and planned an empty night.
+
+    Fail-soft: an unreadable ledger yields {} (no cooldown), because a missing
+    ops file must never be able to zero a night's content. The gate it feeds is
+    a quality gate, not a safety gate.
+    """
+    out: dict[str, str] = {}
+    try:
+        if state is None:
+            from engine.marketing.outbox import fold_state  # noqa: PLC0415
+            state = fold_state(root)
+        items = state.get("items") or {}
+        statuses = state.get("status") or {}
+        today = str(as_of or "")[:10]
+        for iid, item in items.items():
+            if str(statuses.get(iid, "queued")) not in _EXPOSURE_STATUSES:
+                continue
+            day = str(item.get("as_of") or "")[:10]
+            if not day or (today and day >= today):
+                continue
+            for tkr in _item_tickers(item):
+                if day > out.get(tkr, ""):
+                    out[tkr] = day
+    except Exception as exc:  # noqa: BLE001
+        import logging  # noqa: PLC0415
+        logging.getLogger(__name__).warning(
+            "content_studio.ticker_exposure: ledger unreadable (%s) — no cooldown", exc)
+        return {}
+    return out
+
+
+def cooldown_days_for(kind: str, cfg: dict | None = None) -> int:
+    """Sessions a ticker is ineligible for, by post kind. 0 = no cooldown.
+
+    signal carries entry/stop numbers, so a repeat inside a week reads as the
+    same call re-issued (5 sessions); watchlist/chart are coverage (3). Kinds
+    that name no ticker (macro/education/event) are not cooled at all.
+    """
+    sel = selection_cfg(cfg)
+    if kind == "signal":
+        return max(int(sel["signal_cooldown_days"]), 0)
+    if kind in ("watchlist", "chart", "receipt"):
+        return max(int(sel["ticker_cooldown_days"]), 0)
+    return 0
+
+
+def cooled_tickers(
+    exposure: dict[str, str],
+    *,
+    as_of: str,
+    kind: str,
+    cfg: dict | None = None,
+) -> frozenset[str]:
+    """The tickers INELIGIBLE for ``kind`` tonight, given the exposure map.
+
+    Fails CLOSED on an unparseable exposure date (trading_days_since → None):
+    a row we cannot date is a row we cannot clear.
+    """
+    days = cooldown_days_for(kind, cfg)
+    if days <= 0:
+        return frozenset()
+    out: set[str] = set()
+    for tkr, day in (exposure or {}).items():
+        elapsed = trading_days_since(day, as_of)
+        if elapsed is None or elapsed < days:
+            out.add(str(tkr).upper())
+    return frozenset(out)
+
+
+def cooldown_override_reason(
+    ticker: str,
+    *,
+    pack: dict | None = None,
+    facts: dict | None = None,
+    plan: dict | None = None,
+) -> str | None:
+    """A NEW FACT CLASS that re-opens a cooled ticker, or None (masterplan §5.1).
+
+    Four classes, and only four: an earnings print, a |day move| ≥ 4%, a level
+    break, and a streak-rarity record. The returned string is threaded into the
+    writer context as `cooldown_override_reason` and the post must LEAD with it —
+    "we covered this name on Monday" is only defensible when the thing that
+    changed is the first thing the reader sees.
+
+    Reads the Hot Tape context pack (#3941, `data/marketing/hot_tape_pack.json`)
+    when present and degrades to today's facts otherwise — dependency-inverted,
+    no import of radar code (masterplan §4).
+    """
+    src: dict = {}
+    for blob in (pack, facts, plan):
+        if isinstance(blob, dict):
+            for k, v in blob.items():
+                src.setdefault(k, v)
+    if not src:
+        return None
+
+    if src.get("earnings_today") or src.get("is_earnings_day"):
+        return f"{ticker} reports today"
+
+    for key in ("day_move_pct", "pct_change", "day_pct", "move_pct"):
+        raw = src.get(key)
+        if raw is None:
+            continue
+        try:
+            pct = float(raw)
+        except (TypeError, ValueError):
+            continue
+        if abs(pct) >= _NEW_FACT_MOVE_PCT:
+            return f"{ticker} moved {pct:+.1f}% today"
+
+    level = src.get("level_break") or src.get("broke_level")
+    if level:
+        return f"{ticker} broke {level}" if isinstance(level, str) else f"{ticker} broke its level"
+
+    streak = src.get("streak_record") or src.get("streak_rarity_record")
+    if streak:
+        return f"{ticker} {streak}" if isinstance(streak, str) else f"{ticker} set a streak record"
+
+    return None
+
+
+# ── Degenerate-stat gate (masterplan §5.3, §0 gate 3h) ────────────────────────
+# "231 of 231 names bullish" is not a fact, it is a definition — a count whose
+# hit-rate saturates its universe carries ZERO information and reads as a broken
+# screen. The gate is on the RATIO, not on a phrase list, because the next
+# degenerate stat is always a different sentence.
+
+_COUNT_KEY_PAIRS: tuple[tuple[str, str], ...] = (
+    ("n_moving", "n_tracked"),
+    ("numerator", "denominator"),
+    ("n", "n_total"),
+    ("count", "universe"),
+    ("hits", "n_tested"),
+)
+
+_COUNT_TEXT_RE = re.compile(r"\b(\d{1,6})\s+of\s+(\d{1,6})\b", re.IGNORECASE)
+
+
+def is_degenerate_count(
+    numerator: object,
+    denominator: object,
+    *,
+    band: tuple[float, float] = _DEFAULT_DEGENERATE_BAND,
+) -> bool:
+    """True when numerator/denominator saturates its universe (≥hi or ≤lo).
+
+    A zero/absent denominator is NOT degenerate — it is unknown, and the
+    denominator law (contract §Tests, Builder A's validator) handles a count
+    that never states its universe.
+    """
+    try:
+        num, den = float(numerator), float(denominator)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return False
+    if den <= 0:
+        return False
+    ratio = num / den
+    lo, hi = band
+    return ratio >= hi or ratio <= lo
+
+
+def _fact_is_degenerate(fact: dict, *, band: tuple[float, float]) -> bool:
+    """Structured fields first, "<n> of <N>" prose second (belt and braces).
+
+    market_facts is migrating count facts to STRUCTURED fields (masterplan §4,
+    Builder A) — until every producer has, the prose form is still how a
+    degenerate count reaches copy, and reading only the structured keys would
+    have shipped the exact defect this gate is named for.
+    """
+    for num_key, den_key in _COUNT_KEY_PAIRS:
+        if num_key in fact and den_key in fact:
+            if is_degenerate_count(fact.get(num_key), fact.get(den_key), band=band):
+                return True
+    m = _COUNT_TEXT_RE.search(str(fact.get("text") or ""))
+    if m and is_degenerate_count(m.group(1), m.group(2), band=band):
+        return True
+    return False
+
+
+def drop_degenerate_facts(
+    facts: dict | None,
+    *,
+    band: tuple[float, float] = _DEFAULT_DEGENERATE_BAND,
+) -> tuple[dict, int]:
+    """Return (facts-with-degenerate-counts-removed, n_dropped). Never mutates.
+
+    Operates on the chart_facts/market_facts shape
+    ``{"facts": [{"text": ..., ...}], "numbers_whitelist": [...]}``. A facts blob
+    of another shape passes through untouched — this gate drops facts, it never
+    invents a schema.
+
+    THE WHITELIST IS PRUNED WITH THE FACT. A number stays licensed only while
+    some surviving fact carries it: dropping "231 of 231 names" while leaving
+    231 in ``numbers_whitelist`` leaves the model free to write the count the
+    gate just deleted, with the packet's own blessing. Numbers the blob lists
+    but no fact claims (a producer's extras) are left alone — this prunes what
+    the drop orphaned, it does not rebuild the producer's list.
+    """
+    if not isinstance(facts, dict) or not isinstance(facts.get("facts"), list):
+        return (facts if isinstance(facts, dict) else {}), 0
+    kept: list = []
+    removed: list = []
+    for f in facts["facts"]:
+        if isinstance(f, dict) and _fact_is_degenerate(f, band=band):
+            removed.append(f)
+        else:
+            kept.append(f)
+    if not removed:
+        return facts, 0
+    out = dict(facts)
+    out["facts"] = kept
+    whitelist = facts.get("numbers_whitelist")
+    if isinstance(whitelist, list):
+        still_claimed: set = set()
+        for f in kept:
+            if isinstance(f, dict):
+                still_claimed.update(str(n) for n in (f.get("numbers") or []))
+        orphaned: set = set()
+        for f in removed:
+            orphaned.update(str(n) for n in (f.get("numbers") or []))
+        orphaned -= still_claimed
+        if orphaned:
+            out["numbers_whitelist"] = [n for n in whitelist
+                                        if str(n) not in orphaned]
+    return out, len(removed)
+
+
+def angle_for(kind: str, rank: int) -> str:
+    """The angle for the ``rank``-th account carrying a fact (0-based).
+
+    Disjoint by construction while rank < len(preferences) — and the reuse
+    budget caps the accounts per (ticker, day) at 2, which is exactly the length
+    of every row in _ANGLE_BY_KIND.
+    """
+    prefs = _ANGLE_BY_KIND.get(kind) or ("level_watch", "risk_frame")
+    return prefs[rank % len(prefs)]
+
+
+def _slot_day(slot: object) -> str:
+    """The ``D<n>`` prefix of a slot label, or "" for a publish-time slot."""
+    s = str(slot or "")
+    head = s.split("-", 1)[0]
+    return head if len(head) >= 2 and head[0] == "D" and head[1:].isdigit() else ""
+
+
+def apply_reuse_budget(
+    account_rows: list[dict],
+    *,
+    cfg: dict | None = None,
+    day_prefix: str = "D1",
+) -> dict[str, Any]:
+    """Enforce the (ticker, day) fact-reuse budget across desks. Mutates queues.
+
+    THE ARES ×5 FIX (masterplan §1, §5.2). The planner splices one plan into
+    every desk's queue, so a single fact reached five accounts with the same
+    entry and target — the network-linkage fingerprint the Sentinel's
+    cross-account near-dup bar exists to deny, arriving by a route that bar
+    cannot see (five DIFFERENT wordings of one fact).
+
+    Rules: ≤ `max_accounts_per_ticker_day` accounts per (ticker, day), and
+    exactly `max_signal_accounts_per_day` account for signal kinds (a directional
+    call with entry/stop numbers is one desk's call or it is a coordinated one).
+    Survivors get DISJOINT angles. Losers are removed from the queue — never
+    re-typed into filler, because supply-honest volume means an empty rung stays
+    empty (§5.5).
+
+    SCOPED TO THE EMITTED DAY. Only `day_prefix` slots ever reach the outbox
+    (outbox.emit_from_content_plan defaults to D1 and the governor takes the
+    default), so budgeting D2-D7 would delete posts nothing was ever going to
+    send while shrinking the plan the admin reviews. Deterministic account order
+    = the plan's own account order; no RNG.
+
+    Returns counters: {"before", "after", "dropped_ticker_budget",
+    "dropped_signal_budget", "angles_assigned"}.
+    """
+    sel = selection_cfg(cfg)
+    max_accts = max(int(sel["max_accounts_per_ticker_day"]), 0)
+    max_signal = max(int(sel["max_signal_accounts_per_day"]), 0)
+
+    counts = {"before": 0, "after": 0, "dropped_ticker_budget": 0,
+              "dropped_signal_budget": 0, "angles_assigned": 0}
+
+    # (ticker, day) → accounts already holding it; (ticker, day) → signal holders
+    held: dict[tuple[str, str], list[str]] = {}
+    signal_held: dict[tuple[str, str], list[str]] = {}
+
+    for acct_row in account_rows or []:
+        acct_id = str(acct_row.get("id") or "")
+        queue = acct_row.get("queue") or []
+        counts["before"] += len(queue)
+        kept: list[dict] = []
+        for item in queue:
+            ticker = str(item.get("ticker") or "").upper()
+            slot_day = _slot_day(item.get("slot"))
+            kind = str(item.get("type") or "")
+            if not ticker or slot_day != day_prefix:
+                # A ticker-less planned post (macro/education/event) is never
+                # in contention for a fact, but it still has a JOB — and the
+                # writer, the emit provenance and the learning lane all read the
+                # angle, so it is stamped rather than left blank.
+                if not ticker and slot_day == day_prefix and kind in PLANNED_KINDS:
+                    item["angle"] = angle_for(kind, 0)
+                    counts["angles_assigned"] += 1
+                kept.append(item)
+                continue
+
+            key = (ticker, slot_day)
+            holders = held.setdefault(key, [])
+            if kind == "signal":
+                sig = signal_held.setdefault(key, [])
+                if acct_id not in sig and len(sig) >= max_signal:
+                    counts["dropped_signal_budget"] += 1
+                    continue
+            if acct_id not in holders and len(holders) >= max_accts:
+                counts["dropped_ticker_budget"] += 1
+                continue
+
+            if acct_id not in holders:
+                holders.append(acct_id)
+            if kind == "signal" and acct_id not in signal_held.setdefault(key, []):
+                signal_held[key].append(acct_id)
+
+            item["angle"] = angle_for(kind, holders.index(acct_id))
+            counts["angles_assigned"] += 1
+            kept.append(item)
+
+        acct_row["queue"] = kept
+        counts["after"] += len(kept)
+
+    return counts
+
+
+# ── Shape mixer (masterplan §4, §0 gate 4) ────────────────────────────────────
+# The 2026-07-29 batch was 65/65 headline + 2-4 clipped sentences. In the real
+# fintwit corpus that exact shape is the RAREST at 2.8%: ~49% of real posts are
+# one dense line, ~17% headline+blank+body, ~34% multi-line stacks. Shape is
+# therefore ENFORCED here, not requested politely in a prompt — a model asked to
+# "vary the shape" converges on one skeleton within a batch, every time.
+
+_DEFAULT_ONE_LINER_MIN = 0.25
+_DEFAULT_TWO_PART_MAX = 0.30
+
+#: Rotation order. one_liner leads because it is the corpus default shape.
+_SHAPE_ROTATION: tuple[str, ...] = ("one_liner", "stack", "two_part", "list")
+
+
+def shape_quotas(cfg: dict | None) -> tuple[float, float]:
+    """(one_liner_min, two_part_max) from `shapes.quotas`, with fallbacks."""
+    raw = (((cfg or {}).get("shapes") or {}).get("quotas") or {}) if isinstance(cfg, dict) else {}
+
+    def _f(key: str, default: float) -> float:
+        try:
+            v = float(raw.get(key, default))
+        except (TypeError, ValueError):
+            return default
+        return v if 0.0 <= v <= 1.0 else default
+
+    return (_f("one_liner_min", _DEFAULT_ONE_LINER_MIN),
+            _f("two_part_max", _DEFAULT_TWO_PART_MAX))
+
+
+def _rotation_offset(account: str, as_of: str) -> int:
+    """Deterministic rotation seed for (account, day). NO RNG, NO clock read.
+
+    sha256 over the pair, exactly like _account_hash: two desks on the same night
+    start the rotation at different shapes, and the same desk re-planned on the
+    same date lands on the identical mix (the property that lets a plan be
+    diffed night over night).
+    """
+    h = hashlib.sha256(f"{account}|{str(as_of)[:10]}".encode()).hexdigest()
+    return int(h[:8], 16)
+
+
+def shape_plan(
+    n: int,
+    *,
+    account: str,
+    as_of: str,
+    cfg: dict | None = None,
+    prior_mix: dict[str, int] | None = None,
+) -> list[str]:
+    """The ordered shape assignment for ``n`` posts of one (account, day).
+
+    Quotas (contract §Selection): one_liner ≥ 25%, two_part ≤ 30%, at least one
+    stack once the day carries ≥4 posts. Whatever is left goes to the shape the
+    account has leaned on LEAST over the 14-day ledger window (`prior_mix`) —
+    that is the anti-streak mechanism, and it is a deterministic tie-break, not
+    a jitter.
+    """
+    if n <= 0:
+        return []
+    one_min, two_max = shape_quotas(cfg)
+
+    # one_liner_min is a FLOOR so it rounds UP; two_part_max is a CEILING so it
+    # rounds DOWN. Getting either rounding backwards silently breaks the quota
+    # the gate measures.
+    n_one = max(math.ceil(n * one_min), 1)
+    n_two = math.floor(n * two_max)
+    n_stack = 1 if n >= 4 else 0
+    n_one = min(n_one, n)
+    n_two = min(n_two, max(n - n_one - n_stack, 0))
+    n_stack = min(n_stack, max(n - n_one - n_two, 0))
+
+    remainder = n - (n_one + n_two + n_stack)
+    counts = {"one_liner": n_one, "two_part": n_two, "stack": n_stack, "list": 0}
+    if remainder > 0:
+        # Least-used-first over the ledger window, alphabetical on ties.
+        pool = sorted(
+            ("stack", "list", "one_liner"),
+            key=lambda s: ((prior_mix or {}).get(s, 0), s),
+        )
+        for i in range(remainder):
+            counts[pool[i % len(pool)]] += 1
+
+    # Deterministic interleave: walk the rotation from the (account, day) offset
+    # so a day never opens with the same shape twice running.
+    order = list(_SHAPE_ROTATION)
+    off = _rotation_offset(account, as_of) % len(order)
+    order = order[off:] + order[:off]
+
+    out: list[str] = []
+    while len(out) < n:
+        progressed = False
+        for shape in order:
+            if counts.get(shape, 0) > 0:
+                out.append(shape)
+                counts[shape] -= 1
+                progressed = True
+                if len(out) == n:
+                    break
+        if not progressed:  # defensive: counts exhausted early
+            out.extend(["one_liner"] * (n - len(out)))
+    return out
+
+
+def assign_shapes(
+    queue: list[dict],
+    *,
+    account: str,
+    as_of: str,
+    cfg: dict | None = None,
+    prior_mix: dict[str, int] | None = None,
+) -> dict[str, int]:
+    """Stamp `shape` on every queue item, per (account, day). Returns the mix.
+
+    `caption` is assigned ONLY to a chart-bearing item and only where the mixer
+    wanted a one_liner — a caption with no image is a post with no content
+    (contract §Shapes: "REQUIRES media attached at emit"). Publish-time reach
+    items (mover/theme_list, non-D slots) are left alone: they are wire register
+    with their own template banks and no shape contract.
+    """
+    by_day: dict[str, list[dict]] = {}
+    for item in queue or []:
+        day = _slot_day(item.get("slot"))
+        if not day or str(item.get("type") or "") not in PLANNED_KINDS:
+            continue
+        by_day.setdefault(day, []).append(item)
+
+    mix: dict[str, int] = {}
+    for day in sorted(by_day, key=lambda d: (len(d), d)):
+        items = by_day[day]
+        shapes = shape_plan(len(items), account=account, as_of=f"{as_of}|{day}",
+                            cfg=cfg, prior_mix=prior_mix)
+        for item, shape in zip(items, shapes):
+            if shape == "one_liner" and item.get("chart_id"):
+                shape = "caption"
+            item["shape"] = shape
+            mix[shape] = mix.get(shape, 0) + 1
+    return mix
+
+
+# ── 14-day shape ledger (nightly-only write) ──────────────────────────────────
+
+_SHAPE_LEDGER_REL = Path("data") / "marketing" / "shape_ledger.json"
+_SHAPE_LEDGER_DAYS = 14
+
+
+def shape_ledger_path(root: str | Path | None) -> Path:
+    return (Path(root) if root is not None else Path(".")) / _SHAPE_LEDGER_REL
+
+
+def load_shape_ledger(root: str | Path | None) -> dict:
+    """Read the rolling shape ledger. {} on any error (the mixer degrades to its
+    quota math, which is the whole contract — the ledger only breaks ties)."""
+    try:
+        import json  # noqa: PLC0415
+        p = shape_ledger_path(root)
+        if not p.exists():
+            return {}
+        return json.loads(p.read_text(encoding="utf-8")) or {}
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def shape_ledger_prior_mix(ledger: dict, account: str) -> dict[str, int]:
+    """Summed per-shape counts for one account across the ledger window."""
+    out: dict[str, int] = {}
+    for row in (ledger or {}).get("days") or []:
+        if not isinstance(row, dict):
+            continue
+        for shape, n in ((row.get("accounts") or {}).get(account) or {}).items():
+            try:
+                out[str(shape)] = out.get(str(shape), 0) + int(n)
+            except (TypeError, ValueError):
+                continue
+    return out
+
+
+def record_shape_ledger(
+    root: str | Path | None,
+    *,
+    as_of: str,
+    mix_by_account: dict[str, dict[str, int]],
+    keep_days: int = _SHAPE_LEDGER_DAYS,
+) -> Path | None:
+    """Append tonight's shape mix and trim to the last ``keep_days`` days.
+
+    NIGHTLY ONLY (contract §House laws: "shape_ledger.json written in the
+    nightly governor step only"). content_plan writes it exclusively when its
+    caller passes `write_shape_ledger=True`, which only the governor does — a
+    test or an admin preview that happened to pass a real root must never
+    advance an ops file. Fail-soft: returns None on any write error.
+    """
+    try:
+        import json  # noqa: PLC0415
+        day = str(as_of)[:10]
+        ledger = load_shape_ledger(root)
+        days = [d for d in (ledger.get("days") or [])
+                if isinstance(d, dict) and str(d.get("as_of") or "")[:10] != day]
+        days.append({"as_of": day, "accounts": mix_by_account})
+        days = sorted(days, key=lambda d: str(d.get("as_of") or ""))[-max(keep_days, 1):]
+        out = {
+            "schema_version": 1,
+            "produced_by": "engine/marketing/content_studio.py",
+            "produced_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "tier": "display",
+            "schema": "marketing.shape_ledger/v1",
+            "as_of": day,
+            "window_days": keep_days,
+            "days": days,
+        }
+        p = shape_ledger_path(root)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps(out, indent=2) + "\n", encoding="utf-8")
+        return p
+    except Exception as exc:  # noqa: BLE001
+        import logging  # noqa: PLC0415
+        logging.getLogger(__name__).warning(
+            "content_studio.record_shape_ledger: %s", exc)
+        return None
+
+
+def load_hot_tape_pack(root: str | Path | None) -> dict[str, dict]:
+    """ticker → context-pack slice from `data/marketing/hot_tape_pack.json`.
+
+    DEPENDENCY-INVERTED (masterplan §4): a read-only join on a file the Hot Tape
+    radar (#3941) writes, with no import of radar code and no failure when the
+    file is absent — the pack is enrichment (streak rarity, 52w distance,
+    since-dates), never a prerequisite. {} when missing or malformed.
+    """
+    try:
+        import json  # noqa: PLC0415
+        p = (Path(root) if root is not None else Path(".")) / "data" / "marketing" / "hot_tape_pack.json"
+        if not p.exists():
+            return {}
+        raw = json.loads(p.read_text(encoding="utf-8")) or {}
+        blob = raw.get("tickers") if isinstance(raw.get("tickers"), dict) else raw
+        return {str(k).upper(): v for k, v in blob.items() if isinstance(v, dict)}
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def llm_required(cfg: dict | None) -> bool:
+    """Is the no-fallback law armed? (`copywriter.llm.required`, contract §Config)
+
+    §0 gate 1: while this is true a planned-kind post whose model copy failed is
+    DROPPED, never template-filled, and outbox.emit refuses any planned item
+    whose mode is not llm*.
+
+    THE MISSING-BLOCK RULE, stated plainly: the key defaults to TRUE whenever a
+    `copywriter.llm` block exists (so deleting the key cannot silently disarm the
+    gate), and to FALSE when a caller ships no copywriter config at all — such a
+    caller is not running the writer lane, and refusing its hand-built items
+    would be refusing posts no writer was ever asked to write. The live
+    `config/marketing.yml` always carries the block, and
+    tests/test_marketing_selection.py pins that it carries `required: true`, so
+    production can never take the false branch by accident.
+
+    Parsed strictly (a quoted "false" must not enable), mirroring
+    scripts/marketing_publisher._auto_approve_cfg.
+    """
+    cw = (cfg or {}).get("copywriter") if isinstance(cfg, dict) else None
+    llm = (cw or {}).get("llm") if isinstance(cw, dict) else None
+    if not isinstance(llm, dict):
+        return False
+    v = llm.get("required", True)
+    if isinstance(v, bool):
+        return v
+    return str(v).strip().lower() in {"1", "true", "yes"}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Largest-remainder allocation (no RNG)
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -505,6 +1304,13 @@ class ContentItem:
     # Optional confluence provenance fields (additive; absent on Prophet-sourced items)
     source: str | None = None
     combo_id: str | None = None
+    # W1 selection/mixer stamps (contract §Selection, §Emit). NOT underscore-
+    # prefixed on purpose: like `watch_reason`, they must survive
+    # strip_scaffolding into content_plan.json, because outbox.emit copies them
+    # into the item's source provenance and the learning lane (W1.5 per-shape
+    # engagement table) joins on them.
+    shape: str | None = None
+    angle: str | None = None
 
     def as_dict(self) -> dict:
         d: dict = {
@@ -524,6 +1330,10 @@ class ContentItem:
             d["source"] = self.source
         if self.combo_id is not None:
             d["combo_id"] = self.combo_id
+        if self.shape is not None:
+            d["shape"] = self.shape
+        if self.angle is not None:
+            d["angle"] = self.angle
         return d
 
 
@@ -540,6 +1350,10 @@ def plan_account(
     seed: int = 0,
     tilt: dict[str, float] | None = None,
     drop_types: set[str] | None = None,
+    cooled_watch: frozenset[str] | set[str] | None = None,
+    cooled_signal: frozenset[str] | set[str] | None = None,
+    emit_day_prefix: str = "D1",
+    report: dict | None = None,
 ) -> list[ContentItem]:
     """Generate a deterministic content queue for one account.
 
@@ -553,6 +1367,20 @@ def plan_account(
                 (publish_time_content.generate_read_item) owns that post instead,
                 so leaving it nightly too would double-post. Applied AFTER the
                 _DEFAULT_TILT merge so it wins even for the default (no-tilt) path.
+    cooled_watch / cooled_signal: tickers inside the cross-day cooldown (see
+                `cooled_tickers`) for coverage kinds and for signal kinds
+                respectively — the LKFN/GPI/CBOE fix (masterplan §5.1). A slot
+                whose type needs a ticker and finds NO eligible plan is DROPPED,
+                not filled: supply-honest volume means an empty rung stays empty
+                (§5.5), and a ticker-less "signal" post renders empty tokens.
+    emit_day_prefix: the ONLY day the cooldown is applied to. Only `D1` slots are
+                ever emitted (outbox.emit_from_content_plan defaults to D1 and the
+                governor takes the default), so cooling D2-D7 would delete posts
+                nothing was going to send and would hollow out the 7-day plan the
+                admin reviews for no gain.
+    report:     optional mutable counter sink (`dropped_cooldown`) so the plan
+                report can print the funnel without this function changing its
+                return type.
     """
     account_id = account.get("id", "unknown")
     voice = account.get("voice", "authoritative desk")
@@ -595,6 +1423,16 @@ def plan_account(
     bull_plans = [p for p in signal_plans if p.get("direction") == "BULL"]
     plan_pool = bull_plans if bull_plans else signal_plans
 
+    # Cross-day cooldown pools, computed ONCE (contract §Selection). Two pools
+    # because the bar differs by kind: 5 sessions for a directional call, 3 for
+    # coverage. Both are applied to the emitted day only — see the docstring.
+    _cooled_w = {str(t).upper() for t in (cooled_watch or ())}
+    _cooled_s = {str(t).upper() for t in (cooled_signal or ())}
+    watch_pool = [p for p in plan_pool
+                  if str(p.get("asset", "")).upper() not in _cooled_w]
+    signal_pool = [p for p in plan_pool
+                   if str(p.get("asset", "")).upper() not in _cooled_s]
+
     items: list[ContentItem] = []
     plan_cursor = ah % max(len(plan_pool), 1)
     counter = 0
@@ -605,8 +1443,16 @@ def plan_account(
         ticker = ""
         cashtag = ""
         if type_id in ("signal", "chart", "receipt") and plan_pool:
-            plan_idx = (plan_cursor + slot_idx * (ah % 7 + 1)) % len(plan_pool)
-            plan = plan_pool[plan_idx]
+            pool = plan_pool
+            if slot.startswith(f"{emit_day_prefix}-"):
+                pool = signal_pool if type_id == "signal" else watch_pool
+            if not pool:
+                # Nothing fresh to say about any name tonight for this kind.
+                if report is not None:
+                    report["dropped_cooldown"] = report.get("dropped_cooldown", 0) + 1
+                continue
+            plan_idx = (plan_cursor + slot_idx * (ah % 7 + 1)) % len(pool)
+            plan = pool[plan_idx]
             ticker = plan.get("asset", "")
             cashtag = f"${ticker}" if ticker else ""
 
@@ -967,6 +1813,7 @@ def content_plan(
     closes_loader: Callable[[str], tuple[list[str], list[float]] | None] | None = None,
     root: str | Path | None = None,
     defer_media: bool = False,
+    write_shape_ledger: bool = False,
 ) -> dict:
     """Build the full content plan artifact (frozen §2.3 shape).
 
@@ -976,6 +1823,11 @@ def content_plan(
     root:         repo root for OHLCV loading (chart_render._PRICE_SUBDIRS —
                   data/baskets/ohlcv/<TICKER>.parquet, then data/stocks/). If
                   None, inferred from a closes_loader built by _make_closes_loader.
+    write_shape_ledger: nightly-only switch for the 14-day shape ledger
+                  (`data/marketing/shape_ledger.json`). The governor passes True;
+                  every other caller (tests, the admin preview, an ad-hoc rebuild)
+                  leaves it False so a plan build can never advance an ops file —
+                  the nightly stays the sole advancer (CLAUDE.md ledger law).
     defer_media:  when True, render the SVGs but DO NOT raster/upload the PNGs.
                   Each featured chart carries a private "_defer" blob instead, and
                   the caller finishes the job with raster_plan_media() AFTER the
@@ -1022,6 +1874,58 @@ def content_plan(
         ((cfg or {}).get("publish") or {}).get("publish_time_read", {}).get("enabled"))
     drop_types: set[str] = {"event"} if _pt_read_on else set()
 
+    # ── SELECTION LAYER (W1, masterplan §5) ───────────────────────────────────
+    # Read the outbox ledger ONCE and derive the two cooldown sets before any
+    # allocation happens. This is the step that did not exist on 2026-07-29,
+    # which is why LKFN/GPI/CBOE were planned again the day after they posted.
+    # Fail-soft by construction: ticker_exposure returns {} on an unreadable
+    # ledger, and {} cools nothing.
+    _sel_report: dict[str, Any] = {}
+    _exposure = ticker_exposure(root, as_of=today)
+    # Hot Tape context pack (#3941) — read-only join, absent file degrades to
+    # today's facts (masterplan §4). Feeds cooldown_override_reason and the
+    # writer context's `pack` slice.
+    _packs = load_hot_tape_pack(root)
+    _shape_ledger = load_shape_ledger(root)
+
+    # A cooled ticker comes BACK only when a genuinely new fact class fires
+    # (earnings, |move| ≥4%, level break, streak record) — and the post must then
+    # LEAD with that fact, which is why the reason travels into the writer
+    # context rather than just unlocking the name silently (§5.1).
+    _plan_by_asset: dict[str, dict] = {}
+    for _p in (plans or []):
+        _a = str(_p.get("asset") or "").upper()
+        if _a and _a not in _plan_by_asset:
+            _plan_by_asset[_a] = _p
+    _cooldown_overrides: dict[str, str] = {}
+    for _tkr in list(_exposure):
+        _reason = cooldown_override_reason(
+            _tkr, pack=_packs.get(_tkr), plan=_plan_by_asset.get(_tkr))
+        if _reason:
+            _cooldown_overrides[_tkr] = _reason
+
+    def _uncool(blocked: frozenset[str]) -> frozenset[str]:
+        return frozenset(t for t in blocked if t not in _cooldown_overrides)
+
+    _cooled_watch = _uncool(
+        cooled_tickers(_exposure, as_of=today, kind="watchlist", cfg=cfg))
+    _cooled_signal = _uncool(
+        cooled_tickers(_exposure, as_of=today, kind="signal", cfg=cfg))
+    _sel_report["cooled_tickers"] = len(_cooled_watch)
+    _sel_report["cooled_signal_tickers"] = len(_cooled_signal)
+    _sel_report["cooldown_overrides"] = len(_cooldown_overrides)
+
+    # The funnel's first two stages are counted in FACTS (postable plans), the
+    # third in POSTS — stated here so nobody reads `supply` as a post count.
+    # Same pool arithmetic plan_account does, evaluated once for the report.
+    _supply_pool = postable_signals(plans)
+    _bull_pool = [p for p in _supply_pool if p.get("direction") == "BULL"]
+    _supply_pool = _bull_pool or _supply_pool
+    _sel_report["supply"] = len(_supply_pool)
+    _sel_report["after_cooldown"] = len(
+        [p for p in _supply_pool
+         if str(p.get("asset", "")).upper() not in _cooled_watch])
+
     # Collect per-account items
     all_items: list[ContentItem] = []
     account_rows: list[dict] = []
@@ -1066,6 +1970,9 @@ def content_plan(
             seed=0,
             tilt=tilt_cfg if tilt_cfg else None,
             drop_types=drop_types,
+            cooled_watch=_cooled_watch,
+            cooled_signal=_cooled_signal,
+            report=_sel_report,
         )
         all_items.extend(items)
 
@@ -1907,6 +2814,43 @@ def content_plan(
             )
         ]
 
+    # ── Fact-reuse budget + shape mixer (W1 selection layer) ──────────────────
+    # Runs AFTER every producer has contributed (Prophet + confluence + movers)
+    # and BEFORE any copy is written: the writer must receive the FINAL angle and
+    # shape for its item, and an item the budget is about to delete must never
+    # cost a model call. Both passes are deterministic and mutate the queues in
+    # place. Confluence and movers items are inside the budget on purpose
+    # (contract §Selection: "count confluence + movers items toward budgets") —
+    # they are the same fact reaching a reader, whatever lane produced them.
+    _budget_counts = apply_reuse_budget(account_rows, cfg=cfg, day_prefix="D1")
+    _sel_report["dropped_ticker_budget"] = _budget_counts.get("dropped_ticker_budget", 0)
+    _sel_report["dropped_signal_budget"] = _budget_counts.get("dropped_signal_budget", 0)
+    # `after_budget` is the EMITTED-DAY post count: the budget only touches D1
+    # (nothing else is ever emitted), so a whole-plan number here would move for
+    # reasons unrelated to the budget and hide the one it exists to show.
+    _sel_report["after_budget"] = sum(
+        1 for row in account_rows for it in (row.get("queue") or [])
+        if _slot_day(it.get("slot")) == "D1")
+    _sel_report["posts_total"] = _budget_counts.get("after", 0)
+
+    # `all_items` feeds distinctness() and the summary counts, so it has to track
+    # the deletions or the plan would report volume it no longer carries.
+    _surviving_ids = {
+        str(it.get("id")) for row in account_rows for it in (row.get("queue") or [])
+    }
+    all_items = [i for i in all_items if i.id in _surviving_ids]
+
+    _shape_mix_by_account: dict[str, dict[str, int]] = {}
+    for _acct_row in account_rows:
+        _acct_id = str(_acct_row.get("id") or "")
+        _shape_mix_by_account[_acct_id] = assign_shapes(
+            _acct_row.get("queue") or [],
+            account=_acct_id,
+            as_of=today,
+            cfg=cfg,
+            prior_mix=shape_ledger_prior_mix(_shape_ledger, _acct_id),
+        )
+
     # ── Copywriter pass — replaces bot-voice templates with real copy ─────────
     # Runs AFTER all queue items are settled (Prophet + confluence + movers).
     # For signal items: verify live price gate; demote failed items to watchlist.
@@ -1919,6 +2863,14 @@ def content_plan(
     _copy_mode = "deterministic"
     _copy_signal_killed = 0
     _copy_n_receipts = 0
+    # W1 no-fallback lane (masterplan §0 gate 1 / §4). `_copy_modes` is the
+    # per-mode census the §0 gate 8 proof reads ("plan report shows llm mode >0,
+    # det = 0 on planned kinds"); `_copy_dropped` is the by-stage drop census.
+    _copy_modes: dict[str, int] = {}
+    _copy_dropped: dict[str, int] = {}
+    _copy_written = 0
+    _degenerate_dropped = 0
+    _llm_required = llm_required(cfg)
 
     try:
         from engine.marketing.copywriter import (
@@ -1948,6 +2900,15 @@ def content_plan(
         _acct_cfg_by_id: dict[str, dict] = {
             a.get("id", ""): a for a in eff_accounts
         }
+
+        # ticker → texts already written TONIGHT on earlier desks. Threaded into
+        # each context as `sibling_texts` so the writer can be told "different
+        # angle, different shape, zero shared phrasing", and so Builder A's
+        # validator can reject a ≥6-gram overlap with a sibling (contract
+        # §Context contract). Accounts are processed sequentially, so account N
+        # sees accounts 1..N-1 — which is exactly the cross-account sameness the
+        # 07-29 batch shipped (one fact, five outfits, jaccard 0.467).
+        _sibling_texts: dict[str, list[str]] = {}
 
         for acct_row in account_rows:
             acct_id = acct_row.get("id", "")
@@ -2063,6 +3024,23 @@ def content_plan(
                     except Exception:  # noqa: BLE001
                         pass
 
+                # DEGENERATE-STAT GATE (masterplan §5.3, §0 gate 3h). A count
+                # that saturates its universe ("231 of 231 names bullish") is a
+                # definition, not a fact — it is dropped BEFORE the packet is
+                # built so the writer never sees it and the numbers whitelist
+                # never blesses it.
+                #
+                # THIS RUNS OVER EVERY FACT SOURCE, not just chart facts:
+                # `facts_data` is the chart packet for a ticker item and the
+                # macro / event / merged breadth+sector packet for a non-ticker
+                # one, and the count facts that actually saturate live in the
+                # market_facts family (sector breadth, tracked-name breadth).
+                # Gating only the ticker branch would have left the gate pointed
+                # at the one source that rarely trips it.
+                facts_data, _n_degen = drop_degenerate_facts(
+                    facts_data, band=selection_cfg(cfg)["degenerate_stat_band"])
+                _degenerate_dropped += _n_degen
+
                 ctx = build_context(
                     item_dict,
                     persona=persona or None,
@@ -2074,6 +3052,23 @@ def content_plan(
                 ctx["voice"] = voice
                 # Carry slot for hash-based selection on ticker posts
                 ctx["slot"] = item_dict.get("slot", "")
+                # ── W1 writer contract (contract §Context contract) ───────────
+                # shape/angle are the mixer's and the budget's verdicts; the
+                # writer obeys them, it does not choose them. sibling_texts is
+                # what earlier desks already said about this name tonight. `pack`
+                # is the Hot Tape enrichment slice when present (absent → omit,
+                # never a stub). cooldown_override_reason is the NEW FACT that
+                # bought this repeat its slot, and the post must lead with it.
+                ctx["shape"] = item_dict.get("shape") or ""
+                ctx["angle"] = item_dict.get("angle") or angle_for(
+                    item_dict.get("type", ""), 0)
+                ctx["sibling_texts"] = list(_sibling_texts.get(ticker, [])) if ticker else []
+                _pack = _packs.get(str(ticker).upper()) if ticker else None
+                if _pack:
+                    ctx["pack"] = _pack
+                _override = _cooldown_overrides.get(str(ticker).upper()) if ticker else None
+                if _override:
+                    ctx["cooldown_override_reason"] = _override
                 # Carry the plan date so the deterministic variant picker can
                 # seed non-ticker rotation by CALENDAR DAY — otherwise a single
                 # daily post (the event "read on today's move") always lands on
@@ -2081,27 +3076,98 @@ def content_plan(
                 ctx["as_of"] = today
                 contexts.append(ctx)
 
-            # Phase 3: batch call — LLM lane first (persona ceiling; guarded by
-            # config copywriter.llm.enabled AND the MARKETING_LLM_ENABLED env var,
-            # so tests/local runs never trigger it), deterministic floor otherwise.
-            # write_posts_llm validates every output and falls back per-post.
-            posts = None
-            try:
-                from engine.marketing.copywriter import write_posts_llm  # noqa: PLC0415
-                _cw_cfg = (cfg or {}).get("copywriter", {}) or {}
-                posts = write_posts_llm(contexts, _cw_cfg)
-            except Exception:  # noqa: BLE001
-                posts = None
-            if posts is not None:
-                _copy_mode = "llm"
-            else:
+            # Phase 3: the WRITER. Per-post model calls (write_posts_llm_v2 —
+            # contract §Writer API); each result is
+            # {"text","headline","body","mode","critic"} or
+            # {"mode":"dropped","reasons":[...],"stage":"provider|validate|critic"}.
+            #
+            # WHY v2 REPLACED THE BATCH CALL (masterplan §1, §0 gate 2). v1 asked
+            # for SIXTY posts in one 6000-token call — ~100 tokens per post for
+            # ~10k tokens of required JSON. It truncated, the parse failed, the
+            # function returned None, and every post silently fell back to
+            # templates: the persona lane had been armed and credentialed since
+            # the 2026-07-26 incident fix and had never once produced a live post.
+            # Per-item calls mean one failure isolates to one item.
+            #
+            # A MUTE LANE IS NOT A DROP. v2 returns an all-`dropped`/stage
+            # `provider` list when the lane is not armed (flag off, no env var,
+            # no credentials) — the correct read of that is "nothing was written
+            # tonight", not "every post failed the critic". So the lane's armed
+            # state is checked HERE and the mute case never enters the drop
+            # accounting: the plan is still built off templates so the admin can
+            # review what would have shipped, and the reader-facing refusal lives
+            # at outbox.emit, which will not queue a planned-kind item whose mode
+            # is not llm* while copywriter.llm.required is on. Calling v2 on a
+            # mute lane would also charge the plan 196 pointless "drops" per desk.
+            _cw_cfg = (cfg or {}).get("copywriter", {}) or {}
+            _lane_armed = bool((_cw_cfg.get("llm") or {}).get("enabled", False)) and (
+                os.environ.get("MARKETING_LLM_ENABLED", "").strip().lower()
+                in ("1", "true", "yes")
+            )
+            posts: list[dict] = []
+            _det_posts: list[dict] | None = None
+            if _lane_armed:
+                try:
+                    from engine.marketing.copywriter import write_posts_llm_v2  # noqa: PLC0415
+                    posts = list(write_posts_llm_v2(contexts, _cw_cfg) or [])
+                except Exception:  # noqa: BLE001
+                    posts = []
+            if not posts:
                 posts = write_posts_deterministic(contexts)
+            else:
+                _copy_mode = "llm"
+
+            # Items the writer dropped are REMOVED from the queue (never
+            # template-filled) while the no-fallback law is armed. Collected
+            # first, deleted after the zips so queue↔posts stays index-aligned.
+            _drop_ids: set[str] = set()
+
+            for _idx, (item_dict, post) in enumerate(zip(queue, posts)):
+                if not isinstance(post, dict):
+                    continue
+                if post.get("mode") == "dropped":
+                    _stage = str(post.get("stage") or "unknown")
+                    _copy_dropped[_stage] = _copy_dropped.get(_stage, 0) + 1
+                    if _llm_required and str(item_dict.get("type") or "") in PLANNED_KINDS:
+                        _drop_ids.add(str(item_dict.get("id")))
+                        item_dict["_copy_mode"] = "dropped"
+                        item_dict["_copy_drop_stage"] = _stage
+                    else:
+                        # Law disarmed (emergency escape hatch) or a non-planned
+                        # kind: the deterministic bank is still allowed to speak.
+                        if _det_posts is None:
+                            _det_posts = write_posts_deterministic(contexts)
+                        if _idx < len(_det_posts):
+                            posts[_idx] = _det_posts[_idx]
+                    continue
+                _mode = str(post.get("mode") or "deterministic")
+                _copy_modes[_mode] = _copy_modes.get(_mode, 0) + 1
+                if _mode.startswith("llm"):
+                    _copy_written += 1
+                    _crit = post.get("critic")
+                    if isinstance(_crit, dict):
+                        item_dict["_copy_critic"] = _crit.get("verdict")
+                    _tkr = str(item_dict.get("ticker") or "")
+                    _txt = str(post.get("text") or "").strip()
+                    if _tkr and _txt:
+                        _sibling_texts.setdefault(_tkr, []).append(_txt)
+
             for item_dict, post in zip(queue, posts):
+                if str(item_dict.get("id")) in _drop_ids:
+                    continue  # writer dropped it; deleted from the queue below
                 # Confluence signal posts keep the win_rate_hook copy — it is the
                 # crown-jewel framing ("worked 86% of the time historically") and
                 # the generic signal templates would inject empty Prophet fields
                 # ("Entry . T1 .") since combos have no entry/target.
+                #
+                # THE MODE STAMP IS NOT COSMETIC. This lane never reaches the
+                # writer, so under the no-fallback law its copy is template prose
+                # on a planned kind and outbox.emit will refuse it. Stamping the
+                # mode explicitly is what makes that refusal READABLE in the
+                # emit census instead of an item that merely lacks a key.
                 if item_dict.get("source") == "confluence" and item_dict.get("type") == "signal":
+                    item_dict.setdefault("_copy_mode", "confluence_hook")
+                    _copy_modes["confluence_hook"] = _copy_modes.get("confluence_hook", 0) + 1
                     _copy_n_validated += 1
                     continue
                 # mover/theme_list items keep their movers-desk copy (the real
@@ -2125,12 +3191,27 @@ def content_plan(
                     if _mviol:
                         item_dict["_copy_violations"] = _mviol
                         _copy_violations_fixed += len(_mviol)
+                    item_dict.setdefault("_copy_mode", "movers_desk")
                     _copy_n_validated += 1
                     continue
                 new_headline = post.get("headline", "")
                 new_body = post.get("body", "")
                 violations = post.get("violations", [])
-                if new_headline and new_body:
+                # v2 returns the shaped post as `text`; `headline` is "" for every
+                # shape except two_part (contract §Shapes), so the historic
+                # `headline AND body` guard would have rejected four shapes out of
+                # five as "fallback" and kept the template copy. Body carries the
+                # full shaped text (may contain \n); compose_text drops the empty
+                # half at emit. The relaxed guard is scoped to llm* modes so the
+                # deterministic lane's contract is byte-for-byte unchanged.
+                _mode_out = str(post.get("mode") or "deterministic")
+                if _mode_out.startswith("llm"):
+                    if not new_body:
+                        new_body = str(post.get("text") or "")
+                    _accept = bool(new_body)
+                else:
+                    _accept = bool(new_headline and new_body)
+                if _accept:
                     item_dict["headline"] = new_headline
                     item_dict["body"] = new_body
                     item_dict["_copy_mode"] = post.get("mode", "deterministic")
@@ -2141,6 +3222,13 @@ def content_plan(
                 else:
                     _copy_n_fallback += 1
 
+            # Delete the writer's drops. Done AFTER both zips so the queue and
+            # the posts list stay index-aligned while they are being read.
+            if _drop_ids:
+                acct_row["queue"] = [d for d in queue
+                                     if str(d.get("id")) not in _drop_ids]
+                queue = acct_row["queue"]
+
             # Recount mix after type changes (signal→watchlist / receipt→watchlist)
             from collections import Counter as _Counter
             type_counts = _Counter(d.get("type", "") for d in queue)
@@ -2149,6 +3237,30 @@ def content_plan(
     except Exception:  # noqa: BLE001
         # Fail-soft: copywriter unavailable — old template copy survives
         _copy_mode = "fallback"
+
+    # Second reconciliation of `all_items` — the writer's drops land after the
+    # budget's, and both have to be reflected in distinctness() and the summary.
+    _surviving_ids = {
+        str(it.get("id")) for row in account_rows for it in (row.get("queue") or [])
+    }
+    all_items = [i for i in all_items if i.id in _surviving_ids]
+
+    # ── 14-day shape ledger (nightly only) ────────────────────────────────────
+    _shape_ledger_path: str | None = None
+    if write_shape_ledger:
+        _observed_mix: dict[str, dict[str, int]] = {}
+        for _acct_row in account_rows:
+            _acct_id = str(_acct_row.get("id") or "")
+            _m: dict[str, int] = {}
+            for _it in (_acct_row.get("queue") or []):
+                _sh = str(_it.get("shape") or "")
+                if _sh:
+                    _m[_sh] = _m.get(_sh, 0) + 1
+            if _m:
+                _observed_mix[_acct_id] = _m
+        _written_ledger = record_shape_ledger(
+            root, as_of=today, mix_by_account=_observed_mix)
+        _shape_ledger_path = str(_written_ledger) if _written_ledger else None
 
     # ── Funnel W1a (D07): canonical tagged link on every post ─────────────────
     # Every clickable URL a post carries is the canonical UTM link, exactly once.
@@ -2216,10 +3328,54 @@ def content_plan(
                 "violations_fixed": _copy_violations_fixed,
                 "signals_killed_by_gate": _copy_signal_killed,
                 "graded_receipts": _copy_n_receipts,
+                # W1 (§0 gate 8): the proof surface. `written` counts model-
+                # authored posts, `modes` is the per-mode census (the gate reads
+                # "llm > 0, deterministic = 0 on planned kinds"), `dropped` is
+                # by stage (provider|validate|critic), `shape_mix` is gate 4's
+                # measurement, and `llm_required` records which law was in force.
+                "written": _copy_written,
+                "modes": _copy_modes,
+                "dropped": _copy_dropped,
+                "shape_mix": {
+                    s: sum(m.get(s, 0) for m in _shape_mix_by_account.values())
+                    for s in SHAPES
+                    if any(m.get(s) for m in _shape_mix_by_account.values())
+                },
+                "shape_mix_by_account": _shape_mix_by_account,
+                "shape_ledger_path": _shape_ledger_path,
+                "llm_required": _llm_required,
                 "note": (
                     f"{_copy_n_validated} posts written by copywriter; "
                     f"{_copy_n_fallback} fell back to templates; "
                     f"{_copy_signal_killed} signals killed by live gate."
+                ),
+            },
+            # W1 selection funnel (contract §Selection: "Plan report gains
+            # supply, after_cooldown, after_budget"). Supply-honest volume is
+            # only auditable if the plan prints what it threw away and why.
+            "selection": {
+                # supply / after_cooldown are FACT counts (postable plans);
+                # after_budget / posts_total are POST counts. Different units on
+                # purpose — the funnel narrows facts first, then posts.
+                "supply": _sel_report.get("supply", 0),
+                "after_cooldown": _sel_report.get("after_cooldown", 0),
+                "after_budget": _sel_report.get("after_budget", 0),
+                "posts_total": _sel_report.get("posts_total", 0),
+                "cooled_tickers": _sel_report.get("cooled_tickers", 0),
+                "cooled_signal_tickers": _sel_report.get("cooled_signal_tickers", 0),
+                "cooldown_overrides": _sel_report.get("cooldown_overrides", 0),
+                "dropped_cooldown": _sel_report.get("dropped_cooldown", 0),
+                "dropped_ticker_budget": _sel_report.get("dropped_ticker_budget", 0),
+                "dropped_signal_budget": _sel_report.get("dropped_signal_budget", 0),
+                "degenerate_stats_dropped": _degenerate_dropped,
+                "note": (
+                    f"{_sel_report.get('cooled_tickers', 0)} ticker(s) inside the "
+                    f"cross-day cooldown, {_sel_report.get('cooldown_overrides', 0)} "
+                    f"re-opened on a new fact; "
+                    f"{_sel_report.get('dropped_ticker_budget', 0)} post(s) over the "
+                    f"per-ticker account budget, "
+                    f"{_sel_report.get('dropped_signal_budget', 0)} over the signal "
+                    f"budget; {_degenerate_dropped} degenerate stat(s) dropped."
                 ),
             },
             "links": _links_summary,

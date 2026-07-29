@@ -1169,6 +1169,16 @@ on:
       - "tests/test_admin_marketing.py"
       - "admin/marketing.py"
       - "config/marketing.yml"
+      # Content Studio W1 selection layer (LLM-first masterplan §0, 2026-07-29):
+      # cross-day cooldowns, the fact-reuse budget, the degenerate-stat gate,
+      # the shape mixer, the emit-time no-fallback refusal, stale-queued expiry
+      # and the kind-scoped auto-approve. engine/marketing/** and
+      # config/marketing.yml above already reach its subjects; the suite is
+      # listed so a PR touching ONLY the tests still reaches the lane, and the
+      # dry-run workflow is listed because the suite's live-config assertions
+      # are the only thing pinning that lane's arming keys.
+      - "tests/test_marketing_selection.py"
+      - ".github/workflows/marketing-copy-dryrun.yml"
       # chart coverage (#3895, 2026-07-28): every ticker-bearing post carries an
       # illustration; the live gate picks the card VARIANT rather than vetoing it;
       # chart ids stay per-account; the ramp media cap never sits below the post
@@ -1280,6 +1290,15 @@ on:
       - "tests/test_marketing_hot_tape_llm.py"
       - "tests/fixtures/hot_tape_golden_packets.json"
       - "scripts/hot_tape_llm_dryrun.py"
+      # Content Studio W1 (2026-07-29): the per-post LLM writer, the cold-read
+      # critic and the display-rounding law. engine/marketing/copywriter.py,
+      # copy_critic.py and market_facts.py are already matched by the
+      # engine/marketing/** glob above, so only the suite and the dry-run
+      # runner are named here — a suite-only or runner-only edit would
+      # otherwise never reach the marketing-engine lane (test-whitelist-rot,
+      # the same failure mode the four entries above exist for).
+      - "tests/test_marketing_copy_v2.py"
+      - "scripts/marketing_copy_dryrun.py"
       # D02 per-post metrics poller + chart-image (PNG) pipeline. The poller
       # reads back Buffer analytics; media_publish uploads chart PNGs to R2;
       # content_studio renders the PNG at plan-build time. engine/marketing/**
