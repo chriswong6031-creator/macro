@@ -193,6 +193,11 @@ def test_deployed_mode_requires_session():
             raise AssertionError("expected 401")
         except urllib.error.HTTPError as e:
             assert e.code == 401
+        try:
+            _req(port, "/api/auth-check")
+            raise AssertionError("expected 401")
+        except urllib.error.HTTPError as e:
+            assert e.code == 401
 
         # wrong password → 401
         try:
@@ -214,6 +219,10 @@ def test_deployed_mode_requires_session():
         # with the session cookie, the protected route works
         r = _req(port, "/api/health", cookies={auth.SESSION_COOKIE: jar[auth.SESSION_COOKIE]})
         assert r.status == 200
+        r = _req(port, "/api/auth-check",
+                 cookies={auth.SESSION_COOKIE: jar[auth.SESSION_COOKIE]})
+        assert r.status == 200
+        assert json.loads(r.read()) == {"ok": True, "authenticated": True}
 
         # a write WITHOUT the CSRF header is rejected (403) even with a valid session
         try:

@@ -60,6 +60,31 @@ if [ "$OLD" != "$NEW" ]; then
 	fi
 fi
 
+# Runtime-only company-logo configuration. The committed file is deliberately
+# empty; the browser-safe Logo.dev publishable token lives in the root-readable
+# VPS env and is materialized only into the served tree after every rsync. The
+# server-side secret key is neither required nor accepted here.
+LOGO_DEV_TOKEN=""
+if [ -r /etc/macro-api.env ]; then
+	LOGO_DEV_TOKEN=$(sed -n 's/^LOGO_DEV_PUBLISHABLE_KEY=//p' /etc/macro-api.env | tail -n 1)
+fi
+case "$LOGO_DEV_TOKEN" in
+	pk_*) ;;
+	*) LOGO_DEV_TOKEN="" ;;
+esac
+case "$LOGO_DEV_TOKEN" in
+	*[!A-Za-z0-9_-]*) LOGO_DEV_TOKEN="" ;;
+esac
+mkdir -p "$APP_DIR/site.served"
+LOGO_CONFIG_TMP=$(mktemp "$APP_DIR/site.served/.logo_config.XXXXXX")
+printf 'window.MMX_LOGO_DEV_TOKEN = window.MMX_LOGO_DEV_TOKEN || "%s";\n' "$LOGO_DEV_TOKEN" > "$LOGO_CONFIG_TMP"
+chmod 0644 "$LOGO_CONFIG_TMP"
+if ! cmp -s "$LOGO_CONFIG_TMP" "$APP_DIR/site.served/logo_config.js"; then
+	mv -f "$LOGO_CONFIG_TMP" "$APP_DIR/site.served/logo_config.js"
+else
+	rm -f "$LOGO_CONFIG_TMP"
+fi
+
 # Do not exit just because Git is current. A prior run may have self-updated
 # this script while continuing to execute its old inode, or an operator may
 # have drifted an installed unit/config. Reconciliation below is deliberately

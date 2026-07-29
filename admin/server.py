@@ -468,6 +468,11 @@ class Handler(BaseHTTPRequestHandler):
             if settings.auth_enabled() and not self._authed():
                 return self._json({"error": "authentication required"}, 401)
 
+            # Caddy uses this same-origin, cookie-authenticated probe before
+            # serving /research-tools/* from the generated site tree.
+            if path == "/api/auth-check":
+                return self._json({"ok": True, "authenticated": True})
+
             if path == "/api/summary":
                 # Each component is isolated so one failing sub-call degrades ONE landing
                 # tile instead of 500-ing the whole page. health + cost are PROJECTED to the
