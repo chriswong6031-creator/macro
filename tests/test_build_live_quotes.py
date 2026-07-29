@@ -32,7 +32,9 @@ def test_display_snapshot_covers_every_live_tape_symbol():
     The websocket is an enhancement and may stay silent for individual futures;
     omitting a tile from DISPLAY_SYMBOLS leaves its baked value blank forever.
     """
-    from app.tape import TAPE_SYMBOLS
+    # Keep this lane dependency-light: app.tape itself imports FastAPI, while
+    # the shared symbol contract intentionally has no web-server dependencies.
+    from app.tape_symbols import TAPE_SYMBOLS
 
     assert set(TAPE_SYMBOLS) <= set(blq.DISPLAY_SYMBOLS)
 

@@ -46,11 +46,9 @@ from typing import Any
 # then mistakes the param for a query field.
 from fastapi import WebSocket, WebSocketDisconnect
 
-log = logging.getLogger("macro.tape")
+from app.tape_symbols import TAPE_SYMBOLS
 
-# The six tape instruments (masterplan D1 / build spec §1). ORDER here mirrors
-# the dashboard strip; it also drives the upstream subscribe list.
-TAPE_SYMBOLS: tuple[str, ...] = ("ES=F", "NQ=F", "YM=F", "RTY=F", "^TNX", "DX-Y.NYB")
+log = logging.getLogger("macro.tape")
 
 _UPSTREAM_URL = "wss://streamer.finance.yahoo.com"
 

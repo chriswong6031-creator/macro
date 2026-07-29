@@ -36,6 +36,7 @@ import re
 from datetime import datetime, timezone
 from pathlib import Path
 
+from app.tape_symbols import TAPE_SYMBOLS
 from engine import live_quotes
 from lib import config
 
@@ -93,10 +94,10 @@ CORE_SYMBOLS = (US_INDEXES + US_FUTURES + INTL_INDEXES + CORE_ETFS
 # emit — a symbol displayed but absent here keeps its baked value forever.
 DISPLAY_SYMBOLS = [
     "SPY", "QQQ", "^DJI", "^RUT",            # macro market strip (DJI/RUT tiles carry data-sym ^DJI/^RUT)
-    "ES=F", "NQ=F", "YM=F", "RTY=F", "^TNX",  # six-instrument macro tape (DXY is below)
+    *TAPE_SYMBOLS,                            # six-instrument macro tape
     "000001.SS", "510300.SS", "^HSI",        # china page live strip
     "BTC-USD",                               # Bitcoin Vector header (24/7)
-    "GC=F", "SI=F", "HG=F", "CL=F", "BZ=F", "DX-Y.NYB",   # commodities strip
+    "GC=F", "SI=F", "HG=F", "CL=F", "BZ=F",  # commodities strip (DXY is in the tape above)
     "EURUSD=X", "USDJPY=X", "GBPUSD=X", "USDCAD=X",       # forex strip
     "USDCNH=X", "USDCHF=X", "USDMXN=X", "USDBRL=X",
     "^N225", "^KS11", "^TWII",                        # macro overnight/Asia strip
