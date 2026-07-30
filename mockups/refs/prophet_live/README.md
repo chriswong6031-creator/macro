@@ -26,16 +26,30 @@ the matrix `verify_p1.py` prints, not a single number.
 
 ## Height invariance is a SWEEP, not three measurements
 
-`HEIGHT_WIDTHS` × {en, zh} × every mode, and the harness exits non-zero on any variance.
-This matters more than it looks: the first version of the gate hardcoded the three
-configurations the PR body happened to quote, so it could only ever agree with the claim
-being made. It passed while the panel shoved the board by up to **32.75px** at nine other
-widths, because three boxes whose text changes with the mode had no line reservation —
-`.plv-sub`, `.plv-fn`, and the header (a short token fitted beside the title where a long
-one wrapped). The fix is structural rather than per-breakpoint numbers: every mode's
+`HEIGHT_WIDTHS` × {en, zh} × **every specimen the harness defines**, and the run exits
+non-zero on any variance.
+
+Both halves of that sentence are scar tissue, and the gate narrowed twice:
+
+1. The width list was hardcoded to the three configurations the PR body happened to quote,
+   so it could only ever agree with the claim being made. It passed while the panel shoved
+   the board by up to **32.75px** at nine other widths.
+2. The mode list was then hand-written and omitted `strip_noread` — the one specimen added
+   that round, and the one still shoving (**17.00px** at 320/340 en, from the `#plv-asof`
+   box). "308 measurements, variance 0.00" and an independent reviewer's "17.00px" were
+   both true at the same time.
+
+So: `modes` is **derived** from the specimen dict (a new specimen joins the sweep by
+existing — a specimen that is not swept is a crop that lies), and `HEIGHT_WIDTHS` is pinned
+by length and membership in `tests/test_prophet_live_surface.py`, because a prose comment
+saying "never trim this back" is not a guard. Mutating the list to `(375, 1180)` used to
+leave the whole suite green.
+
+Four boxes vary with the mode — `.plv-token`, `.plv-sub`, `.plv-fn`, `.plv-asof` — and all
+four are fixed the same structural way rather than with per-breakpoint numbers: every
 variant stays in the DOM stacked in one grid cell with `visibility:hidden`, so the browser
-reserves the worst case at whatever width and language it is rendering. If you add a mode
-or change any of that copy, re-run — do not re-measure by hand.
+reserves the worst case at whatever width and language it renders. If you add a mode or
+change any of that copy, re-run — do not re-measure by hand.
 
 ## Specimens
 

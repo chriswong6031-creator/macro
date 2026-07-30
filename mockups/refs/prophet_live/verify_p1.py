@@ -533,8 +533,18 @@ def main() -> int:
         # claimed. It passed while the panel shoved the board by up to 32.75px at nine
         # other widths. A gate that can only agree with you is not a gate.
         print("\n── HEIGHT INVARIANCE (spec §6.4 rule 1) — swept ───────────────")
-        modes = ("strip_live", "strip_faded", "strip_overflow", "strip_bare",
-                 "strip_quiet", "strip_dark", "strip_closed")
+        # EVERY strip specimen, derived — never a hand-written subset. The first sweep
+        # listed the modes by hand and omitted `strip_noread`, the one mode added that
+        # round, which was also the one still shoving (17.00px at 320/340 en, because the
+        # as-of box had no line reservation). A specimen that exists but is not swept is a
+        # crop that lies: it ships a picture with no proof behind it.
+        # (derived, so a new specimen joins the sweep automatically — that IS the fix; a
+        # follow-up "is every specimen covered?" check against the same source would be
+        # vacuous by construction and prove nothing)
+        modes = tuple(s for s in specimens if s != "cards")
+        print(f"   modes swept ({len(modes)}): {', '.join(m.replace('strip_','') for m in modes)}")
+        print(f"   widths swept ({len(HEIGHT_WIDTHS)}): "
+              f"{', '.join(str(w) for w in HEIGHT_WIDTHS)}")
         print("   width lang | " + " ".join(f"{m.replace('strip_',''):>8}" for m in modes)
               + " |   variance")
         for lang in ("en", "zh"):

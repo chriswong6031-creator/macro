@@ -24,7 +24,10 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
+import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -189,10 +192,23 @@ def test_glance_tier_copy_carries_no_settled_fact_vocabulary(table):
 
 
 def test_every_state_settles_at_tonights_close_in_both_languages():
-    """The footer sentence is the one place that must always carry the settle clause."""
-    js = _strip_js()
-    assert "settles at tonight" in js
-    assert "以今晚收盘为准" in js
+    """The footer sentence is the one place that must always carry the settle clause.
+
+    Sliced to the VISIBLE sentence: asserting against the whole block was satisfied by the
+    invisible height reserver, which contains the same phrase, so gutting the real footer
+    left this green. The suite still caught that deletion elsewhere, but an assertion that
+    cannot fail for the reason it names should not be left armed for the next author."""
+    js = _nc(_strip_js())
+    on = js[js.index("var fnEn=cnt"):js.index("var rsvEn=")]
+    # BOTH branches: the sentence has a with-count and a numberless form, and the clause
+    # has to survive in each. Asserting it once was satisfied by whichever branch kept it.
+    en = [ln for ln in on.split("\n") if "can appear here" in ln and "fnZh" not in ln]
+    zh = [ln for ln in on.split("\n") if "会出现在这里" in ln]
+    assert len(en) == 2 and len(zh) == 2, f"expected 2 EN + 2 ZH forms, got {len(en)}/{len(zh)}"
+    for ln in en:
+        assert "settles at tonight" in ln, f"settle clause missing from: {ln.strip()!r}"
+    for ln in zh:
+        assert "以今晚收盘为准" in ln, f"settle clause missing from: {ln.strip()!r}"
     # and the stance line says it for the live case
     sub = _copy_table("PLV_SUB")
     assert "nothing is settled until tonight" in sub["live"][0].lower()
@@ -364,8 +380,10 @@ def test_a_cause_is_relayed_only_when_the_producer_attests_one():
     # fact only, exactly like the producer-attested causes beside it
     assert "board below" not in dark["none_today"][0].lower()
     # and no as-of is stamped: a previous session's pass_ts is a bare time-of-day and
-    # would print "as of 4:15 pm ET" at 11:20 in the morning
-    assert "res.why==='none_today'" in _nc(_strip_js()).replace(" ", "")
+    # would print "as of 4:15 pm ET" at 11:20 in the morning. (The line it would have
+    # occupied is still reserved — see test_as_of_reserves_its_line_even_with_nothing_to_stamp.)
+    flat = _nc(_strip_js()).replace(" ", "")
+    assert "varstampOn=(stampMin!==null&&res.why!=='none_today')" in flat
 
 
 def test_closed_mode_is_resolved_before_the_staleness_gates():
@@ -428,9 +446,11 @@ def test_per_name_dark_names_are_never_rendered_as_a_guessed_state():
 # --------------------------------------------------------------------------- #
 
 def test_footer_owns_the_coverage_bound_in_both_languages():
+    """Sliced to fnEn/fnZh — the whole-block form was satisfied by the reserver."""
     js = _nc(_strip_js())
-    assert "names checked intraday can appear here" in js
-    assert "只有它们会出现在这里" in js
+    on = js[js.index("var fnEn=cnt"):js.index("var rsvEn=")]
+    assert "names checked intraday can appear here" in on
+    assert "只有它们会出现在这里" in on
     assert "meta.evaluated_n" in js
 
 
@@ -482,6 +502,60 @@ def test_coverage_line_never_calls_evaluated_n_armed():
     assert "names checked intraday" in fn and "盘中只检查了" in fn
 
 
+def test_closed_token_discloses_the_delay_like_every_other_live_mode():
+    """The spec owner ruled the delay pill stays in CLOSED: the frozen rows are still
+    printing intraday prices, so the plane they came from must still be named. The
+    every-mode delay test only covered rth/preopen, so dropping it here was invisible."""
+    tok = _copy_table("PLV_TOKEN")
+    assert "{d}" in tok["closed"][0] and "{d}" in tok["closed"][1]
+    assert "delayed" in tok["closed"][0].lower()
+    assert "延迟" in tok["closed"][1]
+    # dark is the one mode with no live number on screen, so it carries no delay
+    assert "{d}" not in tok["dark"][0] and "{d}" not in tok["dark"][1]
+    # "settles tonight" moved off the token to the stance line; it must still be said
+    assert "settles" in _copy_table("PLV_SUB")["closed"][0].lower()
+
+
+def test_tier2_receipt_never_calls_evaluated_n_armed_either():
+    """Companion to the Tier-1 test, which slices only the footer region — so the RECEIPT
+    could revert to "armed tonight" with the Tier-1 assertion still green."""
+    js = _nc(_strip_js())
+    rc = js[js.index("var uni=_plvPanel.getAttribute('data-universe')"):js.index("var hEn=")]
+    for claim in ("armed", "共备妥"):
+        assert claim not in rc, f"the Tier-2 receipt still claims {claim!r}"
+    assert "names were checked intraday" in rc and "盘中检查了" in rc
+    # and the gap must still be attributed to BOTH causes, not to distance alone
+    assert "_plvUnprobed" in rc
+    assert "most sit too far" in rc and "beyond what one 5-minute pass" in rc
+
+
+def test_kept_faded_row_is_the_most_recent_not_the_alphabetically_last():
+    """`faded[faded.length-1]` selected whichever ticker sorted last (measured: MSFT of
+    AAPL/CSCO/LFUS/MRP/MSFT) under a comment claiming "the most recent (highest since)"."""
+    cap = _nc(_strip_js())
+    cap = cap[cap.index("function _plvCapRows"):cap.index("function _plvLevel")]
+    flat = cap.replace(" ", "")
+    assert "faded[i].since>best.since" in flat, \
+        "the kept faded row must be chosen by its since_ts, not by sort position"
+    assert "faded[i].since===null" in flat, \
+        "a row with no since_ts cannot take part in a 'most recent' comparison"
+    # ...and the winner has to be USED. Deleting only the assignment leaves the whole
+    # comparison loop in place as decoration while the alphabetical pick ships.
+    assert "if(best)keepFaded=best;" in flat, \
+        "the since_ts winner must actually replace the sort-position pick"
+
+
+def test_zero_active_rows_still_fill_the_reserved_body():
+    """With >=1 faded and 0 active, active.slice(0, cap-1) is empty and ONE row rendered
+    inside a three-row body under a "+4 more" button."""
+    cap = _nc(_strip_js())
+    cap = cap[cap.index("function _plvCapRows"):cap.index("function _plvLevel")]
+    flat = cap.replace(" ", "")
+    assert "if(!active.length)" in flat, "the zero-active branch is gone"
+    i = flat.index("if(!active.length)")
+    assert "faded.slice(" in flat[i:i + 120]
+
+
 def test_unreadable_count_is_disclosed_not_only_cliffed():
     """A hard 50% cliff alone shipped a fully confident header at 49% dark."""
     js = _nc(_strip_js())
@@ -509,6 +583,117 @@ def test_height_contract_is_derived_from_the_row_height_not_guessed_twice():
     assert ".plv-body{min-height:calc(var(--plv-rh) * 3 + 2px)" in css
     assert "height:var(--plv-rh)" in css
     assert "min-height:24.5px" not in css and "min-height:75.5px" not in css
+
+
+def test_the_rendered_page_javascript_actually_parses():
+    """Every other test in this file greps SOURCE TEXT. None of them execute or parse it,
+    so the whole suite stays green on a page whose script does not run at all.
+
+    That is not hypothetical: a doc comment was edited twice and each edit appended prose
+    AFTER the closing `*/`, leaving bare identifiers in the middle of _plvRender. The page
+    threw `Unexpected identifier` at parse time, the ENTIRE strip was dead in the browser,
+    85 tests passed, and the Playwright harness reported it only as a screenshot timeout on
+    a hidden element — a symptom three steps from the cause.
+
+    So: parse the real rendered page. A syntax error is a hard failure here, in one second,
+    naming the line.
+    """
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("node not available to parse the page's JavaScript")
+    html = _render("stocks")
+    scripts = re.findall(r"<script(?![^>]*\bsrc=)([^>]*)>(.*?)</script>", html, re.S)
+    assert scripts, "the page must carry inline script"
+    bad = []
+    checked = 0
+    for i, (attrs, body) in enumerate(scripts):
+        # data islands (application/json, importmap, text/template) are not JavaScript
+        t = re.search(r'type\s*=\s*["\']([^"\']+)', attrs)
+        if t and t.group(1).strip().lower() not in ("text/javascript", "module"):
+            continue
+        if not body.strip():
+            continue
+        checked += 1
+        with tempfile.NamedTemporaryFile("w", suffix=".js", delete=False,
+                                         encoding="utf-8") as fh:
+            fh.write(body)
+            tmp = fh.name
+        try:
+            r = subprocess.run([node, "--check", tmp], capture_output=True, text=True)
+            if r.returncode != 0:
+                first = (r.stderr or "").strip().splitlines()
+                bad.append(f"inline <script> #{i}: " + " / ".join(first[:4]))
+        finally:
+            Path(tmp).unlink(missing_ok=True)
+    assert not bad, "the rendered page's JavaScript does not parse:\n" + "\n".join(bad)
+    assert checked >= 1, "no inline JavaScript was actually parsed — the gate is vacuous"
+    # the strip's own block must be among what was parsed
+    assert any("_plvRender" in body for _, body in scripts)
+
+
+def _harness_src() -> str:
+    return (ROOT / "mockups" / "refs" / "prophet_live" / "verify_p1.py").read_text()
+
+
+def test_height_sweep_covers_every_specimen_and_cannot_shrink():
+    """The acceptance gate is only worth its exit code if it cannot quietly narrow.
+
+    Two ways it did. (1) The height loop listed its modes by hand and omitted the one
+    specimen added that round — which was also the one still shoving — so "variance 0.00"
+    and an independent reviewer's "17.00px" were both true at once. (2) HEIGHT_WIDTHS could
+    be edited down to (375, 1180) with the whole suite still green: the "never trim this
+    back" note was prose, and prose is not a guard. Narrowing the gate to the widths a PR
+    body happens to quote is the exact failure this round exists to close.
+    """
+    src = _harness_src()
+    # (1) the sweep enumerates the specimens instead of a hand-kept subset
+    assert 'modes = tuple(s for s in specimens if s != "cards")' in src, \
+        "the height sweep must derive its modes from the specimens it defines"
+
+    # (2) the width list is pinned HERE, where shrinking it fails a test
+    m = re.search(r"HEIGHT_WIDTHS = \(([^)]*)\)", src, re.S)
+    assert m, "HEIGHT_WIDTHS must exist"
+    widths = [int(x) for x in re.findall(r"\d+", m.group(1))]
+    required = {320, 340, 360, 375, 390, 412, 428, 440, 460, 480, 500, 540,
+                560, 600, 640, 680, 700, 768, 900, 1024, 1180, 1440}
+    assert set(widths) >= required, (
+        f"HEIGHT_WIDTHS lost {sorted(required - set(widths))}. Every one is a real device "
+        "class or sits beside a breakpoint; the 32.75px shove lived at "
+        "320/340/412/428/440/460/480/500/600 and the 17.00px one at 320/340.")
+    assert len(widths) >= 22, f"the sweep must keep >=22 widths, found {len(widths)}"
+    for edge in (560, 680):
+        assert any(w <= edge for w in widths) and any(w > edge for w in widths), \
+            f"the sweep must straddle the {edge}px breakpoint"
+
+
+def test_height_sweep_fails_the_run_on_any_variance():
+    """A gate that prints a shove but exits 0 is a report, not a gate."""
+    src = _harness_src()
+    i = src.index('print("\\n── HEIGHT INVARIANCE')   # the loop, not the module docstring
+    seg = src[i:src.index("COMPUTED STYLE", i)]
+    assert "fails.append" in seg, "a height variance must be recorded as a failure"
+    assert "var > 0.01" in seg
+    assert "return 1" in src[src.index("if fails:"):], "recorded failures must exit non-zero"
+
+
+def test_as_of_reserves_its_line_even_with_nothing_to_stamp():
+    """The fourth mode-varying box. At <=340px the as-of shares header line 2 with the
+    token, so emptying it on a no-read day collapsed that line and shoved the board 17px —
+    the honesty fix paying for itself in exactly the thrash the reserver prevents."""
+    css = _nc(_strip_css())
+    assert ".plv-hd > .plv-asof{display:inline-grid" in css
+    assert "tabular-nums" in css, "the reserver's width only matches if the digits do"
+    js = _nc(_strip_js())
+    render = js[js.index("function _plvRender"):js.index("function _plvFetch")]
+    # slice to the AS-OF call: the footer's _plvStack ends in the same characters, so an
+    # unscoped assertion here is satisfied by a different call site entirely
+    i = render.index("_plvStack(asEl,")
+    call = render[i:render.index(";", render.index("_plvAsOf(720)", i))]
+    assert "_plvAsOf(720)" in call, "the reserver is formatter-built, never hand-written"
+    # the reserver may never be the ACTIVE variant: a visible 12:00 would be a fabricated
+    # stamp, which is the very thing the none_today honesty fix removed
+    assert call.rstrip().endswith("'on')"), \
+        f"'on' must always be the as-of's active key, found: {call.strip()[-40:]!r}"
 
 
 def test_empty_body_fills_the_reservation_and_has_no_height_of_its_own():

@@ -15155,6 +15155,11 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
        inactive text from the accessibility tree, so nothing invisible is ever announced
        or read as a claim. `display:none` would size nothing; `opacity:0` would be read. */
     .plv-hd > .plv-token{display:inline-grid;justify-items:center;text-align:center}
+    /* The as-of reserves its line even when it has nothing to stamp: at <=340px it sits on
+       header line 2 beside the token, so an empty box collapsed that line and shoved the
+       board 17px on exactly the days there is no read to stamp. `tabular-nums` above is
+       what makes the 12:00 reserver exactly as wide as any real two-digit-hour stamp. */
+    .plv-hd > .plv-asof{display:inline-grid;justify-items:end}
     .plv-sub,.plv-fn{display:grid}
     .plv-v{grid-area:1/1;visibility:hidden}
     .plv-v.is-on{visibility:visible}
@@ -17526,8 +17531,25 @@ function _plvRender(){
   /* No stamp when the newest artifact is from ANOTHER DAY. The as-of is a bare
      time-of-day, so a previous session's pass would print "as of 4:15 pm ET" at 11:20 in
      the morning — a stamp that reads as today's. There is no current read to stamp here,
-     and the body line already says exactly that. */
-  asEl.innerHTML=(stampMin===null||res.why==='none_today')?'':_plvAsOf(stampMin);
+     and the body line already says exactly that.
+     BUT THE BOX STILL HAS TO HOLD ITS LINE. This is the fourth mode-varying box and the
+     one the first reservation pass missed: at <=340px the header puts the as-of on line 2
+     beside the token, so emptying it collapsed that line and shoved the board 17.00px —
+     the honesty fix above paying for itself in exactly the layout thrash the reserver
+     exists to prevent. A reader on a 320-340px phone would watch the board jump the
+     instant the day's first pass landed. Same mechanism as the other three: reserve the
+     line, show nothing in it.
+     The reserver is a formatter-built stamp at 12:00 — the widest wall clock this box can
+     render (two-digit hour, and the pass window is 09:20-18:30 ET so nothing exceeds it),
+     exact because .plv-asof is tabular-nums. Built by _plvAsOf itself so it cannot drift
+     from the real thing's markup.
+     'on' is ALWAYS the active key: with no stamp it is the empty string, which _plvStack
+     drops, so the reserver holds the box with nothing visible and nothing announced. The
+     reserver must never be the active variant — a visible 12:00 would be a fabricated
+     stamp, which is the very thing the honesty fix removed. */
+  var stampOn=(stampMin!==null&&res.why!=='none_today');
+  _plvStack(asEl, ['on','rsv'],
+            {on:(stampOn?_plvAsOf(stampMin):''), rsv:_plvAsOf(720)}, 'on');
 
   /* the stance line changes ONLY on a mode change (spec §6.4 rule 5), and all four
      stance lines stay stacked so the box reserves the tallest one at this width */
