@@ -122,16 +122,34 @@ def _dark_account_ids(cfg: dict, root) -> "frozenset[str] | None":
     is the worse failure. Unknown therefore stands the gate down INERT for the
     run (items flow exactly as they did before this gate existed) and says so in
     the Actions summary. None and the empty set are still DIFFERENT answers and
-    callers must not conflate them: empty means "asked, nothing is dark".
+    callers must not conflate them: empty means "asked, a real roster came back,
+    nothing on it is dark".
+
+    TWO shapes are unknown, not one, and the second is the silent-disarm the
+    first review caught: an EMPTY roster. effective_accounts reads
+    ``cfg.desk_network.accounts``, and every way that key can go missing —
+    _load_marketing_cfg failing soft to {}, a mis-indented block, a renamed key,
+    a checkout with no config — returns [] rather than raising. Read as "nothing
+    is dark" that silently disarms the gate on the exact configs least likely to
+    be correct (probe: channels bound, no desk_network → a dark item posts, rc 0,
+    no annotation). A publisher with no roster does not KNOW which desks are
+    armed, so it says so and goes inert loudly instead of quietly.
     """
     try:
         from engine.marketing.accounts import effective_accounts  # noqa: PLC0415
 
-        return frozenset(
-            str(a.get("id") or "")
-            for a in effective_accounts(cfg, root)
-            if not a.get("enabled")
-        )
+        accounts = effective_accounts(cfg, root)
+        if not accounts:
+            log.warning("dark-desk park: desk_network resolved ZERO accounts — "
+                        "liveness UNKNOWN (no roster to check against), the gate "
+                        "stands down INERT for this run")
+            return None
+        # Empty ids dropped: an id-less desk_network entry resolves to "" and
+        # would park every item whose account field is missing or blank.
+        dark = {str(a.get("id") or "").strip()
+                for a in accounts if not a.get("enabled")}
+        dark.discard("")
+        return frozenset(dark)
     except Exception as exc:  # noqa: BLE001
         log.warning("dark-desk park: accounts model unavailable (%s) — the gate "
                     "stands down INERT for this run", exc)
@@ -734,9 +752,11 @@ def _auto_approve_pass(
     preview (same reason resolve_ramp takes announce=False there). It is not
     cosmetic: the annotation is once-per-account-per-PROCESS, so a preview that
     printed it would also CONSUME it and the real dispatch behind it would park
-    silently. A preview is not a dispatch and must leave that budget alone.
-    ``parked_out`` is the matching sink — the caller that cannot read the log
-    (the preview builds a dict) gets the parked ids appended to it.
+    silently. A preview is not a dispatch and must leave that budget alone — and
+    for the same reason a DRY-RUN never annotates either, whatever ``announce``
+    says. ``parked_out`` is the matching sink — the caller that cannot read the
+    log (the preview builds a dict; main() folds the count into its summary) gets
+    the parked ids appended to it.
 
     ``only_ids`` is the operator "post now" override: the pass considers ONLY
     those ids and drops the kind scope (the operator's click IS the approval for
@@ -811,7 +831,11 @@ def _auto_approve_pass(
                                   root=root, note=_DARK_PARK_NOTE)
             if parked_out is not None:
                 parked_out.append(iid)
-            if announce:
+            # Annotation only when something actually happened: a dry-run wrote
+            # no ledger row, so "item(s) parked" would be a claim about a park
+            # that did not occur — and it would spend the once-per-process budget
+            # the next live run needs. The log lines above still say it.
+            if announce and live:
                 _warn_dark_park(acct)
             continue
 
@@ -1130,6 +1154,13 @@ def main(argv: list[str] | None = None) -> int:
     elif _dark:
         log.info("dark desk(s) not enabled in desk_network: %s — any dispatch "
                  "addressed to them parks", sorted(_dark))
+    # Parked ids, by gate. Both feed the parked_dark summary count; together they
+    # are also what decides the exit code of a post-now dispatch (see the ruling
+    # at the end of this function) — a count alone cannot answer "was EVERY
+    # requested id parked", which is the difference between an expected park and
+    # a real failure.
+    _parked_auto: list[str] = []
+    _parked_post: list[str] = []
 
     auto_approve_on = bool(args.auto_approve) or _auto_approve_cfg(pub_cfg)
     allowed_kinds = _auto_approve_kinds_cfg(pub_cfg)
@@ -1151,7 +1182,7 @@ def main(argv: list[str] | None = None) -> int:
             account=args.account, posted_today=posted_today,
             validate_postable=validate_postable, root=root,
             only_ids=post_now, cap_for=_cap_for, halted=set(_halts),
-            dark_accounts=_dark,
+            dark_accounts=_dark, parked_out=_parked_auto,
         )
     elif auto_approve_on or scoped_on:
         # allowed_kinds param: None ONLY when the operator asked for the
@@ -1164,7 +1195,7 @@ def main(argv: list[str] | None = None) -> int:
             account=args.account, posted_today=posted_today,
             validate_postable=validate_postable, root=root,
             allowed_kinds=_kinds_param, cap_for=_cap_for, halted=set(_halts),
-            dark_accounts=_dark,
+            dark_accounts=_dark, parked_out=_parked_auto,
         )
     if live and auto_approved:
         # Re-fold so the candidate set below sees the freshly-approved items.
@@ -1210,7 +1241,7 @@ def main(argv: list[str] | None = None) -> int:
 
     posted = failed = quarantined = skipped_cap = skipped_channel = would_post = 0
     tape_quarantined = tape_skipped = skipped_floor = deferred_immediate = 0
-    forward_booked = deferred_no_media = parked_dark = 0
+    forward_booked = deferred_no_media = 0
 
     # ── Global min-spacing floor (publish.min_minutes_between_any_posts) ──────
     # Post-time anti-spam guard: at most one post per floor-minute window across
@@ -1364,8 +1395,10 @@ def main(argv: list[str] | None = None) -> int:
             if live:
                 _outbox.transition(iid, "quarantined", actor="publisher",
                                    root=root, note=_DARK_PARK_NOTE)
-            parked_dark += 1
-            _warn_dark_park(account)
+                # Dry-run parks nothing, so it announces nothing (and does not
+                # spend the next live run's annotation budget).
+                _warn_dark_park(account)
+            _parked_post.append(iid)
             continue
 
         links_allowed = _links_allowed_for(pub_cfg, account)
@@ -1783,6 +1816,12 @@ def main(argv: list[str] | None = None) -> int:
               f"marketing-media-backfill.yml) — held items quarantine after "
               f"{_MEDIA_DEFER_MAX_AGE_DAYS}d.", flush=True)
 
+    # Both gates park, so both count. The auto-approve pass takes the queued
+    # items (a breaking dispatch's usual shape) and the post loop takes the
+    # already-approved ones; reporting only the second read parked_dark=0 on the
+    # very scenario this gate was built for.
+    parked_dark = len(_parked_auto) + len(_parked_post)
+
     if skipped_halt:
         # Bare print at line start — a logger prefixes the annotation and GitHub
         # silently drops it (house law).
@@ -1846,7 +1885,27 @@ def main(argv: list[str] | None = None) -> int:
     # A breaking dispatch that posted nothing exits non-zero so the operator who
     # clicked "Post now" sees a RED run instead of a silent no-op. Dry-run (the
     # kill-switch is off) is exempt — nothing was ever going to post.
+    #
+    # EXCEPT a pure dark-desk park (ruling 2026-07-29). Every sub-85 radar event
+    # dispatches to a desk that is dark until XG-W2 arms it, so a red here is not
+    # an incident report — it is a scheduled one, several times a day, and a
+    # recurring expected red teaches the operator to stop reading reds. The park
+    # already leaves two durable receipts (the ::warning in the summary and an
+    # account_disabled row in the ledger), which is what a red was for. Narrow on
+    # purpose: EVERY requested id must have been parked. A validation quarantine,
+    # an unknown id, or any mix of park and failure stays red, because those are
+    # the ones a human has to look at. An id that is not in this checkout's
+    # outbox can never be parked, so it can never be covered here — a dispatch
+    # naming a phantom id is a fault of its own and keeps its red.
     if post_now and live and not posted:
+        _parked = set(_parked_auto) | set(_parked_post)
+        if post_now <= _parked:
+            log.info("--post-now: nothing posted — all %d requested item(s) "
+                     "parked on dark desk(s) (account_disabled); the ::warning "
+                     "and the quarantine rows are the receipts. Not a failure: "
+                     "arming the desk in desk_network is what releases this lane.",
+                     len(post_now))
+            return 0
         log.error("--post-now: nothing was posted for %s — see the gate lines above",
                   ", ".join(sorted(post_now)))
         return 3

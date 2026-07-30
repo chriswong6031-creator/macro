@@ -223,6 +223,10 @@ rather than reviving a separate daemon. Its emit/dedupe plumbing is reusable.
   (post_now included, both the auto-approve pass and the post loop), with a
   once-per-account `::warning`. Arming remains the one desk_network flip
   (XG-W2): fresh radar items flow from that moment, parked history stays dead.
+  A dispatch whose every requested item was dark-parked exits 0 by ruling
+  (2026-07-29) — the annotation and the `account_disabled` ledger rows are the
+  receipts, and a red several times a day until XG-W2 would only train
+  red-fatigue; red stays for genuine failures (validation, unknown id, mixed).
 - In-flight sessions to coordinate with: word-salad copy rewrite
   (task_445d4ea5 — owns template mechanics), Buffer recall (task_318af965 —
   shipped `recall_pending`), cadence specs (task_0cd280af).

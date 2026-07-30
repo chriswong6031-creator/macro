@@ -1052,8 +1052,12 @@ desk_network:
       # (quarantines, reason account_disabled, ::warning in the Actions summary)
       # any item addressed to a desk that is not effective-enabled here —
       # operator "post now" included — so this desk's bound channel id in
-      # publish.channels can never post the property on its own. Arming stays
-      # this one flip (or an account_overrides.json entry).
+      # publish.channels is not on its own enough to post the property. Arming
+      # stays this one flip (or an account_overrides.json entry). ONE path
+      # remains open by design: if the accounts model cannot be read at all
+      # (unreadable config, no desk_network roster) the publisher fails OPEN
+      # rather than parking all seven live desks, and says so with a loud
+      # ::warning — so keep this block parseable, not merely correct.
       enabled: false
       disabled: true
       tilt:
