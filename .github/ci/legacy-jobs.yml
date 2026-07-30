@@ -640,6 +640,20 @@ jobs:
       # guard itself against the committed registry, not just its pytest coverage.
       - name: statement-tape schema guard (FL-E / FC-R9)
         run: python -m scripts.check_statement_tape
+      # PROPHET LIVE P0 gates. This job, not a new one: the parity suite drives the
+      # REAL engine.signal_gate over seeded close series, so it needs pandas + numpy
+      # (present in this job's install line above) and pyarrow for the reconciler's
+      # parquet round-trip. Any importorskip here would be a disarmed test — the deps
+      # are provably installed, so there is none.
+      #   G0.1 parity  tests/test_prophet_live_pack.py       (~25s, real gate calls)
+      #   G0.2/3/5/6   tests/test_prophet_live_evaluator.py
+      #   ledger law   tests/test_prophet_live_reconcile.py
+      - name: prophet-live P0 (G0.1 parity, ledger law, debounce, degradation)
+        run: >
+          python -m pytest
+          tests/test_prophet_live_pack.py
+          tests/test_prophet_live_evaluator.py
+          tests/test_prophet_live_reconcile.py -q
 
   collector-registry:
     if: ${{ false }}

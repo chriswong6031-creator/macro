@@ -898,6 +898,23 @@ on:
       - "engine/prophet_bridge.py"
       - "scripts/build_prophet.py"
       - "tests/test_prophet_options_context.py"
+      # PROPHET LIVE P0 (research/PROPHET_LIVE_INTRADAY_SIGNALS_MASTERPLAN_BY_FABLE.md).
+      # G0.1 is a PARITY gate: the published interval must reproduce signal_gate's
+      # verdict, so an edit to the gate, the cascade, the arming probe, the intraday
+      # state machine OR the workflow that runs it has to retrigger the parity suite.
+      # Without these lines a PR touching only these files matches nothing in this
+      # filter, ci.yml never starts, and the guard cannot fire on the change it guards.
+      - "engine/prophet_live/**"
+      - "engine/signal_gate.py"
+      - "engine/confluence_tiers.py"
+      - "scripts/build_prophet_live_pack.py"
+      - "scripts/prophet_live_evaluator.py"
+      - "scripts/reconcile_prophet_live.py"
+      - ".github/workflows/prophet-live.yml"
+      - "tests/test_prophet_live_pack.py"
+      - "tests/test_prophet_live_evaluator.py"
+      - "tests/test_prophet_live_reconcile.py"
+      - "tests/fixtures/prophet_live/import_probe.py"
       # altdata-W1: Finnhub transcript catalog + StockTwits sentiment collectors.
       - "collectors/finnhub_transcripts.py"
       - "collectors/stocktwits.py"

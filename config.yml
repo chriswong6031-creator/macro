@@ -655,6 +655,93 @@ live:
   china_risk_state:
     debounce_ticks: 2
 
+# ── PROPHET LIVE (research/PROPHET_LIVE_INTRADAY_SIGNALS_MASTERPLAN_BY_FABLE.md) ──
+# Two speeds, one engine. The nightly arming pass (scripts/build_prophet_live_pack.py)
+# probes the SAME close-only admission gate (engine/signal_gate.py) with candidate
+# provisional closes and records the price interval over which is_buyable() is true;
+# the */5 lane (scripts/prophet_live_evaluator.py, .github/workflows/prophet-live.yml)
+# compares a 15-min-delayed live price to those levels. NO second signal engine, and
+# the nightly build stays the sole confirmer, grader and ledger advancer.
+#
+# P0 IS MEASURE-DARK: no user surface reads any of this yet. States are display-tier
+# until the §6 promotion gauntlet is pre-registered on the forward ledger the nightly
+# reconciler accrues (data/prophet_live/forward.parquet).
+prophet_live:
+  # ── arming pass ──
+  # Half-width of the probed provisional-close band, percent of the as-of close. A
+  # bound on the SEARCH, not a claim about the tape: 15% is far past any plausible
+  # intraday move, so nothing reachable is excluded by the band itself.
+  band_pct: 15.0
+  # Structure grid across the probed span (endpoints included) then bisection per
+  # edge. 9 points = 1.875% cells on the up-only span; 8 halvings refine an edge to
+  # ~0.7 bp, inside the ~1 bp the published thresholds claim. RESOLUTION IS A BOUND,
+  # NOT A PROOF: a measured 294-name sweep found the buyable region single-contiguous
+  # in 59 of 59 armable cases, but it sampled at a 1.25% grid, so neither that sweep
+  # nor this probe can see an island or a notch NARROWER than one cell — the pack
+  # reports the range as continuous through it. Raising grid_points narrows the blind
+  # spot at a linear cost in gate calls, which comes straight out of max_probe below.
+  grid_points: 9
+  bisect_iters: 8
+  # BUDGET IS LAW, and it is what caps coverage — not the other way round. Sized from
+  # MEASURED 4-worker passes (the nightly pins STOCK_LIB_WORKERS=4, the box being
+  # 4-core-bound): the centre census over ~1,730 names is ~120s and cannot be skipped,
+  # which leaves ~195s of the 420s budget for probing once verification's reserve is set
+  # aside. max_probe 500 did NOT fit — a 4-worker run with that cap produced probed_n=3
+  # and armed_n=0, an empty pack, because the probe deadline cut 389 names and
+  # verification then withheld the rest.
+  #
+  # THE WALL CLOCK BINDS BEFORE THIS CAP at 4 workers — both full-universe receipts
+  # probed fewer names than the cap allows (116/180 pre-split, 99/180 post-split), and
+  # both slices hit their windows. So max_probe mostly sizes the QUEUE here (unfinished
+  # futures are cancelled, which costs nothing) and only starts to bind on a faster
+  # runner. Do not read it as the delivered coverage; read meta.by_class.
+  #
+  # MEASURED COVERAGE at the shipped split, both classes (receipt 2026-07-29):
+  #   board  109 candidates -> 45 probed -> 44 armed. ~64 board names ship with NO fade
+  #          level, i.e. no at-risk read at all; disclosed in meta.by_class.
+  #   cross  1631 candidates -> 54 probed -> 18 armed. Only cap - round(cap*share) = 108
+  #          slots ever reach this class (~31% of the ~350 names that have a trigger in
+  #          band), and the clock cuts that to 54.
+  # Whatever the caps or the clock cut is counted in meta.skipped (probe_cap_* /
+  # deadline_* / unverified / edge_mismatch / membership_mismatch) — never silently
+  # dropped, never re-labelled "dormant". Raising max_seconds is the lever if coverage
+  # matters more than the ~6.2-minute step; it trades against the render budget.
+  max_probe: 180
+  max_seconds: 420
+  # Share of the probe budget — BOTH the wall clock and the name cap — reserved for
+  # BOARD names (the two-sided sweep yielding fade_px, the at-risk read). CROSS
+  # candidates (the up-only sweep yielding trigger_px) get the remainder.
+  #
+  # Operator ruling 2026-07-29. Ordering alone could not fund both: every board name
+  # outranks every cross candidate in probe_priority, so the first 4-worker pass spent
+  # the whole budget on the board and armed 106 fade levels against 4 triggers. P0's
+  # core evidence is the CROSS ledger (confirm rate + entry advantage, masterplan
+  # §5-P0), so crosses must always be funded — but a global reorder would only invert
+  # the starvation onto the at-risk read. The split makes the cross floor an INVARIANT:
+  # the board slice is spent first under its own window, then the cross slice gets
+  # max(floor, remaining), so however long the board took the cross class still gets
+  # (1 - board_probe_share) x budget. Verification still covers every published price
+  # from both classes. Per-class probed/armed/seconds land in meta.by_class.
+  board_probe_share: 0.4
+  # A name whose own last bar trails the store tip by more than this is probed
+  # against a stale close — the mixed-asof fabrication trap. It ships its centre
+  # state unprobed, marked stale.
+  max_lag_sessions: 3
+  # ── intraday evaluator ──
+  # ET, never UTC (a UTC-pinned window is an hour wrong for half the year). 09:25
+  # catches the pre-open pass; the 16:15 tail pass records the close-side state.
+  window_et:
+    start: "09:25"
+    end: "16:15"
+  window_grace_min: 10          # GitHub cron drifts; grace on the END only
+  # A cross needs this many CONSECUTIVE passes above the trigger before it is a
+  # public state (CSP-R2: a 1-tick state flip is a killed class). One pass is an
+  # internal crossing marker, spooled for measurement, never surfaced.
+  debounce_passes: 2
+  fade_buffer_pct: 0.5          # hysteresis below the trigger before a forming name FADES
+  confirm_window_start: "15:30"  # from here on, conditions still met => confirming_into_close
+  quote_max_age_min: 12         # hot-tape convention; older => that NAME is dark, not guessed
+
 fedboard:
   # Excess Bond Premium (Gilchrist-Zakrajšek): the component of corporate credit
   # spreads NOT explained by default risk = a clean credit-risk-appetite / early-

@@ -465,6 +465,26 @@ lanes:
           idempotent) + nightly-gated grade advance + display summary. Forward-accrual ONLY (the
           definitive on-Prophet test the fusion backtest left open); NEVER gates/ranks Prophet
           (win-rate-gate construction is KILLED). Non-fatal; runs after build_prophet.
+      - id: build_prophet_live_pack
+        module: scripts.build_prophet_live_pack
+        note: >
+          Prophet Live arming pass (P0) — probes the SAME close-only admission gate
+          (engine/signal_gate.py) with candidate provisional closes and publishes per-name
+          trigger/fade levels to R2 live_flow/prophet_live_armed.json for the */5
+          prophet-live.yml lane. Writes NO data/ path (runtime tier). FAIL-CLOSED on parity:
+          every published price is re-verified against the real gate and one mismatch
+          publishes nothing (a missing pack darks the evaluator honestly; a wrong pack lies).
+          Non-fatal; runs after build_site so it probes the same closes the board was built from.
+      - id: reconcile_prophet_live
+        module: scripts.reconcile_prophet_live
+        note: >
+          Prophet Live reconciler (P0) — SOLE writer of data/prophet_live/forward.parquet.
+          Lists the day's R2 intraday event spool and joins confirmed? (from a verdict whose
+          basis is the row's own session) + same-day close + the next-session-close fill
+          (mirroring engine.grading.fill_index, the grade_us_board convention); union-merges
+          on (date, ticker, kind) so a rebake or double run only ever ADDS information.
+          MEASURE-DARK: nothing reads this ledger — it accrues the evidence the §6 promotion
+          gauntlet must be pre-registered on. Non-fatal; runs after the arming pass.
       # parallel band
       - id: band
         cluster:
