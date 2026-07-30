@@ -910,11 +910,12 @@ def _build_rail_item(
         "attribution": attribution,
         "corroboration": _corroboration_chip(n_sources, corr_class),
         # ADDITIVE (Mastermind brain coordination, 2026-07-29): the plain
-        # publisher name, a display-tier fact the page may ignore. `salience`
-        # was requested alongside it and DECLINED: wires.json is served to
-        # registered users, and an internal ranking score in a user-fetchable
-        # payload is exactly what the desk's leak law forbids — the brain's
-        # reader falls back to recency without it by design.
+        # publisher name, a display-tier fact the page may ignore. The internal
+        # ranking number was requested alongside it and DECLINED — wires.json
+        # is served to registered users, and TestNoScoreIsUserFacing scans this
+        # very function to keep every such number out of it; the brain's reader
+        # falls back to recency ordering by design. The sanctioned ranked view
+        # is the non-public wire_rank sidecar, never this payload.
         "source_name": str(
             scored.get("source_name") or scored.get("source") or "")[:120],
     }
