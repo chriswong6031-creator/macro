@@ -56,7 +56,7 @@
     var rows = Array.prototype.slice.call(root.children || []);
     return rows.filter(function (row) {
       if (row.matches && row.matches("tr")) return !!row.querySelector("td");
-      return !!(row.matches && row.matches(".actitem,[data-theme-id],.pvcard,.nbcard,.nb-card,.ts-row,.sbx-tile,.dash-tw-row"));
+      return !!(row.matches && row.matches(".actitem,[data-theme-id],.pvcard,.nbcard,.nb-card,.ts-row,.sbx-tile"));
     });
   }
   function groups() {
@@ -71,7 +71,6 @@
     add("#us-standouts .nbgrid");
     add("#us-standouts .topsetups tbody");
     add("#us-stocktable-wrap tbody");
-    add("#dash-tw-rows");
     add("#dash-mtf-body tbody");
     add("body.page-stocks .panel table tbody");
 
