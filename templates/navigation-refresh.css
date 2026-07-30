@@ -1674,6 +1674,31 @@ html[data-lang="zh"] .nav-market-heading { letter-spacing: .02em; }
   .topbar .nav-dd:focus-within > .nav-dd-menu.nav-market-menu {
     display: grid;
   }
+
+  /* The wide menus are anchored to the whole nav instead of their trigger, so
+     their deliberately visible gap is not part of the trigger's hover box.
+     nav_market.js supplies a short hover-intent grace period while the pointer
+     crosses that gap; these rules keep the panel rendered during the crossing
+     without changing a single pixel of the approved menu geometry. */
+  .site-nav .nav-dd.nav-hover-open > .nav-dd-menu,
+  .topbar .nav-dd.nav-hover-open > .nav-dd-menu {
+    display: block;
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+
+  .site-nav .nav-dd.nav-hover-open > .nav-dd-menu.nav-mega,
+  .site-nav .nav-dd.nav-hover-open > .nav-dd-menu.nav-market-menu,
+  .topbar .nav-dd.nav-hover-open > .nav-dd-menu.nav-mega,
+  .topbar .nav-dd.nav-hover-open > .nav-dd-menu.nav-market-menu {
+    display: grid;
+  }
+
+  .site-nav .nav-dd.nav-hover-open > a.nav-link .caret,
+  .topbar .nav-dd.nav-hover-open > a.nav-link .caret {
+    transform: rotate(180deg);
+  }
 }
 
 /* In the content-aware two-row state, an icon-only brand recovers enough room
