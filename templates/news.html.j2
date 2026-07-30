@@ -135,7 +135,7 @@
 @keyframes nxBreathe{ 0%,100%{ opacity:0; } 50%{ opacity:.55; } }
 .nx-lead-eyebrow{ font-size:10.5px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
   color:var(--acc, var(--link)); margin-bottom:10px; }
-.nx-lead-row{ display:flex; gap:16px; align-items:flex-start; }
+.nx-lead-row{ display:flex; gap:18px; align-items:flex-start; }
 .nx-lead-body{ flex:1; min-width:0; }
 .nx-lead-title{ display:block; font-size:22px; font-weight:800; line-height:1.22; letter-spacing:-.015em;
   margin-bottom:10px; text-wrap:balance; }
@@ -147,11 +147,13 @@
 
 /* impact ring (rank_score 0-100) */
 .nx-impact{ --v:0; --acc:var(--link); flex:0 0 auto; width:60px; height:60px; border-radius:50%;
-  display:grid; place-items:center; position:relative;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative;
   background:conic-gradient(var(--acc) calc(var(--v)*1%), color-mix(in srgb,var(--text) 12%,transparent) 0); }
 .nx-impact::before{ content:""; position:absolute; inset:4px; border-radius:50%; background:var(--nx-card-solid); }
-.nx-impact b{ position:relative; font-size:17px; font-weight:800; font-family:var(--num); }
-.nx-impact small{ position:relative; display:block; font-size:8px; letter-spacing:.1em; color:var(--muted); text-transform:uppercase; margin-top:-2px; }
+.nx-impact b{ position:relative; font-size:17px; font-weight:800; line-height:1; font-family:var(--num); }
+.nx-impact small{ position:relative; display:block; width:100%; padding:0 6px; margin-top:4px;
+  font-size:8px; line-height:1; letter-spacing:.06em; text-align:center; white-space:nowrap;
+  overflow:hidden; color:var(--muted); text-transform:uppercase; }
 
 /* movers column */
 .nx-movers{ display:flex; flex-direction:column; gap:8px; }
@@ -521,7 +523,7 @@
 }
 @media(max-width:560px){
   .nx-lead{ padding:16px; } .nx-lead-title{ font-size:19px; }
-  .nx-lead-row{ gap:12px; } .nx-impact{ width:50px; height:50px; }
+  .nx-lead-row{ gap:14px; } .nx-impact{ width:50px; height:50px; }
   .nx-controls{ gap:8px; } .nx-search{ order:3; max-width:none; flex-basis:100%; }
 }
 /* motion / perf gates (mobile-perf law: opacity-only, killed on reduce/touch) */

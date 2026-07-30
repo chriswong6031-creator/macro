@@ -5324,25 +5324,10 @@ body.page-macro.mx4-grid .mx5-ai-gray{background:rgba(255,255,255,.06);color:var
 body.page-macro.mx4-grid .mx5-action-text{flex:1;}
 body.page-macro.mx4-grid .mx5-action-label{
   font-size:13px;color:var(--ink-1,rgba(255,255,255,.92));
-  line-height:1.35;font-weight:560;
+  line-height:1.45;font-weight:500;
 }
 body.page-macro.mx4-grid .mx5-action-sub{
-  font-size:11px;color:var(--ink-3,rgba(255,255,255,.42));margin-top:2px;
-}
-body.page-macro.mx4-grid .mx5-action-primary{
-  align-items:center;padding:2px 0 13px;
-}
-body.page-macro.mx4-grid .mx5-action-primary .mx5-action-icon{
-  width:36px;height:36px;border-radius:10px;
-}
-body.page-macro.mx4-grid .mx5-action-primary .mx5-action-icon svg{width:16px;height:16px;}
-body.page-macro.mx4-grid .mx5-action-primary .mx5-action-label{
-  font-size:15px;line-height:1.3;font-weight:720;letter-spacing:-.01em;
-}
-body.page-macro.mx4-grid .mx5-action-verb{
-  display:inline-block;margin-right:5px;
-  font-size:10px;font-weight:760;letter-spacing:.05em;text-transform:uppercase;
-  color:var(--ink-3,rgba(255,255,255,.42));
+  font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:3px;
 }
 /* in-row jump to an anchored panel (today: the active dislocation strip). The card
    FACE is itself a button that opens the Evidence dialog, so the anchor stops click
@@ -7936,8 +7921,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           </div>
           <div class="mx5-action-text">
             <div class="mx5-action-label">
-              <span class="l-en"><span class="mx5-action-verb">Event</span>{{ _wtd_ev.label }}: expect noise; ignore the first move.</span>
-              <span class="l-zh"><span class="mx5-action-verb">事件</span>{{ _wtd_ev_zh }}：波动会放大，忽略初动。</span>
+              <span class="l-en">{{ _wtd_ev.label }}: expect noise; ignore the first move.</span>
+              <span class="l-zh">{{ _wtd_ev_zh }}：波动会放大，忽略初动。</span>
             </div>
           </div>
         </div>
@@ -7951,8 +7936,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           </div>
           <div class="mx5-action-text">
             <div class="mx5-action-label">
-              <span class="l-en"><span class="mx5-action-verb">Watch</span>{{ _weakest.label_en }} ({{ _weakest.score }}/100).</span>
-              <span class="l-zh"><span class="mx5-action-verb">关注</span>{{ _weakest.label_zh or _weakest.label_en }}（{{ _weakest.score }}/100）。</span>
+              <span class="l-en">Watch {{ _weakest.label_en }} ({{ _weakest.score }}/100).</span>
+              <span class="l-zh">关注{{ _weakest.label_zh or _weakest.label_en }}（{{ _weakest.score }}/100）。</span>
             </div>
           </div>
         </div>
@@ -7975,8 +7960,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           </div>
           <div class="mx5-action-text">
             <div class="mx5-action-label">
-              <span class="l-en"><span class="mx5-action-verb">Policy</span>Watch for repricing.</span>
-              <span class="l-zh"><span class="mx5-action-verb">政策</span>留意重定价。</span>
+              <span class="l-en">Watch for policy repricing.</span>
+              <span class="l-zh">留意政策重定价。</span>
             </div>
           </div>
         </div>
@@ -7992,11 +7977,11 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <div class="mx5-action-text">
             <div class="mx5-action-label">
               {% if MS.radar.do_en %}
-              <span class="l-en"><span class="mx5-action-verb">Risk</span>{{ MS.radar.do_en }}</span>
-              <span class="l-zh"><span class="mx5-action-verb">风险</span>{{ MS.radar.do_zh or MS.radar.do_en }}</span>
+              <span class="l-en">{{ MS.radar.do_en }}</span>
+              <span class="l-zh">{{ MS.radar.do_zh or MS.radar.do_en }}</span>
               {% else %}
-              <span class="l-en"><span class="mx5-action-verb">Risk</span>Stay alert; conditions are weakening.</span>
-              <span class="l-zh"><span class="mx5-action-verb">风险</span>保持警觉，环境正在走弱。</span>
+              <span class="l-en">Stay alert; conditions are weakening.</span>
+              <span class="l-zh">保持警觉，环境正在走弱。</span>
               {% endif %}
             </div>
           </div>
@@ -8011,8 +7996,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           </div>
           <div class="mx5-action-text">
             <div class="mx5-action-label">
-              <span class="l-en"><span class="mx5-action-verb">Watch</span>{{ _weakest.label_en }} ({{ _weakest.score }}/100).</span>
-              <span class="l-zh"><span class="mx5-action-verb">关注</span>{{ _weakest.label_zh or _weakest.label_en }}（{{ _weakest.score }}/100）。</span>
+              <span class="l-en">Watch {{ _weakest.label_en }} ({{ _weakest.score }}/100).</span>
+              <span class="l-zh">关注{{ _weakest.label_zh or _weakest.label_en }}（{{ _weakest.score }}/100）。</span>
             </div>
           </div>
         </div>

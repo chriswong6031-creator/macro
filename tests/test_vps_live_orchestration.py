@@ -12,6 +12,20 @@ from scripts import vps_live_orchestrator as vlo
 from scripts import watch_release_publications as wrp
 from scripts.check_vps_live_health import evaluate as evaluate_live_health
 
+FOMC_STATEMENT = """
+    <html><body>
+    <p>July 29, 2026</p>
+    <p>The Federal Open Market Committee approved the following statement
+    for release by a 9 – 3 vote:</p>
+    <p>The Committee decided to maintain the target range for the federal
+    funds rate at 3-1/2 to 3-3/4 percent.</p>
+    <p>Voting against the monetary policy action were Beth M. Hammack,
+    Neel Kashkari, and Lorie K. Logan, who preferred to raise the target
+    range for the federal funds rate by 1/4 percentage point at this
+    meeting.</p>
+    </body></html>
+""".encode()
+
 
 def _http_result(body: bytes, *, last_modified: str = "Tue, 14 Jul 2026 12:30:00 GMT"):
     return {
@@ -61,6 +75,264 @@ def test_release_watcher_cold_start_recovers_from_official_date():
 
     _, payload = wrp.detect(now=after, state={}, fetcher=fetcher)
     assert [row["type"] for row in payload["publications"]] == ["CPI"]
+
+
+def test_fomc_watcher_publishes_verified_decision_facts():
+    after = datetime(2026, 7, 29, 18, 0, 30, tzinfo=timezone.utc)  # 14:00:30 ET
+
+    def fetcher(spec, prior, timeout):
+        assert spec.source_id == "fed_fomc"
+        assert spec.url.endswith("/monetary20260729a.htm")
+        assert prior == {}
+        return _http_result(
+            FOMC_STATEMENT,
+            last_modified="Wed, 29 Jul 2026 18:00:15 GMT",
+        )
+
+    _, payload = wrp.detect(now=after, state={}, fetcher=fetcher)
+    assert payload["schema"] == "release_publications.v2"
+    assert [row["type"] for row in payload["due"]] == ["FOMC"]
+    publication = payload["publications"][0]
+    assert publication["status"] == "published"
+    assert publication["data_ready"] is True
+    assert publication["scheduled_at"] == "2026-07-29T14:00:00-04:00"
+    assert publication["source_released_at"] == "2026-07-29T18:00:15+00:00"
+    assert publication["parser"] == {"name": "fomc", "version": 1}
+    assert publication["source_url"].endswith("/monetary20260729a.htm")
+    assert publication["actual"] == {
+        "kind": "policy_rate",
+        "action": "hold",
+        "target_low": 3.5,
+        "target_high": 3.75,
+        "unit": "percent",
+        "vote_for": 9,
+        "vote_against": 3,
+        "dissent_preference": "hike",
+        "dissent_basis_points": 25,
+        "headline_en": "Fed holds at 3.50%–3.75%",
+        "headline_zh": "美联储维持利率在 3.50%–3.75%",
+        "summary_en": (
+            "Fed holds at 3.50%–3.75% on a 9–3 vote. "
+            "Dissenters preferred a rate increase of 25 basis points."
+        ),
+        "summary_zh": (
+            "美联储维持利率在 3.50%–3.75%，表决结果为 9–3。 "
+            "反对者倾向于加息 25 个基点。"
+        ),
+        "source_url": (
+            "https://www.federalreserve.gov/newsevents/pressreleases/"
+            "monetary20260729a.htm"
+        ),
+    }
+    event = next(row for row in payload["events"] if row["type"] == "FOMC")
+    assert event["status"] == "published"
+    assert event["actual"]["action"] == "hold"
+    assert all(row["event_id"] != event["event_id"] for row in payload["upcoming"])
+    assert payload["poll_window"]["per_type_after_min"]["FOMC"] == 1440
+
+
+def test_fomc_lifecycle_stops_calling_past_event_upcoming_on_source_delay():
+    after = datetime(2026, 7, 29, 18, 2, tzinfo=timezone.utc)  # 14:02 ET
+
+    def unavailable(spec, prior, timeout):
+        raise RuntimeError("official source unavailable")
+
+    _, payload = wrp.detect(now=after, state={}, fetcher=unavailable)
+    event = next(row for row in payload["events"] if row["type"] == "FOMC")
+    assert event["status"] == "awaiting_publication"
+    assert payload["publications"] == []
+    assert payload["source_health"][0]["status"] == "error"
+    assert payload["source_health"][0]["error"] == "RuntimeError"
+    assert "official source unavailable" not in json.dumps(payload)
+
+
+def test_fomc_parser_handles_page_visible_before_scheduled_time():
+    before = datetime(2026, 7, 29, 17, 59, 30, tzinfo=timezone.utc)
+    after = datetime(2026, 7, 29, 18, 0, 1, tzinfo=timezone.utc)
+    statement = (
+        b"July 29, 2026 Federal Open Market Committee decided to maintain the "
+        b"target range for the federal funds rate at 3-1/2 to 3-3/4 percent."
+    )
+
+    calls: list[bool] = []
+
+    def fetcher(spec, prior, timeout):
+        calls.append(bool(prior))
+        if prior:
+            return {
+                "status": 304,
+                "body": b"",
+                "fingerprint": prior["fingerprint"],
+                "etag": prior["etag"],
+                "last_modified": prior["last_modified"],
+                "content_type": prior["content_type"],
+            }
+        return _http_result(
+            statement,
+            last_modified="Wed, 29 Jul 2026 17:59:00 GMT",
+        )
+
+    state, payload = wrp.detect(now=before, state={}, fetcher=fetcher)
+    assert payload["publications"] == []
+    _, payload = wrp.detect(now=after, state=state, fetcher=fetcher)
+    # The post-time conditional request is realistically a 304. The watcher
+    # retries once without validators so the deterministic parser gets bytes.
+    assert calls == [False, True, False]
+    assert payload["publications"][0]["actual"]["target_high"] == 3.75
+
+
+def test_fomc_unparseable_official_statement_is_not_reported_as_healthy():
+    after = datetime(2026, 7, 29, 18, 3, 30, tzinfo=timezone.utc)
+    changed_format = (
+        b"<html><body>July 29, 2026 Federal Open Market Committee "
+        b"target range decision expressed in an unsupported format.</body></html>"
+    )
+
+    def fetcher(spec, prior, timeout):
+        return _http_result(
+            changed_format,
+            last_modified="Wed, 29 Jul 2026 18:00:15 GMT",
+        )
+
+    _, payload = wrp.detect(now=after, state={}, fetcher=fetcher)
+    publication = payload["publications"][0]
+    assert publication["status"] == "published_unparsed"
+    assert publication["data_ready"] is False
+    event = next(row for row in payload["events"] if row["type"] == "FOMC")
+    assert event["status"] == "published_unparsed"
+
+    health = _healthy_vps_status()
+    health["checks"]["release_publications"].update(
+        {
+            "event_status": {"published_unparsed": 1, "scheduled": 3},
+            "max_publication_lag_min": 3.5,
+        }
+    )
+    assert any(
+        "official publication detected" in failure
+        and "remain unparsed 3.5m after schedule" in failure
+        for failure in evaluate_live_health(health, now=after)
+    )
+
+
+@pytest.mark.parametrize(
+    "now",
+    [
+        datetime(2026, 7, 30, 1, 0, tzinfo=timezone.utc),  # Jul 29 21:00 ET
+        datetime(2026, 7, 30, 5, 0, tzinfo=timezone.utc),  # Jul 30 01:00 ET
+    ],
+)
+def test_fomc_cold_start_recovers_through_24_hour_watch_window(now):
+    def fetcher(spec, prior, timeout):
+        assert spec.source_id == "fed_fomc"
+        return _http_result(
+            FOMC_STATEMENT,
+            last_modified="Wed, 29 Jul 2026 18:00:15 GMT",
+        )
+
+    _, payload = wrp.detect(now=now, state={}, fetcher=fetcher)
+    publication = next(row for row in payload["publications"] if row["type"] == "FOMC")
+    assert publication["data_ready"] is True
+    assert publication["actual"]["action"] == "hold"
+
+
+def test_fomc_missing_result_stays_delayed_after_24_hour_poll_window():
+    after_window = datetime(2026, 7, 30, 18, 1, tzinfo=timezone.utc)
+
+    def no_fomc_fetch(spec, prior, timeout):
+        assert spec.source_id != "fed_fomc"
+        return _http_result(b"unrelated same-day release page")
+
+    _, payload = wrp.detect(now=after_window, state={}, fetcher=no_fomc_fetch)
+    event = next(
+        row for row in payload["events"] if row["event_id"] == "fomc:2026-07-29"
+    )
+    assert event["status"] == "verification_delayed"
+    assert all(row["type"] != "FOMC" for row in payload["due"])
+
+
+def test_fomc_unparsed_result_stays_unhealthy_after_24_hours():
+    after_window = datetime(2026, 7, 30, 18, 1, tzinfo=timezone.utc)
+    event = {
+        "event_id": "fomc:2026-07-29",
+        "type": "FOMC",
+        "date": "2026-07-29",
+        "time_et": "14:00",
+        "label": "FOMC rate decision",
+        "label_zh": "美联储议息会议",
+        "status": "published_unparsed",
+        "data_ready": False,
+        "detected_at": "2026-07-29T18:00:30+00:00",
+    }
+    state = {
+        "schema": "release_publication_state.v2",
+        "sources": {},
+        "publications": {"FOMC:2026-07-29": event},
+    }
+
+    def no_fomc_fetch(spec, prior, timeout):
+        assert spec.source_id != "fed_fomc"
+        return _http_result(b"unrelated same-day release page")
+
+    _, payload = wrp.detect(now=after_window, state=state, fetcher=no_fomc_fetch)
+    retained = next(
+        row for row in payload["events"] if row["event_id"] == "fomc:2026-07-29"
+    )
+    assert retained["status"] == "published_unparsed"
+    assert any(
+        row["event_id"] == "fomc:2026-07-29"
+        for row in payload["publications"]
+    )
+
+    health = _healthy_vps_status()
+    health["checks"]["release_publications"].update(
+        {
+            "event_status": {"published_unparsed": 1},
+            "unparsed_publications": 1,
+            "max_publication_lag_min": 1441,
+        }
+    )
+    assert any(
+        "remain unparsed" in failure
+        for failure in evaluate_live_health(health, now=after_window)
+    )
+
+
+def test_fomc_unparsed_result_retries_and_recovers_after_fast_window():
+    retry_tick = datetime(2026, 7, 30, 18, 15, tzinfo=timezone.utc)
+    event = {
+        "event_id": "fomc:2026-07-29",
+        "type": "FOMC",
+        "date": "2026-07-29",
+        "time_et": "14:00",
+        "label": "FOMC rate decision",
+        "label_zh": "美联储议息会议",
+        "status": "published_unparsed",
+        "data_ready": False,
+        "detected_at": "2026-07-29T18:00:30+00:00",
+    }
+    state = {
+        "schema": "release_publication_state.v2",
+        "sources": {},
+        "publications": {"FOMC:2026-07-29": event},
+    }
+
+    def fetcher(spec, prior, timeout):
+        if spec.source_id == "fed_fomc":
+            return _http_result(
+                FOMC_STATEMENT,
+                last_modified="Wed, 29 Jul 2026 18:00:15 GMT",
+            )
+        return _http_result(b"unrelated same-day release page")
+
+    _, payload = wrp.detect(now=retry_tick, state=state, fetcher=fetcher)
+    recovered = next(
+        row for row in payload["publications"]
+        if row["event_id"] == "fomc:2026-07-29"
+    )
+    assert recovered["status"] == "published"
+    assert recovered["data_ready"] is True
+    assert recovered["actual"]["action"] == "hold"
 
 
 def test_atomic_publish_rejects_invalid_json(tmp_path: Path):
@@ -274,7 +546,12 @@ def _healthy_vps_status() -> dict:
         "status": "ok",
         "checks": {
             "quotes": {"age_min": 1, "requested": 25, "resolved": 20},
-            "release_publications": {"age_min": 1},
+            "release_publications": {
+                "schema": "release_publications.v2",
+                "age_min": 1,
+                "event_status": {"published": 1, "scheduled": 3},
+                "max_publication_lag_min": 0,
+            },
             "orchestrator": {
                 "age_min": 1,
                 "lanes": {
@@ -311,6 +588,24 @@ def test_vps_health_contract_reports_failed_or_stale_lane():
     assert any("lane snapshot: stale" in failure for failure in failures)
 
 
+def test_vps_health_contract_reports_semantically_late_release():
+    payload = _healthy_vps_status()
+    payload["checks"]["release_publications"].update(
+        {
+            "event_status": {"awaiting_publication": 1, "scheduled": 3},
+            "max_publication_lag_min": 2.5,
+        }
+    )
+    failures = evaluate_live_health(
+        payload,
+        now=datetime(2026, 7, 20, 15, 0, tzinfo=timezone.utc),
+    )
+    assert (
+        "release_publications: official result still unavailable 2.5m after schedule"
+        in failures
+    )
+
+
 def test_vps_health_contract_does_not_require_equity_lanes_on_weekend():
     payload = _healthy_vps_status()
     del payload["checks"]["orchestrator"]["lanes"]["snapshot"]
@@ -326,13 +621,14 @@ def test_vps_health_contract_does_not_require_equity_lanes_on_weekend():
 def test_caddy_serves_live_store_without_cache():
     root = Path(__file__).resolve().parents[1]
     text = (root / "app" / "deploy" / "Caddyfile").read_text()
-    assert "@vps_public_quote" in text
+    assert "@vps_public_live" in text
     assert "@vps_external" in text
     assert "handle /live/quotes.json" in text
+    assert "handle /live/release_publications.json" in text
     assert "root * /var/lib/macro-live/public" in text
     assert 'Cache-Control "no-store"' in text
-    # Only the reviewed quote snapshot bypasses auth. All other external live
-    # artifacts must be selected from inside the fail-closed asset route.
+    # Only explicitly reviewed market-display and official-event facts bypass
+    # auth. All other external live artifacts stay inside the fail-closed route.
     assert "handle /live/*" not in text
     protected = text[text.index("handle @reg_asset {") : text.index("@gate_html {")]
     assert "rewrite /api/regwall/check" in protected

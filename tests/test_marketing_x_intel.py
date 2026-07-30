@@ -785,7 +785,10 @@ class TestWorkflow:
         # PyYAML resolves a bare `on:` key to the boolean True (YAML 1.1).
         triggers = wf.get("on", wf.get(True))
         crons = [c["cron"] for c in triggers["schedule"]]
-        assert crons == ["0 22 * * 0"], crons
+        # The Sunday DEEP pass. A second, Mon-Sat cron carries the light pass
+        # (#3960) and is pinned by TestDailyLightPass below; this test owns the
+        # deep one, which must never be replaced by the cheap one.
+        assert "0 22 * * 0" in crons, crons
         assert "workflow_dispatch" in triggers
 
     def test_it_carries_the_api_key(self, wf_path):
@@ -1122,6 +1125,121 @@ class TestStoreSchemaIsValidatedOnRead:
         assert xs.load_store(tmp_path)["latest_version"] == 1
 
 
+class TestATornStoreCannotCrashTheWriter:
+    """MY-M7. The store is DARK (``active_version`` pins to None), so this is
+    about the FAILURE MODE, not the feature: a half-written or hand-edited store
+    is read inside the writer's prompt build, and it must cost the prompt its
+    exemplars rather than the post.
+
+    Two shapes. A truncated write leaves INVALID JSON and was already handled.
+    The other one parses: ``versions`` arriving as a string, or as a list with a
+    non-dict in it. That blob cleared the schema check and then made
+    ``active_exemplars`` raise ``AttributeError`` inside a comprehension --
+    contradicting the module's own documented "returns [], never raises".
+    """
+
+    STORE_REL = "data/marketing/x_intel/exemplar_store.json"
+    PIN = {"intel": {"exemplar_store": {"active_version": 1}}}
+
+    def _write_raw(self, tmp_path, text: str) -> Path:
+        p = tmp_path / self.STORE_REL
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(text, encoding="utf-8")
+        return tmp_path
+
+    def _good_store(self) -> dict:
+        return {"schema": xs.STORE_SCHEMA, "latest_version": 1, "pending": [],
+                "versions": [{"version": 1, "entries": [
+                    {"register": "wire", "text": "ON THE TAPE: something",
+                     "post_id": "1", "engagement": {"interaction_rate": 0.04}}]}]}
+
+    def test_a_truncated_store_yields_no_exemplars_and_does_not_raise(
+            self, tmp_path, capsys):
+        blob = json.dumps(self._good_store())
+        root = self._write_raw(tmp_path, blob[: len(blob) // 2])   # torn mid-write
+
+        assert xs.load_store(root)["versions"] == []
+        assert xs.active_exemplars("wire", 4, root=root, cfg=self.PIN) == []
+
+        lines = capsys.readouterr().out.splitlines()
+        assert [ln for ln in lines
+                if ln.startswith("::warning") and "x-intel-exemplars" in ln], (
+            "a torn store was silent — a start-of-line ::warning is the only "
+            "form GitHub surfaces")
+
+    def test_an_empty_file_yields_no_exemplars(self, tmp_path):
+        root = self._write_raw(tmp_path, "")
+        assert xs.load_store(root)["versions"] == []
+        assert xs.active_exemplars(None, 4, root=root, cfg=self.PIN) == []
+
+    @pytest.mark.parametrize("versions", [
+        "not-a-list",                       # container is a string
+        ["a-bare-string"],                  # list of non-dicts
+        [{"version": 1}, "trailing-junk"],  # one good row, one torn
+        42,
+    ])
+    def test_a_malformed_versions_container_reads_as_empty(self, tmp_path,
+                                                           versions, capsys):
+        store = self._good_store()
+        store["versions"] = versions
+        root = self._write_raw(tmp_path, json.dumps(store))
+
+        assert xs.load_store(root)["versions"] == []
+        assert xs.active_exemplars("wire", 4, root=root, cfg=self.PIN) == []
+        assert "::warning title=x-intel-exemplars::" in capsys.readouterr().out
+
+    def test_a_malformed_entry_inside_a_good_version_never_raises(self, tmp_path,
+                                                                  capsys):
+        """The umbrella's own job: load_store cannot screen every leaf, so a
+        version row with an un-floatable engagement must still return []."""
+        store = self._good_store()
+        store["versions"][0]["entries"] = [
+            {"register": "wire", "text": "x", "post_id": "1",
+             "engagement": {"interaction_rate": "not-a-number"}}]
+        root = self._write_raw(tmp_path, json.dumps(store))
+
+        assert xs.active_exemplars("wire", 4, root=root, cfg=self.PIN) == []
+        assert "::warning title=x-intel-exemplars::" in capsys.readouterr().out
+
+    def test_the_writer_prompts_survive_a_torn_store(self, tmp_path):
+        """END TO END through both production callers (the two BLOCKER-3 seams).
+        A torn store must not change the prompt the writer actually sends."""
+        from engine.marketing import copywriter as cw
+        from engine.marketing import reply_voice as rv
+
+        blob = json.dumps(self._good_store())
+        root = self._write_raw(tmp_path, blob[: len(blob) // 2])
+
+        assert cw.store_exemplar_block(self.PIN, root=root) == ""
+        assert rv.system_prompt(cfg=self.PIN, root=root) == rv.SYSTEM_PROMPT
+
+    def test_a_healthy_store_still_reaches_the_writer(self, tmp_path):
+        """The control: the guards must not have made the hook permanently dark."""
+        from engine.marketing import copywriter as cw
+
+        root = self._write_raw(tmp_path, json.dumps(self._good_store()))
+        shots = xs.active_exemplars("wire", 4, root=root, cfg=self.PIN)
+        assert len(shots) == 1 and shots[0]["exemplar_version"] == 1
+        assert "ON THE TAPE" in cw.store_exemplar_block(self.PIN, root=root)
+
+    def test_the_store_is_written_atomically(self, tmp_path):
+        """No reader can ever see a partial store: the write lands via a tmp file
+        in the same directory plus os.replace, so the swap is atomic."""
+        import inspect
+
+        src = inspect.getsource(xs.save_store)
+        assert "write_json_atomic" in src
+        helper = inspect.getsource(
+            __import__("engine.marketing.x_intel", fromlist=["x"]).write_json_atomic)
+        assert "mkstemp" in helper and "os.replace" in helper
+        # And the real thing round-trips with no leftover tmp file.
+        (tmp_path / "data" / "marketing" / "x_intel").mkdir(parents=True)
+        assert xs.save_store(self._good_store(), tmp_path, now=NOW)
+        assert xs.load_store(tmp_path)["latest_version"] == 1
+        leftovers = list((tmp_path / "data/marketing/x_intel").glob(".xi-*"))
+        assert leftovers == [], leftovers
+
+
 class TestCopywriterExemplarHook:
     """BLOCKER 3, writer half. §10 E3 requires "writer/critic prompts load
     exemplars from the store (config-pinned version, never auto-flipped)".
@@ -1272,3 +1390,258 @@ class TestWorkflowCommitsSpentStateEvenOnFailure:
         payload = json.loads(out.read_text(encoding="utf-8"))
         assert payload["dry_run"] is True
         assert "budget" in payload
+
+
+# ===========================================================================
+# THE DAILY LIGHT PASS (#3960 reviewer minor)
+#
+# intel.monthly_call_cap is 600 and its own arithmetic says why:
+#   17 roster accounts x 1 weekly deep pass x 4.4 weeks  =  ~75 calls
+# + a daily light pass on the 5 fastest desks (5 x 30)   =  150 calls
+# The second line NEVER EXISTED. The cap was justified by a lane nothing spent,
+# and the wire desks it named -- accounts that post dozens of times a day -- were
+# sampled once a week. `--light` is that pass, inside the SAME committed cap.
+# ===========================================================================
+
+class TestDailyLightPass:
+    def _cfg(self, *, roster: list[dict], **over) -> dict:
+        intel = {"enabled": True, "roster": roster, "light_tier": "daily",
+                 "light_max_handles": 5, **over}
+        return {"intel": intel}
+
+    def _seed(self, tmp_path, cfg) -> Path:
+        (tmp_path / "config").mkdir(parents=True, exist_ok=True)
+        (tmp_path / "config" / "marketing.yml").write_text(
+            yaml.safe_dump(cfg), encoding="utf-8")
+        return tmp_path
+
+    def _run(self, tmp_path, *args, probe=(True, "ok")):
+        import scripts.x_intel_harvest as harvest
+
+        out = tmp_path / "run.json"
+        rc = harvest.main(["--root", str(tmp_path), "--json-out", str(out), *args])
+        payload = json.loads(out.read_text(encoding="utf-8"))
+        return rc, payload
+
+    @staticmethod
+    def _fake_probe(monkeypatch, ok: bool, detail: str = "ok") -> None:
+        import scripts.x_intel_harvest as harvest
+
+        monkeypatch.setattr(harvest, "_push_access_ok", lambda _root: (ok, detail))
+
+    # -- handle selection --------------------------------------------------
+
+    def test_light_polls_only_the_daily_tier(self, tmp_path, monkeypatch):
+        self._fake_probe(monkeypatch, True)
+        monkeypatch.delenv("TWITTERAPI_IO_KEY", raising=False)
+        root = self._seed(tmp_path, self._cfg(roster=[
+            {"handle": "DeItaone", "register": "wire", "tier": "daily"},
+            {"handle": "Barchart", "register": "aggregator", "tier": "daily"},
+            {"handle": "bespokeinvest", "register": "commentary"},        # weekly
+            {"handle": "PeterLBrandt", "register": "trader", "tier": "weekly"},
+        ]))
+
+        _rc, payload = self._run(root, "--light")
+
+        assert payload["light"]["handles"] == ["DeItaone", "Barchart"]
+        assert payload["harvest"]["handles_requested"] == 2
+
+    def test_the_weekly_pass_still_polls_everyone(self, tmp_path, monkeypatch):
+        """The control: `tier: daily` narrows the LIGHT pass, not the roster."""
+        self._fake_probe(monkeypatch, True)
+        monkeypatch.delenv("TWITTERAPI_IO_KEY", raising=False)
+        root = self._seed(tmp_path, self._cfg(roster=[
+            {"handle": "DeItaone", "register": "wire", "tier": "daily"},
+            {"handle": "bespokeinvest", "register": "commentary"},
+        ]))
+
+        _rc, payload = self._run(root)
+
+        assert payload["harvest"]["handles_requested"] == 2
+        assert "light" not in payload
+
+    def test_light_is_capped_however_many_desks_carry_the_tier(self, tmp_path,
+                                                              monkeypatch):
+        """A cap that only holds when the config is tidy is not a cap."""
+        self._fake_probe(monkeypatch, True)
+        monkeypatch.delenv("TWITTERAPI_IO_KEY", raising=False)
+        root = self._seed(tmp_path, self._cfg(
+            light_max_handles=2,
+            roster=[{"handle": f"acct{i}", "register": "wire", "tier": "daily"}
+                    for i in range(9)]))
+
+        _rc, payload = self._run(root, "--light")
+
+        assert len(payload["light"]["handles"]) == 2
+
+    def test_no_daily_desk_polls_nothing_rather_than_everyone(self, tmp_path,
+                                                              monkeypatch, capsys):
+        """FAIL CLOSED ON THE BUDGET. Falling back to the full roster would turn a
+        5-call daily pass into a 17-call one on a config typo, 30 times a month."""
+        self._fake_probe(monkeypatch, True)
+        monkeypatch.delenv("TWITTERAPI_IO_KEY", raising=False)
+        root = self._seed(tmp_path, self._cfg(roster=[
+            {"handle": "DeItaone", "register": "wire"},
+            {"handle": "Barchart", "register": "aggregator"},
+        ]))
+
+        _rc, payload = self._run(root, "--light")
+
+        assert payload["light"]["handles"] == []
+        assert payload["harvest"]["handles_requested"] == 0
+        warn = [ln for ln in capsys.readouterr().out.splitlines()
+                if ln.startswith("::warning title=x-intel::") and "--light" in ln]
+        assert warn, "an empty daily selection was silent"
+
+    # -- boundedness -------------------------------------------------------
+
+    def test_light_clamps_the_per_run_call_ceiling_to_the_handle_count(
+            self, tmp_path, monkeypatch):
+        """One call per daily desk, whatever max_calls_per_run says."""
+        self._fake_probe(monkeypatch, True)
+        monkeypatch.setenv("TWITTERAPI_IO_KEY", "fake-key")
+        seen: dict = {}
+        real_run = xi.Harvester.run
+
+        def _spy(self, **kw):
+            seen["max_calls_per_run"] = self.max_calls_per_run
+            seen["handles"] = [h["handle"] for h in (kw.get("handles") or [])]
+            return real_run(self, **{**kw, "offline": True})
+
+        monkeypatch.setattr(xi.Harvester, "run", _spy)
+        root = self._seed(tmp_path, self._cfg(
+            max_calls_per_run=20,
+            roster=[{"handle": "DeItaone", "register": "wire", "tier": "daily"},
+                    {"handle": "Barchart", "register": "aggregator", "tier": "daily"}]))
+
+        self._run(root, "--light")
+
+        assert seen["handles"] == ["DeItaone", "Barchart"]
+        assert seen["max_calls_per_run"] == 2
+
+    def test_light_stops_before_the_tables_and_the_pending_pool(self, tmp_path,
+                                                                monkeypatch):
+        """The weekly pass owns analysis. Re-rendering a file called
+        WEEKLY_REPORT.md thirty times a month is churn AND a lie about cadence."""
+        self._fake_probe(monkeypatch, True)
+        monkeypatch.delenv("TWITTERAPI_IO_KEY", raising=False)
+        root = self._seed(tmp_path, self._cfg(roster=[
+            {"handle": "DeItaone", "register": "wire", "tier": "daily"}]))
+        xi.append_corpus(_fixture_corpus(), root=root)
+
+        _rc, payload = self._run(root, "--light")
+
+        assert "analysis" not in payload and "candidates" not in payload
+        assert payload["skipped"].startswith("light pass")
+        assert not xi.report_path(root).exists()
+        assert not xi.weekly_report_path(root).exists()
+        assert not xs.store_path(root).exists()
+        # The budget receipt is still printed: a pass that spends reports it.
+        assert payload["budget"]["call_cap"] == 600 or "call_cap" in payload["budget"]
+
+    # -- the push-probe money law -----------------------------------------
+
+    def test_a_failed_push_probe_makes_no_billed_request(self, tmp_path,
+                                                         monkeypatch, capsys):
+        """state.json IS the cap. A run that spends and cannot push forgets what
+        it spent, so the next pass reads $0.00 and the cap can never fire."""
+        self._fake_probe(monkeypatch, False, "remote rejected")
+        monkeypatch.setenv("TWITTERAPI_IO_KEY", "fake-key")
+        calls: list = []
+        monkeypatch.setattr(xi.Harvester, "_request",
+                            lambda self, key, params: calls.append(params))
+        root = self._seed(tmp_path, self._cfg(roster=[
+            {"handle": "DeItaone", "register": "wire", "tier": "daily"}]))
+
+        _rc, payload = self._run(root, "--light")
+
+        assert calls == [], "money moved with no landing push"
+        assert payload["push_probe"] == {"ok": False, "detail": "remote rejected"}
+        assert float(payload["budget"]["usd"]) == 0.0
+        warn = [ln for ln in capsys.readouterr().out.splitlines()
+                if ln.startswith("::warning title=x-intel::") and "push access" in ln]
+        assert warn, "the stand-down was silent"
+
+    def test_a_passing_probe_lets_the_harvest_run(self, tmp_path, monkeypatch):
+        """The control: the probe gates the lane, it does not disable it."""
+        self._fake_probe(monkeypatch, True)
+        monkeypatch.setenv("TWITTERAPI_IO_KEY", "fake-key")
+        calls: list = []
+
+        def _req(self, key, params):
+            calls.append(params)
+            return _api_response([])
+
+        monkeypatch.setattr(xi.Harvester, "_request", _req)
+        root = self._seed(tmp_path, self._cfg(roster=[
+            {"handle": "DeItaone", "register": "wire", "tier": "daily"}]))
+
+        _rc, payload = self._run(root, "--light")
+
+        assert len(calls) == 1
+        assert payload["push_probe"]["ok"] is True
+
+    def test_the_probe_is_skipped_when_nothing_would_be_billed(self, tmp_path,
+                                                              monkeypatch):
+        """A dry run spends nothing, so it must not need push access to report."""
+        import scripts.x_intel_harvest as harvest
+
+        monkeypatch.setattr(harvest, "_push_access_ok",
+                            lambda _r: pytest.fail("probed on a dry run"))
+        root = self._seed(tmp_path, self._cfg(roster=[
+            {"handle": "DeItaone", "register": "wire", "tier": "daily"}]))
+        assert self._run(root, "--light", "--dry-run")[0] == 0
+
+    def test_the_probe_rule_is_single_sourced_from_the_press_wire(self):
+        """Two implementations of "may I push" is how one of them rots."""
+        import inspect
+
+        import scripts.x_intel_harvest as harvest
+
+        src = inspect.getsource(harvest._push_access_ok)
+        assert "from scripts.marketing_press_wire import push_access_ok" in src
+        # CODE only -- the docstring names the probe to explain it, and prose
+        # must not be able to satisfy or break this.
+        code = src.replace(harvest._push_access_ok.__doc__ or "", "")
+        assert "subprocess" not in code and "git push" not in code, \
+            "the probe itself must not be re-implemented here"
+
+    # -- the cap did not move ---------------------------------------------
+
+    def test_adding_the_daily_pass_raised_no_cap_and_no_carve(self, cfg):
+        """THE INVARIANT THAT MATTERS. The light pass is spent from the budget
+        that was already justified for it, so both intel caps must be unchanged
+        and the three twitterapi.io carves must still leave the $5 reserve under
+        the shared $75 account cap."""
+        intel = cfg["intel"]
+        assert intel["monthly_call_cap"] == 600
+        assert intel["monthly_usd_cap"] == 5.0
+
+        press = yaml.safe_load(
+            (ROOT / "config" / "press_sources.yml").read_text(encoding="utf-8"))
+        account = float(press["spend"]["twitterapiio_monthly_cap_usd"])
+        wire = float(press["actions_wire"]["monthly_usd_cap"])
+        reply = float(press["reply_discovery"]["monthly_usd_cap"])
+        assert account == 75.0
+        assert wire + reply + float(intel["monthly_usd_cap"]) <= account - 5.0
+
+    def test_the_light_arithmetic_matches_the_shipped_roster(self, cfg):
+        """5 desks x ~30 days = the 150 calls the cap comment already claims."""
+        intel = cfg["intel"]
+        daily = [e for e in intel["roster"]
+                 if str(e.get("tier") or "") == intel["light_tier"]]
+        assert len(daily) == intel["light_max_handles"] == 5
+        assert 31 * len(daily) < intel["monthly_call_cap"]
+
+    def test_the_daily_cron_runs_the_light_pass(self, wf, wf_path):
+        """A cron that does not reach --light is a lane that still does not exist."""
+        crons = [c["cron"] for c in wf[True]["schedule"]]
+        assert "0 22 * * 0" in crons, "the weekly deep pass must survive"
+        daily = [c for c in crons if c != "0 22 * * 0"]
+        assert len(daily) == 1, crons
+        body = wf_path.read_text(encoding="utf-8")
+        # The scheduled run can only tell WHICH cron fired from event.schedule,
+        # so that literal has to match the cron exactly or the daily pass runs
+        # as a full deep pass.
+        assert f"github.event.schedule == '{daily[0]}'" in body
+        assert 'ARGS="$ARGS --light"' in body

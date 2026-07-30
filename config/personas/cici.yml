@@ -106,31 +106,48 @@ canon:
   - "multilingual headlines"
   - "time zones and global cities"
 restraint: "never accepts a Western headline as sufficient local context; separates policy intent from market transmission before drawing any conclusion"
-## LIVE resolver profile (XG-W2). WEIGHTED TO THE HK/ASIA SESSION: the same 3/day
-## as the rest of the bench, but the slots belong to the overnight window the US
-## desks do not cover. engine/marketing/cadence_resolver.py bounds her emission
-## from exactly these numbers — posts_per_day and min_spacing_min are the law now,
-## not a declaration.
+## LIVE resolver law (XG-W2), reconciled with the D08 ramp 2026-07-28. The spec and
+## the ramp tier are ANDed at post time, so a spec number BELOW the tier is what the
+## desk actually gets. 20 is the widest cap she can reach under sentinel.ramp
+## (week_5_plus), so the RAMP is the governor and the spec never binds first — the
+## age ramp is what holds a new desk at 10/day, not a hand-written number here.
+## Spacing 20 + up to 3 jitter = 23 max = the 30-min ladder step minus
+## publish.post_jitter_max_min (7), the gap the resolver actually measures at the
+## next publisher sweep. Derivation + the guard that keeps this coherent:
+## tests/test_marketing_cadence_ramp_coherence.py.
 cadence:
-  posts_per_day: 3
-  min_spacing_min: 150
-  jitter_min: 30
-  weekend_shape: light
+  posts_per_day: 20
+  min_spacing_min: 20
+  jitter_min: 3
+  weekend_shape: medium
   ## Territory clock (constitution §13.8). Two HK-local windows: the cash
   ## session (pre-open read through the close) and the evening leg that lands
   ## while New York is still trading — "Before New York Wakes" belongs to the
   ## first, "Asia Close, Global Read-Through" to the end of it.
   ##
+  ## THE EVENING LEG NOW COVERS THE WHOLE US SESSION (2026-07-28). It ended at
+  ## 23:00 HK, which is 10:00 ET — half an hour after the New York open. The
+  ## publisher can only post inside its own cron window (UTC 11:00–01:30, i.e. HK
+  ## 19:00–09:30), and only 3.5 of those hours fell inside her windows, so the
+  ## session fence alone held her to ~11 slots however high posts_per_day went:
+  ## the fence, not the ramp, was her real cap. 20:00–05:00 HK is the US cash
+  ## session in her clock, which is the tape "what New York inherits at the open"
+  ## is written against. 05:00–08:00 and 17:00–20:00 HK stay fenced — she is a
+  ## correspondent with a working day, not a wire that never sleeps.
+  ##
   ## outside_window_posts_per_day: 1 is the WEIGHTING, not a fence. At most one
-  ## of her three daily slots may land outside the Asia windows, so two of three
-  ## are hers by construction — a correspondent who filed her Asia read from the
-  ## US afternoon would be a correspondent in name only. Set to 0 to make the
-  ## windows a hard fence; the resolver reads whatever is here.
+  ## of her daily slots may land outside the Asia/US windows, so the rest are
+  ## hers by construction — a correspondent who filed her Asia read from the
+  ## US afternoon would be a correspondent in name only. Widening the window
+  ## rather than inflating this allowance is deliberate: the allowance is what
+  ## states how much of her day may escape her territory, and it should not have
+  ## to grow to nine just because the window was drawn too narrow to reach.
+  ## Set to 0 to make the windows a hard fence; the resolver reads whatever is here.
   session:
     tz: Asia/Hong_Kong
     windows:
       - "08:00-17:00"   # HK cash session, pre-open read through the close
-      - "20:00-23:00"   # evening leg — overlaps the US morning
+      - "20:00-05:00"   # evening leg — the whole US cash session in HK time
     outside_window_posts_per_day: 1
 ## Real named human on an official rail — §2 isolation checklist does not apply.
 isolation:

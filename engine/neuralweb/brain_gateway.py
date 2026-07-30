@@ -265,6 +265,10 @@ _BRAIN_TOOLS = frozenset({
     # Portfolio-Aware Intelligence W1 — the signed-in user's own book, read through the
     # desks' current reads (Pro-only, descriptive-only).
     "get_portfolio_brief",
+    # Analyst OS P0 — market-intel retrieval (facts only: headlines/salience/summaries;
+    # never authored effect chains — TI-R5)
+    "get_market_events",
+    "search_research",
     # Inline chart rendering (all pages — renders SVG inside the chat reply)
     "render_inline_chart",
     # Chart-command bus (W6b): client-executed, terminal page only
@@ -306,6 +310,9 @@ _BRAIN_ONLY_TOOLS = frozenset({
     "get_watchlist",
     # Portfolio-Aware Intelligence W1
     "get_portfolio_brief",
+    # Analyst OS P0
+    "get_market_events",
+    "search_research",
     # Inline chart rendering (all pages)
     "render_inline_chart",
     # Chart-command bus (W6b)
@@ -3241,6 +3248,40 @@ def _dispatch_brain_tool(
             return _tool_get_watchlist(tool_params, root, user_id=user_id)
         if tool_name == "get_portfolio_brief":
             return _tool_get_portfolio_brief(tool_params, root, user_id=user_id)
+        if tool_name == "get_market_events":
+            # Analyst OS P0 — live wire + nightly digests; facts only (TI-R5).
+            from engine.neuralweb import brain_market_intel as _bmi  # noqa: PLC0415
+            _sym = tool_params.get("symbol")
+            # Pass raw values through — the module's own clamps handle junk model
+            # arguments; coercing here would raise first and waste the tool round.
+            return _bmi.get_market_events(
+                root,
+                window_h=tool_params.get("window_h", 12.0),
+                limit=tool_params.get("limit", 5),
+                symbol=str(_sym) if _sym else None,
+            )
+        if tool_name == "search_research":
+            # Analyst OS P0 — vault summaries mirror the vault product's tiers
+            # (Insider/Pro). Execution-time gate, portfolio-brief idiom: the model
+            # gets the gate explained instead of fabricating research.
+            if not user_id:
+                return {"error": "insider_required", "note": (
+                    "Institutional research search needs a signed-in Insider or Pro "
+                    "account — explain the gate and answer from the desk's own signals.")}
+            _ent = _resolve_tier(user_id, root=root)
+            _tier = _ent.get("tier") or "free"
+            _status = _ent.get("status") or "active"
+            if not (_tier in ("insider", "pro", "unlimited")
+                    and _status in ("active", "trialing")):
+                return {"error": "insider_required", "tier": _tier, "note": (
+                    "The research vault is an Insider/Pro capability. This user is on "
+                    f"the '{_tier}' tier — explain the gate; do not fabricate research.")}
+            from engine.neuralweb import brain_market_intel as _bmi  # noqa: PLC0415
+            return _bmi.search_research(
+                root,
+                query=str(tool_params.get("query") or ""),
+                limit=tool_params.get("limit", 5),
+            )
         if tool_name == "render_inline_chart":
             return _tool_render_inline_chart(tool_params, root)
         # Chart-command bus (W6b)
@@ -3292,6 +3333,14 @@ def _all_brain_tool_schemas(root: Path, page: str = "", internals_allowed: bool 
     """
     from engine.neuralweb.ask_brain import _read_tool_schemas  # noqa: PLC0415
     schemas = _read_tool_schemas() + _brain_tool_schemas()
+    # Analyst OS P0: market-intel retrieval (live events wire + research-vault search).
+    # Offered everywhere; search_research is tier-gated at EXECUTION (the portfolio-brief
+    # idiom) so the model can explain the gate instead of hallucinating research.
+    try:
+        from engine.neuralweb import brain_market_intel as _bmi  # noqa: PLC0415
+        schemas = schemas + [_bmi.EVENTS_TOOL_SCHEMA, _bmi.RESEARCH_TOOL_SCHEMA]
+    except Exception:  # noqa: BLE001
+        pass
     if page == "terminal":
         schemas = schemas + _chart_command_tool_schemas()
     if internals_allowed:
@@ -3362,11 +3411,37 @@ def _doctrine_block_for(page: str, message: str) -> str:
         return ""
 
 
+def _analyst_block_for(message: str, lane: str) -> str:
+    """Market Analyst doctrine (superintelligence P0): the investigation protocol +
+    trigger-routed lenses/playbooks, EVERY page and mode — market questions arrive on
+    the dashboard as much as the Terminal. The lane dial tunes autonomy, never the
+    evidence bar (fast = tight sequence, pro = deeper pass). Never raises."""
+    try:
+        from engine.neuralweb import analyst_doctrine as _analyst  # noqa: PLC0415
+        block = _analyst.prompt_block(_analyst.route(message))
+        if not block:
+            return ""
+        return block + _analyst.lane_dial(lane)
+    except Exception:  # noqa: BLE001
+        return ""
+
+
 def _grounding_digest(root: Path) -> str:
     """A compact plain-text snapshot of the current calibrated dashboard state, prepended to
     the user's turn so the model always answers from REAL data — not memory — even when a
-    weaker (Fast/DeepSeek) model doesn't reliably call a read tool. Sourced from committed
-    nightly artifacts; the model cites them as master_brief.json / world_state. Never raises."""
+    weaker (Fast/DeepSeek) model doesn't reliably call a read tool. Never raises.
+
+    Analyst OS P0: the primary body is now the Live Market State Packet
+    (engine/neuralweb/market_packet — tape/curve/flags/events + the nightly desk boards,
+    every section freshness-stamped). The original master_brief/world_state prose below
+    survives as the fail-soft fallback so a broken packet can never blank the grounding."""
+    try:
+        from engine.neuralweb import market_packet as _mp  # noqa: PLC0415
+        s = _mp.digest(root)
+        if s:
+            return s
+    except Exception:  # noqa: BLE001
+        pass
     lines: list[str] = []
     try:
         for p in (root / "site" / "master_brief.json",
@@ -4634,6 +4709,7 @@ def _run_brain_loop(
     tool_schemas = _all_brain_tool_schemas(root, page=safe_page, internals_allowed=internals_ok)
     system_prompt = _build_system_prompt(mode, safe_page, internals_allowed=internals_ok)
     system_prompt = system_prompt + _doctrine_block_for(safe_page, message)  # CMX W4
+    system_prompt = system_prompt + _analyst_block_for(message, lane)  # Analyst OS P0
     # The turn's ONE language, named explicitly and LAST (see _language_directive).
     turn_lang = _expected_lang(message, context)
     system_prompt = system_prompt + _language_directive(turn_lang)
@@ -4850,6 +4926,8 @@ _TOOL_LABELS: dict[str, tuple[str, str]] = {
     "get_house_view":         ("Consulting the house view",     "查询本站观点"),
     "get_watchlist":          ("Reading your watchlist",        "读取您的自选列表"),
     "get_portfolio_brief":    ("Reviewing your portfolio",      "查看您的组合"),
+    "get_market_events":      ("Scanning the news wire",        "扫描新闻快讯"),
+    "search_research":        ("Searching institutional research", "检索机构研报"),
     "render_inline_chart":    ("Drawing a chart",               "绘制图表"),
     "annotate_chart":         ("Marking key levels",            "标记关键位置"),
     "chart_digest":           ("Reading your chart",            "读取您的图表"),
@@ -5063,6 +5141,7 @@ def _run_brain_loop_stream(
     tool_schemas = _all_brain_tool_schemas(root, page=safe_page, internals_allowed=internals_ok)
     system_prompt = _build_system_prompt(mode, safe_page, internals_allowed=internals_ok)
     system_prompt = system_prompt + _doctrine_block_for(safe_page, message)  # CMX W4
+    system_prompt = system_prompt + _analyst_block_for(message, lane)  # Analyst OS P0
     # The turn's ONE language, named explicitly and LAST (see _language_directive).
     turn_lang = _expected_lang(message, context)
     system_prompt = system_prompt + _language_directive(turn_lang)
@@ -5620,6 +5699,14 @@ _LEAK_SENTINELS = (
 try:
     from engine.neuralweb import doctrine as _doctrine  # noqa: PLC0415
     _LEAK_SENTINELS = _LEAK_SENTINELS + _doctrine.LEAK_SENTINELS
+except Exception:  # noqa: BLE001
+    pass
+
+# Analyst OS P0: the Market Analyst doctrine rides every page, so its banner and
+# module openers join the same leak screen (same failure mode, same guard).
+try:
+    from engine.neuralweb import analyst_doctrine as _analyst_sentinels  # noqa: PLC0415
+    _LEAK_SENTINELS = _LEAK_SENTINELS + _analyst_sentinels.LEAK_SENTINELS
 except Exception:  # noqa: BLE001
     pass
 

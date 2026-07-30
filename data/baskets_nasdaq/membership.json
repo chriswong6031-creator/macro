@@ -4,7 +4,7 @@
  "index": "Nasdaq-100",
  "benchmark": "QQQ",
  "benchmark_label": "Nasdaq-100 (QQQ)",
- "as_of": "2026-07-29",
+ "as_of": "2026-07-30",
  "source": "finviz idx_ndx + QQQ holdings; curated tech subsectors + amalgamations",
  "subsectors": {
   "semiconductors": {
@@ -32,12 +32,12 @@
      "name": "Intel Corp"
     },
     {
-     "ticker": "ARM",
-     "name": "Arm Holdings Plc ADR"
-    },
-    {
      "ticker": "TXN",
      "name": "Texas Instruments Inc"
+    },
+    {
+     "ticker": "ARM",
+     "name": "Arm Holdings Plc ADR"
     },
     {
      "ticker": "ADI",
@@ -52,12 +52,12 @@
      "name": "Marvell Technology Inc"
     },
     {
-     "ticker": "NXPI",
-     "name": "NXP Semiconductors NV"
-    },
-    {
      "ticker": "MPWR",
      "name": "Monolithic Power System Inc"
+    },
+    {
+     "ticker": "NXPI",
+     "name": "NXP Semiconductors NV"
     },
     {
      "ticker": "ALAB",
@@ -86,12 +86,12 @@
      "name": "Adobe Inc"
     },
     {
-     "ticker": "CDNS",
-     "name": "Cadence Design Systems Inc"
-    },
-    {
      "ticker": "DDOG",
      "name": "Datadog Inc"
+    },
+    {
+     "ticker": "CDNS",
+     "name": "Cadence Design Systems Inc"
     },
     {
      "ticker": "INTU",
@@ -106,12 +106,12 @@
      "name": "Paychex Inc"
     },
     {
-     "ticker": "ROP",
-     "name": "Roper Technologies Inc"
-    },
-    {
      "ticker": "WDAY",
      "name": "Workday Inc"
+    },
+    {
+     "ticker": "ROP",
+     "name": "Roper Technologies Inc"
     },
     {
      "ticker": "MSTR",
@@ -214,11 +214,11 @@
    "sector": "Internet & Platforms",
    "members": [
     {
-     "ticker": "GOOGL",
+     "ticker": "GOOG",
      "name": "Alphabet Inc"
     },
     {
-     "ticker": "GOOG",
+     "ticker": "GOOGL",
      "name": "Alphabet Inc"
     },
     {
@@ -294,12 +294,12 @@
      "name": "Seagate Technology Holdings Plc"
     },
     {
-     "ticker": "SNDK",
-     "name": "Sandisk Corp"
-    },
-    {
      "ticker": "WDC",
      "name": "Western Digital Corp"
+    },
+    {
+     "ticker": "SNDK",
+     "name": "Sandisk Corp"
     }
    ]
   },
@@ -386,12 +386,12 @@
      "name": "Intel Corp"
     },
     {
-     "ticker": "ARM",
-     "name": "Arm Holdings Plc ADR"
-    },
-    {
      "ticker": "TXN",
      "name": "Texas Instruments Inc"
+    },
+    {
+     "ticker": "ARM",
+     "name": "Arm Holdings Plc ADR"
     },
     {
      "ticker": "ADI",
@@ -406,12 +406,12 @@
      "name": "Marvell Technology Inc"
     },
     {
-     "ticker": "NXPI",
-     "name": "NXP Semiconductors NV"
-    },
-    {
      "ticker": "MPWR",
      "name": "Monolithic Power System Inc"
+    },
+    {
+     "ticker": "NXPI",
+     "name": "NXP Semiconductors NV"
     },
     {
      "ticker": "ALAB",
@@ -466,12 +466,12 @@
      "name": "Seagate Technology Holdings Plc"
     },
     {
-     "ticker": "SNDK",
-     "name": "Sandisk Corp"
-    },
-    {
      "ticker": "WDC",
      "name": "Western Digital Corp"
+    },
+    {
+     "ticker": "SNDK",
+     "name": "Sandisk Corp"
     }
    ]
   },
@@ -528,12 +528,12 @@
      "name": "Adobe Inc"
     },
     {
-     "ticker": "CDNS",
-     "name": "Cadence Design Systems Inc"
-    },
-    {
      "ticker": "DDOG",
      "name": "Datadog Inc"
+    },
+    {
+     "ticker": "CDNS",
+     "name": "Cadence Design Systems Inc"
     },
     {
      "ticker": "INTU",
@@ -548,12 +548,12 @@
      "name": "Paychex Inc"
     },
     {
-     "ticker": "ROP",
-     "name": "Roper Technologies Inc"
-    },
-    {
      "ticker": "WDAY",
      "name": "Workday Inc"
+    },
+    {
+     "ticker": "ROP",
+     "name": "Roper Technologies Inc"
     },
     {
      "ticker": "MSTR",
@@ -610,11 +610,11 @@
    "name_zh": "互联网与平台",
    "members": [
     {
-     "ticker": "GOOGL",
+     "ticker": "GOOG",
      "name": "Alphabet Inc"
     },
     {
-     "ticker": "GOOG",
+     "ticker": "GOOGL",
      "name": "Alphabet Inc"
     },
     {

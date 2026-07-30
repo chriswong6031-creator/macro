@@ -1,13 +1,21 @@
 name: marketing-x-intel
 # ─────────────────────────────────────────────────────────────────────────────
-# E3 — the weekly X competitive-intelligence harvest
+# E3 — the X competitive-intelligence harvest
 # (research/MARKETING_CONTENT_STUDIO_LLM_FIRST_MASTERPLAN_BY_FABLE.md §10 E3).
 #
-# Once a week it reads the last ~20 originals from each account in
-# config/marketing.yml `intel.roster` via twitterapi.io, appends them to
-# data/marketing/x_intel/corpus.jsonl, recomputes the per-shape / per-register /
-# per-account engagement tables, regenerates WEEKLY_REPORT.md, and proposes
-# exemplar CANDIDATES into a pending pool. It commits all of that back to main.
+# TWO CADENCES, ONE COMMITTED CAP.
+#   * SUNDAY DEEP PASS. Reads the last ~20 originals from each account in
+#     config/marketing.yml `intel.roster` via twitterapi.io, appends them to
+#     data/marketing/x_intel/corpus.jsonl, recomputes the per-shape /
+#     per-register / per-account engagement tables, regenerates
+#     WEEKLY_REPORT.md, and proposes exemplar CANDIDATES into a pending pool.
+#   * MON-SAT LIGHT PASS (added #3960). One call each to the roster entries
+#     marked `tier: daily` (at most intel.light_max_handles), corpus + spend
+#     only — no tables, no report rewrite, no candidates. The monthly cap was
+#     ALREADY sized for this pass and nothing had ever spent it; adding it moved
+#     no cap and no carve. A weekly-only read of a desk that posts fifty times a
+#     day samples a sliver of what it published.
+# Both commit their writes back to main.
 #
 # THIS RUNS ON ubuntu-latest, NEVER the self-hosted macstudio pool: nothing here
 # may touch the nightly render budget, which is law.
@@ -36,17 +44,37 @@ name: marketing-x-intel
 # ─────────────────────────────────────────────────────────────────────────────
 on:
   schedule:
-    # Sunday 22:00 UTC — after the week's tape is closed everywhere and well
+    # Sunday 22:00 UTC — the DEEP pass: whole roster, tables, WEEKLY_REPORT.md,
+    # exemplar candidates. After the week's tape is closed everywhere and well
     # clear of the ~22:30Z nightly's own commit window on weekdays. GitHub cron
     # has NO timezone; this is UTC and stays correct across both DST regimes
     # because nothing about a weekly style corpus is clock-sensitive.
     - cron: "0 22 * * 0"
+    # Mon-Sat 21:10 UTC — the LIGHT pass (#3960): one call each to the roster
+    # entries marked `tier: daily`, corpus + spend only. Sunday is excluded so it
+    # never races the deep pass for the same monthly counter (the concurrency
+    # group would serialise them, but two passes an hour apart on the same day
+    # buys nothing). 21:10 is ahead of the nightly's window and ahead of the
+    # deep pass's own hour.
+    #
+    # THIS COSTS NO NEW BUDGET. 5 handles x ~26 weekday-ish runs a month is the
+    # 150 calls intel.monthly_call_cap was already sized for (see the arithmetic
+    # in engine/marketing/x_intel.DEFAULTS). No cap and no carve moved.
+    - cron: "10 21 * * 1-6"
   workflow_dispatch:
     inputs:
       dry_run:
         description: >-
           DRY RUN — analyse the committed corpus and print what a harvest WOULD
           do. Zero network calls, zero spend, zero writes. The PR receipt mode.
+        required: false
+        type: boolean
+        default: false
+      light:
+        description: >-
+          LIGHT PASS — poll only the `tier: daily` roster entries and stop after
+          the corpus append. No tables, no report rewrite, no candidates. This is
+          what the Mon-Sat cron runs.
         required: false
         type: boolean
         default: false
@@ -121,11 +149,17 @@ jobs:
           DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
           ANALYZE_ONLY: ${{ github.event_name == 'workflow_dispatch' && inputs.analyze_only }}
           HANDLES: ${{ github.event_name == 'workflow_dispatch' && inputs.handles || '' }}
+          # The Mon-Sat cron IS the light pass; a dispatch may ask for one too.
+          # github.event.schedule is the literal cron string that fired, which is
+          # the only way a scheduled run can tell which of its two crons it is.
+          LIGHT: ${{ github.event.schedule == '10 21 * * 1-6'
+            || (github.event_name == 'workflow_dispatch' && inputs.light) }}
         run: |
           set -uo pipefail
           ARGS=""
           if [ "${DRY_RUN:-}" = "true" ]; then ARGS="$ARGS --dry-run"; fi
           if [ "${ANALYZE_ONLY:-}" = "true" ]; then ARGS="$ARGS --analyze-only"; fi
+          if [ "${LIGHT:-}" = "true" ]; then ARGS="$ARGS --light"; fi
           if [ -n "${HANDLES:-}" ]; then ARGS="$ARGS --handles $HANDLES"; fi
           echo "marketing-x-intel: python -m scripts.x_intel_harvest$ARGS"
           # --json-out, NOT `| tee`. The run prints ::warning/::notice annotations
@@ -162,6 +196,11 @@ jobs:
         if: >-
           ${{ always()
               && !(github.event_name == 'workflow_dispatch' && inputs.dry_run) }}
+        env:
+          # Re-derived here (step env does not carry across steps) purely to
+          # label the commit; nothing about the staging or the push depends on it.
+          LIGHT: ${{ github.event.schedule == '10 21 * * 1-6'
+            || (github.event_name == 'workflow_dispatch' && inputs.light) }}
         run: |
           set -uo pipefail
           git config user.name "dashboard-bot"
@@ -175,7 +214,11 @@ jobs:
             exit 0
           fi
 
-          git commit -m "x-intel: weekly corpus + report $(date -u +%FT%H:%MZ) [skip ci]"
+          if [ "${LIGHT:-}" = "true" ]; then
+            git commit -m "x-intel: daily light corpus $(date -u +%FT%H:%MZ) [skip ci]"
+          else
+            git commit -m "x-intel: weekly corpus + report $(date -u +%FT%H:%MZ) [skip ci]"
+          fi
 
           # Retry-rebase push loop. corpus.jsonl carries merge=union
           # (.gitattributes) so a concurrent append from any other lane resolves

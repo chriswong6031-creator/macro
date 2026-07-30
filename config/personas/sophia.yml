@@ -98,14 +98,27 @@ canon:
   - "storytelling"
   - "visual and cultural taste"
 restraint: "never forces a metaphor; one elegant image at most, and none at all when the mechanism is the point"
-## Declared W2-resolver baseline, not a live profile. Lighter than the flagship's
-## 4/day: a person's account posting like a wire service is its own tell. Her
-## register runs longer, so the spacing is the widest on the employee bench.
+## LIVE resolver law (XG-W2), reconciled with the D08 ramp 2026-07-28. The spec and
+## the ramp tier are ANDed at post time, so a spec number BELOW the tier is what the
+## desk actually gets — at 3/day and a 180-minute floor this block was the tightest
+## on the bench and would have held her to 3 posts against a tier that allows 10
+## today and 20 from week 5. 20 is the widest cap she can reach under
+## sentinel.ramp (week_5_plus), so the RAMP is the governor and the spec never
+## binds first. Spacing 20 + up to 3 jitter = 23 max = the 30-min ladder step minus
+## publish.post_jitter_max_min (7), the gap the resolver actually measures at the
+## next publisher sweep. Derivation + the guard that keeps this coherent:
+## tests/test_marketing_cadence_ramp_coherence.py.
+##
+## The "lighter than the flagship / her register runs longer" shaping this block
+## used to carry belongs in sentinel.ramp.account_overrides, where a per-desk
+## number is operator-scoped and ANNOUNCED in the gate report — not buried here,
+## where it silently undercut the tier and nobody could see which layer was doing
+## the throttling.
 cadence:
-  posts_per_day: 3
-  min_spacing_min: 180
-  jitter_min: 30
-  weekend_shape: light
+  posts_per_day: 20
+  min_spacing_min: 20
+  jitter_min: 3
+  weekend_shape: medium
 ## Real named human on an official rail — §2 isolation checklist does not apply.
 isolation:
   profile_id: null

@@ -138,9 +138,10 @@ def test_macro_backdrop_read_makes_no_unearned_validated_claim():
     out = macro_backdrop(payload, as_of="2026-07-24")
     allow = GATE._load_allowlist()
 
+    surfs = GATE._surfaces_of("engine/intl_recovery_quality.py")
     for field in ("read_en", "read_zh", "summary_en", "summary_zh"):
         for line in str(out.get(field) or "").splitlines():
-            _, hits = GATE._scan_line(line, allow)
+            _, hits = GATE._scan_line(line, allow, surfs)
             assert not [h for h in hits if not h[0]], (
                 f"{field} makes an unearned 'validated' claim: {line!r}. "
                 "The HK rate/FX leg is measured context, not a validated edge — "
@@ -148,8 +149,11 @@ def test_macro_backdrop_read_makes_no_unearned_validated_claim():
                 "citations, and there is no HK rate/FX study to cite)."
             )
 
-    # EN and zh must de-escalate together: only EN carries a token the gate matches
-    # ('validated|已验证' — the zh had said 经验证), so zh can over-claim invisibly.
+    # EN and zh must de-escalate together. This assertion predates the gate covering 经验证:
+    # when #3790 de-escalated the EN, the zh said 经验证, which TOKEN did not match, so the
+    # zh could over-claim invisibly. TOKEN covers it since 2026-07-29 (so the loop above
+    # would now catch a re-escalation too) — the explicit check stays as the cheaper,
+    # closer-to-the-copy sentinel.
     assert "实测" in out["read_zh"] and "经验证" not in out["read_zh"]
 
 

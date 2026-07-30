@@ -195,15 +195,16 @@ fi
 #                          config.py is a module-level dep of live_quotes
 #
 # Deliberately NOT here (do not "fix" these — they would blip /api for nothing):
-#   - Doctrine CONTENT (engine/neuralweb/doctrine/*.md): doctrine.py reloads the
-#     .md files on mtime change, so prose-only edits go live with no restart.
+#   - Doctrine CONTENT (engine/neuralweb/doctrine/*.md AND analyst/*.md): both
+#     libraries reload the .md files on mtime change, so prose-only edits go
+#     live with no restart.
 #   - Data/artifact files read from disk per request.
 #   - The nightly-only closure behind cortex.run() (constitution → qledger →
 #     ai_desk → master_brain → china_*): the API imports cortex for its tool
 #     schemas/implementations only and never calls run(), so those ~90 modules are
 #     NOT in the API's sys.modules. Adding them would restart /api on nearly every
 #     engine commit — exactly what this narrow list exists to prevent.
-if [ "$API_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(app/.*\.py|app/requirements\.txt|app/deploy/macro-api\.service|config/site_access\.yml|engine/neuralweb/(ask_brain|cortex|brain_gateway|chart_perception|doctrine|envelope|key_pool|synapse)\.py|engine/(codex_provider|llm_auth|portfolio_brief|live_quotes|tushare_freshness)\.py|engine/codex_lane/runner\.py|engine/research_vault/.*\.py|engine/context_index/(packet|fusion|gitinfo|lexical|structured)\.py|engine/marketing/(__init__|authority|chart_render|charter|claims|cmo|confluence_source|departments|economics|events|ledgers|opportunity_bus|publication|state)\.py|lib/(config|ai_costs|mastermind_response_log)\.py)$'; then
+if [ "$API_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(app/.*\.py|app/requirements\.txt|app/deploy/macro-api\.service|config/site_access\.yml|engine/neuralweb/(ask_brain|cortex|brain_gateway|chart_perception|doctrine|analyst_doctrine|market_packet|brain_market_intel|envelope|key_pool|synapse)\.py|engine/(codex_provider|llm_auth|portfolio_brief|live_quotes|tushare_freshness)\.py|engine/codex_lane/runner\.py|engine/research_vault/.*\.py|engine/context_index/(packet|fusion|gitinfo|lexical|structured)\.py|engine/marketing/(__init__|authority|chart_render|charter|claims|cmo|confluence_source|departments|economics|events|ledgers|opportunity_bus|publication|state)\.py|lib/(config|ai_costs|mastermind_response_log)\.py)$'; then
 	systemctl is-enabled macro-api >/dev/null 2>&1 && systemctl restart macro-api || true
 fi
 

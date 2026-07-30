@@ -1235,7 +1235,7 @@ class TestContrarianDetector:
 # ─────────────────────────────────────────────────────────────────────────────
 
 TODAY_ET = HT._et_date(NOW)
-YESTERDAY_ET = HT._prev_weekday(TODAY_ET)
+YESTERDAY_ET = HT._prev_session(TODAY_ET)
 
 
 def _earn_row(*, next_date, next_time, surprises=None, as_of=None,
@@ -1336,6 +1336,91 @@ class TestEarningsDetector:
                                   next_time="time-pre-market")}
         assert [e for e in _earn_events(rows, {"AAPL": _quote(1.2, 212.5, 210.0)})
                 if e.trigger == "earnings_reaction"] == []
+
+    def test_an_after_hours_reporter_before_a_holiday_still_fires(self):
+        """END TO END across Labor Day (reviewer minor, #3960).
+
+        AAPL reports after the close on FRIDAY 2026-09-04. Monday is Labor Day,
+        so the reaction is read at TUESDAY 2026-09-08's open. The old
+        weekday-only walk named Monday as "yesterday's session", ``next_date ==
+        yesterday`` never matched, and the biggest gap of the week produced no
+        post at all -- silently, with no refusal line to notice.
+        """
+        friday, tuesday = date(2026, 9, 4), date(2026, 9, 8)
+        now = datetime(tuesday.year, tuesday.month, tuesday.day, 15, 10,
+                       tzinfo=timezone.utc)                     # 11:10 ET
+        rows = {"AAPL": {"next_date": friday.isoformat(),
+                         "next_time": "time-after-hours",
+                         "eps_forecast": 1.88,
+                         "surprises": [_surprise(friday.isoformat())],
+                         "as_of": tuesday.isoformat()}}
+        events = [e for e in HT.detect_events(
+            {"AAPL": {"price": 224.0, "prev_close": 210.0, "change_pct": 6.67,
+                      "ts_ms": int(now.timestamp() * 1000), "source": "quotes"}},
+            pack=_pack({"AAPL": _rec(mcap_usd=3_200_000_000_000)},
+                       friday.isoformat()),
+            heatmap={"asof": None,
+                     "tiles": [_tile("AAPL", "Technology", 6.67,
+                                     industry="Consumer Electronics")]},
+            earnings={"asof": tuesday.isoformat(), "tickers": rows},
+            fired_today=[], now=now, cfg=HT.DEFAULTS,
+        ) if e.trigger == "earnings_reaction"]
+        assert len(events) == 1
+        assert events[0].facts["report_when"] == "ah"
+        assert events[0].facts["report_date"] == friday.isoformat()
+
+
+class TestSessionWalkCrossesMarketHolidays:
+    """"Yesterday's session" is a SESSION, not the previous weekday (#3960).
+
+    ``_prev_weekday`` skipped weekends and nothing else, so every day that
+    follows a scheduled closure named a CLOSED day as yesterday's session. Two
+    consequences, both silent: the earnings detector matches ``next_date ==
+    yesterday`` EXACTLY, so an after-hours reporter read on the session after a
+    holiday was never detected; and ``bridge_ok`` counted the closure as a
+    session, so the pack looked one session staler than it was and every history
+    fact was suppressed for that whole day.
+
+    The dates below are LITERALS on purpose and are not the fixture-date-bomb
+    class: they name specific scheduled NYSE closures, which are fixed calendar
+    facts, and no assertion here reads the current clock. The first test pins
+    that premise so none of the others can pass on a wrong one.
+    """
+
+    LABOR_DAY = date(2026, 9, 7)              # 1st Monday of September 2026
+    THANKSGIVING = date(2026, 11, 26)         # 4th Thursday of November 2026
+
+    def test_the_exchange_calendar_agrees_on_the_premise(self):
+        assert HT._is_session(self.LABOR_DAY) is False
+        assert HT._is_session(self.THANKSGIVING) is False
+        for open_day in (date(2026, 9, 4), date(2026, 9, 8),
+                         date(2026, 11, 25), date(2026, 11, 27)):
+            assert HT._is_session(open_day) is True, open_day
+
+    def test_prev_session_walks_across_labor_day(self):
+        # Tuesday's previous session is FRIDAY, not the Monday holiday.
+        assert HT._prev_session(date(2026, 9, 8)) == date(2026, 9, 4)
+
+    def test_prev_session_walks_across_thanksgiving(self):
+        # Friday's previous session is WEDNESDAY, not Thanksgiving Thursday.
+        assert HT._prev_session(date(2026, 11, 27)) == date(2026, 11, 25)
+
+    def test_prev_session_still_walks_the_weekend(self):
+        # The behaviour the old helper got right is not regressed: Monday
+        # 2026-09-14's previous session is Friday 2026-09-11.
+        assert HT._prev_session(date(2026, 9, 14)) == date(2026, 9, 11)
+
+    def test_a_closure_is_not_counted_as_a_session(self):
+        # Friday's pack read on the Tuesday after Labor Day is ONE session old,
+        # which is inside the default bridge_max_gap_days=1.
+        assert HT._sessions_between(date(2026, 9, 4), date(2026, 9, 8)) == 1
+        assert HT._sessions_between(date(2026, 11, 25), date(2026, 11, 27)) == 1
+
+    def test_bridge_ok_accepts_fridays_pack_on_the_tuesday_after_labor_day(self):
+        now = datetime(2026, 9, 8, 15, 10, tzinfo=timezone.utc)      # 11:10 ET
+        assert HT.bridge_ok(_pack({}, "2026-09-04"), now) is True
+        # Still a real staleness gate: Thursday's pack is two sessions behind.
+        assert HT.bridge_ok(_pack({}, "2026-09-03"), now) is False
 
     def test_a_packet_with_no_device_slot_is_refused(self):
         """Gate 0.2 in the DETECTOR: no stat, no packet, no chart raster."""

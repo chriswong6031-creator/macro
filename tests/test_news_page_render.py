@@ -135,6 +135,18 @@ def test_hero_lead_story_renders():
     assert "Top story" in html or "头条" in html
 
 
+def test_impact_ring_content_is_compact_and_centered():
+    """The score and label use explicit tight line boxes inside the ring.
+
+    Without this guard they inherit the page's 1.6 line-height, spreading the
+    two rows into the ring edge and crowding the adjacent lead headline.
+    """
+    html = _render_full()
+    assert "flex-direction:column; align-items:center; justify-content:center" in html
+    assert ".nx-impact b{ position:relative; font-size:17px; font-weight:800; line-height:1;" in html
+    assert "font-size:8px; line-height:1; letter-spacing:.06em; text-align:center;" in html
+
+
 def test_feed_renders_ranked_story_cards():
     html = _render_full()
     assert html.count("nx-story") >= 5         # one card per feed item

@@ -102,6 +102,16 @@ def load_store(root: Path | str | None = None) -> dict:
     next write, with the entry shape assumed rather than verified. Since the
     entries feed the WRITER PROMPT, a mislabelled store is a voice change nobody
     approved. A schema mismatch is announced at line start and treated as empty.
+
+    THE CONTAINER SHAPES ARE CHECKED TOO (MY-M7). A truncated write leaves invalid
+    JSON and is caught above, but the other torn shape parses cleanly: ``versions``
+    arriving as a string, or as a list with a non-dict in it. That blob passed
+    every check here and then made ``active_exemplars`` raise ``AttributeError``
+    deep in a comprehension — inside the WRITER's prompt build. Both callers wrap
+    the hook, so the post still shipped, but the module's own contract ("returns
+    [], never raises") was false and the failure was reported as a caller warning
+    rather than a store problem. A malformed container is now the same answer as a
+    malformed schema: EMPTY, announced at line start.
     """
     import json  # noqa: PLC0415
 
@@ -130,6 +140,19 @@ def load_store(root: Path | str | None = None) -> dict:
             flush=True,
         )
         return _empty_store()
+    for key in ("versions", "pending"):
+        val = blob.get(key, [])
+        if val is None:
+            continue
+        if not isinstance(val, list) or any(not isinstance(x, dict) for x in val):
+            print(
+                f"::warning title=x-intel-exemplars::exemplar store at {path} has a "
+                f"malformed {key!r} container ({type(val).__name__}) — treating the "
+                f"whole store as EMPTY, so the writer gets no exemplars this run "
+                f"rather than a half-read version",
+                flush=True,
+            )
+            return _empty_store()
     base = _empty_store()
     base.update(blob)
     base.setdefault("versions", [])
@@ -481,8 +504,30 @@ def active_exemplars(register: str | None = None, k: int = 6, *,
         neighbouring version;
       * the pending pool is NEVER visible here, however full it is;
       * the order is deterministic (interaction rate, then post id), so the same
-        corpus and the same pin build the same prompt.
+        corpus and the same pin build the same prompt;
+      * IT NEVER RAISES (MY-M7). This runs inside the writer's prompt build, and
+        a store the operator hand-edited (or a half-written one) must cost the
+        prompt its exemplars, never the post. ``load_store`` screens the container
+        shapes; the umbrella below covers a malformed ENTRY (a version row whose
+        ``version`` is not a number, an ``entries`` list of strings, an
+        ``engagement`` value that will not float) that no reader can anticipate.
     """
+    try:
+        return _active_exemplars(register, k, root=root, cfg=cfg)
+    except Exception as exc:  # noqa: BLE001 — enrichment, never a gate
+        print(
+            f"::warning title=x-intel-exemplars::exemplar store at "
+            f"{store_path(root)} could not be read for the writer prompt "
+            f"({type(exc).__name__}: {exc}) — NO exemplars this run",
+            flush=True,
+        )
+        return []
+
+
+def _active_exemplars(register: str | None, k: int, *,
+                      root: Path | str | None,
+                      cfg: dict | None) -> list[dict]:
+    """:func:`active_exemplars` without the never-raise umbrella."""
     pin = pinned_version(cfg)
     if pin is None:
         return []
@@ -500,7 +545,7 @@ def active_exemplars(register: str | None = None, k: int = 6, *,
         return []
     want = _registers_for(register)
     rows = [e for e in (ver.get("entries") or [])
-            if str(e.get("register") or "unknown") in want]
+            if isinstance(e, dict) and str(e.get("register") or "unknown") in want]
     rows.sort(key=lambda e: (-float((e.get("engagement") or {}).get("interaction_rate") or 0.0),
                              str(e.get("post_id") or "")))
     out = [dict(e) for e in rows[: max(0, int(k))]]

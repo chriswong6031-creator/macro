@@ -246,9 +246,17 @@ def build_features(pit_basis: str | None = None,
     put("fed_dot_median", series.get("fed_dot_median"), ffill_limit=400)
 
     # --- Quant-factor expansion: Fed-research feeds (research/QUANT_FACTOR_EXPANSION.md)
-    # Financial-conditions indices (weekly) — a ready broad risk gauge.
-    for col in ["nfci", "anfci", "nfci_risk", "nfci_credit", "nfci_leverage", "stlfsi"]:
-        put(col, series.get(col), ffill_limit=7)
+    # Financial-conditions indices (weekly) — a ready broad risk gauge. The ffill
+    # budget must clear the release-day seam: obs are Friday-dated but published
+    # mid-NEXT-week (NFCI family Wednesdays 8:30 ET, STLFSI4 Thursdays), so on the
+    # release-day session — before the evening collect ingests the new print — the
+    # newest obs is already 8 (Wed) / 9 (Thu) business days old. A limit of 7 nulled
+    # the whole financial_conditions block every release-day frame. +1 margin for
+    # holiday-shifted releases, matching the claims series below (10/12); a truly
+    # missed release still goes null within 1-2 sessions.
+    for col in ["nfci", "anfci", "nfci_risk", "nfci_credit", "nfci_leverage"]:
+        put(col, series.get(col), ffill_limit=9)
+    put("stlfsi", series.get("stlfsi"), ffill_limit=10)
     # OFR Financial Stress Index (daily, ~2-bday lag) — level + 5 functional + 3
     # regional legs (data/ofr/). The functional decomposition lets the read name the
     # stress CHANNEL; the Funding leg embeds a free x-ccy-basis proxy, the EM leg is

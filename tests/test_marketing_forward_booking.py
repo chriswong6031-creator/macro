@@ -384,15 +384,30 @@ class TestTickerPostMustCarryItsChart:
         gate = gate.split("global min-spacing floor", 1)[0]
         assert "deferred_no_media += 1" in gate and "continue" in gate
 
-    def test_an_operator_post_now_click_is_never_held(self):
-        """Explicit intent outranks the hold: the operator asked for THIS item,
-        on THIS tape, now."""
+    def test_an_operator_post_now_click_does_not_waive_the_chart_law(self):
+        """REVERSED 2026-07-29 (#3960 reviewer minor). This gate used to carry an
+        `iid not in post_now` exemption, on the reasoning that explicit operator
+        intent outranks the hold. That conflates two different questions: the
+        click is intent about WHEN to send, not consent to ship a ticker post
+        with no chart, which the standing law (#3921) forbids outright. The
+        operator cannot see from the admin panel that the chart's R2 URL never
+        resolved, so the waiver silently turned a charted entry-timing read into
+        a naked call. `post_now` skips pacing; it waives no safety gate.
+
+        The behavioural half of this lives in
+        tests/test_marketing_publisher_autoapprove.py::
+        TestPostNowSkipsPacingNotSafety."""
         import inspect
         from scripts.marketing_publisher import main
 
         gate = inspect.getsource(main).split(
-            "a ticker post must carry its chart", 1)[1]
-        assert "iid not in post_now and _missing_required_media" in gate
+            "a ticker post must carry its chart", 1)[1].split(
+            "global min-spacing floor", 1)[0]
+        # CODE only: the comment above the gate names post_now to explain the
+        # reversal, and a comment must not be able to satisfy or break this.
+        code = [l for l in gate.splitlines() if not l.lstrip().startswith("#")]
+        assert "post_now" not in "\n".join(code), code
+        assert "        if _missing_required_media(it, pub_cfg, media_paths):" in code
 
     def test_the_counter_reaches_the_operator(self):
         """A silent hold is the defect this replaces. The count must show up in

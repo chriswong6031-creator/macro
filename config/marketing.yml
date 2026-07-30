@@ -105,8 +105,12 @@ sentinel:
   #   1. the per-account CADENCE RESOLVER (cadence_resolver: below) — each
   #      account's own posts_per_day / min_spacing_min / session window, read
   #      from config/personas/<id>.yml. This is the per-account law; the specs'
-  #      cadence blocks were decorative until XG-W2 and are now enforced.
-  #   2. the post-time 10-minute global floor (publish.min_minutes_between_any_posts).
+  #      cadence blocks were decorative until XG-W2, and ARMED 2026-07-28 once
+  #      their numbers were reconciled with the ramp tiers below. It is the only
+  #      per-account SPACING bound in the stack.
+  #   2. the post-time global floor (publish.min_minutes_between_any_posts) — 4
+  #      minutes since #3924, network-wide. It was 10 and was pacing seven desks
+  #      as if they were one; it is an anti-collision floor, not a cadence.
   #   3. this key, narrowed by the ramp tier — the network-wide ceiling. Still
   #      honoured, still able to LOWER any account below its spec. Setting it
   #      back to a real number is a valid tightening at any time; the resolver
@@ -132,6 +136,47 @@ sentinel:
   # piggybacking vector) is untouched at 2 for ramping desks.
   max_same_cashtag_per_account_per_day: 3
   max_replies_per_account_per_day: 0
+
+  # ── Post-time gates (ported from #3928) ────────────────────────────────────
+  # Enforced by scripts/marketing_publisher.py at the last gate before the
+  # network, over ONE account's same-day posted history. Lane-blind on purpose:
+  # the nightly plan, the wire lanes, the press bridge and an operator "post now"
+  # all land in the same account's day and only the publisher sees all of them.
+  #
+  # Per-account template-FRAME similarity (tickers and numbers blanked, token
+  # Jaccard). Two posts by one desk in one day at or above this are one template
+  # wearing two tickers: "$TEL close to going" / "$CBOE close to going" /
+  # "$FDS close to going" all shipped on the founder desk on 2026-07-28 because
+  # every dedup gate in the tree compares raw tokens and the tickers differ.
+  # Measured over the live outbox on 2026-07-29: of 124 same-(account, day)
+  # pairs among approved/posted items exactly ONE scores at or over 0.60 (the
+  # flagship "$PLTR into the week" / "$MSFT into the week" pair at 0.778, which
+  # is the defect); the next-highest pair is 0.500.
+  frame_similarity: 0.60
+  # Per-account daily cap on the no-ticker, no-chart kinds (macro/event/
+  # education). Kelly's entire 2026-07-28 output was four of them, each a
+  # different way to say "I post my results", so she shipped nothing after
+  # review. They are seasoning, not a meal.
+  #
+  # content_studio.apply_reuse_budget reads THIS SAME KEY and trims the emitted
+  # day to it, so the publisher's copy is a cross-lane backstop rather than a
+  # scythe through planned work: on the 2026-07-28/29 plans the allocator gave
+  # flagship 6 filler slots a day (sophia's tilt allows 10), and arming only the
+  # publish-time half would have quarantined 5 of 6 every night with nothing
+  # upstream saying so. -1 = unlimited.
+  max_filler_per_account_per_day: 1
+  # THE BAR (operator 2026-07-28): "a post must name a ticker, state a dated
+  # fact with its numbers, and then say something that FOLLOWS from that fact."
+  # This gate covers the first two clauses over every ORIGINATED post from every
+  # lane and vintage (replies are exempt — a reply is a conversation).
+  #
+  # DARK ON PURPOSE. Arming it drops the no-ticker kinds outright: macro, event,
+  # education and the planner's ticker-free watchlist slot cannot name a cashtag
+  # by construction. That is a product ruling about whether those lanes exist,
+  # not a bug fix, so the publisher EVALUATES the floor every sweep and
+  # annotates what arming would refuse (the same land-dark shape
+  # cadence_resolver.enabled uses) and enforces nothing until this flips true.
+  require_ticker_and_number: false
 
   # min_minutes_between_posts is NOT enforced at plan tier (queue slots have no
   # timestamps). It is the contract value the D02 actuator MUST read from here
@@ -602,18 +647,33 @@ publish:
 # consults an LLM, and the resolver can only refuse, never escalate.
 # ─────────────────────────────────────────────────────────────────────────────
 cadence_resolver:
-  # LAND DARK (XG-W2 arming ruling). false = SHADOW MODE: the resolver runs its
-  # full computation and logs the verdict it WOULD return (detail.would_refuse)
-  # but binds nothing. Arm after reading one cycle of would_refuse — flipping
-  # this to true is the operator/session arming decision, not a builder's.
+  # ARMED 2026-07-28, after the persona cadence blocks were reconciled with the
+  # D08 ramp. It landed dark (XG-W2) for a good reason: the specs still carried
+  # their W1 declarations — 3-4 posts/day at a 120-180 MINUTE spacing floor —
+  # against a ramp that grants 10/day per desk and 20 to the flagship, and the two
+  # are ANDed at post time. One cycle of shadow verdicts said exactly that:
   #
-  # What arming turns on, concretely: every live account gains its persona
-  # spec's posts_per_day / min_spacing_min / session window as a hard bound. Note
-  # weekend_shape below — flagship and founder are `light`, which resolves to
-  # 1 post on a Saturday or Sunday. That is a real reduction from today's
-  # behaviour and it is the single change most likely to surprise, which is
-  # exactly why this ships off.
-  enabled: false
+  #   flagship posts_per_day=4 posted_today=3 min_spacing_min=120 -> min_spacing
+  #   sophia   posts_per_day=3 posted_today=2 min_spacing_min=180 -> min_spacing
+  #   founder  posts_per_day=3 posted_today=3                     -> daily_cap
+  #
+  # Arming on those numbers would have cut the network from 70 posts/day to 20 and
+  # made every cap #3904 raised dead config. The specs now sit at or above every
+  # ramp tier they will reach, so on a weekday the resolver binds nothing the ramp
+  # was not already binding (measured: 70/70 today, 90/90 at the +14d tier).
+  #
+  # What arming ADDS is the per-account SPACING floor. #3924 removed the 10-minute
+  # global floor because it paced seven desks as if they were one; that left only
+  # publish.min_minutes_between_any_posts (4 min, network-wide) and NOTHING
+  # bounding a single desk's burstiness — which is the shape an automation
+  # heuristic actually reads. This is the per-account bound the global floor was
+  # wrongly standing in for.
+  #
+  # It also turns on weekend shaping (weekend_shape below) and Cici's territory
+  # clock. The specs moved to `medium` (0.67 -> 13 posts of 20) rather than
+  # `light` (0.34 -> 7), which would have fallen under the operator's 10/day floor.
+  # Guard: tests/test_marketing_cadence_ramp_coherence.py.
+  enabled: true
 
   # IMMEDIATE / breaking items skip the resolver, honouring the standing
   # operator ruling of 2026-07-27 ("breaking has no limits") that already
@@ -2119,27 +2179,48 @@ intel:
     # A candidate needs a real denominator behind its interaction rate.
     min_views: 5000
 
+  # ── The daily light pass ─────────────────────────────────────────────────
+  # `tier: daily` on a roster entry admits it to `x_intel_harvest --light`, the
+  # bounded cheap pass the monthly cap was ALREADY sized for (see the budget
+  # arithmetic above: 5 handles x 30 days = 150 calls). At most
+  # light_max_handles are polled however many entries carry the tier, and an
+  # empty selection polls NOTHING rather than falling back to the full roster.
+  # Everything else defaults to `tier: weekly` and is only ever polled by the
+  # Sunday deep pass. NO CAP MOVES for this: monthly_call_cap and
+  # monthly_usd_cap are unchanged, and the $5 intel carve of the shared $75
+  # twitterapi.io bucket is unchanged.
+  light_tier: daily
+  light_max_handles: 5
+
   # ── The roster — the 17 accounts of the manual docket, with the register
   # each one writes in (the docket's "By register" grouping). Registers:
   # wire | aggregator | commentary | trader | macro_color.
   roster:
     # wire / breaking — terse, fact-first, ALL-CAPS or `BREAKING:` leads,
-    # almost no cashtags, almost no emoji.
+    # almost no cashtags, almost no emoji. THE FIVE FASTEST DESKS — the wire
+    # trio plus the two highest-cadence relays — carry `tier: daily`: they post
+    # many times a day, so a weekly-only read of them samples a sliver of what
+    # they published and the register drifts between passes.
     - handle: DeItaone
       register: wire
+      tier: daily
       note: "asterisk-prefix + SOURCE: attribution shorthand; 85% ALL-CAPS lead"
     - handle: FirstSquawk
       register: wire
+      tier: daily
       note: "sentence case, 100% single-line, one-decimal precision"
     - handle: unusual_whales
       register: wire
+      tier: daily
       note: "BREAKING: prefix + `per <source>` suffix; corpus engagement leader"
     # news / numbers aggregator — cashtag-heavy, URL-heavy, long stacks.
     - handle: KobeissiLetter
       register: aggregator
+      tier: daily
       note: "longest posts in the corpus (p50 580 chars), 100% carry digits"
     - handle: Barchart
       register: aggregator
+      tier: daily
       note: "95% emoji, 95% URL — the chart-relay template"
     - handle: StockMKTNewz
       register: aggregator
