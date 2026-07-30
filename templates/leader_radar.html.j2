@@ -1725,7 +1725,8 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
       </div>
       <div class="pb-bd">
         <div style="margin-bottom:6px;color:var(--text-dim);font-size:0.72rem;">{{ t('Machine state: CROWDED / 机器状态：CROWDED', 'Machine state: CROWDED / 机器状态：CROWDED') }}</div>
-        {{ t('≥3 of: extension ≥25% vs 50dma (extension_extreme), monthly RSI ≥80 (monthly_rsi_80), parabolic (parabolic), valuation ≥80th pctile 5y (valuation_extreme), analyst buy-share ≥85% (analyst_saturated), call-skew richness (call_skew_rich), basket-correlation ≥0.75 rising from below 0.5 (basket_corr_rising). Late-stage; handoff watch most relevant.', '≥3项：超伸≥25%（extension_extreme），月RSI≥80（monthly_rsi_80），抛物线（parabolic），估值≥5年80分位（valuation_extreme），分析师买入比例≥85%（analyst_saturated），看涨偏斜过高（call_skew_rich），篮子相关性≥0.75且从低于0.5上升（basket_corr_rising）。后期阶段；接力观察最为重要。') }}
+        {{ t('≥3 of: extension ≥25% vs 50dma (extension_extreme), monthly RSI ≥80 (monthly_rsi_80), parabolic (parabolic), valuation ≥80th pctile 5y (valuation_extreme), analyst buy-share ≥85% (analyst_saturated), basket-correlation ≥0.75 rising from below 0.5 (basket_corr_rising). Late-stage; handoff watch most relevant.', '≥3项：超伸≥25%（extension_extreme），月RSI≥80（monthly_rsi_80），抛物线（parabolic），估值≥5年80分位（valuation_extreme），分析师买入比例≥85%（analyst_saturated），篮子相关性≥0.75且从低于0.5上升（basket_corr_rising）。后期阶段；接力观察最为重要。') }}
+        <div style="margin-top:6px;color:var(--text-dim);font-size:0.72rem;">{{ t('A seventh condition — call-skew richness (call_skew_rich) — is measured nightly but does not count toward the ≥3 while we check whether it carries information; on this options history it has so far behaved like chance. It is shown on the row, never counted.', '第七项条件——看涨偏斜过高（call_skew_rich）——每晚计算，但在检验其是否具备信息量期间不计入≥3；就目前的期权历史而言，其表现与随机无异。仅在行内显示，不计入统计。') }}</div>
       </div>
     </div>
 
@@ -1824,13 +1825,15 @@ const CHIP_LABELS_ZH = {
 };
 const NULL_LABELS_EN = {
   insider_cluster: "no insider data",
-  call_skew_rich: "no options data",
+  // LRV-R6: the options data exists and keeps accruing — the read is held out of the
+  // count until it earns its place, so "no data" would be the wrong reason.
+  call_skew_rich: "options read still being checked",
   revision_positive: "no revision data",
   multiple_compressed: "no valuation data",
 };
 const NULL_LABELS_ZH = {
   insider_cluster: "无内部人数据",
-  call_skew_rich: "无期权数据",
+  call_skew_rich: "期权读数仍在检验",
   revision_positive: "无预测修订数据",
   multiple_compressed: "无估值数据",
 };
