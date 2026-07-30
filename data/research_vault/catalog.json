@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-30T02:24:38.754786+00:00",
-  "count": 359,
+  "generated_at": "2026-07-30T02:39:39.322465+00:00",
+  "count": 360,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -175,6 +175,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 35,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-kwrlaj6pqak-d709a8",
+      "title": "JPM US Market Intell Afternoon Briefing 28.07",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T13:55:50Z",
+      "summary_points": [
+        "**Fed Decision Catalyst**: Fed likely holds rates with ≥2 hawkish dissents; 50% probability of hawkish hold (SPX moves 25bp–50bp), 30% hike probability driven by near-trend GDP and stable inflation.",
+        "**US-Iran Geopolitics & Oil**: WTI down 4% ($79.26) and Brent at $84.09 (below $87 fair value) on MOU optimism vs.",
+        "Houthi attack, impacting energy markets and sector rotation.",
+        "**Sector Rotation & Momentum**: Tech underperformance (-3.6% momentum) vs.",
+        "non-tech rally (Airlines +3.7%, Retail +2.5%); Ford’s $1.3B tariff benefit offset by $2B+ commodity headwinds."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 16,
       "language": "en",
       "needs_metadata": false
     },
