@@ -68,6 +68,105 @@ const radar = api.radarState(
 if (radar.kind !== "awaiting" || radar.en.indexOf("GDP") < 0) {{
   throw new Error("active verification did not outrank an older publication");
 }}
+const sameDayPublications = [
+  {{
+    event_id: "GDP:2026-07-30:08:30",
+    type: "GDP",
+    date: "2026-07-30",
+    data_ready: true,
+    actual: {{ headline_en: "GDP rose 2.1%" }}
+  }},
+  {{
+    event_id: "PCE:2026-07-30:08:30",
+    type: "PCE",
+    date: "2026-07-30",
+    data_ready: true,
+    actual: {{ headline_en: "Core PCE rose 0.2%" }}
+  }}
+];
+const sameDayAwaiting = [{{
+  event_id: "CLAIMS:2026-07-30:08:30",
+  type: "CLAIMS",
+  date: "2026-07-30"
+}}];
+const sameDayGroup = api.activeReleaseGroup(sameDayPublications, sameDayAwaiting);
+if (!sameDayGroup || sameDayGroup.total !== 3 ||
+    sameDayGroup.verified.length !== 2 || sameDayGroup.awaiting.length !== 1) {{
+  throw new Error("same-day release lifecycle was not grouped");
+}}
+const sameDaySummary = api.releaseGroupSummary(sameDayGroup);
+["GDP", "PCE", "CLAIMS", "2 verified results", "1 awaiting official source"].forEach(
+  function (part) {{
+    if (sameDaySummary.en.indexOf(part) < 0) {{
+      throw new Error("same-day summary omitted " + part);
+    }}
+  }}
+);
+if (sameDaySummary.zh.indexOf("2 个结果已核验") < 0 ||
+    sameDaySummary.zh.indexOf("1 个正在等待官方来源") < 0) {{
+  throw new Error("same-day summary is not bilingual");
+}}
+const groupedRadar = api.radarState(sameDayPublications, sameDayAwaiting);
+if (groupedRadar.kind !== "awaiting" || groupedRadar.count !== 3 ||
+    groupedRadar.en.indexOf("GDP") < 0 ||
+    groupedRadar.en.indexOf("PCE") < 0 ||
+    groupedRadar.en.indexOf("CLAIMS") < 0) {{
+  throw new Error("radar banner collapsed a same-day group to one release");
+}}
+const priorDayPlusGroup = api.activeReleaseGroup(
+  [{{
+    event_id: "FOMC:2026-07-29:14:00",
+    type: "FOMC",
+    date: "2026-07-29",
+    data_ready: true
+  }}].concat(sameDayPublications),
+  sameDayAwaiting
+);
+if (priorDayPlusGroup.total !== 3 || priorDayPlusGroup.names.indexOf("FOMC") >= 0) {{
+  throw new Error("same-day summary included an older retained release");
+}}
+const singleRadar = api.radarState(
+  [{{ type: "GDP", date: "2026-07-30",
+      actual: {{ headline_en: "GDP rose 2.1%" }} }}],
+  []
+);
+if (singleRadar.en !== "GDP rose 2.1%" || singleRadar.count) {{
+  throw new Error("single-release banner output changed");
+}}
+const latestSingleRadar = api.radarState(
+  [{{ type: "GDP", date: "2026-07-30",
+      actual: {{ headline_en: "GDP rose 2.1%" }} }}],
+  [{{ type: "FOMC", date: "2026-07-29" }}]
+);
+if (latestSingleRadar.kind !== "published" ||
+    latestSingleRadar.en !== "GDP rose 2.1%") {{
+  throw new Error("older retained verification displaced the latest release date");
+}}
+const duplicateTypeRows = api.awaitingEvents({{
+  events: [
+    {{
+      event_id: "CLAIMS:2026-07-30:08:30:A",
+      type: "CLAIMS",
+      date: "2026-07-30",
+      time_et: "08:30",
+      status: "awaiting_publication"
+    }},
+    {{
+      event_id: "CLAIMS:2026-07-30:08:30:B",
+      type: "CLAIMS",
+      date: "2026-07-30",
+      time_et: "08:30",
+      status: "awaiting_publication"
+    }}
+  ]
+}}, new Date("2026-07-30T13:00:00Z"), {{
+  "event:CLAIMS:2026-07-30:08:30:A": true,
+  "CLAIMS:2026-07-30": true
+}});
+if (duplicateTypeRows.length !== 1 ||
+    duplicateTypeRows[0].event_id !== "CLAIMS:2026-07-30:08:30:B") {{
+  throw new Error("event identity collapsed distinct same-type releases");
+}}
 const overnight = api.awaitingEvents({{
   events: [{{
     type: "FOMC",
@@ -185,6 +284,11 @@ def test_release_publication_client_patches_all_event_surfaces():
         "publication detected — verified facts are being extracted",
         'data-live-event-id',
         "FOMC (?:decision|statement)",
+        "activeReleaseGroup",
+        "patchEventsFaceGroup",
+        "patchWhereNextGroup",
+        "Same-day releases",
+        "official results · live",
     ):
         assert contract in source
     assert "toISOString().slice(0, 10)" not in source

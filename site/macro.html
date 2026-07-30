@@ -1788,6 +1788,9 @@ body.page-macro.mx4-grid .mx5-action-primary .mx5-action-icon svg {
     function _rrInlineBody(){ return document.getElementById('rr-inline-body'); }
     function _rrInlineDateEl(){ return document.getElementById('rr-inline-date'); }
     var _rrInlineDate = null;           /* currently-selected date string */
+    var _rrInlineSignature = null;      /* selected date + current forecast payload */
+    var _rrInlineSwapToken = 0;         /* invalidates delayed paints after rapid clicks */
+    var _rrInlineSwapTimer = null;
     /* INT-03: focus management — track invoker for restore on close */
     var _rrModalInvoker = null;
 
@@ -3221,8 +3224,8 @@ body.page-macro.mx4-grid .mx5-action-primary .mx5-action-icon svg {
       if (impactHTML) metaBits += impactHTML;
       return '<div class="rr-inline-empty">'
         +'<div class="rr-inline-empty-line">'
-        +'<span class="l-en">No model projections for this event — event risk only.</span>'
-        +'<span class="l-zh">该事件无模型预测 — 仅为事件风险提示。</span>'
+        +'<span class="l-en">No model projections for this date — event risk only.</span>'
+        +'<span class="l-zh">该日期无模型预测 — 仅为事件风险提示。</span>'
         +'</div>'
         +(metaBits ? '<div class="rr-inline-empty-meta">'+metaBits+'</div>' : '')
         +'</div>';
@@ -3242,19 +3245,33 @@ body.page-macro.mx4-grid .mx5-action-primary .mx5-action-icon svg {
         +'<span class="l-en">'+esc(RR_MOS_EN[mo]||'')+' '+dy+'</span>'
         +'<span class="l-zh">'+mo+'月'+dy+'日</span>';
     }
+    function _inlineItemsSignature(dateStr, items){
+      try{ return dateStr+'|'+JSON.stringify(items || []); }
+      catch(e){ return dateStr+'|'+String((items || []).length); }
+    }
+    function _syncInlineDateSelection(dateStr){
+      document.querySelectorAll('#dlg-events .mx5-dlg-cal-card.rr-select').forEach(function(card){
+        var active = card.getAttribute('data-cal-date') === dateStr;
+        card.classList.toggle('rr-active', active);
+        card.setAttribute('aria-pressed', active ? 'true' : 'false');
+        if (active) card.setAttribute('aria-current','date');
+        else card.removeAttribute('aria-current');
+      });
+    }
     /* Select a calendar date into the inline panel. Covered → print cards (reuse
        renderCard + openModal); non-covered → honest empty state. Short cross-fade,
        reduced-motion-guarded. Focus is restored to the source card, never a popup. */
     function selectInlineDate(dateStr, sourceCard, immediate){
       var body = _rrInlineBody();
       if (!body) return;
-      _rrInlineDate = dateStr;
-      /* active ring: move it to the source card */
-      document.querySelectorAll('#dlg-events .mx5-dlg-cal-card.rr-active').forEach(function(c){
-        c.classList.remove('rr-active'); c.removeAttribute('aria-pressed');
-      });
-      if (sourceCard){ sourceCard.classList.add('rr-active'); sourceCard.setAttribute('aria-pressed','true'); }
       var items = _itemsForDate(dateStr);
+      var signature = _inlineItemsSignature(dateStr, items);
+      var unchanged = _rrInlineDate === dateStr && _rrInlineSignature === signature;
+      _rrInlineDate = dateStr;
+      _syncInlineDateSelection(dateStr);
+      /* GDP → PCE → claims on one date is one selection, not three fake refreshes.
+         The payload signature still allows a future intraday forecast refresh. */
+      if (!immediate && unchanged) return;
       var covered = items.length > 0;
       var bodyHTML;
       if (covered){
@@ -3263,8 +3280,15 @@ body.page-macro.mx4-grid .mx5-action-primary .mx5-action-icon svg {
         bodyHTML = _inlineEmptyHTML(sourceCard);
       }
       var swap = !immediate && !_prefReducedRR();
+      var token = ++_rrInlineSwapToken;
+      if (_rrInlineSwapTimer !== null){
+        clearTimeout(_rrInlineSwapTimer);
+        _rrInlineSwapTimer = null;
+      }
       var paint = function(){
+        if (token !== _rrInlineSwapToken) return;
         body.innerHTML = bodyHTML;
+        _rrInlineSignature = signature;
         _setInlineHeader(dateStr, covered);
         if (covered){
           body.querySelectorAll('.rr-card').forEach(function(el, idx){
@@ -3288,7 +3312,10 @@ body.page-macro.mx4-grid .mx5-action-primary .mx5-action-icon svg {
       };
       if (swap){
         body.classList.add('rr-inline-swap');
-        setTimeout(paint, 130);
+        _rrInlineSwapTimer = setTimeout(function(){
+          _rrInlineSwapTimer = null;
+          paint();
+        }, 130);
       } else {
         paint();
       }
@@ -3329,6 +3356,8 @@ body.page-macro.mx4-grid .mx5-action-primary .mx5-action-icon svg {
         card.classList.add('rr-select');
         card.setAttribute('role','button');
         card.setAttribute('tabindex','0');
+        card.setAttribute('aria-controls','rr-inline-body');
+        card.setAttribute('aria-pressed','false');
         var hasCoverage = _itemsForDate(dateStr).length > 0;
         if (hasCoverage){
           var dot = document.createElement('div');
@@ -4779,12 +4808,12 @@ body.page-macro.mx4-grid .mx5-action-primary .mx5-action-icon svg {
         <div class="mx5-dlg-sep"></div>
         <div class="mx5-dlg-eyebrow"><span class="l-en">Release Radar</span><span class="l-zh">数据发布雷达</span></div>
         <div style="margin:-4px 0 14px;font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));line-height:1.5">
-          <span class="l-en">What our model expects for the print you pick above. Tap a card for the full read.</span>
-          <span class="l-zh">上方选中日期，模型对该日数据的预测如下。点击卡片查看完整解读。</span>
+          <span class="l-en">Select a date above to see all modeled releases for that day. Tap a projection card for the full read.</span>
+          <span class="l-zh">选择上方日期，查看当天所有已建模数据；点击预测卡片查看完整解读。</span>
         </div>
-        <div id="rr-inline">
+        <div id="rr-inline" role="region" aria-labelledby="rr-inline-date">
           <div class="rr-inline-head">
-            <span class="rr-inline-date" id="rr-inline-date"></span>
+            <span class="rr-inline-date" id="rr-inline-date" aria-live="polite" aria-atomic="true"></span>
             <span class="rr-inline-sub" id="rr-inline-sub">
               <span class="l-en">our projection vs benchmarks</span>
               <span class="l-zh">本方预测 vs 基准</span>
@@ -11564,7 +11593,7 @@ window.__CHART_SWAP__ = {
 <script src="charts.js?v=5372d2a2" defer></script>
 
 <script src="risk_state_live.js?v=07117cd1" defer></script>
-<script src="release_publications_live.js?v=bc2935f4" defer></script>
+<script src="release_publications_live.js?v=2868ce06" defer></script>
 <script src="heatmap.js?v=74c8da96" defer></script>
 <script>
 /* Keep .help tooltips on-screen: flip below the icon when it's near the top of
