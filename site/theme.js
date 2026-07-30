@@ -644,9 +644,93 @@
     });
   }
 
+  /* A theme.js update reaches the VPS before the slow full-site renderer can
+     rebake every HTML page. During that window an older page has .nav-search
+     but no navigation-refresh.css / stock-logo scripts. Never upgrade that
+     legacy search into the new SVG-rich DOM until its stylesheet is ready:
+     otherwise the browser paints the raw <svg> at its 300×150 default (the
+     giant black-circle regression). The fallback keeps the legacy search
+     hidden only while the same-origin CSS is loading, then restores it intact
+     if the asset cannot be loaded. */
+  function navRefreshAssetUrl(name) {
+    try {
+      return new URL(name, _mmThemeScript && _mmThemeScript.src
+        ? _mmThemeScript.src : location.href).href;
+    } catch (e) { return name; }
+  }
+
+  function ensureNavSearchCss(box) {
+    var link = document.querySelector('link[href*="navigation-refresh.css"]');
+    try { if (link && link.sheet) return true; } catch (e) {}
+    if (box.getAttribute('data-nav-css-wait') === '1') return false;
+
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = navRefreshAssetUrl('navigation-refresh.css');
+      link.setAttribute('data-nav-refresh-runtime', '1');
+    }
+
+    var settled = false;
+    var priorVisibility = box.style.visibility;
+    box.setAttribute('data-nav-css-wait', '1');
+    box.style.visibility = 'hidden';
+
+    function finish(loaded) {
+      if (settled) return;
+      settled = true;
+      box.removeAttribute('data-nav-css-wait');
+      box.style.visibility = priorVisibility;
+      if (loaded) initNavSearch();
+    }
+
+    link.addEventListener('load', function () { finish(true); }, { once: true });
+    link.addEventListener('error', function () { finish(false); }, { once: true });
+    if (!link.parentNode) (document.head || docEl).appendChild(link);
+    window.setTimeout(function () {
+      var loaded = false;
+      try { loaded = !!link.sheet; } catch (e) {}
+      finish(loaded);
+    }, 4000);
+    return false;
+  }
+
+  function ensureNavScript(name, ready) {
+    var script = document.querySelector('script[src*="' + name + '"]');
+    if (script) {
+      if (ready) script.addEventListener('load', ready, { once: true });
+      return;
+    }
+    script = document.createElement('script');
+    script.src = navRefreshAssetUrl(name);
+    script.async = true;
+    if (ready) script.addEventListener('load', ready, { once: true });
+    (document.head || docEl).appendChild(script);
+  }
+
+  function ensureNavLogoAssets(box) {
+    function enhance() {
+      if (window.MMXStockLogo && window.MMXStockLogo.enhance) {
+        window.MMXStockLogo.enhance(box);
+      }
+    }
+    function loadLogoSystem() {
+      if (window.MMXStockLogo) { enhance(); return; }
+      ensureNavScript('stock-logos.js', enhance);
+    }
+    if (window.MMX_LOGO_DEV_TOKEN || document.querySelector('script[src*="logo_config.js"]')) {
+      loadLogoSystem();
+    } else {
+      ensureNavScript('logo_config.js', loadLogoSystem);
+    }
+  }
+
   function initNavSearch() {
     var box = document.querySelector('.nav-search');
     if (!box) return;
+    if (box.getAttribute('data-ticker-search-ready') === '1') return;
+    if (!ensureNavSearchCss(box)) return;
+    box.setAttribute('data-ticker-search-ready', '1');
     var phEn = 'Ticker or company';
     var phZh = '股票代码或公司';
     var pfx = location.pathname.indexOf('/sectors/') > -1 ? '../' : '';
@@ -661,6 +745,7 @@
         '<button class="search-esc" type="button" aria-label="Close ticker search">Esc</button>' +
       '</div>' +
       '<div class="ticker-dropdown" id="ticker-search-dropdown" role="listbox" aria-label="Ticker search results"></div>';
+    ensureNavLogoAssets(box);
 
     var trigger = box.querySelector('.search-trigger');
     var input = box.querySelector('.ticker-input');
@@ -4917,13 +5002,16 @@
     historyToken: '',
     historyActive: false,
     closeTimer: 0,
+    readyTimer: 0,
     toastTimer: 0,
     slowTimer: 0,
+    loadingStartedAt: 0,
     scrollY: 0,
     activeElement: null,
     bodyStyle: null,
     locked: []
   };
+  var MIN_LOADER_MS = 1800;
 
   function isDashboardHost() {
     var h = location.hostname || '';
@@ -5168,7 +5256,17 @@
     }, 9000);
   }
 
-  function markReady(data) {
+  function beginLoading(root) {
+    clearTimeout(state.readyTimer);
+    state.readyTimer = 0;
+    state.ready = false;
+    state.loadingStartedAt = Date.now();
+    root.classList.remove('is-ready', 'is-slow');
+    root.classList.add('is-loading');
+    startSlowTimer();
+  }
+
+  function finishReady(data) {
     state.ready = true;
     state.path = data && data.path ? data.path : state.path;
     if (data && data.symbol) state.symbol = data.symbol;
@@ -5181,6 +5279,20 @@
         try { state.frame.focus(); } catch (e) {}
       }, 180);
     }
+  }
+
+  function markReady(data) {
+    var elapsed = state.loadingStartedAt ? Date.now() - state.loadingStartedAt : MIN_LOADER_MS;
+    var wait = Math.max(0, MIN_LOADER_MS - elapsed);
+    clearTimeout(state.readyTimer);
+    if (wait) {
+      state.readyTimer = setTimeout(function () {
+        state.readyTimer = 0;
+        finishReady(data);
+      }, wait);
+      return;
+    }
+    finishReady(data);
   }
 
   function pushOverlayHistory() {
@@ -5227,18 +5339,13 @@
 
     if (!state.booted) {
       state.booted = true;
-      state.ready = false;
-      root.classList.add('is-loading');
+      beginLoading(root);
       state.frame.src = config.url;
-      startSlowTimer();
       return;
     }
 
     if (state.path && state.path !== '/terminal') {
-      state.ready = false;
-      root.classList.remove('is-ready');
-      root.classList.add('is-loading');
-      startSlowTimer();
+      beginLoading(root);
     }
 
     if (state.frame.contentWindow) {

@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-29T23:54:29.314197+00:00",
-  "count": 352,
+  "generated_at": "2026-07-30T00:54:22.116061+00:00",
+  "count": 355,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -1995,6 +1995,66 @@
         "**Nuclear Expansion Catalyst**: Duane Arnold plant online by 2029 (post-approval); FPL’s 8 GW large load forecast by 2032 with 12 GW in advanced discussions (tariff approval expected 2024, potential 2028 online).",
         "**Profitability Acceleration**: EBIT margin expanding to 41.0% (12/28E), EBITDA growth accelerating to 28.4% (12/27E), and FCF/share rising to $2.00 (12/28E) confirming operational efficiency.",
         "**Regulatory Merger Momentum**: Dominion merger filings underway (VA, NC, SC), closing H2 2027; post-merger 11% regulatory capex growth and 9%+ EPS growth through 2032."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-xwuhkdbrbpc-11038c",
+      "title": "Credit Notes Expectations for Hyperscaler Debt Issuance A Top Down Approach",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T01:36:27Z",
+      "summary_points": [
+        "**Debt-Financed CapEx Peak**: Hyperscalers' AI CapEx debt-financed share to peak at 33% (2026) and 35% (2027), driven by $250B+ 2026 issuance and $400B+ 2027 forecast, with CFO narrowly exceeding CapEx in 2026 ($778B vs.",
+        "$770B).",
+        "**Market Saturation Shift**: Public market saturation (40% of YTD 2026 AI debt) forces absorption into private markets (infrastructure) by 2028-2030, with USD IG dominating 65-75% of issuance but smaller IG markets (CAD/CHF/GBP/JPY/AUD) exhausted by 2027.",
+        "**Issuer Concentration Risk**: Hyperscalers (Amazon, Alphabet, Microsoft, Meta, Oracle) dominate IG issuance, growing to top issuers, creating concentration risk as smaller IG markets lack capacity and public saturation constrains flows.",
+        "**Hyperscaler Debt Capacity**: Low leverage (0.6x-1.3x gross) enables $1.1T-$2.3T incremental debt capacity (conservative to FY2027 EBITDA), supporting broader credit market use beyond traditional IG despite $1.2T off-balance sheet lease obligations."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-a6llvl2vdjl-a45d44",
+      "title": "Americas Transportation Railroads Weekly Rail Carload Snapshot — Week 29",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T01:36:26Z",
+      "summary_points": [
+        "**US Rail Momentum Slows**: Class I carload growth decelerated to +3.6% YoY (week 29) from +4.6% YoY (week 28), with intermodal growth slowing to +5.3% YoY (vs +7.8%).",
+        "**Canada Rail Growth Reverses Trend**: Total Canadian carload growth accelerated to +0.2% YoY (week 29) from -0.8% YoY (week 28), marking a shift from negative to positive momentum.",
+        "**Carrier Leadership Emerges**: UNP led intermodal growth (+8.2% YoY), while CPKC drove ex-intermodal (+4.8% YoY) and intermodal (+6.4% YoY) acceleration in Canada."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-g0vajyhuee8-2e726a",
+      "title": "SLB (SLB) Remain Constructive Given Leverage to International Activity Resumptions and Idiosyncratic Opportunities, Contribu...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T01:36:18Z",
+      "summary_points": [
+        "**SLB Buy Rating & Growth Catalysts**: Goldman Sachs maintains *Buy* with $62 target (20.3% upside), driven by Middle East activity resumption (10% international revenue growth 2026-2027) and data center expansion targeting >$2B annual revenue by 2027.",
+        "**Valuation & Key Metrics**: Trading at 7.0% free cash flow yield and 9.0x EV/EBITDA, with adjusted EBITDA estimates up 1% annually (2026-2028) and Middle East production recovery as primary near-term earnings driver.",
+        "**Strong Fundamentals**: Robust EBITDA growth (10.2% in 12/2E), improving free cash flow per share (2.30→2.75), and low net debt/EBITDA (1.0), indicating sustainable growth potential.",
+        "**Relative Performance Strength**: Delivered 25.2% total return over 12 months, outperforming S&P 500 by identical margin, confirming strong market positioning and momentum."
       ],
       "tags": [],
       "tickers": [],
