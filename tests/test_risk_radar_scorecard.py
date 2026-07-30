@@ -254,18 +254,63 @@ def test_missing_intl_ledger_fail_soft(tmp_path):
 # ---------------------------------------------------------------------------
 
 def test_ungraded_backlog_counts_old_rows(tmp_path):
-    # Backlog threshold: rows with graded=None AND (today - asof).days > 7
+    """Backlog = ungraded MORE than (21-bd maturation + 7-bd slack) BUSINESS days after as-of.
+
+    UPDATED 2026-07-29 (radar audit item 9f). The old threshold was 7 CALENDAR days, which
+    pinned the defect: a row cannot be graded until its longest horizon matures at 21 BUSINESS
+    days (risk_radar_audit._grade_entry returns None before then), so every row between ~1 and
+    ~5 weeks old was counted as backlog and steady state read as a stalled grader. Rows younger
+    than maturation are now reported under `awaiting_maturity` instead.
+    """
+    cutoff = sc._UNGRADED_MATURATION_BD + sc._UNGRADED_BACKLOG_AGE   # 28 business days
     rows = [
-        _ungraded_row("caution", 3),    # 3 days ago — NOT backlog (<=7)
-        _ungraded_row("caution", 7),    # exactly 7 days ago — NOT backlog (not > 7)
-        _ungraded_row("caution", 8),    # 8 days ago — IS backlog (> 7)
-        _ungraded_row("caution", 20),   # 20 days ago — IS backlog
+        _ungraded_row("caution", 3),    # ~2 bd — working as designed
+        _ungraded_row("caution", 21),   # ~15 bd — still inside maturation
+        _ungraded_row("caution", 30),   # ~21 bd — matured, inside slack
+        _ungraded_row("caution", 60),   # ~43 bd — IS backlog
+        _ungraded_row("caution", 120),  # ~86 bd — IS backlog
         _row("elevated", "credit", 50, "true_positive"),  # graded, not counted
     ]
     _write_jsonl(tmp_path / "data" / "risk_radar" / "forward_log.jsonl", rows)
     result = sc.build(root=tmp_path)
     monitoring = result["markets"]["us"]["monitoring"]
-    assert monitoring["ungraded_backlog"] == 2
+    assert monitoring["backlog_cutoff_bd"] == cutoff
+    assert monitoring["ungraded_backlog"] == 2, monitoring
+    # everything ungraded but younger than the cutoff is disclosed, not hidden
+    assert monitoring["awaiting_maturity"] == 3, monitoring
+
+
+def test_ungraded_inside_maturation_is_not_backlog(tmp_path):
+    """A ledger writing daily and grading on schedule must report ZERO backlog — the
+    steady-state regression the calendar-day threshold produced (audit item 9f)."""
+    rows = [_ungraded_row("caution", d) for d in (1, 2, 3, 5, 8, 13, 20, 27)]
+    _write_jsonl(tmp_path / "data" / "risk_radar" / "forward_log.jsonl", rows)
+    monitoring = sc.build(root=tmp_path)["markets"]["us"]["monitoring"]
+    assert monitoring["ungraded_backlog"] == 0, monitoring
+    assert monitoring["awaiting_maturity"] == 8, monitoring
+
+
+def test_monitoring_today_is_injectable(tmp_path):
+    """`today` is threaded through build() so the whole scorecard is reproducible from the
+    ledger + one reference date, instead of three independent wall-clock reads (audit 9g)."""
+    from datetime import date
+    rows = [_ungraded_row("caution", 3)]
+    _write_jsonl(tmp_path / "data" / "risk_radar" / "forward_log.jsonl", rows)
+    far = date.today().replace(year=date.today().year + 1)
+    m_now = sc.build(root=tmp_path)["markets"]["us"]["monitoring"]
+    m_far = sc.build(root=tmp_path, today=far)["markets"]["us"]["monitoring"]
+    assert m_now["ungraded_backlog"] == 0 and m_now["awaiting_maturity"] == 1
+    # a year later the same row IS a genuine backlog
+    assert m_far["ungraded_backlog"] == 1, m_far
+    assert m_far["log_fresh"] is False
+
+
+def test_bd_between_counts_weekdays_only(tmp_path):
+    from datetime import date
+    # Fri 2026-07-24 -> Mon 2026-07-27 is ONE business day, not three calendar days
+    assert sc._bd_between(date(2026, 7, 24), date(2026, 7, 27)) == 1
+    assert sc._bd_between(date(2026, 7, 24), date(2026, 7, 31)) == 5
+    assert sc._bd_between(date(2026, 7, 31), date(2026, 7, 24)) == 0
 
 
 # ---------------------------------------------------------------------------

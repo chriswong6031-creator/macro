@@ -1,5 +1,24 @@
 # Dislocation validation (Phase 0, hardened)
 
+> **METRIC LABEL CORRECTION (2026-07-29).** Every `medDD` / `p10DD` / `dd63` / `dd252`
+> figure below is **worst subsequent close vs entry**, not a drawdown in the usual
+> peak-to-trough sense. The generator computes
+> `min(close over [t+1, t+h]) / close(t) − 1` (`scripts/research_dislocation.py:76`),
+> i.e. the trough is measured against the ENTRY price, not against the running high —
+> so when price never closes below entry the figure is **POSITIVE** (see the
+> named-episode ledger: 1998 LTCM `+2.0%`, 2008 GFC `+5.4%` at 63d, 2023 SVB `+1.0%`,
+> 2025 tariff `+3.5%`). A positive "drawdown" is not a data error, it is the metric's
+> definition, and calling it "median drawdown" made those rows unreadable. Read every
+> such column as *worst subsequent close vs entry* (more negative = more path pain).
+> The bootstrap rows labelled `median drawdown` are DIFFS of that same statistic
+> (put-present minus put-absent), where positive means the put-present trough was
+> shallower — those are correctly signed, only the metric name was loose.
+>
+> The generator still emits the old column labels; regenerating this file will restore
+> them until `scripts/research_dislocation.py` (the metric at line 76, the `medDD`/
+> `p10DD` row format at line 160, and the ledger header at lines 387-388) is
+> relabelled. Flagged, not fixed here — that script is outside this change's pathspec.
+
 ```
 ====================================================================================================
 DISLOCATION VALIDATION (hardened) — SPY 1997-01-01..2026-06-12
@@ -146,8 +165,11 @@ VIX INTRADAY WICK — round-tripped spike (intraday high >> close) as a washout 
 
 ====================================================================================================
 NAMED-EPISODE LEDGER — entry = max-VIX day in window; put-state tag + outcome
+  the last two columns are WORST SUBSEQUENT CLOSE vs ENTRY (min close over [t+1,t+h]
+  / close(t) - 1), NOT peak-to-trough drawdown — positive = price never closed below
+  the entry over that horizon. Relabelled from dd63/dd252 (see the note above the block).
 ====================================================================================================
-  episode         entry        VIX  Sahm   be  200d    put-state   fwd63  fwd252   dd63  dd252
+  episode         entry        VIX  Sahm   be  200d    put-state   fwd63  fwd252 worst63 worst252
   1998 LTCM       1998-10-08    46  0.20  nan    up  put-present  +29.3%  +34.7%  +2.0%  +2.0%   
   2000-02 dotcom  2002-08-05    45  1.13  nan  DOWN   PUT-ABSENT   +6.1%  +20.5%  -6.4%  -6.4%   recession
   2008 GFC        2008-11-20    81  1.70  0.0  DOWN   PUT-ABSENT   +5.8%  +49.0%  +5.4%  -9.0%   recession

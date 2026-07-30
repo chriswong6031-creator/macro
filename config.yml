@@ -2908,7 +2908,7 @@ engine:
     # +5.8%/63d, 88% positive (vs +2.8% base), shallower drawdowns; VIX>30 ->
     # +7.2%; COT ES washout (<10th %ile) -> +4.2%; stacked -> +9.6%/92%.
     capitulation:
-      vrp_pctile: 0.90              # realized vol >> implied = panic
+      vrp_pctile: 0.90              # IMPLIED >> realized: vrp = vix - realized (engine/conditions.py:262), so a high percentile = fear priced far above delivered vol. (The comment used to say "realized vol >> implied", which is the inverted, stress-side read — that condition SHRINKS vrp.)
       vix_panic: 30.0
       cot_washout_pctile: 0.10      # COT ES net-spec wrung out (3y rolling)
       cot_pctile_lookback_d: 756
