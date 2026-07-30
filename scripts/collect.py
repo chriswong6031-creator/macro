@@ -276,6 +276,7 @@ def all_adapters() -> dict:
         ("deribit", "collectors.deribit", "DeribitAdapter"),
         ("feargreed", "collectors.crypto_misc", "FearGreedAdapter"),
         ("coingecko", "collectors.crypto_misc", "CoinGeckoAdapter"),
+        ("crypto_universe", "collectors.crypto_misc", "CryptoUniverseAdapter"),
         ("defillama", "collectors.crypto_misc", "DefiLlamaAdapter"),
         ("mempool", "collectors.crypto_misc", "MempoolAdapter"),
         ("wikipedia_btc", "collectors.crypto_misc", "WikipediaBtcAdapter"),  # keyless attention axis
@@ -344,7 +345,8 @@ def all_adapters() -> dict:
 # auto-classified. `crypto`/`slow` are explicit sets consumed by shards added later —
 # inert until a workflow references them; verify before enabling those shards.
 _CRYPTO = {"coinmetrics", "bgeo", "coinbase", "okx", "deribit", "feargreed",
-           "coingecko", "defillama", "mempool", "wikipedia_btc", "farside"}
+           "coingecko", "crypto_universe", "defillama", "mempool",
+           "wikipedia_btc", "farside"}
 _SLOW = set(_QUIVER_KEYS) | {
     "edgar_8k", "edgar_13f", "edgar_trumpflow", "beneficial_ownership",
     "edgar_dilution",  # nwqs-c: S-3/424B daily-index sweep; nightly-only

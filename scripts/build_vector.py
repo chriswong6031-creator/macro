@@ -2985,6 +2985,7 @@ def _g_vectors(vm, commodities, forex, bonds, crossasset, etf, strategies, watch
         _fx_label_zh + ((" · " + _fx_risk_zh) if _fx_risk_zh else ""),
     ) + '</span></div>'
     term = '<div class="chips"><span class="pill on">' + _bi("Trading charts", "交易图表") + '</span><span class="pill">' + _bi("Live terminal", "实时终端") + '</span></div>'
+    crypto = '<div class="chips"><span class="pill on">' + _bi("50-asset board", "50项资产看板") + '</span><span class="pill">' + _bi("Flows & leverage", "资金流与杠杆") + '</span></div>'
     cyc = '<div class="chips"><span class="pill">' + _bi("Cycle clocks", "周期时钟") + '</span><span class="pill">' + _bi("Country regimes", "国家周期") + '</span></div>'
     sec_us = '<div class="chips"><span class="pill">' + _bi("US sectors", "美股行业") + '</span><span class="pill">' + _bi("Rotation desk", "轮动面板") + '</span></div>'
     sec_cn = '<div class="chips"><span class="pill">' + _bi("CN sectors", "中国行业") + '</span><span class="pill">' + _bi("Rotation desk", "轮动面板") + '</span></div>'
@@ -3047,6 +3048,7 @@ def _g_vectors(vm, commodities, forex, bonds, crossasset, etf, strategies, watch
         card("sec l-en", "▦", "US Sectors", "美股行业", "US Sectors", "美股行业", sec_us, "Sector Central rotation map", "行业轮动中心", "sector_central.html"),
         card("sec l-zh", "▦", "CN Sectors", "中国行业", "CN Sectors", "中国行业", sec_cn, "Sector Central rotation map", "中国行业轮动中心", "sector_central_china.html"),
         card("rep", "◇", "Research Reports", "研究报告", "Reports", "报告", rep, "Read the latest research desk", "阅读最新研究", "reports.html"),
+        card("btc crypto", "◈", "Crypto Cockpit", "加密驾驶舱", "Crypto", "加密", crypto, "Market state, flows & class allocation", "市场状态、资金流与资产配置", "crypto.html"),
         card("btc", "₿", "Bitcoin Vector", "比特币向量", "Bitcoin", "比特币", btc, "Risk, momentum & allocation", "风险、动量与配置", "vector.html"),
         card("bd", "🏛️", "Bonds & Bond Health", "债券与债券健康", "Bonds", "债券", bd, "Curve, credit & cycle clock", "曲线、信用与周期时钟", "bonds.html"),
         card("com", "◆", "Commodity Vector", "大宗商品向量", "Commodities", "商品", com, "Allocation & shock detection", "配置与冲击检测", "commodities.html"),
@@ -3161,6 +3163,7 @@ def _hub_footer_html() -> str:
             ("Canada", "canada.html"),
         ]),
         ("Vectors", [
+            ("Crypto Cockpit", "crypto.html"),
             ("Bitcoin", "vector.html"),
             ("Bonds", "bonds.html"),
             ("Commodities", "commodities.html"),
@@ -3181,6 +3184,7 @@ def _hub_footer_html() -> str:
             ("加拿大", "canada.html"),
         ]),
         ("向量", [
+            ("加密驾驶舱", "crypto.html"),
             ("比特币", "vector.html"),
             ("债券", "bonds.html"),
             ("大宗商品", "commodities.html"),
@@ -4543,13 +4547,6 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001
         log.error("international dashboard subprocess launch failed (%s)", e)
         _intl_proc = None
-    try:
-        build_allocation_page(env, site, sig, cards, mtf_a, verdict,
-                              master=master, recommend_d=recommendation, cones=cones,
-                              sizing=sizing, catalyst=catalyst, breadth=breadth, env_d=envd,
-                              gate=gate)
-    except Exception as e:  # noqa: BLE001 — never let the sub-page break the main build
-        log.error("allocation page failed (%s)", e)
     try:
         build_timeline(site, sig)
     except Exception as e:  # noqa: BLE001 — never let the time-machine tape break the build

@@ -664,6 +664,13 @@ lanes:
           so build_vector's surviving fallback hook no-ops for the rest of the job.
       - id: build_vector
         module: scripts.build_vector
+      - id: build_crypto
+        module: scripts.build_crypto
+        note: >
+          Crypto Intelligence Cockpit W2 — first-class nightly render. Runs
+          after build_vector because H6 consumes the governed BTC authority
+          contract emitted by that builder. Display-only; no new scored
+          authority.
       - id: master_brain_scorer
         module: engine.master_brain_scorer
       - id: master_brain
@@ -1927,6 +1934,12 @@ lanes:
         module: scripts.build_ai_desk_page
       - id: build_vector
         module: scripts.build_vector
+      - id: build_crypto
+        module: scripts.build_crypto
+        note: >
+          Crypto Intelligence Cockpit W2 — first-class render lane. Runs after
+          hub() so the H6 BTC lane reads the same-render E0 authority contract;
+          the dedicated crypto() scope also supports narrow crypto rebuilds.
       - id: build_intl
         module: scripts.build_intl
         note: >

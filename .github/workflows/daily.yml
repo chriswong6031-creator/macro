@@ -1479,6 +1479,11 @@ jobs:
         # signals); returns 0 even if the crypto engine errors, so it can never
         # break the macro site.
         run: python -m scripts.build_vector
+      - name: build crypto intelligence cockpit
+        # FIRST-CLASS W2 STEP — load-bearing order: build_vector emits the E0
+        # BTC authority contract consumed by H6, then this class-level hub reads
+        # it alongside the additive universe and market-state engines.
+        run: python -m scripts.build_crypto
       - name: master brain scorer (durability loop; deterministic, resilient)
         # Grades the brain's own past-due cross-asset leans in data/master_brain/theses.jsonl
         # against realized closes (reuses engine.desk_scorer) -> data/master_brain/
