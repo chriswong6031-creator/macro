@@ -764,8 +764,15 @@ def phrase_or_fallback(packet: dict, trigger: str, fallback_text: str, *,
     try:
         from engine import llm_auth  # noqa: PLC0415
 
+        # CHATGPT-FIRST (operator directive 2026-07-29, recorded on
+        # config/marketing.yml copywriter.llm): the attached Codex account leads,
+        # Claude follows as the balanced fallback drawn through the key_pool load
+        # balancer. Terra at LOW effort — one short wire sentence inside a
+        # 5-second per-provider budget cannot afford a reasoning pass.
         provider_cfg = {
-            "provider_order": llm_cfg.get("provider_order") or ["oauth", "anthropic", "deepseek"],
+            "provider_order": llm_cfg.get("provider_order") or ["codex", "oauth", "anthropic", "deepseek"],
+            "codex_source_model": llm_cfg.get("codex_source_model", "gpt-5.6-terra"),
+            "codex_reasoning_effort": llm_cfg.get("codex_reasoning_effort", "low"),
             "oauth_token_env": llm_cfg.get("oauth_token_env", "CLAUDE_CODE_OAUTH_TOKEN"),
             "deepseek_key_env": llm_cfg.get("deepseek_key_env", "DEEPSEEK_API_KEY"),
             "oauth_pool_lane": llm_cfg.get("oauth_pool_lane", "hot-tape-wire"),

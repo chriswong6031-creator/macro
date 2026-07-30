@@ -4015,7 +4015,17 @@ financial_news:
 hot_tape:
   llm:
     enabled: true            # armed only with MARKETING_LLM_ENABLED=1 in the radar workflow env
-    provider_order: [oauth, anthropic, deepseek]
+    # ChatGPT-first (operator directive 2026-07-29; the full note lives on
+    # config/marketing.yml copywriter.llm, the writing lane it was issued for).
+    # Claude subscription tokens are reserved for website-building sessions, so
+    # codex leads and the oauth rung is the balanced fallback behind it.
+    # Terra at LOW effort: the wire desk phrases one short sentence against a
+    # 5-second per-provider latency budget, and a reasoning pass it cannot afford
+    # to wait for is spend with no product.
+    provider_order: [codex, oauth, anthropic, deepseek]
+    codex_source_model: "gpt-5.6-terra"
+    codex_reasoning_effort: "low"
+    oauth_pool_lane: "hot-tape-wire"
     oauth_token_env: CLAUDE_CODE_OAUTH_TOKEN
     deepseek_key_env: DEEPSEEK_API_KEY
     deepseek_model: deepseek-chat

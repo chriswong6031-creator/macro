@@ -55,6 +55,20 @@ capabilities:
       - orchestrator-chat
       - brain-fast       # MNZ-W6a: haiku fallback for fast lane when DeepSeek absent
       - brain-pro        # MNZ-W6a: opus/sonnet pro lane
+      # ── Marketing content lanes (operator directive 2026-07-29) ──────────
+      # ChatGPT-first: the marketing writing lanes default to the attached Codex
+      # account so Claude subscription tokens stay reserved for website-building
+      # sessions. Tier map: Sol writes (copywriter, breaking, copy review,
+      # weekend levels ride the copywriter lane), Terra critiques and wires
+      # (critic, hot-tape wire, reply voice). Luna is never routed user-facing
+      # words. Config: config/marketing.yml copywriter.llm (+ .critic),
+      # breaking.llm, reply_desk.voice and config.yml hot_tape.llm.
+      - marketing-copywriter     # Sol
+      - marketing-breaking       # Sol
+      - marketing-copy-review    # Sol
+      - marketing-critic         # Terra
+      - hot-tape-wire            # Terra
+      - reply-voice              # Terra
     allowed_tiers:
       - T0
       - T1
@@ -129,6 +143,20 @@ capabilities:
       - orchestrator-chat
       - brain-fast       # MNZ-W6a: haiku fallback for fast lane when DeepSeek absent
       - brain-pro        # MNZ-W6a: opus/sonnet pro lane
+      # ── Marketing content lanes (operator directive 2026-07-29) ──────────
+      # ChatGPT-first: the marketing writing lanes default to the attached Codex
+      # account so Claude subscription tokens stay reserved for website-building
+      # sessions. Tier map: Sol writes (copywriter, breaking, copy review,
+      # weekend levels ride the copywriter lane), Terra critiques and wires
+      # (critic, hot-tape wire, reply voice). Luna is never routed user-facing
+      # words. Config: config/marketing.yml copywriter.llm (+ .critic),
+      # breaking.llm, reply_desk.voice and config.yml hot_tape.llm.
+      - marketing-copywriter     # Sol
+      - marketing-breaking       # Sol
+      - marketing-copy-review    # Sol
+      - marketing-critic         # Terra
+      - hot-tape-wire            # Terra
+      - reply-voice              # Terra
     allowed_tiers:
       - T0
       - T1
@@ -175,6 +203,20 @@ capabilities:
       - orchestrator-chat
       - brain-fast       # MNZ-W6a: haiku fallback for fast lane when DeepSeek absent
       - brain-pro        # MNZ-W6a: opus/sonnet pro lane
+      # ── Marketing content lanes (operator directive 2026-07-29) ──────────
+      # ChatGPT-first: the marketing writing lanes default to the attached Codex
+      # account so Claude subscription tokens stay reserved for website-building
+      # sessions. Tier map: Sol writes (copywriter, breaking, copy review,
+      # weekend levels ride the copywriter lane), Terra critiques and wires
+      # (critic, hot-tape wire, reply voice). Luna is never routed user-facing
+      # words. Config: config/marketing.yml copywriter.llm (+ .critic),
+      # breaking.llm, reply_desk.voice and config.yml hot_tape.llm.
+      - marketing-copywriter     # Sol
+      - marketing-breaking       # Sol
+      - marketing-copy-review    # Sol
+      - marketing-critic         # Terra
+      - hot-tape-wire            # Terra
+      - reply-voice              # Terra
     allowed_tiers:
       - T0
       - T1
@@ -219,6 +261,20 @@ capabilities:
       - orchestrator-chat
       - brain-fast       # MNZ-W6a: haiku fallback for fast lane when DeepSeek absent
       - brain-pro        # MNZ-W6a: opus/sonnet pro lane
+      # ── Marketing content lanes (operator directive 2026-07-29) ──────────
+      # ChatGPT-first: the marketing writing lanes default to the attached Codex
+      # account so Claude subscription tokens stay reserved for website-building
+      # sessions. Tier map: Sol writes (copywriter, breaking, copy review,
+      # weekend levels ride the copywriter lane), Terra critiques and wires
+      # (critic, hot-tape wire, reply voice). Luna is never routed user-facing
+      # words. Config: config/marketing.yml copywriter.llm (+ .critic),
+      # breaking.llm, reply_desk.voice and config.yml hot_tape.llm.
+      - marketing-copywriter     # Sol
+      - marketing-breaking       # Sol
+      - marketing-copy-review    # Sol
+      - marketing-critic         # Terra
+      - hot-tape-wire            # Terra
+      - reply-voice              # Terra
     allowed_tiers:
       - T0
       - T1
@@ -263,6 +319,20 @@ capabilities:
       - orchestrator-chat
       - brain-fast       # MNZ-W6a: haiku fallback for fast lane when DeepSeek absent
       - brain-pro        # MNZ-W6a: opus/sonnet pro lane
+      # ── Marketing content lanes (operator directive 2026-07-29) ──────────
+      # ChatGPT-first: the marketing writing lanes default to the attached Codex
+      # account so Claude subscription tokens stay reserved for website-building
+      # sessions. Tier map: Sol writes (copywriter, breaking, copy review,
+      # weekend levels ride the copywriter lane), Terra critiques and wires
+      # (critic, hot-tape wire, reply voice). Luna is never routed user-facing
+      # words. Config: config/marketing.yml copywriter.llm (+ .critic),
+      # breaking.llm, reply_desk.voice and config.yml hot_tape.llm.
+      - marketing-copywriter     # Sol
+      - marketing-breaking       # Sol
+      - marketing-copy-review    # Sol
+      - marketing-critic         # Terra
+      - hot-tape-wire            # Terra
+      - reply-voice              # Terra
     allowed_tiers:
       - T0
       - T1
@@ -307,6 +377,20 @@ capabilities:
       - orchestrator-chat
       - brain-fast       # MNZ-W6a: haiku fallback for fast lane when DeepSeek absent
       - brain-pro        # MNZ-W6a: opus/sonnet pro lane
+      # ── Marketing content lanes (operator directive 2026-07-29) ──────────
+      # ChatGPT-first: the marketing writing lanes default to the attached Codex
+      # account so Claude subscription tokens stay reserved for website-building
+      # sessions. Tier map: Sol writes (copywriter, breaking, copy review,
+      # weekend levels ride the copywriter lane), Terra critiques and wires
+      # (critic, hot-tape wire, reply voice). Luna is never routed user-facing
+      # words. Config: config/marketing.yml copywriter.llm (+ .critic),
+      # breaking.llm, reply_desk.voice and config.yml hot_tape.llm.
+      - marketing-copywriter     # Sol
+      - marketing-breaking       # Sol
+      - marketing-copy-review    # Sol
+      - marketing-critic         # Terra
+      - hot-tape-wire            # Terra
+      - reply-voice              # Terra
     allowed_tiers:
       - T0
       - T1
@@ -351,6 +435,20 @@ capabilities:
       - orchestrator-chat
       - brain-fast       # MNZ-W6a: haiku fallback for fast lane when DeepSeek absent
       - brain-pro        # MNZ-W6a: opus/sonnet pro lane
+      # ── Marketing content lanes (operator directive 2026-07-29) ──────────
+      # ChatGPT-first: the marketing writing lanes default to the attached Codex
+      # account so Claude subscription tokens stay reserved for website-building
+      # sessions. Tier map: Sol writes (copywriter, breaking, copy review,
+      # weekend levels ride the copywriter lane), Terra critiques and wires
+      # (critic, hot-tape wire, reply voice). Luna is never routed user-facing
+      # words. Config: config/marketing.yml copywriter.llm (+ .critic),
+      # breaking.llm, reply_desk.voice and config.yml hot_tape.llm.
+      - marketing-copywriter     # Sol
+      - marketing-breaking       # Sol
+      - marketing-copy-review    # Sol
+      - marketing-critic         # Terra
+      - hot-tape-wire            # Terra
+      - reply-voice              # Terra
     allowed_tiers:
       - T0
       - T1
@@ -395,6 +493,20 @@ capabilities:
       - orchestrator-chat
       - brain-fast       # MNZ-W6a: haiku fallback for fast lane when DeepSeek absent
       - brain-pro        # MNZ-W6a: opus/sonnet pro lane
+      # ── Marketing content lanes (operator directive 2026-07-29) ──────────
+      # ChatGPT-first: the marketing writing lanes default to the attached Codex
+      # account so Claude subscription tokens stay reserved for website-building
+      # sessions. Tier map: Sol writes (copywriter, breaking, copy review,
+      # weekend levels ride the copywriter lane), Terra critiques and wires
+      # (critic, hot-tape wire, reply voice). Luna is never routed user-facing
+      # words. Config: config/marketing.yml copywriter.llm (+ .critic),
+      # breaking.llm, reply_desk.voice and config.yml hot_tape.llm.
+      - marketing-copywriter     # Sol
+      - marketing-breaking       # Sol
+      - marketing-copy-review    # Sol
+      - marketing-critic         # Terra
+      - hot-tape-wire            # Terra
+      - reply-voice              # Terra
     allowed_tiers:
       - T0
       - T1
@@ -468,6 +580,20 @@ capabilities:
       - orchestrator-chat
       - brain-fast
       - brain-pro
+      # ── Marketing content lanes (operator directive 2026-07-29) ──────────
+      # ChatGPT-first: the marketing writing lanes default to the attached Codex
+      # account so Claude subscription tokens stay reserved for website-building
+      # sessions. Tier map: Sol writes (copywriter, breaking, copy review,
+      # weekend levels ride the copywriter lane), Terra critiques and wires
+      # (critic, hot-tape wire, reply voice). Luna is never routed user-facing
+      # words. Config: config/marketing.yml copywriter.llm (+ .critic),
+      # breaking.llm, reply_desk.voice and config.yml hot_tape.llm.
+      - marketing-copywriter     # Sol
+      - marketing-breaking       # Sol
+      - marketing-copy-review    # Sol
+      - marketing-critic         # Terra
+      - hot-tape-wire            # Terra
+      - reply-voice              # Terra
     allowed_tiers:
       - T0
       - T1
