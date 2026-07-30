@@ -14,6 +14,10 @@ builders. Reads: R2_ENDPOINT, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET.
 A single file's terminal upload failure (after boto's own retries) is logged and
 counted instead of aborting the run — the md5/ETag delta pass self-heals it next
 run; the process still exits 1 (plus a ::warning line) so lanes see the miss.
+The connection pool is SIZED from the worker count (_pool_size): each worker's
+upload_file fans out to _TRANSFER_CONCURRENCY part uploads on GB-class files, so
+a flat pool starves the multipart lanes and the resulting TLS churn fails parts
+outright — which then holds the manifest guard shut night after night.
 
 Partial-tree invocations MUST pass --no-manifest: the manifest is rebuilt from the
 local tree, so a checkout holding only a dir's few git-committed files (the heavy
@@ -119,9 +123,58 @@ _DATA_DIR_MIN_BYTES = {"attention": 15_000_000}
 _CT = {".json": "application/json", ".js": "application/javascript",
        ".html": "text/html; charset=utf-8", ".csv": "text/csv"}
 
+# Concurrent part-uploads s3transfer runs per multipart file. This is PINNED into
+# an explicit TransferConfig at upload time (see publish()) rather than inherited
+# from s3transfer's default, because _pool_size() below is derived from it: a
+# future s3transfer default bump would otherwise silently under-provision the
+# connection pool again, exactly as the un-pinned 64 did (see _pool_size).
+_TRANSFER_CONCURRENCY = 10
+# Slack for the non-transfer calls that share this client: list_objects_v2
+# pagination over a dir, and the manifest get/put.
+_POOL_HEADROOM = 8
+# Never drop below the historical pool size, however few workers are requested.
+_POOL_FLOOR = 64
 
-def _client():
-    """S3 client for R2, or None when creds are absent (graceful no-op)."""
+
+def _pool_size(workers: int) -> int:
+    """urllib3 connection-pool size for `workers` upload threads.
+
+    MUST cover the real peak: each of the `workers` outer threads calls
+    upload_file, and every file over the multipart threshold fans out to
+    _TRANSFER_CONCURRENCY concurrent part uploads — so the ceiling is
+    workers x _TRANSFER_CONCURRENCY, not `workers`.
+
+    The flat 64 this replaces sat below that ceiling (32 x 10 = 320) and the
+    thetadata_eod lane paid for it nightly: urllib3 discarded every connection
+    released into a full pool (1,119 "Connection pool is full" warnings in the
+    2026-07-29 run alone), and the resulting TLS churn against R2 killed
+    part uploads mid-flight — "Connection was closed before we received a valid
+    response", 16 terminal failures over three runs, EVERY one of them a
+    `?uploadId=...&partNumber=N` request. Three failures are enough to hold the
+    manifest guard closed, so the offsite index never advanced while the bytes
+    did: a backup whose descriptor is stale is the state you least want it in.
+    Same class of under-provisioning as the EMFILE the plist's 4096-fd
+    SoftResourceLimit fixed one layer down (2026-07-16).
+    """
+    return max(_POOL_FLOOR, workers * _TRANSFER_CONCURRENCY + _POOL_HEADROOM)
+
+
+def _transfer_config(concurrency: int = _TRANSFER_CONCURRENCY):
+    """Explicit s3transfer posture, or None when boto3 is absent (the CI packs
+    that exercise publish() against a fake client install no boto3)."""
+    try:
+        from boto3.s3.transfer import TransferConfig  # noqa: PLC0415
+    except ImportError:
+        return None
+    return TransferConfig(max_concurrency=concurrency)
+
+
+def _client(workers: int = 32):
+    """S3 client for R2, or None when creds are absent (graceful no-op).
+
+    `workers` sizes the connection pool — pass the SAME value handed to
+    publish()'s ThreadPoolExecutor or the pool under-provisions (see _pool_size).
+    """
     ep = os.environ.get("R2_ENDPOINT")
     ak = os.environ.get("R2_ACCESS_KEY_ID")
     sk = os.environ.get("R2_SECRET_ACCESS_KEY")
@@ -135,7 +188,8 @@ def _client():
     # hard-down endpoint costs ~11 x 15s + backoff (~5 min/call), not ~13 min —
     # publish lists its dirs SERIALLY inside daily.yml's 150-min engine job.
     kw = dict(region_name="auto", signature_version="s3v4",
-              max_pool_connections=64, retries={"max_attempts": 10, "mode": "adaptive"},
+              max_pool_connections=_pool_size(workers),
+              retries={"max_attempts": 10, "mode": "adaptive"},
               connect_timeout=15, read_timeout=60)
     try:  # newer botocore: keep R2 happy (it rejects the default CRC32 trailer)
         cfg = Config(**kw, request_checksum_calculation="when_required",
@@ -234,10 +288,14 @@ def _manifest_ok(new_count: int, remote: dict | None, floor: float = 0.5) -> tup
 
 def publish(dirs, dry_run: bool = False, workers: int = 32,
             manifest: bool = True, force_manifest: bool = False) -> int:
-    s3 = _client()
+    s3 = _client(workers)
     if s3 is None:
         log.info("no R2 creds (R2_ENDPOINT/ACCESS_KEY_ID/SECRET_ACCESS_KEY) — skip")
         return 0
+    # Pin the per-file part concurrency the pool was sized for; without this the
+    # two halves of the invariant drift apart on an s3transfer default bump.
+    _xfer = _transfer_config()
+    _xfer_kw = {} if _xfer is None else {"Config": _xfer}
     from lib import config
     bucket = os.environ["R2_BUCKET"]
     site = config.ROOT / config.load()["storage"]["site_dir"]
@@ -304,7 +362,8 @@ def publish(dirs, dry_run: bool = False, workers: int = 32,
             p, key = pk
             try:
                 s3.upload_file(str(p), bucket, key,
-                               ExtraArgs={"ContentType": _CT.get(p.suffix, "application/octet-stream")})
+                               ExtraArgs={"ContentType": _CT.get(p.suffix, "application/octet-stream")},
+                               **_xfer_kw)
                 return None
             except Exception as e:  # noqa: BLE001 — one bad file must not kill the run
                 log.warning("%s: upload failed (%s) — the md5 delta retries it next run",

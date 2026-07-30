@@ -123,8 +123,17 @@
   <!--
     launchd agents inherit macOS's 256-fd soft limit. publish_r2's 32 upload
     threads x s3transfer's ~10 concurrent multipart part-readers on GB-class
-    greeks parquets (+ 64 pooled sockets) exceed that — the first sync
-    (2026-07-16) died EMFILE on greeks/SPY/2022.parquet. 4096 is ~8x headroom.
+    greeks parquets (+ the pooled sockets) exceed that — the first sync
+    (2026-07-16) died EMFILE on greeks/SPY/2022.parquet. 4096 is ample headroom.
+
+    That same 32 x 10 fan-out is why publish_r2 now DERIVES its urllib3 pool
+    from the worker count (_pool_size: 32 x 10 + 8 = 328) instead of the flat 64
+    it shipped with. The flat pool sat below the real ceiling, so urllib3
+    discarded every connection released into it (1,119 "Connection pool is full"
+    warnings on 2026-07-29) and the TLS churn killed multipart parts outright —
+    3 to 12 terminal failures a night, each one enough to hold publish_r2's
+    manifest guard shut, so the offsite INDEX stopped advancing while the bytes
+    kept landing. 328 sockets + ~352 threads still sit ~10x inside this 4096.
   -->
   <key>SoftResourceLimits</key>
   <dict>

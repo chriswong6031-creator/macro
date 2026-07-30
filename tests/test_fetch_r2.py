@@ -16,20 +16,22 @@ class _FakeS3:
     def __init__(self, objects: dict[str, bytes]):
         self.objects = objects
         self.downloads: list[str] = []
+        self.transfer_configs: list[object] = []
 
     def list_objects_v2(self, Bucket, Prefix, ContinuationToken=None):
         contents = [{"Key": k, "ETag": f'"{hashlib.md5(v).hexdigest()}"', "Size": len(v)}
                     for k, v in self.objects.items() if k.startswith(Prefix)]
         return {"Contents": contents, "IsTruncated": False}
 
-    def download_file(self, bucket, key, dest):
+    def download_file(self, bucket, key, dest, Config=None):
         self.downloads.append(key)
+        self.transfer_configs.append(Config)
         Path(dest).write_bytes(self.objects[key])
 
 
 def _wire(monkeypatch, tmp_path, objects):
     s3 = _FakeS3(objects)
-    monkeypatch.setattr(fetch_r2, "_client", lambda: s3)
+    monkeypatch.setattr(fetch_r2, "_client", lambda *a, **k: s3)
     monkeypatch.setenv("R2_BUCKET", "test-bucket")
     monkeypatch.setattr("lib.config.ROOT", tmp_path)
     monkeypatch.setattr("lib.config.load",
@@ -65,5 +67,22 @@ def test_empty_prefix_is_a_failure(monkeypatch, tmp_path):
 
 
 def test_missing_creds_is_graceful_noop(monkeypatch, tmp_path):
-    monkeypatch.setattr(fetch_r2, "_client", lambda: None)
+    monkeypatch.setattr(fetch_r2, "_client", lambda *a, **k: None)
     assert fetch_r2.fetch(["attention"]) == 0
+
+
+def test_restore_leg_sizes_its_own_pool(monkeypatch, tmp_path):
+    """The RESTORE leg is the one you run when you actually need the backup —
+    download_file fans a large object into concurrent ranged GETs just as
+    upload_file fans out parts, so it must size the pool for ITS worker count
+    rather than inherit publish()'s default (see publish_r2._pool_size)."""
+    seen: list[int] = []
+    s3 = _wire(monkeypatch, tmp_path, {"attention/A.parquet": b"deep-history-bytes"})
+
+    def _spy(workers=32, *a, **k):
+        seen.append(workers)
+        return s3
+
+    monkeypatch.setattr(fetch_r2, "_client", _spy)
+    assert fetch_r2.fetch(["attention"], workers=4) == 0
+    assert seen == [4], f"fetch did not hand its worker count to the client: {seen}"
