@@ -509,8 +509,13 @@ def _auditor_block(cp: dict | None) -> dict:
     reproduce the exact defect this console was built to fix, so the cut posts
     travel with their text and the reason.
     """
-    report = ((cp or {}).get("report") or {}) if isinstance(cp, dict) else {}
-    blk = ((report.get("copy") or {}).get("auditor") or {}) if isinstance(report, dict) else {}
+    # The plan's copy census lives under `content.copy` — there is no top-level
+    # `report` key and there never has been in any committed vintage. Reading
+    # `report.copy.auditor` made this panel report "not run yet" on a plan whose
+    # auditor had in fact cut 10 posts, which is the exact class of silent-null
+    # defect this module exists to eliminate. Caught by reading a real plan.
+    content = ((cp or {}).get("content") or {}) if isinstance(cp, dict) else {}
+    blk = ((content.get("copy") or {}).get("auditor") or {}) if isinstance(content, dict) else {}
     if not isinstance(blk, dict) or not blk:
         return {"present": False,
                 "note": "The batch auditor has not run over a plan on this host yet."}

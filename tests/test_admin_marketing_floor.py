@@ -295,3 +295,38 @@ def test_a_stale_tape_pack_is_reported_stale_not_live(repo):
     lane = next(r for r in mf.lanes(repo)["lanes"] if r["id"] == "hot_tape")
     assert lane["state"] == "stale"
     assert "days old" in lane["state_word"]
+
+
+class TestAuditorBlockPath:
+    """The plan's copy census lives at `content.copy`, NOT `report.copy`.
+
+    Reading the wrong path made the panel report "not run yet" on a plan whose
+    auditor had cut 10 posts — a silent null dressed as an honest empty state,
+    which is the exact defect this module exists to eliminate. Caught only by
+    reading a real plan, so pin the path.
+    """
+
+    def test_it_reads_content_copy_not_report_copy(self, tmp_path):
+        from admin.marketing_floor import _auditor_block
+        plan = {"content": {"copy": {"auditor": {
+            "ran": True, "kept": 19, "cut": 10, "unaudited": 0,
+            "cuts": [{"id": "p1", "account": "flagship", "kind": "chart",
+                      "codes": ["repetitive"], "note": "dupe", "text": "x"}],
+            "notes": {"flagship": "formulaic"},
+        }}}}
+        blk = _auditor_block(plan)
+        assert blk["present"] is True
+        assert blk["kept"] == 19 and blk["cut"] == 10
+        assert blk["cut_share"] == pytest.approx(10 / 29, abs=1e-4)
+
+    def test_a_plan_with_only_a_report_key_is_not_mistaken_for_data(self):
+        """The old wrong path must not silently start working again."""
+        from admin.marketing_floor import _auditor_block
+        assert _auditor_block({"report": {"copy": {"auditor": {"kept": 5}}}})["present"] is False
+
+    def test_high_cut_share_points_upstream(self):
+        """A cut rate above a third is the supply failing, not the gate."""
+        from admin.marketing_floor import _auditor_block
+        blk = _auditor_block({"content": {"copy": {"auditor": {
+            "ran": True, "kept": 10, "cut": 10, "cuts": [], "notes": {}}}}})
+        assert "supply" in blk["verdict"]
