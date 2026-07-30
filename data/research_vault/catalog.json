@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-30T03:09:46.219512+00:00",
-  "count": 361,
+  "generated_at": "2026-07-30T03:24:54.691754+00:00",
+  "count": 362,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -258,6 +258,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 17,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-imr7sbpdop0-dbf09e",
+      "title": "Global daily circle of life",
+      "institution": "Rabobank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T13:47:55Z",
+      "summary_points": [
+        "**Geopolitical Oil Volatility**: US-Iran tensions (Iranian missile strikes on Jordan base) drove Brent crude down 5%, rebounding 3% after US-Saudi strikes on Iraq; Saudi-Israel talks signal normalization risk impacting energy markets.",
+        "**RBA Policy & Inflation Data**: June CPI (3.8% vs expectations) and core CPI (3.6%) beat forecasts, driving AUD decline and sovereign yield drops; RBA raised rates March-May due to global energy shocks worsening inflation.",
+        "**Geopolitical & Productivity Risks**: Middle East tensions disrupt supply chains (Strait of Hormuz constraints on copper/nickel); US productivity growth anaemic despite AI investment, with unproven CAPEX-productivity link."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
