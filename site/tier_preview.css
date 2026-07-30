@@ -1,17 +1,42 @@
 /* Public dashboard preview tiers: anonymous = 1 row, Free = 3, paid = full. */
 .mx-tier-blurred{filter:blur(5px);opacity:.34;pointer-events:none;user-select:none}
 .mx-tier-hidden{display:none!important}
-.mx-tier-gate{display:flex;align-items:center;gap:11px;margin:9px 0 2px;padding:11px 12px;
-  border:1px solid color-mix(in srgb,var(--link) 35%,var(--line));border-radius:10px;
-  background:color-mix(in srgb,var(--link) 7%,var(--panel2));box-shadow:0 8px 22px rgba(0,0,0,.12)}
-.mx-tier-lock{display:grid;place-items:center;flex:none;width:30px;height:30px;border-radius:9px;
-  background:color-mix(in srgb,var(--link) 13%,var(--panel));color:var(--link);font-size:18px;font-weight:800}
-.mx-tier-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:2px}
-.mx-tier-copy b{font-size:12.5px;color:var(--text)}
-.mx-tier-copy small{font-size:11px;color:var(--muted);line-height:1.4}
-.mx-tier-gate button{flex:none;border:1px solid var(--link);border-radius:8px;background:var(--link);
-  color:#fff;font:700 11.5px/1 var(--font-ui);padding:9px 11px;cursor:pointer}
+.mx-tier-gate{
+  --mx-tier-accent:var(--link);
+  position:relative;isolation:isolate;overflow:hidden;
+  display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:24px;
+  margin:18px 0 2px;padding:21px 23px;border:1px solid color-mix(in srgb,var(--mx-tier-accent) 34%,var(--line));
+  border-radius:15px;background:linear-gradient(120deg,color-mix(in srgb,var(--mx-tier-accent) 11%,var(--panel)),var(--panel) 68%);
+  box-shadow:0 16px 40px -28px color-mix(in srgb,var(--mx-tier-accent) 72%,transparent)
+}
+.mx-tier-gate::before{content:"";position:absolute;z-index:-1;width:260px;height:260px;right:-95px;top:-165px;
+  border-radius:50%;background:color-mix(in srgb,var(--mx-tier-accent) 12%,transparent);filter:blur(2px)}
+.mx-tier-gate::after{content:"";position:absolute;left:23px;right:23px;top:0;height:1px;
+  background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--mx-tier-accent) 75%,transparent),transparent)}
+.mx-tier-gate--prophet{--mx-tier-accent:#7c5cff;
+  background:linear-gradient(120deg,color-mix(in srgb,#7c5cff 12%,var(--panel)),var(--panel) 70%)}
+.mx-tier-copy{display:flex;min-width:0;flex-direction:column;align-items:flex-start;gap:5px}
+.mx-tier-eyebrow{display:flex;align-items:center;gap:7px;color:var(--mx-tier-accent);
+  font:750 10px/1 var(--font-ui);letter-spacing:.09em;text-transform:uppercase}
+.mx-tier-mark{display:grid;place-items:center;width:22px;height:22px;border-radius:7px;
+  background:color-mix(in srgb,var(--mx-tier-accent) 13%,var(--panel));border:1px solid color-mix(in srgb,var(--mx-tier-accent) 28%,var(--line));
+  font-size:11px;letter-spacing:0}
+.mx-tier-copy b{font-size:18px;line-height:1.2;letter-spacing:-.015em;color:var(--text)}
+.mx-tier-copy small{max-width:650px;font-size:12.5px;color:var(--muted);line-height:1.45}
+.mx-tier-actions{position:relative;z-index:1;display:flex;flex-direction:column;align-items:stretch;gap:7px;min-width:174px}
+.mx-tier-gate button{font-family:var(--font-ui);cursor:pointer}
+.mx-tier-primary{border:1px solid var(--mx-tier-accent);border-radius:10px;background:var(--mx-tier-accent);
+  color:#fff;font-size:12.5px;font-weight:760;line-height:1;padding:12px 17px;
+  box-shadow:0 9px 22px -12px color-mix(in srgb,var(--mx-tier-accent) 85%,transparent);
+  transition:transform .16s ease,box-shadow .16s ease,filter .16s ease}
+.mx-tier-primary:hover{transform:translateY(-1px);filter:brightness(1.06);
+  box-shadow:0 13px 28px -13px color-mix(in srgb,var(--mx-tier-accent) 92%,transparent)}
+.mx-tier-signin{border:0;background:transparent;color:var(--muted);font-size:10.5px;font-weight:650;padding:2px 4px}
+.mx-tier-signin:hover{color:var(--text)}
 @media(max-width:620px){
-  .mx-tier-gate{align-items:flex-start;flex-wrap:wrap}
-  .mx-tier-gate button{margin-left:41px}
+  .mx-tier-gate{grid-template-columns:1fr;gap:16px;margin-top:14px;padding:18px}
+  .mx-tier-gate::after{left:18px;right:18px}
+  .mx-tier-copy b{font-size:17px}
+  .mx-tier-actions{width:100%;min-width:0}
+  .mx-tier-primary{width:100%;padding:13px 16px}
 }
