@@ -80,10 +80,27 @@ def _entry_from_snapshot(snap: dict) -> dict | None:
     """Slim a risk_radar.compute() snapshot to the loggable fields (no recompute)."""
     if not snap or not snap.get("asof") or snap.get("state") is None:
         return None
+    # CONTEXT-GATE EVIDENCE (audit 2026-07-29). Only the GATED state was ever logged, so the
+    # context gate's promotion-grade false-positive claim (H21 banner precision 0.085 -> 0.249,
+    # fire-rate 80% -> 17%) could never be falsified on THIS engine's own ledger: every day the
+    # gate clamped elevated+ down to 'caution' was recorded as a caution day, the alert count
+    # stayed 0 for life, and the counterfactual the gate is justified by left no trace. Logging
+    # the UN-gated state beside the gated one makes the clamped days gradeable as the alerts they
+    # would have been — the gate itself is untouched, this is pure accounting.
+    gate = snap.get("context_gate") or {}
+    ungated = snap.get("state_ungated")
     return {
         "asof": str(snap["asof"]),
         "state": snap.get("state"),
         "alert": bool(snap.get("alert")),
+        # what the radar read BEFORE the context gate clamped it, plus the gate's own legs
+        "state_ungated": ungated,
+        "alert_ungated": (None if ungated is None
+                          else bool(ungated in ALERT_STATES)),
+        "gate_clamped": (None if ungated is None else bool(ungated != snap.get("state"))),
+        "context_gate": {"met": gate.get("met"),
+                         "spy_below_200dma": gate.get("spy_below_200dma"),
+                         "breadth_weak": gate.get("breadth_weak")},
         "dominant_scare": snap.get("dominant_scare"),
         "top_score": snap.get("top_score"),
         "conjunction_n": (snap.get("drawdown_prob") or {}).get("conjunction_n"),
@@ -164,8 +181,22 @@ def _grade_entry(entry: dict, spy: pd.Series) -> dict | None:
         outcome = "tp_watch" if any_primary else "tn_watch"
     else:
         outcome = "calm_dd" if any_primary else "calm_quiet"
+    # COUNTERFACTUAL grade for the UN-gated state (audit 2026-07-29): on a clamped day the
+    # gated row grades as a caution, so the alert the gate suppressed is never scored either
+    # way. Grading it separately is what makes the gate's own FP claim falsifiable. None on
+    # rows logged before state_ungated existed — never imputed from the gated state.
+    ung = entry.get("state_ungated")
+    outcome_ungated = None
+    if ung:
+        if ung in ALERT_STATES:
+            outcome_ungated = "true_positive" if any_primary else "false_positive"
+        elif ung in ("watch", "caution"):
+            outcome_ungated = "tp_watch" if any_primary else "tn_watch"
+        else:
+            outcome_ungated = "calm_dd" if any_primary else "calm_quiet"
     return {"base_px": round(base_px, 2), "fwd_dd": fwd_dd, "hit": hit,
             "outcome": outcome, "any_dd5_within_h21": bool(any_primary),
+            "outcome_ungated": outcome_ungated,
             "graded_at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
 
 
@@ -232,12 +263,35 @@ def scorecard(root=None) -> dict:
                 for r in rows
                 if r["graded"]["outcome"] in ("false_positive",)
                 or (not r.get("alert") and r["graded"].get("any_dd5_within_h21"))]  # FPs + misses
+    # CONTEXT-GATE COUNTERFACTUAL (audit 2026-07-29). `n_alerts` has been 0 for the life of this
+    # ledger because the gate clamps every elevated+ read down to 'caution' before it is logged —
+    # so the gate's measured false-positive reduction has never been checkable HERE. This block
+    # scores the un-gated state on the same realized paths: how many clamped days would have been
+    # alerts, and how many of those would have been false. Rows logged before state_ungated
+    # existed are excluded from the denominators rather than imputed.
+    ung_rows = [r for r in rows if (r["graded"] or {}).get("outcome_ungated")]
+    ung_alerts = [r for r in ung_rows if r.get("alert_ungated")]
+    ung_tp = [r for r in ung_alerts if r["graded"]["outcome_ungated"] == "true_positive"]
+    ung_fp = [r for r in ung_alerts if r["graded"]["outcome_ungated"] == "false_positive"]
+    clamped = [r for r in ung_rows if r.get("gate_clamped")]
+    gate_cf = {
+        "n_rows_with_ungated": len(ung_rows),
+        "n_clamped_by_gate": len(clamped),
+        "n_alerts_ungated": len(ung_alerts),
+        "n_true_pos_ungated": len(ung_tp), "n_false_pos_ungated": len(ung_fp),
+        "alert_precision_ungated": (round(len(ung_tp) / len(ung_alerts), 3)
+                                    if ung_alerts else None),
+        "note": ("Counterfactual: the state BEFORE the context gate clamped it, graded on the "
+                 "same realized SPY paths. Rows logged before state_ungated was recorded are "
+                 "excluded, so an empty block means 'not yet measurable', not 'no false alarms'."),
+    }
     return {
         "n_graded": len(rows),
         "alert_precision": round(len(tp) / len(alerts), 3) if alerts else None,
         "n_alerts": len(alerts), "n_true_pos": len(tp), "n_false_pos": len(fp),
         "recall_dd5_h21": round(len(pre_alerted) / len(pre), 3) if pre else None,
         "by_state": by_state,
+        "context_gate_counterfactual": gate_cf,
         "recent_mistakes": sorted(mistakes, key=lambda m: m["asof"], reverse=True)[:25],
         "asof_range": [rows[0]["asof"], rows[-1]["asof"]],
     }

@@ -1394,6 +1394,22 @@
     "dashboard",
     "macro"
    ]
+  },
+  {
+   "match": "validated gate governs",
+   "backing": "research/DISLOCATION_VALIDATION.md — the dislocation Gate-1 Fed-put switch (engine/dislocation.py). HONEST SCOPE: of the four measured separations only the MEDIAN 3-month drawdown clears its bootstrap CI (+3.9pp, 95% CI [+0.3, +6.3], episode block bootstrap, ~10 put-absent crises). Hit-rate (+30.3pp, CI [-5.1, +63.0]) and median 63d return (+7.4pp, CI [-2.7, +12.3]) SPAN ZERO and are indistinguishable from the unconditional base at this effective sample — they are carried by sign-consistency (leave-one-year-out 26/28, both split-halves), not by significance. So 'validated' here means validated AS A DRAWDOWN/RISK FILTER only, never as return alpha, and the phrase exists solely to rank the deterministic gate ABOVE an LLM/GPR narrative cross-check. The composite CI was measured on VIX>30 | drawdown<=-12% | VRP>0.90 and does NOT cover a backwardation-only firing (engine/dislocation.evidence_scope emits that scoping per firing). Engine copy was reworded to 'measured gate governs' on 2026-07-29; this entry backs the remaining hardcoded template copy. Previously this phrase passed only via the sector_central/gex 'validated gate' entry, whose backing cites a different study and whose surfaces do not include this page.",
+   "surfaces": [
+    "macro",
+    "dashboard"
+   ]
+  },
+  {
+   "match": "validated fed-put gate governs",
+   "backing": "same dislocation Gate-1 artifact and the same honest scope as 'validated gate governs' above (research/DISLOCATION_VALIDATION.md): validated as a DRAWDOWN filter only — the hit-rate and median-return CIs span zero. Distinct from the spvector 'validated fed-put gate' entry, whose re-deploy overlay study does not cover this surface.",
+   "surfaces": [
+    "macro",
+    "dashboard"
+   ]
   }
  ]
 }
