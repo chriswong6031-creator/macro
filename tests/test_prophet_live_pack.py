@@ -43,6 +43,7 @@ if str(ROOT) not in sys.path:
 
 from engine import signal_gate  # noqa: E402
 from engine.prophet_live import armed_pack as AP  # noqa: E402
+from engine.prophet_live.r2io import PACK_KEY as AP_R2_PACK_KEY  # noqa: E402
 
 # A fixed business-day index: no wall-clock date arithmetic anywhere in this file.
 IDX = pd.bdate_range("2022-01-03", periods=520)
@@ -201,15 +202,56 @@ def test_an_unverified_armed_pack_is_refused(monkeypatch, capsys, series):
     assert "re-verified" in err[0]
 
 
-def test_an_edge_mismatch_refuses_to_publish(monkeypatch, capsys, series):
+def test_an_edge_mismatch_withholds_that_name_not_the_pack(monkeypatch, capsys, series):
+    """N3: mismatches are withheld per name; the pack still ships for everyone else.
+
+    Refusing the whole pack over one boundary case darks every other name for the rest of
+    the session, which is a worse outcome than publishing a pack that is missing one
+    name's levels. The wrong price does not reach a user on either path.
+    """
     import scripts.build_prophet_live_pack as B
     p = AP.build_pack([("S09", series["S09"])], now=NOW)
     p["meta"]["edge_mismatches"] = ["S09: gate says buyable=False at published price 1.0"]
     published: list[str] = []
     monkeypatch.setattr(B, "build", lambda **kw: p)
+    monkeypatch.setattr(B.r2io, "put_json", lambda k, v, **kw: published.append(k) or True)
+    assert B.main(["--publish"]) == 0
+    assert published == [AP_R2_PACK_KEY]
+    out = capsys.readouterr().out
+    assert "levels withheld" in out
+    warn = [ln for ln in out.splitlines() if "::warning title=prophet-live-pack-parity" in ln]
+    assert warn and warn[0].startswith("::warning")
+
+
+def test_a_residual_membership_mismatch_still_refuses_the_pack(monkeypatch, series):
+    """The belt: anything that survives the withholding is structural and blocks."""
+    import scripts.build_prophet_live_pack as B
+    p = AP.build_pack([("S09", series["S09"])], now=NOW)
+    victim = next(t for t, e in p["names"].items() if e.get("trigger_px") is not None)
+    p["names"][victim]["trigger_px"] = p["names"][victim]["as_of_close"] * 0.5
+    published: list[str] = []
+    monkeypatch.setattr(B, "build", lambda **kw: p)
     monkeypatch.setattr(B.r2io, "put_json", lambda k, v, **kw: published.append(k))
     assert B.main(["--publish"]) == 1
     assert published == []
+
+
+def test_a_membership_mismatch_is_withheld_inside_build(monkeypatch, series):
+    """The withholding happens where the probes are, so the entry loses its levels."""
+    import scripts.build_prophet_live_pack as B
+    # bisect_iters high enough that a boundary can land within one 4-dp step of the
+    # close is the config-reachable route; drive the withholding directly instead of
+    # hunting a fixture that triggers it, and assert the entry shape it produces.
+    rec = AP.centre_record("S09", series["S09"], cfg=AP.pack_cfg(None))
+    probe = AP.probe_name("S09", series["S09"], rec, cfg=AP.pack_cfg(None))
+    entry = AP.name_entry(rec, probe)
+    assert entry.get("trigger_px") is not None
+    rec["skip"] = "membership_mismatch"
+    rec["wants_probe"] = False
+    withheld = AP.name_entry(rec, None)
+    assert withheld.get("trigger_px") is None and withheld.get("fade_px") is None
+    assert withheld["probed"] is False and withheld["skip"] == "membership_mismatch"
+    assert AP.interval_contains(withheld, withheld["as_of_close"]) is None
 
 
 def test_rounding_never_crosses_the_as_of_close():

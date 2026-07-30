@@ -75,6 +75,9 @@ def interval_contains(entry: dict[str, Any], px: float) -> bool | None:
 
     None is returned for an unprobed or irregular name; the intraday lane turns that
     into ``dark`` with a reason rather than guessing a state (G0.3).
+
+    ASK :func:`in_probed_band` FIRST. This function answers from the interval alone and
+    will happily extrapolate outside the price range the probe actually swept.
     """
     if not entry or entry.get("state") == "irregular":
         return None
@@ -94,23 +97,33 @@ def interval_contains(entry: dict[str, Any], px: float) -> bool | None:
     return True
 
 
-def self_check(names: dict[str, dict[str, Any]]) -> list[str]:
-    """G0.1 parity: interval membership at the as-of close == tonight's verdict.
+def membership_mismatches(names: dict[str, dict[str, Any]]) -> dict[str, str]:
+    """``{ticker: explanation}`` where the published interval excludes tonight's verdict.
 
-    Returns one human-readable line per mismatch (empty list = clean). Unprobed and
-    irregular names answer None above and are skipped — they publish no threshold, so
-    there is nothing for the evaluator to get wrong.
+    A STRUCTURAL check over the assembled payload, not independent evidence of parity —
+    see the block comment above ``armed_pack.edge_checks`` for why. It is reachable via
+    config (a high ``bisect_iters`` can land a trigger within one 4-dp step of the close),
+    so a mismatch withholds THAT name's levels rather than refusing the whole pack:
+    darkening every other name over one boundary case is the wrong trade, and the
+    per-name path already exists for unverified levels.
+
+    Unprobed and irregular names answer None and are skipped — they publish no
+    threshold, so there is nothing for the evaluator to get wrong.
     """
-    bad: list[str] = []
+    bad: dict[str, str] = {}
     for tkr, entry in sorted(names.items()):
         want = bool(entry.get("center_buyable"))
         got = interval_contains(entry, float(entry.get("as_of_close") or 0.0))
-        if got is None:
+        if got is None or got == want:
             continue
-        if got != want:
-            bad.append(
-                f"{tkr}: interval says buyable={got} at as_of_close="
-                f"{entry.get('as_of_close')} but tonight's gate says {want} "
-                f"(state={entry.get('state')}, trigger_px={entry.get('trigger_px')}, "
-                f"fade_px={entry.get('fade_px')}, fade_hi_px={entry.get('fade_hi_px')})")
+        bad[tkr] = (
+            f"{tkr}: interval says buyable={got} at as_of_close="
+            f"{entry.get('as_of_close')} but tonight's gate says {want} "
+            f"(state={entry.get('state')}, trigger_px={entry.get('trigger_px')}, "
+            f"fade_px={entry.get('fade_px')}, fade_hi_px={entry.get('fade_hi_px')})")
     return bad
+
+
+def self_check(names: dict[str, dict[str, Any]]) -> list[str]:
+    """:func:`membership_mismatches` as a list of lines."""
+    return list(membership_mismatches(names).values())

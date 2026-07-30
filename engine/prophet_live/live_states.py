@@ -391,6 +391,10 @@ def transitions(ticker: str, new: dict[str, Any], prev: dict[str, Any] | None, *
     base = {
         "ticker": ticker,
         "ts": _iso(now),
+        # On the ROW, not just the artifact. The reconciler reads session_phase off the
+        # event, so stamping it only in meta wrote None into every ledger row forever —
+        # and a 09:27 pre-open print is a materially different claim from an 11:00 one.
+        "session_phase": session_phase(now),
         "price": new.get("price"),
         "quote_age_min": new.get("quote_age_min"),
         "passes": new.get("passes"),

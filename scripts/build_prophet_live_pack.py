@@ -24,15 +24,20 @@ Measured timings are printed on every run so a regression shows up in the log.
 
 FAIL-CLOSED ON PARITY (G0.1). Before anything is published, the REAL gate is re-run
 at every PUBLISHED price: at each edge (must be buyable) and at the false-side bound
-the bisection actually measured (must not be). One mismatch and NOTHING is published —
-a missing pack makes the evaluator go dark, which is honest, while a wrong pack tells
-a user a level that does not exist. A pack with armed levels and zero re-verified
-prices is also refused: unproven is not clean.
+the bisection actually measured (must not be). A name whose price the gate contradicts,
+or that could not be checked inside the budget, has its thresholds WITHHELD — it ships
+its honest centre state with no levels, and the evaluator drops it from coverage. Per
+NAME, not per pack: one boundary case must not dark every other name, and a wrong price
+never reaches a user either way.
 
-The cheap membership check (``self_check``) still runs, but it is NOT the gate and is
-no longer described as one. It reads the same numbers the assembly wrote, and nothing
-in the assembly path can violate it — fuzzing 400 synthetic gates produced zero
-failures. It catches a representation bug; only the edge check catches a wrong price.
+Whole-pack refusal is reserved for structural failures: no ``as_of`` at all, armed
+levels with zero re-verified prices (unproven is not clean), or a mismatch that somehow
+survived the withholding.
+
+The cheap membership check (``self_check`` / ``membership_mismatches``) still runs, but
+it is NOT the gate and is no longer described as one. It reads the same numbers the
+assembly wrote; fuzzing synthetic gates produced zero failures. It catches a
+representation bug — only the edge check catches a wrong price.
 """
 from __future__ import annotations
 
@@ -181,6 +186,7 @@ def build(*, cfg: dict[str, Any] | None = None, now: datetime | None = None,
     bad: list[str] = []
     checks: dict[str, list] = {}
     verified: set[str] = set()
+    mismatched: set[str] = set()
     probe_seconds: dict[str, float] = {}
     # ONE budget for all three phases. Sizing each separately is how a step creeps:
     # the engine job's cap is what silently skips the nightly commit, so what matters
@@ -272,30 +278,45 @@ def build(*, cfg: dict[str, Any] | None = None, now: datetime | None = None,
             if timed_out:
                 break
             tkr, lines, n = res
-            bad.extend(lines)
+            if lines:
+                bad.extend(lines)
+                mismatched.add(tkr)
             verified.add(tkr)
             edges += n
             gate_calls += n
         verify_s = time.time() - t_verify
-        unverified = sorted(set(checks) - verified)
-        if unverified:
-            # A level nothing checked does not ship. The name keeps its honest centre
-            # state and loses its thresholds, so the evaluator drops it from coverage
-            # instead of acting on an unproven price. Refusing the WHOLE pack over a
-            # budget overrun would be worse: it darks the names that did verify.
-            skipped["unverified"] = len(unverified)
-            print(f"::warning title=prophet-live-pack::{len(unverified)} names could "
-                  "not have their published prices re-verified in budget — their "
-                  "thresholds are withheld (meta.skipped.unverified)", flush=True)
     finally:
         # cancel_futures so a deadline does not then wait out the whole queue.
         ex.shutdown(wait=False, cancel_futures=True)
 
-    for tkr in set(checks) - verified:
-        probes.pop(tkr, None)
-        recs[tkr]["skip"] = "unverified"
-        recs[tkr]["wants_probe"] = False
+    # WITHHOLD PER NAME, don't refuse the pack. A level that nothing checked, or that
+    # the live gate contradicts, must not ship — but darkening every OTHER name over it
+    # is the wrong trade. The name keeps its honest centre state and loses its
+    # thresholds, so the evaluator drops it from coverage instead of acting on it.
+    def _withhold(tickers: set[str], reason: str) -> None:
+        tickers = {t for t in tickers if t in recs}
+        if not tickers:
+            return
+        for t in tickers:
+            probes.pop(t, None)
+            recs[t]["skip"] = reason
+            recs[t]["wants_probe"] = False
+        skipped[reason] = skipped.get(reason, 0) + len(tickers)
+        print(f"::warning title=prophet-live-pack::{len(tickers)} names withheld "
+              f"({reason}) — their thresholds are not published "
+              f"(meta.skipped.{reason})", flush=True)
+
+    _withhold(set(checks) - verified, "unverified")
+    _withhold(mismatched, "edge_mismatch")
     names = {t: AP.name_entry(r, probes.get(t)) for t, r in recs.items()}
+    # The membership check is structural, runs over the ASSEMBLED payload, and is
+    # reachable via config (a high bisect_iters can put a trigger within one 4-dp step
+    # of the close). Same per-name treatment, then re-assemble.
+    mem_bad = AP.membership_mismatches(names)
+    if mem_bad:
+        bad.extend(mem_bad.values())
+        _withhold(set(mem_bad), "membership_mismatch")
+        names = {t: AP.name_entry(r, probes.get(t)) for t, r in recs.items()}
     payload = AP.assemble(names, as_of=tip or "", cfg=c, universe_n=len(uni),
                           wanted_n=wanted, gate_calls=gate_calls, edges_checked=edges,
                           probe_seconds=probe_seconds,
@@ -366,15 +387,24 @@ def main(argv: list[str] | None = None) -> int:
               "no dated bar; refusing to publish an undatable pack", flush=True)
         return 1
 
-    # TWO checks, and only one of them can fail. The membership check is a cheap
-    # structural invariant over the assembled payload; the EDGE check re-runs the real
-    # gate at every published price and is the independent evidence G0.1 asks for.
-    bad = list(m.get("edge_mismatches") or []) + AP.self_check(payload["names"])
+    # Mismatches are already WITHHELD per name inside build() — a single boundary case
+    # must not dark every other name. They are logged here, and the invariants below are
+    # what can still refuse the whole pack.
+    bad = list(m.get("edge_mismatches") or [])
+    for line in bad[:20]:
+        print(f"prophet-live parity mismatch (levels withheld): {line}", flush=True)
     if bad:
-        for line in bad[:20]:
-            print(f"prophet-live parity mismatch: {line}", flush=True)
-        print(f"::error title=prophet-live-pack-parity::{len(bad)} mismatches between "
-              "the published prices and the live gate — pack NOT published", flush=True)
+        print(f"::warning title=prophet-live-pack-parity::{len(bad)} names disagreed "
+              "with the live gate at a published price — those names ship with NO "
+              "thresholds (meta.skipped.edge_mismatch / .membership_mismatch)",
+              flush=True)
+    # Belt: nothing that survived the withholding may still be inconsistent.
+    residual = AP.self_check(payload["names"])
+    if residual:
+        for line in residual[:20]:
+            print(f"prophet-live residual mismatch: {line}", flush=True)
+        print(f"::error title=prophet-live-pack-parity::{len(residual)} mismatches "
+              "survived the per-name withholding — pack NOT published", flush=True)
         return 1
 
     armed = int(m["armed_n"])

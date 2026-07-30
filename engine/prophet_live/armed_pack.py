@@ -72,7 +72,8 @@ from engine import signal_gate
 # The interval contract lives in a stdlib-only sibling so the pandas-free */5 lane
 # can read it too; re-exported here because this is where callers expect it.
 from engine.prophet_live.interval import (  # noqa: F401
-    STATES, in_probed_band, interval_contains, lower_edge, self_check,
+    STATES, in_probed_band, interval_contains, lower_edge, membership_mismatches,
+    self_check,
 )
 
 log = logging.getLogger(__name__)

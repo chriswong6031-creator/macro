@@ -67,7 +67,20 @@ KEY = ["date", "ticker", "kind"]
 #: ``confirmed`` because a verdict is a claim about one session's close and a later
 #: night has no standing to restate it; the first-cross fields because they are the
 #: user-actionable print and a re-read over an expired spool must not lose them.
-FIRST_WINS = ("confirmed", "confirmed_basis", "first_ts", "first_px")
+#:
+#: ``cross_px`` is in here for a proven failure: if one pass object of a session's spool
+#: becomes unreadable, a re-read rebuilds the row from a PARTIAL spool, so ``first_px``
+#: stays frozen at the real first cross while ``cross_px`` — the same number, and the
+#: base of both derived percentages — takes the later print. That put a 100 entry and a
+#: 108 basis in one row with a sign-flipped ``fill_vs_cross_pct``, and
+#: :func:`maturing_rows` then re-derived from the clobbered value the next night.
+FIRST_WINS = ("confirmed", "confirmed_basis", "first_ts", "first_px", "cross_px")
+
+#: Percentages recomputed from the MERGED row after every merge: ``{column: numerator}``,
+#: always over ``cross_px``. Merging them column-wise let a partial re-read leave a
+#: percentage derived from a base the merged row no longer carries — the mixed-basis
+#: fabrication the house law forbids, inside a single row.
+_DERIVED = {"close_vs_cross_pct": "close_same_day", "fill_vs_cross_pct": "next_close_fill"}
 
 #: Sessions strictly before this are NEVER accrued. Belt-and-braces for B4: any
 #: pre-merge spool object may have been written by a receipt or a rehearsal rather
@@ -341,6 +354,13 @@ def merge_ledger(path: Path, rows: list[dict[str, Any]]):
     for col in FIRST_WINS:
         if col in out.columns and col in firsts.columns:
             out[col] = firsts[col]
+    # A derived percentage must be a function of the row it sits in, not of whichever
+    # write last touched that column.
+    if "cross_px" in out.columns:
+        base = out["cross_px"]
+        for col, num in _DERIVED.items():
+            if col in out.columns and num in out.columns:
+                out[col] = [_pct(a, b) for a, b in zip(out[num], base)]
     return out.sort_values(KEY, kind="stable").reset_index(drop=True)
 
 

@@ -55,10 +55,16 @@ def _series(start: float = 100.0) -> pd.Series:
 
 def _event(ticker="AAA", kind="forming", price=105.0, session=D0, passes=2, frm="near",
            ts=None, entered="cross"):
+    """A hand-built event row.
+
+    Deliberately does NOT carry ``session_phase``: injecting a field here is how the
+    round-trip assertion went green while the producer emitted nothing (the renamed-
+    sentinel class). ``test_the_ledger_row_carries_the_producers_session_phase`` drives
+    the REAL producer instead.
+    """
     return {"ticker": ticker, "kind": kind, "ts": ts or f"{session}T14:05:00Z",
             "price": price, "quote_age_min": 3.0, "passes": passes, "from": frm,
-            "entered": entered, "session_phase": "rth",
-            "session_et": session, "pack_as_of": DPREV}
+            "entered": entered, "session_et": session, "pack_as_of": DPREV}
 
 
 def _verdicts(mapping: dict[str, bool], basis: str = "pack"):
@@ -151,7 +157,38 @@ def test_row_carries_the_measurement_the_program_exists_for():
     assert r["close_vs_cross_pct"] == pytest.approx(
         (r["close_same_day"] / 105.0 - 1.0) * 100.0)
     assert r["passes"] == 2 and r["from_state"] == "near" and r["quote_age_min"] == 3.0
-    assert r["entered"] == "cross" and r["session_phase"] == "rth"
+    assert r["entered"] == "cross"
+
+
+def test_the_ledger_row_carries_the_producers_session_phase():
+    """Round-trip through the REAL producer, not a fixture that injects the field.
+
+    ``transitions()`` omitted ``session_phase`` from the event row while the artifact
+    stamped it in meta, so every ledger row got None — and the covering test passed
+    because its own fixture supplied the value. That is the renamed-sentinel /
+    disarmed-test class: the assertion described a contract production never met.
+    """
+    from engine.prophet_live import live_states as LS
+
+    entry = {"state": "near", "center_buyable": False, "as_of_close": 95.0,
+             "probed": True, "buyable_in_band": True, "trigger_px": 100.0,
+             "band_lo_px": 0.0, "band_hi_px": 109.25}
+    cfg = LS.live_cfg(None)
+    # 13:27Z is 09:27 ET — a pre-open print, materially different from an 11:00 one.
+    for utc_hour, utc_min, expect in ((13, 27, "preopen"), (15, 0, "rth")):
+        now = datetime(2026, 8, 3, utc_hour, utc_min, tzinfo=timezone.utc)
+        prev = {"state": "near", "passes": 1, "internal": LS.CROSSING_UNCONFIRMED,
+                "internal_seen": [LS.CROSSING_UNCONFIRMED]}
+        st = LS.name_state(entry, price=101.0, quote_age_min=1.0, prev=prev,
+                           now=now, cfg=cfg)
+        rows = LS.transitions("AAA", st, prev, now=now)
+        assert rows, "the producer emitted no transition to inspect"
+        assert rows[0]["session_phase"] == expect, rows[0]
+        # ... and it survives the join into the ledger row.
+        ev = {**rows[0], "session_et": D0, "pack_as_of": DPREV}
+        led = R.build_rows([ev], verdicts_for=_verdicts({"AAA": True}),
+                           closes={"AAA": _series()}, now=NOW)
+        assert led[0]["session_phase"] == expect
 
 
 def test_the_first_cross_is_the_actionable_one_and_the_last_is_also_kept():
@@ -331,9 +368,65 @@ def test_an_already_confirmed_session_costs_no_verdict_work(monkeypatch, tmp_pat
 def test_confirmed_is_in_the_first_wins_set():
     assert "confirmed" in R.FIRST_WINS and "confirmed_basis" in R.FIRST_WINS
     assert "first_ts" in R.FIRST_WINS and "first_px" in R.FIRST_WINS
+    assert "cross_px" in R.FIRST_WINS
     # The maturing fields must NOT be first-wins or a fill could never land.
     for col in ("next_close_fill", "next_close_date", "close_same_day"):
         assert col not in R.FIRST_WINS
+
+
+def test_a_partial_spool_re_read_cannot_rebase_the_cross_price(tmp_path):
+    """N2: one unreadable pass object used to put two different entries in one row.
+
+    Night 1 sees the whole session: first cross 100, later re-forms at 108. A re-read
+    where only the 15:30 object is readable rebuilt the row from a PARTIAL spool —
+    ``first_px`` stayed frozen at 100 (FIRST_WINS) while ``cross_px`` and both derived
+    percentages took 108, so a single row carried a 100 entry on a 108 basis with
+    ``fill_vs_cross_pct`` flipped in sign. ``maturing_rows`` then re-derived from the
+    clobbered value on the following night, making it permanent.
+    """
+    path = tmp_path / "forward.parquet"
+    full = R.build_rows([_event(price=100.0, ts=f"{D0}T14:00:00Z"),
+                         _event(price=108.0, ts=f"{D0}T19:30:00Z")],
+                        verdicts_for=_verdicts({"AAA": True}),
+                        closes={"AAA": _series()}, now=NOW)
+    R.merge_ledger(path, full).to_parquet(path, index=False)
+    before = pd.read_parquet(path).iloc[0]
+    assert before["first_px"] == 100.0 and before["cross_px"] == 100.0
+    fill = float(_series().loc[pd.Timestamp(D1)])
+    assert before["fill_vs_cross_pct"] == pytest.approx((fill / 100.0 - 1.0) * 100.0)
+
+    # The 14:00 object is now unreadable; only the 19:30 one survives.
+    partial = R.build_rows([_event(price=108.0, ts=f"{D0}T19:30:00Z")],
+                           verdicts_for=_verdicts({"AAA": True}),
+                           closes={"AAA": _series()}, now=NOW)
+    assert partial[0]["cross_px"] == 108.0        # the partial read genuinely sees 108
+    out = R.merge_ledger(path, partial)
+    assert len(out) == 1
+    row = out.iloc[0]
+    assert row["first_px"] == 100.0
+    assert row["cross_px"] == 100.0, "a partial re-read rebased the actionable price"
+    # Both percentages are recomputed from the merged base, so the row is self-consistent.
+    assert row["fill_vs_cross_pct"] == pytest.approx((fill / 100.0 - 1.0) * 100.0)
+    same = float(_series().loc[pd.Timestamp(D0)])
+    assert row["close_vs_cross_pct"] == pytest.approx((same / 100.0 - 1.0) * 100.0)
+
+    # ... and the next night's maturing pass re-derives from the frozen base too.
+    out.to_parquet(path, index=False)
+    matured = R.maturing_rows(path, closes={"AAA": _series()}, now=NOW)
+    for u in matured:
+        assert u["fill_vs_cross_pct"] == pytest.approx((fill / 100.0 - 1.0) * 100.0)
+
+
+def test_a_derived_percentage_is_always_a_function_of_the_merged_row(tmp_path):
+    """Hand-planted inconsistency: the merge must not carry a stale ratio through."""
+    path = tmp_path / "forward.parquet"
+    planted = {"date": D0, "ticker": "AAA", "kind": "forming", "cross_px": 100.0,
+               "close_same_day": 110.0, "next_close_fill": 120.0,
+               "close_vs_cross_pct": -99.0, "fill_vs_cross_pct": -99.0}
+    out = R.merge_ledger(path, [planted])
+    row = out.iloc[0]
+    assert row["close_vs_cross_pct"] == pytest.approx(10.0)
+    assert row["fill_vs_cross_pct"] == pytest.approx(20.0)
 
 
 # ─────────────────────────────────────────────────────────────────────────────

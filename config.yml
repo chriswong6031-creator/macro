@@ -683,18 +683,29 @@ prophet_live:
   grid_points: 9
   bisect_iters: 8
   # BUDGET IS LAW, and it is what caps coverage — not the other way round. Sized from
-  # a MEASURED 4-worker pass (the nightly pins STOCK_LIB_WORKERS=4, the box being
-  # 4-core-bound): the centre census over ~1,730 names is ~108s and cannot be skipped,
-  # which leaves ~310s of the 420s budget for probing plus the edge-verification phase
-  # at ~1.7s per name. 500 did NOT fit — a 4-worker run with that cap produced
-  # probed_n=3 and armed_n=0, i.e. an empty pack, because the probe deadline cut 389
-  # names and verification then withheld the rest. 180 fits with margin.
+  # MEASURED 4-worker passes (the nightly pins STOCK_LIB_WORKERS=4, the box being
+  # 4-core-bound): the centre census over ~1,730 names is ~120s and cannot be skipped,
+  # which leaves ~195s of the 420s budget for probing once verification's reserve is set
+  # aside. max_probe 500 did NOT fit — a 4-worker run with that cap produced probed_n=3
+  # and armed_n=0, an empty pack, because the probe deadline cut 389 names and
+  # verification then withheld the rest.
   #
-  # This is a real coverage ceiling, not a formality: ~350 of the universe have a
-  # trigger inside the band, so 180 arms about half of them. Whatever the caps cut is
-  # counted in meta.skipped (probe_cap_* / deadline_* / unverified) — never silently
+  # THE WALL CLOCK BINDS BEFORE THIS CAP at 4 workers — both full-universe receipts
+  # probed fewer names than the cap allows (116/180 pre-split, 99/180 post-split), and
+  # both slices hit their windows. So max_probe mostly sizes the QUEUE here (unfinished
+  # futures are cancelled, which costs nothing) and only starts to bind on a faster
+  # runner. Do not read it as the delivered coverage; read meta.by_class.
+  #
+  # MEASURED COVERAGE at the shipped split, both classes (receipt 2026-07-29):
+  #   board  109 candidates -> 45 probed -> 44 armed. ~64 board names ship with NO fade
+  #          level, i.e. no at-risk read at all; disclosed in meta.by_class.
+  #   cross  1631 candidates -> 54 probed -> 18 armed. Only cap - round(cap*share) = 108
+  #          slots ever reach this class (~31% of the ~350 names that have a trigger in
+  #          band), and the clock cuts that to 54.
+  # Whatever the caps or the clock cut is counted in meta.skipped (probe_cap_* /
+  # deadline_* / unverified / edge_mismatch / membership_mismatch) — never silently
   # dropped, never re-labelled "dormant". Raising max_seconds is the lever if coverage
-  # matters more than the ~6.5-minute step; it trades against the render budget.
+  # matters more than the ~6.2-minute step; it trades against the render budget.
   max_probe: 180
   max_seconds: 420
   # Share of the probe budget — BOTH the wall clock and the name cap — reserved for
