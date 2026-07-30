@@ -15,12 +15,12 @@
       "lag_days": 0,
       "state": "fresh"
     },
-    "JD": {
+    "BABA": {
       "asof": "2026-07-29",
       "lag_days": 0,
       "state": "fresh"
     },
-    "PDD": {
+    "JD": {
       "asof": "2026-07-29",
       "lag_days": 0,
       "state": "fresh"
@@ -30,7 +30,7 @@
       "lag_days": 0,
       "state": "fresh"
     },
-    "BABA": {
+    "PDD": {
       "asof": "2026-07-29",
       "lag_days": 0,
       "state": "fresh"
