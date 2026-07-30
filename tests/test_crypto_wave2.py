@@ -147,8 +147,13 @@ def test_market_state_derives_class_cap_without_new_authority():
     assert state["as_of"] == str(dates[-1].date())
 
 
-def test_strategy_redirect_and_allocation_build_retirement():
+def test_allocation_and_strategy_legacy_urls_are_durable_redirects():
+    allocation = (ROOT / "site" / "vector_allocation.html").read_text(
+        encoding="utf-8"
+    )
     strategy = (ROOT / "site" / "btc_strategy.html").read_text(encoding="utf-8")
+    assert 'href="https://www.mastermind-x.com/crypto.html"' in allocation
+    assert "crypto.html#allocation" in allocation
     assert 'href="https://www.mastermind-x.com/vector.html"' in strategy
     assert "vector.html#strategy-track-record" in strategy
     assert not (ROOT / "templates" / "vector_allocation.html.j2").exists()
