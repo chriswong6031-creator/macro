@@ -214,6 +214,17 @@ def test_hk_template_missing_key_safe():
     assert "AAA" in html
 
 
+def test_hk_static_legacy_grid_cannot_override_hidden():
+    """The checked-in page temporarily retains its pre-render legacy grid.
+
+    `.act-grid { display:grid }` overrides the browser's default `[hidden]` rule,
+    so the generated fallback needs an explicit author-level display override
+    until the next clean template render removes the old block entirely.
+    """
+    html = (ROOT / "site" / "hk_stocks.html").read_text(encoding="utf-8")
+    assert '<div class="act-grid" hidden aria-hidden="true" style="display:none !important">' in html
+
+
 def test_no_translated_text_in_title_attributes():
     """CI guard parity (scripts/check_title_i18n.py): no t() inside title=/data-*/aria-*."""
     for block in (_china_block(), _canada_block(), _hk_board_block()):
