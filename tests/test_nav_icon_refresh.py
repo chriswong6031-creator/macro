@@ -28,6 +28,9 @@ def test_every_navigation_icon_family_keeps_a_mask_definition():
         classes = set(re.findall(rf"\b({prefix}-[a-z0-9-]+)\b", markup))
         if prefix == "menu-icon":
             classes -= {
+                # Custom-property name used by the one inline Crypto icon;
+                # it is not a semantic class in the navigation markup.
+                "menu-icon-mask",
                 "menu-icon-flag",
                 "menu-icon-us",
                 "menu-icon-cn",
