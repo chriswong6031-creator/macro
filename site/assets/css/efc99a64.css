@@ -64,96 +64,9 @@
     100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--link) 0%, transparent); }
   }
   .panel.flash { animation: panelflash 2.4s ease-out 1; border-color: var(--link); }
-  /* ── Dislocation stress filter, ACTIVE state (engine/dislocation.py) ─────────
-     OPERATOR RULING 2026-07-29 — the active panel must not hijack the page. The
-     old presentation used a negative flex `order` to float it above the entire
-     board as a full-width card of eight nested sub-cards behind a breathing glow: "cannot
-     take up 70% of the viewport … not good UX to disrupt with pop-up boards."
-
-     It is now a READOUT STRIP that sits in normal flow inside the risk section:
-     one head line (state + Fed-put switch + trigger count), one stance line,
-     and every receipt behind the page's inner `.jarg` fold. The ANNOUNCEMENT
-     lives where the operator put it — the alerts-pane entry, the master-switch
-     chip, and the "What To Do Now" row; this panel is the receipt those three
-     jump to. Verdict colour still arrives on --lit (green = buyable washout,
-     red = falling knife) and the Fed-put colour on --dlp, but they are spent on
-     a STATIC left rail plus a soft corner wash — nothing animates here any more,
-     so there is no pseudo-element motion left to kill under reduced-motion. */
-  .panel.dislo-strip { border-left: 3px solid var(--lit);
-    background-image: linear-gradient(107deg,
-      color-mix(in srgb, var(--lit) 9%, transparent) 0%,
-      color-mix(in srgb, var(--lit) 2%, transparent) 34%, transparent 62%); }
-  /* NOTE on specificity: `body.page-macro h2` (0,1,2) out-ranks a bare
-     `h2.dlx-verdict` (0,1,1) and would take back font-size + colour, so every rule
-     below is anchored on `.panel.dislo-strip` / `.jarg.dlx-more`. Same reason for
-     the fold rows: `.jarg .jrow .jk` ships LATER in this stylesheet, so a plain
-     `.dlx-more .jrow .jk` would lose the 96px key column on a specificity tie. */
-  .panel.dislo-strip .dlx-head { display: flex; align-items: baseline; flex-wrap: wrap;
-    column-gap: 11px; row-gap: 7px; }
-  .panel.dislo-strip .dlx-eyebrow { font-size: 10px; font-weight: 700; letter-spacing: .11em;
-    text-transform: uppercase; color: var(--muted); }
-  .panel.dislo-strip h2.dlx-verdict { margin: 0; font-size: 17px; line-height: 1.2;
-    font-weight: 750; letter-spacing: -.005em; color: var(--lit); }
-  .panel.dislo-strip .dlx-put { font-size: 11px; font-weight: 700; letter-spacing: .015em;
-    padding: 2px 9px; border-radius: 5px; white-space: nowrap; color: var(--dlp);
-    background: color-mix(in srgb, var(--dlp) 13%, transparent);
-    border: 1px solid color-mix(in srgb, var(--dlp) 36%, transparent); }
-  .panel.dislo-strip .dlx-count { font-size: 11.5px; color: var(--muted);
-    font-variant-numeric: tabular-nums; }
-  .panel.dislo-strip .dlx-stance { margin: 9px 0 0; font-size: 13px; line-height: 1.45;
-    max-width: 96ch; color: var(--text); }
-  .panel.dislo-strip .dlx-stance b { color: var(--lit); font-weight: 700; }
-  .panel.dislo-strip .dlx-hon { color: var(--muted); }
-  .panel.dislo-strip .dlx-warn { margin: 7px 0 0; font-size: 12px; line-height: 1.45;
-    color: var(--down); max-width: 96ch; }
-  /* ── readout rows: label / value pairs, no nested card chrome. This is where the
-     eight sub-cards went. Everything that DISAGREES with the verdict stays here, in
-     the open — the margin each stress trigger clears, the Fed-put sub-readings, the
-     entry timer, and the geopolitical/catalyst cross-checks (audit order 2026-07-29:
-     never fold the dissent). Only the long-form prose + the measured record fold. */
-  .panel.dislo-strip .dlx-rows { margin: 9px 0 0; padding-top: 7px;
-    border-top: var(--rule, 1px) solid var(--line); }
-  .panel.dislo-strip .dlx-row { display: flex; align-items: baseline; gap: 9px;
-    padding: 3px 0; font-size: 12px; line-height: 1.4; }
-  .panel.dislo-strip .dlx-cap { color: var(--muted); font-size: 11px; }
-  .panel.dislo-strip .dlx-row + .dlx-row { border-top: 1px solid
-    color-mix(in srgb, var(--line) 55%, transparent); }
-  .panel.dislo-strip .dlx-lbl { flex: none; width: 132px; color: var(--muted);
-    font-weight: 600; }
-  .panel.dislo-strip .dlx-val { flex: 1; min-width: 0; }
-  .panel.dislo-strip .dlx-val b { font-variant-numeric: tabular-nums; }
-  .panel.dislo-strip .dlx-chips { display: inline-flex; flex-wrap: wrap; gap: 5px;
-    vertical-align: middle; }
-  /* margin line — every trigger's live reading against its own limit, firing or not.
-     Mono numerals so the four readings line up as a scale, not as prose. */
-  .panel.dislo-strip .dlx-margins { display: block; margin-top: 3px; font-size: 11px;
-    color: var(--muted); font-variant-numeric: tabular-nums; }
-  .panel.dislo-strip .dlx-mg { white-space: nowrap; }
-  .panel.dislo-strip .dlx-mg.on { color: var(--lit); font-weight: 650; }
-  .panel.dislo-strip .dlx-dis { color: var(--warn); font-weight: 650; }
-  /* series VINTAGE, parenthetical to its reading — Sahm is a monthly reference month
-     carried forward, not a same-day print, and the strip must be able to say so
-     without shouting. Regular numerals: a date is a figure, the words around it
-     are not, so only the reading itself keeps the tabular alignment above. */
-  .panel.dislo-strip .dlx-vint { color: var(--ink-3, var(--muted)); white-space: nowrap; }
-  /* policy divergence — amber CONTEXT, never the red of a verdict: the engine attaches
-     it explicitly as context that does not change the call, so it must not read redder
-     than the gate does. */
-  .jarg.dlx-more .dlx-pdiv { color: var(--warn); }
-  .jarg.dlx-more .dlx-pdiv b { color: var(--warn); }
-  /* the fold keeps ONLY long-form prose + the measured record */
-  .jarg.dlx-more { margin-top: 10px; }
-  .jarg.dlx-more .jrow { align-items: baseline; }
-  .jarg.dlx-more .jrow .jk { width: 132px; font-weight: 600; }
-  .jarg.dlx-more .dlx-para { margin: 0 0 7px; font-size: 11.5px; line-height: 1.55; }
-  @media (max-width: 700px) {
-    .panel.dislo-strip .dlx-row,
-    .jarg.dlx-more .jrow { flex-direction: column; gap: 2px; }
-    .panel.dislo-strip .dlx-lbl,
-    .jarg.dlx-more .jrow .jk { width: auto; }
-    .panel.dislo-strip h2.dlx-verdict { font-size: 15.5px; }
-    .panel.dislo-strip .dlx-cap { display: block; margin-top: 3px; }
-  }
+  /* Dislocation stress-filter CSS removed 2026-07-30 with the panel it styled —
+     the readout now lives on macro_signals.html (its own scoped `.dislo-panel`
+     block). Nothing on this page carries `dislo-strip` / `dlx-*` any more. */
   .muted { color: var(--muted); }
   .chart { width: 100%; }
   .topline { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
@@ -1859,16 +1772,13 @@
   body.page-macro .cb-sub { font-size: 12.5px; font-weight: 700; color: var(--ink-2); margin: 0 0 9px;
     display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
   body.page-macro .cb-sub a { margin-left: auto; }
-  /* dislocation surfaced into the alerts pane when active */
-  body.page-macro .alert.alert-dislocation { border-left-color: var(--act); }
-  /* When a dislocation is active its panel renders (only then) and stays in NORMAL
-     PAGE FLOW, in its authored slot inside the risk / nowcast section beside the
-     risk-state banner. It used to carry a negative flex `order` override that floated
-     it above the whole board — operator ruling 2026-07-29 killed that: a fired gate announces
-     itself through the alerts pane, the master-switch chip and the "What To Do Now"
-     row, and the panel itself is only the compact receipt they jump to (see
-     .panel.dislo-strip above). Dormant = not rendered at all. */
-  body.page-macro #dislocation { scroll-margin-top: 16px; }
+  /* `.alert.alert-dislocation` removed 2026-07-30 — nothing has emitted that class
+     since the alerts pane moved to the `.ms-sig` idiom; it styled an element that no
+     longer exists. The live announcement is the `.ms-sig sev-act` entry in the alerts
+     popover, which takes its colour from `sev-act` like every other alert. */
+  /* No `#dislocation` rule here any more: the stress-filter readout left this page
+     for macro_signals.html on 2026-07-30, so both announcement surfaces below link
+     out cross-page rather than scrolling to an in-page anchor. */
   /* fused equity-internal RISK STATE banner (engine/risk_state.py). When the state is
      elevated+ (alert) it FLOATS above the regime hero and pulses loudly; at 'caution'
      it renders inline in the risk section (informative, not dominating). It is now the

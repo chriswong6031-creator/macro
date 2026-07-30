@@ -27,8 +27,8 @@
 <link rel="stylesheet" href="theme.css?v=8d7800c8">
 <link rel="stylesheet" href="assets/css/7d554d26.css?v=7d554d26">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
-<link rel="preload" as="style" href="navigation-refresh.css?v=c7195a9b">
-<link rel="preload" as="style" href="assets/css/a3b983d2.css?v=a3b983d2">
+<link rel="preload" as="style" href="navigation-refresh.css?v=6e249584">
+<link rel="preload" as="style" href="assets/css/2561a86d.css?v=2561a86d">
 
 
 
@@ -8190,157 +8190,160 @@
 
 
 
-<link rel="stylesheet" href="assets/css/a3b983d2.css?v=a3b983d2">
+<link rel="stylesheet" href="assets/css/2561a86d.css?v=2561a86d">
 
-<section class="dg-wrap" style="margin-top:22px">
-  <h2 class="dg-h2">📊
-    <span class="l-en">Desk scorecard — is this desk beating the market?</span><span class="l-zh">研究台记分卡 —— 本台是否跑赢大盘？</span>
-    <span class="dg-note">
-      <span class="l-en">every name this desk surfaces is graded against realized SPY-relative forward returns · context-only</span>
-      <span class="l-zh">本台每个入选标的均以实际相对标普前瞻收益评分 · 仅作参考</span></span>
-  </h2>
 
-  
-  <div class="dg-lead ">
-    <b><span class="l-en">Measuring</span><span class="l-zh">测量中</span></b> —
-      <span class="l-en">matured observations accruing; no horizon has cleared the significance bar yet.</span>
-      <span class="l-zh">到期观测持续累积；尚无周期通过显著性检验。</span>
+<details class="dg">
+  <summary class="dg-sum">
+    <svg class="dg-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <rect x="3" y="4" width="18" height="16" rx="2.4"/>
+  <path d="M6.7 7.9h4.6"/>
+  <path d="M6.7 16.3 10.4 12.3l2.8 2.1 4.1-5.7"/>
+  <circle cx="17.3" cy="8.7" r="1.75" fill="currentColor" stroke="none"/>
+</svg>
+    <span class="dg-ttl"><span class="l-en">Desk scorecard</span><span class="l-zh">研究台记分卡</span></span><span class="dg-badge dg-measuring"><span class="l-en">measuring</span><span class="l-zh">测量中</span></span><span class="dg-verdict"><span class="l-en">Not enough evidence to call it yet</span><span class="l-zh">证据尚不足以下结论</span>
+    </span>
+    <span class="dg-open"><span class="l-en">detail</span><span class="l-zh">详情</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+           stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span>
+  </summary>
+
+  <div class="dg-body">
+    <p class="dg-lead">
+      <span class="l-en">Every name this desk surfaces is scored against what the stock actually did next,
+        measured against SPY. Context only — never a trade instruction.</span>
+      <span class="l-zh">本台每个入选标的都以其之后的实际走势评分，并与标普对比。仅作参考 —— 绝非交易指令。</span>
+      <span class="dg-counts">
+        <span class="l-en">2,616 names recorded · 607 drops tracked</span>
+        <span class="l-zh">已记录 2,616 个标的 · 已追踪 607 次剔除</span></span>
+    </p>
+
     
-    <span class="dg-counts">
-      <span class="l-en">2,616 live snapshots · 607 departures tracked</span>
-      <span class="l-zh">2,616 条在册快照 · 已追踪 607 次离场</span></span>
+    
+    <div class="dg-tblwrap">
+    <table class="dg-tbl"><thead><tr>
+      <th><span class="l-en">Horizon</span><span class="l-zh">周期</span></th>
+      <th class="num"><span class="l-en">graded</span><span class="l-zh">已评分</span></th>
+      <th class="num" data-tip-en="Rank skill: does a higher score from this desk actually go with a better return? Above zero = yes. A daily Newey-West figure where the sample is mature, otherwise pooled (~)." data-tip-zh="排名预测力：本台给分越高，之后的收益是否真的越好？大于零 = 是。样本成熟时用日度 Newey-West 值，否则为合并值（~）。"><span class="l-en">rank skill</span><span class="l-zh">排名预测力</span></th>
+      <th class="num" data-tip-en="Trend skill: same question asked of the CHANGE in this desk's score over its last five readings, rather than its level." data-tip-zh="趋势预测力：同一问题，但针对本台评分在最近五次读数中的「变化」，而非水平值。"><span class="l-en">trend skill</span><span class="l-zh">趋势预测力</span></th>
+      <th class="num" data-tip-en="Average return against SPY while the name is on the desk." data-tip-zh="标的在台期间相对标普的平均收益。"><span class="l-en">vs SPY</span><span class="l-zh">对比标普</span></th>
+      <th><span class="l-en">status</span><span class="l-zh">状态</span></th>
+    </tr></thead><tbody>
+      
+      <tr class=""
+          data-tip-en="After this desk dropped a name it went +0.3% against SPY (n=673) · usable prices for 75.9% of surfaced names"
+          data-tip-zh="本台剔除标的后，其相对标普走势为 +0.3%（样本 673）· 入选标的中 75.9% 有可用价格">
+        <td><b>5</b><span class="l-en">d</span><span class="l-zh">日</span></td>
+        <td class="num">1413</td>
+        <td class="num dg-pos">+0.040</td>
+        <td class="num dg-neg">-0.019</td>
+        <td class="num dg-neg">-0.4%</td>
+        <td><span class="dg-badge dg-measuring"><span class="l-en">measuring</span><span class="l-zh">测量中</span></span></td>
+      </tr>
+      
+      <tr class=""
+          data-tip-en="After this desk dropped a name it went +1.1% against SPY (n=296) · usable prices for 51.0% of surfaced names"
+          data-tip-zh="本台剔除标的后，其相对标普走势为 +1.1%（样本 296）· 入选标的中 51.0% 有可用价格">
+        <td><b>10</b><span class="l-en">d</span><span class="l-zh">日</span></td>
+        <td class="num">796</td>
+        <td class="num dg-neg">-0.014</td>
+        <td class="num dg-neg">-0.152</td>
+        <td class="num dg-neg">-1.4%</td>
+        <td><span class="dg-badge dg-measuring"><span class="l-en">measuring</span><span class="l-zh">测量中</span></span></td>
+      </tr>
+      
+      <tr class=""
+          data-tip-en="After this desk dropped a name it went — against SPY (n=0) · usable prices for 0.0% of surfaced names"
+          data-tip-zh="本台剔除标的后，其相对标普走势为 —（样本 0）· 入选标的中 0.0% 有可用价格">
+        <td><b>20</b><span class="l-en">d</span><span class="l-zh">日</span></td>
+        <td class="num">0</td>
+        <td class="num ">—</td>
+        <td class="num ">—</td>
+        <td class="num ">—</td>
+        <td><span class="dg-badge dg-measuring"><span class="l-en">measuring</span><span class="l-zh">测量中</span></span></td>
+      </tr>
+      
+      <tr class=""
+          data-tip-en="After this desk dropped a name it went — against SPY (n=0) · usable prices for —% of surfaced names"
+          data-tip-zh="本台剔除标的后，其相对标普走势为 —（样本 0）· 入选标的中 —% 有可用价格">
+        <td><b>30</b><span class="l-en">d</span><span class="l-zh">日</span></td>
+        <td class="num">0</td>
+        <td class="num ">—</td>
+        <td class="num ">—</td>
+        <td class="num ">—</td>
+        <td><span class="dg-badge dg-measuring"><span class="l-en">measuring</span><span class="l-zh">测量中</span></span></td>
+      </tr>
+      
+      <tr class=""
+          data-tip-en="After this desk dropped a name it went — against SPY (n=0) · usable prices for —% of surfaced names"
+          data-tip-zh="本台剔除标的后，其相对标普走势为 —（样本 0）· 入选标的中 —% 有可用价格">
+        <td><b>60</b><span class="l-en">d</span><span class="l-zh">日</span></td>
+        <td class="num">0</td>
+        <td class="num ">—</td>
+        <td class="num ">—</td>
+        <td class="num ">—</td>
+        <td><span class="dg-badge dg-measuring"><span class="l-en">measuring</span><span class="l-zh">测量中</span></span></td>
+      </tr>
+      
+      <tr class=""
+          data-tip-en="After this desk dropped a name it went — against SPY (n=0) · usable prices for —% of surfaced names"
+          data-tip-zh="本台剔除标的后，其相对标普走势为 —（样本 0）· 入选标的中 —% 有可用价格">
+        <td><b>90</b><span class="l-en">d</span><span class="l-zh">日</span></td>
+        <td class="num">0</td>
+        <td class="num ">—</td>
+        <td class="num ">—</td>
+        <td class="num ">—</td>
+        <td><span class="dg-badge dg-measuring"><span class="l-en">measuring</span><span class="l-zh">测量中</span></span></td>
+      </tr>
+      
+    </tbody></table>
+    </div>
+
+    
+    
+    
+    
+    
+
+    
+    
+    <div class="dg-sub">
+      <h3><span class="l-en">What the numbers say</span><span class="l-zh">数据说明了什么</span></h3>
+      <ul class="dg-list">
+        <li class="dg-find dg-warn">
+          <span class="dg-sev">▲</span>
+          <span class="l-en">5d: departed names (+0.3% avg) OUTPERFORM on-desk names (-0.4%) — the desk may be exiting winners too early.</span><span class="l-zh">5d: departed names (+0.3% avg) OUTPERFORM on-desk names (-0.4%) — the desk may be exiting winners too early.</span></li>
+        <li class="dg-find dg-warn">
+          <span class="dg-sev">▲</span>
+          <span class="l-en">10d: departed names (+1.1% avg) OUTPERFORM on-desk names (-1.4%) — the desk may be exiting winners too early.</span><span class="l-zh">10d: departed names (+1.1% avg) OUTPERFORM on-desk names (-1.4%) — the desk may be exiting winners too early.</span></li>
+        
+      </ul>
+    </div>
+    
+
+    
+    
+    <div class="dg-sub">
+      <h3><span class="l-en">Lessons logged</span><span class="l-zh">经验记录</span></h3>
+      <ul class="dg-list dg-notes">
+        
+        <li><span class="dg-nd">2026-07-04</span>
+          <span class="l-en">PRICE LESSON: grade off data/yahoo/&lt;T&gt;.parquet adjusted closes ONLY. The S&amp;P-1500 breadth close cache (data/breadth/_closes_cache.parquet) is SPLIT-CORRUPTED — using it silently poisons every RS / forward-return number. A name missing from yahoo is a coverage skip here, never a wrong return.</span><span class="l-zh">PRICE LESSON: grade off data/yahoo/&lt;T&gt;.parquet adjusted closes ONLY. The S&amp;P-1500 breadth close cache (data/breadth/_closes_cache.parquet) is SPLIT-CORRUPTED — using it silently poisons every RS / forward-return number. A name missing from yahoo is a coverage skip here, never a wrong return.</span></li>
+        
+        <li><span class="dg-nd">2026-07-04</span>
+          <span class="l-en">CONGRESS LESSON: disclosure lags the trade by up to 45 days, so grade forward returns from the REPORT date (when the desk surfaces the name), not the trade date — the desk&#39;s edge, if any, is decay-on-report-date, not the politician&#39;s original entry.</span><span class="l-zh">CONGRESS LESSON: disclosure lags the trade by up to 45 days, so grade forward returns from the REPORT date (when the desk surfaces the name), not the trade date — the desk&#39;s edge, if any, is decay-on-report-date, not the politician&#39;s original entry.</span></li>
+        
+      </ul>
+    </div>
+    
+
+    
+    <p class="dg-fine">
+      <span class="l-en">~ marks a provisional reading from a single cross-section; the "proven" bar needs at
+        least six separate grading dates. A falsifiable scorecard of this desk&#39;s own surfaced names — its ranking score (level AND velocity) graded against realized SPY-relative forward returns at 5/10/20/30/60/90 trading days, split on-desk vs after-leaving. A signal is &#39;proven&#39; only past n&gt;=40 with a significant Newey-West t of the right sign; a significant negative IC is an &#39;alarm&#39;. Context-only — nothing here sizes a position.</span><span class="l-zh">~ 表示来自单一横截面的暂定读数；"已验证"门槛需至少六个独立评分日。A falsifiable scorecard of this desk&#39;s own surfaced names — its ranking score (level AND velocity) graded against realized SPY-relative forward returns at 5/10/20/30/60/90 trading days, split on-desk vs after-leaving. A signal is &#39;proven&#39; only past n&gt;=40 with a significant Newey-West t of the right sign; a significant negative IC is an &#39;alarm&#39;. Context-only — nothing here sizes a position.</span></p>
   </div>
-
-  
-  
-  <div class="dg-tblwrap">
-  <table class="dg-tbl"><thead><tr>
-    <th><span class="l-en">Horizon</span><span class="l-zh">周期</span></th>
-    <th class="num"><span class="l-en">n</span><span class="l-zh">样本</span></th>
-    <th class="num" data-tip-en="Cross-sectional rank-IC of the desk's SCORE LEVEL vs forward return (daily-HAC where mature, else pooled~)" data-tip-zh="本台评分水平与前瞻收益的横截面秩相关（成熟时用日度HAC，否则合并~）"><span class="l-en">IC · level</span><span class="l-zh">IC · 水平</span></th>
-    <th class="num" data-tip-en="Rank-IC of the desk's SCORE VELOCITY (Δscore over 5 snapshots) vs forward return — the owner's hypothesis" data-tip-zh="本台评分速度（5次快照的Δ分）与前瞻收益的秩相关——即所有者假设"><span class="l-en">IC · velocity</span><span class="l-zh">IC · 速度</span></th>
-    <th class="num" data-tip-en="Mean SPY-relative forward return while the name is ON the desk" data-tip-zh="标的在台期间的平均相对标普前瞻收益"><span class="l-en">on-desk</span><span class="l-zh">在台</span></th>
-    <th class="num" data-tip-en="Mean SPY-relative forward return AFTER the name left the desk — did dropping it turn out correct?" data-tip-zh="标的离台后的平均相对标普前瞻收益——剔除是否正确？"><span class="l-en">departed</span><span class="l-zh">离台</span></th>
-    <th class="num" data-tip-en="Share of surfaced names with usable yahoo-adjusted prices at this horizon (breadth cache deliberately excluded — split-corrupted)" data-tip-zh="该周期有可用雅虎复权价的入选标的占比（刻意排除拆股损坏的breadth缓存）"><span class="l-en">coverage</span><span class="l-zh">覆盖</span></th>
-    <th><span class="l-en">status</span><span class="l-zh">状态</span></th>
-  </tr></thead><tbody>
-    
-    <tr class="">
-      <td><b>5</b><span class="l-en">d</span><span class="l-zh">日</span></td>
-      <td class="num">1413</td>
-      <td class="num dg-pos">+0.040</td>
-      <td class="num dg-neg">-0.019</td>
-      <td class="num dg-neg">-0.4%</td>
-      <td class="num dg-pos">+0.3%</td>
-      <td class="num mut2">75.9%</td>
-      <td><span class="dg-badge dg-measuring"><span class="l-en">measuring</span><span class="l-zh">测量中</span></span></td>
-    </tr>
-    
-    <tr class="">
-      <td><b>10</b><span class="l-en">d</span><span class="l-zh">日</span></td>
-      <td class="num">796</td>
-      <td class="num dg-neg">-0.014</td>
-      <td class="num dg-neg">-0.152</td>
-      <td class="num dg-neg">-1.4%</td>
-      <td class="num dg-pos">+1.1%</td>
-      <td class="num mut2">51.0%</td>
-      <td><span class="dg-badge dg-measuring"><span class="l-en">measuring</span><span class="l-zh">测量中</span></span></td>
-    </tr>
-    
-    <tr class="">
-      <td><b>20</b><span class="l-en">d</span><span class="l-zh">日</span></td>
-      <td class="num">0</td>
-      <td class="num ">—</td>
-      <td class="num ">—</td>
-      <td class="num ">—</td>
-      <td class="num ">—</td>
-      <td class="num mut2">0.0%</td>
-      <td><span class="dg-badge dg-measuring"><span class="l-en">measuring</span><span class="l-zh">测量中</span></span></td>
-    </tr>
-    
-    <tr class="">
-      <td><b>30</b><span class="l-en">d</span><span class="l-zh">日</span></td>
-      <td class="num">0</td>
-      <td class="num ">—</td>
-      <td class="num ">—</td>
-      <td class="num ">—</td>
-      <td class="num ">—</td>
-      <td class="num mut2">—</td>
-      <td><span class="dg-badge dg-measuring"><span class="l-en">measuring</span><span class="l-zh">测量中</span></span></td>
-    </tr>
-    
-    <tr class="">
-      <td><b>60</b><span class="l-en">d</span><span class="l-zh">日</span></td>
-      <td class="num">0</td>
-      <td class="num ">—</td>
-      <td class="num ">—</td>
-      <td class="num ">—</td>
-      <td class="num ">—</td>
-      <td class="num mut2">—</td>
-      <td><span class="dg-badge dg-measuring"><span class="l-en">measuring</span><span class="l-zh">测量中</span></span></td>
-    </tr>
-    
-    <tr class="">
-      <td><b>90</b><span class="l-en">d</span><span class="l-zh">日</span></td>
-      <td class="num">0</td>
-      <td class="num ">—</td>
-      <td class="num ">—</td>
-      <td class="num ">—</td>
-      <td class="num ">—</td>
-      <td class="num mut2">—</td>
-      <td><span class="dg-badge dg-measuring"><span class="l-en">measuring</span><span class="l-zh">测量中</span></span></td>
-    </tr>
-    
-  </tbody></table>
-  </div>
-  <p class="dg-fine">
-    <span class="l-en">~ = provisional pooled IC (single cross-section); the daily Newey-West HAC IC that the "proven" gate trusts needs ≥6 grading dates. Velocity IC = the change in the desk's own score, the owner's second axis.</span>
-    <span class="l-zh">~ = 暂定合并信息系数（单一横截面）；"已验证"门槛所依赖的日度 Newey-West HAC 信息系数需≥6个评分日。速度信息系数 = 本台评分自身的变化，即所有者的第二维度。</span></p>
-
-  
-  
-  
-  
-  
-
-  
-  
-  <div class="dg-sub">
-    <h3><span class="l-en">Auto-findings</span><span class="l-zh">自动结论</span>
-      <small><span class="l-en">— derived from the stats each run, to improve this desk's engine</span><span class="l-zh">—— 每次运行从统计中导出，用于改进本台引擎</span></small></h3>
-    <ul class="dg-findings">
-      
-      <li class="dg-find dg-warn">
-        <span class="dg-sev">▲</span>
-        <span class="l-en">5d: departed names (+0.3% avg) OUTPERFORM on-desk names (-0.4%) — the desk may be exiting winners too early.</span><span class="l-zh">5d: departed names (+0.3% avg) OUTPERFORM on-desk names (-0.4%) — the desk may be exiting winners too early.</span></li>
-      
-      <li class="dg-find dg-warn">
-        <span class="dg-sev">▲</span>
-        <span class="l-en">10d: departed names (+1.1% avg) OUTPERFORM on-desk names (-1.4%) — the desk may be exiting winners too early.</span><span class="l-zh">10d: departed names (+1.1% avg) OUTPERFORM on-desk names (-1.4%) — the desk may be exiting winners too early.</span></li>
-      
-    </ul>
-  </div>
-  
-
-  
-  
-  <div class="dg-sub">
-    <h3><span class="l-en">Notes &amp; lessons</span><span class="l-zh">笔记与经验</span>
-      <small><span class="l-en">— what we've learned, so the desk's engine keeps improving as data accrues</span><span class="l-zh">—— 已学到的经验，使本台引擎随数据累积持续改进</span></small></h3>
-    <ul class="dg-notes">
-      
-      <li><span class="dg-nd">2026-07-04</span>
-        <span class="l-en">PRICE LESSON: grade off data/yahoo/&lt;T&gt;.parquet adjusted closes ONLY. The S&amp;P-1500 breadth close cache (data/breadth/_closes_cache.parquet) is SPLIT-CORRUPTED — using it silently poisons every RS / forward-return number. A name missing from yahoo is a coverage skip here, never a wrong return.</span><span class="l-zh">PRICE LESSON: grade off data/yahoo/&lt;T&gt;.parquet adjusted closes ONLY. The S&amp;P-1500 breadth close cache (data/breadth/_closes_cache.parquet) is SPLIT-CORRUPTED — using it silently poisons every RS / forward-return number. A name missing from yahoo is a coverage skip here, never a wrong return.</span></li>
-      
-      <li><span class="dg-nd">2026-07-04</span>
-        <span class="l-en">CONGRESS LESSON: disclosure lags the trade by up to 45 days, so grade forward returns from the REPORT date (when the desk surfaces the name), not the trade date — the desk&#39;s edge, if any, is decay-on-report-date, not the politician&#39;s original entry.</span><span class="l-zh">CONGRESS LESSON: disclosure lags the trade by up to 45 days, so grade forward returns from the REPORT date (when the desk surfaces the name), not the trade date — the desk&#39;s edge, if any, is decay-on-report-date, not the politician&#39;s original entry.</span></li>
-      
-    </ul>
-  </div>
-  
-
-  <p class="dg-disc">A falsifiable scorecard of this desk&#39;s own surfaced names — its ranking score (level AND velocity) graded against realized SPY-relative forward returns at 5/10/20/30/60/90 trading days, split on-desk vs after-leaving. A signal is &#39;proven&#39; only past n&gt;=40 with a significant Newey-West t of the right sign; a significant negative IC is an &#39;alarm&#39;. Context-only — nothing here sizes a position.</p>
-</section>
+</details>
 
 
 

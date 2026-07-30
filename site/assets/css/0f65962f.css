@@ -217,3 +217,73 @@
     .panel { animation:none !important; }
     .pulse-dot { animation:none !important; }
   }
+
+  /* ── §5 stress selloff filter (engine/dislocation.py) ──────────────────
+     Demoted here from macro.html on 2026-07-30 (see the §5 block comment).
+     Verdict colour arrives on --lit, the Fed-put colour on --dlp, and both are
+     spent on a static left rail plus a soft corner wash — nothing animates, so
+     there is no pseudo-element motion to kill under reduced-motion. */
+  .dislo-panel { border-left:3px solid var(--lit);
+    background-image:linear-gradient(107deg,
+      color-mix(in srgb, var(--lit) 9%, transparent) 0%,
+      color-mix(in srgb, var(--lit) 2%, transparent) 34%, transparent 62%); }
+  .dislo-panel .dlx-sub { margin:2px 0 0; font-size:12.5px; line-height:1.5;
+    color:var(--muted); max-width:82ch; }
+  .dislo-panel .dlx-dormant { margin:10px 0 0; font-size:13px; line-height:1.5;
+    color:var(--muted); max-width:88ch; }
+  .dislo-panel .dlx-dormant b { color:var(--text); }
+  .dislo-panel .dlx-stance { margin:11px 0 0; font-size:13px; line-height:1.45;
+    max-width:96ch; color:var(--text); }
+  .dislo-panel .dlx-stance b { color:var(--lit); font-weight:700; }
+  .dislo-panel .dlx-hon { color:var(--muted); }
+  .dislo-panel .dlx-warn { margin:7px 0 0; font-size:12px; line-height:1.45;
+    color:var(--down); max-width:96ch; }
+  /* readout rows: label / value pairs, no nested card chrome. Everything that
+     DISAGREES with the verdict stays here, in the open — the margin each stress
+     trigger clears, the Fed-put sub-readings, the entry timer, and the
+     geopolitical/catalyst cross-checks. Only long-form prose + the measured
+     record fold (audit order 2026-07-29: never fold the dissent). */
+  .dislo-panel .dlx-rows { margin:10px 0 0; padding-top:7px;
+    border-top:var(--rule,1px) solid var(--line); }
+  .dislo-panel .dlx-row { display:flex; align-items:baseline; gap:9px;
+    padding:4px 0; font-size:12px; line-height:1.4; }
+  .dislo-panel .dlx-row + .dlx-row { border-top:1px solid
+    color-mix(in srgb, var(--line) 55%, transparent); }
+  .dislo-panel .dlx-lbl { flex:none; width:140px; color:var(--muted); font-weight:600; }
+  .dislo-panel .dlx-val { flex:1; min-width:0; }
+  .dislo-panel .dlx-val b { font-variant-numeric:tabular-nums; }
+  .dislo-panel .dlx-chips { display:inline-flex; flex-wrap:wrap; gap:5px;
+    vertical-align:middle; }
+  .dislo-panel .dlx-cap { color:var(--muted); font-size:11px; }
+  /* margin line — every trigger's live reading against its own limit, firing or
+     not. Mono numerals so the four readings line up as a scale, not as prose. */
+  .dislo-panel .dlx-margins { display:block; margin-top:3px; font-size:11px;
+    color:var(--muted); font-variant-numeric:tabular-nums; }
+  .dislo-panel .dlx-mg { white-space:nowrap; }
+  .dislo-panel .dlx-mg.on { color:var(--lit); font-weight:650; }
+  .dislo-panel .dlx-dis { color:var(--warn); font-weight:650; }
+  /* series VINTAGE, parenthetical to its reading — Sahm is a monthly reference
+     month carried forward, not a same-day print. Regular numerals: a date is a
+     figure, the words around it are not, so only the reading itself keeps the
+     tabular alignment above. */
+  .dislo-panel .dlx-vint { color:var(--ink-3,var(--muted)); white-space:nowrap; }
+  .dislo-panel .dlx-more { margin-top:11px; font-size:12px; }
+  .dislo-panel .dlx-more > summary { cursor:pointer; color:var(--link);
+    font-weight:600; font-size:12px; }
+  .dislo-panel .dlx-mbody { margin-top:8px; padding-top:8px;
+    border-top:1px solid color-mix(in srgb, var(--line) 55%, transparent); }
+  .dislo-panel .dlx-para { margin:0 0 7px; font-size:11.5px; line-height:1.55;
+    max-width:96ch; }
+  /* policy divergence — amber CONTEXT, never the red of a verdict: the engine
+     attaches it explicitly as context that does not change the call, so it must
+     not read redder than the gate does. */
+  .dislo-panel .dlx-pdiv, .dislo-panel .dlx-pdiv b { color:var(--warn); }
+  .dislo-panel .dlx-mrow { display:flex; align-items:baseline; gap:9px;
+    font-size:11.5px; line-height:1.55; }
+  .dislo-panel .dlx-mk { flex:none; width:140px; font-weight:600; color:var(--muted); }
+  .dislo-panel .dlx-mv { flex:1; min-width:0; }
+  @media (max-width:700px) {
+    .dislo-panel .dlx-row, .dislo-panel .dlx-mrow { flex-direction:column; gap:2px; }
+    .dislo-panel .dlx-lbl, .dislo-panel .dlx-mk { width:auto; }
+    .dislo-panel .dlx-cap { display:block; margin-top:3px; }
+  }

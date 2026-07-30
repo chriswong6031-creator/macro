@@ -1638,14 +1638,22 @@ body.page-macro.mx4-grid .mx5-action-label{
 body.page-macro.mx4-grid .mx5-action-sub{
   font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:3px;
 }
-/* in-row jump to an anchored panel (today: the active dislocation strip). The card
-   FACE is itself a button that opens the Evidence dialog, so the anchor stops click
-   and Enter/Space from bubbling — see the inline handlers on the link. */
+/* in-row link out to the receipts (today: the stress selloff filter on
+   macro_signals.html). The card FACE is itself a button that opens the Evidence
+   dialog, so the anchor stops click and Enter/Space from bubbling — see the inline
+   handlers on the link. */
 body.page-macro.mx4-grid .mx5-wtd-jump{
   margin-left:6px;font-size:11.5px;font-weight:650;white-space:nowrap;
   color:var(--link);text-decoration:none;
 }
 body.page-macro.mx4-grid .mx5-wtd-jump:hover{text-decoration:underline;}
+/* "Not everything agrees" — the one clause that keeps a fired gate from burying its
+   own dissent now that the readout lives off-page. Muted, never a second alarm
+   colour: the cross-checks are engine CONTEXT that cannot change the verdict, so it
+   must not read louder than the stance it qualifies. */
+body.page-macro.mx4-grid .mx5-wtd-dissent{
+  color:var(--ink-3,rgba(255,255,255,.36));
+}
 
 /* ── UPCOMING EVENTS (mini week timeline inside sx-events-v2 face) — Wave E ─────────
    Impact = node size + colour + small label; a single connecting rail threads the week

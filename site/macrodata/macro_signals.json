@@ -1,6 +1,6 @@
 {
   "date": "2026-07-29",
-  "generated_utc": "2026-07-30 11:14",
+  "generated_utc": "2026-07-30 12:43",
   "business_cycle": {
     "available": true,
     "asof": "2026-07-31",
@@ -8,8 +8,8 @@
       "leading": {
         "asof": "2026-07-31",
         "index": 94.95562846439803,
-        "mom6": 0.5149538492493946,
-        "trend": 0.6729614424976474,
+        "mom6": 0.5149538492493804,
+        "trend": 0.6729614424976416,
         "diffusion": 100.0,
         "n_legs": 4,
         "direction": "rising",
@@ -1138,7 +1138,7 @@
       },
       "coincident": {
         "asof": "2026-06-30",
-        "index": 35.54997927837482,
+        "index": 35.54997927837485,
         "mom6": -0.19521292979656835,
         "trend": -0.3761025914334855,
         "diffusion": 100.0,
@@ -2269,9 +2269,9 @@
       },
       "lagging": {
         "asof": "2026-06-30",
-        "index": 93.08858904928302,
+        "index": 93.08858904928299,
         "mom6": 0.68950527159231,
-        "trend": 0.014829474145929906,
+        "trend": 0.014829474145930343,
         "diffusion": 50.0,
         "n_legs": 4,
         "direction": "rising",
@@ -3399,7 +3399,7 @@
         ]
       }
     },
-    "cl_ratio_mom6": -0.7078680369326662,
+    "cl_ratio_mom6": -0.7078680369326733,
     "recession_signal": {
       "available": true,
       "state": "off",
@@ -3612,7 +3612,7 @@
       "reason": "version-matched + fresh",
       "calibration_version": "w2.7-loro-v1",
       "calibration_generated_at": "2026-07-02T12:32:51Z",
-      "calibration_age_days": 27
+      "calibration_age_days": 28
     },
     "lag_passport": {
       "basis": "per_leg_schedule",
@@ -4018,6 +4018,86 @@
     "caveat_zh": "\u6709\u6548\u6837\u672c\u6781\u5c0f\uff08\u73b0\u4ee3\u7f8e\u56fd\u8870\u9000\u7ea6 7 \u6b21\uff0c\u53ef\u70b9\u5bf9\u70b9\u56de\u6eaf\u7ea6 3 \u6b21\uff09\u2014\u2014\u8fd9\u662f\u8870\u9000\u201c\u98ce\u9669\u201d\u65f6\u95f4\u7ebf\uff0c\u5e76\u975e\u5d29\u76d8\u9884\u8a00\u3002\u9886\u5148\u65f6\u957f\u4ee5 NBER \u65e5\u671f\u4e3a\u51c6\uff0c\u8be6\u89c1\u9a8c\u8bc1\u62a5\u544a\u3002"
   },
   "conditions": {
+    "vintages": {
+      "nfci": {
+        "asof": "2026-07-24",
+        "age_days": 5,
+        "stale": false,
+        "label": "NFCI (financial conditions)",
+        "cadence_days": 14
+      },
+      "anfci": {
+        "asof": "2026-07-24",
+        "age_days": 5,
+        "stale": false,
+        "label": "ANFCI (adjusted)",
+        "cadence_days": 14
+      },
+      "stlfsi": {
+        "asof": "2026-07-24",
+        "age_days": 5,
+        "stale": false,
+        "label": "St. Louis Fed stress index",
+        "cadence_days": 14
+      },
+      "hy_oas": {
+        "asof": "2026-07-28",
+        "age_days": 1,
+        "stale": false,
+        "label": "High-yield OAS",
+        "cadence_days": 5
+      },
+      "ebp": {
+        "asof": "2026-06-01",
+        "age_days": 58,
+        "stale": false,
+        "label": "Excess bond premium",
+        "cadence_days": 70
+      },
+      "ofr_fsi": {
+        "asof": "2026-07-27",
+        "age_days": 2,
+        "stale": false,
+        "label": "OFR financial stress index",
+        "cadence_days": 6
+      },
+      "vix": {
+        "asof": "2026-07-29",
+        "age_days": 0,
+        "stale": false,
+        "label": "VIX",
+        "cadence_days": 5
+      },
+      "vix_term": {
+        "asof": "2026-07-29",
+        "age_days": 0,
+        "stale": false,
+        "label": "VIX term structure",
+        "cadence_days": 5
+      },
+      "pct_above_200": {
+        "asof": "2026-07-29",
+        "age_days": 0,
+        "stale": false,
+        "label": "Breadth (%>200dma)",
+        "cadence_days": 5
+      },
+      "us10y": {
+        "asof": "2026-07-28",
+        "age_days": 1,
+        "stale": false,
+        "label": "10-year Treasury yield",
+        "cadence_days": 5
+      },
+      "recession_risk": {
+        "asof": "2026-07-29",
+        "age_days": 0,
+        "stale": false,
+        "label": "Recession-risk composite",
+        "cadence_days": 7
+      }
+    },
+    "stale_inputs": [],
     "financial_conditions": {
       "nfci": -0.554,
       "nfci_pctile": 0.0623015873015873,
@@ -4085,7 +4165,7 @@
       "initial_claims_4wk": 207500.0,
       "continued_claims": 1796000.0,
       "claims_yoy_pct": -6.426155580608794,
-      "claims_z": -1.41871973809135,
+      "claims_z": -1.418719738091186,
       "claims_trend": "falling",
       "indeed_postings": 102.09,
       "indeed_chg_3m_pct": -0.40000000000000036,
@@ -4103,22 +4183,22 @@
       "read": "transitory (flexible-led)"
     },
     "risk_appetite": {
-      "vrp": 10.245805548350845,
+      "vrp": 10.245805548350841,
       "vrp_pctile": 0.9027777777777778,
       "vrp_state": "rich (vol overpriced)",
-      "realized_vol": 10.414194299061265,
+      "realized_vol": 10.414194299061268,
       "vix_term": 0.9609302254610284,
       "vix_term_state": "contango (calm)",
       "vix_term_lead_lag": "coincident",
       "skew": 142.98,
       "skew_pctile": 0.31646825396825395,
-      "stock_bond_corr": 0.5172938729296342,
+      "stock_bond_corr": 0.5172938729296336,
       "stock_bond_regime": "breakdown (bonds not hedging)",
-      "roro": 0.4115241599926979,
+      "roro": 0.4115241599924754,
       "roro_state": "risk-on",
-      "vol_target_scalar": 1.1522734889900872,
+      "vol_target_scalar": 1.152273488990087,
       "news_sentiment": 0.015339049510657787,
-      "news_sentiment_z": 0.6487598583619579,
+      "news_sentiment_z": 0.6487598583619592,
       "news_sentiment_state": "optimistic"
     },
     "drawdown_risk": {
@@ -4127,7 +4207,27 @@
       "dd10_prob_pct": 10,
       "base_rate_pct": 19,
       "lead_lag": "lagging",
-      "basis": "macro/credit composite (recession_risk, NFCI, EBP, HY OAS)",
+      "basis": "macro/credit composite (recession risk, NFCI, EBP, HY OAS)",
+      "basis_expected": [
+        "recession risk",
+        "NFCI",
+        "EBP",
+        "HY OAS"
+      ],
+      "basis_resolved": [
+        "recession risk",
+        "NFCI",
+        "EBP",
+        "HY OAS"
+      ],
+      "basis_missing": [],
+      "n_legs": 4,
+      "n_legs_expected": 4,
+      "n_legs_in_mean": 4,
+      "legs_undefined": [],
+      "partial": false,
+      "degraded_note_en": null,
+      "degraded_note_zh": null,
       "is_base_rate": false,
       "dd10_prob_informative": true,
       "stat_passport": {
@@ -4137,6 +4237,18 @@
         "n_base": 8718,
         "n_extreme": 953,
         "span": "1993-01-29\u20132026-06-30",
+        "measured_on": [
+          "recession risk",
+          "NFCI",
+          "EBP",
+          "HY OAS"
+        ],
+        "live_composition": [
+          "recession risk",
+          "NFCI",
+          "EBP",
+          "HY OAS"
+        ],
         "definition": "max peak-to-trough SPY decline over the next 63 trading days",
         "note": "Re-measured on the leak-free PIT ('release') frame with the jobless-claims labor leg; replaces the stale 8/26/36/38 (Sahm-era, revised-frame) table. Live gauge fires on 'latest'; its bands are within CI of PIT. Overlap-inflated N + episode-driven high/extreme bands \u2014 a risk read, not a crash oracle."
       },
@@ -4169,6 +4281,7 @@
       "breadth_above200_pctile": 0.8244047619047619,
       "credit_widen": true,
       "hy_oas_chg_21d_bp": 9.0,
+      "hy_oas_chg_21d_bp_exact": 9.0,
       "lead_lag": "leading",
       "breadth_div_caution": false,
       "caution": false,
@@ -4227,7 +4340,7 @@
   "fear_euphoria": {
     "fe_score": 81,
     "band": "Greed",
-    "roro": 0.4115241599926979,
+    "roro": 0.4115241599924754,
     "roro_state": "risk-on",
     "legs": [
       {
@@ -5202,7 +5315,7 @@
     ],
     "n_legs_qualifying": 11,
     "as_of": "2026-07-29",
-    "generated_utc": "2026-07-30T10:15:24Z",
+    "generated_utc": "2026-07-30T11:47:48Z",
     "disclaimer_en": "Sentiment context only \u2014 display-only composite of public market indicators. Never scored, never feeds the regime engine, no forward claim. Greed/fear readings are not contrarian signals without regime context.",
     "disclaimer_zh": "\u4ec5\u4e3a\u60c5\u7eea\u53c2\u8003 \u2014 \u516c\u5f00\u5e02\u573a\u6307\u6807\u7684\u4ec5\u5c55\u793a\u5408\u6210\u3002\u4e0d\u8ba1\u5206\uff0c\u4e0d\u8fdb\u5165\u5468\u671f\u5f15\u64ce\uff0c\u65e0\u524d\u77bb\u6027\u5224\u65ad\u3002\u8d2a\u5a6a/\u6050\u60e7\u8bfb\u6570\u82e5\u65e0\u5468\u671f\u80cc\u666f\uff0c\u4e0d\u6784\u6210\u53cd\u5411\u4fe1\u53f7\u3002"
   },
@@ -5823,7 +5936,7 @@
       }
     ],
     "as_of": "2026-07-29",
-    "generated_utc": "2026-07-30T10:15:25Z",
+    "generated_utc": "2026-07-30T11:47:49Z",
     "n_young": 0,
     "disclaimer_en": "Display-only context \u2014 volatility surface indicators from public CBOE / Yahoo data. Never scored, no forward claim. These chips describe the current vol environment; they do not predict direction.",
     "disclaimer_zh": "\u4ec5\u4f9b\u5c55\u793a\u7684\u80cc\u666f \u2014 \u6765\u81ea\u516c\u5f00 CBOE / Yahoo \u6570\u636e\u7684\u6ce2\u52a8\u7387\u66f2\u9762\u6307\u6807\u3002\u4e0d\u8ba1\u5206\uff0c\u65e0\u524d\u77bb\u5224\u65ad\u3002\u8fd9\u4e9b\u82af\u7247\u63cf\u8ff0\u5f53\u524d\u6ce2\u52a8\u7387\u73af\u5883\uff0c\u4e0d\u9884\u6d4b\u65b9\u5411\u3002"
