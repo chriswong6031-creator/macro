@@ -1252,18 +1252,18 @@ body.page-macro .rsx-dlg-footer{
 .mx5-dlg-cal-card.hot{border-color:rgba(245,158,11,.25);background:rgba(245,158,11,.04);}
 [data-theme="light"] .mx5-dlg-cal-card{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.07);}
 [data-theme="light"] .mx5-dlg-cal-card.hot{background:rgba(245,158,11,.04);}
-/* ── Calendar card = Release Radar selector (rr-inline, 2026-07) ──────────────
-   Every card is a selector for the inline panel below. Covered dates carry a
-   subtle radar dot; the selected card holds an --info accent ring. FOMC cards
-   route to the Fed Path board instead of selecting (chip affordance). */
+/* ── Calendar date = Release Radar selector (rr-inline, 2026-07) ─────────────
+   Every non-FOMC card selects its date for the inline panel below. Covered
+   dates carry a subtle radar dot; every selector sharing the selected date
+   receives the same --info accent ring. FOMC cards route to Fed Path instead. */
 .mx5-dlg-cal-card.rr-select{cursor:pointer;transition:border-color .16s ease,box-shadow .22s ease,background .16s ease;}
 .mx5-dlg-cal-card.rr-select:hover{border-color:color-mix(in srgb,var(--info,#60a5fa) 40%,transparent);box-shadow:0 2px 12px color-mix(in srgb,var(--info,#60a5fa) 8%,transparent);}
 .mx5-dlg-cal-card.rr-select:focus-visible{outline:2px solid var(--info,#60a5fa);outline-offset:2px;}
-/* active (selected) card — accent ring + faint info tint, coherent with .gbtn glass */
+/* Selected date — outer blue ring survives green/amber live-status fills. */
 .mx5-dlg-cal-card.rr-active{
   border-color:color-mix(in srgb,var(--info,#60a5fa) 58%,transparent);
   background:color-mix(in srgb,var(--info,#60a5fa) 8%,rgba(255,255,255,.04));
-  box-shadow:0 0 0 1px color-mix(in srgb,var(--info,#60a5fa) 40%,transparent),0 6px 18px -10px color-mix(in srgb,var(--info,#60a5fa) 60%,transparent);
+  box-shadow:0 0 0 2px color-mix(in srgb,var(--info,#60a5fa) 72%,transparent),0 6px 18px -10px color-mix(in srgb,var(--info,#60a5fa) 60%,transparent);
 }
 [data-theme="light"] .mx5-dlg-cal-card.rr-active{background:color-mix(in srgb,var(--info,#60a5fa) 9%,rgba(0,0,0,.03));}
 /* covered-date indicator — small radar dot chip (replaces the old "Release Radar ▸" text link) */
@@ -1715,7 +1715,6 @@ body.page-macro.mx4-grid .mx5-action-label{
 }
 body.page-macro.mx4-grid .mx5-action-sub{
   font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:3px;
-<<<<<<<< HEAD:site/assets/css/4b1f0d3a.css
 }
 /* in-row jump to an anchored panel (today: the active dislocation strip). The card
    FACE is itself a button that opens the Evidence dialog, so the anchor stops click
@@ -1723,8 +1722,6 @@ body.page-macro.mx4-grid .mx5-action-sub{
 body.page-macro.mx4-grid .mx5-wtd-jump{
   margin-left:6px;font-size:11.5px;font-weight:650;white-space:nowrap;
   color:var(--link);text-decoration:none;
-========
->>>>>>>> origin/main:site/assets/css/2e4bfff1.css
 }
 body.page-macro.mx4-grid .mx5-wtd-jump:hover{text-decoration:underline;}
 
