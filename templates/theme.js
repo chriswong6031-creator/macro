@@ -436,7 +436,7 @@
     // Keep the dynamic dependency cache-safe too. theme.js itself is
     // content-hashed in every page; this explicit release key prevents a
     // year-cached account.js from pinning an older navigation loader.
-    s.src = pfx + 'account.js?v=20260730-exact7'; s.async = true;
+    s.src = pfx + 'account.js?v=20260730-exact8'; s.async = true;
     document.head.appendChild(s);
   })();
 

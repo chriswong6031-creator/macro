@@ -725,8 +725,9 @@
       dd.setAttribute('data-nav-hover-safe', '1');
 
       var closeTimer = 0;
+      var trigger = dd.querySelector(':scope > a.nav-link');
       var menu = dd.querySelector(':scope > .nav-dd-menu');
-      if (!menu) return;
+      if (!trigger || !menu) return;
 
       function canHover() {
         return window.innerWidth > 900 && fineHover.matches;
@@ -741,13 +742,20 @@
         dd.classList.add('nav-hover-open');
       }
 
+      function hoverGraceMs() {
+        var triggerRect = trigger.getBoundingClientRect();
+        var menuRect = menu.getBoundingClientRect();
+        var gap = Math.max(0, menuRect.top - triggerRect.bottom);
+        return Math.min(1000, Math.max(420, 360 + Math.round(gap * 8)));
+      }
+
       function closeMenuSoon() {
         window.clearTimeout(closeTimer);
         closeTimer = window.setTimeout(function () {
           if (!dd.matches(':hover') && !dd.contains(document.activeElement)) {
             dd.classList.remove('nav-hover-open');
           }
-        }, 420);
+        }, hoverGraceMs());
       }
 
       dd.addEventListener('pointerenter', openMenu);
