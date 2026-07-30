@@ -463,7 +463,7 @@
                   
                   <a class="ms-sig sev-warn" data-ms-jump href="#health">
                     <div class="ms-sig-head"><span class="ms-sig-ico">🔌</span><span class="ms-sig-title"><span class="l-en">A data source went dark</span><span class="l-zh">某数据源中断</span></span><span class="ms-sig-jump"><span class="l-en">View ↓</span><span class="l-zh">查看 ↓</span></span></div>
-                    <div class="ms-sig-detail"><span class="l-en">Source 'china_einteraction' marked dead after 3 consecutive failures — collector skipped until it recovers; affected signals degrade</span><span class="l-zh">数据源 'china_einteraction' 连续 3 次失败后被标记为中断 —采集器暂停直至恢复；相关信号置信度下降</span></div>
+                    <div class="ms-sig-detail"><span class="l-en">Source &#39;china_einteraction&#39; marked dead after 3 consecutive failures — collector skipped until it recovers; affected signals degrade</span><span class="l-zh">数据源 &#39;china_einteraction&#39; 连续 3 次失败后被标记为中断 —采集器暂停直至恢复；相关信号置信度下降</span></div>
                     <div class="ms-sig-what"><span class="l-en">A feed this dashboard relies on failed several runs in a row, so it’s paused until it recovers. Any signals that depend on it automatically lose confidence until it’s back. This is a plumbing notice, not a market signal.</span><span class="l-zh">本仪表盘依赖的某个数据源连续多次失败，已暂停直至恢复。依赖它的信号会自动降低置信度，直到其恢复。这是系统管线提示，并非市场信号。</span></div>
                     <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Plumbing — data health, not a market signal.</span><span class="l-zh">管线 — 数据健康度，而非市场信号。</span></div>
                   </a>
@@ -481,7 +481,7 @@
                   
                   <a class="ms-sig sev-info" href="us_stocks.html#holdings">
                     <div class="ms-sig-head"><span class="ms-sig-ico">🐳</span><span class="ms-sig-title"><span class="l-en">A star fund manager made a notable move</span><span class="l-zh">明星基金经理出现显著动作</span></span><span class="ms-sig-jump"><span class="l-en">View →</span><span class="l-zh">查看 →</span></span></div>
-                    <div class="ms-sig-detail"><span class="l-en">ARKK: manager cut FIG by -97% of position (2026-07-21..2026-07-28, flow-normalized)</span><span class="l-zh">ARKK：经理 cut FIG 仓位 -97%（2026-07-21..2026-07-28，已按资金流标准化）</span></div>
+                    <div class="ms-sig-detail"><span class="l-en">ARKK: manager cut FIG by -97% of position (2026-07-22..2026-07-29, flow-normalized)</span><span class="l-zh">ARKK：经理 cut FIG 仓位 -97%（2026-07-22..2026-07-29，已按资金流标准化）</span></div>
                     <div class="ms-sig-what"><span class="l-en">One of the tracked funds (ARK, etc.) meaningfully added to or cut a position, after stripping out mechanical fund-flow effects — so it reflects genuine conviction. It’s information about what active managers are doing, not a recommendation to copy it.</span><span class="l-zh">在剔除机械性资金流影响后，某只跟踪基金（如 ARK）显著加仓或减仓 —因此反映了真实的信念。这是关于主动经理动作的信息，并非照搬的建议。</span></div>
                     <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Context — what an active manager did, not a recommendation.</span><span class="l-zh">背景 — 主动经理的动作，并非建议。</span></div>
                   </a>
@@ -924,9 +924,8 @@
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
           </svg>
-          
-          <span class="l-en">4 of 6 supportive &middot; 2 warning</span>
-          <span class="l-zh">6 项中 4 项支持 &middot; 2 项警示</span>
+          <span class="l-en">5 signals aligned</span>
+          <span class="l-zh">5 项信号一致</span>
           <svg width="9" height="9" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 1l4 4 4-4"/></svg>
         </button>
 
@@ -980,10 +979,24 @@
                 <span class="mx5-factor-name" style="color:var(--mx5-warn-ink)">
                   <span class="l-en">Risk appetite</span><span class="l-zh">风险偏好</span>
                 </span>
-                <span class="mx5-factor-score weak">42</span>
+                <span class="mx5-factor-score">70</span>
               </div>
               <div class="mx5-factor-bar-track">
-                <div class="mx5-factor-bar-fill weak" style="width:42%"></div>
+                <div class="mx5-factor-bar-fill" style="width:70%"></div>
+              </div>
+              
+            </div>
+            
+            
+            <div class="mx5-factor-row">
+              <div class="mx5-factor-header">
+                <span class="mx5-factor-name" style="color:var(--mx5-warn-ink)">
+                  <span class="l-en">Volatility regime</span><span class="l-zh">波动率环境</span>
+                </span>
+                <span class="mx5-factor-score weak">46</span>
+              </div>
+              <div class="mx5-factor-bar-track">
+                <div class="mx5-factor-bar-fill weak" style="width:46%"></div>
               </div>
               
               <div class="mx5-factor-weak-tag"><span class="l-en">WEAKEST LEG &mdash; MONITOR</span><span class="l-zh">最弱分项 &mdash; 持续关注</span></div>
@@ -4148,7 +4161,19 @@
         
         
         
-        <div class="mx5-sector-heat-col" data-tip-en="Regional Banks — cooling" data-tip-zh="区域银行 — 退潮">
+        <div class="mx5-sector-heat-col" data-tip-en="Big Pharma — cooling" data-tip-zh="大型药企 — 退潮">
+          <div class="mx5-sector-heat-bar mx5-shb-cool" style="height:16px;opacity:0.22;"></div>
+        </div>
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        <div class="mx5-sector-heat-col" data-tip-en="Financials (Equal-Weight) — cooling" data-tip-zh="金融（等权） — 退潮">
           <div class="mx5-sector-heat-bar mx5-shb-cool" style="height:16px;opacity:0.22;"></div>
         </div>
         
@@ -4429,7 +4454,7 @@
         
         <span class="mx5-ai-ticker-pill">META</span>
         
-        <span class="mx5-ai-ticker-pill">USO</span>
+        <span class="mx5-ai-ticker-pill">MSFT</span>
         
       </div>
       
@@ -4521,7 +4546,7 @@
             <div class="mx5-alert-title">
               <span style="font-size:12px;margin-right:3px">📰</span>
               <span class="l-en">Carvana stock falls as auto retailer’s 2026 earnings guidance misses Wall Street…</span>
-              <span class="l-zh">Carvana stock falls as auto retailer’s 2026 earnings guidanc…</span>
+              <span class="l-zh">Carvana股价下跌，因汽车零售商2026年盈利指引不及华尔街预期</span>
             </div>
             <div class="mx5-alert-detail">
               <span>CNBC - Stock Blog</span> · 
@@ -4686,10 +4711,10 @@
             
           </div>
           <div>
-            <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:42%;background:var(--warn)"></div></div>
+            <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:70%;background:var(--up)"></div></div>
             <div class="mx5-dlg-bar-ticks"><span>0</span><span>50</span><span>100</span></div>
           </div>
-          <div class="mx5-dlg-factor-score" style="color:var(--warn)">42</div>
+          <div class="mx5-dlg-factor-score" style="color:var(--up)">70</div>
         </div>
         
         
@@ -5346,8 +5371,8 @@
             
             <div class="mx5-dlg-sector-row">
               <span class="mx5-dlg-sector-arr cool">&#9661;</span>
-              <span class="mx5-dlg-sector-name"><span class="l-en">AI Software & Platforms</span><span class="l-zh">AI 软件与平台</span></span>
-              <span class="mx5-dlg-sector-rk">#13</span>
+              <span class="mx5-dlg-sector-name"><span class="l-en">Big Pharma</span><span class="l-zh">大型药企</span></span>
+              <span class="mx5-dlg-sector-rk">#9</span>
             </div>
             
             <div class="mx5-dlg-sector-row">
@@ -7576,8 +7601,6 @@
             
             <span class="plx-driver-chip"><span class="l-en">market prices ~2.0 hike(s) over 12m</span><span class="l-zh">市场计入未来12个月约2.0次加息</span></span>
             
-            <span class="plx-driver-chip"><span class="l-en">market more hawkish than the Fed (+18bp)</span><span class="l-zh">市场比美联储更鹰派（+18bp）</span></span>
-            
           </div>
           
         </div>
@@ -7949,7 +7972,7 @@
                 </div>
                 <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.36));border:1px solid rgba(255,255,255,.09);white-space:nowrap"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
               </div>
-              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">Source 'china_einteraction' marked dead after 3 consecutive failures — collector skipped until it recovers; affected signals degrade</span><span class="l-zh">数据源 'china_einteraction' 连续 3 次失败后被标记为中断 —采集器暂停直至恢复；相关信号置信度下降</span></div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">Source &#39;china_einteraction&#39; marked dead after 3 consecutive failures — collector skipped until it recovers; affected signals degrade</span><span class="l-zh">数据源 &#39;china_einteraction&#39; 连续 3 次失败后被标记为中断 —采集器暂停直至恢复；相关信号置信度下降</span></div>
             </div>
           </div>
           
@@ -7977,7 +8000,7 @@
                 </div>
                 <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.36));border:1px solid rgba(255,255,255,.09);white-space:nowrap"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
               </div>
-              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">ARKK: manager cut FIG by -97% of position (2026-07-21..2026-07-28, flow-normalized)</span><span class="l-zh">ARKK：经理 cut FIG 仓位 -97%（2026-07-21..2026-07-28，已按资金流标准化）</span></div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">ARKK: manager cut FIG by -97% of position (2026-07-22..2026-07-29, flow-normalized)</span><span class="l-zh">ARKK：经理 cut FIG 仓位 -97%（2026-07-22..2026-07-29，已按资金流标准化）</span></div>
             </div>
           </div>
           
@@ -8066,10 +8089,28 @@
           
           
           
-          <a class="nbx-item" href="https://seekingalpha.com/news/4621102-starbucks-raises-fy2026-eps-outlook-to-2_55-2_65-while-targeting-at-least-1500-north-america?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://www.npr.org/2026/07/29/nx-s1-5911882/the-federal-reserve-is-setting-u-s-interest-rates-what-will-that-look-like" target="_blank" rel="noopener">
             <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Starbucks raises FY2026 EPS outlook to $2.55-$2.65 while targeting at least 1,500 North America coffee house uplifts by year-end</span><span class="l-zh">Starbucks raises FY2026 EPS outlook to $2.55-$2.65 while targeting at least 1,500 North America coffee house uplifts by year-end</span></span>
+              <span class="nbx-theme"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span>
+              <span class="nbx-title"><span class="l-en">The Federal Reserve is setting U.S. interest rates. What will that look like?</span><span class="l-zh">美联储确定美国利率走向，未来将如何演变？</span></span>
+            </div>
+            <div class="nbx-meta">
+              <span class="nbx-src">news_rss</span>
+              <span class="nbx-dot">·</span>
+              <span class="nbx-date">Jul 29</span>
+              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
+            </div>
+            
+          </a>
+          
+          
+          
+          
+          
+          <a class="nbx-item" href="https://www.marketwatch.com/story/chipotle-lifts-its-sales-forecast-even-as-a-lettuce-linked-outbreak-slows-foot-traffic-2249eeab?mod=mw_rss_topstories" target="_blank" rel="noopener">
+            <div class="nbx-top">
+              <span class="nbx-theme"><span class="l-en">Guidance</span><span class="l-zh">指引</span></span>
+              <span class="nbx-title"><span class="l-en">Chipotle lifts its sales forecast even as a lettuce-linked outbreak slows foot traffic</span><span class="l-zh">Chipotle上调销售预期，尽管生菜相关疫情导致客流量放缓</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -8102,15 +8143,15 @@
           
           
           
-          <a class="nbx-item" href="https://www.npr.org/2026/07/29/nx-s1-5911882/the-federal-reserve-is-setting-u-s-interest-rates-what-will-that-look-like" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://www.marketwatch.com/story/robinhood-puts-up-record-revenue-as-volatility-drives-a-trading-bonanza-8e0729c1?mod=mw_rss_topstories" target="_blank" rel="noopener">
             <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span>
-              <span class="nbx-title"><span class="l-en">The Federal Reserve is setting U.S. interest rates. What will that look like?</span><span class="l-zh">The Federal Reserve is setting U.S. interest rates. What will that look like?</span></span>
+              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="nbx-title"><span class="l-en">Robinhood puts up record revenue as volatility drives a trading bonanza</span><span class="l-zh">Robinhood创下营收纪录，波动性引发交易热潮</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
               <span class="nbx-dot">·</span>
-              <span class="nbx-date">Jul 29</span>
+              <span class="nbx-date">Jul 30</span>
               <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
             </div>
             
@@ -9948,7 +9989,27 @@
     <div class="sct-body">
       <div class="sct-name"><span class="l-en">AI Software & Platforms</span><span class="l-zh">AI 软件与平台</span></div>
       <div class="sct-sub">
-        <span class="sct-rk">#13</span>
+        <span class="sct-rk">#9</span>
+        <span class="sct-stance"><span class="l-en">dominant</span><span class="l-zh">dominant</span></span>
+      </div>
+    </div>
+    <svg class="sct-trace" viewBox="0 0 132 30" fill="none" aria-hidden="true">
+      <line class="sct-base" x1="8" y1="15" x2="124" y2="15"/>
+      <path class="sct-ln" d="M8 13.1 L124 16.9"/>
+      <circle class="sct-dot-old" cx="8" cy="13.1" r="2.4"/>
+      <circle class="sct-dot-now" cx="124" cy="16.9" r="3.4"/>
+    </svg>
+    <div class="sct-delta">
+      <span class="sct-delta-v">-6</span>
+      <span class="sct-delta-k"><span class="l-en">vs 5d</span><span class="l-zh">对比5日</span></span>
+    </div>
+  </div>
+  <div class="sct-rung" style="--sct-c:var(--down,#ef4444)">
+    <span class="sct-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v13M6 12l6 6 6-6"/></svg></span>
+    <div class="sct-body">
+      <div class="sct-name"><span class="l-en">Financials (Equal-Weight)</span><span class="l-zh">金融（等权）</span></div>
+      <div class="sct-sub">
+        <span class="sct-rk">#12</span>
         <span class="sct-stance"><span class="l-en">dominant</span><span class="l-zh">dominant</span></span>
       </div>
     </div>
@@ -9966,7 +10027,7 @@
   <div class="sct-rung" style="--sct-c:var(--down,#ef4444)">
     <span class="sct-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v13M6 12l6 6 6-6"/></svg></span>
     <div class="sct-body">
-      <div class="sct-name"><span class="l-en">Payments & Fintech</span><span class="l-zh">支付与金融科技</span></div>
+      <div class="sct-name"><span class="l-en">Payments &amp; Fintech</span><span class="l-zh">支付与金融科技</span></div>
       <div class="sct-sub">
         <span class="sct-rk">#14</span>
         <span class="sct-stance"><span class="l-en">dominant</span><span class="l-zh">dominant</span></span>
@@ -12051,9 +12112,9 @@
       
     </table>
     <p class="muted"><span class="l-en">A failed source never crashes the dashboard — affected signals just lose confidence until it heals.
-       Generated 2026-07-29 23:56 UTC · <a href="aibrief.html">AI daily brief</a> ·
+       Generated 2026-07-30 07:09 UTC · <a href="aibrief.html">AI daily brief</a> ·
        <a href="history.html">history & charts</a></span><span class="l-zh">数据源失败绝不会让仪表盘崩溃 — 受影响的信号只是降低置信度，直到其恢复。
-       生成于 2026-07-29 23:56 UTC · <a href="aibrief.html">AI每日简报</a> ·
+       生成于 2026-07-30 07:09 UTC · <a href="aibrief.html">AI每日简报</a> ·
        <a href="history.html">历史与图表</a></span></p>
   </details>
   
