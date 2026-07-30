@@ -1416,3 +1416,116 @@ def test_headline_gate_passes_clean_two_block(monkeypatch, tmp_path):
     assert rc == 0
     assert len(fake.calls) == 1
     assert current_statuses(tmp_path)[ok_item] == "posted"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Hot-tape orphan-brief gate — a brief never outlives the alert it explains
+# ─────────────────────────────────────────────────────────────────────────────
+# #3983 closed the RADAR half of the two-step recall cascade: dispatch_ids
+# re-checks a queued brief's parent alert and quarantines the orphan. That
+# sweep only runs when the radar runs. An operator recall after the last radar
+# pass of the day (end of the ET window, a weekend, the workflow disabled)
+# leaves an already-booked brief sitting on its scheduled_at, and the publisher
+# sweep would send it — a brief explaining a post the operator pulled. The gate
+# below is the publisher half; both call the SAME predicate
+# (engine.marketing.hot_tape.orphaned_brief_status) so they cannot drift apart.
+
+_HT_ALERT_KEY = "mover:PLTR:up:2026-07-19:0"
+
+
+def _seed_hot_tape_brief(tmp_path: Path, *, parent: str | None = "recalled"):
+    """Seed a hot-tape alert walked to `parent` status plus its queued context
+    brief. parent=None seeds NO alert at all (the ledger-has-no-record case).
+    Returns (alert_id or None, brief_id)."""
+    from engine.marketing import outbox as ob
+    from engine.marketing.hot_tape import BRIEF_TRIGGER, brief_key
+    alert_id = None
+    if parent is not None:
+        alert_id = _seed_queued_kind(
+            tmp_path, kind="breaking", provenance="hot_tape",
+            text="$PLTR up 4.9 percent on heavy volume. Session high 31.20.",
+            source={"lane": "hot_tape", "trigger": "mover",
+                    "story_key": _HT_ALERT_KEY})
+        for step in ("approved", "posted"):
+            assert ob.transition(alert_id, step, actor="test", root=tmp_path,
+                                 now=_FIXED_NOW)
+        if parent != "posted":
+            assert ob.transition(alert_id, parent, actor="test", root=tmp_path,
+                                 now=_FIXED_NOW)
+    brief_id = _seed_queued_kind(
+        tmp_path, kind="breaking", provenance="hot_tape",
+        text=("Context on that move: three peers are bid in sympathy and "
+              "breadth is one-sided. Watching whether the group holds into "
+              "the close."),
+        source={"lane": "hot_tape", "trigger": BRIEF_TRIGGER,
+                "story_key": brief_key(_HT_ALERT_KEY)})
+    return alert_id, brief_id
+
+
+def test_orphan_brief_quarantined_when_alert_recalled(monkeypatch, tmp_path, capsys):
+    """THE regression: the operator recalls the alert AFTER the radar's last
+    pass, so only the publisher is left to catch it. The brief must never
+    reach the network."""
+    from engine.marketing.outbox import fold_state
+
+    _write_publish_cfg(tmp_path, auto_approve=True, cap=5)
+    _alert_id, brief_id = _seed_hot_tape_brief(tmp_path, parent="recalled")
+
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake,
+                        kill_switch=True)
+
+    assert rc == 0
+    st = fold_state(tmp_path)
+    assert st["status"][brief_id] == "quarantined"
+    last = st["last"][brief_id]
+    assert last["actor"] == "publisher"
+    # Only this gate writes that note — proof the orphan gate fired, and not
+    # the language/repeat/tape gates sitting downstream of it.
+    assert "alert is recalled" in (last.get("note") or "")
+    assert fake.calls == []                       # nothing reached the network
+
+    # The annotation must START the line or GitHub silently drops it.
+    lines = capsys.readouterr().out.splitlines()
+    assert any(line.startswith("::warning title=hot-tape-orphan-brief::")
+               for line in lines)
+
+
+def test_posted_alert_still_lets_its_brief_ship(monkeypatch, tmp_path):
+    """Over-fire control. The parent is still posted, so the brief is the
+    legitimate second half of a two-step publish and posts exactly as before —
+    the gate must never mass-quarantine the lane it guards."""
+    from engine.marketing.outbox import fold_state
+
+    _write_publish_cfg(tmp_path, auto_approve=True, cap=5)
+    _alert_id, brief_id = _seed_hot_tape_brief(tmp_path, parent="posted")
+
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake,
+                        kill_switch=True)
+
+    assert rc == 0
+    assert fold_state(tmp_path)["status"][brief_id] == "posted"
+    assert len(fake.calls) == 1
+
+
+def test_orphan_brief_quarantined_when_alert_absent(monkeypatch, tmp_path):
+    """No parent anywhere in the ledger. The publisher's map is built FROM the
+    outbox ledger — the authority on statuses — so a parent it cannot name is
+    positive evidence, not a fold hiccup: it quarantines where the radar (whose
+    same-day fired map is lossy) merely withholds."""
+    from engine.marketing.outbox import fold_state
+
+    _write_publish_cfg(tmp_path, auto_approve=True, cap=5)
+    alert_id, brief_id = _seed_hot_tape_brief(tmp_path, parent=None)
+
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake,
+                        kill_switch=True)
+
+    assert rc == 0
+    assert alert_id is None
+    st = fold_state(tmp_path)
+    assert st["status"][brief_id] == "quarantined"
+    assert "alert is unresolved" in (st["last"][brief_id].get("note") or "")
+    assert fake.calls == []
