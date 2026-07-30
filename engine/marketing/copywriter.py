@@ -1882,6 +1882,87 @@ def batch_body_duplicate_violations(
     return []
 
 
+"""Closers the house prompt used to PRESCRIBE verbatim (operator, 2026-07-30).
+
+The copy law read `down movers carry "watching for a bottom setup, not catching it
+yet"; up movers "strength worth respecting, not chasing here"`, the VOICE block
+repeated both, and the up-mover EXEMPLAR ended with the second one. Triple-
+reinforced, so the model complied perfectly: a live 8-post sample closed FIVE of
+its six passing posts with the identical sentence. The operator read that batch
+and called it bot-like, which it was — but the model was obeying us, not being
+lazy. Two lines below the mandate the same config also said "never repeat a
+signature phrase across posts", so the config contradicted itself and the
+concrete instruction won.
+
+The prompt now asks for the STANCE in the writer's own words. This list is the
+enforcement: the mandate cannot come back by way of a prompt edit without a test
+going red. Entries are matched loosely (case, punctuation and leading filler
+ignored) because the model paraphrases the edges while keeping the spine.
+"""
+_STOCK_CLOSERS: tuple[str, ...] = (
+    "strength worth respecting not chasing here",
+    "strength worth respecting not chasing",
+    "watching for a bottom setup not catching it yet",
+    "watching for a bottom setup not catching it",
+    "size appropriately",
+    "proves me wrong size appropriately",
+)
+
+
+def _closer_key(text: str) -> str:
+    """Normalize a post's final sentence for stock-closer comparison."""
+    body = str(text or "").strip()
+    if not body:
+        return ""
+    # Last sentence-ish chunk: split on terminal punctuation and newlines.
+    parts = [p for p in re.split(r"[.!?\n]+", body) if p.strip()]
+    if not parts:
+        return ""
+    tail = parts[-1].lower()
+    tail = re.sub(r"[^a-z0-9 ]+", " ", tail)
+    return " ".join(tail.split())
+
+
+def stock_closer_violations(
+    text: str, batch_texts: Iterable[str] | None = None,
+) -> list[str]:
+    """Post ends on a house stock closer, or on a closer already used in this batch.
+
+    Two distinct defects, one check:
+
+    * a closer this repo once mandated verbatim (:data:`_STOCK_CLOSERS`) — banned
+      outright, because the operator rejected exactly that copy;
+    * a closer that is fine once but appears on another post in the same plan —
+      the "repetitive posts" complaint, which the opener-stem and body-Jaccard
+      gates both miss when two posts differ everywhere except the last sentence.
+
+    Returns [] when clean.
+    """
+    key = _closer_key(text)
+    if not key:
+        return []
+
+    out: list[str] = []
+    for stock in _STOCK_CLOSERS:
+        # Substring both ways: the model both truncates and pads these.
+        if stock in key or key in stock:
+            out.append(
+                f"stock closer: the post ends on a house boilerplate line "
+                f"('{stock}'). Say the stance in your own words."
+            )
+            break
+
+    others = [t for t in (batch_texts or []) if str(t or "").strip()]
+    for other in others:
+        if _closer_key(other) == key:
+            out.append(
+                "batch closer collision: another post in this plan already ends "
+                "on this exact sentence"
+            )
+            break
+    return out
+
+
 def validate_copy_v2(
     text: str,
     ctx: dict,
@@ -1937,6 +2018,7 @@ def validate_copy_v2(
         text, sibling_texts if sibling_texts is not None else ctx.get("sibling_texts")))
     violations.extend(batch_stem_violations(text, batch_texts))
     violations.extend(batch_body_duplicate_violations(text, batch_texts))
+    violations.extend(stock_closer_violations(text, batch_texts))
     return violations
 
 
@@ -4015,8 +4097,11 @@ def write_posts_llm(
             "'the engine', 'the system'.\n"
             "- Every post carries a level, a take, or a real question. 'Here's the chart, "
             "thoughts?' gives nothing. Give a stance: watching, leaning, respecting, "
-            "fading, waiting, not chasing. Down movers: 'watching for a bottom setup, not "
-            "catching it yet.' Up movers: 'strength worth respecting, not chasing here.'\n"
+            "fading, waiting, not chasing. Down movers admit you aren't trying to catch "
+            "the bottom yet; up movers respect the move without chasing it. Phrase that "
+            "stance FRESH every single time — these two are banned as written: 'strength "
+            "worth respecting, not chasing here' and 'watching for a bottom setup, not "
+            "catching it yet'. They were house boilerplate and the reader noticed.\n"
             "- The default humor is deadpan understatement ('Ugly.' 'Not ideal.' 'That "
             "settles that.'). Most posts carry zero jokes; when wit shows up it carries "
             "the read, it never decorates it. One dry line, never two.\n"
@@ -4097,13 +4182,15 @@ def write_posts_llm(
             "- Avoid model tells: 'Here's what it means for X', 'Let's break it down', "
             "colon-as-drama openers, the repeated 'That's the [noun].' cadence, triads "
             "everywhere, kickers like 'without the noise'.\n\n"
-            "EXEMPLARS (this is the target voice):\n"
+            "EXEMPLARS — these show REGISTER, not vocabulary. Never reuse a sentence "
+            "from them verbatim; write your own line at this pitch. (The old exemplars "
+            "ended on two fixed closers and every post came back wearing them.)\n"
             "- Signal: \"Flagged $AMKR at 41.20, first target 46.80. Closes back under "
             "41 and I'm wrong, I'm out. Historical odds, not a promise.\"\n"
             "- Down mover: \"$ISRG down 14% today. The dip buyers get to find out who "
-            "was early. Watching for a bottom setup, not catching it yet.\"\n"
+            "was early. I'd rather be late here than early.\"\n"
             "- Up mover: \"$VST up 9% and every target on the street just got lapped. "
-            "Strength worth respecting, not chasing here.\"\n"
+            "Nice for anyone already in. I'm not paying this price.\"\n"
             "- Theme list: \"Solar names bleeding again. $ENPH -4.2% $SEDG -5.1% "
             "$RUN -3.8% $FSLR -2.9%. Rate cuts were supposed to fix this. Which one's "
             "actually washed out?\"\n"

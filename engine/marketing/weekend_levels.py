@@ -234,8 +234,10 @@ _FRAMES: dict[str, tuple[str, ...]] = {
     "leading": (
         "Up at 52-week highs, {wk}. Nothing broken here, and I'd rather respect "
         "that than argue with it. {s20} is the line I want it to keep.",
-        "{wk_cap} and pressing new highs. Strength worth respecting, not chasing "
-        "up here. First thing I'd watch on a pullback is {s20}.",
+        # Was "Strength worth respecting, not chasing up here" — retired as house
+        # boilerplate 2026-07-30 (it was leaking onto nearly every post).
+        "{wk_cap} and pressing new highs. Good for anyone already in; I'm not "
+        "paying up here. First thing I'd watch on a pullback is {s20}.",
         "New highs, {wk}. This is what leadership looks like while it lasts. "
         "{s20} is where I'd start paying attention.",
         "{wk_cap}, right at the highs. No cracks I can point at. If that changes "

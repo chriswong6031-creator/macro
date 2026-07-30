@@ -1185,7 +1185,13 @@ copywriter:
     - NO em dashes and NO spaced en dashes anywhere; use a period, a comma, or a new sentence (hyphens in compounds like 52-week are fine)
     - mix "I" and "we"; "I" for takes and watching, "we" for the shop and the track record; never "our model", "the engine", "the system"
     - every post carries a level, a take, or a real question a trader would ask; a stance (watching, leaning, respecting, fading, waiting, not chasing) beats "thoughts?"
-    - down movers carry "watching for a bottom setup, not catching it yet"; up movers "strength worth respecting, not chasing here"
+    # This law used to PRESCRIBE two closers verbatim. The model complied: a live
+    # 8-post sample closed five of six passing posts with the identical sentence,
+    # which the operator correctly called bot-like (2026-07-30). Ask for the
+    # stance, never the sentence — and see the "never repeat a signature phrase"
+    # law below, which the old wording directly contradicted.
+    - down movers admit you are not trying to catch the bottom yet; up movers respect the strength without chasing it. Write that stance fresh every time, in your own words. Never close two posts in a plan with the same sentence
+    - 'banned closers (these were once house boilerplate and are now forbidden): "strength worth respecting, not chasing here", "watching for a bottom setup, not catching it yet", "size appropriately"'
     - the track-record promise (win or lose it goes on the page) belongs on at most 1 post in 4, phrased like a person; never narrate the concept of receipts or accountability
     - 'macro posts state only what the data plainly shows in observable words; NO regime label, NO internal score, NO "(read: ...)" aside'
     - 'banned words: vertical, signal stack (say "our technical signals"), receipt book, accountability layer, honest model, regime, goldilocks, growth score, inflation score, de-rating, narrative, positioning in, implications for, the backdrop'

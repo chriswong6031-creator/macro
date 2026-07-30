@@ -35,6 +35,7 @@ import hashlib
 import math
 import os
 import re
+import zlib
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -2639,16 +2640,28 @@ def content_plan(
                 _mv_headline = f"${_mv_ticker} {_mv_pct_str} today"
                 # Direction-aware stance (doctrine v3): down = flush-watch, dry;
                 # up = respect, don't chase. Same honest posture either way.
+                #
+                # These used to be ONE fixed sentence per direction, so every up
+                # mover the desk ever posted ended "Strength worth respecting, not
+                # chasing here." (retired as boilerplate 2026-07-30). Rotate on a
+                # crc32 of the ticker: deterministic — the same name reads the same
+                # way twice — but the batch no longer speaks in one voice.
+                _mv_rot = zlib.crc32(str(_mv_ticker or "").encode("utf-8")) % 4
                 if (_mv.get("pct") or 0) < 0:
-                    _mv_body = (
-                        f"{_mv_top_fact} The dip buyers get to find out who was early. "
-                        f"Watching how it holds, not chasing the candle."
-                    )
+                    _mv_body = f"{_mv_top_fact} " + (
+                        "The dip buyers get to find out who was early. Watching how "
+                        "it holds.",
+                        "I'd rather be late here than early. Levels are on the chart.",
+                        "No rush to be a hero on this one. Watching where it settles.",
+                        "Nothing to do until it stops going down. Chart's below.",
+                    )[_mv_rot]
                 else:
-                    _mv_body = (
-                        f"{_mv_top_fact} Strength worth respecting, not chasing here. "
-                        f"Levels are on the chart."
-                    )
+                    _mv_body = f"{_mv_top_fact} " + (
+                        "Good for anyone already in. I'm not paying this price.",
+                        "Respect the move, don't pay for it. Levels are on the chart.",
+                        "Nice if you were early. Late entries here get punished.",
+                        "This is what leadership looks like while it lasts. Chart's below.",
+                    )[_mv_rot]
                 _mover_item_dict = {
                     "id": f"post-mover-{_mover_item_counter:03d}",
                     "type": "mover",

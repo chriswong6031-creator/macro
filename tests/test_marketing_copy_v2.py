@@ -1997,3 +1997,61 @@ def test_every_marketing_lane_is_authorized_in_the_capability_manifest():
             continue
         missing = lanes - set(cap.get("allowed_lanes") or [])
         assert not missing, f"{cap_id} does not authorize {sorted(missing)}"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Stock closers (operator, 2026-07-30)
+# The house prompt PRESCRIBED two closers verbatim — as a copy law, in the VOICE
+# block, and as the up-mover exemplar. The model obeyed: a live 8-post sample
+# closed five of six passing posts with the identical sentence, which the
+# operator read and called bot-like. These pin the ban so a prompt edit cannot
+# reintroduce it silently.
+# ─────────────────────────────────────────────────────────────────────────────
+class TestStockClosers:
+    def test_the_retired_up_mover_closer_is_banned(self):
+        from engine.marketing.copywriter import stock_closer_violations
+        v = stock_closer_violations(
+            "$GPI holds 311 for 18 sessions. Strength worth respecting, not chasing here.")
+        assert v and "stock closer" in v[0]
+
+    def test_the_retired_down_mover_closer_is_banned(self):
+        from engine.marketing.copywriter import stock_closer_violations
+        v = stock_closer_violations(
+            "$ISRG down 14%. Watching for a bottom setup, not catching it yet.")
+        assert v and "stock closer" in v[0]
+
+    def test_a_truncated_variant_is_still_caught(self):
+        """The model pads and trims these; matching must not be exact-only."""
+        from engine.marketing.copywriter import stock_closer_violations
+        assert stock_closer_violations("$VST up 9%. Strength worth respecting, not chasing.")
+
+    def test_two_posts_sharing_a_closer_collide(self):
+        from engine.marketing.copywriter import stock_closer_violations
+        v = stock_closer_violations(
+            "$AAA held the line. Chart's below.",
+            ["$BBB broke down. Chart's below."])
+        assert v and "batch closer collision" in v[0]
+
+    def test_distinct_closers_pass(self):
+        from engine.marketing.copywriter import stock_closer_violations
+        assert stock_closer_violations(
+            "$LKFN sits 1.9% below its 64.5 high. I respect the strength, but I'm not chasing.",
+            ["$FDS held 245 for 23 sessions. I'm not paying up here."]) == []
+
+    def test_the_prompt_no_longer_prescribes_the_retired_closers(self):
+        """The ban is worthless while the prompt still hands the model the line."""
+        import inspect
+        from engine.marketing import copywriter
+        src = inspect.getsource(copywriter)
+        # The phrases may appear in the ban list and in explanatory comments, but
+        # never as an instruction to WRITE them.
+        for bad in ("Up movers: 'strength worth respecting",
+                    "Down movers: 'watching for a bottom setup"):
+            assert bad not in src, f"prompt still prescribes a retired closer: {bad!r}"
+
+    def test_the_copy_law_asks_for_a_stance_not_a_sentence(self):
+        import yaml, pathlib
+        cfg = yaml.safe_load(pathlib.Path("config/marketing.yml").read_text())
+        laws = " ".join((cfg.get("copywriter") or {}).get("copy_laws") or [])
+        assert 'movers carry "watching for a bottom setup' not in laws
+        assert "banned closers" in laws
