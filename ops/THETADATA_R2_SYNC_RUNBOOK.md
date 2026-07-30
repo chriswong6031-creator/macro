@@ -51,6 +51,33 @@ guard blocks any file-list that would halve the remote manifest. The final
 `thetadata_eod/_manifest.json` put embeds the collector's store manifest under
 `"store"` (freshness/coverage evidence for `audit_r2`).
 
+**Tripwire (2026-07-30):** `thetadata_eod` is an `audit_r2` freshness anchor
+(`config.yml` → `r2_data_plane.anchors`), so the weekday 14:30 UTC heartbeat
+reddens when this lane stops advancing. Budget is the shared `max_age_hours: 26`:
+a healthy manifest is ~9.5h old at that heartbeat (22:00 PT ≈ 05:00 UTC publish)
+and the first missed night reads ~33.5h. Weekend runs are md5 no-ops that still
+put the manifest, so the weekday-only heartbeat needs no exception.
+
+Read `<dir>/_manifest.json` as a PUBLISH-side key: only the end-of-run put writes
+it. Until 2026-07-30 the delta pass also uploaded the store's *own* collector
+manifest to that key (a different document sharing the name), so on any run whose
+manifest put was skipped — one upload failure is enough — the key held the raw
+collector doc AND carried a fresh `Last-Modified`, i.e. the anchor read fresh on a
+night the manifest never advanced. `_uploadable` now keeps that file out of the
+delta pass. Telling the two apart by eye:
+
+```bash
+curl -sA macro-audit/1.0 https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev/thetadata_eod/_manifest.json | head -c 200
+# publisher's doc (healthy): {"dir": "thetadata_eod", "count": 13127, "files": [...], "store": {...}}
+# raw collector doc (the manifest put was SKIPPED — check the log for upload failures):
+#   {"store": "thetadata_eod", "n_roots": ..., "per_root": {...}, "updated_at": ...}
+```
+
+`_uploadable` lives in `scripts/publish_r2.py`, which runs from THIS deploy tree —
+merging it to main does not deploy it. Copy it path-scoped (see the 2026-07-29 heal
+below) and md5-verify against `origin/main`. `audit_r2.py` + `config.yml` run in
+GitHub Actions from a fresh checkout, so the anchor itself goes live on merge.
+
 ## Install (operator, once — as the mac user, not root)
 
 ```bash
@@ -174,3 +201,53 @@ that key by the ordinary delta pass, because `rglob` picks it up. On a clean run
 the publisher's file-list doc is put last and wins; on a failed run the collector
 doc is what remains, which is exactly what sat there 07-29→07-30. Distinguish the
 two by top-level key: `count`/`files` = publisher, `n_roots`/`per_root` = collector.
+(That upload is itself the reason the freshness anchor could not be trusted — see
+the next entry, which stops it.)
+
+### 2026-07-30 — the detection layer (the 07-25→07-28 freeze was found by eye)
+
+Nothing watched this lane. `audit_r2`'s `DEFAULT_ANCHORS` were `stockdata` +
+`chinastockdata` and its `COVERAGE_ANCHORS` `massive_stock_day` + `hk_stocks_ext`;
+`thetadata_eod` was in neither, so the audit never probed the store at all. The
+~60 GB / ~13k-parquet store exists only on this host, which makes its R2 copy the
+highest-value object in the bucket and left it the only major store with no anchor.
+The four-night ImportError freeze above was caught because a human read the log.
+
+Two publish-side defects had to be fixed before the anchor could mean anything —
+appending it alone would have shipped a tripwire that could not fire:
+
+1. The two-documents-at-one-key behaviour the entry above documents was not a
+   curiosity — it was what made a freshness anchor unusable. The collector doc's
+   delta-pass upload refreshes the key's `Last-Modified`, which is precisely what
+   `audit_r2` anchors on, so the key read FRESH on exactly the nights the
+   publisher's put was held shut. Note the arithmetic: the pool-exhaustion failures
+   above ran three nights while the key's timestamp kept advancing — a naive anchor
+   would have stayed green through all of it. `_uploadable` now keeps that file out
+   of the delta pass (it still reaches R2 embedded under `"store"`), so a skipped
+   manifest put leaves the key untouched and the anchor starts aging honestly. Two
+   guards stop being vacuous as a side effect: `--no-manifest` now really does leave
+   the key alone for data dirs, and `_remote_manifest` finally reads a doc with
+   `count`, so the manifest shrink guard applies to data dirs at all.
+2. `audit_r2`'s coverage probe did `json.loads(body).get("store").get("coverage")`.
+   Every data-dir collector's own manifest has a top-level `"store"` that is the
+   store NAME — a string — so that raised `AttributeError` on the raw doc, caught by
+   neither `except` around it. `healthcheck.check_r2_freshness` swallows any
+   exception from `run()` into `{"ok": True}`, so it would not have been a loud
+   crash: it would have silently voided the whole R2 tripwire, every anchor
+   included. The probe now shape-checks and warns.
+
+`thetadata_eod` is deliberately NOT a COVERAGE_ANCHOR: `_write_manifest` emits
+`store`/`n_roots`/`per_root`/`updated_at` and no `coverage`/`anchor`/`latest_date`,
+so the probe could only ever emit its "no store coverage yet" warning — a permanent
+nag with no signal. Making it meaningful means teaching `_write_manifest` to emit
+the blocks first (per-root year continuity is the natural coverage unit here);
+`updated_at` is likewise an unused remote-visible view of collector — as opposed to
+publisher — health. Both are follow-ups, not preconditions for the freshness anchor.
+
+State at the time of the fix (verified live against the public base): the key held
+the raw collector doc, `Last-Modified` 2026-07-30T05:02:56Z, written by that run's
+delta pass 1s after `_backfill_state.json` while the SPY parquets landed 05:04–05:12
+— i.e. the anchor was reporting "the delta pass started", not "the manifest
+advanced". A raw doc still sitting there hours after a run means the publisher's put
+was skipped; check the log for upload failures.
+

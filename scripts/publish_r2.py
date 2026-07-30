@@ -25,6 +25,13 @@ store is R2-only) would replace the full ~5000-name manifest with a 2-name one �
 and bulk consumers prune against it. A guard blocks any manifest that shrinks the
 remote list by more than half (--force-manifest overrides for intentional culls).
 
+`<dir>/_manifest.json` is a PUBLISH-SIDE key, written only by that end-of-run put.
+A data-dir store's own collector-written _manifest.json is a DIFFERENT document that
+merely shares the name, so _uploadable keeps it out of the delta pass (it rides to R2
+embedded under "store" instead). Without that exclusion the key held two documents per
+run, --no-manifest silently replaced it anyway, and audit_r2's freshness anchor stayed
+warm on nights the publisher's put never happened.
+
 Append-only stores (_APPEND_ONLY_DIRS, e.g. attention/) additionally refuse per-file
 uploads SMALLER than the R2 object, plus a per-dir total-bytes floor: when the
 fetch_r2 restore fails, the collector rebuilds the same ~966 filenames as
@@ -257,6 +264,35 @@ def _append_only_guarded(d: str, local_size: int, remote_size: int | None) -> bo
     return d in _APPEND_ONLY_DIRS and remote_size is not None and local_size < remote_size
 
 
+def _uploadable(d: str, base: Path, files: list[Path]) -> list[Path]:
+    """The subset of `files` the delta pass may upload.
+
+    A data-dir store's own collector-written `_manifest.json` is EXCLUDED. It is not
+    store content — it is the INPUT `_manifest_doc` embeds under "store", and its R2
+    key (`<dir>/_manifest.json`) is the very key the publish-side file-list doc is put
+    to at the end of the run. Uploading it in the delta pass made that one key hold two
+    different documents in the same run, with three consequences:
+
+      * on any run with an upload failure the publisher's put is skipped, so the RAW
+        collector doc is what remains on R2 — top-level `store`/`n_roots`/`per_root`,
+        not `dir`/`count`/`files`. That is the state observed live on 2026-07-30:
+        `Last-Modified` 05:02:56Z, written by the delta pass 1s after
+        `_backfill_state.json`, while the SPY parquets landed 05:04-05:12Z;
+      * that upload REFRESHED the key's Last-Modified, which is audit_r2's freshness
+        anchor — so a night whose manifest put never happened still read FRESH;
+      * `_remote_manifest` (the shrink guard's input) then read a doc with no `count`,
+        making `_manifest_ok` vacuously true for every data dir.
+
+    Nothing is lost: `_manifest_doc` embeds the collector doc under "store". fetch_r2
+    already skips `_manifest.json` keys on the download leg for the mirror-image reason
+    (it is a publish-side artifact) — this is the upload half of that same contract.
+    Site dirs have no collector manifest and are returned unfiltered."""
+    if d not in _DATA_DIRS:
+        return files
+    store_manifest = base / "_manifest.json"
+    return [p for p in files if p != store_manifest]
+
+
 def _manifest_doc(d: str, base: Path, names: list[str]) -> dict:
     """The manifest object to put for dir `d`.  Data-dir stores keep their own
     collector-written _manifest.json (freshness + coverage/anchor blocks — see
@@ -326,7 +362,10 @@ def publish(dirs, dry_run: bool = False, workers: int = 32,
         if not base.is_dir():
             log.info("%s: absent — skip", d)
             continue
-        files = [p for p in base.rglob("*") if p.is_file()]
+        # _uploadable drops a data-dir store's own _manifest.json: it is the collector's
+        # doc, embedded under "store" by _manifest_doc, and its key belongs to the
+        # publish-side file-list doc put at the end of the run.
+        files = _uploadable(d, base, [p for p in base.rglob("*") if p.is_file()])
         total = sum(p.stat().st_size for p in files) if d in _DATA_DIRS else None
         ok, why = _data_dir_syncable(d, len(files), total)
         if not ok:
