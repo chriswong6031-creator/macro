@@ -715,6 +715,8 @@ jobs:
         # JS syntax error (e.g. an empty template var rendering the page blank), so a bad
         # render keeps the last-good site live instead of shipping a broken page.
         run: python3 scripts/check_inline_js.py site
+      - name: guard — no dead site references
+        run: python3 scripts/check_site_asset_refs.py site
       - name: guard — market-state board coherence (ui.ms_board_coherence)
         # A freshly rendered board whose verdict/score/thesis/notes disagree means the
         # render itself is broken (engine or template regression) — restore last-good

@@ -105,6 +105,57 @@ checks:
     owner_program: engine-fix-masterplan
     notes: null
 
+  - law_id: ui.site_asset_refs_resolve
+    summary: >
+      Every template-decided href/src in committed site HTML must resolve to a
+      file in the tree. A page that links a missing asset or page is a silent
+      404 — the HTML is well-formed and the render succeeds, so the break shows
+      up only in production (#3988 and #4042 pruned a stylesheet a sibling page
+      still linked; templates/ticker.html.j2 emitted the PLURAL ../baskets/
+      directory for pages shipping under site/basket/, dead on 605 pages and 909
+      links since the directory was named). Links to stocks/<TICKER>.html warn
+      instead of failing: which ticker pages exist is decided nightly by data, so
+      hard-gating peer/movers/crypto naming would wedge the render on ordinary
+      universe churn.
+    source_ref:
+      - scripts/check_site_asset_refs.py
+      - "PRs #3988 #4042 #4056"
+    severity: hard
+    check_script: scripts/check_site_asset_refs.py
+    ci_wiring:
+      - workflow: .github/workflows/pages.yml
+        job: publish
+        lane: publish
+      - workflow: .github/workflows/render.yml
+        job: render
+        lane: render
+      - workflow: .github/workflows/engine-render.yml
+        job: engine-render
+        lane: render
+      - workflow: .github/workflows/closing-bell.yml
+        job: closingbell
+        lane: scheduled
+      - workflow: .github/workflows/earlyclose.yml
+        job: earlyclose
+        lane: scheduled
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Proves file EXISTENCE, not markup validity. Values carrying ${, {{, <, }
+        or whitespace are template/JS fragments rather than URLs and are skipped,
+        so a genuinely broken href built by JS at runtime is invisible here.
+      - Scans committed site/ only; a link a page builds client-side from a JSON
+        payload is not covered.
+      - /api/* and /ws/* are served by the FastAPI app, not the file tree, so
+        they are exempt by prefix rather than checked.
+    owner_program: engine-fix-masterplan
+    notes: >
+      _KNOWN_GAPS is the escape hatch and is currently EMPTY — the six gaps the
+      guard shipped with each got their own emitter fix, and
+      tests/test_check_site_asset_refs.py ratchets the empty state so a re-pin has
+      to be argued in review rather than riding in with a fresh 404.
+
   - law_id: ui.site_js_parses
     summary: >
       Every standalone site/*.js bundle (loaded via <script src=...>) must parse

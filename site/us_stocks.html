@@ -11249,13 +11249,20 @@ function renderTapeBand(pulse){
       var isG=cx.live_ew_chg_pct>=0;
       var cxTipEn='AI-Capex Complex composite basket.'+(cx.only_green_complex?' Only complex in positive territory this session.':'')+' Context only.';
       var cxTipZh='AI资本开支复合板块。'+(cx.only_green_complex?'本交易时段唯一上涨复合板块。':'')+'仅供参考。';
+      /* Static readout, not a link: `ai_capex` is a COMPLEX id (an aggregate over
+         engine.demand_capex.AI_CAPEX_THEMES), not a basket id, so no
+         basket/<id>.html is ever built for it and the href this row shipped with
+         was a live 404. .dtp-mrow styling is class-driven and the tooltip binds on
+         [data-tip-en] whatever the element, so both survive the <a> -> <div>. The
+         inline colour pins .dtp-mname past `.dtp-mrow:hover .dtp-mname` in
+         theme.css, so a non-clickable row never lights up like a link. */
       colDn+='<div class="dtp-col-lbl cx" style="margin-top:7px">'+L('COMPLEX','复合')+'</div>'
-        +'<a class="dtp-mrow" href="basket/ai_capex.html" data-tip-en="'+esc(cxTipEn)+'" data-tip-zh="'+esc(cxTipZh)+'">'
+        +'<div class="dtp-mrow" style="cursor:default" data-tip-en="'+esc(cxTipEn)+'" data-tip-zh="'+esc(cxTipZh)+'">'
         +'<span class="dtp-rank">·</span>'
-        +'<span class="dtp-mname"><span class="l-en">AI-Capex Complex</span><span class="l-zh">AI资本开支复合板块</span></span>'
+        +'<span class="dtp-mname" style="color:var(--text)"><span class="l-en">AI-Capex Complex</span><span class="l-zh">AI资本开支复合板块</span></span>'
         +'<span class="dtp-mpct '+(isG?'up':'dn')+'">'+fmtPct(cx.live_ew_chg_pct)+'</span>'
         +'<span class="dtp-mtrack'+(isG?'':' dn')+'"><span class="dtp-mbar '+(isG?'up':'dn')+'" style="width:'+Math.max(4,Math.round(Math.abs(cx.live_ew_chg_pct)/maxAbs*56))+'px"></span></span>'
-        +'</a>';
+        +'</div>';
     }
   }
   colDn+='</div>';
