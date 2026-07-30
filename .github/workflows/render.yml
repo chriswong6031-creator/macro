@@ -231,7 +231,7 @@ jobs:
         # Self-hosted workspaces persist between jobs. The generated site history made
         # their .git directories grow without bound (measured 2026-07-30: 4.5–26 GB
         # across the local Mac pool; run 30530156302 then spent >20m in checkout's
-        # index-pack before one builder ran). Once the object store crosses 8 GiB,
+        # index-pack before one builder ran). Once the object store crosses 1 GiB,
         # quarantine the oversized Git store, but RETAIN the clean current working tree:
         # main contains ~2.85 GB / 49.7k tracked files, so deleting the tree merely trades
         # the 26 GB history problem for a 25m+ cold download. A local metadata-only clone
@@ -246,7 +246,7 @@ jobs:
           set -euo pipefail
           [ -d .git ] || exit 0
           GIT_KIB=$(du -sk .git | awk '{print $1}')
-          GIT_MAX_KIB="${CHECKOUT_GIT_MAX_KIB:-8388608}"
+          GIT_MAX_KIB="${CHECKOUT_GIT_MAX_KIB:-1048576}"
           validate_workspace() {
             case "${GITHUB_WORKSPACE:-}" in
               */_work/*/*) ;;
@@ -343,7 +343,15 @@ jobs:
           # of obsolete HTML generations.
           filter: blob:none
           fetch-depth: 1
-      - run: git pull origin main
+          # The publish step installs one process-local token. Persisting checkout's
+          # header as well sends duplicate Authorization headers and GitHub intermittently
+          # answers HTTP 400 (run 30566352541: eight failed fetches before attempt 9).
+          persist-credentials: false
+      - run: |
+          git pull origin main
+          # A checkout-created partial clone is safe to reuse on the next render even
+          # when this run did not enter through the managed fast path.
+          git config --local macro.renderMetadataCheckout true
       - name: python 3.12 venv (self-hosted runner; Linux render-linux, Homebrew fallback)
         run: |
           VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
@@ -912,6 +920,10 @@ jobs:
           . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
+          # checkout@v4 historically persisted this header. Remove any survivor before
+          # installing the process-local token below; two Authorization headers produced
+          # repeated HTTP 400s instead of authenticating more strongly.
+          git config --local --unset-all http.https://github.com/.extraheader 2>/dev/null || true
           if [ -n "${GITHUB_TOKEN:-}" ]; then
             GIT_AUTH=$(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 | tr -d '\r\n')
             export GIT_CONFIG_COUNT=1
@@ -962,7 +974,12 @@ jobs:
           # timed-out, and guard-failed trees, so every commit is a valid watermark.
           SCOPE="${{ steps.pick.outputs.scope }}"; SCOPE="${SCOPE:-all}"
           FROM="${{ steps.pick.outputs.rendered_from }}"
-          commit_index "render: site re-render $(date -u +%F) (scope=$SCOPE, from=$FROM)"
+          RENDER_MESSAGE="render: site re-render $(date -u +%F) (scope=$SCOPE, from=$FROM)"
+          commit_index "$RENDER_MESSAGE"
+          RENDER_COMMIT=$(git rev-parse HEAD)
+          RENDER_PARENT=$(git rev-parse "$RENDER_COMMIT^")
+          PUBLISH_INDEX="${RUNNER_TEMP:?}/render-publish-${GITHUB_RUN_ID:?}-${GITHUB_RUN_ATTEMPT:?}.index"
+          PUBLISH_REF="refs/heads/render-publish-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           # This push is now the ONLY way the render reaches the live site (the VPS serves
           # committed main; there is no Pages-artifact fallback), so it MUST land.
           # --autostash parks the render's throwaway data/ writes (we commit site/ ONLY) so
@@ -994,10 +1011,37 @@ jobs:
             # authoritative. Everything else is untouched — tracked-file edits (ledgers)
             # still ride the autostash, and untracked paths main doesn't know about
             # (runner-local stores, gitignored caches) never enter the intersection.
-            git fetch origin main || true
+            if ! git fetch origin main; then
+              push_backoff
+              continue
+            fi
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
+            # Common path: main advanced only in code/data while this run changed
+            # site/templates. Replay those disjoint tree deltas in a temporary index,
+            # create a one-parent commit on current main, and push its object ID. No
+            # checkout, rebase, or promised-blob download occurs.
+            if PUBLISH_COMMIT=$(push_metadata_replay_commit \
+                "$RENDER_PARENT" origin/main "$RENDER_COMMIT" \
+                "$RENDER_MESSAGE" "$PUBLISH_INDEX"); then
+              echo "::notice::metadata-only replay onto $(git rev-parse --short=12 origin/main)"
+              # Referencing the replay commit locally lets push negotiation exclude
+              # promised objects already present on origin. Pushing an anonymous object
+              # ID makes Git hydrate those unchanged blobs before packing.
+              git update-ref "$PUBLISH_REF" "$PUBLISH_COMMIT"
+              if push_do origin "$PUBLISH_REF:refs/heads/main"; then
+                git update-ref HEAD "$PUBLISH_COMMIT"
+                git update-ref -d "$PUBLISH_REF"
+                echo "pushed rendered site on attempt $PUSH_ATTEMPT (metadata-only replay)"
+                push_won
+                exit 0
+              fi
+              git update-ref -d "$PUBLISH_REF"
+              push_backoff
+              continue
+            fi
+            echo "::notice::render output overlaps newer main; using guarded porcelain fallback"
             # rename/rename on content-hashed site/assets/css/* is deterministic across
             # retries (path conflict; -X theirs can't settle it — 2026-07-22 asia-close
             # run 29904079071 dropped a day's outputs this way). The autoresolver keeps

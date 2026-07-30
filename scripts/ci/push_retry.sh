@@ -145,6 +145,79 @@ push_do() {
   return "$rc"
 }
 
+# Replay one generated commit onto a newer main using tree metadata only.
+#
+# Arguments:
+#   $1  original parent the generated commit was built from
+#   $2  newer commit to publish on top of (normally origin/main)
+#   $3  generated commit
+#   $4  commit message
+#   $5  caller-owned temporary index path
+#
+# `git pull --rebase` checks out the replayed commit and can lazy-fetch thousands of
+# promised blobs in a blobless runner checkout even when main advanced only in
+# unrelated code/data paths. Even `read-tree -m` hydrates unchanged promised blobs on
+# the runner's Git build, so this helper is stricter:
+#   1. load the newer main tree into a temporary index;
+#   2. enumerate only the generated commit's changed paths via tree metadata;
+#   3. reject any path that newer main changed differently; and
+#   4. overlay the generated mode/object IDs with update-index.
+# Unchanged entries remain object IDs; `write-tree --missing-ok` never asks the
+# promisor remote for their bytes. A true same-path conflict returns non-zero so the
+# caller can use its existing porcelain rebase + specialised conflict guards.
+push_metadata_replay_commit() {
+  local render_parent="$1" onto="$2" render_commit="$3" message="$4" index_path="$5"
+  local onto_commit tree commit rc=0 status path base_entry onto_entry render_entry
+  local meta mode oid
+
+  onto_commit=$(git rev-parse "${onto}^{commit}") || return 1
+  rm -f -- "$index_path" "$index_path.lock"
+  GIT_INDEX_FILE="$index_path" git read-tree "$onto_commit" || rc=$?
+  while [ "$rc" -eq 0 ] \
+    && IFS= read -r -d '' status \
+    && IFS= read -r -d '' path; do
+    base_entry=$(git ls-tree "$render_parent" -- "$path") || rc=$?
+    [ "$rc" -eq 0 ] || break
+    onto_entry=$(git ls-tree "$onto_commit" -- "$path") || rc=$?
+    [ "$rc" -eq 0 ] || break
+    render_entry=$(git ls-tree "$render_commit" -- "$path") || rc=$?
+    [ "$rc" -eq 0 ] || break
+    if [ "$onto_entry" != "$base_entry" ] && [ "$onto_entry" != "$render_entry" ]; then
+      printf 'metadata replay conflict: newer main also changed %s\n' "$path" >&2
+      rc=1
+      break
+    fi
+    case "$status" in
+      D)
+        GIT_INDEX_FILE="$index_path" git update-index --force-remove -- "$path" || rc=$?
+        ;;
+      A|M|T)
+        meta=${render_entry%%$'\t'*}
+        mode=${meta%% *}
+        oid=${meta##* }
+        GIT_INDEX_FILE="$index_path" git update-index --add --cacheinfo \
+          "$mode" "$oid" "$path" || rc=$?
+        ;;
+      *)
+        printf 'metadata replay cannot apply status %s for %s\n' "$status" "$path" >&2
+        rc=1
+        ;;
+    esac
+  done < <(
+    git diff-tree -r --no-commit-id --no-renames --name-status -z \
+      "$render_parent" "$render_commit"
+  )
+  if [ "$rc" -eq 0 ]; then
+    tree=$(GIT_INDEX_FILE="$index_path" git write-tree --missing-ok) || rc=$?
+  fi
+  if [ "$rc" -eq 0 ]; then
+    commit=$(printf '%s\n' "$message" | git commit-tree "$tree" -p "$onto_commit") || rc=$?
+  fi
+  rm -f -- "$index_path" "$index_path.lock"
+  [ "$rc" -eq 0 ] || return "$rc"
+  printf '%s\n' "$commit"
+}
+
 # Drop-in replacement for the loops' bare `git rebase --abort 2>/dev/null || true`.
 # A rebase left IN PROGRESS is the tell for a real conflict — that is the one case that
 # deserves the conflict remedy and the long backoff, so record it before aborting.

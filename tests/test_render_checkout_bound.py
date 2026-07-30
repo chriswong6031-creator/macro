@@ -32,7 +32,7 @@ def test_oversized_checkout_is_bounded_before_checkout_runs():
     assert bound_index < checkout_index
 
     script = steps[bound_index]["run"]
-    assert "8388608" in script, "8 GiB checkout bound disappeared"
+    assert "1048576" in script, "1 GiB checkout bound disappeared"
     assert "*/_work/*/*)" in script, "workspace-shape safety check disappeared"
     assert '[ "$PWD" = "$GITHUB_WORKSPACE" ]' in script
     assert 'git reset --hard "$SEED_SHA"' in script
@@ -56,9 +56,19 @@ def test_render_checkout_uses_a_shallow_blobless_partial_clone():
     assert checkout["with"]["ref"] == "main"
     assert checkout["with"]["filter"] == "blob:none"
     assert checkout["with"]["fetch-depth"] == 1
+    assert checkout["with"]["persist-credentials"] is False
     assert "sparse-checkout" not in checkout["with"], (
         "render builders require the complete current data/ and site/ tree"
     )
+    sync = _steps()[
+        next(
+            index
+            for index, step in enumerate(_steps())
+            if step.get("uses") == "actions/checkout@v4"
+        )
+        + 1
+    ]
+    assert "macro.renderMetadataCheckout true" in sync["run"]
 
 
 def test_render_publish_commits_from_index_to_avoid_promisor_blob_materialization():
@@ -69,12 +79,19 @@ def test_render_publish_commits_from_index_to_avoid_promisor_blob_materializatio
 
     assert publish["if"] == "${{ success() && steps.render_pages.outputs.complete == 'true' }}"
     assert publish["env"]["GITHUB_TOKEN"] == "${{ github.token }}"
+    assert "git config --local --unset-all http.https://github.com/.extraheader" in script
     assert "GIT_CONFIG_KEY_0=http.https://github.com/.extraheader" in script
     assert 'GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $GIT_AUTH"' in script
     assert "tree=$(git write-tree --missing-ok)" in script
     assert 'git commit-tree "$tree" -p "$parent"' in script
     assert 'git update-ref HEAD "$commit" "$parent"' in script
-    assert script.count('commit_index "render') == 2
+    assert 'commit_index "$RENDER_MESSAGE"' in script
+    assert 'push_metadata_replay_commit \\' in script
+    assert 'git update-ref "$PUBLISH_REF" "$PUBLISH_COMMIT"' in script
+    assert 'push_do origin "$PUBLISH_REF:refs/heads/main"' in script
+    assert 'git update-ref -d "$PUBLISH_REF"' in script
+    assert "metadata-only replay" in script
+    assert script.count("commit_index ") == 2
     assert "git commit " not in script
 
 
