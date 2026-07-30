@@ -178,6 +178,40 @@ class TestCNUniverseAssembly:
 
         assert "600519.SS" in universe or "601360.SS" in universe
 
+    def test_prophet_v2_depth_lanes_are_context_universe(self):
+        """The capped featured shelf must not erase surfaced depth candidates."""
+        from engine.mtf_upturn import _build_cn_universe
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            site_dir = Path(tmpdir) / "site" / "factordata"
+            site_dir.mkdir(parents=True, exist_ok=True)
+            (site_dir / "china_standouts.json").write_text(json.dumps({
+                "schema_version": "2.0.0",
+                "buy": [{"ticker": "600001.SS"}],
+                "more_actionable": [{"ticker": "600002.SS"}],
+                "late_or_unfillable": [{"ticker": "600003.SS"}],
+                "forming": [{"ticker": "600004.SS"}],
+                "watch": [{"ticker": "699999.SS"}],
+                "ripening": [],
+                "ripening_falling": [],
+            }))
+            with patch("lib.config.load") as mock_cfg:
+                mock_cfg.return_value = {
+                    "storage": {
+                        "site_dir": str(Path(tmpdir) / "site"),
+                        "data_dir": str(Path(tmpdir) / "data"),
+                    }
+                }
+                universe = _build_cn_universe(
+                    data_root=Path(tmpdir) / "data"
+                )
+
+        assert set(universe) == {
+            "600001.SS", "600002.SS", "600003.SS", "600004.SS",
+        }
+        assert universe["600001.SS"] == ["board_featured"]
+        assert universe["600004.SS"] == ["board_forming"]
+
     def test_ripening_tickers_included(self):
         """Ripening shelf tickers appear in universe."""
         from engine.mtf_upturn import _build_cn_universe

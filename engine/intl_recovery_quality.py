@@ -183,6 +183,41 @@ def assess_recovery(
     }
 
 
+def apply_recovery_naming(states: Mapping | None) -> None:
+    """Resolve the conservative recovery-naming law in place (shared view-model).
+
+    Every surface that renders these state dicts — the intl turn board, the
+    macro world-board profile popovers, the country tables, the leaderboard
+    turn chips — must show the SAME words for the same market on the same day.
+    (2026-07-29 audit: intl.html said "Rebound failed — Stand aside" while
+    macro.html said "Repairing — no rush to buy" for India, because only
+    build_intl applied the qualifier, and only in template-land.)
+
+    Each state whose primary price state is ``recovery`` gets a
+    ``recovery_assessment`` computed from whatever confirmation / risk-radar
+    context the caller has already joined onto the state dict (none attached
+    is fine — the price-only fields still qualify the label), and its display
+    words (``state_en/zh``, ``stance_en/zh``) are overwritten with the
+    qualified label so raw-field consumers inherit the overlay. The machine
+    ``state`` enum and ``css`` are left untouched. Idempotent; a pre-attached
+    assessment (e.g. HK's richer confirmation+radar one) is respected, never
+    recomputed.
+    """
+    for st in (_mapping(states)).values():
+        if not isinstance(st, dict) or st.get("state") != "recovery":
+            continue
+        qa = st.get("recovery_assessment")
+        if not qa:
+            qa = assess_recovery(st, st.get("confirmation"), st.get("risk_radar"))
+            if not qa:
+                continue
+            st["recovery_assessment"] = qa
+        st["state_en"] = qa["label_en"]
+        st["state_zh"] = qa["label_zh"]
+        st["stance_en"] = qa["stance_en"]
+        st["stance_zh"] = qa["stance_zh"]
+
+
 def macro_backdrop(
     rates_command: Mapping | None,
     *,

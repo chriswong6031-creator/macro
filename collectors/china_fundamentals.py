@@ -209,7 +209,11 @@ def _high_value_universe() -> list[str]:
             if t:
                 tickers.add(t)
 
-    add("china_setups.json", "buy")
+    # Prophet v2's featured shelf is deliberately capped. Fundamentals are
+    # context, not admission authority, so retain every surfaced lane instead of
+    # starving the depth cards of coverage. ``watch`` covers legacy artifacts.
+    for _key in ("buy", "more_actionable", "late_or_unfillable", "forming", "watch"):
+        add("china_setups.json", _key)
     add("china_reversal.json", "watch")
     add("china_lowvol.json", "sleeve")
     add("china_alpha.json", "top")

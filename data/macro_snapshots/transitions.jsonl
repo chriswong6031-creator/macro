@@ -80,3 +80,13 @@
 {"asof": "2026-07-29", "domain": "market", "field": "market_state_verdict", "from_value": "RISK_ON", "to_value": "MIXED", "macro_context_id": "4ae225574b2d46ac"}
 {"asof": "2026-07-29", "domain": "commodity", "field": "silver_action", "from_value": "HOLD", "to_value": "SELL", "macro_context_id": "4ae225574b2d46ac"}
 {"asof": "2026-07-29", "domain": "hk", "field": "hk_quad", "from_value": "Q3", "to_value": "Q1", "macro_context_id": "4ae225574b2d46ac"}
+{"asof": "2026-07-30", "domain": "us", "field": "us_fused_risk", "from_value": "elevated", "to_value": "caution", "macro_context_id": "a6640f174cbb3573"}
+{"asof": "2026-07-30", "domain": "us", "field": "us_liquidity_quality", "from_value": "neutral-hollow", "to_value": "stress-expansion", "macro_context_id": "a6640f174cbb3573"}
+{"asof": "2026-07-30", "domain": "us", "field": "us_liquidity_overlay", "from_value": "neutral", "to_value": "expanding", "macro_context_id": "a6640f174cbb3573"}
+{"asof": "2026-07-30", "domain": "us", "field": "us_dislocation", "from_value": "calm", "to_value": "buyable_washout", "macro_context_id": "a6640f174cbb3573"}
+{"asof": "2026-07-30", "domain": "us", "field": "us_repricing_state", "from_value": "ELEVATED", "to_value": "QUIET", "macro_context_id": "a6640f174cbb3573"}
+{"asof": "2026-07-30", "domain": "market", "field": "market_state_verdict", "from_value": "MIXED", "to_value": "RISK_OFF", "macro_context_id": "a6640f174cbb3573"}
+{"asof": "2026-07-30", "domain": "fx", "field": "fx_risk", "from_value": "risk-on", "to_value": "risk-off", "macro_context_id": "a6640f174cbb3573"}
+{"asof": "2026-07-30", "domain": "fx", "field": "fx_eurusd_action", "from_value": "FLAT", "to_value": "SHORT", "macro_context_id": "a6640f174cbb3573"}
+{"asof": "2026-07-30", "domain": "commodity", "field": "silver_action", "from_value": "SELL", "to_value": "HOLD", "macro_context_id": "a6640f174cbb3573"}
+{"asof": "2026-07-30", "domain": "canada", "field": "canada_overlay_state", "from_value": "Risk-on", "to_value": "Neutral", "macro_context_id": "a6640f174cbb3573"}

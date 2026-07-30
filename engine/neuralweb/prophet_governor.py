@@ -349,17 +349,23 @@ def _build_cn_block(repo: Path) -> dict:
         try:
             import pandas as pd  # noqa: PLC0415
             df = pd.read_parquet(cn_board_path)
+            from engine import china_standout_track as _cn_track  # noqa: PLC0415
+
+            df, board_definition = _cn_track._latest_definition_frame(df)  # noqa: SLF001
+            board_definition = board_definition or "legacy"
             graded_cols = [c for c in df.columns if "fwd_ret" in c or "excess" in c]
             if graded_cols:
                 matured_mask = df[graded_cols].notna().any(axis=1)
                 matured_df = df[matured_mask]
                 block["cn_board"] = {
+                    "board_definition": board_definition,
                     "total_rows": int(len(df)),
                     "matured_rows": int(len(matured_df)),
                     "fill_basis_note": "t1_hl2 — T+1 HL2 fill, NEVER pooled with next-bar-close markets (PR-R5)",
                 }
             else:
                 block["cn_board"] = {
+                    "board_definition": board_definition,
                     "total_rows": int(len(df)),
                     "matured_rows": 0,
                     "fill_basis_note": "t1_hl2 — accruing",

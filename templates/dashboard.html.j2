@@ -4865,18 +4865,18 @@ body.page-macro .rsx-dlg-footer{
 .mx5-dlg-cal-card.hot{border-color:rgba(245,158,11,.25);background:rgba(245,158,11,.04);}
 [data-theme="light"] .mx5-dlg-cal-card{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.07);}
 [data-theme="light"] .mx5-dlg-cal-card.hot{background:rgba(245,158,11,.04);}
-/* ── Calendar card = Release Radar selector (rr-inline, 2026-07) ──────────────
-   Every card is a selector for the inline panel below. Covered dates carry a
-   subtle radar dot; the selected card holds an --info accent ring. FOMC cards
-   route to the Fed Path board instead of selecting (chip affordance). */
+/* ── Calendar date = Release Radar selector (rr-inline, 2026-07) ─────────────
+   Every non-FOMC card selects its date for the inline panel below. Covered
+   dates carry a subtle radar dot; every selector sharing the selected date
+   receives the same --info accent ring. FOMC cards route to Fed Path instead. */
 .mx5-dlg-cal-card.rr-select{cursor:pointer;transition:border-color .16s ease,box-shadow .22s ease,background .16s ease;}
 .mx5-dlg-cal-card.rr-select:hover{border-color:color-mix(in srgb,var(--info,#60a5fa) 40%,transparent);box-shadow:0 2px 12px color-mix(in srgb,var(--info,#60a5fa) 8%,transparent);}
 .mx5-dlg-cal-card.rr-select:focus-visible{outline:2px solid var(--info,#60a5fa);outline-offset:2px;}
-/* active (selected) card — accent ring + faint info tint, coherent with .gbtn glass */
+/* Selected date — outer blue ring survives green/amber live-status fills. */
 .mx5-dlg-cal-card.rr-active{
   border-color:color-mix(in srgb,var(--info,#60a5fa) 58%,transparent);
   background:color-mix(in srgb,var(--info,#60a5fa) 8%,rgba(255,255,255,.04));
-  box-shadow:0 0 0 1px color-mix(in srgb,var(--info,#60a5fa) 40%,transparent),0 6px 18px -10px color-mix(in srgb,var(--info,#60a5fa) 60%,transparent);
+  box-shadow:0 0 0 2px color-mix(in srgb,var(--info,#60a5fa) 72%,transparent),0 6px 18px -10px color-mix(in srgb,var(--info,#60a5fa) 60%,transparent);
 }
 [data-theme="light"] .mx5-dlg-cal-card.rr-active{background:color-mix(in srgb,var(--info,#60a5fa) 9%,rgba(0,0,0,.03));}
 /* covered-date indicator — small radar dot chip (replaces the old "Release Radar ▸" text link) */
@@ -8416,6 +8416,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     function _rrInlineBody(){ return document.getElementById('rr-inline-body'); }
     function _rrInlineDateEl(){ return document.getElementById('rr-inline-date'); }
     var _rrInlineDate = null;           /* currently-selected date string */
+    var _rrInlineSignature = null;      /* selected date + current forecast payload */
+    var _rrInlineSwapToken = 0;         /* invalidates delayed paints after rapid clicks */
+    var _rrInlineSwapTimer = null;
     /* INT-03: focus management — track invoker for restore on close */
     var _rrModalInvoker = null;
 
@@ -9837,8 +9840,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       }
       return dates[0] || null;
     }
-    /* honest empty-state body for a calendar date with no model coverage. Pulls the
-       event's own time/impact off the card DOM — no fake coverage, no dead card. */
+    /* Honest empty state for a calendar date with no model coverage. */
     function _inlineEmptyHTML(card){
       var timeEl = card ? card.querySelector('.mx5-dlg-cal-time') : null;
       var badgeEl = card ? card.querySelector('.mx5-dlg-cal-badge') : null;
@@ -9849,8 +9851,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       if (impactHTML) metaBits += impactHTML;
       return '<div class="rr-inline-empty">'
         +'<div class="rr-inline-empty-line">'
-        +'<span class="l-en">No model projections for this event — event risk only.</span>'
-        +'<span class="l-zh">该事件无模型预测 — 仅为事件风险提示。</span>'
+        +'<span class="l-en">No model projections for this date — event risk only.</span>'
+        +'<span class="l-zh">该日期无模型预测 — 仅为事件风险提示。</span>'
         +'</div>'
         +(metaBits ? '<div class="rr-inline-empty-meta">'+metaBits+'</div>' : '')
         +'</div>';
@@ -9870,19 +9872,33 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         +'<span class="l-en">'+esc(RR_MOS_EN[mo]||'')+' '+dy+'</span>'
         +'<span class="l-zh">'+mo+'月'+dy+'日</span>';
     }
+    function _inlineItemsSignature(dateStr, items){
+      try{ return dateStr+'|'+JSON.stringify(items || []); }
+      catch(e){ return dateStr+'|'+String((items || []).length); }
+    }
+    function _syncInlineDateSelection(dateStr){
+      document.querySelectorAll('#dlg-events .mx5-dlg-cal-card.rr-select').forEach(function(card){
+        var active = card.getAttribute('data-cal-date') === dateStr;
+        card.classList.toggle('rr-active', active);
+        card.setAttribute('aria-pressed', active ? 'true' : 'false');
+        if (active) card.setAttribute('aria-current','date');
+        else card.removeAttribute('aria-current');
+      });
+    }
     /* Select a calendar date into the inline panel. Covered → print cards (reuse
        renderCard + openModal); non-covered → honest empty state. Short cross-fade,
        reduced-motion-guarded. Focus is restored to the source card, never a popup. */
     function selectInlineDate(dateStr, sourceCard, immediate){
       var body = _rrInlineBody();
       if (!body) return;
-      _rrInlineDate = dateStr;
-      /* active ring: move it to the source card */
-      document.querySelectorAll('#dlg-events .mx5-dlg-cal-card.rr-active').forEach(function(c){
-        c.classList.remove('rr-active'); c.removeAttribute('aria-pressed');
-      });
-      if (sourceCard){ sourceCard.classList.add('rr-active'); sourceCard.setAttribute('aria-pressed','true'); }
       var items = _itemsForDate(dateStr);
+      var signature = _inlineItemsSignature(dateStr, items);
+      var unchanged = _rrInlineDate === dateStr && _rrInlineSignature === signature;
+      _rrInlineDate = dateStr;
+      _syncInlineDateSelection(dateStr);
+      /* GDP → PCE → claims on one date is one selection, not three fake refreshes.
+         The payload signature still allows a future intraday forecast refresh. */
+      if (!immediate && unchanged) return;
       var covered = items.length > 0;
       var bodyHTML;
       if (covered){
@@ -9891,8 +9907,15 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         bodyHTML = _inlineEmptyHTML(sourceCard);
       }
       var swap = !immediate && !_prefReducedRR();
+      var token = ++_rrInlineSwapToken;
+      if (_rrInlineSwapTimer !== null){
+        clearTimeout(_rrInlineSwapTimer);
+        _rrInlineSwapTimer = null;
+      }
       var paint = function(){
+        if (token !== _rrInlineSwapToken) return;
         body.innerHTML = bodyHTML;
+        _rrInlineSignature = signature;
         _setInlineHeader(dateStr, covered);
         if (covered){
           body.querySelectorAll('.rr-card').forEach(function(el, idx){
@@ -9916,7 +9939,10 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       };
       if (swap){
         body.classList.add('rr-inline-swap');
-        setTimeout(paint, 130);
+        _rrInlineSwapTimer = setTimeout(function(){
+          _rrInlineSwapTimer = null;
+          paint();
+        }, 130);
       } else {
         paint();
       }
@@ -9957,6 +9983,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         card.classList.add('rr-select');
         card.setAttribute('role','button');
         card.setAttribute('tabindex','0');
+        card.setAttribute('aria-controls','rr-inline-body');
+        card.setAttribute('aria-pressed','false');
         var hasCoverage = _itemsForDate(dateStr).length > 0;
         if (hasCoverage){
           var dot = document.createElement('div');
@@ -11307,12 +11335,12 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         <div class="mx5-dlg-sep"></div>
         <div class="mx5-dlg-eyebrow"><span class="l-en">Release Radar</span><span class="l-zh">数据发布雷达</span></div>
         <div style="margin:-4px 0 14px;font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));line-height:1.5">
-          <span class="l-en">What our model expects for the print you pick above. Tap a card for the full read.</span>
-          <span class="l-zh">上方选中日期，模型对该日数据的预测如下。点击卡片查看完整解读。</span>
+          <span class="l-en">Select a date above to see all modeled releases for that day. Tap a projection card for the full read.</span>
+          <span class="l-zh">选择上方日期，查看当天所有已建模数据；点击预测卡片查看完整解读。</span>
         </div>
-        <div id="rr-inline">
+        <div id="rr-inline" role="region" aria-labelledby="rr-inline-date">
           <div class="rr-inline-head">
-            <span class="rr-inline-date" id="rr-inline-date"></span>
+            <span class="rr-inline-date" id="rr-inline-date" aria-live="polite" aria-atomic="true"></span>
             <span class="rr-inline-sub" id="rr-inline-sub">
               <span class="l-en">our projection vs benchmarks</span>
               <span class="l-zh">本方预测 vs 基准</span>
@@ -12090,7 +12118,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         <div class="mx5-dlg-sep"></div>
         <div class="mx5-dlg-eyebrow">
           {{ t('Overseas','海外') }}
-          {{ help('Context only — does not move the US score. Tiles link to the full International page. Ring = each market\'s pullback-risk score (0-100), coloured by band.','仅供背景参考——不影响美国评分。点击卡片可进入完整国际页面。环形为各市场回撤风险评分（0-100），按等级着色。') }}
+          {{ help('Context only — does not move the US score. Tiles link to the full International page. Ring = each market\'s pullback-risk score (0-100), coloured by band — the odds a fresh drop is brewing, not a grade of today\'s trend. The hover card carries the trend read, which can point the other way: a market already deep in a selloff can sit beside a mid ring.','仅供背景参考——不影响美国评分。点击卡片可进入完整国际页面。环形为各市场回撤风险评分（0-100），按等级着色——衡量的是新一轮下跌酝酿的可能，而非当前趋势的评级。悬停卡片显示趋势解读，两者方向可能相反：已深度下跌的市场也可能配上中等的环形。') }}
           {# as-of merged into the single dialog footer (one stamp per dialog) #}
         </div>
         {# ── plain-word maps reused from intl.html turn cards ── #}
@@ -12157,7 +12185,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
                     <span class="l-zh">{{ row.name_zh if (row.name_zh is defined and row.name_zh) else (row.name_en if row.name_en is defined else '') }}</span>
                   </span>
                   {% if row.score is defined and row.score is not none %}
-                  <span class="row-pop-kind">{{ t('Risk score','风险评分') }} {{ row.score|round|int }}/100</span>
+                  <span class="row-pop-kind">{{ t('Pullback risk','回撤风险') }} {{ row.score|round|int }}/100</span>
                   {% endif %}
                 </div>
                 <div class="row-pop-div"></div>
@@ -15744,10 +15772,15 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               <span class="nb-ev nb-ev-conf" data-tip-en="Confluence+: {{ _cp.get('k') }} independent evidence groups converging ({{ (_cp.get('groups') or [])|join(' · ') }}). Each group contributes at most 1 vote — same-signal pairs never double-count. Context display; forward IC accruing; no return claim." data-tip-zh="多元共振：{{ _cp.get('k') }} 个独立证据组同时共振（{{ (_cp.get('groups') or [])|join(' · ') }}）。每组最多贡献1票——同源信号不重复计算。情境展示，前瞻IC累积中，不作收益承诺。"><span class="l-en">conf+ {{ _cp.get('k') }}</span><span class="l-zh">多元共振 {{ _cp.get('k') }}</span></span>
             {% endif %}
           </div>
-          {# W3 stop-budget guidance line: anticipation drawdown-validated stop width (display-only). #}
+          {# W3 stop-budget guidance line: anticipation drawdown-MEASURED stop width (display-only).
+             MEASURED, not the stronger word this used to carry: anticipation_gate.json scores the
+             GO legs' DIRECTION out of sample, never a stop width, and this number is dd_avg — a
+             descriptive average close-path adverse excursion. The unscored branch falls back to any
+             horizon carrying dd_avg (build_stock_library.py "if not _scored_h"), so the old wording
+             asserted a study for the very horizon the same parenthesis called unscored. #}
           {% if n.stop_guidance %}{% set _sg = n.stop_guidance %}
           <div class="nb-stop">
-            <span class="{{ '' if _sg.get('scored') else 'stop-unscored' }}" data-tip-en="Anticipation stop-width (drawdown-validated{{ ' — GO legs only' if _sg.get('scored') else '; unscored horizon' }}): avg close-path adverse excursion {{ _sg.get('pct','?') }}%{% if _sg.get('tail_pct') %} · tail {{ _sg.get('tail_pct') }}%{% endif %} over the {{ _sg.get('horizon','?') }}-day horizon. DISPLAY-ONLY context — not a hard stop, not a sizing input." data-tip-zh="预期止损宽度（回撤验证{{ '，仅限GO腿' if _sg.get('scored') else '；未评分区间' }}）：平均收盘路径不利偏移 {{ _sg.get('pct','?') }}%{% if _sg.get('tail_pct') %} · 尾部 {{ _sg.get('tail_pct') }}%{% endif %}。仅供展示，非硬止损，不作为仓位依据。"><span class="l-en">Avg stop: −{{ _sg.get('pct','?') }}%{% if _sg.get('tail_pct') %} · tail −{{ _sg.get('tail_pct') }}%{% endif %}</span><span class="l-zh">均值止损：−{{ _sg.get('pct','?') }}%{% if _sg.get('tail_pct') %} · 尾部 −{{ _sg.get('tail_pct') }}%{% endif %}</span></span>
+            <span class="{{ '' if _sg.get('scored') else 'stop-unscored' }}" data-tip-en="Anticipation stop-width (drawdown-measured{{ ' — GO legs only' if _sg.get('scored') else '; unscored horizon' }}): avg close-path adverse excursion {{ _sg.get('pct','?') }}%{% if _sg.get('tail_pct') %} · tail {{ _sg.get('tail_pct') }}%{% endif %} over the {{ _sg.get('horizon','?') }}-day horizon. DISPLAY-ONLY context — not a hard stop, not a sizing input." data-tip-zh="预期止损宽度（回撤实测{{ '，仅限GO腿' if _sg.get('scored') else '；未评分区间' }}）：平均收盘路径不利偏移 {{ _sg.get('pct','?') }}%{% if _sg.get('tail_pct') %} · 尾部 {{ _sg.get('tail_pct') }}%{% endif %}。仅供展示，非硬止损，不作为仓位依据。"><span class="l-en">Avg stop: −{{ _sg.get('pct','?') }}%{% if _sg.get('tail_pct') %} · tail −{{ _sg.get('tail_pct') }}%{% endif %}</span><span class="l-zh">均值止损：−{{ _sg.get('pct','?') }}%{% if _sg.get('tail_pct') %} · 尾部 −{{ _sg.get('tail_pct') }}%{% endif %}</span></span>
           </div>
           {% endif %}
           {% endif %}

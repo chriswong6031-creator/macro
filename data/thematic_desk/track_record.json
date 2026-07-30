@@ -1,30 +1,30 @@
 {
   "schema": "thematic_desk.v1",
-  "as_of": "2026-07-29",
-  "scored_total": 42,
-  "open": 98,
-  "unscored_soft": 19,
+  "as_of": "2026-07-30",
+  "scored_total": 44,
+  "open": 102,
+  "unscored_soft": 21,
   "overall": {
-    "n": 42,
+    "n": 44,
     "hits": 26,
-    "misses": 16,
-    "hit_rate": 0.619,
-    "dir_accuracy": 0.429
+    "misses": 18,
+    "hit_rate": 0.591,
+    "dir_accuracy": 0.409
   },
   "by_market": {
     "us": {
-      "n": 10,
+      "n": 11,
       "hits": 4,
-      "misses": 6,
-      "hit_rate": 0.4,
-      "dir_accuracy": 0.2
+      "misses": 7,
+      "hit_rate": 0.364,
+      "dir_accuracy": 0.182
     },
     "china": {
-      "n": 15,
+      "n": 16,
       "hits": 7,
-      "misses": 8,
-      "hit_rate": 0.467,
-      "dir_accuracy": 0.4
+      "misses": 9,
+      "hit_rate": 0.438,
+      "dir_accuracy": 0.375
     },
     "hk": {
       "n": 1,
@@ -43,11 +43,11 @@
   },
   "by_conviction": {
     "low": {
-      "n": 42,
+      "n": 44,
       "hits": 26,
-      "misses": 16,
-      "hit_rate": 0.619,
-      "dir_accuracy": 0.429
+      "misses": 18,
+      "hit_rate": 0.591,
+      "dir_accuracy": 0.409
     },
     "medium": {
       "n": 0,
@@ -64,8 +64,28 @@
       "dir_accuracy": null
     }
   },
-  "calibration_note": "42 scored, hit-rate 0.619 (directional accuracy 0.429).",
+  "calibration_note": "44 scored, hit-rate 0.591 (directional accuracy 0.409).",
   "recent": [
+    {
+      "id": "us-2026-07-01-1",
+      "market": "us",
+      "subject": "Memory, HBM & Storage",
+      "lean": "overweight",
+      "conviction": "low",
+      "outcome": "miss",
+      "realized": -0.1655,
+      "check_by": "2026-07-29"
+    },
+    {
+      "id": "china-2026-07-15-1",
+      "market": "china",
+      "subject": "AI Compute & Optics",
+      "lean": "overweight",
+      "conviction": "low",
+      "outcome": "miss",
+      "realized": -0.1208,
+      "check_by": "2026-07-29"
+    },
     {
       "id": "china-2026-06-30-1",
       "market": "china",
@@ -164,26 +184,6 @@
       "conviction": "low",
       "outcome": "hit",
       "realized": -0.0065,
-      "check_by": "2026-07-27"
-    },
-    {
-      "id": "canada-2026-06-29-2",
-      "market": "canada",
-      "subject": "Base Metals & Copper",
-      "lean": "overweight",
-      "conviction": "low",
-      "outcome": "miss",
-      "realized": -0.0501,
-      "check_by": "2026-07-27"
-    },
-    {
-      "id": "canada-2026-06-29-3",
-      "market": "canada",
-      "subject": "Gold Miners",
-      "lean": "underweight",
-      "conviction": "low",
-      "outcome": "hit",
-      "realized": -0.0385,
       "check_by": "2026-07-27"
     }
   ]

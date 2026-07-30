@@ -1,8 +1,8 @@
 /* hub-welcome.js — the signed-in hub's opening moment.
  *
  * A name greeting, then a short spoken-aloud read of TODAY's markets in the voice of a
- * brilliant, casual friend who happens to run a hedge fund — a few remarks with pauses,
- * then a slow dissolve back into the MASTERMIND brand.
+ * calm senior strategist: observant, direct, and never theatrical. A few remarks land
+ * with natural pauses, then the intelligence surface dissolves into the MASTERMIND brand.
  *
  * No LLM. Every remark is assembled from the engine data already on the page
  * (#globe-data: per-region regime quadrant, index direction, risk read, breadth — plus
@@ -31,7 +31,6 @@
   var greet = hdr.querySelector('.hub-greet'); if (!greet) return;
   var tx = greet.querySelector('.greet-tx'); if (!tx) return;
 
-  var zh = document.documentElement.getAttribute('data-lang') === 'zh';
   function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
   function reduced() { try { return window.matchMedia && matchMedia('(prefers-reduced-motion:reduce)').matches; } catch (e) { return false; } }
 
@@ -139,51 +138,51 @@
     return null;
   }
   var HOL = {
-    newyear:      [[1, 1], "Happy New Year — new year, clean slate. Markets are closed today.", '元旦快乐！新的一年，新的开始。今天休市。'],
-    christmas:    [[12, 25], "Merry Christmas — the market's closed, and so am I. Enjoy the day.", '圣诞快乐！市场休市，好好过节。'],
-    boxing:       [[12, 26], 'Happy Boxing Day — still closed, still quiet. Enjoy it.', '节礼日快乐，市场继续休市，继续清净。'],
-    goodfri:      [{ e: -2 }, "It's Good Friday — markets are closed for the long weekend.", '耶稣受难日，市场休市——是个长周末。'],
-    eastermon:    [{ e: 1 }, "Easter Monday — the market's still closed. Enjoy the long weekend.", '复活节星期一，还在休市。好好过长周末。'],
-    may1:         [[5, 1], 'Happy May Day — even the market takes today off.', '五一快乐！劳动节这天，连市场都不劳动。'],
-    cnyeve:       [{ t: { 2026: '2-16', 2027: '2-5', 2028: '1-25' } }, "It's Lunar New Year's Eve — go enjoy the reunion dinner. The market can wait till next year.", '除夕快乐！今晚好好吃年夜饭，行情的事，明年再说。'],
-    cny:          [{ t: { 2026: '2-17', 2027: '2-6', 2028: '1-26' } }, 'Happy Lunar New Year — markets are closed, red envelopes are open.', '新年快乐，恭喜发财！市场休市，红包开市。'],
-    qingming:     [{ t: { 2026: '4-5', 2027: '4-5', 2028: '4-4' } }, "It's the Qingming break — markets are closed today. If the weather's kind, take a walk.", '清明假期，市场休市。天气好的话，出去走走。'],
-    duanwu:       [{ t: { 2026: '6-19', 2027: '6-9', 2028: '5-28' } }, 'Happy Dragon Boat Festival — markets are closed today. Go find a zongzi.', '端午安康！市场休市，记得吃粽子。'],
-    zhongqiu:     [{ t: { 2026: '9-25', 2027: '9-15', 2028: '10-3' } }, "Happy Mid-Autumn Festival — markets closed, moon's full. Head home early.", '中秋快乐，人月两团圆。今天休市，早点回家。'],
-    guoqing:      [[10, 1], 'Happy National Day — the long holiday is on, markets are closed.', '国庆快乐！长假开始，市场休市，好好休息。'],
-    mlk:          [{ w: [1, 1, 3] }, "It's MLK Day — US markets are closed. See you tomorrow.", '马丁·路德·金纪念日，美股休市一天。'],
-    presidents:   [{ w: [2, 1, 3] }, "It's Presidents' Day — US markets are closed.", '总统日，美股休市。'],
-    memorial:     [{ w: [5, 1, -1] }, "It's Memorial Day — markets are closed for the long weekend.", '阵亡将士纪念日，美股休市，长周末。'],
-    juneteenth:   [[6, 19], "It's Juneteenth — US markets are closed today.", '六月节，美股休市一天。'],
-    july4:        [[7, 4], 'Happy Fourth of July — markets are closed. Go find the fireworks.', '美国独立日快乐！美股休市，看烟花去。'],
-    labor:        [{ w: [9, 1, 1] }, "Happy Labor Day — the market's taking the day off too.", '劳动节快乐！市场今天也带薪休假。'],
-    thanksgiving: [{ w: [11, 4, 4] }, 'Happy Thanksgiving — markets are closed. Family first today.', '感恩节快乐！美股休市，今天家人优先。'],
-    familyday:    [{ w: [2, 1, 3] }, "It's Family Day — Canadian markets are closed. The clue is in the name.", '加拿大家庭日，多伦多休市。节日名字已经把今天安排明白了。'],
-    victoria:     [{ t: { 2026: '5-18', 2027: '5-24', 2028: '5-22' } }, "It's Victoria Day — Canadian markets are closed for the long weekend.", '维多利亚日，加拿大休市，长周末。'],
-    canadaday:    [[7, 1], 'Happy Canada Day — markets are closed. Enjoy it.', '加拿大国庆快乐！市场休市。'],
-    civic:        [{ w: [8, 1, 1] }, "It's the civic holiday — Toronto's closed. A long weekend in August: take it.", '八月公民假日，多伦多休市。夏天的长周末，值得好好过。'],
-    labourca:     [{ w: [9, 1, 1] }, "Happy Labour Day — the market's taking the day off too.", '劳动节快乐！市场今天也放假。'],
-    thanksca:     [{ w: [10, 1, 2] }, 'Happy Thanksgiving — Canadian markets are closed today.', '加拿大感恩节快乐！市场休市。'],
-    mayday:       [{ w: [5, 1, 1] }, "It's the early May bank holiday — London's closed. Enjoy the long weekend.", '五月初的银行假日，伦敦休市。长周末愉快。'],
-    springbank:   [{ w: [5, 1, -1] }, "It's the spring bank holiday — London's closed today.", '春季银行假日，伦敦今天休市。'],
-    summerbank:   [{ w: [8, 1, -1] }, "It's the summer bank holiday — London's closed. Squeeze the last out of summer.", '夏末银行假日，伦敦休市。抓住夏天的尾巴。'],
-    australiaday: [[1, 26], "Happy Australia Day — the ASX is closed. It's summer there; go enjoy it.", '澳大利亚国庆日快乐！澳股休市。'],
-    anzac:        [[4, 25], "It's Anzac Day — markets are closed in Australia.", '澳新军团日，澳洲市场休市。'],
-    waitangi:     [[2, 6], "It's Waitangi Day — markets are closed in New Zealand.", '怀唐伊日，新西兰休市。'],
-    stpatrick:    [[3, 17], "Happy St Patrick's Day — Dublin's closed. The one day green is mandatory.", '圣帕特里克节快乐！都柏林休市。'],
-    hksar:        [[7, 1], "It's HKSAR Establishment Day — Hong Kong markets are closed.", '香港回归纪念日，港股休市。'],
-    t228:         [[2, 28], 'Peace Memorial Day — Taiwan markets are closed today.', '和平纪念日，台股休市一天。'],
-    childtomb:    [[4, 4], "It's the Children's Day / Tomb-Sweeping break — Taiwan markets are closed.", '儿童节、清明连假，台股休市。'],
-    double10:     [[10, 10], 'Happy Double Tenth — Taiwan markets are closed today.', '双十节快乐！台股休市。'],
-    goldenweek:   [[5, 3], "It's Golden Week in Japan — Tokyo's closed. Enjoy the break.", '日本黄金周，东京休市。好好休息。'],
-    liberation:   [[8, 15], "It's Liberation Day in Korea — the KOSPI's closed today.", '韩国光复节，首尔休市。'],
-    sgnational:   [[8, 9], 'Happy National Day, Singapore — markets are closed today.', '新加坡国庆快乐！市场休市。'],
-    republic:     [[1, 26], 'Happy Republic Day — Indian markets are closed today.', '印度共和国日快乐！市场休市。'],
-    indep:        [[8, 15], 'Happy Independence Day — Indian markets are closed today.', '印度独立日快乐！市场休市。'],
-    gandhi:       [[10, 2], "It's Gandhi Jayanti — Indian markets are closed today.", '甘地诞辰纪念日，印度市场休市。'],
-    diwali:       [{ t: { 2026: '11-8', 2027: '10-29' } }, 'Happy Diwali — may the year ahead glow.', '排灯节快乐！愿新的一年亮亮堂堂。'],
-    unity:        [[10, 3], "It's German Unity Day — Frankfurt's closed today.", '德国统一日，法兰克福休市。'],
-    bastille:     [[7, 14], 'Happy Bastille Day — Paris is closed today.', '法国国庆日快乐！巴黎休市。']
+    newyear:      [[1, 1], "New Year's Day. Markets are closed; start the year with a clear head.", '元旦休市。新的一年，先把节奏稳下来。'],
+    christmas:    [[12, 25], "Merry Christmas. Markets are closed; leave them closed for the day.", '圣诞快乐。今天休市，好好过节。'],
+    boxing:       [[12, 26], 'Boxing Day. Markets remain closed, and there is nothing you need to do.', '今天是节礼日，市场继续休市。'],
+    goodfri:      [{ e: -2 }, 'Good Friday. Markets are closed for the long weekend.', '耶稣受难日，市场休市，长周末开始了。'],
+    eastermon:    [{ e: 1 }, 'Easter Monday. Markets are still closed.', '复活节星期一，市场继续休市。'],
+    may1:         [[5, 1], 'May Day. Markets are closed; take the day properly.', '五一假期，市场休市。先放下盘面，好好休息。'],
+    cnyeve:       [{ t: { 2026: '2-16', 2027: '2-5', 2028: '1-25' } }, "Lunar New Year's Eve. The market can wait; dinner cannot.", '除夕了。今晚先吃好团圆饭，行情留到年后。'],
+    cny:          [{ t: { 2026: '2-17', 2027: '2-6', 2028: '1-26' } }, 'Happy Lunar New Year. Markets are closed; a new trading year can begin later.', '新年好，祝新的一年顺顺利利。今天休市，先好好过年。'],
+    qingming:     [{ t: { 2026: '4-5', 2027: '4-5', 2028: '4-4' } }, 'The market is closed for Qingming today.', '清明假期，市场休市。'],
+    duanwu:       [{ t: { 2026: '6-19', 2027: '6-9', 2028: '5-28' } }, 'Dragon Boat Festival. Markets are closed today.', '端午安康。今天休市，记得吃粽子。'],
+    zhongqiu:     [{ t: { 2026: '9-25', 2027: '9-15', 2028: '10-3' } }, 'Mid-Autumn Festival. Markets are closed; make time for family.', '中秋快乐。今天休市，陪家人吃顿饭。'],
+    guoqing:      [[10, 1], 'National Day. Markets are closed for the holiday.', '国庆假期开始了，市场休市。好好放松。'],
+    mlk:          [{ w: [1, 1, 3] }, 'MLK Day. US markets are closed.', '今天是马丁·路德·金纪念日，美股休市。'],
+    presidents:   [{ w: [2, 1, 3] }, "Presidents' Day. US markets are closed.", '今天是总统日，美股休市。'],
+    memorial:     [{ w: [5, 1, -1] }, 'Memorial Day. US markets are closed for the long weekend.', '今天是阵亡将士纪念日，美股休市。'],
+    juneteenth:   [[6, 19], 'Juneteenth. US markets are closed today.', '今天是六月节，美股休市。'],
+    july4:        [[7, 4], 'Independence Day. US markets are closed.', '今天是美国独立日，美股休市。'],
+    labor:        [{ w: [9, 1, 1] }, 'Labor Day. US markets are closed.', '今天是美国劳动节，美股休市。'],
+    thanksgiving: [{ w: [11, 4, 4] }, 'Thanksgiving. US markets are closed; family gets the day.', '感恩节快乐。美股休市，今天多陪陪家人。'],
+    familyday:    [{ w: [2, 1, 3] }, 'Family Day. Canadian markets are closed.', '今天是加拿大家庭日，多伦多市场休市。'],
+    victoria:     [{ t: { 2026: '5-18', 2027: '5-24', 2028: '5-22' } }, 'Victoria Day. Canadian markets are closed for the long weekend.', '今天是维多利亚日，加拿大市场休市。'],
+    canadaday:    [[7, 1], 'Canada Day. Markets are closed.', '今天是加拿大国庆日，市场休市。'],
+    civic:        [{ w: [8, 1, 1] }, "Toronto is closed for the civic holiday.", '今天是公民假日，多伦多市场休市。'],
+    labourca:     [{ w: [9, 1, 1] }, 'Labour Day. Canadian markets are closed.', '今天是加拿大劳动节，市场休市。'],
+    thanksca:     [{ w: [10, 1, 2] }, 'Canadian Thanksgiving. Markets are closed today.', '今天是加拿大感恩节，市场休市。'],
+    mayday:       [{ w: [5, 1, 1] }, 'The early May bank holiday. London is closed.', '五月初银行假日，伦敦市场休市。'],
+    springbank:   [{ w: [5, 1, -1] }, 'The spring bank holiday. London is closed today.', '春季银行假日，伦敦市场休市。'],
+    summerbank:   [{ w: [8, 1, -1] }, 'The summer bank holiday. London is closed.', '夏季银行假日，伦敦市场休市。'],
+    australiaday: [[1, 26], 'Australia Day. The ASX is closed.', '今天是澳大利亚国庆日，澳股休市。'],
+    anzac:        [[4, 25], 'Anzac Day. Australian markets are closed.', '今天是澳新军团日，澳洲市场休市。'],
+    waitangi:     [[2, 6], 'Waitangi Day. New Zealand markets are closed.', '今天是怀唐伊日，新西兰市场休市。'],
+    stpatrick:    [[3, 17], "St Patrick's Day. Dublin is closed.", '今天是圣帕特里克节，都柏林市场休市。'],
+    hksar:        [[7, 1], 'HKSAR Establishment Day. Hong Kong markets are closed.', '今天是香港回归纪念日，港股休市。'],
+    t228:         [[2, 28], 'Peace Memorial Day. Taiwan markets are closed.', '今天是和平纪念日，台股休市。'],
+    childtomb:    [[4, 4], "The Children's Day and Qingming break. Taiwan markets are closed.", '儿童节、清明连假，台股休市。'],
+    double10:     [[10, 10], 'Double Tenth Day. Taiwan markets are closed.', '今天是双十节，台股休市。'],
+    goldenweek:   [[5, 3], 'Golden Week. Tokyo is closed.', '日本黄金周，东京市场休市。'],
+    liberation:   [[8, 15], 'Liberation Day. The KOSPI is closed.', '今天是韩国光复节，韩国股市休市。'],
+    sgnational:   [[8, 9], 'Singapore National Day. Markets are closed.', '今天是新加坡国庆日，市场休市。'],
+    republic:     [[1, 26], 'Republic Day. Indian markets are closed.', '今天是印度共和国日，市场休市。'],
+    indep:        [[8, 15], 'Independence Day. Indian markets are closed.', '今天是印度独立日，市场休市。'],
+    gandhi:       [[10, 2], 'Gandhi Jayanti. Indian markets are closed.', '今天是甘地诞辰纪念日，印度市场休市。'],
+    diwali:       [{ t: { 2026: '11-8', 2027: '10-29' } }, 'Happy Diwali. May the year ahead be a steady one.', '排灯节快乐，祝新的一年平安顺遂。'],
+    unity:        [[10, 3], 'German Unity Day. Frankfurt is closed.', '今天是德国统一日，法兰克福市场休市。'],
+    bastille:     [[7, 14], 'Bastille Day. Paris is closed.', '今天是法国国庆日，巴黎市场休市。']
   };
   var HOLCC = {
     US: ['newyear', 'mlk', 'presidents', 'goodfri', 'memorial', 'juneteenth', 'july4', 'labor', 'thanksgiving', 'christmas'],
@@ -334,221 +333,221 @@
   var quad = (C && C.home && C.home.quad) || '';
 
   var OPEN = [
-    ['Give me ten seconds before you dive in.', '先别急，给我十秒钟。'],
-    ['Quick read while you settle in.', '趁你坐下的工夫，我先说两句。'],
-    ["Alright — here's the lay of the land.", '来，先把今天的大盘说清楚。'],
-    ["Let me do this morning's homework for you.", '今天的功课，我先帮你做了。'],
-    ['Two things before you get to work.', '开工之前，先说两件事。'],
-    ["Before you touch anything — here's the temperature.", '下手之前——先感受一下今天的温度。']
+    ["I've done the first pass. Here's what matters.", '盘面我先过了一遍。先看最重要的。'],
+    ['Before you start, one clean read on the day.', '开工前，先把今天的主线说清楚。'],
+    ['I checked the tape. Start here.', '行情我看过了。先从这里开始。'],
+    ['Let me save you a few minutes.', '我先替你筛一遍，省点时间。'],
+    ["The broad picture is clear. Here's the useful part.", '大方向很清楚。下面这点最值得看。'],
+    ['Start with the signal, not the noise.', '先看信号，别被杂音带走。']
   ];
   // Recall lines fire only on a GENUINE return (a real gap of time). Kept clear, not
   // cryptic — they say what the count means ("look today", "check-ins today").
   var VISIT2 = [
-    ['Good to have you back at the desk today.', '今天又回来盯盘了，挺好。'],
-    ["Back for a second look — let's see what moved.", '回来看第二眼——瞧瞧有什么动了。'],
-    ['Second visit today. Something on your mind?', '今天第二趟了。心里惦记着什么？'],
-    ["You're back. I'll keep this one short.", '你回来啦。这回我长话短说。']
+    ["You're back. I'll skip the recap.", '又回来了。前情不重复，直接看现在。'],
+    ['Second check today. Straight to the current read.', '今天第二次看盘。直接说当前结论。'],
+    ['Another look. I’ll keep it brief.', '再看一眼。这次只说重点。'],
+    ['Back at the desk. No need to start from zero.', '又回到台前了。我们不用从头说起。']
   ];
   var VISIT3 = [
-    ["That's your {V}th look today — you're locked in.", '今天第 {V} 次来了——够专注的。'],
-    ['Back again — {V} check-ins today. Markets keeping you busy?', '又来了——今天第 {V} 趟。行情让你闲不住？'],
-    ["{V} visits today. You know the drill — I'll be quick.", '今天第 {V} 次了。老规矩——我快点说。'],
-    ['You keep coming back. Fine by me — let’s talk.', '一趟又一趟地来。行啊，我乐意陪聊。'],
-    ["{V} looks today. When you watch this closely, so do I.", '今天第 {V} 眼了。你盯得这么紧，我也不敢松。']
+    ["{V} checks today. I'll keep this to what still matters.", '今天已经看了 {V} 次。我只说还值得注意的。'],
+    ['Another check. No preamble.', '又来看了。省掉开场，直接说结论。'],
+    ["You know the picture. Here's where it stands now.", '大方向你已经知道了。现在是这个位置。'],
+    ['Back again. One useful line, then the board.', '又回来了。先说一句有用的，再看面板。'],
+    ["{V} looks today. I'll be precise.", '今天第 {V} 次看盘。只说重点。']
   ];
-  // A page REFRESH (same session) — witty, honest, brief. NOT a "you're back".
+  // A page REFRESH (same session) — honest and brief. NOT a "you're back".
   var RELOAD = [
-    ['Same desk, same read — you were just here.', '还是这张台子，还是那个结论——你刚来过。'],
-    ["Back that fast? Nothing's moved much since you looked.", '这么快又刷？你刚看过，没什么大变化。'],
-    ["I'll save us both the time — the read hasn't changed.", '省点时间——结论没变。'],
-    ['Still here, still watching. Nothing new to add yet.', '我还在，还盯着。暂时没有新东西。'],
-    ['Refreshing won’t move the market — but hi again.', '刷新是刷不出行情的——不过，又见面啦。'],
-    ['You just looked. Give it a minute to do something.', '你刚看过。给市场一分钟，让它自己动动。']
+    ['No material change in the last few minutes.', '这几分钟没有实质变化。'],
+    ['Same read. I’ll spare you the replay.', '结论没变，就不重复了。'],
+    ['Nothing new enough to change the decision.', '暂时没有新变化需要调整判断。'],
+    ['The picture is unchanged. The board is ready below.', '盘面没有变化。下面可以直接看。'],
+    ['You have the latest read already.', '你刚看到的就是最新结论。'],
+    ['No update yet. Better to wait than invent one.', '还没有新情况。没变化，就不硬说。']
   ];
   var TAPE = { up: [
-      ['Buyers are in charge today. Nothing wild — a steady green day.', '今天买方说了算。不疯不闹，稳稳的红盘。'],
-      ["It's the kind of up day you don't have to fight. Enjoy those.", '今天是不用硬扛的上涨日。且涨且珍惜。'],
-      ["Some lift out there today — the easy kind. I'll take it.", '今天盘面有点起色——是轻松的那种。我照单全收。'],
-      ['Buyers showed up. Quiet, steady gains.', '买盘来了。安安静静，稳稳地涨。'],
-      ["Green on my screens, and it's holding. I like when it holds.", '我这边满屏飘红，而且守得住。守得住的红，才是好红。'],
-      ["Up day, and nothing forced about it. That's the good kind.", '涨得一点不勉强。这种涨法，最健康。']
+      ['Buyers have control, and the move is orderly. No need to chase it.', '买盘占优，涨势也算稳。可以跟强，但没必要追。'],
+      ['The tape is firm and holding. Let strength come to you.', '盘面偏强，承接还在。按计划做，不用加戏。'],
+      ['Gains are broad enough to trust, not strong enough to get careless.', '上涨有一定广度，可以参与，但别放松纪律。'],
+      ['Good setups are working. Chasing is not.', '走得好的机会可以跟，别急着追。'],
+      ['The bid is steady. Keep participating where price confirms the idea.', '买盘稳定。价格确认的方向，可以继续做。'],
+      ['A constructive session so far. Stay selective.', '到目前为止盘面偏强，但还是要挑着做。']
     ], down: [
-      ["Heavy day out there. Nothing's broken — it's just heavy.", '今天盘子有点沉。没出大事，就是沉。'],
-      ["Red across the screens. The kind of day you sit on your hands.", '今天绿油油一片。这种日子，手别痒，坐住。'],
-      ['Down day, and buyers are scarce. Not the day to chase anything.', '下跌日，买盘稀稀拉拉。今天什么都别追。'],
-      ['Sellers are writing the story today. Let them tire out.', '今天是卖方在讲故事。等他们讲累了再说。'],
-      ["It's drifting lower — not a crash, a slow leak. Patience.", '阴跌磨人——不是崩，是慢慢渗。耐心点。'],
-      ['A red day like this rewards patience, not bravado.', '这种下跌日，奖励耐心，不奖励逞强。']
+      ["Sellers have control. Nothing is broken, but there is no reason to force an entry.", '卖压占优。还没到失控，但也没必要硬做。'],
+      ['The tape is heavy and bids are thin. Let the market prove itself first.', '盘面偏弱，承接也薄。先让市场自己站稳。'],
+      ['Weak session. Reduce the number of decisions, not the quality of them.', '行情偏弱。少做几笔，但标准别降。'],
+      ['Price is drifting lower without much resistance. Patience is useful here.', '价格缓慢走低，承接不强。这里耐心更值钱。'],
+      ['Buyers are not defending much yet. Wait for evidence.', '买方暂时没怎么防守。先等证据。'],
+      ['The market is asking for less risk, not a better story.', '市场要你收风险，不是要你找个更好听的理由。']
     ], flat: [
-      ["Quiet out there. Everyone's waiting on something.", '盘面很静。大家都在等一个说法。'],
-      ['Flat and boring — which is honestly fine by me.', '又平又闷——说实话，我不嫌弃。'],
-      ['Not much moving today. Coiled, not dead.', '今天没什么动静。是在蓄力，不是躺平。'],
-      ["Sideways and patient — the market's holding its breath.", '横盘，有耐心——市场在屏住呼吸。']
+      ['Little directional edge so far. Wait for the market to show its hand.', '方向还没走出来。等市场先表态。'],
+      ['The tape is balanced. Selectivity matters more than conviction.', '多空暂时平衡。选对标的，比押方向更重要。'],
+      ['Not much is moving with purpose yet. There is no penalty for waiting.', '暂时没有明确主线。等一等，不吃亏。'],
+      ['Sideways for now. There is no need to react to every move.', '目前还是横盘。别对每个小波动都做反应。']
     ] };
   /* Weekend / holiday tape: the market is CLOSED, so the last session is read as the
    * last session — never dressed up as a live print. {LASTD} = Friday / last session. */
   var WTAPE = { up: [
-      ['{LASTD} closed green, so we go into the break on a decent note.', '{LASTD}收红，这个收尾还算体面。'],
-      ["Last look before the close: green, and holding. Nothing to worry about while it's shut.", '休市前最后一眼：红盘，还站得稳。这几天不用惦记。'],
-      ["The board went out with buyers under it. It'll keep till the bell.", '收市前还有买盘托着。放心，开盘它还在。']
+      ['{LASTD} closed higher. The market entered the break on firm footing.', '{LASTD}收涨，休市前的状态还算稳。'],
+      ['The last session held its gains into the close.', '上个交易日涨幅守到了收盘。'],
+      ['Buyers were still present at the close. That is the last confirmed read.', '收盘前买盘仍在。这是最近一次确认过的盘面。']
     ], down: [
-      ['{LASTD} closed red — not pretty, but the break came at a good time.', '{LASTD}收绿，不太好看——不过正好趁休市喘口气。'],
-      ["The last session was heavy. Good news: nothing can fall while it's closed.", '上一场收得偏沉。好消息是：休市的时候，它跌不了。'],
-      ["Went out weak. Let it sit — that's a problem for the reopen, not for today.", '收得偏弱。先放着——那是开盘以后的事，不归今天管。']
+      ['{LASTD} closed lower. The weak finish matters when trading resumes, not before.', '{LASTD}收跌。这个弱势要等开市后再处理。'],
+      ['The last session was heavy and finished without much recovery.', '上个交易日偏弱，收盘前也没有明显修复。'],
+      ['The market entered the break defensively. Keep that context for the reopen.', '休市前盘面偏防守。下次开市时，先记住这一点。']
     ], flat: [
-      ['{LASTD} went out quiet — flat, no drama. A clean pause.', '{LASTD}收平，波澜不惊。停得干干净净。'],
-      ["Nothing moved much into the close. The board's asleep, as it should be.", '收市前没什么动静。盘面睡了，本来也该睡。']
+      ['{LASTD} finished flat. No directional signal carried into the break.', '{LASTD}基本收平，没有把明确方向带进休市。'],
+      ['The last session ended quietly. The next useful information comes at the reopen.', '上个交易日平静收盘。下一条有用信息，要等开市。']
     ] };
   // Regime beats are DIRECTION-first, never label-first: the same quad means opposite
   // things depending on whether we're firming into it or rolling out of it — and the
   // confirmed label LAGS the score, so a deteriorating "Goldilocks" is the trap. {REGIME}
   // = the HOME board's quad, {TOWARD} = where its trajectory is dragging it.
   var REGD = [   // DETERIORATING — the label still says {REGIME}, but the trend is down
-      ["We're still calling it {REGIME} — but it's rolling over. The label lags; the trend is dragging toward {TOWARD}.", '牌子上还写着「{REGIME}」——但势头在往下翻。标签是滞后的，趋势正把它拖向「{TOWARD}」。'],
-      ["Careful with the {REGIME} tag today — the score's slipping toward {TOWARD}. Same word, opposite trade from a month ago.", '「{REGIME}」这个标签先别全信——分数正往「{TOWARD}」滑。词还是那个词，做法得跟一个月前反着来。'],
-      ["{REGIME} on paper, but it's aging — momentum leans toward {TOWARD}. I'd turn defensive early, not late.", '纸面上是「{REGIME}」，但成色在变——动能偏向「{TOWARD}」。防守要趁早，别拖到晚。'],
-      ["The backdrop still reads {REGIME}, but it's cracking. Trust the direction of change, not the last print.", '大环境还写着「{REGIME}」，但已经有裂缝。信变化的方向，别信最后那个读数。']
+      ["The label still says {REGIME}, but the trend is weakening toward {TOWARD}. Reduce risk before the label catches up.", '标签还是「{REGIME}」，底层趋势却在转弱，正往「{TOWARD}」靠。别等标签改了才收风险。'],
+      ['{REGIME} is the last confirmed state, not the current direction. The direction is toward {TOWARD}.', '「{REGIME}」是最近一次确认的状态，不代表当前方向。现在正往「{TOWARD}」走。'],
+      ['The backdrop is still {REGIME}; the internals are not. The move toward {TOWARD} matters more.', '大环境仍标作「{REGIME}」，内部结构已经不是原来的样子。往「{TOWARD}」走，才是重点。'],
+      ['The regime has not changed yet. The trajectory has — toward {TOWARD}. Act on the change, not the old label.', '周期标签还没变，走势已经变了，方向是「{TOWARD}」。操作要跟着变化走。']
     ];
   var REGI = [   // IMPROVING — still {REGIME} on the print, but turning UP toward {TOWARD}
-      ["Still {REGIME} on the label, but it's turning up — climbing toward {TOWARD}. Early, but the direction's finally right.", '标签还是「{REGIME}」，但在往上走——朝着「{TOWARD}」爬。还早，但方向终于对了。'],
-      ["{REGIME} is the print; the trend is better — headed for {TOWARD}. Bad-to-better is the good kind of change.", '读数还是「{REGIME}」，趋势却在好转——奔着「{TOWARD}」去。由坏转好，是最值钱的那种变化。'],
-      ["Don't over-read the {REGIME} tag — it's thawing. Getting less bad is how bottoms start.", '别把「{REGIME}」看得太死——正在解冻。“没那么差了”，往往就是底部的开场白。']
+      ['The label still says {REGIME}, but the trend is improving toward {TOWARD}. It is early, but direction is now constructive.', '标签还是「{REGIME}」，趋势已经开始改善，正往「{TOWARD}」走。还早，但方向转对了。'],
+      ['{REGIME} remains the confirmed state. The improvement toward {TOWARD} is the part worth watching.', '当前确认状态仍是「{REGIME}」。更值得看的是，它正在往「{TOWARD}」改善。'],
+      ['The backdrop is still {REGIME}, but it is getting less hostile. Let the move toward {TOWARD} earn more trust over time.', '大环境仍是「{REGIME}」，但压力在减轻。往「{TOWARD}」走的趋势，还需要时间确认。']
     ];
   var REGSG = [  // STABLE + good quad — genuinely holding
-      ["Clean {REGIME}, and it's holding — growth without the heat. Enjoy it while it lasts.", '干干净净的「{REGIME}」，而且稳得住——有增长，不发烫。且涨且珍惜。'],
-      ["{REGIME}, steady — no cracks in the score yet. Rare. Don't waste it.", '「{REGIME}」，稳稳的——分数暂时没裂缝。难得，别浪费。'],
-      ["The backdrop's {REGIME}, and it isn't going anywhere fast. The regime is your friend here.", '大环境是「{REGIME}」，一时半会儿变不了。这时候，大势是你的朋友。']
+      ['{REGIME} is intact and stable. The backdrop supports risk, but entries still need to earn it.', '「{REGIME}」状态稳定，大环境支持承担风险，但每个买点仍要单独确认。'],
+      ['The {REGIME} backdrop is holding. Stay involved where price agrees.', '「{REGIME}」格局还稳。价格配合的方向，可以继续参与。'],
+      ['No deterioration in {REGIME} yet. Keep what works; do not manufacture trades.', '「{REGIME}」暂时没有转弱。跑得好的继续拿，不必硬找新机会。']
     ];
   var REGSB = [  // STABLE + bad quad — stuck, no thaw
-      ["Still stuck in {REGIME}, and it's not letting up. Nothing to force here.", '还困在「{REGIME}」里，没有松动的迹象。这里别硬来。'],
-      ["{REGIME}, and flat — no thaw in the score yet. Patience beats hope.", '「{REGIME}」，横着——还没解冻。耐心比指望管用。']
+      ['{REGIME} is stable, but it is not a supportive backdrop. Keep the burden of proof high.', '「{REGIME}」状态稳定，但并不友好。出手前，多要一点确认。'],
+      ['No improvement in {REGIME} yet. Patience remains the better position.', '「{REGIME}」暂时没有改善。继续等，比勉强出手好。']
     ];
   var RISK = { calm: [
-      ["The risk gauges are quiet. Stress is low — rare, clean water.", '风险仪表很安静。压力不大——难得的干净水域。'],
-      ["Nothing's flashing red on the risk side. I'll take it.", '风险那边没有红灯在闪。这我收下了。'],
-      ['Under the hood, stress is low. If it sells off, that’s mood, not machinery.', '底盘上压力其实不大。就算跌，也是情绪在跌，不是机器坏了。']
+      ['Systemic stress is low. That gives the tape room, not immunity.', '系统性压力不高，盘面有回旋余地，但不等于没有风险。'],
+      ['The risk layer is quiet. You can focus on selection instead of defense.', '风险层面较平静。今天可以把注意力放在选股，而不是防守。'],
+      ['No broad stress signal underneath the market right now.', '目前市场底层没有出现广泛压力信号。']
     ], hot: [
-      ["The risk gauges are lit up. I'd keep the size honest today.", '风险仪表亮起来了。今天仓位放老实点。'],
-      ['Stress is climbing under the surface. Move a little slower out there.', '水面下的压力在涨。动作放慢半拍。'],
-      ["Credit and stress gauges are tightening — that's the part I watch closest.", '信用和压力的仪表都在收紧——这是我盯得最紧的部分。']
+      ['Stress is rising beneath the index. Reduce size before you reduce standards.', '指数下面的压力在上升。先降仓位，别降标准。'],
+      ['The risk layer is tightening. Slow the pace and demand cleaner entries.', '风险环境正在收紧。放慢节奏，只做更清楚的机会。'],
+      ['Credit and stress measures are worsening together. That deserves more caution.', '信用和压力指标同时走弱，值得多一层防守。']
     ] };
   var REGION = [
-    ["China's running its own cycle again — out of step with everyone else. The gap itself is information.", '中国又在走自己的周期——和别人不同步。这个“不同步”，本身就是信息。'],
-    ["{STAG} is boxed into stagflation. I'd leave that one alone for now.", '{STAG}还闷在滞胀里。这个盘，我暂时绕着走。'],
-    ['{GOLD} is sitting in the sweet spot — quietly one of the cleaner boards.', '{GOLD}正待在最舒服的区间——不声不响，却是更干净的盘面之一。'],
-    ["The world isn't moving together today — some up, some down. Divergence everywhere.", '今天全球各走各的——有涨有跌，到处在分化。']
+    ['China remains out of sync with the rest of the board. Treat it as a separate trade, not global confirmation.', '中国市场仍在走独立节奏。单独判断，别拿它替全球行情背书。'],
+    ['{STAG} remains in a stagflationary backdrop. Price needs to offer more before the risk is attractive.', '{STAG}仍处在滞胀环境。价格要更有吸引力，风险才值得承担。'],
+    ['{GOLD} has one of the cleaner macro backdrops on the board. Let price confirm it.', '{GOLD}的宏观环境相对干净，但仍要等价格确认。'],
+    ['Global markets are not moving as one. Regional selection matters more than the headline.', '全球市场没有同涨同跌。今天看地区差异，比看总标题更重要。']
   ];
   var BREADTH = { down: [
-      ["Almost everything's lower — {DOWN} of {TOTAL} markets down. That's macro, not bad luck.", '几乎全线走低——{TOTAL} 个市场里 {DOWN} 个在跌。这是宏观的事，不是运气差。'],
-      ['{DOWN} of {TOTAL} markets lower. When it’s this broad, it’s the tide, not the boats.', '{TOTAL} 个市场里 {DOWN} 个在跌。跌得这么齐，是潮水的问题，不是哪条船的问题。']
+      ['{DOWN} of {TOTAL} tracked markets are lower. That is broad enough to treat as macro pressure.', '跟踪的 {TOTAL} 个市场中有 {DOWN} 个下跌，已经是比较广泛的宏观压力。'],
+      ['Weakness spans {DOWN} of {TOTAL} markets. This is bigger than one index.', '{TOTAL} 个市场里有 {DOWN} 个走弱，不只是某一个指数的问题。']
     ], up: [
-      ["Green nearly everywhere — {UP} of {TOTAL} markets up. Everyone's invited today.", '几乎全线飘红——{TOTAL} 个市场里 {UP} 个在涨。今天人人有份。'],
-      ['{UP} of {TOTAL} markets higher. Broad gains — the healthy kind of rally.', '{TOTAL} 个里 {UP} 个在涨。普涨——健康的那种涨法。']
+      ['{UP} of {TOTAL} tracked markets are higher. The move has useful breadth.', '跟踪的 {TOTAL} 个市场中有 {UP} 个上涨，涨势有一定广度。'],
+      ['Strength spans {UP} of {TOTAL} markets. Participation is healthier than the headline alone suggests.', '{TOTAL} 个市场里有 {UP} 个走强，参与度比单看指数更健康。']
     ], split: [
-      ["It's split out there — some up, some down. A stock-picker's day.", '今天分化——有涨有跌。适合挑着做的日子。'],
-      ['Half up, half down. Today rewards picking, not predicting.', '一半涨一半跌。今天拼的是选股，不是猜方向。']
+      ['The global board is split. This is a selection day, not a conviction day.', '全球盘面分化。今天更适合精选，而不是重仓押方向。'],
+      ['Markets are evenly divided. Let individual setups carry the decision.', '各市场涨跌参半。是否出手，交给具体机会决定。']
     ] };
   var MOVER = [
-    ["The big mover today is {MOVER} — {MOVERDIR} {MOVERPCT}%. That's where the story is.", '今天动静最大的是{MOVER}——{MOVERDIR}了 {MOVERPCT}%。故事在那边。'],
-    ['Keep half an eye on {MOVER} — {MOVERPCT}% is a real move, not noise.', '{MOVER}那边留半只眼——{MOVERPCT}% 是真动了，不是噪音。'],
-    ["Today's outlier: {MOVER}, {MOVERDIR} {MOVERPCT}%. Outliers are where I look first.", '今天的异动是{MOVER}，{MOVERDIR}了 {MOVERPCT}%。有异动的地方，我先看。']
+    ['{MOVER} is the outlier, {MOVERDIR} {MOVERPCT}%. Start there if you want to know what changed.', '{MOVER}是今天的异动，{MOVERDIR} {MOVERPCT}%。想看变化从哪来，先看这里。'],
+    ['{MOVER} moved {MOVERPCT}%. That is large enough to deserve a separate look.', '{MOVER}波动 {MOVERPCT}%，幅度已经值得单独看。'],
+    ["Today's largest move is in {MOVER}: {MOVERDIR} {MOVERPCT}%. Treat it as information, not an invitation.", '今天波动最大的是{MOVER}，{MOVERDIR} {MOVERPCT}%。先把它当信息，不要当成追单理由。']
   ];
   var META = [
-    ['The desk re-ran the whole world overnight. This is fresh as of {ASOF}.', '后台昨晚把全世界重算了一遍。这是 {ASOF} 的最新结果。'],
-    ["I walked every board this morning. You're getting the honest read, not the pretty one.", '今早每个盘面我都过了一遍。给你的是实话，不是漂亮话。'],
-    ['The engines cross-check each other before they talk to you. Less noise that way.', '各路引擎先互相对过账，才开口跟你说话。这样噪音少。'],
-    ["I don't guess — everything I just said is measured, as of {ASOF}.", '我不猜行情——我刚说的每一句都是算出来的，截至 {ASOF}。'],
-    ['Nine markets, one read. I did the reconciling so you don’t have to.', '九个市场，一个结论。对账的活我干了，你不用。']
+    ['The cross-asset pass is current through {ASOF}.', '跨资产数据已更新至 {ASOF}。'],
+    ['The read above uses data current through {ASOF}.', '上面的判断基于截至 {ASOF} 的最新数据。'],
+    ['The useful part is not one indicator; it is where independent signals agree.', '真正有用的，不是某一个指标，而是几条独立线索指向同一个方向。'],
+    ['Nine markets, one consistent frame. The detail is below if you want it.', '九个市场，用同一套框架看。需要细节，下面都有。'],
+    ['The first pass is complete. What remains is the decision, not more noise.', '第一轮筛选已经完成。接下来需要的是判断，不是更多杂音。']
   ];
   // The freshest "What changed" signal, quoted in the alert's own plain words.
   var ALERTP = [
-    ['Freshest thing on the wire: “{ALERT}.” The details are just below.', '盘面上最新的一条：「{ALERT}」。详情就在下面。'],
-    ['One thing changed recently — “{ALERT}.” Worth ten seconds of your time.', '最近有个变化——「{ALERT}」。值得花十秒看看。']
+    ['Most recent change: “{ALERT}.” I would open that before anything else.', '最新变化是：「{ALERT}」。如果只看一条，先看这个。'],
+    ['One fresh signal deserves attention: “{ALERT}.” The evidence is below.', '有一条新信号值得注意：「{ALERT}」。依据就在下面。']
   ];
   // Crypto never closes — on a weekend/holiday it's the only board still printing.
   var CRYPTO = { on: [
-      ["Stocks are shut, but Bitcoin never sleeps — and its risk board leans friendly right now. Watch it, don't chase it.", '股市关门了，可币圈从不打烊——比特币那边现在偏乐观。看看就好，别追。'],
-      ["The only market open right now is crypto. Bitcoin's gauges read risk-on — fun to watch from the couch.", '现在唯一还开着门的是币圈。比特币的仪表偏“愿意冒险”——躺在沙发上看看挺好。']
+      ['Equities are closed. Bitcoin is still trading, and its risk backdrop is constructive. Observe first; no need to chase.', '股市休市，比特币仍在交易，风险环境偏积极。先观察，不必追。'],
+      ['Crypto is the live market today. Bitcoin is constructive, but a quiet day does not need to become a trade.', '今天还在交易的是加密市场。比特币偏强，但没必要为了交易而交易。']
     ], off: [
-      ["Crypto's the only thing trading, and Bitcoin's board is defensive. Nothing out there needs you today.", '现在只有币圈在交易，而比特币那边偏防守。今天外面没什么需要你操心的。'],
-      ["Bitcoin never closes, but right now its risk board says be careful. Watching is free.", '比特币从不休市，但它的风险盘现在写着“小心”。看看不要钱。']
+      ['Crypto is the only live market, and Bitcoin remains defensive. There is no reason to force exposure.', '目前只有加密市场在交易，比特币仍偏防守。没必要勉强参与。'],
+      ['Bitcoin is trading, but its risk backdrop is cautious. Watching is enough for now.', '比特币还在交易，但风险环境偏谨慎。现在先看就够了。']
     ] };
   var NUDGE = { on: [
-      ['If you were waiting for a green light — this is about as close as it gets. Within reason.', '要是你一直在等绿灯——现在差不多就是了。别上头就行。'],
-      ['A day you can lean in a little. Sensible size, though.', '今天可以往前多站半步。仓位还是得讲道理。'],
-      ["Conditions this clean don't come often. Use them; don't abuse them.", '这么干净的窗口不常有。用它，别滥用它。'],
-      ['The setup’s clean. Press a little — just don’t get greedy.', '形态很干净。可以加点力——别贪就行。']
+      ['Conditions support taking risk, not abandoning discipline. Add only where the setup already works.', '环境支持承担风险，但不支持放松纪律。只给已经走对的机会加仓。'],
+      ['Today favors participation. Keep size deliberate and let winners earn more capital.', '今天适合参与。仓位有计划，走强的标的再多给一点。'],
+      ['The backdrop is clean enough to act. Keep the threshold for quality where it is.', '大环境够干净，可以行动。但机会的质量标准不能降。'],
+      ['Risk is being rewarded. Use that permission carefully.', '当前承担风险有回报。可以做，但别做过头。']
     ], good: [
-      ['Constructive out there. Lean in a touch — no heroics.', '外面偏暖。可以稍微前倾——别逞英雄。'],
-      ['Room to be a little brave today. Keep a hand on the wheel.', '今天有胆子大一点的空间。但手别离方向盘。'],
-      ["The wind's mostly at your back. Add to what's working; leave the rest.", '风大体是顺的。给跑得好的加点码，其余的先不动。'],
-      ['Decent day. Add to what’s working, skip the rest.', '盘面不错。跑得好的加一点，其余的跳过。']
+      ['Constructive, not effortless. Add to strength; leave weak ideas alone.', '盘面偏积极，但不是随便做都行。强的可以加，弱的别碰。'],
+      ['There is room to participate. Keep the size proportionate to the evidence.', '今天有参与空间。证据有多强，仓位就做多大。'],
+      ['The backdrop is helping. Add to what is working and skip the rest.', '大环境在帮忙。跑得好的可以加，其余的先放着。'],
+      ['A decent tape. Stay selective and let price do the convincing.', '盘面不错。继续精选，让价格自己证明。']
     ], mixed: [
-      ["Nothing's screaming either way. Let the setups come to you.", '两边都没在喊你。让机会自己走过来。'],
-      ['Mixed day — patience beats prediction.', '震荡市——耐心比预测值钱。'],
-      ['No clear edge right now. Hold your best ideas, skip the rest.', '眼下没有明显的优势。攥住最好的想法，其余的先放放。'],
-      ['Choppy. Trade less, watch more.', '震荡。多看少动。']
+      ['No broad edge right now. Keep the best positions and leave the rest alone.', '眼下没有明显的整体优势。最好的仓位继续拿，其余的先别动。'],
+      ['Mixed tape. Patience is more useful than a market call.', '盘面分化。现在耐心比判断大盘方向更有用。'],
+      ['The market is not offering a clear advantage. Make fewer decisions.', '市场没有给出清楚优势。少做决定。'],
+      ['Choppy conditions. Trade less and require more.', '行情反复。少出手，多确认。']
     ], careful: [
-      ['Careful out there today. Keep some cash dry for better prices.', '今天外面小心点。留点现金，等更好的价格。'],
-      ['Not a day for heroes. Small, patient, boring.', '今天别当英雄。小仓位，有耐心，无聊点没关系。'],
-      ['Trim the edges, keep the core. Live to trade tomorrow.', '边角修一修，核心留着。留得青山在，明天接着打。'],
-      ["If you're unsure, that IS the signal. Size down.", '要是心里没底，这本身就是信号。降点仓。'],
-      ["Respect what the market's telling you — it says slow down.", '尊重盘面给的提示——它在让你慢下来。'],
-      ['Tighten the stops, loosen the grip.', '止损收紧一点，心态放松一点。']
+      ['Risk is rising faster than opportunity. Cut size and keep optionality.', '风险上升得比机会快。降一点仓位，保留选择。'],
+      ['This tape deserves smaller positions and cleaner entries.', '这种盘面适合小仓位，只做更清楚的买点。'],
+      ['Keep the core if the thesis is intact; trim anything you are only hoping for.', '逻辑没变的核心仓位可以留。只是靠期待撑着的，先减。'],
+      ['Uncertainty is high enough to matter. Size down.', '不确定性已经高到会影响结果。仓位降一点。'],
+      ['This pace is too noisy for frequent decisions. Slow down.', '这种节奏不适合频繁出手。慢一点。'],
+      ['Protect the downside first. Better prices can wait.', '先管好下行风险。更好的价格，值得等。']
     ], off: [
-      ['Defense first today. Protect the book; opportunities can wait.', '今天防守优先。先保住本金，机会等得起。'],
-      ['A day to survive, not to swing. Sit tight.', '今天求生，不求胜。坐稳了。'],
-      ['Cash is a position too. No shame in holding it today.', '空仓也是一种仓位。今天拿着现金，不丢人。'],
-      ["Sometimes the best trade is no trade. This is one of those days.", '有时候最好的交易，就是不交易。今天就是这种日子。'],
-      ["Don't try to catch the falling knife. Let it hit the floor first.", '别伸手去接飞刀。等它落地插稳了再说。'],
-      ['On a day like this, doing nothing IS doing something. Wait.', '这种日子，什么都不做本身就是在做事。等。']
+      ['Preserve capital today. Conditions do not justify the exposure yet.', '今天先保住本金。当前条件还不足以支持持仓。'],
+      ['Stand aside until the tape stabilizes. Missing the first bounce is the cheaper mistake.', '等盘面稳住再说。错过第一下反弹，代价通常更小。'],
+      ['Cash is useful when the market offers no clean edge.', '市场没有清楚优势时，现金就是有用的仓位。'],
+      ['Until conditions improve, staying out is the cleanest decision.', '环境改善之前，先不参与最稳妥。'],
+      ['Do not try to predict the low. Wait for buyers to prove it.', '别猜底。等买方自己证明。'],
+      ['Keep capital available. There will be cleaner entries later.', '先把资金留着，后面会有更清楚的机会。']
     ] };
   var CLOSE = [
-    ["Anyway — that's the read. The desk is below whenever you're ready.", '好了——今天就说到这。看板都在下面，你随时开工。'],
-    ['That’s the brief. Eyes open, size sensible.', '简报完毕。眼睛放亮，仓位放稳。'],
-    ['Enough from me. Go make it a good one.', '我说完了。去吧，打得漂亮点。'],
-    ['Alright, the floor’s yours — everything’s below.', '行，交给你了——都在下面。']
+    ["That's the read. The dashboards below have the detail.", '结论就这些。细节都在下面的看板里。'],
+    ['That is enough for now. Start with the strongest signal.', '先说到这里。从最强的信号开始看。'],
+    ['The broad picture is set. Use the board for the evidence.', '大方向已经清楚。证据和细节，下面都有。'],
+    ['You have the context. Now keep the decision simple.', '背景已经交代清楚。接下来，把决定做简单。']
   ];
 
   /* ---- weekend & holiday material ----------------------------------------- */
   var WOPEN = { sat: [
-      ["It's Saturday — no opening bell, no closing bell. Just us.", '周六啦——没有开盘钟，也没有收盘钟。就咱俩。'],
-      ["Saturday at the desk. The market's off; I'm still around.", '周六还来看盘？市场休息了，我倒是一直都在。'],
-      ["Weekend mode: the screens are resting, and that's healthy.", '周末模式：行情不动了，这是好事。']
+      ['Saturday. Cash markets are closed; this is a review, not a live tape.', '周六，现货市场休市。现在适合复盘，不是看实时行情。'],
+      ['Markets are closed. Slow down and use the time to review.', '市场休市。把节奏慢下来，趁现在好好复盘。'],
+      ['Weekend. Nothing on the board needs an immediate decision.', '周末了。盘面上没有什么需要立刻决定。']
     ], sun: [
-      ['Sunday — one more quiet day before the bell rings again.', '周日了——再安静一天，明天就又开锣了。'],
-      ["It's Sunday. A good day to think slow, before the week makes you think fast.", '周日，适合慢慢想的日子——下周有的是要你快快想的时候。'],
-      ["Sunday's for the plan, not the P&L.", '周日适合做计划，别盯着盈亏看。']
+      ['Sunday. One quiet day left before the week begins.', '周日。新一周开始前，还有一天安静时间。'],
+      ['This is a planning day, not a trading day.', '今天适合做计划，不适合找交易。'],
+      ['Set the plan while the market is quiet.', '趁市场安静，把下周计划写清楚。']
     ] };
   var HOPEN = [   // a market-closed holiday, greeting already spoken earlier today
-    ["Quiet day — the market's closed for the holiday.", '今天休市，盘面清清静静。'],
-    ["Still the holiday — nothing's trading. Enjoy the quiet.", '还在放假，没什么可交易的。享受这份清净。']
+    ['The home market is closed for the holiday. This is context, not a live session.', '本地市场因假期休市。现在看到的是背景信息，不是实时交易。'],
+    ['Holiday session. Nothing in the home market needs action today.', '假期休市，本地市场今天没有需要处理的行情。']
   ];
-  // The weekend nudge: compliments for doing the homework, and permission to stop.
+  // The weekend nudge: finish the useful work, then stop.
   var WNUDGE = [
-    ["Checking in on a weekend — that's the homework most people skip. Respect.", '大周末的还来做功课——这是多数人偷懒不做的部分。佩服。'],
-    ['Markets are hard right now. Go get some sun — the charts will keep.', '这段行情不好做。出去晒晒太阳吧，图表跑不了。'],
-    ["You've done the work this week. Now go do the living.", '这一周你已经够拼了。剩下的时间，留给生活。'],
-    ['Review the week, jot down the plan, close the laptop. In that order.', '复个盘，写两行计划，然后合上电脑。就按这个顺序来。'],
-    ["The best position this weekend is outside. I'll watch the rest.", '这个周末最好的仓位，是阳光底下。剩下的我来盯。'],
-    ['Rest is part of the strategy. The traders who last all know it.', '休息也是策略的一部分。能在市场里走得远的人，都懂这个。'],
-    ['Get some rest — the bell rings again soon enough, and I’ll be here first.', '好好休息——开盘钟很快会再响，到时候我肯定比你先到。']
+    ['Review the decisions, write the plan, then step away.', '复盘这周的操作，写好计划，然后离开屏幕。'],
+    ['Use the quiet to improve the process, not to manufacture a trade.', '趁安静把流程理顺，别为了交易而找交易。'],
+    ['Rest is part of risk management. Once the plan is written, close the screen.', '休息也是风险管理。计划写完，就把屏幕关掉。'],
+    ['The charts will still be here Monday. Your attention is the scarcer asset.', '图表周一还在，注意力更值钱。'],
+    ['You have done enough market work for today.', '今天的市场功课已经够了。'],
+    ['One useful weekend task: decide in advance what would change your mind.', '周末最值得做的一件事，是提前想清楚什么情况会让你改变判断。'],
+    ['Leave the next decision to the next session.', '下一次决定，留到下一次开市再做。']
   ];
   var HNUDGE = [
-    ['Holidays are for living. The market will take your call when it reopens.', '假期就该有假期的样子。等开市了，行情随叫随到。'],
-    ['Even the market knows when to stop. Take the cue.', '连市场都知道该歇就歇。你也别硬撑。']
+    ['The market is closed. No trading decision is required today.', '市场休市。今天不需要做交易决定。'],
+    ['There is no reason to treat a holiday like a trading day.', '假期就别按交易日过了，没这个必要。']
   ];
   var WCLOSE = [
-    ["Enjoy the weekend. I'll be here when the bell rings.", '周末愉快。开盘钟响的时候，我都在。'],
-    ['Go on — the desk will keep. See you Monday.', '去吧，台子我看着。周一见。']
+    ["That's the weekend read. Back to the rest of your day.", '周末的盘面就说到这里。剩下的时间留给自己吧。'],
+    ['The plan can wait until the next session.', '剩下的，等下个交易日再处理。']
   ];
 
   /* ---- assemble the sequence: greeting + a few reads, tapering on repeat --- */
   var GREET = {
-    morning: [['Good morning', '早上好'], ['Morning', '早啊'], ['Rise and shine', '起床啦'], ['Up early', '起得真早'], ['Morning to you', '早安']],
-    afternoon: [['Good afternoon', '下午好'], ['Afternoon', '下午好啊'], ['Good to see you', '又见面了'], ['Midday, then', '中午好'], ['Back at it', '继续开工啦']],
-    evening: [['Good evening', '晚上好'], ['Evening', '晚上好啊'], ['Good to see you', '又见面了'], ['Winding down', '忙了一天了吧']],
-    late: [['You’re up late', '夜深了啊'], ['Burning the midnight oil', '又熬夜了'], ['Still at it', '还没歇呢'], ['Can’t sleep either', '你也睡不着啊']]
+    morning: [['Good morning', '早上好'], ['Morning', '早'], ["You're early", '来得挺早'], ['Ready when you are', '准备好了就开始']],
+    afternoon: [['Good afternoon', '下午好'], ['Afternoon', '下午好'], ['Back at the desk', '回来了'], ['Let’s continue', '继续吧']],
+    evening: [['Good evening', '晚上好'], ['Evening', '晚上好'], ['Still at it', '还在看盘'], ['Let’s take one more look', '再看一眼']],
+    late: [["You're up late", '夜深了'], ['Late one', '还没收工'], ['Still working', '这么晚还在看'], ['One last look', '睡前再看一眼']]
   };
   function greetingLine() {
     var H = d0.getHours(), tod = H < 5 ? 'late' : H < 12 ? 'morning' : H < 18 ? 'afternoon' : H < 23 ? 'evening' : 'late';
@@ -557,7 +556,7 @@
   }
   var lines = [];
   if (reload && C) {
-    // A page REFRESH (same session) — one witty beat that acknowledges it, then straight to
+    // A page REFRESH (same session) — one honest beat that acknowledges it, then straight to
     // the brand. We don't re-welcome someone standing right here, or re-read a market they
     // saw a minute ago. (This is the smarter move than pretending it's a fresh visit.)
     lines.push({ s: draw('reload', RELOAD) });
@@ -641,9 +640,20 @@
   save();
 
   /* ---- play it: type, hold to let it land, fade, next; then slow dissolve -- */
-  var text = function (p) { return zh ? p[1] : p[0]; };
+  var text = function (p) { return document.documentElement.getAttribute('data-lang') === 'zh' ? p[1] : p[0]; };
+  var activePair = null, typingActive = false;
+  document.addEventListener('langchange', function () {
+    // The settings panel switches the rest of the hub without a reload. Keep the
+    // sentence in step too; a line already resting on screen changes immediately,
+    // while an active type pass picks up the new script on its next character.
+    if (activePair && !typingActive) tx.textContent = text(activePair);
+  });
   hdr.classList.add('greet-run');
-  function finish() { drop(); greet.classList.remove('convo'); hdr.classList.remove('greet-run'); }   // slow CSS crossfade → brand
+  function finish() {
+    drop();
+    greet.classList.remove('convo', 'is-speaking', 'is-thinking');
+    hdr.classList.remove('greet-run');
+  }   // slow CSS crossfade → brand
 
   // Every pause below goes through wait(), never a bare setTimeout: timers keep running
   // (throttled) in a HIDDEN tab, so a hub opened in a background tab used to deliver its
@@ -671,7 +681,11 @@
     // no typing/animation: show the greeting + one read, briefly, then hand to the brand
     var seq = [lines[0], lines[1] || lines[0]], si = 0;
     (function step() {
-      var ln = seq[si]; greet.classList.toggle('convo', !ln.big); tx.textContent = text(ln.s);
+      var ln = seq[si];
+      greet.classList.toggle('convo', !ln.big);
+      greet.classList.add('is-speaking');
+      activePair = ln.s;
+      tx.textContent = text(ln.s);
       si++; if (si < seq.length) wait(2400, step); else wait(2400, finish);
     })();
     return;
@@ -702,10 +716,15 @@
     if (skip) return finish();
     var ln = lines[li];
     greet.classList.toggle('convo', !ln.big);
+    greet.classList.remove('is-thinking');
+    greet.classList.add('is-speaking');
+    activePair = ln.s;
     var full = text(ln.s), i = 0;
+    typingActive = true;
     tx.style.opacity = '1';
     (function type() {
       if (skip) return finish();
+      full = text(ln.s);
       tx.textContent = full.slice(0, i);
       if (i <= full.length) {
         var ch = full.charAt(i - 1); i++;
@@ -713,6 +732,7 @@
         var d = /[\s，,、；;]/.test(ch) ? 90 : /[.。—？?！!…：]/.test(ch) ? 150 : 26;
         wait(d, type);
       } else {
+        typingActive = false;
         var hold = ln.big ? 1150 : Math.min(2600, 1250 + full.length * 12);   // longer remarks land longer
         wait(hold, nextLine);
       }
@@ -722,6 +742,8 @@
     if (skip) return finish();
     li++;
     if (li >= lines.length) { wait(700, finish); return; }   // last remark held, then dissolve
+    greet.classList.remove('is-speaking');
+    greet.classList.add('is-thinking');
     tx.style.transition = 'opacity .34s ease'; tx.style.opacity = '0';   // soft fade between remarks
     wait(360, playLine);
   }

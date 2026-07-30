@@ -1,5 +1,5 @@
 {
-"applied": "2026-07-22T02:02:17.313795+00:00",
+"applied": "2026-07-30T02:04:58.632129+00:00",
 "rows_flagged": 102,
 "tickers_flagged": 26,
 "by_flag": {
@@ -990,6 +990,13 @@
 "statements": 46300000.0
 },
 {
+"ticker": "AIR",
+"fy": 2025,
+"col": "ni",
+"panel": 187700000.0,
+"statements": 12500000.0
+},
+{
 "ticker": "AKR",
 "fy": 2024,
 "col": "ni",
@@ -1177,6 +1184,13 @@
 "col": "ni",
 "panel": 1220048000.0,
 "statements": 277888000.0
+},
+{
+"ticker": "CALM",
+"fy": 2025,
+"col": "ni",
+"panel": 316682000.0,
+"statements": 1220048000.0
 },
 {
 "ticker": "COLB",
@@ -1518,21 +1532,21 @@
 "ticker": "LPG",
 "fy": 2022,
 "col": "ni",
-"panel": 172443930.0,
+"panel": 172400000.0,
 "statements": 71935018.0
 },
 {
 "ticker": "LPG",
 "fy": 2024,
 "col": "ni",
-"panel": 90170480.0,
+"panel": 90200000.0,
 "statements": 307446913.0
 },
 {
 "ticker": "LPG",
 "fy": 2025,
 "col": "ni",
-"panel": 193665933.0,
+"panel": 193700000.0,
 "statements": 90170480.0
 },
 {
@@ -1623,7 +1637,7 @@
 "ticker": "NTCT",
 "fy": 2024,
 "col": "ni",
-"panel": -366922000.0,
+"panel": -366900000.0,
 "statements": -147734000.0
 },
 {
@@ -2271,6 +2285,13 @@
 "statements": 75200000.0
 },
 {
+"ticker": "AIR",
+"fy": 2025,
+"col": "cfo",
+"panel": 98700000.0,
+"statements": 36100000.0
+},
+{
 "ticker": "ALB",
 "fy": 2021,
 "col": "cfo",
@@ -2395,6 +2416,13 @@
 "col": "cfo",
 "panel": 1224734000.0,
 "statements": 451398000.0
+},
+{
+"ticker": "CALM",
+"fy": 2025,
+"col": "cfo",
+"panel": 479753000.0,
+"statements": 1224734000.0
 },
 {
 "ticker": "COIN",
@@ -2866,6 +2894,13 @@
 "statements": 71000000.0
 },
 {
+"ticker": "SCHL",
+"fy": 2025,
+"col": "cfo",
+"panel": 50900000.0,
+"statements": 124200000.0
+},
+{
 "ticker": "SEZL",
 "fy": 2024,
 "col": "cfo",
@@ -3088,6 +3123,13 @@
 "col": "gross_profit",
 "panel": 1850885000.0,
 "statements": 541571000.0
+},
+{
+"ticker": "CALM",
+"fy": 2025,
+"col": "gross_profit",
+"panel": 672049000.0,
+"statements": 1850885000.0
 },
 {
 "ticker": "CNC",
@@ -3669,6 +3711,13 @@
 "col": "op_income",
 "panel": 1536539000.0,
 "statements": 312452000.0
+},
+{
+"ticker": "CALM",
+"fy": 2025,
+"col": "op_income",
+"panel": 350186000.0,
+"statements": 1536539000.0
 },
 {
 "ticker": "CARG",
@@ -4560,6 +4609,13 @@
 "fy_hi": 2017,
 "col": "repurchases",
 "med": 6000.0
+},
+{
+"ticker": "SLQT",
+"fy_lo": 2019,
+"fy_hi": 2019,
+"col": "cfo",
+"med": 113000.0
 },
 {
 "ticker": "UFCS",

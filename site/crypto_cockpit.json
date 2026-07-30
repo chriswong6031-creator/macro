@@ -2,17 +2,17 @@
   "schema": "crypto.cockpit/v1",
   "contract_phase": "w0",
   "display_only": true,
-  "as_of": "2026-07-29",
-  "generated_at": "2026-07-30T01:07:40+00:00",
+  "as_of": "2026-07-30",
+  "generated_at": "2026-07-30T04:58:47+00:00",
   "hero": {
     "asset": "BTC-USD",
-    "price": 63940.25,
-    "change_24h_pct": 0.15,
+    "price": 63999.47,
+    "change_24h_pct": 0.16,
     "stance_en": "RISK-OFF",
     "stance_zh": "偏空",
-    "summary_en": "The big picture reads risk-off. Support comes from the trend and miners; the drag comes from momentum and fundamentals. Day-to-day direction is a coin flip — watch the dip-risk read below.",
-    "summary_zh": "大方向偏空。支撑来自趋势与矿工；拖累来自动量与基本面。未来几天的涨跌仍近乎抛硬币——先看下方的回撤风险读数。",
-    "master_score": -13,
+    "summary_en": "The big picture reads risk-off. Support comes from the trend and behaviour versus stocks; the drag comes from momentum and fundamentals. Day-to-day direction is a coin flip — watch the dip-risk read below.",
+    "summary_zh": "大方向偏空。支撑来自趋势与与美股的联动；拖累来自动量与基本面。未来几天的涨跌仍近乎抛硬币——先看下方的回撤风险读数。",
+    "master_score": -17,
     "exposure_pct": 0,
     "gate_active": true
   },
@@ -23,6 +23,8 @@
       "label_zh": "趋势与动量",
       "primary": {
         "key": "momentum",
+        "label_en": "Momentum",
+        "label_zh": "动量",
         "source": "master.board.momentum",
         "state_en": "Bearish",
         "state_zh": "看空",
@@ -33,6 +35,8 @@
       "receipt_members": [
         {
           "key": "structure",
+          "label_en": "Structure",
+          "label_zh": "结构",
           "source": "master.board.structure",
           "state_en": "Constructive",
           "state_zh": "偏多",
@@ -41,6 +45,8 @@
         },
         {
           "key": "impulse",
+          "label_en": "Impulse",
+          "label_zh": "脉冲",
           "source": "master.board.impulse",
           "state_en": "Neutral",
           "state_zh": "中性",
@@ -55,6 +61,8 @@
       "label_zh": "周期与估值",
       "primary": {
         "key": "valuation",
+        "label_en": "Valuation",
+        "label_zh": "估值",
         "source": "master.board.valuation",
         "state_en": "Neutral",
         "state_zh": "中性",
@@ -65,6 +73,8 @@
       "receipt_members": [
         {
           "key": "cycle",
+          "label_en": "Cycle phase",
+          "label_zh": "周期相位",
           "source": "master.board.cycle",
           "state_en": "Markdown",
           "state_zh": "下行",
@@ -73,6 +83,8 @@
         },
         {
           "key": "reserve_risk",
+          "label_en": "Reserve Risk",
+          "label_zh": "reserve_risk",
           "source": "master.board.reserve_risk",
           "state_en": "Unavailable",
           "state_zh": "暂无",
@@ -81,6 +93,8 @@
         },
         {
           "key": "extreme",
+          "label_en": "Capitulation/euphoria",
+          "label_zh": "投降/亢奋",
           "source": "master.board.extreme",
           "state_en": "Neutral",
           "state_zh": "中性",
@@ -95,6 +109,8 @@
       "label_zh": "流动性与资金流",
       "primary": {
         "key": "etf",
+        "label_en": "Etf",
+        "label_zh": "etf",
         "source": "master.board.etf",
         "state_en": "Unavailable",
         "state_zh": "暂无",
@@ -105,6 +121,8 @@
       "receipt_members": [
         {
           "key": "stbl",
+          "label_en": "Stablecoin tide",
+          "label_zh": "稳定币潮汐",
           "source": "master.board.stbl",
           "state_en": "Contracting",
           "state_zh": "收缩",
@@ -113,6 +131,8 @@
         },
         {
           "key": "premium",
+          "label_en": "Coinbase premium",
+          "label_zh": "Coinbase 溢价",
           "source": "master.board.premium",
           "state_en": "Healthy demand",
           "state_zh": "健康需求",
@@ -127,16 +147,20 @@
       "label_zh": "杠杆与衍生品",
       "primary": {
         "key": "leverage_cascade",
+        "label_en": "Leverage pressure",
+        "label_zh": "杠杆压力",
         "source": "regime.context_legs.leverage.cascade_risk",
         "state_en": "Low",
         "state_zh": "低",
         "tone": "bull",
-        "as_of": "2026-07-29"
+        "as_of": "2026-07-30"
       },
       "spark_source": "signals.oi_mcap_ratio",
       "receipt_members": [
         {
           "key": "funding",
+          "label_en": "Funding",
+          "label_zh": "funding",
           "source": "master.board.funding",
           "state_en": "Unavailable",
           "state_zh": "暂无",
@@ -145,6 +169,8 @@
         },
         {
           "key": "cot",
+          "label_en": "CME positioning",
+          "label_zh": "CME 持仓",
           "source": "master.board.cot",
           "state_en": "Crowded long",
           "state_zh": "多头拥挤",
@@ -159,6 +185,8 @@
       "label_zh": "网络与矿工",
       "primary": {
         "key": "bfi",
+        "label_en": "BFI fundamentals",
+        "label_zh": "BFI 基本面",
         "source": "master.board.bfi",
         "state_en": "Negative",
         "state_zh": "负向",
@@ -169,6 +197,8 @@
       "receipt_members": [
         {
           "key": "miner",
+          "label_en": "Miner economics",
+          "label_zh": "矿工经济",
           "source": "master.board.miner",
           "state_en": "Capitulation (bottoming)",
           "state_zh": "投降（筑底）",
@@ -177,14 +207,18 @@
         },
         {
           "key": "holders",
+          "label_en": "Holder spread (STH/LTH)",
+          "label_zh": "持有者价差",
           "source": "master.board.holders",
-          "state_en": "Distribution",
-          "state_zh": "派发",
-          "tone": "bear",
+          "state_en": "Neutral",
+          "state_zh": "中性",
+          "tone": "neutral",
           "grade": "NEW"
         },
         {
           "key": "attention",
+          "label_en": "Attention (Wikipedia)",
+          "label_zh": "关注度",
           "source": "master.board.attention",
           "state_en": "Apathy (bottoming)",
           "state_zh": "冷清（筑底）",
@@ -199,16 +233,20 @@
       "label_zh": "宏观背景",
       "primary": {
         "key": "macro",
+        "label_en": "Macro liquidity",
+        "label_zh": "宏观流动性",
         "source": "master.board.macro",
-        "state_en": "Neutral",
-        "state_zh": "中性",
-        "tone": "neutral",
+        "state_en": "Headwind",
+        "state_zh": "逆风",
+        "tone": "bear",
         "grade": "CONFIRMED"
       },
       "spark_source": "signals.macro_score",
       "receipt_members": [
         {
           "key": "beta",
+          "label_en": "Conditional beta",
+          "label_zh": "条件贝塔",
           "source": "master.board.beta",
           "state_en": "Limited downside",
           "state_zh": "下行受限",

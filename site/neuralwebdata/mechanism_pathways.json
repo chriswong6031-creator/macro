@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.mechanism_pathways.v1",
-  "as_of": "2026-07-29",
+  "as_of": "2026-07-30",
   "display_only": true,
   "not_a_signal": true,
   "authority": {
@@ -28,7 +28,7 @@
       "family": "equity-leadership",
       "driver": "ai_semis",
       "pathway_role": "primary",
-      "as_of": "2026-07-29",
+      "as_of": "2026-07-30",
       "direction_en": "AI/semis unwind — tech-led de-rating",
       "direction_zh": "AI/半导体回吐 — 科技主导的回调",
       "confidence_ceiling": "context_only",
@@ -38,7 +38,7 @@
       "nodes": [
         {
           "node_id": "driver_ai_semis",
-          "as_of": "2026-07-29",
+          "as_of": "2026-07-30",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "ai_semis",
@@ -47,8 +47,8 @@
             "zh": "AI/半导体回吐 — 科技主导的回调"
           },
           "direction": -1,
-          "value": 2.65,
-          "z_or_percentile": 2.18,
+          "value": 3.06,
+          "z_or_percentile": 3.32,
           "source_tier": "display",
           "lag_class": "same_day",
           "pathway_role": "trigger",
@@ -58,17 +58,17 @@
         },
         {
           "node_id": "leg_ai_semis_0",
-          "as_of": "2026-07-29",
+          "as_of": "2026-07-30",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "semis RS",
           "observation": {
-            "en": "semis RS (-2.7σ)",
-            "zh": "半导体相对强度 (-2.7σ)"
+            "en": "semis RS (-3.6σ)",
+            "zh": "半导体相对强度 (-3.6σ)"
           },
           "direction": "negative",
-          "value": -2.7,
-          "z_or_percentile": -2.7,
+          "value": -3.6,
+          "z_or_percentile": -3.6,
           "source_tier": "display",
           "lag_class": "same_day",
           "pathway_role": "required_leg",
@@ -78,17 +78,17 @@
         },
         {
           "node_id": "leg_ai_semis_1",
-          "as_of": "2026-07-29",
+          "as_of": "2026-07-30",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "growth vs value",
           "observation": {
-            "en": "growth vs value (-2.9σ)",
-            "zh": "成长对价值 (-2.9σ)"
+            "en": "growth vs value (-3.2σ)",
+            "zh": "成长对价值 (-3.2σ)"
           },
           "direction": "negative",
-          "value": -2.9,
-          "z_or_percentile": -2.9,
+          "value": -3.2,
+          "z_or_percentile": -3.2,
           "source_tier": "display",
           "lag_class": "same_day",
           "pathway_role": "required_leg",
@@ -98,17 +98,17 @@
         },
         {
           "node_id": "leg_ai_semis_2",
-          "as_of": "2026-07-29",
+          "as_of": "2026-07-30",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "cap-weight vs equal-weight",
           "observation": {
-            "en": "cap-weight vs equal-weight (-3.3σ)",
-            "zh": "市值加权对等权重 (-3.3σ)"
+            "en": "cap-weight vs equal-weight (-3.5σ)",
+            "zh": "市值加权对等权重 (-3.5σ)"
           },
           "direction": "negative",
-          "value": -3.3,
-          "z_or_percentile": -3.3,
+          "value": -3.5,
+          "z_or_percentile": -3.5,
           "source_tier": "display",
           "lag_class": "same_day",
           "pathway_role": "required_leg",
@@ -160,7 +160,7 @@
       "family": "rates",
       "driver": "real_rate_shock",
       "pathway_role": "alternate",
-      "as_of": "2026-07-29",
+      "as_of": "2026-07-30",
       "direction_en": "real yields rising — restrictive, gold & duration hit",
       "direction_zh": "",
       "confidence_ceiling": "context_only",
@@ -170,7 +170,7 @@
       "nodes": [
         {
           "node_id": "driver_real_rate_shock",
-          "as_of": "2026-07-29",
+          "as_of": "2026-07-30",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "real_rate_shock",
@@ -179,7 +179,7 @@
             "zh": ""
           },
           "direction": "",
-          "value": 1.21,
+          "value": 0.92,
           "z_or_percentile": null,
           "source_tier": "display",
           "lag_class": "same_day",
@@ -190,7 +190,7 @@
         },
         {
           "node_id": "transmission_real_rate_order1",
-          "as_of": "2026-07-29",
+          "as_of": "2026-07-30",
           "domain": "transmission",
           "source_artifact": "data/transmission/latest.json",
           "entity": "transmission channel",
@@ -210,7 +210,7 @@
         },
         {
           "node_id": "transmission_real_rate_order2",
-          "as_of": "2026-07-29",
+          "as_of": "2026-07-30",
           "domain": "transmission",
           "source_artifact": "data/transmission/latest.json",
           "entity": "transmission channel",
@@ -230,7 +230,7 @@
         },
         {
           "node_id": "transmission_real_rate_order3",
-          "as_of": "2026-07-29",
+          "as_of": "2026-07-30",
           "domain": "transmission",
           "source_artifact": "data/transmission/latest.json",
           "entity": "transmission channel",
@@ -290,11 +290,11 @@
       "coverage_basis": "scare_trigger"
     },
     {
-      "family": "china",
-      "driver": "china_stimulus",
+      "family": "liquidity",
+      "driver": "liquidity_impulse",
       "pathway_role": "alternate",
-      "as_of": "2026-07-29",
-      "direction_en": "China risk-off — A-shares/HK & copper lead down",
+      "as_of": "2026-07-30",
+      "direction_en": "net liquidity draining — risk headwind",
       "direction_zh": "",
       "confidence_ceiling": "context_only",
       "coverage_score": null,
@@ -302,17 +302,17 @@
       "stale_legs": [],
       "nodes": [
         {
-          "node_id": "driver_china_stimulus",
-          "as_of": "2026-07-29",
+          "node_id": "driver_liquidity_impulse",
+          "as_of": "2026-07-30",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
-          "entity": "china_stimulus",
+          "entity": "liquidity_impulse",
           "observation": {
-            "en": "China risk-off — A-shares/HK & copper lead down",
+            "en": "net liquidity draining — risk headwind",
             "zh": ""
           },
           "direction": "",
-          "value": 0.93,
+          "value": 0.89,
           "z_or_percentile": null,
           "source_tier": "display",
           "lag_class": "same_day",

@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-30T02:39:39.322465+00:00",
-  "count": 360,
+  "generated_at": "2026-07-30T04:45:45.568605+00:00",
+  "count": 364,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -221,6 +221,26 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-zryrvkq454g-9c91ce",
+      "title": "JPM Euro area Saving rate",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T13:49:07Z",
+      "summary_points": [
+        "**Euro Area Saving Rate Decline**: Saving rate stable at 14.3% Q1 but set to fall in Q2 due to energy price shocks reducing real disposable income (0.6% q/q), despite positive consumption growth, signaling near-term household caution and demand weakness.",
+        "**Real Disposable Income & Consumption Drop**: Real disposable income fell 0.6% q/q amid energy shocks, while consumption growth turned negative (-1.1% yoy), amplifying risks for equity/bond allocations and indicating deteriorating household financial resilience.",
+        "**Real GDI/Spending Divergence**: J.P.",
+        "Morgan forecasts Real spending lagging Real GDI (2026), signaling potential consumer demand weakness or policy-driven shifts, critical for near-term portfolio positioning in Eurozone equities and bonds."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-fe1mekpi9ch-91b20e",
       "title": "JPM GLOBAL MARKET INTELLIGENCE | Data Assets & Alpha Group",
       "institution": "J.P. Morgan",
@@ -238,6 +258,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 17,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-imr7sbpdop0-dbf09e",
+      "title": "Global daily circle of life",
+      "institution": "Rabobank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T13:47:55Z",
+      "summary_points": [
+        "**Geopolitical Oil Volatility**: US-Iran tensions (Iranian missile strikes on Jordan base) drove Brent crude down 5%, rebounding 3% after US-Saudi strikes on Iraq; Saudi-Israel talks signal normalization risk impacting energy markets.",
+        "**RBA Policy & Inflation Data**: June CPI (3.8% vs expectations) and core CPI (3.6%) beat forecasts, driving AUD decline and sovereign yield drops; RBA raised rates March-May due to global energy shocks worsening inflation.",
+        "**Geopolitical & Productivity Risks**: Middle East tensions disrupt supply chains (Strait of Hormuz constraints on copper/nickel); US productivity growth anaemic despite AI investment, with unproven CAPEX-productivity link."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
@@ -358,6 +397,40 @@
       "tickers": [],
       "top_pick": false,
       "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-7ib8r2ckodh-cad7f0",
+      "title": "Textron Inc",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T08:04:59Z",
+      "summary_points": [
+        "Missing Document**: No source material provided for extraction **Critical Input Gap**: Absence of actual document content prevents identification of fundamentals/data/technical points **Action Required**: Provide document text to proceed with analysis per specified criteria"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-cf9g7ewryhl-b09360",
+      "title": "China Grid Tech Power Transformer Export Tracker June China transformer total exports at 47 yoy, with exports to US at +17...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T08:04:53Z",
+      "summary_points": [
+        "Missing Document**: No source material provided for extraction **Critical Input Gap**: Absence of actual document content prevents identification of fundamentals/data/technical points **Action Required**: Provide document text to proceed with analysis per specified criteria"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },

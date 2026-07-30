@@ -3918,6 +3918,24 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: live quotes / tape / GEX / options-flow / theme + tech-lab feeds behind the intraday lanes
         run: python -m pytest tests/test_attention_deterministic.py tests/test_build_live_quotes.py tests/test_clinicaltrials_themes.py tests/test_event_priors.py tests/test_foresight_ledger_lane_gates.py tests/test_gex_archive_snapshot.py tests/test_grade_thematic.py tests/test_live_delay_labeling.py tests/test_options_flow_attention_reflex.py tests/test_prophet_bridge.py tests/test_prophet_stage_tilt.py tests/test_tape_flow.py tests/test_tape_flow_stamp.py tests/test_tech_events_export.py tests/test_techlab_p0_fixes.py tests/test_thematic_state.py tests/test_theme_adoption.py tests/test_theme_clinical.py tests/test_theme_options_witness.py tests/test_theme_trade_flows.py tests/test_thetadata_resolver.py tests/test_validate_gex.py -q
+      # GEX modeling-core wiring (2026-07-29). Three suites, 42 tests, ~3 s serial.
+      #
+      # These were the three remaining strictly-dark suites in the GEX family — named by
+      # no `run:` step in any workflow AND matched by no ci.yml path pattern, so no
+      # possible edit could even start CI for them: the walls/surface/smile/term model
+      # layer, the finite-difference-verified greeks + dealer-sign engine math, and the
+      # Polygon per-strike chain accrual every options read now depends on. The OIP E3
+      # wave wired its own three and flagged this family as the follow-up; this closes it.
+      #
+      # Import closure verified empirically against THIS job's install line: with scipy,
+      # sklearn, jinja2, plotly, requests, bs4, openpyxl, statsmodels, matplotlib and
+      # fastapi ALL blocked via a builtins.__import__ shim, the only miss is `requests` —
+      # it enters at module scope through collectors/base, which the accrual collector
+      # rides. pytest + pandas + numpy + pyarrow + pyyaml + requests is the full closure;
+      # all six sit in the line above, so the shared venv is unchanged, and the other
+      # nine blocked wheels are confirmed unused. All 42 green on main at wiring time.
+      - name: GEX modeling core — walls/surface model, greeks + dealer-sign engine, polygon per-strike accrual
+        run: python -m pytest tests/test_gex_model.py tests/test_gex_engine.py tests/test_polygon_gex.py -q
 
   unrun-publish-ops:
     # publish/transport, asset pipeline, ticker pages and the nightly ops tripwires.

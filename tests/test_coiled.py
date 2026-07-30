@@ -18,6 +18,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from engine import coiled  # noqa: E402
+from scripts import build_china_library as china_library  # noqa: E402
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────
@@ -32,6 +33,99 @@ def _noisy(n, base=100.0, sigma=0.5, seed=42):
     log_r = rng.normal(0, sigma / 100, n)
     prices = base * np.cumprod(1 + log_r)
     return _make_series(prices)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# China builder scope: COILED-FIRE is evaluated only where it can be published
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def test_china_builder_scans_fire_only_for_eligible_coiled_names(monkeypatch):
+    close_by = {
+        ticker: _noisy(320, seed=seed).rename(ticker)
+        for seed, ticker in enumerate(
+            ("eligible_fire", "eligible_no_fire", "ineligible", "not_coiled"),
+            start=1,
+        )
+    }
+    coiled_by = {
+        "eligible_fire": {"coiled": True, "star": False},
+        "eligible_no_fire": {"coiled": True, "star": True},
+        "ineligible": {"coiled": True, "star": False},
+        "not_coiled": {"coiled": False, "star": False},
+        "missing_close": {"coiled": True, "star": False},
+    }
+    verdict_by = {
+        "eligible_fire": {"eligible": True},
+        "eligible_no_fire": {"eligible": True},
+        "ineligible": {"eligible": False},
+        "not_coiled": {"eligible": True},
+        "missing_close": {"eligible": True},
+    }
+    calls = []
+
+    def fake_fire(close):
+        calls.append(close.name)
+        return {
+            "fire": close.name == "eligible_fire",
+            "ticks": 2,
+            "src": "m2d",
+        }
+
+    monkeypatch.setattr(coiled, "fire_recent", fake_fire)
+
+    evaluated = china_library._attach_eligible_coiled_fire(
+        coiled_by,
+        verdict_by,
+        close_by,
+    )
+
+    assert evaluated == 2
+    assert calls == ["eligible_fire", "eligible_no_fire"]
+    assert coiled_by["eligible_fire"] == {
+        "coiled": True,
+        "star": False,
+        "fire": True,
+        "fire_ticks": 2,
+        "fire_src": "m2d",
+    }
+    assert "fire" not in coiled_by["eligible_no_fire"]
+    assert "fire" not in coiled_by["ineligible"]
+    assert "fire" not in coiled_by["not_coiled"]
+    assert "fire" not in coiled_by["missing_close"]
+
+
+def test_china_builder_fire_error_does_not_suppress_later_receipts(monkeypatch):
+    close_by = {
+        "bad": _noisy(320, seed=11).rename("bad"),
+        "good": _noisy(320, seed=12).rename("good"),
+    }
+    coiled_by = {
+        "bad": {"coiled": True},
+        "good": {"coiled": True},
+    }
+    verdict_by = {
+        "bad": {"eligible": True},
+        "good": {"eligible": True},
+    }
+
+    def fake_fire(close):
+        if close.name == "bad":
+            raise ValueError("malformed synthetic series")
+        return {"fire": True, "ticks": 1, "src": "m1d"}
+
+    monkeypatch.setattr(coiled, "fire_recent", fake_fire)
+
+    evaluated = china_library._attach_eligible_coiled_fire(
+        coiled_by,
+        verdict_by,
+        close_by,
+    )
+
+    assert evaluated == 2
+    assert "fire" not in coiled_by["bad"]
+    assert coiled_by["good"]["fire"] is True
+    assert coiled_by["good"]["fire_ticks"] == 1
+    assert coiled_by["good"]["fire_src"] == "m1d"
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

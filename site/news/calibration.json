@@ -1,8 +1,8 @@
 {
   "schema": "news_event_calibration.v1",
   "is_context_only": true,
-  "asof": "2026-07-28",
-  "n_events_logged": 198,
+  "asof": "2026-07-29",
+  "n_events_logged": 215,
   "n_events_graded": 111,
   "classes": [
     {
@@ -73,7 +73,7 @@
     {
       "event_type": "earnings_result",
       "direction": "mixed",
-      "n": 29,
+      "n": 34,
       "n_graded": 14,
       "hit_5d": 0.0,
       "hit_21d": null,
@@ -99,7 +99,7 @@
     {
       "event_type": "guidance_cut",
       "direction": "bearish",
-      "n": 5,
+      "n": 7,
       "n_graded": 4,
       "hit_5d": 0.25,
       "hit_21d": null,
@@ -112,7 +112,7 @@
     {
       "event_type": "guidance_raise",
       "direction": "bullish",
-      "n": 10,
+      "n": 14,
       "n_graded": 3,
       "hit_5d": 1.0,
       "hit_21d": null,
@@ -138,7 +138,7 @@
     {
       "event_type": "macro_release",
       "direction": "informational",
-      "n": 6,
+      "n": 9,
       "n_graded": 0,
       "hit_5d": null,
       "hit_21d": null,
@@ -151,7 +151,7 @@
     {
       "event_type": "management_change",
       "direction": "mixed",
-      "n": 8,
+      "n": 9,
       "n_graded": 6,
       "hit_5d": 0.0,
       "hit_21d": null,
@@ -190,7 +190,7 @@
     {
       "event_type": "policy_trade_control",
       "direction": "mixed",
-      "n": 18,
+      "n": 19,
       "n_graded": 4,
       "hit_5d": 0.0,
       "hit_21d": null,
@@ -216,7 +216,7 @@
     {
       "event_type": "product_launch",
       "direction": "bullish",
-      "n": 6,
+      "n": 7,
       "n_graded": 1,
       "hit_5d": 0.0,
       "hit_21d": null,
@@ -254,7 +254,7 @@
     }
   ],
   "reject_audit": {
-    "n_sampled": 404,
+    "n_sampled": 424,
     "n_graded": 0,
     "classes": []
   }

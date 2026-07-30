@@ -35,7 +35,9 @@ def test_facet_default_attr_on_panel():
 
 def test_facet_groups_tagged():
     assert 'data-stf="entry"' in CHINA_SRC
-    assert CHINA_SRC.count('data-stf="ran"') == 2, "both RAN blocks must be tagged"
+    assert CHINA_SRC.count('data-stf="ran"') >= 2, (
+        "RAN shelves and the blocked/late Prophet lane must be tagged"
+    )
     assert 'data-stf="rip early"' in CHINA_SRC
 
 

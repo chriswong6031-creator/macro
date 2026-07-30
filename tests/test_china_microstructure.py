@@ -606,3 +606,19 @@ class TestDegrades:
         pkt = name_packet("000001.SZ", None, frozenset())
         assert pkt["limit_state"] is None
         assert pkt["board"] == "main"
+
+
+def test_library_never_freshens_an_undated_packet_from_batch_date():
+    """Per-name freshness must come from the name's own last OHLC bar."""
+    source = (
+        Path(__file__).resolve().parent.parent
+        / "scripts"
+        / "build_china_library.py"
+    ).read_text()
+    micro_join = source.split(
+        "# Join the same-day A-share execution packet", 1
+    )[1].split(
+        "# The board is a point-in-time decision", 1
+    )[0]
+
+    assert '_packet.get("as_of") or _micro_doc.get("as_of")' not in micro_join

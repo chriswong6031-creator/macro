@@ -239,6 +239,7 @@ class TestCNRegistry:
     def test_flagship2_mirror_not_in_registry(self):
         """flagship2_mirror id is NOT counted in the 20 (spec §4)."""
         assert FLAGSHIP2_MIRROR_ID not in CN_BY_ID
+        assert FLAGSHIP2_MIRROR_ID == "cnlab_flagship2_mirror_v2"
 
     def test_all_books_have_required_fields(self):
         required = {

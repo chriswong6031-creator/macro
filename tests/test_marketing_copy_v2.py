@@ -1685,3 +1685,315 @@ def test_every_exemplar_would_survive_its_own_shape_gate():
             shape = "two_part" if "\n\n" in post else (
                 "stack" if "\n" in post else "one_liner")
             assert cw.shape_violations(post, shape) == [], (register, post[:60])
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# CHATGPT-FIRST ROUTING (operator directive 2026-07-29)
+#
+# "The marketing content LLM lanes must default to the attached ChatGPT/Codex
+# account (Claude subscription tokens are being reserved for website-building
+# sessions), with Claude as fallback drawn through the key_pool OAuth load
+# balancer."
+#
+# The ruling, fixed:
+#   marketing-copywriter   gpt-5.6-sol     medium
+#   marketing-breaking     gpt-5.6-sol     medium   (tests/test_marketing_breaking.py)
+#   marketing-copy-review  gpt-5.6-sol     medium
+#   weekend levels         gpt-5.6-sol     medium   (rides marketing-copywriter)
+#   marketing-critic       gpt-5.6-terra   medium
+#   hot-tape-wire          gpt-5.6-terra   low      (tests/test_marketing_hot_tape_llm.py)
+#   reply-voice            gpt-5.6-terra   medium   (tests/test_marketing_reply_voice.py)
+# Luna gets NO user-facing words on any lane.
+#
+# These tests capture the cfg each call site hands build_providers, then run the
+# REAL build_providers over it with the Codex client faked, so both halves are
+# proven: the threading, and that the threading actually puts codex first.
+# ═════════════════════════════════════════════════════════════════════════════
+
+CODEX_FIRST_ORDER = ["codex", "oauth", "anthropic", "deepseek"]
+
+
+def _capture_provider_cfg(monkeypatch) -> list[dict]:
+    """Replace build_providers with a recorder that mutes the lane.
+
+    Returning [] takes every call site down its ARMED-BUT-MUTE branch, which is
+    exactly the shortest path through the code that still proves what the lane
+    ASKED the waterfall for.
+    """
+    seen: list[dict] = []
+
+    def _rec(cfg, **kwargs):  # noqa: ANN001
+        seen.append(dict(cfg))
+        return []
+
+    monkeypatch.setattr(llm_auth, "build_providers", _rec)
+    return seen
+
+
+def _armed_llm_cfg() -> dict:
+    """The shipped copywriter.llm block, read from the live config file."""
+    import yaml as _yaml
+
+    marketing = _yaml.safe_load(
+        (ROOT / "config" / "marketing.yml").read_text(encoding="utf-8")) or {}
+    return dict(((marketing.get("copywriter") or {}).get("llm") or {}))
+
+
+def test_the_copywriter_v1_site_asks_for_codex_first_on_sol(monkeypatch, capsys):
+    seen = _capture_provider_cfg(monkeypatch)
+    monkeypatch.setenv("MARKETING_LLM_ENABLED", "1")
+    cw.write_posts_llm([_chart_ctx()], {"copy_laws": [], "llm": _armed_llm_cfg()})
+    capsys.readouterr()
+
+    assert seen, "write_posts_llm never reached the provider waterfall"
+    cfg = seen[0]
+    assert cfg["provider_order"] == CODEX_FIRST_ORDER
+    assert cfg["codex_source_model"] == "gpt-5.6-sol"
+    assert cfg["codex_reasoning_effort"] == "medium"
+    assert cfg["oauth_pool_lane"] == "marketing-copywriter"
+    assert cfg["usage_lane"] == "marketing-copywriter"
+
+
+def test_the_copywriter_v2_site_asks_for_codex_first_on_sol(monkeypatch, capsys):
+    seen = _capture_provider_cfg(monkeypatch)
+    monkeypatch.setenv("MARKETING_LLM_ENABLED", "1")
+    cw.reset_writer_stats()
+    cw.write_posts_llm_v2([_chart_ctx()], {"copy_laws": [], "llm": _armed_llm_cfg()})
+    capsys.readouterr()
+
+    assert seen, "write_posts_llm_v2 never reached the provider waterfall"
+    cfg = seen[0]
+    assert cfg["provider_order"] == CODEX_FIRST_ORDER
+    assert cfg["codex_source_model"] == "gpt-5.6-sol"
+    assert cfg["codex_reasoning_effort"] == "medium"
+    assert cfg["oauth_pool_lane"] == "marketing-copywriter"
+    # The v2 site keeps its transport guards: the CHAIN is the retry.
+    assert cfg["client_max_retries"] == 0
+
+
+def test_the_critic_asks_for_codex_first_on_terra(monkeypatch, capsys):
+    """Terra, not Sol: the critic reads and judges, it never writes the post."""
+    seen = _capture_provider_cfg(monkeypatch)
+    monkeypatch.setenv("MARKETING_LLM_ENABLED", "1")
+    copy_critic.reset_critic_stats()
+    critic_cfg = (_armed_llm_cfg().get("critic") or {})
+    copy_critic.cold_read_verdict("$ARES held 121.66.", _chart_ctx(),
+                                  {"llm": {"critic": critic_cfg}})
+    capsys.readouterr()
+
+    assert seen, "the critic never reached the provider waterfall"
+    cfg = seen[0]
+    assert cfg["provider_order"] == CODEX_FIRST_ORDER
+    assert cfg["codex_source_model"] == "gpt-5.6-terra"
+    assert cfg["codex_reasoning_effort"] == "medium"
+    assert cfg["oauth_pool_lane"] == "marketing-critic"
+    assert cfg["usage_lane"] == "marketing-critic"
+
+
+def test_the_critic_provider_cache_key_carries_the_codex_tier(monkeypatch, capsys):
+    """The cache is process-scoped. Keyed only on lane+model+transport, a Sol
+    critic config and a Terra one would share ONE waterfall and the second
+    caller would silently run on the first caller's tier."""
+    seen = _capture_provider_cfg(monkeypatch)
+    monkeypatch.setenv("MARKETING_LLM_ENABLED", "1")
+    copy_critic.reset_critic_stats()
+    for tier in ("gpt-5.6-terra", "gpt-5.6-sol"):
+        copy_critic.cold_read_verdict(
+            "$ARES held 121.66.", _chart_ctx(),
+            {"llm": {"critic": {"enabled": True, "codex_source_model": tier}}})
+    capsys.readouterr()
+
+    assert [c["codex_source_model"] for c in seen] == ["gpt-5.6-terra", "gpt-5.6-sol"], (
+        "two codex tiers shared one cached waterfall")
+
+
+def test_copy_review_asks_for_codex_first_and_keeps_its_own_pool_lane(monkeypatch, capsys):
+    """copy_review's cfg IS copywriter.llm, so inheriting that block's
+    oauth_pool_lane would bill every review to marketing-copywriter and make the
+    two lanes indistinguishable in the key ledger."""
+    from engine.marketing import copy_review
+
+    seen = _capture_provider_cfg(monkeypatch)
+    monkeypatch.setenv("MARKETING_LLM_ENABLED", "1")
+    copy_review.review_posts_llm(
+        [{"text": "$ARES held 121.66."}], {"llm": _armed_llm_cfg()})
+    capsys.readouterr()
+
+    assert seen, "copy_review never reached the provider waterfall"
+    cfg = seen[0]
+    assert cfg["provider_order"] == CODEX_FIRST_ORDER
+    assert cfg["codex_source_model"] == "gpt-5.6-sol"
+    assert cfg["codex_reasoning_effort"] == "medium"
+    assert cfg["usage_lane"] == "marketing-copy-review"
+    assert cfg["oauth_pool_lane"] == "marketing-copy-review"
+
+
+# ── the real waterfall, with the Codex transport faked ────────────────────────
+
+class _FakeCodexClient:
+    def __init__(self, timeout_s: int = 180, reasoning_effort: str | None = None) -> None:
+        self.timeout_s = timeout_s
+        self.reasoning_effort = reasoning_effort
+        self.messages = _Messages(lambda **k: '{"text": "unused"}')
+
+
+def _fake_codex(monkeypatch, *, available: bool) -> dict:
+    """Fake the Codex PRESENCE CHECK and its client. Never a credential."""
+    from engine import codex_provider
+
+    built: dict = {}
+
+    def _client(**kwargs):  # noqa: ANN001
+        built.update(kwargs)
+        return _FakeCodexClient(**kwargs)
+
+    monkeypatch.setattr(codex_provider, "is_available", lambda: available)
+    monkeypatch.setattr(codex_provider, "CodexClient", _client)
+    return built
+
+
+def test_the_copywriter_lane_really_puts_codex_first(monkeypatch):
+    """Threading the keys is half the claim; this runs the REAL build_providers
+    over the real committed config and reads the order back out."""
+    built = _fake_codex(monkeypatch, available=True)
+    monkeypatch.setattr(llm_auth, "_oauth_pool_candidates",
+                        lambda lane, ceiling_pct=None: [])
+    monkeypatch.setattr("lib.config.secret", lambda *a, **k: "")
+    llm_auth.clear_dead()
+
+    llm_cfg = _armed_llm_cfg()
+    providers = llm_auth.build_providers({
+        "usage_lane": "marketing-copywriter",
+        "oauth_pool_lane": llm_cfg["oauth_pool_lane"],
+        "provider_order": llm_cfg["provider_order"],
+        "codex_source_model": llm_cfg["codex_source_model"],
+        "codex_reasoning_effort": llm_cfg["codex_reasoning_effort"],
+    })
+
+    assert [p["name"] for p in providers] == ["codex"]
+    assert providers[0]["model"] == "gpt-5.6-sol"
+    assert providers[0]["source_model"] == "gpt-5.6-sol"
+    assert providers[0]["usage_lane"] == "marketing-copywriter"
+    assert built["reasoning_effort"] == "medium"
+
+
+def _fake_anthropic_module():
+    """A minimal stand-in for the anthropic SDK. The marketing-engine CI lane
+    installs pytest + pyyaml + jinja2 only, so build_providers cannot construct a
+    real client there and a test that needed one would be red off this machine."""
+    import types
+
+    mod = types.ModuleType("anthropic")
+
+    class _Client:
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+
+    mod.Anthropic = _Client
+    return mod
+
+
+def test_a_host_without_codex_degrades_to_the_oauth_pool(monkeypatch):
+    """Every ubuntu runner is such a host: no Codex CLI, no attached login. The
+    rung must vanish and the key_pool-balanced Claude rung must serve, or the
+    directive turns the whole marketing estate mute off-Mac."""
+    _fake_codex(monkeypatch, available=False)
+    monkeypatch.setitem(sys.modules, "anthropic", _fake_anthropic_module())
+    llm_auth.clear_dead()
+
+    seen_lane: list[str] = []
+
+    def _spy(lane, ceiling_pct=None):  # noqa: ANN001
+        seen_lane.append(lane)
+        return [("claude_code_oauth_1", "CLAUDE_CODE_OAUTH_TOKEN_1")]
+
+    monkeypatch.setattr(llm_auth, "_oauth_pool_candidates", _spy)
+    monkeypatch.setattr("lib.config.secret",
+                        lambda env, *a, **k: "not-a-real-token"
+                        if "OAUTH" in str(env) else "")
+
+    llm_cfg = _armed_llm_cfg()
+    providers = llm_auth.build_providers({
+        "usage_lane": "marketing-copywriter",
+        "oauth_pool_lane": llm_cfg["oauth_pool_lane"],
+        "provider_order": llm_cfg["provider_order"],
+        "codex_source_model": llm_cfg["codex_source_model"],
+        "codex_reasoning_effort": llm_cfg["codex_reasoning_effort"],
+    })
+
+    names = [p["name"] for p in providers]
+    assert "codex" not in names, f"codex survived an unavailable host: {names}"
+    assert names == ["oauth"], names
+    assert providers[0]["cap_id"] == "claude_code_oauth_1"
+    assert seen_lane == ["marketing-copywriter"], (
+        "the pool walk must be asked for THIS lane, or the broker denies it")
+
+
+# ── the ruling table, pinned against the committed configs ───────────────────
+
+def _live_configs() -> tuple[dict, dict]:
+    import yaml as _yaml
+
+    marketing = _yaml.safe_load(
+        (ROOT / "config" / "marketing.yml").read_text(encoding="utf-8")) or {}
+    root_cfg = _yaml.safe_load(
+        (ROOT / "config.yml").read_text(encoding="utf-8")) or {}
+    return marketing, root_cfg
+
+
+def _marketing_llm_blocks() -> dict[str, dict]:
+    """Every committed config block that feeds a marketing LLM lane."""
+    marketing, root_cfg = _live_configs()
+    cw_llm = (marketing.get("copywriter") or {}).get("llm") or {}
+    return {
+        "marketing-copywriter": cw_llm,
+        "marketing-critic": cw_llm.get("critic") or {},
+        "marketing-breaking": (marketing.get("breaking") or {}).get("llm") or {},
+        "reply-voice": (marketing.get("reply_desk") or {}).get("voice") or {},
+        "hot-tape-wire": (root_cfg.get("hot_tape") or {}).get("llm") or {},
+    }
+
+
+@pytest.mark.parametrize(("lane", "source_model", "effort"), [
+    ("marketing-copywriter", "gpt-5.6-sol", "medium"),
+    ("marketing-critic", "gpt-5.6-terra", "medium"),
+    ("marketing-breaking", "gpt-5.6-sol", "medium"),
+    ("reply-voice", "gpt-5.6-terra", "medium"),
+    ("hot-tape-wire", "gpt-5.6-terra", "low"),
+])
+def test_every_marketing_lane_config_is_codex_first_on_its_ruled_tier(
+        lane, source_model, effort):
+    block = _marketing_llm_blocks()[lane]
+    assert block.get("provider_order") == CODEX_FIRST_ORDER, lane
+    assert block.get("codex_source_model") == source_model, lane
+    assert block.get("codex_reasoning_effort") == effort, lane
+    assert block.get("oauth_pool_lane") == lane, lane
+
+
+def test_luna_never_writes_a_user_facing_word():
+    """Operator ruling: Luna gets NO user-facing words. A whole-file scan, not a
+    per-block one, so a new marketing lane cannot smuggle it in somewhere this
+    test does not know to look."""
+    for rel in ("config/marketing.yml", "config.yml"):
+        text = (ROOT / rel).read_text(encoding="utf-8")
+        for i, line in enumerate(text.splitlines(), start=1):
+            if line.lstrip().startswith("#"):
+                continue  # the tier ruling is DOCUMENTED in comments on purpose
+            assert "luna" not in line.lower(), f"{rel}:{i}: {line.strip()!r}"
+
+
+def test_every_marketing_lane_is_authorized_in_the_capability_manifest():
+    """The oauth rung is broker-gated per lane: a lane missing from a pool key's
+    allowed_lanes gets ZERO pool keys and silently falls back to the deprecated
+    single token. The codex rung is documented in the same manifest."""
+    import yaml as _yaml
+
+    manifest = _yaml.safe_load(
+        (ROOT / "config" / "capability_manifest.yml").read_text(encoding="utf-8")) or {}
+    lanes = set(_marketing_llm_blocks()) | {"marketing-copy-review"}
+    for cap in manifest.get("capabilities") or []:
+        cap_id = str(cap.get("capability_id") or "")
+        if not (cap_id.startswith("claude_code_oauth") or cap_id == "codex_account"):
+            continue
+        missing = lanes - set(cap.get("allowed_lanes") or [])
+        assert not missing, f"{cap_id} does not authorize {sorted(missing)}"

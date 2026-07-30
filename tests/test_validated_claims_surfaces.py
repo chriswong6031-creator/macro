@@ -1,4 +1,4 @@
-"""BC-2: the two enforcement gaps the 2026-07-29 dislocation-panel audit found.
+"""BC-2: the three enforcement gaps the 2026-07-29 dislocation-panel audit found.
 
 GAP 1 — `surfaces` was decorative. Every allowlist entry has carried a `surfaces` list
 naming the page/study its justification was written for, and the matcher never read it.
@@ -15,8 +15,18 @@ GAP 2 — the zh token list was '已验证' only. The script's own header flagge
 以经验证的一道闸为准 (engine/dislocation.py) was therefore not gated at all while its EN
 twin was. 经过验证 had the same hole (gex.html), and 已经验证 is covered through 经验证.
 
-Both are pinned here through the REAL gate (scan_text / scan_python_copy / _scan_line +
-the live allowlist), never a substring match, so negation, structural and surface
+GAP 3 — a hyphen was read as a CSS selector. The structural skip for selector / DOM
+identifier tokens was written `[.\\-]validated\\b` — "a dot OR A HYPHEN before the token".
+A hyphen before the token is also how English writes an adjective, so
+"backtest-validated", "Holdout-validated", "FDR-validated", "drawdown-validated" all
+matched it; and because a _STRUCTURAL hit kills the WHOLE LINE, those claims were
+invisible to BC-2 — no allowlist entry, no CI failure, no trace. 21 lines reached the gate
+only through that rule: 7 genuine selectors and 14 carrying prose claims. The rule now
+requires a DOT-PREFIXED identifier (_IDENT_MASK) and MASKS that identifier in place
+instead of killing its line, so copy sharing a line with a selector is still gated.
+
+All three are pinned here through the REAL gate (scan_text / scan_python_copy / _scan_line
++ the live allowlist), never a substring match, so negation, structural and surface
 semantics stay in one place.
 """
 from __future__ import annotations
@@ -187,6 +197,136 @@ def test_dislocation_validation_artifact_exists():
     assert doc.exists()
     text = doc.read_text(encoding="utf-8")
     assert "PUT-ABSENT" in text and "split-half" in text
+
+
+# ── GAP 3: a hyphen is not a selector ────────────────────────────────────────────────
+
+_PROBE = frozenset({"_probe"})
+
+
+@pytest.mark.parametrize("line", [
+    "  .nbb-validated { color: var(--up); }",                    # CSS class selector
+    "  .val-chip.validated   { color:var(--ok); }",              # chained class
+    "  .ai-chip .ai-tag.validated{color:var(--green)}",          # descendant + chained
+    "{%- if x.validated %}",                                     # dotted attribute access
+    "  /* micro-style — .et-validated / .et-accruing / .et-context. */",
+])
+def test_selector_and_identifier_tokens_are_not_claims(line):
+    _, hits = _scan_line(line, ALLOW, _PROBE)
+    assert hits == [], f"selector read as prose: {line}"
+
+
+@pytest.mark.parametrize("line", [
+    "Epoch: 2026-Q3 · backtest-validated OOS; live cohort accruing",
+    "Holdout-validated, leak-free; act early — the edge decays in ~2-4 days.",
+    "is a real FDR-validated bounce ALERT (63d P-up 75% vs 72% base)",
+    "Anticipation stop-width (drawdown-validated): avg close-path adverse excursion",
+    "requires two mature cohorts and holdout-validated incrementality",
+    "  /* COILED wave-2-validated cohort-washout ranking bonus chip */",
+])
+def test_hyphenated_prose_is_a_claim(line):
+    """The defect itself. Each of these shipped invisible to BC-2 — the hyphen made the rule
+    read an English adjective as a CSS class, and a _STRUCTURAL hit kills the whole line."""
+    _, hits = _scan_line(line, ALLOW, _PROBE)
+    assert hits and not any(backed for backed, _ in hits), f"ungated prose claim: {line}"
+
+
+def test_a_selector_no_longer_suppresses_copy_sharing_its_line():
+    """The other half of the defect: one selector used to hide every claim beside it.
+    _IDENT_MASK excises the identifier and scans the rest of the line normally."""
+    line = '{%- if x.validated %}<span data-tip-en="This edge is validated on every desk.">'
+    _, hits = _scan_line(line, ALLOW, _PROBE)
+    assert len(hits) == 1 and not hits[0][0]
+
+
+def test_a_sentence_boundary_is_not_an_identifier():
+    """'. Validated' is a full stop, not a class token — the lookahead requires the character
+    after the dot to start an identifier."""
+    _, hits = _scan_line("The gate passed. Validated on the 2024+ holdout.", ALLOW, _PROBE)
+    assert hits and not any(backed for backed, _ in hits)
+
+
+def test_excising_an_identifier_cannot_break_the_negation_beside_it():
+    """The cut sentinel sits outside every character class in TOKEN / _NEG_EN / _NEG_ZH, so an
+    excision can neither splice a new token together nor let a negation lookback cross it."""
+    n_neg, hits = _scan_line("there is no .nbb-validated edge and no validated edge",
+                             ALLOW, _PROBE)
+    assert hits == [] and n_neg == 1
+
+
+# The prose claims GAP 3 surfaced, each as it ships, with the entry that now earns it.
+_ADJUDICATED = [
+    ("site/alerts.html",
+     '<span class="l-en">Forward de-risk window from a verified LEADING precursor cross '
+     '(impulse radar). Holdout-validated, leak-free; act early</span>',
+     "Holdout-validated, leak-free"),
+    ("site/alerts.html",
+     '<span class="l-zh">来自经验证的领先前兆突破的前瞻减仓窗口（脉冲雷达）。</span>',
+     "经验证的领先前兆突破"),
+    ("site/cycle_app.js",
+     "' · backtest-validated OOS; live cohort accruing (come-back: n_matured≥40 per cell)')",
+     "backtest-validated OOS; live cohort accruing"),
+    ("templates/sector_cycles.js",
+     '"Epoch: " + epoch + revOpt + " · backtest-validated OOS; live cohort accruing")',
+     "backtest-validated OOS; live cohort accruing"),
+    ("site/signal_lab.html",
+     "The capitulation gauge (VRP-extreme + VIX&gt;30 + COT-washout) is a real "
+     "FDR-validated bounce ALERT (63d P-up 75% vs 72% base)",
+     "FDR-validated bounce ALERT"),
+    ("templates/dashboard.html.j2",
+     "  /* COILED wave-2-validated cohort-washout ranking bonus chip (display-only) */",
+     "wave-2-validated cohort-washout ranking bonus"),
+]
+
+
+@pytest.mark.parametrize("rel,line,phrase", _ADJUDICATED)
+def test_the_surfaced_claims_are_backed_on_their_own_surface(rel, line, phrase):
+    found, _ = scan_text(rel, line, ALLOW)
+    assert found == [], f"{rel} unearned: {found}"
+    entry = next(e for e in ALLOW if e["match"] == phrase)
+    assert set(entry["surfaces"]) & set(_surfaces_of(rel)), entry["surfaces"]
+
+
+@pytest.mark.parametrize("rel,line,phrase", _ADJUDICATED)
+def test_those_justifications_do_not_travel_to_another_page(rel, line, phrase):
+    """Each new entry is scoped to the surfaces its study covers — none of them licenses a page
+    the study says nothing about."""
+    found, _ = scan_text("templates/forex.html.j2", line, ALLOW)
+    assert found, f"{phrase!r} must not back a page outside its study"
+
+
+def test_the_btc_impulse_edge_line_is_backed_at_its_engine_source():
+    """EN and zh halves of one sentence: the zh half was already backed, the EN half rode the
+    hyphen. Both are now claims of record on the module that authors them."""
+    found, _ = scan_python_copy(
+        "engine/btc_alerts.py",
+        '{"edge": "Forward de-risk window from a verified LEADING precursor cross '
+        '(impulse radar). Holdout-validated, leak-free; act early.",\n'
+        ' "edge_zh": "来自经验证的领先前兆突破的前瞻减仓窗口（脉冲雷达）。"}\n', ALLOW)
+    assert found == [], f"btc_alerts conviction line unearned: {found}"
+
+
+def test_the_de_escalated_copy_stays_de_escalated():
+    """Two lines were reworded, not allowlisted, because no study backs them: the anticipation
+    stop-width is dd_avg (a descriptive average close-path adverse excursion, and the unscored
+    branch claimed it for a horizon the same parenthesis called unscored), and the marketing
+    north-star note has no data at all. If the word returns, it must return with a study."""
+    dash = (ROOT / "templates" / "dashboard.html.j2").read_text(encoding="utf-8")
+    assert "drawdown-validated" not in dash
+    state = (ROOT / "engine" / "marketing" / "state.py").read_text(encoding="utf-8")
+    assert "holdout-validated" not in state
+
+
+@pytest.mark.parametrize("doc", [
+    "research/VECTOR_IMPULSE_PREDICTION.md",
+    "research/cycle_masterplan/PREREGISTRATION.md",
+    "research/cycle_masterplan/W42_HAZARD_VERDICT.md",
+    "research/entry_timing/WAVE2_REPORT.md",
+    "reports/capitulation-overlay-phase0.md",
+])
+def test_the_backings_named_by_the_new_entries_exist(doc):
+    """An entry is a claim of record: the artifact it names has to be there."""
+    assert (ROOT / doc).exists(), doc
 
 
 # ── wiring + no-debt ────────────────────────────────────────────────────────────────
