@@ -90,8 +90,13 @@ _ACTIVITY_WORDS: dict[str, str] = {
     "deferred_immediate": "held back as a breaking item",
     "deferred_cross_account": "spaced out from a sibling desk's post",
     "forward_booked": "booked into a later slot",
-    "tape_quarantined": "hot-tape item pulled",
-    "tape_skipped": "hot-tape item skipped",
+    # NOT the hot-tape lane — these two are the LIVE TAPE GATE, which refuses to
+    # send a post whose price claim it cannot verify against a quote fresher than
+    # 45 minutes. Mislabelling them "hot-tape item skipped" hid the actual reason
+    # nothing posted on 2026-07-29: both approved posts were held because their
+    # quotes were ~55h stale or absent from the quote universe entirely.
+    "tape_quarantined": "pulled — price claim contradicted today's tape",
+    "tape_skipped": "held — no fresh quote to verify the price claim",
     "pt_generated": "publish-time reads written",
     "pt_dropped": "publish-time read dropped",
     "auto_approved": "auto-approved",
