@@ -63,6 +63,49 @@ whole-artifact ``carry``: a quote hiccup must not cost the session its history, 
 without it a per-name dark would be more destructive than a whole-artifact one.
 Coming back to a DIFFERENT public state re-stamps, which is the honest answer.
 
+LEVELS (the P1 ``CROSS LEVEL`` column) — the other per-row display field, and the one
+place this module republishes a number it did not decide. Every non-dark state carries
+the pack's armed boundary for that name, under the key that says what the number MEANS
+for THAT row, because the SAME lower edge is opposite news on the two kinds of row —
+the trap :func:`engine.prophet_live.interval.lower_edge` documents:
+
+    cross_level_px   the name is NOT on tonight's board (``entered:"cross"``): the
+                     lowest provisional close that flips the gate true — the pack's
+                     ``trigger_px``.
+    fade_px          the name IS on tonight's board (``entered:"board"``): the SAME
+                     lower edge, but here it is the level BELOW which tonight's
+                     verdict flips false. Not a "cross" level for that row.
+    fade_hi_px       the upper edge, either kind of row: above it the gate stops
+                     admitting the name (the not-topped veto). This is what a name
+                     with ``via:"overrun"`` ran past.
+
+WHY ONLY THE CROSS KEY CARRIES ``_level_`` (operator ruling 2026-07-30). ``fade`` names
+a LEVEL everywhere in this program — ``fade_px``/``fade_hi_px`` are the pack's own
+numbers under the pack's own names — so those two need no marker and deliberately do
+not get one. ``cross`` has no such property: it names an EVENT here, and a PRICE in the
+nightly ledger, where ``cross_px`` is ``first_px``, what the tape actually printed at
+the first cross (``scripts/reconcile_prophet_live``, load-bearing in that module's
+``FIRST_WINS`` and in its ``close_vs_cross_pct``/``fill_vs_cross_pct`` derivations). So
+the LEVEL takes the explicit infix and the ledger's field is left alone. Joining this
+artifact to that ledger on a ``cross``-shaped name would compare a threshold against a
+fill; the two names no longer collide, and this paragraph is why. ``transitions`` also
+builds event rows field by field, so no level reaches the spool the ledger reads.
+
+The two lower-edge keys are MUTUALLY EXCLUSIVE (the pack sets ``trigger_px`` xor
+``fade_px``), so a consumer reads its column label off key PRESENCE and derives
+nothing: ``cross_level_px`` ⇒ the cross level, ``fade_px`` ⇒ the fade level, neither ⇒
+no level to print. A key is ABSENT rather than 0-or-null when there is no level: an
+unprobed, withheld or irregular name, a name with no buyable region in the band, a
+board name whose buyable region has no bound inside the band, and every ``dark`` row
+(which, like ``since_ts``, has no public state to hang a level on).
+
+NEVER RE-ROUNDED. The pack already rounds each edge INTO the buyable region at 4 dp
+(lower up, upper down) and ships the full-precision bisected value instead when a
+rounding step would cross the as-of close — so a published level is always a price the
+gate genuinely accepted. Rounding again here could only move a level the wrong way and
+print one the gate would reject, so the number travels exactly as armed. ``price`` is
+still rounded for display: that is a quote, not a threshold.
+
 VOCABULARY IS LOAD-BEARING (G0.6 + operator 2026-07-27). Nothing here says fired,
 confirmed, refuted or validated. The nightly build is the only thing that confirms,
 and falsifier language is never front-facing.
@@ -409,6 +452,25 @@ def _resolve_state(entry: dict[str, Any], *, price: float | None, quote_age_min:
 
         out: dict[str, Any] = {"price": round(px, 4),
                                "quote_age_min": round(float(quote_age_min), 1)}
+
+        # THE LEVEL THAT MATTERS FOR THIS ROW — a fact about the armed pack, not a
+        # decision, so it is set here rather than at each of the machine's exits (the
+        # same reason _stamp_since is one place) and holds for every branch below.
+        # Keyed by MEANING (module docstring: LEVELS): the same lower edge is a cross
+        # level for a name off tonight's board and a fade level for a name on it, and
+        # one name for both would tell a board row's reader the opposite of what the
+        # number does. `cross_level_px`, not `cross_px` — the ledger's `cross_px` is
+        # the PRICE printed at the cross, and the infix is what stops a threshold
+        # being read as a fill. `buyable_in_band` is the guard because a level only
+        # exists where the interval does; without it a withheld or nothing-buyable
+        # name would print a boundary it has not got. Republished VERBATIM: the pack
+        # rounded these edges into the buyable region already, and re-rounding could
+        # only name a price the gate would reject.
+        if entry.get("buyable_in_band"):
+            if lo is not None:
+                out["fade_px" if on_board else "cross_level_px"] = float(lo)
+            if hi is not None:
+                out["fade_hi_px"] = float(hi)
 
         if on_board:
             # Already admitted at last night's close, so there is no cross to

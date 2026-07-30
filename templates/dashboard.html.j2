@@ -15098,6 +15098,241 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
   </div>{# /panel — What to act on now (standouts split into their own panel 2026-07-11) #}
     {% set _su = us_standouts if (us_standouts and us_standouts.buy) else None %}
     {{ pv.pv_css() }}
+{#- ══════════════════════════════════════════════════════════════════════════════════
+    PROPHET LIVE P1 — "Forming today" strip (research/PROPHET_LIVE_P1_DESIGN_SPEC.md).
+
+    ITS OWN panel span12, deliberately NOT a block inside #us-standouts: doctrine Law 4
+    allows one as-of stamp per panel and the two clocks here are different objects — the
+    board is stamped with the nightly close vintage, this strip with an intraday quote
+    age. Two clocks = two panels; merging them would force one stamp to lie.
+
+    PRESENTATION TIER ONLY. Nothing here touches graded-board rows, membership, ordering,
+    us_standouts.json or any ledger (DNR §1). The nightly build remains the ONLY confirmer:
+    every read on this strip settles at tonight's close and the copy says so in both
+    languages. SSR emits the shell only — the panel stays display:none until the JS has a
+    payload, so an absent artifact is silence, not an empty box (FT-R8).
+    ══════════════════════════════════════════════════════════════════════════════════ #}
+    {% if mode == 'stocks' %}
+    {% set _plv_uni = us_standouts.get('universe') if (us_standouts and us_standouts.get('universe')) else none %}
+    <style>
+    /* ── PROPHET LIVE strip (P1, spec §3) ─────────────────────────────────────────
+       The provisional hue is the lane's OWN component-scoped token, chosen against
+       three neighbours — no global token is added and theme.css stays untouched:
+         · not --link / --info  → a chip must never read as clickable
+         · not --up / --down    → must never read directional (and must not flip under
+                                  html[data-lang="zh"] 红涨绿跌)
+         · not any --pv-*       → must never read as a nightly verdict (green = confirmed,
+                                  and only the nightly build confirms)
+       Escalation to the strongest moment (confirming_into_close) is carried by FILL and
+       WEIGHT, never by hue: one hue for the whole live family. There is deliberately no
+       status dot anywhere — a green "live" pulse is unreachable on a 15-min-delayed plane
+       and would encode certainty. The settle rail is the sanctioned proof of life. */
+    /* --plv-rh is THE height contract's single free parameter — see .plv-body below. */
+    #prophet-live{--plv:#62a0e8;--plv-rh:27px;display:none}
+    html[data-theme="light"] #prophet-live{--plv:#2f6fd0}
+    #prophet-live.visible{display:block}
+    /* Every header item takes the token pill's line box, so a SHORTER token ("READ
+       PAUSED") cannot yield a shorter wrapped line than a longer one. Measured: it did,
+       by 2.5px — which is a height change, i.e. a board shove. */
+    .plv-hd{display:flex;align-items:center;gap:8px;row-gap:4px;flex-wrap:wrap}
+    .plv-hd > *{min-height:17px;display:inline-flex;align-items:center}
+    /* gap, not a literal space: `.plv-hd > *` makes the title an inline-flex box and flex
+       layout discards the whitespace-only text node between the ◐ glyph and the label. */
+    .plv-title{margin:0;gap:6px;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--plv)}
+    .plv-token{font-size:9.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--plv);
+      border:1px solid color-mix(in srgb,var(--plv) 34%,transparent);
+      background:color-mix(in srgb,var(--plv) 9%,transparent);border-radius:999px;padding:1.5px 8px;white-space:nowrap}
+    /* ── WORST-CASE RESERVATION (the general fix for mode-dependent height) ──────
+       Three boxes here hold text that changes with the MODE, and every one of them was
+       an unreserved height variable: a wrapped line count is a function of string
+       length, so the panel measured up to 32.75px taller in one mode than another and
+       shoved the whole board. Reserving a hand-measured min-height per breakpoint would
+       need a magic number per width PER LANGUAGE and would rot the first time a word
+       changed. Instead every variant stays in the DOM, stacked in ONE grid cell, and
+       only the active one is visible: the browser then reserves max(all modes) at
+       whatever width and language it is actually rendering, with no numbers at all.
+       `visibility:hidden` is load-bearing — it keeps the box sized while removing the
+       inactive text from the accessibility tree, so nothing invisible is ever announced
+       or read as a claim. `display:none` would size nothing; `opacity:0` would be read. */
+    .plv-hd > .plv-token{display:inline-grid;justify-items:center;text-align:center}
+    /* The as-of reserves its line even when it has nothing to stamp: at <=340px it sits on
+       header line 2 beside the token, so an empty box collapsed that line and shoved the
+       board 17px on exactly the days there is no read to stamp. `tabular-nums` above is
+       what makes the 12:00 reserver exactly as wide as any real two-digit-hour stamp. */
+    .plv-hd > .plv-asof{display:inline-grid;justify-items:end}
+    .plv-sub,.plv-fn{display:grid}
+    .plv-v{grid-area:1/1;visibility:hidden}
+    .plv-v.is-on{visibility:visible}
+    /* The TOKEN only needs a mode-independent width where the header wraps — above the
+       680px query it sits on one line with room to spare, so drop the reservation there
+       and let the pill hug its own text. Below it the pill keeps a constant width, which
+       is what stops a short token ("READ PAUSED") from fitting beside the title where a
+       long one wraps and taking the as-of onto a line of its own. */
+    @media (min-width:681px){ .plv-token .plv-v:not(.is-on){display:none} }
+    .plv-token.is-dark{color:var(--muted);border-color:color-mix(in srgb,var(--muted) 30%,transparent);background:color-mix(in srgb,var(--muted) 7%,transparent)}
+    .plv-token.is-closed{color:var(--pv-hold);border-color:color-mix(in srgb,var(--pv-hold) 34%,transparent);background:transparent}
+    .plv-more{font-size:10.5px;color:var(--muted);background:none;border:0;padding:0 2px;font-family:inherit;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+    .plv-asof{margin-left:auto;font-size:10.5px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+    .plv-sub{font-size:11.5px;line-height:1.45;color:var(--text);opacity:.82;margin:5px 0 0;min-height:17px}
+    /* SIGNATURE — the settle rail. Fixed height; the only inline style the JS writes
+       anywhere on this page is this fill's width (and the now-tick's left). It encodes the
+       one variable that actually converts "forming" into "confirmed": remaining tape.
+       aria-hidden — the as-of text and the end-cap label carry it in words. */
+    .plv-rail{display:flex;align-items:center;gap:8px;margin:11px 0 10px;height:14px}
+    .plv-rail-track{position:relative;flex:1;height:3px;border-radius:2px;background:var(--line);overflow:visible}
+    .plv-rail-fill{position:absolute;inset:0 auto 0 0;width:0;height:3px;border-radius:2px;background:color-mix(in srgb,var(--plv) 46%,transparent)}
+    .plv-rail-now{position:absolute;top:-3px;left:0;width:1.5px;height:9px;border-radius:1px;background:var(--plv)}
+    .plv-rail-lbl{flex:none;font-size:9.5px;color:var(--muted);white-space:nowrap}
+    #prophet-live.is-dark .plv-rail{opacity:.45}
+    #prophet-live.is-dark .plv-rail-fill,#prophet-live.is-dark .plv-rail-now{display:none}
+    #prophet-live.is-closed .plv-rail-now{display:none}
+    #prophet-live.is-closed .plv-rail-fill{width:100%!important;background:color-mix(in srgb,var(--pv-hold) 30%,transparent)}
+    /* rows: dtp-column discipline — ONE header labels the figure columns, so no row ever
+       repeats a constant (doctrine Law 4) and every figure is self-labelled (Law 3). */
+    .plv-cols,.plv-row{display:grid;grid-template-columns:minmax(96px,auto) 46px 1fr 74px 74px 52px;align-items:baseline;gap:0 10px}
+    .plv-cols{font-size:9.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);
+      border-bottom:1px solid var(--line);padding-bottom:4px}
+    .plv-c2,.plv-c3,.plv-c4{text-align:right}
+    /* EVERY cell is pinned to its column, header and row alike. The labels always were;
+       the row cells were auto-placed, and auto-placement RESHUFFLES when a cell in the
+       middle is removed: the ≤560px rule hides .plv-nm (column 3), so `now` slid into
+       that column — which the same rule sets to 0 — and printed on top of `cross level`
+       ("$224260.85" at 375px). Pinning makes any future column demotion a no-op for the
+       cells that stay. */
+    .plv-c1{grid-column:1}.plv-c2{grid-column:4}.plv-c3{grid-column:5}.plv-c4{grid-column:6}
+    .plv-row > .plv-chip{grid-column:1}
+    .plv-tk{grid-column:2}.plv-nm{grid-column:3}
+    .plv-now{grid-column:4}.plv-lvl{grid-column:5}.plv-since{grid-column:6}
+    /* empty modes keep the hairline rule (height invariance) but HIDE rather than collapse
+       the labels — dead column headings over an empty box read as a broken panel. */
+    #prophet-live.is-empty .plv-cols > span{visibility:hidden}
+    /* THE HEIGHT CONTRACT — 3 reserved slots, and the reservation is DERIVED from the row
+       height instead of being a second hand-measured number. The spec (and the mockup)
+       pinned both sides independently at min-height 24.5px / 75.5px; on the real page the
+       row measures 26.06px, because this page inherits line-height:1.5 while the mockup
+       inherited `normal`, and a baseline-aligned grid row is as tall as
+       max(above-baseline) + max(below-baseline) across the chip and the text — not as tall
+       as the chip box. The strip came out 4.69px taller in live than in quiet/dark/closed:
+       a board shove every time the last cross faded. Two independently guessed numbers
+       cannot stay equal, so now `height` (not min-height) fixes the row and the body
+       reserves exactly 3 of them. --plv-rh is the one parameter; it must stay >= the row's
+       natural content height (21.06px content + 5px padding at time of writing). Re-run
+       mockups/refs/prophet_live/verify_p1.py after ANY change to the chip box, the row
+       font sizes, or the inherited line-height. */
+    .plv-body{min-height:calc(var(--plv-rh) * 3 + 2px);display:flex;flex-direction:column;padding-top:2px}
+    .plv-row{padding:2.5px 0;height:var(--plv-rh);box-sizing:border-box;font-size:12.5px;text-decoration:none;color:inherit}
+    .plv-row:hover .plv-nm,.plv-row:hover .plv-tk{color:var(--link)}
+    .plv-tk{font-weight:800;letter-spacing:.01em;white-space:nowrap}
+    .plv-nm{color:var(--muted);font-size:11px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .plv-now,.plv-lvl,.plv-since{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--font-mono,monospace);white-space:nowrap}
+    .plv-now{font-weight:700}
+    .plv-lvl{color:var(--muted)}
+    .plv-since{color:var(--muted);font-size:11px}
+    .plv-chip{display:inline-flex;align-items:center;gap:4px;justify-self:start;font-size:10px;font-weight:800;
+      letter-spacing:.04em;text-transform:uppercase;line-height:1.35;padding:2px 8px;border-radius:999px;white-space:nowrap;
+      background:color-mix(in srgb,var(--plv) 10%,transparent);color:var(--plv);
+      border:1px solid color-mix(in srgb,var(--plv) 42%,transparent)}
+    /* the strongest moment escalates by FILL + WEIGHT, never by hue */
+    .plv-chip--close{background:var(--plv);color:#fff;border-color:transparent}
+    /* "fell back" (grey, it came back toward you) vs "ran past" (amber, don't chase) —
+       the two fade stories never share a word and never share a hue, and neither uses a
+       directional colour, so 红涨绿跌 holds by construction. Do not add --up/--down. */
+    .plv-chip--drop{background:color-mix(in srgb,var(--pv-hold) 10%,transparent);color:var(--pv-hold);
+      border-color:color-mix(in srgb,var(--pv-hold) 32%,transparent)}
+    .plv-chip--over{background:color-mix(in srgb,var(--pv-wait) 11%,transparent);color:var(--pv-wait);
+      border-color:color-mix(in srgb,var(--pv-wait) 40%,transparent)}
+    .plv-row.is-past .plv-tk,.plv-row.is-past .plv-now{opacity:.72}
+    .plv-none{flex:1;display:flex;flex-direction:column;justify-content:center;gap:3px;font-size:12px;color:var(--muted)}
+    .plv-last{font-size:10.5px;opacity:.8}
+    .plv-fn{border-top:1px solid var(--line);margin-top:7px;padding-top:7px;font-size:10.5px;line-height:1.5;color:var(--muted)}
+    .plv-fig{font-variant-numeric:tabular-nums;font-weight:700;color:var(--text)}  /* figures mono, words never */
+    .plv-row.is-new{animation:plv-in .2s ease-out}
+    @keyframes plv-in{from{opacity:0}to{opacity:1}}
+    @media (prefers-reduced-motion:reduce){.plv-row.is-new{animation:none}}
+    @media (max-width:680px){
+      /* Header pinned to a deterministic TWO lines: [title ? +N] / [token as-of].
+         The reorder alone is not enough. Without it the 44px +N button landed on a THIRD
+         line the moment a 4th row appeared — a 21px shove of the whole board, every 5
+         minutes. With it, WHICH line the token lands on was still a function of its own
+         string length: the short "READ PAUSED" fitted beside the title while
+         "INTRADAY · 15-MIN DELAYED" did not, so the header measured 40.25px in dark
+         against 41.25px in live — a 1px shove on every mode change. The ::before is a
+         zero-content flex item with basis 100%: it consumes the rest of line 1, so the
+         token ALWAYS starts line 2 no matter how long it is, and it carries the 4px the
+         row-gap gave up so the pinned height is unchanged (18 + 4 + 19.25). */
+      .plv-hd{row-gap:0}
+      .plv-hd::before{content:"";order:2;flex:0 0 100%;height:4px}
+      .plv-more{order:1;margin-left:auto}
+      .plv-token{order:3}
+      .plv-asof{order:4;margin-left:auto}
+      .plv-cols,.plv-row{grid-template-columns:minmax(84px,auto) 44px 1fr 68px 68px 0}
+      .plv-c4,.plv-since{display:none}          /* SINCE demoted; it survives in the row tip */
+    }
+    @media (max-width:560px){
+      /* Phone layout: [chip] [ticker] · [now]. Two things had to change here.
+         (1) Column 1 keeps min-content. With minmax(0,auto) the grid handed column 1 ZERO
+             pixels — the 1fr name column outbid it — and the 148px "HOLDING INTO CLOSE"
+             pill printed straight over the ticker at 375px and below.
+         (2) The chip is then allowed to WRAP rather than to shorten. Collapsing it to the
+             bare ◐ glyph (the card-chip idiom) would leave hue as the only carrier of the
+             state, and on the strip the state word IS the content. Wrapping costs row
+             height instead — paid ONCE through --plv-rh, so every mode grows together and
+             the height contract still holds.
+         Cross level is demoted here with the company name (both survive in the row tip);
+         NOW stays, because it is the figure the reader is actually looking for. .plv-c3 is
+         the CROSS LEVEL heading (column 5), so it goes with .plv-lvl — not with .plv-nm,
+         which has no heading of its own. */
+      #prophet-live{--plv-rh:40px}
+      .plv-cols,.plv-row{grid-template-columns:minmax(min-content,auto) 44px minmax(0,1fr) 66px 0 0;
+        gap:0 8px;align-items:center}
+      .plv-nm,.plv-c3,.plv-lvl{display:none}
+      .plv-chip{white-space:normal;text-align:center}
+    }
+    </style>
+    <div class="panel span12" id="prophet-live" hidden{% if _plv_uni %} data-universe="{{ _plv_uni }}"{% endif %}>
+      <div class="plv-hd">
+        <h2 class="plv-title">◐ {{ t('Forming today', '今日正在形成') }}</h2>
+        {#- The Tier-2 receipt (spec §4.6). Tip text is [js]-written and then handed to
+            theme.js's upgradeHelpIcons() for the shared tap-to-toggle popover: the
+            sentence carries the intraday coverage count, which changes every pass, so
+            baking it here would ship a stale receipt. Empty spans keep upgradeOne() from
+            freezing a placeholder into data-tip-en before the fill. #}
+        <span class="help" id="plv-help">?<span class="tip tip-wide"><span class="l-en"></span><span class="l-zh"></span></span></span>
+        <span class="plv-token" id="plv-token"></span>
+        <button class="plv-more" id="plv-more" type="button" aria-expanded="false" hidden></button>
+        <span class="plv-asof" id="plv-asof"></span>
+      </div>
+      <div class="plv-sub" id="plv-sub"></div>
+      <div class="plv-rail" aria-hidden="true">
+        <div class="plv-rail-track"><i class="plv-rail-fill" id="plv-rail-fill"></i><i class="plv-rail-now" id="plv-rail-now"></i></div>
+        <div class="plv-rail-lbl">{{ t('settles 4:00 pm ET', '美东 16:00 结算') }}</div>
+      </div>
+      <div class="plv-cols" id="plv-cols">
+        <span class="plv-c1"></span>
+        <span class="plv-c2">{{ t('Now', '当前') }}</span>
+        <span class="plv-c3">{{ t('Cross level', '上穿价位') }}</span>
+        <span class="plv-c4">{{ t('Since', '起始') }}</span>
+      </div>
+      <div class="plv-body" id="plv-body"></div>
+      <div class="plv-fn" id="plv-fn"></div>
+    </div>
+    {#- ticker → company name for the strip rows. The prophet_live payload carries no
+        names, and the names it needs are by construction NOT on the board below (a
+        strip row is a name that crossed TODAY and was not admitted last night), so
+        the cards cannot supply them. This island is the near-decision population the
+        pack arms from — buy ∪ watch ∪ leaders ∪ laggards, ~150 short strings — which
+        costs one baked object instead of a second network fetch. DISPLAY-ONLY: a
+        label lookup, never a membership or ordering input. #}
+    {%- set _plv_nm = {} -%}
+    {%- if us_standouts -%}
+      {%- for _lst in ['watch', 'buy', 'leaders', 'laggards'] -%}
+        {%- for _r in (us_standouts.get(_lst) or []) -%}
+          {%- if _r.get('ticker') and _r.get('name') -%}{{ _plv_nm.update({_r.ticker: _r.name}) or '' }}{%- endif -%}
+        {%- endfor -%}
+      {%- endfor -%}
+    {%- endif %}
+    <script type="application/json" id="plv-names">{{ _plv_nm | tojson }}</script>
+    {% endif %}
     {% if _su or action_board.notable %}
     <div class="panel span12 notable" id="us-standouts">
       <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
@@ -16787,6 +17022,704 @@ document.addEventListener('click',function(e){
 // double-toggle into a no-op — deliberately no handler.
 
 // Action-board row popovers handled by theme.js shared row-pop engine ([data-rpop] / .rp-src).
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   PROPHET LIVE P1 — the "Forming today" strip + the ◐ card chips.
+   Contract: research/PROPHET_LIVE_P1_DESIGN_SPEC.md §6. Payload:
+   prophet_live.states/v1 (engine/prophet_live/live_states.py).
+
+   PRESENTATION-TIER FENCE (spec §6.5, DNR §1). This block writes to EXACTLY two
+   places: #prophet-live (its own panel) and .pvcard > .pv-chart > .pv-ov.pv-ovl >
+   .pv-live (the reserved chip slot). It never touches card ordering, card
+   membership, the pv-* hue class, .pv-chip (verb), .pv-edn (Edge), .pv-stp/.pv-stl
+   (stage), .pv-zn (zone), .pv-trg (the nightly ⚡), the table view, or any lane or
+   count on the board. The nightly build is the only confirmer.
+
+   VOCABULARY IS LOAD-BEARING (G0.6 + operator 2026-07-27). Nothing here says fired,
+   confirmed, triggered-as-past-fact, refuted or falsifier, and nothing claims proven
+   statistical standing (the CI claims guard owns that last word). Every
+   state settles at tonight's close and every surface below says so, in both
+   languages. There is no "live" pulse and no status dot: on a 15-minute-delayed
+   plane a green dot is both unreachable and a claim of certainty. The settle rail
+   is the sanctioned proof of life — it advances on a local clock, with no fetch.
+   ══════════════════════════════════════════════════════════════════════════════ */
+var PLV_URL   = 'live/prophet_live.json';
+var PLV_EVERY = 120000;   /* ms between fetches — producer writes every ~5 min, so
+                             120s bounds staleness at ~2 min for ~2.5 GETs/artifact */
+var PLV_FLOOR = 30000;    /* floor on a visibility-triggered refetch */
+var PLV_TICK  = 60000;    /* rail clock — no network */
+var PLV_CAP   = 3;        /* row slots; the height contract reserves exactly this many */
+var PLV_OPEN  = 570;      /* 09:30 ET in minutes — the rail's left edge */
+var PLV_CLOSE = 960;      /* 16:00 ET — the rail's right edge, and what settles a read */
+var PLV_WAKE  = 560;      /* 09:20 ET — before this "Forming today" has nothing to say */
+var PLV_SHUT  = 980;      /* 16:20 ET — past this the strip is CLOSED, never age-dark */
+/* 18:30 ET — the nightly build's own cron (.github/workflows/daily.yml `30 22 * * *`,
+   single-cron by design so it is 18:30 EDT / 17:30 EST). CLOSED asserts a PENDING
+   verdict ("tonight's close settles which ones count"); once the nightly has published,
+   the board immediately below has already answered that question, so from here the strip
+   has nothing left to say and hides. Running closed to midnight left a ~5.5h window in
+   which the strip contradicted the board underneath it. */
+var PLV_SETTLE = 1110;
+var PLV_FIRST = 575;      /* 09:35 ET — window start 09:25 + the producer's 10-min cron
+                             grace. Before this, today's first pass is merely LATE, not a
+                             fault, and the strip must not raise an alarm. */
+var PLV_MAXAGE = 900000;  /* 15 min = 3 missed passes */
+/* CLOSED must not launder a fault that was already disclosed: a producer dead since
+   11:00 read honestly dark at 16:17 and then flipped to a confident "closed" with 11:00
+   rows at 16:21. The frozen rows only describe the close if the last pass actually
+   landed near it, so closed requires a pass within 3 missed passes of 16:00 ET. */
+var PLV_CLOSE_PASS = 945; /* 15:45 ET */
+
+var _plvPanel = document.getElementById('prophet-live');
+/* ticker → company name, SSR-baked (see the #plv-names island): the payload carries
+   no names and a strip row must not be a bare slug on a page that has the name. */
+var _plvNames = (function(){
+  try{ return JSON.parse((document.getElementById('plv-names')||{}).textContent||'{}')||{}; }
+  catch(e){ return {}; }
+})();
+var _plvData = null, _plvFetchedAt = 0, _plvFetching = false;
+var _plvLastMode = null, _plvExpanded = false, _plvClearMin = null;
+var _plvEvalN = null, _plvUnprobed = null;
+var _plvEtFmt = null;
+
+/* ── ET wall clock ───────────────────────────────────────────────────────────
+   Every window in this component is an EASTERN clock window. A UTC-pinned one is
+   an hour wrong for half the year (the same trap the P0 cron comments describe),
+   and the reader's own timezone is irrelevant to when the US tape settles. */
+function _plvEt(d){
+  try{
+    if(!_plvEtFmt){
+      _plvEtFmt = new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',
+        hour12:false, weekday:'short', year:'numeric', month:'2-digit', day:'2-digit',
+        hour:'2-digit', minute:'2-digit'});
+    }
+    var parts=_plvEtFmt.formatToParts(d), p={}, i;
+    for(i=0;i<parts.length;i++) p[parts[i].type]=parts[i].value;
+    var h=parseInt(p.hour,10); if(h===24) h=0;   /* en-US hour12:false prints 24 at midnight */
+    return {ymd:p.year+'-'+p.month+'-'+p.day, min:h*60+parseInt(p.minute,10), wd:p.weekday};
+  }catch(e){ return null; }
+}
+/* EN reads a 12-hour clock, ZH a 24-hour one — both are written into the DOM at once
+   (l-en/l-zh) so switching language never needs a re-render or a fresh fetch. */
+function _plvHm12(m){
+  var h=Math.floor(m/60), mm=m%60, ap=h>=12?'pm':'am', h12=h%12;
+  if(h12===0) h12=12;
+  return h12+':'+(mm<10?'0':'')+mm+' '+ap;
+}
+function _plvHm24(m){
+  var h=Math.floor(m/60), mm=m%60;
+  return (h<10?'0':'')+h+':'+(mm<10?'0':'')+mm;
+}
+/* An ISO stamp as ET minutes-of-day, or null. Never throws, never guesses. */
+function _plvTsMin(iso){
+  if(!iso) return null;
+  var ms=Date.parse(iso);
+  if(!isFinite(ms)) return null;
+  var et=_plvEt(new Date(ms));
+  return et?et.min:null;
+}
+/* "as of 3:41 pm ET" / "截至 美东 15:41" — ONE as-of for the whole panel (Law 4). */
+function _plvAsOf(m){
+  return L('as of '+_plvHm12(m)+' ET', '截至 美东 '+_plvHm24(m));
+}
+function _plvNum(v){
+  try{ return Number(v).toLocaleString('en-US'); }catch(e){ return String(v); }
+}
+/* Write every variant into the box and show one. See the WORST-CASE RESERVATION note in
+   the CSS: this is what makes the panel's height independent of which mode is showing,
+   at every width and in both languages, without a single measured constant. `order`
+   fixes the paint order so the DOM is stable pass to pass. */
+function _plvStack(el, order, variants, active){
+  var html='', i, k;
+  for(i=0;i<order.length;i++){
+    k=order[i];
+    if(!variants[k]) continue;
+    html+='<span class="plv-v'+(k===active?' is-on':'')+'"'
+       +(k===active?'':' aria-hidden="true"')+'>'+variants[k]+'</span>';
+  }
+  if(el.innerHTML!==html) el.innerHTML=html;
+}
+function _plvPx(v){
+  if(v===null||v===undefined||!isFinite(Number(v))) return '—';
+  return '$'+Number(v).toFixed(2);
+}
+
+/* ── Copy tables (spec §4) ───────────────────────────────────────────────────
+   Keyed to MODE, never to the row set: a subtitle that rewrites itself every five
+   minutes is its own kind of noise, and holding it stable is also a no-thrash rule. */
+/* The delay disclosure stays in CLOSED too (spec owner's ruling, 2026-07-30): the frozen
+   rows are still printing intraday prices, so the plane they came from must still be
+   named. "settles tonight" moves to the stance line, which already says it. */
+var PLV_TOKEN = {
+  rth:     ['Intraday · {d}-min delayed', '盘中 · {d}分钟延迟'],
+  preopen: ['Pre-open · {d}-min delayed', '盘前 · {d}分钟延迟'],
+  dark:    ['Read paused', '判读暂停'],
+  closed:  ['Closed · {d}-min delayed', '已收盘 · {d}分钟延迟']
+};
+var PLV_SUB = {
+  live:   ["Crossing now — nothing is settled until tonight's close. Get ready; don't chase.",
+           '正在上穿 — 今晚收盘才算数。做好准备，勿追高。'],
+  quiet:  ["Nothing crossing right now. Tonight's board below is the plan.",
+           '当前没有新的上穿。下方的看板即为今日计划。'],
+  dark:   ['The intraday read is paused. The board below is unaffected.',
+           '盘中判读暂停。下方看板不受影响。'],
+  closed: ["These crossed today — tonight's close settles which ones count.",
+           '这些今日已上穿 — 今晚收盘决定哪些成立。']
+};
+/* Dark causes in PLAIN WORDS. "arming pack", "stale_pack", "out_of_band" and every
+   other machine reason stays out of Tier 1 — the reason IS disclosed, in the
+   reader's own language. A per-name dark reason never renders as a guessed state. */
+var PLV_DARK = {
+  no_pack:    ["Today's watch list hasn't loaded, so nothing is being checked.",
+               '今日的追踪清单尚未载入，暂无判读。'],
+  stale_pack: ['The watch list is out of date, so the intraday read is paused.',
+               '追踪清单已过期，盘中判读暂停。'],
+  quotes:     ["Prices aren't updating right now, so the intraday read is paused.",
+               '价格暂未更新，盘中判读暂停。'],
+  /* A cause we DO NOT know. The strip may relay a cause only when the producer attests
+     one (status:"dark" + reason); a date mismatch on its own is not evidence of a stale
+     watch list. It happens every trading morning between 09:20 and the first pass, ALL
+     DAY on every market holiday (no pass runs, so yesterday's file is the newest one),
+     and whenever the lane is down — three different causes, and the browser has no NYSE
+     calendar to tell them apart. Claiming "the watch list is out of date" in all three
+     was a confident wrong cause, so this form names the observable fact instead. */
+  none_today: ["There's no intraday read for today.", '今日暂无盘中判读。']
+};
+/* via selects the word, and "faded" is shown ONLY for via:"drop". An overrun ran
+   PAST the range the gate still admits — the opposite trade from falling through
+   it, so calling that "faded" would lie about direction and pollute the very axis
+   the P0 forward ledger measures. The word "faded" survives in the Tier-2 tip. */
+var PLV_CHIP = {
+  forming: ['Forming', '正在形成', 'plv-chip--forming'],
+  close:   ['Holding into close', '收盘前仍成立', 'plv-chip--close'],
+  drop:    ['Fell back', '回落', 'plv-chip--drop'],
+  over:    ['Ran past', '越过', 'plv-chip--over']
+};
+/* CLOSED freezes the rows, so their labels must freeze in the SETTLED tense too: a row
+   still reading "Forming" / "正在形成" at 17:00 claims a live state on a tape that has
+   stopped. "Crossed" is the sanctioned past tense (the closed stance line already uses
+   it); it is a statement about today's tape and still says nothing about the verdict,
+   which only the nightly build settles. drop/over are already past tense. */
+var PLV_CHIP_PAST = {
+  forming: ['Crossed', '已上穿', 'plv-chip--forming'],
+  close:   ['Held into close', '收盘时仍成立', 'plv-chip--close'],
+  drop:    ['Fell back', '回落', 'plv-chip--drop'],
+  over:    ['Ran past', '越过', 'plv-chip--over']
+};
+var PLV_TIP = {
+  forming: ["The same admission test tonight's build will run already passes at today's price, and has held for two checks in a row. Nothing is confirmed: tonight's close decides, and a board seat is settled only by the nightly build. Price is intraday, {d}-minute delayed.",
+            '今晚生成时要跑的同一套准入判定，在今日价格下已经通过，并且连续两次检查都成立。但这不是确认：今晚收盘才决定，看板席位只由夜间生成敲定。价格为盘中数据，延迟 {d} 分钟。'],
+  close:   ["Still passing with under half an hour of tape left, so today's close is unlikely to move it — but tonight's build is what settles it, and the seat comes with it. Price is intraday, {d}-minute delayed.",
+            '距收盘不足半小时仍然通过，今日收盘价大概率不会推翻它 — 但真正结算的是今晚的生成，席位也随之而定。价格为盘中数据，延迟 {d} 分钟。'],
+  drop:    ['It crossed earlier today and has since traded back below the cross level, so it faded. Nothing to do; if it crosses again it reappears here after two checks.',
+            '今日早前曾上穿，随后回落至上穿价位之下，判读已消退。无需操作；若再次上穿，连续两次检查后会重新出现。'],
+  over:    ["It crossed and then ran above the range where the setup is still admitted — it ran past the entry rather than falling through it. Watch — don't chase.",
+            '上穿后继续冲高，已越过该形态仍被接受的价格区间 — 属于越过入场区，而非跌破。观察为主 — 勿追高。']
+};
+/* Card chips (spec §5.4). "Below range" and NOT "at risk": at_risk is an internal
+   state name, and every verdict-flavoured phrasing of it invites the reader to hear
+   a sell call on an un-graded provisional read, which the watch-don't-chase law
+   forbids. "Below range" is an unimpeachable statement about the tape. */
+var PLV_CARD = {
+  drop:  ['Below range', '低于区间', 'pv-live--drop'],
+  over:  ['Ran past', '越过区间', 'pv-live--over'],
+  close: ['Holding into close', '收盘前仍成立', 'pv-live--close']
+};
+var PLV_CARD_TIP = {
+  drop:  ["Trading below the price range where tonight's close would still admit this setup. Nothing on the board has changed yet — the verdict re-settles at tonight's close and this card updates with it. Watch — don't chase. This is not a sell call. Intraday price, {d}-minute delayed.",
+          '当前价格低于「今晚收盘仍会接受该形态」的价格区间。看板尚未发生任何变化 — 判定将在今晚收盘重新结算，本卡片届时随之更新。观察为主 — 勿追高。这不是卖出建议。盘中价格，延迟 {d} 分钟。'],
+  over:  ["Trading above the range where this setup is still admitted — it ran past the entry rather than falling through it. Tonight's close re-settles the verdict. Don't chase; nothing here says sell. Intraday price, {d}-minute delayed.",
+          '当前价格高于该形态仍被接受的区间 — 属于越过入场区，而非跌破。今晚收盘会重新结算判定。勿追高；此处并未建议卖出。盘中价格，延迟 {d} 分钟。'],
+  close: ["Still passing tonight's admission test with under half an hour of tape left, so today's close is unlikely to change it — but tonight's build is what settles it. Intraday price, {d}-minute delayed.",
+          '距收盘不足半小时仍通过今晚的准入判定，今日收盘价大概率不会改变它 — 但真正结算的是今晚的生成。盘中价格，延迟 {d} 分钟。']
+};
+/* delay_min is the house delayMin convention: the VENDOR FLOOR, not a measured
+   latency. A null delay prints "delayed" with no number — never a guessed 15. */
+function _plvDelay(meta){
+  var d = meta && meta.delay_min;
+  return (d===null||d===undefined||!isFinite(Number(d))) ? null : Number(d);
+}
+function _plvFill(s, d){
+  /* A null delay drops the NUMBER, never the disclosure: "15-min delayed" becomes
+     "delayed" and the sentence still reads. Guessing 15 would be inventing a vendor
+     floor the payload declined to state. */
+  if(d===null){
+    return s.replace('{d}-minute ','').replace('{d}-min ','')
+            .replace('延迟 {d} 分钟','延迟').replace('{d}分钟延迟','延迟');
+  }
+  return s.split('{d}').join(String(d));
+}
+
+/* ── Row selection (spec §6.3) ────────────────────────────────────────────────
+   This is the EDITORIAL FENCE, not a display of `states`. The strip speaks only for
+   names that crossed TODAY and are not on last night's board (entered:"cross").
+   Board names get a card chip and never a strip row — a strip that also listed the
+   ~44 holding board names would be a state dump, and the board below already says
+   it. dormant / near / per-name dark names are counted in the footer's coverage
+   sentence, never listed: a dark name has nothing to say. */
+function _plvPick(states){
+  var out=[], tk, st, kind;
+  for(tk in states){
+    if(!Object.prototype.hasOwnProperty.call(states,tk)) continue;
+    st = states[tk] || {};
+    if(st.entered !== 'cross') continue;
+    if(st.confirming_into_close) kind='close';
+    else if(st.state==='forming') kind='forming';
+    else if(st.state==='faded') kind = (st.via==='overrun') ? 'over' : 'drop';
+    else continue;
+    out.push({tk:tk, kind:kind, st:st,
+              rank:(kind==='close'?0:(kind==='forming'?1:2)),
+              since:_plvTsMin(st.since_ts)});
+  }
+  /* Deterministic and stable, recomputed identically on every pass: group, then the
+     longest-held first (it is the most settled), then ticker — so the order can
+     never depend on object key iteration order. */
+  out.sort(function(a,b){
+    if(a.rank!==b.rank) return a.rank-b.rank;
+    var as=(a.since===null?1e9:a.since), bs=(b.since===null?1e9:b.since);
+    if(as!==bs) return as-bs;
+    return a.tk<b.tk?-1:(a.tk>b.tk?1:0);
+  });
+  return out;
+}
+/* A faded row is NEVER the silent cut: a reader who saw a name forming twenty
+   minutes ago must not find it deleted without a word. "One of these stopped
+   holding" outranks the third concurrent cross. */
+function _plvCapRows(rows, cap){
+  if(rows.length<=cap) return rows.slice();
+  var faded=[], active=[], i;
+  for(i=0;i<rows.length;i++)(rows[i].rank===2?faded:active).push(rows[i]);
+  if(!faded.length) return rows.slice(0,cap);
+  /* "The most recent" means the LATEST since_ts, and it has to be picked by that field.
+     Taking the last element of the group instead read whichever name sorted last, which
+     with no since_ts present is simply the alphabetically last ticker (measured: MSFT out
+     of AAPL/CSCO/LFUS/MRP/MSFT) — a silent ordering claim the code did not honour. When
+     no faded row carries a since_ts there is no "most recent" to be had, and the ticker
+     tiebreak is the honest arbitrary fallback rather than a claim. */
+  var keepFaded=faded[faded.length-1], best=null;
+  for(i=0;i<faded.length;i++){
+    if(faded[i].since===null) continue;
+    if(best===null||faded[i].since>best.since) best=faded[i];
+  }
+  if(best) keepFaded=best;
+  /* With faded rows but NO active ones, active.slice(0, cap-1) is empty and a single row
+     rendered inside a three-row body under a "+4 more" button. Nothing is competing for
+     the slots, so fill them. */
+  if(!active.length) return faded.slice(Math.max(0,faded.length-cap));
+  return active.slice(0,Math.max(0,cap-1)).concat([keepFaded]);
+}
+
+/* The level this row crossed. `cross_level_px` for a cross row, `fade_px` for a board
+   row — the presence of the key IS which quantity it is, so they are read by name and
+   never merged. There is deliberately no `cross_px` here: the forward ledger's `cross_px`
+   is a DIFFERENT quantity (a fill price), and reading it into this column would print one
+   number under another number's label. Absent ⇒ em-dash, never derived. */
+function _plvLevel(st){
+  if(st.cross_level_px!==undefined&&st.cross_level_px!==null) return st.cross_level_px;
+  if(st.fade_px!==undefined&&st.fade_px!==null) return st.fade_px;
+  return null;
+}
+
+function _plvRowHtml(r, delay, past){
+  var c=(past?PLV_CHIP_PAST:PLV_CHIP)[r.kind], tip=PLV_TIP[r.kind], st=r.st;
+  var tipEn=_plvFill(tip[0],delay), tipZh=_plvFill(tip[1],delay);
+  if(r.since!==null){
+    /* SINCE is demoted below 680px (spec §3); it survives here so a narrow reader
+       still learns how long the read has held. */
+    tipEn+=' Since '+_plvHm24(r.since)+' ET.';
+    tipZh+=' 起始 美东 '+_plvHm24(r.since)+'。';
+  }
+  /* Cross level and SINCE both degrade to an em-dash rather than to a derived
+     number: passes × 5 min is not a lawful duration (GitHub cron lands minutes
+     late) and a level this payload does not carry must not be invented. */
+  var lvl=_plvLevel(st);
+  return '<span class="plv-chip '+c[2]+'" data-tip-en="'+esc(tipEn)+'" data-tip-zh="'+esc(tipZh)+'">◐ '+L(esc(c[0]),esc(c[1]))+'</span>'
+    +'<span class="plv-tk">'+esc(r.tk)+'</span>'
+    +'<span class="plv-nm">'+esc(r.name||'')+'</span>'
+    +'<span class="plv-now">'+_plvPx(st.price)+'</span>'
+    +'<span class="plv-lvl">'+_plvPx(lvl)+'</span>'
+    +'<span class="plv-since">'+(r.since===null?'—':_plvHm24(r.since))+'</span>';
+}
+
+/* KEYED RECONCILIATION, never `innerHTML =` on #plv-body (spec §6.4 rule 2).
+   Wholesale replacement flashes every row and kills an open hover tip mid-read, so
+   rows are patched in place by data-plv-tk and only the delta moves. */
+function _plvPaintRows(body, rows, delay, past){
+  var els=[], i, r, el, sig;
+  for(i=0;i<rows.length;i++){
+    r=rows[i];
+    el=body.querySelector('.plv-row[data-plv-tk="'+r.tk+'"]');
+    sig=r.kind+'|'+r.st.price+'|'+r.since+'|'+_plvLevel(r.st)+'|'+(r.name||'')+'|'+(past?'p':'l');
+    if(!el){
+      el=document.createElement('a');
+      el.setAttribute('data-plv-tk', r.tk);
+      el.href='stock.html#'+encodeURIComponent(r.tk);
+      el.innerHTML=_plvRowHtml(r, delay, past);
+      el.className='plv-row is-new'+(r.rank===2?' is-past':'');
+    }else{
+      if(el.getAttribute('data-plv-sig')!==sig) el.innerHTML=_plvRowHtml(r, delay, past);
+      el.className='plv-row'+(r.rank===2?' is-past':'');
+    }
+    el.setAttribute('data-plv-sig', sig);
+    els.push(el);
+  }
+  /* place in order, moving only what is actually out of place */
+  for(i=0;i<els.length;i++){
+    if(body.children[i]!==els[i]) body.insertBefore(els[i], body.children[i]||null);
+  }
+  while(body.children.length>els.length) body.removeChild(body.lastElementChild);
+}
+/* The empty body FILLS the same reserved 75.5px (.plv-none is flex:1) — it never has
+   a height of its own, so quiet / dark / closed measure identical to a 3-row live
+   strip and nothing below the panel ever moves. */
+function _plvPaintNone(body, en, zh, lastMin, isDark){
+  var cls='plv-none'+(isDark?' plv-none--dark':'');
+  var html=L(esc(en),esc(zh));
+  if(lastMin!==null&&lastMin!==undefined){
+    html+='<span class="plv-last">'+L('Last clear read '+_plvHm12(lastMin)+' ET.',
+                                      '最近一次有效判读 美东 '+_plvHm24(lastMin)+'。')+'</span>';
+  }
+  var el=body.firstElementChild;
+  if(!el||body.children.length!==1||el.className!==cls){
+    while(body.firstChild) body.removeChild(body.firstChild);
+    el=document.createElement('div'); el.className=cls; body.appendChild(el);
+  }
+  if(el.innerHTML!==html) el.innerHTML=html;
+}
+
+/* ── Card chips (spec §5) ────────────────────────────────────────────────────
+   The ONLY node this touches on a card is its reserved .pv-live span. Absent state
+   ⇒ hidden + empty ⇒ zero width and zero layout change, so a board with no live
+   state renders byte-equivalent to today's. */
+function _plvPaintCards(states, delay){
+  var slots=document.querySelectorAll('.pvcard[data-ticker] .pv-ov.pv-ovl > .pv-live'), i, el, card, st, kind, c, tip;
+  for(i=0;i<slots.length;i++){
+    el=slots[i]; card=el.closest?el.closest('.pvcard'):null;
+    st=(card&&states)?(states[card.getAttribute('data-ticker')]||null):null;
+    kind=null;
+    if(st&&st.entered==='board'){
+      if(st.confirming_into_close) kind='close';
+      else if(st.state==='at_risk') kind=(st.via==='overrun')?'over':'drop';
+    }
+    if(!kind){
+      if(!el.hidden){ el.hidden=true; el.className='pv-live'; el.innerHTML=''; el.removeAttribute('data-tip-en'); el.removeAttribute('data-tip-zh'); }
+      continue;
+    }
+    c=PLV_CARD[kind]; tip=PLV_CARD_TIP[kind];
+    el.className='pv-live '+c[2];
+    el.setAttribute('data-tip-en', _plvFill(tip[0],delay));
+    el.setAttribute('data-tip-zh', _plvFill(tip[1],delay));
+    var html='◐ '+L(esc(c[0]),esc(c[1]));
+    if(el.innerHTML!==html) el.innerHTML=html;
+    el.hidden=false;
+  }
+}
+
+/* ── The settle rail ────────────────────────────────────────────────────────
+   Filled 09:30 → 16:00 with a now-tick on a local 60-second clock and NO fetch. It
+   encodes the only variable that converts "forming" into "confirmed": remaining
+   tape. The single inline style this whole component writes is this width/left. */
+function _plvRail(){
+  if(!_plvPanel||!_plvPanel.classList.contains('visible')) return;
+  var et=_plvEt(new Date()); if(!et) return;
+  var pct=Math.max(0,Math.min(100,(et.min-PLV_OPEN)/(PLV_CLOSE-PLV_OPEN)*100));
+  var f=document.getElementById('plv-rail-fill'), n=document.getElementById('plv-rail-now');
+  if(f) f.style.width=pct.toFixed(1)+'%';
+  if(n) n.style.left=pct.toFixed(1)+'%';
+}
+
+/* ── Mode resolution (spec §6.2, first match wins) ──────────────────────────── */
+function _plvMode(d, et){
+  /* 1. Weekends, the overnight hours, and everything after the nightly build has
+        settled the day: "Forming today" has nothing to say, so the strip is not
+        rendered at all. The upper bound is the nightly handoff, NOT midnight — past it
+        the board below carries the answer and a pending-verdict strip would contradict
+        it. (The spec's own §6.2 rule 1 upper bound of 16:20 made rule 3 unreachable;
+        this is the bound that keeps rule 3 alive without inventing a false-tense
+        window.) */
+  if(et.wd==='Sat'||et.wd==='Sun') return null;
+  if(et.min<PLV_WAKE||et.min>=PLV_SETTLE) return null;
+  if(!d||!d.meta) return null;
+  /* 2. A frozen file must NEVER present as today — but the strip must not GUESS why.
+        Before today's first pass is even due it is not a fault at all, so say nothing;
+        after that, name the observable fact and not a cause we cannot see (m1). */
+  if(d.meta.session_et&&d.meta.session_et!==et.ymd){
+    if(et.min<PLV_FIRST) return null;
+    return {mode:'dark', why:'none_today'};
+  }
+  /* 3. Post-close. Deliberately AHEAD of the age gates: without this rule the
+        15-minute staleness gate fires every single evening and the strip lies
+        "prices aren't updating" after every close — a nightly lie, not an edge case.
+        But it must not launder a fault either, so the last pass has to have landed
+        near the close for the frozen rows to be describing it (m2). */
+  if(et.min>PLV_SHUT){
+    var cms=_plvTsMin(d.meta.pass_ts);
+    if(d.status!=='dark'&&cms!==null&&cms>=PLV_CLOSE_PASS) return {mode:'closed', why:null};
+    return {mode:'dark', why:(d.reason==='no_pack'?'no_pack':(d.reason==='stale_pack'?'stale_pack':'quotes'))};
+  }
+  /* 4. The producer itself declined to speak — this is the one cause it ATTESTS. */
+  if(d.status==='dark') return {mode:'dark', why:(d.reason==='no_pack'?'no_pack':(d.reason==='stale_pack'?'stale_pack':'quotes'))};
+  /* 5. Three missed passes — the file is no longer describing the current tape. Not
+        before the day's first pass is due, though: late is not broken (m1). */
+  var pms=Date.parse(d.meta.pass_ts||'');
+  if(isFinite(pms)&&(Date.now()-pms)>PLV_MAXAGE&&et.min>=PLV_FIRST) return {mode:'dark', why:'quotes'};
+  /* 6. Speaking a confident "quiet tape" while more than half the armed names are
+        unreadable is degraded-ships-confident. */
+  var dc=d.meta.dark_counts||{}, sum=0, k;
+  for(k in dc){ if(Object.prototype.hasOwnProperty.call(dc,k)) sum+=Number(dc[k])||0; }
+  var ev=Number(d.meta.evaluated_n);
+  if(isFinite(ev)&&ev>0&&(sum/ev)>=0.5) return {mode:'dark', why:'quotes'};
+  return {mode:'live', why:null};   /* refined to 'quiet' once rows are known */
+}
+
+function _plvHide(){
+  if(!_plvPanel) return;
+  _plvPanel.classList.remove('visible');
+  _plvPanel.hidden=true;
+  _plvLastMode=null;
+  /* THE CARD CHIPS GO WITH IT. Hiding the panel alone left a "Below range" chip painted
+     on a card with no as-of stamp, no delay pill and no strip left to explain it — a tab
+     open past the nightly handoff, or across a weekend, showed a stale intraday read
+     presenting as current. Surface 2 has no freshness disclosure of its own; the strip
+     IS its disclosure, so the two must appear and disappear together. */
+  _plvPaintCards(null, null);
+}
+
+function _plvRender(){
+  if(!_plvPanel) return;
+  var et=_plvEt(new Date());
+  if(!et){ _plvHide(); return; }
+  var res=_plvMode(_plvData, et);
+  if(!res){ _plvHide(); return; }
+  var d=_plvData, meta=d.meta||{}, delay=_plvDelay(meta);
+  /* closed/dark keep the SAME SESSION's last per-name states: a dark artifact carries
+     them under prev_states precisely so one bad pass cannot erase the day. */
+  var states=(d.status==='dark')?(d.prev_states||{}):(d.states||{});
+  var rows=(res.mode==='dark')?[]:_plvPick(states);
+  var mode=res.mode;
+  if(mode==='live'&&!rows.length) mode='quiet';
+
+  /* Company names come from the SSR island below the strip (us_standouts buy ∪ watch
+     ∪ leaders ∪ laggards — the near-decision population the pack arms from), so the
+     strip adds no second fetch. Names ship EN-only in both languages, the existing
+     card norm. Absent name ⇒ the ticker alone, which is the identity anyway. */
+  var i;
+  for(i=0;i<rows.length;i++) rows[i].name=_plvNames[rows[i].tk]||'';
+
+  var visRows=_plvCapRows(rows, _plvExpanded?rows.length:PLV_CAP);
+  var hidden=rows.length-visRows.length;
+
+  /* token + as-of: the freshness form, on every live number, always together. Every
+     token variant is stacked so the PILL'S WIDTH is the same in every mode — a short
+     "READ PAUSED" used to fit beside the title where the long one wrapped, which moved
+     the as-of onto its own line and changed the header's height with the mode. */
+  var tokEl=document.getElementById('plv-token'), asEl=document.getElementById('plv-asof');
+  var tkKey=(mode==='dark')?'dark':(mode==='closed')?'closed'
+            :(meta.session_phase==='preopen')?'preopen':'rth';
+  var tkVars={}, tkK;
+  for(tkK in PLV_TOKEN){
+    if(!Object.prototype.hasOwnProperty.call(PLV_TOKEN,tkK)) continue;
+    tkVars[tkK]=L(esc(_plvFill(PLV_TOKEN[tkK][0],delay)), esc(_plvFill(PLV_TOKEN[tkK][1],delay)));
+  }
+  tokEl.className='plv-token'+(mode==='dark'?' is-dark':(mode==='closed'?' is-closed':''));
+  _plvStack(tokEl, ['rth','preopen','dark','closed'], tkVars, tkKey);
+
+  /* The stamp is the ARTIFACT's own clock — meta.quote_asof, falling back to the pass
+     time. Never the browser clock: a local Date.now() would print a fresh-looking time
+     over a stale artifact, which is the exact lie the freshness gate exists to prevent. */
+  var stampMin=_plvTsMin(meta.quote_asof)||_plvTsMin(meta.pass_ts);
+  /* No stamp when the newest artifact is from ANOTHER DAY. The as-of is a bare
+     time-of-day, so a previous session's pass would print "as of 4:15 pm ET" at 11:20 in
+     the morning — a stamp that reads as today's. There is no current read to stamp here,
+     and the body line already says exactly that.
+     BUT THE BOX STILL HAS TO HOLD ITS LINE. This is the fourth mode-varying box and the
+     one the first reservation pass missed: at <=340px the header puts the as-of on line 2
+     beside the token, so emptying it collapsed that line and shoved the board 17.00px —
+     the honesty fix above paying for itself in exactly the layout thrash the reserver
+     exists to prevent. A reader on a 320-340px phone would watch the board jump the
+     instant the day's first pass landed. Same mechanism as the other three: reserve the
+     line, show nothing in it.
+     The reserver is a formatter-built stamp at 12:00 — the widest wall clock this box can
+     render (two-digit hour, and the pass window is 09:20-18:30 ET so nothing exceeds it),
+     exact because .plv-asof is tabular-nums. Built by _plvAsOf itself so it cannot drift
+     from the real thing's markup.
+     'on' is ALWAYS the active key: with no stamp it is the empty string, which _plvStack
+     drops, so the reserver holds the box with nothing visible and nothing announced. The
+     reserver must never be the active variant — a visible 12:00 would be a fabricated
+     stamp, which is the very thing the honesty fix removed. */
+  var stampOn=(stampMin!==null&&res.why!=='none_today');
+  _plvStack(asEl, ['on','rsv'],
+            {on:(stampOn?_plvAsOf(stampMin):''), rsv:_plvAsOf(720)}, 'on');
+
+  /* the stance line changes ONLY on a mode change (spec §6.4 rule 5), and all four
+     stance lines stay stacked so the box reserves the tallest one at this width */
+  if(mode!==_plvLastMode){
+    var subVars={}, subK;
+    for(subK in PLV_SUB){
+      if(!Object.prototype.hasOwnProperty.call(PLV_SUB,subK)) continue;
+      subVars[subK]=L(esc(PLV_SUB[subK][0]),esc(PLV_SUB[subK][1]));
+    }
+    _plvStack(document.getElementById('plv-sub'), ['live','quiet','dark','closed'],
+              subVars, PLV_SUB[mode]?mode:'quiet');
+    _plvLastMode=mode;
+  }
+
+  var body=document.getElementById('plv-body');
+  if(mode==='dark'){
+    var dk=PLV_DARK[res.why]||PLV_DARK.quotes;
+    _plvPaintNone(body, dk[0], dk[1], _plvClearMin, true);
+  }else if(!visRows.length){
+    var lastMin=(stampMin===null)?null:stampMin;
+    if(mode==='closed'){
+      _plvPaintNone(body, 'Nothing crossed today — last checked '+(lastMin===null?'—':_plvHm12(lastMin))+' ET.',
+                          '今日没有出现上穿 — 最近一次检查 美东 '+(lastMin===null?'—':_plvHm24(lastMin))+'。', null, false);
+    }else{
+      _plvPaintNone(body, 'Nothing crossing yet — last checked '+(lastMin===null?'—':_plvHm12(lastMin))+' ET.',
+                          '尚无新的上穿 — 最近一次检查 美东 '+(lastMin===null?'—':_plvHm24(lastMin))+'。', null, false);
+    }
+  }else{
+    _plvPaintRows(body, visRows, delay, mode==='closed');
+  }
+  if(mode!=='dark'&&stampMin!==null) _plvClearMin=stampMin;
+
+  /* +N more: collapsed height stays constant and clicking drops the cap — a
+     USER-initiated reflow, which is the only kind this component allows. */
+  var more=document.getElementById('plv-more');
+  if(hidden>0||_plvExpanded){
+    more.hidden=false;
+    more.setAttribute('aria-expanded', _plvExpanded?'true':'false');
+    more.innerHTML=_plvExpanded?L('Show fewer','收起'):L('+'+hidden+' more','还有 '+hidden+' 只');
+  }else{ more.hidden=true; more.innerHTML=''; more.setAttribute('aria-expanded','false'); }
+
+  /* ONE footer sentence, once: this line owns the coverage bound.
+     WHAT evaluated_n IS. `meta.evaluated_n` is len(states) — the names this pass could
+     actually SPEAK ABOUT, i.e. the PROBED count. It is not the pack's armed_n and it is
+     not the scored census, and `live_states.py` / `armed_pack.py` both warn in so many
+     words against reading it as either. The gap to the universe is also not one cause:
+     `max_probe` (180) means names are dropped for BUDGET as well as for distance from a
+     decision, and those land in `meta.unprobed`/`unprobed_n`. So this line says only what
+     is true — how many were checked — and the Tier-2 receipt splits the gap.
+     evaluated_n is sticky across a dark pass so the figure does not blink; without one
+     ever seen the sentence drops the figure rather than guessing it. */
+  var ev=Number(meta.evaluated_n);
+  if(isFinite(ev)&&ev>0) _plvEvalN=ev;
+  var unpr=Number(meta.unprobed_n);
+  if(isFinite(unpr)&&unpr>=0) _plvUnprobed=unpr;
+  /* How many of the checked names came back unreadable THIS pass. A hard 50% cliff alone
+     shipped a fully confident header at 49% dark; disclosing the count means the reader
+     always knows how much of the check actually landed. */
+  var dcs=0, dck, dcm=meta.dark_counts||{};
+  for(dck in dcm){ if(Object.prototype.hasOwnProperty.call(dcm,dck)) dcs+=Number(dcm[dck])||0; }
+  var fnEl=document.getElementById('plv-fn');
+  /* The sticky count is a claim about a pass that ran. On a day where none did, carrying
+     the previous session's figure would say "62 names were checked intraday" when the
+     answer is none — so that day gets the numberless form. */
+  var cnt=(_plvEvalN&&res.why!=='none_today')?('<b class="plv-fig">'+_plvNum(_plvEvalN)+'</b>'):null;
+  var fnEn=cnt
+    ? 'Only the '+cnt+' names checked intraday can appear here — every read settles at tonight’s close.'
+    : 'Only the names checked intraday can appear here — every read settles at tonight’s close.';
+  var fnZh=cnt
+    ? '盘中只检查了 '+cnt+' 只，只有它们会出现在这里 — 此处所有判读均以今晚收盘为准。'
+    : '盘中只检查了部分标的，只有它们会出现在这里 — 此处所有判读均以今晚收盘为准。';
+  if(dcs>0&&mode!=='dark'){
+    fnEn+=' <b class="plv-fig">'+_plvNum(dcs)+'</b> of them could not be read this pass.';
+    fnZh+='其中 <b class="plv-fig">'+_plvNum(dcs)+'</b> 只本次未能读取。';
+  }
+  /* The reserver is never shown and never read (visibility:hidden takes it out of the
+     accessibility tree) — it exists only so the footer's box is the height of its LONGEST
+     form at this width. Without it the dark mode's shorter sentence wrapped to one line
+     fewer and shoved the board by 15.75px. The four-digit placeholders are a LINE BOX,
+     not a claim: no real count exceeds the 1,578-name scored universe. */
+  var rsvEn='Only the <b class="plv-fig">0,000</b> names checked intraday can appear here — every read settles at tonight’s close. <b class="plv-fig">0,000</b> of them could not be read this pass.';
+  var rsvZh='盘中只检查了 <b class="plv-fig">0,000</b> 只，只有它们会出现在这里 — 此处所有判读均以今晚收盘为准。其中 <b class="plv-fig">0,000</b> 只本次未能读取。';
+  _plvStack(fnEl, ['on','rsv'], {on:L(fnEn,fnZh), rsv:L(rsvEn,rsvZh)}, 'on');
+
+  /* Tier-2 receipt: the debounce mechanic, the delay mechanic, the coverage receipt
+     and the seat-honesty clause (a forming name qualifies on its own signal; the
+     SEAT settles only at the nightly build, so no copy may promise one). */
+  var help=document.getElementById('plv-help');
+  if(help){
+    /* The coverage RECEIPT, and the one place the gap may be broken down. It must not
+       say "armed" (evaluated_n is the probed count, not the pack's armed_n) and it must
+       not blame the whole gap on distance from a decision (max_probe drops names for
+       budget too — that is what unprobed_n counts). So: checked, not-checked, and the two
+       reasons named as two reasons. */
+    var uni=_plvPanel.getAttribute('data-universe');
+    var cov = _plvEvalN
+      ? [_plvNum(_plvEvalN)+' names were checked intraday'
+         +(uni?(' out of '+_plvNum(uni)+' scored'):'')+'.'
+         +(_plvUnprobed
+           ? (' The other '+_plvNum(_plvUnprobed)+' were not checked today — most sit too far'
+              + ' from a decision to matter, and the rest were beyond what one 5-minute pass'
+              + ' can cover.')
+           : ' The rest of the scored list was not checked today.'),
+         '盘中检查了 '+_plvNum(_plvEvalN)+' 只'+(uni?('（全部评分股票 '+_plvNum(uni)+' 只）'):'')+'。'
+         +(_plvUnprobed
+           ? ('其余 '+_plvNum(_plvUnprobed)+' 只今日未检查 — 多数距离临界太远，其余受单次 5 分钟'
+              + '扫描的时间预算所限。')
+           : '评分名单中的其余标的今日未检查。')]
+      : ['Only a subset of the scored list is checked intraday each pass; the rest is not checked at all.',
+         '每次扫描只检查评分名单中的一部分，其余完全未检查。'];
+    var hEn='Forming means the same admission test tonight’s build will run already passes at today’s price — re-checked every 5 minutes on a '+(delay===null?'delayed':delay+'-minute-delayed')+' quote. A level must hold two checks in a row (about 10 minutes) before it appears here. Tonight’s build is the only thing that confirms a signal or hands out a board seat. '+cov[0];
+    var hZh='「正在形成」的含义是：今晚生成时要跑的同一套准入判定，在今日价格下已经通过 — 每 5 分钟用'+(delay===null?'延迟':'延迟 '+delay+' 分钟的')+'报价重跑一次。某个价位必须连续两次检查都成立（约 10 分钟）才会出现在这里。只有今晚的生成才能确认信号、才能给出看板席位。'+cov[1];
+    var hen=help.querySelector('.l-en'), hzh=help.querySelector('.l-zh');
+    if(hen&&hen.textContent!==hEn) hen.textContent=hEn;
+    if(hzh&&hzh.textContent!==hZh) hzh.textContent=hZh;
+    /* the icon may already be upgraded — theme.js reads the ATTRIBUTES after that */
+    if(help.hasAttribute('data-tip-en')){
+      help.setAttribute('data-tip-en',hEn); help.setAttribute('data-tip-zh',hZh);
+    }else if(window.upgradeHelpIcons){ window.upgradeHelpIcons(_plvPanel); }
+  }
+
+  _plvPanel.classList.toggle('is-dark', mode==='dark');
+  _plvPanel.classList.toggle('is-closed', mode==='closed');
+  _plvPanel.classList.toggle('is-empty', !visRows.length);
+  _plvPanel.hidden=false;
+  _plvPanel.classList.add('visible');
+  _plvPaintCards(mode==='dark'?null:states, delay);
+  _plvRail();
+}
+
+function _plvFetch(){
+  if(_plvFetching) return;
+  _plvFetching=true;
+  fetch(PLV_URL,{cache:'no-cache'})
+    .then(function(r){ if(!r.ok) throw 0; return r.json(); })
+    .then(function(j){
+      if(j&&typeof j==='object'&&j.schema&&String(j.schema).indexOf('prophet_live.states/')===0){
+        _plvData=j; _plvFetchedAt=Date.now();
+      }
+      _plvFetching=false;
+      _plvRender();
+    })
+    .catch(function(){
+      /* Graceful-absent (FT-R8): no file on first load ⇒ the panel simply never
+         appears. A LATER failure keeps the last good render until the age gate in
+         _plvMode trips it to dark — an old read must never present as current. */
+      _plvFetching=false;
+      if(_plvData) _plvRender();
+    });
+}
+
+if(_plvPanel){
+  /* First fetch is UNCONDITIONAL. Never gate the initial paint on document.hidden:
+     the preview pane renders with visibility:hidden, so a visibility-gated first
+     fetch produces a permanently empty strip in every verification screenshot. */
+  _plvFetch();
+  setInterval(function(){ if(!document.hidden) _plvFetch(); }, PLV_EVERY);
+  setInterval(_plvRail, PLV_TICK);
+  document.addEventListener('visibilitychange', function(){
+    if(!document.hidden&&(Date.now()-_plvFetchedAt)>PLV_FLOOR) _plvFetch();
+  });
+  document.getElementById('plv-more').addEventListener('click', function(e){
+    e.preventDefault();
+    _plvExpanded=!_plvExpanded;
+    _plvRender();
+  });
+  /* language flip: every string is already in the DOM as an l-en/l-zh pair, so the
+     CSS switch is the whole re-render. Only the ET clock format needs a repaint. */
+  window.addEventListener('languagechange', function(){ if(_plvData) _plvRender(); });
+}
 
 })();
 </script>
