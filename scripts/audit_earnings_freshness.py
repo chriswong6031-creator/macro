@@ -45,16 +45,25 @@ DEFAULT_MAX_AGE_TD = 2       # trading days: warn when as_of older than this
 # near-empty sweep (the documented bug wrote 4 rows from a ~1363-name universe).
 # 50 is intentionally conservative — any real sweep will far exceed it.
 MIN_TICKER_PLAUSIBILITY = 50
-# Coverage floor: the share of ROWS whose own as_of is inside the SLA.  A real
-# whole-universe sweep leaves the large majority fresh — the 66-weekday calendar
-# window covered 1066 of a 1513-name universe on 2026-07-29 (70.5%), and names
-# reporting beyond that window legitimately carry their previous stamp forward.
-# 0.50 sits well clear of both sides of the observed failure (0.2% fresh) and the
-# observed healthy sweep (70.5% fresh).
+# Two complementary per-row coverage tripwires (both landed 2026-07-29, from the
+# two independent fixes of the same freeze — #3979 on main and the OIP-E8 branch):
+#
+# RAW fresh-row floor (#3979).  The age check below reads the store's MAX as_of, which
+# is a presence test, not a coverage test: three demo rows (AAPL/NVDA/JPM) dated 07-28
+# made a 1364-row store whose other 1361 rows were frozen at 2026-06-19 report
+# `sla_ok: true, warnings: []` for six straight weeks.  A healthy full-universe sweep
+# re-stamps ~70-90% of rows nightly, so requiring half of them to sit inside the SLA
+# fires on that failure shape (0.2%) without alarming on names that genuinely have no
+# upcoming report.  Do NOT raise the SLA to silence this — the ceiling is the honesty
+# mechanism.
+MIN_FRESH_ROW_FRACTION = 0.50
+# SWEEP-WINDOW-CONDITIONED share (OIP E8, minor 3).  The collector's calendar sweep
+# covers SWEEP_DAYS=66 WEEKDAYS ahead (~92 calendar days); names whose next report
+# falls beyond it cannot be refreshed by any sweep and must not count against one.
+# The conditioned denominator makes the floor exact rather than loose: 0.50 sits well
+# clear of both the observed failure (0.2% fresh) and the observed healthy sweep
+# (70.5% raw on 2026-07-29, higher once conditioned).
 MIN_FRESH_SHARE = 0.50
-# The collector's calendar sweep covers SWEEP_DAYS=66 WEEKDAYS ahead, i.e. ~92 calendar
-# days. Names whose next report falls beyond it cannot be refreshed by a sweep and must not
-# count against it (minor 3).
 SWEEP_WINDOW_CALENDAR_DAYS = 95
 
 
@@ -141,6 +150,8 @@ def audit(max_age_td: int = DEFAULT_MAX_AGE_TD) -> dict:
         "fresh_share": None,
         "min_fresh_share": MIN_FRESH_SHARE,
         "max_age_td": max_age_td,
+        "rows_within_sla": None,
+        "fresh_row_fraction": None,
     }
 
     if not store_path.exists():
@@ -207,6 +218,27 @@ def audit(max_age_td: int = DEFAULT_MAX_AGE_TD) -> dict:
     detail["as_of_str"] = str(most_recent_str)
     age_td = _session_age(as_of_date)
     detail["as_of_age_td"] = age_td
+
+    # ── Per-row COVERAGE guard ────────────────────────────────────────────────────────
+    # The max()-based age check above cannot see a store where a handful of rows are fresh
+    # and the rest are frozen.  Count how many rows carry an as_of inside the SLA window.
+    try:
+        cutoff = pd.bdate_range(end=today_utc, periods=max_age_td + 1)[0].date()
+        row_dates = pd.to_datetime(as_of_col, errors="coerce", utc=True)
+        within = int((row_dates.dt.date >= cutoff).sum())
+        detail["rows_within_sla"] = within
+        frac = (within / len(df)) if len(df) else 0.0
+        detail["fresh_row_fraction"] = round(frac, 4)
+        if frac < MIN_FRESH_ROW_FRACTION:
+            warn.append(
+                f"earnings store COVERAGE stale: only {within} of {len(df)} rows "
+                f"({frac:.1%}) carry an as_of within the {max_age_td} td SLA "
+                f"(floor={MIN_FRESH_ROW_FRACTION:.0%}) — the store-level as_of looks fresh "
+                f"because a few rows were refreshed while the rest are frozen; check that "
+                f"the collector is sweeping the whole universe, not a named-ticker subset"
+            )
+    except Exception as exc:  # noqa: BLE001
+        warn.append(f"could not compute per-row freshness coverage: {exc}")
 
     if age_td is None:
         warn.append(f"could not compute trading-day age for as_of={as_of_date}")

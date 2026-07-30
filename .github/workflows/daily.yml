@@ -569,11 +569,19 @@ jobs:
         # making the W1.5 blackout gate and the W5 display chips always stale-fail-open.
         # Sweeps Nasdaq's public calendar for the next 66 weekdays (~one quarter), writing
         # data/earnings/earnings.parquet (ticker-indexed: next_date, next_time, eps_forecast,
-        # surprises_json, as_of). Bot-wall-aware: if the first calendar call is blocked
-        # (Akamai 403), the existing cache is kept untouched and the step exits 0 (non-fatal).
+        # surprises_json, surprises_as_of, as_of). Bot-wall-aware: if the first calendar call
+        # is blocked (Akamai 403), the existing cache is kept untouched and the step exits 0.
         # MUST run in collect_tail, NOT collect (house law: new accrual steps go in collect_tail).
-        # Wall time: calendar sweep ~66 × 0.25s ≈ 17s + surprise drip capped at max_new=120
-        # names × 0.25s ≈ 30s → ~50s per night, well within the 150m budget.
+        # KEEP THIS LINE BARE. No-args means "sweep the whole breadth universe"; passing
+        # --tickers collapses the universe to that subset and every other row keeps a frozen
+        # as_of. That is exactly the 2026-06-19 freeze: the collector's __main__ used to fall
+        # through to a 3-name demo default, so for six weeks the nightly refreshed only
+        # AAPL/NVDA/JPM while 1361 of 1364 rows sat at as_of 2026-06-19 — and the tripwire
+        # below read the store-level max() as_of and reported sla_ok the whole time.
+        # Pinned by tests/test_earnings_w5.py::TestNightlyEntryPointSweepsWholeUniverse.
+        # Wall time (measured 2026-07-29): calendar sweep 66 calls ≈ 155s (round-trip
+        # dominates, not the 0.25s pacing sleep) + surprise drip capped at max_new=120
+        # names ≈ 60s → ~3.5m per night, well within the 150m budget.
         # Writes data/earnings/earnings.parquet — covered by `git add data/` below.
         run: |
           python -m collectors.equity_earnings \

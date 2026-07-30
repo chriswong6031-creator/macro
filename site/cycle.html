@@ -40,8 +40,9 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="stylesheet" href="theme.css?v=9a2599d0">
+<link rel="stylesheet" href="theme.css?v=720475f3">
 <link rel="stylesheet" href="cycle.css?v=4">
+<link rel="preload" as="style" href="navigation-refresh.css?v=88af7a13">
 <link rel="preload" as="style" href="product-nav-icons.css?v=7b0290e9">
 <link rel="preload" as="style" href="navigation-refresh.css?v=6607344b">
 </head>
@@ -52,7 +53,7 @@
 
 
 
-    <link rel="stylesheet" href="navigation-refresh.css?v=6607344b">
+    <link rel="stylesheet" href="navigation-refresh.css?v=88af7a13">
     <div class="nav-links">
     
     <a class="nav-brand" href="start.html" aria-label="MASTERMINDX — Home">
@@ -337,14 +338,14 @@
      them synchronous), so the app would run before the deferred engine data and abort on
      `if (!ENGINE) return`. The two inline consumer scripts below read that data, so they
      run on DOMContentLoaded (fires after every defer script). -->
-<script src="regimedata/regime_prior.js?v=6f78a340" defer></script>
+<script src="regimedata/regime_prior.js?v=03a85001" defer></script>
 <script src="cycle_data.js?v=443f0a05" defer></script>
-<script src="cycledata/cycle_engine.js?v=7bfe7fba" defer></script>
+<script src="cycledata/cycle_engine.js?v=fd1a943a" defer></script>
 <script src="mm_charts.js?v=244eb769" defer></script>
 <script src="cycle_i18n.js?v=cb651fea" defer></script>
 <script src="cycle_app.js?v=957e5ec4" defer></script>
 <script>document.addEventListener('DOMContentLoaded',function(){try{document.getElementById('cyc-asof').textContent=(window.CYCLE_ENGINE||window.CYCLE_META||{}).as_of||(window.CYCLE_META||{}).asOf||'';}catch(e){}});</script>
 
-<script src="theme.js?v=d490b492" defer></script>
+<script src="theme.js?v=4e99fde4" defer></script>
 </body>
 </html>

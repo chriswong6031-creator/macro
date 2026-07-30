@@ -1,17 +1,10 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-07-29T21:12:25.174897+00:00",
+  "as_of": "2026-07-30T00:10:07.402331+00:00",
   "posts_seen": 8,
   "seen_total": 68,
-  "evaluated": 1,
+  "evaluated": 0,
   "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
-  "gate_scores": [
-    {
-      "id": "wh-2026-07-29-presidential-message-on-the-birthday-of-alexis-de-tocqueville",
-      "importance": 0,
-      "activated": false,
-      "degraded_reason": "served_by:codex"
-    }
-  ]
+  "gate_scores": []
 }

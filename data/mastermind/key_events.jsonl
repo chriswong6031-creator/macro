@@ -232,3 +232,5 @@
 {"schema":"metabolism.key_ledger.v1","ts":"2026-07-25T20:02:44+00:00","key_id":"claude_code_oauth_5","cycle_id":"2026-07-25T20-01-13-048Z00-00","stage":"analyst","est_tokens":3389,"outcome":"ok"}
 {"schema":"metabolism.key_ledger.v1","ts":"2026-07-25T20:06:23+00:00","key_id":"claude_code_oauth_6","cycle_id":"2026-07-25T20-04-56-160Z00-00","stage":"analyst","est_tokens":3755,"outcome":"ok"}
 {"schema":"metabolism.key_ledger.v1","ts":"2026-07-25T20:08:05+00:00","key_id":"claude_code_oauth_7","cycle_id":"2026-07-25T20-06-23-214Z00-00","stage":"analyst","est_tokens":3845,"outcome":"ok"}
+{"schema":"metabolism.key_ledger.v1","ts":"2026-07-29T14:22:44+00:00","key_id":"claude_code_oauth_3","cycle_id":"2026-07-29T14-20-25-779Z00-00","stage":"deep","est_tokens":20329,"outcome":"ok"}
+{"schema":"metabolism.key_ledger.v1","ts":"2026-07-29T14:23:38+00:00","key_id":"claude_code_oauth_4","cycle_id":"","stage":"scout","est_tokens":5243,"outcome":"ok"}

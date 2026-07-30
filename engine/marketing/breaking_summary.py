@@ -7,8 +7,10 @@ Enforces:
 - validate_summary is STRICTER than validate_copy rule #5: every digit-containing
   token in the summary must appear verbatim in item headline+body_snippet with
   ZERO tolerance (no bare-integer exemption here — this is the citation lane).
-- Deterministic fallback = "{headline} — {source_name}" on any LLM failure or
-  any validate_summary violation.
+- Deterministic fallback on any LLM failure or any validate_summary violation:
+  "{source lead sentence} -- {source_name}", or "{headline} -- {source_name}"
+  when the packet carries no usable body (see _det_lead_sentence). The join is a
+  DOUBLE HYPHEN, never an em dash: the publisher quarantines U+2014.
 - Stance/interpretation vocab banned: no "bullish", "bearish", "buy", "sell",
   "rally" (if not in source), "plunge" (if not in source), no advice phrasing.
 - build_breaking_payload produces the outbox-shaped artifact; imports
@@ -221,10 +223,11 @@ def validate_summary(
        ctx with type="event", numbers_whitelist from source, emoji_budget=0)
        and merges violations.
 
-    is_deterministic_fallback (M2): the "{headline} — {source_name}" fallback IS the
-    headline with attribution by construction, so it would always trip the
-    near-verbatim guard (c). When True, (c) is skipped — the deterministic path is
-    an intentional, honest headline-relay-with-attribution, not an LLM near-copy.
+    is_deterministic_fallback (M2): the fallback is source text with attribution
+    by construction — the source's own lead sentence, or, when the packet carries
+    no usable body, the headline itself. On that second shape it would always trip
+    the near-verbatim guard (c), so when True (c) is skipped: the deterministic
+    path is an intentional, honest relay of the source, not an LLM near-copy.
     Checks (a)/(b) still run (a fallback carries no quotes, so they are no-ops).
 
     Returns list[str] of violations (empty = clean).
@@ -444,18 +447,76 @@ def _llm_summarize(item: dict, cfg: dict, wire: dict | None = None) -> str | Non
         return None
 
 
+#: A lead sentence shorter than this is a byline or a datentline fragment ("By
+#: Reuters Staff", "WASHINGTON"), not a fact worth relaying.
+_DET_LEAD_MIN_WORDS = 6
+#: And one longer than this is a paragraph, which blows the flash budget the
+#: composed post is measured against (wire_format.flash_budget, 280 chars).
+_DET_LEAD_MAX_CHARS = 200
+
+_DET_DASHES = ("—", "–", "―")     # em dash, en dash, horizontal bar
+_DET_WS_RE = re.compile(r"\s+")
+
+
+def _det_lead_sentence(item: dict) -> str:
+    """The source's own first body sentence when it ADDS to the headline, else "".
+
+    W1.5: the keyless body used to be ``{headline} -- {source_name}``, i.e. the
+    headline verbatim. The emitted post is ``headline + blank line + body``
+    (``outbox.compose_text``), so every keyless press item shipped the SAME
+    SENTENCE TWICE in one post -- the headline, then the headline again wearing
+    an attribution. ``body_snippet`` (up to 600 chars of the real article, which
+    the LLM prompt already reads) is non-echo content ALREADY IN THE PACKET, so
+    the fallback relays that instead. Nothing is invented: this is source text,
+    the same trust level as the headline it replaces.
+
+    Returns "" -- and the caller keeps the old headline relay -- unless the
+    sentence is substantive (>= _DET_LEAD_MIN_WORDS words), short enough to fit
+    the flash budget, and NOT a restatement of the headline (the same
+    :func:`_is_near_verbatim` gate the LLM path answers to; a wire mirror whose
+    body_snippet simply repeats its own headline gains us nothing).
+
+    Em/en dashes are normalised to the house double hyphen. That is punctuation,
+    not a fact: source prose is not written to our language law, and the
+    publisher's last gate QUARANTINES U+2014, so relaying one verbatim would
+    kill the item (tests/test_marketing_press_copy.py pins that choke point).
+    """
+    raw = str(item.get("body_snippet") or "")
+    if not raw.strip():
+        return ""
+    for dash in _DET_DASHES:
+        raw = raw.replace(dash, " -- ")
+    text = _DET_WS_RE.sub(" ", raw).strip()
+    # First sentence only: the ladder in wire_format trims to whole sentences and
+    # a flash is at most two, so a paragraph here buys nothing but a clamp.
+    masked = _ABBREV_RE.sub(lambda m: m.group(0).replace(".", "\x00"), text)
+    first = re.split(r"(?<=[.!?])\s", masked, maxsplit=1)[0]
+    lead = _DET_WS_RE.sub(" ", first.replace("\x00", ".")).strip()
+    if len(lead) > _DET_LEAD_MAX_CHARS or len(lead.split()) < _DET_LEAD_MIN_WORDS:
+        return ""
+    headline = str(item.get("headline") or "").strip()
+    if headline and _is_near_verbatim(lead, headline):
+        return ""
+    return lead
+
+
 def _deterministic_summary(item: dict) -> str:
-    """Fallback summary: '{headline} -- {source_name}'.
+    """Fallback body: the source's lead sentence, attributed -- else the headline.
 
     B1: the source clause joins on a DOUBLE HYPHEN. This string is the body that
     ships whenever the LLM is disarmed or fails, so an em dash here is not a style
     slip: the publisher's last-gate language screen quarantines U+2014, which made
     the fallback path unpostable. The double hyphen is also the corpus wire form
     ("...ENVIRONMENTAL REVIEWS -- WSJ").
+
+    The lead sentence comes from :func:`_det_lead_sentence`, which returns "" when
+    the packet has no usable body -- and then this falls back to the historical
+    ``{headline} -- {source_name}`` relay, which is still the honest thing to send
+    when the headline is all we were given.
     """
     headline = item.get("headline", "")
     source_name = item.get("source_name", item.get("source", ""))
-    return f"{headline} -- {source_name}"
+    return f"{_det_lead_sentence(item) or headline} -- {source_name}"
 
 
 _TICKER_STRIP_CAP = 4

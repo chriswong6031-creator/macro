@@ -48,9 +48,24 @@ def test_overlay_has_keyboard_history_accessibility_and_strict_message_guards():
     assert "window.MDXTerminalOverlay" in code
 
 
-def test_overlay_keeps_one_warm_iframe_for_fast_reentry():
+def test_overlay_keeps_desktop_warm_but_recycles_hidden_mobile_iframe():
     code = _read("templates/terminal_overlay.js")
     assert "if (!state.booted)" in code
     assert "state.frame.src = config.url" in code
     assert "terminal:set-symbol" in code
+    assert "function shouldRecycleFrame()" in code
+    assert "window.matchMedia('(max-width: 700px)')" in code
+    assert "/iPad|iPhone|iPod/.test(ua)" in code
+    assert "state.recyclePending = shouldRecycleFrame()" in code
+    assert "if (!state.open && state.recyclePending) recycleFrame()" in code
+    assert "state.frame.src = 'about:blank'" in code
     assert ".removeChild(state.frame)" not in code
+
+
+def test_loader_has_a_deliberate_minimum_display_time():
+    code = _read("templates/terminal_overlay.js")
+    assert "var MIN_LOADER_MS = 1800;" in code
+    assert "state.loadingStartedAt = Date.now()" in code
+    assert "Math.max(0, MIN_LOADER_MS - elapsed)" in code
+    assert "beginLoading(root)" in code
+    assert "finishReady(data)" in code

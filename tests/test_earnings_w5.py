@@ -514,3 +514,249 @@ class TestStoreStaleness:
         )
         result = eb.store_staleness(today=TODAY, store_path=p)
         assert result["stale"] is True
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# E. The 2026-06-19 calendar freeze (E-wave review 2026-07-29)
+#
+# Defect: daily.yml's collect_tail step runs `python -m collectors.equity_earnings`
+# BARE.  The module's __main__ used to fall through to a 3-name demo default
+# (`sys.argv[1:] or ["AAPL", "NVDA", "JPM"]`) and pass it as `tickers=`, which
+# collapses fetch_earnings' universe to those 3 names.  The calendar sweep still
+# burned all 66 Nasdaq calls but discarded every symbol outside the 3-name set, so
+# only 3 rows got a fresh as_of and the carry-forward preserved 1361 rows frozen at
+# 2026-06-19 (the last real full-universe run).  The freshness tripwire read the
+# store-level max() as_of and reported sla_ok for six weeks.
+#
+# These tests pin BOTH halves: the bare entry point must sweep the whole universe,
+# and the tripwire must measure per-row coverage, not store presence.
+# ═══════════════════════════════════════════════════════════════════════════
+
+class TestNightlyEntryPointSweepsWholeUniverse:
+    """collectors.equity_earnings.main() — no args MUST mean the whole universe."""
+
+    def test_bare_invocation_passes_no_ticker_subset(self, monkeypatch):
+        """`python -m collectors.equity_earnings` → fetch_earnings(tickers=None).
+
+        This is THE regression pin.  Any default ticker list here silently becomes the
+        nightly's universe, because daily.yml invokes the module bare.
+        """
+        import collectors.equity_earnings as ee
+        seen = {}
+
+        def _fake_fetch(force=False, max_new=120, tickers=None):
+            seen.update(force=force, max_new=max_new, tickers=tickers)
+            return pd.DataFrame()
+
+        monkeypatch.setattr(ee, "fetch_earnings", _fake_fetch)
+        assert ee.main([]) == 0
+        assert seen["tickers"] is None, (
+            f"bare run restricted the universe to {seen['tickers']!r} — the nightly "
+            "sweeps only those names and every other row keeps a frozen as_of"
+        )
+        assert seen["max_new"] == 120     # production drip cap, not len(demo list)
+        assert seen["force"] is False     # honour REFRESH_DAYS, don't re-fetch everything
+
+    def test_smoke_test_requires_explicit_opt_in(self, monkeypatch):
+        """A named-ticker run is available, but only behind --tickers."""
+        import collectors.equity_earnings as ee
+        seen = {}
+
+        def _fake_fetch(force=False, max_new=120, tickers=None):
+            seen.update(force=force, max_new=max_new, tickers=tickers)
+            return pd.DataFrame()
+
+        monkeypatch.setattr(ee, "fetch_earnings", _fake_fetch)
+        assert ee.main(["--tickers", "aapl", "nvda", "jpm"]) == 0
+        assert seen["tickers"] == ["AAPL", "NVDA", "JPM"]   # upper-cased
+        assert seen["max_new"] == 3                        # capped to the named set
+
+    def test_nightly_workflow_line_carries_no_ticker_subset(self):
+        """daily.yml must invoke the collector bare — no --tickers in the nightly line."""
+        wf = (Path(__file__).resolve().parent.parent
+              / ".github" / "workflows" / "daily.yml").read_text()
+        lines = [ln for ln in wf.splitlines()
+                 if "collectors.equity_earnings" in ln and "python -m" in ln]
+        assert lines, "the equity_earnings nightly step vanished from daily.yml"
+        for ln in lines:
+            assert "--tickers" not in ln, (
+                f"nightly line pins a ticker subset: {ln.strip()!r} — that is the "
+                "2026-06-19 freeze shape"
+            )
+
+
+class TestCoverageAnnotation:
+    """The collector's line-start staleness annotation (GitHub-annotation house law)."""
+
+    def test_low_coverage_emits_line_start_warning(self, capsys):
+        """Sweep that refreshed a handful of a big universe → ::warning at line start.
+
+        Asserted via capsys (NOT caplog) and pinned to startswith("::") so the test
+        fails if the annotation is ever routed through a level-prefixing logger, which
+        is how GitHub silently drops these.
+        """
+        import collectors.equity_earnings as ee
+        ee._emit_coverage_annotation(total=1364, universe_n=1506, swept_n=3)
+        out = capsys.readouterr().out
+        lines = [ln for ln in out.splitlines() if "earnings-calendar-stale" in ln]
+        assert lines, "no staleness annotation emitted for a 3-of-1506 sweep"
+        for ln in lines:
+            assert ln.startswith("::warning title=earnings-calendar-stale::"), (
+                f"annotation does not START the line: {ln!r} — GitHub will drop it"
+            )
+        assert "3 of 1506" in lines[0]
+
+    def test_bot_wall_emits_line_start_warning(self, capsys):
+        """A bot-walled sweep keeps the cache — that silence must be annotated."""
+        import collectors.equity_earnings as ee
+        ee._emit_coverage_annotation(total=1364, universe_n=1506, swept_n=0, blocked=True)
+        lines = [ln for ln in capsys.readouterr().out.splitlines()
+                 if "earnings-calendar-stale" in ln]
+        assert lines
+        assert lines[0].startswith("::warning title=earnings-calendar-stale::")
+        assert "bot-walled" in lines[0]
+
+    def test_healthy_sweep_is_silent(self, capsys):
+        """A full-universe sweep must NOT cry wolf.
+
+        The live 66-weekday sweep on 2026-07-29 placed 1066 of 1506 names (70.8%);
+        the last known-good full run (2026-06-19) placed 1363 (90.5%).  Both clear the
+        floor, so the nightly stays quiet unless the sweep is actually broken.
+        """
+        import collectors.equity_earnings as ee
+        ee._emit_coverage_annotation(total=1506, universe_n=1506, swept_n=1066)
+        assert "earnings-calendar-stale" not in capsys.readouterr().out
+
+
+class TestSurpriseDripNotFrozenByCalendarStamp:
+    """as_of is re-stamped by the cheap calendar sweep; it must not gate the drip.
+
+    Once the full-universe sweep works, ~90% of rows get as_of=now every night.  If the
+    surprise drip keyed off as_of, every swept name would look fresh forever and
+    surprises_json would freeze permanently — a regression the universe fix would have
+    introduced.  surprises_as_of exists to keep the two clocks separate.
+    """
+
+    def _run(self, tmp_path, monkeypatch, existing_rows, dripped):
+        import collectors.equity_earnings as ee
+        store = tmp_path / "earnings.parquet"
+        if existing_rows:
+            pd.DataFrame(existing_rows).set_index("ticker").to_parquet(store)
+        monkeypatch.setattr(ee, "_cache_path", lambda: store)
+        monkeypatch.setattr(ee, "_universe", lambda: {"AAPL"})
+        monkeypatch.setattr(
+            ee, "_calendar_sweep",
+            lambda s, u: ({t: {"next_date": "2026-09-01", "next_time": "time-pre-market",
+                               "eps_forecast": 1.0} for t in u}, False),
+        )
+
+        def _fake_surprises(session, sym):
+            dripped.append(sym)
+            return [{"qtr": "Jun 2026", "reported": "7/30/2026", "eps": 1.1,
+                     "consensus": 1.0, "surprise_pct": 10.0}]
+
+        monkeypatch.setattr(ee, "_surprises", _fake_surprises)
+        monkeypatch.setattr(ee.time, "sleep", lambda *_a, **_k: None)
+        return ee.fetch_earnings(max_new=50)
+
+    def test_fresh_as_of_but_never_dripped_still_gets_surprises(self, tmp_path, monkeypatch):
+        """as_of=now (calendar-stamped) + surprises_as_of absent → the name IS dripped."""
+        dripped: list[str] = []
+        now = datetime.now(timezone.utc).isoformat()
+        out = self._run(tmp_path, monkeypatch, [
+            {"ticker": "AAPL", "next_date": "2026-08-01", "next_time": "time-pre-market",
+             "eps_forecast": 1.0, "surprises_json": "[]", "as_of": now},
+        ], dripped)
+        assert dripped == ["AAPL"], (
+            "surprise history was skipped because the calendar sweep had just stamped "
+            "as_of — the drip must key on surprises_as_of"
+        )
+        assert out.loc["AAPL", "surprises_as_of"]           # stamped by the drip
+        assert json.loads(out.loc["AAPL", "surprises_json"])  # non-empty history
+
+    def test_recently_dripped_name_is_skipped(self, tmp_path, monkeypatch):
+        """surprises_as_of inside REFRESH_DAYS → no redundant (expensive) refetch."""
+        dripped: list[str] = []
+        now = datetime.now(timezone.utc).isoformat()
+        self._run(tmp_path, monkeypatch, [
+            {"ticker": "AAPL", "next_date": "2026-08-01", "next_time": "time-pre-market",
+             "eps_forecast": 1.0, "surprises_json": '[{"qtr": "Jun 2026"}]',
+             "surprises_as_of": now, "as_of": now},
+        ], dripped)
+        assert dripped == [], "re-dripped a name whose surprise history is fresh"
+
+    def test_stale_surprises_as_of_is_refetched(self, tmp_path, monkeypatch):
+        """surprises_as_of older than REFRESH_DAYS → refetched even though as_of is fresh."""
+        dripped: list[str] = []
+        now = datetime.now(timezone.utc)
+        old = (now - timedelta(days=30)).isoformat()
+        self._run(tmp_path, monkeypatch, [
+            {"ticker": "AAPL", "next_date": "2026-08-01", "next_time": "time-pre-market",
+             "eps_forecast": 1.0, "surprises_json": '[{"qtr": "Mar 2026"}]',
+             "surprises_as_of": old, "as_of": now.isoformat()},
+        ], dripped)
+        assert dripped == ["AAPL"]
+
+
+class TestTripwireMeasuresCoverageNotPresence:
+    """audit_earnings_freshness must not read green off a few fresh rows."""
+
+    def _run_audit(self, tmp_path, max_age_td=2):
+        import importlib
+        import scripts.audit_earnings_freshness as af
+        importlib.reload(af)
+        import lib.config as cfg
+        original = cfg.data_dir
+        cfg.data_dir = lambda: tmp_path
+        try:
+            return af.audit(max_age_td=max_age_td)
+        finally:
+            cfg.data_dir = original
+
+    def test_three_fresh_rows_in_a_frozen_store_warns(self, tmp_path):
+        """THE defect: 3 rows at today, 1361 frozen 40 days back → coverage warning.
+
+        Before the fix this returned ok=True with warnings=[] and sla_ok=True, because
+        the age check read as_of_col.max().
+        """
+        (tmp_path / "earnings").mkdir(parents=True, exist_ok=True)
+        rows = {"AAPL": {"next_date": "2026-08-01", "as_of": _as_of_now()},
+                "NVDA": {"next_date": "2026-08-26", "as_of": _as_of_now()},
+                "JPM": {"next_date": "2026-08-14", "as_of": _as_of_now()}}
+        frozen = (pd.Timestamp(datetime.now(timezone.utc).date())
+                  - timedelta(days=40)).isoformat() + "+00:00"
+        rows.update({f"TK{i:04d}": {"next_date": "2026-08-01", "as_of": frozen}
+                     for i in range(1361)})
+        _make_earnings_parquet(tmp_path / "earnings", rows)
+        result = self._run_audit(tmp_path)
+        assert any("coverage" in w.lower() for w in result["warnings"]), (
+            f"frozen store read clean: {result['warnings']!r}"
+        )
+        assert result["detail"]["rows_within_sla"] == 3
+        assert result["detail"]["fresh_row_fraction"] < 0.01
+        # The old store-level signal still reports fresh — that is exactly why the
+        # per-row guard had to be added, so pin the contrast.
+        assert result["detail"]["as_of_age_td"] <= 2
+
+    def test_fully_refreshed_store_has_no_coverage_warning(self, tmp_path):
+        """A store the sweep re-stamped wholesale → no coverage warning."""
+        (tmp_path / "earnings").mkdir(parents=True, exist_ok=True)
+        rows = {f"TK{i:04d}": {"next_date": "2026-08-01", "as_of": _as_of_now()}
+                for i in range(200)}
+        _make_earnings_parquet(tmp_path / "earnings", rows)
+        result = self._run_audit(tmp_path)
+        assert not [w for w in result["warnings"] if "coverage" in w.lower()]
+        assert result["detail"]["fresh_row_fraction"] == 1.0
+
+    def test_partially_refreshed_store_above_floor_is_quiet(self, tmp_path):
+        """70% refreshed (the measured live sweep rate) must not warn."""
+        (tmp_path / "earnings").mkdir(parents=True, exist_ok=True)
+        frozen = (pd.Timestamp(datetime.now(timezone.utc).date())
+                  - timedelta(days=40)).isoformat() + "+00:00"
+        rows = {f"TK{i:04d}": {"next_date": "2026-08-01",
+                               "as_of": _as_of_now() if i < 140 else frozen}
+                for i in range(200)}
+        _make_earnings_parquet(tmp_path / "earnings", rows)
+        result = self._run_audit(tmp_path)
+        assert not [w for w in result["warnings"] if "coverage" in w.lower()]
+        assert result["detail"]["rows_within_sla"] == 140

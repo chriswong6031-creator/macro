@@ -18,9 +18,52 @@ the Terminal UI with a 30s TTL cache.
 | `live_flow/tide_current.json` | `live_flow.tide/v1` | Market tide (NCP/NPP minutes + sectors) |
 | `live_flow/dte_tide_current.json` | `live_flow.dte_tide/v1` | DTE-bucket tide |
 | `live_flow/tickers/{ROOT}.json` | `live_flow.ticker/v1` | Per-root drill (top ~40 roots) |
+| `live_flow/tide/{DATE}.json` | `live_flow.tide/v1` | Dated archive of tide_current (same bytes) |
+| `live_flow/dte_tide/{DATE}.json` | `live_flow.dte_tide/v1` | Dated archive of dte_tide_current |
+| `live_flow/tide/dates.json` | `live_flow.archive_dates/v1` | Sessions index for the tide archive |
+| `live_flow/dte_tide/dates.json` | `live_flow.archive_dates/v1` | Sessions index for the dte archive |
 
 Local copies land in `data/live_flow_out/` (gitignored).
 Day state is persisted at `data/live_flow_state/day_state_{date}.json`.
+
+### Dated tide/dte archives (OIP W0 T-lane)
+
+`tide_current.json` / `dte_tide_current.json` are OVERWRITTEN every cycle, so the session's
+story used to die at the close. Each cycle now also uploads the SAME two local files under a
+date-keyed name (`live_flow/{tide,dte_tide}/{YYYY-MM-DD}.json`) plus a per-family
+`dates.json` sessions index — one write, two keys, so the live copy and the archive can never
+disagree byte-for-byte. **The day's final write is the settled record**, which is what the
+nightly Session Digest (OIP E1) reads. Both payloads already carry the full-session
+cumulative series (390 minutes for a full RTH session), so no payload changed and the current
+keys are byte-identical to before.
+
+- Writer: `scripts/build_flow_archive.py` (pure functions), wired in `live_flow_poller.main`.
+- Retention: newest **30** sessions per family; override with `live_flow.archive_retain_sessions`
+  in `config.yml` (a non-positive value is refused and the default is used — a stray `-1`
+  would otherwise select every dated object, today's included). Swept once per session (two
+  cheap R2 listings), never per-cycle; a failed sweep retries **next session**, not next
+  cycle. The prune rebuilds every delete target from `dated_archive_key`, so it can only ever
+  delete a key this lane wrote — never `dates.json`, never `live_flow/tide_current.json` — and
+  it honors R2's per-key `Errors` array, so a refused delete is reported, not counted.
+  Flow-Surface retention stays at 10 sessions (`surface_retain_sessions`) — unchanged.
+- **Write gates.** The lane is dark unless the run is a live one on a real trading day: any
+  `--date` run (see the smoke warning below) and any non-NYSE-session date
+  (`lib/nyse_calendar.is_session` — holidays, not just weekends) skip the dated write, the
+  ledger entry and the retention sweep. The current keys publish either way.
+- Added cost: +4 R2 PUTs/cycle (~262 KB — `tide` 179 KB + `dte_tide` 82.5 KB, measured live
+  2026-07-29 + two ~250-byte indexes). Stored footprint is only the last write per key:
+  ~8 MB per 30-session retention window. R2 ingress is free; ~800 extra class-A writes per
+  session.
+- Fully fail-soft: a staging or PUT failure logs and degrades to current-keys-only; it can
+  never cost the poller a cycle or blank a key the live Terminal reads.
+- Verify after a deploy:
+  ```bash
+  R2_BASE=$(python -c "import yaml; c=yaml.safe_load(open('config.yml')); \
+    print(c['r2_data_plane']['public_base'])")
+  curl -s "$R2_BASE/live_flow/tide/dates.json" | python -m json.tool
+  curl -s -o /dev/null -w '%{http_code} %{size_download}\n' \
+    "$R2_BASE/live_flow/tide/$(date +%F).json"
+  ```
 
 ## launchd autostart
 
@@ -149,6 +192,25 @@ set -a; source /path/to/.env; set +a
 Never echo these values — they persist in shell history and logs.
 
 ## Manual single-cycle smoke
+
+> **`--date` disables the dated tide/dte ARCHIVE lane — by design.** This recipe polls a
+> handful of roots, so its tide payload is a valid-looking *partial* of that past session, and
+> the archive key is derived from `session_date`. An ungated smoke would therefore overwrite
+> the settled `live_flow/tide/<that date>.json` with a fragment, undetectably (schema valid,
+> date correct — `roots_polled` lives only in `meta.json`, which the archive does not carry).
+> So whenever `--date` is passed, dated **tide/dte_tide** archive writes and their retention
+> sweep are both off and the poller logs it at WARNING. That lane is also dark on any
+> non-session (market holidays — launchd fires anyway). To exercise it, run the unit suite:
+> `pytest tests/test_flow_archive.py`.
+>
+> **⚠️ The dated FLOW-SURFACE store has no such gate — a backdated smoke DOES overwrite it.**
+> `session_date` flows unconditionally into `build_and_stage_surfaces`
+> (`live_flow_poller.py:1717`), so a `--date` run rewrites
+> `live_flow/surface/{ROOT}/<that date>/idx.json` + `{HHMM}.json` with a partial few-root,
+> single-stamp frame, and its retention sweep still runs. Pre-existing M-XP behavior, not
+> changed here. **Do not run a backdated smoke against a session whose surface replay you
+> still care about** — pick a date outside the 10-session surface retention window, or accept
+> that that session's replay is clobbered until the next live session ages it out.
 
 ```bash
 # Wipe stale state first

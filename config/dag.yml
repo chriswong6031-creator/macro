@@ -278,9 +278,14 @@ lanes:
           existed but was never scheduled — earnings.parquet stayed empty and the
           W1.5 blackout gate + W5 chips fail-open stale. Sweeps Nasdaq's public
           calendar (~66 weekdays) → data/earnings/earnings.parquet (ticker-indexed:
-          next_date, next_time, eps_forecast, surprises_json, as_of). Bot-wall-aware:
-          a blocked first call keeps the existing cache and exits 0. ~50s/night.
-          Non-fatal. Writes data/earnings/earnings.parquet (git-tracked).
+          next_date, next_time, eps_forecast, surprises_json, surprises_as_of,
+          as_of). Bot-wall-aware: a blocked first call keeps the existing cache and
+          exits 0. ~3.5m/night (measured 07-29). Non-fatal.
+          INVOKED BARE — no args means "whole breadth universe". Passing --tickers
+          collapses the universe to that subset and leaves every other row on a
+          frozen as_of; that is the 2026-06-19 freeze (a 3-name demo default in the
+          module's __main__ pinned the nightly for six weeks). Writes
+          data/earnings/earnings.parquet (git-tracked).
       - id: audit_earnings_freshness
         module: scripts.audit_earnings_freshness
         note: >

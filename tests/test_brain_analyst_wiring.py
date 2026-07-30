@@ -1,0 +1,150 @@
+"""Gateway wiring for the Market Analyst doctrine (Analyst OS P0).
+
+What this suite pins (mirrors tests/test_brain_doctrine.py's wiring half):
+  1. _analyst_block_for rides on EVERY page (message-routed, page-free) — the
+     protocol reaches dashboard chat, not just the Terminal.
+  2. The lane dial: fast → tight-sequence paragraph, pro/research → deeper-pass
+     paragraph, unknown → block without a dial. The dial never replaces the block.
+  3. Leak screen: the analyst banner + module openers are in _LEAK_SENTINELS.
+  4. Source order in BOTH loops: technician doctrine → analyst block → language
+     directive (the LANGUAGE line must stay last; recency is load-bearing).
+  5. Never raises: a broken analyst library degrades to "" — the turn survives.
+"""
+from __future__ import annotations
+
+import inspect
+
+from engine.neuralweb import analyst_doctrine
+from engine.neuralweb import brain_gateway as gw
+
+
+# ── 1. Every page: block is message-routed, not page-gated ──────────────────
+
+def test_analyst_block_rides_off_terminal():
+    block = gw._analyst_block_for("why is TLT down while yields rise today", "fast")
+    assert "MARKET ANALYST DOCTRINE" in block
+    assert "THE ANALYST PROTOCOL" in block
+
+
+def test_analyst_block_present_even_for_stable_questions():
+    # The protocol is always-on (its freshness law TELLS the model educational
+    # questions need no live retrieval — that guidance must be present to act).
+    block = gw._analyst_block_for("what is duration?", "fast")
+    assert "THE ANALYST PROTOCOL" in block
+    # ...but a calm question must not drag in the stress-day playbook.
+    assert "STRESS-DAY PLAYBOOK" not in block
+
+
+# ── 2. Lane dial ─────────────────────────────────────────────────────────────
+
+def test_fast_lane_gets_the_discipline_dial():
+    block = gw._analyst_block_for("why is the market down today", "fast")
+    assert "DISCIPLINE FOR THIS TURN" in block
+    assert "DEPTH FOR THIS TURN" not in block
+
+
+def test_pro_lane_gets_the_depth_dial():
+    block = gw._analyst_block_for("why is the market down today", "pro")
+    assert "DEPTH FOR THIS TURN" in block
+    assert "DISCIPLINE FOR THIS TURN" not in block
+
+
+def test_unknown_lane_keeps_the_block_drops_the_dial():
+    block = gw._analyst_block_for("why is the market down today", "")
+    assert "THE ANALYST PROTOCOL" in block
+    assert "FOR THIS TURN" not in block
+
+
+# ── 3. Leak screen carries the analyst sentinels ─────────────────────────────
+
+def test_leak_sentinels_include_analyst_doctrine():
+    for s in analyst_doctrine.LEAK_SENTINELS:
+        assert s in gw._LEAK_SENTINELS, f"analyst sentinel missing from leak screen: {s!r}"
+
+
+# ── 4. Source order in both loops: doctrine → analyst → language ────────────
+
+def _assert_order(src: str) -> None:
+    i_doc = src.index("_doctrine_block_for(safe_page, message)")
+    i_ana = src.index("_analyst_block_for(message, lane)")
+    i_lang = src.index("_language_directive(turn_lang)")
+    assert i_doc < i_ana < i_lang
+
+
+def test_loop_order_nonstream():
+    _assert_order(inspect.getsource(gw._run_brain_loop))
+
+
+def test_loop_order_stream():
+    _assert_order(inspect.getsource(gw._run_brain_loop_stream))
+
+
+# ── 5. Never raises ──────────────────────────────────────────────────────────
+
+def test_analyst_block_degrades_to_empty_on_library_error(monkeypatch):
+    def _boom(_msg):
+        raise RuntimeError("library on fire")
+
+    monkeypatch.setattr(analyst_doctrine, "route", _boom)
+    assert gw._analyst_block_for("why is the market down", "fast") == ""
+
+
+# ── 6. Market-intel tools: allowlist, schemas, dispatch, tier gate ───────────
+
+def _dispatch(tool_name, params, tmp_path, user_id=""):
+    return gw._dispatch_brain_tool(
+        tool_name, params, tmp_path, tmp_path, "", user_id=user_id)
+
+
+def test_intel_tools_in_allowlist_and_schemas(tmp_path):
+    assert "get_market_events" in gw._BRAIN_TOOLS
+    assert "search_research" in gw._BRAIN_TOOLS
+    names = {s["name"] for s in gw._all_brain_tool_schemas(tmp_path)}
+    assert {"get_market_events", "search_research"} <= names
+
+
+def test_get_market_events_dispatches_for_everyone(tmp_path):
+    # No user_id (guest turn): events are open — an empty world degrades honestly.
+    out = _dispatch("get_market_events", {"window_h": 6, "limit": 3}, tmp_path)
+    assert isinstance(out, dict) and "events" in out
+
+
+def test_get_market_events_survives_junk_model_arguments(tmp_path):
+    # The model sometimes emits junk argument types; the module's clamps must see
+    # them (dispatch passes raw values through instead of raising on float()).
+    out = _dispatch("get_market_events",
+                    {"window_h": "soon", "limit": "a few"}, tmp_path)
+    assert isinstance(out, dict) and "events" in out
+    assert "error" not in out
+
+
+def test_search_research_gate_guest(tmp_path):
+    out = _dispatch("search_research", {"query": "oil shock"}, tmp_path, user_id="")
+    assert out.get("error") == "insider_required"
+
+
+def test_search_research_gate_free_tier(tmp_path, monkeypatch):
+    monkeypatch.setattr(gw, "_resolve_tier",
+                        lambda uid, root=None: {"tier": "free", "status": "active"})
+    out = _dispatch("search_research", {"query": "oil shock"}, tmp_path, user_id="u1")
+    assert out.get("error") == "insider_required"
+    assert out.get("tier") == "free"
+
+
+def test_search_research_serves_insider_and_pro(tmp_path, monkeypatch):
+    import json
+    cat_dir = tmp_path / "data" / "research_vault"
+    cat_dir.mkdir(parents=True)
+    (cat_dir / "catalog.json").write_text(json.dumps({
+        "schema": "research_vault.catalog.v1", "count": 1,
+        "items": [{"id": "x1", "title": "Oil shock playbook", "institution": "GS",
+                   "side": "sell", "published_at": "2026-07-29T00:00:00Z",
+                   "summary_points": ["Supply risk repricing"], "tags": [],
+                   "tickers": [], "top_pick": False, "pages": 3, "language": "en"}],
+    }))
+    for tier in ("insider", "pro"):
+        monkeypatch.setattr(gw, "_resolve_tier",
+                            lambda uid, root=None, _t=tier: {"tier": _t, "status": "active"})
+        out = _dispatch("search_research", {"query": "oil shock"}, tmp_path, user_id="u1")
+        assert out.get("results"), f"tier {tier} should get results"
+        assert out["results"][0]["title"] == "Oil shock playbook"

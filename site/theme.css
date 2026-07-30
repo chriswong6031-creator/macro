@@ -467,10 +467,10 @@ html body :is(a.actitem, a.idx-alloc, .nbcard, a.scard):hover {
    flyout sheet on init, but that lands ~2s in on a phone — until then the full
    desktop menu (~258px tall at 412px wide) rendered expanded, then vanished:
    a 0.30 layout shift on every mobile load (2026-07-21 audit, the whole page
-   jumped up). Same 1259px breakpoint as theme.js's injected sheet; :not(.nav-open)
+   jumped up). Same 900px breakpoint as theme.js's injected sheet; :not(.nav-open)
    keeps this inert once the flyout opens (JS toggles nav-open on .site-nav); the
    <noscript> re-expand in _navlinks.html.j2 preserves the no-JS fallback. */
-@media (max-width: 1259px){
+@media (max-width: 900px){
   .site-nav:not(.nav-open) .nav-links { display: none; }
 }
 /* ── Brand lockup — the crafted Mastermind “M” logomark + MASTERMIND wordmark, the
@@ -621,10 +621,10 @@ html body :is(a.actitem, a.idx-alloc, .nbcard, a.scard):hover {
    state if JS fails). The generic ≤560 collapse above can't neutralise this
    because `.site-nav .nav-dd-menu{position:absolute}` (0,2,0) out-specificities its
    bare `.nav-dd-menu` (0,1,0). Mirror the hamburger's closed state at the same
-   ≤1259px range: fold the dropdowns in-flow (stacked, zero-height) so nothing
+   ≤900px range: fold the dropdowns in-flow (stacked, zero-height) so nothing
    overflows. Once theme.js runs its has-nav-toggle rules (0,3,0) win and this goes
-   inert; desktop (>1259px) is untouched, so hover fly-outs are unaffected. */
-@media (max-width: 1259px) {
+   inert; desktop (>900px) is untouched, so hover fly-outs are unaffected. */
+@media (max-width: 900px) {
   .site-nav .nav-dd { display: block; }
   .site-nav .nav-dd-menu { position: static; min-width: 0; max-height: 0;
     overflow: hidden; transform: none; box-shadow: none; border: 0; background: transparent; }

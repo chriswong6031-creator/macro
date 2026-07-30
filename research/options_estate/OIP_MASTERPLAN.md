@@ -8,8 +8,28 @@ suite here. CREATE MASTER BUILD PLAN FIRST") → 4-lane sonnet census fan-out (m
 macro engines/data, Terminal intraday suite, adjudications/kills) → live M1 ops probe →
 Fable synthesis under `docs/DESIGN_DOCTRINE.md` + the frontend-design skill.
 
-**Status: PLAN ONLY — nothing here is built.** Every build wave below ships through its own
-spawn with §0 inlined.
+**Status: BUILDING — W0 in flight since 2026-07-29** (operator go: "lets start this build
+out"). Every build wave ships through its own spawn with §0 inlined.
+
+**Amendments (2026-07-29, W0 build-out — commissioning session, terrain-verified):**
+1. **E2a struck.** Build-time recon verified `data/options_skew/snapshots.parquet` and
+   `data/options_ivspread/snapshots.parquet` already append (concat + dedup on
+   (date, underlying)); only the `site/` surfaces are latest-only, correctly so. The census
+   claim behind §6 E2(a) was wrong; no store flip ships.
+2. **The live system event log is not built in W0; E1 derives events instead.** The Python
+   parity evaluators live in charting-app (`ingest/alerts_engine.py`) with prod wiring still
+   fixture-based, and a third parity copy in macro would drift. The digest derives session
+   events (flip crossings, wall touches, premium bursts, hot pockets, 0DTE spikes)
+   deterministically from the archived minute series — same archives in, same events out —
+   with thresholds documented against the Terminal evaluators they mirror. The
+   `live_flow.events.v1` contract stays reserved for a future live writer if alert-fidelity
+   events become a product need. T-lane = dated archive writers only; no charting-app code
+   in W0.
+3. **M1 greek-tap already armed** — the W0 "re-arm" item collapsed to verification (liveflow
+   publishes SPY/QQQ/IWM greek surfaces per-minute, coverage 0.90–0.96, verified live
+   2026-07-29). The real W0 ops work was the flow-ops-wt vintage-skew heal (r2sync
+   ImportError dead since the 07-25 migration; pre-#3521 matrix gate) — recorded in
+   `ops/THETADATA_R2_SYNC_RUNBOOK.md`.
 
 **Standing law honored.** This plan composes with, and does not re-adjudicate: OEU
 (`research/options_estate/OEU_MASTERPLAN.md` — workspace IA, legacy-pages-live-forever,
@@ -378,7 +398,9 @@ from R2: `live_flow/surface/{ROOT}/{DATE}/` archives (exist today, 10-session re
 `*_current.json` are overwritten each minute — the digest cannot exist without them), and
 a **system event log** `live_flow/events/{DATE}.jsonl` emitted by the alert-engine math
 running on a *system* watchlist (flip crossings, wall touches, premium bursts, hot pockets,
-0DTE spikes — the exact evaluators that exist in TS+Python parity today). Privacy law:
+0DTE spikes — the exact evaluators that exist in TS+Python parity today; Amendment 2: not
+built as a live writer in W0 — the digest derives these event families from the archived
+minute series). Privacy law:
 the digest never reads user alert rows (`public.alerts` is owner-scoped); system events
 only. Outputs: `data/options_session/{DATE}/{ROOT}.json` + `site/session/{ROOT}.json`
 (latest, for surfaces) + a session ledger row (arc shape, event counts, 0DTE peak, wall
@@ -387,7 +409,8 @@ migration) — nightly lane only. Guards per §0.11. Cost: reads ~3–5 roots of
 
 **E2 — IV analytics v2 (true history).**
 (a) Flip `data/options_skew` + `data/options_ivspread` from latest-snapshot to appending
-daily grids (schema change, synapse re-registration). (b) True IV-rank/percentile: 15y
+daily grids (schema change, synapse re-registration) *(Amendment 1: struck — the stores
+already append; verified at build time)*. (b) True IV-rank/percentile: 15y
 where ThetaData greeks cover a root (M1-side batch reconstruction → R2 artifact
 `options_iv_history/{ROOT}.parquet`, one-shot + weekly delta), polygon-accrual window
 otherwise, depth printed per name (young-flag < 252d stands). (c) Term slope + 25Δ skew
@@ -455,7 +478,7 @@ runs on the M1/launchd plane or one-shot operator-run scripts, publishing R2 art
 nightly *reads*. The engine job's 200-min ceiling is treated as full.
 
 **R2 contracts (new/changed).** `live_flow/tide/{DATE}.json`, `live_flow/dte_tide/{DATE}.json`,
-`live_flow/events/{DATE}.jsonl` (T-lane writers, retain ≥ 30 sessions — the digest ledger
+`live_flow/events/{DATE}.jsonl` *(reserved — Amendment 2)* (T-lane writers, retain ≥ 30 sessions — the digest ledger
 is the durable record, R2 archives are working files); `options_iv_history/{ROOT}.parquet`;
 `index_gex_history/*.parquet` mirror. Surface archive retain stays 10 (digest persists what
 matters). All writers idempotent, heal-now on missing index files (deferred heals never
@@ -536,7 +559,7 @@ merges. Every wave: PR(s) → `merge-on-green` label → live verify.
 
 | Wave | Scope | Lanes (routing) | Ships |
 |---|---|---|---|
-| **W0 — truth & spine** | E8 integrity sweep; M1 triage + greek-tap re-arm; T-lane archive writers + system event log; E1 digest engine (data only); E5 calendar heal check; E2a store schema flips | builder ×2 (macro, cross-repo T-lane) + reviewer | data artifacts + guards; zero UI |
+| **W0 — truth & spine** | E8 integrity sweep; M1 triage + greek-tap re-arm; T-lane archive writers (events → E1, Amendment 2); E1 digest engine (data only); E5 calendar heal check; E2a struck (Amendment 1) | builder ×2 (macro, cross-repo T-lane) + reviewer | data artifacts + guards; zero UI |
 | **W1 — front door & workbench** | Nav regroup (OEU mechanical list); ticker search; S1 Ticker depth reads; LEX stances; declared caps | designer (pins S1 spec + filmstrip) → builder; reviewer | the workbench answer to Q2/Q3 |
 | **W2 — the evening read** | S2 Brief 2.0 (session character + tomorrow rail); S5 extremes shelf; cross-link rail + dossier chips; movers ZH; market_structure enum/theme.js fixes | designer → builder ×2 | the Q1/Q4/Q5 surfaces |
 | **W3 — scanner & structure** | S3 Scanner v2 (columns/presets/saved views); S4 Structure & Vol desk (term structure, calendar shelf, E7 read) | designer → builder ×2 | the Q3 breadth + index home |
@@ -621,7 +644,7 @@ contract-tape items (Terminal charter, not OIP); any gate flip.
 | Wave-2 greek grid keys (netprem-only today) | Populated via W0 greek-tap re-arm; Terminal renders them; macro digest reads netprem only |
 | `index_gex_history` frozen parquets | HEALED + scheduled (E3, W0) |
 | `em_breach` index ledger rows | EXTENDED per-name (E4, W4) |
-| skew/ivspread latest-only stores | FLIPPED to appending grids (E2a, W0) |
+| skew/ivspread latest-only stores | Amendment 1: already appending — no flip needed |
 | tape_flow SPY+KRE accrual | EXTENDED (E6, W4) |
 | Learn options track (7 lessons) | LINKED from S6 chips; no rewrites |
 | `.pvcard` popover clip (5-board defect) | NOT OIP scope; stays with its flagged owner; OIP avoids `_prophet_card` edits |
@@ -639,7 +662,8 @@ contract-tape items (Terminal charter, not OIP); any gate flip.
 - `options_events.v1` — `site/options_events.json`: `{earnings:[{t,name,days,implied_move,
   past_moves[]}], expirations:[{date,kind,front_share}], macro:[{date,label}]}`
 - `live_flow.events.v1` — R2 `live_flow/events/{DATE}.jsonl`: one JSON object per system
-  event `{t, root, type, level?, side?, z?, share?}` (types = the five evaluator families)
+  event `{t, root, type, level?, side?, z?, share?}` (types = the five evaluator families;
+  reserved — Amendment 2, not written in W0)
 
 ## Appendix C — census provenance
 

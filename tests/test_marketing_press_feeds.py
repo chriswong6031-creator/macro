@@ -199,6 +199,107 @@ class TestTwitterApiIo:
         assert [h["handle"] for h in prov.handles] == ["DeItaone"]
 
 
+class TestAFailedCallIsStillABilledCall:
+    """Fail-CLOSED billing (#3960 reviewer minor).
+
+    ``_request`` collapses a network error, a timeout and an HTTP 4xx/5xx into a
+    single ``None``, and the vendor's floor is per REQUEST: "Minimum charge:
+    $0.00015 per request". The lane used to ``continue`` past its own accounting
+    on that branch, so in OUR ledger every failure was free. A handle that 401s
+    or times out on every one of the 288 ticks a day therefore spent real money
+    against the shared $75 twitterapi.io bucket while the committed spend state
+    read zero -- and that state is the only thing the cap can see.
+    """
+
+    def _provider(self, cap=75.0):
+        cfg = {"handles": [{"handle": "DeItaone", "tier": "fast",
+                            "corroboration_class": "hearsay"}],
+               "poll_tiers": {"fast": 75, "mid": 105, "slow": 300}}
+        return TwitterApiIoProvider(cfg, spend_cap_usd=cap, satire_blocklist=[])
+
+    @staticmethod
+    def _month() -> str:
+        return datetime.now(tz=timezone.utc).strftime("%Y-%m")
+
+    def test_transport_none_records_the_minimum_charge(self, monkeypatch):
+        from engine.marketing import press_providers as pp
+        monkeypatch.setenv("TWITTERAPI_IO_KEY", "fake-key")
+        prov = self._provider()
+        monkeypatch.setattr(prov, "_request", lambda *_a, **_k: None)
+        state: dict = {}
+
+        assert prov.fetch(root=ROOT, session_state=state) == []
+
+        spend = state["twitterapiio"]["spend"][self._month()]
+        assert spend["usd"] > 0, "a failed call was recorded as free"
+        assert spend["usd"] == pytest.approx(pp._TW_MIN_CHARGE)
+        assert spend["requests"] == 1
+        # No tweets arrived, so the per-tweet counter must not move.
+        assert int(spend.get("tweets", 0)) == 0
+
+    def test_a_raising_transport_is_billed_the_same(self, monkeypatch):
+        """``_request`` swallows its own exceptions into None, so the caller sees
+        one branch. Pin that a raising urlopen still lands there and still bills:
+        this is the shape a real DNS failure or timeout takes."""
+        from engine.marketing import press_providers as pp
+
+        def _boom(*_a, **_k):
+            raise OSError("connection reset")
+
+        monkeypatch.setenv("TWITTERAPI_IO_KEY", "fake-key")
+        monkeypatch.setattr(pp, "urlopen", _boom, raising=False)
+        prov = self._provider()
+        state: dict = {}
+
+        assert prov.fetch(root=ROOT, session_state=state) == []
+
+        spend = state["twitterapiio"]["spend"][self._month()]
+        assert spend["usd"] == pytest.approx(pp._TW_MIN_CHARGE)
+        assert spend["requests"] == 1
+
+    def test_repeated_failures_accumulate_toward_the_cap(self, monkeypatch):
+        """The point of billing a failure: a permanently broken handle must walk
+        the lane into its own cap instead of polling free forever."""
+        from engine.marketing import press_providers as pp
+        monkeypatch.setenv("TWITTERAPI_IO_KEY", "fake-key")
+        state: dict = {}
+        for _ in range(5):
+            prov = self._provider()
+            monkeypatch.setattr(prov, "_request", lambda *_a, **_k: None)
+            # A fresh provider each tick, exactly like the workflow: the poll
+            # throttle lives in the committed state, so clear it to model five
+            # separate ticks rather than one burst.
+            state.setdefault("twitterapiio", {}).setdefault("last_poll", {}).clear()
+            prov.fetch(root=ROOT, session_state=state)
+
+        spend = state["twitterapiio"]["spend"][self._month()]
+        assert spend["requests"] == 5
+        assert spend["usd"] == pytest.approx(5 * pp._TW_MIN_CHARGE)
+
+    def test_an_offline_tick_is_still_free(self, monkeypatch):
+        """The control. Billing attaches to a REQUEST, not to a tick: an offline
+        pass makes no call and must not invent a charge."""
+        monkeypatch.setenv("TWITTERAPI_IO_KEY", "fake-key")
+        state: dict = {}
+        assert self._provider().fetch(root=ROOT, session_state=state,
+                                      offline=True) == []
+        month = (state.get("twitterapiio") or {}).get("spend") or {}
+        assert float((month.get(self._month()) or {}).get("usd", 0.0)) == 0.0
+
+    def test_the_x_intel_lane_already_bills_a_failed_call(self):
+        """The sibling lane's accounting is the shape this fix copied, and it is
+        pinned here so the two cannot drift apart silently."""
+        from engine.marketing import x_intel as xi
+
+        state: dict = {}
+        now = datetime.now(tz=timezone.utc)
+        # record_call is what Harvester.run calls unconditionally after a
+        # _request that may have returned None (0 items extracted).
+        cost = xi.record_call(state, 0, cfg={"intel": {}}, now=now)
+        assert cost > 0
+        assert xi.month_bucket(state, now)["usd"] > 0
+
+
 # ---------------------------------------------------------------------------
 # 4. Corroboration gate (pure)
 # ---------------------------------------------------------------------------

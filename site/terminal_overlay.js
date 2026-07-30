@@ -25,14 +25,18 @@
     lastConfig: null,
     historyToken: '',
     historyActive: false,
+    recyclePending: false,
     closeTimer: 0,
+    readyTimer: 0,
     toastTimer: 0,
     slowTimer: 0,
+    loadingStartedAt: 0,
     scrollY: 0,
     activeElement: null,
     bodyStyle: null,
     locked: []
   };
+  var MIN_LOADER_MS = 1800;
 
   function isDashboardHost() {
     var h = location.hostname || '';
@@ -277,7 +281,17 @@
     }, 9000);
   }
 
-  function markReady(data) {
+  function beginLoading(root) {
+    clearTimeout(state.readyTimer);
+    state.readyTimer = 0;
+    state.ready = false;
+    state.loadingStartedAt = Date.now();
+    root.classList.remove('is-ready', 'is-slow');
+    root.classList.add('is-loading');
+    startSlowTimer();
+  }
+
+  function finishReady(data) {
     state.ready = true;
     state.path = data && data.path ? data.path : state.path;
     if (data && data.symbol) state.symbol = data.symbol;
@@ -290,6 +304,49 @@
         try { state.frame.focus(); } catch (e) {}
       }, 180);
     }
+  }
+
+  function markReady(data) {
+    var elapsed = state.loadingStartedAt ? Date.now() - state.loadingStartedAt : MIN_LOADER_MS;
+    var wait = Math.max(0, MIN_LOADER_MS - elapsed);
+    clearTimeout(state.readyTimer);
+    if (wait) {
+      state.readyTimer = setTimeout(function () {
+        state.readyTimer = 0;
+        finishReady(data);
+      }, wait);
+      return;
+    }
+    finishReady(data);
+  }
+
+  function shouldRecycleFrame() {
+    var compact = false;
+    try {
+      compact = !!(window.matchMedia && window.matchMedia('(max-width: 700px)').matches);
+    } catch (e) {}
+    var ua = navigator.userAgent || '';
+    var touchMac = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+    return compact || /iPad|iPhone|iPod/.test(ua) || touchMac;
+  }
+
+  function recycleFrame() {
+    state.recyclePending = false;
+    clearTimeout(state.readyTimer);
+    clearTimeout(state.slowTimer);
+    state.readyTimer = 0;
+    state.ready = false;
+    state.booted = false;
+    state.path = '';
+    state.symbol = '';
+    if (state.overlay) state.overlay.classList.remove('is-ready', 'is-loading', 'is-slow');
+    if (!state.frame) return;
+    // Mobile WebKit can keep the cross-origin iframe's composited surface black
+    // after its fixed ancestor moves through visibility:hidden. Releasing the
+    // hidden document makes the next launch paint a fresh surface; HTTP/browser
+    // caches still make that second boot much faster than the first.
+    try { state.frame.src = 'about:blank'; }
+    catch (e) { state.frame.removeAttribute('src'); }
   }
 
   function pushOverlayHistory() {
@@ -313,6 +370,7 @@
       return;
     }
 
+    if (!state.open && state.recyclePending) recycleFrame();
     clearTimeout(state.closeTimer);
     state.lastConfig = config;
     state.symbol = config.symbol || '';
@@ -336,18 +394,13 @@
 
     if (!state.booted) {
       state.booted = true;
-      state.ready = false;
-      root.classList.add('is-loading');
+      beginLoading(root);
       state.frame.src = config.url;
-      startSlowTimer();
       return;
     }
 
     if (state.path && state.path !== '/terminal') {
-      state.ready = false;
-      root.classList.remove('is-ready');
-      root.classList.add('is-loading');
-      startSlowTimer();
+      beginLoading(root);
     }
 
     if (state.frame.contentWindow) {
@@ -363,6 +416,7 @@
     if (!state.open || !state.overlay) return;
     state.open = false;
     state.historyActive = false;
+    state.recyclePending = shouldRecycleFrame();
     clearTimeout(state.toastTimer);
     clearTimeout(state.slowTimer);
     state.toast.classList.remove('show');
@@ -373,6 +427,7 @@
     state.closeTimer = setTimeout(function () {
       if (!state.overlay || state.open) return;
       state.overlay.classList.remove('is-closing');
+      if (state.recyclePending) recycleFrame();
     }, 650);
   }
 

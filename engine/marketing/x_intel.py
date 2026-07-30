@@ -132,6 +132,15 @@ DEFAULTS: dict[str, Any] = {
     "min_charge_per_request_usd": 0.00015,
     # One run may not eat the month. 17 = one full roster pass.
     "max_calls_per_run": 20,
+    # ── THE DAILY LIGHT PASS (the second line of the budget above) ─────────
+    # The cap was sized for a weekly deep pass PLUS a daily light pass, and the
+    # light pass did not exist — the arithmetic justified 150 calls a month that
+    # nothing spent (#3960 reviewer minor). ``scripts/x_intel_harvest --light``
+    # is that pass: the roster entries marked ``tier: daily``, at most
+    # ``light_max_handles`` of them, one call each. 5 x 30 = 150, exactly the
+    # number above; NEITHER CAP MOVES.
+    "light_tier": "daily",
+    "light_max_handles": 5,
     # ── ANALYSIS ──────────────────────────────────────────────────────────
     # Posts created inside this window feed the tables. Older corpus rows stay
     # on disk (append-only ledger law) but do not skew a "what works now" read.

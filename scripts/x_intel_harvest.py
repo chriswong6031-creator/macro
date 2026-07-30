@@ -26,9 +26,29 @@ exemplar version is an operator act (``--promote`` below, or
 second operator act (a config edit pinning
 ``intel.exemplar_store.active_version``). Neither can happen on a schedule.
 
+**TWO CADENCES, ONE CAP.** The weekly deep pass runs all four actions over the
+whole roster. The DAILY LIGHT PASS (``--light``) runs step 1 only, over the
+roster entries marked ``tier: daily`` (at most ``intel.light_max_handles``), and
+stops: corpus appended, spend persisted, no tables and no candidate proposal.
+This is the pass the monthly cap was always sized for and that nothing spent
+until #3960 -- the budget arithmetic in ``x_intel.DEFAULTS`` reads "+ a daily
+light pass on the 5 fastest desks (5 x 30) = 150 calls". NEITHER CAP MOVED to
+add it, and the $5 intel carve of the shared $75 twitterapi.io bucket is
+untouched.
+
+**NO BILLED REQUEST WITHOUT A LANDING PUSH.** ``state.json`` carries the monthly
+call and USD counters, so a run that spends and then fails to push forgets what
+it spent, and the next pass reads $0.00 against the cap. A ``git push --dry-run``
+probe runs BEFORE the first billed request (the press wire's rule, imported
+rather than re-implemented); on failure the billed harvest stands down and the
+free analysis of the committed corpus still runs.
+
 Usage:
     # the weekly workflow's invocation (dark without the secret)
     python -m scripts.x_intel_harvest
+
+    # the daily workflow's invocation: the `tier: daily` desks, corpus only
+    python -m scripts.x_intel_harvest --light
 
     # analyse the committed corpus, make zero calls
     python -m scripts.x_intel_harvest --dry-run
@@ -80,6 +100,40 @@ def _load_cfg(root: Path) -> dict:
     return blob if isinstance(blob, dict) else {}
 
 
+def _push_access_ok(root: Path) -> tuple[bool, str]:
+    """Would a push from this checkout be accepted right now? (ok, detail).
+
+    SINGLE-SOURCED from the press wire, which argued this out first: the probe is
+    a throwaway-ref ``git push --dry-run``, transfers nothing, and reads "cannot
+    push" for git-missing / no-remote / hung, which is the conservative
+    direction. Imported lazily so this module's import cost is unchanged and a
+    refactor over there cannot silently re-implement the rule here.
+    """
+    try:
+        from scripts.marketing_press_wire import push_access_ok  # noqa: PLC0415
+
+        return push_access_ok(root)
+    except Exception as exc:  # noqa: BLE001
+        return False, f"probe unavailable ({type(exc).__name__}: {exc})"
+
+
+def _emit_report(report_out: dict, json_out: str) -> None:
+    """Print the run report, and copy it to --json-out as PURE JSON.
+
+    stdout carries ::warning/::notice lines interleaved with the report, so a
+    consumer that PARSES the report (the workflow's job summary) must read the
+    file, never a tee of the stream.
+    """
+    blob = json.dumps(report_out, indent=2, ensure_ascii=False, default=str)
+    if json_out:
+        try:
+            Path(json_out).write_text(blob + "\n", encoding="utf-8")
+        except Exception as exc:  # noqa: BLE001 — a receipt file never fails a run
+            print(f"::warning title=x-intel::--json-out write to {json_out} "
+                  f"failed ({exc}) — the report is still on stdout", flush=True)
+    print(blob)
+
+
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap = argparse.ArgumentParser(description="E3 X competitive-intelligence harvest")
     ap.add_argument("--root", default=None,
@@ -89,6 +143,13 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
                          "re-analyses the committed corpus")
     ap.add_argument("--analyze-only", action="store_true",
                     help="skip the harvest entirely; tables + report only")
+    ap.add_argument("--light", action="store_true",
+                    help="DAILY LIGHT PASS: poll only the roster entries marked "
+                         "`tier: daily` (at most intel.light_max_handles), append "
+                         "the corpus, persist spend, and STOP. No tables, no "
+                         "report rewrite, no candidate proposal — the weekly deep "
+                         "pass owns those. Spends from the same committed monthly "
+                         "cap; raises no carve.")
     ap.add_argument("--handles", default="",
                     help="comma-separated subset of the roster to poll")
     ap.add_argument("--no-candidates", action="store_true",
@@ -143,6 +204,21 @@ def main(argv: list[str] | None = None) -> int:
         report_out["harvest"] = {"skipped": "analyze_only"}
     else:
         entries = xi.roster(cfg)
+        if args.light:
+            tier = str(conf.get("light_tier") or "daily").strip().lower()
+            cap = max(0, int(conf.get("light_max_handles") or 0))
+            entries = [e for e in entries
+                       if str(e.get("tier") or "").strip().lower() == tier][:cap]
+            report_out["light"] = {"tier": tier, "max_handles": cap,
+                                   "handles": [e["handle"] for e in entries]}
+            if not entries:
+                # FAIL CLOSED ON THE BUDGET: an empty selection polls NOTHING.
+                # Falling back to the full roster would turn a 5-call daily pass
+                # into a 17-call one on a config typo, 30 times a month.
+                print(f"::warning title=x-intel::--light found no roster entry "
+                      f"with tier={tier!r} — polling nothing this pass. Mark the "
+                      f"daily desks in config/marketing.yml intel.roster.",
+                      flush=True)
         if args.handles:
             want = {h.strip().lstrip("@").lower() for h in args.handles.split(",") if h.strip()}
             entries = [e for e in entries if e["handle"].lower() in want]
@@ -150,9 +226,34 @@ def main(argv: list[str] | None = None) -> int:
             if missing:
                 print(f"::warning title=x-intel::--handles named {sorted(missing)}, "
                       f"which are not in intel.roster — skipped", flush=True)
+        # ── PUSH-PROBE FAIL-CLOSED (press-wire blocker 2, same money, same
+        # shape). state.json carries the monthly call and USD counters, so a run
+        # whose push never lands spends AND forgets: the next pass reads $0.00
+        # and the cap can never fire. That was a tolerable weekly risk and is not
+        # a tolerable daily one. A `git push --dry-run` answers "would a write be
+        # accepted right now" before any money moves; on failure the BILLED work
+        # stands down and the free work (analysis of the committed corpus) still
+        # runs, exactly like the wire lane.
+        offline = bool(args.dry_run)
+        if not offline and entries:
+            pushable, why = _push_access_ok(root)
+            if not pushable:
+                print(f"::warning title=x-intel::push access probe FAILED ({why}) "
+                      f"— standing the billed harvest down. state.json carries the "
+                      f"monthly cap counters, so spending without a landing push "
+                      f"would make the cap invisible to the next run. The corpus "
+                      f"analysis below still runs.", flush=True)
+                report_out["push_probe"] = {"ok": False, "detail": why}
+                offline = True
+            else:
+                report_out["push_probe"] = {"ok": True, "detail": why}
         harvester = xi.Harvester(cfg)
+        if args.light and entries:
+            # One call per daily desk, never more, whatever max_calls_per_run says.
+            harvester.max_calls_per_run = min(harvester.max_calls_per_run,
+                                              len(entries))
         summary = harvester.run(state=state, now=now, handles=entries,
-                                offline=bool(args.dry_run))
+                                offline=offline)
         rows = summary.pop("rows", [])
         if rows and not args.dry_run:
             rows_written = xi.append_corpus(rows, root=root)
@@ -166,6 +267,19 @@ def main(argv: list[str] | None = None) -> int:
         # The run receipt lives in the job summary, which is where it belongs.
         if not args.dry_run and summary.get("calls", 0) > 0:
             xi.save_state(state, root, now=now)
+
+    # ── THE LIGHT PASS STOPS HERE ─────────────────────────────────────────
+    # Corpus in, spend persisted, done. Tables, WEEKLY_REPORT.md and the
+    # exemplar pending pool belong to the Sunday deep pass: re-rendering a file
+    # named WEEKLY_REPORT.md thirty times a month is churn on a tracked artifact
+    # and a lie about its own cadence.
+    if args.light:
+        report_out["skipped"] = "light pass: analysis + candidates are weekly"
+        report_out["budget"] = xi.month_bucket(xi.load_state(root), now)
+        report_out["budget"]["call_cap"] = conf.get("monthly_call_cap")
+        report_out["budget"]["usd_cap"] = conf.get("monthly_usd_cap")
+        _emit_report(report_out, args.json_out)
+        return 0
 
     # ── 2. ANALYSE ────────────────────────────────────────────────────────
     corpus = xi.load_corpus(root)
@@ -223,14 +337,7 @@ def main(argv: list[str] | None = None) -> int:
     report_out["budget"]["call_cap"] = conf.get("monthly_call_cap")
     report_out["budget"]["usd_cap"] = conf.get("monthly_usd_cap")
 
-    blob = json.dumps(report_out, indent=2, ensure_ascii=False, default=str)
-    if args.json_out:
-        try:
-            Path(args.json_out).write_text(blob + "\n", encoding="utf-8")
-        except Exception as exc:  # noqa: BLE001 — a receipt file never fails a run
-            print(f"::warning title=x-intel::--json-out write to {args.json_out} "
-                  f"failed ({exc}) — the report is still on stdout", flush=True)
-    print(blob)
+    _emit_report(report_out, args.json_out)
     return 0
 
 
