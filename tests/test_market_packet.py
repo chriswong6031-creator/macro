@@ -368,6 +368,21 @@ def test_yield_scale_detection_handles_both_conventions(tmp_path):
     assert x10["change_bp"] == pytest.approx(1.8)
 
 
+def test_yield_scale_detection_is_pair_level_across_the_threshold(tmp_path):
+    """A ×10 low-yield print can straddle the 15 threshold (1.45%/1.55% quotes
+    as 14.5/15.5). Per-VALUE detection would normalize only the >15 side and
+    fabricate a -1320bp junk move (dropped, tenor lost); pair-level detection
+    (either value >15 → both ÷10) renders the truth: 1.45%, a real -10bp move.
+    Peer-review note from the Analyst OS session, hardened one step further."""
+    q = quotes_payload()
+    q["quotes"]["^IRX"] = _q(14.5, prev=15.5)           # ×10 straddle pair
+    packet = mp.build_packet(make_root(tmp_path, quotes=q))
+    front = packet["curve"]["tenors"]["3M"]
+    assert front["level_pct"] == pytest.approx(1.45)
+    assert front["change_bp"] == pytest.approx(-10.0)
+    assert not any("3M" in g for g in packet["gaps"])   # never junk-gated
+
+
 def test_a_junk_tenor_move_is_dropped_and_noted(tmp_path):
     q = quotes_payload()
     q["quotes"]["^FVX"] = _q(60.5, prev=40.5)          # a 200bp "move"
