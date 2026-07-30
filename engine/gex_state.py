@@ -77,6 +77,9 @@ _NOISE_FLOOR_MULTIPLIER = 100.0  # noise_floor = max(0.001, spot * _NOISE_FLOOR_
 # The per-state honest notes live in engine/positioning_persistence.py; this pair is
 # the last resort for "the reader could not run at all" (no pandas, no store dir, an
 # unexpected error) so the payload still says something true instead of nothing.
+# DUPLICATED ON PURPOSE from engine.positioning_persistence.OI_DELTA_UNAVAILABLE_*: this
+# branch fires only when importing that module FAILS (no pandas), so it cannot import the
+# strings either. tests/test_positioning_persistence.py pins the two pairs equal.
 _OI_DELTA_UNAVAILABLE_EN = (
     "Open-interest change could not be read for this name, so no build or unwind "
     "strikes are shown."
@@ -456,12 +459,13 @@ def _spot_divergence(snapshot_spot: float | None, board_spot: float | None,
 
     TWO trigger conditions, per the review adjudication:
       * DISTANCE — the two prices differ by more than SPOT_DIVERGENCE_PCT (measured
-        2026-07-29: 112 of 358 shared roots, worst 23.3%);
+        2026-07-29 over the 302 roots that emit a payload: median 0.582%, 97 past 2%,
+        worst 18.6% — UCTT 77.50 snapshot vs 95.25 board);
       * DIRECTION — a listed strike falls BETWEEN the two prices, so sign(K - snapshot)
         != sign(K - board) and above/below reads the opposite way against the payload's
         own spot. This fires at ANY magnitude: a sign flip breaks the reader's mental
-        model regardless of how small the gap is. Measured 104 of 2,259 cluster rows are
-        sign-flipped, and the distance threshold alone caught only 77 of them.
+        model regardless of how small the gap is. Measured 99 of 2,259 emitted cluster
+        rows are sign-flipped, and the distance threshold alone caught only 77.
     """
     try:
         from engine import positioning_persistence as pp  # noqa: PLC0415

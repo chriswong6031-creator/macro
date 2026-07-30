@@ -818,13 +818,21 @@ class TestGapAndStaleness:
         assert "落后" in w["put_side"]["note_zh"]
 
     def test_current_store_adds_no_staleness_noise(self):
-        st = pp.load(use_cache=False)
+        """Pinned to a FIXED clock, not the wall clock. The earlier version skipped
+        itself once the committed fixture dates aged past the threshold, which would
+        have silently disarmed the assertion from ~2026-07-31 onward — the
+        silently-disarmed-test class. `now` is a real seam on load()/_build()."""
+        now = dt.datetime(2026, 7, 29, 23, 0, tzinfo=dt.timezone.utc)
+        st = pp.load(use_cache=False, now=now)
         if st.meta["sessions_available"] < 2:
             pytest.skip("chain store too short in this checkout")
         c = st.clusters("SPY")
-        if c["stale"]:
-            pytest.skip("the committed chain store is genuinely behind in this checkout")
+        assert c["sessions_behind"] == 0, c["sessions_behind"]
+        assert c["stale"] is False
         assert "behind the latest close" not in c["note_en"]
+        w = st.wall_persistence("SPY")
+        assert w["stale"] is False
+        assert "behind the latest close" not in w["call_side"]["note_en"]
 
     def test_staleness_copy_is_calm(self):
         st = self._straddling_store(dt.date(2026, 6, 15), dt.date(2026, 6, 16))
@@ -865,7 +873,12 @@ class TestFailureMemoisation:
         assert "nope" in st.meta["degraded_reason"]
         c = st.clusters("SPY")
         assert c["new_oi"] == [] and c["exit_oi"] == []
-        assert "No per-strike chain snapshots are stored" in c["note_en"]
+        # A READ FAILURE must not claim nothing is stored — the store may be intact and
+        # merely unreadable this run, and the two send an operator to different places.
+        assert "could not be read" in c["note_en"]
+        assert "No per-strike chain snapshots are stored" not in c["note_en"]
+        assert c["note_en"] == pp.OI_DELTA_UNAVAILABLE_EN
+        assert c["note_zh"] == pp.OI_DELTA_UNAVAILABLE_ZH
         assert st.wall_persistence("SPY") is None
 
 
@@ -1036,3 +1049,122 @@ class TestSignFlipTrigger:
         note = pp.spot_divergence_note(197.01, 192.32)   # 2.4%
         assert "the other way round" not in note[0]
         assert "2.4%" in note[0]
+
+
+# ── 22. B2 third condition — union-not-intersection roots ────────────────────
+
+class TestPerRootCoverageDrivesTheFallback:
+    """A root in the snapshot UNION but not the INTERSECTION used to fall to the
+    store-wide fallback and claim "No per-strike chain snapshots are stored for this
+    name" while a wall block derived from those very snapshots sat beside it. Measured on
+    the real store: 25 of 375 roots on the 2026-07-02 -> 07-07 pair, and 346 of 356 on
+    the 2026-06-18 -> 06-22 universe-expansion pair. The state now comes from PER-ROOT
+    coverage."""
+
+    def _pair(self):
+        """AAA in both; ONLYP in the prior only; ONLYL in the latest only."""
+        prior = _chain([
+            _row("AAA", "a1", 110.0, True, 1000, 100.0),
+            _row("AAA", "a2", 90.0, False, 1000, 100.0),
+            _row("ONLYP", "p1", 55.0, True, 500, 50.0),
+            _row("ONLYP", "p2", 45.0, False, 500, 50.0),
+        ])
+        latest = _chain([
+            _row("AAA", "a1", 110.0, True, 1400, 100.0),
+            _row("AAA", "a2", 90.0, False, 1000, 100.0),
+            _row("ONLYL", "l1", 22.0, True, 700, 20.0),
+            _row("ONLYL", "l2", 18.0, False, 700, 20.0),
+        ])
+        frames = {D_FRI: prior, D_MON: latest}
+        return pp.load(chain_dates=lambda: sorted(frames), read_chain=frames.get,
+                       window_sessions=2, use_cache=False)
+
+    def test_only_latest_root_is_not_called_absent(self):
+        st = self._pair()
+        c = st.clusters("ONLYL")
+        assert "No per-strike chain snapshots are stored" not in c["note_en"], c["note_en"]
+        assert "Only one stored chain snapshot covers this name" in c["note_en"]
+        assert "目前只有一次" in c["note_zh"]
+        # and the wall block derived from that snapshot really does exist
+        assert st.wall_persistence("ONLYL") is not None
+
+    def test_only_prior_root_is_not_called_absent(self):
+        st = self._pair()
+        c = st.clusters("ONLYP")
+        assert "No per-strike chain snapshots are stored" not in c["note_en"]
+        assert "Only one stored chain snapshot covers this name" in c["note_en"]
+
+    def test_coverage_counts_are_exposed(self):
+        st = self._pair()
+        assert st.coverage("AAA") == (2, 2)
+        assert st.coverage("ONLYL") == (1, 1)
+        assert st.coverage("ONLYP") == (1, 1)
+        assert st.coverage("NOPE") == (0, 0)
+        assert st.meta["roots_outside_pair"] == 2
+
+    def test_truly_absent_root_still_says_absent(self):
+        c = self._pair().clusters("NOPE")
+        assert "No per-strike chain snapshots are stored" in c["note_en"]
+
+    def test_root_in_older_snapshots_but_not_the_pair(self):
+        """pair=0 but window>=1: 'only one snapshot covers this name' would be false, so
+        the copy names the actual situation instead."""
+        old = _chain([_row("GONE", "g1", 55.0, True, 500, 50.0),
+                      _row("GONE", "g2", 45.0, False, 500, 50.0),
+                      _row("AAA", "a1", 110.0, True, 900, 100.0),
+                      _row("AAA", "a2", 90.0, False, 900, 100.0)])
+        pair_a = _chain([_row("AAA", "a1", 110.0, True, 900, 100.0),
+                         _row("AAA", "a2", 90.0, False, 900, 100.0)])
+        pair_b = _chain([_row("AAA", "a1", 110.0, True, 1200, 100.0),
+                         _row("AAA", "a2", 90.0, False, 900, 100.0)])
+        frames = {dt.date(2026, 7, 22): old, D_THU: pair_a, D_FRI: pair_b}
+        st = pp.load(chain_dates=lambda: sorted(frames), read_chain=frames.get,
+                     window_sessions=3, use_cache=False)
+        assert st.coverage("GONE") == (0, 1)
+        c = st.clusters("GONE")
+        assert "Neither of the two most recent stored chain snapshots lists this name" \
+            in c["note_en"]
+        assert "No per-strike chain snapshots are stored" not in c["note_en"]
+
+    def test_one_of_pair_when_older_snapshots_also_list_it(self):
+        """pair=1 and window>1: 'only one snapshot covers this name' is false."""
+        early = _chain([_row("FADE", "f1", 55.0, True, 500, 50.0),
+                        _row("FADE", "f2", 45.0, False, 500, 50.0)])
+        mid = _chain([_row("FADE", "f1", 55.0, True, 600, 50.0),
+                      _row("FADE", "f2", 45.0, False, 500, 50.0)])
+        late = _chain([_row("AAA", "a1", 110.0, True, 900, 100.0),
+                       _row("AAA", "a2", 90.0, False, 900, 100.0)])
+        frames = {dt.date(2026, 7, 22): early, D_THU: mid, D_FRI: late}
+        st = pp.load(chain_dates=lambda: sorted(frames), read_chain=frames.get,
+                     window_sessions=3, use_cache=False)
+        assert st.coverage("FADE") == (1, 2)
+        c = st.clusters("FADE")
+        assert "Only one of the two most recent stored chain snapshots lists this name" \
+            in c["note_en"]
+
+    def test_real_universe_expansion_pair(self):
+        """2026-06-18 -> 06-22 in the committed store: 10 roots on the prior side, 356 on
+        the latest. 346 union-not-intersection roots must NOT be told nothing is stored."""
+        a, b = dt.date(2026, 6, 18), dt.date(2026, 6, 22)
+        if not all((pp._chains_dir() / f"{d.isoformat()}.parquet").exists() for d in (a, b)):
+            pytest.skip("that vintage pair is not in this checkout")
+        st = pp.load(chain_dates=lambda: [a, b], read_chain=pp.default_read_chain,
+                     window_sessions=2, use_cache=False)
+        outside = [r for r, (pair, _w) in st._coverage.items() if pair < 2]
+        assert len(outside) > 300, len(outside)
+        liars = [r for r in outside
+                 if "No per-strike chain snapshots are stored"
+                 in st.clusters(r)["note_en"]]
+        assert not liars, f"{len(liars)} roots falsely told nothing is stored: {liars[:5]}"
+        # spot-check one that only the latest snapshot lists
+        sample = outside[0]
+        assert st.wall_persistence(sample) is not None
+        assert "Only one stored chain snapshot" in st.clusters(sample)["note_en"]
+
+
+def test_unavailable_copy_matches_the_gex_state_duplicate():
+    """gex_state keeps a byte-identical pair for the one path that cannot reach this
+    module (its own import failing). Pin them equal so the two cannot drift."""
+    from engine import gex_state
+    assert gex_state._OI_DELTA_UNAVAILABLE_EN == pp.OI_DELTA_UNAVAILABLE_EN
+    assert gex_state._OI_DELTA_UNAVAILABLE_ZH == pp.OI_DELTA_UNAVAILABLE_ZH

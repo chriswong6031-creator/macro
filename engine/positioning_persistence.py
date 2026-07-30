@@ -60,11 +60,15 @@ SESSION + VINTAGE INTEGRITY (§0.11 — the classes that have bitten this repo)
   * THE SNAPSHOT'S PRICE IS NOT THE BOARD'S PRICE. `dist_pct` and the above/below-price
     wall split are measured against the SNAPSHOT source's own underlying price — one
     source on both sides of every derived number — while the payload's top-level `spot`
-    comes from the Cboe chain. They really diverge: measured 2026-07-29 over 358 shared
-    roots, median 0.48%, 112 roots past 2%, worst 23.3% (LII 544.11 vs 441.26). So both
-    blocks emit `snapshot_spot`, and above SPOT_DIVERGENCE_PCT the payload layer adds a
-    plain-word note; a reader must never have to discover that `dist_pct`'s sign
-    disagrees with (K - payload.spot).
+    comes from the Cboe chain. They really diverge. Measured 2026-07-29 over the 302 roots
+    that actually EMIT a payload (the population the artifact has, not the 358 roots that
+    merely share both prices — thin-chain names like LII are dropped by compute_gex_state
+    before any of this is reached): median 0.582%, 129 past 1%, 97 past 2%, 40 past 5%,
+    worst 18.6% (UCTT 77.50 snapshot vs 95.25 board). So both blocks emit
+    `snapshot_spot`, and the payload layer adds a plain-word note when the gap exceeds
+    SPOT_DIVERGENCE_PCT or when any emitted row's above/below reading flips between the
+    two prices; a reader must never have to discover that `dist_pct`'s sign disagrees
+    with (K - payload.spot).
   * Open interest is a COUNT of contracts (integral, >= 0). `_normalise_chain` refuses
     a frame whose oi column looks normalised/fractional rather than a count, so a
     vendor or fixture shape change cannot silently rescale the delta. It also drops
@@ -145,6 +149,17 @@ CHAIN_COLS = ["underlying", "strike_ticker", "K", "is_call", "oi", "spot"]
 # disclosure when the resolved history really does start at the beginning of the store.
 _STORE_EPOCH_NOTE_EN = "Per-strike chain snapshots begin {start}, so this record is still short."
 _STORE_EPOCH_NOTE_ZH = "逐行权价期权链快照自 {start} 起累积，记录仍然很短。"
+
+# Copy for a genuine READ/BUILD FAILURE — deliberately different from "not stored". The
+# store may be intact and simply unreadable this run; claiming nothing is stored would
+# point a reader at the wrong problem. engine/gex_state.py keeps a byte-identical pair for
+# the one path that cannot reach this module (its own import failing); a test pins them
+# equal so the two copies cannot drift.
+OI_DELTA_UNAVAILABLE_EN = (
+    "Open-interest change could not be read for this name, so no build or unwind "
+    "strikes are shown."
+)
+OI_DELTA_UNAVAILABLE_ZH = "本标的未平仓量变化暂时无法读取，因此不显示新增或平仓行权价。"
 
 
 # ── small helpers ────────────────────────────────────────────────────────────
@@ -656,9 +671,11 @@ def rows_cross_the_board_price(rows: list[dict] | None, snapshot_spot: float | N
     handled the same way `dist_pct` handles it (0 is not positive).
 
     Why it exists alongside the percentage threshold: measured 2026-07-29 across the whole
-    board, 104 of 2,259 cluster rows have a `dist_pct` whose sign disagrees with
-    (K - payload.spot), and the >2% distance threshold alone caught only 77 of them — the
-    rest are strikes wedged between two prices that agree closely. A sign flip breaks the
+    board, 99 of 2,259 emitted cluster rows have an above/below reading that flips between
+    the two prices, and the >2% distance threshold alone caught only 77 of them — the rest
+    are strikes wedged between two prices that agree closely. (A further 5 rows LOOK
+    flipped if you compare the ROUNDED `dist_pct` to the board price, but there the two
+    prices are identical and `dist_pct` merely rounds to 0.0 — nothing to disclose.) A sign flip breaks the
     reader's mental model at ANY magnitude, so it triggers the note on its own. (A first
     pass used a strict `lo < K < hi` range test and left 4 rows uncovered, exactly the
     K-equals-one-of-the-prices boundary; the sign comparison has no such gap.)
@@ -695,10 +712,10 @@ def spot_divergence_note(snapshot_spot: float | None,
     against the SNAPSHOT's own underlying price — single-source internal consistency is
     the whole point, and mixing the board's Cboe price into a Polygon-derived row would
     be the mixed-source class. But the payload's own top-level `spot` is the Cboe one,
-    and the two really do diverge: measured 2026-07-29 over 358 shared roots, median
-    0.48%, 112 roots above 2%, worst 23.3% (LII 544.11 vs 441.26). A reader comparing
-    `dist_pct` against the payload's `spot` would find the sign contradicted on ~104
-    cluster rows. So say it, above a 2% threshold.
+    and the two really do diverge: over the 302 roots that emit a payload (2026-07-29),
+    median 0.582%, 97 past 2%, worst 18.6% (UCTT 77.50 vs 95.25). A reader comparing
+    `dist_pct` against the payload's `spot` finds the sign contradicted on 99 of 2,259
+    emitted cluster rows. So say it, above a 2% threshold.
 
     `force` fires the note below the threshold — used when a row actually straddles the
     two prices (see rows_cross_the_board_price), which is the case a reader misreads.
@@ -777,6 +794,28 @@ def _cluster_notes(state: str, prior: _dt.date | None, latest: _dt.date | None,
             "open-interest change cannot be measured yet." + tail_en,
             "目前只有一次期权链快照覆盖本标的，因此还无法测量隔日未平仓量变化。" + tail_zh,
         )
+    if state == "one_of_pair":
+        # In exactly ONE of the two compared snapshots, but present in older ones too —
+        # so "only one snapshot covers this name" would be false. Say which is true.
+        return (
+            "Only one of the two most recent stored chain snapshots lists this name, so a "
+            "change across the compared pair cannot be measured for it." + tail_en,
+            "最近两次期权链快照中只有一次包含本标的，"
+            "因此无法测量该对比区间内的未平仓量变化。" + tail_zh,
+        )
+    if state == "outside_pair":
+        return (
+            "Neither of the two most recent stored chain snapshots lists this name, "
+            "though earlier snapshots do, so no current open-interest change is "
+            "available for it." + tail_en,
+            "最近两次期权链快照都不包含本标的（较早的快照有），"
+            "因此目前无法提供其未平仓量变化。" + tail_zh,
+        )
+    if state == "failure":
+        # A genuine read/build failure. Distinct from "not stored": the store may be
+        # perfectly fine and simply unreadable this run, and saying "no snapshots are
+        # stored" would send a reader looking for the wrong problem.
+        return (OI_DELTA_UNAVAILABLE_EN, OI_DELTA_UNAVAILABLE_ZH)
     return (
         "No per-strike chain snapshots are stored for this name, so open-interest change "
         "is not available.",
@@ -866,10 +905,22 @@ class PositioningStore:
     """
 
     def __init__(self, clusters: dict[str, dict], walls: dict[str, dict],
-                 meta: dict) -> None:
+                 meta: dict, coverage: dict[str, tuple[int, int]] | None = None) -> None:
         self._clusters = clusters
         self._walls = walls
         self.meta = meta
+        # {ROOT: (snapshots_of_the_compared_PAIR_listing_it, window_snapshots_listing_it)}
+        # PER-ROOT coverage, because the store-wide counts cannot describe an individual
+        # name. Without it every root outside the pair's INTERSECTION fell to the
+        # store-wide fallback and claimed "no per-strike chain snapshots are stored for
+        # this name" while a wall block derived from those very snapshots sat beside it.
+        # Measured on the real store: 25 of 375 roots on the 2026-07-02 -> 07-07 pair, and
+        # 346 of 356 on the 2026-06-18 -> 06-22 universe-expansion pair.
+        self._coverage = coverage or {}
+
+    def coverage(self, root: str) -> tuple[int, int]:
+        """(pair_snapshots, window_snapshots) that list `root`."""
+        return self._coverage.get(str(root or "").upper(), (0, 0))
 
     # -- accessors ---------------------------------------------------------
     def clusters(self, root: str) -> dict:
@@ -877,7 +928,7 @@ class PositioningStore:
         hit = self._clusters.get(key)
         if hit is not None:
             return dict(hit)
-        state = "one_snapshot" if self.meta.get("snapshots_compared") == 1 else "absent"
+        state = self._fallback_state(key)
         en, zh = _cluster_notes(state, self.meta.get("prior_snapshot"),
                                 self.meta.get("latest_snapshot"),
                                 self.meta.get("store_start"),
@@ -901,6 +952,31 @@ class PositioningStore:
             "snapshot_spot": None,
             "note_en": en, "note_zh": zh,
         }
+
+    def _fallback_state(self, key: str) -> str:
+        """Which honest-absence state applies to a root with no cluster entry.
+
+        Driven by PER-ROOT coverage, not by the store-wide snapshot count:
+          failure       — the build itself failed; the store may be fine and unreadable
+          one_snapshot  — exactly one stored snapshot lists this name (literally true)
+          one_of_pair   — in one of the two compared snapshots, and in older ones too
+          outside_pair  — in neither compared snapshot, though earlier ones list it
+          absent        — no stored snapshot lists it at all
+        """
+        if self.meta.get("degraded"):
+            return "failure"
+        pair, window = self.coverage(key)
+        # No PAIR exists yet (empty store, or a single stored snapshot), so the
+        # pair-relative wordings would be nonsense — only "one" or "none" apply.
+        if int(self.meta.get("snapshots_compared") or 0) < 2:
+            return "one_snapshot" if window >= 1 else "absent"
+        if pair == 1:
+            # "only one snapshot covers this name" is literally true only when no older
+            # snapshot lists it either; otherwise say which pair side is missing.
+            return "one_snapshot" if window <= 1 else "one_of_pair"
+        if pair == 0:
+            return "outside_pair" if window >= 1 else "absent"
+        return "absent"
 
     def wall_persistence(self, root: str) -> dict | None:
         key = str(root or "").upper()
@@ -928,7 +1004,8 @@ def load(chain_dates: Callable[[], list[_dt.date]] | None = None,
          read_chain: Callable[[_dt.date], pd.DataFrame | None] | None = None,
          window_sessions: int = WALL_WINDOW_SESSIONS,
          top_n: int = CLUSTER_TOP_N,
-         use_cache: bool = True) -> PositioningStore:
+         use_cache: bool = True,
+         now: _dt.datetime | None = None) -> PositioningStore:
     """Build (or return the cached) PositioningStore.
 
     Degrades honestly at every step: no chains dir, one snapshot only, a corrupt
@@ -939,8 +1016,11 @@ def load(chain_dates: Callable[[], list[_dt.date]] | None = None,
     separate try/excepts, so at board scale (~555 emitted payloads) an exception out of
     _build used to mean ~1,665 full rebuilds — roughly +33 min on the render band, from
     a path that only ever produces the empty degraded answer. A raise now caches a
-    DEGRADED store (the same honest-absence answer, with the reason stamped in meta) and
-    every later call returns it instantly. Exactly one ::warning per process.
+    DEGRADED store (whose copy says the change could not be READ, not that nothing is
+    stored) and every later call returns it instantly. Exactly one ::warning per process.
+
+    `now` is the clock seam for the staleness disclosure — injectable so a test can pin a
+    date instead of skipping itself once the fixture dates age past the threshold.
     """
     global _CACHE
     if use_cache and _CACHE is not None:
@@ -951,7 +1031,7 @@ def load(chain_dates: Callable[[], list[_dt.date]] | None = None,
         try:
             built = _build(chain_dates or default_chain_dates,
                            read_chain or default_read_chain,
-                           window_sessions, top_n)
+                           window_sessions, top_n, now)
         except Exception as e:  # noqa: BLE001 — degrade once, never per-root
             print(f"::warning title=positioning-persistence-degraded::chain positioning "
                   f"reads unavailable this run ({type(e).__name__}: {e}) — open-interest "
@@ -965,7 +1045,12 @@ def load(chain_dates: Callable[[], list[_dt.date]] | None = None,
 
 
 def _degraded_store(reason: str, window_sessions: int) -> PositioningStore:
-    """An empty store that answers every root with the honest-absence copy."""
+    """An empty store whose copy says the change could not be READ.
+
+    Deliberately NOT the "no snapshots are stored for this name" copy: the store may be
+    perfectly intact and simply unreadable this run, and the two point an operator at
+    different problems. `degraded: True` in meta routes every root to the failure state.
+    """
     return PositioningStore({}, {}, {
         "source": "polygon_gex/chains",
         "store_start": None,
@@ -988,7 +1073,8 @@ def _degraded_store(reason: str, window_sessions: int) -> PositioningStore:
 
 def _build(chain_dates: Callable[[], list[_dt.date]],
            read_chain: Callable[[_dt.date], pd.DataFrame | None],
-           window_sessions: int, top_n: int) -> PositioningStore:
+           window_sessions: int, top_n: int,
+           now: _dt.datetime | None = None) -> PositioningStore:
     try:
         dates = [d for d in (chain_dates() or []) if nyse_calendar.is_session(d)]
     except Exception as e:  # noqa: BLE001
@@ -1050,7 +1136,7 @@ def _build(chain_dates: Callable[[], list[_dt.date]],
     behind: int | None = None
     if latest_kept is not None:
         try:
-            behind = int(nyse_calendar.sessions_behind(latest_kept))
+            behind = int(nyse_calendar.sessions_behind(latest_kept, now))
         except Exception:  # noqa: BLE001 — a calendar hiccup must not drop the block
             behind = None
     stale = behind is not None and behind >= CHAIN_STALE_SESSIONS
@@ -1071,6 +1157,12 @@ def _build(chain_dates: Callable[[], list[_dt.date]],
         "degraded": False,
     }
 
+    # ── per-root coverage (drives the honest-absence state) ───────────────
+    # window count first; the pair count is filled in below once the pair is known.
+    window_cov: dict[str, int] = {r.upper(): len(by_date)
+                                  for r, by_date in wall_rows.items()}
+    pair_cov: dict[str, int] = {}
+
     # ── (a) clusters from the two newest SESSION snapshots ────────────────
     clusters: dict[str, dict] = {}
     if len(recent) >= 2:
@@ -1089,6 +1181,13 @@ def _build(chain_dates: Callable[[], list[_dt.date]],
         # above/below-price wall split are actually measured against. It was computed and
         # thrown away before; a reader had no way to know which price the row used.
         snap_spot = {str(k): _f(v) for k, v in latest_fp["spot"].items()}
+        # PAIR coverage: how many of the two compared snapshots list each root. 2 =
+        # comparable (the loop below handles it); 1 = only one side lists it, so there is
+        # nothing to compare FOR THAT NAME even though the store holds both snapshots.
+        prior_roots = {str(u).upper() for u in prior_fp.index}
+        latest_roots = {str(u).upper() for u in latest_fp.index}
+        for r in prior_roots | latest_roots:
+            pair_cov[r] = int(r in prior_roots) + int(r in latest_roots)
         delta = matched_oi_delta(prior, latest)
         by_root = {str(u): g for u, g in delta.groupby("underlying", observed=True)} \
             if not delta.empty else {}
@@ -1180,8 +1279,12 @@ def _build(chain_dates: Callable[[], list[_dt.date]],
                              "note_en": p_en, "note_zh": p_zh},
             }
 
+    coverage = {r: (pair_cov.get(r, 0), window_cov.get(r, 0))
+                for r in set(pair_cov) | set(window_cov)}
     meta["roots_with_clusters"] = len(clusters)
     meta["roots_with_walls"] = len(walls)
+    meta["roots_in_window"] = len(coverage)
+    meta["roots_outside_pair"] = sum(1 for p, _w in coverage.values() if p < 2)
     meta["store_start"] = store_start
     log.info("positioning_persistence: %d session snapshots (%s..%s, %s apart, %s behind), "
              "clusters for %d roots, wall window %d snapshots for %d roots, "
@@ -1189,4 +1292,4 @@ def _build(chain_dates: Callable[[], list[_dt.date]],
              len(dates), meta["prior_snapshot"], meta["latest_snapshot"],
              meta["sessions_apart"], behind, len(clusters), len(kept), len(walls),
              dropped_keys)
-    return PositioningStore(clusters, walls, meta)
+    return PositioningStore(clusters, walls, meta, coverage)
