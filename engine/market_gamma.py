@@ -44,11 +44,12 @@ def _history_context(current_net_gex_bn: "float | None",
     hist = store.read(_HISTORY_GROUP, _HISTORY_ROOT)
     if hist is None or not len(hist) or "net_gex_bn" not in hist.columns:
         return None
-    # Session guard as above. This store is reconstructed and mostly clean (1 stray
-    # non-session row of 2388 on 2026-07-29), but the percentile below is an own-history
-    # distribution and `.iloc[-1]` is the standing reading — both must be session-true
-    # by construction, not by luck of which rows the reconstruction happened to emit.
-    hist = nyse_calendar.session_rows(hist)
+    # Session guard as above. This store is reconstructed and mostly clean — as measured
+    # on 2026-07-29 it held 2388 rows spanning 2017-01-03 -> 2026-07-02 with exactly ONE
+    # non-session row, dated 2019-02-02 (a Saturday). But the percentile below is an
+    # own-history distribution and `.iloc[-1]` is the standing reading, so both must be
+    # session-true by construction, not by luck of which rows the reconstruction emitted.
+    hist = nyse_calendar.session_rows(hist, label="index_gex_history/SPY")
     ng = pd.to_numeric(hist["net_gex_bn"], errors="coerce").dropna()
     ctx: dict = {
         "source": f"{_HISTORY_GROUP}/{_HISTORY_ROOT}",
@@ -93,7 +94,7 @@ def view(gex: "pd.DataFrame | None") -> dict | None:
     # morning. build_market_structure._read_gex_spx already filters its twin store
     # (gex_SPX.parquet) for exactly this reason; this reader was missed.
     # Fail-open: session_rows returns the frame unchanged if filtering would empty it.
-    gex = nyse_calendar.session_rows(gex)
+    gex = nyse_calendar.session_rows(gex, label="cboe/gex")
     g = gex.iloc[-1]
     svf = g.get("spot_vs_flip_pct")
     if svf is None or pd.isna(svf):

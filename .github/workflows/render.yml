@@ -231,14 +231,7 @@ jobs:
               templates/canada.html.j2|templates/canada_stock.html.j2|templates/canada_history.html.j2|templates/canada_sector.html.j2|scripts/build_canada.py|scripts/build_canada_library.py) echo canada;;
               templates/commodities.html.j2|templates/spr.html.j2|templates/forex.html.j2|templates/bonds.html.j2|templates/crossasset.html.j2|templates/transmission.html.j2|templates/discovery.html.j2|templates/macro_context.html.j2|scripts/build_commodities.py|scripts/build_spr.py|scripts/build_forex.py|scripts/build_bonds.py|scripts/build_crossasset.py|scripts/build_transmission.py|scripts/build_discovery.py|scripts/build_macro_context.py) echo markets;;
               templates/gex.html.j2|scripts/build_gex_board.py|scripts/build_options_flow.py|scripts/build_options_skew.py|scripts/build_vol_regime.py) echo gex;;
-              # OIP E8 (2026-07-29): options.html + options_screener.html are LEAF pages — no
-              # other builder reads their HTML — and the `gex` scope below now rebuilds both
-              # (build_options_screener in cl_gex + the narrow case; build_options_command as
-              # the post-band serial step). Mapping them here narrows an edit from scope=all to
-              # scope=gex. DELIBERATELY NOT mapped: build_options_ivspread.py /
-              # build_options_entry_state.py — their stores also feed build_flow_leaders and
-              # build_site (stock_score), which the `gex` scope does NOT run, so narrowing them
-              # would trade one staleness class for another. They keep falling through to `all`.
+              # OIP E8 leaf-page narrowing — rationale in the step's YAML comment block.
               templates/options.html.j2|templates/options_screener.html.j2|scripts/build_options_command.py|scripts/build_options_screener.py) echo gex;;
               templates/baskets.html.j2|templates/methodology.html.j2|scripts/build_baskets.py|scripts/build_methodology.py) echo baskets;;
               templates/dashboard.html.j2|templates/stock.html.j2|templates/news.html.j2|scripts/build_site.py) echo macro;;
@@ -313,9 +306,33 @@ jobs:
       # drifted from cl_gex, refreshing the skew/ivspread snapshots without re-running the
       # fusion that consumes them.
       # All three are pure functions of committed data/: zero network, site/-only page
-      # writes, O(seconds) — measured on the real stores: screener 4.6s, entry_state 6.3s,
-      # options_command 0.4s, i.e. +11.3s on the narrow gex case.
+      # writes. Measured on the real stores: build_options_screener 4.6s,
+      # build_options_command 0.4s, build_flow_leaders ~27s. Narrow gex) therefore costs
+      # about +32s (screener + flowleaders + optionscmd) and cl_gex +4.6s; scope=all pays
+      # only +0.4s because it already ran flowleaders. build_options_entry_state (6.3s) was
+      # REMOVED from the narrow case by M11 — its only output is under data/, which this
+      # lane discards.
       # Anti-rot: tests/test_render_options_workspace_scope.py.
+      #
+      # region_of() NARROWING. templates/options.html.j2, templates/options_screener.html.j2,
+      # scripts/build_options_command.py and scripts/build_options_screener.py map to `gex`:
+      # they are LEAF pages (no other builder reads their HTML) and the `gex` scope now
+      # rebuilds both. DELIBERATELY NOT mapped: build_options_ivspread.py and
+      # build_options_entry_state.py — their stores also feed build_flow_leaders and
+      # build_site (stock_score), which `gex` does NOT run, so narrowing them would trade
+      # one staleness class for another. They keep falling through to `all`.
+      #
+      # M11: build_options_entry_state is NOT in the narrow gex) case. Its only output is
+      # data/options_entry/state.parquet and this lane commits site/ ONLY, so running it
+      # here was 6.3s of compute whose result is discarded. It stays in cl_gex (where the
+      # same is true, but the cluster is the daily-mirroring band) and in daily.yml, which
+      # is the lane that actually persists it — the drift it fixes is a daily-cadence one.
+      #
+      # M10: the narrow case calls flowleaders BEFORE optionscmd. optionscmd re-serialises
+      # site/flowleaders/leaders.json, and this scope is now reachable by a template edit
+      # via region_of, so without it a gex-scope render would bake options.html with a
+      # silently-stale Leaders block. build_flow_leaders is documented express-safe: zero
+      # data/ writes, absent-safe, exit 0, ~27s.
       - name: re-render pages from committed data (resilient; no collect / no LLM / no EDGAR)
         # Mirrors the RENDER steps of daily.yml's `engine` job, minus the collectors,
         # engine.run, the LLM brains + their scorers/ledgers, the EDGAR special-sits
@@ -597,11 +614,10 @@ jobs:
               run_py "options flow desk (build_options_flow)"   scripts.build_options_flow
               run_py "single-name IV skew (build_options_skew)" scripts.build_options_skew
               run_py "single-name IV spread (build_options_ivspread)" scripts.build_options_ivspread
-              # OIP E8: the narrow case had DRIFTED from cl_gex (skew/ivspread refreshed,
-              # entry-state fusion not re-run). Order mirrors daily.yml cl_gex.
               run_py "US options screener page (build_options_screener)" scripts.build_options_screener
-              run_py "options entry state fusion table (build_options_entry_state)" scripts.build_options_entry_state
-              optionscmd   # options.html LAST — re-serialises everything above
+              # flowleaders BEFORE optionscmd: options.html re-serialises
+              # site/flowleaders/leaders.json (M10). See the OIP E8 note above the step.
+              flowleaders; optionscmd
               hub ;;
             baskets)
               run_py "thematic baskets (build_baskets)"     scripts.build_baskets

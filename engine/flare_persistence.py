@@ -33,6 +33,8 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from lib import nyse_calendar
+
 log = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
@@ -321,6 +323,11 @@ def _compute_t3(
         df = pd.read_parquet(p)
         df.index = pd.to_datetime(df.index)
         df = df.sort_index()
+        # SESSION GUARD (#3721 class, review M3): T3_FLIP_WINDOW below is a POSITIONAL
+        # slice documented as a session window. cboe/gex_* carries ~13 non-session rows of
+        # 39, so a "10-session" flip window was covering about 6 real sessions — and
+        # `gamma_regime.iloc[-1]` (the current-regime gate) could be a weekend recompute.
+        df = nyse_calendar.session_rows(df, label=f"cboe/gex_{ticker}")
         today_ts = pd.Timestamp(today)
         # Use data up to and including today (PIT: today's CBoe GEX is observable same-day)
         df_pt = df[df.index <= today_ts]

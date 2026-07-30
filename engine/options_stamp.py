@@ -132,11 +132,25 @@ def _as_date(x) -> _dt.date | None:
 
 # ── injectable readers (default = disk; tests pass fakes) ────────────────────
 def _default_read_summary(ticker: str) -> pd.DataFrame | None:
+    """The per-name GEX summary, SESSION-FILTERED at the source (#3721 class).
+
+    The filter lives HERE, not only in stamp_options_state(), because this reader has
+    three call sites and two of them bypass that funnel entirely:
+      * scripts/stamp_options_state.py:199 -> _vanna_hedge_5d_from_summary
+      * scripts/stamp_options_state.py:313 -> _get_iv30_5d_chg_from_summary
+    Both feed `opt_vanna_relief`, a CANONICAL LEDGER COLUMN, and both take positional
+    5-row lookbacks documented as 5-trading-day changes — so on a weekend-bearing store
+    (~11 non-session dates of 39) they were labelling a 3-session change `iv30_5d_chg`
+    for the great majority of covered names. Filtering at the reader means every call
+    path inherits one session-true frame; the funnel keeps its own filter for INJECTED
+    readers, where double-filtering an already-session-true frame is a no-op.
+    Fail-open (lib.nyse_calendar.session_rows)."""
     p = _summary_dir() / f"summary_{ticker}.parquet"
     if not p.exists():
         return None
     try:
-        return pd.read_parquet(p)
+        return nyse_calendar.session_rows(
+            pd.read_parquet(p), label=f"polygon_gex/summary_{ticker}")
     except Exception:  # noqa: BLE001 — a corrupt per-name store must not break the whole pass
         return None
 
@@ -175,7 +189,9 @@ def _default_read_skew_snapshots() -> pd.DataFrame | None:
     if not p.exists():
         return None
     try:
-        return pd.read_parquet(p, columns=["date", "underlying", "skew"])
+        return nyse_calendar.session_rows(
+            pd.read_parquet(p, columns=["date", "underlying", "skew"]),
+            "date", label="options_skew/snapshots")
     except Exception:  # noqa: BLE001
         return None
 
@@ -190,7 +206,9 @@ def _default_read_ivspread_snapshots() -> pd.DataFrame | None:
     if not p.exists():
         return None
     try:
-        return pd.read_parquet(p, columns=["date", "underlying", "ivspread_rel"])
+        return nyse_calendar.session_rows(
+            pd.read_parquet(p, columns=["date", "underlying", "ivspread_rel"]),
+            "date", label="options_ivspread/snapshots")
     except Exception:  # noqa: BLE001
         return None
 
@@ -740,15 +758,25 @@ def stamp_options_state(
     # Saturday recompute; `_vanna_hedge_5d_from_summary`'s positional `.iloc[-6]` and
     # `_DOI_WINDOW`'s "today + 5 prior TRADING snapshots" stop meaning sessions; and a
     # weekend chain snapshot enters the ΔOI slope as a duplicate day.
-    # Filtered HERE, at the single funnel, so both the disk defaults AND any injected
-    # reader/frame inherit one session-true view (the build_market_structure
-    # ._read_gex_spx / build_options_screener._load_gex_summary idiom).  Fail-open.
+    # The DISK readers filter at their own source (_default_read_summary and the two
+    # snapshot loaders) because two ledger-writing call paths in
+    # scripts/stamp_options_state.py bypass this funnel entirely — see the docstring on
+    # _default_read_summary.  The filters below therefore exist for INJECTED readers and
+    # pre-loaded frames (the stamp_ledger pass hands both in); re-filtering an
+    # already-session-true frame is a no-op.  Fail-open.
     _raw_read_summary = read_summary
-    read_summary = lambda tk: nyse_calendar.session_rows(_raw_read_summary(tk))  # noqa: E731
-    skew_df = nyse_calendar.session_rows(skew_df, "date") if skew_df is not None else None
-    ivspread_df = (nyse_calendar.session_rows(ivspread_df, "date")
+    read_summary = lambda tk: nyse_calendar.session_rows(  # noqa: E731
+        _raw_read_summary(tk), label=f"injected summary_{tk}")
+    skew_df = (nyse_calendar.session_rows(skew_df, "date", label="injected options_skew")
+               if skew_df is not None else None)
+    ivspread_df = (nyse_calendar.session_rows(ivspread_df, "date",
+                                              label="injected options_ivspread")
                    if ivspread_df is not None else None)
-    chain_dates = nyse_calendar.session_dates(chain_dates) if chain_dates else chain_dates
+    # keep_unparseable=False: chain_dates are real date objects, so anything unreadable
+    # here is a bug, not data we must preserve (contrast altdata, which passes PATHS).
+    chain_dates = (nyse_calendar.session_dates(
+        chain_dates, keep_unparseable=False, label="polygon_gex/chains")
+        if chain_dates else chain_dates)
 
     stamp = dict(_NULL_STAMP)
     # W1.3 fields from GEX summary

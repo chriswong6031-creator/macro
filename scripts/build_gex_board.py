@@ -32,7 +32,7 @@ from jinja2 import Environment, FileSystemLoader
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from lib import config, options_coverage  # noqa: E402
+from lib import config, nyse_calendar, options_coverage  # noqa: E402
 from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -237,14 +237,21 @@ def _market_context(data_dir: Path) -> dict:
     the index GEX state. Best-effort — a missing series just drops that field."""
     ctx: dict = {}
     try:
-        sk = pd.read_parquet(data_dir / "cboe" / "skew.parquet")["skew"].dropna()
+        # SESSION GUARD (#3721 class, review M2): these cboe collector stores accrue
+        # non-session rows (putcall 13 of 39, same dates as gex.parquet), and BOTH the
+        # published level and the *_asof stamp come from `.iloc[-1]` / `index[-1]`.
+        _skew_df = nyse_calendar.session_rows(
+            pd.read_parquet(data_dir / "cboe" / "skew.parquet"), label="cboe/skew")
+        sk = _skew_df["skew"].dropna()
         if len(sk):
             ctx["skew"] = round(float(sk.iloc[-1]), 2)
             ctx["skew_asof"] = str(pd.Timestamp(sk.index[-1]).date())
     except Exception:  # noqa: BLE001 — context is a nicety, never fatal
         pass
     try:
-        pc = pd.read_parquet(data_dir / "cboe" / "putcall.parquet").dropna(how="all")
+        pc = nyse_calendar.session_rows(
+            pd.read_parquet(data_dir / "cboe" / "putcall.parquet").dropna(how="all"),
+            label="cboe/putcall")
         if len(pc):
             last = pc.iloc[-1]
             for c in ("index_pc_ratio", "equity_pc_ratio"):
@@ -370,11 +377,14 @@ def main() -> int:
         universe_name_zh="有活跃期权的标的",
         universe_n=len(rows),
         covered_n=len(manifest),
-        asof=str(date.today()),
+        # minor 5 (review): the SESSION date, never date.today(). A wall-clock stamp
+        # inside an honesty schema is how a Saturday run publishes "as of Saturday" for
+        # Friday's chains — the same class the session filters above exist to stop.
+        asof=str(nyse_calendar.session_date()),
         sources=[
             options_coverage.source(
                 "cboe_chains", "Option chains", "期权链",
-                asof=str(date.today()), n=len(manifest),
+                asof=str(nyse_calendar.session_date()), n=len(manifest),
             ),
         ],
     )

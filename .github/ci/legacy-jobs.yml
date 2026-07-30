@@ -930,6 +930,35 @@ jobs:
       # so the minimal pytest+pyyaml install above is enough.
       - name: render-lane scope contract (canada must be first-class, not a build_vector hook)
         run: python -m pytest tests/test_render_canada_scope.py -q
+      # OIP E8 (2026-07-29). Same #3718 class as the intl suite above: this PR shipped
+      # five guards and, on first push, NO `run:` step named any of them — the
+      # options-workspace suite appeared only in a render.yml YAML COMMENT, which is
+      # enough to satisfy audit_unrun_tests.py's text matcher (tightened in the same
+      # commit to read `run:` steps only, so a comment can no longer fake coverage).
+      # All five are stdlib + pytest + pyyaml + pandas; the express-lane suite also
+      # shells out to bash to execute render.yml's `region_of` for real.
+      - name: options express-lane coverage contract (workspace + screener must stay wired)
+        run: python -m pytest tests/test_render_options_workspace_scope.py -q
+      # #3721 weekend-row class. The options stores accrue non-session rows that RECOMPUTE
+      # IV/spot/walls off a stale price; unfiltered they corrupt .iloc[-1], percentile
+      # windows and positional lookbacks — including the n_obs count that gates
+      # call_skew_rich into the CROWDED state.
+      - name: options readers must session-filter dated stores
+        run: python -m pytest tests/test_options_session_guards.py -q
+      # The ×100 class, hit twice. Both incidents survived tests whose FIXTURES encoded
+      # the bug, so this suite asserts against fixture-shaped AND prod-shaped inputs and
+      # simulates a newest-vintage-only flip.
+      - name: options ingestion seams must assert percent-vs-fraction
+        run: python -m pytest tests/test_options_unit_seams.py -q
+      # R8 one coverage shape across the four family builders; pins the honesty rules
+      # (unknown stays None, never a fabricated 100%; staleness is calendar-derived).
+      - name: options coverage object contract
+        run: python -m pytest tests/test_options_coverage_object.py -q
+      # E5: daily.yml invokes collectors.equity_earnings BARE, and that module's __main__
+      # used to be a three-ticker smoke test — the whole-universe sweep had never run.
+      # Pins the entry point AND the coverage-aware tripwire that could not see it.
+      - name: earnings sweep entry point + coverage-aware tripwire
+        run: python -m pytest tests/test_earnings_sweep_entrypoint.py -q
 
   causal-factory:
     if: ${{ false }}

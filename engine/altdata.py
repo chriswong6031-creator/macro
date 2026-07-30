@@ -543,7 +543,11 @@ def unusual_options(min_oi: float = 5000.0, mult_hot: float = 3.0, top: int = 20
     files = nyse_calendar.session_dates(
         sorted(glob.glob(str(d / "*.parquet"))),
         key=lambda f: os.path.basename(f).removesuffix(".parquet"),
+        # keep_unparseable=True: these are PATHS, and a name this key cannot parse is a
+        # file we must not silently drop from the window (contrast options_stamp, which
+        # passes real date objects and sets False).
         keep_unparseable=True,
+        label="polygon_gex/chains",
     )[-12:]
     if len(files) < 2:
         return []

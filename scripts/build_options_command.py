@@ -240,6 +240,15 @@ def _source_asof(payload) -> str | None:
     return None
 
 
+def _gex_index_asof(payload) -> str | None:
+    """site/gex/index.json is a LIST of per-symbol rows, each carrying its own `asof`."""
+    if not isinstance(payload, list) or not payload:
+        return None
+    stamps = [r.get("asof") for r in payload
+              if isinstance(r, dict) and isinstance(r.get("asof"), str)]
+    return max(stamps) if stamps else None
+
+
 def _source_n(payload, key: str) -> int | None:
     """A store's own covered-names count.  None (never 0) when it does not publish one."""
     if not isinstance(payload, dict):
@@ -382,9 +391,12 @@ def build_session(stores: dict, missing: list[str]) -> dict:
             sources=[
                 options_coverage.source(
                     "flow_desk", "Options tape", "期权成交",
-                    asof=(stores.get("flow_desk") or {}).get("asof")
-                         if isinstance(stores.get("flow_desk"), dict) else None,
-                    n=_source_n(stores.get("flow_desk"), "n_names"),
+                    asof=_source_asof(stores.get("flow_desk")),
+                    # minor 6 (review): flow_desk.json publishes n_names under `read`,
+                    # not at the top level, so this was always None.
+                    n=_source_n((stores.get("flow_desk") or {}).get("read")
+                                if isinstance(stores.get("flow_desk"), dict) else None,
+                                "n_names"),
                 ),
                 options_coverage.source(
                     "screener", "Scanner rows", "筛选表标的",
@@ -393,7 +405,10 @@ def build_session(stores: dict, missing: list[str]) -> dict:
                 options_coverage.source(
                     "leaders", "Flow leaders", "资金领跑",
                     asof=_source_asof(stores.get("leaders")),
-                    n=_source_n(stores.get("leaders"), "n_names"),
+                    # leaders.json counts its universe as coverage.n_universe
+                    n=_source_n((stores.get("leaders") or {}).get("coverage")
+                                if isinstance(stores.get("leaders"), dict) else None,
+                                "n_universe"),
                 ),
                 options_coverage.source(
                     "market_structure", "Index structure", "指数结构",
@@ -405,8 +420,14 @@ def build_session(stores: dict, missing: list[str]) -> dict:
                 ),
                 options_coverage.source(
                     "gex", "Dealer positioning", "做市商持仓",
-                    asof=_source_asof(stores.get("gex_index")),
-                    n=len(stores.get("gex") or {}) or None,
+                    # minor 6 (review): site/gex/index.json is a LIST of per-symbol rows,
+                    # so _source_asof (a dict reader) always returned None. Read the asof
+                    # off the first row, and count the board's real breadth from the list
+                    # rather than the 4 index payloads the Brief happens to inline.
+                    asof=_gex_index_asof(stores.get("gex_index")),
+                    n=(len(stores.get("gex_index"))
+                       if isinstance(stores.get("gex_index"), list)
+                       else None),
                 ),
             ],
         ),

@@ -88,11 +88,12 @@ def test_producer_paths_exist(reg):
         if not isinstance(entry, dict):
             continue
         producer = entry.get("producer", "")
-        storage = entry.get("storage", "")
         if not producer or _PLACEHOLDER_RE.search(producer):
             continue
-        if storage in ("r2",):
-            continue
+        # The `storage in ("r2",)` skip was DELETED 2026-07-29 (review M9): `storage`
+        # describes the ARTIFACT's home, not the producer script's. It exempted every
+        # r2 row from the only check that would have caught
+        # `collectors/live_options_flow_poller.py` — a producer path that never existed.
         # Strip inline comments / line references
         producer_path = producer.split(":")[0].strip()
         candidate = REPO_ROOT / producer_path

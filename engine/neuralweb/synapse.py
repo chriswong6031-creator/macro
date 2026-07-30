@@ -215,18 +215,24 @@ def validate_registry(reg: dict, root: str | Path | None = None) -> list[str]:
                 f"{prefix}: freshness_sla_hours must be a positive int, got {sla!r}"
             )
 
-        # 2i. Producer file exists (skip patterns with placeholders, skip r2/gitignored-local)
+        # 2i. Producer file exists (skip only placeholder patterns).
+        # The `storage: r2` exemption was DELETED 2026-07-29 (review M9): `storage`
+        # describes where the ARTIFACT lives, not where its producer script lives. An
+        # R2-published artifact is still produced by a file in this repo, so exempting it
+        # exempted nothing real — it just blinded the check. That blindness is how
+        # `live-options-flow-current` sat for months naming
+        # `collectors/live_options_flow_poller.py`, a path that has never existed here
+        # (the real producer is scripts/live_flow_poller.py). Every phantom producer in
+        # the registry was an r2 row; after this, zero remain.
         producer = entry.get("producer", "")
         if producer and not _PLACEHOLDER_RE.search(producer):
             # Strip any trailing inline comment / line reference (e.g. "engine/foo.py:123")
             producer_path = producer.split(":")[0].strip()
-            storage_val = entry.get("storage", "")
-            if storage_val not in ("r2",):  # r2 artifacts live offsite
-                candidate = r / producer_path
-                if not candidate.exists():
-                    violations.append(
-                        f"{prefix}: producer file not found: {producer_path!r}"
-                    )
+            candidate = r / producer_path
+            if not candidate.exists():
+                violations.append(
+                    f"{prefix}: producer file not found: {producer_path!r}"
+                )
 
         # 2j. Unique paths (dedupe overlaps are a census error)
         path = entry.get("path", "")

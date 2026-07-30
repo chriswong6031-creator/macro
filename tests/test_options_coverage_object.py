@@ -21,6 +21,7 @@ import sys
 from datetime import date, timedelta
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -255,20 +256,113 @@ def test_the_screener_export_round_trips_the_object(tmp_path):
         assert k in cov, f"the export dropped the pre-existing key {k}"
 
 
-@pytest.mark.parametrize("rel,getter", [
-    ("site/screenerdata/rows.json", lambda d: d.get("coverage") or {}),
-    ("site/flow_desk.json", lambda d: d.get("market_tide") or {}),
-])
-def test_built_artifacts_carry_the_object_when_freshly_rendered(rel, getter):
-    """Soft: skips on a committed vintage that predates this change, asserts once a
-    render has landed."""
-    p = ROOT / rel
-    if not p.exists():
-        pytest.skip(f"{rel} absent on this runner")
-    import json
-    holder = getter(json.loads(p.read_text()))
-    if "coverage_v1" not in holder:
-        pytest.skip(f"{rel} predates this change on this runner")
-    assert holder["coverage_v1"]["schema"] == "options_coverage.v1"
-    if rel.endswith("flow_desk.json"):
-        assert "coverage_note" in holder, "the human-readable note must survive alongside"
+# ─────────── MINOR 1: assert by CALLING the builders, never by skipping
+#
+# The first version of this section read site/screenerdata/rows.json and
+# site/flow_desk.json and called `pytest.skip("predates this change")` when the key was
+# absent — i.e. it skipped on exactly its own detection condition, so it could never fail.
+# These call the builder functions that CONSTRUCT the object, so a removed emit reds.
+
+
+def test_options_command_build_session_emits_the_object():
+    """build_session() is the function that assembles the workspace's session receipt."""
+    import scripts.build_options_command as boc
+    stores = {"flow_desk": {"asof": "2026-07-28", "read": {"n_names": 353}},
+              "screener": {"coverage": {"n_names": 400}},
+              "leaders": {"session_date": "2026-07-28", "coverage": {"n_universe": 352}},
+              "market_structure": {"asof": "2026-07-28"},
+              "vol": {"asof": "2026-07-28"},
+              "gex": {"SPX": {}, "SPY": {}},
+              "gex_index": [{"key": "SPY", "asof": "2026-07-28"}]}
+    sess = boc.build_session(stores, [])
+    assert "coverage_v1" in sess, "build_session no longer emits coverage_v1"
+    o = sess["coverage_v1"]
+    assert o["schema"] == "options_coverage.v1"
+    assert {s["key"] for s in o["sources"]} >= {"flow_desk", "screener", "leaders", "gex"}
+    # every pre-existing session key survives
+    for k in ("date", "covered", "universe", "coverage_pct", "quality_en", "quality_zh"):
+        assert k in sess, f"build_session lost {k}"
+
+
+def test_options_command_source_extractions_are_not_always_none():
+    """MINOR 6 regression: three source rows read the wrong path and were always None —
+    flow_desk's n_names lives under `read`, leaders' count under `coverage.n_universe`,
+    and site/gex/index.json is a LIST that the dict reader could never parse."""
+    import scripts.build_options_command as boc
+    stores = {"flow_desk": {"asof": "2026-07-28", "read": {"n_names": 353}},
+              "screener": None,
+              "leaders": {"session_date": "2026-07-28", "coverage": {"n_universe": 352}},
+              "market_structure": None, "vol": None, "gex": {},
+              "gex_index": [{"key": "SPY", "asof": "2026-07-28"},
+                            {"key": "QQQ", "asof": "2026-07-27"}]}
+    by_key = {s["key"]: s for s in boc.build_session(stores, [])["coverage_v1"]["sources"]}
+    assert by_key["flow_desk"]["n"] == 353
+    assert by_key["leaders"]["n"] == 352
+    assert by_key["gex"]["n"] == 2
+    assert by_key["gex"]["asof"] == "2026-07-28", "the list's newest asof, not None"
+
+
+def test_flow_desk_build_market_tide_emits_the_object(tmp_path):
+    """build_market_tide() is the function that publishes the desk's coverage."""
+    import scripts.build_flow_desk as bfd
+    rows = [{"ticker": f"T{i}", "premium_mn": 10.0, "net_premium_mn": 1.0,
+             "zerodte_share": 0.2, "asof": "2026-07-28"} for i in range(5)]
+    tide = bfd.build_market_tide(rows, tmp_path)
+    assert isinstance(tide, dict)
+    assert "coverage_v1" in tide, "build_market_tide no longer emits coverage_v1"
+    assert tide["coverage_v1"]["schema"] == "options_coverage.v1"
+    assert "coverage_note" in tide, "the human-readable note must survive alongside"
+
+
+def test_flow_desk_publishes_no_fabricated_hundred_percent(tmp_path):
+    """MINOR/M8: universe_n was the covered count, so the share was 100% by construction."""
+    import scripts.build_flow_desk as bfd
+    rows = [{"ticker": f"T{i}", "premium_mn": 10.0, "net_premium_mn": 1.0,
+             "zerodte_share": 0.2, "asof": "2026-07-28"} for i in range(5)]
+    o = bfd.build_market_tide(rows, tmp_path)["coverage_v1"]
+    assert o["coverage_pct"] is None, (
+        "the desk does not know its denominator, so it must publish None — not 100%"
+    )
+    assert o["universe"]["n"] is None
+    assert o["covered"] is not None
+
+
+def test_gex_board_constructs_the_object_with_a_session_asof():
+    """build_gex_board's coverage dict is assembled inline in main(), which needs ~700 live
+    chain fetches. Exercise the CONSTRUCTION with the builder's own arguments instead of
+    skipping: the load-bearing properties are the schema, the group-key safety and the
+    session-date stamp (MINOR 5 — a wall clock inside an honesty schema)."""
+    import scripts.build_gex_board as bgb
+    src = (ROOT / "scripts" / "build_gex_board.py").read_text()
+    block = src.split('coverage["coverage_v1"] = ', 1)[1][:900]
+    # Strip comments before asserting on CODE. A comment saying "never date.today()" would
+    # otherwise fail the very check it documents — the same prose-satisfies-a-check trap
+    # that let a YAML comment convince audit_unrun_tests.py a dark suite was covered.
+    code = "\n".join(ln.split("#", 1)[0] for ln in block.splitlines())
+    assert "nyse_calendar.session_date()" in code, (
+        "the board's coverage asof must be the SESSION date, never the wall clock"
+    )
+    assert "date.today()" not in code
+    o = options_coverage.coverage_object(
+        universe_name_en="Symbols with liquid options",
+        universe_name_zh="有活跃期权的标的",
+        universe_n=646, covered_n=646,
+        asof=str(nyse_calendar.session_date()),
+        sources=[options_coverage.source("cboe_chains", "Option chains", "期权链",
+                                         asof=str(nyse_calendar.session_date()), n=646)])
+    assert o["schema"] == "options_coverage.v1"
+    assert nyse_calendar.is_session(pd.Timestamp(o["asof"]).date()), (
+        "the published asof must be a real trading session"
+    )
+    assert o["sessions_behind"] == 0
+
+
+def test_screener_assembles_the_object_into_its_coverage_dict():
+    """The screener's coverage dict is returned by assemble_rows(); the export then carries
+    it verbatim (round-tripped separately above)."""
+    src = (ROOT / "scripts" / "build_options_screener.py").read_text()
+    body = src.split('coverage["coverage_v1"]', 1)[1][:700]
+    assert "universe_n=None" in body, (
+        "M8: len(rows) on both sides published a fabricated 100%"
+    )
+    assert "covered_n=len(rows)" in body

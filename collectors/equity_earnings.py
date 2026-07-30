@@ -50,6 +50,15 @@ def _cache_path():
     return p
 
 
+def _safe_json_list(s) -> list:
+    """json.loads(s) as a list, or [] — never raises."""
+    try:
+        v = json.loads(s or "[]")
+    except (TypeError, ValueError):
+        return []
+    return v if isinstance(v, list) else []
+
+
 def _num(x) -> float | None:
     try:
         v = float(str(x).replace("$", "").replace(",", "").replace("%", "").strip())
@@ -144,17 +153,34 @@ def fetch_earnings(force: bool = False, max_new: int = 120,
         return existing
     log.info("equity_earnings: calendar sweep found next dates for %d names", len(cal))
 
-    # surprise history: refresh stale/uncached names, capped
+    # ── surprise history: refresh stale/uncached names, capped ────────────────
+    # MINOR 2 (review 2026-07-29): this used to grade `as_of`, which the CALENDAR sweep
+    # bumps for every name it finds. Once the sweep actually covered the universe (the E5
+    # fix), every swept name looked fresh the next night, `stale()` selected NONE of them,
+    # and the 120/night drip became structurally vacuous — 4 of 1364 names had surprise
+    # history and always would. The two facts have different cadences, so they get their
+    # own stamps: `as_of` is when the CALENDAR row was refreshed, `surprises_as_of` is when
+    # the SURPRISE HISTORY was. A name with no history at all is always eligible.
     def stale(t: str) -> bool:
         if force or existing.empty or t not in existing.index:
             return True
-        ts = existing.loc[t].get("as_of")
+        row = existing.loc[t]
+        surp = row.get("surprises_json")
+        try:
+            if not json.loads(surp or "[]"):
+                return True            # never fetched, or fetched empty -> retry
+        except (TypeError, ValueError):
+            return True
+        ts = row.get("surprises_as_of") or row.get("as_of")
         try:
             return (datetime.now(timezone.utc) - pd.to_datetime(ts)).days > REFRESH_DAYS
         except Exception:  # noqa: BLE001
             return True
 
     now = datetime.now(timezone.utc).isoformat()
+    have_surp_asof = (existing["surprises_as_of"]
+                      if (not existing.empty and "surprises_as_of" in existing.columns)
+                      else pd.Series(dtype=object))
     have_surp = (existing["surprises_json"] if (not existing.empty and "surprises_json" in existing.columns)
                  else pd.Series(dtype=object))
     # PERSIST the cheap calendar next_date for EVERY name the sweep found — not only the capped
@@ -163,7 +189,11 @@ def fetch_earnings(force: bool = False, max_new: int = 120,
     out = pd.DataFrame([
         {"ticker": t, "next_date": cc.get("next_date"), "next_time": cc.get("next_time"),
          "eps_forecast": cc.get("eps_forecast"),
-         "surprises_json": (have_surp.get(t) if t in have_surp.index else "[]"), "as_of": now}
+         "surprises_json": (have_surp.get(t) if t in have_surp.index else "[]"),
+         # carry the SURPRISE stamp forward untouched — a calendar refresh is not a
+         # surprise-history refresh (minor 2)
+         "surprises_as_of": (have_surp_asof.get(t) if t in have_surp_asof.index else None),
+         "as_of": now}
         for t, cc in cal.items()
     ]).set_index("ticker") if cal else pd.DataFrame()
     # keep any previously-cached names this sweep didn't cover
@@ -173,14 +203,23 @@ def fetch_earnings(force: bool = False, max_new: int = 120,
 
     # surprise history: drip a capped batch of stale/uncached names (the only expensive call)
     todo = [t for t in (tickers or sorted(cal) or list(universe)) if stale(t) and t in out.index][:max_new]
+    if "surprises_as_of" not in out.columns and not out.empty:
+        out["surprises_as_of"] = None
     for t in todo:
         out.loc[t, "surprises_json"] = json.dumps(_surprises(session, t))
+        out.loc[t, "surprises_as_of"] = now      # the stamp `stale()` actually grades
         out.loc[t, "as_of"] = now
         time.sleep(0.25)
     if not out.empty:
         out.to_parquet(cache)
-    log.info("equity_earnings: cache now %d tickers (%d with a next date)",
-             len(out), int(out["next_date"].notna().sum()) if "next_date" in out else 0)
+    _n_surp = 0
+    if not out.empty and "surprises_json" in out.columns:
+        _n_surp = int(out["surprises_json"].fillna("[]").apply(
+            lambda s: bool(_safe_json_list(s))).sum())
+    log.info("equity_earnings: cache now %d tickers (%d with a next date, "
+             "%d with surprise history; dripped %d this run)",
+             len(out), int(out["next_date"].notna().sum()) if "next_date" in out else 0,
+             _n_surp, len(todo))
     return out
 
 

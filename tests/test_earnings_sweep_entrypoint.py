@@ -26,8 +26,9 @@ Run: .venv/bin/python -m pytest tests/test_earnings_sweep_entrypoint.py -q
 
 from __future__ import annotations
 
+import json
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -37,6 +38,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 import collectors.equity_earnings as ee  # noqa: E402
+from lib import nyse_calendar  # noqa: E402
 
 DAILY = (ROOT / ".github" / "workflows" / "daily.yml").read_text()
 COLLECTOR_SRC = (ROOT / "collectors" / "equity_earnings.py").read_text()
@@ -281,3 +283,152 @@ def test_detail_publishes_the_denominator(monkeypatch, tmp_path, keys):
     _, result = _audit(monkeypatch, tmp_path)
     for k in keys:
         assert k in result["detail"], f"detail missing {k}"
+
+
+# ═══════════ review minors: drip cadence, denominator, ok-semantics, calendar ══════
+
+
+def test_the_surprise_drip_actually_backfills_across_nights(monkeypatch, tmp_path):
+    """MINOR 2. `stale()` used to grade `as_of`, which the CALENDAR sweep bumps for every
+    name it finds. Once the sweep really covered the universe (the E5 fix), every swept
+    name looked fresh the next night, so the 120/night surprise drip selected NOTHING and
+    4 of 1364 names had history forever. Freshness of the two facts is tracked separately."""
+    universe = {f"TK{i:04d}" for i in range(400)}
+    cal = {t: {"next_date": "2026-08-14", "next_time": None, "eps_forecast": 1.0}
+           for t in sorted(universe)}
+    seen = _stub_network(monkeypatch, tmp_path, universe, cal)
+
+    counts = []
+    for _ in range(3):
+        seen["surprises"].clear()
+        ee.main([])
+        df = pd.read_parquet(tmp_path / "earnings.parquet")
+        with_hist = int(df["surprises_json"].fillna("[]").apply(
+            lambda s: bool(json.loads(s or "[]"))).sum())
+        counts.append((len(seen["surprises"]), with_hist))
+
+    assert [c[0] for c in counts] == [120, 120, 120], (
+        f"each night must drip a full batch, got {[c[0] for c in counts]}"
+    )
+    assert [c[1] for c in counts] == [120, 240, 360], (
+        f"history must ACCUMULATE, got {[c[1] for c in counts]} — a flat series means the "
+        "drip is selecting the same names (or none) every night"
+    )
+
+
+def test_a_calendar_refresh_does_not_reset_the_surprise_clock(monkeypatch, tmp_path):
+    """The two stamps must be independent: sweeping the calendar again must not make a
+    name with 8-day-old surprise history look freshly dripped."""
+    universe = {"AAA", "BBB"}
+    cal = {t: {"next_date": "2026-08-14", "next_time": None, "eps_forecast": 1.0}
+           for t in universe}
+    _stub_network(monkeypatch, tmp_path, universe, cal)
+    ee.main([])
+    df = pd.read_parquet(tmp_path / "earnings.parquet")
+    assert "surprises_as_of" in df.columns, "the surprise stamp must be its own column"
+    assert df["surprises_as_of"].notna().all()
+
+    # age the SURPRISE stamp only, leave as_of fresh, and confirm the name is re-selected
+    old = (datetime.now(timezone.utc) - timedelta(days=ee.REFRESH_DAYS + 3)).isoformat()
+    df["surprises_as_of"] = old
+    df.to_parquet(tmp_path / "earnings.parquet")
+    seen2 = _stub_network(monkeypatch, tmp_path, universe, cal)
+    ee.main([])
+    assert set(seen2["surprises"]) == universe, (
+        f"stale surprise history must be re-dripped even when as_of is fresh; "
+        f"got {seen2['surprises']}"
+    )
+
+
+class TestAuditDenominatorAndSemantics:
+    def test_ok_reflects_the_errors_channel(self, monkeypatch, tmp_path):
+        """MINOR 8: the artifact published ok:true beside errors:[...]."""
+        _write_store(tmp_path, fresh_n=3, stale_n=1361)
+        _, result = _audit(monkeypatch, tmp_path)
+        assert result["errors"]
+        assert result["ok"] is False, "ok must mean 'nothing in this audit is wrong'"
+
+    def test_ok_is_true_on_a_genuinely_clean_store(self, monkeypatch, tmp_path):
+        _write_store(tmp_path, fresh_n=1066, stale_n=447)
+        _, result = _audit(monkeypatch, tmp_path)
+        assert not result["errors"] and not result["warnings"]
+        assert result["ok"] is True
+
+    def test_the_denominator_is_the_sweep_window_not_the_whole_store(
+            self, monkeypatch, tmp_path):
+        """MINOR 3: the store grows monotonically and keeps every name it has ever seen,
+        while the sweep only reaches ~66 weekdays ahead. Names reporting beyond that
+        window cannot be refreshed by a sweep and must not dilute its score."""
+        import pandas as pd
+        d = tmp_path / "earnings"
+        d.mkdir(parents=True, exist_ok=True)
+        now = datetime.now(timezone.utc).isoformat()
+        far = (date.today() + timedelta(days=300)).isoformat()   # beyond the window
+        near = (date.today() + timedelta(days=10)).isoformat()   # inside it
+        rows = [{"ticker": f"IN{i:04d}", "next_date": near, "next_time": None,
+                 "eps_forecast": None, "surprises_json": "[]", "as_of": now}
+                for i in range(80)]
+        rows += [{"ticker": f"OUT{i:04d}", "next_date": far, "next_time": None,
+                  "eps_forecast": None, "surprises_json": "[]",
+                  "as_of": "2026-01-02T00:00:00+00:00"} for i in range(900)]
+        pd.DataFrame(rows).set_index("ticker").to_parquet(d / "earnings.parquet")
+
+        _, result = _audit(monkeypatch, tmp_path)
+        det = result["detail"]
+        assert det["denominator_basis"] == "sweep_window"
+        assert det["fresh_denominator"] == 80, (
+            f"denominator {det['fresh_denominator']} — the 900 far-dated names must not "
+            "count against a sweep that cannot reach them"
+        )
+        assert det["fresh_share"] == 1.0
+        assert not result["errors"], (
+            "graded against the whole store this would read 80/980 = 8% and cry stale"
+        )
+
+    def test_the_denominator_falls_back_when_next_date_is_unusable(
+            self, monkeypatch, tmp_path):
+        _write_store(tmp_path, fresh_n=60, stale_n=60)   # next_date present but far/near mix
+        _, result = _audit(monkeypatch, tmp_path)
+        assert result["detail"]["denominator_basis"] in ("sweep_window", "whole_store")
+        assert result["detail"]["fresh_denominator"] > 0
+
+    def test_the_message_quotes_the_denominator_it_actually_used(
+            self, monkeypatch, tmp_path):
+        _write_store(tmp_path, fresh_n=3, stale_n=1361)
+        _, result = _audit(monkeypatch, tmp_path)
+        det = result["detail"]
+        assert str(det["fresh_denominator"]) in result["errors"][0]
+
+
+class TestAuditUsesTheSessionCalendar:
+    def test_a_holiday_week_is_not_counted_as_extra_staleness(self):
+        """MINOR 9: pd.bdate_range counts exchange HOLIDAYS as business days, so a store
+        spanning one read staler than it is — the opposite of the old docstring's claim."""
+        import scripts.audit_earnings_freshness as af
+        # 2026-07-03 is the observed Independence Day holiday (July 4 is a Saturday)
+        assert not nyse_calendar.is_session(date(2026, 7, 3))
+        import pandas as pd
+        naive = max(0, len(pd.bdate_range(date(2026, 7, 2), date(2026, 7, 6))) - 1)
+        exact = af._bdate_range_age(date(2026, 7, 2), date(2026, 7, 6))
+        # the window spans exactly one holiday, so the two measures must differ by 1
+        assert naive - exact == 1, (
+            f"holiday-blind distance {naive} vs session-exact {exact} — the 2026-07-03 "
+            "closure must account for the whole difference"
+        )
+        assert exact is not None and exact < naive, (
+            f"session-calendar age {exact} must be below the holiday-blind {naive}"
+        )
+
+    def test_age_is_anchored_on_the_last_COMPLETED_session(self):
+        """The audit anchors on datetime.now(timezone.utc).date(), which rolls over at
+        20:00 ET the evening before — a to_date distance therefore reported every store as
+        a session staler than it was for the first four hours of each UTC day."""
+        import scripts.audit_earnings_freshness as af
+        last = nyse_calendar.expected_last_session()
+        assert af._session_age(last) == 0, (
+            "a store holding the last COMPLETED session must read 0 trading days old"
+        )
+        # ...and the UTC calendar date is NOT the anchor: at 00:00-04:00 UTC the ET session
+        # of the previous day is the newest completed one, and a from->to distance would
+        # have called that store a session stale.
+        assert af._session_age(date.today()) == 0

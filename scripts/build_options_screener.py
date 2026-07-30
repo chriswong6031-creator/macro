@@ -128,13 +128,28 @@ def _load_skew_lookup() -> dict[str, dict]:
         # options_skew/snapshots.parquet carried 8 non-session dates of 28, so the
         # drop_duplicates(keep="last") below could hand every row a Saturday recompute
         # as its skew reading. Fail-open (lib.nyse_calendar.session_rows).
-        df = nyse_calendar.session_rows(df, "date")
-        # UNIT SEAM (×100 class): skew is a FRACTION here and becomes skew_pp below.
-        options_units.guard_iv_fraction(df["skew"], "options_skew.skew")
+        df = nyse_calendar.session_rows(df, "date", label="options_skew/snapshots")
         # latest date per underlying
         df = df.sort_values("date")
         # whole-row take: groupby.last() is per-column last-VALID and can mix dates
         latest = df.sort_values("date").drop_duplicates("underlying", keep="last")
+        # MINOR-SCOPE (review 2026-07-29): this whole function is wrapped in a bare
+        # `except -> return {}`, so a store missing the `skew` column used to cost every
+        # ticker BOTH skew_pp and skew_tenor_d. Degrade per-FIELD instead: absent column
+        # -> skew_pp None, tenor still published.
+        if "skew" not in latest.columns:
+            print("::warning title=options-unit-seam::options_skew/snapshots.parquet has "
+                  "no 'skew' column - skew_pp degraded to null; tenor still published",
+                  flush=True)
+        # UNIT SEAM (the ×100 class). Guard the LATEST CROSS-SECTION, not the whole store:
+        # the realistic flip lands on the newest vintage while correct history sits behind
+        # it, and a whole-store median dilutes it below any threshold — measured, this
+        # store's median moves 0.0356 -> 0.0376 under a newest-vintage ×100 (a MISS) while
+        # the latest cross-section goes 0.0436 -> 3.95 (CAUGHT). `skew` is a DIFFERENCE of
+        # two vols, so it uses the difference ceiling; the shared level ceiling left only
+        # 1.19× margin. It is a FRACTION here and becomes skew_pp (×100) below.
+        if "skew" in latest.columns:
+            options_units.guard_iv_difference(latest["skew"], "options_skew.skew (latest)")
         out: dict[str, dict] = {}
         for _, row in latest.iterrows():
             underlying = str(row["underlying"]).upper()
@@ -177,12 +192,17 @@ def _load_ivspread_lookup() -> dict[str, float | None]:
             return {}
         # SESSION GUARD (#3721 class, OIP E8): 6 non-session dates of 21 in this store —
         # same reasoning as the skew lookup above.
-        df = nyse_calendar.session_rows(df, "date")
-        # UNIT SEAM (×100 class): ivspread_rel is a FRACTION and becomes ivspread_pp.
-        options_units.guard_iv_fraction(df["ivspread_rel"], "options_ivspread.ivspread_rel")
+        df = nyse_calendar.session_rows(df, "date", label="options_ivspread/snapshots")
         df = df.sort_values("date")
         # whole-row take: groupby.last() is per-column last-VALID and can mix dates
         latest = df.sort_values("date").drop_duplicates("underlying", keep="last")
+        # UNIT SEAM: latest cross-section, DIFFERENCE ceiling — see the skew lookup above.
+        if "ivspread_rel" in latest.columns:
+            options_units.guard_iv_difference(latest["ivspread_rel"],
+                                              "options_ivspread.ivspread_rel (latest)")
+        else:
+            print("::warning title=options-unit-seam::options_ivspread/snapshots.parquet "
+                  "has no 'ivspread_rel' column - ivspread_pp degraded to null", flush=True)
         out: dict[str, float | None] = {}
         for _, row in latest.iterrows():
             underlying = str(row["underlying"]).upper()
@@ -598,13 +618,15 @@ def build_screener_rows(
     # dist_to_flip_pct is ALREADY percent and must pass through untouched. Getting
     # either backwards ships a plausible-looking number 100× off. Non-fatal by design —
     # see lib/options_units.py for why a hard failure is the wrong response.
-    options_units.guard_iv_fraction(
+    # `rows` IS the latest cross-section (one row per ticker), so this is already the
+    # right denominator. iv30 is an IV LEVEL -> level ceiling.
+    options_units.guard_iv_level(
         [r["iv30"] / 100.0 for r in rows if r.get("iv30") is not None],
-        "polygon_gex.summary.iv30 (pre-×100)",
+        "polygon_gex.summary.iv30 (latest, pre-×100)",
     )
     options_units.guard_percent_scale(
         [r["dist_to_flip_pct"] for r in rows if r.get("dist_to_flip_pct") is not None],
-        "polygon_gex.summary.dist_to_flip_pct (pass-through)",
+        "polygon_gex.summary.dist_to_flip_pct (latest, pass-through)",
     )
 
     # Sort: by gross_premium_mn desc (most active first), then ticker
@@ -637,7 +659,10 @@ def build_screener_rows(
     coverage["coverage_v1"] = options_coverage.coverage_object(
         universe_name_en="Names in the options scanner",
         universe_name_zh="期权筛选表内的标的",
-        universe_n=len(rows),
+        # M8 (review): len(rows) on both sides published a fabricated "100%". `rows` is
+        # what we COVERED (names with a polygon_gex summary present); the scanner's
+        # intended universe is not counted here, so the denominator is honestly unknown.
+        universe_n=None,
         covered_n=len(rows),
         asof=_rows_asof,
         sources=[

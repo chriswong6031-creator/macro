@@ -271,7 +271,11 @@ def build_market_tide(flow_rows: list[dict], data_dir: Path) -> dict:
         "coverage_v1": options_coverage.coverage_object(
             universe_name_en="Names with options tape",
             universe_name_zh="有期权成交数据的标的",
-            universe_n=n_covered,
+            # M8 (review): passing n_covered as BOTH sides published a fabricated
+            # "100%" — the desk does not know its own denominator (options_flow only
+            # has files for names that traded), and lib/options_coverage's contract is
+            # that an unknown universe is None so coverage_pct comes back None.
+            universe_n=None,
             covered_n=n_covered,
             asof=asof_date,
             sources=[

@@ -256,8 +256,16 @@ jobs:
       # it reads this run's snapshots; it must not be a sibling cluster because
       # build_options_skew rewrites snapshots.parquet non-atomically (see leaderradar).
       # Both are pure functions of committed data/: zero network, site/-only writes,
-      # O(seconds) (measured: screener 4.6s, options_command 0.4s).
+      # Measured: screener 4.6s, options_command 0.4s, flowleaders ~27s -> narrow gex)
+      # about +32s, cl_gex +4.6s, scope=all +0.4s (flowleaders already ran there).
       # Anti-rot: tests/test_render_options_workspace_scope.py.
+      #
+      # M11: build_options_entry_state is NOT in the narrow gex) case — its only output is
+      # data/options_entry/state.parquet and this lane commits site/ ONLY, so it would be
+      # 6.3s of discarded compute. It stays in cl_gex and in daily.yml (the lane that
+      # persists it).  M10: the narrow case calls flowleaders BEFORE optionscmd, because
+      # optionscmd re-serialises site/flowleaders/leaders.json and would otherwise bake a
+      # silently-stale Leaders block.
       - name: re-render pages from the freshly recomputed engine output (resilient)
         # IDENTICAL to render.yml's render step — reads the engine output just recomputed above
         # (regime/latest.json + the MTF leaf, now in the working tree) and re-renders every page.
@@ -551,10 +559,9 @@ jobs:
               run_py "options flow desk (build_options_flow)"   scripts.build_options_flow
               run_py "single-name IV skew (build_options_skew)" scripts.build_options_skew
               run_py "single-name IV spread (build_options_ivspread)" scripts.build_options_ivspread
-              # OIP E8 (note above): narrow case had drifted from cl_gex.
               run_py "US options screener page (build_options_screener)" scripts.build_options_screener
-              run_py "options entry state fusion table (build_options_entry_state)" scripts.build_options_entry_state
-              optionscmd
+              # flowleaders BEFORE optionscmd (M10) — see the OIP E8 note above the step.
+              flowleaders; optionscmd
               hub ;;
             baskets)
               run_py "thematic baskets (build_baskets)"     scripts.build_baskets

@@ -135,18 +135,48 @@ def test_optionscmd_is_never_a_parallel_band_member(lane):
     )
 
 
+def _narrow_gex(text: str) -> str:
+    return text.split("            gex)\n", 1)[1].split(";;", 1)[0]
+
+
 @pytest.mark.parametrize("lane", sorted(EXPRESS_LANES))
-def test_narrow_gex_case_builds_the_whole_family_in_order(lane):
+def test_narrow_gex_case_builds_the_pages_in_order(lane):
     """The narrow single-scope case must not drift from cl_gex again."""
-    text = EXPRESS_LANES[lane]
-    case = text.split("            gex)\n", 1)[1].split(";;", 1)[0]
+    case = _narrow_gex(EXPRESS_LANES[lane])
     for mod in ("scripts.build_options_skew", "scripts.build_options_ivspread",
-                "scripts.build_options_screener", "scripts.build_options_entry_state"):
+                "scripts.build_options_screener"):
         assert mod in case, f"{lane}: narrow gex case missing {mod}"
     assert "optionscmd" in case, f"{lane}: narrow gex case never rebuilds options.html"
-    # snapshots first, then the readers, then the re-serialiser
+    # snapshots first, then the page builder, then the re-serialiser
     assert case.index("scripts.build_options_ivspread") < case.index("scripts.build_options_screener")
-    assert case.index("scripts.build_options_entry_state") < case.index("optionscmd")
+    assert case.index("scripts.build_options_screener") < case.index("optionscmd")
+
+
+@pytest.mark.parametrize("lane", sorted(EXPRESS_LANES))
+def test_narrow_gex_refreshes_leaders_before_baking_the_workspace(lane):
+    """M10. options.html re-serialises site/flowleaders/leaders.json, and this scope is
+    reachable by a template edit via region_of — so without flowleaders() the narrow case
+    bakes a silently-stale Leaders block. Express-safe: zero data/ writes, exit 0, ~27s."""
+    case = _narrow_gex(EXPRESS_LANES[lane])
+    assert "flowleaders" in case, f"{lane}: narrow gex bakes options.html with stale leaders"
+    assert case.index("flowleaders") < case.index("optionscmd"), (
+        f"{lane}: flowleaders must run BEFORE optionscmd"
+    )
+
+
+@pytest.mark.parametrize("lane", sorted(EXPRESS_LANES))
+def test_narrow_gex_does_not_run_a_data_only_builder(lane):
+    """M11. build_options_entry_state's ONLY output is data/options_entry/state.parquet and
+    both express lanes commit site/ ONLY, so running it in the narrow case was ~6.3s of
+    compute whose result is discarded. It stays in cl_gex and in daily.yml — the lane that
+    actually persists it, and therefore the lane whose cadence drift matters."""
+    case = _narrow_gex(EXPRESS_LANES[lane])
+    assert "scripts.build_options_entry_state" not in case, (
+        f"{lane}: narrow gex runs build_options_entry_state, whose data/ write this lane "
+        "discards — dead compute on the render budget"
+    )
+    # ...but it must still be a cl_gex member (that placement mirrors daily.yml)
+    assert "scripts.build_options_entry_state" in _cl_gex(EXPRESS_LANES[lane])
 
 
 # --------------------------------------------------------------- cl_gex membership
@@ -214,8 +244,42 @@ def _store_paths_read_by_load_stores() -> set[str]:
     return found
 
 
-def test_load_stores_reads_exactly_the_documented_store_set():
-    """A NEW store read in the workspace must make a wiring decision, not inherit one."""
+def test_load_stores_probes_exactly_the_documented_paths_at_RUNTIME():
+    """MINOR 12: the source-regex above cannot see a path built purely by f-string — it
+    only caught `site/gex` from the INDEX_KEYS loop and would miss a whole new store added
+    the same way. Record what load_stores actually asks for, which is f-string-proof."""
+    import scripts.build_options_command as boc
+
+    probed: list[str] = []
+    real_load = boc._load
+
+    def _spy(path):
+        probed.append(str(path))
+        return real_load(path)
+
+    boc._load = _spy
+    try:
+        boc.load_stores(Path("/nonexistent-root-for-probing"))
+    finally:
+        boc._load = real_load
+
+    rel = set()
+    for raw in probed:
+        s = raw.replace("/nonexistent-root-for-probing/", "")
+        # collapse the INDEX_KEYS family to its directory, as WORKSPACE_STORES documents it
+        rel.add("site/gex" if (s.startswith("site/gex/") and s != "site/gex/index.json")
+                else s)
+    assert rel == set(WORKSPACE_STORES), (
+        "build_options_command.load_stores PROBED a different path set than "
+        f"WORKSPACE_STORES documents.  Added: {sorted(rel - set(WORKSPACE_STORES))}; "
+        f"removed: {sorted(set(WORKSPACE_STORES) - rel)}.  Decide each new store's "
+        "express-lane coverage and record it."
+    )
+    assert len(probed) >= len(WORKSPACE_STORES), probed
+
+
+def test_load_stores_source_literals_match_the_documented_set():
+    """Kept as the cheap static twin of the runtime probe above."""
     read = _store_paths_read_by_load_stores()
     assert read == set(WORKSPACE_STORES), (
         "build_options_command.load_stores changed.  Added: "

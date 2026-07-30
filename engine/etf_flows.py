@@ -66,6 +66,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from lib import nyse_calendar
+
 log = logging.getLogger(__name__)
 
 _FLOWS_DIR = Path(__file__).parent.parent / "data" / "flows"
@@ -98,7 +100,11 @@ def _load_so(ticker: str, flows_dir: Path | None = None) -> pd.DataFrame | None:
     if "so_mn" not in df.columns or "nav" not in df.columns:
         log.warning("etf_flows: %s missing required columns, skipping", ticker)
         return None
-    return df.sort_index()
+    # SESSION GUARD (#3721 class, review M4): this frame is the input to _derive_flow
+    # (delta(SO) x NAV) and _z60_causal's 60-SESSION rolling z. broad_flow_proxy.parquet
+    # showed 5 non-session dates of 15, so a weekend row both emits a fabricated
+    # flow_mn row and shortens the causal z window it feeds.
+    return nyse_calendar.session_rows(df.sort_index(), label=f"flows/{ticker}")
 
 
 def _derive_flow(df: pd.DataFrame) -> pd.Series:

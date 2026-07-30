@@ -46,6 +46,17 @@ from __future__ import annotations
 SCHEMA = "options_coverage.v1"
 
 
+def _as_asof(v) -> str | None:
+    """A date string, or None.  `str(pd.NaT)` is the literal "NaT" and `str(nan)` is
+    "nan" — publishing either as an as-of stamp is worse than publishing nothing."""
+    if v is None:
+        return None
+    s = str(v).strip()
+    if not s or s.lower() in ("nat", "nan", "none", "<na>"):
+        return None
+    return s
+
+
 def _sessions_behind(asof) -> int | None:
     """Completed sessions missing behind ``asof``, or None when it cannot be judged.
 
@@ -64,6 +75,22 @@ def _sessions_behind(asof) -> int | None:
         return None
 
 
+def _as_int(v) -> int | None:
+    """int(v) or None.  NEVER raises — `int(float("nan"))` raises ValueError, which would
+    break this module's "never raises" contract the first time a count arrived as NaN from
+    a pandas aggregation (minor 4, review 2026-07-29).  Booleans are rejected because
+    `isinstance(True, int)` is True and a flag is not a count."""
+    if v is None or isinstance(v, bool):
+        return None
+    try:
+        f = float(v)
+    except (TypeError, ValueError):
+        return None
+    if f != f or f in (float("inf"), float("-inf")):   # NaN / +-inf
+        return None
+    return int(f)
+
+
 def source(key: str, name_en: str, name_zh: str, *,
            asof=None, n: int | None = None) -> dict:
     """One input store's freshness row.
@@ -76,8 +103,8 @@ def source(key: str, name_en: str, name_zh: str, *,
         "key": str(key),
         "name_en": str(name_en),
         "name_zh": str(name_zh),
-        "asof": str(asof) if asof else None,
-        "n": int(n) if isinstance(n, (int, float)) and n is not None else None,
+        "asof": _as_asof(asof),
+        "n": _as_int(n),
         "sessions_behind": _sessions_behind(asof),
     }
 
@@ -91,8 +118,8 @@ def coverage_object(*, universe_name_en: str, universe_name_zh: str,
     above 100% is a counting bug, and publishing it as ">100%" is worse than clamping
     and letting the two raw counts stand for inspection.
     """
-    uni = int(universe_n) if isinstance(universe_n, (int, float)) and universe_n is not None else None
-    cov = int(covered_n) if isinstance(covered_n, (int, float)) and covered_n is not None else None
+    uni = _as_int(universe_n)
+    cov = _as_int(covered_n)
     pct = None
     if uni is not None and cov is not None and uni > 0:
         pct = round(min(cov, uni) / uni * 100.0, 1)
@@ -105,7 +132,7 @@ def coverage_object(*, universe_name_en: str, universe_name_zh: str,
         },
         "covered": cov,
         "coverage_pct": pct,
-        "asof": str(asof) if asof else None,
+        "asof": _as_asof(asof),
         "sessions_behind": _sessions_behind(asof),
         "sources": list(sources or []),
     }

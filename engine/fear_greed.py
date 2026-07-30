@@ -67,7 +67,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from lib import config, store
+from lib import config, nyse_calendar, store
 
 log = logging.getLogger(__name__)
 
@@ -634,7 +634,12 @@ def _leg_insider() -> dict:
 def _young_tile_putcall() -> dict:
     """CBOE put/call — young, excluded from composite."""
     try:
-        df = store.read("cboe", "putcall")
+        # SESSION GUARD (#3721 class, review M3): obs_count below is consumed by
+        # vol_shock_scorecard as the maturity signal that escalates this leg's weight
+        # (0.35 -> 1.0), so weekend rows buy escalation the series has not earned. The
+        # published value and as_of come from the same frame.
+        df = nyse_calendar.session_rows(store.read("cboe", "putcall"),
+                                        label="cboe/putcall")
         if df is None or "equity_pc_ratio" not in df.columns:
             return {"key": "putcall", "freshness": "missing", "obs_count": None,
                     "name_en": "CBOE put/call ratio",

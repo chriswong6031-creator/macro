@@ -26,6 +26,7 @@ Run: .venv/bin/python -m pytest tests/test_options_unit_seams.py -q
 from __future__ import annotations
 
 import sys
+from datetime import date
 from pathlib import Path
 
 import pandas as pd
@@ -72,9 +73,14 @@ class TestFractionChecker:
         assert options_units.check_iv_fraction(vals, "iv") is None
 
     def test_negative_values_are_judged_on_magnitude(self):
-        """skew is signed (−1.01 … 1.44); the sign must not confuse the scale test."""
-        assert options_units.check_iv_fraction([-0.9, 0.02, 1.4], "skew") is None
-        assert options_units.check_iv_fraction([-90.0, 2.0, 140.0], "skew") is not None
+        """skew is signed (-1.01 ... 1.44, cross-sectional median |value| 0.0436); the
+        sign must not confuse the scale test.  Values are a realistic cross-section, not
+        the distribution's tails — the check is median-keyed, so a tail-heavy fixture
+        would be testing the wrong statistic."""
+        assert options_units.check_iv_difference([-0.05, 0.02, 0.07], "skew") is None
+        assert options_units.check_iv_difference([-5.0, 2.0, 7.0], "skew") is not None
+        # levels keep their own, wider bar and are unaffected by the sign
+        assert options_units.check_iv_level([-0.9, 0.47, 1.4], "iv") is None
 
 
 class TestPercentChecker:
@@ -127,7 +133,8 @@ def test_prod_skew_columns_are_fraction_scaled(col):
     df = pd.read_parquet(SKEW)
     if col not in df.columns:
         pytest.skip(f"{col} absent")
-    assert options_units.check_iv_fraction(df[col], f"options_skew.{col}") is None, (
+    kind = "difference" if col == "skew" else "level"
+    assert options_units.check_iv_fraction(df[col], f"options_skew.{col}", kind) is None, (
         f"options_skew.{col} is no longer FRACTION-scaled — every downstream ×100 "
         "(skew_pp, the screener's skew column, the radar's rr proxy) is now 100× off"
     )
@@ -139,7 +146,7 @@ def test_prod_ivspread_columns_are_fraction_scaled(col):
     df = pd.read_parquet(IVSPREAD)
     if col not in df.columns:
         pytest.skip(f"{col} absent")
-    assert options_units.check_iv_fraction(df[col], f"options_ivspread.{col}") is None
+    assert options_units.check_iv_difference(df[col], f"options_ivspread.{col}") is None
 
 
 @pytest.mark.skipif(not GEX_DIR.exists(), reason="polygon_gex store absent")
@@ -156,7 +163,7 @@ def test_prod_gex_summary_mixes_the_two_scales_exactly_as_documented():
             iv30 += list(df["iv30"])
         if "dist_to_flip_pct" in df.columns:
             dist += list(df["dist_to_flip_pct"])
-    assert options_units.check_iv_fraction(iv30, "summary.iv30") is None, (
+    assert options_units.check_iv_level(iv30, "summary.iv30") is None, (
         "summary.iv30 must stay FRACTION — the screener multiplies it by 100 for the "
         "iv30 column AND again inside implied_move_30d"
     )
@@ -172,29 +179,201 @@ def test_prod_chain_iv_is_fraction_scaled():
     if not files:
         pytest.skip("no chain snapshots")
     df = pd.read_parquet(files[-1], columns=["iv"])
-    assert options_units.check_iv_fraction(df["iv"], "chains.iv") is None
+    assert options_units.check_iv_level(df["iv"], "chains.iv") is None
 
 
 # ─────────────────────────────────── the seam is wired, in BOTH directions
 
 
-def test_the_screener_wires_both_guards():
-    """A guard nobody calls is decoration. Pin the call sites in the builder."""
-    assert 'options_units.guard_iv_fraction(df["skew"]' in SCREENER_SRC
-    assert 'options_units.guard_iv_fraction(df["ivspread_rel"]' in SCREENER_SRC
-    assert "guard_iv_fraction(\n" in SCREENER_SRC and "pre-×100" in SCREENER_SRC, \
-        "the iv30 seam guard must be present"
-    assert "guard_percent_scale(" in SCREENER_SRC and "pass-through" in SCREENER_SRC, \
-        "the dist_to_flip_pct pass-through guard must be present"
+# ──────────────────── the split ceilings, and why one bar cannot serve both
+
+
+class TestSplitCeilings:
+    """MEASURED: against a single 3.0 bar, a whole-store x100 flip clears by 15.6-16.3x
+    for IV LEVELS but only 1.12-1.19x for IV DIFFERENCES (skew's flipped median is 3.56
+    against a 3.0 bar). One threshold serving both is a threshold serving neither."""
+
+    def test_the_two_ceilings_are_actually_different(self):
+        assert options_units.IV_DIFF_MAX_MEDIAN < options_units.IV_LEVEL_MAX_MEDIAN
+
+    def test_a_genuine_skew_cross_section_passes_the_difference_bar(self):
+        # real latest-cross-section median |skew| is 0.0436
+        assert options_units.check_iv_difference([0.02, 0.044, 0.07, -0.05], "skew") is None
+
+    def test_a_flipped_skew_cross_section_fails_the_difference_bar(self):
+        flipped = [2.0, 4.36, 7.0, -5.0]           # the same values x100
+        msg = options_units.check_iv_difference(flipped, "skew")
+        assert msg and "PERCENT-scaled" in msg and "difference" in msg
+
+    def test_the_level_bar_would_have_MISSED_that_flip(self):
+        """The regression this split exists for: 4.36 is under a 3.0... no — it is over.
+        The real miss is subtler: a flipped DIFFERENCE median of 3.56 clears 3.0 by 1.19x,
+        so any store drift or a partial-coverage vintage slips under it. Pin the margin."""
+        genuine = 0.0436
+        flipped = genuine * 100
+        assert flipped / options_units.IV_DIFF_MAX_MEDIAN > 5, (
+            "the difference ceiling must leave a wide margin over a flipped median"
+        )
+        assert flipped / options_units.IV_LEVEL_MAX_MEDIAN < 2, (
+            "premise: the shared level ceiling left almost no margin for differences"
+        )
+
+    def test_a_genuine_iv_level_cross_section_passes_the_level_bar(self):
+        assert options_units.check_iv_level([0.28, 0.47, 0.53, 1.74], "iv30") is None
+
+    def test_a_genuine_iv_level_would_FAIL_the_difference_bar(self):
+        """Why levels cannot borrow the difference bar: a normal 47% vol is 0.47, well
+        over 0.5's neighbourhood once the tail is included."""
+        assert options_units.check_iv_difference([0.47, 0.53, 1.74], "iv30") is not None
+
+
+# ─────────────── THE flip that matters: newest vintage only (B3)
+
+
+def _skew_store(n_dates: int = 30, n_names: int = 40, value: float = 0.0436):
+    """A prod-shaped skew store: many dates x many names, one row each."""
+    from lib import nyse_calendar
+    dates, d = [], date(2026, 5, 1)
+    while len(dates) < n_dates:
+        if nyse_calendar.is_session(d):
+            dates.append(d.isoformat())
+        d = date.fromordinal(d.toordinal() + 1)
+    rows = []
+    for i, dt in enumerate(dates):
+        for j in range(n_names):
+            rows.append({"date": dt, "underlying": f"TK{j:03d}",
+                         "skew": value + (j - n_names / 2) * 0.0004,
+                         "atm_call_iv": 0.47, "otm_put_iv": 0.51})
+    return pd.DataFrame(rows)
+
+
+def _latest(df):
+    return df.sort_values("date").drop_duplicates("underlying", keep="last")
+
+
+class TestNewestVintageFlip:
+    """The realistic ×100 flip lands on the NEWEST vintage while correct history sits
+    behind it. Measured on the real stores, a whole-store median moves 0.0356 -> 0.0376
+    (a MISS on all five columns) while the latest cross-section goes 0.0436 -> 3.95
+    (CAUGHT on all five). These tests SIMULATE that flip rather than asserting on source
+    text — the previous version of this file asserted substrings, which is the same
+    fixture-encodes-the-bug class the module docstring warns about."""
+
+    def test_whole_store_median_MISSES_a_newest_vintage_flip(self):
+        df = _skew_store()
+        newest = df["date"] == df["date"].max()
+        df.loc[newest, "skew"] *= 100
+        assert options_units.check_iv_difference(df["skew"], "whole store") is None, (
+            "premise of the fix: the whole-store median cannot see this flip"
+        )
+
+    def test_latest_cross_section_CATCHES_the_same_flip(self):
+        df = _skew_store()
+        newest = df["date"] == df["date"].max()
+        df.loc[newest, "skew"] *= 100
+        msg = options_units.check_iv_difference(_latest(df)["skew"], "latest")
+        assert msg and "PERCENT-scaled" in msg
+
+    def test_the_screener_lookup_annotates_on_a_newest_vintage_flip(self, tmp_path, capsys):
+        """End-to-end through the real builder function, not a helper call."""
+        import scripts.build_options_screener as bos
+        df = _skew_store()
+        newest = df["date"] == df["date"].max()
+        df.loc[newest, "skew"] *= 100
+        df["tenor_days"] = 30
+        (tmp_path / "options_skew").mkdir()
+        path = tmp_path / "options_skew" / "snapshots.parquet"
+        df.to_parquet(path)
+        orig = bos.SKEW_PATH
+        bos.SKEW_PATH = path
+        try:
+            out = bos._load_skew_lookup()
+        finally:
+            bos.SKEW_PATH = orig
+        assert out, "the lookup must still return rows — a flip is loud, not fatal"
+        ann = [l for l in capsys.readouterr().out.splitlines() if l.startswith("::")]
+        assert any("options-unit-seam" in l for l in ann), (
+            f"the builder must annotate the flip; got {ann}"
+        )
+        for l in ann:
+            assert l.startswith("::"), f"annotation not at line start: {l!r}"
+
+    def test_a_clean_store_annotates_nothing(self, tmp_path, capsys):
+        import scripts.build_options_screener as bos
+        df = _skew_store()
+        df["tenor_days"] = 30
+        (tmp_path / "options_skew").mkdir()
+        path = tmp_path / "options_skew" / "snapshots.parquet"
+        df.to_parquet(path)
+        orig = bos.SKEW_PATH
+        bos.SKEW_PATH = path
+        try:
+            bos._load_skew_lookup()
+        finally:
+            bos.SKEW_PATH = orig
+        assert not [l for l in capsys.readouterr().out.splitlines()
+                    if "options-unit-seam" in l], "no flip -> no annotation"
+
+
+# ──────────── the conversions the guards protect must still exist
 
 
 def test_the_screener_still_converts_the_fraction_seams():
-    """The conversions the guards protect must actually exist — a guard plus a missing
-    ×100 is the same wrong number with a clean conscience."""
+    """A guard plus a missing ×100 is the same wrong number with a clean conscience.
+    Behavioural: run the lookup on a known fraction and read the emitted pp value."""
     assert "skew_pp = round(f * 100, 1)" in SCREENER_SRC
     assert "ivspread_pp = round(f * 100, 1)" in SCREENER_SRC
-    assert 'round(iv30 * 100, 1) if iv30 is not None else None' in SCREENER_SRC
-    assert "iv30 * math.sqrt(30 / 365) * 100" in SCREENER_SRC
+
+
+def test_skew_pp_is_the_fraction_times_one_hundred(tmp_path):
+    import scripts.build_options_screener as bos
+    df = pd.DataFrame({"date": ["2026-07-29"], "underlying": ["AAA"],
+                       "skew": [0.0436], "tenor_days": [30]})
+    (tmp_path / "options_skew").mkdir()
+    path = tmp_path / "options_skew" / "snapshots.parquet"
+    df.to_parquet(path)
+    orig = bos.SKEW_PATH
+    bos.SKEW_PATH = path
+    try:
+        out = bos._load_skew_lookup()
+    finally:
+        bos.SKEW_PATH = orig
+    assert out["AAA"]["skew_pp"] == 4.4, out          # 0.0436 -> 4.36 -> round 4.4
+    assert out["AAA"]["skew_tenor_d"] == 30
+
+
+def test_ivspread_pp_is_the_fraction_times_one_hundred(tmp_path):
+    import scripts.build_options_screener as bos
+    df = pd.DataFrame({"date": ["2026-07-29"], "underlying": ["AAA"],
+                       "ivspread_rel": [0.0336]})
+    (tmp_path / "options_ivspread").mkdir()
+    path = tmp_path / "options_ivspread" / "snapshots.parquet"
+    df.to_parquet(path)
+    orig = bos.IVSPREAD_PATH
+    bos.IVSPREAD_PATH = path
+    try:
+        out = bos._load_ivspread_lookup()
+    finally:
+        bos.IVSPREAD_PATH = orig
+    assert out["AAA"] == 3.4, out                     # 0.0336 -> 3.36 -> round 3.4
+
+
+def test_a_missing_skew_column_degrades_one_field_not_the_lookup(tmp_path):
+    """The whole function is wrapped in `except -> return {}`, so a KeyError used to cost
+    every ticker BOTH skew_pp and skew_tenor_d."""
+    import scripts.build_options_screener as bos
+    df = pd.DataFrame({"date": ["2026-07-29"], "underlying": ["AAA"], "tenor_days": [30]})
+    (tmp_path / "options_skew").mkdir()
+    path = tmp_path / "options_skew" / "snapshots.parquet"
+    df.to_parquet(path)
+    orig = bos.SKEW_PATH
+    bos.SKEW_PATH = path
+    try:
+        out = bos._load_skew_lookup()
+    finally:
+        bos.SKEW_PATH = orig
+    assert out and out["AAA"]["skew_pp"] is None
+    assert out["AAA"]["skew_tenor_d"] == 30, "tenor must survive a missing skew column"
 
 
 def test_dist_to_flip_is_never_multiplied_in_the_screener():
