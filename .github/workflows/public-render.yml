@@ -40,7 +40,11 @@ concurrency:
 jobs:
   render:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # The push loop has a 10-minute contention budget. Setup + the initial
+    # deterministic sweep run before that budget starts, so 15 minutes could
+    # terminate the job before its retry policy did. This is headroom, not an
+    # expected runtime: the no-upstream fast path now pushes immediately.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:

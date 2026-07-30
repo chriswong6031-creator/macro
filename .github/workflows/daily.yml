@@ -569,11 +569,19 @@ jobs:
         # making the W1.5 blackout gate and the W5 display chips always stale-fail-open.
         # Sweeps Nasdaq's public calendar for the next 66 weekdays (~one quarter), writing
         # data/earnings/earnings.parquet (ticker-indexed: next_date, next_time, eps_forecast,
-        # surprises_json, as_of). Bot-wall-aware: if the first calendar call is blocked
-        # (Akamai 403), the existing cache is kept untouched and the step exits 0 (non-fatal).
+        # surprises_json, surprises_as_of, as_of). Bot-wall-aware: if the first calendar call
+        # is blocked (Akamai 403), the existing cache is kept untouched and the step exits 0.
         # MUST run in collect_tail, NOT collect (house law: new accrual steps go in collect_tail).
-        # Wall time: calendar sweep ~66 × 0.25s ≈ 17s + surprise drip capped at max_new=120
-        # names × 0.25s ≈ 30s → ~50s per night, well within the 150m budget.
+        # KEEP THIS LINE BARE. No-args means "sweep the whole breadth universe"; passing
+        # --tickers collapses the universe to that subset and every other row keeps a frozen
+        # as_of. That is exactly the 2026-06-19 freeze: the collector's __main__ used to fall
+        # through to a 3-name demo default, so for six weeks the nightly refreshed only
+        # AAPL/NVDA/JPM while 1361 of 1364 rows sat at as_of 2026-06-19 — and the tripwire
+        # below read the store-level max() as_of and reported sla_ok the whole time.
+        # Pinned by tests/test_earnings_w5.py::TestNightlyEntryPointSweepsWholeUniverse.
+        # Wall time (measured 2026-07-29): calendar sweep 66 calls ≈ 155s (round-trip
+        # dominates, not the 0.25s pacing sleep) + surprise drip capped at max_new=120
+        # names ≈ 60s → ~3.5m per night, well within the 150m budget.
         # Writes data/earnings/earnings.parquet — covered by `git add data/` below.
         run: |
           python -m collectors.equity_earnings \
@@ -1402,6 +1410,43 @@ jobs:
         # Additive — the builder catches its own render failures and exits 0, so the
         # last committed options.html stands and the deploy is never broken.
         run: python -m scripts.build_options_command || echo "::warning::build_options_command non-fatal failure"
+      - name: OIP E1 — session digest, the Terminal→EOD bridge (build_session_digest)
+        # OIP E1: digests the intraday options plane's R2 archives
+        # (live_flow/surface/{ROOT}/{DATE}/ per-minute stamps + the dated tide/dte archives)
+        # into one settled per-root session record — data only, ZERO UI.
+        # Writes data/options_session/{DATE}/{ROOT}.json + site/session/{ROOT}.json +
+        # data/options_session/ledger.parquet (one row per date×root). All three ride the
+        # existing `git add data/ site/` in "commit engine outputs" below — no new commit path.
+        # MUST be a serial step AFTER the band `wait` barrier: it reads
+        # site/options_structure/gex_state/{ROOT}.json for the EOD flip/wall levels, and
+        # build_gex_board writes those inside the cl_gex cluster of the parallel band — the
+        # same cross-phase reasoning that puts build_options_command immediately above.
+        # Ledger + all data/ writes are lane-gated on COLLECT_LANE=nightly (job-level env);
+        # dedup on (date, root) keeps FIRST, so a replay adds sessions and never rewrites one,
+        # and a dated record is only replaced by a read covering MORE minutes.
+        #
+        # COST, measured at the CONFIGURED 120s cadence (196 stamps x ~600 strikes x 3 roots):
+        #   602 reads, 4.06 MB, 1.13-1.20s wall clock on a local replay (3 runs).
+        # Each per-stamp file is the session TRUNCATED to that stamp, so fetching them all is
+        # quadratic in bytes — 124.8 MB per root, 374 MB a night. The day is therefore read from
+        # the NEWEST frame alone (it already carries the full session), and only the per-stamp
+        # `spot` needs a request each, taken as a ~256-byte Range read of the frame head. That
+        # is the 92x difference between 4.06 MB and 374 MB. R2 round-trips put the nightly
+        # estimate at ~15-40s, inside the ~1-2 min budgeted for this join (OIP §7).
+        #
+        # TAIL RISK IS BOUNDED BOTH WAYS: the engine job was CANCELLED at its 200-minute cap in
+        # 5 of 8 recent nightlies, so this step may not run long. `timeout-minutes: 8` is the
+        # hard stop; the builder's own BUDGET_SECONDS=180 wall-clock budget fires first and
+        # writes honest partial records (the shortfall printed in each record's coverage block)
+        # plus a ::warning, which a killed step could not do.
+        # Non-fatal: absent archives/creds degrade to printed nulls and the builder exits 0.
+        timeout-minutes: 8
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python -m scripts.build_session_digest || echo "::warning::build_session_digest non-fatal failure"
       - name: XSR W1 — US fast-sector rotation lens (build_us_sector_rotation)
         # XSR W1 (XSR-R2): display-tier fast rotation score for the 11 SPDR sector ETFs and
         # named US thematic baskets. Ported from China #2634. Reads sector_cycles
@@ -1551,6 +1596,11 @@ jobs:
         # signals); returns 0 even if the crypto engine errors, so it can never
         # break the macro site.
         run: python -m scripts.build_vector
+      - name: build crypto intelligence cockpit
+        # FIRST-CLASS W2 STEP — load-bearing order: build_vector emits the E0
+        # BTC authority contract consumed by H6, then this class-level hub reads
+        # it alongside the additive universe and market-state engines.
+        run: python -m scripts.build_crypto
       - name: master brain scorer (durability loop; deterministic, resilient)
         # Grades the brain's own past-due cross-asset leans in data/master_brain/theses.jsonl
         # against realized closes (reuses engine.desk_scorer) -> data/master_brain/

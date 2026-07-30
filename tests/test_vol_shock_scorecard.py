@@ -7,6 +7,8 @@ forward-outcome log roundtrip (append -> resolve -> track_record).
 """
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from engine import vol_shock_scorecard as vss
@@ -19,6 +21,7 @@ def _full_latest() -> dict:
         "market_gamma": {  # sibling S2's first-class field
             "regime": "short", "spot_vs_flip_pct": -0.5,
             "net_gex_bn": -2.0, "gamma_flip": 7461.0,
+            "asof": "2026-06-18",           # engine.market_gamma.view always stamps this
         },
         "cross_asset": {"asof": "2026-06-18", "absorption_pctile_5y": 0.94},
         "dislocation": {"asof": "2026-06-18", "inputs": {"vix": 16.4, "vix_term": 0.98}},
@@ -100,6 +103,168 @@ def test_short_gamma_raises_vs_long_gamma():
     dg_short = next(f for f in s_short["factors"] if f["key"] == "dealer_gamma")["sub"]
     dg_long = next(f for f in s_long["factors"] if f["key"] == "dealer_gamma")["sub"]
     assert dg_short > dg_long
+
+
+# --------------------------------------------------------------------------- #
+# Dealer-gamma READ PROVENANCE — which tier answered, and when it was stamped.
+#
+# _resolve_gex has a 3-tier fallback (injected -> latest['market_gamma'] ->
+# site/gex/SPX.json). Tier 3 is a PREVIOUS build's file and can be arbitrarily old, but the
+# normalized dict used to return only {regime, gamma_flip, net_gex_bn, spot_vs_flip_pct} —
+# so the promised "staleness shows in asof" had no data path and a month-old board read
+# exactly like a live contract. These pin the carry-through + the plain-word disclosure.
+# --------------------------------------------------------------------------- #
+def _write_board(root, key: str, summary: dict, asof: str | None = "2026-06-18") -> None:
+    """A site/gex/<KEY>.json shaped like the REAL board: ENGINE field naming in `summary`
+    (gamma_regime / dist_to_flip_pct) and the as-of under `meta` — NOT `summary.asof`,
+    which is the shape the old code looked for and the board never writes."""
+    p = root / "gex" / f"{key}.json"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    doc: dict = {"summary": summary}
+    if asof is not None:
+        doc["meta"] = {"key": key, "asof": asof}
+    p.write_text(json.dumps(doc))
+
+
+def test_contract_tier_carries_its_asof_and_source():
+    gx = vss._resolve_gex(_full_latest(), None)
+    assert gx["source"] == "contract"
+    assert gx["asof"] == "2026-06-18"
+
+
+def test_injected_tier_carries_its_asof_and_source():
+    gx = vss._resolve_gex({"date": "2026-06-18"},
+                          {"regime": "long", "spot_vs_flip_pct": 2.0, "asof": "2026-06-17"})
+    assert gx["source"] == "injected"
+    assert gx["asof"] == "2026-06-17"
+
+
+def test_site_board_tier_carries_asof_from_meta_not_summary(monkeypatch, tmp_path):
+    """The tier-3 fallback's date lives in `meta`, so reading only the top level or
+    `summary` (the pre-fix shape) leaves it None on every real artifact."""
+    _write_board(tmp_path, "SPX", {"gamma_regime": "short", "dist_to_flip_pct": -1.7,
+                                   "net_gex_bn": -55.0, "gamma_flip": 7442.0},
+                 asof="2026-06-11")
+    monkeypatch.setattr(vss, "_site_dir", lambda: tmp_path)
+    gx = vss._resolve_gex({"market_gamma": None}, None)      # the null-contract incident shape
+    assert gx["regime"] == "short"                            # fallback still answers
+    assert gx["source"] == "site_board"                       # ...and says WHICH tier did
+    assert gx["asof"] == "2026-06-11"                         # ...and WHEN it was stamped
+
+
+def test_stale_site_board_is_disclosed_in_plain_words(monkeypatch, tmp_path):
+    """A site board that is WEEKS old — not "one build stale" — must say so on the row, in
+    plain words, with the machine receipt alongside. This is the whole defect: an arbitrarily
+    old fallback previously fed the factor indistinguishably from a live contract."""
+    _write_board(tmp_path, "SPX", {"gamma_regime": "short", "dist_to_flip_pct": -1.7,
+                                   "net_gex_bn": -55.0, "gamma_flip": 7442.0},
+                 asof="2026-05-19")                          # 30 days before the snapshot
+    monkeypatch.setattr(vss, "_site_dir", lambda: tmp_path)
+    latest = _full_latest()
+    latest["market_gamma"] = None
+    snap = vss.snapshot(latest, vol_sentiment=_vs_sentiment())
+
+    assert snap["gex_source"] == "site_board"
+    assert snap["gex_asof"] == "2026-05-19"
+    assert snap["gex_age_days"] == 30
+
+    dg = next(f for f in snap["factors"] if f["key"] == "dealer_gamma")
+    assert dg["source"] == "site_board"
+    assert dg["source_asof"] == "2026-05-19"
+    assert dg["source_age_days"] == 30
+    assert dg["passport"]["read"] == {"source": "site_board", "asof": "2026-05-19",
+                                      "age_days": 30, "snapshot_asof": "2026-06-18"}
+    # plain-word window statement on the row, both languages (DESIGN_DOCTRINE Law 2/5)
+    assert "2026-05-19" in dg["note"] and "30 days before this update" in dg["note"]
+    assert "2026-05-19" in dg["note_zh"] and "比本次更新早 30 天" in dg["note_zh"]
+    # the base note is still translated — the suffix is appended AFTER the _NOTE_ZH lookup,
+    # so an untranslatable composite can never silently drop ZH back to English
+    assert "做市商持空头 Gamma" in dg["note_zh"]
+    # calm statement, never an alarm
+    for alarm in ("STALE", "stale", "WARNING", "⚠", "!"):
+        assert alarm not in dg["note"], f"alarm vocabulary in a calm window statement: {alarm}"
+
+
+def test_same_session_read_discloses_nothing_extra():
+    """No gap, nothing to disclose — the row must not grow a noise clause when the read and
+    the snapshot are the same session (word budgets are hard limits)."""
+    snap = vss.snapshot(_full_latest(), vol_sentiment=_vs_sentiment())
+    dg = next(f for f in snap["factors"] if f["key"] == "dealer_gamma")
+    assert snap["gex_age_days"] == 0
+    assert dg["note"] == "dealers short gamma — they amplify moves"
+    assert "gamma read" not in dg["note"]
+
+
+def test_read_from_a_later_session_than_the_snapshot_is_disclosed(monkeypatch, tmp_path):
+    """The live 2026-07-29 shape: the board had already been rewritten for 07-30, so the
+    fallback fused a LATER session's gamma into an earlier snapshot. A mixed-as-of read is
+    just as undisclosed as an old one — say which way it leans."""
+    _write_board(tmp_path, "SPX", {"gamma_regime": "short", "dist_to_flip_pct": -1.7},
+                 asof="2026-06-19")
+    monkeypatch.setattr(vss, "_site_dir", lambda: tmp_path)
+    latest = _full_latest()
+    latest["market_gamma"] = None
+    snap = vss.snapshot(latest, vol_sentiment=_vs_sentiment())
+    assert snap["gex_age_days"] == -1
+    dg = next(f for f in snap["factors"] if f["key"] == "dealer_gamma")
+    assert "1 day after this update" in dg["note"]
+    assert "比本次更新晚 1 天" in dg["note_zh"]
+
+
+def test_undated_read_says_its_age_is_unknown(monkeypatch, tmp_path):
+    """An absent stamp is disclosed as absent rather than passing for fresh — a board with no
+    `meta` is exactly the silent case this fix exists to close."""
+    _write_board(tmp_path, "SPX", {"gamma_regime": "short", "dist_to_flip_pct": -1.7},
+                 asof=None)
+    monkeypatch.setattr(vss, "_site_dir", lambda: tmp_path)
+    latest = _full_latest()
+    latest["market_gamma"] = None
+    snap = vss.snapshot(latest, vol_sentiment=_vs_sentiment())
+    assert snap["gex_asof"] is None and snap["gex_age_days"] is None
+    dg = next(f for f in snap["factors"] if f["key"] == "dealer_gamma")
+    assert "no date" in dg["note"] and "age is unknown" in dg["note"]
+    assert "没有日期" in dg["note_zh"]
+
+
+def test_live_contract_is_not_shadowed_by_the_board(monkeypatch, tmp_path):
+    """Tier 2 beats tier 3 and tier 3 is never even READ — the provenance fields must not
+    turn the fallback into an unconditional disk hit."""
+    _write_board(tmp_path, "SPX", {"gamma_regime": "long", "dist_to_flip_pct": 2.0},
+                 asof="2026-05-19")
+    monkeypatch.setattr(vss, "_site_dir", lambda: tmp_path)
+    reads: list = []
+    real_read_json = vss._read_json
+    monkeypatch.setattr(vss, "_read_json",
+                        lambda path: (reads.append(path), real_read_json(path))[1])
+    gx = vss._resolve_gex(_full_latest(), None)
+    assert gx["source"] == "contract" and gx["regime"] == "short"
+    assert not reads, f"tier 3 must not be consulted when the contract is live: {reads}"
+
+
+def test_products_disagree_reports_the_board_dates(monkeypatch, tmp_path):
+    """The SPY-vs-SPX contradiction flag promises `spy_asof`/`spx_asof`; those read the same
+    `meta` stamp, so before this fix both were permanently None on the real artifacts."""
+    _write_board(tmp_path, "SPY", {"gamma_regime": "short"}, asof="2026-06-18")
+    _write_board(tmp_path, "SPX", {"gamma_regime": "long"}, asof="2026-06-17")
+    monkeypatch.setattr(vss, "_site_dir", lambda: tmp_path)
+    p = vss._products_disagree()
+    assert p["disagree"] is True
+    assert p["spy_asof"] == "2026-06-18" and p["spx_asof"] == "2026-06-17"
+
+
+def test_provenance_survives_a_malformed_board(monkeypatch, tmp_path):
+    """Degrade-never-raise: a board whose as-of is junk still resolves, and the junk stamp is
+    disclosed verbatim rather than dropped (a present-but-odd date is information)."""
+    _write_board(tmp_path, "SPX", {"gamma_regime": "short", "dist_to_flip_pct": -1.7},
+                 asof="not-a-date")
+    monkeypatch.setattr(vss, "_site_dir", lambda: tmp_path)
+    latest = _full_latest()
+    latest["market_gamma"] = None
+    snap = vss.snapshot(latest, vol_sentiment=_vs_sentiment())
+    assert snap["gex_asof"] == "not-a-date"
+    assert snap["gex_age_days"] is None
+    dg = next(f for f in snap["factors"] if f["key"] == "dealer_gamma")
+    assert "not-a-date" in dg["note"]
 
 
 # --------------------------------------------------------------------------- #

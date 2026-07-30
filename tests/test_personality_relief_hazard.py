@@ -344,7 +344,7 @@ def test_registration_is_fully_hash_bound_and_drift_fails_inert(
     assert not (tmp_path / "personality_timing" / "relief_hazard.jsonl").exists()
 
 
-def test_committed_launch_is_zero_event_and_has_absolute_authority_fences():
+def test_committed_ledger_preserves_launch_and_absolute_authority_fences():
     rows = [
         json.loads(line)
         for line in Path(
@@ -352,20 +352,83 @@ def test_committed_launch_is_zero_event_and_has_absolute_authority_fences():
         ).read_text(encoding="utf-8").splitlines()
         if line and not line.startswith("#")
     ]
-    assert len(rows) == 1 and rows[0]["kind"] == "registration"
-    assert rows[0]["event_rows_at_launch"] == 0
-    assert rows[0]["not_before_session"] == prh.NOT_BEFORE_SESSION
-    assert rows[0]["authority"] == prh.AUTHORITY
+    assert rows
+    registration, *events = rows
+    assert registration == {
+        "kind": "registration",
+        "schema": prh.LEDGER_SCHEMA,
+        "program_id": prh.PROGRAM_ID,
+        "family": prh.FAMILY,
+        "manifest_sha256": prh.EXPECTED_MANIFEST_SHA256,
+        "membership_sha256": prh.EXPECTED_MEMBERSHIP_SHA256,
+        "construction_sha256": prh.EXPECTED_CONSTRUCTION_SHA256,
+        "not_before_session": prh.NOT_BEFORE_SESSION,
+        "event_rows_at_launch": 0,
+        "authority": prh.AUTHORITY,
+    }
+    for event in events:
+        assert event["kind"] == "event"
+        assert event["schema"] == prh.LEDGER_SCHEMA
+        assert event["program_id"] == prh.PROGRAM_ID
+        assert event["family"] == prh.FAMILY
+        assert event["construction_id"] == prh.CONSTRUCTION_ID
+        assert event["construction_sha256"] == prh.EXPECTED_CONSTRUCTION_SHA256
+        assert event["membership_sha256"] == prh.EXPECTED_MEMBERSHIP_SHA256
+        assert event["action_date"] > prh.NOT_BEFORE_SESSION
+        assert event["group"] in {
+            "relief_hazard",
+            "level_control",
+            "weak_level",
+        }
+        assert event["authority"] == prh.AUTHORITY
 
     state = json.loads(
         Path(
             "data/personality_timing/relief_hazard_state.json"
         ).read_text(encoding="utf-8")
     )
-    assert state["ledger"]["events"] == 0
+    group_counts = {
+        group: sum(event["group"] == group for event in events)
+        for group in ("relief_hazard", "level_control", "weak_level")
+    }
+    matured = sum(event.get("grade") is not None for event in events)
+    action_dates = sorted(event["action_date"] for event in events)
+    assert state["schema"] == prh.STATE_SCHEMA
+    assert state["program_id"] == prh.PROGRAM_ID
+    assert state["family"] == prh.FAMILY
+    assert state["registration_ok"] is True
+    assert state["ledger"]["events"] == len(events)
+    assert state["ledger"]["primary_events"] == (
+        group_counts["relief_hazard"] + group_counts["level_control"]
+    )
+    assert state["ledger"]["relief_hazard"] == group_counts["relief_hazard"]
+    assert state["ledger"]["level_control"] == group_counts["level_control"]
+    assert state["ledger"]["weak_level_diagnostic"] == group_counts["weak_level"]
+    assert state["ledger"]["matured"] == matured
+    assert state["ledger"]["ungraded"] == len(events) - matured
+    assert state["ledger"]["earliest_action"] == (
+        action_dates[0] if action_dates else None
+    )
+    assert state["ledger"]["latest_action"] == (
+        action_dates[-1] if action_dates else None
+    )
     assert state["consumers"] == []
     assert state["authority"] == prh.AUTHORITY
-    assert state["decision_read"]["sole_read_executed"] is False
+    decision_read = state["decision_read"]
+    assert isinstance(decision_read["status"], str) and decision_read["status"]
+    assert isinstance(decision_read["sole_read_executed"], bool)
+    assert isinstance(decision_read["count_and_clock_minimums_met"], bool)
+    assert decision_read["observed"]["matured_primary_rows"] == sum(
+        event.get("grade") is not None
+        and event["group"] in {"relief_hazard", "level_control"}
+        for event in events
+    )
+    if decision_read["status"] == "locked_minimums":
+        assert decision_read["sole_read_executed"] is False
+    if decision_read["sole_read_executed"]:
+        assert decision_read["count_and_clock_minimums_met"] is True
+    else:
+        assert decision_read["observed"]["informative_exact_strata"] is None
 
     registry = Path("config/synapse.yml").read_text(encoding="utf-8")
     assert "personality-relief-hazard-state:" in registry

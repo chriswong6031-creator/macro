@@ -397,3 +397,90 @@ def test_coverage_label_format():
         mag7_row = next(r for r in rows if r["key"] == "mag7")
         label = mag7_row["coverage_label"]
         assert "2 of 7" in label, f"Expected '2 of 7' in label, got: {label!r}"
+
+
+# ── Test 11: HOUSE-U5 accrual lane gate ──────────────────────────────────────
+
+class TestCohortAccrualLaneGate:
+    """HOUSE-U5: build_cohorts() UPSERTS committed data/options_flow/cohorts_<key>.parquet,
+    so the accrual must run ONLY in the nightly collector lane. Express/intraday lanes
+    bake site/ from the committed vintage and must leave data/ untouched.
+
+    The returned rows and cohorts.json stay unconditional — only the parquet
+    accrual is gated.
+    """
+
+    def _run(self, tmp: Path, env: dict[str, str] | None) -> Path:
+        """Build cohorts against a tmp data root; return that root.
+
+        lib.config.data_dir is patched (the idiom the other tests in this file
+        use) so lib.store._path resolves every parquet under tmp — nothing can
+        reach the repo's committed stores.
+        env=None → COLLECT_LANE/US_LANE removed entirely (express/dev run).
+        """
+        import unittest.mock as mock
+        import os
+        import lib.config as cfg_mod
+
+        tmp_data = tmp / "data"
+        tmp_site = tmp / "site" / "flowdata"
+        asof = date(2026, 7, 6)
+        _make_membership(tmp_data, "mag7", ["AAPL"])
+        _make_summary(tmp_data, "AAPL", [
+            {"date": str(asof), "premium_mn": 500.0, "net_premium_mn": 100.0,
+             "pc_ratio": 0.55, "volume": 3000.0, "zerodte_share": 0.50, "net_doi": None}
+        ])
+
+        def patched_data_dir():
+            return tmp_data
+
+        saved: dict[str, str] = {}
+        try:
+            for k in ("COLLECT_LANE", "US_LANE"):
+                if k in os.environ:
+                    saved[k] = os.environ.pop(k)
+            if env:
+                os.environ.update(env)
+            with mock.patch.object(cfg_mod, "data_dir", patched_data_dir):
+                rows = build_cohorts(tmp_data, asof=asof, site_flowdata_dir=tmp_site)
+        finally:
+            if env:
+                for k in env:
+                    os.environ.pop(k, None)
+            os.environ.update(saved)
+
+        # site/ output is ungated in every lane — the gate must not cost the display.
+        assert (tmp_site / "cohorts.json").exists(), "cohorts.json must be written in any lane"
+        assert len(rows) == len(COHORTS)
+        return tmp_data
+
+    @staticmethod
+    def _accrued(tmp_data: Path) -> list[str]:
+        d = tmp_data / "options_flow"
+        return sorted(p.name for p in d.glob("cohorts_*.parquet")) if d.exists() else []
+
+    def test_no_accrual_without_lane(self, tmp_path):
+        """COLLECT_LANE unset → no cohorts_<key>.parquet is written."""
+        tmp_data = self._run(tmp_path, None)
+        # File-absence IS the load-bearing signal here (unlike the flow_desk proxy
+        # gate): build_cohorts always attempts the upsert when ungated, even with a
+        # single-member cohort and no history, so an ungated run leaves all four
+        # parquets behind. Verified by the mutation check — this assertion fires on
+        # the pre-gate code.
+        assert self._accrued(tmp_data) == [], (
+            f"no cohort parquet may be written off-nightly, got {self._accrued(tmp_data)}"
+        )
+
+    def test_accrual_runs_on_nightly_lane(self, tmp_path):
+        """COLLECT_LANE=nightly → all four cohort stores accrue (pins against inverted logic)."""
+        tmp_data = self._run(tmp_path, {"COLLECT_LANE": "nightly"})
+        got = self._accrued(tmp_data)
+        assert got == sorted(f"cohorts_{c['key']}.parquet" for c in COHORTS), got
+        # the accrued row must carry the asof we asked for
+        df = pd.read_parquet(tmp_data / "options_flow" / "cohorts_mag7.parquet")
+        assert pd.Timestamp(2026, 7, 6) in pd.to_datetime(df.index)
+
+    def test_accrual_runs_on_legacy_us_lane_alias(self, tmp_path):
+        """US_LANE=nightly is the legacy alias engine.ledger_lane still honours."""
+        tmp_data = self._run(tmp_path, {"US_LANE": "nightly"})
+        assert "cohorts_mag7.parquet" in self._accrued(tmp_data)

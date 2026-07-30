@@ -22,7 +22,10 @@ def test_yahoo_batch_stays_under_the_spark_cliff():
 def test_core_index_and_futures_symbols_always_in_universe(tmp_path):
     uni = blq.build_universe(tmp_path)                 # empty site dir -> CORE only
     for sym in ("^GSPC", "^IXIC", "^DJI", "^VIX", "ES=F", "NQ=F", "^HSI",
-                "000001.SS", "^N225", "GC=F", "EURUSD=X"):
+                "000001.SS", "^N225", "GC=F", "EURUSD=X",
+                # All four Yahoo yield-index tenors: the curve read needs a front
+                # AND a long leg to name a steepener vs a flattener.
+                "^IRX", "^FVX", "^TNX", "^TYX"):
         assert sym in uni, sym
 
 
@@ -152,7 +155,7 @@ def test_cap_high_enough_for_full_scraped_universe(tmp_path):
     html_lines = " ".join(f'<span data-sym="{s}">' for s in syms)
     (tmp_path / "big.html").write_text(html_lines)
     uni = blq.build_universe(tmp_path)                # uses default cap=2200
-    # CORE (39) + 1960 scraped = 1999 unique; all must survive under cap=2200
+    # CORE (44) + 1960 scraped = 2004 unique; all must survive under cap=2200
     assert len(uni) >= 1999, (
         f"universe len {len(uni)} — default cap truncated symbols that should survive"
     )
@@ -189,3 +192,68 @@ def test_universe_includes_basket_members(tmp_path, monkeypatch):
     assert "GONE" not in uni, "removed members must not be fetched"
     # members outrank the scrape: they sit immediately after CORE
     assert uni.index("FAKEUS1") >= len(blq.CORE_SYMBOLS) - 1
+
+
+# ── Brain market-packet curve feed (Mastermind W1, 2026-07-29) ───────────────
+# The brain's Live Market State Packet reads its CURVE tenors and ^VIX tape row
+# from THIS display snapshot (the VPS macro-live-fast lane runs --display).
+# W1 diagnosis findings the tests below pin:
+#   * The tenors were never "failing to resolve" — ^TNX only entered the display
+#     universe on 2026-07-29 (#3963) and repo-committed snapshots had gone stale
+#     two days earlier when production moved to the VPS timers (a code-vs-
+#     artifact vintage skew, not a code bug). Probed from the VPS: Yahoo spark
+#     resolves all five (^IRX ^FVX ^TNX ^TYX ^VIX) 5/5.
+#   * Yield-index UNITS ARE FEED-DEPENDENT: this spark path delivers percent
+#     directly; the /ws/tape relay streams the CBOE ×10 convention (see
+#     templates/live.js tnxPct() and tests/test_tape_decode.py).
+
+
+def test_display_universe_carries_the_packet_curve_inputs():
+    """All four curve tenors + ^VIX must be in the same-origin display snapshot:
+    the packet reads site/live/quotes.json only — a tenor missing here silently
+    removes the CURVE line (and its FLAGS) from every brain grounding turn."""
+    for sym in ("^IRX", "^FVX", "^TNX", "^TYX", "^VIX"):
+        assert sym in blq.DISPLAY_SYMBOLS, sym
+
+
+def test_display_universe_survives_validation_undropped(tmp_path):
+    """meta.requested == the defined display list, exactly — a static guard that
+    no DISPLAY entry is silently eaten by the charset regex or by de-duping
+    before the fetch (^VIX is hard-listed while ^TNX arrives via *TAPE_SYMBOLS;
+    a symbol later added to BOTH would vanish as a dupe with no error anywhere).
+    NOTE this cannot catch the vintage skew that actually produced the W1
+    "27 requested vs 30 defined" artifact — a stale deployed producer running
+    an older list — it pins the current literal only."""
+    dupes = {s for s in blq.DISPLAY_SYMBOLS if blq.DISPLAY_SYMBOLS.count(s) > 1}
+    assert not dupes, f"duplicate DISPLAY_SYMBOLS entries: {sorted(dupes)}"
+    snap = blq.build(tmp_path, offline=True, symbols=list(blq.DISPLAY_SYMBOLS))
+    assert snap["meta"]["requested"] == len(blq.DISPLAY_SYMBOLS)
+
+
+def test_yahoo_spark_yield_indexes_are_percent_direct_scale():
+    """Documents the OBSERVED scale of this feed and guards the parser side of
+    it: Yahoo spark delivered yield indexes as the yield percent directly
+    (^TNX 4.622 = 4.622%, not the CBOE ×10 convention 46.22) — probed live from
+    the VPS 2026-07-29: ^IRX 3.658 / ^FVX 4.352 / ^TNX 4.622 / ^TYX 5.143,
+    matching that day's actual ~3.66%/4.35%/4.62%/5.14% tenors. parse_yahoo_spark
+    must pass the number through unscaled — anyone "normalizing" ×10/÷10 inside
+    the parser breaks every consumer at once. A fixture cannot detect Yahoo
+    itself flipping conventions upstream; the runtime tripwires for that are
+    scale detection at the consumer (templates/live.js tnxPct(), >15 → ÷10) and
+    the packet's 0–20% level sanity band, which drops a ×10-scale print with a
+    visible gap note. bp math is over price/prevClose LEVELS — the snapshot's
+    `changePct` field is the relative day change, never basis points."""
+    payload = {"spark": {"result": [{
+        "symbol": "^TNX",
+        "response": [{"meta": {"regularMarketPrice": 4.622,
+                               "previousClose": 4.604,
+                               "regularMarketTime": 1785351595,
+                               "currency": "USD"}}],
+    }]}}
+    out = lq.parse_yahoo_spark(payload)
+    assert out["^TNX"]["price"] == 4.622           # pass-through — no rescale
+    assert out["^TNX"]["prev_close"] == 4.604
+    # the real bp move is (4.622 - 4.604) × 100 = 1.8bp: percent→bp is ×100 on
+    # the level difference (a ÷10 mis-scale would render the ten-year as 0.46%
+    # and understate the move 10×; live.js:105 has the reference formula)
+    assert round((out["^TNX"]["price"] - out["^TNX"]["prev_close"]) * 100, 1) == 1.8

@@ -4,12 +4,15 @@ DOCTRINE (measurement.html): every number the platform shows must trace to a sto
 leak-free, pre-registered artifact — or it does not ship with the word 'validated'.
 This gate makes that mechanically true. It scans the user-facing surfaces
 (templates/, site/*.js, generated *_data.js, and the engine/ display-copy fields that
-FEED them) in BOTH English and Chinese ('validated', '已验证') and fails if an
-AFFIRMATIVE 'validated' claim maps to NO backing:
+FEED them) in BOTH English and Chinese ('validated', '已验证', '经验证', '经过验证' —
+'已经验证' is covered through its '经验证' substring) and fails if an AFFIRMATIVE
+'validated' claim maps to NO backing:
 
   A claim is BACKED iff either
     (a) it matches a justified entry in data/regime/validated_claims_allowlist.json
-        (each entry names the evidence artifact / study it rests on), or
+        (each entry names the evidence artifact / study it rests on) AND the claiming
+        file's surface is named in that entry's `surfaces` list (_surfaces_of maps
+        file -> surface; a phrase justified for one page never licenses another), or
     (b) the line references an artifact JSON whose top-level `validated == true`.
 
 NEGATED / HEDGED uses are NOT claims and are ignored automatically:
@@ -73,23 +76,14 @@ PY_COPY_GLOBS = [
     ("engine", ("*.py",)),
 ]
 
-TOKEN = re.compile(r"validated|已验证", re.IGNORECASE)
-# KNOWN GAP — 经验证. The zh token list is '已验证' only, so the equally common '经验证'
-# ("having been validated") is invisible: #3790's zh copy said 经验证的港股利率／汇率压力
-# and sailed through while its EN twin reddened main. Live affirmative uses sit on
-# templates/spvector.html.j2, sector_central.html.j2, discovery.html.j2 and others.
-#
-# NOT widened here, deliberately — it is a separate adjudication, not a token edit.
-# MEASURED on this tree (2026-07-27) by adding 经验证 to this pattern and re-scanning:
-#   23 newly-red lines — 21 genuinely affirmative claims (each needs an allowlist entry
-#   citing an artifact, or de-escalated copy), and 2 FALSE POSITIVES that are honest
-#   disclaimers the negation guard cannot see: '香港没有经验证的选股阿尔法' ("HK has no
-#   validated selection alpha", templates/hk_lookup.html.j2 + its render).
-# _NEG_ZH is [无非未不] — it covers 未经验证 (which is why 641 hedged uses stay ignored)
-# but NOT 没有, 尚未, 缺乏. Widening TOKEN without widening _NEG_ZH would therefore turn
-# two of the estate's most honest sentences into gate failures, and the cheapest way out
-# of that red is to delete the disclaimer — the exact inversion this gate exists to
-# prevent. Sequence: widen _NEG_ZH first, then TOKEN, then adjudicate the 21.
+TOKEN = re.compile(r"validated|已验证|经验证|经过验证", re.IGNORECASE)
+# 经验证 / 经过验证 were a KNOWN GAP until 2026-07-29 (found live: the dislocation
+# panel's zh copy 以经验证的一道闸为准 was not gated at all while its EN twin was).
+# 已经验证 needs no alternation of its own — TOKEN's 经验证 matches inside it.
+# _NEG_ZH was widened FIRST (没有/尚未/缺乏 alongside [无非未不]) so honest disclaimers
+# like '香港没有经验证的选股阿尔法' ("HK has no validated selection alpha") stay ignored —
+# widening the token without the negators would make deleting the disclaimer the cheapest
+# way out of the red, the exact inversion this gate exists to prevent.
 
 # STRUCTURAL non-claims — the token here is a code identifier, a data-field key/value, or an
 # i18n token, NOT a displayed prose claim. BC-2 targets DISPLAYED CLAIMS, so these are skipped
@@ -104,8 +98,8 @@ _STRUCTURAL = [
     re.compile(r'"invalidated_membership"'),
     re.compile(r'validated_risk_control'),                    # engine gate-status enum value
     re.compile(r'"(?:absolute_trend_gate|weighting|timing|note)"\s*:.*validated'),
-    # CSS class / DOM identifier tokens (e.g. .tr-validated, nbb-validated, val-chip validated)
-    re.compile(r'[.\-]validated\b'),
+    # (CSS class / DOM identifier TOKENS are handled by _IDENT_MASK below, not here: they
+    # are masked in place rather than killing their whole line.)
     re.compile(r'class="[^"]*\bvalidated\b[^"]*"'),
     re.compile(r"_vs\s*==\s*'validated'"),                    # template state-var comparison
     re.compile(r"verdict\s*===?\s*'validated'"),
@@ -126,6 +120,45 @@ _STRUCTURAL = [
     re.compile(r"validated\s*:\s*\[\s*['\"]Validated"),
     re.compile(r"'(?:go|event-edge|validated|context)'\s*:\s*\[\s*'Validated edge'"),
 ]
+
+# ── SELECTOR / IDENTIFIER TOKENS — masked in place, NOT whole-line skipped ───────────
+#
+# `.tr-validated`, `.val-chip.validated`, `{%- if x.validated %}` are code: a CSS class
+# selector, a chained class, a dotted attribute access. They are not prose and must not
+# be forced to cite a study.
+#
+# WHY THIS IS NOT A _STRUCTURAL ENTRY (the 2026-07-29 gap, closed here). It used to be
+# one, written `[.\-]validated\b` — "a dot OR A HYPHEN before the token". A hyphen before
+# the token is also how ENGLISH writes an adjective, so every claim phrased
+# "backtest-validated", "Holdout-validated", "FDR-validated", "drawdown-validated" matched
+# it, and because a _STRUCTURAL hit kills the WHOLE LINE those claims were invisible to
+# BC-2 — no allowlist entry, no CI failure, no trace. Measured on the tree at that commit:
+# 21 lines reached the gate only through that rule; 7 were genuine selectors/attribute
+# access and 14 carried prose claims (the sector-cycles hazard tooltip on three surfaces,
+# the anticipation stop-width tip, the BTC impulse alert's EN+zh conviction line on both
+# its engine source and its render, the signal-lab capitulation row on three lines, a
+# marketing north-star note, and three code comments). All 14 are adjudicated in the same
+# change that narrowed this rule — 11 earned allowlist entries naming their study, 3 were
+# reworded because no study backed them.
+#
+# THE NARROWING: the token must belong to a DOT-PREFIXED identifier. A hyphen alone earns
+# nothing, which is exactly the selector/prose distinction the old rule could not draw.
+# The lookahead requires the character after the dot to start an identifier, so '. validated'
+# (a sentence boundary) and '.4validated' are not identifiers and stay gated.
+#
+# AND IT MASKS RATHER THAN SKIPS: only the identifier itself is excised (replaced with the
+# _TP_CUT sentinel, same joiner and same reasoning as _mask_third_party — it sits outside
+# every character class in _NEG_EN / _NEG_ZH / TOKEN, so an excision can neither forge a
+# token nor let a negation lookback reach across the cut). The rest of the line is scanned
+# normally, so a line that carries BOTH a selector and copy — e.g. dashboard.html.j2's
+# `{%- if x.validated %}<span data-tip-en="...">` — no longer hides the copy behind the
+# selector. Whole-line suppression was half the reason the old rule was invisible.
+#
+# Code COMMENTS get no exemption, deliberately: the estate already gates and allowlists
+# them (see the 'validated drawdown-control channel' entry, whose backing names a
+# baskets_desk COMMENT), and a comment that asserts something is either accurate — in
+# which case it is cheap to word it accurately — or it is a claim like any other.
+_IDENT_MASK = re.compile(r"\.(?=[A-Za-z_])[\w-]*validated[\w-]*")
 
 # ── QUOTED THIRD-PARTY RESEARCH — structural non-claims, same family as _STRUCTURAL ──
 #
@@ -272,7 +305,9 @@ _NEG_EN = re.compile(
     re.IGNORECASE)
 # 'un'/'in'/'re' glued directly to the token, e.g. 'unvalidated', 'invalidated', 're-validated'
 _GLUED_UN = re.compile(r"un-?$|re-?$|in$", re.IGNORECASE)
-_NEG_ZH = re.compile(r"[无非未不][一-鿿\s]{0,12}$")
+# Multi-char negators (没有/尚未/缺乏) precede the single-char class: they are honest-
+# disclaimer heads the single chars cannot see (没 alone is not a negator character).
+_NEG_ZH = re.compile(r"(?:没有|尚未|缺乏|[无非未不])[一-鿿\s]{0,12}$")
 
 
 def _load_allowlist() -> list[dict]:
@@ -280,6 +315,88 @@ def _load_allowlist() -> list[dict]:
         return []
     d = json.loads(ALLOWLIST.read_text(encoding="utf-8"))
     return d.get("allow", [])
+
+
+# ── FILE → SURFACE (the `surfaces` half of an allowlist entry) ───────────────────────
+#
+# Every allowlist entry carries a `surfaces` list naming the page families its
+# justification was written for. Until 2026-07-29 the matcher never read it, so matching
+# was phrase-scoped only and a claim on ANY page passed if its phrase matched an entry
+# justified for a DIFFERENT page/study (found live: the dashboard dislocation panel's
+# "validated gate" rode the sector_central trend-gate entry). _surfaces_of closes that:
+# an entry backs a claim only when the claiming file's surface set intersects the
+# entry's `surfaces`. An entry with a missing/empty `surfaces` list backs NOTHING —
+# fail closed, so a new entry must always declare where it applies.
+#
+# Derivation: basename minus the render/source suffix, minus a partial-template's
+# leading '_' (templates/_market_state_board.html.j2 IS the market_state_board surface).
+# Two structural facts of the estate make the rest:
+#   - site subdirectories are per-item render families (site/sectors/XLB.html is the
+#     sector surface; site/basket*/<name>.html are all the basket_detail surface);
+#   - _SURFACE_EXTRA records ONE-TEMPLATE-MANY-PAGES render IDENTITY — one source file
+#     written out under several names. Every row below is verified against the builder
+#     that writes it, named in its comment;
+#   - a report_* page also answers to 'report', the name the allowlist already uses for
+#     that family (report prose entries are written per-episode, and every report quotes
+#     the same PIT factor studies).
+# _SURFACE_EXTRA is for identity ONLY, never for "this claim is also welcome over
+# there": a shared PARTIAL is deliberately absent (its claims land on the pages that
+# include it, and those pages belong in the entry's `surfaces`), and so is every
+# engine-module → page rename. Widening scope is the allowlist's job, where the
+# extension sits next to the backing that justifies it and a reviewer can see both.
+
+_SURFACE_SUFFIXES = (".html.j2", ".css.j2", ".html", ".j2", ".js", ".py", ".json", ".css")
+
+_SURFACE_DIRS = {  # site/<dir>/... → the surface family the allowlist names
+    "basket": "basket_detail",
+    "basket_canada": "basket_detail",
+    "basket_china": "basket_detail",
+    "basket_hk": "basket_detail",
+    "basket_intl": "basket_detail",
+    "sectors": "sector",
+}
+
+_SURFACE_EXTRA = {  # derived name → the other names the SAME file is written out as
+    # dashboard.html.j2 renders TWICE through a `mode` flag (scripts/build_site.py:4603
+    # "the same dashboard.html.j2 is rendered twice", :5315 macro.html, :5639 us_stocks.html)
+    "dashboard": ("macro", "us_stocks"),
+    "macro": ("dashboard",),
+    "us_stocks": ("dashboard",),
+    # allocation.html.j2 → all four regional pages (scripts/build_allocation.py PAGES, :217)
+    "allocation_canada": ("allocation",),
+    "allocation_china": ("allocation",),
+    "allocation_hk": ("allocation",),
+    # china.html.j2 renders macro + stocks modes (scripts/render_china_fast.py:45-47,
+    # scripts/build_china.py:1315/1348)
+    "china_stocks": ("china",),
+    "china": ("china_stocks",),
+    # china_narrative_radar.html.j2 → site/narrative_radar.html (build_narrative_radar.py:69/75)
+    "china_narrative_radar": ("narrative_radar",),
+    "narrative_radar": ("china_narrative_radar",),
+    # mastermind_detail.html.j2 → the three per-profile pages (build_masterminds.py:212)
+    "strategy_mm_aggressive": ("mastermind_detail",),
+    "strategy_mm_moderate": ("mastermind_detail",),
+    "strategy_mm_conservative": ("mastermind_detail",),
+}
+
+
+def _surfaces_of(rel_path: str) -> frozenset[str]:
+    """The surface names repo-relative `rel_path` may claim under (see block comment)."""
+    parts = rel_path.split("/")
+    if parts[0] == "site" and len(parts) > 2:
+        d = parts[1]
+        return frozenset({d, _SURFACE_DIRS.get(d, d)})
+    name = parts[-1]
+    for suf in _SURFACE_SUFFIXES:
+        if name.endswith(suf):
+            name = name[: -len(suf)]
+            break
+    name = name.lstrip("_")
+    out = {name}
+    out.update(_SURFACE_EXTRA.get(name, ()))
+    if name.startswith("report_"):
+        out.add("report")                     # report pages share the 'report' family
+    return frozenset(out)
 
 
 def _is_negated(line: str, start: int) -> bool:
@@ -311,32 +428,55 @@ def _artifact_backed(line: str) -> bool:
     return False
 
 
-def _allow_match(line: str, allow: list[dict]) -> dict | None:
+def _allow_match(line: str, allow: list[dict], surfs: frozenset[str]) -> dict | None:
+    """First entry whose phrase appears in `line` AND whose `surfaces` list intersects
+    the claiming file's surface set. Phrase alone is not enough: an entry justified for
+    a different page never licenses this one. Empty/missing `surfaces` backs nothing."""
     low = line.lower()
     for entry in allow:
         m = entry.get("match", "")
-        if m and m.lower() in low:
+        if m and m.lower() in low and surfs.intersection(entry.get("surfaces") or ()):
             return entry
     return None
 
 
-def _scan_line(line: str, allow: list[dict]) -> tuple[int, list[tuple[bool, dict | None]]]:
-    """Evaluate one raw line. Returns (n_negated, hits) — one (backed, allow_entry) per
-    affirmative token occurrence. Token/negation/allowlist matching runs on the
-    html.unescape()d text: rendered site HTML is autoescaped, so an allowlist entry
-    containing '&' can never match its '&amp;' rendered form, and an entity-bearing
-    negation prefix ("isn&#39;t a validated") reads as an affirmative claim. Callers
-    keep the raw line for reporting."""
+def _phrase_only_matches(line: str, allow: list[dict]) -> list[str]:
+    """Entries matching by phrase regardless of surface — for wrong-surface reporting."""
+    low = line.lower()
+    return [e["match"] for e in allow if e.get("match") and e["match"].lower() in low]
+
+
+def _surface_hint(line: str, allow: list[dict], surfs: frozenset[str]) -> str:
+    """'' or a diagnostic suffix when a finding is a surface miss, not a phrase miss."""
+    near = _phrase_only_matches(html.unescape(line), allow)
+    if not near:
+        return ""
+    return (f"  [phrase matches entry {near[0]!r} but file surface "
+            f"{sorted(surfs)} is not in its `surfaces` — extend that entry only if the "
+            f"SAME backing covers this page, else add a properly-backed entry]")
+
+
+def _scan_line(line: str, allow: list[dict],
+               surfs: frozenset[str]) -> tuple[int, list[tuple[bool, dict | None]]]:
+    """Evaluate one raw line as a claim by the surface(s) in `surfs`. Returns
+    (n_negated, hits) — one (backed, allow_entry) per affirmative token occurrence.
+    Token/negation/allowlist matching runs on the html.unescape()d text: rendered site
+    HTML is autoescaped, so an allowlist entry containing '&' can never match its
+    '&amp;' rendered form, and an entity-bearing negation prefix ("isn&#39;t a
+    validated") reads as an affirmative claim. Callers keep the raw line for
+    reporting."""
     if any(sp.search(line) for sp in _STRUCTURAL):
         return 0, []                                    # structural non-claim line
-    norm = html.unescape(line)
+    # Selector / dotted-identifier tokens are excised, not whole-line skipped, so copy
+    # sharing a line with one is still gated (see the _IDENT_MASK block comment).
+    norm = _IDENT_MASK.sub(_TP_CUT, html.unescape(line))
     n_negated = 0
     hits: list[tuple[bool, dict | None]] = []
     for m in TOKEN.finditer(norm):
         if _is_negated(norm, m.start()):
             n_negated += 1
             continue
-        entry = _allow_match(norm, allow)
+        entry = _allow_match(norm, allow, surfs)
         backed = entry is not None or _artifact_backed(norm)
         hits.append((backed, entry))
     return n_negated, hits
@@ -385,6 +525,11 @@ def _scan_line(line: str, allow: list[dict]) -> tuple[int, list[tuple[bool, dict
 _COPY_BARE = frozenset({
     "label", "caveat", "blurb", "headline", "summary", "detail", "read",
     "note", "disclaimer", "tooltip", "takeaway", "subtitle",
+    # `edge` is the alert-card conviction line (engine/btc_alerts._conviction) — shipped
+    # copy whose zh half `edge_zh` was already scanned through the _zh suffix, so leaving
+    # the EN half out gated one language of the same sentence. Adds exactly one finding on
+    # this tree (btc_alerts override_release), resolved in this change.
+    "edge",
 })
 _COPY_SUFFIX = re.compile(r"_(?:en|zh)$")
 
@@ -461,11 +606,12 @@ def scan_python_copy(rel_path: str, text: str, allow: list[dict]) -> tuple[list[
                   "text": f"UNPARSEABLE ({e.msg}) — cannot prove it carries no unearned claim"}],
                 stats)
 
+    surfs = _surfaces_of(rel_path)
     unearned: list[dict] = []
     for field, node in _copy_strings(tree):
         if not TOKEN.search(node.value):
             continue
-        n_neg, hits = _scan_line(node.value, allow)
+        n_neg, hits = _scan_line(node.value, allow, surfs)
         stats["negated"] += n_neg
         for backed, entry in hits:
             stats["claims"] += 1
@@ -475,7 +621,8 @@ def scan_python_copy(rel_path: str, text: str, allow: list[dict]) -> tuple[list[
                                     else "artifact validated:true"))
             else:
                 unearned.append({"file": rel_path, "line_no": node.lineno,
-                                 "text": f"[{field}] " + node.value.strip()[:160]})
+                                 "text": f"[{field}] " + node.value.strip()[:160]
+                                 + _surface_hint(node.value, allow, surfs)})
     return unearned, stats
 
 
@@ -491,13 +638,14 @@ def scan_text(rel_path: str, text: str, allow: list[dict]) -> tuple[list[dict], 
     lines = text.splitlines()
     specs = _third_party_specs(rel_path, text)
     visible = _mask_third_party(lines, specs) if specs else lines
+    surfs = _surfaces_of(rel_path)
     unearned: list[dict] = []
     stats = {"claims": 0, "backed": 0, "negated": 0, "third_party": 0, "ok": []}
     for i, (raw, vis) in enumerate(zip(lines, visible), 1):
         if specs and raw != vis:
             stats["third_party"] += (len(TOKEN.findall(html.unescape(raw)))
                                      - len(TOKEN.findall(html.unescape(vis))))
-        n_neg, hits = _scan_line(vis, allow)
+        n_neg, hits = _scan_line(vis, allow, surfs)
         stats["negated"] += n_neg
         for backed, entry in hits:
             stats["claims"] += 1
@@ -506,7 +654,9 @@ def scan_text(rel_path: str, text: str, allow: list[dict]) -> tuple[list[dict], 
                 stats["ok"].append((i, ("allow:" + entry["match"]) if entry
                                     else "artifact validated:true"))
             else:
-                unearned.append({"file": rel_path, "line_no": i, "text": raw.strip()[:160]})
+                unearned.append({"file": rel_path, "line_no": i,
+                                 "text": raw.strip()[:160]
+                                 + _surface_hint(vis, allow, surfs)})
     return unearned, stats
 
 
@@ -604,40 +754,86 @@ def _page(**over) -> str:
 
 
 def selftest() -> int:
-    """Prove the gate FIRES on a synthetic unearned 'validated' in EN and in zh, does NOT
-    fire on negated uses, and matches through HTML autoescaping ('&' vs '&amp;').
-    Synthetic lines only — never touches the tree."""
+    """Prove the gate FIRES on a synthetic unearned 'validated' in EN and in zh (all
+    token variants), does NOT fire on negated uses, matches through HTML autoescaping
+    ('&' vs '&amp;'), enforces the allowlist's `surfaces` scoping, and tells a CSS
+    selector / dotted identifier apart from hyphenated PROSE. Synthetic lines only —
+    never touches the tree."""
     allow = _load_allowlist()
-    # Synthetic allowlist for the autoescape cases: an '&'-bearing match string must cover
-    # its '&amp;' rendered form. Deliberately NOT in the real allowlist — it exercises
-    # _scan_line's html.unescape normalization, nothing on the tree cites it.
-    amp_allow = [{"match": "validated & wired for selftest"}]
+    # Synthetic allowlist for the autoescape + surface cases: an '&'-bearing match string
+    # must cover its '&amp;' rendered form, and its `surfaces` scope must bind. Deliberately
+    # NOT in the real allowlist — nothing on the tree cites it.
+    amp_allow = [{"match": "validated & wired for selftest", "surfaces": ["selftest"]}]
+    S = frozenset({"selftest"})
     cases = [
-        ("EN affirmative unearned", "This signal is validated as a real cross-sectional alpha.", True, allow),
-        ("zh affirmative unearned", "该信号是已验证的方向性优势。", True, allow),
-        ("EN negated (disclaimer)", "The rank has no validated forward edge here.", False, allow),
-        ("zh negated (disclaimer)", "此处无已验证方向信号。", False, allow),
-        ("EN allowlisted", "gated by the validated MACD-2D × StochRSI-3D confluence.", False, allow),
+        ("EN affirmative unearned", "This signal is validated as a real cross-sectional alpha.", True, allow, S),
+        ("zh affirmative unearned", "该信号是已验证的方向性优势。", True, allow, S),
+        ("zh 经验证 affirmative unearned", "该策略具备经验证的方向性优势。", True, allow, S),
+        ("zh 已经验证 (matched via 经验证) unearned", "该信号已经验证具备优势。", True, allow, S),
+        ("zh 经过验证 affirmative unearned", "该引擎经过验证。", True, allow, S),
+        ("EN negated (disclaimer)", "The rank has no validated forward edge here.", False, allow, S),
+        ("zh negated (disclaimer)", "此处无已验证方向信号。", False, allow, S),
+        ("zh 未经验证 negated", "该构造未经验证，仅供参考。", False, allow, S),
+        ("zh 没有经验证 negated (hk_lookup disclaimer shape)",
+         "香港没有经验证的选股阿尔法。", False, allow, S),
+        ("zh 尚未…验证 negated", "该效应尚未被经验证的框架覆盖。", False, allow, S),
+        ("zh 缺乏经验证 negated", "该主题缺乏经验证的前瞻优势。", False, allow, S),
+        ("EN allowlisted on a listed surface",
+         "gated by the validated MACD-2D × StochRSI-3D confluence.", False, allow,
+         frozenset({"discovery"})),
+        ("SAME phrase on an UNLISTED surface fires",
+         "gated by the validated MACD-2D × StochRSI-3D confluence.", True, allow, S),
         ("allowlisted '&' entry matches rendered '&amp;'",
-         "<h2>Scored — validated &amp; wired for selftest</h2>", False, amp_allow),
+         "<h2>Scored — validated &amp; wired for selftest</h2>", False, amp_allow, S),
         ("unearned claim behind '&amp;' still fires",
-         "This edge is validated &amp; deployed everywhere.", True, amp_allow),
+         "This edge is validated &amp; deployed everywhere.", True, amp_allow, S),
+        ("entry with NO surfaces backs nothing (fail closed)",
+         "<h2>Scored — validated &amp; wired for selftest</h2>", True,
+         [{"match": "validated & wired for selftest"}], S),
         ("negation behind entity apostrophe ignored",
-         "This isn&#39;t a validated edge.", False, allow),
+         "This isn&#39;t a validated edge.", False, allow, S),
         ("EN negated perfect-tense contraction",
-         "the PRIOR hasn't been validated, so trade the tape, not the narrative.", False, allow),
+         "the PRIOR hasn't been validated, so trade the tape, not the narrative.", False, allow, S),
         ("perfect-tense contraction behind entity apostrophe",
-         "the PRIOR hasn&#39;t been validated, so trade the tape.", False, allow),
+         "the PRIOR hasn&#39;t been validated, so trade the tape.", False, allow, S),
         ("EN negated 'cannot be validated'",
-         "This construction cannot be validated on the available window.", False, allow),
+         "This construction cannot be validated on the available window.", False, allow, S),
         ("jinja ternary literal (factors val payload source) is code, not prose",
-         "    val: {{ ('validated' if (r.survives_fdr and r.mean_ic is not none and r.mean_ic > 0)", False, allow),
+         "    val: {{ ('validated' if (r.survives_fdr and r.mean_ic is not none and r.mean_ic > 0)", False, allow, S),
         ("rendered factors val payload is a data value, not a claim",
-         '    val: "validated",', False, allow),
+         '    val: "validated",', False, allow, S),
+        # ── selector / identifier vs hyphenated PROSE (the _IDENT_MASK narrowing) ────
+        ("CSS class selector is not a claim",
+         "  .nbb-validated { color: var(--up); }", False, allow, S),
+        ("chained class selector is not a claim",
+         "  .val-chip.validated   { color:var(--ok); }", False, allow, S),
+        ("descendant + chained selector is not a claim",
+         "  .ai-chip .ai-tag.validated{color:var(--green)}", False, allow, S),
+        ("dotted attribute access is not a claim",
+         "{%- if x.validated %}", False, allow, S),
+        ("selectors NAMED in a comment are still selectors",
+         "  /* evidence-tag micro-style — .et-validated / .et-accruing / .et-context. */",
+         False, allow, S),
+        # …and the shapes the old '[.\-]validated' rule swallowed whole-line:
+        ("HYPHENATED PROSE fires — a hyphen is not a selector",
+         "Epoch: 2026-Q3 · backtest-validated OOS; live cohort accruing", True, allow, S),
+        ("…the same adjective opening a sentence fires",
+         "Holdout-validated, leak-free; act early — the edge decays in ~2-4 days.", True, allow, S),
+        ("…an acronym-hyphen form fires",
+         "is a real FDR-validated bounce ALERT (63d P-up 75% vs 72% base)", True, allow, S),
+        ("…and a code comment earns no exemption",
+         "  /* COILED wave-2-validated cohort-washout ranking bonus chip */", True, allow, S),
+        ("a selector no longer suppresses copy sharing its line",
+         '{%- if x.validated %}<span data-tip-en="This edge is validated on every desk.">',
+         True, allow, S),
+        ("a sentence boundary is not an identifier",
+         "The gate passed. Validated on the 2024+ holdout.", True, allow, S),
+        ("excising an identifier cannot break the negation beside it",
+         "there is no .nbb-validated edge and no validated edge", False, allow, S),
     ]
     ok = True
-    for name, line, should_fire, allow_entries in cases:
-        _, hits = _scan_line(line, allow_entries)
+    for name, line, should_fire, allow_entries, surfs in cases:
+        _, hits = _scan_line(line, allow_entries, surfs)
         fired = any(not backed for backed, _ in hits)
         status = "PASS" if fired == should_fire else "FAIL"
         if fired != should_fire:
@@ -697,8 +893,11 @@ def selftest() -> int:
     # The first case is the ACTUAL defect, byte-for-byte in its original shape: the
     # field name on one line, the token on the next. It is the reason this scan parses
     # instead of grepping — a same-line rule scores 0 on it.
+    # Each case scans as a rel path whose surface matters now: engine/_selftest.py is
+    # the (unlisted) 'selftest' surface, so allowlist-backed passes must name a rel
+    # path whose surface the entry actually lists.
     py_cases = [
-        ("#3765 read_en: token on a bare continuation line FIRES", True, '''
+        ("#3765 read_en: token on a bare continuation line FIRES", True, "engine/_selftest.py", '''
 def macro_backdrop() -> dict:
     return {
         "read_en": (
@@ -708,30 +907,39 @@ def macro_backdrop() -> dict:
         ),
     }
 '''),
-        ("zh 已验证 in a label_zh FIRES", True,
+        ("zh 已验证 in a label_zh FIRES", True, "engine/_selftest.py",
          'TIERS = [{"key": "x", "label_zh": "已验证的选股优势"}]\n'),
         ("dataclass/profile keyword copy FIRES",
-         True, 'P = RadarProfile(key="x", caveat_en="This sleeve is validated on HK breadth.")\n'),
+         True, "engine/_selftest.py",
+         'P = RadarProfile(key="x", caveat_en="This sleeve is validated on HK breadth.")\n'),
         ("f-string literal part FIRES",
-         True, 'note = f"validated macro gauge ({band})"\n'.replace("{band}", "{b}")),
-        ("negated engine copy is NOT a claim", False,
+         True, "engine/_selftest.py",
+         'note = f"validated macro gauge ({band})"\n'.replace("{band}", "{b}")),
+        ("zh 经验证 in a note_zh FIRES", True, "engine/_selftest.py",
+         'note_zh = "经验证的港股利率／汇率压力信号。"\n'),
+        ("negated engine copy is NOT a claim", False, "engine/_selftest.py",
          '{"detail_en": "HK has no validated selection edge; context only."}\n'),
-        ("allowlisted engine copy does not fire", False,
+        ("allowlisted engine copy on a listed surface does not fire", False, "engine/discovery.py",
          '{"caveat_en": "gated by the validated MACD-2D × StochRSI-3D confluence."}\n'),
+        ("SAME allowlisted copy on an unlisted surface FIRES", True, "engine/_selftest.py",
+         '{"caveat_en": "gated by the validated MACD-2D × StochRSI-3D confluence."}\n'),
+        ("dislocation zh note (经验证的一道闸) is backed on its own surface",
+         False, "engine/dislocation.py",
+         'note_zh = "背离 —— 以经验证的一道闸为准；将该叙述视为值得留意的警示信号。"\n'),
         # Everything below is why the scan is field-restricted rather than whole-file:
         # engine internals use this token constantly and assert nothing to a user.
-        ("data field `\"validated\": True` is not copy", False,
+        ("data field `\"validated\": True` is not copy", False, "engine/_selftest.py",
          'row = {"validated": True, "tier": "scored"}\n'),
-        ("code identifiers are not copy", False,
+        ("code identifiers are not copy", False, "engine/_selftest.py",
          'validated_tag = compute()\nif verdict == "validated":\n    ship()\n'),
-        ("research-registry `notes` bookkeeping is out of scope", False,
+        ("research-registry `notes` bookkeeping is out of scope", False, "engine/_selftest.py",
          '_row(notes="W4-C7 VERDICT: validated at index level, do NOT wire")\n'),
-        ("LLM tool `description` is out of scope", False,
+        ("LLM tool `description` is out of scope", False, "engine/_selftest.py",
          'TOOL = {"description": "Read the validated mechanism-pathways artifact."}\n'),
-        ("unparseable engine file FAILS CLOSED", True, 'def broken(:\n'),
+        ("unparseable engine file FAILS CLOSED", True, "engine/_selftest.py", 'def broken(:\n'),
     ]
-    for name, should_fire, src in py_cases:
-        found, _ = scan_python_copy("engine/_selftest.py", src, allow)
+    for name, should_fire, rel, src in py_cases:
+        found, _ = scan_python_copy(rel, src, allow)
         fired = bool(found)
         status = "PASS" if fired == should_fire else "FAIL"
         if fired != should_fire:

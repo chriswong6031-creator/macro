@@ -909,19 +909,44 @@ def apply_reuse_budget(
     send while shrinking the plan the admin reviews. Deterministic account order
     = the plan's own account order; no RNG.
 
+    THE FILLER BUDGET rides along here (2026-07-29) for the same reason: the
+    no-ticker kinds (macro/event/education) are the ONE class this function used
+    to wave through unbudgeted, and the publisher now caps them per desk per day.
+    Capping only the publish-time half would have quarantined 5 of flagship's 6
+    planned filler posts every night — planned, written by the LLM, charted, then
+    killed at the last gate. Trimming here instead means the plan the admin
+    reviews is the plan that can post, and an item the budget deletes never costs
+    a model call.
+
     Returns counters: {"before", "after", "dropped_ticker_budget",
-    "dropped_signal_budget", "angles_assigned"}.
+    "dropped_signal_budget", "dropped_filler_budget", "angles_assigned"}.
     """
     sel = selection_cfg(cfg)
     max_accts = max(int(sel["max_accounts_per_ticker_day"]), 0)
     max_signal = max(int(sel["max_signal_accounts_per_day"]), 0)
+    # ONE reader for the filler key: sentinel owns it, both seams call it, so the
+    # plan side and the publisher cannot disagree about the number. Fail-soft —
+    # an unimportable sentinel leaves the filler budget off, never crashes a plan
+    # (an empty kind set makes the branch below unreachable on its own).
+    max_filler: int | None = None
+    filler_kinds: frozenset[str] = frozenset()
+    try:
+        from engine.marketing.sentinel import (  # noqa: PLC0415
+            FILLER_KINDS, max_filler_per_account_per_day)
+        filler_kinds = FILLER_KINDS
+        max_filler = max_filler_per_account_per_day(cfg)
+    except Exception:  # noqa: BLE001
+        max_filler = None
 
     counts = {"before": 0, "after": 0, "dropped_ticker_budget": 0,
-              "dropped_signal_budget": 0, "angles_assigned": 0}
+              "dropped_signal_budget": 0, "dropped_filler_budget": 0,
+              "angles_assigned": 0}
 
     # (ticker, day) → accounts already holding it; (ticker, day) → signal holders
     held: dict[tuple[str, str], list[str]] = {}
     signal_held: dict[tuple[str, str], list[str]] = {}
+    # account → filler posts already kept on the emitted day
+    filler_kept: dict[str, int] = {}
 
     for acct_row in account_rows or []:
         acct_id = str(acct_row.get("id") or "")
@@ -938,6 +963,13 @@ def apply_reuse_budget(
                 # writer, the emit provenance and the learning lane all read the
                 # angle, so it is stamped rather than left blank.
                 if not ticker and slot_day == day_prefix and kind in PLANNED_KINDS:
+                    # Filler budget: one macro/event/education post per desk per
+                    # emitted day (sentinel.max_filler_per_account_per_day).
+                    if kind in filler_kinds and max_filler is not None:
+                        if filler_kept.get(acct_id, 0) >= max_filler:
+                            counts["dropped_filler_budget"] += 1
+                            continue
+                        filler_kept[acct_id] = filler_kept.get(acct_id, 0) + 1
                     item["angle"] = angle_for(kind, 0)
                     counts["angles_assigned"] += 1
                 kept.append(item)
@@ -3188,6 +3220,7 @@ def content_plan(
     _budget_counts = apply_reuse_budget(account_rows, cfg=cfg, day_prefix="D1")
     _sel_report["dropped_ticker_budget"] = _budget_counts.get("dropped_ticker_budget", 0)
     _sel_report["dropped_signal_budget"] = _budget_counts.get("dropped_signal_budget", 0)
+    _sel_report["dropped_filler_budget"] = _budget_counts.get("dropped_filler_budget", 0)
     # `after_budget` is the EMITTED-DAY post count: the budget only touches D1
     # (nothing else is ever emitted), so a whole-plan number here would move for
     # reasons unrelated to the budget and hide the one it exists to show.

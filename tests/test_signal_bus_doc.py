@@ -73,9 +73,12 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 513, (
-        f"Expected 513 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 519, (
+        f"Expected 519 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
+        " (OIP E1 session digest added live-flow-surface-dated, live-flow-tide-dated,"
+        " live-flow-dte-tide-dated, options-session-records, options-session-latest,"
+        " options-session-ledger = 513->519;"
         " (Crypto Cockpit W0 added crypto-cockpit = 512->513;"
         " (china W3 #3844 added site-china-calendar = 511->512;"
         " (PSS-RH1 prospective hazard added frozen manifest + membership + ledger + state = 507->511;"

@@ -612,6 +612,13 @@ on:
       - "tests/test_neuralweb_daily_brief.py"
       # CMX W4: technician doctrine library tests (neural-web-core job).
       - "tests/test_brain_doctrine.py"
+      # Analyst OS P0 (Mastermind superintelligence masterplan): analyst doctrine
+      # library + gateway wiring + Live Market State Packet + market-intel tools.
+      # engine/neuralweb/** covers the code; these cover test-only edits.
+      - "tests/test_brain_analyst_doctrine.py"
+      - "tests/test_brain_analyst_wiring.py"
+      - "tests/test_market_packet.py"
+      - "tests/test_brain_market_intel.py"
       # The two cortex suites gate their own jobs ('cortex provider routing + tool loop'
       # and 'cortex ADB-W3 two-way read tools + parity') but were never listed here, so a
       # TEST-ONLY edit to either file triggered no ci.yml run at all and the suite it
@@ -708,6 +715,10 @@ on:
       # The engine-source scan's own suite (#3765 → #3790 latency). engine/** already
       # triggers the lane for copy changes; name the suite so a test-only edit does too.
       - "tests/test_validated_claims_engine.py"
+      # The `surfaces`-enforcement + zh-token suite (2026-07-29 dislocation-panel audit):
+      # a phrase justified for one page must not license another, and 经验证/经过验证 are
+      # gated. Named so a test-only edit still triggers the lane that runs it.
+      - "tests/test_validated_claims_surfaces.py"
       # The intl backdrop copy that tripped BC-2 on 2026-07-27. engine/** already covers
       # the module; list the suite so a test-only edit still triggers CI.
       - "tests/test_intl_recovery_quality.py"
@@ -1263,6 +1274,16 @@ on:
       # config/marketing.yml + config/personas/** above; the suite is listed by
       # name so a TEST-ONLY edit still reaches the lane that runs it.
       - "tests/test_marketing_cadence_spine.py"
+      # The cadence spec <-> D08 ramp coherence guard (2026-07-28). The two are
+      # ANDed at post time, so a persona `cadence:` block below its ramp tier is a
+      # silent network-wide throttle. Its subjects are config/personas/** and
+      # config/marketing.yml (both listed above) plus .github/workflows/
+      # marketing-publish.yml, which is NOT otherwise matched by anything in this
+      # list — the suite derives the sweep grid from that cron, so a cron edit has
+      # to reach the lane too. Both are named so a workflow-only or test-only edit
+      # still runs the guard.
+      - "tests/test_marketing_cadence_ramp_coherence.py"
+      - ".github/workflows/marketing-publish.yml"
       # X Growth W3 (XG-W3): the franchise register + slot scheduler, the
       # four-lane desk feed, the persona memory stores (promises/phrases/
       # relations) and the Gift-Grip-Proof value gate. Its subject modules are
@@ -1953,6 +1974,16 @@ on:
       - "tests/test_theme_trade_flows.py"
       - "tests/test_thetadata_resolver.py"
       - "tests/test_validate_gex.py"
+      # GEX modeling-core wiring (2026-07-29), into unrun-market-plumbing. The subject
+      # modules are already covered — engine/** reaches the walls/surface model layer
+      # and the greeks + engine math, collectors/** reaches the accrual collector, and
+      # the scripts/*.py catch-all reaches the accrual runner — so these three entries
+      # are the OTHER half: a suite-only edit (a new wall-shape case, a chain-parse
+      # re-pin) must still be able to START ci.yml. All three suites existed before
+      # this wiring and were reachable from no path pattern at all.
+      - "tests/test_gex_engine.py"
+      - "tests/test_gex_model.py"
+      - "tests/test_polygon_gex.py"
       - "scripts/backtest_event_priors.py"
       - "scripts/build_attention_deterministic.py"
       - "scripts/build_discovery_confluence.py"
@@ -2043,6 +2074,7 @@ on:
       # Their subjects are templates/** and scripts/*.py, both broad catch-alls
       # above, so again only the test halves need entries here.
       # unrun-template-chips
+      - "tests/test_macro_header_compact.py"
       - "tests/test_okx_retail.py"
       - "tests/test_w4_us_board.py"
       - "tests/test_w5b_edge_chips.py"

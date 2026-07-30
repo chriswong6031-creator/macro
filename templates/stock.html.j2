@@ -1469,7 +1469,8 @@
       }
       if (pos.insider) {
         var ins = pos.insider, net = ins.net_usd_mn, irows = '';
-        // headline: net buying as a % of market cap (size-normalised, the validated read)
+        // headline: net buying as a % of market cap — the mcap-normalised construction that
+        // cleared the FDR gate (reports/insider-phase0.md, insider-phase1.md)
         if (ins.net_mcap_bps != null) {
           var pct = ins.net_mcap_bps / 100, tiny = Math.abs(pct) < 0.005;
           var pctStr = tiny ? '≈0%' : (pct > 0 ? '+' : '') + pct.toFixed(2) + '%';
@@ -2123,7 +2124,7 @@
   var _iflowBaseLoaded = false;  // true after first fetch (even if empty/error)
   var _iflowPulse = {};          // ticker -> pulse row
   var _iflowPulseAsof = null;
-  var _iflowFlow = {};           // ticker -> {ncp, flow_dur, badges, session_tier, asof}
+  var _iflowFlow = {};           // ticker -> {ncp(~soft cum NCP), flow_dur, badges[], session_tier}
   var _iflowFlowAsof = null;
   var _iflowLeaderMap = {};      // ticker -> leader record from base.json
   var _iflowCur = null;         // ticker whose render is in flight (stale-ticker guard)
@@ -2394,36 +2395,76 @@
       .catch(function(){ cb(); });
   }
 
+  // Flow durability = share of non-overlapping 5-min windows whose INCREMENTAL
+  // cumulative NCP is positive. Same definition as engine.intraday_flow.flow_durability()
+  // and intraday_flow.html.j2's fetchRootFlow, so both surfaces agree.
+  function _iflowFlowDur(mins) {
+    if (!mins || mins.length < 6) return null;
+    var win = 5, pos = 0, n = 0;
+    for (var i = win; i < mins.length; i += win) {
+      var inc = (mins[i].ncp || 0) - (mins[i - win].ncp || 0);
+      n++;
+      if (inc > 0) pos++;
+    }
+    return n > 0 ? pos / n : null;
+  }
+
+  // Highest session_tier seen across this root's events today (mirrors bestTier
+  // in intraday_flow.html.j2).
+  function _iflowBestTier(a, b) {
+    var rank = {below_medium: 0, medium: 1, high: 2, strong: 3, elite: 4};
+    if (a == null) return b;
+    return (rank[b] || 0) > (rank[a] || 0) ? b : a;
+  }
+
+  // Reads the schemas these endpoints actually publish: live_flow.ticker/v1
+  // (top-level asof, day{}, cumulative minutes[]) and flow.enrich/v1 (top-level
+  // asof, FLAT events[]). The pre-#2391 rollup shape — tickerData.cum_ncp /
+  // .flow_dur / .meta.asof and enrich.tickers{} — was never published on either
+  // endpoint; #2391 replaced these same reads on intraday_flow and this copy was
+  // left behind, so every field below silently read undefined.
   function _iflowLoadFlow(t, cb) {
     var base = (window.DATA_BASE || '').replace(/\/+$/, '');
     if (!base) { cb(); return; }
     var enrichUrl = base + '/live_flow/enrich_current.json';
-    var tickerUrl = base + '/live_flow/tickers/' + t + '.json';
+    var tickerUrl = base + '/live_flow/tickers/' + encodeURIComponent(t) + '.json';
     Promise.all([
       fetch(enrichUrl, {cache: 'no-cache'}).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; }),
       fetch(tickerUrl, {cache: 'no-cache'}).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; })
     ]).then(function(results){
       var enrich = results[0], tickerData = results[1];
       var existing = _iflowFlow[t] || {};
+      var asof = null;
       if (tickerData) {
-        existing.ncp = tickerData.cum_ncp != null ? tickerData.cum_ncp : existing.ncp;
-        existing.flow_dur = tickerData.flow_dur != null ? tickerData.flow_dur : existing.flow_dur;
+        // minutes[] carries CUMULATIVE signed premium, so the last entry's ncp is
+        // the session ~net CALL premium — the same series L5 and durability read.
+        // (day.net_soft is ncp+npp, a net-total, not the call-only figure the chip names.)
+        var mins = tickerData.minutes || [];
+        var last = mins.length ? mins[mins.length - 1] : null;
+        if (last && last.ncp != null) existing.ncp = last.ncp;
+        var dur = _iflowFlowDur(mins);
+        if (dur != null) existing.flow_dur = dur;
+        asof = tickerData.asof || asof;
       }
-      if (enrich && enrich.tickers && enrich.tickers[t]) {
-        var te = enrich.tickers[t];
-        var badges = [];
-        if (te.badge_counts) {
-          var bc = te.badge_counts;
+      if (enrich) {
+        var counts = {}, tier = null, seen = false;
+        (enrich.events || []).forEach(function(ev){
+          if (!ev || ev.root !== t) return;
+          seen = true;
+          (ev.badges || []).forEach(function(b){ counts[b] = (counts[b] || 0) + 1; });
+          if (ev.session_tier) tier = _iflowBestTier(tier, ev.session_tier);
+        });
+        if (seen) {
+          var badges = [];
           ['WHALE','FRESH','Z_OUTLIER','SIZE_VS_OI','REPEAT_HITTER'].forEach(function(b){
-            if (bc[b] && bc[b] > 0) badges.push(b + '×' + bc[b]);
+            if (counts[b] > 0) badges.push(b + '×' + counts[b]);
           });
+          existing.badges = badges;
+          existing.session_tier = tier || existing.session_tier;
         }
-        existing.badges = badges;
-        existing.session_tier = te.session_tier || null;
+        asof = enrich.asof || asof;
       }
-      _iflowFlowAsof = (enrich && enrich.meta && enrich.meta.asof)
-        || (tickerData && tickerData.meta && tickerData.meta.asof)
-        || null;
+      _iflowFlowAsof = asof;
       _iflowFlow[t] = existing;
       cb();
     }).catch(function(){ cb(); });

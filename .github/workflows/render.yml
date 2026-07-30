@@ -40,9 +40,9 @@ on:
         default: all
         options: [all, macro, intl, china, hk, canada, markets, gex, baskets, sits]
       runner:
-        description: "Runner label — re-dispatch with macstudio if the render PC (pc-render-1) is down (GHA has no automatic label fallback)"
+        description: "Runner label — macstudio is the fast default; use render-linux as the PC fallback"
         type: choice
-        default: render-linux
+        default: macstudio
         options: [render-linux, macstudio]
   push:
     branches: [main]
@@ -106,10 +106,11 @@ concurrency:
 
 jobs:
   render:
-    # render-linux = pc-render-1, the WSL2 PC (#2771). GHA has no OR-label fallback —
-    # if the PC is down, re-dispatch with runner=macstudio (the venv bootstrap and the
-    # setup-node step below are portable both ways).
-    runs-on: ${{ github.event.inputs.runner || 'render-linux' }}
+    # The full macstudio pool is the measured fast path (40-71m quiet-box runs versus
+    # 65-108m on render-linux, with the Mac-saved zstd caches restoring natively).
+    # Keep render-linux as an explicit manual fallback; GHA has no OR-label fallback
+    # and the venv/bootstrap steps below remain portable both ways.
+    runs-on: ${{ github.event.inputs.runner || 'macstudio' }}
     # was 75 — a scope=all render now takes 40-71m when the box is quiet (measured
     # 2026-07-11: run 29155365959 = 40m, run 29169451233 = 71.4m) and blew straight
     # through 75m under the evening merge-spree congestion (run 29172926033 CANCELLED
@@ -347,6 +348,7 @@ jobs:
           }
 
           hub() { [ -n "$HUB_DONE" ] && return 0; HUB_DONE=1; run_py "bitcoin vector + landing hub (build_vector)" scripts.build_vector; }
+          crypto() { [ -n "$CRYPTO_DONE" ] && return 0; CRYPTO_DONE=1; run_py "crypto intelligence cockpit (build_crypto)" scripts.build_crypto; }
           intl() { [ -n "$INTL_DONE" ] && return 0; INTL_DONE=1; run_py "international macro dashboard (build_intl)" scripts.build_intl; }
 
           canada() { [ -n "$CANADA_DONE" ] && return 0; CANADA_DONE=1; export SKIP_CANADA_HOOK=1; run_py "canada / S&P-TSX dashboard (build_canada)" scripts.build_canada; }
@@ -520,19 +522,19 @@ jobs:
           for SC in ${SCOPE//+/ }; do
           case "$SC" in
             all)
-              spine; intl; canada; band; central; flowleaders; leaderradar; foresightpage; hub; us_pages; libs; sits; csits ;;
+              spine; intl; canada; band; central; flowleaders; leaderradar; foresightpage; hub; crypto; us_pages; libs; sits; csits ;;
             macro)
-              spine; hub; us_pages; central ;;
+              spine; hub; crypto; us_pages; central ;;
             intl)
               intl ;;
             sits)
               sits ;;
             china)
-              run_py "build china a-share dashboard (build_china)" scripts.build_china; csits; hub ;;
+              run_py "build china a-share dashboard (build_china)" scripts.build_china; csits; hub; crypto ;;
             hk)
-              run_py "build hong kong / hang seng (build_hk)" scripts.build_hk; hub ;;
+              run_py "build hong kong / hang seng (build_hk)" scripts.build_hk; hub; crypto ;;
             canada)
-              canada; hub ;;
+              canada; hub; crypto ;;
             markets)
               run_py "build commodity vector (build_commodities)"         scripts.build_commodities
               run_py "build strategic reserves (build_spr)"               scripts.build_spr
@@ -542,14 +544,14 @@ jobs:
               run_py "rate & inflation transmission (build_transmission)" scripts.build_transmission
               run_py "discovery leaderboard (build_discovery)"            scripts.build_discovery
               run_py "build macro-context page (build_macro_context)"     scripts.build_macro_context
-              hub ;;
+              hub; crypto ;;
             gex)
               run_py "GEX magnets board (build_gex_board)"      scripts.build_gex_board
               run_py "index vol-regime (build_vol_regime)"      scripts.build_vol_regime
               run_py "options flow desk (build_options_flow)"   scripts.build_options_flow
               run_py "single-name IV skew (build_options_skew)" scripts.build_options_skew
               run_py "single-name IV spread (build_options_ivspread)" scripts.build_options_ivspread
-              hub ;;
+              hub; crypto ;;
             baskets)
               run_py "thematic baskets (build_baskets)"     scripts.build_baskets
               run_py "news suite (build_news)"              scripts.build_news
@@ -557,7 +559,7 @@ jobs:
               run_py "radar upgrade (build_radar_plus)"     scripts.build_radar_plus
               run_py "radar IC ledger (build_radar_ic)"     scripts.build_radar_ic
               run_py "radar page (build_radar_page)"        scripts.build_radar_page
-              central; hub ;;
+              central; hub; crypto ;;
             *)
               echo "::error::unknown scope '$SC'"; exit 1 ;;
           esac

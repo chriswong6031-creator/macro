@@ -160,16 +160,17 @@
       </div>
     </div>
     <div class="nav-dd">
+      <a class="nav-link" href="{{ NP }}crypto.html"><span class="menu-icon menu-icon-assets" style="--menu-icon-mask:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='black' stroke-width='1.55' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='8.5'/%3E%3Cpath d='m12 7 4.4 2.5v5L12 17l-4.4-2.5v-5L12 7Zm0 0V4m0 13v3M7.6 9.5 5 8m11.4 6.5L19 16m-11.4-1.5L5 16m11.4-6.5L19 8'/%3E%3C/g%3E%3C/svg%3E&quot;)" aria-hidden="true"></span>{{ t('Crypto', '加密') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="{{ NP }}crypto.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span>{{ t('Crypto Cockpit', '加密驾驶舱') }}<span class="d">{{ t('Market board · flows · leverage', '市场看板 · 资金流 · 杠杆') }}</span></a>
+        <a href="{{ NP }}vector.html"><span class="submenu-icon submenu-icon-bitcoin" aria-hidden="true"></span>{{ t('Bitcoin Vector', '比特币向量') }}<span class="d">{{ t('State · risk · cycle · strategy', '状态 · 风险 · 周期 · 策略') }}</span></a>
+        <a href="{{ NP }}crypto.html#allocation"><span class="submenu-icon submenu-icon-allocation" aria-hidden="true"></span>{{ t('Allocation', '配置') }}<span class="d">{{ t('BTC · ETH · alts · cash', 'BTC · ETH · 山寨 · 现金') }}</span></a>
+        <a href="{{ NP }}vector.html#strategy-track-record"><span class="submenu-icon submenu-icon-strategy" aria-hidden="true"></span>{{ t('Strategy Track Record', '策略历史表现') }}<span class="d">{{ t('Cycle and risk-allocation evidence', '周期与风险配置证据') }}</span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
       <a class="nav-link" href="javascript:void(0)"><span class="menu-icon menu-icon-assets" aria-hidden="true"></span>{{ t('Other Assets', '其他资产') }} <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
-        <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="{{ NP }}vector.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-bitcoin" aria-hidden="true"></span>{{ t('Bitcoin Vector', '比特币向量') }}<span class="d">{{ t('Market state · risk · cycle', '市场状态 · 风险 · 周期') }}</span></span><span class="caret-r">▸</span></a>
-          <div class="nav-dd-menu" role="menu">
-            <a href="{{ NP }}vector.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span>{{ t('Overview', '总览') }}<span class="d">{{ t('Market state · risk · momentum', '市场状态 · 风险 · 动量') }}</span></a>
-            <a href="{{ NP }}vector_allocation.html"><span class="submenu-icon submenu-icon-allocation" aria-hidden="true"></span>{{ t('Allocation Strategy', '仓位策略') }}<span class="d">{{ t('BTC · ETH · alts · cash', 'BTC · ETH · 山寨 · 现金') }}</span></a>
-            <a href="{{ NP }}btc_strategy.html"><span class="submenu-icon submenu-icon-strategy" aria-hidden="true"></span>{{ t('BTC Strategy', 'BTC策略') }}<span class="d">{{ t('Cycle vs risk-allocation · backtested', '周期 vs 风险配置 · 已回测') }}</span></a>
-          </div>
-        </div>
         <div class="nav-dd nav-sub">
           <a class="nav-sub-trig" href="{{ NP }}commodities.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-commodities" aria-hidden="true"></span>{{ t('Commodities', '大宗商品') }}<span class="d">{{ t('Gold · oil · silver · copper', '黄金 · 原油 · 白银 · 铜') }}</span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
@@ -188,51 +189,59 @@
     <div class="nav-dd nav-mega-dd">
       <a class="nav-link" href="{{ NP }}intelligence_hub.html"><span class="menu-icon menu-icon-research" aria-hidden="true"></span>{{ t('Research', '研究') }} <span class="caret">▾</span></a>
       <div class="nav-dd-menu nav-mega" role="menu">
-        <div class="nav-mega-feat">
-          <a class="nm-feat" href="{{ NP }}intelligence_hub.html"><span class="nm-ic research-icon research-icon-intelligence-hub" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t">{{ t('Intelligence Hub', '情报中心') }}</span><span class="d">{{ t('Central command · all desks fused · 2nd/3rd-order reads', '中枢指挥 · 所有信号台融合 · 二三阶推理') }}</span></span></a>
-          <a class="nm-feat" href="{{ NP }}reports.html"><span class="nm-ic research-icon research-icon-reports" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t">{{ t('Research Reports', '研究报告') }}</span><span class="d">{{ t('In-depth written market & macro reports', '深度市场与宏观研究报告') }}</span></span></a>
-          <a class="nm-feat" href="{{ NP }}research_vault.html"><span class="nm-ic research-icon research-icon-vault" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t">{{ t('Research Vault', '研报库') }}</span><span class="d">{{ t('Institutional desk research · read & search the PDFs', '机构研究报告 · 在线阅读与全文检索') }}</span></span></a>
-          <a class="nm-feat" href="{{ NP }}neural_web.html"><span class="nm-ic research-icon research-icon-neural-web" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t">{{ t('Neural Web', '智脑') }}</span><span class="d">{{ t('See how every signal is challenged', '查看每个信号如何经过审议') }}</span></span></a>
-        </div>
-        <div class="nav-mega-grid">
-          <div class="nav-mega-col">
-            <div class="nav-mega-h">{{ t('Find Edge', '寻找边际') }}</div>
-            <a class="nav-mega-item" href="{{ NP }}foresight.html"><span class="nm-ic research-icon research-icon-foresight" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t">{{ t('Foresight', '前瞻') }}</span><span class="d">{{ t('Catch important themes early', '提前捕捉重要主题') }}</span></span></a>
-            <a class="nav-mega-item" href="{{ NP }}state_of_themes.html"><span class="nm-ic research-icon research-icon-themes" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t">{{ t('Theme Tracker', '主题追踪') }}</span><span class="d">{{ t('See every theme in motion', '查看所有主题的变化') }}</span></span></a>
-            <a class="nav-mega-item" href="{{ NP }}radar.html"><span class="nm-ic research-icon research-icon-divergence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t">{{ t('Divergence Radar', '背离雷达') }}</span><span class="d">{{ t('Find gaps between price and reality', '寻找价格与现实的差距') }}</span></span></a>
-            <a class="nav-mega-item" href="{{ NP }}confluence_screener.html"><span class="nm-ic research-icon research-icon-confluence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t">{{ t('Signal Board', '信号看板') }}</span><span class="d">{{ t('Find signals lining up now', '寻找当前共振信号') }}</span></span></a>
-          </div>
-          <div class="nav-mega-col">
+        <div class="nav-mega-main">
+          <section class="nav-mega-section">
+            <div class="nav-mega-h">{{ t('Core Research', '核心研究') }}</div>
+            <div class="nav-mega-item-grid">
+              <a class="nm-feat" href="{{ NP }}intelligence_hub.html"><span class="nm-ic research-icon research-icon-intelligence-hub" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t">{{ t('Intelligence Hub', '情报中心') }}</span><span class="d">{{ t('Your market command center', '你的市场指挥中心') }}</span></span></a>
+              <a class="nm-feat" href="{{ NP }}reports.html"><span class="nm-ic research-icon research-icon-reports" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t">{{ t('Research Reports', '研究报告') }}</span><span class="d">{{ t('Deep dives and market calls', '深度研究与市场判断') }}</span></span></a>
+              <a class="nm-feat" href="{{ NP }}research_vault.html"><span class="nm-ic research-icon research-icon-vault" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t">{{ t('Research Vault', '研报库') }}</span><span class="d">{{ t('Search every published note', '搜索所有已发布研究') }}</span></span></a>
+              <a class="nm-feat" href="{{ NP }}neural_web.html"><span class="nm-ic research-icon research-icon-neural-web" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t">{{ t('Neural Web', '智脑') }}</span><span class="d">{{ t('See how every signal votes', '查看每个信号如何投票') }}</span></span></a>
+            </div>
+          </section>
+          <section class="nav-mega-section">
+            <div class="nav-mega-h">{{ t('Find the Edge', '寻找边际') }}</div>
+            <div class="nav-mega-item-grid">
+              <a class="nav-mega-item" href="{{ NP }}foresight.html"><span class="nm-ic research-icon research-icon-foresight" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t">{{ t('Foresight', '前瞻') }}</span><span class="d">{{ t('Themes before markets price them', '市场定价前的主题') }}</span></span></a>
+              <a class="nav-mega-item" href="{{ NP }}state_of_themes.html"><span class="nm-ic research-icon research-icon-themes" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t">{{ t('Theme Tracker', '主题追踪') }}</span><span class="d">{{ t('What is strengthening and fading', '正在增强与减弱的主题') }}</span></span></a>
+              <a class="nav-mega-item" href="{{ NP }}radar.html"><span class="nm-ic research-icon research-icon-divergence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t">{{ t('Divergence Radar', '背离雷达') }}</span><span class="d">{{ t('Where price and reality split', '价格与现实的分歧') }}</span></span></a>
+              <a class="nav-mega-item" href="{{ NP }}confluence_screener.html"><span class="nm-ic research-icon research-icon-confluence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t">{{ t('Signal Board', '信号看板') }}</span><span class="d">{{ t('Today’s strongest confirmed setups', '今日最强确认信号') }}</span></span></a>
+            </div>
+          </section>
+          <section class="nav-mega-section">
             <div class="nav-mega-h">{{ t('Capital & Regimes', '资金与周期') }}</div>
-            <a class="nav-mega-item" href="{{ NP }}smart_money.html"><span class="nm-ic research-icon research-icon-smart-money" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t">{{ t('Smart Money', '聪明钱') }}</span><span class="d">{{ t('Track proven investor positioning', '追踪优秀投资者的仓位') }}</span></span></a>
-            <a class="nav-mega-item" href="{{ NP }}etfs.html"><span class="nm-ic research-icon research-icon-fund-flows" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t">{{ t('Fund Flows', '基金流向') }}</span><span class="d">{{ t('See where conviction is building', '观察资金信念正在形成') }}</span></span></a>
-            <a class="nav-mega-item" href="{{ NP }}cycle.html"><span class="nm-ic research-icon research-icon-cycle-intelligence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t">{{ t('Cycle Intelligence', '周期智慧') }}</span><span class="d">{{ t('Understand where the cycle sits', '理解周期所处位置') }}</span></span></a>
-            <a class="nav-mega-item" href="{{ NP }}macro_context.html"><span class="nm-ic research-icon research-icon-macro-weather" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t">{{ t('Macro Weather', '宏观气象') }}</span><span class="d">{{ t('Read the global regime quickly', '快速读取全球宏观环境') }}</span></span></a>
-          </div>
-          <div class="nav-mega-col nav-mega-explore">
-            <div class="nav-mega-h">{{ t('Explore', '探索') }}</div>
-            <a class="nav-mega-item" href="{{ NP }}policy_watch.html"><span class="nm-ic research-icon research-icon-fed-policy" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t">{{ t('Policy Watch', '政策观察') }}</span><span class="d">{{ t('Follow policy and capital rotation', '追踪政策与资本轮动') }}</span></span></a>
-            <a class="nav-mega-item" href="{{ NP }}alt_data.html"><span class="nm-ic research-icon research-icon-alt-data" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t">{{ t('Alternative Data', '替代数据') }}</span><span class="d">{{ t('Connect signals beyond price', '连接价格之外的信号') }}</span></span></a>
-            <a class="nav-mega-item" href="{{ NP }}special_situations.html"><span class="nm-ic research-icon research-icon-special-situations" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t">{{ t('Special Situations', '特殊事件') }}</span><span class="d">{{ t('Track event-driven opportunities', '追踪事件驱动机会') }}</span></span></a>
-            <div class="nav-drill" data-nav-drill>
-              <button class="nav-mega-item nav-drill-trigger" type="button" data-nav-drill-open aria-expanded="false">
-                <span class="nm-ic research-icon research-icon-global-cycles" aria-hidden="true"></span>
-                <span class="nm-tx"><span class="nm-t">{{ t('Global Cycles', '全球周期') }}</span><span class="d">{{ t('Explore markets and sectors', '探索市场与行业周期') }}</span></span>
-                <span class="nav-drill-arrow" aria-hidden="true">›</span>
-              </button>
-              <div class="nav-drill-panel" data-nav-drill-panel aria-hidden="true">
-                <button class="nav-drill-back" type="button" data-nav-drill-back>‹ <span>{{ t('Research', '研究') }}</span></button>
-                <div class="nav-drill-heading">{{ t('Global Cycles', '全球周期') }}</div>
-                <a class="nav-mega-item" href="{{ NP }}markets.html"><span class="nm-ic research-icon research-icon-global-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t">{{ t('Global Market Cycles', '全球市场周期') }}</span><span class="d">{{ t('Compare national equity clocks', '比较各国股市周期') }}</span></span></a>
-                <a class="nav-mega-item" href="{{ NP }}country_cycles.html"><span class="nm-ic research-icon research-icon-country-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t">{{ t('Country Cycles', '国家周期') }}</span><span class="d">{{ t('Track countries and regions', '追踪国家与区域') }}</span></span></a>
-                <a class="nav-mega-item" href="{{ NP }}sector_cycles.html"><span class="nm-ic research-icon research-icon-sector-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t">{{ t('U.S. Sector Cycles', '美国行业周期') }}</span><span class="d">{{ t('See every sector clock', '查看所有行业周期') }}</span></span></a>
-                <a class="nav-mega-item" href="{{ NP }}sector_cycles_china.html"><span class="nm-ic research-icon research-icon-sector-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t">{{ t('China Sector Cycles', '中国行业周期') }}</span><span class="d">{{ t('Read China sector rotation', '查看中国行业轮动') }}</span></span></a>
-                <a class="nav-mega-item" href="{{ NP }}cycle.html"><span class="nm-ic research-icon research-icon-cycle-intelligence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t">{{ t('Cycle Intelligence', '周期智慧') }}</span><span class="d">{{ t('Understand the full cycle', '理解完整经济周期') }}</span></span></a>
-                <a class="nav-mega-item" href="{{ NP }}macro_context.html"><span class="nm-ic research-icon research-icon-macro-weather" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t">{{ t('Macro Weather', '宏观气象') }}</span><span class="d">{{ t('Read today’s macro regime', '读取当前宏观环境') }}</span></span></a>
-              </div>
+            <div class="nav-mega-item-grid">
+              <a class="nav-mega-item" href="{{ NP }}smart_money.html"><span class="nm-ic research-icon research-icon-smart-money" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t">{{ t('Smart Money', '聪明钱') }}</span><span class="d">{{ t('How top investors are positioned', '顶级投资者的仓位') }}</span></span></a>
+              <a class="nav-mega-item" href="{{ NP }}etfs.html"><span class="nm-ic research-icon research-icon-fund-flows" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t">{{ t('Fund Flows', '基金流向') }}</span><span class="d">{{ t('Where institutional capital is moving', '机构资金流向') }}</span></span></a>
+              <a class="nav-mega-item" href="{{ NP }}cycle.html"><span class="nm-ic research-icon research-icon-cycle-intelligence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t">{{ t('Cycle Intelligence', '周期智慧') }}</span><span class="d">{{ t('Where the economy is heading', '经济周期的下一站') }}</span></span></a>
+              <a class="nav-mega-item" href="{{ NP }}macro_context.html"><span class="nm-ic research-icon research-icon-macro-weather" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t">{{ t('Macro Weather', '宏观气象') }}</span><span class="d">{{ t('Growth, inflation and liquidity now', '当前增长、通胀与流动性') }}</span></span></a>
+            </div>
+          </section>
+        </div>
+        <aside class="nav-mega-rail">
+          <div class="nav-mega-h">{{ t('Explore', '探索') }}</div>
+          <a class="nav-rail-item" href="{{ NP }}policy_watch.html"><span class="nm-ic research-icon research-icon-fed-policy" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t">{{ t('Policy Watch', '政策观察') }}</span><span class="d">{{ t('Policy and capital rotation', '政策与资本轮动') }}</span></span><span class="nav-drill-arrow" aria-hidden="true">↗</span></a>
+          <a class="nav-rail-item" href="{{ NP }}alt_data.html"><span class="nm-ic research-icon research-icon-alt-data" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t">{{ t('Alternative Data', '替代数据') }}</span><span class="d">{{ t('Signals beyond price', '价格之外的信号') }}</span></span><span class="nav-drill-arrow" aria-hidden="true">↗</span></a>
+          <a class="nav-rail-item" href="{{ NP }}special_situations.html"><span class="nm-ic research-icon research-icon-special-situations" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t">{{ t('Special Situations', '特殊事件') }}</span><span class="d">{{ t('Event-driven opportunities', '事件驱动机会') }}</span></span><span class="nav-drill-arrow" aria-hidden="true">↗</span></a>
+          <div class="nav-drill" data-nav-drill>
+            <button class="nav-rail-item nav-drill-trigger" type="button" data-nav-drill-open aria-expanded="false">
+              <span class="nm-ic research-icon research-icon-global-cycles" aria-hidden="true"></span>
+              <span class="nm-tx"><span class="nm-t">{{ t('Global Cycles', '全球周期') }}</span><span class="d">{{ t('Markets and sector clocks', '市场与行业周期') }}</span></span>
+              <span class="nav-drill-arrow" aria-hidden="true">›</span>
+            </button>
+            <div class="nav-drill-panel" data-nav-drill-panel aria-hidden="true">
+              <button class="nav-drill-back" type="button" data-nav-drill-back>‹ <span>{{ t('Research', '研究') }}</span></button>
+              <div class="nav-drill-heading">{{ t('Global Cycles', '全球周期') }}</div>
+              <a class="nav-mega-item" href="{{ NP }}markets.html"><span class="nm-ic research-icon research-icon-global-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t">{{ t('Global Market Cycles', '全球市场周期') }}</span><span class="d">{{ t('Compare national equity clocks', '比较各国股市周期') }}</span></span></a>
+              <a class="nav-mega-item" href="{{ NP }}country_cycles.html"><span class="nm-ic research-icon research-icon-country-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t">{{ t('Country Cycles', '国家周期') }}</span><span class="d">{{ t('Track countries and regions', '追踪国家与区域') }}</span></span></a>
+              <a class="nav-mega-item" href="{{ NP }}sector_cycles.html"><span class="nm-ic research-icon research-icon-sector-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t">{{ t('U.S. Sector Cycles', '美国行业周期') }}</span><span class="d">{{ t('See every sector clock', '查看所有行业周期') }}</span></span></a>
+              <a class="nav-mega-item" href="{{ NP }}sector_cycles_china.html"><span class="nm-ic research-icon research-icon-sector-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t">{{ t('China Sector Cycles', '中国行业周期') }}</span><span class="d">{{ t('Read China sector rotation', '查看中国行业轮动') }}</span></span></a>
+              <a class="nav-mega-item" href="{{ NP }}cycle.html"><span class="nm-ic research-icon research-icon-cycle-intelligence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t">{{ t('Cycle Intelligence', '周期智慧') }}</span><span class="d">{{ t('Understand the full cycle', '理解完整经济周期') }}</span></span></a>
+              <a class="nav-mega-item" href="{{ NP }}macro_context.html"><span class="nm-ic research-icon research-icon-macro-weather" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t">{{ t('Macro Weather', '宏观气象') }}</span><span class="d">{{ t('Read today’s macro regime', '读取当前宏观环境') }}</span></span></a>
             </div>
           </div>
-        </div>
+          <a class="nav-mastermind-cta" href="https://bot.mastermind-x.com" target="_blank" rel="noopener"><span class="nav-mastermind-mark" aria-hidden="true"></span><span><strong>{{ t('Ask Mastermind', '询问 Mastermind') }}</strong><small>{{ t('Research the market with AI', '使用 AI 研究市场') }}</small></span><span aria-hidden="true">→</span></a>
+        </aside>
       </div>
     </div>
   </div>

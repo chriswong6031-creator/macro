@@ -6,7 +6,7 @@ Covers:
   - cn_snapshot.CN_SNAPSHOT_COLUMNS: completeness (all listed columns present)
   - reversion_desk.compute_reversion_desk: rank order, bonus arithmetic, screens
   - reversion_desk.build_reversion_desk_artifact: schema/as_of/rows output
-  - Executability screens: fillable==False excluded, is_st==True excluded
+  - Executability screens: fillable==True and chase_veto==False required; ST excluded
   - Spec §4 bonus arithmetic: washout_2w +0.5, coiled +0.25, star +0.15, ext -0.5x
 
 Does NOT import build_china_library (heavy pipeline dependency).
@@ -17,6 +17,7 @@ Run:
 """
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -28,6 +29,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine.pick_lab.cn_snapshot import CN_SNAPSHOT_COLUMNS, build_cn_core_rows
 from engine.pick_lab.reversion_desk import (
+    DEFINITION as REVERSION_DEFINITION,
     _compute_score,
     build_reversion_desk_artifact,
     compute_reversion_desk,
@@ -129,6 +131,51 @@ class TestCNSnapshotColumns:
     def test_no_duplicates(self):
         """No duplicate column names."""
         assert len(CN_SNAPSHOT_COLUMNS) == len(set(CN_SNAPSHOT_COLUMNS))
+
+
+def test_library_producer_uses_one_screened_exact_date_population():
+    """The row universe and the new Prophet feature maps must share one definition.
+
+    This is a focused wiring contract because the library builder is intentionally
+    too heavy to import and execute in this pure producer suite.
+    """
+    source = (
+        Path(__file__).resolve().parent.parent
+        / "scripts"
+        / "build_china_library.py"
+    ).read_text()
+    pick_lab = source.split(
+        "# ── CN Pick Lab snapshot producer", 1
+    )[1].split(
+        "# ── END CN Pick Lab snapshot producer", 1
+    )[0]
+    pick_lab_flat = " ".join(pick_lab.split())
+
+    assert "for _cpl_r in _scored_candidates" in pick_lab
+    assert "_scored_ticker_set" in pick_lab
+    assert "for _cpl_t in _scored_ticker_set" in pick_lab
+    assert "== _cnpl_asof_date" in pick_lab
+    assert "_cnpl_panel.index <= pd.Timestamp(_cnpl_asof_date)" in pick_lab_flat
+    assert "_cnpl_tickers = list(sector_by.keys())" not in pick_lab
+
+
+def test_live_prophet_qvix_is_cut_off_at_stock_panel_date():
+    """A later market-context row cannot leak into the live runway score."""
+    source = (
+        Path(__file__).resolve().parent.parent
+        / "scripts"
+        / "build_china_library.py"
+    ).read_text()
+    qvix_block = source.split(
+        "# QVIX vol-regime overlay", 1
+    )[1].split(
+        "# per-stock margin-financing", 1
+    )[0]
+    qvix_flat = " ".join(qvix_block.split())
+
+    assert "_panel_asof is not None" in qvix_block
+    assert "_qvix_frame.index <= pd.Timestamp(_panel_asof)" in qvix_flat
+    assert 'qvix_regime(pd.read_parquet(_qp)["close"])' not in qvix_block
 
 
 class TestBuildCNcoreRows:
@@ -343,9 +390,8 @@ class TestComputeReversionDesk:
         assert "coiled" in coiled_row["bonuses"]
         assert coiled_row["bonuses"]["coiled"] == pytest.approx(0.25)
 
-    def test_star_bonus_not_stacked_with_coiled(self):
-        """star (+0.15) only applies when coiled is False (elif)."""
-        # T000: no bonus; T001: star=True, coiled=False → +0.15
+    def test_star_bonus_requires_coiled_state(self):
+        """An impossible stand-alone STAR flag cannot manufacture a bonus."""
         snap = _make_snap(
             2,
             rev_rank=[1, 2],
@@ -355,11 +401,10 @@ class TestComputeReversionDesk:
         )
         result = compute_reversion_desk(snap, as_of=ASOF)
         star_row = next(r for r in result if r["rev_depth"]["sector_rank"] == 2)
-        assert "star" in star_row["bonuses"]
-        assert star_row["bonuses"]["star"] == pytest.approx(0.15)
+        assert "star" not in star_row["bonuses"]
 
-    def test_coiled_takes_precedence_over_star(self):
-        """When coiled=True AND star=True, only coiled bonus (+0.25) applies."""
+    def test_star_is_marginal_bonus_on_top_of_coiled(self):
+        """STAR = COILED + divergence, so both components stack to +0.40."""
         snap = _make_snap(
             1,
             rev_rank=[1],
@@ -370,7 +415,8 @@ class TestComputeReversionDesk:
         result = compute_reversion_desk(snap, as_of=ASOF)
         row = result[0]
         assert row["bonuses"].get("coiled") == pytest.approx(0.25)
-        assert "star" not in row["bonuses"]
+        assert row["bonuses"].get("star") == pytest.approx(0.15)
+        assert row["score"] == pytest.approx(1.4)
 
     def test_extension_penalty(self):
         """extension_score of 1.0 → penalty of -0.5."""
@@ -435,6 +481,16 @@ class TestComputeReversionDesk:
         result = compute_reversion_desk(snap, as_of=ASOF)
         tickers_in_result = [r["ticker"] for r in result]
         assert "T001" not in tickers_in_result
+
+    def test_unknown_chase_status_is_excluded(self):
+        """Actionable mirror requires an observed clear chase screen."""
+        snap = _make_snap(3)
+        snap["chase_veto"] = snap["chase_veto"].astype(object)
+        snap.loc["T001", "chase_veto"] = None
+
+        result = compute_reversion_desk(snap, as_of=ASOF)
+
+        assert "T001" not in {row["ticker"] for row in result}
 
     def test_max_rows_respected(self):
         """Output must not exceed max_rows."""
@@ -512,6 +568,7 @@ class TestBuildReversionDeskArtifact:
         snap = _make_snap(5)
         artifact = build_reversion_desk_artifact(snap, as_of=ASOF)
         assert artifact["schema"] == "china_reversion_desk.v1"
+        assert artifact["definition"] == REVERSION_DEFINITION
 
     def test_as_of_key(self):
         snap = _make_snap(5)
@@ -528,6 +585,17 @@ class TestBuildReversionDeskArtifact:
         artifact = build_reversion_desk_artifact(snap, as_of=ASOF)
         assert artifact["authority"] == "display_only"
 
+    def test_mixed_missing_numeric_fields_are_strict_json(self):
+        """Pandas NaN cannot escape as the non-standard JSON token ``NaN``."""
+        import json
+
+        snap = _make_snap(3)
+        snap.loc["T000", "rev_z"] = None
+        snap.loc["T000", "rev_3m"] = None
+        artifact = build_reversion_desk_artifact(snap, as_of=ASOF)
+
+        json.dumps(artifact, allow_nan=False)
+
     def test_empty_snap_gives_empty_rows(self):
         artifact = build_reversion_desk_artifact(pd.DataFrame(), as_of=ASOF)
         assert artifact["rows"] == []
@@ -539,6 +607,20 @@ class TestBuildReversionDeskArtifact:
         artifact = build_reversion_desk_artifact(snap, as_of=ASOF, max_rows=8)
         assert len(artifact["rows"]) <= 8
         assert artifact["n_rows"] <= 8
+
+    def test_mixed_missing_numeric_fields_are_strict_json_nulls(self):
+        snap = _make_snap(2)
+        snap.loc["T000", "rev_z"] = float("nan")
+        snap.loc["T000", "rev_3m"] = float("nan")
+        snap.loc["T000", "close"] = float("nan")
+
+        artifact = build_reversion_desk_artifact(snap, as_of=ASOF)
+
+        json.dumps(artifact, allow_nan=False)
+        row = next(item for item in artifact["rows"] if item["ticker"] == "T000")
+        assert row["rev_depth"]["rev_z"] is None
+        assert row["rev_depth"]["rev_3m"] is None
+        assert row["close"] is None
 
 
 class TestComputeScoreUnit:
@@ -569,9 +651,10 @@ class TestComputeScoreUnit:
         row = self._row(rev_3m_sector_rank=1, rev_sector_n=5, coiled=True)
         assert _compute_score(row) == pytest.approx(1.25)
 
-    def test_star_adds_point_15(self):
+    def test_standalone_star_is_ignored(self):
+        """STAR is a COILED subtype, never a standalone state."""
         row = self._row(rev_3m_sector_rank=1, rev_sector_n=5, star=True)
-        assert _compute_score(row) == pytest.approx(1.15)
+        assert _compute_score(row) == pytest.approx(1.0)
 
     def test_extension_penalty_full(self):
         """extension_score=1.0 → -0.5 penalty."""
@@ -591,11 +674,14 @@ class TestComputeScoreUnit:
         # depth=1.0 (rank=1,n=5); bonus = 0.5 + 0.25 - 0.5*0.5 = 0.5; score = 1.5
         assert _compute_score(row) == pytest.approx(1.5)
 
-    def test_coiled_wins_over_star_when_both_set(self):
-        """When both coiled and star are True, only coiled (+0.25) applies."""
+    def test_star_is_marginal_bonus_on_top_of_coiled(self):
+        """STAR stacks its +0.15 divergence bonus on the +0.25 COILED base."""
         row_both = self._row(rev_3m_sector_rank=1, rev_sector_n=5, coiled=True, star=True)
         row_coiled_only = self._row(rev_3m_sector_rank=1, rev_sector_n=5, coiled=True)
-        assert _compute_score(row_both) == pytest.approx(_compute_score(row_coiled_only))
+        assert _compute_score(row_both) == pytest.approx(1.4)
+        assert _compute_score(row_both) == pytest.approx(
+            _compute_score(row_coiled_only) + 0.15
+        )
 
     def test_null_rank_gives_zero_depth(self):
         """When rev_3m_sector_rank is None, depth_component = 0."""

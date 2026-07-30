@@ -665,7 +665,10 @@ PUBLIC_EXACT = frozenset({
     # it runs on anonymous visitors before auth resolves (AD_CENTRAL_MASTERPLAN §2).
     "/adtest.js",
     "/nav_market.js", "/supabase.js", "/data_base.js", "/live.js", "/live_config.js",
-    "/live/quotes.json", "/live/breadth.json", "/prophet/showcase.json",
+    "/live/quotes.json", "/live/breadth.json",
+    # Official agency event lifecycle/facts; no signal, portfolio or user data.
+    "/live/release_publications.json",
+    "/prophet/showcase.json",
     "/factordata/tech_lab.json",
 })
 

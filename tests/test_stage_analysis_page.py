@@ -144,6 +144,19 @@ def test_nav_gap_padding_top_ge_14px():
     assert int(m.group(1)) >= 14, f"padding-top too small: {m.group(0)}"
 
 
+def test_uses_canonical_san_francisco_inter_stack_only():
+    """Stage Analysis must not introduce a page-specific webfont.
+
+    Apple platforms use San Francisco via -apple-system; self-hosted Inter is
+    the cross-platform fallback used across the main Mastermind experience.
+    """
+    html = _render_with_fixture()
+    assert "Space Grotesk" not in html
+    assert "fonts.googleapis.com" not in html
+    assert "--font-display:-apple-system,BlinkMacSystemFont,'SF Pro Display',Inter" in html
+    assert "font:14px/1.5 var(--font-display)" in html
+
+
 def test_title_is_plain_english():
     """<title> RCDATA must be plain EN — no t()/td() markup, no CJK
     (title RCDATA plain-EN sweep, #2705/#2724)."""

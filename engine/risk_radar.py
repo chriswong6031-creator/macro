@@ -254,11 +254,63 @@ def _gross_from_source() -> dict:
 
 _GROSS = _gross_from_source()
 
-_DISCLAIMER = ("Evidence-gated leading-risk radar (research/RISK_ENGINE_V2_FINDINGS.md). "
-               "Edge is MODEST (~1.5-2x conditional lift, not a forecast) and LOUD+EARLY by "
-               "design — every alert prints its measured lift/lead, a forward-outcome log grades "
-               "every call, and the Opus review loop retunes from its mistakes. De-risk = sizing, "
-               "not selection; the validated regime quad is untouched.")
+# STATE-CONDITIONAL by construction (audit 2026-07-29). The old copy claimed a flat
+# "~1.5-2x conditional lift" for the whole radar; that is FALSE at the quiet tiers, whose own
+# _PROB_CAL numbers were never that strong — 'caution' h21 is 0.16 against a 0.178 base rate,
+# a lift of 0.90, i.e. BELOW base. The lift is now taken from the calibration table for the
+# state actually being shown (_state_lift / _disclaimer_for), so the claim can only ever be the
+# one that state measured. No calibration number changed — only what the copy is allowed to say.
+_DISCLAIMER_HEAD = "Evidence-gated leading-risk radar (research/RISK_ENGINE_V2_FINDINGS.md). "
+_DISCLAIMER_TAIL = ("LOUD+EARLY by design — every alert prints its measured lift/lead, a "
+                    "forward-outcome log grades every call, and the Opus review loop retunes "
+                    "from its mistakes. De-risk = sizing, not selection; the validated regime "
+                    "quad is untouched.")
+# used when there is no state to condition on (degraded payloads); makes NO lift claim
+_DISCLAIMER = (_DISCLAIMER_HEAD
+               + "Edge is MODEST and STATE-CONDITIONAL — each state prints its own measured "
+                 "conditional lift, and the quiet tiers measure at or below the unconditional "
+                 "base rate. Never a forecast. " + _DISCLAIMER_TAIL)
+
+
+def _state_lift(state: str, calib: dict | None = None) -> dict:
+    """Per-horizon MEASURED conditional lift of `state` vs the unconditional base rate, straight
+    off the calibration table (no conjunction bump — this is the state's OWN lift). Returns
+    {h5,h10,h21,h21_pct,base_h21_pct,above_base}. A lift < 1.0 means this tier's measured
+    pullback rate sits BELOW base; the disclaimer must then not claim an edge."""
+    cal = (calib or {}).get("prob_cal") or _PROB_CAL
+    out = {}
+    for h in ("h5", "h10", "h21"):
+        p = cal.get(h, _PROB_CAL[h]).get(state)
+        base = _PROB_BASE[h]
+        out[h] = None if (p is None or not base) else round(float(p) / base, 2)
+    p21 = cal.get("h21", _PROB_CAL["h21"]).get(state)
+    out["h21_pct"] = None if p21 is None else round(float(p21) * 100, 1)
+    out["base_h21_pct"] = round(_PROB_BASE["h21"] * 100, 1)
+    out["above_base"] = bool(out["h21"] is not None and out["h21"] > 1.0)
+    return out
+
+
+def _disclaimer_for(state: str | None, calib: dict | None = None) -> str:
+    """The disclaimer, conditioned on the state actually being displayed. Only ever claims the
+    lift that state measured; when the measured lift is at/below base it says so in plain words."""
+    if not state:
+        return _DISCLAIMER
+    sl = _state_lift(state, calib)
+    lift, p21, base21 = sl.get("h21"), sl.get("h21_pct"), sl.get("base_h21_pct")
+    if lift is None or p21 is None:
+        edge = ("This state carries NO measured conditional lift yet — it is an early watch flag, "
+                "not an edge. Never a forecast. ")
+    elif lift < 1.0:
+        edge = (f"At this state the measured 21-day pullback rate is {p21}% against a {base21}% "
+                f"unconditional base rate — a lift of {lift}x, i.e. BELOW base. This tier is an "
+                f"early watch flag, not an edge, and never a forecast. ")
+    elif lift < 1.2:
+        edge = (f"At this state the measured 21-day pullback rate is {p21}% against a {base21}% "
+                f"base rate — a lift of only {lift}x. Marginal, not a forecast. ")
+    else:
+        edge = (f"Edge is MODEST: at this state the measured 21-day pullback rate is {p21}% "
+                f"against a {base21}% base rate — a lift of {lift}x, not a forecast. ")
+    return _DISCLAIMER_HEAD + edge + _DISCLAIMER_TAIL
 
 
 # --- config / calibration overlay --------------------------------------------
@@ -303,12 +355,18 @@ def _roc(s, n):
     return (s / s.shift(n) - 1.0) if s is not None else None
 
 
-def _global_breadth_raw() -> pd.Series | None:
+def _global_breadth_raw(asof=None) -> pd.Series | None:
     """Causal global-breadth series: fraction of the data/intl_etf/ country ETFs above their
     200dma on each date (NaN where fewer than _GB_PANEL_MIN ETFs are alive). This is the exact
     validated C3 construction (reports/intl-global-breadth-phase0.md). Reads the parquet store
     directly through lib.config — NO import of any intl module (risk_radar is a leaf w.r.t. them).
-    Returns None (leg absent) when the store is missing, thin, or stale so the leg fails soft."""
+    Returns None (leg absent) when the store is missing, thin, or stale so the leg fails soft.
+
+    `asof` is the FRAME's own last session (leading_signals passes the SPY calendar's max).
+    The stale guard used pd.Timestamp.today() — wall clock inside a causal series builder, so a
+    replay/backtest at an older as-of graded the store against TODAY and could drop the leg from
+    ALL history for a reason that did not exist at the replayed date (PIT violation). None falls
+    back to the wall clock so ad-hoc callers behave as before."""
     try:
         etf_dir = config.data_dir() / _GB_ETF_DIR
         if not etf_dir.exists():
@@ -334,7 +392,8 @@ def _global_breadth_raw() -> pd.Series | None:
         # STALE guard: if the last observation is older than the SLA, the leg zeroes itself
         # (the store went stale; do not carry a frozen breadth read forward into a live radar).
         last_obs = panel.index.max()
-        if (pd.Timestamp.today().normalize() - last_obs).days > _GB_STALE_DAYS:
+        ref = pd.Timestamp(asof).normalize() if asof is not None else pd.Timestamp.today().normalize()
+        if (ref - last_obs).days > _GB_STALE_DAYS:
             return None
         # THIN-PANEL guard: on the LAST date we need >=_GB_PANEL_MIN alive ETFs, else the read is
         # too sparse to trust — zero the whole leg (never emit a value off a shrunken panel).
@@ -461,9 +520,16 @@ def build_nh_contraction(spy: pd.Series, breadth_df: "pd.DataFrame") -> "pd.Seri
     """NH-contraction Tier-B leg (RRX masterplan §4B R1).
 
     pct_rank_window(-nh_share_21d, 504) on near-high days (SPY >= 0.98 * rolling 252d max),
-    0.0 elsewhere. Near-high mask makes the signal event-conditioned — it fires only when the
+    NaN elsewhere. Near-high mask makes the signal event-conditioned — it fires only when the
     index is at/near a 252d high while internal breadth (% of members at new 52wk highs) is
     contracting, a topping narrowing read.
+
+    STRUCTURALLY-INAPPLICABLE = NaN, not 0.0 (audit 2026-07-29). Off near-high this leg has
+    nothing to say, but 0.0 is notna, so subscore_series counted it at FULL weight and DILUTED
+    the 'internals' sub-score toward zero: with the other leg confirmed at pctile 1.0 the scare
+    printed 50.0 ("calm") and could never reach the watch band off near-high — a measurement the
+    construction cannot make, presented as a reading. NaN lets subscore_series renormalize over
+    the legs that actually resolve, exactly as it already does for absent legs.
 
     Caveats: Q4 52wk-window seasonality — nh counts are naturally elevated in Q4 (bias toward
     false-silence during genuine market topping). 2010/2011 false-negatives on record (Fed-put
@@ -482,7 +548,9 @@ def build_nh_contraction(spy: pd.Series, breadth_df: "pd.DataFrame") -> "pd.Seri
     near_high = spy >= 0.98 * roll_max_252
     neg_nh_share = -nh_share_21d
     pctile = pct_rank_window(neg_nh_share, _PCT_WIN)
-    leg = pctile.where(near_high, other=0.0)
+    # NaN (not 0.0) off near-high — the leg is structurally inapplicable there, and a notna 0.0
+    # would be averaged in at full weight by subscore_series. See the docstring.
+    leg = pctile.where(near_high)
     return leg.rename("nh_contraction")
 
 
@@ -576,7 +644,10 @@ def leading_signals() -> pd.DataFrame:
     # (leg simply not added) when the intl_etf store is missing/stale/thin — degrade-don't-crash,
     # exactly like the flow legs above. pcol() ffills the (daily) ETF breadth onto the SPY calendar
     # and takes the causal 504d percentile, matching the C3 spec.
-    gb = _global_breadth_raw()
+    # asof = the frame's OWN last session (never the wall clock): the stale guard inside
+    # _global_breadth_raw must be evaluated at the as-of being built, or a replay drops the
+    # leg from all history for a staleness that did not exist then. See that docstring.
+    gb = _global_breadth_raw(asof=idx.max() if len(idx) else None)
     if gb is not None and len(gb) >= _PCT_MINP:
         out["global_breadth"] = pcol(-gb)
     # --- RRX §4B W3 Tier-B accruing legs (scripts/study_rrx_tierb_phase0.py) -----------------
@@ -642,9 +713,40 @@ def leading_signals() -> pd.DataFrame:
     return out
 
 
+def display_only_legs(calib: dict | None = None) -> set:
+    """Legs registered display_only=True — STRUCTURALLY UNABLE to move a scare tier until
+    gauntlet-promoted (VSB W6 doctrine). Shared by subscore_series (the DISPLAYED sub-score)
+    and _tierb_can_escalate (escalation eligibility) so the two can never disagree."""
+    legs = (calib or _calib())["legs"]
+    return {leg for leg, lc in legs.items() if lc.get("display_only")}
+
+
 def subscore_series(sigs: pd.DataFrame | None = None, calib: dict | None = None) -> pd.DataFrame:
     """Daily 0-100 sub-score per scare-type = weighted mean of available leg percentiles * 100.
-    For backtest + history. Renormalizes over available legs."""
+    For backtest + history. Renormalizes over available legs.
+
+    display_only legs are INCLUDED here, deliberately — see §15 of
+    research/REGIME_DISLOCATION_RECAL_PROPOSAL.md.
+
+    The 2026-07-29 audit is right that the VSB W6 contract ("STRUCTURALLY UNABLE to move scare
+    tier until gauntlet-promoted") is enforced only in _tierb_can_escalate, so an un-promoted
+    leg still sets the DISPLAYED number, and that it does so in the calming direction: a quiet
+    display_only leg at 0.0 carries full weight in the mean, so 'vol' prints 22.4 while its one
+    graded leg (vix_term) sits at pctile 0.67.
+
+    Excluding them was implemented and REVERTED the same day, because renormalizing is not
+    free: 'vol' registers 3 legs and only vix_term resolves today (weight_coverage 0.5 —
+    vol_putcall/vol_gex are still accruing). Dropping corr_floor_break renormalizes half the
+    scare's registered evidence to full confidence, and the band cuts were never calibrated on
+    that composition. Measured effect on the live stores: vol 22.4 -> 67.3, Tier-B escalates,
+    market_state severe_gated True, ceiling 56 -> 40, US verdict MIXED -> RISK_OFF — an
+    authority-tier flip resting on ONE unvalidated leg reading BELOW its own thr_pct 0.90
+    (lift_2020 0.44, era_robust False). That is originating an escalation, not fixing a bug.
+
+    The defect is disclosed instead: weight_coverage / partial_composition / n_legs_resolved
+    and the display_only_legs payload block let a surface say "this scare is running on half
+    its evidence, and a leg the doctrine silences is holding the number down." The fix itself
+    is pre-registered with acceptance gates for the gauntlet."""
     if sigs is None:
         sigs = leading_signals()
     calib = calib or _calib()
@@ -814,13 +916,57 @@ def compute(sigs: pd.DataFrame | None = None, calib: dict | None = None, asof=No
                     f["validation_ref"] = _GB_VALIDATION_REF
                 firing.append(f)
         firing.sort(key=lambda d: -d["pctile"])
+        # COMPOSITION COVERAGE (audit 2026-07-29) — DISCLOSURE ONLY, gates nothing.
+        # subscore_series renormalises over whichever legs resolve, so a scare running on a
+        # fraction of its registered evidence is published at the same confidence as a complete
+        # one. 'vol' is the live example: of its non-display_only registered weight (vol_term 0.5,
+        # vol_putcall 0.3, vol_gex 0.2) only vol_term resolves — the two flow legs are still
+        # accruing history — so half the registered weight carries 100% of the number, and the
+        # band cuts were not calibrated on that composition. Publishing the coverage is what lets
+        # a surface (and the promotion gauntlet) see it; nothing here acts on it.
+        _skipd = display_only_legs(calib)
+        _reg = [(lg, w) for lg, w in spec["legs"] if lg not in _skipd]
+        _reg_w = sum(float(w) for _lg, w in _reg)
+        _res_w = sum(float(w) for lg, w in _reg
+                     if lg in sigrow.index and not pd.isna(sigrow.get(lg)))
+        _cov = (round(_res_w / _reg_w, 3) if _reg_w else None)
         # lift-weighted score: a LEADING leg (high measured lift) outranks a coincident one
         # (e.g. the weak vol-level leg) when picking the dominant/named scare. Display keeps raw score.
         best_lift = max([float(l.get("lift_2020") or 1.0) for l in firing], default=1.0)
         scares.append({"scare": scare, "tier": spec["tier"],
                        "label_en": _SCARE_LABEL[scare][0], "label_zh": _SCARE_LABEL[scare][1],
                        "score": round(sc, 1), "band": band, "firing_legs": firing,
-                       "lead_weighted": round(sc * best_lift, 1)})
+                       "lead_weighted": round(sc * best_lift, 1),
+                       # disclosure only — see the COMPOSITION COVERAGE note above
+                       "n_legs_registered": len(_reg),
+                       "n_legs_resolved": sum(1 for lg, _w in _reg
+                                              if lg in sigrow.index and not pd.isna(sigrow.get(lg))),
+                       "weight_coverage": _cov,
+                       "partial_composition": bool(_cov is not None and _cov < 1.0)})
+
+    # DISPLAY-ONLY leg readings (VSB W6). These legs are excluded from every sub-score AND from
+    # escalation eligibility, so a scare whose only RESOLVING leg is display_only now has no
+    # sub-score and drops out of `scares` above. Surface the readings here rather than deleting
+    # them: the leg is real context, it just may not set a tier. Machine-readable + a plain reason.
+    do_readings = []
+    _do_skip = display_only_legs(calib)
+    for leg in sorted(_do_skip):
+        v = sigrow.get(leg) if leg in sigrow.index else None
+        if v is None or pd.isna(v):
+            continue
+        lc = calib["legs"].get(leg, {})
+        do_readings.append({
+            "leg": leg,
+            "pctile": round(float(v), 3),
+            "firing": bool(float(v) >= bands["watch"] / 100.0),
+            "confirmed": bool(float(v) >= float(lc.get("thr_pct", 0.90))),
+            "scare": next((s for s, sp in calib["scares"].items()
+                           if any(lg == leg for lg, _w in sp["legs"])), None),
+            "lift_2020": lc.get("lift_2020"),
+            "reason_en": "Display-only until gauntlet-promoted — it cannot set a risk tier "
+                         "or move the sub-score.",
+            "reason_zh": "通过验证前仅作展示——不参与风险等级与分数计算。",
+        })
 
     scares.sort(key=lambda d: -d["score"])
     tierA = [s for s in scares if s["tier"] == "A"]
@@ -857,11 +1003,11 @@ def compute(sigs: pd.DataFrame | None = None, calib: dict | None = None, asof=No
         legs = scare_d["firing_legs"]
         if not legs:
             return False
-        # Exclude display_only legs from escalation eligibility (VSB W6 doctrine)
-        escalatable = [
-            l for l in legs
-            if not calib["legs"].get(l["leg"], {}).get("display_only", False)
-        ]
+        # Exclude display_only legs from escalation eligibility (VSB W6 doctrine). SINGLE
+        # SOURCE with subscore_series' exclusion (display_only_legs()) so the DISPLAYED
+        # sub-score and the escalation decision can never disagree about which legs speak.
+        _skip = display_only_legs(calib)
+        escalatable = [l for l in legs if l["leg"] not in _skip]
         if not escalatable:
             # all firing legs are display_only — scare is structurally non-escalating
             return False
@@ -962,7 +1108,17 @@ def compute(sigs: pd.DataFrame | None = None, calib: dict | None = None, asof=No
         "reader_contract": _READER[state],
         "is_context_only": False,
         "loud_early": True,
-        "disclaimer": _DISCLAIMER,
+        # STATE-CONDITIONAL (audit 2026-07-29): only claims the lift THIS state measured.
+        "disclaimer": _disclaimer_for(state, calib),
+        "state_lift": _state_lift(state, calib),
+        # display-only leg readings that are excluded from every sub-score + from escalation
+        "display_only_legs": do_readings,
+        # CONTEXT-GATE EVIDENCE (audit 2026-07-29): state_ungated + context_gate are logged per
+        # row by engine/risk_radar_audit so the gate's own false-positive claim is falsifiable —
+        # before this, only the GATED state reached the ledger, so the counterfactual the gate is
+        # justified by ("these would have been false alarms") had no evidence and could never be
+        # graded. The gate itself is untouched; this is pure accounting.
+        "gate_clamped": bool(state_ungated != state),
     }
 
 
@@ -983,6 +1139,24 @@ def _drawdown_prob(state: str, nhot: int, calib: dict | None = None) -> dict:
     out["lift_h21"] = round(out["h21"] / _PROB_BASE["h21"], 2)
     out["conjunction_n"] = int(nhot)
     out["measure"] = ">=5% SPY pullback (empirical 2006-2026; rises with intensity + conjunction)"
+    # The STATE's OWN measured lift, conjunction bump excluded (audit 2026-07-29). lift_h21 above
+    # blends the state with the conjunction bonus, so a quiet tier could read as an edge it never
+    # measured: 'caution' alone is h21 0.16 vs a 0.178 base = 0.90x, BELOW base. Surfaced beside
+    # the odds so the card can print the honest multiple instead of the module's old flat claim.
+    sl = _state_lift(state, calib)
+    out["state_lift"] = {h: sl.get(h) for h in ("h5", "h10", "h21")}
+    out["state_lift_h21"] = sl.get("h21")
+    out["state_above_base"] = sl.get("above_base")
+    out["state_h21_pct"] = sl.get("h21_pct")
+    out["base_h21_pct"] = sl.get("base_h21_pct")
+    out["lift_note_en"] = (
+        f"This state's own measured 21-day rate is {sl.get('h21_pct')}% vs a "
+        f"{sl.get('base_h21_pct')}% base rate (lift {sl.get('h21')}x"
+        + (")." if sl.get("above_base") else " — at or below base, an early flag not an edge)."))
+    out["lift_note_zh"] = (
+        f"该等级自身实测 21 日回撤率 {sl.get('h21_pct')}%，长期基准 {sl.get('base_h21_pct')}%"
+        f"（倍数 {sl.get('h21')}x"
+        + ("）。" if sl.get("above_base") else "——不高于基准，属早期提示而非优势）。"))
     return out
 
 
@@ -1119,9 +1293,14 @@ def trajectory(subs: pd.DataFrame | None = None, calib: dict | None = None,
         # matches what the card would have shown. Only the window is mapped to odds (not all history).
         states = odds = None
         try:
-            from engine.risk_radar_backtest import state_series
+            from engine.risk_radar_backtest import state_series, band_delta_series
             states = state_series(subs, calib).reindex(intensity.index).tail(window)
-            nhot = sum((subs[s] >= bands["caution"]).astype(int) for s in tierA
+            # the conjunction count must use the SAME election-cycle-nudged caution cut that
+            # state_series (and compute()) use, or the states and the hot-count that together
+            # produce the odds series come from two different calibrations (audit 2026-07-29).
+            _caut = (bands["caution"]
+                     - band_delta_series(subs.index).reindex(subs.index).fillna(0.0)).clip(lower=0.0)
+            nhot = sum((subs[s] >= _caut).astype(int) for s in tierA
                        ).reindex(intensity.index).fillna(0).astype(int).tail(window)
             odds = pd.Series(
                 [_drawdown_prob(st, int(n), calib)["h21"] for st, n in zip(states, nhot)],

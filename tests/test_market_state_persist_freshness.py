@@ -19,11 +19,38 @@ def _read(root):
 
 def test_persist_stamps_stale_when_behind_calendar(tmp_path):
     """The incident snapshot (asof 07-02 on a morning that expects 07-06) persists —
-    the dashboard must still build from cached data — but is stamped stale."""
+    the dashboard must still build from cached data — but is stamped stale.
+
+    UPDATED 2026-07-29 (radar audit item 9e): this used to assert EXACT dict equality, which
+    pinned the stamp's self-certifying shape — data_asof comes from the frame calendar, so it
+    reported stale:false on a session where the NFCI print was 12 days old. The price-calendar
+    leg is unchanged and still asserted; the per-input vintage block is additive.
+    """
     ms.persist({"asof": "2026-07-02", "verdict": "RISK_OFF"}, root=tmp_path, now=INCIDENT_NOW)
-    got = _read(tmp_path)
-    assert got["freshness"] == {
-        "data_asof": "2026-07-02", "expected_asof": "2026-07-06", "stale": True}
+    got = _read(tmp_path)["freshness"]
+    assert got["data_asof"] == "2026-07-02"
+    assert got["expected_asof"] == "2026-07-06"
+    assert got["stale"] is True
+    # the stamp now carries a claim it can back: per-input vintages, not just the frame date
+    assert "inputs" in got and "stale_inputs" in got and "any_input_stale" in got
+
+
+def test_persist_freshness_reports_stale_inputs(tmp_path):
+    """A snapshot whose per-input vintages carry a stale macro print must say so — the stamp
+    is no longer allowed to certify itself off the price calendar alone (audit item 9e)."""
+    snap = {
+        "asof": "2026-07-06", "verdict": "MIXED",
+        "input_vintages": {
+            "nfci": {"asof": "2026-06-19", "age_days": 17, "stale": True},
+            "vix": {"asof": "2026-07-06", "age_days": 0, "stale": False},
+        },
+    }
+    ms.persist(snap, root=tmp_path, now=INCIDENT_NOW)
+    got = _read(tmp_path)["freshness"]
+    assert got["stale"] is False               # the PRICE calendar is current...
+    assert got["any_input_stale"] is True      # ...but a macro input is not
+    assert got["stale_inputs"] == ["nfci"]
+    assert got["worst_input_age_days"] == 17
 
 
 def test_persist_stamps_fresh_when_current(tmp_path):

@@ -199,24 +199,42 @@ def _ths_concepts(ticker: str, cap: int = 3) -> list:
 
 
 def _load_board_membership() -> set:
-    """Current buy-board members from site/factordata/china_standouts.json → {ticker}."""
+    """Every ticker surfaced in the current China Prophet board."""
     try:
         d = _read_json("site/factordata/china_standouts.json")
         if isinstance(d, dict):
-            return {str(r.get("ticker", "")).upper().strip()
-                    for r in (d.get("buy") or []) if r.get("ticker")}
+            keys = (
+                ("buy", "more_actionable", "late_or_unfillable", "forming")
+                if d.get("schema_version") == "2.0.0"
+                else ("buy", "watch")
+            )
+            return {
+                str(r.get("ticker", "")).upper().strip()
+                for key in keys
+                for r in (d.get(key) or [])
+                if isinstance(r, dict) and r.get("ticker")
+            }
     except Exception as e:  # noqa: BLE001
         log.debug("china_intel_hub: board membership failed (%s)", e)
     return set()
 
 
 def _load_board_rows() -> dict:
-    """Buy-board rows keyed by ticker {ticker: row}."""
+    """Every surfaced board row keyed by ticker, preserving its Prophet lane."""
     try:
         d = _read_json("site/factordata/china_standouts.json")
         if isinstance(d, dict):
-            return {str(r.get("ticker", "")).upper().strip(): r
-                    for r in (d.get("buy") or []) if r.get("ticker")}
+            keys = (
+                ("buy", "more_actionable", "late_or_unfillable", "forming")
+                if d.get("schema_version") == "2.0.0"
+                else ("buy", "watch")
+            )
+            return {
+                str(r.get("ticker", "")).upper().strip(): r
+                for key in keys
+                for r in (d.get(key) or [])
+                if isinstance(r, dict) and r.get("ticker")
+            }
     except Exception as e:  # noqa: BLE001
         log.debug("china_intel_hub: board rows failed (%s)", e)
     return {}

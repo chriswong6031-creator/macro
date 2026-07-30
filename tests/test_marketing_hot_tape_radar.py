@@ -882,8 +882,29 @@ class TestSafetyStack:
     #: argument to it that lets a post through that would otherwise be refused.
     #: Scoped to that ONE symbol: any other hot_tape name in a safety module —
     #: the radar, the emit path, a config knob — still fails this test.
+    #:
+    #: The SECOND sanctioned reference, granted on the same reasoning and
+    #: scoped the same way: the publisher's send-time orphan-brief gate imports
+    #: ``hot_tape.orphaned_brief_status`` (plus the two identity constants that
+    #: say which rows it applies to) and can only ever REFUSE a brief whose
+    #: parent alert is no longer posted. There is no argument to it that lets a
+    #: post through that would otherwise be refused, which is the whole test of
+    #: whether a reach into this program has removed a guard or added one.
+    #:
+    #: WHY it must live in the publisher at all: the radar re-checks the parent
+    #: at dispatch, but that sweep only runs when the radar runs. An operator
+    #: recall after the last pass of the day (end of the ET window, a weekend,
+    #: the workflow disabled) leaves an already-booked brief on its
+    #: scheduled_at and the publisher's scheduled sweep is the only thing left
+    #: between it and the network.
+    #:
+    #: Scoped to those THREE symbols on ONE import line: any other hot_tape
+    #: name in the publisher — a posting rule, a cap, a cadence knob — still
+    #: fails this test.
     _SANCTIONED_HOT_TAPE_REFS: dict[str, tuple[str, ...]] = {
         "engine/marketing/copywriter.py": ("hot_tape_llm", "numeric_violations"),
+        "scripts/marketing_publisher.py": (
+            "hot_tape", "LANE", "BRIEF_TRIGGER", "orphaned_brief_status"),
     }
 
     def test_safety_modules_are_not_edited_by_this_program(self):
@@ -1172,7 +1193,14 @@ class TestLLMPhrasing:
         cfg = _yaml.safe_load((REPO_ROOT / "config.yml").read_text(encoding="utf-8"))
         block = (cfg.get("hot_tape") or {}).get("llm") or {}
         assert block.get("enabled") is True
-        assert block.get("provider_order") == ["oauth", "anthropic", "deepseek"]
+        # CHATGPT-FIRST (operator directive 2026-07-29): codex leads every
+        # marketing LLM lane so Claude subscription tokens stay reserved for
+        # website-building sessions; the Claude oauth rung is the balanced
+        # fallback behind it. Pinned here so a silent re-order is caught.
+        assert block.get("provider_order") == ["codex", "oauth", "anthropic", "deepseek"]
+        assert block.get("codex_source_model") == "gpt-5.6-terra"
+        assert block.get("codex_reasoning_effort") == "low"
+        assert block.get("oauth_pool_lane") == "hot-tape-wire"
         assert RADAR.llm_config(REPO_ROOT)["llm"] == block
 
 
@@ -1532,6 +1560,124 @@ class TestTwoStepBrief:
         assert cfg["two_step"]["max_per_run"] == 1
         assert cfg["emit"]["max_per_run"] >= 1
         assert cfg["two_step"]["delay_min"] > 0     # never the alert's own pass
+
+
+class TestABriefNeverOutlivesItsAlert:
+    """The residual ordering hole behind M2's build-time gate (#3960 minor).
+
+    ``pending_briefs`` requires the alert to be ``posted`` when the brief is
+    BUILT. That is a snapshot. A booked brief that does not post on its own
+    dispatch (a lost push race, a superseded publisher run) sits queued and
+    every later pass inside ``CARRYOVER_MAX_AGE_MIN`` re-dispatches it -- and a
+    dispatch is ``post_now``, which skips schedule gating entirely. Recall the
+    alert in that gap and the second half of a two-step publish goes out
+    explaining a post nobody ever saw, which is precisely what M2 existed to
+    prevent.
+    """
+
+    @staticmethod
+    def _brief_and_alert(root: Path) -> tuple[dict, dict]:
+        briefs = _brief_items(root)
+        alerts = [i for i in OB.read_items(root)
+                  if (i.get("source") or {}).get("trigger") != HT.BRIEF_TRIGGER]
+        assert briefs and alerts
+        return briefs[0], alerts[0]
+
+    def _booked_brief(self, tmp_path, monkeypatch) -> tuple[Path, dict, dict]:
+        """A posted alert plus its queued brief -- the state the hole opens in."""
+        root = _brief_root(tmp_path)
+        _stub_chart(monkeypatch)
+        RADAR.run(root, now=NOW, fetcher=_no_fetch)
+        _post_alert(root)
+        RADAR.run(root, now=NOW + timedelta(minutes=5), fetcher=_no_fetch)
+        brief, alert = self._brief_and_alert(root)
+        return root, brief, alert
+
+    def test_a_recalled_alert_stops_its_queued_brief_from_being_dispatched(
+            self, tmp_path, monkeypatch, capsys):
+        root, brief, alert = self._booked_brief(tmp_path, monkeypatch)
+        out_file = tmp_path / "gh_output.txt"
+        monkeypatch.setenv("GITHUB_OUTPUT", str(out_file))
+        # The operator kills the alert AFTER it was accepted (scripts/marketing_
+        # _recall.py's transition): `posted` -> `recalled`.
+        assert OB.transition(alert["id"], "recalled", actor="test", root=root,
+                             note="fixture recall", now=NOW) is True
+        capsys.readouterr()
+
+        RADAR.run(root, now=NOW + timedelta(minutes=10), fetcher=_no_fetch)
+
+        dispatched = out_file.read_text(encoding="utf-8") if out_file.exists() else ""
+        assert brief["id"] not in dispatched, dispatched
+        # And it is DEAD, not deferred: the scheduled publish sweep must not
+        # send it either.
+        assert OB.fold_state(root)["status"][brief["id"]] == "quarantined"
+        warn = [l for l in capsys.readouterr().out.splitlines()
+                if l.startswith("::warning title=hot-tape-orphan-brief::")]
+        assert len(warn) == 1 and brief["id"] in warn[0], warn
+
+    def test_a_still_posted_alert_lets_its_brief_ride_the_next_dispatch(
+            self, tmp_path, monkeypatch):
+        """The control. The gate must not eat a legitimate carryover brief."""
+        root, brief, _alert = self._booked_brief(tmp_path, monkeypatch)
+        out_file = tmp_path / "gh_output.txt"
+        monkeypatch.setenv("GITHUB_OUTPUT", str(out_file))
+
+        ids = RADAR.dispatch_ids(root, [], fired_today=HT.load_fired(root, DAY),
+                                 now=NOW + timedelta(minutes=8))
+
+        assert brief["id"] in ids
+        assert OB.fold_state(root)["status"][brief["id"]] == "queued"
+
+    def test_a_quarantined_alert_stops_its_queued_brief(self, tmp_path,
+                                                        monkeypatch, capsys):
+        """The quarantined spelling of the same hole, at the dispatch seam.
+
+        ``posted -> quarantined`` is not a legal outbox transition, so this state
+        is reached the way production would reach it if the ledger ever carried
+        it: the gate must key on "is the parent posted", never on "is the parent
+        absent from a known-dead list".
+        """
+        root, brief, alert = self._booked_brief(tmp_path, monkeypatch)
+        rows = HT.load_fired(root, DAY)
+        statuses = {alert["id"]: "quarantined", brief["id"]: "queued"}
+        monkeypatch.setattr(OB, "fold_state", lambda *_a, **_k: {"status": statuses})
+        capsys.readouterr()
+
+        ids = RADAR.dispatch_ids(root, [], fired_today=rows,
+                                 now=NOW + timedelta(minutes=8))
+
+        assert brief["id"] not in ids
+        assert "::warning title=hot-tape-orphan-brief::" in capsys.readouterr().out
+
+    def test_an_unresolvable_parent_withholds_the_brief_without_killing_it(
+            self, tmp_path, monkeypatch, capsys):
+        """Fail closed, but do not DESTROY on missing evidence.
+
+        A brief whose alert row cannot be found is withheld from the fast lane
+        and ages out of the carryover window on its own. Quarantine is reserved
+        for positive proof the alert is dead, so a fold hiccup cannot cost a
+        legitimate brief its life.
+        """
+        root, brief, _alert = self._booked_brief(tmp_path, monkeypatch)
+        rows = [r for r in HT.load_fired(root, DAY)
+                if str(r.get("trigger") or "") == HT.BRIEF_TRIGGER]
+        assert rows, "no brief row in the fired ledger"
+        capsys.readouterr()
+
+        ids = RADAR.dispatch_ids(root, [], fired_today=rows,
+                                 now=NOW + timedelta(minutes=8))
+
+        assert brief["id"] not in ids
+        assert OB.fold_state(root)["status"][brief["id"]] == "queued"
+        assert "unresolved" in capsys.readouterr().out
+
+    def test_the_brief_key_round_trips_to_its_alert(self):
+        """The dispatch gate can only re-check what it can resolve."""
+        assert HT.parent_alert_key(HT.brief_key("mover:MU:down:2026-09-08:0")) == \
+            "mover:MU:down:2026-09-08:0"
+        assert HT.parent_alert_key("mover:MU:down:2026-09-08:0") is None
+        assert HT.parent_alert_key("") is None
+        assert HT.parent_alert_key("brief:") is None
 
 
 # ─────────────────────────────────────────────────────────────────────────────

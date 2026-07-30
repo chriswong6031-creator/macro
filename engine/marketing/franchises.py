@@ -725,6 +725,24 @@ def _parse_window(raw: str) -> tuple[int, int] | None:
     return sh * 60 + sm, eh * 60 + em
 
 
+def _split_wrap(window: tuple[int, int]) -> list[tuple[int, int]]:
+    """A window as one or two NON-WRAPPING ``[start, end)`` minute intervals.
+
+    ``end <= start`` means the window crosses local midnight ("20:00-05:00"), the
+    same reading ``open_slots`` and ``cadence_resolver.SessionWindow`` already
+    give it. The plain ``fs < se and ss < fe`` overlap test cannot see such a
+    window — with ``(1200, 300)`` every comparison against a normal evening
+    window is False — so spec_drift() reported a real, overlapping franchise as
+    drift the moment the first wrapping session window shipped (Cici's evening
+    leg widened to cover the US cash session, 2026-07-28). Splitting first makes
+    the arithmetic honest for both shapes.
+    """
+    start, end = window
+    if end > start:
+        return [(start, end)]
+    return [(start, 1440), (0, end)]
+
+
 def _zone(tz: str):
     """Resolve a tz name, fail-soft to UTC.
 
@@ -1232,13 +1250,15 @@ def spec_drift(*, root: Path | str | None = None) -> list[str]:
 
         # 6. franchise windows vs the account's own territory clock.
         session = (raw.get("cadence") or {}).get("session") or {}
-        sess_windows = [w for w in (_parse_window(x) for x in session.get("windows", [])) if w]
+        sess_windows = [s for w in (_parse_window(x) for x in session.get("windows", []))
+                        if w for s in _split_wrap(w)]
         if not sess_windows:
             continue
         for f in by_account.get(sid, []):
             if not f.is_windowed or f.tz != session.get("tz"):
                 continue
-            fw = [w for w in (_parse_window(x) for x in f.windows) if w]
+            fw = [s for w in (_parse_window(x) for x in f.windows) if w
+                  for s in _split_wrap(w)]
             if fw and not any(
                 fs < se and ss < fe for (fs, fe) in fw for (ss, se) in sess_windows
             ):

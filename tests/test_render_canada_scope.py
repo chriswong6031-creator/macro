@@ -37,6 +37,16 @@ BUILD_VECTOR = (ROOT / "scripts" / "build_vector.py").read_text()
 BUILD_CANADA = (ROOT / "scripts" / "build_canada.py").read_text()
 
 
+def test_automatic_render_uses_fast_macstudio_pool() -> None:
+    assert "default: macstudio" in RENDER
+    assert "github.event.inputs.runner || 'macstudio'" in RENDER
+
+
+def test_render_linux_remains_an_explicit_fallback() -> None:
+    assert "options: [render-linux, macstudio]" in RENDER
+    assert "use render-linux as the PC fallback" in RENDER
+
+
 def _region_of_fn() -> str:
     """The literal `region_of() { ... }` shell function lifted out of render.yml."""
     lines = RENDER.splitlines()
@@ -96,8 +106,9 @@ def test_canada_is_a_dispatchable_scope():
 
 
 def test_canada_scope_builds_canada_then_the_hub():
-    # hub() must follow: build_vector's _canada_state() reads the regime JSON written here.
-    assert "canada)\n              canada; hub ;;" in RENDER
+    # hub() must follow: build_vector's _canada_state() reads the regime JSON written
+    # here. crypto() follows hub() because H6 consumes the BTC authority contract.
+    assert "canada)\n              canada; hub; crypto ;;" in RENDER
 
 
 def test_canada_builder_runs_before_hub_in_a_full_render():

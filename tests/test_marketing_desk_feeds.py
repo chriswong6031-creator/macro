@@ -37,8 +37,10 @@ ROOT = Path(__file__).resolve().parent.parent
 _WED_0900_ET = datetime(2026, 7, 22, 13, 0, 0, tzinfo=timezone.utc)
 # 04:00 UTC = 12:00 Hong Kong — inside Cici's cash-session window.
 _WED_HK_CASH = datetime(2026, 7, 22, 4, 0, 0, tzinfo=timezone.utc)
-# 18:00 UTC = 02:00 Thursday in Hong Kong — outside both her windows.
-_WED_HK_ASLEEP = datetime(2026, 7, 22, 18, 0, 0, tzinfo=timezone.utc)
+# 22:00 UTC = 06:00 Thursday in Hong Kong — outside both her windows. 06:00
+# rather than 02:00 since 2026-07-28: her evening leg runs to 05:00 HK so it
+# covers the whole US cash session, and 02:00 HK is inside it.
+_WED_HK_ASLEEP = datetime(2026, 7, 22, 22, 0, 0, tzinfo=timezone.utc)
 
 _CFG = {
     "wire_routing": {"default": "flagship", "classes": {"macro_print": "flagship"}},
@@ -457,8 +459,9 @@ def test_session_franchises_do_not_open_at_the_weekend():
     assert "cici_before_new_york_wakes" not in sat_ids, (
         "a session-premise franchise opened on a Saturday"
     )
-    # Reflective weeklies still open — the specs say weekend_shape: light, not silent.
-    assert sat_ids, "the weekend went completely dark; weekend_shape is `light`, not `none`"
+    # Reflective weeklies still open — the specs shape the weekend (`medium`),
+    # they never silence it.
+    assert sat_ids, "the weekend went completely dark; weekend_shape thins, it does not mute"
 
     wed_ids = {s.franchise_id for s in fr.open_slots("cici", now=_WED_HK_CASH)}
     assert "cici_before_new_york_wakes" in wed_ids

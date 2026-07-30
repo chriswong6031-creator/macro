@@ -243,7 +243,20 @@ def implied_vol_vec(mid, S, K, T, is_call, r=DEFAULT_R, q=DEFAULT_Q):
         vega = bs_vega(S, Kv, Tv, sigma, r, q)
         # Where vega is too small, Newton is unstable — leave for bisection.
         step_ok = unconverged & (vega > 1e-8)
-        sigma = np.where(step_ok, sigma - diff / vega, sigma)
+        # np.where evaluates BOTH branches, so `diff / vega` must never see a zero
+        # denominator even though step_ok would discard the result: vega is exactly 0.0
+        # whenever _pdf(d1) UNDERFLOWS (|d1| > ~38.6 → exp(-d1²/2) == 0.0 in float64), which
+        # a late-day 0DTE wing reaches routinely — T floored at MIN_T (1 minute) makes
+        # σ·√T ≈ 4e-4, so a strike merely ~2% out of the money gives |d1| ≈ 49. That raised a
+        # live `RuntimeWarning: divide by zero encountered in divide` on the M1 poller
+        # (2026-07-29, during RTH), once per Newton iteration. Masking the denominator (the
+        # same "compute on a safe copy, then mask" idiom as bs_greeks_vec above) is
+        # arithmetically identical — where step_ok is True the divisor is unchanged, where it
+        # is False np.where returns `sigma` either way — so the solve is untouched and these
+        # contracts still resolve to NaN via the no-bracket bisection path (honest "cannot
+        # price this quote"). Regression: tests/test_intraday_greeks.py.
+        safe_vega = np.where(step_ok, vega, 1.0)
+        sigma = np.where(step_ok, sigma - diff / safe_vega, sigma)
         sigma = np.clip(sigma, IV_LO, IV_HI)
 
     # Accept Newton solutions that converged.

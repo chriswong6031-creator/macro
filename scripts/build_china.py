@@ -74,6 +74,64 @@ def _load_json(path: Path) -> dict | None:
     return None
 
 
+_CN_PROPHET_DEFINITION = "cn_prophet_v2"
+
+
+def _is_current_prophet_artifact(doc: dict | None) -> bool:
+    return bool(
+        isinstance(doc, dict)
+        and doc.get("schema_version") == "2.0.0"
+        and doc.get("board_definition") == _CN_PROPHET_DEFINITION
+    )
+
+
+def _prophet_outage_shell(reason: str) -> dict:
+    """Never render a legacy board beneath the Prophet v2 heading."""
+    return {
+        "schema_version": "2.0.0",
+        "as_of": None,
+        "rank_by": _CN_PROPHET_DEFINITION,
+        "board_definition": _CN_PROPHET_DEFINITION,
+        "ranking": {},
+        "buy": [],
+        "more_actionable": [],
+        "late_or_unfillable": [],
+        "forming": [],
+        "watch": [],
+        "lane_counts": {
+            "featured": 0,
+            "more_actionable": 0,
+            "late_or_unfillable": 0,
+            "forming": 0,
+        },
+        "execution_coverage": {
+            "raw_eligible": 0,
+            "actionable_t1_t3": 0,
+            "fresh_same_day_micro_count": 0,
+            "fresh_same_day_micro_rate_pct": 0.0,
+        },
+        "laggards": [],
+        "eligible": 0,
+        "actionable": 0,
+        "universe": 0,
+        "quality_screen": {},
+        "coverage": {},
+        "sleeve_chip": {},
+        "track_ledger": None,
+        "cap_composition": {
+            "large": 0, "mid": 0, "small": 0, "unknown": 0,
+        },
+        "ripening": [],
+        "ripening_falling": [],
+        "ran": [],
+        "data_outage": {
+            "flag": True,
+            "reason": reason,
+            "reason_zh": "中国先知v2构建失败；旧版榜单已被阻止，避免误标为新版结果。",
+        },
+    }
+
+
 def _chart_regime(px: pd.Series, hist: pd.DataFrame, days: int = 3650) -> str:
     cut = px.index.max() - pd.Timedelta(days=days)
     s = px.loc[cut:].dropna()
@@ -1115,11 +1173,22 @@ def main() -> int:
             vm["scoreboard"] = None
 
         factordata = site / "factordata"
-        if not (vm.get("setups") or {}).get("buy"):
+        if not _is_current_prophet_artifact(vm.get("setups")):
             fallback = _load_json(factordata / "china_standouts.json")
-            if fallback and fallback.get("buy"):
+            if _is_current_prophet_artifact(fallback):
                 vm["setups"] = fallback
-                log.info("using persisted china_standouts.json fallback (%d buy)", len(fallback["buy"]))
+                log.info(
+                    "using persisted China Prophet v2 fallback (%d featured)",
+                    len(fallback.get("buy") or []),
+                )
+            else:
+                vm["setups"] = _prophet_outage_shell(
+                    "China Prophet v2 build unavailable. A persisted legacy "
+                    "board was rejected rather than mislabeled as the new system."
+                )
+                log.error(
+                    "China Prophet v2 unavailable; rejected non-v2 persisted fallback"
+                )
         if not ((vm.get("scoreboard") or {}).get("modes")):
             fallback = _load_json(factordata / "china_scoreboard.json")
             if fallback and fallback.get("modes"):
@@ -1131,7 +1200,14 @@ def main() -> int:
         # and transform it to the schema the template expects.  Never fatal.
         try:
             _rd_artifact = _load_json(factordata / "china_reversion_desk.json")
-            if _rd_artifact and isinstance(_rd_artifact.get("rows"), list):
+            _rd_asof = str((_rd_artifact or {}).get("as_of") or "")[:10]
+            _board_asof = str((vm.get("setups") or {}).get("as_of") or "")[:10]
+            if (
+                _rd_artifact
+                and _rd_asof
+                and _rd_asof == _board_asof
+                and isinstance(_rd_artifact.get("rows"), list)
+            ):
                 _rd_picks = []
                 for _row in _rd_artifact["rows"]:
                     _chips = _row.get("chips") or {}
@@ -1170,7 +1246,11 @@ def main() -> int:
                 log.info("china stocks: reversion_desk loaded (%d picks)", len(_rd_picks))
             else:
                 vm["reversion_desk"] = None
-                log.debug("china stocks: no reversion_desk artifact — flagship-2 block hidden")
+                log.warning(
+                    "china stocks: reversion desk hidden (desk asof=%s, board asof=%s)",
+                    _rd_asof or "missing",
+                    _board_asof or "missing",
+                )
         except Exception as _rd_e:  # noqa: BLE001 — additive, never fatal
             log.error("china stocks: reversion_desk load failed (%s); skipping", _rd_e)
             vm["reversion_desk"] = None

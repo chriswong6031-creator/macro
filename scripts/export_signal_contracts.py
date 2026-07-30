@@ -245,29 +245,38 @@ ARTIFACT_MANIFEST = [
      "note": "US Buy Board — sizes the autonomous book's US candidate universe"},
     {"artifact": "site/factordata/china_standouts.json",
      "kind": "board",
-     "schema_version": "1.2.0",
+     "schema_version": "2.0.0",
      "schema_fields": [
-         "as_of", "board_track", "buy", "cap_composition", "coverage",
-         "dispersion_regime", "eligible", "laggards", "quality_screen", "qvix_regime",
-         "ran", "rank_by", "ripening", "ripening_falling", "sleeve_chip", "universe",
+         "actionable", "as_of", "board_definition", "buy", "cap_composition",
+         "coverage", "eligible", "execution_coverage", "forming", "laggards",
+         "lane_counts", "late_or_unfillable", "more_actionable", "quality_screen",
+         "ran", "rank_by", "ranking", "ripening", "ripening_falling",
+         "schema_version", "sleeve_chip", "track_ledger", "universe",
      ],
      "optional_fields": [
          # data_outage — W0.7 board-width guard stamp, present only on a collapsed
          # board (>40% day-over-day buy-count drop); conditional-by-design.
-         # watch — CN board-cap overflow lane (2026-07-28): gate-eligible rows ranked
-         # below BOARD_BUY_CAP (110), same row shape as buy. Always emitted by builds
-         # from this version on; optional (not required) so the committed pre-rebuild
-         # artifact doesn't read as removed-drift on the main heartbeat.
+         # watch — compatibility union of the explicit v2 secondary lanes
+         # (more_actionable + late_or_unfillable + forming).  New consumers must use
+         # the explicit lanes; the alias keeps older bots/microstructure collectors
+         # lossless during migration.
          # (List order is alphabetical — test_contract_drift asserts optional_fields sorted.)
-         "data_outage", "watch",
+         "board_track", "data_outage", "definition_change", "dispersion_regime",
+         "qvix_regime", "watch",
      ],
      "schema_item_fields": [
-         "ab_tier", "align_tier", "alpha", "alpha_entry", "coiled", "conviction",
-         "data_through", "dir", "entry_signal", "eq_dir", "extension", "hold", "label",
-         "label_zh", "name", "narrative", "off_high", "price", "risk_sizing", "sector",
-         "sector_n", "sector_rank", "sector_turn", "setup", "signal", "spark_svg",
-         "stage", "stage_detail", "stage_sublabel", "stage_sublabel_zh", "state",
-         "ticker", "urgency", "washout_2w", "why_ranked",
+         "ab_tier", "adv_yi", "align_tier", "alpha", "alpha_entry",
+         "board_definition", "cap_bucket", "coiled", "conviction", "data_through",
+         "days_since_signal", "dir", "display_rank", "entry_signal", "eq_dir",
+         "extension", "hold", "label", "label_zh", "lane", "lane_reasons",
+         "macd_d2", "macd_d3", "macd_hist_d", "mcap", "microstructure",
+         "muted_entry", "name", "narrative", "off_high", "price", "prophet",
+         "quality", "rev_percentile", "rev_z",
+         "reversal_member", "reversal_sector_n", "reversal_sector_rank",
+         "risk_sizing", "score_rank", "sector", "sector_n", "sector_rank",
+         "sector_turn", "setup", "signal", "spark_svg", "stage", "stage_detail",
+         "stage_sublabel", "stage_sublabel_zh", "state", "ticker", "urgency",
+         "washout_2w", "why_ranked",
      ],
      "expected_max_age_td": 3,
      "as_of_field": "as_of",

@@ -112,15 +112,56 @@ validated and copied through a same-directory temporary file before `replace()`.
 
 ## Publication semantics
 
-`scripts.watch_release_publications` polls official BLS, BEA and DOL endpoints only
-inside a small window around a scheduled release. It publishes detection metadata
-to `live/release_publications.json` and preserves source health/fingerprints under
+`scripts.watch_release_publications` polls official Fed, BLS, BEA and DOL endpoints
+only inside a small window around a scheduled release. It publishes an ET-aware
+event lifecycle (`scheduled`, `watching`, `awaiting_publication`, `published`,
+`published_unparsed`, or `verification_delayed`) to
+`live/release_publications.json` and preserves source health/fingerprints under
 the external state directory.
 
-The sidecar is display-only and explicitly reports `data_ready=false`: detection
-does not fabricate or score an actual value. When a direct live-data entitlement
-arrives, its adapter can attach parsed values to this sidecar. The nightly
-ALFRED/official retrieval remains the only canonical actual/scoreboard writer.
+The FOMC adapter resolves the deterministic official statement URL and extracts
+the target range, action, vote and dissent preference without an LLM. Exact-date
+official adapters also parse headline/core CPI, PPI, payrolls/unemployment,
+GDP, headline/core PCE and initial claims. BLS uses the release-specific Atom
+feeds; BEA uses an exact RSS item followed by its permanent release page; DOL
+uses the exact dated claims entry in the ETA releases listing because the
+per-release URL is a PDF. Every verified packet carries normalized metric IDs,
+period, units, bilingual display copy and its official URL.
+
+Ordinary publication sources use a six-hour fast polling window. FOMC uses a
+24-hour fast window so a same-evening deploy or overnight process restart still
+recovers the official statement. Conditional 304 responses are retried without
+validators when a parser-backed event still lacks verified facts, and one shared
+BEA RSS response fans out to independent GDP and PCE event IDs.
+Every unresolved result family remains in lifecycle/heartbeat output for seven
+days and an unparsed receipt is retried every 15 minutes. A parser miss is always
+`published_unparsed`, never a green `published` row. It remains unhealthy and
+retained until deterministic parsing recovers.
+
+The browser selects Release Radar by date: every selectable event card on that
+date shares the active state, and clicking GDP/PCE/claims in succession does not
+fake-refresh an unchanged date panel. Simultaneous lifecycle rows render as
+independent outcome cards while the hero, next-action card and Radar banner show
+aggregate verified/extracting/awaiting counts.
+
+The watcher publishes schedule coverage for every supported family. The external
+dead-man fails when that coverage is incomplete, preventing a hard-coded annual
+table from silently fabricating or omitting next-year release dates. Official
+schedule synchronization is still a planned Phase 1 dependency; the alarm makes
+the remaining maintenance requirement explicit and operationally visible.
+
+This sidecar is public because it contains only official agency facts, provenance
+and operational lifecycle—not proprietary signals, rankings, portfolios or user
+data. Caddy serves it from the external live store with `Cache-Control: no-store`.
+The nightly ALFRED/official retrieval remains the sole canonical vintage,
+scoreboard and forward-ledger writer.
+
+The public `/api/status` check reports lifecycle counts and publication lag. The
+external heartbeat becomes unhealthy when a v2 event remains unverified for more
+than two minutes after its scheduled time, when an official publication remains
+`published_unparsed`, or when an event falls beyond its type-specific watch
+window (six hours normally, 24 hours for FOMC). This prevents a
+fresh-but-semantically-empty file from looking operationally healthy.
 
 ## Deployment and cutover
 

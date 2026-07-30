@@ -187,8 +187,17 @@ def downsample(eq: pd.Series, k=240):
 
 
 # --------------------------------------------------------------------------- build
-def main():
-    close = load_close()
+def build_context(close: pd.Series | None = None, chart_points: int = 240) -> dict:
+    """Return the shared strategy view-model without rendering a page.
+
+    Wave 1 consumes this from ``build_vector`` so the flagship verdict and its
+    strategy/track-record receipt share one process, one BTC close, and one
+    as-of.  The standalone strategy builder remains a thin renderer over the
+    same context until its URL retires in Wave 2.
+    """
+    close = load_close() if close is None else close.copy()
+    close.index = pd.to_datetime(close.index)
+    close = close[~close.index.duplicated()].dropna().sort_index()
     log.info("BTC close %s..%s  n=%d", close.index.min().date(), close.index.max().date(), len(close))
     pivots = cycle_pivots()
     a_cycle = cycle_alloc(close, pivots)
@@ -251,11 +260,11 @@ def main():
                          "blown": mL["total"] <= 1e-6})
 
     # equity-curve SVGs (strategy vs HODL)
-    d_c, v_c = downsample(eq_cycle)
-    _, vh_c = downsample(hodl)
+    d_c, v_c = downsample(eq_cycle, k=chart_points)
+    _, vh_c = downsample(hodl, k=chart_points)
     svg_cycle = equity_svg(d_c, {"4Y Cycle": (v_c, "#f2a900"), "Buy & Hold": (vh_c, "var(--muted)")})
-    d_r, v_r = downsample(eq_risk)
-    _, vh_r = downsample(hodl)
+    d_r, v_r = downsample(eq_risk, k=chart_points)
+    _, vh_r = downsample(hodl, k=chart_points)
     svg_risk = equity_svg(d_r, {"Risk Alloc": (v_r, "#5aa7ff"), "Buy & Hold": (vh_r, "var(--muted)")})
 
     # current cycle phase
@@ -367,6 +376,11 @@ def main():
         # this template family ever shows must read ctx.gate, never re-derive the window.
         "gate": gate_live,
     }
+    return ctx
+
+
+def main():
+    ctx = build_context()
 
     env = Environment(loader=FileSystemLoader(str(ROOT / "templates")),
                       trim_blocks=True, lstrip_blocks=True, autoescape=False)

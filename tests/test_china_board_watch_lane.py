@@ -1,92 +1,88 @@
-"""CN standout board — the 110-cap overflow must land in a visible `watch` lane.
+"""China Prophet v2 artifact + overflow UX contract.
 
-2026-07-28 finding: build_china_library.main() cut the buy lane with a flat
-``eligible_rows[:110]`` slice. The live artifact that day carried eligible=156 and
-buy=110 — 46 names that PASSED the same confluence gate appeared NOWHERE on the
-page or in the artifact. The RIPENING and RAN arrays cannot absorb them: both
-exclude gate-eligible names by construction (a W1-B invariant asserts ripening
-rows are never gate-eligible), so the overflow was silently dropped, not demoted.
-
-Fix = an additive ``watch`` lane, mirroring the US board's watch routing
-(scripts/build_stock_library.py, W6-US fix 6). The cap is page width, not a
-quality bar, and `buy` deliberately keeps its width: it feeds the board-ORDER
-forward ledger (china_standout_track.append_board) and the bot:china_book
-consumer, so widening it would be a promotion-adjacent change.
-
-Run: .venv/bin/python -m pytest tests/test_china_board_watch_lane.py -q
+The former 110/overflow split was positional and mislabeled raw legacy early
+warnings as names that had cleared the actionable screen.  V2 exposes disjoint
+semantic lanes and keeps ``watch`` only as a compatibility union.
 """
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from scripts import build_china_library as bcl  # noqa: E402
-
-
-def _rows(n: int) -> list[dict]:
-    """Minimal rank-ordered row dicts — only the identity the lane split preserves."""
-    return [{"ticker": f"{600000 + i}.SS", "rank": i} for i in range(n)]
+ROOT = Path(__file__).resolve().parent.parent
+TEMPLATE = (ROOT / "templates" / "china.html.j2").read_text()
 
 
-def test_overflow_lands_in_watch_and_nothing_is_dropped():
-    """156 eligible (the 2026-07-28 live count) → 110 buy + 46 watch, loss-free."""
-    rows = _rows(156)
-    buy, watch = bcl._split_board_lanes(rows)
-
-    assert len(buy) == 110
-    assert len(watch) == 46
-    # loss-free AND order-preserving: concatenating the lanes reconstructs the input
-    # exactly, by identity — no row copied, re-sorted, or dropped.
-    assert buy + watch == rows
-    assert all(a is b for a, b in zip(buy + watch, rows))
-    # disjoint: every eligible row is in exactly one lane
-    buy_ids, watch_ids = {id(r) for r in buy}, {id(r) for r in watch}
-    assert not (buy_ids & watch_ids)
-    assert len(buy_ids | watch_ids) == len(rows)
-
-
-def test_under_cap_leaves_watch_empty():
-    rows = _rows(80)
-    buy, watch = bcl._split_board_lanes(rows)
-    assert buy == rows
-    assert watch == []
-
-
-def test_exactly_at_cap_leaves_watch_empty():
-    rows = _rows(bcl.BOARD_BUY_CAP)
-    buy, watch = bcl._split_board_lanes(rows)
-    assert len(buy) == bcl.BOARD_BUY_CAP
-    assert watch == []
-
-
-def test_empty_input():
-    assert bcl._split_board_lanes([]) == ([], [])
-
-
-def test_board_cap_is_pinned_at_110():
-    """Widening the board is a DELIBERATE act, never an incidental edit.
-
-    `buy` width feeds china_standout_track.append_board (the board-ORDER forward
-    ledger, whose history is only comparable at a constant width) and the
-    bot:china_book consumer. Changing this constant must update this test AND
-    re-check both consumers — the watch lane exists precisely so display pressure
-    never has to move it.
-    """
-    assert bcl.BOARD_BUY_CAP == 110
-
-
-def test_watch_is_declared_optional_in_the_artifact_contract():
-    """Contract side: watch is emitted by every build from schema 1.2.0 on, but is
-    declared OPTIONAL — the committed pre-rebuild china_standouts.json has no watch
-    key, and a required field would read as removed-drift on the main heartbeat
-    until the next nightly turns the artifact over."""
+def test_artifact_contract_versions_semantic_lanes():
     from scripts.export_signal_contracts import ARTIFACT_MANIFEST
 
-    entry = next(e for e in ARTIFACT_MANIFEST
-                 if e["artifact"] == "site/factordata/china_standouts.json")
-    assert entry["schema_version"] == "1.2.0"
+    entry = next(
+        e for e in ARTIFACT_MANIFEST
+        if e["artifact"] == "site/factordata/china_standouts.json"
+    )
+    assert entry["schema_version"] == "2.0.0"
+    required = set(entry["schema_fields"])
+    assert {
+        "schema_version", "actionable", "board_definition",
+        "execution_coverage", "lane_counts", "ranking",
+        "more_actionable", "late_or_unfillable", "forming", "track_ledger",
+    } <= required
     assert "watch" in (entry.get("optional_fields") or [])
-    # optional by design until artifact turnover — NOT a required top-level key
-    assert "watch" not in entry["schema_fields"]
+    assert {"prophet", "lane", "lane_reasons", "microstructure", "adv_yi"} <= set(
+        entry["schema_item_fields"]
+    )
+
+
+def test_flat_overflow_spam_is_gone_and_depth_is_collapsed():
+    assert "Also cleared today's screen" not in TEMPLATE
+    assert "beyond the board's" not in TEMPLATE
+    assert 'class="cn-depth"' in TEMPLATE
+    assert "<details" in TEMPLATE
+    assert "More live setups" in TEMPLATE
+    assert "Early warnings — not confirmed" in TEMPLATE
+    assert "Wait / unfillable / do not chase" in TEMPLATE
+    assert "legacy early/T4/null-tier observations" in TEMPLATE
+
+
+def test_depth_rows_are_cards_not_one_wrapped_name_paragraph():
+    assert 'class="cn-depth-card"' in TEMPLATE
+    assert "cn_depth_grid(_more)" in TEMPLATE
+    assert "cn_depth_grid(_late)" in TEMPLATE
+    assert "cn_depth_grid(_forming)" in TEMPLATE
+    # Backward fallback data is still collapsed and formatted, never deleted.
+    assert "Legacy depth — classification pending" in TEMPLATE
+    assert "cn_depth_grid(_legacy_depth)" in TEMPLATE
+
+
+def test_live_rank_copy_names_only_earned_components():
+    assert "signal 35%" in TEMPLATE
+    assert "entry 25%" in TEMPLATE
+    assert "runway 20%" in TEMPLATE
+    assert "bottom quality 10%" in TEMPLATE
+    assert "reversal-sleeve membership 10%" in TEMPLATE
+    assert "not a win probability or return forecast" in TEMPLATE
+
+
+def test_zero_universe_publishes_outage_instead_of_reusing_stale_board():
+    source = (ROOT / "scripts" / "build_china_library.py").read_text()
+    assert "published explicit empty outage artifact" in source
+    assert "Scored universe collapsed to zero" in source
+    assert "allow_nan=False" in source
+
+
+def test_renderer_rejects_legacy_fallback_under_prophet_v2_heading():
+    from scripts.build_china import (
+        _is_current_prophet_artifact,
+        _prophet_outage_shell,
+    )
+
+    assert not _is_current_prophet_artifact({"buy": [{"ticker": "OLD"}]})
+    assert _is_current_prophet_artifact({
+        "schema_version": "2.0.0",
+        "board_definition": "cn_prophet_v2",
+        "buy": [],
+    })
+    shell = _prophet_outage_shell("test failure")
+    assert shell["board_definition"] == "cn_prophet_v2"
+    assert shell["buy"] == []
+    assert shell["data_outage"]["flag"] is True

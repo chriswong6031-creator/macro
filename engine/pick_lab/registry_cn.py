@@ -17,7 +17,7 @@ import hashlib
 import json
 
 
-FLAGSHIP2_MIRROR_ID = "cnlab_flagship2_mirror"
+FLAGSHIP2_MIRROR_ID = "cnlab_flagship2_mirror_v2"
 """Ledger id for the flagship-2 daily top-12 mirror (§4, not counted in the 20)."""
 
 

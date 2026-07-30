@@ -18,7 +18,8 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine.axes import score_axis  # noqa: E402
-from engine.regime import apply_hysteresis, classify  # noqa: E402
+from engine.regime import (apply_hysteresis, classify, flip_condition,  # noqa: E402
+                           raw_quad)
 from engine.transition import compute_flags, state_machine  # noqa: E402
 
 RNG = np.random.default_rng(7)
@@ -118,6 +119,101 @@ def test_hysteresis_blocks_fakeout() -> None:
     assert (out["quad"] == "Q1").all(), "fakeout flipped the regime"
 
 
+def test_alternating_candidate_stalls_hysteresis_known_defect() -> None:
+    """PINS A KNOWN DESIGN DEFECT — do NOT 'fix' by loosening this assertion.
+
+    `apply_hysteresis` keys its confirmation counter on the candidate quad's IDENTITY
+    (`engine/regime.py`: `cand, cand_n = rq, 1` whenever `rq != cand`). So when one axis
+    holds a flipped sign indefinitely while the OTHER oscillates across zero, the raw
+    quad alternates between two candidates, each arrival resets the counter to 1, and
+    the confirmed label can NEVER reach `hysteresis_days` — it holds forever against a
+    permanently contradicted axis.
+
+    Concretely below: the label starts Q1 (growth ≥ 0, inflation < 0). Growth then goes
+    negative and STAYS negative for 40 sessions, so Q1's growth clause is false on every
+    one of them. Inflation alternates ±0.4 each session, so the raw quad alternates
+    Q3 (g<0, i≥0) / Q4 (g<0, i<0). The candidate identity flips every session, the
+    counter never exceeds 1, and the confirmed label stays Q1 for the whole stretch.
+
+    Observed live on 2026-07-29: label Q1 Goldilocks with growth −0.133 / inflation
+    +0.400 (raw Q3), and the Jan-2026 history shows the same pattern (quad pinned Q4
+    while raw alternated Q2/Q1, counter reset on 2026-01-07). raw_quad != quad on ~44%
+    of sessions since 2000 and ~49% of the trailing two years.
+
+    This test exists so any future recalibration of the counter (candidate-identity ->
+    per-axis-sign, or "any non-current quad") shows up as a DELIBERATE diff here rather
+    than as a silent behaviour change. The proposed change and its pre-registered
+    acceptance gate live in research/REGIME_DISLOCATION_RECAL_PROPOSAL.md §1. Nothing in
+    this test changes the hysteresis logic.
+    """
+    idx = pd.bdate_range("2020-01-01", periods=60)
+    # 20 clean Q1 sessions to establish the label, then 40 sessions of the stall
+    g = np.concatenate([np.full(20, 0.40), np.full(40, -0.40)])
+    i = np.concatenate([np.full(20, -0.40),
+                        np.tile([0.40, -0.40], 20)])          # alternates every session
+    gs, is_ = pd.Series(g, index=idx), pd.Series(i, index=idx)
+    # shock_z above every |score| here so the override cannot rescue the flip
+    out = apply_hysteresis(gs, is_, hysteresis_days=7, shock_z=0.85)
+
+    assert out["quad"].iloc[19] == "Q1", "setup: label should be Q1 before the stall"
+    stall = out.iloc[20:]
+    # the raw rule alternates between exactly two quads, both of which contradict Q1
+    raw = [raw_quad(a, b) for a, b in zip(g[20:], i[20:])]
+    assert set(raw) == {"Q3", "Q4"}
+    # DEFECT: the confirmed label never leaves Q1 across 40 contradicted sessions
+    assert (stall["quad"] == "Q1").all(), (
+        "hysteresis behaviour changed — if this is intentional, update this test and "
+        "research/REGIME_DISLOCATION_RECAL_PROPOSAL.md §1 in the same commit")
+    # ...and the countdown never gets past its first session, which is the mechanism
+    assert stall["pending_days"].max() == 1
+    assert set(stall["pending_quad"]) == {"Q3", "Q4"}
+    # a single-candidate stall of the same length DOES confirm — proving the stall is
+    # caused by the alternating identity, not by the hysteresis length
+    i_steady = np.concatenate([np.full(20, -0.40), np.full(40, 0.40)])
+    steady = apply_hysteresis(gs, pd.Series(i_steady, index=idx),
+                              hysteresis_days=7, shock_z=0.85)
+    assert steady["quad"].iloc[-1] == "Q3", "control: a steady candidate must confirm"
+
+
+def test_flip_condition_signs_against_the_displayed_label() -> None:
+    """flip_condition must hunt for supporters of the DISPLAYED quad's expected axis
+    signs, never of the raw score's sign — and when the label's own axes contradict it,
+    it must SAY so instead of presenting anti-evidence as "the weakest support".
+
+    The old code signed off `row[axis_score] >= 0`, so on the ~44% of sessions where
+    raw_quad != quad it captioned evidence AGAINST the label as the shakiest evidence
+    behind it (2026-07-29: label Q1, growth −0.133, reported iwm_spy z=−0.45).
+    """
+    idx = pd.bdate_range("2020-01-01", periods=30)
+    regime = pd.DataFrame({
+        "growth_score": -0.133, "inflation_score": 0.400,
+        "quad": "Q1", "raw_quad": "Q3", "pending_quad": "Q3", "pending_days": 3,
+    }, index=idx)
+    fc = flip_condition(pd.DataFrame(index=idx), regime, idx[-1])
+    assert fc["label_unsupported"] is True
+    assert fc["component"] is None, "must not name a 'weakest supporter' of a contradicted label"
+    assert fc["displayed_quad"] == "Q1" and fc["raw_quad"] == "Q3"
+    assert fc["pending_quad"] == "Q3" and fc["pending_days"] == 3
+    assert "no longer support" in fc["note"]
+    assert "Q3" in fc["note"] and "Q1" in fc["note"]
+
+    # agreeing label -> normal path, and the sign searched is the label's expected sign
+    agree = pd.DataFrame({
+        "growth_score": 0.40, "inflation_score": -0.40,
+        "quad": "Q1", "raw_quad": "Q1", "pending_quad": None, "pending_days": 0,
+    }, index=idx)
+    fc2 = flip_condition(pd.DataFrame(index=idx), agree, idx[-1])
+    assert fc2["label_unsupported"] is False
+    assert fc2["displayed_quad"] == "Q1"
+
+    # engine/run.py mirrors flip_condition.margin into latest["flip_margin"]. An
+    # unsupported label has NO supporting component and so no margin — but it is
+    # MAXIMALLY fragile, not unknown, and engine/neuralweb/contradictions._is_near_flip
+    # skips its check entirely on None. Pin the 0.0 mirror so that stays true.
+    assert "margin" not in fc
+    assert (0.0 if fc.get("label_unsupported") else fc.get("margin")) == 0.0
+
+
 def test_axis_scoring_direction() -> None:
     f = goldilocks_to_stagflation()
     gx = score_axis(f, "growth")
@@ -132,6 +228,8 @@ def test_axis_scoring_direction() -> None:
 if __name__ == "__main__":
     for fn in [test_quads_and_single_flip, test_transition_warns_before_flip,
                test_shock_override_flips_fast, test_hysteresis_blocks_fakeout,
+               test_alternating_candidate_stalls_hysteresis_known_defect,
+               test_flip_condition_signs_against_the_displayed_label,
                test_axis_scoring_direction]:
         fn()
         print(f"PASS {fn.__name__}")

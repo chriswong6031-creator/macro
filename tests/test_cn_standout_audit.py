@@ -137,6 +137,29 @@ def _make_board(root: Path, dates: list[str] | None = None) -> pd.DataFrame:
     return df
 
 
+def _make_same_date_mixed_definition_board(root: Path) -> pd.DataFrame:
+    """Write one legacy and one v2 row sharing the same date/ticker key."""
+    base = _make_board(root, ["2026-07-01"]).iloc[0].to_dict()
+    rows = [
+        {
+            **base,
+            "board_definition": "legacy",
+            "fwd_21d_excess": -0.20,
+        },
+        {
+            **base,
+            "board_definition": "cn_prophet_v2",
+            "fwd_21d_excess": 0.05,
+        },
+    ]
+    df = pd.DataFrame(rows)
+    df.to_parquet(
+        root / "data" / "china_standout_track" / "board.parquet",
+        index=False,
+    )
+    return df
+
+
 # ---------------------------------------------------------------------------
 # 1. CN_LANE fail-closed: regime store
 # ---------------------------------------------------------------------------
@@ -574,6 +597,67 @@ class TestAttributionKeepFirst:
             key_cols = ["date", "ticker", "horizon", "taxonomy_version"]
             dups = df.duplicated(subset=key_cols)
             assert not dups.any(), "cn_attribution.parquet must not have duplicate keys"
+
+
+# ---------------------------------------------------------------------------
+# 8b. Board-definition isolation
+# ---------------------------------------------------------------------------
+
+class TestBoardDefinitionIsolation:
+    def test_same_date_legacy_and_v2_rows_grade_only_latest_definition(
+        self, tmp_path, monkeypatch,
+    ):
+        """A same-date legacy row must not enter the v2 attribution or scoreboard."""
+        _make_same_date_mixed_definition_board(tmp_path)
+        monkeypatch.setenv("CN_LANE", "asia")
+
+        result = run_attribution(root=tmp_path, lane="asia")
+
+        assert result["written"] is True
+        assert result["board_definition"] == "cn_prophet_v2"
+        assert result["n_matured"] == 1
+
+        attribution = pd.read_parquet(
+            tmp_path / "data" / "standout_audit" / "cn_attribution.parquet"
+        )
+        assert attribution["board_definition"].tolist() == ["cn_prophet_v2"]
+        assert attribution["fwd_excess"].tolist() == pytest.approx([0.05])
+
+        scoreboard = json.loads(
+            (
+                tmp_path
+                / "site"
+                / "factordata"
+                / "cn_audit_scoreboard.json"
+            ).read_text()
+        )
+        assert scoreboard["board_definition"] == "cn_prophet_v2"
+        assert scoreboard["total_matured"] == 1
+
+    def test_definition_stamped_evidence_is_not_duplicated_on_rerun(
+        self, tmp_path, monkeypatch,
+    ):
+        """Evidence keep-first uses definition/date/ticker consistently on reload."""
+        _make_same_date_mixed_definition_board(tmp_path)
+        monkeypatch.setenv("CN_LANE", "asia")
+
+        first = run_attribution(root=tmp_path, lane="asia")
+        second = run_attribution(root=tmp_path, lane="asia")
+
+        assert first["n_new_evidence"] == 1
+        assert second["n_new_this_run"] == 0
+        assert second["n_new_evidence"] == 0
+
+        evidence_path = (
+            tmp_path / "data" / "standout_audit" / "cn_evidence.jsonl"
+        )
+        evidence = [
+            json.loads(line)
+            for line in evidence_path.read_text().splitlines()
+            if line.strip()
+        ]
+        assert len(evidence) == 1
+        assert evidence[0]["board_definition"] == "cn_prophet_v2"
 
 
 # ---------------------------------------------------------------------------

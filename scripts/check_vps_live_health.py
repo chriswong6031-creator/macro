@@ -51,6 +51,50 @@ def evaluate(payload: dict[str, Any], *, now: datetime | None = None) -> list[st
     _require_age(failures, checks, "quotes", 5)
     _require_age(failures, checks, "release_publications", 5)
     _require_age(failures, checks, "orchestrator", 5)
+    release_check = checks.get("release_publications") or {}
+    if release_check.get("schema") == "release_publications.v2":
+        if release_check.get("schedule_status") not in (None, "ok"):
+            missing = release_check.get("missing_schedule_types") or []
+            failures.append(
+                "release_publications: official schedule coverage is incomplete"
+                + (f" ({', '.join(str(value) for value in missing)})" if missing else "")
+            )
+        statuses = release_check.get("event_status")
+        if not isinstance(statuses, dict):
+            failures.append("release_publications: semantic event status is missing")
+        else:
+            delayed = int(statuses.get("verification_delayed") or 0)
+            awaiting = int(statuses.get("awaiting_publication") or 0)
+            status_unparsed = int(statuses.get("published_unparsed") or 0)
+            try:
+                unparsed = max(
+                    status_unparsed,
+                    int(release_check.get("unparsed_publications") or 0),
+                )
+            except (TypeError, ValueError):
+                unparsed = status_unparsed
+                failures.append("release_publications: invalid unparsed count")
+            try:
+                lag = float(release_check.get("max_publication_lag_min") or 0)
+            except (TypeError, ValueError):
+                lag = 0
+                failures.append("release_publications: invalid publication lag")
+            if delayed:
+                failures.append(
+                    "release_publications: "
+                    f"{delayed} event(s) remain unverified beyond the watch window"
+                )
+            elif unparsed and (lag > 2 or status_unparsed == 0):
+                failures.append(
+                    "release_publications: official publication detected but "
+                    f"{unparsed} event result(s) remain unparsed"
+                    + (f" {lag:.1f}m after schedule" if lag > 0 else "")
+                )
+            elif awaiting and lag > 2:
+                failures.append(
+                    "release_publications: official result still unavailable "
+                    f"{lag:.1f}m after schedule"
+                )
     try:
         resolved = int(checks["quotes"]["resolved"])
     except (KeyError, TypeError, ValueError):

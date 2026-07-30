@@ -18,47 +18,228 @@ the Terminal UI with a 30s TTL cache.
 | `live_flow/tide_current.json` | `live_flow.tide/v1` | Market tide (NCP/NPP minutes + sectors) |
 | `live_flow/dte_tide_current.json` | `live_flow.dte_tide/v1` | DTE-bucket tide |
 | `live_flow/tickers/{ROOT}.json` | `live_flow.ticker/v1` | Per-root drill (top ~40 roots) |
+| `live_flow/tide/{DATE}.json` | `live_flow.tide/v1` | Dated archive of tide_current (same bytes) |
+| `live_flow/dte_tide/{DATE}.json` | `live_flow.dte_tide/v1` | Dated archive of dte_tide_current |
+| `live_flow/tide/dates.json` | `live_flow.archive_dates/v1` | Sessions index for the tide archive |
+| `live_flow/dte_tide/dates.json` | `live_flow.archive_dates/v1` | Sessions index for the dte archive |
 
 Local copies land in `data/live_flow_out/` (gitignored).
 Day state is persisted at `data/live_flow_state/day_state_{date}.json`.
 
+### Dated tide/dte archives (OIP W0 T-lane)
+
+`tide_current.json` / `dte_tide_current.json` are OVERWRITTEN every cycle, so the session's
+story used to die at the close. Each cycle now also uploads the SAME two local files under a
+date-keyed name (`live_flow/{tide,dte_tide}/{YYYY-MM-DD}.json`) plus a per-family
+`dates.json` sessions index — one write, two keys, so the live copy and the archive can never
+disagree byte-for-byte. **The day's final write is the settled record**, which is what the
+nightly Session Digest (OIP E1) reads. Both payloads already carry the full-session
+cumulative series (390 minutes for a full RTH session), so no payload changed and the current
+keys are byte-identical to before.
+
+- Writer: `scripts/build_flow_archive.py` (pure functions), wired in `live_flow_poller.main`.
+- Retention: newest **30** sessions per family; override with `live_flow.archive_retain_sessions`
+  in `config.yml` (a non-positive value is refused and the default is used — a stray `-1`
+  would otherwise select every dated object, today's included). Swept once per session (two
+  cheap R2 listings), never per-cycle; a failed sweep retries **next session**, not next
+  cycle. The prune rebuilds every delete target from `dated_archive_key`, so it can only ever
+  delete a key this lane wrote — never `dates.json`, never `live_flow/tide_current.json` — and
+  it honors R2's per-key `Errors` array, so a refused delete is reported, not counted.
+  Flow-Surface retention stays at 10 sessions (`surface_retain_sessions`) — unchanged.
+- **Write gates.** The lane is dark unless the run is a live one on a real trading day: any
+  `--date` run (see the smoke warning below) and any non-NYSE-session date
+  (`lib/nyse_calendar.is_session` — holidays, not just weekends) skip the dated write, the
+  ledger entry and the retention sweep. The current keys publish either way.
+- Added cost: +4 R2 PUTs/cycle (~262 KB — `tide` 179 KB + `dte_tide` 82.5 KB, measured live
+  2026-07-29 + two ~250-byte indexes). Stored footprint is only the last write per key:
+  ~8 MB per 30-session retention window. R2 ingress is free; ~800 extra class-A writes per
+  session.
+- Fully fail-soft: a staging or PUT failure logs and degrades to current-keys-only; it can
+  never cost the poller a cycle or blank a key the live Terminal reads.
+- Verify after a deploy:
+  ```bash
+  R2_BASE=$(python -c "import yaml; c=yaml.safe_load(open('config.yml')); \
+    print(c['r2_data_plane']['public_base'])")
+  curl -s "$R2_BASE/live_flow/tide/dates.json" | python -m json.tool
+  curl -s -o /dev/null -w '%{http_code} %{size_download}\n' \
+    "$R2_BASE/live_flow/tide/$(date +%F).json"
+  ```
+
 ## launchd autostart
 
-Two plists manage the options-flow stack:
+Two plists manage the options-flow stack.  Both run on the **M1 ops host**, but
+from **two different deploy trees** — a recurring source of confusion:
 
-| Plist | Job | Schedule | Log paths |
-|---|---|---|---|
-| `com.mastermind.liveflow.plist` | Live poller (RTH) | Weekdays 09:25 ET | `/tmp/liveflow.stdout.log` `/tmp/liveflow.stderr.log` |
-| `com.mastermind.optionshub.plist` | Nightly hub builder | Weekdays 16:45 ET | `/tmp/optionshub.stdout.log` `/tmp/optionshub.stderr.log` |
+| Plist | Job | Schedule | WorkingDirectory | Log paths |
+|---|---|---|---|---|
+| `com.mastermind.liveflow.plist` | Live poller (RTH) | Weekdays 09:25 ET | `/Users/chriswong/liveflow-ops-wt` | `/tmp/liveflow.stdout.log` `/tmp/liveflow.stderr.log` |
+| `com.mastermind.optionshub.plist` | Nightly hub builder | Weekdays 16:45 ET | `/Users/chriswong/hub-ops-wt` | `/tmp/optionshub.stdout.log` `/tmp/optionshub.stderr.log` |
 
 Both plists use `ops/launchd/run_with_env.sh` to source `.env` before launching
 Python.  Secrets (`R2_*`, `THETADATA_STORE`) must be in the `.env` file inside
 the job's working directory.  **Never inline secrets in the plist
 EnvironmentVariables block.**
 
-### Deploy-worktree doctrine (live-flow poller)
+> **Read `*.stderr.log`, not `*.stdout.log`.**  The poller logs through Python's
+> `logging`, which writes to **stderr**.  `/tmp/liveflow.stdout.log` sits at
+> 0 bytes for weeks at a time (measured 2026-07-30: 0 bytes since 07-27, while
+> `/tmp/liveflow.stderr.log` held 4.8 MB from the 07-29 session).  **An empty
+> stdout log is not evidence the job failed to run.**  Session evidence — cycle
+> lines, root counts, R2 publish confirmations — lives in the stderr log.
 
-The `com.mastermind.liveflow` job MUST run from a **dedicated deploy worktree**
-`/Users/chriswong/liveflow-ops-wt` (pinned to `origin/main`) — **never** from the
-main checkout `/Users/chriswong/Documents/Cluade/Macro Dashboard`.  The main
-checkout's git HEAD is controlled by many concurrent agent sessions and is
-frequently parked at a detached HEAD that does **not** contain
-`scripts/live_flow_poller.py`; a launchd run rooted there dies with
-`ModuleNotFoundError` at the next 06:25 PT fire.  The launchd `ProgramArguments`,
-`WorkingDirectory`, and `PYTHONPATH` therefore all point at the deploy worktree.
+### Deploy-tree doctrine (live-flow poller)
 
-Create / refresh the deploy worktree:
+The `com.mastermind.liveflow` job MUST run from a **dedicated deploy tree**
+`/Users/chriswong/liveflow-ops-wt` (pinned to `origin/main`) — **never** from a
+shared agent checkout.  A shared checkout's git HEAD is controlled by many
+concurrent agent sessions and is frequently parked at a detached HEAD that does
+**not** contain `scripts/live_flow_poller.py`; a launchd run rooted there dies
+with `ModuleNotFoundError` at the next 06:25 PT fire.  The launchd
+`ProgramArguments`, `WorkingDirectory`, and `PYTHONPATH` therefore all point at
+the deploy tree.
+
+#### Two machines — know which one you are on
+
+This section used to read as if there were one machine.  There are two, and only
+one of them runs anything:
+
+| | Mac Studio (`Mac14,14`) | M1 ops host (`Mac13,1`, ssh alias `m1`) |
+|---|---|---|
+| Parent checkout `~/Documents/Cluade/Macro Dashboard` | **exists** (shared agent checkout) | **does not exist** — `~/Documents/Cluade` holds only `Mastermind` |
+| `/Users/chriswong/liveflow-ops-wt` | a **dormant stale copy** (last touched 2026-07-25) | the **live** poller tree |
+| `com.mastermind.liveflow` loaded in launchd | no | **yes** |
+
+The Studio's `liveflow-ops-wt` is a leftover at the same path: nothing loads it
+and nothing reads it.  **Editing it deploys nothing.**  The live lane is the
+M1's — reach it with `ssh m1`.
+
+#### Why the old `git worktree add` recipe is gone
+
+Until 2026-07-30 this section prescribed, from the parent checkout:
 
 ```bash
+# HISTORICAL — impossible on the M1, kept only so the failure is recognisable
 cd '/Users/chriswong/Documents/Cluade/Macro Dashboard'
-git fetch origin main
 git worktree add -B ops/liveflow-deploy /Users/chriswong/liveflow-ops-wt origin/main
-cp '/Users/chriswong/Documents/Cluade/Macro Dashboard/.env' /Users/chriswong/liveflow-ops-wt/.env
-# .env must define R2_ENDPOINT R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY R2_BUCKET
-# THETADATA_STORE  (baselines.json is committed under data/live_flow_baselines/).
 ```
 
-The same pattern applies to the ThetaData EOD backfill agent
+On the M1 there is no parent checkout, so this cannot run.  Worse, the tree that
+was there had been created that way under some earlier machine state: its `.git`
+was a one-line `gitdir:` pointer into
+`…/Macro Dashboard/.git/worktrees/liveflow-ops-wt`, which does not exist on that
+host — so **every** git command inside the deploy tree failed with `fatal: not a
+git repository`.
+
+The lane was therefore being deployed by `scp`-ing individual files, which let it
+drift silently.  Measured 2026-07-29, before the rebuild: `engine/live_flow.py`
+and `scripts/live_flow_poller.py` matched `origin/main`, but `config.yml`,
+`engine/flow_signing.py` and `lib/nyse_calendar.py` were each one commit behind
+— and `lib/nyse_calendar.is_session` is what gates the dated tide/dte archive
+writes.  A file-copy deploy updates what you remember to copy; nothing tells you
+what you forgot.
+
+#### Current procedure — standalone shallow clone
+
+The deploy tree is now a **standalone clone**, not a worktree.  This follows the
+precedent already on the M1: `flow-ops-wt` and `fund-ops-wt` were standalone
+clones and were the only ops trees whose git still worked.
+
+Constraints that shaped the shape:
+
+- **Disk.**  The M1 sits at ~97% (~15 GB free).  A full clone of this repo costs
+  ~13 GB of `.git` alone (measured: `flow-ops-wt/.git`).  `--depth 1` costs
+  ~1.6 GB, for ~4.5 GB of tree total.
+- **No `--filter=blob:none`.**  A blobless partial clone lazily fetches blobs on
+  read; a deploy tree on a live lane must not need the network to read its own
+  source files.
+- **Auth.**  `gh` on the M1 is authenticated as `chriswong6031-creator` with an
+  **invalid token** — do not rely on it.  Two paths do work, both verified
+  2026-07-30:
+  1. the repo-scoped SSH **deploy key** `~/.ssh/macro_dashboard_deploy`
+     (`ssh -i ~/.ssh/macro_dashboard_deploy -T git@github.com` →
+     `Hi chriswong6031-creator/macro!`).  There is no `~/.ssh/config` on the M1,
+     so the key is pinned in the clone's own `core.sshCommand`.
+     Note `macro_dashboard_deploy_v2` does **not** authenticate — use the v1 key.
+  2. anonymous **HTTPS** — the repo is public, so `git ls-remote
+     https://github.com/chriswong6031-creator/macro.git` needs no credentials.
+     Fallback if the key is ever revoked.
+
+Rebuild, while the poller is idle (it self-exits 16:05 ET, so any weekday
+evening/overnight works — check `launchctl list | grep liveflow` shows PID `-`):
+
+```bash
+OLD=/Users/chriswong/liveflow-ops-wt
+NEW=/Users/chriswong/liveflow-ops-wt.new
+
+# 1. clone BESIDE the live path, never over it
+git clone --depth 1 --single-branch --branch main \
+  --config "core.sshCommand=ssh -i /Users/chriswong/.ssh/macro_dashboard_deploy -o IdentitiesOnly=yes" \
+  git@github.com:chriswong6031-creator/macro.git "$NEW"
+
+# 2. carry over what git can never provide (all gitignored)
+rsync -a "$OLD/.env" "$NEW/.env"                                  # keeps 0600
+rsync -a "$OLD/data/live_flow_state" "$OLD/data/live_flow_out" "$NEW/data/"
+
+# 3. swap, keeping a timestamped rollback; launchd paths never change
+mv "$OLD" "${OLD}.orphaned-$(date +%Y%m%dT%H%M%S)"
+mv "$NEW" "$OLD"
+```
+
+Copy **only** those gitignored paths.  Anything else the old tree has that
+`origin/main` lacks is a stale vintage of a file main has since changed or
+deleted; copying it back re-creates the drift the rebuild exists to remove.
+
+Verify (no live cycle — see the warning below):
+
+```bash
+cd /Users/chriswong/liveflow-ops-wt
+git log -1 --format='%H %ci %s'
+git status --porcelain -uno | wc -l         # must be 0
+ls -l .env                                  # must still be -rw-------
+ls data/live_flow_state/                    # day_state_*.json must be present
+launchctl list | grep mastermind.liveflow   # PID '-', last status 0, while idle
+PYTHONPATH=/Users/chriswong/liveflow-ops-wt \
+  /Users/chriswong/miniconda3/envs/plane/bin/python \
+  -m scripts.live_flow_poller --help >/dev/null && echo "poller entrypoint OK"
+```
+
+> **Do not verify by running a real cycle.**  A bare `--once` publishes to the
+> live R2 *current* keys, and `--once --date <past>` overwrites that date's
+> flow-surface replay (see the smoke warning above).  The import + `--help`
+> check covers the `ModuleNotFoundError` class of failure that this doctrine
+> exists to prevent; the real proof is the next 09:25 ET session in
+> **`/tmp/liveflow.stderr.log`**.
+
+Refresh thereafter — this is now an ordinary git operation, which was the whole
+point:
+
+```bash
+cd /Users/chriswong/liveflow-ops-wt
+git fetch --depth 1 origin main && git reset --hard FETCH_HEAD
+```
+
+Keep `--depth 1` on the fetch: it holds the shallow boundary at one commit so the
+tree never grows toward the ~13 GB full-history footprint this disk cannot take.
+`git reset --hard` also restores any file an earlier `scp` deploy hand-patched,
+and leaves gitignored runtime state (`.env`, `data/live_flow_state/`,
+`data/live_flow_out/`) untouched.
+
+#### Sibling deploy trees on the M1
+
+| Tree | Job(s) | State (2026-07-30) |
+|---|---|---|
+| `liveflow-ops-wt` | `com.mastermind.liveflow` | **standalone clone — git-refreshable** |
+| `flow-ops-wt` | flow enrich / signing lanes | standalone clone, full history (~75 GB) |
+| `fund-ops-wt` | `com.mastermind.fund` | standalone clone of a *different* repo (`mastermind-terminal`) |
+| `hub-ops-wt` | `com.mastermind.optionshub` | **still orphaned** — same dead `gitdir:` pointer |
+| `theta-ops-wt` | `com.macro.thetadata-*` | **still orphaned** — same dead `gitdir:` pointer |
+
+`hub-ops-wt` and `theta-ops-wt` are still deployed by file copy and will drift
+the same way `liveflow-ops-wt` did.  Repair each with the same recipe — clone
+beside, carry the gitignored state, timestamped swap — one at a time, while that
+job is idle (`optionshub` fires 16:45 ET, so its window is overnight too).
+
+The same TCC constraint applies to the ThetaData EOD backfill agent
 (`com.macro.thetadata-backfill`): its keepalive script must live **outside**
 `~/Documents/` (kept at `/Users/chriswong/theta-ops-wt/scripts/launchd/`),
 because macOS TCC denies launchd `exec` on scripts under `~/Documents/`
@@ -70,6 +251,17 @@ because macOS TCC denies launchd `exec` on scripts under `~/Documents/`
 cp ops/launchd/com.mastermind.liveflow.plist ~/Library/LaunchAgents/
 launchctl load ~/Library/LaunchAgents/com.mastermind.liveflow.plist
 ```
+
+Rebuilding the deploy tree does **not** require touching launchd: the plist
+addresses the tree by path, so a clone-beside-and-swap is invisible to it as
+long as the job is idle and the final path is unchanged.  Reinstall only when
+the plist itself changes.
+
+The installed plist on the M1 spells the interpreter as
+`/Users/chriswong/miniconda3/envs/plane/bin/python`, while the repo copy uses
+`/opt/homebrew/Caskroom/miniconda/base/bin/python`.  On that host the second is
+a **symlink to the first** — same binary, same deps — so the two are
+interchangeable and the difference is not drift worth "fixing".
 
 ### Options-hub nightly builder — install
 
@@ -149,6 +341,25 @@ set -a; source /path/to/.env; set +a
 Never echo these values — they persist in shell history and logs.
 
 ## Manual single-cycle smoke
+
+> **`--date` disables the dated tide/dte ARCHIVE lane — by design.** This recipe polls a
+> handful of roots, so its tide payload is a valid-looking *partial* of that past session, and
+> the archive key is derived from `session_date`. An ungated smoke would therefore overwrite
+> the settled `live_flow/tide/<that date>.json` with a fragment, undetectably (schema valid,
+> date correct — `roots_polled` lives only in `meta.json`, which the archive does not carry).
+> So whenever `--date` is passed, dated **tide/dte_tide** archive writes and their retention
+> sweep are both off and the poller logs it at WARNING. That lane is also dark on any
+> non-session (market holidays — launchd fires anyway). To exercise it, run the unit suite:
+> `pytest tests/test_flow_archive.py`.
+>
+> **⚠️ The dated FLOW-SURFACE store has no such gate — a backdated smoke DOES overwrite it.**
+> `session_date` flows unconditionally into `build_and_stage_surfaces`
+> (`live_flow_poller.py:1717`), so a `--date` run rewrites
+> `live_flow/surface/{ROOT}/<that date>/idx.json` + `{HHMM}.json` with a partial few-root,
+> single-stamp frame, and its retention sweep still runs. Pre-existing M-XP behavior, not
+> changed here. **Do not run a backdated smoke against a session whose surface replay you
+> still care about** — pick a date outside the 10-session surface retention window, or accept
+> that that session's replay is clobbered until the next live session ages it out.
 
 ```bash
 # Wipe stale state first

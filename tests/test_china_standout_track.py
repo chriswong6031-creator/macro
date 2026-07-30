@@ -160,6 +160,69 @@ def test_ledger_append_gated_to_asia_lane(cn_store):
     assert n2 == 1
 
 
+def test_append_board_versions_same_day_without_overwriting(cn_store):
+    """Different board definitions are different instruments, even on one date."""
+    _, dates = cn_store
+    asof = str(dates[0].date())
+    legacy = [{"ticker": "600000.SS", "price": 10.0,
+               "board_definition": "legacy"}]
+    v2 = [{"ticker": "600000.SS", "price": 10.0,
+           "board_definition": "cn_prophet_v2",
+           "lane": "featured",
+           "prophet": {
+               "version": "cn_prophet_v2", "score": 81,
+               "components": {
+                   "signal": 0.9, "entry": 1.0, "runway": 0.7,
+                   "bottom_quality": 0.4, "reversal_member": 1.0,
+               },
+           }}]
+    assert t.append_board(legacy, asof=asof) == 1
+    assert t.append_board(v2, asof=asof) == 2
+    df = pd.read_parquet(t._store_path())
+    assert set(df["board_definition"]) == {"legacy", "cn_prophet_v2"}
+    row = df[df["board_definition"] == "cn_prophet_v2"].iloc[0]
+    assert row["lane"] == "featured"
+    assert float(row["prophet_score"]) == 81
+    assert float(row["prophet_reversal_member"]) == 1.0
+
+
+def test_latest_board_definition_is_graded_in_isolation(cn_store):
+    """A definition change resets the public cohort instead of pooling history."""
+    _, dates = cn_store
+    old = pd.DataFrame([
+        {"date": str(dates[0].date()), "ticker": "OLD", "board_rank": 1,
+         "board_definition": "legacy"},
+    ])
+    new = pd.DataFrame([
+        {"date": str(dates[1].date()), "ticker": "NEW", "board_rank": 1,
+         "board_definition": "cn_prophet_v2"},
+    ])
+    cohort, definition = t._latest_definition_frame(pd.concat([old, new], ignore_index=True))
+    assert definition == "cn_prophet_v2"
+    assert cohort["ticker"].tolist() == ["NEW"]
+
+
+def test_latest_definition_prefers_new_append_on_same_date(cn_store):
+    """A same-session migration must not select legacy just because it had more ranks."""
+    _, dates = cn_store
+    asof = str(dates[0].date())
+    legacy = pd.DataFrame([
+        {"date": asof, "ticker": "OLD1", "board_rank": 1,
+         "board_definition": "legacy"},
+        {"date": asof, "ticker": "OLD60", "board_rank": 60,
+         "board_definition": "legacy"},
+    ])
+    new = pd.DataFrame([
+        {"date": asof, "ticker": "NEW1", "board_rank": 1,
+         "board_definition": "cn_prophet_v2"},
+    ])
+    cohort, definition = t._latest_definition_frame(
+        pd.concat([legacy, new], ignore_index=True)
+    )
+    assert definition == "cn_prophet_v2"
+    assert cohort["ticker"].tolist() == ["NEW1"]
+
+
 def test_grade_end_to_end_publishes_conventions(cn_store):
     """grade() over a real (matured) synthetic ledger publishes the honest convention block + a
     Wilson-CI hit rate vs CSI300, and resolves prices (n>0) — proving the ledger is no longer dead."""

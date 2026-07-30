@@ -13,6 +13,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -26,6 +27,7 @@ from plotly.subplots import make_subplots
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config, store  # noqa: E402
+from lib.illus import illus, regime_tape  # noqa: E402
 from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -239,6 +241,8 @@ def _cockpit_axis_rows(master: dict, regime: dict) -> list[dict]:
             )
             primary = {
                 "key": primary_key,
+                "label_en": "Leverage pressure",
+                "label_zh": "杠杆压力",
                 "source": "regime.context_legs.leverage.cascade_risk",
                 "state_en": state_en,
                 "state_zh": state_zh,
@@ -249,6 +253,8 @@ def _cockpit_axis_rows(master: dict, regime: dict) -> list[dict]:
             row = board_rows.get(primary_key) or {}
             primary = {
                 "key": primary_key,
+                "label_en": row.get("label_en", primary_key.replace("_", " ").title()),
+                "label_zh": row.get("label_zh", primary_key),
                 "source": f"master.board.{primary_key}",
                 "state_en": row.get("state_en", "Unavailable"),
                 "state_zh": row.get("state_zh", "暂无"),
@@ -261,6 +267,8 @@ def _cockpit_axis_rows(master: dict, regime: dict) -> list[dict]:
             row = board_rows.get(key) or {}
             receipts.append({
                 "key": key,
+                "label_en": row.get("label_en", key.replace("_", " ").title()),
+                "label_zh": row.get("label_zh", key),
                 "source": f"master.board.{key}",
                 "state_en": row.get("state_en", "Unavailable"),
                 "state_zh": row.get("state_zh", "暂无"),
@@ -276,6 +284,361 @@ def _cockpit_axis_rows(master: dict, regime: dict) -> list[dict]:
             "receipt_members": receipts,
         })
     return axes
+
+
+def _series_payload(series: pd.Series | None, days: int | None = None) -> dict:
+    """Small ilx payload with calendar dates and finite numeric values."""
+    if series is None:
+        return {"dates": [], "vals": []}
+    s = pd.to_numeric(series, errors="coerce").dropna().sort_index()
+    if days and len(s):
+        s = s.loc[s.index >= s.index.max() - pd.Timedelta(days=days)]
+    return {
+        "dates": [pd.Timestamp(d).strftime("%Y-%m-%d") for d in s.index],
+        "vals": [float(v) for v in s],
+    }
+
+
+def _spark_points(series: pd.Series | None, days: int = 90, w: int = 150, h: int = 34) -> str:
+    """Theme-aware Tier-1 spark geometry; normalization is visual only."""
+    if series is None:
+        return ""
+    s = pd.to_numeric(series, errors="coerce").dropna().sort_index()
+    if len(s):
+        s = s.loc[s.index >= s.index.max() - pd.Timedelta(days=days)]
+    if len(s) < 3:
+        return ""
+    lo, hi = float(s.min()), float(s.max())
+    span = hi - lo
+    return " ".join(
+        f"{w * i / max(len(s) - 1, 1):.1f},{h - (h * (float(v) - lo) / span) if span else h / 2:.1f}"
+        for i, v in enumerate(s.to_numpy())
+    )
+
+
+def _plain_watch_conditions(cycle_thesis: dict) -> list[dict]:
+    """Translate the cycle monitor into calm, banned-vocabulary-free watch rows."""
+    copy = {
+        "timing": (
+            "Cycle window",
+            "周期窗口",
+            "The projected timing window is being updated from the latest close.",
+            "预测时间窗口会依据最新收盘持续更新。",
+        ),
+        "structure": (
+            "Price structure",
+            "价格结构",
+            "The cycle read needs price structure to keep holding.",
+            "周期判断需要价格结构继续保持。",
+        ),
+        "dampening": (
+            "Drawdown shape",
+            "回撤形态",
+            "A shallower sell-off would point to a less distinct cycle low.",
+            "若回撤更浅，本轮周期低点可能不再清晰。",
+        ),
+        "desync": (
+            "Cycle alignment",
+            "周期对齐",
+            "The halving clock and calendar window need to stay aligned.",
+            "减半时钟与日历窗口需要继续保持一致。",
+        ),
+        "pivot_staleness": (
+            "Cycle anchors",
+            "周期锚点",
+            "New price extremes can require the cycle anchors to be refreshed.",
+            "新的价格极值可能需要更新周期锚点。",
+        ),
+    }
+    level_words = {
+        "ok": ("On track", "按计划"),
+        "watch": ("Watch", "留意"),
+        "alert": ("Needs review", "需复核"),
+    }
+    rows = []
+    for flag in (cycle_thesis or {}).get("flags") or []:
+        if flag.get("key") not in copy:
+            continue
+        title_en, title_zh, body_en, body_zh = copy[flag["key"]]
+        state_en, state_zh = level_words.get(flag.get("level"), ("Updating", "更新中"))
+        rows.append({
+            "key": flag["key"],
+            "level": flag.get("level", "ok"),
+            "title_en": title_en,
+            "title_zh": title_zh,
+            "state_en": state_en,
+            "state_zh": state_zh,
+            "body_en": body_en,
+            "body_zh": body_zh,
+        })
+    return rows[:3]
+
+
+def _vector_presentations(
+    sig: pd.DataFrame,
+    master: dict,
+    regime: dict,
+    cycle_thesis: dict,
+) -> dict:
+    """Build Wave-1 display objects from existing engine series only."""
+    last = sig.iloc[-1]
+    close = sig["close"]
+    cutoff = close.index.max() - pd.Timedelta(days=730)
+    price = close.loc[close.index >= cutoff]
+    alloc = sig["alloc_optimal"].reindex(price.index)
+    comp = sig.get("composite_state", pd.Series("NEUTRAL", index=sig.index)).reindex(price.index)
+    tone_map = {
+        "ACCUMULATE": "bull",
+        "RISK-ON": "bull",
+        "NEUTRAL": "neutral",
+        "DISTRIBUTE": "bear",
+        "RISK-OFF": "bear",
+    }
+    regimes = [
+        {
+            "start": pd.Timestamp(start).strftime("%Y-%m-%d"),
+            "end": pd.Timestamp(end).strftime("%Y-%m-%d"),
+            "tone": tone_map.get(str(state), "neutral"),
+        }
+        for start, end, state in _runs(comp)
+    ]
+
+    vcfg = config.load().get("vector", {})
+    events = []
+    for raw in (vcfg.get("cycle_clock") or {}).get("halving_dates") or []:
+        events.append({
+            "date": str(raw)[:10],
+            "label_en": "Bitcoin halving",
+            "label_zh": "比特币减半",
+        })
+    phase_cfg = vcfg.get("cycle_phase_clock") or {}
+    for raw in phase_cfg.get("tops") or []:
+        events.append({
+            "date": str(raw)[:10],
+            "label_en": "Recorded cycle high",
+            "label_zh": "记录周期高点",
+        })
+    for raw in phase_cfg.get("bottoms") or []:
+        events.append({
+            "date": str(raw)[:10],
+            "label_en": "Recorded cycle low",
+            "label_zh": "记录周期低点",
+        })
+    projection = None
+    if (cycle_thesis or {}).get("window_start") and (cycle_thesis or {}).get("window_end"):
+        projection = {
+            "start": cycle_thesis["window_start"],
+            "end": cycle_thesis["window_end"],
+            "label_en": "Cycle watch window",
+            "label_zh": "周期观察窗口",
+        }
+
+    axes = _cockpit_axis_rows(master, regime)
+    micro = {
+        "trend_momentum": (
+            f"{float(last.get('momentum')):+.2f}" if pd.notna(last.get("momentum")) else "—",
+            "momentum",
+            "动量",
+        ),
+        "cycle_valuation": (
+            f"{round(100 * float(last.get('cycle_position')))}%" if pd.notna(last.get("cycle_position")) else "—",
+            "cycle",
+            "周期",
+        ),
+        "liquidity_flows": (
+            f"{float(last.get('stbl_growth')):+.1f}%" if pd.notna(last.get("stbl_growth")) else "—",
+            "stablecoin growth",
+            "稳定币增长",
+        ),
+        "leverage_derivatives": (
+            f"{round(float(last.get('leverage_stress')))}/100" if pd.notna(last.get("leverage_stress")) else "—",
+            "pressure",
+            "压力",
+        ),
+        "network_miners": (
+            f"{round(float(last.get('bfi')))}/100" if pd.notna(last.get("bfi")) else "—",
+            "BFI",
+            "BFI",
+        ),
+        "macro_backdrop": (
+            f"{float(last.get('global_m2_yoy')):+.1f}%" if pd.notna(last.get("global_m2_yoy")) else "—",
+            "global M2",
+            "全球 M2",
+        ),
+    }
+    for row, spec in zip(axes, COCKPIT_AXIS_PRESENTATION):
+        source_col = spec["spark_source"].split(".", 1)[-1]
+        row["spark"] = _spark_points(sig[source_col] if source_col in sig else None)
+        row["micro"], row["micro_en"], row["micro_zh"] = micro[row["id"]]
+        all_receipts = [row["primary"], *row["receipt_members"]]
+        row["receipt_en"] = (
+            "Primary: "
+            + " — ".join((all_receipts[0]["label_en"], all_receipts[0]["state_en"]))
+            + ". Also watching: "
+            + "; ".join(f"{r['label_en']} — {r['state_en']}" for r in all_receipts[1:])
+            + ". Display context only; position size comes from the final allocation."
+        )
+        row["receipt_zh"] = (
+            "主读数："
+            + " — ".join((all_receipts[0]["label_zh"], all_receipts[0]["state_zh"]))
+            + "。同时观察："
+            + "；".join(f"{r['label_zh']} — {r['state_zh']}" for r in all_receipts[1:])
+            + "。仅作展示背景；仓位取自最终配置。"
+        )
+
+    def _close_series(group: str, name: str) -> pd.Series | None:
+        try:
+            frame = store.read(group, name)
+            if frame is None or frame.empty:
+                return None
+            col = "close" if "close" in frame else ("close_price" if "close_price" in frame else frame.columns[0])
+            return pd.to_numeric(frame[col], errors="coerce").dropna()
+        except Exception:
+            return None
+
+    eth = _close_series("yahoo", "ETH-USD")
+    sol = _close_series("yahoo", "SOL-USD")
+    try:
+        global_market = store.read("coingecko", "global_market")
+    except Exception:
+        global_market = None
+
+    def _relative(series: pd.Series | None, benchmark: pd.Series, days: int = 56) -> tuple[str, str]:
+        if series is None:
+            return "History unavailable", "暂无历史"
+        joined = pd.concat(
+            [series.rename("asset"), benchmark.rename("btc")],
+            axis=1,
+            sort=True,
+        ).dropna()
+        if len(joined) <= days:
+            return "Building relative history", "正在积累相对历史"
+        rel = (joined["asset"].iloc[-1] / joined["asset"].iloc[-days - 1]) / (
+            joined["btc"].iloc[-1] / joined["btc"].iloc[-days - 1]
+        ) - 1
+        if rel >= 0:
+            return f"Leading BTC by {rel:+.1%} over 8 weeks", f"近 8 周领先 BTC {rel:+.1%}"
+        return f"Lagging BTC by {abs(rel):.1%} over 8 weeks", f"近 8 周落后 BTC {abs(rel):.1%}"
+
+    btc_rel = ("Benchmark asset", "基准资产")
+    eth_rel = _relative(eth, close)
+    sol_rel = _relative(sol, close)
+    dom = (
+        pd.to_numeric(global_market["btc_dominance_pct"], errors="coerce").dropna()
+        if global_market is not None and "btc_dominance_pct" in global_market
+        else None
+    )
+    total = (
+        pd.to_numeric(global_market["total_mcap_usd"], errors="coerce").dropna()
+        if global_market is not None and "total_mcap_usd" in global_market
+        else None
+    )
+    complex_cards = [
+        {
+            "id": "btc",
+            "symbol": "BTC",
+            "name_en": "Bitcoin",
+            "name_zh": "比特币",
+            "value": f"${float(close.iloc[-1]):,.0f}",
+            "context_en": btc_rel[0],
+            "context_zh": btc_rel[1],
+            "tone": "accent",
+            "chart": illus(_series_payload(close, 90), kind="line", accent="var(--btc)",
+                           height=72, max_points=90, value_fmt="${:,.0f}",
+                           aria_en="Bitcoin price over 90 days"),
+        },
+        {
+            "id": "eth",
+            "symbol": "ETH",
+            "name_en": "Ethereum",
+            "name_zh": "以太坊",
+            "value": f"${float(eth.iloc[-1]):,.0f}" if eth is not None and len(eth) else "—",
+            "context_en": eth_rel[0],
+            "context_zh": eth_rel[1],
+            "tone": "up" if "Leading" in eth_rel[0] else "down",
+            "chart": illus(_series_payload(eth, 90), kind="line", accent="var(--info)",
+                           height=72, max_points=90, value_fmt="${:,.0f}",
+                           aria_en="Ethereum price over 90 days"),
+        },
+        {
+            "id": "sol",
+            "symbol": "SOL",
+            "name_en": "Solana",
+            "name_zh": "索拉纳",
+            "value": f"${float(sol.iloc[-1]):,.0f}" if sol is not None and len(sol) else "—",
+            "context_en": sol_rel[0],
+            "context_zh": sol_rel[1],
+            "tone": "up" if "Leading" in sol_rel[0] else "down",
+            "chart": illus(_series_payload(sol, 90), kind="line", accent="var(--warn)",
+                           height=72, max_points=90, value_fmt="${:,.0f}",
+                           aria_en="Solana price over 90 days"),
+        },
+        {
+            "id": "dominance",
+            "symbol": "BTC.D",
+            "name_en": "BTC share",
+            "name_zh": "BTC 占比",
+            "value": f"{float(dom.iloc[-1]):.1f}%" if dom is not None and len(dom) else "—",
+            "context_en": "Market leadership",
+            "context_zh": "市场主导度",
+            "tone": "neutral",
+            "chart": illus(_series_payload(dom), kind="line", accent="var(--muted)",
+                           height=72, max_points=90, value_fmt="{:,.1f}%",
+                           aria_en="Bitcoin market share history"),
+        },
+        {
+            "id": "market",
+            "symbol": "TOTAL",
+            "name_en": "Crypto market",
+            "name_zh": "加密市场",
+            "value": f"${float(total.iloc[-1]) / 1e12:.2f}T" if total is not None and len(total) else "—",
+            "context_en": "Total market value",
+            "context_zh": "市场总市值",
+            "tone": "neutral",
+            "chart": illus(_series_payload(total), kind="area", accent="var(--info)",
+                           height=72, max_points=90, value_fmt="${:,.0f}",
+                           aria_en="Total crypto market value history"),
+        },
+    ]
+
+    return {
+        "tape": regime_tape(
+            _series_payload(price),
+            allocation=_series_payload(alloc),
+            regimes=regimes,
+            events=events,
+            projection=projection,
+            height=270,
+            max_points=280,
+            aria_en="Bitcoin price, market regime and final model exposure over two years",
+            aria_zh="比特币价格、市场状态与最终模型仓位，两年视图",
+        ),
+        "axes": axes,
+        "watch": _plain_watch_conditions(cycle_thesis),
+        "complex": complex_cards,
+        "charts": {
+            "momentum": illus(
+                _series_payload(sig.get("momentum"), 365),
+                kind="baseline", baseline=0, height=180, max_points=180,
+                value_fmt="{:+.2f}", aria_en="Bitcoin momentum over one year",
+            ),
+            "structure": illus(
+                _series_payload(sig.get("structure"), 365),
+                kind="baseline", baseline=0, height=180, max_points=180,
+                value_fmt="{:+.2f}", aria_en="Bitcoin market structure over one year",
+            ),
+            "bfi": illus(
+                _series_payload(sig.get("bfi"), 365),
+                kind="line", accent="var(--info)", height=180, max_points=180,
+                value_fmt="{:,.0f}", aria_en="Bitcoin fundamentals index over one year",
+            ),
+            "etf_flow": illus(
+                _series_payload(sig.get("etf_flow_btc"), 365),
+                kind="bars", baseline=0, height=180, max_points=120,
+                value_fmt="{:+,.0f}", aria_en="Bitcoin ETF net flow over one year",
+            ),
+        },
+    }
 
 
 def emit_crypto_cockpit_json(
@@ -1633,12 +1996,18 @@ _BRAND_MARK_SVG = (
 
 
 _GLOBE_HUB_CSS = r"""<style>
-html{overflow-x:hidden}
+/* Keep the browser canvas itself theme-aware.  In particular, iOS Safari can
+   retain the old propagated body background when an async account preference
+   changes data-theme after first paint; an explicit root paint avoids the
+   resulting dark/light split.  The body stacking context keeps its negative-z
+   ambient sky above that paint instead of letting it escape behind the root. */
+html{overflow-x:hidden;background:var(--bg);color-scheme:dark}
+html[data-theme="light"]{color-scheme:light}
 
 *{box-sizing:border-box}
 body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
  font-family:var(--font-ui);display:flex;flex-direction:column;align-items:center;
- position:relative;overflow-x:hidden}
+ position:relative;isolation:isolate;overflow-x:hidden}
 .wrap{width:100%;max-width:1180px;display:flex;flex-direction:column}
 @media(min-width:1600px){.wrap{max-width:1360px}}
 .hub-top{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-bottom:10px}
@@ -1874,6 +2243,14 @@ a:focus-visible,.links a:focus-visible,.ha-item summary:focus-visible{outline:2p
 @media(max-width:880px){.gd-stage{min-height:0;height:min(94vw,500px)}}
 .gd-canvas{position:relative;z-index:10;width:100%;max-width:100%;height:100%;display:block;touch-action:none;cursor:grab;outline:none}
 .gd-canvas:focus-visible{outline:2px solid var(--link);outline-offset:-2px}
+/* The globe is a required scroll crossing on phones, not a navigation control.
+   Let touch gestures land on the page so a swipe anywhere over the hero scrolls
+   normally; auto-rotation remains, while fine-pointer and keyboard controls keep
+   the full interactive desktop experience. */
+@media (hover:none) and (pointer:coarse){
+ .gd-stage{pointer-events:none}
+ .gd-canvas{touch-action:pan-y;cursor:default}
+}
 
 /* ===== floating data-islands (a back layer UNDER the canvas + a front layer OVER it;
    the opaque globe disc clips back-side pebbles → true behind/in-front occlusion) ===== */
@@ -1947,8 +2324,11 @@ html.soft-contrast[data-theme="dark"]{--bg:#0d1018;--panel:#151820;--panel2:#1b1
 .gd-leg .l-zh{display:none} html[data-lang="zh"] .gd-leg .l-en{display:none} html[data-lang="zh"] .gd-leg .l-zh{display:inline}
 
 /* ===== tooltip ===== */
-.gd-tip{position:fixed;z-index:50;width:264px;padding:13px 14px;border-radius:14px;pointer-events:none;
- box-shadow:var(--popover-shadow);transition:opacity .12s ease}
+.gd-tip{position:absolute;z-index:50;width:264px;padding:13px 14px;border-radius:14px;pointer-events:none;
+ opacity:0;visibility:visible;transform:translate3d(0,12px,0) scale(.94);transform-origin:50% calc(100% + 8px);
+ filter:blur(5px) saturate(.86);box-shadow:0 4px 16px -10px rgba(0,0,0,.42);
+ will-change:transform,opacity,filter;transition:opacity .24s cubic-bezier(.2,.7,.25,1),transform .42s cubic-bezier(.16,1,.3,1),filter .3s ease,box-shadow .42s ease}
+.gd-tip.is-visible{opacity:1;transform:translate3d(0,0,0) scale(1);filter:blur(0) saturate(1);box-shadow:var(--popover-shadow)}
 .gd-tip.pinned{pointer-events:auto}   /* a clicked (pinned) tooltip is interactive so its "Open dashboard" link works */
 .gd-tip[hidden]{display:none}
 .gd-tip-h{display:flex;align-items:center;gap:8px;margin-bottom:10px}
@@ -1985,6 +2365,7 @@ html.soft-contrast[data-theme="dark"]{--bg:#0d1018;--panel:#151820;--panel2:#1b1
 .gd-tip.mini .gd-chip{flex:none}
 .gd-mini-name{font-weight:800;font-size:12.5px;color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis}
 .gd-mini-risk{font-size:11.5px;font-weight:600;color:var(--muted);flex:none}
+@media (prefers-reduced-motion: reduce){.gd-tip{transition:none}}
 
 /* ===== sidebar clock ===== */
 .gd-clock{display:flex;flex-direction:column;padding:14px 14px 12px;min-width:0;max-width:100%}
@@ -2164,33 +2545,86 @@ html[data-lang="zh"] .regime-drift .l-zh{display:inline}
 .rep-latest{font-size:11px;opacity:.82;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:32ch;display:block;margin-top:2px}
 .ipo-line{font-size:11px;opacity:.82;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;margin-top:2px}
 
-/* ===== personal welcome — a typed greeting stands in for the wordmark on entry,
-   then cross-dissolves into the brand lockup. Decorative (aria-hidden); the brand
-   + tagline stay the accessible content. The hero-stack overlaps greeting + brand
-   in ONE grid cell so the crossfade never shifts layout. ===== */
-.hub-hero-stack{display:grid}
+/* ===== personal welcome — a quiet intelligence surface, not a chat bubble.
+   A small reasoning constellation identifies the speaker; the changing market read
+   remains the only loud element. Greeting + brand share one grid cell so the handoff
+   never shifts the globe. Decorative (aria-hidden); the brand remains accessible. ===== */
+.hub-hero-stack{display:grid;isolation:isolate}
 .hub-hero-stack>.hub-greet,.hub-hero-stack>.hub-brand{grid-area:1/1}
-.hub-brand{transition:opacity .85s ease,transform .85s ease}
-.hub-greet{display:flex;align-items:center;justify-content:center;gap:3px;min-height:clamp(88px,12vw,124px);
- opacity:0;pointer-events:none;transform:translateY(-6px);transition:opacity .8s ease,transform .8s ease}
+.hub-brand{transition:opacity .82s ease,transform .82s cubic-bezier(.2,.75,.25,1)}
+.hub-greet{display:flex;align-items:center;justify-content:center;min-height:clamp(132px,16vw,168px);
+ opacity:0;pointer-events:none;transform:translateY(-7px) scale(.985);
+ transition:opacity .62s ease,transform .8s cubic-bezier(.2,.75,.25,1)}
 .h.greet-run .hub-greet{opacity:1;transform:none}
-.h.greet-run .hub-brand{opacity:0;transform:translateY(7px)}
-.hub-greet .greet-tx{font-family:var(--font-ui);font-weight:850;letter-spacing:-.006em;line-height:1.05;text-align:center;
- font-size:clamp(27px,4.6vw,47px);
- background:linear-gradient(176deg,var(--text) 20%,color-mix(in srgb,var(--text) 55%,var(--accent,var(--info))));
+.h.greet-run .hub-brand{opacity:0;transform:translateY(9px) scale(.99)}
+.hub-intel-shell{position:relative;isolation:isolate;display:grid;grid-template-rows:auto 1fr auto;
+ width:min(760px,calc(100vw - 42px));min-height:clamp(126px,15vw,154px);padding:13px 17px 11px;
+ overflow:hidden;border:1px solid color-mix(in srgb,var(--info) 22%,var(--line));
+ border-radius:22px;background:
+ linear-gradient(135deg,color-mix(in srgb,var(--panel) 92%,var(--info) 8%),color-mix(in srgb,var(--panel) 96%,transparent));
+ box-shadow:inset 0 1px 0 color-mix(in srgb,#fff 16%,transparent),
+  0 20px 52px -30px color-mix(in srgb,var(--info) 55%,transparent),
+  0 7px 24px -18px color-mix(in srgb,var(--text) 42%,transparent);
+ -webkit-backdrop-filter:blur(18px) saturate(1.15);backdrop-filter:blur(18px) saturate(1.15)}
+.hub-intel-shell::before{content:"";position:absolute;z-index:-1;inset:-90% 32% -90% -12%;
+ background:radial-gradient(circle,color-mix(in srgb,var(--info) 15%,transparent) 0,transparent 64%);
+ opacity:.82;transform:translateX(-12%);transition:transform 1.2s ease}
+.hub-intel-shell::after{content:"";position:absolute;z-index:-1;top:0;bottom:0;width:28%;
+ left:-32%;transform:skewX(-14deg);opacity:0;
+ background:linear-gradient(90deg,transparent,color-mix(in srgb,#fff 11%,transparent),transparent)}
+.h.greet-run .hub-intel-shell::before{transform:translateX(0)}
+.hub-greet.is-speaking .hub-intel-shell::after{opacity:1;animation:intelSweep 4.8s ease-in-out infinite}
+.hub-intel-meta,.hub-intel-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;
+ color:color-mix(in srgb,var(--muted) 88%,var(--text));font-family:var(--font-mono);
+ font-size:9.5px;font-weight:720;line-height:1;letter-spacing:.14em;text-transform:uppercase}
+.hub-intel-id{display:inline-flex;align-items:center;gap:9px;color:color-mix(in srgb,var(--text) 82%,var(--info));letter-spacing:.11em}
+.hub-intel-mark{position:relative;width:23px;height:23px;flex:none}
+.hub-intel-core{position:absolute;left:8px;top:8px;width:7px;height:7px;border-radius:50%;
+ background:var(--info);box-shadow:0 0 0 3px color-mix(in srgb,var(--info) 14%,transparent),0 0 13px color-mix(in srgb,var(--info) 70%,transparent)}
+.hub-intel-orbit{position:absolute;inset:1px;border:1px solid color-mix(in srgb,var(--info) 52%,transparent);
+ border-left-color:transparent;border-radius:50%;animation:intelOrbit 3.8s linear infinite}
+.hub-intel-sat{position:absolute;width:3px;height:3px;border-radius:50%;background:color-mix(in srgb,var(--info) 68%,#fff)}
+.hub-intel-sat.sat-a{top:1px;left:10px}.hub-intel-sat.sat-b{right:1px;bottom:5px}.hub-intel-sat.sat-c{left:1px;bottom:4px;opacity:.6}
+.hub-intel-mode{display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+.hub-intel-mode::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--up);
+ box-shadow:0 0 0 3px color-mix(in srgb,var(--up) 13%,transparent),0 0 9px color-mix(in srgb,var(--up) 52%,transparent)}
+.hub-intel-mode.mode-read{display:none}
+.hub-greet.convo .hub-intel-mode.mode-ready{display:none}
+.hub-greet.convo .hub-intel-mode.mode-read{display:inline-flex}
+.hub-intel-message{display:flex;align-items:center;justify-content:center;gap:4px;min-height:78px;padding:8px 22px 6px}
+.hub-greet .greet-tx{font-family:var(--font-ui);font-weight:820;letter-spacing:-.018em;line-height:1.07;text-align:center;
+ font-size:clamp(29px,4.5vw,48px);text-wrap:balance;transition:opacity .32s ease;
+ background:linear-gradient(112deg,var(--text) 18%,color-mix(in srgb,var(--text) 66%,var(--info)) 72%,var(--info) 118%);
  -webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;
- filter:drop-shadow(0 1px 1px var(--bg)) drop-shadow(0 0 14px var(--bg)) drop-shadow(0 0 32px var(--bg))}
-.hub-greet .greet-caret{width:3px;height:clamp(26px,4vw,40px);flex:none;border-radius:2px;transform:translateY(3px);
- background:var(--accent,var(--info));box-shadow:0 0 10px color-mix(in srgb,var(--accent,var(--info)) 65%,transparent);
- animation:greetCaret 1.05s steps(1) infinite}
-.greet-tx{transition:opacity .34s ease}
-/* conversation mode: the market read wraps in a smaller, lighter voice than the
-   big name greeting; the caret becomes an inline blink at the end of the text. */
-.hub-greet.convo .greet-tx{font-size:clamp(19px,2.7vw,29px);font-weight:600;letter-spacing:0;line-height:1.34;max-width:min(30ch,86vw);text-wrap:balance}
+ filter:drop-shadow(0 1px 1px var(--bg)) drop-shadow(0 0 20px var(--bg))}
+.hub-greet .greet-caret{width:3px;height:clamp(27px,4vw,40px);flex:none;border-radius:2px;transform:translateY(3px);
+ background:var(--info);box-shadow:0 0 11px color-mix(in srgb,var(--info) 68%,transparent);animation:greetCaret 1.05s steps(1) infinite}
+.hub-greet.convo .greet-tx{font-size:clamp(19px,2.45vw,28px);font-weight:620;letter-spacing:-.008em;line-height:1.33;
+ max-width:min(33ch,calc(100vw - 108px))}
+html[data-lang="zh"] .hub-greet.convo .greet-tx{max-width:min(20em,calc(100vw - 108px));letter-spacing:.01em;line-height:1.42}
 .hub-greet.convo .greet-caret{display:none}
-.hub-greet.convo .greet-tx::after{content:"";display:inline-block;width:2px;height:1.02em;margin-left:3px;transform:translateY(3px);border-radius:1px;background:var(--accent,var(--info));animation:greetCaret 1.05s steps(1) infinite}
+.hub-greet.convo .greet-tx::after{content:"";display:inline-block;width:2px;height:1.02em;margin-left:4px;transform:translateY(3px);
+ border-radius:1px;background:var(--info);box-shadow:0 0 8px color-mix(in srgb,var(--info) 50%,transparent);animation:greetCaret 1.05s steps(1) infinite}
+.hub-intel-foot{padding-top:7px;border-top:1px solid color-mix(in srgb,var(--line) 68%,transparent);letter-spacing:.12em}
+.hub-intel-wave{display:flex;align-items:center;justify-content:flex-end;gap:3px;width:38px;height:10px}
+.hub-intel-wave i{display:block;width:2px;height:3px;border-radius:2px;background:color-mix(in srgb,var(--info) 72%,var(--text));
+ transform-origin:center;animation:intelWave 1.15s ease-in-out infinite}
+.hub-intel-wave i:nth-child(2){animation-delay:-.82s}.hub-intel-wave i:nth-child(3){animation-delay:-.55s}
+.hub-intel-wave i:nth-child(4){animation-delay:-.28s}.hub-intel-wave i:nth-child(5){animation-delay:-.68s}
+.hub-greet.is-thinking .hub-intel-wave i{animation-duration:1.8s;opacity:.48}
 @keyframes greetCaret{0%,49%{opacity:1}50%,100%{opacity:0}}
-@media(prefers-reduced-motion:reduce){.hub-greet .greet-caret{animation:none}.hub-brand,.hub-greet{transition:none}}
+@keyframes intelOrbit{to{transform:rotate(360deg)}}
+@keyframes intelSweep{0%,14%{left:-32%}55%,100%{left:122%}}
+@keyframes intelWave{0%,100%{height:3px;opacity:.42}50%{height:10px;opacity:1}}
+@media(max-width:560px){
+ .hub-greet{min-height:140px}.hub-intel-shell{width:calc(100vw - 34px);min-height:132px;padding:12px 13px 10px;border-radius:18px}
+ .hub-intel-message{min-height:80px;padding:8px 6px 5px}.hub-intel-meta,.hub-intel-foot{font-size:8.5px;letter-spacing:.1em}
+ .hub-intel-context .context-long{display:none}.hub-greet.convo .greet-tx,html[data-lang="zh"] .hub-greet.convo .greet-tx{max-width:calc(100vw - 62px)}
+}
+@media(prefers-reduced-motion:reduce){
+ .hub-brand,.hub-greet,.hub-intel-shell::before{transition:none}.hub-intel-shell::after{display:none}
+ .hub-greet .greet-caret,.hub-greet.convo .greet-tx::after,.hub-intel-orbit,.hub-intel-wave i{animation:none}
+}
 </style>"""
 
 # Critical a11y CSS that must ship INLINE in the hub page itself (start.html
@@ -2551,6 +2985,7 @@ def _g_vectors(vm, commodities, forex, bonds, crossasset, etf, strategies, watch
         _fx_label_zh + ((" · " + _fx_risk_zh) if _fx_risk_zh else ""),
     ) + '</span></div>'
     term = '<div class="chips"><span class="pill on">' + _bi("Trading charts", "交易图表") + '</span><span class="pill">' + _bi("Live terminal", "实时终端") + '</span></div>'
+    crypto = '<div class="chips"><span class="pill on">' + _bi("50-asset board", "50项资产看板") + '</span><span class="pill">' + _bi("Flows & leverage", "资金流与杠杆") + '</span></div>'
     cyc = '<div class="chips"><span class="pill">' + _bi("Cycle clocks", "周期时钟") + '</span><span class="pill">' + _bi("Country regimes", "国家周期") + '</span></div>'
     sec_us = '<div class="chips"><span class="pill">' + _bi("US sectors", "美股行业") + '</span><span class="pill">' + _bi("Rotation desk", "轮动面板") + '</span></div>'
     sec_cn = '<div class="chips"><span class="pill">' + _bi("CN sectors", "中国行业") + '</span><span class="pill">' + _bi("Rotation desk", "轮动面板") + '</span></div>'
@@ -2613,6 +3048,7 @@ def _g_vectors(vm, commodities, forex, bonds, crossasset, etf, strategies, watch
         card("sec l-en", "▦", "US Sectors", "美股行业", "US Sectors", "美股行业", sec_us, "Sector Central rotation map", "行业轮动中心", "sector_central.html"),
         card("sec l-zh", "▦", "CN Sectors", "中国行业", "CN Sectors", "中国行业", sec_cn, "Sector Central rotation map", "中国行业轮动中心", "sector_central_china.html"),
         card("rep", "◇", "Research Reports", "研究报告", "Reports", "报告", rep, "Read the latest research desk", "阅读最新研究", "reports.html"),
+        card("btc crypto", "◈", "Crypto Cockpit", "加密驾驶舱", "Crypto", "加密", crypto, "Market state, flows & class allocation", "市场状态、资金流与资产配置", "crypto.html"),
         card("btc", "₿", "Bitcoin Vector", "比特币向量", "Bitcoin", "比特币", btc, "Risk, momentum & allocation", "风险、动量与配置", "vector.html"),
         card("bd", "🏛️", "Bonds & Bond Health", "债券与债券健康", "Bonds", "债券", bd, "Curve, credit & cycle clock", "曲线、信用与周期时钟", "bonds.html"),
         card("com", "◆", "Commodity Vector", "大宗商品向量", "Commodities", "商品", com, "Allocation & shock detection", "配置与冲击检测", "commodities.html"),
@@ -2727,6 +3163,7 @@ def _hub_footer_html() -> str:
             ("Canada", "canada.html"),
         ]),
         ("Vectors", [
+            ("Crypto Cockpit", "crypto.html"),
             ("Bitcoin", "vector.html"),
             ("Bonds", "bonds.html"),
             ("Commodities", "commodities.html"),
@@ -2747,6 +3184,7 @@ def _hub_footer_html() -> str:
             ("加拿大", "canada.html"),
         ]),
         ("向量", [
+            ("加密驾驶舱", "crypto.html"),
             ("比特币", "vector.html"),
             ("债券", "bonds.html"),
             ("大宗商品", "commodities.html"),
@@ -2918,11 +3356,23 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
         # grid cell, then cross-dissolves into it (hub-greet.js). Brand is the
         # accessible content; the greeting is decorative (aria-hidden).
         + '<div class="hub-hero-stack">'
-        + '<div class="hub-greet" aria-hidden="true"><span class="greet-tx"></span><span class="greet-caret"></span></div>'
+        + '<div class="hub-greet" aria-hidden="true"><div class="hub-intel-shell">'
+        + '<div class="hub-intel-meta"><span class="hub-intel-id">'
+        + '<span class="hub-intel-mark"><i class="hub-intel-core"></i><i class="hub-intel-orbit"></i>'
+        + '<i class="hub-intel-sat sat-a"></i><i class="hub-intel-sat sat-b"></i><i class="hub-intel-sat sat-c"></i></span>'
+        + '<span>MASTERMIND</span></span>'
+        + '<span class="hub-intel-mode mode-ready">' + _bi("Connected", "已连接") + '</span>'
+        + '<span class="hub-intel-mode mode-read">' + _bi("Market read", "市场解读") + '</span></div>'
+        + '<div class="hub-intel-message"><span class="greet-tx"></span><span class="greet-caret"></span></div>'
+        + '<div class="hub-intel-foot"><span class="hub-intel-context">'
+        + _bi('<span class="context-long">Global context · </span>09 markets',
+              '<span class="context-long">全球脉络 · </span>9 个市场')
+        + '</span><span class="hub-intel-wave"><i></i><i></i><i></i><i></i><i></i></span></div>'
+        + '</div></div>'
         + '<div class="hub-brand"><h1 class="hub-logo">' + _BRAND_MARK_SVG
         + '<span class="logo-word">MASTERMINDX</span></h1>'
-        '<p>' + _bi("Regime dashboards across every major asset class — one mechanical, disciplined engine.",
-                    "覆盖各大类资产的市场周期仪表盘——一套机械化、有纪律的引擎。") + '</p></div></div></header>'
+        '<p>' + _bi("One disciplined view across every major market.",
+                    "一套框架，看清全球主要市场。") + '</p></div></div></header>'
         + globe_deck
         + '<div class="hub-views" id="hub-views" data-view="mk">'
         + _HUB_SEG_HTML
@@ -3772,6 +4222,32 @@ def main() -> int:
         },
     }
 
+    # Wave 1: the Strategy & Track Record fold and the live verdict now share
+    # the same close series and as-of.  The standalone page remains a renderer
+    # over this exact function until its URL retires in Wave 2.
+    try:
+        from scripts.build_btc_strategy import build_context as build_btc_strategy_context
+        # The fold is a compact receipt, not a second strategy page.  A leaner
+        # curve sample preserves the exact figures while keeping the flagship
+        # HTML below the Wave 1 payload budget.  The standalone URL retains its
+        # original 240-point curves.
+        strategy = build_btc_strategy_context(close, chart_points=140)
+    except Exception as e:  # noqa: BLE001 — strategy receipt must not kill the flagship
+        log.warning("shared BTC strategy context failed (%s)", e)
+        strategy = {"strategies": [], "hodl": {}, "phase": {}, "gate": gate}
+
+    try:
+        presentation = _vector_presentations(sig, master, regime, cycle_thesis)
+    except Exception as e:  # noqa: BLE001 — preserve a plain null page if a display leg fails
+        log.warning("vector Wave-1 presentation build failed (%s)", e)
+        presentation = {
+            "tape": regime_tape(_series_payload(close, 730), height=270),
+            "axes": _cockpit_axis_rows(master, regime),
+            "watch": [],
+            "complex": [],
+            "charts": {},
+        }
+
     vm = {
         "as_of": sig.index.max().strftime("%b %d, %Y"),
         "built": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
@@ -4003,6 +4479,8 @@ def main() -> int:
         "cones": cones,
         "rec": recommendation,
         "newf": newf,
+        "presentation": presentation,
+        "strategy": strategy,
         "env": envd,
         "scn": scnd,
         "sizing": sizing,
@@ -4013,12 +4491,9 @@ def main() -> int:
         "timeline": timeline,
         "timeline_days": acfg["timeline_days"],
         "n_alerts": sum(len(d["events"]) for d in timeline),
-        "charts": {
-            "momentum": chart_oscillator(sig["momentum"], close, "Momentum"),
-            "structure": chart_oscillator(sig["structure"], close, "Structure Shift"),
-            "bfi": chart_bfi(sig),
-            "etf_flow": chart_etf_flow(sig) if "etf_flow_btc" in sig.columns else "",
-        },
+        # All static flagship illustrations are ilx SSR fragments. Plotly is
+        # retained only for the separate allocation page until Wave 2.
+        "charts": presentation.get("charts", {}),
     }
 
     env = Environment(loader=FileSystemLoader(str(Path(__file__).resolve().parent.parent / "templates")),
@@ -4034,9 +4509,13 @@ def main() -> int:
     env.filters["money"] = lambda v: f"${v:,.0f}" if pd.notna(v) else "—"
     env.filters["money1"] = lambda v: f"${v/1000:,.1f}K" if pd.notna(v) else "—"
     html = env.get_template("vector.html.j2").render(**vm, C=C)
+    # The bilingual cockpit contains CJK text, so character count understates
+    # transfer weight.  Collapse formatting-only gaps between tags while
+    # preserving one separating space for adjacent inline elements.
+    html = re.sub(r">\s+<", "> <", html)
     site = Path(config.load()["storage"]["site_dir"])
     write_page(site / "vector.html", html)
-    log.info("wrote %s/vector.html (%d KB)", site, len(html) // 1024)
+    log.info("wrote %s/vector.html (%d KB)", site, len(html.encode("utf-8")) // 1024)
     try:  # interactive Lightweight-Charts backtest feed — never break the build
         emit_risk_strategy_json(site, sig)
     except Exception as e:  # noqa: BLE001
@@ -4068,13 +4547,6 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001
         log.error("international dashboard subprocess launch failed (%s)", e)
         _intl_proc = None
-    try:
-        build_allocation_page(env, site, sig, cards, mtf_a, verdict,
-                              master=master, recommend_d=recommendation, cones=cones,
-                              sizing=sizing, catalyst=catalyst, breadth=breadth, env_d=envd,
-                              gate=gate)
-    except Exception as e:  # noqa: BLE001 — never let the sub-page break the main build
-        log.error("allocation page failed (%s)", e)
     try:
         build_timeline(site, sig)
     except Exception as e:  # noqa: BLE001 — never let the time-machine tape break the build

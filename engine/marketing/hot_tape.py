@@ -98,6 +98,14 @@ TRIGGERS: tuple[str, ...] = (
     "earnings_reaction", "context_brief",
 )
 
+#: This program's name in an outbox item's ``source["lane"]``. Named once
+#: because it is a CROSS-MODULE contract, not a local string: packet_to_source
+#: stamps it and downstream readers (the radar's carryover sweep, the
+#: publisher's orphan-brief gate) select on it. Two lanes — press_lane and
+#: fastlane — also stamp ``story_key``, so a reader that drops this filter is
+#: reading their rows too.
+LANE = "hot_tape"
+
 #: The follow-up trigger (codex two-step publish, §Strongest controlled
 #: comparisons): the alert wins speed, the brief wins reposts. Filed by the
 #: radar on a LATER tick than the alert it explains, never in the same pass.
@@ -442,26 +450,65 @@ def _et_date(now: datetime | None) -> date:
     return _et_clock(now).date()
 
 
-def _prev_weekday(d: date) -> date:
-    """The weekday before `d` (holiday-naive, exactly like :func:`bridge_ok`).
+def _is_session(d: date) -> bool:
+    """True when the US cash-equity market holds a session on `d`.
 
-    Used by the earnings detector to name "yesterday's session": an AH reporter
-    on Friday is read on Monday's open, so a bare ``d - 1 day`` would look at a
-    Sunday and the reaction would never be detected.
+    Weekends AND scheduled NYSE full-day closures. The holiday rules come from
+    :mod:`lib.nyse_calendar` — the estate's existing exchange calendar (pure rule
+    arithmetic, stdlib only, no data dependency), so there is ONE holiday
+    authority and no new dependency. It is imported LAZILY and guarded because
+    that module builds a ``ZoneInfo`` at import time, and this one deliberately
+    survives a host with no tzdata (see the ``_ET`` note above). A host that
+    cannot load the calendar degrades to the old weekday-only answer rather than
+    raising: wrong on the ~9 closure days a year, never dead.
+
+    NOT ``collectors.tsa_throughput.us_federal_holidays``: the exchange calendar
+    is not the federal one. NYSE closes on Good Friday (not a federal holiday)
+    and trades through Columbus Day and Veterans Day (both federal holidays), so
+    the federal set is wrong in both directions for a session question.
+    """
+    if d.weekday() >= 5:
+        return False
+    try:
+        from lib.nyse_calendar import is_session  # noqa: PLC0415
+
+        return bool(is_session(d))
+    except Exception:  # pragma: no cover - no tzdata / calendar unavailable
+        return True
+
+
+def _prev_session(d: date) -> date:
+    """The trading session before `d` (weekends AND market holidays skipped).
+
+    Used by the earnings detector to name "yesterday's session". Holiday-naive
+    weekday arithmetic mislabels the session on every day that follows a
+    closure, and the mislabel is silent: an after-hours reporter on Friday
+    2026-09-04 is read at Tuesday 2026-09-08's open because Monday is Labor Day,
+    but ``d - 1 weekday`` names Monday, ``next_date == yesterday`` never matches,
+    and the reaction is simply never detected. Same shape the day after
+    Thanksgiving, Good Friday, Juneteenth and Christmas.
     """
     x = d - timedelta(days=1)
-    while x.weekday() >= 5:
+    for _ in range(30):          # longest closed stretch is a few days
+        if _is_session(x):
+            return x
         x -= timedelta(days=1)
     return x
 
 
-def _weekdays_between(older: date, newer: date) -> int:
-    """Count weekdays strictly after `older` up to and including `newer`."""
+def _sessions_between(older: date, newer: date) -> int:
+    """Count trading sessions strictly after `older` up to and including `newer`.
+
+    Sessions, not weekdays: counting a closed Monday as a session makes the
+    Tuesday-after-a-holiday pack look two sessions stale when it is in fact
+    yesterday's, which suppressed every history fact for a full day after each
+    closure (see :func:`bridge_ok`).
+    """
     if newer <= older:
         return 0
     n, cursor = 0, older + timedelta(days=1)
     while cursor <= newer:
-        if cursor.weekday() < 5:
+        if _is_session(cursor):
             n += 1
         cursor += timedelta(days=1)
         if n > 500:                     # runaway guard on a nonsense trade_date
@@ -475,13 +522,18 @@ def bridge_ok(
     *,
     cfg: dict | None = None,
 ) -> bool:
-    """Is the pack's trade_date adjacent to today's session (holiday-naive)?
+    """Is the pack's trade_date adjacent to today's session?
 
-    True when at most ``bridge_max_gap_days`` (default 1) weekdays separate the
-    pack's last stored session from today in ET — i.e. a Tuesday radar needs
-    Monday's bars, a Monday radar needs Friday's. The store was 18 sessions
-    stale on 2026-07-28; every history fact is suppressed in that state rather
-    than computed against an anchor that is not yesterday.
+    True when at most ``bridge_max_gap_days`` (default 1) TRADING SESSIONS
+    separate the pack's last stored session from today in ET — i.e. a Tuesday
+    radar needs Monday's bars, a Monday radar needs Friday's. The store was 18
+    sessions stale on 2026-07-28; every history fact is suppressed in that state
+    rather than computed against an anchor that is not yesterday.
+
+    Sessions, not weekdays (see :func:`_sessions_between`): the holiday-naive
+    count made the day after every closure look one session staler than it was,
+    so the Tuesday after Labor Day suppressed all history against a pack that
+    genuinely held Friday's — the last session there was.
     """
     try:
         td = _parse_iso_date((pack or {}).get("trade_date"))
@@ -491,7 +543,7 @@ def bridge_ok(
         if td > today:
             return False
         max_gap = int(_c(cfg, "bridge_max_gap_days", DEFAULTS["bridge_max_gap_days"]))
-        return _weekdays_between(td, today) <= max_gap
+        return _sessions_between(td, today) <= max_gap
     except Exception as exc:  # noqa: BLE001
         log.warning("hot_tape.bridge_ok failed: %s", exc)
         return False
@@ -1167,7 +1219,7 @@ def _detect_earnings(
     max_cal_age = int(_c(cfg, "detectors.earnings.max_calendar_age_days", 21))
     day = _day(now)
     today = _et_date(now)
-    yesterday = _prev_weekday(today)
+    yesterday = _prev_session(today)
     view_asof = (earnings or {}).get("asof")
     names = {
         str(t.get("t") or "").upper(): str(t.get("name") or "")
@@ -1756,13 +1808,71 @@ def detect_events(
 # Two-step publish — the context brief (codex case study, 2026-07-28)
 # ─────────────────────────────────────────────────────────────────────────────
 
+#: The prefix :func:`brief_key` stamps. Named once so its inverse below cannot
+#: drift away from it.
+_BRIEF_KEY_PREFIX = "brief:"
+
+
 def brief_key(alert_key: Any) -> str:
     """The fired-ledger key of the brief that follows `alert_key`.
 
     One brief per alert, forever: the row lands in the SAME append-only fired
     ledger the cooldowns use, so a later pass sees it and never files a second.
     """
-    return f"brief:{alert_key}"
+    return f"{_BRIEF_KEY_PREFIX}{alert_key}"
+
+
+def parent_alert_key(key: Any) -> str | None:
+    """The alert key a brief is context FOR, or None when `key` is not a brief.
+
+    The inverse of :func:`brief_key`. A consumer holding nothing but a brief's
+    fired-ledger row needs this to find the alert and re-check that it is still
+    posted: the "alert must have posted" gate is evaluated once, when the brief
+    is BUILT, and a brief can sit queued for a while after that.
+    """
+    s = str(key or "")
+    if not s.startswith(_BRIEF_KEY_PREFIX):
+        return None
+    return s[len(_BRIEF_KEY_PREFIX):] or None
+
+
+def orphaned_brief_status(
+    key: Any,
+    trigger: Any,
+    alert_item_by_key: dict[str, str],
+    statuses: dict[str, str],
+) -> str | None:
+    """The parent's not-posted status when (key, trigger) name an orphaned
+    context brief; None when this is not a brief or its alert is "posted".
+
+    THE one predicate for "is this brief orphaned". Two call sites, one truth:
+    the radar's dispatch re-check (scripts/hot_tape_radar.py dispatch_ids) and
+    the publisher's send-time gate (scripts/marketing_publisher.py) both call
+    this, so the two halves of the recall cascade cannot drift apart. A brief
+    is recognised by EITHER its trigger or its brief-shaped key: a row that
+    claims one but not the other is malformed, and a malformed brief must fail
+    CLOSED (checked, and unresolvable) rather than ride out as an alert.
+
+    Returns:
+      * None           - not a context brief, or the parent alert is "posted"
+      * a status string - the parent's folded status ("recalled", "quarantined", ...)
+      * "unresolved"   - no parent can be named from `alert_item_by_key`/`statuses`
+
+    What the caller does with a not-None answer is the caller's policy: the
+    radar only DESTROYS on a resolved status (its same-day fired map is lossy,
+    so "unresolved" is merely withheld), while the publisher quarantines on
+    both (its map is built from the outbox ledger itself, the authority on
+    statuses, so a parent it cannot name is positive evidence).
+    """
+    is_brief = str(trigger or "") == BRIEF_TRIGGER
+    parent_key = parent_alert_key(key)
+    if not is_brief and parent_key is None:
+        return None
+    parent_id = str(alert_item_by_key.get(parent_key) or "") if parent_key else ""
+    status = statuses.get(parent_id) if parent_id else None
+    if status == "posted":
+        return None
+    return str(status or "unresolved")
 
 
 def _group_members(tiles: list[dict], kind: str, label: str) -> list[dict]:
@@ -1947,7 +2057,7 @@ def packet_to_source(packet: FactPacket, media: dict | None = None) -> dict:
     try:
         prov = packet.provenance or {}
         source: dict[str, Any] = {
-            "lane": "hot_tape",
+            "lane": LANE,
             "trigger": packet.trigger,
             "ticker": packet.ticker,
             "sector": packet.sector,
@@ -1967,4 +2077,4 @@ def packet_to_source(packet: FactPacket, media: dict | None = None) -> dict:
         return source
     except Exception as exc:  # noqa: BLE001
         log.warning("hot_tape.packet_to_source failed: %s", exc)
-        return {"lane": "hot_tape", "trigger": getattr(packet, "trigger", None)}
+        return {"lane": LANE, "trigger": getattr(packet, "trigger", None)}

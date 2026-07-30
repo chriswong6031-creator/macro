@@ -288,7 +288,20 @@ def classify(f: pd.DataFrame) -> pd.DataFrame:
 
 def flip_condition(f: pd.DataFrame, regime: pd.DataFrame, asof: pd.Timestamp) -> dict:
     """The single most fragile input: among components currently supporting the
-    weaker axis's sign, the one whose z is closest to the scoring threshold."""
+    DISPLAYED quad's expected sign for the weaker axis, the one whose z is closest to
+    the scoring threshold.
+
+    SIGN BUG FIXED 2026-07-29. This used to sign against the RAW axis sign
+    (`row[axis_score] >= 0`), which is the sign of the memoryless read — not of the
+    label on screen. On the ~44% of post-2000 sessions where `raw_quad != quad` the two
+    disagree, so the row hunted for components supporting the axis direction that
+    CONTRADICTS the displayed label and then captioned them "the shakiest evidence
+    behind this call". Worked example (2026-07-29): label Q1 Goldilocks (expects
+    growth ≥ 0), growth_score −0.133, so it searched for growth-NEGATIVE supporters and
+    reported iwm_spy z=−0.45 — evidence AGAINST Goldilocks — as Goldilocks's weakest
+    support. It now signs against `_quad_signs(displayed quad)`, and when the label's
+    own axes no longer support it at all the row says exactly that instead of dressing
+    up the contradiction (`label_unsupported`)."""
     from engine.axes import _component_scores
     from engine.indicators import slope_z
     ecfg = config.load()["engine"]
@@ -297,7 +310,35 @@ def flip_condition(f: pd.DataFrame, regime: pd.DataFrame, asof: pd.Timestamp) ->
 
     row = regime.loc[asof]
     weaker = "growth" if abs(row["growth_score"]) <= abs(row["inflation_score"]) else "inflation"
-    sign = 1 if row[f"{weaker}_score"] >= 0 else -1
+
+    # Sign against the DISPLAYED label's expected axis signs, never the raw score.
+    quad = row.get("quad")
+    quad = None if quad is None or str(quad) in ("None", "nan") else str(quad)
+    raw_q = row.get("raw_quad")
+    raw_q = None if raw_q is None or str(raw_q) in ("None", "nan") else str(raw_q)
+    if quad in ("Q1", "Q2", "Q3", "Q4"):
+        gsign, isign = _quad_signs(quad)
+        sign = gsign if weaker == "growth" else isign
+    else:                                    # warm-up: no label yet, fall back to raw
+        sign = 1 if row[f"{weaker}_score"] >= 0 else -1
+
+    # The label's own axes contradict it (the pending candidate is counting down):
+    # naming a "weakest supporter" here would present anti-evidence as support.
+    if quad is not None and raw_q is not None and raw_q != quad:
+        pend = row.get("pending_quad")
+        pend = None if pend is None or str(pend) in ("None", "nan") else str(pend)
+        days = row.get("pending_days")
+        days = None if days is None else int(days)
+        need = int(ecfg["quad"]["hysteresis_days"])
+        note = (f"the label's own axes no longer support it — today's signs read "
+                f"{raw_q} (growth {float(row['growth_score']):+.2f} / inflation "
+                f"{float(row['inflation_score']):+.2f}) while the confirmed label is {quad}")
+        if pend:
+            note += f"; {pend} counting down {days} of {need} confirmation sessions"
+        return {"axis": weaker, "component": None, "label_unsupported": True,
+                "displayed_quad": quad, "raw_quad": raw_q,
+                "pending_quad": pend, "pending_days": days, "pending_need": need,
+                "note": note}
 
     comp_series = {
         "growth": {"copper_gold": ("copper_gold", True), "xly_xlp": ("xly_xlp", True),
@@ -324,8 +365,12 @@ def flip_condition(f: pd.DataFrame, regime: pd.DataFrame, asof: pd.Timestamp) ->
             best = {"axis": weaker, "component": comp, "z": round(float(zv), 2),
                     "threshold": zt, "margin": round(float(margin), 2)}
     if best is None:
-        return {"axis": weaker, "component": None,
+        return {"axis": weaker, "component": None, "label_unsupported": False,
+                "displayed_quad": quad, "raw_quad": raw_q,
                 "note": "no supporting component near threshold — axis already mixed"}
+    best["label_unsupported"] = False
+    best["displayed_quad"] = quad
+    best["raw_quad"] = raw_q
     best["note"] = (f"{weaker} axis flips risk: {best['component']} slope z={best['z']} "
                     f"is the closest supporter to its +/-{zt} cutoff")
     return best

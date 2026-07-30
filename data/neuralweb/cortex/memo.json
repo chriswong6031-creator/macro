@@ -1,32 +1,34 @@
 {
   "schema": "neuralweb.cortex_memo.v1",
-  "as_of": "2026-07-29T03:33:50+00:00",
-  "summary": "Context-only committee read: the world state is MIXED with a low-confidence transitioning Q1 label, broad equity breadth and calm credit/vol on one side, versus a 64.8 growth-scare caution reading, restrictive rising real yields, strengthening dollar, hollow liquidity composition, broken AI leadership, and bonds/FX divergence on the other. This supports uncertainty and selective de-escalation, not a new signal. Factor intelligence is not mature: only 11 panel dates, no scorecard survivors, composite IC is negative, and Pair G remains dormant. Kernel estimates leave every reviewed engine unarmed; recent board outcomes cannot be treated as proof because pooled-versus-equal gates were held or vacuous. The spine query was capped and dominated by repeated Canada-board context rows, limiting family-level decay inference.",
+  "as_of": "2026-07-30T04:16:42+00:00",
+  "summary": "Context-only committee read: the current tape is risk-off/caution despite a low-confidence Q1 Goldilocks label. The growth-scare score is 76.9 and rising; FX has shifted risk-off, bonds/FX confirmation diverges from equities, and systematic flows are aligned cutting. This is a regime-label/tape tension, not a new signal. Credit and funding remain comparatively healthy, breadth is still broad, volatility is normalizing, and empirical 21-day drawdown odds remain below base rate, so the evidence does not support treating the caution banner as a crash forecast. Liquidity is similarly two-sided: the overlay is expanding, but the tailwind is low quality and mechanical; net liquidity fell over 20 days, Treasury cash rebuilding is a drain, and the RRP buffer is exhausted. Factor evidence is immature: only 11 panel dates, no Pair G ledger, no factor-attention history, no scorecard survivors, and every kernel engine remains unarmed. The graded-spine sample returned mostly repeated Canadian-board observations and does not establish a general macro edge. One conditional Q1/cross-asset-divergence hypothesis was registered for forward testing; it is proposal material only.",
   "what_fired": [
-    "Growth-scare radar at caution (64.8), but only one unconfirmed, non-era-robust leg and no broad-tape context gate.",
-    "Cross-asset contradiction: bonds/FX versus equity regime, with 50% agreement.",
-    "Briefing demand-versus-supply divergences and seven buy-lane names with rising put skew; both remain display-only de-escalation context.",
-    "Master-brain thesis conflicts requiring review: China overweight versus Q3/contracting/forced-deleveraging context; long Treasuries near a stated real-yield falsifier."
+    "Risk radar: caution, dominated by growth scare/defensive rotation at 76.9 with rising trajectory.",
+    "Cross-asset contradiction: bonds and FX diverge from the equity Q1 label; FX risk-off and dollar strength are leaning against risk assets.",
+    "Market structure: short gamma with vol-control and CTA flows aligned cutting.",
+    "Liquidity-quality tension: expanding overlay versus negative 20-day net-liquidity change, active TGA rebuild, exhausted RRP buffer, and stress-expansion quality label.",
+    "Master-brain thesis review identified conflicts or near-falsifiers in China equities, long Treasuries, and high-yield credit.",
+    "No factor contradiction fired: Pair G is dormant until at least 60 panel dates."
   ],
-  "contradictions_review": "Three current contradiction records were reviewed. The strongest macro tension is healthy equity breadth/Q1 framing against bonds-FX divergence, restrictive real yields, dollar strength, and neutral-hollow liquidity. The briefing divergence record confirms internal directional opposition but does not identify a validated aggregate edge. Rising put skew on seven buy-lane names is de-escalation-only because the bullish skew-deceleration prior is unsupported. No factor Pair G contradictions exist because the panel has not reached the required 60 dates. Open master-brain theses are internally inconsistent on China: both overweight and underweight theses remain open, with several check-by dates already passed; these require ledger hygiene rather than directional adjudication.",
+  "contradictions_review": "Five current contradiction records were reviewed. The central macro contradiction is the low-confidence, transitioning Q1 regime versus a risk-off market verdict and diverging bonds/FX confirmation. A separate options-skew contradiction affects three buy-lane names, but its bullish skew-deceleration prior is unsupported and remains de-escalation context only. The intelligence briefing also contains 36 ticker-level demand-versus-supply divergences; these were not converted into rankings or signals. Master-brain review: the open China-equities overweight thesis conflicts with China Q3 stagflation, contracting liquidity, forced deleveraging, and fire-sale participation risk. Long-Treasury overweight theses are close to their stated real-yield/bear-steepening falsifiers. The high-yield underweight thesis is in tension with 2.84% OAS, healthy bond conditions, loose NFCI, and absent funding stress. Growth-over-value and semiconductor underweights are broadly consistent with current relative weakness and therefore were not separately flagged from the supplied contradiction set. The US-equity underweight is directionally consistent with current caution but remains low conviction and unvalidated.",
   "decaying_families": [
-    "Factor composite: negative IC, no surviving legs, only 11 live panel dates; non-tradeable.",
-    "Altdata at 21 days: negative shrunken IC; pooled gate held and engine remains unarmed.",
-    "Radar at 5 and 21 days: shrunken IC is negative despite large n; allocation test is vacuous and engine remains unarmed.",
-    "Policy and thematic/stock desks: negative outcomes with thin or vacuous held-out evidence; all remain unarmed.",
-    "Cortex attention: one effective graded event, negative mean outcome, far below authority threshold.",
-    "Master-brain ledger hygiene: multiple open theses have passed check-by dates without scoring, including older semiconductor, Bitcoin, China, and Treasury entries."
+    "Factor composite, low-beta, low-vol, and investment evidence: negative historical IC legs, no survivors, composite not tradeable, and only 11 live panel dates.",
+    "Risk radar as directional alpha: Q1 5-day shrunken IC is slightly negative and 21-day IC is negative; engine remains unarmed despite high reliability estimates.",
+    "Policy and White House families: negative observed means with thin held-out tails; unarmed.",
+    "AI, stock, and thematic desk 63-day families: negative shrunken IC and thin or vacuous held-out tests; unarmed.",
+    "Cortex attention track record: one effective event in the kernel and zero factor-attention firings; authority remains shadow.",
+    "Master-brain evidence: only four scored leans, with directional accuracy 0.5; insufficient for validated authority."
   ],
   "deserves_operator": [
-    "Review cross-asset/equity divergence under the pre-committed 70%-agreement clearing criterion; do not convert it into a position.",
-    "Review China overweight thesis mb-2026-07-09-1 against current Q3, contracting liquidity, forced deleveraging/fire-sale participation, and weak-side HK peg.",
-    "Review long-Treasury thesis mb-2026-07-01-1 before its 2026-07-29 check-by: real 10-year yield is 2.44%, close to its 2.50% falsifier, while the curve is bear-steepening.",
-    "Reconcile mutually opposed open China theses and score or retire theses whose check-by dates have passed.",
-    "Keep cortex attention in shadow probation: current evidence is insufficient for A2 authority."
+    "US regime label versus tape: review while Q1 confidence is 0.335, the regime is transitioning, cross-asset confirmation diverges, and systematic flows are aligned cutting. Clear if Q1 confidence exceeds 0.50 and divergence disappears for three sessions, or if the hard regime exits Q1 while caution persists.",
+    "Liquidity quantity versus quality: review the mechanical tailwind against a $137.5B 20-day net-liquidity decline, $178.3B TGA rebuild, and exhausted RRP buffer. Clear if net-liquidity change turns positive, the TGA build ends, and quality is benign-expansion for three sessions.",
+    "Open China-equities overweight thesis mb-2026-07-09-1: current China Q3/contracting-liquidity/forced-deleveraging state conflicts with it. Clear if China moves to Q1/Q2 with non-contracting liquidity and participation exits forced deleveraging for three sessions; otherwise review by 2026-08-06.",
+    "Open Long-Treasury overweight theses: real 10-year yield is 2.41%, up 50bp over 63 days, and the curve is bear-steepening. Clear if real yield falls at least 20bp and bear-steepening ends; retain if real yield reaches 2.50% while bear-steepening persists.",
+    "Open high-yield-credit underweight thesis: current 2.84% OAS and 84/100 bond health conflict with the stress premise. Clear attention if OAS widens above 3.25% or by at least 40bp over 20 sessions with confirming stress; otherwise review if OAS stays below 3.00% through 2026-08-14."
   ],
   "probation": {
     "schema": "neuralweb.cortex_probation.v1",
-    "as_of": "2026-07-28",
+    "as_of": "2026-07-29",
     "granted": false,
     "tier": "A0/A1 shadow",
     "reason": "insufficient-n: n=0 < min_n=25",
@@ -50,6 +52,7 @@
     "read_kernel": 1,
     "read_master_brain_theses": 1,
     "flag_attention": 1,
+    "stake_hypothesis": 1,
     "write_memo": 1
   },
   "is_context_only": true,
@@ -90,12 +93,20 @@
         "ok": true,
         "error_type": null,
         "error_message": null
+      },
+      {
+        "provider": "codex",
+        "model": "gpt-5.6-sol",
+        "attempted": true,
+        "ok": true,
+        "error_type": null,
+        "error_message": null
       }
     ],
-    "tool_call_batches": 3,
-    "individual_tool_calls": 9,
+    "tool_call_batches": 4,
+    "individual_tool_calls": 10,
     "expected_min_tool_calls": 1,
     "context_stale": false,
-    "context_as_of": "2026-07-29T03:19:06Z"
+    "context_as_of": "2026-07-30T04:01:36Z"
   }
 }

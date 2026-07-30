@@ -294,7 +294,7 @@
       if (!trigger) return;
       dd.setAttribute('data-nm-bound', '1');
       trigger.addEventListener('click', function (e) {
-        if (window.innerWidth > 1259) return;
+        if (window.innerWidth > 900) return;
         e.preventDefault(); e.stopPropagation();
         var wasOpen = dd.classList.contains('open');
         dd.parentElement.querySelectorAll(':scope > .nav-dd.open').forEach(function (d) {

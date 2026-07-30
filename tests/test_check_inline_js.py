@@ -46,6 +46,20 @@ def test_broken_inline_js_is_caught(tmp_path):
 
 
 @needs_node
+def test_explicit_file_scope_checks_only_the_named_page(tmp_path):
+    """Deploy retries can validate their three rebuilt public pages in seconds."""
+    clean = tmp_path / "clean.html"
+    broken = tmp_path / "broken.html"
+    clean.write_text(CLEAN, encoding="utf-8")
+    broken.write_text(BROKEN, encoding="utf-8")
+
+    assert guard.main([str(clean)]) == 0
+    assert guard.main([str(broken)]) == 1
+    assert guard.find_bad_scripts(str(clean)) == []
+    assert guard.find_bad_scripts(str(broken))
+
+
+@needs_node
 def test_external_and_json_blocks_are_skipped(tmp_path):
     # src= scripts aren't our content; application/json islands aren't executed
     # as JS and would false-positive on node --check — both must be ignored.

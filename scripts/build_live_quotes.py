@@ -50,7 +50,18 @@ _DATA_SYM_RE = re.compile(r'data-sym="([^"]+)"')
 
 # CORE live universe — always fetched even if no page links them yet. Drives the
 # landing Market clock rows + dashboard index/futures tiles. All keyless via Yahoo.
-US_INDEXES = ["^GSPC", "^IXIC", "^DJI", "^RUT", "^VIX", "^TNX"]
+# ^IRX/^FVX/^TNX/^TYX are Yahoo yield indexes whose UNITS ARE FEED-DEPENDENT in
+# this repo: the spark endpoint THIS builder uses delivers the yield percent
+# directly (^TNX price 4.622 = 4.622% — probed live from the VPS 2026-07-29),
+# while the /ws/tape relay path streams the CBOE ×10 index convention (42.5 =
+# 4.25% — see templates/live.js tnxPct(), which scale-detects at >15 exactly
+# because the paths disagree). Consumers of THIS snapshot: the level is `price`
+# as-is (scale-detect if you must be robust to a Yahoo flip); a bp move is
+# (price - prevClose) × 100. `changePct` is the RELATIVE day change of the
+# level and is NOT basis points. All four tenors are needed for a curve read —
+# a 10y alone cannot say whether a move was a steepener or a flattener.
+US_INDEXES = ["^GSPC", "^IXIC", "^DJI", "^RUT", "^VIX",
+              "^IRX", "^FVX", "^TNX", "^TYX"]
 US_FUTURES = ["ES=F", "NQ=F", "YM=F", "RTY=F"]              # overnight, reference only
 INTL_INDEXES = [
     "^HSI",        # Hang Seng (Hong Kong)
@@ -83,11 +94,13 @@ CORE_CRYPTO = ["BTC-USD"]
 CORE_SYMBOLS = (US_INDEXES + US_FUTURES + INTL_INDEXES + CORE_ETFS
                 + CORE_COMMODITIES + CORE_FX + CORE_CRYPTO)
 
-# DISPLAY set — exactly the market/index tiles the SITE renders as glance-tier live
-# tiles (macro market strip, china live strip, commodities/forex strips, BTC header).
+# DISPLAY set — the market/index tiles the SITE renders as glance-tier live tiles
+# (macro market strip, china live strip, commodities/forex strips, BTC header)
+# PLUS the brain market packet's curve/vol inputs (^IRX/^FVX/^TYX/^VIX — read by
+# engine/neuralweb/market_packet.py from this same snapshot, no page tile).
 # This is the SAME-ORIGIN snapshot universe (site/live/quotes.json): the browser's
 # only keyless feed for these symbols when no Worker is deployed (the full-universe
-# snapshot lives on the live-data BRANCH, which pages never fetch). Kept tiny (~30
+# snapshot lives on the live-data BRANCH, which pages never fetch). Kept tiny (~34
 # symbols, seconds to fetch) so BOTH producers stay cheap: the hourly 24/7 btc-live
 # Action (nights/weekends/Sunday Globex reopen) and the 30-min intraday-fastpath
 # tick (US RTH + HKEX windows). Keep in sync with the data-sym tiles the templates
@@ -95,6 +108,8 @@ CORE_SYMBOLS = (US_INDEXES + US_FUTURES + INTL_INDEXES + CORE_ETFS
 DISPLAY_SYMBOLS = [
     "SPY", "QQQ", "^DJI", "^RUT",            # macro market strip (DJI/RUT tiles carry data-sym ^DJI/^RUT)
     *TAPE_SYMBOLS,                            # six-instrument macro tape
+    "^IRX", "^FVX", "^TYX",                  # curve tenors (with ^TNX above) — brain market packet CURVE/FLAGS
+    "^VIX",                                   # vol row for the brain packet TAPE line
     "000001.SS", "510300.SS", "^HSI",        # china page live strip
     "BTC-USD",                               # Bitcoin Vector header (24/7)
     "GC=F", "SI=F", "HG=F", "CL=F", "BZ=F",  # commodities strip (DXY is in the tape above)

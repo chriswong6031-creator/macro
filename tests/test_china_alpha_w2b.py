@@ -649,6 +649,18 @@ class TestTemplateRender:
         env = Environment(autoescape=False)
         env.parse(SRC)
 
+    def test_prophet_readiness_is_not_visibly_mislabeled_as_edge(self):
+        """China v2 is a readiness priority, not a calibrated return edge."""
+        html = _render_w1c_w2b(_full_setups())
+        assert (
+            'class="pv-edl"><span class="l-en">Priority</span>'
+            '<span class="l-zh">优先级</span>'
+        ) in html
+        assert (
+            'class="pv-edl"><span class="l-en">Readiness</span>'
+            '<span class="l-zh">就绪度</span>'
+        ) in html
+
     def test_no_non_ascii_attribute_delimiters(self):
         """Zero non-ASCII quote characters in attributes — mirrors the sibling test.
 
@@ -792,9 +804,10 @@ class TestTemplateRender:
 
         The original narrative-confluence caveat left with the chips (#1400)
         and the reader-first help rewrite (#2203). The surviving honesty line
-        is the shelf footer note — Score = buy-readiness; forward grades still
-        accruing — bilingual. (The (?)-popup caveats are separately enforced
-        by test_china_stocks_copy_w09.py.)
+        is the shelf footer note — Priority = a transparent readiness rank,
+        not a win probability; the new cohort is still accruing — bilingual.
+        (The (?)-popup caveats are separately enforced by
+        test_china_stocks_copy_w09.py.)
 
         Asserts the footer's own wording, not the loose substrings: the render
         window starts at the W-FCT anchor, so the board's (?) help popup — which
@@ -802,5 +815,7 @@ class TestTemplateRender:
         output and would satisfy a bare "still accruing" check on its own.
         """
         html = _render_w1c_w2b(_full_setups())
-        assert "Score = buy-readiness; forward grades are still accruing." in html
-        assert "评分＝买入就绪度；前瞻成绩仍在累积。" in html
+        assert "It is a readiness rank, not a win probability." in html
+        assert "The cn_prophet_v2 forward cohort is accruing separately." in html
+        assert "这是就绪度排序，并非胜率。" in html
+        assert "cn_prophet_v2前瞻样本将单独积累。" in html
