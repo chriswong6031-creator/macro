@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-30T22:41:28.575109+00:00",
-  "count": 418,
+  "generated_at": "2026-07-30T22:56:37.561152+00:00",
+  "count": 419,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -1631,6 +1631,23 @@
       "tickers": [],
       "top_pick": false,
       "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ykzpmlkawu3-3517bc",
+      "title": "Omnicom (OMC) 2Q26 Core revenues slightly below due to prior year restatement while organic growth improved",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T08:04:11Z",
+      "summary_points": [
+        "Missing Document**: No source material provided for extraction **Critical Input Gap**: Absence of actual document content prevents identification of fundamentals/data/technical points **Action Required**: Provide document text to proceed with analysis per specified criteria"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
