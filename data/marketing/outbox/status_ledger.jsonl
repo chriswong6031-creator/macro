@@ -447,3 +447,7 @@
 {"id":"ob-2026-07-30-ba31eee24a","from":"approved","to":"quarantined","at":"2026-07-30T19:25:12Z","actor":"publisher","note":"repeat: near-identical (jaccard=0.79) to ob-2026-07-30-8c1d04d6af posted 2026-07-30; deep rewording required","receipt":null}
 {"id":"ob-2026-07-30-dfe3fd4fc5","from":"queued","to":"approved","at":"2026-07-30T20:24:33Z","actor":"publisher-autoapprove","note":"auto-approved (kind-scoped publish-time lane)","receipt":null}
 {"id":"ob-2026-07-30-efd3f4bcc1","from":"queued","to":"approved","at":"2026-07-30T20:24:33Z","actor":"publisher-autoapprove","note":"auto-approved (kind-scoped publish-time lane)","receipt":null}
+{"id":"ob-2026-07-30-6003875d0e","from":"queued","to":"quarantined","at":"2026-07-30T10:55:05Z","actor":"operator_review","note":"operator review: post repeats its own '5 of 11 sectors' figure twice","receipt":null}
+{"id":"ob-2026-07-30-6731ec63ae","from":"queued","to":"quarantined","at":"2026-07-30T10:55:05Z","actor":"operator_review","note":"operator review: four-line $CDW stat dump, no thesis connecting them","receipt":null}
+{"id":"ob-2026-07-30-4948a14c2c","from":"queued","to":"quarantined","at":"2026-07-30T10:55:05Z","actor":"operator_review","note":"operator review: duplicate $TPR — kelly's 00:00 post is the stronger read","receipt":null}
+{"id":"ob-2026-07-30-0c3e4c4f53","from":"queued","to":"quarantined","at":"2026-07-30T10:55:05Z","actor":"operator_review","note":"operator review: duplicate $AVNT — kelly's 12:00 post is the stronger read","receipt":null}
