@@ -4274,20 +4274,13 @@
       var r = row.getBoundingClientRect();
       var pw = pop.offsetWidth, ph = pop.offsetHeight;
       var vw = window.innerWidth, vh = window.innerHeight, m = 10, gap = 12;
-      var x, side, y = r.top + (r.height - ph) / 2;
-      if (r.right + gap + pw <= vw - m) {
-        x = r.right + gap; side = 'right';                              // prefer right of row
-      } else if (r.left - gap - pw >= m) {
-        x = r.left - gap - pw; side = 'left';                           // flip left
-      } else if (r.bottom + gap + ph <= vh - m) {
-        x = Math.max(m, Math.min(r.left, vw - pw - m)); y = r.bottom + gap; side = 'below';
-      } else {
-        x = Math.max(m, Math.min(r.left, vw - pw - m)); y = r.top - gap - ph; side = 'above';
-      }
-      y = Math.max(m, Math.min(y, vh - ph - m));                         // clamp vertically
+      var x, y = r.top;
+      if (r.right + gap + pw <= vw - m) x = r.right + gap;            // prefer right of row
+      else if (r.left - gap - pw >= m) x = r.left - gap - pw;         // flip left
+      else { x = Math.max(m, Math.min(r.left, vw - pw - m)); y = r.bottom + 8; }  // stack below
+      if (y + ph > vh - m) y = Math.max(m, vh - ph - m);              // clamp vertically
       pop.style.left = x + 'px';
       pop.style.top = y + 'px';
-      pop.dataset.side = side;
     }
 
     function open(row) {
@@ -4295,7 +4288,6 @@
       if (!src) return;
       cur = row;
       pop.textContent = '';
-      pop.classList.toggle('row-pop--decision', src.classList.contains('row-pop-decision'));
       var clone = src.cloneNode(true);        // clone keeps l-en/l-zh spans live for CSS
       clone.classList.remove('rp-src');       // …but must shed the payload's display:none class
       clone.removeAttribute('hidden');        // …and its belt-and-braces hidden attribute

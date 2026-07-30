@@ -108,11 +108,9 @@ def test_theme_hover_card_prioritizes_score_breadth_risk_and_leaders():
 
 
 def test_decision_card_shell_is_viewport_safe_and_uses_dedicated_variant():
-    css = (ROOT / "templates" / "theme.css").read_text(encoding="utf-8")
-    js = (ROOT / "templates" / "theme.js").read_text(encoding="utf-8")
-    assert ".row-pop--decision {" in css
+    css = (ROOT / "templates" / "dashboard.html.j2").read_text(encoding="utf-8")
+    assert '<style id="action-card-css">' in css
+    assert ".row-pop:has(> .row-pop-decision){" in css
     assert "max-height:calc(100dvh - 20px)" in css
     assert "grid-template-columns:repeat(auto-fit,minmax(82px,1fr))" in css
-    assert "src.classList.contains('row-pop-decision')" in js
-    assert "r.top + (r.height - ph) / 2" in js
-    assert "pop.dataset.side = side" in js
+    assert "z-index:2147483001" in css
