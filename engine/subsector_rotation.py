@@ -20,6 +20,13 @@ Design
   leadership improving) → Leading / Weakening / Lagging / Improving. The
   *Improving* quadrant (laggards turning up) plus positive ``accel`` is the
   early-rotation watchlist.
+* **Turn read (additive).** ``engine/subsector_turn.py`` re-derives the same snapshot as a
+  disjoint-segment pace curve plus a reconstructed level path, replays it over the
+  append-only PIT archive, and attaches per-node cycle position, turn state
+  (bottoming / turned up / topping / turned down) with cross-session confirmation, member
+  breadth, and a parallel fast rank. Every incumbent field here is left byte-identical —
+  the two reads are logged side by side and graded head-to-head by
+  ``engine/subsector_track_record.py``.
 """
 from __future__ import annotations
 
@@ -126,6 +133,79 @@ def _rotation_metrics(perf_by_key: Mapping[str, Mapping[str, float]]) -> dict[st
     return out
 
 
+def _history_with_today(history: Sequence[Mapping] | None,
+                        perf_by_key: Mapping[str, Mapping],
+                        asof: str | None) -> list[dict]:
+    """Archive rows + today's snapshot, appended only if the archive doesn't already hold it.
+
+    The archive (``subsector_perf_history.jsonl``) is appended by the fetcher, so on a normal
+    nightly today is already the last row. On a render-only lane — or for a synthetic node
+    like the Mag-7 composite, which is injected in memory and never archived — the snapshot
+    is ahead of the archive, and the read must still see today.
+    """
+    rows = [dict(r) for r in (history or []) if (r or {}).get("subsectors")]
+    day = str(asof or "").strip() or "today"
+    if rows and str(rows[-1].get("asof") or "") == day:
+        # same session: fold in any key the archive is missing (synthetic nodes)
+        merged = dict(rows[-1].get("subsectors") or {})
+        for k, v in perf_by_key.items():
+            merged.setdefault(k, v)
+        rows[-1] = {"asof": day, "subsectors": merged}
+        return rows
+    rows.append({"asof": day, "subsectors": dict(perf_by_key)})
+    return rows
+
+
+def attach_turn(rows: list[dict], perf_by_key: Mapping[str, Mapping],
+                *, key_of=lambda r: r["key"],
+                history: Sequence[Mapping] | None = None,
+                member_map: Mapping | None = None,
+                member_perf: Mapping | None = None,
+                asof: str | None = None,
+                min_members: int = 3) -> dict:
+    """Compute the turn read for ``rows`` and attach it in place. Returns the summary block.
+
+    Shared by subsectors, theme rollups and the sector-ETF cross-section so all three
+    surfaces carry the same vocabulary. Degrade-safe: on any failure the rows are left
+    exactly as the incumbent pipeline produced them and an empty summary comes back.
+    """
+    try:
+        from engine import subsector_turn as st
+
+        hist = _history_with_today(history, perf_by_key, asof)
+        out = st.replay(hist, member_map=member_map, member_perf=member_perf,
+                        keys=list(perf_by_key))
+        reads = out.get("reads") or {}
+        meta = {}
+        for r in rows:
+            k = key_of(r)
+            rd = reads.get(k)
+            if not rd:
+                continue
+            for f in st.ROW_FIELDS:
+                if f in rd:
+                    r[f] = rd[f]
+            copy = st.STATE_COPY.get(rd.get("turn_state") or "", {})
+            r["turn_label"] = copy.get("en")
+            r["turn_label_zh"] = copy.get("zh")
+            r["turn_say"] = copy.get("say_en")
+            r["turn_say_zh"] = copy.get("say_zh")
+            meta[k] = {"name": r.get("name") or r.get("theme") or k,
+                       "name_zh": r.get("name_zh") or r.get("theme_zh"),
+                       "theme": r.get("theme") or "", "theme_zh": r.get("theme_zh") or "",
+                       "n_members": r.get("n_members")}   # None = unknown, not zero
+        summary = st.summarize(reads, meta, min_members=min_members)
+        summary["n_sessions"] = out.get("n_days")
+        summary["warm"] = out.get("warm")
+        summary["market"] = out.get("market")
+        summary["nominations"] = st.handoff_nominations(reads, meta)
+        summary["schema"] = st.SCHEMA
+        return summary
+    except Exception as e:  # noqa: BLE001 — additive layer, never fatal
+        log.warning("turn read failed: %s", e)
+        return {}
+
+
 def perf_from_close(close, asof: str | None = None) -> dict | None:
     """Finviz-convention horizon returns (PERCENT) from a daily close series — the feed
     for SYNTHETIC rotation nodes computed from local stores (Rotation Command RC-R4: the
@@ -159,6 +239,7 @@ def compute_rotation(
     generated_utc: str | None = None,
     asof: str | None = None,
     top_members: int = 8,
+    history: Sequence[Mapping] | None = None,
 ) -> dict:
     """Assemble the subsector-rotation payload.
 
@@ -167,7 +248,11 @@ def compute_rotation(
     tree           : ``[{theme, subsectors:[{key,name,members:[...]}]}]`` — the
                      committed Finviz structure.
     subsector_perf : ``{subsector_key: {horizon: pct}}``.
-    member_perf    : ``{ticker: {horizon: pct}}`` (optional, for member chips).
+    member_perf    : ``{ticker: {horizon: pct}}`` (optional, for member chips + breadth).
+    history        : append-only PIT archive rows ``[{asof, subsectors:{key:{horizon:pct}}}]``
+                     (optional). Supplied → the turn read gets realised volatility,
+                     cross-session confirmation and rotation tails; absent → the turn read
+                     runs on today alone and stays unconfirmable (``vol_cold``).
     """
     member_perf = member_perf or {}
     # flatten subsectors, attach theme; keep only those with a perf row.
@@ -205,6 +290,18 @@ def compute_rotation(
     for i, s in enumerate(subsectors):
         s["rank"] = i + 1
 
+    # ── turn read (additive; incumbent fields above are untouched) ──
+    sub_turn = attach_turn(
+        subsectors, {k: subsector_perf[k] for k in meta},
+        history=history, asof=asof,
+        member_map={k: m["members"] for k, m in meta.items()},
+        member_perf=member_perf)
+    # Parallel fast ranking — a second ORDER over the same rows, never a re-sort of them.
+    ranked_v2 = sorted(subsectors, key=lambda s: (s.get("rank_score_v2") or -1e9),
+                       reverse=True)
+    for i, s in enumerate(ranked_v2):
+        s["rank_v2"] = i + 1
+
     # theme rollup: each theme = mean of its subsectors' perf per horizon.
     theme_keys = {}
     theme_perf: dict[str, dict[str, float]] = {}
@@ -235,6 +332,17 @@ def compute_rotation(
         })
     themes.sort(key=lambda t: t["emerging_score"], reverse=True)
 
+    # Theme-level turn read: the archive is subsector-grain, so each historical day's theme
+    # perf is re-aggregated the same way today's is (mean of member subsectors per horizon).
+    for t in themes:
+        t["n_members"] = t.get("n_subs") or 0      # the breadth floor reads n_members
+    theme_hist = _theme_history(history, theme_keys) if history else None
+    theme_turn = attach_turn(themes, theme_perf, key_of=lambda r: r["theme"],
+                             history=theme_hist, asof=asof, min_members=1)
+    ranked_t2 = sorted(themes, key=lambda t: (t.get("rank_score_v2") or -1e9), reverse=True)
+    for i, t in enumerate(ranked_t2):
+        t["rank_v2"] = i + 1
+
     # highlights — only sensible candidates per bucket. A breadth floor keeps the
     # actionable emerging/fading calls off 1-2-member "subsectors" (those are a
     # stock or two, not a rotation) — signal hygiene, not a fitted parameter.
@@ -258,7 +366,44 @@ def compute_rotation(
         "highlights": {"emerging": emerging, "fading": fading, "leaders": leaders, "laggards": laggards},
         "n_subsectors": len(subsectors),
         "n_themes": len(themes),
+        # Turn read — buckets keyed on confirmed cycle turns rather than on the incumbent
+        # score. Additive: `highlights` above is unchanged, so every consumer of the old
+        # contract keeps working while the desk leads with the faster read.
+        "turn": sub_turn,
+        "turn_themes": theme_turn,
     }
+
+
+def _theme_history(history: Sequence[Mapping] | None,
+                   theme_keys: Mapping[str, Sequence[str]]) -> list[dict]:
+    """Re-aggregate the subsector-grain archive into theme-grain rows, one per session.
+
+    Uses the same rule as today's rollup (mean of the theme's subsectors at each horizon)
+    so a theme's history is measured exactly like its present. Membership comes from
+    TODAY's tree for every historical day — the tree is versioned separately in
+    ``tree_history.jsonl`` and re-deriving past membership is a different job; the effect is
+    that a theme which gained a subsector last week has that subsector in its back-history
+    too. Disclosed rather than silently assumed.
+    """
+    out: list[dict] = []
+    for row in history or ():
+        subs = row.get("subsectors") or {}
+        if not subs:
+            continue
+        agg: dict[str, dict] = {}
+        for theme, keys in theme_keys.items():
+            per_h: dict[str, float] = {}
+            for h in HORIZONS:
+                vals = [v for k in keys
+                        if (p := subs.get(k)) and (v := p.get(h)) is not None
+                        and np.isfinite(v)]
+                if vals:
+                    per_h[h] = float(np.mean(vals))
+            if per_h:
+                agg[theme] = per_h
+        if agg:
+            out.append({"asof": row.get("asof"), "subsectors": agg})
+    return out
 
 
 # ── Sector ETF cross-section ─────────────────────────────────────────────────

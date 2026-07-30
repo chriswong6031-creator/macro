@@ -404,6 +404,7 @@
         +'<div class="sr-meta">'+L('Whole market · speed of relative strength','全市场 · 相对强度的变化速度')+'</div>'
       +'</div>'
       +'<div class="sr-map-card"></div>'
+      +'<div class="sr-turn-wrap"></div>'
       +'<div class="sr-versus-wrap"></div>'
       +'<div class="sr-table-wrap"></div>'
       +'<div class="sr-vb-container"></div>'
@@ -413,6 +414,7 @@
       b.addEventListener('click',function(){_unit=b.getAttribute('data-u'); _sortKey='emerging_score'; _sortDir=-1; _zoom=null; render(root);});
     });
     drawMapCard(root.querySelector('.sr-map-card'));
+    drawTurns(root.querySelector('.sr-turn-wrap'));
     drawVersus(root.querySelector('.sr-versus-wrap'));
     drawTable(root.querySelector('.sr-table-wrap'));
     drawVelocityBoard(root.querySelector('.sr-vb-container'));
@@ -673,6 +675,205 @@
     if(mb)mb.addEventListener('click',function(){_vsMore=!_vsMore;drawVersus(el);});
   }
 
+  /* ---------- turns rail ----------------------------------------------------
+   * The desk's fastest read: groups whose own cycle turned, confirmed across
+   * sessions. Tier 1 per docs/DESIGN_DOCTRINE.md — plain state, plain numbers, one
+   * stance, one footnote; every mechanic (legs, tracking error, thresholds) lives on
+   * the hover receipt. Follows the unit toggle: subsectors / themes / sector ETFs each
+   * read their own turn summary. No turn data (an old payload) → the rail hides.
+   *
+   * The one device: a RANGE NOTCH per row — the group's reconstructed 1-year range as a
+   * track, low on the left, high on the right, with a marker where it sits now whose
+   * glyph carries the direction it just turned. Position and direction in one mark, and
+   * it is the only genuinely new fact the turn engine produces.
+   * ------------------------------------------------------------------------- */
+  var TSTATE={
+    turn_up:   {en:'Turned up',   zh:'已转上行', cls:'up'},
+    bottoming: {en:'Bottoming',   zh:'筑底中',   cls:'up soft'},
+    turn_down: {en:'Turned down', zh:'已转下行', cls:'dn'},
+    topping:   {en:'Topping',     zh:'筑顶中',   cls:'dn soft'}
+  };
+  function turnSummary(){
+    if(!_data) return null;
+    if(_unit==='themes')  return _data.turn_themes||null;
+    if(_unit==='sectors') return _data.turn_sectors||null;
+    return _data.turn||null;
+  }
+  // low ←→ high track with the now-marker; `dir` picks the marker glyph.
+  function rangeNotch(pos,dir){
+    if(pos==null||isNaN(pos)) return '<span class="sr-tn-na">—</span>';
+    // Inset by the marker's own half-width so a group at 0% or 100% of its range still sits
+    // fully inside the track instead of poking past the end tick.
+    var W=54,H=12,x=5.6+Math.max(0,Math.min(100,pos))/100*(W-11.2);
+    var col=dir>0?'--up':(dir<0?'--down':'--muted');
+    var mark=dir>0
+      ? '<path d="M'+(x-3.4)+' 8.4 L'+x+' 3 L'+(x+3.4)+' 8.4 Z" fill="var('+col+')"></path>'
+      : (dir<0
+        ? '<path d="M'+(x-3.4)+' 3.6 L'+x+' 9 L'+(x+3.4)+' 3.6 Z" fill="var('+col+')"></path>'
+        : '<circle cx="'+x+'" cy="6" r="2.6" fill="var('+col+')"></circle>');
+    return '<svg class="sr-tn" viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'" aria-hidden="true">'
+      +'<line x1="2" y1="6" x2="'+(W-2)+'" y2="6" stroke="var(--line)" stroke-width="1"></line>'
+      +'<line x1="2" y1="2.5" x2="2" y2="9.5" stroke="var(--line)" stroke-width="1"></line>'
+      +'<line x1="'+(W-2)+'" y1="2.5" x2="'+(W-2)+'" y2="9.5" stroke="var(--line)" stroke-width="1"></line>'
+      +mark+'</svg>';
+  }
+  // "fell 12% · 10 of 11 turning" — every number arrives with its meaning (Law 3).
+  // The engine publishes WHICH path qualified the node. A group sitting at its price high
+  // whose leadership faded and is turning back up is a real read, but printing "fell 0%"
+  // for it would contradict the row it sits on, so the wording follows the basis.
+  function turnFact(d,up){
+    var bits=[];
+    var lead=(up?d.basis_up:d.basis_dn)==='leadership';
+    var mv=lead?(up?d.rs_dd_from_peak:d.rs_up_from_trough)
+               :(up?d.dd_from_peak:d.up_from_trough);
+    if(mv!=null){
+      var a=Math.abs(mv).toFixed(0);
+      bits.push(lead
+        ? (up?L('lost '+a+'% of its lead','领先度回落 '+a+'%')
+             :L('gained '+a+'% of lead','领先度累涨 '+a+'%'))
+        : (up?L('fell '+a+'%','先跌 '+a+'%'):L('ran '+a+'%','先涨 '+a+'%')));
+    }
+    var b=d.breadth,frac=b?(up?b.turn_up:b.turn_dn):null;
+    if(b&&frac!=null){var n=Math.round(frac*b.n);
+      bits.push(up?L(n+' of '+b.n+' turning',b.n+'只中 '+n+'只转向')
+                  :L(n+' of '+b.n+' rolling',b.n+'只中 '+n+'只走弱'));}
+    else if(d.n_members) bits.push(L(d.n_members+' names',d.n_members+'只成分股'));
+    if(b&&b.concentrated) bits.push(L('one name leads','单一成分股主导'));
+    return bits.join(' · ');
+  }
+  function turnDay(d){
+    var n=d.turn_state==='turn_up'||d.turn_state==='turn_down'
+      ? (d.turn_age==null?null:d.turn_age+1)
+      : (d.turn_state==='bottoming'?d.persist_up:(d.turn_state==='topping'?d.persist_dn:null));
+    if(!n) return '';
+    return '<span class="sr-tw-day">'+L('day '+n,'第 '+n+' 天')+'</span>';
+  }
+  function drawTurns(el){
+    var tn=turnSummary();
+    if(!tn||!tn.counts){el.style.display='none';return;}
+    el.style.display='';
+    function byKey(k){var a=items(),i;for(i=0;i<a.length;i++)if(keyOf(a[i])===k)return a[i];return null;}
+    function pick(b){return (tn[b]||[]).map(byKey).filter(Boolean);}
+    var up=pick('turned_up'),dn=pick('turned_down'),wu=pick('bottoming'),wd=pick('topping');
+
+    function row(d,isUp){
+      var st=TSTATE[d.turn_state]||TSTATE[isUp?'bottoming':'topping'];
+      return '<div class="sr-tw-row" data-k="'+esc(keyOf(d))+'">'
+        +'<span class="sr-tw-main">'
+          +(hasDetail()?'<a class="sr-tw-nm" href="'+detailHref(keyOf(d))+'">'+esc(nameOf(d))+'</a>'
+                       :'<span class="sr-tw-nm">'+esc(nameOf(d))+'</span>')
+          +(_unit==='subsectors'?'<span class="sr-tw-th">'+esc(themeOf(d))+'</span>':'')
+        +'</span>'
+        +'<span class="sr-tw-pos">'+rangeNotch(d.pos_in_range,isUp?1:-1)+'</span>'
+        +'<span class="sr-tw-fact">'+turnFact(d,isUp)+turnDay(d)+'</span>'
+      +'</div>';
+    }
+    function col(list,isUp){
+      var ttl=isUp?L('Turned up','已转上行'):L('Turned down','已转下行');
+      var sub=isUp?L('fell, then turned — held for a second session','先跌后转，且已连续确认')
+                  :L('ran, then rolled over — held for a second session','先涨后弱，且已连续确认');
+      var body=list.length?list.slice(0,6).map(function(d){return row(d,isUp);}).join('')
+        :'<div class="sr-tw-empty">'+(isUp?L('no confirmed upturns today','今日无已确认转上行')
+                                          :L('no confirmed downturns today','今日无已确认转下行'))+'</div>';
+      return '<div class="sr-tw-col '+(isUp?'in':'out')+'">'
+        +'<div class="sr-tw-shd"><span class="sr-tw-ttl">'+(isUp?'▲ ':'▼ ')+ttl+'</span>'
+        +'<span class="sr-tw-sub">'+sub+'</span></div>'+body+'</div>';
+    }
+    // The Finviz taxonomy reuses display names across themes — "Hardware" exists under both
+    // Cloud Computing and Semiconductors, "Security" under IoT, Cybersecurity and Cloud. Two
+    // identical chips are unreadable, so a colliding name carries its theme. Only when it
+    // collides: disambiguate where needed, no clutter where it isn't.
+    function chips(list,isUp){
+      if(!list.length) return '';
+      var picks=list.slice(0,6),seen={};
+      picks.forEach(function(d){var n=nameOf(d);seen[n]=(seen[n]||0)+1;});
+      return '<span class="sr-tw-cg">'+(isUp?'⌃ ':'⌄ ')
+        +picks.map(function(d){
+          var n=nameOf(d);
+          return '<a class="sr-tw-chip '+(isUp?'up':'dn')+'" '
+            +(hasDetail()?'href="'+detailHref(keyOf(d))+'"':'')+' data-k="'+esc(keyOf(d))+'">'
+            +esc(n)+(seen[n]>1&&_unit==='subsectors'?'<i>'+esc(themeOf(d))+'</i>':'')
+            +'</a>';}).join('')+'</span>';
+    }
+    // Handoffs are shown whether or not both sides are confirmed — on real data most days
+    // have neither side confirmed yet, and a line that only appears on the rare double
+    // confirmation is a dead feature. The pair carries its own state instead: a check when
+    // both ends are confirmed, "forming" when they are not.
+    var noms=(tn.nominations||[]).slice(0,3);
+    var nomLine=noms.length
+      ? '<div class="sr-tw-hand"><span class="sr-tw-hlab">'+L('Handoffs','接力')+'</span>'
+        +noms.map(function(n){
+          var dnm=isZh()?(n.donor.name_zh||n.donor.name):n.donor.name;
+          var rnm=isZh()?(n.receiver.name_zh||n.receiver.name):n.receiver.name;
+          var th=isZh()?(n.theme_zh||n.theme):n.theme;
+          var tag=n.both_confirmed
+            ? '<span class="sr-tw-ptag ok">'+L('both confirmed','两端已确认')+'</span>'
+            : '<span class="sr-tw-ptag">'+L('forming','成形中')+'</span>';
+          return '<span class="sr-tw-pair"><b class="dn">'+esc(dnm)+'</b>'
+            +'<i class="sr-tw-arrow" aria-hidden="true">→</i><b class="up">'+esc(rnm)+'</b>'
+            +'<span class="sr-tw-pth">'+esc(th)+'</span>'+tag+'</span>';}).join('')
+        +'</div>'
+      : '';
+    var sess=tn.n_sessions?('<span class="sr-tw-meta">'+L(tn.n_sessions+' sessions read',
+                                                          '已读取 '+tn.n_sessions+' 个交易日')+'</span>'):'';
+    // Tier-2 receipt: the mechanics, in one tip. Never a title= attribute (house law).
+    var lw=tn.leg_weights||{},pr=tn.params||{};
+    var howEn=('Measured on non-overlapping return windows, against the median group, and '
+      +'scaled by each group’s own week-to-week variability. A turn scores on four '
+      +'separate legs — size of the change ('+((lw.flip||0)*100).toFixed(0)+'%), what it '
+      +'turned from ('+((lw.regime||0)*100).toFixed(0)+'%), how unusual it is across the '
+      +'market ('+((lw.rs||0)*100).toFixed(0)+'%), and member participation ('
+      +((lw.part||0)*100).toFixed(0)+'%) — and needs '+(pr.confirm_days||2)+' sessions to '
+      +'confirm, or one very large reading. A group must have fallen at least '
+      +(pr.fell_dd_min||6)+'% (or run '+(pr.rose_run_min||8)+'%) from an extreme at least a '
+      +'month old to qualify. Cycle range is rebuilt from six return windows, so peaks and '
+      +'troughs inside a window are invisible and the dates are approximate. Context tier: '
+      +'this ranks nothing and sizes nothing.');
+    var howZh=('以不重叠的区间收益计算，对比全市场中位数，'
+      +'并按各标的自身的周度波动幅归一。转向由四个独立分项评分：'
+      +'变化幅度（'+((lw.flip||0)*100).toFixed(0)+'%）、从何种趋势转向（'
+      +((lw.regime||0)*100).toFixed(0)+'%）、在全市场中的罕见程度（'
+      +((lw.rs||0)*100).toFixed(0)+'%）、以及成分股参与度（'
+      +((lw.part||0)*100).toFixed(0)+'%）；需连续 '+(pr.confirm_days||2)
+      +' 个交易日确认，或单日读数极大。标的需自一个月以上的极值'
+      +'回落至少 '+(pr.fell_dd_min||6)+'%（或上涨 '+(pr.rose_run_min||8)
+      +'%）才具备资格。周期区间由六个区间收益重建，'
+      +'区间内部的高低点不可见，日期为近似值。仅供参考：'
+      +'不用于排名，也不用于确定仓位。');
+
+    el.innerHTML='<div class="sr-turns">'
+      +'<div class="sr-tw-hd">'
+        +'<h3>🔄 '+L('Turns this week','本周转向')+'</h3>'
+        +'<span class="rcf-help sr-tw-q" tabindex="0" role="button"'
+          +' data-tip-en="'+esc(howEn)+'" data-tip-zh="'+esc(howZh)+'">?</span>'
+        +sess
+      +'</div>'
+      +'<p class="sr-tw-lede">'+L('Groups that fell then turned, or ran then rolled over. Watch — don’t chase.',
+                                  '先跌后转、或先涨后弱的板块。观察为主，不宜追高。')+'</p>'
+      +'<div class="sr-tw-body">'+col(up,true)+col(dn,false)+'</div>'
+      +((wu.length||wd.length)?'<div class="sr-tw-watch"><span class="sr-tw-wlab">'
+        +L('Still forming','尚在成形')+'</span>'+chips(wu,true)+chips(wd,false)+'</div>':'')
+      +nomLine
+      +'<p class="sr-tw-foot">'
+        +L('A turn is a heads-up, not an entry — the cycle range and the turn date are rebuilt from return windows, so both are approximate.',
+           '转向只是提示，并非入场信号——周期区间与转向日期均由区间收益重建，因此都是近似值。')
+        +(tn.warm===false?' '+L('Still building session history; reads stay provisional.',
+                                '交易日历史仍在积累，研判暂为初步结论。'):'')
+      +'</p>'
+    +'</div>';
+    Array.prototype.forEach.call(el.querySelectorAll('.sr-tw-row'),function(c){
+      c.addEventListener('mousemove',function(e){showTip(c.getAttribute('data-k'),e.clientX,e.clientY);});
+      c.addEventListener('mouseleave',hideTip);
+      c.addEventListener('click',function(e){if(e.target.closest('a'))return;
+        var k=c.getAttribute('data-k'); if(hasDetail())location.href=detailHref(k); else flashRow(k);});
+    });
+    Array.prototype.forEach.call(el.querySelectorAll('.sr-tw-chip'),function(c){
+      c.addEventListener('mousemove',function(e){showTip(c.getAttribute('data-k'),e.clientX,e.clientY);});
+      c.addEventListener('mouseleave',hideTip);
+      if(!hasDetail())c.addEventListener('click',function(){flashRow(c.getAttribute('data-k'));});
+    });
+  }
+
   /* ---------- table ---------- */
   var COLS=[
     {k:'name',en:'Subsector',zh:'子行业',num:false},
@@ -681,6 +882,8 @@
     {k:'1W',en:'1W',zh:'1周',num:true,perf:true},
     {k:'1M',en:'1M',zh:'1月',num:true,perf:true},
     {k:'3M',en:'3M',zh:'3月',num:true,perf:true},
+    {k:'turn_state',en:'Turn',zh:'转向',num:false},
+    {k:'pos_in_range',en:'In range',zh:'区间位置',num:true},
     {k:'accel',en:'Accel',zh:'加速',num:true},
     {k:'rs_ratio',en:'RS',zh:'相对强度',num:true},
     {k:'rs_mom',en:'Mom',zh:'动量',num:true},
@@ -707,7 +910,10 @@
       var rankTd='<td class="num" style="color:var(--muted);font-variant-numeric:tabular-nums;">'+(ri+1)+'</td>';
       var tds=rankTd+COLS.filter(function(c){return !(hideTCol&&c.k==='theme');}).map(function(c){
         if(c.k==='quadrant'){var q=QUAD[d.quadrant];return '<td><span class="sr-q '+q.cls+'">'+(isZh()?q.zh:q.en)+'</span></td>';}
+        if(c.k==='turn_state'){var ts=TSTATE[d.turn_state];
+          return '<td>'+(ts?'<span class="sr-ts '+ts.cls+'">'+(isZh()?ts.zh:ts.en)+'</span>':'<span class="sr-ts-na">—</span>')+'</td>';}
         var v=cellVal(d,c);
+        if(c.k==='pos_in_range')return '<td class="num">'+(v==null?'—':(+v).toFixed(0)+'%')+'</td>';
         if(c.perf)return '<td class="num '+pcCls(v)+'">'+fmtPc(v)+'</td>';
         if(c.num){var s=v==null?'—':(c.k==='emerging_score'||c.k==='rs_ratio'||c.k==='rs_mom'?(v>0?'+':'')+(+v).toFixed(2):(v>0?'+':'')+(+v).toFixed(1));
           return '<td class="num '+(['accel','rs_mom','emerging_score','rs_ratio'].indexOf(c.k)>=0?pcCls(v):'')+'">'+s+'</td>';}
@@ -813,9 +1019,47 @@
     var zAccelLine=d.z_accel!=null
       ?'<span style="margin-left:8px;">'+L('accel vs peers','对比同类加速度')+' <b class="'+pcCls(d.z_accel)+'">'+(d.z_accel>0?'+':'')+d.z_accel.toFixed(1)+'σ</b></span>'
       :'';
+    // Tier-2 turn receipt: the cycle facts, the four legs, and the noise scale the legs
+    // are measured in — the mechanics the rail deliberately keeps off the glance tier.
+    var turnLine='';
+    if(d.turn_state){
+      var ts=TSTATE[d.turn_state],isUp=(d.turn_state==='turn_up'||d.turn_state==='bottoming');
+      var legs=isUp?(d.legs_up||{}):(d.legs_dn||{});
+      var LEGN={flip:['change','变化幅度'],regime:['turned from','原趋势'],rs:['vs market','对比市场'],part:['members','成分股']};
+      var legRow=Object.keys(LEGN).map(function(lk){
+        var lv=legs[lk];
+        return '<div class="sr-tsp"><span>'+L(LEGN[lk][0],LEGN[lk][1])+'</span><b>'+(lv==null?'—':(lv*100).toFixed(0)+'%')+'</b></div>';
+      }).join('');
+      var cyc=[];
+      if(d.pos_in_range!=null) cyc.push(L('at '+(+d.pos_in_range).toFixed(0)+'% of its 1-year range',
+                                          '处于一年区间的 '+(+d.pos_in_range).toFixed(0)+'%'));
+      if(d.dd_from_peak!=null) cyc.push(L((+d.dd_from_peak).toFixed(1)+'% from the 1-year high',
+                                          '距一年高点 '+(+d.dd_from_peak).toFixed(1)+'%'));
+      if(d.up_from_trough!=null) cyc.push(L('+'+(+d.up_from_trough).toFixed(1)+'% off the low',
+                                            '自低点 +'+(+d.up_from_trough).toFixed(1)+'%'));
+      if(d.rs_dd_from_peak!=null) cyc.push(L('leadership '+(+d.rs_dd_from_peak).toFixed(1)+'% off its best',
+                                             '领先度距最佳 '+(+d.rs_dd_from_peak).toFixed(1)+'%'));
+      var wk=(d.pace_rel||{}).w1,mk=(d.pace_mkt||{}).w1;
+      var paceLine=(wk!=null)?('<div class="sr-tip-mt">'+L('this week vs market','本周对比市场')
+        +' <b class="'+pcCls(wk)+'">'+(wk>0?'+':'')+(+wk).toFixed(1)+'%</b>'
+        +(mk!=null?' <span style="color:var(--muted);">'+L('market '+((mk>0?'+':'')+(+mk).toFixed(1))+'%/wk',
+                                                           '市场 '+((mk>0?'+':'')+(+mk).toFixed(1))+'%/周')+'</span>':'')
+        +(d.noise_w!=null?' · '+L('typical week ±'+(+d.noise_w).toFixed(1)+'%','常态周波动 ±'+(+d.noise_w).toFixed(1)+'%'):'')
+        +'</div>'):'';
+      turnLine='<div class="sr-tip-turn">'
+        +'<div class="sr-tip-tst"><span class="sr-ts '+(ts?ts.cls:'')+'">'+(ts?(isZh()?ts.zh:ts.en):esc(d.turn_state))+'</span>'
+          +(d.turn_since?'<i>'+L('since '+esc(d.turn_since),'自 '+esc(d.turn_since))+'</i>':'')+'</div>'
+        +(cyc.length?'<div class="sr-tip-cyc">'+cyc.join(' · ')+'</div>':'')
+        +paceLine
+        +(legRow?'<div style="font-size:9.5px;color:var(--muted);margin:4px 0 1px;">'
+            +L('turn legs (share of full credit)','转向分项（占满分比例）')+'</div>'
+          +'<div class="sr-tsp-row">'+legRow+'</div>':'')
+      +'</div>';
+    }
     el.innerHTML='<div class="sr-tip-hd"><b>'+esc(nameOf(d))+'</b><span class="sr-q '+q.cls+'">'+(isZh()?q.zh:q.en)+'</span></div>'
       +rankLine
       +secLine
+      +turnLine
       +'<div class="sr-tsp-row">'+sp+'</div>'
       +rsLine
       +'<div class="sr-tip-mt">'+L('accel','加速')+' <b class="'+pcCls(d.accel)+'">'+(d.accel==null?'—':(d.accel>0?'+':'')+d.accel.toFixed(1))+'</b>'
@@ -861,6 +1105,59 @@
     +'.sr-qlab{font:800 15px Inter,sans-serif;letter-spacing:.05em;opacity:.5;pointer-events:none;} .sr-qsub{font:700 8.5px Inter,sans-serif;opacity:.62;letter-spacing:.02em;pointer-events:none;}'
     +'.sr-qlab.q-lead,.sr-qsub.q-lead{fill:var(--up);} .sr-qlab.q-weak,.sr-qsub.q-weak{fill:var(--warn);} .sr-qlab.q-impr,.sr-qsub.q-impr{fill:var(--link);} .sr-qlab.q-lag,.sr-qsub.q-lag{fill:var(--down);}'
     +'.sr-axc{font:700 11px Inter,sans-serif;fill:color-mix(in srgb,var(--text) 52%,transparent);letter-spacing:.02em;pointer-events:none;} .sr-ax-up{font:800 12.5px Inter,sans-serif;fill:var(--up);letter-spacing:.06em;} .sr-ax-dn{font:800 12.5px Inter,sans-serif;fill:var(--down);letter-spacing:.06em;}'
+    // ---- turns rail (cycle turn read) ----
+    // The rail sits between the map and the versus scorecard and borrows the card shell.
+    // Its own device is .sr-tn (the range notch); everything else is deliberately quiet so
+    // that notch is the thing the eye remembers.
+    +'.sr-turns{background:var(--panel);border:1px solid var(--line);border-radius:16px;margin-top:14px;padding:12px 15px 13px;}'
+    +'.sr-tw-hd{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;}'
+    +'.sr-tw-hd h3{margin:0;font:800 15px Inter,sans-serif;color:var(--text);}'
+    +'.sr-tw-q{font:700 10px Inter,sans-serif;color:var(--muted);border:1px solid var(--line);border-radius:50%;width:15px;height:15px;display:inline-flex;align-items:center;justify-content:center;cursor:help;}'
+    +'.sr-tw-q:hover{color:var(--text);border-color:var(--link);}'
+    +'.sr-tw-q:focus-visible{color:var(--text);border-color:var(--link);outline:2px solid var(--link);outline-offset:2px;}'
+    +'.sr-tw-meta{margin-left:auto;font-size:10.5px;color:var(--muted);font-variant-numeric:tabular-nums;}'
+    +'.sr-tw-lede{margin:3px 0 11px;font-size:11.5px;color:var(--muted);line-height:1.45;}'
+    +'.sr-tw-body{display:grid;grid-template-columns:1fr 1fr;gap:10px 22px;}'
+    +'.sr-tw-shd{display:flex;flex-direction:column;gap:1px;padding-bottom:5px;margin-bottom:4px;border-bottom:1px solid var(--line);}'
+    +'.sr-tw-ttl{font:800 11px Inter,sans-serif;letter-spacing:.04em;text-transform:uppercase;}'
+    +'.sr-tw-col.in .sr-tw-ttl{color:var(--up);} .sr-tw-col.out .sr-tw-ttl{color:var(--down);}'
+    +'.sr-tw-sub{font-size:10px;color:var(--muted);line-height:1.35;}'
+    +'.sr-tw-row{display:grid;grid-template-columns:minmax(0,1fr) 58px minmax(0,1.05fr);align-items:center;gap:8px;padding:5px 6px;margin:0 -6px;border-radius:8px;cursor:pointer;}'
+    +'.sr-tw-row:hover{background:var(--panel2);}'
+    +'.sr-tw-main{display:flex;flex-direction:column;line-height:1.2;min-width:0;}'
+    +'.sr-tw-nm{font:700 12.5px Inter,sans-serif;color:var(--text);text-decoration:none;overflow-wrap:anywhere;}'
+    +'a.sr-tw-nm:hover{color:var(--link);text-decoration:underline;}'
+    +'.sr-tw-th{font-size:9.5px;color:var(--muted);overflow-wrap:anywhere;}'
+    +'.sr-tw-pos{display:flex;justify-content:center;}'
+    +'.sr-tn{display:block;overflow:visible;} .sr-tn-na{font-size:11px;color:var(--muted);}'
+    +'.sr-tw-fact{font-size:10.5px;color:var(--muted);line-height:1.35;font-variant-numeric:tabular-nums;}'
+    +'.sr-tw-day{display:inline-block;margin-left:6px;padding:0 5px;border:1px solid var(--line);border-radius:6px;font-size:9.5px;color:var(--muted);}'
+    +'.sr-tw-empty{padding:9px 2px;font-size:11px;color:var(--muted);font-style:italic;}'
+    +'.sr-tw-watch{display:flex;align-items:baseline;gap:7px 12px;flex-wrap:wrap;margin-top:11px;padding-top:9px;border-top:1px solid var(--line);}'
+    +'.sr-tw-wlab,.sr-tw-hlab{font:800 9.5px Inter,sans-serif;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);flex:none;}'
+    +'.sr-tw-cg{display:inline-flex;align-items:center;gap:5px;flex-wrap:wrap;font-size:11px;color:var(--muted);}'
+    +'.sr-tw-chip{font:600 11px Inter,sans-serif;text-decoration:none;padding:2px 7px;border-radius:7px;border:1px solid var(--line);background:var(--panel2);}'
+    +'.sr-tw-chip.up{color:var(--up);} .sr-tw-chip.dn{color:var(--down);}'
+    +'.sr-tw-chip:hover{border-color:currentColor;}'
+    +'.sr-tw-chip i{font-style:normal;font-weight:600;font-size:9px;color:var(--muted);margin-left:4px;}'
+    +'.sr-tw-hand{display:flex;align-items:baseline;gap:7px 14px;flex-wrap:wrap;margin-top:9px;}'
+    +'.sr-tw-pair{display:inline-flex;align-items:baseline;gap:5px;font-size:11.5px;}'
+    +'.sr-tw-pair b{font-weight:700;} .sr-tw-pair b.up{color:var(--up);} .sr-tw-pair b.dn{color:var(--down);}'
+    +'.sr-tw-arrow{font-style:normal;color:var(--muted);font-size:12px;}'
+    +'.sr-tw-pth{font-size:9.5px;color:var(--muted);}'
+    +'.sr-tw-ptag{font-size:9px;color:var(--muted);border:1px solid var(--line);border-radius:5px;padding:0 4px;}'
+    +'.sr-tw-ptag.ok{color:var(--text);border-color:color-mix(in srgb,var(--text) 35%,transparent);}'
+    +'.sr-tw-foot{margin:10px 0 0;font-size:10px;color:var(--muted);line-height:1.5;}'
+    +'@media (max-width:640px){.sr-tw-body{grid-template-columns:1fr;gap:14px;}'
+      +'.sr-tw-row{grid-template-columns:minmax(0,1fr) 58px;}'
+      +'.sr-tw-fact{grid-column:1/-1;}}'
+    // turn-state token, shared by the rail, the table cell and the hover receipt
+    +'.sr-ts{display:inline-block;font:700 10px Inter,sans-serif;padding:1px 6px;border-radius:6px;border:1px solid currentColor;white-space:nowrap;}'
+    +'.sr-ts.up{color:var(--up);} .sr-ts.dn{color:var(--down);}'
+    +'.sr-ts.soft{opacity:.72;border-style:dashed;} .sr-ts-na{color:var(--muted);}'
+    +'.sr-tip-turn{margin-top:6px;padding-top:6px;border-top:1px solid var(--line);}'
+    +'.sr-tip-tst{display:flex;align-items:center;gap:7px;} .sr-tip-tst i{font-style:normal;font-size:9.5px;color:var(--muted);}'
+    +'.sr-tip-cyc{margin-top:3px;font-size:10px;color:var(--muted);line-height:1.45;}'
     // ---- head-to-head scorecard ----
     +'.sr-versus{margin-top:14px;padding:12px 15px 14px;}'
     +'.sr-vs-key{font-size:10px;color:var(--muted);text-align:center;margin:0 0 10px;line-height:1.4;}'
