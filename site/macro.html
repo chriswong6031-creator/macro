@@ -433,7 +433,7 @@
             <div class="ms-alerts-wrap">
               <label class="ms-alerts" for="ms-alerts-toggle" tabindex="0" aria-haspopup="dialog" aria-controls="ms-alerts-pop">
                 <span class="dot"></span><span class="l-en">Fired alerts</span><span class="l-zh">已触发警报</span>
-                <span class="ct">2</span>
+                <span class="ct">5</span>
               </label>
               <div class="ms-alerts-pop" id="ms-alerts-pop" role="dialog" aria-label="Fired alerts · 已触发警报">
                 <div class="ms-pop-head">
@@ -456,6 +456,33 @@
                   
                   
                   
+                  
+                  
+                  
+                  <a class="ms-sig sev-warn" data-ms-jump href="#health">
+                    <div class="ms-sig-head"><span class="ms-sig-ico">🔌</span><span class="ms-sig-title"><span class="l-en">A data source went dark</span><span class="l-zh">某数据源中断</span></span><span class="ms-sig-jump"><span class="l-en">View ↓</span><span class="l-zh">查看 ↓</span></span></div>
+                    <div class="ms-sig-detail"><span class="l-en">Source &#39;china_einteraction&#39; marked dead after 3 consecutive failures — collector skipped until it recovers; affected signals degrade</span><span class="l-zh">数据源 &#39;china_einteraction&#39; 连续 3 次失败后被标记为中断 —采集器暂停直至恢复；相关信号置信度下降</span></div>
+                    <div class="ms-sig-what"><span class="l-en">A feed this dashboard relies on failed several runs in a row, so it’s paused until it recovers. Any signals that depend on it automatically lose confidence until it’s back. This is a plumbing notice, not a market signal.</span><span class="l-zh">本仪表盘依赖的某个数据源连续多次失败，已暂停直至恢复。依赖它的信号会自动降低置信度，直到其恢复。这是系统管线提示，并非市场信号。</span></div>
+                    <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Plumbing — data health, not a market signal.</span><span class="l-zh">管线 — 数据健康度，而非市场信号。</span></div>
+                  </a>
+                  
+                  
+                  
+                  <a class="ms-sig sev-info" data-ms-dlg="dlg-sector" href="#dlg-sector">
+                    <div class="ms-sig-head"><span class="ms-sig-ico">📈</span><span class="ms-sig-title"><span class="l-en">A sector broke into leadership</span><span class="l-zh">某板块跃升为领先</span></span><span class="ms-sig-jump"><span class="l-en">View →</span><span class="l-zh">查看 →</span></span></div>
+                    <div class="ms-sig-detail"><span class="l-en">XLRE RS vs SPY crossed above 90th pctile of 90d (now 93)</span><span class="l-zh">XLRE RS 相对 SPY 上穿 90 天第 90 百分位（现为 93）</span></div>
+                    <div class="ms-sig-what"><span class="l-en">One sector’s strength versus the market just pushed into the top of its recent range — it’s starting to lead. This describes where money is rotating, not an instant buy. Check the sector’s heat and trigger column before acting.</span><span class="l-zh">某板块相对市场的强度刚冲入其近期区间的顶部 — 开始领先。这描述的是资金轮动的方向，并非立即买入。行动前请查看该板块的热度与触发列。</span></div>
+                    <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Context — descriptive rotation, not a timing signal.</span><span class="l-zh">背景 — 描述性的轮动，而非择时信号。</span></div>
+                  </a>
+                  
+                  
+                  
+                  <a class="ms-sig sev-info" href="us_stocks.html#holdings">
+                    <div class="ms-sig-head"><span class="ms-sig-ico">🐳</span><span class="ms-sig-title"><span class="l-en">A star fund manager made a notable move</span><span class="l-zh">明星基金经理出现显著动作</span></span><span class="ms-sig-jump"><span class="l-en">View →</span><span class="l-zh">查看 →</span></span></div>
+                    <div class="ms-sig-detail"><span class="l-en">ARKK: manager cut FIG by -97% of position (2026-07-22..2026-07-29, flow-normalized)</span><span class="l-zh">ARKK：经理 cut FIG 仓位 -97%（2026-07-22..2026-07-29，已按资金流标准化）</span></div>
+                    <div class="ms-sig-what"><span class="l-en">One of the tracked funds (ARK, etc.) meaningfully added to or cut a position, after stripping out mechanical fund-flow effects — so it reflects genuine conviction. It’s information about what active managers are doing, not a recommendation to copy it.</span><span class="l-zh">在剔除机械性资金流影响后，某只跟踪基金（如 ARK）显著加仓或减仓 —因此反映了真实的信念。这是关于主动经理动作的信息，并非照搬的建议。</span></div>
+                    <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Context — what an active manager did, not a recommendation.</span><span class="l-zh">背景 — 主动经理的动作，并非建议。</span></div>
+                  </a>
                   
                   
                   
@@ -536,7 +563,7 @@
       
       
       
-      <div class="mxfs-stance"><span class="l-en">Label looks steady today — nothing to do from this panel.</span><span class="l-zh">今日标签稳定——本面板无需操作。</span></div>
+      <div class="mxfs-stance"><span class="l-en">Treat the label as provisional — lean on the risk score, not the regime name.</span><span class="l-zh">该标签宜视为临时——以风险评分为主，勿依赖周期名称。</span></div>
       
     </div>
     
@@ -604,7 +631,7 @@
       <div class="mx5-sc-gauge-row mx5-score-red">
         
         <svg class="mx5-gauge-svg" viewBox="0 -4 140 101" fill="none"
-             aria-label="Risk-off — score 34; capped from six-signal blend 66"
+             aria-label="Risk-off — score 40; capped from six-signal blend 69"
              data-gauge-arc-len="175.93"
              data-gauge-radius="56"
              data-gauge-cx="70" data-gauge-cy="75">
@@ -637,7 +664,7 @@
           <text x="70"  y="10" fill="rgba(255,255,255,.26)" font-size="11" text-anchor="middle" font-family="Inter,-apple-system,sans-serif">50</text>
           <text x="126" y="95" fill="rgba(255,255,255,.26)" font-size="11" text-anchor="middle" font-family="Inter,-apple-system,sans-serif">100</text>
           
-          <g id="mx5-gauge-needle" transform="rotate(-28.8 70 75)" filter="url(#mx5NeedleGlow)">
+          <g id="mx5-gauge-needle" transform="rotate(-18.0 70 75)" filter="url(#mx5NeedleGlow)">
             <line x1="70" y1="75" x2="70" y2="24" stroke="rgba(255,255,255,.30)" stroke-width="5" stroke-linecap="round"/>
             <polygon points="69,75 71,75 70.5,24 69.5,24" fill="white" opacity=".94"/>
             <circle cx="70" cy="75" r="7"  fill="rgba(255,255,255,.10)"/>
@@ -664,7 +691,7 @@
             <span class="l-en">RED &mdash; Defend capital first</span>
             <span class="l-zh">优先保住本金</span>
             
-            <span class="help">?<span class="tip"><span class="l-en">The dial is capped at 34; the six-signal blend is 66. The cap can only pull the dial down, never up.</span><span class="l-zh">刻度盘上限为 34；六项信号合成为 66。上限只能压低刻度盘，不会抬高。</span></span></span>
+            <span class="help">?<span class="tip"><span class="l-en">The dial is capped at 40; the six-signal blend is 69. The cap can only pull the dial down, never up.</span><span class="l-zh">刻度盘上限为 40；六项信号合成为 69。上限只能压低刻度盘，不会抬高。</span></span></span>
             
           </div>
         </div>
@@ -894,10 +921,10 @@
                 <span class="mx5-factor-name">
                   <span class="l-en">Risk appetite</span><span class="l-zh">风险偏好</span>
                 </span>
-                <span class="mx5-factor-score">55</span>
+                <span class="mx5-factor-score">70</span>
               </div>
               <div class="mx5-factor-bar-track">
-                <div class="mx5-factor-bar-fill" style="width:55%"></div>
+                <div class="mx5-factor-bar-fill" style="width:70%"></div>
               </div>
               
             </div>
@@ -4348,13 +4375,13 @@
       
       <div class="mx5-ai-ticker-pills">
         
-        <span class="mx5-ai-ticker-pill">SPY</span>
+        <span class="mx5-ai-ticker-pill">XHB</span>
         
         <span class="mx5-ai-ticker-pill">META</span>
         
         <span class="mx5-ai-ticker-pill">QQQ</span>
         
-        <span class="mx5-ai-ticker-pill">MSFT</span>
+        <span class="mx5-ai-ticker-pill">GLD</span>
         
       </div>
       
@@ -4362,14 +4389,14 @@
       <div class="mx5-ai-body">
         
         <span class="l-en">
-          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">6 High-Impact Items</span><br>
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">8 High-Impact Items</span><br>
           Dominant channel: <span style="color:var(--mx5-accent-ink);font-weight:600">earnings</span><br>
-          6 high-impact signals across channels
+          8 high-impact signals across channels
         </span>
         <span class="l-zh">
-          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">6 条高影响信息</span><br>
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">8 条高影响信息</span><br>
           主导频道：<span style="color:var(--mx5-accent-ink);font-weight:600">业绩</span><br>
-          6 条高影响信号
+          8 条高影响信号
         </span>
         
       </div>
@@ -4445,11 +4472,11 @@
           <div class="mx5-alert-content">
             <div class="mx5-alert-title">
               <span style="font-size:12px;margin-right:3px">📰</span>
-              <span class="l-en">Carvana stock falls as auto retailer’s 2026 earnings guidance misses Wall Street…</span>
-              <span class="l-zh">Carvana股价下跌，因汽车零售商2026年盈利指引不及华尔街预期</span>
+              <span class="l-en">Glaukos hits new all-time high on Q2 results, raised 2026 revenue guidance</span>
+              <span class="l-zh">Glaukos创历史新高，Q2业绩强劲并上调2026年营收指引</span>
             </div>
             <div class="mx5-alert-detail">
-              <span>CNBC - Markets</span> · 
+              <span>Seeking Alpha - Market Currents</span> · 
               <span style="color:var(--mx5-warn-ink,#9c6212);font-weight:600"><span class="l-en">High impact</span><span class="l-zh">高影响</span></span>
             </div>
           </div>
@@ -4462,8 +4489,8 @@
       </div>
       <div class="mx5-alert-footer">
         <span>
-          <span class="l-en">Showing 1 of 1 in feed</span>
-          <span class="l-zh">显示 1 / 1 条</span>
+          <span class="l-en">Showing 1 of 4 in feed</span>
+          <span class="l-zh">显示 1 / 4 条</span>
         </span>
         <button type="button" class="gbtn gbtn-sm gbtn-quiet" onclick="event.stopPropagation();mx5OpenDlg('dlg-news')">
           <span class="l-en">View all &#8594;</span>
@@ -4611,10 +4638,10 @@
             
           </div>
           <div>
-            <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:55%;background:var(--warn)"></div></div>
+            <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:70%;background:var(--up)"></div></div>
             <div class="mx5-dlg-bar-ticks"><span>0</span><span>50</span><span>100</span></div>
           </div>
-          <div class="mx5-dlg-factor-score" style="color:var(--warn)">55</div>
+          <div class="mx5-dlg-factor-score" style="color:var(--up)">70</div>
         </div>
         
         
@@ -6934,29 +6961,6 @@
           
           
           <div class="scare-row" style="--rkc-c:var(--down,#ef4444)">
-            <span class="rkc-sc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20V10M10 20V4M15 20v-7M20 20V8"/></svg></span>
-            <span class="sc-name">
-              <span class="l-en">Breadth internals deterioration</span>
-              <span class="l-zh">内部广度恶化</span>
-              
-              
-            </span>
-            <div class="sc-bar-track"><div class="sc-bar-fill" style="width:100.0%;background:var(--down)"></div></div>
-            <span class="sc-score" style="color:var(--down)">100.0</span>
-            <span class="sc-band sc-band-high">
-              <span class="l-en">risk-off</span>
-              <span class="l-zh">避险</span>
-            </span>
-          </div>
-          
-          
-          
-          
-          
-          
-          
-          
-          <div class="scare-row" style="--rkc-c:var(--down,#ef4444)">
             <span class="rkc-sc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6l6 6 4-4 8 8"/><path d="M21 16v-4h-4"/></svg></span>
             <span class="sc-name">
               <span class="l-en">Growth scare / defensive rotation</span>
@@ -7480,11 +7484,11 @@
         
         <div class="plx-chart-caption">
           
-          <span class="l-en">At end-2026 the market implies 3.89% vs the Fed&#39;s 3.80% median dot (+9bp — market ≈ the Fed). The near-term forward spread is positive — no cuts priced near-term (+0.57pp).</span>
+          <span class="l-en">At end-2026 the market implies 3.89% vs the Fed&#39;s 3.80% median dot (+9bp — market ≈ the Fed). The near-term forward spread is positive — no cuts priced near-term (+0.70pp).</span>
           
           
           
-          <span class="l-zh">在end-2026，市场隐含 3.89% 对比美联储 3.80% 的中位点（+9基点 — 市场与美联储基本一致）。近端远期利差为正——近端未为降息定价（+0.57个百分点）。</span>
+          <span class="l-zh">在end-2026，市场隐含 3.89% 对比美联储 3.80% 的中位点（+9基点 — 市场与美联储基本一致）。近端远期利差为正——近端未为降息定价（+0.70个百分点）。</span>
           
           
           
@@ -7508,8 +7512,8 @@
         </div>
         <div class="plx-stance-card">
           <div class="plx-stance-label">
-            <span class="l-en">Hawkish — on hold</span>
-            <span class="l-zh">鹰派 — 按兵不动</span>
+            <span class="l-en">Hawkish — unknown</span>
+            <span class="l-zh">鹰派 — unknown</span>
           </div>
           
           <div class="plx-stance-mve">
@@ -7522,8 +7526,6 @@
           <div class="plx-drivers-chips">
             
             <span class="plx-driver-chip"><span class="l-en">market prices ~2.0 hike(s) over 12m</span><span class="l-zh">市场计入未来12个月约2.0次加息</span></span>
-            
-            <span class="plx-driver-chip"><span class="l-en">statement guidance on-hold</span><span class="l-zh">声明指引按兵不动</span></span>
             
           </div>
           
@@ -7546,7 +7548,7 @@
             </div>
           </div>
           <div class="plx-jaw-count-box">
-            <div class="plx-jaw-count-num">13</div>
+            <div class="plx-jaw-count-num">12</div>
             <div class="plx-jaw-count-lbl">
               <span class="l-en">speeches 30d</span><span class="l-zh">30日发声</span>
             </div>
@@ -7556,7 +7558,7 @@
         
         
         
-        <div class="plx-jaw-bar-track"><div class="plx-jaw-bar-fill" style="width:15%"></div></div>
+        <div class="plx-jaw-bar-track"><div class="plx-jaw-bar-fill" style="width:17%"></div></div>
         
         <div class="plx-jaw-ts">
           <span class="l-en">Last event: 2026-07-28</span>
@@ -7889,12 +7891,77 @@
         
         
         
+        <div class="isle-head"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">Context</span><span class="l-zh">背景</span></span><div class="isle-head-line"></div></div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;opacity:.8">
+          
+          <div style="display:flex;gap:10px;padding:10px 12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid rgba(255,255,255,.05)">
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.30));flex-shrink:0;margin-top:5px"></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:3px">
+                <div style="font-size:12.5px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.7))">
+                  <span style="font-size:11px;margin-right:3px">🔌</span>
+                  <span class="l-en">A data source went dark</span><span class="l-zh">某数据源中断</span>
+                </div>
+                <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.36));border:1px solid rgba(255,255,255,.09);white-space:nowrap"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
+              </div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">Source &#39;china_einteraction&#39; marked dead after 3 consecutive failures — collector skipped until it recovers; affected signals degrade</span><span class="l-zh">数据源 &#39;china_einteraction&#39; 连续 3 次失败后被标记为中断 —采集器暂停直至恢复；相关信号置信度下降</span></div>
+            </div>
+          </div>
+          
+          <div style="display:flex;gap:10px;padding:10px 12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid rgba(255,255,255,.05)">
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.30));flex-shrink:0;margin-top:5px"></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:3px">
+                <div style="font-size:12.5px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.7))">
+                  <span style="font-size:11px;margin-right:3px">📈</span>
+                  <span class="l-en">A sector broke into leadership</span><span class="l-zh">某板块跃升为领先</span>
+                </div>
+                <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.36));border:1px solid rgba(255,255,255,.09);white-space:nowrap"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
+              </div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">XLRE RS vs SPY crossed above 90th pctile of 90d (now 93)</span><span class="l-zh">XLRE RS 相对 SPY 上穿 90 天第 90 百分位（现为 93）</span></div>
+            </div>
+          </div>
+          
+          <div style="display:flex;gap:10px;padding:10px 12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid rgba(255,255,255,.05)">
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.30));flex-shrink:0;margin-top:5px"></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:3px">
+                <div style="font-size:12.5px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.7))">
+                  <span style="font-size:11px;margin-right:3px">🐳</span>
+                  <span class="l-en">A star fund manager made a notable move</span><span class="l-zh">明星基金经理出现显著动作</span>
+                </div>
+                <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.36));border:1px solid rgba(255,255,255,.09);white-space:nowrap"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
+              </div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">ARKK: manager cut FIG by -97% of position (2026-07-22..2026-07-29, flow-normalized)</span><span class="l-zh">ARKK：经理 cut FIG 仓位 -97%（2026-07-22..2026-07-29，已按资金流标准化）</span></div>
+            </div>
+          </div>
+          
+        </div>
+        
         
         
         
         <div class="isle-head"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">Market Intelligence</span><span class="l-zh">市场情报</span></span><div class="isle-head-line"></div></div>
         
         <div class="nbx-list">
+          
+          
+          
+          
+          
+          <a class="nbx-item" href="https://seekingalpha.com/news/4621941-glaukos-hits-new-all-time-high-q2-results-raised-2026-revenue-guidance?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
+            <div class="nbx-top">
+              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="nbx-title"><span class="l-en">Glaukos hits new all-time high on Q2 results, raised 2026 revenue guidance</span><span class="l-zh">Glaukos创历史新高，Q2业绩强劲并上调2026年营收指引</span></span>
+            </div>
+            <div class="nbx-meta">
+              <span class="nbx-src">news_rss</span>
+              <span class="nbx-dot">·</span>
+              <span class="nbx-date">Jul 30</span>
+              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
+            </div>
+            
+          </a>
           
           
           
@@ -7921,25 +7988,7 @@
           <a class="nbx-item" href="https://www.npr.org/2026/07/30/nx-s1-5912203/federal-reserve-holds-interest-rates-steady-despite-high-inflation" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span>
-              <span class="nbx-title"><span class="l-en">Federal Reserve holds interest rates steady despite high inflation</span><span class="l-zh">美联储维持利率不变，尽管通胀高企</span></span>
-            </div>
-            <div class="nbx-meta">
-              <span class="nbx-src">news_rss</span>
-              <span class="nbx-dot">·</span>
-              <span class="nbx-date">Jul 30</span>
-              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
-            </div>
-            
-          </a>
-          
-          
-          
-          
-          
-          <a class="nbx-item" href="https://www.marketwatch.com/story/why-microsofts-stock-is-soaring-toward-a-historic-gain-after-earnings-96cd5b1e?mod=mw_rss_topstories" target="_blank" rel="noopener">
-            <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Why Microsoft’s stock is soaring toward a historic gain after earnings</span><span class="l-zh">微软股价为何在财报后飙升至历史性涨幅</span></span>
+              <span class="nbx-title"><span class="l-en">Federal Reserve holds interest rates steady despite high inflation</span><span class="l-zh">美联储维持利率稳定，尽管通胀高企</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7972,6 +8021,24 @@
           
           
           
+          <a class="nbx-item" href="https://seekingalpha.com/news/4621944-goldman-sachs-asset-management-arm-launches-ai-investing-platform---report?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
+            <div class="nbx-top">
+              <span class="nbx-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="nbx-title"><span class="l-en">Goldman Sachs&#39; asset management arm launches AI investing platform - report</span><span class="l-zh">高盛资产管理公司推出AI投资平台——报道</span></span>
+            </div>
+            <div class="nbx-meta">
+              <span class="nbx-src">news_rss</span>
+              <span class="nbx-dot">·</span>
+              <span class="nbx-date">Jul 30</span>
+              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
+            </div>
+            
+          </a>
+          
+          
+          
+          
+          
           <a class="nbx-item" href="https://www.cnbc.com/2026/07/29/qualcomm-qcom-earnings-report-q3-2026-.html" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
@@ -7990,10 +8057,10 @@
           
           
           
-          <a class="nbx-item" href="https://seekingalpha.com/news/4621776-konica-minolta-reports-revenue-of-2585m-yen-for-three-months-ended-june-30?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://seekingalpha.com/news/4621948-siriusxm-outlines-2026-targets-of-8_525b-revenue-and-1_375b-free-cash-flow-while-raising?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Konica Minolta reports revenue of 258.5M yen for three months ended June 30</span><span class="l-zh">柯尼卡美能达报告截至6月30日三个月营收2.585亿日元</span></span>
+              <span class="nbx-title"><span class="l-en">SiriusXM outlines 2026 targets of $8.525B revenue and $1.375B free cash flow while raising guidance by $25M</span><span class="l-zh">SiriusXM设定2026年目标：营收85.25亿美元，自由现金流13.75亿美元，同时上调指引2500万美元</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -8026,33 +8093,15 @@
           
           
           
-          <a class="nbx-item" href="https://www.marketwatch.com/story/fed-favored-pce-inflation-gauge-falls-for-first-time-since-pandemic-but-danger-far-from-over-57e382bf?mod=mw_rss_topstories" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://www.cnbc.com/2026/07/28/meta-q2-earnings-call-mentions-kalshi-market-odds-.html" target="_blank" rel="noopener">
             <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Inflation</span><span class="l-zh">通胀</span></span>
-              <span class="nbx-title"><span class="l-en">PCE inflation gauge falls for the first time since the pandemic. The danger is far from over.</span><span class="l-zh">PCE通胀指标自疫情以来首次下降，但危险远未结束</span></span>
+              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="nbx-title"><span class="l-en">Meta likely to highlight smart glasses, avoid social media policy on upcoming earnings call, Kalshi traders say</span><span class="l-zh">Kalshi交易员称，Meta在即将到来的财报电话会上可能聚焦智能眼镜，回避社交媒体政策</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
               <span class="nbx-dot">·</span>
-              <span class="nbx-date">Jul 30</span>
-              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
-            </div>
-            
-          </a>
-          
-          
-          
-          
-          
-          <a class="nbx-item" href="https://finance.yahoo.com/markets/stocks/articles/kbw-upgrades-core-scientific-amd-143207759.html" target="_blank" rel="noopener">
-            <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Analysts</span><span class="l-zh">分析师</span></span>
-              <span class="nbx-title"><span class="l-en">KBW upgrades Core Scientific after AMD leases raise contracted value, eyes 35% rise</span><span class="l-zh">AMD租赁交易提升签约价值后，KBW上调Core Scientific评级，预计上涨35%</span></span>
-            </div>
-            <div class="nbx-meta">
-              <span class="nbx-src">news_rss</span>
-              <span class="nbx-dot">·</span>
-              <span class="nbx-date">Jul 30</span>
+              <span class="nbx-date">Jul 28</span>
               <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
             </div>
             
@@ -8065,7 +8114,7 @@
           <a class="nbx-item" href="https://www.bea.gov/news/2026/gdp-advance-estimate-2nd-quarter-2026" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Growth</span><span class="l-zh">增长</span></span>
-              <span class="nbx-title"><span class="l-en">GDP (Advance Estimate), 2nd Quarter 2026</span><span class="l-zh">2026年第二季度GDP（初值）</span></span>
+              <span class="nbx-title"><span class="l-en">GDP (Advance Estimate), 2nd Quarter 2026</span><span class="l-zh">GDP（预估值），2026年第二季度</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">official</span>
@@ -11832,9 +11881,9 @@
       
     </table>
     <p class="muted"><span class="l-en">A failed source never crashes the dashboard — affected signals just lose confidence until it heals.
-       Generated 2026-07-30 14:47 UTC · <a href="aibrief.html">AI daily brief</a> ·
+       Generated 2026-07-30 17:33 UTC · <a href="aibrief.html">AI daily brief</a> ·
        <a href="history.html">history & charts</a></span><span class="l-zh">数据源失败绝不会让仪表盘崩溃 — 受影响的信号只是降低置信度，直到其恢复。
-       生成于 2026-07-30 14:47 UTC · <a href="aibrief.html">AI每日简报</a> ·
+       生成于 2026-07-30 17:33 UTC · <a href="aibrief.html">AI每日简报</a> ·
        <a href="history.html">历史与图表</a></span></p>
   </details>
   
