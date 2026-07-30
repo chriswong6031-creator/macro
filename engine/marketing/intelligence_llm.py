@@ -681,7 +681,20 @@ def _call_model(fact_packet: dict, block: dict, *, shapes: tuple[str, ...]) -> d
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _analysis_draft(text: str, packet: dict, *, now: datetime) -> dict:
-    """A canonical `analysis` draft. Same row shape the desk's own drafts use."""
+    """A canonical `analysis` draft. Same row shape the desk's own drafts use.
+
+    ``status`` follows the desk's own rule (``intelligence_desk._draft``):
+    **review means postable as-is on X**, so anything over the 280 cap is
+    ``needs_edit``. The analysis budget is ``ANALYSIS_CHAR_CAP`` (400) because
+    this shape is desk copy, not a platform post — but the Content Studio
+    "Queue for X" button reads the LAST draft on the story, which is this one,
+    and ``admin.marketing.intelligence_approve`` gates on nothing but
+    ``status == "review"``. Neither ``outbox.validate_item`` nor the value gate
+    measures length, so a 281-400 char draft left at ``review`` would queue
+    green, deliver to main, and then be refused forever by
+    ``social_publisher.validate_postable`` with ``over_280`` — a poisoned queue
+    row and a success message that was never true.
+    """
     evidence = [r for r in (packet.get("evidence") or []) if isinstance(r, dict)]
     source_url = _clean(evidence[0].get("url") if evidence else "", 900)
     story_id = _clean(packet.get("id"), 96)
@@ -691,7 +704,7 @@ def _analysis_draft(text: str, packet: dict, *, now: datetime) -> dict:
         ).hexdigest()[:16],
         "shape": "analysis",
         "text": text,
-        "status": "review",
+        "status": "review" if len(text) <= WIRE_CHAR_CAP else "needs_edit",
         "characters": len(text),
         "requires_review": True,
         "source_url": source_url,
@@ -770,9 +783,44 @@ def phrase_packet(packet: dict, *, block: dict, now: datetime,
                     draft["status"] = "review"
                     draft["origin"] = "llm"
                     draft["updated_at"] = _iso(now)
+                    # A DESK DRAFT ID HASHES ITS TEXT — that invariant is the
+                    # only staleness guard the approve flow has. `admin.marketing
+                    # .intelligence_approve` re-reads the snapshot and refuses a
+                    # draft_id that is no longer on the story ("the desk replaces
+                    # a draft when the copy changes"), so rewriting the body under
+                    # the id an operator's page is already showing would let one
+                    # click queue copy that operator never read. Re-derive it the
+                    # way `_analysis_draft` does.
+                    draft["id"] = "draft_" + hashlib.sha1(
+                        f"{_clean(packet.get('id'), 96)}|wire|{text}".encode("utf-8")
+                    ).hexdigest()[:16]
                     outcome["wire"] = True
                     _bump("phrased_wire")
                     break
+            else:
+                # Review N13: a story whose only deterministic draft is
+                # long_post/needs_edit has NO wire slot, and discarding a valid
+                # gated ≤280 phrasing here left the story with nothing
+                # approvable. A missing slot is not a refusal — add the wire
+                # draft; the desk's per-shape merge slots it canonically.
+                if isinstance(packet.get("drafts"), list) or not packet.get("drafts"):
+                    packet.setdefault("drafts", []).append({
+                        "id": "draft_" + hashlib.sha1(
+                            f"{_clean(packet.get('id'), 96)}|wire|{text}"
+                            .encode("utf-8")).hexdigest()[:16],
+                        "shape": "wire",
+                        "text": text,
+                        "status": "review",
+                        "characters": len(text),
+                        "requires_review": True,
+                        "source_url": next(
+                            (str(d.get("source_url") or "") for d in drafts
+                             if d.get("source_url")), ""),
+                        "origin": "llm",
+                        "updated_at": _iso(now),
+                    })
+                    outcome["wire"] = True
+                    _bump("phrased_wire")
 
     if outcome["violations"]:
         _bump("rejected")

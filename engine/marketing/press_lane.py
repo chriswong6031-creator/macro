@@ -318,7 +318,16 @@ def _primary_entity(item: dict) -> str:
 # in intelligence_desk (stdlib-only) and not in the spine (assigns pre-scoring).
 _INTEL_CLAIM_TTL_H = 24.0
 _INTEL_JACCARD_MIN = 0.15
+# Inside `tight_window_min` the wording bar LOWERS to this — it is never
+# bypassed. A bare "overlap >= jaccard_min OR inside the window" merged two
+# genuinely different same-ticker stories that arrived 10 minutes apart and then
+# presented the false merge as confirmed/multi-source evidence (review N1).
+_INTEL_TIGHT_JACCARD_MIN = 0.05
 _INTEL_TIGHT_WINDOW_MIN = 45.0
+#: Prefix of the day-bucketed fallback id. Load-bearing: it is what tells a
+#: registered `story_id` apart from a spine-assigned one (see
+#: `_intel_registered_spine_sid`).
+_INTEL_STUB_PREFIX = "intel_"
 # STATE BUDGET (load-bearing, not a round number). This registry lives in the
 # tick state dict, and the GitHub Actions deployment of this lane
 # (scripts/marketing_press_wire.py) COMMITS that dict to a tracked cursors.json
@@ -391,7 +400,8 @@ def _intel_day_stub_id(scored: dict, *, now: datetime) -> str:
     head = re.sub(r"[^a-z0-9 ]", " ", str(scored.get("headline", "")).lower())
     head = re.sub(r"\s+", " ", head).strip()[:120]
     day = now.astimezone(timezone.utc).strftime("%Y%m%d")
-    return "intel_" + hashlib.sha1(f"{day}|{head}".encode("utf-8")).hexdigest()[:20]
+    return _INTEL_STUB_PREFIX + hashlib.sha1(
+        f"{day}|{head}".encode("utf-8")).hexdigest()[:20]
 
 
 def _prune_intel_claims(registry: dict, *, now: datetime, ttl_h: float) -> None:
@@ -413,16 +423,38 @@ def _prune_intel_claims(registry: dict, *, now: datetime, ttl_h: float) -> None:
             del registry[key]
 
 
+def _intel_registered_spine_sid(entry: object) -> str:
+    """The SPINE sid a registry entry was registered with, or "" when none.
+
+    Read off `story_id` rather than stored a second time, and that is exact by
+    construction: `_resolve_intel_story_id` registers ``own``, which is either
+    the incoming spine sid or a day stub, and a day stub is the only value that
+    carries `_INTEL_STUB_PREFIX` (spine ids are ``st-<sha1>``). Duplicating the
+    value into its own key costs ~17 KB at the 400-entry cap and puts the state
+    budget over the 100 KB line that `cursors.json` is measured against —
+    `test_the_claim_registry_stays_inside_its_state_budget` pins both that
+    ceiling and the `story_id == spine_sid` invariant this reader depends on.
+    """
+    if not isinstance(entry, dict):
+        return ""
+    sid = str(entry.get("story_id") or "")
+    return "" if sid.startswith(_INTEL_STUB_PREFIX) else sid
+
+
 def _resolve_intel_story_id(scored: dict, *, spine_sid: str, registry: dict,
                             now: datetime, jaccard_min: float,
+                            tight_jaccard_min: float,
                             tight_window_min: float) -> str:
     """The desk story id this item belongs to (V2 §3 resolution).
 
         no anchor        -> the spine's id, else a day-bucketed headline stub
         anchor hit (TTL) -> alias to the registered story WHEN the wording
-                            overlaps (Jaccard >= jaccard_min) or the two arrivals
-                            are inside the tight window; otherwise keep own id,
-                            because two different stories can share a ticker
+                            overlaps: Jaccard >= jaccard_min, relaxed to
+                            >= tight_jaccard_min inside tight_window_min.
+                            Otherwise keep own id, because two different
+                            stories can share a ticker
+        spine primacy    -> when BOTH arrivals carry a real spine sid and the
+                            two differ, never alias, whatever the wording says
         anchor miss      -> register this story under the anchor
     """
     own = str(spine_sid or "") or _intel_day_stub_id(scored, now=now)
@@ -432,6 +464,16 @@ def _resolve_intel_story_id(scored: dict, *, spine_sid: str, registry: dict,
     tokens = _intel_tokens(scored.get("headline"))
     entry = registry.get(key)
     if isinstance(entry, dict) and entry.get("story_id"):
+        # SPINE PRIMACY (review N1). The registry is the deterministic floor
+        # UNDER a missing spine, never an override of a working one: when the
+        # spine placed these two arrivals in DIFFERENT stories it used a better
+        # matcher than an entity anchor plus a token overlap, and undoing that
+        # here would merge on the weaker signal. Only a real sid counts on each
+        # side — a day stub means the spine said nothing about that arrival.
+        registered = _intel_registered_spine_sid(entry)
+        incoming = str(spine_sid or "")
+        if registered and incoming and registered != incoming:
+            return own
         # Pruning already dropped anything past the TTL, so a hit is in-window.
         first = _parse_ts(entry.get("first_ts"))
         tight = (
@@ -439,8 +481,12 @@ def _resolve_intel_story_id(scored: dict, *, spine_sid: str, registry: dict,
             and (now.astimezone(timezone.utc) - first)
             <= timedelta(minutes=max(0.0, tight_window_min))
         )
+        # The tight window LOWERS the bar; it never bypasses it. `min` keeps
+        # that true even if the two keys are configured the wrong way round —
+        # "arrived close together" may relax the wording test, never tighten it.
+        bar = min(jaccard_min, tight_jaccard_min) if tight else jaccard_min
         overlap = _intel_jaccard(tokens, _intel_stored_tokens(entry.get("tokens")))
-        if overlap >= jaccard_min or tight:
+        if overlap >= bar:
             return str(entry["story_id"])
         return own
     registry[key] = {
@@ -863,6 +909,14 @@ def _build_rail_item(
         "en": text_en,
         "attribution": attribution,
         "corroboration": _corroboration_chip(n_sources, corr_class),
+        # ADDITIVE (Mastermind brain coordination, 2026-07-29): the plain
+        # publisher name, a display-tier fact the page may ignore. `salience`
+        # was requested alongside it and DECLINED: wires.json is served to
+        # registered users, and an internal ranking score in a user-fetchable
+        # payload is exactly what the desk's leak law forbids — the brain's
+        # reader falls back to recency without it by design.
+        "source_name": str(
+            scored.get("source_name") or scored.get("source") or "")[:120],
     }
     if tape_stamp:
         item["tape_stamp"] = tape_stamp
@@ -1599,6 +1653,8 @@ def run_press_tick(
 
     claim_ttl_h = _claims_num("ttl_h", _INTEL_CLAIM_TTL_H)
     claim_jaccard = _claims_num("jaccard_min", _INTEL_JACCARD_MIN)
+    claim_tight_jaccard = _claims_num("tight_jaccard_min",
+                                      _INTEL_TIGHT_JACCARD_MIN)
     claim_tight_min = _claims_num("tight_window_min", _INTEL_TIGHT_WINDOW_MIN)
     intel_claims = state.setdefault("intel_claims", {})
     if not isinstance(intel_claims, dict):
@@ -1636,6 +1692,7 @@ def run_press_tick(
                 registry=intel_claims,
                 now=now,
                 jaccard_min=claim_jaccard,
+                tight_jaccard_min=claim_tight_jaccard,
                 tight_window_min=claim_tight_min,
             )
             story_view = dict(spine_view or {})

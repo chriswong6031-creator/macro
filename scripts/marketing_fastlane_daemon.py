@@ -976,8 +976,15 @@ def _attach_desk_zh(packets: list, intelligence_cfg: dict) -> tuple[int, int]:
             texts.append(why)
             slots.append((packet, "why_it_matters_zh"))
 
-    cfg = _zh_cfg(cfg_in)
     try:
+        # `_zh_cfg` reads config.yml and coerces `zh_timeout_s` / `zh_max_chars`,
+        # so it belongs INSIDE the guard: it is the one line of this pass that can
+        # raise on a mistyped config value, and step 6 wraps all three enrichment
+        # stages in a single try — an escape here skips `update_intelligence_desk`
+        # itself, freezing the desk snapshot every tick behind a heartbeat that
+        # keeps ticking. The other two stages (`_attach_desk_llm`,
+        # `_attach_desk_context`) already swallow everything; this one must too.
+        cfg = _zh_cfg(cfg_in)
         from engine.news_translate import translate_to_zh  # noqa: PLC0415
         out = translate_to_zh(texts, cfg)
     except Exception as exc:  # noqa: BLE001 — a translator fault never breaks the desk

@@ -671,7 +671,15 @@ class AlpacaNewsProvider:
         try:
             return self._parse(payload, since=since)
         except Exception as exc:  # noqa: BLE001
-            print(f"[press_providers] alpaca parse error: {exc}", file=sys.stderr)
+            # A start-of-line annotation, not a stderr line: every OTHER failure
+            # in this lane (url / oversize / fetch / auth / 429 / http) surfaces
+            # in the Actions summary, and this one is the most dangerous of the
+            # set — on the COLD-START poll a swallowed mapper fault still primes
+            # the cursor and still prints the success notice, so the lane reports
+            # itself armed and healthy while ingesting nothing, forever.
+            print(f"::warning title=alpaca-parse::Alpaca news page could not be "
+                  f"mapped ({type(exc).__name__}: {exc}) — no items this tick",
+                  flush=True)
             return [], None
 
     def _parse(
@@ -690,6 +698,7 @@ class AlpacaNewsProvider:
         newest: datetime | None = None
         page_ids: set[str] = set()
         results: list[FeedItem] = []
+        stampless = 0
 
         for row in rows:
             if not isinstance(row, dict):
@@ -701,15 +710,19 @@ class AlpacaNewsProvider:
             if not headline:
                 continue                       # a headline-less row is not news
             raw_ts = str(row.get("created_at") or row.get("updated_at") or "").strip()
+            pub_dt = _iso_to_dt(raw_ts) if raw_ts else None
+            # Review N3: a row whose timestamp is absent OR unparseable is
+            # DROPPED, counted, and noticed — it can neither be ordered against
+            # the cursor nor advance it. The earlier rule ingested it with an
+            # ingest-time stamp, which either stalled the cursor forever (an
+            # all-stampless page re-serves every poll) or fast-forwarded it to
+            # "now" past items still in flight. Both are worse than losing a
+            # malformed row the other wire sources will re-carry.
+            if pub_dt is None:
+                stampless += 1
+                continue
             published_at = _parse_pub_date(raw_ts)
-            # A row that carried NO timestamp gets stamped at INGEST TIME by
-            # _parse_pub_date (its documented last resort). That stamp must never
-            # drive the cursor: fast-forwarding `since` to "now" on a field rename
-            # would silently skip every item still in flight — loss instead of
-            # noise. Such a row still ingests (the shared seen-ledger de-dupes it
-            # downstream by id); it just does not get to move the clock.
-            pub_dt = _iso_to_dt(published_at) if raw_ts else None
-            if since_dt is not None and pub_dt is not None and pub_dt <= since_dt:
+            if since_dt is not None and pub_dt <= since_dt:
                 continue                       # strictly-newer-than-cursor
 
             page_ids.add(raw_id)
@@ -722,7 +735,13 @@ class AlpacaNewsProvider:
             body = str(row.get("summary") or "") or str(row.get("content") or "")
             item = FeedItem(
                 id=f"alpaca:{raw_id}",
-                source=self.key,
+                # Review N7: PER-PUBLISHER source key, not one lane-wide slug.
+                # garbage_gate's source blocklist reads `source`, so collapsing
+                # every resold publisher into "alpaca_benzinga" left the
+                # operator no lever against one bad reseller short of a URL
+                # host entry. The lane prefix stays so provenance still says
+                # which pipe carried it.
+                source=_alpaca_source_key(row.get("source")),
                 source_name=_pretty_wire_name(row.get("source")),
                 source_tier=self.source_tier,
                 url=str(row.get("url") or ""),
@@ -741,6 +760,10 @@ class AlpacaNewsProvider:
                 item["symbols"] = symbols
             results.append(item)
 
+        if stampless:
+            print(f"::notice title=alpaca-timestampless::{stampless} Alpaca news "
+                  f"row(s) carried no parseable timestamp — dropped (cannot be "
+                  "ordered against the cursor)", flush=True)
         return results, (newest.isoformat() if newest is not None else None)
 
     # ---- network fetch (never in tests) -------------------------------------
@@ -807,7 +830,8 @@ class AlpacaNewsProvider:
             # PER-PROVIDER COLD START: prime the cursor, ingest nothing. An empty
             # first page still primes (to the run clock) — there is nothing older
             # to miss, and leaving the cursor unset would re-arm the prime against
-            # the first real batch.
+            # the first real batch. This is the ONE `sort=desc` request the lane
+            # makes: page one of "newest first" IS the freshest timestamp.
             st["since"] = newest or now_dt.isoformat()
             st["primed_at"] = now_dt.isoformat()
             print(f"::notice title=alpaca-cold-start::Alpaca news cursor primed to "
@@ -817,6 +841,19 @@ class AlpacaNewsProvider:
 
         if newest:
             st["since"] = newest
+            # Review N2: cursored polls are `sort=asc` + `start=<cursor>`, so a
+            # backlog wider than one page catches up CONTIGUOUSLY — the cursor
+            # advances to the newest of the OLDEST page and the next poll picks
+            # up exactly where this one stopped. A full page therefore means
+            # "more to come next poll", not silent loss; say so at notice level.
+            rows = payload.get("news")
+            if rows is None:
+                rows = payload.get("data") or []
+            if isinstance(rows, list) and len(rows) >= self.limit:
+                print(f"::notice title=alpaca-page-catchup::Alpaca news returned "
+                      f"a full page ({len(rows)} of limit {self.limit}) — older "
+                      "backlog continues on the next poll (asc cursor advance)",
+                      flush=True)
         return items
 
     def _request(self, api_key: str, api_secret: str, *, since: str,
@@ -829,7 +866,11 @@ class AlpacaNewsProvider:
                   f"({self.rest_url!r}) — lane skipped", flush=True)
             return None
 
-        params = {"limit": str(self.limit), "sort": "desc"}
+        # Review N2: the cold-start probe (no cursor) asks newest-first so page
+        # one carries the freshest stamp to prime to. Every CURSORED poll asks
+        # OLDEST-first from the cursor, so a backlog wider than one page drains
+        # contiguously across polls instead of the cursor leaping over it.
+        params = {"limit": str(self.limit), "sort": "desc" if not since else "asc"}
         if since:
             params["start"] = since
         url = f"{self.rest_url}?{urlencode(params)}"
@@ -885,6 +926,19 @@ class AlpacaNewsProvider:
 # ─────────────────────────────────────────────────────────────────────────────
 # Small pure helpers
 # ─────────────────────────────────────────────────────────────────────────────
+
+def _alpaca_source_key(raw: Any) -> str:
+    """Machine `source` key for one Alpaca-carried article: ``alpaca_<publisher>``.
+
+    Review N7: the blocklist lever. ``garbage_gate._source_blocked`` reads
+    ``source`` (never ``source_name``), so the key must name the actual
+    publisher the wire resold, one slug per publisher. Lowercase, non-alnum
+    collapsed to underscores; an article naming no publisher falls to the
+    lane's historical ``alpaca_benzinga``.
+    """
+    slug = re.sub(r"[^a-z0-9]+", "_", str(raw or "").strip().lower()).strip("_")
+    return f"alpaca_{slug}" if slug else "alpaca_benzinga"
+
 
 def _pretty_wire_name(raw: Any) -> str:
     """Display name from an article's own `source` field ("benzinga" -> "Benzinga").

@@ -2350,16 +2350,13 @@ _INTEL_ENQUEUE_DETAIL: dict[str, str] = {
 #: which is what makes the single-file API delivery below sufficient.
 _INTEL_ITEMS_REL = "data/marketing/outbox/items.jsonl"
 
-#: The three git-tracked outbox ledgers one enqueue can touch. All three are
-#: committed together because they are ONE write: enqueue appends the item, the
-#: status ledger records the state it was born in, and the activity log records
-#: that it happened. Shipping the item without its ledgers would hand the
-#: publisher a row with no history.
-_INTEL_OUTBOX_LEDGERS = (
-    _INTEL_ITEMS_REL,
-    "data/marketing/outbox/status_ledger.jsonl",
-    "data/marketing/outbox/activity.jsonl",
-)
+#: Review N6: `outbox.enqueue` writes ONLY items.jsonl — the earlier three-ledger
+#: tuple here rested on a false premise and its scoped commit would have SWEPT
+#: whatever unrelated dirt other lanes had left on the status/activity ledgers
+#: of a shared checkout onto main. Delivery commits exactly the one file the
+#: enqueue wrote. (gitops._ALLOWED_PATHS keeps all three outbox ledgers listed —
+#: harmless, and a future path that really writes them can opt in explicitly.)
+_INTEL_OUTBOX_LEDGERS = (_INTEL_ITEMS_REL,)
 
 #: Plain-word sentence per failed API-delivery step (github_api's ``step`` key).
 #: Keyed by step rather than by parsing the error so a new failure mode reads as
@@ -2401,9 +2398,10 @@ def _intel_deliver(item: dict) -> tuple[bool, str]:
       and ``app/deploy/update.sh`` resets it ``--hard`` to origin/main every few
       minutes, so a local commit is not slow delivery — it is DELETED delivery,
       taking the row with it.
-    * Authenticated local checkout -> commit+push with retry
-      (``gitops.commit_paths_synced``): the press wire commits every few minutes,
-      so a single push racing it is more likely to be refused than to land.
+    * Authenticated local checkout -> scoped commit + ONE plain push
+      (``gitops.commit_paths``): no rebase retry, because this checkout may be
+      occupied by other agents and a rebase rewrites it under them (review N6).
+      A push refused by a racing press-wire commit is reported, not forced.
 
     Exactly one is attempted per call. Never both: a fallback would either write
     the same row twice or spend a doomed git shell-out on every VPS approval.
@@ -2490,12 +2488,24 @@ def _intel_deliver_via_api(item: dict, item_id: str) -> tuple[bool, str]:
 
 
 def _intel_deliver_via_git(item_id: str) -> tuple[bool, str]:
-    """Local authenticated checkout: commit+push the three outbox ledgers."""
+    """Local authenticated checkout: scoped commit of items.jsonl + ONE push.
+
+    Review N6: no fetch/rebase retry loop here, deliberately. This branch runs
+    only on a non-deployed checkout — which per repo law is often OCCUPIED by
+    other agents mid-work — and a rebase rewrites the WHOLE checkout's history
+    out from under them to win a push race over one ledger row. A single plain
+    push either lands or refuses; a refusal is reported honestly and the row
+    stays committed locally for the operator (or the checkout's owner) to push
+    when the tree is theirs. The deployed VPS never takes this branch at all
+    (Contents API), so the retry loop bought robustness exactly where it could
+    do the most collateral damage.
+    """
     try:
         from . import gitops  # noqa: PLC0415
-        res = gitops.commit_paths_synced(
+        res = gitops.commit_paths(
             list(_INTEL_OUTBOX_LEDGERS),
             message=f"admin: intelligence desk approve {item_id}",
+            push=True,
             confirm=True)
     except Exception as exc:  # noqa: BLE001
         log.warning("intelligence_approve: delivery step failed: %s", exc)
@@ -2668,12 +2678,16 @@ def intelligence_approve(story_id, draft_id, root=None, *, now=None) -> dict:
             "story_key": lock_key,
         }
 
-        # Gift-Grip-Proof verdict rides on every emission (charter §0). The
-        # story headline is the UPSTREAM one, so the informational-surplus test
-        # has the right thing to compare our copy against.
+        # Gift-Grip-Proof verdict rides on every emission (charter §0). The gate
+        # must score the STRING THAT SHIPS (review N4): make_item posts `text`
+        # alone — there is no headline+body composition on this lane — so
+        # `headline` is empty here or the verdict is measured on copy that never
+        # reaches X. The STORY headline still goes in as `source_headline`, which
+        # is the upstream wire line the informational-surplus test compares
+        # against ("we rewrote the headline" is not an answer).
         would_block = _ob.stamp_value_gate(
             source,
-            headline=headline,
+            headline="",
             body=text,
             kind="breaking",
             has_media=False,
@@ -2736,8 +2750,16 @@ def intelligence_approve(story_id, draft_id, root=None, *, now=None) -> dict:
                 owner=lock.owner)
 
         # ── 7. Enqueue (id dedup, text dedup, near-dup radar, daily cap) ──────
+        # `duplicate` is NOT a dead end (review N5): the row already exists on
+        # THIS disk, but the first click's DELIVERY may have failed — returning
+        # here made that failure permanent, because every retry the note invited
+        # refused as duplicate before ever reaching delivery again. Both delivery
+        # paths are idempotent (the API append checks main for the id; the git
+        # path's scoped commit no-ops on a clean file), so a duplicate falls
+        # through to delivery instead of returning.
         result = str(_ob.enqueue(item, repo, cfg=cfg))
-        if result != "queued":
+        duplicate_requeue = result == "duplicate"
+        if result != "queued" and not duplicate_requeue:
             if result.startswith("invalid:"):
                 return _intel_refuse("item_invalid", result.split(":", 1)[1])
             return _intel_refuse(result, _INTEL_ENQUEUE_DETAIL.get(
@@ -2747,6 +2769,10 @@ def intelligence_approve(story_id, draft_id, root=None, *, now=None) -> dict:
         # caller's job (the admin card prints both), so this does not repeat it.
         note = ("Nothing posts now: it waits for the publisher's own gates "
                 "exactly like every other outbox item.")
+        if duplicate_requeue:
+            note = ("This draft was already queued on this machine, so the "
+                    "click queued nothing twice; delivery was re-checked. "
+                    + note)
         # HONEST ABOUT THE PICTURE. `breaking` sits OUTSIDE the publisher's
         # _CHART_BEARING_KINDS, so a ticker-bearing item on this lane is not
         # deferred for a missing chart the way a signal/watchlist post is — it
@@ -2764,6 +2790,8 @@ def intelligence_approve(story_id, draft_id, root=None, *, now=None) -> dict:
             "story_id": sid,
             "draft_id": did,
         }
+        if duplicate_requeue:
+            payload["reason"] = "duplicate"
 
         # ── 8. DELIVERY: the enqueue above wrote to THIS disk, not to main ────
         # Only the default repo root is a real checkout the publisher's copy of

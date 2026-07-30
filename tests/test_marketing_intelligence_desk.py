@@ -239,6 +239,14 @@ def test_news_page_consumes_story_contract_and_keeps_review_gate_visible():
     )[0]
     assert ".innerHTML" not in block
     assert "textContent" in block
+    # Review N11: the V2 producer-side field spellings the client reads. A
+    # producer rename would otherwise ship an empty timeline/context group with
+    # this suite green — the payload contract and the template must drift
+    # TOGETHER or fail here.
+    for field in ("timeline", "label_en", "label_zh", "engine_context",
+                  "line_en", "line_zh", "as_of", "headline_zh", "brief_zh"):
+        assert field in block, f"desk client no longer reads `{field}`"
+    assert "Attention cooling" in template and "关注降温" in template
 
 
 def test_content_studio_receives_the_live_review_queue_without_a_nightly_plan(tmp_path):
@@ -296,7 +304,8 @@ _LANE_PRESS_CFG = {
         "rail_salience_floor": 30,
         "intelligence": {
             "salience_floor": 0,
-            "claims": {"ttl_h": 24, "jaccard_min": 0.15, "tight_window_min": 45},
+            "claims": {"ttl_h": 24, "jaccard_min": 0.15,
+                       "tight_jaccard_min": 0.05, "tight_window_min": 45},
         },
         "voice": {"enabled": False},
         "tape": {"enabled": False},
@@ -429,6 +438,191 @@ def test_desk_ids_are_stable_across_ticks_when_the_spine_is_absent(tmp_path):
     assert len(payload["stories"][0]["evidence"]) == 2
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Review N1 — the tight window LOWERS the wording bar; it never bypasses it,
+# and it never overrides a spine that placed the two arrivals apart.
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: Two reports of ONE story, minutes apart, with almost disjoint vocabulary —
+#: the case the tight window exists for. Overlap is 0.0667: under `jaccard_min`
+#: (0.15) but over `tight_jaccard_min` (0.05).
+_SAME_STORY_A = "Nvidia halts $NVDA chip exports to China after a new federal rule"
+_SAME_STORY_B = ("$NVDA shipments to Beijing stop as Washington tightens "
+                 "semiconductor curbs")
+
+
+def _overlap(left: str, right: str) -> float:
+    from engine.marketing import press_lane
+
+    return press_lane._intel_jaccard(press_lane._intel_tokens(left),
+                                     press_lane._intel_tokens(right))
+
+
+def _resolve(headline: str, *, registry: dict, now: datetime, spine_sid: str = "",
+             tight_jaccard_min: float = 0.05) -> str:
+    """One `_resolve_intel_story_id` call on a fixed claim anchor.
+
+    Direct rather than through the lane because these cases turn on an EXACT
+    token overlap and an exact arrival gap; routing them through the classifier
+    would make the assertion depend on which event_class it picked that day.
+    The lane-level counterpart below covers the wiring.
+    """
+    from engine.marketing import press_lane
+
+    return press_lane._resolve_intel_story_id(
+        {"headline": headline, "event_class": "policy",
+         "matched": {"tickers": ["NVDA"]}},
+        spine_sid=spine_sid, registry=registry, now=now,
+        jaccard_min=0.15, tight_jaccard_min=tight_jaccard_min,
+        tight_window_min=45,
+    )
+
+
+def test_the_tight_window_lowers_the_jaccard_bar_but_never_bypasses_it():
+    """Two DIFFERENT same-ticker stories 10 minutes apart must stay separate.
+
+    The old rule was ``overlap >= jaccard_min or tight`` — a bare OR, so any
+    second arrival inside the window aliased onto the first whatever it said.
+    The desk then showed that false merge as a two-source story, i.e. it
+    presented an unrelated headline as corroboration.
+    """
+    other = "Chief executive resigns abruptly as the board picks an interim"
+    assert _overlap(_SAME_STORY_A, other) == 0.0, "fixture drifted"
+
+    registry: dict = {}
+    first = _resolve(_SAME_STORY_A, registry=registry, now=NOW)
+    second = _resolve(other, registry=registry, now=NOW + timedelta(minutes=10))
+    assert first != second, "the tight window bypassed the wording bar again"
+    # Same anchor, so the separation is the wording test doing its job — not two
+    # registry keys never meeting.
+    assert len(registry) == 1
+
+
+def test_a_reworded_report_inside_the_tight_window_still_merges():
+    """…and the window still buys something: 0.05 <= overlap < 0.15 merges.
+
+    Deleting the window rather than lowering its bar would fix the false merge
+    by giving up every true one, which is the failure this pins against.
+    """
+    assert 0.05 <= _overlap(_SAME_STORY_A, _SAME_STORY_B) < 0.15
+
+    registry: dict = {}
+    first = _resolve(_SAME_STORY_A, registry=registry, now=NOW)
+    second = _resolve(_SAME_STORY_B, registry=registry,
+                      now=NOW + timedelta(minutes=10))
+    assert first == second, "the tight window stopped relaxing the bar"
+
+    # Outside the window the SAME pair separates — 0.0667 is under jaccard_min.
+    wide: dict = {}
+    assert _resolve(_SAME_STORY_A, registry=wide, now=NOW) != _resolve(
+        _SAME_STORY_B, registry=wide, now=NOW + timedelta(minutes=90))
+
+
+def test_the_tight_bar_is_read_from_config_end_to_end(tmp_path):
+    """The lane must pass the CONFIGURED tight bar down, not a module constant.
+
+    Same two arrivals, same 10-minute gap, one knob moved: at the shipped 0.05
+    they are one story, at 0.5 they are two. A resolver reading its own default
+    would merge in both runs.
+    """
+    def _two_ticks(tight_jaccard_min: float) -> tuple[list, list]:
+        cfg = json.loads(json.dumps(_LANE_PRESS_CFG))
+        cfg["wire"]["intelligence"]["claims"]["tight_jaccard_min"] = tight_jaccard_min
+        root = tmp_path / f"bar-{tight_jaccard_min}"
+        root.mkdir()
+        state: dict = {}
+
+        def tick(iid, name, host, headline, offset):
+            from engine.marketing.press_lane import run_press_tick
+
+            return run_press_tick(
+                [_wire_item(iid, name, host, headline, "2026-07-29T17:55:00Z")],
+                root=root, now=NOW + timedelta(minutes=offset), cfg=_NO_SPINE_CFG,
+                press_cfg=cfg, state=state, seen_ids=set(), dry_run=True,
+            )["intelligence"]
+
+        return (tick("r-1", "Reuters", "reuters.com", _SAME_STORY_A, 0),
+                tick("ap-1", "AP", "apnews.com", _SAME_STORY_B, 10))
+
+    lenient_a, lenient_b = _two_ticks(0.05)
+    assert lenient_a and lenient_b
+    assert lenient_a[0]["id"] == lenient_b[0]["id"]
+
+    strict_a, strict_b = _two_ticks(0.5)
+    assert strict_a and strict_b
+    assert strict_a[0]["id"] != strict_b[0]["id"], (
+        "the configured tight bar never reached the resolver")
+
+
+def test_the_shipped_config_carries_the_tight_bar():
+    import yaml
+
+    claims = yaml.safe_load(
+        (ROOT / "config" / "press_sources.yml").read_text(encoding="utf-8")
+    )["wire"]["intelligence"]["claims"]
+    assert claims["tight_jaccard_min"] == 0.05
+    # A tight bar at or above the wide one would make the window pointless.
+    assert claims["tight_jaccard_min"] < claims["jaccard_min"]
+
+
+def test_spine_primacy_stops_the_registry_undoing_a_split():
+    """When the spine placed two arrivals in DIFFERENT stories, the registry —
+    the floor UNDER a missing spine — may not merge them back.
+
+    The overlap here is 0.75, well over both bars, so ONLY spine primacy can
+    keep them apart: a resolver that lost this rule fails here, where the
+    zero-overlap case below would still pass for the wrong reason.
+    """
+    reuters = "Nvidia halts $NVDA chip exports to China after new rule"
+    ap = "New rule stops $NVDA chip exports from Nvidia to China"
+    assert _overlap(reuters, ap) > 0.15
+
+    registry: dict = {}
+    first = _resolve(reuters, registry=registry, now=NOW, spine_sid="st-aaaa")
+    second = _resolve(ap, registry=registry, now=NOW + timedelta(minutes=10),
+                      spine_sid="st-bbbb")
+    assert first == "st-aaaa" and second == "st-bbbb"
+
+    # Control: the SAME wording with no competing spine verdict does merge, so
+    # the split above is the spine's doing and not a broken overlap test.
+    agreeing: dict = {}
+    assert _resolve(reuters, registry=agreeing, now=NOW,
+                    spine_sid="st-aaaa") == _resolve(
+        ap, registry=agreeing, now=NOW + timedelta(minutes=10),
+        spine_sid="st-aaaa")
+
+
+def test_spine_distinct_arrivals_never_merge_inside_the_window():
+    """The literal review case: distinct spine ids, zero wording overlap, well
+    inside the tight window — two stories, always."""
+    registry: dict = {}
+    first = _resolve(_SAME_STORY_A, registry=registry, now=NOW,
+                     spine_sid="st-1111")
+    second = _resolve("Chief executive resigns abruptly as the board picks an "
+                      "interim", registry=registry,
+                      now=NOW + timedelta(minutes=10), spine_sid="st-2222")
+    assert first == "st-1111" and second == "st-2222"
+
+
+def test_primacy_needs_a_real_spine_id_on_BOTH_sides():
+    """A day stub is the spine saying nothing, not the spine disagreeing.
+
+    Treating the stub as a verdict would disable aliasing on exactly the bare
+    host the registry was built for — the spine-less arrival must still merge
+    onto the registered story on wording alone.
+    """
+    from engine.marketing import press_lane
+
+    registry: dict = {}
+    stub = _resolve(_SAME_STORY_A, registry=registry, now=NOW)   # no spine
+    assert stub.startswith(press_lane._INTEL_STUB_PREFIX)
+    assert press_lane._intel_registered_spine_sid(
+        next(iter(registry.values()))) == "", "a day stub read as a spine verdict"
+    joined = _resolve(_SAME_STORY_B, registry=registry,
+                      now=NOW + timedelta(minutes=10), spine_sid="st-late")
+    assert joined == stub
+
+
 def test_the_claim_registry_stays_inside_its_state_budget():
     """The registry rides the tick state dict — which the GitHub Actions
     deployment of this lane COMMITS to a tracked cursors.json under a 256 KB
@@ -443,10 +637,18 @@ def test_the_claim_registry_stays_inside_its_state_budget():
                          "weak demand overseas this morning",
              "event_class": "earnings", "matched": {"tickers": [f"TK{index}"]}},
             spine_sid=f"st-{index:016d}", registry=registry, now=NOW,
-            jaccard_min=0.15, tight_window_min=45,
+            jaccard_min=0.15, tight_jaccard_min=0.05, tight_window_min=45,
         )
     press_lane._prune_intel_claims(registry, now=NOW, ttl_h=24)
     assert len(registry) == press_lane._INTEL_CLAIM_MAX_ENTRIES
+    # SPINE PRIMACY DEPENDS ON THIS. `_intel_registered_spine_sid` reads the
+    # registered spine id off `story_id` instead of storing it a second time —
+    # a duplicate key costs ~17 KB here and puts the budget below over the line.
+    # So the invariant it relies on is pinned where the cost is measured: an
+    # entry registered WITH a spine id stores exactly that id.
+    for key, entry in registry.items():
+        assert entry["story_id"].startswith("st-"), key
+        assert press_lane._intel_registered_spine_sid(entry) == entry["story_id"]
     # cursors.json is written with indent=2 — measure the shape that ships.
     body = json.dumps({"intel_claims": registry}, indent=2, sort_keys=True,
                       ensure_ascii=False)
@@ -939,6 +1141,68 @@ def test_a_clean_phrasing_adds_an_analysis_draft_and_a_story_specific_why(
     assert packet["why_it_matters_zh"] == _CANNED_WHY_ZH
     assert ill.stats()["phrased_analysis"] == 1
     assert ill.stats()["phrased_why"] == 1
+
+
+def test_a_stored_llm_draft_survives_a_deterministic_re_arrival(tmp_path):
+    """Review N8: quiet ticks re-arrive with only the deterministic wire text
+    (the LLM pass is budget-capped and cache-keyed). That must not evict the
+    phrased copy — until the headline moves, when stale phrasing must go."""
+    db = tmp_path / "intelligence.db"
+    sink = tmp_path / "intelligence.json"
+
+    first = _packet("fed-1", "Reuters", "https://reuters.com/fed")
+    first["drafts"] = [dict(first["drafts"][0], origin="llm",
+                            text="Fed leaves its policy rate unchanged.",
+                            id="draft_llm000000000001")]
+    update_intelligence_desk([first], root=tmp_path, now=NOW,
+                             db_path=db, snapshot_path=sink)
+
+    quiet = _packet("fed-2", "Reuters", "https://reuters.com/fed-2")
+    assert quiet["drafts"][0]["origin"] == "wire"
+    payload = update_intelligence_desk(
+        [quiet], root=tmp_path, now=NOW + timedelta(minutes=2),
+        db_path=db, snapshot_path=sink)
+    wire = next(d for d in payload["stories"][0]["drafts"]
+                if d["shape"] == "wire")
+    assert wire["origin"] == "llm", "a quiet tick reverted the phrased copy"
+    assert wire["text"] == "Fed leaves its policy rate unchanged."
+
+    moved = _packet("fed-3", "Reuters", "https://reuters.com/fed-3")
+    moved["headline"] = "Federal Reserve signals a September cut"
+    payload = update_intelligence_desk(
+        [moved], root=tmp_path, now=NOW + timedelta(minutes=4),
+        db_path=db, snapshot_path=sink)
+    wire = next(d for d in payload["stories"][0]["drafts"]
+                if d["shape"] == "wire")
+    assert wire["origin"] == "wire", (
+        "stale phrasing outlived the story text it phrased")
+
+
+def test_a_valid_wire_phrasing_lands_even_when_only_a_long_post_exists(
+    monkeypatch, tmp_path,
+):
+    """Review N13: a story whose deterministic draft is long_post/needs_edit has
+    no wire slot; the phrased ≤280 line must be ADDED, not discarded, or the
+    story keeps nothing approvable."""
+    import engine.marketing.intelligence_llm as ill
+
+    _arm_llm(monkeypatch, _GOOD_REPLY)
+    packet = _confirmed_packet()
+    packet["drafts"] = [{
+        "id": "draft_long000000000001", "shape": "long_post",
+        "text": "x" * 350, "status": "needs_edit", "characters": 350,
+        "requires_review": True, "source_url": "https://reuters.com/fed",
+        "origin": "wire", "updated_at": "2026-07-29T17:58:00Z",
+    }]
+
+    ill.attach_llm_drafts([packet], _llm_cfg(), root=tmp_path, now=NOW)
+
+    shapes = {d["shape"]: d for d in packet["drafts"]}
+    assert "wire" in shapes, "the valid phrasing was discarded"
+    assert shapes["wire"]["origin"] == "llm"
+    assert shapes["wire"]["status"] == "review"
+    assert shapes["wire"]["characters"] <= 280
+    assert shapes["long_post"]["text"] == "x" * 350  # untouched
 
 
 def test_an_invented_number_leaves_every_deterministic_line_standing(

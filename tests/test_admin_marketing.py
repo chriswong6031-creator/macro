@@ -1881,10 +1881,13 @@ class TestGitopsCommitPathsSynced:
     def test_the_three_outbox_ledgers_are_allowlisted(self):
         from admin import gitops
         assert set(self.OUTBOX) <= set(gitops._ALLOWED_PATHS)
-        # The approve path and the allowlist must name the SAME three files: a
-        # ledger the caller commits but the allowlist has not blessed would be
-        # refused at delivery time, in production, with the item already queued.
-        assert set(marketing._INTEL_OUTBOX_LEDGERS) == set(self.OUTBOX)
+        # Review N6: the approve path commits ONLY the file its enqueue wrote.
+        # `outbox.enqueue` appends items.jsonl alone, and a wider scoped commit
+        # would sweep other lanes' dirt on the status/activity ledgers of a
+        # shared checkout onto main. The allowlist keeps all three (harmless);
+        # the delivery tuple must not.
+        assert set(marketing._INTEL_OUTBOX_LEDGERS) == {
+            "data/marketing/outbox/items.jsonl"}
 
     def test_requires_confirm_and_shells_out_to_nothing_without_it(self, monkeypatch):
         from admin import gitops
@@ -2667,16 +2670,19 @@ class TestIntelligenceApproveRefusals:
         assert r["ok"] is False and r["reason"] == "no_snapshot"
 
     def test_second_click_is_a_duplicate_not_a_second_post(self, intel_root):
-        """Outbox id-dedup makes a double-click safe. It must SAY so — a silent
-        second ok:true would read as two queued posts."""
+        """Outbox id-dedup makes a double-click safe. It must SAY so — and it
+        must not be a dead end (review N5): the row exists, so ok stays True
+        with reason "duplicate", nothing is queued twice, and on a deployed
+        host delivery would be re-attempted (root-pinned calls attempt none)."""
         first = marketing.intelligence_approve("story-alpha", "draft-wire-1",
                                                root=intel_root)
         assert first["ok"] is True
         second = marketing.intelligence_approve("story-alpha", "draft-wire-1",
                                                 root=intel_root)
-        assert second["ok"] is False
+        assert second["ok"] is True
         assert second["reason"] == "duplicate"
-        assert "already in the outbox" in second["detail"]
+        assert "queued nothing twice" in second["note"]
+        assert "delivered" not in second  # root-pinned: no delivery attempted
         assert len(_intel_items(intel_root)) == 1
 
     def test_story_owned_by_another_desk_is_refused(self, intel_root):
@@ -2807,17 +2813,19 @@ class TestIntelligenceApproveDelivery:
 
     @staticmethod
     def _stub_delivery(monkeypatch, result):
+        """Stub the N6 delivery primitive: plain ``commit_paths`` (ONE push, no
+        rebase — this branch may run on a checkout other agents occupy)."""
         from admin import gitops
         seen: dict = {}
 
-        def fake(paths, message="", *, confirm=False, attempts=3):
+        def fake(paths, message="", push=False, confirm=False):
             seen.update(paths=list(paths), message=message, confirm=confirm,
-                        attempts=attempts)
+                        push=push)
             if isinstance(result, Exception):
                 raise result
             return result
 
-        monkeypatch.setattr(gitops, "commit_paths_synced", fake)
+        monkeypatch.setattr(gitops, "commit_paths", fake)
         return seen
 
     # ---- the dev/test shape: git is never in the picture --------------------
@@ -2844,25 +2852,27 @@ class TestIntelligenceApproveDelivery:
 
     def test_a_landed_push_reports_delivered_true(self, deployed_root, monkeypatch):
         seen = self._stub_delivery(monkeypatch, {
-            "ok": True, "committed": True, "pushed": True, "attempts": 1})
+            "ok": True, "committed": True, "pushed": True})
         r = marketing.intelligence_approve("story-alpha", "draft-wire-1")
         assert r["ok"] is True and r["delivered"] is True
-        # exactly the three ledgers, confirmed, under the item's own message
-        assert seen["paths"] == list(marketing._INTEL_OUTBOX_LEDGERS)
+        # ONLY items.jsonl (review N6 — enqueue writes nothing else), pushed,
+        # confirmed, under the item's own message
+        assert seen["paths"] == ["data/marketing/outbox/items.jsonl"]
         assert seen["message"] == f"admin: intelligence desk approve {r['item_id']}"
-        assert seen["confirm"] is True
+        assert seen["confirm"] is True and seen["push"] is True
         assert "publisher will see it" in r["note"]
         # the pre-existing note survives — delivery appends, it does not replace
         assert "nothing posts now" in r["note"].lower()
 
     def test_a_stranded_commit_is_delivered_false_and_keeps_the_item(
             self, deployed_root, monkeypatch):
-        """Committed-but-not-pushed is the routine outcome when origin moved.
-        The item is real, so ok stays True and only `delivered` goes false."""
+        """A push refused by a racing press-wire commit is the routine outcome,
+        and there is deliberately NO rebase retry (review N6: this branch can
+        run on a checkout other agents occupy). The item is real, so ok stays
+        True and only `delivered` goes false."""
         self._stub_delivery(monkeypatch, {
-            "ok": True, "committed": True, "pushed": False, "attempts": 3,
-            "warning": ("committed locally; not pushed after 3 push attempt(s) "
-                        "— the push was refused (! [rejected] main -> main)")})
+            "ok": False, "committed": True, "pushed": False,
+            "error": "the push was refused (! [rejected] main -> main)"})
         r = marketing.intelligence_approve("story-alpha", "draft-wire-1")
         assert r["ok"] is True
         assert r["delivered"] is False
@@ -2886,15 +2896,14 @@ class TestIntelligenceApproveDelivery:
         assert r["ok"] is True and r["delivered"] is False
         assert "not on a main tracking branch" in r["note"]
 
-    def test_a_conflicted_rebase_is_folded_into_the_note(self, deployed_root,
-                                                         monkeypatch):
+    def test_a_named_push_error_is_folded_into_the_note(self, deployed_root,
+                                                        monkeypatch):
         self._stub_delivery(monkeypatch, {
             "ok": False, "committed": True, "pushed": False,
-            "error": ("committed locally; rebase onto origin/main conflicted "
-                      "(CONFLICT (content)) and was aborted")})
+            "error": "git push failed (network unreachable)"})
         r = marketing.intelligence_approve("story-alpha", "draft-wire-1")
         assert r["ok"] is True and r["delivered"] is False
-        assert "conflicted" in r["note"]
+        assert "network unreachable" in r["note"]
 
     def test_a_thrown_delivery_error_never_un_queues_the_item(
             self, deployed_root, monkeypatch):
@@ -3070,6 +3079,45 @@ class TestIntelligenceApproveDeliveryDeployed:
         # never un-queued: the row is real on this disk either way
         items = _intel_items(deployed_vps)
         assert len(items) == 1 and items[0]["id"] == r["item_id"]
+
+    def test_a_retry_whose_re_read_finds_our_own_id_stops_without_a_second_put(
+            self, deployed_vps, monkeypatch):
+        """Review N12: the idempotency check must live INSIDE the retry loop.
+
+        The race this pins: our PUT is rejected as a stale sha, and the write
+        that beat us carried the SAME item row (a twin admin worker, or our own
+        first PUT that half-landed). The re-read now contains our id — a loop
+        whose marker check ran only on the FIRST read would append the row a
+        second time. Hoisting the check above the loop passes every other test
+        in this class; this one fails it.
+        """
+        self._no_git(monkeypatch)
+
+        class _SelfRaced(_FakeContents):
+            def _put(self, path, content, message, *, sha=None, branch="main"):
+                self.puts.append({"path": path, "content": content,
+                                  "message": message, "sha": sha,
+                                  "branch": branch})
+                if self.conflicts > 0:
+                    self.conflicts -= 1
+                    # The competing write carried OUR row: the body this PUT
+                    # tried to write becomes main's content.
+                    self.content = content
+                    self.sha = self.sha + "-moved"
+                    return {"ok": False,
+                            "error": "HTTP 409 — sha conflict; retry"}
+                return {"ok": True, "commit_sha": "c0ffee"}
+
+        gh = _SelfRaced(conflicts=1).install(monkeypatch)
+        r = marketing.intelligence_approve("story-alpha", "draft-wire-1")
+
+        assert r["ok"] is True and r["delivered"] is True
+        assert "already" in r["note"], "a found-on-main row must say so"
+        # Two reads (the retry re-read), but only ONE put — the rejected one.
+        # A second PUT here is the double-append this test exists to forbid.
+        assert len(gh.gets) == 2
+        assert len(gh.puts) == 1
+        assert gh.content.count(f'"id":"{r["item_id"]}"') == 1
 
     # ---- (d) idempotency ------------------------------------------------------
 

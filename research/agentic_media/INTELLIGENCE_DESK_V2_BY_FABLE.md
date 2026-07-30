@@ -86,9 +86,20 @@ key = claim:{event_class}:{primary_entity}        # reuses _corroboration_key's 
 registry[key] = {story_id, first_ts, headline_tokens}
 resolve(scored, spine_sid):
     key empty (no anchor)      -> spine_sid or day-bucketed headline-stub id
-    key hit within ttl_h (24)  -> token-overlap sanity: Jaccard(title tokens) ≥ 0.15
-                                  OR within tight_window_min (45) -> alias to registered story_id
+    key hit within ttl_h (24)  -> token-overlap sanity: Jaccard(title tokens) ≥ 0.15,
+                                  RELAXED to ≥ tight_jaccard_min (0.05) inside
+                                  tight_window_min (45) — the tight window LOWERS the
+                                  bar, it never bypasses it (review N1: a bare OR merged
+                                  two different same-ticker stories 10 min apart and
+                                  presented the false merge as confirmed/multi-source)
+                                  -> alias to registered story_id
                                   else -> keep own sid (two different stories, same ticker)
+    SPINE PRIMACY (review N1): when the spine assigned BOTH items real story ids and
+    they DIFFER, the registry never aliases them — the registry is the floor under a
+    missing spine, not an override of a working one.
+    KNOWN LIMIT (review N9, accepted): first_ts never refreshes on a hit, so a story
+    running past ttl_h opens a second desk row; refreshing it would let merge chains
+    extend unboundedly, which is the worse failure.
     key miss                   -> register current sid
 ```
 

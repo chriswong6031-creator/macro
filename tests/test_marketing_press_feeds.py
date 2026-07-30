@@ -965,14 +965,14 @@ class TestAlpacaNews:
             "https://www.benzinga.com/news/26/07/48213377/fed-holds-rates")
         assert items[0]["author"] == "Benzinga Newsdesk"
 
-    def test_a_timestampless_row_never_fast_forwards_the_cursor(self):
-        """A field rename must cost NOISE, not silent loss.
+    def test_a_timestampless_row_is_dropped_and_noticed(self, capsys):
+        """Review N3: a row with no parseable timestamp is DROPPED, not ingested.
 
-        `_parse_pub_date` stamps a dateless row at ingest time. If that stamp were
-        allowed to advance `since`, one malformed row would push the cursor to
-        "now" and every item still in flight behind it would be skipped forever.
-        The row ingests (the seen-ledger de-dupes it downstream); it does not get
-        to move the clock.
+        It cannot be ordered against the cursor: ingesting it with an ingest-time
+        stamp either stalls the cursor forever (an all-stampless page re-serves
+        every poll) or — if that stamp ever drove the cursor — fast-forwards
+        `since` to "now" past items still in flight. The drop is counted and
+        noticed so a field rename costs visible noise, never silent loss.
         """
         page = {"news": [
             {"id": 1, "headline": "Dateless row", "source": "benzinga"},
@@ -980,9 +980,24 @@ class TestAlpacaNews:
              "source": "benzinga"},
         ]}
         items, newest = self._provider().parse(page)
-        assert [i["id"] for i in items] == ["alpaca:1", "alpaca:2"]
-        assert newest == "2026-07-29T16:00:00+00:00", (
-            "the ingest-time stamp of a dateless row leaked into the cursor")
+        assert [i["id"] for i in items] == ["alpaca:2"]
+        assert newest == "2026-07-29T16:00:00+00:00"
+        out = capsys.readouterr().out
+        line = next(l for l in out.splitlines() if "alpaca-timestampless" in l)
+        assert line.startswith("::notice") and "1 " in line
+
+    def test_an_all_timestampless_page_ingests_nothing_and_advances_nothing(
+            self, capsys):
+        """The stall case the drop rule exists for: nothing to order, nothing
+        ingested, cursor untouched — instead of the same rows re-serving on
+        every poll forever."""
+        page = {"news": [
+            {"id": 1, "headline": "Dateless one", "source": "benzinga"},
+            {"id": 2, "headline": "Dateless two", "source": "benzinga"},
+        ]}
+        items, newest = self._provider().parse(page, since="2026-07-29T15:00:00Z")
+        assert items == [] and newest is None
+        assert "alpaca-timestampless" in capsys.readouterr().out
 
     def test_malformed_payload_never_raises(self):
         prov = self._provider()
@@ -1054,8 +1069,11 @@ class TestAlpacaNews:
         assert [i["id"] for i in out] == ["alpaca:48213377"], (
             "an item at-or-before the cursor was re-ingested")
         assert state["alpaca"]["since"] == self.NEWEST_ISO
-        # The cursor rides the wire as `start` so the page is small.
+        # The cursor rides the wire as `start` so the page is small — and the
+        # cursored poll asks OLDEST-first (review N2) so a wide backlog drains
+        # contiguously instead of the cursor leaping over it.
         assert f"start={quote(self.APPLE_ISO, safe='')}" in http.requests[0].full_url
+        assert "sort=asc" in http.requests[0].full_url
 
     def test_third_poll_with_nothing_new_holds_the_cursor(self, monkeypatch):
         self._keys(monkeypatch)
@@ -1080,6 +1098,71 @@ class TestAlpacaNews:
             clock += timedelta(minutes=5)
         assert seen == [], "a re-served history page must never ingest twice"
         assert state["alpaca"]["since"] == self.NEWEST_ISO
+
+    def test_a_wide_backlog_drains_contiguously_over_asc_polls(self, monkeypatch,
+                                                               capsys):
+        """Review N2: 120 backlogged items catch up over 3 cursored polls with
+        no gap. Before the asc cursor, `sort=desc` + limit meant the cursor
+        leapt to the newest of page one and the other 70 items were never
+        requested again."""
+        import engine.marketing.press_providers as pp
+
+        base = datetime(2026, 7, 29, 12, 0, tzinfo=timezone.utc)
+        rows = [{"id": n, "headline": f"Backlog item {n}", "source": "benzinga",
+                 "created_at": (base + timedelta(minutes=n)).isoformat()}
+                for n in range(1, 121)]
+
+        class _Resp:
+            def __init__(self, body: bytes):
+                self._body = body
+
+            def read(self, n: int = -1) -> bytes:
+                return self._body if n is None or n < 0 else self._body[:n]
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *exc):
+                return False
+
+        class _AscServer:
+            """Serve the oldest 50 rows strictly after the `start` param —
+            exactly what the real endpoint does for sort=asc."""
+            def __init__(self):
+                self.requests: list = []
+
+            def __call__(self, req, timeout=None):
+                self.requests.append(req)
+                from urllib.parse import parse_qs, urlsplit
+                q = parse_qs(urlsplit(req.full_url).query)
+                start = _iso(q.get("start", [""])[0])
+                page = [r for r in rows if _iso(r["created_at"]) > start][:50]
+                return _Resp(json.dumps({"news": page}).encode("utf-8"))
+
+        def _iso(v):
+            from engine.marketing.press_providers import _iso_to_dt
+            return _iso_to_dt(v) or base - timedelta(days=1)
+
+        self._keys(monkeypatch)
+        server = _AscServer()
+        monkeypatch.setattr(pp, "urlopen", server)
+        prov = self._provider()
+        state = {"alpaca": {"since": base.isoformat(),
+                            "last_poll": (self.NOW - timedelta(minutes=10)).isoformat()}}
+        got: list[str] = []
+        clock = self.NOW
+        for _ in range(3):
+            for item in prov.fetch(root=ROOT, session_state=state, now=clock):
+                got.append(item["id"])
+            clock += timedelta(minutes=5)
+
+        assert got == [f"alpaca:{n}" for n in range(1, 121)], (
+            "the backlog did not drain contiguously")
+        assert all("sort=asc" in r.full_url for r in server.requests)
+        # Full pages 1 and 2 announce catch-up at notice level, never a warning.
+        out = capsys.readouterr().out
+        lines = [l for l in out.splitlines() if "alpaca-page-catchup" in l]
+        assert len(lines) == 2 and all(l.startswith("::notice") for l in lines)
 
     # ---- (d) no keys = total no-op ----------------------------------------
 

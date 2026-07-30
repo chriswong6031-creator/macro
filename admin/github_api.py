@@ -277,6 +277,25 @@ def get_file(path: str, ref: str = "main") -> dict:
         j = resp.json()
         import base64  # noqa: PLC0415
         raw = base64.b64decode(j.get("content", "") or "").decode("utf-8")
+        # THE 1 MB INLINE CEILING IS A TRUNCATION TRAP. Past ~1 MB the Contents
+        # API still answers 200 with the real sha, but `content` comes back EMPTY
+        # and `encoding: "none"` (the blob has to be fetched through the Blob or
+        # raw media API instead). Returning that as an ok-but-empty read is
+        # fail-OPEN for any caller that rebuilds the file from it:
+        # `append_jsonl_line` would PUT a single row over the whole ledger under
+        # a sha the API happily accepts, replacing the live outbox queue on main.
+        # Its own size guard cannot catch it — the size it measures is 0. An
+        # unreadable file is recoverable; a truncated ledger is not.
+        encoding = str(j.get("encoding") or "base64")
+        try:
+            reported = int(j.get("size") or 0)
+        except (TypeError, ValueError):
+            reported = 0
+        if encoding != "base64" or (reported > 0 and not raw):
+            return {"ok": False, "error": (
+                f"{path} was not inlined by the Contents API "
+                f"(encoding={encoding!r}, size={reported}) — it is over the 1 MB "
+                f"inline ceiling and needs rotating")}
         return {"ok": True, "content": raw, "sha": j.get("sha")}
     except Exception as exc:  # noqa: BLE001
         return {"ok": False, "error": str(exc)}

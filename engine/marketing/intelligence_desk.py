@@ -51,6 +51,9 @@ DEFAULT_PACE_CFG: dict[str, float] = {
 }
 # A story is "New" only while it is both single-sourced and this young.
 _NEW_STORY_MAX_MIN = 60.0
+# How far ahead of the tick clock an evidence stamp may sit and still count as
+# evidence for the pace recompute. See `_recompute_pace`.
+_FUTURE_STAMP_TOLERANCE = timedelta(minutes=5)
 
 _WS_RE = re.compile(r"\s+")
 _URL_RE = re.compile(r"https?://\S+", re.IGNORECASE)
@@ -156,6 +159,23 @@ def _plain_brief(scored: dict) -> str:
     return body
 
 
+def _evidence_word(*, verified: bool, source_count: int) -> str:
+    """The `context.evidence` chip for a story with this much backing.
+
+    ONE definition, used at build time AND re-applied by `_merge_packets`: the
+    merge recomputes `source_count` and `stage` from the union of evidence, and a
+    chip left at whatever the last-arriving item alone could see contradicted
+    them. That is not hypothetical on the V2 path — the claim registry aliases
+    items the corroboration ledger never paired (a Truth post keys on
+    `truth:<status_id>`, a late arrival falls outside the ledger's window), so a
+    genuine two-source story served "Confirmed", "2 sources", "X joined
+    coverage" and "Single report" on the same card.
+    """
+    if verified:
+        return "Primary source"
+    return "Multiple reports" if int(source_count or 0) >= 2 else "Single report"
+
+
 def _context(scored: dict, story: dict, source_tier: int,
              *, source_count: int = 0) -> dict:
     source_count = max(
@@ -164,12 +184,10 @@ def _context(scored: dict, story: dict, source_tier: int,
         int(story.get("sources_15m", 0) or 0),
         1,
     )
-    if str(scored.get("corroboration_class") or "") == "direct-quote":
-        evidence = "Primary source"
-    elif source_count >= 2:
-        evidence = "Multiple reports"
-    else:
-        evidence = "Single report"
+    evidence = _evidence_word(
+        verified=str(scored.get("corroboration_class") or "") == "direct-quote",
+        source_count=source_count,
+    )
 
     # Build-time pace is a seed only: `IntelligenceStore.snapshot` recomputes it
     # from the story's own evidence timestamps for EVERY served packet, so a
@@ -517,10 +535,26 @@ def _merge_packets(old: dict | None, new: dict, *, now: datetime | None = None,
     # review queue; keying by shape means a drifted redraft replaces its
     # shape-mate. Unknown/future shapes ("analysis", an LLM shape) get their own
     # slot generically — this dict is never a whitelist.
+    #
+    # Review N8: within a slot, a stored LLM phrasing OUTRANKS an incoming
+    # deterministic draft while the story's headline is unchanged — the LLM pass
+    # is budget-capped and cache-keyed, so most ticks re-arrive with only the
+    # deterministic wire text, and letting that evict the phrased copy silently
+    # reverted the story every quiet tick. A moved headline releases the slot:
+    # stale phrasing must not outlive the story text it phrased.
+    headline_moved = _clean(old.get("headline"), 320) != _clean(
+        new.get("headline"), 320)
     drafts: dict[str, dict] = {}
     for row in list(old.get("drafts") or []) + list(new.get("drafts") or []):
-        if isinstance(row, dict) and row.get("id"):
-            drafts[str(row.get("shape") or "wire")] = row
+        if not isinstance(row, dict) or not row.get("id"):
+            continue
+        slot = str(row.get("shape") or "wire")
+        held = drafts.get(slot)
+        if (held is not None and not headline_moved
+                and str(held.get("origin") or "") == "llm"
+                and str(row.get("origin") or "") != "llm"):
+            continue
+        drafts[slot] = row
     merged["drafts"] = list(drafts.values())[:6]
     # A market stamp is a fresh, threshold-gated session observation. Never
     # carry yesterday's/last-tick's stamp forward when the current quote is
@@ -541,6 +575,16 @@ def _merge_packets(old: dict | None, new: dict, *, now: datetime | None = None,
     if merged["stage"] == "high_impact":
         routes.append("thread")
     merged["content_routes"] = routes
+    # The evidence chip is part of the same verdict as `stage` and
+    # `source_count`, so it is re-derived from the merged totals rather than
+    # inherited from the incoming packet, which only ever saw its own item.
+    # (`pace` is deliberately NOT touched here — `_served_packet` recomputes it
+    # from evidence timestamps at snapshot time.)
+    merged_context = dict(merged.get("context") or {})
+    merged_context["evidence"] = _evidence_word(
+        verified=verified, source_count=int(merged["source_count"])
+    )
+    merged["context"] = merged_context
     if any(d.get("status") == "review" for d in merged["drafts"]):
         merged["stance"] = "Review the draft"
     elif confirmed:
@@ -615,6 +659,15 @@ def _recompute_pace(packet: dict, *, now: datetime, pace_cfg: dict) -> str:
     stamps = [
         ts for ts in (_parse_iso(row.get("published_at")) for row in rows)
         if ts is not None
+        # A FUTURE STAMP WOULD FREEZE THIS STORY AT "Rising" FOREVER. `_age_min`
+        # floors at 0, so one clock-skewed or embargo-dated publisher pins
+        # `newest_age` at 0: the Rising test always passes and the Cooling test
+        # (`newest_age >= cooling_h * 60`) can never pass again, for the whole 72h
+        # the row is retained. Snapshot-time honesty is the entire point of this
+        # function, so a stamp the clock says has not happened yet is not evidence
+        # about how fast the story is moving. The tolerance absorbs ordinary
+        # host/publisher clock drift rather than treating it as a fault.
+        and ts <= now + _FUTURE_STAMP_TOLERANCE
     ]
     if not stamps:
         fallback = (_parse_iso(packet.get("updated_at"))

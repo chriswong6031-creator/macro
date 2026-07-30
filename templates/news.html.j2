@@ -406,10 +406,16 @@
 /* zh time units are two glyphs where English uses one letter ("28分钟" measures
    41px against "28m"), so the gutter is sized per language rather than clipped.
    Higher specificity than the 560px rule below on purpose: the string does not
-   get shorter on a narrow screen. */
-html[data-lang="zh"] .nxi-tick{ grid-template-columns:46px 13px minmax(0,1fr); }
-html[data-lang="zh"] .nxi-tick::before{ left:49px; }
-html[data-lang="zh"] .nxi-track-rest{ margin-left:59px; }
+   get shorter on a narrow screen.
+   The track carries the age cell's own 9px padding-right (box-sizing is border-
+   box repo-wide), so the 41px string needs 41+9 before any slack: at 46 the
+   content box was 37px and the row silently clipped its LEADING glyph — an age
+   that reads "8分钟" when the story is 28 minutes old, which is a wrong figure
+   rather than a visibly cut one. 55/58/68 restores the intended 5px slack and
+   keeps the spine and rest offsets on the same arithmetic (track + 3.5, +13). */
+html[data-lang="zh"] .nxi-tick{ grid-template-columns:55px 13px minmax(0,1fr); }
+html[data-lang="zh"] .nxi-tick::before{ left:58px; }
+html[data-lang="zh"] .nxi-track-rest{ margin-left:68px; }
 .nxi-facts{ display:flex; flex-direction:column; gap:6px; }
 .nxi-fact{ padding-left:9px; border-left:2px solid color-mix(in srgb,var(--muted) 34%,transparent);
   font-size:10.5px; line-height:1.55; color:color-mix(in srgb,var(--text) 76%,transparent); }

@@ -353,11 +353,14 @@ wire:
     # ── V2 (INTELLIGENCE_DESK_V2_BY_FABLE.md) ────────────────────────────────
     # Claim-registry aliasing: the deterministic clustering floor when the story
     # spine's optional backends (datasketch / local encoder) are absent. Same
-    # entity+event_class claim within ttl_h merges IF the headlines share tokens
-    # (jaccard_min) or arrive within tight_window_min of each other.
+    # entity+event_class claim within ttl_h merges IF the headlines share enough
+    # tokens — jaccard_min normally, tight_jaccard_min inside tight_window_min.
     claims:
       ttl_h: 24
       jaccard_min: 0.15
+      # Inside tight_window_min the wording bar LOWERS to this; it is never
+      # bypassed (a bare OR merged two different same-ticker stories 10min apart).
+      tight_jaccard_min: 0.05
       tight_window_min: 45
     # Snapshot-time honesty: pace recomputed from evidence timestamps; a market
     # stamp older than market_stale_min is served as null, never as current.
