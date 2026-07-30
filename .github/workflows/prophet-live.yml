@@ -1,31 +1,48 @@
 name: prophet-live
 # ─────────────────────────────────────────────────────────────────────────────
-# PROPHET LIVE P0 — the 5-minute provisional-close evaluator
-# (research/PROPHET_LIVE_INTRADAY_SIGNALS_MASTERPLAN_BY_FABLE.md §4.2).
+# PROPHET LIVE — BACKSTOP LANE, not the product cadence
+# (research/PROPHET_LIVE_INTRADAY_SIGNALS_MASTERPLAN_BY_FABLE.md §4.2 + §4.2a).
 #
-# Every 5 minutes from 09:25 to 16:15 America/New_York on weekdays it loads the
-# nightly armed pack from R2, merges the freshest 15-min-delayed quote view, and
-# publishes provisional per-name states plus an event spool. The nightly build
-# arms the levels; this lane only compares a price to them. There is no second
-# signal engine and nothing here confirms anything — the nightly does that.
+# THE PRODUCT LANE IS THE VPS TIMER (app/deploy/macro-live-prophet.{service,timer}).
+# This workflow's crons ask for every 5 minutes; GitHub does not deliver it. Measured
+# 2026-07-30 on this repo: marketing-hot-tape.yml, also */5 in RTH, ran 09:07Z then
+# 12:19Z — ~3h12m apart; live-quotes.yml (*/15) ran ~90 min apart. With ~58 workflows
+# here, frequent schedules are deprioritised and a 5-minute product cadence is not
+# purchasable at any price. Worse, since the 2026-07-27 VPS cutover the */5 legs that
+# refresh the `live-data` branch self-disable, so the quote artifact this lane fetches
+# below is refreshed only by the throttled */15 leg (measured 83 min old at 13:41Z,
+# 118 min at 14:16Z, against a 12-minute per-quote freshness gate).
 #
-# MEASURE-DARK (P0). No user surface reads these artifacts. They exist so the
-# forward ledger (data/prophet_live/forward.parquet, written by the nightly
-# reconciler) can accrue the evidence the §6 promotion gauntlet needs before any
-# state earns a place on a page.
+# So this lane is kept for what it is actually good for: a rollback path and a
+# ~90-minute backstop that still evaluates when the VPS is down or being rebuilt. It
+# stands itself down while the VPS is primary (see the job `if:` below), exactly like
+# live-quotes / intraday-fastpath / live-breadth / btc-live do.
 #
-# THIS RUNS ON ubuntu-latest, NEVER the self-hosted macstudio pool: ~80 runs a
-# day on the render pool would eat the nightly's budget, which is law
-# (masterplan §3 runner-placement law, hot-tape precedent).
+# When it does run it loads the nightly armed pack from R2, merges the freshest
+# 15-min-delayed quote view, and publishes provisional per-name states plus an event
+# spool. The nightly build arms the levels; this lane only compares a price to them.
+# There is no second signal engine and nothing here confirms anything — the nightly
+# does that.
+#
+# WHAT THE ARTIFACTS ARE FOR. Primarily the forward ledger
+# (data/prophet_live/forward.parquet, written by the nightly reconciler), which accrues
+# the evidence the §6 promotion gauntlet needs before any state earns authority. The
+# P1 surface reads a SERVED COPY of the same payload — written by the VPS lane onto its
+# own live plane, behind the registration/entitlement gate, never from this runner
+# (there is no /var/lib/macro-live here, so the served write is skipped with a notice).
+#
+# THIS RUNS ON ubuntu-latest, NEVER the self-hosted macstudio pool: a per-session lane
+# on the render pool would eat the nightly's budget, which is law (masterplan §3
+# runner-placement law, hot-tape precedent).
 #
 # LEDGER LAW (G0.2). This lane writes NO data/ path and commits nothing. Note
 # `permissions: contents: read` and the total absence of a git step — the only
-# outputs are two R2 keys. The nightly reconciler is the sole writer of
+# outputs from a runner are R2 keys. The nightly reconciler is the sole writer of
 # data/prophet_live/, and the nightly build is the sole advancer of any ledger.
 #
-# WHY IT IS SAFE. Nothing here can reach a user: no page fetches these keys in
-# P0, no alert channel is wired (that is P2), and the kill switch below stands
-# the whole lane down without a commit.
+# WHY IT IS SAFE. Nothing here confirms, grades or advances anything; no alert channel
+# is wired (that is P2); the served payload is gated, not public; and the kill switch
+# below stands the whole lane down without a commit.
 # ─────────────────────────────────────────────────────────────────────────────
 on:
   schedule:
@@ -72,9 +89,18 @@ concurrency:
 
 jobs:
   evaluate:
-    # Operator kill switch: set repo variable PROPHET_LIVE_DISABLED=true to stand
-    # the lane down with no commit and no code change.
-    if: vars.PROPHET_LIVE_DISABLED != 'true'
+    # TWO GATES, and the nesting is the point.
+    #
+    # PROPHET_LIVE_DISABLED is the program's kill switch and binds ALWAYS — a manual
+    # dispatch must not be able to run a lane the operator has stood down.
+    #
+    # VPS_LIVE_PRIMARY is the host gate, the estate's standing idiom (live-quotes.yml,
+    # intraday-fastpath.yml, live-breadth.yml, btc-live.yml): while the VPS timer owns
+    # the cadence, the scheduled legs here self-disable so there is exactly one writer
+    # per artifact. workflow_dispatch bypasses THIS one only — that is the rollback
+    # path (dispatch while the VPS is being rebuilt; set the variable false for a
+    # sustained failover, per docs/VPS_LIVE_ORCHESTRATION.md §Deployment and cutover).
+    if: ${{ vars.PROPHET_LIVE_DISABLED != 'true' && (github.event_name == 'workflow_dispatch' || vars.VPS_LIVE_PRIMARY != 'true') }}
     runs-on: ubuntu-latest      # OFF the render path — never the macstudio pool
     # A pass is seconds of compute plus two small R2 round trips. 8 minutes is
     # generous head-room and small enough that a wedged run frees the concurrency

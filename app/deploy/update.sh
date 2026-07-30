@@ -251,6 +251,56 @@ if systemctl is-enabled macro-live-fast.timer >/dev/null 2>&1 && \
 	fi
 fi
 
+# PROPHET LIVE evaluator lane (research/PROPHET_LIVE_INTRADAY_SIGNALS_MASTERPLAN_BY_FABLE.md
+# §4.2a). Its own block, not a fourth entry in the list above, for two reasons: the
+# three lanes there are ONE orchestrator invoked with three --lane arguments, and
+# widening that regex would restart all three timers whenever this unrelated unit
+# changed. Same narrow allow-list discipline — exactly the two paths this lane owns.
+#
+# Unlike the block above it also arms itself, because go-live for this program is a
+# REPO COMMIT and nothing else: the unit did not exist when live-setup.sh was last run
+# on the box, so a CHANGED-only trigger would install a timer that nobody ever enables.
+# `enable --now` on an already-enabled, already-active timer is a systemd no-op, and
+# the absent-file clause makes the block self-healing when an earlier tick's
+# systemd-analyze failed or an operator removed the unit (macro-update installing it
+# twice must be, and is, a no-op).
+#
+# The live plane must already exist (macro-live-fast.timer enabled): this lane reads
+# what those lanes publish, so on any host without them it would have nothing to read.
+# That guard is also what keeps this block inert on a box that is not the VPS.
+#
+# The .service is NEVER restarted. It is a oneshot — `systemctl restart` would RUN a
+# pass out of band, off the ET-windowed schedule, with the R2 debounce predecessor
+# from whenever the last legitimate tick was. Only the timer is (re)armed.
+if systemctl is-enabled macro-live-fast.timer >/dev/null 2>&1 && \
+   { echo "$CHANGED" | grep -qE '^app/deploy/macro-live-prophet\.(service|timer)$' || \
+     [ ! -f /etc/systemd/system/macro-live-prophet.timer ]; }; then
+	PROPHET_UNIT_SOURCES=(
+		"$APP_DIR/app/deploy/macro-live-prophet.service"
+		"$APP_DIR/app/deploy/macro-live-prophet.timer"
+	)
+	if systemd-analyze verify "${PROPHET_UNIT_SOURCES[@]}"; then
+		PROPHET_UNIT_UPDATED=0
+		for UNIT_SOURCE in "${PROPHET_UNIT_SOURCES[@]}"; do
+			UNIT=$(basename "$UNIT_SOURCE")
+			if ! cmp -s "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"; then
+				install -m 0644 "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"
+				PROPHET_UNIT_UPDATED=1
+			fi
+		done
+		if [ "$PROPHET_UNIT_UPDATED" -eq 1 ]; then
+			systemctl daemon-reload
+			systemctl restart macro-live-prophet.timer 2>/dev/null || true
+			RECONCILED=1
+			echo "macro-update: macro-live-prophet units updated"
+		fi
+		systemctl enable --now macro-live-prophet.timer >/dev/null 2>&1 || \
+			echo "macro-update: macro-live-prophet.timer could not be enabled" >&2
+	else
+		echo "macro-update: refusing macro-live-prophet unit update — systemd-analyze verify failed" >&2
+	fi
+fi
+
 # PRESS-FEEDS is a long-running daemon, unlike the oneshot live-plane timers
 # above. Arming remains an explicit operator choice: this block neither installs
 # an absent unit nor enables/starts an inactive one. Once the operator has
