@@ -918,9 +918,11 @@ jobs:
       # was dead ~1h. yaml.safe_load, check_workflow_yaml.py and actionlint ALL pass on an
       # over-cap file, and the owning PR's checks stay green — the failure only shows in
       # the BRANCH run list, as a zero-job run titled by PATH instead of by `name:`. This
-      # is the only gate that can catch it pre-merge.
-      - name: "no workflow run: step may exceed GitHub's observed size ceiling"
-        run: python -m pytest tests/test_render_run_size_cap.py -q
+      # is the only gate that can catch it pre-merge. The ownership suite in the
+      # same step pins the positive builder allowlist that keeps unrelated entrypoints
+      # out of the scarce self-hosted render queue.
+      - name: "render workflow size ceiling and builder ownership"
+        run: python -m pytest tests/test_render_run_size_cap.py tests/test_render_builder_ownership.py -q
       # Same class, second instance (2026-07-27). build_canada was invoked by NO
       # workflow at all: site/canada.html existed only as a side effect of a
       # swallowed try/except inside build_vector, so a canada-only fix could ride a
@@ -931,6 +933,15 @@ jobs:
       # so the minimal pytest+pyyaml install above is enough.
       - name: render-lane scope contract (canada must be first-class, not a build_vector hook)
         run: python -m pytest tests/test_render_canada_scope.py -q
+      # FD-EXP (2026-07-30). Third instance of the same class: build_flow_desk was
+      # daily.yml-ONLY, so flow_desk.html/json + flowdata/cohorts.json refreshed once a
+      # night while both express lanes rebuilt the stores around them (#3515 flow_leaders,
+      # #3487 research_vault). Admitted to cl_gex in both lanes once #4007 lane-gated the
+      # builder's three data/ writes; this suite pins the wiring AND that gate, since
+      # deleting the gate would quietly turn every express render into a ledger writer.
+      # stdlib + pytest only (reads workflow/dag/builder text; imports no builder).
+      - name: render-lane scope contract (flow_desk must stay express-wired)
+        run: python -m pytest tests/test_render_flow_desk_scope.py -q
 
   causal-factory:
     if: ${{ false }}

@@ -5100,6 +5100,7 @@
   var FIRST_LOADER_MS = 900;
   var REPEAT_LOADER_MS = 0;
   var SHELL_READY_FALLBACK_MS = 7000;
+  var CLOSE_ANIMATION_MS = 300;
 
   function isDashboardHost() {
     var h = location.hostname || '';
@@ -5120,7 +5121,8 @@
       '#mm-terminal-overlay{--mmto-x:50vw;--mmto-y:18vh;position:fixed;inset:0;z-index:2147483000;',
         'visibility:hidden;pointer-events:none;isolation:isolate;overflow:hidden;background:#05070b;',
         'font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#f4f7ff}',
-      '#mm-terminal-overlay.is-open,#mm-terminal-overlay.is-closing{visibility:visible;pointer-events:auto}',
+      '#mm-terminal-overlay.is-open{visibility:visible;pointer-events:auto}',
+      '#mm-terminal-overlay.is-closing{visibility:visible;pointer-events:none;background:transparent}',
       '#mm-terminal-overlay::before{content:"";position:absolute;inset:-25%;z-index:0;pointer-events:none;',
         'background:radial-gradient(circle at var(--mmto-x) var(--mmto-y),rgba(77,130,255,.23),transparent 23%),',
         'radial-gradient(circle at 82% 16%,rgba(129,92,246,.15),transparent 25%),#05070b;',
@@ -5131,7 +5133,8 @@
         'opacity:0;transform:translate3d(0,14px,0) scale(.978);transform-origin:var(--mmto-x) var(--mmto-y);',
         'transition:opacity .22s ease,transform .56s cubic-bezier(.16,1,.3,1),clip-path .62s cubic-bezier(.16,1,.3,1)}',
       '#mm-terminal-overlay.is-open .mmto-stage{opacity:1;transform:none}',
-      '#mm-terminal-overlay.is-closing .mmto-stage{opacity:0;transform:translate3d(0,8px,0) scale(.986)}',
+      '#mm-terminal-overlay.is-closing .mmto-stage{opacity:0;transform:translate3d(0,8px,0) scale(.986);',
+        'transition-duration:.16s,.28s,.28s}',
       '@supports (clip-path:circle(10px at 10px 10px)){',
         '.mmto-stage{clip-path:circle(0 at var(--mmto-x) var(--mmto-y))}',
         '#mm-terminal-overlay.is-open .mmto-stage{clip-path:circle(150vmax at var(--mmto-x) var(--mmto-y))}',
@@ -5550,18 +5553,32 @@
     if (!state.open || !state.overlay) return;
     var remount = shouldRemountFrame();
     state.open = false;
+    clearTimeout(state.closeTimer);
     clearTimeout(state.toastTimer);
     clearTimeout(state.slowTimer);
     state.toast.classList.remove('show');
-    state.overlay.classList.add('is-closing');
     state.overlay.classList.remove('is-open');
     state.overlay.setAttribute('aria-hidden', 'true');
+
+    // Compact/mobile sessions already require a fresh iframe on every launch.
+    // Tear that compositor layer down and uncover the preserved dashboard in
+    // the same task instead of holding an opaque full-screen exit frame.
+    if (remount) {
+      state.overlay.classList.remove('is-closing');
+      destroyFrame();
+      unlockDashboard();
+      return;
+    }
+
+    // Desktop keeps the warm iframe, but the shrinking stage now reveals the
+    // dashboard through a transparent, non-interactive overlay immediately.
+    state.overlay.classList.add('is-closing');
     unlockDashboard();
     state.closeTimer = setTimeout(function () {
       if (!state.overlay || state.open) return;
       state.overlay.classList.remove('is-closing');
-      if (remount) destroyFrame();
-    }, 650);
+      state.closeTimer = 0;
+    }, CLOSE_ANIMATION_MS);
   }
 
   function requestClose() {

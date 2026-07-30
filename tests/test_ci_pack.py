@@ -175,6 +175,27 @@ def test_ci_pack_is_a_few_hosted_jobs_not_eighty_six() -> None:
     assert "closed" in triggers["pull_request"]["types"]
 
 
+def test_ci_pack_partial_clone_keeps_history_without_historical_site_blobs() -> None:
+    """Full history is load-bearing; full historical blob transfer is not.
+
+    The four #4053 hosted runners spent 6m45s-14m39s in checkout before tests.
+    ``filter: blob:none`` preserves the complete current working tree and commit
+    graph while omitting historical generated-site blobs from the initial fetch.
+    Do not replace this with sparse checkout: legacy suites legitimately inspect
+    current ``site/`` files.
+    """
+    workflow = _yaml(WORKFLOW)
+    pack = workflow["jobs"]["ci-pack"]
+    checkout = next(
+        step
+        for step in pack["steps"]
+        if str(step.get("uses", "")).startswith("actions/checkout@")
+    )
+    assert checkout["with"]["filter"] == "blob:none"
+    assert checkout["with"]["fetch-depth"] == 0
+    assert "sparse-checkout" not in checkout["with"]
+
+
 def test_same_repo_fences_share_one_runner_and_keep_required_contexts() -> None:
     workflow = _yaml(FENCES)
     assert workflow["permissions"]["checks"] == "write"
