@@ -559,9 +559,13 @@ substitute: GitHub cron lands minutes late, so a derived duration would understa
 print a number the lane cannot stand behind (and for `entered:"board"` names `passes` counts passes
 since the day's first evaluation, not since a cross).
 
-**Ask:** add `since_ts` (ISO-Z) to each per-name state — the `pass_ts` of the pass that established the
-current public state, carried forward unchanged while that state persists, reset on a public-state
-change. ~20 lines in `name_state` + the carry, and the reconciler already wants `first_cross_ts`.
+**SHIPPED (PR #4076) — this is no longer an ask; consume it, do not re-derive it.** Each per-name
+state carries `since_ts` (ISO-Z): the `pass_ts` of the pass that established the current public state,
+carried forward byte-identical while that state persists (banking a debounce pass, gaining an
+`internal` marker, or raising `confirming_into_close` do NOT reset it) and re-stamped on a
+public-state change, `near`->`forming` included. A DARK row publishes no `since_ts` and instead
+chains `prior_public`/`prior_since_ts`, so a name whose quote goes missing for a pass or two and
+returns to the SAME public state keeps the time it actually entered that state.
 
 **Degradation, if it is not there:** the `SINCE` cell renders `—`, the column header stays, the tips
 drop their timing clause, and nothing else changes. The strip ships either way; it just says less.

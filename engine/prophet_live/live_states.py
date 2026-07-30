@@ -40,6 +40,29 @@ the buffer needs ``debounce_passes`` consecutive failing passes to publish
 ``at_risk``, and recovery needs the same going back; a move that clears the buffer
 is decisive immediately in either direction.
 
+SINCE (the P1 ``SINCE`` column, design spec §6.6). Every non-dark state carries
+``since_ts``: the ISO-Z ``pass_ts`` of the pass that first put the name in the public
+state it is in NOW, within this ET session. It is carried forward byte-identical
+while the public state persists — banking a second debounce pass, gaining an
+``internal`` marker or raising ``confirming_into_close`` are not public-state changes
+— and re-stamped when the public state changes, ``near``→``forming`` included: what
+the reader is being told changed, so the clock on it restarts. It is measured, never
+derived: ``passes × 5 min`` is not a lawful substitute, because this cron lands
+minutes late and an ``entered:"board"`` name's ``passes`` counts from the day's first
+evaluation rather than from a cross, so the arithmetic prints a duration the lane
+cannot stand behind. A new session resets it for free — ``prev_states`` resolves only
+when the predecessor's ``meta.session_et`` is this pass's.
+
+A DARK row publishes NO ``since_ts``: there is no public state to time, and inventing
+one is exactly the guess G0.3 forbids. It instead carries its predecessor's pair
+forward under ``prior_public``/``prior_since_ts`` (a dark row re-carries a dark row's,
+so a gap of any length chains), so a name whose quote goes missing for a pass or two
+and comes back to the SAME public state keeps the time it actually entered that state
+instead of restarting the clock. That is the per-name twin of ``dark_artifact``'s
+whole-artifact ``carry``: a quote hiccup must not cost the session its history, and
+without it a per-name dark would be more destructive than a whole-artifact one.
+Coming back to a DIFFERENT public state re-stamps, which is the honest answer.
+
 VOCABULARY IS LOAD-BEARING (G0.6 + operator 2026-07-27). Nothing here says fired,
 confirmed, refuted or validated. The nightly build is the only thing that confirms,
 and falsifier language is never front-facing.
@@ -254,10 +277,52 @@ def _dark(reason: str, **extra: Any) -> dict[str, Any]:
     return out
 
 
+def _prior_public(prev: dict[str, Any]) -> tuple[str, str | None]:
+    """The last PUBLIC state this name held today, and the ts it was entered at.
+
+    Reads straight THROUGH a dark row: dark is not a public state, so a dark row keeps
+    its predecessor's pair under ``prior_public``/``prior_since_ts`` rather than a
+    ``since_ts`` of its own, and consecutive dark rows chain it.
+    """
+    if str(prev.get("state") or "") == "dark":
+        return str(prev.get("prior_public") or ""), (prev.get("prior_since_ts") or None)
+    return str(prev.get("state") or ""), (prev.get("since_ts") or None)
+
+
+def _stamp_since(out: dict[str, Any], prev: dict[str, Any], now: datetime) -> dict[str, Any]:
+    """Attach the SINCE clock to a resolved state (module docstring: SINCE). Never raises.
+
+    The only field that needs the previous pass's TIME rather than its counters, so it
+    is resolved in one place instead of at each of the state machine's exits.
+    """
+    try:
+        prior, since = _prior_public(prev)
+        if out.get("state") == "dark":
+            if prior and since:
+                out["prior_public"] = prior
+                out["prior_since_ts"] = since
+            return out
+        out["since_ts"] = since if (since and prior == out.get("state")) else _iso(now)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("live_states: since stamp failed: %s", exc)
+    return out
+
+
 def name_state(entry: dict[str, Any], *, price: float | None, quote_age_min: float | None,
                prev: dict[str, Any] | None, now: datetime, cfg: dict[str, Any]) -> dict[str, Any]:
-    """One name's state this pass. Never raises; unknowns become ``dark`` with a reason."""
+    """One name's state this pass. Never raises; unknowns become ``dark`` with a reason.
+
+    Two steps: :func:`_resolve_state` decides the state off this pass's price and the
+    previous pass's counters, then :func:`_stamp_since` puts the SINCE clock on it.
+    """
     prev = prev or {}
+    return _stamp_since(_resolve_state(entry, price=price, quote_age_min=quote_age_min,
+                                       prev=prev, now=now, cfg=cfg), prev, now)
+
+
+def _resolve_state(entry: dict[str, Any], *, price: float | None, quote_age_min: float | None,
+                   prev: dict[str, Any], now: datetime, cfg: dict[str, Any]) -> dict[str, Any]:
+    """The state machine itself — everything except the SINCE clock."""
     try:
         if not entry.get("probed"):
             return _dark(str(entry.get("skip") or "not_probed"))
@@ -379,7 +444,7 @@ def name_state(entry: dict[str, Any], *, price: float | None, quote_age_min: flo
             out["internal_seen"] = seen
         return out
     except Exception as exc:  # noqa: BLE001
-        log.warning("live_states.name_state failed: %s", exc)
+        log.warning("live_states._resolve_state failed: %s", exc)
         return _dark(f"eval_error: {exc}")
 
 
