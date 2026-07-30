@@ -222,7 +222,11 @@ def test_hk_static_legacy_grid_cannot_override_hidden():
     until the next clean template render removes the old block entirely.
     """
     html = (ROOT / "site" / "hk_stocks.html").read_text(encoding="utf-8")
-    assert '<div class="act-grid" hidden aria-hidden="true" style="display:none !important">' in html
+    legacy_grid = '<div class="act-grid"'
+    hidden_legacy_grid = (
+        '<div class="act-grid" hidden aria-hidden="true" style="display:none !important">'
+    )
+    assert legacy_grid not in html or hidden_legacy_grid in html
 
 
 def test_no_translated_text_in_title_attributes():
