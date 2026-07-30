@@ -1,15 +1,15 @@
 {
   "schema": "neuralweb.daily_brief.v1",
-  "produced_at": "2026-07-30T04:09:43.055443+00:00",
+  "produced_at": "2026-07-30T04:19:00.333093+00:00",
   "as_of": "2026-07-29",
   "status": "warn",
-  "phase": "engine",
+  "phase": "final",
   "did_the_brain_run": {
     "cortex_status": "fresh",
-    "tool_call_batches": 3,
-    "individual_tool_calls": 9,
+    "tool_call_batches": 4,
+    "individual_tool_calls": 10,
     "context_stale": false,
-    "summary": "cortex ran (9 tool calls); memo as_of 2026-07-29T03:33:50+00:00"
+    "summary": "cortex ran (10 tool calls); memo as_of 2026-07-30T04:16:42+00:00"
   },
   "what_changed": [
     {
@@ -553,7 +553,7 @@
   },
   "evidence_clock": {
     "available": true,
-    "as_of": "2026-07-29",
+    "as_of": "2026-07-30",
     "counts": {
       "overdue": 25,
       "due": 8,

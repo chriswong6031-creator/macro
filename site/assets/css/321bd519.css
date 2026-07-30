@@ -10,7 +10,9 @@
   --s2:var(--up);           /* advance — green */
   --s3:#d9a441;             /* top — amber / ripe */
   --s4:var(--down);         /* decline — red */
-  --font-display:'Space Grotesk',Inter,-apple-system,'Segoe UI',sans-serif;
+  /* Canonical Mastermind face: San Francisco on Apple platforms, with the
+     self-hosted Inter family as the consistent cross-platform fallback. */
+  --font-display:-apple-system,BlinkMacSystemFont,'SF Pro Display',Inter,system-ui,'Segoe UI',Roboto,sans-serif;
   --hair:color-mix(in srgb,var(--text) 8%,transparent);
   /* sentence-level secondary copy — clears the 7:1 body gate in BOTH themes
      (dark 8.26:1 / light 8.73:1 on the worst panel). --muted stays reserved
@@ -24,8 +26,8 @@ html[data-theme="light"]{
 html:not([data-lang="zh"]) .l-zh{display:none}
 html[data-lang="zh"] .l-en{display:none}
 html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
-body{margin:0;padding-top:24px;background:var(--bg);color:var(--text);
-  font:14px/1.5 Inter,-apple-system,'Segoe UI',Roboto,sans-serif;
+html body{margin:0;padding-top:24px;background:var(--bg);color:var(--text);
+  font:14px/1.5 var(--font-display);
   -webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
 a{color:var(--link);text-decoration:none}
 .tnum{font-variant-numeric:tabular-nums}

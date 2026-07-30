@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.health.v1",
-  "produced_at": "2026-07-30T04:09:40.880389+00:00",
+  "produced_at": "2026-07-30T04:19:00.227387+00:00",
   "as_of": "2026-07-29",
   "overall_status": "warn",
   "lobes": [
@@ -2871,8 +2871,8 @@
     }
   ],
   "cortex": {
-    "cortex_source": "previous_run",
-    "memo_as_of": "2026-07-29T03:33:50+00:00",
+    "cortex_source": "current_run",
+    "memo_as_of": "2026-07-30T04:16:42+00:00",
     "run_status": {
       "status": "ok",
       "degraded": false,
@@ -2910,13 +2910,21 @@
           "ok": true,
           "error_type": null,
           "error_message": null
+        },
+        {
+          "provider": "codex",
+          "model": "gpt-5.6-sol",
+          "attempted": true,
+          "ok": true,
+          "error_type": null,
+          "error_message": null
         }
       ],
-      "tool_call_batches": 3,
-      "individual_tool_calls": 9,
+      "tool_call_batches": 4,
+      "individual_tool_calls": 10,
       "expected_min_tool_calls": 1,
       "context_stale": false,
-      "context_as_of": "2026-07-29T03:19:06Z"
+      "context_as_of": "2026-07-30T04:01:36Z"
     },
     "probation": {
       "granted": false,
