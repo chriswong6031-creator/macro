@@ -13,6 +13,10 @@ never set in tests. Covers:
   7. Daemon tick with kill-switches unset = no-op exit 0; dry-run bypasses.
   8. Emission idempotency (seen-ledger); flagship top-K cap.
   9. Config register sanity + gitignore guard.
+ 10. AlpacaNewsProvider (Intelligence Desk V2 §C): recorded-shape mapping, the
+     per-provider cold-start cursor prime, strictly-newer-than-cursor ingest,
+     the keyless no-op + once-per-process preflight notice, offline/dry-run,
+     the min_interval politeness floor, and the 429 backoff ladder.
 """
 from __future__ import annotations
 
@@ -21,8 +25,9 @@ import json
 import os
 import sys
 from contextlib import redirect_stdout
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from urllib.parse import quote
 
 import pytest
 
@@ -40,6 +45,7 @@ FIXTURES = ROOT / "tests" / "fixtures" / "press"
 sys.path.insert(0, str(ROOT))
 
 from engine.marketing.press_providers import (  # noqa: E402
+    AlpacaNewsProvider,
     TrumpstruthProvider,
     CnnTruthBackfillProvider,
     TwitterApiIoProvider,
@@ -570,7 +576,18 @@ class TestConfigAndGitignore:
         assert "x_follow" in cfg
         assert "satire_blocklist" in cfg and "HalfwayPost" in cfg["satire_blocklist"]
         assert cfg["spend"]["twitterapiio_monthly_cap_usd"] == 75.0
-        assert cfg["alpaca"]["enabled"] is False
+        # IS-W1: the Alpaca lane ships ARMED IN CONFIG for every host. That is only
+        # safe because arming is really an ENV decision — a host without both keys
+        # no-ops (TestAlpacaNews::test_no_keys_is_a_total_no_op pins it), so the
+        # same committed file rides the VPS daemon and the Actions wire.
+        assert cfg["alpaca"]["enabled"] is True
+        assert cfg["alpaca"]["rest_url"] == "https://data.alpaca.markets/v1beta1/news"
+        assert cfg["alpaca"]["key_env"] == "ALPACA_API_KEY_ID"
+        assert cfg["alpaca"]["secret_env"] == "ALPACA_API_SECRET_KEY"
+        # Politeness floor and page cap are the two numbers that keep one page per
+        # poll honest; the endpoint's own maximum limit is 50.
+        assert cfg["alpaca"]["min_interval_s"] >= 60
+        assert 1 <= cfg["alpaca"]["limit"] <= 50
         marketing_cfg = yaml.safe_load((ROOT / "config" / "marketing.yml").read_text())
         bls = next(
             s for s in marketing_cfg["breaking"]["sources"]
@@ -595,6 +612,13 @@ class TestConfigAndGitignore:
         assert "TrumpstruthProvider" in names
         assert "CnnTruthBackfillProvider" in names
         assert "TwitterApiIoProvider" in names
+        assert "AlpacaNewsProvider" in names
+
+    def test_build_providers_omits_alpaca_when_disabled(self):
+        """`enabled: false` must not even construct the lane."""
+        provs = build_providers({"alpaca": {"enabled": False,
+                                            "key_env": "ALPACA_API_KEY_ID"}})
+        assert [type(p).__name__ for p in provs] == []
 
     def test_press_dir_in_gitignore(self):
         content = (ROOT / ".gitignore").read_text(encoding="utf-8")
@@ -861,6 +885,614 @@ class Testm2ColdStartPrime:
         assert res2["emitted"], "a genuinely new item after prime must emit (m2)"
         # the primed tariff post does NOT re-emit
         assert not any("tariff" in e["headline"].lower() for e in res2["emitted"])
+
+
+class TestAlpacaNews:
+    """IS-W1 / Intelligence Desk V2 §C — the Alpaca (Benzinga) news REST poller.
+
+    ZERO network: ``press_providers.urlopen`` is replaced wholesale, so the REAL
+    ``_request`` runs (URL, query params and auth headers are asserted on the
+    Request object it built) while nothing leaves the process. A test that reaches
+    the network fails loudly instead of quietly costing a rate-limit budget.
+    """
+
+    # ---- fixtures ---------------------------------------------------------
+
+    #: A recorded-SHAPE /v1beta1/news response (docs.alpaca.markets, 2026-07-29).
+    #: Deliberately includes the three rows the mapper must handle specially:
+    #: markup in `summary`, a headline-less row, and a re-served duplicate id.
+    PAGE: dict = {
+        "news": [
+            {
+                "id": 48213377,
+                "headline": "Fed Holds Rates Steady, Signals One Cut By Year-End",
+                "author": "Benzinga Newsdesk",
+                "created_at": "2026-07-29T18:02:11Z",
+                "updated_at": "2026-07-29T18:04:03Z",
+                "summary": "<p>The Federal Reserve left the target range unchanged "
+                           "at <b>4.25%&ndash;4.50%</b> and penciled in one cut.</p>",
+                "content": "<p>Longer body that should NOT win over summary.</p>",
+                "url": "https://www.benzinga.com/news/26/07/48213377/fed-holds-rates",
+                "images": [{"size": "large",
+                            "url": "https://cdn.benzinga.com/files/fed.jpeg"}],
+                "symbols": ["SPY", "TLT"],
+                "source": "benzinga",
+            },
+            {
+                "id": 48213301,
+                "headline": "Apple Beats On Q3 Revenue, Raises Full-Year Guidance",
+                "author": "Benzinga Staff",
+                "created_at": "2026-07-29T17:31:00Z",
+                "updated_at": "2026-07-29T17:31:00Z",
+                "summary": "",
+                "content": "<div>Apple reported revenue above consensus.</div>",
+                "url": "https://www.benzinga.com/news/26/07/48213301/apple-q3",
+                "images": [],
+                "symbols": ["AAPL"],
+                "source": "benzinga",
+            },
+            {
+                # Headline-less row: an id and a body but nothing to publish.
+                "id": 48213208,
+                "headline": "   ",
+                "author": "",
+                "created_at": "2026-07-29T17:05:00Z",
+                "updated_at": "2026-07-29T17:05:00Z",
+                "summary": "Contentless placeholder.",
+                "url": "https://www.benzinga.com/news/26/07/48213208/",
+                "symbols": [],
+                "source": "benzinga",
+            },
+            {
+                # The SAME article re-served inside one page (corrections do this).
+                "id": 48213301,
+                "headline": "Apple Beats On Q3 Revenue, Raises Full-Year Guidance",
+                "author": "Benzinga Staff",
+                "created_at": "2026-07-29T17:31:00Z",
+                "updated_at": "2026-07-29T17:44:02Z",
+                "summary": "Corrected copy.",
+                "url": "https://www.benzinga.com/news/26/07/48213301/apple-q3",
+                "symbols": ["AAPL"],
+                "source": "benzinga",
+            },
+        ],
+        "next_page_token": "MjAyNi0wNy0yOVQxNzowNTowMFo6NDgyMTMyMDg=",
+    }
+
+    NEWEST_ISO = "2026-07-29T18:02:11+00:00"   # the Fed row's created_at, UTC
+    APPLE_ISO = "2026-07-29T17:31:00+00:00"
+    NOW = datetime(2026, 7, 29, 18, 5, 0, tzinfo=timezone.utc)
+
+    CFG: dict = {
+        "enabled": True,
+        "rest_url": "https://data.alpaca.markets/v1beta1/news",
+        "key_env": "ALPACA_API_KEY_ID",
+        "secret_env": "ALPACA_API_SECRET_KEY",
+        "min_interval_s": 60,
+        "limit": 50,
+        "snippet_max_chars": 400,
+    }
+
+    @pytest.fixture(autouse=True)
+    def _clean_process_state(self, monkeypatch):
+        """The preflight notice is once-per-PROCESS; tests share the process."""
+        import engine.marketing.press_providers as pp
+        pp._PREFLIGHT_NOTICED.clear()
+        yield
+        pp._PREFLIGHT_NOTICED.clear()
+
+    def _keys(self, monkeypatch):
+        monkeypatch.setenv("ALPACA_API_KEY_ID", "test-key-id")
+        monkeypatch.setenv("ALPACA_API_SECRET_KEY", "test-secret")
+
+    def _http(self, monkeypatch, *, payload=None, error=None):
+        """Replace press_providers.urlopen; return the call recorder."""
+        import engine.marketing.press_providers as pp
+
+        class _Resp:
+            def __init__(self, body: bytes):
+                self._body = body
+
+            def read(self, n: int = -1) -> bytes:
+                return self._body if n is None or n < 0 else self._body[:n]
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *exc):
+                return False
+
+        class _Recorder:
+            def __init__(self):
+                self.requests: list = []
+
+            def __call__(self, req, timeout=None):
+                self.requests.append(req)
+                if error is not None:
+                    raise error
+                return _Resp(json.dumps(payload if payload is not None else {}
+                                        ).encode("utf-8"))
+
+        rec = _Recorder()
+        monkeypatch.setattr(pp, "urlopen", rec)
+        return rec
+
+    def _provider(self, **overrides):
+        return AlpacaNewsProvider({**self.CFG, **overrides})
+
+    # ---- (a) mapping ------------------------------------------------------
+
+    def test_mapping_shape_and_identity(self):
+        items, newest = self._provider().parse(self.PAGE)
+        # headline-less row dropped, duplicate id collapsed -> 2 of 4
+        assert [i["id"] for i in items] == ["alpaca:48213377", "alpaca:48213301"]
+        assert newest == self.NEWEST_ISO
+        for it in items:
+            assert not (_REQUIRED_KEYS - set(it.keys()))
+            assert it["source"] == "alpaca_benzinga"
+            assert it["source_tier"] == "wire"
+            assert it["corroboration_class"] == "wire"
+            # source_name comes from the ARTICLE's own source field, prettified
+            assert it["source_name"] == "Benzinga"
+            assert datetime.fromisoformat(it["published_at"]).tzinfo is not None
+
+    def test_snippet_is_html_stripped_and_capped(self):
+        prov = self._provider(snippet_max_chars=40)
+        items, _ = prov.parse(self.PAGE)
+        fed = items[0]
+        snippet = fed["body_snippet"]
+        assert "<" not in snippet and ">" not in snippet, snippet
+        assert "&ndash;" not in snippet, "HTML entities must be unescaped, not shipped"
+        assert snippet.startswith("The Federal Reserve left the target")
+        assert len(snippet) <= 40
+        # summary wins over content when both are present
+        assert "Longer body" not in snippet
+        # …and content is the fallback when summary is empty
+        assert items[1]["body_snippet"] == "Apple reported revenue above consensus."
+
+    def test_symbols_pass_through_only_when_present(self):
+        items, _ = self._provider().parse(self.PAGE)
+        assert items[0]["symbols"] == ["SPY", "TLT"]
+        assert items[1]["symbols"] == ["AAPL"]
+        # A symbol-less article carries no key at all rather than a lying []
+        empty, _ = self._provider().parse(
+            {"news": [{"id": 1, "headline": "No tickers here",
+                       "created_at": "2026-07-29T18:00:00Z", "source": "benzinga"}]})
+        assert "symbols" not in empty[0]
+
+    def test_url_and_author_pass_through(self):
+        items, _ = self._provider().parse(self.PAGE)
+        assert items[0]["url"] == (
+            "https://www.benzinga.com/news/26/07/48213377/fed-holds-rates")
+        assert items[0]["author"] == "Benzinga Newsdesk"
+
+    def test_a_timestampless_row_is_dropped_and_noticed(self, capsys):
+        """Review N3: a row with no parseable timestamp is DROPPED, not ingested.
+
+        It cannot be ordered against the cursor: ingesting it with an ingest-time
+        stamp either stalls the cursor forever (an all-stampless page re-serves
+        every poll) or — if that stamp ever drove the cursor — fast-forwards
+        `since` to "now" past items still in flight. The drop is counted and
+        noticed so a field rename costs visible noise, never silent loss.
+        """
+        page = {"news": [
+            {"id": 1, "headline": "Dateless row", "source": "benzinga"},
+            {"id": 2, "headline": "Dated row", "created_at": "2026-07-29T16:00:00Z",
+             "source": "benzinga"},
+        ]}
+        items, newest = self._provider().parse(page)
+        assert [i["id"] for i in items] == ["alpaca:2"]
+        assert newest == "2026-07-29T16:00:00+00:00"
+        out = capsys.readouterr().out
+        line = next(l for l in out.splitlines() if "alpaca-timestampless" in l)
+        assert line.startswith("::notice") and "1 " in line
+
+    def test_an_all_timestampless_page_ingests_nothing_and_advances_nothing(
+            self, capsys):
+        """The stall case the drop rule exists for: nothing to order, nothing
+        ingested, cursor untouched — instead of the same rows re-serving on
+        every poll forever."""
+        page = {"news": [
+            {"id": 1, "headline": "Dateless one", "source": "benzinga"},
+            {"id": 2, "headline": "Dateless two", "source": "benzinga"},
+        ]}
+        items, newest = self._provider().parse(page, since="2026-07-29T15:00:00Z")
+        assert items == [] and newest is None
+        assert "alpaca-timestampless" in capsys.readouterr().out
+
+    def test_malformed_payload_never_raises(self):
+        prov = self._provider()
+        assert prov.parse("{not json") == ([], None)
+        assert prov.parse({"news": "not-a-list"}) == ([], None)
+        assert prov.parse({}) == ([], None)
+
+    # ---- (b) first-run cursor prime --------------------------------------
+
+    def test_first_run_primes_cursor_and_ingests_nothing(self, monkeypatch, capsys):
+        """A history page is not live news: prime the cursor, emit zero.
+
+        The GLOBAL press cold-start only covers a brand-new deployment. A provider
+        added mid-life meets a warm seen-ledger, so without this its first page of
+        50 back-dated articles would look like 50 simultaneous breaks.
+        """
+        self._keys(monkeypatch)
+        http = self._http(monkeypatch, payload=self.PAGE)
+        state: dict = {}
+        out = self._provider().fetch(root=ROOT, session_state=state, now=self.NOW)
+
+        assert out == [], "first poll must ingest NOTHING (§C cold start)"
+        assert len(http.requests) == 1
+        st = state["alpaca"]
+        assert st["since"] == self.NEWEST_ISO, "cursor did not advance on the prime"
+        assert st["last_poll"] == self.NOW.isoformat()
+        assert st["primed_at"] == self.NOW.isoformat()
+        notice = [ln for ln in capsys.readouterr().out.splitlines()
+                  if "alpaca-cold-start" in ln]
+        assert notice and notice[0].startswith("::notice title=alpaca-cold-start::")
+
+    def test_first_run_with_no_cursor_sends_no_start_param(self, monkeypatch):
+        self._keys(monkeypatch)
+        http = self._http(monkeypatch, payload=self.PAGE)
+        self._provider().fetch(root=ROOT, session_state={}, now=self.NOW)
+        url = http.requests[0].full_url
+        assert "start=" not in url
+        assert "limit=50" in url and "sort=desc" in url, url
+        assert url.startswith("https://data.alpaca.markets/v1beta1/news?")
+
+    def test_auth_headers_are_the_documented_pair(self, monkeypatch):
+        self._keys(monkeypatch)
+        http = self._http(monkeypatch, payload=self.PAGE)
+        self._provider().fetch(root=ROOT, session_state={}, now=self.NOW)
+        req = http.requests[0]
+        # urllib capitalises header names on add_header().
+        assert req.get_header("Apca-api-key-id") == "test-key-id"
+        assert req.get_header("Apca-api-secret-key") == "test-secret"
+
+    def test_empty_first_page_still_primes(self, monkeypatch):
+        """An empty prime must not re-arm itself against the first real batch."""
+        self._keys(monkeypatch)
+        self._http(monkeypatch, payload={"news": []})
+        state: dict = {}
+        assert self._provider().fetch(
+            root=ROOT, session_state=state, now=self.NOW) == []
+        assert state["alpaca"]["since"] == self.NOW.isoformat()
+
+    # ---- (c) second poll ingests only newer -------------------------------
+
+    def test_second_poll_ingests_only_newer_and_advances(self, monkeypatch):
+        self._keys(monkeypatch)
+        http = self._http(monkeypatch, payload=self.PAGE)
+        # Cursor already at the Apple story; last_poll well past the floor.
+        state = {"alpaca": {"since": self.APPLE_ISO,
+                            "last_poll": (self.NOW - timedelta(minutes=10)).isoformat()}}
+        out = self._provider().fetch(root=ROOT, session_state=state, now=self.NOW)
+
+        assert [i["id"] for i in out] == ["alpaca:48213377"], (
+            "an item at-or-before the cursor was re-ingested")
+        assert state["alpaca"]["since"] == self.NEWEST_ISO
+        # The cursor rides the wire as `start` so the page is small — and the
+        # cursored poll asks OLDEST-first (review N2) so a wide backlog drains
+        # contiguously instead of the cursor leaping over it.
+        assert f"start={quote(self.APPLE_ISO, safe='')}" in http.requests[0].full_url
+        assert "sort=asc" in http.requests[0].full_url
+
+    def test_third_poll_with_nothing_new_holds_the_cursor(self, monkeypatch):
+        self._keys(monkeypatch)
+        self._http(monkeypatch, payload=self.PAGE)
+        state = {"alpaca": {"since": self.NEWEST_ISO,
+                            "last_poll": (self.NOW - timedelta(minutes=10)).isoformat()}}
+        assert self._provider().fetch(
+            root=ROOT, session_state=state, now=self.NOW) == []
+        assert state["alpaca"]["since"] == self.NEWEST_ISO
+
+    def test_re_served_page_never_double_emits_across_polls(self, monkeypatch):
+        """The end-to-end dedupe contract: poll the SAME page three times."""
+        self._keys(monkeypatch)
+        self._http(monkeypatch, payload=self.PAGE)
+        state: dict = {}
+        prov = self._provider()
+        clock = self.NOW
+        seen: list[str] = []
+        for _ in range(3):
+            for item in prov.fetch(root=ROOT, session_state=state, now=clock):
+                seen.append(item["id"])
+            clock += timedelta(minutes=5)
+        assert seen == [], "a re-served history page must never ingest twice"
+        assert state["alpaca"]["since"] == self.NEWEST_ISO
+
+    def test_a_wide_backlog_drains_contiguously_over_asc_polls(self, monkeypatch,
+                                                               capsys):
+        """Review N2: 120 backlogged items catch up over 3 cursored polls with
+        no gap. Before the asc cursor, `sort=desc` + limit meant the cursor
+        leapt to the newest of page one and the other 70 items were never
+        requested again."""
+        import engine.marketing.press_providers as pp
+
+        base = datetime(2026, 7, 29, 12, 0, tzinfo=timezone.utc)
+        rows = [{"id": n, "headline": f"Backlog item {n}", "source": "benzinga",
+                 "created_at": (base + timedelta(minutes=n)).isoformat()}
+                for n in range(1, 121)]
+
+        class _Resp:
+            def __init__(self, body: bytes):
+                self._body = body
+
+            def read(self, n: int = -1) -> bytes:
+                return self._body if n is None or n < 0 else self._body[:n]
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *exc):
+                return False
+
+        class _AscServer:
+            """Serve the oldest 50 rows strictly after the `start` param —
+            exactly what the real endpoint does for sort=asc."""
+            def __init__(self):
+                self.requests: list = []
+
+            def __call__(self, req, timeout=None):
+                self.requests.append(req)
+                from urllib.parse import parse_qs, urlsplit
+                q = parse_qs(urlsplit(req.full_url).query)
+                start = _iso(q.get("start", [""])[0])
+                page = [r for r in rows if _iso(r["created_at"]) > start][:50]
+                return _Resp(json.dumps({"news": page}).encode("utf-8"))
+
+        def _iso(v):
+            from engine.marketing.press_providers import _iso_to_dt
+            return _iso_to_dt(v) or base - timedelta(days=1)
+
+        self._keys(monkeypatch)
+        server = _AscServer()
+        monkeypatch.setattr(pp, "urlopen", server)
+        prov = self._provider()
+        state = {"alpaca": {"since": base.isoformat(),
+                            "last_poll": (self.NOW - timedelta(minutes=10)).isoformat()}}
+        got: list[str] = []
+        clock = self.NOW
+        for _ in range(3):
+            for item in prov.fetch(root=ROOT, session_state=state, now=clock):
+                got.append(item["id"])
+            clock += timedelta(minutes=5)
+
+        assert got == [f"alpaca:{n}" for n in range(1, 121)], (
+            "the backlog did not drain contiguously")
+        assert all("sort=asc" in r.full_url for r in server.requests)
+        # Full pages 1 and 2 announce catch-up at notice level, never a warning.
+        out = capsys.readouterr().out
+        lines = [l for l in out.splitlines() if "alpaca-page-catchup" in l]
+        assert len(lines) == 2 and all(l.startswith("::notice") for l in lines)
+
+    # ---- (d) no keys = total no-op ----------------------------------------
+
+    def test_no_keys_is_a_total_no_op(self, monkeypatch, capsys):
+        """`enabled: true` with keys absent must cost NOTHING — env arms the lane."""
+        monkeypatch.delenv("ALPACA_API_KEY_ID", raising=False)
+        monkeypatch.delenv("ALPACA_API_SECRET_KEY", raising=False)
+        http = self._http(monkeypatch, payload=self.PAGE)
+        state: dict = {}
+        assert self._provider().fetch(
+            root=ROOT, session_state=state, now=self.NOW) == []
+        assert http.requests == [], "keyless lane reached the network"
+        assert state == {}, "keyless lane wrote provider state"
+        lines = [ln for ln in capsys.readouterr().out.splitlines()
+                 if "alpaca-preflight" in ln]
+        assert lines, "expected one preflight notice"
+        # Repo law: a GH annotation must START its line (never through a logger).
+        assert lines[0].startswith("::notice title=alpaca-preflight::"), lines[0]
+        assert "ALPACA_API_KEY_ID" in lines[0] and "ALPACA_API_SECRET_KEY" in lines[0]
+
+    def test_half_a_credential_is_still_a_no_op(self, monkeypatch):
+        monkeypatch.setenv("ALPACA_API_KEY_ID", "test-key-id")
+        monkeypatch.delenv("ALPACA_API_SECRET_KEY", raising=False)
+        http = self._http(monkeypatch, payload=self.PAGE)
+        assert self._provider().fetch(
+            root=ROOT, session_state={}, now=self.NOW) == []
+        assert http.requests == []
+
+    def test_preflight_notice_fires_once_per_process(self, monkeypatch, capsys):
+        """A 75 s tick loop must not emit this notice 1,152 times a day."""
+        monkeypatch.delenv("ALPACA_API_KEY_ID", raising=False)
+        monkeypatch.delenv("ALPACA_API_SECRET_KEY", raising=False)
+        self._http(monkeypatch, payload=self.PAGE)
+        prov = self._provider()
+        for i in range(4):
+            prov.fetch(root=ROOT, session_state={},
+                       now=self.NOW + timedelta(minutes=i))
+        lines = [ln for ln in capsys.readouterr().out.splitlines()
+                 if "alpaca-preflight" in ln]
+        assert len(lines) == 1, f"notice repeated {len(lines)}x per process"
+
+    # ---- (e) offline / dry-run -------------------------------------------
+
+    def test_offline_makes_no_request_and_no_state_write(self, monkeypatch):
+        """Dry-run is NON-CONSUMING: advancing a cursor whose state is discarded
+        would hide those items from the next live run."""
+        self._keys(monkeypatch)
+        http = self._http(monkeypatch, payload=self.PAGE)
+        state: dict = {}
+        assert self._provider().fetch(
+            root=ROOT, session_state=state, offline=True, now=self.NOW) == []
+        assert http.requests == []
+        assert state == {}
+
+    def test_poll_all_threads_offline_to_the_alpaca_lane(self, monkeypatch):
+        """The daemon/wire both reach this lane through poll_all, not fetch()."""
+        import engine.marketing.press_providers as pp
+        self._keys(monkeypatch)
+        http = self._http(monkeypatch, payload=self.PAGE)
+        state: dict = {}
+        items = pp.poll_all(ROOT, {"alpaca": self.CFG}, state,
+                            offline=True, now=self.NOW)
+        assert items == [] and http.requests == [] and state == {}
+
+    def test_poll_all_builds_and_runs_the_lane_when_armed(self, monkeypatch):
+        import engine.marketing.press_providers as pp
+        self._keys(monkeypatch)
+        http = self._http(monkeypatch, payload=self.PAGE)
+        state = {"alpaca": {"since": self.APPLE_ISO}}
+        items = pp.poll_all(ROOT, {"alpaca": self.CFG}, state,
+                            offline=False, now=self.NOW)
+        assert len(http.requests) == 1
+        assert [i["id"] for i in items] == ["alpaca:48213377"]
+
+    # ---- (f) politeness floor --------------------------------------------
+
+    def test_min_interval_skips_without_touching_the_network(self, monkeypatch):
+        """The floor is measured against a PERSISTED last_poll, so it holds even
+        if the daemon's ~75 s tick shrinks."""
+        self._keys(monkeypatch)
+        http = self._http(monkeypatch, payload=self.PAGE)
+        state = {"alpaca": {"since": self.APPLE_ISO,
+                            "last_poll": (self.NOW - timedelta(seconds=30)).isoformat()}}
+        assert self._provider().fetch(
+            root=ROOT, session_state=state, now=self.NOW) == []
+        assert http.requests == [], "polled 30 s into a 60 s floor"
+        assert state["alpaca"]["last_poll"] == (
+            self.NOW - timedelta(seconds=30)).isoformat(), "skipped poll re-stamped"
+
+    def test_min_interval_elapsed_polls_again(self, monkeypatch):
+        self._keys(monkeypatch)
+        http = self._http(monkeypatch, payload=self.PAGE)
+        state = {"alpaca": {"since": self.APPLE_ISO,
+                            "last_poll": (self.NOW - timedelta(seconds=61)).isoformat()}}
+        assert self._provider().fetch(
+            root=ROOT, session_state=state, now=self.NOW) != []
+        assert len(http.requests) == 1
+
+    def test_two_ticks_inside_the_floor_make_one_request(self, monkeypatch):
+        self._keys(monkeypatch)
+        http = self._http(monkeypatch, payload=self.PAGE)
+        prov = self._provider()
+        state: dict = {}
+        prov.fetch(root=ROOT, session_state=state, now=self.NOW)               # prime
+        prov.fetch(root=ROOT, session_state=state,
+                   now=self.NOW + timedelta(seconds=75 // 2))                  # too soon
+        assert len(http.requests) == 1
+
+    # ---- (g) failure honesty ---------------------------------------------
+
+    def _http_error(self, code: str | int):
+        from urllib.error import HTTPError
+        return HTTPError("https://data.alpaca.markets/v1beta1/news",
+                         int(code), "boom", {}, None)   # type: ignore[arg-type]
+
+    def test_rate_limit_backs_off_by_doubling_and_caps(self, monkeypatch, capsys):
+        self._keys(monkeypatch)
+        http = self._http(monkeypatch, error=self._http_error(429))
+        prov = self._provider()
+        state: dict = {"alpaca": {"since": self.APPLE_ISO}}
+        clock = self.NOW
+
+        steps: list[float] = []
+        for _ in range(6):
+            # Step the clock past both the floor and the standing backoff so each
+            # iteration genuinely re-polls and doubles.
+            out = prov.fetch(root=ROOT, session_state=state, now=clock)
+            assert out == []
+            steps.append(float(state["alpaca"]["backoff_s"]))
+            clock = (datetime.fromisoformat(state["alpaca"]["backoff_until"])
+                     + timedelta(seconds=1))
+
+        assert steps == [60.0, 120.0, 240.0, 480.0, 900.0, 900.0], steps
+        assert len(http.requests) == 6
+        warns = [ln for ln in capsys.readouterr().out.splitlines()
+                 if "alpaca-rate-limit" in ln]
+        assert len(warns) == 6
+        assert warns[0].startswith("::warning title=alpaca-rate-limit::"), warns[0]
+
+    def test_backoff_window_is_honoured_before_any_request(self, monkeypatch):
+        self._keys(monkeypatch)
+        http = self._http(monkeypatch, payload=self.PAGE)
+        state = {"alpaca": {
+            "since": self.APPLE_ISO,
+            "backoff_s": 240.0,
+            "backoff_until": (self.NOW + timedelta(minutes=3)).isoformat(),
+        }}
+        assert self._provider().fetch(
+            root=ROOT, session_state=state, now=self.NOW) == []
+        assert http.requests == [], "polled inside the 429 backoff window"
+
+    def test_a_good_poll_clears_the_backoff_ladder(self, monkeypatch):
+        self._keys(monkeypatch)
+        self._http(monkeypatch, payload=self.PAGE)
+        state = {"alpaca": {
+            "since": self.APPLE_ISO,
+            "backoff_s": 480.0,
+            "backoff_until": (self.NOW - timedelta(seconds=1)).isoformat(),
+        }}
+        assert self._provider().fetch(
+            root=ROOT, session_state=state, now=self.NOW) != []
+        assert "backoff_s" not in state["alpaca"]
+        assert "backoff_until" not in state["alpaca"]
+
+    @pytest.mark.parametrize("code", [401, 403])
+    def test_auth_failure_warns_by_name_and_skips(self, monkeypatch, capsys, code):
+        self._keys(monkeypatch)
+        self._http(monkeypatch, error=self._http_error(code))
+        state = {"alpaca": {"since": self.APPLE_ISO}}
+        assert self._provider().fetch(
+            root=ROOT, session_state=state, now=self.NOW) == []
+        line = next(ln for ln in capsys.readouterr().out.splitlines()
+                    if "alpaca-auth" in ln)
+        assert line.startswith("::warning title=alpaca-auth::"), line
+        assert str(code) in line
+        assert "ALPACA_API_KEY_ID" in line and "ALPACA_API_SECRET_KEY" in line
+        # An auth failure is not a rate limit — no backoff ladder is armed.
+        assert "backoff_until" not in state["alpaca"]
+
+    def test_server_error_warns_and_returns_empty(self, monkeypatch, capsys):
+        self._keys(monkeypatch)
+        self._http(monkeypatch, error=self._http_error(503))
+        assert self._provider().fetch(
+            root=ROOT, session_state={"alpaca": {"since": self.APPLE_ISO}},
+            now=self.NOW) == []
+        line = next(ln for ln in capsys.readouterr().out.splitlines()
+                    if "alpaca-http" in ln)
+        assert line.startswith("::warning title=alpaca-http::"), line
+
+    def test_network_error_warns_and_returns_empty(self, monkeypatch, capsys):
+        from urllib.error import URLError
+        self._keys(monkeypatch)
+        self._http(monkeypatch, error=URLError("dns is down"))
+        assert self._provider().fetch(
+            root=ROOT, session_state={"alpaca": {"since": self.APPLE_ISO}},
+            now=self.NOW) == []
+        line = next(ln for ln in capsys.readouterr().out.splitlines()
+                    if "alpaca-fetch" in ln)
+        assert line.startswith("::warning title=alpaca-fetch::"), line
+
+    def test_one_dead_provider_never_kills_the_tick(self, monkeypatch):
+        """poll_all must still return the other lanes' items when Alpaca 500s."""
+        import engine.marketing.press_providers as pp
+        self._keys(monkeypatch)
+        self._http(monkeypatch, error=self._http_error(500))
+
+        class _Free:
+            def fetch(self, *, root, session_state, offline=False, now=None):
+                return [{"id": "free"}]
+
+        real_build = pp.build_providers
+        monkeypatch.setattr(
+            pp, "build_providers",
+            lambda cfg: [*real_build(cfg), _Free()])
+        items = pp.poll_all(ROOT, {"alpaca": self.CFG},
+                            {"alpaca": {"since": self.APPLE_ISO}}, now=self.NOW)
+        assert [i["id"] for i in items] == ["free"]
+
+    def test_non_https_url_is_refused_before_any_request(self, monkeypatch, capsys):
+        self._keys(monkeypatch)
+        http = self._http(monkeypatch, payload=self.PAGE)
+        prov = self._provider(rest_url="http://data.alpaca.markets/v1beta1/news")
+        assert prov.fetch(root=ROOT,
+                          session_state={"alpaca": {"since": self.APPLE_ISO}},
+                          now=self.NOW) == []
+        assert http.requests == []
+        line = next(ln for ln in capsys.readouterr().out.splitlines()
+                    if "alpaca-url" in ln)
+        assert line.startswith("::warning title=alpaca-url::"), line
 
 
 class Testm3DeterministicAttribution:

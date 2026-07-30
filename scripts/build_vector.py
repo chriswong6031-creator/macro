@@ -3534,68 +3534,15 @@ def build_allocation_page(env, site: Path, sig: pd.DataFrame, cards: dict,
                           breadth: dict | None = None, env_d: dict | None = None,
                           gate: dict | None = None,
                           **_ignored) -> None:
-    """The allocation deep-dive page: the Master Signal recommendation + Kelly sizing +
-    forward cones (shared with vector.html), AND the altcoin-cycle / ETH allocation keyed
-    to (cycle regime x alt-season x risk). New context is optional (back-compatible)."""
-    from engine import alt_cycle
-    cfg = config.load()["vector"]["alt_cycle"]
-    close = sig["close"]
-    last = sig.iloc[-1]
-    eth = _series("yahoo", "ETH-USD")
-    eb = alt_cycle.ethbtc_signal(eth, close, cfg)
-    cg = store.read("coingecko", "global_market")
-    dom = float(cg["btc_dominance_pct"].iloc[-1]) if cg is not None and not cg.empty else None
-    ethdom = float(cg["eth_dominance_pct"].iloc[-1]) if cg is not None and not cg.empty else None
-    score, bucket = alt_cycle.alt_season_score(eb, dom, cfg)
-    lad = mtf_a.get("ladder") or {}
-    regime = lad.get("regime")
-    grid = alt_cycle.alloc_grid(regime, bucket)
-    # Reconcile with vector.html's headline OPTIMAL STRATEGY: TOTAL crypto exposure =
-    # alloc_pct (the tactical risk gate, alloc_optimal); the alt-cycle grid only SPLITS
-    # that budget across BTC/ETH/alts. So when the gate is shut (alloc_pct=0) this page
-    # is 100% cash too — no more "100% cash here / 25% BTC there" incongruence.
-    alloc_pct = round(100 * last["alloc_optimal"]) if pd.notna(last.get("alloc_optimal")) else 0
-    _rs = grid["btc"] + grid["eth"] + grid["alts"]
-    if _rs > 0 and alloc_pct > 0:
-        _b = round(alloc_pct * grid["btc"] / _rs)
-        _e = round(alloc_pct * grid["eth"] / _rs)
-        _a = alloc_pct - _b - _e          # absorb rounding so crypto sums to alloc_pct
-    else:
-        _b = _e = _a = 0
-    rec = {"btc": _b, "eth": _e, "alts": _a, "cash": 100 - alloc_pct,
-           "regime_key": grid["regime_key"], "season_key": grid["season_key"]}
-    pvm = {
-        "as_of": sig.index.max().strftime("%b %d, %Y"),
-        "built": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
-        "price": close.iloc[-1],
-        "grid": rec, "grid_full": grid, "regime": regime, "regime_label": lad.get("regime_label"),
-        "regime_label_zh": lad.get("regime_label_zh"), "verdict": verdict,
-        "alloc_pct": alloc_pct,
-        "gate": gate or {"active": False},   # W3: the ONE stamped gated-state flag
-        "cards": cards,
-        # shared command-center decision layer (reused from vector.html). NOTE: the local
-        # `rec` above is the BTC/ETH/alts/cash SPLIT — the recommendation is `recommend_d`.
-        "master": master or {"ok": False},
-        "rec": recommend_d or {"ok": False},
-        "cones": cones or {"ok": False},
-        "sizing": sizing,
-        "catalyst": catalyst,
-        "breadth": breadth or {},
-        "env": env_d or {},
-        "alt": {
-            "ethbtc": _r(eb.get("level"), 4) if eb else None,
-            "ethbtc_pctile": eb.get("pctile") if eb else None,
-            "above_ma": eb.get("above_ma") if eb else None,
-            "slope": _r(100 * eb["slope"], 1) if eb.get("slope") is not None else None,
-            "season": eb.get("season") if eb else None,
-            "score": score, "bucket": bucket,
-            "dom": _r(dom, 1), "ethdom": _r(ethdom, 1),
-        },
-        "chart_ethbtc": chart_ethbtc(eb["ratio"], eb.get("ma"), cfg) if eb else "",
-    }
-    html = env.get_template("vector_allocation.html.j2").render(**pvm, C=C)
+    """Render the retired allocation URL as a source-owned compatibility redirect.
+
+    The allocation model moved into crypto.html in Wave 2. Keeping this builder hook
+    makes every full render actively preserve that move instead of letting a stale,
+    previously generated dashboard survive as an orphaned site artifact.
+    """
+    html = env.get_template("vector_allocation.html.j2").render()
     write_page(site / "vector_allocation.html", html)
-    log.info("wrote %s/vector_allocation.html (%d KB)", site, len(html) // 1024)
+    log.info("wrote %s/vector_allocation.html redirect", site)
 
 
 def _override_falsifier_health(ct: dict, gate: dict, vcfg: dict) -> dict:
@@ -4547,6 +4494,7 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001
         log.error("international dashboard subprocess launch failed (%s)", e)
         _intl_proc = None
+    build_allocation_page(env, site, sig, cards, mtf_a, verdict)
     try:
         build_timeline(site, sig)
     except Exception as e:  # noqa: BLE001 — never let the time-machine tape break the build

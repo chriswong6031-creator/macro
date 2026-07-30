@@ -134,9 +134,9 @@ def test_needs_render_still_fires_on_a_real_template_or_builder_merge(tmp_path):
     other = _commit(repo, "scripts/check_thing.py", "print(2)\n", "chore: checker")
     assert GUARD._needs_render(repo, other, start_head, other) is False
 
-    # Nor a NESTED build_*: render.yml's `scripts/build_*.py` glob does not cross
-    # `/`, and the lane invokes nothing under scripts/research/ regardless — so
-    # demanding a render there is unsatisfiable, not strict.
+    # Nor a NESTED build_*: the fail-closed fallback models the old top-level
+    # wildcard, which did not cross `/`, and the lane invokes nothing under
+    # scripts/research/ regardless.
     nested = _commit(repo, "scripts/research/build_panel.py", "print(3)\n", "chore: research")
     assert GUARD._needs_render(repo, nested, start_head, nested) is False
 
@@ -379,6 +379,30 @@ def test_the_heavy_lane_keeps_everything_the_split_left_it(tmp_path):
         assert GUARD._needs_public_render(repo, sha, start_head, sha) is False, rel
 
 
+def test_explicit_builder_ownership_drops_uninvoked_builders_from_the_heavy_lane():
+    """A builder the workflow never executes must not create a render wait.
+
+    These are real recent false admissions: their merges queued the shared
+    self-hosted renderer even though render.yml never invoked the changed module.
+    """
+    filters = GUARD._render_lane_filters(ROOT)
+    for rel in (
+        "scripts/build_session_digest.py",
+        "scripts/build_live_quotes.py",
+        "scripts/build_flow_archive.py",
+        "scripts/build_marketing.py",
+        "scripts/build_press_properties.py",
+    ):
+        assert GUARD._render_lanes_for_paths([rel], set(), filters) == set(), rel
+
+    for rel in (
+        "scripts/build_site.py",
+        "scripts/build_stock_library.py",
+        "scripts/build_china_library.py",
+    ):
+        assert GUARD._render_lanes_for_paths([rel], set(), filters) == {"render"}, rel
+
+
 def test_the_paired_plain_copy_exemption_outranks_the_public_lane(tmp_path):
     """#3671's ruling survives the split: a paired asset owes NEITHER lane.
 
@@ -456,7 +480,7 @@ def test_the_push_paths_scanner_reads_the_real_filter_and_fails_closed(tmp_path)
     heavy, public = GUARD._render_lane_filters(ROOT)
     assert heavy[0] == "templates/**", "order matters; the scanner must preserve it"
     assert "!templates/plans.html.j2" in heavy
-    assert "!scripts/build_public_pages.py" in heavy
+    assert "scripts/build_public_pages.py" not in heavy
     assert "config/plans.yml" in public and "templates/plans.html.j2" in public
     assert not any(p.startswith("!") for p in public), "the fast lane claims, it does not negate"
 

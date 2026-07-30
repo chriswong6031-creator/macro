@@ -1016,22 +1016,22 @@ def _check_ci(
     return False, message
 
 
-# render.yml's push filter, verbatim. The three sweep scripts and lib/pages.py
-# rewrite every page in site/ (shim injection, inline-CSS externalization, ?v=
-# stamping, CSS preload hints), so the lane renders on them too — they were
-# added to the workflow after #3558 shipped a sweep change that triggered
-# nothing. Missing them here under-required a render, the fail-OPEN direction.
+# Fail-closed fallback used only when the workflow push filters cannot be read.
+# The normal path reads render.yml's explicit builder allowlist directly, so
+# builders owned by nightly/collector/research lanes no longer create an
+# impossible ship-loop wait for a heavy render that deliberately does not run
+# them. These four shared inputs still belong to the fallback because they
+# rewrite every page in site/.
 _RENDER_INPUT_PATHS = {
     "scripts/inject_data_base.py",
     "scripts/externalize_css.py",
     "scripts/optimize_assets.py",
     "lib/pages.py",
 }
-# `scripts/build_*.py`. GitHub path globs do not cross `/`, so neither does this
-# — and the merits agree independently of that semantics: render.yml invokes
-# nothing under `scripts/research/`, so a nested `build_*.py` there produces
-# nothing in the lane and a render for it would be an unsatisfiable demand.
-_RENDER_BUILDER = re.compile(r"^scripts/build_[^/]*\.py$")
+# The old workflow admitted every top-level build_*.py. Keep that broad rule
+# only as the unreadable-filter fallback: ignorance must over-require, while a
+# successfully parsed explicit allowlist is authoritative.
+_FALLBACK_RENDER_BUILDER = re.compile(r"^scripts/build_[^/]*\.py$")
 
 # The two render lanes. `render.yml` is the heavy self-hosted market renderer;
 # #3834 split the data-free public surfaces out of it into `public-render.yml`,
@@ -1146,12 +1146,12 @@ def _path_filter_includes(item: str, patterns: list[str]) -> bool:
     """Whether a push filter fires for ``item``. LAST matching pattern wins.
 
     GitHub evaluates the list in order and lets a later entry overturn an
-    earlier one, which is the whole mechanism render.yml uses: ``templates/**``
-    then thirteen ``!templates/...`` negations then ``scripts/build_*.py`` then
-    ``!scripts/build_public_pages.py``. Reading it as "any negation excludes"
-    would happen to agree today, but only by the accident that no positive
-    pattern currently follows a negation of the same path — exactly the kind of
-    accident that rots the next time someone reorders the block.
+    earlier one, which is the whole mechanism render.yml uses for
+    ``templates/**`` followed by its public-surface negations. Reading it as
+    "any negation excludes" would happen to agree today, but only by the
+    accident that no positive pattern currently follows a negation of the same
+    path — exactly the kind of accident that rots the next time someone
+    reorders the block.
     """
     verdict = False
     for pattern in patterns:
@@ -1230,8 +1230,9 @@ def _render_lanes_for_paths(
 ) -> set[str]:
     """Which render lanes ``changed`` actually needs — possibly neither.
 
-    render.yml's push filter USED to be a bare `templates/**`, so ANY templates/
-    path demanded a render from the heavy self-hosted lane. Two things have since
+    render.yml's push filter USED to be a bare `templates/**`, and its builder
+    rule used to admit every top-level `scripts/build_*.py`, so those paths all
+    demanded a render from the heavy self-hosted lane. Three things have since
     made that read wrong, and each one produced its own unsatisfiable gate.
 
     First, the lane only produces two things: re-baked `.j2` pages and the `?v=`
@@ -1274,8 +1275,9 @@ def _render_lanes_for_paths(
     Second — and this is the same class of false gate, one lane over — #3834
     stopped `templates/**` being one lane at all. The public/marketing surfaces
     were split into `public-render.yml`, and render.yml's push filter now carries
-    thirteen explicit negations plus `!scripts/build_public_pages.py` so the
-    scarce self-hosted market renderer is never occupied merely to bake the three
+    explicit template negations, while its builder trigger is now a positive
+    allowlist that simply omits `scripts/build_public_pages.py`, so the scarce
+    self-hosted market renderer is never occupied merely to bake the three
     data-free public pages. For those paths a push-triggered render.yml run
     CANNOT EXIST, so demanding one blocked forever. Observed 2026-07-28 on
     PR #3897 (templates/plans.html.j2 + site/plans.html): merged as 7fe17018,
@@ -1283,6 +1285,15 @@ def _render_lanes_for_paths(
     pushed d4ac971df7a, https://www.mastermind-x.com/plans.html was browser-
     verified live in production — and the guard returned `render_pending`
     regardless, with no run it could ever have been waiting for.
+
+    Third, the old `scripts/build_*.py` wildcard admitted 283 top-level builders
+    while this workflow executed or transitively imported only 101 of them.
+    Changes to nightly collectors, research factories, marketing builders, and
+    live-flow producers therefore queued a 50-100 minute render whose body never
+    invoked the changed module. render.yml now carries the executable positive
+    ownership list. When both workflow filters parse successfully, that list is
+    authoritative here too: an unclaimed builder owes no render and cannot leave
+    the ship loop waiting on a run GitHub never created.
 
     So the question is not one bool but which LANE owes the work. A path
     public-render.yml claims and render.yml excludes belongs to
@@ -1300,18 +1311,24 @@ def _render_lanes_for_paths(
     new lane would quietly undo it.
     """
     touched = set(changed)
+    heavy_filters, public_filters = filters
+    filters_complete = bool(heavy_filters and public_filters)
     lanes: set[str] = set()
     for item in changed:
         if item.startswith("templates/"):
             name = item[len("templates/") :]
             if name in pairs and f"site/{name}" in touched:
                 continue
-        if _public_render_owns(item, filters):
+        if filters_complete and _public_render_owns(item, filters):
             lanes.add(_RENDER_LANE_PUBLIC)
+            continue
+        if filters_complete:
+            if _path_filter_includes(item, heavy_filters):
+                lanes.add(_RENDER_LANE_HEAVY)
             continue
         if (
             item in _RENDER_INPUT_PATHS
-            or _RENDER_BUILDER.match(item)
+            or _FALLBACK_RENDER_BUILDER.match(item)
             or item.startswith("templates/")
         ):
             lanes.add(_RENDER_LANE_HEAVY)

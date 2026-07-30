@@ -3,13 +3,13 @@
   "authority": {
     "tier": "context_only"
   },
-  "built": "2026-07-29T10:17:58.652460+00:00",
-  "asof": "2026-07-29",
+  "built": "2026-07-30T10:02:48.615974+00:00",
+  "asof": "2026-07-30",
   "phase": "POLICY_PUT",
   "confidence": 0.75,
   "evidence": [
     "turnover_z20_null",
-    "qvix_z_elevated (1.51)"
+    "qvix_z_elevated (2.31)"
   ],
   "contradictions": [],
   "falsifiers": [
@@ -260,8 +260,8 @@
     }
   ],
   "ledger_summary": {
-    "total_graded": 22733,
-    "held": 8056,
+    "total_graded": 22734,
+    "held": 8057,
     "fired": 1959,
     "indeterminate": 12718
   },

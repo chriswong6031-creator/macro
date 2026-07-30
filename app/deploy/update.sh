@@ -379,7 +379,16 @@ fi
 # Only these two — research_triage/research_veto/research_lane are reached solely
 # through desk_planner's function-level imports on the PLANNING path, which the
 # panel never calls.
-if [ "$ADMIN_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(admin/.*|lib/(ai_costs|mastermind_response_log)\.py|engine/(codex_provider|llm_auth)\.py|engine/codex_lane/runner\.py|engine/neuralweb/(key_pool|ask_brain|support_map|orchestrator_log|trade_memory)\.py|engine/metabolism/(throttle|budget_gate)\.py|engine/marketing/(__init__|accounts|ad_allocator|ad_arena|ad_central|ad_stats|authority|charter|claims|cmo|copywriter|departments|economics|events|ledgers|opportunity_bus|outbox|personas|publication|rejections|blind_identity|health_monitor|labels|learned_rules|reply_export|reply_queue|sentinel|state)\.py|engine/press/(__init__|desk_planner)\.py|scripts/marketing_publisher\.py)$'; then
+#
+# The Intelligence Desk approve endpoint adds engine/marketing/{story_lock,
+# wire_routing}.py. That endpoint is the ONE admin path that emits a post, and
+# both modules are gates on it: wire_routing decides which desk owns the emission
+# and story_lock enforces one-owner-per-conversation across desks. Left out here,
+# a deploy that retuned the routing table or widened the lock window would leave
+# the panel queueing against the OLD rule out of sys.modules — the outbox gap
+# (2026-07-26) again, but on the path where being stale means a wrong-desk or
+# double-owner post rather than a stale reading.
+if [ "$ADMIN_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(admin/.*|lib/(ai_costs|mastermind_response_log)\.py|engine/(codex_provider|llm_auth)\.py|engine/codex_lane/runner\.py|engine/neuralweb/(key_pool|ask_brain|support_map|orchestrator_log|trade_memory)\.py|engine/metabolism/(throttle|budget_gate)\.py|engine/marketing/(__init__|accounts|ad_allocator|ad_arena|ad_central|ad_stats|authority|charter|claims|cmo|copywriter|departments|economics|events|ledgers|opportunity_bus|outbox|personas|publication|rejections|blind_identity|health_monitor|labels|learned_rules|reply_export|reply_queue|sentinel|state|story_lock|wire_routing)\.py|engine/press/(__init__|desk_planner)\.py|scripts/marketing_publisher\.py)$'; then
 	systemctl is-enabled admin >/dev/null 2>&1 && systemctl restart admin || true
 fi
 

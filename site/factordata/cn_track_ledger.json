@@ -1,7 +1,7 @@
 {
  "schema": "track_ledger/v1",
  "market": "CN",
- "as_of": "2026-07-29",
+ "as_of": "2026-07-30",
  "state": "accruing",
  "bench": {
   "code": "510300.SS",
@@ -13,7 +13,7 @@
   "horizon": 10,
   "n_matured": 0,
   "n_inflight": 0,
-  "n_skipped_no_price": 14,
+  "n_skipped_no_price": 9,
   "n_board_days": 0,
   "win_pct": null,
   "expectancy_pct": null,
@@ -38,7 +38,7 @@
   "grain": "episode",
   "survivorship": {
    "n_locked_excluded": 0,
-   "n_skipped_no_price": 14,
+   "n_skipped_no_price": 9,
    "note": "locked-limit T+1 rows are unfillable — flagged, excluded from stats"
   },
   "board_definition": "cn_prophet_v2",

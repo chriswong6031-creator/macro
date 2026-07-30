@@ -1529,3 +1529,499 @@ def test_orphan_brief_quarantined_when_alert_absent(monkeypatch, tmp_path):
     assert st["status"][brief_id] == "quarantined"
     assert "alert is unresolved" in (st["last"][brief_id].get("note") or "")
     assert fake.calls == []
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Dispatch-time DARK-DESK park (desk_network liveness)
+# ─────────────────────────────────────────────────────────────────────────────
+# hot_tape.severity_account routes every sub-85 event to mastermind_news and
+# never consults liveness — routing is pure by design (wire_routing: "LIVENESS
+# IS NOT ROUTING"). That desk is deliberately dark in config/marketing.yml, but
+# its Buffer channel id IS wired, and the breaking/immediate rail never passes
+# through sentinel's plan gate. Liveness therefore binds HERE, at dispatch, in
+# both the auto-approve pass and the post loop: quarantine with reason
+# account_disabled, one ::warning per account, and arming stays one flip.
+
+_WIRE_DESK = "mastermind_news"
+_WIRE_TEXT = ("$NVDA just broke to a new high on heavy volume. "
+              "Watching how it holds into the close.")
+
+
+@pytest.fixture(autouse=True)
+def _reset_dark_park_warnings():
+    """The park annotation is once-per-account-per-PROCESS and pytest runs the
+    whole file in one process — a stale warn set would make the "printed exactly
+    once" assertion depend on execution order."""
+    import scripts.marketing_publisher as pub
+    pub.reset_dark_park_warnings()
+    yield
+    pub.reset_dark_park_warnings()
+
+
+def _write_desk_network_cfg(tmp_path: Path, *, wire_enabled: bool,
+                            auto_approve: bool = False, cap: int = -1,
+                            floor_min: int = 0,
+                            with_desk_network: bool = True) -> None:
+    """marketing.yml with a desk_network block AND the wire desk's channel id.
+
+    ``wire_enabled=False`` reproduces the live config/marketing.yml shape for
+    mastermind_news exactly — BOTH keys (``enabled: false`` plus the legacy
+    ``disabled: true``) with the Buffer channel already bound — which is the
+    combination the dispatch-time park exists for. ``True`` is the armed state
+    after the one desk_network flip.
+
+    ``with_desk_network=False`` drops the roster entirely while KEEPING the bound
+    channels — the shape a missing or mis-indented block produces, and the one
+    the gate must never read as "asked, nothing is dark".
+    """
+    cfg_dir = tmp_path / "config"
+    cfg_dir.mkdir(parents=True, exist_ok=True)
+    on = "true" if wire_enabled else "false"
+    off = "false" if wire_enabled else "true"
+    roster = (
+        "desk_network:\n"
+        "  accounts:\n"
+        "    - id: flagship\n"
+        "      enabled: true\n"
+        f"    - id: {_WIRE_DESK}\n"
+        f"      enabled: {on}\n"
+        f"      disabled: {off}\n"
+    ) if with_desk_network else ""
+    (cfg_dir / "marketing.yml").write_text(
+        "sentinel:\n"
+        f"  max_posts_per_account_per_day: {cap}\n"
+        + roster +
+        "publish:\n"
+        "  backend: buffer\n"
+        "  require_approval: true\n"
+        f"  auto_approve: {'true' if auto_approve else 'false'}\n"
+        "  auto_approve_scope: all\n"
+        f"  min_minutes_between_any_posts: {floor_min}\n"
+        "  channels:\n"
+        "    flagship: \"buf-chan-123\"\n"
+        f"    {_WIRE_DESK}: \"buf-chan-news\"\n"
+        "  links_allowed:\n"
+        "    flagship: true\n"
+        f"    {_WIRE_DESK}: true\n",
+        encoding="utf-8",
+    )
+
+
+def _seed_wire_item(tmp_path: Path, *, text: str = _WIRE_TEXT,
+                    account: str = _WIRE_DESK) -> str:
+    """One queued kind=breaking, scheduled_at=immediate item — the exact shape
+    scripts/hot_tape_radar.py enqueues before dispatching post_now."""
+    return _seed_queued_kind(tmp_path, kind="breaking", provenance="hot_tape",
+                             text=text, account=account)
+
+
+def _quarantine_note(tmp_path: Path, iid: str) -> str:
+    from engine.marketing.outbox import read_ledger
+    return next(r for r in read_ledger(tmp_path)
+                if r.get("id") == iid and r["to"] == "quarantined")["note"]
+
+
+def _dark_park_lines(capsys) -> list[str]:
+    """Annotation lines at LINE START — a logger-prefixed one does not count,
+    because GitHub would never parse it (house law)."""
+    return [ln for ln in capsys.readouterr().out.splitlines()
+            if ln.startswith("::warning title=publisher-dark-desk")]
+
+
+def _auto_approve_direct(tmp_path: Path, *, live: bool, only_ids=None) -> list[str]:
+    """Call the pass directly with the dark set THIS fixture resolves, so the
+    kwarg contract is pinned independently of main()'s wiring."""
+    import scripts.marketing_publisher as pub
+    from engine.marketing import outbox
+    from engine.marketing.social_publisher import validate_postable
+    cfg = pub._load_marketing_cfg(tmp_path)
+    return pub._auto_approve_pass(
+        outbox, outbox.fold_state(tmp_path), pub._publish_cfg(cfg),
+        cap=-1, now=_FIXED_NOW, live=live, account=None, posted_today={},
+        validate_postable=validate_postable, root=tmp_path,
+        only_ids=only_ids, dark_accounts=pub._dark_account_ids(cfg, tmp_path),
+    )
+
+
+def test_dark_desk_parks_the_post_now_dispatch(monkeypatch, tmp_path, capsys):
+    """The gap this closes: a fresh sub-85 radar event, dispatched post_now onto
+    a dark desk whose Buffer channel is wired. It must NEVER reach the network —
+    the operator's click does not override account_disabled."""
+    from engine.marketing.outbox import current_statuses, read_activity
+
+    _write_desk_network_cfg(tmp_path, wire_enabled=False)
+    iid = _seed_wire_item(tmp_path)
+
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live", "--post-now", iid],
+                        fake_publisher=fake, kill_switch=True)
+
+    # RULING 2026-07-29: a dispatch whose every requested item was dark-parked
+    # exits 0, not 3. Until XG-W2 arms the desk this fires several times a day,
+    # and a recurring expected red only teaches the operator to ignore reds. The
+    # annotation and the account_disabled ledger row are the receipts.
+    assert rc == 0
+    assert fake.calls == []
+    assert current_statuses(tmp_path)[iid] == "quarantined"
+    assert _quarantine_note(tmp_path, iid).startswith("account_disabled")
+    assert len(_dark_park_lines(capsys)) == 1
+    # The park is COUNTED. It happens in the auto-approve pass (a queued item is
+    # the breaking rail's normal shape), so a post-loop-only counter read 0 here.
+    row = read_activity(tmp_path, n=1)[0]
+    assert row["parked_dark"] == 1
+    assert row["dark_accounts"] == [_WIRE_DESK]
+
+
+def test_post_now_nonpark_failure_still_exits_red(monkeypatch, tmp_path):
+    """The rc=0 ruling is scoped to a PURE park. An item that quarantines for any
+    other reason is the kind of nothing-posted a human must look at, so the
+    dispatch stays red — here a live desk whose copy fails the language gate."""
+    from engine.marketing.outbox import current_statuses, transition
+
+    _write_desk_network_cfg(tmp_path, wire_enabled=False)
+    bad = _seed_item_bypassing_enqueue_guard(tmp_path, text=_JARGON_TEXT,
+                                             as_of="2026-07-19", kind="watchlist",
+                                             account="flagship")
+    assert transition(bad, "approved", actor="test", root=tmp_path, now=_FIXED_NOW)
+
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live", "--post-now", bad],
+                        fake_publisher=fake, kill_switch=True)
+
+    assert rc == 3
+    assert fake.calls == []
+    assert current_statuses(tmp_path)[bad] == "quarantined"
+    assert "banned language" in _quarantine_note(tmp_path, bad)
+
+
+def test_dark_desk_park_pass_contract_live(tmp_path):
+    """Pass level: dark_accounts binds even with only_ids set (post_now)."""
+    from engine.marketing.outbox import current_statuses
+
+    _write_desk_network_cfg(tmp_path, wire_enabled=False)
+    iid = _seed_wire_item(tmp_path)
+
+    assert _auto_approve_direct(tmp_path, live=True, only_ids=frozenset({iid})) == []
+    assert current_statuses(tmp_path)[iid] == "quarantined"
+    assert _quarantine_note(tmp_path, iid).startswith("account_disabled")
+
+
+def test_dark_desk_park_dry_run_writes_nothing(monkeypatch, tmp_path):
+    """DRY-RUN parity: the pass reports and returns, it does not touch the
+    ledger — the same invariant every other auto-approve gate keeps."""
+    from engine.marketing.outbox import current_statuses, read_ledger
+
+    _write_desk_network_cfg(tmp_path, wire_enabled=False)
+    iid = _seed_wire_item(tmp_path)
+    ledger_before = read_ledger(tmp_path)
+
+    assert _auto_approve_direct(tmp_path, live=False, only_ids=frozenset({iid})) == []
+    assert current_statuses(tmp_path)[iid] == "queued"
+    assert read_ledger(tmp_path) == ledger_before
+
+    # And through main(), kill-switch off: still queued, still no ledger row.
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live", "--post-now", iid],
+                        fake_publisher=fake, kill_switch=False)
+    assert rc == 0
+    assert fake.calls == []
+    assert current_statuses(tmp_path)[iid] == "queued"
+    assert read_ledger(tmp_path) == ledger_before
+
+
+def test_one_desk_network_flip_arms_the_dispatch(monkeypatch, tmp_path):
+    """Arming is ONE flip: the same fixture with the desk enabled posts. Nothing
+    else about the item, the channel, or the dispatch changes."""
+    from engine.marketing.outbox import current_statuses
+    import scripts.marketing_publisher as pub
+
+    _write_desk_network_cfg(tmp_path, wire_enabled=True)
+    iid = _seed_wire_item(tmp_path)
+
+    cfg = pub._load_marketing_cfg(tmp_path)
+    assert pub._dark_account_ids(cfg, tmp_path) == frozenset()
+
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live", "--post-now", iid],
+                        fake_publisher=fake, kill_switch=True)
+
+    assert rc == 0
+    assert len(fake.calls) == 1
+    assert current_statuses(tmp_path)[iid] == "posted"
+
+
+def test_dark_desk_park_leaves_live_desks_alone(monkeypatch, tmp_path):
+    """Per-account, like the halt: the dark wire desk parks while flagship
+    auto-approves and posts in the same run."""
+    from engine.marketing.outbox import current_statuses
+
+    _write_desk_network_cfg(tmp_path, wire_enabled=False, auto_approve=True)
+    dark = _seed_wire_item(tmp_path)
+    live_item = _seed_queued_item(tmp_path, text="Flagship read, unaffected.")
+
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake,
+                        kill_switch=True)
+
+    assert rc == 0
+    statuses = current_statuses(tmp_path)
+    assert statuses[dark] == "quarantined"
+    assert statuses[live_item] == "posted"
+    assert len(fake.calls) == 1
+
+
+def test_account_override_parks_a_config_enabled_desk(monkeypatch, tmp_path):
+    """The admin lever binds at dispatch too: config says enabled, the operator
+    override file says off, and effective_accounts (the one reader of that
+    question) gives the override the last word."""
+    import json
+    from engine.marketing.outbox import current_statuses
+
+    _write_desk_network_cfg(tmp_path, wire_enabled=True)
+    ov_dir = tmp_path / "data" / "marketing"
+    ov_dir.mkdir(parents=True, exist_ok=True)
+    (ov_dir / "account_overrides.json").write_text(
+        json.dumps({_WIRE_DESK: {"enabled": False, "note": "paused"}}),
+        encoding="utf-8")
+    iid = _seed_wire_item(tmp_path)
+
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live", "--post-now", iid],
+                        fake_publisher=fake, kill_switch=True)
+
+    assert rc == 0                                        # pure park — see the ruling
+    assert fake.calls == []
+    assert current_statuses(tmp_path)[iid] == "quarantined"
+    assert _quarantine_note(tmp_path, iid).startswith("account_disabled")
+
+
+def test_account_override_can_also_ARM_a_config_dark_desk(monkeypatch, tmp_path):
+    """The lever swings both ways: config says dark, the override says enabled,
+    and the item posts. This is the no-deploy arming path the park's annotation
+    points the operator at, and it beats the legacy `disabled: true` too."""
+    import json
+    from engine.marketing.outbox import current_statuses
+
+    _write_desk_network_cfg(tmp_path, wire_enabled=False)   # enabled:false + disabled:true
+    ov_dir = tmp_path / "data" / "marketing"
+    ov_dir.mkdir(parents=True, exist_ok=True)
+    (ov_dir / "account_overrides.json").write_text(
+        json.dumps({_WIRE_DESK: {"enabled": True, "note": "armed for the drill"}}),
+        encoding="utf-8")
+    iid = _seed_wire_item(tmp_path)
+
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live", "--post-now", iid],
+                        fake_publisher=fake, kill_switch=True)
+
+    assert rc == 0
+    assert len(fake.calls) == 1
+    assert current_statuses(tmp_path)[iid] == "posted"
+
+
+def test_post_loop_parks_an_already_approved_dark_item(monkeypatch, tmp_path, capsys):
+    """The other half: an item approved BEFORE the desk went dark (or approved
+    by the operator) reaches the post loop, not the auto-approve pass. Same
+    park, same reason, and the backend is never called."""
+    from engine.marketing.outbox import current_statuses, transition
+
+    _write_desk_network_cfg(tmp_path, wire_enabled=False)   # auto_approve off
+    iid = _seed_wire_item(tmp_path)
+    assert transition(iid, "approved", actor="test", root=tmp_path, now=_FIXED_NOW)
+
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake,
+                        kill_switch=True)
+
+    assert rc == 0
+    assert fake.calls == []
+    assert current_statuses(tmp_path)[iid] == "quarantined"
+    assert _quarantine_note(tmp_path, iid).startswith("account_disabled")
+    assert len(_dark_park_lines(capsys)) == 1
+
+
+def test_dark_park_annotation_prints_once_per_account(monkeypatch, tmp_path, capsys):
+    """Two parked items, ONE annotation: the publisher runs on a */5 cron and a
+    per-item line would bury the summary it exists to surface. The line must
+    start at column 0 — a logger prefix and GitHub drops it silently."""
+    from engine.marketing.outbox import current_statuses
+
+    _write_desk_network_cfg(tmp_path, wire_enabled=False, auto_approve=True)
+    first = _seed_wire_item(tmp_path)
+    second = _seed_wire_item(tmp_path, text="$AMD is up sharply on the session. "
+                                            "Watching the close.")
+
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake,
+                        kill_switch=True)
+
+    assert rc == 0
+    statuses = current_statuses(tmp_path)
+    assert statuses[first] == statuses[second] == "quarantined"
+    lines = _dark_park_lines(capsys)
+    assert len(lines) == 1, lines
+    assert _WIRE_DESK in lines[0]
+
+
+def test_unknown_liveness_stands_the_gate_down_inert(monkeypatch, tmp_path, capsys):
+    """Fail-open, deliberately the opposite of wire_routing: with no safe
+    fallback for "may this desk post", failing closed would park all seven live
+    desks on a transient helper error. Unknown → items flow as before, and the
+    run SAYS the gate is not enforcing."""
+    from engine.marketing.outbox import current_statuses
+    import engine.marketing.accounts as accounts
+    import scripts.marketing_publisher as pub
+
+    _write_desk_network_cfg(tmp_path, wire_enabled=False)
+    iid = _seed_wire_item(tmp_path)
+
+    def _boom(cfg, root=None):
+        raise RuntimeError("accounts model exploded")
+
+    monkeypatch.setattr(accounts, "effective_accounts", _boom)
+    assert pub._dark_account_ids(pub._load_marketing_cfg(tmp_path), tmp_path) is None
+
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live", "--post-now", iid],
+                        fake_publisher=fake, kill_switch=True)
+
+    assert rc == 0
+    assert len(fake.calls) == 1                       # gate inert — item flowed
+    assert current_statuses(tmp_path)[iid] == "posted"
+    inert = [ln for ln in capsys.readouterr().out.splitlines()
+             if ln.startswith("::warning title=publisher-dark-desk")
+             and "INERT" in ln]
+    assert len(inert) == 1, inert
+
+
+def test_dry_run_report_parks_dark_desk_items(monkeypatch, tmp_path, capsys):
+    """The admin preview must MIRROR the park, not hide it and not promise a post.
+
+    A dark-desk item under would_post tells the operator the opposite of what a
+    live run does — on an UNARMED property, which is the exact confusion this
+    gate exists to end. The preview also must not print the annotation: it is
+    once-per-account-per-PROCESS, so a preview that spent it would leave the real
+    dispatch behind it parking in silence.
+    """
+    import scripts.marketing_publisher as pub
+    from engine.marketing.outbox import current_statuses, read_ledger, transition
+
+    _write_desk_network_cfg(tmp_path, wire_enabled=False, auto_approve=True)
+    queued = _seed_wire_item(tmp_path)
+    approved = _seed_wire_item(tmp_path, text="$AMD is up sharply on the session. "
+                                              "Watching the close.")
+    assert transition(approved, "approved", actor="test", root=tmp_path, now=_FIXED_NOW)
+    ledger_before = read_ledger(tmp_path)
+    capsys.readouterr()                                   # drop the seeding noise
+
+    rep = pub.dry_run_report(root=tmp_path, now=_FIXED_NOW)
+
+    assert rep["ok"] is True
+    # Neither item is offered as postable or approvable …
+    assert [w["id"] for w in rep["would_auto_approve"]] == []
+    assert [w["id"] for w in rep["would_post"]] == []
+    # … and both are NAMED as parked rather than silently dropped.
+    parked = {w["id"]: w["account"] for w in rep["would_park_dark"]}
+    assert parked == {queued: _WIRE_DESK, approved: _WIRE_DESK}
+    assert rep["counts"]["would_park_dark"] == 2
+    assert rep["dark_accounts"] == [_WIRE_DESK]
+
+    # Writeless, as every other preview path is.
+    assert read_ledger(tmp_path) == ledger_before
+    assert current_statuses(tmp_path)[queued] == "queued"
+    assert current_statuses(tmp_path)[approved] == "approved"
+
+    # The preview is not a dispatch: no annotation, and the once-per-process
+    # budget is untouched — the live run behind it still gets its warning.
+    assert _dark_park_lines(capsys) == []
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake,
+                        kill_switch=True)
+    assert rc == 0
+    assert fake.calls == []
+    assert len(_dark_park_lines(capsys)) == 1
+
+
+def test_no_desk_network_roster_is_unknown_not_all_clear(monkeypatch, tmp_path, capsys):
+    """An EMPTY roster is not an answer. effective_accounts returns [] for every
+    way desk_network can go missing — fail-soft cfg load, mis-indent, rename — so
+    reading [] as "nothing is dark" silently disarms the gate on exactly the
+    configs least likely to be correct. Items still flow (fail-open is the
+    adjudicated direction), but the run must SAY the gate is not enforcing."""
+    from engine.marketing.outbox import current_statuses
+    import scripts.marketing_publisher as pub
+
+    _write_desk_network_cfg(tmp_path, wire_enabled=False, with_desk_network=False)
+    iid = _seed_wire_item(tmp_path)
+
+    cfg = pub._load_marketing_cfg(tmp_path)
+    assert cfg.get("desk_network") is None                 # channels bound, no roster
+    assert pub._dark_account_ids(cfg, tmp_path) is None    # UNKNOWN, not frozenset()
+
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live", "--post-now", iid],
+                        fake_publisher=fake, kill_switch=True)
+
+    assert rc == 0
+    assert len(fake.calls) == 1                            # fail-open, unchanged
+    assert current_statuses(tmp_path)[iid] == "posted"
+    inert = [ln for ln in _dark_park_lines(capsys) if "INERT" in ln]
+    assert len(inert) == 1, inert
+
+
+def test_dark_set_ignores_id_less_desk_entries(tmp_path):
+    """An id-less desk_network entry resolves to "" — kept in the set it would
+    park every item whose account field is blank or missing."""
+    import scripts.marketing_publisher as pub
+
+    cfg = {"desk_network": {"accounts": [
+        {"id": "flagship", "enabled": True},
+        {"enabled": False},                 # no id at all
+        {"id": "   ", "enabled": False},    # whitespace id
+        {"id": _WIRE_DESK, "enabled": False},
+    ]}}
+    assert pub._dark_account_ids(cfg, tmp_path) == frozenset({_WIRE_DESK})
+
+
+def test_post_loop_dark_park_dry_run_writes_nothing(monkeypatch, tmp_path, capsys):
+    """The post loop's dry-run parity, the sibling of the pass-level case: an
+    approved dark-desk item is REPORTED, not parked — no ledger row, and no
+    annotation claiming a park that did not happen (which would also spend the
+    once-per-process budget the next live run needs)."""
+    from engine.marketing.outbox import current_statuses, read_ledger, transition
+
+    _write_desk_network_cfg(tmp_path, wire_enabled=False)   # auto_approve off
+    iid = _seed_wire_item(tmp_path)
+    assert transition(iid, "approved", actor="test", root=tmp_path, now=_FIXED_NOW)
+    ledger_before = read_ledger(tmp_path)
+    capsys.readouterr()
+
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake,
+                        kill_switch=False)                  # kill-switch off → dry
+
+    assert rc == 0
+    assert fake.calls == []
+    assert current_statuses(tmp_path)[iid] == "approved"    # untouched
+    assert read_ledger(tmp_path) == ledger_before
+    assert _dark_park_lines(capsys) == []
+
+
+def test_post_now_park_plus_unknown_id_still_exits_red(monkeypatch, tmp_path):
+    """Tie-break on the rc ruling: a dispatch that parks one real item AND names
+    an id that is not in this checkout keeps its red. The park is expected; a
+    phantom id is a fault of its own (the radar dispatched something never
+    committed), and the enumeration keeps "missing item" red."""
+    from engine.marketing.outbox import current_statuses
+
+    _write_desk_network_cfg(tmp_path, wire_enabled=False)
+    iid = _seed_wire_item(tmp_path)
+
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path,
+                        ["--live", "--post-now", f"{iid},ob-does-not-exist"],
+                        fake_publisher=fake, kill_switch=True)
+
+    assert rc == 3
+    assert fake.calls == []
+    assert current_statuses(tmp_path)[iid] == "quarantined"   # the real one parked
