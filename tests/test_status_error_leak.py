@@ -27,6 +27,10 @@ Run:
 """
 from __future__ import annotations
 
+import json
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+
 import pytest
 
 
@@ -96,3 +100,84 @@ def test_status_happy_envelope_and_health_both_return_200(client):
 
     h = client.get("/api/health")
     assert h.status_code == 200
+
+
+def test_status_reports_release_semantics_not_only_file_age(
+    client, tmp_path, monkeypatch
+):
+    import app.main as main
+
+    scheduled = datetime.now(ZoneInfo("America/New_York")) - timedelta(minutes=3)
+    release = tmp_path / "release_publications.json"
+    release.write_text(
+        json.dumps(
+            {
+                "schema": "release_publications.v2",
+                "built": datetime.now().astimezone().isoformat(),
+                "due": [{"type": "FOMC"}],
+                "publications": [],
+                "events": [
+                    {
+                        "type": "FOMC",
+                        "date": scheduled.date().isoformat(),
+                        "time_et": scheduled.strftime("%H:%M"),
+                        "status": "awaiting_publication",
+                    }
+                ],
+                "source_health": [{"source_id": "fed_fomc", "status": "error"}],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    def artifact(name: str):
+        return release if name == "release_publications.json" else tmp_path / name
+
+    monkeypatch.setattr(main, "_live_artifact", artifact)
+    response = client.get("/api/status")
+    assert response.status_code == 200
+    check = response.json()["checks"]["release_publications"]
+    assert check["event_status"] == {"awaiting_publication": 1}
+    assert check["source_errors"] == 1
+    assert 2 <= check["max_publication_lag_min"] <= 4
+
+
+def test_status_exposes_unparsed_high_impact_publication(
+    client, tmp_path, monkeypatch
+):
+    import app.main as main
+
+    scheduled = datetime.now(ZoneInfo("America/New_York")) - timedelta(minutes=4)
+    event = {
+        "event_id": f"fomc:{scheduled.date().isoformat()}",
+        "type": "FOMC",
+        "date": scheduled.date().isoformat(),
+        "time_et": scheduled.strftime("%H:%M"),
+        "status": "published_unparsed",
+        "data_ready": False,
+    }
+    release = tmp_path / "release_publications.json"
+    release.write_text(
+        json.dumps(
+            {
+                "schema": "release_publications.v2",
+                "built": datetime.now().astimezone().isoformat(),
+                "due": [event],
+                "publications": [event],
+                "events": [event],
+                "source_health": [{"source_id": "fed_fomc", "status": "ok"}],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    def artifact(name: str):
+        return release if name == "release_publications.json" else tmp_path / name
+
+    monkeypatch.setattr(main, "_live_artifact", artifact)
+    check = client.get("/api/status").json()["checks"]["release_publications"]
+    assert check["event_status"] == {"published_unparsed": 1}
+    assert check["published"] == 1
+    assert check["verified_publications"] == 0
+    assert check["unparsed_publications"] == 1
+    assert 3 <= check["max_publication_lag_min"] <= 5
