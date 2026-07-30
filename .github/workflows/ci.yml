@@ -2162,6 +2162,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          # Keep the complete current working tree because legacy suites inspect
+          # committed site/ artifacts, but do not transfer every historical site/
+          # blob. The four #4053 pack checkouts took 6m45s-14m39s with fetch-depth: 0
+          # alone. checkout@v4 maps sparse/partial settings onto `git fetch
+          # --filter=blob:none`; full history/merge-base semantics remain available
+          # while checkout lazily downloads only blobs needed by the current tree.
+          filter: blob:none
           fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
