@@ -112,6 +112,17 @@ jobs:
         # surface (~6.6k files, ~450MB) and cone mode always includes top-level
         # files, so lib/config's root config.yml comes along:
         #   engine, scripts, lib  — the code
+        #   app                   — NOT decorative and NOT a read path: the
+        #                           radar's live self-fetch imports
+        #                           scripts.build_live_quotes, which does
+        #                           `from app.tape_symbols import TAPE_SYMBOLS` at
+        #                           MODULE scope. Without this entry that import
+        #                           raises ModuleNotFoundError, refresh_live_snapshot
+        #                           catches it, prints its fail-soft warning, and
+        #                           the self-fetch is dead in production while
+        #                           looking healthy in every test — the shipped-dark
+        #                           class. Verified by materializing this cone and
+        #                           importing inside it.
         #   config                — hot_tape.yml + marketing.yml
         #   data/marketing        — pack, ring, fired ledger, outbox, quote
         #                           snapshot, logo cache (all three commit paths
@@ -131,6 +142,7 @@ jobs:
           fetch-depth: 1
           filter: blob:none
           sparse-checkout: |
+            app
             engine
             scripts
             lib

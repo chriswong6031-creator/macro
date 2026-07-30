@@ -1800,7 +1800,7 @@ class TestCIWiring:
         cone = {line.strip() for line in str(with_["sparse-checkout"]).splitlines()
                 if line.strip()}
         assert cone == {
-            "engine", "scripts", "lib", "config",
+            "app", "engine", "scripts", "lib", "config",
             "data/marketing", "data/earnings",
             "data/baskets/ohlcv", "data/stocks",
             "site/marketdata", "site/live",
@@ -2285,3 +2285,85 @@ class TestMultiPassCadence:
             assert ids_file.read_text(encoding="utf-8").strip(), ids_file.read_text()
         else:
             assert not ids_file.exists() or not ids_file.read_text().strip()
+
+
+class TestSelfFetchImportsResolveInTheCone:
+    """The self-fetch's import graph must fit the sparse checkout it runs in.
+
+    `refresh_live_snapshot` imports `scripts.build_live_quotes` lazily, and that
+    module does `from app.tape_symbols import TAPE_SYMBOLS` at MODULE scope. `app`
+    was not in the radar's cone when the self-fetch shipped: the import raised
+    ModuleNotFoundError, the fail-soft handler swallowed it into a ::warning, and
+    the radar stood down exactly as it had before — a dead primary fix that passed
+    every test, because tests run in a full checkout. Caught by materializing the
+    cone and importing inside it.
+
+    Structural on purpose: it derives the requirement from the source's actual
+    imports, so the NEXT first-party import added to build_live_quotes fails this
+    test instead of dying quietly in production.
+    """
+
+    #: Top-level dirs that are first-party packages rather than stdlib/site-packages.
+    _FIRST_PARTY = {"app", "engine", "lib", "scripts", "collectors", "admin"}
+
+    @staticmethod
+    def _cone() -> set[str]:
+        import yaml as _yaml
+
+        wf = _yaml.safe_load(
+            (REPO_ROOT / ".github/workflows/marketing-hot-tape.yml").read_text(
+                encoding="utf-8"))
+        checkout = [s for s in wf["jobs"]["radar"]["steps"]
+                    if str(s.get("uses", "")).startswith("actions/checkout")][0]
+        return {line.strip()
+                for line in str(checkout["with"]["sparse-checkout"]).splitlines()
+                if line.strip()}
+
+    def _module_scope_first_party_imports(self, rel: str) -> set[str]:
+        import ast
+
+        tree = ast.parse((REPO_ROOT / rel).read_text(encoding="utf-8"))
+        roots: set[str] = set()
+        for node in tree.body:            # MODULE SCOPE ONLY — lazy imports are fine
+            if isinstance(node, ast.Import):
+                names = [a.name for a in node.names]
+            elif isinstance(node, ast.ImportFrom):
+                names = [node.module or ""]
+            else:
+                continue
+            for name in names:
+                root = name.split(".")[0]
+                if root in self._FIRST_PARTY:
+                    roots.add(root)
+        return roots
+
+    def test_the_quote_builder_module_graph_is_inside_the_cone(self):
+        cone = self._cone()
+        # The chain the self-fetch actually walks: build_live_quotes -> live_quotes.
+        for rel in ("scripts/build_live_quotes.py", "engine/live_quotes.py"):
+            for root in self._module_scope_first_party_imports(rel):
+                assert root in cone, (
+                    f"{rel} imports `{root}` at module scope but `{root}` is not in "
+                    f"the radar's sparse cone — the self-fetch would raise "
+                    f"ModuleNotFoundError and fail soft into a warning")
+
+    def test_the_radar_module_graph_is_inside_the_cone(self):
+        cone = self._cone()
+        for root in self._module_scope_first_party_imports("scripts/hot_tape_radar.py"):
+            assert root in cone, f"hot_tape_radar imports `{root}`, absent from the cone"
+
+    def test_live_quotes_lane_cone_covers_its_own_graph_too(self):
+        """The same trap, the same day, in the sibling lane this PR also sparsened."""
+        import yaml as _yaml
+
+        wf = _yaml.safe_load(
+            (REPO_ROOT / ".github/workflows/live-quotes.yml").read_text(
+                encoding="utf-8"))
+        checkout = [s for s in wf["jobs"]["snapshot"]["steps"]
+                    if str(s.get("uses", "")).startswith("actions/checkout")][0]
+        cone = {line.strip()
+                for line in str(checkout["with"]["sparse-checkout"]).splitlines()
+                if line.strip()}
+        for rel in ("scripts/build_live_quotes.py", "engine/live_quotes.py"):
+            for root in self._module_scope_first_party_imports(rel):
+                assert root in cone, f"{rel} imports `{root}`, absent from the cone"
