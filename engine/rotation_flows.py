@@ -19,7 +19,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from lib import config
+from lib import config, nyse_calendar
 
 log = logging.getLogger(__name__)
 
@@ -103,6 +103,10 @@ def gamma_receipt(etf: str, data_dir: Path | None = None) -> dict:
                 "note": f"no GEX feed ({etf})"}
     try:
         df = pd.read_parquet(p)
+        # SESSION GUARD (#3721 class, review M3): this function PUBLISHES `gex_asof`
+        # from index[-1] and the regime from iloc[-1] — the #F3-17 shape verbatim (a
+        # non-session date shipped as a receipt's as-of stamp).
+        df = nyse_calendar.session_rows(df, label=f"cboe/gex_{etf}")
         if df.empty or "gamma_regime" not in df.columns:
             return {"gamma_regime": None, "gex_asof": None,
                     "note": "gamma_regime column missing"}

@@ -70,7 +70,7 @@ from typing import Callable
 import numpy as np
 import pandas as pd
 
-from lib import config
+from lib import config, nyse_calendar
 from lib.nyse_calendar import session_dates, session_rows
 
 # ── nullable stamp schema (ruling A6/A9; W-C additions 2026-07-05; W-OVC 2026-07-17) ─
@@ -248,7 +248,9 @@ def _default_read_skew_snapshots() -> pd.DataFrame | None:
     if not p.exists():
         return None
     try:
-        return pd.read_parquet(p, columns=["date", "underlying", "skew"])
+        return nyse_calendar.session_rows(
+            pd.read_parquet(p, columns=["date", "underlying", "skew"]),
+            "date", label="options_skew/snapshots")
     except Exception:  # noqa: BLE001
         return None
 
@@ -263,7 +265,9 @@ def _default_read_ivspread_snapshots() -> pd.DataFrame | None:
     if not p.exists():
         return None
     try:
-        return pd.read_parquet(p, columns=["date", "underlying", "ivspread_rel"])
+        return nyse_calendar.session_rows(
+            pd.read_parquet(p, columns=["date", "underlying", "ivspread_rel"]),
+            "date", label="options_ivspread/snapshots")
     except Exception:  # noqa: BLE001
         return None
 
@@ -802,6 +806,36 @@ def stamp_options_state(
     if ivspread_df is None:
         loader = _ivspread_loader or _default_read_ivspread_snapshots
         ivspread_df = loader()
+
+    # ── SESSION GUARD (#3721 class, OIP E8 2026-07-29) ───────────────────────
+    # Every dated store this stamp reads accrues non-session rows, and those rows
+    # RECOMPUTE iv30 / spot / walls / skew off a stale carried-forward price — they are
+    # fabricated observations, not genuine closes.  Measured 2026-07-29:
+    # polygon_gex/summary_* ~11 of 39 dates, options_skew 8 of 28, options_ivspread
+    # 6 of 21, polygon_gex/chains 11 of 39 snapshot files.  Unfiltered they corrupt this
+    # module three ways: the PIT `date <= as_of` + `.iloc[-1]` pick can land on a
+    # Saturday recompute; `_vanna_hedge_5d_from_summary`'s positional `.iloc[-6]` and
+    # `_DOI_WINDOW`'s "today + 5 prior TRADING snapshots" stop meaning sessions; and a
+    # weekend chain snapshot enters the ΔOI slope as a duplicate day.
+    # The DISK readers filter at their own source (_default_read_summary and the two
+    # snapshot loaders) because two ledger-writing call paths in
+    # scripts/stamp_options_state.py bypass this funnel entirely — see the docstring on
+    # _default_read_summary.  The filters below therefore exist for INJECTED readers and
+    # pre-loaded frames (the stamp_ledger pass hands both in); re-filtering an
+    # already-session-true frame is a no-op.  Fail-open.
+    _raw_read_summary = read_summary
+    read_summary = lambda tk: nyse_calendar.session_rows(  # noqa: E731
+        _raw_read_summary(tk), label=f"injected summary_{tk}")
+    skew_df = (nyse_calendar.session_rows(skew_df, "date", label="injected options_skew")
+               if skew_df is not None else None)
+    ivspread_df = (nyse_calendar.session_rows(ivspread_df, "date",
+                                              label="injected options_ivspread")
+                   if ivspread_df is not None else None)
+    # keep_unparseable=False: chain_dates are real date objects, so anything unreadable
+    # here is a bug, not data we must preserve (contrast altdata, which passes PATHS).
+    chain_dates = (nyse_calendar.session_dates(
+        chain_dates, keep_unparseable=False, label="polygon_gex/chains")
+        if chain_dates else chain_dates)
 
     stamp = dict(_NULL_STAMP)
     # W1.3 fields from GEX summary

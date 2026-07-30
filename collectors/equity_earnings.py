@@ -28,6 +28,7 @@ while the store-level freshness tripwire read green off the 3 fresh rows.
 """
 from __future__ import annotations
 
+import argparse
 import json
 import logging
 import time
@@ -60,6 +61,15 @@ def _cache_path():
     p = config.data_dir() / "earnings" / "earnings.parquet"
     p.parent.mkdir(parents=True, exist_ok=True)
     return p
+
+
+def _safe_json_list(s) -> list:
+    """json.loads(s) as a list, or [] — never raises."""
+    try:
+        v = json.loads(s or "[]")
+    except (TypeError, ValueError):
+        return []
+    return v if isinstance(v, list) else []
 
 
 def _num(x) -> float | None:
@@ -235,6 +245,8 @@ def fetch_earnings(force: bool = False, max_new: int = 120,
 
     # surprise history: drip a capped batch of stale/uncached names (the only expensive call)
     todo = [t for t in (tickers or sorted(cal) or list(universe)) if stale(t) and t in out.index][:max_new]
+    if "surprises_as_of" not in out.columns and not out.empty:
+        out["surprises_as_of"] = None
     for t in todo:
         out.loc[t, "surprises_json"] = json.dumps(_surprises(session, t))
         out.loc[t, "surprises_as_of"] = now
@@ -242,34 +254,61 @@ def fetch_earnings(force: bool = False, max_new: int = 120,
         time.sleep(0.25)
     if not out.empty:
         out.to_parquet(cache)
-    log.info("equity_earnings: cache now %d tickers (%d with a next date)",
-             len(out), int(out["next_date"].notna().sum()) if "next_date" in out else 0)
+    _n_surp = 0
+    if not out.empty and "surprises_json" in out.columns:
+        _n_surp = int(out["surprises_json"].fillna("[]").apply(
+            lambda s: bool(_safe_json_list(s))).sum())
+    log.info("equity_earnings: cache now %d tickers (%d with a next date, "
+             "%d with surprise history; dripped %d this run)",
+             len(out), int(out["next_date"].notna().sum()) if "next_date" in out else 0,
+             _n_surp, len(todo))
     return out
 
 
+DEFAULT_MAX_NEW = 120     # surprise-history drip cap per run (~30s at 0.25s/call)
+
+
 def main(argv: list[str] | None = None) -> int:
-    """CLI. NO ARGS = the nightly production sweep over the WHOLE breadth universe.
+    """CLI entry point.  BARE `python -m collectors.equity_earnings` IS THE NIGHTLY.
 
-    A named-ticker run is a smoke test and must opt in via `--tickers`. Never restore a
-    default ticker list here: `daily.yml` invokes this module bare, so any fallback
-    universe silently becomes the nightly's universe (the 2026-06-19 freeze).
+    Root-cause fix (E8/E5 sweep + #3979, 2026-07-29): this block used to read
+        ts = sys.argv[1:] or ["AAPL", "NVDA", "JPM"]
+        fetch_earnings(force=True, max_new=len(ts), tickers=ts)
+    i.e. a bare invocation ran a THREE-TICKER smoke test — and daily.yml's
+    collect_tail step invokes it bare.  So the "~66 weekday, whole-universe"
+    sweep the step comment promises had never run in production: the store held
+    1361 rows stamped 2026-06-19 and exactly 3 (AAPL/NVDA/JPM — the hardcoded
+    smoke list) stamped 2026-07-28.  Nasdaq was never the problem (probed live
+    the same day: 305/61/132 calendar rows for 07-30/07-31/08-03, HTTP 200).
+
+    A bare run now sweeps the real `_universe()`.  A smoke test must name its
+    tickers explicitly — positional (`python -m collectors.equity_earnings AAPL
+    NVDA`) or via `--tickers` (space- and/or comma-separated symbols).  Never
+    restore a default ticker list here: any fallback universe silently becomes
+    the nightly's universe (the 2026-06-19 freeze shape).
     """
-    import argparse
-    parser = argparse.ArgumentParser(description="Nasdaq earnings calendar + surprise sweep")
-    parser.add_argument("--tickers", nargs="+", metavar="SYM",
-                        help="Smoke test: sweep ONLY these tickers (default: whole universe)")
-    parser.add_argument("--max-new", type=int, default=120,
-                        help="Cap on surprise-history fetches this run (default: 120)")
-    parser.add_argument("--force", action="store_true",
-                        help="Re-fetch surprise history regardless of age")
-    args = parser.parse_args(argv)
-
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
-    ts = [t.upper() for t in args.tickers] if args.tickers else None
-    max_new = len(ts) if ts else args.max_new
-    df = fetch_earnings(force=args.force or bool(ts), max_new=max_new, tickers=ts)
+    ap = argparse.ArgumentParser(description="US earnings calendar + surprise-history sweep")
+    ap.add_argument("tickers", nargs="*", metavar="SYM",
+                    help="explicit tickers = SMOKE TEST (default: sweep the full universe)")
+    ap.add_argument("--tickers", dest="tickers_flag", nargs="+", metavar="SYM", default=None,
+                    help="same smoke path as the positional form; space- and/or "
+                         "comma-separated symbols both accepted")
+    ap.add_argument("--max-new", type=int, default=DEFAULT_MAX_NEW,
+                    help=f"surprise-history drip cap (default {DEFAULT_MAX_NEW})")
+    ap.add_argument("--force", action="store_true",
+                    help="refresh surprise history regardless of REFRESH_DAYS age")
+    args = ap.parse_args(argv)
 
-    if ts:                                  # smoke test: print the per-name detail
+    raw = list(args.tickers_flag or []) + list(args.tickers or [])
+    ts = list(dict.fromkeys(
+        sym for tok in raw for sym in (s.strip().upper() for s in tok.split(",")) if sym
+    )) or None
+
+    if ts:
+        # Smoke path: force + a cap matching the named list — never the nightly
+        # (daily.yml invokes this module bare; tests pin tickers=None on that path).
+        df = fetch_earnings(force=True, max_new=len(ts), tickers=ts)
         for t in ts:
             if t in df.index:
                 r = df.loc[t]
@@ -279,6 +318,21 @@ def main(argv: list[str] | None = None) -> int:
                 for s in surp:
                     print(f"   {s['qtr']}: actual {s['eps']} vs est {s['consensus']} "
                           f"→ {s['surprise_pct']}%")
+        return 0
+
+    # Production path: whole universe, capped surprise drip.
+    df = fetch_earnings(force=args.force, max_new=args.max_new)
+    n = len(df)
+    if n == 0:
+        # Line-start annotation, never through a logger (tests/test_gh_annotation_line_start.py).
+        print("::warning title=earnings-sweep-empty::earnings sweep produced zero rows "
+              "(bot-wall or empty universe) — the previous cache stands", flush=True)
+        return 0
+    fresh = 0
+    if "as_of" in df.columns:
+        today = datetime.now(timezone.utc).date().isoformat()
+        fresh = int(df["as_of"].astype(str).str.startswith(today).sum())
+    print(f"equity_earnings: swept {n} tickers, {fresh} stamped today", flush=True)
     return 0
 
 

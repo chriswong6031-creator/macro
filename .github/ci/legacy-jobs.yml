@@ -904,8 +904,21 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      # Deps grew 2026-07-30 (#3977). This job was `pytest pyyaml` — right for the
+      # workflow-YAML steps — but OIP E8 attached five options suites whose assertions are
+      # DATA-layer: they build DataFrames, round-trip parquet, and drive builders that
+      # render templates and fetch over HTTP. Only the first added step ran before ci-pack-1
+      # died, so its `No module named 'jinja2'` hid four more steps that would have failed
+      # the same way on pandas/jinja2/requests. Verified minimal by installing one package
+      # at a time in a clean venv (2026-07-30): pytest+pyyaml alone collects none of the
+      # four; +pandas leaves parquet writes failing; +pyarrow leaves 15 jinja2 and 11
+      # requests failures; the set below runs all five green (31+52+38+33+23 = 177 tests).
+      # numpy is transitive via pandas and named for the record, as causal-factory does.
+      # NOT patched with importorskip anywhere — a suite that skips in the only job naming
+      # it executes NOWHERE while reading green, which is the class the
+      # check_skip_only_suites.py steps below exist to catch.
       - name: install minimal deps
-        run: pip install pytest pyyaml
+        run: pip install pytest pyyaml pandas numpy pyarrow jinja2 requests
       - name: check_workflow_yaml selftest
         run: python scripts/check_workflow_yaml.py --selftest
       - name: "all workflow files must parse with on:/jobs: blocks"
@@ -954,6 +967,37 @@ jobs:
       # so the minimal pytest+pyyaml install above is enough.
       - name: render-lane scope contract (canada must be first-class, not a build_vector hook)
         run: python -m pytest tests/test_render_canada_scope.py -q
+      # OIP E8 (2026-07-29). Same #3718 class as the intl suite above: this PR shipped
+      # five guards and, on first push, NO `run:` step named any of them — the
+      # options-workspace suite appeared only in a render.yml YAML COMMENT, which is
+      # enough to satisfy audit_unrun_tests.py's text matcher (tightened in the same
+      # commit to read `run:` steps only, so a comment can no longer fake coverage).
+      # Deps: see the install step's note — these five need the data stack, not just
+      # pytest+pyyaml. The express-lane suite itself is stdlib + bash (it shells out to
+      # execute render.yml's `region_of` for real) and its one RUNTIME probe stubs jinja2
+      # when absent rather than skipping, so it stays runnable in a thin env too.
+      - name: options express-lane coverage contract (workspace + screener must stay wired)
+        run: python -m pytest tests/test_render_options_workspace_scope.py -q
+      # #3721 weekend-row class. The options stores accrue non-session rows that RECOMPUTE
+      # IV/spot/walls off a stale price; unfiltered they corrupt .iloc[-1], percentile
+      # windows and positional lookbacks — including the n_obs count that gates
+      # call_skew_rich into the CROWDED state.
+      - name: options readers must session-filter dated stores
+        run: python -m pytest tests/test_options_session_guards.py -q
+      # The ×100 class, hit twice. Both incidents survived tests whose FIXTURES encoded
+      # the bug, so this suite asserts against fixture-shaped AND prod-shaped inputs and
+      # simulates a newest-vintage-only flip.
+      - name: options ingestion seams must assert percent-vs-fraction
+        run: python -m pytest tests/test_options_unit_seams.py -q
+      # R8 one coverage shape across the four family builders; pins the honesty rules
+      # (unknown stays None, never a fabricated 100%; staleness is calendar-derived).
+      - name: options coverage object contract
+        run: python -m pytest tests/test_options_coverage_object.py -q
+      # E5: daily.yml invokes collectors.equity_earnings BARE, and that module's __main__
+      # used to be a three-ticker smoke test — the whole-universe sweep had never run.
+      # Pins the entry point AND the coverage-aware tripwire that could not see it.
+      - name: earnings sweep entry point + coverage-aware tripwire
+        run: python -m pytest tests/test_earnings_sweep_entrypoint.py -q
       # FD-EXP (2026-07-30). Third instance of the same class: build_flow_desk was
       # daily.yml-ONLY, so flow_desk.html/json + flowdata/cohorts.json refreshed once a
       # night while both express lanes rebuilt the stores around them (#3515 flow_leaders,

@@ -19,8 +19,14 @@ missing entry is a false "store stale" — a red-but-non-fatal gate step and an 
 """
 from __future__ import annotations
 
+import logging
 from datetime import date, datetime, time, timedelta, timezone
 from zoneinfo import ZoneInfo
+
+# Plain messages only — never a '::' prefix through a logger (a level prefix
+# pushes the workflow command off column 0 and GitHub drops it silently;
+# see tests/test_gh_annotation_line_start.py).
+_log = logging.getLogger(__name__)
 
 ET = ZoneInfo("America/New_York")
 
@@ -229,13 +235,14 @@ def session_date(now_utc: datetime | None = None) -> date:
     return last_session_on_or_before(today_et - timedelta(days=1))
 
 
-def session_rows(df, date_col: str | None = None, *, label: str = "store"):
+def session_rows(df, date_col: str | None = None, *, label: str = "store",
+                 keep_unparseable: bool = True):
     """Drop non-session rows from a dated frame — the #3721 weekend-row guard.
 
     Several EOD options stores accrue a row on non-session days: as of 2026-07-29
     ``data/cboe/gex.parquet`` carried 13 non-session rows of 39,
-    ``data/options_skew/snapshots.parquet`` 8 of 28,
-    ``data/options_ivspread/snapshots.parquet`` 6 of 21, and the
+    ``data/cboe/putcall.parquet`` 13 of 39, ``data/options_skew/snapshots.parquet``
+    8 of 28, ``data/options_ivspread/snapshots.parquet`` 6 of 21, and the
     ``data/polygon_gex/summary_*.parquet`` family ~11 of 39 dates.  A weekend row is
     NOT a harmless carry-forward duplicate: the builder recomputes IV, spot, walls and
     net-GEX off a stale carried-forward price, so the row is a fabricated observation.
@@ -248,10 +255,22 @@ def session_rows(df, date_col: str | None = None, *, label: str = "store"):
       * ``date_col=None`` — the frame is indexed by date/DatetimeIndex.
       * ``date_col="date"`` — the dates live in that column (str or datetime).
 
-    FAIL-OPEN by design: if filtering would empty the frame, or the dates cannot be
-    parsed, the original frame is returned unchanged.  A calendar-arithmetic surprise
-    must degrade to the old behaviour, never to a blank panel.  Callers that want to
-    know log the count difference themselves.
+    PER-ROW REALITY (the docstring used to overpromise here).  A value that cannot be
+    read as a date is kept when ``keep_unparseable`` (the default), and that now
+    genuinely includes null/NaT: ``pd.Timestamp(None)`` returns ``NaT`` rather than
+    raising, and ``is_session(NaT)`` is False, so nulls used to be silently DROPPED by
+    the very branch documented as keeping them.  Nulls are detected explicitly.
+
+    NOT-A-DATED-FRAME is a WARNING, not a silent pass.  A missing ``date_col`` or a
+    non-datetime index (a ``RangeIndex`` from a ``reset_index()`` or a hand-built test
+    frame) makes this function a no-op, which is the worst outcome for a guard: the call
+    reads as protection and does nothing.  Both cases log at WARNING and return the frame
+    unchanged — the caller is doing something the guard cannot honour.
+
+    FAIL-OPEN otherwise: if filtering would empty the frame the original is returned.  A
+    calendar-arithmetic surprise must degrade to the old behaviour, never to a blank
+    panel.  ``label`` names the store in the log lines (drops log at DEBUG — a drop is the
+    normal case and this runs per-ticker inside the stamp pass, so INFO would flood).
 
     Returns the filtered frame (a view/copy per pandas' own semantics).
     """
@@ -260,43 +279,113 @@ def session_rows(df, date_col: str | None = None, *, label: str = "store"):
     try:
         import pandas as pd
 
-        src = df[date_col] if date_col is not None else df.index
+        if date_col is not None:
+            if date_col not in getattr(df, "columns", ()):
+                _log.warning("session_rows(%s): no %r column — NOT filtered "
+                             "(the guard is a no-op on this frame)", label, date_col)
+                return df
+            src = df[date_col]
+        else:
+            src = df.index
+            if not isinstance(src, pd.DatetimeIndex):
+                # A NUMERIC index is never a date index here, and it must not be coerced:
+                # pd.Timestamp(0..2) yields 1970-01-01, which is a holiday, so a RangeIndex
+                # frame would silently reach the all-non-session fail-open and read as
+                # "filtered" in the logs. Reject it by dtype instead.
+                if pd.api.types.is_numeric_dtype(src):
+                    _log.warning("session_rows(%s): index is %s (numeric), not dates — "
+                                 "NOT filtered (the guard is a no-op on this frame; pass "
+                                 "date_col= or set a DatetimeIndex)",
+                                 label, type(src).__name__)
+                    return df
+                coerced = pd.to_datetime(pd.Series(list(src)), errors="coerce")
+                if coerced.isna().all():
+                    _log.warning("session_rows(%s): index is %s, not dates — NOT filtered "
+                                 "(the guard is a no-op on this frame)",
+                                 label, type(src).__name__)
+                    return df
+
         keep = []
         for raw in src:
-            try:
-                d = pd.Timestamp(raw).date()
-            except (ValueError, TypeError):
-                keep.append(True)      # unparseable: keep, never silently drop data
+            if raw is None or raw is pd.NaT or (isinstance(raw, float) and raw != raw):
+                keep.append(keep_unparseable)     # null: keep by default, never silent
                 continue
-            keep.append(is_session(d))
+            try:
+                ts = pd.Timestamp(raw)
+            except (ValueError, TypeError):
+                keep.append(keep_unparseable)     # unreadable: same contract
+                continue
+            if pd.isna(ts):                       # pd.Timestamp(None) -> NaT, no raise
+                keep.append(keep_unparseable)
+                continue
+            keep.append(is_session(ts.date()))
+
         if not any(keep):
+            _log.warning("session_rows(%s): every one of %d rows is non-session — "
+                         "keeping the frame unfiltered (fail-open)", label, len(df))
             return df
         filtered = df[pd.Series(keep, index=df.index)] if date_col is not None else df[keep]
-        return filtered if len(filtered) else df
-    except Exception:  # noqa: BLE001
+        if not len(filtered):
+            return df
+        if len(filtered) != len(df):
+            _log.debug("session_rows(%s): dropped %d non-session row(s) of %d",
+                       label, len(df) - len(filtered), len(df))
+        return filtered
+    except Exception as exc:  # noqa: BLE001
+        _log.warning("session_rows(%s): filter failed (%s) — using the frame unfiltered",
+                     label, exc)
         return df
 
 
-def session_dates(dates, *, key=None, keep_unparseable: bool = False) -> list:
+def session_dates(dates, *, key=None, keep_unparseable: bool = True,
+                  label: str = "store") -> list:
     """The session-only subset of an iterable of dates/strings, order preserved.
 
     The filename-keyed twin of :func:`session_rows` — for stores whose "rows" are files
     (``data/polygon_gex/chains/{DATE}.parquet`` carried 11 non-session snapshots of 39
     on 2026-07-29).  Pass ``key`` to extract the date from each item (e.g.
     ``key=lambda p: Path(p).stem`` for a list of paths); without it the items themselves
-    must parse as dates.  FAIL-OPEN: returns the input list unchanged when the filter
-    would empty it, so a calendar surprise degrades to the old behaviour.
+    must parse as dates — and a list of PATHS does not, so omitting ``key`` there makes
+    the whole filter a silent no-op under ``keep_unparseable``.
+
+    ``keep_unparseable`` defaults to True to match :func:`session_rows`' contract (never
+    silently drop data the guard cannot read); both call sites pass it explicitly.
+
+    FAIL-OPEN: returns the input unchanged when the filter would empty it or when the
+    scan raises, so a calendar surprise degrades to the old behaviour.
     """
     import pandas as pd
 
-    out = []
-    for raw in dates:
-        try:
-            d = pd.Timestamp(key(raw) if key is not None else raw).date()
-        except (ValueError, TypeError):
-            if keep_unparseable:
+    src = list(dates)          # materialise: an iterator would be consumed by the scan
+    try:
+        out = []
+        for raw in src:
+            probe = key(raw) if key is not None else raw
+            if probe is None:
+                if keep_unparseable:
+                    out.append(raw)
+                continue
+            try:
+                ts = pd.Timestamp(probe)
+            except (ValueError, TypeError):
+                if keep_unparseable:
+                    out.append(raw)
+                continue
+            if pd.isna(ts):
+                if keep_unparseable:
+                    out.append(raw)
+                continue
+            if is_session(ts.date()):
                 out.append(raw)
-            continue
-        if is_session(d):
-            out.append(raw)
-    return out or list(dates)
+    except Exception as exc:  # noqa: BLE001
+        _log.warning("session_dates(%s): filter failed (%s) — using the list unfiltered",
+                     label, exc)
+        return src
+    if not out:
+        _log.warning("session_dates(%s): every one of %d entries is non-session — "
+                     "keeping the list unfiltered (fail-open)", label, len(src))
+        return src
+    if len(out) != len(src):
+        _log.debug("session_dates(%s): dropped %d non-session entr(ies) of %d",
+                   label, len(src) - len(out), len(src))
+    return out

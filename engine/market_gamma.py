@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from lib import store
+from lib import nyse_calendar, store
 
 # Reconstructed index dealer-gamma history (scripts/build_index_gex_history.py). SPY is
 # the S&P index proxy comparable to the SPX-based cboe/gex current-day source used by
@@ -44,6 +44,12 @@ def _history_context(current_net_gex_bn: "float | None",
     hist = store.read(_HISTORY_GROUP, _HISTORY_ROOT)
     if hist is None or not len(hist) or "net_gex_bn" not in hist.columns:
         return None
+    # Session guard as above. This store is reconstructed and mostly clean — as measured
+    # on 2026-07-29 it held 2388 rows spanning 2017-01-03 -> 2026-07-02 with exactly ONE
+    # non-session row, dated 2019-02-02 (a Saturday). But the percentile below is an
+    # own-history distribution and `.iloc[-1]` is the standing reading, so both must be
+    # session-true by construction, not by luck of which rows the reconstruction emitted.
+    hist = nyse_calendar.session_rows(hist, label="index_gex_history/SPY")
     ng = pd.to_numeric(hist["net_gex_bn"], errors="coerce").dropna()
     ctx: dict = {
         "source": f"{_HISTORY_GROUP}/{_HISTORY_ROOT}",
@@ -80,6 +86,15 @@ def view(gex: "pd.DataFrame | None") -> dict | None:
     coarse net-$ sign the ETF-flows board flags — they answer different questions."""
     if gex is None or not len(gex):
         return None
+    # SESSION GUARD (#3721 class, OIP E8 2026-07-29). data/cboe/gex.parquet accrues rows
+    # on non-session days — 13 of 39 as of this writing — and those rows RECOMPUTE
+    # spot_vs_flip_pct / flip_strike / net_gex_bn off a stale carried-forward spot rather
+    # than skipping the day. Unfiltered, `.iloc[-1]` hands the dashboard banner AND
+    # latest['market_gamma'] a fabricated Saturday reading every weekend and Monday
+    # morning. build_market_structure._read_gex_spx already filters its twin store
+    # (gex_SPX.parquet) for exactly this reason; this reader was missed.
+    # Fail-open: session_rows returns the frame unchanged if filtering would empty it.
+    gex = nyse_calendar.session_rows(gex, label="cboe/gex")
     g = gex.iloc[-1]
     svf = g.get("spot_vs_flip_pct")
     if svf is None or pd.isna(svf):

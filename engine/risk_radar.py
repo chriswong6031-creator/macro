@@ -45,7 +45,7 @@ import numpy as np
 import pandas as pd
 
 from engine.indicators import pct_rank_window
-from lib import config, store
+from lib import config, nyse_calendar, store
 
 log = logging.getLogger(__name__)
 
@@ -633,10 +633,14 @@ def leading_signals() -> pd.DataFrame:
     # (>= _FLOW_MIN_HISTORY rows), after which the forward-outcome log + the Opus loop gate them like
     # any other leg. Rising equity put/call = hedging demand building; falling/negative net GEX =
     # dealer short-gamma (reflexive air-pocket). Both leak-free causal percentiles.
-    pc = store.read("cboe", "putcall")
+    # SESSION GUARD (#3721 class, review M3): both stores carry 13 non-session rows of
+    # 39, and `len(...) >= _FLOW_MIN_HISTORY` is a MATURITY GATE — padded with weekend
+    # rows it arms these legs ~a third of a window early, on a causal percentile computed
+    # over fabricated observations. Filtering makes the maturity count sessions.
+    pc = nyse_calendar.session_rows(store.read("cboe", "putcall"), label="cboe/putcall")
     if pc is not None and len(pc) >= _FLOW_MIN_HISTORY and "equity_pc_ratio" in pc.columns:
         out["vol_putcall"] = pcol(pc["equity_pc_ratio"].astype(float))
-    gx = store.read("cboe", "gex")
+    gx = nyse_calendar.session_rows(store.read("cboe", "gex"), label="cboe/gex")
     if gx is not None and len(gx) >= _FLOW_MIN_HISTORY and "net_gex_bn" in gx.columns:
         out["vol_gex"] = pcol(-gx["net_gex_bn"].astype(float))   # negative net GEX = dealer short-gamma
     # Tier-B GLOBAL breadth leg (C3, INTL-38): % of country ETFs > 200dma → causal 504d percentile

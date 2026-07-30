@@ -467,9 +467,31 @@ def test_real_data_young_tiles_excluded():
     assert "aaii" in young_tile_keys, "aaii should be in young_tiles"
 
 
+
+def _nyse_sessions(n: int, start: str) -> list:
+    """n consecutive NYSE SESSION timestamps from `start` (inclusive if it is one).
+
+    pandas' freq="B" keeps exchange HOLIDAYS, so a fixture that needs "N observations"
+    from a session-filtered store must generate N real sessions.
+    """
+    from lib import nyse_calendar
+    out = []
+    d = pd.Timestamp(start)
+    while len(out) < n:
+        if nyse_calendar.is_session(d.date()):
+            out.append(d)
+        d += pd.Timedelta(days=1)
+    return out
+
+
 def test_young_tile_putcall_mock(monkeypatch, tmp_path):
     """_young_tile_putcall returns a well-formed dict even with a small store."""
-    idx = pd.bdate_range("2026-01-01", periods=21)
+    # 21 SESSIONS, not 21 business days: obs_count is the maturity signal
+    # vol_shock_scorecard uses to escalate this leg's weight (0.35 -> 1.0), and
+    # _young_tile_putcall now session-filters its store (the #3721 weekend-row class), so a
+    # freq="B" fixture describes 21 rows but only 19 observations — 2026-01-01 (New Year)
+    # and 2026-01-19 (MLK) are business days the exchange is closed.
+    idx = pd.DatetimeIndex(_nyse_sessions(21, "2026-01-02"))
     df = pd.DataFrame({"equity_pc_ratio": [0.7]*21, "index_pc_ratio": [0.9]*21}, index=idx)
     monkeypatch.setattr(fgmod.store, "read", lambda cat, name: df)
     tile = fgmod._young_tile_putcall()

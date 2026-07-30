@@ -101,20 +101,45 @@ def test_pit_no_lookahead_summary():
     assert s["opt_dist_to_flip_pct"] == pytest.approx(2.0)
 
 
+def _sessions(n: int, start: str) -> list[_dt.date]:
+    """n consecutive NYSE SESSION dates from `start` (inclusive if it is one).
+
+    Chain-snapshot fixtures must be session-true: stamp_options_state filters
+    chain_dates through the exchange calendar, so calendar-day fixtures silently shrink
+    the PIT window and a weekend "fire date" has no window at all.
+    """
+    from lib import nyse_calendar
+    out: list[_dt.date] = []
+    d = _dt.date.fromisoformat(start)
+    while len(out) < n:
+        if nyse_calendar.is_session(d):
+            out.append(d)
+        d += _dt.timedelta(days=1)
+    return out
+
+
 def test_pit_no_lookahead_chain():
     """doi_slope/voi_flag on date D use only chain snapshots ≤ D, never a future snapshot.
 
     We plant a huge OI spike on a FUTURE day; a fire before it must not see the spike."""
-    dates = [_dt.date(2026, 6, d) for d in range(15, 25)]  # 10 days
-    future_spike_day = _dt.date(2026, 6, 24)
+    # TEN SESSIONS. This used to be ten consecutive CALENDAR days (06-15..06-24), which
+    # contains Juneteenth (06-19) plus the weekend — only 7 sessions — and the fire below
+    # was dated 06-20, a SATURDAY. stamp_options_state session-filters chain_dates now
+    # (the #3721 class: a weekend chain snapshot re-records the prior session's OI, so it
+    # enters the ΔOI window as a duplicate day), and _DOI_WINDOW's "today + 5 prior
+    # TRADING snapshots" needs six real sessions to exist at all.
+    dates = _sessions(10, "2026-06-15")
+    future_spike_day = dates[-1]
 
     def read_chain(d):
         # normal small OI, but the future day has a 100x spike — if PIT leaks, slope explodes
         oi = 100000.0 if d == future_spike_day else 1000.0
         return _chain_frame("FOO", call_oi=oi)
 
-    # fire on 06-20 (has 6 prior snapshots 15..20) — must NOT include the 06-24 spike
-    s = stamp_options_state("2026-06-20", "FOO", read_summary=lambda t: None,
+    # fire on the 6th session (6 snapshots at/before it) — must NOT see the last-day spike
+    fire_day = dates[5]
+    assert fire_day < future_spike_day
+    s = stamp_options_state(fire_day.isoformat(), "FOO", read_summary=lambda t: None,
                             chain_dates=dates, read_chain=read_chain)
     # all six window days have identical OI (1000) → slope ≈ 0, definitely not spiked
     assert s["opt_doi_slope_5d"] is not None

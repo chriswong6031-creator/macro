@@ -558,6 +558,20 @@ on:
       - "tests/test_render_run_size_cap.py"
       - "tests/test_render_builder_ownership.py"
       - "tests/test_render_canada_scope.py"
+      # OIP E8 options integrity suites (job: workflow-yaml). engine/**, scripts/** and
+      # .github/workflows/** already reach their subjects; these entries are so a
+      # TEST-ONLY edit still starts CI, per the two-halves law.
+      - "tests/test_render_options_workspace_scope.py"
+      - "tests/test_options_session_guards.py"
+      - "tests/test_options_unit_seams.py"
+      - "tests/test_options_coverage_object.py"
+      - "tests/test_earnings_sweep_entrypoint.py"
+      # ...and the two shared libs they guard, so a change to either re-runs them.
+      - "lib/options_units.py"
+      - "lib/options_coverage.py"
+      - "lib/nyse_calendar.py"
+      - "collectors/equity_earnings.py"
+      - "scripts/audit_earnings_freshness.py"
       # W0 PR3 synapse read-gate: any change to engine, scripts, collectors, the registry,
       # the gate script, the test, or the baseline must re-run the read-gate + Article-2 check.
       - "config/synapse.yml"

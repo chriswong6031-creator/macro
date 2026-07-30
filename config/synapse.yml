@@ -5786,7 +5786,11 @@ artifacts:
   live-options-flow-current:
     path: live_flow/feed_current.json
     format: json
-    producer: collectors/live_options_flow_poller.py
+    # OIP E8 (2026-07-29): was `collectors/live_options_flow_poller.py`, a path that has
+    # never existed in this repo. The real producer is scripts/live_flow_poller.py — it
+    # writes feed_current.json via _write_json() (:1549) and uploads it to
+    # R2_PREFIX + "feed_current.json" (:1731), i.e. exactly this key.
+    producer: scripts/live_flow_poller.py
     known_extra_writers: []
     owner_program: options-nw-entry-intelligence
     cadence: collect
