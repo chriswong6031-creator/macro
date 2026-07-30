@@ -915,6 +915,13 @@ jobs:
           . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
+          commit_index() {
+            local message="$1" parent tree commit
+            parent=$(git rev-parse HEAD)
+            tree=$(git write-tree --missing-ok)
+            commit=$(printf '%s\n' "$message" | git commit-tree "$tree" -p "$parent")
+            git update-ref HEAD "$commit" "$parent"
+          }
           # ONLY site/ — never data/ or reports/. The render may touch data/ as a build
           # side-effect (cache writes, alert appends), but committing none of it keeps the
           # nightly the single source of truth for every forward-accountability ledger.
@@ -954,9 +961,9 @@ jobs:
           SCOPE="${{ steps.pick.outputs.scope }}"; SCOPE="${SCOPE:-all}"
           FROM="${{ steps.pick.outputs.rendered_from }}"
           if [ "${RENDER_OK:-0}" = "1" ] && [ -n "$FROM" ]; then
-            git commit -m "render: site re-render $(date -u +%F) (scope=$SCOPE, from=$FROM)"
+            commit_index "render: site re-render $(date -u +%F) (scope=$SCOPE, from=$FROM)"
           else
-            git commit -m "render: site re-render $(date -u +%F) (scope=$SCOPE)"
+            commit_index "render: site re-render $(date -u +%F) (scope=$SCOPE)"
           fi
           # This push is now the ONLY way the render reaches the live site (the VPS serves
           # committed main; there is no Pages-artifact fallback), so it MUST land.
@@ -1023,7 +1030,7 @@ jobs:
               python3 scripts/check_ms_board_coherence.py --heal-from origin/main \
                 || echo "::warning::ms-board coherence heal incomplete (incoherent board may predate this run)"
               if ! git diff --quiet -- site/ templates/; then
-                git add site/ templates/ && git commit -m "render-sync: post-rebase guards (re-stamp + template re-copy + ms-board coherence)" \
+                git add site/ templates/ && commit_index "render-sync: post-rebase guards (re-stamp + template re-copy + ms-board coherence)" \
                   || echo "::warning::render-sync commit failed (non-fatal — pages publish gate backstops divergence)"
               fi
               if push_do; then echo "pushed rendered site on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
