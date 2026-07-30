@@ -216,36 +216,42 @@ ran.
    8h) track lane count far more tightly than requested-tick count, which points
    at a per-lane floor rather than a proportional share of a repo budget. Not
    worth spending the estate's schedule budget to find out.
-3. **In-run multi-pass — SHIPPED 2026-07-30.** One delivered tick does `PASSES`
-   passes `PASS_INTERVAL_S` apart, each committing and dispatching on its own so
-   latency is per-pass, not per-run. At 3×300s this takes the mean to **~17 min**
-   (23% of crosses land inside a covered 10-min window and wait ~2.5 min; the
-   rest wait out the ~33-min hole). That makes the **median** compliant and
-   leaves the **tail** where it was — passes are clustered, so the holes between
-   delivered ticks are untouched. It is a multiplier on whatever GitHub gives us,
-   which is exactly why it is robust to either throttling model.
-4. **Session-long poller** — a chained pair of long jobs (the 6h job cap does not
-   cover a 7h40m session) looping every 5 min, bootstrapped by one delivered tick
-   a day with an hourly re-bootstrap cron as the dead-man. True 5-min cadence,
-   fully compliant distribution. Cost: ~7.7h/day of GitHub-hosted Linux ≈
-   **$77/month**. No new host, no new credential.
-5. **External ticker via `repository_dispatch`** — RECOMMENDED TARGET. A launchd
-   timer on the Mac Studio fires `repository_dispatch` every 5 min during the ET
-   window. `repository_dispatch` and `workflow_dispatch` are the two documented
-   exceptions to GitHub's "GITHUB_TOKEN events do not create workflow runs" rule,
-   so this composes with the existing publisher dispatch. Actions cost is only
-   the real pass time (~12 × 1.5 min/hour ≈ **$23/month**), it gives an exact
-   5-min cadence, and the ticker is ~10 lines. Costs: a fine-grained PAT with
-   `actions:write` (GITHUB_TOKEN does not exist outside Actions), and host-ops on
-   the Studio — negligible load (one curl per tick), but it does put a product
-   dependency on a machine whose job is the render pool.
+3. **In-run multi-pass** — shipped 2026-07-30 as a stepping stone, then
+   superseded by 5 the same day. Bounded to 3 passes it took the mean to ~17 min
+   but left the tail untouched, because the passes cluster and the ~33-minute
+   holes between delivered ticks remain.
+4. **External `repository_dispatch` ticker** (Mac Studio launchd timer) — an exact
+   cadence and near-zero Actions cost, but it needs a **fine-grained PAT with
+   `actions:write`** (GITHUB_TOKEN does not exist outside Actions) and puts a
+   product dependency on the render-pool host. The PAT is operator-only work.
+5. **Session-long poller — CHOSEN AND SHIPPED (operator delegated the call
+   2026-07-30).** One bootstrap tick runs the lane as a session: a 2-entry matrix
+   with `max-parallel: 1` gives two serialized halves (a GitHub *job* caps at 6h;
+   the window is 6h50m), each looping every `PASS_INTERVAL_S` until the ET window
+   closes or its own `JOB_BUDGET_S` is spent. **True 5-minute cadence, so the whole
+   latency distribution is compliant rather than just the median.**
 
-**Recommendation.** Ship 3 (done). Then 5, because it is both the cheapest and
-the only option that makes the whole latency distribution compliant rather than
-just the median; 4 is the fallback if putting the ticker on the Studio is
-unwanted. Both 4 and 5 are standing-cost/host decisions and belong to the
-operator, not to a defect-fix chip — which is why this section states the
-numbers rather than picking for them.
+**Why 5 over 4 — and a correction.** An earlier draft of this section priced 5 at
+~$77/month and 4 at ~$23/month and recommended 4 on cost. **Both figures were
+wrong: this repo is PUBLIC, and GitHub-hosted runner minutes are free and
+unlimited for public repositories.** Cost was the entire case for 4, and it does
+not exist. What remains is that 4 needs a credential and a host and 5 needs
+neither — so 5 wins outright.
+
+A self-dispatch chain of short runs was also considered and rejected: it would
+rest on the GITHUB_TOKEN `workflow_dispatch` carve-out, and nothing in this repo
+demonstrates that carve-out working. `metabolism-cycle.yml` writes exactly such a
+chain, yet every one of its `workflow_dispatch` runs was human-triggered. `sleep`
+in a job needs no such premise.
+
+**What the poller does NOT fix.** It does not make the crons deliver. They are
+demoted to two jobs only: bootstrapping the session, and acting as the crash
+dead-man. If a half dies mid-session, the next delivered tick (~45 min at the
+measured rate) starts a fresh session for the remainder — so a crash costs up to
+~45 minutes of coverage, not the day. `fail-fast: false` keeps half 2 alive when
+half 1 dies, and the concurrency group makes a tick arriving mid-session queue and
+then stand down out-of-window harmlessly. Worth revisiting 4 if that ~45-minute
+crash window ever proves material.
 
 **Standing rule.** A cadence claim in this repo is about *delivered* runs, never
 about the cron expression. When tuning any intraday lane, measure delivery first
@@ -293,6 +299,18 @@ and treat the crontab as an upper bound that reality will not honour.
 - XG charter §6: employee desks join per-call lanes only after XG-W2 enables —
   Hot Tape routes to mastermind_news + flagship until then (cadence-spec chip
   task_0cd280af is in flight; its resolver enablement widens routing later).
+- **Dark-desk park (2026-07-29):** the severity_account ↔ desk_network gap is
+  closed in `scripts/marketing_publisher.py`, not in routing. `severity_account`
+  keeps no liveness fallback — rerouting sub-85 events to flagship would break
+  the flagship law (≥85 severity, ≤1 per pass). Instead any dispatch addressed
+  to a desk that is not effective-enabled quarantines as `account_disabled`
+  (post_now included, both the auto-approve pass and the post loop), with a
+  once-per-account `::warning`. Arming remains the one desk_network flip
+  (XG-W2): fresh radar items flow from that moment, parked history stays dead.
+  A dispatch whose every requested item was dark-parked exits 0 by ruling
+  (2026-07-29) — the annotation and the `account_disabled` ledger rows are the
+  receipts, and a red several times a day until XG-W2 would only train
+  red-fatigue; red stays for genuine failures (validation, unknown id, mixed).
 - In-flight sessions to coordinate with: word-salad copy rewrite
   (task_445d4ea5 — owns template mechanics), Buffer recall (task_318af965 —
   shipped `recall_pending`), cadence specs (task_0cd280af).

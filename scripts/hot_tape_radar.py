@@ -56,7 +56,7 @@ import json
 import logging
 import os
 import sys
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable
 
@@ -188,6 +188,39 @@ def _et_day(now: datetime) -> str:
 # ─────────────────────────────────────────────────────────────────────────────
 # Inputs
 # ─────────────────────────────────────────────────────────────────────────────
+
+def window_end_epoch(root: Path, *, now: datetime | None = None,
+                     demo: bool = False) -> int:
+    """Epoch seconds at which today's ET window (end + grace) closes.
+
+    The session-long pass loop stops here. Computed from the SAME config
+    ``HT.in_window`` reads and on the SAME Eastern clock, because a second
+    implementation of the DST reasoning in bash is how the shipped crons ended up
+    describing a UTC window in the first place.
+
+    Demo returns a far-future stamp: demo exists to run on a closed tape, and a
+    demo loop that stopped at the real window end could not demonstrate anything.
+    Never raises — on any failure it returns `now`, which stops the loop after one
+    pass rather than looping until the job timeout.
+    """
+    t = now or datetime.now(timezone.utc)
+    if demo:
+        return int(t.timestamp()) + 86_400
+    try:
+        cfg = HT.load_config(root)
+        end = HT._parse_hhmm(_cfg(cfg, "window_et.end", "16:05"), time(16, 5))
+        try:
+            grace = float(_cfg(cfg, "window_grace_min", HT.DEFAULTS["window_grace_min"]))
+        except (TypeError, ValueError):
+            grace = float(HT.DEFAULTS["window_grace_min"])
+        et_now = HT._et_clock(t)
+        close = et_now.replace(hour=end.hour, minute=end.minute, second=0,
+                               microsecond=0) + timedelta(minutes=max(0.0, grace))
+        return int(close.timestamp())
+    except Exception as exc:  # noqa: BLE001
+        log.warning("hot_tape_radar: window_end_epoch failed (%s) — one pass only", exc)
+        return int(t.timestamp())
+
 
 def freshness_cfg(cfg: dict | None, *, demo: bool) -> dict:
     """The config the freshness gate ACTUALLY applies.
@@ -1701,12 +1734,27 @@ def main(argv: list[str] | None = None) -> int:
                              "(also via env HOT_TAPE_DEMO=1); items are stamped demo")
     parser.add_argument("--root", default=None,
                         help="repo root (default: this script's parent)")
+    parser.add_argument("--window-status", action="store_true", dest="window_status",
+                        help="print IN_WINDOW=0|1 and WINDOW_END_EPOCH=<int> for the "
+                             "session-long pass loop, then exit. Detects nothing, "
+                             "writes nothing.")
     args = parser.parse_args(argv)
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s",
                         stream=sys.stderr)
     root = Path(args.root) if args.root else _repo_root()
     demo = bool(args.demo) or _flag("HOT_TAPE_DEMO")
+
+    if args.window_status:
+        # ONE window authority. The session-long loop in marketing-hot-tape.yml
+        # needs to know when to stop passing, and re-deriving the ET window in
+        # bash would be a second implementation of the DST reasoning that
+        # HT.in_window already carries — the exact split-brain that put a UTC
+        # window in the shipped crons. So it asks the radar instead.
+        print(f"IN_WINDOW={1 if (demo or HT.in_window(None, HT.load_config(root))) else 0}")
+        print(f"WINDOW_END_EPOCH={window_end_epoch(root, demo=demo)}")
+        return 0
+
     try:
         return run(root, demo=demo, dry_run=bool(args.dry_run))
     except Exception as exc:  # noqa: BLE001

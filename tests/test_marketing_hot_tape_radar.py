@@ -2165,102 +2165,137 @@ class TestRunSelfFetchesAStaleTape:
                   fetcher=_no_fetch, quote_builder=_never)
 
 
-class TestMultiPassCadence:
-    """One delivered tick must do several passes — GitHub will not deliver */5.
+class TestSessionCadence:
+    """One delivered tick must cover the whole session — GitHub will not deliver */5.
 
-    Measured 2026-07-29, the 8h RTH window: GitHub delivered 104 scheduled runs
-    across ALL 46 scheduled workflows in this repo, of which this lane got 6 of
-    its ~92 ticks (6.5%) — ~1.4 passes an hour against a ~43-minute mean
-    detection gap, while gate 0.1 asks for booked-at-Buffer inside 20 minutes.
-    Starvation is GitHub-side, so the lever is spending each delivered tick
-    better rather than asking for more ticks.
+    Measured 2026-07-29, the 8h RTH window: GitHub created 104 scheduled runs
+    across ALL 46 scheduled workflows in this repo, of which this lane got 6 of its
+    ~92 ticks (6.5%) — ~1.4 passes an hour against a ~43-minute mean detection gap,
+    while gate 0.1 asks for booked-at-Buffer inside 20 minutes. Starvation is
+    GitHub-side and per-lane, so the lever is not depending on delivery: one
+    bootstrap tick runs a session-long poller at a real 5-minute cadence. Runner
+    minutes are free on this public repo, so the trade is runner time for latency.
     """
 
     @staticmethod
-    def _radar_step() -> dict:
+    def _wf() -> dict:
         import yaml as _yaml
 
-        wf = _yaml.safe_load(
+        return _yaml.safe_load(
             (REPO_ROOT / ".github/workflows/marketing-hot-tape.yml").read_text(
                 encoding="utf-8"))
-        step = [s for s in wf["jobs"]["radar"]["steps"] if s.get("id") == "radar"]
+
+    @classmethod
+    def _radar_step(cls) -> dict:
+        step = [s for s in cls._wf()["jobs"]["radar"]["steps"] if s.get("id") == "radar"]
         assert len(step) == 1, "the radar step lost its id"
         return step[0]
 
-    def test_a_run_does_more_than_one_pass(self):
-        env = self._radar_step()["env"]
-        assert int(env["PASSES"]) >= 2, (
-            "single-pass runs put the cadence back in GitHub's hands, where it "
-            "measured 1.4 passes/hour against a 5-minute design target")
-        assert 60 <= int(env["PASS_INTERVAL_S"]) <= 600, env["PASS_INTERVAL_S"]
+    def test_the_session_is_covered_by_serialized_halves(self):
+        """A job caps at 6h; the ET window is 6h50m. Two halves, strictly ordered."""
+        job = self._wf()["jobs"]["radar"]
+        strat = job["strategy"]
+        assert strat["max-parallel"] == 1, (
+            "the halves would run CONCURRENTLY — two radar passes racing the same "
+            "fired ledger is the double-book this lane's concurrency group exists "
+            "to prevent")
+        assert strat["fail-fast"] is False, (
+            "fail-fast would cancel the second half when the first dies, so a crash "
+            "at 14:00Z would leave the rest of the session dark")
+        assert len(strat["matrix"]["half"]) == 2, strat["matrix"]
 
-    def test_the_timeout_covers_every_planned_pass(self):
-        """The coupling that would otherwise break silently.
-
-        PASSES and timeout-minutes are one decision. Raise PASSES alone and the
-        run is killed partway through its last pass — which looks exactly like a
-        wedged job, and the passes that never ran leave no trace at all.
-        """
+    def test_two_halves_cover_the_whole_et_window(self):
+        """The arithmetic that would otherwise rot silently."""
         import yaml as _yaml
 
-        wf = _yaml.safe_load(
-            (REPO_ROOT / ".github/workflows/marketing-hot-tape.yml").read_text(
-                encoding="utf-8"))
-        job = wf["jobs"]["radar"]
+        job = self._wf()["jobs"]["radar"]
         env = self._radar_step()["env"]
-        passes, interval = int(env["PASSES"]), int(env["PASS_INTERVAL_S"])
-        sleep_min = (passes - 1) * interval / 60.0
-        # ~2 min of work per pass: the radar itself, up to 3 Chrome rasters at
-        # ~13s, a possible ~25s self-fetch, and the push race.
-        need = sleep_min + 2.0 * passes
-        assert int(job["timeout-minutes"]) >= need, (
-            f"{passes} passes at {interval}s need >= {need:.0f}m but the job "
-            f"budget is {job['timeout-minutes']}m — the last pass would be killed")
+        budget_s = int(env["JOB_BUDGET_S"])
+        timeout_s = int(job["timeout-minutes"]) * 60
+        assert budget_s < timeout_s, (
+            f"budget {budget_s}s exceeds the {timeout_s}s job timeout — the half "
+            "would be killed mid-pass instead of handing over")
+        assert timeout_s < 6 * 3600, (
+            f"timeout {timeout_s}s is at or past GitHub's 6h job cap")
+
+        cfg = _yaml.safe_load((REPO_ROOT / "config/hot_tape.yml").read_text(
+            encoding="utf-8"))
+        h1, m1 = (int(x) for x in str(cfg["window_et"]["start"]).split(":"))
+        h2, m2 = (int(x) for x in str(cfg["window_et"]["end"]).split(":"))
+        window_s = ((h2 * 60 + m2) - (h1 * 60 + m1) + int(cfg["window_grace_min"])) * 60
+        halves = len(self._wf()["jobs"]["radar"]["strategy"]["matrix"]["half"])
+        assert halves * budget_s >= window_s, (
+            f"{halves} halves x {budget_s}s = {halves * budget_s}s cannot cover a "
+            f"{window_s}s window — the close would go uncovered")
+
+    def test_the_backstop_bounds_every_iteration_not_just_passes(self):
+        """A pre-open WAIT must consume the backstop too.
+
+        An earlier draft decremented the counter on a wait ("a wait is not a
+        pass"), which made the cap unreachable: a stuck `--window-status` would
+        spin the loop for the whole budget. Verified by simulation before shipping.
+        """
+        body = self._radar_step()["run"]
+        assert "iter=$(( iter + 1 ))" in body, "the loop no longer counts iterations"
+        assert "pass=$(( pass - 1 ))" not in body, (
+            "the counter is decremented again — the backstop is unreachable")
+        # The cap must allow a full session plus some pre-open waiting.
+        env = self._radar_step()["env"]
+        need = int(env["JOB_BUDGET_S"]) // int(env["PASS_INTERVAL_S"])
+        assert int(env["MAX_PASSES"]) > need, (
+            f"backstop {env['MAX_PASSES']} is below the {need} passes a full half "
+            "performs — it would cut the session short")
+
+    def test_the_loop_asks_the_radar_for_the_window(self):
+        """No second implementation of the DST reasoning in bash."""
+        body = self._radar_step()["run"]
+        assert "--window-status" in body, (
+            "the loop derives the window itself again; a UTC re-derivation in bash "
+            "is how the shipped crons came to describe the wrong window")
+        for token in ("IN_WINDOW=", "WINDOW_END_EPOCH="):
+            assert token in body, token
+
+    def test_pre_open_waits_and_closed_exits(self):
+        """Three states, and pre-open is not closed.
+
+        A run bootstrapped before the bell must wait for it. Treating pre-open as
+        closed would throw away the bootstrap and leave the session uncovered.
+        """
+        body = self._radar_step()["run"]
+        assert "pre-open" in body, "the pre-open wait is gone"
+        assert "window closed" in body, "the closed-window exit is gone"
 
     def test_every_pass_commits_and_dispatches_on_its_own(self):
-        """Latency is the whole point: a pass must not wait for the run to end.
+        """Latency is the whole point: a pass must not wait for the session to end.
 
-        A 10:04 cross detected on pass 1 has to reach Buffer at ~10:07, not when
-        the third pass finishes 10 minutes later. So the commit and the dispatch
-        live INSIDE the loop — which also means the old post-loop `commit`/
-        `dispatch` steps must be gone, not merely bypassed.
+        A 10:04 cross detected on one pass has to reach Buffer at ~10:07, not when
+        the half finishes hours later. So the commit and the dispatch live INSIDE
+        the loop — which also means the old post-loop `commit`/`dispatch` steps
+        must be gone, not merely bypassed.
         """
-        import yaml as _yaml
-
-        wf = _yaml.safe_load(
-            (REPO_ROOT / ".github/workflows/marketing-hot-tape.yml").read_text(
-                encoding="utf-8"))
-        names = [str(s.get("name") or "") for s in wf["jobs"]["radar"]["steps"]]
+        names = [str(s.get("name") or "") for s in self._wf()["jobs"]["radar"]["steps"]]
         assert not [n for n in names if n.startswith("commit radar state")], names
         assert not [n for n in names if n.startswith("dispatch the publisher")], names
 
         body = self._radar_step()["run"]
-        loop = body.split("for pass in", 1)
-        assert len(loop) == 2, "the multi-pass loop is gone"
-        head, inside = loop
+        head, _, inside = body.partition("while :; do")
+        assert inside, "the session loop is gone"
         for token in ("python -m scripts.hot_tape_radar", "commit_and_push",
                       "gh workflow run marketing-publish.yml"):
             assert token in inside, f"{token} moved out of the per-pass loop"
-        # …and the helpers they call are DEFINED before it.
-        for fn in ("refresh_shared_tape()", "commit_and_push()"):
+        for fn in ("refresh_shared_tape()", "commit_and_push()", "window_status()"):
             assert fn in head, f"{fn} is used in the loop but defined after it"
 
     def test_a_booked_pass_that_cannot_push_never_dispatches(self):
         """The publisher folds items.jsonl from main, so push-then-dispatch."""
         body = self._radar_step()["run"]
-        dispatch_at = body.index("gh workflow run marketing-publish.yml")
-        gate_at = body.index("if commit_and_push; then")
-        assert gate_at < dispatch_at, (
+        assert body.index("if commit_and_push; then") < body.index(
+            "gh workflow run marketing-publish.yml"), (
             "the dispatch is no longer gated on the push landing — the publisher "
             "would look for item ids that are not on main yet and post nothing")
 
     def test_the_ids_channel_is_per_pass_not_github_output(self):
-        """GITHUB_OUTPUT is append-only and collapses to one value per step.
-
-        Three passes in one step cannot each report their own booked ids through
-        it, so the loop uses a file it truncates before every pass. Reading a
-        stale value would re-dispatch the previous pass's items.
-        """
+        """GITHUB_OUTPUT is append-only and collapses to one value per step."""
         env = self._radar_step()["env"]
         assert env.get("HOT_TAPE_IDS_FILE"), "no per-pass ids channel"
         body = self._radar_step()["run"]
@@ -2271,20 +2306,63 @@ class TestMultiPassCadence:
             REPO_ROOT / "scripts/hot_tape_radar.py").read_text(encoding="utf-8"), (
             "the workflow reads an ids file the script never writes")
 
-    def test_the_script_writes_the_ids_file_when_asked(self, tmp_path, monkeypatch):
-        """The seam itself, exercised — not just asserted to exist."""
-        root = _mover_root(tmp_path)
-        ids_file = tmp_path / "ids"
-        monkeypatch.setenv("HOT_TAPE_IDS_FILE", str(ids_file))
-        RADAR.run(root, now=NOW, fetcher=_no_fetch)
-        # The mover fixture books; if the chart law drops it there are no ids and
-        # the file stays absent, which is also correct — assert the two agree.
-        booked = [r for r in _fired_rows(root) if r.get("item_id")]
-        if booked:
-            assert ids_file.exists(), "a pass booked items but wrote no ids file"
-            assert ids_file.read_text(encoding="utf-8").strip(), ids_file.read_text()
-        else:
-            assert not ids_file.exists() or not ids_file.read_text().strip()
+
+class TestWindowStatusSeam:
+    """`--window-status` is the loop's only source of truth about the session."""
+
+    def test_it_reports_closed_outside_the_window(self, capsys):
+        assert RADAR.main(["--window-status", "--root", str(REPO_ROOT)]) == 0
+        out = capsys.readouterr().out
+        # 06:00Z on a weekday is 02:00 ET — unambiguously outside any session.
+        assert "IN_WINDOW=" in out and "WINDOW_END_EPOCH=" in out, out
+
+    def test_demo_reports_open_with_a_far_deadline(self, capsys):
+        assert RADAR.main(["--window-status", "--demo", "--root", str(REPO_ROOT)]) == 0
+        out = capsys.readouterr().out
+        assert "IN_WINDOW=1" in out, out
+        end = int([l for l in out.splitlines()
+                   if l.startswith("WINDOW_END_EPOCH=")][0].split("=")[1])
+        assert end > datetime.now(timezone.utc).timestamp() + 3600, (
+            "a demo loop must not stop at the real window end — demo exists to run "
+            "on a closed tape")
+
+    def test_the_deadline_is_the_configured_close_plus_grace(self):
+        import yaml as _yaml
+
+        cfg = _yaml.safe_load((REPO_ROOT / "config/hot_tape.yml").read_text(
+            encoding="utf-8"))
+        end_h, end_m = (int(x) for x in str(cfg["window_et"]["end"]).split(":"))
+        grace = int(cfg["window_grace_min"])
+        epoch = RADAR.window_end_epoch(REPO_ROOT, now=NOW)
+        got = datetime.fromtimestamp(epoch, timezone.utc)
+        et = HT._et_clock(got)
+        assert (et.hour * 60 + et.minute) == end_h * 60 + end_m + grace, (
+            f"deadline {et} is not {end_h:02d}:{end_m:02d} ET + {grace}m grace")
+
+    def test_a_broken_config_keeps_the_loop_and_the_gate_agreeing(self, tmp_path):
+        """The invariant is AGREEMENT, not fail-closed.
+
+        `_parse_hhmm` falls back to the same 16:05 default `in_window` uses, so an
+        unparseable `window_et.end` leaves the loop's deadline and the gate's window
+        describing the same session. That is the property worth having: a loop that
+        stopped at a different time than the gate opens/closes would either drop the
+        close or spin past it. (A genuine exception — an unreadable config — still
+        returns `now`, which stops the loop after one pass rather than holding a
+        runner for the full budget.)
+        """
+        (tmp_path / "config").mkdir()
+        (tmp_path / "config" / "hot_tape.yml").write_text(
+            "window_et:\n  end: nonsense\n", encoding="utf-8")
+        epoch = RADAR.window_end_epoch(tmp_path, now=NOW)
+        cfg = HT.load_config(tmp_path)
+        # One minute inside the deadline the gate must still be open; one minute
+        # past it, shut. Same session, both sides.
+        before = datetime.fromtimestamp(epoch - 60, timezone.utc)
+        after = datetime.fromtimestamp(epoch + 60, timezone.utc)
+        assert HT.in_window(before, cfg), (
+            "the loop would keep passing after the gate had closed")
+        assert not HT.in_window(after, cfg), (
+            "the loop would stop while the gate was still open — dropping the close")
 
 
 class TestSelfFetchImportsResolveInTheCone:
