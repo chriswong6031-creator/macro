@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.evidence_clock.v1",
-  "as_of": "2026-07-29",
-  "generated_utc": "2026-07-29T03:27:04Z",
+  "as_of": "2026-07-30",
+  "generated_utc": "2026-07-30T04:09:44Z",
   "authority": "display_only",
   "summary": {
     "n_rows": 311,
@@ -86,7 +86,7 @@
       "date_state": "overdue",
       "readiness": {
         "n_open": 812,
-        "n_past_check_by": 738
+        "n_past_check_by": 770
       },
       "allowed_actions": [
         "inspect",
@@ -134,7 +134,7 @@
       "date_state": "overdue",
       "readiness": {
         "n_open": 1598,
-        "n_past_check_by": 1026
+        "n_past_check_by": 1039
       },
       "allowed_actions": [
         "inspect",
@@ -182,7 +182,7 @@
       "date_state": "overdue",
       "readiness": {
         "n_open": 1598,
-        "n_past_check_by": 1026
+        "n_past_check_by": 1039
       },
       "allowed_actions": [
         "inspect",
@@ -230,7 +230,7 @@
       "date_state": "overdue",
       "readiness": {
         "n_open": 7684,
-        "n_past_check_by": 3429
+        "n_past_check_by": 3708
       },
       "allowed_actions": [
         "inspect",
@@ -278,7 +278,7 @@
       "date_state": "overdue",
       "readiness": {
         "n_open": 7684,
-        "n_past_check_by": 3429
+        "n_past_check_by": 3708
       },
       "allowed_actions": [
         "inspect",
@@ -741,7 +741,7 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 31,
+        "n_open": 38,
         "n_past_check_by": 27
       },
       "allowed_actions": [
@@ -806,8 +806,8 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 1408,
-        "n_past_check_by": 418
+        "n_open": 1500,
+        "n_past_check_by": 455
       },
       "allowed_actions": [
         "inspect",
@@ -1123,7 +1123,7 @@
       "subject_type": "experiment",
       "owner_program": "engine-fix",
       "clock_type": "awaiting_execution",
-      "due_at": "2026-07-29",
+      "due_at": "2026-07-30",
       "as_of": "2026-07-06",
       "state": "due",
       "date_state": "due",
@@ -1155,7 +1155,7 @@
       "subject_type": "experiment",
       "owner_program": "engine-fix",
       "clock_type": "awaiting_execution",
-      "due_at": "2026-07-29",
+      "due_at": "2026-07-30",
       "as_of": "2026-07-06",
       "state": "due",
       "date_state": "due",
@@ -1187,7 +1187,7 @@
       "subject_type": "experiment",
       "owner_program": "engine-fix",
       "clock_type": "awaiting_execution",
-      "due_at": "2026-07-29",
+      "due_at": "2026-07-30",
       "as_of": "2026-07-06",
       "state": "due",
       "date_state": "due",
@@ -1219,7 +1219,7 @@
       "subject_type": "experiment",
       "owner_program": "engine-fix",
       "clock_type": "awaiting_execution",
-      "due_at": "2026-07-29",
+      "due_at": "2026-07-30",
       "as_of": "2026-07-06",
       "state": "due",
       "date_state": "due",
@@ -1284,11 +1284,11 @@
       "owner_program": "nw-mastermind-bridge",
       "clock_type": "freshness_sla",
       "due_at": null,
-      "as_of": "2026-07-28",
+      "as_of": "2026-07-29",
       "state": "stale",
       "date_state": "stale",
       "readiness": {
-        "as_of": "2026-07-28",
+        "as_of": "2026-07-29",
         "stale_chips": [
           "reliability",
           "contradictions"
@@ -1367,7 +1367,7 @@
       "state": "blocked",
       "date_state": "accruing",
       "readiness": {
-        "n_claims": 29366,
+        "n_claims": 29465,
         "n_with_falsifier": 403,
         "falsifier_coverage": "1.4%",
         "blocking_reason": "falsifier coverage 1.4%; not a promotion-grade substrate"

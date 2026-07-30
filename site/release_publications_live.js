@@ -424,6 +424,135 @@
     setPair(card.querySelector(".wnx-go"), "Open live details", "查看实时详情");
   }
 
+  function uniqueEventNames(rows) {
+    var seen = {};
+    return (rows || []).map(function (row) {
+      return String(row.type || row.label || "").toUpperCase();
+    }).filter(function (name) {
+      if (!name || seen[name]) return false;
+      seen[name] = true;
+      return true;
+    });
+  }
+
+  function shortEventDate(value, chinese) {
+    var parts = String(value || "").split("-");
+    var month = Number(parts[1]);
+    var day = Number(parts[2]);
+    if (!month || !day) return String(value || "");
+    if (chinese) return month + "月" + day + "日";
+    var months = [
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    ];
+    return months[month - 1] + " " + day;
+  }
+
+  function activeReleaseGroup(publications, awaiting) {
+    var rows = (publications || []).concat(awaiting || []).filter(function (row) {
+      return Boolean(row && row.date);
+    });
+    if (!rows.length) return null;
+    var dates = rows.map(function (row) { return row.date; }).sort();
+    var date = dates[dates.length - 1];
+    var groupPublications = (publications || []).filter(function (row) {
+      return row.date === date;
+    });
+    var groupAwaiting = (awaiting || []).filter(function (row) {
+      return row.date === date;
+    });
+    var verified = groupPublications.filter(function (row) {
+      return row.data_ready === true;
+    });
+    var extracting = groupPublications.filter(function (row) {
+      return row.data_ready !== true;
+    });
+    return {
+      date: date,
+      publications: groupPublications,
+      awaiting: groupAwaiting,
+      verified: verified,
+      extracting: extracting,
+      total: groupPublications.length + groupAwaiting.length,
+      names: uniqueEventNames(groupPublications.concat(groupAwaiting))
+    };
+  }
+
+  function releaseGroupSummary(group) {
+    if (!group) return null;
+    var verified = group.verified.length;
+    var extracting = group.extracting.length;
+    var awaiting = group.awaiting.length;
+    var enParts = [];
+    var zhParts = [];
+    if (verified) {
+      enParts.push(verified + " verified " + (verified === 1 ? "result" : "results"));
+      zhParts.push(verified + " 个结果已核验");
+    }
+    if (extracting) {
+      enParts.push(extracting + " " + (extracting === 1 ? "publication" : "publications") +
+        " extracting");
+      zhParts.push(extracting + " 个官方发布正在提取");
+    }
+    if (awaiting) {
+      enParts.push(awaiting + " awaiting official " +
+        (awaiting === 1 ? "source" : "sources"));
+      zhParts.push(awaiting + " 个正在等待官方来源");
+    }
+    var namesEn = group.names.join(", ");
+    var namesZh = group.names.join("、");
+    return {
+      en: shortEventDate(group.date, false) + " · " + enParts.join(", ") +
+        (namesEn ? " — " + namesEn : ""),
+      zh: shortEventDate(group.date, true) + " · " + zhParts.join("、") +
+        (namesZh ? " — " + namesZh : ""),
+      badgeEn: verified && !extracting && !awaiting ?
+        verified + " live" :
+        ([verified ? verified + " live" : "",
+          extracting ? extracting + " parsing" : "",
+          awaiting ? awaiting + " checking" : ""].filter(Boolean).join(" · ")),
+      badgeZh: verified && !extracting && !awaiting ?
+        verified + " 个实时" :
+        ([verified ? verified + " 个已核验" : "",
+          extracting ? extracting + " 个提取中" : "",
+          awaiting ? awaiting + " 个核验中" : ""].filter(Boolean).join(" · "))
+    };
+  }
+
+  function patchEventsFaceGroup(group) {
+    var face = document.querySelector("#sx-events-v2 .mx5-card-face");
+    if (!face) return;
+    var summary = releaseGroupSummary(group);
+    face.classList.add("mx-live-event-face");
+    face.setAttribute("data-live-state",
+      group.awaiting.length || group.extracting.length ? "detected" : "verified");
+    setPair(
+      face.querySelector(".mx5-card-title"),
+      group.awaiting.length || group.extracting.length ?
+        "Live release status" : group.verified.length + " official results · live",
+      group.awaiting.length || group.extracting.length ?
+        "实时发布状态" : group.verified.length + " 个官方结果 · 实时"
+    );
+    setPair(face.querySelector(".mx5-events-sub"), summary.en, summary.zh);
+    setPair(face.querySelector(".mx5-card-badge"), summary.badgeEn, summary.badgeZh);
+  }
+
+  function patchWhereNextGroup(group) {
+    var card = document.querySelector('.wnx-card[href="#dlg-events"]');
+    if (!card) return;
+    var summary = releaseGroupSummary(group);
+    setPair(card.querySelector(".wnx-kicker"), "Same-day releases", "同日发布");
+    setPair(
+      card.querySelector(".wnx-state"),
+      group.awaiting.length || group.extracting.length ?
+        "Live release status" : group.verified.length + " official results · live",
+      group.awaiting.length || group.extracting.length ?
+        "实时发布状态" : group.verified.length + " 个官方结果 · 实时"
+    );
+    setPair(card.querySelector(".wnx-line"), summary.en, summary.zh);
+    setPair(card.querySelector(".wnx-go"), "Open all live details", "查看全部实时详情");
+  }
+
   function patchFedPath(row, published) {
     if (String(row.type || "").toUpperCase() !== "FOMC") return;
     var actual = row.actual || {};
@@ -787,7 +916,9 @@
   function awaitingEvents(payload, now, publishedKeys) {
     var rows = payload.events || payload.due || payload.upcoming || [];
     return rows.filter(function (row) {
-      var key = row.type + ":" + row.date;
+      var key = row.event_id ?
+        "event:" + row.event_id :
+        row.type + ":" + row.date;
       var lifecycleRequiresAttention = [
         "awaiting_publication",
         "published_unparsed",
@@ -808,6 +939,21 @@
   }
 
   function radarState(publications, awaiting) {
+    var group = activeReleaseGroup(publications, awaiting);
+    if (group && group.total > 1) {
+      var summary = releaseGroupSummary(group);
+      return {
+        kind: group.awaiting.length ? "awaiting" : "published",
+        en: summary.en,
+        zh: summary.zh,
+        count: group.total,
+        date: group.date
+      };
+    }
+    if (group) {
+      publications = group.publications;
+      awaiting = group.awaiting;
+    }
     if (awaiting.length) {
       return {
         kind: "awaiting",
@@ -973,6 +1119,7 @@
     var publishedKeys = {};
     publications.forEach(function (row) {
       publishedKeys[row.type + ":" + row.date] = true;
+      if (row.event_id) publishedKeys["event:" + row.event_id] = true;
     });
     var awaiting = awaitingEvents(payload, now, publishedKeys);
     var panel = ensureOutcomePanel();
@@ -998,13 +1145,21 @@
       patchTimeline(row, false);
       patchFedPath(row, false);
     });
-    var primary = awaiting[0] || publications[publications.length - 1];
-    if (primary) {
-      var isPublished = awaiting.length === 0 && publications.length > 0;
+    var group = activeReleaseGroup(publications, awaiting);
+    var primary = group ?
+      (group.awaiting[0] || group.publications[group.publications.length - 1]) :
+      null;
+    if (group && group.total > 1) {
+      patchEventsFaceGroup(group);
+      patchWhereNextGroup(group);
+    } else if (primary) {
+      var isPublished = group ?
+        (group.awaiting.length === 0 && group.publications.length > 0) :
+        (awaiting.length === 0 && publications.length > 0);
       patchEventsFace(primary, isPublished);
       patchWhereNext(primary, isPublished);
     }
-    if (trackPrimaryState(Boolean(primary))) expireLiveState();
+    if (trackPrimaryState(Boolean(group || primary))) expireLiveState();
 
     var banner = ensureRadarBanner();
     if (banner) {
@@ -1042,6 +1197,8 @@
     recentPublications: recentPublications,
     awaitingEvents: awaitingEvents,
     rowMatchesText: rowMatchesText,
+    activeReleaseGroup: activeReleaseGroup,
+    releaseGroupSummary: releaseGroupSummary,
     radarState: radarState,
     trackPrimaryState: trackPrimaryState,
     notePollFailure: notePollFailure,

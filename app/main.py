@@ -625,6 +625,15 @@ def status() -> dict:
                                 if source.get("status") == "error"
                             ),
                             "max_publication_lag_min": round(max_lag_min, 1),
+                            "schedule_status": (
+                                (data.get("schedule_coverage") or {}).get("status")
+                            ),
+                            "missing_schedule_types": (
+                                (data.get("schedule_coverage") or {}).get(
+                                    "missing_or_too_distant"
+                                )
+                                or []
+                            ),
                         }
                     )
                 elif key == "orchestrator":

@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-30T03:39:46.710610+00:00",
-  "count": 363,
+  "generated_at": "2026-07-30T04:09:49.216562+00:00",
+  "count": 364,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -414,6 +414,23 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-cf9g7ewryhl-b09360",
+      "title": "China Grid Tech Power Transformer Export Tracker June China transformer total exports at 47 yoy, with exports to US at +17...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T08:04:53Z",
+      "summary_points": [
+        "Missing Document**: No source material provided for extraction **Critical Input Gap**: Absence of actual document content prevents identification of fundamentals/data/technical points **Action Required**: Provide document text to proceed with analysis per specified criteria"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },

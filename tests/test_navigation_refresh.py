@@ -124,6 +124,34 @@ def test_mobile_navigation_is_a_full_height_accordion_with_full_width_search() -
     assert "window.innerWidth > 900" in THEME_JS
 
 
+def test_right_edge_asset_flyouts_open_inward_without_desktop_overflow() -> None:
+    assert (
+        ".site-nav .nav-links > .nav-dd:nth-last-of-type(6) "
+        "> .nav-dd-menu:not(.nav-mega)"
+    ) in REFRESH_CSS
+    edge_selector = (
+        ".site-nav .nav-links > .nav-dd:nth-last-of-type(-n + 3) "
+        "> .nav-dd-menu:not(.nav-mega)"
+    )
+    assert edge_selector in REFRESH_CSS
+    edge_rule = REFRESH_CSS.split(edge_selector, 1)[1].split("}", 1)[0]
+    assert "left: auto;" in edge_rule
+    assert "right: 0;" in edge_rule
+
+    selector = (
+        ".site-nav .nav-links > .nav-dd:nth-last-of-type(2) "
+        ".nav-sub > .nav-dd-menu"
+    )
+    assert selector in REFRESH_CSS
+    rule = REFRESH_CSS.split(selector, 1)[1].split("}", 1)[0]
+    assert "left: auto;" in rule
+    assert "right: 100%;" in rule
+    assert ".site-nav .nav-dd > .nav-dd-menu,\n" in REFRESH_CSS
+    assert "display: none;" in REFRESH_CSS.split(
+        ".site-nav .nav-dd > .nav-dd-menu,", 1
+    )[1].split("}", 1)[0]
+
+
 def test_neural_web_public_view_exists_and_hides_proprietary_details() -> None:
     page = (ROOT / "templates" / "neural_web.html.j2").read_text(encoding="utf-8")
     assert "Signals do not arrive" in page

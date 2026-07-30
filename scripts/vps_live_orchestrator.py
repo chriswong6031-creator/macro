@@ -265,7 +265,7 @@ class Orchestrator:
                 str(self.state_dir),
             ],
             outputs=self._publish_pairs(("release_publications.json",)),
-            timeout=35,
+            timeout=60,
         )
         self.module(
             "display_quotes",

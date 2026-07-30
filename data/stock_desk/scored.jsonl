@@ -149,3 +149,5 @@
 {"id": "2026-07-14-MS-1", "ticker": "MS", "subject": "MS", "lean": "constructive", "conviction": "low", "kind": "rel_return", "check_by": "2026-07-28", "outcome": "hit", "realized": -0.0319, "directionally_correct": false, "scored_at": "2026-07-29T03:33:07.387055+00:00"}
 {"id": "2026-07-28-TMP-2", "ticker": "TMP", "subject": "TMP", "lean": "neutral", "conviction": "low", "kind": "soft", "check_by": "2026-08-25", "outcome": "unscored", "scored_at": "2026-07-29T03:34:03.560655+00:00"}
 {"id": "2026-07-28-KSS-5", "ticker": "KSS", "subject": "KSS", "lean": "neutral", "conviction": "low", "kind": "soft", "check_by": "2026-08-25", "outcome": "unscored", "scored_at": "2026-07-29T03:34:03.560667+00:00"}
+{"id": "2026-07-29-LLY-2", "ticker": "LLY", "subject": "LLY", "lean": "neutral", "conviction": "low", "kind": "soft", "check_by": "2026-09-09", "outcome": "unscored", "scored_at": "2026-07-30T04:23:24.371705+00:00"}
+{"id": "2026-07-29-KSS-4", "ticker": "KSS", "subject": "KSS", "lean": "neutral", "conviction": "low", "kind": "soft", "check_by": "2026-09-09", "outcome": "unscored", "scored_at": "2026-07-30T04:23:24.371715+00:00"}

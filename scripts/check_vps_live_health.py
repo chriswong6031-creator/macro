@@ -53,6 +53,12 @@ def evaluate(payload: dict[str, Any], *, now: datetime | None = None) -> list[st
     _require_age(failures, checks, "orchestrator", 5)
     release_check = checks.get("release_publications") or {}
     if release_check.get("schema") == "release_publications.v2":
+        if release_check.get("schedule_status") not in (None, "ok"):
+            missing = release_check.get("missing_schedule_types") or []
+            failures.append(
+                "release_publications: official schedule coverage is incomplete"
+                + (f" ({', '.join(str(value) for value in missing)})" if missing else "")
+            )
         statuses = release_check.get("event_status")
         if not isinstance(statuses, dict):
             failures.append("release_publications: semantic event status is missing")
