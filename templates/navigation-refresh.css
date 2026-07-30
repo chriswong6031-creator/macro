@@ -23,8 +23,8 @@ html[data-theme="light"] {
 /* Roomier, more legible standard market menus. The direct title nodes land in
    grid column two; their descriptions align below without duplicated wrappers. */
 @media (min-width: 701px) {
-  .site-nav .nav-dd > .nav-dd-menu:not(.nav-mega),
-  .topbar .nav-dd > .nav-dd-menu:not(.nav-mega) {
+  .site-nav .nav-dd > .nav-dd-menu:not(.nav-mega):not(.nav-market-menu),
+  .topbar .nav-dd > .nav-dd-menu:not(.nav-mega):not(.nav-market-menu) {
     width: min(420px, calc(100vw - 28px));
     min-width: 390px;
     padding: 13px;
@@ -34,10 +34,10 @@ html[data-theme="light"] {
     box-shadow: var(--nr-shadow);
   }
 
-  .site-nav .nav-dd > .nav-dd-menu:not(.nav-mega) > a,
-  .site-nav .nav-dd > .nav-dd-menu:not(.nav-mega) > .nav-sub > a,
-  .topbar .nav-dd > .nav-dd-menu:not(.nav-mega) > a,
-  .topbar .nav-dd > .nav-dd-menu:not(.nav-mega) > .nav-sub > a {
+  .site-nav .nav-dd > .nav-dd-menu:not(.nav-mega):not(.nav-market-menu) > a,
+  .site-nav .nav-dd > .nav-dd-menu:not(.nav-mega):not(.nav-market-menu) > .nav-sub > a,
+  .topbar .nav-dd > .nav-dd-menu:not(.nav-mega):not(.nav-market-menu) > a,
+  .topbar .nav-dd > .nav-dd-menu:not(.nav-mega):not(.nav-market-menu) > .nav-sub > a {
     min-height: 70px;
     display: grid;
     grid-template-columns: 56px minmax(0, 1fr) auto;
@@ -49,21 +49,21 @@ html[data-theme="light"] {
     border-radius: 13px;
   }
 
-  .nav-dd-menu:not(.nav-mega) > a > .submenu-icon,
-  .nav-dd-menu:not(.nav-mega) > .nav-sub > a .submenu-icon {
+  .nav-dd-menu:not(.nav-mega):not(.nav-market-menu) > a > .submenu-icon,
+  .nav-dd-menu:not(.nav-mega):not(.nav-market-menu) > .nav-sub > a .submenu-icon {
     grid-column: 1;
     grid-row: 1 / 3;
   }
 
-  .nav-dd-menu:not(.nav-mega) > a > .l-en,
-  .nav-dd-menu:not(.nav-mega) > a > .l-zh {
+  .nav-dd-menu:not(.nav-mega):not(.nav-market-menu) > a > .l-en,
+  .nav-dd-menu:not(.nav-mega):not(.nav-market-menu) > a > .l-zh {
     grid-column: 2;
     grid-row: 1;
     align-self: end;
     line-height: 1.25;
   }
 
-  .nav-dd-menu:not(.nav-mega) > a > .d {
+  .nav-dd-menu:not(.nav-mega):not(.nav-market-menu) > a > .d {
     grid-column: 2 / 4;
     grid-row: 2;
     align-self: start;
@@ -75,7 +75,7 @@ html[data-theme="light"] {
     white-space: nowrap;
   }
 
-  .nav-dd-menu:not(.nav-mega) > .nav-sub > a .nav-sub-text {
+  .nav-dd-menu:not(.nav-mega):not(.nav-market-menu) > .nav-sub > a .nav-sub-text {
     grid-column: 1 / 3;
     grid-row: 1 / 3;
     display: grid;
@@ -85,12 +85,12 @@ html[data-theme="light"] {
     column-gap: 13px;
   }
 
-  .nav-dd-menu:not(.nav-mega) > .nav-sub > a .nav-sub-text > .submenu-icon {
+  .nav-dd-menu:not(.nav-mega):not(.nav-market-menu) > .nav-sub > a .nav-sub-text > .submenu-icon {
     grid-column: 1;
     grid-row: 1 / 3;
   }
 
-  .nav-dd-menu:not(.nav-mega) > .nav-sub > a .nav-sub-text > .d {
+  .nav-dd-menu:not(.nav-mega):not(.nav-market-menu) > .nav-sub > a .nav-sub-text > .d {
     grid-column: 2;
     grid-row: 2;
     margin-top: 3px;
@@ -106,10 +106,10 @@ html[data-theme="light"] {
    flyouts then open inward instead of pushing another 420px panel off-screen.
    Structural positions remain stable when profile-selected markets are hidden. */
 @media (min-width: 701px) {
-  .site-nav .nav-links > .nav-dd:nth-last-of-type(6) > .nav-dd-menu:not(.nav-mega),
-  .topbar .nav-links > .nav-dd:nth-last-of-type(6) > .nav-dd-menu:not(.nav-mega),
-  .site-nav .nav-links > .nav-dd:nth-last-of-type(-n + 3) > .nav-dd-menu:not(.nav-mega),
-  .topbar .nav-links > .nav-dd:nth-last-of-type(-n + 3) > .nav-dd-menu:not(.nav-mega) {
+  .site-nav .nav-links > .nav-dd:nth-last-of-type(6) > .nav-dd-menu:not(.nav-mega):not(.nav-market-menu),
+  .topbar .nav-links > .nav-dd:nth-last-of-type(6) > .nav-dd-menu:not(.nav-mega):not(.nav-market-menu),
+  .site-nav .nav-links > .nav-dd:nth-last-of-type(-n + 3) > .nav-dd-menu:not(.nav-mega):not(.nav-market-menu),
+  .topbar .nav-links > .nav-dd:nth-last-of-type(-n + 3) > .nav-dd-menu:not(.nav-mega):not(.nav-market-menu) {
     left: auto;
     right: 0;
   }
@@ -902,13 +902,13 @@ html:not([data-theme="light"]) .signal-status.status-bounce { color: #ffc47c; ba
 @media (min-width: 901px) {
   .site-nav .nav-dd-menu.nav-mega,
   .topbar .nav-dd-menu.nav-mega {
-    width: min(1160px, calc(100vw - 40px));
-    min-height: 610px;
+    width: min(1276px, calc(100vw - 60px));
+    min-height: 690px;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 300px;
+    grid-template-columns: minmax(0, 1fr) 245px;
     padding: 0;
     overflow: hidden;
-    border-radius: 24px;
+    border-radius: 21px;
   }
 }
 
@@ -917,7 +917,7 @@ html:not([data-theme="light"]) .signal-status.status-bounce { color: #ffc47c; ba
   display: flex;
   flex-direction: column;
   gap: 20px;
-  padding: 26px 28px 27px;
+  padding: 30px 36px 31px;
 }
 
 .nav-mega-section { min-width: 0; }
@@ -934,7 +934,7 @@ html:not([data-theme="light"]) .signal-status.status-bounce { color: #ffc47c; ba
   box-sizing: border-box;
   min-width: 0;
   display: grid;
-  grid-template-columns: 58px minmax(0, 1fr) auto;
+  grid-template-columns: 62px minmax(0, 1fr) auto;
   align-items: center;
   gap: 14px;
   padding: 10px 12px;
@@ -989,29 +989,24 @@ html:not([data-theme="light"]) .signal-status.status-bounce { color: #ffc47c; ba
   min-width: 0;
   display: flex;
   flex-direction: column;
-  padding: 26px 22px 22px;
+  padding: 30px 24px 22px;
   border-left: 1px solid var(--nr-line);
   background: color-mix(in srgb, var(--nr-soft) 58%, transparent);
 }
 
 .nav-mega.nav-mega .nav-rail-item {
   width: 100%;
-  min-height: 72px;
-  grid-template-columns: 46px minmax(0, 1fr) auto;
-  gap: 11px;
-  padding: 9px 10px;
+  min-height: 48px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  padding: 9px 8px;
 }
 
 .nav-mega.nav-mega .nav-rail-item .nm-ic.research-icon {
-  width: 44px;
-  height: 44px;
+  display: none;
 }
 
-.nav-mega.nav-mega .nav-rail-item .research-icon::before,
-.nav-mega.nav-mega .nav-rail-item .research-icon::after {
-  width: 37px;
-  height: 37px;
-}
+.nav-mega.nav-mega .nav-rail-item .d { display: none; }
 
 .nav-mega.nav-mega .nav-rail-item .nav-drill-arrow {
   font-size: 17px;
@@ -1066,6 +1061,279 @@ html:not([data-theme="light"]) .signal-status.status-bounce { color: #ffc47c; ba
 .nav-mega.nav-mega .nav-mastermind-cta small { display: block; }
 .nav-mega.nav-mega .nav-mastermind-cta strong { font-size: 12.5px; }
 .nav-mega.nav-mega .nav-mastermind-cta small { margin-top: 4px; color: var(--muted, #8d97a8); font-size: 10.5px; }
+
+/* Market destination maps -------------------------------------------------
+   These panels deliberately share the Research menu's geometry and icon
+   language. nav_market.js builds them from one data map, including markets
+   moved under International by a user's profile. */
+@media (min-width: 901px) {
+  .site-nav .nav-market-dd,
+  .topbar .nav-market-dd { position: static; }
+
+  .site-nav .nav-market-dd::after,
+  .topbar .nav-market-dd::after { content: none; }
+
+  .site-nav .nav-dd-menu.nav-market-menu,
+  .topbar .nav-dd-menu.nav-market-menu {
+    left: auto;
+    right: 0;
+    width: min(1276px, calc(100vw - 60px));
+    min-width: 0;
+    min-height: 690px;
+    grid-template-columns: minmax(0, 1fr) 245px;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid var(--nr-line-strong);
+    border-radius: 21px;
+    background: var(--nr-surface);
+    box-shadow: var(--nr-shadow);
+  }
+
+  .nav-market-menu::before {
+    content: "";
+    position: absolute;
+    top: -12px;
+    left: 0;
+    right: 0;
+    height: 14px;
+  }
+}
+
+.nav-market-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: 30px 36px 32px;
+}
+
+.nav-market-intro {
+  min-height: 78px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 0 4px 20px;
+  border-bottom: 1px solid var(--nr-line);
+}
+
+.nav-market-name {
+  color: var(--text, var(--ink));
+  font-size: 21px;
+  font-weight: 730;
+  letter-spacing: -.025em;
+}
+
+.nav-market-subtitle {
+  margin-top: 7px;
+  color: var(--muted, #8d97a8);
+  font-size: 11.5px;
+  line-height: 1.35;
+}
+
+.nav-market-count {
+  flex: none;
+  margin-top: 4px;
+  padding: 5px 10px;
+  border: 1px solid var(--nr-line-strong);
+  border-radius: 999px;
+  color: var(--muted, #8d97a8);
+  font-size: 8px;
+  font-weight: 780;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.nav-market-section { min-width: 0; }
+
+.nav-market-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 4px 11px;
+  color: color-mix(in srgb, var(--muted, #8d97a8) 86%, transparent);
+  font-size: 10px;
+  font-weight: 780;
+  letter-spacing: .105em;
+  text-transform: uppercase;
+}
+
+.nav-market-heading::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--nr-line);
+}
+
+html[data-lang="zh"] .nav-market-heading { letter-spacing: .02em; }
+
+.nav-market-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 18px;
+}
+
+.nav-dd-menu.nav-market-menu .nav-market-item,
+.nav-dd-menu.nav-market-menu .nav-market-rail-item {
+  box-sizing: border-box;
+  min-width: 0;
+  display: grid;
+  align-items: center;
+  color: var(--text, var(--ink));
+  border: 1px solid transparent;
+  text-decoration: none;
+  white-space: normal;
+  transition: background .18s ease, border-color .18s ease, transform .18s ease, box-shadow .18s ease;
+}
+
+.nav-dd-menu.nav-market-menu .nav-market-item {
+  min-height: 78px;
+  grid-template-columns: 62px minmax(0, 1fr);
+  gap: 14px;
+  padding: 9px 10px;
+  border-radius: 15px;
+}
+
+.nav-dd-menu.nav-market-menu .nav-market-rail-item {
+  min-height: 50px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  padding: 9px 8px;
+  border-radius: 11px;
+}
+
+.nav-dd-menu.nav-market-menu .nav-market-item:hover,
+.nav-dd-menu.nav-market-menu .nav-market-rail-item:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--link, #5b79ff) 22%, var(--nr-line));
+  background: color-mix(in srgb, var(--link, #5b79ff) 6%, var(--nr-soft));
+  box-shadow: 0 14px 28px -24px color-mix(in srgb, var(--link, #5b79ff) 72%, transparent);
+}
+
+.nav-market-menu .nav-market-icon.submenu-icon {
+  width: 58px;
+  height: 58px;
+  float: none;
+  margin: 0;
+}
+
+.nav-market-menu .nav-market-icon.submenu-icon::before,
+.nav-market-menu .nav-market-icon.submenu-icon::after {
+  width: 49px;
+  height: 49px;
+}
+
+.nav-market-copy { min-width: 0; }
+
+.nav-market-title {
+  display: block;
+  color: var(--text, var(--ink));
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.nav-market-menu :is(.nav-market-item, .nav-market-rail-item) .d {
+  display: block;
+  margin-top: 5px;
+  overflow: hidden;
+  color: var(--muted, #8d97a8);
+  font-size: 11.5px;
+  font-weight: 450;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-market-rail {
+  min-width: 0;
+  /* Keep folded-market drill panels positioned by the full mega menu instead
+     of this 245px rail; the rail itself does not need a containing block. */
+  position: static;
+  display: flex;
+  flex-direction: column;
+  padding: 30px 24px 22px;
+  border-left: 1px solid var(--nr-line);
+  background: color-mix(in srgb, var(--nr-soft) 58%, transparent);
+}
+
+.nav-market-rail .nav-market-heading { padding-inline: 4px; }
+
+.nav-market-rail-item .nav-market-icon,
+.nav-market-rail-item .d { display: none !important; }
+
+.nav-market-arrow {
+  color: var(--muted, #8d97a8);
+  font-size: 15px;
+  transition: color .18s ease, transform .18s ease;
+}
+
+.nav-market-rail-item:hover .nav-market-arrow {
+  color: var(--link, #5b79ff);
+  transform: translate(2px, -2px);
+}
+
+.nav-market-note {
+  margin-top: auto;
+  padding: 18px 4px 2px;
+  border-top: 1px solid var(--nr-line);
+}
+
+.nav-market-note strong,
+.nav-market-note > span { display: block; }
+.nav-market-note strong {
+  color: var(--text, var(--ink));
+  font-size: 10px;
+  font-weight: 720;
+}
+.nav-market-note > span {
+  margin-top: 7px;
+  color: var(--muted, #8d97a8);
+  font-size: 10.5px;
+  line-height: 1.45;
+}
+
+.nav-market-rail > .nav-market-drill {
+  position: static !important;
+  width: 100%;
+}
+
+.nav-market-rail > .nav-market-drill > .nav-sub-trig {
+  min-height: 48px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 8px;
+  border-radius: 11px;
+}
+
+.nav-market-rail > .nav-market-drill > .nav-sub-trig .nav-sub-text {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.nav-market-rail > .nav-market-drill > .nav-sub-trig .menu-icon { margin-right: 0; }
+
+.nav-market-rail > .nav-market-drill > .nav-market-drill-panel {
+  inset: 0;
+  z-index: 14;
+  width: 100%;
+  min-height: 100%;
+  border: 0;
+  border-radius: inherit;
+  box-shadow: none;
+}
+
+.nav-market-drill-panel > .nav-drill-back {
+  position: absolute;
+  z-index: 2;
+  top: 17px;
+  left: 22px;
+}
+
+.nav-market-drill-panel > .nav-market-main { padding-top: 62px; }
 
 /* The compact control sits at the right edge, as in the approved mockup. It
    expands left over reserved whitespace so the menu does not jump. */
@@ -1174,8 +1442,8 @@ html:not([data-theme="light"]) .signal-status.status-bounce { color: #ffc47c; ba
     overflow: visible;
   }
 
-  .has-nav-toggle .nav-links .nav-dd-menu:not(.nav-mega) > a,
-  .has-nav-toggle .nav-links .nav-dd-menu:not(.nav-mega) > .nav-sub > a {
+  .has-nav-toggle .nav-links .nav-dd-menu:not(.nav-mega):not(.nav-market-menu) > a,
+  .has-nav-toggle .nav-links .nav-dd-menu:not(.nav-mega):not(.nav-market-menu) > .nav-sub > a {
     min-height: 66px;
     display: grid;
     grid-template-columns: 50px minmax(0, 1fr) auto;
@@ -1229,6 +1497,12 @@ html:not([data-theme="light"]) .signal-status.status-bounce { color: #ffc47c; ba
     background: transparent;
   }
 
+  .nav-dd-menu.nav-market-menu {
+    display: block;
+    min-height: 0;
+    background: transparent;
+  }
+
   .nav-mega-main { gap: 18px; padding: 5px 0 18px; }
   .nav-mega-item-grid { grid-template-columns: 1fr; gap: 2px; }
   .nav-mega-rail {
@@ -1260,6 +1534,67 @@ html:not([data-theme="light"]) .signal-status.status-bounce { color: #ffc47c; ba
   }
 
   .has-nav-toggle .nav-links .nav-mega.nav-mega .nav-mastermind-cta { margin: 18px 5px 0; }
+
+  .nav-market-main {
+    gap: 18px;
+    padding: 5px 0 18px;
+  }
+
+  .nav-market-intro {
+    min-height: 0;
+    display: block;
+    padding: 9px 7px 18px;
+  }
+
+  .nav-market-name { font-size: 19px; }
+  .nav-market-count {
+    display: inline-flex;
+    margin-top: 13px;
+  }
+  .nav-market-grid { grid-template-columns: 1fr; gap: 2px; }
+  .has-nav-toggle .nav-links .nav-dd-menu.nav-market-menu .nav-market-item {
+    min-height: 68px;
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr);
+    gap: 12px;
+    padding: 8px 7px;
+  }
+  .nav-market-menu .nav-market-icon.submenu-icon {
+    width: 48px;
+    height: 48px;
+  }
+  .nav-market-menu .nav-market-icon.submenu-icon::before,
+  .nav-market-menu .nav-market-icon.submenu-icon::after {
+    width: 41px;
+    height: 41px;
+  }
+  .nav-market-rail {
+    padding: 20px 0 0;
+    border-top: 1px solid var(--nr-line);
+    border-left: 0;
+    background: transparent;
+  }
+  .has-nav-toggle .nav-links .nav-dd-menu.nav-market-menu .nav-market-rail-item {
+    min-height: 48px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding-inline: 7px;
+  }
+  .nav-market-note { margin: 14px 7px 0; }
+  .nav-market-rail > .nav-market-drill > .nav-sub-trig {
+    min-height: 50px;
+    padding-inline: 7px;
+  }
+  .nav-market-rail > .nav-market-drill > .nav-market-drill-panel {
+    position: fixed;
+    min-height: 0;
+    width: auto;
+  }
+  .nav-market-drill-panel > .nav-drill-back {
+    position: static;
+    margin-bottom: 8px;
+  }
+  .nav-market-drill-panel > .nav-market-main { padding-top: 0; }
 
   .nav-drill-panel {
     position: fixed;
@@ -1330,6 +1665,13 @@ html:not([data-theme="light"]) .signal-status.status-bounce { color: #ffc47c; ba
   .site-nav .nav-dd:focus-within > .nav-dd-menu.nav-mega,
   .topbar .nav-dd:hover > .nav-dd-menu.nav-mega,
   .topbar .nav-dd:focus-within > .nav-dd-menu.nav-mega {
+    display: grid;
+  }
+
+  .site-nav .nav-dd:hover > .nav-dd-menu.nav-market-menu,
+  .site-nav .nav-dd:focus-within > .nav-dd-menu.nav-market-menu,
+  .topbar .nav-dd:hover > .nav-dd-menu.nav-market-menu,
+  .topbar .nav-dd:focus-within > .nav-dd-menu.nav-market-menu {
     display: grid;
   }
 }

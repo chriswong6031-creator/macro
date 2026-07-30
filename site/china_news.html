@@ -24,10 +24,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>China Tape — Macro Dashboard</title>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css?v=720475f3">
+<link rel="stylesheet" href="theme.css?v=8d7800c8">
 <link rel="stylesheet" href="assets/css/8e4ae4ee.css?v=8e4ae4ee">
-<link rel="preload" as="style" href="product-nav-icons.css?v=7b0290e9">
-<link rel="preload" as="style" href="navigation-refresh.css?v=f38c6288">
+<link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
+<link rel="preload" as="style" href="navigation-refresh.css?v=6e249584">
 
 
 
@@ -54,7 +54,7 @@
 
 
 
-    <link rel="stylesheet" href="navigation-refresh.css?v=f38c6288">
+    <link rel="stylesheet" href="navigation-refresh.css?v=6e249584">
     <div class="nav-links">
     
     <a class="nav-brand" href="start.html" aria-label="MASTERMINDX — Home">
@@ -300,8 +300,8 @@
       
       
       <p class="cn-lead">
-        <span class="l-en"><b>24</b> stories cleared the macro filter; official policy tone leans supportive. <b>24</b> rated high-impact, led by <b>PBOC & liquidity</b>.</span>
-        <span class="l-zh"><b>24</b> 条通过宏观筛选；官方政策基调偏积极。其中 <b>24</b> 条高影响，主导<b>央行与流动性</b>。</span>
+        <span class="l-en"><b>24</b> stories cleared the macro filter; official policy tone leans supportive. <b>15</b> rated high-impact, led by <b>equity market</b>.</span>
+        <span class="l-zh"><b>24</b> 条通过宏观筛选；官方政策基调偏积极。其中 <b>15</b> 条高影响，主导<b>股票市场</b>。</span>
       </p>
       <p class="cn-asof"><span class="l-en">As of</span><span class="l-zh">截至</span>  · <span class="l-en">context, not trade calls</span><span class="l-zh">仅为背景，非交易信号</span></p>
       <div class="cn-glance">
@@ -309,8 +309,8 @@
         
         <span class="cn-gchip st-supportive"><span class="dot"></span><span class="l-en">Policy tone</span><span class="l-zh">政策基调</span> <b><span class="l-en">leans supportive</span><span class="l-zh">偏积极</span></b></span>
         
-        <span class="cn-gchip hot"><span class="dot"></span><b>24</b> <span class="l-en">high-impact</span><span class="l-zh">高影响</span></span>
-        <span class="cn-gchip led th-policy"><span class="dot"></span><span class="l-en">Led by</span><span class="l-zh">主导</span> <b><span class="l-en">PBOC & liquidity</span><span class="l-zh">央行与流动性</span></b></span>
+        <span class="cn-gchip hot"><span class="dot"></span><b>15</b> <span class="l-en">high-impact</span><span class="l-zh">高影响</span></span>
+        <span class="cn-gchip led th-markets"><span class="dot"></span><span class="l-en">Led by</span><span class="l-zh">主导</span> <b><span class="l-en">equity market</span><span class="l-zh">股票市场</span></b></span>
         <span class="cn-gchip"><b>24</b> <span class="l-en">on the tape</span><span class="l-zh">条在流</span></span>
         <span class="cn-gchip hidden" id="fresh"><span class="dot" style="background:var(--up)"></span><span id="fresh-t"></span></span>
       </div>
@@ -351,33 +351,40 @@
         <div class="mx-row th-policy">
           <span class="mx-name"><span class="l-en">Policy</span><span class="l-zh">政策</span></span>
           <span class="mx-bar"><i style="width:100%"></i></span>
-          <span class="mx-n">12</span>
+          <span class="mx-n">6</span>
+        </div>
+        
+        
+        <div class="mx-row th-policy">
+          <span class="mx-name"><span class="l-en">Policy</span><span class="l-zh">政策</span></span>
+          <span class="mx-bar"><i style="width:83%"></i></span>
+          <span class="mx-n">5</span>
         </div>
         
         
         <div class="mx-row th-monetary">
           <span class="mx-name"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
-          <span class="mx-bar"><i style="width:75%"></i></span>
-          <span class="mx-n">9</span>
+          <span class="mx-bar"><i style="width:83%"></i></span>
+          <span class="mx-n">5</span>
         </div>
         
         
-        <div class="mx-row th-growth">
-          <span class="mx-name"><span class="l-en">Growth</span><span class="l-zh">增长</span></span>
-          <span class="mx-bar"><i style="width:17%"></i></span>
-          <span class="mx-n">2</span>
+        <div class="mx-row th-credit">
+          <span class="mx-name"><span class="l-en">Credit</span><span class="l-zh">信用</span></span>
+          <span class="mx-bar"><i style="width:50%"></i></span>
+          <span class="mx-n">3</span>
         </div>
         
         
-        <div class="mx-row th-markets">
-          <span class="mx-name"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
-          <span class="mx-bar"><i style="width:8%"></i></span>
-          <span class="mx-n">1</span>
+        <div class="mx-row th-fiscal">
+          <span class="mx-name"><span class="l-en">Fiscal/Trade</span><span class="l-zh">财政/贸易</span></span>
+          <span class="mx-bar"><i style="width:50%"></i></span>
+          <span class="mx-n">3</span>
         </div>
         
       
       
-      <p class="ov-foot"><span class="l-en">Sources</span><span class="l-zh">来源</span>: <span class="l-en">Chinese financial press</span><span class="l-zh">中国财经媒体</span> 22 · <span class="l-en">domestic wire</span><span class="l-zh">国内财经快讯</span> 1 · <span class="l-en">global wire</span><span class="l-zh">国际通讯社</span> 1</p>
+      <p class="ov-foot"><span class="l-en">Sources</span><span class="l-zh">来源</span>: <span class="l-en">Chinese financial press</span><span class="l-zh">中国财经媒体</span> 22 · <span class="l-en">global wire</span><span class="l-zh">国际通讯社</span> 2</p>
       
     </article>
 
@@ -415,7 +422,7 @@
         
         <a class="tp-item th-policy lead" href="https://wallstreetcn.com/livenews/3142203" target="_blank" rel="noopener"
            data-theme="policy" data-importance="high"
-           data-search="中共中央政治局会议：深化资本市场投融资综合改革，提升资本市场韧性和信心  中共中央政治局会议：深化资本市场投融资综合改革，提升资本市场韧性和信心 会议强调，要切实筑牢安全屏障。稳定房地产市场，实施好一揽子化债方案，扎实推进地方中小金融机构改革化险、减量提质。深化资本市场投融资综合改革，提升资本市场韧性和信心。深入排查整治各类风险隐患，坚决遏制重特大事故发生。加强对病险水库、江河堤防、山洪和地质灾害危险区、城市低洼易涝点等隐患排查治理，扎实做好防汛应急抢险救灾各项工作，全力维护人民群众生命财产安全。（新华社） the meeting stressed the need to build a solid safety barrier, stabilize the real estate market, implement a package of debt resolution plans, push forward reform and risk mitigation of local small and medium financial institutions to reduce quantity and improve quality, deepen comprehensive reforms in capital market investment and financing to enhance resilience and confidence, thoroughly investigate and rectify various risks and hazards, resolutely prevent major accidents, strengthen risk checks on dangerous reservoirs, river embankments, mountain flood and geological disaster zones, low-lying urban areas prone to waterlogging, and make solid efforts in flood control, emergency response, and disaster relief to protect people's lives and property. (xinhua) 会议强调，要切实筑牢安全屏障。稳定房地产市场，实施好一揽子化债方案，扎实推进地方中小金融机构改革化险、减量提质。深化资本市场投融资综合改革，提升资本市场韧性和信心。深入排查整治各类风险隐患，坚决遏制重特大事故发生。加强对病险水库、江河堤防、山洪和地质灾害危险区、城市低洼易涝点等隐患排查治理，扎实做好防汛应急抢险救灾各项工作，全力维护人民群众生命财产安全。（新华社） 华尔街见闻 property property 房地产 512200.ss">
+           data-search="中共中央政治局会议：深化资本市场投融资综合改革，提升资本市场韧性和信心 a political bureau of the cpc central committee meeting: deepen comprehensive reforms in capital market investment and financing to enhance market resilience and confidence. 中共中央政治局会议：深化资本市场投融资综合改革，提升资本市场韧性和信心 会议强调，要切实筑牢安全屏障。稳定房地产市场，实施好一揽子化债方案，扎实推进地方中小金融机构改革化险、减量提质。深化资本市场投融资综合改革，提升资本市场韧性和信心。深入排查整治各类风险隐患，坚决遏制重特大事故发生。加强对病险水库、江河堤防、山洪和地质灾害危险区、城市低洼易涝点等隐患排查治理，扎实做好防汛应急抢险救灾各项工作，全力维护人民群众生命财产安全。（新华社） the meeting stressed the need to firmly establish a safety net, stabilize the real estate market, implement a package of debt resolution plans, advance reforms to mitigate risks and improve quality in local small and medium financial institutions, deepen comprehensive reforms in capital market investment and financing to enhance market resilience and confidence, thoroughly investigate and rectify various risks and hazards, resolutely prevent major accidents, strengthen隐患排查 and management of dangerous reservoirs, river embankments, mountain torrents, geological disaster zones, and urban low-lying areas prone to waterlogging, and diligently carry out flood prevention and emergency rescue efforts to safeguard people's lives and property. (xinhua) 会议强调，要切实筑牢安全屏障。稳定房地产市场，实施好一揽子化债方案，扎实推进地方中小金融机构改革化险、减量提质。深化资本市场投融资综合改革，提升资本市场韧性和信心。深入排查整治各类风险隐患，坚决遏制重特大事故发生。加强对病险水库、江河堤防、山洪和地质灾害危险区、城市低洼易涝点等隐患排查治理，扎实做好防汛应急抢险救灾各项工作，全力维护人民群众生命财产安全。（新华社） 华尔街见闻 property property 房地产 512200.ss">
           <time class="tp-when" data-t="2026-07-30T06:37:22+00:00" datetime="2026-07-30T06:37:22+00:00">07-30<br>06:37</time>
           <div class="tp-spine"><span class="tp-node" data-t="2026-07-30T06:37:22+00:00"></span></div>
           <div class="tp-body">
@@ -425,35 +432,35 @@
               <span class="cn-src">华尔街见闻</span>
               <span class="cn-imp imp-high"><b>100</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
             </div>
-            <h2 class="tp-title"><span class="l-en">中共中央政治局会议：深化资本市场投融资综合改革，提升资本市场韧性和信心</span><span class="l-zh">中共中央政治局会议：深化资本市场投融资综合改革，提升资本市场韧性和信心</span></h2>
-            <p class="tp-sum"><span class="l-en">The meeting stressed the need to build a solid safety barrier, stabilize the real estate market, implement a package of debt resolution plans, push forward reform and risk mitigation of local small and medium financial institutions to reduce quantity and improve quality, deepen comprehensive reforms in capital market investment and financing to enhance resilience and confidence, thoroughly investigate and rectify various risks and hazards, resolutely prevent major accidents, strengthen risk checks on dangerous reservoirs, river embankments, mountain flood and geological disaster zones, low-lying urban areas prone to waterlogging, and make solid efforts in flood control, emergency response, and disaster relief to protect people's lives and property. (Xinhua)</span><span class="l-zh">会议强调，要切实筑牢安全屏障。稳定房地产市场，实施好一揽子化债方案，扎实推进地方中小金融机构改革化险、减量提质。深化资本市场投融资综合改革，提升资本市场韧性和信心。深入排查整治各类风险隐患，坚决遏制重特大事故发生。加强对病险水库、江河堤防、山洪和地质灾害危险区、城市低洼易涝点等隐患排查治理，扎实做好防汛应急抢险救灾各项工作，全力维护人民群众生命财产安全。（新华社）</span></p>
+            <h2 class="tp-title"><span class="l-en">A Political Bureau of the CPC Central Committee meeting: Deepen comprehensive reforms in capital market investment and financing to enhance market resilience and confidence.</span><span class="l-zh">中共中央政治局会议：深化资本市场投融资综合改革，提升资本市场韧性和信心</span></h2>
+            <p class="tp-sum"><span class="l-en">The meeting stressed the need to firmly establish a safety net, stabilize the real estate market, implement a package of debt resolution plans, advance reforms to mitigate risks and improve quality in local small and medium financial institutions, deepen comprehensive reforms in capital market investment and financing to enhance market resilience and confidence, thoroughly investigate and rectify various risks and hazards, resolutely prevent major accidents, strengthen隐患排查 and management of dangerous reservoirs, river embankments, mountain torrents, geological disaster zones, and urban low-lying areas prone to waterlogging, and diligently carry out flood prevention and emergency rescue efforts to safeguard people's lives and property. (Xinhua)</span><span class="l-zh">会议强调，要切实筑牢安全屏障。稳定房地产市场，实施好一揽子化债方案，扎实推进地方中小金融机构改革化险、减量提质。深化资本市场投融资综合改革，提升资本市场韧性和信心。深入排查整治各类风险隐患，坚决遏制重特大事故发生。加强对病险水库、江河堤防、山洪和地质灾害危险区、城市低洼易涝点等隐患排查治理，扎实做好防汛应急抢险救灾各项工作，全力维护人民群众生命财产安全。（新华社）</span></p>
             <div class="tp-chips"><span class="cn-cchip"><span class="l-en">property</span><span class="l-zh">房地产</span></span><span class="cn-tk">512200.SS</span></div>
           </div>
         </a>
         
         
-        <a class="tp-item th-monetary" href="https://wallstreetcn.com/livenews/3142143" target="_blank" rel="noopener"
-           data-theme="monetary" data-importance="high"
-           data-search="提醒：日内请重点关注（以下均为北京时间） reminder: key events to watch today (all in beijing time) 提醒：日内请重点关注（以下均为北京时间） ① 13:30 法国二季度gdp初值； ② 16:00 德国二季度gdp初值； ③ 17:00 欧元区二季度gdp初值； ④ 19:00 英国央行公布利率决议； ⑤ 20:00 德国7月cpi初值； ⑥ 20:30 美国二季度gdp初值，6月个人收入和个人消费支出（pce）、pce物价指数，7月25日当周首次申请失业救济人数； ⑦ 美股盘后 苹果、亚马逊发布业绩报告； 微信小程序搜索“见闻历”，了解更多。 ① 1:30 pm france q2 gdp preliminary; ② 4:00 pm germany q2 gdp preliminary; ③ 5:00 pm eurozone q2 gdp preliminary; ④ 7:00 pm bank of england rate decision; ⑤ 8:00 pm germany july cpi preliminary; ⑥ 8:30 pm us q2 gdp preliminary, june personal income and personal consumption expenditures (pce), pce price index, initial jobless claims for week ending july 25; ⑦ post-us market close apple and amazon earnings reports. ① 13:30 法国二季度gdp初值； ② 16:00 德国二季度gdp初值； ③ 17:00 欧元区二季度gdp初值； ④ 19:00 英国央行公布利率决议； ⑤ 20:00 德国7月cpi初值； ⑥ 20:30 美国二季度gdp初值，6月个人收入和个人消费支出（pce）、pce物价指数，7月25日当周首次申请失业救济人数； ⑦ 美股盘后 苹果、亚马逊发布业绩报告； 微信小程序搜索“见闻历”，了解更多。 华尔街见闻 pboc_liquidity consumer pboc & liquidity 央行与流动性 consumer 消费 ">
-          <time class="tp-when" data-t="2026-07-30T04:30:01+00:00" datetime="2026-07-30T04:30:01+00:00">07-30<br>04:30</time>
-          <div class="tp-spine"><span class="tp-node" data-t="2026-07-30T04:30:01+00:00"></span></div>
+        <a class="tp-item th-credit" href="https://flash.jin10.com/detail/20260730162959240800" target="_blank" rel="noopener"
+           data-theme="credit" data-importance="high"
+           data-search="金十数据整理：每日债券市场要闻速递（2026-07-30） jin10 data compilation: daily bond market news briefing (2026-07-30) 金十数据整理：每日债券市场要闻速递（2026-07-30） <span class="section-news">1. 中共中央政治局会议：宏观政策要发力提效，加快财政支出和债券资金使用进度。</span><br/><span class="section-news">2. 美媒：共和党人开始考虑在中期选举临近之际再次提高债务上限。</span><br/><span class="section-news">3. 沃什：密切观察市场定价但不随市场定价行动。</span><br/><span class="section-news">4. 机构：美联储继续按兵不动 年底前仍以“等待数据”为主。</span><br/ <span class="section-news">1. politburo meeting: macro policy should exert force and improve efficiency, accelerating fiscal spending and the use of bond funds.</span><br/><span class="section-news">2. us media: republicans begin considering raising the debt ceiling again as midterm elections approach.</span><br/><span class="section-news">3. warsh: closely observing market pricing but not acting on it.</span><br/><span class="section-news">4. institutions: fed remains on hold, primarily 'waiting for data' until year-end.</span><br/> <span class="section-news">1. 中共中央政治局会议：宏观政策要发力提效，加快财政支出和债券资金使用进度。</span><br/><span class="section-news">2. 美媒：共和党人开始考虑在中期选举临近之际再次提高债务上限。</span><br/><span class="section-news">3. 沃什：密切观察市场定价但不随市场定价行动。</span><br/><span class="section-news">4. 机构：美联储继续按兵不动 年底前仍以“等待数据”为主。</span><br/ 金十数据 fiscal_trade fiscal & trade 财政与贸易 ">
+          <time class="tp-when" data-t="2026-07-30T16:29:59+08:00" datetime="2026-07-30T16:29:59+08:00">07-30<br>16:29</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-07-30T16:29:59+08:00"></span></div>
           <div class="tp-body">
             <div class="tp-top">
               
-              <span class="cn-tag"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
-              <span class="cn-src">华尔街见闻</span>
-              <span class="cn-imp imp-high"><b>100</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
+              <span class="cn-tag"><span class="l-en">Credit</span><span class="l-zh">信用</span></span>
+              <span class="cn-src">金十数据</span>
+              <span class="cn-imp imp-high"><b>90</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
             </div>
-            <h2 class="tp-title"><span class="l-en">Reminder: Key events to watch today (all in Beijing time)</span><span class="l-zh">提醒：日内请重点关注（以下均为北京时间）</span></h2>
-            <p class="tp-sum"><span class="l-en">① 1:30 PM France Q2 GDP preliminary; ② 4:00 PM Germany Q2 GDP preliminary; ③ 5:00 PM Eurozone Q2 GDP preliminary; ④ 7:00 PM Bank of England rate decision; ⑤ 8:00 PM Germany July CPI preliminary; ⑥ 8:30 PM US Q2 GDP preliminary, June personal income and personal consumption expenditures (PCE), PCE price index, initial jobless claims for week ending July 25; ⑦ Post-US market close Apple and Amazon earnings reports.</span><span class="l-zh">① 13:30 法国二季度GDP初值； ② 16:00 德国二季度GDP初值； ③ 17:00 欧元区二季度GDP初值； ④ 19:00 英国央行公布利率决议； ⑤ 20:00 德国7月CPI初值； ⑥ 20:30 美国二季度GDP初值，6月个人收入和个人消费支出（PCE）、PCE物价指数，7月25日当周首次申请失业救济人数； ⑦ 美股盘后 苹果、亚马逊发布业绩报告； 微信小程序搜索“见闻历”，了解更多。</span></p>
-            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">PBOC & liquidity</span><span class="l-zh">央行与流动性</span></span><span class="cn-cchip"><span class="l-en">consumer</span><span class="l-zh">消费</span></span></div>
+            <h2 class="tp-title"><span class="l-en">Jin10 Data compilation: Daily bond market news briefing (2026-07-30)</span><span class="l-zh">金十数据整理：每日债券市场要闻速递（2026-07-30）</span></h2>
+            <p class="tp-sum"><span class="l-en"><span class="section-news">1. Politburo meeting: Macro policy should exert force and improve efficiency, accelerating fiscal spending and the use of bond funds.</span><br/><span class="section-news">2. US media: Republicans begin considering raising the debt ceiling again as midterm elections approach.</span><br/><span class="section-news">3. Warsh: Closely observing market pricing but not acting on it.</span><br/><span class="section-news">4. Institutions: Fed remains on hold, primarily 'waiting for data' until year-end.</span><br/></span><span class="l-zh"><span class="section-news">1. 中共中央政治局会议：宏观政策要发力提效，加快财政支出和债券资金使用进度。</span><br/><span class="section-news">2. 美媒：共和党人开始考虑在中期选举临近之际再次提高债务上限。</span><br/><span class="section-news">3. 沃什：密切观察市场定价但不随市场定价行动。</span><br/><span class="section-news">4. 机构：美联储继续按兵不动 年底前仍以“等待数据”为主。</span><br/</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">fiscal & trade</span><span class="l-zh">财政与贸易</span></span></div>
           </div>
         </a>
         
         
         <a class="tp-item th-monetary" href="https://wallstreetcn.com/livenews/3142207" target="_blank" rel="noopener"
            data-theme="monetary" data-importance="high"
-           data-search="中共中央政治局会议：实施好更加积极的财政政策和适度宽松的货币政策，充分发挥各项存量政策效能  中共中央政治局会议：实施好更加积极的财政政策和适度宽松的货币政策，充分发挥各项存量政策效能 会议强调，实施好更加积极的财政政策和适度宽松的货币政策，充分发挥各项存量政策效能，及时谋划出台务实管用的增量政策，加大逆周期调节力度，加力扩大内需、优化供给，切实保障和改善民生，增强发展动力、激发社会活力，推动经济持续向新向优向好发展，努力实现“十五五”良好开局。（新华社） the meeting emphasized implementing a more proactive fiscal policy and moderately accommodative monetary policy, fully leveraging existing policy effectiveness, promptly formulating pragmatic incremental policies, increasing counter-cyclical adjustments, expanding domestic demand, optimizing supply, ensuring and improving people's livelihoods, enhancing development momentum, stimulating social vitality, promoting sustained high-quality economic development, and striving for a good start to the 15th five-year plan. (xinhua) 会议强调，实施好更加积极的财政政策和适度宽松的货币政策，充分发挥各项存量政策效能，及时谋划出台务实管用的增量政策，加大逆周期调节力度，加力扩大内需、优化供给，切实保障和改善民生，增强发展动力、激发社会活力，推动经济持续向新向优向好发展，努力实现“十五五”良好开局。（新华社） 华尔街见闻 fiscal_trade fiscal & trade 财政与贸易 ">
+           data-search="中共中央政治局会议：实施好更加积极的财政政策和适度宽松的货币政策，充分发挥各项存量政策效能 a political bureau of the cpc central committee meeting: implement a more proactive fiscal policy and moderately accommodative monetary policy, and fully leverage the effectiveness of existing policies. 中共中央政治局会议：实施好更加积极的财政政策和适度宽松的货币政策，充分发挥各项存量政策效能 会议强调，实施好更加积极的财政政策和适度宽松的货币政策，充分发挥各项存量政策效能，及时谋划出台务实管用的增量政策，加大逆周期调节力度，加力扩大内需、优化供给，切实保障和改善民生，增强发展动力、激发社会活力，推动经济持续向新向优向好发展，努力实现“十五五”良好开局。（新华社） the meeting stressed implementing a more proactive fiscal policy and moderately loose monetary policy, fully utilizing existing policy effectiveness, promptly devising practical incremental policies, increasing counter-cyclical adjustments, boosting domestic demand and optimizing supply, effectively ensuring and improving people's livelihoods, enhancing development momentum and social vitality, driving sustained high-quality economic development, and striving for a good start to the '15th five-year plan'. (xinhua) 会议强调，实施好更加积极的财政政策和适度宽松的货币政策，充分发挥各项存量政策效能，及时谋划出台务实管用的增量政策，加大逆周期调节力度，加力扩大内需、优化供给，切实保障和改善民生，增强发展动力、激发社会活力，推动经济持续向新向优向好发展，努力实现“十五五”良好开局。（新华社） 华尔街见闻 fiscal_trade fiscal & trade 财政与贸易 ">
           <time class="tp-when" data-t="2026-07-30T06:39:33+00:00" datetime="2026-07-30T06:39:33+00:00">07-30<br>06:39</time>
           <div class="tp-spine"><span class="tp-node" data-t="2026-07-30T06:39:33+00:00"></span></div>
           <div class="tp-body">
@@ -463,35 +470,35 @@
               <span class="cn-src">华尔街见闻</span>
               <span class="cn-imp imp-high"><b>90</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
             </div>
-            <h2 class="tp-title"><span class="l-en">中共中央政治局会议：实施好更加积极的财政政策和适度宽松的货币政策，充分发挥各项存量政策效能</span><span class="l-zh">中共中央政治局会议：实施好更加积极的财政政策和适度宽松的货币政策，充分发挥各项存量政策效能</span></h2>
-            <p class="tp-sum"><span class="l-en">The meeting emphasized implementing a more proactive fiscal policy and moderately accommodative monetary policy, fully leveraging existing policy effectiveness, promptly formulating pragmatic incremental policies, increasing counter-cyclical adjustments, expanding domestic demand, optimizing supply, ensuring and improving people's livelihoods, enhancing development momentum, stimulating social vitality, promoting sustained high-quality economic development, and striving for a good start to the 15th Five-Year Plan. (Xinhua)</span><span class="l-zh">会议强调，实施好更加积极的财政政策和适度宽松的货币政策，充分发挥各项存量政策效能，及时谋划出台务实管用的增量政策，加大逆周期调节力度，加力扩大内需、优化供给，切实保障和改善民生，增强发展动力、激发社会活力，推动经济持续向新向优向好发展，努力实现“十五五”良好开局。（新华社）</span></p>
+            <h2 class="tp-title"><span class="l-en">A Political Bureau of the CPC Central Committee meeting: Implement a more proactive fiscal policy and moderately accommodative monetary policy, and fully leverage the effectiveness of existing policies.</span><span class="l-zh">中共中央政治局会议：实施好更加积极的财政政策和适度宽松的货币政策，充分发挥各项存量政策效能</span></h2>
+            <p class="tp-sum"><span class="l-en">The meeting stressed implementing a more proactive fiscal policy and moderately loose monetary policy, fully utilizing existing policy effectiveness, promptly devising practical incremental policies, increasing counter-cyclical adjustments, boosting domestic demand and optimizing supply, effectively ensuring and improving people's livelihoods, enhancing development momentum and social vitality, driving sustained high-quality economic development, and striving for a good start to the '15th Five-Year Plan'. (Xinhua)</span><span class="l-zh">会议强调，实施好更加积极的财政政策和适度宽松的货币政策，充分发挥各项存量政策效能，及时谋划出台务实管用的增量政策，加大逆周期调节力度，加力扩大内需、优化供给，切实保障和改善民生，增强发展动力、激发社会活力，推动经济持续向新向优向好发展，努力实现“十五五”良好开局。（新华社）</span></p>
             <div class="tp-chips"><span class="cn-cchip"><span class="l-en">fiscal & trade</span><span class="l-zh">财政与贸易</span></span></div>
           </div>
         </a>
         
         
-        <a class="tp-item th-monetary" href="https://news.futunn.com/flash/20573175/meeting-of-the-political-bureau-of-the-cpc-central-committee" target="_blank" rel="noopener"
+        <a class="tp-item th-monetary" href="https://wallstreetcn.com/livenews/3142300" target="_blank" rel="noopener"
            data-theme="monetary" data-importance="high"
-           data-search="中共中央政治局会议：加快推动新旧动能转换 实施好更加积极的财政政策和适度宽松的货币政策  中共中央政治局会议：加快推动新旧动能转换 实施好更加积极的财政政策和适度宽松的货币政策 中共中央政治局7月30日召开会议，会议强调，做好下半年经济工作，要坚持以习近平新时代中国特色社会主义思想为指导，坚持稳中求进工作总基调，完整准确全面贯彻新发展理念，加快构建新发展格局，更好统筹国内国际两个大局，统筹发展和安全，坚持深化改革开放，加快推动新旧动能转换，实施好更加积极的财政政策和适度宽松的货币政策，充分发挥各项存量政策效能，及时谋划出台务实管用的增量政策，加大逆周期调节力度，加力扩大内需、优化供给，切实保障和改善民生，增强发展动力、激发社会活力，推动经济持续向新向优向好发展，努力实现“十五五”良好开局。（新华社） the political bureau of the cpc central committee held a meeting on july 30, stressing that for the second half of the year's economic work, we must adhere to xi jinping thought on socialism with chinese characteristics for a new era, maintain the general principle of seeking progress while maintaining stability, fully and accurately implement the new development philosophy, accelerate the construction of a new development pattern, better coordinate domestic and international situations, balance development and security, persist in deepening reforms and opening up, accelerate the transformation of old and new growth drivers, implement a more proactive fiscal policy and moderately accommodative monetary policy, fully utilize existing policy effectiveness, promptly formulate pragmatic incremental policies, increase counter-cyclical adjustments, expand domestic demand, optimize supply, ensure and improve people's livelihoods, enhance development momentum, stimulate social vitality, promote sustained high-quality economic development, and strive for a good start to the 15th five-year plan. (xinhua) 中共中央政治局7月30日召开会议，会议强调，做好下半年经济工作，要坚持以习近平新时代中国特色社会主义思想为指导，坚持稳中求进工作总基调，完整准确全面贯彻新发展理念，加快构建新发展格局，更好统筹国内国际两个大局，统筹发展和安全，坚持深化改革开放，加快推动新旧动能转换，实施好更加积极的财政政策和适度宽松的货币政策，充分发挥各项存量政策效能，及时谋划出台务实管用的增量政策，加大逆周期调节力度，加力扩大内需、优化供给，切实保障和改善民生，增强发展动力、激发社会活力，推动经济持续向新向优向好发展，努力实现“十五五”良好开局。（新华社） 富途牛牛 fiscal_trade fiscal & trade 财政与贸易 ">
-          <time class="tp-when" data-t="2026-07-30T06:36:00+00:00" datetime="2026-07-30T06:36:00+00:00">07-30<br>06:36</time>
-          <div class="tp-spine"><span class="tp-node" data-t="2026-07-30T06:36:00+00:00"></span></div>
+           data-search="中国人民银行副行长宣昌能会见印度尼西亚银行副行长托马斯·吉万多诺 pbc deputy governor xuan changneng meets with bank indonesia deputy governor thomas g. g. 中国人民银行副行长宣昌能会见印度尼西亚银行副行长托马斯·吉万多诺 2026年7月28日，中国人民银行副行长宣昌能会见印度尼西亚银行副行长托马斯·吉万多诺。双方就中印尼经济形势和双边金融合作等议题进行了交流。（中国央行网站） on july 28, 2026, pboc deputy governor xuan changneng met with bank indonesia deputy governor thomas givandono to discuss china-indonesia economic conditions and bilateral financial cooperation. (pboc website) 2026年7月28日，中国人民银行副行长宣昌能会见印度尼西亚银行副行长托马斯·吉万多诺。双方就中印尼经济形势和双边金融合作等议题进行了交流。（中国央行网站） 华尔街见闻 pboc_liquidity pboc & liquidity 央行与流动性 512800.ss">
+          <time class="tp-when" data-t="2026-07-30T08:41:48+00:00" datetime="2026-07-30T08:41:48+00:00">07-30<br>08:41</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-07-30T08:41:48+00:00"></span></div>
           <div class="tp-body">
             <div class="tp-top">
               
               <span class="cn-tag"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
-              <span class="cn-src">富途牛牛</span>
-              <span class="cn-imp imp-high"><b>90</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
+              <span class="cn-src">华尔街见闻</span>
+              <span class="cn-imp imp-high"><b>82</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
             </div>
-            <h2 class="tp-title"><span class="l-en">中共中央政治局会议：加快推动新旧动能转换 实施好更加积极的财政政策和适度宽松的货币政策</span><span class="l-zh">中共中央政治局会议：加快推动新旧动能转换 实施好更加积极的财政政策和适度宽松的货币政策</span></h2>
-            <p class="tp-sum"><span class="l-en">The Political Bureau of the CPC Central Committee held a meeting on July 30, stressing that for the second half of the year's economic work, we must adhere to Xi Jinping Thought on Socialism with Chinese Characteristics for a New Era, maintain the general principle of seeking progress while maintaining stability, fully and accurately implement the new development philosophy, accelerate the construction of a new development pattern, better coordinate domestic and international situations, balance development and security, persist in deepening reforms and opening up, accelerate the transformation of old and new growth drivers, implement a more proactive fiscal policy and moderately accommodative monetary policy, fully utilize existing policy effectiveness, promptly formulate pragmatic incremental policies, increase counter-cyclical adjustments, expand domestic demand, optimize supply, ensure and improve people's livelihoods, enhance development momentum, stimulate social vitality, promote sustained high-quality economic development, and strive for a good start to the 15th Five-Year Plan. (Xinhua)</span><span class="l-zh">中共中央政治局7月30日召开会议，会议强调，做好下半年经济工作，要坚持以习近平新时代中国特色社会主义思想为指导，坚持稳中求进工作总基调，完整准确全面贯彻新发展理念，加快构建新发展格局，更好统筹国内国际两个大局，统筹发展和安全，坚持深化改革开放，加快推动新旧动能转换，实施好更加积极的财政政策和适度宽松的货币政策，充分发挥各项存量政策效能，及时谋划出台务实管用的增量政策，加大逆周期调节力度，加力扩大内需、优化供给，切实保障和改善民生，增强发展动力、激发社会活力，推动经济持续向新向优向好发展，努力实现“十五五”良好开局。（新华社）</span></p>
-            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">fiscal & trade</span><span class="l-zh">财政与贸易</span></span></div>
+            <h2 class="tp-title"><span class="l-en">PBC Deputy Governor Xuan Changneng meets with Bank Indonesia Deputy Governor Thomas G. G.</span><span class="l-zh">中国人民银行副行长宣昌能会见印度尼西亚银行副行长托马斯·吉万多诺</span></h2>
+            <p class="tp-sum"><span class="l-en">On July 28, 2026, PBOC Deputy Governor Xuan Changneng met with Bank Indonesia Deputy Governor Thomas Givandono to discuss China-Indonesia economic conditions and bilateral financial cooperation. (PBOC website)</span><span class="l-zh">2026年7月28日，中国人民银行副行长宣昌能会见印度尼西亚银行副行长托马斯·吉万多诺。双方就中印尼经济形势和双边金融合作等议题进行了交流。（中国央行网站）</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">PBOC & liquidity</span><span class="l-zh">央行与流动性</span></span><span class="cn-tk">512800.SS</span></div>
           </div>
         </a>
         
         
         <a class="tp-item th-policy" href="https://wallstreetcn.com/livenews/3142206" target="_blank" rel="noopener"
            data-theme="policy" data-importance="high"
-           data-search="中共中央政治局会议：扎实推进“六张网”规划建设  中共中央政治局会议：扎实推进“六张网”规划建设 会议强调，要有效扩大国内需求，适应不同群体消费需求扩大优质供给，挖掘服务消费潜力。扎实推进“六张网”规划建设。加快现代化产业体系建设，加强对基础研究的长期稳定支持，深入实施“人工智能+”行动，发展智能经济新形态，完善人工智能治理体系。积极推动前沿技术突破和未来产业发展，着力打造新兴支柱产业，持续推动传统产业改造升级。（新华社） the meeting stressed effectively expanding domestic demand, adapting to consumption needs of different groups to expand quality supply, tapping into service consumption potential, steadily advancing the 'six networks' planning and construction, accelerating the establishment of a modern industrial system, strengthening long-term stable support for basic research, deeply implementing the 'ai+' action, developing new forms of intelligent economy, improving the ai governance system, actively promoting breakthroughs in frontier technologies and future industries, building emerging pillar industries, and continuously driving the transformation and upgrade of traditional industries. (xinhua) 会议强调，要有效扩大国内需求，适应不同群体消费需求扩大优质供给，挖掘服务消费潜力。扎实推进“六张网”规划建设。加快现代化产业体系建设，加强对基础研究的长期稳定支持，深入实施“人工智能+”行动，发展智能经济新形态，完善人工智能治理体系。积极推动前沿技术突破和未来产业发展，着力打造新兴支柱产业，持续推动传统产业改造升级。（新华社） 华尔街见闻 consumer tech_policy consumer 消费 tech policy 科技政策 ">
+           data-search="中共中央政治局会议：扎实推进“六张网”规划建设 a political bureau of the cpc central committee meeting: steadily advance the planning and construction of the 'six networks'. 中共中央政治局会议：扎实推进“六张网”规划建设 会议强调，要有效扩大国内需求，适应不同群体消费需求扩大优质供给，挖掘服务消费潜力。扎实推进“六张网”规划建设。加快现代化产业体系建设，加强对基础研究的长期稳定支持，深入实施“人工智能+”行动，发展智能经济新形态，完善人工智能治理体系。积极推动前沿技术突破和未来产业发展，着力打造新兴支柱产业，持续推动传统产业改造升级。（新华社） the meeting stressed effectively expanding domestic demand, adapting to different consumer groups to improve high-quality supply, tapping into service consumption potential, advancing the 'six networks' planning and construction, accelerating the building of a modern industrial system, strengthening long-term stable support for basic research, deeply implementing the 'ai+' action, developing new forms of intelligent economy, improving the ai governance system, actively promoting breakthroughs in frontier technologies and future industries, cultivating emerging pillar industries, and continuing to transform and upgrade traditional industries. (xinhua) 会议强调，要有效扩大国内需求，适应不同群体消费需求扩大优质供给，挖掘服务消费潜力。扎实推进“六张网”规划建设。加快现代化产业体系建设，加强对基础研究的长期稳定支持，深入实施“人工智能+”行动，发展智能经济新形态，完善人工智能治理体系。积极推动前沿技术突破和未来产业发展，着力打造新兴支柱产业，持续推动传统产业改造升级。（新华社） 华尔街见闻 consumer tech_policy consumer 消费 tech policy 科技政策 ">
           <time class="tp-when" data-t="2026-07-30T06:38:34+00:00" datetime="2026-07-30T06:38:34+00:00">07-30<br>06:38</time>
           <div class="tp-spine"><span class="tp-node" data-t="2026-07-30T06:38:34+00:00"></span></div>
           <div class="tp-body">
@@ -501,149 +508,35 @@
               <span class="cn-src">华尔街见闻</span>
               <span class="cn-imp imp-high"><b>82</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
             </div>
-            <h2 class="tp-title"><span class="l-en">中共中央政治局会议：扎实推进“六张网”规划建设</span><span class="l-zh">中共中央政治局会议：扎实推进“六张网”规划建设</span></h2>
-            <p class="tp-sum"><span class="l-en">The meeting stressed effectively expanding domestic demand, adapting to consumption needs of different groups to expand quality supply, tapping into service consumption potential, steadily advancing the 'six networks' planning and construction, accelerating the establishment of a modern industrial system, strengthening long-term stable support for basic research, deeply implementing the 'AI+' action, developing new forms of intelligent economy, improving the AI governance system, actively promoting breakthroughs in frontier technologies and future industries, building emerging pillar industries, and continuously driving the transformation and upgrade of traditional industries. (Xinhua)</span><span class="l-zh">会议强调，要有效扩大国内需求，适应不同群体消费需求扩大优质供给，挖掘服务消费潜力。扎实推进“六张网”规划建设。加快现代化产业体系建设，加强对基础研究的长期稳定支持，深入实施“人工智能+”行动，发展智能经济新形态，完善人工智能治理体系。积极推动前沿技术突破和未来产业发展，着力打造新兴支柱产业，持续推动传统产业改造升级。（新华社）</span></p>
+            <h2 class="tp-title"><span class="l-en">A Political Bureau of the CPC Central Committee meeting: Steadily advance the planning and construction of the 'six networks'.</span><span class="l-zh">中共中央政治局会议：扎实推进“六张网”规划建设</span></h2>
+            <p class="tp-sum"><span class="l-en">The meeting stressed effectively expanding domestic demand, adapting to different consumer groups to improve high-quality supply, tapping into service consumption potential, advancing the 'six networks' planning and construction, accelerating the building of a modern industrial system, strengthening long-term stable support for basic research, deeply implementing the 'AI+' action, developing new forms of intelligent economy, improving the AI governance system, actively promoting breakthroughs in frontier technologies and future industries, cultivating emerging pillar industries, and continuing to transform and upgrade traditional industries. (Xinhua)</span><span class="l-zh">会议强调，要有效扩大国内需求，适应不同群体消费需求扩大优质供给，挖掘服务消费潜力。扎实推进“六张网”规划建设。加快现代化产业体系建设，加强对基础研究的长期稳定支持，深入实施“人工智能+”行动，发展智能经济新形态，完善人工智能治理体系。积极推动前沿技术突破和未来产业发展，着力打造新兴支柱产业，持续推动传统产业改造升级。（新华社）</span></p>
             <div class="tp-chips"><span class="cn-cchip"><span class="l-en">consumer</span><span class="l-zh">消费</span></span><span class="cn-cchip"><span class="l-en">tech policy</span><span class="l-zh">科技政策</span></span></div>
           </div>
         </a>
         
         
-        <a class="tp-item th-policy" href="https://news.10jqka.com.cn/20260730/c678548960.shtml" target="_blank" rel="noopener"
-           data-theme="policy" data-importance="high"
-           data-search="中共中央政治局：要有效扩大国内需求，适应不同群体消费需求扩大优质供给  中共中央政治局：要有效扩大国内需求，适应不同群体消费需求扩大优质供给 中共中央政治局召开会议，会议强调，要有效扩大国内需求，适应不同群体消费需求扩大优质供给，挖掘服务消费潜力。扎实推进“六张网”规划建设。加快现代化产业体系建设，加强对基础研究的长期稳定支持，深入实施“人工智能+”行动，发展智能经济新形态，完善人工智能治理体系。积极推动前沿技术突破和未来产业发展，着力打造新兴支柱产业，持续推动传统产业改造升级。（新华社） the political bureau of the cpc central committee held a meeting, stressing effectively expanding domestic demand, adapting to consumption needs of different groups to expand quality supply, tapping into service consumption potential, steadily advancing the 'six networks' planning and construction, accelerating the establishment of a modern industrial system, strengthening long-term stable support for basic research, deeply implementing the 'ai+' action, developing new forms of intelligent economy, improving the ai governance system, actively promoting breakthroughs in frontier technologies and future industries, building emerging pillar industries, and continuously driving the transformation and upgrade of traditional industries. (xinhua) 中共中央政治局召开会议，会议强调，要有效扩大国内需求，适应不同群体消费需求扩大优质供给，挖掘服务消费潜力。扎实推进“六张网”规划建设。加快现代化产业体系建设，加强对基础研究的长期稳定支持，深入实施“人工智能+”行动，发展智能经济新形态，完善人工智能治理体系。积极推动前沿技术突破和未来产业发展，着力打造新兴支柱产业，持续推动传统产业改造升级。（新华社） 同花顺 consumer tech_policy consumer 消费 tech policy 科技政策 ">
-          <time class="tp-when" data-t="2026-07-30T06:38:28+00:00" datetime="2026-07-30T06:38:28+00:00">07-30<br>06:38</time>
-          <div class="tp-spine"><span class="tp-node" data-t="2026-07-30T06:38:28+00:00"></span></div>
-          <div class="tp-body">
-            <div class="tp-top">
-              
-              <span class="cn-tag"><span class="l-en">Policy</span><span class="l-zh">政策</span></span>
-              <span class="cn-src">同花顺</span>
-              <span class="cn-imp imp-high"><b>82</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
-            </div>
-            <h2 class="tp-title"><span class="l-en">中共中央政治局：要有效扩大国内需求，适应不同群体消费需求扩大优质供给</span><span class="l-zh">中共中央政治局：要有效扩大国内需求，适应不同群体消费需求扩大优质供给</span></h2>
-            <p class="tp-sum"><span class="l-en">The Political Bureau of the CPC Central Committee held a meeting, stressing effectively expanding domestic demand, adapting to consumption needs of different groups to expand quality supply, tapping into service consumption potential, steadily advancing the 'six networks' planning and construction, accelerating the establishment of a modern industrial system, strengthening long-term stable support for basic research, deeply implementing the 'AI+' action, developing new forms of intelligent economy, improving the AI governance system, actively promoting breakthroughs in frontier technologies and future industries, building emerging pillar industries, and continuously driving the transformation and upgrade of traditional industries. (Xinhua)</span><span class="l-zh">中共中央政治局召开会议，会议强调，要有效扩大国内需求，适应不同群体消费需求扩大优质供给，挖掘服务消费潜力。扎实推进“六张网”规划建设。加快现代化产业体系建设，加强对基础研究的长期稳定支持，深入实施“人工智能+”行动，发展智能经济新形态，完善人工智能治理体系。积极推动前沿技术突破和未来产业发展，着力打造新兴支柱产业，持续推动传统产业改造升级。（新华社）</span></p>
-            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">consumer</span><span class="l-zh">消费</span></span><span class="cn-cchip"><span class="l-en">tech policy</span><span class="l-zh">科技政策</span></span></div>
-          </div>
-        </a>
-        
-        
-        <a class="tp-item th-policy" href="https://news.futunn.com/flash/20573184/meeting-of-the-political-bureau-of-the-cpc-central-committee" target="_blank" rel="noopener"
-           data-theme="policy" data-importance="high"
-           data-search="中共中央政治局会议：要有效扩大国内需求 积极推动前沿技术突破和未来产业发展  中共中央政治局会议：要有效扩大国内需求 积极推动前沿技术突破和未来产业发展 中共中央政治局7月30日召开会议，会议强调，要有效扩大国内需求，适应不同群体消费需求扩大优质供给，挖掘服务消费潜力。扎实推进“六张网”规划建设。加快现代化产业体系建设，加强对基础研究的长期稳定支持，深入实施“人工智能+”行动，发展智能经济新形态，完善人工智能治理体系。积极推动前沿技术突破和未来产业发展，着力打造新兴支柱产业，持续推动传统产业改造升级。（新华社） the political bureau of the cpc central committee held a meeting on july 30, stressing effectively expanding domestic demand, adapting to consumption needs of different groups to expand quality supply, tapping into service consumption potential, steadily advancing the 'six networks' planning and construction, accelerating the establishment of a modern industrial system, strengthening long-term stable support for basic research, deeply implementing the 'ai+' action, developing new forms of intelligent economy, improving the ai governance system, actively promoting breakthroughs in frontier technologies and future industries, building emerging pillar industries, and continuously driving the transformation and upgrade of traditional industries. (xinhua) 中共中央政治局7月30日召开会议，会议强调，要有效扩大国内需求，适应不同群体消费需求扩大优质供给，挖掘服务消费潜力。扎实推进“六张网”规划建设。加快现代化产业体系建设，加强对基础研究的长期稳定支持，深入实施“人工智能+”行动，发展智能经济新形态，完善人工智能治理体系。积极推动前沿技术突破和未来产业发展，着力打造新兴支柱产业，持续推动传统产业改造升级。（新华社） 富途牛牛 consumer tech_policy consumer 消费 tech policy 科技政策 ">
-          <time class="tp-when" data-t="2026-07-30T06:37:00+00:00" datetime="2026-07-30T06:37:00+00:00">07-30<br>06:37</time>
-          <div class="tp-spine"><span class="tp-node" data-t="2026-07-30T06:37:00+00:00"></span></div>
-          <div class="tp-body">
-            <div class="tp-top">
-              
-              <span class="cn-tag"><span class="l-en">Policy</span><span class="l-zh">政策</span></span>
-              <span class="cn-src">富途牛牛</span>
-              <span class="cn-imp imp-high"><b>82</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
-            </div>
-            <h2 class="tp-title"><span class="l-en">中共中央政治局会议：要有效扩大国内需求 积极推动前沿技术突破和未来产业发展</span><span class="l-zh">中共中央政治局会议：要有效扩大国内需求 积极推动前沿技术突破和未来产业发展</span></h2>
-            <p class="tp-sum"><span class="l-en">The Political Bureau of the CPC Central Committee held a meeting on July 30, stressing effectively expanding domestic demand, adapting to consumption needs of different groups to expand quality supply, tapping into service consumption potential, steadily advancing the 'six networks' planning and construction, accelerating the establishment of a modern industrial system, strengthening long-term stable support for basic research, deeply implementing the 'AI+' action, developing new forms of intelligent economy, improving the AI governance system, actively promoting breakthroughs in frontier technologies and future industries, building emerging pillar industries, and continuously driving the transformation and upgrade of traditional industries. (Xinhua)</span><span class="l-zh">中共中央政治局7月30日召开会议，会议强调，要有效扩大国内需求，适应不同群体消费需求扩大优质供给，挖掘服务消费潜力。扎实推进“六张网”规划建设。加快现代化产业体系建设，加强对基础研究的长期稳定支持，深入实施“人工智能+”行动，发展智能经济新形态，完善人工智能治理体系。积极推动前沿技术突破和未来产业发展，着力打造新兴支柱产业，持续推动传统产业改造升级。（新华社）</span></p>
-            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">consumer</span><span class="l-zh">消费</span></span><span class="cn-cchip"><span class="l-en">tech policy</span><span class="l-zh">科技政策</span></span></div>
-          </div>
-        </a>
-        
-        
-        <a class="tp-item th-monetary" href="https://wallstreetcn.com/livenews/3142191" target="_blank" rel="noopener"
+        <a class="tp-item th-monetary" href="https://wallstreetcn.com/livenews/3142254" target="_blank" rel="noopener"
            data-theme="monetary" data-importance="high"
-           data-search="世界黄金协会：二季度中国央行购金步伐明显加快，累计增持33吨  世界黄金协会：二季度中国央行购金步伐明显加快，累计增持33吨 世界黄金协会：中国人民银行仍是全球最活跃的官方黄金买家之一，已连续20个月购金，创下历史最长连增周期。继一季度增持7吨后，二季度中国央行购金步伐明显加快，累计增持33吨，创下2023年四季度以来最大季度购金规模。截至6月末，中国官方黄金储备达2,346吨，占外汇储备总额的8%。 world gold council: the people's bank of china remains one of the world's most active official gold buyers, having purchased gold for 20 consecutive months, setting a record for the longest continuous buying cycle. after adding 7 tonnes in q1, the pboc significantly accelerated its purchases in q2, adding 33 tonnes, the largest quarterly purchase since q4 2023. as of end-june, china's official gold reserves reached 2,346 tonnes, accounting for 8% of total foreign exchange reserves. 世界黄金协会：中国人民银行仍是全球最活跃的官方黄金买家之一，已连续20个月购金，创下历史最长连增周期。继一季度增持7吨后，二季度中国央行购金步伐明显加快，累计增持33吨，创下2023年四季度以来最大季度购金规模。截至6月末，中国官方黄金储备达2,346吨，占外汇储备总额的8%。 华尔街见闻 pboc_liquidity pboc & liquidity 央行与流动性 512800.ss">
-          <time class="tp-when" data-t="2026-07-30T06:19:41+00:00" datetime="2026-07-30T06:19:41+00:00">07-30<br>06:19</time>
-          <div class="tp-spine"><span class="tp-node" data-t="2026-07-30T06:19:41+00:00"></span></div>
+           data-search="中共中央召开党外人士座谈会 习近平主持并发表重要讲话 cpc central committee holds symposium with non-cpc figures; xi jinping presides and delivers important speech. 中共中央召开党外人士座谈会 习近平主持并发表重要讲话 据央视，7月24日，中共中央在中南海召开党外人士座谈会，就当前经济形势和下半年经济工作听取各民主党派中央、全国工商联负责人和无党派人士代表的意见建议。中共中央总书记习近平主持座谈会并发表重要讲话强调，做好下半年经济工作，要坚持稳中求进工作总基调，完整准确全面贯彻新发展理念，加快构建新发展格局，更好统筹国内国际两个大局，统筹发展和安全，坚持深化改革开放，加快推动新旧动能转换，实施好更加积极的财政政策和适度宽松的货币政策，充分发挥各项存量政策效能，及时谋划出台务实管用的增量政策，加大逆周期调节力度，加力扩大内需、优化供给，切实保障和改善民生，增强发展动力、激 according to cctv, on july 24, the cpc central committee held a symposium in zhongnanhai with non-party figures to hear opinions on the current economic situation and h2 work. general secretary xi jinping emphasized maintaining stability, implementing a more proactive fiscal policy and moderately loose monetary policy, and accelerating the transformation of old and new growth drivers. (xinhua) 据央视，7月24日，中共中央在中南海召开党外人士座谈会，就当前经济形势和下半年经济工作听取各民主党派中央、全国工商联负责人和无党派人士代表的意见建议。中共中央总书记习近平主持座谈会并发表重要讲话强调，做好下半年经济工作，要坚持稳中求进工作总基调，完整准确全面贯彻新发展理念，加快构建新发展格局，更好统筹国内国际两个大局，统筹发展和安全，坚持深化改革开放，加快推动新旧动能转换，实施好更加积极的财政政策和适度宽松的货币政策，充分发挥各项存量政策效能，及时谋划出台务实管用的增量政策，加大逆周期调节力度，加力扩大内需、优化供给，切实保障和改善民生，增强发展动力、激 华尔街见闻 fiscal_trade fiscal & trade 财政与贸易 ">
+          <time class="tp-when" data-t="2026-07-30T07:39:02+00:00" datetime="2026-07-30T07:39:02+00:00">07-30<br>07:39</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-07-30T07:39:02+00:00"></span></div>
           <div class="tp-body">
             <div class="tp-top">
               
               <span class="cn-tag"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
               <span class="cn-src">华尔街见闻</span>
-              <span class="cn-imp imp-high"><b>82</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
+              <span class="cn-imp imp-high"><b>76</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
             </div>
-            <h2 class="tp-title"><span class="l-en">世界黄金协会：二季度中国央行购金步伐明显加快，累计增持33吨</span><span class="l-zh">世界黄金协会：二季度中国央行购金步伐明显加快，累计增持33吨</span></h2>
-            <p class="tp-sum"><span class="l-en">World Gold Council: The People's Bank of China remains one of the world's most active official gold buyers, having purchased gold for 20 consecutive months, setting a record for the longest continuous buying cycle. After adding 7 tonnes in Q1, the PBOC significantly accelerated its purchases in Q2, adding 33 tonnes, the largest quarterly purchase since Q4 2023. As of end-June, China's official gold reserves reached 2,346 tonnes, accounting for 8% of total foreign exchange reserves.</span><span class="l-zh">世界黄金协会：中国人民银行仍是全球最活跃的官方黄金买家之一，已连续20个月购金，创下历史最长连增周期。继一季度增持7吨后，二季度中国央行购金步伐明显加快，累计增持33吨，创下2023年四季度以来最大季度购金规模。截至6月末，中国官方黄金储备达2,346吨，占外汇储备总额的8%。</span></p>
-            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">PBOC & liquidity</span><span class="l-zh">央行与流动性</span></span><span class="cn-tk">512800.SS</span></div>
-          </div>
-        </a>
-        
-        
-        <a class="tp-item th-growth" href="https://flash.jin10.com/detail/20260730150230763800" target="_blank" rel="noopener"
-           data-theme="growth" data-importance="high"
-           data-search="nbs: china’s 'three-new' economy value added 25.79 trillion yuan in 2025, 18.39% of gdp  国家统计局：2025年中国'三新'经济增加值达25.79万亿元，占gdp比重18.39% the national bureau of statistics said china’s three-new economy (new industries, new business forms and new models) generated 25.79 trillion yuan of value added in 2025, up 6.2% at current prices—2.2 percentage points faster than nominal gdp—and accounted for 18.39% of gdp, a 0.  国家统计局数据显示，2025年中国三新经济（新产业、新业态、新商业模式）增加值达25.79万亿元，按现价计算同比增长6.2%，较名义gdp增速快2.2个百分点，占gdp比重为18.39%，较上年提升0. 金十数据 yuan yuan & fx 人民币与汇率 cny">
-          <time class="tp-when" data-t="2026-07-30T15:02:30+08:00" datetime="2026-07-30T15:02:30+08:00">07-30<br>15:02</time>
-          <div class="tp-spine"><span class="tp-node" data-t="2026-07-30T15:02:30+08:00"></span></div>
-          <div class="tp-body">
-            <div class="tp-top">
-              
-              <span class="cn-tag"><span class="l-en">Growth</span><span class="l-zh">增长</span></span>
-              <span class="cn-src">金十数据</span>
-              <span class="cn-imp imp-high"><b>88</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
-            </div>
-            <h2 class="tp-title"><span class="l-en">NBS: China’s 'three-new' economy value added 25.79 trillion yuan in 2025, 18.39% of GDP</span><span class="l-zh">国家统计局：2025年中国'三新'经济增加值达25.79万亿元，占GDP比重18.39%</span></h2>
-            <p class="tp-sum"><span class="l-en">The National Bureau of Statistics said China’s three-new economy (new industries, new business forms and new models) generated 25.79 trillion yuan of value added in 2025, up 6.2% at current prices—2.2 percentage points faster than nominal GDP—and accounted for 18.39% of GDP, a 0.</span><span class="l-zh">国家统计局数据显示，2025年中国三新经济（新产业、新业态、新商业模式）增加值达25.79万亿元，按现价计算同比增长6.2%，较名义GDP增速快2.2个百分点，占GDP比重为18.39%，较上年提升0.</span></p>
-            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">yuan & FX</span><span class="l-zh">人民币与汇率</span></span><span class="cn-tk">CNY</span></div>
-          </div>
-        </a>
-        
-        
-        <a class="tp-item th-growth" href="https://www.stats.gov.cn/sj/zxfb/202607/t20260730_1964247.html" target="_blank" rel="noopener"
-           data-theme="growth" data-importance="high"
-           data-search="国家统计局：2025年我国“三新”经济增加值占国内生产总值比重为18.39%  国家统计局：2025年我国“三新”经济增加值占国内生产总值比重为18.39% 金十数据7月30日讯，国家统计局数据显示，2025年我国“三新”经济增加值为257869亿元，按现价计算，比上年增长6.2%，高于同期国内生产总值（gdp）现价增速2.2个百分点；占gdp的比重为18.39%，比上年提高0.38个百分点。 jin10 data, july 30: national bureau of statistics data shows that in 2025, china's 'three new' economy added value reached 25.7869 trillion yuan, up 6.2% year-on-year at current prices, 2.2 percentage points higher than the nominal gdp growth rate, accounting for 18.39% of gdp, up 0.38 percentage points year-on-year. 金十数据7月30日讯，国家统计局数据显示，2025年我国“三新”经济增加值为257869亿元，按现价计算，比上年增长6.2%，高于同期国内生产总值（gdp）现价增速2.2个百分点；占gdp的比重为18.39%，比上年提高0.38个百分点。 金十数据 growth growth 增长 ">
-          <time class="tp-when" data-t="2026-07-30T15:02:22+08:00" datetime="2026-07-30T15:02:22+08:00">07-30<br>15:02</time>
-          <div class="tp-spine"><span class="tp-node" data-t="2026-07-30T15:02:22+08:00"></span></div>
-          <div class="tp-body">
-            <div class="tp-top">
-              
-              <span class="cn-tag"><span class="l-en">Growth</span><span class="l-zh">增长</span></span>
-              <span class="cn-src">金十数据</span>
-              <span class="cn-imp imp-high"><b>82</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
-            </div>
-            <h2 class="tp-title"><span class="l-en">国家统计局：2025年我国“三新”经济增加值占国内生产总值比重为18.39%</span><span class="l-zh">国家统计局：2025年我国“三新”经济增加值占国内生产总值比重为18.39%</span></h2>
-            <p class="tp-sum"><span class="l-en">Jin10 Data, July 30: National Bureau of Statistics data shows that in 2025, China's 'three new' economy added value reached 25.7869 trillion yuan, up 6.2% year-on-year at current prices, 2.2 percentage points higher than the nominal GDP growth rate, accounting for 18.39% of GDP, up 0.38 percentage points year-on-year.</span><span class="l-zh">金十数据7月30日讯，国家统计局数据显示，2025年我国“三新”经济增加值为257869亿元，按现价计算，比上年增长6.2%，高于同期国内生产总值（GDP）现价增速2.2个百分点；占GDP的比重为18.39%，比上年提高0.38个百分点。</span></p>
-            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">Growth</span><span class="l-zh">增长</span></span></div>
-          </div>
-        </a>
-        
-        
-        <a class="tp-item th-policy" href="https://finance.eastmoney.com/a/202607303826626131.html" target="_blank" rel="noopener"
-           data-theme="policy" data-importance="high"
-           data-search="中共中央政治局召开会议 分析研究当前经济形势和经济工作  中共中央政治局召开会议 分析研究当前经济形势和经济工作 【中共中央政治局召开会议 分析研究当前经济形势和经济工作】中共中央政治局7月30日召开会议，决定今年10月在北京召开中国共产党第二十届中央委员会第五次全体会议，主要议程是，中共中央政治局向中央委员会报告工作，研究持之以恒推进全面从严治党若干重大问题。会议分析研究当前经济形势，部署下半年经济工作。中共中央总书记习近平主持会议。会议强调，要切实筑牢安全屏障。稳定房地产市场，实施好一揽子化债方案，扎实推进地方中小金融机构改革化险、减量提质。深化资本市场投融资综合改革，提升资本市场韧性和信心。 [the political bureau of the cpc central committee holds meeting to analyze and study current economic situation and economic work] the political bureau of the cpc central committee held a meeting on july 30, deciding to convene the fifth plenary session of the 20th cpc central committee in beijing this october, with the main agenda being the political bureau reporting work to the central committee and studying several major issues on persistently advancing full and rigorous party governance. the meeting analyzed and studied the current economic situation and deployed economic work for the second half of the year. general secretary xi jinping presided over the meeting. the meeting emphasized building a solid safety barrier, stabilizing the real estate market, implementing a package of debt resolution plans, pushing forward reform and risk mitigation of local small and medium financial institutions to reduce quantity and improve quality, and deepening comprehensive reforms in capital market investment and financing to enhance resilience and confidence. 【中共中央政治局召开会议 分析研究当前经济形势和经济工作】中共中央政治局7月30日召开会议，决定今年10月在北京召开中国共产党第二十届中央委员会第五次全体会议，主要议程是，中共中央政治局向中央委员会报告工作，研究持之以恒推进全面从严治党若干重大问题。会议分析研究当前经济形势，部署下半年经济工作。中共中央总书记习近平主持会议。会议强调，要切实筑牢安全屏障。稳定房地产市场，实施好一揽子化债方案，扎实推进地方中小金融机构改革化险、减量提质。深化资本市场投融资综合改革，提升资本市场韧性和信心。 eastmoney property property 房地产 512200.ss">
-          <time class="tp-when" data-t="2026-07-30 14:34:58" datetime="2026-07-30 14:34:58">07-30<br>14:34</time>
-          <div class="tp-spine"><span class="tp-node" data-t="2026-07-30 14:34:58"></span></div>
-          <div class="tp-body">
-            <div class="tp-top">
-              
-              <span class="cn-tag"><span class="l-en">Policy</span><span class="l-zh">政策</span></span>
-              <span class="cn-src">Eastmoney</span>
-              <span class="cn-imp imp-high"><b>79</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
-            </div>
-            <h2 class="tp-title"><span class="l-en">中共中央政治局召开会议 分析研究当前经济形势和经济工作</span><span class="l-zh">中共中央政治局召开会议 分析研究当前经济形势和经济工作</span></h2>
-            <p class="tp-sum"><span class="l-en">[The Political Bureau of the CPC Central Committee Holds Meeting to Analyze and Study Current Economic Situation and Economic Work] The Political Bureau of the CPC Central Committee held a meeting on July 30, deciding to convene the Fifth Plenary Session of the 20th CPC Central Committee in Beijing this October, with the main agenda being the Political Bureau reporting work to the Central Committee and studying several major issues on persistently advancing full and rigorous Party governance. The meeting analyzed and studied the current economic situation and deployed economic work for the second half of the year. General Secretary Xi Jinping presided over the meeting. The meeting emphasized building a solid safety barrier, stabilizing the real estate market, implementing a package of debt resolution plans, pushing forward reform and risk mitigation of local small and medium financial institutions to reduce quantity and improve quality, and deepening comprehensive reforms in capital market investment and financing to enhance resilience and confidence.</span><span class="l-zh">【中共中央政治局召开会议 分析研究当前经济形势和经济工作】中共中央政治局7月30日召开会议，决定今年10月在北京召开中国共产党第二十届中央委员会第五次全体会议，主要议程是，中共中央政治局向中央委员会报告工作，研究持之以恒推进全面从严治党若干重大问题。会议分析研究当前经济形势，部署下半年经济工作。中共中央总书记习近平主持会议。会议强调，要切实筑牢安全屏障。稳定房地产市场，实施好一揽子化债方案，扎实推进地方中小金融机构改革化险、减量提质。深化资本市场投融资综合改革，提升资本市场韧性和信心。</span></p>
-            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">property</span><span class="l-zh">房地产</span></span><span class="cn-tk">512200.SS</span></div>
-          </div>
-        </a>
-        
-        
-        <a class="tp-item th-monetary" href="https://news.futunn.com/flash/20573157/world-gold-council-gold-investment-demand-is-expected-to-remain" target="_blank" rel="noopener"
-           data-theme="monetary" data-importance="high"
-           data-search="世界黄金协会：预计黄金投资需求仍将保持积极态势  世界黄金协会：预计黄金投资需求仍将保持积极态势 世界黄金协会报告指出，预计在2026年剩余时间内，投资需求将成为黄金需求增长的主要动力，并日益受到场外交易活动和亚洲投资需求的支撑。央行仍将作为重要黄金买家。高金价将继续压制金饰需求量，但金矿产量和回收金供应量的反应预计将较为温和。预计2026年余下时间内，黄金投资需求仍将保持积极态势。场外交易活动和亚洲投资需求预计将发挥更大作用，而西方黄金etf资金流或继续对美债实际收益率、美联储货币政策预期及美元走势保持敏感。尽管消费者支出金额仍相对具有韧性，但高金价将继续压制金饰需求量；科技用金需求有望进一步受益于人工智能投资，不过下行风险正在累积。 world gold council report indicates that investment demand is expected to become the primary driver of gold demand growth for the remainder of 2026, increasingly supported by otc trading activity and asian investment demand. central banks will remain important gold buyers. high gold prices will continue to suppress jewelry demand, but reactions in mine production and recycled gold supply are expected to be moderate. gold investment demand is expected to remain positive for the rest of 2026. otc trading activity and asian investment demand are expected to play a larger role, while western gold etf flows may remain sensitive to us treasury real yields, fed monetary policy expectations, and the us dollar. although consumer spending remains relatively resilient, high gold prices will continue to suppress jewelry demand; technology-related gold demand may further benefit from ai investment, but downside risks are accumulating. 世界黄金协会报告指出，预计在2026年剩余时间内，投资需求将成为黄金需求增长的主要动力，并日益受到场外交易活动和亚洲投资需求的支撑。央行仍将作为重要黄金买家。高金价将继续压制金饰需求量，但金矿产量和回收金供应量的反应预计将较为温和。预计2026年余下时间内，黄金投资需求仍将保持积极态势。场外交易活动和亚洲投资需求预计将发挥更大作用，而西方黄金etf资金流或继续对美债实际收益率、美联储货币政策预期及美元走势保持敏感。尽管消费者支出金额仍相对具有韧性，但高金价将继续压制金饰需求量；科技用金需求有望进一步受益于人工智能投资，不过下行风险正在累积。 富途牛牛 pboc_liquidity consumer tech_policy pboc & liquidity 央行与流动性 consumer 消费 tech policy 科技政策 cbon">
-          <time class="tp-when" data-t="2026-07-30T06:34:10+00:00" datetime="2026-07-30T06:34:10+00:00">07-30<br>06:34</time>
-          <div class="tp-spine"><span class="tp-node" data-t="2026-07-30T06:34:10+00:00"></span></div>
-          <div class="tp-body">
-            <div class="tp-top">
-              
-              <span class="cn-tag"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
-              <span class="cn-src">富途牛牛</span>
-              <span class="cn-imp imp-high"><b>74</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
-            </div>
-            <h2 class="tp-title"><span class="l-en">世界黄金协会：预计黄金投资需求仍将保持积极态势</span><span class="l-zh">世界黄金协会：预计黄金投资需求仍将保持积极态势</span></h2>
-            <p class="tp-sum"><span class="l-en">World Gold Council report indicates that investment demand is expected to become the primary driver of gold demand growth for the remainder of 2026, increasingly supported by OTC trading activity and Asian investment demand. Central banks will remain important gold buyers. High gold prices will continue to suppress jewelry demand, but reactions in mine production and recycled gold supply are expected to be moderate. Gold investment demand is expected to remain positive for the rest of 2026. OTC trading activity and Asian investment demand are expected to play a larger role, while Western gold ETF flows may remain sensitive to US Treasury real yields, Fed monetary policy expectations, and the US dollar. Although consumer spending remains relatively resilient, high gold prices will continue to suppress jewelry demand; technology-related gold demand may further benefit from AI investment, but downside risks are accumulating.</span><span class="l-zh">世界黄金协会报告指出，预计在2026年剩余时间内，投资需求将成为黄金需求增长的主要动力，并日益受到场外交易活动和亚洲投资需求的支撑。央行仍将作为重要黄金买家。高金价将继续压制金饰需求量，但金矿产量和回收金供应量的反应预计将较为温和。预计2026年余下时间内，黄金投资需求仍将保持积极态势。场外交易活动和亚洲投资需求预计将发挥更大作用，而西方黄金ETF资金流或继续对美债实际收益率、美联储货币政策预期及美元走势保持敏感。尽管消费者支出金额仍相对具有韧性，但高金价将继续压制金饰需求量；科技用金需求有望进一步受益于人工智能投资，不过下行风险正在累积。</span></p>
-            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">PBOC & liquidity</span><span class="l-zh">央行与流动性</span></span><span class="cn-cchip"><span class="l-en">consumer</span><span class="l-zh">消费</span></span><span class="cn-cchip"><span class="l-en">tech policy</span><span class="l-zh">科技政策</span></span><span class="cn-tk">CBON</span></div>
+            <h2 class="tp-title"><span class="l-en">CPC Central Committee holds symposium with non-CPC figures; Xi Jinping presides and delivers important speech.</span><span class="l-zh">中共中央召开党外人士座谈会 习近平主持并发表重要讲话</span></h2>
+            <p class="tp-sum"><span class="l-en">According to CCTV, on July 24, the CPC Central Committee held a symposium in Zhongnanhai with non-party figures to hear opinions on the current economic situation and H2 work. General Secretary Xi Jinping emphasized maintaining stability, implementing a more proactive fiscal policy and moderately loose monetary policy, and accelerating the transformation of old and new growth drivers. (Xinhua)</span><span class="l-zh">据央视，7月24日，中共中央在中南海召开党外人士座谈会，就当前经济形势和下半年经济工作听取各民主党派中央、全国工商联负责人和无党派人士代表的意见建议。中共中央总书记习近平主持座谈会并发表重要讲话强调，做好下半年经济工作，要坚持稳中求进工作总基调，完整准确全面贯彻新发展理念，加快构建新发展格局，更好统筹国内国际两个大局，统筹发展和安全，坚持深化改革开放，加快推动新旧动能转换，实施好更加积极的财政政策和适度宽松的货币政策，充分发挥各项存量政策效能，及时谋划出台务实管用的增量政策，加大逆周期调节力度，加力扩大内需、优化供给，切实保障和改善民生，增强发展动力、激</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">fiscal & trade</span><span class="l-zh">财政与贸易</span></span></div>
           </div>
         </a>
         
         
         <a class="tp-item th-policy" href="https://wallstreetcn.com/livenews/3142211" target="_blank" rel="noopener"
            data-theme="policy" data-importance="high"
-           data-search="中共中央政治局会议：稳定生猪等农畜产品生产和价格，促进农民稳定增收  中共中央政治局会议：稳定生猪等农畜产品生产和价格，促进农民稳定增收 会议强调，要毫不放松做好“三农”工作，持续巩固拓展脱贫攻坚成果，建立健全高标准农田建设、运营、管护机制，稳定生猪等农畜产品生产和价格，促进农民稳定增收。做好农资保供稳价，抓好农业生产，夺取秋粮和全年粮食丰收。（新华社） the meeting stressed continuously focusing on agriculture, rural areas, and farmers, consolidating and expanding poverty alleviation achievements, establishing sound mechanisms for construction, operation and maintenance of high-standard farmland, stabilizing production and prices of agricultural products such as pigs, promoting stable income growth for farmers, ensuring supply and price stability of agricultural materials, focusing on agricultural production, and securing autumn harvest and annual grain harvest. (xinhua) 会议强调，要毫不放松做好“三农”工作，持续巩固拓展脱贫攻坚成果，建立健全高标准农田建设、运营、管护机制，稳定生猪等农畜产品生产和价格，促进农民稳定增收。做好农资保供稳价，抓好农业生产，夺取秋粮和全年粮食丰收。（新华社） 华尔街见闻 policy policy 政策 ">
+           data-search="中共中央政治局会议：稳定生猪等农畜产品生产和价格，促进农民稳定增收 a political bureau of the cpc central committee meeting: stabilize production and prices of livestock and agricultural products like live pigs, and promote stable income growth for farmers. 中共中央政治局会议：稳定生猪等农畜产品生产和价格，促进农民稳定增收 会议强调，要毫不放松做好“三农”工作，持续巩固拓展脱贫攻坚成果，建立健全高标准农田建设、运营、管护机制，稳定生猪等农畜产品生产和价格，促进农民稳定增收。做好农资保供稳价，抓好农业生产，夺取秋粮和全年粮食丰收。（新华社） the meeting stressed unremitting efforts in agriculture, rural areas, and farmers, consolidating poverty alleviation achievements, establishing mechanisms for high-standard farmland construction, operation, and maintenance, stabilizing production and prices of livestock products like pork, increasing farmers' incomes, ensuring agricultural supply and price stability, and securing autumn and annual grain harvests. (xinhua) 会议强调，要毫不放松做好“三农”工作，持续巩固拓展脱贫攻坚成果，建立健全高标准农田建设、运营、管护机制，稳定生猪等农畜产品生产和价格，促进农民稳定增收。做好农资保供稳价，抓好农业生产，夺取秋粮和全年粮食丰收。（新华社） 华尔街见闻 policy policy 政策 ">
           <time class="tp-when" data-t="2026-07-30T06:44:03+00:00" datetime="2026-07-30T06:44:03+00:00">07-30<br>06:44</time>
           <div class="tp-spine"><span class="tp-node" data-t="2026-07-30T06:44:03+00:00"></span></div>
           <div class="tp-body">
@@ -653,104 +546,9 @@
               <span class="cn-src">华尔街见闻</span>
               <span class="cn-imp imp-high"><b>76</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
             </div>
-            <h2 class="tp-title"><span class="l-en">中共中央政治局会议：稳定生猪等农畜产品生产和价格，促进农民稳定增收</span><span class="l-zh">中共中央政治局会议：稳定生猪等农畜产品生产和价格，促进农民稳定增收</span></h2>
-            <p class="tp-sum"><span class="l-en">The meeting stressed continuously focusing on agriculture, rural areas, and farmers, consolidating and expanding poverty alleviation achievements, establishing sound mechanisms for construction, operation and maintenance of high-standard farmland, stabilizing production and prices of agricultural products such as pigs, promoting stable income growth for farmers, ensuring supply and price stability of agricultural materials, focusing on agricultural production, and securing autumn harvest and annual grain harvest. (Xinhua)</span><span class="l-zh">会议强调，要毫不放松做好“三农”工作，持续巩固拓展脱贫攻坚成果，建立健全高标准农田建设、运营、管护机制，稳定生猪等农畜产品生产和价格，促进农民稳定增收。做好农资保供稳价，抓好农业生产，夺取秋粮和全年粮食丰收。（新华社）</span></p>
+            <h2 class="tp-title"><span class="l-en">A Political Bureau of the CPC Central Committee meeting: Stabilize production and prices of livestock and agricultural products like live pigs, and promote stable income growth for farmers.</span><span class="l-zh">中共中央政治局会议：稳定生猪等农畜产品生产和价格，促进农民稳定增收</span></h2>
+            <p class="tp-sum"><span class="l-en">The meeting stressed unremitting efforts in agriculture, rural areas, and farmers, consolidating poverty alleviation achievements, establishing mechanisms for high-standard farmland construction, operation, and maintenance, stabilizing production and prices of livestock products like pork, increasing farmers' incomes, ensuring agricultural supply and price stability, and securing autumn and annual grain harvests. (Xinhua)</span><span class="l-zh">会议强调，要毫不放松做好“三农”工作，持续巩固拓展脱贫攻坚成果，建立健全高标准农田建设、运营、管护机制，稳定生猪等农畜产品生产和价格，促进农民稳定增收。做好农资保供稳价，抓好农业生产，夺取秋粮和全年粮食丰收。（新华社）</span></p>
             <div class="tp-chips"><span class="cn-cchip"><span class="l-en">Policy</span><span class="l-zh">政策</span></span></div>
-          </div>
-        </a>
-        
-        
-        <a class="tp-item th-policy" href="https://news.10jqka.com.cn/20260730/c678549018.shtml" target="_blank" rel="noopener"
-           data-theme="policy" data-importance="high"
-           data-search="中共中央政治局：深化国资国企改革 推动平台经济规范健康发展  中共中央政治局：深化国资国企改革 推动平台经济规范健康发展 中共中央政治局召开会议，会议强调，要营造公平有序的市场竞争环境，制定实施全国统一大市场建设条例，继续综合整治“内卷式”竞争，常态化解决企业账款拖欠问题。深化国资国企改革，优化民营经济发展环境，推动平台经济规范健康发展。（新华社） the political bureau of the cpc central committee held a meeting, stressing the need to create a fair and orderly market competition environment, formulate and implement regulations for a unified national market, continue comprehensive rectification of 'involution-style' competition, regularly resolve corporate account arrears, deepen state-owned enterprise reform, optimize the development environment for the private economy, and promote the standardized and healthy development of the platform economy. (xinhua) 中共中央政治局召开会议，会议强调，要营造公平有序的市场竞争环境，制定实施全国统一大市场建设条例，继续综合整治“内卷式”竞争，常态化解决企业账款拖欠问题。深化国资国企改革，优化民营经济发展环境，推动平台经济规范健康发展。（新华社） 同花顺 policy policy 政策 ">
-          <time class="tp-when" data-t="2026-07-30T06:40:40+00:00" datetime="2026-07-30T06:40:40+00:00">07-30<br>06:40</time>
-          <div class="tp-spine"><span class="tp-node" data-t="2026-07-30T06:40:40+00:00"></span></div>
-          <div class="tp-body">
-            <div class="tp-top">
-              
-              <span class="cn-tag"><span class="l-en">Policy</span><span class="l-zh">政策</span></span>
-              <span class="cn-src">同花顺</span>
-              <span class="cn-imp imp-high"><b>76</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
-            </div>
-            <h2 class="tp-title"><span class="l-en">中共中央政治局：深化国资国企改革 推动平台经济规范健康发展</span><span class="l-zh">中共中央政治局：深化国资国企改革 推动平台经济规范健康发展</span></h2>
-            <p class="tp-sum"><span class="l-en">The Political Bureau of the CPC Central Committee held a meeting, stressing the need to create a fair and orderly market competition environment, formulate and implement regulations for a unified national market, continue comprehensive rectification of 'involution-style' competition, regularly resolve corporate account arrears, deepen state-owned enterprise reform, optimize the development environment for the private economy, and promote the standardized and healthy development of the platform economy. (Xinhua)</span><span class="l-zh">中共中央政治局召开会议，会议强调，要营造公平有序的市场竞争环境，制定实施全国统一大市场建设条例，继续综合整治“内卷式”竞争，常态化解决企业账款拖欠问题。深化国资国企改革，优化民营经济发展环境，推动平台经济规范健康发展。（新华社）</span></p>
-            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">Policy</span><span class="l-zh">政策</span></span></div>
-          </div>
-        </a>
-        
-        
-        <a class="tp-item th-policy" href="https://news.futunn.com/flash/20573186/meeting-of-the-political-bureau-of-the-cpc-central-committee" target="_blank" rel="noopener"
-           data-theme="policy" data-importance="high"
-           data-search="中共中央政治局会议：制定实施全国统一大市场建设条例 继续综合整治“内卷式”竞争  中共中央政治局会议：制定实施全国统一大市场建设条例 继续综合整治“内卷式”竞争 中共中央政治局7月30日召开会议，会议强调，要营造公平有序的市场竞争环境，制定实施全国统一大市场建设条例，继续综合整治“内卷式”竞争，常态化解决企业账款拖欠问题。深化国资国企改革，优化民营经济发展环境，推动平台经济规范健康发展。（新华社） the political bureau of the cpc central committee held a meeting on july 30, stressing the need to create a fair and orderly market competition environment, formulate and implement regulations for a unified national market, continue comprehensive rectification of 'involution-style' competition, regularly resolve corporate account arrears, deepen state-owned enterprise reform, optimize the development environment for the private economy, and promote the standardized and healthy development of the platform economy. (xinhua) 中共中央政治局7月30日召开会议，会议强调，要营造公平有序的市场竞争环境，制定实施全国统一大市场建设条例，继续综合整治“内卷式”竞争，常态化解决企业账款拖欠问题。深化国资国企改革，优化民营经济发展环境，推动平台经济规范健康发展。（新华社） 富途牛牛 policy policy 政策 ">
-          <time class="tp-when" data-t="2026-07-30T06:37:36+00:00" datetime="2026-07-30T06:37:36+00:00">07-30<br>06:37</time>
-          <div class="tp-spine"><span class="tp-node" data-t="2026-07-30T06:37:36+00:00"></span></div>
-          <div class="tp-body">
-            <div class="tp-top">
-              
-              <span class="cn-tag"><span class="l-en">Policy</span><span class="l-zh">政策</span></span>
-              <span class="cn-src">富途牛牛</span>
-              <span class="cn-imp imp-high"><b>76</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
-            </div>
-            <h2 class="tp-title"><span class="l-en">中共中央政治局会议：制定实施全国统一大市场建设条例 继续综合整治“内卷式”竞争</span><span class="l-zh">中共中央政治局会议：制定实施全国统一大市场建设条例 继续综合整治“内卷式”竞争</span></h2>
-            <p class="tp-sum"><span class="l-en">The Political Bureau of the CPC Central Committee held a meeting on July 30, stressing the need to create a fair and orderly market competition environment, formulate and implement regulations for a unified national market, continue comprehensive rectification of 'involution-style' competition, regularly resolve corporate account arrears, deepen state-owned enterprise reform, optimize the development environment for the private economy, and promote the standardized and healthy development of the platform economy. (Xinhua)</span><span class="l-zh">中共中央政治局7月30日召开会议，会议强调，要营造公平有序的市场竞争环境，制定实施全国统一大市场建设条例，继续综合整治“内卷式”竞争，常态化解决企业账款拖欠问题。深化国资国企改革，优化民营经济发展环境，推动平台经济规范健康发展。（新华社）</span></p>
-            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">Policy</span><span class="l-zh">政策</span></span></div>
-          </div>
-        </a>
-        
-        
-        <a class="tp-item th-policy" href="https://wallstreetcn.com/livenews/3142198" target="_blank" rel="noopener"
-           data-theme="policy" data-importance="high"
-           data-search="中共中央政治局召开会议，决定召开二十届五中全会，分析研究当前经济形势和经济工作。中共中央总书记习近平主持会议  中共中央政治局召开会议，决定召开二十届五中全会，分析研究当前经济形势和经济工作。中共中央总书记习近平主持会议 据新华社，中共中央政治局7月30日召开会议，决定今年10月在北京召开中国共产党第二十届中央委员会第五次全体会议，主要议程是，中共中央政治局向中央委员会报告工作，研究持之以恒推进全面从严治党若干重大问题。会议分析研究当前经济形势，部署下半年经济工作。中共中央总书记习近平主持会议。 according to xinhua, the political bureau of the cpc central committee held a meeting on july 30, deciding to convene the fifth plenary session of the 20th cpc central committee in beijing this october, with the main agenda being the political bureau reporting work to the central committee and studying several major issues on persistently advancing full and rigorous party governance. the meeting analyzed and studied the current economic situation and deployed economic work for the second half of the year. general secretary xi jinping presided over the meeting. 据新华社，中共中央政治局7月30日召开会议，决定今年10月在北京召开中国共产党第二十届中央委员会第五次全体会议，主要议程是，中共中央政治局向中央委员会报告工作，研究持之以恒推进全面从严治党若干重大问题。会议分析研究当前经济形势，部署下半年经济工作。中共中央总书记习近平主持会议。 华尔街见闻 policy policy 政策 ">
-          <time class="tp-when" data-t="2026-07-30T06:35:43+00:00" datetime="2026-07-30T06:35:43+00:00">07-30<br>06:35</time>
-          <div class="tp-spine"><span class="tp-node" data-t="2026-07-30T06:35:43+00:00"></span></div>
-          <div class="tp-body">
-            <div class="tp-top">
-              
-              <span class="cn-tag"><span class="l-en">Policy</span><span class="l-zh">政策</span></span>
-              <span class="cn-src">华尔街见闻</span>
-              <span class="cn-imp imp-high"><b>76</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
-            </div>
-            <h2 class="tp-title"><span class="l-en">中共中央政治局召开会议，决定召开二十届五中全会，分析研究当前经济形势和经济工作。中共中央总书记习近平主持会议</span><span class="l-zh">中共中央政治局召开会议，决定召开二十届五中全会，分析研究当前经济形势和经济工作。中共中央总书记习近平主持会议</span></h2>
-            <p class="tp-sum"><span class="l-en">According to Xinhua, the Political Bureau of the CPC Central Committee held a meeting on July 30, deciding to convene the Fifth Plenary Session of the 20th CPC Central Committee in Beijing this October, with the main agenda being the Political Bureau reporting work to the Central Committee and studying several major issues on persistently advancing full and rigorous Party governance. The meeting analyzed and studied the current economic situation and deployed economic work for the second half of the year. General Secretary Xi Jinping presided over the meeting.</span><span class="l-zh">据新华社，中共中央政治局7月30日召开会议，决定今年10月在北京召开中国共产党第二十届中央委员会第五次全体会议，主要议程是，中共中央政治局向中央委员会报告工作，研究持之以恒推进全面从严治党若干重大问题。会议分析研究当前经济形势，部署下半年经济工作。中共中央总书记习近平主持会议。</span></p>
-            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">Policy</span><span class="l-zh">政策</span></span></div>
-          </div>
-        </a>
-        
-        
-        <a class="tp-item th-monetary" href="https://news.futunn.com/flash/20572887/world-gold-council-global-central-banks-and-other-official-institutions" target="_blank" rel="noopener"
-           data-theme="monetary" data-importance="high"
-           data-search="世界黄金协会：二季度全球央行及其他官方机构合计净增黄金储备同比增长62%  世界黄金协会：二季度全球央行及其他官方机构合计净增黄金储备同比增长62% 世界黄金协会发布的2026年二季度《全球黄金需求趋势报告》显示，二季度，全球央行及其他官方机构合计净增黄金储备289吨，同比增长62%，多个国家央行的购金活动均有所回升。但受一季度的疲软拖累，上半年全球央行购金需求略低于近年来的高位水平。世界黄金协会发布的《2026年全球央行黄金储备调研》显示，45%的受访央行预计未来一年内将增加其自身黄金储备，这凸显了黄金在官方储备中长期稳定的重要地位。 the world gold council's global gold demand trends report for q2 2026 shows that global central banks and other official institutions added a net 289 tonnes of gold reserves in q2, up 62% year-on-year, with increased buying activity from multiple central banks. however, dragged down by weak q1, h1 central bank gold demand was slightly below the high levels of recent years. the world gold council's 2026 central bank gold reserves survey shows that 45% of surveyed central banks expect to increase their gold reserves in the coming year, highlighting gold's stable and important role in official reserves. 世界黄金协会发布的2026年二季度《全球黄金需求趋势报告》显示，二季度，全球央行及其他官方机构合计净增黄金储备289吨，同比增长62%，多个国家央行的购金活动均有所回升。但受一季度的疲软拖累，上半年全球央行购金需求略低于近年来的高位水平。世界黄金协会发布的《2026年全球央行黄金储备调研》显示，45%的受访央行预计未来一年内将增加其自身黄金储备，这凸显了黄金在官方储备中长期稳定的重要地位。 富途牛牛 pboc_liquidity pboc & liquidity 央行与流动性 ">
-          <time class="tp-when" data-t="2026-07-30T06:19:26+00:00" datetime="2026-07-30T06:19:26+00:00">07-30<br>06:19</time>
-          <div class="tp-spine"><span class="tp-node" data-t="2026-07-30T06:19:26+00:00"></span></div>
-          <div class="tp-body">
-            <div class="tp-top">
-              
-              <span class="cn-tag"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
-              <span class="cn-src">富途牛牛</span>
-              <span class="cn-imp imp-high"><b>76</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
-            </div>
-            <h2 class="tp-title"><span class="l-en">世界黄金协会：二季度全球央行及其他官方机构合计净增黄金储备同比增长62%</span><span class="l-zh">世界黄金协会：二季度全球央行及其他官方机构合计净增黄金储备同比增长62%</span></h2>
-            <p class="tp-sum"><span class="l-en">The World Gold Council's Global Gold Demand Trends Report for Q2 2026 shows that global central banks and other official institutions added a net 289 tonnes of gold reserves in Q2, up 62% year-on-year, with increased buying activity from multiple central banks. However, dragged down by weak Q1, H1 central bank gold demand was slightly below the high levels of recent years. The World Gold Council's 2026 Central Bank Gold Reserves Survey shows that 45% of surveyed central banks expect to increase their gold reserves in the coming year, highlighting gold's stable and important role in official reserves.</span><span class="l-zh">世界黄金协会发布的2026年二季度《全球黄金需求趋势报告》显示，二季度，全球央行及其他官方机构合计净增黄金储备289吨，同比增长62%，多个国家央行的购金活动均有所回升。但受一季度的疲软拖累，上半年全球央行购金需求略低于近年来的高位水平。世界黄金协会发布的《2026年全球央行黄金储备调研》显示，45%的受访央行预计未来一年内将增加其自身黄金储备，这凸显了黄金在官方储备中长期稳定的重要地位。</span></p>
-            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">PBOC & liquidity</span><span class="l-zh">央行与流动性</span></span></div>
-          </div>
-        </a>
-        
-        
-        <a class="tp-item th-monetary" href="https://wallstreetcn.com/livenews/3142183" target="_blank" rel="noopener"
-           data-theme="monetary" data-importance="high"
-           data-search="世界黄金协会：二季度，全球央行及其他官方机构合计净增黄金储备289吨，同比增长62%  世界黄金协会：二季度，全球央行及其他官方机构合计净增黄金储备289吨，同比增长62% 世界黄金协会发布的2026年二季度《全球黄金需求趋势报告》显示，二季度，全球央行及其他官方机构合计净增黄金储备289吨，同比增长62%，多个国家央行的购金活动均有所回升。但受一季度的疲软拖累，上半年全球央行购金需求略低于近年来的高位水平。世界黄金协会发布的《2026年全球央行黄金储备调研》显示，45%的受访央行预计未来一年内将增加其自身黄金储备，这凸显了黄金在官方储备中长期稳定的重要地位。 the world gold council's q2 2026 global gold demand trends report shows that central banks and other official institutions added a net 289 tonnes of gold to their reserves in q2, up 62% year-on-year, with gold purchases by several countries' central banks picking up. however, dragged down by a weak q1, global central bank gold demand in the first half was slightly below recent highs. the wgc's 2026 central bank gold reserves survey indicates that 45% of surveyed central banks plan to increase their gold reserves over the next year, highlighting gold's long-term stable role in official reserves. 世界黄金协会发布的2026年二季度《全球黄金需求趋势报告》显示，二季度，全球央行及其他官方机构合计净增黄金储备289吨，同比增长62%，多个国家央行的购金活动均有所回升。但受一季度的疲软拖累，上半年全球央行购金需求略低于近年来的高位水平。世界黄金协会发布的《2026年全球央行黄金储备调研》显示，45%的受访央行预计未来一年内将增加其自身黄金储备，这凸显了黄金在官方储备中长期稳定的重要地位。 华尔街见闻 pboc_liquidity pboc & liquidity 央行与流动性 ">
-          <time class="tp-when" data-t="2026-07-30T06:14:24+00:00" datetime="2026-07-30T06:14:24+00:00">07-30<br>06:14</time>
-          <div class="tp-spine"><span class="tp-node" data-t="2026-07-30T06:14:24+00:00"></span></div>
-          <div class="tp-body">
-            <div class="tp-top">
-              
-              <span class="cn-tag"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
-              <span class="cn-src">华尔街见闻</span>
-              <span class="cn-imp imp-high"><b>76</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
-            </div>
-            <h2 class="tp-title"><span class="l-en">世界黄金协会：二季度，全球央行及其他官方机构合计净增黄金储备289吨，同比增长62%</span><span class="l-zh">世界黄金协会：二季度，全球央行及其他官方机构合计净增黄金储备289吨，同比增长62%</span></h2>
-            <p class="tp-sum"><span class="l-en">The World Gold Council's Q2 2026 Global Gold Demand Trends report shows that central banks and other official institutions added a net 289 tonnes of gold to their reserves in Q2, up 62% year-on-year, with gold purchases by several countries' central banks picking up. However, dragged down by a weak Q1, global central bank gold demand in the first half was slightly below recent highs. The WGC's 2026 Central Bank Gold Reserves Survey indicates that 45% of surveyed central banks plan to increase their gold reserves over the next year, highlighting gold's long-term stable role in official reserves.</span><span class="l-zh">世界黄金协会发布的2026年二季度《全球黄金需求趋势报告》显示，二季度，全球央行及其他官方机构合计净增黄金储备289吨，同比增长62%，多个国家央行的购金活动均有所回升。但受一季度的疲软拖累，上半年全球央行购金需求略低于近年来的高位水平。世界黄金协会发布的《2026年全球央行黄金储备调研》显示，45%的受访央行预计未来一年内将增加其自身黄金储备，这凸显了黄金在官方储备中长期稳定的重要地位。</span></p>
-            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">PBOC & liquidity</span><span class="l-zh">央行与流动性</span></span></div>
           </div>
         </a>
         
@@ -776,9 +574,66 @@ The demand from Singapore was likely to remain steady in the coming months, give
         </a>
         
         
+        <a class="tp-item th-markets" href="https://news.10jqka.com.cn/20260730/c678554037.shtml" target="_blank" rel="noopener"
+           data-theme="markets" data-importance="high"
+           data-search="天晟新材：股价异动，控股股东拟变更及立案调查仍在进行中 tiancheng new materials: abnormal stock price movement; controlling shareholder change and investigation are still ongoing. 天晟新材：股价异动，控股股东拟变更及立案调查仍在进行中 天晟新材公告，公司股票于2026年7月28日至30日连续3个交易日内日收盘价格涨幅偏离值累计超过30%，属于股票交易异常波动。经核查，公司近期经营情况及内外部经营环境未发生重大变化，但投资者关注的事项包括：公司于2026年2月6日收到中国证监会立案告知书，截至公告日尚未收到最终调查结论；控股股东拟通过协议转让及向特定对象发行股票方式变更，其中协议转让尚需深交所审核及办理过户，定增已获股东会审议通过但尚未向深交所提交申请；此外，公司累计银行账户冻结金额为68.99万元，占净资产1.06%，不影响主要生产经营活动。 tiancheng xincai announced that its stock price rose cumulatively over 30% in three consecutive trading days from july 28-30, constituting abnormal trading. after verification, the company's recent operations and internal/external environment have not changed significantly, but investors noted: the company received a csrc investigation notice on february 6, 2026, with no final conclusion yet; the controlling shareholder plans to change via协议转让 and private placement, with the transfer pending szse review and the placement approved by shareholders but not yet submitted; company bank accounts frozen amount to 689,900 yuan, 1.06% of net assets, not affecting main operations. 天晟新材公告，公司股票于2026年7月28日至30日连续3个交易日内日收盘价格涨幅偏离值累计超过30%，属于股票交易异常波动。经核查，公司近期经营情况及内外部经营环境未发生重大变化，但投资者关注的事项包括：公司于2026年2月6日收到中国证监会立案告知书，截至公告日尚未收到最终调查结论；控股股东拟通过协议转让及向特定对象发行股票方式变更，其中协议转让尚需深交所审核及办理过户，定增已获股东会审议通过但尚未向深交所提交申请；此外，公司累计银行账户冻结金额为68.99万元，占净资产1.06%，不影响主要生产经营活动。 同花顺 markets equity market 股票市场 512800.ss">
+          <time class="tp-when" data-t="2026-07-30T08:37:04+00:00" datetime="2026-07-30T08:37:04+00:00">07-30<br>08:37</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-07-30T08:37:04+00:00"></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
+              
+              <span class="cn-tag"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+              <span class="cn-src">同花顺</span>
+              <span class="cn-imp imp-high"><b>68</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
+            </div>
+            <h2 class="tp-title"><span class="l-en">Tiancheng New Materials: Abnormal stock price movement; controlling shareholder change and investigation are still ongoing.</span><span class="l-zh">天晟新材：股价异动，控股股东拟变更及立案调查仍在进行中</span></h2>
+            <p class="tp-sum"><span class="l-en">Tiancheng Xincai announced that its stock price rose cumulatively over 30% in three consecutive trading days from July 28-30, constituting abnormal trading. After verification, the company's recent operations and internal/external environment have not changed significantly, but investors noted: the company received a CSRC investigation notice on February 6, 2026, with no final conclusion yet; the controlling shareholder plans to change via协议转让 and private placement, with the transfer pending SZSE review and the placement approved by shareholders but not yet submitted; company bank accounts frozen amount to 689,900 yuan, 1.06% of net assets, not affecting main operations.</span><span class="l-zh">天晟新材公告，公司股票于2026年7月28日至30日连续3个交易日内日收盘价格涨幅偏离值累计超过30%，属于股票交易异常波动。经核查，公司近期经营情况及内外部经营环境未发生重大变化，但投资者关注的事项包括：公司于2026年2月6日收到中国证监会立案告知书，截至公告日尚未收到最终调查结论；控股股东拟通过协议转让及向特定对象发行股票方式变更，其中协议转让尚需深交所审核及办理过户，定增已获股东会审议通过但尚未向深交所提交申请；此外，公司累计银行账户冻结金额为68.99万元，占净资产1.06%，不影响主要生产经营活动。</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span><span class="cn-tk">512800.SS</span></div>
+          </div>
+        </a>
+        
+        
+        <a class="tp-item th-markets" href="https://wallstreetcn.com/livenews/3142293" target="_blank" rel="noopener"
+           data-theme="markets" data-importance="high"
+           data-search="香港证监会：向经纪行发出限制通知书以冻结与涉嫌首次公开招股欺诈有关的逾1.25亿港元资产 sfc: issues restriction notices to brokerage firms to freeze over hk$125 million in assets linked to suspected ipo fraud. 香港证监会：向经纪行发出限制通知书以冻结与涉嫌首次公开招股欺诈有关的逾1.25亿港元资产 据香港证监会网站，香港证监会向富途证券国际（香港）有限公司（富途）发出限制通知书，禁止其处理或处置由某实体持有的客户帐户内的资产，以125,247,000港元为限。该实体涉嫌参与一项欺诈计划，旨在营造首次公开招股股份需求的虚假或非真实表象。富途并非香港证监会的调查对象，而该限制通知书亦不会影响富途或其其他客户。 according to the hong kong sfc website, the sfc issued a restriction notice to futu securities international (hong kong) limited, prohibiting it from dealing with assets in a client account held by a certain entity, up to hkd 125,247,000. the entity is suspected of involvement in a fraud scheme to create false demand for ipo shares. futu is not under sfc investigation, and the notice does not affect futu or its other clients. 据香港证监会网站，香港证监会向富途证券国际（香港）有限公司（富途）发出限制通知书，禁止其处理或处置由某实体持有的客户帐户内的资产，以125,247,000港元为限。该实体涉嫌参与一项欺诈计划，旨在营造首次公开招股股份需求的虚假或非真实表象。富途并非香港证监会的调查对象，而该限制通知书亦不会影响富途或其其他客户。 华尔街见闻 markets equity market 股票市场 512880.ss">
+          <time class="tp-when" data-t="2026-07-30T08:30:28+00:00" datetime="2026-07-30T08:30:28+00:00">07-30<br>08:30</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-07-30T08:30:28+00:00"></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
+              
+              <span class="cn-tag"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+              <span class="cn-src">华尔街见闻</span>
+              <span class="cn-imp imp-high"><b>68</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
+            </div>
+            <h2 class="tp-title"><span class="l-en">SFC: Issues restriction notices to brokerage firms to freeze over HK$125 million in assets linked to suspected IPO fraud.</span><span class="l-zh">香港证监会：向经纪行发出限制通知书以冻结与涉嫌首次公开招股欺诈有关的逾1.25亿港元资产</span></h2>
+            <p class="tp-sum"><span class="l-en">According to the Hong Kong SFC website, the SFC issued a restriction notice to Futu Securities International (Hong Kong) Limited, prohibiting it from dealing with assets in a client account held by a certain entity, up to HKD 125,247,000. The entity is suspected of involvement in a fraud scheme to create false demand for IPO shares. Futu is not under SFC investigation, and the notice does not affect Futu or its other clients.</span><span class="l-zh">据香港证监会网站，香港证监会向富途证券国际（香港）有限公司（富途）发出限制通知书，禁止其处理或处置由某实体持有的客户帐户内的资产，以125,247,000港元为限。该实体涉嫌参与一项欺诈计划，旨在营造首次公开招股股份需求的虚假或非真实表象。富途并非香港证监会的调查对象，而该限制通知书亦不会影响富途或其其他客户。</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span><span class="cn-tk">512880.SS</span></div>
+          </div>
+        </a>
+        
+        
+        <a class="tp-item th-fiscal" href="https://wallstreetcn.com/livenews/3142256" target="_blank" rel="noopener"
+           data-theme="fiscal" data-importance="medium"
+           data-search="蓝佛安会见刚果共和国副总理布亚 lan fo'an meets with deputy prime minister of the republic of the congo, bouya. 蓝佛安会见刚果共和国副总理布亚 2026年7月28日，财政部部长蓝佛安在北京会见刚果共和国副总理布亚。双方主要就两国财金领域合作和宏观经济形势等问题交换意见。进出口银行董事长陈怀宇，刚果共和国财政、预算和国库部部长约卡、驻华大使马米纳等参加会见。（财政部网站） on july 28, 2026, minister of finance lan fo'an met with republic of congo vice prime minister bouya in beijing to exchange views on bilateral fiscal cooperation and macroeconomic conditions. export-import bank chairman chen huaiyu, congo finance minister joka, and ambassador mamina attended. (mof website) 2026年7月28日，财政部部长蓝佛安在北京会见刚果共和国副总理布亚。双方主要就两国财金领域合作和宏观经济形势等问题交换意见。进出口银行董事长陈怀宇，刚果共和国财政、预算和国库部部长约卡、驻华大使马米纳等参加会见。（财政部网站） 华尔街见闻 fiscal_trade fiscal & trade 财政与贸易 512800.ss">
+          <time class="tp-when" data-t="2026-07-30T07:42:02+00:00" datetime="2026-07-30T07:42:02+00:00">07-30<br>07:42</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-07-30T07:42:02+00:00"></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
+              
+              <span class="cn-tag"><span class="l-en">Fiscal/Trade</span><span class="l-zh">财政/贸易</span></span>
+              <span class="cn-src">华尔街见闻</span>
+              <span class="cn-imp imp-medium"><b>66</b> <span class="l-en">medium</span><span class="l-zh">中</span></span>
+            </div>
+            <h2 class="tp-title"><span class="l-en">Lan Fo'an meets with Deputy Prime Minister of the Republic of the Congo, Bouya.</span><span class="l-zh">蓝佛安会见刚果共和国副总理布亚</span></h2>
+            <p class="tp-sum"><span class="l-en">On July 28, 2026, Minister of Finance Lan Fo'an met with Republic of Congo Vice Prime Minister Bouya in Beijing to exchange views on bilateral fiscal cooperation and macroeconomic conditions. Export-Import Bank Chairman Chen Huaiyu, Congo Finance Minister Joka, and Ambassador Mamina attended. (MOF website)</span><span class="l-zh">2026年7月28日，财政部部长蓝佛安在北京会见刚果共和国副总理布亚。双方主要就两国财金领域合作和宏观经济形势等问题交换意见。进出口银行董事长陈怀宇，刚果共和国财政、预算和国库部部长约卡、驻华大使马米纳等参加会见。（财政部网站）</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">fiscal & trade</span><span class="l-zh">财政与贸易</span></span><span class="cn-tk">512800.SS</span></div>
+          </div>
+        </a>
+        
+        
         <a class="tp-item th-policy" href="https://wallstreetcn.com/livenews/3142210" target="_blank" rel="noopener"
            data-theme="policy" data-importance="high"
-           data-search="中共中央政治局会议：继续综合整治“内卷式”竞争，常态化解决企业账款拖欠问题 politburo meeting: continue comprehensive crackdown on 'involution-style' competition, normalize resolution of corporate accounts receivable arrears 中共中央政治局会议：继续综合整治“内卷式”竞争，常态化解决企业账款拖欠问题 会议强调，要营造公平有序的市场竞争环境，制定实施全国统一大市场建设条例，继续综合整治“内卷式”竞争，常态化解决企业账款拖欠问题。深化国资国企改革，优化民营经济发展环境，推动平台经济规范健康发展。（新华社） the meeting emphasized the need to create a fair and orderly market competition environment, formulate and implement regulations for a unified national market, continue to comprehensively rectify 'involution-style' competition, and regularly resolve corporate payment arrears. it also stressed deepening state-owned enterprise reforms, optimizing the development environment for the private economy, and promoting the healthy and standardized development of the platform economy. (xinhua) 会议强调，要营造公平有序的市场竞争环境，制定实施全国统一大市场建设条例，继续综合整治“内卷式”竞争，常态化解决企业账款拖欠问题。深化国资国企改革，优化民营经济发展环境，推动平台经济规范健康发展。（新华社） 华尔街见闻 policy policy 政策 ">
+           data-search="中共中央政治局会议：继续综合整治“内卷式”竞争，常态化解决企业账款拖欠问题 a political bureau of the cpc central committee meeting: continue comprehensive rectification of 'involution-style' competition, and regularly resolve overdue payments to enterprises. 中共中央政治局会议：继续综合整治“内卷式”竞争，常态化解决企业账款拖欠问题 会议强调，要营造公平有序的市场竞争环境，制定实施全国统一大市场建设条例，继续综合整治“内卷式”竞争，常态化解决企业账款拖欠问题。深化国资国企改革，优化民营经济发展环境，推动平台经济规范健康发展。（新华社） the meeting stressed creating a fair and orderly market competition environment, formulating and implementing regulations for a unified national market, comprehensively curbing 'involution-style' competition, regularly resolving corporate account arrears, deepening state-owned enterprise reforms, optimizing the private economy development environment, and promoting the standardized and healthy development of the platform economy. (xinhua) 会议强调，要营造公平有序的市场竞争环境，制定实施全国统一大市场建设条例，继续综合整治“内卷式”竞争，常态化解决企业账款拖欠问题。深化国资国企改革，优化民营经济发展环境，推动平台经济规范健康发展。（新华社） 华尔街见闻 policy policy 政策 ">
           <time class="tp-when" data-t="2026-07-30T06:42:32+00:00" datetime="2026-07-30T06:42:32+00:00">07-30<br>06:42</time>
           <div class="tp-spine"><span class="tp-node" data-t="2026-07-30T06:42:32+00:00"></span></div>
           <div class="tp-body">
@@ -788,73 +643,16 @@ The demand from Singapore was likely to remain steady in the coming months, give
               <span class="cn-src">华尔街见闻</span>
               <span class="cn-imp imp-high"><b>68</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
             </div>
-            <h2 class="tp-title"><span class="l-en">Politburo Meeting: Continue comprehensive crackdown on 'involution-style' competition, normalize resolution of corporate accounts receivable arrears</span><span class="l-zh">中共中央政治局会议：继续综合整治“内卷式”竞争，常态化解决企业账款拖欠问题</span></h2>
-            <p class="tp-sum"><span class="l-en">The meeting emphasized the need to create a fair and orderly market competition environment, formulate and implement regulations for a unified national market, continue to comprehensively rectify 'involution-style' competition, and regularly resolve corporate payment arrears. It also stressed deepening state-owned enterprise reforms, optimizing the development environment for the private economy, and promoting the healthy and standardized development of the platform economy. (Xinhua)</span><span class="l-zh">会议强调，要营造公平有序的市场竞争环境，制定实施全国统一大市场建设条例，继续综合整治“内卷式”竞争，常态化解决企业账款拖欠问题。深化国资国企改革，优化民营经济发展环境，推动平台经济规范健康发展。（新华社）</span></p>
+            <h2 class="tp-title"><span class="l-en">A Political Bureau of the CPC Central Committee meeting: Continue comprehensive rectification of 'involution-style' competition, and regularly resolve overdue payments to enterprises.</span><span class="l-zh">中共中央政治局会议：继续综合整治“内卷式”竞争，常态化解决企业账款拖欠问题</span></h2>
+            <p class="tp-sum"><span class="l-en">The meeting stressed creating a fair and orderly market competition environment, formulating and implementing regulations for a unified national market, comprehensively curbing 'involution-style' competition, regularly resolving corporate account arrears, deepening state-owned enterprise reforms, optimizing the private economy development environment, and promoting the standardized and healthy development of the platform economy. (Xinhua)</span><span class="l-zh">会议强调，要营造公平有序的市场竞争环境，制定实施全国统一大市场建设条例，继续综合整治“内卷式”竞争，常态化解决企业账款拖欠问题。深化国资国企改革，优化民营经济发展环境，推动平台经济规范健康发展。（新华社）</span></p>
             <div class="tp-chips"><span class="cn-cchip"><span class="l-en">Policy</span><span class="l-zh">政策</span></span></div>
-          </div>
-        </a>
-        
-        
-        <a class="tp-item th-policy" href="https://news.futunn.com/flash/20573208/meeting-of-the-political-bureau-of-the-cpc-central-committee" target="_blank" rel="noopener"
-           data-theme="policy" data-importance="high"
-           data-search="中共中央政治局会议：多措并举加强民生保障 做好灵活就业人员和新就业形态人员权益保障工作 politburo meeting: take multiple measures to strengthen livelihood security, protect rights of flexible and new-form employment workers 中共中央政治局会议：多措并举加强民生保障 做好灵活就业人员和新就业形态人员权益保障工作 中共中央政治局7月30日召开会议，会议指出，要多措并举加强民生保障，加大重点群体就业支持力度，做好灵活就业人员和新就业形态人员权益保障工作。抓好“一老一小”服务保障，健全分层分类的社会救助体系。加强生态环境保护，打好“三北”工程攻坚战，积极稳妥推进碳达峰碳中和。（新华社） the politburo of the cpc central committee held a meeting on july 30, stating that multiple measures should be taken to strengthen livelihood security, increase employment support for key groups, and protect the rights of flexible and new forms of employment workers. it called for improving services for the elderly and young children, and establishing a tiered and categorized social assistance system. it also emphasized strengthening ecological and environmental protection, advancing the 'three-north' shelterbelt project, and promoting carbon peak and carbon neutrality steadily. (xinhua) 中共中央政治局7月30日召开会议，会议指出，要多措并举加强民生保障，加大重点群体就业支持力度，做好灵活就业人员和新就业形态人员权益保障工作。抓好“一老一小”服务保障，健全分层分类的社会救助体系。加强生态环境保护，打好“三北”工程攻坚战，积极稳妥推进碳达峰碳中和。（新华社） 富途牛牛 policy policy 政策 ">
-          <time class="tp-when" data-t="2026-07-30T06:39:00+00:00" datetime="2026-07-30T06:39:00+00:00">07-30<br>06:39</time>
-          <div class="tp-spine"><span class="tp-node" data-t="2026-07-30T06:39:00+00:00"></span></div>
-          <div class="tp-body">
-            <div class="tp-top">
-              
-              <span class="cn-tag"><span class="l-en">Policy</span><span class="l-zh">政策</span></span>
-              <span class="cn-src">富途牛牛</span>
-              <span class="cn-imp imp-high"><b>68</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
-            </div>
-            <h2 class="tp-title"><span class="l-en">Politburo Meeting: Take multiple measures to strengthen livelihood security, protect rights of flexible and new-form employment workers</span><span class="l-zh">中共中央政治局会议：多措并举加强民生保障 做好灵活就业人员和新就业形态人员权益保障工作</span></h2>
-            <p class="tp-sum"><span class="l-en">The Politburo of the CPC Central Committee held a meeting on July 30, stating that multiple measures should be taken to strengthen livelihood security, increase employment support for key groups, and protect the rights of flexible and new forms of employment workers. It called for improving services for the elderly and young children, and establishing a tiered and categorized social assistance system. It also emphasized strengthening ecological and environmental protection, advancing the 'Three-North' shelterbelt project, and promoting carbon peak and carbon neutrality steadily. (Xinhua)</span><span class="l-zh">中共中央政治局7月30日召开会议，会议指出，要多措并举加强民生保障，加大重点群体就业支持力度，做好灵活就业人员和新就业形态人员权益保障工作。抓好“一老一小”服务保障，健全分层分类的社会救助体系。加强生态环境保护，打好“三北”工程攻坚战，积极稳妥推进碳达峰碳中和。（新华社）</span></p>
-            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">Policy</span><span class="l-zh">政策</span></span></div>
-          </div>
-        </a>
-        
-        
-        <a class="tp-item th-policy" href="https://news.futunn.com/flash/20573206/meeting-of-the-political-bureau-of-the-cpc-central-committee" target="_blank" rel="noopener"
-           data-theme="policy" data-importance="high"
-           data-search="中共中央政治局会议：稳定生猪等农畜产品生产和价格 politburo meeting: stabilize production and prices of agricultural and livestock products like pork 中共中央政治局会议：稳定生猪等农畜产品生产和价格 中共中央政治局7月30日召开会议，会议强调，要毫不放松做好“三农”工作，持续巩固拓展脱贫攻坚成果，建立健全高标准农田建设、运营、管护机制，稳定生猪等农畜产品生产和价格，促进农民稳定增收。做好农资保供稳价，抓好农业生产，夺取秋粮和全年粮食丰收。（新华社） the politburo of the cpc central committee held a meeting on july 30, stressing the need to maintain steady work on agriculture, rural areas, and farmers, continuously consolidate and expand poverty alleviation achievements, and establish mechanisms for the construction, operation, and maintenance of high-standard farmland. it called for stabilizing the production and prices of agricultural and livestock products like live pigs, promoting stable income growth for farmers, ensuring the supply and price stability of agricultural materials, and focusing on agricultural production to secure autumn harvest and full-year grain output. (xinhua) 中共中央政治局7月30日召开会议，会议强调，要毫不放松做好“三农”工作，持续巩固拓展脱贫攻坚成果，建立健全高标准农田建设、运营、管护机制，稳定生猪等农畜产品生产和价格，促进农民稳定增收。做好农资保供稳价，抓好农业生产，夺取秋粮和全年粮食丰收。（新华社） 富途牛牛 policy policy 政策 ">
-          <time class="tp-when" data-t="2026-07-30T06:39:00+00:00" datetime="2026-07-30T06:39:00+00:00">07-30<br>06:39</time>
-          <div class="tp-spine"><span class="tp-node" data-t="2026-07-30T06:39:00+00:00"></span></div>
-          <div class="tp-body">
-            <div class="tp-top">
-              
-              <span class="cn-tag"><span class="l-en">Policy</span><span class="l-zh">政策</span></span>
-              <span class="cn-src">富途牛牛</span>
-              <span class="cn-imp imp-high"><b>68</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
-            </div>
-            <h2 class="tp-title"><span class="l-en">Politburo Meeting: Stabilize production and prices of agricultural and livestock products like pork</span><span class="l-zh">中共中央政治局会议：稳定生猪等农畜产品生产和价格</span></h2>
-            <p class="tp-sum"><span class="l-en">The Politburo of the CPC Central Committee held a meeting on July 30, stressing the need to maintain steady work on agriculture, rural areas, and farmers, continuously consolidate and expand poverty alleviation achievements, and establish mechanisms for the construction, operation, and maintenance of high-standard farmland. It called for stabilizing the production and prices of agricultural and livestock products like live pigs, promoting stable income growth for farmers, ensuring the supply and price stability of agricultural materials, and focusing on agricultural production to secure autumn harvest and full-year grain output. (Xinhua)</span><span class="l-zh">中共中央政治局7月30日召开会议，会议强调，要毫不放松做好“三农”工作，持续巩固拓展脱贫攻坚成果，建立健全高标准农田建设、运营、管护机制，稳定生猪等农畜产品生产和价格，促进农民稳定增收。做好农资保供稳价，抓好农业生产，夺取秋粮和全年粮食丰收。（新华社）</span></p>
-            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">Policy</span><span class="l-zh">政策</span></span></div>
-          </div>
-        </a>
-        
-        
-        <a class="tp-item th-monetary" href="https://finance.sina.com.cn/money/fund/etf/2026-07-30/doc-inikpxkp1309000.shtml" target="_blank" rel="noopener"
-           data-theme="monetary" data-importance="high"
-           data-search="央行等九部门联合印发！事关科技金融领域数据开发利用！ nine departments including pboc jointly issue plan on data development and utilization in sci-tech finance! 央行等九部门联合印发！事关科技金融领域数据开发利用！    新浪财经股票 pboc_liquidity pboc & liquidity 央行与流动性 ">
-          <time class="tp-when" data-t="2026-07-30" datetime="2026-07-30">07-30</time>
-          <div class="tp-spine"><span class="tp-node" data-t="2026-07-30"></span></div>
-          <div class="tp-body">
-            <div class="tp-top">
-              
-              <span class="cn-tag"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
-              <span class="cn-src">新浪财经股票</span>
-              <span class="cn-imp imp-high"><b>68</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
-            </div>
-            <h2 class="tp-title"><span class="l-en">Nine departments including PBOC jointly issue plan on data development and utilization in sci-tech finance!</span><span class="l-zh">央行等九部门联合印发！事关科技金融领域数据开发利用！</span></h2>
-            
-            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">PBOC & liquidity</span><span class="l-zh">央行与流动性</span></span></div>
           </div>
         </a>
         
         
         <a class="tp-item th-monetary" href="https://www.yicai.com/news/103298553.html" target="_blank" rel="noopener"
            data-theme="monetary" data-importance="high"
-           data-search="从“单一锚”到“多元尺”，广东dr定价贷款也来了！ 告别lpr“单一锚定”。 from 'single anchor' to 'multiple yardsticks': guangdong's dr-priced loans arrive! say goodbye to lpr 'single pegging'. 从“单一锚”到“多元尺”，广东dr定价贷款也来了！ 告别lpr“单一锚定”。    第一财经 pboc_liquidity credit_impulse pboc & liquidity 央行与流动性 credit & financing 信贷与社融 512800.ss">
+           data-search="从“单一锚”到“多元尺”，广东dr定价贷款也来了！ 告别lpr“单一锚定”。 from 'single anchor' to 'multiple yardsticks': guangdong's dr-priced loans have arrived! saying goodbye to the lpr 'single anchor'. 从“单一锚”到“多元尺”，广东dr定价贷款也来了！ 告别lpr“单一锚定”。    第一财经 pboc_liquidity credit_impulse pboc & liquidity 央行与流动性 credit & financing 信贷与社融 512800.ss">
           <time class="tp-when" data-t="" >—</time>
           <div class="tp-spine"><span class="tp-node" data-t=""></span></div>
           <div class="tp-body">
@@ -864,9 +662,222 @@ The demand from Singapore was likely to remain steady in the coming months, give
               <span class="cn-src">第一财经</span>
               <span class="cn-imp imp-high"><b>68</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
             </div>
-            <h2 class="tp-title"><span class="l-en">From 'single anchor' to 'multiple yardsticks': Guangdong's DR-priced loans arrive! Say goodbye to LPR 'single pegging'.</span><span class="l-zh">从“单一锚”到“多元尺”，广东DR定价贷款也来了！ 告别LPR“单一锚定”。</span></h2>
+            <h2 class="tp-title"><span class="l-en">From 'single anchor' to 'multiple yardsticks': Guangdong's DR-priced loans have arrived! Saying goodbye to the LPR 'single anchor'.</span><span class="l-zh">从“单一锚”到“多元尺”，广东DR定价贷款也来了！ 告别LPR“单一锚定”。</span></h2>
             
             <div class="tp-chips"><span class="cn-cchip"><span class="l-en">PBOC & liquidity</span><span class="l-zh">央行与流动性</span></span><span class="cn-cchip"><span class="l-en">credit & financing</span><span class="l-zh">信贷与社融</span></span><span class="cn-tk">512800.SS</span></div>
+          </div>
+        </a>
+        
+        
+        <a class="tp-item th-fiscal" href="https://flash.jin10.com/detail/20260730164012221800" target="_blank" rel="noopener"
+           data-theme="fiscal" data-importance="medium"
+           data-search="五粮液集团等入股四川长江担保集团，后者增资至约53.6亿元 wuliangye group and others invest in sichuan changjiang guarantee group, whose registered capital increases to approximately 5.36 billion yuan. 五粮液集团等入股四川长江担保集团，后者增资至约53.6亿元 金十数据7月30日讯，天眼查app显示，7月29日，四川长江担保集团有限公司发生工商变更，新增四川省宜宾五粮液集团有限公司、宜宾市产业投资集团有限公司、宜宾市高新投资集团有限公司等为股东，同时，注册资本由约14.1亿人民币增至约53.6亿人民币，增幅约279%。该公司成立于2022年11月，法定代表人为郑智，经营范围含非融资担保服务、自有资金投资的资产管理服务、以自有资金从事投资活动、融资咨询服务、企业管理咨询等。股东信息显示，该公司现由宜宾市财政局及上述新增股东共同持股。 jin10 data, july 30 - tianyancha app shows that on july 29, sichuan changjiang guarantee group co., ltd. underwent industrial and commercial changes, adding shareholders such as sichuan yibin wuliangye group co., ltd., yibin industrial investment group co., ltd., and yibin high-tech investment group co., ltd., while increasing registered capital from approx. 1.41 billion yuan to approx. 5.36 billion yuan, a ~279% increase. established in november 2022, the company is now jointly held by yibin finance bureau and the new shareholders. 金十数据7月30日讯，天眼查app显示，7月29日，四川长江担保集团有限公司发生工商变更，新增四川省宜宾五粮液集团有限公司、宜宾市产业投资集团有限公司、宜宾市高新投资集团有限公司等为股东，同时，注册资本由约14.1亿人民币增至约53.6亿人民币，增幅约279%。该公司成立于2022年11月，法定代表人为郑智，经营范围含非融资担保服务、自有资金投资的资产管理服务、以自有资金从事投资活动、融资咨询服务、企业管理咨询等。股东信息显示，该公司现由宜宾市财政局及上述新增股东共同持股。 金十数据 fiscal_trade yuan fiscal & trade 财政与贸易 yuan & fx 人民币与汇率 cny">
+          <time class="tp-when" data-t="2026-07-30T16:40:12+08:00" datetime="2026-07-30T16:40:12+08:00">07-30<br>16:40</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-07-30T16:40:12+08:00"></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
+              
+              <span class="cn-tag"><span class="l-en">Fiscal/Trade</span><span class="l-zh">财政/贸易</span></span>
+              <span class="cn-src">金十数据</span>
+              <span class="cn-imp imp-medium"><b>60</b> <span class="l-en">medium</span><span class="l-zh">中</span></span>
+            </div>
+            <h2 class="tp-title"><span class="l-en">Wuliangye Group and others invest in Sichuan Changjiang Guarantee Group, whose registered capital increases to approximately 5.36 billion yuan.</span><span class="l-zh">五粮液集团等入股四川长江担保集团，后者增资至约53.6亿元</span></h2>
+            <p class="tp-sum"><span class="l-en">Jin10 Data, July 30 - Tianyancha App shows that on July 29, Sichuan Changjiang Guarantee Group Co., Ltd. underwent industrial and commercial changes, adding shareholders such as Sichuan Yibin Wuliangye Group Co., Ltd., Yibin Industrial Investment Group Co., Ltd., and Yibin High-tech Investment Group Co., Ltd., while increasing registered capital from approx. 1.41 billion yuan to approx. 5.36 billion yuan, a ~279% increase. Established in November 2022, the company is now jointly held by Yibin Finance Bureau and the new shareholders.</span><span class="l-zh">金十数据7月30日讯，天眼查App显示，7月29日，四川长江担保集团有限公司发生工商变更，新增四川省宜宾五粮液集团有限公司、宜宾市产业投资集团有限公司、宜宾市高新投资集团有限公司等为股东，同时，注册资本由约14.1亿人民币增至约53.6亿人民币，增幅约279%。该公司成立于2022年11月，法定代表人为郑智，经营范围含非融资担保服务、自有资金投资的资产管理服务、以自有资金从事投资活动、融资咨询服务、企业管理咨询等。股东信息显示，该公司现由宜宾市财政局及上述新增股东共同持股。</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">fiscal & trade</span><span class="l-zh">财政与贸易</span></span><span class="cn-cchip"><span class="l-en">yuan & FX</span><span class="l-zh">人民币与汇率</span></span><span class="cn-tk">CNY</span></div>
+          </div>
+        </a>
+        
+        
+        <a class="tp-item th-tech" href="https://wallstreetcn.com/livenews/3142226" target="_blank" rel="noopener"
+           data-theme="tech" data-importance="medium"
+           data-search="科创50指数跌超5%，大消费板块逆势走强 science and technology innovation 50 index falls over 5%, while consumer staples sector shows contrarian strength. 科创50指数跌超5%，大消费板块逆势走强 1，整体走势：市场全天探底回升，三大指数集体调整，科创50跌超5%。个股跌多涨少，沪深京三市超3600股飘绿，今日成交2.36万亿。截止收盘沪指跌0.62%，深成指跌2.73%，创业板指跌3.97%。 2，行业板块：白酒、汽车整车、教育、油气等板块涨幅居前，半导体、cpo、存储芯片、玻璃基板等板块跌幅居前。 3，热门概念：消费股逆势走强，一鸣食品3连板，金徽酒、舍得酒业等涨停。银行板块震荡拉升，工商银行、建设银行均创历史新高。下跌方面，半导体芯片股走低，长电科技、通富微电等跌停，华虹宏力、寒武纪等跌超10%；算力硬件股下挫，剑桥科技、东山精密等跌停，新易 1, overall trend: market rebounded after a morning dip, with three major indices adjusting collectively, the star 50 falling over 5%. more stocks fell than rose, with over 3,600 stocks in the red across beijing, shanghai, and shenzhen markets, turnover at 2.36 trillion yuan. at close, shanghai composite fell 0.62%, shenzhen component fell 2.73%, chinext fell 3.97%. 2, sectors: baijiu, auto manufacturing, education, oil & gas led gains; semiconductors, cpo, memory chips, glass substrates lagged. 3, hot concepts: consumer stocks strengthened against the trend, with yiming food hitting 3 consecutive daily limits, jinhui liquor and shede spirits涨停. banking sector震荡 rallied, with icbc and ccb hitting historical highs. on the downside, semiconductor chip stocks fell, with jcet and tfme跌停, huahong hongli and cambricon falling over 10%; computing power hardware stocks dropped, with cig and dsbj跌停, xinyi... 1，整体走势：市场全天探底回升，三大指数集体调整，科创50跌超5%。个股跌多涨少，沪深京三市超3600股飘绿，今日成交2.36万亿。截止收盘沪指跌0.62%，深成指跌2.73%，创业板指跌3.97%。 2，行业板块：白酒、汽车整车、教育、油气等板块涨幅居前，半导体、cpo、存储芯片、玻璃基板等板块跌幅居前。 3，热门概念：消费股逆势走强，一鸣食品3连板，金徽酒、舍得酒业等涨停。银行板块震荡拉升，工商银行、建设银行均创历史新高。下跌方面，半导体芯片股走低，长电科技、通富微电等跌停，华虹宏力、寒武纪等跌超10%；算力硬件股下挫，剑桥科技、东山精密等跌停，新易 华尔街见闻 consumer markets tech_policy consumer 消费 equity market 股票市场 tech policy 科技政策 ashr 512800.ss 512760.ss">
+          <time class="tp-when" data-t="2026-07-30T07:01:36+00:00" datetime="2026-07-30T07:01:36+00:00">07-30<br>07:01</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-07-30T07:01:36+00:00"></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
+              
+              <span class="cn-tag"><span class="l-en">Tech</span><span class="l-zh">科技</span></span>
+              <span class="cn-src">华尔街见闻</span>
+              <span class="cn-imp imp-medium"><b>60</b> <span class="l-en">medium</span><span class="l-zh">中</span></span>
+            </div>
+            <h2 class="tp-title"><span class="l-en">Science and Technology Innovation 50 Index falls over 5%, while consumer staples sector shows contrarian strength.</span><span class="l-zh">科创50指数跌超5%，大消费板块逆势走强</span></h2>
+            <p class="tp-sum"><span class="l-en">1, Overall trend: Market rebounded after a morning dip, with three major indices adjusting collectively, the STAR 50 falling over 5%. More stocks fell than rose, with over 3,600 stocks in the red across Beijing, Shanghai, and Shenzhen markets, turnover at 2.36 trillion yuan. At close, Shanghai Composite fell 0.62%, Shenzhen Component fell 2.73%, ChiNext fell 3.97%. 2, Sectors: Baijiu, auto manufacturing, education, oil & gas led gains; semiconductors, CPO, memory chips, glass substrates lagged. 3, Hot concepts: Consumer stocks strengthened against the trend, with Yiming Food hitting 3 consecutive daily limits, Jinhui Liquor and Shede Spirits涨停. Banking sector震荡 rallied, with ICBC and CCB hitting historical highs. On the downside, semiconductor chip stocks fell, with JCET and TFME跌停, Huahong Hongli and Cambricon falling over 10%; computing power hardware stocks dropped, with CIG and DSBJ跌停, Xinyi...</span><span class="l-zh">1，整体走势：市场全天探底回升，三大指数集体调整，科创50跌超5%。个股跌多涨少，沪深京三市超3600股飘绿，今日成交2.36万亿。截止收盘沪指跌0.62%，深成指跌2.73%，创业板指跌3.97%。 2，行业板块：白酒、汽车整车、教育、油气等板块涨幅居前，半导体、CPO、存储芯片、玻璃基板等板块跌幅居前。 3，热门概念：消费股逆势走强，一鸣食品3连板，金徽酒、舍得酒业等涨停。银行板块震荡拉升，工商银行、建设银行均创历史新高。下跌方面，半导体芯片股走低，长电科技、通富微电等跌停，华虹宏力、寒武纪等跌超10%；算力硬件股下挫，剑桥科技、东山精密等跌停，新易</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">consumer</span><span class="l-zh">消费</span></span><span class="cn-cchip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span><span class="cn-cchip"><span class="l-en">tech policy</span><span class="l-zh">科技政策</span></span><span class="cn-tk">ASHR</span><span class="cn-tk">512800.SS</span><span class="cn-tk">512760.SS</span></div>
+          </div>
+        </a>
+        
+        
+        <a class="tp-item th-monetary" href="https://finance.sina.com.cn/money/fund/etf/2026-07-30/doc-inikpxkp1309000.shtml" target="_blank" rel="noopener"
+           data-theme="monetary" data-importance="high"
+           data-search="央行等九部门联合印发！事关科技金融领域数据开发利用！ nine central government departments, including the pboc, jointly issue a plan on data development and utilization in the sci-tech finance sector! 央行等九部门联合印发！事关科技金融领域数据开发利用！    新浪财经股票 pboc_liquidity pboc & liquidity 央行与流动性 ">
+          <time class="tp-when" data-t="2026-07-30" datetime="2026-07-30">07-30</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-07-30"></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
+              
+              <span class="cn-tag"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
+              <span class="cn-src">新浪财经股票</span>
+              <span class="cn-imp imp-high"><b>68</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
+            </div>
+            <h2 class="tp-title"><span class="l-en">Nine central government departments, including the PBOC, jointly issue a plan on data development and utilization in the sci-tech finance sector!</span><span class="l-zh">央行等九部门联合印发！事关科技金融领域数据开发利用！</span></h2>
+            
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">PBOC & liquidity</span><span class="l-zh">央行与流动性</span></span></div>
+          </div>
+        </a>
+        
+        
+        <a class="tp-item th-fiscal" href="https://wallstreetcn.com/livenews/3142208" target="_blank" rel="noopener"
+           data-theme="fiscal" data-importance="medium"
+           data-search="中共中央政治局会议：完善对外投资管理制度和海外综合服务体系 a political bureau of the cpc central committee meeting: improve the overseas investment management system and comprehensive overseas service system. 中共中央政治局会议：完善对外投资管理制度和海外综合服务体系 会议指出，要拓展国际经贸互利合作空间，大力发展服务贸易，促进贸易平衡发展。完善对外投资管理制度和海外综合服务体系，积极吸引和利用外资。（新华社） the meeting pointed out expanding international trade and economic cooperation, vigorously developing service trade, promoting balanced trade development, improving foreign investment management systems and overseas comprehensive service systems, and actively attracting and utilizing foreign capital. (xinhua) 会议指出，要拓展国际经贸互利合作空间，大力发展服务贸易，促进贸易平衡发展。完善对外投资管理制度和海外综合服务体系，积极吸引和利用外资。（新华社） 华尔街见闻 fiscal fiscal/trade 财政/贸易 ">
+          <time class="tp-when" data-t="2026-07-30T06:41:30+00:00" datetime="2026-07-30T06:41:30+00:00">07-30<br>06:41</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-07-30T06:41:30+00:00"></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
+              
+              <span class="cn-tag"><span class="l-en">Fiscal/Trade</span><span class="l-zh">财政/贸易</span></span>
+              <span class="cn-src">华尔街见闻</span>
+              <span class="cn-imp imp-medium"><b>66</b> <span class="l-en">medium</span><span class="l-zh">中</span></span>
+            </div>
+            <h2 class="tp-title"><span class="l-en">A Political Bureau of the CPC Central Committee meeting: Improve the overseas investment management system and comprehensive overseas service system.</span><span class="l-zh">中共中央政治局会议：完善对外投资管理制度和海外综合服务体系</span></h2>
+            <p class="tp-sum"><span class="l-en">The meeting pointed out expanding international trade and economic cooperation, vigorously developing service trade, promoting balanced trade development, improving foreign investment management systems and overseas comprehensive service systems, and actively attracting and utilizing foreign capital. (Xinhua)</span><span class="l-zh">会议指出，要拓展国际经贸互利合作空间，大力发展服务贸易，促进贸易平衡发展。完善对外投资管理制度和海外综合服务体系，积极吸引和利用外资。（新华社）</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">Fiscal/Trade</span><span class="l-zh">财政/贸易</span></span></div>
+          </div>
+        </a>
+        
+        
+        <a class="tp-item th-growth" href="https://www.scmp.com/economy/policy/article/3362364/chinas-politburo-pledges-policy-support-spending-counteract-sluggish-growth?utm_source=rss_feed" target="_blank" rel="noopener"
+           data-theme="growth" data-importance="high"
+           data-search="china’s politburo pledges policy support, spending to counteract sluggish growth  中国政治局承诺政策支持并增加支出以应对经济增长放缓 beijing has pledged to step up macro policy support and enhance the resilience of capital markets for the remainder of the year, following a slowdown in second-quarter economic growth and rising volatility in global stock exchanges.
+after a meeting of the communist party’s 21-member politburo – a major decision-making body led by president xi jinping – that ended on thursday, the party’s upper echelon vowed to accelerate the pace of fiscal spending and speed up the transition from old to new...  北京承诺，在二季度经济增长放缓及全球股市波动加剧的背景下，将在今年余下时间加大宏观政策支持力度，增强资本市场韧性。
+在由习近平主席领导的21人中共中央政治局——这一重要决策机构——召开会议后， scmp - china economy markets equity market 股票市场 510300.ss">
+          <time class="tp-when" data-t="2026-07-30T06:44:47+00:00" datetime="2026-07-30T06:44:47+00:00">07-30<br>06:44</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-07-30T06:44:47+00:00"></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
+              
+              <span class="cn-tag"><span class="l-en">Growth</span><span class="l-zh">增长</span></span>
+              <span class="cn-src">SCMP - China Economy</span>
+              <span class="cn-imp imp-high"><b>70</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
+            </div>
+            <h2 class="tp-title"><span class="l-en">China’s Politburo pledges policy support, spending to counteract sluggish growth</span><span class="l-zh">中国政治局承诺政策支持并增加支出以应对经济增长放缓</span></h2>
+            <p class="tp-sum"><span class="l-en">Beijing has pledged to step up macro policy support and enhance the resilience of capital markets for the remainder of the year, following a slowdown in second-quarter economic growth and rising volatility in global stock exchanges.
+After a meeting of the Communist Party’s 21-member Politburo – a major decision-making body led by President Xi Jinping – that ended on Thursday, the party’s upper echelon vowed to accelerate the pace of fiscal spending and speed up the transition from old to new...</span><span class="l-zh">北京承诺，在二季度经济增长放缓及全球股市波动加剧的背景下，将在今年余下时间加大宏观政策支持力度，增强资本市场韧性。
+在由习近平主席领导的21人中共中央政治局——这一重要决策机构——召开会议后，</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span><span class="cn-tk">510300.SS</span></div>
+          </div>
+        </a>
+        
+        
+        <a class="tp-item th-credit" href="https://wallstreetcn.com/livenews/3142241" target="_blank" rel="noopener"
+           data-theme="credit" data-importance="medium"
+           data-search="林园投资：部分产品维持原合同约定不再接受申购 linyuan investment: some products maintain original contract terms and no longer accept subscriptions 林园投资：部分产品维持原合同约定不再接受申购 深圳市林园投资管理有限责任公司发布公告称，169只私募基金产品维持原合同约定不再接受申购，相关产品不再修改基金合同以适配《私募证券投资基金运作指引》的要求，维持原合同条款及投资自由度不变。林园投资解释称，公司产品的投资运作一直坚持适度集中、长期投资的风格，这与《运作指引》中关于组合投资“双25%”限制及债券投资比例限制等条款存在冲突。若强行修改，将造成产品现在或未来被迫调仓，在目前及未来的市场环境下可能对现有持有人利益造成实质损害。自2026年8月1日起，客户持有的产品将不再接受新增申购，产品到期后不展期，按合同约定正常清算。 shenzhen lin yuan investment management co., ltd. announced that 169 private fund products will maintain original contract terms and no longer accept subscriptions. related products will not modify contracts to comply with the 'private securities investment fund operational guidelines', maintaining original terms and investment freedom. the firm explained its investment approach of moderate concentration and long-term holding conflicts with the guidelines' 'double 25%' portfolio restriction and bond investment limits. forcing changes could harm existing holders' interests in current and future markets. from august 1, 2026, client products will no longer accept new subscriptions and will not be extended upon maturity, with normal liquidation per contract terms. 深圳市林园投资管理有限责任公司发布公告称，169只私募基金产品维持原合同约定不再接受申购，相关产品不再修改基金合同以适配《私募证券投资基金运作指引》的要求，维持原合同条款及投资自由度不变。林园投资解释称，公司产品的投资运作一直坚持适度集中、长期投资的风格，这与《运作指引》中关于组合投资“双25%”限制及债券投资比例限制等条款存在冲突。若强行修改，将造成产品现在或未来被迫调仓，在目前及未来的市场环境下可能对现有持有人利益造成实质损害。自2026年8月1日起，客户持有的产品将不再接受新增申购，产品到期后不展期，按合同约定正常清算。 华尔街见闻 credit credit 信用 512880.ss">
+          <time class="tp-when" data-t="2026-07-30T07:19:27+00:00" datetime="2026-07-30T07:19:27+00:00">07-30<br>07:19</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-07-30T07:19:27+00:00"></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
+              
+              <span class="cn-tag"><span class="l-en">Credit</span><span class="l-zh">信用</span></span>
+              <span class="cn-src">华尔街见闻</span>
+              <span class="cn-imp imp-medium"><b>62</b> <span class="l-en">medium</span><span class="l-zh">中</span></span>
+            </div>
+            <h2 class="tp-title"><span class="l-en">Linyuan Investment: Some products maintain original contract terms and no longer accept subscriptions</span><span class="l-zh">林园投资：部分产品维持原合同约定不再接受申购</span></h2>
+            <p class="tp-sum"><span class="l-en">Shenzhen Lin Yuan Investment Management Co., Ltd. announced that 169 private fund products will maintain original contract terms and no longer accept subscriptions. Related products will not modify contracts to comply with the 'Private Securities Investment Fund Operational Guidelines', maintaining original terms and investment freedom. The firm explained its investment approach of moderate concentration and long-term holding conflicts with the Guidelines' 'double 25%' portfolio restriction and bond investment limits. Forcing changes could harm existing holders' interests in current and future markets. From August 1, 2026, client products will no longer accept new subscriptions and will not be extended upon maturity, with normal liquidation per contract terms.</span><span class="l-zh">深圳市林园投资管理有限责任公司发布公告称，169只私募基金产品维持原合同约定不再接受申购，相关产品不再修改基金合同以适配《私募证券投资基金运作指引》的要求，维持原合同条款及投资自由度不变。林园投资解释称，公司产品的投资运作一直坚持适度集中、长期投资的风格，这与《运作指引》中关于组合投资“双25%”限制及债券投资比例限制等条款存在冲突。若强行修改，将造成产品现在或未来被迫调仓，在目前及未来的市场环境下可能对现有持有人利益造成实质损害。自2026年8月1日起，客户持有的产品将不再接受新增申购，产品到期后不展期，按合同约定正常清算。</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">Credit</span><span class="l-zh">信用</span></span><span class="cn-tk">512880.SS</span></div>
+          </div>
+        </a>
+        
+        
+        <a class="tp-item th-credit" href="https://wallstreetcn.com/livenews/3142236" target="_blank" rel="noopener"
+           data-theme="credit" data-importance="medium"
+           data-search="中国30年期国债期货日内涨0.55%，至去年11月以来最高水平 china's 30-year government bond futures rise 0.55% intraday to highest level since november last year 中国30年期国债期货日内涨0.55%，至去年11月以来最高水平 中国30年期国债期货日内涨0.55%，至去年11月以来最高水平。 china's 30-year government bond futures rose 0.55% intraday to the highest level since november last year. 中国30年期国债期货日内涨0.55%，至去年11月以来最高水平。 华尔街见闻 credit credit 信用 cbon">
+          <time class="tp-when" data-t="2026-07-30T07:12:45+00:00" datetime="2026-07-30T07:12:45+00:00">07-30<br>07:12</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-07-30T07:12:45+00:00"></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
+              
+              <span class="cn-tag"><span class="l-en">Credit</span><span class="l-zh">信用</span></span>
+              <span class="cn-src">华尔街见闻</span>
+              <span class="cn-imp imp-medium"><b>62</b> <span class="l-en">medium</span><span class="l-zh">中</span></span>
+            </div>
+            <h2 class="tp-title"><span class="l-en">China's 30-year government bond futures rise 0.55% intraday to highest level since November last year</span><span class="l-zh">中国30年期国债期货日内涨0.55%，至去年11月以来最高水平</span></h2>
+            <p class="tp-sum"><span class="l-en">China's 30-year government bond futures rose 0.55% intraday to the highest level since November last year.</span><span class="l-zh">中国30年期国债期货日内涨0.55%，至去年11月以来最高水平。</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">Credit</span><span class="l-zh">信用</span></span><span class="cn-tk">CBON</span></div>
+          </div>
+        </a>
+        
+        
+        <a class="tp-item th-markets" href="https://wallstreetcn.com/livenews/3142225" target="_blank" rel="noopener"
+           data-theme="markets" data-importance="medium"
+           data-search="上证指数收报3804.69点，跌0.62% shanghai composite index closes at 3804.69 points, down 0.62% 上证指数收报3804.69点，跌0.62% 上证指数收报3804.69点，跌0.62%。 深证成指收报13285.80点，跌2.73%。 创业板指收报3244.62点，跌3.97%。 沪深300收报4549.72点，跌1.10%。 科创50收报1588.41点，跌5.38%。 中证500收报7309.58点，跌2.86%。 中证1000收报6900.66点，跌2.74%。 the shanghai composite index closed at 3804.69 points, down 0.62%. the shenzhen component index closed at 13285.80 points, down 2.73%. the chinext index closed at 3244.62 points, down 3.97%. the csi 300 closed at 4549.72 points, down 1.10%. the star 50 closed at 1588.41 points, down 5.38%. the csi 500 closed at 7309.58 points, down 2.86%. the csi 1000 closed at 6900.66 points, down 2.74%. 上证指数收报3804.69点，跌0.62%。 深证成指收报13285.80点，跌2.73%。 创业板指收报3244.62点，跌3.97%。 沪深300收报4549.72点，跌1.10%。 科创50收报1588.41点，跌5.38%。 中证500收报7309.58点，跌2.86%。 中证1000收报6900.66点，跌2.74%。 华尔街见闻 markets equity market 股票市场 510300.ss ashr">
+          <time class="tp-when" data-t="2026-07-30T07:01:01+00:00" datetime="2026-07-30T07:01:01+00:00">07-30<br>07:01</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-07-30T07:01:01+00:00"></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
+              
+              <span class="cn-tag"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+              <span class="cn-src">华尔街见闻</span>
+              <span class="cn-imp imp-medium"><b>62</b> <span class="l-en">medium</span><span class="l-zh">中</span></span>
+            </div>
+            <h2 class="tp-title"><span class="l-en">Shanghai Composite Index closes at 3804.69 points, down 0.62%</span><span class="l-zh">上证指数收报3804.69点，跌0.62%</span></h2>
+            <p class="tp-sum"><span class="l-en">The Shanghai Composite Index closed at 3804.69 points, down 0.62%. The Shenzhen Component Index closed at 13285.80 points, down 2.73%. The ChiNext Index closed at 3244.62 points, down 3.97%. The CSI 300 closed at 4549.72 points, down 1.10%. The STAR 50 closed at 1588.41 points, down 5.38%. The CSI 500 closed at 7309.58 points, down 2.86%. The CSI 1000 closed at 6900.66 points, down 2.74%.</span><span class="l-zh">上证指数收报3804.69点，跌0.62%。 深证成指收报13285.80点，跌2.73%。 创业板指收报3244.62点，跌3.97%。 沪深300收报4549.72点，跌1.10%。 科创50收报1588.41点，跌5.38%。 中证500收报7309.58点，跌2.86%。 中证1000收报6900.66点，跌2.74%。</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span><span class="cn-tk">510300.SS</span><span class="cn-tk">ASHR</span></div>
+          </div>
+        </a>
+        
+        
+        <a class="tp-item th-policy" href="https://www.stcn.com/article/detail/4049058.html" target="_blank" rel="noopener"
+           data-theme="policy" data-importance="high"
+           data-search="中共中央政治局召开会议 决定召开二十届五中全会 分析研究当前经济形势和经济工作 中共中央总书记习近平主持会议 political bureau of the cpc central committee holds meeting, decides to convene the fifth plenary session of the 20th central committee, analyzes current economic situation and work; xi jinping presides 中共中央政治局召开会议 决定召开二十届五中全会 分析研究当前经济形势和经济工作 中共中央总书记习近平主持会议    证券时报 policy policy 政策 512880.ss">
+          <time class="tp-when" data-t="" >—</time>
+          <div class="tp-spine"><span class="tp-node" data-t=""></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
+              
+              <span class="cn-tag"><span class="l-en">Policy</span><span class="l-zh">政策</span></span>
+              <span class="cn-src">证券时报</span>
+              <span class="cn-imp imp-high"><b>68</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
+            </div>
+            <h2 class="tp-title"><span class="l-en">Political Bureau of the CPC Central Committee holds meeting, decides to convene the Fifth Plenary Session of the 20th Central Committee, analyzes current economic situation and work; Xi Jinping presides</span><span class="l-zh">中共中央政治局召开会议 决定召开二十届五中全会 分析研究当前经济形势和经济工作 中共中央总书记习近平主持会议</span></h2>
+            
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">Policy</span><span class="l-zh">政策</span></span><span class="cn-tk">512880.SS</span></div>
+          </div>
+        </a>
+        
+        
+        <a class="tp-item th-markets" href="https://flash.jin10.com/detail/20260730161716826800" target="_blank" rel="noopener"
+           data-theme="markets" data-importance="medium"
+           data-search="金十图示：2026年07月30日（周四）沪深港通南向资金流向 jin10 chart: southbound capital flows via shanghai-hong kong and shenzhen-hong kong stock connects on july 30, 2026 (thursday) 金十图示：2026年07月30日（周四）沪深港通南向资金流向    金十数据 markets equity market 股票市场 ashr">
+          <time class="tp-when" data-t="2026-07-30T16:17:16+08:00" datetime="2026-07-30T16:17:16+08:00">07-30<br>16:17</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-07-30T16:17:16+08:00"></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
+              
+              <span class="cn-tag"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+              <span class="cn-src">金十数据</span>
+              <span class="cn-imp imp-medium"><b>60</b> <span class="l-en">medium</span><span class="l-zh">中</span></span>
+            </div>
+            <h2 class="tp-title"><span class="l-en">Jin10 Chart: Southbound capital flows via Shanghai-Hong Kong and Shenzhen-Hong Kong Stock Connects on July 30, 2026 (Thursday)</span><span class="l-zh">金十图示：2026年07月30日（周四）沪深港通南向资金流向</span></h2>
+            
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span><span class="cn-tk">ASHR</span></div>
+          </div>
+        </a>
+        
+        
+        <a class="tp-item th-markets" href="https://wallstreetcn.com/livenews/3142215" target="_blank" rel="noopener"
+           data-theme="markets" data-importance="medium"
+           data-search="创业板etf易方达成交额刷新年内次高记录 chinext etf from e fund sees trading volume hit second-highest intraday record this year 创业板etf易方达成交额刷新年内次高记录 创业板etf易方达（159915）成交额163亿元超越2026年7月17日的年内次高纪录，7月份该etf累计申赎净流入320.26亿元，最新规模为658亿元。科创50etf华夏（588000）成交额145亿元刷新年内第3高记录，7月份该etf累计申赎净流入389.22亿元，最新规模为863亿元。 the chinext etf (159915) traded 16.3 billion yuan, surpassing its previous intra-year high on july 17, 2026. in july, the etf saw cumulative net subscriptions of 32.026 billion yuan, with the latest scale at 65.8 billion yuan. the star 50 etf (588000) traded 14.5 billion yuan, marking the third highest intra-year record. in july, the etf saw cumulative net subscriptions of 38.922 billion yuan, with the latest scale at 86.3 billion yuan. 创业板etf易方达（159915）成交额163亿元超越2026年7月17日的年内次高纪录，7月份该etf累计申赎净流入320.26亿元，最新规模为658亿元。科创50etf华夏（588000）成交额145亿元刷新年内第3高记录，7月份该etf累计申赎净流入389.22亿元，最新规模为863亿元。 华尔街见闻 markets equity market 股票市场 ">
+          <time class="tp-when" data-t="2026-07-30T06:48:48+00:00" datetime="2026-07-30T06:48:48+00:00">07-30<br>06:48</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-07-30T06:48:48+00:00"></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
+              
+              <span class="cn-tag"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+              <span class="cn-src">华尔街见闻</span>
+              <span class="cn-imp imp-medium"><b>62</b> <span class="l-en">medium</span><span class="l-zh">中</span></span>
+            </div>
+            <h2 class="tp-title"><span class="l-en">ChiNext ETF from E Fund sees trading volume hit second-highest intraday record this year</span><span class="l-zh">创业板ETF易方达成交额刷新年内次高记录</span></h2>
+            <p class="tp-sum"><span class="l-en">The ChiNext ETF (159915) traded 16.3 billion yuan, surpassing its previous intra-year high on July 17, 2026. In July, the ETF saw cumulative net subscriptions of 32.026 billion yuan, with the latest scale at 65.8 billion yuan. The STAR 50 ETF (588000) traded 14.5 billion yuan, marking the third highest intra-year record. In July, the ETF saw cumulative net subscriptions of 38.922 billion yuan, with the latest scale at 86.3 billion yuan.</span><span class="l-zh">创业板ETF易方达（159915）成交额163亿元超越2026年7月17日的年内次高纪录，7月份该ETF累计申赎净流入320.26亿元，最新规模为658亿元。科创50ETF华夏（588000）成交额145亿元刷新年内第3高记录，7月份该ETF累计申赎净流入389.22亿元，最新规模为863亿元。</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span></div>
           </div>
         </a>
         
@@ -952,22 +963,28 @@ The demand from Singapore was likely to remain steady in the coming months, give
         <div class="exp-pills">
           
           
-          <span class="exp-pill"><span class="tk">512200.SS</span><span class="nm"><span class="l-en">property</span><span class="l-zh">房地产</span></span><span class="ct">×3</span></span>
+          <span class="exp-pill"><span class="tk">512800.SS</span><span class="nm"><span class="l-en">banks</span><span class="l-zh">银行</span></span><span class="ct">×5</span></span>
           
           
-          <span class="exp-pill"><span class="tk">512800.SS</span><span class="nm"><span class="l-en">banks</span><span class="l-zh">银行</span></span><span class="ct">×2</span></span>
+          <span class="exp-pill"><span class="tk">510300.SS</span><span class="nm"><span class="l-en">CSI 300</span><span class="l-zh">沪深300</span></span><span class="ct">×3</span></span>
+          
+          
+          <span class="exp-pill"><span class="tk">512880.SS</span><span class="nm"><span class="l-en">brokers</span><span class="l-zh">券商</span></span><span class="ct">×3</span></span>
+          
+          
+          <span class="exp-pill"><span class="tk">ASHR</span><span class="nm"><span class="l-en">A-shares</span><span class="l-zh">A股</span></span><span class="ct">×3</span></span>
+          
+          
+          <span class="exp-pill"><span class="tk">512200.SS</span><span class="nm"><span class="l-en">property</span><span class="l-zh">房地产</span></span><span class="ct">×2</span></span>
           
           
           <span class="exp-pill"><span class="tk">CNY</span><span class="nm"><span class="l-en">yuan</span><span class="l-zh">人民币</span></span></span>
+          
+          
+          <span class="exp-pill"><span class="tk">512760.SS</span><span class="nm"><span class="l-en">chips</span><span class="l-zh">半导体</span></span></span>
           
           
           <span class="exp-pill"><span class="tk">CBON</span><span class="nm"><span class="l-en">China bonds</span><span class="l-zh">中国债券</span></span></span>
-          
-          
-          <span class="exp-pill"><span class="tk">510300.SS</span><span class="nm"><span class="l-en">CSI 300</span><span class="l-zh">沪深300</span></span></span>
-          
-          
-          <span class="exp-pill"><span class="tk">CNY</span><span class="nm"><span class="l-en">yuan</span><span class="l-zh">人民币</span></span></span>
           
         </div>
       </section>
@@ -1063,6 +1080,6 @@ The demand from Singapore was likely to remain steady in the coming months, give
 })();
 </script>
 
-<script src="theme.js?v=6a69012a" defer></script>
+<script src="theme.js?v=fc81bc1e" defer></script>
 </body>
 </html>

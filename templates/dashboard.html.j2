@@ -1751,30 +1751,11 @@
 .actcol:not(:has(.actbody.act-fold > a.actitem:nth-child(4))):not(:has(.actbody.act-fold > div:nth-child(4))):not(:has(.ab-trim-fold > a.actitem:nth-child(4))):not(:has(.ab-trim-fold > div:nth-child(4))) .lst-more.act-more { display: none; }
 .ab-trim-fold.is-collapsed > a.actitem:nth-child(n+4),
 .ab-trim-fold.is-collapsed > div:nth-child(n+4) { display: none; }
-/* Stand-aside keeps its stable id for Turn Watch, but uses the shared cap-3 fold. */
+/* Stand-aside keeps its stable id and uses the shared cap-3 fold. */
 .lst-collapse.lst-cap3.is-collapsed > a.actitem:nth-child(n+4),
 .lst-collapse.lst-cap3.is-collapsed > div:nth-child(n+4) { display: none; }
 /* Sector-setups table (unchanged) */
 #sectors table.act-fold.is-collapsed > tbody > tr:nth-child(n+8), #sectors table.act-fold.is-collapsed > tr:nth-child(n+8) { display:none; }
-
-  /* ── TS-U3: turn watch strip ────────────────────────────────────────────── */
-  .dash-tw-strip { background:color-mix(in srgb,var(--warn) 6%,var(--panel2)); border:1px solid color-mix(in srgb,var(--warn) 28%,var(--line)); border-radius:9px; padding:9px 13px 10px; margin:0 0 12px; display:none; }
-  .dash-tw-strip.visible { display:block; }
-  .dash-tw-hdr { display:flex; align-items:center; gap:8px; margin-bottom:7px; flex-wrap:wrap; }
-  .dash-tw-title { font-size:12px; font-weight:700; color:var(--warn); text-transform:uppercase; letter-spacing:.05em; }
-  .dash-tw-asof { font-size:10px; color:var(--muted); margin-left:auto; }
-  .dash-tw-sub { font-size:11.5px; color:var(--text); opacity:.8; margin:-3px 0 7px; }
-  .dash-tw-rows { display:flex; flex-direction:column; gap:5px; }
-  .dash-tw-row { display:flex; align-items:baseline; gap:7px; flex-wrap:wrap; font-size:12px; }
-  .dash-tw-badge { display:inline-flex; align-items:center; padding:1px 7px; border-radius:12px; font-size:10px; font-weight:800; letter-spacing:.04em; white-space:nowrap; }
-  .dash-tw-badge.ignition { background:color-mix(in srgb,var(--up) 15%,transparent); border:1px solid color-mix(in srgb,var(--up) 38%,transparent); color:var(--up); }
-  .dash-tw-badge.watch { background:color-mix(in srgb,var(--warn) 12%,transparent); border:1px solid color-mix(in srgb,var(--warn) 35%,transparent); color:var(--warn); }
-  .dash-tw-badge.member { background:color-mix(in srgb,var(--info) 12%,transparent); border:1px solid color-mix(in srgb,var(--info) 32%,transparent); color:var(--info,var(--link)); }
-  .dash-tw-name { font-weight:600; color:var(--text); }
-  .dash-tw-slow { font-size:11px; color:var(--muted); }
-
-  /* ── TS-U3: salience chip on hold/avoid rows ────────────────────────────── */
-  .dash-turn-chip { display:inline-flex; align-items:center; gap:3px; padding:1px 5px; border-radius:5px; font-size:9px; font-weight:800; letter-spacing:.04em; white-space:nowrap; background:color-mix(in srgb,var(--warn) 12%,transparent); border:1px solid color-mix(in srgb,var(--warn) 32%,transparent); color:var(--warn); margin-left:4px; }
 
   /* ── TS-U3: per-stock turn setups table ─────────────────────────────────── */
   .dash-mtf-section { margin-top:14px; }
@@ -15036,23 +15017,6 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       ⚠ <span class="l-en">SHOCK active — fresh entries carry extra uncertainty; sector ranks computed on pre-shock data. Context only — no ranks have been changed. Active until {{ shock_state.get('expires', '') }}.</span><span class="l-zh">冲击期间 — 新进场具有额外不确定性；板块排名基于冲击前数据计算。仅供参考，排名未作调整，有效期至 {{ shock_state.get('expires', '') }}。</span>
     </div>
     {% endif %}
-    {# TS-U3: Turn Watch strip → "Early turn signs" (user-first copy per docs/DESIGN_DOCTRINE.md;
-       mode=stocks only; client-side).
-       Shown ONLY when data exists: baskets with WATCH/IGNITION or ≥2 UPTURN_CONFIRMED members
-       while slow reco is hold/avoid. Does NOT reorder lanes or change recos.
-       The fade disclosure (26 past cases, ~6 in 10 faded next day) lives in the ? tip —
-       operator order 2026-07-11; the plain-word sentence IS the receipt. #}
-    {% if mode == 'stocks' %}
-    <div id="dash-tw-strip" class="dash-tw-strip">
-      <div class="dash-tw-hdr">
-        <span class="dash-tw-title">{{ t('⚡ Early turn signs','⚡ 早期拐点迹象') }}</span>
-        {{ help('Not a buy signal: in 26 past cases, about 6 in 10 of these early signs faded within a day. If the turn is real, the lanes below upgrade on their own.', '非买入信号：历史26次中约六成的早期迹象在一天内消退。若拐点为真，下方泳道会自行升级。') }}
-        <span class="dash-tw-asof" id="dash-tw-asof"></span>
-      </div>
-      <div class="dash-tw-sub">{{ t("Bounce attempts in groups we still rate Hold / Avoid. Watch — don't chase.","仍评级为「持有／回避」的板块出现反弹尝试。观察为主 — 勿追高。") }}</div>
-      <div class="dash-tw-rows" id="dash-tw-rows"></div>
-    </div>
-    {% endif %}
     {# Unified board: 🧩 narrative baskets (the AI-buildout-vs-rest resolution) lead each
        lane, 🏛 GICS sectors follow. Basket buys carry a leadership-LENS marker (≈, descriptive)
        and basket reduces a backtested marker (✓, the absolute-trend drawdown gate); ★ = in the
@@ -16602,7 +16566,7 @@ window.__CHART_SWAP__ = {
 </script>
 {% if mode == 'stocks' %}
 <script>
-/* TS-U3 dash-tape-band + dash-tw-strip + dash-mtf-section JS (mode=stocks only).
+/* TS-U3 dash-tape-band + dash-mtf-section JS (mode=stocks only).
    FT-R1/TS-R5: display-tier only; never mutates slow state; no buy verbs.
    FT-R8: graceful absent-file. TS-R1: honest-delay modes. */
 (function(){
@@ -16885,128 +16849,6 @@ function renderTapeBand(pulse){
 }
 
 /* ────────────────────────────────────────────────────────────────────────
-   TURN WATCH STRIP + AUTO-EXPAND SALIENCE (TS-R5 / TS-R7)
-   Shows baskets with WATCH/IGNITION state OR ≥2 UPTURN_CONFIRMED members
-   while slow reco is hold/avoid. Removes is-collapsed from hold fold for
-   matched rows (TS-R5); adds ⚡ chip to those rows.
-   ──────────────────────────────────────────────────────────────────────── */
-function renderTurnWatch(turnWatch, mtfUpturn){
-  var stripEl=document.getElementById('dash-tw-strip');
-  var rowsEl=document.getElementById('dash-tw-rows');
-  var asofEl=document.getElementById('dash-tw-asof');
-  if(!stripEl||!rowsEl) return;
-
-  // Build mtfUpturn member-confirmed index: basket_id → confirmed count
-  var mtfBasketConfirmed={};
-  if(mtfUpturn&&mtfUpturn.tickers){
-    Object.keys(mtfUpturn.tickers).forEach(function(sym){
-      var t=mtfUpturn.tickers[sym];
-      if(t.state==='UPTURN_CONFIRMED'){
-        (t.basket_ids||[]).forEach(function(bid){
-          mtfBasketConfirmed[bid]=(mtfBasketConfirmed[bid]||0)+1;
-        });
-      }
-    });
-  }
-
-  // Build candidate list from turn_watch (basket-level)
-  var candidates=[];
-  var twBaskets=(turnWatch&&turnWatch.baskets)||[];
-  var twAsOf=(turnWatch&&turnWatch.as_of)||'';
-  var DISAGREE_RECOS={'hold':1,'avoid':1};  // TS-R5 disagreement gate (A1 fix)
-  twBaskets.forEach(function(tw){
-    var isActive=tw.state==='WATCH'||tw.state==='IGNITION';
-    var memberCount=mtfBasketConfirmed[tw.basket_id]||0;
-    // Show if: active state OR ≥2 members UPTURN_CONFIRMED
-    if(!isActive&&memberCount<2) return;
-    // TS-R5 disagreement gate: for WATCH/IGNITION baskets, only surface when slow_reco
-    // is hold/avoid (turn disagrees with slow read) or when reco is absent (honest null).
-    // A basket already on a buy reco + IGNITION is agreement, not disagreement — omit.
-    var reco=(tw.slow_reco||'').toLowerCase();
-    if(isActive&&reco&&!DISAGREE_RECOS[reco]) return;
-    candidates.push({
-      id: tw.basket_id,
-      name: _dtpNameEn(tw.basket_id),
-      tw_state: isActive?tw.state:null,
-      member_confirmed: memberCount,
-      reco: tw.slow_reco||'',
-      reco_as_of: tw.reco_as_of||'',
-      sort_key: (tw.state==='IGNITION'?0:tw.state==='WATCH'?1:2)*100 - memberCount
-    });
-  });
-  // Also add baskets with ≥2 UPTURN_CONFIRMED members even if NOT in turn_watch baskets
-  Object.keys(mtfBasketConfirmed).forEach(function(bid){
-    var count=mtfBasketConfirmed[bid];
-    if(count>=2&&!candidates.find(function(c){return c.id===bid;})){
-      candidates.push({
-        id:bid, name:_dtpNameEn(bid), tw_state:null, member_confirmed:count,
-        reco:'', reco_as_of:'', sort_key:200-count
-      });
-    }
-  });
-
-  candidates.sort(function(a,b){return a.sort_key-b.sort_key;});
-  candidates=candidates.slice(0,6);
-
-  if(!candidates.length){stripEl.classList.remove('visible');return;}
-  stripEl.classList.add('visible');
-  if(asofEl&&twAsOf){asofEl.innerHTML=L('updated nightly · '+esc(twAsOf),'每晚更新 · '+esc(twAsOf));}
-
-  // Render rows — user-first copy (docs/DESIGN_DOCTRINE.md): plain badges, plain
-  // rating text; the constant fade stat lives in the footer ONCE; the internal
-  // receipt (state names, reco as-of, base rate) moves to a data-tip on the row.
-  var html='';
-  candidates.forEach(function(c){
-    var badgeCls='member', badgeTxt='';
-    if(c.tw_state==='IGNITION'){ badgeCls='ignition'; badgeTxt=L('&#9889; STRONG SIGN','&#9889; 较强迹象'); }
-    else if(c.tw_state==='WATCH'){ badgeCls='watch'; badgeTxt=L('&#9889; EARLY SIGN','&#9889; 初步迹象'); }
-    else { badgeTxt=L(c.member_confirmed+' stocks turning up',c.member_confirmed+'只成分股转强'); }
-    var slowPart='';
-    var reco=(c.reco||'').toLowerCase();
-    if(reco){
-      var recoEn=reco==='hold'?'still rated Hold':reco==='avoid'?'still rated Avoid':'still rated '+esc(c.reco);
-      var recoZh=reco==='hold'?'主评级仍为「持有」':reco==='avoid'?'主评级仍为「回避」':'主评级仍为 '+esc(c.reco);
-      slowPart='<span class="dash-tw-slow">· '+L(recoEn,recoZh)+'</span>';
-    }
-    var tipEn='Receipt: fast state '+(c.tw_state||'none')+' · '+c.member_confirmed+' member(s) multi-timeframe confirmed'+(c.reco?' · slow reco '+c.reco.toUpperCase()+(c.reco_as_of?' as-of '+c.reco_as_of:''):'')+' · T+1 fade base rate 58% (n=26; basket-level turn = null edge in backtest, Oracle P8)';
-    var tipZh='技术说明：快速状态 '+(c.tw_state||'none')+' · '+c.member_confirmed+'只成分多时间框架确认'+(c.reco?' · 慢速评级 '+c.reco.toUpperCase()+(c.reco_as_of?'（截至'+c.reco_as_of+'）':''):'')+' · T+1消退基础概率58%（n=26；篮子级拐点回测为空值，Oracle P8）';
-    html+='<div class="dash-tw-row" data-tip-en="'+esc(tipEn)+'" data-tip-zh="'+esc(tipZh)+'">'
-      +'<span class="dash-tw-badge '+badgeCls+'">'+badgeTxt+'</span>'
-      +'<span class="dash-tw-name">'+esc(c.name)+'</span>'
-      +slowPart
-      +'</div>';
-  });
-  rowsEl.innerHTML=html;
-
-  // TS-R5: auto-expand hold fold for matched theme IDs; add ⚡ chip
-  var matchedIds=new Set(candidates.map(function(c){return c.id;}));
-  var fold=document.getElementById('dash-hold-fold');
-  if(fold&&matchedIds.size){
-    var needExpand=false;
-    fold.querySelectorAll('[data-theme-id]').forEach(function(wrapper){
-      var tid=wrapper.getAttribute('data-theme-id');
-      if(!tid||!matchedIds.has(tid)) return;
-      // Add ⚡ salience chip if not already present
-      if(!wrapper.querySelector('.dash-turn-chip')){
-        var chip=document.createElement('span');
-        chip.className='dash-turn-chip';
-        chip.innerHTML='&#9889; '+L('EARLY TURN','早期拐点');
-        wrapper.appendChild(chip);
-      }
-      // Check if this item is currently hidden (would be after n+7 sibling)
-      // We'll just un-collapse the whole fold when any match is hidden
-      needExpand=true;
-    });
-    if(needExpand&&fold.classList.contains('is-collapsed')){
-      fold.classList.remove('is-collapsed');
-      // Update button state
-      var btn=fold.parentElement&&fold.parentElement.querySelector('.lst-more');
-      if(btn){btn.setAttribute('aria-expanded','true');var sh=btn.querySelector('.lm-show'),hi=btn.querySelector('.lm-hide');if(sh)sh.style.display='none';if(hi)hi.style.display='inline';}
-    }
-  }
-}
-
-/* ────────────────────────────────────────────────────────────────────────
    PER-STOCK TURN SETUPS TABLE (TS-R3 / TS-R7 / TS-R3)
    ──────────────────────────────────────────────────────────────────────── */
 function _mtfPhasePlain(raw){
@@ -17172,20 +17014,18 @@ function renderMtfTable(mtfUpturn){
 /* ────────────────────────────────────────────────────────────────────────
    FETCH + ORCHESTRATE
    ──────────────────────────────────────────────────────────────────────── */
-var pulse=null, turnWatch=null, mtfUpturn=null;
-var pulseDone=false, twDone=false, mtfDone=false, namesDone=false;
+var pulse=null, mtfUpturn=null;
+var pulseDone=false, mtfDone=false, namesDone=false;
 
 function tryRender(){
-  if(!pulseDone||!twDone||!mtfDone||!namesDone) return;
+  if(!pulseDone||!mtfDone||!namesDone) return;
   renderTapeBand(pulse);
-  renderTurnWatch(turnWatch, mtfUpturn);
   renderMtfTable(mtfUpturn);
 }
 
 fetchJson('live/basket_pulse.json',function(d){pulse=d;pulseDone=true;tryRender();});
-fetchJson('basketdata/turn_watch.json',function(d){turnWatch=d;twDone=true;tryRender();});
 fetchJson('stockdata/mtf_upturn.json',function(d){mtfUpturn=d;mtfDone=true;tryRender();});
-/* Parallel fetch: display names for chips + turn-watch enrichment (FT-R8: graceful fail).
+/* Parallel fetch: display names for tape and turn-setup rows (FT-R8: graceful fail).
    Unlike the data fetches, a names failure must not stall the band behind the 4s
    backstop — fall through to prettified slugs immediately. */
 fetch('basketdata/baskets.json',{cache:'no-cache'})
@@ -17200,7 +17040,7 @@ fetch('basketdata/baskets.json',{cache:'no-cache'})
   .then(function(){namesDone=true;tryRender();});
 
 // Fail-open: if any fetch doesn't resolve, still render with what we have
-setTimeout(function(){pulseDone=true;twDone=true;mtfDone=true;namesDone=true;tryRender();},4000);
+setTimeout(function(){pulseDone=true;mtfDone=true;namesDone=true;tryRender();},4000);
 
 // See-more folds — V2 action board + sector setups table. Page-scoped;
 // theme.js .lst-wrap handler ignores .act-more buttons.

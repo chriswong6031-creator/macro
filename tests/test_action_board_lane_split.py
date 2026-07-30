@@ -113,12 +113,19 @@ def _china_block() -> str:
 
 
 def _canada_block() -> str:
-    # #2674 (canada mx5 port) renamed the section marker and dropped the old
-    # "/macro-only sections" end comment. The mode-gate {% if %}/{% endif %} pair
-    # stays OUTSIDE the slice so the extracted block is balanced Jinja.
+    # The mode-gate {% if %}/{% endif %} pair stays OUTSIDE the slice so the
+    # extracted block is balanced Jinja.
     src = (ROOT / "templates" / "canada.html.j2").read_text()
-    start = src.index("<!-- ===== What to act on now (sector entry-timing board")
+    start = src.index("<!-- ===== Act-Now v2 — four-lane board")
     end = src.index("\n{% endif %}\n\n{% if mode != 'stocks' %}", start)
+    return src[start:end]
+
+
+def _hk_board_block() -> str:
+    """Extract the self-contained four-lane grid (outside the HK leadership banner)."""
+    src = (ROOT / "templates" / "hk.html.j2").read_text()
+    start = src.index("{% set _hk_buy = actions.get('buy_now', []) %}")
+    end = src.index("\n  </div>\n  {% endif %}\n  {% endif %}", start)
     return src[start:end]
 
 
@@ -165,20 +172,60 @@ def test_china_dlg_sector_missing_lane_safe():
     assert "领先" not in html and "cnx-chip hot" not in html  # no leaders label/chips
 
 
-def test_canada_template_renders_on_the_run_lane():
-    html = _env(_canada_block()).get_template("blk").render(actions=_full_actions())
-    assert "ON THE RUN" in html and "勿追高" in html
-    assert "ab-on_the_run" in html                # violet accent class, never green
+def test_canada_template_uses_china_four_lane_ui():
+    html = _env(_canada_block()).get_template("blk").render(
+        actions=_full_actions(), latest={"date": "2026-07-30"}
+    )
+    assert "In Favour" in html and "看好" in html
+    assert "anv2-lane--pull" in html
+    assert "WAIT FOR DIP" in html and "等待回调" in html
     assert "RRR" in html
 
 
 def test_canada_template_missing_key_safe():
     a = _full_actions(); del a["on_the_run"]
-    html = _env(_canada_block()).get_template("blk").render(actions=a)
+    html = _env(_canada_block()).get_template("blk").render(
+        actions=a, latest={"date": "2026-07-30"}
+    )
     assert "AAA" in html
+
+
+def test_hk_template_uses_china_four_lane_ui_and_keeps_hover_rows():
+    html = _env(_hk_board_block()).get_template("blk").render(
+        actions=_full_actions(),
+        sectors_by_ticker={},
+        latest={"date": "2026-07-30"},
+    )
+    for cls in ("anv2-lane--buy", "anv2-lane--pull", "anv2-lane--bot", "anv2-lane--red"):
+        assert cls in html
+    assert "In Favour" in html and "看好" in html
+    assert 'class="anv2-row" data-rpop' in html
+    assert "RRR" in html
+
+
+def test_hk_template_missing_key_safe():
+    actions = _full_actions()
+    del actions["on_the_run"]
+    html = _env(_hk_board_block()).get_template("blk").render(
+        actions=actions,
+        sectors_by_ticker={},
+        latest={"date": "2026-07-30"},
+    )
+    assert "AAA" in html
+
+
+def test_hk_static_legacy_grid_cannot_override_hidden():
+    """The checked-in page temporarily retains its pre-render legacy grid.
+
+    `.act-grid { display:grid }` overrides the browser's default `[hidden]` rule,
+    so the generated fallback needs an explicit author-level display override
+    until the next clean template render removes the old block entirely.
+    """
+    html = (ROOT / "site" / "hk_stocks.html").read_text(encoding="utf-8")
+    assert '<div class="act-grid" hidden aria-hidden="true" style="display:none !important">' in html
 
 
 def test_no_translated_text_in_title_attributes():
     """CI guard parity (scripts/check_title_i18n.py): no t() inside title=/data-*/aria-*."""
-    for block in (_china_block(), _canada_block()):
+    for block in (_china_block(), _canada_block(), _hk_board_block()):
         assert not re.search(r'(?:title|data-[a-z-]+|aria-[a-z]+)="[^"]*\{\{\s*t\(', block)

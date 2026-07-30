@@ -43,12 +43,12 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css?v=720475f3">
+<link rel="stylesheet" href="theme.css?v=8d7800c8">
 <link rel="stylesheet" href="dashboard-icons.css?v=be32e541">
 <script defer src="dashboard-icons.js?v=e096076e"></script>
 <link rel="stylesheet" href="illus.css?v=816c67ce">
 <link rel="stylesheet" href="assets/css/c821091e.css?v=c821091e">
-<link rel="preload" as="style" href="product-nav-icons.css?v=7b0290e9">
+<link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
 <link rel="preload" as="style" href="assets/css/9cfd4219.css?v=9cfd4219">
 <link rel="preload" as="style" href="assets/css/a227b24b.css?v=a227b24b">
 <link rel="preload" as="style" href="assets/css/93de4274.css?v=93de4274">
@@ -374,10 +374,21 @@
   <!-- ===================== WHAT TO ACT ON NOW (sector entry-timing board) ===================== -->
   
   <link rel="stylesheet" href="assets/css/a227b24b.css?v=a227b24b">
-  <div class="panel span12" id="act-now">
-    <h2>⚡ <span class="l-en">What to act on now — sectors</span><span class="l-zh">当前可操作 — 板块</span>
-      <span class="help">?<span class="tip"><span class="l-en">The HK sector groups bucketed by the cycle ladder's entry-timing call — the same engine as the US action board. A structure / risk map, not an allocation rule: ON THE RUN = in favour but extended (do not chase; add on a pullback); the reduce side (take profits / avoid) is the risk read. HK has no validated single-stock edge — this is sector positioning.</span><span class="l-zh">香港板块按周期阶梯的入场时机分桶 — 与美国操作板同一引擎。这是结构／风险图，而非配置规则：顺势运行 = 看好但已延伸（勿追高；回调加仓）；减仓侧（止盈／回避）是风险判读。香港无经验证的个股优势 — 这是板块定位。</span></span></span>
-    </h2>
+  <style>
+  .anv2-board .anv2-name-link{color:inherit;text-decoration:none}
+  .anv2-board .anv2-name-link:hover .l-en,.anv2-board .anv2-name-link:hover .l-zh{text-decoration:underline}
+  .anv2-board .anv2-name-link:focus-visible{outline:2px solid var(--link);outline-offset:2px;border-radius:4px}
+  .anv2-board .anv2-go{font-size:10px;opacity:.55;margin-left:3px}
+  .anv2-board .anv2-empty{padding:10px 13px;color:var(--muted);font-size:11px}
+  </style>
+  <div class="panel span12 anv2-board" id="act-now">
+    <div class="anv2-hd">
+      <h2>⚡ <span class="l-en">What to Act On Now</span><span class="l-zh">现在行动</span>
+        <span class="anv2-v2pill">v2</span>
+        <span class="help">?<span class="tip"><span class="l-en">Four lanes, read left to right: Buy Now = a clean HK sector entry today. In Favour = hold or wait for a dip rather than chase. Bottoming Watch = a sector setting up near a cycle low (watch only, not a buy signal). Reduce / Avoid = take profits or stay away as the trend weakens. HK has no validated single-stock edge — this board is sector positioning, not an allocation rule.</span><span class="l-zh">四个分栏从左到右：立即买入＝今天有干净的港股板块入场点。看好＝持有或等待回调，勿追高。洗盘观察＝板块接近周期低点并开始形成形态（仅观察，非买入信号）。减仓／回避＝趋势转弱时止盈或避开。香港无经验证的个股优势 — 本看板用于板块定位，不是配置规则。</span></span></span>
+      </h2>
+      <div class="anv2-meta"><span class="muted" style="font-size:11px"><span class="l-en">sectors as of</span><span class="l-zh">板块截至</span> 2026-07-29</span></div>
+    </div>
     <div class="hkrv-banner" id="hkrv-banner-a">
       <div class="hkrv-banner-top">
         <span class="hkrv-banner-icon">⚡</span>
@@ -411,7 +422,41 @@
         </div>
       </div>
     </div>
-    <div class="act-grid">
+    <div class="anv2-grid">
+      <div class="anv2-lane anv2-lane--buy" id="anv2-buy">
+        <div class="anv2-lane-hd"><div class="anv2-lane-title"><span class="l-en">Buy Now</span><span class="l-zh">立即买入</span><span class="anv2-lane-count">(2)</span></div><div class="anv2-lane-sub"><span class="l-en">Clean entry point today</span><span class="l-zh">今日有干净入场点</span></div></div>
+        <div class="anv2-lane-body lst-wrap"><div class="anv2-lst lst-collapse lst-cap4 is-collapsed">
+          <div class="anv2-row"><div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/hk-insurance.html"><span class="l-en">Insurance</span><span class="l-zh">保险</span><span class="anv2-go" aria-hidden="true">↗</span></a></div><div class="anv2-chips"><span class="anv2-chip anv2-chip-reco-enter"><span class="l-en">ENTRY NOW</span><span class="l-zh">现在入场</span></span></div><div class="anv2-stat"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span> · hk-insurance</div></div>
+          <div class="anv2-row"><div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/hk-telecom-utilities.html"><span class="l-en">Telecom &amp; Utilities</span><span class="l-zh">电信与公用事业</span><span class="anv2-go" aria-hidden="true">↗</span></a></div><div class="anv2-chips"><span class="anv2-chip anv2-chip-reco-enter"><span class="l-en">ENTRY NOW</span><span class="l-zh">现在入场</span></span></div><div class="anv2-stat"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span> · hk-telecom-utilities</div></div>
+        </div></div>
+      </div>
+      <div class="anv2-lane anv2-lane--pull" id="anv2-pull">
+        <div class="anv2-lane-hd"><div class="anv2-lane-title"><span class="l-en">In Favour</span><span class="l-zh">看好</span><span class="anv2-lane-count">(2)</span></div><div class="anv2-lane-sub"><span class="l-en">Hold or wait for a dip — do not chase</span><span class="l-zh">持有或等待回调 — 勿追高</span></div></div>
+        <div class="anv2-lane-body lst-wrap"><div class="anv2-lst lst-collapse lst-cap4 is-collapsed">
+          <div class="anv2-row"><div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/hk-financials-banks.html"><span class="l-en">Financials &amp; Banks</span><span class="l-zh">金融与银行</span><span class="anv2-go" aria-hidden="true">↗</span></a></div><div class="anv2-chips"><span class="anv2-chip anv2-chip-tag"><span class="l-en">WAIT FOR DIP</span><span class="l-zh">等待回调</span></span></div><div class="anv2-stat"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span> · hk-financials-banks</div></div>
+          <div class="anv2-row"><div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/hk-exchange-diversified.html"><span class="l-en">Exchange &amp; Diversified</span><span class="l-zh">交易所与综合企业</span><span class="anv2-go" aria-hidden="true">↗</span></a></div><div class="anv2-chips"><span class="anv2-chip anv2-chip-tag"><span class="l-en">WAIT FOR DIP</span><span class="l-zh">等待回调</span></span></div><div class="anv2-stat"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span> · hk-exchange-diversified</div></div>
+        </div></div>
+      </div>
+      <div class="anv2-lane anv2-lane--bot" id="anv2-bot">
+        <div class="anv2-lane-hd"><div class="anv2-lane-title"><span class="l-en">Bottoming Watch</span><span class="l-zh">洗盘观察</span><span class="anv2-lane-count">(0)</span></div><div class="anv2-lane-sub"><span class="l-en">Setting up near a cycle low — watch only</span><span class="l-zh">接近周期低点 — 仅观察</span></div></div>
+        <div class="anv2-lane-body lst-wrap"><div class="anv2-lst lst-collapse lst-cap4 is-collapsed"><div class="anv2-empty"><span class="l-en">No sectors in this lane today.</span><span class="l-zh">今天此栏暂无板块。</span></div></div></div>
+      </div>
+      <div class="anv2-lane anv2-lane--red" id="anv2-red">
+        <div class="anv2-lane-hd"><div class="anv2-lane-title"><span class="l-en">Reduce / Avoid</span><span class="l-zh">减仓 / 回避</span><span class="anv2-lane-count">(9)</span></div><div class="anv2-lane-sub"><span class="l-en">Trend weakening — take profits or stay away</span><span class="l-zh">趋势转弱 — 止盈或回避</span></div></div>
+        <div class="anv2-lane-body lst-wrap"><div class="anv2-lst lst-collapse lst-cap4 is-collapsed">
+          <div class="anv2-row"><div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/hk-energy.html"><span class="l-en">Energy</span><span class="l-zh">能源</span><span class="anv2-go" aria-hidden="true">↗</span></a></div><div class="anv2-chips"><span class="anv2-chip anv2-chip-reco-trim"><span class="l-en">TAKE PROFITS</span><span class="l-zh">止盈</span></span></div><div class="anv2-stat"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span> · hk-energy</div></div>
+          <div class="anv2-row"><div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/hk-internet-tech.html"><span class="l-en">Internet &amp; Tech</span><span class="l-zh">互联网与科技</span><span class="anv2-go" aria-hidden="true">↗</span></a></div><div class="anv2-chips"><span class="anv2-chip anv2-chip-reco-avoid"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span></div><div class="anv2-stat"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span> · hk-internet-tech</div></div>
+          <div class="anv2-row"><div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/hk-healthcare-pharma.html"><span class="l-en">Healthcare &amp; Pharma</span><span class="l-zh">医疗与制药</span><span class="anv2-go" aria-hidden="true">↗</span></a></div><div class="anv2-chips"><span class="anv2-chip anv2-chip-reco-avoid"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span></div><div class="anv2-stat"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span> · hk-healthcare-pharma</div></div>
+          <div class="anv2-row"><div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/hk-consumer.html"><span class="l-en">Consumer</span><span class="l-zh">消费</span><span class="anv2-go" aria-hidden="true">↗</span></a></div><div class="anv2-chips"><span class="anv2-chip anv2-chip-reco-avoid"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span></div><div class="anv2-stat"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span> · hk-consumer</div></div>
+          <div class="anv2-row"><div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/hk-gaming-leisure.html"><span class="l-en">Gaming &amp; Leisure</span><span class="l-zh">博彩与休闲</span><span class="anv2-go" aria-hidden="true">↗</span></a></div><div class="anv2-chips"><span class="anv2-chip anv2-chip-reco-avoid"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span></div><div class="anv2-stat"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span> · hk-gaming-leisure</div></div>
+          <div class="anv2-row"><div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/hk-property.html"><span class="l-en">Property</span><span class="l-zh">地产</span><span class="anv2-go" aria-hidden="true">↗</span></a></div><div class="anv2-chips"><span class="anv2-chip anv2-chip-reco-avoid"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span></div><div class="anv2-stat"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span> · hk-property</div></div>
+          <div class="anv2-row"><div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/hk-industrials-transport.html"><span class="l-en">Industrials &amp; Transport</span><span class="l-zh">工业与运输</span><span class="anv2-go" aria-hidden="true">↗</span></a></div><div class="anv2-chips"><span class="anv2-chip anv2-chip-reco-avoid"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span></div><div class="anv2-stat"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span> · hk-industrials-transport</div></div>
+          <div class="anv2-row"><div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/hk-materials.html"><span class="l-en">Materials</span><span class="l-zh">原材料</span><span class="anv2-go" aria-hidden="true">↗</span></a></div><div class="anv2-chips"><span class="anv2-chip anv2-chip-reco-avoid"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span></div><div class="anv2-stat"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span> · hk-materials</div></div>
+          <div class="anv2-row"><div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/hk-auto-ev.html"><span class="l-en">Auto &amp; EV</span><span class="l-zh">汽车与新能源车</span><span class="anv2-go" aria-hidden="true">↗</span></a></div><div class="anv2-chips"><span class="anv2-chip anv2-chip-reco-avoid"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span></div><div class="anv2-stat"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span> · hk-auto-ev</div></div>
+        </div><button class="lst-more" type="button" aria-expanded="false"><span class="lm-show"><span class="l-en">Show more</span><span class="l-zh">显示更多</span> ▾</span><span class="lm-hide"><span class="l-en">Show less</span><span class="l-zh">收起</span> ▴</span></button></div>
+      </div>
+    </div>
+    <div class="act-grid" hidden aria-hidden="true" style="display:none !important">
       
       
       
@@ -2404,7 +2449,7 @@ _rcStripObs.observe(document.documentElement,{attributes:true,attributeFilter:['
   <span class="made">© 2026 Mastermind Inc</span>
 </div>
 
-<script src="theme.js?v=6a69012a" defer></script>
+<script src="theme.js?v=fc81bc1e" defer></script>
 <script src="mtf.js?v=b62aea2f" defer></script>
 <script src="charts.js?v=5372d2a2" defer></script>
 <script src="tablesort.js?v=484d9333" defer></script>

@@ -302,6 +302,27 @@ Always end with: "is_context_only: true — all signals are display-tier pending
 """
 
 
+def _analyst_block(question: str) -> str:
+    """The Market Analyst doctrine block for /api/ask (Analyst OS W1-A).
+
+    Same internal investigation guide the chat gateway rides (protocol + trigger-routed
+    lenses/playbooks), appended AFTER _CUSTOMER_SYSTEM_PROMPT so this path's own laws — the
+    citation discipline and the is_context_only trailer — keep the last word.
+
+    The dial is always the FAST one: /api/ask is a single tight-budget path (the
+    _classify_question budget caps the tool loop), so the protocol should keep the sequence
+    short rather than invite a deeper pass. Never raises — "" on any error leaves the prompt
+    byte-identical to today's."""
+    try:
+        from engine.neuralweb import analyst_doctrine as _analyst  # noqa: PLC0415
+        block = _analyst.prompt_block(_analyst.route(question))
+        if not block:
+            return ""
+        return block + _analyst.lane_dial("fast")
+    except Exception:  # noqa: BLE001
+        return ""
+
+
 # ---------------------------------------------------------------------------
 # Path helpers (mirrors cortex.py)
 # ---------------------------------------------------------------------------
@@ -364,6 +385,41 @@ def _post_filter_advice(answer: str, citations: list[str]) -> tuple[str, bool]:
     operator removed it so the Brain answers the question directly.
     """
     return answer, False
+
+
+# Analyst OS W1: the Market Analyst doctrine now rides this prompt (_analyst_block),
+# so a verbatim echo of the internal guide must be screened on the way OUT —
+# /api/brain has this guard (brain_gateway._LEAK_SENTINELS); /api/ask never did.
+# This is NOT the removed advice refusal above: it fires only on the doctrine's
+# own sentinel strings and this prompt's opener, never on market content.
+_LEAK_REFUSAL_EN = ("That's proprietary methodology — I can tell you what the "
+                    "signals say, not how they're built.")
+_LEAK_REFUSAL_ZH = "这是专有方法论 — 我可以告诉你信号说了什么，但不能透露它如何构建。"
+_PROMPT_SENTINELS: tuple[str, ...] = ("You are the Macro Dashboard Brain",)
+
+
+def _leak_screen_ask(answer: str, question: str) -> tuple[str, bool]:
+    """Replace an answer that echoes internal-guide text with the standard refusal.
+
+    Sentinels = the analyst doctrine library's own LEAK_SENTINELS plus this
+    module's prompt opener. Language follows the question (CJK → zh). Fail-soft:
+    any error returns the answer unchanged; never raises.
+    """
+    try:
+        if not answer:
+            return answer, False
+        sentinels: tuple[str, ...] = _PROMPT_SENTINELS
+        try:
+            from engine.neuralweb import analyst_doctrine as _ad  # noqa: PLC0415
+            sentinels = sentinels + tuple(_ad.LEAK_SENTINELS)
+        except Exception:  # noqa: BLE001
+            pass
+        if not any(s in answer for s in sentinels):
+            return answer, False
+        zh = any("一" <= c <= "鿿" for c in (question or ""))
+        return (_LEAK_REFUSAL_ZH if zh else _LEAK_REFUSAL_EN), True
+    except Exception:  # noqa: BLE001
+        return answer, False
 
 
 # ---------------------------------------------------------------------------
@@ -2356,6 +2412,8 @@ def _run_ask_loop(
     tool_schemas = _read_tool_schemas()
     tool_call_census: dict[str, int] = {}
     usage_tot = _new_usage_tot()
+    # W1-A: analyst doctrine, routed once per ask (the question does not change per turn)
+    system_prompt = _CUSTOMER_SYSTEM_PROMPT + _analyst_block(question)
 
     # Build the opening user message — include context_ticker hint if present
     user_content = question
@@ -2372,7 +2430,7 @@ def _run_ask_loop(
             resp = client.messages.create(
                 model=model,
                 max_tokens=_DEFAULT_MAX_TOKENS,
-                system=_CUSTOMER_SYSTEM_PROMPT,
+                system=system_prompt,
                 tools=tool_schemas,
                 messages=messages,
             )
@@ -2455,6 +2513,9 @@ def _run_ask_loop_stream(
     tool_schemas = _read_tool_schemas()
     tool_call_census: dict[str, int] = {}
     usage_tot = _new_usage_tot()
+    # W1-A: analyst doctrine, routed once per ask — both the tool turns and the streamed
+    # synthesis turn below carry the same prompt.
+    system_prompt = _CUSTOMER_SYSTEM_PROMPT + _analyst_block(question)
 
     user_content = question
     if context_ticker:
@@ -2471,7 +2532,7 @@ def _run_ask_loop_stream(
             resp = client.messages.create(
                 model=model,
                 max_tokens=_DEFAULT_MAX_TOKENS,
-                system=_CUSTOMER_SYSTEM_PROMPT,
+                system=system_prompt,
                 tools=tool_schemas,
                 messages=messages,
             )
@@ -2526,7 +2587,7 @@ def _run_ask_loop_stream(
             stream_resp = client.messages.stream(
                 model=model,
                 max_tokens=_DEFAULT_MAX_TOKENS,
-                system=_CUSTOMER_SYSTEM_PROMPT,
+                system=system_prompt,
                 tools=tool_schemas,
                 messages=messages,
             )
@@ -2544,6 +2605,9 @@ def _run_ask_loop_stream(
                     pass
             citations = _extract_citations(messages)
             filtered, was_filtered = _post_filter_advice(full_answer, citations)
+            _lk_text, _leaked = _leak_screen_ask(filtered, question)
+            if _leaked:
+                filtered, was_filtered = _lk_text, True
             if was_filtered:
                 yield f"data: {json.dumps({'delta': filtered, 'filtered': True})}\n\n"
             else:
@@ -2558,6 +2622,9 @@ def _run_ask_loop_stream(
                     fallback += block.text
             citations = _extract_citations(messages)
             filtered, was_filtered = _post_filter_advice(fallback, citations)
+            _lk_text, _leaked = _leak_screen_ask(filtered, question)
+            if _leaked:
+                filtered, was_filtered = _lk_text, True
             if was_filtered:
                 yield f"data: {json.dumps({'delta': filtered, 'filtered': True})}\n\n"
             else:
@@ -2572,6 +2639,9 @@ def _run_ask_loop_stream(
                 full_answer += block.text
         citations = _extract_citations(messages)
         filtered, was_filtered = _post_filter_advice(full_answer, citations)
+        _lk_text, _leaked = _leak_screen_ask(filtered, question)
+        if _leaked:
+            filtered, was_filtered = _lk_text, True
         if was_filtered:
             yield f"data: {json.dumps({'delta': filtered, 'filtered': True})}\n\n"
         else:
@@ -2667,8 +2737,11 @@ def ask(
     if not answer_text:
         return _memo_quote_response(clean_question, root, "empty_answer")
 
-    # 6. Post-filter advice patterns
+    # 6. Post-filter advice patterns (no-op) + the analyst-doctrine leak screen
     answer_text, was_filtered = _post_filter_advice(answer_text, citations)
+    _lk_text, _leaked = _leak_screen_ask(answer_text, clean_question)
+    if _leaked:
+        answer_text, was_filtered = _lk_text, True
 
     return {
         "answer": answer_text,

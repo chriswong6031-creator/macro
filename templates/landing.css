@@ -196,9 +196,10 @@ html[data-lang="zh"] .mk{font-family:ui-monospace,'SF Mono',SFMono-Regular,Menlo
 .sec-sub b{color:var(--ink);font-weight:600}
 
 /* ============ §4 TEXTURE LIBRARY ============
-   Ground, not decoration. Every texture is CSS-only, STATIC (no animation — so
-   CALM/STILL cost nothing), sits behind content on its own layer, and is masked so
-   it never collides with a section edge. Host needs position:relative. */
+   Ground, not decoration. These CSS fallback textures stay static (so CALM/STILL
+   cost nothing), sit behind content on their own layer, and are masked so they never
+   collide with a section edge. The hero's optional canvas field adds motion above
+   this fallback without making the page depend on it. Host needs position:relative. */
 
 /* 1 · the curtain — a soft wash rising off the bottom of a light band with a fine
    vertical hairline rain over it. The wash carries the §8 regime tint; the hairlines
@@ -211,6 +212,13 @@ html[data-lang="zh"] .mk{font-family:ui-monospace,'SF Mono',SFMono-Regular,Menlo
   -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 34%),linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent);
   mask-image:linear-gradient(180deg,transparent 0,#000 34%),linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent);
   -webkit-mask-composite:source-in;mask-composite:intersect}
+/* Living market field — a progressively enhanced canvas above the curtain wash and
+   below every hero object. The canvas owns only light and line work: the static
+   curtain remains the no-JS / reduced-motion composition. */
+.market-field{position:absolute;left:0;right:0;bottom:0;width:100%;height:58%;
+  pointer-events:none;z-index:0;opacity:.9;mix-blend-mode:multiply;
+  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 18%,#000 88%,transparent 100%);
+  mask-image:linear-gradient(180deg,transparent 0,#000 18%,#000 88%,transparent 100%)}
 /* 5 · dark-band modifier — `class="tx-curtain tx-curtain-dark"`: hairlines only,
    no light wash (a dark band already has its own ground). */
 .tx-curtain-dark{background:none}
@@ -365,7 +373,7 @@ html.still{scroll-behavior:auto}
 .gp-link:hover,.gp-signout:hover{background:var(--panel-2);color:var(--ink)}
 
 /* ============ COVER ============ */
-.cover{position:relative;overflow:clip}
+.cover{position:relative;overflow:clip;isolation:isolate}
 .cover-in{position:relative;z-index:1;max-width:var(--maxw);margin:0 auto;padding:clamp(22px,3vh,36px) var(--gutter) 0;display:block}
 /* §8 SIGNATURE — "the page reads the tape". The hero field's wash takes its colour
    from the SAME scripted regime cycle that already drives the gauge on the centre
@@ -1149,6 +1157,7 @@ footer{background:#04070c;border-top:1px solid #10161f;padding:56px 0 48px;color
   .cover-in{min-height:0;padding-top:34px}
   .cov-copy{max-width:640px}
   .cta-row{justify-content:center}
+  .market-field{height:56%;opacity:.82}
   .pyr{width:100%;height:auto;margin:clamp(8px,1.4vh,16px) auto 0;display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding:6px 4px 20px;-webkit-overflow-scrolling:touch}
   .pyr::-webkit-scrollbar{display:none}
   .pyr::before{display:none}
@@ -1180,6 +1189,7 @@ footer{background:#04070c;border-top:1px solid #10161f;padding:56px 0 48px;color
   .nav-card{min-height:58px;padding:10px;background:#fff;border-color:var(--hair)}
 }
 @media (max-width:760px){
+  .market-field{height:52%;opacity:.72;mix-blend-mode:normal}
   .matrix-card{overflow:visible;border-radius:18px}
   .mx-mobile-head{display:block;position:sticky;top:64px;z-index:35;padding:12px;background:rgba(255,255,255,.94);border-bottom:1px solid var(--hair-2);border-radius:18px 18px 0 0;box-shadow:var(--sh-2);backdrop-filter:blur(14px) saturate(140%);-webkit-backdrop-filter:blur(14px) saturate(140%)}
   .mx-mobile-label{margin:0 0 8px;font-family:var(--display);font-weight:700;font-size:9.5px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase}

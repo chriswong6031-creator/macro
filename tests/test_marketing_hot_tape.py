@@ -659,6 +659,73 @@ class TestConfigAndFreshness:
         ok, _ = HT.quotes_fresh({"AMD": _quote(-5.0)}, NOW, HT.DEFAULTS)
         assert ok
 
+    # ── the delay-aware ceiling (2026-07-29 zero-events diagnosis) ───────────
+    #
+    # A quote's ts is Yahoo's regularMarketTime, which is behind wall clock by
+    # (how long since we looked) PLUS (the feed's contractual delay). Measured
+    # 2026-07-30T03:46Z on symbols trading at that moment: 0700.HK 15.0m,
+    # 0005.HK 15.1m, 9988.HK 15.1m, futures ~10m, BTC-USD/EURUSD=X 0.6-0.9m.
+    # A 12-minute budget compared straight against that is unsatisfiable for
+    # every equity on the only feed we have, however healthy the writer lane is.
+
+    def test_effective_ceiling_is_the_bare_budget_when_no_delay_is_declared(self):
+        assert HT.effective_max_quote_age_min(
+            {"quotes": {}}, HT.DEFAULTS) == HT.DEFAULTS["max_quote_age_min"]
+        assert HT.effective_max_quote_age_min(None, HT.DEFAULTS) == 12
+
+    def test_effective_ceiling_allows_for_a_declared_feed_delay(self):
+        view = {"quotes": {}, "feed_delay_min": 15.0}
+        assert HT.effective_max_quote_age_min(view, HT.DEFAULTS) == 27.0
+
+    def test_a_fresh_equity_on_a_delayed_feed_is_admitted(self):
+        """The bug: a snapshot pushed one second ago still reads 15m old.
+
+        Every US equity quote in a just-written snapshot carries ts = now - 15m.
+        Against a bare 12m ceiling that is "stale", so the radar could never act
+        on an equity — and the failure was invisible because the gate's min()
+        passed on a real-time crypto tick while the per-quote drop silently binned
+        every equity behind it.
+        """
+        equity_age_min = 15.05        # measured, not assumed
+        view = {
+            "quotes": {"MU": {"ts_ms": int(
+                (NOW - timedelta(minutes=equity_age_min)).timestamp() * 1000)}},
+            "asof": None,
+            "feed_delay_min": 15.0,
+        }
+        ok, age = HT.quotes_fresh(view, NOW, HT.DEFAULTS)
+        assert ok, f"a just-fetched equity at {age}m must clear a 12+15 ceiling"
+        # …and the same quote is correctly REFUSED when the feed admits no delay.
+        assert not HT.quotes_fresh(dict(view, feed_delay_min=0.0), NOW,
+                                   HT.DEFAULTS)[0]
+
+    def test_the_worst_observed_stale_merge_still_fails_the_ceiling(self):
+        """Allowing for the declared delay must not forgive a stale WRITER lane.
+
+        49.72m — run 30467377599 at 15:48Z, against a last successful live-quotes
+        push of 14:58:23Z — was a genuinely stale feed and must still stand the
+        pass down. If a widened ceiling ever admits it, the gate has stopped doing
+        its job.
+
+        The dark day's OTHER sampled age, 21.92m (run 30478516423 at 18:08Z, last
+        push 17:46:53Z), is deliberately NOT asserted here: 21.92 is inside a
+        12+15 ceiling and this layer is right to admit it. What made that pass
+        undetectable was the equity book behind that freshest print — FX at 21.92m
+        over equities stamped ~17:31, i.e. ~37m — and catching that is the radar's
+        book-collapse gate, pinned in test_marketing_hot_tape_radar.py. One layer,
+        one job.
+        """
+        view = {
+            "quotes": {"MU": {"ts_ms": int(
+                (NOW - timedelta(minutes=49.72)).timestamp() * 1000)}},
+            "asof": None,
+            "feed_delay_min": 15.0,
+        }
+        ok, age = HT.quotes_fresh(view, NOW, HT.DEFAULTS)
+        assert not ok, (
+            f"49.72m was a stale feed on 2026-07-29 and must stay refused "
+            f"(reported {age}m)")
+
     def test_bridge_ok_is_true_for_the_previous_session(self):
         assert HT.bridge_ok(_pack({}, FRESH_TRADE_DATE), NOW)
 

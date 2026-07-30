@@ -55,9 +55,269 @@
   };
   var INTL_HREF = 'intl.html';
 
+  /* One destination map drives every wide market panel, whether that market is
+     visible on the top rail or folded into International for this user. This is
+     the important maintenance property: a new China page is added here once,
+     not to separate "top-level China" and "China inside International" menus. */
+  var MARKET_KEY_BY_HREF = {
+    'macro.html': 'us',
+    'china.html': 'cn',
+    'hk.html': 'hk',
+    'canada.html': 'ca',
+    'intl.html': 'intl',
+    'crypto.html': 'crypto'
+  };
+  var MARKET_MENU = {
+    us: {
+      title: 'United States',
+      subtitle: 'Macro context, stocks, sectors and live market desks.',
+      sections: [
+        ['Market overview', [
+          ['Macro Dashboard', 'Regime, growth and inflation now', 'macro.html', 'dashboard'],
+          ['Stock Dashboard', 'Standouts, sectors and flows', 'us_stocks.html', 'stocks'],
+          ['Sector Central', 'Every sector in one view', 'sector_central.html', 'intelligence'],
+          ['Theme Baskets', 'Themes, leaders and rotation', 'baskets.html', 'baskets']
+        ]],
+        ['Signals & strategy', [
+          ['Subsector Rotation', 'Catch emerging groups early', 'subsector_rotation.html', 'rotation'],
+          ['Strategies', 'Tactical scorecards and positioning', 'strategies.html', 'strategy'],
+          ['Alert Center', 'Ranked market-moving alerts', 'alerts.html', 'alert'],
+          ['News Feed', 'Catalysts, headlines and sentiment', 'news.html', 'news']
+        ]],
+        ['Market structure', [
+          ['Options Desk', 'Gamma, walls and volatility', 'gex.html', 'options'],
+          ['Group Flow Heatmap', 'Follow sector capital flows', 'flow_desk.html', 'flow'],
+          ['Options Screener', 'Find liquid volatility setups', 'options_screener.html', 'dashboard'],
+          ['Dark Pool Desk', 'Track off-exchange positioning', 'darkpool.html', 'darkpool']
+        ]]
+      ],
+      rail: [
+        ['Stock Terminal', 'Open any U.S. ticker', 'stock.html', 'stocks'],
+        ['Market Heatmap', 'See the whole tape', 'sector_central.html', 'heatmap'],
+        ['Subsector Confluence', 'Find aligned groups', 'subsectors.html', 'confluence'],
+        ['Browse U.S. markets', 'All U.S. destinations', 'macro.html', 'dashboard']
+      ],
+      note: ['Built for quick decisions', 'The most-used desks stay one click away.']
+    },
+    cn: {
+      title: 'China',
+      subtitle: 'A-shares, policy, capital flow and narrative intelligence.',
+      sections: [
+        ['Market overview', [
+          ['Macro Dashboard', 'Regime, sectors and policy pulse', 'china.html', 'dashboard'],
+          ['Stock Dashboard', 'A-share leaders and setups', 'china_stocks.html', 'stocks'],
+          ['Market Heatmap', 'Every A-share in one view', 'china_heatmap.html', 'heatmap'],
+          ['China Intelligence', 'Policy, markets and signal context', 'china_intel.html', 'intelligence']
+        ]],
+        ['Themes & rotation', [
+          ['Sector Central', 'Cycle map and gated reads', 'sector_central_china.html', 'intelligence'],
+          ['Theme Baskets', 'Equal-weight themes and leaders', 'baskets_china.html', 'baskets'],
+          ['Subsector Rotation', 'Catch concepts gaining speed', 'subsector_rotation_china.html', 'rotation'],
+          ['Narrative Radar', 'See which story is running', 'narrative_radar.html', 'narrative']
+        ]],
+        ['Flows & policy', [
+          ['Capital Flow Velocity', 'Track accelerating big money', 'flow_velocity.html', 'flow'],
+          ['Policy Watch', 'Rates, liquidity and sector policy', 'china_policy_watch.html', 'policy'],
+          ['Market Mechanics', 'Participation and policy tape', 'china_mechanics.html', 'structure'],
+          ['Special Situations', 'Unlocks, filings and stress', 'china_special_situations.html', 'event']
+        ]]
+      ],
+      rail: [
+        ['China News', 'Official sources and catalysts', 'china_news.html', 'news'],
+        ['Strategies', 'Tactical China scorecards', 'china_strategies.html', 'strategy'],
+        ['Alternative Data', 'Signals beyond price', 'china_altdata.html', 'research'],
+        ['Browse China', 'All China research', 'china_intel.html', 'intelligence']
+      ]
+    },
+    hk: {
+      title: 'Hong Kong',
+      subtitle: 'Hong Kong equities, southbound flow and thematic rotation.',
+      sections: [
+        ['Market overview', [
+          ['Macro Dashboard', 'HSI, southbound and global risk', 'hk.html', 'dashboard'],
+          ['Stock Dashboard', 'Hong Kong leaders and setups', 'hk_stocks.html', 'stocks'],
+          ['Market Heatmap', 'Turnover-sized market map', 'hk_heatmap.html', 'heatmap'],
+          ['Capital Flow Velocity', 'Southbound money in motion', 'flow_velocity.html', 'flow']
+        ]],
+        ['Themes & rotation', [
+          ['Thematic Baskets', 'Equal-weight themes versus HSI', 'baskets_hk.html', 'baskets'],
+          ['Narrative Rotation', 'What to hold and when to rotate', 'allocation_hk.html', 'rotation']
+        ]]
+      ],
+      rail: [
+        ['China Intelligence', 'Shared policy context', 'china_intel.html', 'intelligence'],
+        ['Policy Watch', 'Liquidity and policy shifts', 'china_policy_watch.html', 'policy'],
+        ['Hong Kong Baskets', 'Browse active themes', 'baskets_hk.html', 'baskets'],
+        ['Browse Hong Kong', 'Return to market overview', 'hk.html', 'dashboard']
+      ]
+    },
+    ca: {
+      title: 'Canada',
+      subtitle: 'TSX equities, Bank of Canada and commodity-sensitive leadership.',
+      sections: [
+        ['Market overview', [
+          ['Macro Dashboard', 'TSX, BoC and commodity overlay', 'canada.html', 'dashboard'],
+          ['Stock Dashboard', 'Canadian leaders and setups', 'canada_stocks.html', 'stocks'],
+          ['Market Heatmap', 'Every TSX name in one view', 'canada_heatmap.html', 'heatmap']
+        ]],
+        ['Themes & rotation', [
+          ['Thematic Baskets', 'Equal-weight themes versus TSX', 'baskets_canada.html', 'baskets'],
+          ['Narrative Rotation', 'What to hold and when to rotate', 'allocation_canada.html', 'rotation']
+        ]]
+      ],
+      rail: [
+        ['Banks & insurers', 'Canadian financial leadership', 'canada_stocks.html', 'stocks'],
+        ['Energy complex', 'Oil-sensitive market context', 'commodities.html', 'commodities'],
+        ['Gold & materials', 'Materials leadership', 'baskets_canada.html', 'baskets'],
+        ['Browse Canada', 'Return to market overview', 'canada.html', 'dashboard']
+      ]
+    },
+    intl: {
+      title: 'International',
+      subtitle: 'Compare the world’s equity markets, cycles and leadership.',
+      sections: [
+        ['Global overview', [
+          ['World Dashboard', 'Major markets compared', 'intl.html', 'dashboard'],
+          ['Stock Dashboard', 'Cross-market leaders and sectors', 'intl_stocks.html', 'stocks'],
+          ['Global Market Cycles', 'Compare national equity clocks', 'markets.html', 'rotation'],
+          ['Country Cycles', 'Every country on one cycle map', 'country_cycles.html', 'intelligence']
+        ]],
+        ['Themes & regions', [
+          ['Thematic Baskets', 'Cross-country themes beyond the U.S.', 'baskets_intl.html', 'baskets']
+        ]]
+      ],
+      rail: [
+        ['Japan', 'Tokyo market overview', 'intl.html#japan', 'dashboard'],
+        ['South Korea', 'Seoul market overview', 'intl.html#south-korea', 'dashboard'],
+        ['Europe', 'Continental markets', 'intl.html#europe', 'dashboard'],
+        ['United Kingdom', 'London market overview', 'intl.html#united-kingdom', 'dashboard'],
+        ['India', 'Indian market overview', 'intl.html#india', 'dashboard']
+      ],
+      note: ['Your other markets appear here', 'The same panels move with your market preferences.']
+    },
+    crypto: {
+      title: 'Crypto',
+      subtitle: 'Cycle, risk, allocation and strategy for digital assets.',
+      sections: [
+        ['Market overview', [
+          ['Crypto Cockpit', 'Market board, flows and leverage', 'crypto.html', 'dashboard'],
+          ['Bitcoin Vector', 'State, risk and cycle', 'vector.html', 'bitcoin']
+        ]],
+        ['Portfolio', [
+          ['Allocation', 'Bitcoin, ether, alts and cash', 'crypto.html#allocation', 'allocation'],
+          ['Strategy Track Record', 'Cycle and allocation evidence', 'vector.html#strategy-track-record', 'strategy']
+        ]]
+      ],
+      rail: [
+        ['Bitcoin Terminal', 'Open the BTC chart', 'stock.html?ticker=BTC-USD', 'bitcoin'],
+        ['Allocation', 'Current portfolio stance', 'crypto.html#allocation', 'allocation'],
+        ['Browse Crypto', 'Return to the cockpit', 'crypto.html', 'dashboard']
+      ]
+    },
+    assets: {
+      title: 'Other Assets',
+      subtitle: 'Commodities, currencies and bonds in one coherent workspace.',
+      sections: [
+        ['Commodities', [
+          ['Commodity Dashboard', 'Gold, metals, energy and softs', 'commodities.html', 'commodities'],
+          ['Commodity Strategies', 'Tactical calls by commodity', 'commodity_strategies.html', 'strategy'],
+          ['Strategic Reserves', 'Global stockpiles versus price', 'spr.html', 'commodities']
+        ]],
+        ['Macro assets', [
+          ['Forex', 'Dollar, G10 carry and pairs', 'forex.html', 'forex'],
+          ['Bonds', 'Curve, credit and duration', 'bonds.html', 'policy']
+        ]]
+      ],
+      rail: [
+        ['Gold', 'Precious metals context', 'commodities.html#gold', 'commodities'],
+        ['Crude oil', 'Energy market context', 'commodities.html#oil', 'commodities'],
+        ['Copper', 'Industrial metals context', 'commodities.html#copper', 'commodities'],
+        ['Browse other assets', 'All non-equity desks', 'commodities.html', 'dashboard']
+      ]
+    }
+  };
+
   function fileOf(a) {
     var h = a && a.getAttribute ? (a.getAttribute('href') || '') : '';
     return h.split('?')[0].split('#')[0].split('/').pop().toLowerCase();
+  }
+
+  function prefixOf(dd) {
+    var a = dd.querySelector(':scope > a[href], :scope > .nav-dd-menu a[href]');
+    var h = a ? (a.getAttribute('href') || '') : '';
+    if (/^(?:https?:|javascript:|#)/i.test(h)) {
+      a = dd.querySelector(':scope > .nav-dd-menu a[href]:not([href^="javascript:"]):not([href^="#"])');
+      h = a ? (a.getAttribute('href') || '') : '';
+    }
+    var slash = h.lastIndexOf('/');
+    return slash > -1 ? h.slice(0, slash + 1) : '';
+  }
+
+  function marketKeyOf(dd) {
+    var trig = dd && dd.querySelector ? dd.querySelector(':scope > a') : null;
+    var file = fileOf(trig);
+    if (MARKET_KEY_BY_HREF[file]) return MARKET_KEY_BY_HREF[file];
+    if (trig && trig.getAttribute('href') === 'javascript:void(0)') return 'assets';
+    return null;
+  }
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (ch) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+    });
+  }
+
+  function langText(en, zh) {
+    return '<span class="l-en">' + esc(en) + '</span><span class="l-zh">' + esc(zh || en) + '</span>';
+  }
+
+  function destinationMarkup(item, prefix, rail) {
+    var cls = rail ? 'nav-market-rail-item' : 'nav-market-item';
+    return '<a class="' + cls + '" href="' + esc(prefix + item[2]) + '">' +
+      '<span class="nav-market-icon submenu-icon submenu-icon-' + esc(item[3]) + '" aria-hidden="true"></span>' +
+      '<span class="nav-market-copy"><span class="nav-market-title">' + langText(item[0], item[4]) + '</span>' +
+      '<span class="d">' + langText(item[1], item[5]) + '</span></span>' +
+      (rail ? '<span class="nav-market-arrow" aria-hidden="true">↗</span>' : '') +
+      '</a>';
+  }
+
+  function marketMarkup(key, prefix) {
+    var data = MARKET_MENU[key], main = '', rail = '';
+    if (!data) return '';
+    for (var i = 0; i < data.sections.length; i++) {
+      var section = data.sections[i], items = '';
+      for (var j = 0; j < section[1].length; j++) items += destinationMarkup(section[1][j], prefix, false);
+      main += '<section class="nav-market-section"><div class="nav-market-heading">' +
+        langText(section[0]) + '</div><div class="nav-market-grid">' + items + '</div></section>';
+    }
+    for (var k = 0; k < data.rail.length; k++) rail += destinationMarkup(data.rail[k], prefix, true);
+    if (data.note) {
+      rail += '<div class="nav-market-note"><strong>' + langText(data.note[0]) +
+        '</strong><span>' + langText(data.note[1]) + '</span></div>';
+    }
+    return '<div class="nav-market-main"><header class="nav-market-intro">' +
+      '<div><div class="nav-market-name">' + langText(data.title) + '</div>' +
+      '<div class="nav-market-subtitle">' + langText(data.subtitle) + '</div></div>' +
+      '<span class="nav-market-count">' + data.sections.reduce(function (n, s) { return n + s[1].length; }, 0) +
+      ' destinations</span></header>' + main + '</div>' +
+      '<aside class="nav-market-rail"><div class="nav-market-heading">' + langText('Explore') +
+      '</div>' + rail + '</aside>';
+  }
+
+  function enhanceMarketMenus(links) {
+    if (!links) return;
+    var top = links.querySelectorAll(':scope > .nav-dd');
+    for (var i = 0; i < top.length; i++) {
+      var dd = top[i], key = marketKeyOf(dd);
+      if (!key || dd.getAttribute('data-nav-market-ready') === '1') continue;
+      var menu = dd.querySelector(':scope > .nav-dd-menu');
+      if (!menu) continue;
+      dd.setAttribute('data-nav-market-ready', '1');
+      dd.classList.add('nav-market-dd');
+      menu.className = 'nav-dd-menu nav-market-menu';
+      menu.setAttribute('data-nav-market-key', key);
+      menu.innerHTML = marketMarkup(key, prefixOf(dd));
+    }
   }
 
   /* ---- preference ------------------------------------------------------- */
@@ -273,12 +533,13 @@
     // live on the rail — and a user who has "lost" China needs to recognise where
     // it went on the first look, not hunt for it.
     injectCSS();
+    var foldTarget = intlMenu.querySelector(':scope > .nav-market-rail') || intlMenu;
     var head = document.createElement('div');
     head.className = 'nav-mkt-h';
     head.innerHTML = '<span class="l-en">Other markets</span><span class="l-zh">其他市场</span>';
-    intlMenu.appendChild(head);
+    foldTarget.appendChild(head);
 
-    for (var k = 0; k < countries.length; k++) intlMenu.appendChild(toSubmenu(countries[k]));
+    for (var k = 0; k < countries.length; k++) foldTarget.appendChild(toSubmenu(countries[k]));
     applied = true;
 
     remarkActive(links);
@@ -331,6 +592,12 @@
   }
 
   function boot() {
+    var links = document.querySelector('.site-nav .nav-links, .topbar .nav-links');
+    if (links) {
+      enhanceMarketMenus(links);
+      capture(links);
+      remarkActive(links);
+    }
     if (!window.MDXAuth || !window.MDXAuth.onChange) return;
     window.MDXAuth.onChange(function (user) {
       try {

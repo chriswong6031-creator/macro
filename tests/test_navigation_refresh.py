@@ -45,7 +45,10 @@ def test_global_cycles_uses_accessible_in_panel_drill() -> None:
 
 
 def test_market_folding_reuses_canonical_menu_dom() -> None:
-    assert "intlMenu.appendChild(toSubmenu(countries[k]))" in MARKET_JS
+    assert "foldTarget.appendChild(toSubmenu(countries[k]))" in MARKET_JS
+    assert "intlMenu.querySelector(':scope > .nav-market-rail')" in MARKET_JS
+    assert "enhanceMarketMenus(links)" in MARKET_JS
+    assert "MARKET_MENU" in MARKET_JS
     assert "MMXMarkets.current" in MARKET_JS
     assert "mmx-markets-change" in MARKET_JS
     assert "currentPreference.enabled.slice()" in MARKET_JS

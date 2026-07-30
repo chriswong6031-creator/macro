@@ -552,6 +552,7 @@ on:
       # still starts CI, per the two-halves law.
       - "tests/test_render_intl_scope.py"
       - "tests/test_render_run_size_cap.py"
+      - "tests/test_render_builder_ownership.py"
       - "tests/test_render_canada_scope.py"
       # W0 PR3 synapse read-gate: any change to engine, scripts, collectors, the registry,
       # the gate script, the test, or the baseline must re-run the read-gate + Article-2 check.
@@ -619,6 +620,7 @@ on:
       - "tests/test_brain_analyst_wiring.py"
       - "tests/test_market_packet.py"
       - "tests/test_brain_market_intel.py"
+      - "tests/test_brain_seed_router.py"
       # The two cortex suites gate their own jobs ('cortex provider routing + tool loop'
       # and 'cortex ADB-W3 two-way read tools + parity') but were never listed here, so a
       # TEST-ONLY edit to either file triggered no ci.yml run at all and the suite it

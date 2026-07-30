@@ -753,7 +753,9 @@
     var self = document.querySelector('script[src$="account.js"],script[src*="account.js?"]');
     var pfx = self ? (self.getAttribute('src') || '').replace(/account\.js(\?.*)?$/, '') : '';
     var s = document.createElement('script');
-    s.src = pfx + 'nav_market.js';
+    // nav_market.js owns the runtime menu composition, so it must never inherit
+    // a stale year-cached response after a navigation release.
+    s.src = pfx + 'nav_market.js?v=20260730-nav2';
     s.async = true;
     (document.head || document.documentElement).appendChild(s);
   })();
