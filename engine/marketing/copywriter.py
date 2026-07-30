@@ -1791,6 +1791,70 @@ _JARGON_PATTERNS: tuple[tuple[str, str], ...] = (
 )
 
 
+"""Lecture register (operator, 2026-07-30).
+
+The operator read the education posts and called them terrible, useless, and
+lecturing: "no one likes being lectured... we want to provide value without
+making it seem like we are superior to others, or cocky/arrogant/ego vibes."
+Most desks are women, and a superior register reads worse from them and costs
+follows.
+
+The template bank was built on it — "The difference between those two sentences
+is most of trading", "Anyone can show winners", "Early looks identical to wrong
+for longer than anyone admits", "The half of trading nobody talks about". But
+the LLM inherits it too, because nothing forbade it: a live sample produced both
+"Turns out doing nothing is still a position. I didn't take a trade, so there's
+no win or loss to dress up" (right) and "If you can't name what proves you wrong
+before the trade, you're not managing risk. You're waiting for the market to
+explain it with your money" (wrong, and worse than the template — it accuses
+the reader directly).
+
+The tell is grammatical person. A good post says what I DID. A lecture says what
+YOU are doing wrong, or what MOST PEOPLE fail to grasp. That is what this
+checks; the open-ended half ("does this feel superior?") belongs to the critic.
+
+A plain question to the reader ("what's your read?") is not a lecture and must
+keep passing — engagement bait is a different problem and this check must not
+suppress it.
+"""
+_LECTURE_PATTERNS: tuple[tuple[str, str], ...] = (
+    # Superiority comparisons: we know, they don't.
+    ("most people", r"\bmost (?:people|traders|of you)\b"),
+    ("nobody/no one", r"\b(?:nobody|no one) (?:talks about|admits|does|gets|understands|tells you)\b"),
+    ("anyone can", r"\banyone can\b"),
+    ("than anyone admits", r"\bthan (?:anyone|most people|anybody) (?:admits|thinks|realizes)\b"),
+    ("everyone else", r"\b(?:everyone|everybody) else\b"),
+    ("the part most skip", r"\bthe part (?:most|that most)\b"),
+    # Second-person prescription: telling the reader what they are doing wrong.
+    ("you should/need/must", r"\byou (?:should|need to|have to|must|ought to)\b"),
+    ("if you can't/don't", r"\bif you (?:can'?t|don'?t|didn'?t|aren'?t|won'?t)\b"),
+    ("you're not X-ing", r"\byou'?re not\b"),
+    ("your problem", r"\byou'?re (?:waiting|hoping|guessing|gambling|kidding)\b"),
+    # Definitional teacher-voice openers.
+    ("plain english:", r"\bplain english\s*:"),
+    ("what X actually means", r"\bwhat .{0,24} actually means\b"),
+)
+
+
+def lecture_violations(text: str) -> list[str]:
+    """Copy that lectures the reader or claims superiority over them. [] = clean.
+
+    Flags the two constructions the operator named: comparisons that put the
+    desk above "most people", and second-person prescriptions that tell the
+    reader what they are doing wrong. First-person practice statements ("I
+    didn't take a trade", "I'm waiting") are the intended register and pass.
+    """
+    low = str(text or "").lower()
+    out: list[str] = []
+    for label, pattern in _LECTURE_PATTERNS:
+        if re.search(pattern, low):
+            out.append(
+                f"lecture register '{label}': say what you did, not what the "
+                f"reader gets wrong"
+            )
+    return out[:2]
+
+
 def jargon_violations(text: str) -> list[str]:
     """Internal-machinery vocabulary in copy (gate 3f). [] = clean.
 
@@ -2019,6 +2083,7 @@ def validate_copy_v2(
     violations.extend(batch_stem_violations(text, batch_texts))
     violations.extend(batch_body_duplicate_violations(text, batch_texts))
     violations.extend(stock_closer_violations(text, batch_texts))
+    violations.extend(lecture_violations(text))
     return violations
 
 
@@ -4102,6 +4167,19 @@ def write_posts_llm(
             "stance FRESH every single time — these two are banned as written: 'strength "
             "worth respecting, not chasing here' and 'watching for a bottom setup, not "
             "catching it yet'. They were house boilerplate and the reader noticed.\n"
+            "- NEVER LECTURE. This is the fastest way to lose a follower. Say what YOU "
+            "did and what YOU are watching. Never tell the reader what they should do, "
+            "what they are getting wrong, or what 'most people' fail to grasp. Banned "
+            "outright: 'most people', 'nobody talks about', 'anyone can', 'than anyone "
+            "admits', 'you should', 'you need to', 'if you can't', \"you're not\".\n"
+            "  Wrong: \"If you can't name what proves you wrong, you're not managing "
+            "risk. You're waiting for the market to explain it with your money.\"\n"
+            "  Right: \"Turns out doing nothing is still a position. I didn't take a "
+            "trade, so there's no win or loss to dress up.\"\n"
+            "- No ego. You are not the smartest person in the room and you never imply "
+            "it. Curiosity and honest uncertainty beat authority — 'I'm not sure yet' is "
+            "a real post and a strong one. A genuine question to the reader is welcome; "
+            "a rhetorical question that sets up your own superior answer is not.\n"
             "- The default humor is deadpan understatement ('Ugly.' 'Not ideal.' 'That "
             "settles that.'). Most posts carry zero jokes; when wit shows up it carries "
             "the read, it never decorates it. One dry line, never two.\n"
@@ -4198,8 +4276,14 @@ def write_posts_llm(
             "victory lap, the runner's still working.\"\n"
             "- Receipt (loss): \"Stopped out of $COIN at 198, -3.1%. Tuition paid. "
             "Next.\"\n"
-            "- Education: \"Everyone has a target. Almost nobody has a stop. The stop "
-            "is the part that decides whether you're trading or hoping.\"\n"
+            # The old education exemplar ("Everyone has a target. Almost nobody has a
+            # stop…") was the lecture register in one line, and the whole education
+            # kind came back sounding like it. Education = your own working today,
+            # not a rule for the reader.
+            "- Education (show YOUR working on something real today, never a lesson): "
+            "\"Turns out doing nothing is still a position. I didn't take a trade, so "
+            "there's no win or loss to dress up. Cash stayed cash, which beat forcing "
+            "a setup just to feel productive.\"\n"
             "- Macro: \"Growth prints keep coming in soft while inflation sits there "
             "being inflation. The soft-landing crowd went quiet this week. Patience "
             "over heroics.\"\n"

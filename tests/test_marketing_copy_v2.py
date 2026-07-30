@@ -2055,3 +2055,67 @@ class TestStockClosers:
         laws = " ".join((cfg.get("copywriter") or {}).get("copy_laws") or [])
         assert 'movers carry "watching for a bottom setup' not in laws
         assert "banned closers" in laws
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Lecture register (operator, 2026-07-30)
+# "no one likes being lectured... we want to provide value without making it
+# seem like we are superior to others, or cocky/arrogant/ego vibes." Most desks
+# are women and a superior register reads worse from them and costs follows.
+# The tell is grammatical person: say what I DID, never what YOU get wrong.
+# ─────────────────────────────────────────────────────────────────────────────
+class TestLectureRegister:
+    def test_second_person_accusation_is_flagged(self):
+        """The exact LLM post the operator would have rejected."""
+        from engine.marketing.copywriter import lecture_violations
+        assert lecture_violations(
+            "If you can't name what proves you wrong before the trade, you're not "
+            "managing risk. You're waiting for the market to explain it with your money.")
+
+    def test_superiority_comparisons_are_flagged(self):
+        from engine.marketing.copywriter import lecture_violations
+        for line in (
+            "Win, lose, or nothing happened, the result gets posted. Anyone can show winners.",
+            "Early looks identical to wrong for longer than anyone admits.",
+            "The half of trading nobody talks about. Direction is the fun half.",
+            "Most people never name their stop.",
+        ):
+            assert lecture_violations(line), f"not flagged: {line!r}"
+
+    def test_teacher_voice_openers_are_flagged(self):
+        from engine.marketing.copywriter import lecture_violations
+        assert lecture_violations("Plain English: what's a 'setup'?")
+
+    def test_first_person_practice_passes(self):
+        """The register we WANT must not be suppressed."""
+        from engine.marketing.copywriter import lecture_violations
+        for line in (
+            "Turns out doing nothing is still a position. I didn't take a trade, so "
+            "there's no win or loss to dress up.",
+            "I had no clean market fact to post today, so I didn't force one.",
+            "I'm not sure yet, and I'm not forcing a trade without a price level.",
+            "$LKFN sits 1.9% below its high. I respect the strength, but I'm not chasing.",
+        ):
+            assert lecture_violations(line) == [], f"false positive: {line!r}"
+
+    def test_a_genuine_question_to_the_reader_still_passes(self):
+        """Engagement bait is a different problem; this check must not eat it."""
+        from engine.marketing.copywriter import lecture_violations
+        assert lecture_violations(
+            "$LII crashed -19.6% today. Watching, not chasing. What's your read?") == []
+        assert lecture_violations("You can see the level on the chart below.") == []
+
+    def test_the_prompt_forbids_lecturing(self):
+        import inspect
+        from engine.marketing import copywriter
+        src = inspect.getsource(copywriter)
+        assert "NEVER LECTURE" in src
+        # the old education exemplar WAS the lecture register in one line
+        assert "Almost nobody has a stop" not in src
+
+    def test_the_copy_law_forbids_lecturing(self):
+        import yaml, pathlib
+        cfg = yaml.safe_load(pathlib.Path("config/marketing.yml").read_text())
+        laws = " ".join((cfg.get("copywriter") or {}).get("copy_laws") or [])
+        assert "NEVER lecture" in laws
+        assert "banned superiority constructions" in laws
