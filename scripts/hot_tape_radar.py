@@ -57,6 +57,7 @@ import logging
 import os
 import sys
 from datetime import date, datetime, time, timedelta, timezone
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Callable
 
@@ -242,6 +243,41 @@ def freshness_cfg(cfg: dict | None, *, demo: bool) -> dict:
     return out
 
 
+@lru_cache(maxsize=4)
+def remote_quote_urls(root: Path) -> tuple[str, ...]:
+    """The VPS live plane URLs for the merge, from ``config.yml`` ``live:``.
+
+    CACHED PER ROOT because this loop fires ~81 times a session and the answer is a
+    URL — re-parsing the 4k-line config.yml on every pass to re-read one string is
+    the cost ``llm_config`` documents right above. A session that wanted a new URL
+    would be a new process anyway (the poller re-execs per run).
+
+    Resolution and the operator's off switch both live in
+    :func:`engine.marketing.live_verify.remote_quote_urls`; this only supplies the
+    config.
+
+    NO CONFIG MEANS NO REMOTE SOURCE — not "fall back to the estate default". A root
+    without a readable config.yml is a test harness or a partial checkout, not
+    production, and a resolver that reached for a hardcoded URL there would put a
+    live network call inside every unit test that builds a tmp_path root: a suite
+    that fails when a web host is down, and a source of real fetches on a machine
+    that never asked for one. The degraded behaviour is exactly the repo-local
+    merge, which is what this lane had before the remote source existed.
+    """
+    try:
+        import yaml  # noqa: PLC0415
+
+        path = root / "config.yml"
+        if not path.exists():
+            return ()
+        loaded = yaml.safe_load(path.read_text(encoding="utf-8"))
+        return LV.remote_quote_urls(loaded if isinstance(loaded, dict) else {})
+    except Exception as exc:  # noqa: BLE001
+        log.warning("hot_tape_radar: live.public_quotes_url unreadable (%s) - "
+                    "repo-local quote sources only this pass", exc)
+        return ()
+
+
 def load_quotes(root: Path, *, now: datetime, cfg: dict, demo: bool) -> tuple[dict, bool, float | None]:
     """(live view, fresh?, freshest age in minutes). Never raises.
 
@@ -261,7 +297,7 @@ def load_quotes(root: Path, *, now: datetime, cfg: dict, demo: bool) -> tuple[di
     definition, one ceiling — and a drop that empties the book stands the pass
     down out loud rather than detecting on what is left.
     """
-    live = LV.load_live_quotes(root)
+    live = LV.load_live_quotes(root, remote_urls=remote_quote_urls(root))
     gate_cfg = freshness_cfg(cfg, demo=demo)
     max_age = HT.effective_max_quote_age_min(live, gate_cfg)
     fresh, age = HT.quotes_fresh(live, now, gate_cfg)
