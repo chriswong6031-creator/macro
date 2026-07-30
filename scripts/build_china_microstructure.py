@@ -77,6 +77,32 @@ def _append_parquet(new_rows: pd.DataFrame, path: Path, sort_cols: list[str]) ->
     combined.to_parquet(path, index=False, compression="snappy")
 
 
+def _packet_frame_asof(
+    frame: pd.DataFrame,
+    *,
+    cutoff: pd.Timestamp,
+) -> tuple[pd.DataFrame, str | None]:
+    """Return a point-in-time packet frame and its actual last observed session.
+
+    The document build date is not evidence that every ticker traded that day.
+    Each packet therefore carries the last date present in that ticker's own
+    frame.  A historical ``--date`` build is also sliced at the requested date
+    so it cannot read future bars.
+    """
+    if frame is None or frame.empty:
+        return pd.DataFrame(), None
+    work = frame.copy()
+    parsed_index = pd.DatetimeIndex(pd.to_datetime(work.index, errors="coerce"))
+    valid = (~parsed_index.isna()) & (parsed_index.normalize() <= cutoff.normalize())
+    work = work.loc[valid].copy()
+    parsed_index = parsed_index[valid]
+    if work.empty:
+        return work, None
+    work.index = parsed_index
+    packet_asof = str(pd.Timestamp(parsed_index.max()).date())
+    return work, packet_asof
+
+
 def build_increment(target_date: Optional[str] = None) -> dict:
     """Run one nightly increment for target_date (defaults to latest available data date).
 
@@ -240,8 +266,9 @@ def build_increment(target_date: Optional[str] = None) -> dict:
                     df = pd.read_parquet(fp) if fp.exists() else pd.DataFrame()
                 except Exception:  # noqa: BLE001
                     df = pd.DataFrame()
-                board = _board_from_ticker(ticker)
+                df, packet_asof = _packet_frame_asof(df, cutoff=scan_date)
                 pkt = name_packet(ticker=ticker, df=df, st_set=st_set)
+                pkt["as_of"] = packet_asof
                 name_packets.append(pkt)
         except Exception as exc:  # noqa: BLE001
             log.warning("Could not build name packets from standouts: %s", exc)

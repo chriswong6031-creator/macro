@@ -705,6 +705,11 @@ def adapt_china_board(root: Path | str | None = None) -> tuple[pd.DataFrame, lis
     if raw.empty:
         return _empty_df(), gaps
 
+    from engine import china_standout_track as _cn_track  # noqa: PLC0415
+
+    raw, board_definition = _cn_track._latest_definition_frame(raw)  # noqa: SLF001
+    board_definition = board_definition or "legacy"
+
     rows: list[dict] = []
     for _, r in raw.iterrows():
         ticker = _safe_str(r.get("ticker"))
@@ -716,11 +721,14 @@ def adapt_china_board(root: Path | str | None = None) -> tuple[pd.DataFrame, lis
             mfe_col = f"fwd_mfe_{h}"
             if mfe_col not in r.index:
                 continue
-            sig = f"board_cn:{as_of}:{ticker}:{h}"
+            sig = f"board_cn:{board_definition}:{as_of}:{ticker}:{h}"
             row: dict[str, Any] = {c: None for c in COLUMNS}
             row["signal_id"]      = sig
             row["engine"]         = "cn_board"
-            row["family"]         = f"cn_board:{_safe_str(r.get('tier')) or 'tier'}"
+            row["family"]         = (
+                f"cn_board:{board_definition}:"
+                f"{_safe_str(r.get('tier')) or 'tier'}"
+            )
             row["ledger"]         = "board_cn"
             row["as_of"]          = as_of
             row["symbol"]         = ticker

@@ -2025,16 +2025,23 @@ def _build_candidate_context(
     # Authority: is_context_only=True; NW-scope wired via mastermind:context tag in
     # synapse.yml (SA-R1 prerequisite).  Never raises.
     #
-    # F7 FIX: china_standouts.json has keys buy/laggards/ripening/ripening_falling
-    # (no 'watch' key).  Candidate set = buy + ripening (active buy candidates +
-    # names approaching buy territory); laggards excluded as they are below-line
-    # names not yet at candidate status; ripening_falling excluded as declining
-    # momentum names that may be heading off the board.
+    # Prophet v2 explicitly separates the capped featured shelf from three
+    # discoverable depth lanes. All four are surfaced candidate context and must
+    # remain available to the neural web; the compatibility ``watch`` union is
+    # deliberately ignored to avoid double intake. Legacy artifacts fall back to
+    # buy + watch. Laggards and ripening_falling remain excluded.
     cn_standouts_path = repo / "site" / "factordata" / "china_standouts.json"
     try:
         cs = _read_json(cn_standouts_path)
         if isinstance(cs, dict):
-            for key in ("buy", "ripening"):
+            if cs.get("schema_version") == "2.0.0":
+                cn_keys = (
+                    "buy", "more_actionable", "late_or_unfillable",
+                    "forming", "ripening",
+                )
+            else:
+                cn_keys = ("buy", "watch", "ripening")
+            for key in cn_keys:
                 lst = cs.get(key) or []
                 if isinstance(lst, list):
                     for item in lst:

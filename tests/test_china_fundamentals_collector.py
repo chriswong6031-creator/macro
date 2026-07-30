@@ -8,6 +8,7 @@ coverage at the high-value subset).
 """
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -49,3 +50,27 @@ def test_full_universe_prefers_explicit_ticker_column(tmp_path, monkeypatch):
 def test_full_universe_missing_file(tmp_path, monkeypatch):
     monkeypatch.setattr(cf.config, "data_dir", lambda: tmp_path)
     assert cf._full_universe() == []
+
+
+def test_high_value_universe_keeps_every_prophet_depth_lane(tmp_path, monkeypatch):
+    site = tmp_path / "site"
+    fd = site / "factordata"
+    fd.mkdir(parents=True)
+    (fd / "china_setups.json").write_text(json.dumps({
+        "schema_version": "2.0.0",
+        "buy": [{"ticker": "600001.SS"}],
+        "more_actionable": [{"ticker": "600002.SS"}],
+        "late_or_unfillable": [{"ticker": "600003.SS"}],
+        "forming": [{"ticker": "600004.SS"}],
+        "watch": [{"ticker": "600002.SS"}, {"ticker": "600004.SS"}],
+    }))
+    monkeypatch.setattr(cf.config, "ROOT", tmp_path)
+    monkeypatch.setattr(
+        cf.config,
+        "load",
+        lambda: {"storage": {"site_dir": "site"}},
+    )
+
+    assert cf._high_value_universe() == [
+        "600001.SS", "600002.SS", "600003.SS", "600004.SS",
+    ]
