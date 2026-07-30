@@ -31,7 +31,13 @@ lanes:
     deepseek_base_url: https://api.deepseek.com/anthropic
     # Fallback model when DeepSeek unavailable (operator-configurable)
     fallback_model: claude-haiku-4-5
-    max_tokens: 2000
+    # Headroom for v4's DEFAULT thinking, which shares this budget (same reason the pro
+    # lane runs 8000). At 2000 a live zh guest turn spent EXACTLY 2000 output tokens on
+    # thinking, emitted no text, and shipped the degraded stub (2026-07-30); the retry of
+    # the same question answered in 1,428. DeepSeek output pricing puts the worst case at
+    # ~+$0.001/turn — a dead turn costs a user. ONE kwarg feeds both the tool rounds and
+    # the synthesis call, so this is the ceiling for every round of a Fast turn.
+    max_tokens: 4000
     tool_budget: 5
     usage_lane: brain-fast
 
