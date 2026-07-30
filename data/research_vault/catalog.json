@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-30T15:40:40.541091+00:00",
-  "count": 398,
+  "generated_at": "2026-07-30T16:10:42.910097+00:00",
+  "count": 399,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -538,6 +538,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-cra9dia3zak-a80bfc",
+      "title": "BoE preview",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-30T05:34:40Z",
+      "summary_points": [
+        "**BOE Rate Hold & Inflation Trajectory**: BOE holds rates at 3.75% with no hikes expected; CPI forecasted to fall to 1.6% Q3 2027 (vs.",
+        "current 2.6% undershoot), driven by easing services inflation, labor market slack, and Trump election-driven oil price caution.",
+        "**Geopolitical Risk Mitigation**: Iran conflict/energy prices act as BOE \"insurance\" but slack labor market and fading energy shock prevent second-round inflation, reducing near-term hawkish pressure.",
+        "**Policy Shift Catalyst**: Hawkish members (Greene, Pill) likely abandon hikes as inflation squeeze fades, enabling earlier rate cuts despite geopolitical volatility."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
       "language": "en",
       "needs_metadata": false
     },
