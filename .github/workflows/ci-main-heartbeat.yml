@@ -355,6 +355,10 @@ jobs:
         run: python -m pytest tests/test_free_content.py -q
       - name: committed estate must match a fresh render (template↔site drift law)
         run: python -m scripts.build_free_content --check
+      # Mirrors legacy-jobs.yml::free-content-estate — see the note there. `--check`
+      # pins bytes, not validity, and froze `href="</span>` on 26 calculator pages.
+      - name: no split tags across the bilingual t() macro (rendered + source)
+        run: python -m pytest tests/test_i18n_split_tag_guard.py -q
       # Mirrors legacy-jobs.yml::free-content-estate — see the long note there.
       # Short version: this suite's jinja2-gated cross-module test (externalize_css
       # and build_free_content must share ONE HAND_AUTHORED frozenset) skips in

@@ -109,7 +109,8 @@
    '净资产就是所拥有的减去所欠下的。持续追踪同一个数字——趋势比任何单次读数都更能说明问题。') }}</p>
 </div>
 
-<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('See what a growing balance can become with the <a href="', '用 <a href="') }}{{ rel }}tools/calculators/compounding.html">{{ t('compound growth calculator', '复利增长计算器') }}</a>{{ t(', or measure a portfolio’s annual growth with the <a href="', '看看不断增长的余额能变成什么，或用 <a href="') }}{{ rel }}tools/calculators/cagr.html">{{ t('CAGR calculator', 'CAGR 计算器') }}</a>{{ t('.', '衡量投资组合的年化增长。') }}</p>
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('See what a growing balance can become with the <a href="' ~ rel ~ 'tools/calculators/compounding.html">compound growth calculator</a>, or measure a portfolio’s annual growth with the <a href="' ~ rel ~ 'tools/calculators/cagr.html">CAGR calculator</a>.',
+   '用 <a href="' ~ rel ~ 'tools/calculators/compounding.html">复利增长计算器</a>看看不断增长的余额能变成什么，或用 <a href="' ~ rel ~ 'tools/calculators/cagr.html">CAGR 计算器</a>衡量投资组合的年化增长。') }}</p>
 {% endblock %}
 
 {% block calc_script %}

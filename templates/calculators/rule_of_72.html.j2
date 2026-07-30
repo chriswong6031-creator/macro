@@ -100,7 +100,8 @@
    '72 除以收益率就是以年计的翻倍时间——在 6–10% 区间里是一张快速而诚实的草图，一旦远离这个区间，就值得用精确公式核对。') }}</p>
 </div>
 
-<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('See the full curve behind the shortcut with the <a href="', '用 <a href="') }}{{ rel }}tools/calculators/compounding.html">{{ t('compounding calculator', '复利计算器') }}</a>{{ t(', or turn a growth rate into an annualized figure with the <a href="', '查看捷径背后的完整曲线，或用 <a href="') }}{{ rel }}tools/calculators/cagr.html">{{ t('CAGR calculator', '年化增长率计算器') }}</a>{{ t('.', '把增长率换算成年化数字。') }}</p>
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('See the full curve behind the shortcut with the <a href="' ~ rel ~ 'tools/calculators/compounding.html">compounding calculator</a>, or turn a growth rate into an annualized figure with the <a href="' ~ rel ~ 'tools/calculators/cagr.html">CAGR calculator</a>.',
+   '用 <a href="' ~ rel ~ 'tools/calculators/compounding.html">复利计算器</a>查看捷径背后的完整曲线，或用 <a href="' ~ rel ~ 'tools/calculators/cagr.html">年化增长率计算器</a>把增长率换算成年化数字。') }}</p>
 {% endblock %}
 
 {% block calc_script %}

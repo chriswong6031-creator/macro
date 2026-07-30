@@ -3421,6 +3421,16 @@ jobs:
         run: python -m pytest tests/test_free_content.py -q
       - name: committed estate must match a fresh render (template↔site drift law)
         run: python -m scripts.build_free_content --check
+      # i18n split-tag law (2026-07-30). `--check` above pins the committed bytes
+      # to a fresh render — it does NOT judge whether those bytes are valid, so it
+      # froze 48 t() calls that passed an OPENING `<a href="` through the
+      # bilingual macro and shipped `href="</span>` on all 26 calculator pages.
+      # check_inline_js only parses <script>/on*=, and check_site_asset_refs
+      # deliberately skips refs containing `<`. Scans site/ AND templates/, so it
+      # is not scoped to this estate; it lives here because this job already owns
+      # the render contract and already installs the deps.
+      - name: no split tags across the bilingual t() macro (rendered + source)
+        run: python -m pytest tests/test_i18n_split_tag_guard.py -q
       # SECOND home for this suite, and the only one where all of it RUNS.
       # tests/test_externalize_css.py also runs in template-site-sync, whose
       # `pip install pyyaml pytest` deliberately has no jinja2 — so its

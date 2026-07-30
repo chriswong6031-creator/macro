@@ -104,7 +104,8 @@
    '备兑看涨期权，是用行权价以上的上涨空间，换取今天的收入。用你留下的权利金和你接受的上限来评判它——而不是用一个假设完美一整年的年化数字。') }}</p>
 </div>
 
-<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('See what a single closed trade actually returned with the <a href="', '用 <a href="') }}{{ rel }}tools/calculators/trade-profit.html">{{ t('trade profit calculator', '交易盈亏计算器') }}</a>{{ t(', or weigh a stop against a target with the <a href="', '看单笔平仓交易的实际回报，或用 <a href="') }}{{ rel }}tools/calculators/risk-reward.html">{{ t('risk-to-reward calculator', '盈亏比计算器') }}</a>{{ t('.', '权衡止损与目标。') }}</p>
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('See what a single closed trade actually returned with the <a href="' ~ rel ~ 'tools/calculators/trade-profit.html">trade profit calculator</a>, or weigh a stop against a target with the <a href="' ~ rel ~ 'tools/calculators/risk-reward.html">risk-to-reward calculator</a>.',
+   '用 <a href="' ~ rel ~ 'tools/calculators/trade-profit.html">交易盈亏计算器</a>看单笔平仓交易的实际回报，或用 <a href="' ~ rel ~ 'tools/calculators/risk-reward.html">盈亏比计算器</a>权衡止损与目标。') }}</p>
 {% endblock %}
 
 {% block calc_script %}

@@ -114,7 +114,8 @@
    '将亏损减半不能将恢复时间减半——而是几乎消除了大部分。保护本金在不对称上远比寻找回报更有价值。') }}</p>
 </div>
 
-<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('The companion piece for this topic is <a href="/blog/why-a-50-percent-loss-needs-a-100-percent-gain.html">Why a 50% loss needs a 100% gain</a>. For long-run compounding context, see <a href="/blog/compound-growth-for-traders.html">Compound growth for traders</a>. Model recovery scenarios with the <a href="', '本主题的配套阅读是 <a href="/blog/why-a-50-percent-loss-needs-a-100-percent-gain.html">为什么亏损50%需要盈利100%才能回本</a>。长期复利背景请参见 <a href="/blog/compound-growth-for-traders.html">交易者的复利增长</a>。用 <a href="') }}{{ rel }}tools/calculators/compounding.html">{{ t('compounding calculator', '复利计算器') }}</a>{{ t(' to model recovery scenarios.', '建模恢复情景。') }}</p>
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('The companion piece for this topic is <a href="/blog/why-a-50-percent-loss-needs-a-100-percent-gain.html">Why a 50% loss needs a 100% gain</a>. For long-run compounding context, see <a href="/blog/compound-growth-for-traders.html">Compound growth for traders</a>. Model recovery scenarios with the <a href="' ~ rel ~ 'tools/calculators/compounding.html">compounding calculator</a>.',
+   '本主题的配套阅读是 <a href="/blog/why-a-50-percent-loss-needs-a-100-percent-gain.html">为什么亏损50%需要盈利100%才能回本</a>。长期复利背景请参见 <a href="/blog/compound-growth-for-traders.html">交易者的复利增长</a>。用 <a href="' ~ rel ~ 'tools/calculators/compounding.html">复利计算器</a>建模恢复情景。') }}</p>
 {% endblock %}
 
 {% block calc_script %}

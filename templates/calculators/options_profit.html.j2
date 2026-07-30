@@ -123,7 +123,8 @@
    '期权在到期时兑付其内在价值；盈亏平衡价是行权价按权利金平移后的位置，而非行权价本身。') }}</p>
 </div>
 
-<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('Weigh the trade’s reward against its risk with the <a href="', '用 <a href="') }}{{ rel }}tools/calculators/risk-reward.html">{{ t('risk-to-reward calculator', '盈亏比计算器') }}</a>{{ t(', or work through a stock trade end to end with the <a href="', '权衡这笔交易的收益与风险，或用 <a href="') }}{{ rel }}tools/calculators/trade-profit.html">{{ t('trade profit calculator', '交易盈亏计算器') }}</a>{{ t('.', '完整推演一笔股票交易。') }}</p>
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('Weigh the trade’s reward against its risk with the <a href="' ~ rel ~ 'tools/calculators/risk-reward.html">risk-to-reward calculator</a>, or work through a stock trade end to end with the <a href="' ~ rel ~ 'tools/calculators/trade-profit.html">trade profit calculator</a>.',
+   '用 <a href="' ~ rel ~ 'tools/calculators/risk-reward.html">盈亏比计算器</a>权衡这笔交易的收益与风险，或用 <a href="' ~ rel ~ 'tools/calculators/trade-profit.html">交易盈亏计算器</a>完整推演一笔股票交易。') }}</p>
 {% endblock %}
 
 {% block calc_script %}

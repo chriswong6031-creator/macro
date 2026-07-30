@@ -107,7 +107,8 @@
    '做空赚取跌幅，并在等待期间支付「租金」。价格变动是你的优势；借券费则是与之赛跑的时钟。') }}</p>
 </div>
 
-<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('For the long side of the same trade, use the <a href="', '同一笔交易的多头一侧，可使用 <a href="') }}{{ rel }}tools/calculators/trade-profit.html">{{ t('trade profit calculator', '交易盈亏计算器') }}</a>{{ t(', or size the position first with the <a href="', '，或先用 <a href="') }}{{ rel }}tools/calculators/position-size.html">{{ t('position size calculator', '仓位计算器') }}</a>{{ t('.', '为仓位定量。') }}</p>
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('For the long side of the same trade, use the <a href="' ~ rel ~ 'tools/calculators/trade-profit.html">trade profit calculator</a>, or size the position first with the <a href="' ~ rel ~ 'tools/calculators/position-size.html">position size calculator</a>.',
+   '同一笔交易的多头一侧，可使用 <a href="' ~ rel ~ 'tools/calculators/trade-profit.html">交易盈亏计算器</a>，或先用 <a href="' ~ rel ~ 'tools/calculators/position-size.html">仓位计算器</a>为仓位定量。') }}</p>
 {% endblock %}
 
 {% block calc_script %}

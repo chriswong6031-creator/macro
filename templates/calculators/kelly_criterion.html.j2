@@ -96,7 +96,8 @@
    '凯利告诉你——若优势确定无疑——最多能下多少。而正因优势从不确定，把仓位定在它之下——半凯利或更低——才是诚实的默认选择。') }}</p>
 </div>
 
-<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('Ground it in the lesson on <a href="', '在这节课中打好基础 <a href="') }}{{ rel }}learn/risk/position-sizing.html">{{ t('position sizing', '仓位管理') }}</a>{{ t(', or turn a win rate and payoff into an edge with the <a href="', '，或用 <a href="') }}{{ rel }}tools/calculators/risk-reward.html">{{ t('risk-to-reward calculator', '盈亏比计算器') }}</a>{{ t('.', '把胜率与赔付换算成优势。') }}</p>
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('Ground it in the lesson on <a href="' ~ rel ~ 'learn/risk/position-sizing.html">position sizing</a>, or turn a win rate and payoff into an edge with the <a href="' ~ rel ~ 'tools/calculators/risk-reward.html">risk-to-reward calculator</a>.',
+   '在这节课中打好基础 <a href="' ~ rel ~ 'learn/risk/position-sizing.html">仓位管理</a>，或用 <a href="' ~ rel ~ 'tools/calculators/risk-reward.html">盈亏比计算器</a>把胜率与赔付换算成优势。') }}</p>
 {% endblock %}
 
 {% block calc_script %}
