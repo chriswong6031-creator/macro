@@ -1579,3 +1579,29 @@ exactly as specced; hysteresis operates on the 4 quads only.
 **D14. GEX flag is live-only.** No free historical dealer-gamma series exists;
 in the backtest the GEX transition flag is simply False (NaN-safe). Validation
 whipsaw/accuracy stats therefore use 5 of the 6 flags historically.
+
+**D15. The `us3m` alias is DGS3MO, and only DGS3MO.** Both `DGS3MO` (group
+`curve`) and `DTB3` (group `fx_rates_short`) were aliased `us3m` until
+2026-07-30. `engine/inputs.build_features` flattens every `fred.series` group
+into one map, so the later group won and the whole constant-maturity curve —
+`yield_curve.NODES`, the `spread_10y3m` fallback, the Engstrom-Sharpe NTFS leg,
+`near_term_forward_spread`, the bonds curve chart — read its 3m point off a
+*discount-basis* bill sitting ~13bp below the bond-equivalent yield every other
+tenor is quoted on. The two constructions disagree on whether 3m10y is inverted
+on 99 of the last 1260 sessions. DTB3 now carries `us3m_bill`.
+
+Basis, not preference, decides this: DGS3MO is quoted on an investment
+(bond-equivalent) basis and FRED's `T10Y3M` is exactly `DGS10 - DGS3MO`
+(verified to 4e-16 on 11,142 of 11,144 shared dates), so the engine's fallback
+now reconciles with the published spread it falls back from. The CP-bill funding
+spread (`engine/conditions.py`) deliberately keeps the *bill*: the Fed quotes
+commercial paper as annual discount yields, so DTB3 is the basis-matched leg
+there and the CMT would shave ~13bp off the spread by convention alone.
+
+No stored artifact needs a correction note. `slope_3m10y` itself was always
+sourced from the published `T10Y3M` and was never wrong — what was wrong was the
+displayed 3m *leg* (which did not subtract to the spread shown beside it) and
+everything computed from the nodes directly. The pre-registered forward-test
+trials read `data/fred/T10Y3M.parquet` directly and never touched the alias, so
+no scored or gauntleted result is contaminated; the live `latest.json`
+artifacts are nightly snapshots that self-heal on the next render.

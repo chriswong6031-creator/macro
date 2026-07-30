@@ -32,7 +32,9 @@ def _frame(n: int = 1400, fsi_recent: float = 2.0, **overrides) -> pd.DataFrame:
         f[col] = fsi * mult
     f["aa_cp_90d"] = 5.00                              # 90d AA CP
     f["a2p2_cp_90d"] = 5.30                            # A2/P2 spread = 30bp
-    f["us3m"] = 4.80                                   # CP-bill spread = 20bp
+    # bill leg = us3m_bill (DTB3, discount basis) — basis-matched to the CP legs.
+    # NOT us3m (DGS3MO, bond-equivalent): the two were one alias until 2026-07-30.
+    f["us3m_bill"] = 4.80                              # CP-bill spread = 20bp
     for k, v in overrides.items():
         f[k] = v
     return f

@@ -62,7 +62,8 @@ def load_bills() -> pd.Series:
     """Short-rate (% annual) for the cash sleeve: DTB3 (3m bill) extended back with
     DFF (fed funds) where the bill series doesn't reach. Forward-filled to daily."""
     dff = pd.read_parquet(DATA / "fred" / "DFF.parquet")["fed_funds"]
-    tb3 = pd.read_parquet(DATA / "fred" / "DTB3.parquet")["us3m"]
+    # positional read: the DTB3 column follows its config alias (us3m -> us3m_bill, 2026-07-30)
+    tb3 = pd.read_parquet(DATA / "fred" / "DTB3.parquet").iloc[:, 0]
     dff.index = pd.to_datetime(dff.index)
     tb3.index = pd.to_datetime(tb3.index)
     bills = tb3.combine_first(dff).sort_index()  # prefer the bill, backfill with FF
