@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-07-29",
+  "as_of": "2026-07-30",
   "authority": {
     "may_alert": false,
     "may_auto_promote": false,
@@ -38,19 +38,19 @@
   },
   "family": "pss_rh1_relief_hazard_prospective",
   "gate_open": true,
-  "generated_utc": "2026-07-29T01:21:26.485763+00:00",
+  "generated_utc": "2026-07-30T01:48:40.784792+00:00",
   "ledger": {
     "advanced_today": 0,
-    "appended_today": 0,
-    "earliest_action": null,
-    "events": 0,
-    "latest_action": null,
-    "level_control": 0,
+    "appended_today": 1,
+    "earliest_action": "2026-07-29",
+    "events": 1,
+    "latest_action": "2026-07-29",
+    "level_control": 1,
     "matured": 0,
-    "primary_events": 0,
+    "primary_events": 1,
     "rejected_pre_cutoff_today": 0,
     "relief_hazard": 0,
-    "ungraded": 0,
+    "ungraded": 1,
     "weak_level_diagnostic": 0
   },
   "manifest_sha256": "0b07345178592032570aeb57c1c54c1cb24b6463a5836431bc7daf5d44b0cc6b",
@@ -60,16 +60,16 @@
   "program_id": "PSS-RH1",
   "registration_ok": true,
   "scan_census": {
-    "anchors": 9250,
-    "detected_post_cutoff_paths": 0,
+    "anchors": 9261,
+    "detected_post_cutoff_paths": 1,
     "frozen_members": 799,
     "loaded_members": 799,
     "missing_members": 0,
     "prospective_candidate_anchors": 28,
     "reasons": {
-      "incomplete_formation": 19,
+      "incomplete_formation": 30,
       "missing_ohlcv": 0,
-      "no_subject_recovery": 8,
+      "no_subject_recovery": 7,
       "pre_cutoff_action": 20
     }
   },

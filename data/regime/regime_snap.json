@@ -1,25 +1,39 @@
 {
   "snap": false,
   "relief_magnitude": null,
-  "roro": 0.501,
-  "cap_recent": false,
+  "roro": 0.412,
+  "cap_recent": true,
   "fear_built": 0.319,
-  "roro_velocity": -0.005,
-  "vel_pctile": 0.474,
-  "legs_up": 0,
+  "roro_velocity": -0.028,
+  "vel_pctile": 0.425,
+  "legs_up": 2,
   "legs_total": 7,
-  "flipped_legs": [],
-  "days_since_last_snap": 32,
+  "flipped_legs": [
+    "skew",
+    "dxy"
+  ],
+  "days_since_last_snap": 33,
   "fear_rebuilding": true,
-  "vix_term": 0.917,
+  "vix_term": 0.961,
   "status": "dormant",
   "gates": {
     "velocity": false,
     "legs": false,
     "fear": false,
-    "washout": false
+    "washout": true
   },
   "min_legs": 4,
-  "flipped_legs_named": [],
+  "flipped_legs_named": [
+    {
+      "key": "skew",
+      "en": "SKEW (tail pricing)",
+      "zh": "SKEW \u5c3e\u90e8\u5b9a\u4ef7"
+    },
+    {
+      "key": "dxy",
+      "en": "Dollar (20d %\u0394)",
+      "zh": "\u7f8e\u5143\uff0820\u65e5 %\u53d8\u52a8\uff09"
+    }
+  ],
   "magnitude_band": null
 }
