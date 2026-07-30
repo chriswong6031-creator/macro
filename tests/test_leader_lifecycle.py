@@ -1894,3 +1894,77 @@ class TestDisplayChipsNotInClassify:
         assert peer_div_pos is True, (
             f"peer_divergence expected True with positive rs_accel; got {peer_div_pos!r}"
         )
+
+
+class TestCallSkewRichChip:
+    """LRV-R6: CROWDED chip 6 reads the builder's last-5 persistence count.
+
+    The engine holds only the frozen k (CROWDED_SKEW_PERSIST_MIN of
+    CROWDED_SKEW_PERSIST_WINDOW); the window-excluded Q80 benchmark that produced the
+    count lives in the builder. The daily self-inclusive form this replaced measured
+    ~= its mechanical coin (research/leader_radar_skew_chip/MEASUREMENT.md).
+    """
+
+    def _inp(self, skew_rich_last5: int | None) -> LifecycleInputs:
+        """Flat close/bench so the skew chip is the only leg under test."""
+        n = 300
+        idx = _date_index(n)
+        return LifecycleInputs(
+            close=_flat_close(n, price=100.0, start=str(idx[0].date())),
+            bench_close=_flat_close(n, price=100.0, start=str(idx[0].date())),
+            skew_rich_last5=skew_rich_last5,
+        )
+
+    @pytest.mark.parametrize("count", [3, 4, 5])
+    def test_count_at_or_above_min_fires(self, count):
+        """>= CROWDED_SKEW_PERSIST_MIN of the window → chip True."""
+        from engine.leader_lifecycle import _crowded_check, CROWDED_SKEW_PERSIST_MIN
+        assert count >= CROWDED_SKEW_PERSIST_MIN
+        _, chips, _ = _crowded_check(self._inp(count))
+        assert chips["call_skew_rich"] is True
+
+    @pytest.mark.parametrize("count", [0, 1, 2])
+    def test_count_below_min_is_false_not_null(self, count):
+        """Below the floor is a real FALSE vote — it stays in the denominator."""
+        from engine.leader_lifecycle import _crowded_check, CROWDED_SKEW_PERSIST_MIN
+        assert count < CROWDED_SKEW_PERSIST_MIN
+        _, chips, _ = _crowded_check(self._inp(count))
+        assert chips["call_skew_rich"] is False
+
+    def test_null_count_drops_the_chip_out_of_n_avail(self):
+        """Ineligible history → None → out of the denominator (Kleene, unchanged)."""
+        from engine.leader_lifecycle import _crowded_check
+        _, chips_false, n_with = _crowded_check(self._inp(0))
+        _, chips_null, n_without = _crowded_check(self._inp(None))
+        assert chips_false["call_skew_rich"] is False
+        assert chips_null["call_skew_rich"] is None
+        assert n_without == n_with - 1, (
+            f"a null skew chip must leave n_avail entirely: {n_without} vs {n_with}"
+        )
+
+    def _two_other_chips_true(self, count: int | None) -> LifecycleInputs:
+        """Exactly 2 of the other 6 CROWDED chips TRUE — skew is the deciding vote."""
+        n = 300
+        idx = _date_index(n)
+        return LifecycleInputs(
+            close=_flat_close(n, price=100.0, start=str(idx[0].date())),
+            bench_close=_flat_close(n, price=100.0, start=str(idx[0].date())),
+            valuation_pctile_5y=85.0,   # chip 4 True
+            analyst_buy_pct=90.0,       # chip 5 True
+            basket_corr_now=0.60,
+            basket_corr_then=0.55,      # chip 7 False (never rose from < 0.50)
+            skew_rich_last5=count,
+        )
+
+    def test_persistence_count_decides_the_k_of_n_gate(self):
+        """With 2 other chips TRUE, count 3 reaches CROWDED_K_OF_N and count 2 does not."""
+        from engine.leader_lifecycle import _crowded_check
+        crowded_3, chips_3, _ = _crowded_check(self._two_other_chips_true(3))
+        others_true = [k for k, v in chips_3.items() if v is True and k != "call_skew_rich"]
+        assert len(others_true) == 2, f"fixture drift — other TRUE chips: {others_true}"
+        assert chips_3["call_skew_rich"] is True
+        assert crowded_3 is True
+
+        crowded_2, chips_2, _ = _crowded_check(self._two_other_chips_true(2))
+        assert chips_2["call_skew_rich"] is False
+        assert crowded_2 is False, "2 of 5 window sessions must not carry the gate"

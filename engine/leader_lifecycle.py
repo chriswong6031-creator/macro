@@ -158,6 +158,10 @@ CROWDED_ANALYST_BUY_PCT: float = 85.0       # analyst buy-share ≥ 85% (finnhub
 CROWDED_CORR_NOW: float = 0.75
 CROWDED_CORR_THEN: float = 0.50
 CROWDED_K_OF_N: int = 3                     # ≥3 of chips required
+# LRV-R6: call-skew persistence window (frozen). Pre-registered from null math + state
+# semantics, never tuned on outcomes — research/leader_radar_skew_chip/MEASUREMENT.md.
+CROWDED_SKEW_PERSIST_MIN: int = 3            # ≥3 of the last...
+CROWDED_SKEW_PERSIST_WINDOW: int = 5         # ...5 observed sessions above the window-excluded own-Q80
 
 # ---- State machine / hysteresis ---------------------------------------------
 # pre-registered-arbitrary (LR-R2; frozen)
@@ -247,8 +251,9 @@ class LifecycleInputs:
 
     # --- Crowding / extension inputs ---
     analyst_buy_pct: float | None = None        # analyst buy-share (0..100)
-    rr_25d: float | None = None                 # 25-delta risk reversal (options)
-    rr_80th_pctile: float | None = None         # own 80th pctile of rr_25d
+    # LRV-R6: count of the last CROWDED_SKEW_PERSIST_WINDOW observed sessions whose rr
+    # cleared the window-excluded own-Q80 benchmark (builder computes; None = ineligible)
+    skew_rich_last5: int | None = None
     basket_corr_now: float | None = None        # basket 60d correlation now
     basket_corr_then: float | None = None       # basket correlation 3m ago
 
@@ -1331,9 +1336,13 @@ def _crowded_check(inp: LifecycleInputs) -> tuple[bool, dict, int]:
     else:
         chips["analyst_saturated"] = None
 
-    # Chip 6: call-skew richness (rr_25d ≥ own 80th pctile where gex present)
-    if not _is_null(inp.rr_25d) and not _is_null(inp.rr_80th_pctile):
-        chips["call_skew_rich"] = bool(float(inp.rr_25d) >= float(inp.rr_80th_pctile))
+    # Chip 6: call-skew richness — LRV-R6 persistence form. The builder counts how many
+    # of the last CROWDED_SKEW_PERSIST_WINDOW observed sessions cleared the name's own
+    # Q80 over ≥21 PRIOR real sessions (evaluation window excluded from the benchmark);
+    # the engine only applies the frozen k. The daily self-inclusive form this replaces
+    # measured ≈ its mechanical coin (research/leader_radar_skew_chip/MEASUREMENT.md).
+    if not _is_null(inp.skew_rich_last5):
+        chips["call_skew_rich"] = bool(int(inp.skew_rich_last5) >= CROWDED_SKEW_PERSIST_MIN)
     else:
         chips["call_skew_rich"] = None
 

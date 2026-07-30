@@ -5734,9 +5734,13 @@ artifacts:
       2026-07-05. 5d change computed in engine/options_entry_state.py from this store;
       minimum LOOKBACK_TRADING_DAYS+1 rows required for non-null 5d change.
       No scored arithmetic path reads this store until the skew gate passes.
-      LRV-W1: build_leader_radar reads rr proxy (atm_call_iv−otm_put_iv) for
-      call_skew_rich chip; display-only (≥21 obs gate; all names currently below
-      threshold — chip stays null until history accrues).
+      LRV-W1/LRV-R6: build_leader_radar reads rr proxy (atm_call_iv−otm_put_iv)
+      for the call_skew_rich chip — a CROWDED state-gate input (chip 6 of the
+      7-chip k-of-n, #3977 review corrected the earlier display-only claim),
+      not a scored/ranked path. LRV-R6 (2026-07-29) construction: session-true
+      rows; fires on ≥3 of last 5 sessions above the Q80 of ≥21 prior real
+      sessions (evaluation window excluded); first non-null at n≥26 per name.
+      Measurement of record: research/leader_radar_skew_chip/MEASUREMENT.md.
 
   options-ivspread-snapshots:
     path: data/options_ivspread/snapshots.parquet

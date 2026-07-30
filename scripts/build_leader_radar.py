@@ -761,11 +761,15 @@ def _load_insider_cluster(
     return result
 
 
-# ── Options skew loader (LRV-R1c) ─────────────────────────────────────────────
+# ── Options skew loader (LRV-R1c; construction amended by LRV-R6) ─────────────
 # Sign convention: skew column = otm_put_iv - atm_call_iv (negative = puts cheaper than calls).
 # rr proxy = atm_call_iv - otm_put_iv = -skew. Positive rr means calls MORE expensive
-# than puts (call-skew-rich). Chip fires when rr_25d >= own 80th percentile of history.
-# Require >= 21 observations per name for non-null output; emit skew_n_obs for young-data tag.
+# than puts (call-skew-rich). LRV-R6 fire rule: >= CROWDED_SKEW_PERSIST_MIN of the last
+# CROWDED_SKEW_PERSIST_WINDOW observed sessions clear the Q80 of the PRIOR history with
+# that window excluded. min_obs now gates the benchmark sample alone, so the first
+# non-null arrives at n_obs >= min_obs + CROWDED_SKEW_PERSIST_WINDOW. The superseded
+# daily self-inclusive form measured ~= its mechanical coin — see
+# research/leader_radar_skew_chip/MEASUREMENT.md. Emit skew_n_obs for the young-data tag.
 
 def _load_options_skew(
     data_root: Path,
@@ -774,15 +778,23 @@ def _load_options_skew(
     """Load call-skew data from data/options_skew/snapshots.parquet.
 
     Returns {ticker: {'rr_25d': float|None, 'rr_80th_pctile': float|None,
-                       'skew_n_obs': int}} for each underlying in the store.
+                       'skew_rich_last5': int|None, 'skew_n_obs': int}} for each
+    underlying in the store.
 
-    rr proxy = atm_call_iv - otm_put_iv (= -skew). Chip calls-rich = True when
-    rr_25d >= rr_80th_pctile. History < min_obs: both rr values are None.
+    rr proxy = atm_call_iv - otm_put_iv (= -skew). LRV-R6: 'rr_80th_pctile' is the Q80
+    of the history EXCLUDING the last CROWDED_SKEW_PERSIST_WINDOW observed sessions;
+    'skew_rich_last5' counts how many sessions in that excluded window clear it (the
+    engine fires the chip at >= CROWDED_SKEW_PERSIST_MIN). Prior history < min_obs:
+    rr_25d, rr_80th_pctile and skew_rich_last5 are all None.
 
     Args:
         data_root: repo data root
-        min_obs: minimum date observations per ticker for non-null rr percentile (default 21)
+        min_obs: minimum PRIOR-history observations, evaluation window excluded, for
+            non-null output (default 21 — the LRV-R1c floor, now applied to the
+            benchmark sample alone)
     """
+    from engine.leader_lifecycle import CROWDED_SKEW_PERSIST_WINDOW  # noqa: PLC0415
+
     p = data_root / "options_skew" / "snapshots.parquet"
     if not p.exists():
         log.debug("build_leader_radar: data/options_skew/snapshots.parquet absent")
@@ -801,7 +813,7 @@ def _load_options_skew(
     df = df.copy()
     df["rr"] = df["atm_call_iv"] - df["otm_put_iv"]
 
-    # Per-name: use latest observation only; compute 80th pctile over full history
+    # Per-name: Q80 benchmark over PRIOR history only, evaluation window held out (LRV-R6)
     result: dict[str, dict] = {}
     date_col = "date" if "date" in df.columns else "asof"
 
@@ -811,20 +823,30 @@ def _load_options_skew(
             # Aggregate across tenors: use mean per date
             daily = grp.groupby(date_col)["rr"].mean().sort_index()
             n_obs = len(daily)
-            rr_now = float(daily.iloc[-1]) if n_obs > 0 else None
-            if n_obs >= min_obs:
-                rr_pctile = float(daily.quantile(0.80))
+            # LRV-R6: the evaluation window is held out of its own benchmark, so a
+            # session cannot move the threshold it is being judged against.
+            hist = daily.iloc[:-CROWDED_SKEW_PERSIST_WINDOW]
+            win = daily.iloc[-CROWDED_SKEW_PERSIST_WINDOW:]
+            if len(hist) >= min_obs:
+                thr = float(hist.quantile(0.80))
+                result[ticker] = {
+                    "rr_25d": float(daily.iloc[-1]),
+                    "rr_80th_pctile": thr,
+                    # NaN >= thr is False: a missing reading is never counted as above
+                    "skew_rich_last5": int((win >= thr).sum()),
+                    "skew_n_obs": n_obs,
+                }
             else:
-                rr_pctile = None
-                rr_now = None  # also null when < min_obs
-            result[ticker] = {
-                "rr_25d": rr_now,
-                "rr_80th_pctile": rr_pctile,
-                "skew_n_obs": n_obs,
-            }
+                result[ticker] = {
+                    "rr_25d": None,
+                    "rr_80th_pctile": None,
+                    "skew_rich_last5": None,  # prior history short of min_obs
+                    "skew_n_obs": n_obs,
+                }
         except Exception as e:  # noqa: BLE001
             log.debug("build_leader_radar: options_skew/%s failed: %s", ticker, e)
-            result[ticker] = {"rr_25d": None, "rr_80th_pctile": None, "skew_n_obs": 0}
+            result[ticker] = {"rr_25d": None, "rr_80th_pctile": None,
+                              "skew_rich_last5": None, "skew_n_obs": 0}
     return result
 
 
@@ -1331,8 +1353,7 @@ def _build_ticker_assessment(
     peer_median_rs_63d: float | None = None,
     rs_accel_leader: float | None = None,
     insider_cluster: bool | None = None,
-    rr_25d: float | None = None,
-    rr_80th_pctile: float | None = None,
+    skew_rich_last5: int | None = None,
     basket_corr_now: float | None = None,
     basket_corr_then: float | None = None,
     session_calendar: "list[date] | None" = None,
@@ -1389,13 +1410,13 @@ def _build_ticker_assessment(
         ),
         state_history=confirmed_history,
         days_in_state=tracked_sessions,
-        # LRV-W1 new wires (rr_25d + rr_80th_pctile → engine computes call_skew_rich)
+        # LRV-W1 new wires (LRV-R6: the builder counts the last-5 window against the
+        # window-excluded Q80; the engine applies the frozen CROWDED_SKEW_PERSIST_MIN)
         rs_rank_history=rs_rank_history,
         peer_median_rs_63d=peer_median_rs_63d,
         rs_accel_leader=rs_accel_leader,
         insider_cluster=insider_cluster,
-        rr_25d=rr_25d,
-        rr_80th_pctile=rr_80th_pctile,
+        skew_rich_last5=skew_rich_last5,
         basket_corr_now=basket_corr_now,
         basket_corr_then=basket_corr_then,
     )
@@ -2237,7 +2258,7 @@ def build(
     except Exception as e:  # noqa: BLE001
         log.warning("build_leader_radar: insider_cluster load failed: %s", e)
 
-    # Options skew: {ticker: {rr_25d, rr_80th_pctile, skew_n_obs}}
+    # Options skew: {ticker: {rr_25d, rr_80th_pctile, skew_rich_last5, skew_n_obs}}
     skew_map: dict[str, dict] = {}
     try:
         skew_map = _load_options_skew(data_root)
@@ -2407,8 +2428,7 @@ def build(
                 peer_median_rs_63d=peer_median_map.get(ticker),
                 rs_accel_leader=rs_accel_map.get(ticker),
                 insider_cluster=insider_map.get(ticker),
-                rr_25d=_skew.get("rr_25d"),
-                rr_80th_pctile=_skew.get("rr_80th_pctile"),
+                skew_rich_last5=_skew.get("skew_rich_last5"),
                 basket_corr_now=_basket_corr[0] if _basket_corr else None,
                 basket_corr_then=_basket_corr[1] if _basket_corr else None,
                 session_calendar=_session_calendar,
@@ -2541,6 +2561,11 @@ def build(
                     "tf2d_state": tf2d,
                     # LRV-W1 context additions
                     "skew_n_obs": (skew_map.get(ticker) or {}).get("skew_n_obs"),
+                    # LRV-R6 receipt: the count that fired the chip + the two rr levels
+                    # behind it (display-only — the engine reads skew_rich_last5 alone)
+                    "skew_rich_last5": (skew_map.get(ticker) or {}).get("skew_rich_last5"),
+                    "rr_25d": (skew_map.get(ticker) or {}).get("rr_25d"),
+                    "rr_80th_pctile": (skew_map.get(ticker) or {}).get("rr_80th_pctile"),
                     "peer_median_rs_63d": peer_median_map.get(ticker),
                     "rs_accel_leader": rs_accel_map.get(ticker),
                     "insider_cluster": insider_map.get(ticker),
