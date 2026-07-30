@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-30T01:39:42.946460+00:00",
-  "count": 357,
+  "generated_at": "2026-07-30T01:54:42.638158+00:00",
+  "count": 358,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -398,6 +398,23 @@
       "side": "sell",
       "desk": "",
       "published_at": "2026-07-29T08:04:26Z",
+      "summary_points": [
+        "Missing Document**: No source material provided for extraction **Critical Input Gap**: Absence of actual document content prevents identification of fundamentals/data/technical points **Action Required**: Provide document text to proceed with analysis per specified criteria"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-pxsfj3twnf8-781af2",
+      "title": "Seagate Technology (STX) Continued pricing momentum and HAMR ramp should bolster confidence in earnings power and capital re...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T08:04:22Z",
       "summary_points": [
         "Missing Document**: No source material provided for extraction **Critical Input Gap**: Absence of actual document content prevents identification of fundamentals/data/technical points **Action Required**: Provide document text to proceed with analysis per specified criteria"
       ],
