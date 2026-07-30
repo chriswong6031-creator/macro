@@ -231,16 +231,21 @@ jobs:
         # their .git directories grow without bound (measured 2026-07-30: 4.5–26 GB
         # across the local Mac pool; run 30530156302 then spent >20m in checkout's
         # index-pack before one builder ran). Once the object store crosses 8 GiB,
-        # quarantine that disposable checkout and let checkout create a shallow partial
-        # clone. The exact workspace shape is validated before removal; the quarantined
-        # Git store lives under RUNNER_TEMP, which the runner also cleans after the job.
+        # quarantine the oversized Git store, but RETAIN the clean current working tree:
+        # main contains ~2.85 GB / 49.7k tracked files, so deleting the tree merely trades
+        # the 26 GB history problem for a 25m+ cold download. A local metadata-only clone
+        # gives checkout a shallow partial repository whose index already describes the
+        # retained tree; checkout then downloads only real main deltas. The exact workspace
+        # shape is validated before any destructive command. The quarantined store lives
+        # under RUNNER_TEMP, which the runner also cleans after the job.
         shell: bash
         run: |
           set -euo pipefail
           [ -d .git ] || exit 0
           GIT_KIB=$(du -sk .git | awk '{print $1}')
-          [ "${GIT_KIB:-0}" -gt 8388608 ] || {
-            echo "::notice::persisted checkout is $((GIT_KIB / 1024)) MiB; below the 8 GiB reset bound"
+          GIT_MAX_KIB="${CHECKOUT_GIT_MAX_KIB:-8388608}"
+          [ "${GIT_KIB:-0}" -gt "$GIT_MAX_KIB" ] || {
+            echo "::notice::persisted checkout is $((GIT_KIB / 1024)) MiB; below the reset bound"
             exit 0
           }
           case "${GITHUB_WORKSPACE:-}" in
@@ -252,10 +257,37 @@ jobs:
             exit 1
           }
           CHECKOUT_TRASH="${RUNNER_TEMP:?}/macro-git-${GITHUB_RUN_ID:?}-${GITHUB_RUN_ATTEMPT:?}"
-          echo "::notice::resetting oversized persisted checkout ($((GIT_KIB / 1024)) MiB)"
-          mv .git "$CHECKOUT_TRASH"
-          find "$GITHUB_WORKSPACE" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
+          CHECKOUT_META="${RUNNER_TEMP:?}/macro-meta-${GITHUB_RUN_ID:?}-${GITHUB_RUN_ATTEMPT:?}"
+          case "$CHECKOUT_TRASH $CHECKOUT_META" in
+            "$RUNNER_TEMP"/macro-git-"$GITHUB_RUN_ID"-"$GITHUB_RUN_ATTEMPT $RUNNER_TEMP"/macro-meta-"$GITHUB_RUN_ID"-"$GITHUB_RUN_ATTEMPT") ;;
+            *) echo "::error::refusing unexpected checkout quarantine paths"; exit 1 ;;
+          esac
+          [ ! -e "$CHECKOUT_TRASH" ] && [ ! -e "$CHECKOUT_META" ] || {
+            echo "::error::refusing to overwrite an existing checkout quarantine"
+            exit 1
+          }
+          REMOTE_URL=$(git remote get-url origin)
+          SEED_SHA=$(git rev-parse HEAD)
+          echo "::notice::compacting oversized persisted checkout ($((GIT_KIB / 1024)) MiB) at $SEED_SHA"
+          # A timed-out render can leave tracked and ignored builder outputs dirty.
+          # Restore the retained tree while its complete old object store is available.
+          git reset --hard "$SEED_SHA"
+          git clean -ffdx
           echo "CHECKOUT_TRASH=$CHECKOUT_TRASH" >> "$GITHUB_ENV"
+          mv .git "$CHECKOUT_TRASH"
+          # Serve a metadata-only depth-1 clone locally. The old tree's blobs stay on
+          # disk as regular working files; they are not copied into the new object store.
+          git --git-dir="$CHECKOUT_TRASH" config uploadpack.allowFilter true
+          git clone --quiet --no-checkout --single-branch --branch main --depth=1 \
+            --filter=blob:none "file://$CHECKOUT_TRASH" "$CHECKOUT_META"
+          mv "$CHECKOUT_META/.git" "$GITHUB_WORKSPACE/.git"
+          rmdir "$CHECKOUT_META"
+          git remote set-url origin "$REMOTE_URL"
+          # Populate index stat data from the retained clean files without checking out
+          # (and therefore without lazy-fetching) all ~49.7k current-tree blobs.
+          git reset --mixed HEAD
+          git update-index --refresh
+          echo "::notice::retained current tree with a $(du -sh .git | awk '{print $1}') shallow metadata store"
       - uses: actions/checkout@v4
         with:
           ref: main

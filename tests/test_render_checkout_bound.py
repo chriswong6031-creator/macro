@@ -1,6 +1,8 @@
 """Keep self-hosted render checkouts from accumulating generated-site history."""
 
+import os
 from pathlib import Path
+import subprocess
 
 import yaml
 
@@ -32,11 +34,16 @@ def test_oversized_checkout_is_bounded_before_checkout_runs():
     assert "8388608" in script, "8 GiB checkout bound disappeared"
     assert "*/_work/*/*)" in script, "workspace-shape safety check disappeared"
     assert '[ "$PWD" = "$GITHUB_WORKSPACE" ]' in script
+    assert 'git reset --hard "$SEED_SHA"' in script
+    assert "git clean -ffdx" in script
     assert 'mv .git "$CHECKOUT_TRASH"' in script
-    assert (
-        script.index('mv .git "$CHECKOUT_TRASH"')
-        < script.index('find "$GITHUB_WORKSPACE"')
-    ), "the Git store must be quarantined before the disposable tree is removed"
+    assert 'find "$GITHUB_WORKSPACE"' not in script, (
+        "the 2.85 GB current tree must survive metadata compaction"
+    )
+    assert "--filter=blob:none" in script
+    assert '"file://$CHECKOUT_TRASH"' in script
+    assert 'git reset --mixed HEAD' in script
+    assert 'git update-index --refresh' in script
 
 
 def test_render_checkout_uses_a_shallow_blobless_partial_clone():
@@ -61,3 +68,97 @@ def test_quarantine_cleanup_is_exact_and_runs_even_after_failure():
     script = cleanup["run"]
     assert '"${RUNNER_TEMP:?}"/macro-git-' in script
     assert 'rm -rf -- "$CHECKOUT_TRASH"' in script
+
+
+def _git(cwd: Path, *args: str) -> str:
+    result = subprocess.run(
+        ["git", *args],
+        cwd=cwd,
+        check=True,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    return result.stdout.strip()
+
+
+def test_oversized_reset_retains_clean_tree_and_replaces_only_metadata(tmp_path):
+    remote = tmp_path / "remote.git"
+    subprocess.run(["git", "init", "--bare", remote], check=True, capture_output=True)
+
+    workspace = tmp_path / "runner" / "_work" / "macro" / "macro"
+    workspace.parent.mkdir(parents=True)
+    subprocess.run(
+        ["git", "clone", remote, workspace],
+        check=True,
+        capture_output=True,
+    )
+    _git(workspace, "config", "user.name", "Render Test")
+    _git(workspace, "config", "user.email", "render@example.test")
+    (workspace / "site").mkdir()
+    payload = "current generated site\n" + ("x" * 1024 * 1024)
+    (workspace / "site" / "macro.html").write_text(payload, encoding="utf-8")
+    (workspace / "tracked.txt").write_text("committed\n", encoding="utf-8")
+    _git(workspace, "add", "site/macro.html", "tracked.txt")
+    _git(workspace, "commit", "-m", "seed")
+    _git(workspace, "branch", "-M", "main")
+    _git(workspace, "push", "-u", "origin", "main")
+
+    old_git_kib = int(
+        subprocess.run(
+            ["du", "-sk", workspace / ".git"],
+            check=True,
+            text=True,
+            capture_output=True,
+        ).stdout.split()[0]
+    )
+    (workspace / "tracked.txt").write_text("dirty render output\n", encoding="utf-8")
+    (workspace / "ignored.tmp").write_text("throwaway\n", encoding="utf-8")
+
+    runner_temp = tmp_path / "runner-temp"
+    runner_temp.mkdir()
+    github_env = tmp_path / "github-env"
+    env = {
+        **os.environ,
+        "CHECKOUT_GIT_MAX_KIB": "1",
+        "GITHUB_WORKSPACE": str(workspace),
+        "RUNNER_TEMP": str(runner_temp),
+        "GITHUB_RUN_ID": "123",
+        "GITHUB_RUN_ATTEMPT": "1",
+        "GITHUB_ENV": str(github_env),
+    }
+    bound = next(
+        step
+        for step in _steps()
+        if step.get("name") == "bound persisted render checkout"
+    )
+    subprocess.run(
+        ["bash", "-c", bound["run"]],
+        cwd=workspace,
+        env=env,
+        check=True,
+        text=True,
+        capture_output=True,
+    )
+
+    assert (workspace / "site" / "macro.html").read_text(encoding="utf-8") == payload
+    assert (workspace / "tracked.txt").read_text(encoding="utf-8") == "committed\n"
+    assert not (workspace / "ignored.tmp").exists()
+    assert _git(workspace, "status", "--porcelain") == ""
+    assert _git(workspace, "rev-parse", "--is-shallow-repository") == "true"
+    assert _git(workspace, "config", "remote.origin.partialclonefilter") == "blob:none"
+    assert _git(workspace, "remote", "get-url", "origin") == str(remote)
+    assert (
+        github_env.read_text(encoding="utf-8").strip()
+        == f"CHECKOUT_TRASH={runner_temp / 'macro-git-123-1'}"
+    )
+    assert (runner_temp / "macro-git-123-1").is_dir()
+    new_git_kib = int(
+        subprocess.run(
+            ["du", "-sk", workspace / ".git"],
+            check=True,
+            text=True,
+            capture_output=True,
+        ).stdout.split()[0]
+    )
+    assert new_git_kib < old_git_kib
