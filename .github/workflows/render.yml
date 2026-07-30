@@ -40,10 +40,10 @@ on:
         default: all
         options: [all, macro, intl, china, hk, canada, markets, gex, baskets, sits]
       runner:
-        description: "Runner label — macstudio is the fast default; use render-linux as the PC fallback"
+        description: "Runner label — render-heavy is reserved; macstudio/render-linux are manual fallbacks"
         type: choice
-        default: macstudio
-        options: [render-linux, macstudio]
+        default: render-heavy
+        options: [render-heavy, render-linux, macstudio]
   push:
     branches: [main]
     # A HUMAN pushing a template or builder change auto-renders + deploys. The
@@ -210,11 +210,14 @@ concurrency:
 
 jobs:
   render:
-    # The full macstudio pool is the measured fast path (40-71m quiet-box runs versus
-    # 65-108m on render-linux, with the Mac-saved zstd caches restoring natively).
-    # Keep render-linux as an explicit manual fallback; GHA has no OR-label fallback
-    # and the venv/bootstrap steps below remain portable both ways.
-    runs-on: ${{ github.event.inputs.runner || 'macstudio' }}
+    # `macstudio` currently represents logical agents on only two physical Macs.
+    # General daily/asia/codex jobs could therefore run beside this serial renderer
+    # and turn a 40-71m quiet-box build into a 2h+ run. `render-heavy` reserves one
+    # M2 host for this lane. The dispatch input retains the shared Mac pool and
+    # render-linux as explicit operator fallbacks; bootstrap remains portable.
+    runs-on:
+      - self-hosted
+      - ${{ github.event.inputs.runner || 'render-heavy' }}
     # was 75 — a scope=all render now takes 40-71m when the box is quiet (measured
     # 2026-07-11: run 29155365959 = 40m, run 29169451233 = 71.4m) and blew straight
     # through 75m under the evening merge-spree congestion (run 29172926033 CANCELLED
