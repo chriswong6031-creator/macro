@@ -823,8 +823,8 @@ jobs:
           exit 0
       - name: ensure node for the inline-JS guard
         # check_inline_js shells out to `node --check`. pc-render-1 (WSL2, #2771) shipped
-        # WITHOUT node, so this guard failed on every render there 07-18 — and because the
-        # commit step is if: always(), unverified JS shipped to main (the VPS serves main).
+        # WITHOUT node, so this guard failed on every render there 07-18; the old
+        # always-publish path still shipped that unverified JS. Publication is now gated.
         # setup-node installs into the runner tool cache: works on Linux AND a Mac fallback.
         uses: actions/setup-node@v4
         with:
