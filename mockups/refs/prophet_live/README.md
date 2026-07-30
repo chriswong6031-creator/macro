@@ -16,10 +16,26 @@ these files are what it must end up looking like.
 
 The mockup's height numbers (231.25 / 233.25 / 284.34px) do **not** carry over: the real
 page inherits `line-height:1.5` where the mockup inherited `normal`, so a baseline-aligned
-row measures 26.06px there against 24.5px here. The shipped build therefore pins the row
-height and derives the body reservation from it (`--plv-rh`), and the production numbers are
-**243.25px** at 1180px (en and zh) and **336.34px** at 375px. `verify_p1.py` is the source
-of truth for the shipped surface; re-run it, never quote the mockup.
+row measures 26.06px there against 24.5px here. The shipped build pins the row height and
+derives the body reservation from it (`--plv-rh`). `verify_p1.py` is the source of truth
+for the shipped surface; re-run it, never quote the mockup.
+
+The panel's height is **constant across modes at every width** but varies BY width (the
+copy wraps differently): 243.25px from 700px up, rising to 369.09px at 320px in en. Quote
+the matrix `verify_p1.py` prints, not a single number.
+
+## Height invariance is a SWEEP, not three measurements
+
+`HEIGHT_WIDTHS` × {en, zh} × every mode, and the harness exits non-zero on any variance.
+This matters more than it looks: the first version of the gate hardcoded the three
+configurations the PR body happened to quote, so it could only ever agree with the claim
+being made. It passed while the panel shoved the board by up to **32.75px** at nine other
+widths, because three boxes whose text changes with the mode had no line reservation —
+`.plv-sub`, `.plv-fn`, and the header (a short token fitted beside the title where a long
+one wrapped). The fix is structural rather than per-breakpoint numbers: every mode's
+variant stays in the DOM stacked in one grid cell with `visibility:hidden`, so the browser
+reserves the worst case at whatever width and language it is rendering. If you add a mode
+or change any of that copy, re-run — do not re-measure by hand.
 
 ## Specimens
 

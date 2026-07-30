@@ -19,11 +19,12 @@ What it does, and why each part is not optional:
      rail position is not reproducible.
   4. Shoots per-state crops in dark + light + zh via ``element.screenshot`` — which dodges
      the backdrop-filter scroll blackout a full-page shot hits on this page.
-  5. Prints the four proofs the spec's §7 demands:
+  5. Prints the five proofs the spec's §7 demands:
        · HEIGHT INVARIANCE — ``getBoundingClientRect().height`` of ``#prophet-live``
-         identical across live / faded / quiet / dark / closed, at 1180 en, 1180 zh and
-         375 en. This is the no-thrash gate: the strip must not move the board when the
-         counts change every ~5 minutes.
+         identical across every mode, SWEPT over :data:`HEIGHT_WIDTHS` × en/zh (not
+         sampled at the widths the PR body quotes — see that constant's note). This is the
+         no-thrash gate: the strip must not move the board when the counts change every ~5
+         minutes, and it must not move it when the MODE changes either.
        · COMPUTED STYLE — the states, hues and visibilities are read back off
          ``getComputedStyle``, never eyeballed off markup (house law). Includes the
          ``.pv-live[hidden]`` trap: a class-level ``display`` out-specifies the UA
@@ -33,7 +34,10 @@ What it does, and why each part is not optional:
          must be byte-identical. Anything else means the presentation tier reached into
          the graded board (DNR §1).
        · OVERLAY WRAP — the pre-existing desktop clipping bug: ``.pv-ov.pv-ovl``
-         ``flex-wrap`` must be ``wrap`` at 1180px, not only under the 680px query.
+         ``flex-wrap`` must be ``wrap`` at every desktop width, not only under the 680px
+         query. Swept, and measured against today's 3-chip board as well as the 4-chip one.
+       · ROW CELL GEOMETRY — no cell overlaps a neighbour and no row overflows the panel,
+         at every breakpoint the component defines.
 
 Exit code is non-zero when any proof fails, so this doubles as a pre-push gate.
 """
@@ -53,6 +57,15 @@ SITE = ROOT / "site"
 PAGE_NAME = "_plv_verify.html"
 
 sys.path.insert(0, str(ROOT))
+
+#: Widths the height sweep must hold at, in BOTH languages and across every mode. Covers
+#: each real phone/tablet class plus the component's own breakpoints (560/680) and both
+#: sides of them. THIS LIST IS THE GATE: the first version of this harness hardcoded the
+#: three configurations the PR body happened to quote, so it could only ever confirm what
+#: was already claimed — and it passed while the panel shoved the board by up to 32.75px
+#: at 320/340/412/428/440/460/480/500/600. Never trim this back to the widths you measured.
+HEIGHT_WIDTHS = (320, 340, 360, 375, 390, 412, 428, 440, 460, 480, 500, 540,
+                 560, 600, 640, 680, 700, 768, 900, 1024, 1180, 1440)
 
 # ── Clock anchors (ET) ───────────────────────────────────────────────────────────
 # 2026-07-30 is a Thursday. Each specimen pins the ET wall clock that makes its own
@@ -120,10 +133,23 @@ def _dark(pass_ts: str, reason: str, *, carry: dict | None = None,
     }
 
 
-def _cross(state: str, px: float, lvl: float, since: str, *, via: str | None = None,
-           close: bool = False, passes: int = 3) -> dict:
-    st: dict = {"state": state, "entered": "cross", "price": px, "cross_px": lvl,
-                "quote_age_min": 3.2, "passes": passes, "since_ts": since}
+def _cross(state: str, px: float, lvl: float | None, since: str | None, *,
+           via: str | None = None, close: bool = False, passes: int = 3) -> dict:
+    """One cross row.
+
+    ``lvl``/``since`` are passed as ``None`` by the bare specimen so the em-dash
+    degradation path is exercised by a real render rather than only asserted by a
+    substring grep. The level key is ``cross_level_px`` — the pack's own name for the
+    lower edge of the buyable interval. There is deliberately no ``cross_px`` anywhere:
+    the forward ledger's ``cross_px`` is a fill price, a different quantity, and printing
+    it under a "Cross level" heading would put one number under another's label.
+    """
+    st: dict = {"state": state, "entered": "cross", "price": px,
+                "quote_age_min": 3.2, "passes": passes}
+    if lvl is not None:
+        st["cross_level_px"] = lvl
+    if since is not None:
+        st["since_ts"] = since
     if via:
         st["via"] = via
     if close:
@@ -131,9 +157,14 @@ def _cross(state: str, px: float, lvl: float, since: str, *, via: str | None = N
     return st
 
 
-def _board(state: str, px: float, *, via: str | None = None, close: bool = False) -> dict:
+def _board(state: str, px: float, *, via: str | None = None, close: bool = False,
+           fade_px: float | None = None) -> dict:
+    """One board row. A board name's level is ``fade_px``, not ``cross_level_px`` — the
+    key that is present IS which quantity it is, so the consumer reads them by name."""
     st: dict = {"state": state, "entered": "board", "price": px, "quote_age_min": 2.8,
-                "passes": 4, "fails": 0}
+                "passes": 4, "fails": 0, "since_ts": "2026-07-30T18:10:00Z"}
+    if fade_px is not None:
+        st["fade_px"] = fade_px
     if via:
         st["via"] = via
     if close:
@@ -153,8 +184,8 @@ def build_specimens(cross_tickers: list[str], buy_tk: str, other_tk: str) -> dic
     """
     c1, c2, c3, c4 = (cross_tickers + ["ONTO", "MLI", "CRS", "LFUS"])[:4]
     cards_payload = _live(T_1541, _states(**{
-        buy_tk: _board("at_risk", 144.10, via="drop"),
-        other_tk: _board("forming", 47.95, close=True),
+        buy_tk: _board("at_risk", 144.10, via="drop", fade_px=146.60),
+        other_tk: _board("forming", 47.95, close=True, fade_px=47.08),
     }))
     return {
         "strip_live": (T_1541, _live(T_1541, _states(**{
@@ -179,9 +210,23 @@ def build_specimens(cross_tickers: list[str], buy_tk: str, other_tk: str) -> dic
             c4: _cross("forming", 41.20, 40.85, "2026-07-30T16:10:00Z"),
             "AAPL": _cross("forming", 232.10, 230.90, "2026-07-30T17:00:00Z"),
         }))),
+        # Neither optional field present — the em-dash path for BOTH the Cross level and
+        # the SINCE column, rendered rather than merely asserted by a substring grep.
+        "strip_bare": (T_1541, _live(T_1541, _states(**{
+            c1: _cross("forming", 224.60, None, None),
+            c2: _cross("faded", 86.62, None, None, via="drop"),
+            c3: _cross("forming", 286.40, None, None, close=True),
+        }))),
         "strip_quiet": (T_1120, _live(T_1120, _states())),
+        # Producer-ATTESTED dark: it says stale_pack, so the strip may relay that cause.
         "strip_dark": (T_1120, _dark(T_1120, "stale_pack")),
-        "strip_closed": (T_1645, _live(T_1645, _states(**{
+        # No pass has run for today at all — the shape of every market holiday, and of a
+        # down lane. The strip must NOT guess a cause here (m1): yesterday's file is simply
+        # the newest one, which is not evidence of a stale watch list.
+        "strip_noread": (T_1120, _live("2026-07-29T20:15:00Z", _states(), session="2026-07-29")),
+        # Post-close. The pass_ts must be near the close or the strip stays dark rather
+        # than laundering a producer that died hours earlier (m2).
+        "strip_closed": (T_1645, _live("2026-07-30T20:15:00Z", _states(**{
             c1: _cross("forming", 224.60, 222.85, "2026-07-30T17:20:00Z", close=True),
             c2: _cross("faded", 86.62, 87.40, "2026-07-30T16:40:00Z", via="drop"),
         }))),
@@ -192,7 +237,16 @@ def build_specimens(cross_tickers: list[str], buy_tk: str, other_tk: str) -> dic
 # ── The page ─────────────────────────────────────────────────────────────────────
 
 def render_page() -> tuple[list[str], list[str]]:
-    """Render the real template into site/ and return (board tickers, cross tickers)."""
+    """Render the real template and return (⚡ tickers, candidate cross tickers).
+
+    The HTML is held IN MEMORY and served by the handler below, never written into
+    ``site/``. A temp page there is picked up by the repo guards that scan ``site/**`` —
+    ``check_validated_claims`` reported 21 unearned claims off this harness's own scratch
+    file, because the page is a copy of the real board and inherits every phrase on it.
+    Serving it from the server root keeps all the relative asset paths (theme.css,
+    theme.js, factordata/…) resolving exactly as they do in production, with nothing on
+    disk to leak into a guard, a commit, or a crashed run's leftovers.
+    """
     from tests.test_dashboard_template_render import _base_vm, _env
 
     board = json.loads((SITE / "factordata" / "us_standouts.json").read_text())
@@ -203,8 +257,8 @@ def render_page() -> tuple[list[str], list[str]]:
     trg = [r["ticker"] for r in board["buy"][:6]]
     vm["top_setups"] = {"buy": [{"ticker": t, "signal": {"tier_cascade": "T2"}} for t in trg]}
 
-    html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
-    (SITE / PAGE_NAME).write_text(html)
+    _Page.body = _env().get_template("dashboard.html.j2").render(
+        **vm, mode="stocks").encode()
 
     on_board = {r["ticker"] for r in board["buy"]}
     crosses = [r["ticker"] for r in (board.get("watch") or []) if r["ticker"] not in on_board]
@@ -216,6 +270,12 @@ class _Payload:
 
     body: bytes | None = None
     hits = 0
+
+
+class _Page:
+    """The rendered us_stocks page, served from memory (see render_page)."""
+
+    body: bytes | None = None
 
 
 def serve() -> tuple[socketserver.TCPServer, int]:
@@ -232,6 +292,13 @@ def serve() -> tuple[socketserver.TCPServer, int]:
 
         def do_GET(self):  # noqa: N802
             path = self.path.split("?")[0]
+            if path == "/" + PAGE_NAME and _Page.body is not None:
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(_Page.body)))
+                self.end_headers()
+                self.wfile.write(_Page.body)
+                return
             if path == "/live/prophet_live.json":
                 if _Payload.body is None:
                     self.send_error(404)
@@ -406,9 +473,11 @@ def main() -> int:
                 ("strip_faded", ("dark", "en")), ("strip_faded", ("light", "en")),
                 ("strip_faded", ("dark", "zh")),
                 ("strip_overflow", ("dark", "en")), ("strip_overflow", ("dark", "zh")),
+                ("strip_bare", ("dark", "en")),
                 ("strip_quiet", ("dark", "en")), ("strip_quiet", ("light", "en")),
                 ("strip_dark", ("dark", "en")), ("strip_dark", ("light", "en")),
                 ("strip_dark", ("dark", "zh")),
+                ("strip_noread", ("dark", "en")), ("strip_noread", ("dark", "zh")),
                 ("strip_closed", ("dark", "en")), ("strip_closed", ("light", "en")),
                 ("cards", ("dark", "en")), ("cards", ("light", "en")),
                 ("cards", ("dark", "zh"))]
@@ -458,32 +527,57 @@ def main() -> int:
             ctx.close()
 
         # ── 2. Height invariance ─────────────────────────────────────────────
-        print("\n── HEIGHT INVARIANCE (spec §6.4 rule 1) ───────────────────────")
-        modes = ("strip_live", "strip_faded", "strip_overflow", "strip_quiet",
-                 "strip_dark", "strip_closed")
-        for width, lang in ((1180, "en"), (1180, "zh"), (375, "en")):
-            heights = {}
-            for shot in modes:
-                ctx = browser.new_context(viewport={"width": width, "height": 1500})
-                page = ctx.new_page()
-                load(page, shot, "dark", lang)
-                heights[shot] = page.evaluate(
-                    "() => {var e=document.getElementById('prophet-live');"
-                    "return e?+e.getBoundingClientRect().height.toFixed(2):null;}")
-                ctx.close()
-            uniq = sorted({h for h in heights.values() if h is not None})
-            ok = len(uniq) == 1 and None not in heights.values()
-            print(f"  {width}px {lang}: " + "  ".join(
-                f"{k.replace('strip_','')}={v}" for k, v in heights.items())
-                + f"   → {'INVARIANT ' + str(uniq[0]) + 'px' if ok else 'FAIL'}")
-            if not ok:
-                fails.append(f"height invariance {width}px {lang}: {heights}")
+        # SWEPT, not sampled. The first version of this loop hardcoded
+        # ((1180,"en"),(1180,"zh"),(375,"en")) — the three configurations the PR body
+        # happened to report — so the gate could only ever confirm what was already
+        # claimed. It passed while the panel shoved the board by up to 32.75px at nine
+        # other widths. A gate that can only agree with you is not a gate.
+        print("\n── HEIGHT INVARIANCE (spec §6.4 rule 1) — swept ───────────────")
+        modes = ("strip_live", "strip_faded", "strip_overflow", "strip_bare",
+                 "strip_quiet", "strip_dark", "strip_closed")
+        print("   width lang | " + " ".join(f"{m.replace('strip_',''):>8}" for m in modes)
+              + " |   variance")
+        for lang in ("en", "zh"):
+            for width in HEIGHT_WIDTHS:
+                heights = {}
+                for shot in modes:
+                    ctx = browser.new_context(viewport={"width": width, "height": 1600})
+                    page = ctx.new_page()
+                    load(page, shot, "dark", lang)
+                    heights[shot] = page.evaluate(
+                        "() => {var e=document.getElementById('prophet-live');"
+                        "return (e && !e.hidden) ? "
+                        "+e.getBoundingClientRect().height.toFixed(2) : null;}")
+                    ctx.close()
+                vals = [h for h in heights.values() if h is not None]
+                missing = [k for k, v in heights.items() if v is None]
+                var = (max(vals) - min(vals)) if vals else 0.0
+                ok = not missing and var <= 0.01
+                print(f"  {width:6d} {lang}   | "
+                      + " ".join(f"{heights[m]:8.2f}" if heights[m] is not None
+                                 else "  HIDDEN" for m in modes)
+                      + f" | {var:7.2f}  {'OK' if ok else 'SHOVE'}")
+                if missing:
+                    fails.append(f"height invariance {width}px {lang}: "
+                                 f"panel hidden in {missing}")
+                elif var > 0.01:
+                    fails.append(f"height invariance {width}px {lang}: {var:.2f}px shove "
+                                 f"({heights})")
 
         # ── 3. Computed style ────────────────────────────────────────────────
         print("\n── COMPUTED STYLE (house law: verify orders, don't eyeball) ────")
         probe = """
         () => {
           const cs = (el, p) => el ? getComputedStyle(el).getPropertyValue(p).trim() : null;
+          // Read only the VISIBLE variant. The token / stance / footer boxes stack every
+          // mode's text in one grid cell so the box reserves the worst case at this width;
+          // textContent on the container would concatenate all of them and hide which one
+          // is actually showing. This must read what the reader sees.
+          const shown = id => { const e = document.getElementById(id); if (!e) return null;
+            const on = e.querySelector('.plv-v.is-on');
+            return ((on || e).textContent || '').trim(); };
+          const nVis = id => { const e = document.getElementById(id);
+            return e ? e.querySelectorAll('.plv-v').length : 0; };
           const panel = document.getElementById('prophet-live');
           const rows = [...document.querySelectorAll('#plv-body .plv-row')];
           const chip = k => document.querySelector('#plv-body .plv-chip--'+k);
@@ -495,11 +589,11 @@ def main() -> int:
             panelClasses: panel ? panel.className : null,
             rowCount: rows.length,
             tickers: rows.map(r => r.getAttribute('data-plv-tk')),
-            token: (document.getElementById('plv-token')||{}).textContent,
+            token: shown('plv-token'), reserved: [nVis('plv-token'), nVis('plv-sub'), nVis('plv-fn')],
             asof: (document.getElementById('plv-asof')||{}).textContent,
-            sub: (document.getElementById('plv-sub')||{}).textContent,
+            sub: shown('plv-sub'),
             body: (document.getElementById('plv-body')||{}).textContent,
-            footer: (document.getElementById('plv-fn')||{}).textContent,
+            footer: shown('plv-fn'),
             more: (() => { const m=document.getElementById('plv-more');
                            return m ? {hidden:m.hidden, txt:m.textContent,
                                        exp:m.getAttribute('aria-expanded')} : null; })(),
@@ -563,14 +657,15 @@ def main() -> int:
                   cardH: +best.c.getBoundingClientRect().height.toFixed(2)};
         }
         """
-        for shot in ("strip_live", "strip_faded", "strip_overflow", "strip_quiet",
-                     "strip_dark", "strip_closed", "cards"):
+        for shot in ("strip_live", "strip_faded", "strip_overflow", "strip_bare",
+                     "strip_quiet", "strip_dark", "strip_noread", "strip_closed", "cards"):
             ctx = browser.new_context(viewport={"width": 1180, "height": 1500})
             page = ctx.new_page()
             load(page, shot, "dark", "en")
             r = page.evaluate(probe)
             print(f"\n  [{shot}] display={r['panelDisplay']} classes={r['panelClasses']!r}")
-            print(f"    token={r['token']!r} asof={r['asof']!r}")
+            print(f"    token={r['token']!r} asof={r['asof']!r}  "
+                  f"(stacked variants token/sub/footer={r['reserved']})")
             print(f"    sub={r['sub']!r}")
             print(f"    rows={r['rowCount']} {r['tickers']} more={r['more']}")
             print(f"    body={r['body']!r}")
@@ -693,7 +788,7 @@ def main() -> int:
 
         browser.close()
     srv.shutdown()
-    (SITE / PAGE_NAME).unlink(missing_ok=True)
+    # nothing to clean up: the page was never written to disk (see render_page)
 
     print("\n── VERDICT ────────────────────────────────────────────────────")
     if fails:

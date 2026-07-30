@@ -286,6 +286,42 @@ def test_settle_rail_is_the_proof_of_life_and_ticks_without_a_fetch():
 # G-D · Honest degradation — four distinct forms
 # --------------------------------------------------------------------------- #
 
+def test_closed_freezes_the_row_labels_in_the_settled_tense():
+    """A row still reading "Forming" / "正在形成" at 17:00 claims a live state on a tape
+    that has stopped. CLOSED swaps the label set for the past-tense one."""
+    now, past = _copy_table("PLV_CHIP"), _copy_table("PLV_CHIP_PAST")
+    assert set(now) == set(past)
+    for k in ("forming", "close"):
+        assert past[k][0] != now[k][0], f"PLV_CHIP_PAST.{k} is still present tense"
+        assert past[k][1] != now[k][1]
+    assert past["forming"][0] == "Crossed" and past["forming"][1] == "已上穿"
+    # drop/over were already past tense and must NOT be re-worded
+    for k in ("drop", "over"):
+        assert past[k][0] == now[k][0] and past[k][1] == now[k][1]
+    js = _nc(_strip_js())
+    assert "_plvPaintRows(body, visRows, delay, mode==='closed')" in js
+    assert "(past?PLV_CHIP_PAST:PLV_CHIP)" in js
+
+
+def test_worst_case_reservation_uses_visibility_not_display():
+    """This is the whole mechanism behind height invariance: `visibility:hidden` keeps the
+    inactive variants SIZED (so the box is as tall as the tallest mode at this width) while
+    removing them from the accessibility tree. `display:none` sizes nothing and the shove
+    comes straight back; `opacity:0` would leave them announced."""
+    css = _nc(_strip_css())
+    assert ".plv-v{grid-area:1/1;visibility:hidden}" in css
+    assert ".plv-v.is-on{visibility:visible}" in css
+    assert ".plv-v{grid-area:1/1;display:none}" not in css
+    assert ".plv-sub,.plv-fn{display:grid}" in css
+    assert ".plv-hd > .plv-token{display:inline-grid" in css
+    js = _nc(_strip_js())
+    stack = js[js.index("function _plvStack"):js.index("function _plvPx")]
+    assert "aria-hidden=" in stack, "inactive variants must not be announced"
+    # all three mode-dependent boxes go through it
+    for el in ("tokEl", "document.getElementById('plv-sub')", "fnEl"):
+        assert "_plvStack(" + el in js, f"{el} must reserve its worst case"
+
+
 def test_four_distinct_modes_exist_with_distinct_stance_lines():
     sub = _copy_table("PLV_SUB")
     assert set(sub) == {"live", "quiet", "dark", "closed"}
@@ -306,8 +342,30 @@ def test_dark_reasons_are_plain_words_with_no_machine_vocabulary():
             assert machine not in en.lower(), f"PLV_DARK.{key} leaks {machine!r}"
         assert zh and zh != en
     dark = _copy_table("PLV_DARK")
-    assert set(dark) == {"no_pack", "stale_pack", "quotes"}
-    assert len({v[0] for v in dark.values()}) == 3
+    assert set(dark) == {"no_pack", "stale_pack", "quotes", "none_today"}
+    assert len({v[0] for v in dark.values()}) == 4
+
+
+def test_a_cause_is_relayed_only_when_the_producer_attests_one():
+    """A date mismatch is not evidence of a stale watch list. It happens every trading
+    morning before the first pass, all day on every market holiday (no pass runs, so
+    yesterday's file is the newest one), and whenever the lane is down. The browser has no
+    NYSE calendar, so the strip names the observable fact instead of picking a cause."""
+    js = _nc(_strip_js())
+    mode = js[js.index("function _plvMode"):js.index("function _plvHide")]
+    i_mismatch = mode.index("session_et!==et.ymd")
+    seg = mode[i_mismatch:mode.index("et.min>PLV_SHUT")]
+    assert "'none_today'" in seg
+    assert "'stale_pack'" not in seg, "a date mismatch must not be reported as a stale pack"
+    assert "et.min<PLV_FIRST" in seg, "before the first pass is due, late is not a fault"
+    dark = _copy_table("PLV_DARK")
+    assert "no intraday read for today" in dark["none_today"][0].lower()
+    # the stance line already carries the board-unaffected direction; the body states the
+    # fact only, exactly like the producer-attested causes beside it
+    assert "board below" not in dark["none_today"][0].lower()
+    # and no as-of is stamped: a previous session's pass_ts is a bare time-of-day and
+    # would print "as of 4:15 pm ET" at 11:20 in the morning
+    assert "res.why==='none_today'" in _nc(_strip_js()).replace(" ", "")
 
 
 def test_closed_mode_is_resolved_before_the_staleness_gates():
@@ -370,9 +428,9 @@ def test_per_name_dark_names_are_never_rendered_as_a_guessed_state():
 # --------------------------------------------------------------------------- #
 
 def test_footer_owns_the_coverage_bound_in_both_languages():
-    js = _strip_js()
-    assert "names sitting near a decision are checked intraday" in js
-    assert "盘中仅检查接近临界的" in js
+    js = _nc(_strip_js())
+    assert "names checked intraday can appear here" in js
+    assert "只有它们会出现在这里" in js
     assert "meta.evaluated_n" in js
 
 
@@ -380,9 +438,9 @@ def test_coverage_sentence_degrades_without_a_count_instead_of_guessing():
     js = _strip_js()
     fn = _nc(js)[_nc(js).index("var ev=Number(meta.evaluated_n)"):
                  _nc(js).index("var help=document.getElementById('plv-help')")]
-    assert "Only the names sitting near a decision" in fn, \
+    assert "Only the names checked intraday can appear here" in fn, \
         "no evaluated_n ⇒ the sentence drops the figure, it does not invent one"
-    assert "盘中仅检查接近临界的标的" in fn
+    assert "盘中只检查了部分标的" in fn
 
 
 def test_universe_is_ssr_baked_and_the_receipt_is_a_ratio(stocks_html):
@@ -392,14 +450,49 @@ def test_universe_is_ssr_baked_and_the_receipt_is_a_ratio(stocks_html):
     assert "data-universe=" not in _render("stocks", us_standouts={"buy": []})
     html = _render("stocks", us_standouts={"buy": [], "universe": 1578})
     assert 'data-universe="1578"' in html
-    js = _strip_js()
-    assert "scored names were armed tonight" in js
+    js = _nc(_strip_js())
+    assert "out of ' + _plvNum(uni) + ' scored" in js.replace("'+_plvNum(uni)+'",
+                                                             "' + _plvNum(uni) + '")
     assert "全部评分股票" in js
 
 
 def test_unprobed_is_never_implied_to_be_dormant():
-    js = _strip_js()
-    assert "out of coverage, not dormant" in js.lower() or "OUT OF COVERAGE" in js
+    """This was the one test that named the law and it asserted a COMMENT: it used raw
+    `_strip_js()` and matched a phrase that existed only in the source comment, so it
+    passed while the shipped sentence broke the law. Now it reads the code."""
+    js = _nc(_strip_js())
+    assert "meta.unprobed_n" in js, "the not-checked count must be read, not inferred"
+    # the coverage receipt may not attribute the whole gap to distance from a decision
+    assert "the rest sit too far from a decision" not in js
+    assert "其余距离临界太远" not in js
+    # and the gap that IS named must name BOTH causes
+    assert "most sit too far" in js and "beyond what one 5-minute pass" in js
+    assert "多数距离临界太远" in js and "时间预算所限" in js
+
+
+def test_coverage_line_never_calls_evaluated_n_armed():
+    """`meta.evaluated_n` is len(states) — the PROBED count. It is not the pack's armed_n
+    and not the scored census, and live_states.py / armed_pack.py both warn against
+    reading it as either."""
+    js = _nc(_strip_js())
+    fn = js[js.index("var fnEl=document.getElementById('plv-fn')"):
+            js.index("_plvStack(fnEl,")]
+    for claim in ("armed", "near a decision", "共备妥", "接近临界"):
+        assert claim not in fn, f"the Tier-1 coverage line still claims {claim!r}"
+    assert "names checked intraday" in fn and "盘中只检查了" in fn
+
+
+def test_unreadable_count_is_disclosed_not_only_cliffed():
+    """A hard 50% cliff alone shipped a fully confident header at 49% dark."""
+    js = _nc(_strip_js())
+    assert "meta.dark_counts" in js
+    fn = js[js.index("var fnEl=document.getElementById('plv-fn')"):
+            js.index("_plvStack(fnEl,")]
+    # the phrase must be APPENDED under a dark-count guard — asserting it merely appears
+    # somewhere was satisfied by the invisible height reserver, which always contains it
+    assert "if(dcs>0" in fn.replace(" ", "")
+    assert "fnEn+=" in fn and "could not be read this pass" in fn
+    assert "fnZh+=" in fn and "本次未能读取" in fn
 
 
 # --------------------------------------------------------------------------- #
@@ -553,9 +646,14 @@ def test_since_and_cross_level_degrade_to_an_em_dash():
     level the payload does not carry must not be invented. Both cells print — instead."""
     js = _nc(_strip_js())
     row = js[js.index("function _plvRowHtml"):js.index("function _plvPaintRows")]
+    lvl = js[js.index("function _plvLevel"):js.index("function _plvRowHtml")]
     assert "since_ts" in js
     assert "r.since===null?'—'" in row
-    assert "cross_px" in row and "cross_level" in row
+    # read by NAME, and cross_px is not one of them: the ledger's cross_px is a fill
+    # price, so printing it under a "Cross level" heading would mislabel a number
+    assert "st.cross_level_px" in lvl and "st.fade_px" in lvl
+    assert "return null" in lvl
+    assert "cross_px" not in lvl.replace("cross_level_px", "")
     px = js[js.index("function _plvPx"):js.index("var PLV_TOKEN")]
     assert "'—'" in px
     assert "passes" not in row, "a duration derived from the pass count is not lawful"
@@ -589,6 +687,62 @@ def test_source_path_is_the_live_family(stocks_html):
     assert "var PLV_URL   = 'live/prophet_live.json'" in js
     assert "var PLV_EVERY = 120000" in js
     assert "var PLV_FLOOR = 30000" in js
+
+
+def test_every_window_constant_is_pinned_by_value():
+    """Every numeric window was unprotected: widening PLV_MAXAGE from 15 minutes to 10
+    days, or pushing PLV_SHUT from 16:20 to 23:20 (which restores the nightly lie), passed
+    the whole suite. A window constant IS the behaviour, so each one is asserted by value
+    with the ET clock time it means spelled out."""
+    js = _nc(_strip_js())
+    for name, val, meaning in (
+        ("PLV_CAP", "3", "three reserved row slots"),
+        ("PLV_OPEN", "570", "09:30 ET, the rail's left edge"),
+        ("PLV_CLOSE", "960", "16:00 ET, what settles a read"),
+        ("PLV_WAKE", "560", "09:20 ET, before which the strip says nothing"),
+        ("PLV_SHUT", "980", "16:20 ET, past which the strip is CLOSED not age-dark"),
+        ("PLV_SETTLE", "1110", "18:30 ET, the nightly handoff"),
+        ("PLV_FIRST", "575", "09:35 ET, when today's first pass is actually due"),
+        ("PLV_CLOSE_PASS", "945", "15:45 ET, how near the close a frozen read must be"),
+        ("PLV_MAXAGE", "900000", "15 min = 3 missed passes"),
+        ("PLV_EVERY", "120000", "the fetch cadence"),
+        ("PLV_FLOOR", "30000", "the visibility-refetch floor"),
+        ("PLV_TICK", "60000", "the rail's local clock"),
+    ):
+        assert re.search(r"var %s\s*=\s*%s\s*;" % (name, val), js), \
+            f"{name} must be exactly {val} ({meaning})"
+
+
+def test_overnight_and_weekend_hides_are_present():
+    """Deleting either one left the strip claiming "Forming today" at 03:00 or on a
+    Sunday, and nothing caught it."""
+    js = _nc(_strip_js())
+    mode = js[js.index("function _plvMode"):js.index("function _plvHide")]
+    assert "et.wd==='Sat'||et.wd==='Sun'" in mode.replace(" ", "")
+    assert "et.min<PLV_WAKE" in mode.replace(" ", "")
+    assert "et.min>=PLV_SETTLE" in mode.replace(" ", "")
+
+
+def test_render_always_repaints_the_card_chips():
+    """Surface 2 has no fetch of its own — deleting this one call disconnected it entirely
+    while every other test stayed green."""
+    js = _nc(_strip_js())
+    render = js[js.index("function _plvRender"):js.index("function _plvFetch")]
+    assert "_plvPaintCards(" in render
+    hide = js[js.index("function _plvHide"):js.index("function _plvRender")]
+    assert "_plvPaintCards(null, null)" in hide, \
+        "hiding the strip must clear the chips: the strip is their only disclosure"
+
+
+def test_as_of_stamp_comes_from_the_artifact_never_the_browser_clock():
+    """A local Date.now() here would print a fresh-looking time over a stale artifact —
+    exactly the lie the freshness gate exists to prevent."""
+    js = _nc(_strip_js())
+    render = js[js.index("function _plvRender"):js.index("function _plvFetch")]
+    line = [ln for ln in render.split("\n") if "stampMin=" in ln]
+    assert line, "the as-of stamp assignment must exist"
+    assert "meta.quote_asof" in line[0] and "meta.pass_ts" in line[0]
+    assert "Date.now" not in line[0] and "new Date" not in line[0]
 
 
 def test_first_fetch_is_never_gated_on_document_hidden():
