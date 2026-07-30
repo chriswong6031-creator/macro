@@ -129,6 +129,17 @@ public:
     # /var/lib/macro-live/public (site/live/ is gitignored); the repo copy is
     # only the zero-downtime fallback. Quotes/breadth are display-tier market
     # context; release_publications contains official public event facts only.
+    #
+    # THIS LIST IS THE EXCEPTION, NOT THE PREFIX. Everything else under /live/
+    # flows through Caddy's @reg_asset default-deny route. In particular
+    # /live/prophet_live.json (Prophet Live provisional states, masterplan §4.4a)
+    # MUST NOT join it. It names which tickers are armed and which are forming
+    # today — pre-publication board membership, which is what the "don't show the
+    # real board free" ruling (#3391, which regwalled /factordata/*) is about.
+    # (The armed trigger LEVELS are not in it; they stay in the R2 pack.) It is
+    # deliberately left undeclared everywhere in this file so it takes the
+    # premium.default_tier below — the same tier as the board artifact it
+    # overlays — and tests/test_prophet_live_vps_lane.py pins that.
     - /live/quotes.json
     - /live/breadth.json
     - /live/release_publications.json

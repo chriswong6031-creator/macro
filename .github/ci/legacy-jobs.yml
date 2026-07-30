@@ -648,12 +648,19 @@ jobs:
       #   G0.1 parity  tests/test_prophet_live_pack.py       (~25s, real gate calls)
       #   G0.2/3/5/6   tests/test_prophet_live_evaluator.py
       #   ledger law   tests/test_prophet_live_reconcile.py
+      #   VPS lane     tests/test_prophet_live_vps_lane.py — quote source, the atomic
+      #                served write, the serving gate (/live/prophet_live.json is NOT
+      #                public), the systemd unit/timer, macro-update's reconciliation
+      #                and the workflow's self-disabling backstop gate (§4.2a/§4.4a).
+      #                Stdlib + pyyaml only, so it rides in this job rather than
+      #                needing one of its own.
       - name: prophet-live P0 (G0.1 parity, ledger law, debounce, degradation)
         run: >
           python -m pytest
           tests/test_prophet_live_pack.py
           tests/test_prophet_live_evaluator.py
-          tests/test_prophet_live_reconcile.py -q
+          tests/test_prophet_live_reconcile.py
+          tests/test_prophet_live_vps_lane.py -q
 
   collector-registry:
     if: ${{ false }}

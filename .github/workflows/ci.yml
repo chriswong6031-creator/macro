@@ -923,6 +923,15 @@ on:
       - "tests/test_prophet_live_evaluator.py"
       - "tests/test_prophet_live_reconcile.py"
       - "tests/fixtures/prophet_live/import_probe.py"
+      # PROPHET LIVE VPS lane (§4.2a/§4.4a). The unit files, the reconciler that
+      # installs them and the provisioner that arms them are the subjects of
+      # test_prophet_live_vps_lane.py — a PR touching only a unit file must retrigger
+      # the guard that reads it, or the guard fires on everyone else's PR instead
+      # (the #3488 failure mode).
+      - "app/deploy/macro-live-prophet.service"
+      - "app/deploy/macro-live-prophet.timer"
+      - "app/deploy/live-setup.sh"
+      - "tests/test_prophet_live_vps_lane.py"
       # altdata-W1: Finnhub transcript catalog + StockTwits sentiment collectors.
       - "collectors/finnhub_transcripts.py"
       - "collectors/stocktwits.py"

@@ -757,7 +757,33 @@ prophet_live:
   debounce_passes: 2
   fade_buffer_pct: 0.5          # hysteresis below the trigger before a forming name FADES
   confirm_window_start: "15:30"  # from here on, conditions still met => confirming_into_close
-  quote_max_age_min: 12         # hot-tape convention; older => that NAME is dark, not guessed
+  # Hot-tape convention; older => that NAME is dark, not guessed.
+  #
+  # MEASURED 2026-07-30, unresolved: the US single-name feed is contractually ~15-min
+  # delayed (live.delayed_min below, and every quote carries its own delayMin — measured
+  # 16.7m on QQQ/SPY off the VPS plane at 14:10Z). Per-quote age is measured from the
+  # quote's OWN timestamp, so it is (polling gap) + (feed delay) and cannot go below the
+  # feed delay at any cadence. A 12-minute ceiling under a ~15-minute floor therefore
+  # darks every US single name on every pass, on the freshest plane there is. The
+  # evaluator now prints a line-start warning whenever this number is at or below the
+  # declared feed delay; re-basing it is an operator ruling, not a lane fix, so the
+  # number is left exactly as pre-registered.
+  quote_max_age_min: 12
+  # ── host wiring (VPS lane, masterplan §4.2a/§4.4a) ──
+  # Quote files to try BEFORE the live_verify merge, in order, freshest-wins per ticker.
+  # These are the local twins of the merge's inputs, published by atomic rename by the
+  # systemd lanes on the same box: no network, no auth, no throttled git branch. An
+  # absent file is skipped silently (a GitHub runner has none of them and falls through
+  # to the merge, which is exactly the backstop's behaviour); an EMPTY list here turns
+  # the local plane off entirely without a code change.
+  local_quote_paths:
+    # ~2,100 symbols, the 5-minute `snapshot` lane — this is the coverage source.
+    - /var/lib/macro-live/state/quotes_full.json
+    # ~34 display symbols, the 60-second `fast` lane — freshest, but index/ETF only.
+    - /var/lib/macro-live/public/live/quotes.json
+  # Where the evaluator writes the served copy, atomically. Behind Caddy's @reg_asset
+  # default-deny route — NEVER one of the /live/ public exceptions. "" disables it.
+  served_path: /var/lib/macro-live/public/live/prophet_live.json
 
 fedboard:
   # Excess Bond Premium (Gilchrist-Zakrajšek): the component of corporate credit
