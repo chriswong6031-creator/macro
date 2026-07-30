@@ -1,22 +1,16 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-07-30T20:35:38.818173+00:00",
-  "posts_seen": 12,
-  "seen_total": 72,
-  "evaluated": 2,
-  "activated": 1,
+  "as_of": "2026-07-30T22:19:12.404219+00:00",
+  "posts_seen": 13,
+  "seen_total": 73,
+  "evaluated": 1,
+  "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
   "gate_scores": [
     {
-      "id": "wh-2026-07-30-presidential-permit-authorizing-cameron-county-texas-to-own-operate-and-maintain",
-      "importance": 10,
+      "id": "wh-2026-07-30-fact-sheet-president-donald-j-trump-delegates-defense-production-act-authority-w",
+      "importance": 50,
       "activated": false,
-      "degraded_reason": "served_by:deepseek"
-    },
-    {
-      "id": "wh-2026-07-30-presidential-determination-pursuant-to-section-101-of-the-defense-production-act",
-      "importance": 68,
-      "activated": true,
       "degraded_reason": "served_by:deepseek"
     }
   ]
