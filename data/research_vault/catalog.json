@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-30T02:24:38.754786+00:00",
-  "count": 359,
+  "generated_at": "2026-07-30T03:24:54.691754+00:00",
+  "count": 362,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -179,6 +179,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-kwrlaj6pqak-d709a8",
+      "title": "JPM US Market Intell Afternoon Briefing 28.07",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T13:55:50Z",
+      "summary_points": [
+        "**Fed Decision Catalyst**: Fed likely holds rates with ≥2 hawkish dissents; 50% probability of hawkish hold (SPX moves 25bp–50bp), 30% hike probability driven by near-trend GDP and stable inflation.",
+        "**US-Iran Geopolitics & Oil**: WTI down 4% ($79.26) and Brent at $84.09 (below $87 fair value) on MOU optimism vs.",
+        "Houthi attack, impacting energy markets and sector rotation.",
+        "**Sector Rotation & Momentum**: Tech underperformance (-3.6% momentum) vs.",
+        "non-tech rally (Airlines +3.7%, Retail +2.5%); Ford’s $1.3B tariff benefit offset by $2B+ commodity headwinds."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 16,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-p8utyhtfa1f-3cb485",
       "title": "JPM Equity Thematic Strategy",
       "institution": "J.P. Morgan",
@@ -200,6 +221,26 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-zryrvkq454g-9c91ce",
+      "title": "JPM Euro area Saving rate",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T13:49:07Z",
+      "summary_points": [
+        "**Euro Area Saving Rate Decline**: Saving rate stable at 14.3% Q1 but set to fall in Q2 due to energy price shocks reducing real disposable income (0.6% q/q), despite positive consumption growth, signaling near-term household caution and demand weakness.",
+        "**Real Disposable Income & Consumption Drop**: Real disposable income fell 0.6% q/q amid energy shocks, while consumption growth turned negative (-1.1% yoy), amplifying risks for equity/bond allocations and indicating deteriorating household financial resilience.",
+        "**Real GDI/Spending Divergence**: J.P.",
+        "Morgan forecasts Real spending lagging Real GDI (2026), signaling potential consumer demand weakness or policy-driven shifts, critical for near-term portfolio positioning in Eurozone equities and bonds."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-fe1mekpi9ch-91b20e",
       "title": "JPM GLOBAL MARKET INTELLIGENCE | Data Assets & Alpha Group",
       "institution": "J.P. Morgan",
@@ -217,6 +258,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 17,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-imr7sbpdop0-dbf09e",
+      "title": "Global daily circle of life",
+      "institution": "Rabobank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T13:47:55Z",
+      "summary_points": [
+        "**Geopolitical Oil Volatility**: US-Iran tensions (Iranian missile strikes on Jordan base) drove Brent crude down 5%, rebounding 3% after US-Saudi strikes on Iraq; Saudi-Israel talks signal normalization risk impacting energy markets.",
+        "**RBA Policy & Inflation Data**: June CPI (3.8% vs expectations) and core CPI (3.6%) beat forecasts, driving AUD decline and sovereign yield drops; RBA raised rates March-May due to global energy shocks worsening inflation.",
+        "**Geopolitical & Productivity Risks**: Middle East tensions disrupt supply chains (Strait of Hormuz constraints on copper/nickel); US productivity growth anaemic despite AI investment, with unproven CAPEX-productivity link."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },

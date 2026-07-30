@@ -982,3 +982,71 @@ class TestUniverseCacheAndEnrichment:
         payload = build_breaking_payload(scored, {"breaking": {"llm": {"enabled": False}}})
         assert "MACRO PRINT" in payload["card_svg"]
         assert "macro_print" not in payload["card_svg"]  # raw key never shown
+
+
+# ---------------------------------------------------------------------------
+# CHATGPT-FIRST ROUTING (operator directive 2026-07-29)
+#
+# "The marketing content LLM lanes must default to the attached ChatGPT/Codex
+# account (Claude subscription tokens are being reserved for website-building
+# sessions), with Claude as fallback drawn through the key_pool OAuth load
+# balancer."
+#
+# Ruled tier for this lane: gpt-5.6-sol at medium effort. Sol because the
+# breaking rewriter produces the sentence that publishes, so it is writing work.
+# The full ruling table and the cross-lane pins live in
+# tests/test_marketing_copy_v2.py.
+# ---------------------------------------------------------------------------
+
+class TestBreakingProviderRouting:
+    """The lane must ASK for codex first and carry the ruled tier.
+
+    build_providers is replaced by a recorder that returns [] — every call site
+    treats an empty waterfall as "mute, fall back to deterministic", which is the
+    shortest path through the code that still proves what the lane requested. No
+    network, no credential, no anthropic import.
+    """
+
+    def _capture(self, monkeypatch) -> list[dict]:
+        from engine import llm_auth
+
+        seen: list[dict] = []
+
+        def _rec(cfg, **kwargs):  # noqa: ANN001
+            seen.append(dict(cfg))
+            return []
+
+        monkeypatch.setattr(llm_auth, "build_providers", _rec)
+        return seen
+
+    def _live_cfg(self) -> dict:
+        import yaml
+
+        marketing = yaml.safe_load(
+            (ROOT / "config" / "marketing.yml").read_text(encoding="utf-8")) or {}
+        return {"breaking": {"llm": dict((marketing.get("breaking") or {}).get("llm") or {})}}
+
+    def test_the_lane_asks_for_codex_first_on_sol(self, monkeypatch):
+        from engine.marketing.breaking_summary import _llm_summarize
+
+        seen = self._capture(monkeypatch)
+        monkeypatch.setenv("MARKETING_LLM_ENABLED", "1")
+        items = parse_feed(_load_fixture("rss_mixed.xml"), BLS_SOURCE_CFG)
+        assert _llm_summarize(items[0], self._live_cfg()) is None  # muted on purpose
+
+        assert seen, "the breaking lane never reached the provider waterfall"
+        cfg = seen[0]
+        assert cfg["provider_order"] == ["codex", "oauth", "anthropic", "deepseek"]
+        assert cfg["codex_source_model"] == "gpt-5.6-sol"
+        assert cfg["codex_reasoning_effort"] == "medium"
+        assert cfg["oauth_pool_lane"] == "marketing-breaking"
+        assert cfg["usage_lane"] == "marketing-breaking"
+
+    def test_the_shipped_config_carries_the_ruling(self):
+        block = self._live_cfg()["breaking"]["llm"]
+        assert block["provider_order"] == ["codex", "oauth", "anthropic", "deepseek"]
+        assert block["codex_source_model"] == "gpt-5.6-sol"
+        assert block["codex_reasoning_effort"] == "medium"
+        assert block["oauth_pool_lane"] == "marketing-breaking"
+        # Luna never touches a user-facing word.
+        assert "luna" not in str(block).lower()

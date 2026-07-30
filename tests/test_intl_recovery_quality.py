@@ -3,7 +3,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from engine.intl_recovery_quality import assess_recovery, macro_backdrop
+import pytest
+
+from engine.intl_recovery_quality import apply_recovery_naming, assess_recovery, macro_backdrop
 
 
 def _state(**overrides):
@@ -81,6 +83,112 @@ def test_broken_price_evidence_marks_failed_rebound():
 
 def test_non_recovery_state_is_not_relabelled():
     assert assess_recovery(_state(state="uptrend"), _confirmation(), _radar()) == {}
+
+
+def _rendered(**overrides):
+    """A state dict as market_states() hands it out: machine enum + raw display words."""
+    value = _state(
+        state_en="Repairing",
+        state_zh="修复中",
+        stance_en="Early recovery — no rush to buy",
+        stance_zh="初步回升 — 不急于买入",
+        css="state-recovery",
+    )
+    value.update(overrides)
+    return value
+
+
+class TestApplyRecoveryNaming:
+    """The shared view-model step — one set of words per market per day.
+
+    Regression (2026-07-29 audit): India read "Rebound failed — Stand aside" on
+    intl.html and "Repairing — no rush to buy" on macro.html from the same engine
+    on the same day, because build_intl applied the qualifier in template-land and
+    build_site copied state_en/stance_en RAW. The overlay now lands on the state
+    dict itself, so every raw-field consumer inherits it.
+    """
+
+    def test_broken_price_evidence_overwrites_words_in_place(self):
+        states = {"IN": _rendered(above_ma20=False)}
+
+        apply_recovery_naming(states)
+        st = states["IN"]
+
+        assert st["state_en"] == "Rebound failed"
+        assert st["state_zh"] == "反弹失败"
+        assert st["stance_en"] == "Stand aside — repair evidence has broken"
+        assert st["stance_zh"] == "观望 — 修复证据已经破坏"
+        assert st["recovery_assessment"]["phase"] == "failed_rebound"
+        # The machine enum and CSS class are the heat/colour authorities — untouched.
+        assert st["state"] == "recovery"
+        assert st["css"] == "state-recovery"
+
+    def test_negative_momentum_also_fails_the_rebound(self):
+        states = {"IN": _rendered(mom20_pct=-1.0)}
+
+        apply_recovery_naming(states)
+
+        assert states["IN"]["state_en"] == "Rebound failed"
+        assert states["IN"]["recovery_assessment"]["phase"] == "failed_rebound"
+
+    def test_healthy_price_without_confirmation_is_a_qualified_repair_attempt(self):
+        states = {"JP": _rendered()}
+
+        apply_recovery_naming(states)
+        st = states["JP"]
+
+        # Never the raw "Repairing": price-only repair cannot claim recovery.
+        assert st["state_en"] == "Repair attempt"
+        assert st["state_zh"] == "修复尝试"
+        assert st["stance_en"] == "Unconfirmed — wait for breadth and external pressure to improve"
+        assert st["stance_zh"] == "尚未确认 — 等待广度与外部压力改善"
+        assert st["recovery_assessment"]["phase"] == "repair_attempt"
+
+    def test_non_recovery_state_is_left_completely_untouched(self):
+        states = {"AU": _rendered(state="uptrend", state_en="Uptrend", state_zh="上升趋势",
+                                  stance_en="Trend intact", stance_zh="趋势完好",
+                                  css="state-uptrend")}
+        before = dict(states["AU"])
+
+        apply_recovery_naming(states)
+
+        assert states["AU"] == before
+        assert "recovery_assessment" not in states["AU"]
+
+    def test_pre_attached_assessment_is_respected_never_recomputed(self, monkeypatch):
+        """HK's richer confirmation+radar assessment must survive the sweep."""
+        import engine.intl_recovery_quality as MOD
+
+        def _boom(*_a, **_kw):  # pragma: no cover — must never be reached
+            raise AssertionError("assess_recovery recomputed a pre-attached assessment")
+
+        monkeypatch.setattr(MOD, "assess_recovery", _boom)
+        states = {"HK": _rendered(recovery_assessment={
+            "label_en": "Fragile rebound",
+            "label_zh": "脆弱反弹",
+            "stance_en": "Rollover risk — wait for breadth to re-accelerate",
+            "stance_zh": "再度转弱风险 — 等待广度重新加速",
+        })}
+
+        MOD.apply_recovery_naming(states)
+
+        assert states["HK"]["state_en"] == "Fragile rebound"
+        assert states["HK"]["state_zh"] == "脆弱反弹"
+        assert states["HK"]["stance_en"] == "Rollover risk — wait for breadth to re-accelerate"
+        assert states["HK"]["stance_zh"] == "再度转弱风险 — 等待广度重新加速"
+
+    def test_is_idempotent(self):
+        states = {"IN": _rendered(above_ma20=False)}
+
+        apply_recovery_naming(states)
+        once = dict(states["IN"])
+        apply_recovery_naming(states)
+
+        assert states["IN"] == once
+
+    @pytest.mark.parametrize("states", [None, {}, {"X": "not-a-dict"}, {"X": None}])
+    def test_junk_input_never_raises(self, states):
+        apply_recovery_naming(states)
 
 
 def test_macro_backdrop_is_visible_but_never_scores_geopolitics_or_midterm():

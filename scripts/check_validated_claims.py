@@ -98,18 +98,8 @@ _STRUCTURAL = [
     re.compile(r'"invalidated_membership"'),
     re.compile(r'validated_risk_control'),                    # engine gate-status enum value
     re.compile(r'"(?:absolute_trend_gate|weighting|timing|note)"\s*:.*validated'),
-    # CSS class / DOM identifier tokens (e.g. .tr-validated, nbb-validated, val-chip validated)
-    # KNOWN GAP (measured 2026-07-29, NOT fixed here — a separate adjudication): this pattern
-    # is blind to the difference between a selector and hyphenated PROSE, so a claim written
-    # "backtest-validated" or "Holdout-validated" is skipped whole-line. Measured on this tree:
-    # 21 lines reach the gate only through this rule, of which ~15 are genuine selectors /
-    # attribute access ('.nbb-validated', '.val-chip.validated', '{%- if x.validated %}') and
-    # ~6 are prose claims hiding behind a hyphen — 'backtest-validated OOS; live cohort
-    # accruing' (sector_cycles.js, cycle_app.js), 'Anticipation stop-width
-    # (drawdown-validated)' (dashboard), 'Holdout-validated, leak-free' (engine/btc_alerts).
-    # Tightening it means teaching the rule what a selector context looks like AND adjudicating
-    # those ~6 — do that in its own PR, not by widening this one.
-    re.compile(r'[.\-]validated\b'),
+    # (CSS class / DOM identifier TOKENS are handled by _IDENT_MASK below, not here: they
+    # are masked in place rather than killing their whole line.)
     re.compile(r'class="[^"]*\bvalidated\b[^"]*"'),
     re.compile(r"_vs\s*==\s*'validated'"),                    # template state-var comparison
     re.compile(r"verdict\s*===?\s*'validated'"),
@@ -130,6 +120,45 @@ _STRUCTURAL = [
     re.compile(r"validated\s*:\s*\[\s*['\"]Validated"),
     re.compile(r"'(?:go|event-edge|validated|context)'\s*:\s*\[\s*'Validated edge'"),
 ]
+
+# ── SELECTOR / IDENTIFIER TOKENS — masked in place, NOT whole-line skipped ───────────
+#
+# `.tr-validated`, `.val-chip.validated`, `{%- if x.validated %}` are code: a CSS class
+# selector, a chained class, a dotted attribute access. They are not prose and must not
+# be forced to cite a study.
+#
+# WHY THIS IS NOT A _STRUCTURAL ENTRY (the 2026-07-29 gap, closed here). It used to be
+# one, written `[.\-]validated\b` — "a dot OR A HYPHEN before the token". A hyphen before
+# the token is also how ENGLISH writes an adjective, so every claim phrased
+# "backtest-validated", "Holdout-validated", "FDR-validated", "drawdown-validated" matched
+# it, and because a _STRUCTURAL hit kills the WHOLE LINE those claims were invisible to
+# BC-2 — no allowlist entry, no CI failure, no trace. Measured on the tree at that commit:
+# 21 lines reached the gate only through that rule; 7 were genuine selectors/attribute
+# access and 14 carried prose claims (the sector-cycles hazard tooltip on three surfaces,
+# the anticipation stop-width tip, the BTC impulse alert's EN+zh conviction line on both
+# its engine source and its render, the signal-lab capitulation row on three lines, a
+# marketing north-star note, and three code comments). All 14 are adjudicated in the same
+# change that narrowed this rule — 11 earned allowlist entries naming their study, 3 were
+# reworded because no study backed them.
+#
+# THE NARROWING: the token must belong to a DOT-PREFIXED identifier. A hyphen alone earns
+# nothing, which is exactly the selector/prose distinction the old rule could not draw.
+# The lookahead requires the character after the dot to start an identifier, so '. validated'
+# (a sentence boundary) and '.4validated' are not identifiers and stay gated.
+#
+# AND IT MASKS RATHER THAN SKIPS: only the identifier itself is excised (replaced with the
+# _TP_CUT sentinel, same joiner and same reasoning as _mask_third_party — it sits outside
+# every character class in _NEG_EN / _NEG_ZH / TOKEN, so an excision can neither forge a
+# token nor let a negation lookback reach across the cut). The rest of the line is scanned
+# normally, so a line that carries BOTH a selector and copy — e.g. dashboard.html.j2's
+# `{%- if x.validated %}<span data-tip-en="...">` — no longer hides the copy behind the
+# selector. Whole-line suppression was half the reason the old rule was invisible.
+#
+# Code COMMENTS get no exemption, deliberately: the estate already gates and allowlists
+# them (see the 'validated drawdown-control channel' entry, whose backing names a
+# baskets_desk COMMENT), and a comment that asserts something is either accurate — in
+# which case it is cheap to word it accurately — or it is a claim like any other.
+_IDENT_MASK = re.compile(r"\.(?=[A-Za-z_])[\w-]*validated[\w-]*")
 
 # ── QUOTED THIRD-PARTY RESEARCH — structural non-claims, same family as _STRUCTURAL ──
 #
@@ -438,7 +467,9 @@ def _scan_line(line: str, allow: list[dict],
     reporting."""
     if any(sp.search(line) for sp in _STRUCTURAL):
         return 0, []                                    # structural non-claim line
-    norm = html.unescape(line)
+    # Selector / dotted-identifier tokens are excised, not whole-line skipped, so copy
+    # sharing a line with one is still gated (see the _IDENT_MASK block comment).
+    norm = _IDENT_MASK.sub(_TP_CUT, html.unescape(line))
     n_negated = 0
     hits: list[tuple[bool, dict | None]] = []
     for m in TOKEN.finditer(norm):
@@ -725,8 +756,9 @@ def _page(**over) -> str:
 def selftest() -> int:
     """Prove the gate FIRES on a synthetic unearned 'validated' in EN and in zh (all
     token variants), does NOT fire on negated uses, matches through HTML autoescaping
-    ('&' vs '&amp;'), and enforces the allowlist's `surfaces` scoping. Synthetic lines
-    only — never touches the tree."""
+    ('&' vs '&amp;'), enforces the allowlist's `surfaces` scoping, and tells a CSS
+    selector / dotted identifier apart from hyphenated PROSE. Synthetic lines only —
+    never touches the tree."""
     allow = _load_allowlist()
     # Synthetic allowlist for the autoescape + surface cases: an '&'-bearing match string
     # must cover its '&amp;' rendered form, and its `surfaces` scope must bind. Deliberately
@@ -770,6 +802,34 @@ def selftest() -> int:
          "    val: {{ ('validated' if (r.survives_fdr and r.mean_ic is not none and r.mean_ic > 0)", False, allow, S),
         ("rendered factors val payload is a data value, not a claim",
          '    val: "validated",', False, allow, S),
+        # ── selector / identifier vs hyphenated PROSE (the _IDENT_MASK narrowing) ────
+        ("CSS class selector is not a claim",
+         "  .nbb-validated { color: var(--up); }", False, allow, S),
+        ("chained class selector is not a claim",
+         "  .val-chip.validated   { color:var(--ok); }", False, allow, S),
+        ("descendant + chained selector is not a claim",
+         "  .ai-chip .ai-tag.validated{color:var(--green)}", False, allow, S),
+        ("dotted attribute access is not a claim",
+         "{%- if x.validated %}", False, allow, S),
+        ("selectors NAMED in a comment are still selectors",
+         "  /* evidence-tag micro-style — .et-validated / .et-accruing / .et-context. */",
+         False, allow, S),
+        # …and the shapes the old '[.\-]validated' rule swallowed whole-line:
+        ("HYPHENATED PROSE fires — a hyphen is not a selector",
+         "Epoch: 2026-Q3 · backtest-validated OOS; live cohort accruing", True, allow, S),
+        ("…the same adjective opening a sentence fires",
+         "Holdout-validated, leak-free; act early — the edge decays in ~2-4 days.", True, allow, S),
+        ("…an acronym-hyphen form fires",
+         "is a real FDR-validated bounce ALERT (63d P-up 75% vs 72% base)", True, allow, S),
+        ("…and a code comment earns no exemption",
+         "  /* COILED wave-2-validated cohort-washout ranking bonus chip */", True, allow, S),
+        ("a selector no longer suppresses copy sharing its line",
+         '{%- if x.validated %}<span data-tip-en="This edge is validated on every desk.">',
+         True, allow, S),
+        ("a sentence boundary is not an identifier",
+         "The gate passed. Validated on the 2024+ holdout.", True, allow, S),
+        ("excising an identifier cannot break the negation beside it",
+         "there is no .nbb-validated edge and no validated edge", False, allow, S),
     ]
     ok = True
     for name, line, should_fire, allow_entries, surfs in cases:

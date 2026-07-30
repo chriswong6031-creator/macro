@@ -366,7 +366,7 @@ html.still{scroll-behavior:auto}
 
 /* ============ COVER ============ */
 .cover{position:relative;overflow:clip}
-.cover-in{position:relative;z-index:1;max-width:var(--maxw);margin:0 auto;padding:clamp(22px,3vh,36px) var(--gutter) clamp(38px,5vh,64px);display:block}
+.cover-in{position:relative;z-index:1;max-width:var(--maxw);margin:0 auto;padding:clamp(22px,3vh,36px) var(--gutter) 0;display:block}
 /* §8 SIGNATURE — "the page reads the tape". The hero field's wash takes its colour
    from the SAME scripted regime cycle that already drives the gauge on the centre
    card: the atmosphere behind the desk shifts with the read on the desk. Four
@@ -574,7 +574,7 @@ body[data-regime="stagflation"]{--field-tint:#f0e7d4}
 /* — Terminal showcase: dark full-bleed section + Safari-framed live terminal.
      (The old dark-plate terminal + options-flow feed are archived in
      mockups/landing/options_flow_feed.html for the future flow panel.) — */
-.tsec{position:relative;background:#04070c;margin-top:clamp(22px,3vh,36px);padding:clamp(48px,6.5vw,84px) 0 0;overflow:hidden}
+.tsec{position:relative;background:#04070c;margin-top:0;padding:clamp(48px,6.5vw,84px) 0 0;overflow:hidden}
 .tsec>.wrap{position:relative;z-index:1}
 /* §6.2 ONE opacity (it was .8 on the row TIMES .75 on the image), 8px-grid gaps,
    full on hover. Per-logo heights stay on the <img> tags: with six different

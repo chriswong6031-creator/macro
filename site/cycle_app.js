@@ -787,7 +787,7 @@
      family-stratified KM baseline; PRIOR = KM base rate, shown muted with the
      KM-prior wording). No naked probabilities — every number is badged (UI-HZ-1).
      The hover (title attr) carries: cell verdict wording, epoch, BACKTEST-cohort
-     note (ruling A6: these are backtest-validated, live cohort accruing).
+     note (ruling A6: backtest-validated OOS; live cohort accruing).
      Renders nothing if hazard data is absent (non-MEASURED or scorer unavailable). */
   function hazardLine(band) {
     var hz = band.now && band.now.hazard;

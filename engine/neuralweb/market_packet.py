@@ -15,9 +15,10 @@ This module AGGREGATES.  It ORIGINATES nothing.
 
 * Every number it prints was computed by an existing engine or builder and is
   read back off disk unchanged — the only arithmetic here is presentational
-  (Yahoo's ×10 yield-index convention, a change in basis points, a mean of index
-  change percents) plus a handful of THRESHOLD comparisons over those same
-  numbers.  No new signal, no fused score, no probability, no ranking, no
+  (normalizing a yield-index print to percent whichever units the feed used —
+  see _yield_pct_pair, units are feed-dependent — a change in basis points, a
+  mean of index change percents) plus a handful of THRESHOLD comparisons over
+  those same numbers.  No new signal, no fused score, no probability, no ranking, no
   forecast.  The deterministic FLAGS are shape observations ("these two things
   moved together, here are the exact numbers") — they are display tier, they
   never gate anything, and each one carries the figures that fired it so the
@@ -125,12 +126,21 @@ _COMMODITY_SYMS: tuple[tuple[str, str], ...] = (
 _DOLLAR_SYM = "DX-Y.NYB"
 _CRYPTO_SYMS: tuple[tuple[str, str], ...] = (("BTC-USD", "BTC"), ("ETH-USD", "ETH"))
 
-# Yahoo publishes these as an INDEX quoting 10x the yield percent: ^TNX price
-# 46.92 == 4.692%. level_pct = price/10; change_bp = (price - prevClose) * 10.
+# Yield-index UNITS ARE FEED-DEPENDENT (W1 diagnosis, 2026-07-29): the spark
+# path behind site/live/quotes.json delivers the yield percent DIRECTLY (^TNX
+# price 4.622 == 4.622% — probed live from the VPS), while the /ws/tape relay
+# streams the CBOE ×10 index convention (42.5 == 4.25%). Mirror the browser's
+# scale detection (templates/live.js tnxPct(), in production since 2026-07-24):
+# a row with either value above _YIELD_X10_THRESHOLD is ×10 units, normalize
+# both ÷10 (pair-level — see _yield_pct_pair). No US tenor has yielded >15%
+# since 1985, and a ×10 print of even a 2% yield is 20 — the bands can't
+# overlap in any plausible regime. level_pct = normalized price;
+# change_bp = (normalized price - normalized prevClose) * 100.
 _YIELD_SYMS: tuple[tuple[str, str], ...] = (
     ("^IRX", "3M"), ("^FVX", "5Y"), ("^TNX", "10Y"), ("^TYX", "30Y"),
 )
-_YIELD_SCALE = 10.0
+_YIELD_X10_THRESHOLD = 15.0
+_BP_PER_PCT = 100.0
 _FRONT_TENORS = ("3M", "5Y")     # first present wins
 _LONG_TENORS = ("30Y", "10Y")    # first present wins
 
@@ -503,6 +513,20 @@ def _tape_block(quotes: dict, gaps: list[str]) -> dict | None:
     return block
 
 
+def _yield_pct_pair(px: float, prev: float | None) -> tuple[float, float | None]:
+    """Normalize a yield-index price/prevClose PAIR to percent, whichever units
+    the feed used (feed-dependent — see _YIELD_SYMS comment): 4.622 -> 4.622%,
+    46.22 -> 4.622%. Detection is PAIR-LEVEL — either value above the threshold
+    marks the whole row ×10 — because per-value detection fabricates a giant
+    Δbp when a ×10 low-yield print straddles 15 (px 14.5 / prev 15.5 is a real
+    -10bp move at 1.45%, not -1320bp). Same >15 threshold the browser has used
+    since 2026-07-24 (live.js tnxPct)."""
+    x10 = px > _YIELD_X10_THRESHOLD or (
+        prev is not None and prev > _YIELD_X10_THRESHOLD)
+    scale = 10.0 if x10 else 1.0
+    return px / scale, (prev / scale if prev is not None else None)
+
+
 def _curve_block(quotes: dict, gaps: list[str]) -> dict | None:
     """Yahoo yield indexes -> tenor level_pct / change_bp, each sanity-gated."""
     qs = quotes.get("quotes")
@@ -516,9 +540,8 @@ def _curve_block(quotes: dict, gaps: list[str]) -> dict | None:
         px = _f(q.get("price"))
         if px is None:
             continue
-        level = px / _YIELD_SCALE
-        prev = _f(q.get("prevClose"))
-        chg_bp = (px - prev) * _YIELD_SCALE if prev is not None else None
+        level, prev = _yield_pct_pair(px, _f(q.get("prevClose")))
+        chg_bp = (level - prev) * _BP_PER_PCT if prev is not None else None
         if not (TENOR_MIN_PCT < level < TENOR_MAX_PCT):
             gaps.append(f"curve: {tenor} level {level:.3f}% outside sanity band — dropped")
             continue
