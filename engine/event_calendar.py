@@ -231,6 +231,11 @@ def _scheduled_release_dates(etype: str, today: date, end: date,
             return live, "fred"
     out: list[date] = []
     for (y, m) in _months_in_window(today, end):
+        # This table is authoritative for CY2026 only. Replaying its day-of-month
+        # values into 2027 would fabricate a plausible-looking future calendar
+        # and suppress the live watcher's schedule-exhaustion alarm.
+        if y != 2026:
+            continue
         day = _SCHED_2026.get(etype, {}).get(m)
         if not day:
             continue

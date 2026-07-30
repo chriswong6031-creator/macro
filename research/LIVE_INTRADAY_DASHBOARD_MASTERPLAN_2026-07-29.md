@@ -1,7 +1,7 @@
 # Live Intraday Dashboard — production master plan
 
 **Date:** 2026-07-29
-**Status:** ratified architecture + Phase 0 implementation
+**Status:** ratified architecture + Phase 0 and core Phase 1 implementation
 **Extends:** `research/LIVE_DATA_ARCHITECTURE.md`,
 `research/MACRO_RELEASE_INTEL_MASTERPLAN_BY_FABLE.md`, and
 `docs/VPS_LIVE_ORCHESTRATION.md`
@@ -405,8 +405,10 @@ Acceptance: a fixture and a live official statement both produce
 
 ### Phase 1 — complete official release adapters
 
-- CPI/core CPI, PPI, payrolls/unemployment/earnings, claims, GDP, PCE,
-  retail sales, ISM, JOLTS and Treasury auctions;
+- **Implemented:** CPI/core CPI, PPI, payrolls/unemployment, claims, GDP and
+  headline/core PCE from exact-dated official BLS, BEA and DOL entries;
+- **Remaining:** payroll earnings/revisions, retail sales, ISM, JOLTS and
+  Treasury auctions;
 - official actual, previous/revised previous, units and period;
 - immutable receipts/replay and parser-version registry;
 - official schedule sync removes annual hard-coded date risk;
@@ -415,6 +417,13 @@ Acceptance: a fixture and a live official statement both produce
 Acceptance: every high-impact calendar event has an adapter or an explicit
 unsupported badge seven days before release; p95 actual latency is under two
 minutes over a full release cycle.
+
+The core adapter tranche also makes `event_id` the publication/state identity,
+retains and retries every unparsed result family for seven days, refuses to call
+an unparsed document “published,” groups simultaneous results in the UI, and
+raises a dead-man failure before the static annual schedule can silently run
+out. Full official schedule synchronization and immutable raw-receipt storage
+remain required before Phase 1 is complete.
 
 ### Phase 2 — freshness control plane
 
