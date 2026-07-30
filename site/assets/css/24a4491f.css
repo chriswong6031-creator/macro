@@ -99,6 +99,9 @@ body.crypto-page::before{opacity:.34}
 .lane-cta{font-size:10px;font-weight:740;color:var(--link)}
 .equity-grid{display:grid;grid-template-columns:repeat(7,1fr);border:1px solid var(--line)}
 .equity{padding:16px 14px;border-right:1px solid var(--line);text-decoration:none;color:inherit}.equity:last-child{border-right:0}
+/* Rails member with no dossier page — the basket names a wider universe than
+   we render. Tile and quote stay; the click does not. */
+.equity-off{cursor:default}
 .equity b{font:780 14px/1 var(--font-mono)}.equity .eq-price{margin-top:18px;font:720 13px/1 var(--font-mono)}
 .equity .eq-change{margin-top:6px;color:var(--tone);font:680 10px/1 var(--font-mono)}.equity .state{margin-top:13px;font-size:9.5px}
 .calendar-grid{display:grid;grid-template-columns:repeat(6,1fr);border:1px solid var(--line)}
