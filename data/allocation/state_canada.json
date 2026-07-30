@@ -7,7 +7,6 @@
     "ca_base_metals",
     "ca_consumer",
     "ca_insurers",
-    "ca_materials",
     "ca_oil_gas",
     "ca_pipelines",
     "ca_rails_ind",
@@ -19,7 +18,7 @@
     "ca_banks",
     "ca_base_metals",
     "ca_pipelines",
-    "ca_rails_ind"
+    "ca_utilities"
   ],
   "leader": "ca_banks",
   "names": {

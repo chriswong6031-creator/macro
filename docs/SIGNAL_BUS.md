@@ -64,6 +64,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | nw-mastermind-bridge | 5 |
 | nw-rails | 7 |
 | options-alpha | 7 |
+| options-intelligence-program | 6 |
 | options-nw-entry-intelligence | 3 |
 | oracle | 29 |
 | personality-timing | 12 |
@@ -100,7 +101,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 335 |
+| display | 341 |
 | infrastructure | 95 |
 | scored | 4 |
 | shadow | 79 |
@@ -109,9 +110,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 491 |
+| git | 494 |
 | gitignored-local | 15 |
-| r2 | 7 |
+| r2 | 10 |
 
 ## Artifacts by owner_program
 
@@ -728,6 +729,17 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | vol-regime-basket-overlay-gate | `data/vol_regime/basket_overlay_gate.json` | json | on-demand | scored | 2 | 0 |
 | options-flow-index | `site/flow/index.json` | json | collect | display | 0 | 1 |
 | options-ivspread-snapshots | `data/options_ivspread/snapshots.parquet` | parquet | collect | display | 1 | 0 |
+
+### options-intelligence-program
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| live-flow-dte-tide-dated | `live_flow/dte_tide/<DATE>.json` | json | intraday | display | 1 | 1 |
+| live-flow-surface-dated | `live_flow/surface/<ROOT>/<DATE>/idx.json` | json | intraday | display | 1 | 1 |
+| live-flow-tide-dated | `live_flow/tide/<DATE>.json` | json | intraday | display | 1 | 1 |
+| options-session-ledger | `data/options_session/ledger.parquet` | parquet | daily-engine | display | 1 | 0 |
+| options-session-latest | `site/session/` | json | daily-engine | display | 0 | 0 |
+| options-session-records | `data/options_session/` | json | daily-engine | display | 0 | 0 |
 
 ### options-nw-entry-intelligence
 
@@ -1484,6 +1496,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/neuralweb/lagging.py`
 - **extra writers:**
   - scripts/build_kernel_diagnostics.py — thin CLI wrapper; calls write_lagging() defined in the producer; no independent write logic
+
+### live-flow-surface-dated
+
+- **path:** `live_flow/surface/<ROOT>/<DATE>/idx.json`
+- **declared producer:** `scripts/build_flow_surface.py`
+- **extra writers:**
+  - scripts/live_flow_poller.py
 
 ### long-hold-clocks
 

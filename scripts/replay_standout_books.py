@@ -179,6 +179,10 @@ def _load_grades(data_dir: Path, market: str) -> tuple[Any, str | None]:
 
     try:
         df = pd.read_parquet(grade_path)
+        if market == "cn":
+            from engine import china_standout_track as _cn_track  # noqa: PLC0415
+
+            df, _definition = _cn_track._latest_definition_frame(df)  # noqa: SLF001
         return df, None
     except Exception as e:  # noqa: BLE001
         return None, f"grade_store_read_error:{e}"

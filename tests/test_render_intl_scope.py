@@ -17,5 +17,5 @@ def test_render_workflow_has_an_international_scope():
 def test_full_render_includes_international_dashboard():
     assert (
         "spine; intl; canada; band; central; flowleaders; leaderradar; "
-        "foresightpage; hub; us_pages; libs; sits; csits ;;"
+        "foresightpage; hub; crypto; us_pages; libs; sits; csits ;;"
     ) in WORKFLOW

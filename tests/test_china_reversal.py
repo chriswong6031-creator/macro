@@ -62,6 +62,12 @@ def test_deepest_dip_ranks_first_and_screens():
     # ret_3m and within-sector rank are sane
     a = next(r for r in out["watch"] if r["ticker"] == "A_DIP")
     assert a["ret_3m"] == -30.0 and a["sector_rank"] == 1 and a["rev_z"] > 0
+    full = out["reversal_all"]
+    assert set(full) == set(tickers)
+    assert full["A_DIP"]["ret_3m"] == -30.0
+    assert full["A_DIP"]["sector_rank"] == 1
+    assert full["A_DIP"]["deepest_quintile"] is True
+    assert "A_ST" not in full and "A_MICRO" not in full
 
 
 def test_guards():

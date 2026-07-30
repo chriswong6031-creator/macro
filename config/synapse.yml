@@ -5742,9 +5742,16 @@ artifacts:
       2026-07-05. 5d change computed in engine/options_entry_state.py from this store;
       minimum LOOKBACK_TRADING_DAYS+1 rows required for non-null 5d change.
       No scored arithmetic path reads this store until the skew gate passes.
-      LRV-W1: build_leader_radar reads rr proxy (atm_call_iv−otm_put_iv) for
-      call_skew_rich chip; display-only (≥21 obs gate; all names currently below
-      threshold — chip stays null until history accrues).
+      LRV-W1/LRV-R6: build_leader_radar reads rr proxy (atm_call_iv−otm_put_iv)
+      for the call_skew_rich chip — a CROWDED state-gate input (chip 6 of the
+      7-chip k-of-n, #3977 review corrected the earlier display-only claim),
+      not a scored/ranked path. LRV-R6 (2026-07-30) HOLDS that vote:
+      CROWDED_SKEW_CHIP_ARMED=False pins the chip to None (out of n_avail)
+      until an n≥60 re-benchmark (~mid-Oct 2026) meets three pre-registered
+      arming criteria. Construction behind the hold: session-true rows,
+      dropna before the gate, ≥3 of the last 5 sessions above the Q80 of ≥21
+      prior real readings (evaluation window excluded), eligible at n≥26.
+      Measurement of record: research/leader_radar_skew_chip/MEASUREMENT.md.
 
   options-ivspread-snapshots:
     path: data/options_ivspread/snapshots.parquet
@@ -5800,6 +5807,199 @@ artifacts:
       Signing_gate root false as of 2026-07-05 — direction fields are soft-signed
       (tick-rule / minute-agg; no NBBO). Only magnitude fields (net dollar flow,
       gamma_flow, 0DTE pct) are reliable per signing_gate sub-gate audit.
+
+  # --- OIP E1 session digest + the dated intraday archives it reads (2026-07-29) ---
+  live-flow-surface-dated:
+    path: live_flow/surface/<ROOT>/<DATE>/idx.json
+    format: json
+    producer: scripts/build_flow_surface.py
+    known_extra_writers:
+      - scripts/live_flow_poller.py
+    owner_program: options-intelligence-program
+    cadence: intraday
+    storage: r2
+    asof_field: asof
+    freshness_sla_hours: 1
+    schema: live_flow.surface.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_session_digest.py
+    external_consumers:
+      - mastermind:flow-desk-terminal
+    notes: >
+      Date-keyed per-minute options surface archive (M-XP a): per root and session,
+      idx.json (stamp list + true cadence) plus one {HHMM}.json replay frame per stamp,
+      each frame being the session truncated to that stamp. Registered here because the
+      OIP E1 digest is its first macro-side consumer; the store itself predates this
+      entry and was previously unregistered. Retention 10 sessions per root
+      (SURFACE_RETAIN_SESSIONS) — the digest ledger is the durable record, the archive is
+      a working file. WRITER CONTRACT the digest depends on: frame_for_stamp emits each
+      stamp's scalar spot but DROPS spot_path, and emits that stamp's own walls rather
+      than walls_path, so the price path and the opening wall map cost one GET per stamp.
+      Stamps are correct exchange time (an aware UTC datetime through astimezone(ET)) —
+      unlike the tide families below. COST WARNING for any future consumer: each per-stamp
+      file is the session TRUNCATED to that stamp, so fetching a whole session is QUADRATIC
+      in bytes (measured 124.8 MB for one root at the configured 120s cadence). Read the
+      newest frame for the full day and range-read the head of each stamp for its `spot`;
+      `_full.json` carries spot_path/walls_path but is staged locally by the poller and never
+      uploaded, so it cannot be fetched. Intraday store: consumers check staleness before
+      display and NEVER couple it to a forward ledger outside the nightly lane.
+
+  live-flow-tide-dated:
+    path: live_flow/tide/<DATE>.json
+    format: json
+    producer: scripts/live_flow_poller.py
+    known_extra_writers: []
+    owner_program: options-intelligence-program
+    cadence: intraday
+    storage: r2
+    asof_field: asof
+    freshness_sla_hours: 1
+    schema: live_flow.tide.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_session_digest.py
+    external_consumers:
+      - mastermind:flow-desk-terminal
+    notes: >
+      Dated market-tide archive (same payload as the overwritten tide_current.json:
+      full-session cumulative signed ncp/npp minutes, sectors, top_net_impact).
+      MARKET-WIDE, not per-root — every consumer must present it as such. ~183 KB per
+      session; retention 30 sessions. KNOWN DEFECT the digest works around:
+      engine/live_flow._minute_key localizes naive exchange timestamps as UTC before
+      converting to ET, so the minute LABELS run a whole timezone offset early (a
+      09:30-16:00 session reads 05:30-11:59). The series is correct and monotone; only
+      the labels are wrong. Consumers must not trust the wall-clock labels — see
+      engine/session_digest.clock_offset_minutes for the correction the digest applies.
+      `spy` is always empty (no price series); the spot path comes from the surface
+      archive above. Intraday store: never coupled to a forward ledger off-lane.
+
+  live-flow-dte-tide-dated:
+    path: live_flow/dte_tide/<DATE>.json
+    format: json
+    producer: scripts/live_flow_poller.py
+    known_extra_writers: []
+    owner_program: options-intelligence-program
+    cadence: intraday
+    storage: r2
+    asof_field: asof
+    freshness_sla_hours: 1
+    schema: live_flow.dte_tide.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_session_digest.py
+    external_consumers:
+      - mastermind:flow-desk-terminal
+    notes: >
+      Dated DTE-bucket tide archive (5 buckets: 0d, 1_7d, 8_30d, 31_90d, 90p; cumulative
+      signed ncp/npp per minute). MARKET-WIDE, not per-root. ~84 KB per session;
+      retention 30 sessions. Carries the same _minute_key label defect as the tide family
+      above. Source of the digest's same-day-expiry share, computed at the newest stamp
+      present in EVERY bucket (a share built from two different clock readings would be a
+      fabricated ratio). Carries no session_date field — the date lives in the key, and
+      the digest cross-checks it against `asof` before using the document.
+
+  options-session-records:
+    path: data/options_session/
+    format: json
+    producer: scripts/build_session_digest.py
+    known_extra_writers: []
+    owner_program: options-intelligence-program
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: options_session.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      OIP E1 settled session records, data/options_session/{DATE}/{ROOT}.json — the
+      Terminal→EOD bridge. Per root and session: the net-premium arc (downsampled to ~80
+      points), derived session events with receipts (gamma-flip crossings, wall touches,
+      premium-pace bursts, strike concentrations, same-day-expiry spikes), open-vs-close
+      walls with a migration flag, and a coverage block that prints what was missing in
+      plain EN/ZH words. DISPLAY-ONLY and descriptive: no direction claim, no fused
+      score, no ranking, no forecast. `arc.ncp`/`arc.npp` are deliberately null — the
+      archived per-root series is gross call-minus-put premium, NOT the tide's signed net
+      call/put premium, and labelling it as such would fabricate a number. Written only
+      in the nightly lane (COLLECT_LANE=nightly); no surface consumes it yet (W2 S2 is
+      the first planned reader). RETENTION: the newest 40 sessions
+      (build_session_digest.RECORD_RETAIN_SESSIONS) — these are committed git artifacts and
+      would otherwise grow without bound; the ledger parquet below is the durable record and
+      is never swept. A dated record is replaced only by a read covering MORE minutes, so a
+      re-run after the 10-session surface retention has aged out cannot degrade a settled
+      session.
+
+  options-session-latest:
+    path: site/session/
+    format: json
+    producer: scripts/build_session_digest.py
+    known_extra_writers: []
+    owner_program: options-intelligence-program
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: options_session.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Latest-session pointer per root, site/session/{ROOT}.json — the same
+      options_session.v1 payload as the dated record, for future surfaces (W2 S2 Brief
+      session-character shelf). Monotone: a replay of an older session never rolls this
+      pointer back. Refreshed in any lane (a display artifact nobody grades), unlike the
+      dated records under data/. DISPLAY-ONLY.
+
+  options-session-ledger:
+    path: data/options_session/ledger.parquet
+    format: parquet
+    producer: scripts/build_session_digest.py
+    known_extra_writers: []
+    owner_program: options-intelligence-program
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: options_session.ledger.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_session_digest.py
+    external_consumers: []
+    notes: >
+      OIP E1 session ledger — one row per (date, root): arc shape tag, per-family event
+      counts, same-day-expiry peak share, open/close walls with the migration flag,
+      gamma-flip crossings, and coverage. The DURABLE record of the intraday plane: the
+      R2 surface archive retains 10 sessions and the tide archives 30, so this parquet is
+      what survives. NIGHTLY IS THE SOLE ADVANCER
+      (engine.ledger_lane.nightly_advance_enabled, COLLECT_LANE=nightly); dedup on
+      (date, root) keeps FIRST, so replays and backfills add sessions and never rewrite a
+      row already on the record. Read back by the builder itself: a prior session's close
+      walls are this session's open walls while the intraday greek tap is dark.
+      Carries the vintage/source of the level map each row's flip and wall figures were
+      measured against, plus the clock offset applied and whether that clock read was
+      ambiguous — so a genuine zero-crossing day is distinguishable from a day whose level
+      map was unusable. DISPLAY-ONLY — a descriptive record, not a graded forecast; nothing
+      here is scored or promoted, and no gate reads it.
 
   # --- W3 Event Intelligence priors (Signal Commons, 2026-07-05) ---
   event-priors-clinicaltrials:

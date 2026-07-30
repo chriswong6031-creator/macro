@@ -197,6 +197,11 @@ the consequence, not just the cause.
   truth; readings near zero are especially ambiguous. Daily EOD cadence only —
   a regime/vol-context input, not a day-trading tool. No free history exists,
   so the GEX transition flag is live-only (False throughout the backtest).
+  A missed evening is a permanent hole: the chain endpoint serves only the
+  live snapshot, so a failed collect cannot be backfilled honestly. Known
+  gaps are registered with their cause in `collectors/cboe.py`
+  `KNOWN_PERMANENT_GAPS` (2026-07-27: CDN 429s took out putcall + gex/
+  gex_SPX/gex_SPY/gex_MSFT; the other symbols carried the session).
 - **Sector ETF flows = ΔSO × NAV are T+1** and miss heartbeat-trade nuance and
   intra-day creations. Good for direction and magnitude rank, not exact dollars.
 - **Sponsor holdings scrapers are per-sponsor fragile**: ARK (clean CSV,

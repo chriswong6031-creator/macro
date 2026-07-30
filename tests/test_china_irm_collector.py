@@ -357,12 +357,18 @@ class TestBoardUniverse:
     def test_reads_the_sz_half_only(self, tmp_path, monkeypatch):
         site = tmp_path / "site"
         (site / "factordata").mkdir(parents=True)
-        (site / "factordata" / "china_setups.json").write_text(json.dumps({"buy": [
-            {"ticker": "002595.SZ"}, {"ticker": "000034.SZ"},
-            {"ticker": "601963.SS"}, {"ticker": "junk"}, {},
-        ]}))
+        (site / "factordata" / "china_setups.json").write_text(json.dumps({
+            "schema_version": "2.0.0",
+            "buy": [{"ticker": "002595.SZ"}],
+            "more_actionable": [{"ticker": "000034.SZ"}],
+            "late_or_unfillable": [{"ticker": "300001.SZ"}],
+            "forming": [{"ticker": "301002.SZ"}],
+            # Compatibility watch is the union of depth lanes and must not be
+            # treated as a separate v2 source.
+            "watch": [{"ticker": "399999.SZ"}],
+        }))
         monkeypatch.setattr(config, "site_dir", lambda: site)
-        assert ci.board_universe() == ["000034", "002595"]
+        assert ci.board_universe() == ["000034", "002595", "300001", "301002"]
 
     def test_absent_file_is_an_empty_universe_not_a_crash(self, tmp_path, monkeypatch):
         monkeypatch.setattr(config, "site_dir", lambda: tmp_path / "nope")

@@ -1,0 +1,11 @@
+{
+  "tone_score": 0.2,
+  "guidance_direction": "on_hold",
+  "risk_delta": 0,
+  "shock_reversible": "unknown",
+  "confidence": "medium",
+  "evidence": [
+    {"field": "guidance_direction", "quote_span": "The Committee decided to maintain the target range for the federal funds rate at 3-1/2 to 3-3/4 percent"},
+    {"field": "tone_score", "quote_span": "Inflation remains elevated relative to the Committee's 2 percent goal"}
+  ]
+}

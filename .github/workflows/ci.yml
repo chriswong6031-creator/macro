@@ -2058,6 +2058,7 @@ on:
       # Their subjects are templates/** and scripts/*.py, both broad catch-alls
       # above, so again only the test halves need entries here.
       # unrun-template-chips
+      - "tests/test_macro_header_compact.py"
       - "tests/test_okx_retail.py"
       - "tests/test_w4_us_board.py"
       - "tests/test_w5b_edge_chips.py"

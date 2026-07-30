@@ -96,8 +96,9 @@ def test_canada_is_a_dispatchable_scope():
 
 
 def test_canada_scope_builds_canada_then_the_hub():
-    # hub() must follow: build_vector's _canada_state() reads the regime JSON written here.
-    assert "canada)\n              canada; hub ;;" in RENDER
+    # hub() must follow: build_vector's _canada_state() reads the regime JSON written
+    # here. crypto() follows hub() because H6 consumes the BTC authority contract.
+    assert "canada)\n              canada; hub; crypto ;;" in RENDER
 
 
 def test_canada_builder_runs_before_hub_in_a_full_render():

@@ -1,0 +1,8 @@
+{
+  "tone_score": 0,
+  "guidance_direction": "unknown",
+  "risk_delta": 0,
+  "shock_reversible": "unknown",
+  "confidence": "low",
+  "evidence": []
+}

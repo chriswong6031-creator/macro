@@ -1,122 +1,122 @@
 {
   "gold": {
     "cycle_ref": "gold",
-    "pos": 1.3,
+    "pos": 1.6,
     "phase": "Trough",
     "phase_v2": "Downturn",
     "overdue": true,
-    "overdue_frac": 1.395,
+    "overdue_frac": 1.403,
     "hazard_1m": 0.5904,
     "hazard_3m": 0.0474,
     "hazard_6m": 0.0894,
-    "asof": "2026-07-28"
+    "asof": "2026-07-29"
   },
   "silver": {
     "cycle_ref": "silver",
-    "pos": 0.8,
+    "pos": 0.9,
     "phase": "Trough",
     "phase_v2": "Downturn",
     "overdue": false,
-    "overdue_frac": 0.525,
+    "overdue_frac": 0.532,
     "hazard_1m": 0.5676,
     "hazard_3m": 0.0474,
     "hazard_6m": 0.0894,
-    "asof": "2026-07-28"
+    "asof": "2026-07-29"
   },
   "copper": {
     "cycle_ref": "copper",
-    "pos": 59.9,
+    "pos": 60.7,
     "phase": "Downturn",
     "phase_v2": "Downturn",
     "overdue": true,
-    "overdue_frac": 2.562,
+    "overdue_frac": 2.569,
     "hazard_1m": 0.642,
-    "hazard_3m": 0.5263,
+    "hazard_3m": 0.5595,
     "hazard_6m": 0.5882,
-    "asof": "2026-07-28"
+    "asof": "2026-07-29"
   },
   "oil": {
     "cycle_ref": "oil",
-    "pos": 15.9,
+    "pos": 24.5,
     "phase": "Trough",
     "phase_v2": "Downturn",
     "overdue": false,
-    "overdue_frac": 0.307,
-    "hazard_1m": 0.5288,
+    "overdue_frac": 0.317,
+    "hazard_1m": 0.4878,
     "hazard_3m": 0.0474,
     "hazard_6m": 0.0894,
-    "asof": "2026-07-20"
+    "asof": "2026-07-27"
   },
   "natgas": {
     "cycle_ref": "natural-gas",
-    "pos": 5.0,
+    "pos": 4.2,
     "phase": "Trough",
     "phase_v2": "Downturn",
     "overdue": false,
-    "overdue_frac": 0.74,
+    "overdue_frac": 0.772,
     "hazard_1m": 0.5288,
     "hazard_3m": 0.0474,
     "hazard_6m": 0.0894,
-    "asof": "2026-07-20"
+    "asof": "2026-07-27"
   },
   "platinum": {
     "cycle_ref": "pgms",
-    "pos": 0.5,
+    "pos": 0.6,
     "phase": "Trough",
     "phase_v2": "Downturn",
     "overdue": false,
-    "overdue_frac": 0.86,
+    "overdue_frac": 0.865,
     "hazard_1m": 0.5676,
     "hazard_3m": 0.0474,
     "hazard_6m": 0.0894,
-    "asof": "2026-07-28"
+    "asof": "2026-07-29"
   },
   "palladium": {
     "cycle_ref": "pgms",
-    "pos": 0.5,
+    "pos": 0.6,
     "phase": "Trough",
     "phase_v2": "Downturn",
     "overdue": false,
-    "overdue_frac": 0.86,
+    "overdue_frac": 0.865,
     "hazard_1m": 0.5676,
     "hazard_3m": 0.0474,
     "hazard_6m": 0.0894,
-    "asof": "2026-07-28"
+    "asof": "2026-07-29"
   },
   "corn": {
     "cycle_ref": "agriculture",
-    "pos": 69.8,
+    "pos": 70.1,
     "phase": "Expansion",
     "phase_v2": "Expansion",
     "overdue": true,
-    "overdue_frac": 10.87,
+    "overdue_frac": 10.877,
     "hazard_1m": 0.2531,
     "hazard_3m": 0.0474,
     "hazard_6m": 0.0894,
-    "asof": "2026-07-28"
+    "asof": "2026-07-29"
   },
   "wheat": {
     "cycle_ref": "agriculture",
-    "pos": 69.8,
+    "pos": 70.1,
     "phase": "Expansion",
     "phase_v2": "Expansion",
     "overdue": true,
-    "overdue_frac": 10.87,
+    "overdue_frac": 10.877,
     "hazard_1m": 0.2531,
     "hazard_3m": 0.0474,
     "hazard_6m": 0.0894,
-    "asof": "2026-07-28"
+    "asof": "2026-07-29"
   },
   "soybeans": {
     "cycle_ref": "agriculture",
-    "pos": 69.8,
+    "pos": 70.1,
     "phase": "Expansion",
     "phase_v2": "Expansion",
     "overdue": true,
-    "overdue_frac": 10.87,
+    "overdue_frac": 10.877,
     "hazard_1m": 0.2531,
     "hazard_3m": 0.0474,
     "hazard_6m": 0.0894,
-    "asof": "2026-07-28"
+    "asof": "2026-07-29"
   }
 }

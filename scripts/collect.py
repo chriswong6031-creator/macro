@@ -276,6 +276,7 @@ def all_adapters() -> dict:
         ("deribit", "collectors.deribit", "DeribitAdapter"),
         ("feargreed", "collectors.crypto_misc", "FearGreedAdapter"),
         ("coingecko", "collectors.crypto_misc", "CoinGeckoAdapter"),
+        ("crypto_universe", "collectors.crypto_misc", "CryptoUniverseAdapter"),
         ("defillama", "collectors.crypto_misc", "DefiLlamaAdapter"),
         ("mempool", "collectors.crypto_misc", "MempoolAdapter"),
         ("wikipedia_btc", "collectors.crypto_misc", "WikipediaBtcAdapter"),  # keyless attention axis
@@ -344,7 +345,8 @@ def all_adapters() -> dict:
 # auto-classified. `crypto`/`slow` are explicit sets consumed by shards added later —
 # inert until a workflow references them; verify before enabling those shards.
 _CRYPTO = {"coinmetrics", "bgeo", "coinbase", "okx", "deribit", "feargreed",
-           "coingecko", "defillama", "mempool", "wikipedia_btc", "farside"}
+           "coingecko", "crypto_universe", "defillama", "mempool",
+           "wikipedia_btc", "farside"}
 _SLOW = set(_QUIVER_KEYS) | {
     "edgar_8k", "edgar_13f", "edgar_trumpflow", "beneficial_ownership",
     "edgar_dilution",  # nwqs-c: S-3/424B daily-index sweep; nightly-only
@@ -849,6 +851,18 @@ def main() -> int:
             check_cor_vol_freshness()
         except Exception as e:  # noqa: BLE001 — a tripwire's crash must not abort the run
             log.warning("cor/vol freshness tripwire crashed (non-fatal): %s", e)
+
+    # 2026-07-27 whole-family miss (CBOE CDN 429s through the retry window): store-level
+    # SESSION-COVERAGE tripwire for the delayed-chain family (putcall + gex + gex_<SYM>).
+    # Membership over the last N sessions, not tail age — a one-day hole goes green to
+    # every tail check the very next evening, which is how that miss stayed silent.
+    # Emits line-start ::warning/::error annotations; warn-only, never fails the lane.
+    if "cboe_gex" in registry or "cboe_putcall" in registry:
+        try:
+            from collectors.cboe import check_chain_session_coverage
+            check_chain_session_coverage()
+        except Exception as e:  # noqa: BLE001 — a tripwire's crash must not abort the run
+            log.warning("chain session-coverage tripwire crashed (non-fatal): %s", e)
 
     # ^GSPC incident (frozen 2026-06-12→07-16): same store-level tripwire for the
     # pinned engine-critical yahoo names (collectors.yahoo.ENGINE_CRITICAL_SERIES).

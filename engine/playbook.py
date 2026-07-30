@@ -67,6 +67,62 @@ QUAD_SHORT = {"Q1": "Goldilocks", "Q2": "Reflation",
 # canonical Chinese for the short quad names + transition states, for composed prose
 QUAD_SHORT_ZH = {"Q1": "理想增长", "Q2": "再通胀",
                  "Q3": "滞胀", "Q4": "增长恐慌"}
+# exposure-dial posture, canonical 中文 — same values as engine/i18n.py LEX so the
+# composed prose and the glossary-rendered chips never disagree.
+POSTURE_ZH = {"AGGRESSIVE": "进取", "CONSTRUCTIVE": "偏多", "NEUTRAL": "中性",
+              "CAREFUL": "谨慎", "DEFENSIVE": "防御"}
+# axis names for composed 中文 prose (never leave the raw English slug in a ZH line)
+AXIS_ZH = {"growth": "增长", "inflation": "通胀"}
+
+# --------------------------------------------------------------------------- #
+# QUAD_MEANING is the CANONICAL gloss for a quad — "growth improving while
+# inflation cools" etc. It is only TRUE of the label when the label matches
+# today's signs. `quad` is the sticky hysteresis label and disagreed with the
+# memoryless sign rule on ~44% of post-2000 sessions, so emitting the canonical
+# gloss unconditionally asserted two clauses that the axes contradicted. Worked
+# example (2026-07-29): label Q1 Goldilocks, growth −0.133 (deteriorating),
+# inflation +0.400 (rising) — BOTH clauses false, Stagflation on the raw rule.
+# quad_meaning_for() derives the honest string from the signed axis values.
+# --------------------------------------------------------------------------- #
+_AXIS_WORD = {
+    "growth": {1: "improving", -1: "deteriorating"},
+    "inflation": {1: "rising", -1: "cooling"},
+}
+_AXIS_WORD_ZH = {
+    "growth": {1: "增长改善", -1: "增长走弱"},
+    "inflation": {1: "通胀上行", -1: "通胀降温"},
+}
+
+
+def quad_meaning_for(quad: str, growth: float | None = None,
+                     inflation: float | None = None,
+                     raw_quad: str | None = None) -> dict:
+    """Honest quad gloss. Returns {"en", "zh", "canonical": bool}.
+
+    When the displayed label agrees with today's signed axes (or the axes are not
+    supplied) this is the canonical QUAD_MEANING gloss verbatim. When they disagree
+    it names the label, prints the actual axis readings, and names the quad the raw
+    sign rule reads instead — so the sentence can never assert a direction the data
+    contradicts. PURE."""
+    en_canon = QUAD_MEANING.get(quad, "")
+    zh_canon = QUAD_MEANING_ZH.get(quad, "")
+    if growth is None or inflation is None:
+        return {"en": en_canon, "zh": zh_canon, "canonical": True}
+    g, i = float(growth), float(inflation)
+    rq = raw_quad if raw_quad in ("Q1", "Q2", "Q3", "Q4") else None
+    if rq is None:                       # derive it the same way engine.regime does
+        rq = ("Q1" if i < 0 else "Q2") if g >= 0 else ("Q4" if i < 0 else "Q3")
+    if rq == quad:
+        return {"en": en_canon, "zh": zh_canon, "canonical": True}
+    gs, is_ = (1 if g >= 0 else -1), (1 if i >= 0 else -1)
+    en = (f"{QUAD_SHORT.get(quad, quad)} is still the confirmed label, but today's axes read "
+          f"growth {g:+.2f} ({_AXIS_WORD['growth'][gs]}) / inflation {i:+.2f} "
+          f"({_AXIS_WORD['inflation'][is_]}) — {QUAD_SHORT.get(rq, rq)} on the raw sign rule.")
+    zh = (f"确认标签仍为{QUAD_SHORT_ZH.get(quad, quad)}，但今日两轴读数为"
+          f"增长 {g:+.2f}（{_AXIS_WORD_ZH['growth'][gs]}）／通胀 {i:+.2f}"
+          f"（{_AXIS_WORD_ZH['inflation'][is_]}）—— 按原始符号规则为"
+          f"{QUAD_SHORT_ZH.get(rq, rq)}。")
+    return {"en": en, "zh": zh, "canonical": False}
 
 
 def next_quads_line(nxt: dict, zh: bool = False, top: int = 2) -> str:
@@ -469,13 +525,35 @@ def _trigger_lines(latest_flags: dict, flip: dict, pending: dict | None,
                       f"{pending['days']} of {pending['need']} confirmation days done.",
                       f"转向 {pname_zh} 的周期切换已在倒计时："
                       f"已完成 {pending['days']}/{pending['need']} 个确认交易日。"))
-    if flip and flip.get("component"):
+    if flip and flip.get("label_unsupported"):
+        # The label's own axes contradict it — do NOT dress a contradiction up as
+        # "the shakiest evidence behind this call" (engine/regime.flip_condition).
+        _dq, _rq = flip.get("displayed_quad"), flip.get("raw_quad")
+        _pq, _pd, _pn = flip.get("pending_quad"), flip.get("pending_days"), flip.get("pending_need")
+        _en = (f"The label's own axes no longer support it — today's signs read "
+               f"{QUAD_SHORT.get(_rq, _rq)} while the confirmed label is still "
+               f"{QUAD_SHORT.get(_dq, _dq)}.")
+        _zh = (f"该标签自身的两轴已不再支持它 — 今日符号读数为"
+               f"{QUAD_SHORT_ZH.get(_rq, _rq)}，而确认标签仍为"
+               f"{QUAD_SHORT_ZH.get(_dq, _dq)}。")
+        # ...but only restate the countdown if the pending line above did NOT already
+        # print it — otherwise the same countdown appears twice in a 4-line list.
+        if _pq and _pd is not None and _pn is not None and not (pending and pending.get("quad")):
+            _en += (f" {QUAD_SHORT.get(_pq, _pq)} is counting down: "
+                    f"{_pd} of {_pn} confirmation days done.")
+            _zh += (f"{QUAD_SHORT_ZH.get(_pq, _pq)}正在倒计时："
+                    f"已完成 {_pd}/{_pn} 个确认交易日。")
+        lines.append((_en, _zh))
+    elif flip and flip.get("component"):
         plain = COMPONENT_PLAIN.get(flip["component"], flip["component"])
         plain_zh = COMPONENT_PLAIN_ZH.get(flip["component"], flip["component"])
+        # the axis name must be TRANSLATED in the 中文 line — a bare English slug
+        # ("growth 信号将翻转") reads as broken copy, not as bilingual copy.
+        axis_zh = AXIS_ZH.get(flip.get("axis"), flip.get("axis"))
         lines.append((f"The most fragile support is {plain} — if it rolls over, "
                       f"the {flip['axis']} signal flips.",
                       f"最脆弱的支撑是{plain_zh} — 若其反转，"
-                      f"{flip['axis']} 信号将翻转。"))
+                      f"{axis_zh}信号将翻转。"))
     flag_plain = {
         "flag_breadth_price": "the index is near highs but fewer stocks are participating",
         "flag_credit_equity": "stocks are up but credit markets are getting nervous",
@@ -749,7 +827,22 @@ def build_playbook(f: pd.DataFrame, regime: pd.DataFrame, closes: pd.DataFrame,
     triggers = _trigger_lines(latest.get("transition_flags", {}),
                               latest.get("flip_condition", {}), pending, next_quad)
 
-    headline = (f"{QUAD_MEANING[quad]}. Posture: {dial['posture']} — {dial['meaning']}.")
+    # Honest gloss: the canonical QUAD_MEANING only when the label agrees with today's
+    # signed axes, otherwise the label + actual readings + the raw-rule quad. See
+    # quad_meaning_for().
+    _rq = last.get("raw_quad")
+    qmean = quad_meaning_for(
+        quad,
+        growth=latest.get("growth_score"),
+        inflation=latest.get("inflation_score"),
+        raw_quad=None if _rq is None or str(_rq) in ("None", "nan") else str(_rq),
+    )
+    _sep = ". " if qmean["canonical"] else " "
+    headline = f"{qmean['en']}{_sep}Posture: {dial['posture']} — {dial['meaning']}."
+    _zh_sep = "。" if qmean["canonical"] else ""
+    headline_zh = (f"{qmean['zh']}{_zh_sep}仓位立场："
+                   f"{POSTURE_ZH.get(dial['posture'], dial['posture'])} — "
+                   f"{dial.get('meaning_zh') or dial['meaning']}。")
 
     # --- regime progress: where are we in this regime's typical lifespan? -----
     cur = trans["current"]
@@ -830,6 +923,7 @@ def build_playbook(f: pd.DataFrame, regime: pd.DataFrame, closes: pd.DataFrame,
 
     return {
         "headline": headline,
+        "headline_zh": headline_zh,
         "dial": dial,
         "scenario": scenario_odds(closes, regime, f, latest),
         "leaders": leaders[:4],
@@ -842,7 +936,13 @@ def build_playbook(f: pd.DataFrame, regime: pd.DataFrame, closes: pd.DataFrame,
         "progress": progress,
         "regime_age_note": age_note,
         "regime_age_note_zh": age_note_zh,
-        "quad_meaning": {"en": QUAD_MEANING[quad], "zh": QUAD_MEANING_ZH[quad]},
+        # honest gloss (quad_meaning_for): canonical only when the label agrees with
+        # today's signed axes; `canonical: false` means the string names the divergence
+        # instead of asserting a direction the axes contradict.
+        "quad_meaning": qmean,
+        # the canonical dictionary gloss, kept separately so a surface that wants the
+        # textbook definition of the LABEL still has it — clearly not a claim about today
+        "quad_meaning_canonical": {"en": QUAD_MEANING[quad], "zh": QUAD_MEANING_ZH[quad]},
         "watchlist": watchlist[:4],
         "triggers": triggers,
         "stages": enriched,

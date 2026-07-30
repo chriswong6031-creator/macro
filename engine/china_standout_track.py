@@ -135,6 +135,8 @@ _OWN_REGIME_COLS = ("own_market_regime", "own_market_regime_note")
 # Complete column set — B-c review found a missed bool column; list every string/bool nullable
 # column explicitly.
 _OBJECT_COLS_CN = (
+    "board_definition",
+    "lane",
     "species_id",
     "archetype",
     "own_market_regime",
@@ -598,8 +600,28 @@ def append_board(rows: list[dict], asof: str | None = None, top_n: int = 60,
         sig = r.get("signal") or {}
         _cb = r.get("coiled") or {}
         _es = r.get("entry_signal") or {}
+        _pr = r.get("prophet") or {}
         out.append({
             "date": str(asof), "ticker": str(tk), "board_rank": i + 1,
+            # Board-definition versioning is load-bearing: the old 110-name
+            # cascade/setup board and the selective China Prophet v2 featured
+            # shelf are different instruments and must never share a headline
+            # grade.  Keep-first therefore keys on definition as well as
+            # date/ticker below.
+            "board_definition": (
+                r.get("board_definition") or _pr.get("version") or "legacy"
+            ),
+            "lane": r.get("lane") or "featured",
+            "prophet_score": _pr.get("score"),
+            "prophet_signal": (_pr.get("components") or {}).get("signal"),
+            "prophet_entry": (_pr.get("components") or {}).get("entry"),
+            "prophet_runway": (_pr.get("components") or {}).get("runway"),
+            "prophet_bottom_quality": (
+                (_pr.get("components") or {}).get("bottom_quality")
+            ),
+            "prophet_reversal_member": (
+                (_pr.get("components") or {}).get("reversal_member")
+            ),
             "tier": sig.get("tier_cascade"),
             "setup": r.get("setup"),
             "extended": bool(ext.get("extended")),
@@ -686,7 +708,9 @@ def append_board(rows: list[dict], asof: str | None = None, top_n: int = 60,
             combined = pd.concat(
                 [prior.reindex(columns=cols), new.reindex(columns=cols)],
                 ignore_index=True,
-            ).drop_duplicates(subset=["date", "ticker"], keep="first")
+            ).drop_duplicates(
+                subset=["date", "ticker", "board_definition"], keep="first"
+            )
             combined = _coerce_object_cols(combined)
         else:
             combined = new
@@ -776,6 +800,35 @@ def _fwd_excess(ticker: str, d0: pd.Timestamp, h: int,
     return name_ret - bench_ret, pinned                   # CSI300-relative excess
 
 
+def _latest_definition_frame(df: pd.DataFrame) -> tuple[pd.DataFrame, str | None]:
+    """Return only the newest versioned board cohort.
+
+    A board definition changes the selection instrument.  Pooling the former
+    110-name cascade/setup board with the selective China Prophet v2 shelf would
+    manufacture sample size and make its rank statistics uninterpretable.  Legacy
+    ledgers without a definition keep their historical all-row behavior.
+    """
+    if df.empty or "board_definition" not in df.columns:
+        return df, None
+    stamped = df[
+        df["board_definition"].notna()
+        & ~df["board_definition"].astype(str).isin(("", "nan", "None", "NaT"))
+    ]
+    if stamped.empty:
+        return df, None
+    dated = stamped.assign(_d=pd.to_datetime(stamped["date"], errors="coerce"))
+    newest_date = dated["_d"].max()
+    newest_rows = dated[dated["_d"] == newest_date]
+    if newest_rows.empty:  # malformed legacy dates: preserve append order as the fallback
+        newest_rows = dated
+    # append_board concatenates prior rows before the new definition.  Keeping
+    # original order here matters when a migration writes legacy and v2 cohorts
+    # on the same date; sorting by board_rank would incorrectly choose the wider
+    # legacy cohort merely because it has a larger final rank.
+    definition = str(newest_rows.iloc[-1]["board_definition"])
+    return df[df["board_definition"].astype(str) == definition].copy(), definition
+
+
 def grade() -> dict:
     """Score every matured board row, CSI300-relative + fill-realistic.
 
@@ -852,10 +905,13 @@ def grade() -> dict:
                 df.at[idx, col] = val
             n_backfilled += 1
 
-    n_unstamped = int(df["us_rate_pressure"].isna().sum()) if "us_rate_pressure" in df.columns else 0
+    n_unstamped_all = (
+        int(df["us_rate_pressure"].isna().sum())
+        if "us_rate_pressure" in df.columns else 0
+    )
     if n_backfilled:
         log.info("china_standout_track: regime-backfilled %d rows; %d still unstamped",
-                 n_backfilled, n_unstamped)
+                 n_backfilled, n_unstamped_all)
 
     # Write spine + regime updates back (keep-FRESH)
     if spine_updates or n_backfilled > 0:
@@ -865,10 +921,18 @@ def grade() -> dict:
         except Exception as e:  # noqa: BLE001
             log.warning("china_standout_track: grade write-back failed: %s", e)
 
+    grade_df, board_definition = _latest_definition_frame(df)
+    n_unstamped = (
+        int(grade_df["us_rate_pressure"].isna().sum())
+        if "us_rate_pressure" in grade_df.columns else 0
+    )
     bench = _bench_close()
-    out = {"available": True, "n_rows": int(len(df)),
+    out = {"available": True, "n_rows": int(len(grade_df)),
+           "n_rows_all_definitions": int(len(df)),
+           "board_definition": board_definition,
            "n_unstamped": n_unstamped,
-           "dates": sorted(df["date"].dropna().unique().tolist()),
+           "n_unstamped_all_definitions": n_unstamped_all,
+           "dates": sorted(grade_df["date"].dropna().unique().tolist()),
            "horizons_d": list(_HORIZONS_D),
            "grading": {
                "benchmark": _BENCH, "relative": True, "entry_basis": ENTRY_BASIS,
@@ -881,7 +945,7 @@ def grade() -> dict:
     for h in _HORIZONS_D:
         recs = []
         n_pinned = 0
-        for _i, row in df.iterrows():
+        for _i, row in grade_df.iterrows():
             ex, pinned = _fwd_excess(row["ticker"], pd.Timestamp(row["date"]), h, bench)
             if pinned:
                 n_pinned += 1
@@ -968,7 +1032,7 @@ def grade() -> dict:
     # already executed above.  Key = (ticker_str, date_str), value = excess float or None.
     # Only the 21d horizon is needed by china_standout_audit (primary grading horizon).
     fwd_excess_map_21d: dict = {}
-    for _i, row in df.iterrows():
+    for _i, row in grade_df.iterrows():
         ex, _ = _fwd_excess(row["ticker"], pd.Timestamp(row["date"]), 21, bench)
         fwd_excess_map_21d[(str(row["ticker"]), str(row["date"]))] = ex
     out["fwd_excess_map_21d"] = fwd_excess_map_21d
@@ -1031,6 +1095,7 @@ def interim_grade() -> dict:
         return {"available": False, "note": f"unreadable: {e}"}
     if df.empty:
         return {"available": False, "note": "empty"}
+    df, board_definition = _latest_definition_frame(df)
     bench = _bench_close()
     exc: list[float] = []
     held: list[int] = []
@@ -1045,11 +1110,13 @@ def interim_grade() -> dict:
         held.append(days)
     n = len(exc)
     if n < _MIN_GRADED:
-        return {"available": True, "n": n, "note": "accruing"}
+        return {"available": True, "n": n, "note": "accruing",
+                "board_definition": board_definition}
     arr = pd.Series(exc, dtype=float)
     lo, hi = _wilson_ci(int((arr > 0).sum()), n)
     return {
         "available": True,
+        "board_definition": board_definition,
         "n": n,
         "unrealized": True,
         "hit_vs_csi300": round(float((arr > 0).mean()), 4),

@@ -106,6 +106,25 @@ def reversal_watch(closes: pd.DataFrame, tkr_sector: dict, tkr_name: dict, *,
     # this, ~800 names fell back to residual momentum (alpha), the signal the engine itself labels
     # "not a validated A-share edge", silently breaking the reversal-led CN rank.
     rev_z_all = {t: round(float(d.loc[t, "rev_z"]), 2) for t in d.index if pd.notna(d.loc[t, "rev_z"])}
+    # Full-universe PIT membership contract for downstream rankers.  Recomputing
+    # sector ranks on a later, alpha-covered or gate-eligible subset changes who
+    # belongs to the validated deepest quintile, so consumers must use these exact
+    # responsibility-screened ranks.
+    reversal_all = {
+        t: {
+            "rev_z": float(d.loc[t, "rev_z"]),
+            "ret_3m": round(float(d.loc[t, "ret"]) * 100, 1),
+            "sector_rank": int(d.loc[t, "sector_rank"]),
+            "sector_n": int(d.loc[t, "sector_n"]),
+            "deepest_quintile": (
+                int(d.loc[t, "sector_rank"])
+                <= max(1, int(d.loc[t, "sector_n"]) // 5)
+            ),
+        }
+        for t in d.index
+        if pd.notna(d.loc[t, "rev_z"])
+    }
     return {"as_of": str(closes.index.max().date()), "n": int(len(d)), "note": NOTE,
             "win_days": win, "watch": watch, "rev_z_all": rev_z_all,
+            "reversal_all": reversal_all,
             "screened": {"st": int(n_st), "illiquid": int(n_illiq)}}

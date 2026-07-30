@@ -1,7 +1,7 @@
 {
   "schema": "transmission_chains.v1",
-  "asof": "2026-07-28",
-  "built": "2026-07-29 02:09 UTC",
+  "asof": "2026-07-29",
+  "built": "2026-07-30 02:47 UTC",
   "chains": [
     {
       "chain": "credit_spreads_refinancing",
@@ -37,7 +37,7 @@
               "vs": "SPY",
               "metric": "rs_pp",
               "window": 63,
-              "value": 2.264,
+              "value": 2.855,
               "op": "lt",
               "threshold": 0,
               "passed": false
@@ -55,7 +55,7 @@
               "series": "HYG/LQD",
               "metric": "ratio_ret_pct",
               "window": 22,
-              "value": 2.023,
+              "value": 2.44,
               "op": "lt",
               "threshold": -2.0,
               "passed": false
@@ -72,7 +72,7 @@
               "vs": "SPY",
               "metric": "rs_pp",
               "window": 63,
-              "value": 2.264,
+              "value": 2.855,
               "op": "lt",
               "threshold": 0,
               "passed": false
@@ -93,12 +93,12 @@
         "en": "Dollar spike → EM & multinational-EPS headwind",
         "zh": "美元飙升 → 新兴市场与跨国企业盈利承压"
       },
-      "state": "propagating",
+      "state": "expressed",
       "state_label": {
-        "en": "Propagating",
-        "zh": "传导中"
+        "en": "Expressed",
+        "zh": "已兑现"
       },
-      "hop": 1,
+      "hop": 2,
       "n_hops": 2,
       "armable": true,
       "episode_id": "dollar_spike_em_multinational@r3:2026-07-27",
@@ -145,15 +145,15 @@
             0,
             90
           ],
-          "confirmed": false,
-          "asof": null,
+          "confirmed": true,
+          "asof": "2026-07-29",
           "value_receipt": [
             {
               "series": "FXI",
               "vs": "SPY",
               "metric": "rs_pp",
               "window": 63,
-              "value": -5.787,
+              "value": -2.856,
               "op": "lt",
               "threshold": 0,
               "passed": true
@@ -221,7 +221,7 @@
               "vs": "SPY",
               "metric": "rs_pp",
               "window": 63,
-              "value": -5.787,
+              "value": -2.856,
               "op": "lt",
               "threshold": 0,
               "passed": true
@@ -237,10 +237,11 @@
             "en": "EM revenue exposure",
             "zh": "新兴市场营收敞口"
           },
-          "n": 29,
+          "n": 33,
           "cuts": {},
-          "unevaluable": 2845,
+          "unevaluable": 2836,
           "names": [
+            "A",
             "AAPL",
             "ADI",
             "AES",
@@ -254,6 +255,7 @@
             "CE",
             "CNH",
             "CTVA",
+            "DD",
             "EL",
             "FCX",
             "INGR",
@@ -267,6 +269,8 @@
             "NEM",
             "NVDA",
             "NXPI",
+            "PSN",
+            "SNPS",
             "TEL",
             "WAB",
             "WHR"
@@ -282,10 +286,11 @@
             "en": "Multinational FX translation",
             "zh": "跨国汇率折算"
           },
-          "n": 125,
+          "n": 138,
           "cuts": {},
-          "unevaluable": 2701,
+          "unevaluable": 2666,
           "names": [
+            "A",
             "AA",
             "AAPL",
             "ABNB",
@@ -326,8 +331,10 @@
             "CSCO",
             "CTVA",
             "DAN",
+            "DD",
             "DE",
             "DELL",
+            "DLR",
             "DOV",
             "DXC",
             "EBAY",
@@ -337,6 +344,7 @@
             "EQIX",
             "EXPE",
             "FCX",
+            "FTNT",
             "GE",
             "GEHC",
             "GEV",
@@ -375,9 +383,13 @@
             "NFLX",
             "NKE",
             "NOV",
+            "NTAP",
             "NWSA",
             "NXPI",
+            "OGN",
+            "OI",
             "OMC",
+            "ON",
             "ORCL",
             "OTIS",
             "PCAR",
@@ -389,15 +401,19 @@
             "RL",
             "ROK",
             "RTX",
+            "SARO",
             "SLB",
             "SMCI",
             "SNEX",
+            "SNPS",
             "SOLV",
             "SON",
             "STT",
             "SW",
+            "TDY",
             "TEL",
             "TMO",
+            "TTWO",
             "UBER",
             "V",
             "VFC",
@@ -405,6 +421,7 @@
             "VTRS",
             "WAB",
             "WKC",
+            "WMG",
             "WTW",
             "XPO",
             "XYL",
@@ -423,11 +440,11 @@
             "en": "Dollar-debt burden",
             "zh": "美元债务负担"
           },
-          "n": 10,
+          "n": 13,
           "cuts": {
             "financials.debt_to_assets": 31.9
           },
-          "unevaluable": 2794,
+          "unevaluable": 2764,
           "names": [
             "APTV",
             "AVGO",
@@ -435,10 +452,13 @@
             "CCK",
             "ITW",
             "NXPI",
+            "OGN",
+            "OI",
             "OTIS",
             "SON",
             "VFC",
-            "VTRS"
+            "VTRS",
+            "WMG"
           ],
           "resolved": true,
           "note": {
@@ -707,7 +727,7 @@
               "series": "T10YIE",
               "metric": "ret_bp",
               "window": 22,
-              "value": -1.0,
+              "value": 6.0,
               "op": "gt",
               "threshold": 15,
               "passed": false
@@ -757,7 +777,7 @@
               "vs": "SPY",
               "metric": "rs_pp",
               "window": 63,
-              "value": -1.897,
+              "value": -1.861,
               "op": "lt",
               "threshold": 0,
               "passed": true
@@ -775,7 +795,7 @@
               "series": "CL=F",
               "metric": "ret_pct",
               "window": 60,
-              "value": -13.519,
+              "value": -13.888,
               "op": "gt",
               "threshold": 25,
               "passed": false
@@ -783,7 +803,7 @@
             {
               "series": "CL=F",
               "metric": "ma50_slope5",
-              "value": -1.5214,
+              "value": -1.446,
               "op": "gt",
               "threshold": 0,
               "passed": false
@@ -799,7 +819,7 @@
               "series": "T10YIE",
               "metric": "ret_bp",
               "window": 22,
-              "value": -1.0,
+              "value": 6.0,
               "op": "gt",
               "threshold": 15,
               "passed": false
@@ -837,7 +857,7 @@
               "vs": "SPY",
               "metric": "rs_pp",
               "window": 63,
-              "value": -1.897,
+              "value": -1.861,
               "op": "lt",
               "threshold": 0,
               "passed": true
@@ -883,7 +903,7 @@
               "path": "vol_regime.vol_target_scalar",
               "op": "lt",
               "threshold": 0.85,
-              "value": 0.64,
+              "value": 0.66,
               "passed": true
             }
           ]
@@ -904,7 +924,7 @@
               "vs": "SPLV",
               "metric": "rs_pp",
               "window": 21,
-              "value": -10.729,
+              "value": -14.867,
               "op": "lt",
               "threshold": 0,
               "passed": true
@@ -932,7 +952,7 @@
               "path": "vol_regime.vix",
               "op": "gte",
               "threshold": 25,
-              "value": 18.67,
+              "value": 18.21,
               "passed": false
             }
           ]
@@ -946,7 +966,7 @@
               "path": "vol_regime.vol_target_scalar",
               "op": "lt",
               "threshold": 0.85,
-              "value": 0.64,
+              "value": 0.66,
               "passed": true
             }
           ]
@@ -961,7 +981,7 @@
               "vs": "SPLV",
               "metric": "rs_pp",
               "window": 21,
-              "value": -10.729,
+              "value": -14.867,
               "op": "lt",
               "threshold": 0,
               "passed": true
@@ -991,10 +1011,10 @@
   ],
   "display_only": true,
   "substrate": {
-    "universe": 2929,
+    "universe": 2928,
     "substrate_asof": {
       "min": "2026-05-07",
-      "max": "2026-07-28"
+      "max": "2026-07-29"
     }
   }
 }

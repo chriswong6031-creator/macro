@@ -3515,11 +3515,19 @@ jobs:
       # job red at collection, which is the point.
       #
       # NOTHING IN THE SUITE IS importorskip-GATED. The near-dup pass's optional
-      # `datasketch` dependency is exercised through its DOCUMENTED DEGRADED
-      # STATE (`cluster_density` reports `exact-only` and declares the value a
-      # floor) rather than by requiring the wheel — so the suite cannot decay
-      # into a skip-only one, and the production workflow installs datasketch
-      # so the lane itself does not ship the degraded read.
+      # `datasketch` dependency is exercised through its DOCUMENTED STATES
+      # (`cluster_density` reports `exact-only` and declares the value a floor
+      # without the wheel, `measured-alone` with it) rather than by requiring
+      # the wheel — so the suite cannot decay into a skip-only one, and the
+      # production workflow installs datasketch so the lane itself does not
+      # ship the degraded read.
+      #
+      # BOTH dependency states are FORCED at the availability seam, so the
+      # result does not depend on whether THIS env has the wheel (2026-07-29).
+      # The earlier assertion took a union of both branches, which passed here —
+      # where the pack installs `pytest pyyaml jinja2` and nothing else — and
+      # failed on every dev machine with datasketch installed. An env-shaped
+      # pass is not a pass; it just moves the red somewhere nobody runs.
       #
       # The veto pass is exercised through its injected `call` seam, so this
       # step makes no network call and needs no credential.
@@ -3764,7 +3772,7 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: scripts/build_site.py panels and view-models — the dashboard organs the nightly render ships
-        run: python -m pytest tests/test_action_board_coherence.py tests/test_advanced_breadth.py tests/test_basket_integration.py tests/test_breadth_panel.py tests/test_c4_dollar.py tests/test_factor_ic_panel.py tests/test_macro_glance.py tests/test_macro_signals_vm.py tests/test_market_gamma.py tests/test_market_gamma_contract.py tests/test_regime_snap.py tests/test_spark_zone_band.py tests/test_ts_u3_dashboard_surfaces.py tests/test_wiki_pageviews.py -q
+        run: python -m pytest tests/test_action_board_coherence.py tests/test_advanced_breadth.py tests/test_basket_integration.py tests/test_breadth_panel.py tests/test_c4_dollar.py tests/test_factor_ic_panel.py tests/test_macro_glance.py tests/test_macro_signals_vm.py tests/test_market_gamma.py tests/test_market_gamma_contract.py tests/test_regime_snap.py tests/test_spark_zone_band.py tests/test_ts_u3_dashboard_surfaces.py tests/test_vol_shock_scorecard.py tests/test_wiki_pageviews.py -q
 
   unrun-release-forecast:
     # the macro-release forecast producer — projections, benchmarks and the graded forward ledger.
@@ -4037,7 +4045,8 @@ jobs:
   # renamed sentinel silently disarms every absence assertion keyed to the old one;
   # when a presence marker changes, re-point the absence tests in the same edit.
   # Repeats the shared dependency install BYTE-FOR-BYTE so run_ci_pack.py keeps one
-  # venv across the unrun-* set.  Measured locally: 3 suites / 42 tests / ~2s.
+  # venv across the unrun-* set.  The macro-header suite also keeps the glance
+  # layer compact while preserving the click-through detail affordances.
   unrun-template-chips:
     if: ${{ false }}
     timeout-minutes: 4
@@ -4049,6 +4058,8 @@ jobs:
           python-version: "3.12"
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: Macro header — compact glance layer with on-demand detail
+        run: python -m pytest tests/test_macro_header_compact.py -q
       - name: OKX retail chip — bilingual + the contrarian framing survives copy edits
         run: python -m pytest tests/test_okx_retail.py -q
       - name: CN risk-backdrop chip — renders, degrades, and stays out of macro mode
