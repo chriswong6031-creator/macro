@@ -831,22 +831,72 @@
 </div>
 {% endif %}
 
-{% if mode == 'stocks' and actions and (actions.buy_now or actions.buy_soon or actions.get('on_the_run') or actions.take_profits or actions.hold or actions.avoid) %}
-<!-- ===== What to act on now (sector entry-timing board, ported to the stock page) ===== -->
-<div class="panel">
-  <h2>⚡ {{ t('What to act on now — sectors', '当前可操作 — 板块') }}
-    {{ help("The TSX sector groups bucketed by the cycle ladder’s entry-timing call — the same engine as the US action board. A structure / risk map, not an allocation rule: ON THE RUN = in favour but extended (do not chase; add on a pullback); the reduce side (take profits / avoid) is the risk read.", "TSX 板块按周期阶梯的入场时机分桶 — 与美国操作板同一引擎。这是结构／风险图，而非配置规则：顺势运行 = 看好但已延伸（勿追高；回调加仓）；减仓侧（止盈／回避）是风险判读。") }}
-  </h2>
-  <div class="ab">
-    {% set abmap = [('buy_now','✅ Buy now','立即买入'), ('buy_soon','⏳ Buy soon','即将买入'), ("on_the_run", "🏃 ON THE RUN — don't chase", '顺势运行 — 勿追高'), ('take_profits','💰 Take profits','止盈'), ('hold','✋ Hold','持有'), ('avoid','🚫 Avoid','回避')] %}
-    {% for key, en, zh in abmap %}
-    {% set items = actions.get(key, []) %}
-    <div class="abcol ab-{{ key }}">
-      <h3>{{ t(en, zh) }} <span class="muted">({{ items|length }})</span></h3>
-      {% for it in items %}<div class="it">{{ td(it.name) }} <span class="muted small">{{ it.ticker }}</span></div>{% endfor %}
-      {% if not items %}<div class="it muted">—</div>{% endif %}
+{% if mode == 'stocks' and actions and (actions.get('buy_now') or actions.get('buy_soon') or actions.get('on_the_run') or actions.get('take_profits') or actions.get('hold') or actions.get('avoid')) %}
+<!-- ===== Act-Now v2 — four-lane board, matching china_stocks.html ===== -->
+{% set _ca_buy = actions.get('buy_now', []) %}
+{% set _ca_pull = actions.get('on_the_run', []) + actions.get('hold', []) %}
+{% set _ca_bot = actions.get('buy_soon', []) %}
+{% set _ca_red = actions.get('take_profits', []) + actions.get('avoid', []) %}
+<style>
+.anv2-board .anv2-name-link{color:inherit;text-decoration:none}
+.anv2-board .anv2-name-link:hover .l-en,.anv2-board .anv2-name-link:hover .l-zh{text-decoration:underline}
+.anv2-board .anv2-name-link:focus-visible{outline:2px solid var(--link);outline-offset:2px;border-radius:4px}
+.anv2-board .anv2-go{font-size:10px;opacity:.55;margin-left:3px}
+.anv2-board .anv2-empty{padding:10px 13px;color:var(--muted);font-size:11px}
+</style>
+<div class="panel anv2-board" id="act-now">
+  <div class="anv2-hd">
+    <h2>⚡ {{ t('What to Act On Now', '现在行动') }}
+      <span class="anv2-v2pill">v2</span>
+      {{ help("Four lanes, read left to right: Buy Now = a clean TSX sector entry today. In Favour = hold or wait for a dip rather than chase. Bottoming Watch = a sector setting up near a cycle low (watch only, not a buy signal). Reduce / Avoid = take profits or stay away as the trend weakens. This is a structure and risk map, not an allocation rule.", "四个分栏从左到右：立即买入＝今天有干净的TSX板块入场点。看好＝持有或等待回调，勿追高。洗盘观察＝板块接近周期低点并开始形成形态（仅观察，非买入信号）。减仓／回避＝趋势转弱时止盈或避开。这是结构与风险图，不是配置规则。") }}
+    </h2>
+    <div class="anv2-meta">
+      <span class="muted" style="font-size:11px">{{ t('sectors as of', '板块截至') }} {{ latest.date }}</span>
     </div>
-    {% endfor %}
+  </div>
+  <div class="anv2-grid">
+    {%- macro _ca_anrow(it, lane) -%}
+    <div class="anv2-row">
+      <div class="anv2-row-top">
+        <a class="anv2-name anv2-name-link" href="sectors/{{ it.ticker }}.html">{{ td(it.name) }}<span class="anv2-go" aria-hidden="true">↗</span></a>
+      </div>
+      <div class="anv2-chips">
+        {% if lane == 'buy' %}
+        <span class="anv2-chip anv2-chip-reco-enter">{{ t('ENTRY NOW', '现在入场') }}</span>
+        {% elif lane == 'pull' and it in actions.get('on_the_run', []) %}
+        <span class="anv2-chip anv2-chip-tag">{{ t('WAIT FOR DIP', '等待回调') }}</span>
+        {% elif lane == 'pull' %}
+        <span class="anv2-chip anv2-chip-reco-hold">{{ t('HOLD', '持有') }}</span>
+        {% elif lane == 'bot' %}
+        <span class="anv2-chip anv2-chip-trough">{{ t('SETTING UP', '形态形成中') }}</span>
+        {% elif it in actions.get('avoid', []) %}
+        <span class="anv2-chip anv2-chip-reco-avoid">{{ t('AVOID', '回避') }}</span>
+        {% else %}
+        <span class="anv2-chip anv2-chip-reco-trim">{{ t('TAKE PROFITS', '止盈') }}</span>
+        {% endif %}
+      </div>
+      <div class="anv2-stat">{{ td(it.label) }}{% if it.days is not none %} · ~{{ it.days }}{{ t('d', '天') }}{% endif %} · {{ it.ticker }}</div>
+    </div>
+    {%- endmacro -%}
+    {%- macro _ca_anlane(lane, cls, title_en, title_zh, sub_en, sub_zh, items, lane_id) -%}
+    <div class="anv2-lane anv2-lane--{{ cls }}" id="{{ lane_id }}">
+      <div class="anv2-lane-hd">
+        <div class="anv2-lane-title"><span class="l-en">{{ title_en }}</span><span class="l-zh">{{ title_zh }}</span><span class="anv2-lane-count">({{ items|length }})</span></div>
+        <div class="anv2-lane-sub"><span class="l-en">{{ sub_en }}</span><span class="l-zh">{{ sub_zh }}</span></div>
+      </div>
+      <div class="anv2-lane-body lst-wrap">
+        <div class="anv2-lst lst-collapse lst-cap4 is-collapsed">
+          {% for it in items %}{{ _ca_anrow(it, lane) }}{% endfor %}
+          {% if not items %}<div class="anv2-empty">{{ t('No sectors in this lane today.', '今天此栏暂无板块。') }}</div>{% endif %}
+        </div>
+        {% if items|length > 4 %}<button class="lst-more" type="button" aria-expanded="false"><span class="lm-show">{{ t('Show more', '显示更多') }} ▾</span><span class="lm-hide">{{ t('Show less', '收起') }} ▴</span></button>{% endif %}
+      </div>
+    </div>
+    {%- endmacro -%}
+    {{ _ca_anlane('buy', 'buy', 'Buy Now', '立即买入', 'Clean entry point today', '今日有干净入场点', _ca_buy, 'anv2-buy') }}
+    {{ _ca_anlane('pull', 'pull', 'In Favour', '看好', 'Hold or wait for a dip — do not chase', '持有或等待回调 — 勿追高', _ca_pull, 'anv2-pull') }}
+    {{ _ca_anlane('bot', 'bot', 'Bottoming Watch', '洗盘观察', 'Setting up near a cycle low — watch only', '接近周期低点 — 仅观察', _ca_bot, 'anv2-bot') }}
+    {{ _ca_anlane('red', 'red', 'Reduce / Avoid', '减仓 / 回避', 'Trend weakening — take profits or stay away', '趋势转弱 — 止盈或回避', _ca_red, 'anv2-red') }}
   </div>
 </div>
 {% endif %}
