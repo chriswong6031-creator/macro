@@ -1019,7 +1019,7 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
     {% if themes.baskets %}
     {% for b in themes.baskets %}
     <div class="throw">
-      <a href="../baskets/{{ b.id }}.html">{{ t(b.name_en, b.name_zh) }}</a>
+      <a href="../basket/{{ b.id }}.html">{{ t(b.name_en, b.name_zh) }}</a>
       <span class="tm">{{ b.theme if b.theme else b.rationale }}</span>
       {% if b.band_en %}<span class="okx q" style="font-size:10px;">{{ t(b.band_en, b.band_zh) }}</span>{% endif %}
     </div>

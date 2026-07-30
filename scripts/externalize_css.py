@@ -35,6 +35,7 @@ from __future__ import annotations
 import hashlib
 import logging
 import re
+import subprocess
 import sys
 from pathlib import Path
 from typing import Optional, Set
@@ -94,6 +95,74 @@ def _paired_page_names(site_dir: Path) -> Set[str]:
         names = {p.name for p in tdir.glob("*.html")
                  if p.is_file() and (site_dir / p.name).is_file()} if tdir.is_dir() else set()
     return {n for n in names if n.lower().endswith(".html")}
+
+
+def _committed_refs_for_absent_pages(site_dir: Path) -> Optional[Set[str]]:
+    """Hash refs held by pages that are COMMITTED but MISSING from this tree.
+
+    _prune_orphans decides orphanhood from the pages this sweep can SEE. That is
+    only sound when the tree holds every page that ships. A lane whose checkout
+    is partial — a sparse cone, a scoped render, an interrupted sync — shows
+    fewer pages than production serves, so a stylesheet that an unseen page
+    still links reads as unreferenced and gets deleted. The page keeps its
+    <link> and 404s: half its styling silently stops loading. That is the shape
+    that hit site/us_stocks.html -> 21f5c251.css (#3988) and the start-page
+    panel stylesheet (#4042), one month apart.
+
+    Pages PRESENT on disk are authoritative in their freshly-rendered form —
+    their old committed refs must not resurrect a file they just stopped using,
+    or nothing would ever be pruned. Only ABSENT pages need their committed refs
+    honored, which in a healthy full checkout is the empty set and costs exactly
+    one `git ls-files`.
+
+    Returns the empty set when there is no committed baseline to consult (no
+    git checkout, no git binary): nothing can be committed-but-absent, so the
+    on-disk scan is complete by definition and pruning proceeds as before.
+
+    Returns None only when a checkout EXISTS but could not be enumerated — the
+    one case where unseen committed pages may be real and unknowable. The caller
+    treats None as "cannot prove orphanhood" and SKIPS pruning: keeping a stale
+    file wastes a few KB, deleting a live one breaks a shipping page.
+    """
+    root = site_dir.parent
+    try:
+        probe = subprocess.run(
+            ["git", "-C", str(root), "rev-parse", "--is-inside-work-tree"],
+            capture_output=True, timeout=30,
+        )
+        if probe.returncode != 0:
+            return set()  # not a checkout — disk is the whole truth
+        listed = subprocess.run(
+            ["git", "-C", str(root), "ls-files", "-z", "--", site_dir.name],
+            capture_output=True, timeout=60,
+        )
+        if listed.returncode != 0:
+            log.warning("git ls-files failed in a real checkout; skipping prune")
+            return None
+        absent = [
+            rel for rel in listed.stdout.decode("utf-8", "replace").split("\0")
+            if rel.endswith(".html") and not (root / rel).exists()
+        ]
+        if not absent:
+            return set()  # full checkout — on-disk scan already saw everything
+        refs: Set[str] = set()
+        # One `git show` per absent page; absent pages are rare by construction.
+        for rel in absent:
+            blob = subprocess.run(
+                ["git", "-C", str(root), "show", f"HEAD:{rel}"],
+                capture_output=True, timeout=60,
+            )
+            if blob.returncode == 0:
+                refs.update(_REF_RE.findall(blob.stdout.decode("utf-8", "replace")))
+        print(f"::warning title=externalize-css-partial-tree::{len(absent)} committed "
+              f"page(s) missing from this checkout; honoring their CSS refs so the "
+              f"prune cannot delete a live stylesheet", flush=True)
+        return refs
+    except FileNotFoundError:  # no git binary — no committed baseline exists
+        return set()
+    except (OSError, subprocess.SubprocessError) as e:  # noqa: BLE001
+        log.warning("committed-page ref scan failed (%s); skipping prune", e)
+        return None
 
 
 def externalize(site_dir: Path) -> int:
@@ -159,7 +228,15 @@ def externalize(site_dir: Path) -> int:
             except Exception as e:  # noqa: BLE001
                 log.warning("write page %s failed: %s", html.name, e)
 
-    pruned = _prune_orphans(css_root, referenced)
+    # A hash is an orphan only when NO shipping page links it — including pages
+    # this checkout never materialized. See _committed_refs_for_absent_pages.
+    unseen = _committed_refs_for_absent_pages(site_dir)
+    if unseen is None:
+        log.info("externalized CSS on %d page(s); skipped %d source page(s) "
+                 "(plain-copy pairs + hand-authored); prune SKIPPED "
+                 "(cannot confirm the tree is complete)", pages_changed, len(skip))
+        return pages_changed
+    pruned = _prune_orphans(css_root, referenced | unseen)
     log.info("externalized CSS on %d page(s); skipped %d source page(s) "
              "(plain-copy pairs + hand-authored); pruned %d orphan file(s)",
              pages_changed, len(skip), pruned)
