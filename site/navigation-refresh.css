@@ -25,9 +25,10 @@ html[data-theme="light"] {
 @media (min-width: 701px) {
   .site-nav .nav-dd > .nav-dd-menu:not(.nav-mega),
   .topbar .nav-dd > .nav-dd-menu:not(.nav-mega) {
-    min-width: 370px;
-    padding: 12px;
-    border-radius: 18px;
+    width: min(420px, calc(100vw - 28px));
+    min-width: 390px;
+    padding: 13px;
+    border-radius: 20px;
     background: var(--nr-surface);
     border-color: var(--nr-line-strong);
     box-shadow: var(--nr-shadow);
@@ -37,13 +38,13 @@ html[data-theme="light"] {
   .site-nav .nav-dd > .nav-dd-menu:not(.nav-mega) > .nav-sub > a,
   .topbar .nav-dd > .nav-dd-menu:not(.nav-mega) > a,
   .topbar .nav-dd > .nav-dd-menu:not(.nav-mega) > .nav-sub > a {
-    min-height: 58px;
+    min-height: 70px;
     display: grid;
-    grid-template-columns: 46px minmax(0, 1fr) auto;
+    grid-template-columns: 56px minmax(0, 1fr) auto;
     grid-template-rows: auto auto;
     align-items: center;
-    column-gap: 12px;
-    padding: 9px 11px;
+    column-gap: 13px;
+    padding: 10px 12px;
     white-space: normal;
     border-radius: 13px;
   }
@@ -67,8 +68,8 @@ html[data-theme="light"] {
     grid-row: 2;
     align-self: start;
     margin-top: 3px;
-    font-size: 11px;
-    line-height: 1.25;
+    font-size: 12px;
+    line-height: 1.35;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -78,10 +79,10 @@ html[data-theme="light"] {
     grid-column: 1 / 3;
     grid-row: 1 / 3;
     display: grid;
-    grid-template-columns: 46px minmax(0, 1fr);
+    grid-template-columns: 56px minmax(0, 1fr);
     grid-template-rows: auto auto;
     align-items: center;
-    column-gap: 12px;
+    column-gap: 13px;
   }
 
   .nav-dd-menu:not(.nav-mega) > .nav-sub > a .nav-sub-text > .submenu-icon {
@@ -777,4 +778,506 @@ html:not([data-theme="light"]) .signal-status.status-bounce { color: #ffc47c; ba
   .fan-card,
   .result-row { opacity: 1; transform: none; }
   .ticker-search .idle-ticker::after { animation: none; }
+}
+
+/* ==========================================================================
+   Responsive navigation composition
+
+   The rail is built once. JavaScript measures the links that remain after the
+   user's market profile has folded unused countries into International, then
+   writes data-nav-layout="single" or "stacked". No market-specific menu forks
+   and no duplicated navigation inventories are required.
+   ========================================================================== */
+@media (min-width: 901px) {
+  .site-nav[data-nav-layout],
+  .topbar[data-nav-layout] .wrap {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 124px auto;
+    align-items: center;
+    gap: 8px 10px;
+  }
+
+  .site-nav[data-nav-layout="single"] .nav-links,
+  .topbar[data-nav-layout="single"] .nav-links {
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+    display: flex;
+    flex-wrap: nowrap;
+  }
+
+  .site-nav[data-nav-layout="single"] .nav-search,
+  .topbar[data-nav-layout="single"] .nav-search {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+  }
+
+  .site-nav[data-nav-layout="single"] .nav-ctrls,
+  .topbar[data-nav-layout="single"] .nav-ctrls {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .site-nav[data-nav-layout="stacked"] .nav-links,
+  .topbar[data-nav-layout="stacked"] .nav-links {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    display: flex;
+    flex-wrap: nowrap;
+  }
+
+  .site-nav[data-nav-layout="stacked"] .nav-search,
+  .topbar[data-nav-layout="stacked"] .nav-search {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: end;
+  }
+
+  .site-nav[data-nav-layout="stacked"] .nav-ctrls,
+  .topbar[data-nav-layout="stacked"] .nav-ctrls {
+    grid-column: 3;
+    grid-row: 2;
+  }
+
+  .site-nav[data-nav-layout] .nav-links,
+  .topbar[data-nav-layout] .nav-links {
+    position: static;
+    gap: 2px;
+  }
+
+  .site-nav[data-nav-layout] a.nav-link,
+  .topbar[data-nav-layout] a.nav-link {
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 9px;
+    border-radius: 9px;
+  }
+
+  .site-nav[data-nav-layout] .nav-dd-menu.nav-mega,
+  .topbar[data-nav-layout] .nav-dd-menu.nav-mega {
+    right: 0;
+  }
+}
+
+/* The live app no longer needs a second Mastermind pill. The destination now
+   lives in the Research menu, where users naturally look for an AI research
+   assistant. JS removes older rendered copies; this keeps the transition safe
+   while the full render catches up. */
+.nav-ctrls .mastermind-link,
+.nav-ctrls a[href*="bot.mastermind-x.com"] { display: none !important; }
+
+/* Approved research composition: a generous two-column product map with an
+   Explore rail. The main lane uses the same detailed drafting icons as the
+   mockup; the rail stays intentionally lighter and ends with Ask Mastermind. */
+@media (min-width: 901px) {
+  .site-nav .nav-dd-menu.nav-mega,
+  .topbar .nav-dd-menu.nav-mega {
+    width: min(1160px, calc(100vw - 40px));
+    min-height: 610px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    padding: 0;
+    overflow: hidden;
+    border-radius: 24px;
+  }
+}
+
+.nav-mega-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 26px 28px 27px;
+}
+
+.nav-mega-section { min-width: 0; }
+
+.nav-mega-item-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px 10px;
+}
+
+.nav-mega.nav-mega .nav-mega-item,
+.nav-mega.nav-mega .nm-feat,
+.nav-mega.nav-mega .nav-rail-item {
+  box-sizing: border-box;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: 15px;
+  color: var(--text, var(--ink));
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  white-space: normal;
+  cursor: pointer;
+  transition: background .18s ease, border-color .18s ease, transform .18s ease, box-shadow .18s ease;
+}
+
+.nav-mega.nav-mega .nav-mega-item,
+.nav-mega.nav-mega .nm-feat { min-height: 78px; }
+
+.nav-mega.nav-mega :is(.nav-mega-item, .nm-feat, .nav-rail-item):hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--link, #5b79ff) 22%, var(--nr-line));
+  background: color-mix(in srgb, var(--link, #5b79ff) 6%, var(--nr-soft));
+  box-shadow: 0 14px 28px -24px color-mix(in srgb, var(--link, #5b79ff) 72%, transparent);
+}
+
+.nav-mega .nav-mega-h {
+  padding: 0 10px 10px;
+  font-size: 10.5px;
+  color: color-mix(in srgb, var(--muted, #8d97a8) 88%, transparent);
+}
+
+.nav-mega.nav-mega .nm-t { font-size: 14px; font-weight: 700; }
+
+.nav-mega.nav-mega :is(.nav-mega-item, .nm-feat, .nav-rail-item) .d {
+  margin-top: 5px;
+  font-size: 11.5px;
+  line-height: 1.3;
+}
+
+.nav-mega.nav-mega :is(.nav-mega-item, .nm-feat) .nm-ic.research-icon {
+  width: 56px;
+  height: 56px;
+}
+
+.nav-mega.nav-mega :is(.nav-mega-item, .nm-feat) .research-icon::before,
+.nav-mega.nav-mega :is(.nav-mega-item, .nm-feat) .research-icon::after {
+  width: 48px;
+  height: 48px;
+}
+
+.nav-mega-rail {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 26px 22px 22px;
+  border-left: 1px solid var(--nr-line);
+  background: color-mix(in srgb, var(--nr-soft) 58%, transparent);
+}
+
+.nav-mega.nav-mega .nav-rail-item {
+  width: 100%;
+  min-height: 72px;
+  grid-template-columns: 46px minmax(0, 1fr) auto;
+  gap: 11px;
+  padding: 9px 10px;
+}
+
+.nav-mega.nav-mega .nav-rail-item .nm-ic.research-icon {
+  width: 44px;
+  height: 44px;
+}
+
+.nav-mega.nav-mega .nav-rail-item .research-icon::before,
+.nav-mega.nav-mega .nav-rail-item .research-icon::after {
+  width: 37px;
+  height: 37px;
+}
+
+.nav-mega.nav-mega .nav-rail-item .nav-drill-arrow {
+  font-size: 17px;
+  opacity: .72;
+}
+
+.nav-mega.nav-mega .nav-mastermind-cta {
+  min-height: 68px;
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  margin-top: auto;
+  padding: 11px 13px;
+  border: 1px solid color-mix(in srgb, var(--link, #5b79ff) 28%, var(--nr-line));
+  border-radius: 16px;
+  color: var(--text, var(--ink));
+  background:
+    radial-gradient(120% 150% at 0 0, color-mix(in srgb, var(--link, #5b79ff) 15%, transparent), transparent 58%),
+    var(--nr-surface-solid);
+  text-decoration: none;
+  transition: border-color .18s ease, transform .18s ease, box-shadow .18s ease;
+}
+
+.nav-mega.nav-mega .nav-mastermind-cta:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--link, #5b79ff) 56%, var(--nr-line));
+  box-shadow: 0 15px 30px -22px color-mix(in srgb, var(--link, #5b79ff) 80%, transparent);
+}
+
+.nav-mastermind-mark {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  color: #fff;
+  background: linear-gradient(145deg, #5b9dff, #586cf0 58%, #865fe8);
+  box-shadow: inset 0 1px rgba(255,255,255,.34), 0 6px 15px rgba(71,87,190,.24);
+}
+
+.nav-mastermind-mark::before {
+  content: "";
+  width: 21px;
+  height: 21px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 18V6.5l7 7L19 4.5V18' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 18V6.5l7 7L19 4.5V18' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.nav-mega.nav-mega .nav-mastermind-cta strong,
+.nav-mega.nav-mega .nav-mastermind-cta small { display: block; }
+.nav-mega.nav-mega .nav-mastermind-cta strong { font-size: 12.5px; }
+.nav-mega.nav-mega .nav-mastermind-cta small { margin-top: 4px; color: var(--muted, #8d97a8); font-size: 10.5px; }
+
+/* The compact control sits at the right edge, as in the approved mockup. It
+   expands left over reserved whitespace so the menu does not jump. */
+.nav-search.ticker-search { width: 124px; }
+.nav-search.ticker-search.open {
+  width: 340px;
+  justify-self: end;
+}
+.ticker-search .search-expanded { transform-origin: right center; }
+.ticker-dropdown {
+  left: auto;
+  right: 0;
+  transform-origin: 92% 0;
+}
+
+/* Attio-inspired mobile drawer: one calm top row, a full-width ticker field,
+   then a full-height accordion with large icons and short descriptions. */
+@media (max-width: 900px) {
+  .site-nav.has-nav-toggle,
+  .topbar.has-nav-toggle .wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 9px;
+  }
+
+  .site-nav.has-nav-toggle .nav-toggle,
+  .topbar.has-nav-toggle .nav-toggle { order: 1; }
+
+  .site-nav.has-nav-toggle .nav-ctrls,
+  .topbar.has-nav-toggle .nav-ctrls {
+    order: 2;
+    margin-left: auto;
+  }
+
+  .site-nav.has-nav-toggle .nav-search,
+  .topbar.has-nav-toggle .nav-search {
+    order: 3;
+    width: 100%;
+    max-width: none;
+  }
+
+  .site-nav.has-nav-toggle .nav-links,
+  .topbar.has-nav-toggle .nav-links {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    width: auto;
+    max-height: none;
+    height: 100dvh;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 18px 18px 34px;
+    overflow: auto;
+    border: 0;
+    border-radius: 0;
+    background: var(--nr-surface-solid);
+    box-shadow: none;
+  }
+
+  .has-nav-toggle.nav-open .nav-toggle {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    left: auto;
+    z-index: 1002;
+    border-color: transparent;
+    background: transparent;
+  }
+
+  .has-nav-toggle .nav-links .nav-brand {
+    min-height: 44px;
+    box-sizing: border-box;
+    margin: 0 52px 5px 0;
+    padding: 0 0 13px;
+  }
+
+  .has-nav-toggle .nav-links .nav-brand .brand-word { font-size: 15px; }
+
+  .has-nav-toggle .nav-links > .nav-dd > a.nav-link {
+    min-height: 52px;
+    display: flex;
+    align-items: center;
+    padding: 0 7px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 620;
+  }
+
+  .has-nav-toggle .nav-links > .nav-dd > a.nav-link .caret {
+    margin-left: auto;
+    font-size: 0;
+  }
+
+  .has-nav-toggle .nav-links > .nav-dd > a.nav-link .caret::before {
+    content: "⌄";
+    font-size: 18px;
+    font-weight: 400;
+  }
+
+  .has-nav-toggle .nav-links .nav-dd.open > .nav-dd-menu,
+  .has-nav-toggle .nav-links .nav-dd.open > .nav-dd-menu.nav-mega {
+    max-height: none;
+    padding: 7px 0 15px 8px;
+    overflow: visible;
+  }
+
+  .has-nav-toggle .nav-links .nav-dd-menu:not(.nav-mega) > a,
+  .has-nav-toggle .nav-links .nav-dd-menu:not(.nav-mega) > .nav-sub > a {
+    min-height: 66px;
+    display: grid;
+    grid-template-columns: 50px minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    align-items: center;
+    column-gap: 12px;
+    padding: 8px 7px;
+    border-radius: 12px;
+  }
+
+  .has-nav-toggle .nav-links .nav-dd-menu .submenu-icon {
+    width: 46px;
+    height: 46px;
+    grid-column: 1;
+    grid-row: 1 / 3;
+    margin: 0;
+  }
+
+  .has-nav-toggle .nav-links .nav-dd-menu .submenu-icon::before,
+  .has-nav-toggle .nav-links .nav-dd-menu .submenu-icon::after {
+    width: 40px;
+    height: 40px;
+  }
+
+  .has-nav-toggle .nav-links .nav-dd-menu a .d {
+    display: block;
+    grid-column: 2 / 4;
+    grid-row: 2;
+    margin-top: 4px;
+    overflow: hidden;
+    color: var(--muted, #8d97a8);
+    font-size: 11.5px;
+    line-height: 1.3;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .has-nav-toggle .nav-links .nav-sub > a .nav-sub-text {
+    grid-column: 1 / 3;
+    grid-row: 1 / 3;
+    display: grid;
+    grid-template-columns: 50px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-items: center;
+    column-gap: 12px;
+  }
+
+  .nav-dd-menu.nav-mega {
+    display: block;
+    min-height: 0;
+    background: transparent;
+  }
+
+  .nav-mega-main { gap: 18px; padding: 5px 0 18px; }
+  .nav-mega-item-grid { grid-template-columns: 1fr; gap: 2px; }
+  .nav-mega-rail {
+    padding: 20px 0 0;
+    border-top: 1px solid var(--nr-line);
+    border-left: 0;
+    background: transparent;
+  }
+
+  .has-nav-toggle .nav-links .nav-mega.nav-mega .nav-mega-item,
+  .has-nav-toggle .nav-links .nav-mega.nav-mega .nm-feat,
+  .has-nav-toggle .nav-links .nav-mega.nav-mega .nav-rail-item {
+    min-height: 68px;
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr) auto;
+    gap: 12px;
+    padding: 8px 7px;
+  }
+
+  .nav-mega.nav-mega :is(.nav-mega-item, .nm-feat, .nav-rail-item) .nm-ic.research-icon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .nav-mega.nav-mega :is(.nav-mega-item, .nm-feat, .nav-rail-item) .research-icon::before,
+  .nav-mega.nav-mega :is(.nav-mega-item, .nm-feat, .nav-rail-item) .research-icon::after {
+    width: 41px;
+    height: 41px;
+  }
+
+  .has-nav-toggle .nav-links .nav-mega.nav-mega .nav-mastermind-cta { margin: 18px 5px 0; }
+
+  .nav-drill-panel {
+    position: fixed;
+    inset: 0;
+    z-index: 1010;
+    display: block;
+    box-sizing: border-box;
+    padding: 22px 18px 34px;
+    overflow-y: auto;
+    border: 0;
+    border-radius: 0;
+    background: var(--nr-surface-solid);
+  }
+
+  .nav-drill-panel .nav-mega-item { margin-bottom: 3px; }
+
+  .ticker-search .search-trigger {
+    justify-content: flex-start;
+    padding-left: 16px;
+  }
+
+  .ticker-search .idle-ticker { min-width: 0; }
+  .ticker-dropdown {
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-height: min(68dvh, 620px);
+    border-radius: 17px;
+  }
+
+  .fan-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 560px) {
+  .site-nav.has-nav-toggle,
+  .topbar.has-nav-toggle .wrap { gap: 8px; }
+
+  .site-nav.has-nav-toggle .nav-ctrls .terminal-link,
+  .topbar.has-nav-toggle .nav-ctrls .terminal-link {
+    min-height: 34px;
+    padding: 7px 11px;
+    font-size: 11.5px;
+  }
+
+  .fan-grid { grid-template-columns: 1fr; }
+  .fan-card { min-height: 58px; }
+  .ticker-dropdown { max-height: calc(100dvh - 150px); }
 }
