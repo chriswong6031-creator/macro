@@ -1810,6 +1810,8 @@ feargreed:
 
 coingecko:
   global_url: https://api.coingecko.com/api/v3/global
+  markets_url: https://api.coingecko.com/api/v3/coins/markets
+  markets_fallback_url: https://api.coinpaprika.com/v1/tickers
   retries: 3                      # keyless tier ~5-15 req/min; we make 1/day
 
 defillama:
