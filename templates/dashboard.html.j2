@@ -3793,38 +3793,6 @@ body.page-macro.mx4-grid .mx5-gauge-svg{
 [data-theme="light"] body.page-macro.mx4-grid .mx5-gauge-svg > text{fill:rgba(10,16,24,.42);}
 [data-theme="light"] body.page-macro.mx4-grid .mx5-gauge-svg path:first-of-type{stroke:rgba(10,16,24,.10);}
 [data-theme="light"] body.page-macro.mx4-grid .mx5-gauge-svg g[stroke]{stroke:rgba(10,16,24,.20);}
-/* Ghost mark = where the six-signal BLEND sits before the cap. A single quiet tick, no
-   glow and no second hue: the whole point is that this number was overridden, so it
-   must never compete with the needle. It sits inside the `g[stroke]` light-mode rule's
-   sibling space, hence its own explicit stroke in both themes. */
-body.page-macro.mx4-grid .mx5-gauge-ghost line{stroke:rgba(255,255,255,.40);}
-[data-theme="light"] body.page-macro.mx4-grid .mx5-gauge-ghost line{stroke:rgba(10,16,24,.34);}
-/* caption + its legend glyph (the same tick, inline, so the mark on the arc is
-   self-explaining without a legend box) */
-body.page-macro.mx4-grid .mx5-score-prov{
-  margin-top:5px;font-size:10.5px;line-height:1.45;
-  color:var(--ink-3,rgba(255,255,255,.36));
-}
-body.page-macro.mx4-grid .mx5-score-prov b{color:var(--text);font-variant-numeric:tabular-nums;}
-/* inline-block, never a flex child: as a flex item the legend tick wrapped onto its own
-   line above the sentence it belongs to */
-body.page-macro.mx4-grid .mx5-ghost-key{
-  display:inline-block;width:2px;height:10px;border-radius:1px;margin-right:5px;
-  background:rgba(255,255,255,.40);vertical-align:-1px;
-}
-[data-theme="light"] body.page-macro.mx4-grid .mx5-ghost-key{background:rgba(10,16,24,.34);}
-
-/* ── Chip receipts (chipn-*) — the three things the two chips above cannot say ──
-   Quiet by construction: same ink as the provenance caption, so the chips stay the
-   loud element and these read as the fine print under them. */
-body.page-macro.mx4-grid .mx5-chipn{
-  display:flex;flex-direction:column;gap:3px;margin-top:8px;
-  font-size:10.5px;line-height:1.45;color:var(--ink-3,rgba(255,255,255,.36));
-}
-body.page-macro.mx4-grid .mx5-chipn-row b{color:var(--text);font-variant-numeric:tabular-nums;}
-body.page-macro.mx4-grid .mx5-chipn-row.warn{color:var(--mx5-warn-ink,var(--warn));}
-body.page-macro.mx4-grid .mx5-chipn-row.warn b{color:var(--mx5-warn-ink,var(--warn));}
-
 /* Regime pill (Order 3: smaller + never clips — sizes to content, no fixed width) */
 body.page-macro.mx4-grid .mx5-regime-pill{
   display:inline-flex;align-items:center;gap:6px;
@@ -3857,52 +3825,6 @@ body.page-macro.mx4-grid .mx5-regime-pill.rp-red .mx5-dot{
 body.page-macro.mx4-grid .mx5-regime-pill .mx5-dot{
   width:6px;height:6px;border-radius:50%;
   background:var(--mx5-accent);box-shadow:0 0 6px var(--mx5-accent-glow);
-}
-
-/* ── Regime reality rows (rgx-*) — what the chip's label is actually worth ──────
-   Operator escalation 2026-07-29: a label with 0.04% model probability and its own
-   axes reading the other way was presentable as a calm green chip because every
-   qualifier lived behind the ⓘ hover. These rows put the qualifiers on the chip's own
-   line. Deliberately QUIET typography — a 10px uppercase key column against 11.5px
-   body — so the pill above stays the loudest thing in the cluster and the rows read as
-   its footnotes, not as four competing headlines. Amber (never red) is the only accent:
-   these rows report that a call is weakly held, which is a caution, not a verdict. */
-body.page-macro.mx4-grid .mx5-rgx{
-  display:flex;flex-direction:column;gap:3px;margin:-4px 0 10px;
-  padding-left:11px;border-left:2px solid var(--line);
-}
-body.page-macro.mx4-grid .mx5-rgx-row{
-  display:flex;align-items:baseline;gap:9px;font-size:11.5px;line-height:1.42;
-}
-body.page-macro.mx4-grid .mx5-rgx-k{
-  flex:none;width:88px;font-size:9.5px;font-weight:700;letter-spacing:.09em;
-  text-transform:uppercase;color:var(--ink-3,rgba(255,255,255,.36));
-  padding-top:1px;
-}
-body.page-macro.mx4-grid .mx5-rgx-v{flex:1;min-width:0;color:var(--text);}
-/* mono numerals for FIGURES only — the words around them stay in the body face */
-body.page-macro.mx4-grid .mx5-rgx-v b{font-variant-numeric:tabular-nums;font-weight:700;}
-body.page-macro.mx4-grid .mx5-rgx-v.warn{color:var(--mx5-warn-ink,var(--warn));}
-body.page-macro.mx4-grid .mx5-rgx-note{
-  margin-top:3px;font-size:10.5px;line-height:1.45;
-  color:var(--ink-3,rgba(255,255,255,.36));
-}
-/* Confirmation meter — N of M sessions as filled bars. Non-verbal by design: it needs
-   no vocabulary in either language, and it is the one place on this cluster where a
-   regime change in progress is visible without reading a sentence. */
-body.page-macro.mx4-grid .mx5-rgx-meter{
-  display:inline-flex;gap:2px;vertical-align:baseline;margin-right:7px;
-  position:relative;top:1px;
-}
-body.page-macro.mx4-grid .mx5-rgx-meter i{
-  width:5px;height:10px;border-radius:1.5px;display:inline-block;
-  background:color-mix(in srgb,var(--line) 80%,transparent);
-}
-body.page-macro.mx4-grid .mx5-rgx-meter i.on{background:var(--mx5-warn,#f59e0b);}
-@media(max-width:700px){
-  body.page-macro.mx4-grid .mx5-rgx{padding-left:9px;margin:-2px 0 10px;}
-  body.page-macro.mx4-grid .mx5-rgx-row{flex-direction:column;gap:0;}
-  body.page-macro.mx4-grid .mx5-rgx-k{width:auto;padding-top:2px;}
 }
 
 /* Score + verdict beside gauge */
@@ -6752,10 +6674,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     {% set _mx5_ceil = MS.score_ceiling if (MS.score_ceiling is defined and MS.score_ceiling is not none)
                        else ((MS.radar.ceiling if (MS.radar and MS.radar.ceiling is defined and MS.radar.ceiling is not none) else none)) %}
     {% set _mx5_src = MS.score_source if (MS.score_source is defined and MS.score_source) else none %}
-    {# the ghost tick draws ONLY when the blend and the shown score actually differ —
-       an unbinding cap must not paint a second mark on top of the needle #}
+    {# Disclose a binding cap on demand beside the verdict. The mechanics belong
+       behind the existing help affordance, not in the dashboard's glance layer. #}
     {% set _mx5_ghost = _mx5_raw is not none and _mx5_raw != _mx5_score %}
-    {% set _mx5_ghost_deg = ((_mx5_raw / 100 * 180 - 90) | round(1)) if _mx5_ghost else none %}
     {# what is actually holding the dial down. score_source names it outright; on an
        older payload the radar ceiling is identifiable because it equals the shown score. #}
     {% set _mx5_capw = {'radar_ceiling': ['the Risk Radar’s cap', '风险雷达的上限'],
@@ -6815,138 +6736,10 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         <span class="l-zh">{{ td(latest.quad_name) if latest.quad_name is defined else '周期' }}{% if _mx5_ts_zh %} &nbsp;&middot;&nbsp; {{ _mx5_ts_zh }}{% endif %}</span>
         <span class="mx5-pill-info">ⓘ</span>
       </div>
-      {# ── REGIME REALITY (rgx-*) — the chip's own lines, never a hover ──────────
-         Operator escalation 2026-07-29: the chip printed "Goldilocks" while the engine's
-         own filtered model gave that label 0.04% and the memoryless sign rule had read
-         Stagflation for ten sessions. A near-zero probability on the HEADLINE label is a
-         statement about the headline, not a technical detail, so per the design doctrine
-         it cannot sit behind the ⓘ hover — it belongs on the chip's own line, with the
-         countdown that would resolve the disagreement and the stance that follows from
-         the regime's age.
-
-         Every value here is engine-published, and every one is guarded: quad_vector.p
-         (model odds), the hysteresis countdown (run.py raw_quad / pending_* once it
-         reaches the payload, else the playbook's own countdown sentence), playbook
-         .progress (phase + its stance note), and the rate/inflation transmission LEVEL
-         read. An older latest.json simply prints fewer rows; with nothing to say the
-         block does not render at all. No threshold, gate or verdict is computed here. #}
-      {%- set _rgx_fc = latest.get('flip_condition') or {} %}
-      {%- set _rgx_q = {'Q1':['Goldilocks','理想增长'],'Q2':['Reflation','再通胀'],
-                        'Q3':['Stagflation','滞胀'],'Q4':['Growth scare','增长恐慌']} %}
-      {%- set _rgx_disp = _rgx_fc.get('displayed_quad') or latest.get('quad') %}
-      {%- set _rgx_gs = latest.get('growth_score') %}
-      {%- set _rgx_is = latest.get('inflation_score') %}
-      {#- raw = the memoryless sign rule on today's axes. Engine-published first
-          (flip_condition.raw_quad, then run.py's raw_quad); the last resort derives it
-          the SAME way engine/playbook.quad_meaning_for() does when the column is absent,
-          so the page can never disagree with the engine's own fallback. -#}
-      {%- set _rgx_raw = _rgx_fc.get('raw_quad') or latest.get('raw_quad')
-                         or ((('Q1' if _rgx_is < 0 else 'Q2') if _rgx_gs >= 0
-                              else ('Q4' if _rgx_is < 0 else 'Q3'))
-                             if (_rgx_gs is not none and _rgx_gs is number
-                                 and _rgx_is is not none and _rgx_is is number) else none) %}
-      {%- set _rgx_unsup = (_rgx_fc.get('label_unsupported') is sameas true)
-                           or (_rgx_disp and _rgx_raw and _rgx_raw != _rgx_disp) %}
-      {%- set _rgx_qv = latest.get('quad_vector') if latest.get('quad_vector') is mapping else {} %}
-      {%- set _rgx_p = (_rgx_qv.get('p') or {}) if not _rgx_qv.get('degraded', true) else {} %}
-      {%- set _rgx_pl = _rgx_p.get(_rgx_disp) if (_rgx_p and _rgx_disp) else none %}
-      {%- set _rgx_rivals = [] %}
-      {%- for _rk, _rv in (_rgx_p.items() | sort(attribute='1', reverse=true)) %}
-        {%- if _rk != _rgx_disp and _rgx_rivals | length < 2 and _rv %}{% if _rgx_rivals.append([_rk, _rv]) %}{% endif %}{% endif %}
-      {%- endfor %}
-      {%- set _rgx_pq = _rgx_fc.get('pending_quad') or latest.get('pending_quad') %}
-      {%- set _rgx_pd = _rgx_fc.get('pending_days') if _rgx_fc.get('pending_days') is not none else latest.get('pending_days') %}
-      {%- set _rgx_pn = _rgx_fc.get('pending_need') if _rgx_fc.get('pending_need') is not none else latest.get('pending_need') %}
-      {#- the playbook's own bilingual countdown sentence, used verbatim when the
-          structured keys above are not in the payload yet -#}
-      {%- set _rgx_cd = [] %}
-      {%- for _tp in (pb.triggers if (pb is defined and pb and pb.triggers) else []) %}
-        {%- if _rgx_cd | length < 1 and 'counting down' in (_tp[0] | string) %}{% if _rgx_cd.append(_tp) %}{% endif %}{% endif %}
-      {%- endfor %}
-      {#- meter = [days, need]. Structured keys first; otherwise read the two integers
-          out of the engine's own sentence ("… counting down: 3 of 7 confirmation days
-          done."). Bounds-checked and FAIL-CLOSED: an unparsable sentence simply draws no
-          meter, and the sentence beside it is rendered verbatim either way, so no claim
-          on this page depends on the parse. -#}
-      {%- set _rgx_meter = [] %}
-      {%- if _rgx_pd is not none and _rgx_pn %}
-        {%- if _rgx_meter.append(_rgx_pd | int) %}{% endif %}{% if _rgx_meter.append(_rgx_pn | int) %}{% endif %}
-      {%- elif _rgx_cd %}
-        {%- set _rgx_tail = (_rgx_cd[0][0] | string).split('counting down: ') %}
-        {%- if _rgx_tail | length > 1 %}
-          {%- set _rgx_bits = _rgx_tail[1].split(' of ') %}
-          {%- if _rgx_bits | length > 1 %}
-            {%- set _rgx_d = _rgx_bits[0] | trim | int %}
-            {%- set _rgx_n = (_rgx_bits[1] | trim).split(' ')[0] | int %}
-            {%- if _rgx_n > 0 and _rgx_n <= 14 and _rgx_d > 0 and _rgx_d <= _rgx_n %}
-              {%- if _rgx_meter.append(_rgx_d) %}{% endif %}{% if _rgx_meter.append(_rgx_n) %}{% endif %}
-            {%- endif %}
-          {%- endif %}
-        {%- endif %}
-      {%- endif %}
-      {%- set _rgx_prog = (pb.progress if (pb is defined and pb and pb.progress is mapping) else {}) %}
-      {%- set _rgx_infl = ((latest.get('rate_inflation_transmission') or {}).get('state') or {}).get('inflation') or {} %}
-      {%- set _rgx_pce = _rgx_infl.get('core_pce_yoy') %}
-      {%- set _rgx_pce_w = {'above target':['above target','高于目标'],
-                            'at target':['at target','接近目标'],
-                            'below target':['below target','低于目标']}.get(_rgx_infl.get('regime')) %}
-      {% if _rgx_pl is not none or (_rgx_unsup and _rgx_raw) or _rgx_cd or (_rgx_pq and _rgx_pd is not none) or _rgx_prog.get('phase_note') %}
-      <div class="mx5-rgx">
-        {% if _rgx_pl is not none %}
-        <div class="mx5-rgx-row">
-          <span class="mx5-rgx-k">{{ t('Model odds','模型概率') }}</span>
-          <span class="mx5-rgx-v{{ ' warn' if _rgx_pl < 0.10 }}">
-            <span class="l-en"><b>{% if _rgx_pl < 0.01 %}Under 1{% else %}{{ (_rgx_pl * 100) | round | int }}{% endif %} in 100</b> on {{ _rgx_q.get(_rgx_disp, [_rgx_disp, _rgx_disp])[0] }}{% if _rgx_rivals %} — {% for _r in _rgx_rivals %}{{ _rgx_q.get(_r[0], [_r[0], _r[0]])[0] }} <b>{{ (_r[1] * 100) | round | int }}</b>{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}</span>
-            <span class="l-zh"><b>100 中{% if _rgx_pl < 0.01 %}不足 1{% else %}约 {{ (_rgx_pl * 100) | round | int }}{% endif %}</b>落在{{ _rgx_q.get(_rgx_disp, [_rgx_disp, _rgx_disp])[1] }}{% if _rgx_rivals %} — {% for _r in _rgx_rivals %}{{ _rgx_q.get(_r[0], [_r[0], _r[0]])[1] }} <b>{{ (_r[1] * 100) | round | int }}</b>{% if not loop.last %}、{% endif %}{% endfor %}{% endif %}</span>
-          </span>
-        </div>
-        {% endif %}
-        {% if _rgx_unsup and _rgx_raw %}
-        <div class="mx5-rgx-row">
-          <span class="mx5-rgx-k">{{ t('Today’s axes','今日两轴') }}</span>
-          <span class="mx5-rgx-v warn">
-            <span class="l-en"><b>{{ _rgx_q.get(_rgx_raw, [_rgx_raw, _rgx_raw])[0] }}</b> — the label’s own axes no longer support it{% if _rgx_gs is not none and _rgx_gs is number and _rgx_is is not none and _rgx_is is number %} (growth <b>{{ '%+.2f'|format(_rgx_gs) }}</b>, inflation <b>{{ '%+.2f'|format(_rgx_is) }}</b>){% endif %}</span>
-            <span class="l-zh"><b>{{ _rgx_q.get(_rgx_raw, [_rgx_raw, _rgx_raw])[1] }}</b> — 该标签自身的两轴已不再支持它{% if _rgx_gs is not none and _rgx_gs is number and _rgx_is is not none and _rgx_is is number %}（增长 <b>{{ '%+.2f'|format(_rgx_gs) }}</b>、通胀 <b>{{ '%+.2f'|format(_rgx_is) }}</b>）{% endif %}</span>
-          </span>
-        </div>
-        {% endif %}
-        {% if _rgx_cd or (_rgx_pq and _rgx_pd is not none and _rgx_pn) %}
-        <div class="mx5-rgx-row">
-          <span class="mx5-rgx-k">{{ t('Counting down','倒计时') }}</span>
-          <span class="mx5-rgx-v">
-            {%- if _rgx_meter | length == 2 %}<span class="mx5-rgx-meter" aria-hidden="true">{% for _i in range(_rgx_meter[1]) %}<i{% if _i < _rgx_meter[0] %} class="on"{% endif %}></i>{% endfor %}</span>{% endif %}
-            {%- if _rgx_pq and _rgx_pd is not none and _rgx_pn %}
-            <span class="l-en">A change to <b>{{ _rgx_q.get(_rgx_pq, [_rgx_pq, _rgx_pq])[0] }}</b> is counting down — <b>{{ _rgx_pd }} of {{ _rgx_pn }}</b> confirmation days done</span>
-            <span class="l-zh">转向<b>{{ _rgx_q.get(_rgx_pq, [_rgx_pq, _rgx_pq])[1] }}</b>的切换正在倒计时 — 已完成 <b>{{ _rgx_pd }}/{{ _rgx_pn }}</b> 个确认交易日</span>
-            {%- else %}
-            <span class="l-en">{{ _rgx_cd[0][0] }}</span><span class="l-zh">{{ _rgx_cd[0][1] }}</span>
-            {%- endif %}
-          </span>
-        </div>
-        {% endif %}
-        {% if _rgx_prog.get('phase_note') %}
-        <div class="mx5-rgx-row">
-          <span class="mx5-rgx-k">{{ t('Regime age','周期已运行') }}</span>
-          <span class="mx5-rgx-v">
-            {%- if _rgx_prog.get('age_days') is not none %}<b>{{ _rgx_prog.age_days }}</b><span class="l-en"> days{% if _rgx_prog.get('median_days') %} (typical <b>{{ _rgx_prog.median_days }}</b>){% endif %} — </span><span class="l-zh"> 天{% if _rgx_prog.get('median_days') %}（通常 <b>{{ _rgx_prog.median_days }}</b> 天）{% endif %} — </span>{% endif %}
-            <span class="l-en">{{ _rgx_prog.phase_note }}</span><span class="l-zh">{{ _rgx_prog.phase_note_zh or _rgx_prog.phase_note }}</span>
-          </span>
-        </div>
-        {% endif %}
-        {# What the two axes actually measure. They are built from the DIRECTION OF
-           CHANGE in market proxies, so "inflation cooling" on the label is never a claim
-           that the price level is low — core PCE is printed beside it so the two cannot
-           be confused. Level read comes from rate_inflation_transmission.state. #}
-        <div class="mx5-rgx-note">
-          <span class="l-en">These two axes read the direction of change in market proxies, not levels{% if _rgx_pce is not none and _rgx_pce is number %} — core PCE is {{ '%.1f'|format(_rgx_pce) }}%{% if _rgx_pce_w %}, {{ _rgx_pce_w[0] }}{% endif %}{% endif %}.</span>
-          <span class="l-zh">这两轴读的是市场代理指标的变化方向，而非水平值{% if _rgx_pce is not none and _rgx_pce is number %} — 核心 PCE 为 {{ '%.1f'|format(_rgx_pce) }}%{% if _rgx_pce_w %}，{{ _rgx_pce_w[1] }}{% endif %}{% endif %}。</span>
-        </div>
-      </div>
-      {% endif %}
       <div class="mx5-sc-gauge-row {{ _mx5_sc_cls }}">
         {# Compact semicircle gauge; data-* attrs for risk_state_live.js patchMacro #}
         <svg class="mx5-gauge-svg" viewBox="0 -4 140 101" fill="none"
-             aria-label="{{ MS.label_en }} — score {{ _mx5_score }}"
+             aria-label="{{ MS.label_en }} — score {{ _mx5_score }}{% if _mx5_ghost %}; capped from six-signal blend {{ _mx5_raw }}{% endif %}"
              data-gauge-arc-len="{{ _mx5_arc_len }}"
              data-gauge-radius="56"
              data-gauge-cx="70" data-gauge-cy="75">
@@ -6978,16 +6771,6 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <text x="14"  y="95" fill="rgba(255,255,255,.26)" font-size="11" text-anchor="middle" font-family="Inter,-apple-system,sans-serif">0</text>
           <text x="70"  y="10" fill="rgba(255,255,255,.26)" font-size="11" text-anchor="middle" font-family="Inter,-apple-system,sans-serif">50</text>
           <text x="126" y="95" fill="rgba(255,255,255,.26)" font-size="11" text-anchor="middle" font-family="Inter,-apple-system,sans-serif">100</text>
-          {# Ghost mark — where the six-leg BLEND sits, drawn under the needle so the
-             two marks read as "measured" vs "shown". Quiet ink, never a second hue:
-             this is the number that was overridden, so it must stay subordinate to the
-             needle. No id and no data-* — risk_state_live.js patches the needle by id
-             and leaves this alone, which is right: the blend is a nightly composite. #}
-          {% if _mx5_ghost %}
-          <g class="mx5-gauge-ghost" transform="rotate({{ _mx5_ghost_deg }} 70 75)">
-            <line x1="70" y1="16" x2="70" y2="31" stroke-width="2.6" stroke-linecap="round"/>
-          </g>
-          {% endif %}
           {# Needle — rotation baked by Jinja; JS patches via data attr #}
           <g id="mx5-gauge-needle" transform="rotate({{ _mx5_needle_deg }} 70 75)" filter="url(#mx5NeedleGlow)">
             <line x1="70" y1="75" x2="70" y2="24" stroke="rgba(255,255,255,.30)" stroke-width="5" stroke-linecap="round"/>
@@ -7015,20 +6798,11 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <div class="mx5-sub-line">
             <span class="l-en">{{ {'green':'GREEN','yellow':'YELLOW','red':'RED'}.get(MS.color,'—') }} &mdash; {{ {'green':'Trend-following supported','yellow':'Trade with caution','red':'Defend capital first'}.get(MS.color,'') }}</span>
             <span class="l-zh">{{ {'green':'偏多 — 顺势而为受支撑','yellow':'谨慎操作','red':'优先保住本金'}.get(MS.color,'') }}</span>
+            {% if _mx5_ghost and _mx5_capw %}
+            {{ help('The dial is capped at ' ~ _mx5_score ~ '; the six-signal blend is ' ~ _mx5_raw ~ '. The cap can only pull the dial down, never up.',
+                    '刻度盘上限为 ' ~ _mx5_score ~ '；六项信号合成为 ' ~ _mx5_raw ~ '。上限只能压低刻度盘，不会抬高。') }}
+            {% endif %}
           </div>
-          {# The dial's second mark, in words. Deliberately does NOT restate the shown
-             score: risk_state_live.js moves the needle intraday, and a baked "56" here
-             would go stale the moment it does. The blend is a nightly composite, so it
-             is safe to print — and the ghost tick on the arc is its legend. #}
-          {% if _mx5_ghost and _mx5_capw %}
-          <div class="mx5-score-prov">
-            <i class="mx5-ghost-key" aria-hidden="true"></i>
-            <span class="l-en">Six-signal blend <b>{{ _mx5_raw }}</b> — the dial is held below it by {{ _mx5_capw[0] }}.</span>
-            <span class="l-zh">六项信号合成 <b>{{ _mx5_raw }}</b> — 刻度盘受{{ _mx5_capw[1] }}压制在其下方。</span>
-            {{ help('The dial shows the LOWER of two numbers: the blend of the six signals below, and a cap. Today the cap binds, so the number you see is the cap' ~ ((' (' ~ _mx5_ceil ~ ')') if _mx5_ceil is not none else '') ~ ', not a measurement of the tape — the blend reads ' ~ _mx5_raw ~ '. A cap can only pull the dial down, never up.',
-                     '刻度盘显示两个数中较低的一个：下方六项信号的合成值，以及一个上限。今日上限起作用，因此你看到的数字是上限' ~ ((' ' ~ _mx5_ceil) if _mx5_ceil is not none else '') ~ '，而非对行情的测量 —— 合成值为 ' ~ _mx5_raw ~ '。上限只能把刻度盘压低，不会抬高。') }}
-          </div>
-          {% endif %}
         </div>
       </div>{# /mx5-sc-gauge-row #}
 
@@ -7227,7 +7001,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           'tips_nominal_momentum':['the TIPS spread','TIPS 利差'] } %}
         {#- the weakest-support clause is SUPPRESSED when the label's own axes no longer
             support it: there is no supporting component to name, and the glance rows
-            above already say what the axes read (see raw_quad_of + the mx5-rgx block).
+            popup above already says what the axes read (see raw_quad_of()).
             The engine returns component=None in that state; an older payload does not,
             so the same check runs here. -#}
         {%- set _gk_raw = raw_quad_of(latest) | trim %}
@@ -7368,53 +7142,6 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
 
       </div>{# /mx5-btn-row #}
 
-      {# ── Receipts for the two chips above (chipn-*) ────────────────────────────
-         Three things a reader cannot get from the chips alone, in the order they are
-         likely to be misread. All engine-sourced, all individually guarded. #}
-      {% set _mx5_ddb = (_mx5_rdr.dd_base if (_mx5_rdr and _mx5_rdr.dd_base is mapping) else {}) %}
-      {% set _mx5_dd21 = _mx5_rdr.dd21 if (_mx5_rdr and _mx5_rdr.dd21 is defined and _mx5_rdr.dd21 is not none) else none %}
-      {% set _mx5_ddbase21 = _mx5_ddb.get('h21') %}
-      {% set _mx5_ddlift = _mx5_rdr.dd_lift if (_mx5_rdr and _mx5_rdr.dd_lift is defined and _mx5_rdr.dd_lift is not none) else none %}
-      {% set _mx5_unav = _mx5_rdr.amp_unavailable if (_mx5_rdr and _mx5_rdr.amp_unavailable is defined and _mx5_rdr.amp_unavailable) else [] %}
-      {% set _mx5_unav_n = _mx5_rdr.amp_n_checked if (_mx5_rdr and _mx5_rdr.amp_n_checked is defined and _mx5_rdr.amp_n_checked) else none %}
-      {% if (_mx5_risk_elevated and _mx5_radar_top > 0) or _mx5_dd21 is not none or _mx5_unav %}
-      <div class="mx5-chipn">
-        {# 1. THE TWO NUMBERS RUN OPPOSITE WAYS. The dial beside this reads 0-100 toward
-              Risk-on; the radar chip reads 0-100 toward more risk. Printed next to each
-              other with no scale, "56" and "77" invite the reader to compare them. #}
-        {% if _mx5_risk_elevated and _mx5_radar_top > 0 %}
-        <div class="mx5-chipn-row">
-          <span class="l-en">Opposite scales — dial: 100 = Risk-on (now <b>{{ _mx5_score }}</b>). Radar: 100 = most risk (now <b>{{ _mx5_radar_top }}</b>).</span>
-          <span class="l-zh">两把尺方向相反 — 刻度盘：100＝偏多（现 <b>{{ _mx5_score }}</b>）；雷达：100＝风险最高（现 <b>{{ _mx5_radar_top }}</b>）。</span>
-        </div>
-        {% endif %}
-        {# 2. WHAT THE STATE HAS ACTUALLY MEASURED. "Elevated Risk" is a state name, not
-              an edge: the quiet tiers measure at or below the unconditional base rate.
-              The engine now composes this sentence itself (lift_note_en/zh) — render
-              that verbatim when present; otherwise say the same thing from the three
-              numbers it already publishes, and only claim a lift when there is one. #}
-        {% if _mx5_rdr.lift_note_en is defined and _mx5_rdr.lift_note_en %}
-        <div class="mx5-chipn-row"><span class="l-en">{{ _mx5_rdr.lift_note_en }}</span><span class="l-zh">{{ _mx5_rdr.lift_note_zh or _mx5_rdr.lift_note_en }}</span></div>
-        {% elif _mx5_dd21 is not none and _mx5_ddbase21 %}
-        <div class="mx5-chipn-row">
-          <span class="l-en">Measured at this state: a <b>{{ (_mx5_dd21 * 100) | round | int }}%</b> chance of a 5%-or-worse pullback within 21 sessions, against a <b>{{ (_mx5_ddbase21 * 100) | round(1) }}%</b> long-run rate{% if _mx5_ddlift is not none %} — {% if _mx5_ddlift <= 1.0 %}no lift above that base, so treat it as an early flag, not an edge{% else %}a <b>{{ _mx5_ddlift }}&times;</b> lift{% endif %}{% endif %}.</span>
-          <span class="l-zh">该等级实测：21 个交易日内出现 5% 或以上回撤的概率为 <b>{{ (_mx5_dd21 * 100) | round | int }}%</b>，长期基准为 <b>{{ (_mx5_ddbase21 * 100) | round(1) }}%</b>{% if _mx5_ddlift is not none %} — {% if _mx5_ddlift <= 1.0 %}并未高于基准，属早期提示而非优势{% else %}倍数 <b>{{ _mx5_ddlift }}</b>{% endif %}{% endif %}。</span>
-        </div>
-        {% endif %}
-        {# 3. SILENT BY CONSTRUCTION ≠ ALL-CLEAR. Two of the cross-check gauges need a
-              CALM tape to fire at all, so they disarm in exactly the decline they would
-              be wanted for. Without this line, "no corroborators firing" reads as "the
-              cross-checks agree there is nothing here". #}
-        {% if _mx5_unav %}
-        <div class="mx5-chipn-row warn">
-          <span class="l-en"><b>{{ _mx5_unav | length }}</b>{% if _mx5_unav_n %} of <b>{{ _mx5_unav_n }}</b>{% endif %} cross-check gauges cannot fire on this tape — silent by construction, not an all-clear.</span>
-          <span class="l-zh">{% if _mx5_unav_n %}<b>{{ _mx5_unav_n }}</b> 项交叉验证指标中有 {% endif %}<b>{{ _mx5_unav | length }}</b> 项在当前行情下无法触发 — 属结构性沉默，并非安全信号。</span>
-          {{ help((_mx5_unav | map(attribute='note_en') | select | join(' ')) or 'These gauges are defined only on a calm tape, so they cannot corroborate a decline.',
-                  (_mx5_unav | map(attribute='note_zh') | select | join(' ')) or '这些指标仅在平静行情下才成立，因此无法在下跌中提供确认。') }}
-        </div>
-        {% endif %}
-      </div>
-      {% endif %}
     </div>{# /mx5-sc-left #}
 
     {# 60-session path panel (right, hidden ≤700px per spec §0 via CSS) #}
