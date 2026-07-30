@@ -322,6 +322,82 @@ def _alert_retention(event: dict[str, Any]) -> timedelta:
     return EVENT_ALERT_RETENTION.get(str(event.get("type") or ""), _poll_after(event))
 
 
+def _parse_coverage_start(raw: Any, now: datetime) -> datetime:
+    """Parse and safely clamp one persisted coverage boundary."""
+    if isinstance(raw, str) and raw:
+        try:
+            parsed = datetime.fromisoformat(raw)
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=timezone.utc)
+            return min(parsed.astimezone(timezone.utc), now)
+        except ValueError:
+            pass
+    return now
+
+
+def _coverage_started_at_by_type(
+    state: dict[str, Any],
+    now: datetime,
+) -> dict[str, datetime]:
+    """Return when this state began covering each official release family.
+
+    Per-family boundaries prevent a later adapter rollout from manufacturing
+    historical SLA failures for its newly supported event type. State written
+    before multi-release coverage has no marker, so that migration tick becomes
+    the start for every currently supported family.
+    """
+    raw_by_type = state.get("coverage_started_at_by_type")
+    if not isinstance(raw_by_type, dict):
+        raw_by_type = {}
+    legacy = state.get("coverage_started_at")
+    return {
+        event_type: _parse_coverage_start(
+            raw_by_type.get(event_type, legacy),
+            now,
+        )
+        for event_type in RESULT_EVENT_TYPES
+    }
+
+
+def _new_coverage_types(state: dict[str, Any]) -> set[str]:
+    """Identify families initialized on this tick for immediate cold recovery."""
+    raw_by_type = state.get("coverage_started_at_by_type")
+    if not isinstance(raw_by_type, dict):
+        raw_by_type = {}
+    legacy = state.get("coverage_started_at")
+    return {
+        event_type
+        for event_type in RESULT_EVENT_TYPES
+        if event_type not in raw_by_type and not legacy
+    }
+
+
+def _retain_event(
+    event: dict[str, Any],
+    *,
+    now_et: datetime,
+    coverage_started_at: datetime,
+    publication: dict[str, Any],
+) -> bool:
+    """Keep future rows, covered misses, and retained publication evidence."""
+    event_day = date.fromisoformat(str(event["date"]))
+    if event_day >= now_et.date():
+        return True
+    if event.get("type") not in RESULT_EVENT_TYPES:
+        return False
+    event_at = _event_at(event)
+    elapsed = now_et - event_at
+    if not (timedelta(0) <= elapsed <= _alert_retention(event)):
+        return False
+    if publication:
+        return True
+    # A new watcher may legitimately recover a release for 24 hours after its
+    # embargo. Beyond that boundary, only emit a delayed alarm if this state
+    # existed during the recovery window and was therefore accountable for it.
+    recovery_deadline = event_at.astimezone(timezone.utc) + timedelta(hours=24)
+    return coverage_started_at <= recovery_deadline
+
+
 def active_events(events: list[dict[str, Any]], now: datetime) -> list[dict[str, Any]]:
     now_et = now.astimezone(NY)
     return [
@@ -684,27 +760,38 @@ def detect(
     now_et = now.astimezone(NY)
     today_et = now_et.date()
     candidates = scheduled_releases(today_et - timedelta(days=7), horizon_days=14)
-    events = [
-        event
-        for event in candidates
-        if date.fromisoformat(event["date"]) >= today_et
-        or (
-            event["type"] in RESULT_EVENT_TYPES
-            and timedelta(0) <= now_et - _event_at(event) <= _alert_retention(event)
-        )
-    ]
     source_state = dict(state.get("sources") or {})
     publications = _migrate_publication_keys(
         dict(state.get("publications") or {}),
         candidates,
     )
+    coverage_started_at_by_type = _coverage_started_at_by_type(state, now)
+    new_coverage_types = _new_coverage_types(state)
+    events = [
+        event
+        for event in candidates
+        if _retain_event(
+            event,
+            now_et=now_et,
+            coverage_started_at=coverage_started_at_by_type.get(
+                str(event.get("type") or ""),
+                now,
+            ),
+            publication=_publication_for(publications, event),
+        )
+    ]
     due = active_events(events, now)
     # Past the high-frequency window, keep every unresolved result-capable row
     # visible and retry at low frequency. A parser hotfix can therefore self-heal
     # CPI/GDP/PCE/payrolls/claims just as it can an FOMC statement.
-    if int(now.timestamp() // 60) % UNRESOLVED_RETRY_INTERVAL_MIN == 0:
+    periodic_retry = (
+        int(now.timestamp() // 60) % UNRESOLVED_RETRY_INTERVAL_MIN == 0
+    )
+    if periodic_retry or new_coverage_types:
         due_keys = {_event_key(event) for event in due}
         for event in events:
+            if not periodic_retry and event.get("type") not in new_coverage_types:
+                continue
             event_key = _event_key(event)
             publication = _publication_for(publications, event)
             elapsed = now_et - _event_at(event)
@@ -964,6 +1051,12 @@ def detect(
 
     new_state = {
         "schema": "release_publication_state.v2",
+        "coverage_started_at_by_type": {
+            event_type: started_at.isoformat()
+            for event_type, started_at in sorted(
+                coverage_started_at_by_type.items()
+            )
+        },
         "sources": source_state,
         "publications": publications,
         "updated_at": now.isoformat(),
@@ -983,6 +1076,12 @@ def detect(
         "schema": "release_publications.v2",
         "built": now.isoformat(),
         "as_of_et": now_et.isoformat(),
+        "coverage_started_at_by_type": {
+            event_type: started_at.isoformat()
+            for event_type, started_at in sorted(
+                coverage_started_at_by_type.items()
+            )
+        },
         "timezone": "America/New_York",
         "poll_window": {
             "before_min": 12,
