@@ -2367,3 +2367,51 @@ class TestSelfFetchImportsResolveInTheCone:
         for rel in ("scripts/build_live_quotes.py", "engine/live_quotes.py"):
             for root in self._module_scope_first_party_imports(rel):
                 assert root in cone, f"{rel} imports `{root}`, absent from the cone"
+
+
+class TestTheLogReportsTheCeilingItApplied:
+    """A log line must not misreport the threshold it used.
+
+    Observed in run 30529411662 (the PR's own live verification): a demo pass
+    printed `ceiling=27m` while the gate had actually judged against 100015m,
+    because the summary line resolved the ceiling from the raw config and the gate
+    resolved it from the demo-aware one. Harmless to the decision, corrosive to
+    every future diagnosis — this defect took a day to find precisely because the
+    numbers on screen had to be hand-correlated against another lane's push times.
+    """
+
+    def test_demo_prints_the_relaxed_ceiling_not_the_strict_one(self, tmp_path,
+                                                               capsys):
+        root = _mover_root(tmp_path)
+        _date_stamped_heatmap(root)
+        # Old enough that only the demo ceiling can admit it.
+        _write_snapshot(root, {"MU": _aged_quote(600.0), "XYZ": _aged_quote(600.0, 0.4, 50.0, 49.8)},
+                        asof_min_ago=600.0, delayed_min=15)
+        RADAR.run(root, now=NOW.replace(hour=6, minute=0), demo=True,
+                  fetcher=_no_fetch, quote_builder=lambda syms: {})
+        line = [l for l in capsys.readouterr().out.splitlines()
+                if l.startswith("hot-tape quotes ")]
+        assert line, "no quote summary line"
+        assert "demo=1" in line[0]
+        assert "ceiling=27m" not in line[0], (
+            f"demo printed the STRICT ceiling while applying the relaxed one: {line[0]}")
+        assert "budget=100000m" in line[0], line[0]
+
+    def test_a_normal_pass_prints_the_delay_aware_ceiling(self, tmp_path, capsys):
+        root = _mover_root(tmp_path)
+        _write_snapshot(root, {"MU": _aged_quote(15.0), "XYZ": _aged_quote(15.0, 0.4, 50.0, 49.8)},
+                        delayed_min=15)
+        RADAR.run(root, now=NOW, fetcher=_no_fetch)
+        line = [l for l in capsys.readouterr().out.splitlines()
+                if l.startswith("hot-tape quotes ")]
+        assert line and "ceiling=27m" in line[0], line
+        assert "budget=12m" in line[0] and "feed_delay=15m" in line[0], line[0]
+
+    def test_the_gate_and_the_log_share_one_resolution(self):
+        """Structural: both must go through freshness_cfg, so they cannot drift."""
+        body = (REPO_ROOT / "scripts/hot_tape_radar.py").read_text(encoding="utf-8")
+        assert body.count("freshness_cfg(cfg, demo=demo)") >= 2, (
+            "the gate and the log no longer share one ceiling resolution")
+        assert "effective_max_quote_age_min(live, cfg)" not in body, (
+            "a raw-config ceiling resolution is back — in demo it prints a "
+            "threshold the gate never applied")
