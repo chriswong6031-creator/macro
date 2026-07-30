@@ -15,6 +15,11 @@
       "lag_days": 1,
       "state": "fresh"
     },
+    "JD": {
+      "asof": "2026-07-28",
+      "lag_days": 1,
+      "state": "fresh"
+    },
     "BABA": {
       "asof": "2026-07-28",
       "lag_days": 1,
@@ -35,7 +40,7 @@
       "lag_days": 1,
       "state": "fresh"
     },
-    "JD": {
+    "FXI": {
       "asof": "2026-07-28",
       "lag_days": 1,
       "state": "fresh"
