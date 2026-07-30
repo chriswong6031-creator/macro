@@ -79,6 +79,18 @@ A healthy steady-state night shows ~141 changed / ~13k unchanged. `0 changed`
 on a weekday means the backfill refresh didn't write — check
 `/Users/chriswong/theta-ops-wt/backfill.log` before suspecting this lane.
 
+**Exit code alone is not proof the offsite index moved.** Three checks, in order
+— the last one is the one that was silently failing 07-25→07-30:
+
+```bash
+ssh m1 'grep -c "Connection pool is full" /tmp/thetadata_r2sync.stderr.log'   # want 0
+ssh m1 'tail -3 /tmp/thetadata_r2sync.stderr.log'                            # want "0 failed"
+ssh m1 'grep "manifest put\|manifest untouched" /tmp/thetadata_r2sync.stderr.log | tail -2'
+```
+
+The third must read `manifest put — N files`, NOT `manifest untouched`. A run can
+upload every byte, exit 1 on three stragglers, and leave the index frozen.
+
 ## Restore
 
 `scripts/fetch_r2.py` is the download leg (same key layout, same md5 skip):
@@ -124,3 +136,41 @@ Standing lesson: after any host migration, md5-compare the deploy tree's import
 closure against origin/main before trusting lane exit codes — a mixed-vintage
 tree fails on the seam between two files, and launchd's last-exit column cannot
 distinguish that from a data problem.
+
+### 2026-07-30 — connection-pool exhaustion held the manifest shut
+
+With the vintage skew healed, all three 07-29 runs still exited 1: **1, 12 and 3
+terminal upload failures**, and every one of them a multipart part
+(`?uploadId=...&partNumber=N`) — no single-PUT upload ever failed. The stderr log
+carried **1,119** `Connection pool is full, discarding connection ... pool size:
+64` warnings.
+
+Cause: `publish_r2._client` pinned `max_pool_connections=64` while the real
+ceiling is `workers x s3transfer part concurrency` = **32 x 10 = 320**. urllib3
+does not block on a full pool — it opens the connection anyway and discards it on
+release, so the lane re-ran the TLS handshake thousands of times and R2 dropped
+parts mid-flight (`Connection was closed before we received a valid response`).
+The same class of under-provisioning as the 2026-07-16 EMFILE one layer down,
+which the plist's 4096-fd `SoftResourceLimits` fixed.
+
+Why it mattered more than "a few files retried": `publish()` deliberately refuses
+to write `_manifest.json` when ANY upload failed, so three stragglers were enough
+to hold the offsite **index** frozen while the bytes kept landing — a backup whose
+descriptor is stale is the state you least want it in when you go to restore. No
+successful manifest put appears anywhere in the retained log.
+
+Fix (#4059): the pool is now DERIVED, not a constant —
+`_pool_size(workers) = max(64, workers x _TRANSFER_CONCURRENCY + 8)` → 328 at the
+default 32 workers, and `publish()`/`fetch()` each hand their own worker count to
+`_client()`. `_TRANSFER_CONCURRENCY` is also PINNED into an explicit
+`TransferConfig` at the upload/download call, so a future s3transfer default bump
+cannot silently invalidate the arithmetic. The restore leg got the same treatment
+— `download_file` fans a large object into concurrent ranged GETs exactly as
+`upload_file` fans out parts.
+
+Note for anyone reading `thetadata_eod/_manifest.json` on R2: the store's own
+collector manifest (`store`/`n_roots`/`per_root`/`updated_at`) is ALSO uploaded to
+that key by the ordinary delta pass, because `rglob` picks it up. On a clean run
+the publisher's file-list doc is put last and wins; on a failed run the collector
+doc is what remains, which is exactly what sat there 07-29→07-30. Distinguish the
+two by top-level key: `count`/`files` = publisher, `n_roots`/`per_root` = collector.

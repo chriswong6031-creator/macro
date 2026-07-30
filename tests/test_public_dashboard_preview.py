@@ -16,6 +16,16 @@ def test_public_dashboard_shells_and_controller_are_allowlisted():
     assert "/macro.html" not in set(policy["free_registered"]["exact"])
 
 
+def test_public_hub_globe_topology_is_allowlisted():
+    """The public shell must not fetch its map geometry through the regwall."""
+    policy = yaml.safe_load((ROOT / "config" / "site_access.yml").read_text())
+    public = set(policy["public"]["exact"])
+    html = (ROOT / "site" / "start.html").read_text()
+
+    assert 'data-topo="world-110m.json"' in html
+    assert "/world-110m.json" in public
+
+
 def test_stock_preview_controller_enforces_one_three_full():
     js = (ROOT / "templates" / "tier_preview.js").read_text()
     assert 'state = { tier: "anon", cap: 1 }' in js

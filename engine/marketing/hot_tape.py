@@ -2091,7 +2091,11 @@ def packet_to_source(packet: FactPacket, media: dict | None = None) -> dict:
     so nothing re-checks this figure against the live quote before sending. The
     protection that IS live for this lane is upstream — the freshness gate, the
     bridge/per-record history gates, and the numeric-consistency gate in
-    hot_tape_wire — plus the operator kill switch.
+    hot_tape_wire — plus the operator kill switch, and downstream the publisher's
+    dispatch-time dark-desk park (an item addressed to a desk that is not
+    enabled in desk_network quarantines at dispatch, reason account_disabled,
+    post_now included — severity_account routes by severity alone and never
+    consults liveness).
     """
     try:
         prov = packet.provenance or {}

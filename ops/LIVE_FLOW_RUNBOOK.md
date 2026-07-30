@@ -224,26 +224,150 @@ tree never grows toward the ~13 GB full-history footprint this disk cannot take.
 and leaves gitignored runtime state (`.env`, `data/live_flow_state/`,
 `data/live_flow_out/`) untouched.
 
+> **`theta-ops-wt` only — `reset --hard` breaks the store, re-create the symlink.**
+> That tree deliberately overrides a *tracked* path: `data/thetadata_eod` is a
+> **symlink** to `/Users/chriswong/flow-ops-wt/data/thetadata_eod`, while
+> `origin/main` tracks a directory there holding two snapshot files
+> (`_backfill_state.json`, `_manifest.json`).  `git reset --hard` restores the
+> tracked directory and silently destroys the override — four lanes
+> (`optionsmatrix`, `theme-options-witness`, `thetadata-r2sync`, `optionshub`)
+> would then resolve `THETADATA_STORE` to a near-empty directory, and the
+> backfill would read a **29-byte** snapshot `_backfill_state.json` in place of
+> the live **~88 KB** one and re-pull ~380 roots × 2012-2026 from scratch.
+> After any hard reset on this tree:
+>
+> ```bash
+> cd /Users/chriswong/theta-ops-wt
+> rm -rf data/thetadata_eod
+> ln -s /Users/chriswong/flow-ops-wt/data/thetadata_eod data/thetadata_eod
+> ```
+>
+> Consequently `theta-ops-wt` never shows a clean `git status`: the two
+> deletions above are its correct steady state.  Verify it with
+> `git status --porcelain -uno -- . ':(exclude)data/thetadata_eod'`, which must
+> be empty.  (`flow-ops-wt`, which owns the real store, carries the same two
+> files permanently *modified* for the same reason.)
+
 #### Sibling deploy trees on the M1
 
 | Tree | Job(s) | State (2026-07-30) |
 |---|---|---|
 | `liveflow-ops-wt` | `com.mastermind.liveflow` | **standalone clone — git-refreshable** |
+| `hub-ops-wt` | `com.mastermind.optionshub`, `com.mastermind.levelsgrader`, `com.mastermind.levelsseal` | **standalone clone — git-refreshable** (rebuilt 2026-07-30) |
+| `theta-ops-wt` | `com.macro.theta-terminal`, `com.macro.thetadata-backfill`, `com.macro.theta-staleness` (+4 readers) | **standalone clone — git-refreshable** (rebuilt 2026-07-30) |
 | `flow-ops-wt` | flow enrich / signing lanes | standalone clone, full history (~75 GB) |
 | `fund-ops-wt` | `com.mastermind.fund` | standalone clone of a *different* repo (`mastermind-terminal`) |
-| `hub-ops-wt` | `com.mastermind.optionshub` | **still orphaned** — same dead `gitdir:` pointer |
-| `theta-ops-wt` | `com.macro.thetadata-*` | **still orphaned** — same dead `gitdir:` pointer |
 
-`hub-ops-wt` and `theta-ops-wt` are still deployed by file copy and will drift
-the same way `liveflow-ops-wt` did.  Repair each with the same recipe — clone
-beside, carry the gitignored state, timestamped swap — one at a time, while that
-job is idle (`optionshub` fires 16:45 ET, so its window is overnight too).
+All three macro-repo deploy trees are now standalone shallow clones.  Refresh any
+of them with the ordinary `git fetch --depth 1 origin main && git reset --hard
+FETCH_HEAD` above.
+
+**Count the jobs before you touch a tree — `grep -l <tree> ~/Library/LaunchAgents/*.plist`.**
+Both rebuilds found a blast radius wider than the tree's name suggests:
+
+- `hub-ops-wt` roots **three** jobs, not one.  `levelsgrader` (18:00 local) and
+  `levelsseal` (04:30 + 06:00 local, weekdays) both `exec` scripts from
+  `hub-ops-wt/ops/launchd/`.
+- `theta-ops-wt` is named by **seven** plists.  Three `exec` scripts out of
+  `theta-ops-wt/scripts/launchd/`; the other four
+  (`optionsmatrix`, `theme-options-witness`, `thetadata-r2sync`, `optionshub`)
+  only resolve `THETADATA_STORE=…/theta-ops-wt/data/thetadata_eod`, which is a
+  **symlink** into `flow-ops-wt` — the 60 GB store is not inside the tree, but
+  drop that one symlink and four lanes lose the store, including its sole
+  offsite backup.
+
+Schedules in these plists are **local (PDT)**, not ET — `optionshub`'s
+`Hour 16 Minute 45` fires 16:45 local (19:45 ET) and runs ~80 min.
+
+##### Untracked does not always mean stale
+
+The "copy only the gitignored runtime state, nothing else" rule has one
+exception, and it is the dangerous one: a file can be untracked because it was
+**never committed**, not because main moved past it.  `hub-ops-wt` held
+`ops/launchd/levels_grader_daily.sh` and `levels_seal_preopen.sh` — absent from
+`origin/main` entirely, executable, and named directly in two loaded plists.  A
+clean clone would have deleted both and killed those lanes silently.  They are
+now committed to main, so the tree is genuinely refreshable; if you meet another
+one, carry it **and commit it**, don't just copy it forward.
+
+Sort each untracked path into: live runtime state (carry), a stale vintage of a
+file main has since changed or deleted (drop), or never-committed load-bearing
+code (carry **and** commit).  Derive the set mechanically — diff the tree
+against main rather than trusting a remembered list:
+
+```bash
+cd <tree> && find . \( -type f -o -type l \) | sed 's|^\./||' | sort > /tmp/actual.txt
+# main_tracked.txt = `git ls-tree -r --name-only origin/main | sort`, generated
+# on a host that has a working checkout and copied over
+comm -23 /tmp/actual.txt /tmp/main_tracked.txt | grep -v __pycache__
+```
+
+Carry lists as measured 2026-07-30:
+
+| Tree | Carry | Drop |
+|---|---|---|
+| `liveflow-ops-wt` | `.env`, `data/live_flow_state/`, `data/live_flow_out/` | — |
+| `hub-ops-wt` | `.env`, `data/live_flow_out/` (its own output), `data/levels/` (`grades.parquet`, `track_record.json`, `ledger/`, `backfill_done_years.txt`), `ops/launchd/levels_{grader_daily,seal_preopen}.sh` | `__pycache__`, stale `site/assets/*` render artifacts, templates/tests main deleted |
+| `theta-ops-wt` | `.env`, the `data/thetadata_eod` **symlink** | `backfill.log` (118 MB of 60 s gate lines — launchd recreates it), `__pycache__`, 4 templates main deleted |
+
+##### What the drift actually was
+
+`theta-ops-wt` proved the thesis.  Its `scripts/launchd/` copies were stale
+vintages predating two merged PRs that never reached the host:
+
+- **#3138** — zombie-proof terminal health.  A terminal on a stale/revoked
+  `THETA_API_KEY` stays up serving HTTP 200 with an *empty* body while real data
+  endpoints time out (bit live 2026-07-20).  The deployed keepalive *and*
+  sentinel both trusted the bare status code, so the monitor stayed green
+  through the outage.
+- **#3150** — the keepalive hands the key to the JVM via `THETADATA_API_KEY`
+  instead of `--api-key` argv.  The stale copy leaked the production ThetaData
+  key into world-readable `ps` output, and was still doing so at rebuild time.
+
+Neither was visible as "drift" because nothing on the host could run `git
+status`.  That is the whole argument for these trees being clones.
+
+##### Swapping a tree that is never idle
+
+`optionshub` has a clean overnight window, but `theta-ops-wt` roots two
+`KeepAlive` jobs that never go idle:
+
+- `com.macro.theta-terminal` — the wrapper blocks holding the java process for
+  the terminal's whole lifetime, so launchd does **not** re-exec it while the
+  terminal is healthy.  Its jar and log live outside the tree
+  (`~/theta/`), and both processes' `cwd` follows the inode through a rename,
+  so a swap does not disturb a running terminal.  It keeps the *old* script on
+  its open fd and picks up the new one on its next natural restart.
+- `com.macro.thetadata-backfill` — `exec`s **every 60 s** (it exits 1 on its
+  own pre-close gate until 20:10 UTC, and `ThrottleInterval` re-fires it).  A
+  swap can land in that gap; the cost is one failed exec and a 60 s retry.
+  Keep the two `mv`s back-to-back in a single shell and it is a non-event.
+
+Do not carry `backfill.log` forward — that once-per-minute gate line grows it
+past 100 MB, and launchd recreates it on the next spawn.  Leaving it in the
+rollback is the cheap cleanup.
 
 The same TCC constraint applies to the ThetaData EOD backfill agent
 (`com.macro.thetadata-backfill`): its keepalive script must live **outside**
 `~/Documents/` (kept at `/Users/chriswong/theta-ops-wt/scripts/launchd/`),
 because macOS TCC denies launchd `exec` on scripts under `~/Documents/`
 ("Operation not permitted" / exit 126).
+
+##### Disk
+
+A depth-1 clone of this repo costs **~4.5 GB** checked out (~1.7 GB `.git`), and
+takes 20–30 min over the M1's link.  Rebuilding a tree therefore costs ~4.5 GB
+until its rollback is deleted, and the M1 runs at ~97%.  Check `df -g
+/System/Volumes/Data` before and during, and stop if free space would fall below
+~6 GB.  Free space on that host is volatile — the three GitHub Actions runners
+(`~/actions-runner-{1,2,3}`, 12–24 GB each) churn tens of GB as CI runs, so a
+rebuild that looks unaffordable at the start may be affordable an hour later.
+
+Rollbacks are `~/<tree>.orphaned-<UTC-ish stamp>` and are kept until the lane has
+been proven by a real scheduled run; deleting one is an operator call.  For
+`theta-ops-wt`, note that the long-lived ThetaData terminal keeps its `cwd`
+inside whichever directory it was launched from — after a swap that is the
+rollback — so prefer deleting that rollback once the terminal has restarted.
 
 ### Live-flow poller — install
 

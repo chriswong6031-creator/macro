@@ -215,18 +215,21 @@ def test_hk_template_missing_key_safe():
 
 
 def test_hk_static_legacy_grid_cannot_override_hidden():
-    """The checked-in page temporarily retains its pre-render legacy grid.
+    """The legacy pre-render act-grid block is GONE from the checked-in page.
 
-    `.act-grid { display:grid }` overrides the browser's default `[hidden]` rule,
-    so the generated fallback needs an explicit author-level display override
-    until the next clean template render removes the old block entirely.
+    History: the page transitionally carried its old `.act-grid` fallback with an
+    author-level `display:none !important` override (because `.act-grid
+    { display:grid }` beats the browser's default `[hidden]` rule), and this test
+    pinned that transitional string "until the next clean template render removes
+    the old block entirely" — its own words. The 2026-07-30 asia render completed
+    that removal, which flipped the transitional pin red (a fixture-state time
+    bomb: it asserted a state the pipeline was chartered to erase). The durable
+    property is absence: with no legacy `.act-grid` markup in the page, nothing
+    can override `[hidden]`. If this test reds again, a render regressed the page
+    back to the pre-lane-split legacy grid.
     """
     html = (ROOT / "site" / "hk_stocks.html").read_text(encoding="utf-8")
-    legacy_grid = '<div class="act-grid"'
-    hidden_legacy_grid = (
-        '<div class="act-grid" hidden aria-hidden="true" style="display:none !important">'
-    )
-    assert legacy_grid not in html or hidden_legacy_grid in html
+    assert 'class="act-grid"' not in html
 
 
 def test_no_translated_text_in_title_attributes():

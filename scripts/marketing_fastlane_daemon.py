@@ -526,8 +526,23 @@ def _run_press_tick(*, dry_run: bool) -> dict:
             intelligence_cfg = (
                 ((press_cfg or {}).get("wire") or {}).get("intelligence") or {}
             )
+            desk_packets = result.get("intelligence", [])
+            # V2 §D — ENRICH BEFORE TRANSLATE BEFORE MERGE. The order is load
+            # bearing: the LLM pass may replace `why_it_matters_en`, and the zh
+            # pass has to see that replacement to buy the matching twin.
+            #
+            # The phrasing pass lives HERE and not in run_press_tick because that
+            # function also runs inside GitHub Actions
+            # (scripts/marketing_press_wire.py), where the intelligence list is
+            # discarded — model spend there would buy nothing at all.
+            _attach_desk_llm(desk_packets, intelligence_cfg, now)
+            _attach_desk_context(desk_packets, intelligence_cfg, now)
+            # Bilingual BEFORE the merge, so the store persists the twin with the
+            # English it was translated from (the merge drops a zh whose original
+            # moved on). Budgeted, cached, and fail-soft — see _attach_desk_zh.
+            _attach_desk_zh(desk_packets, intelligence_cfg)
             snapshot = update_intelligence_desk(
-                result.get("intelligence", []),
+                desk_packets,
                 root=ROOT,
                 now=now,
                 cfg=intelligence_cfg,
@@ -832,6 +847,174 @@ def _zh_preflight(wire_cfg: dict) -> None:
                        cfg.get("api_key_env", "DEEPSEEK_API_KEY"))
 
 
+def _attach_desk_llm(packets: list, intelligence_cfg: dict,
+                     now: datetime) -> dict:
+    """V2 §D.1/D.2: let the model PHRASE this tick's confirmed stories (in place).
+
+    Thin, fail-soft wrapper around engine.marketing.intelligence_llm. The engine
+    computed every fact; the model only words them, and every gate hit hands the
+    story back its deterministic draft and canned why. DAEMON-ONLY by design —
+    run_press_tick also executes in GitHub Actions, where the desk list is thrown
+    away.
+
+    An enrichment fault must NEVER stop the desk sink: the whole point of the
+    desk is that it keeps collecting while the extras degrade.
+    """
+    try:
+        from engine.marketing.intelligence_llm import attach_llm_drafts  # noqa: PLC0415
+        return attach_llm_drafts(
+            packets,
+            intelligence_cfg if isinstance(intelligence_cfg, dict) else {},
+            root=ROOT,
+            now=now,
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("[press] desk phrasing skipped (%s: %s)",
+                       type(exc).__name__, exc)
+        return {}
+
+
+def _attach_desk_context(packets: list, intelligence_cfg: dict,
+                         now: datetime) -> int:
+    """V2 §D.3: join story tickers against the committed engine artifacts.
+
+    Congress / insider / earnings facts, counted from artifact rows and phrased
+    by a fixed bilingual template. NO LLM anywhere in that module: these lines
+    are engine facts, each carrying the artifact's own as_of, and a stale
+    artifact yields no line rather than a stale one.
+    """
+    try:
+        from engine.marketing.intelligence_context import (  # noqa: PLC0415
+            attach_engine_context,
+        )
+        return attach_engine_context(
+            packets,
+            intelligence_cfg if isinstance(intelligence_cfg, dict) else {},
+            root=ROOT,
+            now=now,
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("[press] desk engine context skipped (%s: %s)",
+                       type(exc).__name__, exc)
+        return 0
+
+
+# Desk packets are heavier than rail lines (a headline AND a brief each), and the
+# desk is a durable layer — an untranslated packet is still there next tick. A
+# smaller per-tick budget than the rail's is therefore the right default.
+_DESK_ZH_PER_TICK = 10
+
+
+def _attach_desk_zh(packets: list, intelligence_cfg: dict) -> tuple[int, int]:
+    """Give this tick's Intelligence Desk packets Chinese twins, in place.
+
+    The SAME seam as the rail's `_attach_zh`: engine.news_translate.translate_to_zh
+    through `_zh_cfg` (host-local cache dir, no ai_costs append, no repo write).
+    The story layer shipped English-only on a bilingual-by-law site while the
+    cached translator sat one function away.
+
+    Fail-soft end to end: no key / disabled / rate-limited / malformed returns None
+    per item and the packet simply ships without `headline_zh`, which the client
+    renders as English with the plain 英文原文 marker. The desk merge additionally
+    DROPS a zh twin whose English original moved on, so a stale pair is never
+    served.
+
+    Budget: `zh_per_tick` PACKETS per tick (not strings — a packet costs one to
+    three translations). The text-hash cache absorbs the repeats of a story that
+    stays on the desk for hours.
+
+    V2 §D: a packet whose `why_it_matters_en` was PHRASED by the LLM pass
+    (`_why_phrased`) also gets its why translated here, on the same seam and the
+    same budget. Ordering guarantees the phrasing already happened — see the
+    step-6 hook order. A packet whose why is still the canned per-class line is
+    NOT re-translated: that line already ships with a house zh twin.
+
+    Returns (packets_filled, packets_attempted) for the caller's log line.
+    """
+    cfg_in = intelligence_cfg if isinstance(intelligence_cfg, dict) else {}
+    # Default OFF in code, exactly like the rail: deleting the config key must
+    # DISARM the spend, never silently arm it.
+    if not packets or not cfg_in.get("zh_enabled", False):
+        return (0, 0)
+
+    def _wants_zh(packet: object) -> bool:
+        if not isinstance(packet, dict):
+            return False
+        if str(packet.get("headline") or "").strip() and not packet.get("headline_zh"):
+            return True
+        return bool(packet.get("_why_phrased")
+                    and str(packet.get("why_it_matters_en") or "").strip())
+
+    pending = [p for p in packets if _wants_zh(p)]
+    if not pending:
+        return (0, 0)
+    try:
+        per_tick = int(cfg_in.get("zh_per_tick", _DESK_ZH_PER_TICK))
+    except (TypeError, ValueError):
+        per_tick = _DESK_ZH_PER_TICK
+    if per_tick > 0:
+        pending = pending[:per_tick]
+
+    texts: list[str] = []
+    slots: list[tuple[dict, str]] = []
+    for packet in pending:
+        head = str(packet.get("headline") or "").strip()
+        brief = str(packet.get("brief") or "").strip()
+        if head and not packet.get("headline_zh"):
+            texts.append(head)
+            slots.append((packet, "headline_zh"))
+            # `_plain_brief` returns the headline verbatim when there is no body;
+            # paying twice for one string is not a budget.
+            if brief and brief != head and not packet.get("brief_zh"):
+                texts.append(brief)
+                slots.append((packet, "brief_zh"))
+        why = str(packet.get("why_it_matters_en") or "").strip()
+        if packet.get("_why_phrased") and why:
+            # The canned zh twin stays in place until this lands, so a failed or
+            # unbudgeted translation degrades to the generically-true house line
+            # for the event class rather than to a blank.
+            texts.append(why)
+            slots.append((packet, "why_it_matters_zh"))
+
+    try:
+        # `_zh_cfg` reads config.yml and coerces `zh_timeout_s` / `zh_max_chars`,
+        # so it belongs INSIDE the guard: it is the one line of this pass that can
+        # raise on a mistyped config value, and step 6 wraps all three enrichment
+        # stages in a single try — an escape here skips `update_intelligence_desk`
+        # itself, freezing the desk snapshot every tick behind a heartbeat that
+        # keeps ticking. The other two stages (`_attach_desk_llm`,
+        # `_attach_desk_context`) already swallow everything; this one must too.
+        cfg = _zh_cfg(cfg_in)
+        from engine.news_translate import translate_to_zh  # noqa: PLC0415
+        out = translate_to_zh(texts, cfg)
+    except Exception as exc:  # noqa: BLE001 — a translator fault never breaks the desk
+        logger.warning("[press] desk zh translation skipped (%s: %s)",
+                       type(exc).__name__, exc)
+        return (0, len(pending))
+
+    # Count PACKETS that gained a twin, not fields: a story whose headline was
+    # already translated and that only needed a why twin still counts as served,
+    # and the log line would otherwise read "0/1" on a perfectly good pass.
+    served: set[int] = set()
+    for (packet, field), zh, source_text in zip(slots, out or [], texts,
+                                                strict=False):
+        zh_s = str(zh).strip() if zh else ""
+        if zh_s and zh_s != source_text.strip():
+            packet[field] = zh_s
+            served.add(id(packet))
+    filled = len(served)
+    for packet in pending:
+        # One translation covers both fields when the brief IS the headline.
+        if (packet.get("headline_zh") and not packet.get("brief_zh")
+                and str(packet.get("brief") or "").strip()
+                == str(packet.get("headline") or "").strip()):
+            packet["brief_zh"] = packet["headline_zh"]
+    if filled < len(pending):
+        logger.info("[press] desk zh: %d/%d stories translated (the rest ship as "
+                    "English with the 英文原文 marker)", filled, len(pending))
+    return (filled, len(pending))
+
+
 def _write_wires_sink(rail_items: list, press_cfg: dict, now: datetime) -> None:
     """Atomically publish the wires.v1 rolling-window rail payload (M1).
 
@@ -968,9 +1151,22 @@ def _log_press_tick(result: dict, now: datetime, *, dry_run: bool) -> None:
     digest_n = len(result.get("digest", []))
     blocked_n = len(result.get("blocked", []))
     ts = now.strftime("%Y-%m-%dT%H:%M:%SZ")
+    # Desk health rides the SAME line: a desk that stopped merging (or a store
+    # that quarantined itself) used to be invisible in the tick log, so the only
+    # signal was a stale live/intelligence.json nobody was watching. `.get` all
+    # the way down — this helper runs before the heartbeat touch, so a missing
+    # key here would present as a dead daemon.
+    health = result.get("_intelligence_health")
+    desk = ""
+    if isinstance(health, dict):
+        desk = " | desk active=%s confirmed=%s drafts=%s" % (
+            health.get("active_stories", "?"),
+            health.get("confirmed", "?"),
+            health.get("draft_ready", "?"),
+        )
     logger.info(
-        "[press] tick%s | emitted=%d skipped=%d digest=%d blocked=%d | %s",
-        dry_tag, emitted_n, skipped_n, digest_n, blocked_n, ts,
+        "[press] tick%s | emitted=%d skipped=%d digest=%d blocked=%d%s | %s",
+        dry_tag, emitted_n, skipped_n, digest_n, blocked_n, desk, ts,
     )
     for item in result.get("emitted", []):
         # XG-W2 item shape — see _src(). This loop runs on EVERY emitting tick

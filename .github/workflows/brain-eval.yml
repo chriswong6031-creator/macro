@@ -1,0 +1,55 @@
+name: brain-eval
+# Weekly offline answer-quality eval over the Mastermind AI response log
+# (masterplan §3 row 14 / §9 rubric, W2). Grades a sample of the week's answers
+# with an LLM judge on the §9 rubric, plus the frozen operator benchmark case.
+#
+# NOT a nightly lane and NOT declared in config/dag.yml on purpose: it renders
+# nothing, commits nothing, and touches no pipeline artifact. Its only outputs are
+# data/mastermind/eval_summary_latest.json (gitignored, admin-local) and one R2
+# object per ISO week on the private data plane. Scores are INTERNAL QA TELEMETRY
+# ONLY — never product copy (see engine/neuralweb/response_eval.py).
+on:
+  schedule:
+    - cron: "0 13 * * 0"    # Sunday 13:00 UTC — after the week's nightlies, off the daily lane
+  workflow_dispatch:
+
+permissions:
+  contents: read            # reads the repo, writes nothing back to git
+
+concurrency:
+  # Its own lane: the eval is read-only over R2 + a bounded LLM spend, so it
+  # neither blocks nor is blocked by pipeline-daily / pipeline-batch.
+  group: brain-eval
+  cancel-in-progress: false
+
+jobs:
+  brain-eval:
+    runs-on: [self-hosted, macstudio]
+    timeout-minutes: 45     # measured budget: <=150 judge calls + 1 benchmark turn on a
+                            # small model. The script is fail-soft per row, so a slow
+                            # provider degrades the sample rather than the run.
+    steps:
+      - uses: actions/checkout@v4
+      - name: python 3.12 (Homebrew venv - self-hosted runner)
+        # Same bootstrap every macstudio lane uses. Without it `python` is whatever
+        # the runner's PATH resolves and the boto3/anthropic imports this script
+        # needs are absent — the lane would run green and grade nothing.
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+      - run: pip install -r requirements.txt
+      - name: weekly answer-quality eval
+        # R2_*: the response-log corpus to grade + the summary archive.
+        # DEEPSEEK_API_KEY / ANTHROPIC_API_KEY: the judge waterfall (DeepSeek first,
+        # Anthropic as the only backup). Every one of these is fail-soft — an absent
+        # cred narrows the pass, it never aborts the run.
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python scripts/run_brain_eval.py
