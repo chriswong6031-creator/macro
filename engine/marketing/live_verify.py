@@ -183,6 +183,40 @@ def _quotes_from_heatmap(obj: dict) -> dict[str, dict]:
     return out
 
 
+def _feed_delay_min(obj: dict | None) -> float:
+    """The delay a quote artifact DECLARES for itself, in minutes (0 when silent).
+
+    ``build_live_quotes`` stamps ``meta.delayed_min`` from config.yml's
+    ``live.delayed_min`` because the feed underneath is contractually delayed:
+    Yahoo's ``regularMarketTime`` — the field that becomes each quote's ``ts`` —
+    is the timestamp of a price we are only allowed to see ~15 minutes late.
+    Measured 2026-07-30T03:46Z against symbols that were ACTIVELY TRADING at the
+    time: 0700.HK 15.0m, 0005.HK 15.1m, 1299.HK 15.0m, 9988.HK 15.1m behind wall
+    clock, futures ~10m, and BTC-USD/EURUSD=X real-time at 0.6-0.9m.
+
+    That number is a property of the DATA PLAN, not of our lane's health, and the
+    two must not be conflated: a quote's age is (how long since we looked) PLUS
+    (how far behind real-time the tape is), and a freshness budget written to
+    bound the first is unsatisfiable when the second alone exceeds it.
+
+    REPORTED, NEVER APPLIED HERE. This module's own live gate deliberately keeps
+    measuring absolute market time against its own ceiling — nothing about this
+    helper loosens it. A consumer whose budget means observation lag adds this to
+    its ceiling; a consumer that means market time ignores it. Which one a caller
+    is, is the caller's business.
+
+    Silent artifacts (the heatmap's pct-only tiles, every test fixture) return
+    0.0, so a caller's ceiling is unchanged unless a feed actually declares a lag.
+    """
+    try:
+        meta = (obj or {}).get("meta")
+        if not isinstance(meta, dict):
+            return 0.0
+        return max(0.0, float(meta.get("delayed_min") or 0))
+    except Exception:  # noqa: BLE001
+        return 0.0
+
+
 def _artifact_ms(obj: dict | None) -> float | None:
     """Epoch-ms of an artifact's `asof`, or None when absent/unparseable."""
     raw = str((obj or {}).get("asof") or "").strip()
@@ -234,9 +268,16 @@ def load_live_quotes(root: Path | str | None = None) -> dict[str, Any]:
     """Load the freshest available quote view.
 
     Returns {"quotes": {ticker: {price, prev_close, change_pct, ts_ms, source}},
-             "asof": iso-str | None, "source": str}.
+             "asof": iso-str | None, "source": str, "feed_delay_min": float}.
     Per ticker the FRESHEST quote wins (see _merge_quotes); among equally-timed
     or untimed ones the old precedence holds: full snapshot > display > heatmap.
+
+    ``feed_delay_min`` is the LARGEST delay any merged artifact declares for
+    itself (0.0 when none does) — see :func:`_feed_delay_min`. It is reported,
+    never applied here: a consumer decides whether its own freshness budget is
+    measuring observation lag (and so must allow for the feed's delay) or
+    absolute market time (and so must not).
+
     Never raises; empty quotes dict when nothing is readable.
     """
     r = Path(root) if root is not None else Path(".")
@@ -244,6 +285,7 @@ def load_live_quotes(root: Path | str | None = None) -> dict[str, Any]:
     asof: str | None = None
     asof_ms: float | None = None
     src_used: list[str] = []
+    feed_delay = 0.0
 
     heat = _read_json(r / _HEATMAP_REL)
     if heat:
@@ -251,6 +293,7 @@ def load_live_quotes(root: Path | str | None = None) -> dict[str, Any]:
         if hq:
             _merge_quotes(quotes, hq, _artifact_ms(heat))
             src_used.append("heatmap")
+            feed_delay = max(feed_delay, _feed_delay_min(heat))
 
     for rel, label in ((_DISPLAY_REL, "display"), (_SNAPSHOT_REL, "snapshot")):
         obj = _read_json(r / rel)
@@ -260,6 +303,7 @@ def load_live_quotes(root: Path | str | None = None) -> dict[str, Any]:
                 obj_ms = _artifact_ms(obj)
                 _merge_quotes(quotes, q, obj_ms)
                 src_used.append(label)
+                feed_delay = max(feed_delay, _feed_delay_min(obj))
                 # The reported `asof` is the NEWEST artifact seen, not the last
                 # one read: it is the fallback age for every quote with no ts_ms
                 # of its own, so taking a stale artifact's asof here would age
@@ -269,7 +313,8 @@ def load_live_quotes(root: Path | str | None = None) -> dict[str, Any]:
                 elif asof is None:
                     asof = obj.get("asof") or asof
 
-    return {"quotes": quotes, "asof": asof, "source": "+".join(src_used) or "none"}
+    return {"quotes": quotes, "asof": asof, "source": "+".join(src_used) or "none",
+            "feed_delay_min": feed_delay}
 
 
 def _quote_age_min(quote: dict, asof: str | None, now: datetime) -> float | None:

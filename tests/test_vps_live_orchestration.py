@@ -877,10 +877,22 @@ def test_status_is_external_and_lane_scoped(tmp_path: Path):
 
 def test_cutover_guards_keep_manual_recovery():
     root = Path(__file__).resolve().parents[1]
-    for name in ("intraday-fastpath.yml", "intraday.yml", "live-quotes.yml", "btc-live.yml"):
+    # live-quotes.yml is NOT in this list (2026-07-30). It is the only writer of
+    # the `live-data` branch, and that branch feeds three consumers the VPS does
+    # not serve: the browser's fallback, marketing-publish's tape gate, and the
+    # Hot Tape radar. Gating it on the cutover variable is what froze the branch on
+    # 2026-07-27 and starved the radar on 2026-07-29, so the gate is gone and the
+    # job always runs — which preserves manual recovery trivially rather than
+    # conditionally. The cadence invariant that replaces this assertion lives in
+    # test_marketing_forward_booking.test_live_quotes_outpaces_its_tightest_consumer.
+    for name in ("intraday-fastpath.yml", "intraday.yml", "btc-live.yml"):
         text = (root / ".github" / "workflows" / name).read_text()
         assert "vars.VPS_LIVE_PRIMARY != 'true'" in text
         assert "github.event_name == 'workflow_dispatch'" in text
+    live_quotes = (root / ".github" / "workflows" / "live-quotes.yml").read_text()
+    assert "vars.VPS_LIVE_PRIMARY" not in live_quotes, (
+        "live-quotes must stay ungated — it is the sole writer of `live-data`, and "
+        "every time it has been gated the tape gate and the radar went dark")
     external = (root / ".github" / "workflows" / "vps-live-heartbeat.yml").read_text()
     assert "runs-on: ubuntu-latest" in external
     assert "vars.VPS_LIVE_PRIMARY == 'true'" in external
