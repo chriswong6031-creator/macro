@@ -35,6 +35,23 @@ with an as-of date ``≤ D``. summary rows are selected by the latest index date
 chain days are the trading days whose ``asof ≤ D``; skew/ivspread rows are selected by the
 latest ``date`` column value ``≤ D``; opex uses only the calendar date D. No lookahead.
 
+SESSION DISCIPLINE (hard rule, tested — the #3721 weekend-row class): both PINNED
+positioning stores accrue NON-SESSION entries, because the collector runs once per
+CALENDAR day and a weekend/holiday run re-fetches the prior session's reading. Measured
+2026-07-30: 11 of the 40 ``chains/{date}.parquet`` files are non-sessions, and 3,281 of
+12,472 rows across the 403 ``summary_*.parquet`` files (26.3%). A non-session entry is not
+a harmless duplicate — the builder recomputes IV, spot, walls and net-GEX off a stale
+carried-forward price, so the row is a fabricated observation — and EVERY chain/summary
+reader below slices its input POSITIONALLY (``usable[-1]``, ``usable[-2]``, ``usable[-6:]``,
+``iloc[-1]``, ``iloc[-6]``), where a fabricated entry silently redefines what "yesterday"
+and "5 sessions ago" mean.
+
+The filter therefore lives in the two READERS, not in the seven consumers:
+``_default_chain_dates`` (via ``lib.nyse_calendar.session_dates``) and
+``_default_read_summary`` (via ``lib.nyse_calendar.session_rows``). One choke point each,
+so every positional consumer inherits it. See each function's docstring for the measured
+corruption it removes.
+
 The ledger's ``as_of`` column is a STRING (``YYYY-MM-DD``); store dates are datetimes.
 All comparisons are done on ``date`` objects to avoid tz / ms-precision traps.
 
@@ -54,6 +71,7 @@ import numpy as np
 import pandas as pd
 
 from lib import config
+from lib.nyse_calendar import session_dates, session_rows
 
 # ── nullable stamp schema (ruling A6/A9; W-C additions 2026-07-05; W-OVC 2026-07-17) ─
 # Order is the canonical column order for the ledger schema-union.
@@ -132,24 +150,79 @@ def _as_date(x) -> _dt.date | None:
 
 # ── injectable readers (default = disk; tests pass fakes) ────────────────────
 def _default_read_summary(ticker: str) -> pd.DataFrame | None:
+    """The per-name GEX summary frame, SESSION-FILTERED (see module header).
+
+    ``summary_*.parquet`` carries one row per CALENDAR day, so weekend/holiday rows are
+    present: measured 2026-07-30, 3,281 of 12,472 rows across the 403 files are
+    non-sessions (26.3%). Those rows are fabricated observations — the builder recomputes
+    iv30/spot/walls/net-GEX off a stale carried-forward price — and four readers slice this
+    frame positionally, so leaving them in corrupts each one:
+
+      * ``_summary_stamp`` / ``_spot_from_summary`` — ``iloc[-1]``; the "latest" reading
+        becomes a Saturday whenever the store has no row for the fire's own session.
+      * ``_vanna_hedge_5d_from_summary`` — ``iloc[-6]``, which stops meaning "5 sessions
+        ago". Measured on the store at as_of 2026-07-21, the raw ``iloc[-6]`` resolved to
+        2026-07-14 where the true 5-sessions-back row is 2026-07-10, and the resulting
+        vanna_hedge_5d changed for 10 of 10 sampled names WITH SIGN FLIPS (META
+        +5.51e6 → −2.54e7, IWM +3.28e6 → −1.68e6). ``opt_vanna_relief`` gates on a
+        cross-sectional tercile of that value, so a sign flip moves names across the gate.
+      * ``scripts/stamp_options_state._get_iv30_5d_chg_from_summary`` — the same
+        ``iloc[-6]``; it reads through THIS function, so it inherits the fix.
+
+    ``session_rows`` is fail-open by contract: if filtering would empty the frame it
+    returns the input unchanged, so a calendar surprise degrades to the old behaviour
+    rather than to a blank stamp."""
     p = _summary_dir() / f"summary_{ticker}.parquet"
     if not p.exists():
         return None
     try:
-        return pd.read_parquet(p)
+        return session_rows(pd.read_parquet(p), label=f"polygon_gex/summary_{ticker}")
     except Exception:  # noqa: BLE001 — a corrupt per-name store must not break the whole pass
         return None
 
 
 def _default_chain_dates() -> list[_dt.date]:
-    """Sorted list of available chain snapshot dates (from the filenames)."""
+    """Sorted list of available chain snapshot SESSION dates (from the filenames).
+
+    SESSION-FILTERED (see module header) — mirrors the #4018 repair of
+    ``scripts/build_flow_leaders._load_two_chain_days``. The collector writes one file per
+    CALENDAR day and a weekend/holiday run re-fetches the prior session's reading, so the
+    raw glob returns non-session snapshots: measured 2026-07-30, 11 of the 40 files on disk
+    are non-sessions (Saturdays, Sundays, and Juneteenth 2026-06-19).
+
+    All three consumers slice this list positionally, so an unfiltered list corrupts each:
+
+      * ``_voi_flag_stamp`` — ``usable[-1]`` vs ``usable[-2]``, the exact shape #4018
+        repaired. On a weekend as_of those two files are ONE vintage (2026-07-25 and
+        2026-07-26 are byte-identical: 163,564 rows, 117,303,840 total OI), so "today's
+        volume > yesterday's OI" compares a snapshot against a copy of itself.
+      * ``_doi_slope_stamp`` — OLS slope over ``usable[-6:]``. Measured on the store at
+        as_of 2026-07-30 the raw window 07-25..07-30 spans only FOUR distinct sessions,
+        because the 07-25 / 07-26 / 07-27 files all carry the 2026-07-24 reading — half
+        the fit is duplicated points and the normalised slope is biased toward zero. The
+        filtered window is 07-23, 07-24, 07-27, 07-28, 07-29, 07-30: six distinct
+        sessions. Sampled across 10 liquid names the slope changed on 10/10 for every
+        as_of tested, including sign flips (TSLA at 07-30: +0.0547 → −0.0550).
+      * ``_ovc_from_chain`` — ``usable[-1]`` greeks against ``usable[-2]`` OI, the same
+        shape as the voi flag.
+
+    The filename is a RUN stamp, not the OI vintage (file *D* carries session *D−1*'s
+    snapshot, since the collector runs pre-open). Session-filtering nonetheless yields one
+    file per session with no duplicates — verified on the store at 2026-07-30: the raw
+    store has 4 adjacent byte-identical file pairs, the filtered store has 0. Weekend
+    files are not lost information: each carries the same vintage as the Monday file that
+    follows it.
+
+    Filtering HERE rather than in each reader is deliberate — one choke point, so every
+    positional consumer inherits the fix. Tests that inject an explicit ``chain_dates``
+    list are exercising the positional arithmetic itself and are unaffected."""
     out: list[_dt.date] = []
     for f in glob.glob(str(_chains_dir() / "*.parquet")):
         stem = Path(f).stem
         d = _as_date(stem)
         if d is not None:
             out.append(d)
-    return sorted(out)
+    return sorted(session_dates(out))
 
 
 def _default_read_chain(d: _dt.date) -> pd.DataFrame | None:
