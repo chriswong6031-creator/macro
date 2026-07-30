@@ -38,7 +38,7 @@ if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
 from lib import config  # noqa: E402
-from lib.pages import write_page  # noqa: E402
+from lib.pages import rendered_ticker_pages, write_page  # noqa: E402
 from lib.seo import SITE_BASE as _SITE_BASE  # noqa: E402
 
 log = logging.getLogger(__name__)
@@ -2572,9 +2572,22 @@ def _build_peers(
     factors_map: dict, baskets_map: dict,
     factors_blob: dict | None,
     self_cap_hint: float | None = None,
+    linkable: frozenset[str] | None = None,
 ) -> list | None:
     """Build peers from same-sector tickers in the factors.json table
     (has name/sector/mktcap_bn). Sort by log-cap proximity.
+
+    `linkable` is the set of tickers that actually ship a page (see
+    lib.pages.rendered_ticker_pages). factors.json is a WIDER universe than the
+    rendered one — it carries delisted, renamed and below-the-cut symbols — so a
+    peer drawn from it may have no page at all: 35 such symbols were linked from
+    197 peer cards before this filter existed. Such a peer keeps its card (it is
+    a real same-sector name with a real market cap, and dropping it would leave
+    a hole in the six-card grid) but gets `href=None`, which the template renders
+    as a flat, non-clickable card instead of a link to a 404.
+
+    None means "universe unknown, link everything" — the pre-filter behaviour,
+    for callers that build a context without a site tree to consult.
     """
     if not sector or not factors_map:
         return None
@@ -2624,7 +2637,8 @@ def _build_peers(
         rows.append({
             "ticker": t,
             "name": name,
-            "href": f"/stocks/{t}.html",
+            "href": (f"/stocks/{t}.html"
+                     if linkable is None or t in linkable else None),
             "mktcap": cap_str,
         })
     return rows or None
@@ -2917,8 +2931,14 @@ def build_page_context(
     group: str = "sp500",
     all_groups: set[str] | None = None,
     dow30_set: set[str] | None = None,
+    linkable_tickers: frozenset[str] | None = None,
 ) -> dict:
-    """Build the full v2 context dict for one ticker. Pure — no I/O."""
+    """Build the full v2 context dict for one ticker. Pure — no I/O.
+
+    `linkable_tickers`: tickers that ship a stocks/<T>.html page, passed in
+    rather than read here so this stays pure. None = link every peer (the
+    pre-filter behaviour). See _build_peers.
+    """
     blob = per.get("blob")
     ohlc_bars = per.get("ohlc_bars") or []
     is_candle = per.get("ohlc_is_candle", False)
@@ -3003,6 +3023,7 @@ def build_page_context(
         agg.get("factors_map") or {}, baskets_map,
         (blob or {}).get("factors"),
         self_cap_hint=profile.get("mktcap_bn"),
+        linkable=linkable_tickers,
     )
     themes_raw = _build_themes(blob, member_ctx_list, baskets_map)
     signal_history = _build_signal_history(blob)
@@ -3204,6 +3225,14 @@ def run(
             if f.stem != "index":
                 stockdata_tickers.add(f.stem)
 
+    # Peer cards may only link tickers that actually ship a page. Snapshotted
+    # HERE, before the loop writes its first page, so a peer's linkability does
+    # not depend on where in the alphabet the loop happens to be. site/stocks/
+    # is never pruned, so this pre-run set is a subset of what ships afterwards:
+    # sound (never links a 404), one night behind for a brand-new ticker.
+    linkable_tickers = rendered_ticker_pages(site)
+    log.info("Peer links restricted to %d shipped ticker page(s)", len(linkable_tickers))
+
     n_rendered = 0
     n_skipped = 0
     n_noindexed = 0
@@ -3280,6 +3309,7 @@ def run(
             ctx = build_page_context(
                 ticker, name, sector, per, agg, generated_utc,
                 group=group, all_groups=_all_groups, dow30_set=dow30_set,
+                linkable_tickers=linkable_tickers,
             )
 
             # ── Share card (og:image) ─────────────────────────────────────

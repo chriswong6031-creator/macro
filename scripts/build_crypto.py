@@ -24,7 +24,7 @@ from engine.crypto_universe import breadth_read, load_universe  # noqa: E402
 from engine.event_calendar import us_macro_events  # noqa: E402
 from lib import config, store  # noqa: E402
 from lib.illus import illus, regime_tape  # noqa: E402
-from lib.pages import write_page  # noqa: E402
+from lib.pages import rendered_ticker_pages, write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_crypto")
@@ -285,7 +285,15 @@ def _asset_lanes(e0: dict) -> list[dict]:
     ]
 
 
-def _equities() -> list[dict]:
+def _equities(linkable: frozenset[str] | None = None) -> list[dict]:
+    """Crypto-rails equities shelf.
+
+    Members come from data/baskets/membership.json, which names symbols we do
+    not necessarily render a dossier for (IBIT and MSTR were both linked to
+    404s). `linkable` is the set of tickers that ship a page; a member without
+    one keeps its tile and its quote but loses the anchor. None = link
+    everything, the pre-filter behaviour.
+    """
     try:
         membership = json.loads(
             (config.data_dir() / "baskets" / "membership.json").read_text(encoding="utf-8")
@@ -314,7 +322,8 @@ def _equities() -> list[dict]:
                 "state": state,
                 "state_zh": _state_zh(state),
                 "tone": "bull" if state == "Firm" else ("bear" if state == "Fading" else "neutral"),
-                "href": f"stocks/{ticker}.html",
+                "href": (f"stocks/{ticker}.html"
+                         if linkable is None or ticker in linkable else None),
             }
         )
     return out
@@ -418,7 +427,7 @@ def build(site_dir: Path | None = None) -> Path:
         "allocation": allocation,
         "e0": e0,
         "lanes": _asset_lanes(e0),
-        "equities": _equities(),
+        "equities": _equities(rendered_ticker_pages(site)),
         "calendar": _calendar(market["as_of"]),
         "fmt_money": _money,
         "fmt_pct": _pct,
