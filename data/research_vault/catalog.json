@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-30T00:54:22.116061+00:00",
-  "count": 355,
+  "generated_at": "2026-07-30T01:17:59.725999+00:00",
+  "count": 356,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -2060,6 +2060,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ymwkwp0abg7-82acea",
+      "title": "Brixmor Property Group (BRX) 2Q26 First Take Vacancy up in 2Q as indicated, FFO guide up to consensus, '27 tailwinds from S...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T01:36:11Z",
+      "summary_points": [
+        "**FFO Guidance & Occupancy Dip**: 2Q26 FFO $0.58 (inline), raised FY26 FFO guidance to $2.35–$2.37 (midpoint $2.36); billed occupancy fell 100bps q/q to 90.4%, signaling near-term 2H26 slowdown despite upgraded SS NOI growth guidance (5.00%–5.75%).",
+        "**Leasing Spreads & Pipeline Strength**: TTM total cash lease spreads at +15.7% (new leases +34.4%); SNO pipeline dollar contribution surged to $71.1mn with spread expansion to 440bps, validating robust pricing power and future cash flow growth.",
+        "**Spread Sustainability Risk**: Quarterly leasing spreads (Q2 +13.6%) lagged TTM (+15.7%) due to lower-spread leases, raising concerns about sustaining 30%–40% renewal spreads amid potential volatility.",
+        "**Valuation Premium & Target Momentum**: Current price ($28.71) vs.",
+        "$35.00 12-month target (8.2% upside); Goldman Sachs’ target price trended upward from $27.00 (Aug 2023) to $35.00 (Mar 2026), indicating strong growth expectations."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
