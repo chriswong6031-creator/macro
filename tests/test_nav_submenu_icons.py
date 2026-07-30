@@ -34,6 +34,8 @@ EXPECTED_ICON_FAMILIES = {
     "strategy",
     "structure",
 }
+EXPECTED_EMITTED_ICON_FAMILIES = EXPECTED_ICON_FAMILIES - {"allocation", "bitcoin"}
+EXPECTED_EMITTED_ICON_COUNT = 61
 LEGACY_SUBMENU_MARKS = (
     "📊", "📈", "📶", "🧠", "🧺", "🌀", "💫", "🎛", "📰", "🚨",
     "🧲", "🌊", "🏆", "🌑", "🏗", "📡", "🔥", "🔬", "🛰", "🏛",
@@ -75,8 +77,8 @@ def test_requested_submenus_use_complete_semantic_icon_set() -> None:
         )
     }
 
-    assert families == EXPECTED_ICON_FAMILIES
-    assert menu.count('class="submenu-icon ') == 65
+    assert families == EXPECTED_EMITTED_ICON_FAMILIES
+    assert menu.count('class="submenu-icon ') == EXPECTED_EMITTED_ICON_COUNT
     assert not any(mark in menu for mark in LEGACY_SUBMENU_MARKS)
 
 
@@ -131,8 +133,8 @@ def test_jinja_nav_partial_preserves_submenu_icon_markup_on_rerender() -> None:
     # Crypto is intentionally composed inside the exact Other Assets mega-menu
     # at runtime, so the fresh template no longer emits a duplicate top-level
     # Crypto dropdown or its four legacy mask icons.
-    assert families == EXPECTED_ICON_FAMILIES - {"allocation", "bitcoin"}
-    assert menu.count('class="submenu-icon ') == 61
+    assert families == EXPECTED_EMITTED_ICON_FAMILIES
+    assert menu.count('class="submenu-icon ') == EXPECTED_EMITTED_ICON_COUNT
     assert not any(mark in menu for mark in LEGACY_SUBMENU_MARKS)
 
 
