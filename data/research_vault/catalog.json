@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-30T07:25:56.525761+00:00",
-  "count": 373,
+  "generated_at": "2026-07-30T07:40:01.474593+00:00",
+  "count": 374,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -71,6 +71,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-e5hbvs35itp-93eb51",
+      "title": "Lithia Motors Inc",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T06:26:58Z",
+      "summary_points": [
+        "**EPS Beat Driven by SG&A & Financing Gains**: Q2 EPS ($10.03) beat consensus ($8.73) via $36.5m financing gain (vs.",
+        "$23.7m est.) and improved SG&A, with used retail GPU up 20% sequentially.",
+        "**Used Vehicle GPU Surges 20%**: Same-store used retail GPU rose to $2,019 (vs.",
+        "$1,700 est.), exceeding expectations and driving total vehicle GPU growth.",
+        "**Valuation Gap & Overvaluation**: Current price ($358.31) exceeds 12m target ($320.00) by 10.7%, signaling potential overvaluation despite growth trajectory."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
       "language": "en",
       "needs_metadata": false
     },

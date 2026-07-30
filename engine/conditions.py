@@ -34,12 +34,15 @@ from __future__ import annotations
 
 import functools
 import json
+import logging
 
 import numpy as np
 import pandas as pd
 
 from engine.indicators import pct_rank_window
 from lib import config, store
+
+log = logging.getLogger("conditions")
 
 
 # --- drawdown-risk band table: the PIT-frame RE-ISSUED numbers (audit #39) -----
@@ -335,11 +338,27 @@ def conditions_frame(f: pd.DataFrame) -> pd.DataFrame:
     dcfg = cfg["drawdown_risk"]
     src = {"recession_risk": out.get("recession_risk"), "nfci": nfci,
            "ebp": _col(f, "ebp"), "hy_oas": _col(f, "hy_oas")}
-    zlegs = [_z(s, dcfg["z_lookback_d"]) for k, s in src.items()
-             if k in dcfg["components"] and s is not None]
+    _dd_keys = [k for k in src if k in dcfg["components"] and src[k] is not None]
+    zlegs = [_z(src[k], dcfg["z_lookback_d"]) for k in _dd_keys]
     if len(zlegs) >= 2:
-        comp = pd.concat(zlegs, axis=1).mean(axis=1)
+        _zf = pd.concat(zlegs, axis=1)
+        comp = _zf.mean(axis=1)
         out["drawdown_risk"] = (comp.expanding(min_periods=252).rank(pct=True) * 100)
+        # PER-ROW COMPOSITION (audit 2026-07-29). The row-mean silently skips whichever z-legs
+        # are NaN that day, so when the NFCI print ages out of inputs.py's ffill_limit the gauge
+        # keeps printing off 3 legs while the payload still claims the validated 4-leg basis
+        # ("recession_risk, NFCI, EBP, HY OAS") AND ships a stat_passport of {basis: measured,
+        # n_base: 8718} measured on that 4-leg composition. Counting the resolved legs per row is
+        # what lets conditions_snapshot degrade the CLAIM instead of the number.
+        out["drawdown_risk_nlegs"] = _zf.notna().sum(axis=1).astype(float)
+        for k, zl in zip(_dd_keys, zlegs):
+            # SOURCE presence drives the CLAIM (is there a current print for this input?) —
+            # that is the condition the payload's basis string asserts.
+            out[f"drawdown_risk_src_{k}"] = src[k].notna().astype(float)
+            # z-leg presence drives the ARITHMETIC (did this leg enter the row mean?). The two
+            # differ when an input is present but degenerate (zero variance -> undefined z), so
+            # both are reported rather than conflated.
+            out[f"drawdown_risk_leg_{k}"] = zl.notna().astype(float)
 
     # Capitulation gauge (contrarian bounce, 0..3 signals) --------------------
     # MEASURED: VRP %ile>0.90 -> +5.8%/63d 88% pos; VIX>30 -> +7.2%; COT washout
@@ -401,6 +420,72 @@ def _band(v: float | None, lo: float, hi: float, names: tuple[str, str, str]) ->
     if v is None:
         return None
     return names[0] if v < lo else (names[2] if v >= hi else names[1])
+
+
+# Per-input VINTAGE reporting (audit 2026-07-29). The frame ffills slow macro series onto trading
+# days (engine/inputs.py `put(..., ffill_limit=N)`), so every column carries the frame's own
+# calendar date and NOTHING downstream could tell a fresh print from a 12-day-old one carried
+# forward — the NFCI hole that silently narrowed the drawdown composite was invisible for exactly
+# this reason. `vintages` reports the LAST DATE EACH INPUT ACTUALLY PRINTED, so a surface (and
+# market_state's freshness stamp) can stop self-certifying off the price calendar.
+# (key in payload, frame column, plain label, max age in CALENDAR days before genuinely late)
+# The ages are DISCLOSURE thresholds, never signal gates — each is the longest a HEALTHY feed can
+# legitimately go between prints, so `stale: true` means "later than this publisher ever is", not
+# "older than we would like". NFCI/ANFCI/STLFSI are weekly with a Friday observation date
+# published the FOLLOWING Wednesday, so a healthy print is routinely 11-12 days old by the Tuesday
+# before the next release — 14 leaves one day of headroom without hiding a real miss. EBP is
+# monthly with roughly a month of publication lag (an observation dated the 1st routinely arrives
+# ~8 weeks later), hence 70.
+_VINTAGE_INPUTS = (
+    ("nfci", "nfci", "NFCI (financial conditions)", 14),
+    ("anfci", "anfci", "ANFCI (adjusted)", 14),
+    ("stlfsi", "stlfsi", "St. Louis Fed stress index", 14),
+    ("hy_oas", "hy_oas", "High-yield OAS", 5),
+    ("ebp", "ebp", "Excess bond premium", 70),
+    ("ofr_fsi", "ofr_fsi", "OFR financial stress index", 6),
+    ("vix", "vix", "VIX", 5),
+    ("vix_term", "vix_ratio", "VIX term structure", 5),
+    ("pct_above_200", "pct_above_200", "Breadth (%>200dma)", 5),
+    ("us10y", "us10y", "10-year Treasury yield", 5),
+    ("recession_risk", None, "Recession-risk composite", 7),
+)
+
+
+def _input_vintages(f: pd.DataFrame, fr: pd.DataFrame) -> dict:
+    """{key: {asof, age_days, stale, label, cadence_days}} — the last date each macro input
+    ACTUALLY printed, measured against the frame's own last session (never the wall clock).
+    `stale` = the print is older than its expected cadence. Never raises."""
+    out: dict = {}
+    try:
+        ref = pd.Timestamp(f.index.max())
+        for key, col, label, cadence in _VINTAGE_INPUTS:
+            s = None
+            if col is not None and col in f.columns:
+                s = f[col]
+            elif key in fr.columns:
+                s = fr[key]
+            elif col is None and key in fr.columns:
+                s = fr[key]
+            if s is None:
+                out[key] = {"asof": None, "age_days": None, "stale": None,
+                            "label": label, "cadence_days": cadence}
+                continue
+            sd = s.dropna()
+            if sd.empty:
+                out[key] = {"asof": None, "age_days": None, "stale": None,
+                            "label": label, "cadence_days": cadence}
+                continue
+            # the ffilled frame repeats the last print, so the VINTAGE is the last date the
+            # value CHANGED-or-began, not the last non-NaN row. Collapse repeats first.
+            distinct = sd[sd.ne(sd.shift())]
+            last = pd.Timestamp(distinct.index.max())
+            age = int((ref - last).days)
+            out[key] = {"asof": str(last.date()), "age_days": age,
+                        "stale": bool(age > cadence), "label": label,
+                        "cadence_days": cadence}
+    except Exception as e:  # noqa: BLE001 — disclosure block, never fatal
+        log.warning("conditions input-vintage read failed: %s", e)
+    return out
 
 
 def conditions_snapshot(f: pd.DataFrame) -> dict:
@@ -623,30 +708,87 @@ def conditions_snapshot(f: pd.DataFrame) -> dict:
                ("extreme" if dr >= dcfg["extreme"] else
                 ("high" if dr >= dcfg["high"] else
                  ("elevated" if dr >= dcfg["elevated"] else "low"))))
+    # COMPOSITION HONESTY (audit 2026-07-29). The composite row-means over whichever z-legs
+    # resolve, so a missing input silently narrows the gauge while the payload kept claiming the
+    # validated 4-leg basis and shipping a {basis: measured, n_base: ...} passport measured on
+    # THAT composition. Today conditions.financial_conditions is entirely None (the 2026-07-17
+    # NFCI print aged past inputs.py's ffill_limit=7) so the gauge runs on 3 of 4 legs. When the
+    # live composition differs from the validated set the band-probability claim + the passport
+    # are marked PARTIAL and dd10_prob_pct is withheld: the measured table does not describe this
+    # composition, and a number measured on a different gauge is not a null — it is wrong.
+    _dd_expected = [k for k in ("recession_risk", "nfci", "ebp", "hy_oas")
+                    if k in dcfg["components"]]
+    # The CLAIM degrades on SOURCE presence — "is there a current print for this input?" is
+    # exactly what the basis string asserts, and exactly the NFCI condition that triggered this.
+    _dd_resolved = [k for k in _dd_expected if (g(f"drawdown_risk_src_{k}") or 0.0) >= 1.0]
+    _dd_missing = [k for k in _dd_expected if k not in _dd_resolved]
+    _dd_partial = bool(dr is not None and _dd_missing)
+    # Separately: which legs actually entered the row mean. These differ when an input is
+    # present but degenerate (zero variance -> undefined z-score); reported, never conflated
+    # with a missing print, and never used to withhold the band odds.
+    _dd_in_mean = [k for k in _dd_expected if (g(f"drawdown_risk_leg_{k}") or 0.0) >= 1.0]
+    _dd_undefined = [k for k in _dd_resolved if k not in _dd_in_mean]
+    _dd_basis_names = {"recession_risk": "recession risk", "nfci": "NFCI",
+                       "ebp": "EBP", "hy_oas": "HY OAS"}
     drawdown = {
         "score": dr,
         "band": dr_band,
-        # re-issued PIT-frame P(>=10% drawdown in 63d) per band (claims composition).
-        "dd10_prob_pct": (None if dr_band is None else _dbt[dr_band]),
+        # re-issued PIT-frame P(>=10% drawdown in 63d) per band (claims composition). WITHHELD
+        # when the live composition is not the composition the table was measured on.
+        "dd10_prob_pct": (None if (dr_band is None or _dd_partial) else _dbt[dr_band]),
         "base_rate_pct": _dbt["base"],
         # lead/lag honesty: slow macro/credit composite, lags price.
         "lead_lag": "lagging",
-        "basis": "macro/credit composite (recession_risk, NFCI, EBP, HY OAS)",
+        "basis": ("macro/credit composite ("
+                  + ", ".join(_dd_basis_names[k] for k in _dd_resolved) + ")"),
+        "basis_expected": [_dd_basis_names[k] for k in _dd_expected],
+        "basis_resolved": [_dd_basis_names[k] for k in _dd_resolved],
+        "basis_missing": [_dd_basis_names[k] for k in _dd_missing],
+        "n_legs": len(_dd_resolved),
+        "n_legs_expected": len(_dd_expected),
+        "n_legs_in_mean": len(_dd_in_mean),
+        # input present but its z-score is undefined (zero variance) — it contributes nothing
+        # to the composite even though the print exists
+        "legs_undefined": [_dd_basis_names[k] for k in _dd_undefined],
+        "partial": _dd_partial,
+        "degraded_note_en": (
+            ("Running on " + str(len(_dd_resolved)) + " of " + str(len(_dd_expected))
+             + " inputs — no current print for "
+             + " or ".join(_dd_basis_names[k] for k in _dd_missing)
+             + ". The measured per-band pullback odds were calibrated on the full set, so they "
+               "are withheld rather than restated for a narrower gauge.")
+            if _dd_partial else None),
+        "degraded_note_zh": (
+            ("当前仅有 " + str(len(_dd_expected)) + " 项输入中的 " + str(len(_dd_resolved))
+             + " 项——" + "、".join(_dd_basis_names[k] for k in _dd_missing)
+             + " 暂无最新数据。每档回撤概率是在完整输入下测得的，因此暂不显示，而非改用较窄的口径重述。")
+            if _dd_partial else None),
         # low band now sits BELOW base (mild info), so it is no longer a bare base-rate read.
         "is_base_rate": False,
-        "dd10_prob_informative": bool(dr_band is not None),
-        # passport: this band table is MEASURED on the PIT frame with the live composition.
+        "dd10_prob_informative": bool(dr_band is not None and not _dd_partial),
+        # passport: this band table is MEASURED on the PIT frame with the live composition —
+        # but only while the LIVE composition still matches it.
         "stat_passport": {
-            "basis": "measured", "frame": _dbt.get("frame", "pit"),
+            "basis": "partial" if _dd_partial else "measured",
+            "frame": _dbt.get("frame", "pit"),
             "labor_leg": _dbt.get("labor_leg", "claims"),
-            "n_base": _dbt.get("n_base"), "n_extreme": _dbt.get("n_extreme"),
+            "n_base": None if _dd_partial else _dbt.get("n_base"),
+            "n_extreme": None if _dd_partial else _dbt.get("n_extreme"),
             "span": _dbt.get("measure_span"),
+            "measured_on": [_dd_basis_names[k] for k in _dd_expected],
+            "live_composition": [_dd_basis_names[k] for k in _dd_resolved],
             "definition": "max peak-to-trough SPY decline over the next 63 trading days",
-            "note": ("Re-measured on the leak-free PIT ('release') frame with the jobless-claims "
-                     "labor leg; replaces the stale 8/26/36/38 (Sahm-era, revised-frame) table. "
-                     "Live gauge fires on 'latest'; its bands are within CI of PIT. "
-                     "Overlap-inflated N + episode-driven high/extreme bands — a risk read, not a "
-                     "crash oracle."),
+            "note": ((("PARTIAL: the band table was measured on "
+                       + ", ".join(_dd_basis_names[k] for k in _dd_expected)
+                       + " but the live gauge is currently running without "
+                       + ", ".join(_dd_basis_names[k] for k in _dd_missing)
+                       + " — N and the per-band odds are withheld because they do not describe "
+                         "this composition. ") if _dd_partial else "")
+                     + "Re-measured on the leak-free PIT ('release') frame with the "
+                       "jobless-claims labor leg; replaces the stale 8/26/36/38 (Sahm-era, "
+                       "revised-frame) table. Live gauge fires on 'latest'; its bands are within "
+                       "CI of PIT. Overlap-inflated N + episode-driven high/extreme bands — a "
+                       "risk read, not a crash oracle."),
         },
         "label": "Macro/credit drawdown pressure (lagging)",
         "label_zh": "宏观/信用回撤压力（滞后）",
@@ -713,6 +855,11 @@ def conditions_snapshot(f: pd.DataFrame) -> dict:
         "breadth_above200_pctile": b2p,
         "credit_widen": bool(credit_widen),
         "hy_oas_chg_21d_bp": None if hychg is None else round(hychg * 100, 0),
+        # UNROUNDED companion (audit 2026-07-29): the rounded value above turns a -0.4bp
+        # TIGHTENING into -0.0, and `-0.0 < 0` is False — so market_state's direction copy read
+        # "widening" on a session credit had actually tightened. Consumers take the direction
+        # from here and the DISPLAY from the rounded value above.
+        "hy_oas_chg_21d_bp_exact": None if hychg is None else round(hychg * 100, 3),
         # lead/lag honesty: breadth divergence (calm tape, thinning internals) is a
         # forward fragility tell — the leading member of this gauge.
         "lead_lag": "leading",
@@ -730,7 +877,14 @@ def conditions_snapshot(f: pd.DataFrame) -> dict:
                               "推动指数的个股减少）") if breadth_div else None,
     }
 
+    _vint = _input_vintages(f, fr)
     return {
+        # PER-INPUT VINTAGES (audit 2026-07-29) — the last date each macro input actually
+        # printed, measured against the frame's own last session. Consumed by
+        # market_state.persist's freshness stamp (which used to certify itself off the price
+        # calendar and so reported stale:false while NFCI was 12 days old).
+        "vintages": _vint,
+        "stale_inputs": sorted(k for k, v in _vint.items() if v.get("stale")),
         "financial_conditions": fin,
         "systemic_stress": systemic_stress,
         "recession": recession,
