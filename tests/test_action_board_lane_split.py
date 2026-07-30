@@ -215,14 +215,21 @@ def test_hk_template_missing_key_safe():
 
 
 def test_hk_static_legacy_grid_cannot_override_hidden():
-    """The checked-in page temporarily retains its pre-render legacy grid.
+    """Any checked-in pre-render legacy grid must remain explicitly hidden.
 
     `.act-grid { display:grid }` overrides the browser's default `[hidden]` rule,
     so the generated fallback needs an explicit author-level display override
-    until the next clean template render removes the old block entirely.
+    until a clean template render removes the old block entirely. Absence is the
+    intended terminal state and must not fail this transitional guard.
     """
     html = (ROOT / "site" / "hk_stocks.html").read_text(encoding="utf-8")
-    assert '<div class="act-grid" hidden aria-hidden="true" style="display:none !important">' in html
+    legacy_grids = re.findall(r'<div class="act-grid"[^>]*>', html)
+    assert all(
+        'hidden' in tag
+        and 'aria-hidden="true"' in tag
+        and 'style="display:none !important"' in tag
+        for tag in legacy_grids
+    )
 
 
 def test_no_translated_text_in_title_attributes():
