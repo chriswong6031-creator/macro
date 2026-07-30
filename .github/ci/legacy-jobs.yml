@@ -883,8 +883,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      # jinja2 (2026-07-30): the options-workspace suite's RUNTIME probe below imports
+      # scripts.build_options_command, whose module scope does `from jinja2 import
+      # Environment` — so pytest+pyyaml alone made that ONE test red while its 30
+      # siblings passed (ci-pack-1 on #3977). Verified minimal: pytest+pyyaml+jinja2
+      # runs the whole file green in a clean venv. NOT fixed with importorskip — that
+      # is the skip-only class check_skip_only_suites.py below exists to catch, and it
+      # would disarm the very guard the probe is.
       - name: install minimal deps
-        run: pip install pytest pyyaml
+        run: pip install pytest pyyaml jinja2
       - name: check_workflow_yaml selftest
         run: python scripts/check_workflow_yaml.py --selftest
       - name: "all workflow files must parse with on:/jobs: blocks"
@@ -936,8 +943,9 @@ jobs:
       # options-workspace suite appeared only in a render.yml YAML COMMENT, which is
       # enough to satisfy audit_unrun_tests.py's text matcher (tightened in the same
       # commit to read `run:` steps only, so a comment can no longer fake coverage).
-      # All five are stdlib + pytest + pyyaml + pandas; the express-lane suite also
-      # shells out to bash to execute render.yml's `region_of` for real.
+      # Deps: stdlib + pytest + pyyaml, plus jinja2 for the runtime probe (see the install
+      # step's note); the express-lane suite also shells out to bash to execute render.yml's
+      # `region_of` for real.
       - name: options express-lane coverage contract (workspace + screener must stay wired)
         run: python -m pytest tests/test_render_options_workspace_scope.py -q
       # #3721 weekend-row class. The options stores accrue non-session rows that RECOMPUTE
