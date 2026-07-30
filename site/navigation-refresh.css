@@ -1859,7 +1859,22 @@ html:not([data-theme="light"]) .ticker-search {
   .topbar .nav-dd:hover > .nav-dd-menu.mega-menu,
   .topbar .nav-dd:focus-within > .nav-dd-menu.mega-menu {
     display: grid;
+  }
+
+  /* Play the entrance once for the persistent JS-owned open state. Binding
+     this keyframe to raw :hover made it restart whenever the pointer crossed
+     the intentional trigger-to-panel air gap, producing a visible flash even
+     though nav-hover-open correctly kept the menu alive. */
+  .site-nav .nav-dd.nav-hover-open > .nav-dd-menu.mega-menu,
+  .topbar .nav-dd.nav-hover-open > .nav-dd-menu.mega-menu {
     animation: mockupMenuSwap .34s cubic-bezier(.2, .76, .2, 1) both;
+  }
+}
+
+@media (min-width: 901px) and (prefers-reduced-motion: reduce) {
+  .site-nav .nav-dd.nav-hover-open > .nav-dd-menu.mega-menu,
+  .topbar .nav-dd.nav-hover-open > .nav-dd-menu.mega-menu {
+    animation: none;
   }
 }
 
