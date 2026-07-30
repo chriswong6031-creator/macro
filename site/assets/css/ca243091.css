@@ -180,38 +180,6 @@ body.page-macro.mx4-grid .mx5-gauge-svg{
 [data-theme="light"] body.page-macro.mx4-grid .mx5-gauge-svg > text{fill:rgba(10,16,24,.42);}
 [data-theme="light"] body.page-macro.mx4-grid .mx5-gauge-svg path:first-of-type{stroke:rgba(10,16,24,.10);}
 [data-theme="light"] body.page-macro.mx4-grid .mx5-gauge-svg g[stroke]{stroke:rgba(10,16,24,.20);}
-/* Ghost mark = where the six-signal BLEND sits before the cap. A single quiet tick, no
-   glow and no second hue: the whole point is that this number was overridden, so it
-   must never compete with the needle. It sits inside the `g[stroke]` light-mode rule's
-   sibling space, hence its own explicit stroke in both themes. */
-body.page-macro.mx4-grid .mx5-gauge-ghost line{stroke:rgba(255,255,255,.40);}
-[data-theme="light"] body.page-macro.mx4-grid .mx5-gauge-ghost line{stroke:rgba(10,16,24,.34);}
-/* caption + its legend glyph (the same tick, inline, so the mark on the arc is
-   self-explaining without a legend box) */
-body.page-macro.mx4-grid .mx5-score-prov{
-  margin-top:5px;font-size:10.5px;line-height:1.45;
-  color:var(--ink-3,rgba(255,255,255,.36));
-}
-body.page-macro.mx4-grid .mx5-score-prov b{color:var(--text);font-variant-numeric:tabular-nums;}
-/* inline-block, never a flex child: as a flex item the legend tick wrapped onto its own
-   line above the sentence it belongs to */
-body.page-macro.mx4-grid .mx5-ghost-key{
-  display:inline-block;width:2px;height:10px;border-radius:1px;margin-right:5px;
-  background:rgba(255,255,255,.40);vertical-align:-1px;
-}
-[data-theme="light"] body.page-macro.mx4-grid .mx5-ghost-key{background:rgba(10,16,24,.34);}
-
-/* ── Chip receipts (chipn-*) — the three things the two chips above cannot say ──
-   Quiet by construction: same ink as the provenance caption, so the chips stay the
-   loud element and these read as the fine print under them. */
-body.page-macro.mx4-grid .mx5-chipn{
-  display:flex;flex-direction:column;gap:3px;margin-top:8px;
-  font-size:10.5px;line-height:1.45;color:var(--ink-3,rgba(255,255,255,.36));
-}
-body.page-macro.mx4-grid .mx5-chipn-row b{color:var(--text);font-variant-numeric:tabular-nums;}
-body.page-macro.mx4-grid .mx5-chipn-row.warn{color:var(--mx5-warn-ink,var(--warn));}
-body.page-macro.mx4-grid .mx5-chipn-row.warn b{color:var(--mx5-warn-ink,var(--warn));}
-
 /* Regime pill (Order 3: smaller + never clips — sizes to content, no fixed width) */
 body.page-macro.mx4-grid .mx5-regime-pill{
   display:inline-flex;align-items:center;gap:6px;
@@ -244,52 +212,6 @@ body.page-macro.mx4-grid .mx5-regime-pill.rp-red .mx5-dot{
 body.page-macro.mx4-grid .mx5-regime-pill .mx5-dot{
   width:6px;height:6px;border-radius:50%;
   background:var(--mx5-accent);box-shadow:0 0 6px var(--mx5-accent-glow);
-}
-
-/* ── Regime reality rows (rgx-*) — what the chip's label is actually worth ──────
-   Operator escalation 2026-07-29: a label with 0.04% model probability and its own
-   axes reading the other way was presentable as a calm green chip because every
-   qualifier lived behind the ⓘ hover. These rows put the qualifiers on the chip's own
-   line. Deliberately QUIET typography — a 10px uppercase key column against 11.5px
-   body — so the pill above stays the loudest thing in the cluster and the rows read as
-   its footnotes, not as four competing headlines. Amber (never red) is the only accent:
-   these rows report that a call is weakly held, which is a caution, not a verdict. */
-body.page-macro.mx4-grid .mx5-rgx{
-  display:flex;flex-direction:column;gap:3px;margin:-4px 0 10px;
-  padding-left:11px;border-left:2px solid var(--line);
-}
-body.page-macro.mx4-grid .mx5-rgx-row{
-  display:flex;align-items:baseline;gap:9px;font-size:11.5px;line-height:1.42;
-}
-body.page-macro.mx4-grid .mx5-rgx-k{
-  flex:none;width:88px;font-size:9.5px;font-weight:700;letter-spacing:.09em;
-  text-transform:uppercase;color:var(--ink-3,rgba(255,255,255,.36));
-  padding-top:1px;
-}
-body.page-macro.mx4-grid .mx5-rgx-v{flex:1;min-width:0;color:var(--text);}
-/* mono numerals for FIGURES only — the words around them stay in the body face */
-body.page-macro.mx4-grid .mx5-rgx-v b{font-variant-numeric:tabular-nums;font-weight:700;}
-body.page-macro.mx4-grid .mx5-rgx-v.warn{color:var(--mx5-warn-ink,var(--warn));}
-body.page-macro.mx4-grid .mx5-rgx-note{
-  margin-top:3px;font-size:10.5px;line-height:1.45;
-  color:var(--ink-3,rgba(255,255,255,.36));
-}
-/* Confirmation meter — N of M sessions as filled bars. Non-verbal by design: it needs
-   no vocabulary in either language, and it is the one place on this cluster where a
-   regime change in progress is visible without reading a sentence. */
-body.page-macro.mx4-grid .mx5-rgx-meter{
-  display:inline-flex;gap:2px;vertical-align:baseline;margin-right:7px;
-  position:relative;top:1px;
-}
-body.page-macro.mx4-grid .mx5-rgx-meter i{
-  width:5px;height:10px;border-radius:1.5px;display:inline-block;
-  background:color-mix(in srgb,var(--line) 80%,transparent);
-}
-body.page-macro.mx4-grid .mx5-rgx-meter i.on{background:var(--mx5-warn,#f59e0b);}
-@media(max-width:700px){
-  body.page-macro.mx4-grid .mx5-rgx{padding-left:9px;margin:-2px 0 10px;}
-  body.page-macro.mx4-grid .mx5-rgx-row{flex-direction:column;gap:0;}
-  body.page-macro.mx4-grid .mx5-rgx-k{width:auto;padding-top:2px;}
 }
 
 /* Score + verdict beside gauge */

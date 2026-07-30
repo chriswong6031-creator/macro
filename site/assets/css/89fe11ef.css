@@ -1941,30 +1941,11 @@
 .actcol:not(:has(.actbody.act-fold > a.actitem:nth-child(4))):not(:has(.actbody.act-fold > div:nth-child(4))):not(:has(.ab-trim-fold > a.actitem:nth-child(4))):not(:has(.ab-trim-fold > div:nth-child(4))) .lst-more.act-more { display: none; }
 .ab-trim-fold.is-collapsed > a.actitem:nth-child(n+4),
 .ab-trim-fold.is-collapsed > div:nth-child(n+4) { display: none; }
-/* Stand-aside keeps its stable id for Turn Watch, but uses the shared cap-3 fold. */
+/* Stand-aside keeps its stable id and uses the shared cap-3 fold. */
 .lst-collapse.lst-cap3.is-collapsed > a.actitem:nth-child(n+4),
 .lst-collapse.lst-cap3.is-collapsed > div:nth-child(n+4) { display: none; }
 /* Sector-setups table (unchanged) */
 #sectors table.act-fold.is-collapsed > tbody > tr:nth-child(n+8), #sectors table.act-fold.is-collapsed > tr:nth-child(n+8) { display:none; }
-
-  /* ── TS-U3: turn watch strip ────────────────────────────────────────────── */
-  .dash-tw-strip { background:color-mix(in srgb,var(--warn) 6%,var(--panel2)); border:1px solid color-mix(in srgb,var(--warn) 28%,var(--line)); border-radius:9px; padding:9px 13px 10px; margin:0 0 12px; display:none; }
-  .dash-tw-strip.visible { display:block; }
-  .dash-tw-hdr { display:flex; align-items:center; gap:8px; margin-bottom:7px; flex-wrap:wrap; }
-  .dash-tw-title { font-size:12px; font-weight:700; color:var(--warn); text-transform:uppercase; letter-spacing:.05em; }
-  .dash-tw-asof { font-size:10px; color:var(--muted); margin-left:auto; }
-  .dash-tw-sub { font-size:11.5px; color:var(--text); opacity:.8; margin:-3px 0 7px; }
-  .dash-tw-rows { display:flex; flex-direction:column; gap:5px; }
-  .dash-tw-row { display:flex; align-items:baseline; gap:7px; flex-wrap:wrap; font-size:12px; }
-  .dash-tw-badge { display:inline-flex; align-items:center; padding:1px 7px; border-radius:12px; font-size:10px; font-weight:800; letter-spacing:.04em; white-space:nowrap; }
-  .dash-tw-badge.ignition { background:color-mix(in srgb,var(--up) 15%,transparent); border:1px solid color-mix(in srgb,var(--up) 38%,transparent); color:var(--up); }
-  .dash-tw-badge.watch { background:color-mix(in srgb,var(--warn) 12%,transparent); border:1px solid color-mix(in srgb,var(--warn) 35%,transparent); color:var(--warn); }
-  .dash-tw-badge.member { background:color-mix(in srgb,var(--info) 12%,transparent); border:1px solid color-mix(in srgb,var(--info) 32%,transparent); color:var(--info,var(--link)); }
-  .dash-tw-name { font-weight:600; color:var(--text); }
-  .dash-tw-slow { font-size:11px; color:var(--muted); }
-
-  /* ── TS-U3: salience chip on hold/avoid rows ────────────────────────────── */
-  .dash-turn-chip { display:inline-flex; align-items:center; gap:3px; padding:1px 5px; border-radius:5px; font-size:9px; font-weight:800; letter-spacing:.04em; white-space:nowrap; background:color-mix(in srgb,var(--warn) 12%,transparent); border:1px solid color-mix(in srgb,var(--warn) 32%,transparent); color:var(--warn); margin-left:4px; }
 
   /* ── TS-U3: per-stock turn setups table ─────────────────────────────────── */
   .dash-mtf-section { margin-top:14px; }

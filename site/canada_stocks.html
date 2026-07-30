@@ -299,7 +299,7 @@
   <div class="row">
     <h1><span class="l-en">TSX Stock Dashboard</span><span class="l-zh">标普/TSX 个股看板</span></h1>
     <span style="flex:1"></span>
-    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-07-29 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-07-30 08:44 UTC</span>
+    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-07-29 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-07-30 10:52 UTC</span>
   </div>
   <p class="muted small" style="margin:6px 0 0"><span class="l-en">A shortlist of TSX stocks that look ready to buy, with a suggested buy zone for each. Search any TSX stock in the box above, or click a card for the full breakdown.</span><span class="l-zh">一份看起来可以买入的 TSX 个股短名单，并为每只标注建议买入区间。可在上方搜索框查询任意 TSX 个股，或点击卡片查看完整拆解。</span>
     <a href="canada.html" style="color:var(--link);font-weight:600">← <span class="l-en">Canada macro dashboard</span><span class="l-zh">加拿大宏观看板</span></a></p>
@@ -308,6 +308,10 @@
 
 
 <!-- ===== Act-Now v2 — four-lane board, matching china_stocks.html ===== -->
+
+
+
+
 <style>
 .anv2-board .anv2-name-link{color:inherit;text-decoration:none}
 .anv2-board .anv2-name-link:hover .l-en,.anv2-board .anv2-name-link:hover .l-zh{text-decoration:underline}
@@ -321,37 +325,181 @@
       <span class="anv2-v2pill">v2</span>
       <span class="help">?<span class="tip"><span class="l-en">Four lanes, read left to right: Buy Now = a clean TSX sector entry today. In Favour = hold or wait for a dip rather than chase. Bottoming Watch = a sector setting up near a cycle low (watch only, not a buy signal). Reduce / Avoid = take profits or stay away as the trend weakens. This is a structure and risk map, not an allocation rule.</span><span class="l-zh">四个分栏从左到右：立即买入＝今天有干净的TSX板块入场点。看好＝持有或等待回调，勿追高。洗盘观察＝板块接近周期低点并开始形成形态（仅观察，非买入信号）。减仓／回避＝趋势转弱时止盈或避开。这是结构与风险图，不是配置规则。</span></span></span>
     </h2>
-    <div class="anv2-meta"><span class="muted" style="font-size:11px"><span class="l-en">sectors as of</span><span class="l-zh">板块截至</span> 2026-07-29</span></div>
+    <div class="anv2-meta">
+      <span class="muted" style="font-size:11px"><span class="l-en">sectors as of</span><span class="l-zh">板块截至</span> 2026-07-29</span>
+    </div>
   </div>
-  <div class="anv2-grid">
-    <div class="anv2-lane anv2-lane--buy" id="anv2-buy">
-      <div class="anv2-lane-hd"><div class="anv2-lane-title"><span class="l-en">Buy Now</span><span class="l-zh">立即买入</span><span class="anv2-lane-count">(3)</span></div><div class="anv2-lane-sub"><span class="l-en">Clean entry point today</span><span class="l-zh">今日有干净入场点</span></div></div>
-      <div class="anv2-lane-body lst-wrap"><div class="anv2-lst lst-collapse lst-cap4 is-collapsed">
-        <div class="anv2-row"><div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/XST.TO.html"><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span><span class="anv2-go" aria-hidden="true">↗</span></a></div><div class="anv2-chips"><span class="anv2-chip anv2-chip-reco-enter"><span class="l-en">ENTRY NOW</span><span class="l-zh">现在入场</span></span></div><div class="anv2-stat">XST.TO</div></div>
-        <div class="anv2-row"><div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/XIT.TO.html"><span class="l-en">Information Technology</span><span class="l-zh">信息技术</span><span class="anv2-go" aria-hidden="true">↗</span></a></div><div class="anv2-chips"><span class="anv2-chip anv2-chip-reco-enter"><span class="l-en">ENTRY NOW</span><span class="l-zh">现在入场</span></span></div><div class="anv2-stat">XIT.TO</div></div>
-        <div class="anv2-row"><div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/XCG.TO.html"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span><span class="anv2-go" aria-hidden="true">↗</span></a></div><div class="anv2-chips"><span class="anv2-chip anv2-chip-reco-enter"><span class="l-en">ENTRY NOW</span><span class="l-zh">现在入场</span></span></div><div class="anv2-stat">XCG.TO</div></div>
-      </div></div>
+  <div class="anv2-grid"><div class="anv2-lane anv2-lane--buy" id="anv2-buy">
+      <div class="anv2-lane-hd">
+        <div class="anv2-lane-title"><span class="l-en">Buy Now</span><span class="l-zh">立即买入</span><span class="anv2-lane-count">(3)</span></div>
+        <div class="anv2-lane-sub"><span class="l-en">Clean entry point today</span><span class="l-zh">今日有干净入场点</span></div>
+      </div>
+      <div class="anv2-lane-body lst-wrap">
+        <div class="anv2-lst lst-collapse lst-cap4 is-collapsed">
+          <div class="anv2-row">
+      <div class="anv2-row-top">
+        <a class="anv2-name anv2-name-link" href="sectors/XST.TO.html"><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span><span class="anv2-go" aria-hidden="true">↗</span></a>
+      </div>
+      <div class="anv2-chips">
+        
+        <span class="anv2-chip anv2-chip-reco-enter"><span class="l-en">ENTRY NOW</span><span class="l-zh">现在入场</span></span>
+        
+      </div>
+      <div class="anv2-stat"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span> · XST.TO</div>
+    </div><div class="anv2-row">
+      <div class="anv2-row-top">
+        <a class="anv2-name anv2-name-link" href="sectors/XIT.TO.html"><span class="l-en">Information Technology</span><span class="l-zh">信息技术</span><span class="anv2-go" aria-hidden="true">↗</span></a>
+      </div>
+      <div class="anv2-chips">
+        
+        <span class="anv2-chip anv2-chip-reco-enter"><span class="l-en">ENTRY NOW</span><span class="l-zh">现在入场</span></span>
+        
+      </div>
+      <div class="anv2-stat"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span> · XIT.TO</div>
+    </div><div class="anv2-row">
+      <div class="anv2-row-top">
+        <a class="anv2-name anv2-name-link" href="sectors/XCG.TO.html"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span><span class="anv2-go" aria-hidden="true">↗</span></a>
+      </div>
+      <div class="anv2-chips">
+        
+        <span class="anv2-chip anv2-chip-reco-enter"><span class="l-en">ENTRY NOW</span><span class="l-zh">现在入场</span></span>
+        
+      </div>
+      <div class="anv2-stat"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span> · XCG.TO</div>
+    </div>
+          
+        </div>
+        
+      </div>
     </div>
     <div class="anv2-lane anv2-lane--pull" id="anv2-pull">
-      <div class="anv2-lane-hd"><div class="anv2-lane-title"><span class="l-en">In Favour</span><span class="l-zh">看好</span><span class="anv2-lane-count">(1)</span></div><div class="anv2-lane-sub"><span class="l-en">Hold or wait for a dip — do not chase</span><span class="l-zh">持有或等待回调 — 勿追高</span></div></div>
-      <div class="anv2-lane-body lst-wrap"><div class="anv2-lst lst-collapse lst-cap4 is-collapsed"><div class="anv2-row"><div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/XEG.TO.html"><span class="l-en">Energy</span><span class="l-zh">能源</span><span class="anv2-go" aria-hidden="true">↗</span></a></div><div class="anv2-chips"><span class="anv2-chip anv2-chip-tag"><span class="l-en">WAIT FOR DIP</span><span class="l-zh">等待回调</span></span></div><div class="anv2-stat">XEG.TO</div></div></div></div>
+      <div class="anv2-lane-hd">
+        <div class="anv2-lane-title"><span class="l-en">In Favour</span><span class="l-zh">看好</span><span class="anv2-lane-count">(1)</span></div>
+        <div class="anv2-lane-sub"><span class="l-en">Hold or wait for a dip — do not chase</span><span class="l-zh">持有或等待回调 — 勿追高</span></div>
+      </div>
+      <div class="anv2-lane-body lst-wrap">
+        <div class="anv2-lst lst-collapse lst-cap4 is-collapsed">
+          <div class="anv2-row">
+      <div class="anv2-row-top">
+        <a class="anv2-name anv2-name-link" href="sectors/XEG.TO.html"><span class="l-en">Energy</span><span class="l-zh">能源</span><span class="anv2-go" aria-hidden="true">↗</span></a>
+      </div>
+      <div class="anv2-chips">
+        
+        <span class="anv2-chip anv2-chip-tag"><span class="l-en">WAIT FOR DIP</span><span class="l-zh">等待回调</span></span>
+        
+      </div>
+      <div class="anv2-stat"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span> · XEG.TO</div>
+    </div>
+          
+        </div>
+        
+      </div>
     </div>
     <div class="anv2-lane anv2-lane--bot" id="anv2-bot">
-      <div class="anv2-lane-hd"><div class="anv2-lane-title"><span class="l-en">Bottoming Watch</span><span class="l-zh">洗盘观察</span><span class="anv2-lane-count">(0)</span></div><div class="anv2-lane-sub"><span class="l-en">Setting up near a cycle low — watch only</span><span class="l-zh">接近周期低点 — 仅观察</span></div></div>
-      <div class="anv2-lane-body lst-wrap"><div class="anv2-lst lst-collapse lst-cap4 is-collapsed"><div class="anv2-empty"><span class="l-en">No sectors in this lane today.</span><span class="l-zh">今天此栏暂无板块。</span></div></div></div>
+      <div class="anv2-lane-hd">
+        <div class="anv2-lane-title"><span class="l-en">Bottoming Watch</span><span class="l-zh">洗盘观察</span><span class="anv2-lane-count">(0)</span></div>
+        <div class="anv2-lane-sub"><span class="l-en">Setting up near a cycle low — watch only</span><span class="l-zh">接近周期低点 — 仅观察</span></div>
+      </div>
+      <div class="anv2-lane-body lst-wrap">
+        <div class="anv2-lst lst-collapse lst-cap4 is-collapsed">
+          
+          <div class="anv2-empty"><span class="l-en">No sectors in this lane today.</span><span class="l-zh">今天此栏暂无板块。</span></div>
+        </div>
+        
+      </div>
     </div>
     <div class="anv2-lane anv2-lane--red" id="anv2-red">
-      <div class="anv2-lane-hd"><div class="anv2-lane-title"><span class="l-en">Reduce / Avoid</span><span class="l-zh">减仓 / 回避</span><span class="anv2-lane-count">(8)</span></div><div class="anv2-lane-sub"><span class="l-en">Trend weakening — take profits or stay away</span><span class="l-zh">趋势转弱 — 止盈或回避</span></div></div>
-      <div class="anv2-lane-body lst-wrap"><div class="anv2-lst lst-collapse lst-cap4 is-collapsed">
-        <div class="anv2-row"><div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/XFN.TO.html"><span class="l-en">Financials</span><span class="l-zh">金融</span><span class="anv2-go" aria-hidden="true">↗</span></a></div><div class="anv2-chips"><span class="anv2-chip anv2-chip-reco-trim"><span class="l-en">TAKE PROFITS</span><span class="l-zh">止盈</span></span></div><div class="anv2-stat">XFN.TO</div></div>
-        <div class="anv2-row"><div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/XUT.TO.html"><span class="l-en">Utilities</span><span class="l-zh">公用事业</span><span class="anv2-go" aria-hidden="true">↗</span></a></div><div class="anv2-chips"><span class="anv2-chip anv2-chip-reco-trim"><span class="l-en">TAKE PROFITS</span><span class="l-zh">止盈</span></span></div><div class="anv2-stat">XUT.TO</div></div>
-        <div class="anv2-row"><div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/ZEB.TO.html"><span class="l-en">Banks</span><span class="l-zh">银行</span><span class="anv2-go" aria-hidden="true">↗</span></a></div><div class="anv2-chips"><span class="anv2-chip anv2-chip-reco-avoid"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span></div><div class="anv2-stat">ZEB.TO</div></div>
-        <div class="anv2-row"><div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/XRE.TO.html"><span class="l-en">Real Estate</span><span class="l-zh">房地产</span><span class="anv2-go" aria-hidden="true">↗</span></a></div><div class="anv2-chips"><span class="anv2-chip anv2-chip-reco-avoid"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span></div><div class="anv2-stat">XRE.TO</div></div>
-        <div class="anv2-row"><div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/XCD.TO.html"><span class="l-en">Communication Services</span><span class="l-zh">通信服务</span><span class="anv2-go" aria-hidden="true">↗</span></a></div><div class="anv2-chips"><span class="anv2-chip anv2-chip-reco-avoid"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span></div><div class="anv2-stat">XCD.TO</div></div>
-        <div class="anv2-row"><div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/XBM.TO.html"><span class="l-en">Base Metals</span><span class="l-zh">基本金属</span><span class="anv2-go" aria-hidden="true">↗</span></a></div><div class="anv2-chips"><span class="anv2-chip anv2-chip-reco-avoid"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span></div><div class="anv2-stat">XBM.TO</div></div>
-        <div class="anv2-row"><div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/XMA.TO.html"><span class="l-en">Materials</span><span class="l-zh">原材料</span><span class="anv2-go" aria-hidden="true">↗</span></a></div><div class="anv2-chips"><span class="anv2-chip anv2-chip-reco-avoid"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span></div><div class="anv2-stat">XMA.TO</div></div>
-        <div class="anv2-row"><div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/XGD.TO.html"><span class="l-en">Gold Miners</span><span class="l-zh">黄金矿业</span><span class="anv2-go" aria-hidden="true">↗</span></a></div><div class="anv2-chips"><span class="anv2-chip anv2-chip-reco-avoid"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span></div><div class="anv2-stat">XGD.TO</div></div>
-      </div><button class="lst-more" type="button" aria-expanded="false"><span class="lm-show"><span class="l-en">Show more</span><span class="l-zh">显示更多</span> ▾</span><span class="lm-hide"><span class="l-en">Show less</span><span class="l-zh">收起</span> ▴</span></button></div>
+      <div class="anv2-lane-hd">
+        <div class="anv2-lane-title"><span class="l-en">Reduce / Avoid</span><span class="l-zh">减仓 / 回避</span><span class="anv2-lane-count">(8)</span></div>
+        <div class="anv2-lane-sub"><span class="l-en">Trend weakening — take profits or stay away</span><span class="l-zh">趋势转弱 — 止盈或回避</span></div>
+      </div>
+      <div class="anv2-lane-body lst-wrap">
+        <div class="anv2-lst lst-collapse lst-cap4 is-collapsed">
+          <div class="anv2-row">
+      <div class="anv2-row-top">
+        <a class="anv2-name anv2-name-link" href="sectors/XFN.TO.html"><span class="l-en">Financials</span><span class="l-zh">金融</span><span class="anv2-go" aria-hidden="true">↗</span></a>
+      </div>
+      <div class="anv2-chips">
+        
+        <span class="anv2-chip anv2-chip-reco-trim"><span class="l-en">TAKE PROFITS</span><span class="l-zh">止盈</span></span>
+        
+      </div>
+      <div class="anv2-stat"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span> · XFN.TO</div>
+    </div><div class="anv2-row">
+      <div class="anv2-row-top">
+        <a class="anv2-name anv2-name-link" href="sectors/XUT.TO.html"><span class="l-en">Utilities</span><span class="l-zh">公用事业</span><span class="anv2-go" aria-hidden="true">↗</span></a>
+      </div>
+      <div class="anv2-chips">
+        
+        <span class="anv2-chip anv2-chip-reco-trim"><span class="l-en">TAKE PROFITS</span><span class="l-zh">止盈</span></span>
+        
+      </div>
+      <div class="anv2-stat"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span> · XUT.TO</div>
+    </div><div class="anv2-row">
+      <div class="anv2-row-top">
+        <a class="anv2-name anv2-name-link" href="sectors/ZEB.TO.html"><span class="l-en">Banks</span><span class="l-zh">银行</span><span class="anv2-go" aria-hidden="true">↗</span></a>
+      </div>
+      <div class="anv2-chips">
+        
+        <span class="anv2-chip anv2-chip-reco-avoid"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span>
+        
+      </div>
+      <div class="anv2-stat"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span> · ZEB.TO</div>
+    </div><div class="anv2-row">
+      <div class="anv2-row-top">
+        <a class="anv2-name anv2-name-link" href="sectors/XRE.TO.html"><span class="l-en">Real Estate</span><span class="l-zh">房地产</span><span class="anv2-go" aria-hidden="true">↗</span></a>
+      </div>
+      <div class="anv2-chips">
+        
+        <span class="anv2-chip anv2-chip-reco-avoid"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span>
+        
+      </div>
+      <div class="anv2-stat"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span> · XRE.TO</div>
+    </div><div class="anv2-row">
+      <div class="anv2-row-top">
+        <a class="anv2-name anv2-name-link" href="sectors/XCD.TO.html"><span class="l-en">Communication Services</span><span class="l-zh">通信服务</span><span class="anv2-go" aria-hidden="true">↗</span></a>
+      </div>
+      <div class="anv2-chips">
+        
+        <span class="anv2-chip anv2-chip-reco-avoid"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span>
+        
+      </div>
+      <div class="anv2-stat"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span> · XCD.TO</div>
+    </div><div class="anv2-row">
+      <div class="anv2-row-top">
+        <a class="anv2-name anv2-name-link" href="sectors/XBM.TO.html"><span class="l-en">Base Metals</span><span class="l-zh">基本金属</span><span class="anv2-go" aria-hidden="true">↗</span></a>
+      </div>
+      <div class="anv2-chips">
+        
+        <span class="anv2-chip anv2-chip-reco-avoid"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span>
+        
+      </div>
+      <div class="anv2-stat"><span class="l-en">DOWNTREND</span><span class="l-zh">下跌趋势</span> · XBM.TO</div>
+    </div><div class="anv2-row">
+      <div class="anv2-row-top">
+        <a class="anv2-name anv2-name-link" href="sectors/XMA.TO.html"><span class="l-en">Materials</span><span class="l-zh">原材料</span><span class="anv2-go" aria-hidden="true">↗</span></a>
+      </div>
+      <div class="anv2-chips">
+        
+        <span class="anv2-chip anv2-chip-reco-avoid"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span>
+        
+      </div>
+      <div class="anv2-stat"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span> · XMA.TO</div>
+    </div><div class="anv2-row">
+      <div class="anv2-row-top">
+        <a class="anv2-name anv2-name-link" href="sectors/XGD.TO.html"><span class="l-en">Gold Miners</span><span class="l-zh">黄金矿业</span><span class="anv2-go" aria-hidden="true">↗</span></a>
+      </div>
+      <div class="anv2-chips">
+        
+        <span class="anv2-chip anv2-chip-reco-avoid"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span>
+        
+      </div>
+      <div class="anv2-stat"><span class="l-en">DOWNTREND</span><span class="l-zh">下跌趋势</span> · XGD.TO</div>
+    </div>
+          
+        </div>
+        <button class="lst-more" type="button" aria-expanded="false"><span class="lm-show"><span class="l-en">Show more</span><span class="l-zh">显示更多</span> ▾</span><span class="lm-hide"><span class="l-en">Show less</span><span class="l-zh">收起</span> ▴</span></button>
+      </div>
     </div>
   </div>
 </div>
