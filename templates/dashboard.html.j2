@@ -11529,7 +11529,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         <div class="mx5-dlg-sep"></div>
         <div class="mx5-dlg-eyebrow">
           {{ t('Overseas','海外') }}
-          {{ help('Context only — does not move the US score. Tiles link to the full International page. Ring = each market\'s pullback-risk score (0-100), coloured by band.','仅供背景参考——不影响美国评分。点击卡片可进入完整国际页面。环形为各市场回撤风险评分（0-100），按等级着色。') }}
+          {{ help('Context only — does not move the US score. Tiles link to the full International page. Ring = each market\'s pullback-risk score (0-100), coloured by band — the odds a fresh drop is brewing, not a grade of today\'s trend. The hover card carries the trend read, which can point the other way: a market already deep in a selloff can sit beside a mid ring.','仅供背景参考——不影响美国评分。点击卡片可进入完整国际页面。环形为各市场回撤风险评分（0-100），按等级着色——衡量的是新一轮下跌酝酿的可能，而非当前趋势的评级。悬停卡片显示趋势解读，两者方向可能相反：已深度下跌的市场也可能配上中等的环形。') }}
           {# as-of merged into the single dialog footer (one stamp per dialog) #}
         </div>
         {# ── plain-word maps reused from intl.html turn cards ── #}
@@ -11571,7 +11571,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
                     <span class="l-zh">{{ row.name_zh if (row.name_zh is defined and row.name_zh) else (row.name_en if row.name_en is defined else '') }}</span>
                   </span>
                   {% if row.score is defined and row.score is not none %}
-                  <span class="row-pop-kind">{{ t('Risk score','风险评分') }} {{ row.score|round|int }}/100</span>
+                  <span class="row-pop-kind">{{ t('Pullback risk','回撤风险') }} {{ row.score|round|int }}/100</span>
                   {% endif %}
                 </div>
                 <div class="row-pop-div"></div>
