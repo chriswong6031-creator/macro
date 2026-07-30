@@ -37,9 +37,6 @@
 @font-face{font-family:Inter;font-style:normal;font-weight:900;font-display:swap;src:url("fonts/Inter-900.woff2") format("woff2");}
 </style>
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="theme.css?v=720475f3">
 <title>Stage Analysis</title>
 
@@ -60,9 +57,7 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="stylesheet" href="assets/css/fac95a52.css?v=fac95a52">
-<link rel="preload" as="style" href="navigation-refresh.css?v=f38c6288">
-<link rel="preload" as="style" href="navigation-refresh.css?v=88af7a13">
+<link rel="stylesheet" href="assets/css/321bd519.css?v=321bd519">
 <link rel="preload" as="style" href="product-nav-icons.css?v=7b0290e9">
 <link rel="preload" as="style" href="navigation-refresh.css?v=88af7a13">
 </head>
@@ -1815,7 +1810,7 @@
     Object.keys(centres).forEach(function(k){
       var px=padX+centres[k]*(W-2*padX);
       labs+='<circle cx="'+px.toFixed(1)+'" cy="'+(baseY+30)+'" r="9" fill="none" stroke="'+scol[k]+'" stroke-width="1.4" opacity="0.7"/>'+
-            '<text x="'+px.toFixed(1)+'" y="'+(baseY+34)+'" text-anchor="middle" font-family="Space Grotesk,Inter,sans-serif" font-size="10.5" font-weight="700" fill="'+scol[k]+'">'+lnames[k]+'</text>';
+            '<text x="'+px.toFixed(1)+'" y="'+(baseY+34)+'" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Inter,sans-serif" font-size="10.5" font-weight="700" fill="'+scol[k]+'">'+lnames[k]+'</text>';
     });
     var arcLabel=isZH()
       ? '市场阶段曲线：'+raw.s2+' 只上升，'+raw.s1+' 只筑底，'+raw.s3+' 只见顶，'+raw.s4+' 只下行。'

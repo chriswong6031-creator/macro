@@ -1996,12 +1996,18 @@ _BRAND_MARK_SVG = (
 
 
 _GLOBE_HUB_CSS = r"""<style>
-html{overflow-x:hidden}
+/* Keep the browser canvas itself theme-aware.  In particular, iOS Safari can
+   retain the old propagated body background when an async account preference
+   changes data-theme after first paint; an explicit root paint avoids the
+   resulting dark/light split.  The body stacking context keeps its negative-z
+   ambient sky above that paint instead of letting it escape behind the root. */
+html{overflow-x:hidden;background:var(--bg);color-scheme:dark}
+html[data-theme="light"]{color-scheme:light}
 
 *{box-sizing:border-box}
 body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
  font-family:var(--font-ui);display:flex;flex-direction:column;align-items:center;
- position:relative;overflow-x:hidden}
+ position:relative;isolation:isolate;overflow-x:hidden}
 .wrap{width:100%;max-width:1180px;display:flex;flex-direction:column}
 @media(min-width:1600px){.wrap{max-width:1360px}}
 .hub-top{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-bottom:10px}
@@ -2237,6 +2243,14 @@ a:focus-visible,.links a:focus-visible,.ha-item summary:focus-visible{outline:2p
 @media(max-width:880px){.gd-stage{min-height:0;height:min(94vw,500px)}}
 .gd-canvas{position:relative;z-index:10;width:100%;max-width:100%;height:100%;display:block;touch-action:none;cursor:grab;outline:none}
 .gd-canvas:focus-visible{outline:2px solid var(--link);outline-offset:-2px}
+/* The globe is a required scroll crossing on phones, not a navigation control.
+   Let touch gestures land on the page so a swipe anywhere over the hero scrolls
+   normally; auto-rotation remains, while fine-pointer and keyboard controls keep
+   the full interactive desktop experience. */
+@media (hover:none) and (pointer:coarse){
+ .gd-stage{pointer-events:none}
+ .gd-canvas{touch-action:pan-y;cursor:default}
+}
 
 /* ===== floating data-islands (a back layer UNDER the canvas + a front layer OVER it;
    the opaque globe disc clips back-side pebbles → true behind/in-front occlusion) ===== */
