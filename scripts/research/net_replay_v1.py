@@ -186,7 +186,7 @@ def _load_dtb3(data_dir: Path) -> float:
     Returns annualized rate in percent (e.g. 3.69).
     Falls back to DGS3MO then DFF.
     """
-    for name, col in [("DTB3", "us3m"), ("DGS3MO", "us3m"), ("DFF", "dff")]:
+    for name, col in [("DTB3", "us3m_bill"), ("DGS3MO", "us3m"), ("DFF", "dff")]:
         p = data_dir / "fred" / f"{name}.parquet"
         if p.exists():
             try:

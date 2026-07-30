@@ -83,7 +83,8 @@ def load_close(ticker: str) -> pd.Series:
 
 
 def load_bill(index: pd.Index) -> pd.Series:
-    b = pd.read_parquet(DATA / "fred" / "DTB3.parquet")["us3m"].astype(float)
+    # positional read: the DTB3 column follows its config alias (us3m -> us3m_bill, 2026-07-30)
+    b = pd.read_parquet(DATA / "fred" / "DTB3.parquet").iloc[:, 0].astype(float)
     b.index = pd.to_datetime(b.index)
     return b.reindex(index).ffill().fillna(0.0)
 
