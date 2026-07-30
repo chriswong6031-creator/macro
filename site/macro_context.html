@@ -32,7 +32,7 @@
 </style>
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css?v=720475f3">
-<title>Macro Weather Station — 2026-07-29</title>
+<title>Macro Weather Station — 2026-07-30</title>
 
 
 
@@ -312,6 +312,8 @@
     <a href="#timeline">
       <span class="l-en">Transitions</span><span class="l-zh">转换记录</span>
       
+      <span class="cnt">10 <span class="l-en">today</span><span class="l-zh">今日</span></span>
+      
     </a>
     <a href="#census">
       <span class="l-en">Contradictions</span><span class="l-zh">矛盾</span>
@@ -327,7 +329,7 @@
     <div class="hero-content">
       <div class="hero-top">
         <div class="hero-headline-group">
-          <div class="hero-eyebrow"><span class="l-en">Macro Weather Station</span><span class="l-zh">宏观气象台</span> &bull; 2026-07-29</div>
+          <div class="hero-eyebrow"><span class="l-en">Macro Weather Station</span><span class="l-zh">宏观气象台</span> &bull; 2026-07-30</div>
           <div class="hero-headline">
             <span class="l-en">Macro regime loading</span><span class="l-zh">宏观周期加载中</span>
           </div>
@@ -391,18 +393,18 @@
         
         <div class="kpi-chip">
           <span class="kpi-label"><span class="l-en">Repricing</span><span class="l-zh">重定价</span></span>
-          <span class="kpi-val c-info">ELEVATED</span>
+          <span class="kpi-val c-up">QUIET</span>
           <span class="kpi-sub l-en">how much markets agree</span><span class="kpi-sub l-zh">各市场一致程度</span>
         </div>
         
         
         <div class="kpi-chip"
-             data-tip-en="How confident a hidden-Markov regime model is in the current quadrant — its smoothed posterior probability P(quad), the months already spent in this regime, and the typical dwell time before a switch. Hazard rate 0.42. Display-only: scored use requires a causal refit against live regime labels."
+             data-tip-en="How confident a hidden-Markov regime model is in the current quadrant — its smoothed posterior probability P(quad), the months already spent in this regime, and the typical dwell time before a switch. Hazard rate 0.68. Display-only: scored use requires a causal refit against live regime labels."
              data-tip-zh="HMM平滑后验（仅展示）。评分使用需对实时周期标签进行因果重拟合。">
           <span class="kpi-label"><span class="l-en">Model agrees</span><span class="l-zh">模型判断</span></span>
-          <span class="kpi-val c-info">51%</span>
-          <span class="kpi-sub l-en">on Q2 &middot; 3 months in &middot; usually ~2.4 months</span>
-          <span class="kpi-sub l-zh">判定为 Q2 &middot; 已 3 个月 &middot; 通常约 2.4 个月</span>
+          <span class="kpi-val c-info">67%</span>
+          <span class="kpi-sub l-en">on Q3 &middot; 3 months in &middot; usually ~1.5 months</span>
+          <span class="kpi-sub l-zh">判定为 Q3 &middot; 已 3 个月 &middot; 通常约 1.5 个月</span>
         </div>
         
         
@@ -416,9 +418,9 @@
         
         <div class="kpi-chip">
           <span class="kpi-label"><span class="l-en">Labels flipped</span><span class="l-zh">标签变动</span></span>
-          <span class="kpi-val c-warn">59</span>
-          <span class="kpi-sub l-en">in 14 days &middot; 0 today</span>
-          <span class="kpi-sub l-zh">近14日 &middot; 今日 0</span>
+          <span class="kpi-val c-warn">60</span>
+          <span class="kpi-sub l-en">in 14 days &middot; 10 today</span>
+          <span class="kpi-sub l-zh">近14日 &middot; 今日 10</span>
         </div>
         
       </div>
@@ -433,13 +435,6 @@
       
       <div style="display:flex;gap:4px;align-items:flex-end;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">
         <span style="font-size:10px;color:var(--muted);margin-right:6px;text-transform:uppercase;letter-spacing:.07em;line-height:1"><span class="l-en">Market State</span><span class="l-zh">市场状态</span></span>
-        
-        
-        <div data-tip-en="2026-07-21: MIXED (50)"
-             data-tip-zh="2026-07-21: MIXED (50)"
-             style="width:10px;height:16px;border-radius:3px 3px 0 0;
-               background:var(--warn);
-               opacity:0.7;"></div>
         
         
         <div data-tip-en="2026-07-22: RISK_ON (74)"
@@ -477,7 +472,14 @@
                opacity:0.7;"></div>
         
         
-        <span style="font-size:10px;color:var(--muted);margin-left:4px">50/100</span>
+        <div data-tip-en="2026-07-30: RISK_OFF (40)"
+             data-tip-zh="2026-07-30: RISK_OFF (40)"
+             style="width:10px;height:13px;border-radius:3px 3px 0 0;
+               background:var(--down);
+               opacity:0.7;"></div>
+        
+        
+        <span style="font-size:10px;color:var(--muted);margin-left:4px">40/100</span>
         
       </div>
       
@@ -657,8 +659,8 @@
           <span class="domain-name-en"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
           
           <span class="domain-asof stale-ok"
-                data-tip-en="Source as-of 2026-07-28"
-                data-tip-zh="数据截至 2026-07-28">2026-07-28</span>
+                data-tip-en="Source as-of 2026-07-29"
+                data-tip-zh="数据截至 2026-07-29">2026-07-29</span>
           
         </div>
         <div class="domain-chips">
@@ -681,12 +683,12 @@
             </span>
           </div>
           
-          <div class="field-chip"
+          <div class="field-chip changed-today"
                data-tip-en="Fused Risk"
                data-tip-zh="融合风险">
             <span class="field-chip-name"><span class="l-en">Fused Risk</span><span class="l-zh">融合风险</span></span>
             <span class="field-chip-val" style="color:var(--warn)">
-              <span class="l-en">Elevated</span><span class="l-zh">Elevated</span>
+              <span class="l-en">Caution</span><span class="l-zh">Caution</span>
             </span>
           </div>
           
@@ -699,7 +701,7 @@
             </span>
           </div>
           
-          <div class="field-chip"
+          <div class="field-chip changed-today"
                data-tip-en="Risk Radar"
                data-tip-zh="风险雷达">
             <span class="field-chip-name"><span class="l-en">Risk Radar</span><span class="l-zh">风险雷达</span></span>
@@ -726,21 +728,21 @@
             </span>
           </div>
           
-          <div class="field-chip"
+          <div class="field-chip changed-today"
                data-tip-en="Liquidity Quality"
                data-tip-zh="流动性质量">
             <span class="field-chip-name"><span class="l-en">Liquidity Quality</span><span class="l-zh">流动性质量</span></span>
-            <span class="field-chip-val" style="color:var(--muted)">
-              <span class="l-en">Neutral hollow</span><span class="l-zh">Neutral hollow</span>
+            <span class="field-chip-val" style="color:var(--warn)">
+              <span class="l-en">Stress expansion</span><span class="l-zh">Stress expansion</span>
             </span>
           </div>
           
-          <div class="field-chip"
+          <div class="field-chip changed-today"
                data-tip-en="Liquidity"
                data-tip-zh="流动性">
             <span class="field-chip-name"><span class="l-en">Liquidity</span><span class="l-zh">流动性</span></span>
-            <span class="field-chip-val" style="color:var(--muted)">
-              <span class="l-en">neutral</span><span class="l-zh">中性</span>
+            <span class="field-chip-val" style="color:var(--up)">
+              <span class="l-en">expanding</span><span class="l-zh">扩张</span>
             </span>
           </div>
           
@@ -757,8 +759,8 @@
                data-tip-en="Dislocation"
                data-tip-zh="错位状态">
             <span class="field-chip-name"><span class="l-en">Dislocation</span><span class="l-zh">错位状态</span></span>
-            <span class="field-chip-val" style="color:var(--muted)">
-              <span class="l-en">calm</span><span class="l-zh">平静</span>
+            <span class="field-chip-val" style="color:var(--info)">
+              <span class="l-en">buyable_washout</span><span class="l-zh">可买入的错杀</span>
             </span>
           </div>
           
@@ -771,12 +773,12 @@
             </span>
           </div>
           
-          <div class="field-chip"
+          <div class="field-chip changed-today"
                data-tip-en="Repricing Coherence"
                data-tip-zh="重定价一致性">
             <span class="field-chip-name"><span class="l-en">Repricing Coherence</span><span class="l-zh">重定价一致性</span></span>
-            <span class="field-chip-val" style="color:var(--info)">
-              <span class="l-en">Elevated</span><span class="l-zh">Elevated</span>
+            <span class="field-chip-val" style="color:var(--up)">
+              <span class="l-en">Quiet</span><span class="l-zh">Quiet</span>
             </span>
           </div>
           
@@ -789,7 +791,7 @@
             </span>
           </div>
           
-          <div class="field-chip"
+          <div class="field-chip changed-today"
                data-tip-en="Vol Risk Premium"
                data-tip-zh="波动风险溢价">
             <span class="field-chip-name"><span class="l-en">Vol Risk Premium</span><span class="l-zh">波动风险溢价</span></span>
@@ -798,7 +800,7 @@
             </span>
           </div>
           
-          <div class="field-chip"
+          <div class="field-chip changed-today"
                data-tip-en="Cross-Asset"
                data-tip-zh="跨资产">
             <span class="field-chip-name"><span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span></span>
@@ -814,10 +816,6 @@
         
         <div class="hist-dots">
           
-          
-          <div class="hist-d "
-               data-tip-en="2026-07-19: Q1"
-               data-tip-zh="2026-07-19: Q1"></div>
           
           <div class="hist-d "
                data-tip-en="2026-07-20: Q1"
@@ -847,6 +845,10 @@
                data-tip-en="2026-07-29: Q1"
                data-tip-zh="2026-07-29: Q1"></div>
           
+          <div class="hist-d "
+               data-tip-en="2026-07-30: Q1"
+               data-tip-zh="2026-07-30: Q1"></div>
+          
           
           <span class="hist-hint"><span class="l-en">ledger</span><span class="l-zh">账本</span></span>
         </div>
@@ -860,18 +862,18 @@
           <span class="domain-name-en"><span class="l-en">Market State</span><span class="l-zh">市场状态</span></span>
           
           <span class="domain-asof stale-ok"
-                data-tip-en="Source as-of 2026-07-28"
-                data-tip-zh="数据截至 2026-07-28">2026-07-28</span>
+                data-tip-en="Source as-of 2026-07-29"
+                data-tip-zh="数据截至 2026-07-29">2026-07-29</span>
           
         </div>
         <div class="domain-chips">
           
-          <div class="field-chip"
+          <div class="field-chip changed-today"
                data-tip-en="Verdict"
                data-tip-zh="判定">
             <span class="field-chip-name"><span class="l-en">Verdict</span><span class="l-zh">判定</span></span>
-            <span class="field-chip-val" style="color:var(--warn)">
-              <span class="l-en">Mixed</span><span class="l-zh">Mixed</span>
+            <span class="field-chip-val" style="color:var(--down)">
+              <span class="l-en">Risk off</span><span class="l-zh">Risk off</span>
             </span>
           </div>
           
@@ -882,10 +884,6 @@
         
         <div class="hist-dots">
           
-          
-          <div class="hist-d "
-               data-tip-en="2026-07-19: MIXED"
-               data-tip-zh="2026-07-19: MIXED"></div>
           
           <div class="hist-d "
                data-tip-en="2026-07-20: MIXED"
@@ -915,6 +913,10 @@
                data-tip-en="2026-07-29: MIXED"
                data-tip-zh="2026-07-29: MIXED"></div>
           
+          <div class="hist-d changed"
+               data-tip-en="2026-07-30: RISK_OFF"
+               data-tip-zh="2026-07-30: RISK_OFF"></div>
+          
           
           <span class="hist-hint"><span class="l-en">ledger</span><span class="l-zh">账本</span></span>
         </div>
@@ -928,8 +930,8 @@
           <span class="domain-name-en"><span class="l-en">Rates Transmission</span><span class="l-zh">利率传导</span></span>
           
           <span class="domain-asof stale-ok"
-                data-tip-en="Source as-of 2026-07-28"
-                data-tip-zh="数据截至 2026-07-28">2026-07-28</span>
+                data-tip-en="Source as-of 2026-07-29"
+                data-tip-zh="数据截至 2026-07-29">2026-07-29</span>
           
         </div>
         <div class="domain-chips">
@@ -961,10 +963,6 @@
           
           
           <div class="hist-d "
-               data-tip-en="2026-07-19: bear_steepener"
-               data-tip-zh="2026-07-19: bear_steepener"></div>
-          
-          <div class="hist-d "
                data-tip-en="2026-07-20: bear_steepener"
                data-tip-zh="2026-07-20: bear_steepener"></div>
           
@@ -992,6 +990,10 @@
                data-tip-en="2026-07-29: bear_steepener"
                data-tip-zh="2026-07-29: bear_steepener"></div>
           
+          <div class="hist-d "
+               data-tip-en="2026-07-30: bear_steepener"
+               data-tip-zh="2026-07-30: bear_steepener"></div>
+          
           
           <span class="hist-hint"><span class="l-en">ledger</span><span class="l-zh">账本</span></span>
         </div>
@@ -1005,8 +1007,8 @@
           <span class="domain-name-en"><span class="l-en">FX / Dollar</span><span class="l-zh">外汇 / 美元</span></span>
           
           <span class="domain-asof stale-ok"
-                data-tip-en="Source as-of 2026-07-29"
-                data-tip-zh="数据截至 2026-07-29">2026-07-29</span>
+                data-tip-en="Source as-of 2026-07-30"
+                data-tip-zh="数据截至 2026-07-30">2026-07-30</span>
           
         </div>
         <div class="domain-chips">
@@ -1033,8 +1035,8 @@
                data-tip-en="FX Risk"
                data-tip-zh="外汇风险">
             <span class="field-chip-name"><span class="l-en">FX Risk</span><span class="l-zh">外汇风险</span></span>
-            <span class="field-chip-val" style="color:var(--up)">
-              <span class="l-en">risk-on</span><span class="l-zh">偏好风险</span>
+            <span class="field-chip-val" style="color:var(--down)">
+              <span class="l-en">risk-off</span><span class="l-zh">避险</span>
             </span>
           </div>
           
@@ -1097,7 +1099,7 @@
                data-tip-zh="欧元兑美元">
             <span class="field-chip-name"><span class="l-en">EUR/USD</span><span class="l-zh">欧元兑美元</span></span>
             <span class="field-chip-val" style="color:var(--info)">
-              <span class="l-en">Flat</span><span class="l-zh">Flat</span>
+              <span class="l-en">Short</span><span class="l-zh">Short</span>
             </span>
           </div>
           
@@ -1191,10 +1193,6 @@
           
           
           <div class="hist-d "
-               data-tip-en="2026-07-19: up"
-               data-tip-zh="2026-07-19: up"></div>
-          
-          <div class="hist-d "
                data-tip-en="2026-07-20: up"
                data-tip-zh="2026-07-20: up"></div>
           
@@ -1222,6 +1220,10 @@
                data-tip-en="2026-07-29: up"
                data-tip-zh="2026-07-29: up"></div>
           
+          <div class="hist-d "
+               data-tip-en="2026-07-30: up"
+               data-tip-zh="2026-07-30: up"></div>
+          
           
           <span class="hist-hint"><span class="l-en">ledger</span><span class="l-zh">账本</span></span>
         </div>
@@ -1236,8 +1238,8 @@
           <span class="domain-name-en"><span class="l-en">International Risk</span><span class="l-zh">国际风险</span></span>
           
           <span class="domain-asof stale-ok"
-                data-tip-en="Source as-of 2026-07-30"
-                data-tip-zh="数据截至 2026-07-30">2026-07-30</span>
+                data-tip-en="Source as-of 2026-07-29"
+                data-tip-zh="数据截至 2026-07-29">2026-07-29</span>
           
         </div>
         
@@ -1273,8 +1275,8 @@
           <span class="domain-name-en"><span class="l-en">Bonds &amp; Credit</span><span class="l-zh">债券与信用</span></span>
           
           <span class="domain-asof stale-ok"
-                data-tip-en="Source as-of 2026-07-28"
-                data-tip-zh="数据截至 2026-07-28">2026-07-28</span>
+                data-tip-en="Source as-of 2026-07-29"
+                data-tip-zh="数据截至 2026-07-29">2026-07-29</span>
           
         </div>
         <div class="domain-chips">
@@ -1324,10 +1326,6 @@
           
           
           <div class="hist-d "
-               data-tip-en="2026-07-19: healthy"
-               data-tip-zh="2026-07-19: healthy"></div>
-          
-          <div class="hist-d "
                data-tip-en="2026-07-20: healthy"
                data-tip-zh="2026-07-20: healthy"></div>
           
@@ -1355,6 +1353,10 @@
                data-tip-en="2026-07-29: healthy"
                data-tip-zh="2026-07-29: healthy"></div>
           
+          <div class="hist-d "
+               data-tip-en="2026-07-30: healthy"
+               data-tip-zh="2026-07-30: healthy"></div>
+          
           
           <span class="hist-hint"><span class="l-en">ledger</span><span class="l-zh">账本</span></span>
         </div>
@@ -1368,8 +1370,8 @@
           <span class="domain-name-en"><span class="l-en">Commodities</span><span class="l-zh">大宗商品</span></span>
           
           <span class="domain-asof stale-ok"
-                data-tip-en="Source as-of 2026-07-28"
-                data-tip-zh="数据截至 2026-07-28">2026-07-28</span>
+                data-tip-en="Source as-of 2026-07-29"
+                data-tip-zh="数据截至 2026-07-29">2026-07-29</span>
           
         </div>
         <div class="domain-chips">
@@ -1446,12 +1448,12 @@
             </span>
           </div>
           
-          <div class="field-chip"
+          <div class="field-chip changed-today"
                data-tip-en="Silver"
                data-tip-zh="白银">
             <span class="field-chip-name"><span class="l-en">Silver</span><span class="l-zh">白银</span></span>
             <span class="field-chip-val" style="color:var(--info)">
-              <span class="l-en">Sell</span><span class="l-zh">Sell</span>
+              <span class="l-en">HOLD</span><span class="l-zh">持有</span>
             </span>
           </div>
           
@@ -1482,10 +1484,6 @@
           
           
           <div class="hist-d "
-               data-tip-en="2026-07-19: Goldilocks"
-               data-tip-zh="2026-07-19: Goldilocks"></div>
-          
-          <div class="hist-d "
                data-tip-en="2026-07-20: Goldilocks"
                data-tip-zh="2026-07-20: Goldilocks"></div>
           
@@ -1513,6 +1511,10 @@
                data-tip-en="2026-07-29: Goldilocks"
                data-tip-zh="2026-07-29: Goldilocks"></div>
           
+          <div class="hist-d "
+               data-tip-en="2026-07-30: Goldilocks"
+               data-tip-zh="2026-07-30: Goldilocks"></div>
+          
           
           <span class="hist-hint"><span class="l-en">ledger</span><span class="l-zh">账本</span></span>
         </div>
@@ -1526,8 +1528,8 @@
           <span class="domain-name-en"><span class="l-en">China</span><span class="l-zh">中国</span></span>
           
           <span class="domain-asof stale-ok"
-                data-tip-en="Source as-of 2026-07-28"
-                data-tip-zh="数据截至 2026-07-28">2026-07-28</span>
+                data-tip-en="Source as-of 2026-07-29"
+                data-tip-zh="数据截至 2026-07-29">2026-07-29</span>
           
         </div>
         <div class="domain-chips">
@@ -1568,10 +1570,6 @@
           
           
           <div class="hist-d "
-               data-tip-en="2026-07-19: Q3"
-               data-tip-zh="2026-07-19: Q3"></div>
-          
-          <div class="hist-d "
                data-tip-en="2026-07-20: Q3"
                data-tip-zh="2026-07-20: Q3"></div>
           
@@ -1599,6 +1597,10 @@
                data-tip-en="2026-07-29: Q3"
                data-tip-zh="2026-07-29: Q3"></div>
           
+          <div class="hist-d "
+               data-tip-en="2026-07-30: Q3"
+               data-tip-zh="2026-07-30: Q3"></div>
+          
           
           <span class="hist-hint"><span class="l-en">ledger</span><span class="l-zh">账本</span></span>
         </div>
@@ -1612,13 +1614,13 @@
           <span class="domain-name-en"><span class="l-en">Hong Kong</span><span class="l-zh">香港</span></span>
           
           <span class="domain-asof stale-ok"
-                data-tip-en="Source as-of 2026-07-28"
-                data-tip-zh="数据截至 2026-07-28">2026-07-28</span>
+                data-tip-en="Source as-of 2026-07-29"
+                data-tip-zh="数据截至 2026-07-29">2026-07-29</span>
           
         </div>
         <div class="domain-chips">
           
-          <div class="field-chip"
+          <div class="field-chip changed-today"
                data-tip-en="Quadrant"
                data-tip-zh="象限">
             <span class="field-chip-name"><span class="l-en">Quadrant</span><span class="l-zh">象限</span></span>
@@ -1654,10 +1656,6 @@
           
           
           <div class="hist-d "
-               data-tip-en="2026-07-19: Q3"
-               data-tip-zh="2026-07-19: Q3"></div>
-          
-          <div class="hist-d "
                data-tip-en="2026-07-20: Q3"
                data-tip-zh="2026-07-20: Q3"></div>
           
@@ -1685,6 +1683,10 @@
                data-tip-en="2026-07-29: Q1"
                data-tip-zh="2026-07-29: Q1"></div>
           
+          <div class="hist-d "
+               data-tip-en="2026-07-30: Q1"
+               data-tip-zh="2026-07-30: Q1"></div>
+          
           
           <span class="hist-hint"><span class="l-en">ledger</span><span class="l-zh">账本</span></span>
         </div>
@@ -1698,8 +1700,8 @@
           <span class="domain-name-en"><span class="l-en">Canada</span><span class="l-zh">加拿大</span></span>
           
           <span class="domain-asof stale-ok"
-                data-tip-en="Source as-of 2026-07-28"
-                data-tip-zh="数据截至 2026-07-28">2026-07-28</span>
+                data-tip-en="Source as-of 2026-07-29"
+                data-tip-zh="数据截至 2026-07-29">2026-07-29</span>
           
         </div>
         <div class="domain-chips">
@@ -1717,8 +1719,8 @@
                data-tip-en="Overlay"
                data-tip-zh="叠加状态">
             <span class="field-chip-name"><span class="l-en">Overlay</span><span class="l-zh">叠加状态</span></span>
-            <span class="field-chip-val" style="color:var(--up)">
-              <span class="l-en">Risk-on</span><span class="l-zh">风险偏好</span>
+            <span class="field-chip-val" style="color:var(--muted)">
+              <span class="l-en">Neutral</span><span class="l-zh">中性</span>
             </span>
           </div>
           
@@ -1738,10 +1740,6 @@
         
         <div class="hist-dots">
           
-          
-          <div class="hist-d "
-               data-tip-en="2026-07-19: Q1"
-               data-tip-zh="2026-07-19: Q1"></div>
           
           <div class="hist-d "
                data-tip-en="2026-07-20: Q1"
@@ -1771,6 +1769,10 @@
                data-tip-en="2026-07-29: Q2"
                data-tip-zh="2026-07-29: Q2"></div>
           
+          <div class="hist-d "
+               data-tip-en="2026-07-30: Q2"
+               data-tip-zh="2026-07-30: Q2"></div>
+          
           
           <span class="hist-hint"><span class="l-en">ledger</span><span class="l-zh">账本</span></span>
         </div>
@@ -1784,8 +1786,8 @@
           <span class="domain-name-en"><span class="l-en">Dispersion</span><span class="l-zh">离散度</span></span>
           
           <span class="domain-asof stale-ok"
-                data-tip-en="Source as-of 2026-07-28"
-                data-tip-zh="数据截至 2026-07-28">2026-07-28</span>
+                data-tip-en="Source as-of 2026-07-29"
+                data-tip-zh="数据截至 2026-07-29">2026-07-29</span>
           
         </div>
         <div class="domain-chips">
@@ -1806,10 +1808,6 @@
         
         <div class="hist-dots">
           
-          
-          <div class="hist-d "
-               data-tip-en="2026-07-19: lean_in"
-               data-tip-zh="2026-07-19: lean_in"></div>
           
           <div class="hist-d "
                data-tip-en="2026-07-20: lean_in"
@@ -1839,6 +1837,10 @@
                data-tip-en="2026-07-29: lean_in"
                data-tip-zh="2026-07-29: lean_in"></div>
           
+          <div class="hist-d "
+               data-tip-en="2026-07-30: lean_in"
+               data-tip-zh="2026-07-30: lean_in"></div>
+          
           
           <span class="hist-hint"><span class="l-en">ledger</span><span class="l-zh">账本</span></span>
         </div>
@@ -1851,9 +1853,9 @@
         <div class="domain-name">
           <span class="domain-name-en"><span class="l-en">International</span><span class="l-zh">国际</span></span>
           
-          <span class="domain-asof stale-warn"
-                data-tip-en="Source as-of 2026-07-27"
-                data-tip-zh="数据截至 2026-07-27">2026-07-27</span>
+          <span class="domain-asof stale-ok"
+                data-tip-en="Source as-of 2026-07-28"
+                data-tip-zh="数据截至 2026-07-28">2026-07-28</span>
           
         </div>
         <div class="domain-chips">
@@ -1930,10 +1932,6 @@
           
           
           <div class="hist-d "
-               data-tip-en="2026-07-19: Q1"
-               data-tip-zh="2026-07-19: Q1"></div>
-          
-          <div class="hist-d "
                data-tip-en="2026-07-20: Q1"
                data-tip-zh="2026-07-20: Q1"></div>
           
@@ -1960,6 +1958,10 @@
           <div class="hist-d "
                data-tip-en="2026-07-29: Q2"
                data-tip-zh="2026-07-29: Q2"></div>
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-30: Q2"
+               data-tip-zh="2026-07-30: Q2"></div>
           
           
           <span class="hist-hint"><span class="l-en">ledger</span><span class="l-zh">账本</span></span>
@@ -2147,22 +2149,22 @@
           
           <div class="stat-item">
             <span class="stat-key"><span class="l-en">Implied Cuts (6m)</span><span class="l-zh">隐含降息(6月)</span></span>
-            <span class="stat-val">-2</span>
+            <span class="stat-val">-1</span>
           </div>
           
           
           <div class="stat-item">
             <span class="stat-key"><span class="l-en">Market vs Fed</span><span class="l-zh">市场vs美联储</span></span>
-            <span class="stat-val">+18bp</span>
+            <span class="stat-val">+9bp</span>
           </div>
           
           
           <div class="stat-item">
             <span class="stat-key"><span class="l-en">2s10s Spread</span><span class="l-zh">2s10s利差</span></span>
             <div>
-              <span class="stat-val">35bp</span>
+              <span class="stat-val">45bp</span>
               
-              <div class="stat-pctile"><span class="l-en">64th pct</span><span class="l-zh">第64百分位</span></div>
+              <div class="stat-pctile"><span class="l-en">69th pct</span><span class="l-zh">第69百分位</span></div>
               
             </div>
           </div>
@@ -2468,17 +2470,117 @@
 
     <!-- Breaking slug -->
     
+    <div class="breaking-slug">
+      <span class="breaking-badge"><span class="l-en">TODAY</span><span class="l-zh">今日</span></span>
+      <span class="breaking-text">
+        10 <span class="l-en">flip(s) this session</span><span class="l-zh">项转换本轮</span>
+        
+        — <span class="l-en">Hong Kong</span><span class="l-zh">香港</span>: <span class="l-en">Quadrant</span><span class="l-zh">象限</span>, <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span>: <span class="l-en">Silver</span><span class="l-zh">白银</span>, <span class="l-en">Market State</span><span class="l-zh">市场状态</span>: <span class="l-en">Verdict</span><span class="l-zh">判定</span> +7 <span class="l-en">more</span><span class="l-zh">更多</span>
+        
+      </span>
+    </div>
+    
 
     
     
     <div class="tl-date-group">
       <div class="tl-date-header">
-        2026-07-29
+        2026-07-30
         
       </div>
       <div class="tl-events">
         
         <div class="tl-event">
+          <span class="tl-domain"><span class="l-en">Canada</span><span class="l-zh">加拿大</span></span>
+          <span style="font-size:12px;color:var(--muted)"><span class="l-en">Overlay</span><span class="l-zh">叠加状态</span></span>
+          <span class="tl-from"><span class="l-en">Risk-on</span><span class="l-zh">风险偏好</span></span>
+          <span class="tl-arrow">&#8594;</span>
+          <span class="tl-to"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
+        </div>
+        
+        <div class="tl-event">
+          <span class="tl-domain"><span class="l-en">Commodities</span><span class="l-zh">大宗商品</span></span>
+          <span style="font-size:12px;color:var(--muted)"><span class="l-en">Silver</span><span class="l-zh">白银</span></span>
+          <span class="tl-from"><span class="l-en">Sell</span><span class="l-zh">Sell</span></span>
+          <span class="tl-arrow">&#8594;</span>
+          <span class="tl-to"><span class="l-en">HOLD</span><span class="l-zh">持有</span></span>
+        </div>
+        
+        <div class="tl-event">
+          <span class="tl-domain"><span class="l-en">FX / Dollar</span><span class="l-zh">外汇 / 美元</span></span>
+          <span style="font-size:12px;color:var(--muted)"><span class="l-en">EUR/USD</span><span class="l-zh">欧元兑美元</span></span>
+          <span class="tl-from"><span class="l-en">Flat</span><span class="l-zh">Flat</span></span>
+          <span class="tl-arrow">&#8594;</span>
+          <span class="tl-to"><span class="l-en">Short</span><span class="l-zh">Short</span></span>
+        </div>
+        
+        <div class="tl-event">
+          <span class="tl-domain"><span class="l-en">FX / Dollar</span><span class="l-zh">外汇 / 美元</span></span>
+          <span style="font-size:12px;color:var(--muted)"><span class="l-en">FX Risk</span><span class="l-zh">外汇风险</span></span>
+          <span class="tl-from"><span class="l-en">risk-on</span><span class="l-zh">偏好风险</span></span>
+          <span class="tl-arrow">&#8594;</span>
+          <span class="tl-to"><span class="l-en">risk-off</span><span class="l-zh">避险</span></span>
+        </div>
+        
+        <div class="tl-event">
+          <span class="tl-domain"><span class="l-en">Market State</span><span class="l-zh">市场状态</span></span>
+          <span style="font-size:12px;color:var(--muted)"><span class="l-en">Verdict</span><span class="l-zh">判定</span></span>
+          <span class="tl-from"><span class="l-en">Mixed</span><span class="l-zh">Mixed</span></span>
+          <span class="tl-arrow">&#8594;</span>
+          <span class="tl-to"><span class="l-en">Risk off</span><span class="l-zh">Risk off</span></span>
+        </div>
+        
+        <div class="tl-event">
+          <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
+          <span style="font-size:12px;color:var(--muted)"><span class="l-en">Repricing Coherence</span><span class="l-zh">重定价一致性</span></span>
+          <span class="tl-from"><span class="l-en">Elevated</span><span class="l-zh">Elevated</span></span>
+          <span class="tl-arrow">&#8594;</span>
+          <span class="tl-to"><span class="l-en">Quiet</span><span class="l-zh">Quiet</span></span>
+        </div>
+        
+        <div class="tl-event">
+          <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
+          <span style="font-size:12px;color:var(--muted)"><span class="l-en">Dislocation</span><span class="l-zh">错位状态</span></span>
+          <span class="tl-from"><span class="l-en">calm</span><span class="l-zh">平静</span></span>
+          <span class="tl-arrow">&#8594;</span>
+          <span class="tl-to"><span class="l-en">buyable_washout</span><span class="l-zh">可买入的错杀</span></span>
+        </div>
+        
+        <div class="tl-event">
+          <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
+          <span style="font-size:12px;color:var(--muted)"><span class="l-en">Liquidity</span><span class="l-zh">流动性</span></span>
+          <span class="tl-from"><span class="l-en">neutral</span><span class="l-zh">中性</span></span>
+          <span class="tl-arrow">&#8594;</span>
+          <span class="tl-to"><span class="l-en">expanding</span><span class="l-zh">扩张</span></span>
+        </div>
+        
+        <div class="tl-event">
+          <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
+          <span style="font-size:12px;color:var(--muted)"><span class="l-en">Liquidity Quality</span><span class="l-zh">流动性质量</span></span>
+          <span class="tl-from"><span class="l-en">Neutral hollow</span><span class="l-zh">Neutral hollow</span></span>
+          <span class="tl-arrow">&#8594;</span>
+          <span class="tl-to"><span class="l-en">Stress expansion</span><span class="l-zh">Stress expansion</span></span>
+        </div>
+        
+        <div class="tl-event">
+          <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
+          <span style="font-size:12px;color:var(--muted)"><span class="l-en">Fused Risk</span><span class="l-zh">融合风险</span></span>
+          <span class="tl-from"><span class="l-en">Elevated</span><span class="l-zh">Elevated</span></span>
+          <span class="tl-arrow">&#8594;</span>
+          <span class="tl-to"><span class="l-en">Caution</span><span class="l-zh">Caution</span></span>
+        </div>
+        
+      </div>
+    </div>
+    
+    <div class="tl-date-group">
+      <div class="tl-date-header today">
+        2026-07-29
+         — <span class="l-en">TODAY</span><span class="l-zh">今日</span>
+      </div>
+      <div class="tl-events">
+        
+        <div class="tl-event hot">
           <span class="tl-domain"><span class="l-en">Hong Kong</span><span class="l-zh">香港</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Quadrant</span><span class="l-zh">象限</span></span>
           <span class="tl-from"><span class="l-en">Q3</span><span class="l-zh">Q3</span></span>
@@ -2486,7 +2588,7 @@
           <span class="tl-to"><span class="l-en">Q1</span><span class="l-zh">Q1</span></span>
         </div>
         
-        <div class="tl-event">
+        <div class="tl-event hot">
           <span class="tl-domain"><span class="l-en">Commodities</span><span class="l-zh">大宗商品</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Silver</span><span class="l-zh">白银</span></span>
           <span class="tl-from"><span class="l-en">HOLD</span><span class="l-zh">持有</span></span>
@@ -2494,7 +2596,7 @@
           <span class="tl-to"><span class="l-en">Sell</span><span class="l-zh">Sell</span></span>
         </div>
         
-        <div class="tl-event">
+        <div class="tl-event hot">
           <span class="tl-domain"><span class="l-en">Market State</span><span class="l-zh">市场状态</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Verdict</span><span class="l-zh">判定</span></span>
           <span class="tl-from"><span class="l-en">Risk on</span><span class="l-zh">Risk on</span></span>
@@ -2502,7 +2604,7 @@
           <span class="tl-to"><span class="l-en">Mixed</span><span class="l-zh">Mixed</span></span>
         </div>
         
-        <div class="tl-event">
+        <div class="tl-event hot">
           <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span></span>
           <span class="tl-from"><span class="l-en">mixed</span><span class="l-zh">喜忧参半</span></span>
@@ -2510,7 +2612,7 @@
           <span class="tl-to"><span class="l-en">Diverge</span><span class="l-zh">Diverge</span></span>
         </div>
         
-        <div class="tl-event">
+        <div class="tl-event hot">
           <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Vol Risk Premium</span><span class="l-zh">波动风险溢价</span></span>
           <span class="tl-from"><span class="l-en">normal</span><span class="l-zh">正常</span></span>
@@ -2518,7 +2620,7 @@
           <span class="tl-to"><span class="l-en">rich (vol overpriced — constructive)</span><span class="l-zh">rich (vol overpriced — constructive)</span></span>
         </div>
         
-        <div class="tl-event">
+        <div class="tl-event hot">
           <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Repricing Coherence</span><span class="l-zh">重定价一致性</span></span>
           <span class="tl-from"><span class="l-en">Quiet</span><span class="l-zh">Quiet</span></span>
@@ -2526,7 +2628,7 @@
           <span class="tl-to"><span class="l-en">Elevated</span><span class="l-zh">Elevated</span></span>
         </div>
         
-        <div class="tl-event">
+        <div class="tl-event hot">
           <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Liquidity</span><span class="l-zh">流动性</span></span>
           <span class="tl-from"><span class="l-en">expanding</span><span class="l-zh">扩张</span></span>
@@ -2534,7 +2636,7 @@
           <span class="tl-to"><span class="l-en">neutral</span><span class="l-zh">中性</span></span>
         </div>
         
-        <div class="tl-event">
+        <div class="tl-event hot">
           <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Liquidity Quality</span><span class="l-zh">流动性质量</span></span>
           <span class="tl-from"><span class="l-en">Stress expansion</span><span class="l-zh">Stress expansion</span></span>
@@ -2542,7 +2644,7 @@
           <span class="tl-to"><span class="l-en">Neutral hollow</span><span class="l-zh">Neutral hollow</span></span>
         </div>
         
-        <div class="tl-event">
+        <div class="tl-event hot">
           <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Risk Radar</span><span class="l-zh">风险雷达</span></span>
           <span class="tl-from"><span class="l-en">Watch</span><span class="l-zh">Watch</span></span>
@@ -2550,7 +2652,7 @@
           <span class="tl-to"><span class="l-en">Caution</span><span class="l-zh">Caution</span></span>
         </div>
         
-        <div class="tl-event">
+        <div class="tl-event hot">
           <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Fused Risk</span><span class="l-zh">融合风险</span></span>
           <span class="tl-from"><span class="l-en">Caution</span><span class="l-zh">Caution</span></span>
@@ -2948,106 +3050,6 @@
           <span class="tl-to"><span class="l-en">Watch</span><span class="l-zh">Watch</span></span>
         </div>
         
-        <div class="tl-event">
-          <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
-          <span style="font-size:12px;color:var(--muted)"><span class="l-en">Risk Radar</span><span class="l-zh">风险雷达</span></span>
-          <span class="tl-from"><span class="l-en">Watch</span><span class="l-zh">Watch</span></span>
-          <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to"><span class="l-en">Caution</span><span class="l-zh">Caution</span></span>
-        </div>
-        
-        <div class="tl-event">
-          <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
-          <span style="font-size:12px;color:var(--muted)"><span class="l-en">Fused Risk</span><span class="l-zh">融合风险</span></span>
-          <span class="tl-from"><span class="l-en">neutral</span><span class="l-zh">中性</span></span>
-          <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to"><span class="l-en">Caution</span><span class="l-zh">Caution</span></span>
-        </div>
-        
-        <div class="tl-event">
-          <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
-          <span style="font-size:12px;color:var(--muted)"><span class="l-en">Transition</span><span class="l-zh">转换状态</span></span>
-          <span class="tl-from"><span class="l-en">WEAKENING</span><span class="l-zh">走弱</span></span>
-          <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to"><span class="l-en">TRANSITIONING</span><span class="l-zh">转换中</span></span>
-        </div>
-        
-      </div>
-    </div>
-    
-    <div class="tl-date-group">
-      <div class="tl-date-header">
-        2026-07-16
-        
-      </div>
-      <div class="tl-events">
-        
-        <div class="tl-event">
-          <span class="tl-domain"><span class="l-en">China</span><span class="l-zh">中国</span></span>
-          <span style="font-size:12px;color:var(--muted)"><span class="l-en">Fear / Euphoria</span><span class="l-zh">恐惧/亢奋</span></span>
-          <span class="tl-from"><span class="l-en">Greed</span><span class="l-zh">Greed</span></span>
-          <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
-        </div>
-        
-        <div class="tl-event">
-          <span class="tl-domain"><span class="l-en">Rates Transmission</span><span class="l-zh">利率传导</span></span>
-          <span style="font-size:12px;color:var(--muted)"><span class="l-en">Curve Regime</span><span class="l-zh">曲线周期</span></span>
-          <span class="tl-from"><span class="l-en">Bear flattener</span><span class="l-zh">Bear flattener</span></span>
-          <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to"><span class="l-en">Bear steepener</span><span class="l-zh">Bear steepener</span></span>
-        </div>
-        
-        <div class="tl-event">
-          <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
-          <span style="font-size:12px;color:var(--muted)"><span class="l-en">Vol Risk Premium</span><span class="l-zh">波动风险溢价</span></span>
-          <span class="tl-from"><span class="l-en">collapsing (de-risk)</span><span class="l-zh">collapsing (de-risk)</span></span>
-          <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to"><span class="l-en">normal</span><span class="l-zh">正常</span></span>
-        </div>
-        
-        <div class="tl-event">
-          <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
-          <span style="font-size:12px;color:var(--muted)"><span class="l-en">Repricing Coherence</span><span class="l-zh">重定价一致性</span></span>
-          <span class="tl-from"><span class="l-en">Elevated</span><span class="l-zh">Elevated</span></span>
-          <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to"><span class="l-en">Quiet</span><span class="l-zh">Quiet</span></span>
-        </div>
-        
-        <div class="tl-event">
-          <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
-          <span style="font-size:12px;color:var(--muted)"><span class="l-en">Froth / Fragility</span><span class="l-zh">泡沫/脆弱度</span></span>
-          <span class="tl-from"><span class="l-en">Watch</span><span class="l-zh">Watch</span></span>
-          <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to"><span class="l-en">calm</span><span class="l-zh">平静</span></span>
-        </div>
-        
-        <div class="tl-event">
-          <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
-          <span style="font-size:12px;color:var(--muted)"><span class="l-en">Transition</span><span class="l-zh">转换状态</span></span>
-          <span class="tl-from"><span class="l-en">TRANSITIONING</span><span class="l-zh">转换中</span></span>
-          <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to"><span class="l-en">WEAKENING</span><span class="l-zh">走弱</span></span>
-        </div>
-        
-      </div>
-    </div>
-    
-    <div class="tl-date-group">
-      <div class="tl-date-header">
-        2026-07-15
-        
-      </div>
-      <div class="tl-events">
-        
-        <div class="tl-event">
-          <span class="tl-domain"><span class="l-en">China</span><span class="l-zh">中国</span></span>
-          <span style="font-size:12px;color:var(--muted)"><span class="l-en">Fear / Euphoria</span><span class="l-zh">恐惧/亢奋</span></span>
-          <span class="tl-from"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
-          <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to"><span class="l-en">Greed</span><span class="l-zh">Greed</span></span>
-        </div>
-        
       </div>
     </div>
     
@@ -3091,11 +3093,11 @@
   <div id="footnote" class="section">
     <div class="sec-lbl"><span class="l-en">Footnote</span><span class="l-zh">注脚</span></div>
     <div class="footnote">
-      <b><span class="l-en">Context ID</span><span class="l-zh">背景ID</span>:</b> <code>4ae225574b2d46ac</code>
+      <b><span class="l-en">Context ID</span><span class="l-zh">背景ID</span>:</b> <code>a6640f174cbb3573</code>
       &nbsp;·&nbsp;
-      <b><span class="l-en">As of</span><span class="l-zh">截至</span>:</b> 2026-07-29
+      <b><span class="l-en">As of</span><span class="l-zh">截至</span>:</b> 2026-07-30
       &nbsp;·&nbsp;
-      <b><span class="l-en">14-day transitions</span><span class="l-zh">14天转换数</span>:</b> 59
+      <b><span class="l-en">14-day transitions</span><span class="l-zh">14天转换数</span>:</b> 60
       &nbsp;·&nbsp;
       <a href="committee.html"><span class="l-en">Committee View</span><span class="l-zh">委员会视图</span></a>
       &nbsp;·&nbsp;
@@ -3106,7 +3108,7 @@
       <b><span class="l-en">Display-only — labels, not signals.</span><span class="l-zh">仅展示标签，非信号。</span></b>
       <span class="l-en">This page presents macro regime labels distilled from committed data sources. No label on this page has been calibrated for forward return, has passed a pre-registration gate, or carries authority to modify any position or scoring surface. These are context descriptors only.</span><span class="l-zh">本页展示从已提交数据源中提炼的宏观周期标签。页面上任何标签均未经前瞻收益校准、未通过预注册门槛，亦不具备修改任何持仓或评分界面的权限。仅作背景描述使用。</span>
     </div>
-    <div class="meta-foot"><span class="l-en">Built</span><span class="l-zh">构建于</span> 2026-07-30 02:18 UTC</div>
+    <div class="meta-foot"><span class="l-en">Built</span><span class="l-zh">构建于</span> 2026-07-30 03:43 UTC</div>
   </div>
 
 </div><!-- /page-wrap -->
@@ -3116,6 +3118,7 @@
   <span><span class="l-en">Macro Weather Station · display-only context · labels, not signals</span><span class="l-zh">宏观气象台 · 仅供展示 · 标签，非信号</span></span>
 </footer>
 
-<script src="theme.js?v=4e99fde4" defer></script>
+<script src="theme.js?v=0390288f" defer></script>
+<script defer data-whb data-root="" src="wh_banner.js?v=37bf40aa"></script>
 </body>
 </html>

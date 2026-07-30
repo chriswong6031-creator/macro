@@ -1,26 +1,26 @@
 {
   "schema": "neuralweb.covariance_spine.v1",
-  "as_of": "2026-07-29",
+  "as_of": "2026-07-30",
   "display_only": true,
   "authority": "context",
   "descriptive_not_gauntleted": true,
   "blocks": {
     "rates": {
-      "dominant_pc_share": 0.8249,
+      "dominant_pc_share": 0.825,
       "first3_var": 0.9632,
-      "effective_dimension_pr": 1.4457,
+      "effective_dimension_pr": 1.4455,
       "pc3_to_pc4_gap": null,
       "oos_pctile_vs_null": null,
       "curvature_stability_tag": "stable",
       "vol_match_multipliers": {
         "pc2": 2.96,
-        "pc3": 4.34
+        "pc3": 4.33
       },
       "source": "data/regime/latest.json#yield_curve"
     },
     "factors": {
-      "dominant_factor_pc_share": 0.5527,
-      "effective_factor_bets_pr": 2.7982,
+      "dominant_factor_pc_share": 0.5619,
+      "effective_factor_bets_pr": 2.7331,
       "n_factors_used": 7,
       "n_obs_used": 252,
       "caveat": "~3y history, annual fundamentals; descriptive only",
@@ -28,11 +28,11 @@
     },
     "dispersion": {
       "state": "lean_in",
-      "dispersion_pctile": 0.72,
+      "dispersion_pctile": 0.73,
       "avg_corr": 0.07,
-      "dominant_equity_pc_share": 0.1851,
-      "effective_universe_bets_pr": 21.74,
-      "idio_dispersion_share": 0.6273
+      "dominant_equity_pc_share": 0.1848,
+      "effective_universe_bets_pr": 21.76,
+      "idio_dispersion_share": 0.6204
     },
     "lobes": {
       "effective_independent_lobes": 1.0,
@@ -72,15 +72,15 @@
           "options_entry": 3,
           "policy": 6,
           "radar": 6,
-          "reflex.cortex_attention": 1,
-          "reflex.options_flow_attention": 4,
+          "reflex.cortex_attention": 2,
+          "reflex.options_flow_attention": 5,
           "reflex.regime_stale_selfheal": 4,
           "stock_personality": 1,
           "tech_signals": 1,
-          "us_board": 5,
+          "us_board": 6,
           "us_importance_v0": 6,
           "us_importance_v0_pit": 6,
-          "whitehouse": 3
+          "whitehouse": 4
         },
         "pairs_below_floor": 0,
         "pairs_below_floor_assumption": "below-floor pairs (n_shared < 30) are treated as 0.0 (independence assumption) in the effective_independent_lobes matrix; this biases the estimate toward more diversification when unmeasured pairs exist",
@@ -111,15 +111,15 @@
       "options_entry": 3,
       "policy": 6,
       "radar": 6,
-      "reflex.cortex_attention": 1,
-      "reflex.options_flow_attention": 4,
+      "reflex.cortex_attention": 2,
+      "reflex.options_flow_attention": 5,
       "reflex.regime_stale_selfheal": 4,
       "stock_personality": 1,
       "tech_signals": 1,
-      "us_board": 5,
+      "us_board": 6,
       "us_importance_v0": 6,
       "us_importance_v0_pit": 6,
-      "whitehouse": 3
+      "whitehouse": 4
     },
     "pairs_below_floor": 0,
     "pairs_below_floor_assumption": "below-floor pairs (n_shared < 30) are treated as 0.0 (independence assumption) in the effective_independent_lobes matrix; this biases the estimate toward more diversification when unmeasured pairs exist",

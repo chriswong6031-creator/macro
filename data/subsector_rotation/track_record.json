@@ -1,10 +1,10 @@
 {
   "schema": "subsector_rotation.track_record.v1",
-  "as_of": "2026-07-29",
-  "generated_at": "2026-07-29T01:36:53.021286+00:00",
+  "as_of": "2026-07-30",
+  "generated_at": "2026-07-30T02:13:08.186482+00:00",
   "is_context_only": true,
-  "n_snapshots": 6177,
-  "n_days": 23,
+  "n_snapshots": 6446,
+  "n_days": 24,
   "horizons": {
     "5": {
       "n_matured": 4319,
@@ -40,68 +40,68 @@
       }
     },
     "10": {
-      "n_matured": 3355,
-      "score_ic": 0.2259,
-      "score_ic_t_hac": 4.299,
+      "n_matured": 3596,
+      "score_ic": 0.2525,
+      "score_ic_t_hac": 4.083,
       "score_ic_detail": {
-        "mean_ic": 0.2259,
-        "ic_vol": 0.3091,
-        "ic_ir": 0.731,
-        "ic_ir_ann": 3.269,
-        "t_hac": 4.299,
+        "mean_ic": 0.2525,
+        "ic_vol": 0.3151,
+        "ic_ir": 0.801,
+        "ic_ir_ann": 3.584,
+        "t_hac": 4.083,
         "p_hac": 0.0,
-        "hit": 0.786,
-        "n": 14,
+        "hit": 0.8,
+        "n": 15,
         "hac_lags": 10
       },
       "by_stage": {
         "emerging": {
-          "n": 129,
-          "mean_fwd_rel": 0.0016,
-          "hit_rate": 0.527
+          "n": 136,
+          "mean_fwd_rel": 0.0036,
+          "hit_rate": 0.544
         },
         "neutral": {
-          "n": 3072,
-          "mean_fwd_rel": -0.0069,
+          "n": 3295,
+          "mean_fwd_rel": -0.0061,
           "hit_rate": null
         },
         "fading": {
-          "n": 154,
-          "mean_fwd_rel": -0.0316,
-          "hit_rate": 0.734
+          "n": 165,
+          "mean_fwd_rel": -0.0323,
+          "hit_rate": 0.733
         }
       }
     },
     "21": {
-      "n_matured": 1673,
-      "score_ic": 0.2091,
-      "score_ic_t_hac": null,
+      "n_matured": 1912,
+      "score_ic": 0.265,
+      "score_ic_t_hac": 3.581,
       "score_ic_detail": {
-        "mean_ic": 0.2091,
-        "ic_vol": 0.3232,
-        "ic_ir": 0.647,
-        "ic_ir_ann": 4.193,
-        "t_hac": null,
-        "p_hac": null,
-        "hit": 0.571,
-        "n": 7,
+        "mean_ic": 0.265,
+        "ic_vol": 0.3383,
+        "ic_ir": 0.783,
+        "ic_ir_ann": 5.075,
+        "t_hac": 3.581,
+        "p_hac": 0.0003,
+        "hit": 0.625,
+        "n": 8,
         "hac_lags": 21
       },
       "by_stage": {
         "emerging": {
-          "n": 63,
-          "mean_fwd_rel": -0.0111,
-          "hit_rate": 0.429
+          "n": 72,
+          "mean_fwd_rel": 0.0004,
+          "hit_rate": 0.5
         },
         "neutral": {
-          "n": 1533,
-          "mean_fwd_rel": -0.0133,
+          "n": 1752,
+          "mean_fwd_rel": -0.012,
           "hit_rate": null
         },
         "fading": {
-          "n": 77,
-          "mean_fwd_rel": -0.0588,
-          "hit_rate": 0.844
+          "n": 88,
+          "mean_fwd_rel": -0.0674,
+          "hit_rate": 0.864
         }
       }
     },
@@ -115,18 +115,18 @@
       "by_stage": {}
     }
   },
-  "lead_time_d": 10,
-  "peak_score_ic": 0.2259,
+  "lead_time_d": 21,
+  "peak_score_ic": 0.265,
   "proven": {
     "5": false,
     "10": true,
-    "21": false,
+    "21": true,
     "63": false
   },
   "any_matured": true,
   "verdict": "validated",
-  "note": "Emerging-score IC is significant at the 10d horizon (measured). Context-only \u2014 informs the read, never sizes.",
-  "note_zh": "\u5347\u6e29\u8bc4\u5206\u7684\u4fe1\u606f\u7cfb\u6570\u5728 10 \u5929\u5468\u671f\u4e0a\u663e\u8457\uff08\u5df2\u6d4b\u5f97\uff09\u3002\u4ec5\u4f9b\u53c2\u8003\u2014\u2014\u8f85\u52a9\u7814\u5224\uff0c\u4ece\u4e0d\u7528\u4e8e\u4ed3\u4f4d\u3002",
+  "note": "Emerging-score IC is significant at the 21d horizon (measured). Context-only \u2014 informs the read, never sizes.",
+  "note_zh": "\u5347\u6e29\u8bc4\u5206\u7684\u4fe1\u606f\u7cfb\u6570\u5728 21 \u5929\u5468\u671f\u4e0a\u663e\u8457\uff08\u5df2\u6d4b\u5f97\uff09\u3002\u4ec5\u4f9b\u53c2\u8003\u2014\u2014\u8f85\u52a9\u7814\u5224\uff0c\u4ece\u4e0d\u7528\u4e8e\u4ed3\u4f4d\u3002",
   "recent_misses": [
     {
       "date": "2026-07-07",
