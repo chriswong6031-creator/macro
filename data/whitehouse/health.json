@@ -1,10 +1,17 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-07-30T06:41:16.352414+00:00",
-  "posts_seen": 8,
-  "seen_total": 68,
-  "evaluated": 0,
+  "as_of": "2026-07-30T12:04:03.665595+00:00",
+  "posts_seen": 9,
+  "seen_total": 69,
+  "evaluated": 1,
   "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
-  "gate_scores": []
+  "gate_scores": [
+    {
+      "id": "wh-2026-07-30-first-lady-melania-trump-facilitates-her-fifth-ukrainerussia-family-reunificatio",
+      "importance": 5,
+      "activated": false,
+      "degraded_reason": "served_by:codex"
+    }
+  ]
 }
