@@ -1,5 +1,5 @@
 /* AURORA — breathing macro-regime globe flight deck.
-   A draggable d3-geoOrthographic globe on a single 2D canvas: each covered country
+   A desktop-draggable d3-geoOrthographic globe on a single 2D canvas: each covered country
    breathes in its live regime color (read from theme.css --q1..--q4 so it flips
    EN<->中文 + dark/light for free), a real day/night terminator sweeps the planet,
    HK is a sonar marker, the Eurozone is one merged gold bloc, hover pops a bilingual
@@ -23,6 +23,7 @@
   DATA.forEach(function (m) { byCC[m.cc] = m; });
 
   var motionOK = !window.matchMedia || !matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var touchlessMobile = !!(window.matchMedia && matchMedia("(hover: none) and (pointer: coarse)").matches);
   var isDark = function () { return document.documentElement.getAttribute("data-theme") !== "light"; };
 
   // ---- visibility & quality state ------------------------------------------
@@ -1019,6 +1020,7 @@
   stage.addEventListener("pointerenter", function (e) { if (e.pointerType !== "touch") hovering = true; });
   stage.addEventListener("pointerleave", function (e) { if (e.pointerType !== "touch") hovering = false; });
   canvas.addEventListener("pointerdown", function (e) {
+    if (e.pointerType === "touch") return;
     dragging = true; flying = null; velX = velY = 0; moved = 0;
     px = e.clientX; py = e.clientY; lastInteract = performance.now();
     canvas.setPointerCapture(e.pointerId);
@@ -1038,9 +1040,11 @@
     }
   });
   canvas.addEventListener("pointerup", function (e) {
+    if (e.pointerType === "touch") return;
     dragging = false;
     if (moved < 5) { clickAt(e.clientX, e.clientY); }     // a click, not a drag
   });
+  canvas.addEventListener("pointercancel", function () { dragging = false; });
   canvas.addEventListener("pointerleave", function () { if (!dragging) { hovered = null; hideTip(); } });
   canvas.addEventListener("wheel", function (e) {
     // plain wheel / trackpad scroll → let the page scroll (no preventDefault)
@@ -1486,6 +1490,7 @@
   var _hintEl = null;
   function buildHintChip() {
     if (!stage) return;
+    if (touchlessMobile) return;
     if (localStorage.getItem("gdHintSeen")) return;
     _hintEl = document.createElement("div");
     _hintEl.className = "gd-hint-chip";
