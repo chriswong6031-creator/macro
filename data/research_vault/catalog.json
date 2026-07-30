@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-30T21:26:13.301623+00:00",
-  "count": 415,
+  "generated_at": "2026-07-30T21:56:15.775262+00:00",
+  "count": 416,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -1495,6 +1495,23 @@
       "tickers": [],
       "top_pick": false,
       "pages": 33,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-3mq95iobemf-a48a54",
+      "title": "Swissquote Group (SQN)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T08:04:35Z",
+      "summary_points": [
+        "Missing Document**: No source material provided for extraction **Critical Input Gap**: Absence of actual document content prevents identification of fundamentals/data/technical points **Action Required**: Provide document text to proceed with analysis per specified criteria"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 18,
       "language": "en",
       "needs_metadata": false
     },
